@@ -738,6 +738,11 @@
            Default 0.0 = the SBOW does not fire and the forward is byte-identical;
            > 0 trains the codebook in the parallel (symbolicOrder=0) forward. -->
       <xs:element name="conceptualSimilarityScale" type="nonNegativeFloat" minOccurs="0"/>
+      <!-- <definitionSparsityScale> (snap contract sec 5, 2026-07-06): lambda
+           for the rank-ordered soft-L0 that keeps concept definitions compact
+           (shrinks the surplus concept->symbol in-edges past definitionFreeSize).
+           Default 0.0 = no penalty, byte-identical. -->
+      <xs:element name="definitionSparsityScale" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="autoload" type="xs:boolean" minOccurs="0"/>
       <xs:element name="autosave" type="xs:boolean" minOccurs="0"/>
       <xs:element name="checkpointEveryBatches" type="xs:nonNegativeInteger" minOccurs="0"/>
@@ -972,6 +977,11 @@
       <xs:element name="tetralemmaOverride" type="tetralemmaOverrideType" minOccurs="0"/>
       <xs:element name="TetralemmaPolicy" type="tetralemmaPolicyType" minOccurs="0"/>
       <xs:element name="stmCapacity" type="xs:positiveInteger" minOccurs="0"/>
+      <!-- <definitionFreeSize> (snap contract sec 5, 2026-07-06): symbols a
+           concept definition may use for free (genus + differentia = 2);
+           the rank-ordered L0 penalty shrinks only the surplus past this.
+           Pairs with stmCapacity (the hard ceiling). Default 2. -->
+      <xs:element name="definitionFreeSize" type="xs:positiveInteger" minOccurs="0"/>
       <!-- perWordStemSerial: when true, the per-word stem uses a
            causal cursor loop (option (a) from the K-microbatch
            design discussion) instead of the parallel-over-AR-windows
@@ -998,6 +1008,16 @@
       <xs:element name="nVectors" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nWhere" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nWhen" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <!-- <initScale> (2026-07-06 fidelity leg, doc/plans/2026-07-06-concepts-
+           formalization-and-snap-contract-*.md): per-row SEED MAGNITUDE for
+           this space's codebooks (the .what symbol codebook + analysis_store,
+           and fresh insert_whole rows). Small values (~0.02) keep the
+           sigma/pi folds in their linear regime (tanh saturation grows with
+           fold depth x row scale). Omitted / 0 = current behavior (unit /
+           [-1,1] hypercube prefill), byte-identical. Direction-preserving: a
+           uniform per-row scale leaves dot-product argmax selection
+           unchanged. -->
+      <xs:element name="initScale" type="nonNegativeFloat" minOccurs="0"/>
       <!-- Phase 4b (analysis/synthesis dual-input plan, rev. 2026-06-09):
            WholeSpace owns the top-down ANALYSIS knobs.
            <lexer> (moved here from InputSpace): the intake granularity

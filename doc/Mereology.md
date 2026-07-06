@@ -406,7 +406,7 @@ the other.
   concept dictionary (`similarity_codebook`, softplus-rectified). For a higher-order
   concept the *production* is no longer "$\sigma$ then quantize"; it is the **iterated
   sparse wave** (`cs_forward_content`, bin/Spaces.py): the single untyped square
-  `AttentionLayer` propagates the order-0 snap presences one
+  `ConceptualAttentionLayer` propagates the order-0 snap presences one
   membership-weighted hop per step ($a^{i+1} = \tanh(W [a^i \mid 1] + s)$,
   $K$ = `symbolicOrder` steps, the snap as additive source), and the concept
   code is the final activation

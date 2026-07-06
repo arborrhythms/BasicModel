@@ -137,8 +137,8 @@ class TestLieCarriesBothTrust(unittest.TestCase):
 
         # Make both ideas already-known concepts so children == 1.0.
         pred, a, b = _ideas(cs)
-        ws.insert_symbol(init_vec=a)
-        ws.insert_symbol(init_vec=b)
+        ws.insert_whole(init_vec=a)
+        ws.insert_whole(init_vec=b)
         children_factor = cs._learn_score_children_in_codebook(a, b)
         self.assertEqual(children_factor, 1.0)
 

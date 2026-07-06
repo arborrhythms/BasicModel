@@ -30,7 +30,7 @@ reconstruction on some trials and pure prediction on others.
   `sequences` dataset + `MM_sequence_predict.xml`. **Root-cause found + fixed:**
   the discourse chain only spans sentences when (a) the BYTE cursor keeps the
   document in one stream AND (b) each document EXCEEDS the byte slab width
-  (`InputSpace nObj`, ~1024) so it is walked over multiple ticks — a short doc
+  (`InputSpace nIdeas`, ~1024) so it is walked over multiple ticks — a short doc
   collapses to one tick / one end-state and the next-idea loss never fires. Tests:
   `TestInterContrastive` (unit) + `test_inter_contrastive_predict.py` (end-to-end:
   predictor trains).

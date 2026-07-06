@@ -59,7 +59,7 @@ def _make_radix_model():
 def _seed_known_concept(ws, vec):
     """Insert ``vec`` as a fresh SS-codebook row so a later
     nearest-row lookup of the same vector lands distance 0."""
-    return ws.insert_symbol(init_vec=vec)
+    return ws.insert_whole(init_vec=vec)
 
 
 class TestChildrenInCodebookFactor(unittest.TestCase):

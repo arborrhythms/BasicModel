@@ -23,8 +23,8 @@ import torch
 
 
 def _oss(cap=64, dim=4):
-    from Language import ObjectSubSpace
-    return ObjectSubSpace(percept_dim=dim, capacity=cap, batch=1)
+    from Language import IdeaSubSpace
+    return IdeaSubSpace(percept_dim=dim, capacity=cap, batch=1)
 
 
 def test_routed_known_word_is_one_terminal():

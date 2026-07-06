@@ -3,7 +3,7 @@
 doc/plans/2026-05-30-subsymbolic-analyzer-terminal-emitter.md ("Forward PS
 Analysis", "Analyzer Contract"): the first analyzer mode uses stop /
 whitespace boundary / uniform + byte fallback and reproduces the current
-word-lexer terminal sequence. It writes durable spans to an ObjectSubSpace
+word-lexer terminal sequence. It writes durable spans to an IdeaSubSpace
 and exposes a fixed-capacity terminal-stream view with endpoint-sum .where.
 """
 
@@ -22,8 +22,8 @@ import torch
 
 
 def _oss(cap=64, dim=4):
-    from Language import ObjectSubSpace
-    return ObjectSubSpace(percept_dim=dim, capacity=cap, batch=1)
+    from Language import IdeaSubSpace
+    return IdeaSubSpace(percept_dim=dim, capacity=cap, batch=1)
 
 
 def test_boundary_matches_word_lexer():

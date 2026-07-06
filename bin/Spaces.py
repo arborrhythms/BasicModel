@@ -1448,13 +1448,13 @@ class WhatEncoding(Encoding):
     #
     # When an InputSpace runs in embedding (text) mode, the lexer's output
     # is packed into the What basis as null-terminated UTF-8 bytes. The
-    # buffer has shape [batch, nObj, nWhat]: within each slot, up to
+    # buffer has shape [batch, nIdeas, nWhat]: within each slot, up to
     # ``nWhat - 1`` bytes hold the token and the final byte is reserved
     # for the 0x00 terminator. These two helpers are the single writer /
     # reader pair for that layout -- InputSpace.forward uses encode_tokens
     # to write the buffer, PartSpace._embed uses
     # decode_tokens to read it back.
-    def encode_tokens(self, tokens_per_batch, batch, nObj, nWhat, device):
+    def encode_tokens(self, tokens_per_batch, batch, nIdeas, nWhat, device):
         """Pack token strings into a [B, N, nWhat] null-terminated byte buffer.
 
         ``tokens_per_batch[b][i]`` is the UTF-8 string for slot i of batch
@@ -1469,10 +1469,10 @@ class WhatEncoding(Encoding):
         # (correct + race-free -- a non_blocking copy of an ephemeral
         # pinned buffer corrupts data when the source is freed before
         # the transfer lands; see memory / pinmem guide).
-        buf = torch.zeros(batch, nObj, nWhat, dtype=torch.long,
+        buf = torch.zeros(batch, nIdeas, nWhat, dtype=torch.long,
                           device='cpu')
         for b, row in enumerate(tokens_per_batch):
-            for i in range(min(len(row), nObj)):
+            for i in range(min(len(row), nIdeas)):
                 text = row[i]
                 if not text:
                     continue
@@ -1513,11 +1513,11 @@ class WhatEncoding(Encoding):
             out.append(row)
         return out
 
-    def tokens_to_decoded(self, tokens_per_batch, batch, nObj, nWhat):
+    def tokens_to_decoded(self, tokens_per_batch, batch, nIdeas, nWhat):
         """Host-side equivalent of ``decode_tokens(encode_tokens(...))``.
 
         Returns the exact ``list[list[str]]`` that
-        ``decode_tokens(encode_tokens(tokens_per_batch, batch, nObj,
+        ``decode_tokens(encode_tokens(tokens_per_batch, batch, nIdeas,
         nWhat, dev))`` would produce, computed purely on the host with
         **no tensor / no device round-trip**. The lexer already has the
         token strings on the host (``InputSpace._lex_batch``); carrying
@@ -1532,7 +1532,7 @@ class WhatEncoding(Encoding):
         for b in range(batch):
             row_in = tokens_per_batch[b] if b < len(tokens_per_batch) else []
             row = []
-            for i in range(nObj):
+            for i in range(nIdeas):
                 text = row_in[i] if i < len(row_in) else ""
                 if not text:
                     row.append("")
@@ -2930,11 +2930,21 @@ class Codebook(Basis):
 
     def create(self, nInput, nVectors, nDim, customVQ=True, monotonic=True,
                category=False,
-               invertible=False, STE=False, svdOrthogonal=False):
+               invertible=False, STE=False, svdOrthogonal=False,
+               init_scale=None):
         """Construct the module's submodules and parameters.
-        
+
         Mutates ``self`` to install the layers and tensor buffers.
+
+        ``init_scale`` (fidelity leg, 2026-07-06): if set, the initial
+        prototype rows are rescaled to this per-row magnitude after the
+        unit / hypercube prefill (see ``addVectors``). ``None`` = the
+        legacy unit / [-1, 1] prefill (byte-identical).
         """
+        # Stashed BEFORE addVectors (called below) so the prefill sees it;
+        # persists so codebook growth reseeds at the same scale.
+        self.init_scale = None if init_scale in (None, 0, 0.0) else float(
+            init_scale)
         super().create(
             nInput,
             nVectors,
@@ -3119,6 +3129,30 @@ class Codebook(Basis):
                 y = pi.reverse(y)
             # FOLD_NEITHER -> identity
         return y
+
+    def unfolded_prototypes(self, sigma=None, pi=None):
+        """The order-k UNFOLD of every stored row (snap contract sec 2.3,
+        2026-07-06): reconstitute each row to its pre-fold (order-0) value via
+        :meth:`invert_ramsified`, so a linear probe sees the full order-k
+        region rather than the folded order-0 SHADOW a discontiguous region
+        collapses to. Returns a ``[V, D]`` matrix aligned row-for-row with
+        :meth:`getW` (rows with no recorded folds pass through unchanged), for
+        the peel's ``prototypes=`` hook. Returns ``None`` when ramsification is
+        not allocated -- the caller then peels against ``getW()`` directly (the
+        order-0 fallback), so a config without live fold stamps degrades to
+        order-0 matching rather than erroring."""
+        if self.ramsification is None:
+            return None
+        W = self.getW()
+        if W is None or not torch.is_tensor(W) or W.numel() == 0:
+            return None
+        D = int(W.shape[-1])
+        rows = []
+        for r in range(int(W.shape[0])):
+            unfolded = self.invert_ramsified(
+                W[r:r + 1], r, sigma=sigma, pi=pi)   # [1, D] -> [., D]
+            rows.append(unfolded.reshape(-1)[:D])
+        return torch.stack(rows, dim=0)
 
     def ensure_descriptor_roles(self):
         """Lazily allocate (or grow) the per-row descriptor-role buffer.
@@ -3428,6 +3462,13 @@ class Codebook(Basis):
                 # range check uses a strict 1e-2 tolerance, so we
                 # tighten the codebook to literal [-1, 1] here.
                 init = init.clamp(-1.0, 1.0)
+                # Fidelity leg (2026-07-06): a small per-row seed magnitude
+                # keeps the sigma/pi folds in their linear regime. A uniform
+                # per-row scale leaves dot-product argmax selection unchanged;
+                # a ~0.02 scale stays within the [-1, 1] range checks above.
+                _isc = getattr(self, "init_scale", None)
+                if _isc is not None:
+                    init = init * _isc
                 self.vq.codebook = init
             # Initial Parameter registration goes through ``replace_W``
             # (which handles both first-time and in-place updates).
@@ -3442,6 +3483,11 @@ class Codebook(Basis):
                             device=TheDevice.get()).clamp(-1.0, 1.0)
             for i in range(nVec):
                 W[i, :] = self.normalize(W[i, :]).squeeze(0)
+            # Fidelity leg (2026-07-06): small-magnitude seed (see the
+            # customVQ branch above / <initScale>).
+            _isc = getattr(self, "init_scale", None)
+            if _isc is not None:
+                W = W * _isc
             self.replace_W(W)
         return self.getW()
 
@@ -8573,11 +8619,11 @@ class InputSpace(Space):
         resolution. Those live on PartSpace.
 
         Returns: (what_buf, where_idx, when_idx)
-          what_buf: [B, nObj, nWhat] long tensor of UTF-8 bytes, null-terminated.
+          what_buf: [B, nIdeas, nWhat] long tensor of UTF-8 bytes, null-terminated.
             Each slot holds one token's bytes followed by a null; tokens longer
             than nWhat-1 bytes are truncated. Empty/padding slots are all-zero.
-          where_idx: [B, nObj] long tensor of byte offsets into the source.
-          when_idx:  [B, nObj] long tensor of sequential positions.
+          where_idx: [B, nIdeas] long tensor of byte offsets into the source.
+          when_idx:  [B, nIdeas] long tensor of sequential positions.
 
         Self-contained: IS owns its RAW byte lexer; no peer reference.
         """
@@ -8613,18 +8659,18 @@ class InputSpace(Space):
         if input.dim() == 1:
             input = input.unsqueeze(0)
         batch = input.shape[0]
-        nObj = self.outputShape[0]
+        nIdeas = self.outputShape[0]
         nWhat = self.subspace.nWhat
 
-        # Byte-mode safety: cap the input to ``nObj`` bytes before the
-        # tokenizer sees it. Cursor mode already sizes the slab to nObj
+        # Byte-mode safety: cap the input to ``nIdeas`` bytes before the
+        # tokenizer sees it. Cursor mode already sizes the slab to nIdeas
         # (one token per byte under byte-mode), so this is a no-op
         # there. Non-cursor callers (tests via ``stringTensor``) hand in
         # an ``inputLength``-padded buffer (e.g. 4096 bytes) -- without
         # the cap the byte tokenizer would emit one token per padded
         # null and overflow the assert. Constant time, no host sync.
-        if self.byte_mode and input.shape[-1] > nObj:
-            input = input[..., :nObj]
+        if self.byte_mode and input.shape[-1] > nIdeas:
+            input = input[..., :nIdeas]
 
         def _cache_key(batch_size, n_obj, device):
             return (int(batch_size), int(n_obj), str(device))
@@ -8647,11 +8693,11 @@ class InputSpace(Space):
         # synchronize and are not graph-capturable.
         if self.lexer == "raw":
             where_idx = _cached_arange(
-                self._where_idx_cache, batch, nObj, dev)
+                self._where_idx_cache, batch, nIdeas, dev)
         else:
-            where_idx = torch.zeros(batch, nObj, dtype=torch.long,
+            where_idx = torch.zeros(batch, nIdeas, dtype=torch.long,
                                     device='cpu')
-        when_idx = _cached_arange(self._when_idx_cache, batch, nObj, dev)
+        when_idx = _cached_arange(self._when_idx_cache, batch, nIdeas, dev)
 
         if self.lexer == "raw":
             # Raw/analyse consumers use the unanalyzed surface below and do
@@ -8664,11 +8710,11 @@ class InputSpace(Space):
                 # Word-mode lexing under the post-2026-04 single-char regex
                 # produces more tokens per byte than the legacy grouped form
                 # (each digit / punct / whitespace is its own token), so a
-                # 4096-byte text slab can yield > nObj=1024 tokens. Truncate
-                # to nObj here -- losing tail content is preferable to
+                # 4096-byte text slab can yield > nIdeas=1024 tokens. Truncate
+                # to nIdeas here -- losing tail content is preferable to
                 # asserting mid-epoch on long documents. Cursor mode still
-                # sizes the slab to nObj exactly, so this is a no-op there.
-                n_tokens = min(len(stream), nObj)
+                # sizes the slab to nIdeas exactly, so this is a no-op there.
+                n_tokens = min(len(stream), nIdeas)
                 row = []
                 for i in range(n_tokens):
                     token_text, start = stream[i]
@@ -8680,7 +8726,7 @@ class InputSpace(Space):
                     final_offset = last_start + len(last_text.encode('utf-8'))
                 else:
                     final_offset = 0
-                for i in range(n_tokens, nObj):
+                for i in range(n_tokens, nIdeas):
                     where_idx[b, i] = final_offset + (i - n_tokens)
 
         if self.lexer != "raw":
@@ -8691,11 +8737,11 @@ class InputSpace(Space):
 
         if self.lexer == "raw":
             what_buf = torch.zeros(
-                batch, nObj, nWhat, dtype=torch.long, device=dev)
+                batch, nIdeas, nWhat, dtype=torch.long, device=dev)
             host_tokens = [[] for _ in range(batch)]
         else:
             what_buf = self.subspace.whatEncoding.encode_tokens(
-                tokens_per_batch, batch, nObj, nWhat, dev)
+                tokens_per_batch, batch, nIdeas, nWhat, dev)
             # Host-side decode-equivalent carried forward so
             # PartSpace._embed skips the decode_tokens GPU->host sync
             # (residual B). Bit-identical to decode_tokens(what_buf) -- the
@@ -8704,7 +8750,7 @@ class InputSpace(Space):
             # _lex_and_embed) so its space-lexer is not limited by the .where
             # character-space byte width.
             host_tokens = self.subspace.whatEncoding.tokens_to_decoded(
-                tokens_per_batch, batch, nObj, nWhat)
+                tokens_per_batch, batch, nIdeas, nWhat)
 
         # The surface the analyzer (chunking="analyse") lexes. With
         # ``lexer == "raw"`` it is decoded STRAIGHT from the raw [B,1,N] input
@@ -9298,17 +9344,17 @@ class InputSpace(Space):
         # Non-text path: vocab is Codebook/Tensor.
         vocab = self.subspace.what
         batch = input.shape[0]
-        nObj = self.outputShape[0]
+        nIdeas = self.outputShape[0]
         dev = TheDevice.get()
         assert list(input.shape) == [batch, self.inputShape[0], self.inputShape[1]]
         what = vocab.forward(input)
         self._forward_input = None
         self.subspace.set_what(what)
         if self.nWhere > 0:
-            positions = torch.arange(nObj, dtype=torch.float32, device=dev).unsqueeze(0).expand(batch, -1)
+            positions = torch.arange(nIdeas, dtype=torch.float32, device=dev).unsqueeze(0).expand(batch, -1)
             self.subspace.set_where(self.subspace.whereEncoding.encode(positions))
         if self.nWhen > 0:
-            timesteps = torch.arange(nObj, dtype=torch.float32, device=dev).unsqueeze(0).expand(batch, -1)
+            timesteps = torch.arange(nIdeas, dtype=torch.float32, device=dev).unsqueeze(0).expand(batch, -1)
             self.subspace.set_when(self.subspace.whenEncoding.encode(timesteps))
         self.input = self.subspace.materialize()
         self.subspace.normalize("input", target="what", normalize=True)
@@ -10284,7 +10330,7 @@ class PartSpace(PerceptualSpace):
         dev = TheDevice.get()
         batch = what_buf.shape[0]
         n_upstream = what_buf.shape[1]
-        nObj = self.outputShape[0]
+        nIdeas = self.outputShape[0]
         codebook = self.subspace.what  # Embedding (the lexicon lives here)
 
         # Token text per slot. InputSpace._lex_batch already had these
@@ -10311,11 +10357,11 @@ class PartSpace(PerceptualSpace):
                 row_len = 0
             if row_len > max_tokens_seen:
                 max_tokens_seen = row_len
-        if max_tokens_seen > nObj:
+        if max_tokens_seen > nIdeas:
             warnings.warn(
                 f"PartSpace._embed: input produced "
-                f"{max_tokens_seen} tokens but nOutput={nObj}; "
-                f"truncating {max_tokens_seen - nObj} tokens.",
+                f"{max_tokens_seen} tokens but nOutput={nIdeas}; "
+                f"truncating {max_tokens_seen - nIdeas} tokens.",
                 stacklevel=2,
             )
 
@@ -10323,7 +10369,7 @@ class PartSpace(PerceptualSpace):
         oov_seen = set()
         oov_words = []
         for row in batch_tokens:
-            for text in row[:nObj]:
+            for text in row[:nIdeas]:
                 if (text and text not in codebook.pretrain.key_to_index
                         and text not in oov_seen):
                     oov_words.append(text)
@@ -10346,9 +10392,9 @@ class PartSpace(PerceptualSpace):
         # is graph-friendly (the allocation is part of the graph; no
         # post-allocation mutation).
         null_idx = codebook.wv.key_to_index.get("\x00", 0)
-        indices_2d = [[null_idx] * nObj for _ in range(batch)]
+        indices_2d = [[null_idx] * nIdeas for _ in range(batch)]
         for b, row in enumerate(batch_tokens):
-            for n in range(min(len(row), nObj)):
+            for n in range(min(len(row), nIdeas)):
                 text = row[n]
                 if text:
                     indices_2d[b][n] = codebook._token_to_index(text)
@@ -10363,17 +10409,17 @@ class PartSpace(PerceptualSpace):
         when_raw = upstream_vspace.materialize(mode="when")
         if self.nWhere > 0:
             if where_raw is not None:
-                where_indices = where_raw[:, :nObj].long()
+                where_indices = where_raw[:, :nIdeas].long()
             else:
-                where_indices = torch.zeros(batch, nObj, dtype=torch.long, device=dev)
+                where_indices = torch.zeros(batch, nIdeas, dtype=torch.long, device=dev)
         else:
             where_indices = None
         if self.nWhen > 0:
             if when_raw is not None:
-                when_indices = when_raw[:, :nObj].long()
+                when_indices = when_raw[:, :nIdeas].long()
             else:
                 when_indices = torch.arange(
-                    nObj, device=dev).unsqueeze(0).expand(batch, -1)
+                    nIdeas, device=dev).unsqueeze(0).expand(batch, -1)
         else:
             when_indices = None
 
@@ -10415,7 +10461,7 @@ class PartSpace(PerceptualSpace):
                 "before PartSpace.forward runs.")
         dev = TheDevice.get()
         batch = what_buf.shape[0]
-        nObj = self.outputShape[0]
+        nIdeas = self.outputShape[0]
         ps = self.percept_store
         # Token text per slot. Mirror the lexicon-path host-token
         # shortcut so we skip the decode_tokens GPU->host sync.
@@ -10497,13 +10543,13 @@ class PartSpace(PerceptualSpace):
             else:
                 word_texts_2d.append(None)
             # Pass 1 -- frequency observation for EVERY chunk in the row,
-            # independent of the nObj emission budget below. ``observe_chunk``
+            # independent of the nIdeas emission budget below. ``observe_chunk``
             # (promotion counting) must see every word: a word truncated
             # from this row's emission must still accrue sightings so it can
             # promote and come back as a single percept next time. Coupling
             # this to the slot-limited emission loop silently starved any
             # word past the budget of promotion (the earlier words' spell-out
-            # fills nObj slots and the loop breaks before reaching them).
+            # fills nIdeas slots and the loop breaks before reaching them).
             # Under meronomy the observed unit is the word-tiling SEGMENT,
             # not the (whole-line) lexer token, so parts top out at word size.
             if _tiles is not None:
@@ -10518,7 +10564,7 @@ class PartSpace(PerceptualSpace):
                              else bytes(text))
                     if chunk:
                         ps.observe_chunk(chunk)
-            # Pass 2 -- spell-out emission, bounded by the nObj slot budget.
+            # Pass 2 -- spell-out emission, bounded by the nIdeas slot budget.
             # Promotions from Pass 1 already took effect, so a just-promoted
             # recurring word now spells out as ONE percept here.
             row_pids: list = []
@@ -10553,7 +10599,7 @@ class PartSpace(PerceptualSpace):
                 for piece, piece_start in pieces:
                     byte_pos = piece_start
                     for pid in ps.spell_out(piece):
-                        if len(row_pids) >= nObj:
+                        if len(row_pids) >= nIdeas:
                             break
                         if _wspans is not None:
                             grp = -1
@@ -10572,19 +10618,19 @@ class PartSpace(PerceptualSpace):
                         # Tile span per slot: the word-sized object's (start, end).
                         row_spans.append((int(piece_start),
                                           int(piece_start + len(piece))))
-                    if len(row_pids) >= nObj:
+                    if len(row_pids) >= nIdeas:
                         break
-                if len(row_pids) >= nObj:
+                if len(row_pids) >= nIdeas:
                     break
-            while len(row_pids) < nObj:
+            while len(row_pids) < nIdeas:
                 row_pids.append(int(null_pid))
                 row_groups.append(-1)             # pad slots: no token group
                 row_offsets.append(-1)
                 row_spans.append((-1, -1))
-            pid_2d.append(row_pids[:nObj])
-            group_2d.append(row_groups[:nObj])
-            offset_2d.append(row_offsets[:nObj])
-            span_2d.append(row_spans[:nObj])
+            pid_2d.append(row_pids[:nIdeas])
+            group_2d.append(row_groups[:nIdeas])
+            offset_2d.append(row_offsets[:nIdeas])
+            span_2d.append(row_spans[:nIdeas])
         if os.environ.get("XCHUNK_PROBE"):
             _nn = [sum(1 for p in r if p != null_pid) for r in pid_2d[:4]]
             print(f"=XCHUNK2= non-null-pids/row={_nn} pid_2d[0]={pid_2d[0]} "
@@ -10689,7 +10735,7 @@ class PartSpace(PerceptualSpace):
                          else what_buf).long())
         codebook = self.subspace.what
         batch = what_buf.shape[0]
-        nObj = self.outputShape[0]
+        nIdeas = self.outputShape[0]
         dev = TheDevice.get()
         null_idx = codebook.wv.key_to_index.get("\x00", 0)
 
@@ -10711,9 +10757,9 @@ class PartSpace(PerceptualSpace):
         chunk_ids, tok_count = bpe.gpu_chunk_ids(
             byte_indices, best_id, best_len)
         sub_cb, sub_target, sub_pos, keep = bpe.segment_words(
-            chunk_ids, tok_count, tab, nObj)
+            chunk_ids, tok_count, tab, nIdeas)
         return self._bpe_emit_gpu(
-            upstream_vspace, codebook, batch, nObj, dev, null_idx,
+            upstream_vspace, codebook, batch, nIdeas, dev, null_idx,
             sub_cb, sub_target, sub_pos, keep)
 
     def _embed_bpe_trie(self, upstream_vspace):
@@ -10726,7 +10772,7 @@ class PartSpace(PerceptualSpace):
         vectors within each word.  Emit one [nDim] vector per word.
 
         Implementation is **batch-flat**. The previous form built three
-        nested ``[B][nObj]`` Python lists -- one of ints, one of floats,
+        nested ``[B][nIdeas]`` Python lists -- one of ints, one of floats,
         one of ``[nDim]`` GPU tensors -- then materialized them with
         ``torch.tensor`` and ``torch.stack(torch.stack(...))``. The
         per-word ``_max_fuse_subtokens`` allocated and stacked a fresh
@@ -10741,7 +10787,7 @@ class PartSpace(PerceptualSpace):
             * ONE ``scatter_reduce_(amax)`` collapsing the gathered
               vectors into ``[N_words, nDim]`` via segment ids.
             * ONE fancy-index assignment placing those into
-              ``[B, nObj, nDim]``.
+              ``[B, nIdeas, nDim]``.
 
         Net: 2 small H2Ds + 1 gather + 1 reduce + 1 scatter for the
         whole batch's MAX-fuse, regardless of word/sub-token count.
@@ -10755,7 +10801,7 @@ class PartSpace(PerceptualSpace):
 
         dev = TheDevice.get()
         batch = what_buf.shape[0]
-        nObj = self.outputShape[0]
+        nIdeas = self.outputShape[0]
         codebook = self.subspace.what
         boundary = self.chunk_layer.BOUNDARY_BYTES
         chunk_frozen = (
@@ -10854,7 +10900,7 @@ class PartSpace(PerceptualSpace):
                 matched_key = id_to_bytes.get(matched_id, (bval,))
                 is_boundary = all(bv in boundary for bv in matched_key)
                 if is_boundary:
-                    if cur_subs and word_idx < nObj:
+                    if cur_subs and word_idx < nIdeas:
                         per_word_first.append(cur_subs[0])
                         per_word_b.append(b)
                         per_word_slot.append(word_idx)
@@ -10870,7 +10916,7 @@ class PartSpace(PerceptualSpace):
                         cur_subs.append(resolved)
                 i += matched_len
             # Trailing word (row ended without a final boundary chunk).
-            if cur_subs and word_idx < nObj:
+            if cur_subs and word_idx < nIdeas:
                 per_word_first.append(cur_subs[0])
                 per_word_b.append(b)
                 per_word_slot.append(word_idx)
@@ -10880,11 +10926,11 @@ class PartSpace(PerceptualSpace):
                 word_id += 1
 
         return self._bpe_emit(
-            upstream_vspace, codebook, batch, nObj, dev, null_idx,
+            upstream_vspace, codebook, batch, nIdeas, dev, null_idx,
             flat_subtoken_idx, flat_word_seg, per_word_first,
             per_word_b, per_word_slot, word_id)
 
-    def _bpe_emit(self, upstream_vspace, codebook, batch, nObj, dev,
+    def _bpe_emit(self, upstream_vspace, codebook, batch, nIdeas, dev,
                   null_idx, flat_idx, flat_seg, per_word_first,
                   per_word_b, per_word_slot, word_id):
         """Shared tail for both _embed_bpe paths: gather codebook
@@ -10903,11 +10949,11 @@ class PartSpace(PerceptualSpace):
         nDim = self.nDim
 
         word_active = torch.zeros(
-            batch, nObj, dtype=torch.float32, device=target_device)
+            batch, nIdeas, dtype=torch.float32, device=target_device)
         what_indices = torch.full(
-            (batch, nObj), null_idx, dtype=torch.long, device=target_device)
+            (batch, nIdeas), null_idx, dtype=torch.long, device=target_device)
         word_vectors = torch.zeros(
-            batch, nObj, nDim, dtype=vectors.dtype, device=target_device)
+            batch, nIdeas, nDim, dtype=vectors.dtype, device=target_device)
 
         if word_id > 0:
             # ``as_tensor``: trie path passes Python lists (one H2D);
@@ -10937,31 +10983,31 @@ class PartSpace(PerceptualSpace):
                 gathered, reduce='amax', include_self=True)
 
             # Place per-word results at (b, slot) coordinates in the
-            # [B, nObj, *] outputs. Empty slots stay zero / null_idx.
+            # [B, nIdeas, *] outputs. Empty slots stay zero / null_idx.
             word_vectors[per_word_b_t, per_word_slot_t] = per_word_max
             what_indices[per_word_b_t, per_word_slot_t] = per_word_first_t
             word_active[per_word_b_t, per_word_slot_t] = 1.0
 
         return self._bpe_finalize(
             upstream_vspace, word_vectors, what_indices, word_active,
-            batch, nObj, dev)
+            batch, nIdeas, dev)
 
     def _bpe_finalize(self, upstream_vspace, word_vectors,
-                      what_indices, word_active, batch, nObj, dev):
+                      what_indices, word_active, batch, nIdeas, dev):
         """Shared tail of both BPE emitters: pull where/when from the
         upstream buffer, set_forward_content, mux ``word_vectors`` with
         the where/when encodings, ``setW`` the muxed event, stash the
         BPE word mask. Identical for the trie and GPU paths -- they
-        differ only in how the [B,nObj,*] word arrays are built."""
+        differ only in how the [B,nIdeas,*] word arrays are built."""
         where_raw = upstream_vspace.materialize(mode="where")
         when_raw = upstream_vspace.materialize(mode="when")
-        where_indices = (where_raw[:, :nObj].long()
+        where_indices = (where_raw[:, :nIdeas].long()
                          if (self.nWhere > 0 and where_raw is not None)
-                         else (torch.zeros(batch, nObj, dtype=torch.long, device=dev)
+                         else (torch.zeros(batch, nIdeas, dtype=torch.long, device=dev)
                                if self.nWhere > 0 else None))
-        when_indices = (when_raw[:, :nObj].long()
+        when_indices = (when_raw[:, :nIdeas].long()
                         if (self.nWhen > 0 and when_raw is not None)
-                        else (torch.arange(nObj, device=dev).unsqueeze(0).expand(batch, -1)
+                        else (torch.arange(nIdeas, device=dev).unsqueeze(0).expand(batch, -1)
                               if self.nWhen > 0 else None))
 
         self.subspace.whereEncoding.p = 0
@@ -10969,13 +11015,13 @@ class PartSpace(PerceptualSpace):
             what_indices, where_indices, when_indices,
             activation=word_active)
 
-        # Mux ``word_vectors`` ([B, nObj, nDim]) with the where/when
+        # Mux ``word_vectors`` ([B, nIdeas, nDim]) with the where/when
         # encodings so the cached event matches the muxed width
         # ``nDim + nWhere + nWhen`` that ``forwardEnd`` reshapes
         # against. Setting the event at plain ``nDim`` width caused
-        # ``[B, nObj * nDim] / muxedSize`` to round to a wrong
+        # ``[B, nIdeas * nDim] / muxedSize`` to round to a wrong
         # sequence length (e.g. 1024 * 6 / 8 = 768) and trip a shape
-        # mismatch against the [B, nObj] BPE word mask. ``materialize``
+        # mismatch against the [B, nIdeas] BPE word mask. ``materialize``
         # would otherwise gather codebook rows by ``what_indices``,
         # which gives the *first sub-token's* vector, not the
         # MAX-fused word vector we computed -- hence we must persist
@@ -11017,24 +11063,24 @@ class PartSpace(PerceptualSpace):
         self._bpe_word_mask_flat = None
         return self.subspace
 
-    def _bpe_emit_gpu(self, upstream_vspace, codebook, batch, nObj, dev,
+    def _bpe_emit_gpu(self, upstream_vspace, codebook, batch, nIdeas, dev,
                       null_idx, sub_cb, sub_target, sub_pos, keep):
         """Static-shape GPU emitter: scatter the per-position
-        ``[B,T]`` segmentation into static ``[B*nObj]`` word buffers
+        ``[B,T]`` segmentation into static ``[B*nIdeas]`` word buffers
         (no dense word-id, no ``.item()``, no boolean compaction ->
-        zero DtoH). Produces the same [B,nObj,*] word arrays the trie
+        zero DtoH). Produces the same [B,nIdeas,*] word arrays the trie
         path builds, then the shared ``_bpe_finalize`` tail. Asserted
         bit-identical to the trie path by test/bpe_gpu_equiv.py.
         """
         vectors = codebook.wv._vectors
         tdev = vectors.device
         nDim = self.nDim
-        BN = batch * nObj
+        BN = batch * nIdeas
         flat_t = sub_target.reshape(-1).to(tdev)             # [B*T]
         cb_safe = sub_cb.clamp(min=0).reshape(-1)            # -1 -> 0
         gathered = vectors[cb_safe]                          # [B*T, nDim]
 
-        # Segmented MAX into [BN(+trash), nDim]; trash row B*nObj
+        # Segmented MAX into [BN(+trash), nDim]; trash row B*nIdeas
         # absorbs non-kept positions, then sliced off.
         per_word_max = torch.full(
             (BN + 1, nDim), float('-inf'),
@@ -11047,10 +11093,10 @@ class PartSpace(PerceptualSpace):
         active_flat = torch.zeros(BN + 1, dtype=torch.int64, device=tdev)
         active_flat.scatter_reduce_(
             0, flat_t, keep_f, reduce='amax', include_self=True)
-        word_active = (active_flat[:BN].reshape(batch, nObj)
+        word_active = (active_flat[:BN].reshape(batch, nIdeas)
                        .to(torch.float32))
 
-        word_max = per_word_max[:BN].reshape(batch, nObj, nDim)
+        word_max = per_word_max[:BN].reshape(batch, nIdeas, nDim)
         word_vectors = torch.where(
             word_active.unsqueeze(-1) > 0, word_max,
             torch.zeros((), dtype=vectors.dtype, device=tdev))
@@ -11071,11 +11117,11 @@ class PartSpace(PerceptualSpace):
         what_indices = torch.where(
             packed_min[:BN] < BIG, first_cb,
             torch.full_like(first_cb, null_idx)
-        ).reshape(batch, nObj)
+        ).reshape(batch, nIdeas)
 
         return self._bpe_finalize(
             upstream_vspace, word_vectors, what_indices, word_active,
-            batch, nObj, dev)
+            batch, nIdeas, dev)
 
     def _chunk_key_to_latin1(self, byte_tuple):
         """Convert a byte-tuple key (e.g., (104, 101)) to its latin-1 string."""
@@ -11348,7 +11394,7 @@ class PartSpace(PerceptualSpace):
 
         dev = TheDevice.get()
         batch = what_buf.shape[0]
-        nObj = self.outputShape[0]
+        nIdeas = self.outputShape[0]
 
         if what_buf.dim() == 3:
             byte_indices = what_buf[..., 0].long()
@@ -11360,13 +11406,13 @@ class PartSpace(PerceptualSpace):
         # right entry.
         byte_indices = byte_indices.where(byte_indices >= 0, byte_indices + 256)
         byte_indices = byte_indices.clamp(0, 255)
-        # Trim / pad to nObj slots.
+        # Trim / pad to nIdeas slots.
         n_upstream = byte_indices.shape[1]
-        if n_upstream > nObj:
-            byte_indices = byte_indices[:, :nObj]
-        elif n_upstream < nObj:
+        if n_upstream > nIdeas:
+            byte_indices = byte_indices[:, :nIdeas]
+        elif n_upstream < nIdeas:
             pad = torch.zeros(
-                batch, nObj - n_upstream,
+                batch, nIdeas - n_upstream,
                 dtype=byte_indices.dtype, device=byte_indices.device)
             byte_indices = torch.cat([byte_indices, pad], dim=1)
 
@@ -11376,18 +11422,18 @@ class PartSpace(PerceptualSpace):
         when_raw = upstream_vspace.materialize(mode="when")
         if self.nWhere > 0:
             if where_raw is not None:
-                where_indices = where_raw[:, :nObj].long()
+                where_indices = where_raw[:, :nIdeas].long()
             else:
                 where_indices = torch.zeros(
-                    batch, nObj, dtype=torch.long, device=dev)
+                    batch, nIdeas, dtype=torch.long, device=dev)
         else:
             where_indices = None
         if self.nWhen > 0:
             if when_raw is not None:
-                when_indices = when_raw[:, :nObj].long()
+                when_indices = when_raw[:, :nIdeas].long()
             else:
                 when_indices = torch.arange(
-                    nObj, device=dev).unsqueeze(0).expand(batch, -1)
+                    nIdeas, device=dev).unsqueeze(0).expand(batch, -1)
         else:
             when_indices = None
 
@@ -11396,7 +11442,7 @@ class PartSpace(PerceptualSpace):
             byte_indices, where_indices, when_indices)
         self.subspace.normalize("input", target="what", normalize=True)
 
-        # Stash the materialized [B, nObj, D] muxed event for
+        # Stash the materialized [B, nIdeas, D] muxed event for
         # InputSpace.forward to consume (same contract as ``_embed``
         # and ``_embed_bpe``).
         self._embedded_input = self.subspace.materialize()
@@ -11454,8 +11500,8 @@ class PartSpace(PerceptualSpace):
         (``BOUNDARY_BYTES`` over the upstream byte buffer). Output
         contract matches ``_embed_bpe_trie`` exactly: routes through the
         shared ``_bpe_emit`` -> ``_bpe_finalize`` tail so the muxed
-        ``subspace.event`` ``[B, nObj, D]``, ``_bpe_word_mask``
-        ``[B, nObj]``, and the where/when slots populate identically to
+        ``subspace.event`` ``[B, nIdeas, D]``, ``_bpe_word_mask``
+        ``[B, nIdeas]``, and the where/when slots populate identically to
         all the other chunking modes.
 
         Per-word, the routing is:
@@ -11487,7 +11533,7 @@ class PartSpace(PerceptualSpace):
 
         dev = TheDevice.get()
         batch = what_buf.shape[0]
-        nObj = self.outputShape[0]
+        nIdeas = self.outputShape[0]
         codebook = self.subspace.what
         boundary = self.chunk_layer.BOUNDARY_BYTES
         chunk_frozen = (
@@ -11537,7 +11583,7 @@ class PartSpace(PerceptualSpace):
                 if bval == 0:
                     break
                 if bval in boundary:
-                    if word_byte_seq and word_idx < nObj:
+                    if word_byte_seq and word_idx < nIdeas:
                         per_word_bytes.append(tuple(word_byte_seq))
                         per_word_b.append(b)
                         per_word_slot.append(word_idx)
@@ -11547,7 +11593,7 @@ class PartSpace(PerceptualSpace):
                     word_byte_seq.append(bval)
                 i += 1
             # Trailing word (row ended without a final boundary byte).
-            if word_byte_seq and word_idx < nObj:
+            if word_byte_seq and word_idx < nIdeas:
                 per_word_bytes.append(tuple(word_byte_seq))
                 per_word_b.append(b)
                 per_word_slot.append(word_idx)
@@ -11669,7 +11715,7 @@ class PartSpace(PerceptualSpace):
                     word_id += 1
 
         return self._bpe_emit(
-            upstream_vspace, codebook, batch, nObj, dev, null_idx,
+            upstream_vspace, codebook, batch, nIdeas, dev, null_idx,
             flat_subtoken_idx, flat_word_seg, per_word_first,
             per_word_b_out, per_word_slot_out, word_id)
 
@@ -12595,7 +12641,7 @@ def _concept_rows_exist(host):
 def _concept_alloc_of(host):
     """Lazy :class:`Layers.ConceptAllocator` + THE shared square store for
     ``host`` (a ConceptualSpace or a duck-typed stub). Sizes the single
-    untyped [N x N+1] AttentionLayer from the host's two-block caps when
+    untyped [N x N+1] ConceptualAttentionLayer from the host's two-block caps when
     available (host-only 1x1 record container otherwise) and wires the
     back-compat instance views."""
     alloc = getattr(host, "_concept_allocator", None)
@@ -12827,6 +12873,13 @@ class ConceptualSpace(Space):
         self.concept_dim = int(concept_dim)
         self.stm = ShortTermMemory(
             batch=1, capacity=stm_capacity, concept_dim=concept_dim)
+        # <definitionFreeSize> (snap contract sec 5, 2026-07-06): the number of
+        # symbols a concept's definition may use for free (genus + differentia
+        # = 2); the rank-ordered L0 penalty (definition_sparsity_loss) pulls
+        # only the surplus ranks past this toward zero. Pairs with stmCapacity
+        # (the hard ceiling, enforced by the decode peel).
+        _dfs = TheXMLConfig.space(section, "definitionFreeSize", default=None)
+        self.definition_free_size = int(_dfs) if _dfs else 2
 
         # 2026-06-04 parallel-symbolic-substrate refactor: the per-stage
         # ConceptualSpace ``sigma_in`` / ``sigma_cs`` SigmaLayers are
@@ -13682,13 +13735,13 @@ class ConceptualSpace(Space):
                 # Detach so the WS row seed and META fused_vec don't
                 # carry autograd graph from the PerceptStore lookup; the
                 # WS row is an nn.Parameter (its own optimization
-                # variable) and the in-place copy under insert_symbol /
+                # variable) and the in-place copy under insert_whole /
                 # insert_meta happens under no_grad anyway.
                 seed = vec_tensor[b, n].detach().clone()
                 sym_pos = None
                 ps_pos = ws.ensure_ps_position(pid)
                 if pid not in bound:
-                    sym_pos = ws.insert_symbol(init_vec=seed)
+                    sym_pos = ws.insert_whole(init_vec=seed)
                     ws.insert_meta(ps_pos, sym_pos, fused_vec=seed)
                     bound.add(pid)
                 else:
@@ -13788,7 +13841,7 @@ class ConceptualSpace(Space):
         had exactly one part and the raise was dormant).
 
         Reuses the SAME APIs as the per-pid path (``ensure_ps_position`` /
-        ``insert_symbol`` / ``insert_meta`` / ``maybe_raise_order``); only the
+        ``insert_whole`` / ``insert_meta`` / ``maybe_raise_order``); only the
         WHOLE is shared across a token's parts. Word-keyed wholes persist on
         ``ws._word_whole_ss`` (text -> ws position). This gated path
         deliberately skips the per-pid LBG / category-codebook bookkeeping (both
@@ -13837,11 +13890,11 @@ class ConceptualSpace(Space):
                 whole_pos = whole_by_text.get(key)
                 if whole_pos is None:
                     # Seed a fresh whole with the mean of its parts' vectors
-                    # (insert_symbol demuxes the muxed width down to .what).
+                    # (insert_whole demuxes the muxed width down to .what).
                     idx = torch.tensor(slots, device=vec_tensor.device)
                     seed_whole = vec_tensor[b].index_select(
                         0, idx).mean(dim=0).detach()
-                    whole_pos = ws.insert_symbol(init_vec=seed_whole)
+                    whole_pos = ws.insert_whole(init_vec=seed_whole)
                     whole_by_text[key] = int(whole_pos)
                 last_meta = None
                 word_parts = []
@@ -13850,7 +13903,7 @@ class ConceptualSpace(Space):
                     word_parts.append(pid)
                     part_seed = vec_tensor[b, n].detach().clone()
                     # Demux the muxed event width down to the WS codebook
-                    # content width (.what nDim) -- insert_symbol does this
+                    # content width (.what nDim) -- insert_whole does this
                     # internally, but insert_meta requires the demuxed seed.
                     _cbw = int(ws.subspace.what.getW().shape[-1])
                     if part_seed.shape[-1] != _cbw:
@@ -14263,7 +14316,7 @@ class ConceptualSpace(Space):
     # (ConceptDim). Rows split two-block (_order_caps): the order-0 snap
     # block [0, n_snap) reserves codebook rows (no in-edges); the relation
     # pool [n_snap, N) holds every composition as UNTYPED edges on ONE
-    # shared square [N x N+1] AttentionLayer (col N = the EVERYTHING
+    # shared square [N x N+1] ConceptualAttentionLayer (col N = the EVERYTHING
     # bias). The forward is the iterated wave + dictionary decoder:
     #
     #     a^{i+1}         = tanh(W [a^i | 1] + s)     (s = padded snap a_0)
@@ -14487,6 +14540,29 @@ class ConceptualSpace(Space):
                     rows[mask, :D] = ((1.0 - eta) * rows[mask, :D]
                                       + eta * mean_tgt.to(rows.dtype))
         return a_0
+
+    def definition_sparsity_loss(self, lam=0.0, free_size=None):
+        """The rank-ordered soft-L0 training pressure that keeps each concept's
+        definition COMPACT (snap contract sec 1.4 / sec 5, 2026-07-06): a
+        shrinkage penalty on the surplus concept->symbol in-edges of the shared
+        conceptual store, exempting the top ``free_size`` (genus + differentia).
+        A growth-PREVENTING regularizer -- it pulls marginal symbols toward
+        zero, it does not add any. Returns ``lam * penalty`` or ``None`` (no-op)
+        when ``lam <= 0`` or the store has no marginal tail. ``free_size``
+        defaults to this space's ``definition_free_size``."""
+        lam = float(lam or 0.0)
+        if lam <= 0.0:
+            return None
+        if free_size is None:
+            free_size = getattr(self, "definition_free_size", 2)
+        layer = _concept_alloc_of(self).layer(0)
+        penalty = getattr(layer, "definition_sparsity_penalty", None)
+        if penalty is None:
+            return None
+        total = penalty(free_size=free_size)
+        if total is None:
+            return None
+        return lam * total
 
     def cs_forward_content(self, a_0, dictionary):
         """Iterated clamped-SOURCE wave over the single untyped layer (v3):
@@ -14776,6 +14852,130 @@ class ConceptualSpace(Space):
             out.add(cur)
         return out
 
+    def _row_to_concept(self):
+        """Invert the shared store's row allocation: GLOBAL tensor row ->
+        concept id (rows were assigned per-cid under the ("snap"/"pool", cid)
+        namespaces by ``_csw_concept_row``). Rows never allocated to a
+        concept are absent."""
+        ly = _concept_alloc_of(self).layer(0)
+        out = {}
+        for key, row in getattr(ly, "_tensor_rows", {}).items():
+            if isinstance(key, tuple) and len(key) == 2 and key[0] in (
+                    "snap", "pool"):
+                out[int(row)] = int(key[1])
+        return out
+
+    def _covers(self, a, b, _depth=8):
+        """True when concept ``a`` is in the transitive WHOLE-closure of
+        concept ``b`` (a covers b): walks b's sym whole links through the
+        relation records. Depth/cycle guarded; raw WS whole codes are
+        outside this walk (they subsume via the WS taxonomy, handled by
+        :meth:`prune_concept_links`)."""
+        alloc = _concept_alloc_of(self)
+        seen = set()
+        frontier = [int(b)]
+        for _ in range(int(_depth)):
+            nxt = []
+            for c in frontier:
+                if c in seen:
+                    continue
+                seen.add(c)
+                for w in alloc.refs(c, "whole"):
+                    if isinstance(w, tuple) and len(w) == 2 and w[0] == "sym":
+                        if int(w[1]) == int(a):
+                            return True
+                        nxt.append(int(w[1]))
+            if not nxt:
+                return False
+            frontier = nxt
+        return False
+
+    def typed_definition(self, idea, max_parts=None, eps=None):
+        """Decode ``idea`` into the TYPED conceptual definition (snap contract
+        sec 2.4-2.5, 2026-07-06): the signed peel's support (the pursuit of
+        all concepts against the idea -- a sparse signed symbol vector),
+        frontier-pruned and split for the grammar:
+
+          ``head``       -- the minimal covering whole: a supported inclusion
+                            that covers other supported members and is not
+                            itself covered by one (tie -> largest
+                            coefficient); with no relation coverage, the
+                            largest-coefficient inclusion (sparse table =>
+                            VERBOSE, not wrong);
+          ``modifiers``  -- the surviving maximal parts (inclusions not
+                            implied by the head or another survivor);
+          ``exclusions`` -- the negative-polarity members;
+          ``residual``   -- what the support cannot yet say: the difference
+                            between the definition and the idea, to be
+                            explained by ADV/intersection and the other
+                            grammatical transforms (persistent structure here
+                            is the promotion mint signal, design sec 3.3).
+
+        Entries are ``(codebook_row, coeff, concept_id_or_None)``.
+        ``max_parts`` defaults to ``stm_capacity`` -- a definition cannot
+        exceed what STM holds (the sec-5 hard cap). Returns ``None`` when
+        the concept dictionary is missing/empty."""
+        from Language import ChunkLayer, PEEL_SUPPORT_EPS
+        cb = getattr(self, "similarity_codebook", None)
+        W = cb.getW() if (cb is not None and hasattr(cb, "getW")) else None
+        if W is None or not torch.is_tensor(W) or W.numel() == 0:
+            return None
+        cap = int(max_parts if max_parts is not None
+                  else getattr(self, "stm_capacity", 8))
+        parts, residual = ChunkLayer.peel(
+            idea, cb, max_parts=cap,
+            eps=float(PEEL_SUPPORT_EPS if eps is None else eps))
+        row2cid = self._row_to_concept()
+        support = [(r, c, row2cid.get(int(r))) for (r, c) in parts]
+        inclusions = [(r, c, cid) for (r, c, cid) in support if c > 0]
+        exclusions = [(r, c, cid) for (r, c, cid) in support if c < 0]
+        # Frontier: head = the minimal covering whole among the inclusions.
+        head = None
+        with_cid = [(r, c, cid) for (r, c, cid) in inclusions
+                    if cid is not None]
+        covers = {}
+        for (_r, _c, a) in with_cid:
+            covers[a] = {b for (_r2, _c2, b) in with_cid
+                         if b != a and self._covers(a, b)}
+        coverers = [(r, c, cid) for (r, c, cid) in with_cid if covers[cid]]
+        if coverers:
+            # MINIMAL = the TIGHTEST cover: the coverer at the BOTTOM of the
+            # coverer chain -- one that covers no OTHER coverer (an ancestor
+            # covers coverers below it and is dropped as looser); tie -> the
+            # largest coefficient.
+            bottom = [x for x in coverers
+                      if not any(y[2] in covers[x[2]] for y in coverers
+                                 if y[2] != x[2])]
+            head = max(bottom or coverers, key=lambda x: abs(x[1]))
+        elif inclusions:
+            head = max(inclusions, key=lambda x: abs(x[1]))
+        # Modifiers: BOTH frontiers are kept (sec 1.3 -- the interval between
+        # the maximal parts and the minimal whole): the head does NOT imply
+        # away its parts (they are the differentia). Dropped as implied:
+        # (a) members that COVER the head -- looser wholes, the head's
+        # ancestors ("cat" implies "animal"); (b) sub-parts covered by
+        # ANOTHER surviving modifier (keep maximal parts).
+        head_cid = head[2] if head is not None else None
+        rest = [(r, c, cid) for (r, c, cid) in inclusions
+                if head is None or r != head[0]]
+        if head_cid is not None:
+            rest = [(r, c, cid) for (r, c, cid) in rest
+                    if cid is None or head_cid not in covers.get(cid, set())]
+        modifiers = []
+        for (r, c, cid) in rest:
+            if cid is not None and any(
+                    cid in covers.get(o[2], set()) for o in rest
+                    if o[2] is not None and o[2] != cid):
+                continue
+            modifiers.append((r, c, cid))
+        return {
+            "support": support,
+            "head": head,
+            "modifiers": modifiers,
+            "exclusions": exclusions,
+            "residual": residual,
+        }
+
     def prune_concept_links(self):
         """Closest-links pruning round (periodic; mint stays unconstrained):
         keep the MAXIMAL part and the MINIMAL whole among each concept's
@@ -15021,7 +15221,7 @@ class ConceptualSpace(Space):
     # "relation-only completion" + "Migration reality check"). ConceptualSpace
     # is the OWNER of the relation-only symbol table (the _sym_* /
     # word-object-meta APIs above). The LEGACY position-keyed taxonomy is
-    # physically served from the TERMINAL WholeSpace -- whose insert_symbol /
+    # physically served from the TERMINAL WholeSpace -- whose insert_whole /
     # insert_meta mint a codebook ROW and write the position dicts in ONE
     # ATOMIC call, so the dicts cannot move off WS without either a CS codebook
     # (rejected -- symbols are relation-only) or retiring the meta-vector seed
@@ -15276,7 +15476,7 @@ class ConceptualSpace(Space):
         """Resolve an idea/predicate vector to an WS-codebook POSITION:
         the nearest existing row when within
         :attr:`_learn_children_dist_threshold`, else a freshly allocated
-        row via ``insert_symbol``. Returns a positive int position.
+        row via ``insert_whole``. Returns a positive int position.
 
         Raises when no terminal WS is wired -- the caller
         (:meth:`_maybe_learn_relation`) has already cleared the gate, so
@@ -15296,7 +15496,7 @@ class ConceptualSpace(Space):
         # Not close to any existing concept -> allocate a fresh row when
         # the WS-side ``.what`` is a growable Codebook. When it is a
         # fixed-width plain Tensor codebook (``codebook_mode='none'`` --
-        # e.g. the relative-grammar MentalModel config), ``insert_symbol``
+        # e.g. the relative-grammar MentalModel config), ``insert_whole``
         # is unavailable, so SNAP to the nearest existing row instead:
         # the relation still binds into the taxonomy, it just cannot mint
         # a brand-new concept row. ``row`` is always non-None here when a
@@ -15307,7 +15507,7 @@ class ConceptualSpace(Space):
             # Growable codebook (quantize mode) -> mint a fresh row for
             # the new concept (the historical behaviour, incl. the
             # empty-codebook first-row case).
-            return ws.insert_symbol(init_vec=v)
+            return ws.insert_whole(init_vec=v)
         if row is not None:
             # Fixed-width (plain Tensor) codebook -> bind nearest row.
             return ws.ensure_ws_position(int(row), kind="ws")
@@ -16130,8 +16330,8 @@ class ConceptualSpace(Space):
 
     # -- Interface factoring (MeronomySpec §3; MeronomyPlan Stage 4) ----
     # The percept leg crosses the callosum NAMELESS and FACTORED:
-    # content selects a reference row (embedding match against the
-    # codebook), evidence sets the activation magnitude a in [0, +1].
+    # content selects a reference CONCEPT row (embedding match), evidence
+    # sets the signed activation a in [-1, +1] (inclusion + / exclusion -).
     # No coordinate chart exists -- raw percept coordinates never cross
     # as coordinates. Knob-gated (<architecture><meronomy>on</meronomy>);
     # with the knob off (default), bind_streams is byte-identical to the
@@ -16139,29 +16339,36 @@ class ConceptualSpace(Space):
 
     @staticmethod
     def factor_percept(percept, rows):
-        """Factor a percept into (row selection, evidence magnitude).
+        """Factor a percept into (concept-row selection, signed evidence).
 
         ``percept``: ``[..., D]`` -- only its POSITIVE content
-        participates (percepts are one-sided, spec §2; negative input
-        coordinates are structurally invisible to this path).
-        ``rows``: ``[V, D]`` reference rows (unit-norm by the
+        participates (percepts are one-sided, spec §2; the part INPUT has
+        no negative coordinates -- epistemic ladder sec 1).
+        ``rows``: ``[V, D]`` reference CONCEPT rows (unit-norm by the
         ConceptualSpace EMA convention).
 
-        Returns ``(idx, a)`` with ``idx [...]`` the selected row per
-        slot and ``a [...] in [0, +1]`` the evidence. Absence of
-        stimulation IS zero evidence -- a zero percept yields ``a = 0``
-        as a tautology of the dot product, not via a clamp; the
-        negative half is unreachable by construction (anti-matches are
-        non-matches, and the upper cap is the certainty ceiling).
-        Returns ``(None, None)`` when there are no rows to factor
-        against.
+        Returns ``(idx, a)`` with ``idx [...]`` the selected row per slot
+        and ``a [...] in [-1, +1]`` the SIGNED evidence: ``+`` the concept
+        is present/included, ``-`` it is excluded (a "known false"), ``0``
+        no stimulation (a zero percept yields ``a = 0`` as a tautology of
+        the dot product). Selection is abs-argmax so an anti-aligned
+        concept row -- an exclusion -- is reachable, not clamped away.
+        Returns ``(None, None)`` when there are no rows to factor against.
         """
         if rows is None or rows.shape[0] == 0:
             return None, None
+        # Part INPUT stays positive (percepts are one-sided; absence is not
+        # negation -- epistemic ladder sec 1). But the EVIDENCE against a
+        # CONCEPT row is SIGNED (taxonomy: inclusion + / exclusion -), so the
+        # match is un-clamped and selected by abs-argmax -- an anti-aligned
+        # row (a "known false" exclusion) is now reachable, carrying a
+        # negative a. (2026-07-06, Alec: factor_percept factors CONCEPTS -- the
+        # rows are the CS concept dictionary -- so its evidence is signed.)
         q = percept.clamp(min=0)
-        sims = (q @ rows.transpose(-1, -2)).clamp(min=0)
-        a, idx = sims.max(dim=-1)
-        return idx, a.clamp(max=1.0)
+        sims = q @ rows.transpose(-1, -2)
+        _, idx = sims.abs().max(dim=-1)
+        a = sims.gather(-1, idx.unsqueeze(-1)).squeeze(-1)
+        return idx, a.clamp(min=-1.0, max=1.0)
 
     def belief_to_extent(self, a):
         """THE belief→extent cash-out: ``χ(a) = (1 + a)/2``, exactly once.
@@ -16888,6 +17095,7 @@ class WholeSpace(PerceptualSpace):
                 category=True,
                 STE=True,
                 invertible=False,
+                init_scale=self._read_init_scale(),
             )
         finally:
             torch.set_rng_state(_rng_state)
@@ -17447,9 +17655,9 @@ class WholeSpace(PerceptualSpace):
         if the row hasn't been bound yet.
 
         Used by :class:`SymbolizeLayer.forward` (nearest-row lookups
-        may land on pre-existing rows that pre-date :meth:`insert_symbol`)
+        may land on pre-existing rows that pre-date :meth:`insert_whole`)
         and by :meth:`insert_meta` (which re-tags an WS row as
-        ``"meta"`` after allocating it through :meth:`insert_symbol`).
+        ``"meta"`` after allocating it through :meth:`insert_whole`).
         ``kind`` may be ``"ws"`` or ``"meta"`` and overrides the
         existing tag.
         """
@@ -17507,7 +17715,7 @@ class WholeSpace(PerceptualSpace):
         pid = int(ps.insert(bytes(canonical_bytes)))
         return self.ensure_ps_position(pid)
 
-    def insert_symbol(self, init_vec=None):
+    def insert_whole(self, init_vec=None):
         """Allocate a fresh WS.codebook row and return its position
         (positive int).
 
@@ -17522,7 +17730,7 @@ class WholeSpace(PerceptualSpace):
         cb = getattr(self.subspace, "what", None)
         if cb is None or not isinstance(cb, Codebook):
             raise RuntimeError(
-                f"WholeSpace.insert_symbol requires self.subspace.what "
+                f"WholeSpace.insert_whole requires self.subspace.what "
                 f"to be a Codebook; got "
                 f"{type(cb).__name__ if cb is not None else 'None'}.")
         # Shared cursor with the legacy ``insert_paired_word`` so the
@@ -17539,13 +17747,19 @@ class WholeSpace(PerceptualSpace):
         W = cb.getW()
         if W is None:
             raise RuntimeError(
-                "WholeSpace.insert_symbol: WS codebook W is None; "
+                "WholeSpace.insert_whole: WS codebook W is None; "
                 "_build_what_basis did not allocate prototypes.")
-        # Resolve init_vec.
+        # Resolve init_vec. <initScale> (fidelity leg, 2026-07-06): when set,
+        # fresh rows land at the small operating point -- a None seed is
+        # scaled uniformly, and a content seed is rescaled direction-preserving
+        # to initScale.unit so a data-scale event doesn't re-inflate the row.
+        _isc = self._read_init_scale()
         if init_vec is None:
             vec = torch.empty(
                 int(self.nDim), device=W.device, dtype=W.dtype
             ).uniform_(-1.0, 1.0)
+            if _isc is not None:
+                vec = vec * _isc
         else:
             if not torch.is_tensor(init_vec):
                 init_vec = torch.as_tensor(init_vec, dtype=torch.float32)
@@ -17557,9 +17771,11 @@ class WholeSpace(PerceptualSpace):
                 init_vec = init_vec[:int(self.nDim)]
             if init_vec.dim() != 1 or init_vec.shape[0] != int(self.nDim):
                 raise RuntimeError(
-                    f"WholeSpace.insert_symbol: init_vec must be shape "
+                    f"WholeSpace.insert_whole: init_vec must be shape "
                     f"[nDim={self.nDim}]; got {tuple(init_vec.shape)}")
             vec = init_vec.detach().to(device=W.device, dtype=W.dtype)
+            if _isc is not None:
+                vec = F.normalize(vec, dim=-1) * _isc
         with torch.no_grad():
             W.data[row, :].copy_(vec)
         self._paired_next_row = row + 1
@@ -17574,7 +17790,7 @@ class WholeSpace(PerceptualSpace):
         doc/plans/2026-05-30-subsymbolic-analyzer-terminal-emitter.md
         (Phase 2, amended 2026-06-02): the operator's identity lives in a
         codebook so the soft-superposition over the operator-prefixed parse
-        tree (held deterministically in SymbolSubSpace / ObjectSubSpace) can
+        tree (held deterministically in SymbolSubSpace / IdeaSubSpace) can
         resolve it by lookup. An operator defines HOW meanings combine and
         contributes no meaning of its own, so it is NOT a meaning-bearing
         symbol and is NEVER written into the STM idea space.
@@ -17871,7 +18087,7 @@ class WholeSpace(PerceptualSpace):
             return self.ws_vector(pos), pos, True
         self._ps_exposure[key] = self._ps_exposure.get(key, 0) + 1
         if self._ps_exposure[key] >= int(promote_threshold):
-            pos = self.insert_symbol()
+            pos = self.insert_whole()
             self._ps_to_ws_binding[key] = pos
             return self.ws_vector(pos), pos, True
         return self.null_sem(), -1, False
@@ -18014,7 +18230,7 @@ class WholeSpace(PerceptualSpace):
 
         Both ``ps_pos`` and ``ws_pos`` must be positive integer
         positions allocated through :meth:`allocate_position` (typically
-        returned by :meth:`insert_percept` and :meth:`insert_symbol`).
+        returned by :meth:`insert_percept` and :meth:`insert_whole`).
         Returns the META node's position (positive int).
 
         ``trust`` (optional) is a tetralemma 4-tuple ``(t, f, b, n)``
@@ -18028,7 +18244,7 @@ class WholeSpace(PerceptualSpace):
 
         Behaviour:
           * First call for the pair: allocates a fresh WS row via
-            :meth:`insert_symbol`, re-tags its position to ``"meta"``,
+            :meth:`insert_whole`, re-tags its position to ``"meta"``,
             and seeds its vector. If ``fused_vec`` is supplied, it is
             the seed; otherwise the default seed is
             ``(PS.codebook[ps_row] + WS.codebook[ws_row]) / 2`` (the
@@ -18133,7 +18349,7 @@ class WholeSpace(PerceptualSpace):
             if ws_row is None:
                 raise RuntimeError(
                     f"WholeSpace.insert_meta: ws_pos={ws_pos_i} has no "
-                    f"bound WS row. Call insert_symbol or ensure_ws_position "
+                    f"bound WS row. Call insert_whole or ensure_ws_position "
                     f"before insert_meta.")
             ps_vec = ps_store.codebook[int(ps_row)].detach().to(W.device, W.dtype)
             sym_vec = W[int(ws_row)].detach().to(W.device, W.dtype)
@@ -18166,9 +18382,9 @@ class WholeSpace(PerceptualSpace):
         # malformed posture raises without leaving a half-built META.
         trust_norm = (self._normalize_trust_tuple(trust)
                       if trust is not None else None)
-        # Allocate a fresh WS row + position for the META; insert_symbol
+        # Allocate a fresh WS row + position for the META; insert_whole
         # tags as "ws", which we override to "meta" immediately.
-        meta_pos = self.insert_symbol(init_vec=seed)
+        meta_pos = self.insert_whole(init_vec=seed)
         self._pos_kind[meta_pos] = "meta"
         # Register taxonomy + parent maps with positive-int positions.
         self.taxonomy[meta_pos] = [ps_pos_i, ws_pos_i]
@@ -18195,7 +18411,7 @@ class WholeSpace(PerceptualSpace):
         ``[idea1_pos, idea2_pos]``.
 
         All three arguments are positive integer positions (resolve
-        vectors to positions via :meth:`insert_symbol` / a
+        vectors to positions via :meth:`insert_whole` / a
         nearest-codebook lookup before calling). Returns
         ``predicate_pos`` (the relation/META node).
 
@@ -18405,7 +18621,7 @@ class WholeSpace(PerceptualSpace):
         # Mint the higher-order node, record its constituents, and bump its
         # order one above the max constituent order (clamped to the table width
         # = subsymbolicOrder, per "subsymbolicOrder sets the max order").
-        ho_pos = self.insert_symbol(init_vec=raised_code)
+        ho_pos = self.insert_whole(init_vec=raised_code)
         self._pos_kind[ho_pos] = "meta"
         self.taxonomy[ho_pos] = [int(whole)] + [int(p) for p in ps_children]
         self.part_chain[ho_pos] = [int(p) for p in ps_children]
@@ -18429,7 +18645,7 @@ class WholeSpace(PerceptualSpace):
             object.__setattr__(self, "_property_class_whole", d)
         key = tuple(sorted(int(c) for c in class_ids))
         if key not in d:
-            d[key] = int(self.insert_symbol(init_vec=None))
+            d[key] = int(self.insert_whole(init_vec=None))
         return d[key]
 
     @torch.no_grad()
@@ -18580,7 +18796,7 @@ class WholeSpace(PerceptualSpace):
 
         The split creates two new centroids: ``old + eps*dir`` (kept
         in the existing row) and ``old - eps*dir`` (allocated to a
-        fresh row via ``insert_symbol``). If the original row was the
+        fresh row via ``insert_whole``). If the original row was the
         child of a META node, a new META edge is registered for the
         split-off row so both halves remain discoverable via the
         reverse-decode walk.
@@ -18624,7 +18840,7 @@ class WholeSpace(PerceptualSpace):
         with torch.no_grad():
             W.data[old_row].copy_(new_a)
         # Allocate the split-off row + its position.
-        new_pos = self.insert_symbol(init_vec=new_b)
+        new_pos = self.insert_whole(init_vec=new_b)
         # If the original row was bound under a META, mirror the binding
         # onto the split-off so both halves remain discoverable.
         parent = self.taxonomy_parent(p)
@@ -18973,6 +19189,18 @@ class WholeSpace(PerceptualSpace):
         """Event is a writable Tensor -- codebook lives on .what."""
         return None
 
+    def _read_init_scale(self):
+        """``<initScale>`` for this space (fidelity leg, 2026-07-06): the
+        per-row seed magnitude for this space's codebooks. ``None`` when the
+        knob is unset / 0 (the legacy unit / [-1, 1] prefill)."""
+        try:
+            raw = TheXMLConfig.space(self.config_section, "initScale")
+        except KeyError:
+            return None
+        if raw in (None, "", 0, "0", 0.0):
+            return None
+        return float(raw)
+
     def _build_what_basis(self):
         """Symbol codebook on .what, monotonic. One row per symbol.
 
@@ -19019,6 +19247,7 @@ class WholeSpace(PerceptualSpace):
             category=True,
             STE=True,
             invertible=False,
+            init_scale=self._read_init_scale(),
         )
         return basis
 

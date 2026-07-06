@@ -414,7 +414,7 @@ def make_vector_spaces():
         "STM plus concept relations",
         "ties part-percepts to whole-percepts",
         "Concept codebook: relation rows",
-        "AttentionLayer: symbolic wave over concept inventory",
+        "ConceptualAttentionLayer: symbolic wave over concept inventory",
         "ConceptAllocator: ids, ordered records, relation pool",
         "Truth-gated acceptance and reasoning hooks",
     ]

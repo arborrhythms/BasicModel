@@ -5,7 +5,7 @@ taxonomy refactor (doc/plans/2026-05-28-where-keyed-taxonomy.md):
 
   * ``insert_percept(canonical_bytes) -> int (position)`` delegates to
     ``PartSpace.percept_store`` and binds a position.
-  * ``insert_symbol(init_vec=None) -> int (position)`` allocates a new
+  * ``insert_whole(init_vec=None) -> int (position)`` allocates a new
     SS.codebook row + position; tagged ``"ws"`` in ``_pos_kind``.
   * ``insert_meta(ps_pos, ws_pos, fused_vec=None) -> int (position)``
     allocates a META node binding ``(ps_pos, ws_pos)``; idempotent on
@@ -122,10 +122,10 @@ class TestInsertPercept(unittest.TestCase):
                          "re-inserting same bytes must return the same position")
 
 
-class TestInsertSymbol(unittest.TestCase):
-    """``insert_symbol`` allocates a fresh SS row + position (positive int)."""
+class TestInsertWhole(unittest.TestCase):
+    """``insert_whole`` allocates a fresh WS row + position (positive int)."""
 
-    def test_insert_symbol_returns_positive_position_and_writes_row(self):
+    def test_insert_whole_returns_positive_position_and_writes_row(self):
         m = _make_radix_model()
         ws = m.wholeSpace
         cb = ws.subspace.what
@@ -134,13 +134,13 @@ class TestInsertSymbol(unittest.TestCase):
         init_vec = torch.zeros(int(ws.nDim))
         init_vec[0] = 0.7
         init_vec[1] = -0.3
-        pos = ws.insert_symbol(init_vec=init_vec)
+        pos = ws.insert_whole(init_vec=init_vec)
         self.assertIsInstance(pos, int)
         self.assertGreater(pos, 0,
-                           f"insert_symbol must return a positive position; "
+                           f"insert_whole must return a positive position; "
                            f"got {pos}")
         self.assertEqual(ws._pos_kind.get(pos), "ws",
-                         "fresh SS symbol must be tagged 'ws' in _pos_kind")
+                         "fresh WS whole must be tagged 'ws' in _pos_kind")
         ws_row = _ws_row_from_pos(ws, pos)
         self.assertGreaterEqual(ws_row, 0)
         self.assertLess(ws_row, cb.nVectors)
@@ -149,7 +149,7 @@ class TestInsertSymbol(unittest.TestCase):
         expected = init_vec.to(device=W_after.device, dtype=W_after.dtype)
         self.assertTrue(
             torch.allclose(W_after[ws_row], expected, atol=1e-5),
-            f"SS row {ws_row} should match init_vec; got "
+            f"WS row {ws_row} should match init_vec; got "
             f"{W_after[ws_row].tolist()} vs {expected.tolist()}")
         # Other pre-existing rows untouched.
         for r in range(min(W_before.shape[0], W_after.shape[0])):
@@ -157,16 +157,16 @@ class TestInsertSymbol(unittest.TestCase):
                 continue
             self.assertTrue(
                 torch.allclose(W_before[r], W_after[r], atol=1e-6),
-                f"row {r} changed unexpectedly after insert_symbol")
+                f"row {r} changed unexpectedly after insert_whole")
 
-    def test_insert_symbol_default_init_random(self):
+    def test_insert_whole_default_init_random(self):
         """init_vec=None falls back to a random-ish init."""
         m = _make_radix_model()
         ws = m.wholeSpace
-        pos_a = ws.insert_symbol()
-        pos_b = ws.insert_symbol()
+        pos_a = ws.insert_whole()
+        pos_b = ws.insert_whole()
         self.assertNotEqual(pos_a, pos_b,
-                            "Distinct insert_symbol calls must return "
+                            "Distinct insert_whole calls must return "
                             "distinct positions")
 
 
@@ -177,7 +177,7 @@ class TestInsertMeta(unittest.TestCase):
         m = _make_radix_model()
         ws = m.wholeSpace
         ps_pos = ws.insert_percept(b"meta_a")
-        ws_pos = ws.insert_symbol()
+        ws_pos = ws.insert_whole()
         meta_pos = ws.insert_meta(ps_pos, ws_pos)
         self.assertGreater(meta_pos, 0,
                            f"insert_meta must return a positive position; "
@@ -214,7 +214,7 @@ class TestInsertMeta(unittest.TestCase):
             ps.codebook.data[ps_row, 0] = 1.0
         sym_init = torch.zeros(int(ws.nDim))
         sym_init[1] = 1.0
-        ws_pos = ws.insert_symbol(init_vec=sym_init)
+        ws_pos = ws.insert_whole(init_vec=sym_init)
         ws_row_of_input = _ws_row_from_pos(ws, ws_pos)
 
         meta_pos = ws.insert_meta(ps_pos, ws_pos)
@@ -234,7 +234,7 @@ class TestInsertMeta(unittest.TestCase):
         m = _make_radix_model()
         ws = m.wholeSpace
         ps_pos = ws.insert_percept(b"meta_c")
-        ws_pos = ws.insert_symbol()
+        ws_pos = ws.insert_whole()
         # First insert with an explicit fused_vec.
         fused1 = torch.zeros(int(ws.nDim))
         fused1[0] = 1.0
@@ -284,7 +284,7 @@ class TestReverseDecodeStructural(unittest.TestCase):
         meta_idxs = []
         for w in words:
             pid = ws.insert_percept(w)
-            sid = ws.insert_symbol()
+            sid = ws.insert_whole()
             mid = ws.insert_meta(pid, sid)
             meta_idxs.append(mid)
         # Pin the META rows to deterministic, well-separated vectors so
@@ -335,7 +335,7 @@ class TestStructuralReverseDecodeIntegration(unittest.TestCase):
         meta_idxs = []
         for w in words:
             pid = ws.insert_percept(w)
-            sid = ws.insert_symbol()
+            sid = ws.insert_whole()
             mid = ws.insert_meta(pid, sid)
             meta_idxs.append(mid)
         # Pin META rows to deterministic vectors.
@@ -385,8 +385,8 @@ class TestPersistenceRoundtrip(unittest.TestCase):
         # Insert a few META nodes.
         pid_a = ws.insert_percept(b"persist_a")
         pid_b = ws.insert_percept(b"persist_b")
-        sid_a = ws.insert_symbol()
-        sid_b = ws.insert_symbol()
+        sid_a = ws.insert_whole()
+        sid_b = ws.insert_whole()
         mid_a = ws.insert_meta(pid_a, sid_a)
         mid_b = ws.insert_meta(pid_b, sid_b)
         # Dump.
@@ -423,7 +423,7 @@ class TestPersistenceRoundtrip(unittest.TestCase):
         # Re-insertion proves the cache was restored correctly:
         # insert_meta on an existing pair must return the SAME
         # meta idx via the idempotency hit, not allocate a new
-        # SS row. Pass a fresh fused_vec so the code path doesn't
+        # meta row. Pass a fresh fused_vec so the code path doesn't
         # need a wired perceptualSpace_ref on ss2.
         fresh_vec = torch.zeros(int(ss2.nDim))
         re_mid_a = ss2.insert_meta(pid_a, sid_a, fused_vec=fresh_vec)
@@ -449,7 +449,7 @@ class TestReverseDecodeGuards(unittest.TestCase):
         # Ensure W has at least one row so the NaN check is reached
         # before the empty-codebook short-circuit.
         _pid = ws.insert_percept(b"x")
-        _sid = ws.insert_symbol()
+        _sid = ws.insert_whole()
         _mid = ws.insert_meta(_pid, _sid)
         D = int(ws.nDim)
         vec = torch.full((D,), float("nan"))
@@ -461,7 +461,7 @@ class TestReverseDecodeGuards(unittest.TestCase):
         m = _make_radix_model()
         ws = m.wholeSpace
         _pid = ws.insert_percept(b"y")
-        _sid = ws.insert_symbol()
+        _sid = ws.insert_whole()
         _mid = ws.insert_meta(_pid, _sid)
         D = int(ws.nDim)
         vec = torch.zeros(D)
@@ -506,7 +506,7 @@ class TestInsertMetaGuards(unittest.TestCase):
         m = _make_radix_model()
         ws = m.wholeSpace
         pid = ws.insert_percept(b"neg_ema")
-        sid = ws.insert_symbol()
+        sid = ws.insert_whole()
         # First insert with valid args, so the second call hits the
         # EMA-update branch.
         D = int(ws.nDim)
@@ -520,7 +520,7 @@ class TestInsertMetaGuards(unittest.TestCase):
         m = _make_radix_model()
         ws = m.wholeSpace
         pid = ws.insert_percept(b"big_ema")
-        sid = ws.insert_symbol()
+        sid = ws.insert_whole()
         D = int(ws.nDim)
         v = torch.zeros(D)
         ws.insert_meta(pid, sid, fused_vec=v)
@@ -531,7 +531,7 @@ class TestInsertMetaGuards(unittest.TestCase):
         m = _make_radix_model()
         ws = m.wholeSpace
         pid = ws.insert_percept(b"nan_first")
-        sid = ws.insert_symbol()
+        sid = ws.insert_whole()
         D = int(ws.nDim)
         bad = torch.full((D,), float("nan"))
         with self.assertRaises(RuntimeError) as ctx:
@@ -542,7 +542,7 @@ class TestInsertMetaGuards(unittest.TestCase):
         m = _make_radix_model()
         ws = m.wholeSpace
         pid = ws.insert_percept(b"inf_first")
-        sid = ws.insert_symbol()
+        sid = ws.insert_whole()
         D = int(ws.nDim)
         bad = torch.zeros(D)
         bad[0] = float("inf")
@@ -553,7 +553,7 @@ class TestInsertMetaGuards(unittest.TestCase):
         m = _make_radix_model()
         ws = m.wholeSpace
         pid = ws.insert_percept(b"nan_update")
-        sid = ws.insert_symbol()
+        sid = ws.insert_whole()
         D = int(ws.nDim)
         good = torch.zeros(D)
         ws.insert_meta(pid, sid, fused_vec=good)

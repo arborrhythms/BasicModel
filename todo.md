@@ -19,27 +19,20 @@ OPEN QUESTIONS / FUTURE WORK (Alec's calls + next builds):
   XFAILED 2026-07-06 (test_mm20m_xor_blind_roundtrip, strict=False) pending
   the knob call.
 
-* [ALEC — DESIGN + BUILD, separate thread] Concepts formalization + the CS
-  snap contract + the signed/fidelity program (subsumes the old
-  "Signed-domain concept storage" possibility, now fully designed):
-  doc/plans/2026-07-06-concepts-formalization-and-snap-contract-design.md.
-  Single consolidated plan — framework (epistemic ladder from The Whole
-  Part; concept = region bounded mereologically by parts/wholes; symbol =
-  signed presence scalar; sparse-over-symbols held compact by a growth-
-  preventing regularizer; two-sided evidence), the signed-snap reconstruction
-  contract, and the execution plan (terminology rename pass; WS initScale;
-  signed peel; symbol sparsity+regularizer; order-k unfold; frontier). Gated
-  on Alec's calls in §5 (regularizer form + dead-zone ε).
-
 ============================================================================
 
 * Serial-derivation reconstruction (doc/plans/2026-07-04-serial-derivation-
   reconstruction-*.md): Tasks 0-2 + the S2 operand-provenance build DONE
   (2026-07-06, Method-1 leaves replay — test_mm20m_grammar_derivation_
   roundtrip GREEN). REMAINING from that plan: Task 3 (NULL-word pathway),
-  Task 4 (Method-2 free-derivation bar — its front half is now the concepts
-  snap-contract plan above), Task 5 (docs + suite). Query-tool operational
-  integration is the [ALEC — DESIGN] item above.
+  Task 4 (Method-2 free-derivation bar). Its front half — the idea→typed
+  conceptual definition (signed OMP peel + ConceptualSpace.typed_definition:
+  head/modifiers/exclusions/residual) — LANDED with the concepts snap-contract
+  work (doc/plans/2026-07-06-...-execution.md, T0–T6 full-suite gated); what
+  remains for Task 4 is the grammar-surface COMPRESSION (definition → surface)
+  scored against the input, plus λ-sweeping <definitionSparsityScale> against
+  the fidelity bars on a real training config. Task 5 (docs + suite).
+  Query-tool operational integration is the [ALEC — DESIGN] item above.
 
 * .where recovery is still a placeholder in [bin/recon_bench.py (line 206)](/Users/arogers/Library/Mobile Documents/com~apple~CloudDocs/bits/projects/WikiOracle/basicmodel/bin/recon_bench.py:206).
 
@@ -51,9 +44,7 @@ OPEN QUESTIONS / FUTURE WORK (Alec's calls + next builds):
 
 * GPU/CUDA PORTABILITY (Task 8 GPU rung; blocks the borrowed CUDA server; GPU-first policy = everything on GPU by default). CPU-Generator-vs-device bug class SWEPT and fixed across bin/ (Language.py:2366, References.py:58-62; all other generator sites classified clean). REMAINING blockers before a full non-CPU grammar epoch: (1) MPS OOM on the 65536-row PS codebook — codebook/device-memory sizing, MPS-specific; (2) `AttributeError: 'NoneType'.is_empty` at bin/Spaces.py:21315 (`outputSpace.forward`, a subspace returns None) on the non-CPU forward path — device-independent-looking, needs root-cause.
 
-* FULL-SUITE STATUS before relying on green: last `make test` was Gate 3 = 2971 passed / 0 failed, taken BEFORE the four post-Gate-3 fixes (len-churn pad, MPS/References generator sweep, count-churn gate). Each passed its targeted gate + the 24-test RUN_SLOW fidelity gate, but NOT a combined full-suite run — run a fresh `make test` on the committed tree to confirm the combined state (the Gate-4 close).
-
-* The "Codebook.property_basis" is a hack that needs to be removed. Please summarize the WholeSpace property mechanism. You said properties "are" WholeSpace.what. But that codebook currently holds the symbol/truth prototypes wired into the codebook-snap machinery; making properties the live .what semantics would rip that out and move the basin. So I built the property capability as opt-in/additive (Codebook.property_basis) alongside the existing symbol codebook, not as a wholesale replacement. If you intended the live cutover, that's a separate deliberate step.
+* The "Codebook.property_basis" is a hack that needs to be removed. Please summarize the WholeSpace property mechanism. You said properties "are" WholeSpace.what. But that codebook currently holds the whole/truth prototypes wired into the codebook-snap machinery; making properties the live .what semantics would rip that out and move the basin. So I built the property capability as opt-in/additive (Codebook.property_basis) alongside the existing whole codebook, not as a wholesale replacement. If you intended the live cutover, that's a separate deliberate step.
   * Codebook.property_basis = False still exists: [bin/Spaces.py (line 2599)](/Users/arogers/Library/Mobile Documents/com~apple~CloudDocs/bits/projects/WikiOracle/basicmodel/bin/Spaces.py:2599)
   * SubSpace.materialize(mode="property") only routes through property materialization when .what.property_basis is true: [bin/Spaces.py (line 6718)](/Users/arogers/Library/Mobile Documents/com~apple~CloudDocs/bits/projects/WikiOracle/basicmodel/bin/Spaces.py:6718)
   * The docs explicitly describe it as “additive and opt-in”: [doc/Spaces.md (line 41)](/Users/arogers/Library/Mobile Documents/com~apple~CloudDocs/bits/projects/WikiOracle/basicmodel/doc/Spaces.md:41)
@@ -70,6 +61,11 @@ OPEN QUESTIONS / FUTURE WORK (Alec's calls + next builds):
   * Acceptance criteria: running this config performs masked IR training; masked positions contribute reconstruction loss; parser/category evidence is visible in the reconstruction path; concept attention/wave is live, not dark; and a targeted smoke test confirms masked-word predictions change when category evidence or concept-attention state is disabled.
 
 * Make abstraction order canonical
+  * NOTE (2026-07-06): `invert_ramsified` now HAS a consumer — the order-k
+    unfold (`Codebook.unfolded_prototypes` → the decode peel's `prototypes=`,
+    exercised by `ConceptualSpace.typed_definition`). So the live stamping
+    below is no longer dark scaffolding: stamped fold provenance feeds the
+    idea→definition decode. The remaining gap is exactly the live stamping.
   * the ramsification record has to become part of the normal codebook contract, not an optional sidecar. Every PS/WS codebook row that can represent a percept, word, type, or higher-order definition should carry fold provenance: for each subsymbolicOrder pass, whether that row was produced through Sigma, Pi, or neither. The scalar “order” should remain a derived readout, abstraction_order(row) = count(non-NEITHER folds), not separately stored state.
   * The main missing wiring is live stamping. Today the table exists and higher-order minting can stamp some rows, but the actual subsymbolic pump loop does not consistently call record_fold when a row is routed through PS synthesis or WS analysis. That needs to move into the canonical forward path: whenever a codebook row is created, selected, raised, or rewritten by a sigma/pi pass, the corresponding fold slot for that pass should be updated. This makes order provenance a normal consequence of processing rather than a special feature behind mereologyRaise.
   * The opt-in flag can be removed once ramsification allocation is cheap and universal. Allocate the table for relevant codebooks at creation time using max_order = max(1, architecture.subsymbolicOrder), grow it with the codebook, and reset nothing on ordinary document boundaries. Keep it non-gradient metadata, but decide whether it should persist. If explicit-constraint retraining depends on it after reload, it should ride checkpoint metadata or a sidecar serialization path; leaving it out of state_dict is only safe while it is reconstructible from deterministic build/mint history.

@@ -85,15 +85,15 @@ class TestInsertReturnsPositiveInt(unittest.TestCase):
         self.assertEqual(ws._pos_kind.get(pos), "ps",
                          "PS-side insert should tag _pos_kind[pos]='ps'")
 
-    def test_insert_symbol_returns_positive_position(self):
+    def test_insert_whole_returns_positive_position(self):
         m = _make_radix_model()
         ws = m.wholeSpace
         init = torch.zeros(int(ws.nDim))
         init[0] = 0.5
-        pos = ws.insert_symbol(init_vec=init)
+        pos = ws.insert_whole(init_vec=init)
         self.assertIsInstance(pos, int)
         self.assertGreater(pos, 0,
-                           f"insert_symbol must return a positive position; got {pos}")
+                           f"insert_whole must return a positive position; got {pos}")
         self.assertEqual(ws._pos_kind.get(pos), "ws",
                          "SS-side insert should tag _pos_kind[pos]='ws'")
         # The position resolves to a real SS row.
@@ -107,7 +107,7 @@ class TestInsertReturnsPositiveInt(unittest.TestCase):
         m = _make_radix_model()
         ws = m.wholeSpace
         ps_pos = ws.insert_percept(b"beta")
-        ws_pos = ws.insert_symbol()
+        ws_pos = ws.insert_whole()
         meta_pos = ws.insert_meta(ps_pos, ws_pos)
         self.assertIsInstance(meta_pos, int)
         self.assertGreater(meta_pos, 0,
@@ -143,7 +143,7 @@ class TestTaxonomyStoragePositiveInt(unittest.TestCase):
         m = _make_radix_model()
         ws = m.wholeSpace
         ps_pos = ws.insert_percept(b"gamma")
-        ws_pos = ws.insert_symbol()
+        ws_pos = ws.insert_whole()
         meta_pos = ws.insert_meta(ps_pos, ws_pos)
 
         children = ws.taxonomy_children(meta_pos)
@@ -174,7 +174,7 @@ class TestVocabExtrasPositiveInt(unittest.TestCase):
         m = _make_radix_model()
         ws = m.wholeSpace
         ps_pos = ws.insert_percept(b"delta")
-        ws_pos = ws.insert_symbol()
+        ws_pos = ws.insert_whole()
         meta_pos = ws.insert_meta(ps_pos, ws_pos)
         blob = ws.vocab_extras()
 

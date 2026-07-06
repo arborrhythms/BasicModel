@@ -168,6 +168,18 @@ the **truth/catuskoti** boundary, not the percept seam.
 > softplus(atom)`. So the "signed sphere" describes the activation's role; the
 > stored atom itself is positive. Sign comes from the signed sparse weights.
 
+> **Epistemic-ladder note (2026-07-06).** The "concepts / symbols" column
+> above pairs by shared *geometry* (both ride the signed sphere), NOT by
+> epistemic level — the two are orthogonal (epistemic ladder, *The Whole
+> Part*). A **concept** is a CS region defined *over* percepts (bounded
+> mereologically by parts/wholes; composed taxonomically over symbols); a
+> **symbol** is a **percept** (it lives in SS, alongside parts in PS and
+> wholes in WS) whose *value* is a signed presence scalar. So "symbol" is
+> never a synonym for a concept (a CS row) or a whole (a WS row); it is
+> grouped here with concepts only because the lexicon currently rides the
+> signed torus. Whether symbols eventually follow the `[0,1]` percept-cube
+> move (§8) is an open item, untouched here.
+
 ---
 
 ## 6. SBOW situates concepts, **not** percepts

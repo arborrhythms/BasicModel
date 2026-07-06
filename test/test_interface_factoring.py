@@ -1,16 +1,18 @@
 """Stage 4 of doc/plans/MeronomyPlan.md: interface factoring at the callosum.
 
 MeronomySpec §3, percept half of §10.6: the PS leg crosses the corpus
-callosum NAMELESS and FACTORED -- content selects a reference row
-(embedding match), evidence sets the activation magnitude
-``a ∈ [0, +1]`` -- and beliefs cash into membership-fold operands only
-through ``Ops.eval_chart`` (χ), applied exactly once.
+callosum NAMELESS and FACTORED -- content selects a reference CONCEPT row
+(embedding match), evidence sets the SIGNED activation
+``a ∈ [-1, +1]`` (inclusion + / exclusion -) -- and beliefs cash into
+membership-fold operands only through ``Ops.eval_chart`` (χ), applied
+exactly once.
 
   * no stimulation ⇒ ``a = 0`` (a tautology of the dot product, not a
     clamp);
-  * ``a < 0`` unreachable end-to-end from the percept path (negative
-    input coordinates are structurally invisible; anti-matches are
-    non-matches);
+  * ``a < 0`` is an EXCLUSION (a "known false" concept): the part INPUT
+    stays one-sided/positive, but the concept EVIDENCE is signed, so an
+    anti-aligned concept row is selected (abs-argmax) with a negative a
+    (2026-07-06, Alec: factor_percept factors CONCEPTS);
   * the crossing emits ``a · u`` in the K3 wire domain -- charting
     happens ONLY at the cash-out (never inside the crossing), and the
     chart is applied exactly once;
@@ -84,7 +86,7 @@ def test_meronomy_knob_forms():
 
 
 # ---------------------------------------------------------------------------
-# factor_percept: content → row selection, evidence → a ∈ [0, +1].
+# factor_percept: content → concept-row selection, evidence → signed a ∈ [-1, +1].
 # ---------------------------------------------------------------------------
 
 def test_no_stimulation_is_zero_evidence():
@@ -93,18 +95,36 @@ def test_no_stimulation_is_zero_evidence():
     assert a.item() == 0.0, "absence of stimulation IS a = 0 (tautology)"
 
 
-def test_negative_half_unreachable():
+def test_evidence_is_signed_and_capped():
     rows = unit_rows()
     torch.manual_seed(2)
-    # Adversarial percepts: any sign, any magnitude.
+    # Adversarial percepts: any sign, any magnitude. Evidence is SIGNED
+    # (an exclusion reads negative) but always capped at certainty ±1.
     for scale in (0.1, 1.0, 10.0):
         p = torch.randn(32, D) * scale
         idx, a = ConceptualSpace.factor_percept(p, rows)
-        assert (a >= 0).all(), "a < 0 unreachable from the percept path"
-        assert (a <= 1).all(), "a capped at certainty 1"
-    # Purely negative content is structurally invisible.
+        assert (a.abs() <= 1).all(), "evidence capped at certainty ±1"
+    # Purely negative percept CONTENT is still structurally invisible: the
+    # part INPUT is one-sided (q = percept.clamp(min=0)), so it zeros out.
     idx, a = ConceptualSpace.factor_percept(-torch.rand(8, D), rows)
     assert (a == 0).all()
+
+
+def test_exclusion_is_reachable_signed():
+    # A positive part whose strongest concept alignment is ANTI (a "known
+    # false") is an EXCLUSION: abs-argmax selects that row and returns a
+    # NEGATIVE a -- unreachable under the old sims.clamp(min=0), which would
+    # have zeroed it and picked some weakly-positive row instead.
+    rows = torch.zeros(V, D)
+    rows[0] = torch.tensor([-1.0, -1.0, 0, 0, 0, 0])   # points AWAY from p
+    rows[0] = rows[0] / rows[0].norm()
+    for k in range(1, V):                              # the rest: orthogonal
+        rows[k, 1 + k] = 1.0
+    p = torch.tensor([1.0, 1.0, 0, 0, 0, 0])           # positive percept
+    idx, a = ConceptualSpace.factor_percept(p, rows)
+    assert idx.item() == 0, "the anti-aligned (exclusion) row wins abs-argmax"
+    assert a.item() < 0, "an exclusion reads as NEGATIVE evidence"
+    assert a.item() == -1.0, "capped at certainty -1 (|p·row0| = sqrt(2) > 1)"
 
 
 def test_content_selects_evidence_scales():
@@ -167,9 +187,9 @@ def test_factored_crossing_lives_in_the_row_span():
         if n < 1e-9:
             continue                         # a = 0 slot: nothing crossed
         cos = (slot / n) @ rows.T
-        assert cos.max() > 1 - 1e-5, (
-            "every crossed slot is a·u for some reference row u -- "
-            "raw coordinates never cross")
+        assert cos.abs().max() > 1 - 1e-5, (
+            "every crossed slot is ±a·u for some reference row u -- "
+            "raw coordinates never cross (a signed exclusion points along -u)")
         assert n <= 1 + 1e-6, "evidence magnitude capped at 1"
 
 
@@ -189,8 +209,8 @@ def test_factored_crossing_emits_wire_domain_not_memberships():
     p = 0.6 * rows[1].clamp(min=0)
     out = cs._factor_crossing(p.reshape(1, 1, D))
     idx, a = ConceptualSpace.factor_percept(p, rows)
-    assert torch.allclose(out.norm(), a, atol=1e-6), (
-        "crossing magnitude is the evidence a (wire domain), uncharted")
+    assert torch.allclose(out.norm(), a.abs(), atol=1e-6), (
+        "crossing magnitude is |a| (wire domain), uncharted")
 
 
 def test_factored_crossing_without_codebook_is_identity():

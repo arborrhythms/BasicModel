@@ -24,8 +24,8 @@ import torch
 
 
 def _oss(cap=128, dim=4):
-    from Language import ObjectSubSpace
-    return ObjectSubSpace(percept_dim=dim, capacity=cap, batch=1)
+    from Language import IdeaSubSpace
+    return IdeaSubSpace(percept_dim=dim, capacity=cap, batch=1)
 
 
 def test_routed_byte_fallback_round_trips_non_ascii():

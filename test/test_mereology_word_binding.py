@@ -223,7 +223,7 @@ def test_cs_owns_relation_taxonomy_by_reference():
     """S3 relocation (Fix #1; doc/specs "relation-only completion"): CS owns the
     relation taxonomy BY REFERENCE -- its forwarding accessors return the
     terminal WholeSpace's taxonomy, so callers can migrate WS->CS behavior-
-    equivalently. The physical position-keyed dicts stay on WS (insert_symbol /
+    equivalently. The physical position-keyed dicts stay on WS (insert_whole /
     insert_meta mint codebook rows atomically; a physical move is gated on the
     deferred meta-vector retirement)."""
     ss = _whole_space()

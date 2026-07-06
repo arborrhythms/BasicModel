@@ -2261,6 +2261,13 @@ class UnionLayer(GrammarLayer):
                             left_priming=left_priming, right_priming=right_priming)
 
 
+# Read-time support / peel-stop threshold (snap contract sec 2.1, 2026-07-06):
+# a residual match with |cos| <= PEEL_SUPPORT_EPS is a don't-care (outside the
+# dead-zone around 0), so the signed matching pursuit stops. A small fixed
+# constant; per-space / learned tuning is a later, minor knob.
+PEEL_SUPPORT_EPS = 1e-2
+
+
 class ChunkLayer(GrammarLayer):
     """``chunk(C, C) = left + right`` — the additive mereological sum.
 
@@ -2348,27 +2355,63 @@ class ChunkLayer(GrammarLayer):
         return parent, torch.zeros_like(parent)
 
     @classmethod
-    def peel(cls, whole, basis, max_parts=8, tol=1e-4):
-        """Greedy matching pursuit: repeatedly subtract the best-cosine
-        store row until the residual is ~0, no row matches (cos <= 0), or
-        ``max_parts``. Returns ``(row_indices, residual)``. Exact for
-        near-orthogonal (signed-domain) parts; the [0,1] cone is where it
-        degrades — the hypothesis's contrast case."""
+    def peel(cls, whole, basis, max_parts=8, eps=PEEL_SUPPORT_EPS,
+             prototypes=None, tol=1e-4):
+        """SIGNED matching pursuit (snap contract sec 2.2, 2026-07-06):
+        repeatedly select the store row of largest ABSOLUTE cosine alignment
+        with the residual, subtract its signed projection, and emit
+        ``(row, coeff)``. Stops when the support falls below ``eps``
+        (``|cos| <= eps`` -- a don't-care), the residual is ~0, or
+        ``max_parts``.
+
+        Returns ``(parts, residual)`` where ``parts`` is a list of
+        ``(row_index, coeff)`` pairs. ``coeff`` is the SIGNED projection
+        magnitude ``<residual, w> / <w, w>`` -- an EXCLUSION reads as a
+        NEGATIVE coeff, and a plain sum of near-orthogonal rows reads back at
+        coeff ~ 1.0. (Un-discards the sign the old peel clamped away: the
+        ``<= 0`` break and the fixed unit subtraction are gone; selection is
+        the ``_snap_content`` abs-argmax + signed idiom, generalized from
+        +/-1 to the real magnitude.) Exact for near-orthogonal signed parts;
+        the [0,1] cone is where it degrades -- the contrast case.
+
+        ``prototypes`` (T5 hook, optional): a matrix (same row count + width as
+        the basis) of UNFOLDED order-k prototypes; when given, the whole peel
+        (ranking AND the OMP refit) runs in this space instead of the raw basis
+        rows, so a discontiguous order-k region is matched by its reconstituted
+        form rather than its folded order-0 shadow. ``support`` still indexes
+        the codebook rows. ``None`` peels against the basis rows directly.
+        """
         W = basis.getW() if hasattr(basis, 'getW') else basis
-        residual = whole.detach().reshape(-1).to(W.dtype).clone()
-        floor = tol * (1.0 + float(whole.detach().norm()))
-        Wn = torch.nn.functional.normalize(W, dim=-1)
-        picked = []
+        ref = W if prototypes is None else prototypes
+        target = whole.detach().reshape(-1).to(W.dtype)
+        residual = target.clone()
+        floor = tol * (1.0 + float(target.norm()))
+        Wn = torch.nn.functional.normalize(ref, dim=-1)
+        support = []            # distinct selected rows, in selection order
+        coeffs = target.new_zeros(0)
         for _ in range(int(max_parts)):
             if float(residual.norm()) < floor:
                 break
             sims = Wn @ torch.nn.functional.normalize(residual, dim=0)
-            best = int(sims.argmax())
-            if float(sims[best]) <= 0.0:
+            if support:         # ORTHOGONAL MP: never re-pick a selected row
+                sims = sims.clone()
+                sims[torch.tensor(support, device=sims.device)] = 0.0
+            best = int(sims.abs().argmax())
+            if float(sims[best].abs()) <= eps:
                 break
-            picked.append(best)
-            residual = residual - W[best]
-        return picked, residual.reshape(whole.shape)
+            support.append(best)
+            # Refit ALL selected coeffs by least squares (the OMP step): solve
+            # ``ref[support]^T @ c ~= whole`` so the residual is orthogonal to
+            # the chosen rows -- exact for a linearly-independent signed
+            # support, unlike single-row subtraction which over/undershoots on
+            # non-orthogonal rows. Ranking AND refit use ``ref`` (= the basis
+            # rows, or the T5 unfolded order-k prototypes) so the whole peel
+            # lives in one space; ``support`` still indexes the codebook rows.
+            Rs = ref[support]                                   # [k, D]
+            coeffs = torch.linalg.lstsq(Rs.t(), target).solution
+            residual = target - Rs.t() @ coeffs
+        parts = [(r, float(c)) for r, c in zip(support, coeffs.tolist())]
+        return parts, residual.reshape(whole.shape)
 
     def generate(self, parent, basis=None,
                  left_rows=None, right_rows=None,
@@ -8699,13 +8742,13 @@ class Taxonomy:
             return U
         return U.t() @ U                                   # [D, D]
 
-class ObjectSubSpace(nn.Module):
+class IdeaSubSpace(nn.Module):
     """Durable PartSpace meronymic-analysis carrier -- the PS
     analogue of :class:`SymbolSubSpace`.
 
     doc/plans/2026-05-30-subsymbolic-analyzer-terminal-emitter.md
     ("Carrier State"): SymbolSubSpace stores taxonomic state for symbolic
-    parsing; ObjectSubSpace stores meronymic state for perceptual
+    parsing; IdeaSubSpace stores meronymic state for perceptual
     analysis -- spans, part ids, parent / child links, route ids /
     scores, depth, and the replay metadata ``reverse()`` needs to
     re-realize the surface. It is a durable state HOLDER, not a parser:
@@ -8738,7 +8781,7 @@ class ObjectSubSpace(nn.Module):
     Phase-2 contract), not here.
 
     Marker-route metadata (absorb/emit replay -- "route-metadata on
-    ObjectSubSpace" in the codification)::
+    IdeaSubSpace" in the codification)::
 
         _marker_ps_id    [B, cap]    bound marker PS row id, or -1
         _marker_span     [B, cap, 2] marker sub-span endpoint-sum key
@@ -8813,7 +8856,7 @@ class ObjectSubSpace(nn.Module):
         d = int(self._depth[b].item())
         if d >= self.max_depth:
             raise AssertionError(
-                f"ObjectSubSpace overflow at row {b}: "
+                f"IdeaSubSpace overflow at row {b}: "
                 f"max_depth={self.max_depth}")
         self._buffer[b, d] = vec.to(
             device=self._buffer.device, dtype=self._buffer.dtype)
@@ -8851,7 +8894,7 @@ class ObjectSubSpace(nn.Module):
         d = int(self._depth[b].item())
         if not (0 <= slot < d):
             raise IndexError(
-                f"ObjectSubSpace.update: slot {slot} not live "
+                f"IdeaSubSpace.update: slot {slot} not live "
                 f"(depth {d}) at row {b}")
         for name, value in fields.items():
             if name == 'vec':
@@ -8867,7 +8910,7 @@ class ObjectSubSpace(nn.Module):
                     value, device=buf.device, dtype=buf.dtype)
             else:
                 raise KeyError(
-                    f"ObjectSubSpace.update: unknown field {name!r}")
+                    f"IdeaSubSpace.update: unknown field {name!r}")
 
     def get(self, b, slot):
         """Return a dict snapshot of slot ``(b, slot)``'s parallel state."""
@@ -8884,7 +8927,7 @@ class ObjectSubSpace(nn.Module):
         d = int(self._depth[b].item())
         if d < k:
             raise AssertionError(
-                f"ObjectSubSpace.top: row {b} has {d} spans, asked k={k}")
+                f"IdeaSubSpace.top: row {b} has {d} spans, asked k={k}")
         return self.get(b, d - k)
 
     def pop(self, b):
@@ -8893,7 +8936,7 @@ class ObjectSubSpace(nn.Module):
         d = int(self._depth[b].item())
         if d <= 0:
             raise AssertionError(
-                f"ObjectSubSpace underflow at row {b}: stack is empty")
+                f"IdeaSubSpace underflow at row {b}: stack is empty")
         slot = d - 1
         out = self.get(b, slot)
         self._clear_slot(b, slot)

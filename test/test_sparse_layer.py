@@ -1,11 +1,13 @@
-"""SparseLayer: COO sparse linear substrate (tanh forward / transpose reverse)."""
+"""SparseLayer: generic COO sparse linear substrate (tanh forward / transpose
+reverse). ConceptualAttentionLayer: the square wave store + the concept
+relation record store (moved off the generic base, 2026-07-06)."""
 import os
 import sys
 import pytest
 import torch
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "bin"))
-from Layers import SparseLayer, AttentionLayer  # noqa: E402
+from Layers import SparseLayer, ConceptualAttentionLayer  # noqa: E402
 
 
 def _dense(layer):
@@ -123,15 +125,15 @@ def test_self_edge_allowed_by_default():
     ly.add_edge(2, 2)                      # rectangular role layers unaffected
 
 
-def test_attention_layer_is_square_and_forbids_self_edges():
-    ly = AttentionLayer(8)                 # N=8 concepts -> [9 x 8], no roles
+def test_conceptual_attention_layer_is_square_and_forbids_self_edges():
+    ly = ConceptualAttentionLayer.square(8)   # N=8 concepts -> [9 x 8], no roles
     assert (ly.nInput, ly.nOutput) == (9, 8)
     with pytest.raises(ValueError, match="self-edge"):
         ly.add_edge(3, 3)
 
 
-def test_attention_layer_wave_step_matches_formula():
-    ly = AttentionLayer(4)
+def test_conceptual_attention_layer_wave_step_matches_formula():
+    ly = ConceptualAttentionLayer.square(4)
     ly.add_edge(2, 0, weight=0.5)          # relation row 2 reads concept 0
     a = torch.zeros(4, 1); a[0, 0] = 1.0
     s = a.clone()
@@ -149,9 +151,43 @@ def test_attention_layer_wave_step_matches_formula():
     assert torch.allclose(ly.wave_step(a, s, bias=1.0), out)   # default == 1
 
 
-def test_attention_layer_wave_step_empty_layer_is_tanh_s():
-    ly = AttentionLayer(3)
+def test_conceptual_attention_layer_wave_step_empty_layer_is_tanh_s():
+    ly = ConceptualAttentionLayer.square(3)
     assert torch.all(ly.wave_step(torch.rand(3, 2), torch.zeros(3, 2)) == 0)
     s = torch.tensor([[0.5, -0.5], [0.0, 1.0], [-1.0, 0.25]])
     out = ly.wave_step(torch.rand(3, 2), s)
     assert torch.allclose(out, torch.tanh(s))
+
+
+# -- concept relation store (moved off SparseLayer onto ConceptualAttentionLayer)
+
+def test_concept_store_absent_from_generic_sparse_layer():
+    # The generic substrate must NOT carry the concept record API.
+    ly = SparseLayer(4, 3)
+    for m in ("ensure_row_key", "embed_pair", "constituents",
+              "row_is_identity", "assign_row", "hebbian_strengthen_row"):
+        assert not hasattr(ly, m), f"SparseLayer should not expose {m}"
+
+
+def test_concept_store_embed_pair_and_identity():
+    ly = ConceptualAttentionLayer.square(6)
+    ly.embed_pair(1, whole_ref=("sym", 2), part_ref=("sym", 3))
+    assert ly.constituents(1) == [("whole", ("sym", 2)), ("part", ("sym", 3))]
+    assert ly.row_is_identity(1)                    # one whole + one part
+    assert ly.discretize_row(1) == (("sym", 2), ("sym", 3))
+    ly.add_constituent(1, "part", ("sym", 4))       # second part -> not 1:1
+    assert not ly.row_is_identity(1)
+    assert ly.discretize_row(1) is None
+    ly.add_constituent(1, "part", ("sym", 4))       # idempotent
+    assert ly.count_role(1, "part") == 2
+
+
+def test_concept_store_assign_row_and_hebbian():
+    ly = ConceptualAttentionLayer.square(4)
+    r0 = ly.assign_row(10)
+    assert ly.assign_row(10) == r0                  # stable per key
+    assert ly.assign_row(11) == r0 + 1              # next free row
+    assert ly.row_of(10) == r0 and ly.row_of(99) is None
+    ly.add_edge(2, 0, weight=0.5)
+    ly.hebbian_strengthen_row(2, eta=0.25, cap=4.0)
+    assert abs(float(ly.values[ly._index[(2, 0)]]) - 0.75) < 1e-6

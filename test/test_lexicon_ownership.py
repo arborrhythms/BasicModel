@@ -420,10 +420,10 @@ def test_what_encoding_roundtrip():
     reader/writer for the null-terminated byte layout on .what.W."""
     import torch
     from bin.Spaces import WhatEncoding
-    enc = WhatEncoding([2, 10], [2, 10])  # nObj=2, per-slot dim irrelevant here
+    enc = WhatEncoding([2, 10], [2, 10])  # nIdeas=2, per-slot dim irrelevant here
     nWhat = 8
     tokens = [["hello", "world"], ["", "hi"]]
-    buf = enc.encode_tokens(tokens, batch=2, nObj=2, nWhat=nWhat,
+    buf = enc.encode_tokens(tokens, batch=2, nIdeas=2, nWhat=nWhat,
                             device=torch.device("cpu"))
     assert buf.shape == (2, 2, nWhat)
     # null terminator is present in used slots
@@ -438,7 +438,7 @@ def test_what_encoding_truncates_oversized_tokens():
     from bin.Spaces import WhatEncoding
     enc = WhatEncoding([1, 4], [1, 4])
     nWhat = 4  # 3 bytes for content + 1 null
-    buf = enc.encode_tokens([["abcdef"]], batch=1, nObj=1, nWhat=nWhat,
+    buf = enc.encode_tokens([["abcdef"]], batch=1, nIdeas=1, nWhat=nWhat,
                             device=torch.device("cpu"))
     decoded = enc.decode_tokens(buf)
     assert decoded == [["abc"]]

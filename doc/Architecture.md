@@ -161,7 +161,7 @@ kernel by default, `torch.sparse.mm` opt-in. Edges append host-side at mint
 pruning rounds (`remove_edges`; `ConceptualSpace.prune_concept_links` keeps
 the closest links using within-tower relations only). The iterated-loop
 rework (v3, landed 2026-07-03) kept this substrate and collapsed the
-per-order families into ONE square untyped **`AttentionLayer`** subclass --
+per-order families into ONE square untyped **`ConceptualAttentionLayer`** subclass --
 described below.
 
 **The forward is TWO PHASES with one terminal cutover.** Phase A -- the
@@ -178,17 +178,17 @@ presence -- slot-mean projection onto the unit atom direction in
 hypercube-diagonal $\sqrt{D}$ units, magnitude-preserving, NOT cosine --
 with an EMA identity trace of the winning rows while training), then the
 conceptual wave runs ($K$ = `symbolicOrder` iterations over the
-`AttentionLayer`, below) and its outputs feed the SS leg,
+`ConceptualAttentionLayer`, below) and its outputs feed the SS leg,
 the head-side losses (conceptual SBOW on the settled slab), and the concept
 table -- they are NEVER substituted back into the subsymbolic carrier (the
 `<sparseReplace>` knob is retired; non-replacement is structural).
 Quantization sits exactly at the seam because 0-D symbols lack the bandwidth
 to carry subsymbolic content.
 
-**The `AttentionLayer` is SYMBOLIC-ONLY and owns BOTH readings of concept
+**The `ConceptualAttentionLayer` is SYMBOLIC-ONLY and owns BOTH readings of concept
 structure (v3, the iterated symbolic loop -- landed 2026-07-03).** The
 weighted reading is ONE square untyped $[N \times N{+}1]$ store over the
-stacked concept inventory (`AttentionLayer`, bin/Layers.py) -- named for
+stacked concept inventory (`ConceptualAttentionLayer`, bin/Layers.py) -- named for
 what it IS, bottom-up attention over the concept inventory (see "Parse
 time" sec C); `SparseLayer` is how it works (it subclasses the substrate
 above). The per-order role-split families and their dyadic capacities are
@@ -283,7 +283,7 @@ successor design
 ([2026-07-02-iterated-symbolic-loop.md](plans/2026-07-02-iterated-symbolic-loop.md),
 landed 2026-07-03; execution plan
 [2026-07-03-iterated-symbolic-loop-execution.md](plans/2026-07-03-iterated-symbolic-loop-execution.md)),
-which FIXES it: iteration over the one untyped square `AttentionLayer`
+which FIXES it: iteration over the one untyped square `ConceptualAttentionLayer`
 replaces stratification, so a link of any order simply arrives one wave hop
 later; see "Parse time" sec C.
 
@@ -353,7 +353,7 @@ WS mereological towers. Attention parses them two ways:
   continues this same channel past the bandwidth seam: the wave over the
   single untyped square layer propagates the snap's salience one
   membership-weighted hop per iteration — bottom-up attention lifted into
-  relation space — which is why that layer is named **`AttentionLayer`**
+  relation space — which is why that layer is named **`ConceptualAttentionLayer`**
   (what it is), not `SparseLayer` (how it works). Heat and wave are two
   renderings of ONE channel and want integration (recorded future work:
   derive taxonomy heat from the wave's terminal activations $a^K$;
@@ -382,7 +382,7 @@ scaffold-fed to blind as training allows).
 
 The design splits representation into a **dense, invertible, subsymbolic**
 integrator (the corpus-callosum mixing matrix, which mixes part/whole *content*
-in high dimension) and a **sparse, symbolic** composer (the `AttentionLayer`,
+in high dimension) and a **sparse, symbolic** composer (the `ConceptualAttentionLayer`,
 which composes *scalar activations* of named concepts; it subclasses the
 `SparseLayer` substrate). This is not an
 arbitrary engineering choice; the split, and specifically *why sparsity belongs
@@ -470,7 +470,7 @@ Boyes-Braem (1976), *Basic objects in natural categories*, Cognitive Psychology
 Press. Olshausen & Field (1996), *Emergence of simple-cell receptive field
 properties by learning a sparse code*, Nature 381 (sparse *activation* over a
 dense dictionary — the dictionary/atom side here — as distinct from the sparse
-*relational graph* of the `AttentionLayer`).
+*relational graph* of the `ConceptualAttentionLayer`).
 
 ## Overview
 
@@ -544,7 +544,7 @@ the principled fix for the MM_20M mean-collapse. Full design:
 |-------|------|------|-------|
 | **InputSpace** | Lifts raw data into working dimensionality; surface tokenization | LiftingLayer; lexer wiring (text mode) | Reaches PS's lexicon via back-ref; no own lexicon |
 | **PartSpace** | Bottom-up SYNTHESIS branch (Pi/Sigma swap, rev. 2026-06-09): sigma fold + `<synthesis>` front ends + MPHF lookup | one `self.sigma` (SigmaLayer — the union fold), MPHF + index table | `forward(x_subspace)` takes one positional arg (the atom-view stem). Result = `sigma(x)` after the front end embeds. PS Lexicon (`self.vocabulary`) holds per-word vectors; MPHF maps surface $\to$ row. |
-| **ConceptualSpace** | STM container + main grammatical CPU + (when sparse-active) the POST-PUMP symbolic phase | STM (`ShortTermMemory`, depth ~8); the single untyped square `AttentionLayer` (a `SparseLayer` subclass; registered via the `_sparse_fam` shim) + concept dictionary (`similarity_codebook`) + the relation store (`ConceptAllocator` + ordered records) when sparse-active | `forward(subspace, word_subspace=None)`: STM bookkeeping only — the pump is purely subsymbolic (P3 two-phase); the symbolic transform fires ONCE post-pump (`cs_symbolic_phase`: snap + iterated wave, $K$ = `symbolicOrder`, driven by `_forward_body`'s cutover). Dispatches read-only grammar ops via the signal router. |
+| **ConceptualSpace** | STM container + main grammatical CPU + (when sparse-active) the POST-PUMP symbolic phase | STM (`ShortTermMemory`, depth ~8); the single untyped square `ConceptualAttentionLayer` (a `SparseLayer` subclass; registered via the `_sparse_fam` shim) + concept dictionary (`similarity_codebook`) + the relation store (`ConceptAllocator` + ordered records) when sparse-active | `forward(subspace, word_subspace=None)`: STM bookkeeping only — the pump is purely subsymbolic (P3 two-phase); the symbolic transform fires ONCE post-pump (`cs_symbolic_phase`: snap + iterated wave, $K$ = `symbolicOrder`, driven by `_forward_body`'s cutover). Dispatches read-only grammar ops via the signal router. |
 | **WholeSpace** | Top-down ANALYSIS branch: pi fold + `<analysis>`/`<lexer>` knobs; unified word lexicon codebook owner; dispatch site for codebook-write ops | one `self.pi` (PiLayer — the intersection fold), unified codebook with paired (orth, semantic) rows | `forward(CS_subspaceForWS, IS_concepts=None)` — stage 0 reads the unity view. `insert_paired_word(word, vec)` creates an orth row + random semantic row, parented via `Codebook.set_part_parent`. Lookup chain: surface $\to$ MPHF $\to$ orth row $\to$ semantic via parthood. |
 | **OutputSpace** | Final prediction | LinearLayer | nActive, nDim, nVectors |
 

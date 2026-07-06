@@ -117,7 +117,7 @@ class TestRadixLayerReverseWithSS(unittest.TestCase):
         meta_idxs = []
         for w in words:
             pid = ws.insert_percept(w)
-            sid = ws.insert_symbol()
+            sid = ws.insert_whole()
             mid = ws.insert_meta(pid, sid)
             meta_idxs.append(mid)
         # Pin META rows to deterministic vectors.

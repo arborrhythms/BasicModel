@@ -113,14 +113,34 @@ def test_basis_reverse_peels_one_part():
 
 
 def test_peel_recovers_multiset_signed():
-    """Greedy matching pursuit over a signed store recovers the exact
-    constituent multiset with residual ~0 (the hypothesis's YES case)."""
+    """Signed matching pursuit over a signed store recovers the exact
+    constituent multiset with residual ~0 (the hypothesis's YES case). Now
+    returns (row, coeff) pairs; a plain sum reads back at coeff ~ 1.0."""
     from Language import ChunkLayer
     torch.manual_seed(4)
     W = torch.randn(8, 32)
     whole = W[2] + W[5] + W[6]
-    idx, residual = ChunkLayer.peel(whole, _BasisShim(W), max_parts=8)
-    assert sorted(idx) == [2, 5, 6], idx
+    parts, residual = ChunkLayer.peel(whole, _BasisShim(W), max_parts=8)
+    rows = sorted(r for r, _c in parts)
+    assert rows == [2, 5, 6], parts
+    for _r, c in parts:
+        assert abs(c - 1.0) < 1e-3, f"sum-of-rows coeff should be ~1.0, got {c}"
+    assert float(residual.norm()) < 1e-4 * (1 + float(whole.norm()))
+
+
+def test_peel_recovers_signed_exclusion():
+    """The un-discarded sign: a NEGATIVE-coefficient operand (an exclusion)
+    is recovered as a negative coeff on its row, and an anti-aligned row is
+    selected (abs-quotient), not skipped as the old `cos <= 0` break did."""
+    from Language import ChunkLayer
+    torch.manual_seed(7)
+    W = torch.randn(8, 32)
+    whole = W[1] - 0.7 * W[4]                       # W[4] is EXCLUDED
+    parts, residual = ChunkLayer.peel(whole, _BasisShim(W), max_parts=8)
+    coeff = {r: c for r, c in parts}
+    assert set(coeff) == {1, 4}, parts
+    assert abs(coeff[1] - 1.0) < 1e-3, coeff
+    assert abs(coeff[4] + 0.7) < 1e-3, coeff       # negative -> exclusion
     assert float(residual.norm()) < 1e-4 * (1 + float(whole.norm()))
 
 

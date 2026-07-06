@@ -112,7 +112,7 @@
 > Sections below that predate this orientation are marked or should be
 > read against it.
 
-> **2026-06-02 update (subsymbolic analyzer).** New `ObjectSubSpace`
+> **2026-06-02 update (subsymbolic analyzer).** New `IdeaSubSpace`
 > (`bin/Language.py`) -- the PS-meronymic carrier analogue of
 > `SymbolicSubSpace` (spans, parent/child links, route ids, marker-route
 > replay fields). `WholeSpace` gains `insert_operations` (grammar
@@ -169,7 +169,7 @@ All spaces inherit from `Space`, which manages:
   Subclasses read dimensions from `TheObjectEncoding`.
 - **Codebook / VQ quantization.** When `nVectors > nActive`, a codebook holds
   candidate vectors; top-k selection gives the bottleneck.
-- **Reshape flag.** When in/out object counts differ, the `[B, nObj, nDim]`
+- **Reshape flag.** When in/out object counts differ, the `[B, nIdeas, nDim]`
   tensor is flattened before the next space and restored on the way back.
 - **Attention.** The legacy boolean `hasAttention` is deprecated and inert
   (kept only as a backward-compat alias); use the `<attention>` element
@@ -217,7 +217,7 @@ internal Sigma / Pi (no substrate-borrowing).
 | Space | Owns | Forward signature |
 |---|---|---|
 | **PartSpace** | one `self.sigma` (SigmaLayer — the synthesis fold), the `<synthesis>` front ends, MPHF + index table, the surface-keyed Lexicon (`self.vocabulary`) | `PS.forward(x_subspace)` — **single positional argument** (the atom-view stem). Body: `self.sigma(x.materialize())` after the synthesis front end embeds. |
-| **ConceptualSpace** | STM (`ShortTermMemory`, depth ~8) + (when sparse-active) the single untyped square `AttentionLayer` (a `SparseLayer` subclass) + the relation store (`ConceptAllocator` + ordered records) + concept dictionary (`similarity_codebook`) | `CS.forward(subspace, word_subspace=None)` — STM bookkeeping only (`sigma_percept` fold retired); the symbolic transform (snap + iterated wave) fires ONCE post-pump at `_forward_body`'s cutover (`cs_symbolic_phase`), never in-loop (2026-07-02 two-phase rework). Dispatches read-only grammar ops via the signal router. |
+| **ConceptualSpace** | STM (`ShortTermMemory`, depth ~8) + (when sparse-active) the single untyped square `ConceptualAttentionLayer` (a `SparseLayer` subclass) + the relation store (`ConceptAllocator` + ordered records) + concept dictionary (`similarity_codebook`) | `CS.forward(subspace, word_subspace=None)` — STM bookkeeping only (`sigma_percept` fold retired); the symbolic transform (snap + iterated wave) fires ONCE post-pump at `_forward_body`'s cutover (`cs_symbolic_phase`), never in-loop (2026-07-02 two-phase rework). Dispatches read-only grammar ops via the signal router. |
 | **WholeSpace** | one `self.pi` (PiLayer — the analysis fold), the `<analysis>` + `<lexer>` knobs, the unified word lexicon codebook with paired (orth, semantic) rows; `insert_paired_word(word, vec)` API; hosts codebook-write-required grammar ops | `SS.forward(CS_subspaceForWS, IS_concepts=None)` — stage 0 reads the unity view (`IS_concepts`); later stages read the recurrent CS. Lookup chain: surface $\to$ MPHF $\to$ orth row $\to$ parented semantic row (via `Codebook.set_part_parent`). |
 
 **Composition (per-mode):**
@@ -789,7 +789,7 @@ activation is produced by the POST-PUMP SYMBOLIC PHASE (2026-07-02 two-phase
 rework; v3 iterated wave 2026-07-03): the settled field is snapped to the
 ORDER-0 snap block
 (`cs_snap_order0`) and the conceptual wave iterates $K$ = `symbolicOrder`
-steps over the single untyped square `AttentionLayer`, then each activation
+steps over the single untyped square `ConceptualAttentionLayer`, then each activation
 scales its atom (the decode inlined in `cs_forward_content`). `PerceptDim`
 and `ConceptDim` are **decoupled** (the
 weights live in index/activation space); a concept is NOT an additive linear
@@ -849,7 +849,7 @@ read-back) with no fold to invert, and the symbolic generalization operator
 moved to WholeSpace (inverted upstream of `CS.reverse` on the reconstruction
 path, in `BasicModel._reverse_body`). Convergence on MM_xor continues via the
 PiLayer butterfly cascade. (When the sparse transform is ON, CS DOES
-own a parameterised forward transform — the `AttentionLayer`'s edge values
+own a parameterised forward transform — the `ConceptualAttentionLayer`'s edge values
 and the concept dictionary — see **The symbolic phase** below.)
 
 **Reverse.** `CS.reverse` is a thin pass-through (no fold layer to
@@ -875,7 +875,7 @@ code[c]  = a[c] * softplus(atom[c])    # dictionary decode (inlined)
 
 (`cs_symbolic_phase` = the snap + `cs_forward_content`.) The percept
 families AND the per-order role-split families are RETIRED: the store is ONE
-square untyped `AttentionLayer` (a `SparseLayer` subclass) over the stacked
+square untyped `ConceptualAttentionLayer` (a `SparseLayer` subclass) over the stacked
 concept inventory, edges = fuzzy set-membership degrees, plus a
 bias-column edge for relations bounded above by the EVERYTHING pole (a
 concrete whole retires it). The row space is two blocks: the SNAP

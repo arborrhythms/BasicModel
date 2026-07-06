@@ -483,7 +483,7 @@ def _clamp_subspace(vspace, lo=1e-7, hi=1.0):
     return vspace
 
 
-def _setup_object_encoding(objSize=0, contentDim=6, outputDim=2, nObj=3,
+def _setup_object_encoding(objSize=0, contentDim=6, outputDim=2, nIdeas=3,
                            reconstruct="FULL", flatten=True, ergodic=False,
                            hasAttention=True,
                            invertible=False,
@@ -501,7 +501,7 @@ def _setup_object_encoding(objSize=0, contentDim=6, outputDim=2, nObj=3,
     Models.TheXMLConfig.load(util._defaults_xml)
     nWhere = objSize // 2 if objSize > 0 else 0
     nWhen = objSize - nWhere if objSize > 0 else 0
-    nObjects = nObj * 6  # 6 spaces, each with nObj vectors
+    nObjects = nIdeas * 6  # 6 spaces, each with nIdeas vectors
     # Deep-merge test overrides onto existing defaults
     overrides = {
         "architecture": {
@@ -517,10 +517,10 @@ def _setup_object_encoding(objSize=0, contentDim=6, outputDim=2, nObj=3,
             "dataType": "numeric",
             "embeddingPath": None, "data": {}, "training": {},
         },
-        "InputSpace":      {"nDim": contentDim, "nVectors": nObj, "nActive": nObj, "flatten": False, "codebook": False, "lexer": "word"},
-        "PartSpace": {"nDim": contentDim, "nVectors": nObj, "nActive": nObj, "flatten": flatten, "codebook": False, "hasAttention": hasAttention, "invertible": invertible},
-        "ConceptualSpace": {"nDim": contentDim, "nVectors": nObj, "nActive": nObj, "flatten": flatten, "codebook": False, "hasAttention": False, "invertible": invertible},
-        "OutputSpace":     {"nDim": outputDim,  "nVectors": nObj, "nActive": nObj, "nWhere": 0, "nWhen": 0, "flatten": True, "codebook": False, "invertible": False},
+        "InputSpace":      {"nDim": contentDim, "nVectors": nIdeas, "nActive": nIdeas, "flatten": False, "codebook": False, "lexer": "word"},
+        "PartSpace": {"nDim": contentDim, "nVectors": nIdeas, "nActive": nIdeas, "flatten": flatten, "codebook": False, "hasAttention": hasAttention, "invertible": invertible},
+        "ConceptualSpace": {"nDim": contentDim, "nVectors": nIdeas, "nActive": nIdeas, "flatten": flatten, "codebook": False, "hasAttention": False, "invertible": invertible},
+        "OutputSpace":     {"nDim": outputDim,  "nVectors": nIdeas, "nActive": nIdeas, "nWhere": 0, "nWhen": 0, "flatten": True, "codebook": False, "invertible": False},
     }
     for section, vals in overrides.items():
         if section in Models.TheXMLConfig._data and isinstance(Models.TheXMLConfig._data[section], dict):
@@ -578,15 +578,15 @@ class TestConceptualSpacePairedSigma(unittest.TestCase):
     """ConceptualSpace with paired (non-invertible) sigma layers."""
     def _check(self, objSize):
         _setup_object_encoding(objSize=objSize, invertible=False,                               ergodic=False, flatten=True, hasAttention=False)
-        nObj, contentDim = 3, 6
+        nIdeas, contentDim = 3, 6
         embDim = contentDim + objSize
 
         cspace = Models.ConceptualSpace(
-            [nObj, embDim], [nObj, contentDim], [nObj, embDim],
+            [nIdeas, embDim], [nIdeas, contentDim], [nIdeas, embDim],
         )
         cspace.eval()
         # Input in (0,1) -- logit in ConceptualSpace.forward() expects this range
-        x = (torch.rand(2, nObj, embDim) * 0.8 + 0.1).to(TheDevice.get())
+        x = (torch.rand(2, nIdeas, embDim) * 0.8 + 0.1).to(TheDevice.get())
         with torch.no_grad():
             y = cspace.forward(_wrap_tensor(cspace, x))
             x_rec = _unwrap(cspace.reverse(y))
@@ -605,15 +605,15 @@ class TestOutputSpaceReversePass(unittest.TestCase):
     def _check(self, objSize):
         _setup_object_encoding(objSize=objSize, outputDim=2, reconstruct="FULL",
                                flatten=True)
-        nObj, contentDim, outputDim = 3, 6, 2
+        nIdeas, contentDim, outputDim = 3, 6, 2
         embDim = contentDim + objSize
 
         # OutputSpace: input has upstream objectSize, output has 0 (nWhere=0/nWhen=0)
         ospace = Models.OutputSpace(
-            [nObj, embDim], [nObj, contentDim], [1, outputDim],
+            [nIdeas, embDim], [nIdeas, contentDim], [1, outputDim],
         )
         ospace.eval()
-        x = torch.randn(2, nObj, embDim).to(TheDevice.get())
+        x = torch.randn(2, nIdeas, embDim).to(TheDevice.get())
         with torch.no_grad():
             y = ospace.forward(_wrap_tensor(ospace, x))
             x_rec = _unwrap(ospace.reverse(y))
@@ -794,14 +794,14 @@ class TestConceptualSpaceReverseRangeCheck(unittest.TestCase):
     def test_nonlinear_output_in_range(self):
         """With nonlinear=True, sigmoid guarantees reverse output in (0, 1)."""
         _setup_object_encoding(objSize=0, invertible=True,                               flatten=True, hasAttention=False)
-        nObj, contentDim = 3, 6
+        nIdeas, contentDim = 3, 6
 
         cspace = Models.ConceptualSpace(
-            [nObj, contentDim], [nObj, contentDim], [nObj, contentDim],
+            [nIdeas, contentDim], [nIdeas, contentDim], [nIdeas, contentDim],
         )
         cspace.eval()
         # Input in (0,1) -- logit expects this range
-        x = torch.rand(2, nObj, contentDim) * 0.8 + 0.1
+        x = torch.rand(2, nIdeas, contentDim) * 0.8 + 0.1
         with torch.no_grad():
             y = cspace.forward(_wrap_tensor(cspace, x))
             # Should NOT raise -- sigmoid bounds output to (0, 1)

@@ -1,19 +1,10 @@
 <?xml version="1.0" ?>
 <model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:noNamespaceSchemaLocation="model.xsd">
-  <!-- MM_xor_fixture: dedicated test fixture for the META taxonomy /
-       SymbolizeLayer / RadixLayer regression suite. Decoupled from
-       MM_xor.xml so that runtime experiments on MM_xor (e.g. toggling
-       SS <codebook>quantize</codebook> -> <codebook>none</codebook>)
-       don't break the tests, which inherently require:
-         - <synthesis>radix</synthesis> so PerceptStore is constructed.
-         - <codebook>quantize</codebook> on WholeSpace so
-           ``WholeSpace.subspace.what`` is a Codebook and
-           ``insert_symbol`` can allocate rows.
-       Used by test/test_two_codebook_meta_taxonomy.py,
-       test/test_symbolize_layer.py, test/test_autobind_from_cs.py,
-       test/test_radix_layer_reverse.py. Do not consume this from
-       production code. -->
+  <!-- MM_init_scale: MM_xor_fixture + <WholeSpace><initScale>. Fixture for
+       test/test_init_scale.py's end-to-end wiring check that <initScale>
+       reaches the WholeSpace codebooks (.what symbol store + analysis_store)
+       so their prefill rows land at the small operating point. -->
   <architecture>
     <subsymbolicOrder>3</subsymbolicOrder>
     <data>
@@ -33,8 +24,6 @@
   </architecture>
 
   <InputSpace>
-    <!-- radix chunking consumes pre-lexed word tokens; pin word so it does
-         not inherit the raw default (which targets analyse). -->
     <nVectors>8</nVectors>
     <nDim>14</nDim>
     <nOutput>8</nOutput>
@@ -64,6 +53,7 @@
     <nVectors>8</nVectors>
     <nDim>14</nDim>
     <nOutput>8</nOutput>
+    <initScale>0.02</initScale>
   </WholeSpace>
 
   <OutputSpace>

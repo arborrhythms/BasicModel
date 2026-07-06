@@ -1,4 +1,4 @@
-"""The shared untyped square concept store (v3) via AttentionLayer.
+"""The shared untyped square concept store (v3) via ConceptualAttentionLayer.
 
 A concept is a stored ConceptDim atom. The snap block [0, n_snap) holds
 order-0 concepts as codebook rows read by normalized-sum presence (no
@@ -62,7 +62,7 @@ def test_add_concept_edge_dedup_and_query():
 
 
 def test_shared_untyped_square_store():
-    """v3: every order shares ONE untyped [N x N+1] AttentionLayer -- no
+    """v3: every order shares ONE untyped [N x N+1] ConceptualAttentionLayer -- no
     role blocks; the bias is the trailing column N; self-edges raise (the
     Quine atom); the learnable values register EXACTLY ONCE."""
     cs = _cs(nS=16, order=2)                         # two-block [8 | 8]

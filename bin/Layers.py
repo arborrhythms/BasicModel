@@ -4405,16 +4405,17 @@ class SigmaLayer2(Layer):
 class SparseLayer(Layer):
     """COO sparse linear substrate: forward tanh(W @ x), reverse tanh(W^T @ y).
 
-    The percept/symbol -> concept map of the ramsified conceptual space
-    (doc/plans/2026-07-02-sparse-layer-conceptual-embedding.md). Edges are
-    appended host-side as concepts mint (add_edge, idempotent) and removed by
-    pruning rounds (remove_edges); values are ONE learnable Parameter grown
-    tail-preserving so trained weights survive growth. No LDU inverse: the
-    reverse is the transpose (sparse autoencoder pair). No atanh entry: inputs
-    are presences [0,1) / activations (-1,1), not logit-domain codes.
+    A generic sparse-linear autoencoder pair. Edges are appended host-side
+    (add_edge, idempotent) and removed by remove_edges; values are ONE
+    learnable Parameter grown tail-preserving so trained weights survive
+    growth. No LDU inverse: the reverse is the transpose. No atanh entry:
+    inputs are presences [0,1) / activations (-1,1), not logit-domain codes.
     Kernel "scatter" (index_select + index_add_) is export-safe (MLX /
     executorch); "spmm" (torch.sparse.mm, COO kept on MPS) is the opt-in
-    fast path. Empty layer -> zeros (both directions).
+    fast path. Empty layer -> zeros (both directions). Optional role-tagged
+    column blocks partition the input columns (role_slice); forbid_self_edges
+    rejects the r == c diagonal. Carries NO concept vocabulary -- the concept
+    relation store lives on :class:`ConceptualAttentionLayer`.
     """
 
     def __init__(self, nInput, nOutput, nonlinear=True, kernel="scatter",
@@ -4445,12 +4446,6 @@ class SparseLayer(Layer):
                 raise ValueError(
                     f"SparseLayer: role widths sum {off} != nInput "
                     f"{self.nInput}")
-        # Discrete relation store (the layer's SECOND reading of concept
-        # structure): ordered role-tagged constituent records per row key
-        # (global concept id), plus the capacity-bounded tensor-row map.
-        self._constituents = {}    # key -> [(role, ref), ...] insertion order
-        self._tensor_rows = {}     # key -> GLOBAL tensor row
-        self._row_next = {}        # region base -> next unallocated local row
 
     @property
     def nnz(self):
@@ -4505,9 +4500,7 @@ class SparseLayer(Layer):
                 f"[{self.nOutput},{self.nInput}]")
         if self._forbid_self_edges and r == c:
             raise ValueError(
-                f"SparseLayer: self-edge ({r}, {c}) forbidden -- "
-                f"x = {{x}} is the Quine atom (see "
-                f"doc/plans/2026-07-02-iterated-symbolic-loop.md)")
+                f"SparseLayer: self-edge ({r}, {c}) forbidden")
         pos = self._index.get((r, c))
         if pos is not None:
             return pos
@@ -4594,11 +4587,56 @@ class SparseLayer(Layer):
         """Transpose decode: tanh(W^T @ y) (the sparse autoencoder pair)."""
         return self._apply_shape(y, transpose=True)
 
-    # -- discrete relation store (doc/plans/2026-07-02-two-phase-loops-
-    # sparse-relation.md P1): the layer owns BOTH readings of concept
-    # structure -- the weighted role-tagged COO above and the ordered
-    # relation records below. Row keys are GLOBAL concept ids; the local
-    # tensor row of a key is a separate capacity-bounded allocation. -------
+
+class ConceptualAttentionLayer(SparseLayer):
+    """BOTTOM-UP ATTENTION over the concept inventory + the concept relation
+    store. The wave a^{i+1} = tanh(W [a^i | 1] + s) propagates perceptual
+    salience one membership-weighted hop per step over the square untyped
+    store [N x N+1] whose edges are fuzzy set-membership degrees (the
+    horizontal channel lifted into relation space -- doc/Architecture.md
+    "Parse time" sec C; the iterated symbolic loop,
+    doc/plans/2026-07-02-iterated-symbolic-loop.md). Self-edges are forbidden
+    on the square store (x = {x}, the Quine atom); longer cycles are
+    deliberate.
+
+    This subclass ALSO owns the discrete relation store (the concept
+    structure the ConceptAllocator parks per row): ordered role-tagged
+    constituent records keyed by GLOBAL concept id, plus the
+    capacity-bounded tensor-row map. The generic COO substrate (edges,
+    values, forward/reverse) is inherited from :class:`SparseLayer` and
+    carries no concept vocabulary."""
+
+    def __init__(self, nInput, nOutput, nonlinear=True, kernel="scatter",
+                 device=None, roles=None, forbid_self_edges=False):
+        super().__init__(nInput, nOutput, nonlinear=nonlinear, kernel=kernel,
+                         device=device, roles=roles,
+                         forbid_self_edges=forbid_self_edges)
+        # Discrete relation store (doc/plans/2026-07-02-two-phase-loops-
+        # sparse-relation.md P1): ordered role-tagged constituent records per
+        # row key (GLOBAL concept id), plus the capacity-bounded tensor-row
+        # map. Host-side (no tensor shape dependence).
+        self._constituents = {}    # key -> [(role, ref), ...] insertion order
+        self._tensor_rows = {}     # key -> GLOBAL tensor row
+        self._row_next = {}        # region base -> next unallocated local row
+
+    @classmethod
+    def square(cls, n_concepts, device=None):
+        """THE square [ (N+1) x N ] wave store: forbid_self_edges (x = {x},
+        the Quine atom); the trailing column (col == N) is the EVERYTHING
+        bias pole."""
+        return cls(int(n_concepts) + 1, int(n_concepts),
+                   device=device, forbid_self_edges=True)
+
+    def wave_step(self, a, s, bias=1.0):
+        """One bottom-up-attention hop: tanh(W [a | 1] + s); a, s: [N, B];
+        bias scales the constant column (0 masks the EVERYTHING pole)."""
+        x = torch.cat([a, a.new_full((1, int(a.shape[-1])), float(bias))],
+                      dim=0)
+        return torch.tanh(self.forward_linear(x) + s)
+
+    # -- discrete relation store: the ordered role-tagged relation records.
+    # Row keys are GLOBAL concept ids; the local tensor row of a key is a
+    # separate capacity-bounded allocation. --------------------------------
 
     def ensure_row_key(self, key):
         """Register ``key`` in the record store (empty record list)."""
@@ -4704,27 +4742,35 @@ class SparseLayer(Layer):
                     self.values[i] = min(float(cap),
                                          float(self.values[i]) + float(eta))
 
-
-class AttentionLayer(SparseLayer):
-    """BOTTOM-UP ATTENTION over the concept inventory (the iterated
-    symbolic loop, doc/plans/2026-07-02-iterated-symbolic-loop.md): one
-    square untyped store [N x N+1] whose edges are fuzzy set-membership
-    degrees; the wave a^{i+1} = tanh(W [a^i | 1] + s) propagates perceptual
-    salience one membership-weighted hop per step (the horizontal channel
-    lifted into relation space -- doc/Architecture.md "Parse time" sec C).
-    Named for what it IS; SparseLayer is how it works. Self-edges are
-    forbidden (x = {x}, the Quine atom); longer cycles are deliberate."""
-
-    def __init__(self, n_concepts, device=None):
-        super().__init__(int(n_concepts) + 1, int(n_concepts),
-                         device=device, forbid_self_edges=True)
-
-    def wave_step(self, a, s, bias=1.0):
-        """One bottom-up-attention hop: tanh(W [a | 1] + s); a, s: [N, B];
-        bias scales the constant column (0 masks the EVERYTHING pole)."""
-        x = torch.cat([a, a.new_full((1, int(a.shape[-1])), float(bias))],
-                      dim=0)
-        return torch.tanh(self.forward_linear(x) + s)
+    def definition_sparsity_penalty(self, free_size=2):
+        """Rank-ordered soft-L0 on each concept's DEFINITION SIZE (snap
+        contract sec 1.4 / sec 5, 2026-07-06): sort a concept row's in-edge
+        weights by ``|w|`` (excluding the trailing EVERYTHING-pole column --
+        a standing axiom, not part of the definition), EXEMPT the top
+        ``free_size`` (genus + differentia, the minimal definition), and sum
+        the marginal ranks. Shrinkage then lands only on the surplus symbols
+        (the ones to drop) while the core stay at full presence -- a
+        differentiable soft-L0 (``torch.sort`` backprops through the marginal
+        values). Returns the scalar penalty, or ``None`` when the store is
+        empty / has no marginal tail past ``free_size``. Reads the LIVE
+        ``self.values`` (reallocated on growth/prune) -- never cache it.
+        """
+        vals = self.values
+        if vals is None or not torch.is_tensor(vals) or vals.numel() == 0:
+            return None
+        N = int(self.nOutput)                    # concept rows
+        ncol = int(self.nInput)                  # N + 1: last col = pole
+        concept_cols = max(0, ncol - 1)
+        free = max(0, int(free_size))
+        if N <= 0 or concept_cols <= free:
+            return None
+        rows_t, cols_t = self._indices(vals.device)
+        # Scatter the flat COO edge values into a dense [N, ncol] view; grad
+        # flows to ``vals`` through index_put (edges are unique, no accumulate).
+        dense = vals.new_zeros(N, ncol).index_put((rows_t, cols_t), vals)
+        w = dense[:, :concept_cols].abs()        # drop the EVERYTHING pole
+        sorted_w, _ = torch.sort(w, dim=-1, descending=True)
+        return sorted_w[:, free:].sum()
 
 
 class ConceptAllocator:
@@ -4733,9 +4779,9 @@ class ConceptAllocator:
     doc/plans/2026-07-02-iterated-symbolic-loop.md): id allocation, ramsified
     order derivation (bookkeeping only), raise/retire bookkeeping, the
     resolved-identity map, and the global idempotency caches. ALL concept
-    records and tensor rows live on ONE shared square store
-    (``self.layer()``, an :class:`AttentionLayer` when the owner supplies a
-    square sizer); rows are permanent -- nothing migrates by order."""
+    records and tensor rows live on ONE shared store
+    (``self.layer()``, a :class:`ConceptualAttentionLayer`); rows are
+    permanent -- nothing migrates by order."""
 
     def __init__(self, layer_sizer=None, order_cap=None):
         self.next_id = 1                 # 0 reserved
@@ -4753,20 +4799,22 @@ class ConceptAllocator:
         self._order_cap = order_cap      # () -> max ramsified order S
 
     def layer(self, order=0):
-        """THE shared square store (v3: ``order`` ignored, every order gets
-        the same object). A square sizer (roles=None, nInput==nOutput+1)
-        builds an :class:`AttentionLayer`; no sizer keeps the host-sized 1x1
-        duck-typed stub."""
+        """THE shared store (v3: ``order`` ignored, every order gets the same
+        object) -- always a :class:`ConceptualAttentionLayer` so the concept
+        relation store is present. A square sizer (roles=None,
+        nInput==nOutput+1) builds the square wave store; no sizer keeps the
+        host-sized 1x1 record-container stub (never runs the wave)."""
         got = self._layers.get(0)
         if got is None:
             n_in, n_out, dev, roles = (self._layer_sizer(0)
                                        if self._layer_sizer
                                        else (1, 1, None, None))
             if roles is None and int(n_in) == int(n_out) + 1:
-                got = AttentionLayer(int(n_out), device=dev)
+                got = ConceptualAttentionLayer.square(int(n_out), device=dev)
             else:
-                got = SparseLayer(max(1, int(n_in)), max(1, int(n_out)),
-                                  device=dev, roles=roles)
+                got = ConceptualAttentionLayer(
+                    max(1, int(n_in)), max(1, int(n_out)),
+                    device=dev, roles=roles)
             self._layers[0] = got
         return got
 
@@ -5315,7 +5363,7 @@ class QKVAttentionLayer(Layer):
     type="transformer" -- Standard multi-head attention over the object/token axis.
                          Q K^T / sqrt(d) with multi-head splitting.
 
-    All modes require 3D input [batch, nObj, dim].
+    All modes require 3D input [batch, nIdeas, dim].
     """
     def __init__(self, nInput, nOutput, nHidden=None, type="asymmetric", nHeads=1):
         """Initialize QKVAttentionLayer; allocate state for the class contract.
@@ -10772,7 +10820,7 @@ class RadixLayer(Layer):
         if target.shape[0] != W.shape[1]:
             # CS->PS demux: the recon vector is the muxed [what|where|when]
             # event, wider than the content-width codebook row -- take the
-            # leading .what slice (mirrors insert_symbol's demux). A narrower
+            # leading .what slice (mirrors insert_whole's demux). A narrower
             # vec is a genuine mismatch; bail.
             if target.shape[0] > W.shape[1]:
                 target = target[:W.shape[1]]
@@ -11082,7 +11130,7 @@ class BPEGpuLayer(Layer):
         return best_id, best_len
 
     @staticmethod
-    def segment_words(chunk_ids, tok_count, tables, nObj):
+    def segment_words(chunk_ids, tok_count, tables, nIdeas):
         """Tensor word-segmentation, **fully static** (no ``.item()``, no
         boolean-mask compaction -> zero DtoH, fullgraph/CUDA-graph safe).
         Bit-identical semantics to ``_embed_bpe``'s Python sweep:
@@ -11092,17 +11140,17 @@ class BPEGpuLayer(Layer):
             byte_mode key not in codebook);
           * a word = a maximal run of non-boundary chunks, EMITTED only if
             it has >=1 resolved sub-token (empty/all-unresolved runs take
-            no slot); per-row emitted words are slotted 0..nObj-1 in
+            no slot); per-row emitted words are slotted 0..nIdeas-1 in
             left-to-right order, later words dropped.
 
         Everything stays ``[B,T]`` (T = chunk buffer width, static). The
-        emitter scatters these into static ``[B*nObj]`` buffers, so the
-        target id ``b*nObj+slot`` is the only thing needed -- no dense
+        emitter scatters these into static ``[B*nIdeas]`` buffers, so the
+        target id ``b*nIdeas+slot`` is the only thing needed -- no dense
         word-id / word-count, hence no host sync.
 
         Returns (all ``[B,T]``, long/bool): ``sub_cb`` (codebook row, -1
-        where not a kept sub-token), ``sub_target`` (``b*nObj+slot``, or
-        ``B*nObj`` trash bucket where not kept), ``sub_pos`` (token index,
+        where not a kept sub-token), ``sub_target`` (``b*nIdeas+slot``, or
+        ``B*nIdeas`` trash bucket where not kept), ``sub_pos`` (token index,
         for first-sub-token tiebreak), ``keep`` (bool).
         """
         B, T = chunk_ids.shape
@@ -11129,12 +11177,12 @@ class BPEGpuLayer(Layer):
         # (exclusive cumsum of the has_res grid over the run-key axis).
         emit_excl = torch.cumsum(has_res, dim=1) - has_res       # [B,T]
         slot = emit_excl.gather(1, run_key)                      # [B,T]
-        keep = resolved & (slot < nObj)                          # [B,T] bool
+        keep = resolved & (slot < nIdeas)                          # [B,T] bool
 
         b_idx = (torch.arange(B, device=dev)
                  .unsqueeze(1).expand(B, T))                     # [B,T]
-        trash = B * nObj
-        sub_target = torch.where(keep, b_idx * nObj + slot,
+        trash = B * nIdeas
+        sub_target = torch.where(keep, b_idx * nIdeas + slot,
                                  torch.full_like(slot, trash))
         sub_cb = torch.where(keep, cb, torch.full_like(cb, -1))
         return sub_cb, sub_target, pos, keep

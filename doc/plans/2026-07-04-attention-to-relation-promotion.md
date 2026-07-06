@@ -7,7 +7,7 @@ field; the relation table remains the sparse long-term memory.
 
 ## Rationale
 
-The conceptual `AttentionLayer` already provides the right computational
+The conceptual `ConceptualAttentionLayer` already provides the right computational
 shape: a soft active set over concepts, pairwise interaction evidence, and a
 nonlinear wave over the concept inventory. The missing canonical step is a
 promotion policy that turns repeated shared-context patterns into named
@@ -48,7 +48,7 @@ decides whether it deserves a durable whole such as `royalty`.
    instead of minting duplicates.
 
 5. **Populate weighted attention edges.** The committed whole must enter the
-   `AttentionLayer` wave, not just the discrete record store. Add sparse edges
+   `ConceptualAttentionLayer` wave, not just the discrete record store. Add sparse edges
    from the promoted whole row to its member/context rows with initial weights
    from the candidate statistics. Subsequent masked reconstruction and
    conceptual SBOW losses should train those weights.
@@ -70,7 +70,7 @@ decides whether it deserves a durable whole such as `royalty`.
       prediction-gain bookkeeping, and capacity policy.
 - [ ] Add a promotion pass that mines common neighborhoods and calls the
       relation-table higher-order mint path.
-- [ ] Initialize `AttentionLayer` sparse edges from promoted candidate weights.
+- [ ] Initialize `ConceptualAttentionLayer` sparse edges from promoted candidate weights.
 - [ ] Route promoted-whole activations into masked reconstruction /
       conceptual-SBOW loss.
 - [ ] Add pruning/merge rules for stale or duplicate promoted wholes.

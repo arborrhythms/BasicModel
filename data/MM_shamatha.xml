@@ -48,7 +48,7 @@
         <S>sigma(S)</S>
         <S>disjunction(S, S)</S>
         <S>not(S)</S>
-        <S>join(C, C)</S>
+        <S>union(C, C)</S>
         <S>C</S>
         <C>intersection(C, C)</C>
         <C>P</C>

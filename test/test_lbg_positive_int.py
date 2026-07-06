@@ -57,7 +57,7 @@ class TestRecordLbgPullPositions(unittest.TestCase):
     def test_record_pull_on_ws_position_accumulates(self):
         m = _make_radix_model()
         ws = m.wholeSpace
-        ws_pos = ws.insert_symbol()
+        ws_pos = ws.insert_whole()
         D = int(ws.nDim)
         vec = torch.zeros(D)
         vec[0] = 1.0
@@ -85,7 +85,7 @@ class TestRecordLbgPullPositions(unittest.TestCase):
     def test_record_pull_raises_on_nan(self):
         m = _make_radix_model()
         ws = m.wholeSpace
-        ws_pos = ws.insert_symbol()
+        ws_pos = ws.insert_whole()
         D = int(ws.nDim)
         bad = torch.full((D,), float("nan"))
         with self.assertRaises(RuntimeError) as ctx:
@@ -99,7 +99,7 @@ class TestMaybeSplitLbgPositions(unittest.TestCase):
     def test_no_split_below_threshold(self):
         m = _make_radix_model()
         ws = m.wholeSpace
-        ws_pos = ws.insert_symbol()
+        ws_pos = ws.insert_whole()
         # No data, no split.
         result = ws.maybe_split_lbg(ws_pos)
         self.assertIsNone(result,
@@ -110,7 +110,7 @@ class TestMaybeSplitLbgPositions(unittest.TestCase):
         and returns a new positive-int position."""
         m = _make_radix_model()
         ws = m.wholeSpace
-        ws_pos = ws.insert_symbol()
+        ws_pos = ws.insert_whole()
         # Force enough pulls + high variance to trip the split.
         D = int(ws.nDim)
         # Alternate +1 and -1 to drive variance up while keeping the
@@ -148,7 +148,7 @@ class TestMaybeSplitLbgPositions(unittest.TestCase):
         m = _make_radix_model()
         ws = m.wholeSpace
         ps_pos = ws.insert_percept(b"lbg_split_meta")
-        ws_pos = ws.insert_symbol()
+        ws_pos = ws.insert_whole()
         meta_pos = ws.insert_meta(ps_pos, ws_pos)
         # Drive a split on the SS child.
         D = int(ws.nDim)

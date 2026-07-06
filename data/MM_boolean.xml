@@ -93,7 +93,7 @@
 
   <SymbolSpace>
     <!-- Single-non-terminal DNF grammar with outermost negation:
-            S = not(S) | join(C, C) | C
+            S = not(S) | union(C, C) | C
             C = intersection(C, C) | P
          Augustinian/shamatha placement: negation operates only on
          whole propositions, so NOT lives at the S level. Internal
@@ -103,7 +103,7 @@
 
          Layer correspondence (gated on rule transition probability):
             S = not(S)            -> propositional NEG (bivector swap)
-            S = join(C, C)       -> SigmaLayer  (in WholeSpace)
+            S = union(C, C)      -> UnionLayer  (in WholeSpace)
             S = C                 -> passthrough
             C = intersection(...) -> PiLayer     (in ConceptualSpace)
             C = P                 -> bare percept
@@ -125,7 +125,7 @@
         <C>pi(C)</C>
         <S>sigma(S)</S>
         <S>not(S)</S>
-        <S>join(C, C)</S>
+        <S>union(C, C)</S>
         <S>C</S>
         <C>intersection(C, C)</C>
         <C>P</C>

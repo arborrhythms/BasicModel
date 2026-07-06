@@ -889,7 +889,7 @@ class Data():
         the discourse end-state chain to span sentences (so the next-idea loss
         fires): (1) the BYTE cursor (this config sets <lexer>byte</lexer>) keeps
         the document in one stream -- a trial cursor resets the chain every tick;
-        (2) each document must EXCEED the byte slab width (InputSpace nObj, ~1024)
+        (2) each document must EXCEED the byte slab width (InputSpace nIdeas, ~1024)
         so it is walked over MULTIPLE ticks -- one end-state per tick, the chain
         accumulating to >=2 before the document-boundary reset. A short document
         collapses to a single tick / single end-state and never trains the

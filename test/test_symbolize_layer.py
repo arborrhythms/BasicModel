@@ -145,7 +145,7 @@ class TestSymbolizeLayerForward(unittest.TestCase):
         # can identify them.
         ps_idx = ws.insert_percept(b"hello")
         ps_row = _ps_row_from_pos(ws,ps_idx)
-        ws_idx = ws.insert_symbol()
+        ws_idx = ws.insert_whole()
         ws_row = _ws_row_from_pos(ws,ws_idx)
         # Pin the codebook rows to deterministic vectors so nearest-
         # match is unambiguous.
@@ -192,7 +192,7 @@ class TestSymbolizeLayerForward(unittest.TestCase):
         ps_store = ps_space.percept_store
         ps_idx = ws.insert_percept(b"world")
         ps_row = _ps_row_from_pos(ws,ps_idx)
-        ws_idx = ws.insert_symbol()
+        ws_idx = ws.insert_whole()
         ws_row = _ws_row_from_pos(ws,ws_idx)
         D = int(ws.nDim)
         ps_vec = torch.zeros(D)
@@ -247,7 +247,7 @@ class TestSymbolizeLayerReverse(unittest.TestCase):
         ps_store = ps_space.percept_store
         ps_idx = ws.insert_percept(b"alpha")
         ps_row = _ps_row_from_pos(ws,ps_idx)
-        ws_idx = ws.insert_symbol()
+        ws_idx = ws.insert_whole()
         ws_row = _ws_row_from_pos(ws,ws_idx)
         D = int(ws.nDim)
         ps_vec = torch.zeros(D)
@@ -307,7 +307,7 @@ class TestSymbolizeLayerIdempotency(unittest.TestCase):
         ps_store = ps_space.percept_store
         ps_idx = ws.insert_percept(b"gamma")
         ps_row = _ps_row_from_pos(ws,ps_idx)
-        ws_idx = ws.insert_symbol()
+        ws_idx = ws.insert_whole()
         ws_row = _ws_row_from_pos(ws,ws_idx)
         D = int(ws.nDim)
         ps_vec = torch.zeros(D)
@@ -511,7 +511,7 @@ class TestSymbolizeLayerNumericalGuard(unittest.TestCase):
         # Ensure PS / SS have at least one row so the nearest-match
         # search isn't a no-op.
         ws.insert_percept(b"nan_guard_left")
-        ws.insert_symbol()
+        ws.insert_whole()
         meta = SymbolizeLayer(
             wholeSpace=ws,
             perceptualSpace=ps_space,
@@ -529,7 +529,7 @@ class TestSymbolizeLayerNumericalGuard(unittest.TestCase):
         ps_space = m.perceptualSpace
         D = int(ws.nDim)
         ws.insert_percept(b"inf_guard_right")
-        ws.insert_symbol()
+        ws.insert_whole()
         meta = SymbolizeLayer(
             wholeSpace=ws,
             perceptualSpace=ps_space,
@@ -602,7 +602,7 @@ class TestSymbolizeLayerComposeGenerate(unittest.TestCase):
         ps_store = ps_space.percept_store
         ps_idx = ws.insert_percept(b"compose_word")
         ps_row = _ps_row_from_pos(ws,ps_idx)
-        ws_idx = ws.insert_symbol()
+        ws_idx = ws.insert_whole()
         ws_row = _ws_row_from_pos(ws,ws_idx)
         D = int(ws.nDim)
         a = torch.zeros(D)
@@ -718,7 +718,7 @@ class TestSymbolizeLayerGradient(unittest.TestCase):
         # Pre-seed PS + SS so nearest-match resolves deterministically.
         ps_idx = ws.insert_percept(b"grad_word")
         ps_row = _ps_row_from_pos(ws,ps_idx)
-        ws_idx = ws.insert_symbol()
+        ws_idx = ws.insert_whole()
         ws_row = _ws_row_from_pos(ws,ws_idx)
         D = int(ws.nDim)
         ps_vec = torch.zeros(D)
@@ -738,7 +738,7 @@ class TestSymbolizeLayerGradient(unittest.TestCase):
         right = ws_vec.clone().detach()
         meta_vec = meta.forward(left, right)
         # Capture the SS-side trainable Parameter AFTER forward:
-        # ``insert_meta`` -> ``insert_symbol`` -> ``grow_to`` may
+        # ``insert_meta`` -> ``insert_whole`` -> ``grow_to`` may
         # replace ``subspace.what.W`` with a new Parameter, so the
         # gradient must be read off the post-forward identity.
         ws_param = ws.subspace.what.W
@@ -793,7 +793,7 @@ class TestSymbolizeLayerGradient(unittest.TestCase):
         ps_store = ps_space.percept_store
         ps_idx = ws.insert_percept(b"detach_word")
         ps_row = _ps_row_from_pos(ws,ps_idx)
-        ws_idx = ws.insert_symbol()
+        ws_idx = ws.insert_whole()
         ws_row = _ws_row_from_pos(ws,ws_idx)
         D = int(ws.nDim)
         ps_vec = torch.zeros(D)
@@ -840,7 +840,7 @@ class TestSymbolizeLayerGradient(unittest.TestCase):
         ps_store = ps_space.percept_store
         ps_idx = ws.insert_percept(b"existing_grad")
         ps_row = _ps_row_from_pos(ws,ps_idx)
-        ws_idx = ws.insert_symbol()
+        ws_idx = ws.insert_whole()
         ws_row = _ws_row_from_pos(ws,ws_idx)
         D = int(ws.nDim)
         ps_vec = torch.zeros(D)
@@ -1000,7 +1000,7 @@ class TestSymbolizeLayerSignalRouterDispatch(unittest.TestCase):
         # match cleanly and register a META.
         ps_idx = ws.insert_percept(b"dispatch_word")
         ps_row = _ps_row_from_pos(ws,ps_idx)
-        ws_idx = ws.insert_symbol()
+        ws_idx = ws.insert_whole()
         ws_row = _ws_row_from_pos(ws,ws_idx)
         D = int(ws.nDim)
         ps_vec = torch.zeros(D)
@@ -1064,7 +1064,7 @@ class TestSymbolizeLayerSignalRouterDispatch(unittest.TestCase):
         ps_store = ps_space.percept_store
         ps_idx = ws.insert_percept(b"adapter_word")
         ps_row = _ps_row_from_pos(ws,ps_idx)
-        ws_idx = ws.insert_symbol()
+        ws_idx = ws.insert_whole()
         ws_row = _ws_row_from_pos(ws,ws_idx)
         D = int(ws.nDim)
         ps_vec = torch.zeros(D)

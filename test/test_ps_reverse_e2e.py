@@ -2,7 +2,7 @@
 
 doc/plans/2026-05-30-subsymbolic-analyzer-terminal-emitter.md ("Reverse PS
 Synthesis" + Execution-manifest E2E): reverse replays the surface from
-ObjectSubSpace route metadata; the end-to-end round-trip is
+IdeaSubSpace route metadata; the end-to-end round-trip is
 analyze -> [op, X, Y] -> execute -> reverse -> emit -> surface, with the
 marker word lists deleted (the connective is a LEARNED marker, not a
 grammar token).
@@ -23,12 +23,12 @@ import torch
 
 
 def _oss(cap=64, dim=4):
-    from Language import ObjectSubSpace
-    return ObjectSubSpace(percept_dim=dim, capacity=cap, batch=1)
+    from Language import IdeaSubSpace
+    return IdeaSubSpace(percept_dim=dim, capacity=cap, batch=1)
 
 
 def test_meronymic_reverse_replays_surface():
-    """ObjectSubSpace route metadata (the analysis record) reconstructs the
+    """IdeaSubSpace route metadata (the analysis record) reconstructs the
     observed surface exactly."""
     from perceptual_analyzer import MeronymicAnalyzer
     surface = "the book has a cover"

@@ -1,6 +1,6 @@
 """End-to-end: the shared untyped square concept store (v3).
 
-Population (at mint) writes untyped edges onto ONE shared AttentionLayer;
+Population (at mint) writes untyped edges onto ONE shared ConceptualAttentionLayer;
 the forward (gated on symbolicOrder>0 + parallel) runs the iterated wave
 encoder + dictionary decoder. Byte-identical when off.
 """

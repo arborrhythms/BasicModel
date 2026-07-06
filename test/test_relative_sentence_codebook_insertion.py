@@ -144,9 +144,9 @@ class TestInsertRelationPrimitive(unittest.TestCase):
         m = _make_radix_model()
         ws = m.wholeSpace
         D = int(ws.nDim)
-        pred_pos = ws.insert_symbol(init_vec=torch.zeros(D))
-        idea1_pos = ws.insert_symbol(init_vec=torch.zeros(D))
-        idea2_pos = ws.insert_symbol(init_vec=torch.zeros(D))
+        pred_pos = ws.insert_whole(init_vec=torch.zeros(D))
+        idea1_pos = ws.insert_whole(init_vec=torch.zeros(D))
+        idea2_pos = ws.insert_whole(init_vec=torch.zeros(D))
         trust = (0.5, 0.1, 0.3, 0.1)
         ret = ws.insert_relation(pred_pos, idea1_pos, idea2_pos,
                                  trust=trust)
@@ -168,9 +168,9 @@ class TestInsertRelationPrimitive(unittest.TestCase):
         m = _make_radix_model()
         ws = m.wholeSpace
         D = int(ws.nDim)
-        pred_pos = ws.insert_symbol(init_vec=torch.zeros(D))
-        idea1_pos = ws.insert_symbol(init_vec=torch.zeros(D))
-        idea2_pos = ws.insert_symbol(init_vec=torch.zeros(D))
+        pred_pos = ws.insert_whole(init_vec=torch.zeros(D))
+        idea1_pos = ws.insert_whole(init_vec=torch.zeros(D))
+        idea2_pos = ws.insert_whole(init_vec=torch.zeros(D))
         ws.insert_relation(pred_pos, idea1_pos, idea2_pos,
                            trust=(1, 0, 0, 0))
         # Re-insert the same triple: children must not duplicate; trust
@@ -187,7 +187,7 @@ class TestInsertRelationPrimitive(unittest.TestCase):
         m = _make_radix_model()
         ws = m.wholeSpace
         D = int(ws.nDim)
-        good = ws.insert_symbol(init_vec=torch.zeros(D))
+        good = ws.insert_whole(init_vec=torch.zeros(D))
         with self.assertRaises(ValueError):
             ws.insert_relation(0, good, good)
         with self.assertRaises(ValueError):
@@ -202,7 +202,7 @@ class TestInsertMetaTrustKwarg(unittest.TestCase):
         m = _make_radix_model()
         ws = m.wholeSpace
         pid = ws.insert_percept(b"no_trust")
-        sid = ws.insert_symbol()
+        sid = ws.insert_whole()
         meta = ws.insert_meta(pid, sid)
         # No trust kwarg -> nothing recorded (autobind path is byte-equal).
         self.assertNotIn(meta, ws.meta_trust)
@@ -211,7 +211,7 @@ class TestInsertMetaTrustKwarg(unittest.TestCase):
         m = _make_radix_model()
         ws = m.wholeSpace
         pid = ws.insert_percept(b"with_trust")
-        sid = ws.insert_symbol()
+        sid = ws.insert_whole()
         meta = ws.insert_meta(pid, sid, trust=(2, 0, 1, 1))
         stored = ws.meta_trust.get(meta)
         self.assertIsNotNone(stored)
@@ -223,7 +223,7 @@ class TestInsertMetaTrustKwarg(unittest.TestCase):
         m = _make_radix_model()
         ws = m.wholeSpace
         pid = ws.insert_percept(b"persist_trust")
-        sid = ws.insert_symbol()
+        sid = ws.insert_whole()
         meta = ws.insert_meta(pid, sid, trust=(1, 0, 0, 0))
         extras = ws.vocab_extras()
         self.assertIn("meta_trust", extras)

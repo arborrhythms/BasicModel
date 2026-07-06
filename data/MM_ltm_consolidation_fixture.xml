@@ -77,7 +77,7 @@
       <grammar>
         <S>S = not(S)</S>
         <S>S = intersection(S, S)</S>
-        <S>S = join(S, S)</S>
+        <S>S = union(S, S)</S>
       </grammar>
     </language>
   </SymbolSpace>

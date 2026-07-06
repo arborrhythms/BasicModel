@@ -145,5 +145,5 @@ def test_operations_are_distinct_from_meaning_symbols():
     assert ws.operation_vector(op_name) is not None
     assert "op" not in set(ws._pos_kind.values())
     # The symbol codebook still allocates meaning-bearing "ws" rows.
-    sym_pos = ws.insert_symbol()
+    sym_pos = ws.insert_whole()
     assert ws._pos_kind.get(sym_pos) == "ws"

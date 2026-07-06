@@ -37,7 +37,7 @@ functionality folded into `bin/Layers.py` and `bin/Language.py`.)
 >   the operator says *how* meanings combine, contributing none of its own.
 >   The rule-id stays in `.where` (its presence marks a slot as a *computed*
 >   idea, which is by definition not a codebook vector).
-> - **ObjectSubSpace** (`bin/Language.py`) -- the PS-meronymic carrier
+> - **IdeaSubSpace** (`bin/Language.py`) -- the PS-meronymic carrier
 >   analogue of `SymbolSubSpace`: span buffers + parent/child links + route
 >   ids/scores + the marker-route replay fields
 >   (`_marker_ps_id`/`_marker_span`/`_order_bit`/`_marker_position`).
@@ -46,7 +46,7 @@ functionality folded into `bin/Layers.py` and `bin/Language.py`.)
 >   angle decodes the span center, the magnitude the span length.
 >   `MeronymicAnalyzer` analyzes a surface into terminals (compatibility
 >   mode reuses the word/byte tokenizer as the `boundary` op, so it matches
->   the current lexer), writes durable spans to an `ObjectSubSpace`, exposes
+>   the current lexer), writes durable spans to an `IdeaSubSpace`, exposes
 >   a fixed-capacity terminal-stream view, and reverse-synthesizes surface
 >   (`synthesize` exact replay; `synthesize_tree` from an operator-prefixed
 >   tree with `emit`). `soft_operator_compose` + `WholeSpace

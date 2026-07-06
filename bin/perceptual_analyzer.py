@@ -8,13 +8,13 @@ meronymic direction:
   * :class:`EndpointSumWhere` -- the invertible endpoint-sum span key
     ``where = phase(start) + phase(end)`` ("Where Encoding And Spans").
   * :class:`MeronymicAnalyzer` -- analyzes a surface whole into perceptual
-    parts (terminals) and writes durable span state to an ``ObjectSubSpace``
+    parts (terminals) and writes durable span state to an ``IdeaSubSpace``
     ("Forward PS Analysis"); reverse-synthesizes surface from route metadata
     ("Reverse PS Synthesis"). The first analyzer mode is a *compatibility
     mode* (stop / whitespace ``boundary`` / ``uniform`` + byte fallback)
     that reproduces the current word-lexer terminal sequence.
 
-Durable analysis state lives on ``ObjectSubSpace`` (bin/Language.py); the
+Durable analysis state lives on ``IdeaSubSpace`` (bin/Language.py); the
 trainable routing modules live on the LanguageLayer-like router. This
 module is the orchestration + PS-meronymic-operation layer between them.
 """
@@ -230,7 +230,7 @@ class MeronymicAnalyzer:
     per span: a known percept is accepted whole (``stop``); an unknown word
     falls back to byte terminals; with no percept store every word is one
     ``boundary`` terminal. Durable spans are written to an
-    :class:`ObjectSubSpace`; :meth:`terminal_view` exposes the fixed-
+    :class:`IdeaSubSpace`; :meth:`terminal_view` exposes the fixed-
     capacity terminal stream (``what`` / ``where`` / ``ids`` / ``mask`` /
     ``len``) the PS-to-WS binding consumes. ``.where`` is the endpoint-sum
     span key.
@@ -240,7 +240,7 @@ class MeronymicAnalyzer:
     RadixLayer; standalone, byte fallback covers everything.
     """
 
-    # Meronymic route ids written to ObjectSubSpace._route_id.
+    # Meronymic route ids written to IdeaSubSpace._route_id.
     STOP, BOUNDARY, UNIFORM, BYTE = 0, 1, 2, 3
 
     def __init__(self, percept_lookup=None, namespace=256, where_enc=None):
@@ -260,7 +260,7 @@ class MeronymicAnalyzer:
 
     def _emit(self, oss, b, text, start, end, vec, part_id, route_id, record,
               raw=None):
-        """Push one terminal span to the ObjectSubSpace with endpoint-sum
+        """Push one terminal span to the IdeaSubSpace with endpoint-sum
         ``.where`` and append its host-side replay record. When ``raw`` (the
         terminal's exact source bytes) is given it is stored so reverse
         synthesis can reconstruct the surface byte-exactly (no mojibake for a

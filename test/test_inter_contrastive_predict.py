@@ -2,7 +2,7 @@
 trains on MM_sequence_predict.xml. Guards the load-bearing precondition found
 2026-06-23: the discourse end-state chain only spans sentences when (a) the BYTE
 cursor keeps the document in one stream and (b) each document EXCEEDS the byte
-slab width (InputSpace nObj ~1024) so it is walked over multiple ticks (one
+slab width (InputSpace nIdeas ~1024) so it is walked over multiple ticks (one
 end-state per tick). A short document collapses to one tick / one end-state and
 the next-idea loss never fires.
 """

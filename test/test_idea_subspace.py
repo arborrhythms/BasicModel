@@ -1,4 +1,4 @@
-"""ObjectSubSpace -- durable PartSpace meronymic-analysis carrier.
+"""IdeaSubSpace -- durable PartSpace meronymic-analysis carrier.
 
 doc/plans/2026-05-30-subsymbolic-analyzer-terminal-emitter.md ("Carrier
 State" + "Absorb/Emit/Swap codification"): the PS analogue of SymbolSubSpace.
@@ -23,8 +23,8 @@ import torch
 
 
 def _oss(cap=4, batch=1, dim=4):
-    from Language import ObjectSubSpace
-    return ObjectSubSpace(percept_dim=dim, capacity=cap, batch=batch)
+    from Language import IdeaSubSpace
+    return IdeaSubSpace(percept_dim=dim, capacity=cap, batch=batch)
 
 
 def test_push_keeps_parallel_buffers_in_sync():

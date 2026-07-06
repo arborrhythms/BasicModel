@@ -895,7 +895,7 @@ class TestExistingConfigsSatisfyFlatSlab(unittest.TestCase):
 
 
 class TestStage8MetaTaxonomyStructural(unittest.TestCase):
-    """Stage 8 structural assertions over (insert_percept, insert_symbol,
+    """Stage 8 structural assertions over (insert_percept, insert_whole,
     insert_meta) on the radix-mode model.
 
     The legacy ``insert_paired_word`` tests above continue to assert the
@@ -916,7 +916,7 @@ class TestStage8MetaTaxonomyStructural(unittest.TestCase):
         # with chunking=radix AND SS codebook=quantize) so runtime
         # experiments on MM_xor.xml don't break the META taxonomy
         # tests, which inherently require an SS Codebook for
-        # ``insert_symbol`` to allocate rows.
+        # ``insert_whole`` to allocate rows.
         cfg = os.path.join(_DATA_DIR, "MM_xor_fixture.xml")
         _init_config(path=cfg, defaults_path=_DEFAULTS)
         _Language.TheGrammar._configured = False
@@ -941,13 +941,13 @@ class TestStage8MetaTaxonomyStructural(unittest.TestCase):
         ps_store = self.model.perceptualSpace.percept_store
         # Insert PS-side bytes + SS-side meaning row; bind via META.
         ps_pos = ws.insert_percept(b"structural_meta")
-        ws_pos = ws.insert_symbol()
+        ws_pos = ws.insert_whole()
         meta_pos = ws.insert_meta(ps_pos, ws_pos)
         # All three are positive positions; kinds are tagged accordingly.
         self.assertGreater(ps_pos, 0,
                            "insert_percept must return a positive position")
         self.assertGreater(ws_pos, 0,
-                           "insert_symbol must return a positive position")
+                           "insert_whole must return a positive position")
         self.assertGreater(meta_pos, 0,
                            "insert_meta must return a positive position")
         self.assertEqual(ws._pos_kind.get(ps_pos), "ps")
@@ -987,7 +987,7 @@ class TestStage8MetaTaxonomyStructural(unittest.TestCase):
         # fused vec also distinct from the pinned PS row.
         sym_init = torch.zeros(D)
         sym_init[1] = 1.0
-        ws_pos = ws.insert_symbol(init_vec=sym_init)
+        ws_pos = ws.insert_whole(init_vec=sym_init)
         fused_init = torch.zeros(D)
         fused_init[2] = 1.0
         meta_pos = ws.insert_meta(ps_pos, ws_pos, fused_vec=fused_init)

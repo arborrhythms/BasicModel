@@ -1013,6 +1013,11 @@ class BaseModel(Mereology, nn.Module):
         self.loss.embedding_scale = float(_t("embeddingScale") or 0.1)
         self.loss.conceptual_similarity_scale = float(
             _t("conceptualSimilarityScale", 0.0) or 0.0)
+        # <definitionSparsityScale> (snap contract sec 5, 2026-07-06): lambda
+        # for the rank-ordered soft-L0 that keeps concept definitions compact.
+        # 0.0 (default) disables the penalty -- byte-identical.
+        self.loss.definition_sparsity_scale = float(
+            _t("definitionSparsityScale", 0.0) or 0.0)
         if _emb_legacy is not None:
             _emb_legacy.optimize_embedding = self.optimize_embedding
             object.__setattr__(_emb_legacy, "_model", self)
@@ -4496,6 +4501,17 @@ class BasicModel(BaseModel):
                         "conceptual_sbow", csbow, weight=_cscale,
                         space="ConceptualSpace", category="embedding",
                     )
+            # Rank-ordered soft-L0 that keeps concept definitions compact
+            # (snap contract sec 5). Default lambda 0.0 -- byte-identical off.
+            _dss = float(getattr(
+                self.loss, "definition_sparsity_scale", 0.0) or 0.0)
+            if train and _dss > 0.0 and self.conceptualSpace is not None:
+                defsp = self.conceptualSpace.definition_sparsity_loss(lam=_dss)
+                if defsp is not None:
+                    totalLoss = totalLoss + defsp
+                    TheError.add(
+                        "definition_sparsity", defsp, weight=_dss,
+                        space="ConceptualSpace", category="reg")
             if lossRev is not None:
                 totalLoss = totalLoss + (
                     float(getattr(self.loss, 'reconstruction_scale', 0.0)
@@ -5240,7 +5256,7 @@ class BasicModel(BaseModel):
         #   * **Byte cursor** (AR text byte): each row's document is
         #     walked one ``slab_bytes``-wide tick at a time;
         #     ``hard_eos[b]`` flips True when row b crosses a doc
-        #     boundary. Sized to ``nObj - 1`` so the lex's reserved
+        #     boundary. Sized to ``nIdeas - 1`` so the lex's reserved
         #     EOS-sentinel slot stays byte-faithful.
         #   * **Trial cursor** (numeric / non-AR / non-byte): each tick
         #     yields one batch of trials with ``hard_eos = [True] * B``.
@@ -5257,15 +5273,15 @@ class BasicModel(BaseModel):
         use_byte_cursor = (text_input and byte_lexer)
 
         if use_byte_cursor:
-            # InputSpace.outputShape[0] (= ``nObj``) is the byte-buffer
+            # InputSpace.outputShape[0] (= ``nIdeas``) is the byte-buffer
             # width the lex emits. Under the §8g/§EOS-removal change
             # the lex no longer reserves a slot for an EOS sentinel
             # (the slot held a null-embedding indistinguishable from
             # the codebook's null padding -- no reader consumed it as
-            # a stop signal). Sizing the slab to ``nObj`` keeps the
+            # a stop signal). Sizing the slab to ``nIdeas`` keeps the
             # cursor byte-faithful through the lex: every byte emitted
             # ends up in a real token, and the assert in
-            # ``InputSpace._lex_batch`` (``n_tokens <= nObj``) holds
+            # ``InputSpace._lex_batch`` (``n_tokens <= nIdeas``) holds
             # exactly under the bytes-mode parse fix that produces one
             # token per input byte.
             slab_bytes = max(1, int(self.inputSpace.outputShape[0]))
@@ -7367,7 +7383,7 @@ class BasicModel(BaseModel):
         ``word_slice`` is the ``[B,1,D]`` muxed per-word slice the
         InputSpace cursor returned (``_ar_embedded[:, p:p+1, :]``);
         ``cursor_pos`` is its per-word slot index ``p`` (the same
-        ``[B,nObj,M]`` per-word slot axis ``_embed_bpe``'s
+        ``[B,nIdeas,M]`` per-word slot axis ``_embed_bpe``'s
         ``set_forward_content`` writes the per-word frozen lexicon row
         onto -- ``PartSpace.subspace._index[:,p,0]`` (==
         ``per_word_first``, the byte-derived O(1) frozen ``key_to_index``
@@ -7398,9 +7414,9 @@ class BasicModel(BaseModel):
         # The per-word frozen lexicon row (== the MPHF index for the
         # in-vocab percept) is written by ``_embed_bpe`` /
         # ``set_forward_content`` onto the PERCEPTUAL space's subspace
-        # ``_index`` (``[B,nObj,M]``; ``[...,0]`` == ``per_word_first``,
+        # ``_index`` (``[B,nIdeas,M]``; ``[...,0]`` == ``per_word_first``,
         # the byte-derived frozen ``key_to_index`` row). It shares the
-        # ``_ar_embedded`` per-word cursor slot axis (both ``[B,nObj,*]``).
+        # ``_ar_embedded`` per-word cursor slot axis (both ``[B,nIdeas,*]``).
         sub = getattr(ps, "subspace", None)
         active = getattr(sub, "_index", None) if sub is not None else None
         if (active is None or active.dim() != 3
