@@ -35,6 +35,30 @@ Consequences for prose and code:
 
 ## 1. What a concept is (the ladder)
 
+**Two axes of definition (Alec, 2026-07-06).** A concept is defined along
+two orthogonal relations, at two epistemic levels:
+
+- **Mereologically** — a set of **parts and wholes** *bounds* a concept:
+  the interval between the parts it contains (from below) and the wholes
+  that cover it (from above). This is the PERCEPT layer — one-sided /
+  positive (a part is present or absent; there is no *negative* part) — and
+  it GROUNDS the concept in percepts.
+- **Taxonomically** — a set of **concepts**, by their **presence and
+  absence ($\pm$)**, defines *subsequent* concepts: inclusion ($+$) and
+  exclusion ($-$) of already-defined concepts compose new ones. This is the
+  CONCEPT layer — two-sided / signed — and it is where the signed algebra
+  (and the signed snap of §2) lives.
+
+This is the load-bearing distinction, because it says WHERE sign belongs.
+Mereology is positive (percept presence; the `[0,1]` cube of
+[percept-hypercube.md](../percept-hypercube.md) §4 — absence is a
+non-informative observation, not a negation). The minus sign is a *taxonomic*
+operation — one concept excluding another — never a negative part. So the
+signed-coefficient snap (§2) is a property of the taxonomic layer; the
+mereological bounding stays on the `[0,1]` presence cube. The ladder below
+is these two axes stacked: 1–3 are mereological (grounding), 4–5 taxonomic
+(composition).
+
 1. **Order 0 — cells.** A percept prototype row plus its $\sigma/\pi$-local
    generalization is a *cell*: a contiguous local region around the
    prototype (parts in PS, wholes in WS).
@@ -45,18 +69,21 @@ Consequences for prose and code:
    (`abstraction_order(row)` = count of non-NEITHER folds) — its LIVE
    stamping (todo: "make abstraction order canonical") is a **dependency**
    of this design, not a neighbor.
-3. **A 0th-order concept is an interval.** A concept is *bounded by parts
-   and wholes*: the region between what it includes (parts, from below)
-   and what covers it (wholes, from above) —
+3. **A 0th-order concept is a mereological interval.** A concept is
+   *bounded by parts and wholes*: the region between what it includes
+   (parts, from below) and what covers it (wholes, from above) —
    $[\,\bigsqcup \text{maximal parts},\ \bigsqcap \text{minimal wholes}\,]$
    in the mereological order. (The Galois/FCA reading: extent shrinks as
-   intent grows; the two frontiers are one antitone pair.)
-4. **Higher concepts are algebraic.** Concepts defined by the inclusion
-   AND exclusion (negation) of other concepts leave mereology — which has
-   no complement — for a signed algebra over **symbols**, computed by the
-   $\sigma$ layer plus the negation ops the concept layer owns. The result
-   is a (potentially) complex region in CS: a concept that includes some
-   things and excludes others.
+   intent grows; the two frontiers are one antitone pair.) This is the
+   **mereological** axis — positive, grounding.
+4. **Higher concepts are taxonomic (algebraic).** Concepts defined by the
+   inclusion ($+$) AND exclusion ($-$) of *other concepts* leave mereology
+   — which has no complement — for a signed algebra over **symbols**,
+   computed by the $\sigma$ layer plus the negation ops the concept layer
+   owns. The result is a (potentially) complex region in CS: a concept that
+   includes some things and excludes others. This is the **taxonomic** axis
+   — signed; the $\pm$ presence/absence of prior concepts is exactly the
+   signed coefficient the snap of §2 must carry.
 5. **An idea is a signed sparse combination.** An idea (an STM entry; the
    reduced sentence root $S$) is represented over concepts/symbols in
    $[-1,+1]$ where **0 = don't-care** (outside the support), $+$ = include,
