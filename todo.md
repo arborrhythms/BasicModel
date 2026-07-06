@@ -16,57 +16,30 @@ OPEN QUESTIONS / FUTURE WORK (Alec's calls + next builds):
   5-vs-6-byte tiles. Options: more where-band training pressure / longer
   budgets / accept scaffold-fed. Recorded in the encoding plan's Gate-B
   notes. (Mechanism is proven correct via synthetic-stamp tests.)
+  XFAILED 2026-07-06 (test_mm20m_xor_blind_roundtrip, strict=False) pending
+  the knob call.
 
-* [NEXT BUILD — Serial S2] Operand PROVENANCE for Method-1 exactness: stash
-  the pre-reduce STM snapshot / per-step operand pairs on the forward
-  (the reducer already parks marginal_slab [B,2,D] = the last step's
-  operand pair on _stm_last_reduce_routing; multi-step needs per-step
-  accumulation, batch-scoped like _stm_single_S). Walk recorded rules
-  backward popping stored operands; dispatch real inverses (lower);
-  then Task 3 NULL-word pathway (emit side; the additive chunk identity is
-  the compose-identity), Task 4 Method-2 free-derivation bar, Task 5 docs.
-
-* [POSSIBLE — Alec's call] Signed-domain concept storage (the deferred
-  percept-cube signed-mixing decision): keep [0,1] presence as the symbolic
-  READ (containment/truth), store+transport the ADDITIVE domain underneath
-  where the additive chunk peel is exact — no nearest-neighbor guessing
-  against a bunched cone. Couples to the blind-bar content path AND the
-  serial peel decode (sigma.reverse's partition-blind split is the same
-  missing-residual defect).
+* [ALEC — DESIGN + BUILD, separate thread] Concepts formalization + the CS
+  snap contract + the signed/fidelity program (subsumes the old
+  "Signed-domain concept storage" possibility, now fully designed):
+  doc/plans/2026-07-06-concepts-formalization-and-snap-contract-design.md.
+  Single consolidated plan — framework (epistemic ladder from The Whole
+  Part; concept = region bounded mereologically by parts/wholes; symbol =
+  signed presence scalar; sparse-over-symbols held compact by a growth-
+  preventing regularizer; two-sided evidence), the signed-snap reconstruction
+  contract, and the execution plan (terminology rename pass; WS initScale;
+  signed peel; symbol sparsity+regularizer; order-k unfold; frontier). Gated
+  on Alec's calls in §5 (regularizer form + dead-zone ε).
 
 ============================================================================
 
-* Execute doc/plans/2026-07-04-serial-derivation-reconstruction-execution.md.
-  OVERNIGHT STATE (2026-07-04 night, notes in the plan): Task 0 DONE
-  (sub-agent survey: decode consumed the TENSOR arm — _reverse_from_S's
-  thunk was OVERWRITTEN; recorded rules {isEqual x3, lower, exist}; ZERO
-  per-op reverses fire on the router path; unreduce = dead code there).
-  Task 1 DONE (stub sanction revoked everywhere: raise_no_inverse
-  inventory errors; unreduce + SyntacticLayer.reverse + 9 per-op stubs;
-  exist invertible=True — identity forward; 2-D codebook guards on the
-  four recommenders; 6 contract tests + 11 consumers adapted; suite
-  3013/0). Task 2 ROUTING DONE, BAR RED: serial eval decode now consumes
-  the Method-1 replay ('hello world'→'world' — the single-S never
-  EXPANDS; rule names are stored but operand payloads are NOT);
-  test_mm20m_grammar_derivation_roundtrip added (RUN_SLOW, RED).
-  ⇒ NEXT (the real S2 build): operand PROVENANCE — stash the pre-reduce
-  STM snapshot / per-step operand pairs on the forward; walk recorded
-  rules backward popping stored operands; dispatch real inverses
-  (lower); NULL-word pads the expansion (Task 3 emit side). GATE S1
-  verdicts RESOLVED (Alec 2026-07-05): the relation family (isEqual,
-  isPart, related) are QUERIES — tools, no defined syntactic operation —
-  relocated to complete.grammar's <Queries> (equal/part forms); the
-  OPERATIONAL INTEGRATION of query tools is Alec's open design question.
-  exist KEPT its compose form (structural absolute-truth start; follows
-  the family only if the integration design says so). default/shamatha
-  keep relation parse rules (generalizing broke the MM_grammar XOR bar).
-  S2 worklist now: lower (real inverse) + exist (identity) + substrate
-  folds — no un-invertible rules recorded. NP-R-NP sentences have no
-  grammar producer until the integration design; 4 relative-sentence
-  integration tests skip at the finder (flagged). THEN Task 3 (NULL-word + padding
-  fork), Task 4 (Method-2 bar), Task 5 (docs + suite). COUPLING: the
-  additive chunk pair is the residual substrate for the free
-  (Method-2) case; NULL-word = the additive compose-identity.
+* Serial-derivation reconstruction (doc/plans/2026-07-04-serial-derivation-
+  reconstruction-*.md): Tasks 0-2 + the S2 operand-provenance build DONE
+  (2026-07-06, Method-1 leaves replay — test_mm20m_grammar_derivation_
+  roundtrip GREEN). REMAINING from that plan: Task 3 (NULL-word pathway),
+  Task 4 (Method-2 free-derivation bar — its front half is now the concepts
+  snap-contract plan above), Task 5 (docs + suite). Query-tool operational
+  integration is the [ALEC — DESIGN] item above.
 
 * .where recovery is still a placeholder in [bin/recon_bench.py (line 206)](/Users/arogers/Library/Mobile Documents/com~apple~CloudDocs/bits/projects/WikiOracle/basicmodel/bin/recon_bench.py:206).
 

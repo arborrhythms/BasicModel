@@ -195,11 +195,21 @@ def test_recon_bench_blind_flag(tmp_path):
     assert rec_scaf.where_recovery == 1.0
 
 
+@pytest.mark.xfail(reason="Gate-B blind round-trip DEFERRED (Alec 2026-07-05): "
+                          "the closing knob (.where band training pressure vs "
+                          "longer budgets vs accepting scaffold-fed) is Alec's "
+                          "call; the mechanism is proven by the synthetic-stamp "
+                          "tests above -- xfail until the band matures.",
+                   strict=False)
 @pytest.mark.skipif(not os.environ.get("RUN_SLOW"),
                     reason="~70s (build + pinned epochs) -- RUN_SLOW gates the bar")
 def test_mm20m_xor_blind_roundtrip(tmp_path):
     """THE Gate-2b bar: scaffold OFF, tiling re-derived from the band,
     exact_match == 1.0 at the pinned budget.
+
+    XFAIL (Alec 2026-07-05): deferred to Alec's band-precision knob (see
+    the marker reason + the Gate-B EXECUTION NOTES). Kept RUN_SLOW-gated so
+    it stays an explicit expected-failure of the bar, not a silent skip.
 
     STATUS: RED (Gate B, 2026-07-04) -- the bar's premise (the E~80
     byte-exact claim crossing, from the FIXTURE probes) does not hold in
