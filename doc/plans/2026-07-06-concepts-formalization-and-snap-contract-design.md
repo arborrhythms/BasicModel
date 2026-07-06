@@ -289,9 +289,10 @@ names not behavior).
   find/replace would re-conflate, so read each def.
 - The "concepts/symbols" conflation prose in `percept-hypercube.md` and the
   WS "symbol/truth prototypes" line in `todo.md` → the §0 ladder terms.
-- `nObj` / `ObjectSubSpace` "object" overload (per-word **slots**, not
-  referents): ~159 sites — needs Alec's replacement name (`nSlots`?
-  `nWords`?); its own commit. HOLD for that name.
+- `nObj` → `nIdeas` (Alec, 2026-07-06 — each per-word slot holds an
+  **idea**, not a referent object): ~159 sites; its own commit + full-suite
+  gate. `ObjectSubSpace` and the rest of the "object = slot" naming follow
+  the same idea-slot rename.
 - Verify: `make test` green (byte-identical behavior — pure rename).
 
 **T2 — WS `<initScale>` + measurement** (no design call; the small-init
@@ -370,10 +371,10 @@ Still open:
 2. **Dead-zone $\varepsilon$**: fixed constant, per-space, or learned — the
    threshold separating support from don't-care (§2.1), the same gate as (1)
    if the dead-zone route is chosen.
-3. **Rename sweep verdicts** per §0 — Alec asked to enforce the terminology
-   where possible (2026-07-06): `insert_symbol` → `insert_whole`; the
-   "concepts/symbols" doc phrasing; the `nObj` "object" overload. Verdict
-   per site pending, but the direction is GO where clear.
+3. **Rename sweep** per §0 — RESOLVED to GO (Alec, 2026-07-06):
+   `insert_symbol` → `insert_whole` (whole-inserting sites, disambiguated);
+   `nObj` → `nIdeas`; the "concepts/symbols" doc phrasing → §0 terms.
+   Executed in T1 (no open call remains here — it's a task, not a question).
 4. **Symbols and the `[0,1]` lexicon move**: orthogonal to everything above
    — does the percept-hood of symbols eventually argue the lexicon onto the
    presence cube, or does "sign is form content" keep the torus? Note the
