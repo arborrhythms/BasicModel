@@ -76,14 +76,20 @@ is these two axes stacked: 1–3 are mereological (grounding), 4–5 taxonomic
    in the mereological order. (The Galois/FCA reading: extent shrinks as
    intent grows; the two frontiers are one antitone pair.) This is the
    **mereological** axis — positive, grounding.
-4. **Higher concepts are taxonomic (algebraic).** Concepts defined by the
-   inclusion ($+$) AND exclusion ($-$) of *other concepts* leave mereology
-   — which has no complement — for a signed algebra over **symbols**,
-   computed by the $\sigma$ layer plus the negation ops the concept layer
-   owns. The result is a (potentially) complex region in CS: a concept that
-   includes some things and excludes others. This is the **taxonomic** axis
-   — signed; the $\pm$ presence/absence of prior concepts is exactly the
-   signed coefficient the snap of §2 must carry.
+4. **Higher concepts are taxonomic (algebraic), and SPARSELY defined over
+   symbols.** A concept is defined by the inclusion ($+$) AND exclusion
+   ($-$) of *other concepts*, addressed through their **symbols** — leaving
+   mereology (which has no complement) for a signed algebra, computed by the
+   $\sigma$ layer plus the negation ops the concept layer owns. The
+   definition is a **sparse** signed weight vector over symbols
+   (Alec, 2026-07-06): weights $\in [-1,+1]$ are the absence/presence of
+   each symbol in the definition, **0 = don't-care**, and only a few symbols
+   are non-zero. Crucially the pressure on this layer is a **growth-
+   preventing regularization** — a shrinkage penalty on the concept→symbol
+   weights that keeps each definition compact — NOT a force that grows it; a
+   concept should depend on as few symbols as suffice. This is the
+   **taxonomic** axis — signed; those $\pm$ weights are exactly the signed
+   coefficients the snap of §2 recovers.
 5. **Sign lives on the SYMBOLS; an idea is a sparse signed symbol vector.**
    (Alec, 2026-07-06 — resolves the "concepts vs symbols" carrier question.)
    A **symbol** is a scalar $\in [-1,+1]$ = the absence/presence of its
@@ -101,6 +107,17 @@ is these two axes stacked: 1–3 are mereological (grounding), 4–5 taxonomic
    symbol scalar expresses present / absent / don't-care = TRUE / FALSE /
    NEITHER; the BOTH (conflict) state stays on the 2-axis catuskoti carrier
    — the symbol is the *decided* view.
+6. **Evidence accumulates on two independent axes; the symbol is the
+   readout.** The symbol scalar $\in [-1,+1]$ is decided, but evidence FOR
+   and AGAINST a symbol accumulates INDEPENDENTLY (Alec, 2026-07-06) — e.g.
+   the luminosity / truth-set-consistency checks track positive and negative
+   support separately, so BOTH (high $+$ and high $-$ = conflict) and
+   NEITHER (low both) stay distinguishable rather than cancelling in a
+   single running sum. The decided symbol is $\mathrm{pos} - \mathrm{neg}$,
+   exactly the existing `act = pos.clamp(0,1) - neg.clamp(0,1)`
+   (Spaces.py:6335) over the catuskoti's independent T/F axes. So the
+   accumulator is two-sided; only the emitted symbol collapses to one
+   signed scalar.
 
 ## 2. The snap contract (decoding an idea)
 
@@ -256,8 +273,9 @@ order instead of saturating); peel-termination margin; terminal residual
 
 1. **Ramsification live stamping** (existing todo) — prerequisite for
    order-$k$ membership (§2.3).
-2. **Sparse signed concept codes** — the don't-care representation
-   (§2 prerequisites; where sparsity lands is Alec's call).
+2. **Sparse signed symbols + a growth-preventing regularizer** — sparsify
+   the symbol/activation layer (concepts untouched); the shrinkage penalty
+   on the concept→symbol weights is the representation call (§1.4, §5.1).
 3. **Signed snap + $\varepsilon$ dead-zone** — the contract itself
    (§2.1–2.2): un-discard sign on the peel (drop the clamps + carry the
    coefficient), NOT retire `cos.abs`.
@@ -270,24 +288,30 @@ order instead of saturating); peel-termination margin; terminal residual
 
 RESOLVED this session: the storage DOMAIN (small-magnitude init, not the
 unbounded dual-rays; Boolean limits kept — §3.2); WHERE sign lives
-(taxonomic, not mereological — §1); and the sign CARRIER (the **symbol**,
-a scalar $\in[-1,1]$ = signed presence of its concept — §1.5), which also
-collapses the old "signed-sparse atoms vs sparse activations" fork: sign
-and sparsity both ride the symbol/activation, concepts stay dense positive.
+(taxonomic, not mereological — §1); the sign CARRIER (the **symbol**, a
+scalar $\in[-1,1]$ = signed presence of its concept — §1.5), collapsing the
+old "signed-sparse atoms vs sparse activations" fork (sign + sparsity ride
+the symbol; concepts stay dense positive); the SPARSITY PRESSURE (§1.4 —
+concepts are sparsely defined over symbols, held compact by a
+**growth-preventing regularization** / shrinkage penalty on the
+concept→symbol weights, NOT a growth force — so this layer wants a
+regularizer, answering the former "what grows it"); and the ACCUMULATOR is
+two-sided (§1.6 — evidence tracks $+$/$-$ independently; only the emitted
+symbol collapses to one scalar).
 
 Still open:
 
-1. **Sparsity pressure**: what makes the symbol vector go sparse (most
-   $a = 0$)? An $L_0/L_1$-style prior on $a$, the $\varepsilon$ dead-zone as
-   a straight-through gate that self-sparsifies, or an explicit top-k? This
-   is now the ONLY representation-side design call gating the taxonomic
-   build.
+1. **Regularizer form** (§1.4): the concrete shrinkage on the concept→symbol
+   weights — $L_1$ / $L_0$ / a learned dead-zone gate / explicit top-k — and
+   its strength. This is now the only representation-side call gating the
+   taxonomic build.
 2. **Dead-zone $\varepsilon$**: fixed constant, per-space, or learned — the
-   threshold separating support from don't-care (§2.1), which doubles as
-   the sparsity gate if that route is chosen.
-3. **Rename sweep verdicts** per §0: `insert_symbol` → `insert_whole`?
-   the "concepts/symbols" doc phrasing; the `nObj` "object" overload.
-   (Low-risk, per-site.)
+   threshold separating support from don't-care (§2.1), the same gate as (1)
+   if the dead-zone route is chosen.
+3. **Rename sweep verdicts** per §0 — Alec asked to enforce the terminology
+   where possible (2026-07-06): `insert_symbol` → `insert_whole`; the
+   "concepts/symbols" doc phrasing; the `nObj` "object" overload. Verdict
+   per site pending, but the direction is GO where clear.
 4. **Symbols and the `[0,1]` lexicon move**: orthogonal to everything above
    — does the percept-hood of symbols eventually argue the lexicon onto the
    presence cube, or does "sign is form content" keep the torus? Note the
