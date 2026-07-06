@@ -1,8 +1,12 @@
-# Concepts — Formalization and the CS Snap Contract (Design)
+# Concepts — Formalization, the CS Snap Contract, and Execution Plan
 
-> **STATUS: DRAFT 2026-07-06 — awaiting Alec's review. NO implementation
-> before approval.** Framework: Alec (2026-07-05/06 session); terminology
-> from *The Whole Part* (Alec). Companions:
+> **STATUS: PLAN 2026-07-06 — the single consolidated plan for this line of
+> work (framework + snap contract + execution), to be executed in a separate
+> thread.** The mechanical/measurement tasks (§4 T1 terminology rename, T2 WS
+> initScale) are ready now; the taxonomic-build tasks (§4 T3+) are gated on
+> Alec's two representation calls in §5 (regularizer form + dead-zone ε). No
+> taxonomic-build code before those calls. Framework: Alec (2026-07-05/06
+> session); terminology from *The Whole Part* (Alec). Companions:
 > [percept-hypercube.md](../percept-hypercube.md) (percept geometry),
 > [2026-07-04-serial-derivation-reconstruction-design.md](2026-07-04-serial-derivation-reconstruction-design.md)
 > (Method-1/Method-2 duality),
@@ -269,20 +273,78 @@ inventory; radial spread by composition depth (composites separate by
 order instead of saturating); peel-termination margin; terminal residual
 → 0 on expressed ideas; Method-2 surface match as the end-to-end meter.
 
-## 4. Dependencies and sequencing
+## 4. Execution plan (ordered; for the separate thread)
 
-1. **Ramsification live stamping** (existing todo) — prerequisite for
-   order-$k$ membership (§2.3).
-2. **Sparse signed symbols + a growth-preventing regularizer** — sparsify
-   the symbol/activation layer (concepts untouched); the shrinkage penalty
-   on the concept→symbol weights is the representation call (§1.4, §5.1).
-3. **Signed snap + $\varepsilon$ dead-zone** — the contract itself
-   (§2.1–2.2): un-discard sign on the peel (drop the clamps + carry the
-   coefficient), NOT retire `cos.abs`.
-4. **WS `<initScale>` + measurement** — small, independent, immediately
-   testable (§3.2).
-5. **Relation-table coverage** (the promotion plan) — gates frontier
-   *strength* only (§2.4); never a correctness blocker.
+Each task: what · where (reuse existing code) · gate · verification.
+House rules of this repo apply — targeted pytest per task
+(`PYTHONPATH=test:bin BASICMODEL_DEVICE=cpu MODEL_COMPILE=eager`), `make
+test` only at a task's final gate on a quiet tree, Inf/NaN fail loud,
+value-pins updated honestly.
+
+**T1 — Terminology rename pass** (no design call; do first, it touches
+names not behavior).
+- `insert_symbol` → `insert_whole`: ~100 source sites — DISAMBIGUATE each
+  definition first (rename only the ones inserting **wholes**, e.g.
+  `WholeSpace.insert_symbol`; leave any genuine SS symbol insert). A blind
+  find/replace would re-conflate, so read each def.
+- The "concepts/symbols" conflation prose in `percept-hypercube.md` and the
+  WS "symbol/truth prototypes" line in `todo.md` → the §0 ladder terms.
+- `nObj` / `ObjectSubSpace` "object" overload (per-word **slots**, not
+  referents): ~159 sites — needs Alec's replacement name (`nSlots`?
+  `nWords`?); its own commit. HOLD for that name.
+- Verify: `make test` green (byte-identical behavior — pure rename).
+
+**T2 — WS `<initScale>` + measurement** (no design call; the small-init
+fidelity leg, §3.2).
+- Add a per-space `<initScale>` (default WS seeds + `Codebook.create`
+  prefill rescale to ~0.02; PS `RadixLayer.insert` already there; Boolean
+  limits untouched). Pair with a guard that content-derived rows
+  (`insert_whole(init_vec=…)` from the CS→WS demux) and any live EMA/update
+  writer don't re-inflate to data scale.
+- Where: `Spaces.py` (`Codebook.create` ~3441; `WholeSpace.insert_whole`),
+  the XML space-config schema.
+- Verify: `test_union_difference_ops` residual survival through depth-8
+  folds (the contrast test); a new radial-spread probe (composites separate
+  by depth, don't saturate). Bars: §3.
+
+**T3 — Signed peel (un-discard + coefficient)** — GATE §5.2 (ε).
+- `ChunkLayer.peel` (Language.py:2351): drop `if sims[best] <= 0.0: break`
+  (2367); keep `sims[best]` as the row's signed COEFFICIENT (= the symbol,
+  §1.5) — `residual - coeff·W[best]`; emit `(symbol_row, coeff)` pairs.
+  Reuse the `_snap_content` `pol = sign(q·v)` idiom (Spaces.py:2046-2050).
+- Drop the reconstruction-path sign clamps: `factor_percept`
+  (Spaces.py:16161-62), the order-0 `cs_snap_order0(nonneg=True)` (14428).
+- Verify: a signed-peel unit test (an exclusion / negative-coefficient
+  operand is recovered; multiset recovery with a negative row) + the S2
+  round-trip stays green.
+
+**T4 — Symbol sparsity + regularizer** — GATE §5.1 (regularizer form).
+- Sparsify the symbol/activation layer with the growth-preventing shrinkage
+  on the concept→symbol weights (§1.4); the ε dead-zone (§2.1) is the
+  support gate. Concept atoms stay dense-positive (untouched).
+- Verify: pairwise-cosine spread of the inventory ↑ (the cone dissolves);
+  terminal residual → 0 on expressed ideas; the achieved sparsity level.
+
+**T5 — Order-$k$ membership unfold** — GATE the existing "make abstraction
+order canonical" todo (ramsification live stamping).
+- Apply `invert_ramsified` (the recorded σ/π inversions) BEFORE the inner
+  product on the peel (§2.3), so discontiguous order-$k$ regions match.
+- Verify: an order-$k$ region member (second-lobe) scores correctly where
+  an order-0 probe missed it.
+
+**T6 — Frontier + typed conceptual definition** — GATE relation-table
+coverage (strength only; §2.4, the promotion plan).
+- Two-sided pruning: keep maximal parts / minimal wholes; emit the typed
+  definition (head = minimal covering whole; modifiers = maximal parts;
+  exclusions = negative-polarity members) as the grammar's compression
+  input (§2.5).
+- Verify: Method-2 surface match (Task 4 of the serial-derivation plan) —
+  the end-to-end meter.
+
+**Also (independent, existing todo):** two-sided evidence accumulation
+(§1.6) — wire luminosity / truth-set-consistency onto the independent ±
+axes feeding `act = pos − neg` (Spaces.py:6335). Not on the critical path
+of T1–T6; sequence when the truth-store work is next.
 
 ## 5. Open questions (Alec)
 
