@@ -13402,10 +13402,20 @@ class ConceptualSpace(Space):
         if float(self.intra_loss_weight) <= 0.0:
             return
         step_loss = self.intraSentenceLayer.intra_loss(prediction, target)
+        # Per-step losses are kept as a LIST and summed lazily in
+        # ``consume_intra_loss`` (2026-07-08): the old running
+        # ``accum + step_loss`` built a per-WORD add-chain INSIDE the
+        # compiled forward (the serial loop calls this once per word), which
+        # inductor inlines transitively into ONE kernel with a buffer
+        # argument per step -- over Metal's 31-buffer kernel-arg limit on
+        # wide configs (N=64: a 34-arg scalar-sum kernel; the fullgraph
+        # blocker, immune to fusion caps). As a list, each step's scalar
+        # stays an independent graph output; the chunked sum runs in the
+        # eager consume (post-body, pre-backward).
         if self._intra_loss_accum is None:
-            self._intra_loss_accum = step_loss
+            self._intra_loss_accum = [step_loss]
         else:
-            self._intra_loss_accum = self._intra_loss_accum + step_loss
+            self._intra_loss_accum.append(step_loss)
         self._intra_loss_count += 1
 
     def consume_intra_loss(self):
@@ -13422,7 +13432,17 @@ class ConceptualSpace(Space):
         if self._intra_loss_accum is None:
             self._intra_loss_count = 0
             return None
-        mean_loss = self._intra_loss_accum / max(1, self._intra_loss_count)
+        # Chunked eager sum of the per-step list (<=8 per torch.stack; see
+        # the accumulation note above -- keeps every Metal kernel under the
+        # 31-buffer arg limit). Value identical to the old running sum up
+        # to float-add reordering.
+        vals = self._intra_loss_accum
+        total = None
+        for i in range(0, len(vals), 8):
+            chunk = vals[i:i + 8]
+            part = chunk[0] if len(chunk) == 1 else torch.stack(chunk).sum()
+            total = part if total is None else total + part
+        mean_loss = total / max(1, self._intra_loss_count)
         self._intra_loss_accum = None
         self._intra_loss_count = 0
         return mean_loss

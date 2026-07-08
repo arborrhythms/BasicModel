@@ -13995,7 +13995,8 @@ class Error:
         preserving tensor references for autograd.
         """
         return [
-            (name, rec["value"], rec["weight"], rec["space"], rec["category"])
+            (name, self._value(rec), rec["weight"], rec["space"],
+             rec["category"])
             for name, rec in self._terms.items()
         ]
 
@@ -14040,16 +14041,52 @@ class Error:
         if rec is None:
             self._terms[name] = {
                 "weight": float(weight),
-                "value": value,
+                "values": [value],
                 "space": space,
                 "category": category,
                 "count": 1,
             }
         else:
-            rec["value"] = rec["value"] + value
+            # Same-name contributions are kept as a LIST and summed lazily
+            # at read time (2026-07-08): the old in-place ``value + value``
+            # built a per-contribution add-chain INSIDE the compiled forward
+            # (the serial loop adds e.g. ``symbol_l1`` once per word), which
+            # inductor inlines transitively into ONE kernel with a buffer
+            # argument per contribution -- over Metal's 31-buffer kernel-arg
+            # limit on wide configs (N=64: 34-arg kernels; the fullgraph
+            # blocker, immune to fusion caps). As a list, each per-pass
+            # scalar stays an independent graph output; the sum happens in
+            # the eager read (``_value``), chunked.
+            rec["values"].append(value)
             # count is telemetry-only; skip the in-trace int bump so dynamo mints no ``count == N`` recompile guard.
             if not torch.compiler.is_compiling():
                 rec["count"] += 1
+
+    @staticmethod
+    def _value(rec):
+        """Materialize a term's value: chunked sum of its contributions.
+
+        Chunks of <=8 go through ``torch.stack(...).sum()`` (pointwise-cat
+        realizes as intermediate buffers) so no consumer ever reads every
+        leaf -- the Metal 31-buffer discipline, harmless elsewhere. Scalar
+        0-dim contributions stack; mixed/multi-element ones fall back to a
+        chained add (rare).
+        """
+        vals = rec["values"]
+        if len(vals) == 1:
+            return vals[0]
+        scalars = [v.reshape(()) for v in vals
+                   if isinstance(v, torch.Tensor) and v.numel() == 1]
+        others = [v for v in vals
+                  if not (isinstance(v, torch.Tensor) and v.numel() == 1)]
+        total = None
+        for i in range(0, len(scalars), 8):
+            chunk = scalars[i:i + 8]
+            part = chunk[0] if len(chunk) == 1 else torch.stack(chunk).sum()
+            total = part if total is None else total + part
+        for v in others:
+            total = v if total is None else total + v
+        return total
 
     def compute(self, name: str, pred, target, *,
                 weight: float = 1.0, method: str = "compute",
@@ -14078,14 +14115,35 @@ class Error:
     # ---- aggregation / inspection --------------------------------------
 
     def total(self):
-        """Return the weighted sum of all enabled terms (or ``None``)."""
+        """Return the weighted sum of all enabled terms (or ``None``).
+
+        Chunked accumulation (2026-07-08): a plain add-chain over the 30+
+        scalar terms inlines TRANSITIVELY under torch.compile into one
+        kernel with a buffer argument per leaf -- over Metal's 31-buffer
+        kernel-arg limit (the N=64 fullgraph blocker; immune to the fusion
+        caps because 0-dim inlining happens at lowering). ``torch.stack``
+        chunks of <=8 lower to pointwise-cat (``max_pointwise_cat_inputs``)
+        and realize as intermediate buffers, so no kernel reads every leaf.
+        Float-add reorder: not byte-identical to the chained sum; term
+        order carries no semantics.
+        """
         if not self._terms:
             return None
-        total = None
+        scalars, others = [], []
         for rec in self._terms.values():
             if rec["category"] in self._disabled:
                 continue
-            contrib = rec["weight"] * rec["value"]
+            contrib = rec["weight"] * self._value(rec)
+            if isinstance(contrib, torch.Tensor) and contrib.numel() == 1:
+                scalars.append(contrib.reshape(()))
+            else:
+                others.append(contrib)
+        total = None
+        for i in range(0, len(scalars), 8):
+            chunk = scalars[i:i + 8]
+            part = chunk[0] if len(chunk) == 1 else torch.stack(chunk).sum()
+            total = part if total is None else total + part
+        for contrib in others:
             total = contrib if total is None else total + contrib
         return total
 
@@ -14098,7 +14156,7 @@ class Error:
         """
         out = {}
         for name, rec in self._terms.items():
-            v_tensor = rec["value"]
+            v_tensor = self._value(rec)
             if isinstance(v_tensor, torch.Tensor) and v_tensor.numel() == 1:
                 value_f = float(v_tensor.detach().item())
             else:
@@ -14122,7 +14180,7 @@ class Error:
         """
         snap = {}
         for name, rec in self._terms.items():
-            v = rec["value"]
+            v = self._value(rec)
             if isinstance(v, torch.Tensor) and v.numel() == 1:
                 snap[name] = rec["weight"] * float(v.detach().item())
         if snap:

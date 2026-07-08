@@ -334,7 +334,7 @@ def test_producer_writes_teacher_scope_and_registers_loss():
     assert torch.allclose(scope.float(), torch.tensor([0.0, w]), atol=1e-4)
     # The next-word CE is registered on the conceptual error container.
     assert "reading_attention" in cs_sub.errors._terms
-    val = cs_sub.errors._terms["reading_attention"]["value"]
+    val = cs_sub.errors._value(cs_sub.errors._terms["reading_attention"])
     assert torch.isfinite(val).all() and bool(val.requires_grad)
 
 
@@ -354,7 +354,7 @@ def test_registered_loss_backprops_to_producer():
     _stage_synthetic_spans(m, ps, K=3)
     cs_sub = cs0._subspaceForWS
     m._reading_attention_step(1, prev, ps, cs_sub)
-    val = cs_sub.errors._terms["reading_attention"]["value"]
+    val = cs_sub.errors._value(cs_sub.errors._terms["reading_attention"])
     m.zero_grad(set_to_none=True)
     val.backward()
     got = any(p.grad is not None and float(p.grad.abs().sum()) > 0

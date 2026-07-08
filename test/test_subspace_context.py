@@ -85,7 +85,7 @@ def test_error_count_not_bumped_while_compiling(monkeypatch):
     e.add("symbol_l1", torch.tensor(1.0))            # in-trace: value sums, count frozen
     rec = e._terms["symbol_l1"]
     assert rec["count"] == 1, "count must stay frozen under is_compiling()"
-    assert float(rec["value"].detach()) == pytest.approx(2.0), \
+    assert float(e._value(rec).detach()) == pytest.approx(2.0), \
         "the loss VALUE must still accumulate in-trace (only count is skipped)"
     monkeypatch.setattr(torch.compiler, "is_compiling", lambda: False)
     e.add("symbol_l1", torch.tensor(1.0))            # eager: count resumes

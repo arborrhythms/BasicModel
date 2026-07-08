@@ -702,6 +702,18 @@ def compile(model, verbose=True, fullgraph=False):
                 _fuse = os.environ.get("BASICMODEL_MPS_FUSE")
                 if _fuse:
                     _ind.max_fusion_size = int(_fuse)
+                # Scalar loss-term chains inline transitively at lowering
+                # (34 0-dim reads in one Metal kernel on the N=64 config --
+                # over the 31-buffer arg limit; immune to the fusion caps).
+                # BASICMODEL_MPS_REALIZE tightens inductor's realization
+                # thresholds so long accumulation chains materialize into
+                # intermediate buffers (more, smaller kernels).
+                _rlz = os.environ.get("BASICMODEL_MPS_REALIZE")
+                if _rlz:
+                    _ind.realize_acc_reads_threshold = int(_rlz)
+                    _ind.realize_reads_threshold = min(
+                        int(_rlz), _ind.realize_reads_threshold)
+                    _ind.realize_acc_reads_size_threshold = 0
                 _msg(f"MPS: inductor max_fusion_unique_io_buffers={_iobuf}"
                      + (f", max_fusion_size={_fuse}" if _fuse else "")
                      + " (Metal 31-buffer kernel-arg limit)")
