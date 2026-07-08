@@ -831,7 +831,13 @@ def amp_context():
             _AMP_FIRST_LOGGED = True
         return nullcontext(), None
     dev = TheDevice.type  # "cpu" | "cuda" | "mps" (ROCm exposes "cuda")
-    if dev == "mps":
+    if dev == "mps" and mode == "fp16":
+        # fp16 stays blocked on MPS (no GradScaler story there); bf16 is
+        # UN-GATED 2026-07-08 -- the old "MPS has no working autocast path"
+        # premise is stale: torch 2.12's ``torch.autocast(device_type='mps',
+        # dtype=bfloat16)`` works (verified: matmul emits bf16). Apple GPUs
+        # run fp32 matmul at full rate, so the gain is bandwidth-bound
+        # (~1.1-1.4x observed), unlike CUDA's ~2x tensor-core doubling.
         if not _AMP_WARNED:
             print(f"MODEL_AMP={mode} unsupported on MPS; running fp32.")
             _AMP_WARNED = True
@@ -839,6 +845,12 @@ def amp_context():
             print(f"[AMP] {mode} requested but disabled on MPS -> fp32")
             _AMP_FIRST_LOGGED = True
         return nullcontext(), None
+    if dev == "mps":  # bf16
+        if not _AMP_FIRST_LOGGED:
+            print("[AMP] bf16 active on mps (autocast, no scaler)")
+            _AMP_FIRST_LOGGED = True
+        return torch.autocast(device_type="mps",
+                              dtype=torch.bfloat16), None
     if dev == "cpu" and mode == "fp16":
         if not _AMP_WARNED:
             print("MODEL_AMP=fp16 unsupported on CPU; running fp32.")

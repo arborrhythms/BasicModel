@@ -49,6 +49,13 @@
 
     <training>
       <numEpochs>1</numEpochs>
+      <!-- Throughput knob (measured 2026-07-08, MPS eager): batchSize 256
+           gives ~1.7x sentences/s over 64 (38s/step vs 16.4 -- the 64
+           sequential per-word launches amortize sub-linearly); memory is not
+           the binding constraint (~2GiB state vs 47GiB budget). Kept at 64 as
+           the learning-dynamics-neutral default; raise deliberately with lr
+           when chasing wall-clock. MODEL_AMP=bf16 is ~neutral on MPS (Apple
+           GPUs run fp32 matmul at full rate) but ~2x on H100/CUDA. -->
       <batchSize>64</batchSize>
       <learningRate>0.0005</learningRate>
       <reconstructionScale>0.1</reconstructionScale>
