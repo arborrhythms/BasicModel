@@ -58,7 +58,7 @@ TheDevice = util.TheDevice
 TheMessage = util.TheMessage
 
 from visualize import Report, TheReport
-from util import ProjectPaths, XMLConfig, compile, TheXMLConfig, init_config, init_compile_backend, amp_context, init_model_amp, init_device
+from util import ProjectPaths, XMLConfig, compile, TheXMLConfig, init_config, init_compile_backend, amp_context, init_model_amp, init_device, TheDevice
 from architecture import canonical_shape
 import util as _util
 from embed import WordVectors, PretrainModel, _random_unit_ball
@@ -692,6 +692,11 @@ class BaseModel(Mereology, nn.Module):
         _sp_default = self.serial
         self.sentence_protocol = bool(TheXMLConfig.get(
             "architecture.sentenceProtocol", default=_sp_default))
+        # Pre-declare the prelude's pump counter: lazily minting it on the
+        # first forward (``getattr(self, '_prelude_pumps', 0) + 1``) makes
+        # torch.compile guard graph #1 on ``not hasattr(...)``, which fails
+        # on every later forward -- one wasted full retrace per process.
+        self._prelude_pumps = 0
 
         # TransformChooser kind. Mirrors the router-side read in
         # LanguageLayer._wire_signal_router_grammar_ops so the cutover reaches
@@ -3131,6 +3136,39 @@ class BasicModel(BaseModel):
                 # gracefully and the SHIFT-only depth-bound stays via
                 # back-pressure. Not a compile blocker.
                 self._stm_reducer_cached = False
+        # Pre-grow the WS symbol codebook to its configured budget BEFORE the
+        # first trace: insert_whole grows it once-to-budget (recompile
+        # hygiene, Spaces.py), but if the first trace lands before the first
+        # insert, graph #1 records the tiny well-known-atoms shape and the
+        # derived [V] ``_intent_boosts`` guard fails once when the budget
+        # arrives -- one wasted full retrace. Growing here makes the traced
+        # shape final from the start. No-op when unconfigured or already
+        # at/above budget.
+        try:
+            _ws_cb = (self.wholeSpace.subspace.codebook()
+                      if getattr(self, "wholeSpace", None) is not None
+                      and hasattr(self.wholeSpace.subspace, "codebook")
+                      else None)
+            _budget = int(TheXMLConfig.space(
+                "WholeSpace", "nVectors", default=0) or 0)
+            if (_ws_cb is not None and _budget > 0
+                    and int(_ws_cb.nVectors) < _budget):
+                _ws_cb.grow_to(_budget)
+        except Exception:
+            pass  # degenerate configs (no WS / no codebook) keep going
+        # Device-coherence sweep before the trace, against the CANONICAL
+        # process device (util.TheDevice -- the single source of truth that
+        # ``init_device`` keeps in sync with torch's default device). The lazy
+        # reducer build (above) and any module minted during ModelFactory's
+        # build-on-CPU phase (``init_device("cpu")`` -> build ->
+        # ``init_device(target)`` + ``m.to(target)``) can be left on CPU if it
+        # was created after the ``m.to`` or lives off the module registry; the
+        # compiled forward's fake-tensor propagation then fails loud
+        # ("two different devices mps:0, cpu") where eager might limp. The
+        # sweep is an idempotent no-op when already coherent. The per-call
+        # re-home in ``_stm_reducer`` stays host-only (a ``torch.device``
+        # compare is not traceable).
+        self.to(str(TheDevice.get()))
         # The strict gate holds where the forward traces end to end. A
         # FULL-ROUTER grammar (anything beyond the default-only
         # pi/sigma rules) routes through the host-side chart fires
@@ -3151,7 +3189,19 @@ class BasicModel(BaseModel):
         # full-router grammar, its disabled call is itself a graph break, so it
         # needs fullgraph relaxed too. ``_host_islands`` gates both.
         _symbol_tower = bool(getattr(self, 'symbol_tower', False))
-        _host_islands = _full_router or _symbol_tower
+        # SERIAL full-router keeps the strict gate (2026-07-07): the per-word
+        # path never dispatches the host-side chart fires (the islands above
+        # are the PER-STAGE parallel path's), and with the mid-sentence
+        # reground removed the serial forward traces fullgraph-clean --
+        # verified 0 dynamo breaks / 1 graph on MM_20M_grammar with the
+        # sentence protocol ON. The MPS eager-skip below intentionally keeps
+        # the BROAD condition: inductor-MPS still miscompiles this forward
+        # (NaN/Inf caught by insert_meta; async command-buffer errors) even
+        # with the uint16 + 31-buffer workarounds in util.compile.
+        _serial_per_word = bool(getattr(
+            getattr(self, 'inputSpace', None), '_per_word_enabled', False))
+        _host_islands = ((_full_router and not _serial_per_word)
+                         or _symbol_tower)
         # torch 2.12 inductor-MPS cannot codegen the FULL-ROUTER
         # forward: the generated Metal references undeclared reduction
         # indices ("use of undeclared identifier 'r0_1'" — an upstream
@@ -3160,13 +3210,18 @@ class BasicModel(BaseModel):
         # Until the upstream fix lands those configs run eager on MPS;
         # CUDA / CPU and default-only MPS configs compile as before.
         # MODEL_COMPILE=none stays the manual override everywhere.
-        if _host_islands and str(TheDevice.get()).startswith("mps"):
-            TheMessage(
-                "MPS compile skipped: host-island config (full-router grammar "
-                "or symbolTower forward_symbol — upstream torch 2.12 inductor-MPS "
-                "codegen bug / eager-island break); running eager")
-            self._compiled_step = self.forward
-            return
+        # MPS eager-skip RETIRED (2026-07-07): the "inductor-MPS miscompiles
+        # this forward (NaN)" premise was a test-harness artifact (recon_bench
+        # _build_model device incoherence), not a compile bug -- the real
+        # ModelFactory path compiles fullgraph=True on MPS and runs clean at
+        # ~2.6-6x eager once the recompile churn was fixed (symbol-codebook
+        # preallocation, Optimizer device-restore spelling, grad-off
+        # diagnostics routed eager, prelude-counter/pre-grow warms). The
+        # ``MODEL_COMPILE`` policy governs as everywhere else (DEBUG =
+        # none/eager to skip the one-time ~6min MPS compile; PRODUCTION =
+        # inductor past the amortization break-even). util.compile's MPS
+        # block carries the required codegen workarounds (uint16->ushort,
+        # max_fusion_unique_io_buffers, assert disables).
         _fullgraph = ENUM_FULLGRAPH and not _host_islands
         if ENUM_FULLGRAPH and _host_islands:
             TheMessage(
@@ -4134,7 +4189,16 @@ class BasicModel(BaseModel):
                     float(superposition_temperature))
                 _fwd = self.forward
             else:
-                _fwd = self._compiled_step or self.forward
+                # Diagnostic passes run under ``torch.no_grad()`` -- training
+                # is ALWAYS grad-on (verified 2026-07-07: the only grad-off
+                # forward in a training run is runTrial's
+                # ``_reconstructionReport``). Entering the compiled step with
+                # a different ambient grad mode fails its GLOBAL_STATE guard
+                # and forces a full retrace (~100-380s each on MPS), so
+                # non-grad passes take the eager forward -- the same
+                # precedent as the superposition_temperature override above.
+                _fwd = ((self._compiled_step or self.forward)
+                        if torch.is_grad_enabled() else self.forward)
             # Explore trial (pass B): gate the forward-internal per-sentence
             # commit (the LTM end-state append) so it does not fire a second
             # time on the same sentence. Reset in the finally below.
@@ -7077,6 +7141,25 @@ class BasicModel(BaseModel):
         """
         cached = getattr(self, "_stm_reducer_cached", None)
         if cached is not None:
+            if cached is not False and not torch.compiler.is_compiling():
+                # Re-home to the live STM-buffer device: this reducer is built
+                # lazily and registered as a child, but the MPS build path
+                # (ModelFactory._run_hydrated) constructs the model on CPU and
+                # only then ``m.to(mps)``. A reducer first cached during the CPU
+                # phase would stay on CPU while the buffer it reads is MPS
+                # ("weight is on cpu but expected on mps"). ``.to`` is a no-op
+                # once the devices already match. HOST-SIDE ONLY: a
+                # ``torch.device`` ``!=`` compare is not traceable (its
+                # ``__eq__`` is a builtin method-wrapper -> Dynamo
+                # "Polyfill handler ... does not have a traceable function"),
+                # and inside the compiled forward the device is already fixed,
+                # so ``is_compiling()`` skips it under trace.
+                # Canonical device (util.TheDevice), not an incidental
+                # tensor's -- the single source of truth init_device keeps.
+                _dev = torch.device(str(TheDevice.get()))
+                if next(cached.parameters(), None) is not None:
+                    if next(cached.parameters()).device != _dev:
+                        cached = cached.to(_dev)
             return cached if cached is not False else None
         ws = self.wholeSpace
         sl = getattr(ws, "syntacticLayer", None)
@@ -7598,11 +7681,9 @@ class BasicModel(BaseModel):
         return stm, N_target, word_carrier, in_event
 
     # -- §6c sentence protocol (GrammarOpsPass; author 2026-06-11) ------
-
-    # Preemption knobs (§6: threshold + hysteresis on the absolute
-    # set's conflict mass; per-dimension max as the trigger statistic).
-    PREEMPT_THRESHOLD = 0.5
-    PREEMPT_HYSTERESIS = 0.1
+    # (The §6 preemption knobs PREEMPT_THRESHOLD/HYSTERESIS left with the
+    # mid-sentence reground's removal, 2026-07-07; the layer-level
+    # ``preemption_signal`` keeps its own defaults for the reasoning path.)
 
     def _set_serial_pump(self, flag):
         """Stamp the per-pump mode for the §6d update law (mode is a
@@ -8037,10 +8118,36 @@ class BasicModel(BaseModel):
         out_slot = [None] * N_words
         self._per_word_contributions = out_slot
 
+        # Skip-padding (eager only): run the body only up to the batch's
+        # LONGEST sentence (``N_loop == K_host`` is the last column with any
+        # active row across the batch, so columns ``[N_loop, N_words)`` are
+        # empty for EVERY row). Byte-identical -- a skipped column leaves
+        # ``out_slot[p]`` None, which the post-loop fills with the SAME zeros
+        # the gate-masked body would have produced, and its STM push / mirror
+        # advance were no-ops. Under ``torch.compile`` the trip count stays the
+        # static ``N_words`` (a data-dependent count recompiles per length --
+        # the 2026-07-04 static-loop contract); eager (CPU / host-island MPS,
+        # where MM_20M actually runs) has no such constraint, so the loop cost
+        # tracks the real sentence length instead of the padded slab width.
+        _n_trips = N_words
+        if not torch.compiler.is_compiling():
+            _n_trips = max(1, min(N_words, N_loop))
+
         last_cs = None
-        _truth = self._get_truth_layer() if protocol_on else None
-        _preempt_latched = False
-        for p in range(N_words):
+        # Mid-sentence reground REMOVED (Alec 2026-07-07). The §6 preattention
+        # rung (per-word conflict-mass check -> re-pump the gist on the rising
+        # edge) was the forward's ONLY fullgraph=True blocker (6 data-dependent
+        # ``.item()`` reads), and it was structurally dormant in training: the
+        # absolute truth store's writers (``record``/``record_batch``) live on
+        # the reasoning path only, so the store is empty during runEpoch and
+        # the conflict mass is identically 0 -- the rung never fired. The
+        # sentence-START prelude (the §6c pump-zero gist/intent) is unchanged;
+        # the intent is now sentence-scoped with no mid-sentence refresh. If a
+        # truth-grounded curriculum later wires store writes into the forward,
+        # reintroduce the reground MASKLESS (always-pump + ``torch.where`` on
+        # the intent, latch as a tensor) so fullgraph survives; the old
+        # branched form is in git history at this site.
+        for p in range(_n_trips):
             w = self.inputSpace.word_at(p)
             if w is None:
                 # ``word_at`` returns None only past the padded slab width
@@ -8058,20 +8165,6 @@ class BasicModel(BaseModel):
                 w, p, gate_b_1, out_slot, active_host=True)
             if CS_sub is not None:
                 last_cs = CS_sub
-            # §6 preattention (protocol-gated; eager path only — the
-            # signal is a host read): the absolute set's conflict mass
-            # (per-dimension max of min(T, F), threshold + hysteresis)
-            # captures the serial thread. The ladder's live rungs:
-            # checkpoint (the workspace simply stays — no abort) →
-            # reground (re-pump the gist; the sign-off's
-            # refresh-on-preemption-only policy). Re-pump fires on the
-            # RISING edge so a latched conflict doesn't thrash.
-            if _truth is not None:
-                _, _fired = _truth.preemption_signal(
-                    self.PREEMPT_THRESHOLD, self.PREEMPT_HYSTERESIS)
-                if _fired and not _preempt_latched:
-                    self._sentence_prelude(in_event, word_carrier)
-                _preempt_latched = _fired
         if protocol_on:
             # Sentence end: un-stamp the per-pump mode (the §6d law
             # falls back to the legacy read between sentences).
@@ -8098,7 +8191,11 @@ class BasicModel(BaseModel):
         # high-water mark survives) + test_per_word_ss_padding_noop (the
         # per-forward advance == active-prefix count, not N).
         if stm is not None:
-            _pad_overcount = max(0, N_words - N_loop)
+            # Only the columns that ACTUALLY ran advanced the mirror, so the
+            # over-count is ``_n_trips - N_loop`` (== ``N_words - N_loop`` on
+            # the static/compiled path; 0 on the eager skip-padding path, which
+            # never ran the padding columns).
+            _pad_overcount = max(0, _n_trips - N_loop)
             if _pad_overcount:
                 stm._max_depth_host = max(
                     0, int(stm._max_depth_host) - _pad_overcount)

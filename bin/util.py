@@ -668,6 +668,43 @@ def compile(model, verbose=True, fullgraph=False):
                 lambda self, expr, size, lower, upper: None)
             _msg("MPS: inductor device asserts disabled (check_bounds + "
                  "device_assert_async) -- Metal 31-buffer limit vs error_buf")
+            # torch 2.12 inductor-MPS ``DTYPE_TO_METAL`` omits ``uint16``, so
+            # any kernel that casts to it (torch's ``arange``/``eye``
+            # decomposition picks uint16 for small ranges) hard-fails codegen
+            # with ``KeyError: torch.uint16`` in ``mps.py:to_dtype`` -- observed
+            # 2026-07-07 on the full-router serial forward once the upstream
+            # ``r0_1`` codegen bug (the reason this config used to run eager on
+            # MPS) was fixed. ``uint16`` IS a Metal scalar (``ushort``); add the
+            # mapping so those kernels codegen. Config-level list so the
+            # out-of-process compile worker inherits it too.
+            if getattr(torch, "uint16", None) is not None:
+                _mps_cg.DTYPE_TO_METAL.setdefault(torch.uint16, "ushort")
+                _msg("MPS: inductor DTYPE_TO_METAL patched with uint16->ushort")
+            # Metal caps kernel arguments at 31 buffers, but the inductor MPS
+            # scheduler is limit-unaware: a large fusion binds one constant
+            # buffer per distinct input, and the MM-scale forward produced
+            # kernels with ~118 args ("number of constant buffers exceeds
+            # maximum supported (31)", 6 kernels, deterministic — 2026-07-07,
+            # fullgraph trace of MM_20M_grammar). ``max_fusion_unique_io_
+            # buffers`` is the buffer-count-aware fusion cap (default None =
+            # unlimited); 24 leaves headroom for the runtime's own bindings.
+            # Verified: 6 failing kernels -> 0; compile completes. Config-level
+            # so out-of-process compile workers inherit it.
+            if getattr(_ind, "max_fusion_unique_io_buffers", "absent") is None:
+                # Unique-I/O is a PROXY for Metal's 31-buffer kernel-arg cap:
+                # big fused reductions add accumulator/temp buffers beyond the
+                # unique-I/O count, so wide graphs (the N=64 whole-sentence
+                # config) can still overflow at 24 where the N=8 graph fit.
+                # BASICMODEL_MPS_IOBUF tunes it down (12 is a safe floor);
+                # BASICMODEL_MPS_FUSE additionally caps nodes-per-fusion.
+                _iobuf = int(os.environ.get("BASICMODEL_MPS_IOBUF", "24"))
+                _ind.max_fusion_unique_io_buffers = _iobuf
+                _fuse = os.environ.get("BASICMODEL_MPS_FUSE")
+                if _fuse:
+                    _ind.max_fusion_size = int(_fuse)
+                _msg(f"MPS: inductor max_fusion_unique_io_buffers={_iobuf}"
+                     + (f", max_fusion_size={_fuse}" if _fuse else "")
+                     + " (Metal 31-buffer kernel-arg limit)")
     except Exception:
         pass
 

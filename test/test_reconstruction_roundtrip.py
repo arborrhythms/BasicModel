@@ -565,10 +565,17 @@ def test_mm20m_xor_roundtrip_at_harness_budget(tmp_path):
     moved 1.0 window: see EPOCHS_PINNED comment. This pin is the SCAFFOLD
     trajectory point (blind=False explicit -- the harness default flipped
     to blind at Gate B; the blind bar lives in test_blind_decode.py).
+    RE-PINNED 0.75 -> 1.0 (per-vector order-raise fix, 2026-07-07): the
+    sigma/pi mereological fold now raises EACH word's order over its own D
+    features independently (fold width percept_dim, not nOutput*D), instead
+    of flat-folding the whole N*D slab and mixing features across words. The
+    per-word round-trip is cleaner without that cross-word leak, so E=3 exact
+    match rises 0.75 -> 1.0 (where_recovery stays 1.0). This is strictly
+    better AND makes the serial loop linear in the word count (was O(N^2)).
     """
     rec = run_config("data/MM_20M_xor.xml", epochs=3, seed=0,
                      out_dir=str(tmp_path), blind=False)
-    assert rec.exact_match_rate == 0.75
+    assert rec.exact_match_rate == 1.0
     assert rec.where_recovery == 1.0
 
 

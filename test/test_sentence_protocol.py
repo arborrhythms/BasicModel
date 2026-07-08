@@ -121,10 +121,14 @@ def test_protocol_runs_pump_zero_and_sets_intent():
         assert getattr(sp, 'serial_pump', 'missing') is None
 
 
-def test_preemption_rising_edge_repumps_once():
-    """Gist refresh on preemption ONLY: a contested absolute corpus
-    fires the latch at the first tick; the re-pump fires on the RISING
-    edge and the latch prevents per-word thrash."""
+def test_no_mid_sentence_reground_even_under_conflict():
+    """Mid-sentence reground REMOVED (Alec 2026-07-07): the intent is
+    sentence-scoped -- pump zero fires ONCE at sentence start and a
+    contested absolute corpus no longer re-pumps the gist mid-word-loop.
+    (The per-word conflict check was the forward's only fullgraph=True
+    blocker and was dormant in training, where the store has no writers;
+    the layer-level ``preemption_signal`` survives for the reasoning /
+    admission path -- test_two_truth_stores pins its latch semantics.)"""
     m = _make_model()
     m.sentence_protocol = True
     tl = m._get_truth_layer()
@@ -138,9 +142,8 @@ def test_preemption_rising_edge_repumps_once():
         tl.record(-hot, degree=1.0)         # sharply contested witness
     assert tl.conflict_mass() == pytest.approx(0.9, abs=1e-5)
     m.forward(_xor_input())
-    # Pump zero + exactly ONE preemption re-pump (rising edge), no
-    # matter how many words the sentence carries.
-    assert int(getattr(m, '_prelude_pumps', 0)) == 2
+    # Pump zero ONLY -- the contested corpus does not add a re-pump.
+    assert int(getattr(m, '_prelude_pumps', 0)) == 1
 
 
 def test_protocol_word_learning_pumps_parallel_partition():

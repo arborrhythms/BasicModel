@@ -103,10 +103,12 @@ def test_order_preserved_through_cascade(kind):
 
 
 @pytest.mark.parametrize("kind", ["sigma", "pi"])
-def test_cross_slot_reach(kind):
-    """The reason the cascade exists: information crosses slot
-    boundaries. Perturbing slot 0 must move other slots' outputs —
-    the per-slot fold this corrects could never do that."""
+def test_per_vector_isolation(kind):
+    """RE-PINNED (per-vector order-raise, Alec 2026-07-07): mereological
+    order-raising raises EACH vector independently -- it must NOT mix
+    across word slots (the old cross_slot_reach contract inverted; the
+    cross-word feature leak degraded the per-word round-trip and made the
+    serial loop O(N^2)). Perturbing slot 0 moves slot 0 ONLY."""
     ad = _adapter(kind, randomize=True, seed=7)
     x = _slab(seed=19)
     x2 = x.clone()
@@ -115,17 +117,30 @@ def test_cross_slot_reach(kind):
         y = ad.forward(x)
         y2 = ad.forward(x2)
     moved_elsewhere = (y2[:, 1:, :] - y[:, 1:, :]).abs().max()
-    assert moved_elsewhere > 1e-4, (
-        f"{kind}: no cross-slot reach (max move {moved_elsewhere:.2e})")
+    moved_slot0 = (y2[:, 0, :] - y[:, 0, :]).abs().max()
+    assert moved_slot0 > 1e-4, (
+        f"{kind}: perturbed slot 0 did not move ({moved_slot0:.2e})")
+    assert moved_elsewhere == 0.0, (
+        f"{kind}: per-vector fold leaked across slots "
+        f"(max move {moved_elsewhere:.2e})")
 
 
-def test_width_agnostic_flat_and_slab_agree():
+def test_per_vector_slab_equals_per_row_fold():
+    """RE-PINNED (per-vector order-raise): the slab fold equals folding
+    each slot independently -- leading dims are pure batch. (Replaces the
+    old width-agnostic flat==slab contract: a ``[B, N*D]`` input is now
+    ONE N*D-wide vector, not a slab view, and exceeds the per-vector
+    cascade width by design.)"""
     ad = _adapter('pi', randomize=True, seed=9)
     x = _slab(seed=23)
     with torch.no_grad():
         y_slab = ad.forward(x)
-        y_flat = ad.forward(x.reshape(2, _N * _D))
-    assert torch.allclose(y_slab.reshape(2, -1), y_flat, atol=1e-6)
+        y_rows = torch.stack(
+            [ad.forward(x[:, i:i + 1, :]).squeeze(1) for i in range(_N)],
+            dim=1)
+    assert torch.allclose(y_slab, y_rows, atol=1e-6)
+    with pytest.raises(RuntimeError):
+        ad.forward(x.reshape(2, _N * _D))   # one over-wide vector: fail loud
 
 
 def test_unary_mode_unchanged():
@@ -186,10 +201,12 @@ def test_repeated_application_preserves_discontiguous_spec():
 
 def test_repeated_application_produces_discontiguous_spec():
     """Multiple applications PRODUCE a discontiguous specification
-    from a contiguous one: σ accretes parts across non-adjacent lanes
-    (a scattered whole), each application extending the chain — lane
-    0 raises lanes 64..69 (app 1), which raise lanes 96..101 (app 2).
-    The within-application level order (low strides first) makes the
+    from a contiguous one — RE-PINNED WITHIN one vector (per-vector
+    order-raise, Alec 2026-07-07: the cascade never crosses word
+    slots; accretion happens along one vector's own feature lanes).
+    On the 16-lane cascade (D=14 padded to 16): lanes 0..1 raise
+    lanes 8..9 (app 1), which raise lanes 12..13 (app 2). The
+    within-application level order (low strides first) makes the
     second hop wait for the second application — the growth is real
     repetition, not one big matrix."""
     from Layers import MeronymicFoldAdapter
@@ -198,40 +215,40 @@ def test_repeated_application_produces_discontiguous_spec():
     with torch.no_grad():
         for raw in (ad.raw_bfly_L, ad.raw_bfly_d, ad.raw_bfly_U):
             raw.zero_()                      # exact identity baseline
-        lvl_hi = ad.n_levels - 1             # stride 64: lanes i <-> i+64
-        lvl_mid = ad.n_levels - 2            # stride 32: lanes i <-> i+32
-        for i in range(6):
-            # tap: lane i (slot 0) feeds lane 64+i; raw²=1.0.
-            ad.raw_bfly_L[lvl_hi, _pair_index(ad, lvl_hi, i, 64 + i)] = 1.0
-            # tap: lane 64+i feeds lane 96+i.
+        lvl_hi = ad.n_levels - 1             # stride 8: lanes i <-> i+8
+        lvl_mid = ad.n_levels - 2            # stride 4: lanes i <-> i+4
+        for i in range(2):
+            # tap: lane i feeds lane 8+i; raw²=1.0.
+            ad.raw_bfly_L[lvl_hi, _pair_index(ad, lvl_hi, i, 8 + i)] = 1.0
+            # tap: lane 8+i feeds lane 12+i.
             ad.raw_bfly_L[lvl_mid,
-                          _pair_index(ad, lvl_mid, 64 + i, 96 + i)] = 1.0
+                          _pair_index(ad, lvl_mid, 8 + i, 12 + i)] = 1.0
 
-    flat = torch.full((1, _N * _D), -0.8)
-    flat[0, 0:6] = 0.8                       # contiguous spec: lanes 0..5
+    vec = torch.full((1, 1, _D), -0.8)
+    vec[0, 0, 0:2] = 0.8                     # contiguous spec: lanes 0..1
     with torch.no_grad():
-        app1 = ad.forward(flat)
+        app1 = ad.forward(vec)
         app2 = ad.forward(app1)
 
     def hi(t, sl):
-        return float(t[0, sl].min())
+        return float(t[0, 0, sl].min())
 
     def lo(t, sl):
-        return float(t[0, sl].max())
+        return float(t[0, 0, sl].max())
 
-    # App 1: the whole accretes lanes 64..69 — already discontiguous
-    # (a gap of low lanes 6..63 between its parts).
-    assert hi(app1, slice(64, 70)) > 0.5, "first hop did not accrete"
-    assert lo(app1, slice(96, 102)) < 0.0, "second hop fired too early"
-    assert lo(app1, slice(6, 64)) < 0.0
+    # App 1: the whole accretes lanes 8..9 — already discontiguous
+    # (a gap of low lanes 2..7 between its parts).
+    assert hi(app1, slice(8, 10)) > 0.5, "first hop did not accrete"
+    assert lo(app1, slice(12, 14)) < 0.0, "second hop fired too early"
+    assert lo(app1, slice(2, 8)) < 0.0
     # App 2: a further application extends the scattered whole to
-    # lanes 96..101 while keeping the earlier parts — three separated
+    # lanes 12..13 while keeping the earlier parts — three separated
     # bands, produced by repetition, nothing saturated.
-    assert hi(app2, slice(0, 6)) > 0.5
-    assert hi(app2, slice(64, 70)) > 0.5
-    assert hi(app2, slice(96, 102)) > 0.5, "repetition did not extend"
-    assert lo(app2, slice(6, 64)) < 0.0
-    assert lo(app2, slice(70, 96)) < 0.0
+    assert hi(app2, slice(0, 2)) > 0.5
+    assert hi(app2, slice(8, 10)) > 0.5
+    assert hi(app2, slice(12, 14)) > 0.5, "repetition did not extend"
+    assert lo(app2, slice(2, 8)) < 0.0
+    assert lo(app2, slice(10, 12)) < 0.0
     assert float(app2.abs().max()) < 0.999, "corner saturation"
 
 
@@ -284,11 +301,10 @@ def test_xor_exact_slots_keep_butterfly_under_meronomy():
     assert ps.sigma.butterfly is True and ps.butterfly_enabled is True
     assert isinstance(ws.pi, MeronymicFoldAdapter)
     assert ws.pi.butterfly is True and ws.butterfly_enabled is True
-    # The cascade is real: cross-slot reach on the live PS slot. The
-    # probe law is mild (raw 0.28: tap ~ 0.078 per node) — an
-    # aggressive law saturates a 7-level cascade's memberships to the
-    # corner, where every output is constant and reach is
-    # unmeasurable (the law's contraction, not a wiring fault).
+    # RE-PINNED (per-vector order-raise, Alec 2026-07-07): the live cascade
+    # raises each slot's vector independently -- perturbing slot 0 moves
+    # slot 0 and leaves every other slot byte-identical (the old cross-slot
+    # reach contract inverted). Probe law mild (raw 0.28) as before.
     with torch.no_grad():
         for raw in (ps.sigma.raw_bfly_L, ps.sigma.raw_bfly_U):
             raw.fill_(0.28)
@@ -296,6 +312,9 @@ def test_xor_exact_slots_keep_butterfly_under_meronomy():
         x = torch.rand(2, _N, _D) * 1.6 - 0.8
         x2 = x.clone()
         x2[:, 0, :] = (x2[:, 0, :] + 0.5).clamp(-0.95, 0.95)
-        moved = (ps.sigma.forward(x2)[:, 1:, :]
-                 - ps.sigma.forward(x)[:, 1:, :]).abs().max()
-    assert moved > 1e-4, f"no live cross-slot reach (moved {moved:.2e})"
+        y, y2 = ps.sigma.forward(x), ps.sigma.forward(x2)
+        moved_self = (y2[:, 0, :] - y[:, 0, :]).abs().max()
+        moved_other = (y2[:, 1:, :] - y[:, 1:, :]).abs().max()
+    assert moved_self > 1e-4, f"perturbed slot did not move ({moved_self:.2e})"
+    assert moved_other == 0.0, (
+        f"per-vector fold leaked across live slots ({moved_other:.2e})")

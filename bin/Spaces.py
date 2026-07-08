@@ -2658,6 +2658,25 @@ class Codebook(Basis):
             return _unorm_ste(self.W)
         return self.W
 
+    def lookup_rows(self, idx):
+        """Gather codebook rows by ``idx`` with the SAME read-time transform
+        as :meth:`getW`, but applying the UNORM STE to ONLY the gathered rows.
+
+        Byte-identical to ``getW()[idx]`` because ``_unorm_ste`` is elementwise
+        (``x + (clamp(x)-x).detach()`` per coordinate, so the clamp and its
+        straight-through gradient commute with a row gather). The win is
+        O(|idx|) instead of O(V): the radix per-slot gathers were each clamping
+        the whole ``[V, D]`` store (65536x1024) to read one row. ``idx`` may be
+        an int, a list/LongTensor of ids, or a slice.
+        """
+        if self.W is None:
+            return None
+        rows = self.W[idx]
+        if (getattr(self, "is_percept_store", False)
+                and meronomy_enabled()):
+            return _unorm_ste(rows)
+        return rows
+
     def setW(self, value):
         """Assign the codebook prototype matrix. Raises on per-batch
         (3-D) plain-tensor writes — per spec
@@ -9757,8 +9776,15 @@ class PartSpace(PerceptualSpace):
             else TheXMLConfig.get("architecture.sigmaPi", default="butterfly"))
         _butterfly = (_pi_mode == "butterfly")
         self.sigma_pi_slab = None  # set only for the "full" dense bridge
-        # Sigma mixes the post-synthesis word slots: flattened total = nOutput * D.
-        _butterfly_total = int(outputShape[0]) * int(percept_dim)
+        # PER-VECTOR order-raise: the sigma/pi fold raises EACH word's order
+        # over its own ``percept_dim`` (D) features, independently -- it does
+        # NOT mix across the ``nOutput`` word slots (mereological order-raising
+        # is a per-vector op; the adapter's per-vector _bfly_flatten batches the
+        # slots). Sizing the fold to ``nOutput * D`` (the old value) made every
+        # per-word call pad D up to N*D and, replayed once per word in the
+        # serial loop, cost O(N^2 * D); at ``percept_dim`` the fold width is
+        # constant in the word count and the loop is linear.
+        _butterfly_total = int(percept_dim)
         # Degenerate 0/1-element butterfly requests fall back to per-slot mode.
         _butterfly_built = bool(_butterfly and _butterfly_total >= 2)
 
@@ -16906,6 +16932,72 @@ class ConceptualSpace(Space):
         return vspace
 
 
+# Host-eager analysis-cut boundary classes (ASCII), as 256-entry byte LUTs so
+# the span staging is a vectorised gather instead of a per-element Python scan.
+# WS = the discarded whitespace boundaries (incl. the \0 pad sentinel); PUNCT =
+# ASCII punctuation, each char its OWN one-char token (Alec 2026-06-22). Byte
+# codes only reach 0..255; values >= 256 clamp to a non-boundary (word) slot.
+_ANALYSIS_WS = (0, 9, 10, 13, 32)
+_ANALYSIS_PUNCT = tuple(sorted(
+    set(range(33, 48)) | set(range(58, 65))
+    | set(range(91, 97)) | set(range(123, 127))))
+_LUT_ANALYSIS_WS = torch.zeros(256, dtype=torch.bool)
+_LUT_ANALYSIS_WS[list(_ANALYSIS_WS)] = True
+_LUT_ANALYSIS_PUNCT = torch.zeros(256, dtype=torch.bool)
+_LUT_ANALYSIS_PUNCT[list(_ANALYSIS_PUNCT)] = True
+
+
+def _word_punct_spans(is_word, is_punct):
+    """Vectorised token spans from per-position ``is_word`` / ``is_punct``
+    boolean masks (both ``[B, N]``, on CPU).
+
+    A token is either a maximal ``is_word`` run OR a single ``is_punct``
+    char (its own one-char token). Returns ``LongTensor [B, K, 2]`` of
+    ``(start, end)`` exclusive spans in left-to-right order, zero-padded
+    ``(0, 0)`` for rows with fewer tokens (``K >= 1``). This is the
+    devectorised replacement for the old per-row ``.tolist()`` + Python
+    boundary scan (which also emitted one ``__torch_function__`` dispatch
+    per scalar span write); output is byte-identical to that scan.
+
+    ``is_punct`` all-False reduces this to pure ``is_word``-run extraction
+    (the ``property_spans`` case).
+    """
+    B, N = int(is_word.shape[0]), int(is_word.shape[1])
+    zc = torch.zeros(B, 1, dtype=torch.bool)
+    prev_word = torch.cat([zc, is_word[:, :-1]], 1)
+    nxt_word = torch.cat([is_word[:, 1:], zc], 1)
+    word_start = is_word & ~prev_word            # first char of a word run
+    word_end = is_word & ~nxt_word               # last char of a word run (incl)
+    ar = torch.arange(N).unsqueeze(0).expand(B, N)
+    anchor = word_start | is_punct               # one entry per emitted token
+    starts = torch.where(anchor, ar, torch.full_like(ar, N))
+    # end (exclusive): punct -> i+1; word-start -> matching word_end + 1.
+    ends = torch.where(is_punct, ar + 1, torch.full_like(ar, -1))
+    n_we = int(word_end.long().sum(1).max().item()) if N else 0
+    if n_we > 0:
+        we_rank = torch.cumsum(word_end.long(), 1) - 1
+        ws_rank = torch.cumsum(word_start.long(), 1) - 1
+        we_end = torch.full((B, n_we), N, dtype=torch.long)
+        wep = word_end.nonzero(as_tuple=False)
+        if wep.numel():
+            bb, ii = wep[:, 0], wep[:, 1]
+            we_end[bb, we_rank[bb, ii]] = ii + 1
+        wsp = word_start.nonzero(as_tuple=False)
+        if wsp.numel():
+            bb, ii = wsp[:, 0], wsp[:, 1]
+            ends[bb, ii] = we_end[bb, ws_rank[bb, ii]]
+    K = int(max(1, anchor.long().sum(1).max().item()))
+    tok_rank = torch.cumsum(anchor.long(), 1) - 1
+    out = torch.zeros(B, K, 2, dtype=torch.long)
+    ap = anchor.nonzero(as_tuple=False)
+    if ap.numel():
+        bb, ii = ap[:, 0], ap[:, 1]
+        r = tok_rank[bb, ii]
+        out[bb, r, 0] = starts[bb, ii]
+        out[bb, r, 1] = ends[bb, ii]
+    return out
+
+
 class WholeSpace(PerceptualSpace):
     """ConceptualSpace -> symbol prototypes, analysis spans, and truth stores.
 
@@ -17742,7 +17834,24 @@ class WholeSpace(PerceptualSpace):
         row = int(self._paired_next_row)
         cap = int(cb.nVectors)
         if row >= cap:
-            target = max(row + 1, cap * 2)
+            # Preallocate to the CONFIGURED symbol budget in ONE growth
+            # (recompile hygiene, 2026-07-07): cap-doubling re-registers the
+            # codebook Parameter every ~log2 step, and each re-registration
+            # changes getW()'s shape, so compiled-forward guards derived from
+            # it (e.g. the [V] intent boosts) fail and force a full recompile
+            # (~100-380s/each on MPS) -- fatal on streaming data where symbols
+            # keep arriving. Growing straight to the XML <WholeSpace><nVectors>
+            # budget makes growth a once-per-run event that happens in the
+            # eager stem BEFORE the trace, so the compiled graph sees one
+            # stable shape. Unset/small budgets keep the legacy doubling as
+            # the floor; overflow past the budget still doubles (config
+            # undersize stays survivable, just churny -- fix the config).
+            try:
+                _budget = int(TheXMLConfig.space(
+                    "WholeSpace", "nVectors", default=0) or 0)
+            except Exception:
+                _budget = 0
+            target = max(row + 1, cap * 2, _budget)
             cb.grow_to(target)
         W = cb.getW()
         if W is None:
@@ -20186,45 +20295,19 @@ class WholeSpace(PerceptualSpace):
         if u.dim() == 3:
             u = u[:, 0, :]
         vals = u.detach().to("cpu").long()
-        B, N = int(vals.shape[0]), int(vals.shape[1])
-        _ws = (0, 9, 10, 13, 32)
-        # ASCII punctuation (Layers.char_class PUNCT ranges): a word boundary
-        # like whitespace, but -- unlike whitespace, which is discarded -- each
-        # punctuation char becomes its OWN one-char span so the grammar can see
-        # it (Alec 2026-06-22: the word analyzer splits on punctuation as well
-        # as spaces). Punct-free input (xor / phrases) is unchanged.
-        _punct = frozenset(range(33, 48)) | frozenset(range(58, 65)) \
-            | frozenset(range(91, 97)) | frozenset(range(123, 127))
-        all_spans = []
-        K = 1
-        for b in range(B):
-            row = vals[b].tolist()
-            parts = []
-            start = None
-            for i, v in enumerate(row):
-                if v in _ws:
-                    if start is not None:
-                        parts.append((start, i))
-                        start = None
-                elif v in _punct:
-                    if start is not None:
-                        parts.append((start, i))
-                        start = None
-                    parts.append((i, i + 1))   # punctuation: its own token
-                else:
-                    if start is None:
-                        start = i
-            if start is not None:
-                parts.append((start, N))
-            if not parts:
-                parts = [(0, 0)]
-            all_spans.append(parts)
-            K = max(K, len(parts))
-        t = torch.zeros(B, K, 2, dtype=torch.long)
-        for b, parts in enumerate(all_spans):
-            for k, (s, e) in enumerate(parts):
-                t[b, k, 0] = s
-                t[b, k, 1] = e
+        # ASCII punctuation is a word boundary like whitespace, but -- unlike
+        # whitespace, which is discarded -- each punctuation char becomes its
+        # OWN one-char span so the grammar can see it (Alec 2026-06-22: the word
+        # analyzer splits on punctuation as well as spaces). Punct-free input
+        # (xor / phrases) is unchanged. Membership is a 256-byte LUT gather
+        # (values >= 256 clamp to a non-boundary word char), and the run->span
+        # cut is vectorised in ``_word_punct_spans`` -- byte-identical to the
+        # prior per-row Python scan, minus its per-element/per-write overhead.
+        idx = vals.clamp(0, 255)
+        is_ws = _LUT_ANALYSIS_WS[idx]
+        is_punct = _LUT_ANALYSIS_PUNCT[idx]
+        is_word = ~is_ws & ~is_punct
+        t = _word_punct_spans(is_word, is_punct)
         return t.to(IS_concepts.device)
 
     def property_spans(self, IS_concepts, class_ids):
@@ -20250,32 +20333,12 @@ class WholeSpace(PerceptualSpace):
             u = u[:, 0, :]
         region = char_class_region(u, class_ids)          # [B, N] in {+1, -1}
         has = (region > 0).detach().to("cpu")
-        B, N = int(has.shape[0]), int(has.shape[1])
-        all_spans = []
-        K = 1
-        for b in range(B):
-            row = has[b].tolist()
-            parts = []
-            start = None
-            for i, v in enumerate(row):
-                if v:
-                    if start is None:
-                        start = i
-                else:
-                    if start is not None:
-                        parts.append((start, i))
-                        start = None
-            if start is not None:
-                parts.append((start, N))
-            if not parts:
-                parts = [(0, 0)]
-            all_spans.append(parts)
-            K = max(K, len(parts))
-        t = torch.zeros(B, K, 2, dtype=torch.long)
-        for b, parts in enumerate(all_spans):
-            for k, (s, e) in enumerate(parts):
-                t[b, k, 0] = s
-                t[b, k, 1] = e
+        # Runs of the has-property mask are the tokens (no punct-as-own-token
+        # here -- the property IS the membership); the run->span cut is the
+        # ``is_punct``-empty case of ``_word_punct_spans``. Byte-identical to
+        # the prior per-row Python scan.
+        no_punct = torch.zeros_like(has)
+        t = _word_punct_spans(has, no_punct)
         return t.to(IS_concepts.device)
 
     def semantic_arrangement_loss(self, indices):

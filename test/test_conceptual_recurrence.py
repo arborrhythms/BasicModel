@@ -631,7 +631,10 @@ def test_widening_ps_pi_sized_at_embedded_percept_width():
     m = _build("MM_20M_legacy.xml")
     ps = m.perceptualSpace
     assert int(ps._fold_width) == int(ps.nOutputDim) == 1024
-    assert int(ps.butterflyN) == int(ps.outputShape[0]) * 1024
+    # RE-PINNED (per-vector order-raise, Alec 2026-07-07): the cascade is
+    # sized at ONE embedded percept's width (percept_dim), not the whole
+    # nOutput*D slab -- the fold raises each word independently.
+    assert int(ps.butterflyN) == 1024
 
 
 def test_mm5m_grammar_builds_and_forwards():

@@ -128,6 +128,8 @@ training).
 | `MODEL_COMPILE` | torch.compile backend selector (`auto`, `none`, `inductor`, `eager`, `aot_eager`) |
 | `MODEL_COMPILE_MODE` | torch.compile mode (`default`, `reduce-overhead`, `max-autotune`, `max-autotune-no-cudagraphs`) |
 | `PYTORCH_MPS_HIGH_WATERMARK_RATIO` | MPS memory limit; set to `0.0` by `train.py` |
+| `BASICMODEL_MPS_IOBUF` | MPS inductor fusion cap (`max_fusion_unique_io_buffers`, default 24) — keeps fused Metal kernels under the hardware 31-buffer kernel-arg limit; lower (e.g. 12) for wide configs |
+| `BASICMODEL_MPS_FUSE` | Optional MPS inductor `max_fusion_size` (nodes per fusion); unset leaves the torch default |
 | `PYTHONUNBUFFERED` | Set to `1` by `train.py` for real-time log streaming |
 
 ---

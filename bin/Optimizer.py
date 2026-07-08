@@ -113,15 +113,25 @@ class Optimizer:
         thread-local op and is a no-op when the default device is
         already ``cpu`` (CPU runs, or non-MPS targets that were never
         flipped by ``init_device``).
+
+        The restore goes through the CANONICAL ``util.TheDevice`` string,
+        NOT a ``torch.get_default_device()`` snapshot: torch normalizes
+        ``'mps'`` to ``device('mps', index=0)`` on read, and the two are
+        NOT ``==``. Restoring the normalized snapshot therefore changed
+        the ambient-device IDENTITY that ``torch.compile`` guards on
+        (``utils_device.CURRENT_DEVICE == device('mps')`` failed after the
+        first optimizer step), forcing a full retrace (~200-380s on MPS).
+        ``init_device`` keeps ``TheDevice`` and the default device in
+        sync, so this restores exactly the spelling the process set.
         """
-        prev = torch.get_default_device()
+        from util import TheDevice  # local: Optimizer imports before util elsewhere
         torch.set_default_device("cpu")
         try:
             if closure is None:
                 return self._inner.step()
             return self._inner.step(closure=closure)
         finally:
-            torch.set_default_device(prev)
+            torch.set_default_device(str(TheDevice.get()))
 
     # --------------------------------------------------------- forwarding API
 

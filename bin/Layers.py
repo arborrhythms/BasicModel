@@ -5002,10 +5002,20 @@ class MeronymicFoldAdapter(Layer):
         self.N = int(legacy_N) if legacy_N is not None else int(nInput)
         self.butterfly = bool(butterfly)
         if self.butterfly:
-            # Membership-chart cascade over the flattened slab (same
-            # pairing topology as GrammarLayer's signed cascade).
+            # PER-VECTOR cascade (Alec 2026-07-07: mereological order-raising
+            # raises EACH vector's order over its own features independently
+            # -- it never mixes across word slots). The cascade is therefore
+            # sized at ``nInput`` (one vector's width), NOT the legacy
+            # whole-slab total ``legacy_N`` -- sizing at N*D made every
+            # per-word call pad one D-vector up to the slab width and fold
+            # mostly zeros (the O(N^2) serial-loop wall), and mis-pinned the
+            # pad-identity mask when the per-vector flatten landed data in
+            # lanes < D but the mask only pinned lanes >= legacy_N (leaked
+            # mass broke the exact roundtrip). ``legacy_N`` is retained on
+            # ``self.N`` for callers' bookkeeping only.
+            _vec_width = int(nInput)
             M = 1
-            while M < max(2, self.N):
+            while M < max(2, _vec_width):
                 M *= 2
             self.M_total = M
             self.n_levels = int(math.log2(M))
@@ -5044,8 +5054,10 @@ class MeronymicFoldAdapter(Layer):
             for k in range(self.n_levels):
                 perm = self.butterfly_perms[k]
                 for p in range(pair_count):
-                    if (int(perm[2 * p]) >= self.N
-                            or int(perm[2 * p + 1]) >= self.N):
+                    # Pads start at the VECTOR width (the per-vector flatten
+                    # fills lanes [0, nInput)), not at the legacy slab total.
+                    if (int(perm[2 * p]) >= _vec_width
+                            or int(perm[2 * p + 1]) >= _vec_width):
                         mask[k, p] = 0.0
             self.register_buffer('_bfly_pair_mask', mask)
             self.fold = None
@@ -5060,11 +5072,36 @@ class MeronymicFoldAdapter(Layer):
         self.activation = torch.zeros(1, nOutput, 1)
 
     # -- membership cascade (butterfly mode) ---------------------------
-    # Borrow the signed cascade's flatten/permutation plumbing — the
-    # adapter carries the same ``M_total`` / ``butterfly_perms``
-    # surface, only the per-node law differs.
-    _bfly_flatten = GrammarLayer._butterfly_flatten
-    _bfly_unflatten = GrammarLayer._butterfly_unflatten
+    # PER-VECTOR flatten (differs from GrammarLayer's whole-slab flatten):
+    # mereological order-raising raises ONE vector's order over its own
+    # ``percept_dim`` features and does NOT mix across word slots, so every
+    # leading dim -- batch AND word-slot -- collapses into the row axis and
+    # the cascade never pairs lanes from different vectors. ``M_total ==
+    # next_pow2(percept_dim)`` (independent of the word count), so the fold is
+    # O(rows * D * logD) -- linear in words, not the O((N*D)^2) the old
+    # whole-slab flatten produced when replayed per word.
+    def _bfly_flatten(self, x):
+        """Flatten to ``[rows, M_total]`` folding each length-``D`` vector
+        independently (``rows == prod(x.shape[:-1])``); returns
+        ``(flat, original_shape)``."""
+        original_shape = tuple(x.shape)
+        D = original_shape[-1]
+        flat = x.reshape(-1, D)
+        if D < self.M_total:
+            pad = torch.zeros(flat.shape[0], self.M_total - D,
+                              device=flat.device, dtype=flat.dtype)
+            flat = torch.cat([flat, pad], dim=1)
+        elif D > self.M_total:
+            raise RuntimeError(
+                f"MeronymicFoldAdapter._bfly_flatten: vector width {D} "
+                f"exceeds cascade M_total={self.M_total} (percept_dim "
+                f"mismatch -- the fold is sized to one vector, not the slab).")
+        return flat, original_shape
+
+    def _bfly_unflatten(self, flat, original_shape):
+        """Inverse of :meth:`_bfly_flatten`: strip pad, restore shape."""
+        D = original_shape[-1]
+        return flat[:, :D].reshape(original_shape)
 
     def _mem_law(self):
         """The per-node contractive law via the square reparam:
@@ -10449,7 +10486,9 @@ class RadixLayer(Layer):
             raise IndexError(
                 f"RadixLayer.vector_for: percept_id {pid} out of range "
                 f"[0, {self._size})")
-        return self.codebook[pid]
+        # Gather-then-STE: clamp only this row, not the whole [V,D] store
+        # (byte-identical to ``self.codebook[pid]``; see Codebook.lookup_rows).
+        return self._basis.lookup_rows(pid)
 
     def associate_span(self, vec, size=None):
         """Nearest ACTIVE percept by cosine (scale-robust to the reverse-path
@@ -10595,18 +10634,22 @@ class RadixLayer(Layer):
         # Step 1: hash-map fast path.
         cached = self.hash_map.get(chunk_b)
         if cached is not None:
-            return self.codebook[cached], int(cached)
+            # Gather-then-STE (Codebook.lookup_rows): clamp only the gathered
+            # row, not the full [V,D] store. Byte-identical to
+            # ``self.codebook[cached]`` -- _unorm_ste is elementwise. This is
+            # the per-slot radix hot path (was O(V) per lookup).
+            return self._basis.lookup_rows(cached), int(cached)
         # Step 2: radix longest-match on the input.
         match_id, match_len = self.radix_trie.longest_match(chunk_b)
         prefix_vec: Optional[torch.Tensor] = None
         if match_id is not None and match_len > 0:
-            prefix_vec = self.codebook[match_id]
+            prefix_vec = self._basis.lookup_rows(match_id)
         residual = chunk_b[match_len:]
         if not residual:
             # Whole chunk matched (rare here since the hash-map miss
             # came first; defensive guard).
             vec = prefix_vec if prefix_vec is not None \
-                else self.codebook[match_id]
+                else self._basis.lookup_rows(match_id)
             return vec, (int(match_id) if match_id is not None else None)
         # Step 3: byte-fallback encode the residual.
         fallback_vec = self.byte_fallback.encode(residual)
@@ -10711,7 +10754,7 @@ class RadixLayer(Layer):
             return None
         pids = self.spell_out(chunk_b)
         with torch.no_grad():
-            init = (self.codebook[pids].mean(dim=0).detach()
+            init = (self._basis.lookup_rows(pids).mean(dim=0).detach()
                     if pids else None)
         new_id = self.insert(chunk_b, init_vector=init)
         self._chunk_hits.pop(chunk_b, None)
