@@ -1,43 +1,6 @@
 OPEN QUESTIONS / FUTURE WORK (Alec's calls + next builds):
 
-* [ALEC — DESIGN] Operational integration of the QUERY TOOLS (isEqual,
-  isPart, exist, and the reasoner's equal/part/query/quantize/wholes/parts/
-  arma). They are tools the mind uses but have NO defined syntactic
-  operation — how do they get invoked during parse/reason? This is the
-  gating design question for: (a) whether exist follows the family out of
-  <compose> (it currently keeps the absolute-truth START role); (b) whether
-  default.grammar/shamatha.grammar follow complete.grammar's relocation
-  (generalizing there broke the MM_grammar XOR convergence bar — reverted);
-  (c) reviving the NP-R-NP (3-concept) relative-sentence form, which now
-  has no grammar-level producer (4 integration tests skip at the finder).
-
-* [ALEC — KNOB] Gate-B blind round-trip bar is RED at E~80: full-model
-  .where band precision (~4–7 byte claim error) can't separate xor's
-  5-vs-6-byte tiles. Options: more where-band training pressure / longer
-  budgets / accept scaffold-fed. Recorded in the encoding plan's Gate-B
-  notes. (Mechanism is proven correct via synthetic-stamp tests.)
-  XFAILED 2026-07-06 (test_mm20m_xor_blind_roundtrip, strict=False) pending
-  the knob call.
-
-============================================================================
-
-* Serial-derivation reconstruction (doc/plans/2026-07-04-serial-derivation-
-  reconstruction-*.md): Tasks 0-2 + the S2 operand-provenance build DONE
-  (2026-07-06, Method-1 leaves replay — test_mm20m_grammar_derivation_
-  roundtrip GREEN). REMAINING from that plan: Task 3 (NULL-word pathway),
-  Task 4 (Method-2 free-derivation bar). Its front half — the idea→typed
-  conceptual definition (signed OMP peel + ConceptualSpace.typed_definition:
-  head/modifiers/exclusions/residual) — LANDED with the concepts snap-contract
-  work (doc/plans/2026-07-06-...-execution.md, T0–T6 full-suite gated); what
-  remains for Task 4 is the grammar-surface COMPRESSION (definition → surface)
-  scored against the input, plus λ-sweeping <definitionSparsityScale> against
-  the fidelity bars on a real training config. Task 5 (docs + suite).
-  Query-tool operational integration is the [ALEC — DESIGN] item above.
-
-
 * Wave brightness and Task 11 nVectors wiring are explicitly parked out of scope: [design scope (line 36)](/Users/arogers/Library/Mobile Documents/com~apple~CloudDocs/bits/projects/WikiOracle/basicmodel/doc/plans/2026-07-03-reconstruction-fidelity-design.md:36).
-
-* GPU/CUDA PORTABILITY (Task 8 GPU rung; GPU-first policy = everything on GPU by default; training target is now a cloud GPU — the GB10 was returned). CPU-Generator-vs-device bug class SWEPT and fixed across bin/ (Language.py:2366, References.py:58-62; all other generator sites classified clean). 2026-07-07: full MPS grammar epochs now run (65536-row PS codebook included — the old "MPS OOM on the PS codebook" blocker no longer reproduces), and the device-coherence class is handled per util.TheDevice (whole-model sweep at compile-enlist; Optimizer.step canonical restore; recon_bench `_build_model` remains device-incoherent for MPS — harness-only, produces NaN where the real ModelFactory path is clean). REMAINING: the `AttributeError: 'NoneType'.is_empty` at bin/Spaces.py:21315 (`outputSpace.forward`, a subspace returns None) on the non-CPU forward path — device-independent-looking, needs root-cause; and a CUDA smoke pass once a cloud GPU is borrowed (nothing MPS-specific should carry over: no 31-buffer limit, uint16 supported).
 
 * The "Codebook.property_basis" is a hack that needs to be removed. Please summarize the WholeSpace property mechanism. You said properties "are" WholeSpace.what. But that codebook currently holds the whole/truth prototypes wired into the codebook-snap machinery; making properties the live .what semantics would rip that out and move the basin. So I built the property capability as opt-in/additive (Codebook.property_basis) alongside the existing whole codebook, not as a wholesale replacement. If you intended the live cutover, that's a separate deliberate step.
   * Codebook.property_basis = False still exists: [bin/Spaces.py (line 2599)](/Users/arogers/Library/Mobile Documents/com~apple~CloudDocs/bits/projects/WikiOracle/basicmodel/bin/Spaces.py:2599)
