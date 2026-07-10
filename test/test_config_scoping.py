@@ -121,18 +121,18 @@ class TestCreateFromConfig(unittest.TestCase):
     <data><dataType>numeric</dataType><dataset>xor</dataset></data>
     <training><autoload>false</autoload></training>
   </architecture>
-  <InputSpace><nOutput>2</nOutput><nDim>7</nDim></InputSpace>
+  <InputSpace><nOutput>2</nOutput><nDim>9</nDim></InputSpace>
   <PartSpace>
-    <nOutput>4</nOutput><nDim>7</nDim>
+    <nOutput>4</nOutput><nDim>9</nDim>
 
     <hasAttention>false</hasAttention>
   </PartSpace>
   <ConceptualSpace>
-    <nOutput>3</nOutput><nDim>7</nDim>
+    <nOutput>3</nOutput><nDim>9</nDim>
     <invertible>true</invertible>
   </ConceptualSpace>
   <WholeSpace>
-    <nOutput>3</nOutput><nDim>7</nDim><nVectors>3</nVectors>
+    <nOutput>3</nOutput><nDim>9</nDim><nVectors>3</nVectors>
 
   </WholeSpace>
   <OutputSpace><nOutput>1</nOutput><nDim>1</nDim></OutputSpace>

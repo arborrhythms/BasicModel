@@ -26,7 +26,7 @@
        IS/PS to 8*2=16 to preserve the bottleneck shape end-to-end. -->
   <InputSpace>
     <nVectors>3</nVectors>
-    <nDim>8</nDim>
+    <nDim>10</nDim>
     <nOutput>8</nOutput>
     <nOutputDim>8</nOutputDim>
   </InputSpace>
@@ -35,7 +35,7 @@
     <nInput>8</nInput>
     <nInputDim>8</nInputDim>
     <nVectors>1000</nVectors>
-    <nDim>8</nDim>
+    <nDim>10</nDim>
     <nOutput>8</nOutput>
     <nOutputDim>8</nOutputDim>
     <invertible>true</invertible>
@@ -45,7 +45,7 @@
     <nInput>8</nInput>
     <nInputDim>8</nInputDim>
     <nVectors>8</nVectors>
-    <nDim>8</nDim>
+    <nDim>10</nDim>
     <nOutput>8</nOutput>
     <nOutputDim>8</nOutputDim>
     <invertible>true</invertible>
@@ -59,7 +59,7 @@
          (nWhat + nWhere + nWhen). SS now carries (2, 2) like every other
          tier, so nDim/nInputDim/nOutputDim were bumped 2 -> 6 to preserve
          nWhat=2 (the binary truth state). -->
-    <nDim>8</nDim>
+    <nDim>10</nDim>
     <nInputDim>8</nInputDim>
     <nVectors>8</nVectors>
     <nOutput>8</nOutput>

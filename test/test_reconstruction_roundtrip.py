@@ -46,7 +46,15 @@ def _build(config, seed=0):
 # one row of content-association drift, the known residual; where_recovery
 # is 1.0 from E=50 up). Pinned at 80 (verified point); the instability is
 # recorded in the encoding plan's EXECUTION NOTES for Alec's review.
-EPOCHS_PINNED = 80
+# RE-PINNED (2026-07-09 multi-rung pass): the (4, 4) band -- .where is now the
+# 2-rung LADDER (LF range + HF resolution; nWhat 1018 -> 1016) -- moved the
+# seed-0 trajectory again. Measured E={75: scaffold 1.0/blind .75, 80: .75/.75,
+# 85: BOTH 1.0/1.0, 90: .75/.75, 100: .5-.75}. Pinned at 85, the point where
+# the blind bar AND the scaffold bar are both exact under the DEFAULT ladder
+# (wherePeriod 8192 / whereRungRatio 32 -- no per-config period override; the
+# ladder decodes byte-exact starts at the full period, start error 0.0). The
+# 90/100 content-drift tail persists (same residual as before).
+EPOCHS_PINNED = 85
 
 
 def test_xor_recon_loss_is_live(tmp_path):

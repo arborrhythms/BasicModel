@@ -39,7 +39,7 @@ from test_basicmodel import _populate_test_config
 # Builder
 # ---------------------------------------------------------------------------
 
-def _make_symbolic_space(nSymbols=3, symbolDim=6, conceptDim=6):
+def _make_symbolic_space(nSymbols=3, symbolDim=8, conceptDim=8):
     """Construct a minimal WholeSpace via TheXMLConfig + direct constructor.
 
     Uses the same _populate_test_config / TheXMLConfig approach used by the

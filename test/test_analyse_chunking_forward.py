@@ -53,20 +53,20 @@ def _write_xml(tmpdir, *, synthesis="lexicon", lexer="byte", analysis=None,
     <!-- Uniform (2,2): IS/PS/CS/SS are muxed space_roles, so nDim is the EVENT
          width = content(4) + .where/.when band(4) = 8. OS is the only
          (0,0) space_role and keeps the bare content width (1). -->
-    <nDim>8</nDim>
+    <nDim>10</nDim>
     <nVectors>8</nVectors>
     <nOutput>32</nOutput>
   </InputSpace>
   <PartSpace>
     <nInput>32</nInput>
     <nOutput>32</nOutput>
-    <nDim>8</nDim>
+    <nDim>10</nDim>
     <nVectors>{n_vectors}</nVectors>
     <synthesis>{synthesis}</synthesis>
   </PartSpace>
   <ConceptualSpace>
     <nOutput>32</nOutput>
-    <nDim>8</nDim>
+    <nDim>10</nDim>
     <nVectors>8</nVectors>
     <codebook>true</codebook>
   </ConceptualSpace>
@@ -74,7 +74,7 @@ def _write_xml(tmpdir, *, synthesis="lexicon", lexer="byte", analysis=None,
     <nOutput>32</nOutput>
     <!-- Uniform (2,2): SS.nWhat must equal CS.nWhat (handoff invariant);
          nDim = content(4) + band(4) = 8 (was 4 under the retired SS=(0,0)). -->
-    <nDim>8</nDim>
+    <nDim>10</nDim>
     <nVectors>8</nVectors>
     <codebook>true</codebook>
     <lexer>{lexer}</lexer>{analysis_elem}

@@ -12,9 +12,12 @@ demuxed at the CS->WS boundary (now a no-op identity reshape), which
 simplifies the constructor chain and makes ``space[i].nOutputDim ==
 space[i+1].nInputDim`` directly comparable for handoff validation.
 
-2026-07-04 encoding pass: the band is (nWhere=2, nWhen=4) — `.when` is the
-4-dim 2-rung start ladder (WhenStartDurationEncoding; slots [-4..-1]),
-`.where` keeps the 2-dim endpoint-sum bracket (slots [-6, -5]).
+2026-07-09 multi-rung pass: the band is (nWhere=4, nWhen=4) — `.when` is the
+4-dim 2-rung start ladder (WhenStartDurationEncoding; slots [-4..-1]) and
+`.where` is now the SAME 2-rung ladder shape over the byte START
+(WhereEncoding; slots [-8..-5]; LF = <wherePeriod> range, HF =
+wherePeriod/<whereRungRatio> sub-byte resolution). The endpoint-sum bracket is
+retired from the muxed band (the analyzer's EndpointSumWhere keeps it).
 
 The TWO principled exceptions stay ``(0, 0)``: there is no positional
 encoding BEFORE the input or AFTER the output. OutputSpace (the terminal
@@ -22,18 +25,18 @@ prediction / answer) is one — a scalar/answer has no .where/.when to mux,
 and the loss would otherwise slice empty where/when segments and NaN."""
 
 _CANONICAL_SHAPE = {
-    "InputSpace":      (2, 4),
-    "PartSpace": (2, 4),
+    "InputSpace":      (4, 4),
+    "PartSpace": (4, 4),
     # ModalSpace is the demuxed perceptual-space_role composite (Spaces.ModalSpace):
     # it routes what/where/when through sub-PartSpaces and shares the
     # perceptual shape. No live config currently enables demuxed mode.
-    "ModalSpace":      (2, 4),
-    "ConceptualSpace": (2, 4),
-    "WholeSpace":   (2, 4),
+    "ModalSpace":      (4, 4),
+    "ConceptualSpace": (4, 4),
+    "WholeSpace":   (4, 4),
     # Exception: the terminal output carries no positional encoding -- the
     # answer has no .where/.when (see module docstring).
     "OutputSpace":     (0, 0),
-    "SymbolSpace":       (2, 4),
+    "SymbolSpace":       (4, 4),
 }
 # 2026-06-04: no space_role's codebook is mandatory. A config opts into a codebook
 # explicitly via <codebook>quantize</codebook>; any space_role may resolve to

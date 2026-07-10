@@ -39,10 +39,10 @@ def _write_minimal_bpe_xml(tmpdir, n_vectors=512, synthesis="bpe"):
   </architecture>
   <InputSpace>
     <!-- Uniform-band convention: EVERY interior space_role has the same
-         band, so nDim = nWhat + .where(2) + .when(4). nWhat=4 everywhere
-         => nDim=10 on IS/PS/CS AND SS (2026-07-04 encoding pass: .when
+         band, so nDim = nWhat + .where(4) + .when(4). nWhat=4 everywhere
+         => nDim=12 on IS/PS/CS AND SS (2026-07-09 multi-rung pass: .where
          widened 2->4). OS is (0,0), content-only nDim=1. -->
-    <nDim>10</nDim>
+    <nDim>12</nDim>
     <nVectors>8</nVectors>
     <!-- nOutput sized to fit the test's "hello world foo" input
          (15 chars under the BPE pre-chunking byte stream + 1 EOS
@@ -54,20 +54,20 @@ def _write_minimal_bpe_xml(tmpdir, n_vectors=512, synthesis="bpe"):
   <PartSpace>
     <nInput>32</nInput>
     <nOutput>32</nOutput>
-    <nDim>10</nDim>
+    <nDim>12</nDim>
     <nVectors>{n_vectors}</nVectors>
     <synthesis>{synthesis}</synthesis>
     <wordLearning>2</wordLearning>
   </PartSpace>
   <ConceptualSpace>
     <nOutput>32</nOutput>
-    <nDim>10</nDim>
+    <nDim>12</nDim>
     <nVectors>8</nVectors>
     <codebook>true</codebook>
   </ConceptualSpace>
   <WholeSpace>
     <nOutput>32</nOutput>
-    <nDim>10</nDim>
+    <nDim>12</nDim>
     <nVectors>8</nVectors>
     <codebook>true</codebook>
     <!-- Phase 4b: <lexer> lives on WholeSpace (analytic cutting). -->
@@ -172,11 +172,11 @@ class TestPerceptualSpaceBPE(unittest.TestCase):
             ps_event = captured.get("active")
             self.assertIsNotNone(ps_event, "PartSpace.forward must emit a percept")
             self.assertEqual(ps_event.shape[0], 1)
-            # PartSpace is a (2,4) muxed space_role, so the materialized
-            # event is the full EVENT width = content(4) + .where(2) +
-            # .when(4) = 10, matching <PartSpace><nDim>10 in the fixture
-            # above (2026-07-04 encoding pass: .when widened 2->4).
-            self.assertEqual(ps_event.shape[-1], 10)
+            # PartSpace is a (4,4) muxed space_role, so the materialized
+            # event is the full EVENT width = content(4) + .where(4) +
+            # .when(4) = 12, matching <PartSpace><nDim>12 in the fixture
+            # above (2026-07-09 multi-rung pass: .where widened 2->4).
+            self.assertEqual(ps_event.shape[-1], 12)
             non_zero_rows = (ps_event[0].abs().sum(dim=-1) > 0).sum().item()
             self.assertGreaterEqual(non_zero_rows, 1,
                 "At least one position must have a non-zero vector")

@@ -1,11 +1,13 @@
-"""Muxed WhereEncoding endpoint-sum BRACKET (2026-06-16 redesign).
+"""Muxed WhereEncoding 2-rung LADDER (2026-07-09 multi-rung pass).
 
-``.where`` is the invertible endpoint-sum key over a span ``[start, end]`` (the
-``EndpointSumWhere`` form adopted into the muxed event tail): the ANGLE decodes
-the span center, the MAGNITUDE the span extent. An INSTANT (start == end)
-collapses to the legacy single-quadrature point (byte-identical to the
-pre-bracket stamp). ``decode`` returns the center (legacy positional contract);
-``decode_span`` returns ``(start, end)`` for the mereology contiguity test.
+``.where`` is a 4-dim two-pair quadrature ladder over ONE quantity, the byte
+START position (mirrors the `.when` v2 ladder): LF pair at ``<wherePeriod>``
+(range), HF pair at ``wherePeriod/<whereRungRatio>`` (sub-byte resolution);
+``decode`` = atan2 per pair + HF branch resolution by LF, minus the
+``where_origin`` seam shift. The endpoint-sum bracket is RETIRED from the muxed
+band (the END is content-terminated, Alec 2026-07-09); the analyzer's
+``EndpointSumWhere`` span key (perceptual_analyzer.py) is a separate codec and
+keeps the bracket -- test_ps_where.py covers it.
 """
 import math, os, sys, unittest
 from pathlib import Path
@@ -14,93 +16,68 @@ os.environ.setdefault("BASICMODEL_DEVICE", "cpu")
 import torch
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "bin"))
 
-from Spaces import WhereEncoding, QuadratureEncoding
+from Spaces import WhereEncoding, _WHERE_RUNG_RATIO
 
 
-def _enc(maxP=4096):
-    return WhereEncoding(maxP, 2, 2)
+def _enc(maxP=8192, ratio=_WHERE_RUNG_RATIO):
+    return WhereEncoding(maxP, 4, 4, rung_ratio=ratio)
 
 
-# --- instant is a single-quadrature point at the ORIGIN-SHIFTED position -----
-def test_instant_is_origin_shifted_legacy_point():
-    # The instant is still a single-quadrature point (0.5*2 == 1 exact), now at
-    # the ORIGIN-SHIFTED position (WhereEncoding.where_origin off the wrap seam,
-    # 2026-07-09): encode(p) == the legacy quadrature point of (p + where_origin).
+def test_ladder_shape_and_rungs():
     enc = _enc()
-    o = enc.where_origin
-    for p in (0.0, 3.0, 37.0, 120.0, 999.0):
-        new = enc.encode(torch.tensor(p))                      # end=None -> instant
-        legacy = QuadratureEncoding.encode(enc, torch.tensor(p + o))
-        assert torch.equal(new, legacy), (p, new, legacy)
+    assert enc.nDim == 4
+    assert enc.index == [-8, -7, -6, -5]           # before the 4 when slots
+    assert math.isclose(enc.period_hf, 8192 / _WHERE_RUNG_RATIO)
+    key = enc.encode(torch.tensor(37.0))
+    assert key.shape[-1] == 4
+    # Two TRUE pairs: each rung is a unit phasor (constant norm sqrt(2) total).
+    assert math.isclose(float(key[..., :2].norm()), 1.0, abs_tol=1e-5)
+    assert math.isclose(float(key[..., 2:].norm()), 1.0, abs_tol=1e-5)
 
 
-def test_forward_stamp_is_origin_shifted_legacy():
-    # The auto-counter forward stamp (instants) is the legacy quadrature stamp
-    # at the origin-shifted positions -- the bracket capability is opt-in via
-    # encode(s, e); the origin shift is applied uniformly by encode.
+def test_ladder_round_trip_exact_across_range():
+    # Byte positions round-trip EXACTLY across the full period -- including
+    # past the HF period (256), where the LF rung resolves the HF branch.
+    # A single quadrature pair cannot do this: range and resolution trade off.
+    enc = _enc()
+    for p in (0, 1, 5, 6, 11, 255, 256, 257, 1000, 4000, 8000):
+        d = float(enc.decode(enc.encode(torch.tensor(float(p)))))
+        assert math.isclose(d, float(p), abs_tol=1e-2), (p, d)
+
+
+def test_origin_shift_clears_the_seam():
+    # Offset 0 is stamped OFF the LF angle-0 seam (where_origin, 1/64 period):
+    # small negative phase noise must not wrap the decode to ~maxVal.
+    enc = _enc()
+    key = enc.encode(torch.tensor(0.0))
+    noisy = key + torch.tensor([-0.02, 0.0, -0.02, 0.0])
+    d = float(enc.decode(noisy))
+    assert abs(d) < 3.0, d                          # near 0, NOT near 8192
+
+
+def test_forward_stamp_round_trip():
+    # The auto-counter forward stamp reverses to the stamped positions.
     enc = _enc(); enc.p = 0
-    x = torch.zeros(2, 4, 12)
+    x = torch.zeros(2, 4, 16)
     y = enc.forward(x.clone())
-    # Re-derive the legacy stamp for the same ORIGIN-SHIFTED positions.
-    enc2 = _enc(); enc2.p = 0
-    idx = enc2.resolve(12)
-    pos = torch.arange(0, 2 * 4, dtype=torch.float32) + enc2.where_origin
-    legacy = QuadratureEncoding.encode(enc2, pos).reshape(2, 4, 2)
-    assert torch.allclose(y[..., idx], legacy, atol=0)
+    _cleaned, decoded = enc.reverse(y)
+    for b in range(2):
+        for v in range(4):
+            assert math.isclose(float(decoded[b, v]), float(b * 4 + v),
+                                abs_tol=1e-2), (b, v, float(decoded[b, v]))
 
 
-# --- bracket: center via decode (legacy), endpoints via decode_span ---------
-def test_bracket_center_and_span():
+def test_bracket_is_retired():
+    # The muxed band no longer carries the endpoint-sum bracket: encode takes
+    # ONE quantity (no end kwarg) and decode_span is gone.
     enc = _enc()
-    for s, e in ((10, 20), (5, 40), (100, 130), (0, 250)):
-        key = enc.encode(torch.tensor(float(s)), torch.tensor(float(e)))
-        center = enc.decode(key)
-        assert math.isclose(float(center), (s + e) / 2.0, abs_tol=0.05), (s, e)
-        ds, de = enc.decode_span(key)
-        assert math.isclose(float(ds), float(s), abs_tol=0.1), (s, e)
-        assert math.isclose(float(de), float(e), abs_tol=0.1), (s, e)
-
-
-def test_instant_decodes_to_point_with_zero_extent():
-    enc = _enc()
-    key = enc.encode(torch.tensor(42.0))
-    assert math.isclose(float(enc.decode(key)), 42.0, abs_tol=0.05)
-    ds, de = enc.decode_span(key)
-    assert math.isclose(float(ds), 42.0, abs_tol=1e-2)
-    assert math.isclose(float(de), 42.0, abs_tol=1e-2)
-
-
-def test_batched_decode_span():
-    enc = _enc()
-    spans = [(10, 20), (50, 90), (200, 230)]
-    keys = torch.stack([enc.encode(torch.tensor(float(s)), torch.tensor(float(e)))
-                        for s, e in spans], dim=0)
-    starts, ends = enc.decode_span(keys)
-    for i, (s, e) in enumerate(spans):
-        assert math.isclose(float(starts[i]), float(s), abs_tol=0.1), (s, e)
-        assert math.isclose(float(ends[i]), float(e), abs_tol=0.1), (s, e)
-
-
-# --- contiguity / containment: the mereology read off decode_span ----------
-def test_containment_and_contiguity_via_span():
-    enc = _enc()
-    def span(s, e):
-        return enc.decode_span(enc.encode(torch.tensor(float(s)), torch.tensor(float(e))))
-
-    # A = [10, 50] contains B = [20, 30].
-    a_s, a_e = span(10, 50)
-    b_s, b_e = span(20, 30)
-    assert float(a_s) <= float(b_s) + 0.1 and float(b_e) <= float(a_e) + 0.1
-
-    # Two sibling parts [10, 30] and [30, 60] are CONTIGUOUS (no gap at 30).
-    _p1s, p1e = span(10, 30)
-    p2s, _p2e = span(30, 60)
-    assert abs(float(p1e) - float(p2s)) < 1.0
-
-    # [10, 30] and [40, 60] are DISCONTIGUOUS (a gap of ~10 between them).
-    _q1s, q1e = span(10, 30)
-    q2s, _q2e = span(40, 60)
-    assert float(q2s) - float(q1e) > 5.0
+    assert not hasattr(enc, "decode_span")
+    try:
+        enc.encode(torch.tensor(10.0), torch.tensor(20.0))
+        raised = False
+    except TypeError:
+        raised = True
+    assert raised, "encode must reject an end argument (bracket retired)"
 
 
 if __name__ == "__main__":

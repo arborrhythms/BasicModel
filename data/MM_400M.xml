@@ -32,9 +32,9 @@
     <nInput>8192</nInput>
     <nInputDim>1</nInputDim>
     <nVectors>256</nVectors>
-    <nDim>7</nDim>
+    <nDim>9</nDim>
     <nOutput>8192</nOutput>
-    <nOutputDim>7</nOutputDim> <!-- 1 byte + 2 where + 4 when -->
+    <nOutputDim>9</nOutputDim> <!-- 1 byte + 4 where + 4 when -->
 
   </InputSpace>
 

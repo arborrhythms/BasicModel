@@ -23,10 +23,13 @@
     </training>
   </architecture>
 
-  <!-- InputSpace: text-mode lexer, full content width. -->
+  <!-- InputSpace: text-mode lexer, full content width. nDim 14 -> 16
+       (2026-07-09 multi-rung pass: .where widened 2 -> 4; +2 preserves the
+       content width nWhat = 8; at 14 the crisp XOR basin was lost, seeds
+       0/1 settled at the 0.5 data mean). -->
   <InputSpace>
     <nVectors>8</nVectors>
-    <nDim>14</nDim>
+    <nDim>16</nDim>
     <nOutput>8</nOutput>
   </InputSpace>
 
@@ -37,7 +40,7 @@
   <PartSpace>
     <nInput>8</nInput>
     <nVectors>1000</nVectors>
-    <nDim>14</nDim>
+    <nDim>16</nDim>
     <nOutput>8</nOutput>
     <invertible>true</invertible>
     <!-- PartSpace is subsymbolic: its <codebook> element was retired
@@ -58,7 +61,7 @@
   <ConceptualSpace>
     <nInput>8</nInput>
     <nVectors>8</nVectors>
-    <nDim>14</nDim>
+    <nDim>16</nDim>
     <nOutput>8</nOutput>
     <invertible>true</invertible>
     <butterfly>true</butterfly>
@@ -68,7 +71,7 @@
   <WholeSpace>
     <lexer>word</lexer>
     <nInput>8</nInput>
-    <nDim>14</nDim>
+    <nDim>16</nDim>
     <nVectors>8</nVectors>
     <nOutput>8</nOutput>
     <!-- XOR_exact overrides the codebook defaults: drop the WholeSpace

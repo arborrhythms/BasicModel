@@ -912,38 +912,42 @@ def _bracket_decode_span(encoded, div_term, scale=_BRACKET_SCALE, wrap=True,
     return center - half, center + half
 
 
-class WhereEncoding(QuadratureEncoding):
-    """Encode spatial position (nWhere) as sin/cos values in reserved embedding slots.
+# .where multi-rung defaults (2026-07-09 multi-rung pass): the LF/HF rung
+# ratio <whereRungRatio>. 32 puts the HF period at wherePeriod/32 (8192 -> 256,
+# the fine period Gate-B measured EXACT starts at) while the LF rung keeps the
+# full-period RANGE -- a single period cannot carry both (range vs resolution).
+_WHERE_RUNG_RATIO = 32
 
-    Index is computed dynamically from nWhere and nWhen so the slots
-    always align with the muxed layout ``[what, where, when]``:
+
+class WhereEncoding(QuadratureEncoding):
+    """4-dim `.where` multi-rung: a 2-rung quadrature LADDER over ONE quantity,
+    the byte START position (2026-07-09 pass; mirrors the `.when` v2 ladder,
+    ``WhenStartDurationEncoding``):
+
+      ``[sin(p*w_lf), cos(p*w_lf), sin(p*w_hf), cos(p*w_hf)]``
+
+    with ``w_lf = 2*pi/<wherePeriod>`` (RANGE: the full sentence cap) and
+    ``w_hf = w_lf * <whereRungRatio>`` (RESOLUTION: default ratio 32 puts one
+    byte at ~0.0245 rad at the 8192 default -- above the measured ~0.02 rad
+    reverse-transport noise, the Gate-B closing measurement). ``decode`` =
+    atan2 per pair + HF branch resolution by LF: a single period trades range
+    against resolution; the ladder carries both. The END is NOT in the band --
+    content terminates the tile (Alec 2026-07-09); the endpoint-sum bracket is
+    retired from the muxed band (the analyzer's ``EndpointSumWhere`` span key
+    in perceptual_analyzer.py is a different codec and keeps it).
+
+    Index is computed dynamically from nWhere and nWhen so the slots always
+    align with the muxed layout ``[what, where, when]``:
       index = [-(nWhere+nWhen), ..., -(nWhen+1)]
 
     A monotonic counter ``self.p`` assigns each object a unique position
     within a dataset pass; it must be reset between epochs to avoid overflow.
-
-    -----------------------------------------------------------------------
-    Codebook offset registry (post-rollback bivector-activation work)
-    -----------------------------------------------------------------------
-    ``.where`` doubles as a globally-unique key into the per-Space
-    codebook tables. ``.where`` carries spatial / positional EXTENT -- a
-    sin/cos position with period ``maxP`` (e.g. architecture.nObjects) -- NOT
-    a codebook row key. Codebook identity is the row index (the ``_index``
-    selection). The cross-codebook ``.where`` slice registry was RETIRED
-    (modality re-architecture, 2026-06-04 reconciliation with the
-    where-keyed-taxonomy plan): the taxonomy is row/position-keyed via
-    WholeSpace's explicit dicts, and reverse decode is content-match.
+    Codebook identity stays the row index (the retired cross-codebook .where
+    registry note lives in git history).
     """
     p = 0
 
-    # Cross-codebook .where slice registry RETIRED (2026-06-04, modality
-    # re-architecture Phase 4): codebook identity is the row index (the
-    # _index selection), not a global .where offset, so there is no shared
-    # where-space to allocate slices in. .where keeps its positional /
-    # spatial-extent role only. ``allocate_codebook_slice`` / ``global_max_val``
-    # / ``reset_codebook_registry`` were removed with this change.
-
-    def __init__(self, maxP=0, nWhere=2, nWhen=0):
+    def __init__(self, maxP=0, nWhere=4, nWhen=0, rung_ratio=_WHERE_RUNG_RATIO):
         """Place the where-encoding's slots dynamically before the when slots.
 
         When ``nWhere`` is 0 the encoding is disabled (zero-width carrier),
@@ -954,57 +958,95 @@ class WhereEncoding(QuadratureEncoding):
             # Dynamic: where sits at [-(nWhere+nWhen), ..., -(nWhen+1)]
             index = [-(nWhere + nWhen) + i for i in range(nWhere)]
             super().__init__(index, maxP)
+            self.nDim = int(nWhere)
         else:
             Encoding.__init__(self, [], 1)  # skip QuadratureEncoding div_term
             self.nDim = 0
+        self.rung_ratio = max(1, int(rung_ratio))
+        self.set_period(self.maxVal)
         self.p = 0
+
+    def set_period(self, maxP):
+        """The ONE period seam: sets ``maxVal`` and derives both rung omegas
+        (and the legacy ``div_term`` alias = the LF omega, for the period
+        checks that read it). The raise-to-fit overflow seam calls this."""
+        self.maxVal = max(1, int(maxP))
+        self.div_lf = 2 * math.pi / self.maxVal
+        self.div_hf = self.div_lf * self.rung_ratio
+        self.div_term = self.div_lf
+
+    @property
+    def period_hf(self):
+        """The HF rung period in bytes (P_lf / rung_ratio)."""
+        return 2 * math.pi / self.div_hf
 
     @property
     def where_origin(self):
         """ORIGIN SHIFT: positions are stamped at ``pos + where_origin`` so the
-        valid buffer sub-arc sits clear of the angle-0 seam -- reverse-transport
-        noise near offset 0 can no longer wrap to ~maxVal (the atan2 % 2pi seam
-        aliasing); decode subtracts it. Sized at 1/64 of the period (angle
-        ~0.098 rad, ~5x the measured ~0.02 rad transport noise): enough to clear
-        the seam, small enough to barely rotate the band (a pi/2 quarter-period
-        shift measurably perturbed marginal xor-convergence bars). Computed LIVE
-        off ``maxVal`` so it tracks the raise-to-fit period reset."""
+        valid buffer sub-arc sits clear of the LF angle-0 seam --
+        reverse-transport noise near offset 0 can no longer wrap to ~maxVal
+        (the atan2 % 2pi seam aliasing); decode subtracts it. Sized at 1/64 of
+        the LF period (LF angle ~0.098 rad, ~5x the measured ~0.02 rad
+        transport noise). The HF rung needs no seam clearance of its own: HF
+        wraps are absorbed by the LF branch resolution. Computed LIVE off
+        ``maxVal`` so it tracks the raise-to-fit period reset."""
         return max(1, int(self.maxVal) // 64) if self.nDim > 0 else 0
 
-    def encode(self, start, end=None):
-        """Origin-shifted endpoint-sum bracket key for span ``[start, end]``.
-
-        ``end is None`` (every legacy single-position call site -- ``forward``,
-        ``set_where``, the codebook stamp) => an INSTANT at ``start``. Passing a
-        distinct ``end`` (word-span compaction, mereology synthesis) carries the
-        start-end bracket: angle=center, magnitude=extent. Both endpoints are
-        shifted by ``where_origin`` off the seam (decode subtracts it)."""
-        o = self.where_origin
-        return _bracket_encode(start + o,
-                               (end + o) if end is not None else None,
-                               self.div_term)
+    def encode(self, start):
+        """Encode byte position(s) to the two-pair ladder (ONE quantity, the
+        origin-shifted START; the end is content-terminated, not banded).
+        Each pair folds the position into ITS period before the angle multiply
+        so the sin/cos argument stays < 2*pi (float32 keeps byte-level
+        precision at any position). ``nWhere=2`` is the degenerate single-rung
+        (LF-only) band -- the legacy fixture width."""
+        if not isinstance(start, torch.Tensor):
+            start = torch.tensor(float(start), device=TheDevice.get())
+        start = start.to(torch.float32) + self.where_origin
+        a_lf = torch.remainder(start, float(self.maxVal)) * self.div_lf
+        parts = [torch.sin(a_lf), torch.cos(a_lf)]
+        if self.nDim >= 4:
+            a_hf = torch.remainder(start, self.period_hf) * self.div_hf
+            parts += [torch.sin(a_hf), torch.cos(a_hf)]
+        return torch.stack(parts, dim=-1)
 
     def decode(self, encoded):
-        """Inverse of the origin-shifted encode: the atan2 center (inherited)
-        minus ``where_origin`` returns the true position."""
-        return super().decode(encoded) - self.where_origin
+        """Recover the byte position from the ladder: LF localizes the branch,
+        HF supplies the fine position (exact once the LF estimate lands within
+        half an HF period -- LF transport noise ~0.02 rad = ~26 bytes at 8192,
+        well inside the +-128-byte branch bound at ratio 32). Un-shifts
+        ``where_origin``. Broadcasts over ``encoded[..., :nDim]``; the 2-dim
+        single-rung band decodes the LF pair alone."""
+        if not isinstance(encoded, torch.Tensor):
+            encoded = torch.as_tensor(encoded, dtype=torch.float32)
+        two_pi = 2 * math.pi
+        a_lf = torch.atan2(encoded[..., 0], encoded[..., 1]) % two_pi
+        s_lf = a_lf / self.div_lf
+        if self.nDim >= 4 and encoded.shape[-1] >= 4:
+            a_hf = torch.atan2(encoded[..., 2], encoded[..., 3]) % two_pi
+            p_hf = self.period_hf
+            r = a_hf / self.div_hf              # fine position in [0, P_hf)
+            k = torch.round((s_lf - r) / p_hf)  # branch from the LF estimate
+            start = k * p_hf + r
+        else:
+            start = s_lf                        # single-rung: LF only
+        # Seam fold (mirrors the .when ladder): map [P-0.5, P) -> [-0.5, 0)
+        # so integer positions near the fold round exact.
+        P = float(self.maxVal)
+        start = torch.remainder(start, P)
+        start = torch.where(start >= P - 0.5, start - P, start)
+        return start - self.where_origin
 
     def stamp(self, buf, batch_idx, pos_idx, offset):
-        """Origin-shifted scalar stamp (keeps ``stamp`` coherent with
-        ``encode``/``decode`` -- both shift by ``where_origin``)."""
-        super().stamp(buf, batch_idx, pos_idx, offset + self.where_origin)
-
-    def decode_span(self, encoded):
-        """Recover ``(start, end)`` byte positions from a .where bracket key.
-
-        ``decode`` returns the span CENTER; ``decode_span`` the endpoints for the
-        contiguity / containment test. Both un-shift ``where_origin``."""
-        o = self.where_origin
-        s, e = _bracket_decode_span(encoded, self.div_term, wrap=True)
-        return s - o, e - o
+        """Scalar ladder stamp at a specific buffer position (coherent with
+        ``encode``/``decode`` -- the origin shift rides inside ``encode``)."""
+        idx = self.resolve(buf.shape[-1])
+        if len(idx) and idx[0] >= 0 and idx[0] < buf.shape[-1]:
+            key = self.encode(float(offset))
+            for i, j in enumerate(idx):
+                buf[batch_idx, pos_idx, int(j)] = float(key[..., i])
 
     def forward(self, x):
-        """Stamp sin/cos positional values into reserved embedding slots.
+        """Stamp ladder positional values into reserved embedding slots.
 
         Advances the per-batch counter ``self.p`` by ``batch``; asserts
         before wrap so an overflow is loud. No-op when the encoding is
@@ -1017,22 +1059,17 @@ class WhereEncoding(QuadratureEncoding):
         embeddingSize = x.shape[-1]
         index = np.add([embeddingSize] * len(self.index), self.index)
         position = torch.arange(self.p, self.p+batch*n, dtype=torch.float32, device=TheDevice.get())
-        pos = self.encode(position)  # [batch*n, 2]
+        pos = self.encode(position)  # [batch*n, nDim]
         y = x.clone()
         y[:, :, index] = pos.reshape(batch, n, self.nDim)
         self.p += batch
         assert self.p + self.where_origin < self.maxVal, "Overflow in object embedding"
         return y
 
-    # WhereEncoding.recover (the .where -> int identity inverse) RETIRED
-    # (2026-06-04, Phase 4): .where no longer keys the codebook, so there is no
-    # integer position to recover from a row's .where slot; codebook identity
-    # is the row index and CS->WS reverse decode is content-match (nearest row).
-
     @staticmethod
     def test():
         """Self-test: encode then decode positions; print round-trip values."""
-        pe = WhereEncoding(100, nWhere=2, nWhen=0)
+        pe = WhereEncoding(100, nWhere=4, nWhen=0)
         pe.p = 0
         x = torch.zeros([2, 4, 12], device=TheDevice.get())
         y = pe.forward(x)
@@ -1615,6 +1652,19 @@ class EventEncoding(Encoding):
                                         and len(outputShape) > 1) else 0
         self._total = total
         self.nWhat = max(0, total - self.nWhere - self.nWhen)
+        # Warn loud (2026-07-09 multi-rung pass): a sectioned event with no
+        # CONTENT width means the config's nDim cannot fit the canonical
+        # .where/.when band. Degenerate fixtures that never build a real
+        # what-basis run fine at nWhat=0 (long-standing tolerance), so this
+        # warns and NAMES the knob -- if a codebook build later crashes on the
+        # empty width, the warning has already said why.
+        if section is not None and total > 0 and self.nWhat < 1:
+            warnings.warn(
+                f"EventEncoding[{section}]: nDim={total} leaves no content "
+                f"width after the canonical band (nWhere={self.nWhere} + "
+                f"nWhen={self.nWhen}); raise <nDim> to at least "
+                f"{self.nWhere + self.nWhen + 1} if this space builds a "
+                f"what-basis.", RuntimeWarning)
         self.muxedSize = self.nWhat + self.nWhere + self.nWhen
 
     def set_band(self, nWhere, nWhen, total=None):
@@ -4280,15 +4330,17 @@ def _decode_where_offset(positions, batch_idx, vector_idx, subspace=None):
     where_encoding = None if subspace is None else subspace.whereEncoding
     if where_encoding is None:
         return None
-    sin_val = positions[batch_idx, vector_idx, 0].item()
-    cos_val = positions[batch_idx, vector_idx, 1].item()
-    # Noise floor 0.1: a real stamp has |(sin,cos)|=1.0; an UNWRITTEN band
-    # reconstructs ~1e-2 noise (probe 4.2) -- below-floor = no offset claim.
+    band = positions[batch_idx, vector_idx, :where_encoding.nDim]
+    # Noise floor 0.1: a real stamp has |(sin,cos)|=1.0 PER RUNG PAIR; an
+    # UNWRITTEN band reconstructs ~1e-2 noise (probe 4.2) -- gate on the LF
+    # pair (the branch-resolving rung); below-floor = no offset claim.
+    sin_val = float(band[0])
+    cos_val = float(band[1])
     if (sin_val * sin_val + cos_val * cos_val) < 0.01:
         return None
-    if math.isnan(sin_val) or math.isnan(cos_val):
+    if not bool(torch.isfinite(band).all()):
         return None
-    return round(where_encoding.decode(torch.tensor([sin_val, cos_val])).item())
+    return round(float(where_encoding.decode(band.float())))
 
 
 def _blind_active_slots(mags, ratio_guard=1.8, abs_floor=0.25):
@@ -7649,9 +7701,13 @@ class Space(nn.Module):
         whatEncoding   = WhatEncoding(inputShape, outputShape)
         # Period is config-derived (<wherePeriod>, default 8192), NOT nObjects
         # (2026-07-04 encoding pass; the seam below raise-to-fits with a warn).
+        # <whereRungRatio> (2026-07-09 multi-rung pass): HF period =
+        # wherePeriod / ratio (default 32 -> 256-byte fine rung at the default).
         whereEncoding  = WhereEncoding(
             int(TheXMLConfig.get("architecture.wherePeriod",
-                                 _WHERE_PERIOD_DEFAULT)), _nWhere, _nWhen)
+                                 _WHERE_PERIOD_DEFAULT)), _nWhere, _nWhen,
+            rung_ratio=int(TheXMLConfig.get("architecture.whereRungRatio",
+                                            _WHERE_RUNG_RATIO)))
         whenEncoding   = event_when_encoding(_nWhen)
         self.subspace  = SubSpace(
             nInputDim=self.nInputDim,
@@ -9676,8 +9732,8 @@ class PartSpace(PerceptualSpace):
                     f"period {period}; raising the period to {maxP} -- "
                     f"increase <wherePeriod> to at least {need} to "
                     f"silence this.", RuntimeWarning)
-            self.subspace.whereEncoding.maxVal = maxP
-            self.subspace.whereEncoding.div_term = 2 * math.pi / maxP
+            # set_period derives BOTH rung omegas (+ the div_term alias).
+            self.subspace.whereEncoding.set_period(maxP)
         # <chunking> was renamed <synthesis>; fail loudly on old configs.
         try:
             _legacy_chunking = TheXMLConfig.space(section, "chunking")
@@ -12274,6 +12330,9 @@ class PartSpace(PerceptualSpace):
                               if n < len(tile_spans[b])
                               and tile_spans[b][n][0] >= 0]
             elif positions is not None:
+                # Slot-activity magnitude: the LF rung pair (a real stamp is
+                # |.|=1 per pair; the multi-rung band's slots 0..1 are the LF
+                # pair -- same gate semantics as the single-pair band).
                 mags = {n: float(torch.linalg.vector_norm(
                             positions[b, n, :2].float()))
                         for n in range(N) if claims[n] is not None}

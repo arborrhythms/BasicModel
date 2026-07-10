@@ -31,15 +31,14 @@
          concepts (hello/world) exist as parts at their .where. Without this the
          analyser stages word spans but no concepts are minted from them. -->
     <mereologyRaise>true</mereologyRaise>
-    <!-- wherePeriod 256 (Gate-B, 2026-07-09): the xor sentences are ~12 bytes, so
-         a short period gives a high .where frequency (1 byte = 2pi/256 rad). The
-         8192 default buried the byte-offset signal under the reverse-transport
-         noise floor (~0.008 rad); at 256 the same noise is sub-byte, so the band
-         decodes EXACT starts and the blind tiling separates the 5 vs 6 byte tiles.
-         The origin-shift (WhereEncoding.where_origin) keeps offset 0 off the wrap
-         seam. Long-sentence configs need a coarse+fine multi-rung, not this single
-         short period (a separate follow-up). -->
-    <wherePeriod>256</wherePeriod>
+    <!-- .where multi-rung (2026-07-09): the DEFAULT ladder (wherePeriod 8192,
+         whereRungRatio 32, HF period 256) carries both the full-period RANGE
+         (LF rung) and the sub-byte RESOLUTION (HF rung, 1 byte = 0.0245 rad,
+         above the ~0.02 rad reverse-transport noise) that Gate-B needs; the
+         interim single-period wherePeriod=256 override is retired, so this
+         config validates the ladder end-to-end (the blind round-trip bar,
+         test_mm20m_xor_blind_roundtrip). -->
+
 
     <data>
       <dataType>embedding</dataType>

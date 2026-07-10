@@ -16,13 +16,16 @@ def test_canonical_shape_table():
     # OutputSpace: the terminal answer has no .where/.when to mux.
     # 2026-07-04 encoding pass: the band widened (2, 2) -> (2, 4) -- .when is
     # the 4-dim start ladder (WhenStartDurationEncoding).
-    assert canonical_shape("InputSpace")      == (2, 4)
-    assert canonical_shape("PartSpace") == (2, 4)
-    assert canonical_shape("ModalSpace")      == (2, 4)
-    assert canonical_shape("ConceptualSpace") == (2, 4)
-    assert canonical_shape("WholeSpace")   == (2, 4)
+    # 2026-07-09 multi-rung pass: (2, 4) -> (4, 4) -- .where is now the SAME
+    # 2-rung ladder shape over the byte START (WhereEncoding; LF range rung +
+    # HF resolution rung, <wherePeriod>/<whereRungRatio>).
+    assert canonical_shape("InputSpace")      == (4, 4)
+    assert canonical_shape("PartSpace") == (4, 4)
+    assert canonical_shape("ModalSpace")      == (4, 4)
+    assert canonical_shape("ConceptualSpace") == (4, 4)
+    assert canonical_shape("WholeSpace")   == (4, 4)
     assert canonical_shape("OutputSpace")     == (0, 0)
-    assert canonical_shape("SymbolSpace")       == (2, 4)
+    assert canonical_shape("SymbolSpace")       == (4, 4)
 
 
 def test_mandatory_codebook_space_roles():

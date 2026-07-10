@@ -66,6 +66,11 @@
            inputs longer than the period, warning once per build (never
            silent aliasing). -->
       <xs:element name="wherePeriod" type="xs:positiveInteger" minOccurs="0"/>
+      <!-- whereRungRatio (2026-07-09 multi-rung pass): LF/HF period ratio of
+           the .where 2-rung ladder. Default 32 (HF period = wherePeriod/32,
+           256 bytes at the default, the fine period Gate-B measured exact
+           starts at; LF keeps the full-period range). -->
+      <xs:element name="whereRungRatio" type="xs:positiveInteger" minOccurs="0"/>
       <!-- whenPeriod (2026-07-04 encoding pass): the .when v2 LF horizon in
            clock ticks (the LTM event-addressing range). Default 1000000.
            The band is the SIMILARITY channel; absolute addressing rides the

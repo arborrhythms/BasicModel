@@ -31,13 +31,13 @@
 
   <InputSpace>
     <nOutput>8192</nOutput>
-    <nDim>7</nDim> <!-- 1 byte + 2 where + 4 when -->
+    <nDim>9</nDim> <!-- 1 byte + 4 where + 4 when -->
     <!-- lexer>word</lexer -->
   </InputSpace>
 
   <PartSpace>
     <nInput>8192</nInput>        <!--    8 FROM CONCEPTUAL -->
-    <nInputDim>7</nInputDim>     <!-- 1024 FROM CONCEPTUAL -->
+    <nInputDim>9</nInputDim>     <!-- 1024 FROM CONCEPTUAL -->
     <nVectors>65536</nVectors>
     <nDim>1024</nDim>
     <nOutput>8</nOutput>         <!-- 8 in parallel mode, looping over 1 in symbolic mode -->

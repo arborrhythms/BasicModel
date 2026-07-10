@@ -29,41 +29,41 @@
 
   <InputSpace>
     <nVectors>8</nVectors>
-    <!-- "6+2+2": nDim is the EVENT width (4 content + 2 .where + 2 .when). -->
-    <nDim>8</nDim>
+    <!-- "4+4+4": nDim is the EVENT width (4 content + 4 .where + 4 .when). -->
+    <nDim>12</nDim>
     <nOutput>8</nOutput>
-    <nOutputDim>8</nOutputDim>
+    <nOutputDim>12</nOutputDim>
   </InputSpace>
 
   <PartSpace>
     <nInput>8</nInput>
-    <nInputDim>8</nInputDim>
+    <nInputDim>12</nInputDim>
     <nVectors>8</nVectors>
 	    <!-- nDim is the codebook prototype width. Post-bivector-
 	         retirement (2026-05-20) nDim was raised from 2 to 4 to
 	         match InputSpace.nDim=4 — the bivector regime previously
 	         promoted nDim=2 to a [B, N, 2] output, but the scalar
 	         codebook now flows the codebook width through unchanged.
-	         "6+2+2": nDim is the EVENT width (4 content + 2 .where + 2 .when). -->
-    <nDim>8</nDim>
+	         "4+4+4": nDim is the EVENT width (4 content + 4 .where + 4 .when). -->
+    <nDim>12</nDim>
     <nOutput>8</nOutput>
-    <nOutputDim>8</nOutputDim>
+    <nOutputDim>12</nOutputDim>
     <invertible>true</invertible>
     <nonlinear>false</nonlinear>
   </PartSpace>
 
   <ConceptualSpace>
     <nInput>8</nInput>
-    <nInputDim>8</nInputDim>
+    <nInputDim>12</nInputDim>
     <nVectors>8</nVectors>
 	    <!-- nDim is the codebook prototype content width. The right-half
 	         loopback widening was retired in favour of per-order input
 	         sourcing on ConceptualSpace.forward. Raised 2→4 in lockstep
 	         with PartSpace post-bivector-retirement.
-	         "6+2+2": nDim is the EVENT width (4 content + 2 .where + 2 .when). -->
-    <nDim>8</nDim>
+	         "4+4+4": nDim is the EVENT width (4 content + 4 .where + 4 .when). -->
+    <nDim>12</nDim>
     <nOutput>8</nOutput>
-    <nOutputDim>8</nOutputDim>
+    <nOutputDim>12</nOutputDim>
     <invertible>true</invertible>
     <codebook>quantize</codebook>
     <nonlinear>false</nonlinear>
@@ -71,14 +71,14 @@
 
   <WholeSpace>
     <nInput>8</nInput>
-    <nInputDim>8</nInputDim>
+    <nInputDim>12</nInputDim>
     <nVectors>8</nVectors>
     <!-- 2026-06-06 uniform-band migration: nDim is the EVENT width
          (nWhat + nWhere + nWhen). SS now carries (2, 2) like every other
          tier, so nDim was bumped 4 -> 8 to preserve nWhat=4. -->
-    <nDim>8</nDim>
+    <nDim>12</nDim>
     <nOutput>8</nOutput>
-    <nOutputDim>8</nOutputDim>
+    <nOutputDim>12</nOutputDim>
 	    <!-- Smoke config: zero out the codebook regularizers. -->
     <l1Lambda>0.0</l1Lambda>
     <commitmentBeta>0.0</commitmentBeta>
@@ -90,7 +90,7 @@
     <!-- C2 (handoff migration): OS.nInputDim 4->8 to match the uniform-band
          widened SS event (SS slab nOutput*nOutputDim = 8*8 = 64); the band
          slots ride along as inert padding into the (0,0)-band OutputSpace. -->
-    <nInputDim>8</nInputDim>
+    <nInputDim>12</nInputDim>
     <nVectors>1</nVectors>
     <nOutput>1</nOutput>
   </OutputSpace>

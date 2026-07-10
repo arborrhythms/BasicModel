@@ -36,14 +36,14 @@
     <!-- radix chunking consumes pre-lexed word tokens; pin word so it does
          not inherit the raw default (which targets analyse). -->
     <nVectors>8</nVectors>
-    <nDim>14</nDim>
+    <nDim>16</nDim>
     <nOutput>8</nOutput>
   </InputSpace>
 
   <PartSpace>
     <nInput>8</nInput>
     <nVectors>8</nVectors>
-    <nDim>14</nDim>
+    <nDim>16</nDim>
     <nOutput>8</nOutput>
     <invertible>true</invertible>
     <synthesis>radix</synthesis>
@@ -53,7 +53,7 @@
   <ConceptualSpace>
     <nInput>8</nInput>
     <nVectors>8</nVectors>
-    <nDim>14</nDim>
+    <nDim>16</nDim>
     <nOutput>8</nOutput>
     <invertible>true</invertible>
   </ConceptualSpace>
@@ -62,7 +62,7 @@
     <lexer>word</lexer>
     <nInput>8</nInput>
     <nVectors>8</nVectors>
-    <nDim>14</nDim>
+    <nDim>16</nDim>
     <nOutput>8</nOutput>
   </WholeSpace>
 
