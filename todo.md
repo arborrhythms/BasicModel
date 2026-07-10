@@ -34,7 +34,6 @@ OPEN QUESTIONS / FUTURE WORK (Alec's calls + next builds):
   the fidelity bars on a real training config. Task 5 (docs + suite).
   Query-tool operational integration is the [ALEC — DESIGN] item above.
 
-* .where recovery is still a placeholder in [bin/recon_bench.py (line 206)](/Users/arogers/Library/Mobile Documents/com~apple~CloudDocs/bits/projects/WikiOracle/basicmodel/bin/recon_bench.py:206).
 
 * Wave brightness and Task 11 nVectors wiring are explicitly parked out of scope: [design scope (line 36)](/Users/arogers/Library/Mobile Documents/com~apple~CloudDocs/bits/projects/WikiOracle/basicmodel/doc/plans/2026-07-03-reconstruction-fidelity-design.md:36).
 
@@ -78,6 +77,19 @@ OPEN QUESTIONS / FUTURE WORK (Alec's calls + next builds):
 * Sentences create explicit knowledge if they pass a criterion:
   learn_score = children_in_codebook * is_truth_obvious * resolves_contradiction
   accept iff learn_score >= truth_criterion and truth_criterion < 1
+
+
+* [ALEC — DESIGN] Operational integration of the QUERY TOOLS (isEqual,
+  isPart, exist, and the reasoner's equal/part/query/quantize/wholes/parts/
+  arma). They are tools the mind uses but have NO defined syntactic
+  operation — how do they get invoked during parse/reason? This is the
+  gating design question for: (a) whether exist follows the family out of
+  <compose> (it currently keeps the absolute-truth START role); (b) whether
+  default.grammar/shamatha.grammar follow complete.grammar's relocation
+  (generalizing there broke the MM_grammar XOR convergence bar — reverted);
+  (c) reviving the NP-R-NP (3-concept) relative-sentence form, which now
+  has no grammar-level producer (4 integration tests skip at the finder).
+  * This work satarted as thinking_kernel_spec
 
 
 ================================== April 24 ==================================
