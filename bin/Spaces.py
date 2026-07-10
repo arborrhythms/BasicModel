@@ -43,6 +43,9 @@ from embed import (
 from data import Data, TheData
 from Layers import Layer, PiLayer, SigmaLayer, NegationLayer, RunStructureLayer  # Import custom layers from Model.py
 from Layers import PropertyTilingLayer, char_class_region, WORD as _WORD_CLASS  # char-class property tiling (S6/B1)
+from Layers import (LETTER as _CLS_LETTER, DIGIT as _CLS_DIGIT,               # the four char-class ids the
+                    WHITESPACE as _CLS_WHITESPACE, PUNCT as _CLS_PUNCT,       # type-codebook rows carry (T2)
+                    _CHAR_CLASS_RANGES)
 from Layers import EVERYTHING as _EVERYTHING, NOTHING as _NOTHING  # relation-only lattice poles (word/object/meta)
 from Layers import VectorQuantize  # moved from Spaces.py (April 2026 perf pass)
 # NB: ``Meronomy`` is imported lazily inside _embed_radix (it pulls Mereology ->
@@ -2550,8 +2553,18 @@ class Tensor(Basis):
         if "W" not in self._parameters:
             self.W = y
         return y
-class Codebook(Basis):
+class Codebook(Tensor):
     """Prototype basis with vector quantization and reverse snapping support.
+
+    Derives from :class:`Tensor` (Alec 2026-07-10: "a Codebook is a Tensor"):
+    the dense ``W`` storage contract lives on ``Tensor`` and a Codebook is a
+    ``Tensor`` that adds vector quantization, an invertible SVD cache, and the
+    property/role/meronomy side-tables. It overrides only what genuinely differs
+    -- ``getW`` (the percept UNORM-STE read), ``setW`` / ``replace_W`` (SVD-cache
+    invalidation + a strict no-3-D-prototype policy), ``set_event`` / ``get_event``
+    (a codebook slot reconstructs its per-batch event from prototype+selection,
+    never caches it), and ``forward`` / ``reverse`` (the VQ snap). ``__init__``
+    keeps ``self.W = None`` until :meth:`create`, overriding Tensor's zeros-fill.
 
     Class-level metric flag ``use_dot_product``: when True the underlying
     ``VectorQuantize`` instance is built with ``use_cosine_sim=True``, which
@@ -2657,6 +2670,9 @@ class Codebook(Basis):
         # basis. Lazy dict; ``None`` (default) => every row stays sinusoidal,
         # byte-identical. See :meth:`set_property_kind`.
         self.property_kind = None
+        # Monotonic tag-version, bumped by ``set_property_kind`` so a downstream
+        # derived-LUT cache invalidates cheaply (an int compare, not a dict scan).
+        self._property_kind_version = 0
         # Per-row meronomy parent index. ``part_parents[i] = j`` means
         # atom ``i`` is a part of atom ``j``. ``-1`` is the sentinel for
         # "no parent" (atom is a root concept). Used by the codebook
@@ -2844,16 +2860,14 @@ class Codebook(Basis):
         return proto[idx]
 
     # -- property materialization (WholeSpace) -----------------------------
-    # When this flag is set the codebook's rows are read as PROPERTIES
-    # rather than as atoms: a row no longer names one gathered prototype
-    # vector, it parameterizes a basis that RANGES OVER THE WHOLE INPUT
-    # (the WholeSpace contract -- see the PerceptualSpace base docstring).
-    # ``materialize`` routes ``mode="property"`` here. Default False keeps
-    # every existing codebook (PartSpace atoms, the WholeSpace symbol /
-    # truth prototypes) on the unchanged ``lookup`` path, so this is purely
-    # additive -- the live symbol codebook and the pinned basin are
-    # untouched until a caller opts a property codebook in.
-    property_basis = False
+    # A row read as a PROPERTY (rather than as an atom) no longer names one
+    # gathered prototype vector: it parameterizes a basis that RANGES OVER
+    # THE WHOLE INPUT (the WholeSpace contract -- see the PerceptualSpace
+    # base docstring). The property read is opted into per call via
+    # ``materialize(mode="property")`` -- the ``mode`` argument IS the
+    # explicit opt-in, so every other read stays on the unchanged
+    # ``lookup`` path. See doc/plans/2026-07-10-wholes-are-types-
+    # segmentation.md for the wholes-are-types framing.
 
     def materialize_property(self, index, n_positions, input_bytes=None):
         """Materialize selected PROPERTY rows as per-position region membership.
@@ -2931,6 +2945,11 @@ class Codebook(Basis):
         if isinstance(classes, int):
             classes = (classes,)
         self.property_kind[int(row)] = set(int(c) for c in classes)
+        # Bump so a derived-LUT cache (WholeSpace.stage_analysis_spans) knows to
+        # rebuild when the type-row tags change (doc/plans/2026-07-10-wholes-
+        # are-types-segmentation.md, T2: the rows are the cut's source of truth).
+        self._property_kind_version = int(
+            getattr(self, "_property_kind_version", 0)) + 1
 
     def get_property_kind(self, row):
         """Return the char-class set tagged on ``row`` (``None`` if untagged)."""
@@ -7043,11 +7062,11 @@ class SubSpace(nn.Module):
             # WholeSpace contract: ``.what`` rows are properties. Pass the
             # per-position selection (``_index``) to the codebook so it can
             # produce the materialized object -- here a per-position region
-            # membership over the whole input (has-property vs not). Only
-            # valid when ``.what`` is a property-flagged Codebook.
+            # membership over the whole input (has-property vs not). The
+            # ``mode="property"`` argument is the explicit opt-in; this
+            # branch needs only a ``.what`` codebook and a selection.
             what = self.what
-            if (what is None or not getattr(what, "property_basis", False)
-                    or self._index is None):
+            if what is None or self._index is None:
                 return None
             sel = self._index
             if sel.ndim == 3 and sel.shape[-1] >= 1:
@@ -17037,19 +17056,210 @@ class ConceptualSpace(Space):
         return vspace
 
 
-# Host-eager analysis-cut boundary classes (ASCII), as 256-entry byte LUTs so
-# the span staging is a vectorised gather instead of a per-element Python scan.
-# WS = the discarded whitespace boundaries (incl. the \0 pad sentinel); PUNCT =
-# ASCII punctuation, each char its OWN one-char token (Alec 2026-06-22). Byte
-# codes only reach 0..255; values >= 256 clamp to a non-boundary (word) slot.
+# Host-eager analysis-cut character TYPE, as a 256-entry byte LUT so the span
+# staging is a vectorised gather instead of a per-element Python scan. A whole
+# is a maximal constant-TYPE run (doc/plans/2026-07-10-wholes-are-types-
+# segmentation.md): the four types mirror ``Layers._CHAR_CLASS_RANGES``
+# (LETTER / DIGIT / WHITESPACE / PUNCT) -- the four type-codebook rows of that
+# design doc. SPACE = the discarded whitespace boundaries (incl. the \0 pad
+# sentinel); DIGIT = 0-9; PUNCT = ASCII punctuation; LETTER = everything else
+# (A-Z, a-z, AND bytes >= 127 / DEL / non-ASCII and any other unassigned byte --
+# they keep their word-char behavior by mapping to the letter type). Byte codes
+# only reach 0..255; values >= 256 clamp to the LETTER slot.
+_TYPE_SPACE, _TYPE_LETTER, _TYPE_DIGIT, _TYPE_PUNCT = 0, 1, 2, 3
 _ANALYSIS_WS = (0, 9, 10, 13, 32)
 _ANALYSIS_PUNCT = tuple(sorted(
     set(range(33, 48)) | set(range(58, 65))
     | set(range(91, 97)) | set(range(123, 127))))
-_LUT_ANALYSIS_WS = torch.zeros(256, dtype=torch.bool)
-_LUT_ANALYSIS_WS[list(_ANALYSIS_WS)] = True
-_LUT_ANALYSIS_PUNCT = torch.zeros(256, dtype=torch.bool)
-_LUT_ANALYSIS_PUNCT[list(_ANALYSIS_PUNCT)] = True
+_LUT_ANALYSIS_TYPE = torch.full((256,), _TYPE_LETTER, dtype=torch.long)
+_LUT_ANALYSIS_TYPE[list(_ANALYSIS_WS)] = _TYPE_SPACE
+_LUT_ANALYSIS_TYPE[list(range(48, 58))] = _TYPE_DIGIT
+_LUT_ANALYSIS_TYPE[list(_ANALYSIS_PUNCT)] = _TYPE_PUNCT
+
+# Layers char-CLASS id -> analysis TYPE id. A type-codebook row is tagged with a
+# char class (Layers LETTER/DIGIT/WHITESPACE/PUNCT via Codebook.set_property_kind);
+# the run cut needs the run TYPE (_type_run_spans' _TYPE_*). This is the bridge.
+_CLASS_TO_TYPE = {
+    _CLS_WHITESPACE: _TYPE_SPACE,
+    _CLS_LETTER: _TYPE_LETTER,
+    _CLS_DIGIT: _TYPE_DIGIT,
+    _CLS_PUNCT: _TYPE_PUNCT,
+}
+
+
+def _derive_type_lut(property_kind):
+    """Build the 256-entry byte->TYPE LUT FROM the tagged type-codebook rows
+    (doc/plans/2026-07-10-wholes-are-types-segmentation.md, T2).
+
+    The four binary char-class propositions (isSpace / isLetter / isDigit /
+    isPunctuation) ARE codebook codes now: the analysis cut is a READ of their
+    :meth:`Codebook.set_property_kind` tags + ``Layers._CHAR_CLASS_RANGES``, not
+    a hard-coded module constant. ``property_kind`` is a ``{row: {class_id}}``
+    dict; each tagged row paints its class byte-ranges with the class's TYPE id.
+
+    BYTE-IDENTICAL to the frozen :data:`_LUT_ANALYSIS_TYPE` when all four classes
+    are tagged: the default is LETTER (bytes >= 127 / DEL / control chars keep
+    their word-char behaviour by mapping to the letter type), and byte 0 (the
+    ``\\0`` pad sentinel, which is NOT a member of the WHITESPACE class ranges)
+    is forced to SPACE so the pad is always a discarded boundary."""
+    lut = torch.full((256,), _TYPE_LETTER, dtype=torch.long)
+    lut[0] = _TYPE_SPACE                    # \0 pad sentinel (not a ws-class byte)
+    for _row, classes in property_kind.items():
+        for cid in classes:
+            tid = _CLASS_TO_TYPE.get(int(cid))
+            if tid is None:
+                continue
+            for (lo, hi) in _CHAR_CLASS_RANGES[int(cid)]:
+                lut[lo:hi + 1] = tid
+    return lut
+
+
+def _analysis_type_lut(space):
+    """Return the 256-entry byte->TYPE LUT for ``space``'s analysis cut,
+    derived from the tags on the frozen TYPE subspace's ``.what`` codebook
+    (``WholeSpace.type_subspace`` -- data on the SubSpace, per the processing
+    contract) and cached on the space (rebuilt only when
+    ``Codebook._property_kind_version`` changes).
+
+    Falls back to the frozen module :data:`_LUT_ANALYSIS_TYPE` when there is no
+    type subspace to read (byte-mode configs, ``SimpleNamespace`` unit-test
+    doubles) -- byte-identical, so the cut is unchanged for those configs. Takes
+    ``space`` as a plain argument (not a bound method) so it also runs on the
+    unbound ``stage_analysis_spans`` test double whose ``self`` is a bare
+    namespace."""
+    cb = getattr(getattr(space, "type_subspace", None), "what", None)
+    pk = getattr(cb, "property_kind", None) if cb is not None else None
+    if not pk:
+        return _LUT_ANALYSIS_TYPE
+    ver = int(getattr(cb, "_property_kind_version", 0))
+    if (getattr(space, "_type_lut_cache", None) is None
+            or getattr(space, "_type_lut_version", None) != ver):
+        try:
+            space._type_lut_cache = _derive_type_lut(pk)
+            space._type_lut_version = ver
+        except (AttributeError, TypeError):
+            # A namespace double that forbids attribute writes: derive fresh
+            # (still byte-identical, just uncached).
+            return _derive_type_lut(pk)
+    return space._type_lut_cache
+
+
+def _type_run_spans(type_ids):
+    """Vectorised token spans from per-position TYPE ids (``[B, N]`` long, on
+    CPU). A whole is a MAXIMAL CONSTANT-TYPE RUN; runs of the SPACE type
+    (``_TYPE_SPACE``, incl. the ``\\0`` pad sentinel) are discarded.
+
+    Returns ``LongTensor [B, K, 2]`` of ``(start, end)`` exclusive spans in
+    left-to-right order, zero-padded ``(0, 0)`` for rows with fewer tokens
+    (``K >= 1``). A run STARTS where the type differs from the previous
+    position (or at position 0), restricted to non-space positions, and ENDS
+    where the type differs from the next position (or at ``N-1``). Reuses the
+    anchor / rank / scatter pattern of :func:`_word_punct_spans`.
+    """
+    B, N = int(type_ids.shape[0]), int(type_ids.shape[1])
+    is_run = type_ids != _TYPE_SPACE                 # non-space positions
+    if N == 0:
+        return torch.zeros(B, 1, 2, dtype=torch.long)
+    first = torch.zeros(B, 1, dtype=torch.bool)
+    prev_same = torch.cat(
+        [first, type_ids[:, 1:] == type_ids[:, :-1]], 1)   # same type as prev
+    nxt_same = torch.cat(
+        [type_ids[:, :-1] == type_ids[:, 1:], first], 1)    # same type as next
+    run_start = is_run & ~prev_same                  # first char of a run
+    run_end = is_run & ~nxt_same                     # last char of a run (incl)
+    ar = torch.arange(N).unsqueeze(0).expand(B, N)
+    starts = torch.where(run_start, ar, torch.full_like(ar, N))
+    ends = torch.full_like(ar, -1)
+    n_re = int(run_end.long().sum(1).max().item()) if N else 0
+    if n_re > 0:
+        re_rank = torch.cumsum(run_end.long(), 1) - 1
+        rs_rank = torch.cumsum(run_start.long(), 1) - 1
+        re_end = torch.full((B, n_re), N, dtype=torch.long)
+        rep = run_end.nonzero(as_tuple=False)
+        if rep.numel():
+            bb, ii = rep[:, 0], rep[:, 1]
+            re_end[bb, re_rank[bb, ii]] = ii + 1
+        rsp = run_start.nonzero(as_tuple=False)
+        if rsp.numel():
+            bb, ii = rsp[:, 0], rsp[:, 1]
+            ends[bb, ii] = re_end[bb, rs_rank[bb, ii]]
+    K = int(max(1, run_start.long().sum(1).max().item()))
+    tok_rank = torch.cumsum(run_start.long(), 1) - 1
+    out = torch.zeros(B, K, 2, dtype=torch.long)
+    sp = run_start.nonzero(as_tuple=False)
+    if sp.numel():
+        bb, ii = sp[:, 0], sp[:, 1]
+        r = tok_rank[bb, ii]
+        out[bb, r, 0] = starts[bb, ii]
+        out[bb, r, 1] = ends[bb, ii]
+    return out
+
+
+def _divide_spans_into_attested(byte_vals, spans, percept_store,
+                                standalone_bytes):
+    """T3 within-whole division at the span->concept seam
+    (doc/plans/2026-07-10-wholes-are-types-segmentation.md).
+
+    A type-run span whose byte surface is NOT itself an attested percept
+    divides by GREEDY LONGEST-MATCH tiling into attested standalone parts
+    -- the same ``RadixTrie.longest_match`` walk ``RadixLayer.spell_out``
+    uses, minus the on-demand byte seeding (division never mints). A part
+    is ATTESTED ("appears standalone", the plan's condition) when it is a
+    MULTI-byte store entry (promotion = recurrence as a standalone tile),
+    or a SINGLE byte that has occurred as its own type-run
+    (``standalone_bytes``: the <= 256-entry byte set the WS records from
+    its own staged spans) -- the ``spell_out``-seeded byte percepts alone
+    do NOT attest, or every unpromoted word would re-divide per byte. A
+    COMPLETE tiling into >= 2 attested parts replaces the span with its
+    part spans, in order; an attested span stays ONE span (whole preferred
+    over parts); an incomplete tiling keeps the span unchanged (the
+    existing unattested fallback). Host-eager (runs in the eager stem via
+    ``stage_analysis_spans``, never in a compiled body). ``byte_vals`` is
+    the ``[B, N]`` CPU byte grid the spans index; ``spans`` is the
+    zero-padded ``[B, K, 2]`` from :func:`_type_run_spans`. Returns
+    ``[B, K', 2]`` (``spans`` itself when nothing divides). No-op without
+    a trie-backed store (e.g. lexicon-mode PS has no RadixLayer).
+    """
+    trie = getattr(percept_store, "radix_trie", None)
+    get_id = getattr(percept_store, "get_id", None)
+    if trie is None or get_id is None or len(trie) == 0:
+        return spans
+    rows = spans.tolist()
+    vals = byte_vals.tolist()
+    out_rows = []
+    changed = False
+    for b, row in enumerate(rows):
+        out = []
+        for (s, e) in row:
+            if e <= s:
+                continue                      # zero-pad slot
+            if e - s > 1:
+                seg = bytes(vals[b][s:e])
+                if get_id(seg) is None:       # unattested whole
+                    parts, pos = [], 0
+                    while pos < len(seg):
+                        _pid, mlen = trie.longest_match(seg[pos:])
+                        if (_pid is None or mlen <= 0
+                                or (mlen == 1
+                                    and seg[pos] not in standalone_bytes)):
+                            parts = None      # gap -> no complete tiling
+                            break
+                        parts.append((s + pos, s + pos + mlen))
+                        pos += mlen
+                    if parts is not None and len(parts) > 1:
+                        out.extend(parts)     # the attested concepts, in order
+                        changed = True
+                        continue
+            out.append((s, e))
+        out_rows.append(out)
+    if not changed:
+        return spans
+    K = max(1, max(len(r) for r in out_rows))
+    t = torch.zeros(len(out_rows), K, 2, dtype=spans.dtype)
+    for b, row in enumerate(out_rows):
+        if row:
+            t[b, :len(row)] = torch.tensor(row, dtype=spans.dtype)
+    return t
 
 
 def _word_punct_spans(is_word, is_punct):
@@ -17275,6 +17485,23 @@ class WholeSpace(PerceptualSpace):
                 f"WholeSpace.analysis must be "
                 f"byte|word|raw|sentence|grammatical|meronomy, "
                 f"got {self.analysis_mode!r}")
+        # T3 (doc/plans/2026-07-10-wholes-are-types-segmentation.md):
+        # within-whole division of unattested type-run spans into attested
+        # standalone concepts at the span->concept seam
+        # (stage_analysis_spans -> _divide_spans_into_attested). LIVE by
+        # default (Alec 2026-07-10: all wiring live);
+        # <divideWithinWhole>false</divideWithinWhole> opts out.
+        try:
+            _dww = TheXMLConfig.space(section, "divideWithinWhole")
+        except KeyError:
+            _dww = None
+        if _dww is None:
+            self.divide_within_whole = True
+        elif isinstance(_dww, bool):
+            self.divide_within_whole = _dww
+        else:
+            self.divide_within_whole = (
+                str(_dww).strip().lower() not in ("false", "0", "no", "off"))
         self._staged_analysis_spans = None
         # Analysis store is separate from the symbolic iteration codebook.
         _rng_state = torch.get_rng_state()
@@ -17568,6 +17795,20 @@ class WholeSpace(PerceptualSpace):
             # higher.
             cb.set_part_parent(self.well_known_atoms["words"], -1)
 
+        # Build the frozen TYPE subspace (the isSpace/isLetter/isDigit/
+        # isPunctuation propositions as tagged rows of its ``.what`` codebook).
+        # DATA lives in SubSpaces (the processing contract), and "properties
+        # are WholeSpace.what" is literal: the four type propositions ARE the
+        # ``.what`` of a dedicated WS-owned SubSpace. The codebook is frozen --
+        # a Codebook (a Tensor) with a plain (non-Parameter) W, never snapped
+        # or trained -- and forward-connected as the SOURCE OF TRUTH for the
+        # analysis cut's byte->type LUT
+        # (doc/plans/2026-07-10-wholes-are-types-segmentation.md, T2).
+        self._type_lut_cache = None
+        self._type_lut_version = None
+        self.type_subspace = None
+        self._build_type_subspace()
+
         # Phase 3 of the SubSpace.what STM refactor: wire V_sym into the
         # global Grammar so where_id_for_rule produces correct offsets
         # (rule slot = V_sym + 1 + rule_id), and build the rule codebook
@@ -17765,6 +18006,91 @@ class WholeSpace(PerceptualSpace):
         right slot.
         """
         return int(self.well_known_atoms.get("words", 0))
+
+    # (name, Layers char-class id) of each TYPE-property row, in row order
+    # (isSpace/isLetter/isDigit/isPunctuation). These are the four binary
+    # char-class propositions of the wholes-are-types design; each is one row
+    # of the dedicated frozen TYPE codebook, tagged via set_property_kind.
+    _TYPE_ROW_ATOMS = (
+        ("type_whitespace", _CLS_WHITESPACE),
+        ("type_letter", _CLS_LETTER),
+        ("type_digit", _CLS_DIGIT),
+        ("type_punct", _CLS_PUNCT),
+    )
+
+    def _build_type_subspace(self, tags=None):
+        """Build the frozen TYPE subspace (doc/plans/2026-07-10-wholes-are-
+        types-segmentation.md, T2; Alec 2026-07-10: the type codebook is the
+        ``.what`` of a SubSpace owned by WholeSpace).
+
+        The four isSpace/isLetter/isDigit/isPunctuation char-class propositions
+        live as tagged rows of the ``.what`` :class:`Codebook` (a
+        :class:`Tensor` with a plain, non-Parameter ``W``) of a DEDICATED
+        WS-owned :class:`SubSpace` -- calculations in Spaces, DATA in SubSpaces
+        (the processing contract), and "properties are WholeSpace.what" made
+        literal. The codebook's ``property_kind`` is the SOURCE OF TRUTH from
+        which :meth:`stage_analysis_spans` derives the analysis cut's
+        byte->type LUT.
+
+        The SubSpace is minimal (the ``ConceptualSpace._subspaceForPS``
+        auxiliary-subspace idiom): shape ``(4, nDim)``, default zero-band
+        encodings, no fabricated ``.where`` / ``.when`` content -- passing
+        ``what=`` hands the codebook in verbatim (``codebook_slot='what'``) and
+        the default sibling slots stay empty plain Tensors.
+
+        FROZEN BY CONSTRUCTION: the ``.what`` W is a plain tensor (not an
+        ``nn.Parameter``), the subspace registers no parameters and no
+        state_dict keys (its word/pos buffers are ``persistent=False``), and
+        nothing snaps or trains against it -- an optimizer never sees it, so
+        no VQ / EMA / LBG / adopt defenses are needed. Deterministic +
+        idempotent: a rebuild (at construction or after a checkpoint load)
+        always lands the same four tags. Only the analysis modes that actually
+        run the type-run cut (``word`` / ``grammatical`` / ``meronomy``) build
+        it; ``byte`` / ``raw`` / ``sentence`` stage no spans and leave
+        ``type_subspace`` None, so the cut falls back to the frozen module LUT
+        (byte-identical) for them.
+
+        ``tags`` (optional) restores a ``{row: iterable-of-class-ids}`` map from
+        a checkpoint blob; absent, the deterministic default is used."""
+        if getattr(self, "analysis_mode", "byte") not in (
+                "word", "grammatical", "meronomy"):
+            self.type_subspace = None
+            self._type_lut_cache = None
+            return
+        tc = Codebook()
+        n = len(self._TYPE_ROW_ATOMS)
+        tc.nVectors = n
+        tc.nDim = int(self.nDim)
+        tc.codebookSize = n
+        # Plain (non-Parameter) W: the rows carry only their char-class TAG for
+        # the cut; the vectors are inert. setW with a 2-D tensor stays a plain
+        # tensor (never a Parameter), so this codebook is frozen by construction
+        # and contributes no state_dict keys to the owning WholeSpace.
+        tc.setW(torch.zeros(n, tc.nDim))
+        if tags:
+            for row, classes in tags.items():
+                tc.set_property_kind(int(row), [int(c) for c in classes])
+        else:
+            for row, (_name, cls) in enumerate(self._TYPE_ROW_ATOMS):
+                tc.set_property_kind(row, cls)
+        self.type_subspace = SubSpace(
+            inputShape=(n, tc.nDim), outputShape=(n, tc.nDim), what=tc)
+        self._type_lut_cache = None
+
+    def type_property_rows(self):
+        """Map ``{Layers char-class id: type-codebook row}`` for the four
+        TYPE-property rows on the type subspace's ``.what`` (empty when no type
+        subspace is built -- byte/raw/sentence configs). The read-side companion
+        of :meth:`_build_type_subspace`."""
+        tc = getattr(getattr(self, "type_subspace", None), "what", None)
+        pk = getattr(tc, "property_kind", None) if tc is not None else None
+        if not pk:
+            return {}
+        out = {}
+        for row, classes in pk.items():
+            for cls in classes:
+                out[int(cls)] = int(row)
+        return out
 
     # ------------------------------------------------------------------
     # Lexicon ownership (post-lexicon-migration)
@@ -19133,6 +19459,19 @@ class WholeSpace(PerceptualSpace):
                 int(k): [int(c) for c in v]
                 for k, v in self.part_chain.items()
             }
+        # Frozen TYPE-subspace ``.what`` tags (the analysis cut's source of
+        # truth). Emitted ONLY when the type subspace exists (word/grammatical/
+        # meronomy configs), so byte-mode checkpoint blobs stay byte-identical
+        # to the pre-feature baseline (doc/plans/2026-07-10-wholes-are-types-
+        # segmentation.md, T2). The blob key predates the subspace move and is
+        # kept, so pre-move checkpoints load unchanged.
+        _tc = getattr(getattr(self, "type_subspace", None), "what", None)
+        _tpk = getattr(_tc, "property_kind", None) if _tc is not None else None
+        if _tpk:
+            _ve["type_property_kinds"] = {
+                int(row): sorted(int(c) for c in classes)
+                for row, classes in _tpk.items()
+            }
         return _ve
 
     def load_vocab_extras(self, extras):
@@ -19240,6 +19579,17 @@ class WholeSpace(PerceptualSpace):
             self.part_chain = {
                 int(k): [int(c) for c in v] for k, v in pc.items()
             }
+        # Rebuild the frozen TYPE subspace from the blob (its ``.what`` tags are
+        # the cut's source of truth). The rows are deterministic, but riding
+        # them through vocab_extras -- the repo's durable mechanism for
+        # non-Parameter state -- makes the roundtrip explicit and testable
+        # (doc/plans/2026-07-10-wholes-are-types-segmentation.md, T2). The
+        # ``type_property_kinds`` key predates the subspace move (same shape),
+        # so pre-move checkpoints load unchanged.
+        tpk = extras.get("type_property_kinds")
+        tags = ({int(k): [int(c) for c in v] for k, v in tpk.items()}
+                if isinstance(tpk, dict) else None)
+        self._build_type_subspace(tags)
 
     def _migrate_signed_int_taxonomy(self, tax, tp_blob, mp_blob):
         """Rekey a legacy signed-int taxonomy blob to positive-int
@@ -20385,12 +20735,21 @@ class WholeSpace(PerceptualSpace):
         fewer parts -- or None for the ``byte`` mode (uniform regions:
         the pooling default needs no spans).
 
-        ``word``: whitespace-cut parts (space/tab/newline/CR and the
-        ``\\0`` pad sentinel are boundaries). ``analyse``: the meronymic
-        analyzer's front cut -- its default available op IS the
-        space-lexer (whitespace = hard boundary), so today this shares
-        the word cut; the learned bottom-up merge integration follows
-        with the deeper WS analyzer work (Phases 5-6)."""
+        ``word``: type-run-cut parts -- a whole is a maximal
+        constant-TYPE run over the four character types (LETTER / DIGIT /
+        WHITESPACE / PUNCT), and SPACE-type runs (space/tab/newline/CR
+        and the ``\\0`` pad sentinel) are discarded. ``analyse``: the
+        meronymic analyzer's front cut -- its default available op IS the
+        type-run cut, so today this shares the word cut; the learned
+        bottom-up merge integration follows with the deeper WS analyzer
+        work (Phases 5-6).
+
+        Cut policy: maximal constant-type runs
+        (doc/plans/2026-07-10-wholes-are-types-segmentation.md, T2).
+        Deltas vs. the old whitespace/punct cut: (1) mixed alphanumerics
+        split into a letter-run + a digit-run (``abc123`` -> two spans);
+        (2) a multi-char punctuation run is ONE span, no longer one span
+        per punct char (``...`` -> one span)."""
         mode = getattr(self, "analysis_mode", "byte")
         # byte/raw/sentence = NO division (the analyzer stages no spans);
         # word/grammatical/meronomy stage the boundary spans below.
@@ -20400,19 +20759,42 @@ class WholeSpace(PerceptualSpace):
         if u.dim() == 3:
             u = u[:, 0, :]
         vals = u.detach().to("cpu").long()
-        # ASCII punctuation is a word boundary like whitespace, but -- unlike
-        # whitespace, which is discarded -- each punctuation char becomes its
-        # OWN one-char span so the grammar can see it (Alec 2026-06-22: the word
-        # analyzer splits on punctuation as well as spaces). Punct-free input
-        # (xor / phrases) is unchanged. Membership is a 256-byte LUT gather
-        # (values >= 256 clamp to a non-boundary word char), and the run->span
-        # cut is vectorised in ``_word_punct_spans`` -- byte-identical to the
-        # prior per-row Python scan, minus its per-element/per-write overhead.
+        # Per-position TYPE via a 256-entry byte LUT gather (values >= 256
+        # clamp to the LETTER slot); a whole is a maximal constant-type run,
+        # cut vectorised in ``_type_run_spans`` (SPACE-type runs discarded).
+        # The LUT is DERIVED from the four tagged TYPE-property codebook rows
+        # (the source of truth; doc/plans/2026-07-10-wholes-are-types-
+        # segmentation.md, T2) -- cached and rebuilt only when the tags change.
+        # Configs whose ``.what`` carries no tags (byte-mode stubs, non-Codebook
+        # bases) fall back to the frozen module LUT, byte-identical.
         idx = vals.clamp(0, 255)
-        is_ws = _LUT_ANALYSIS_WS[idx]
-        is_punct = _LUT_ANALYSIS_PUNCT[idx]
-        is_word = ~is_ws & ~is_punct
-        t = _word_punct_spans(is_word, is_punct)
+        type_ids = _analysis_type_lut(self)[idx]
+        t = _type_run_spans(type_ids)
+        # T3 within-whole division (same plan doc): an UNATTESTED type-run
+        # divides by longest-match tiling over attested standalone percepts
+        # (the peer PS RadixLayer store); attested wholes stay one span.
+        # Gated <divideWithinWhole> (WholeSpace section; LIVE default true).
+        # Attestation reflects the store as of the PREVIOUS batch: the stem
+        # stages spans before this batch's spell-out, the one-step-stale
+        # contract adopt_symbolic_evidence already uses. Host-eager here,
+        # like the cut itself.
+        if getattr(self, "divide_within_whole", False):
+            # Record single-byte type-runs ("appears standalone" for 1-byte
+            # parts): a bounded <= 256-entry byte set, accrued from the
+            # staged wholes themselves. Lazy-init so the SimpleNamespace
+            # test stubs need not carry it.
+            seen = getattr(self, "_standalone_run_bytes", None)
+            if seen is None:
+                seen = set()
+                object.__setattr__(self, "_standalone_run_bytes", seen)
+            one = (t[..., 1] - t[..., 0]) == 1
+            if bool(one.any()):
+                bb, kk = one.nonzero(as_tuple=True)
+                seen.update(idx[bb, t[bb, kk, 0]].tolist())
+            _ps = getattr(getattr(self, "perceptualSpace_ref", None),
+                          "percept_store", None)
+            if _ps is not None:
+                t = _divide_spans_into_attested(idx, t, _ps, seen)
         return t.to(IS_concepts.device)
 
     def property_spans(self, IS_concepts, class_ids):

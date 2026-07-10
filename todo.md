@@ -1,12 +1,5 @@
 OPEN QUESTIONS / FUTURE WORK (Alec's calls + next builds):
 
-* Wave brightness and Task 11 nVectors wiring are explicitly parked out of scope: [design scope (line 36)](/Users/arogers/Library/Mobile Documents/com~apple~CloudDocs/bits/projects/WikiOracle/basicmodel/doc/plans/2026-07-03-reconstruction-fidelity-design.md:36).
-
-* The "Codebook.property_basis" is a hack that needs to be removed. Please summarize the WholeSpace property mechanism. You said properties "are" WholeSpace.what. But that codebook currently holds the whole/truth prototypes wired into the codebook-snap machinery; making properties the live .what semantics would rip that out and move the basin. So I built the property capability as opt-in/additive (Codebook.property_basis) alongside the existing whole codebook, not as a wholesale replacement. If you intended the live cutover, that's a separate deliberate step.
-  * Codebook.property_basis = False still exists: [bin/Spaces.py (line 2599)](/Users/arogers/Library/Mobile Documents/com~apple~CloudDocs/bits/projects/WikiOracle/basicmodel/bin/Spaces.py:2599)
-  * SubSpace.materialize(mode="property") only routes through property materialization when .what.property_basis is true: [bin/Spaces.py (line 6718)](/Users/arogers/Library/Mobile Documents/com~apple~CloudDocs/bits/projects/WikiOracle/basicmodel/bin/Spaces.py:6718)
-  * The docs explicitly describe it as “additive and opt-in”: [doc/Spaces.md (line 41)](/Users/arogers/Library/Mobile Documents/com~apple~CloudDocs/bits/projects/WikiOracle/basicmodel/doc/Spaces.md:41)
-
 * Implement user TruthSet-to-LTM integration.
   * WikiOracle parses the user-supplied XML <truthSet> into the /chat/completions request body as truth entries; bin/serve.py passes those to BaseModel.store_truths(entries). Today store_truths() still clears and writes SymbolSpace.truth_layer, while STM-derived memory and config-time <architecture><truthSet> provisioning write to symbolSpace.ltm_store when <ltmConsolidation>true.
   * Change store_truths(entries) so user-supplied truth entries append into the consolidated TernaryTruthStore LTM (symbolSpace.ltm_store) alongside STM-derived rows. Then make TruthLayer a compatibility/interface layer over the LTM tensor, or migrate its callers, so luminosity, falsity penalty, consistency, clarifications, and truth assessment read the same LTM-backed user truth data instead of a separate truth_layer.truths buffer.
@@ -42,17 +35,25 @@ OPEN QUESTIONS / FUTURE WORK (Alec's calls + next builds):
   accept iff learn_score >= truth_criterion and truth_criterion < 1
 
 
-* [ALEC — DESIGN] Operational integration of the QUERY TOOLS (isEqual,
-  isPart, exist, and the reasoner's equal/part/query/quantize/wholes/parts/
-  arma). They are tools the mind uses but have NO defined syntactic
-  operation — how do they get invoked during parse/reason? This is the
-  gating design question for: (a) whether exist follows the family out of
-  <compose> (it currently keeps the absolute-truth START role); (b) whether
-  default.grammar/shamatha.grammar follow complete.grammar's relocation
-  (generalizing there broke the MM_grammar XOR convergence bar — reverted);
-  (c) reviving the NP-R-NP (3-concept) relative-sentence form, which now
-  has no grammar-level producer (4 integration tests skip at the finder).
-  * This work satarted as thinking_kernel_spec
+* Operational integration of the QUERY TOOLS (isEqual, isPart, exist, and
+  the reasoner's equal/part/query/quantize/wholes/parts/arma) — the
+  invocation design is now SPECIFIED in
+  doc/plans/thinking_kernel_spec.md (the Thinking Kernel: lookup/part/
+  think/query/answer over truth intervals + trust, STM frame stack,
+  runtime-enforced execution loop). It extends the reasoner-driven,
+  post-parse model already LIVE-wired per
+  doc/plans/2026-06-23-reasoning-live-wiring.md (serve.py answer_query ->
+  Models._detect_query/reason_about -> NeuralToolUser over reasoning.py's
+  TruthGroundedReasoner); the tools build NO parse structure and live in
+  <Queries>. REMAINING = (1) implement the kernel spec; (2) the
+  grammar-consistency cleanup left by the 2026-07-05 relocation:
+    (a) exist still holds the absolute-truth START role in <compose> while
+        its cousins moved to <Queries>; decide if it relocates too.
+    (b) default.grammar / shamatha.grammar did not follow complete.grammar's
+        relocation (generalizing there broke the MM_grammar XOR convergence
+        bar — reverted); they are inconsistent.
+    (c) NP-R-NP (3-concept) relative-sentence form lost its grammar-level
+        producer (4 integration tests skip at the finder).
 
 
 ================================== April 24 ==================================

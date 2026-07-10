@@ -283,11 +283,11 @@ _WORD_SEPARATORS = (WHITESPACE, PUNCT)
 def word_spans(byte_seq, separators=_WORD_SEPARATORS):
     """Spans of the WORDS: maximal runs delimited by the separator classes.
 
-    The word analyzer is the OR of the separator dichotomies (left-of-X /
-    right-of-X for the separator classes) -- it marks every word boundary. A
-    word is the content BETWEEN separators (the part to the right of one
-    separator and the left of the next, plus the start/end runs); the
-    ``[left-of-sep, right-of-sep]`` separator spans are dropped.
+    A word is a maximal run of bytes whose class is not in ``separators``
+    (whitespace, punctuation); each separator run is skipped rather than
+    emitted as a span. Conceptual framing (wholes are types; runs over
+    types, not boundary dichotomies) is in
+    doc/plans/2026-07-10-wholes-are-types-segmentation.md.
     """
     bs = _as_bytes(byte_seq)
     sep = set(separators)

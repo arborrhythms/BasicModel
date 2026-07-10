@@ -2,11 +2,13 @@
 
 Phase 3 of the part/whole refactor: on WholeSpace a ``.what`` codebook row
 is a PROPERTY (e.g. a sinusoid value) rather than a character atom. When
-``materialize`` hands the per-position selection (``_index``) to a
-property-flagged codebook, it produces a per-position region membership
-over the whole input -- the region that HAS the property (``> 0``) and the
-region that does NOT (``<= 0``). The capability is additive and opt-in: a
-default codebook stays on the unchanged ``lookup`` path.
+``materialize`` hands the per-position selection (``_index``) to a codebook
+via ``mode="property"``, it produces a per-position region membership over
+the whole input -- the region that HAS the property (``> 0``) and the
+region that does NOT (``<= 0``). The read is opted into per call by the
+``mode`` argument (there is no flag); every other read stays on the
+unchanged ``lookup`` path (doc/plans/2026-07-10-wholes-are-types-
+segmentation.md, T1).
 """
 
 import os
@@ -27,10 +29,12 @@ from Spaces import Codebook, SubSpace
 
 
 def _property_codebook(V=6, D=8, seed=0):
+    # A "property" codebook is just a codebook read via mode="property";
+    # there is no flag -- the mode argument IS the per-call opt-in
+    # (doc/plans/2026-07-10-wholes-are-types-segmentation.md, T1).
     torch.manual_seed(seed)
     cb = Codebook()
     cb.W = nn.Parameter(torch.randn(V, D))
-    cb.property_basis = True
     return cb
 
 
@@ -67,11 +71,6 @@ def test_property_region_is_low_frequency():
     assert crossings <= 2 * half + 2, f"too many sign changes ({crossings}) for low-freq property"
 
 
-def test_default_codebook_is_not_a_property_codebook():
-    cb = Codebook()
-    assert cb.property_basis is False
-
-
 def test_materialize_property_is_differentiable():
     cb = _property_codebook(seed=1)
     idx = torch.zeros(1, 4, dtype=torch.long)
@@ -90,11 +89,24 @@ def test_subspace_routes_property_mode_to_codebook():
     assert region.shape[-1] == 4                  # n_positions from selection
 
 
-def test_subspace_property_mode_none_without_property_flag():
+def test_subspace_property_mode_routes_any_codebook():
+    # There is no property flag: mode="property" is the per-call opt-in, so
+    # ANY .what codebook is read as a property when the mode is requested
+    # (doc/plans/2026-07-10-wholes-are-types-segmentation.md, T1).
     D = 8
     sub = SubSpace([4, D], [4, D], nInputDim=D, nOutputDim=D)
     cb = Codebook()
-    cb.W = nn.Parameter(torch.randn(4, D))        # NOT a property codebook
+    cb.W = nn.Parameter(torch.randn(4, D))        # a plain codebook
     sub.what = cb
     sub.set_index(torch.tensor([[0, 1, 2, 3]]).unsqueeze(-1))
-    assert sub.materialize(mode="property") is None
+    region = sub.materialize(mode="property")
+    assert region is not None
+    assert region.shape[-1] == 4                  # n_positions from selection
+
+
+def test_subspace_property_mode_none_without_index():
+    # The only remaining None conditions: no .what, or no selection.
+    D = 8
+    sub = SubSpace([4, D], [4, D], nInputDim=D, nOutputDim=D)
+    sub.what = _property_codebook(V=4, D=D, seed=2)
+    assert sub.materialize(mode="property") is None   # no _index set

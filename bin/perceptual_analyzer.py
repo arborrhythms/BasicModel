@@ -104,6 +104,33 @@ def byte_fallback_vector(text, dim):
     return acc / math.sqrt(len(raw))
 
 
+def divide_into_attested(surface, is_attested):
+    """Greedy longest-match tiling of a type-run WHOLE into attested standalone
+    CONCEPTS -- the whole-vs-concept split of
+    doc/plans/2026-07-10-wholes-are-types-segmentation.md (T3). Reuses the
+    longest-match pick of ``Meronomy.match_greedy`` over the whole's attested
+    substrings; returns the list of ``(start, end)`` part spans (offsets WITHIN
+    ``surface``) tiling ``[0, len)`` left-to-right, or ``None`` when no complete
+    cover by attested parts exists (an attested whole is preferred over its
+    parts by the caller resolving the whole first). ``is_attested(text) -> bool``.
+    """
+    from Meronomy import match_greedy
+    n = len(surface)
+    # Every attested substring is a candidate whole ``((start, end), _, text)``;
+    # match_greedy returns the LONGEST one starting at a cursor (or None).
+    wholes = [((i, j), None, surface[i:j])
+              for i in range(n) for j in range(i + 1, n + 1)
+              if is_attested(surface[i:j])]
+    parts, pos = [], 0
+    while pos < n:
+        m = match_greedy(wholes, pos)
+        if m is None:                     # gap: no attested part starts here
+            return None
+        parts.append(m[0])
+        pos = m[0][1]
+    return parts
+
+
 class MeronymicRouter:
     """Learned meronymic router: ONE hard route + soft marginals over a
     surface's atom sequence, reusing the SHARED inverse-routing primitive.
@@ -243,10 +270,20 @@ class MeronymicAnalyzer:
     # Meronymic route ids written to IdeaSubSpace._route_id.
     STOP, BOUNDARY, UNIFORM, BYTE = 0, 1, 2, 3
 
-    def __init__(self, percept_lookup=None, namespace=256, where_enc=None):
-        """``percept_lookup``: callable(text) -> (vec, part_id) | None."""
+    def __init__(self, percept_lookup=None, namespace=256, where_enc=None,
+                 divide_within_whole=True):
+        """``percept_lookup``: callable(text) -> (vec, part_id) | None.
+
+        ``divide_within_whole`` gates the T3 within-whole division: in
+        ``granularity="type"`` an unattested type-run whole is tiled into
+        attested standalone concepts before byte fallback
+        (doc/plans/2026-07-10-wholes-are-types-segmentation.md). Default ON
+        -- the same live default as the WholeSpace <divideWithinWhole> knob;
+        pass False for the undivided pre-T3 fallback.
+        """
         self.percept_lookup = percept_lookup
         self.where = where_enc or EndpointSumWhere(namespace=namespace)
+        self.divide_within_whole = bool(divide_within_whole)
 
     def _resolve(self, oss, text):
         """Return ``(vec, part_id)``: a percept-store hit, or byte fallback
@@ -280,7 +317,10 @@ class MeronymicAnalyzer:
         ``granularity``: ``"word"`` = whitespace/word boundary (matches the
         word lexer); ``"byte"`` = one terminal per byte; ``"auto"`` = word
         boundary with byte fallback for unknown words (the compatibility
-        analyzer mode). Durable span state is written to ``oss``; a
+        analyzer mode); ``"type"`` = maximal constant-TYPE runs (T2 wholes;
+        space-type runs discarded), an unattested whole divided into attested
+        concepts when ``divide_within_whole`` is set (T3), else byte fallback.
+        Durable span state is written to ``oss``; a
         host-side replay record (one dict per terminal with the canonical
         ``text`` + span + route) is returned so reverse synthesis can do
         exact replay (the standalone analyzer's stand-in for the percept
@@ -288,6 +328,43 @@ class MeronymicAnalyzer:
         """
         from util import parse
         record = []
+        if granularity == "type":
+            # T2 type-run wholes (maximal constant-type runs; space-type runs
+            # discarded) + T3 within-whole division. Host-eager, string-world:
+            # doc/plans/2026-07-10-wholes-are-types-segmentation.md.
+            from Meronomy import class_segments
+            from Layers import WHITESPACE
+            raw = (surface.encode("utf-8")
+                   if isinstance(surface, str) else bytes(surface))
+            for (cls, bs, be) in class_segments(raw):
+                if cls == WHITESPACE:
+                    continue                       # space-type runs discarded
+                token = raw[bs:be].decode("utf-8", errors="surrogateescape")
+                hit = (self.percept_lookup(token)
+                       if self.percept_lookup is not None else None)
+                if hit is not None:                # attested whole preferred
+                    vec, pid = hit
+                    self._emit(oss, b, token, bs, be, vec, int(pid),
+                               self.STOP, record)
+                    continue
+                parts = None
+                if self.divide_within_whole and self.percept_lookup is not None:
+                    parts = divide_into_attested(
+                        token, lambda s: self.percept_lookup(s) is not None)
+                if parts is not None:              # divides into attested parts
+                    for (i, j) in parts:
+                        sub = token[i:j]
+                        ps = bs + len(token[:i].encode("utf-8"))
+                        pe = bs + len(token[:j].encode("utf-8"))
+                        vec, pid = self.percept_lookup(sub)
+                        self._emit(oss, b, sub, ps, pe, vec, int(pid),
+                                   self.STOP, record)
+                else:                              # no tiling: byte fallback
+                    for k, byte in enumerate(token.encode("utf-8")):
+                        vec, pid = self._resolve(oss, chr(byte))
+                        self._emit(oss, b, chr(byte), bs + k, bs + k + 1,
+                                   vec, pid, self.BYTE, record)
+            return record
         if granularity == "byte":
             for ch, off in parse(surface, lex="bytes"):
                 vec, pid = self._resolve(oss, ch)

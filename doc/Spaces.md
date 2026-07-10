@@ -38,21 +38,30 @@
 > zero-banded symbol codes below: whole-percepts of symbols carry
 > `.where = .when = 0`).
 >
-> **`subspace.what`: atoms vs properties.** On `PartSpace` the `.what`
-> rows are **atoms** (letters and words — the existing lexicon / BPE /
-> MPHF front ends, gathered by `Codebook.lookup`). On `WholeSpace` the
-> `.what` rows are **properties** — things that range over the whole
-> input rather than naming one character (a sinusoid value is the
-> worked example; "whitespace"/"words" are content-keyed properties).
+> **`subspace.what`: atoms vs properties — wholes are types.** On
+> `PartSpace` the `.what` rows are **atoms** (letters and words — the
+> existing lexicon / BPE / MPHF front ends, gathered by
+> `Codebook.lookup`). On `WholeSpace` the `.what` rows are **properties**,
+> and properties are what wholes *are*: a `.what` row is a binary
+> proposition over the field, and only a proposition can bifurcate the
+> input into two clearly-identified regions (`+1` has-type / `-1`
+> complement) the way `materialize_property` does below. Types apply to
+> **runs of characters, not single characters**: the four canonical
+> properties are `isLetter`, `isSpace`, `isDigit`, `isPunctuation` — the
+> existing `LETTER` / `WHITESPACE` / `DIGIT` / `PUNCT` classes of
+> `Layers.char_class_region`, one codebook code each. A whole is a
+> **maximal constant-type run**; words are runs of letters, punct, or
+> digits. (See `doc/plans/2026-07-10-wholes-are-types-segmentation.md`
+> for the full argument and the boundary-dichotomy framing it
+> supersedes.)
 > `materialize` hands the per-position selection (`subspace._index`,
 > renamed from `_active` 2026-06-12) to the codebook so it produces the
 > materialized object: atoms via `lookup`, or a per-position **region
 > membership** via `Codebook.materialize_property` (`mode="property"`) —
 > the region that has the property (`> 0`) and the region that doesn't
-> (`<= 0`). The property path is additive and opt-in
-> (`Codebook.property_basis`); the continuous sinusoid backend is wired,
-> the content-keyed (whitespace/words) backend reuses the meronymic
-> analyzer's span segmentation and is a documented seam.
+> (`<= 0`). The continuous sinusoid backend is wired as the worked
+> example; the content-keyed (whitespace/words) backend reuses the
+> meronymic analyzer's span segmentation and is a documented seam.
 > Properties are **low-frequency by construction**: there is too much
 > detail to learn a codebook over the whole input unless the atoms are
 > low-frequency, so the property basis frequency is tied to the input
