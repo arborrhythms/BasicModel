@@ -348,7 +348,24 @@ mechanism tests green (synthetic byte-exact stamps drive render-set /
 size-hypothesis / curriculum / flag assertions; the default-is-scaffold
 identity pin), + the RUN_SLOW bar.
 
-**THE BAR IS RED — measured, diagnosed, escalated.**
+**RESOLVED — THE BAR IS GREEN (2026-07-09).** The RED diagnosis below mis-framed
+the cause as full-model band *precision* under a fixed period. The real cause was
+`.where` **FREQUENCY**: at the 8192 default period 1 byte = 0.00077 rad, far below
+the ~0.02 rad reverse-transport noise, so the reverse band collapsed. The
+`[8,27,40]` "claim error" was mostly wrap-aliasing at the angle-0 seam (offset 0
+wrapping to ~maxVal), not irreducible precision loss. Fix (3 parts): (1)
+`WhereEncoding.where_origin` — a small (1/64-period) origin shift off the wrap
+seam; (2) `<wherePeriod>256</wherePeriod>` on MM_20M_xor — the ~12-byte buffer
+only needs a short period, so the higher frequency lifts the byte-offset signal
+above the noise → the band decodes EXACT starts (start-offset error 0.0); (3)
+NUL-exclusion in `RadixLayer.associate_span` for the content-terminated last
+tile. Net at E=80: content 12/12, exact_match 1.0. `test_mm20m_xor_blind_roundtrip`
+xfail removed (a real passing test). The training-pressure knobs (a)/(b) below
+turned out NOT to be the lever (the band was collapsed by frequency, not
+under-trained); (c) scaffold-fed was not needed. FOLLOW-UP: long-sentence configs
+need a coarse+fine multi-rung period, not this single short period.
+
+**[SUPERSEDED — historical] THE BAR IS RED — measured, diagnosed, escalated.**
 `test_mm20m_xor_blind_roundtrip` (scaffold OFF, E=80): exact 0.0, where
 0.33; with the snap, E=200: exact 0.0, where 0.17. Root cause is NOT
 the mechanism (synthetic-stamp tests are exact end-to-end): the

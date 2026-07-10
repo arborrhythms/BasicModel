@@ -506,3 +506,52 @@ the un-fold. NULL-word pathway (Task 3) unstarted — the leaf slab's
 padding positions are the masked zeros the render already gates out; the
 explicit ∅-word (forward identity + reverse emit/recognize) is still its
 own gate.
+
+### Tasks 3–5 CLOSED (2026-07-09)
+
+**Task 3 (∅-word / NULL pathway) — DONE, mostly pre-existing.** Alec's reframe:
+the `\x00` NULL is the sentence TERMINATOR (a real ASCII value to PROCESS), not
+an all-zeros identity added to the fold. Padding cost (3.2/3.3) is already the
+eager skip-padding (`_n_trips = min(N_words, N_loop)`, Models.py:8133 — fixed
+loop, conditional body; pinned by test_per_word_ss_padding_noop). Terminator
+recognition / length round-trip (3.1b) already lives in `_render_token_buffer`
+(Spaces.py:4334 — bounds the decoded length at the terminator) + the lexer's
+`\x00` append; the full blind length round-trip is verified by the now-GREEN
+`test_mm20m_xor_blind_roundtrip`. Added `test_null_word_pathway.py` (variable-
+length terminator-cut). No all-zeros ∅-word, no pow2 buckets, `null_percept_idx`
+untouched.
+
+**Task 4 (Method-2 free-derivation) — harness landed; bar OPEN (routing, NOT an
+intrinsic ceiling — corrected 2026-07-09).** Added `recon_bench
+--free-derivation` (routes the decode through the trained student reverse:
+reconstruct_from_idea + serial_tensor_reverse_debug). Measured: exact_match 0.0
+at E=3 AND E=80 (where 0.25→0.33) — one dominant word per sentence.
+**Cause (instrumented, corrects the first-pass "non-invertible fold" claim):**
+the lattice-fold reverses fire ZERO times in this decode — the free-derivation
+falls through to the CS reverse (`_reverse_from_S`), never reaching
+`union.reverse(parent, basis)` = `Ops.disjunctionReverse`, the CODEBOOK-WALK
+recommender that reconstitutes an operand pair (Alec: a codebook lookup — since
+neither word is a part of the other, the join keeps enough edge to reconstitute
+the residual word — NOT a subtraction). The forward reduce parks per-step op
+routing (`_stm_last_reduce_routing`) but no reverse walks it backward.
+**Reverse-reduce BUILT + FIRING (same day, second pass):** forward accumulates
+the per-step fold trace (`_stm_reduce_op_trace`, reset per sweep, eager-only);
+`Models._reverse_reduce_unfold` walks it backward calling each chosen op's
+basis-threaded `reverse` on the **.what slice** (muxed [1018|2|4]; basis =
+`WholeSpace.subspace.what` 65536×1018, the first dim-matched codebook); hooked
+at the eval staging seed. Verified: DisjunctionLayer chosen, un-fold returns
+[B, 8, D]. **Measured remaining residual — operand recovery + trace
+granularity:** the recommender returns the same attractor rows for every
+sentence at E=3 (operands decode to 'loving'-family regardless of target), and
+the sweep trace spans ALL STM pushes (8 items, not the 2 words). Open
+iteration: candidate restriction (left_rows/right_rows in
+`Ops._binary_op_recommend`), trace filtering to word-bearing folds, trained
+codebook regime. exact_match stays 0.0; the ceiling test pin holds unchanged. `<definitionSparsityScale>` λ ∈ {0,0.5,2} is orthogonal
+to this bar (identical 0.0/0.25). Method-1 (leaves) stays the exact TEACHER
+(1.0). Pinned by `test_mm20m_grammar_free_derivation_ceiling` (RUN_SLOW; re-pin
+when the reverse-reduce lands). The earlier "no no-basis raise → trap ii
+dormant" read was the same routing artifact: the raise never fired because the
+op reverses were never reached.
+
+**Task 5 (docs + suite) — this note + the Gate-B GREEN note in the where/when
+encoding execution doc; full suite gate green.**

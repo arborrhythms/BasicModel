@@ -4436,6 +4436,21 @@ class BasicModel(BaseModel):
                         rev_ev = self._reverse_method1_leaves()
                     if rev_ev is None:
                         terminal_idea = self._reconstruction_seed()
+                        # Method-2 reverse-reduce (serial plan Task 4): on the
+                        # FREE-derivation decode (reconstruct_from_idea, eval),
+                        # un-fold the collapsed root back into per-word ideas by
+                        # walking the recorded fold steps backward -- each step
+                        # the chosen op's basis-threaded reverse, the
+                        # codebook-walk recommender (a LOOKUP that reconstitutes
+                        # the operand pair, not a subtraction). Falls through to
+                        # the single-slot seed when no trace/basis exists.
+                        if (terminal_idea is not None and not train
+                                and bool(getattr(
+                                    self, 'reconstruct_from_idea', False))):
+                            unfolded = self._reverse_reduce_unfold(
+                                terminal_idea[:, 0, :])
+                            if unfolded is not None:
+                                terminal_idea = unfolded   # [B, N_words, D_c]
                         if terminal_idea is not None:
                             cs = self.conceptualSpace
                             cs.subspace.set_event(terminal_idea)
@@ -7289,6 +7304,19 @@ class BasicModel(BaseModel):
             # names which op fired -- parked for interpretable readback.
             parent = (soft + (hard - soft).detach())[:, 0, :]   # [B, D]
             object.__setattr__(self, "_stm_last_reduce_routing", routing)
+            # Method-2 reverse-reduce trace (serial plan Task 4): append this
+            # step's chosen-op posteriors + the rows that actually folded, so
+            # the reverse can walk the fold BACKWARD calling each op's
+            # basis-threaded reverse (the codebook-walk recommender) to
+            # reconstitute the operand pair. Host list of detached tensors,
+            # reset per sweep by _stm_reduce_to_single_S; eager-only (a Python
+            # list mutation would graph-break under compile).
+            if not torch.compiler.is_compiling():
+                trace = getattr(self, "_stm_reduce_op_trace", None)
+                if trace is not None:
+                    trace.append((
+                        routing["reduce_marginal_op"].detach(),  # [B, 1, R]
+                        can.detach()))                           # [B] bool
         else:
             # Degenerate grammar (no S-space_role arity-2 op): the FORCED
             # reduce is a structural pop of the top onto its parent
@@ -7409,6 +7437,12 @@ class BasicModel(BaseModel):
         buf = stm._buffer
         B = buf.shape[0]
         device = buf.device
+        # Method-2 reverse-reduce trace: reset per sweep so the trace covers
+        # exactly the folds that build THIS root S (back-pressure folds before
+        # the sweep are not traced -- those rows fall back to the CS reverse).
+        # Host attr, eager-only (compile keeps the pre-existing behavior).
+        if not torch.compiler.is_compiling():
+            object.__setattr__(self, "_stm_reduce_op_trace", [])
         # Host-side relative detection BEFORE the captured sweep (reads
         # the host ``current_rules`` dict; never enters the graph).
         rel = self._sentence_relative_mask(B, device=device)    # [B] bool
@@ -9560,6 +9594,90 @@ class BasicModel(BaseModel):
             psp, '_recovered_input_thunk',
             ("radix", radix, slab.detach(), psp.subspace))
         return slab
+
+    def _reverse_reduce_unfold(self, S):
+        """Method-2 reverse-reduce (serial plan Task 4): un-fold the collapsed
+        root ``S`` ``[B, D]`` back into per-word ideas ``[B, N, D]`` by walking
+        the forward's recorded fold steps BACKWARD.
+
+        Each backward step calls the CHOSEN op's basis-threaded ``reverse``
+        (e.g. ``UnionLayer.reverse(parent, basis)`` -> ``Ops.disjunctionReverse``,
+        the CODEBOOK-WALK recommender: it picks an operand pair ``(x1, x2)``
+        from the codebook with ``op(x1, x2) ~= parent`` -- since neither word
+        is a part of the other, the join keeps enough of each word's edge to
+        reconstitute the residual word; this is a LOOKUP, not a subtraction).
+        Per the newest-at-slot-0 fold convention (left = older), the backward
+        walk emits ``x1`` (left) as the next word and carries ``x2`` (right)
+        into the next step; the final carry is the last word.
+
+        Trace: ``_stm_reduce_op_trace`` -- per sweep step
+        ``(reduce_marginal_op [B, 1, R], can [B])`` appended by
+        ``_stm_bounded_reduce_step`` (reset per ``_stm_reduce_to_single_S``
+        sweep). Rows masked out of a step (can=False) emit nothing there.
+        Returns ``None`` (caller falls back to the single-slot CS reverse)
+        when there is no trace, no reducer, or no dimension-matched basis.
+        Eval/eager only (the free-derivation decode path).
+        """
+        trace = getattr(self, "_stm_reduce_op_trace", None)
+        if not trace or S is None or not torch.is_tensor(S) or S.dim() != 2:
+            return None
+        reducer = self._stm_reducer()
+        if reducer is None or not len(getattr(reducer, "ops", [])):
+            return None
+        B, D = S.shape
+        # The STM idea is the MUXED event [what | where | when]; the codebook
+        # rows are nWhat-wide (content only). Un-fold on the .what slice; the
+        # band tail rides zeroed (scaffold placement comes from the forward
+        # record; blind placement from the percept band, not these ideas).
+        sub = self.conceptualSpace.subspace
+        nw = int(getattr(sub, "nWhere", 0) or 0)
+        nn_ = int(getattr(sub, "nWhen", 0) or 0)
+        d_what = D - nw - nn_
+        if d_what <= 0:
+            return None
+        # Basis for the recommender: the first codebook whose rows match the
+        # .what width (docstring contract: "typically WholeSpace.subspace.what").
+        basis = None
+        for space in (getattr(self, "wholeSpace", None),
+                      getattr(self, "conceptualSpace", None)):
+            what = getattr(getattr(space, "subspace", None), "what", None)
+            W = what.getW() if hasattr(what, "getW") else None
+            if (torch.is_tensor(W) and W.dim() == 2
+                    and int(W.shape[1]) == int(d_what)):
+                basis = what
+                break
+        if basis is None:
+            return None
+        words_per_row = [[] for _ in range(B)]      # emitted, earliest-first
+        carry = [S[b, :d_what] for b in range(B)]   # [d_what] per row
+        for marg, can in reversed(trace):
+            op_idx = marg[:, 0, :].argmax(dim=-1)   # [B] chosen op per row
+            for b in range(B):
+                if not bool(can[b]):
+                    continue                        # row did not fold this step
+                gl = getattr(reducer.ops[int(op_idx[b])], "gl", None)
+                if gl is None or not hasattr(gl, "reverse"):
+                    return None
+                parent = carry[b].unsqueeze(0)      # [1, d_what]
+                try:
+                    pair = gl.reverse(parent, basis=basis)
+                except TypeError:
+                    pair = gl.reverse(parent)       # unary-signature op
+                except NotImplementedError:
+                    return None                     # no faithful inverse: fall back
+                if not (isinstance(pair, tuple) and len(pair) == 2):
+                    return None
+                x1, x2 = pair
+                words_per_row[b].append(x1.reshape(-1))   # left = older word
+                carry[b] = x2.reshape(-1)                 # right rides on
+        for b in range(B):
+            words_per_row[b].append(carry[b])       # final carry = last word
+        n = max(len(w) for w in words_per_row)
+        out = S.new_zeros(B, n, D)                  # band tail stays zero
+        for b, ws in enumerate(words_per_row):
+            for i, w in enumerate(ws):
+                out[b, i, :d_what] = w
+        return out
 
     def _reverse_from_S(self, S):
         """Rework B (2): ``reverse(S)`` -- replay SymbolSpace's STORED

@@ -959,24 +959,49 @@ class WhereEncoding(QuadratureEncoding):
             self.nDim = 0
         self.p = 0
 
+    @property
+    def where_origin(self):
+        """ORIGIN SHIFT: positions are stamped at ``pos + where_origin`` so the
+        valid buffer sub-arc sits clear of the angle-0 seam -- reverse-transport
+        noise near offset 0 can no longer wrap to ~maxVal (the atan2 % 2pi seam
+        aliasing); decode subtracts it. Sized at 1/64 of the period (angle
+        ~0.098 rad, ~5x the measured ~0.02 rad transport noise): enough to clear
+        the seam, small enough to barely rotate the band (a pi/2 quarter-period
+        shift measurably perturbed marginal xor-convergence bars). Computed LIVE
+        off ``maxVal`` so it tracks the raise-to-fit period reset."""
+        return max(1, int(self.maxVal) // 64) if self.nDim > 0 else 0
+
     def encode(self, start, end=None):
-        """Endpoint-sum bracket key for a span ``[start, end]`` (sin/cos pair).
+        """Origin-shifted endpoint-sum bracket key for span ``[start, end]``.
 
         ``end is None`` (every legacy single-position call site -- ``forward``,
-        ``set_where``, the codebook stamp) => an INSTANT at ``start``, which is
-        BYTE-IDENTICAL to the pre-bracket single-quadrature encoding (``0.5 * 2``
-        is exact). Passing a distinct ``end`` (the word-span compaction, the
-        mereology synthesis path) carries the real start-end bracket: the angle
-        is the span center, the magnitude the span extent."""
-        return _bracket_encode(start, end, self.div_term)
+        ``set_where``, the codebook stamp) => an INSTANT at ``start``. Passing a
+        distinct ``end`` (word-span compaction, mereology synthesis) carries the
+        start-end bracket: angle=center, magnitude=extent. Both endpoints are
+        shifted by ``where_origin`` off the seam (decode subtracts it)."""
+        o = self.where_origin
+        return _bracket_encode(start + o,
+                               (end + o) if end is not None else None,
+                               self.div_term)
+
+    def decode(self, encoded):
+        """Inverse of the origin-shifted encode: the atan2 center (inherited)
+        minus ``where_origin`` returns the true position."""
+        return super().decode(encoded) - self.where_origin
+
+    def stamp(self, buf, batch_idx, pos_idx, offset):
+        """Origin-shifted scalar stamp (keeps ``stamp`` coherent with
+        ``encode``/``decode`` -- both shift by ``where_origin``)."""
+        super().stamp(buf, batch_idx, pos_idx, offset + self.where_origin)
 
     def decode_span(self, encoded):
         """Recover ``(start, end)`` byte positions from a .where bracket key.
 
-        ``decode`` (inherited) returns the span CENTER (byte-identical, the
-        position for an instant); ``decode_span`` adds the endpoints for the
-        contiguity / containment test (centers wrap into ``[0, period)``)."""
-        return _bracket_decode_span(encoded, self.div_term, wrap=True)
+        ``decode`` returns the span CENTER; ``decode_span`` the endpoints for the
+        contiguity / containment test. Both un-shift ``where_origin``."""
+        o = self.where_origin
+        s, e = _bracket_decode_span(encoded, self.div_term, wrap=True)
+        return s - o, e - o
 
     def forward(self, x):
         """Stamp sin/cos positional values into reserved embedding slots.
@@ -996,7 +1021,7 @@ class WhereEncoding(QuadratureEncoding):
         y = x.clone()
         y[:, :, index] = pos.reshape(batch, n, self.nDim)
         self.p += batch
-        assert self.p < self.maxVal, "Overflow in object embedding"
+        assert self.p + self.where_origin < self.maxVal, "Overflow in object embedding"
         return y
 
     # WhereEncoding.recover (the .where -> int identity inverse) RETIRED
@@ -12267,10 +12292,11 @@ class PartSpace(PerceptualSpace):
                           if i % stride == 0}
             else:
                 masked = set()
-            # Blind tile-size hypotheses use the NEXT active claim against
-            # the RUNNING SUM (design 1.3 snap: running-sum consistency --
-            # emitted bytes re-anchor cum each step, so claim errors do not
-            # accumulate; the last active tile has no successor -> arm (b)).
+            # Blind tile sizes: NEXT active claim minus the RUNNING SUM. With the
+            # origin-shifted higher-frequency band the claims are byte-exact, so
+            # the size restriction reliably excludes the NUL shadow (the 1-byte
+            # NUL that outranks the true word under unrestricted association);
+            # the last active tile has no successor -> content-terminated (arm b).
             claimed = [n for n in render_set if claims[n] is not None]
             next_claim = {}
             for i, n in enumerate(claimed[:-1]):

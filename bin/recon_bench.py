@@ -161,7 +161,8 @@ def _decode_texts(model):
 
 
 def run_config(config, epochs, seed, out_dir, profile=False,
-               max_batches=None, compiled_step=False, blind=True):
+               max_batches=None, compiled_step=False, blind=True,
+               free_derivation=False):
     """Run `epochs` timed training epochs on `config`; write a JSON record.
 
     The `seed` argument deliberately overrides BASIC_SEED / the XML
@@ -207,6 +208,19 @@ def run_config(config, epochs, seed, out_dir, profile=False,
     else:
         _epoch_loop()
 
+    # Method-2 free-derivation (serial-plan Task 4): route the serial decode
+    # through the TRAINED STUDENT reverse instead of the Method-1 leaves replay
+    # -- serial_tensor_reverse_debug bypasses _reverse_method1_leaves, and
+    # reconstruct_from_idea rebuilds the derivation from the reduced idea. Must
+    # be set BEFORE the eval decode pass (which stages the reverse). Currently
+    # scores 0.0: the reverse-reduce (backward walk over the recorded fold steps
+    # calling each op's basis-threaded reverse -- the codebook-walk recommender)
+    # is not yet wired, so the decode falls through to the CS reverse; see
+    # test_mm20m_grammar_free_derivation_ceiling.
+    if free_derivation:
+        model.reconstruct_from_idea = True
+        model.serial_tensor_reverse_debug = True
+
     # Decode pass: one bounded eval epoch stages the reverse() state.
     test_input, _ = model.inputSpace.getTestData()
     n = (int(test_input.shape[0]) if torch.is_tensor(test_input)
@@ -224,7 +238,8 @@ def run_config(config, epochs, seed, out_dir, profile=False,
         psp.decode_blind_rate = 1.0 if blind else 0.0
 
     notes = {}
-    notes["decode_mode"] = "blind" if blind else "scaffold"
+    notes["decode_mode"] = ("free-derivation" if free_derivation
+                            else ("blind" if blind else "scaffold"))
     where_recovery = -1.0
     try:
         targets, decoded = _decode_texts(model)
@@ -314,11 +329,17 @@ def main(argv=None):
     mode.add_argument("--scaffold", dest="blind", action="store_false",
                       help="decode via the forward scaffold (debug/"
                            "regression path)")
+    ap.add_argument("--free-derivation", dest="free_derivation",
+                    action="store_true",
+                    help="Method-2: decode via the trained free-derivation "
+                         "(reconstruct_from_idea) instead of the Method-1 "
+                         "leaves replay -- ceiling-bounded by the fold inverse")
     args = ap.parse_args(argv)
     rec = run_config(args.config, epochs=args.epochs, seed=args.seed,
                      out_dir=args.out, profile=args.profile,
                      max_batches=args.max_batches,
-                     compiled_step=args.compiled_step, blind=args.blind)
+                     compiled_step=args.compiled_step, blind=args.blind,
+                     free_derivation=args.free_derivation)
     print(json.dumps(dataclasses.asdict(rec), indent=2))
     print(f"[recon_bench] wrote {os.path.join(args.out, rec.filename)}")
 

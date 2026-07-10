@@ -21,25 +21,30 @@ def _enc(maxP=4096):
     return WhereEncoding(maxP, 2, 2)
 
 
-# --- instant byte-identity to the legacy single-quadrature point ------------
-def test_instant_is_byte_identical_to_legacy_point():
+# --- instant is a single-quadrature point at the ORIGIN-SHIFTED position -----
+def test_instant_is_origin_shifted_legacy_point():
+    # The instant is still a single-quadrature point (0.5*2 == 1 exact), now at
+    # the ORIGIN-SHIFTED position (WhereEncoding.where_origin off the wrap seam,
+    # 2026-07-09): encode(p) == the legacy quadrature point of (p + where_origin).
     enc = _enc()
+    o = enc.where_origin
     for p in (0.0, 3.0, 37.0, 120.0, 999.0):
         new = enc.encode(torch.tensor(p))                      # end=None -> instant
-        legacy = QuadratureEncoding.encode(enc, torch.tensor(p))
+        legacy = QuadratureEncoding.encode(enc, torch.tensor(p + o))
         assert torch.equal(new, legacy), (p, new, legacy)
 
 
-def test_forward_stamp_unchanged_by_bracket_capability():
-    # The auto-counter forward stamp (instants) must be byte-identical to the
-    # legacy quadrature stamp -- the bracket capability is opt-in via encode(s,e).
+def test_forward_stamp_is_origin_shifted_legacy():
+    # The auto-counter forward stamp (instants) is the legacy quadrature stamp
+    # at the origin-shifted positions -- the bracket capability is opt-in via
+    # encode(s, e); the origin shift is applied uniformly by encode.
     enc = _enc(); enc.p = 0
     x = torch.zeros(2, 4, 12)
     y = enc.forward(x.clone())
-    # Re-derive the legacy stamp for the same positions.
+    # Re-derive the legacy stamp for the same ORIGIN-SHIFTED positions.
     enc2 = _enc(); enc2.p = 0
     idx = enc2.resolve(12)
-    pos = torch.arange(0, 2 * 4, dtype=torch.float32)
+    pos = torch.arange(0, 2 * 4, dtype=torch.float32) + enc2.where_origin
     legacy = QuadratureEncoding.encode(enc2, pos).reshape(2, 4, 2)
     assert torch.allclose(y[..., idx], legacy, atol=0)
 

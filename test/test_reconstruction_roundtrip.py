@@ -604,6 +604,36 @@ def test_mm20m_grammar_derivation_roundtrip(tmp_path):
     assert rec.where_recovery == 1.0
 
 
+@pytest.mark.skipif(not os.environ.get("RUN_SLOW"),
+                    reason="~40s (build + 3 epochs + decode) -- RUN_SLOW gates it")
+def test_mm20m_grammar_free_derivation_ceiling(tmp_path):
+    """THE Method-2 bar (serial plan Task 4): the TRAINED free-derivation,
+    scored on surfaces via recon_bench's ``--free-derivation`` mode (the decode
+    routes through the trained STUDENT reverse -- reconstruct_from_idea +
+    serial_tensor_reverse_debug -- NOT the Method-1 leaves replay).
+
+    NOT GREEN -- and the cause is ROUTING, not an intrinsic fold ceiling
+    (corrected 2026-07-09; the earlier "non-invertible fold" framing was WRONG).
+    Instrumented: the lattice-fold reverses (union/intersection ``reverse``, the
+    ``Ops.disjunctionReverse`` codebook-walk recommender that reconstitutes an
+    operand pair ``(x1, x2)`` with ``union(x1,x2) ~= parent``) fire ZERO times in
+    this decode -- the free-derivation falls through to the CS reverse
+    (``_reverse_from_S``, nearest-concept on the collapsed root), which renders
+    ONE dominant word (measured exact 0.0 at E=3 AND E=80; where 0.25->0.33).
+    The forward reduce parks which op fired per step
+    (``_stm_last_reduce_routing``) but NO reverse walks those steps backward
+    calling each op's basis-threaded ``reverse`` (Alec: the union reverse is a
+    CODEBOOK LOOKUP -- since neither word is a part of the other, the join keeps
+    enough edge to reconstitute the residual word -- NOT a subtraction). Wiring
+    that reverse-reduce is the open Method-2 build; Method-1 (leaves replay, the
+    test above) stays the exact TEACHER (1.0). If exact_match ever exceeds 0 the
+    reverse-reduce is landing: re-pin (expected-improvement signal)."""
+    rec = run_config("data/MM_20M_grammar.xml", epochs=3, seed=0,
+                     out_dir=str(tmp_path), blind=False, free_derivation=True)
+    assert rec.exact_match_rate == 0.0      # the non-invertible-fold ceiling
+    assert rec.where_recovery < 1.0         # does not reach the Method-1 teacher
+
+
 def test_mm20m_xor_exact_roundtrip(tmp_path):
     """THE bar (Alec 2026-07-03): decoded reconstruction == input, exactly,
     at EPOCHS_PINNED (2026-07-04 encoding pass: the verified 1.0 window is

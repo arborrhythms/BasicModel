@@ -199,34 +199,27 @@ def test_recon_bench_blind_flag(tmp_path):
     assert rec_scaf.where_recovery == 1.0
 
 
-@pytest.mark.xfail(reason="Gate-B blind round-trip DEFERRED (Alec 2026-07-05): "
-                          "the closing knob (.where band training pressure vs "
-                          "longer budgets vs accepting scaffold-fed) is Alec's "
-                          "call; the mechanism is proven by the synthetic-stamp "
-                          "tests above -- xfail until the band matures.",
-                   strict=False)
 @pytest.mark.skipif(not os.environ.get("RUN_SLOW"),
-                    reason="~70s (build + pinned epochs) -- RUN_SLOW gates the bar")
+                    reason="~24s (build + pinned epochs) -- RUN_SLOW gates the bar")
 def test_mm20m_xor_blind_roundtrip(tmp_path):
     """THE Gate-2b bar: scaffold OFF, tiling re-derived from the band,
     exact_match == 1.0 at the pinned budget.
 
-    XFAIL (Alec 2026-07-05): deferred to Alec's band-precision knob (see
-    the marker reason + the Gate-B EXECUTION NOTES). Kept RUN_SLOW-gated so
-    it stays an explicit expected-failure of the bar, not a silent skip.
-
-    STATUS: RED (Gate B, 2026-07-04) -- the bar's premise (the E~80
-    byte-exact claim crossing, from the FIXTURE probes) does not hold in
-    the full-model regime: measured claim errors vs true [0, 5, 6] are
-    [8, 22, 34] bytes at E=80 and [7, 0, 4] at E=200 (converging, slow);
-    the xor size inventory {1, 5, 6} needs sub-half-byte claims to
-    separate 5 from 6, so arm (a) mis-restricts and exact stays 0.0
-    (magnitude gating is PERFECT there -- real 0.997+ vs pads <=0.11).
-    The mechanism itself is verified by the synthetic-stamp tests above.
-    Deliberately left RED per the nWhere-fix precedent: the closing knob
-    (more where-band training pressure vs longer budgets vs accepting
-    scaffold-fed until the curriculum matures the band) is Alec's call --
-    see the encoding plan's Gate-B EXECUTION NOTES."""
+    GREEN (2026-07-09): closed by the .where FREQUENCY fix, not a training
+    knob. The 8192 default period buried the byte-offset signal under the
+    reverse-transport noise floor (~0.008 rad = ~10 bytes at 1 byte =
+    0.00077 rad), so the band collapsed and 5-vs-6 could not separate. Three
+    changes close it: (1) WhereEncoding.where_origin -- a quarter-period
+    ORIGIN SHIFT so offset 0 sits off the atan2 wrap seam (no more
+    ~maxVal aliasing at offset 0); (2) <wherePeriod>256 for MM_20M_xor
+    (the ~12-byte buffer only needs a short period, giving 1 byte = 0.0245
+    rad, so the same noise is sub-byte and the band decodes EXACT starts --
+    measured start-offset error 0.0); (3) NUL-exclusion in
+    RadixLayer.associate_span for the content-terminated last tile (size=None),
+    so an active content slot never resolves to the 1-byte NUL pad row.
+    Net at E=80: start error 0.0, content 12/12, exact_match 1.0. Long-
+    sentence configs need a coarse+fine multi-rung period, not this single
+    short period (a follow-up)."""
     from test_reconstruction_roundtrip import EPOCHS_PINNED
     rec = run_config("data/MM_20M_xor.xml", epochs=EPOCHS_PINNED, seed=0,
                      out_dir=str(tmp_path), blind=True)

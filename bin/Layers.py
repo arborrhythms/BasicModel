@@ -10524,6 +10524,13 @@ class RadixLayer(Layer):
             W = W[cand]
         sims = torch.nn.functional.normalize(W, dim=-1) @ \
             torch.nn.functional.normalize(target, dim=0)
+        if size is None:
+            # Content-terminated tile (no successor claim): an ACTIVE content
+            # slot must never resolve to the 1-byte NUL pad row, which otherwise
+            # out-cosines the true word (the "NUL shadow"). Exclude it.
+            for pid in range(W.shape[0]):
+                if self.inverse_table[pid] == b"\x00":
+                    sims[pid] = float("-inf")
         best = int(sims.argmax())
         return int(cand[best]) if size is not None else best
 
