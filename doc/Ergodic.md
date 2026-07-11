@@ -4,6 +4,15 @@ This document describes the current implementation in `bin/Layers.py`.
 The theory-level motivation belongs in [Architecture.md](Architecture.md) and
 [MachineMinds.md](MachineMinds.md); this page is the operational contract.
 
+## Relation to LLMs, Formal Concept Analysis, and DisCoCat
+
+Ergodic exploration is orthogonal to the LLM/FCA/DisCoCat split, but it supports
+all three roles. It lets LLM-like predictive training explore without replacing
+the architecture's explicit codebooks; it lets Formal Concept Analysis-like
+concept order settle from repeated evidence; and it lets DisCoCat-like grammar
+composition search among typed reductions without turning the model into an
+unstructured residual stream.
+
 ## Effective Weights
 
 `ErgodicLayer` mixes learned structure with sampled noise through two scalar

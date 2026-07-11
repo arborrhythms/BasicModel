@@ -16,6 +16,16 @@ Truth-aware model methods plus the query-reasoning helpers in
 and `policy_answer_loss`. Builds on the TruthLayer infrastructure
 ([Logic.md](Logic.md)) and grammar composition ([Language.md](Language.md)).
 
+## Relation to LLMs, Formal Concept Analysis, and DisCoCat
+
+Reasoning is the point where BasicModel uses explicit structure instead of
+asking an LLM-style prior to improvise an answer. Formal Concept Analysis
+contributes the ordered concept support that makes grounding and entailment
+auditable. DisCoCat contributes the typed composition path that turns phrases
+and sentences into candidate propositions. The reasoner then checks those
+propositions against the TruthLayer rather than treating fluent continuation as
+evidence.
+
 ## Partitioned Symbol Space
 
 > **Terminology (percept / concept / symbol).** Throughout this doc
@@ -210,7 +220,7 @@ object grammar plus spatiotemporal contiguity. Every `conjunction` /
 `when()` support continuous. Differs from serial mode --- may reduce over all
 active percepts at once; rejects scattered object fields, not multi-percept
 fields. See
-[Language.md](Language.md) Section Shamatha Speech Mode and
+[Philosophy.md](Philosophy.md#shamatha-speech-and-single-pointedness) and
 [plans/2026-04-28-shamatha-speech-contiguity-handoff.md](old/2026-04-28-shamatha-speech-contiguity-handoff.md).
 
 ## Testing

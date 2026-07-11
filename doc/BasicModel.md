@@ -24,6 +24,23 @@ Based on the Basic Model of Cognition at
 [cognitivesciencesociety.org/framework-cognitive-science](https://cognitivesciencesociety.org/framework-cognitive-science/);
 see also [The Whole Part](https://thewholepart.com).
 
+## Relation to LLMs, Formal Concept Analysis, and DisCoCat
+
+BasicModel is a language-capable architecture, but it is not organized like a
+standard transformer LLM. A transformer LLM usually represents token context,
+semantic association, syntactic composition, and memory inside dense hidden
+state. BasicModel makes those roles explicit: percepts ground the input,
+concepts bind part/whole support, symbols provide addressable references, and
+grammar/reasoning layers compose or test those references.
+
+In Formal Concept Analysis terms, a concept has both an **extension** (the
+percepts that support it) and an **intension** (the attributes, relations, or
+symbolic edges that define it). BasicModel implements a fuzzy neural version of
+that split rather than a strict binary concept lattice. In DisCoCat terms, the
+grammar path composes word/object vectors into sentence-level meaning through
+typed reductions. BasicModel extends that DisCoCat-style composition with
+bidirectional reconstruction, truth weighting, and explicit meronymic codebooks.
+
 ## Inputs and Outputs
 
 Inputs and outputs derive from a real space that is ineffable. The original
@@ -140,6 +157,10 @@ $[whole, part]$ (whole $\Rightarrow$ part / if $\to$ then); the SINGLETON --
 a whole containing exactly one symbolic part, the unit-set $\{x\}$ Lewis
 resisted, here the constructive primitive; and the recursion VINE (ordered
 chains from nested pairs -- order from nesting, since each row is set-like).
+At the storage level, each sparse entry pairs one concept index with one symbol
+index. Repeating the same concept index across entries accumulates its set-like
+definition; recursively nesting relation concepts supplies vine order. See the
+relation-table entry contract in [Architecture.md](Architecture.md#relation-table-entry-contract).
 Where the relation does NOT need order (the word/object meta), the read-out
 is typed intersection, not slot order. See doc/Architecture.md sec A and
 doc/plans/2026-07-02-two-phase-loops-sparse-relation.md; the un-ramsified

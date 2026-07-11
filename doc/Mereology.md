@@ -4,6 +4,16 @@ Single-page reference for the mereological grammar: parthood as the
 fundamental operation, the five mereological relations, and the
 `ImpenetrableLayer` regularizer.
 
+## Relation to LLMs, Formal Concept Analysis, and DisCoCat
+
+Mereology is the bridge from subsymbolic perception to explicit concept order.
+Where an LLM usually leaves part/whole structure implicit in token statistics,
+BasicModel stores and trains it as codebook geometry. This is the architecture's
+closest point of contact with Formal Concept Analysis: part-percepts and
+whole-percepts define a fuzzy extent/intent relation, and concepts are the
+ordered links over that relation. DisCoCat enters one level later, when the
+language layer composes these ordered meanings according to typed grammar.
+
 > **Part/whole spaces (2026-06-12).** The perceptual side now names the
 > duality directly: `PartSpace` (bottom-up synthesis over atoms) and
 > `WholeSpace` (top-down analysis over unity), both subclassing the thin

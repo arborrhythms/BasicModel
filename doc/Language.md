@@ -7,6 +7,17 @@ analyzer) `bin/perceptual_analyzer.py`. (The earlier
 modules were retired in the 2026-05-21 / 2026-05-29 refactors; their
 functionality folded into `bin/Layers.py` and `bin/Language.py`.)
 
+## Relation to LLMs, Formal Concept Analysis, and DisCoCat
+
+The language layer is the architecture's DisCoCat-facing surface. Like
+Categorical Compositional Distributional semantics, it treats grammar as a typed
+composition discipline over vector meanings: reductions such as lift, lower,
+union, intersection, `part`, and `isEqual` decide how meanings combine. Unlike a
+typical transformer LLM, these reductions are explicit operators rather than
+latent behaviors distributed across heads. Their operands are tied back to the
+Formal Concept Analysis side of the model through concept order, role
+participation, and part/whole support in the codebooks.
+
 > **2026-06-02 deltas (subsymbolic analyzer + terminal emitter).** Plan:
 > [doc/old/2026-05-30-subsymbolic-analyzer-terminal-emitter.md](old/2026-05-30-subsymbolic-analyzer-terminal-emitter.md).
 >
@@ -120,7 +131,7 @@ non-default operator rule derives `useGrammar == "all"`.
 > `LanguageLayer.compose` does both selection and tensor reduction, and
 > the per-space cursors are deliberately bypassed
 > (`not _grammar_is_default_only`). See
-> [STM.md Section 5](STM.md#5-routing-parser-ws-analysis-vs-cs-execution)
+> [STM.md Section 5](STM.md#routing-parser)
 > for the accurate, audited account.
 
 ## Grammar

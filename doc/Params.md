@@ -7,6 +7,16 @@ model-specific configs. The schema is in `data/model.xsd`.
 This document is the human-facing reference for common knobs and migrations.
 `data/model.xsd` is authoritative for the complete accepted element set.
 
+## Relation to LLMs, Formal Concept Analysis, and DisCoCat
+
+Several XML knobs expose the architecture's relation to LLMs, Formal Concept
+Analysis, and DisCoCat. `dataType=embedding`, sentence prediction, and
+reconstruction cover the LLM-like prediction/generation path.
+`subsymbolicOrder`, `symbolicOrder`, `mereologyRaise`, `monotonic`, and the
+codebook settings control the FCA-like concept order and part/whole lattice.
+`serial`, `learning`, `transformChooser`, `categoryCodebook`, and grammar-layer
+settings control the DisCoCat-like typed composition path.
+
 Overlay merge order:
 `data/model.xml`  $\to$  `<config>.xml`  $\to$  runtime overrides.
 

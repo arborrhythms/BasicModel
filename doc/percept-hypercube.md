@@ -10,6 +10,15 @@
 > covered at the end and in
 > [plans/2026-06-23-conceptual-similarity-space.md](plans/2026-06-23-conceptual-similarity-space.md).
 
+## Relation to LLMs, Formal Concept Analysis, and DisCoCat
+
+The percept hypercube is the grounded extent side of the architecture. LLMs
+usually learn such grounding indirectly through token statistics; BasicModel
+keeps percept presence as an explicit carrier. Formal Concept Analysis enters
+when these perceptual extents are paired with whole/property intents to form
+concept order. DisCoCat enters after that, when grammar composes the resulting
+conceptual meanings rather than raw percept memberships.
+
 This is the partner of the **concept** similarity space. Percepts = the cube
 (presence); concepts = the sphere (meaning ⊕ certainty). Keeping them distinct
 is what resolves a long-standing confusion where a single `[-1,1]` encoding was

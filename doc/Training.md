@@ -21,6 +21,16 @@
 >   reconstruction loss (`reconstructionScale`-weighted).
 > - See [doc/old/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md](old/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md).
 
+## Relation to LLMs, Formal Concept Analysis, and DisCoCat
+
+Training keeps the LLM-like objectives of prediction and reconstruction, but
+does not make next-token likelihood the whole story. Early objectives shape the
+embedding and codebook substrate; later objectives train the Formal Concept
+Analysis-like concept order, the DisCoCat-like grammar composition path, and the
+truth/reasoning machinery that tests composed meanings. This is why the staged
+curriculum treats prediction as substrate-building and question answering as a
+separate deliberate objective.
+
 ## Overview
 
 Two phases: **embedding pretraining** and **network training**. Embedding

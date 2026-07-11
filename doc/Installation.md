@@ -6,6 +6,15 @@
 - **PyTorch** with MPS (Apple Silicon) or CUDA
 - **pandoc** (optional, for PDF generation via `make doc`)
 
+## Conceptual Orientation
+
+The installable artifact is not only an LLM training stack. It runs BasicModel's
+explicit architecture: LLM-like prediction/reconstruction objectives,
+Formal Concept Analysis-like part/whole concept order, and DisCoCat-like typed
+grammar composition. The generated PDF includes the detailed explanation in
+[Architecture.md](Architecture.md), [Mereology.md](Mereology.md), and
+[Language.md](Language.md).
+
 ## Setup
 
 ```bash

@@ -15,6 +15,16 @@ Universals / generalities           Particulars / specifically
                                     characterized entities
 ```
 
+## Relation to LLMs, Formal Concept Analysis, and DisCoCat
+
+The philosophical mapping is compatible with, but not reducible to, the
+engineering comparison with LLMs. LLMs motivate the problem of opaque fluent
+prediction. Formal Concept Analysis gives a modern mathematical reading of the
+analytic/synthetic and extension/intension split: concepts are supported by an
+extent and constrained by an intent. DisCoCat gives the corresponding account
+for language: grammatical form composes distributional meanings into a sentence
+meaning before truth or valid cognition can be assessed.
+
 ## Analytic / Synthetic (Kant)
 
 For Kant, **synthesis** is "the act of putting different representations

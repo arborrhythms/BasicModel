@@ -1,5 +1,14 @@
 # Lexicon
 
+## Relation to LLMs, Formal Concept Analysis, and DisCoCat
+
+The lexicon is the language-facing entry point shared with LLM practice:
+surface forms become vectors learned from corpus statistics. BasicModel then
+splits that vector work across two additional structures. Formal Concept
+Analysis appears when word/object rows are bound into the part/whole concept
+order; DisCoCat appears when those lexical vectors participate in typed grammar
+reductions rather than only in distributional similarity.
+
 > **2026-05-29 deltas:**
 >
 > - **Two-codebook split (Stage 8, 2026-05-27).** PartSpace owns

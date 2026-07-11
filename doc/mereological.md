@@ -18,6 +18,16 @@ This doc states the algorithm. Companion docs: percept presence geometry
 [Mereology.md](Mereology.md); the free conceptual layer on top
 [plans/2026-06-23-conceptual-similarity-space.md](plans/2026-06-23-conceptual-similarity-space.md).
 
+## Relation to LLMs, Formal Concept Analysis, and DisCoCat
+
+This algorithm is the concrete, code-facing form of the Formal Concept Analysis
+analogy used elsewhere in the docs. The byte-span containment order supplies the
+extent side, whole/property rows supply the intent side, and the learned
+part/whole links form a fuzzy concept lattice. Compared with LLMs, the
+part/whole order is not merely an effect of token co-occurrence hidden in
+weights. Compared with DisCoCat, this page describes the ordered substrate that
+typed grammatical composition consumes, not the grammatical composition itself.
+
 ---
 
 ## 1. The two operators (and why they're one design)

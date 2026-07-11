@@ -728,10 +728,10 @@ Full suite; **STOP for commit.**
 | :85 attention-to-relation promotion | soft-GATES T6 (strength only) | 0/7 built; T6 correct-but-verbose without it; sequence after T3 (it consumes the honest residual) |
 | :50 COMPILE/PERF + NULL-word | INDEPENDENT | zero file overlap with T3 ("peel" absent from Models.py); owned by serial Task 3.3 |
 | :56-59 property_basis hack | DOVETAILS T1c | T1c rewrites its PROSE only; mechanism removal stays a separate deliberate step (anchors drifted: 2599→2762, 6718→6907) |
-| :61-64 TruthSet→LTM + design §1.6 two-sided evidence | INDEPENDENT | bundle §1.6 (± axes feeding `act = pos−neg`, Spaces.py:6335 — note the twin site :5972 in `_compute_active`) into the TruthSet-to-LTM session |
+| :61-64 TruthSet→LTM + design §1.6 two-sided evidence | INDEPENDENT | bundle §1.6 (± axes feeding `act = pos−neg`, Spaces.py:6477 — note the twin site :6114 in `_compute_active`) into the TruthSet-to-LTM session |
 | :67-70 masked semantic recon config | DOVETAILS T4 | sequence AFTER T4 or re-tune λ under the changed loss mix; uses mereologyRaise like T5/T6 |
 | :14-20 Gate-B xfail | INDEPENDENT | expected xfail in every gate run |
-| :3-12 query-tool integration; :44 .where recovery (re-audit — recon_bench.py:69 now real); :46/:48; :52 GPU; :79 FCA doc; :81-83 relation-table notes | INDEPENDENT | :81-83 is consistent with T6's table reading (per-row 1:1 = binding; multi-row accumulation = set definition); FCA doc can cite design §1.3 |
+| :3-12 query-tool integration; :44 .where recovery (re-audit — recon_bench.py:69 now real); :46/:48; :52 GPU; :79 FCA doc; :81-83 relation-table notes | INDEPENDENT | :81-83 is consistent with T6's table reading (one entry = one concept-symbol binding; repeated entries with the same concept index = set definition; recursive relation concepts = vine); FCA doc can cite design §1.3 |
 
 ## Fidelity bars (design §3 — measured, not asserted)
 

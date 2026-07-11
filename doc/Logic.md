@@ -11,6 +11,15 @@ This document defines the logic system at three levels:
 Executable implementations of the subsymbolic and symbolic operators are the
 `Method` subclasses in Language.md.
 
+## Relation to LLMs, Formal Concept Analysis, and DisCoCat
+
+The logic layer states what a BasicModel sentence meaning can be trusted to do
+after it has been composed. In an LLM this kind of inferential behavior is often
+implicit in next-token priors. Here it is explicit: Formal Concept Analysis gives
+the order-theoretic reading of concept support and intent, DisCoCat gives the
+typed composition route that builds sentence meanings, and the truth operators
+test or accumulate the resulting propositions.
+
 > **Terminology (2026-06-21; see
 > [doc/old/2026-06-21-terminology-percepts-concepts-symbols.md](old/2026-06-21-terminology-percepts-concepts-symbols.md)).**
 > One noun per-space: **percept** = a PartSpace/WholeSpace thing (dimensionally

@@ -5,6 +5,15 @@
 code-anchored, normative version — it states the principle and maps each
 invariant onto the structures that already realize it (or names the gap).*
 
+## Relation to LLMs, Formal Concept Analysis, and DisCoCat
+
+The firewall is the negative definition of BasicModel's relation to LLMs: it
+rejects a large unrestricted residual stream as the place where meaning lives.
+The positive replacement is split across Formal Concept Analysis-like concept
+order, where persistent state has extent/intent structure, and DisCoCat-like
+grammar composition, where semantic mutations are typed operations over known
+units. The firewall requires those units to remain inspectable.
+
 ## Principle
 
 > All computation must be composed over known, typed, introspectable units —
@@ -49,13 +58,13 @@ already built, plus a small set of identified gaps.
 
 | # | Invariant | Status | Anchor |
 |---|---|---|---|
-| 1 | No anonymous persistent state | **satisfied** | `Codebook` rows are addressed by integer position; `part_parents` meronomy ([Spaces.py:1835](bin/Spaces.py:1835), [set_part_parent:2361](bin/Spaces.py:2361)) |
+| 1 | No anonymous persistent state | **satisfied** | `Codebook` rows are addressed by integer position; `part_parents` meronomy ([Spaces.py:2669](../bin/Spaces.py#L2669), [set_part_parent:3297](../bin/Spaces.py#L3297)) |
 | 2 | No unrestricted global residual stream | **satisfied** | Five-Space pipeline; cross-module signal goes through STM + the grammar router, not a shared hidden vector ([Architecture.md](Architecture.md), [Spaces.md](Spaces.md)) |
-| 3 | All latent vectors owned by symbols | **satisfied** | META taxonomy binds every latent to a position: `insert_whole` ([Spaces.py:17510](bin/Spaces.py:17510)), `insert_meta` ([Spaces.py:18011](bin/Spaces.py:18011)), `taxonomy_parent` ([Spaces.py:18244](bin/Spaces.py:18244)) |
-| 4 | Operations declare read/write masks | **partial** | Mode-partitioned `reference_update_mask` ([Spaces.py:79](bin/Spaces.py:79)), `update_mask_fn` ([Spaces.py:6918](bin/Spaces.py:6918)), `intent_priming_weights` ([Spaces.py:100](bin/Spaces.py:100)). **No per-operation *feature* mask** until the verb edit below. |
+| 3 | All latent vectors owned by symbols | **satisfied** | META taxonomy binds every latent to a position: `insert_whole` ([Spaces.py:17915](../bin/Spaces.py#L17915)), `insert_meta` ([Spaces.py:18441](../bin/Spaces.py#L18441)), `taxonomy_parent` ([Spaces.py:18674](../bin/Spaces.py#L18674)) |
+| 4 | Operations declare read/write masks | **partial** | Mode-partitioned `reference_update_mask` ([Spaces.py:83](../bin/Spaces.py#L83)), `update_mask_fn` ([Spaces.py:7942](../bin/Spaces.py#L7942)), `intent_priming_weights` ([Spaces.py:104](../bin/Spaces.py#L104)). **No per-operation *feature* mask** until the verb edit below. |
 | 5 | Semantic mutation emits a delta | **partial** | Truth-domain only: luminosity + `extrapolate` deltas ([Logic.md](Logic.md), [Reasoning.md](Reasoning.md)). Not yet generalized to all mutations. |
 | 6 | Temporary latent is compressed or discarded | **satisfied (by design)** | Bounded STM depth + reset cascade ([STM.md](STM.md), [Spaces.md](Spaces.md)); no indefinite latent workspace |
-| 7 | Recurrent useful patterns are promoted | **satisfied** | LBG codebook split + meta auto-bind `_maybe_autobind_meta` ([Spaces.py](bin/Spaces.py)) |
+| 7 | Recurrent useful patterns are promoted | **satisfied** | LBG codebook split + meta auto-bind `_maybe_autobind_meta` ([Spaces.py:13752](../bin/Spaces.py#L13752)) |
 
 "Partial" rows (#4, #5) are where this body of work makes concrete progress; the
 remaining gaps are listed under *Future work*.
@@ -90,7 +99,7 @@ learned class identity it already carries. Where the NP lacks a feature (out of
 class) `p_class` $\approx 0$ and that feature is preserved. The only per-verb parameter
 is a **sparse** eigenvalue edit `δ_v` over the shared lift operator's content
 eigenbasis (the LDU diagonal is the eigenvalue-like component,
-[Layers.py:1109](bin/Layers.py:1109)), made sparse by an in-forward
+[Language.py:2642](../bin/Language.py#L2642)), made sparse by an in-forward
 soft-threshold plus the L1 hook `gate_l1_loss`. The edit is a **zero-init
 residual branch** (untrained ⇒ no-op ⇒ the sigma fold), and stashes an
 introspectable `adverb_purchase` diagnostic — a first, bounded form of the emitted
@@ -98,7 +107,7 @@ semantic delta. NOTE (2026-06-20): the eig-based *verb* edit was removed (the ve
 is the lift operator itself); this mechanism is now the **adverb** eigenmodifier.
 The live grammar path is `adverb`, implemented by `AdverbLayer`, which
 force-builds the zero-init projection and calls `LiftLayer.apply_adverb`
-([Language.py](bin/Language.py)). `<adverbEigEdit>` remains only as the legacy
+([Language.py:3049](../bin/Language.py#L3049)). `<adverbEigEdit>` remains only as the legacy
 direct-`LiftLayer` helper flag. Source proposal:
 [`doc/old/semantic_verb_np_mask_eigenvalue_proposal.md`](old/semantic_verb_np_mask_eigenvalue_proposal.md).
 

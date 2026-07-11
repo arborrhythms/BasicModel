@@ -1,5 +1,13 @@
 # Spaces
 
+> **Architecture relation.** The Space/SubSpace split is where BasicModel most
+> directly departs from conventional LLMs: hidden state is routed through named
+> percept, concept, symbol, STM, and codebook stores instead of one residual
+> stream. PartSpace/WholeSpace plus the Concept codebook provide the fuzzy
+> Formal Concept Analysis reading (extent, intent, and concept order), while
+> SymbolSpace and the grammar host provide the DisCoCat-like composition path
+> from typed syntax to vector meaning.
+
 > **2026-06-21 terminology note (one noun per-space).** This doc follows the
 > percept / concept / symbol convention
 > (`doc/old/2026-06-21-terminology-percepts-concepts-symbols.md`): a **percept**
@@ -186,7 +194,7 @@ All spaces inherit from `Space`, which manages:
 - **`set_sigma` propagation.** Ergodic-mode noise level cascades from the
   top-level model down through every child layer.
 
-### Reset cascade --- hard vs. soft
+### Reset cascade: hard vs. soft {#reset-cascade-hard-vs-soft}
 
 Every space exposes `Reset(batch=None, hard=True)`. The signature is required
 (legacy zero-arg fallback removed).
@@ -211,7 +219,7 @@ compute brick --- see [Architecture.md](Architecture.md)).
 
 ---
 
-## Sigma / Pi ownership (Pi/Sigma swap, rev. 2026-06-09)
+## Sigma / Pi ownership (Pi/Sigma swap, rev. 2026-06-09) {#sigma-pi-ownership}
 
 History: the 2026-05-13 rebalance described "each space owns one
 operator"; the 2026-05-27 substrate refactor gave PS both folds; Stage 10
@@ -901,7 +909,12 @@ global ids/caches). Population is at mint: one untyped edge per SYMBOLIC
 constituent plus the EVERYTHING bias edge (`_populate_concept_weights`;
 `_concept_source_order` stays as bookkeeping — $K$ is an ITERATION BUDGET,
 not forced ramsification: a depth-$d$ vine completes at iteration $d$, tail
-links first). The per-step wave residual (`_cs_wave_qe`) is a report-only
+links first). Concretely, each sparse entry pairs one concept row index with
+one symbol column index. Repeated entries with the same concept index form its
+set-like definition; recursive `[whole=current, part=rest]` relation concepts
+form a vine. The normative distinction is stated in
+[Architecture.md](Architecture.md#relation-table-entry-contract). The per-step
+wave residual (`_cs_wave_qe`) is a report-only
 settle statistic; `cs_groundedness_probe` gives the Kripke grounded /
 ungrounded reading (bias column masked; see Architecture.md sec A). The
 phase outputs feed the SS leg, the head-side losses (conceptual SBOW on the
@@ -1051,7 +1064,7 @@ Cognitive correspondence:
 The distinction is preserved at the rule-id level (parser records which
 op fired) plus the operational difference in the per-pair math.
 
-See [Language.md](Language.md#grammarlayer-implementations) for the
+See [Language.md](Language.md#grammar) for the
 GrammarLayer specifics.
 
 ---

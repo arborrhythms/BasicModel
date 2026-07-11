@@ -106,13 +106,23 @@ is these two axes stacked: 1–3 are mereological (grounding), 4–5 taxonomic
    it. An idea (an STM entry; the reduced root $S$) is the sparse signed
    vector of these symbol scalars — WHICH concepts, at WHAT $\pm$ presence.
    This maps directly onto the code's factored form:
-   `concept_code = a · softplus(atom)` (Spaces.py:14510-14521) already
+   `concept_code = a · softplus(atom)` (Spaces.py:14717) already
    splits the **concept** (the dense positive atom / region) from the
    **symbol** (the signed activation $a$, the presence scalar) — so "sign on
    symbols" IS the signed activation, and sparsity is 0-valued symbols. A
    symbol scalar expresses present / absent / don't-care = TRUE / FALSE /
    NEITHER; the BOTH (conflict) state stays on the 2-axis catuskoti carrier
    — the symbol is the *decided* view.
+
+   The 1:1 concept↔symbol binding does NOT limit a concept definition to one
+   symbol. At the sparse-entry level, one entry pairs one concept index with
+   one symbol index and a signed weight. The same concept index may occur in
+   multiple entries, each with a different symbol index; those entries form
+   its set-like definition. A vine uses the same entries recursively: each
+   relation concept stores `[whole=current, part=rest]`, and `rest` references
+   the next relation concept. Thus repeated entries define a set, while nested
+   relation concepts define an order.
+
 6. **Evidence accumulates on two independent axes; the symbol is the
    readout.** The symbol scalar $\in [-1,+1]$ is decided, but evidence FOR
    and AGAINST a symbol accumulates INDEPENDENTLY (Alec, 2026-07-06) — e.g.
@@ -121,7 +131,7 @@ is these two axes stacked: 1–3 are mereological (grounding), 4–5 taxonomic
    NEITHER (low both) stay distinguishable rather than cancelling in a
    single running sum. The decided symbol is $\mathrm{pos} - \mathrm{neg}$,
    exactly the existing `act = pos.clamp(0,1) - neg.clamp(0,1)`
-   (Spaces.py:6335) over the catuskoti's independent T/F axes. So the
+   (Spaces.py:6477) over the catuskoti's independent T/F axes. So the
    accumulator is two-sided; only the emitted symbol collapses to one
    signed scalar.
 
@@ -193,9 +203,9 @@ idea vector $x$:
    implied by others) and **minimal wholes** (tightest covers) — the two
    frontiers of the interval in §1.3. Subsumption truth: byte-interval
    containment on the percept side (`RunStructureLayer`); the relation
-   table on the concept side (one concept index ↔ one symbol index per
-   row). Sparse table coverage ⇒ weaker pruning ⇒ *verbose* definitions,
-   not wrong ones.
+   table on the concept side (one sparse entry = one concept index ↔ one
+   symbol index; the same concept index may repeat across entries). Sparse
+   table coverage ⇒ weaker pruning ⇒ *verbose* definitions, not wrong ones.
 5. **OUTPUT — a typed conceptual definition.** What survives is the
    uncompressed semantic form, and it is typed for the grammar:
    **head/subject = the minimal covering whole; modifiers = the surviving

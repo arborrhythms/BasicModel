@@ -14,6 +14,15 @@ The MoC7 application form is for proposing either a talk or a poster presentatio
 The application deadline is 5 July 2026, Anywhere on Earth (AoE).
 Conference attendance requires separate registration.
 
+## Project Framing
+
+BasicModel can be presented under the "AI, LLMs and consciousness science"
+theme as an explicit alternative decomposition of LLM-like cognition. It relates
+to Formal Concept Analysis through its fuzzy extent/intent concept order, and
+to DisCoCat through typed grammatical composition of vector meanings. The poster
+angle is that perception, concept formation, grammar, memory, and truth are
+separate inspectable mechanisms rather than one opaque sequence model.
+
 ## Presentation Options
 
 - 20-minute talk slot: 15 minutes for presentation plus 5 minutes for questions.

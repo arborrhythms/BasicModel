@@ -22,17 +22,29 @@ parallel, the third is serial:
    SS codebook) — linked by the word/object Concept codebook
    (`bin/References.py`), whose rows are the concepts (part$\leftrightarrow$whole references).
 2. **Attention.** In an LLM, attention is QKV per subsymbolic layer.
-   In BasicModel, attention is quadratic over all three structures —
-   both towers and the Concept codebook — realized as priming (boost weights
-   over codebook rows; the single intent of GrammarOpsPass §5). Two channels
-   on two axes (see "Parse time" §C): **bottom-up attention is horizontal**
-   — the priming/heat itself, activation spreading among peers WITHIN a
-   level, choosing which items — and **top-down attention is vertical** —
-   mostly goal- or emotion-driven attachment to PROPERTIES, fixing the level
-   of abstraction (Rosch's Basic Level: object size) and, through that,
-   which objects are selected at all. The symbolic/conceptual heat
-   (`<symbolicPriming>`, the `<attention>` retrieval modes) belongs to the
-   BOTTOM-UP channel — it is driven by what has been active, not by goals.
+   In BasicModel: **bases of relevance guide attention; attention
+   determines the contents of awareness.** Relevance is carried as
+   weights on the percepts; ATTENTION is the single selection process
+   (at CS) that reads the integrated priority out; AWARENESS is what the
+   selection admits. (The priority-map synthesis — Fecteau & Munoz 2006;
+   Bisley & Goldberg 2010 — with attention as the readout, never the
+   sources; attention distinct from awareness per Koch & Tsuchiya 2007.)
+   Relevance factors as **ORIGIN $\times$ AXIS**, realized as **ONE
+   QUADRATIC PRIMING SURFACE per space with two write channels** (the
+   simplified law): **bottom-up things are primed in virtue of BEING
+   SEEN** (perception itself writes the surface: fired rows bump, the
+   surface decays toward neutral) and **top-down things are primed in
+   virtue of being DESIRED or HATED** (signed intent: desire boosts,
+   hate suppresses with floor 0 — suppression, never a veto). "Top-down"
+   is therefore a DIRECTION of writes on the one surface, not a second
+   mechanism — matching biased competition (Desimone & Duncan: the
+   template IS conceptual content) while keeping the two channels'
+   automatic/strategic dissociation distinct (§C). `readingAttention` is
+   HARD-CODED over the same surface: the reading scope is the span of
+   the hottest-primed word-whole. Two AXES, orthogonal to origin ("Parse
+   time" §C): HORIZONTAL (which parts within the level) and VERTICAL
+   (which properties — fixing Rosch's Basic Level and, through it, which
+   objects exist at all).
 3. **Thought.** In an LLM, thought is the computation of priors for
    autoregressive word prediction. In BasicModel, thought is a
    **subsequent isolation of attention over that space, enabled by
@@ -55,7 +67,38 @@ update law (and the codebook/meronomy ownership model generally) instances: all
 computation is composed over typed, symbol-attached units — read/write masks,
 no anonymous global residual stream.
 
-#### Addressable attention — the typed `.where`
+## Relation to LLMs, Formal Concept Analysis, and DisCoCat
+
+BasicModel is best read as an explicit decomposition of functions that a
+transformer LLM usually folds into attention heads, feed-forward blocks, and an
+unrestricted residual stream. The LLM comparison in this document is therefore
+architectural, not merely benchmark-oriented:
+
+- **LLMs:** a conventional LLM learns fluent priors over token sequences with
+  latent attention and hidden residual state. BasicModel keeps the language-model
+  goal of prediction and generation, but separates perception, concept
+  formation, attention, grammar, truth, and reconstruction into named stores and
+  typed operations. The wager is that some behavior now implicit in LLM weights
+  should become inspectable state.
+- **Formal Concept Analysis:** the PartSpace/WholeSpace towers and Concept
+  codebook form a neural, fuzzy analogue of a formal context. Part-percepts play
+  the role of objects or extents, whole-percepts play the role of attributes or
+  intents, and concepts are the order-bearing links between them. The resulting
+  meronymic structure is not a classical binary FCA lattice, because support and
+  trust are graded and trainable, but it uses the same extent/intension
+  discipline as its organizing constraint.
+- **DisCoCat:** the grammar path is a DisCoCat-like composition engine: typed
+  grammatical reductions decide how word/object meanings compose into sentence
+  meanings in vector space. BasicModel differs from standard categorical
+  compositional distributional semantics by making the reductions bidirectional,
+  tying them to part/whole codebooks, and feeding their results into truth,
+  reconstruction, and memory.
+
+In short: LLMs are the operational baseline, Formal Concept Analysis supplies
+the lattice and extension/intension reading of concepts, and DisCoCat supplies the
+grammar-to-vector-composition reading of sentence meaning.
+
+### Addressable attention — the typed `.where`
 
 Global attention (`GlobalAttention`, `bin/Spaces.py`; gated `<globalAttention>`)
 ranges over a **typed addressable space**: one distribution competes across every
@@ -237,6 +280,23 @@ identity slots) give the pump DISTINCT layers per pass -- depth IS
 mereological order -- and the per-percept snap-residual (`snap_settle_qe`)
 is read as a report-only SETTLE SIGNAL for later adaptive work.
 
+#### Relation-table entry contract
+
+At the sparse-entry level, one entry binds one concept row index to one symbol
+column index, plus its signed membership weight. A concept definition is
+therefore not limited to one symbol: the same concept index may occur in
+multiple entries, each paired with a different symbol index. Those repeated
+entries collectively form the concept's sparse, set-like definition; different
+concept indices define different concepts.
+
+The same representation is sufficient for a vine, with an important
+qualification: one entry alone does not encode a total order. Each vine link is
+the ordered pair $[\text{whole}=\text{current},\text{part}=\text{rest}]$, where
+`rest` references the next relation concept. The discrete role-tagged records
+preserve the whole/part distinction exactly, while recursive nesting and wave
+iteration make the sequence order operational. In short: repeated entries for
+one concept define a set; recursively nested relation concepts define a vine.
+
 **Groundedness and cycles.** `cs_groundedness_probe` (host-side, eager,
 report-only) is the KRIPKE reading of the wave, in two runs. Run 1 iterates
 from $a^0 = 0$ WITH the source: whatever lights up is GROUNDED -- its
@@ -323,41 +383,79 @@ subspace and the PS/WS subspaces**:
   in the current test fixtures — the tiling is again a partition and order
   suffices.)
 
-### C. Parse time (two attentions)
+### C. Parse time (relevance = origin $\times$ axis)
 
-At parse time CS receives the overcomplete input representations from the PS and
-WS mereological towers. Attention parses them two ways:
+At parse time CS receives the overcomplete input representations from the PS
+and WS mereological towers. **Bases of relevance — carried as weights on the
+percepts — integrate into a priority signal; attention is the selection at
+CS that reads it out; awareness is what the selection admits.** Relevance
+factors as ORIGIN $\times$ AXIS: two origins (perceptual salience/novelty;
+symbolic history) crossed with two axes (horizontal: which parts; vertical:
+which properties/level).
 
-- **Top-down attention is vertical** (w.r.t. the bottom-up / top-down towers):
-  it is attachment to PROPERTIES — mostly goal- or emotion-driven ("I am
-  reading, I need to look for words", which is exactly what serial mode
-  institutionalizes) — and by weighting properties it fixes the **Basic
-  Level** of analysis (E. Rosch): the size of parts and wholes. The scope
-  handoff is its EFFECT ON PERCEPTION: the word-level isolates the regions
-  that are type *word*, *punctuation*, and *space*, forming a **complete
-  tiling** (the WS$\to$PS `_passback_scope_where` handoff; punctuation
-  already tiles to its own span) — the level of analysis is governed
-  top-down, and particular objects are chosen over others as a result.
-- **Bottom-up attention is horizontal**: within the level the vertical
-  channel fixed, WHICH items? Top-down may fix the word boundary of
-  *wheelhouse*, but what makes *wheel* + *house* its building blocks rather
-  than the equally-segmentable *wheelhou* + *se*? **Greedy longest-match** is
-  the current easy approximation (`RadixLayer.longest_match`); bottom-up
-  attention should guide both parsing and reconstruction here. The SYMBOLIC
-  face of the same channel is the heat: `<symbolicPriming>` row heat and the
-  `<attention>` retrieval modes are conceptual/symbolic heat — activation
-  spreading horizontally among taxonomy peers — bottom-up attention at the
-  symbol level, NOT top-down (driven by what has been active, not by goals).
-  The approved iterated-loop rework
-  ([2026-07-02-iterated-symbolic-loop.md](plans/2026-07-02-iterated-symbolic-loop.md))
-  continues this same channel past the bandwidth seam: the wave over the
-  single untyped square layer propagates the snap's salience one
-  membership-weighted hop per iteration — bottom-up attention lifted into
-  relation space — which is why that layer is named **`ConceptualAttentionLayer`**
-  (what it is), not `SparseLayer` (how it works). Heat and wave are two
-  renderings of ONE channel and want integration (recorded future work:
-  derive taxonomy heat from the wave's terminal activations $a^K$;
-  optionally re-enter heat as a further additive source term).
+- **Salience/novelty, HORIZONTAL (significant particles, PS)** — within
+  the level the vertical axis fixed, WHICH items? The level may fix the
+  word boundary of *wheelhouse*, but what makes *wheel* + *house* its
+  building blocks rather than the equally-segmentable *wheelhou* + *se*?
+  **Greedy longest-match** is the current easy approximation
+  (`RadixLayer.longest_match`); particle salience should guide both
+  parsing and reconstruction here. Under the simplified law the signal
+  is SEEN-priming: rows that fire are primed by being perceived (bump +
+  exponential decay toward neutral) — presence primes; no separate
+  novelty computation.
+- **Salience/novelty, VERTICAL (significant properties, WS)** — a
+  property can be stimulus-significant too (a novel type-run, an
+  unexpected region); property salience weights the wholes and thereby
+  participates in fixing the **Basic Level** of analysis (E. Rosch): the
+  size of parts and wholes. The scope handoff is the vertical axis's
+  EFFECT ON PERCEPTION: the word-level isolates the regions that are type
+  *word*, *punctuation*, and *space*, forming a **complete tiling** (the
+  WS$\to$PS `_passback_scope_where` handoff) — the level of analysis
+  governs which particular objects are chosen at all.
+- **The single quadratic surface (SS and every space)** — ONE priming
+  vector over each space's rows, with TWO WRITE CHANNELS: **SEEN**
+  (bottom-up — fired rows bump, the surface decays exponentially toward
+  neutral; `prime_seen`) and **DESIRED/HATED** (top-down — signed
+  intent; desire boosts, hate suppresses with floor 0, never a veto;
+  `prime_desire`). The two channels ARE the automatic/strategic
+  dissociation (Posner & Snyder 1975; Neely 1977, the prime-target
+  expectancy experiments): **AUTOMATIC** — fast, capacity-free,
+  inhibitionless priming through use — versus **STRATEGIC** — slow,
+  capacity-limited, goal-set (the SINGLE intent of GrammarOpsPass §5 —
+  capacity limited by construction), able to suppress. They also
+  dissociate from each other behaviorally (selection/reward history
+  captures attention even AGAINST current goals: Awh, Belopolsky &
+  Theeuwes 2012) — both channels WRITE, neither vetoes.
+  **`readingAttention` is HARD-CODED over this surface**: the reading
+  scope is the span of the hottest-primed word-whole
+  (`_primed_reading_step`, the learned producer's contract) — the
+  symbols map onto the wholes that isolate words.
+
+**The readout site is the concept pyramid's per-order top-K**
+(`cs_forward_content`; the FF pyramid is COMPOSITION, not attention — the
+selection over it is where attention acts). The CS surface projects
+directly onto the inventory rows as the ranking score
+(`_relevance_priority` $=$ boost $-$ 1; rank $= |cand| \cdot (1 +
+\mathrm{score})$, spreading upward through edge magnitudes, admitted rows
+only) — selection changes, activations never distort. The pyramid's
+ADMITTED rows write back through `prime_seen`: awareness primes. Gated
+`<architecture><relevance>` (default false, byte-identical);
+`<primingDecay>` sets the seen decay.
+
+**The bases interact (cross-basis priming).** The psychological literature
+is unambiguous that symbolic activation primes the subsymbolic layers:
+automatic spreading activation vs. strategic expectancy in semantic priming
+(Neely 1977 — the heat vs. intent split, exactly); word-level activation
+feeding back to letter perception (McClelland & Rumelhart's interactive
+activation); conceptual templates biasing early sensory competition
+(Desimone & Duncan's biased competition); learned context guiding spatial
+attention without awareness (Chun & Jiang's contextual cueing); labels
+sharpening perception (Lupyan's label feedback). The architectural
+consequence: **conceptual activation should be the ORIGIN of
+`readingAttention`** — the reading template built from the currently
+selected concepts (the pyramid's winners, `_concept_activations`) rather
+than a free-standing query — making WS's vertical basis the conceptual
+tower's own downward projection, as biased competition prescribes.
 
 ### D. Attention indexing (`.where` / `.when` / codebooks)
 
@@ -565,7 +663,7 @@ The legacy composition `C = sigma_percept(pi_input(IS) + pi_concept(C_prev))`
 is **retired**. Per-stage feedback is absent at the substrate; grammar
 dispatch over STM provides the recurrent character via the signal router.
 
-See [Spaces.md Section "Sigma / Pi ownership"](Spaces.md#sigma--pi-ownership-2026-05-27-substrate-refactor)
+See [Spaces.md Section "Sigma / Pi ownership"](Spaces.md#sigma-pi-ownership)
 for the cognitive rationale and the migration trail.
 See [Logic.md Section 8](Logic.md) for the algebraic constraints on sigma/pi.
 
@@ -819,8 +917,8 @@ byte-exact. `valid_mask: [B, K]` handles partial-fill tails via NULL-padding.
 **Compute-brick contract.** No `.item()`, no `.tolist()`, no Python
 conditional on a tensor value, no GPU$\to$host copy inside `runBatch`. The
 chart's residual `.tolist()` calls retired with the `Chart` class itself in
-the substrate refactor; remaining graph-break sites are documented in
-[`doc/BrickHostSyncStatus.md`](BrickHostSyncStatus.md).
+the substrate refactor. The historical host-sync audit is preserved in
+[the vectorization handoff](old/2026-04-27-brick-vectorization-and-legacy-removal-handoff.md).
 
 ### Two-File Architecture
 
@@ -965,7 +1063,7 @@ See [Logic.md](Logic.md), [Mereology.md](Mereology.md), and
 speech: complete DNF over active percepts, permitting each `conjunction` /
 `disjunction` only when operands' `where()` supports are connected and
 `when()` supports are continuous. See
-[Language.md](Language.md#shamatha-speech-mode).
+[Philosophy.md](Philosophy.md#shamatha-speech-and-single-pointedness).
 
 ---
 

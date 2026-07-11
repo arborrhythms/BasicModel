@@ -9,6 +9,16 @@ Alec Rogers, September 24, 2025
 > temperature. Current invertible layers use the factorized implementation
 > described in [Architecture.md](Architecture.md), not the early SVD sketch.
 
+## Relation to LLMs, Formal Concept Analysis, and DisCoCat
+
+This essay frames the motivation for treating machine minds as architectures,
+not only as trained LLM weights. In the current BasicModel docs, that motivation
+has three technical anchors: LLMs provide the comparison class for fluent
+prediction; Formal Concept Analysis names the extent/intent discipline behind
+concept order; and DisCoCat names the grammar-to-vector composition discipline
+behind sentence meaning. The later architecture documents make those anchors
+operational.
+
 ## Abstract
 
 *Problem*

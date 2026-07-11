@@ -1,5 +1,14 @@
 # Short-Term Memory
 
+## Relation to LLMs, Formal Concept Analysis, and DisCoCat
+
+STM is the local working set that replaces the anonymous residual-state view of
+many LLM descriptions. It holds unquantized ideas while the parser decides which
+typed DisCoCat-like reductions should apply. Those ideas are still grounded in
+the Formal Concept Analysis side of the model: their slots point back to
+part/whole support, concept order, and codebook rows rather than floating as
+untyped context vectors.
+
 > **2026-06-02 update (subsymbolic analyzer).** Operators no longer enter
 > the STM idea space. They are kept in the SS **codebook**
 > (`WholeSpace.insert_operations`, wired into `SymbolicSubSpace.__init__`)
@@ -92,7 +101,7 @@ signal router consumes `stm.snapshot()` as its slab input.
 **Lifecycle.** Cleared on hard `Reset` (sentence boundary) — the
 per-batch idea stack drops everything from the just-finished sentence and
 the next sentence starts empty. Soft reset leaves the STM intact (see
-[Spaces.md](Spaces.md#reset-cascade--hard-vs-soft)).
+[Spaces.md](Spaces.md#reset-cascade-hard-vs-soft)).
 
 ---
 
@@ -256,7 +265,7 @@ direction, not built here.
 
 ---
 
-## 5. Routing parser: SS-analysis vs CS-execution
+## 5. Routing parser: SS-analysis vs CS-execution {#routing-parser}
 
 The grammar runs through the signal router (`LanguageLayer`,
 [Language.py:3493](../bin/Language.py)); `SymbolicSubSpace` owns it as
