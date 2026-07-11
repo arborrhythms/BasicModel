@@ -91,18 +91,21 @@ def test_ws_routes_universe_on_parallel_path():
     assert stamps == ["universe"] * len(stamps), stamps
 
 
-def test_ws_routes_legacy_off_path():
-    """Serial + sO=0 never take universe routing (byte-identity invariant).
-
-    Serial drives only the terminal stage's WS (per-word path), so earlier
-    stages legitimately stamp None — the pin is the ABSENCE of "universe".
+def test_ws_routing_after_serial_migration():
+    """The FINAL migrated law (2026-07-11): the unity is offered every
+    pump; a LIVE unity routes universe, a DEAD unity (all shipped configs
+    today -- no live analysis front-end yet) with a live carrier routes the
+    carrier body. Empty-carrier bootstraps route universe even when dead.
+    When <analysis>word</analysis> lands, universe routing lights up here
+    automatically -- no config gate.
     """
-    for cfg in ("data/MM_20M_xor.xml", "data/MM_20M_grammar.xml"):
-        m = _run_one_epoch(cfg)
-        stamps = [getattr(ws, "_ws_routed_source", None)
-                  for ws in m.wholeSpaces]
-        assert "universe" not in stamps, (cfg, stamps)
-        assert any(s == "legacy" for s in stamps), (cfg, stamps)
+    m = _run_one_epoch("data/MM_20M_grammar.xml")
+    stamps = [getattr(ws, "_ws_routed_source", None) for ws in m.wholeSpaces]
+    assert stamps[-1] == "carrier", stamps      # dead unity, live carrier
+    m = _run_one_epoch("data/MM_20M_xor.xml")
+    stamps = [getattr(ws, "_ws_routed_source", None) for ws in m.wholeSpaces]
+    assert stamps[0] == "universe", stamps      # empty-carrier bootstrap
+    assert all(s == "carrier" for s in stamps[1:]), stamps
 
 
 # ---- Tasks B/C: signed snap + feedforward pyramid (rev 2 design §§2-5) ----

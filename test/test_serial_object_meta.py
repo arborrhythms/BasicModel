@@ -195,10 +195,12 @@ def test_ss_analyzes_unity_at_prelude_pump_zero():
     assert real >= 1, "WS must analyze the unity at prelude pump 0"
 
 
-def test_ss_unity_feed_is_gated_off():
-    """Flag OFF: the prelude does NOT feed WS the unity (byte-identical prelude
-    for other serial configs)."""
+def test_ss_unity_feed_unconditional_after_migration():
+    """Serial migration (2026-07-11): the unity is OFFERED unconditionally
+    (the flag no longer gates the FEED); consumption is decided by the
+    typed+liveness routing law -- a dead unity with a live carrier routes
+    the carrier body, so non-dual preludes stay behaviorally intact."""
     m, x = _serial_model_and_batch()
     m.serial_object_meta = False
     real, _none = _count_unity_calls(m, x)
-    assert real == 0, "no unity feed when serialObjectMeta is off"
+    assert real > 0, "unity must be offered every pump post-migration"

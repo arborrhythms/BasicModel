@@ -166,6 +166,29 @@ Per order, report-only: selected `.index` occupancy, activation magnitude,
 per-fold gradient norms. These are the mechanism-live pins (replacing
 `_cs_wave_qe`).
 
+## Follow-on decisions (Alec, 2026-07-11)
+
+1. **Serial routing migrates to the TYPED + LIVENESS law** (outcome of
+   "update serial; remove legacy if it works"): the unity is offered at
+   every pump with no mode gates; a LIVE unity routes universe-primary, a
+   DEAD unity with a live carrier routes the carrier body (the recurrent
+   leg + machinery). No shipped config has a live universe analysis yet,
+   so behavior is unchanged today — the universe path lights up
+   automatically when decision 2's `<analysis>word</analysis>` lands.
+   Full carrier-path removal is bounded by that. Trade + the WS-leg
+   ablation finding recorded in the execution notes (items 22-24).
+2. **`<analysis>word</analysis>` typed runs into the glued frame are
+   sanctioned as a USEFUL INTERIM:** until serial mode can work on its own
+   AND a better attention mechanism lets the mind itself determine the
+   basic level, the word cut supplies that level externally — words are a
+   good first test of that level-finding. When an attention mechanism can
+   discover the basic level, the externally-imposed word cut retires.
+3. **Groundedness probe stays retired**; the bottom-up-attention AUDIT
+   (2026-07-11) confirms the pyramid replaced only the wave — every other
+   attention mechanism (ReadingAttention, GlobalAttention, intent
+   priming / `_topk_priming_mask`, reverse-side heat + `<attention>`
+   modes) is present, orthogonal, and composes; see the execution notes.
+
 ## Gates (Alec commits at each)
 
 - **Gate A:** PS/WS symmetry refactor green — class removed, dual signatures

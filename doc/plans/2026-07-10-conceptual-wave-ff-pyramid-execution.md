@@ -299,6 +299,71 @@ the path; off-path green.
     test_subspace_what_stm_contract + test_symbolic_iteration +
     test_typed_definition 65 passed / 1 xfailed; contract pins re-verified
     (62 passed).
+### Serial-routing migration + attention audit (2026-07-11, post-d293b4d)
+
+22. **Serial migration executed (Alec follow-on decision 1).** Final state
+    — THE TYPED + LIVENESS ROUTING LAW in WS.forward: a raw unity tensor
+    is OFFERED at every pump (no ``serialObjectMeta`` feed gate, no
+    serial/parallel routing branch); it routes UNIVERSE-primary when its
+    analysis is ALIVE (nonzero event) or the carrier is empty (bootstrap)
+    or the path is parallel (glue contract); a DEAD unity with a live
+    carrier routes the CARRIER body (the recurrent leg + grammar dispatch
+    + quantize snap + stack router + truth recording). The "legacy" stamp
+    is renamed "carrier" — it is the machinery body, not a compat shim.
+    Truth recording was EXTRACTED (`_record_truth_activations`) and fires
+    from BOTH branches, so `store_truths` ingestion works under either
+    routing.
+23. **Measured verdicts and the honest finding (cpu/eager seed 0,
+    recon_bench 3 epochs):** NO shipped config has a LIVE universe
+    analysis today — grammar's unity event materializes ALL-ZERO
+    ($[B,2,8]$, max 0.0), xor's unity is a degenerate flattened grid
+    ($[B,1,8323072]$ int) whose analysis is a zero grad-free constant, and
+    MM_sparse_concept (`<analysis>raw`) likewise. Consequently: grammar
+    routes carrier (recon 0.051825, exact **1.0**, byte-stable); xor
+    byte-identical ($0.200180/0.009222$; the every-stage universe attempt
+    broke its grads-flow + round-trip pins — its $t>0$ carrier legs are
+    load-bearing). The intermediate "universe-every-pump" experiment
+    IMPROVED grammar recon 10$\times$ ($0.0518 \to 0.0051$ at exact 1.0) —
+    but the unity being all-zero means this was a WS-LEG ABLATION effect
+    (silencing the serial WS carrier contribution), NOT universe
+    re-anchoring. Recorded as a finding: the serial WS leg's recurrent
+    contribution HURTS recon on grammar; worth a deliberate ablation
+    experiment, not a silent routing side effect.
+24. **THE TRADE (what serial migration buys/costs):** GAINED — one uniform
+    typed+liveness law (no mode branches; ``serialObjectMeta`` no longer
+    gates the unity feed); the universe path is fully plumbed end-to-end
+    and LIGHTS UP AUTOMATICALLY (per space, per pump) the moment a live
+    analysis front-end lands (`<analysis>word</analysis>` — follow-on
+    decision 2), with truth recording already wired on that branch; the
+    pre-rev-2 "WS processes symbols" leftover gone. COST/KEPT — the
+    carrier body remains the $t>0$ recurrent leg wherever the universe is
+    dead (today: everywhere), so no behavioral change ships for
+    serial/sO=0 configs (grammar exact bar unchanged at 1.0, xor
+    byte-identical); FULL carrier-path removal is bounded by giving
+    inputs a live universe analysis, and is deferred to that phase.
+26. **Trace safety:** the liveness probe is data-dependent control flow —
+    `make test` caught it via the compiled-CLI XOR node and the mlx export
+    (GuardOnDataDependentSymNode). Fixed with the house
+    `torch.compiler.is_compiling()` guard: under trace the probe is
+    skipped and the carrier path is taken (factually correct — all
+    shipped universes are dead); revisit the compiled story when
+    `<analysis>word</analysis>` lights the universe path up.
+25. **Attention audit (agent sweep, 9 mechanisms):** the pyramid replaced
+    exactly ONE mechanism — the ConceptualAttentionLayer WAVE (same store,
+    same $\tanh(W[a|1])$ hop, iteration $\to$ per-order top-K). INTACT and
+    composing: ReadingAttention (gate `<readingAttention>`, default off;
+    MM_qa/MM_query_reasoning/MM_global/MM_reading enable), GlobalAttention
+    (+`<globalAttentionConsume>`, default off; MM_qa/MM_query_reasoning/
+    MM_global/MM_symbol_attention/MM_ws_tall), intent priming /
+    `_topk_priming_mask` (dark until an intent is set; same top-K idiom as
+    the pyramid but on the WS word-codebook axis — composes, no
+    duplication), reverse-side symbolic-heat `<attention>` modes +
+    `<symbolicPriming>` (default off; NO shipped config enables them).
+    Already-inert pre-rewrite: `hasAttention` (deprecated alias),
+    QKVAttentionLayer (retired class, test-only). Residuals: `wave_step`
+    orphaned (kept, pinned by 2 substrate tests), `_cs_wave_qe=None`
+    write-only retirement marker (pinned deliberately).
+
 21. **Second `make test` (4 failed / 3076) caught the bias-edge LIFECYCLE
     gap:** bias edges were ADDED at the store's own bias column but
     REMOVED at `col == nVectors` (and both remove sites resolved rows via

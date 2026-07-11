@@ -3817,6 +3817,14 @@ class BasicModel(BaseModel):
         """
         in_sub, concepts_in = self.inputSpace.forward(x)
         self._staged_concepts_in = concepts_in
+        # Dual-towers: WS's universe view is only WELL-FORMED on text input
+        # (string rows the analysis can cut); embedding-mode unities are
+        # degenerate flattened grids that analyse to dead zeros.
+        _ti = getattr(self.inputSpace.data, "train_input", None)
+        object.__setattr__(self, "_ws_universe",
+                           concepts_in if (isinstance(_ti, list) and _ti
+                                           and isinstance(_ti[0], str))
+                           else None)
         # Phase 4b: host-eager analysis cut. The configured WS analysis
         # (word / analyse) divides the unity into parts HERE -- in the
         # eager stem, exactly like the PS host tokenization -- and parks
@@ -6962,10 +6970,13 @@ class BasicModel(BaseModel):
             # stages read only the recurrent CS (input once, mirroring
             # PS). Pure attr read, so the compiled/export paths trace it
             # exactly like _staged_in_sub.
-            # Dual-towers rev 2: universe view always offered; the WS routing
-            # branch decides (parallel: every stage; legacy: empty-carrier only).
-            WS_sub = ws.forward(self._staged_concepts_in,
-                                cs_out=prevCS_forSS)
+            # Dual-towers rev 2: the universe bootstraps stage 0 ALWAYS and
+            # drives every stage on the PARALLEL path (glue contract);
+            # non-parallel t>0 stays carrier-driven (the live recurrent leg).
+            _par = self.symbolicOrder > 0 and not self.serial
+            WS_sub = ws.forward(
+                (self._staged_concepts_in if (_par or t == 0) else None),
+                cs_out=prevCS_forSS)
             # ``cs.forward`` does the STM push + the C->P / C->S handoff
             # bookkeeping and produces this stage's perception event CS_0
             # (STM bookkeeping, no parameterised fold). PRESERVED intact --
@@ -7888,8 +7899,8 @@ class BasicModel(BaseModel):
             _unity = getattr(self, '_staged_concepts_in', None)
             for _i in range(T):
                 PS_sub = self.perceptualSpace.forward(word_carrier)
-                _is = _unity if (_dual and _i == 0) else None
-                WS_sub = ws.forward(_is, cs_out=self._prev_cs_for_ss)
+                WS_sub = ws.forward(getattr(self, "_ws_universe", None),
+                                    cs_out=self._prev_cs_for_ss)
                 CS_sub = cs.forward(PS_sub, WS_sub)
                 self._prev_cs_for_ps = cs._subspaceForPS
                 self._prev_cs_for_ss = cs._subspaceForWS
@@ -8004,7 +8015,8 @@ class BasicModel(BaseModel):
         # single-arg now (``pi(x) + sigma(x)`` on the same input —
         # no CS-feedback path entering PS at this level).
         PS_sub = self.perceptualSpace.forward(word_sub)
-        WS_sub = ws.forward(None, cs_out=prevCS_forSS)
+        WS_sub = ws.forward(getattr(self, "_ws_universe", None),
+                            cs_out=prevCS_forSS)
         CS_sub = cs.forward(PS_sub, WS_sub)
 
         # Masked-blend the persistent CS carriers' new events with the

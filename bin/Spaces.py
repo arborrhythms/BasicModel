@@ -21508,19 +21508,80 @@ class WholeSpace(Space):
             t = int(getattr(self, "_pump_pass_idx", 0) or 0)
         return stack[min(max(0, int(t)), len(stack) - 1)]
 
+    def _record_truth_activations(self, act, symbolSpace):
+        """Continuous truthCriterion-gated truth recording (one knob, fires
+        from BOTH the carrier body and the universe branch)."""
+        # Truth recording governed by the continuous ``truthCriterion`` bar
+        # (0 = record every activation, 1 = record none) -- replaces the
+        # retired binary truthMinMagnitude/accumulateTruth arm. A per-cell
+        # activation is recorded when its clamped magnitude clears the bar
+        # (``mag >= truthCriterion``): at tc=0 every valid cell is recorded,
+        # at tc->1 only the strongest, at tc=1 none. This fires wherever
+        # WholeSpace.forward runs -- both normal training and the
+        # ``store_truths`` gold-ingestion epoch -- so a single continuous
+        # knob governs all truth recording (no separate gold path, no binary
+        # switch). BEHAVIOURAL NOTE: unlike the retired binary gate (off
+        # during training), truths are now accumulated continuously during
+        # training per ``truthCriterion``; raise truthCriterion toward 1 to
+        # suppress it.
+        tc = float(self.truth_criterion)
+        if tc < 1.0 and symbolSpace is not None:
+            truth_layer = getattr(symbolSpace, 'truth_layer', None)
+            if truth_layer is not None:
+                basis = getattr(self.subspace, 'basis', None)
+                BK, N, D = act.shape
+                norms = act.norm(dim=-1)
+                # Per-cell magnitude in [0, 1] (activations are tanh-bounded
+                # so norms are O(1); clamp guards the rare overshoot).
+                mag = norms.clamp(max=1.0)
+                # Acceptance against the bar: keep cells clearing tc.
+                accept = (mag >= tc).to(mag.dtype)
+                vmask = self.subspace.valid_mask
+                if vmask is not None:
+                    accept = accept \
+                        * vmask.flatten().unsqueeze(-1).to(accept.dtype)
+                trust = mag * accept
+                # The TruthLayer stores CONTENT-width symbolic activations
+                # (its ``nDim`` = symbol/content width), but ``act`` here is the
+                # WS EVENT-width slab (content + where/when). Conform to the
+                # TruthLayer width before recording -- slice the trailing
+                # where/when (the common case, event > content) or zero-pad the
+                # rare narrower case -- so gold ingestion (``store_truths`` at
+                # ``truthCriterion`` 0, the only path that records when widths
+                # differ) does not size-mismatch ``_pending_truths``. The
+                # magnitude bar above is computed over the FULL event and is
+                # unchanged; only the stored vector is conformed.
+                tw = int(getattr(truth_layer, 'nDim', D))
+                if D > tw:
+                    act_rec = act[..., :tw]
+                elif D < tw:
+                    act_rec = torch.cat(
+                        [act, act.new_zeros(BK, N, tw - D)], dim=-1)
+                else:
+                    act_rec = act
+                truth_layer.record_batch(
+                    act_rec.reshape(BK * N, tw),
+                    trust.reshape(BK * N),
+                    degree=1.0,
+                    basis=basis)
+
+
+
     def forward(self, in_sub, cs_out=None):
         """Universe->symbol forward (the top-down analysis tower).
 
-        Dual-towers rev 2 (doc/plans/2026-07-10-conceptual-wave-ff-pyramid
-        -design.md): symmetric signature with PS — ``in_sub`` is the
-        UNIVERSE view of the input (the IS unity ``[B, 1, N]``), ``cs_out``
-        this tower's conceptual feedback (the prior pass's
-        ``ConceptualSpace._subspaceForWS``). Routing: on the sO>=1 PARALLEL
-        leg WS consumes the universe at EVERY stage (dual-input plan
-        sec.2's "later knob", now live) with ``cs_out`` stashed as
-        ``_cs_feedback``; otherwise the LEGACY routing (cs_out primary,
-        unity consumed only when cs_out is empty — stage 0) is
-        byte-identical to the pre-rev-2 dataflow.
+        Dual-towers rev 2 + serial migration (2026-07-11): symmetric
+        signature with PS — ``in_sub`` is the UNIVERSE view of the input
+        (the IS unity ``[B, 1, N]``), ``cs_out`` this tower's conceptual
+        feedback. ONE TYPED ROUTING LAW: a raw unity tensor routes
+        universe-primary (feedback stashed as ``_cs_feedback``); a
+        SubSpace-like first arg or ``in_sub=None`` routes the CARRIER body
+        (the recurrent leg + the grammar/snap machinery). Callers choose
+        by what they pass: parallel offers the universe every stage,
+        serial text per-word offers it every pump, non-parallel pumps
+        bootstrap stage 0 with it and stay carrier-driven at t>0
+        (embedding-mode unities analyse to dead zeros — no live universe
+        exists there yet).
 
         Dispatches to the rule-application path when the caller marks the
         incoming subspace with ``_rule_dispatch`` (see
@@ -21537,14 +21598,33 @@ class WholeSpace(Space):
         # universe views are raw [B, 1, N] tensors. A single positional
         # SubSpace is therefore the pre-rev-2 legacy carrier call shape.
         _is_carrier = hasattr(in_sub, "is_empty")
-        _parallel = (int(getattr(self, "_symbolic_order", 0) or 0) > 0
-                     and not bool(getattr(self, "_serial", True)))
-        if _parallel and in_sub is not None and not _is_carrier:
-            # Universe-primary at every stage; feedback stashed for Task B/C.
-            object.__setattr__(self, "_cs_feedback", cs_out)
-            object.__setattr__(self, "_ws_routed_source", "universe")
-            return self._stage0_unity_forward(in_sub)
-        object.__setattr__(self, "_ws_routed_source", "legacy")
+        if in_sub is not None and not _is_carrier:
+            # Universe-primary (serial migration, Alec 2026-07-11) with a
+            # LIVENESS law: the universe drives when its analysis carries
+            # signal; a DEAD unity (embedding-mode: analyses to zeros) with
+            # a live carrier falls back to the recurrent body. Parallel is
+            # exempt (glue contract; its WS half awaits a live universe).
+            out = self._stage0_unity_forward(in_sub)
+            _ev = out.materialize() if hasattr(out, "materialize") else None
+            # The liveness probe is data-dependent: skip it under trace
+            # (house is_compiling pattern) -- all shipped universes are
+            # dead today, so the traced path is the carrier; revisit when
+            # <analysis>word</analysis> lights the universe up.
+            _alive = (not torch.compiler.is_compiling()
+                      and _ev is not None and _ev.ndim == 3
+                      and bool((_ev != 0).any()))
+            _par = (int(getattr(self, "_symbolic_order", 0) or 0) > 0
+                    and not bool(getattr(self, "_serial", True)))
+            if (_alive or _par or cs_out is None or cs_out.is_empty()):
+                object.__setattr__(self, "_cs_feedback", cs_out)
+                object.__setattr__(self, "_ws_routed_source", "universe")
+                if _alive:
+                    # Truth recording: the WS activation IS the unity
+                    # analysis under the migrated law (store_truths path).
+                    self._record_truth_activations(
+                        _ev, getattr(self, "symbolSpace", None))
+                return out
+        object.__setattr__(self, "_ws_routed_source", "carrier")
         # Legacy mapping: cs_out primary; unity read only on an empty carrier.
         if cs_out is None and _is_carrier:
             CS_subspaceForWS, IS_concepts = in_sub, None
@@ -21762,59 +21842,7 @@ class WholeSpace(Space):
                 act,
                 torch.zeros_like(act))
 
-        # Truth recording governed by the continuous ``truthCriterion`` bar
-        # (0 = record every activation, 1 = record none) -- replaces the
-        # retired binary truthMinMagnitude/accumulateTruth arm. A per-cell
-        # activation is recorded when its clamped magnitude clears the bar
-        # (``mag >= truthCriterion``): at tc=0 every valid cell is recorded,
-        # at tc->1 only the strongest, at tc=1 none. This fires wherever
-        # WholeSpace.forward runs -- both normal training and the
-        # ``store_truths`` gold-ingestion epoch -- so a single continuous
-        # knob governs all truth recording (no separate gold path, no binary
-        # switch). BEHAVIOURAL NOTE: unlike the retired binary gate (off
-        # during training), truths are now accumulated continuously during
-        # training per ``truthCriterion``; raise truthCriterion toward 1 to
-        # suppress it.
-        tc = float(self.truth_criterion)
-        if tc < 1.0 and symbolSpace is not None:
-            truth_layer = getattr(symbolSpace, 'truth_layer', None)
-            if truth_layer is not None:
-                basis = getattr(self.subspace, 'basis', None)
-                BK, N, D = act.shape
-                norms = act.norm(dim=-1)
-                # Per-cell magnitude in [0, 1] (activations are tanh-bounded
-                # so norms are O(1); clamp guards the rare overshoot).
-                mag = norms.clamp(max=1.0)
-                # Acceptance against the bar: keep cells clearing tc.
-                accept = (mag >= tc).to(mag.dtype)
-                vmask = self.subspace.valid_mask
-                if vmask is not None:
-                    accept = accept \
-                        * vmask.flatten().unsqueeze(-1).to(accept.dtype)
-                trust = mag * accept
-                # The TruthLayer stores CONTENT-width symbolic activations
-                # (its ``nDim`` = symbol/content width), but ``act`` here is the
-                # WS EVENT-width slab (content + where/when). Conform to the
-                # TruthLayer width before recording -- slice the trailing
-                # where/when (the common case, event > content) or zero-pad the
-                # rare narrower case -- so gold ingestion (``store_truths`` at
-                # ``truthCriterion`` 0, the only path that records when widths
-                # differ) does not size-mismatch ``_pending_truths``. The
-                # magnitude bar above is computed over the FULL event and is
-                # unchanged; only the stored vector is conformed.
-                tw = int(getattr(truth_layer, 'nDim', D))
-                if D > tw:
-                    act_rec = act[..., :tw]
-                elif D < tw:
-                    act_rec = torch.cat(
-                        [act, act.new_zeros(BK, N, tw - D)], dim=-1)
-                else:
-                    act_rec = act
-                truth_layer.record_batch(
-                    act_rec.reshape(BK * N, tw),
-                    trust.reshape(BK * N),
-                    degree=1.0,
-                    basis=basis)
+        self._record_truth_activations(act, symbolSpace)
 
         if self._symbol_where is not None:
             B = act.shape[0]

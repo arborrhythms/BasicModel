@@ -123,19 +123,19 @@ def test_ws_stage0_consumes_unity():
         "stage-0 symbolic output must CHANGE when the unity changes")
 
 
-def test_ws_legacy_routing_with_nonempty_cs():
-    # Dual-towers rev 2 (2026-07-10 plan): unity alongside a live carrier is
-    # now the STANDARD call convention -- the routing branch decides. On an
-    # off-path (serial/sO=0) space the legacy branch keeps cs_out primary,
-    # leaves the unity unconsumed, and STAMPS the decision (the loud signal
-    # replacing the retired Phase-2 NotImplementedError).
+def test_ws_routing_law_typed():
+    # Serial migration (2026-07-11): ONE typed law -- a raw unity tensor
+    # routes universe-primary even alongside a live carrier; passing the
+    # carrier first (or in_sub=None) routes the carrier body.
     m = _build("MM_20M_legacy.xml")
     ws = m.wholeSpace
     u = torch.randint(0, 256, (2, 1, 512), dtype=torch.int64)
     ws.forward(u, cs_out=m._empty_seed_ss)   # populates ws.subspace
     assert not ws.subspace.is_empty()
-    ws.forward(u, cs_out=ws.subspace)        # live carrier + unity: legal now
-    assert getattr(ws, "_ws_routed_source", None) == "legacy"
+    ws.forward(u, cs_out=ws.subspace)        # raw unity wins: universe
+    assert getattr(ws, "_ws_routed_source", None) == "universe"
+    ws.forward(ws.subspace)                  # carrier-first: body path
+    assert getattr(ws, "_ws_routed_source", None) == "carrier"
 
 
 def test_model_forward_passes_unity_at_stage0():
@@ -167,16 +167,16 @@ def test_model_forward_passes_unity_at_stage0():
         for w, real in zip(stage_ws, reals):
             w.forward = real
     assert out is not None and torch.isfinite(out).all()
-    # Dual-towers rev 2: the unity is OFFERED at every stage (first
-    # positional); on this off-path config the legacy routing consumes it
-    # only at stage 0 (empty carrier) -- the stamp proves no universe
-    # routing engaged.
+    # Serial migration (2026-07-11): stage 0 bootstraps with the unity
+    # (universe stamp); t>0 non-parallel stages are carrier-driven.
     stage0 = [(u, src) for (i, u, src) in calls if i == 0]
     later = [(u, src) for (i, u, src) in calls if i > 0]
     assert stage0 and torch.is_tensor(stage0[0][0]), (
         "stage 0 must be offered the parked unity view")
-    assert all(src == "legacy" for (_u, src) in stage0 + later), (
-        "off-path stages must route legacy (cs_out primary)")
+    assert all(src == "universe" for (_u, src) in stage0), (
+        "stage 0 bootstraps from the universe")
+    assert all(src == "carrier" for (_u, src) in later), (
+        "t>0 non-parallel stages are carrier-driven")
 
 
 def test_full_forward_green_with_dual_view():
