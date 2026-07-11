@@ -99,8 +99,10 @@
     <nInputDim>1024</nInputDim>
     <nVectors>65536</nVectors>
     <nDim>1024</nDim>
-    <nOutput>1024</nOutput>
-    <nOutputDim>8</nOutputDim>
+    <!-- WS matches PS [8,1024] for the corpus-callosum stack; the old
+         [1024,8] wide-symbol shape was a leftover from WS processing symbols. -->
+    <nOutput>8</nOutput>
+    <nOutputDim>1024</nOutputDim>
     <invertible>true</invertible>
     <codebook>quantize</codebook>
   </WholeSpace>

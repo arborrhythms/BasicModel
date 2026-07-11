@@ -260,9 +260,13 @@ def test_conceptual_sbow_situates_live_sparse_codes():
 
 
 def test_csw_weights_update_under_optimizer_step():
-    cs = _cs_active(nS=16, order=1)                    # two-block [8 | 8]
-    cs.add_concept_edge(8, 0, weight=0.5)
-    cs.add_concept_edge(9, 2, weight=1.0)
+    """Edge values train under the optimizer (dual-towers rev 2: grads reach
+    the store only through ALLOCATED+selected rung rows -- mint first)."""
+    cs = _cs_active(nS=16, order=1)                    # taper caps (8, 4)
+    r1 = cs._csw_concept_row(1, 101)                   # allocated -> selected
+    r2 = cs._csw_concept_row(1, 102)
+    cs.add_concept_edge(r1, 0, weight=0.5)
+    cs.add_concept_edge(r2, 2, weight=1.0)
     what = torch.randn(16, _D)
     a_0 = torch.rand(8, 2)
     vals = cs._sparse_families(1)[1].values

@@ -110,14 +110,16 @@ class TestPSForwardSingleArg(unittest.TestCase):
     (``x_subspace``); the legacy ``CS_subspaceForPS`` second arg is
     gone."""
 
-    def test_forward_signature_is_single_arg(self):
+    def test_forward_signature_is_dual_towers(self):
+        # Dual-towers rev 2 (2026-07-10 plan): PS and WS share one
+        # symmetric signature -- forward(in_sub, cs_out=None).
         import Spaces
         sig = inspect.signature(Spaces.PartSpace.forward)
         params = [n for n in sig.parameters if n != "self"]
         self.assertEqual(
-            len(params), 1,
-            f"PartSpace.forward must have exactly 1 positional "
-            f"arg (x_subspace); got {params}")
+            params, ["in_sub", "cs_out"],
+            f"PartSpace.forward must be (in_sub, cs_out=None); "
+            f"got {params}")
 
     def test_reverse_signature_is_single_arg(self):
         import Spaces

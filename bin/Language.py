@@ -51,7 +51,7 @@ from Layers import (
 
 from Spaces import ActiveEncoding, WhereEncoding, WhenEncoding, WhatEncoding, EventEncoding, WordEncoding
 from Spaces import Basis, Tensor, Codebook, Embedding
-from Spaces import SubSpace, Space, PerceptualSpace, InputSpace, PartSpace, ModalSpace, ConceptualSpace, WholeSpace, OutputSpace
+from Spaces import SubSpace, Space, InputSpace, PartSpace, ModalSpace, ConceptualSpace, WholeSpace, OutputSpace
 
 import xml.etree.ElementTree as _ET
 from pathlib import Path as _Path
@@ -12562,7 +12562,7 @@ _SYMBOLSPACE_FORWARD_WRITES = {
 }
 
 
-class SymbolSpace(PerceptualSpace):
+class SymbolSpace(Space):
     """The unified grammar/symbol container (2026-06-21 SymbolSpace refactor,
     Stage 3).
 
@@ -12575,8 +12575,7 @@ class SymbolSpace(PerceptualSpace):
     forward through ``__setattr__``. Registered submodules / parameters stay on
     SymbolSpace.
 
-    It SUBCLASSES ``PerceptualSpace`` (so ``isinstance(symbolSpace,
-    PerceptualSpace)`` holds -- SS is a peer perceptual tower alongside
+    It SUBCLASSES ``Space`` (SS is a peer perceptual tower alongside
     PartSpace/WholeSpace, the third ``.what``/``.where`` carrier) but constructs
     via ``nn.Module.__init__``, deliberately SKIPPING ``Space.__init__``'s
     object/what/where/when VQ-basis construction this coordinator must not own.

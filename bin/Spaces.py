@@ -2862,8 +2862,8 @@ class Codebook(Tensor):
     # -- property materialization (WholeSpace) -----------------------------
     # A row read as a PROPERTY (rather than as an atom) no longer names one
     # gathered prototype vector: it parameterizes a basis that RANGES OVER
-    # THE WHOLE INPUT (the WholeSpace contract -- see the PerceptualSpace
-    # base docstring). The property read is opted into per call via
+    # THE WHOLE INPUT (the WholeSpace contract -- property rows analyse the
+    # input by region). The property read is opted into per call via
     # ``materialize(mode="property")`` -- the ``mode`` argument IS the
     # explicit opt-in, so every other read stays on the unchanged
     # ``lookup`` path. See doc/plans/2026-07-10-wholes-are-types-
@@ -7103,6 +7103,20 @@ class SubSpace(nn.Module):
             self.mux()
             e = self.event.getW() if self.event is not None else None
             return self._apply_index_selection(e)
+        # Dual-towers rev 2: a staged concept selection on a PURE-EVENT
+        # subspace materializes against the stashed basis (the CS
+        # similarity codebook). Additive: no pre-rev-2 config sets both.
+        _basis = getattr(self, "_index_basis", None)
+        if (_basis is not None and mode in ("active", "event")
+                and self._index is not None
+                and self._index.ndim == 3
+                and self._index.dtype != torch.bool
+                and not torch.is_floating_point(self._index)):
+            _W = _basis.getW() if hasattr(_basis, "getW") else _basis
+            if torch.is_tensor(_W) and _W.ndim == 2:
+                _sel = self._index[:, :, 0].long().clamp(
+                    0, int(_W.shape[0]) - 1)
+                return _W[_sel]                          # [B, n_sel, D]
         # ``activation`` mode: presence-style read.  Returns the stored
         # activation reduced to per-position **presence** (max of bivector
         # poles after modal gating).  Order of preference, mirroring the
@@ -9609,67 +9623,19 @@ class InputSpace(Space):
         Always returns (None, None); callers fall back to forwardInput.
         """
         return None, None
-class PerceptualSpace(Space):
-    """Thin shared base for the two perceptual views: PartSpace and WholeSpace.
-
-    Both subclasses are perceptual -- they hold codebook-backed views of
-    the same scene from dual orientations:
-
-      * ``PartSpace``  -- bottom-up SYNTHESIS over atoms (Sigma; parts
-        get chunked into wholes);
-      * ``WholeSpace`` -- top-down ANALYSIS over unity (Pi; wholes get
-        split into parts).
-
-    The ``subspace.what`` codebook carries the view-appropriate content:
-
-      * on ``PartSpace`` the ``.what`` rows are **atoms** -- the
-        codebook holds letters and words (the lexicon / BPE / MPHF
-        front ends);
-      * on ``WholeSpace`` the ``.what`` rows are **properties** --
-        e.g. "color", "whitespace", "words" -- each of which, when
-        materialized against an input, analyses it into the regions
-        that have the property and the regions that don't.
-
-    Either way ``materialize`` hands the per-position selection
-    (``subspace._index``; see ``get_index``) to the ``.what`` codebook
-    so it can produce the materialized objects (atoms gathered by row,
-    or property regions).
-
-    At the corpus callosum, objects are analysed and synthesized by
-    sending them back to PerceptualSpace: wholes get split and parts
-    get chunked. The name ``SymbolSpace`` (this base's former
-    occupant on the whole side) is reserved for re-introduction with
-    new semantics.
-
-    This base registers NO parameters and NO submodules -- state_dict
-    keys of both subclasses are exactly what they were before the
-    split. It exists for shared identity (isinstance over the
-    perceptual side) and shared class-level constants.
-    """
-
-    # Reserved codebook key for the IR-mode NULL-percept slot. Distinct
-    # from byte ``\x00`` (a real prediction target in byte mode); IR
-    # mask injection replaces masked positions with this slot so the
-    # brick body sees a distinct embedding meaning "predict me" rather
-    # than "this was \x00". Lives on the shared perceptual base because
-    # the IR mode and the percept-level mask injection are percept-side
-    # concepts; downstream consumers (Embedding seed path, checkpoint
-    # vocab migration, MPHF byte-fallback table) reference it via
-    # ``PartSpace.NULL_PERCEPT_KEY`` (inherited from here).
-    NULL_PERCEPT_KEY = "__NULL_PERCEPT__"
-
-
-class PartSpace(PerceptualSpace):
+class PartSpace(Space):
     """InputSpace -> percepts via the configured synthesis front end and sigma fold.
 
-    The broader analysis/synthesis orientation is documented in
-    ``doc/Architecture.md`` and ``doc/Spaces.md``.
+    PS and WS are symmetric DUALS -- atoms (bottom-up sigma synthesis) vs
+    universe (top-down pi analysis) views of the same input, stacked at
+    the corpus callosum; see ``doc/Architecture.md`` and ``doc/Spaces.md``.
     """
     name = "Percepts"
     config_section = "PartSpace"
 
-    # NULL_PERCEPT_KEY is inherited from the PerceptualSpace base (the
-    # IR-mode NULL-percept slot); see the base class for the contract.
+    # Reserved codebook key for the IR-mode NULL-percept slot (distinct from
+    # byte \x00); consumers reference it as ``PartSpace.NULL_PERCEPT_KEY``.
+    NULL_PERCEPT_KEY = "__NULL_PERCEPT__"
 
     def __init__(self, inputShape, spaceShape, outputShape, model_type=None):
 
@@ -11932,27 +11898,24 @@ class PartSpace(PerceptualSpace):
         fed.set_event(out)
         return fed
 
-    def forward(self, x_subspace):
-        """Perception: map input to percepts via ``pi(x)``.
+    def forward(self, in_sub, cs_out=None):
+        """Perception: map the atoms view of the input to percepts via ``pi``.
 
-        Stage 1.A substrate refactor (doc/plans/2026-05-26-two-loop-pi-
-        sigma-substrate.md): single positional arg ``x_subspace``.
-        Stage 10 (doc/plans/2026-05-27-perceptstore-meta-taxonomy-
-        reentrancy.md, updated by the Pi/Sigma swap rev. 2026-06-09): body
-        becomes ``return self.sigma(x.materialize())``
-        — PS is pi-only. The sigma half migrates to per-stage
-        ``ConceptualSpace.sigma_in``.
-
-        The CS-feedback ``CS_subspaceForPS`` argument is retired by
-        this refactor; CS feedback no longer enters PS directly (it
-        re-enters via the chart / signal-router dispatch over STM in
-        later stages).
+        Dual-towers rev 2 (doc/plans/2026-07-10-conceptual-wave-ff-pyramid
+        -design.md): PS and WS share one symmetric signature
+        ``forward(in_sub, cs_out)`` — ``in_sub`` is this tower's view of the
+        input (atoms here, universe on WS), ``cs_out`` its own conceptual
+        feedback (stashed as ``_cs_feedback``; consumed by the callosum-fed
+        pyramid tasks).
 
         Handles three paths: warm-serial AR (process only new last slot,
         splice into the rolled cache), embedding (text -> lexicon -> percept),
         and numeric (linear -> attention -> VQ). Writes the resulting
         percept tensor to ``self.subspace`` and returns the live subspace.
         """
+        x_subspace = in_sub
+        # Dual-towers: feedback is stashed, not yet folded (Task B/C consume it).
+        object.__setattr__(self, "_cs_feedback", cs_out)
         if x_subspace.is_empty():
             return x_subspace
         self.subspace.copy_context(x_subspace)
@@ -13179,6 +13142,9 @@ class ConceptualSpace(Space):
         self.similarity_codebook = _sim_cb
         self.layers.append(_sim_cb)
         self.params = self.params + list(_sim_cb.parameters())
+        # Dual-towers rev 2: the pyramid stages its top-K winners on the
+        # subspace index; the codebook is the lookup basis materialize uses.
+        object.__setattr__(self.subspace, "_index_basis", _sim_cb)
 
     def _build_what_basis(self):
         """Bivector regime: build a ``ProjectionBasis`` on ``.what`` so
@@ -13210,6 +13176,20 @@ class ConceptualSpace(Space):
             self.nDim,
         )
         return basis
+
+    def _register_requirements(self):
+        """CS relaxation (dual-towers rev 2): the pure-event CS ``nVectors``
+        sizes the CONCEPT INVENTORY (similarity codebook + tapered sparse
+        store), decoupled from the slab post-P3 -- ``nVectors >= nActive``
+        is valid here. Codebook modes keep Space's base rule."""
+        if not self.codebook:
+            nV, nA = self.nVectors, self.outputShape[0]
+            TheXMLConfig.require(
+                lambda cfg, _nv=nV, _na=nA: _nv == 0 or _nv >= _na,
+                f"{self.config_section}: ConceptualSpace requires nVectors "
+                f"({nV}) >= nActive ({nA}) (inventory decoupled post-P3)")
+            return
+        super()._register_requirements()
 
     def _stm_set_all_slots(self, slab):
         """STM primitive (parallel mode): write all N positions of
@@ -14478,16 +14458,34 @@ class ConceptualSpace(Space):
     # ====================================================================
 
     def _order_caps(self):
-        """Cached (n_snap, n_pool) split of THIS CS's ``nVectors`` rows: the
-        order-0 snap block and the single untyped relation pool (v3 -- the
-        dyadic per-order split is retired with ramsification)."""
+        """Cached per-order row caps of THIS CS's ``nVectors`` inventory.
+        Sparse-parallel (dual-towers rev 2): the tile-based taper
+        ``[base, base>>1, .., 1]`` (base = outputShape[0] tiles; K+1
+        entries; inventory rows past ``sum(caps)`` stay inert). Off-path:
+        the v3 ``(n_snap, n_pool)`` split, unchanged."""
         N = int(self.nVectors)
-        key = N
+        K = int(getattr(self, "_symbolic_order", 0) or 0)
+        sparse = bool(self._sparse_active())
+        key = (N, K, sparse)
         cache = getattr(self, "_order_caps_cache", None)
         if cache is None or cache[0] != key:
-            n_snap = max(1, N // 2)
-            object.__setattr__(self, "_order_caps_cache",
-                               (key, (n_snap, max(1, N - n_snap))))
+            if sparse:
+                # Shrink the tile base until the whole taper fits the
+                # inventory (nVectors == nActive configs keep pool room:
+                # N=8, K=3 -> [4, 2, 1, 1], mirroring the legacy split).
+                base = min(int(self.outputShape[0]), N)
+                caps = [base] + [max(1, base >> k) for k in range(1, K + 1)]
+                while sum(caps) > N and base > 1:
+                    base >>= 1
+                    caps = [base] + [max(1, base >> k)
+                                     for k in range(1, K + 1)]
+                while sum(caps) > N and len(caps) > 1:
+                    caps.pop()
+                caps = tuple(caps)
+            else:
+                n_snap = max(1, N // 2)
+                caps = (n_snap, max(1, N - n_snap))
+            object.__setattr__(self, "_order_caps_cache", (key, caps))
         return self._order_caps_cache[1]
 
     def order_slice(self, order):
@@ -14526,7 +14524,7 @@ class ConceptualSpace(Space):
         rows, not compositions -- fail loud); a self-edge raises in the
         layer (the Quine atom). IDEMPOTENT per edge; grows the learnable
         values host-side."""
-        n_snap, _n_pool = self._order_caps()
+        n_snap = self._order_caps()[0]
         r = int(row)
         if r < n_snap:
             raise ValueError(
@@ -14535,7 +14533,12 @@ class ConceptualSpace(Space):
                 f"compositions")
         # _sparse_families(0) registers the store in _sparse_fam (params/nnz)
         _percept, ly = self._sparse_families(0)
-        return ly.add_edge(r, int(col), weight=weight)
+        # Global bias convention col == nVectors; translate to the store's
+        # own bias column (nOutput -- the taper span).
+        _c = int(col)
+        if _c == int(self.nVectors):
+            _c = self._bias_col()
+        return ly.add_edge(r, _c, weight=weight)
 
     def concept_weights(self, row):
         """The ``(col, weight)`` edges of GLOBAL concept ``row`` on the
@@ -14546,7 +14549,12 @@ class ConceptualSpace(Space):
         if ly is None or ly.values is None:
             return []
         r = int(row)
-        return sorted((int(c), float(ly.values[i]))
+        # Read-side bias back-translation: callers see the GLOBAL bias
+        # convention (col == nVectors); storage uses the store's nOutput.
+        _bias = int(ly.nOutput)
+        _nv = int(self.nVectors)
+        return sorted(((_nv if int(c) == _bias else int(c)),
+                       float(ly.values[i]))
                       for (rr, c), i in ly._index.items() if rr == r)
 
     def _sparse_family_nnz(self):
@@ -14672,8 +14680,10 @@ class ConceptualSpace(Space):
         # through CloneBackward): the EMA write below mutates the same rows
         # in-place, and a saved live VIEW would fail backward with a
         # version-counter error (the SS-leg clone lesson).
+        # Dual-towers rev 2 (design 2026-07-10 "Why" #1): SIGNED readout --
+        # the nonneg clamp annihilated the mean-negative epoch-1 readout.
         a_0 = torch.tanh(self.source_code_activation(
-            ev, W0.clone(), nonneg=True, normalize=True))    # [caps0, B]
+            ev, W0.clone(), nonneg=False, normalize=True))   # [caps0, B]
         if ema and self.training:
             with torch.no_grad():
                 D = min(int(ev.shape[-1]), int(W0.shape[-1]))
@@ -14730,57 +14740,44 @@ class ConceptualSpace(Space):
         signed activations (the SS feed)."""
         N = int(self.nVectors)
         B = int(a_0.shape[-1])
-        n_snap, _n_pool = self._order_caps()
+        caps = self._order_caps()
         K = int(getattr(self, "_symbolic_order", 0) or 0)
         ly = _concept_alloc_of(self).layer(0)
         atoms = F.softplus(dictionary)               # [N, CDim] > 0
-        s = torch.cat([a_0, a_0.new_zeros((N - n_snap, B))], dim=0)
-        a = s                                        # a^0 = padded snap
-        qes = []
-        for _i in range(K):                          # K static: unrolls
-            a_next = ly.wave_step(a, s)              # tanh(W [a|1] + s)
-            with torch.no_grad():
-                qes.append((a_next - a).abs().mean())
-            a = a_next
-        object.__setattr__(self, "_cs_wave_qe",
-                           torch.stack(qes) if qes else a_0.new_zeros(0))
+        # Feedforward sigma-pyramid (dual-towers rev 2): a^0 = the SIGNED
+        # order-0 tiles padded to the inventory; each rung k is ONE
+        # feedforward hop tanh(W [a|1]) gathered to order-k rows with a
+        # per-batch top-K taper (caps). No fixed point, no re-injection.
+        a = torch.cat([a_0, a_0.new_zeros((N - int(a_0.shape[0]), B))], dim=0)
+        level_acts = [float(a.detach().abs().max())]
+        sel_rows = [torch.arange(min(int(caps[0]), int(a_0.shape[0])),
+                                 device=a.device).unsqueeze(-1).expand(-1, B)]
+        for k in range(1, min(K + 1, len(caps))):
+            start, end = self.order_slice(k)
+            n_alloc = min(int(ly._row_next.get(start, 0)), end - start)
+            if n_alloc <= 0:
+                level_acts.append(0.0)
+                continue
+            rows_k = torch.arange(start, start + n_alloc, device=a.device)
+            # The store spans only the taper rows (sum(caps) x sum(caps)+1,
+            # the _sizer contract) -- fold in store coordinates, scatter back.
+            _S = min(sum(int(c) for c in caps), N)
+            pre = ly.forward_linear(
+                torch.cat([a[:_S], a.new_ones((1, B))], dim=0))   # [S, B]
+            cand = torch.tanh(pre.index_select(0, rows_k))   # [n_k, B]
+            keep = min(int(caps[k]), n_alloc)
+            _v, topi = torch.topk(cand.abs(), keep, dim=0)   # [keep, B]
+            mask = torch.zeros_like(cand)
+            mask.scatter_(0, topi, 1.0)
+            a = a.index_copy(0, rows_k, cand * mask)         # winners only
+            level_acts.append(float((cand * mask).detach().abs().max()))
+            sel_rows.append(rows_k[topi])                    # global rows
+        object.__setattr__(self, "_cs_level_acts", level_acts)
+        object.__setattr__(self, "_cs_level_rows",
+                           [r.detach() for r in sel_rows])
+        object.__setattr__(self, "_cs_wave_qe", None)        # wave retired
         content = a.t().unsqueeze(-1) * atoms.unsqueeze(0)   # [B, N, CDim]
         return content, a
-
-    @torch.no_grad()
-    def cs_groundedness_probe(self, a_0, k=None, tol=1e-3):
-        """KRIPKE groundedness (host-side, eager, report-only). Run 1
-        iterates from a^0 = 0 WITH the source: what lights up is GROUNDED
-        (support traces to perception -- the least-fixed-point reading).
-        Run 2 continues from run 1's terminal state with the SOURCE RELEASED
-        (s = 0): rows persisting above ``tol`` are UNGROUNDED -- sustained by
-        a loop, answering to nothing outside it (rumination/addiction shape;
-        see the design doc's human-problems call-out). Returns
-        ``(grounded [N] bool, ungrounded [N] bool)`` or ``None`` inactive.
-        The EVERYTHING-bias column is MASKED in both runs (Alec 2026-07-03):
-        the pole is a standing axiom, not perception -- unmasked it lights
-        bias-bounded rows in run 1 and sustains them in run 2, polluting
-        both halves of the Kripke reading."""
-        if not self._sparse_active() or a_0 is None:
-            return None
-        N = int(self.nVectors)
-        B = int(a_0.shape[-1])
-        n_snap, _ = self._order_caps()
-        K = int(k) if k is not None else 2 * max(
-            1, int(getattr(self, "_symbolic_order", 0) or 0))
-        ly = _concept_alloc_of(self).layer(0)
-        s = torch.cat([a_0, a_0.new_zeros((N - n_snap, B))], dim=0)
-
-        def _iterate(a, source, steps):
-            for _ in range(steps):
-                a = ly.wave_step(a, source, bias=0.0)    # axiom pole masked
-            return a
-
-        lit = _iterate(torch.zeros_like(s), s, K)          # ground-up, source ON
-        grounded = lit.abs().amax(dim=-1) > tol
-        free = _iterate(lit, torch.zeros_like(s), K)       # source RELEASED
-        ungrounded = free.abs().amax(dim=-1) > tol
-        return grounded, ungrounded
 
     # -- per-order weight population at mint (abstraction_order-keyed) ---------
 
@@ -14812,16 +14809,22 @@ class ConceptualSpace(Space):
         snap block ``[0, n_snap)``, relations in the pool ``[n_snap, N)``.
         ``None`` on overflow -- LOUDLY (decision 2: first-come + report)."""
         alloc = _concept_alloc_of(self)
-        n_snap, n_pool = self._order_caps()
+        caps = self._order_caps()
         ly = alloc.layer(0)
         if int(order) == 0:
-            region, cap = "snap block", n_snap
-            row = ly.assign_row(("snap", int(concept_id)), capacity=n_snap,
+            region, cap = "snap block", caps[0]
+            row = ly.assign_row(("snap", int(concept_id)), capacity=caps[0],
                                 base=0)
+        elif len(caps) == 2:
+            region, cap = "relation pool", caps[1]
+            row = ly.assign_row(("pool", int(concept_id)), capacity=caps[1],
+                                base=caps[0])
         else:
-            region, cap = "relation pool", n_pool
-            row = ly.assign_row(("pool", int(concept_id)), capacity=n_pool,
-                                base=n_snap)
+            # Dual-towers rev 2: one tapered block per ramsified order.
+            o = max(1, min(int(order), len(caps) - 1))
+            region, cap = f"order-{o} block", caps[o]
+            row = ly.assign_row((f"o{o}", int(concept_id)), capacity=caps[o],
+                                base=sum(caps[:o]))
         if row is None:
             n = int(getattr(self, "_csw_overflow_count", 0)) + 1
             object.__setattr__(self, "_csw_overflow_count", n)
@@ -14932,7 +14935,14 @@ class ConceptualSpace(Space):
         a_0 = self.cs_snap_order0(settled, ema=True)
         if a_0 is None:
             return settled, None
+        object.__setattr__(self, "_cs_last_a0", a_0.detach())
         content, acts = self.cs_forward_content(a_0, dict_W)   # acts [N, B]
+        # Stage the pyramid's per-order winners on the subspace index so a
+        # generic materialize() pulls exactly the selected codes (rev 2 #6).
+        rows = getattr(self, "_cs_level_rows", None)
+        if rows:
+            sel = torch.cat(rows, dim=0)                       # [n_sel, B]
+            self.subspace.set_index(sel.t().unsqueeze(-1).long())
         return content, acts
 
     def refine_over_collected(self, *, k_parts=None, k_wholes=None):
@@ -15002,6 +15012,24 @@ class ConceptualSpace(Space):
             out.add(cur)
         return out
 
+    def _csw_row_of(self, concept_id):
+        """GLOBAL store row of ``concept_id`` under any block namespace
+        (snap / legacy pool / rev-2 per-order ``o<k>``), or None."""
+        ly = _concept_alloc_of(self).layer(0)
+        for ns in ("pool", "snap"):
+            r = ly.row_of((ns, int(concept_id)))
+            if r is not None:
+                return r
+        for o in range(1, len(self._order_caps())):
+            r = ly.row_of((f"o{o}", int(concept_id)))
+            if r is not None:
+                return r
+        return None
+
+    def _bias_col(self):
+        """The EVERYTHING bias column in STORE coordinates (store nOutput)."""
+        return int(_concept_alloc_of(self).layer(0).nOutput)
+
     def _row_to_concept(self):
         """Invert the shared store's row allocation: GLOBAL tensor row ->
         concept id (rows were assigned per-cid under the ("snap"/"pool", cid)
@@ -15010,8 +15038,11 @@ class ConceptualSpace(Space):
         ly = _concept_alloc_of(self).layer(0)
         out = {}
         for key, row in getattr(ly, "_tensor_rows", {}).items():
-            if isinstance(key, tuple) and len(key) == 2 and key[0] in (
-                    "snap", "pool"):
+            ns = key[0] if isinstance(key, tuple) and len(key) == 2 else None
+            # snap/pool plus the rev-2 per-order block namespaces ("o<k>").
+            if ns in ("snap", "pool") or (isinstance(ns, str)
+                                          and ns.startswith("o")
+                                          and ns[1:].isdigit()):
                 out[int(row)] = int(key[1])
         return out
 
@@ -15184,10 +15215,10 @@ class ConceptualSpace(Space):
         if not _concept_rows_exist(self):
             return                                 # never populated (inactive)
         ly = _concept_alloc_of(self).layer(0)
-        c_row = ly.row_of(("pool", int(concept_id)))
+        c_row = self._csw_row_of(concept_id)
         if c_row is None:
-            return                                 # snap/unallocated: no edges
-        ly.remove_edges([(int(c_row), int(self.nVectors))])
+            return                                 # unallocated: no edges
+        ly.remove_edges([(int(c_row), self._bias_col())])
 
     def _set_concept_edge_value(self, cid, code, side, value):
         """Set the trained value of ``cid``'s edge for one sym constituent
@@ -15254,9 +15285,9 @@ class ConceptualSpace(Space):
         if (had_everything and had_rows
                 and (whole is not None or sym_whole is not None)):
             ly = alloc.layer(0)
-            row = ly.row_of(("pool", int(c)))
+            row = self._csw_row_of(c)
             if row is not None:
-                ly.remove_edges([(int(row), int(self.nVectors))])
+                ly.remove_edges([(int(row), self._bias_col())])
         if weight != 1.0:
             for (code, side) in asserted:
                 self._set_concept_edge_value(c, code, side, weight)
@@ -16851,6 +16882,7 @@ class ConceptualSpace(Space):
         # field, driven by ``BasicModel._forward_body``). None clears any
         # stale activation stamp from a prior pass on the same object.
         object.__setattr__(subspace, "_concept_activations", None)
+        object.__setattr__(self.subspace, "_index", None)  # stale top-K clear
         # STM bookkeeping (2026-05-28 fix). Mode-dependent:
         #
         #   * PARALLEL (whole-slab, N > 1): ``folded[B, N, D]`` IS the
@@ -17313,7 +17345,7 @@ def _word_punct_spans(is_word, is_punct):
     return out
 
 
-class WholeSpace(PerceptualSpace):
+class WholeSpace(Space):
     """ConceptualSpace -> symbol prototypes, analysis spans, and truth stores.
 
     ``forward`` writes to ``self.subspace`` rather than the incoming subspace;
@@ -21476,15 +21508,19 @@ class WholeSpace(PerceptualSpace):
             t = int(getattr(self, "_pump_pass_idx", 0) or 0)
         return stack[min(max(0, int(t)), len(stack) - 1)]
 
-    def forward(self, CS_subspaceForWS, IS_concepts=None):
-        """Concept->symbol forward (symbolic recurrent loop leg).
+    def forward(self, in_sub, cs_out=None):
+        """Universe->symbol forward (the top-down analysis tower).
 
-        Explicit inputs: ``CS_subspaceForWS`` -- the prior pass's
-        ConceptualSpace output (``ConceptualSpace._subspaceForWS``) -- and
-        the optional ``IS_concepts`` unity view ``[B, 1, N]``, the stage-0
-        symbolic input branch of the analysis/synthesis dual-input plan
-        (rev. 2026-06-09). WholeSpace never combined siblings (no
-        ``_sourced_input``); it consumes these directly.
+        Dual-towers rev 2 (doc/plans/2026-07-10-conceptual-wave-ff-pyramid
+        -design.md): symmetric signature with PS — ``in_sub`` is the
+        UNIVERSE view of the input (the IS unity ``[B, 1, N]``), ``cs_out``
+        this tower's conceptual feedback (the prior pass's
+        ``ConceptualSpace._subspaceForWS``). Routing: on the sO>=1 PARALLEL
+        leg WS consumes the universe at EVERY stage (dual-input plan
+        sec.2's "later knob", now live) with ``cs_out`` stashed as
+        ``_cs_feedback``; otherwise the LEGACY routing (cs_out primary,
+        unity consumed only when cs_out is empty — stage 0) is
+        byte-identical to the pre-rev-2 dataflow.
 
         Dispatches to the rule-application path when the caller marks the
         incoming subspace with ``_rule_dispatch`` (see
@@ -21497,17 +21533,25 @@ class WholeSpace(PerceptualSpace):
         concept space — and runs unconditionally regardless of grammar
         state.
         """
-        if IS_concepts is not None and not CS_subspaceForWS.is_empty():
-            # The first implementation reads input ONCE at stage 0 (the
-            # recurrent CS is empty there), mirroring PS. Repeated symbolic
-            # input injection alongside a live recurrent carrier is a later
-            # knob (dual-input plan sec.2) -- fail loudly, never silently
-            # drop a provided concept input.
-            raise NotImplementedError(
-                "repeated symbolic input injection (IS_concepts alongside a "
-                "non-empty recurrent CS) is a later knob -- analysis/"
-                "synthesis dual-input plan sec.2; stage 0 reads the unity "
-                "once.")
+        # Typed discrimination: carriers are SubSpace-like (is_empty);
+        # universe views are raw [B, 1, N] tensors. A single positional
+        # SubSpace is therefore the pre-rev-2 legacy carrier call shape.
+        _is_carrier = hasattr(in_sub, "is_empty")
+        _parallel = (int(getattr(self, "_symbolic_order", 0) or 0) > 0
+                     and not bool(getattr(self, "_serial", True)))
+        if _parallel and in_sub is not None and not _is_carrier:
+            # Universe-primary at every stage; feedback stashed for Task B/C.
+            object.__setattr__(self, "_cs_feedback", cs_out)
+            object.__setattr__(self, "_ws_routed_source", "universe")
+            return self._stage0_unity_forward(in_sub)
+        object.__setattr__(self, "_ws_routed_source", "legacy")
+        # Legacy mapping: cs_out primary; unity read only on an empty carrier.
+        if cs_out is None and _is_carrier:
+            CS_subspaceForWS, IS_concepts = in_sub, None
+        else:
+            CS_subspaceForWS = cs_out
+            IS_concepts = in_sub if (CS_subspaceForWS is None
+                                     or CS_subspaceForWS.is_empty()) else None
         if CS_subspaceForWS.is_empty():
             if IS_concepts is None:
                 return CS_subspaceForWS

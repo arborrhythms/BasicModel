@@ -103,11 +103,11 @@ def test_ws_stage0_consumes_unity():
     ws = m.wholeSpace
     seed = m._empty_seed_ss
     # None == legacy path: empty in, empty out (no evidence, no symbols).
-    out_none = ws.forward(seed, IS_concepts=None)
+    out_none = ws.forward(None, cs_out=seed)
     assert out_none is seed and out_none.is_empty()
     u1 = torch.randint(0, 256, (2, 1, 512), dtype=torch.int64)
     u1_snapshot = u1.clone()
-    out1 = ws.forward(seed, IS_concepts=u1)
+    out1 = ws.forward(u1, cs_out=seed)
     ev1 = out1.materialize()
     assert ev1 is not None and torch.isfinite(ev1).all()
     assert ev1.shape == (2, int(ws.inputShape[0]), int(ws.subspace.muxedSize)), (
@@ -118,22 +118,24 @@ def test_ws_stage0_consumes_unity():
         "analysis is NON-ALTERING: the unity buffer must be untouched")
     ev1 = ev1.detach().clone()
     u2 = (u1 + 64) % 256
-    ev2 = ws.forward(seed, IS_concepts=u2).materialize()
+    ev2 = ws.forward(u2, cs_out=seed).materialize()
     assert not torch.equal(ev1, ev2), (
         "stage-0 symbolic output must CHANGE when the unity changes")
 
 
-def test_ws_rejects_concepts_with_nonempty_cs():
-    # Phase 2 contract: input is read ONCE at stage 0. Supplying IS_concepts
-    # alongside a live recurrent CS is the later repeated-injection knob and
-    # must fail loudly (never a silent drop).
+def test_ws_legacy_routing_with_nonempty_cs():
+    # Dual-towers rev 2 (2026-07-10 plan): unity alongside a live carrier is
+    # now the STANDARD call convention -- the routing branch decides. On an
+    # off-path (serial/sO=0) space the legacy branch keeps cs_out primary,
+    # leaves the unity unconsumed, and STAMPS the decision (the loud signal
+    # replacing the retired Phase-2 NotImplementedError).
     m = _build("MM_20M_legacy.xml")
     ws = m.wholeSpace
     u = torch.randint(0, 256, (2, 1, 512), dtype=torch.int64)
-    ws.forward(m._empty_seed_ss, IS_concepts=u)   # populates ws.subspace
+    ws.forward(u, cs_out=m._empty_seed_ss)   # populates ws.subspace
     assert not ws.subspace.is_empty()
-    with pytest.raises(NotImplementedError):
-        ws.forward(ws.subspace, IS_concepts=u)
+    ws.forward(u, cs_out=ws.subspace)        # live carrier + unity: legal now
+    assert getattr(ws, "_ws_routed_source", None) == "legacy"
 
 
 def test_model_forward_passes_unity_at_stage0():
@@ -148,14 +150,16 @@ def test_model_forward_passes_unity_at_stage0():
     x = _staged_batch(m)
     stage_ws = list(m.wholeSpaces)
     reals = [w.forward for w in stage_ws]
-    calls = []  # (stage_idx, IS_concepts)
-    def _mk(idx, real):
-        def _capture(sub, *a, **k):
-            calls.append((idx, k.get("IS_concepts", None)))
-            return real(sub, *a, **k)
+    calls = []  # (stage_idx, offered_unity, routed_source)
+    def _mk(idx, real, w):
+        def _capture(in_sub, *a, **k):
+            out = real(in_sub, *a, **k)
+            calls.append((idx, in_sub,
+                          getattr(w, "_ws_routed_source", None)))
+            return out
         return _capture
     for i, w in enumerate(stage_ws):
-        w.forward = _mk(i, reals[i])
+        w.forward = _mk(i, reals[i], w)
     try:
         with torch.no_grad():
             out = m.forward(x)[2]
@@ -163,12 +167,16 @@ def test_model_forward_passes_unity_at_stage0():
         for w, real in zip(stage_ws, reals):
             w.forward = real
     assert out is not None and torch.isfinite(out).all()
-    stage0_concepts = [c for (i, c) in calls if i == 0]
-    later_concepts = [c for (i, c) in calls if i > 0]
-    assert stage0_concepts and torch.is_tensor(stage0_concepts[0]), (
-        "stage 0 must receive the parked unity view")
-    assert all(c is None for c in later_concepts), (
-        "stages after 0 read only the recurrent CS (input once)")
+    # Dual-towers rev 2: the unity is OFFERED at every stage (first
+    # positional); on this off-path config the legacy routing consumes it
+    # only at stage 0 (empty carrier) -- the stamp proves no universe
+    # routing engaged.
+    stage0 = [(u, src) for (i, u, src) in calls if i == 0]
+    later = [(u, src) for (i, u, src) in calls if i > 0]
+    assert stage0 and torch.is_tensor(stage0[0][0]), (
+        "stage 0 must be offered the parked unity view")
+    assert all(src == "legacy" for (_u, src) in stage0 + later), (
+        "off-path stages must route legacy (cs_out primary)")
 
 
 def test_full_forward_green_with_dual_view():
@@ -204,7 +212,7 @@ def test_word_analysis_boundaries_shape_evidence():
     ws.analysis_mode = "byte"
     assert ws.stage_analysis_spans(u) is None
     ws._staged_analysis_spans = None
-    ev_byte = ws.forward(m._empty_seed_ss, IS_concepts=u).materialize().clone()
+    ev_byte = ws.forward(u, cs_out=m._empty_seed_ss).materialize().clone()
     # word mode: parts are the whitespace-cut spans.
     ws.analysis_mode = "word"
     spans = ws.stage_analysis_spans(u)
@@ -216,7 +224,7 @@ def test_word_analysis_boundaries_shape_evidence():
     ws._staged_analysis_spans = spans
     try:
         ev_word = ws.forward(
-            m._empty_seed_ss, IS_concepts=u).materialize().clone()
+            u, cs_out=m._empty_seed_ss).materialize().clone()
         z_pre = ws._stage0_z_pre_snap.detach().clone()
     finally:
         ws._staged_analysis_spans = None
@@ -330,7 +338,7 @@ def test_ws_codebook_recon_gradient():
     ws.train()
     u = torch.randint(0, 256, (2, 1, 512), dtype=torch.int64)
     try:
-        ws.forward(m._empty_seed_ss, IS_concepts=u)
+        ws.forward(u, cs_out=m._empty_seed_ss)
         recon = ws._stage0_recon_loss
     finally:
         ws.eval()
@@ -379,7 +387,7 @@ def test_descriptor_roles_lf_coarse_tagging():
     ws = m.wholeSpace
     basis = ws.analysis_store
     u = torch.randint(0, 256, (2, 1, 512), dtype=torch.int64)
-    ws.forward(m._empty_seed_ss, IS_concepts=u)
+    ws.forward(u, cs_out=m._empty_seed_ss)
     idx = ws._stage0_indices
     assert idx is not None
     for row in idx.reshape(-1)[:8].tolist():
@@ -409,12 +417,12 @@ def test_semantic_arrangement_mechanism():
     assert float(getattr(ws, "semantic_arrangement_weight", 0.0)) == 0.0
     ws.train()
     try:
-        ws.forward(m._empty_seed_ss, IS_concepts=u)
+        ws.forward(u, cs_out=m._empty_seed_ss)
         assert ws._stage0_semantic_loss is None, (
             "semantic arrangement must be OFF by default")
         # Enable and re-run.
         ws.semantic_arrangement_weight = 0.5
-        ws.forward(m._empty_seed_ss, IS_concepts=u)
+        ws.forward(u, cs_out=m._empty_seed_ss)
         sem = ws._stage0_semantic_loss
     finally:
         ws.eval()

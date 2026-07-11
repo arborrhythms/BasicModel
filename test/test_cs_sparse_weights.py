@@ -1,11 +1,13 @@
-"""The shared untyped square concept store (v3) via ConceptualAttentionLayer.
+"""The shared untyped square concept store via ConceptualAttentionLayer.
 
-A concept is a stored ConceptDim atom. The snap block [0, n_snap) holds
-order-0 concepts as codebook rows read by normalized-sum presence (no
-edges); the relation pool [n_snap, N) holds everything else on ONE shared
-untyped [N x N+1] store whose trailing column N is the EVERYTHING bias.
-Direction/order live in the record store and the nesting, never in typed
-columns. (doc/plans/2026-07-02-iterated-symbolic-loop.md)
+A concept is a stored ConceptDim atom. Rows split into per-order TAPER
+blocks (dual-towers rev 2): the order-0 snap block [0, caps[0]) holds
+codebook rows read by SIGNED normalized-sum presence (no edges); each
+order-k block holds compositions on ONE shared untyped [S+1 x S] store
+(S = sum(caps)) whose bias is the store's trailing column S (callers pass
+col == nVectors). Direction/order live in the record store and the
+nesting, never in typed columns.
+(doc/plans/2026-07-10-conceptual-wave-ff-pyramid-design.md)
 """
 import os
 import sys
@@ -40,12 +42,26 @@ def _cs(nS=64, order=3):
     return cs
 
 
-def test_order_slice_two_block_contract():
-    cs = _cs(nS=64, order=3)                         # two-block [32 | 32]
+def _mint_row(cs, order, cid):
+    """First-seen allocated row of cid in its order block (dual-towers rev 2:
+    only ALLOCATED rows enter a rung)."""
+    return cs._csw_concept_row(order, cid)
+
+
+def test_order_slice_taper_contract():
+    """dual-towers rev 2: per-order TAPER caps [base, base>>1, ..], base
+    halved until sum(caps) <= nVectors; contiguous cumulative blocks."""
+    cs = _cs(nS=64, order=3)                         # base 64 -> 32
+    assert cs._order_caps() == (32, 16, 8, 4)        # sum 60 <= 64
     assert cs.order_slice(0) == (0, 32)              # the snap block
-    assert cs.order_slice(1) == (32, 64)             # the relation pool
-    assert cs.order_slice(2) == cs.order_slice(1)    # every order >= 1: pool
-    assert cs.order_slice(3) == cs.order_slice(1)
+    assert cs.order_slice(1) == (32, 48)
+    assert cs.order_slice(2) == (48, 56)
+    assert cs.order_slice(3) == (56, 60)
+    assert cs.order_slice(9) == cs.order_slice(3)    # clamped to the taper
+    cs2 = _cs(nS=16, order=1)                        # base 16 -> 8
+    assert cs2._order_caps() == (8, 4)
+    assert cs2.order_slice(0) == (0, 8)
+    assert cs2.order_slice(1) == (8, 12)
 
 
 # -- the shared untyped square store (v3) --------------------------------------
@@ -62,17 +78,19 @@ def test_add_concept_edge_dedup_and_query():
 
 
 def test_shared_untyped_square_store():
-    """v3: every order shares ONE untyped [N x N+1] ConceptualAttentionLayer -- no
-    role blocks; the bias is the trailing column N; self-edges raise (the
-    Quine atom); the learnable values register EXACTLY ONCE."""
-    cs = _cs(nS=16, order=2)                         # two-block [8 | 8]
+    """dual-towers rev 2: every order shares ONE untyped [S+1 x S]
+    ConceptualAttentionLayer, S = sum(taper caps) -- no role blocks; the bias is
+    the store's trailing column S (callers pass col == nVectors); self-edges
+    raise (the Quine atom); the learnable values register EXACTLY ONCE."""
+    cs = _cs(nS=16, order=2)                         # taper (8, 4, 2): S = 14
     _p, s1 = cs._sparse_families(1)
     assert _p is None                                # percept family RETIRED
     assert s1 is cs._sparse_families(2)[1]           # ONE shared store
-    assert (s1.nOutput, s1.nInput) == (16, 17)       # square + bias col
+    assert (s1.nOutput, s1.nInput) == (14, 15)       # [S+1 inputs x S outputs]
     assert s1.roles is None                          # untyped: no role blocks
-    cs.add_concept_edge(8, 2)                        # pool row <- snap col
-    cs.add_concept_edge(8, 16)                       # the bias col N
+    cs.add_concept_edge(8, 2)                        # order-1 row <- snap col
+    cs.add_concept_edge(8, 16)                       # bias: col nVectors -> S
+    assert (16, 1.0) in cs.concept_weights(8)        # read back as nVectors
     try:
         cs.add_concept_edge(9, 9)
         assert False, "self-edge must raise (the Quine atom)"
@@ -132,14 +150,15 @@ def test_source_code_activation_is_nonneg_presence_by_default():
 
 
 def test_snap_order0_is_input_dependent_not_saturated():
-    """The order-0 SNAP readout (P2): normalized-sum presence of the settled
+    """The order-0 SNAP readout: normalized-sum presence of the settled
     field against the ORDER-0 codebook block -- slot-mean projection onto the
-    unit atom direction in hypercube-diagonal units. Bounded, input-dependent,
-    and (per Alec) MAGNITUDE-SENSITIVE: objects in the unit hypercube
-    differentiate by magnitude, so events are NOT unit-normalized (no
-    cosine). Raw dot-SUM presences would saturate tanh to an input-blind
-    constant (the sO=1 mean-collapse root cause)."""
-    cs = _cs(nS=16, order=1)                           # caps [8, 8]
+    unit atom direction in hypercube-diagonal units. SIGNED in (-1, 1)
+    (dual-towers rev 2: the nonneg clamp annihilated the mean-negative
+    epoch-1 readout), input-dependent, and (per Alec) MAGNITUDE-SENSITIVE:
+    objects in the unit hypercube differentiate by magnitude, so events are
+    NOT unit-normalized (no cosine). Raw dot-SUM presences would saturate
+    tanh to an input-blind constant (the sO=1 mean-collapse root cause)."""
+    cs = _cs(nS=16, order=1)                           # taper caps (8, 4)
     torch.manual_seed(0)
     D_dict = int(cs.similarity_codebook.getW().shape[-1])
     e1 = torch.rand(2, 3, D_dict)                      # unit-hypercube events
@@ -147,8 +166,8 @@ def test_snap_order0_is_input_dependent_not_saturated():
     p1 = cs.cs_snap_order0(e1)
     p2 = cs.cs_snap_order0(e2)
     assert p1.shape == (8, 2)                          # [caps[0], B]
-    assert p1.min() >= 0.0 and p1.max() < 1.0
-    assert float((p1 > 0.99).float().mean()) == 0.0    # never saturates
+    assert p1.min() > -1.0 and p1.max() < 1.0          # SIGNED tanh range
+    assert float((p1.abs() > 0.99).float().mean()) == 0.0   # never saturates
     assert not torch.allclose(p1, p2)                  # input-dependent
     # Magnitude carries information: a half-magnitude object is LESS present.
     p_half = cs.cs_snap_order0(0.5 * e1)
@@ -186,10 +205,10 @@ def test_snap_order0_is_differentiable_in_event():
 
 
 def test_cs_decode_scales_dictionary_atoms():
-    cs = _cs(nS=64, order=3)                           # two-block [32 | 32]
+    cs = _cs(nS=64, order=3)                           # taper (32, 16, 8, 4)
     what = torch.randn(64, _D)
-    # the relation pool occupies rows [32:64); pick its first 2 active
-    n_o = 32
+    # the order-1 block occupies rows [32:48); pick its first 2 active
+    n_o = 16
     a = torch.zeros(n_o, 2)                            # [n_concepts_o, B]
     a[0, 0] = 2.0
     a[1, 1] = -1.0
@@ -203,88 +222,98 @@ def test_cs_decode_scales_dictionary_atoms():
     assert torch.allclose(code[0, 5], torch.zeros(_D), atol=1e-6)
 
 
-# -- forward-content assembly (v3 iterated wave) -------------------------------
-# a^{i+1} = tanh(W [a^i | 1] + s), K = symbolicOrder steps; s is the snap
-# presence padded to the inventory (snap rows carry no in-edges -> tanh(a_0)).
+# -- forward-content assembly (dual-towers rev 2 sigma-pyramid) -----------------
+# a = a_0 padded to N; each rung k is ONE feedforward hop tanh(W [a|1])
+# gathered to the ALLOCATED order-k rows, top-caps[k] winners scattered in;
+# no source re-injection, no iteration.
 
 def test_forward_content_shape_and_stacking():
-    cs = _cs(nS=16, order=1)                           # two-block [8 | 8], K=1
+    """dual-towers rev 2: order-0 rows equal the padded a_0 (1:1, no extra
+    tanh); an allocated+selected rung row reads one feedforward hop."""
+    cs = _cs(nS=16, order=1)                           # taper (8, 4), K=1
     B = 2
     a_0 = torch.rand(8, B).tanh()                      # snap presences
     what = torch.randn(16, _D)
-    # pool concept row 8 fires off a_0[0] (snap col 0).
-    cs.add_concept_edge(8, 0, weight=2.0)
+    r = _mint_row(cs, 1, 101)                          # first order-1 row: 8
+    cs.add_concept_edge(r, 0, weight=2.0)              # fires off a_0[0]
     content, a = cs.cs_forward_content(a_0, what)
     assert content.shape == (B, 16, _D)                # stacked [B, N, CDim]
     assert a.shape == (16, B)                          # full-inventory acts
-    assert torch.allclose(a[:8], torch.tanh(a_0))      # snap rows read tanh(s)
-    assert torch.allclose(a[8], torch.tanh(2.0 * a_0[0]), atol=1e-5)
+    assert torch.equal(a[:8], a_0)                     # order-0 passes 1:1
+    assert torch.allclose(a[r], torch.tanh(2.0 * a_0[0]), atol=1e-5)
+    assert torch.equal(a[r + 1:], torch.zeros(16 - r - 1, B))   # unallocated
 
 
 def test_forward_content_legs_and_bias_sum_pre_tanh():
-    cs = _cs(nS=16, order=1)
+    """dual-towers rev 2: a selected rung row is ONE feedforward hop
+    tanh(sum_c w_c * a_0[c] + bias edge); expectation computed from
+    concept_weights(r) -- the bias col is S in store coordinates."""
+    cs = _cs(nS=16, order=1)                           # taper (8, 4): S = 12
     B = 1
     a_0 = torch.zeros(8, B)
     a_0[3, 0] = 0.5
     a_0[5, 0] = 0.25
     what = torch.randn(16, _D)
-    cs.add_concept_edge(10, 3, weight=3.0)             # constituent leg 1
-    cs.add_concept_edge(10, 5, weight=-0.5)            # constituent leg 2
-    cs.add_concept_edge(10, 16, weight=0.25)           # everything bias (col N)
+    r = _mint_row(cs, 1, 201)
+    cs.add_concept_edge(r, 3, weight=3.0)              # constituent leg 1
+    cs.add_concept_edge(r, 5, weight=-0.5)             # constituent leg 2
+    cs.add_concept_edge(r, 16, weight=0.25)            # bias: col nVectors -> S
     _content, a = cs.cs_forward_content(a_0, what)
-    # a^1[10] = tanh(w1*a0[3] + w2*a0[5] + w_bias*1 + s[10]), s[10] == 0.
-    want = torch.tanh(torch.tensor(3.0 * 0.5 + (-0.5) * 0.25 + 0.25))
-    assert abs(float(a[10, 0]) - float(want)) < 1e-5
+    nV = int(cs.nVectors)
+    acc = sum(w * (1.0 if c == nV else float(a_0[c, 0]))
+              for c, w in cs.concept_weights(r))       # 3*0.5 - 0.5*0.25 + 0.25
+    want = torch.tanh(torch.tensor(acc))
+    assert abs(float(a[r, 0]) - float(want)) < 1e-5
 
 
 def test_forward_content_activation_is_bounded_tanh():
-    cs = _cs(nS=16, order=2)                           # K=2: iterate the wave
-    cs.add_concept_edge(8, 0, weight=3.0)              # big weight saturates
-    cs.add_concept_edge(9, 8, weight=4.0)              # second-hop pile-on
+    cs = _cs(nS=16, order=2)                           # taper (8, 4, 2): 2 rungs
+    r1 = _mint_row(cs, 1, 101)                         # order-1 row: 8
+    r2 = _mint_row(cs, 2, 102)                         # order-2 row: 12
+    cs.add_concept_edge(r1, 0, weight=3.0)             # big weight saturates
+    cs.add_concept_edge(r2, r1, weight=4.0)            # second-rung pile-on
     a_0 = torch.tanh(torch.full((8, 2), 5.0))
     what = torch.randn(16, _D)
     content, a = cs.cs_forward_content(a_0, what)
     assert a.min() >= -1.0 and a.max() <= 1.0          # tanh-bounded
-    assert 0.9 < float(a[8, 0]) <= 1.0
+    assert 0.9 < float(a[r1, 0]) <= 1.0
+    assert 0.9 < float(a[r2, 0]) <= 1.0
 
 
-def test_forward_content_empty_store_is_tanh_source():
+def test_forward_content_empty_store_passes_a0():
+    """dual-towers rev 2: empty store -> a IS the padded a_0 EXACTLY
+    (order-0 passes 1:1, no extra tanh; higher rows stay zero)."""
     cs = _cs(nS=16, order=1)                           # no edges anywhere
     a_0 = torch.rand(8, 2)
     content, a = cs.cs_forward_content(a_0, torch.randn(16, _D))
-    assert torch.allclose(a[:8], torch.tanh(a_0))      # snap: tanh(0 + s)
-    assert torch.equal(a[8:], torch.zeros(8, 2))       # pool: tanh(0) == 0
+    assert torch.equal(a[:8], a_0)                     # exact pass-through
+    assert torch.equal(a[8:], torch.zeros(8, 2))       # higher rows zero
 
 
-def test_wave_depth2_vine_completes_at_k2():
-    """A depth-d vine completes at iteration d (tail links first): the
-    head link reads the REST link's activation only once the wave has
-    propagated one hop -- K=1 leaves it dark, K=2 lights it."""
-    a_0 = torch.zeros(8, 1)
-    a_0[0, 0] = 0.5
-    what = torch.randn(16, _D)
-    t = torch.tanh
-    tail1 = t(torch.tensor(2.0 * 0.5))                 # a^1[9] = tanh(2 s[0])
-    for order, want10 in ((1, torch.tensor(0.0)),      # K=1: head still dark
-                          (2, t(2.0 * tail1))):        # K=2: head reads a^1[9]
-        cs = _cs(nS=16, order=order)
-        cs.add_concept_edge(9, 0, weight=2.0)          # tail: pool <- snap
-        cs.add_concept_edge(10, 9, weight=2.0)         # head: pool <- pool
-        _c, a = cs.cs_forward_content(a_0, what)
-        # the tail rides the CURRENT source: a^K[9] = tanh(2 a^{K-1}[0]).
-        src = torch.tensor(0.5) if order == 1 else t(torch.tensor(0.5))
-        assert torch.allclose(a[9, 0], t(2.0 * src), atol=1e-5)
-        assert torch.allclose(a[10, 0], want10, atol=1e-5)
+# RETIRED (dual-towers rev 2): test_wave_depth2_vine_completes_at_k2 -- the
+# K-iteration depth schedule was temporal semantics; structural one-pass
+# completion is pinned in test_iterated_symbolic_wave.py.
 
 
-def test_wave_qe_is_report_only():
-    cs = _cs(nS=16, order=2)
-    cs.add_concept_edge(8, 0, weight=1.0)
+def test_level_stats_are_report_only():
+    """dual-towers rev 2: _cs_wave_qe is RETIRED (None -- no settle statistic
+    without iteration); the per-level pyramid stats are report-only."""
+    cs = _cs(nS=16, order=2)                           # taper (8, 4, 2)
+    r1 = _mint_row(cs, 1, 101)
+    cs.add_concept_edge(r1, 0, weight=1.0)
     a_0 = torch.rand(8, 2, requires_grad=True)
     cs.cs_forward_content(a_0, torch.randn(16, _D))
-    qe = cs._cs_wave_qe
-    assert qe.shape == (2,) and not qe.requires_grad   # K entries, no grad
-    assert torch.isfinite(qe).all()
+    assert cs._cs_wave_qe is None                      # settle stat retired
+    acts = cs._cs_level_acts
+    assert isinstance(acts, list) and len(acts) == 3   # [max|a_0|, rung 1, 2]
+    assert all(type(v) is float for v in acts)         # plain floats, no grad
+    rows = cs._cs_level_rows
+    assert isinstance(rows, list) and len(rows) == 2   # order-0 + visited rung
+    for r in rows:
+        assert r.dtype == torch.long and not r.requires_grad
+    assert rows[0].shape == (8, 2)                     # order-0 arange x B
+    assert rows[1].shape == (1, 2)                     # rung-1 winner rows
+    assert int(rows[1][0, 0]) == r1
 
 
 def test_forward_content_kernels_agree():
@@ -301,26 +330,38 @@ def test_forward_content_kernels_agree():
 
 
 def test_forward_content_positive_atoms_and_signed_activation():
+    """dual-towers rev 2: atoms stay softplus-positive; SIGNED activations
+    survive both for rung winners and the signed order-0 pass-through."""
     cs = _cs(nS=16, order=1)
     B = 1
-    a_0 = torch.rand(8, B) + 0.1                       # snap presences > 0
+    a_0 = torch.rand(8, B) + 0.1                       # snap presences > 0...
+    a_0[1, 0] = -0.3                                   # ...plus a SIGNED entry
     what = torch.randn(16, _D)                         # has negative entries
-    cs.add_concept_edge(8, 0, weight=-1.0)             # NEGATIVE weight
+    r = _mint_row(cs, 1, 101)                          # selected (only alloc)
+    cs.add_concept_edge(r, 0, weight=-1.0)             # NEGATIVE weight
     content, a = cs.cs_forward_content(a_0, what)
-    # pool row 8's activation is negative (neg weight * pos presence)
-    assert a[8, 0] < 0
-    # the atom used is softplus(what[8]) -> strictly positive
+    # the winner's activation is negative (neg weight * pos presence)
+    assert a[r, 0] < 0
+    # the atom used is softplus(what[r]) -> strictly positive
     import torch.nn.functional as F
-    atom = F.softplus(what[8])
+    atom = F.softplus(what[r])
     assert (atom > 0).all()
     # code row = a * positive_atom -> points opposite the atom (anti-present)
-    assert torch.allclose(content[0, 8], a[8, 0] * atom, atol=1e-5)
+    assert torch.allclose(content[0, r], a[r, 0] * atom, atol=1e-5)
+    # the negative order-0 entry passes 1:1: content sign follows activation
+    assert torch.allclose(content[0, 1], a_0[1, 0] * F.softplus(what[1]),
+                          atol=1e-5)
+    assert (content[0, 1] < 0).all()
 
 
 def test_forward_content_differentiable():
-    cs = _cs(nS=16, order=2)                           # grads through K=2 steps
-    cs.add_concept_edge(8, 0, weight=0.5)
-    cs.add_concept_edge(9, 8, weight=0.5)
+    """dual-towers rev 2: grads reach the store values ONLY through
+    allocated+selected rungs; a_0 and the dictionary always."""
+    cs = _cs(nS=16, order=2)                           # taper (8, 4, 2)
+    r1 = _mint_row(cs, 1, 101)
+    r2 = _mint_row(cs, 2, 102)
+    cs.add_concept_edge(r1, 0, weight=0.5)
+    cs.add_concept_edge(r2, r1, weight=0.5)
     a_0 = torch.rand(8, 2, requires_grad=True)
     what = torch.randn(16, _D, requires_grad=True)
     content, _ = cs.cs_forward_content(a_0, what)

@@ -68,20 +68,17 @@ class TestForwardArityContract(unittest.TestCase):
     # carrier-free signatures.
 
     def test_perceptual_forward_arity(self):
-        # Post-Stage-1.A substrate refactor (doc/plans/
-        # 2026-05-26-two-loop-pi-sigma-substrate.md): PS.forward is
-        # single-arg. Body composes ``pi(x) + sigma(x)`` on the same
-        # materialized input; the legacy ``CS_subspaceForPS`` second
-        # arg is gone (CS feedback no longer enters PS at this level —
-        # it re-enters via chart / signal-router over STM in later
-        # stages).
+        # Dual-towers rev 2 (2026-07-10 plan): PS and WS share one
+        # symmetric signature -- forward(in_sub, cs_out=None); cs_out is
+        # the tower's own conceptual feedback (stashed until the
+        # callosum-fed pyramid consumes it).
         import inspect
         import Spaces
         sig = inspect.signature(Spaces.PartSpace.forward)
         params = [n for n in sig.parameters if n != "self"]
-        self.assertEqual(len(params), 1,
+        self.assertEqual(params, ["in_sub", "cs_out"],
                          f"PartSpace.forward must be "
-                         f"(x_subspace); got {params}")
+                         f"(in_sub, cs_out=None); got {params}")
         self.assertNotIn("work", sig.parameters,
                          "PartSpace.forward must not carry the "
                          "retired Phase-1 'work' carrier.")
@@ -102,15 +99,15 @@ class TestForwardArityContract(unittest.TestCase):
                          "retired Phase-1 'work' carrier.")
 
     def test_symbolic_forward_arity(self):
-        # Dual-input plan (rev. 2026-06-09): WholeSpace.forward gains the
-        # optional stage-0 unity input -- (CS_subspaceForWS, IS_concepts=None).
+        # Dual-towers rev 2 (2026-07-10 plan): PS and WS share one
+        # symmetric signature -- forward(in_sub, cs_out=None).
         import inspect
         import Spaces
         sig = inspect.signature(Spaces.WholeSpace.forward)
         params = [n for n in sig.parameters if n != "self"]
-        self.assertEqual(params, ["CS_subspaceForWS", "IS_concepts"],
+        self.assertEqual(params, ["in_sub", "cs_out"],
                          f"WholeSpace.forward must be "
-                         f"(CS_subspaceForWS, IS_concepts=None); got {params}")
+                         f"(in_sub, cs_out=None); got {params}")
         self.assertNotIn("work", sig.parameters,
                          "WholeSpace.forward must not carry the "
                          "retired Phase-1 'work' carrier.")

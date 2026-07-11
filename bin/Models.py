@@ -6067,8 +6067,29 @@ class BasicModel(BaseModel):
 
             # Non-codebook spaces require nVectors (spaceShape[0]) ==
             # nActive (outputShape[0]); resize the per-stage codebook shape
-            # to match the halved N.
-            stage_space_concept = [cs_out[0], spaceShape_concept[1]]
+            # to match the halved N. Dual-towers rev 2: the sparse-PARALLEL
+            # path instead honors the config <nVectors> INVENTORY (the taper
+            # blocks + inert tail live inside it; symbolicOrder parses after
+            # create, so read the XML directly).
+            _so_raw = TheXMLConfig.get("architecture.symbolicOrder",
+                                       default=None)
+            try:
+                _so_v = int(_so_raw) if _so_raw is not None else 0
+            except (TypeError, ValueError):
+                _so_v = 0
+            _ser_raw = TheXMLConfig.get("architecture.serial", default=None)
+            if _ser_raw is None:
+                _ser_v = _so_v > 0
+            elif isinstance(_ser_raw, bool):
+                _ser_v = _ser_raw
+            else:
+                _ser_v = str(_ser_raw).strip().lower() in (
+                    "true", "1", "yes", "on")
+            if _so_v > 0 and not _ser_v:
+                stage_space_concept = [spaceShape_concept[0],
+                                       spaceShape_concept[1]]
+            else:
+                stage_space_concept = [cs_out[0], spaceShape_concept[1]]
             stage_space_symbol = [ws_out[0], spaceShape_symbol[1]]
             # Right-half loopback widening retired (see ConceptualSpace
             # docstring): per-order input sourcing replaces the concat,
@@ -6941,9 +6962,10 @@ class BasicModel(BaseModel):
             # stages read only the recurrent CS (input once, mirroring
             # PS). Pure attr read, so the compiled/export paths trace it
             # exactly like _staged_in_sub.
-            WS_sub = ws.forward(
-                prevCS_forSS,
-                IS_concepts=(self._staged_concepts_in if t == 0 else None))
+            # Dual-towers rev 2: universe view always offered; the WS routing
+            # branch decides (parallel: every stage; legacy: empty-carrier only).
+            WS_sub = ws.forward(self._staged_concepts_in,
+                                cs_out=prevCS_forSS)
             # ``cs.forward`` does the STM push + the C->P / C->S handoff
             # bookkeeping and produces this stage's perception event CS_0
             # (STM bookkeeping, no parameterised fold). PRESERVED intact --
@@ -7161,6 +7183,13 @@ class BasicModel(BaseModel):
                 and _cut_cs._sparse_active()):
             _settled = last_cs.materialize()
             _content, _acts = _cut_cs.cs_symbolic_phase(_settled)
+            # Fail loud on a mis-shaped pyramid output (rows-first [N, B]):
+            # a transposed acts would silently misuse batch rows as symbols.
+            assert _acts is None or (
+                _acts.dim() == 2
+                and int(_acts.shape[0]) == int(_cut_cs.nVectors)), (
+                f"symbolic phase acts must be [nVectors, B]; got "
+                f"{None if _acts is None else tuple(_acts.shape)}")
             object.__setattr__(last_cs, "_concept_activations", _acts)
             if _acts is not None:
                 # The SS leg, ONCE: syncs the SS codebook to the settled
@@ -7860,7 +7889,7 @@ class BasicModel(BaseModel):
             for _i in range(T):
                 PS_sub = self.perceptualSpace.forward(word_carrier)
                 _is = _unity if (_dual and _i == 0) else None
-                WS_sub = ws.forward(self._prev_cs_for_ss, IS_concepts=_is)
+                WS_sub = ws.forward(_is, cs_out=self._prev_cs_for_ss)
                 CS_sub = cs.forward(PS_sub, WS_sub)
                 self._prev_cs_for_ps = cs._subspaceForPS
                 self._prev_cs_for_ss = cs._subspaceForWS
@@ -7975,7 +8004,7 @@ class BasicModel(BaseModel):
         # single-arg now (``pi(x) + sigma(x)`` on the same input —
         # no CS-feedback path entering PS at this level).
         PS_sub = self.perceptualSpace.forward(word_sub)
-        WS_sub = ws.forward(prevCS_forSS)
+        WS_sub = ws.forward(None, cs_out=prevCS_forSS)
         CS_sub = cs.forward(PS_sub, WS_sub)
 
         # Masked-blend the persistent CS carriers' new events with the

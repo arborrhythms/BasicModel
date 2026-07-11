@@ -114,7 +114,7 @@ def test_space_forward_arities():
     into explicit ``forward`` arguments supplied by the recurrent cell:
       * PartSpace.forward(x_subspace)        -- Stage 1.A single-arg
       * ConceptualSpace.forward(PS_subspace, SS_subspace=None)
-      * WholeSpace.forward(CS_subspaceForWS, IS_concepts=None)
+      * WholeSpace.forward(in_sub, cs_out=None)
         -- the optional stage-0 UNITY input (analysis/synthesis
         dual-input plan, rev. 2026-06-09)
       * InputSpace / ModalSpace / OutputSpace    -- single arg
@@ -140,10 +140,10 @@ def test_space_forward_arities():
                         ConceptualSpace, WholeSpace, OutputSpace)
     expected = {
         InputSpace: (1, 1),
-        PartSpace: (1, 1),   # x_subspace -- Stage 1.A single-arg
+        PartSpace: (1, 2),   # in_sub req, cs_out opt -- dual-towers rev 2
         ModalSpace: (1, 1),
         ConceptualSpace: (1, 2),   # PS_subspace req, SS_subspace opt
-        WholeSpace: (1, 2),     # CS_subspaceForWS req, IS_concepts opt
+        WholeSpace: (1, 2),     # in_sub req, cs_out opt -- dual-towers rev 2
         OutputSpace: (1, 1),
     }
     for cls, (min_req, max_params) in expected.items():
