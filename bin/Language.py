@@ -12566,11 +12566,14 @@ class SymbolSpace(Space):
     """The unified grammar/symbol container (2026-06-21 SymbolSpace refactor,
     Stage 3).
 
-    Relevance basis: SYMBOLIC HISTORY -- the quadratic priming heat
+    Relevance: SYMBOLIC HISTORY -- the QUADRATIC priming heat
     (``build_semantic_heat`` / ``topk_heat``: activation spreading among
-    taxonomy peers; cog-psych selection history). Well-defined per
-    Architecture sec C; ``relevance_weights()`` returns None until the
-    heat rows are projected into the CS inventory (open spec).
+    taxonomy peers; cog-psych selection history), which ALSO spreads
+    downward into the mereological level: intent priming and
+    readingAttention are this basis's downward projections (symbols
+    mapping onto the wholes that isolate words -- Architecture sec C).
+    ``relevance_weights()`` returns None until the heat rows are
+    projected into the CS inventory (open spec).
 
     OWNS the ``SymbolSubSpace`` coordinator (the typed-STM stack + grammar
     dispatch carrier) and is the home for the per-space_role SyntacticLayers and (Stage

@@ -7883,12 +7883,14 @@ class Space(nn.Module):
             )
 
     def relevance_weights(self):
-        """This tower's BASIS OF RELEVANCE as per-percept weights
-        (doc/Architecture.md sec C: part-salience on PS, whole-relevance
-        on WS, symbolic history on SS). Returns ``[B, N]`` nonnegative
-        weights or ``None`` when the basis is dark (default --
-        byte-identical). Consumed by the CS attention readout as a
-        RANKING bias (``_relevance_priority``), never a content change."""
+        """This tower's RELEVANCE as per-percept weights (doc/Architecture
+        sec C, origin x axis): salience/novelty of PARTICLES on PS
+        (horizontal) and of PROPERTIES on WS (vertical); SYMBOLIC HISTORY
+        on SS (the quadratic priming, which also spreads downward into the
+        mereological level). Returns ``[B, N]`` nonnegative weights or
+        ``None`` when dark (default -- byte-identical). Consumed by the CS
+        attention readout as a RANKING bias (``_relevance_priority``),
+        never a content change."""
         return None
 
     def get_vectors(self):
@@ -9635,10 +9637,10 @@ class InputSpace(Space):
 class PartSpace(Space):
     """InputSpace -> percepts via the configured synthesis front end and sigma fold.
 
-    Relevance basis: PART-SALIENCE (horizontal). Stub: the candidate live
-    signal is the per-percept settle residual (``snap_settle_qe`` --
-    surprise-salience); its polarity + CS-row projection are open spec
-    (Architecture sec C), so ``relevance_weights()`` stays None here.
+    Relevance: PARTICLE SALIENCE/NOVELTY (bottom-up, horizontal). Stub:
+    the candidate live signal is the per-percept settle residual
+    (``snap_settle_qe`` -- novelty-salience); polarity + CS-row projection
+    are open spec (Architecture sec C); ``relevance_weights()`` stays None.
 
     PS and WS are symmetric DUALS -- atoms (bottom-up sigma synthesis) vs
     universe (top-down pi analysis) views of the same input, stacked at
@@ -17368,11 +17370,11 @@ def _word_punct_spans(is_word, is_punct):
 
 
 class WholeSpace(Space):
-    # Relevance basis: WHOLE-RELEVANCE (vertical, top-down). Stub: the
-    # intended live source is the intent-boost affinity (the op-2
-    # ``(sim*boosts).amax`` idiom) and readingAttention's span scores;
-    # projection into CS rows is open spec -- relevance_weights() stays
-    # None here until then (Architecture sec C).
+    # Relevance: PROPERTY SALIENCE/NOVELTY (bottom-up, vertical) -- the
+    # stimulus-significance of wholes/type-runs. NB intent priming and
+    # readingAttention are NOT WS-native relevance: they are the SYMBOLIC
+    # basis's downward projections (Architecture sec C). Projection into
+    # CS rows is open spec -- relevance_weights() stays None here.
     """ConceptualSpace -> symbol prototypes, analysis spans, and truth stores.
 
     ``forward`` writes to ``self.subspace`` rather than the incoming subspace;
