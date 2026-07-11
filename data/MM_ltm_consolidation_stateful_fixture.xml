@@ -1,0 +1,86 @@
+<?xml version="1.0" ?>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="model.xsd">
+  <!-- MM_ltm_consolidation_stateful_fixture: identical to
+       MM_ltm_consolidation_fixture but sets <stateless>false</stateless>, so a
+       saved checkpoint's ORIGIN_USER rows are DURABLE state that must survive a
+       state_dict reload (the _revive_ltm_post_load hook keeps them, unlike the
+       default stateless=true revive which drops them). Exercises the config
+       read of the stateless flag + the stateful branch of the load-time revive.
+       Do not consume from production code. -->
+  <architecture>
+    <subsymbolicOrder>3</subsymbolicOrder>
+    <data>
+      <dataType>embedding</dataType>
+    </data>
+    <symbolicOrder>0</symbolicOrder>
+    <ltmConsolidation>true</ltmConsolidation>
+    <stateless>false</stateless>
+    <truthSet>
+      <truth text="cat" trust="0.9"/>
+      <truth text="fire causes smoke" trust="0.8" kind="implies"/>
+      <truth text="paw partOf cat" trust="0.7" kind="partOf"/>
+    </truthSet>
+
+    <training>
+      <numEpochs>400</numEpochs>
+      <learningRate>0.005</learningRate>
+      <reconstructionScale>0.1</reconstructionScale>
+      <trainEmbedding>JOINT</trainEmbedding>
+      <embeddingScale>0.05</embeddingScale>
+      <autoload>false</autoload>
+    </training>
+
+  </architecture>
+
+  <InputSpace>
+    <nVectors>8</nVectors>
+    <nDim>14</nDim>
+    <nOutput>8</nOutput>
+  </InputSpace>
+
+  <PartSpace>
+    <nInput>8</nInput>
+    <nVectors>8</nVectors>
+    <nDim>14</nDim>
+    <nOutput>8</nOutput>
+    <invertible>true</invertible>
+    <synthesis>radix</synthesis>
+    <butterfly>false</butterfly>
+  </PartSpace>
+
+  <ConceptualSpace>
+    <nInput>8</nInput>
+    <nVectors>8</nVectors>
+    <nDim>14</nDim>
+    <nOutput>8</nOutput>
+    <invertible>true</invertible>
+  </ConceptualSpace>
+
+  <WholeSpace>
+    <lexer>word</lexer>
+    <nInput>8</nInput>
+    <nVectors>8</nVectors>
+    <nDim>14</nDim>
+    <nOutput>8</nOutput>
+  </WholeSpace>
+
+  <OutputSpace>
+    <nInput>8</nInput>
+    <nVectors>1</nVectors>
+    <nOutput>1</nOutput>
+  </OutputSpace>
+
+  <SymbolSpace>
+    <ltmCapacity>64</ltmCapacity>
+    <language>
+      <start>S</start>
+      <grammar>
+        <S>S = not(S)</S>
+        <S>S = intersection(S, S)</S>
+        <S>S = union(S, S)</S>
+      </grammar>
+    </language>
+  </SymbolSpace>
+
+</model>

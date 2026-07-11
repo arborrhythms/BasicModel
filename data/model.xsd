@@ -300,6 +300,17 @@
           </xs:sequence>
         </xs:complexType>
       </xs:element>
+      <!-- Stateless server (mirrors the WikiOracle server.stateless flag;
+           the shipped deployment runs in stateless mode). When true
+           (DEFAULT), each request is self-contained: the runtime request-body
+           TruthSet (store_truths, ORIGIN_USER rows in the consolidated LTM) is
+           NOT durable, so on every state_dict load the LTM is revived WITHOUT
+           the user rows (only the config-provisioned and conversation rows
+           persist) and the TruthLayer view is rematerialized. Set false for a
+           stateful deployment where a saved checkpoint's user rows are the
+           durable state and must survive reload. Read only when
+           <ltmConsolidation> is on. -->
+      <xs:element name="stateless" type="xs:boolean" minOccurs="0"/>
       <!-- GrammarOpsPass §6c (author sign-off 2026-06-11): the sentence
            protocol. In serial mode every sentence opens with an
            independent PARALLEL prelude of <subsymbolicOrder> pumps

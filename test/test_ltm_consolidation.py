@@ -53,6 +53,10 @@ _ON_CONFIG = os.path.join(_DATA_DIR, "MM_ltm_consolidation_fixture.xml")
 # BOTH <ltmConsolidation> AND <training><sentencePrediction>.
 _SERIAL_CONFIG = os.path.join(
     _DATA_DIR, "MM_ltm_consolidation_serial_fixture.xml")
+# Consolidated but STATEFUL (<stateless>false</stateless>): a checkpoint's
+# ORIGIN_USER rows are durable and survive a state_dict reload.
+_STATEFUL_CONFIG = os.path.join(
+    _DATA_DIR, "MM_ltm_consolidation_stateful_fixture.xml")
 _DEFAULTS = os.path.join(_DATA_DIR, "model.xml")
 
 
@@ -553,6 +557,307 @@ class TestObserveSkipsDequeWhenConsolidated(unittest.TestCase):
         # The L_inter cycle ran: a loss term accumulated.
         self.assertIsNotNone(disc._inter_loss_accum)
         self.assertGreater(disc._inter_loss_count, 0)
+
+
+# -- user TruthSet -> LTM: the TruthLayer as a view over the store ----------
+#
+# ``store_truths`` (the serve-layer request-body TruthSet) now lands its rows
+# in the unified ltm_store (ORIGIN_USER) alongside the XML-provisioned rows
+# (ORIGIN_PROVISIONED) and the observe-site conversation rows
+# (ORIGIN_CONVERSATION); the TruthLayer is a compatibility view materialized
+# from the provisioned + user rows (``sync_from_ltm``), so the flat-field
+# readers (luminosity / falsity penalty / consistency / clarifications /
+# assess) read the LTM-backed user truth data.
+
+class TestTruthLayerLtmView(unittest.TestCase):
+    def test_truth_layer_attached_when_consolidated(self):
+        m = _make_model(_ON_CONFIG)
+        tl = m.symbolSpace.truth_layer
+        self.assertIs(tl.ltm_backed, m.symbolSpace.ltm_store)
+
+    def test_truth_layer_not_attached_when_gate_off(self):
+        m = _make_model(_OFF_CONFIG)
+        self.assertIsNone(m.symbolSpace.truth_layer.ltm_backed)
+
+    def test_attach_does_not_duplicate_store_in_state_dict(self):
+        m = _make_model(_ON_CONFIG)
+        keys = [k for k in m.state_dict() if 'ltm_store' in k]
+        self.assertTrue(keys)
+        self.assertFalse(
+            any('truth_layer' in k for k in keys),
+            "attach_ltm must not re-register the store under truth_layer")
+
+    def test_sync_materializes_user_and_provisioned_rows_only(self):
+        from Layers import TernaryTruthStore as T
+        m = _make_model(_ON_CONFIG)
+        store = m.symbolSpace.ltm_store
+        tl = m.symbolSpace.truth_layer
+        store.reset()
+        D = store.nDim
+        # the view slices the content band, clamped to the store width
+        cw = max(1, min(int(store.content_width), D))
+        a = torch.zeros(D); a[0] = 1.0
+        b = torch.zeros(D); b[1] = 1.0
+        store.append_idea(a, trust=0.5)                     # conversation
+        i_prov = store.append_idea(a, trust=0.9)
+        store.set_origin(i_prov, T.ORIGIN_PROVISIONED, text="prov")
+        i_user = store.append_idea(b, trust=-0.5)
+        store.set_origin(i_user, T.ORIGIN_USER, text="user")
+        n = tl.sync_from_ltm()
+        self.assertEqual(n, 2)
+        self.assertEqual(int(tl.count.item()), 2)
+        self.assertEqual(tl._sources, ["prov", "user"])
+        # flat view = content band * trust (an absolute row reduces to its
+        # NP1 band; negative trust flips the sign, no bivector re-bake),
+        # zero-padded up to the TruthLayer width when the band is narrower
+        exp0 = torch.zeros(tl.nDim); exp0[:cw] = a[:cw] * 0.9
+        exp1 = torch.zeros(tl.nDim); exp1[:cw] = b[:cw] * -0.5
+        self.assertTrue(torch.allclose(tl.truths[0], exp0, atol=1e-6))
+        self.assertTrue(torch.allclose(tl.truths[1], exp1, atol=1e-6))
+        self.assertAlmostEqual(tl._trusts[0], 0.9, places=5)
+        self.assertAlmostEqual(tl._trusts[1], -0.5, places=5)
+        self.assertFalse(tl.is_empty())
+
+    def test_sync_relation_row_flattens_live_slots(self):
+        from Layers import TernaryTruthStore as T
+        m = _make_model(_ON_CONFIG)
+        store = m.symbolSpace.ltm_store
+        tl = m.symbolSpace.truth_layer
+        store.reset()
+        D = store.nDim
+        cw = max(1, min(int(store.content_width), D))
+        np1 = torch.zeros(D); np1[0] = 1.0
+        vp = torch.zeros(D); vp[1] = 1.0
+        np2 = torch.zeros(D); np2[2] = 1.0
+        i = store.append_relation(np1, vp, np2, rel_type=T.REL_IMPLIES,
+                                  trust=0.6)
+        store.set_origin(i, T.ORIGIN_USER, text="rel")
+        tl.sync_from_ltm()
+        exp = torch.zeros(tl.nDim)
+        exp[:cw] = (np1[:cw] + vp[:cw] + np2[:cw]) / 3.0 * 0.6
+        self.assertTrue(torch.allclose(tl.truths[0], exp, atol=1e-6))
+
+    def test_sync_empty_selection_empties_view(self):
+        m = _make_model(_ON_CONFIG)
+        store = m.symbolSpace.ltm_store
+        tl = m.symbolSpace.truth_layer
+        store.reset()
+        store.append_idea(torch.ones(store.nDim), trust=0.5)  # conversation
+        self.assertEqual(tl.sync_from_ltm(), 0)
+        self.assertEqual(int(tl.count.item()), 0)
+        self.assertTrue(tl.is_empty())
+
+    def test_sync_without_attachment_is_noop(self):
+        from Layers import TruthLayer
+        tl = TruthLayer(4, max_truths=8)
+        self.assertEqual(tl.sync_from_ltm(), -1)
+
+
+class TestRuntimeUserIngestion(unittest.TestCase):
+    """``store_truths`` end-to-end on the SERIAL fixture: the request-body
+    TruthSet lands in the unified LTM via the real forward."""
+
+    def _fresh(self):
+        m = _make_model(_SERIAL_CONFIG)
+        return m, m.symbolSpace.ltm_store, m.symbolSpace.truth_layer
+
+    def test_user_rows_land_alongside_provisioned(self):
+        from Layers import TernaryTruthStore as T
+        m, store, tl = self._fresh()
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore")
+            m.store_truths([{"content": "hello world", "trust": 0.9},
+                            {"content": "loving there", "trust": -0.5}])
+        # lazy provisioning fired first (3 XML truths, earliest ticks) ...
+        self.assertTrue(m._ltm_provisioned)
+        self.assertEqual(
+            store.rows_of_origin(T.ORIGIN_PROVISIONED).tolist(), [0, 1, 2])
+        # ... then one real end-state row per user truth, tagged + trusted.
+        user_rows = store.rows_of_origin(T.ORIGIN_USER).tolist()
+        self.assertEqual(len(user_rows), 2)
+        r0 = store.row(user_rows[0])
+        r1 = store.row(user_rows[1])
+        self.assertAlmostEqual(r0["trust"], 0.9, places=5)
+        self.assertAlmostEqual(r1["trust"], -0.5, places=5)
+        self.assertEqual(r0["text"], "hello world")
+        self.assertEqual(r1["text"], "loving there")
+        self.assertGreater(float(r0["np1"].norm()), 0.0,
+                           "real parse, not a placeholder")
+
+    def test_view_and_serve_surface_read_ltm_backed_data(self):
+        m, store, tl = self._fresh()
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore")
+            m.store_truths([{"content": "hello world", "trust": 0.9},
+                            {"content": "loving there", "trust": -0.5}])
+        # The view covers provisioned + user rows; sources carry the texts
+        # clarifications reference.
+        self.assertEqual(int(tl.count.item()), 5)
+        self.assertIn("hello world", tl._sources)
+        self.assertIn("loving there", tl._sources)
+        self.assertIn(0.9, [round(t, 5) for t in tl._trusts if t is not None])
+        # Serve surface: score / clarifications / assessment are cached on
+        # the model exactly as the legacy path did.
+        self.assertIsInstance(m._last_truth_score, float)
+        self.assertIsInstance(m._last_clarifications, list)
+        assessment = m._last_truth_assessment
+        self.assertIsInstance(assessment, dict)
+        for k in ("support", "conflict", "ignorance"):
+            self.assertIn(k, assessment)
+            self.assertGreaterEqual(assessment[k], 0.0)
+            self.assertLessEqual(assessment[k], 1.0)
+        # The view is non-degenerate: luminosity reads the LTM-backed rows.
+        self.assertNotEqual(tl.luminosity(), 0.0)
+
+    def test_resubmit_replaces_user_rows_only(self):
+        from Layers import TernaryTruthStore as T
+        m, store, tl = self._fresh()
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore")
+            m.store_truths([{"content": "hello world", "trust": 0.9},
+                            {"content": "loving there", "trust": -0.5}])
+            n_prov = len(store.rows_of_origin(T.ORIGIN_PROVISIONED))
+            m.store_truths([{"content": "hello there", "trust": 0.7}])
+        user_rows = store.rows_of_origin(T.ORIGIN_USER).tolist()
+        self.assertEqual(len(user_rows), 1, "resubmit replaces, not appends")
+        self.assertEqual(store.row(user_rows[0])["text"], "hello there")
+        self.assertEqual(
+            len(store.rows_of_origin(T.ORIGIN_PROVISIONED)), n_prov,
+            "provisioned rows persist across user resubmits")
+        self.assertEqual(int(tl.count.item()), n_prov + 1)
+        self.assertIn("hello there", tl._sources)
+        self.assertNotIn("hello world", tl._sources)
+
+    def test_store_truths_after_load_does_not_reprovision(self):
+        # A checkpoint provisioned before saving comes back with the
+        # transient _ltm_provisioned flag reset while its provisioned rows
+        # survive (the load-time revive keeps them). store_truths must NOT
+        # re-run provisioning then -- that would duplicate the XML truthSet.
+        # Simulate that post-load state by resetting the flag on an already-
+        # provisioned model (a raw state_dict round-trip can't be used here:
+        # real provisioning grows the dynamic vocab, so the production reload
+        # goes through load_weights' vocab restore, not bare load_state_dict).
+        from Layers import TernaryTruthStore as T
+        m = _make_model_provisioned(_SERIAL_CONFIG)
+        store = m.symbolSpace.ltm_store
+        n_prov = len(store.rows_of_origin(T.ORIGIN_PROVISIONED))
+        self.assertEqual(n_prov, 3)
+        m._ltm_provisioned = False               # as after a fresh reload
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore")
+            m.store_truths([{"content": "hello world", "trust": 0.9}])
+        # provisioned rows unchanged (no duplication), one user row added.
+        self.assertEqual(
+            len(store.rows_of_origin(T.ORIGIN_PROVISIONED)), n_prov)
+        self.assertEqual(len(store.rows_of_origin(T.ORIGIN_USER)), 1)
+        self.assertTrue(m._ltm_provisioned)
+
+    def test_user_rows_coexist_with_conversation_rows(self):
+        from Layers import TernaryTruthStore as T
+        m, store, tl = self._fresh()
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore")
+            m.store_truths([{"content": "hello world", "trust": 0.9}])
+            opt = m.getOptimizer(lr=0.01)
+            m.runEpoch(optimizer=opt, batchSize=1, split="train",
+                       max_batches=2)
+        conv = store.rows_of_origin(T.ORIGIN_CONVERSATION).tolist()
+        user = store.rows_of_origin(T.ORIGIN_USER).tolist()
+        prov = store.rows_of_origin(T.ORIGIN_PROVISIONED).tolist()
+        self.assertTrue(conv, "the epoch's observe push appends STM rows")
+        self.assertEqual(len(user), 1)
+        self.assertEqual(len(prov), 3)
+        # One persistent store holds all three writers' rows.
+        self.assertEqual(len(store), len(conv) + len(user) + len(prov))
+        # The view keeps reading only the user TruthSet surface.
+        tl.sync_from_ltm()
+        self.assertEqual(int(tl.count.item()), len(user) + len(prov))
+
+
+# -- load-time LTM revive, gated by <stateless> ----------------------------
+#
+# The server is stateless by default (<stateless> mirrors WikiOracle's
+# server.stateless; the shipped deployment runs stateless), so a checkpoint's
+# request-scoped ORIGIN_USER rows must NOT be revived on load -- each request
+# supplies its own TruthSet. Every load_state_dict rematerializes the
+# TruthLayer view; stateless drops the user rows first, stateful keeps them.
+
+class TestStatelessRevive(unittest.TestCase):
+    def _seed(self, m):
+        """Seed one row per origin (provisioned / user / conversation)."""
+        from Layers import TernaryTruthStore as T
+        store = m.symbolSpace.ltm_store
+        store.reset()
+        D = store.nDim
+        v = torch.zeros(D); v[0] = 1.0
+        i0 = store.append_idea(v, trust=0.9)
+        store.set_origin(i0, T.ORIGIN_PROVISIONED, text="cat")
+        i1 = store.append_idea(v, trust=0.8)
+        store.set_origin(i1, T.ORIGIN_USER, text="hello world")
+        store.append_idea(v, trust=0.3)                    # ORIGIN_CONVERSATION
+        return store
+
+    def test_default_flag_is_stateless_true(self):
+        # Config read: absent <stateless> -> default True (model + subspace).
+        m = _make_model(_ON_CONFIG)
+        self.assertTrue(m.stateless)
+        self.assertTrue(m.symbolSpace._stateless)
+
+    def test_stateful_fixture_reads_false(self):
+        # Config read: <stateless>false</stateless> is honored end-to-end.
+        m = _make_model(_STATEFUL_CONFIG)
+        self.assertFalse(m.stateless)
+        self.assertFalse(m.symbolSpace._stateless)
+
+    def test_stateless_load_drops_user_rows(self):
+        from Layers import TernaryTruthStore as T
+        m = _make_model(_ON_CONFIG)
+        self._seed(m)
+        sd = m.state_dict()
+        m2 = _make_model(_ON_CONFIG)              # stateless (default)
+        m2.load_state_dict(sd, strict=False)
+        store = m2.symbolSpace.ltm_store
+        # user rows dropped; provisioned + conversation survive.
+        self.assertEqual(store.rows_of_origin(T.ORIGIN_USER).tolist(), [])
+        self.assertEqual(
+            store.rows_of_origin(T.ORIGIN_PROVISIONED).tolist(), [0])
+        self.assertEqual(
+            store.rows_of_origin(T.ORIGIN_CONVERSATION).tolist(), [1])
+        self.assertEqual(len(store), 2)
+        # the view was rematerialized from the surviving provisioned row only.
+        self.assertEqual(int(m2.symbolSpace.truth_layer.count.item()), 1)
+
+    def test_stateful_load_keeps_user_rows(self):
+        from Layers import TernaryTruthStore as T
+        m = _make_model(_STATEFUL_CONFIG)
+        self._seed(m)
+        sd = m.state_dict()
+        m2 = _make_model(_STATEFUL_CONFIG)        # stateful
+        m2.load_state_dict(sd, strict=False)
+        store = m2.symbolSpace.ltm_store
+        # every row survives; the user row is durable state.
+        self.assertEqual(store.rows_of_origin(T.ORIGIN_USER).tolist(), [1])
+        self.assertEqual(len(store), 3)
+        # the view covers provisioned + user (conversation stays out).
+        self.assertEqual(int(m2.symbolSpace.truth_layer.count.item()), 2)
+
+    def test_load_syncs_view_even_with_no_user_rows(self):
+        # A checkpoint with only provisioned + conversation rows still
+        # rematerializes the view on load (stateless drop is a no-op).
+        from Layers import TernaryTruthStore as T
+        m = _make_model(_ON_CONFIG)
+        store = m.symbolSpace.ltm_store
+        store.reset()
+        D = store.nDim
+        v = torch.zeros(D); v[0] = 1.0
+        i0 = store.append_idea(v, trust=0.7)
+        store.set_origin(i0, T.ORIGIN_PROVISIONED, text="p")
+        store.append_idea(v, trust=0.2)                    # conversation
+        sd = m.state_dict()
+        m2 = _make_model(_ON_CONFIG)
+        m2.load_state_dict(sd, strict=False)
+        self.assertEqual(len(m2.symbolSpace.ltm_store), 2)
+        self.assertEqual(int(m2.symbolSpace.truth_layer.count.item()), 1)
 
 
 class TestSerialForwardAppendsStore(unittest.TestCase):

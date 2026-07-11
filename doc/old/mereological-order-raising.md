@@ -1330,6 +1330,37 @@ issues):** `Spaces._topk_priming_mask` crashes under `sentenceProtocol`+top-k-pr
 (reproduces on `MM_grammar.xml`), and `runEpoch(split="runtime")` raises on its no-`batch_override` inference
 fast-path. The checklist below is the design rationale.
 
+**USER TRUTHSET → LTM (2026-07-10).** The runtime request-body TruthSet (`store_truths`, the serve layer's
+`/chat/completions` `truth` entries) is consolidated into the same store: a per-row **`origin`** column
+(`ORIGIN_CONVERSATION` / `ORIGIN_PROVISIONED` / `ORIGIN_USER`, a registered buffer) plus host-side source
+texts (`set_origin(idx, origin, text=)`, transient like `TruthLayer._sources`) distinguish the three writers.
+`store_truths` on a consolidated config compacts prior user rows out (`clear_origin` — replace-on-resubmit;
+the client sends its full TruthSet each request), runs each text through the same real-parse ingestion
+provisioning uses (`_ltm_ingest_truth_texts`, extracted from `provision_ltm`), and stamps trust + origin +
+text on the landed rows — user rows, XML rows and conversation rows coexist in the one persistent store.
+The **TruthLayer is no longer the canonical user-truth store on consolidated configs**: it is a
+compatibility read model (`attach_ltm` back-ref at construction; `sync_from_ltm` materializes the
+provisioned + user rows as one flat content-band vector per row × trust, plus `_sources`/`_trusts`), so
+the flat-field readers — luminosity, falsity penalty, consistency, clarifications, assess — read the
+LTM-backed data unchanged and the serve surface (clarifications / truth_assessment) is preserved. Gate off:
+`store_truths` keeps the legacy epoch-ingestion path byte-identical. Tests:
+`test_ternary_truth_store.py::TestOriginProvenance`,
+`test_ltm_consolidation.py::{TestTruthLayerLtmView, TestRuntimeUserIngestion}`.
+
+**LOAD-TIME REVIVE, gated by `<stateless>` (2026-07-11).** New architecture flag
+`architecture.stateless` (model.xsd, `Models.stateless`, `SymbolSubSpace._stateless`;
+**DEFAULT TRUE**, mirroring WikiOracle's `server.stateless` — the shipped deployment runs
+stateless). A `register_load_state_dict_post_hook` on `SymbolSubSpace`
+(`_revive_ltm_post_load`, registered only on consolidated configs) fires after every
+`load_state_dict` (a parent post-hook runs after all children, so `ltm_store` +
+`truth_layer` buffers are loaded) and **rematerializes the TruthLayer view** from the
+loaded store. Stateless (default): the checkpoint's request-scoped `ORIGIN_USER` rows are
+`clear_origin`'d first — each request supplies its own TruthSet, so only the persistent
+provisioned + conversation rows revive. Stateful (`<stateless>false`): user rows are durable
+state and are kept. Host-side `_texts` don't ride the state_dict, so revived rows read
+`text=None` (the source strings are gone after a stateless reload anyway). Tests:
+`test_ltm_consolidation.py::TestStatelessRevive` + `MM_ltm_consolidation_stateful_fixture.xml`.
+
 **Resolution checklist before building (2026-06-18, code-grounded — workflow `wf_eb4ccbf5-329`, 6 readers).**
 Beyond the three requirements above, these must be settled:
 

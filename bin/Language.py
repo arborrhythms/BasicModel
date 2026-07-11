@@ -9342,6 +9342,23 @@ class SymbolSubSpace(SubSpace):
             # persistent LTM survives every document-boundary Reset.
             self.ltm_store = TernaryTruthStore(
                 muxed, capacity=_ltm_cap, content_width=symbol_dim)
+            # User-TruthSet consolidation: the TruthLayer becomes a
+            # compatibility view over this store (``sync_from_ltm``);
+            # ``store_truths`` routes user rows here. attach_ltm bypasses
+            # submodule registration (no state_dict duplication).
+            self.truth_layer.attach_ltm(self.ltm_store)
+            # LTM REVIVE (load time). Every ``load_state_dict`` rematerializes
+            # the TruthLayer view from the loaded store (fires after the
+            # store's + truth_layer's buffers load -- a parent post-hook runs
+            # after all children). Gated by ``architecture.stateless`` (mirror
+            # of WikiOracle's server.stateless; DEFAULT TRUE, the shipped
+            # deployment): stateless -> a checkpoint's request-scoped
+            # ``ORIGIN_USER`` rows are dropped first (each request supplies its
+            # own TruthSet), so only the persistent provisioned + conversation
+            # rows revive; stateful -> user rows are durable state and are kept.
+            self._stateless = bool(TheXMLConfig.get(
+                "architecture.stateless", default=True))
+            self.register_load_state_dict_post_hook(self._revive_ltm_post_load)
         else:
             self.relative_store = RelativeTruthStore(
                 symbol_dim, max_triples=max_truths)
@@ -12288,6 +12305,29 @@ class SymbolSubSpace(SubSpace):
         self.arm_stm(int(batch))
         self.clear_last_svo(int(batch))
         self.clear_sentence_completed(int(batch))
+
+    def _revive_ltm_post_load(self, module, incompatible_keys):
+        """``load_state_dict`` post-hook: rematerialize the TruthLayer view
+        from the freshly-loaded consolidated LTM (see the registration site
+        for the stateless gate). Registered only on consolidated configs, so
+        ``ltm_store`` / ``truth_layer`` are present. Best-effort: a load must
+        never be aborted by revive bookkeeping.
+
+        ``incompatible_keys`` is the standard post-hook payload (unused;
+        accepted for the hook signature)."""
+        del incompatible_keys
+        store = getattr(self, 'ltm_store', None)
+        tl = getattr(self, 'truth_layer', None)
+        if store is None or tl is None or tl.ltm_backed is not store:
+            return
+        try:
+            if getattr(self, '_stateless', True):
+                # Request-scoped: drop the checkpoint's user rows so the
+                # server starts each request from a clean TruthSet.
+                store.clear_origin(store.ORIGIN_USER)
+            tl.sync_from_ltm()
+        except Exception:
+            pass
 
     def soft_reset(self, batch=None):
         """Re-arm sentence-internal state for row ``batch`` (or all rows).

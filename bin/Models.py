@@ -858,6 +858,17 @@ class BaseModel(Mereology, nn.Module):
         self.ltm_consolidation = bool(TheXMLConfig.get(
             "architecture.ltmConsolidation", default=False))
 
+        # Stateless server (mirrors WikiOracle's server.stateless; the
+        # shipped deployment runs --stateless). Default TRUE: the runtime
+        # request-body TruthSet (``store_truths``, ORIGIN_USER rows) is
+        # request-scoped, so on every state_dict load the consolidated LTM
+        # is revived WITHOUT the user rows (config-provisioned + conversation
+        # rows persist) and the TruthLayer view is rematerialized -- see
+        # ``SymbolSubSpace._revive_ltm_post_load``. Set false for a stateful
+        # deployment where a saved checkpoint's user rows are durable state.
+        self.stateless = bool(TheXMLConfig.get(
+            "architecture.stateless", default=True))
+
         # Two-pass soft-superposition learning (doc/Language.md
         # "Soft-superposition route"). When ``<learning>`` is true, runEpoch
         # runs each TRAINING batch twice as two independent trials -- pass A
@@ -2394,18 +2405,34 @@ class BasicModel(BaseModel):
             TheReport.plotActivations(figure=1, symbols=symbols)
         return outputData
     def store_truths(self, entries):
-        """Encode truth entries via runEpoch and store in SymbolSpace.truth_layer.
+        """Store user-supplied truth entries (the request-body TruthSet).
 
-        Truths are processed through the full pipeline by running a
-        standard inference epoch. Truth recording is governed by the
-        continuous ``truthCriterion`` bar (no binary switch); to capture
-        every provided gold truth this method drops
-        ``wholeSpace.truth_criterion`` to 0 for the ingestion epoch,
-        during which WholeSpace.forward() records the gold activations
-        into the TruthLayer (``self.symbolSpace.truth_layer``), then
-        restores it. After the epoch completes, each stored activation is
-        scaled by its effective DegreeOfTruth (incoming DoT multiplied by
-        model-level ``<trust>``).
+        LTM-BACKED PATH (``<ltmConsolidation>`` on, ``ltm_store`` built and
+        attached to the TruthLayer): the canonical home is the unified
+        ``TernaryTruthStore``. Each entry text runs through the real
+        forward (``_ltm_ingest_truth_texts``, the same path XML
+        provisioning uses) so the Change-1 observe-site push appends one
+        real parsed end-state row per truth ALONGSIDE the STM-derived
+        conversation rows; the landed rows get the effective DoT and the
+        ``ORIGIN_USER`` tag + source text. Runtime user rows have
+        replace-on-resubmit semantics (the client sends its full TruthSet
+        each request), so previous ``ORIGIN_USER`` rows are compacted out
+        first -- provisioned and conversation rows persist untouched.
+        Finally ``truth_layer.sync_from_ltm()`` rematerializes the
+        compatibility view so the flat-field readers (luminosity, falsity
+        penalty, consistency, clarifications, assess) read the LTM-backed
+        data.
+
+        LEGACY PATH (gate off): encode via a runtime epoch into the
+        standalone TruthLayer. Recording is governed by the continuous
+        ``truthCriterion`` bar (no binary switch); to capture every
+        provided gold truth the bar drops to 0 for the ingestion epoch,
+        during which WholeSpace.forward() records the gold activations,
+        then restores. Each stored activation is scaled by its effective
+        DegreeOfTruth (incoming DoT multiplied by model-level ``<trust>``).
+
+        Both paths end with the same consistency / clarification /
+        assessment tail read by the serve layer.
 
         Args:
             entries: list of dicts with 'content' and 'trust' keys.
@@ -2428,41 +2455,52 @@ class BasicModel(BaseModel):
         if not texts:
             return
 
-        # 2. Reset the truth store and run a forced epoch over the gold
-        #    texts. Recording is governed by the continuous ``truthCriterion``
-        #    bar (no binary arm): the WholeSpace.forward recording block
-        #    captures the gold activations during this epoch exactly as it
-        #    does during training. To capture ALL provided gold truths
-        #    regardless of the configured bar, drop truthCriterion to 0 for
-        #    the ingestion epoch, then restore it.
-        truth_layer.clear()
-        prev_tc = self.wholeSpace.truth_criterion
-        self.wholeSpace.truth_criterion = 0.0
-        self.eval()
-        self.set_sigma(0)
-        try:
-            with torch.no_grad(), TheData.runtime_batch(texts):
-                self.runEpoch(batchSize=len(texts), split="runtime")
-        finally:
-            self.wholeSpace.truth_criterion = prev_tc
+        ltm_store = (getattr(self.symbolSpace, 'ltm_store', None)
+                     if getattr(self, 'ltm_consolidation', False) else None)
+        if ltm_store is not None and truth_layer.ltm_backed is ltm_store:
+            # 2a. Consolidated path: user rows land in the unified LTM,
+            # then the TruthLayer view is rebuilt from it.
+            self._store_truths_into_ltm(ltm_store, truth_layer,
+                                        texts, trusts)
+        else:
+            # 2b. Legacy path: reset the truth store and run a forced
+            #    epoch over the gold texts. Recording is governed by the
+            #    continuous ``truthCriterion`` bar (no binary arm): the
+            #    WholeSpace.forward recording block captures the gold
+            #    activations during this epoch exactly as it does during
+            #    training. To capture ALL provided gold truths regardless
+            #    of the configured bar, drop truthCriterion to 0 for the
+            #    ingestion epoch, then restore it.
+            truth_layer.clear()
+            prev_tc = self.wholeSpace.truth_criterion
+            self.wholeSpace.truth_criterion = 0.0
+            self.eval()
+            self.set_sigma(0)
+            try:
+                with torch.no_grad(), TheData.runtime_batch(texts):
+                    self.runEpoch(batchSize=len(texts), split="runtime")
+            finally:
+                self.wholeSpace.truth_criterion = prev_tc
 
-        # 3. Apply DoT to each stored activation
-        n = min(truth_layer.count.item(), len(trusts))
-        for i in range(n):
-            truth_layer.truths[i] *= trusts[i]
+            # 3. Apply DoT to each stored activation
+            n = min(truth_layer.count.item(), len(trusts))
+            for i in range(n):
+                truth_layer.truths[i] *= trusts[i]
 
-        # 4. Attach sources/trusts for clarification surfacing, run the
-        # consistency report, and cache any clarification messages on
-        # the model for the serve layer to expose.
-        stored_count = truth_layer.count.item()
-        truth_layer._sources = (
-            list(texts[:stored_count])
-            + [None] * max(0, stored_count - len(texts))
-        )
-        truth_layer._trusts = (
-            list(trusts[:stored_count])
-            + [None] * max(0, stored_count - len(trusts))
-        )
+            # 4. Attach sources/trusts for clarification surfacing (the
+            # LTM path gets these from sync_from_ltm).
+            stored_count = truth_layer.count.item()
+            truth_layer._sources = (
+                list(texts[:stored_count])
+                + [None] * max(0, stored_count - len(texts))
+            )
+            truth_layer._trusts = (
+                list(trusts[:stored_count])
+                + [None] * max(0, stored_count - len(trusts))
+            )
+
+        # 5. Run the consistency report and cache any clarification
+        # messages on the model for the serve layer to expose.
         basis = getattr(getattr(self.wholeSpace, 'subspace', None),
                         'basis', None)
         try:
@@ -2483,6 +2521,40 @@ class BasicModel(BaseModel):
             self._last_truth_assessment = truth_layer.assess(basis=basis)
         except Exception:
             self._last_truth_assessment = None
+
+    @torch.no_grad()
+    def _store_truths_into_ltm(self, store, truth_layer, texts, trusts):
+        """``store_truths``' consolidated arm: land the user TruthSet in
+        the unified LTM and rebuild the TruthLayer view.
+
+        Ordering: the lazy XML provisioning fires FIRST (mirroring the
+        runEpoch trigger) so provisioned rows keep the earliest ticks even
+        when the first thing a served model does is ingest a user
+        TruthSet. Then previous ``ORIGIN_USER`` rows are compacted out
+        (replace-on-resubmit), the texts run through the real forward
+        (rows land via the observe-site push, NOT gated by
+        ``truthCriterion``), each landed row gets its effective DoT +
+        user origin + source text, and the view is rematerialized."""
+        if not getattr(self, '_ltm_provisioned', True):
+            self._ltm_provisioned = True
+            # Skip provisioning when the store already carries its XML
+            # truthSet: ``_ltm_provisioned`` is a transient attribute (not in
+            # the state_dict), so a LOADED checkpoint that was provisioned
+            # before saving comes back with the flag reset -- re-provisioning
+            # would duplicate those rows (they survive a stateless reload).
+            already = len(store.rows_of_origin(store.ORIGIN_PROVISIONED)) > 0
+            if not already:
+                try:
+                    self.provision_ltm()
+                except Exception:
+                    pass
+        store.clear_origin(store.ORIGIN_USER)
+        per_text_rows = self._ltm_ingest_truth_texts(store, texts)
+        for (start, end), text, trust in zip(per_text_rows, texts, trusts):
+            for row in range(start, end):
+                store.set_trust(row, trust)
+                store.set_origin(row, store.ORIGIN_USER, text=text)
+        truth_layer.sync_from_ltm()
 
     # -- LTM consolidation: XML TruthSet provisioning ------------------
     @torch.no_grad()
@@ -2505,7 +2577,8 @@ class BasicModel(BaseModel):
         parsed end-state row per truth, in submission order. After all texts
         the rows ``[n_before : len(store)]`` are exactly the provisioned
         truths: each gets its effective XML ``trust`` overwritten
-        (``set_trust``; XML DoT multiplied by model-level ``<trust>``) and,
+        (``set_trust``; XML DoT multiplied by model-level ``<trust>``), the
+        ``ORIGIN_PROVISIONED`` tag + source text (``set_origin``) and,
         when the entry carries a ``kind`` (``partOf`` / ``implies`` /
         ``other``), its ``rel_type`` overridden to the tagged relation.
 
@@ -2563,22 +2636,41 @@ class BasicModel(BaseModel):
             return 0
 
         n_before = len(store)
-        # Run each truth text through the REAL forward (the working inference
-        # path, as _infer_ir): eval + sigma 0, then PER TEXT stage it via
-        # runtime_batch and run prepInput + forward. The Change-1 observe-site
-        # store-append fires per sentence, landing one real parsed end-state
-        # row per truth in submission order. Per-text (B=1) keeps the row
-        # ordering 1:1 with the truthset (a B>1 batch would append B rows in a
-        # single boundary, mixing the order). Best-effort PER TEXT: a parse
-        # failure on one truth must not abort the others or crash load (flag-
-        # off byte-identical, and a flag-on build still yields a usable model
-        # with whatever rows did land). Track the per-text landed row RANGE so
-        # the trust / rel_type override below stays aligned even if a text
-        # lands 0 (parse failure) or >1 rows.
+        per_text_rows = self._ltm_ingest_truth_texts(store, texts)
+
+        # Overwrite each text's landed rows with the XML trust, tag the
+        # provisioned origin + source text, and override the rel_type from
+        # the entry's kind (when tagged). Robust to a text landing 0 rows
+        # (the range is empty) or >1 (all its rows get the same trust /
+        # kind).
+        for (start, end), text, trust, kind in zip(
+                per_text_rows, texts, trusts, kinds):
+            for row in range(start, end):
+                store.set_trust(row, trust)
+                store.set_origin(
+                    row, TernaryTruthStore.ORIGIN_PROVISIONED, text=text)
+                if kind in kind_map:
+                    store.rel_type[row] = kind_map[kind]
+        return max(0, len(store) - n_before)
+
+    def _ltm_ingest_truth_texts(self, store, texts):
+        """Run each truth text through the REAL forward (the working
+        inference path, as _infer_ir): eval + sigma 0, then PER TEXT stage
+        it via runtime_batch and run prepInput + forward. The Change-1
+        observe-site store-append fires per sentence, landing one real
+        parsed end-state row per truth in submission order. Per-text (B=1)
+        keeps the row ordering 1:1 with the truth list (a B>1 batch would
+        append B rows in a single boundary, mixing the order). Best-effort
+        PER TEXT: a parse failure on one truth must not abort the others
+        or crash the caller. Returns the per-text landed row RANGE
+        ``[(start, end), ...]`` so trust / origin / rel_type overrides stay
+        aligned even if a text lands 0 (parse failure) or >1 rows. Shared
+        by XML provisioning (``provision_ltm``) and runtime user ingestion
+        (``store_truths``)."""
         self.eval()
         self.set_sigma(0)
         per_text_rows = []                         # list of (start, end)
-        for text, trust, kind in zip(texts, trusts, kinds):
+        for text in texts:
             start = len(store)
             try:
                 with torch.no_grad(), TheData.runtime_batch([text]):
@@ -2589,17 +2681,7 @@ class BasicModel(BaseModel):
                 pass
             end = len(store)
             per_text_rows.append((start, end))
-
-        # Overwrite each text's landed rows with the XML trust and override
-        # the rel_type from the entry's kind (when tagged). Robust to a text
-        # landing 0 rows (the range is empty) or >1 (all its rows get the same
-        # trust / kind).
-        for (start, end), trust, kind in zip(per_text_rows, trusts, kinds):
-            for row in range(start, end):
-                store.set_trust(row, trust)
-                if kind in kind_map:
-                    store.rel_type[row] = kind_map[kind]
-        return max(0, len(store) - n_before)
+        return per_text_rows
 
     def infer(self, text, max_length=None, mode='IR'):
         """IR-mode infill inference.

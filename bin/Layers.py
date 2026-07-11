@@ -6229,6 +6229,17 @@ class TruthLayer(Layer):
     Propositional structure is defined by the S-space_role grammar:
       - ``part(S, S)`` -- parthood / containment
       - ``equals(S, S)`` -- identity / equivalence
+
+    LTM-BACKED MODE (``<ltmConsolidation>`` on): the canonical user-truth
+    store is the unified ``TernaryTruthStore`` (``symbolSpace.ltm_store``);
+    this layer is then a COMPATIBILITY READ MODEL over it. ``attach_ltm``
+    wires the back-reference and ``sync_from_ltm`` materializes the
+    provisioned + user rows into ``truths``/``count``/``_sources``/
+    ``_trusts`` (one flat content-width vector per row, scaled by the
+    row's trust) so every flat-field reader -- luminosity, falsity
+    penalty, consistency, clarifications, assess -- reads the LTM-backed
+    data unchanged. Gate off: no back-reference, this buffer stays the
+    canonical store (legacy behaviour).
     """
 
     def __init__(self, nDim: int, max_truths: int = 1024):
@@ -6280,6 +6291,13 @@ class TruthLayer(Layer):
         # value, so it never adds a sync and cannot drift. Read via
         # ``is_empty()``.
         self._nonempty = False
+
+        # LTM back-reference (see class docstring "LTM-BACKED MODE").
+        # Plain attribute; ``attach_ltm`` re-binds it via
+        # ``object.__setattr__`` so the store is NOT double-registered as
+        # a submodule here (it already rides the state_dict on
+        # SymbolSpace).
+        self._ltm = None
 
     # -- Record / Query ------------------------------------------------
 
@@ -6453,6 +6471,73 @@ class TruthLayer(Layer):
         self._nonempty = True  # n_actual >= 1 here (guarded above)
         return n_actual
 
+    # -- LTM-backed view (see class docstring "LTM-BACKED MODE") --------
+
+    def attach_ltm(self, store) -> None:
+        """Bind the unified LTM store this layer mirrors. Bypasses
+        nn.Module registration (the store already rides the state_dict on
+        SymbolSpace; registering it here would duplicate its buffers)."""
+        object.__setattr__(self, '_ltm', store)
+
+    @property
+    def ltm_backed(self):
+        """The attached LTM store, or None (legacy standalone mode)."""
+        return getattr(self, '_ltm', None)
+
+    def _flatten_ltm_row(self, store, idx: int) -> torch.Tensor:
+        """One flat content-width vector for LTM row ``idx``: the mean of
+        the non-Null slots' content bands (an absolute row reduces to its
+        NP1 band), conformed to this layer's ``nDim``. Trust is NOT
+        applied here -- the caller scales, matching ``store_truths``'
+        plain scalar DoT multiply."""
+        cw = max(1, min(int(getattr(store, 'content_width', store.nDim)),
+                        int(store.nDim)))
+        slots = store.slots[idx, :, :cw]                       # [3, cw]
+        live = slots.norm(dim=-1) > 1e-12
+        vec = (slots[live].mean(dim=0) if bool(live.any())
+               else slots.new_zeros(cw))
+        if cw == self.nDim:
+            return vec
+        out = vec.new_zeros(self.nDim)
+        k = min(self.nDim, cw)
+        out[:k] = vec[:k]
+        return out
+
+    @torch.no_grad()
+    def sync_from_ltm(self) -> int:
+        """Rebuild the materialized view from the attached LTM store.
+
+        Selects the provisioned + user rows (``rows_of_origin``) in row
+        order and rewrites ``truths[:n]`` = flattened row * row trust,
+        together with ``count`` / ``_sources`` / ``_trusts`` /
+        ``_nonempty``, then drops any staged pending entries (the view
+        supersedes per-cell candidates recorded during ingestion
+        forwards). Conversation rows stay out: they are the training-time
+        corpus, not the user TruthSet the flat-field readers surface.
+        Rows beyond ``max_truths`` are dropped oldest-last (the leading
+        ``max_truths`` selected rows win). Returns the view size; no-op
+        returning -1 when no store is attached."""
+        store = self.ltm_backed
+        if store is None:
+            return -1
+        idxs = store.rows_of_origin(store.ORIGIN_PROVISIONED,
+                                    store.ORIGIN_USER)
+        idx_list = idxs.tolist()[:self.max_truths]
+        n = len(idx_list)
+        self.truths.zero_()
+        sources, trusts = [], []
+        for view_i, row_i in enumerate(idx_list):
+            t = float(store.trust[row_i].item())
+            self.truths[view_i] = (
+                self._flatten_ltm_row(store, row_i).to(self.truths) * t)
+            sources.append(store.text_of(row_i))
+            trusts.append(t)
+        self.count.fill_(n)
+        self._nonempty = n > 0
+        self._sources = sources
+        self._trusts = trusts
+        self._pending_count = 0
+        return n
 
     def query(self, activation: torch.Tensor, threshold: float = 0.9
               ) -> Optional[Tuple[int, float]]:
@@ -7922,14 +8007,26 @@ class TernaryTruthStore(Layer):
     slice (:meth:`recent`); reasoning scans the whole corpus
     (:meth:`relations`).
 
-    Storage-only foundation (stage 1 of the consolidation): nothing
-    constructs it yet, so it is inert / byte-identical until wired.
+    PROVENANCE: a per-row ``origin`` column distinguishes the three writers
+    that share the store -- ``ORIGIN_CONVERSATION`` (the observe-site STM
+    push, the default), ``ORIGIN_PROVISIONED`` (XML ``<truthSet>`` rows,
+    ``provision_ltm``) and ``ORIGIN_USER`` (runtime request-body TruthSet
+    rows, ``store_truths``). Origin rides the state_dict; the optional
+    source text attached alongside (``set_origin(..., text=)``) is host-side
+    transient metadata for clarification surfacing, like
+    ``TruthLayer._sources``. ``clear_origin`` compacts one origin's rows out
+    in place so ``store_truths`` can give runtime user rows replace-on-
+    resubmit semantics without touching conversation / provisioned rows.
     """
 
     REL_NONE = 0
     REL_PARTOF = 1
     REL_IMPLIES = 2
     REL_OTHER = 3
+
+    ORIGIN_CONVERSATION = 0
+    ORIGIN_PROVISIONED = 1
+    ORIGIN_USER = 2
 
     def __init__(self, nDim: int, capacity: int = 1024, content_width=None):
         super().__init__(nDim, nDim)
@@ -7946,10 +8043,19 @@ class TernaryTruthStore(Layer):
         self.register_buffer('timestamp', torch.zeros(capacity))
         self.register_buffer('trust', torch.zeros(capacity))
         self.register_buffer('count', torch.tensor(0, dtype=torch.long))
+        # Per-row writer provenance (ORIGIN_*); default 0 = conversation so
+        # the observe-site push needs no change.
+        self.register_buffer('origin',
+                             torch.zeros(capacity, dtype=torch.long))
         # Monotonic logical clock: each append without an explicit timestamp
         # takes the next tick. XML provisioning appends first (earliest
         # ticks); conversation appends continue from there.
         self.register_buffer('_next_ts', torch.tensor(0, dtype=torch.long))
+        # Host-side per-row source text (set via ``set_origin``); transient
+        # metadata (NOT checkpoint material), indexed alongside rows and
+        # None-padded lazily -- a state_dict load changes ``count`` without
+        # appends, so readers must tolerate a short list.
+        self._texts = []
 
     def __len__(self):
         return int(self.count.item())
@@ -7982,6 +8088,9 @@ class TernaryTruthStore(Layer):
         self.slots[n, 2] = self._fit(np2)
         self.rel_type[n] = int(rel_type)
         self.trust[n] = max(-1.0, min(1.0, float(trust)))
+        self.origin[n] = self.ORIGIN_CONVERSATION
+        self._ensure_texts(n + 1)
+        self._texts[n] = None
         if timestamp is None:
             self.timestamp[n] = float(self._next_ts.item())
             self._next_ts.fill_(int(self._next_ts.item()) + 1)
@@ -8007,8 +8116,9 @@ class TernaryTruthStore(Layer):
                            trust=trust, timestamp=timestamp)
 
     def row(self, idx: int) -> dict:
-        """The stored row as ``{np1, vp, np2, rel_type, timestamp, trust}``
-        (vectors are views; ``rel_type`` int, the rest floats)."""
+        """The stored row as ``{np1, vp, np2, rel_type, timestamp, trust,
+        origin, text}`` (vectors are views; ``rel_type`` / ``origin`` ints,
+        ``text`` the host-side source string or None)."""
         n = int(self.count.item())
         if not (0 <= int(idx) < n):
             raise IndexError(f"row {idx} of {n}")
@@ -8018,6 +8128,8 @@ class TernaryTruthStore(Layer):
             'np2': self.slots[i, 2], 'rel_type': int(self.rel_type[i].item()),
             'timestamp': float(self.timestamp[i].item()),
             'trust': float(self.trust[i].item()),
+            'origin': int(self.origin[i].item()),
+            'text': self.text_of(i),
         }
 
     def recent(self, n: int):
@@ -8054,6 +8166,75 @@ class TernaryTruthStore(Layer):
             raise IndexError(f"row {i} of {int(self.count.item())}")
         self.trust[i] = max(-1.0, min(1.0, float(trust)))
 
+    # -- Provenance ------------------------------------------------------
+
+    def _ensure_texts(self, n: int):
+        """Pad the host-side ``_texts`` list to ``n`` entries."""
+        if len(self._texts) < n:
+            self._texts.extend([None] * (n - len(self._texts)))
+
+    def text_of(self, idx: int):
+        """The row's source text, or None (unset / post-load)."""
+        i = int(idx)
+        return self._texts[i] if 0 <= i < len(self._texts) else None
+
+    @torch.no_grad()
+    def set_origin(self, idx: int, origin: int, text=None):
+        """Tag a row's writer provenance (``ORIGIN_*``) and optionally
+        attach its source text -- retroactive, mirroring ``set_trust``,
+        because provisioned / user rows land via the observe-site push
+        during the forward and are identified only afterwards."""
+        i = int(idx)
+        n = int(self.count.item())
+        if not (0 <= i < n):
+            raise IndexError(f"row {i} of {n}")
+        self.origin[i] = int(origin)
+        self._ensure_texts(n)
+        if text is not None:
+            self._texts[i] = str(text)
+
+    def rows_of_origin(self, *origins):
+        """Row indices whose ``origin`` is any of ``origins``, in row
+        (append) order."""
+        c = int(self.count.item())
+        if c == 0 or not origins:
+            return self.count.new_zeros(0)
+        og = self.origin[:c]
+        mask = torch.zeros_like(og, dtype=torch.bool)
+        for o in origins:
+            mask |= og == int(o)
+        return mask.nonzero(as_tuple=True)[0]
+
+    @torch.no_grad()
+    def clear_origin(self, origin: int) -> int:
+        """Remove every row of ``origin``, compacting the survivors in
+        place (order, timestamps and texts preserved). Returns the number
+        of rows removed. The logical clock is NOT rewound: re-appended
+        rows keep landing after everything ever seen."""
+        c = int(self.count.item())
+        if c == 0:
+            return 0
+        keep = (self.origin[:c] != int(origin)).nonzero(as_tuple=True)[0]
+        n_keep = int(keep.numel())
+        removed = c - n_keep
+        if removed == 0:
+            return 0
+        self._ensure_texts(c)
+        kept_texts = [self._texts[int(i)] for i in keep.tolist()]
+        self.slots[:n_keep] = self.slots[keep]
+        self.rel_type[:n_keep] = self.rel_type[keep]
+        self.timestamp[:n_keep] = self.timestamp[keep]
+        self.trust[:n_keep] = self.trust[keep]
+        self.origin[:n_keep] = self.origin[keep]
+        self.slots[n_keep:c].zero_()
+        self.rel_type[n_keep:c].zero_()
+        self.timestamp[n_keep:c].zero_()
+        self.trust[n_keep:c].zero_()
+        self.origin[n_keep:c].zero_()
+        self._texts = kept_texts + [None] * (len(self._texts) - n_keep)
+        self.count.fill_(n_keep)
+        return removed
+
     @torch.no_grad()
     def reset(self):
         """Clear the store (idempotent)."""
@@ -8062,7 +8243,9 @@ class TernaryTruthStore(Layer):
         self.timestamp.zero_()
         self.trust.zero_()
         self.count.zero_()
+        self.origin.zero_()
         self._next_ts.zero_()
+        self._texts = []
 
 
 class InterSentenceLayer(Layer):

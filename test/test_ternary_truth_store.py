@@ -202,5 +202,117 @@ class TestPersistence(unittest.TestCase):
         self.assertEqual(s.row(r)['timestamp'], 0.0, "clock reset")
 
 
+class TestOriginProvenance(unittest.TestCase):
+    """Per-row writer provenance: the ``origin`` column + host-side source
+    text distinguish conversation / provisioned / user rows sharing the
+    store, and ``clear_origin`` gives runtime user rows replace-on-resubmit
+    semantics without touching the other writers' rows."""
+
+    def test_append_defaults_conversation_origin(self):
+        from Layers import TernaryTruthStore as T
+        s = _store()
+        s.append_idea(_v(1))
+        r = s.row(0)
+        self.assertEqual(r['origin'], T.ORIGIN_CONVERSATION)
+        self.assertIsNone(r['text'])
+
+    def test_set_origin_tags_row_and_text(self):
+        from Layers import TernaryTruthStore as T
+        s = _store()
+        s.append_idea(_v(1), trust=0.4)
+        s.set_origin(0, T.ORIGIN_USER, text="the cat sat")
+        r = s.row(0)
+        self.assertEqual(r['origin'], T.ORIGIN_USER)
+        self.assertEqual(r['text'], "the cat sat")
+        # trust untouched by the origin tag
+        self.assertAlmostEqual(r['trust'], 0.4, places=6)
+
+    def test_set_origin_out_of_range_raises(self):
+        from Layers import TernaryTruthStore as T
+        s = _store()
+        with self.assertRaises(IndexError):
+            s.set_origin(0, T.ORIGIN_USER)
+
+    def test_rows_of_origin_filters_in_row_order(self):
+        from Layers import TernaryTruthStore as T
+        s = _store()
+        s.append_idea(_v(1))                       # 0: conversation
+        s.append_idea(_v(2))                       # 1: -> provisioned
+        s.append_idea(_v(3))                       # 2: -> user
+        s.append_idea(_v(4))                       # 3: -> user
+        s.set_origin(1, T.ORIGIN_PROVISIONED, text="p")
+        s.set_origin(2, T.ORIGIN_USER, text="u1")
+        s.set_origin(3, T.ORIGIN_USER, text="u2")
+        self.assertEqual(
+            s.rows_of_origin(T.ORIGIN_CONVERSATION).tolist(), [0])
+        self.assertEqual(
+            s.rows_of_origin(T.ORIGIN_USER).tolist(), [2, 3])
+        # multi-origin select (the TruthLayer view's read) in row order
+        self.assertEqual(
+            s.rows_of_origin(T.ORIGIN_PROVISIONED,
+                             T.ORIGIN_USER).tolist(), [1, 2, 3])
+        self.assertEqual(s.rows_of_origin().tolist(), [])
+
+    def test_clear_origin_compacts_survivors_in_place(self):
+        from Layers import TernaryTruthStore as T
+        s = _store()
+        s.append_idea(_v(1), trust=0.1)            # 0: conversation
+        s.append_idea(_v(2), trust=0.2)            # 1: user
+        s.append_relation(_v(3), _v(0, 3), _v(0, 0, 3),
+                          rel_type=T.REL_IMPLIES, trust=0.3)   # 2: prov
+        s.append_idea(_v(4), trust=0.4)            # 3: user
+        s.set_origin(1, T.ORIGIN_USER, text="u1")
+        s.set_origin(2, T.ORIGIN_PROVISIONED, text="p")
+        s.set_origin(3, T.ORIGIN_USER, text="u2")
+        removed = s.clear_origin(T.ORIGIN_USER)
+        self.assertEqual(removed, 2)
+        self.assertEqual(len(s), 2)
+        # survivors keep order, vectors, trust, rel_type, timestamp, text
+        r0, r1 = s.row(0), s.row(1)
+        self.assertTrue(torch.equal(r0['np1'], _v(1)))
+        self.assertEqual(r0['origin'], T.ORIGIN_CONVERSATION)
+        self.assertEqual(r0['timestamp'], 0.0)
+        self.assertTrue(torch.equal(r1['np1'], _v(3)))
+        self.assertEqual(r1['rel_type'], T.REL_IMPLIES)
+        self.assertAlmostEqual(r1['trust'], 0.3, places=6)
+        self.assertEqual(r1['timestamp'], 2.0)
+        self.assertEqual(r1['text'], "p")
+        # vacated tail rows are zeroed
+        self.assertEqual(float(s.slots[2:4].abs().sum()), 0.0)
+        self.assertEqual(int(s.origin[2:4].abs().sum()), 0)
+        # the clock is NOT rewound: the next append lands after row 3's tick
+        r = s.append_idea(_v(9))
+        self.assertEqual(s.row(r)['timestamp'], 4.0)
+        # idempotent: nothing left of that origin
+        self.assertEqual(s.clear_origin(T.ORIGIN_USER), 0)
+
+    def test_reset_clears_origin_and_texts(self):
+        from Layers import TernaryTruthStore as T
+        s = _store()
+        s.append_idea(_v(1))
+        s.set_origin(0, T.ORIGIN_USER, text="u")
+        s.reset()
+        self.assertEqual(s._texts, [])
+        s.append_idea(_v(2))
+        r = s.row(0)
+        self.assertEqual(r['origin'], T.ORIGIN_CONVERSATION)
+        self.assertIsNone(r['text'])
+
+    def test_origin_rides_state_dict_texts_do_not(self):
+        from Layers import TernaryTruthStore as T
+        s = _store()
+        s.append_idea(_v(1))
+        s.set_origin(0, T.ORIGIN_USER, text="u")
+        sd = s.state_dict()
+        self.assertIn('origin', sd)
+        s2 = _store()
+        s2.load_state_dict(sd)
+        r = s2.row(0)
+        self.assertEqual(r['origin'], T.ORIGIN_USER)
+        # source text is host-side transient metadata: absent after load,
+        # readers fall back to None.
+        self.assertIsNone(r['text'])
+
+
 if __name__ == "__main__":
     unittest.main()
