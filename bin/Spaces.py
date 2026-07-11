@@ -14323,7 +14323,10 @@ class ConceptualSpace(Space):
         """Retire a TRANSIENT symbol that has triggered refinement -- the
         restructuring it signaled supersedes it. Idempotent; drops its
         Parts / Wholes records and any idempotency-cache entries pointing at
-        it (store-level lifecycle: :meth:`Layers.ConceptAllocator.drop`)."""
+        it (store-level lifecycle: :meth:`Layers.ConceptAllocator.drop`).
+        FROZEN concepts never retire (no forgetting)."""
+        if int(sym) in getattr(self, "_frozen_concepts", ()):
+            return
         _concept_alloc_of(self).drop(sym)
 
     def resolve_identities(self):
@@ -14596,6 +14599,9 @@ class ConceptualSpace(Space):
                 f"add_concept_edge: snap row {r} accepts no edges -- "
                 f"order-0 concepts are codebook rows (the snap), not "
                 f"compositions")
+        # Frozen definition: no FORMING of new connections on its row.
+        if getattr(self, "_frozen_concepts", None) and r in self._frozen_rows():
+            return None
         # _sparse_families(0) registers the store in _sparse_fam (params/nnz)
         _percept, ly = self._sparse_families(0)
         # Global bias convention col == nVectors; translate to the store's
@@ -14603,7 +14609,11 @@ class ConceptualSpace(Space):
         _c = int(col)
         if _c == int(self.nVectors):
             _c = self._bias_col()
-        return ly.add_edge(r, _c, weight=weight)
+        out = ly.add_edge(r, _c, weight=weight)
+        # Values may have regrown: re-arm the frozen-weights grad hook.
+        if getattr(self, "_frozen_concepts", None):
+            self._refresh_frozen_values_hook()
+        return out
 
     def concept_weights(self, row):
         """The ``(col, weight)`` edges of GLOBAL concept ``row`` on the
@@ -15063,6 +15073,8 @@ class ConceptualSpace(Space):
         for sym in list(alloc.placement):
             if sym in raised:
                 continue                              # higher-order: not re-refined
+            if int(sym) in getattr(self, "_frozen_concepts", ()):
+                continue                              # frozen: no restructuring
             store = alloc.store_of(sym)
             n_p = store.count_role(sym, "part")
             n_w = store.count_role(sym, "whole")
@@ -15103,6 +15115,79 @@ class ConceptualSpace(Space):
         """The CS surface spans the concept inventory (the similarity
         codebook rows), not a subspace codebook (pure-event)."""
         return int(self.nVectors)
+
+    def freeze_concept(self, concept_id):
+        """FREEZE a concept's relational structure (Alec 2026-07-11): no
+        FORMING of new connections, no FORGETTING of existing ones, no
+        WEIGHT drift on them. The codebook row/content stays live -- a
+        frozen concept keeps tracking perception; its DEFINITION is fixed."""
+        frz = getattr(self, "_frozen_concepts", None)
+        if frz is None:
+            frz = set()
+            object.__setattr__(self, "_frozen_concepts", frz)
+        frz.add(int(concept_id))
+        self._refresh_frozen_values_hook()
+        return frz
+
+    def is_frozen(self, concept_id):
+        """True when ``concept_id``'s relational structure is frozen."""
+        return int(concept_id) in getattr(self, "_frozen_concepts", ())
+
+    def _frozen_rows(self):
+        """GLOBAL store rows of the frozen concepts (allocated only)."""
+        rows = set()
+        for cid in getattr(self, "_frozen_concepts", ()):
+            r = self._csw_row_of(cid)
+            if r is not None:
+                rows.add(int(r))
+        return rows
+
+    def _refresh_frozen_values_hook(self):
+        """Zero backprop grads on the frozen rows' edge VALUES (their
+        weights are frozen; other rows' values train normally). Re-run
+        after edge growth (``values`` is a fresh Parameter each grow)."""
+        alloc = getattr(self, "_concept_allocator", None)
+        if alloc is None:
+            return
+        ly = alloc.layer(0)
+        vals = getattr(ly, "values", None)
+        rows = self._frozen_rows()
+        h = getattr(ly, "_frozen_hook_handle", None)
+        if h is not None:
+            try:
+                h.remove()
+            except Exception:
+                pass
+            object.__setattr__(ly, "_frozen_hook_handle", None)
+        if vals is None or not vals.requires_grad or not rows:
+            return
+        idx = sorted(i for (r, _c), i in ly._index.items() if int(r) in rows)
+        if not idx:
+            return
+        _ix = torch.tensor(idx, dtype=torch.long)
+
+        def _zero_frozen(grad, _ix=_ix):
+            g = grad.clone()
+            g[_ix.to(grad.device)] = 0.0
+            return g
+
+        object.__setattr__(ly, "_frozen_hook_handle",
+                           vals.register_hook(_zero_frozen))
+
+    def mint_frozen_concept(self, name):
+        """Mint a HARD-CODED named concept (stable handle + order-0 snap
+        row) and freeze its relational structure. Idempotent per name."""
+        reg = getattr(self, "_frozen_named", None)
+        if reg is None:
+            reg = {}
+            object.__setattr__(self, "_frozen_named", reg)
+        if name in reg:
+            return reg[name]
+        cid = self.new_concept()
+        self._csw_concept_row(0, cid)
+        self.freeze_concept(cid)
+        reg[name] = cid
+        return cid
 
     def symbol_history_priority(self, heat):
         """SYMBOLIC-HISTORY projection (Architecture sec C spec): map
@@ -15289,6 +15374,8 @@ class ConceptualSpace(Space):
         raised = alloc.raised
         dropped = []
         for c in list(alloc.placement):
+            if int(c) in getattr(self, "_frozen_concepts", ()):
+                continue                       # frozen: no forgetting
             ws_all = {w for w in alloc.refs(c, "whole")
                       if not isinstance(w, tuple)}
             # EVERYTHING is the loosest whole of all: once ANY other whole is
@@ -15421,10 +15508,12 @@ class ConceptualSpace(Space):
         ``cid`` holds no edges / the sparse transform is inactive."""
         if not _concept_rows_exist(self):
             return
+        if int(cid) in getattr(self, "_frozen_concepts", ()):
+            return                                 # frozen weights: no drift
         ly = _concept_alloc_of(self).layer(0)
-        c_row = ly.row_of(("pool", int(cid)))
+        c_row = self._csw_row_of(cid)              # any block namespace
         if c_row is None:
-            return                                 # snap/unallocated: no edges
+            return                                 # unallocated: no edges
         ly.hebbian_strengthen_row(c_row, eta=eta, cap=cap)
 
     def create_joint_concept(self, word_syms, key=None):

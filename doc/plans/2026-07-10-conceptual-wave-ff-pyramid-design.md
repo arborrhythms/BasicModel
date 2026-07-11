@@ -233,6 +233,20 @@ per-fold gradient norms. These are the mechanism-live pins (replacing
    projection. KEPT: `forward_linear_abs` + the spread law,
    `symbol_history_priority` (the SS$\to$CS bridge), the `<relevance>`
    gate.
+6. **Frozen concepts + the hard-coded reading wiring (Alec, 2026-07-11):**
+   freezing fixes a concept's RELATIONAL STRUCTURE and nothing else — "all
+   freeze_concept() needs to freeze is the forming or forgetting of new
+   connections and the weights of the existing connections." Content rows
+   stay live (EMA/SBOW keep tracking perception; a frozen concept's
+   DEFINITION is fixed, its grounding adapts). Others may still BUILD ON a
+   frozen concept (references to it stay legal). `mint_frozen_concept`
+   mints hard-coded named concepts; the first is **"reading"**:
+   `set_reading(desire)` desires its row on the CS surface, and while
+   reading is desired the assembler desires each batch's staged word-whole
+   rows — the concept$\to$word-isolating-wholes projection IS the staged
+   span$\to$slot$\to$row chain (the wholes-are-types product; no new
+   mapping table). `set_reading(False)` stops the sustained desire; the
+   shared surface's seen-decay fades the residue.
 
 ## Gates (Alec commits at each)
 

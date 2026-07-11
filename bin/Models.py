@@ -2414,6 +2414,30 @@ class BasicModel(BaseModel):
         if self.plot:
             TheReport.plotActivations(figure=1, symbols=symbols)
         return outputData
+    def set_reading(self, desire=True, valence=1.0):
+        """READING mode (Architecture sec C, simplified law): desire (or,
+        with valence < 0, hate) the frozen hard-coded 'reading' concept;
+        while on, each batch's staged word-whole rows are desired too --
+        the hard-coded concept -> word-isolating-wholes wiring. The
+        surface's seen-decay fades it after set_reading(False)."""
+        cs0 = (self.conceptualSpaces[0]
+               if getattr(self, 'conceptualSpaces', None) else None)
+        if not desire:
+            object.__setattr__(self, "_reading_desire", None)
+            return None
+        v = float(valence)
+        object.__setattr__(self, "_reading_desire", v)
+        if cs0 is None or not cs0._sparse_active():
+            return None
+        cid = getattr(self, "_reading_cid", None)
+        if cid is None:
+            cid = cs0.mint_frozen_concept("reading")
+            object.__setattr__(self, "_reading_cid", cid)
+        row = cs0._csw_row_of(cid)
+        if row is not None:
+            cs0.prime_desire(torch.tensor([int(row)]), valence=v)
+        return cid
+
     @torch.no_grad()
     def _primed_reading_step(self):
         """Hard-coded readingAttention (sec C, simplified law): scope =
@@ -2453,6 +2477,12 @@ class BasicModel(BaseModel):
             idx = getattr(ws0, "_stage0_indices", None)
             if torch.is_tensor(idx):
                 ws0.prime_seen(idx)
+                # Hard-coded reading -> word-whole wiring: while reading is
+                # desired, the staged word-whole rows are desired too (the
+                # staged span -> slot -> row chain IS the projection).
+                _rd = getattr(self, "_reading_desire", None)
+                if _rd is not None:
+                    ws0.prime_desire(idx, valence=float(_rd))
         b = cut_cs.priming_weights()
         if b is None:
             return None

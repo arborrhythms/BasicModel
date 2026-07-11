@@ -393,6 +393,18 @@ the path; off-path green.
     `<readingAttention>` off). The item-28 settle-residual/view-half
     novelty assembly is DELETED; `relevance_weights()` now IS
     `priming_weights()`. 9 pins in test_relevance_bases.py.
+30. **Frozen concepts + reading wiring implemented (design decision 6).**
+    `freeze_concept` / `is_frozen` / `mint_frozen_concept` on CS; guards at
+    all three freeze surfaces: FORM (`add_concept_edge` refuses new edges
+    on frozen rows; references TO frozen rows stay legal), FORGET
+    (`retire_concept` no-op, `prune_concept_links` + `refine_over_collected`
+    skip frozen), WEIGHTS (grad hook zeroes frozen rows' edge values,
+    re-armed after growth; the Hebbian wrapper skips frozen AND got its
+    latent taper-migration namespace fix — it resolved rows via the retired
+    ("pool", cid) key, silently never firing on per-order blocks; now
+    `_csw_row_of`). `set_reading(desire)` + the per-batch assembler wiring
+    (staged rows desired while reading is on). 7 pins in
+    test_frozen_concepts.py.
 26. **Trace safety:** the liveness probe is data-dependent control flow —
     `make test` caught it via the compiled-CLI XOR node and the mlx export
     (GuardOnDataDependentSymNode). Fixed with the house
