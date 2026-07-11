@@ -7882,16 +7882,65 @@ class Space(nn.Module):
                 f"{section_name}: non-codebook space requires nVectors ({nV}) == nActive ({nA})"
             )
 
+    def _priming_dim(self):
+        """Row count of this Space's priming surface (its codebook)."""
+        sub = getattr(self, 'subspace', None)
+        cb = sub.codebook() if (sub is not None
+                                and hasattr(sub, 'codebook')) else None
+        W = cb.getW() if (cb is not None and hasattr(cb, 'getW')) else None
+        return int(W.shape[0]) if torch.is_tensor(W) else 0
+
+    def _priming_surface(self, V, device=None):
+        b = getattr(self, "_priming_boosts", None)
+        if b is None or int(b.shape[0]) != int(V):
+            b = torch.ones(int(V), device=device)
+            object.__setattr__(self, "_priming_boosts", b)
+        return b
+
+    @torch.no_grad()
+    def prime_seen(self, rows, bump=1.0, decay=None):
+        """SEEN write (Architecture sec C, simplified law): decay the
+        surface toward neutral 1.0, then bump the rows that fired --
+        bottom-up things are primed in virtue of being seen."""
+        V = self._priming_dim()
+        if V <= 0 or rows is None or not torch.is_tensor(rows):
+            return None
+        d = float(decay if decay is not None
+                  else getattr(self, "_priming_decay", 0.9))
+        b = self._priming_surface(V, device=rows.device)
+        b.mul_(d).add_(1.0 - d)
+        r = rows.reshape(-1).long().clamp(0, V - 1)
+        b.index_add_(0, r, torch.full((int(r.numel()),), float(bump),
+                                      device=b.device, dtype=b.dtype))
+        b.clamp_(min=0.0)
+        return b
+
+    @torch.no_grad()
+    def prime_desire(self, rows, valence=1.0, bump=1.0):
+        """DESIRED (+) / HATED (-) write: signed suppression, floor 0,
+        never a veto -- top-down things are primed in virtue of being
+        desired or hated."""
+        V = self._priming_dim()
+        if V <= 0 or rows is None or not torch.is_tensor(rows):
+            return None
+        b = self._priming_surface(V, device=rows.device)
+        r = rows.reshape(-1).long().clamp(0, V - 1)
+        b.index_add_(0, r, torch.full((int(r.numel()),),
+                                      float(valence) * float(bump),
+                                      device=b.device, dtype=b.dtype))
+        b.clamp_(min=0.0)
+        return b
+
+    def priming_weights(self):
+        """The single quadratic priming surface ``[V]`` over this Space's
+        codebook rows (neutral 1.0), or ``None`` when never written."""
+        return getattr(self, "_priming_boosts", None)
+
     def relevance_weights(self):
-        """This tower's RELEVANCE as per-percept weights (doc/Architecture
-        sec C, origin x axis): salience/novelty of PARTICLES on PS
-        (horizontal) and of PROPERTIES on WS (vertical); SYMBOLIC HISTORY
-        on SS (the quadratic priming, which also spreads downward into the
-        mereological level). Returns ``[B, N]`` nonnegative weights or
-        ``None`` when dark (default -- byte-identical). Consumed by the CS
-        attention readout as a RANKING bias (``_relevance_priority``),
-        never a content change."""
-        return None
+        """This tower's relevance IS its priming surface (Architecture
+        sec C, simplified law: one quadratic; SEEN + DESIRED/HATED are
+        its two write channels). ``None`` when dark (byte-identical)."""
+        return self.priming_weights()
 
     def get_vectors(self):
         """Convenience accessor -- delegates to subspace."""
@@ -9637,10 +9686,10 @@ class InputSpace(Space):
 class PartSpace(Space):
     """InputSpace -> percepts via the configured synthesis front end and sigma fold.
 
-    Relevance: PARTICLE SALIENCE/NOVELTY (bottom-up, horizontal). Stub:
-    the candidate live signal is the per-percept settle residual
-    (``snap_settle_qe`` -- novelty-salience); polarity + CS-row projection
-    are open spec (Architecture sec C); ``relevance_weights()`` stays None.
+    Relevance: PARTICLE SALIENCE/NOVELTY (bottom-up, horizontal) -- the
+    settle residual of the PS view half, stashed by the gated
+    ``<relevance>`` integration; ``relevance_weights()`` returns the last
+    batch's ``[B, N]`` novelty (None while the gate is off).
 
     PS and WS are symmetric DUALS -- atoms (bottom-up sigma synthesis) vs
     universe (top-down pi analysis) views of the same input, stacked at
@@ -14768,6 +14817,17 @@ class ConceptualSpace(Space):
         level_acts = [float(a.detach().abs().max())]
         sel_rows = [torch.arange(min(int(caps[0]), int(a_0.shape[0])),
                                  device=a.device).unsqueeze(-1).expand(-1, B)]
+        _S = min(sum(int(c) for c in caps), N)
+        # Relevance priority (sec C spec): [N] or [N, B] nonnegative; rung
+        # score = p[row] + (|W| p)[row]; rank = |cand| * (1 + score); only
+        # ADMITTED rows carry their score upward (relevance spreads through
+        # awareness). Absent -> rank = |cand| (byte-identical).
+        _prio = getattr(self, "_relevance_priority", None)
+        if _prio is not None and torch.is_tensor(_prio):
+            p_rel = _prio if _prio.dim() == 2 else _prio.unsqueeze(-1)
+            p_rel = p_rel.to(a.dtype).expand(N, B).contiguous().detach()
+        else:
+            p_rel = None
         for k in range(1, min(K + 1, len(caps))):
             start, end = self.order_slice(k)
             n_alloc = min(int(ly._row_next.get(start, 0)), end - start)
@@ -14777,23 +14837,26 @@ class ConceptualSpace(Space):
             rows_k = torch.arange(start, start + n_alloc, device=a.device)
             # The store spans only the taper rows (sum(caps) x sum(caps)+1,
             # the _sizer contract) -- fold in store coordinates, scatter back.
-            _S = min(sum(int(c) for c in caps), N)
             pre = ly.forward_linear(
                 torch.cat([a[:_S], a.new_ones((1, B))], dim=0))   # [S, B]
             cand = torch.tanh(pre.index_select(0, rows_k))   # [n_k, B]
             keep = min(int(caps[k]), n_alloc)
-            # Relevance priority (three-bases stub, Architecture sec C):
-            # a [N]- or [N, B]-shaped nonnegative weight biases the top-K
-            # RANKING only -- winners change, activations never distort.
-            _prio = getattr(self, "_relevance_priority", None)
             rank = cand.abs()
-            if _prio is not None and torch.is_tensor(_prio):
-                _p = _prio if _prio.dim() == 2 else _prio.unsqueeze(-1)
-                rank = rank * _p.index_select(0, rows_k).to(rank.dtype)
+            score = None
+            if p_rel is not None:
+                with torch.no_grad():
+                    hop = ly.forward_linear_abs(
+                        torch.cat([p_rel[:_S], p_rel.new_zeros((1, B))],
+                                  dim=0))                    # |W| p  [S, B]
+                    score = (p_rel.index_select(0, rows_k)
+                             + hop.index_select(0, rows_k))  # [n_k, B]
+                rank = rank * (1.0 + score)
             _v, topi = torch.topk(rank, keep, dim=0)         # [keep, B]
             mask = torch.zeros_like(cand)
             mask.scatter_(0, topi, 1.0)
             a = a.index_copy(0, rows_k, cand * mask)         # winners only
+            if p_rel is not None:
+                p_rel = p_rel.index_copy(0, rows_k, score * mask)
             level_acts.append(float((cand * mask).detach().abs().max()))
             sel_rows.append(rows_k[topi])                    # global rows
         object.__setattr__(self, "_cs_level_acts", level_acts)
@@ -15035,6 +15098,39 @@ class ConceptualSpace(Space):
             cur = int(parent)
             out.add(cur)
         return out
+
+    def _priming_dim(self):
+        """The CS surface spans the concept inventory (the similarity
+        codebook rows), not a subspace codebook (pure-event)."""
+        return int(self.nVectors)
+
+    def symbol_history_priority(self, heat):
+        """SYMBOLIC-HISTORY projection (Architecture sec C spec): map
+        ``{symbol_id: heat}`` onto concept-store rows through the
+        allocator's ``('sym', id)`` constituent records -- a concept is
+        prioritized by the SUMMED heat of the symbols it references.
+        Returns ``[nVectors]`` (zeros where unreferenced) or ``None`` on a
+        dark/empty heat. Host-side; called once per batch under
+        ``<relevance>``."""
+        if not heat:
+            return None
+        alloc = getattr(self, "_concept_allocator", None)
+        if alloc is None:
+            return None
+        ly = _concept_alloc_of(self).layer(0)
+        N = int(self.nVectors)
+        p = None
+        for (_o, cid), row in self._csw_rows.items():
+            h = 0.0
+            for _role, ref in ly.constituents(cid):
+                if (isinstance(ref, tuple) and len(ref) == 2
+                        and ref[0] == "sym"):
+                    h += float(heat.get(int(ref[1]), 0.0))
+            if h > 0.0 and 0 <= int(row) < N:
+                if p is None:
+                    p = torch.zeros(N)
+                p[int(row)] += h
+        return p
 
     def _csw_row_of(self, concept_id):
         """GLOBAL store row of ``concept_id`` under any block namespace
@@ -17371,10 +17467,11 @@ def _word_punct_spans(is_word, is_punct):
 
 class WholeSpace(Space):
     # Relevance: PROPERTY SALIENCE/NOVELTY (bottom-up, vertical) -- the
-    # stimulus-significance of wholes/type-runs. NB intent priming and
-    # readingAttention are NOT WS-native relevance: they are the SYMBOLIC
-    # basis's downward projections (Architecture sec C). Projection into
-    # CS rows is open spec -- relevance_weights() stays None here.
+    # settle residual of the WS view half, stashed by the gated
+    # <relevance> integration; relevance_weights() returns the last
+    # batch's [B, N] novelty (None while the gate is off). NB intent
+    # priming and readingAttention are NOT WS-native relevance: they are
+    # the SYMBOLIC basis's downward projections (Architecture sec C).
     """ConceptualSpace -> symbol prototypes, analysis spans, and truth stores.
 
     ``forward`` writes to ``self.subspace`` rather than the incoming subspace;
@@ -17383,6 +17480,16 @@ class WholeSpace(Space):
     """
     name = "Symbols"
     config_section = "WholeSpace"
+
+    def _priming_dim(self):
+        """The WS surface spans the ANALYSIS-STORE rows (the stage-0
+        selections index them), not the event codebook."""
+        st = getattr(self, "analysis_store", None)
+        W = st.getW() if (st is not None and hasattr(st, "getW")) else None
+        if torch.is_tensor(W) and W.ndim == 2:
+            return int(W.shape[0])
+        return super()._priming_dim()
+
     # Parallel mode can hold WS at zero and skip symbolic side effects.
     held_at_zero = False
     # rule_codebook is instance-owned; a class default would shadow the submodule.

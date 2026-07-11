@@ -175,6 +175,14 @@
            routes a third (symbol) peer leg (PS/WS percepts + SS symbols). Default
            false -> the 2-stream (PS, WS) bind -> byte-identical. -->
       <xs:element name="symbolTower" type="xs:boolean" minOccurs="0"/>
+      <!-- Relevance integration (Architecture sec C, origin x axis): when
+           true the cutover assembles the per-tower salience/novelty +
+           symbolic-history priority and the pyramid's top-K consumes it as
+           a ranking bias. Default false -> byte-identical. -->
+      <xs:element name="relevance" type="xs:boolean" minOccurs="0"/>
+      <!-- Exponential decay of the SEEN priming toward neutral 1.0, applied
+           at each seen-write (sec C simplified law). Default 0.9. -->
+      <xs:element name="primingDecay" type="xs:decimal" minOccurs="0"/>
       <!-- Reading attention (doc/specs/reading-attention.md "(A) Reading
            attention"). When true, a learned .where producer runs at each t>0
            subsymbolic pass and writes _passback_scope_where (the normalized

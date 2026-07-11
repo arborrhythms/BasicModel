@@ -188,6 +188,51 @@ per-fold gradient norms. These are the mechanism-live pins (replacing
    attention mechanism (ReadingAttention, GlobalAttention, intent
    priming / `_topk_priming_mask`, reverse-side heat + `<attention>`
    modes) is present, orthogonal, and composes; see the execution notes.
+4. **Relevance projections SPEC (Alec: "spec and implement in this
+   round", 2026-07-11).** Frame: relevance $=$ ORIGIN $\times$ AXIS
+   (Architecture sec C). Implementation law, gated
+   `<architecture><relevance>` (default false $\to$ byte-identical):
+   - **Bottom-up (salience/novelty), both towers:** signal $=$ the
+     per-percept settle residual (`snap_settle_qe`; novelty polarity —
+     parts/properties that RESIST settling are salient) computed on each
+     tower's VIEW HALF of the bind carrier (`combine.views`): particle
+     novelty from the PS view, property novelty from the WS view; stashed
+     per tower (`relevance_weights()` pull-API returns it).
+   - **Slot $\to$ row projection:** the snap's own argmax map (settled
+     slot $\to$ order-0 codebook row), scatter-amax of slot novelty onto
+     rows.
+   - **Symbolic history:** heat over symbols $\to$ concept rows through
+     the allocator's `('sym', id)` constituent records
+     (`ConceptualSpace.symbol_history_priority(heat)`) — the projection
+     is implemented and unit-tested; the live heat source stays dark
+     until `<symbolicPriming>`/`<attention>` are enabled.
+   - **Combination:** SUM of bases (the priority-map law; no veto).
+   - **Upward spread:** priority climbs the pyramid through EDGE
+     MAGNITUDES — rung score $= p[\mathrm{row}] + (|W|\,p)[\mathrm{row}]$
+     (`forward_linear_abs`), rank $= |cand| \cdot (1 + \mathrm{score})$,
+     and only ADMITTED (top-K) rows carry their score upward — relevance
+     spreads through awareness, never through rejected content.
+   - **Deferred to the next projection:** readingAttention's symbolic
+     origin (template from hot symbols / pyramid winners via the
+     symbol$\to$word-whole map).
+5. **SIMPLIFIED LAW (Alec, 2026-07-11 — supersedes most of decision 4):**
+   "bottom-up things are primed in virtue of being SEEN; top-down things
+   are primed in virtue of being DESIRED or HATED. That gives us a single
+   quadratic mapping over which we can implement readingAttention
+   (hard-coded)." Implementation: ONE priming surface per space
+   (`prime_seen` bump + `<primingDecay>` exponential decay;
+   `prime_desire` signed with floor 0 — suppression, never veto;
+   per-codebook rows, CS over the concept inventory, WS over the
+   analysis store). The CS surface IS the pyramid's ranking score
+   (boost $-$ 1; the spread law from decision 4 is KEPT); the pyramid's
+   admitted rows write back via `prime_seen` (awareness primes).
+   `readingAttention` hard-coded: scope $=$ span of the hottest-primed
+   word-whole (`_primed_reading_step`, active when `<relevance>` on and
+   the learned producer off). DELETED from decision 4: the
+   settle-residual novelty assembly, per-tower view-half scatter
+   projection. KEPT: `forward_linear_abs` + the spread law,
+   `symbol_history_priority` (the SS$\to$CS bridge), the `<relevance>`
+   gate.
 
 ## Gates (Alec commits at each)
 

@@ -359,6 +359,40 @@ the path; off-path green.
     never exceeds the taper caps, so priority REORDERS rather than
     EXCLUDES; competitive exclusion engages when the store outgrows the
     taper.
+28. **Relevance projections IMPLEMENTED (Alec: "spec and implement",
+    2026-07-11; spec = design doc follow-on decision 4).** Gated
+    `<architecture><relevance>` (default false, byte-identical; XSD +
+    parse). Under the gate, the cutover assembles the priority
+    (`_assemble_relevance_priority`, no_grad): per-tower NOVELTY = settle
+    residual (`snap_settle_qe`) on each tower's VIEW HALF of the bind
+    carrier (stashed; `relevance_weights()` pull-API live on PS/WS),
+    slot$\to$row by the snap argmax (scatter-amax), SUMMED with the
+    symbolic-history projection (`symbol_history_priority(heat)`: heat
+    over `('sym', id)` constituent records $\to$ concept rows; live-dark —
+    `_symbol_heat_source()` returns None until priming is enabled). The
+    pyramid consumes it with the SPREAD LAW: rung score $= p +$
+    `forward_linear_abs` hop ($|W|p$; new abs-weight kernel in
+    SparseLayer._matmul), rank $= |cand|(1 + score)$, admitted rows only
+    carry their score upward. 6 pins in test_relevance_bases.py (spread,
+    projection, gated e2e, default-off, rerank, no-distortion).
+    Deferred: readingAttention's symbolic origin (next projection);
+    per-order competitive EXCLUSION still awaits store growth past the
+    taper (priority reorders today).
+29. **Simplified relevance law implemented (supersedes the item-28
+    assembly; Alec's one-quadratic reframe).** `Space.prime_seen`
+    (bump + `<primingDecay>` decay toward neutral) / `prime_desire`
+    (signed, floor 0) / `priming_weights`; surfaces: CS $=$ concept
+    inventory (`_priming_dim` override), WS $=$ analysis-store rows.
+    Writes: WS seen $=$ stage-0 selections (`_stage0_indices`, at the
+    gated cutover assembler); CS seen $=$ the pyramid's ADMITTED rows
+    (awareness primes, post-`cs_symbolic_phase`); desire/hate $=$
+    `prime_desire` (intent wiring later). Reads: `_relevance_priority`
+    $=$ CS boost $-$ 1 (the spread law unchanged); `_primed_reading_step`
+    $=$ hard-coded readingAttention (hottest-primed word-whole's span,
+    learned-producer contract, active when `<relevance>` on and
+    `<readingAttention>` off). The item-28 settle-residual/view-half
+    novelty assembly is DELETED; `relevance_weights()` now IS
+    `priming_weights()`. 9 pins in test_relevance_bases.py.
 26. **Trace safety:** the liveness probe is data-dependent control flow —
     `make test` caught it via the compiled-CLI XOR node and the mlx export
     (GuardOnDataDependentSymNode). Fixed with the house

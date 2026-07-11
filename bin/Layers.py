@@ -4544,8 +4544,9 @@ class SparseLayer(Layer):
         self._dev_cache = (device, rows_t, cols_t)
         return rows_t, cols_t
 
-    def _matmul(self, x, transpose=False):
+    def _matmul(self, x, transpose=False, abs_weights=False):
         # Sparse matmul core; x is [n_in, B]; returns [n_out, B].
+        # abs_weights: |W| x (the relevance-priority spread; sec C).
         n_from = self.nInput if not transpose else self.nOutput
         n_to = self.nOutput if not transpose else self.nInput
         if int(x.shape[0]) != n_from:
@@ -4556,6 +4557,8 @@ class SparseLayer(Layer):
         rows_t, cols_t = self._indices(x.device)
         take, put = (cols_t, rows_t) if not transpose else (rows_t, cols_t)
         vals = self.values.to(x.device)
+        if abs_weights:
+            vals = vals.abs()
         if self.kernel == "spmm":
             idx = torch.stack([put, take])
             W = torch.sparse_coo_tensor(
@@ -4572,6 +4575,18 @@ class SparseLayer(Layer):
         out = self._matmul(x.unsqueeze(-1) if squeeze else x, transpose)
         if self.nonlinear:
             out = torch.tanh(out)
+        return out.squeeze(-1) if squeeze else out
+
+    def forward_linear_abs(self, x):
+        """``|W| @ x`` -- the relevance-priority spread (edge MAGNITUDES
+        carry priority up the pyramid; Architecture sec C)."""
+        return self._apply_shape_linear_abs(x)
+
+    def _apply_shape_linear_abs(self, x):
+        squeeze = x.dim() == 1
+        if squeeze:
+            x = x.unsqueeze(-1)
+        out = self._matmul(x, abs_weights=True)
         return out.squeeze(-1) if squeeze else out
 
     def forward_linear(self, x):

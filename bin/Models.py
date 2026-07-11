@@ -779,6 +779,14 @@ class BaseModel(Mereology, nn.Module):
         # tall (whole-percepts, not the compact symbol). Default off -> the
         # 2-stream (PS, WS) bind -> BYTE-IDENTICAL. (ConceptualCombine is already
         # n_streams-parametrized, Slice A.)
+        # Relevance integration gate (Architecture sec C); default false.
+        self.relevance_on = bool(TheXMLConfig.get(
+            "architecture.relevance", default=False))
+        try:
+            self.priming_decay = float(TheXMLConfig.get(
+                "architecture.primingDecay", default=0.9))
+        except (TypeError, ValueError):
+            self.priming_decay = 0.9
         self.symbol_tower = bool(TheXMLConfig.get(
             "architecture.symbolTower", default=False))
 
@@ -894,6 +902,7 @@ class BaseModel(Mereology, nn.Module):
         for _ss in (getattr(self, 'wholeSpaces', None) or []):
             object.__setattr__(_ss, '_symbolic_order', self.symbolicOrder)
             object.__setattr__(_ss, '_serial', self.serial)
+            object.__setattr__(_ss, '_priming_decay', self.priming_decay)
         # The ConceptualSpaces need the same stamp so the sparse-coding edge
         # population + scatter (gated on ``_symbolic_order > 0`` and parallel)
         # activate together. A plain host-attribute stamp -- byte-identical.
@@ -914,6 +923,7 @@ class BaseModel(Mereology, nn.Module):
         for _cs in (getattr(self, 'conceptualSpaces', None) or []):
             object.__setattr__(_cs, '_symbolic_order', self.symbolicOrder)
             object.__setattr__(_cs, '_serial', self.serial)
+            object.__setattr__(_cs, '_priming_decay', self.priming_decay)
             # Back-ref to the model so the CS can rebuild the optimizer when its
             # per-order sparse weight Parameters grow (mirrors codebook growth).
             object.__setattr__(_cs, '_model', self)
@@ -2404,6 +2414,57 @@ class BasicModel(BaseModel):
         if self.plot:
             TheReport.plotActivations(figure=1, symbols=symbols)
         return outputData
+    @torch.no_grad()
+    def _primed_reading_step(self):
+        """Hard-coded readingAttention (sec C, simplified law): scope =
+        the span of the hottest-primed word-whole. Reads the WS priming
+        surface + the staged spans and the stage-0 slot->row selections;
+        writes ``wholeSpaces[0]._passback_scope_where`` (the learned
+        producer's contract). Silent no-op when spans / surface are dark."""
+        ws0 = (self.wholeSpaces[0]
+               if getattr(self, "wholeSpaces", None) else None)
+        if ws0 is None:
+            return
+        spans = getattr(ws0, "_staged_analysis_spans", None)
+        idx = getattr(ws0, "_stage0_indices", None)
+        b = ws0.priming_weights()
+        if (spans is None or idx is None or b is None
+                or not torch.is_tensor(spans) or not torch.is_tensor(idx)):
+            return
+        B, K = int(spans.shape[0]), int(spans.shape[1])
+        k_slots = min(K, int(idx.shape[1]))
+        rows = idx[:, :k_slots].long().clamp(0, int(b.shape[0]) - 1)
+        heat = b.to(rows.device)[rows]                   # [B, k_slots]
+        k_star = heat.argmax(dim=1)                      # [B]
+        scope = spans[torch.arange(B, device=spans.device), k_star]
+        object.__setattr__(ws0, "_passback_scope_where", scope.float())
+
+    @torch.no_grad()
+    def _assemble_relevance_priority(self, cut_cs, stage, last_cs, settled):
+        """The simplified relevance law (Architecture sec C): ONE quadratic
+        priming surface per space -- SEEN rows primed by being perceived,
+        DESIRED/HATED rows by signed intent. The CS surface projects
+        directly onto the pyramid's inventory rows as the ranking score
+        (boost - 1: neutral 0, desire positive, hate negative)."""
+        # SEEN write, WS: the stage-0 unity selections that fired this batch.
+        ws0 = (self.wholeSpaces[0]
+               if getattr(self, "wholeSpaces", None) else None)
+        if ws0 is not None:
+            idx = getattr(ws0, "_stage0_indices", None)
+            if torch.is_tensor(idx):
+                ws0.prime_seen(idx)
+        b = cut_cs.priming_weights()
+        if b is None:
+            return None
+        return (b - 1.0).unsqueeze(-1)               # [N, 1] signed score
+
+    def _symbol_heat_source(self):
+        """The live symbolic-history heat ``{symbol_id: heat}`` or None.
+        Dark on every shipped config (<symbolicPriming>/<attention> off);
+        the projection law (``symbol_history_priority``) is implemented
+        regardless (sec C spec)."""
+        return None
+
     def store_truths(self, entries):
         """Store user-supplied truth entries (the request-body TruthSet).
 
@@ -7068,6 +7129,13 @@ class BasicModel(BaseModel):
                 # reverse, with ``carriers`` kept as a test/verification
                 # handle.
                 ps_t = PS_sub_stage0
+                if (getattr(self, "relevance_on", False) and t > 0
+                        and getattr(self, "reading_attention", None) is None):
+                    # Hard-coded readingAttention over the priming surface
+                    # (sec C, simplified law): the reading scope is the span
+                    # of the hottest-primed word-whole. Same output contract
+                    # as the learned producer; no-op without spans/surface.
+                    self._primed_reading_step()
                 if (getattr(self, "reading_attention", None) is not None
                         and t > 0):
                     # Reading attention (doc/specs/reading-attention.md
@@ -7193,7 +7261,25 @@ class BasicModel(BaseModel):
         if (last_cs is not None and _cut_cs is not None
                 and _cut_cs._sparse_active()):
             _settled = last_cs.materialize()
+            # Relevance integration (sec C, gated <relevance>): per-tower
+            # novelty (settle residual on each view half) projected
+            # slot->row by the snap's argmax map, SUMMED with the symbolic
+            # history projection; consumed by the pyramid's top-K as a
+            # ranking bias. no_grad -- relevance selects, never trains.
+            if getattr(self, "relevance_on", False):
+                _prio = self._assemble_relevance_priority(
+                    _cut_cs, prev_cs_stage, last_cs, _settled)
+                object.__setattr__(_cut_cs, "_relevance_priority", _prio)
+            else:
+                object.__setattr__(_cut_cs, "_relevance_priority", None)
             _content, _acts = _cut_cs.cs_symbolic_phase(_settled)
+            # SEEN write, CS (gated): the pyramid's ADMITTED rows prime the
+            # concept surface -- awareness primes (sec C, simplified law).
+            if getattr(self, "relevance_on", False):
+                _rows = getattr(_cut_cs, "_cs_level_rows", None)
+                if _rows:
+                    _cut_cs.prime_seen(torch.cat(
+                        [r.reshape(-1) for r in _rows]))
             # Fail loud on a mis-shaped pyramid output (rows-first [N, B]):
             # a transposed acts would silently misuse batch rows as symbols.
             assert _acts is None or (
