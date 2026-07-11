@@ -341,6 +341,24 @@ the path; off-path green.
     serial/sO=0 configs (grammar exact bar unchanged at 1.0, xor
     byte-identical); FULL carrier-path removal is bounded by giving
     inputs a live universe analysis, and is deferred to that phase.
+27. **Three-bases relevance stub (Alec, 2026-07-11; Architecture sec C
+    rewritten in the relevance $\to$ attention $\to$ awareness frame):**
+    per-tower `relevance_weights()` contract on Space (PS part-salience /
+    WS whole-relevance / SS symbolic history; all default None =
+    byte-identical, each carrying its intended-live-source note), and the
+    CS readout consumes `_relevance_priority` ($[N]$ or $[N,B]$) as a
+    RANKING bias on the per-order top-K — winners change, activations
+    never distort (pinned in test/test_relevance_bases.py, 3 tests).
+    OPEN SPEC (deliberate): (a) PS salience polarity (settle-residual
+    surprise vs snap-strength familiarity — literature favors surprise/
+    distinctiveness for the exogenous basis) and the slot$\to$row
+    projection; (b) WS whole-relevance projection (intent affinity /
+    readingAttention scores $\to$ CS rows); (c) SS heat rows $\to$ CS
+    inventory projection + the combination law (product vs sum — the
+    priority-map literature sums). Structural note: today allocation
+    never exceeds the taper caps, so priority REORDERS rather than
+    EXCLUDES; competitive exclusion engages when the store outgrows the
+    taper.
 26. **Trace safety:** the liveness probe is data-dependent control flow —
     `make test` caught it via the compiled-CLI XOR node and the mlx export
     (GuardOnDataDependentSymNode). Fixed with the house

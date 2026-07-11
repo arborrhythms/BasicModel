@@ -7882,6 +7882,15 @@ class Space(nn.Module):
                 f"{section_name}: non-codebook space requires nVectors ({nV}) == nActive ({nA})"
             )
 
+    def relevance_weights(self):
+        """This tower's BASIS OF RELEVANCE as per-percept weights
+        (doc/Architecture.md sec C: part-salience on PS, whole-relevance
+        on WS, symbolic history on SS). Returns ``[B, N]`` nonnegative
+        weights or ``None`` when the basis is dark (default --
+        byte-identical). Consumed by the CS attention readout as a
+        RANKING bias (``_relevance_priority``), never a content change."""
+        return None
+
     def get_vectors(self):
         """Convenience accessor -- delegates to subspace."""
         return self.subspace.get_vectors()
@@ -9625,6 +9634,11 @@ class InputSpace(Space):
         return None, None
 class PartSpace(Space):
     """InputSpace -> percepts via the configured synthesis front end and sigma fold.
+
+    Relevance basis: PART-SALIENCE (horizontal). Stub: the candidate live
+    signal is the per-percept settle residual (``snap_settle_qe`` --
+    surprise-salience); its polarity + CS-row projection are open spec
+    (Architecture sec C), so ``relevance_weights()`` stays None here.
 
     PS and WS are symmetric DUALS -- atoms (bottom-up sigma synthesis) vs
     universe (top-down pi analysis) views of the same input, stacked at
@@ -14766,7 +14780,15 @@ class ConceptualSpace(Space):
                 torch.cat([a[:_S], a.new_ones((1, B))], dim=0))   # [S, B]
             cand = torch.tanh(pre.index_select(0, rows_k))   # [n_k, B]
             keep = min(int(caps[k]), n_alloc)
-            _v, topi = torch.topk(cand.abs(), keep, dim=0)   # [keep, B]
+            # Relevance priority (three-bases stub, Architecture sec C):
+            # a [N]- or [N, B]-shaped nonnegative weight biases the top-K
+            # RANKING only -- winners change, activations never distort.
+            _prio = getattr(self, "_relevance_priority", None)
+            rank = cand.abs()
+            if _prio is not None and torch.is_tensor(_prio):
+                _p = _prio if _prio.dim() == 2 else _prio.unsqueeze(-1)
+                rank = rank * _p.index_select(0, rows_k).to(rank.dtype)
+            _v, topi = torch.topk(rank, keep, dim=0)         # [keep, B]
             mask = torch.zeros_like(cand)
             mask.scatter_(0, topi, 1.0)
             a = a.index_copy(0, rows_k, cand * mask)         # winners only
@@ -17346,6 +17368,11 @@ def _word_punct_spans(is_word, is_punct):
 
 
 class WholeSpace(Space):
+    # Relevance basis: WHOLE-RELEVANCE (vertical, top-down). Stub: the
+    # intended live source is the intent-boost affinity (the op-2
+    # ``(sim*boosts).amax`` idiom) and readingAttention's span scores;
+    # projection into CS rows is open spec -- relevance_weights() stays
+    # None here until then (Architecture sec C).
     """ConceptualSpace -> symbol prototypes, analysis spans, and truth stores.
 
     ``forward`` writes to ``self.subspace`` rather than the incoming subspace;
