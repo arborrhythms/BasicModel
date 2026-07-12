@@ -1604,19 +1604,32 @@ class BaseModel(Mereology, nn.Module):
                      if sym_space is not None
                      and hasattr(sym_space, 'vocab_extras')
                      else None)
+        # Canonical abstraction-order provenance for the PS percept
+        # codebook (the WS tables ride inside ws_extras). None when there
+        # is nothing stamped, so pre-feature blobs stay byte-identical.
+        ps_cb = getattr(getattr(getattr(self, 'perceptualSpace', None),
+                                'subspace', None), 'what', None)
+        ps_rams = (ps_cb.ramsification_extras()
+                   if ps_cb is not None
+                   and hasattr(ps_cb, 'ramsification_extras') else None)
         if emb is None or getattr(emb, 'wv', None) is None:
-            if ws_extras is None:
+            if ws_extras is None and ps_rams is None:
                 return None
-            # Lexicon-less radix mode: only the WS state needs to
+            # Lexicon-less radix mode: only the WS/PS state needs to
             # travel; we still wrap it in the standard envelope so
             # ``_restore_vocab_extras`` finds the keys.
-            return {
+            blob = {
                 "index_to_key": [],
                 "counts": [],
                 "total_count": 0,
-                "well_known_atoms": ws_extras.get("well_known_atoms", {}),
-                "ws_taxonomy_extras": ws_extras,
+                "well_known_atoms": (ws_extras or {}).get(
+                    "well_known_atoms", {}),
             }
+            if ws_extras is not None:
+                blob["ws_taxonomy_extras"] = ws_extras
+            if ps_rams is not None:
+                blob["ps_ramsification"] = ps_rams
+            return blob
         wv = emb.wv
         counts = getattr(wv, 'counts', None)
         if counts is not None and hasattr(counts, 'tolist'):
@@ -1630,6 +1643,8 @@ class BaseModel(Mereology, nn.Module):
         }
         if ws_extras is not None:
             blob["ws_taxonomy_extras"] = ws_extras
+        if ps_rams is not None:
+            blob["ps_ramsification"] = ps_rams
         return blob
 
     def _collect_bpe_extras(self):
@@ -1849,7 +1864,37 @@ class BaseModel(Mereology, nn.Module):
         sees matching dimensions. Vector data itself is populated by
         the subsequent ``load_state_dict`` call; here we just allocate
         the right-sized parameter and rebuild the Python mappings.
+
+        The WS-side restores (well-known atoms, META taxonomy, fold
+        provenance) run FIRST, independent of the Embedding: the radix
+        envelope carries them with an EMPTY lexicon (``index_to_key ==
+        []``), so the lexicon early-returns below must not skip them.
         """
+        # Restore the well-known atoms dict on WholeSpace so the
+        # "words" meronomy parent (and any future named parents) lines
+        # up with the rows in the saved codebook.
+        sym_space = getattr(self, 'wholeSpace', None)
+        well_known = extras.get("well_known_atoms")
+        if sym_space is not None and isinstance(well_known, dict) and well_known:
+            sym_space.well_known_atoms = {
+                str(k): int(v) for k, v in well_known.items()
+            }
+        # Stage 8: restore META taxonomy + parent map + meta-pair lookup
+        # so the structural decode path survives checkpoint roundtrip.
+        ws_extras = extras.get("ws_taxonomy_extras")
+        if (sym_space is not None
+                and isinstance(ws_extras, dict)
+                and hasattr(sym_space, 'load_vocab_extras')):
+            sym_space.load_vocab_extras(ws_extras)
+        # Canonical abstraction-order provenance for the PS percept
+        # codebook (absent in pre-feature blobs).
+        ps_rams = extras.get("ps_ramsification")
+        if isinstance(ps_rams, dict):
+            ps_cb = getattr(getattr(getattr(self, 'perceptualSpace', None),
+                                    'subspace', None), 'what', None)
+            if ps_cb is not None and hasattr(ps_cb,
+                                             'load_ramsification_extras'):
+                ps_cb.load_ramsification_extras(ps_rams)
         emb = self._get_embedding()
         if emb is None or getattr(emb, 'wv', None) is None:
             return
@@ -1881,22 +1926,6 @@ class BaseModel(Mereology, nn.Module):
             emb.pretrain.index_to_key = wv.index_to_key
             emb.pretrain.key_to_index = wv.key_to_index
         wv._normed = None
-        # Restore the well-known atoms dict on WholeSpace so the
-        # "words" meronomy parent (and any future named parents) lines
-        # up with the rows in the saved codebook.
-        sym_space = getattr(self, 'wholeSpace', None)
-        well_known = extras.get("well_known_atoms")
-        if sym_space is not None and isinstance(well_known, dict) and well_known:
-            sym_space.well_known_atoms = {
-                str(k): int(v) for k, v in well_known.items()
-            }
-        # Stage 8: restore META taxonomy + parent map + meta-pair lookup
-        # so the structural decode path survives checkpoint roundtrip.
-        ws_extras = extras.get("ws_taxonomy_extras")
-        if (sym_space is not None
-                and isinstance(ws_extras, dict)
-                and hasattr(sym_space, 'load_vocab_extras')):
-            sym_space.load_vocab_extras(ws_extras)
 
     def _restore_bpe_extras(self, extras):
         """Write the BPE codebook from a saved bundle back onto the
@@ -6470,20 +6499,20 @@ class BasicModel(BaseModel):
 
         # Mereological order-raising (doc/specs/mereological-order-raising.md).
         # Opt-in via <mereologyRaise>: build a meronymic lattice in perception
-        # and raise abstraction order as attention requires. Unlike the category
-        # codebook (which needs the grammar's role rules, hence its lazy enable),
-        # the ramsification table needs only (nVectors, max_order) -- both known
-        # at build -- so enable it DIRECTLY here. Read the LIVE config (the
-        # self.* arch flags are not yet assigned when _create_per_stage runs).
-        # Enabled on exactly two codebooks: the PartSpace (sigma / parts) and the
-        # terminal WholeSpace (pi / wholes, owns the META taxonomy). Stamp the
-        # flag onto the PartSpace + terminal WholeSpace so the perception hot
-        # path reads it off ``self`` (the _symbolic_order stamping convention).
-        # Default off -> table stays None -> byte-identical.
+        # and raise abstraction order as attention requires. Read the LIVE
+        # config (the self.* arch flags are not yet assigned when
+        # _create_per_stage runs). Stamp the flag onto the PartSpace +
+        # terminal WholeSpace so the perception hot path reads it off
+        # ``self`` (the _symbolic_order stamping convention).
+        # NOTE (todo "make abstraction order canonical"): the ramsification
+        # table is NO LONGER gated here -- Codebook.create allocates it for
+        # every built codebook with max_order = max(1, subsymbolicOrder),
+        # and the sigma/pi processing sites stamp it live. This flag now
+        # gates ONLY the lattice behaviors (word-whole autobind, order
+        # raising, the top-down handoff).
         _mereology_raise = bool(TheXMLConfig.get(
             "architecture.mereologyRaise", default=False))
         if _mereology_raise and terminal_ss is not None:
-            _max_order = max(1, int(getattr(self, 'subsymbolicOrder', 1) or 1))
             object.__setattr__(terminal_ss, '_mereology_raise', True)
             object.__setattr__(self.perceptualSpace, '_mereology_raise', True)
             # Stamp the STAGE-0 WholeSpace too so it computes the read-only
@@ -6496,10 +6525,6 @@ class BasicModel(BaseModel):
             _ws0 = self.wholeSpaces[0] if len(self.wholeSpaces) else None
             if _ws0 is not None:
                 object.__setattr__(_ws0, '_mereology_raise', True)
-            for _cb in (getattr(self.perceptualSpace.subspace, 'what', None),
-                        getattr(terminal_ss.subspace, 'what', None)):
-                if _cb is not None and hasattr(_cb, 'enable_ramsification'):
-                    _cb.enable_ramsification(_max_order)
 
         # The conceptual basis honours the ``architecture.monotonic``
         # knob rather than being unconditionally bitonic: monotone

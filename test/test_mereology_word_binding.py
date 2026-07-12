@@ -104,12 +104,17 @@ def test_word_whole_accumulates_parts_and_raises():
     assert len(parts) == 3
     assert all(ss._pos_kind.get(int(p)) == "ps" for p in parts)
     # the raise fired: a higher-order part subsuming the 3 constituents,
-    # order 1, with explicit provenance.
+    # with explicit provenance. Canonical fold ladder: the word-whole is
+    # order 1 (sigma over its order-0 parts), its METAs are order 2 (one
+    # above the whole), and the raised node tops out at the table width
+    # (max_order=2 here -- subsymbolicOrder caps the ladder).
     assert ss.part_chain
     ho = next(iter(ss.part_chain))
     assert len(ss.part_chain[ho]) == 3
+    whole_row = ss._ws_pos_to_row[int(whole)]
+    assert ss.subspace.what.abstraction_order(int(whole_row)) == 1
     ho_row = ss._ws_pos_to_row[int(ho)]
-    assert ss.subspace.what.abstraction_order(int(ho_row)) == 1
+    assert ss.subspace.what.abstraction_order(int(ho_row)) == 2
 
 
 def test_same_word_reuses_one_whole_idempotently():

@@ -70,8 +70,19 @@ def test_unfolded_prototypes_reconstitutes_stamped_rows():
 def test_unfolded_prototypes_none_without_table():
     # Silent-degradation guard: no ramsification table -> None (the caller
     # peels against getW() directly, the order-0 fallback -- never errors).
-    cb = _codebook(V=3, D=4)
+    # Canonical contract: only a BARE instance (never through ``create``)
+    # lacks a table; created codebooks carry one from birth.
+    import torch.nn as nn
+    cb = Codebook()
+    cb.W = nn.Parameter(torch.randn(3, 4))
+    cb.nVectors = 3
+    assert cb.ramsification is None
     assert cb.unfolded_prototypes() is None
+    # A CREATED codebook has an (all-NEITHER) table -> the unfold is the
+    # identity on every row, byte-equal to peeling against getW().
+    cb2 = _codebook(V=3, D=4)
+    assert cb2.ramsification is not None
+    assert torch.equal(cb2.unfolded_prototypes(), cb2.getW())
 
 
 def test_peel_runs_in_the_prototypes_basis():

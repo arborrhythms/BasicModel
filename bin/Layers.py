@@ -10793,6 +10793,15 @@ class RadixLayer(Layer):
         self.hash_map[chunk_b] = new_id
         self.inverse_table.append(chunk_b)
         self._size += 1
+        # Canonical fold provenance (todo "make abstraction order
+        # canonical"): a multi-byte percept row is PRODUCED by the sigma
+        # radix synthesis (bytes -> chunk combine) -- stamp FOLD_SIGMA at
+        # pass slot 0 on the owning percept codebook. A single-byte atom
+        # is an order-0 prototype: no fold, no stamp.
+        if len(chunk_b) > 1:
+            _rf = getattr(self._basis, "record_fold", None)
+            if _rf is not None:
+                _rf(new_id, 0, getattr(self._basis, "FOLD_SIGMA", 1))
         return new_id
 
     # ------------------------------------------------------------------

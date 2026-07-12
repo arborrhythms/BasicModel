@@ -2693,7 +2693,7 @@ class Codebook(Tensor):
         # confidently tagged. Allocated lazily by ``ensure_category_logits``
         # since C isn't known until the grammar is configured.
         self.category_logits = None
-        # -- ramsification table (additive sidecar; opt-in) ----------------
+        # -- ramsification table (canonical codebook contract) -------------
         # ``[V, max_order]`` uint8 record, index-aligned with the codebook
         # rows: for each code, which fold it was routed through at each
         # subsymbolic pass -- FOLD_NEITHER / FOLD_SIGMA / FOLD_PI. The Pi /
@@ -2703,10 +2703,18 @@ class Codebook(Tensor):
         # fold chain back to the codebook row that produced the code. The
         # abstraction ORDER of a code = number of non-NEITHER folds it
         # underwent (proper noun / prototype = order 0, regular noun / type
-        # = 1, count noun = 2, ...). Plain attr (NOT a Parameter / buffer):
-        # like the sibling sidecars it stays out of the state_dict, so
-        # enabling it adds no keys and cannot move a pinned basin. ``None``
-        # until ``enable_ramsification`` allocates it.
+        # = 1, count noun = 2, ...) -- a DERIVED readout
+        # (:meth:`abstraction_order`), never separately stored state.
+        # CANONICAL (not opt-in): :meth:`create` allocates the table for
+        # every built codebook with ``max_order = max(1,
+        # architecture.subsymbolicOrder)``; it grows with the codebook
+        # (``grow_to`` / ``insert`` append aligned rows, ``remove`` masks)
+        # and is never reset on document boundaries. Plain attr (NOT a
+        # Parameter / buffer): non-gradient metadata that stays out of the
+        # state_dict, so it adds no keys and cannot move a pinned basin;
+        # checkpoint roundtrip rides the ``vocab_extras`` sidecar
+        # (:meth:`ramsification_extras`). ``None`` only on a bare instance
+        # that never went through ``create``/``enable_ramsification``.
         self.ramsification = None
         self.ramsification_max_order = 0
         # Per-position signed projection cache, populated by ``project``
@@ -3103,6 +3111,12 @@ class Codebook(Tensor):
             self.addVectors(self.nVectors)
         if self._svd_orthogonal_init and self.nVectors > 0:
             self.svdOrthogonalize()
+        # Canonical ramsification allocation (todo "make abstraction order
+        # canonical"): every created codebook carries the fold-provenance
+        # table from birth, sized [nVectors, max(1, subsymbolicOrder)].
+        # Non-gradient uint8 metadata -- no state_dict keys, no numeric
+        # change; live stamping happens at the sigma/pi processing sites.
+        self.enable_ramsification(self._config_max_order())
         return self
 
     def svdOrthogonalize(self):
@@ -3158,6 +3172,19 @@ class Codebook(Tensor):
     FOLD_SIGMA = 1     # routed through the Sigma (synthesis / union) fold
     FOLD_PI = 2        # routed through the Pi (analysis / intersection) fold
 
+    @staticmethod
+    def _config_max_order():
+        """The canonical table width: ``max(1,
+        architecture.subsymbolicOrder)`` -- one recorded fold slot per
+        subsymbolic pass. Defaults to 1 when the config is absent (bare
+        unit-test instances)."""
+        try:
+            so = int(TheXMLConfig.get(
+                "architecture.subsymbolicOrder", default=1) or 1)
+        except Exception:
+            so = 1
+        return max(1, so)
+
     def enable_ramsification(self, max_order):
         """Allocate (or grow) the ``[V, max_order]`` ramsification table.
 
@@ -3165,11 +3192,14 @@ class Codebook(Tensor):
         code (typically the model's ``subsymbolicOrder``). Idempotent:
         a second call with a larger ``max_order`` widens the table,
         preserving recorded routes. All entries start ``FOLD_NEITHER``.
+        CPU-pinned like the sibling ``descriptor_roles`` buffer, so the
+        stamp path indexes with host indices regardless of model device.
         """
         max_order = int(max_order)
         V = int(self.nVectors)
         if self.ramsification is None:
-            self.ramsification = torch.zeros(V, max_order, dtype=torch.uint8)
+            self.ramsification = torch.zeros(
+                V, max_order, dtype=torch.uint8, device="cpu")
             self.ramsification_max_order = max_order
             return
         if max_order > self.ramsification_max_order:
@@ -3180,17 +3210,58 @@ class Codebook(Tensor):
             self.ramsification = new
             self.ramsification_max_order = max_order
 
+    def _sync_ramsification_rows(self):
+        """Grow the table to cover the live prototype rows. Every growth
+        path APPENDS rows (``grow_to`` / ``insert`` / RadixLayer growth),
+        so zero-fill growth here is index-aligned by construction;
+        ``remove`` keeps alignment by masking the table with the same row
+        mask it applies to ``W``."""
+        if self.ramsification is None:
+            return
+        n = int(self.nVectors)
+        W = self.W
+        if torch.is_tensor(W) and W.dim() == 2:
+            n = max(n, int(W.shape[0]))
+        if n > int(self.ramsification.shape[0]):
+            new = torch.zeros(n, int(self.ramsification_max_order),
+                              dtype=torch.uint8,
+                              device=self.ramsification.device)
+            new[:self.ramsification.shape[0]].copy_(self.ramsification)
+            self.ramsification = new
+
     def record_fold(self, rows, pass_idx, route):
         """Stamp the fold ``route`` taken by codebook ``rows`` at subsymbolic
-        ``pass_idx``. ``rows`` is a long tensor (any shape) of row indices;
+        ``pass_idx``. ``rows`` is an int or an index tensor (any shape);
         ``route`` is ``FOLD_SIGMA`` / ``FOLD_PI`` / ``FOLD_NEITHER``. No-op
-        if the table is not allocated or ``pass_idx`` is out of range."""
+        if the table is not allocated or ``pass_idx`` is out of range (the
+        table width IS the max order; a deeper pass has no slot). Row
+        indices outside the table FAIL LOUD via the native bounds check of
+        the index write below -- a clamp would silently stamp a foreign
+        row on table/codebook misalignment. (No host int() extraction
+        here: this runs inside the traced forward, where a data-dependent
+        specialization breaks torch.export -- same discipline as
+        ``set_descriptor_role``.)"""
         if self.ramsification is None:
             return
         if not (0 <= int(pass_idx) < self.ramsification_max_order):
             return
-        idx = rows.reshape(-1).long().clamp(min=0, max=self.ramsification.shape[0] - 1)
+        self._sync_ramsification_rows()
+        if torch.is_tensor(rows):
+            idx = rows.detach().reshape(-1).long().cpu()
+        else:
+            idx = torch.tensor([int(rows)], dtype=torch.long)
+        if idx.numel() == 0:
+            return
         self.ramsification[idx, int(pass_idx)] = int(route)
+
+    def copy_fold_provenance(self, src_row, dst_row):
+        """Copy the recorded fold sequence from ``src_row`` onto
+        ``dst_row`` -- the LBG-split move: both halves of a split row share
+        the fold history that produced the parent. No-op without a table."""
+        if self.ramsification is None:
+            return
+        self._sync_ramsification_rows()
+        self.ramsification[int(dst_row)] = self.ramsification[int(src_row)]
 
     def fold_sequence(self, row):
         """Return the ``[max_order]`` uint8 route sequence recorded for
@@ -3198,6 +3269,8 @@ class Codebook(Tensor):
         is not allocated."""
         if self.ramsification is None:
             return None
+        if int(row) >= int(self.ramsification.shape[0]):
+            self._sync_ramsification_rows()
         return self.ramsification[int(row)]
 
     def abstraction_order(self, row):
@@ -3205,10 +3278,24 @@ class Codebook(Tensor):
         (non-``FOLD_NEITHER`` passes) it underwent. 0 = proper noun /
         prototype / token (matches raw, order 0); 1 = regular noun / type;
         2 = count noun (concrete only under a determiner); higher = more
-        abstract. Returns 0 when the table is not allocated."""
-        if self.ramsification is None:
+        abstract. DERIVED from the fold record, never stored separately.
+        Returns 0 when the table is not allocated."""
+        seq = self.fold_sequence(row)
+        if seq is None:
             return 0
-        return int((self.ramsification[int(row)] != self.FOLD_NEITHER).sum())
+        return int((seq != self.FOLD_NEITHER).sum())
+
+    @staticmethod
+    def _fold_handle(handle, pass_idx):
+        """Resolve a fold-layer argument for ``pass_idx``: ``sigma`` /
+        ``pi`` may be ONE layer (applied for every recorded pass) or a
+        per-pass sequence (the P4 stacks -- ``PartSpace.sigmas`` /
+        ``WholeSpace.pis``) indexed by the pass slot."""
+        if isinstance(handle, (list, tuple, nn.ModuleList)):
+            if len(handle) == 0:
+                return None
+            return handle[min(int(pass_idx), len(handle) - 1)]
+        return handle
 
     def invert_ramsified(self, code, row, sigma=None, pi=None):
         """Reconstitute ``code`` by undoing the recorded fold chain for
@@ -3219,7 +3306,8 @@ class Codebook(Tensor):
         order; inversion walks them in REVERSE, applying ``sigma.reverse``
         for a ``FOLD_SIGMA`` pass, ``pi.reverse`` for ``FOLD_PI``, and the
         identity for ``FOLD_NEITHER``. ``sigma`` / ``pi`` are the owning
-        Space's invertible folds (``PartSpace.sigma`` / ``WholeSpace.pi``).
+        Space's invertible folds (``PartSpace.sigma`` / ``WholeSpace.pi``),
+        or per-pass sequences of them (see :meth:`_fold_handle`).
         Returns ``code`` unchanged when the table is not allocated.
         """
         seq = self.fold_sequence(row)
@@ -3229,19 +3317,135 @@ class Codebook(Tensor):
         for pass_idx in range(int(self.ramsification_max_order) - 1, -1, -1):
             route = int(seq[pass_idx])
             if route == self.FOLD_SIGMA:
-                if sigma is None:
+                s = self._fold_handle(sigma, pass_idx)
+                if s is None:
                     raise ValueError(
                         "invert_ramsified: row recorded a FOLD_SIGMA pass "
                         "but no sigma layer was provided.")
-                y = sigma.reverse(y)
+                y = s.reverse(y)
             elif route == self.FOLD_PI:
-                if pi is None:
+                p = self._fold_handle(pi, pass_idx)
+                if p is None:
                     raise ValueError(
                         "invert_ramsified: row recorded a FOLD_PI pass "
                         "but no pi layer was provided.")
-                y = pi.reverse(y)
+                y = p.reverse(y)
             # FOLD_NEITHER -> identity
         return y
+
+    def refold_ramsified(self, code, row, sigma=None, pi=None):
+        """Forward dual of :meth:`invert_ramsified`: carry ``code`` (a
+        value in the pre-fold / definition space) onto the stored-row
+        space by applying the row's RECORDED folds in pass order --
+        ``sigma`` for ``FOLD_SIGMA``, ``pi`` for ``FOLD_PI``, identity for
+        ``FOLD_NEITHER``. This is the explicit-constraint write path: a
+        changed definition re-folds through the same chain that produced
+        the row, so the update lands on this row's abstraction layer and
+        rows of other orders are untouched. Returns ``code`` unchanged
+        when the table is not allocated."""
+        seq = self.fold_sequence(row)
+        if seq is None:
+            return code
+        y = code
+        for pass_idx in range(int(self.ramsification_max_order)):
+            route = int(seq[pass_idx])
+            if route == self.FOLD_SIGMA:
+                s = self._fold_handle(sigma, pass_idx)
+                if s is None:
+                    raise ValueError(
+                        "refold_ramsified: row recorded a FOLD_SIGMA pass "
+                        "but no sigma layer was provided.")
+                y = s(y)
+            elif route == self.FOLD_PI:
+                p = self._fold_handle(pi, pass_idx)
+                if p is None:
+                    raise ValueError(
+                        "refold_ramsified: row recorded a FOLD_PI pass "
+                        "but no pi layer was provided.")
+                y = p(y)
+            # FOLD_NEITHER -> identity
+        return y
+
+    @torch.no_grad()
+    def apply_definition_constraint(self, row, new_definition,
+                                    sigma=None, pi=None, ema=1.0):
+        """Explicit-constraint retraining write (todo "make abstraction
+        order canonical"): route ``new_definition`` (given in the pre-fold
+        / definition space) through the row's recorded fold chain
+        (:meth:`refold_ramsified`) and write the folded result into
+        ``W[row]``. Only THIS row moves -- lower-order rows (e.g. the
+        surface percept form) keep their values, so an abstract-definition
+        change cannot clobber the low-order reconstruction. ``ema`` in
+        (0, 1] blends with the existing row (1.0 = replace). Returns the
+        folded row value written."""
+        W = self.W
+        if W is None:
+            raise RuntimeError(
+                "Codebook.apply_definition_constraint: no prototype "
+                "matrix allocated.")
+        ema_f = float(ema)
+        if not (0.0 < ema_f <= 1.0):
+            raise ValueError(
+                f"Codebook.apply_definition_constraint: ema must be in "
+                f"(0.0, 1.0]; got {ema_f}")
+        if not torch.is_tensor(new_definition):
+            new_definition = torch.as_tensor(
+                new_definition, dtype=torch.float32)
+        if not torch.isfinite(new_definition).all():
+            raise RuntimeError(
+                "Codebook.apply_definition_constraint: new_definition "
+                "contains NaN/Inf; refusing to fold divergence into the "
+                "codebook.")
+        folded = self.refold_ramsified(
+            new_definition, row, sigma=sigma, pi=pi)
+        folded = folded.detach().reshape(-1)[:int(W.shape[-1])].to(
+            W.device, W.dtype)
+        if int(folded.shape[0]) != int(W.shape[-1]):
+            raise RuntimeError(
+                f"Codebook.apply_definition_constraint: folded definition "
+                f"width {int(folded.shape[0])} != row width "
+                f"{int(W.shape[-1])}.")
+        r = int(row)
+        W.data[r, :] = (1.0 - ema_f) * W.data[r, :] + ema_f * folded
+        return folded
+
+    def ramsification_extras(self):
+        """Sparse JSON-friendly dump of the fold table for the
+        ``vocab_extras`` checkpoint sidecar: ``{"max_order": k, "rows":
+        {row: [routes...]}}`` over the non-NEITHER rows only. Returns
+        ``None`` when there is nothing to persist, so pre-feature
+        checkpoint blobs stay byte-identical (no new key)."""
+        t = self.ramsification
+        if t is None or t.numel() == 0:
+            return None
+        nz = (t != int(self.FOLD_NEITHER)).any(dim=1)
+        nz = nz.nonzero().reshape(-1)
+        if int(nz.numel()) == 0:
+            return None
+        return {
+            "max_order": int(self.ramsification_max_order),
+            "rows": {
+                int(r): [int(v) for v in t[int(r)]]
+                for r in nz.tolist()
+            },
+        }
+
+    def load_ramsification_extras(self, blob):
+        """Restore a :meth:`ramsification_extras` dump. Widens the table
+        to the saved ``max_order``; rows beyond the current capacity are
+        dropped (a well-ordered load restores the codebook itself --
+        state_dict / vocab_extras -- before this runs, so none remain)."""
+        if not isinstance(blob, dict):
+            return
+        self.enable_ramsification(max(1, int(blob.get("max_order") or 1)))
+        self._sync_ramsification_rows()
+        n = int(self.ramsification.shape[0])
+        width = int(self.ramsification_max_order)
+        for r, seq in (blob.get("rows") or {}).items():
+            r = int(r)
+            if 0 <= r < n:
+                for p, v in enumerate(list(seq)[:width]):
+                    self.ramsification[r, p] = int(v)
 
     def unfolded_prototypes(self, sigma=None, pi=None):
         """The order-k UNFOLD of every stored row (snap contract sec 2.3,
@@ -4045,7 +4249,7 @@ class Codebook(Tensor):
 
     def insert(self, new_vectors):
         """Insert.
-        
+
         See class docstring for the operation contract.
         """
         new_vectors = self._coerce_rows(new_vectors)
@@ -4057,11 +4261,14 @@ class Codebook(Tensor):
             self.replace(new_vectors)
         else:
             self.replace(torch.cat([current, new_vectors], dim=0))
+        # Appended rows extend the fold-provenance table index-aligned
+        # (fresh rows start FOLD_NEITHER = order 0).
+        self._sync_ramsification_rows()
         return self.getW()
 
     def remove(self, indices):
         """Remove.
-        
+
         See class docstring for the operation contract.
         """
         w = self.getW()
@@ -4069,6 +4276,11 @@ class Codebook(Tensor):
             return None
         mask = torch.ones(w.shape[0], dtype=torch.bool, device=w.device)
         mask[indices] = False
+        # Row removal SHIFTS the surviving rows; mask the fold-provenance
+        # table with the SAME row mask so it stays index-aligned.
+        if (self.ramsification is not None
+                and int(self.ramsification.shape[0]) == int(w.shape[0])):
+            self.ramsification = self.ramsification[mask.cpu()]
         self.replace(w[mask])
         return self.getW()
 
@@ -14091,6 +14303,10 @@ class ConceptualSpace(Space):
                         0, idx).mean(dim=0).detach()
                     whole_pos = ws.insert_whole(init_vec=seed_whole)
                     whole_by_text[key] = int(whole_pos)
+                    # Canonical fold provenance: a word-whole is the per-
+                    # text sigma binding over its order-0 parts -> one
+                    # sigma fold (order 1, the regular-noun/type rung).
+                    ws.stamp_fold(int(whole_pos), Codebook.FOLD_SIGMA)
                 last_meta = None
                 word_parts = []
                 for n in slots:
@@ -18580,6 +18796,79 @@ class WholeSpace(Space):
         # overrides this tag to "meta" after the call returns.
         return self.ensure_ws_position(row, kind="ws")
 
+    def stamp_fold(self, pos, route, count=1):
+        """Record ``count`` folds of ``route`` (pass slots 0..count-1) on
+        the WS-codebook row bound to position ``pos`` -- the canonical
+        mint-site provenance stamp: ``abstraction_order(row)`` becomes
+        ``count``, clamped to the table width (= ``subsymbolicOrder``, so
+        an over-deep mint tops out at the model's max order). No-op when
+        the position has no bound row or ``.what`` is not a Codebook."""
+        cb = getattr(self.subspace, "what", None)
+        if cb is None or not isinstance(cb, Codebook):
+            return
+        row = self._ws_pos_to_row.get(int(pos))
+        if row is None:
+            return
+        for p in range(max(0, int(count))):
+            cb.record_fold(int(row), p, route)
+
+    def order_ladder(self, ps_pos):
+        """The percept's abstraction ladder: walk the META ancestry upward
+        from ``ps_pos`` and return ``[(order, pos, row), ...]`` for each
+        bound WS-codebook ancestor, where ``order`` is the row's derived
+        fold count. The explicit-constraint path uses this to resolve
+        WHICH layer a constraint targets: raw token identity is the PS row
+        (order 0, not listed here -- it lives on the percept codebook);
+        basic category / count noun / higher-order definition are the
+        rungs returned."""
+        cb = getattr(self.subspace, "what", None)
+        out = []
+        if cb is None or not isinstance(cb, Codebook):
+            return out
+        seen = set()
+        node = self.taxonomy_parent(int(ps_pos))
+        while node is not None and int(node) not in seen:
+            node = int(node)
+            seen.add(node)
+            row = self._ws_pos_to_row.get(node)
+            if row is not None:
+                out.append(
+                    (int(cb.abstraction_order(int(row))), node, int(row)))
+            node = self.taxonomy_parent(node)
+        return out
+
+    def apply_definition_constraint(self, ps_pos, new_definition, *,
+                                    target_order=None, sigma=None, pi=None,
+                                    ema=1.0):
+        """Explicit-constraint retraining entry (todo "make abstraction
+        order canonical"): resolve the rung of ``target_order`` on the
+        percept's ladder (default: the HIGHEST-order rung -- "this word's
+        abstract definition changed") and write ``new_definition`` through
+        that row's recorded fold chain
+        (:meth:`Codebook.apply_definition_constraint`). Lower-order rows
+        -- in particular the order-0 percept surface form -- are untouched,
+        so the low-order reconstruction survives the update. ``sigma`` /
+        ``pi`` default to this space's own folds. Returns the ``(pos,
+        row)`` written, or ``None`` when the ladder has no matching rung."""
+        ladder = self.order_ladder(ps_pos)
+        if not ladder:
+            return None
+        if target_order is None:
+            order, pos, row = max(ladder, key=lambda x: x[0])
+        else:
+            match = [x for x in ladder if x[0] == int(target_order)]
+            if not match:
+                return None
+            order, pos, row = match[-1]
+        cb = self.subspace.what
+        cb.apply_definition_constraint(
+            row, new_definition,
+            sigma=(sigma if sigma is not None
+                   else getattr(self, "sigma", None)),
+            pi=(pi if pi is not None else getattr(self, "pi", None)),
+            ema=ema)
+        return (pos, row)
+
     def insert_operations(self, grammar):
         """Register each grammar OPERATION in the dedicated operator
         codebook and return ``{op_name: op_position}``.
@@ -19190,6 +19479,22 @@ class WholeSpace(Space):
         self.meta_pair_to_idx[key] = meta_pos
         if trust_norm is not None:
             self.meta_trust[meta_pos] = trust_norm
+        # Canonical fold provenance: a fresh META is the sigma-combine of
+        # its (ps, ws) constituents, so it sits ONE fold above them --
+        # order = max(constituent orders) + 1 sigma stamps (clamped to the
+        # table width), the same convention as maybe_raise_order.
+        _cb = self.subspace.what
+        _orders = [0]
+        _ws_row = self._ws_pos_to_row.get(ws_pos_i)
+        if _ws_row is not None and hasattr(_cb, "abstraction_order"):
+            _orders.append(int(_cb.abstraction_order(int(_ws_row))))
+        _ps_row = self._ps_pos_to_row.get(ps_pos_i)
+        _ps_basis = getattr(self._peer_percept_store(), "_basis", None)
+        if (_ps_row is not None and _ps_basis is not None
+                and hasattr(_ps_basis, "abstraction_order")):
+            _orders.append(int(_ps_basis.abstraction_order(int(_ps_row))))
+        self.stamp_fold(meta_pos, Codebook.FOLD_SIGMA,
+                        count=max(_orders) + 1)
         return meta_pos
 
     def insert_relation(self, predicate_pos, idea1_pos, idea2_pos,
@@ -19422,10 +19727,8 @@ class WholeSpace(Space):
         self._pos_kind[ho_pos] = "meta"
         self.taxonomy[ho_pos] = [int(whole)] + [int(p) for p in ps_children]
         self.part_chain[ho_pos] = [int(p) for p in ps_children]
-        ho_row = self._ws_pos_to_row.get(ho_pos)
-        if ho_row is not None and cb.ramsification is not None:
-            for _pidx in range((max(orders) if orders else 0) + 1):
-                cb.record_fold(torch.tensor([int(ho_row)]), _pidx, cb.FOLD_SIGMA)
+        self.stamp_fold(ho_pos, cb.FOLD_SIGMA,
+                        count=(max(orders) if orders else 0) + 1)
         raised.add(int(whole))
         return ho_pos
 
@@ -19443,6 +19746,10 @@ class WholeSpace(Space):
         key = tuple(sorted(int(c) for c in class_ids))
         if key not in d:
             d[key] = int(self.insert_whole(init_vec=None))
+            # Canonical fold provenance: a char-class TYPE whole is a
+            # product of the property-tiling ANALYSIS -> one pi fold
+            # (order 1, the basic-category rung).
+            self.stamp_fold(d[key], Codebook.FOLD_PI)
         return d[key]
 
     @torch.no_grad()
@@ -19638,6 +19945,11 @@ class WholeSpace(Space):
             W.data[old_row].copy_(new_a)
         # Allocate the split-off row + its position.
         new_pos = self.insert_whole(init_vec=new_b)
+        # The split-off inherits the original row's fold provenance --
+        # both halves were produced by the same fold history.
+        _new_row = self._ws_pos_to_row.get(int(new_pos))
+        if _new_row is not None and isinstance(self.subspace.what, Codebook):
+            self.subspace.what.copy_fold_provenance(old_row, int(_new_row))
         # If the original row was bound under a META, mirror the binding
         # onto the split-off so both halves remain discoverable.
         parent = self.taxonomy_parent(p)
@@ -19729,6 +20041,19 @@ class WholeSpace(Space):
                 int(row): sorted(int(c) for c in classes)
                 for row, classes in _tpk.items()
             }
+        # Canonical abstraction-order provenance (fold stamps) for the WS
+        # symbol codebook + the stage-0 analysis store. Emitted ONLY when
+        # non-empty so pre-feature checkpoint blobs stay byte-identical.
+        _wcb = getattr(self.subspace, "what", None)
+        _rb = (_wcb.ramsification_extras()
+               if isinstance(_wcb, Codebook) else None)
+        if _rb:
+            _ve["ramsification"] = _rb
+        _acb = getattr(self, "analysis_store", None)
+        _ab = (_acb.ramsification_extras()
+               if isinstance(_acb, Codebook) else None)
+        if _ab:
+            _ve["analysis_ramsification"] = _ab
         return _ve
 
     def load_vocab_extras(self, extras):
@@ -19847,6 +20172,16 @@ class WholeSpace(Space):
         tags = ({int(k): [int(c) for c in v] for k, v in tpk.items()}
                 if isinstance(tpk, dict) else None)
         self._build_type_subspace(tags)
+        # Canonical abstraction-order provenance (absent in pre-feature
+        # blobs -> the freshly built tables stay all-NEITHER).
+        rb = extras.get("ramsification")
+        _wcb = getattr(self.subspace, "what", None)
+        if isinstance(rb, dict) and isinstance(_wcb, Codebook):
+            _wcb.load_ramsification_extras(rb)
+        ab = extras.get("analysis_ramsification")
+        _acb = getattr(self, "analysis_store", None)
+        if isinstance(ab, dict) and isinstance(_acb, Codebook):
+            _acb.load_ramsification_extras(ab)
 
     def _migrate_signed_int_taxonomy(self, tax, tp_blob, mp_blob):
         """Rekey a legacy signed-int taxonomy blob to positive-int
@@ -21554,6 +21889,14 @@ class WholeSpace(Space):
             # one generality codebook.
             with torch.no_grad():
                 basis.set_descriptor_role(idx, Codebook.ROLE_LF_COARSE)
+                # Canonical fold provenance (todo "make abstraction order
+                # canonical"): the snapped rows are analysis descriptors --
+                # their stored values are selected + recon-rewritten through
+                # THIS pi pass, so stamp FOLD_PI at the pump pass slot. Same
+                # host-write pattern as the role tag above.
+                basis.record_fold(
+                    idx, int(getattr(self, "_pump_pass_idx", 0) or 0),
+                    Codebook.FOLD_PI)
             # Task 5 (C-13): the post-sentence semantic arrangement over
             # the activated rows (pode attraction + antipode repulsion);
             # threaded like the recon term and lifted by _forward_body.
@@ -22226,6 +22569,13 @@ class WholeSpace(Space):
                     object.__setattr__(
                         self, "_symbolic_emission",
                         (_win.detach(), _wrow.detach()))
+                    # Canonical fold provenance: the WINNER row is selected
+                    # (and, in training, recon-rewritten) through this
+                    # symbolic-iteration pi pass -- stamp FOLD_PI at the
+                    # pump pass slot.
+                    _basis.record_fold(
+                        _wrow, int(getattr(self, "_pump_pass_idx", 0) or 0),
+                        Codebook.FOLD_PI)
                     # STE (the asymmetric output->encoder leg): the frame
                     # forwards the winner row's CODE; the gradient passes
                     # identity to the winner slot's z. The apoha mask
