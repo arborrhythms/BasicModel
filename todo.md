@@ -1,15 +1,9 @@
 
 
-## Deliverable: create a dedicated masked semantic reconstruction training config.
+## Deliverable: create a dedicated masked semantic reconstruction training config
   * Add a new XML training file derived from the masked IR config, but with the parser-side semantic context enabled. It should train masked-word reconstruction/prediction, not plain byte reconstruction: set a nonzero training.maskRate, use reconstruction-heavy loss (reconstructionScale high enough to dominate), keep sentencePrediction enabled, and enable the symbolic/category machinery needed for the parser to use word category evidence during reconstruction.
   * The config should also enable bottom-up concept attention: use the sparse conceptual loop path with symbolicOrder > 0, parallel symbolic execution, mereologyRaise, symbolTower, and the concept inventory sized so snap rows plus relation-pool rows cannot overflow. The goal is that a masked word is predicted from both its parser category/semantic-whole evidence and bottom-up attention over all active concepts.
   * Acceptance criteria: running this config performs masked IR training; masked positions contribute reconstruction loss; parser/category evidence is visible in the reconstruction path; concept attention/wave is live, not dark; and a targeted smoke test confirms masked-word predictions change when category evidence or concept-attention state is disabled.
-
-
-## Implement doc/plans/2026-07-04-attention-to-relation-promotion.md
-  * Sentences create explicit knowledge if they pass a criterion:
-  learn_score = children_in_codebook * is_truth_obvious * resolves_contradiction
-  accept iff learn_score >= truth_criterion and truth_criterion < 1
 
 
 ## Operational integration of the QUERY TOOLS (isEqual, isPart, exist, and

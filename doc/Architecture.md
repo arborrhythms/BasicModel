@@ -663,6 +663,24 @@ The legacy composition `C = sigma_percept(pi_input(IS) + pi_concept(C_prev))`
 is **retired**. Per-stage feedback is absent at the substrate; grammar
 dispatch over STM provides the recurrent character via the signal router.
 
+**Attention-to-relation promotion** (gated `<attentionPromotion>`, default
+off $\to$ byte-identical): the pyramid's admitted field is also the
+DISCOVERY surface for latent taxonomic wholes. The cutover stashes the
+admitted activations; `ConceptualSpace.Reset(hard)` consumes them (the same
+compile-safety hoist as `learn_relations_from_stm`) into a bounded
+candidate cache keyed by context signature --- each active order-0 row is a
+focal member observation over the rest of the active set, with EWMA
+member/context weights and cosine fold-in of near contexts. Recurrent,
+contrasted member sets face the SAME acceptance law as sentence learning
+(learn-score $\ge$ `truthCriterion` AND `truthCriterion` $< 1$, the
+three-factor product over the Task-6c seams); accepted sets mint a
+higher-order whole via `synthesize_higher_order` (member edge values from
+the candidate statistics, top context concepts as weighted `sym_part`
+intent), which then competes in the pyramid like any other row.
+Re-support strengthens (Hebbian) instead of re-minting; unsupported
+wholes decay and retire. See
+doc/plans/2026-07-12-attention-promotion-execution.md.
+
 See [Spaces.md Section "Sigma / Pi ownership"](Spaces.md#sigma-pi-ownership)
 for the cognitive rationale and the migration trail.
 See [Logic.md Section 8](Logic.md) for the algebraic constraints on sigma/pi.

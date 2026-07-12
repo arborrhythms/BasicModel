@@ -1,5 +1,13 @@
 # Attention-to-Relation Promotion Plan
 
+> **STATUS: EXECUTED 2026-07-12** — see
+> [2026-07-12-attention-promotion-execution.md](2026-07-12-attention-promotion-execution.md)
+> for the architecture mapping (this plan predates the FF pyramid), the
+> acceptance law pinned by todo.md (the Task-6c learn-score $\ge$
+> `truthCriterion` AND `truthCriterion` $< 1$), and the recorded
+> deviations (Reset-hoisted collector; role-aware evidence and
+> prediction-gain bookkeeping deferred).
+
 **Goal:** Use quadratic bottom-up attention as the discovery surface for
 latent taxonomic wholes, then commit only stable, predictive patterns into the
 persistent conceptual relation table. Attention remains the dense temporary
@@ -65,17 +73,23 @@ decides whether it deserves a durable whole such as `royalty`.
 
 ## Implementation Tasks
 
-- [ ] Add an attention-evidence collector at the post-pump symbolic cutover.
-- [ ] Define the candidate cache: key, support stats, EWMA weights, contrast,
+- [x] Add an attention-evidence collector at the post-pump symbolic cutover.
+      (Stashed at the cutover, consumed at `Reset(hard)` — the
+      `learn_relations_from_stm` compile-safety hoist, mirrored.)
+- [x] Define the candidate cache: key, support stats, EWMA weights, contrast,
       prediction-gain bookkeeping, and capacity policy.
-- [ ] Add a promotion pass that mines common neighborhoods and calls the
+      (Prediction-gain bookkeeping deferred — recorded deviation.)
+- [x] Add a promotion pass that mines common neighborhoods and calls the
       relation-table higher-order mint path.
-- [ ] Initialize `ConceptualAttentionLayer` sparse edges from promoted candidate weights.
-- [ ] Route promoted-whole activations into masked reconstruction /
-      conceptual-SBOW loss.
-- [ ] Add pruning/merge rules for stale or duplicate promoted wholes.
-- [ ] Add ablation tests: masked semantic prediction should degrade when
+- [x] Initialize `ConceptualAttentionLayer` sparse edges from promoted candidate weights.
+- [x] Route promoted-whole activations into masked reconstruction /
+      conceptual-SBOW loss. (Automatic through the existing cutover
+      interfaces once the row exists — proven by the ablation pin.)
+- [x] Add pruning/merge rules for stale or duplicate promoted wholes.
+- [x] Add ablation tests: masked semantic prediction should degrade when
       promoted-whole edges or the conceptual wave are disabled.
+      (`test/test_attention_promotion.py` — mechanism-level ablation:
+      removing the promoted whole's edges zeroes its rung activation.)
 
 ## Acceptance Criteria
 

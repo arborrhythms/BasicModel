@@ -13281,6 +13281,13 @@ class ConceptualSpace(Space):
         self.truth_criterion = float(
             TheXMLConfig.space("ConceptualSpace", "truthCriterion", 1.0))
 
+        # Attention-to-relation promotion gate (2026-07-12 execution of the
+        # 2026-07-04 plan). Default false -> byte-identical; the promotion
+        # bar itself is the same truth_criterion law as sentence learning.
+        self._promotion_enabled = bool(
+            TheXMLConfig.space("ConceptualSpace", "attentionPromotion",
+                               False))
+
         # Task 3 (STM serial/parallel modes): explicit predict-then-
         # perceive state. ``forward`` now runs the intra-sentence
         # predictor from the RETAINED STM context BEFORE writing the
@@ -13895,6 +13902,12 @@ class ConceptualSpace(Space):
                 _rel = sentence_relative_mask(
                     _ws, int(_buf.shape[0]), device=_buf.device)
                 self.learn_relations_from_stm(_rel)
+            # Attention-to-relation promotion (same hoist rationale):
+            # consume the cutover's stashed admitted field, then run the
+            # promotion policy. Both no-op when the gate is off.
+            if getattr(self, "_promotion_enabled", False):
+                self.promotion_observe()
+                self.promotion_pass()
         super().Reset(batch=batch, hard=hard)
         # Task 3: clear the predict-then-perceive held predictions and the
         # intra-loss accumulator on EVERY reset (hard or soft) so neither a
@@ -15212,6 +15225,10 @@ class ConceptualSpace(Space):
         if rows:
             sel = torch.cat(rows, dim=0)                       # [n_sel, B]
             self.subspace.set_index(sel.t().unsqueeze(-1).long())
+        # Attention-to-relation promotion: stash the admitted field for the
+        # Reset(hard) collector (consumed once; the compile-safety hoist).
+        if getattr(self, "_promotion_enabled", False):
+            object.__setattr__(self, "_promo_last_acts", acts.detach())
         return content, acts
 
     def refine_over_collected(self, *, k_parts=None, k_wholes=None):
@@ -15389,19 +15406,27 @@ class ConceptualSpace(Space):
                 p[int(row)] += h
         return p
 
-    def _csw_row_of(self, concept_id):
-        """GLOBAL store row of ``concept_id`` under any block namespace
-        (snap / legacy pool / rev-2 per-order ``o<k>``), or None."""
+    def _csw_rows_of(self, concept_id):
+        """ALL global store rows of ``concept_id`` across the block
+        namespaces (legacy pool / snap / rev-2 per-order ``o<k>``), in
+        that scan order. Usually 0 or 1 entries."""
         ly = _concept_alloc_of(self).layer(0)
+        rows = []
         for ns in ("pool", "snap"):
             r = ly.row_of((ns, int(concept_id)))
             if r is not None:
-                return r
+                rows.append(int(r))
         for o in range(1, len(self._order_caps())):
             r = ly.row_of((f"o{o}", int(concept_id)))
             if r is not None:
-                return r
-        return None
+                rows.append(int(r))
+        return rows
+
+    def _csw_row_of(self, concept_id):
+        """GLOBAL store row of ``concept_id`` under any block namespace
+        (snap / legacy pool / rev-2 per-order ``o<k>``), or None."""
+        rows = self._csw_rows_of(concept_id)
+        return rows[0] if rows else None
 
     def _bias_col(self):
         """The EVERYTHING bias column in STORE coordinates (store nOutput)."""
@@ -15605,24 +15630,24 @@ class ConceptualSpace(Space):
         ``relate(x, x)`` a part- and a whole-assertion address the SAME
         merged edge ``(c_row, s_row)``. ``no_grad`` -- an assertion strength
         is evidence, not a backprop target. No-op when the edge is absent
-        (raw codes carry no edges post-P2). The constituent may hold BOTH
-        a snap and a pool row -- whichever namespace carries the live edge
-        wins."""
+        (raw codes carry no edges post-P2). Rows resolve across ALL block
+        namespaces (snap / legacy pool / rev-2 per-order ``o<k>`` -- the
+        item-30 taper fix; the pool-only lookup silently never fired on
+        per-order blocks); a constituent holding several rows keeps the
+        documented law: whichever namespace carries the live edge wins."""
         if side not in ("sym_part", "sym_whole"):
             return                                 # raw refs: records only
         if not _concept_rows_exist(self):
             return
         ly = _concept_alloc_of(self).layer(0)
-        c_row = ly.row_of(("pool", int(cid)))
-        if c_row is None:
-            return
         pos = None
-        for ns in ("snap", "pool"):
-            s_row = ly.row_of((ns, int(code)))
-            if s_row is not None:
+        for c_row in self._csw_rows_of(cid):
+            for s_row in self._csw_rows_of(code):
                 pos = ly._index.get((int(c_row), int(s_row)))
                 if pos is not None:
                     break
+            if pos is not None:
+                break
         if pos is not None and ly.values is not None:
             with torch.no_grad():
                 ly.values[pos] = float(value)
@@ -15687,6 +15712,341 @@ class ConceptualSpace(Space):
         if c_row is None:
             return                                 # unallocated: no edges
         ly.hebbian_strengthen_row(c_row, eta=eta, cap=cap)
+
+    def _decay_concept_edges(self, cid, factor=0.9):
+        """Scale ``cid``'s sparse edge values by ``factor`` (the forgetting
+        counterpart of :meth:`_hebbian_strengthen`). Returns the max
+        ``|value|`` remaining on the row, or ``None`` when nothing decayed
+        (inactive / unallocated / FROZEN -- frozen weights never drift, and
+        a ``None`` tells the caller not to retire)."""
+        if not _concept_rows_exist(self):
+            return None
+        if int(cid) in getattr(self, "_frozen_concepts", ()):
+            return None                            # frozen weights: no drift
+        ly = _concept_alloc_of(self).layer(0)
+        c_row = self._csw_row_of(cid)
+        if c_row is None:
+            return None                            # unallocated: no edges
+        return float(ly.decay_row(c_row, factor=factor))
+
+    # ------------------------------------------------------------------
+    # Attention-to-relation promotion (2026-07-12 execution of
+    # doc/plans/2026-07-04-attention-to-relation-promotion.md; notes in
+    # doc/plans/2026-07-12-attention-promotion-execution.md).
+    #
+    # The pyramid's ADMITTED field is the discovery surface: each active
+    # order-0 row is a FOCAL member observation whose CONTEXT is the rest
+    # of the active set. Recurrent (context -> members) candidates that
+    # clear the SAME learn-score law as sentence learning
+    # (score >= truth_criterion AND truth_criterion < 1) mint a
+    # higher-order whole via synthesize_higher_order. Evidence is stashed
+    # at the P3 cutover and consumed at Reset(hard) -- the
+    # learn_relations_from_stm compile-safety hoist, mirrored.
+    # All policy constants are class attributes (test seams).
+    # ------------------------------------------------------------------
+
+    _promotion_act_eps = 1e-3        # |activation| bar for an ACTIVE row
+    _promotion_min_support = 3       # observations before a mint attempt
+    _promotion_cache_cap = 64        # bounded candidate cache
+    _promotion_ewma = 0.9            # EWMA beta for member/context stats
+    _promotion_member_frac = 0.5     # member iff w >= frac * max(member_w)
+    _promotion_match_cos = 0.8       # near-miss context fold-in bar
+    _promotion_contrast_min = 0.02   # member-vs-nonmember weight margin
+    _promotion_merge_jaccard = 0.8   # fold into an existing whole above this
+    _promotion_stale_age = 8         # observations before stale handling
+    _promotion_decay = 0.9           # edge decay for unsupported wholes
+    _promotion_retire_eps = 1e-3     # retire a whole decayed below this
+    _promotion_intent_top = 2        # context concepts committed as intent
+
+    def _promotion_state(self):
+        """Lazy host-side promotion state: the bounded candidate cache
+        (insertion-ordered dict keyed by context-row frozenset) and the
+        observation counter."""
+        st = getattr(self, "_promotion_cache_state", None)
+        if st is None:
+            st = {"cache": {}, "obs": 0}
+            object.__setattr__(self, "_promotion_cache_state", st)
+        return st
+
+    def _promotion_match_entry(self, cache, ctx_key, ctx_vec):
+        """Resolve an observation to a cache entry: exact context-set hit,
+        else the nearest entry by cosine over the EWMA context vector when
+        it clears ``_promotion_match_cos`` (the plan's "signature is a
+        weighted neighborhood, not a single pair"). ``None`` on no match."""
+        e = cache.get(ctx_key)
+        if e is not None:
+            return e
+        v = ctx_vec / max(float(ctx_vec.norm()), 1e-8)
+        best, best_cos = None, float(self._promotion_match_cos)
+        for entry in cache.values():
+            w = entry["context_w"]
+            n = float(w.norm())
+            if n <= 0.0:
+                continue
+            cos = float(torch.dot(v, w / n))
+            if cos >= best_cos:
+                best, best_cos = entry, cos
+        return best
+
+    def _promotion_evict(self, cache):
+        """Capacity policy: drop the weakest (support, last_seen)
+        UNCOMMITTED entry first; committed entries only when nothing else
+        remains (safe -- ``relate_idx`` idempotency re-finds the whole)."""
+        if len(cache) < int(self._promotion_cache_cap):
+            return
+        pool = [k for k, e in cache.items() if e["committed"] is None]
+        pool = pool or list(cache.keys())
+        victim = min(pool, key=lambda k: (cache[k]["support"],
+                                          cache[k]["last_seen"]))
+        del cache[victim]
+
+    @torch.no_grad()
+    def promotion_observe(self):
+        """Attention-evidence collector: consume the P3 cutover's stashed
+        admitted field (one observation per batch row). For each ACTIVE
+        order-0 focal row, fold ``(focal | context)`` evidence into the
+        candidate cache: support count, EWMA member weights, EWMA context
+        weights, last-seen. Contrast against non-members is mined
+        within-entry at promotion time. Fail-loud on non-finite
+        activations. No-op when the gate is off or nothing is stashed."""
+        if not getattr(self, "_promotion_enabled", False):
+            return
+        acts = getattr(self, "_promo_last_acts", None)
+        if acts is None or not torch.is_tensor(acts):
+            return
+        object.__setattr__(self, "_promo_last_acts", None)   # consume once
+        if not torch.isfinite(acts).all():
+            raise RuntimeError(
+                "ConceptualSpace.promotion_observe: admitted activations "
+                "contain NaN/Inf. Numerical divergence must surface, not "
+                "be silently accumulated as promotion evidence.")
+        level_rows = getattr(self, "_cs_level_rows", None)
+        if not level_rows:
+            return
+        a = acts.detach().to("cpu", torch.float32)           # [N, B]
+        N, B = int(a.shape[0]), int(a.shape[1])
+        rows_all = torch.cat([r.detach().to("cpu")
+                              for r in level_rows], dim=0)   # [n_sel, B]
+        start0, end0 = self.order_slice(0)
+        eps = float(self._promotion_act_eps)
+        st = self._promotion_state()
+        cache = st["cache"]
+        beta = float(self._promotion_ewma)
+        for b in range(B):
+            sel = sorted({int(r) for r in rows_all[:, b].tolist()})
+            active = {r: float(a[r, b]) for r in sel
+                      if abs(float(a[r, b])) >= eps}
+            if not active:
+                continue
+            st["obs"] += 1
+            focals = [r for r in active if start0 <= r < end0]
+            for f in focals:
+                ctx = frozenset(r for r in active if r != f)
+                if not ctx:
+                    continue
+                ctx_vec = torch.zeros(N)
+                for r in ctx:
+                    ctx_vec[r] = abs(active[r])
+                e = self._promotion_match_entry(cache, ctx, ctx_vec)
+                if e is None:
+                    self._promotion_evict(cache)
+                    e = {"key": ctx, "support": 0,
+                         "member_w": torch.zeros(N),
+                         "context_w": torch.zeros(N),
+                         "last_seen": 0, "committed": None,
+                         "support_at_commit": 0}
+                    cache[ctx] = e
+                e["support"] += 1
+                e["last_seen"] = st["obs"]
+                e["member_w"].mul_(beta)
+                e["member_w"][f] += (1.0 - beta) * abs(active[f])
+                e["context_w"].mul_(beta).add_(ctx_vec, alpha=1.0 - beta)
+
+    def _learn_score_members_in_codebook(self, member_vecs):
+        """N-ary generalization of the Task-6c ``children_in_codebook``
+        factor: the fraction of member content vectors whose nearest
+        terminal-WS codebook row lies within
+        :attr:`_learn_children_dist_threshold`. 0.0 when no terminal WS is
+        reachable or no members are given. Overridable test seam."""
+        ws = self._terminal_ws_for_learning()
+        if ws is None or not hasattr(ws, "nearest_ws_row") or not member_vecs:
+            return 0.0
+        thr = float(self._learn_children_dist_threshold)
+        hits = 0
+        for vec in member_vecs:
+            _row, dist = ws.nearest_ws_row(self._as_idea_vec(vec))
+            if dist <= thr:
+                hits += 1
+        return hits / len(member_vecs)
+
+    def _promotion_learn_score(self, entry, member_rows):
+        """Promotion acceptance score in [0, 1] -- the todo.md law over the
+        Task-6c seams:
+
+        learn_score = members_in_codebook(member content rows)
+                      * is_truth_obvious(signature)
+                      * resolves_contradiction(signature)
+
+        The signature operand is the candidate's EWMA-context-weighted
+        codebook combination (the shared intent as content). Fail-loud on
+        a non-finite product, mirroring :meth:`_compute_learn_score`."""
+        cb = getattr(self, "similarity_codebook", None)
+        W = cb.getW() if (cb is not None and hasattr(cb, "getW")) else None
+        if W is None:
+            return 0.0
+        Wc = W.detach().to("cpu", torch.float32)
+        vecs = [Wc[int(r)] for r in member_rows]
+        ctx_w = entry["context_w"]
+        denom = max(float(ctx_w.sum()), 1e-8)
+        sig = (ctx_w.unsqueeze(0) @ Wc).reshape(-1) / denom
+        children = float(self._learn_score_members_in_codebook(vecs))
+        obvious = float(self._learn_score_is_truth_obvious(sig))
+        resolves = float(self._learn_score_resolves_contradiction(sig))
+        score = children * obvious * resolves
+        if not math.isfinite(score):
+            raise RuntimeError(
+                f"ConceptualSpace._promotion_learn_score produced a "
+                f"non-finite value ({score}) from factors "
+                f"children={children}, obvious={obvious}, "
+                f"resolves={resolves}. A divergent learn-score must "
+                f"surface, not be silently gated.")
+        return max(0.0, min(1.0, score))
+
+    def _promotion_members(self, entry):
+        """Mine an entry's MEMBER set: rows whose EWMA member weight
+        clears ``frac * max`` (>= 2 required), CONTRASTED against the
+        co-observed non-members (their mean weight must sit at least
+        ``_promotion_contrast_min`` below the members'). Returns
+        ``(member_rows, contrast_ok)``."""
+        w = entry["member_w"]
+        mx = float(w.max())
+        if mx <= 0.0:
+            return [], False
+        bar = float(self._promotion_member_frac) * mx
+        members = [int(r) for r in (w >= bar).nonzero().reshape(-1).tolist()]
+        others = [int(r) for r in (w > 0).nonzero().reshape(-1).tolist()
+                  if int(r) not in set(members)]
+        m_mean = float(w[members].mean()) if members else 0.0
+        o_mean = float(w[others].mean()) if others else 0.0
+        contrast_ok = (m_mean - o_mean) >= float(self._promotion_contrast_min)
+        return members, contrast_ok
+
+    def promotion_pass(self):
+        """The promotion policy over the candidate cache (host-side, at the
+        sentence boundary):
+
+          * COMMITTED entries: fresh support Hebbian-strengthens the whole
+            (never re-mints); stale ones decay their edges and RETIRE below
+            the retire bar (frozen never retire).
+          * Stale weak candidates drop from the cache.
+          * Ripe candidates (support, >= 2 resolvable members, contrast)
+            face the learn-score gate -- accept iff
+            ``score >= truth_criterion`` AND ``truth_criterion < 1`` (the
+            todo.md law; tc=1 promotes NOTHING). Accepted member sets that
+            Jaccard-overlap an existing committed whole FOLD INTO it;
+            otherwise ``synthesize_higher_order`` mints the whole, member
+            edge values initialize from the normalized EWMA weights, and
+            the top context concepts commit as weighted ``sym_part``
+            intent assertions.
+
+        Returns the list of concept ids minted or folded into this pass."""
+        if not getattr(self, "_promotion_enabled", False):
+            return []
+        st = self._promotion_state()
+        cache, obs = st["cache"], st["obs"]
+        stale = int(self._promotion_stale_age)
+        min_support = int(self._promotion_min_support)
+        tc = float(self.truth_criterion)
+        committed_now = []
+        for key in list(cache):
+            e = cache[key]
+            H = e["committed"]
+            if H is not None:
+                if e["support"] > e["support_at_commit"]:
+                    self._hebbian_strengthen(H)
+                    e["support_at_commit"] = e["support"]
+                elif obs - e["last_seen"] > stale:
+                    peak = self._decay_concept_edges(
+                        H, factor=float(self._promotion_decay))
+                    if (peak is not None
+                            and peak < float(self._promotion_retire_eps)):
+                        self.retire_concept(H)
+                        del cache[key]
+                continue
+            if e["support"] < min_support:
+                if obs - e["last_seen"] > stale:
+                    del cache[key]                 # stale weak candidate
+                continue
+            members, contrast_ok = self._promotion_members(e)
+            if len(members) < 2 or not contrast_ok:
+                continue
+            r2c = self._row_to_concept()
+            pairs = [(r, r2c[r]) for r in members if r in r2c]
+            if len(pairs) < 2:
+                continue                           # members must be concepts
+            cids = sorted(c for (_r, c) in pairs)
+            # Fold into an existing committed whole on member overlap --
+            # promotion strengthens structure, it does not duplicate it.
+            folded = False
+            for other in cache.values():
+                oH = other["committed"]
+                if oH is None or other is e:
+                    continue
+                om = set(other.get("member_cids", ()))
+                if not om:
+                    continue
+                jac = len(om & set(cids)) / max(1, len(om | set(cids)))
+                if jac >= float(self._promotion_merge_jaccard):
+                    self._hebbian_strengthen(oH)
+                    e["committed"] = oH
+                    e["member_cids"] = tuple(sorted(om | set(cids)))
+                    e["support_at_commit"] = e["support"]
+                    committed_now.append(int(oH))
+                    folded = True
+                    break
+            if folded:
+                continue
+            score = self._promotion_learn_score(e, [r for (r, _c) in pairs])
+            # The todo.md acceptance law -- identical endpoint semantics to
+            # _maybe_learn_relation (tc=0 promotes everything, tc=1 nothing).
+            if score < tc or tc >= 1.0:
+                continue
+            H = self.synthesize_higher_order(
+                tuple(("sym", int(c)) for c in cids))
+            mx = float(e["member_w"].max())
+            for (r, c) in pairs:
+                self._set_concept_edge_value(
+                    H, c, "sym_part", float(e["member_w"][r]) / mx)
+            self._promotion_commit_intent(e, H, set(cids), r2c)
+            e["committed"] = H
+            e["member_cids"] = tuple(cids)
+            e["support_at_commit"] = e["support"]
+            committed_now.append(int(H))
+        return committed_now
+
+    def _promotion_commit_intent(self, entry, H, member_cids, r2c):
+        """Commit the shared INTENT: the top context concepts become
+        weighted ``sym_part`` assertions on the promoted whole (this
+        codebase's "a body has a leg" property channel), weight = the
+        normalized EWMA context weight."""
+        ctx_w = entry["context_w"]
+        mx = float(ctx_w.max())
+        if mx <= 0.0:
+            return
+        order = torch.argsort(ctx_w, descending=True).tolist()
+        taken = 0
+        for r in order:
+            if taken >= int(self._promotion_intent_top):
+                break
+            w = float(ctx_w[int(r)])
+            if w <= 0.0:
+                break
+            c = r2c.get(int(r))
+            if c is None or c in member_cids or int(c) == int(H):
+                continue
+            self.assert_concept_relation(H, sym_part=int(c),
+                                         weight=w / mx)
+            taken += 1
 
     def create_joint_concept(self, word_syms, key=None):
         """JOINT/sentence concept (v2, P2 decision 6): the ordered Gallistel

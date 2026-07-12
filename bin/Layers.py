@@ -4757,6 +4757,21 @@ class ConceptualAttentionLayer(SparseLayer):
                     self.values[i] = min(float(cap),
                                          float(self.values[i]) + float(eta))
 
+    def decay_row(self, row, factor=0.9):
+        """Scale every edge on ``row`` by ``factor`` (the forgetting
+        counterpart of :meth:`hebbian_strengthen_row`); ``no_grad``.
+        Returns the max ``|value|`` remaining on the row (0.0 when the
+        row carries no edges) so callers can retire fully-decayed rows."""
+        if self.values is None:
+            return 0.0
+        peak = 0.0
+        with torch.no_grad():
+            for (r, _c), i in self._index.items():
+                if r == int(row):
+                    self.values[i] = float(self.values[i]) * float(factor)
+                    peak = max(peak, abs(float(self.values[i])))
+        return peak
+
     def definition_sparsity_penalty(self, free_size=2):
         """Rank-ordered soft-L0 on each concept's DEFINITION SIZE (snap
         contract sec 1.4 / sec 5, 2026-07-06): sort a concept row's in-edge
