@@ -15858,7 +15858,10 @@ class ConceptualSpace(Space):
             A, B, C = wom[key]
             for p in word_parts:                  # A keeps accruing word-parts
                 self.add_part(A, int(p))
-            self._priming_bridge_put(A, C, word_parts, None, accrue=True)
+            # Class dispatch: mock harnesses drive this method with a bare
+            # namespace self, which carries no bound helper.
+            ConceptualSpace._priming_bridge_put(
+                self, A, C, word_parts, None, accrue=True)
             self._populate_concept_weights(A)      # re-decompose A (parts grew)
             # Hebbian: word/object co-occurred again -> strengthen the META
             # tie's edge values (no_grad; codebooks stay EMA-only). Weakening
@@ -15890,7 +15893,9 @@ class ConceptualSpace(Space):
         self._populate_concept_weights(C)
         # CS->PS/WS priming-projection bridge (Alec 2026-07-12): the triple's
         # surface anchors (taxonomy positions), keyed by A and its META C.
-        self._priming_bridge_put(A, C, word_parts, word_whole)
+        # Class dispatch: mock harnesses drive this method with a bare
+        # namespace self, which carries no bound helper.
+        ConceptualSpace._priming_bridge_put(self, A, C, word_parts, word_whole)
         return A, B, C
 
     def _priming_bridge_put(self, A, C, word_parts, word_whole, accrue=False):
