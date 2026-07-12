@@ -146,6 +146,50 @@ through:
 `BasicModel.reason(...)` remains as the model-level bidirectional reasoning
 entry point. Inference query routing is enabled when `reasoningIterations > 0`.
 
+## The Thinking Kernel
+
+`bin/thinking.py` implements the runtime-enforced execution loop of
+[doc/plans/thinking_kernel_spec.md](plans/thinking_kernel_spec.md) over the
+reasoner's hard tools (gate: `<architecture><thinkingBudget>`; absent/0 = off,
+byte-identical; positive N = the op budget of a top-level `think()` frame):
+
+1. `TruthInterval` — signed `[lower, upper] ⊆ [-1, 1]` + trust + provenance;
+   `luminosity` is the max-abs distance from unknownness; `status` classifies
+   true / false / unknown / mixed / conflicting against the `tau` bar.
+2. `Frame` / STM stack — `think()` pushes, `answer()` pops; only the certified
+   `ChildResult` (value, interval, trust, trace) crosses a frame boundary;
+   scratch is discarded.
+3. `ThinkingKernel.execute` — validates each proposed op, charges the shared
+   budget pool, and enforces the closure rules: a true/false answer the
+   frame's evidence does not support is refused (unsupported assertion →
+   unknown); budget exhaustion closes `bounded_unknown`; unknown is a valid
+   terminal. LTM writes happen only inside the runtime: `_materialize_close`
+   (trusted derivation via `reasoner.materialize`, gated `<ltmConsolidation>`)
+   and `incorporate` (testimony above the source×channel trust floor).
+4. `KernelPolicy` — the deterministic baseline: `lookup` (LTM-direct, no
+   chaining) → close if luminous → climb `part(·, up)` opening one `think()`
+   subgoal per unvisited whole (soft α ordering via the
+   `InterveningIdeaGenerator` when present — the α only orders, never
+   asserts). On an unknown LEAF the policy consults each registered
+   addressee once via `query()` (`arma` built in): NUMERIC testimony folds
+   into the frame interval as `asserted × source_trust` (§14.2 — flimsy
+   testimony cannot manufacture luminosity); tensor testimony is content,
+   never truth; the durable write stays the explicit `incorporate`.
+5. `compile_rewards` / `trace_examples` — the §12 reward compilation
+   (Δluminosity·trust·relevance − step cost, terminal on grounded closes) and
+   the `(state, op)` supervision exporters for next-operation training.
+6. `NextOpPolicy` / `next_op_loss` / `traces_from_store` — §12.6 next-op
+   learning: the head is behavior-cloned on grounded traces generated from
+   the store's 2-hop chains (`<training><thinkingLossWeight>`, runBatch
+   hook, eager build for optimizer membership; the teacher never writes
+   LTM). At inference the head is consulted only at explore-vs-stop choice
+   points over the legal option menu — it can waste budget, never assert.
+
+`BaseModel.think_about(query_spec)` builds the kernel from the model;
+`answer_query` attaches the kernel's certified result under the payload's
+`kernel` key when the budget is positive. Tests:
+`test/test_thinking_kernel.py`.
+
 ## Parser And Conceptual Order
 
 Grammar mode is derived from the loaded grammar block. Default-only unary

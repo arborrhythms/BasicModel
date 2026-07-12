@@ -315,13 +315,12 @@ class TestBoundaryHookForwardWiring(unittest.TestCase):
         # output-role rule in the role-collapsed default).
         rel_ids = [
             rid for rid in sorted(g._relative_rule_id_set())
-            if g.rules[rid].method_name in g._RELATIVE_OP_NAMES
-            and ".reverse" not in (g.rules[rid].canonical or "")]
+            if ".reverse" not in (g.rules[rid].canonical or "")]
         if not rel_ids:
-            # ADAPTED 2026-07-05: relation family relocated to <Queries>
-            # (integration design pending) -- no grammar-level producer.
-            self.skipTest("no relative parse rule in the configured "
-                          "grammar -- relation family lives in <Queries>")
+            # No grammar-level relative producer (complete.grammar regained
+            # its compose relations part/whole/equal 2026-07-05; the rule set
+            # is lhs-driven, so this fires only without relative starts).
+            self.skipTest("no relative parse rule in the configured grammar")
         rel_id = rel_ids[0]
 
         cs = m.conceptualSpace

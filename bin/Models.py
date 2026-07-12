@@ -847,6 +847,14 @@ class BaseModel(Mereology, nn.Module):
         # Back-compat: code/tests that gate on the boolean still work.
         self.query_reasoning = self.reasoning_iterations > 0
 
+        # The Thinking Kernel (doc/plans/thinking_kernel_spec.md; execution
+        # notes doc/plans/2026-07-12-thinking-kernel-execution.md). N = the op
+        # budget of a top-level think() frame. Absent/0 ⇒ off (byte-identical);
+        # positive ⇒ answer_query additionally attaches the kernel's certified
+        # result under the payload's "kernel" key.
+        self.thinking_budget = max(0, int(TheXMLConfig.get(
+            "architecture.thinkingBudget", default=0) or 0))
+
         # Serial word-at-a-time object/meta (doc/specs/mereological-order-
         # raising.md "Serial-mode word-at-a-time loop"; Alec 2026-06-17). When
         # on (serial only), the per-word body HARD-MASKS each step to the active
@@ -1118,6 +1126,13 @@ class BaseModel(Mereology, nn.Module):
             except Exception:
                 pass
 
+        # Thinking Kernel next-op head (§12.6): built eagerly when its loss
+        # weight is positive, for the same reason -- getOptimizer must see the
+        # params at train start. Weight 0 builds nothing (byte-identical).
+        if float(getattr(self, "thinking_loss_weight", 0.0) or 0.0) > 0.0:
+            from thinking import NextOpPolicy
+            self._next_op_policy = NextOpPolicy()
+
         return cfg
 
     def create(self, **kwargs):
@@ -1158,7 +1173,7 @@ class BaseModel(Mereology, nn.Module):
         # => the attrs are unset => no extra params (byte-identical).
         for _att_name in ("reading_attention", "global_attention",
                           "_intervening_generator", "_reasoning_ga",
-                          "_predict_next_scorer"):
+                          "_predict_next_scorer", "_next_op_policy"):
             _att = getattr(self, _att_name, None)
             if _att is not None:
                 for p in _att.parameters():
@@ -4940,6 +4955,25 @@ class BasicModel(BaseModel):
             # deduction} blend to predict the observed next end-state root.
             # Default weight 0.0 -> skipped -> byte-identical; no-op without a
             # >=2-entry discourse chain.
+            # Thinking Kernel next-op policy loss (§12.6): behavior-clones the
+            # NextOpPolicy head on grounded kernel traces generated from the
+            # reasoning store (the teacher runs with materialize=False, so
+            # trace generation never writes LTM). Default weight 0.0 ->
+            # skipped -> byte-identical; also a no-op without a head / store /
+            # 2-hop chains.
+            if train and float(
+                    getattr(self, "thinking_loss_weight", 0.0) or 0.0) > 0.0:
+                try:
+                    tk_loss = self._thinking_policy_loss()
+                except Exception:
+                    tk_loss = None         # a kernel hiccup must not abort training
+                if tk_loss is not None:
+                    totalLoss = totalLoss + self.thinking_loss_weight * tk_loss
+                    TheError.add(
+                        "thinking", tk_loss,
+                        weight=self.thinking_loss_weight,
+                        space="SymbolSpace", category="policy")
+
             if train and float(
                     getattr(self, "predict_next_loss_weight", 0.0) or 0.0) > 0.0:
                 try:
@@ -6011,6 +6045,11 @@ class BasicModel(BaseModel):
         # deduction} blend). 0.0 -> no term -> byte-identical.
         self.predict_next_loss_weight = float(
             TheXMLConfig.training("predictNextLossWeight", default=0.0) or 0.0)
+        # Thinking Kernel next-op policy loss weight (spec §12.6): behavior-
+        # clones the NextOpPolicy head on successful kernel traces generated
+        # from the reasoning store. 0.0 -> no term -> byte-identical.
+        self.thinking_loss_weight = float(
+            TheXMLConfig.training("thinkingLossWeight", default=0.0) or 0.0)
 
         # Syntax tree dump — when <writeSyntax>true</writeSyntax> is
         # set in the model XML (under <architecture>), BasicModel.forward
@@ -9363,6 +9402,53 @@ class BasicModel(BaseModel):
             materialize=bool(getattr(self, "_ltm_consolidation", False)))
         return tool.run(query_spec)
 
+    @torch.no_grad()
+    def think_about(self, query_spec, *, spaces=None):
+        """Run the Thinking Kernel on a ``QuerySpec`` (doc/plans/
+        thinking_kernel_spec.md): the runtime-enforced lookup/part/think/query/
+        answer loop over a budgeted STM frame stack. Returns the kernel's
+        ``ChildResult`` (value + truth interval + trust + trace), or ``None``
+        when the kernel is off (``thinking_budget == 0``) — byte-identical.
+        Shares the reasoner + the soft ordering half (generator/GA/spaces) with
+        ``reason_about``; LTM lemma write-back is gated by
+        ``<ltmConsolidation>`` exactly as there."""
+        budget = int(getattr(self, "thinking_budget", 0) or 0)
+        if budget <= 0:
+            return None
+        from reasoning import TruthGroundedReasoner
+        from thinking import ThinkingKernel, KernelPolicy
+        reasoner = TruthGroundedReasoner(self)
+        if spaces is None:
+            spaces = self._reasoning_spaces()
+        gen, ga = self._reasoning_tooluser(spaces)
+        kernel = ThinkingKernel(
+            reasoner, budget=budget, generator=gen, ga=ga, spaces=spaces,
+            policy=KernelPolicy(
+                next_op=getattr(self, "_next_op_policy", None)),
+            materialize=bool(getattr(self, "_ltm_consolidation", False)))
+        return kernel.run(query_spec)
+
+    def _thinking_policy_loss(self):
+        """§12.6: the next-op behavior-cloning loss. Generates grounded kernel
+        traces from store-derived 2-hop isPart targets (the deterministic
+        teacher, materialize=False -- no LTM writes in the hot loop) and
+        cross-entropy-trains the NextOpPolicy head on their (state, op) pairs.
+        ``None`` when the head is not built / no store / no chains -- so the
+        caller adds nothing (byte-identical). Gated by
+        ``thinking_loss_weight > 0`` at the call site."""
+        head = getattr(self, "_next_op_policy", None)
+        if head is None:
+            return None
+        from reasoning import TruthGroundedReasoner
+        from thinking import ThinkingKernel, traces_from_store, next_op_loss
+        reasoner = TruthGroundedReasoner(self)
+        budget = int(getattr(self, "thinking_budget", 0) or 0) or 16
+        kernel = ThinkingKernel(reasoner, budget=budget, materialize=False)
+        examples = traces_from_store(kernel)
+        if not examples:
+            return None
+        return next_op_loss(head, examples)
+
     def reason_predict_next(self, state_idea, *, spaces=None):
         """Step 2: the differentiable next-idea blend over {arma, retrieval,
         deduction}. Returns ``(e_hat, weights)`` or ``None`` when reasoning is
@@ -9488,8 +9574,12 @@ class BasicModel(BaseModel):
             from Language import TheGrammar
             if hasattr(TheGrammar, "_ensure_configured"):
                 TheGrammar._ensure_configured()
-            has_query = any(getattr(r, "query", False)
-                            for r in getattr(TheGrammar, "rules", []))
+            # The query capability signal: a <Queries> declaration (the
+            # post-relocation home -- complete.grammar carries NO query="true"
+            # rules since 2026-07-05) OR a legacy query="true" rule.
+            has_query = (bool(getattr(TheGrammar, "query_ops", []))
+                         or any(getattr(r, "query", False)
+                                for r in getattr(TheGrammar, "rules", [])))
         except Exception:
             has_query = False
         if not has_query:
@@ -9560,7 +9650,7 @@ class BasicModel(BaseModel):
         result = self.reason_about(spec, beam=beam)
         if result is None:
             return None
-        return {
+        payload = {
             "posture": result.posture,
             "confidence": float(result.confidence),
             "support_true": float(result.support_true),
@@ -9568,6 +9658,23 @@ class BasicModel(BaseModel):
             "sentences": self._realize_ideas(result, n=self.reasoning_iterations),
             "trace": result.trace,
         }
+        # The Thinking Kernel rides ALONGSIDE the reasoner payload (off ⇒ no
+        # key ⇒ byte-identical). A kernel error must not break the answer.
+        if int(getattr(self, "thinking_budget", 0) or 0) > 0:
+            try:
+                kres = self.think_about(spec)
+            except Exception:
+                kres = None
+            if kres is not None:
+                payload["kernel"] = {
+                    "value": str(kres.value),
+                    "interval": [float(kres.interval.lower),
+                                 float(kres.interval.upper)],
+                    "trust": float(kres.trust),
+                    "luminosity": float(kres.interval.luminosity),
+                    "ops": [str(e.get("op")) for e in kres.trace],
+                }
+        return payload
 
     def _passback_scope_ps(self, pass_idx, ps_default, prevCS_forSS):
         """Apply the WS->PS top-down pass-back to choose PartSpace's input for a

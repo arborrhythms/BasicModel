@@ -263,6 +263,15 @@
            positive value (10 recommended) turns it on with that chain depth;
            0 is explicitly off. -->
       <xs:element name="reasoningIterations" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <!-- The Thinking Kernel (doc/plans/thinking_kernel_spec.md): the
+           runtime-enforced lookup/part/think/query/answer loop over truth
+           intervals + trust and an STM frame stack. N = the op budget of a
+           top-level think() frame (every executed operation costs 1; child
+           frames draw from the parent's remaining budget; exhaustion closes
+           the frame bounded_unknown). This knob is the on/off SWITCH: absent
+           or 0 ⇒ kernel off (byte-identical); positive ⇒ a query answer
+           additionally carries the kernel's certified result. -->
+      <xs:element name="thinkingBudget" type="xs:nonNegativeInteger" minOccurs="0"/>
       <!-- DEPRECATED alias for reasoningIterations (the prior boolean gate).
            When true it enables reasoning at the default depth (10); prefer
            <reasoningIterations>. Default false. -->
@@ -772,6 +781,12 @@
            end-state root (gradient through the blend weights + scorer only,
            not the detached candidates). 0.0 = off (byte-identical). -->
       <xs:element name="predictNextLossWeight" type="nonNegativeFloat" minOccurs="0"/>
+      <!-- Thinking Kernel next-op policy loss weight (thinking_kernel_spec.md
+           section 12.6). Behavior-clones the NextOpPolicy head on grounded
+           kernel traces generated from the reasoning store's 2-hop chains
+           (the teacher runs materialize=false, so trace generation never
+           writes LTM). 0.0 = off (byte-identical; the head is not built). -->
+      <xs:element name="thinkingLossWeight" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="maskRate" type="unitInterval" minOccurs="0"/>
       <xs:element name="trainEmbedding" type="trainEnum" minOccurs="0"/>
       <xs:element name="embeddingScale" type="nonNegativeFloat" minOccurs="0"/>

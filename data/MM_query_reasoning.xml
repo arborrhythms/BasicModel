@@ -22,6 +22,11 @@
        absent and answerLossWeight 0 this file behaves like MM_qa. -->
   <architecture>
     <symbolicOrder>0</symbolicOrder>
+    <!-- SERIAL per-word body: the observe-site conversation push (the LTM
+         store-append) lives ONLY in _forward_body_per_word, so <truthSet>
+         provisioning needs it; with the parallel body provision_ltm ran
+         the forwards but landed 0 rows (found 2026-07-12). -->
+    <serial>true</serial>
     <subsymbolicOrder>3</subsymbolicOrder>
     <l1Lambda>0.01</l1Lambda>
     <sigmaPi>butterfly</sigmaPi>
@@ -37,6 +42,12 @@
 
     <!-- Reasoning ON: N=10 intervening ideas / a 10-step chain to the answer. -->
     <reasoningIterations>10</reasoningIterations>
+
+    <!-- The Thinking Kernel ON (doc/plans/thinking_kernel_spec.md): a query
+         answer additionally carries the kernel's certified result (value +
+         truth interval + trust + op trace) under the payload's "kernel" key.
+         16 = the op budget of a top-level think() frame. -->
+    <thinkingBudget>16</thinkingBudget>
 
     <!-- A parthood syllogism the reasoner can chain extensionally:
          socrates <= human <= mortal. -->
@@ -56,6 +67,10 @@
       <reconstructionScale>0.1</reconstructionScale>
       <!-- Phase C: train the soft reasoning route under the answer-policy loss. -->
       <answerLossWeight>0.1</answerLossWeight>
+      <!-- Thinking Kernel: behavior-clone the next-op head on grounded kernel
+           traces from the store's 2-hop chains (a no-op until the parse
+           yields real relation endpoints; harmless meanwhile). -->
+      <thinkingLossWeight>0.1</thinkingLossWeight>
     </training>
   </architecture>
 

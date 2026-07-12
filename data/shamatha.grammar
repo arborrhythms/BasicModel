@@ -3,6 +3,11 @@
   shamatha grammar, role-only format. Same C / S operator set as
   default.grammar plus the unary ``query`` operator. Declares ONLY
   operator roles (op_I[n] inputs, op_O1 output).
+
+  RELOCATED 2026-07-12 to complete.grammar's operator form, exactly as in
+  default.grammar: relations (part / equal) are assertive COMPOSITIONAL
+  operators; the is-prefixed boolean-predicate queries live in <Queries>.
+  See default.grammar's header for the measurement history.
 -->
 <grammar name="shamatha">
 
@@ -24,7 +29,7 @@
   </PartSpace>
 
   <Symbolic>
-    <start name="relative_truth">isEqual_O1</start>
+    <start name="relative_truth">equal_O1</start>
     <start name="relative_truth">part_O1</start>
 
     <compose>
@@ -36,9 +41,7 @@
       <rule>conjunction_O1 = conjunction.forward(conjunction_I1, conjunction_I2)</rule>
       <rule>disjunction_O1 = disjunction.forward(disjunction_I1, disjunction_I2)</rule>
       <rule query="false">part_O1 = part.forward(part_I1, part_I2)</rule>
-      <rule query="true">part_O1 = part.forward(part_I1, part_I2)</rule>
-      <rule query="false">isEqual_O1 = isEqual.forward(isEqual_I1, isEqual_I2)</rule>
-      <rule query="true">isEqual_O1 = isEqual.forward(isEqual_I1, isEqual_I2)</rule>
+      <rule query="false">equal_O1 = equal.forward(equal_I1, equal_I2)</rule>
       <!-- Unary query operator (shamatha-specific). -->
       <rule>query_O1 = query.forward(query_I1)</rule>
     </compose>
@@ -51,12 +54,21 @@
       <rule>not_I1 = not.reverse(not_O1)</rule>
       <rule>conjunction_I1, conjunction_I2 = conjunction.reverse(conjunction_O1)</rule>
       <rule>disjunction_I1, disjunction_I2 = disjunction.reverse(disjunction_O1)</rule>
-      <rule query="false">isEqual_I1, isEqual_I2 = isEqual.reverse(isEqual_O1)</rule>
-      <rule query="true">isEqual_I1, isEqual_I2 = isEqual.reverse(isEqual_O1)</rule>
+      <rule query="false">equal_I1, equal_I2 = equal.reverse(equal_O1)</rule>
       <rule query="false">part_I1, part_I2 = part.reverse(part_O1)</rule>
-      <rule query="true">part_I1, part_I2 = part.reverse(part_O1)</rule>
       <rule>query_I1 = query.reverse(query_O1)</rule>
     </generate>
   </Symbolic>
+
+  <Queries>
+    <!-- INTROSPECTION ops (parse-NOPs; see complete.grammar). -->
+    <query>isTrue(X)</query>
+    <query>isEqual(X, Y)</query>
+    <query>isPart(X, Y)</query>
+    <query>parts(X)</query>
+    <query>wholes(X)</query>
+    <query>quantize(X)</query>
+    <query>query(X, Y)</query>
+  </Queries>
 
 </grammar>

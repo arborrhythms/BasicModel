@@ -17,6 +17,12 @@
       (Mentioned here, never a rule.)
     - exist: redefined as "the NP is found in LTM and is trusted" - an LTM QUERY
       (introspection). It remains the absolute-truth predicate / start state.
+      DECIDED 2026-07-12 (with the Thinking Kernel landing): exist STAYS in
+      <compose>. It carries a STRUCTURAL role its Queries cousins never had -
+      the absolute-truth START rooting the 1-concept sentence form - and its
+      introspective half is already served by isTrue(X) in <Queries> (the
+      kernel's lookup()). Relocating it would leave the grammar with no
+      absolute start. bin/thinking.py / doc/plans/thinking_kernel_spec.md.
     - INTROSPECTION ("thinking") ops - query, part, equal, exist - read the
       codebook / relations / LTM and are NOP for a parse (they build no
       structure). Listed under <queries>, NOT <compose>. queryPart / queryEqual

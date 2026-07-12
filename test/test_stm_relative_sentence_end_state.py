@@ -63,16 +63,14 @@ def _forward_relative_rule_id():
     rel = g._relative_rule_id_set()
     for rid in sorted(rel):
         r = g.rules[rid]
-        if (r.method_name in g._RELATIVE_OP_NAMES
-                and '.reverse' not in (r.canonical or '')):
+        if '.reverse' not in (r.canonical or ''):
             return rid
-    # ADAPTED 2026-07-05: the relation family (isEqual/isPart) relocated to
-    # complete.grammar's <Queries> (Alec: query tools, no defined syntactic
-    # operation; integration design pending). The relative-sentence
-    # machinery keeps existing; without a grammar-level producer these
-    # integration tests SKIP until the integration design lands.
-    pytest.skip("no relative parse rule in the configured grammar -- the "
-                "relation family lives in <Queries> (integration pending)")
+    # No grammar-level relative producer (the is* QUERY cousins never count:
+    # queries are not parse structure). complete.grammar regained its
+    # producers 2026-07-05 as the COMPOSE relations part/whole/equal heading
+    # the relative_truth starts (rule set is lhs-driven), so this skip now
+    # fires only on a grammar without relative starts.
+    pytest.skip("no relative parse rule in the configured grammar")
 
 
 def _forward_absolute_rule_id():
