@@ -787,6 +787,21 @@ class BaseModel(Mereology, nn.Module):
                 "architecture.primingDecay", default=0.9))
         except (TypeError, ValueError):
             self.priming_decay = 0.9
+        # Energy-dissipating prime diffusion (Alec 2026-07-12): the fraction
+        # of a connected row's standing energy that moves to its neighbors
+        # per prime event. Live by default; 0 restores pure decay+bump.
+        try:
+            self.priming_spread = float(TheXMLConfig.get(
+                "architecture.primingSpread", default=0.25))
+        except (TypeError, ValueError):
+            self.priming_spread = 0.25
+        # 2b-2 opportunistic STM reduce gate: fold the top-2 during serial
+        # reading where the reducer DP's reduce marginal exceeds tau.
+        try:
+            self.stm_reduce_tau = float(TheXMLConfig.get(
+                "architecture.stmReduceTau", default=0.5))
+        except (TypeError, ValueError):
+            self.stm_reduce_tau = 0.5
         self.symbol_tower = bool(TheXMLConfig.get(
             "architecture.symbolTower", default=False))
 
@@ -903,6 +918,13 @@ class BaseModel(Mereology, nn.Module):
             object.__setattr__(_ss, '_symbolic_order', self.symbolicOrder)
             object.__setattr__(_ss, '_serial', self.serial)
             object.__setattr__(_ss, '_priming_decay', self.priming_decay)
+            object.__setattr__(_ss, '_priming_spread', self.priming_spread)
+            # Canonical priming (Alec 2026-07-12): per-stage WS delegate to
+            # the terminal's order-indexed codebook surface.
+            _ws_list = list(getattr(self, 'wholeSpaces', None) or [])
+            if _ws_list and _ss is not _ws_list[-1]:
+                object.__setattr__(_ss, '_priming_canonical_ref',
+                                   _ws_list[-1])
         # The ConceptualSpaces need the same stamp so the sparse-coding edge
         # population + scatter (gated on ``_symbolic_order > 0`` and parallel)
         # activate together. A plain host-attribute stamp -- byte-identical.
@@ -924,6 +946,13 @@ class BaseModel(Mereology, nn.Module):
             object.__setattr__(_cs, '_symbolic_order', self.symbolicOrder)
             object.__setattr__(_cs, '_serial', self.serial)
             object.__setattr__(_cs, '_priming_decay', self.priming_decay)
+            object.__setattr__(_cs, '_priming_spread', self.priming_spread)
+            # Canonical priming: non-zero CS stages delegate to stage 0
+            # (the concept-store owner).
+            _cs_list = list(getattr(self, 'conceptualSpaces', None) or [])
+            if _cs_list and _cs is not _cs_list[0]:
+                object.__setattr__(_cs, '_priming_canonical_ref',
+                                   _cs_list[0])
             # Back-ref to the model so the CS can rebuild the optimizer when its
             # per-order sparse weight Parameters grow (mirrors codebook growth).
             object.__setattr__(_cs, '_model', self)
@@ -2470,19 +2499,24 @@ class BasicModel(BaseModel):
     @torch.no_grad()
     def _primed_reading_step(self):
         """Hard-coded readingAttention (sec C, simplified law): scope =
-        the span of the hottest-primed word-whole. Reads the WS priming
-        surface + the staged spans and the stage-0 slot->row selections;
-        writes ``wholeSpaces[0]._passback_scope_where`` (the learned
-        producer's contract). Silent no-op when spans / surface are dark."""
+        the span of the hottest-primed word-whole. Spans come from the
+        stem's staging (ws0); the slot->row selections and the heat come
+        from the CANONICAL priming surface (the terminal WS codebook, Alec
+        2026-07-12) -- only canonical-stamp rows may index it. Writes
+        ``wholeSpaces[0]._passback_scope_where`` (the learned producer's
+        contract). Silent no-op when spans / stamp / surface are dark or
+        the canonical stamp is not slot-aligned with the staged spans."""
         ws0 = (self.wholeSpaces[0]
                if getattr(self, "wholeSpaces", None) else None)
         if ws0 is None:
             return
         spans = getattr(ws0, "_staged_analysis_spans", None)
-        idx = getattr(ws0, "_stage0_indices", None)
-        b = ws0.priming_weights()
+        ws_c = ws0._priming_target()
+        idx = getattr(ws_c, "_stage0_indices", None)
+        b = ws_c.priming_weights()
         if (spans is None or idx is None or b is None
-                or not torch.is_tensor(spans) or not torch.is_tensor(idx)):
+                or not torch.is_tensor(spans) or not torch.is_tensor(idx)
+                or int(idx.shape[0]) != int(spans.shape[0])):
             return
         B, K = int(spans.shape[0]), int(spans.shape[1])
         k_slots = min(K, int(idx.shape[1]))
@@ -2498,24 +2532,53 @@ class BasicModel(BaseModel):
         priming surface per space -- SEEN rows primed by being perceived,
         DESIRED/HATED rows by signed intent. The CS surface projects
         directly onto the pyramid's inventory rows as the ranking score
-        (boost - 1: neutral 0, desire positive, hate negative)."""
-        # SEEN write, WS: the stage-0 unity selections that fired this batch.
-        ws0 = (self.wholeSpaces[0]
-               if getattr(self, "wholeSpaces", None) else None)
-        if ws0 is not None:
-            idx = getattr(ws0, "_stage0_indices", None)
-            if torch.is_tensor(idx):
-                ws0.prime_seen(idx)
-                # Hard-coded reading -> word-whole wiring: while reading is
-                # desired, the staged word-whole rows are desired too (the
-                # staged span -> slot -> row chain IS the projection).
-                _rd = getattr(self, "_reading_desire", None)
-                if _rd is not None:
-                    ws0.prime_desire(idx, valence=float(_rd))
+        (boost - 1: neutral 0, desire positive, hate negative). Pure READ:
+        the SEEN/DESIRE writes live in ``_prime_seen_step`` (unconditional,
+        both paths, once per batch)."""
         b = cut_cs.priming_weights()
         if b is None:
             return None
         return (b - 1.0).unsqueeze(-1)               # [N, 1] signed score
+
+    @torch.no_grad()
+    def _prime_seen_step(self):
+        """UNCONDITIONAL SEEN priming (Alec 2026-07-12): perception itself
+        primes -- once per batch, on both paths, no ``<relevance>`` gate.
+        WS: each stage's unity selections (the serial path stamps the
+        terminal, the parallel pump stage 0); while READING is desired the
+        same rows are desired too (the span -> slot -> row chain IS the
+        projection). CS: the pyramid's admitted rows. Consumers stay put
+        (the pyramid priority read; the <relevance>-gated reading scope)."""
+        _rd = getattr(self, "_reading_desire", None)
+        # Canonical-only WS write: rows must index the canonical (terminal)
+        # codebook, and the terminal stamps its OWN unity selections on
+        # both paths (per-stage on parallel, terminal-only on serial) --
+        # the other stages' stamps are private-quantizer rows and dropped.
+        _ws_list = getattr(self, "wholeSpaces", None) or []
+        ws_c = _ws_list[-1] if len(_ws_list) else None
+        if ws_c is not None:
+            idx = getattr(ws_c, "_stage0_indices", None)
+            if torch.is_tensor(idx):
+                ws_c.prime_seen(idx)
+                if _rd is not None:
+                    ws_c.prime_desire(idx, valence=float(_rd))
+        cs0 = (self.conceptualSpaces[0]
+               if getattr(self, "conceptualSpaces", None) else None)
+        rows = (getattr(cs0, "_cs_level_rows", None)
+                if cs0 is not None else None)
+        if rows:
+            cs0.prime_seen(torch.cat([r.reshape(-1) for r in rows]))
+        # CS->PS / CS->WS heat projection (Alec 2026-07-12): the diffused
+        # concept heat lands on the word triples' PS pids (primed
+        # RECOGNITION) and word-whole WS rows (primed RETRIEVAL -- the
+        # surface the reading scope reads). Terminal WS: the relation
+        # store's pos->row tables live there (== stage 0 on sO=0 configs).
+        if cs0 is not None:
+            cs0.project_priming_to_towers(
+                getattr(self, "perceptualSpace", None),
+                (self.wholeSpaces[-1]
+                 if getattr(self, "wholeSpaces", None) else None),
+                gain=self.priming_spread)
 
     def _symbol_heat_source(self):
         """The live symbolic-history heat ``{symbol_id: heat}`` or None.
@@ -4420,6 +4483,9 @@ class BasicModel(BaseModel):
                     self._set_superposition_temperature(None)
                 self._exploration_trial = False
             self._end_step()
+            # Unconditional SEEN priming: the rows this forward fired bump
+            # their surfaces (no-grad bookkeeping; consumers read next batch).
+            self._prime_seen_step()
             outputDataPred = predictions
 
             # ε-growing codebook hook (Phase 4 follow-up): when any
@@ -7329,25 +7395,17 @@ class BasicModel(BaseModel):
         if (last_cs is not None and _cut_cs is not None
                 and _cut_cs._sparse_active()):
             _settled = last_cs.materialize()
-            # Relevance integration (sec C, gated <relevance>): per-tower
-            # novelty (settle residual on each view half) projected
-            # slot->row by the snap's argmax map, SUMMED with the symbolic
-            # history projection; consumed by the pyramid's top-K as a
-            # ranking bias. no_grad -- relevance selects, never trains.
-            if getattr(self, "relevance_on", False):
-                _prio = self._assemble_relevance_priority(
-                    _cut_cs, prev_cs_stage, last_cs, _settled)
-                object.__setattr__(_cut_cs, "_relevance_priority", _prio)
-            else:
-                object.__setattr__(_cut_cs, "_relevance_priority", None)
+            # Relevance integration (sec C, UNCONDITIONAL 2026-07-12): the
+            # priming surface is always warm (``_prime_seen_step``), so the
+            # pyramid's top-K always reads the boost-1 ranking bias -- zero
+            # (neutral) until primes accumulate. no_grad -- relevance
+            # selects, never trains.
+            _prio = self._assemble_relevance_priority(
+                _cut_cs, prev_cs_stage, last_cs, _settled)
+            object.__setattr__(_cut_cs, "_relevance_priority", _prio)
             _content, _acts = _cut_cs.cs_symbolic_phase(_settled)
-            # SEEN write, CS (gated): the pyramid's ADMITTED rows prime the
-            # concept surface -- awareness primes (sec C, simplified law).
-            if getattr(self, "relevance_on", False):
-                _rows = getattr(_cut_cs, "_cs_level_rows", None)
-                if _rows:
-                    _cut_cs.prime_seen(torch.cat(
-                        [r.reshape(-1) for r in _rows]))
+            # SEEN write moved to ``_prime_seen_step`` (unconditional, once
+            # per batch, both paths) -- awareness primes (simplified law).
             # Fail loud on a mis-shaped pyramid output (rows-first [N, B]):
             # a transposed acts would silently misuse batch rows as symbols.
             assert _acts is None or (
@@ -7488,7 +7546,7 @@ class BasicModel(BaseModel):
         self._stm_reducer_cached = layer
         return layer
 
-    def _stm_bounded_reduce_step(self, protect_depth=None):
+    def _stm_bounded_reduce_step(self, protect_depth=None, gate_tau=None):
         """ONE statically-unrolled, masked REDUCE micro-step (forced).
 
         Operates on the live STM ``[B, cap, D]`` buffer + the tensor
@@ -7545,6 +7603,10 @@ class BasicModel(BaseModel):
         """
         stm = self.conceptualSpace.stm
         reducer = self._stm_reducer()
+        if gate_tau is not None and reducer is None:
+            # 2b-2 scored (opportunistic) mode needs a grammar to license
+            # the fold; the degenerate mean-fold is an unlicensed parse.
+            return
         buf = stm._buffer                                  # [B, cap, D]
         B, cap, D = buf.shape
         depth = stm._depth                                 # [B] long
@@ -7580,6 +7642,12 @@ class BasicModel(BaseModel):
             # names which op fired -- parked for interpretable readback.
             parent = (soft + (hard - soft).detach())[:, 0, :]   # [B, D]
             object.__setattr__(self, "_stm_last_reduce_routing", routing)
+            if gate_tau is not None:
+                # 2b-2 scored gate: the DP's reduce-vs-copy marginal on the
+                # 2-window -- a row folds only where the grammar licenses
+                # the reduce above tau. Pure tensor mask, no host sync.
+                can = can & (
+                    routing["reduce_marginal"][:, 0] > float(gate_tau))
             # Method-2 reverse-reduce trace (serial plan Task 4): append this
             # step's chosen-op posteriors + the rows that actually folded, so
             # the reverse can walk the fold BACKWARD calling each op's
@@ -8254,6 +8322,18 @@ class BasicModel(BaseModel):
                         stm._max_depth_host = stm.capacity - 1
                     stm.push_step_masked(idea_bd, commit_b_1)
                     stm._max_depth_host = stm._max_depth_host + 1
+                    # Normal grammatical parse DURING reading (2b-2, Alec
+                    # 2026-07-12): two scored opportunistic reduce steps per
+                    # word -- the STM stack IS the syntactic loop; the
+                    # SymbolicLoop stays the activation processor. Masked
+                    # no-ops where the DP's reduce marginal stays under
+                    # <stmReduceTau>; structural no-op without an arity-2
+                    # grammar. The host depth mirror keeps its high-water
+                    # mark (a conservative upper bound, as documented above).
+                    self._stm_bounded_reduce_step(
+                        gate_tau=self.stm_reduce_tau)
+                    self._stm_bounded_reduce_step(
+                        gate_tau=self.stm_reduce_tau)
                 # Masked contribution: at inactive batch rows / padding
                 # columns the contribution is zero so it doesn't push
                 # bogus state into downstream concept reads. ``out_slot``

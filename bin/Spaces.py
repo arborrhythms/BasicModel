@@ -8095,7 +8095,10 @@ class Space(nn.Module):
             )
 
     def _priming_dim(self):
-        """Row count of this Space's priming surface (its codebook)."""
+        """Row count of the priming surface (the CANONICAL codebook)."""
+        t = self._priming_target()
+        if t is not self:
+            return t._priming_dim()
         sub = getattr(self, 'subspace', None)
         cb = sub.codebook() if (sub is not None
                                 and hasattr(sub, 'codebook')) else None
@@ -8107,13 +8110,54 @@ class Space(nn.Module):
         if b is None or int(b.shape[0]) != int(V):
             b = torch.ones(int(V), device=device)
             object.__setattr__(self, "_priming_boosts", b)
+        elif device is not None and b.device != device:
+            # Follow the caller's rows (e.g. a CPU-built model moved to mps):
+            # a stale-device surface would crash the index_add_ writes.
+            b = b.to(device)
+            object.__setattr__(self, "_priming_boosts", b)
         return b
+
+    def _priming_edges(self):
+        """``(src, dst, |w|)`` diffusion graph over this Space's priming
+        rows, or None. Base Spaces carry no row graph; ConceptualSpace
+        overrides with the concept store's untyped edges."""
+        return None
+
+    def _priming_target(self):
+        """The canonical priming holder (Alec 2026-07-12): per-stage towers
+        delegate to the ONE order-indexed codebook surface -- the terminal
+        WholeSpace / stage-0 ConceptualSpace -- so priming lives on THE
+        codebook, not on per-stage quantizer copies."""
+        return getattr(self, "_priming_canonical_ref", None) or self
+
+    def priming_row_orders(self):
+        """``[V]`` long abstraction orders of the priming rows -- the
+        canonical codebook's ramsification readout (order = count of
+        non-NEITHER folds). ``None`` when the codebook carries no table."""
+        t = self._priming_target()
+        sub = getattr(t, 'subspace', None)
+        cb = sub.codebook() if (sub is not None
+                                and hasattr(sub, 'codebook')) else None
+        ram = getattr(cb, 'ramsification', None)
+        if ram is None:
+            return None
+        orders = (ram != cb.FOLD_NEITHER).sum(dim=1).long()
+        # The table covers the full nVectors inventory; the surface tracks
+        # the ACTIVE getW view -- clip to the index-aligned prefix.
+        return orders[:t._priming_dim()]
 
     @torch.no_grad()
     def prime_seen(self, rows, bump=1.0, decay=None):
         """SEEN write (Architecture sec C, simplified law): decay the
-        surface toward neutral 1.0, then bump the rows that fired --
-        bottom-up things are primed in virtue of being seen."""
+        surface toward neutral 1.0, DIFFUSE a ``<primingSpread>`` fraction
+        of each connected row's standing energy to its neighbors (energy
+        moves, never amplifies -- so successive primes propagate energy
+        further out into the connected symbols), then bump the rows that
+        fired -- bottom-up things are primed in virtue of being seen.
+        Rows are CANONICAL-codebook rows; per-stage callers delegate."""
+        t = self._priming_target()
+        if t is not self:
+            return t.prime_seen(rows, bump=bump, decay=decay)
         V = self._priming_dim()
         if V <= 0 or rows is None or not torch.is_tensor(rows):
             return None
@@ -8121,6 +8165,23 @@ class Space(nn.Module):
                   else getattr(self, "_priming_decay", 0.9))
         b = self._priming_surface(V, device=rows.device)
         b.mul_(d).add_(1.0 - d)
+        s = float(getattr(self, "_priming_spread", 0.0) or 0.0)
+        edges = self._priming_edges() if s > 0.0 else None
+        if edges is not None:
+            src, dst, w = edges
+            keep = (src < V) & (dst < V)
+            src = src[keep].to(b.device)
+            dst = dst[keep].to(b.device)
+            w = w[keep].to(device=b.device, dtype=b.dtype)
+            if int(src.numel()):
+                # Per-source normalized transfer: each connected row gives
+                # away s * energy, split over its |edge| weights; the flow
+                # is conservative (dst gains exactly what src loses).
+                deg = torch.zeros(V, device=b.device,
+                                  dtype=b.dtype).index_add_(0, src, w)
+                flow = s * (b[src] - 1.0) * (w / deg[src].clamp(min=1e-12))
+                b.index_add_(0, dst, flow)
+                b.index_add_(0, src, -flow)
         r = rows.reshape(-1).long().clamp(0, V - 1)
         b.index_add_(0, r, torch.full((int(r.numel()),), float(bump),
                                       device=b.device, dtype=b.dtype))
@@ -8131,7 +8192,10 @@ class Space(nn.Module):
     def prime_desire(self, rows, valence=1.0, bump=1.0):
         """DESIRED (+) / HATED (-) write: signed suppression, floor 0,
         never a veto -- top-down things are primed in virtue of being
-        desired or hated."""
+        desired or hated. Rows are CANONICAL-codebook rows (delegated)."""
+        t = self._priming_target()
+        if t is not self:
+            return t.prime_desire(rows, valence=valence, bump=bump)
         V = self._priming_dim()
         if V <= 0 or rows is None or not torch.is_tensor(rows):
             return None
@@ -8144,9 +8208,9 @@ class Space(nn.Module):
         return b
 
     def priming_weights(self):
-        """The single quadratic priming surface ``[V]`` over this Space's
+        """The single quadratic priming surface ``[V]`` over the CANONICAL
         codebook rows (neutral 1.0), or ``None`` when never written."""
-        return getattr(self, "_priming_boosts", None)
+        return getattr(self._priming_target(), "_priming_boosts", None)
 
     def relevance_weights(self):
         """This tower's relevance IS its priming surface (Architecture
@@ -9181,7 +9245,8 @@ class InputSpace(Space):
                 # derivation from a lexed carrier.
                 raw = getattr(sub, "_raw_surface", None)
                 if torch.is_tensor(raw) and raw.dim() == 2:
-                    return raw.long().unsqueeze(1)       # [B, 1, N]
+                    # Deliver on the live device (raw may be the CPU host slab).
+                    return raw.long().unsqueeze(1).to(TheDevice.get())
                 # Fallback (pre-embedded caches): rebuild from the batch rows.
                 rows = getattr(self, "_last_sentences", None)
                 if rows:
@@ -14741,6 +14806,52 @@ class ConceptualSpace(Space):
             object.__setattr__(self, "_order_caps_cache", (key, caps))
         return self._order_caps_cache[1]
 
+    def _priming_edges(self):
+        """Undirected ``(src, dst, |w|)`` view of the shared concept store
+        for priming diffusion: each (concept row, constituent row) edge
+        conducts both ways; the trailing EVERYTHING bias column is not a
+        row and drops. Rebuilt per event from the LIVE edge values (they
+        train); the host walk is bounded by the store cap below."""
+        if not self._sparse_active():
+            return None
+        alloc = getattr(self, "_concept_allocator", None)
+        if alloc is None:
+            return None
+        layers = list(alloc._layers.values())
+        nnz = sum(int(ly.nnz) for ly in layers)
+        if nnz == 0:
+            return None
+        if nnz > 4096:
+            # Fail-loud (warn-once): an oversized store must announce that
+            # diffusion is skipped, never silently stop propagating.
+            if not getattr(self, "_priming_edges_capped_warned", False):
+                object.__setattr__(self, "_priming_edges_capped_warned", True)
+                warnings.warn(
+                    f"priming diffusion skipped: concept store nnz {nnz} "
+                    f"exceeds the 4096 host-walk cap", RuntimeWarning)
+            return None
+        src, dst, w = [], [], []
+        for ly in layers:
+            vals = getattr(ly, "values", None)
+            if vals is None or ly.nnz == 0:
+                continue
+            bias = int(ly.nInput) - 1
+            v = vals.detach().abs().cpu()
+            for pos, (r, c) in enumerate(zip(ly._rows, ly._cols)):
+                if c == bias:
+                    continue
+                wt = float(v[pos])
+                if wt <= 0.0:
+                    continue
+                src += [c, r]
+                dst += [r, c]
+                w += [wt, wt]
+        if not src:
+            return None
+        return (torch.tensor(src, dtype=torch.long),
+                torch.tensor(dst, dtype=torch.long),
+                torch.tensor(w, dtype=torch.float32))
+
     def order_slice(self, order):
         """The ``(start, end)`` row range of ramsified ``order`` in the stacked
         ``nVectors``-row concept inventory (``CS.subspace.what`` / SS)."""
@@ -16107,6 +16218,10 @@ class ConceptualSpace(Space):
             A, B, C = wom[key]
             for p in word_parts:                  # A keeps accruing word-parts
                 self.add_part(A, int(p))
+            # Class dispatch: mock harnesses drive this method with a bare
+            # namespace self, which carries no bound helper.
+            ConceptualSpace._priming_bridge_put(
+                self, A, C, word_parts, None, accrue=True)
             self._populate_concept_weights(A)      # re-decompose A (parts grew)
             # Hebbian: word/object co-occurred again -> strengthen the META
             # tie's edge values (no_grad; codebooks stay EMA-only). Weakening
@@ -16136,7 +16251,90 @@ class ConceptualSpace(Space):
         self._populate_concept_weights(A)
         self._populate_concept_weights(B)
         self._populate_concept_weights(C)
+        # CS->PS/WS priming-projection bridge (Alec 2026-07-12): the triple's
+        # surface anchors (taxonomy positions), keyed by A and its META C.
+        # Class dispatch: mock harnesses drive this method with a bare
+        # namespace self, which carries no bound helper.
+        ConceptualSpace._priming_bridge_put(self, A, C, word_parts, word_whole)
         return A, B, C
+
+    def _priming_bridge_put(self, A, C, word_parts, word_whole, accrue=False):
+        """Record (or accrue onto) the word triple's surface anchors:
+        ``{cid: (frozenset(part positions), whole position | None)}`` for
+        A and its META C -- the mint-time bridge ``project_priming_to_
+        towers`` resolves through the relation store's pos->row tables."""
+        br = getattr(self, "_priming_bridge", None)
+        if br is None:
+            br = {}
+            object.__setattr__(self, "_priming_bridge", br)
+        parts = frozenset(int(p) for p in word_parts)
+        whole = None if word_whole is None else int(word_whole)
+        if accrue and int(A) in br:
+            old_parts, old_whole = br[int(A)]
+            parts = parts | old_parts
+            whole = old_whole if whole is None else whole
+        br[int(A)] = (parts, whole)
+        if C is not None:
+            br[int(C)] = (parts, whole)
+
+    @torch.no_grad()
+    def project_priming_to_towers(self, ps_space, ws_space, gain=1.0):
+        """CS->PS / CS->WS heat projection (Alec 2026-07-12): each word
+        triple's standing energy lands on its word-parts' PS rows and its
+        word-whole's WS row, so recognition (PS) and reading retrieval (WS)
+        read a conceptually-primed surface. Anchors are taxonomy positions;
+        kind 'ps' resolves via ``_ps_pos_to_row``, 'ws'/'meta' via
+        ``_ws_pos_to_row`` (META vectors live on the WS codebook). The
+        destination surface takes one decay event then the signed additive
+        projection (steady state bounded); out-of-range rows are DROPPED,
+        never clamped (a clamp would misattribute heat to the last row)."""
+        b = self.priming_weights()
+        br = getattr(self, "_priming_bridge", None)
+        store = self._relation_store()
+        if b is None or not br or store is None:
+            return
+        ps_rows, ps_heat, ws_rows, ws_heat = [], [], [], []
+        kind = store._pos_kind
+        for cid, (parts, whole) in br.items():
+            row = self._csw_row_of(cid)
+            if row is None or row >= int(b.shape[0]):
+                continue
+            e = float(b[row]) - 1.0
+            if e == 0.0:
+                continue
+            refs = list(parts) + ([] if whole is None else [whole])
+            for pos in refs:
+                k = kind.get(int(pos))
+                if k == 'ps':
+                    r = store._ps_pos_to_row.get(int(pos))
+                    if r is not None:
+                        ps_rows.append(int(r))
+                        ps_heat.append(e)
+                elif k in ('ws', 'meta'):
+                    r = store._ws_pos_to_row.get(int(pos))
+                    if r is not None:
+                        ws_rows.append(int(r))
+                        ws_heat.append(e)
+        for space, rows, heat in ((ps_space, ps_rows, ps_heat),
+                                  (ws_space, ws_rows, ws_heat)):
+            if space is None or not rows:
+                continue
+            V = space._priming_dim()
+            if V <= 0:
+                continue
+            idx = torch.tensor(rows, dtype=torch.long)
+            val = torch.tensor(heat, dtype=torch.float32)
+            keep = idx < V
+            if not bool(keep.all()):
+                idx, val = idx[keep], val[keep]
+            if not int(idx.numel()):
+                continue
+            surf = space._priming_surface(V, device=idx.device)
+            idx = idx.to(surf.device)
+            d = float(getattr(space, "_priming_decay", 0.9))
+            surf.mul_(d).add_(1.0 - d)
+            surf.index_add_(0, idx, float(gain) * val.to(surf.dtype))
+            surf.clamp_(min=0.0)
 
     # ------------------------------------------------------------------
     # S3 relocation (2026-06-17; doc/specs/mereological-order-raising.md
@@ -17844,7 +18042,9 @@ _ANALYSIS_WS = (0, 9, 10, 13, 32)
 _ANALYSIS_PUNCT = tuple(sorted(
     set(range(33, 48)) | set(range(58, 65))
     | set(range(91, 97)) | set(range(123, 127))))
-_LUT_ANALYSIS_TYPE = torch.full((256,), _TYPE_LETTER, dtype=torch.long)
+# Host-island LUT: pin CPU (the global default device may be mps).
+_LUT_ANALYSIS_TYPE = torch.full((256,), _TYPE_LETTER, dtype=torch.long,
+                                device="cpu")
 _LUT_ANALYSIS_TYPE[list(_ANALYSIS_WS)] = _TYPE_SPACE
 _LUT_ANALYSIS_TYPE[list(range(48, 58))] = _TYPE_DIGIT
 _LUT_ANALYSIS_TYPE[list(_ANALYSIS_PUNCT)] = _TYPE_PUNCT
@@ -17875,7 +18075,8 @@ def _derive_type_lut(property_kind):
     their word-char behaviour by mapping to the letter type), and byte 0 (the
     ``\\0`` pad sentinel, which is NOT a member of the WHITESPACE class ranges)
     is forced to SPACE so the pad is always a discarded boundary."""
-    lut = torch.full((256,), _TYPE_LETTER, dtype=torch.long)
+    # Host-island LUT: pin CPU (the global default device may be mps).
+    lut = torch.full((256,), _TYPE_LETTER, dtype=torch.long, device="cpu")
     lut[0] = _TYPE_SPACE                    # \0 pad sentinel (not a ws-class byte)
     for _row, classes in property_kind.items():
         for cid in classes:
@@ -17932,22 +18133,23 @@ def _type_run_spans(type_ids):
     B, N = int(type_ids.shape[0]), int(type_ids.shape[1])
     is_run = type_ids != _TYPE_SPACE                 # non-space positions
     if N == 0:
-        return torch.zeros(B, 1, 2, dtype=torch.long)
-    first = torch.zeros(B, 1, dtype=torch.bool)
+        return torch.zeros(B, 1, 2, dtype=torch.long, device="cpu")
+    # Host-island cut: pin factories to CPU (default device may be mps).
+    first = torch.zeros(B, 1, dtype=torch.bool, device="cpu")
     prev_same = torch.cat(
         [first, type_ids[:, 1:] == type_ids[:, :-1]], 1)   # same type as prev
     nxt_same = torch.cat(
         [type_ids[:, :-1] == type_ids[:, 1:], first], 1)    # same type as next
     run_start = is_run & ~prev_same                  # first char of a run
     run_end = is_run & ~nxt_same                     # last char of a run (incl)
-    ar = torch.arange(N).unsqueeze(0).expand(B, N)
+    ar = torch.arange(N, device="cpu").unsqueeze(0).expand(B, N)
     starts = torch.where(run_start, ar, torch.full_like(ar, N))
     ends = torch.full_like(ar, -1)
     n_re = int(run_end.long().sum(1).max().item()) if N else 0
     if n_re > 0:
         re_rank = torch.cumsum(run_end.long(), 1) - 1
         rs_rank = torch.cumsum(run_start.long(), 1) - 1
-        re_end = torch.full((B, n_re), N, dtype=torch.long)
+        re_end = torch.full((B, n_re), N, dtype=torch.long, device="cpu")
         rep = run_end.nonzero(as_tuple=False)
         if rep.numel():
             bb, ii = rep[:, 0], rep[:, 1]
@@ -17958,7 +18160,7 @@ def _type_run_spans(type_ids):
             ends[bb, ii] = re_end[bb, rs_rank[bb, ii]]
     K = int(max(1, run_start.long().sum(1).max().item()))
     tok_rank = torch.cumsum(run_start.long(), 1) - 1
-    out = torch.zeros(B, K, 2, dtype=torch.long)
+    out = torch.zeros(B, K, 2, dtype=torch.long, device="cpu")
     sp = run_start.nonzero(as_tuple=False)
     if sp.numel():
         bb, ii = sp[:, 0], sp[:, 1]
@@ -18028,10 +18230,12 @@ def _divide_spans_into_attested(byte_vals, spans, percept_store,
     if not changed:
         return spans
     K = max(1, max(len(r) for r in out_rows))
-    t = torch.zeros(len(out_rows), K, 2, dtype=spans.dtype)
+    # Host-island cut: pin factories to CPU (default device may be mps).
+    t = torch.zeros(len(out_rows), K, 2, dtype=spans.dtype, device="cpu")
     for b, row in enumerate(out_rows):
         if row:
-            t[b, :len(row)] = torch.tensor(row, dtype=spans.dtype)
+            t[b, :len(row)] = torch.tensor(row, dtype=spans.dtype,
+                                           device="cpu")
     return t
 
 
@@ -18051,12 +18255,13 @@ def _word_punct_spans(is_word, is_punct):
     (the ``property_spans`` case).
     """
     B, N = int(is_word.shape[0]), int(is_word.shape[1])
-    zc = torch.zeros(B, 1, dtype=torch.bool)
+    # Host-island cut: pin factories to CPU (default device may be mps).
+    zc = torch.zeros(B, 1, dtype=torch.bool, device="cpu")
     prev_word = torch.cat([zc, is_word[:, :-1]], 1)
     nxt_word = torch.cat([is_word[:, 1:], zc], 1)
     word_start = is_word & ~prev_word            # first char of a word run
     word_end = is_word & ~nxt_word               # last char of a word run (incl)
-    ar = torch.arange(N).unsqueeze(0).expand(B, N)
+    ar = torch.arange(N, device="cpu").unsqueeze(0).expand(B, N)
     anchor = word_start | is_punct               # one entry per emitted token
     starts = torch.where(anchor, ar, torch.full_like(ar, N))
     # end (exclusive): punct -> i+1; word-start -> matching word_end + 1.
@@ -18065,7 +18270,7 @@ def _word_punct_spans(is_word, is_punct):
     if n_we > 0:
         we_rank = torch.cumsum(word_end.long(), 1) - 1
         ws_rank = torch.cumsum(word_start.long(), 1) - 1
-        we_end = torch.full((B, n_we), N, dtype=torch.long)
+        we_end = torch.full((B, n_we), N, dtype=torch.long, device="cpu")
         wep = word_end.nonzero(as_tuple=False)
         if wep.numel():
             bb, ii = wep[:, 0], wep[:, 1]
@@ -18076,7 +18281,7 @@ def _word_punct_spans(is_word, is_punct):
             ends[bb, ii] = we_end[bb, ws_rank[bb, ii]]
     K = int(max(1, anchor.long().sum(1).max().item()))
     tok_rank = torch.cumsum(anchor.long(), 1) - 1
-    out = torch.zeros(B, K, 2, dtype=torch.long)
+    out = torch.zeros(B, K, 2, dtype=torch.long, device="cpu")
     ap = anchor.nonzero(as_tuple=False)
     if ap.numel():
         bb, ii = ap[:, 0], ap[:, 1]
