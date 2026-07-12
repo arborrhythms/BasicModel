@@ -92,20 +92,21 @@ def test_ws_routes_universe_on_parallel_path():
 
 
 def test_ws_routing_after_serial_migration():
-    """The FINAL migrated law (2026-07-11): the unity is offered every
-    pump; a LIVE unity routes universe, a DEAD unity (all shipped configs
-    today -- no live analysis front-end yet) with a live carrier routes the
-    carrier body. Empty-carrier bootstraps route universe even when dead.
-    When <analysis>word</analysis> lands, universe routing lights up here
-    automatically -- no config gate.
+    """UNCONDITIONAL routing + the VALIDITY law (2026-07-12): a staged
+    unity routes universe, period; an ALL-ZERO unity is staged as None at
+    the stem and the carrier body routes. Embedding-mode inputs lex zero
+    byte buffers today (live-universe byte plumbing is the recorded
+    follow-on), so serial per-word routes carrier; when real bytes land,
+    universe routing engages with no code change. The parallel pump offers
+    its unity raw (glue contract) and stamps universe regardless.
     """
     m = _run_one_epoch("data/MM_20M_grammar.xml")
     stamps = [getattr(ws, "_ws_routed_source", None) for ws in m.wholeSpaces]
-    assert stamps[-1] == "carrier", stamps      # dead unity, live carrier
+    assert stamps[-1] == "carrier", stamps      # zero unity -> None staged
+    assert getattr(m, "_ws_universe", "x") is None
     m = _run_one_epoch("data/MM_20M_xor.xml")
     stamps = [getattr(ws, "_ws_routed_source", None) for ws in m.wholeSpaces]
-    assert stamps[0] == "universe", stamps      # empty-carrier bootstrap
-    assert all(s == "carrier" for s in stamps[1:]), stamps
+    assert stamps[0] == "universe", stamps      # pump raw offer at t=0
 
 
 # ---- Tasks B/C: signed snap + feedforward pyramid (rev 2 design §§2-5) ----

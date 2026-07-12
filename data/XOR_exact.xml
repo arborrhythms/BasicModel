@@ -15,7 +15,10 @@
     <symbolicOrder>0</symbolicOrder>
 
     <training>
-      <numEpochs>600</numEpochs>
+      <!-- 2026-07-12 re-derivation: the unity byte-channel fix moved the
+           init-sensitive two-timescale trajectory; 600 under-converges
+           (MSE 0.0986), 1200 lands the crisp basin (MSE ~3e-4). -->
+      <numEpochs>1200</numEpochs>
       <learningRate>0.005</learningRate>
       <autoload>false</autoload>
       <trainEmbedding>JOINT</trainEmbedding>

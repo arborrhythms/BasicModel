@@ -48,6 +48,10 @@
   <WholeSpace>
     <nOutput>8</nOutput>
     <nDim>14</nDim>
+    <!-- content width after the canonical where/when band (4+4): without
+         this the WS event is ALL BAND and unity evidence pools to zero
+         (dual-towers: the universe must have somewhere to land). -->
+    <nOutputDim>14</nOutputDim>
     <nVectors>8</nVectors>
   </WholeSpace>
 

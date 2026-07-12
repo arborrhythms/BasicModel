@@ -405,6 +405,31 @@ the path; off-path green.
     `_csw_row_of`). `set_reading(desire)` + the per-batch assembler wiring
     (staged rows desired while reading is on). 7 pins in
     test_frozen_concepts.py.
+31. **Unconditional universe routing + the validity law (Alec:
+    "shouldn't that be happening unconditionally?", 2026-07-12).** The
+    interim liveness branch is DELETED: a raw unity tensor routes
+    universe, period — no data-dependent branch, no is_compiling guard
+    (trace-safe by construction). Validity moved to the STEM (host-eager,
+    once per batch): an ALL-ZERO unity is NO unity — staged None, the
+    carrier body routes. Enablers landed: (a) `_unity_view` byte-channel
+    fix (the embedded-width flatten buried $T$ bytes in $T\times 1023$
+    zeros); (b) WS GEOMETRY TRANSPOSES on MM_20M_xor + MM_20M_grammar
+    (decision 4 applied consistently — their events were ALL BAND, zero
+    content width; the long-filtered EventEncoding build warning was the
+    smoking gun) + `<nOutputDim>` on the MM_grammar fixture. BARS:
+    grammar exact 1.0 HOLDS through the 128$\times$ WS widening (recon
+    $0.0518 \to 0.0051$ — still the WS-silencing effect, honestly
+    labeled); xor RUN_SLOW exact round-trip green post-transpose.
+    HONEST LIMIT: every unity is STILL all-zero — embedding-mode inputs
+    embed BEFORE InputSpace, so no bytes reach the lexed buffer; the
+    byte-channel reads a zero channel. FOLLOW-ONS: (i) plumb raw text
+    rows to the stem in embedding mode (loader row-identity) — then
+    universes go LIVE with no further code change; (ii) the
+    `<analysis>word</analysis>` flip on MM_sparse_concept is DEFERRED —
+    it OOMs at build ($2^{48}$-byte allocation at 65536-row WS dims;
+    needs its own sizing pass); (iii) the parallel pump's raw offer vs
+    the serial sites' validity-gated offer is a recorded asymmetry
+    (unifying would shift xor's stage-0 numerics).
 26. **Trace safety:** the liveness probe is data-dependent control flow —
     `make test` caught it via the compiled-CLI XOR node and the mlx export
     (GuardOnDataDependentSymNode). Fixed with the house

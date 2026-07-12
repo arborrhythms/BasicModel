@@ -186,21 +186,18 @@ def _count_unity_calls(m, x):
     return calls["real"], calls["none"]
 
 
-def test_ss_analyzes_unity_at_prelude_pump_zero():
-    """2c dual view: under serialObjectMeta the §6c prelude feeds WS the UNITY
-    at pump 0 (CS empty -> the legal _stage0_unity_forward path, no repeated-
-    injection NotImplementedError), so WS 'looks at the input' alongside PS."""
+def test_ss_unity_validity_at_stem():
+    """Unity VALIDITY law (2026-07-12): an all-zero unity is NO unity --
+    the stem stages None and the carrier body routes. This fixture's
+    embedding-mode input lexes a zero byte buffer (bytes never reach IS in
+    embedding mode -- the live-universe byte plumbing is the recorded
+    follow-on), so no unity feed is CORRECT here; when real bytes land,
+    universe routing engages with no code change."""
+    import torch as _t
     m, x = _serial_model_and_batch()
+    with _t.no_grad():
+        m.forward(x)
+    assert getattr(m, "_ws_universe", None) is None, (
+        "an all-zero unity must stage None")
     real, _none = _count_unity_calls(m, x)
-    assert real >= 1, "WS must analyze the unity at prelude pump 0"
-
-
-def test_ss_unity_feed_unconditional_after_migration():
-    """Serial migration (2026-07-11): the unity is OFFERED unconditionally
-    (the flag no longer gates the FEED); consumption is decided by the
-    typed+liveness routing law -- a dead unity with a live carrier routes
-    the carrier body, so non-dual preludes stay behaviorally intact."""
-    m, x = _serial_model_and_batch()
-    m.serial_object_meta = False
-    real, _none = _count_unity_calls(m, x)
-    assert real > 0, "unity must be offered every pump post-migration"
+    assert real == 0, "no unity feed from a zero unity (validity law)"

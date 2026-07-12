@@ -3937,14 +3937,14 @@ class BasicModel(BaseModel):
         """
         in_sub, concepts_in = self.inputSpace.forward(x)
         self._staged_concepts_in = concepts_in
-        # Dual-towers: WS's universe view is only WELL-FORMED on text input
-        # (string rows the analysis can cut); embedding-mode unities are
-        # degenerate flattened grids that analyse to dead zeros.
-        _ti = getattr(self.inputSpace.data, "train_input", None)
+        # Dual-towers: an ALL-ZERO unity is NO unity -- validity is decided
+        # HERE (host-eager stem, once per batch), never in routing. A None
+        # offer routes the carrier body; a real unity routes universe,
+        # unconditionally.
+        _u_ok = (torch.is_tensor(concepts_in)
+                 and bool((concepts_in != 0).any()))
         object.__setattr__(self, "_ws_universe",
-                           concepts_in if (isinstance(_ti, list) and _ti
-                                           and isinstance(_ti[0], str))
-                           else None)
+                           concepts_in if _u_ok else None)
         # Phase 4b: host-eager analysis cut. The configured WS analysis
         # (word / analyse) divides the unity into parts HERE -- in the
         # eager stem, exactly like the PS host tokenization -- and parks

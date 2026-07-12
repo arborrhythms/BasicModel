@@ -9274,7 +9274,14 @@ class InputSpace(Space):
                     return None
                 if buf.dim() == 2:          # [B, T] -> [B, 1, T]
                     return buf.unsqueeze(1)
-                if buf.dim() == 3:          # [B, T, nWhat] -> [B, 1, T*nWhat]
+                if buf.dim() == 3:
+                    # Lexed-not-yet-embedded text (IS is a pure lexer; PS
+                    # owns embedding): the unity is the BYTE CHANNEL
+                    # [B, 1, T] -- the embedded-width flatten buried T bytes
+                    # in T*(nWhat-1) zeros and every analysis pooled to 0.
+                    if not getattr(sub, "stem_embedded", True):
+                        return buf[..., 0].unsqueeze(1)
+                    # Genuinely embedded numeric input: one flattened row.
                     return buf.transpose(1, 2).reshape(buf.shape[0], 1, -1)
                 return None
             ev = sub.materialize()
@@ -22167,31 +22174,20 @@ class WholeSpace(Space):
         # SubSpace is therefore the pre-rev-2 legacy carrier call shape.
         _is_carrier = hasattr(in_sub, "is_empty")
         if in_sub is not None and not _is_carrier:
-            # Universe-primary (serial migration, Alec 2026-07-11) with a
-            # LIVENESS law: the universe drives when its analysis carries
-            # signal; a DEAD unity (embedding-mode: analyses to zeros) with
-            # a live carrier falls back to the recurrent body. Parallel is
-            # exempt (glue contract; its WS half awaits a live universe).
+            # UNCONDITIONAL universe routing (Alec 2026-07-12): a raw unity
+            # tensor IS the universe -- WS analyses it, period. The interim
+            # liveness law is deleted (unities are live now: the byte-channel
+            # unity fix + the WS geometry transposes). No data-dependent
+            # branches -- trace-safe by construction.
             out = self._stage0_unity_forward(in_sub)
+            object.__setattr__(self, "_cs_feedback", cs_out)
+            object.__setattr__(self, "_ws_routed_source", "universe")
             _ev = out.materialize() if hasattr(out, "materialize") else None
-            # The liveness probe is data-dependent: skip it under trace
-            # (house is_compiling pattern) -- all shipped universes are
-            # dead today, so the traced path is the carrier; revisit when
-            # <analysis>word</analysis> lights the universe up.
-            _alive = (not torch.compiler.is_compiling()
-                      and _ev is not None and _ev.ndim == 3
-                      and bool((_ev != 0).any()))
-            _par = (int(getattr(self, "_symbolic_order", 0) or 0) > 0
-                    and not bool(getattr(self, "_serial", True)))
-            if (_alive or _par or cs_out is None or cs_out.is_empty()):
-                object.__setattr__(self, "_cs_feedback", cs_out)
-                object.__setattr__(self, "_ws_routed_source", "universe")
-                if _alive:
-                    # Truth recording: the WS activation IS the unity
-                    # analysis under the migrated law (store_truths path).
-                    self._record_truth_activations(
-                        _ev, getattr(self, "symbolSpace", None))
-                return out
+            if _ev is not None and _ev.ndim == 3:
+                # Truth recording: the WS activation IS the unity analysis.
+                self._record_truth_activations(
+                    _ev, getattr(self, "symbolSpace", None))
+            return out
         object.__setattr__(self, "_ws_routed_source", "carrier")
         # Legacy mapping: cs_out primary; unity read only on an empty carrier.
         if cs_out is None and _is_carrier:

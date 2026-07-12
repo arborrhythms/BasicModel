@@ -91,8 +91,8 @@
     <nInputDim>1024</nInputDim>
     <nVectors>65536</nVectors>
     <nDim>1024</nDim>
-    <nOutput>1024</nOutput>
-    <nOutputDim>8</nOutputDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>1024</nOutputDim>
 
     <invertible>true</invertible>
     <butterfly>true</butterfly>

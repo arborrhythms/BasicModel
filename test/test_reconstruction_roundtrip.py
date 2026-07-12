@@ -54,7 +54,11 @@ def _build(config, seed=0):
 # (wherePeriod 8192 / whereRungRatio 32 -- no per-config period override; the
 # ladder decodes byte-exact starts at the full period, start error 0.0). The
 # 90/100 content-drift tail persists (same residual as before).
-EPOCHS_PINNED = 85
+# (That 85-window analysis is SUPERSEDED by the 2026-07-12 re-pin below.)
+# 2026-07-12 re-pin (WS geometry transposes, decision 4 applied to
+# MM_20M_xor/grammar): converges at 128 (exact 1.0, recon 3.8e-4;
+# 104 insufficient) -> 128 + 25% margin = 160. Prior pin: 85.
+EPOCHS_PINNED = 160
 
 
 def test_xor_recon_loss_is_live(tmp_path):
