@@ -3,7 +3,9 @@ ONE quadratic priming surface per space -- SEEN rows primed by being
 perceived (bump + exponential decay), DESIRED/HATED rows by signed intent
 (suppression floors at 0, never a veto). The CS surface feeds the pyramid's
 top-K as a ranking score; readingAttention is hard-coded over the WS
-surface. Default-off (<relevance>) -> byte-identical. cpu/eager.
+surface. Priming is UNCONDITIONAL (Alec 2026-07-12): the SEEN writes and
+the pyramid's priority read fire on every batch; ``<relevance>`` gates
+only the hard-coded reading-scope consumer. cpu/eager.
 """
 import os
 os.environ.setdefault("BASICMODEL_DEVICE", "cpu")
@@ -23,9 +25,11 @@ def _build(cfg):
     return model
 
 
-def test_surface_contract_default_dark():
-    """All three towers expose the surface APIs; default None (dark),
-    and relevance_weights IS the priming surface."""
+def test_surface_contract_cold_at_build():
+    """All three towers expose the surface APIs; None until a batch has
+    primed them (writes are unconditional but perception-driven), and
+    relevance_weights IS the priming surface. <relevance> still defaults
+    off -- it now gates only the reading-scope consumer."""
     m = _build("data/MM_sparse_concept.xml")
     towers = [m.perceptualSpace, m.wholeSpace]
     if m.symbolSpace is not None:
@@ -63,48 +67,49 @@ def test_desire_signed_floor():
     object.__setattr__(cs0, "_priming_boosts", None)
 
 
-def test_gated_integration_end_to_end():
-    """<relevance> on: awareness primes (pyramid winners write the CS
-    surface) and the pyramid consumes the surface as its ranking score;
-    off (default): everything stays None."""
+def test_unconditional_integration_end_to_end():
+    """No <relevance> needed: awareness primes (pyramid winners write the
+    CS surface) on every batch, and the pyramid consumes the surface as
+    its ranking score on the next one."""
     m = _build("data/MM_sparse_concept.xml")
     opt = m.getOptimizer(lr=0.01)
     cs0 = m.conceptualSpaces[0]
-    m.runEpoch(optimizer=opt, batchSize=4, split="train", max_batches=1)
-    assert getattr(cs0, "_relevance_priority", None) is None
-    assert cs0.priming_weights() is None
-    m.relevance_on = True
+    assert m.relevance_on is False
     try:
         m.runEpoch(optimizer=opt, batchSize=4, split="train", max_batches=1)
         b = cs0.priming_weights()
         assert torch.is_tensor(b) and float(b.max()) > 1.0, (
-            "admitted rows must prime the surface")
+            "admitted rows must prime the surface unconditionally")
         m.runEpoch(optimizer=opt, batchSize=4, split="train", max_batches=1)
         prio = getattr(cs0, "_relevance_priority", None)
         assert torch.is_tensor(prio), "the surface must feed the pyramid"
         assert float(prio.max()) > 0.0
     finally:
-        m.relevance_on = False
         object.__setattr__(cs0, "_priming_boosts", None)
         object.__setattr__(cs0, "_relevance_priority", None)
         object.__setattr__(m.wholeSpaces[0], "_priming_boosts", None)
+        for _ws in m.wholeSpaces:
+            object.__setattr__(_ws, "_priming_boosts", None)
 
 
 def test_primed_reading_scope():
     """Hard-coded readingAttention: scope = the span of the hottest-primed
-    word-whole (synthetic spans/selections; the learned producer's
-    contract)."""
+    word-whole. Spans are staged on ws0 (the stem's surface); the slot
+    selections and the heat live on the CANONICAL terminal codebook
+    (synthetic state; the learned producer's contract)."""
     m = _build("data/MM_sparse_concept.xml")
     ws0 = m.wholeSpaces[0]
-    V = ws0._priming_dim()
+    ws_c = m.wholeSpaces[-1]
+    assert ws0._priming_target() is ws_c, "per-stage WS must delegate"
+    V = ws0._priming_dim()                 # canonical dim via delegation
     assert V > 0, "WS must carry a codebook surface"
     spans = torch.tensor([[[0, 5], [6, 11]], [[0, 3], [4, 9]]],
                          dtype=torch.float32)
     idx = torch.tensor([[2, 5], [2, 5]]).clamp(max=V - 1)
     object.__setattr__(ws0, "_staged_analysis_spans", spans)
-    object.__setattr__(ws0, "_stage0_indices", idx)
-    object.__setattr__(ws0, "_priming_boosts", None)   # fresh surface
-    ws0.prime_desire(idx[0, 1:2], valence=3.0)         # desire slot-1's row
+    object.__setattr__(ws_c, "_stage0_indices", idx)
+    object.__setattr__(ws_c, "_priming_boosts", None)  # fresh surface
+    ws0.prime_desire(idx[0, 1:2], valence=3.0)  # delegates to the canonical
     try:
         m._primed_reading_step()
         scope = getattr(ws0, "_passback_scope_where", None)
@@ -112,9 +117,10 @@ def test_primed_reading_scope():
         assert scope[0].tolist() == [6.0, 11.0], "hottest whole wins"
         assert scope[1].tolist() == [4.0, 9.0]
     finally:
-        for attr in ("_staged_analysis_spans", "_stage0_indices",
-                     "_passback_scope_where", "_priming_boosts"):
+        for attr in ("_staged_analysis_spans", "_passback_scope_where"):
             object.__setattr__(ws0, attr, None)
+        for attr in ("_stage0_indices", "_priming_boosts"):
+            object.__setattr__(ws_c, attr, None)
 
 
 def _minted_cs():

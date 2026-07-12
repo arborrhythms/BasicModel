@@ -1,0 +1,119 @@
+<?xml version="1.0" ?>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="model.xsd">
+  <!-- MM_masked_semantic: masked SEMANTIC reconstruction driver (todo.md
+       deliverable). Masked-WORD prediction, not plain byte reconstruction:
+       the whole-slab masked-LM (create_ir_mask -> compute_masked) runs on
+       the PARALLEL symbolic path, so a masked word is predicted from BOTH
+       the parser-side category/semantic-whole evidence (grammar +
+       categoryCodebook + the word/object/meta mint under mereologyRaise)
+       and bottom-up attention over all active concepts (the sparse
+       conceptual pump + FF pyramid, MM_sparse_concept's live path).
+       Shape family = MM_sparse_concept (the proven parallel-pump family);
+       training block = masked-IR (MM_5M_IR's contract: nonzero maskRate,
+       reconstruction-dominant loss, sentencePrediction on). Smoke test:
+       test/test_masked_semantic.py. -->
+  <architecture>
+    <subsymbolicOrder>3</subsymbolicOrder>
+    <!-- explicit override: PARALLEL symbolic loop at symbolicOrder>=1
+         (whole-slab masked-LM stays engaged; the serial per-word path
+         would swap it for the D3 objective). -->
+    <serial>false</serial>
+    <symbolicOrder>3</symbolicOrder>
+    <l1Lambda>0.01</l1Lambda>
+    <sigmaPi>butterfly</sigmaPi>
+    <!-- word/object/meta mint -> the untyped edges on the concept store;
+         also the lattice behaviors (word-whole autobind, order raising). -->
+    <mereologyRaise>true</mereologyRaise>
+    <!-- the 3-stream peer bind incl. the SS symbol leg. -->
+    <symbolTower>true</symbolTower>
+    <!-- parser category evidence: the MetaSymbol role-participation VQ on
+         the terminal WholeSpace (default-on; explicit here because the
+         smoke test ablates it). -->
+    <categoryCodebook>true</categoryCodebook>
+
+    <data>
+      <dataType>embedding</dataType>
+      <dataset>xor</dataset>
+    </data>
+    <training>
+      <numEpochs>300</numEpochs>
+      <batchSize>12</batchSize>
+      <learningRate>0.01</learningRate>
+      <!-- masked-word reconstruction: nonzero Bernoulli word-mask rate. -->
+      <maskRate>0.3</maskRate>
+      <!-- reconstruction-heavy: dominates the auxiliary terms (SBOW at
+           0.1, l1 at 0.01). -->
+      <reconstructionScale>1.0</reconstructionScale>
+      <sentencePrediction>true</sentencePrediction>
+      <!-- the substitutability SITUATING signal on the concept codes. -->
+      <conceptualSimilarityScale>0.1</conceptualSimilarityScale>
+    </training>
+  </architecture>
+
+  <InputSpace>
+    <nOutput>8192</nOutput>
+    <nVectors>256</nVectors>
+    <nDim>1024</nDim>
+  </InputSpace>
+
+  <PartSpace>
+    <nInput>8192</nInput>
+    <nInputDim>1024</nInputDim>
+    <nVectors>65536</nVectors>
+    <nDim>1024</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>1024</nOutputDim>
+    <invertible>true</invertible>
+    <synthesis>radix</synthesis>
+  </PartSpace>
+
+  <ConceptualSpace>
+    <nInput>8</nInput>
+    <nInputDim>1024</nInputDim>
+    <!-- inventory sizing: the sparse caps are the TILE taper
+         [8, 4, 2, 1] (base = nOutput tiles, sum 15); an operator
+         grammar would halve the tiles (useGrammar="all") and shrink the
+         taper to [4, 2, 1, 1], overflowing the XOR mint (8 order-0
+         word/object syms + 4 order-1 METAs). With the 8-tile base the
+         mint fits exactly; nVectors 64 leaves inert rows for records-
+         only overflow so late minting cannot alias. -->
+    <nVectors>64</nVectors>
+    <stmCapacity>8</stmCapacity>
+    <nDim>1024</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>1024</nOutputDim>
+    <invertible>true</invertible>
+  </ConceptualSpace>
+
+  <WholeSpace>
+    <analysis>raw</analysis>
+    <nInput>8</nInput>
+    <nInputDim>1024</nInputDim>
+    <nVectors>65536</nVectors>
+    <nDim>1024</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>1024</nOutputDim>
+    <invertible>true</invertible>
+    <codebook>quantize</codebook>
+  </WholeSpace>
+
+  <OutputSpace>
+    <nInput>8</nInput>
+    <nInputDim>1024</nInputDim>
+    <nVectors>1</nVectors>
+    <nDim>1</nDim>
+    <nOutput>1</nOutput>
+    <nOutputDim>1</nOutputDim>
+  </OutputSpace>
+
+  <!-- NO <SymbolSpace><language> operator grammar here: any non-substrate
+       rule flips useGrammar="all" and the parallel body becomes the
+       N-halving progressive bottleneck (8->4->2), which shrinks the
+       concept-inventory taper AND clips the whole-slab masked-LM compare.
+       The parser side runs on the default substrate grammar: its pi/sigma
+       roles feed the categoryCodebook columns, and the word/object/meta
+       mint under <mereologyRaise> supplies the per-word category (META)
+       evidence. -->
+
+</model>

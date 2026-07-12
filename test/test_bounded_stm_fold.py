@@ -163,10 +163,13 @@ def test_cap_equivalence_short_sentence():
     def _counting_reduce(*args, **kwargs):
         # Force-to-fit (ingestion back-pressure) calls
         # _stm_bounded_reduce_step() with no protect_depth; the sentence-end
-        # sweep passes protect_depth=. Discriminate on the argument, not a
-        # hard-coded line number, so this robustly counts ONLY ingestion fires
-        # (a line-number check would silently miscount after any Models.py edit).
-        if not args and kwargs.get('protect_depth') is None:
+        # sweep passes protect_depth=, and the per-word opportunistic parse
+        # passes gate_tau= (scored, not back-pressure). Discriminate on the
+        # arguments, not a hard-coded line number, so this robustly counts
+        # ONLY ingestion fires (a line-number check would silently miscount
+        # after any Models.py edit).
+        if (not args and kwargs.get('protect_depth') is None
+                and kwargs.get('gate_tau') is None):
             bp_count_tight[0] += 1
         return _orig_reduce(*args, **kwargs)
     m._stm_bounded_reduce_step = _counting_reduce

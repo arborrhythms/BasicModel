@@ -123,13 +123,13 @@ def test_reading_wiring_desires_staged_wholes():
     try:
         m.set_reading(True)
         opt = m.getOptimizer(lr=0.01)
-        object.__setattr__(ws0, "_priming_boosts", None)
+        object.__setattr__(ws0._priming_target(), "_priming_boosts", None)
         m.runEpoch(optimizer=opt, batchSize=4, split="train", max_batches=1)
         b_read = ws0.priming_weights()
         assert b_read is not None, "staged rows must be primed"
         hot_read = float(b_read.max())
         m.set_reading(False)
-        object.__setattr__(ws0, "_priming_boosts", None)
+        object.__setattr__(ws0._priming_target(), "_priming_boosts", None)
         m.runEpoch(optimizer=opt, batchSize=4, split="train", max_batches=1)
         b_seen = ws0.priming_weights()
         assert b_seen is not None
@@ -138,5 +138,5 @@ def test_reading_wiring_desires_staged_wholes():
     finally:
         m.relevance_on = False
         m.set_reading(False)
-        object.__setattr__(ws0, "_priming_boosts", None)
+        object.__setattr__(ws0._priming_target(), "_priming_boosts", None)
         object.__setattr__(cs0, "_priming_boosts", None)

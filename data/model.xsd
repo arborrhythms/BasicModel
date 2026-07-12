@@ -183,6 +183,17 @@
       <!-- Exponential decay of the SEEN priming toward neutral 1.0, applied
            at each seen-write (sec C simplified law). Default 0.9. -->
       <xs:element name="primingDecay" type="xs:decimal" minOccurs="0"/>
+      <!-- Energy-dissipating prime diffusion (2026-07-12): the fraction of a
+           connected row's standing energy that moves to its neighbors (per-
+           source normalized over the concept store's |edge| weights) at each
+           prime event; successive primes propagate energy further out.
+           Live by default (0.25); 0 restores pure decay+bump. -->
+      <xs:element name="primingSpread" type="xs:decimal" minOccurs="0"/>
+      <!-- Opportunistic STM reduce gate (2b-2): during serial reading, after
+           each word's push the top-2 folds where the reducer DP's reduce-vs-
+           copy marginal exceeds tau. Default 0.5; >=1 disables the
+           mid-sentence parse (capacity/end-of-sentence sweeps unaffected). -->
+      <xs:element name="stmReduceTau" type="xs:decimal" minOccurs="0"/>
       <!-- Reading attention (doc/specs/reading-attention.md "(A) Reading
            attention"). When true, a learned .where producer runs at each t>0
            subsymbolic pass and writes _passback_scope_where (the normalized
