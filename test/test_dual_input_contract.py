@@ -67,15 +67,19 @@ def test_inputspace_forward_returns_dual_view():
     assert what is not None and what.dim() == 3 and what.shape[-1] == 1, (
         "atom view content channel must be [B, N, 1], got "
         f"{None if what is None else tuple(what.shape)}")
-    # Unity view: ONE width-N event.
+    # Unity view: ONE width-N event -- the DELIVERED raw surface itself
+    # (IS is not the lexer, 2026-07-12: bytes to PS, one whole to WS).
     assert torch.is_tensor(concepts_in) and concepts_in.dim() == 3, (
         f"concepts_in must be a [B, 1, N] tensor, got {type(concepts_in)!r}")
     B, one, N = concepts_in.shape
     assert one == 1, (
         f"unity view must be a SINGLE event, got {tuple(concepts_in.shape)}")
-    assert B == what.shape[0] and N == what.shape[1], (
-        "the two views must present the SAME B and N "
-        f"(atoms {tuple(what.shape)}, unity {tuple(concepts_in.shape)})")
+    raw = getattr(percepts_in, "_raw_surface", None)
+    assert torch.is_tensor(raw) and raw.dim() == 2, (
+        "the atom view must carry the delivered raw surface for PS")
+    assert B == raw.shape[0] and N == raw.shape[1], (
+        "the unity must be the SAME presentation as the delivered bytes "
+        f"(raw {tuple(raw.shape)}, unity {tuple(concepts_in.shape)})")
 
 
 def test_dual_views_share_values():
@@ -87,10 +91,13 @@ def test_dual_views_share_values():
     with torch.no_grad():
         percepts_in, concepts_in = m.inputSpace.forward(x)
         what = percepts_in.materialize(mode="what")
+    raw = getattr(percepts_in, "_raw_surface", None)
+    assert torch.is_tensor(raw), "the delivered raw surface must be staged"
     assert torch.equal(
         concepts_in.squeeze(1).to(torch.float32),
-        what[..., 0].to(torch.float32)), (
-        "unity-view values must equal the atom-view content channel")
+        raw.to(torch.float32)), (
+        "unity-view values must equal the DELIVERED bytes verbatim "
+        "(one presentation, two views)")
 
 
 def test_ws_stage0_consumes_unity():

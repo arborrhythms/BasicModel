@@ -187,17 +187,16 @@ def _count_unity_calls(m, x):
 
 
 def test_ss_unity_validity_at_stem():
-    """Unity VALIDITY law (2026-07-12): an all-zero unity is NO unity --
-    the stem stages None and the carrier body routes. This fixture's
-    embedding-mode input lexes a zero byte buffer (bytes never reach IS in
-    embedding mode -- the live-universe byte plumbing is the recorded
-    follow-on), so no unity feed is CORRECT here; when real bytes land,
-    universe routing engages with no code change."""
+    """Unity VALIDITY law + LIVE delivery (2026-07-12): IS is not the
+    lexer -- it delivers the raw surface, so the unity now carries the
+    batch's real bytes and the stem stages it (universe routing engaged,
+    exactly as the validity law promised once real bytes landed)."""
     import torch as _t
     m, x = _serial_model_and_batch()
     with _t.no_grad():
         m.forward(x)
-    assert getattr(m, "_ws_universe", None) is None, (
-        "an all-zero unity must stage None")
+    u = getattr(m, "_ws_universe", None)
+    assert _t.is_tensor(u) and bool((u != 0).any()), (
+        "the delivered unity must be staged live (real bytes)")
     real, _none = _count_unity_calls(m, x)
-    assert real == 0, "no unity feed from a zero unity (validity law)"
+    assert real > 0, "a live unity must feed the universe branch"

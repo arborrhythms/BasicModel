@@ -430,6 +430,96 @@ the path; off-path green.
     needs its own sizing pass); (iii) the parallel pump's raw offer vs
     the serial sites' validity-gated offer is a recorded asymmetry
     (unifying would shift xor's stage-0 numerics).
+32. **Unity goes LIVE from the batch rows (2026-07-12, in flight):**
+    `prepInput` already stashes the batch's raw strings
+    (`_last_sentences`); `_unity_view` now builds the WS unity as their
+    byte block ($[B,1,T]$, null-terminated) — measured live:
+    `'hello world'`, 46 nonzero bytes across the batch. xor 3-epoch recon
+    improves $0.0080 \to 0.0049$ (live stage-0 evidence); grammar exact
+    bar unchanged at 1.0. SUPERSEDING DIRECTIVE (Alec): IS is NOT the
+    lexer — it DELIVERS bytes to PS and ONE WHOLE to WS; PS assembles
+    chunks; WS divides into types. The lexing-in-IS is a REGRESSION to
+    locate (git archaeology in flight) and undo.
+33. **IS-is-not-the-lexer: the regression found and fixed (Alec
+    directive, 2026-07-12).** ARCHAEOLOGY: the 2026-04-21
+    lexer-to-inputspace plan deliberately moved lexing INTO IS (commit
+    f44282e, buried in a "Pytorch optimizations and input buffer fixes"
+    message); Action D (2026-06-06/07) and the dual-input plan
+    (2026-06-08) DECIDED the delivery contract (IS delivers bytes to PS +
+    one whole to WS; PS assembles chunks; WS divides types) but the
+    reversal was left incomplete: 5cdc006 kept word/byte tokenization
+    EXECUTING in IS for corpus-build speed, 4ce3f2d moved only the knob,
+    and the WS whole was implemented as a DERIVATION from the lexed
+    buffer -- which silently zeroed under raw mode. FIX: `_lex_batch` is
+    now pure DELIVERY (raw surface + slot width + zero what-carrier +
+    positional where/when; the non-raw tokenize arms are deleted);
+    `_unity_view` returns the raw surface itself (`[B,1,N]`, direct
+    delivery, `_last_sentences` rebuild as the pre-embedded-cache
+    fallback); byte-index consumers (`_embed_byte`, `_embed_bpe_gpu`,
+    `_embed_bpe_trie`) read `_delivered_bytes` (the raw surface capped to
+    the delivering IS's slot width). xor/grammar byte-identical (their
+    raw path already WAS the contract).
+34. **Finding: legacy's byte feed was NEVER alive.** The reference-
+    worktree diff (HEAD vs working tree, one legacy batch) shows the OLD
+    what-buffer was ALSO all-zero: legacy's `<lexer>byte</lexer>` tokens
+    were encoded into `nWhat=1` slots ("token bytes + null" in ONE
+    column) -- truncated to NOTHING since 2026-04. The bpe trie has
+    walked nulls ever since; every legacy baseline (incl. 2026-07-03's
+    recon 0.0044) was measured on a broken feed. The delivery contract
+    REPAIRS the feed (PS event goes 0 $\to$ live bytes); legacy's numeric
+    shift is repair, not regression -- the suites are the arbiter.
+35. **Delivery-contract verification round (2026-07-12, tree UNCOMMITTED
+    pending Alec's review).** (a) Serial law finalized: the universe
+    BOOTSTRAPS (empty carrier), carriers RECUR, parallel gets the
+    universe every stage -- a live unity every serial pump starved the
+    recurrent leg XOR_exact's output head depends on. (b) torch.export
+    dead-constant fixed (agent): the stale-event detach housekeeping at
+    the top of `_forward_per_stage` lifted the stem-parked PS event as an
+    unused constant under export; gated `is_exporting()` only (dynamo +
+    eager identical); mlx file 3 passed / 2 xfailed. NB
+    `is_compiling()`/`is_exporting()` are BOTH True inside non-strict
+    torch.export (probed). (c) Truth-compact bar follows the
+    gold-ingestion tc (unity-analysis magnitudes are small by
+    construction). (d) OPEN: XOR_exact output head flatlines (predictions
+    0.5000, loss constant from epoch 1; recon PERFECT at 2400 epochs) --
+    the delta severed its output gradient path; component bisect in
+    flight. Contract pins migrated to the live-delivery reality
+    (dual-view = raw surface verbatim; routing stamps; validity pin).
+36. **XOR_exact flatline root-caused (agent bisect) -- it was NEVER the
+    serial routing.** The zeroed what-carrier collapsed `valid_mask`
+    (validity derived from the carrier's first byte $\to$ every row
+    "invalid" $\to$ WholeSpace's per-cell gate zeroed the WS event at
+    every $t>0$ $\to$ the terminal CS event fed to the head was exactly 0
+    $\to$ zero grads, predictions pinned at 0.5); plus dead stage-0
+    evidence (the deprecated `<lexer>word</lexer>` spelling never reached
+    `analysis_mode`). FIXES (contract-true, bin/Spaces.py): validity +
+    `_valid_len_host` from the DELIVERED bytes; `_embed_lexicon`
+    publishes PS's own word-active mask (PS is the lexer);
+    `finalize_stem` accepts it; `analysis_mode` falls back to the
+    deprecated `<analyzer>`/`<lexer>` spellings. XOR_exact crisp again
+    (seeded MSE 0.045 < 0.05). CONSEQUENCE: the serial bootstrap-only law
+    (item 35a) was a reaction to this misdiagnosis -- REVERTED to the
+    unconditional unity offer (universe every pump; XOR_exact runs the
+    parallel loop and never touches the serial sites). Grammar lands its
+    best state: recon $0.0588 \to 0.005115$ at exact $= 1.0$, now from a
+    LIVE universe analysis (the honest version of the old ablation
+    number). 60 contract pins green.
+37. **OPEN AT HANDOFF (tree uncommitted for Alec's review): the xor
+    exact-match family.** The item-36 validity repair (mask from the
+    DELIVERED bytes) un-zeroed WS events on raw configs -- rows the old
+    zero-carrier-derived mask had flagged invalid now carry live WS
+    content. MM_20M_xor's long trajectories moved: recon LOSS is the best
+    ever ($2$-$5\times 10^{-4}$ across 128-320 epochs) but EXACT-MATCH
+    oscillates (0.5/0.5/0.0/0.25 at 128/160/224/320) -- a small content
+    drift in the decode, the same tail the EPOCHS_PINNED history already
+    documents. Affected pins: xor exact + harness-budget round-trips,
+    blind decode (0.5), test_mm_xor convergence (0.25 vs 0.20 bar).
+    DECISION NEEDED: re-derive the bars against the repaired dynamics
+    (possibly requiring the known drift-tail fix) vs revisiting the
+    validity semantics. Everything else green: 60 contract pins, mlx
+    export, XOR_exact crisp (seeded MSE 0.045), grammar exact $= 1.0$ at
+    recon 0.005115 (live universe), full gate 3128 passed / 5 failed
+    (all five = this family).
 26. **Trace safety:** the liveness probe is data-dependent control flow —
     `make test` caught it via the compiled-CLI XOR node and the mlx export
     (GuardOnDataDependentSymNode). Fixed with the house

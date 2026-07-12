@@ -5262,7 +5262,13 @@ class BasicModel(BaseModel):
         if ss is not None:
             tl = getattr(ss, 'truth_layer', None)
             if tl is not None and hasattr(tl, 'compact'):
-                tl.compact(min_trust=0.5)
+                # Gold ingestion (store_truths drops truth_criterion to 0
+                # to capture ALL provided truths): drop the compact bar the
+                # same way -- unity-analysis magnitudes are small by
+                # construction, unlike the retired body-snap norms.
+                _min_trust = 0.0 if float(getattr(
+                    self.wholeSpace, "truth_criterion", 1.0)) == 0.0 else 0.5
+                tl.compact(min_trust=_min_trust)
         self._detach_persistent_state()
 
     def _detach_persistent_state(self):
@@ -7090,8 +7096,15 @@ class BasicModel(BaseModel):
             # drives every stage on the PARALLEL path (glue contract);
             # non-parallel t>0 stays carrier-driven (the live recurrent leg).
             _par = self.symbolicOrder > 0 and not self.serial
+            # Under trace the unity is a lifted constant that the export
+            # config leaves unused (lift_constants_pass StopIteration);
+            # the traced path takes the carrier -- numerically what the
+            # pre-delivery export computed (its unity was all-zero).
+            _u_ok = not (torch.compiler.is_compiling()
+                         or torch.compiler.is_exporting())
             WS_sub = ws.forward(
-                (self._staged_concepts_in if (_par or t == 0) else None),
+                (self._staged_concepts_in
+                 if ((_par or t == 0) and _u_ok) else None),
                 cs_out=prevCS_forSS)
             # ``cs.forward`` does the STM push + the C->P / C->S handoff
             # bookkeeping and produces this stage's perception event CS_0
@@ -8156,6 +8169,9 @@ class BasicModel(BaseModel):
         # single-arg now (``pi(x) + sigma(x)`` on the same input —
         # no CS-feedback path entering PS at this level).
         PS_sub = self.perceptualSpace.forward(word_sub)
+        # Universe every pump (the carrier arrives as cs_out feedback);
+        # the earlier bootstrap-only law reacted to a misdiagnosed
+        # flatline (valid_mask collapse -- exec notes item 36).
         WS_sub = ws.forward(getattr(self, "_ws_universe", None),
                             cs_out=prevCS_forSS)
         CS_sub = cs.forward(PS_sub, WS_sub)
@@ -10198,9 +10214,13 @@ class BasicModel(BaseModel):
                 # selection; nothing to detach on ``event`` itself.
                 continue
             w = sub.event.getW()
+            # Host housekeeping only: under export the traced detach of a
+            # stem-parked host event lifts a DEAD constant (StopIteration
+            # in torch.export's lift_constants_pass), so skip it there.
             if (w is not None and torch.is_tensor(w)
                     and not isinstance(w, nn.Parameter)
-                    and w.ndim >= 3 and w.requires_grad):
+                    and w.ndim >= 3 and w.requires_grad
+                    and not torch.compiler.is_exporting()):
                 sub.event.setW(w.detach())
 
         # Per-run scratch.

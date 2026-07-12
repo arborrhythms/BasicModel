@@ -100,13 +100,20 @@ def test_ws_routing_after_serial_migration():
     universe routing engages with no code change. The parallel pump offers
     its unity raw (glue contract) and stamps universe regardless.
     """
+    m = _build("data/MM_20M_grammar.xml")
+    for w in m.wholeSpaces:                     # cached models: clear stamps
+        object.__setattr__(w, "_ws_routed_source", None)
     m = _run_one_epoch("data/MM_20M_grammar.xml")
     stamps = [getattr(ws, "_ws_routed_source", None) for ws in m.wholeSpaces]
-    assert stamps[-1] == "carrier", stamps      # zero unity -> None staged
-    assert getattr(m, "_ws_universe", "x") is None
+    assert stamps[-1] == "universe", stamps     # LIVE unity, per-word
+    import torch as _t
+    assert _t.is_tensor(getattr(m, "_ws_universe", None))
+    m = _build("data/MM_20M_xor.xml")
+    for w in m.wholeSpaces:
+        object.__setattr__(w, "_ws_routed_source", None)
     m = _run_one_epoch("data/MM_20M_xor.xml")
     stamps = [getattr(ws, "_ws_routed_source", None) for ws in m.wholeSpaces]
-    assert stamps[0] == "universe", stamps      # pump raw offer at t=0
+    assert stamps[0] == "universe", stamps      # live unity at the bootstrap
 
 
 # ---- Tasks B/C: signed snap + feedforward pyramid (rev 2 design §§2-5) ----

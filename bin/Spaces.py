@@ -9018,45 +9018,27 @@ class InputSpace(Space):
         return toks
 
     def _lex_batch(self, input):
-        """Tokenize a raw byte tensor into null-terminated UTF-8 byte slots.
+        """DELIVERY, not lexing (Alec 2026-07-12; restores the 2026-06-08
+        dual-input contract): IS hands its BYTES to PartSpace (the raw
+        surface; PS assembles chunks) and ONE WHOLE to WholeSpace (the
+        unity; WS divides it into types). No tokenization here -- the
+        2026-04-21 lexing-in-IS (f44282e) and its 5cdc006 build-speed
+        residue are removed.
 
-        Pure lexer -- no codebook access, no OOV discovery, no index
-        resolution. Those live on PartSpace.
-
-        Returns: (what_buf, where_idx, when_idx)
-          what_buf: [B, nIdeas, nWhat] long tensor of UTF-8 bytes, null-terminated.
-            Each slot holds one token's bytes followed by a null; tokens longer
-            than nWhat-1 bytes are truncated. Empty/padding slots are all-zero.
-          where_idx: [B, nIdeas] long tensor of byte offsets into the source.
-          when_idx:  [B, nIdeas] long tensor of sequential positions.
-
-        Self-contained: IS owns its RAW byte lexer; no peer reference.
+        Returns: (what_buf, where_idx, when_idx, host_tokens)
+          what_buf: [B, nIdeas, nWhat] zero carrier (PS re-lexes the raw
+            surface; the WHAT channel carries no tokens).
+          where_idx / when_idx: [B, nIdeas] positional arange carriers.
+          host_tokens: empty rows (PS consumes the whole-line surface).
         """
-        # IS owns its lexer (2026-06-07): use this InputSpace's OWN
-        # ``_radix_token_stream`` (bytes when ``byte_mode``, else word base
-        # tokens) -- NO peer-tokenizer borrow, ``_peer_perceptual`` is gone.
-        # The ``what`` buffer is just a carrier here; PartSpace owns ALL
-        # word/sub-word tokenization (it re-lexes the whole-line surface handed
-        # over via ``_host_tokens``): analyse/bpe/radix self-lex, lexicon via
-        # ``_embed_lexicon``. (Byte-forcing every config exploded the token
-        # count and slowed the full-corpus build, so the base granularity
-        # stays config-driven; PS re-lexing makes it RAW for PS regardless.)
-        tokenize = self._radix_token_stream
         dev = TheDevice.get()
 
-        # Lex the *host* byte slab when the byte cursor staged one
-        # (consumed once). It is byte-identical to the device `input`
-        # (runEpoch builds `input = host_slab.to(device,int8)
-        # .unsqueeze(1)`; `_to_text` masks `& 0xFF` so int8/uint8
-        # agree) and carries the same shape, so every line below is
-        # unchanged -- but `_token_stream`/`_to_text`'s `.tolist()` is
-        # now a CPU op, not a cudaMemcpyDtoH (residual A,
-        # doc/BrickHostSyncStatus.md). where_idx/when_idx/what_buf are
-        # still built on `dev` for downstream tensor consumers.
+        # Deliver the *host* byte slab when the cursor staged one
+        # (consumed once; byte-identical to the device copy).
         host_slab = getattr(self, '_host_input_slab', None)
         if host_slab is not None:
             self._host_input_slab = None  # consume once
-            self._last_host_slab = host_slab  # retained for post-run decode alignment (mirrors _last_sentences)
+            self._last_host_slab = host_slab  # post-run decode alignment
             input = host_slab
 
         if input.dim() == 3:
@@ -9067,13 +9049,8 @@ class InputSpace(Space):
         nIdeas = self.outputShape[0]
         nWhat = self.subspace.nWhat
 
-        # Byte-mode safety: cap the input to ``nIdeas`` bytes before the
-        # tokenizer sees it. Cursor mode already sizes the slab to nIdeas
-        # (one token per byte under byte-mode), so this is a no-op
-        # there. Non-cursor callers (tests via ``stringTensor``) hand in
-        # an ``inputLength``-padded buffer (e.g. 4096 bytes) -- without
-        # the cap the byte tokenizer would emit one token per padded
-        # null and overflow the assert. Constant time, no host sync.
+        # Byte-mode safety: cap the delivered width to ``nIdeas`` (cursor
+        # mode already sizes the slab; test callers hand padded buffers).
         if self.byte_mode and input.shape[-1] > nIdeas:
             input = input[..., :nIdeas]
 
@@ -9090,96 +9067,26 @@ class InputSpace(Space):
                 cache[key] = value
             return value
 
-        tokens_per_batch = []
-        # Raw lexing has fixed byte positions: .where and .when are both the
-        # same [B, N] coordinate carrier for a given input slab shape. Non-raw
-        # lexing still builds .where on the host from lexer offsets, then stages
-        # it to the device once; per-element writes into a device tensor would
-        # synchronize and are not graph-capturable.
-        if self.lexer == "raw":
-            where_idx = _cached_arange(
-                self._where_idx_cache, batch, nIdeas, dev)
-        else:
-            where_idx = torch.zeros(batch, nIdeas, dtype=torch.long,
-                                    device='cpu')
+        where_idx = _cached_arange(self._where_idx_cache, batch, nIdeas, dev)
         when_idx = _cached_arange(self._when_idx_cache, batch, nIdeas, dev)
+        what_buf = torch.zeros(
+            batch, nIdeas, nWhat, dtype=torch.long, device=dev)
+        host_tokens = [[] for _ in range(batch)]
 
-        if self.lexer == "raw":
-            # Raw/analyse consumers use the unanalyzed surface below and do
-            # not read token bytes from the WHAT carrier. Keep one empty row
-            # per batch element so host-token fallbacks preserve shape.
-            tokens_per_batch = [[] for _ in range(batch)]
-        else:
-            for b in range(batch):
-                stream = tokenize(input[b])
-                # Word-mode lexing under the post-2026-04 single-char regex
-                # produces more tokens per byte than the legacy grouped form
-                # (each digit / punct / whitespace is its own token), so a
-                # 4096-byte text slab can yield > nIdeas=1024 tokens. Truncate
-                # to nIdeas here -- losing tail content is preferable to
-                # asserting mid-epoch on long documents. Cursor mode still
-                # sizes the slab to nIdeas exactly, so this is a no-op there.
-                n_tokens = min(len(stream), nIdeas)
-                row = []
-                for i in range(n_tokens):
-                    token_text, start = stream[i]
-                    row.append(token_text)
-                    where_idx[b, i] = start
-                tokens_per_batch.append(row)
-                if n_tokens > 0:
-                    last_text, last_start = stream[n_tokens - 1]
-                    final_offset = last_start + len(last_text.encode('utf-8'))
-                else:
-                    final_offset = 0
-                for i in range(n_tokens, nIdeas):
-                    where_idx[b, i] = final_offset + (i - n_tokens)
-
-        if self.lexer != "raw":
-            # Single SYNCHRONOUS host->device stage for the host-built
-            # where_idx (correct + race-free; non_blocking on an ephemeral
-            # pinned buffer corrupts data when freed pre-transfer).
-            where_idx = where_idx.to(dev)
-
-        if self.lexer == "raw":
-            what_buf = torch.zeros(
-                batch, nIdeas, nWhat, dtype=torch.long, device=dev)
-            host_tokens = [[] for _ in range(batch)]
-        else:
-            what_buf = self.subspace.whatEncoding.encode_tokens(
-                tokens_per_batch, batch, nIdeas, nWhat, dev)
-            # Host-side decode-equivalent carried forward so
-            # PartSpace._embed skips the decode_tokens GPU->host sync
-            # (residual B). Bit-identical to decode_tokens(what_buf) -- the
-            # legacy lexicon path keeps this nWhat-clipped form. The analyse
-            # front end instead reconstructs the UNTRUNCATED surface (see
-            # _lex_and_embed) so its space-lexer is not limited by the .where
-            # character-space byte width.
-            host_tokens = self.subspace.whatEncoding.tokens_to_decoded(
-                tokens_per_batch, batch, nIdeas, nWhat)
-
-        # The surface the analyzer (chunking="analyse") lexes. With
-        # ``lexer == "raw"`` it is decoded STRAIGHT from the raw [B,1,N] input
-        # byte buffer -- PS owns all tokenization, no host-token
-        # reconstruction. Otherwise it is the untruncated join of the lexer's
-        # host tokens. NUL is the byte pad / EOS sentinel, never real surface,
-        # so it is stripped first.
-        if self.lexer == "raw":
-            self.subspace._raw_surface = input          # [B, N] raw byte buffer
-            self._analyse_surfaces = []
-            for b in range(batch):
-                row = input[b]
-                if row.device.type != "cpu":
-                    row = row.detach().cpu()
-                raw = row.to(torch.uint8).numpy().tobytes()
-                self._analyse_surfaces.append(
-                    raw.replace(b"\x00", b"").decode(
-                        "utf-8", errors="surrogateescape"))
-        else:
-            self._analyse_surfaces = [
-                "".join(t for t in (tokens_per_batch[b]
-                                    if b < len(tokens_per_batch) else [])
-                        ).replace("\x00", "")
-                for b in range(batch)]
+        # The BYTES delivered to PS (the raw surface PS assembles) and the
+        # per-row text surfaces the analyse front end divides. _raw_slots
+        # carries this IS's slot count (the old token-loop truncation width).
+        self.subspace._raw_surface = input           # [B, N] raw byte buffer
+        self.subspace._raw_slots = nIdeas
+        self._analyse_surfaces = []
+        for b in range(batch):
+            row = input[b]
+            if row.device.type != "cpu":
+                row = row.detach().cpu()
+            raw = row.to(torch.uint8).numpy().tobytes()
+            self._analyse_surfaces.append(
+                raw.replace(b"\x00", b"").decode(
+                    "utf-8", errors="surrogateescape"))
 
         return what_buf, where_idx, when_idx, host_tokens
 
@@ -9269,6 +9176,24 @@ class InputSpace(Space):
             return None
         with torch.no_grad():
             if self.model_type == "embedding":
+                # ONE WHOLE delivered to WS (Alec 2026-07-12): the raw byte
+                # surface itself, undivided -- direct delivery, never a
+                # derivation from a lexed carrier.
+                raw = getattr(sub, "_raw_surface", None)
+                if torch.is_tensor(raw) and raw.dim() == 2:
+                    return raw.long().unsqueeze(1)       # [B, 1, N]
+                # Fallback (pre-embedded caches): rebuild from the batch rows.
+                rows = getattr(self, "_last_sentences", None)
+                if rows:
+                    enc = [s.encode("utf-8") for s in rows]
+                    T = max(len(b) for b in enc) + 1        # null-terminated
+                    u = torch.zeros(len(enc), 1, T, dtype=torch.int64)
+                    for i, bs in enumerate(enc):
+                        u[i, 0, :len(bs)] = torch.tensor(
+                            list(bs), dtype=torch.int64)
+                    dev = getattr(sub.event.getW(), "device", None) if (
+                        sub.event is not None) else None
+                    return u.to(dev) if dev is not None else u
                 buf = sub.materialize(mode="what")
                 if buf is None:
                     return None
@@ -9334,19 +9259,21 @@ class InputSpace(Space):
             # ``_per_word_enabled``), so the IS-side handles are cleared.
             self._ar_embedded = None
             self._ar_embedded_N = None
-            # Valid length / mask come from the LEXED buffer (real == non-null
-            # first byte), so IS-side consumers (the static per-word loop's
-            # ``_valid_len_host``) need no embedded output. Eager host int at
-            # the (non-captured) IS boundary, matching the retired peer path.
+            # Validity comes from the DELIVERED bytes (the what carrier is
+            # a zero carrier now; deriving from it would zero the WS tower).
             with torch.no_grad():
-                _wbuf = sub.materialize(mode="what")
-                if _wbuf is not None:
-                    _first = _wbuf[..., 0] if _wbuf.dim() == 3 else _wbuf
-                    _valid_pos = (_first.long() != 0)
+                _raw = getattr(sub, "_raw_surface", None)
+                if _raw is None:
+                    _raw = sub.materialize(mode="what")
+                    if _raw is not None and _raw.dim() == 3:
+                        _raw = _raw[..., 0]
+                if _raw is not None:
+                    _valid_pos = (_raw.long() != 0)
                     _any = _valid_pos.any(dim=0)
-                    self._valid_len_host = (
+                    self._valid_len_host = min(
                         int(_any.nonzero().max().item()) + 1
-                        if bool(_any.any().item()) else 0)
+                        if bool(_any.any().item()) else 0,
+                        int(self.outputShape[0]))
                     sub.valid_mask = _valid_pos.any(dim=1).reshape(-1, 1)
                 else:
                     self._valid_len_host = 0
@@ -9513,7 +9440,7 @@ class InputSpace(Space):
                     _first = _wbuf[..., 0] if _wbuf.dim() == 3 else _wbuf
                     source_valid_pos = (_first.long() != 0)
         bpe_mask = (getattr(ps, "_bpe_word_mask", None)
-                    if _mode in ("bpe", "none", "mphf") else None)
+                    if _mode in ("bpe", "none", "mphf", "lexicon") else None)
         with torch.no_grad():
             _Te = embedded.shape[1]
             if bpe_mask is not None:
@@ -11067,6 +10994,21 @@ class PartSpace(Space):
         }
         return self.subspace
 
+    def _delivered_bytes(self, upstream_vspace):
+        """The bytes IS DELIVERED (the raw surface, UNRESIZED -- for
+        byte-mode it is exactly the old byte-token sequence); the legacy
+        what-carrier is the fallback for pre-delivery callers."""
+        raw = getattr(upstream_vspace, "_raw_surface", None)
+        if torch.is_tensor(raw) and raw.dim() == 2:
+            n = getattr(upstream_vspace, "_raw_slots", None)
+            if n is not None and raw.shape[-1] > int(n):
+                raw = raw[..., :int(n)]              # the old token-loop cap
+            return raw.long()
+        buf = upstream_vspace.materialize(mode="what")
+        if buf is None:
+            return None
+        return (buf[..., 0] if buf.dim() == 3 else buf).long()
+
     def _embed_bpe(self, upstream_vspace):
         """Dispatch BPE embedding: GPU tensor tokenizer when the vocab
         is FROZEN (``word_learning <= 0`` -- the CPU-pretrain -> freeze
@@ -11102,13 +11044,12 @@ class PartSpace(Space):
         trie path).
         """
         bpe = self._bpe_gpu_layer
-        what_buf = upstream_vspace.materialize(mode="what")
+        what_buf = self._delivered_bytes(upstream_vspace)
         if what_buf is None:
             raise RuntimeError(
                 "PartSpace._embed_bpe_gpu: upstream subspace.what "
                 "is empty.")
-        byte_indices = ((what_buf[..., 0] if what_buf.dim() == 3
-                         else what_buf).long())
+        byte_indices = what_buf
         codebook = self.subspace.what
         batch = what_buf.shape[0]
         nIdeas = self.outputShape[0]
@@ -11168,7 +11109,7 @@ class PartSpace(Space):
         Net: 2 small H2Ds + 1 gather + 1 reduce + 1 scatter for the
         whole batch's MAX-fuse, regardless of word/sub-token count.
         """
-        what_buf = upstream_vspace.materialize(mode="what")
+        what_buf = self._delivered_bytes(upstream_vspace)
         if what_buf is None:
             raise RuntimeError(
                 "PartSpace._embed_bpe: upstream subspace.what is empty. "
@@ -11761,13 +11702,11 @@ class PartSpace(Space):
         AR-window pad-and-unfold path) read the mask the same way they
         do for BPE mode.
         """
-        what_buf = upstream_vspace.materialize(mode="what")
+        what_buf = self._delivered_bytes(upstream_vspace)
         if what_buf is None:
             raise RuntimeError(
-                "PartSpace._embed_byte: upstream subspace.what is empty. "
-                "InputSpace.forward must lex into subspace.what.W before "
-                "PartSpace.forward runs.")
-
+                "PartSpace._embed_byte: no delivered bytes and no "
+                "what-carrier -- InputSpace.forward must run first.")
         dev = TheDevice.get()
         batch = what_buf.shape[0]
         nIdeas = self.outputShape[0]
@@ -11854,6 +11793,16 @@ class PartSpace(Space):
             surface = "".join(t for t in row if t)
             rows.append([t for (t, _off) in _parse(surface, lex="words")])
         upstream_vspace._host_tokens = rows
+        # PS owns the word slots, so PS publishes the word-active mask
+        # finalize_stem consumes (the lexicon twin of the byte-path mask).
+        nIdeas = int(self.outputShape[0])
+        _wm = torch.zeros(len(rows), nIdeas, dtype=torch.float32)
+        for b, row in enumerate(rows):
+            for n in range(min(len(row), nIdeas)):
+                if row[n]:
+                    _wm[b, n] = 1.0
+        self._bpe_word_mask = _wm.to(TheDevice.get())
+        self._bpe_word_mask_flat = None
         return self._embed(upstream_vspace)
 
     # ``_embed_analyse`` REMOVED (Phase 4b, analysis/synthesis dual-input
@@ -17954,11 +17903,20 @@ class WholeSpace(Space):
         # Catuskoti state lives on activation, not in the codebook row width.
         nSymbols = spaceShape[0]
         # WholeSpace owns one Pi fold; <analysis> selects top-down span cuts.
-        try:
-            self.analysis_mode = str(
-                TheXMLConfig.space(section, "analysis") or "byte")
-        except KeyError:
-            self.analysis_mode = "byte"
+        # Unset <analysis> follows the deprecated <analyzer>/<lexer> spellings
+        # (one intake knob; pure-delivery WS must divide the unity itself).
+        _a = None
+        for _key in ("analysis", "analyzer", "lexer"):
+            try:
+                _a = TheXMLConfig.space(section, _key)
+            except (KeyError, TypeError, ValueError):
+                _a = None
+            if _a:
+                break
+        if _key != "analysis" and _a not in (
+                "byte", "word", "grammatical", "raw", "sentence", "meronomy"):
+            _a = None  # non-analysis lexer spellings keep the byte default
+        self.analysis_mode = str(_a or "byte")
         if self.analysis_mode not in (
                 "byte", "word", "grammatical", "raw", "sentence", "meronomy"):
             raise ValueError(
@@ -22182,11 +22140,20 @@ class WholeSpace(Space):
             out = self._stage0_unity_forward(in_sub)
             object.__setattr__(self, "_cs_feedback", cs_out)
             object.__setattr__(self, "_ws_routed_source", "universe")
-            _ev = out.materialize() if hasattr(out, "materialize") else None
-            if _ev is not None and _ev.ndim == 3:
-                # Truth recording: the WS activation IS the unity analysis.
-                self._record_truth_activations(
-                    _ev, getattr(self, "symbolSpace", None))
+            # Truth recording is stateful host I/O -- never traced, and the
+            # event only materializes when recording can actually happen
+            # (a dead materialize leaves an unused constant that trips
+            # torch.export's lift_constants_pass).
+            _ss = getattr(self, "symbolSpace", None)
+            if (float(getattr(self, "truth_criterion", 1.0)) < 1.0
+                    and _ss is not None
+                    and getattr(_ss, "truth_layer", None) is not None
+                    and not (torch.compiler.is_compiling()
+                             or torch.compiler.is_exporting())):
+                _ev = (out.materialize()
+                       if hasattr(out, "materialize") else None)
+                if _ev is not None and _ev.ndim == 3:
+                    self._record_truth_activations(_ev, _ss)
             return out
         object.__setattr__(self, "_ws_routed_source", "carrier")
         # Legacy mapping: cs_out primary; unity read only on an empty carrier.
