@@ -32,9 +32,14 @@ class ResultCollector:
         self.start_time = time.time()
 
     def pytest_runtest_logreport(self, report):
-        if report.when == "call" or (report.when == "setup" and report.outcome == "error"):
+        if (report.when == "call"
+                or (report.when == "setup"
+                    and report.outcome in ("failed", "skipped"))):
             duration = report.duration
-            if report.passed:
+            if hasattr(report, "wasxfail") and report.passed:
+                outcome = "xpassed"
+                msg = report.wasxfail or ""
+            elif report.passed:
                 outcome = "passed"
                 msg = ""
             elif report.failed:
@@ -95,6 +100,7 @@ def generate_report(test_dir=None):
     failed = sum(1 for r in collector.results if r[1] == "failed")
     skipped = sum(1 for r in collector.results if r[1] == "skipped")
     xfailed = sum(1 for r in collector.results if r[1] == "xfailed")
+    xpassed = sum(1 for r in collector.results if r[1] == "xpassed")
     total = len(collector.results)
 
     # Summary table
@@ -105,6 +111,8 @@ def generate_report(test_dir=None):
     ]
     if xfailed:
         rows.append(["Expected failures", f'<span style="color:#cc0">{xfailed}</span>'])
+    if xpassed:
+        rows.append(["Unexpected passes", f'<span class="mismatch">{xpassed}</span>'])
     if skipped:
         rows.append(["Skipped", str(skipped)])
     rows.extend([
@@ -132,6 +140,8 @@ def generate_report(test_dir=None):
                 status = '<span class="mismatch">FAIL</span>'
             elif outcome == "xfailed":
                 status = '<span style="color:#cc0">XFAIL</span>'
+            elif outcome == "xpassed":
+                status = '<span class="mismatch">XPASS</span>'
             elif outcome == "skipped":
                 status = "SKIP"
             else:

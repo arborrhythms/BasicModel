@@ -73,15 +73,19 @@ def test_loadshards_preserves_order(tmp_path, monkeypatch):
     )
     monkeypatch.setattr(
         data_mod, "get_shard_paths",
-        lambda d, num_shards=1: ["fake_shard.parquet"],
+        lambda d, num_shards=1, random_select=False:
+            ["fake_shard.parquet"],
     )
 
     td = data_mod.Data()
     td.loadShards(num_shards=1, max_docs=100, shard_dir=str(tmp_path))
 
-    # 80/10/10 split; the first 80 docs should be the train set, in order.
-    assert td.train_input[:10] == [f"d{i}" for i in range(10)]
-    assert td.train_input[-1] == "d79"
+    # Document-safe 8/1/1 blocks: train retains canonical order while doc 8
+    # and doc 9 are held out, so no document can cross a split boundary.
+    assert td.train_input[:10] == [
+        "d0", "d1", "d2", "d3", "d4", "d5", "d6", "d7", "d10", "d11"]
+    assert td.validation_input[:2] == ["d8", "d18"]
+    assert td.test_input[:2] == ["d9", "d19"]
 
 
 def test_data_loader_uses_train_input_in_order():

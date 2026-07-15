@@ -1,0 +1,152 @@
+<?xml version="1.0" ?>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="model.xsd">
+  <!-- MATRIX VARIANT of data/MM_20M_grammar.xml. ONE FLAG FLIPPED:
+       PartSpace wordStore absent/false (parent) to true (here): the
+       PS percept store's WORD collection (type="words",
+       RadixLayer.word_ids: the promoted word-bounded entries, rows of
+       PS .what) becomes the reverse() recommenders' candidate basis in
+       the Method-2 free-derivation decode. Everything else verbatim from
+       the parent. See doc/plans/2026-07-12-word-store-typed-reverse.md. -->
+  <!-- MM_20M_grammar: the SERIAL sibling of MM_20M, now on the NEW DEFAULTS
+       synthesis=meronomy + analysis=meronomy (Task 6, plan
+       doc/plans/2026-07-03-reconstruction-fidelity-execution.md; Alec's
+       decision). The space dims are the XOR-proven meronomy shape
+       (data/MM_20M_xor.xml) adapted to serial mode, the SAME adaptation the
+       committed serial+radix sibling data/MM_mereology_serial.xml already
+       carries: IS 8192x1024 raw byte buffer; PS deep [B,8,1024] percepts from
+       a 65536-row MPHF codebook; CS deep hub [B,8,1024] (N=8=STM depth); WS
+       [8,1024] in, wide [1024,8] symbol slab out. Serial derivation is kept:
+       symbolicOrder=1 (no serial tag; derived true), per-word forward via
+       _forward_body_per_word, and grammatical composition (complete.grammar)
+       instead of the parallel per-stage butterfly bridges.
+
+       Under analysis=meronomy the lexer resolves to raw (Spaces.py
+       resolve_lexer), so use_byte_cursor=False and the supervised out_items
+       (the 0/1 XOR labels) reach the head; the byte-cursor AR stub-label
+       path this config trained on before the switch is retired. -->
+  <architecture>
+    <!-- legacy serial: per-word forward dispatch via _forward_body_per_word. -->
+    <symbolicOrder>1</symbolicOrder>
+    <!-- Mereological order-raising ON (Alec 2026-07-13): word-whole
+         sigma-binding + maybe_raise_order (higher-order percept parts,
+         the subsymbolic raise ladder) + percept .where band fill +
+         in-model word recognition. Without it there are no
+         subsymbolic raises on this config. -->
+    <mereologyRaise>true</mereologyRaise>
+    <radialStmReduce>true</radialStmReduce>
+    <subsymbolicOrder>3</subsymbolicOrder>
+    <l1Lambda>0.01</l1Lambda>
+    <!-- sigmaPi=butterfly: PS.Pi and SS.Sigma use O(N log N) cross-position
+         butterfly cascade (moved from per-space to architecture-level). -->
+    <sigmaPi>butterfly</sigmaPi>
+
+    <data>
+      <dataType>embedding</dataType>
+      <dataset>xor</dataset>
+    </data>
+
+    <training>
+      <numEpochs>1</numEpochs>
+      <batchSize>64</batchSize>
+      <learningRate>0.0005</learningRate>
+      <reconstructionScale>0.1</reconstructionScale>
+    </training>
+  </architecture>
+
+  <!-- InputSpace: raw byte intake, 8192-byte buffer x 1024-wide events (the
+       XOR-proven IS; was 1024x12 wide slots). Under the raw lexer the IS
+       emits the unanalyzed [B,1,N] byte buffer and PS owns tokenization. -->
+  <InputSpace>
+    <nOutput>8192</nOutput>
+    <nVectors>256</nVectors>
+    <nDim>1024</nDim>
+  </InputSpace>
+
+  <!-- PartSpace: deep [B, 8, 1024] meronomy percepts (was wide [B,1024,12]
+       lexicon slots). nVectors=65536 is the MPHF percept-codebook budget and
+       nDim=1024 the percept event width, both from the XOR-proven shape;
+       nInput/nInputDim consume the IS byte buffer. Content slab 8*1020
+       matches CS (band 4 subtracted per space). -->
+  <PartSpace>
+    <nInput>8192</nInput>
+    <nInputDim>1024</nInputDim>
+    <nVectors>65536</nVectors>
+    <nDim>1024</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>1024</nOutputDim>
+
+    <invertible>true</invertible>
+    <synthesis>meronomy</synthesis>
+    <!-- Promote a recurring word to a SINGLE percept after 2 sightings
+         (default 4) so PS climbs to word-size parts inside the small xor
+         dataset budget (mirrors MM_20M_xor; the round-trip decode needs the
+         promoted word percepts). -->
+    <chunkPromotionThreshold>2</chunkPromotionThreshold>
+    <!-- FLIPPED for this variant: the PS word collection
+         (type="words") feeds the reverse() recommenders
+         (parent leaves it default false). -->
+    <wordStore>true</wordStore>
+  </PartSpace>
+
+  <!-- ConceptualSpace: the deep hub [B, 8, 1024]; N=8 = STM depth. PS->CS is
+       now an identity handoff (equal widths; was the wide-to-deep 12/1028
+       regroup). Dims mirror MM_20M_xor / MM_mereology_serial. -->
+  <ConceptualSpace>
+    <nInput>8</nInput>
+    <nInputDim>1024</nInputDim>
+    <nVectors>8</nVectors>
+    <stmCapacity>8</stmCapacity>
+    <nDim>1024</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>1024</nOutputDim>
+
+    <invertible>true</invertible>
+  </ConceptualSpace>
+
+  <!-- WholeSpace: analysis=meronomy (the 1-x dual of the PS synthesizer; was
+       byte). Consumes the deep CS idea [8,1024] and emits the wide [1024,8]
+       symbol slab (the XOR-proven WS shape); the bounded-STM grammar fold is
+       still the serial Sigma. nVectors=65536 mirrors the meronomy store
+       budget of the proven pair (was 1000, the byte-path grammar-op
+       budget). -->
+  <WholeSpace>
+    <analysis>meronomy</analysis>
+    <!-- Per-space sigmaPi override kept from the byte-era config: "last"
+         (per-slot square fold, about 1M params/stage) instead of the
+         architecture-global butterfly. The serial grammar path sizes the
+         WS.pi cascade at next_pow2(preMergeSlots * nInputDim); on the old
+         wide grid that was a 2^20 cascade and the bulk of a 114s build.
+         The deep shape shrinks preMergeSlots to 8, but the square fold
+         stays the measured-safe choice (plan Task 6: KEEP butterfly=false). -->
+    <butterfly>false</butterfly>
+    <nInput>8</nInput>
+    <nInputDim>1024</nInputDim>
+    <nVectors>65536</nVectors>
+    <nDim>1024</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>1024</nOutputDim>
+
+    <invertible>true</invertible>
+  </WholeSpace>
+
+  <!-- OutputSpace: the supervised XOR head (labels reach it post-switch).
+       nInput*nInputDim = 8*1024 matches the flattened WS symbol slab
+       (1024*8); nDim=1 is the 0/1 target width (was 4 under the stub-label
+       byte path). Mirrors MM_mereology_serial. -->
+  <OutputSpace>
+    <nInput>8</nInput>
+    <nInputDim>1024</nInputDim>
+    <nVectors>1</nVectors>
+    <nDim>1</nDim>
+    <nOutput>1</nOutput>
+    <nOutputDim>1</nOutputDim>
+  </OutputSpace>
+
+  <SymbolSpace>
+    <language>
+      <grammar>complete.grammar</grammar>
+    </language>
+  </SymbolSpace>
+
+</model>

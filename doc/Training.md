@@ -1,5 +1,10 @@
 # Training
 
+> For the current ownership of the training lifecycle and the proposed split
+> between launch resolution, corpus cursors, host orchestration, compiled tensor
+> steps, objectives, and checkpoints, see
+> [Runtime Architecture and Componentization](Componentization.md).
+
 > **2026-05-29 deltas:**
 >
 > - **Embedding unit-ball normalization.** The training loop calls
@@ -17,8 +22,8 @@
 >   no knob to set or override. Whenever reconstruction fires it is always
 >   concepts-seeded from the terminal `ConceptualSpace` STM snapshot.
 > - **Supervised output loss restored.** `bin/Models.py::runBatch`
->   computes MSE on the supervised output in addition to the
->   reconstruction loss (`reconstructionScale`-weighted).
+>   computes MSE on labeled datasets. Unlabeled corpora such as FineWeb
+>   train only through reconstruction/prediction objectives.
 > - See [doc/old/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md](old/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md).
 
 ## Relation to LLMs, Formal Concept Analysis, and DisCoCat
@@ -306,18 +311,17 @@ not a full-softmax projection head.
 
 ---
 
-## Three-File Architecture
+## Integrated checkpoint architecture
 
 | Artifact | Example | Contents | Updated by |
 |----------|---------|----------|-----------|
-| XML config | `data/BasicModel.xml` | Architecture, hyperparameters, paths | Hand-edited |
-| Embedding | `data/BasicModel.kv` | Word vectors ($V \times d$) | Phase 1 |
-| Weights | `data/BasicModel.ckpt` | Model layer parameters | Phase 2 |
+| XML config | `data/MM_20M_fineweb.xml` | Architecture, objectives, corpus and checkpoint path | Hand-edited |
+| Checkpoint | `output/MM_20M_fineweb.ckpt` | Model and embedding state, vocabulary/BPE extras, optimizer, counters, RNG and corpus manifest | Phase 2 |
 
-Checkpoint excludes embedding parameters (`wv._vectors`). Enables:
-- Retrain embeddings without touching model weights (`--force-embeddings`)
-- Retrain model with frozen codebook (`<trainEmbedding>NONE`)
-- Swap codebooks between models sharing the same architecture
+The integrated checkpoint is resumable. Mid-epoch resume requires the same
+corpus manifest and batch size; mismatches fail loudly instead of replaying a
+different cursor. `--force-embeddings` remains a deliberate Phase-1 rebuild,
+not a separate model artifact contract.
 
 ---
 

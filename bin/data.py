@@ -479,8 +479,12 @@ class Data():
         self.output_max = None
         # True  => measured presence features -> [0,1] percept hypercube.
         # False => signed embedding vectors (text) -> keep [-1,1].
-        # Set per-dataset by _compute_ranges (doc/percept-hypercube.md sec 8).
+        # Set per-dataset by _compute_ranges (doc/Spaces.md#percept-live-path).
         self.input_presence = True
+        # Self-supervised corpora still carry placeholder OutputSpace tensors
+        # for batching, but those placeholders are not supervised targets.
+        self.has_supervised_outputs = False
+        self.source_manifest = None
         # ``_runtime_mode`` retired 2026-05-14 alongside ARIR; runtime
         # callers no longer pass a mode token.  Field kept on the class
         # at None so legacy ``getattr(data, '_runtime_mode', None)``
@@ -530,7 +534,8 @@ class Data():
             return self.train_output.shape[2]
         return 1
 
-    def load(self, dataset, num_shards=1, max_docs=10000, shard_dir=None, dat=None):
+    def load(self, dataset, num_shards=1, max_docs=10000, shard_dir=None,
+             dat=None, random_shards=False, max_tokens=None):
         """Dispatch to the per-dataset loader, then compute ranges + move to device.
 
         ``dataset`` selects ``mnist`` / ``xor`` / ``tomatoes`` / ``text``
@@ -538,6 +543,8 @@ class Data():
         train / validation / test attributes and the min/max scaling
         values; finally moves tensors to ``TheDevice``.
         """
+        self.has_supervised_outputs = False
+        self.source_manifest = {"dataset": str(dataset)}
         if dataset == "mnist":
             self.loadMNist()
         if dataset == "xor":
@@ -553,9 +560,13 @@ class Data():
         if dataset == "tomatoes":
             self.loadTomatoes()
         if dataset == "text":
-            self.loadShards(num_shards, max_docs, shard_dir)
+            self.loadShards(num_shards, max_docs, shard_dir,
+                            random_shards=random_shards,
+                            max_tokens=max_tokens)
         if dataset == "inline":
             self.loadInline(dat or {})
+        if dataset == "mnist":
+            self.has_supervised_outputs = True
         self._compute_ranges()
         self.toDevice()
     def toDevice(self):
@@ -612,7 +623,7 @@ class Data():
             # are SIGNED embedding vectors (concept-ish), not one-sided
             # presence, so they keep the signed [-1,1] canonical range until
             # the percept lexicon itself moves to [0,1]
-            # (doc/percept-hypercube.md sec 8 -- the half-done move breaks the
+            # (doc/Spaces.md#percept-live-path -- the half-done move breaks the
             # invertible embedding reconstruction chain, e.g. XOR_exact).
             self.input_min = -1.0
             self.input_max = 1.0
@@ -635,7 +646,7 @@ class Data():
                    ``input_presence`` (measured presence on the positive unit
                    hypercube: 0 = absent / nothing, 1 = present / everything;
                    one-sided, the percept antipode is the complement 1-x -- see
-                   doc/percept-hypercube.md). Restores the [0,1] target the
+                   doc/Spaces.md#percept-live-path). Restores the [0,1] target the
                    _compute_ranges docstring always declared. Signed text
                    embeddings (``input_presence`` False) keep the [-1,1] map
                    (the prior ``* 2 - 1``) until the lexicon moves to [0,1].
@@ -829,7 +840,8 @@ class Data():
 
     def loadSubstitution(self):
         """Substitutability grid for the conceptual SBOW (word2vec) demonstration
-        (doc/mereological.md / the conceptual-similarity layer): a FULL noun×verb
+        (doc/Mereology.md#mereological-algorithm / the conceptual-similarity
+        layer): a FULL noun×verb
         grid, so every noun shares all verb-contexts and every verb shares all
         noun-contexts -- the distributional structure SBOW situates. After
         training, substitutable concepts should CO-LOCATE in similarity_codebook:
@@ -1015,7 +1027,8 @@ class Data():
             data = load_dataset("rotten_tomatoes")
             torch.save(data, cache_file)
         self.processLM(data)
-    def loadShards(self, num_shards, max_docs, shard_dir):
+    def loadShards(self, num_shards, max_docs, shard_dir,
+                   random_shards=False, max_tokens=None):
         """Load training text from FineWeb-EDU parquet shards.
 
         Uses the same shard infrastructure as embed.py so the model trains
@@ -1031,16 +1044,29 @@ class Data():
 
         print(f"Loading text: {num_shards} shard(s), max {max_docs} docs "
               f"from {shard_dir}")
-        shard_paths = get_shard_paths(shard_dir, num_shards=num_shards)
+        shard_paths = get_shard_paths(
+            shard_dir, num_shards=num_shards,
+            random_select=bool(random_shards))
         if not shard_paths:
             raise RuntimeError(f"No shards found in {shard_dir}. "
                                "Run 'make basic_data' first.")
+        self.source_manifest = {
+            "dataset": "text",
+            "shards": [os.path.basename(p) for p in shard_paths],
+            "max_docs": int(max_docs) if max_docs is not None else None,
+            "max_tokens": (int(max_tokens)
+                           if max_tokens is not None else None),
+            "random_shards": bool(random_shards),
+            "split": "document_mod10_8_1_1",
+        }
 
-        docs = list(iter_documents(shard_paths, max_docs=max_docs))
-        if not docs:
-            raise RuntimeError("No documents found in shards.")
-
-        # Split each doc into sentences before assembling training rows.
+        # Split by DOCUMENT before sentence expansion.  The old sentence-level
+        # slice leaked boundary documents across train/eval. FineWeb shards are
+        # already shuffled, so a stable 8/1/1 block assignment preserves order
+        # and keeps every document in exactly one split. Consume the parquet
+        # iterator once rather than first materializing a second ``docs`` list.
+        # Sentence rows remain resident because SentenceStreamDataset requires
+        # random access for its contiguous streams.
         # Each item in the resulting list is one sentence -- the unit the
         # SentenceStreamDataset feeds per row in trial-cursor mode, and
         # the unit the word-lexer tokenizes downstream. Sentence-sized
@@ -1048,24 +1074,31 @@ class Data():
         # word tokens vs. ~3000 for a full document under the per-char
         # whitespace/punct lexer).
         from util import parse
-        sentences = []
-        for doc in docs:
+        split_sentences = {"train": [], "validation": [], "test": []}
+        docs_seen = 0
+        for doc_idx, doc in enumerate(
+                iter_documents(shard_paths, max_docs=max_docs)):
+            residue = doc_idx % 10
+            split = ("train" if residue < 8 else
+                     "validation" if residue == 8 else "test")
             for sent_text, _ in parse(doc, lex='sentences'):
                 if sent_text.strip():
-                    sentences.append(sent_text)
+                    if max_tokens is not None:
+                        words = sent_text.split()
+                        sent_text = " ".join(
+                            words[:max(1, int(max_tokens))])
+                    split_sentences[split].append(sent_text)
+            docs_seen += 1
 
-        if not sentences:
+        if docs_seen == 0:
+            raise RuntimeError("No documents found in shards.")
+        n = sum(len(v) for v in split_sentences.values())
+        if n == 0:
             raise RuntimeError("No sentences found after splitting documents.")
 
-        # Split 80/10/10 into train/validation/test at the sentence level.
-        n = len(sentences)
-        n_val = max(1, n // 10)
-        n_test = max(1, n // 10)
-        n_train = n - n_val - n_test
-
-        train_texts = sentences[:n_train]
-        val_texts = sentences[n_train:n_train + n_val]
-        test_texts = sentences[n_train + n_val:]
+        train_texts = split_sentences["train"]
+        val_texts = split_sentences["validation"]
+        test_texts = split_sentences["test"]
 
         data = {
             "train":      {"text": train_texts, "label": []},
@@ -1073,8 +1106,9 @@ class Data():
             "test":       {"text": test_texts,  "label": []},
         }
 
-        print(f"Loaded {len(docs)} docs -> {n} sentences "
-              f"({n_train} train, {n_val} val, {n_test} test)")
+        print(f"Loaded {docs_seen} docs -> {n} sentences "
+              f"({len(train_texts)} train, {len(val_texts)} val, "
+              f"{len(test_texts)} test)")
         self.processLM(data)
     def processLM(self, data):
         """Stash text splits as lists; tensorize labels eagerly when numeric.
@@ -1109,6 +1143,7 @@ class Data():
             self.validation_output = [torch.zeros(1) for _ in validation_tokens]
             self.test_output = [torch.zeros(1) for _ in test_tokens]
             self._lm_labels = None
+            self.has_supervised_outputs = False
         elif isinstance(train_labels[0], str):
             self._lm_labels = {
                 "train": list(train_labels),
@@ -1119,8 +1154,10 @@ class Data():
             self.train_output = [torch.zeros(1) for _ in train_labels]
             self.validation_output = [torch.zeros(1) for _ in validation_labels]
             self.test_output = [torch.zeros(1) for _ in test_labels]
+            self.has_supervised_outputs = False
         else:
             self._lm_labels = None
+            self.has_supervised_outputs = True
             # ``torch.as_tensor`` is tensor-aware: for tensor inputs it
             # avoids the "copy-construct from a tensor" deprecation
             # warning that ``torch.tensor`` triggers; for list inputs it

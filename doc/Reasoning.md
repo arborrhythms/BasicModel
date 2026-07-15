@@ -153,7 +153,7 @@ entry point. Inference query routing is enabled when `reasoningIterations > 0`.
 reasoner's hard tools (gate: `<architecture><thinkingBudget>`; absent/0 = off,
 byte-identical; positive N = the op budget of a top-level `think()` frame):
 
-1. `TruthInterval` — signed `[lower, upper] ⊆ [-1, 1]` + trust + provenance;
+1. `TruthInterval` — signed `[lower, upper]` contained in `[-1, 1]` + trust + provenance;
    `luminosity` is the max-abs distance from unknownness; `status` classifies
    true / false / unknown / mixed / conflicting against the `tau` bar.
 2. `Frame` / STM stack — `think()` pushes, `answer()` pops; only the certified
@@ -168,8 +168,8 @@ byte-identical; positive N = the op budget of a top-level `think()` frame):
    and `incorporate` (testimony above the source×channel trust floor).
 4. `KernelPolicy` — the deterministic baseline: `lookup` (LTM-direct, no
    chaining) → close if luminous → climb `part(·, up)` opening one `think()`
-   subgoal per unvisited whole (soft α ordering via the
-   `InterveningIdeaGenerator` when present — the α only orders, never
+   subgoal per unvisited whole (soft $\alpha$ ordering via the
+   `InterveningIdeaGenerator` when present — $\alpha$ only orders, never
    asserts). On an unknown LEAF the policy consults each registered
    addressee once via `query()` (`arma` built in): NUMERIC testimony folds
    into the frame interval as `asserted × source_trust` (§14.2 — flimsy

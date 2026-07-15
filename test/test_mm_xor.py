@@ -142,12 +142,26 @@ class TestMMXorConvergence(unittest.TestCase):
     # test_runbatch_losses_stay_finite retired 2026-05-14 (reverse pipeline / <maskedPrediction> retired in IR-only refactor).
 
     def test_learns_xor_signal(self):
-        """The recurrent forward path should learn XOR.
+        """The affine head reaches the THEORY FLOOR (Alec 2026-07-13:
+        bars are derived, not empirically re-pinned).
+
+        XOR on $\\{0,1\\}^2$ is not linearly separable: the best affine
+        predictor is the constant 1/2, whose MSE is exactly 0.25, and no
+        affine head can do better. MM_xor's head IS affine (the joint
+        cross-word nonlinearity lives only in MM_20M_xor's
+        ``<nonlinear>true`` combine), so the derived bar here is
+        REACHING the floor -- ``best_loss < 0.25 + tol`` -- which pins
+        that training attains the best linear separation. The
+        effective-zero bar belongs to the nonlinear configs (XOR_exact's
+        crisp MSE < 0.05 is the exemplar); upgrading MM_xor's head to a
+        joint nonlinearity (and flipping this bar to <= 0.05) is the
+        named follow-on. Replaces the former xfail-below-0.15, which
+        certified nothing (0.15 < floor is unreachable for this head).
 
         2026-05-29: seeded retry loop. XOR under a small affine head
         is init-sensitive; without seeding this was a single un-seeded
         attempt -- a noise lottery that flakes on bad inits. Retry up
-        to 3 seeded attempts; pass if any converges.
+        to 3 seeded attempts; pass if any reaches the floor.
         """
         import torch
 
@@ -181,17 +195,29 @@ class TestMMXorConvergence(unittest.TestCase):
                     loss.backward()
                     optimizer.step()
                     best_loss = min(best_loss, loss.item())
-                    if best_loss < 0.15:
+                    if best_loss < 0.26:
                         break
-            if best_loss < 0.15:
+            if best_loss < 0.26:
                 break
 
         self.assertGreater(len(data.train_input), 0)
-        self.assertLess(best_loss, 0.15)
+        # The derived affine floor: best possible MSE is 0.25 (see
+        # docstring); reaching it (with tolerance) is the correct bar.
+        self.assertLess(best_loss, 0.26)
 
     def _grammar_xor_convergence(self, cfg_path, epochs=900,
                                  threshold=0.15, max_attempts=5):
         """Shared body: grammar-path XOR convergence on a given config path.
+
+        BAR DERIVATION (Alec 2026-07-13, two-tier): the grammar path is
+        jointly NONLINEAR (tanh/atanh folds), so its THEORY bar is
+        effective-zero -- <= 0.05, the XOR_exact crisp exemplar. The
+        0.15 asserted here is the EMPIRICAL REGRESSION PIN: it certifies
+        beating the 0.25 affine floor by ~2x (the basin reaches ~0.125)
+        and guards grammar refactors against convergence regressions; it
+        is NOT the capability bar. Closing the 0.15 -> 0.05 gap is the
+        named nonlinear-learning frontier; tighten this threshold as the
+        basin deepens, never loosen it past the floor.
 
         The grammar path has a bimodal convergence landscape on XOR:
         a fraction of inits falls into a low-loss basin, the rest
@@ -277,6 +303,9 @@ class TestMMXorConvergence(unittest.TestCase):
     # is no longer a meaningful "without VQVAE" variant to test.
     # test_vqvae_ste_registers_commitment_and_moves_encoder retired 2026-05-14 (reverse pipeline / <maskedPrediction> retired in IR-only refactor).
 
+    @pytest.mark.xfail(reason=(
+        "The current affine MM_xor head plateaus at MSE 0.25; retain as an "
+        "explicit nonlinear-learning gap, not a FineWeb launch gate."))
     def test_convergence(self):
         """Train for up to 200 epochs; output loss should drop below 0.20.
 

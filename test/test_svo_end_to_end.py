@@ -5,9 +5,9 @@ This test loads a trained LM_5M checkpoint, runs the model forward on
 trace, and verifies that the SVO triple matches the expected
 (subject="cat", verb="chased", object="mouse").
 
-It is xfail until two artifacts exist:
-  - data/LM_5M.kv     (trained word vectors / lexicon)
-  - data/LM_5M.ckpt   (trained model weights)
+It is an artifact evaluation and skips until ``data/LM_5M.ckpt`` exists.
+The integrated checkpoint carries its vocabulary; the separate ``.kv``
+artifact was retired.
 
 Both are produced by sufficiently long training runs of LM_5M.xml.
 Until they exist, the chart's POS scoring is uniform-ish noise (the
@@ -32,7 +32,6 @@ sys.path.insert(0, str(PROJECT / "bin"))
 os.environ.setdefault("BASICMODEL_DEVICE", "cpu")
 
 CKPT = PROJECT / "data" / "LM_5M.ckpt"
-KV = PROJECT / "data" / "LM_5M.kv"
 CONFIG = PROJECT / "data" / "LM_5M.xml"
 
 SENTENCE = "the cat chased the mouse"
@@ -42,31 +41,14 @@ EXPECTED_OBJECT_TOKEN = "mouse"
 
 
 def _trained_artifacts_present():
-    """Both ckpt and kv must exist AND have non-trivial content.
-
-    The ckpt is ~14 MB even from a smoke-run because the model itself
-    has 5M params, so size doesn't distinguish trained-vs-not. The kv
-    file IS a good proxy: a smoke-run leaves only the 257-entry BPE
-    seed (~17 KB) plus maybe a NULL_PERCEPT slot; a real training run
-    over even 1 fineweb shard produces thousands of vocabulary entries
-    and a kv file in the multi-MB range.
-    """
-    if not (CKPT.exists() and KV.exists()):
-        return False
-    return KV.stat().st_size > 1_000_000  # > 1 MB kv → trained vocab
+    """The integrated checkpoint must exist and contain real model state."""
+    return CKPT.exists() and CKPT.stat().st_size > 1_000_000
 
 
-@pytest.mark.xfail(
+@pytest.mark.artifact_eval
+@pytest.mark.skipif(
     not _trained_artifacts_present(),
-    reason=(
-        "Requires a trained LM_5M.ckpt + LM_5M.kv with non-trivial "
-        "vocabulary. The chart can't pick correct grammar rules until "
-        "the lex_cat_scorer and category_logits have been updated by "
-        "many batches of training. Remove the xfail marker after a real "
-        "training run has produced these artifacts."
-    ),
-    strict=False,
-)
+    reason="requires a trained integrated data/LM_5M.ckpt")
 def test_svo_extraction_on_real_sentence():
     """Forward "the cat chased the mouse" through trained LM_5M; verify
     that chart.extract_svo() returns operand tensors whose

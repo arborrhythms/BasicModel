@@ -3201,6 +3201,316 @@ class RunStructureLayer(Layer):
                 "route_hint": route_hint}
 
 
+class WhereTilingLayer(Layer):
+    """Local PS/WS agreement over overlapping ``.where`` candidates.
+
+    ``RunStructureLayer`` measures one undifferentiated span set.  The
+    subsymbolic refinement loop needs the dual observation instead: PS parts
+    ``[B, P, 2]`` and WS wholes ``[B, W, 2]`` remain separate while equality,
+    immediate containment, coverage and routing are computed for every local
+    family in parallel.  No boundary logits and no batch reduction are used.
+
+    A part may agree exactly with a whole *and* be an immediate part of a
+    larger whole.  That is intentional: a settled word remains available as a
+    constituent of a phrase/sentence in the multi-level tiling.
+    """
+
+    ROUTE_NULL = 0
+    ROUTE_SETTLED = 1
+    ROUTE_SIGMA = 2
+    ROUTE_PI = 3
+    ROUTE_RAISE = 4
+
+    def __init__(self, nWhere=2, contiguity_tol=0.5):
+        super().__init__(nWhere, nWhere)
+        self.contiguity_tol = float(contiguity_tol)
+
+    @staticmethod
+    def _as_batched(spans, name):
+        if not torch.is_tensor(spans):
+            spans = torch.as_tensor(spans, dtype=torch.float32)
+        if spans.dim() == 2:
+            spans = spans.unsqueeze(0)
+        if spans.dim() != 3 or int(spans.shape[-1]) != 2:
+            raise ValueError(
+                f"WhereTilingLayer: {name} must be [B,K,2] or [K,2], "
+                f"got {tuple(spans.shape)}")
+        return spans
+
+    def _coverage(self, candidates, membership, containers, tol):
+        """Does each container have one gap-free candidate cover?
+
+        ``membership[b, i, j]`` says candidate ``i`` belongs to container
+        ``j``.  The calculation is fixed-shape and mirrors
+        :class:`RunStructureLayer`, repeated independently for each container.
+        Returns ``(complete, n_runs)`` with shape ``[B, C]``.
+        """
+        B, A, _ = candidates.shape
+        C = int(containers.shape[1])
+        if A == 0 or C == 0:
+            z = torch.zeros(B, C, dtype=torch.long,
+                            device=candidates.device)
+            return z.bool(), z
+        starts = candidates[..., 0]
+        ends = candidates[..., 1]
+        si = starts.unsqueeze(-1)                    # [B,A,1] candidate i
+        sj = starts.unsqueeze(-2)                    # [B,1,A] candidate j
+        ej = ends.unsqueeze(-2)
+        idx = torch.arange(A, device=candidates.device)
+        ii = idx.view(1, A, 1)
+        jj = idx.view(1, 1, A)
+        precedes = (sj < si) | ((sj == si) & (jj < ii))
+        reaches = ej >= (si - tol)
+        earlier_reaches = precedes & reaches         # [B,A(i),A(j)]
+        has_earlier = (
+            earlier_reaches.unsqueeze(-1)
+            & membership.unsqueeze(1)
+        ).any(dim=2)                                 # [B,A,C]
+        run_start = membership & (~has_earlier)
+        n_runs = run_start.sum(dim=1)
+
+        big = torch.full_like(starts, float(2 ** 30))
+        small = torch.full_like(ends, float(-(2 ** 30)))
+        min_start = torch.where(
+            membership, starts.unsqueeze(-1), big.unsqueeze(-1)).amin(dim=1)
+        max_end = torch.where(
+            membership, ends.unsqueeze(-1), small.unsqueeze(-1)).amax(dim=1)
+        n_members = membership.sum(dim=1)
+        complete = (
+            (n_members > 0) & (n_runs == 1)
+            & (min_start <= containers[..., 0] + tol)
+            & (max_end >= containers[..., 1] - tol)
+        )
+        return complete, n_runs
+
+    def forward(self, part_spans, whole_spans, part_valid=None,
+                whole_valid=None, tol=None):
+        """Observe one overlapping part/whole frontier.
+
+        The returned dict contains only fixed-shape tensors.  Important masks:
+
+        ``settled_*``
+            an exact PS/WS span identity;
+        ``sigma_whole`` / ``sigma_part``
+            several immediate parts completely cover a whole;
+        ``pi_part`` / ``pi_whole``
+            several immediate whole children completely cover a part;
+        ``raise_*``
+            an immediate family is disconnected or has a gap;
+        ``part_route`` / ``whole_route``
+            integer summaries for diagnostics only.  Independent masks are the
+            control source because one candidate can be settled at one level
+            while participating in sigma at the next.
+        """
+        tol = self.contiguity_tol if tol is None else float(tol)
+        parts = self._as_batched(part_spans, "part_spans")
+        wholes = self._as_batched(whole_spans, "whole_spans")
+        if int(parts.shape[0]) != int(wholes.shape[0]):
+            raise ValueError(
+                "WhereTilingLayer: part/whole batch sizes differ "
+                f"({int(parts.shape[0])} vs {int(wholes.shape[0])})")
+        # Compare in one floating dtype/device.  Spans are metadata; casting is
+        # non-altering and keeps integer callers convenient.
+        dtype = (parts.dtype if parts.is_floating_point()
+                 else torch.get_default_dtype())
+        parts = parts.to(dtype=dtype)
+        wholes = wholes.to(device=parts.device, dtype=dtype)
+        ps, pe = parts[..., 0], parts[..., 1]
+        ws, we = wholes[..., 0], wholes[..., 1]
+        if part_valid is None:
+            part_valid = pe > ps
+        else:
+            part_valid = torch.as_tensor(
+                part_valid, device=parts.device, dtype=torch.bool)
+            if part_valid.dim() == 1:
+                part_valid = part_valid.unsqueeze(0)
+        if whole_valid is None:
+            whole_valid = we > ws
+        else:
+            whole_valid = torch.as_tensor(
+                whole_valid, device=parts.device, dtype=torch.bool)
+            if whole_valid.dim() == 1:
+                whole_valid = whole_valid.unsqueeze(0)
+
+        pv = part_valid.unsqueeze(-1)
+        wv = whole_valid.unsqueeze(-2)
+        part_in_whole = (
+            (ps.unsqueeze(-1) >= ws.unsqueeze(-2) - tol)
+            & (pe.unsqueeze(-1) <= we.unsqueeze(-2) + tol)
+            & pv & wv
+        )                                                     # [B,P,W]
+        equal = (
+            (ps.unsqueeze(-1) - ws.unsqueeze(-2)).abs() <= tol
+        ) & (
+            (pe.unsqueeze(-1) - we.unsqueeze(-2)).abs() <= tol
+        ) & pv & wv
+        strict_part_in_whole = part_in_whole & (~equal)
+
+        # Immediate strict parent: the smallest WS whole containing each PS
+        # part.  Exact peers are excluded, so an identity can still climb into
+        # its next enclosing whole on a later order.
+        w_extent = (we - ws).clamp(min=0)
+        big_w = torch.full_like(w_extent, float(2 ** 30))
+        parent_extent = torch.where(
+            strict_part_in_whole, w_extent.unsqueeze(-2),
+            big_w.unsqueeze(-2))
+        min_parent_extent = parent_extent.amin(dim=-1, keepdim=True)
+        immediate_parent = (
+            strict_part_in_whole
+            & (parent_extent <= min_parent_extent + tol)
+        )
+
+        # Immediate strict children for π are the largest WS wholes inside a
+        # PS part (closest children, not every descendant).
+        whole_in_part = (
+            (ws.unsqueeze(-2) >= ps.unsqueeze(-1) - tol)
+            & (we.unsqueeze(-2) <= pe.unsqueeze(-1) + tol)
+            & pv & wv
+        )                                               # [B,P,W]
+        strict_whole_in_part = whole_in_part & (~equal)
+        neg = torch.full_like(w_extent, float(-(2 ** 30)))
+        child_extent = torch.where(
+            strict_whole_in_part, w_extent.unsqueeze(-2),
+            neg.unsqueeze(-2))
+        max_child_extent = child_extent.amax(dim=-1, keepdim=True)
+        immediate_child = (
+            strict_whole_in_part
+            & (child_extent >= max_child_extent - tol)
+        )
+
+        part_cover, part_runs = self._coverage(
+            parts, immediate_parent, wholes, tol)
+        # _coverage expects membership [B,A,C].  Here WS candidates are A and
+        # PS parts are C, so transpose immediate_child.
+        whole_cover, whole_runs = self._coverage(
+            wholes, immediate_child.transpose(1, 2), parts, tol)
+        n_parts = immediate_parent.sum(dim=1)             # [B,W]
+        n_wholes = immediate_child.sum(dim=-1)            # [B,P]
+        settled_part = equal.any(dim=-1) & part_valid
+        settled_whole = equal.any(dim=1) & whole_valid
+        sigma_whole = (n_parts >= 2) & part_cover & whole_valid
+        raise_whole = (n_parts >= 2) & (~part_cover) & whole_valid
+        pi_part = (n_wholes >= 2) & whole_cover & part_valid
+        raise_part = (n_wholes >= 2) & (~whole_cover) & part_valid
+        sigma_part = (immediate_parent
+                      & sigma_whole.unsqueeze(1)).any(dim=-1)
+        pi_whole = (immediate_child
+                    & pi_part.unsqueeze(-1)).any(dim=1)
+        raise_sigma_part = (immediate_parent
+                            & raise_whole.unsqueeze(1)).any(dim=-1)
+        raise_pi_whole = (immediate_child
+                          & raise_part.unsqueeze(-1)).any(dim=1)
+
+        part_route = torch.full_like(ps, self.ROUTE_NULL, dtype=torch.long)
+        whole_route = torch.full_like(ws, self.ROUTE_NULL, dtype=torch.long)
+        part_route = torch.where(
+            settled_part, torch.full_like(part_route, self.ROUTE_SETTLED),
+            part_route)
+        whole_route = torch.where(
+            settled_whole, torch.full_like(whole_route, self.ROUTE_SETTLED),
+            whole_route)
+        part_route = torch.where(
+            sigma_part, torch.full_like(part_route, self.ROUTE_SIGMA),
+            part_route)
+        whole_route = torch.where(
+            sigma_whole, torch.full_like(whole_route, self.ROUTE_SIGMA),
+            whole_route)
+        part_route = torch.where(
+            pi_part, torch.full_like(part_route, self.ROUTE_PI), part_route)
+        whole_route = torch.where(
+            pi_whole, torch.full_like(whole_route, self.ROUTE_PI), whole_route)
+        part_route = torch.where(
+            raise_part | raise_sigma_part,
+            torch.full_like(part_route, self.ROUTE_RAISE), part_route)
+        whole_route = torch.where(
+            raise_whole | raise_pi_whole,
+            torch.full_like(whole_route, self.ROUTE_RAISE), whole_route)
+
+        return {
+            "part_spans": parts, "whole_spans": wholes,
+            "part_valid": part_valid, "whole_valid": whole_valid,
+            "part_in_whole": part_in_whole, "equal": equal,
+            "immediate_parent": immediate_parent,
+            "immediate_child": immediate_child,
+            "n_parts": n_parts, "n_wholes": n_wholes,
+            "part_runs": part_runs, "whole_runs": whole_runs,
+            "part_cover": part_cover, "whole_cover": whole_cover,
+            "settled_part": settled_part, "settled_whole": settled_whole,
+            "sigma_part": sigma_part, "sigma_whole": sigma_whole,
+            "pi_part": pi_part, "pi_whole": pi_whole,
+            "raise_part": raise_part | raise_sigma_part,
+            "raise_whole": raise_whole | raise_pi_whole,
+            "part_route": part_route, "whole_route": whole_route,
+        }
+
+    @torch.no_grad()
+    def refine_frontier(self, part_spans, whole_spans, observation=None):
+        """Apply one structural σ/π step to the PS span frontier.
+
+        This eager helper builds the fixed-pass metadata schedule; neural
+        content is still transformed by the model's learned σ/π stacks.  Parts
+        consumed by a σ family are replaced by its whole span.  A π-requesting
+        part is replaced by its immediate whole children.  Unconsumed parts
+        (including separator/gap carriers) remain.  Output width equals the
+        input PS width; overflow is returned explicitly and never hidden.
+        """
+        parts = self._as_batched(part_spans, "part_spans")
+        wholes = self._as_batched(whole_spans, "whole_spans").to(parts.device)
+        obs = observation or self.forward(parts, wholes)
+        B, P, _ = parts.shape
+        out = torch.zeros_like(parts)
+        overflow = torch.zeros(B, dtype=torch.long, device=parts.device)
+        for b in range(B):
+            spans = []
+
+            def add(span):
+                pair = (float(span[0]), float(span[1]))
+                if pair[1] <= pair[0] or pair in spans:
+                    return
+                spans.append(pair)
+
+            consumed = (obs["sigma_part"][b] | obs["pi_part"][b])
+            for i in range(P):
+                if bool(obs["part_valid"][b, i]) and not bool(consumed[i]):
+                    add(parts[b, i])
+            for j in range(int(wholes.shape[1])):
+                if bool(obs["sigma_whole"][b, j]):
+                    add(wholes[b, j])
+            for i in range(P):
+                if not bool(obs["pi_part"][b, i]):
+                    continue
+                for j in range(int(wholes.shape[1])):
+                    if bool(obs["immediate_child"][b, i, j]):
+                        add(wholes[b, j])
+            overflow[b] = max(0, len(spans) - P)
+            for i, pair in enumerate(spans[:P]):
+                out[b, i, 0] = pair[0]
+                out[b, i, 1] = pair[1]
+        return out, overflow
+
+    @torch.no_grad()
+    def build_schedule(self, part_spans, whole_spans, passes):
+        """Return a fixed-length refinement schedule and accepted tiling."""
+        parts = self._as_batched(part_spans, "part_spans")
+        wholes = self._as_batched(whole_spans, "whole_spans").to(parts.device)
+        schedule = []
+        accepted = torch.zeros(
+            wholes.shape[:2], dtype=torch.bool, device=wholes.device)
+        total_overflow = torch.zeros(
+            int(parts.shape[0]), dtype=torch.long, device=parts.device)
+        for _ in range(max(1, int(passes))):
+            obs = self.forward(parts, wholes)
+            accepted = accepted | obs["settled_whole"]
+            obs["frontier_part_spans"] = parts
+            schedule.append(obs)
+            parts, overflow = self.refine_frontier(parts, wholes, obs)
+            total_overflow = total_overflow + overflow
+        for obs in schedule:
+            obs["accepted_whole"] = accepted
+            obs["overflow"] = total_overflow
+        return schedule
+
+
 # Char-class property tiling (doc/specs/mereological-order-raising.md "Analysis
 # = property-tiling"). A char-class property is a BINARY TILING of a byte input
 # into {has-class} / {not} -- the analysis-side (WholeSpace π) dual of a
@@ -10678,6 +10988,39 @@ class RadixLayer(Layer):
     def __contains__(self, key: bytes) -> bool:
         return bytes(key) in self.hash_map
 
+    # ------------------------------------------------------------------
+    # The WORD view (type="words")
+    # ------------------------------------------------------------------
+    # The store's promoted collection IS the word store (Alec 2026-07-12:
+    # it "already existed but was not labelled as such") — under meronomy
+    # synthesis promotion is word_bounded, so promoted multi-byte entries
+    # are words by construction, and their vectors are ROWS of the shared
+    # PS ``.what`` basis (percept id == codebook row). This view is the
+    # LABEL: no new state, nothing new to persist.
+    # doc/plans/2026-07-12-word-store-typed-reverse.md.
+
+    WORDS_TYPE = "words"
+
+    def word_ids(self, standalone_bytes=None):
+        """LongTensor of percept ids in the type="words" collection.
+
+        Multi-byte entries always qualify (promotion = standalone
+        recurrence; seeded byte percepts are single-byte). A SINGLE-byte
+        entry qualifies only when its byte is in ``standalone_bytes`` —
+        the same "appears standalone" attestation rule the within-whole
+        division uses (the stage-0 WS accrues that set from its own
+        staged type-runs) — so one-letter words attest without admitting
+        every ``spell_out``-seeded byte.
+        """
+        sb = standalone_bytes or ()
+        ids = [i for i, b in enumerate(self.inverse_table)
+               if len(b) >= 2 or (len(b) == 1 and b[0] in sb)]
+        return torch.tensor(ids, dtype=torch.long)
+
+    def word_text(self, percept_id: int) -> str:
+        """Surface text of one word entry (the realize direction)."""
+        return self.bytes_for(int(percept_id)).decode("utf-8", "replace")
+
     def get_id(self, chunk: bytes) -> Optional[int]:
         """Hash-map lookup. Returns ``None`` if ``chunk`` is unknown."""
         return self.hash_map.get(bytes(chunk))
@@ -12004,6 +12347,30 @@ class _RuleScorer(nn.Module):
         return self.head(self.body(x))
 
 
+class LeafDecoderHead(nn.Module):
+    """Slot-conditioned leaf decoder for the Method-1 -> Method-2
+    distillation (doc/plans/2026-07-14-signed-space-snap-design.md, step 3):
+    ``leaf_i = W2 · tanh(W1 · S + e_i)`` — a shared trunk plus a per-slot
+    embedding (parameter-light; the anchors-over-MLPs house preference).
+    Trained to regenerate the EXACT per-word leaves from the collapsed
+    root, which the root cannot satisfy while collapsing distinct
+    sentences into one attractor (the measured root-separability gap)."""
+
+    def __init__(self, d_in, n_slots, d_out, hidden=256):
+        super().__init__()
+        self.d_in = int(d_in)
+        self.n_slots = int(n_slots)
+        self.d_out = int(d_out)
+        self.trunk = nn.Linear(self.d_in, hidden)
+        self.slot_e = nn.Parameter(torch.randn(self.n_slots, hidden) * 0.02)
+        self.out = nn.Linear(hidden, self.d_out)
+
+    def forward(self, S):
+        """``S [B, d_in]`` -> predicted leaves ``[B, n_slots, d_out]``."""
+        h = self.trunk(S).unsqueeze(1) + self.slot_e.unsqueeze(0)
+        return self.out(torch.tanh(h))
+
+
 class ShortTermMemory(Layer):
     """Runtime idea stack plus shift/reduce scorer for ConceptualSpace.
 
@@ -12121,6 +12488,49 @@ class ShortTermMemory(Layer):
             device=device, dtype=dtype)
         self._depth = torch.zeros(batch, dtype=torch.long, device=device)
         self._max_depth_host = 0
+        # Slot-kind provenance resets with the buffer (recording stays
+        # enabled but the rows restart empty, matching depth 0).
+        if getattr(self, "_slot_kinds", None) is not None:
+            object.__setattr__(
+                self, "_slot_kinds", [[] for _ in range(batch)])
+
+    # -- slot-kind provenance (word-bearing-fold filtering) ----------------
+    # doc/plans/2026-07-13-word-grain-open-fronts.md Task B: per-row host
+    # stacks mirroring the buffer discipline (newest kind at index 0), so
+    # the reverse-reduce trace can tag each fold's operands as word /
+    # other. ``None`` = recording off (the default; zero cost). Host-eager
+    # only — callers guard ``torch.compiler.is_compiling()``.
+
+    def kinds_enable(self, batch, depths=None, kind="other"):
+        """(Re)initialize recording for ``batch`` rows; pre-existing STM
+        content (e.g. a carried sentence root) is tagged ``kind``."""
+        ds = ([int(d) for d in depths] if depths is not None
+              else [0] * int(batch))
+        object.__setattr__(
+            self, "_slot_kinds",
+            [[kind] * min(ds[b], int(self.capacity))
+             for b in range(int(batch))])
+
+    def note_push_masked(self, gate_rows, kind):
+        """Kind mirror of a masked slot-0 push (gated rows only)."""
+        ks = getattr(self, "_slot_kinds", None)
+        if ks is None:
+            return
+        cap = int(self.capacity)
+        for b, on in enumerate(gate_rows):
+            if on and b < len(ks):
+                ks[b].insert(0, str(kind))
+                del ks[b][cap:]
+
+    def note_push_all(self, kind):
+        """Kind mirror of an unmasked all-rows slot-0 push."""
+        ks = getattr(self, "_slot_kinds", None)
+        if ks is None:
+            return
+        cap = int(self.capacity)
+        for row in ks:
+            row.insert(0, str(kind))
+            del row[cap:]
 
     def ensure_capacity(self, capacity):
         """Grow the per-slot capacity to at least ``capacity`` (grow-only)."""
@@ -12186,7 +12596,8 @@ class ShortTermMemory(Layer):
             shifted[:, 1:cap] = buf[:, 0:cap - 1]
         shifted[:, 0] = ideas
         self._buffer = torch.where(gate_col, shifted, buf)
-        self._depth = self._depth + gate_bool.long()
+        self._depth = torch.clamp(
+            self._depth + gate_bool.long(), max=cap)
 
     def push_window_batch(self, ideas):
         # Newest-at-slot-0: shift RIGHT by W; write the window REVERSED
@@ -12255,10 +12666,14 @@ class ShortTermMemory(Layer):
         buf = self._buffer
         if buf is None:
             return
+        ks = getattr(self, "_slot_kinds", None)
         if b is None:
             buf.zero_()
             self._depth.zero_()
             self._max_depth_host = 0
+            if ks is not None:
+                for row in ks:
+                    del row[:]
             return
         b = int(b)
         if b < 0 or b >= int(buf.shape[0]):
@@ -12266,6 +12681,8 @@ class ShortTermMemory(Layer):
         buf[b].zero_()
         self._depth[b] = 0
         self._max_depth_host = int(self._depth.max().item())
+        if ks is not None and b < len(ks):
+            del ks[b][:]
 
     # -- STM shift/reduce driver (formerly stm_driver.STMDriver) -----------
 
@@ -13134,9 +13551,25 @@ class Ops:
         return Ops._negation_kernel(x, monotonic=monotonic)
 
     @staticmethod
+    def _word_snap(result, W, op_name, left_rows, left_priming):
+        """Dispatch the op-respecting word snap (Alec 2026-07-14,
+        doc/plans/2026-07-14-signed-space-snap-design.md): the dot-metric
+        pair snap over the restricted word rows, replacing the order-filter
+        recommender that returned ⊤ sentinels on trained composites.
+        ``left_priming`` (``[K]`` over W) is indexed to the restricted rows —
+        the present-word bias conjunction's lossy meet leans on."""
+        prime = None
+        if left_priming is not None and torch.is_tensor(left_priming):
+            lr = left_rows.long().to(left_priming.device)
+            prime = left_priming.reshape(-1).index_select(0, lr)
+        return Ops.word_pair_snap(result, W, left_rows, op_name=op_name,
+                                  priming=prime)
+
+    @staticmethod
     def conjunctionReverse(result, y, W, monotonic=False, unit_ball=False,
                            left_rows=None, right_rows=None,
-                           left_priming=None, right_priming=None):
+                           left_priming=None, right_priming=None,
+                           radial=False, snap=False):
         """Inverse-recommend ``(x1, x2)`` for ``conjunction(x1, x2) ≈ result``.
 
         Replaces the prior brute-force codebook search (which returned
@@ -13158,16 +13591,26 @@ class Ops:
             soft boost-above-unity weights per W-row, biasing argmin /
             argmax toward primed candidates. Default 1.0 (multiplicative
             identity, no bias). See ``_binary_op_recommend``.
+
+        ``snap`` (Alec 2026-07-14): when True and ``left_rows`` is given,
+            use the dot-metric MEET-aware snap (priming-led — the meet is
+            lossy) instead of the order-filter recommender. This is the
+            selection conjunction owns, distinct from disjunction's.
         """
+        if snap and W is not None and left_rows is not None:
+            return Ops._word_snap(result, W, 'intersection',
+                                  left_rows, left_priming)
         return Ops._binary_op_inverse_impl(
             result, W, 'intersection', monotonic, unit_ball=unit_ball,
             left_rows=left_rows, right_rows=right_rows,
-            left_priming=left_priming, right_priming=right_priming)
+            left_priming=left_priming, right_priming=right_priming,
+            radial=radial)
 
     @staticmethod
     def disjunctionReverse(result, y, W, monotonic=False, unit_ball=False,
                            left_rows=None, right_rows=None,
-                           left_priming=None, right_priming=None):
+                           left_priming=None, right_priming=None,
+                           radial=False, snap=False):
         """Inverse-recommend ``(x1, x2)`` for ``disjunction(x1, x2) ≈ result``.
 
         Replaces the prior brute-force codebook search (which returned
@@ -13188,16 +13631,25 @@ class Ops:
             soft boost-above-unity weights per W-row, biasing argmin /
             argmax toward primed candidates. Default 1.0 (multiplicative
             identity, no bias). See ``_binary_op_recommend``.
+
+        ``snap`` (Alec 2026-07-14): when True and ``left_rows`` is given,
+            use the dot-metric JOIN snap (fit-determined — the join keeps
+            each operand's edge) instead of the order-filter recommender.
         """
+        if snap and W is not None and left_rows is not None:
+            return Ops._word_snap(result, W, 'union',
+                                  left_rows, left_priming)
         return Ops._binary_op_inverse_impl(
             result, W, 'union', monotonic, unit_ball=unit_ball,
             left_rows=left_rows, right_rows=right_rows,
-            left_priming=left_priming, right_priming=right_priming)
+            left_priming=left_priming, right_priming=right_priming,
+            radial=radial)
 
     @staticmethod
     def _binary_op_inverse_impl(result, W, op, monotonic, unit_ball=False,
                                 left_rows=None, right_rows=None,
-                                left_priming=None, right_priming=None):
+                                left_priming=None, right_priming=None,
+                                radial=False):
         """Backward-compatible shim for the union / intersection inverse.
 
         Delegates to :func:`Ops._binary_op_recommend`. Returns the pair
@@ -13222,7 +13674,8 @@ class Ops:
         return Ops._binary_op_recommend(
             result, W, op_name, monotonic=monotonic,
             left_rows=left_rows, right_rows=right_rows,
-            left_priming=left_priming, right_priming=right_priming)
+            left_priming=left_priming, right_priming=right_priming,
+            radial=radial)
 
     @staticmethod
     def _normalize_lattice_op(op):
@@ -13250,10 +13703,115 @@ class Ops:
             "(expected union / intersection / conjunction / disjunction)")
 
     @staticmethod
+    def word_pair_snap(result, W, rows, op_name='union', priming=None):
+        """Joint pair snap over word rows (Alec's design call, 2026-07-14;
+        doc/plans/2026-07-14-signed-space-snap-design.md).
+
+        ``(x1, x2) = argmax over row pairs of <fold(w_i, w_j), parent>``
+        — RAW dot product, NO feasibility filter: the radial order filter
+        admitted no real row against trained composite parents, so the
+        recommender returned the ⊤ sentinel for EVERY free-derivation
+        operand (measured). Dot ignores dims absent from the parent
+        (annihilation wildcards contribute nothing) and does not penalize
+        a word's support outside the parent — the ADJ(N) rationale.
+
+        ``op_name`` selects the fold AND the selection law (Alec: conjunction
+        may want different selection from disjunction). ``'union'`` (radmax /
+        join) is well-determined by the fit alone. ``'intersection'`` (radmin
+        / meet) is LOSSY — the meet collapses to the dominated operand, so
+        the fit is uninformative and the selection leans on ``priming`` (which
+        words are present) plus a distinctness tie-break (the meet of a word
+        with itself is trivial; two distinct present words is the informative
+        recovery).
+
+        ``priming`` (optional ``[K]``, score-space, default 0): additive
+        per-row boost — a primed pair's members each add their weight, so
+        among fit-tied pairs the most-present pair wins.
+
+        ``x1`` is the higher one-sided-dot member: the symmetric fold cannot
+        recover operand ORDER (recorded limitation; the tie-break is
+        deterministic, not semantic)."""
+        Wr = W.index_select(0, rows.long().to(W.device))       # [K, D]
+        flat = result.reshape(-1, W.shape[1])                  # [N, D]
+        fold = Ops._radmax if op_name == 'union' else Ops._radmin
+        pairs = fold(Wr.unsqueeze(1), Wr.unsqueeze(0))         # [K, K, D]
+        n, k = flat.shape[0], Wr.shape[0]
+        scores = Ops._support_dot(pairs.reshape(-1, W.shape[1]),
+                                  flat).reshape(n, k, k)        # [N, K, K]
+        if priming is not None:
+            p = priming.reshape(-1).to(scores.dtype).to(scores.device)
+            scores = scores + (p.unsqueeze(0) + p.unsqueeze(1)).unsqueeze(0)
+        if op_name != 'union':
+            # Meet-aware distinctness (conjunction only): break fit/priming
+            # ties toward two DISTINCT rows — recovering a word ∧ itself
+            # carries no information the meet did not already destroy.
+            distinct = 1.0 - torch.eye(k, device=scores.device,
+                                       dtype=scores.dtype)
+            scores = scores + 1e-4 * distinct.unsqueeze(0)
+        idx = scores.reshape(n, -1).argmax(dim=-1)
+        i, j = idx // k, idx % k
+        side = Ops._support_dot(Wr, flat)                      # [N, K]
+        ar = torch.arange(n, device=W.device)
+        swap = side[ar, j] > side[ar, i]
+        ii = torch.where(swap, j, i)
+        jj = torch.where(swap, i, j)
+        return (Wr[ii].reshape(result.shape),
+                Wr[jj].reshape(result.shape))
+
+    @staticmethod
+    def _support_dot(cands, flat):
+        """Support-restricted normalized dot: ``<p, c> / ||c||_supp(p)``.
+
+        Scores each candidate ONLY over the parent's support — dims the
+        parent lacks (a modifier's attenuation, annihilation wildcards)
+        cost the candidate nothing (Alec's ADJ(N) rationale), while the
+        support-restricted norm kills raw dot's large-row dominance
+        (measured: every row of every batch snapped to the same two
+        largest-norm words). ``cands [K, D]``, ``flat [N, D]`` →
+        ``[N, K]``."""
+        supp = (flat != 0).to(flat.dtype)                      # [N, D]
+        num = torch.einsum('kd,nd->nk', cands, flat)           # [N, K]
+        c2 = torch.einsum('kd,nd->nk', cands * cands, supp)    # [N, K]
+        return num / c2.clamp_min(1e-12).sqrt()
+
+    @staticmethod
+    def word_side_snap(result, W, rows):
+        """One-sided snap + minimal radial residual (word∧other steps;
+        Alec's design call, 2026-07-14).
+
+        ``w* = argmax_w <parent, w>`` (raw dot — Decision A: absent dims
+        cost nothing, so a modifier-attenuated parent still matches its
+        noun where L2 would prefer a low-magnitude decoy). The residual
+        carries the parent EXACTLY on the dims ``w*`` does not radially
+        dominate and zero elsewhere (MINIMAL residual — the next backward
+        step scores against the unexplained content, not the parent's
+        echo)."""
+        Wr = W.index_select(0, rows.long().to(W.device))       # [K, D]
+        flat = result.reshape(-1, W.shape[1])                  # [N, D]
+        scores = Ops._support_dot(Wr, flat)                    # [N, K]
+        w = Wr[scores.argmax(dim=-1)]                          # [N, D]
+        resid = torch.where(flat.abs() > w.abs(), flat,
+                            torch.zeros_like(flat))
+        return w.reshape(result.shape), resid.reshape(result.shape)
+
+    @staticmethod
     def _binary_op_recommend(result, W, op_name, monotonic=True,
                              left_rows=None, right_rows=None,
-                             left_priming=None, right_priming=None):
+                             left_priming=None, right_priming=None,
+                             radial=False):
         """Inverse-recommend a pair ``(x1, x2)`` from an augmented codebook.
+
+        ``radial`` (Alec 2026-07-13, "min should be a radial min to deal
+        with signed activations"): the elementwise ordering filters and
+        the union residual switch to the RADIAL order (per-dim
+        MAGNITUDE, matching the ``_radmin`` / ``_radmax`` fold kernels)
+        instead of the signed lattice order. Over signed idea vectors
+        the lattice comparisons are ill-posed (no real row is elementwise
+        comparable to a fold parent), while radially each operand of a
+        radmax fold is contained in the parent BY CONSTRUCTION — and the
+        ⊥/⊤ sentinel guarantees are restored (|⊥| ≤ |y| always; |⊤| ≥
+        |r| for tanh-bounded ideas). Default False = the lattice
+        behavior, byte-identical.
 
         ``op_name``:
           * ``'union'``        — ``y = max(x1, x2)``; pick ``x1`` as the
@@ -13369,21 +13927,39 @@ class Ops:
             # 1) x1 = argmax_{S ≤ y, S in left_rows ∪ sentinels}
             #        norm(S) * priming(S)
             #    (argmax: multiply by priming so primed rows preferred)
-            le_y = (S <= y).all(dim=-1) & left_mask.unsqueeze(0)  # [N, K]
+            #    Radial: containment is |S| ≤ |y| per dim (the radmax
+            #    fold's own order — every operand is radially inside it).
+            if radial:
+                # A zero parent dim is radmax ANNIHILATION (sign
+                # conflict) — a wildcard, not a magnitude bound.
+                ya = y.abs()
+                le_y = (((S.abs() <= ya) | (ya == 0)).all(dim=-1)
+                        & left_mask.unsqueeze(0))       # [N, K]
+            else:
+                le_y = (S <= y).all(dim=-1) & left_mask.unsqueeze(0)
             primed_sizes = sizes * left_w               # [K_aug]
             scores = torch.where(
                 le_y, primed_sizes.unsqueeze(0).expand(N, K_aug), NEG_INF)
             idx1 = scores.argmax(dim=-1)                # [N]
             x1 = C[idx1]                                # [N, D]
 
-            # 2) residual r = y − x1
-            r = flat - x1                               # [N, D]
+            # 2) residual r = y − x1 (lattice) / the dims x1 did not reach
+            #    (radial: there the co-operand must supply y exactly).
+            if radial:
+                r = torch.where(flat.abs() > x1.abs(), flat,
+                                torch.zeros_like(flat))  # [N, D]
+            else:
+                r = flat - x1                           # [N, D]
 
             # 3) x2 = argmin_{S ≥ r, S in right_rows ∪ sentinels}
             #        norm(S) / priming(S)
             #    (argmin: divide by priming so primed rows look smaller)
             r_b = r.unsqueeze(1)                        # [N, 1, D]
-            ge_r = (S >= r_b).all(dim=-1) & right_mask.unsqueeze(0)
+            if radial:
+                ge_r = ((S.abs() >= r_b.abs()).all(dim=-1)
+                        & right_mask.unsqueeze(0))
+            else:
+                ge_r = (S >= r_b).all(dim=-1) & right_mask.unsqueeze(0)
             primed_sizes_r = sizes / right_w            # [K_aug]
             scores = torch.where(
                 ge_r, primed_sizes_r.unsqueeze(0).expand(N, K_aug), POS_INF)
@@ -13395,7 +13971,14 @@ class Ops:
         if op_name == 'intersection':
             # 1) x1 = argmin_{S ≥ y, S in left_rows ∪ sentinels}
             #        norm(S) / priming(S)
-            ge_y = (S >= y).all(dim=-1)                 # [N, K]
+            #    Radial: the radmin fold's order — operands contain the
+            #    parent, |S| ≥ |y| per dim.
+            if radial:
+                # Zero parent dims are radmin annihilation wildcards.
+                ya = y.abs()
+                ge_y = ((S.abs() >= ya) | (ya == 0)).all(dim=-1)
+            else:
+                ge_y = (S >= y).all(dim=-1)             # [N, K]
             ge_y_left = ge_y & left_mask.unsqueeze(0)
             primed_sizes_l = sizes / left_w             # [K_aug]
             scores = torch.where(

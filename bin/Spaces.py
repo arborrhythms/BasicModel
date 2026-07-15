@@ -41,7 +41,8 @@ from embed import (
     _random_unit_ball, _presence_mse_score, _unorm_ste,
 )
 from data import Data, TheData
-from Layers import Layer, PiLayer, SigmaLayer, NegationLayer, RunStructureLayer  # Import custom layers from Model.py
+from Layers import (Layer, PiLayer, SigmaLayer, NegationLayer,
+                    RunStructureLayer, WhereTilingLayer)  # custom layers
 from Layers import PropertyTilingLayer, char_class_region, WORD as _WORD_CLASS  # char-class property tiling (S6/B1)
 from Layers import (LETTER as _CLS_LETTER, DIGIT as _CLS_DIGIT,               # the four char-class ids the
                     WHITESPACE as _CLS_WHITESPACE, PUNCT as _CLS_PUNCT,       # type-codebook rows carry (T2)
@@ -1768,7 +1769,7 @@ class Basis(nn.Module):
         # signed lexicon Embedding nor the concept/symbol sphere. `unit_ball`
         # alone can't discriminate (True for percept Codebook AND lexicon
         # Embedding), so the [0,1] decode at _snap_content / _nearest_idx /
-        # codebookDistance keys on this. See doc/percept-hypercube.md s2,s9.
+        # codebookDistance keys on this. See doc/Spaces.md#percept-live-path.
         self.is_percept_store = False
 
     @property
@@ -2094,7 +2095,7 @@ class Basis(nn.Module):
             # Stage 5 audit).
             if meronomy_enabled() and getattr(self, "is_percept_store", False):
                 # [0,1] percept presence: complement-aware, no torus wrap
-                # (doc/percept-hypercube.md s2). Scoped to the radix percept
+                # (doc/Spaces.md#percept-complement). Scoped to the radix percept
                 # Codebook; lexicon/concept decode is the verbatim else.
                 scores = _presence_mse_score(
                     flat[nonzero].unsqueeze(1),
@@ -2332,7 +2333,7 @@ class Basis(nn.Module):
         vec = weight[:, :self.nDim].to(TheDevice.get())
         if self.unit_ball:
             if meronomy_enabled() and getattr(self, "is_percept_store", False):
-                # [0,1] percept presence (doc/percept-hypercube.md s2); keeps
+                # [0,1] percept presence (doc/Spaces.md#percept-complement); keeps
                 # forward-snap on the same metric as _snap_content/_nearest_idx.
                 return _presence_mse_score(
                     x[..., :self.nDim].unsqueeze(-2),
@@ -2743,7 +2744,7 @@ class Codebook(Tensor):
         On the radix percept Codebook (``is_percept_store``) under
         ``meronomy_enabled()`` the read is re-homed onto the positive unit
         cube ``[0,1]^D`` via a UNORM straight-through clamp
-        (doc/percept-hypercube.md s7): every reader -- the forward gather
+        (doc/Spaces.md#percept-bounded-encodings): every reader -- the forward gather
         (PartSpace._embed_radix), the forward VQ snap, and the reverse
         nearest-row decode -- then sees [0,1] codes, while the master
         Parameter stays a float that JOINT backprop trains through the STE.
@@ -8763,8 +8764,8 @@ def resolve_lexer():
             "analytic cutting -- analysis/synthesis dual-input plan Phase "
             f"4b, rev. 2026-06-09). Move <lexer>{_legacy}</lexer> into the "
             "<WholeSpace> section.")
-    # <analyzer> REPLACES <lexer> (doc/mereological.md): prefer the new spelling,
-    # fall back to the deprecated <lexer>.
+    # <analyzer> REPLACES <lexer> (doc/Mereology.md#mereological-algorithm):
+    # prefer the new spelling, fall back to the deprecated <lexer>.
     for _key in ("analyzer", "lexer"):
         try:
             _v = TheXMLConfig.space("WholeSpace", _key)
@@ -10049,6 +10050,17 @@ class PartSpace(Space):
                 or 2)
         except (KeyError, TypeError, ValueError):
             self.chunk_promotion_min_length = 2
+        # <wordStore>: the percept store's WORD collection (type="words",
+        # RadixLayer.word_ids) becomes the reverse() recommenders' candidate
+        # basis (doc/plans/2026-07-12-word-store-typed-reverse.md). Default
+        # OFF = the existing basis pick, byte-identical.
+        try:
+            _wst = TheXMLConfig.space(section, "wordStore")
+        except KeyError:
+            _wst = None
+        self.word_store_reverse = (_wst if isinstance(_wst, bool)
+                                   else str(_wst or "").strip().lower()
+                                   in ("true", "1", "yes", "on"))
         if isinstance(lexical_basis, Embedding):
             lexical_basis.synthesis_mode = self.synthesis_mode
             lexical_basis.lexer_mode = self.lexer
@@ -10459,7 +10471,7 @@ class PartSpace(Space):
             # Mark the radix percept Codebook as a [0,1] presence store so the
             # complement-aware decode keys here and ONLY here. The lexicon
             # Embedding returned below stays unmarked (signed; sign = form
-            # content). See doc/percept-hypercube.md s2,s9.
+            # content). See doc/Spaces.md#percept-live-path.
             cb.is_percept_store = True
             return cb
         basis = Embedding()
@@ -10893,6 +10905,11 @@ class PartSpace(Space):
         word_texts_2d: list = []
         # Per-slot word-tile spans (5c type-tiling scaffold for the reverse).
         span_2d: list = []
+        # Exact per-percept instance spans for the overlapping `.where`
+        # refinement lattice.  Unlike ``span_2d`` (the enclosing word tile,
+        # intentionally repeated on every constituent), these brackets advance
+        # by the emitted percept's own byte extent.
+        part_span_2d: list = []
         for b, row in enumerate(batch_tokens):
             # Word-isolation tiling cut ahead of Pass 1/2; see doc/Mereology.md. None off-flag.
             _wspans = None
@@ -10939,6 +10956,7 @@ class PartSpace(Space):
             row_groups: list = []
             row_offsets: list = []
             row_spans: list = []
+            row_part_spans: list = []
             byte_off = 0
             for n in range(len(row)):
                 text = row[n]
@@ -10969,16 +10987,18 @@ class PartSpace(Space):
                     for pid in ps.spell_out(piece):
                         if len(row_pids) >= nIdeas:
                             break
+                        part_start = int(byte_pos)
+                        _pb = ps.bytes_for(int(pid))
+                        part_len = len(_pb) if _pb else 1
                         if _wspans is not None:
                             grp = -1
                             for _wi, (_ws, _we) in enumerate(_wspans):
-                                if _ws <= byte_pos < _we:
+                                if _ws <= part_start < _we:
                                     grp = _wi
                                     break
-                            _pb = ps.bytes_for(int(pid))
-                            byte_pos += len(_pb) if _pb else 1
                         else:
                             grp = int(n)
+                        byte_pos += part_len
                         row_pids.append(int(pid))
                         row_groups.append(grp)    # word (meronomy) or token idx
                         # .where: piece (word-tile) start; see doc/Mereology.md.
@@ -10986,6 +11006,8 @@ class PartSpace(Space):
                         # Tile span per slot: the word-sized object's (start, end).
                         row_spans.append((int(piece_start),
                                           int(piece_start + len(piece))))
+                        row_part_spans.append(
+                            (part_start, int(part_start + part_len)))
                     if len(row_pids) >= nIdeas:
                         break
                 if len(row_pids) >= nIdeas:
@@ -10995,10 +11017,12 @@ class PartSpace(Space):
                 row_groups.append(-1)             # pad slots: no token group
                 row_offsets.append(-1)
                 row_spans.append((-1, -1))
+                row_part_spans.append((0, 0))
             pid_2d.append(row_pids[:nIdeas])
             group_2d.append(row_groups[:nIdeas])
             offset_2d.append(row_offsets[:nIdeas])
             span_2d.append(row_spans[:nIdeas])
+            part_span_2d.append(row_part_spans[:nIdeas])
         if os.environ.get("XCHUNK_PROBE"):
             _nn = [sum(1 for p in r if p != null_pid) for r in pid_2d[:4]]
             print(f"=XCHUNK2= non-null-pids/row={_nn} pid_2d[0]={pid_2d[0]} "
@@ -11006,6 +11030,8 @@ class PartSpace(Space):
         pid_grid = torch.tensor(pid_2d, dtype=torch.long, device=dev)
         word_group_grid = torch.tensor(group_2d, dtype=torch.long, device=dev)
         word_offset_grid = torch.tensor(offset_2d, dtype=torch.long, device=dev)
+        part_span_grid = torch.tensor(
+            part_span_2d, dtype=torch.long, device=dev)
         # Gather per-slot vectors from the shared ``.what`` codebook (the
         # same Codebook the RadixLayer writes its percepts into), so the
         # event reflects the learned percept prototypes and gradient flows
@@ -11056,6 +11082,8 @@ class PartSpace(Space):
             'word_texts': word_texts_2d,
             # 5c: the analysis tiling record the reverse associates against.
             'tile_spans': span_2d,
+            # Exact candidate brackets for the per-.where PS/WS tiling loop.
+            'part_spans': part_span_grid,
         }
         return self.subspace
 
@@ -12196,6 +12224,38 @@ class PartSpace(Space):
         fed.set_event(out)
         return fed
 
+    def synthesize_feedback_where(self, sub, t, sigma_mask, default=None):
+        """Apply pass-``t`` σ only to locally requesting `.where` slots.
+
+        ``sigma_mask`` is the PS-side ``[B,P]`` mask emitted by
+        :class:`WhereTilingLayer`.  Non-requesting slots retain ``default`` so
+        settled objects and π-routed regions continue to cross the callosum.
+        Shape mismatches degrade to the ordinary feedback result rather than
+        silently broadcasting a mask onto unrelated slots.
+        """
+        folded = self.synthesize_feedback(sub, t)
+        if folded is None or sigma_mask is None or default is None:
+            return folded if folded is not None else default
+        f_ev = folded.materialize() if hasattr(folded, "materialize") else None
+        d_ev = default.materialize() if hasattr(default, "materialize") else None
+        if (f_ev is None or d_ev is None or not torch.is_tensor(f_ev)
+                or not torch.is_tensor(d_ev) or f_ev.shape != d_ev.shape
+                or f_ev.dim() != 3):
+            return folded
+        mask = sigma_mask.to(device=f_ev.device, dtype=torch.bool)
+        if mask.dim() == 1:
+            mask = mask.unsqueeze(0)
+        if (int(mask.shape[0]) != int(f_ev.shape[0])
+                or int(mask.shape[1]) != int(f_ev.shape[1])):
+            return folded
+        event = torch.where(mask.unsqueeze(-1), f_ev, d_ev)
+        routed = SubSpace(inputShape=(1, 1), outputShape=(1, 1),
+                          nInputDim=1, nOutputDim=1)
+        routed.copy_context(default)
+        routed.set_event(event)
+        object.__setattr__(routed, "_where_sigma_mask", mask)
+        return routed
+
     def forward(self, in_sub, cs_out=None):
         """Perception: map the atoms view of the input to percepts via ``pi``.
 
@@ -12536,6 +12596,23 @@ class PartSpace(Space):
         is bit-identical to the old eager path. A no-op during pure
         training (no consumer ever fires -> 0 host syncs).
         """
+        # §13 increment (2026-07-14 snap design doc): a staged Method-2
+        # un-fold slab takes RENDER PRIORITY over the transported reverse
+        # thunk — the trained reverse collapses the multi-slot un-fold
+        # event back to the root's single slot, so the render reads the
+        # slab directly. Consume-once; re-stashed per eval batch by the
+        # un-fold caller, cleared by the Method-1 leaves staging.
+        if self._recovered_input is None:
+            _slab = getattr(self, '_unfold_recovered_slab', None)
+            if _slab is not None and torch.is_tensor(_slab):
+                from Layers import RadixLayer as _Radix
+                _radix = getattr(self, 'vocabulary', None)
+                if isinstance(_radix, _Radix):
+                    self._recovered_input = self._decode_radix_meta(
+                        _radix, _slab, self.subspace)
+                    object.__setattr__(self, '_unfold_recovered_slab', None)
+                    self._recovered_input_thunk = None
+                    return self._recovered_input
         if (self._recovered_input is None
                 and self._recovered_input_thunk is not None):
             thunk = self._recovered_input_thunk
@@ -13029,6 +13106,63 @@ def _concept_rows_exist(host):
             and any(ly._tensor_rows for ly in alloc._layers.values()))
 
 
+def _stash_category_roles(ws, pid_host, B, N):
+    """MetaSymbol Category learning (opt-in via <categoryCodebook>). The
+    route's round-0 role observations (stashed on the WS by
+    LanguageLayer.compose) say which operator INPUT role each percept
+    filled this sentence. Attribute them to the percept's MetaSymbol and
+    hand the observed role vector to Language.MetaSymbolCategoryLearner:
+    pending words accumulate sparse role evidence; stable words commit
+    to one role-space VQ category. The stash is consumed so a later
+    non-compose forward does not re-apply stale observations. Shared by
+    BOTH _maybe_autobind_meta arms (per-pid and word-whole); module-level
+    so duck-typed stubs need no extra bound methods."""
+    if not (getattr(ws, 'category_codebook_enabled', None) is not None
+            and ws.category_codebook_enabled()):
+        return
+    # Phase 2 (chooser conditioning): stash this perception's per-
+    # position percept ids so the NEXT compose can map each terminal
+    # slot -> MetaSymbol -> centroid -> role vector for the MLP
+    # chooser's category context. Perception runs before compose in the
+    # same step (compose reads the STM this forward populated), so the
+    # stash is current. Host list [B][N] (mirrors pid_host).
+    ws._category_last_pid = pid_host
+    role_obs = getattr(ws, '_category_role_obs', None)
+    role_index = getattr(ws, '_category_role_index', None) or {}
+    n_roles = int(getattr(ws, '_category_n_roles', 0) or 0)
+    if role_obs and n_roles > 0:
+        for b in range(min(len(role_obs), B)):
+            # Accumulate this row's per-position role vector: each
+            # round-0 reduce gives its left operand op_I1 and right
+            # operand op_I2 of the firing method.
+            acc = {}
+            for (lp, rp, method) in role_obs[b]:
+                for pos, suffix in ((lp, 'I1'), (rp, 'I2')):
+                    col = role_index.get(f"{method}_{suffix}")
+                    if col is None:
+                        continue
+                    vec = acc.get(pos)
+                    if vec is None:
+                        vec = [0.0] * n_roles
+                        acc[pos] = vec
+                    vec[col] += 1.0
+            for pos, vec in acc.items():
+                if pos < 0 or pos >= N or pos >= len(pid_host[b]):
+                    continue
+                pid = int(pid_host[b][pos])
+                if pid < 0:
+                    continue
+                ps_pos = ws.ensure_ps_position(pid)
+                meta_pos = ws.taxonomy_parent(ps_pos)
+                if meta_pos is None:
+                    continue
+                ws.observe_category_roles(
+                    int(meta_pos),
+                    torch.tensor([vec], dtype=torch.float32))
+    if hasattr(ws, '_category_role_obs'):
+        ws._category_role_obs = None
+
+
 def _concept_alloc_of(host):
     """Lazy :class:`Layers.ConceptAllocator` + THE shared square store for
     ``host`` (a ConceptualSpace or a duck-typed stub). Sizes the single
@@ -13374,6 +13508,7 @@ class ConceptualSpace(Space):
         self._stm_predicted_idea = None
         self._stm_predicted_slab = None
         self._intra_loss_accum = None
+        self._intra_loss_weight_accum = None
         self._intra_loss_count = 0
 
         # Stage 10 PARALLEL reverse-roundtrip cache (doc/plans/
@@ -13645,6 +13780,11 @@ class ConceptualSpace(Space):
         # without the host sync.
         if B > 0 and int(stm._max_depth_host) < cap:
             stm._max_depth_host = int(stm._max_depth_host) + 1
+        # Slot-kind provenance (word-bearing-fold filtering, open-fronts
+        # Task B): this bookkeeping push is never a WORD. No-op unless
+        # recording is enabled; host list, eager-only.
+        if not torch.compiler.is_compiling():
+            stm.note_push_all("other")
 
     # -- Task 3: explicit predict-then-perceive helpers ----------------
     def _stm_shift_for_predict(self):
@@ -13774,7 +13914,7 @@ class ConceptualSpace(Space):
             self._stm_predicted_idea = pred
         return pred
 
-    def _accumulate_intra_loss(self, prediction, target):
+    def _accumulate_intra_loss(self, prediction, target, row_gate=None):
         """Accumulate one step of ``L_intra = MSE(prediction, target)``
         into the live running sum, gated on grad-enabled + positive
         weight.
@@ -13790,7 +13930,17 @@ class ConceptualSpace(Space):
             return
         if float(self.intra_loss_weight) <= 0.0:
             return
-        step_loss = self.intraSentenceLayer.intra_loss(prediction, target)
+        squared = (prediction - target).square()
+        if row_gate is None:
+            step_loss = squared.sum()
+            step_weight = squared.new_tensor(float(squared.numel()))
+        else:
+            mask = row_gate.reshape(
+                int(row_gate.shape[0]), *([1] * (squared.dim() - 1)))
+            mask = mask.to(dtype=squared.dtype, device=squared.device)
+            step_loss = (squared * mask).sum()
+            per_row = squared.numel() // max(1, int(squared.shape[0]))
+            step_weight = mask.sum() * float(per_row)
         # Per-step losses are kept as a LIST and summed lazily in
         # ``consume_intra_loss`` (2026-07-08): the old running
         # ``accum + step_loss`` built a per-WORD add-chain INSIDE the
@@ -13803,8 +13953,10 @@ class ConceptualSpace(Space):
         # eager consume (post-body, pre-backward).
         if self._intra_loss_accum is None:
             self._intra_loss_accum = [step_loss]
+            self._intra_loss_weight_accum = [step_weight]
         else:
             self._intra_loss_accum.append(step_loss)
+            self._intra_loss_weight_accum.append(step_weight)
         self._intra_loss_count += 1
 
     def consume_intra_loss(self):
@@ -13819,6 +13971,7 @@ class ConceptualSpace(Space):
         backward, mirroring the ARMA term.
         """
         if self._intra_loss_accum is None:
+            self._intra_loss_weight_accum = None
             self._intra_loss_count = 0
             return None
         # Chunked eager sum of the per-step list (<=8 per torch.stack; see
@@ -13831,12 +13984,22 @@ class ConceptualSpace(Space):
             chunk = vals[i:i + 8]
             part = chunk[0] if len(chunk) == 1 else torch.stack(chunk).sum()
             total = part if total is None else total + part
-        mean_loss = total / max(1, self._intra_loss_count)
+        weights = self._intra_loss_weight_accum or []
+        total_weight = None
+        for i in range(0, len(weights), 8):
+            chunk = weights[i:i + 8]
+            part = chunk[0] if len(chunk) == 1 else torch.stack(chunk).sum()
+            total_weight = (part if total_weight is None
+                            else total_weight + part)
+        if total_weight is None:
+            total_weight = total.new_tensor(1.0)
+        mean_loss = total / total_weight.clamp_min(1.0)
         self._intra_loss_accum = None
+        self._intra_loss_weight_accum = None
         self._intra_loss_count = 0
         return mean_loss
 
-    def _stm_predict_then_perceive_serial(self, idea):
+    def _stm_predict_then_perceive_serial(self, idea, row_gate=None):
         """SERIAL predict step (single-position call). Snapshot the
         current slots, run the intra-sentence predictor from the RETAINED
         context, stash the held prediction on ``self._stm_predicted_idea``,
@@ -13869,7 +14032,7 @@ class ConceptualSpace(Space):
         routing = self._intra_routing_for_predict()
         prediction = self._stm_run_intra_predict(
             context, routing, parallel=False)         # [B, D]
-        self._accumulate_intra_loss(prediction, idea)
+        self._accumulate_intra_loss(prediction, idea, row_gate=row_gate)
 
     def _stm_predict_then_perceive_parallel(self, folded):
         """PARALLEL predict step (whole-slab call). Snapshot the prev STM,
@@ -13982,6 +14145,7 @@ class ConceptualSpace(Space):
         self._stm_predicted_idea = None
         self._stm_predicted_slab = None
         self._intra_loss_accum = None
+        self._intra_loss_weight_accum = None
         self._intra_loss_count = 0
         if not hard:
             return
@@ -14057,11 +14221,68 @@ class ConceptualSpace(Space):
                 tokens=ps_fwd.get('tokens'),
                 word_texts=ps_fwd.get('word_texts'),
                 percept_where=percept_where,
-                percept_when=percept_when)
+                percept_when=percept_when,
+                tile_spans=ps_fwd.get('tile_spans'),
+                percept_store=ps_fwd.get('percept_store'))
+
+    def _agg_span_matches_ws_property(self, b, slots, tile_spans, ws,
+                                      parts=None, percept_store=None):
+        """The refined 1:1 recognition gate (Alec 2026-07-13, both passes):
+        the part-aggregation must be EQUAL IN SPAN to a WS word-property
+        span (the staged type-run analysis spans — the whole's ``.where``
+        claim). Two equalities, both required:
+
+          * the aggregation's TILE span equals a staged WS span
+            (cross-tower placement agreement), AND
+          * the parts' OWN byte extent (``bytes_for`` lengths) fills that
+            span exactly — the tile record stamps the WORD-tile span on
+            every slot of a piece, so a letters-part covering only a
+            prefix of the word would otherwise slip through (Alec: "a
+            word-whole may have a letters-part which is not the entire
+            word").
+
+        Strict on every missing ingredient: no tile record, no staged
+        spans, no store, or a still-partial trie ⇒ NO recognition — until
+        the towers agree there is a word, there is no word, and that is
+        OK."""
+        if not slots or tile_spans is None or b >= len(tile_spans):
+            return False
+        row = tile_spans[b]
+        try:
+            ss_ = [tuple(int(x) for x in row[n]) for n in slots
+                   if n < len(row)]
+        except (TypeError, IndexError):
+            return False
+        ss_ = [t for t in ss_ if t[1] > t[0]]
+        if len(ss_) != len(slots):
+            return False
+        agg = (min(s for s, _ in ss_), max(e for _, e in ss_))
+        # The parts must FILL the span: total own-byte extent == span width.
+        if parts is None or percept_store is None \
+                or not hasattr(percept_store, 'bytes_for'):
+            return False
+        try:
+            filled = sum(len(percept_store.bytes_for(int(p)) or b"")
+                         for p in parts)
+        except (IndexError, TypeError, ValueError):
+            return False
+        if filled != (agg[1] - agg[0]):
+            return False
+        spans = getattr(ws, '_staged_analysis_spans', None)
+        if spans is None:
+            spans = getattr(getattr(self, 'wholeSpace_ref', None),
+                            '_staged_analysis_spans', None)
+        if spans is None or not torch.is_tensor(spans) \
+                or b >= int(spans.shape[0]):
+            return False
+        row_spans = spans[b].detach().to("cpu").tolist()
+        return any(int(s) == agg[0] and int(e) == agg[1]
+                   for (s, e) in row_spans)
 
     def _maybe_autobind_meta(self, pid_2d, vec_tensor, word_groups=None,
                              tokens=None, word_texts=None, percept_where=None,
-                             percept_when=None):
+                             percept_when=None, tile_spans=None,
+                             percept_store=None):
         """Auto-bind PS percepts to fresh WS symbols + META edges.
 
         Task G relocation: moved here from ``PartSpace`` so the
@@ -14135,9 +14356,21 @@ class ConceptualSpace(Space):
             # presentations. Runs BEFORE the cross-tower knit so the per-span
             # location concept reuses A (2026-07-02 A-merge). Additive, gated.
             per_row = {}
-            for (b, w_parts, w_whole, w_key) in (word_bindings or ()):
+            for (b, w_parts, w_whole, w_key, w_slots) in (word_bindings
+                                                          or ()):
                 A, _B, _C = self.create_word_object_meta(
                     w_parts, w_whole, key=w_key)
+                # 1:1 recognition (plan v3, REFINED Alec 2026-07-13 second
+                # pass): the part-AGGREGATION (one promoted percept — the
+                # trie's created word) must be EQUAL IN SPAN to the WS
+                # word-property span. No staged spans / no span match /
+                # trie not built up yet -> NO word, and that is OK.
+                if (len(w_parts) == 1
+                        and self._agg_span_matches_ws_property(
+                            b, w_slots, tile_spans, ws,
+                            parts=w_parts, percept_store=percept_store)):
+                    self._register_recognized_word(
+                        A, w_key, w_parts[0], ws=ws, whole_pos=w_whole)
                 per_row.setdefault(b, []).append((A, w_key))
             # JOINT/sentence concept (P2 decision 6): the SYMBOLIC joint
             # mixing -- the ordered bias-bounded CHAIN over the row's
@@ -14156,6 +14389,15 @@ class ConceptualSpace(Space):
             self._autobind_cross_tower(pid_2d, percept_where, ws,
                                        percept_when=percept_when,
                                        word_texts=word_texts)
+            # Category stash runs on THIS arm too: returning before it left
+            # ws._category_last_pid unset on every mereologyRaise config, so
+            # the chooser's anchored conditioning never engaged (depth-3
+            # campaign finding, 2026-07-13).
+            _B = int(pid_2d.shape[0])
+            _N = int(pid_2d.shape[1]) if pid_2d.dim() == 2 else 0
+            _stash_category_roles(
+                ws, pid_2d.detach().reshape(_B, _N).tolist() if _N else [],
+                _B, _N)
             return
         bound = getattr(self, '_autobound_percept_ids', None)
         if bound is None:
@@ -14214,58 +14456,7 @@ class ConceptualSpace(Space):
                     if _pm is not None:
                         ws.maybe_raise_order(int(_pm))
 
-        # --------------------------------------------------------------
-        # MetaSymbol Category learning (opt-in via <categoryCodebook>). The
-        # route's round-0 role observations (stashed on the WS by
-        # LanguageLayer.compose) say which operator INPUT role each percept
-        # filled this sentence. Attribute them to the percept's MetaSymbol and
-        # hand the observed role vector to Language.MetaSymbolCategoryLearner:
-        # pending words accumulate sparse role evidence; stable words commit
-        # to one role-space VQ category. The stash is consumed so a later
-        # non-compose forward does not re-apply stale observations.
-        if (getattr(ws, 'category_codebook_enabled', None) is not None
-                and ws.category_codebook_enabled()):
-            # Phase 2 (chooser conditioning): stash this perception's per-
-            # position percept ids so the NEXT compose can map each terminal
-            # slot -> MetaSymbol -> centroid -> role vector for the MLP
-            # chooser's category context. Perception runs before compose in the
-            # same step (compose reads the STM this forward populated), so the
-            # stash is current. Host list [B][N] (mirrors pid_host).
-            ws._category_last_pid = pid_host
-            role_obs = getattr(ws, '_category_role_obs', None)
-            role_index = getattr(ws, '_category_role_index', None) or {}
-            n_roles = int(getattr(ws, '_category_n_roles', 0) or 0)
-            if role_obs and n_roles > 0:
-                for b in range(min(len(role_obs), B)):
-                    # Accumulate this row's per-position role vector: each
-                    # round-0 reduce gives its left operand op_I1 and right
-                    # operand op_I2 of the firing method.
-                    acc = {}
-                    for (lp, rp, method) in role_obs[b]:
-                        for pos, suffix in ((lp, 'I1'), (rp, 'I2')):
-                            col = role_index.get(f"{method}_{suffix}")
-                            if col is None:
-                                continue
-                            vec = acc.get(pos)
-                            if vec is None:
-                                vec = [0.0] * n_roles
-                                acc[pos] = vec
-                            vec[col] += 1.0
-                    for pos, vec in acc.items():
-                        if pos < 0 or pos >= N or pos >= len(pid_host[b]):
-                            continue
-                        pid = int(pid_host[b][pos])
-                        if pid < 0:
-                            continue
-                        ps_pos = ws.ensure_ps_position(pid)
-                        meta_pos = ws.taxonomy_parent(ps_pos)
-                        if meta_pos is None:
-                            continue
-                        ws.observe_category_roles(
-                            int(meta_pos),
-                            torch.tensor([vec], dtype=torch.float32))
-            if hasattr(ws, '_category_role_obs'):
-                ws._category_role_obs = None
+        _stash_category_roles(ws, pid_host, B, N)
 
     def _autobind_word_wholes(self, pid_2d, vec_tensor, word_groups, tokens, ws,
                               word_texts=None):
@@ -14360,7 +14551,23 @@ class ConceptualSpace(Space):
                 # part subsuming them (idempotent per whole).
                 if last_meta is not None:
                     ws.maybe_raise_order(int(last_meta))
-                bindings.append((b, word_parts, int(whole_pos), key))
+                # Syntactic anchor (Alec 2026-07-13): a closed-class relation
+                # surface ("partOf" ...) binds its pids to the OPERATOR role —
+                # the "is of definition" resolves grammatically, feeding the
+                # chooser's category context (no learned centroid needed).
+                try:
+                    from Language import TheGrammar
+                    _anch = getattr(TheGrammar, 'surface_anchors', None)
+                except ImportError:
+                    _anch = None
+                if _anch and str(key).casefold() in _anch:
+                    _reg = getattr(ws, '_anchored_pids', None)
+                    if _reg is None:
+                        _reg = {}
+                        object.__setattr__(ws, '_anchored_pids', _reg)
+                    for _p in word_parts:
+                        _reg[int(_p)] = _anch[str(key).casefold()]
+                bindings.append((b, word_parts, int(whole_pos), key, slots))
         return bindings
 
     def _autobind_cross_tower(self, pid_2d, percept_where, ws,
@@ -16183,6 +16390,105 @@ class ConceptualSpace(Space):
             cache[k] = J
         return J
 
+    def _register_recognized_word(self, A, key, pid, ws=None,
+                                  whole_pos=None):
+        """In-model word RECOGNITION registration (Alec 2026-07-13, plan v3):
+        a word-whole whose part-run is a SINGLE percept (1:1) joins the
+        explicit higher-order WORDS concept on FIRST sighting — promotion
+        already encodes the recurrence, so no further consistency gate.
+
+        Parts(WORDS) accrues ``('sym', A)`` (the in-model structure — the
+        type="words" label at the META layer); ``_recognized_words``
+        (``key -> pid``, the ``_word_whole_ss`` host-registry idiom) is the
+        row PROJECTION reverse() derives candidates from. WORDS carries no
+        per-member edges (a many-part flat concept would fight the order
+        caps); its codebook FACE is the order-capped SUMMARY ROW — the
+        well-known 'words' atom — updated below when ``ws``/``whole_pos``
+        are supplied. Idempotent per surface key.
+        """
+        reg = getattr(self, '_recognized_words', None)
+        if reg is None:
+            reg = {}
+            object.__setattr__(self, '_recognized_words', reg)
+        if key in reg:
+            return
+        wid = getattr(self, '_words_concept_id', None)
+        if wid is None:
+            wid = self.new_concept()
+            object.__setattr__(self, '_words_concept_id', wid)
+        self.add_part(wid, ("sym", int(A)))
+        reg[str(key)] = int(pid)
+        # WORDS codebook face (Alec 2026-07-13: the order-capped SUMMARY
+        # ROW, not per-member edges): the well-known 'words' atom (WS row
+        # 0) carries the running mean of the member word-wholes' rows at
+        # the abstraction-order cap — one row, no order-cap fight.
+        if ws is not None and whole_pos is not None:
+            self._update_words_summary_row(ws, int(whole_pos), len(reg))
+
+    def _update_words_summary_row(self, ws, whole_pos, n_members):
+        """STASH a WORDS summary-row update (the well-known 'words' atom,
+        WS row 0 by convention): the registration seam runs at the
+        sentence-boundary Reset, BETWEEN a forward and its backward — an
+        in-place codebook write there bumps the Parameter version and
+        breaks the pending backward. The write is deferred to the next
+        eager STEM (``apply_pending_words_summary``, the adopt-on-sight /
+        one-step-stale discipline)."""
+        pend = getattr(ws, '_pending_words_summary', None)
+        if pend is None:
+            pend = []
+            object.__setattr__(ws, '_pending_words_summary', pend)
+        pend.append((int(whole_pos), int(n_members)))
+
+    @staticmethod
+    @torch.no_grad()
+    def apply_pending_words_summary(ws):
+        """Drain the stashed WORDS summary updates on ``ws`` — the
+        running mean of member word-whole rows into the 'words' atom row,
+        fold record stamped FULL (abstraction order at the cap). Runs in
+        the eager stem (pre-graph), so the Parameter write can never
+        invalidate a pending backward. Best-effort per entry."""
+        pend = getattr(ws, '_pending_words_summary', None)
+        if not pend:
+            return
+        row0 = (getattr(ws, 'well_known_atoms', None) or {}).get('words')
+        p2r = getattr(ws, '_ws_pos_to_row', None)
+        cb = getattr(getattr(ws, 'subspace', None), 'what', None)
+        W = cb.getW() if cb is not None and hasattr(cb, 'getW') else None
+        if row0 is None or not isinstance(p2r, dict) or W is None \
+                or not torch.is_tensor(W) or int(row0) >= int(W.shape[0]):
+            del pend[:]
+            return
+        wrote = False
+        for whole_pos, n_members in pend:
+            wrow = p2r.get(int(whole_pos))
+            if wrow is None or int(wrow) >= int(W.shape[0]):
+                continue
+            n = max(1, int(n_members))
+            vec = W[int(wrow)].detach()
+            W.data[int(row0)] = (W.data[int(row0)] * (n - 1) + vec) / n
+            wrote = True
+        del pend[:]
+        if not wrote:
+            return
+        vq = getattr(cb, 'vq', None)
+        if vq is not None and hasattr(vq, '_b_norms_sq'):
+            vq._b_norms_sq.copy_((vq.codebook.detach() ** 2).sum(dim=-1))
+        # Order cap: a FULL fold sequence derives abstraction_order ==
+        # max_order (the summary is maximally abstract by construction).
+        rams = getattr(cb, 'ramsification', None)
+        if rams is not None and int(row0) < int(rams.shape[0]):
+            rams[int(row0)][:] = cb.FOLD_SIGMA
+
+    def recognized_word_rows(self):
+        """PS ``.what`` rows (percept ids) of the WORDS-registered words —
+        the reverse() candidate projection of the in-model label. ``None``
+        while nothing is recognized."""
+        reg = getattr(self, '_recognized_words', None)
+        if not reg:
+            return None
+        return torch.tensor(sorted({int(p) for p in reg.values()}),
+                            dtype=torch.long)
+
     def create_word_object_meta(self, word_parts, word_whole, key=None):
         """Create the per-word A / B / C symbols in the relation-only table
         (Alec, 2026-06-17; doc/specs/mereological-order-raising.md "word /
@@ -16227,6 +16533,7 @@ class ConceptualSpace(Space):
             # tie's edge values (no_grad; codebooks stay EMA-only). Weakening
             # awaits a dis-occurrence signal (vacuous in a text-only learner).
             self._hebbian_strengthen(C)
+            ConceptualSpace._record_percept_concept(self, A, B, word_parts)
             return A, B, C
         A = alloc.new_concept()                    # the WORD-symbol
         for p in word_parts:
@@ -16256,7 +16563,104 @@ class ConceptualSpace(Space):
         # Class dispatch: mock harnesses drive this method with a bare
         # namespace self, which carries no bound helper.
         ConceptualSpace._priming_bridge_put(self, A, C, word_parts, word_whole)
+        ConceptualSpace._record_percept_concept(self, A, B, word_parts)
         return A, B, C
+
+    def _record_percept_concept(self, A, B, word_parts):
+        """Reverse tie percept-id -> the word/object pair ``(A, B)`` (snap
+        design doc §ontology, Alec 2026-07-15). The parallel path forms the
+        concepts (support = the parts and wholes co-occurring at one
+        `.where`/`.when`; the concept, once formed, is location-independent)
+        and calls ``add_part(A, pid)``; this records the INVERSE so the
+        serial per-word path can RESOLVE (light up) the already-known
+        concepts from a percept without minting. Runs on BOTH the mint arm
+        and the idempotent reuse/accrue arm of ``create_word_object_meta``.
+        Host dicts; last write wins. Non-int part refs (``('sym', id)``)
+        carry no raw percept and are skipped."""
+        idx = getattr(self, '_percept_word_concept', None)
+        if idx is None:
+            idx = {}
+            object.__setattr__(self, '_percept_word_concept', idx)
+        o2w = getattr(self, '_object_word_concept', None)
+        if o2w is None:
+            o2w = {}
+            object.__setattr__(self, '_object_word_concept', o2w)
+        o2w[int(B)] = int(A)
+        for p in (word_parts or ()):
+            # Match ``add_part``'s unconditional ``int(p)`` (the parts are raw
+            # PS codes — Python/numpy ints or scalar tensors); only genuine
+            # non-scalar refs (``('sym', id)`` tuples) fail and are skipped.
+            try:
+                pid = int(p)
+            except (TypeError, ValueError):
+                continue
+            idx[pid] = (int(A), int(B))
+
+    def concept_of_percept(self, pid):
+        """The WORD-concept ``A`` tied to percept ``pid``, or ``None`` if
+        untied. Decode-side endpoint: Method-2 translates the un-folded
+        OBJECT concepts back to word concepts (the exact reverse of the
+        forward), then A's parts (PS codes) render the surface."""
+        idx = getattr(self, '_percept_word_concept', None)
+        got = None if not idx else idx.get(int(pid))
+        return None if got is None else got[0]
+
+    def object_concept_of_percept(self, pid):
+        """The OBJECT-concept ``B`` tied to percept ``pid``, or ``None`` —
+        the referent whose row the forward folds (Alec: "Method-2 will
+        unfold into object concepts, which are then translated into their
+        corresponding word concepts")."""
+        idx = getattr(self, '_percept_word_concept', None)
+        got = None if not idx else idx.get(int(pid))
+        return None if got is None else got[1]
+
+    def word_concept_of_object(self, cid):
+        """The Method-2 translation step: OBJECT-concept ``B`` -> its
+        WORD-concept ``A`` (the META pair's other member), or ``None``."""
+        o2w = getattr(self, '_object_word_concept', None)
+        return None if not o2w else o2w.get(int(cid))
+
+    def concept_codebook_row_of_percept(self, pid):
+        """The order-0 ``similarity_codebook`` row of percept ``pid``'s
+        OBJECT-concept ``B`` (its random signed-hypersphere vector), or
+        ``None``. percept -> (A, B) reverse tie -> B's order-0 row: the
+        forward folds OBJECT concepts; words are the decode-side
+        translation. Uses the ALLOCATING ``_csw_concept_row`` (idempotent,
+        into ``[0, caps0)``) so the already-known concept's codebook SLOT
+        lights up even where the serial config left the sparse populate
+        dormant — allocating a row for an existing concept, not minting a
+        concept."""
+        cid = self.object_concept_of_percept(pid)
+        if cid is None:
+            return None
+        row = self._csw_concept_row(0, cid)
+        return None if row is None else int(row)
+
+    def concept_row_content(self, pid_b):
+        """Light up the already-known OBJECT-concept rows for a ``[B]``
+        batch of percept ids (snap design doc §ontology): resolve each
+        percept -> its object-concept ``B`` -> that concept's
+        ``similarity_codebook`` row, and return ``([B, W] rows, [B] bool
+        mask)``. The forward folds OBJECT concepts (words are the
+        decode-side translation). Rows are RE-NORMALIZED (the codebook
+        maintains near-unit-norm but ``getW()`` does not guarantee it on
+        read — the signed hypersphere). Untied percepts give a zero row
+        and ``mask=False`` (the caller keeps the computed idea there).
+        Host-side resolve; the gather is a plain codebook read."""
+        cb = getattr(self, "similarity_codebook", None)
+        W = cb.getW() if (cb is not None and hasattr(cb, "getW")) else None
+        if W is None or not torch.is_tensor(W) or pid_b is None:
+            return None, None
+        B = int(pid_b.reshape(-1).shape[0])
+        out = W.new_zeros(B, int(W.shape[1]))
+        mask = torch.zeros(B, dtype=torch.bool, device=W.device)
+        pids = pid_b.reshape(-1).tolist()
+        for b, pid in enumerate(pids):
+            row = self.concept_codebook_row_of_percept(int(pid))
+            if row is not None and 0 <= int(row) < int(W.shape[0]):
+                out[b] = F.normalize(W[int(row)], dim=-1, eps=1e-8)
+                mask[b] = True
+        return out, mask
 
     def _priming_bridge_put(self, A, C, word_parts, word_whole, accrue=False):
         """Record (or accrue onto) the word triple's surface anchors:
@@ -17591,6 +17995,30 @@ class ConceptualSpace(Space):
         ws_content, _, _ = self._bind_demux(WS_sub, D)
         ws_content = self._bind_regroup(ws_content, nv)
         WS_t = self._bind_fit(ws_content, D, cs_content)
+        # Experimental overlapping `.where` lattice: PS and WS candidates
+        # retain separate fixed-slot masks through the callosum.  This only
+        # removes pad candidates; settled and unresolved candidates coexist
+        # and therefore remain available to later orders/the FF pyramid.
+        tiling = getattr(self, "_where_tiling_obs", None)
+        if isinstance(tiling, dict):
+            def _mask_candidates(x, key):
+                mask = tiling.get(key)
+                if not torch.is_tensor(mask) or x is None or x.dim() != 3:
+                    return x
+                mask = mask.to(device=x.device, dtype=torch.bool)
+                if mask.dim() == 1:
+                    mask = mask.unsqueeze(0)
+                if int(mask.shape[0]) != int(x.shape[0]):
+                    return x
+                if int(mask.shape[1]) < int(x.shape[1]):
+                    mask = F.pad(mask, (0, int(x.shape[1])
+                                        - int(mask.shape[1])), value=False)
+                elif int(mask.shape[1]) > int(x.shape[1]):
+                    mask = mask[:, :int(x.shape[1])]
+                return x * mask.unsqueeze(-1).to(x.dtype)
+
+            PS_t = _mask_candidates(PS_t, "part_valid")
+            WS_t = _mask_candidates(WS_t, "whole_valid")
         if seed_payload is not None:
             WS_t = WS_t + self._bind_seed_slab(seed_payload, cs_content, D)
         # Slice B: the THIRD (symbol) peer leg -- present whenever the combine
@@ -17628,6 +18056,9 @@ class ConceptualSpace(Space):
         else:
             advanced_ev = glued
         CS_sub.set_event(advanced_ev)
+        if isinstance(tiling, dict):
+            object.__setattr__(CS_sub, "_where_tiling", tiling)
+            object.__setattr__(self.subspace, "_where_tiling", tiling)
         # The carrier rides ON the SubSpace(s): the handed-in CS_sub (the
         # data that flows downstream) AND this stage's own subspace when
         # they differ (CS.forward returns a per-batch sub distinct from
@@ -17723,6 +18154,10 @@ class ConceptualSpace(Space):
             downstream consumers continue to receive a SubSpace whose
             event matches what was pushed onto STM.
         """
+        # The serial per-word caller stages a transient row gate on the space
+        # so the public two-argument Space contract remains unchanged. Direct
+        # and parallel callers have no staged gate and retain prior behavior.
+        row_gate = getattr(self, "_serial_row_gate", None)
         if subspace.is_empty():
             return subspace
         self.subspace.copy_context(subspace)
@@ -17859,14 +18294,22 @@ class ConceptualSpace(Space):
             else:
                 # N == 1: serial per-word call.
                 idea = folded.squeeze(1)              # [B, D]
-                self._stm_predict_then_perceive_serial(idea)
-                self._stm_shift_and_push(idea)
+                self._stm_predict_then_perceive_serial(
+                    idea, row_gate=row_gate)
+                if row_gate is None:
+                    self._stm_shift_and_push(idea)
+                else:
+                    self.stm.push_step_masked(idea, row_gate)
             event_for_carrier = folded               # preserve [B, N, D]
         elif folded.dim() == 2:
             idea = folded                            # [B, D]
             event_for_carrier = folded.unsqueeze(1)   # [B, 1, D]
-            self._stm_predict_then_perceive_serial(idea)
-            self._stm_shift_and_push(idea)
+            self._stm_predict_then_perceive_serial(
+                idea, row_gate=row_gate)
+            if row_gate is None:
+                self._stm_shift_and_push(idea)
+            else:
+                self.stm.push_step_masked(idea, row_gate)
         else:
             # Defensive: degenerate shape — fall back to a no-op
             # (don't crash; return the input subspace unchanged).
@@ -18667,6 +19110,19 @@ class WholeSpace(Space):
         # reaches it. Consumed GATED + read-only in _stage0_unity_forward.
         self.run_structure = RunStructureLayer()
         self.layers.append(self.run_structure)
+        # Experimental dual observation over overlapping PS/WS `.where`
+        # candidates.  Unlike run_structure this never collapses the towers or
+        # the batch.  It is constructed only under the opt-in so legacy module
+        # trees/state remain unchanged while the corpus gates are pending.
+        self.overlap_where_tiling = bool(TheXMLConfig.get(
+            "architecture.overlapWhereTiling", default=False))
+        self.where_tiling = None
+        self._where_tiling_schedule = None
+        self._where_tiling_obs = None
+        self._staged_analysis_kinds = None
+        if self.overlap_where_tiling:
+            self.where_tiling = WhereTilingLayer()
+            self.layers.append(self.where_tiling)
 
         # Propositional negation slot: NEG sits at the WholeSpace
         # output, gated on ``rule_probability("not(S)")``. ``NotLayer``
@@ -21919,6 +22375,100 @@ class WholeSpace(Space):
                 t = _divide_spans_into_attested(idx, t, _ps, seen)
         return t.to(IS_concepts.device)
 
+    def stage_overlapping_spans(self, IS_concepts, base_spans=None):
+        """Stage the experimental multi-part/multi-whole WS lattice.
+
+        The legacy analysis cut returns one flat typed tiling.  The overlap
+        path retains three simultaneous scales, deduplicated per row:
+
+        ``kind=1`` typed run, ``kind=2`` separator-bounded word,
+        ``kind=3`` separator run, ``kind=4`` enclosing sentence.
+
+        Word/separator tiles are placed first so the fixed WS event budget sees
+        a complete surface tiling before optional typed refinements and the
+        sentence parent.  The full metadata lattice is not truncated here.
+        Host-eager by construction (called from ``_lex_embed_stem``).
+        """
+        if not self.overlap_where_tiling or IS_concepts is None:
+            self._staged_analysis_kinds = None
+            return base_spans
+        import Meronomy                         # local: avoid import cycle
+        u = IS_concepts
+        if u.dim() == 3:
+            u = u[:, 0, :]
+        rows = u.detach().to("cpu").long().tolist()
+        base_rows = (base_spans.detach().to("cpu").long().tolist()
+                     if torch.is_tensor(base_spans) else [[] for _ in rows])
+        out_rows, kind_rows = [], []
+        for b, vals in enumerate(rows):
+            # InputSpace text uses byte 0 as the pad/sentence sentinel.  Keep
+            # embedded zeros inside the active prefix conservative: the final
+            # nonzero byte defines the surface extent.
+            nonzero = [i for i, x in enumerate(vals) if int(x) != 0]
+            n = (max(nonzero) + 1) if nonzero else 0
+            surface = bytes(int(x) & 0xFF for x in vals[:n])
+            words = set(Meronomy.word_spans(surface))
+            spans, kinds, seen = [], [], set()
+
+            def add(span, kind):
+                s, e = int(span[0]), int(span[1])
+                if e <= s or (s, e) in seen:
+                    return
+                seen.add((s, e))
+                spans.append((s, e))
+                kinds.append(int(kind))
+
+            for span in Meronomy.word_tiling(surface):
+                add(span, 2 if tuple(span) in words else 3)
+            if b < len(base_rows):
+                for span in base_rows[b]:
+                    add(span, 1)
+            if n > 0:
+                add((0, n), 4)
+            out_rows.append(spans)
+            kind_rows.append(kinds)
+        K = max((len(x) for x in out_rows), default=0)
+        if K == 0:
+            self._staged_analysis_kinds = None
+            return torch.zeros(
+                len(rows), 0, 2, dtype=torch.long, device=IS_concepts.device)
+        spans_t = torch.zeros(len(rows), K, 2, dtype=torch.long)
+        kinds_t = torch.zeros(len(rows), K, dtype=torch.long)
+        for b, spans in enumerate(out_rows):
+            if spans:
+                spans_t[b, :len(spans)] = torch.tensor(spans, dtype=torch.long)
+                kinds_t[b, :len(spans)] = torch.tensor(
+                    kind_rows[b], dtype=torch.long)
+        self._staged_analysis_kinds = kinds_t.to(IS_concepts.device)
+        return spans_t.to(IS_concepts.device)
+
+    def stage_where_tiling(self, part_spans, passes):
+        """Build the eager fixed-pass `.where` refinement schedule."""
+        if (not self.overlap_where_tiling or self.where_tiling is None
+                or part_spans is None
+                or getattr(self, "_staged_analysis_spans", None) is None):
+            self._where_tiling_schedule = None
+            self._where_tiling_obs = None
+            return None
+        schedule = self.where_tiling.build_schedule(
+            part_spans.to(torch.float32),
+            self._staged_analysis_spans.to(torch.float32),
+            max(1, int(passes)))
+        kinds = getattr(self, "_staged_analysis_kinds", None)
+        for obs in schedule:
+            if torch.is_tensor(kinds):
+                obs["whole_kinds"] = kinds
+        self._where_tiling_schedule = schedule
+        self._where_tiling_obs = schedule[0] if schedule else None
+        return schedule
+
+    def where_tiling_for_pass(self, pass_idx):
+        """Observation that routes a later pump pass (pass 0 is wide)."""
+        schedule = getattr(self, "_where_tiling_schedule", None)
+        if not schedule or int(pass_idx) <= 0:
+            return None
+        return schedule[min(int(pass_idx) - 1, len(schedule) - 1)]
+
     def property_spans(self, IS_concepts, class_ids):
         """Host-eager CHAR-CLASS property tiling → ``[B, K, 2]`` spans of the
         has-property RUNS (the ``.where`` of the ``{has-class}`` whole; S6/B1).
@@ -22830,7 +23380,8 @@ class WholeSpace(Space):
             # downstream composes with the emission, it does not
             # re-analyze it.
             act = act_pre
-        elif getattr(self, 'syntacticLayer', None) is None:
+        elif (getattr(self, 'syntacticLayer', None) is None
+              or (self.overlap_where_tiling and not bool(_serial))):
             # Parallel-mode WS fold. Post Pi/Sigma swap (Phase 3, rev.
             # 2026-06-09) the fold is ``self.pi`` -- the top-down ANALYSIS
             # (product/intersection) operator. It is the cross-slot symbolic
@@ -22887,6 +23438,35 @@ class WholeSpace(Space):
                     # this batch.  XOR training always uses the construction-
                     # time sequence length, so XOR accuracy is unaffected.
                     act = act_pre
+                # Per-.where π routing on the experimental path.  The default
+                # grammar is attached even in parallel mode, which previously
+                # sent every WS carrier through the eager grammar cursor and
+                # left the per-pass pi stack unused.  Here the local tiling is
+                # the selector: only immediate whole children of a 1:N part
+                # take the analysed value; peer σ targets and settled wholes
+                # retain their incoming content.  Pass 0 has no plan and stays
+                # wide-open.
+                if self.overlap_where_tiling:
+                    _plan = self.where_tiling_for_pass(
+                        int(getattr(self, "_pump_pass_idx", 0) or 0))
+                    _mask = (_plan.get("pi_whole")
+                             if isinstance(_plan, dict) else None)
+                    if (torch.is_tensor(_mask) and act is not None
+                            and act_pre is not None and act.shape == act_pre.shape
+                            and act.dim() == 3):
+                        _mask = _mask.to(act.device, torch.bool)
+                        if _mask.dim() == 1:
+                            _mask = _mask.unsqueeze(0)
+                        if int(_mask.shape[0]) == int(act.shape[0]):
+                            if int(_mask.shape[1]) < int(act.shape[1]):
+                                _mask = F.pad(
+                                    _mask,
+                                    (0, int(act.shape[1])
+                                     - int(_mask.shape[1])), value=False)
+                            elif int(_mask.shape[1]) > int(act.shape[1]):
+                                _mask = _mask[:, :int(act.shape[1])]
+                            act = torch.where(
+                                _mask.unsqueeze(-1), act, act_pre)
         else:
             # ---- Eager cursor path: WholeSpace is the single site
             # that drives S-space_role op application. The per-space_role rule list

@@ -462,7 +462,7 @@ scratchpad):
   Method-1's *by-construction* exactness.
 - The ONE decode that IS exact untrained is the **percept-store
   nearest-neighbour**: a percept's vector position IS its identity
-  (doc/percept-hypercube.md §10). Rendering the per-word PERCEPT
+  (doc/Spaces.md#percept-guarantees). Rendering the per-word PERCEPT
   leaves (`inputSpace._ar_embedded_N`, `[B, N, D]`, word order)
   straight through the radix store recovers every word exactly
   (verified 4/4, both words and spans).

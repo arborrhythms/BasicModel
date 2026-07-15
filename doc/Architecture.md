@@ -1,5 +1,10 @@
 # Architecture
 
+> This document describes the cognitive and mathematical architecture. For the
+> live software ownership map—including configuration, training, STM, losses,
+> checkpoints, reconstruction, and proposed consolidation boundaries—see
+> [Runtime Architecture and Componentization](Componentization.md).
+
 ## The three pieces: Mereology, Attention, Thought (2026-06-11)
 
 ![Three pieces: LLM vs BasicModel](diagrams/three_pieces.svg)

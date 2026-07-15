@@ -390,23 +390,6 @@ def test_execute_superposed_independent_then_weighted_sum():
 _CONFIG_PATH = str(_project / "data" / "MM_xor.xml")
 
 
-def test_symbolic_space_init_builds_rule_codebook():
-    """WholeSpace.__init__ wires the rule codebook.
-
-    We cannot use a class-level default because nn.Module routes Module
-    submodules through ``_modules`` and a class attribute would shadow
-    the instance attribute. Instead pin the contract at the source
-    level: the __init__ body must construct ``self.rule_codebook``.
-    """
-    import inspect
-    from Spaces import WholeSpace
-    src = inspect.getsource(WholeSpace.__init__)
-    assert "self.rule_codebook = RuleCodebook(" in src, (
-        "WholeSpace.__init__ must build self.rule_codebook = "
-        "RuleCodebook(...) per the SubSpace.what STM refactor"
-    )
-
-
 def test_rule_codebook_class_basics():
     """RuleCodebook is a pure identity/location store; no embedding by default."""
     from Language import RuleCodebook

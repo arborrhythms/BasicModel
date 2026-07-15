@@ -327,53 +327,5 @@ class TestReason(unittest.TestCase):
         self.assertFalse(result['proved'])
 
 
-# -- English-level tests (require trained model) ----------------------
-
-@pytest.mark.xfail(reason="requires trained model with populated TruthSet", run=False)
-def test_syllogism_all_men_mortal():
-    # Given: "all men are mortal", "Socrates is a man"
-    # Expect: isTrue(encode("Socrates is mortal")) > 0.5
-    model = _make_model()
-    pass  # encode sentences -> activations -> reason()
-
-
-@pytest.mark.xfail(reason="requires trained model with populated TruthSet", run=False)
-def test_syllogism_contrapositive():
-    # Given: "if it rains the ground is wet", "the ground is not wet"
-    # Expect: isTrue(encode("it did not rain")) > 0.5
-    model = _make_model()
-    pass
-
-
-@pytest.mark.xfail(reason="requires trained model", run=False)
-def test_inconsistency_detected():
-    # TruthSet: "the ball is red" (+1) and "the ball is not red" (-1)
-    # Expect: isConsistent() -> consistent=False
-    model = _make_model()
-    pass
-
-
-@pytest.mark.xfail(reason="requires trained model with synonym coverage", run=False)
-def test_semantic_equivalence_paraphrase():
-    # "the canine bounded" ~= "the dog ran" in conceptual space (cosine sim > 0.7)
-    model = _make_model()
-    pass
-
-
-@pytest.mark.xfail(reason="requires trained model", run=False)
-def test_semantic_nonequivalence():
-    # "the dog ran" vs "the cat slept" cosine sim < 0.5
-    model = _make_model()
-    pass
-
-
-@pytest.mark.xfail(reason="requires trained model", run=False)
-def test_extrapolate_transitive():
-    # Given: "A is part of B", "B is part of C"
-    # Expect: extrapolate() derives something encoding "A is part of C"
-    model = _make_model()
-    pass
-
-
 if __name__ == '__main__':
     unittest.main()

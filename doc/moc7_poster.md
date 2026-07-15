@@ -1,133 +1,127 @@
-# MoC7 Poster Application
+# Models of Consciousness 7 Poster Application
 
-Source: https://amcs-community.org/moc7-talk-application/
+The [MoC7 application form](https://amcs-community.org/moc7-talk-application/)
+closed after 5 July 2026. This is the completed application copy for direct
+submission to `moc7-organisers@amcs.science`.
 
-Accessed: 2026-07-03
+## Cover Email
 
-## Event
+**Subject:** MoC7 poster application - A Truth-based Architecture for Grounded Cognition
 
-Models of Consciousness 7, University of Copenhagen
+Dear MoC7 organisers,
 
-## Application Summary
+I would like to ask whether the following work can still be considered for the
+MoC7 poster session. It develops the Basic Model of Cognition that I introduced
+on the Cognitive Science Society blog into an executable, inspectable cognitive
+architecture. The proposal fits the conference theme "AI, LLMs, and
+consciousness science."
 
-The MoC7 application form is for proposing either a talk or a poster presentation.
-The application deadline is 5 July 2026, Anywhere on Earth (AoE).
-Conference attendance requires separate registration.
+The completed application is below. Thank you for considering it.
 
-## Project Framing
+Best,
 
-BasicModel can be presented under the "AI, LLMs and consciousness science"
-theme as an explicit alternative decomposition of LLM-like cognition. It relates
-to Formal Concept Analysis through its fuzzy extent/intent concept order, and
-to DisCoCat through typed grammatical composition of vector meanings. The poster
-angle is that perception, concept formation, grammar, memory, and truth are
-separate inspectable mechanisms rather than one opaque sequence model.
+Alec Rogers, ArborRhythms (`alec@arborrhythms.com`)
 
-## Presentation Options
+## Applicant Details
 
-- 20-minute talk slot: 15 minutes for presentation plus 5 minutes for questions.
-- Poster in the poster session.
-- Talk or poster.
+| Application field | Response |
+|---|---|
+| Name | Alec Rogers |
+| Current qualification or position | Non-academic; independent researcher and software engineer |
+| Primary discipline | Computer Science |
+| Secondary discipline | Philosophy |
+| Centre, group, or network | ArborRhythms |
+| Department, institute, or school | Independent research |
+| Affiliation | ArborRhythms |
+| Country | United States |
+| Correspondence email | `alec@arborrhythms.com` |
+| Planning to attend the full conference | Yes |
+| Applying to present | A poster in the poster session |
+| MoC7 core theme | AI, LLMs, and consciousness science |
+| Permission to film a talk | Not applicable |
+| Conference privacy consent | Yes |
+| Privacy policy confirmation | Yes |
 
-Applicants who request a talk but are not selected for a talk slot will usually be
-offered a poster presentation instead. A small number of talk applications may be
-selected by the organising committee as showcase talks with a 30-minute slot.
+## For the Conference Booklet
 
-## Application Process
+### Presentation Title
 
-1. Complete the online application form.
-2. Take particular care with fields marked "For Booklet"; those entries will appear
-   in the conference booklet exactly as submitted.
-3. Confirm that the automated confirmation email arrives after submission. Check
-   junk mail if needed.
-4. If no confirmation email arrives, submit the application again.
-5. If confirmation still does not arrive, contact the organisers at
-   moc7-organisers@amcs.science.
-6. Decisions are expected in July 2026. Talks will be selected by the organisers
-   and advisory board.
+**A Truth-based Architecture for Grounded Cognition**
 
-## Application Form Fields
+### Keywords
 
-### Personal Details
+Basic Model of Cognition; cognitive architecture; grounded cognition;
+conceptual space; symbolic reasoning; artificial consciousness
 
-- Name: first and last name. Required.
-- Current qualification or position. Required.
-  Options: Bachelor, Master, Postbac/research associate, PhD candidate, PhD,
-  Postdoc, Non-tenured faculty, Tenured researcher/faculty, Full professor,
-  Retired accademic, Non-accademic.
-- Discipline. Required.
-  Options: Arts, Psychology, Phenomenology, Philosophy, Neuroscience, Social
-  Sciences & Humanities, Physics, Computer Science, Biology, Chemistry,
-  Mathematics, Medicine, Engineering, Other.
-- Secondary discipline. Optional.
-  Use this if qualified in multiple disciplines.
-- Centre, group, or network.
-- Department, institute, or school.
-- Affiliation. Required.
-- Country. Required.
+### Summary
 
-### Attendance
+BasicModel is an executable cognitive architecture based on Alec Rogers's
+Basic Model of Cognition. It separates cognition into explicit perceptual,
+conceptual, and symbolic spaces connected by inspectable bottom-up and top-down
+transformations.
 
-- Planning to attend the full conference. Required.
-  Options: Yes, No.
+Perceptual prototypes represent experienced particulars. Mereological
+structures organize these percepts into fuzzy part-whole relationships, while
+conceptual representations bind and distinguish them. Stable symbolic
+references and typed grammar then support sentence-level composition, memory,
+reasoning, and reportable claims. Because the same pathways operate in reverse,
+the model can reconstruct inputs and expose how a concept or assertion was
+formed.
 
-### Presentation Type
+Unlike transformer language models, where grounding, syntax, memory, and
+reasoning are typically entangled within hidden states, BasicModel makes these
+functions individually observable and testable. It does not claim that
+transparency alone produces consciousness. Instead, it provides an open-source
+computational framework for investigating which representational spaces and
+transformations may be necessary for grounded, interpretable, and reportable
+cognition.
 
-- Applying to present. Required.
-  Options:
-  - A talk in a 20-minute talk slot.
-  - A poster in the poster session.
-  - A talk or a poster.
+### Abstract
 
-Talk slots are in parallel sessions. Applicants not offered a talk slot will
-usually be offered the opportunity to present a poster.
+How can an artificial system expose the transformations by which sensory input
+becomes concepts, symbols, memories, and reportable claims? This poster presents
+BasicModel, an executable cognitive architecture developed from Alec Rogers's
+"Basic Model of Cognition," introduced in a 2020 Cognitive Science Society blog
+post as a common framework for cognitive science. That proposal separates
+objective, sensory, conceptual, and symbolic domains and distinguishes bottom-up
+conceptualization and symbolization from top-down visualization and
+interpretation.
 
-### Core Theme
+BasicModel turns that conceptual diagram into an inspectable neural and symbolic
+system. Perceptual prototypes represent experienced particulars; conceptual
+hyperplanes bind and divide them into fuzzy part-whole structures; symbolic
+references provide stable addresses; and typed grammar composes those references
+into sentence-level states. The same pathways support bidirectional
+reconstruction, making it possible to ask which percepts ground a concept, which
+relations define it, and where a report was transformed. Truth is represented as
+an inspectable relation over explicit states rather than an undifferentiated
+confidence hidden in weights.
 
-- MoC7 core theme. Required.
-  Options:
-  - Philosophical foundations in the scientific study of consciousness.
-  - Methodologies, models and measures of consciousness.
-  - AI, LLMs and consciousness science.
-  - Phenomenology and applied phenomenology.
-  - None of the above.
+The poster contrasts this explicit decomposition with transformer language
+models, where grounding, syntax, memory, and reasoning are usually entangled in
+learned hidden state. BasicModel does not claim that architectural transparency
+is sufficient for consciousness. It offers a computational object for testing a
+narrower question: which representational spaces and transformations are
+required for grounded, interpretable, and reportable cognition? The
+implementation and tests are open source, allowing proposed mechanisms and
+failure modes to be inspected rather than inferred only from fluent output.
 
-Contributed talks and posters may address any topic in the field, especially
-topics related to the neuroscience of consciousness and mathematical approaches.
+### Papers, Preprints, and Supporting Work
 
-### Presentation Details
+| Work | Relevance |
+|---|---|
+| Alec Rogers (2020), ["The Basic Model of Cognition"](https://cognitivesciencesociety.org/framework-cognitive-science/), published by the Cognitive Science Society as *A Common Framework for Cognitive Science* | Introduces the shared framework of sensory, conceptual, and symbolic spaces and the transformations between them |
+| Alec Rogers (2020), [*The Whole Part*](https://thewholepart.com/) | Develops the model's mereological and referential foundations |
+| [BasicModel source code](https://github.com/ArborRhythms/BasicModel) | Open-source implementation, tests, and technical documentation |
 
-- Key words. Required.
-- Presentation title. Required.
-- Abstract. Required. Limit: 250 words.
-- Papers or preprints on which the presentation is based.
+## Submission Check
 
-### Filming
-
-Only relevant for 20-minute talk applications:
-
-- If accepted, indicate whether the talk may be filmed.
-
-Recording is not guaranteed. Presenters who want filming may be asked to sign a
-consent form at the conference. Resulting videos are likely to be posted on the
-MoC conference YouTube channel, and presenters may later request that their video
-not be used.
-
-### Contact and Privacy
-
-- Correspondence email. Required.
-  The form suggests avoiding Gmail accounts because they may block the automated
-  confirmation email.
-- Privacy consent. Required.
-  The submitted details may be used in relation to the conference, including in
-  a public participant list and conference booklet.
-- Privacy policy confirmation. Required.
-- Custom captcha. Required.
-
-## Related Links
-
-- Talk application: https://amcs-community.org/moc7-talk-application/
-- MoC7 main page: https://amcs-community.org/events/moc7-2026/
-- Practical information: https://amcs-community.org/moc7-practical-information/
-- Registration: https://amcs-community.org/moc7-registration/
-- AMCS privacy notice: https://amcs-community.org/wp-content/uploads/2021/03/AMCS-Privacy-Notice_Final.pdf
+| Requirement | Status |
+|---|---|
+| Poster application | Complete |
+| Core theme selected | Complete |
+| Keywords supplied | Complete |
+| Summary within 250-word limit | Complete |
+| Abstract within 250-word limit | Complete |
+| Public supporting work supplied | Complete |
+| Separate conference registration | Required if the application is accepted |

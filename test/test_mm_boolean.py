@@ -63,7 +63,9 @@ class TestMMBoolean(unittest.TestCase):
     """End-to-end BasicModel runs of MM_boolean.xml."""
 
     @unittest.skipIf(not _RUN_SLOW, "slow -- set RUN_SLOW=1")
-    @unittest.expectedFailure  # convergence under bare-PiLayer C-space_role pending; revisit after explicit wrapper lands
+    @pytest.mark.xfail(reason=(
+        "Convergence under the bare PiLayer concept path is not yet stable; "
+        "retain as the held-out MM_boolean learning gate."))
     def test_explicit_test_sentences(self):
         """After training, the three held-out sentences classify per formula.
 

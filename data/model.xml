@@ -136,6 +136,9 @@
          Unsettled MetaSymbols accumulate bounded temporary role evidence, then
          commit to one role-space category id used by all transform choosers. -->
     <categoryCodebook>true</categoryCodebook>
+    <!-- Experimental overlapping PS/WS .where lattice. Requires
+         mereologyRaise=true; stays false until its corpus gates pass. -->
+    <overlapWhereTiling>false</overlapWhereTiling>
     <codebookRetire>false</codebookRetire>
 
     <!-- Single continuous truth bar in [0, 1] (read onto BOTH

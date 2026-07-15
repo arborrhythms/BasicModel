@@ -472,36 +472,190 @@ but the two coordinating.
 
 ---
 
-## Meronymic Synthesis / Analysis
+## Mereological Algorithm: Meronymic Synthesis and Analysis {#mereological-algorithm}
 
-Parthood is not only the mereological relation over percepts of the previous
-sections; it is also used by the text front ends. The live knobs are:
+> **Main algorithm.** One monotone synthesizer maps parts to wholes and one
+> monotone analyzer maps wholes to parts. Together they build a codebook whose
+> part/whole codes carry a partial order by construction: a concept lattice.
+> The analyzer is the complement-mirror of the synthesizer, so the two are one
+> adjoint design rather than unrelated procedures.
+
+The live configuration surface is:
 
 ```xml
 <PartSpace><synthesis>meronomy</synthesis></PartSpace>
 <WholeSpace><analysis>meronomy</analysis></WholeSpace>
 ```
 
-PartSpace owns bottom-up synthesis. WholeSpace owns top-down analysis. The
+PartSpace owns bottom-up synthesis and WholeSpace owns top-down analysis. The
 legacy `<chunking>` spelling and PartSpace `analyse` mode are rejected by code.
+Other synthesis and analysis modes remain available.
 
-`InputSpace` provides both the atomic part view and the unity whole view.
-`PartSpace` tokenization is controlled by `<synthesis>`; `WholeSpace` division
-is controlled by `<analysis>`. `analysis=raw` keeps the whole byte buffer as the
-analysis surface, while `analysis=word` uses the word-level boundary detector.
-`analysis=meronomy` routes the same top-down role through the meronymic path.
+### Relation to FCA, LLMs, and DisCoCat
 
-`MeronymicRouter` (`bin/perceptual_analyzer.py`) scores candidate merges
-by signed-neighborhood cosine against the perceptual codebook and routes
-with the shared `binary_tiling_viterbi` / `binary_tiling_soft_dp`
-primitives (see [Language.md](Language.md), *Shared Weighted-Deduction
-Framework*). In the cold state the codebook holds only the whole-input
-vector and the byte vectors, so the router decomposes the surface to byte
-terminals --- the deliberately-failing initial state. As words are
-learned bottom-up (merge promotion), the same router reproduces
-word-level runs. `analyze_routed` reconstructs a byte-exact surface for
-replay (UTF-8 multi-byte characters are stored as raw bytes, not decoded
-per segment).
+The algorithm is the code-facing form of the Formal Concept Analysis analogy:
+byte-span containment supplies the extent order, whole/property rows supply the
+intent side, and learned part/whole links form a fuzzy concept lattice. Unlike
+an LLM, the order is explicit rather than only an effect of token co-occurrence
+hidden in weights. DisCoCat enters above this ordered substrate, where typed
+grammar composes conceptual meanings; it does not define the perceptual order.
+
+### The Adjoint Operators
+
+Parts and wholes form a bounded lattice. The operators start from opposite
+poles---`ATOM` ($\bot$, all zero, nothing) and `UNIVERSE` ($\top$, all one,
+everything)---already named in [`bin/Layers.py`](../bin/Layers.py):
+
+| Property | Synthesizer | Analyzer |
+|---|---|---|
+| direction | parts $\to$ whole | whole $\to$ parts |
+| pole / start | $\bot$: all zero | $\top$: all one |
+| operation | join: $0 \lor p_1 \lor p_2 \lor \cdots$ | meet: $1 \land c_1 \land c_2 \land \cdots$ |
+| produces | dominating wholes (suprema) | subordinate parts (infima) |
+| monotonicity | increasing: `whole > parts` | decreasing: `part < whole` |
+| configuration | `<synthesis>meronomy</synthesis>` | `<analysis>meronomy</analysis>` |
+
+They are exact De Morgan duals under percept complement:
+
+```text
+analyzer(x) = complement(synthesizer(complement(x)))
+complement(x) = 1 - x
+```
+
+Implement the join-from-$\bot$ synthesizer; obtain the analyzer by reflection.
+These are sigma/pi *lattice roles* (union from zero and intersection from one),
+not the `SigmaLayer`/`PiLayer` butterfly folds. The butterfly folds remain the
+higher-order abstraction machinery. See
+[Percept Geometry](Spaces.md#percept-geometry-positive-unit-hypercube).
+
+### The Order Lives in the Codes
+
+The part/whole codes themselves are coordinatewise monotone on the `[0,1]`
+presence cube: every whole dominates its parts. That ordered codebook is the
+mereological embedding. In FCA terms, the monotone adjoints provide the Galois
+closure; the ordering of the codes is what distinguishes a lattice from an
+unordered lookup table.
+
+SBOW is deliberately excluded here. It situates free conceptual relations by
+distributional substitutability, whereas the mereological layer is grounded by
+span order and nearest-row identity. Moving percept rows with SBOW would fight
+the closure and could redirect token decode. See
+[SBOW Situates Concepts, Not Percepts](Spaces.md#percept-sbow).
+
+### The Part Specification: `.where` Containment
+
+For text, parthood is byte-span containment:
+
+```text
+P is-part-of W  iff  span(P) is contained by span(W)
+```
+
+`record_cross_tower_meronomy` and `RunStructureLayer.contained_mask` read the
+order from `.where` brackets. It is exact and complete for contiguous parts,
+including a cross-boundary part that the local build did not combine:
+
+```text
+"abcd" = [0,4]   "ab" = [0,2]   "cd" = [2,4]   "bc" = [1,3]
+[1,3] is contained by [0,4]  =>  "bc" is-part-of "abcd"
+```
+
+Thus a synthesizer may build `abcd` locally as `ab join cd` and still recover
+the global constraint involving `bc`. Non-contiguous selections such as `ac`
+lie outside this poset by design.
+
+### Synthesizer: Build, Then Project
+
+```text
+synthesize(parts):
+    seed  = bottom join part_1 join ... join part_k
+    poset = {(whole, part): span(part) is contained by span(whole)}
+    code  = project_monotone(seed, poset)
+```
+
+The join seed dominates the parts used in the local build, but it may initially
+violate a cross-boundary constraint. Projection repairs the code against the
+complete `.where` order. On sparse, bounded-depth grounding, the soft union
+stays away from the all-one corner. Cross-order abstraction is handled by the
+separate butterfly folds rather than by repeatedly stacking this join.
+
+### Redistribution as Isotonic Projection
+
+For every containment edge and coordinate, require:
+
+$$
+\operatorname{code}(W)_i \geq \operatorname{code}(P)_i.
+$$
+
+The constraints are isotonic and decouple per coordinate. Redistribution is
+therefore per-coordinate isotonic regression on the `.where` containment DAG:
+project the codes to the nearest point that satisfies every part/whole edge.
+The projection is convex and minimum-norm, so it moves only what the order
+requires. A newly promoted part requires projection only in its `.where`
+neighborhood.
+
+The differentiable pressure is the Vendrov-style hinge
+$\sum_i \max(0, P_i-W_i)$. When training content jointly, use projected
+gradient: the hinge supplies pressure and the projection supplies the hard
+guarantee. A test construction in which `join(ab, cd)` initially violated the
+cross-boundary `bc` relation projected to zero violations while remaining in
+`[0,1]`.
+
+### Analyzer: the `1-x` Mirror
+
+The analyzer is meet-from-$\top$, reflected through `1-x`, and produces
+subordinate parts. It cuts a whole by boundary properties. The first live
+approximation fixes word boundaries with `OR(space, punctuation)` via
+`char_class_region([WHITESPACE, PUNCT])`. The fuller design grows a composable,
+factorable basis of relational properties such as left/right-of-X and splits a
+newly promoted whole until it reaches the word level.
+
+`InputSpace` supplies both the atomic part view and the unity whole view.
+`PartSpace` tokenization is selected by `<synthesis>`; WholeSpace division is
+selected by `<analysis>`. `analysis=raw` preserves the whole byte buffer,
+`analysis=word` uses the word boundary detector, and `analysis=meronomy` routes
+the top-down role through the meronymic path.
+
+### Convergence and Supported Modes
+
+With `subsymbolicOrder > 0`, synthesis chunks small parts upward and analysis
+splits large wholes downward. Each pass feeds the next until the two meet at an
+operational basic level. The current boundary rule pins that level to words as
+a first approximation; learning the more general Rosch-style basic level is an
+open extension.
+
+The adjoint pair can subsume alternate text front ends, but the implementation
+continues to support the existing synthesis modes (`radix`, `lexicon`, `bpe`,
+`mphf`, and `byte`) and analysis cuts (`byte`, `word`, `raw`, `sentence`,
+`grammatical`, and `meronomy`).
+
+### Live Routing and Implementation Boundary
+
+`MeronymicRouter` in [`bin/perceptual_analyzer.py`](../bin/perceptual_analyzer.py)
+scores candidate merges against the perceptual codebook and routes them with
+the shared `binary_tiling_viterbi` / `binary_tiling_soft_dp` primitives (see
+[Language.md](Language.md), *Shared Weighted-Deduction Framework*). In a cold
+state the codebook contains the whole-input vector and byte vectors, so the
+router decomposes the surface to byte terminals. As merge promotion learns
+words bottom-up, the same router reproduces word-level runs.
+`analyze_routed` preserves the raw bytes of UTF-8 segments and reconstructs a
+byte-exact surface for replay.
+
+The live router and span bookkeeping establish the path and the complete order
+specification. The load-bearing next implementation boundary is the hard
+`join-from-bottom` plus isotonic projection guarantee; the relational analyzer
+basis and learned convergence criterion follow it. The existing butterfly
+folds and conceptual SBOW remain unaffected.
+
+Implementation references:
+
+- poles, membership folds, and character-class regions:
+  [`bin/Layers.py`](../bin/Layers.py)
+- `.where` containment, `record_cross_tower_meronomy`, and
+  `stage_analysis_spans`: [`bin/Spaces.py`](../bin/Spaces.py)
+- presence and complement geometry:
+  [Spaces.md](Spaces.md#percept-geometry-positive-unit-hypercube)
+- conceptual situating:
+  [conceptual-similarity-space plan](plans/2026-06-23-conceptual-similarity-space.md)
 
 ### `isPart` as a Grammar Layer
 

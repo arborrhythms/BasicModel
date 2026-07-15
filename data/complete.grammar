@@ -101,7 +101,7 @@
            COMPOSITIONAL operators, i.e. Relation(RI_1, RI_2) over two ideas,
            that head the relative-truth start. Their is-prefixed cousins
            (isPart / isWhole / isEqual) are the boolean-predicate QUERIES in
-           <Queries>; whole is the converse of part (WholeLayer). queryPart /
+         <Queries>; whole is the converse of part (WholeLayer). queryPart /
            assertPart remain folded away (decision 6). -->
       <rule query="false">part_O1 = part.forward(part_I1, part_I2)</rule>
       <rule query="false">whole_O1 = whole.forward(whole_I1, whole_I2)</rule>
@@ -186,6 +186,19 @@
       <rule>morphology_I1 = morphology.reverse(morphology_O1)</rule>
     </generate>
   </Symbolic>
+
+  <!-- Syntactic ANCHORS (Alec 2026-07-13): the CLOSED-CLASS surfaces of
+       the relation operators. NP-R-NP is a grammatical form in its own
+       right (the "is of definition", which does not reduce to the "is of
+       predication", NP-VP), so its R-words resolve their slot to the
+       operator's role SYNTACTICALLY (surface to operator, no learned
+       centroid needed). Extend per relation surface as the vocabulary
+       grows. -->
+  <Anchors>
+    <part>partOf, partof, part-of</part>
+    <whole>wholeOf, wholeof, whole-of</whole>
+    <equal>isEqual, equals, is-equal</equal>
+  </Anchors>
 
   <Queries>
     <!-- INTROSPECTION / "thinking" ops: query the codebook / relations / LTM.

@@ -327,7 +327,9 @@ class TestXorGrammarReconstruction(unittest.TestCase):
     """
 
     @unittest.skipIf(not _RUN_SLOW, "slow (~65s end-to-end XOR_grammar train) -- set RUN_SLOW=1")
-    @unittest.expectedFailure
+    @pytest.mark.xfail(reason=(
+        "The lossy grammar root cannot yet reconstruct leaves without "
+        "walking the recorded parse tree."))
     def test_piecewise_overall_at_least_50_pct_with_pinned_seed(self):
         model = _run_xor_grammar_in_process(XOR_GRAMMAR_SEED)
         psp = model.perceptualSpace

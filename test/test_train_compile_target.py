@@ -65,13 +65,9 @@ def test_venv_python_honors_basicmodel_python(monkeypatch):
     assert train.venv_python("/tmp/project") == os.path.expanduser("~/custom-python")
 
 
-def test_mm20m_inherits_raw_lexer_for_embedding_skip():
-    # MM_20M's lexer is now EXPLICIT (Phase 4b home: WholeSpace;
-    # the config had carried no live lexer at all after the migration,
-    # staging every sentence as the same slab). ``byte`` keeps the
-    # purpose this test pins: train.py's Phase-1 word-embedding skip
-    # applies to raw AND byte lexers (train.py ``lexer in ("byte",
-    # "bytes", "raw")``).
-    cfg = train.read_xml_config(str(Path(__file__).resolve().parent.parent / "data" / "MM_20M_legacy.xml"))
+def test_fineweb_uses_raw_lexer_for_embedding_skip():
+    cfg = train.read_xml_config(str(
+        Path(__file__).resolve().parent.parent
+        / "data" / "MM_20M_fineweb.xml"))
     assert cfg["lexer"] in ("byte", "raw")
-    assert cfg["lexer"] == "byte"
+    assert cfg["lexer"] == "raw"

@@ -31,13 +31,6 @@ from Models import BaseModel
 from util import init_config, init_device
 
 
-@pytest.mark.xfail(
-    reason="Dynamo Unsupported: WordVectors._vectors property uses "
-           "object.__getattribute__('_tied_param_getter') which trips "
-           "fullgraph=True. Needs a Dynamo-friendly tied-Parameter access "
-           "path on WordVectors before this compiled-step gate can pass.",
-    strict=False,
-)
 def test_compiled_step_is_invoked():
     # Force the *global* TheDevice to CPU at runtime (not just via the
     # import-time env): in a shared pytest process a prior test can

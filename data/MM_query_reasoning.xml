@@ -31,6 +31,7 @@
     <l1Lambda>0.01</l1Lambda>
     <sigmaPi>butterfly</sigmaPi>
     <mereologyRaise>true</mereologyRaise>
+    <radialStmReduce>true</radialStmReduce>
     <readingAttention>true</readingAttention>
     <!-- (B) free attention over the typed truth-space; parks the soft read. -->
     <globalAttention>true</globalAttention>
@@ -97,7 +98,12 @@
     <nOutputDim>1024</nOutputDim>
 
     <invertible>true</invertible>
-    <synthesis>radix</synthesis>
+    <!-- meronomy: word-bounded promotion + per-word tiling (todo item 2
+         2026-07-13 — radix had NO per-word PS tiling, so words could
+         never promote/recognize here; threshold 2 lets the tiny
+         truthSet corpus promote its recurring words). -->
+    <synthesis>meronomy</synthesis>
+    <chunkPromotionThreshold>2</chunkPromotionThreshold>
   </PartSpace>
 
   <ConceptualSpace>
@@ -123,7 +129,10 @@
     <nOutputDim>8</nOutputDim>
 
     <invertible>true</invertible>
-    <codebook>none</codebook>
+    <!-- quantize: the WS codebook is the word-substrate face the
+         autobind/recognition seams write (none = they no-op;
+         2026-07-13 depth-3 wiring). -->
+    <codebook>quantize</codebook>
   </WholeSpace>
 
   <OutputSpace>

@@ -42,6 +42,24 @@ import pytest
 import torch
 
 
+@pytest.fixture(autouse=True)
+def _fresh_dynamo():
+    """Self-isolation for the fullgraph pins: a PRIOR test in the same
+    process may have blown dynamo's recompile limit on the very code
+    object compiled here (test_compile_static_loop's churn test does),
+    which marks it skip-forever — fullgraph then reports "no compiled
+    frames. Compilation was not attempted" without ever tracing. Reset
+    dynamo's global caches before each test in this file (found by
+    order-bisect, 2026-07-13; deterministic in the 9-file sweep, absent
+    in isolation)."""
+    try:
+        import torch._dynamo as dynamo
+        dynamo.reset()
+    except Exception:
+        pass
+    yield
+
+
 def _build_gate_model():
     """Build the grammar-enabled MM_20M model -- the canonical per-word
     target. Mirrors test_input_word_cursor._build_gate_model."""
@@ -50,7 +68,7 @@ def _build_gate_model():
     from util import init_config, init_device
 
     init_device("cpu")
-    cfg = str(_root / "data" / "MM_20M_legacy.xml")
+    cfg = str(_root / "data" / "MM_20M_grammar.xml")
     init_config(path=cfg, defaults_path=str(_root / "data" / "model.xml"))
     TheData.load("text", shard_dir=str(_root / "data" / "fineweb"),
                  num_shards=1, max_docs=8)
@@ -75,7 +93,7 @@ def _stage_for_per_word(m):
     inp_items = list(inp[:2])
     isp.Start()
     inputTensor = isp.prepInput(inp_items)
-    in_sub = isp.forward(inputTensor)
+    in_sub = m._lex_embed_stem(inputTensor)
     # Per-sentence SymbolSubSpace state. Production initializes this in
     # the first ``_per_word_prelude`` (sentinel
     # ``_per_sentence_initialized``); replay that here for tests that
@@ -91,6 +109,10 @@ def _stage_for_per_word(m):
     # ``_per_word_body_step`` in isolation so the prelude is
     # replayed here verbatim.
     m._per_word_prelude(in_sub)
+    # Production's enable_compiled_step() constructs the grammar reducer
+    # before tracing. Parameter construction inside a Dynamo trace is not
+    # supported, so the isolated-step gate must mirror that boundary.
+    m._stm_reducer()
     return isp
 
 
@@ -99,14 +121,6 @@ def _gate_for(isp, w, p=0):
     return torch.ones(w.shape[0], 1, dtype=torch.bool, device=w.device)
 
 
-@pytest.mark.xfail(
-    reason="MM_20M_legacy.xml: percept_dim+nWhere+nWhen=12 != concept_dim+nWhere+"
-           "nWhen=1028. Stage 1.C retired sigma_percept (the percept-to-"
-           "concept lift); the signal router replacement (Stage 3) is not "
-           "yet wired, so STM bookkeeping receives an unlifted percept "
-           "vector that doesn't match the CS buffer width.",
-    strict=False,
-)
 def test_per_word_step_runs_eagerly_end_to_end():
     """SANITY gate (eager mode): the extracted per-word step must run
     end-to-end without raising. This catches regressions in the
@@ -147,11 +161,6 @@ def test_per_word_step_is_extractable_as_a_standalone_callable():
     assert callable(m._per_word_body_step)
 
 
-@pytest.mark.xfail(
-    reason="MM_20M_legacy.xml percept_dim / concept_dim mismatch (see "
-           "test_per_word_step_runs_eagerly_end_to_end).",
-    strict=False,
-)
 def test_per_word_step_compiles_fullgraph_clean():
     """RED gate #2: the extracted per-word step must compile under
     ``torch.compile(fullgraph=True)`` with zero graph breaks. Dynamo
@@ -189,11 +198,6 @@ def test_per_word_step_compiles_fullgraph_clean():
     compiled(w, 0, _gate_for(isp, w), out_slot)
 
 
-@pytest.mark.xfail(
-    reason="MM_20M_legacy.xml percept_dim / concept_dim mismatch (see "
-           "test_per_word_step_runs_eagerly_end_to_end).",
-    strict=False,
-)
 def test_per_word_loop_completes_two_steps_under_fullgraph():
     """RED gate #3: two consecutive compiled steps must succeed without
     a recompile (cache hit, same shape)."""

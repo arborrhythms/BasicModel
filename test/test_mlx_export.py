@@ -67,8 +67,7 @@ _MLX_ONLY = pytest.mark.skipif(
 # handoff doc.
 _SO3_MULTI_DELEGATE = pytest.mark.xfail(
     reason="MM_20M sO=3: executorch mishandles a torch.export-dedup'd constant "
-           "shared across the 3 delegated combine subgraphs (upstream)",
-    strict=False)
+           "shared across the 3 delegated combine subgraphs (upstream)")
 
 
 def _build(name):

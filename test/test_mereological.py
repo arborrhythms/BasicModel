@@ -1,4 +1,5 @@
-"""The mereological algorithm core (doc/mereological.md): the synthesizer's
+"""The mereological algorithm core (doc/Mereology.md#mereological-algorithm):
+the synthesizer's
 join-from-bottom seed + isotonic `.where`-projection (the redistribution that
 makes a whole dominate ALL its parts, including cross-boundary), and the
 analyzer as its `1-x` mirror."""

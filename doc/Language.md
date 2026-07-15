@@ -141,8 +141,23 @@ XML `<SymbolSpace><language><grammar>` blocks or from a configured grammar
 CFG. A `RuleDef` stores:
 
 ```text
-(space_role, canonical, arity, method_name, lhs, rhs_symbols)
+(space_role, canonical, arity, method_name, lhs, rhs_symbols,
+ width_min, width_max, query)
 ```
+
+The grammar file carries BOTH directions: the `<compose>` section holds
+the forward rules (`op_O1 = op.forward(op_I1, op_I2)`) and the
+`<generate>` section the reverse rules (`op_I1, op_I2 = op.reverse(op_O1)`)
+— parsed into `rules_upward` / `rules_downward` and concatenated into the
+one flat `TheGrammar.rules` table. Both directions carry the BARE
+`method_name` (the `.forward`/`.reverse` suffix is stripped and survives
+only in `canonical`), so a generate rule resolves the SAME host layer the
+compose rule uses. Note the arity asymmetry: a generate rule's
+`RuleDef.arity` counts its RHS *call* arguments (1 for
+`op.reverse(op_O1)`); its two-output nature is implicit in the LHS
+string. Enumerating "the binary reverse ops" therefore filters on
+`.reverse in canonical` and the HOST's `arity == 2`
+(`BasicModel._grammar_reverse_ops`), not on `RuleDef.arity`.
 
 The grammar accepts explicit conceptual-order suffixes:
 
@@ -168,6 +183,61 @@ so `NP3` and `NP4` both have `category == "NP"` but orders `3` and `4`.
 
 Kleene order forms such as `NP*` are still parsed for compatibility, but
 they are not required by the current grammar style.
+
+### GrammarLayer forward / reverse inventory
+
+The per-operator contracts, as implemented (2026-07-14; every op's
+`forward` is what `<compose>` fires and its `reverse` is what
+`<generate>` fires — see the section pairing above). "Recommender"
+means the basis-threaded codebook walk (`Ops.conjunctionReverse` /
+`Ops.disjunctionReverse` $\to$ `Ops._binary_op_recommend`); "snap"
+means the op-respecting dot-metric word snap
+(`snap=True` $\to$ `Ops.word_pair_snap` — see
+`doc/plans/2026-07-14-signed-space-snap-design.md`). Ops with no
+faithful inverse raise (`raise_no_inverse`, the fail-loud contract) —
+fabricating a split would corrupt the reconstruction.
+
+| op (`rule_name`) | arity | role | forward | reverse |
+|---|---|---|---|---|
+| `not` | 1 | CS | pole swap | self-inverse (`forward(y)`) |
+| `non` | 1 | CS | non-affirming complement | self-inverse |
+| `intersection` | 2 | CS | `Ops.intersection` (RadMin / lattice min; ADJ mask, meet) | recommender w/ basis; `snap=True` $\to$ MEET-aware snap (priming-led — the meet is lossy); no basis $\to$ raise |
+| `union` | 2 | CS | `Ops.union` (RadMax / lattice max, OR-region, join) | recommender w/ basis; `snap=True` $\to$ JOIN snap (fit-determined); no basis $\to$ raise |
+| `chunk` | 2 | CS | additive `left + right` (PS-style chunking) | PEEL w/ basis: best-cosine row `x1`, exact residual `(x1, parent − x1)`; empty-set decomposition `(parent, 0)` without |
+| `sum` | 2 | CS | element-wise `left + right` | empty-set decomposition `(parent, 0)` — recomposes exactly |
+| `product` | 2 | CS | element-wise `left * right` | **raise** (zeros annihilate; many-to-one) |
+| `lift` | 2 | CS | order-raising fold (internal SigmaLayer; optional gate) | `Ops.liftReverseAll` w/ basis ($\to$ disjunctionReverse); balanced `_sigma.generate` split without |
+| `verb` | 2 | CS | sparse verb-conditioned spectral operator | requires `verb_what` (`reverse_required_kwargs`); returns `(unapply_verb(parent, verb_what), verb_what)` |
+| `adverb` | 2 | CS | VP eigenmodifier (`apply_adverb`) | **not dispatchable** (`reverse_dispatchable = False`; lossy) |
+| `lower` | 2 | CS | order-lowering (internal PiLayer; DET) | `Ops.lowerReverseAll` w/ basis ($\to$ conjunctionReverse); `_pi.generate` without |
+| `preposition` | 2 | CS | `.where`-relation refinement of NP/VP | `(x, x)` with the `.where` rotation undone (content-exact, marker-lossy) |
+| `bind` | 2 | CS | contextual missing/controlled-NP resolution | **raise** (context not preserved in the parent) |
+| `tense` | 1 | CS | phase rotation of the `.when` band (`shift_time(+delta)`) | exact inverse rotation (`shift_time(-delta)`) |
+| `aspect` | 1 | CS | identity (rewrite() planned; not a live rule) | identity |
+| `morphology` | 1 | CS | surface inflection $\to$ `.when` (tense/aspect feature ops) | analyzes features, undoes aspect ops in reverse order, then tense |
+| `symbolize` | 2 | CS | bind PS percept row + WS symbol row into an idempotent META node (fused average; `insert_meta`) | recover META children by nearest WS row; balanced `(parent/2, parent/2)` split without wired stores |
+| `conjunction` | 2 | SS | `Ops.intersection` monotonic (scalar activation min; RadMin under `<radialStmReduce>`) | recommender (`monotonic=True`, radial-aware); `snap=True` $\to$ MEET-aware snap; no basis $\to$ raise |
+| `disjunction` | 2 | SS | `Ops.union` monotonic (scalar activation max; RadMax under `<radialStmReduce>`) | recommender; `snap=True` $\to$ JOIN snap; no basis $\to$ raise |
+| `exist` | 1 | SS | identity (EXISTS roots the minimal event) | identity |
+| `isEqual` | 2 | SS | identity-assertion truth bivector | **raise** (max-fold not bijective) |
+| `isPart` | 2 | SS | parthood-assertion truth bivector | **raise** (A's identity not preserved) |
+| `part` | 2 | CS | returns the encompassing parent (parthood learned by codebook geometry) | **raise** (A's identity not preserved) |
+| `whole` | 2 | CS | converse of `part` (PartLayer subclass) | **raise** (same) |
+| `equal` | 2 | CS | geometric mutual-parthood on concept bivectors (Layers.EqualLayer) | lossy `(parent, parent)` pseudo-inverse |
+| `query` | 2 | CS | geometric parthood query $\to$ truth bivector | **raise** (two operands collapse to a truth value) |
+
+Notes. (1) The binary lattice reverses (union/intersection,
+conjunction/disjunction) accept `left_rows` / `right_rows` (typed
+candidate restriction), `left_priming` / `right_priming` (soft boosts),
+`radial` (signed-magnitude order), and `snap` — recovery is owned by the
+layer and DIFFERS by op: the join is fit-determined; the lossy meet leans
+on priming (which words are present). (2) The trace-free free-derivation
+decode (`_reverse_reduce_unfold` $\to$ `_reverse_choose_op`) CHOOSES
+among the `<generate>` binary ops per un-fold step by round-trip fit —
+`op.compose(op.reverse(parent)) \approx parent` — with no forward record.
+(3) `VerbLayer`/`AdverbLayer` subclass `LiftLayer`; `WholeLayer` subclasses
+`PartLayer`; `TenseLayer`/`AspectLayer` share `_WhenOpMixin`; `EqualLayer`
+lives in `bin/Layers.py`, all others in `bin/Language.py`.
 
 ## Knowledge Artifacts
 
@@ -487,3 +557,36 @@ Parsing*; the SCFG inside-outside line of Lari and Young 1990; weighted
 logic programming / parsing transformations, Eisner and Blatz 2006; and
 neural grammar induction, Kim, Dyer, and Rush 2019). See the plan's
 section 5.6 for the full mapping.
+
+## Future work: nouns from PartSpace, adjectives from WholeSpace
+
+The signed-space snap
+(`doc/plans/2026-07-14-signed-space-snap-design.md`) models a concrete
+noun as an adjective pre-applied to the top domain --- `black(cat($\ldots$))`
+treats "cat" as the same *kind* of function as "black", the later one
+already mapped over $\mathbb{1}$. That modeling choice is probably already
+latent in the mereology poles. The lattice poles are vectors of the
+presence domain (see `doc/Architecture.md`): **NOTHING** $= [0,0,\ldots]$
+is the part/bottom pole, **EVERYTHING** $= [1,1,\ldots]$ is the whole/top
+pole. So:
+
+- a **whole (property)** is pre-applied to EVERYTHING --- narrowing the
+  wide-open $\mathbb{1}$ object downward (the `assert_concept_relation`
+  first-concrete-whole-replaces-EVERYTHING move); this is the *adjective*
+  shape, a modifier that carves the domain;
+- a **part (particle)** is pre-applied to NOTHING --- building presence up
+  from $\mathbf{0}$ (the first-concrete-part-replaces-NOTHING move); this
+  is the *concrete-noun* shape, an object accreted from constituents.
+
+The conjecture for a future pass: source **concrete nouns from PartSpace**
+and **adjectives from WholeSpace**, so the grammatical part-of-speech
+distinction falls out of which pole a symbol is pre-applied to, rather than
+being a learned category. This would give the snap's ADJ(N) intersection a
+principled home --- the noun's broad PS-side support and the adjective's
+narrowing WS-side mask are then *typed by origin*, and the
+support-restricted metric (score over the parent's support, unaffected by
+the modifier's attenuation) becomes the natural recovery law rather than a
+tuning choice. Open questions: how order-raising (`maybe_raise_order`)
+interacts with a PS/WS part-of-speech split; whether abstract nouns want
+the WholeSpace (property-like) or PartSpace (object-like) origin; and how
+the `<Anchors>` closed-class relation surfaces sit relative to this axis.

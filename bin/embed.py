@@ -90,7 +90,7 @@ def _presence_mse_score(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
     non-periodic. On rows already in [0,1] it ranks identically to the
     wrapped form (the wrap is an identity there); re-homing the codebook
     rows onto the cube is what makes the distinction load-bearing.
-    See doc/percept-hypercube.md s2 for the [0,1] / complement geometry.
+    See doc/Spaces.md#percept-complement for the [0,1] geometry.
     """
     d = min(a.shape[-1], b.shape[-1])
     delta = a[..., :d] - b[..., :d]
@@ -101,8 +101,9 @@ def _presence_mse_score(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
 def _unorm_ste(x: torch.Tensor) -> torch.Tensor:
     """Re-home a float master parameter onto the percept cube [0,1]^D.
 
-    UNORM clamp with a straight-through estimator (doc/percept-hypercube.md
-    s7): the forward VALUE is ``clamp(x, 0, 1)`` (so every READER sees a
+    UNORM clamp with a straight-through estimator
+    (doc/Spaces.md#percept-bounded-encodings): the forward VALUE is
+    ``clamp(x, 0, 1)`` (so every READER sees a
     coordinate on the positive unit cube), but the gradient passes straight
     through to the unclamped master ``x``. Without the STE, JOINT backprop
     would push the codes back off the cube (task fact #1); with it, the
@@ -1709,7 +1710,7 @@ def conceptual_sbow_loss_codes(window, pool=None, *, sigma=None, neg_k=None,
     (sensory similarity) and carries the mereological encoding (the sigma/pi
     part/whole fold algebra is a geometric relation between part- and
     whole-vectors), which moving individual vectors would corrupt. See
-    doc/percept-hypercube.md.
+    doc/Spaces.md#percept-sbow.
 
     Operating on unit directions makes the gradient tangential, so a code's
     magnitude is left untouched and only its angle rotates; ``beta`` is the

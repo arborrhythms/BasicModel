@@ -921,6 +921,24 @@ class Grammar:
                 q = [q]
             if isinstance(q, list):
                 self.query_ops = [str(x).strip() for x in q if str(x).strip()]
+        # Parse the top-level <Anchors> section (Alec 2026-07-13): the
+        # CLOSED-CLASS surfaces of the relation operators — NP-R-NP is a
+        # grammatical form (the "is of definition", not reducible to the
+        # "is of predication"), so its R-words anchor SYNTACTICALLY:
+        # ``surface_anchors[surface.casefold()] -> operator name``. An
+        # anchored word's slot resolves to the operator's role directly
+        # (no learned centroid needed).
+        self.surface_anchors = {}
+        a_block = grammar_dict.get('Anchors')
+        if isinstance(a_block, dict):
+            for _op, _surf in a_block.items():
+                _surfs = (_surf if isinstance(_surf, list) else [_surf])
+                for _entry in _surfs:
+                    for _s in str(_entry).split(','):
+                        _s = _s.strip()
+                        if _s:
+                            self.surface_anchors[_s.casefold()] = \
+                                str(_op).strip()
         if ps_block is None and ws_block is None:
             has_named = any(k in grammar_dict
                             for k in ('compose', 'generate'))
@@ -2054,7 +2072,7 @@ class IntersectionLayer(GrammarLayer):
 
     def reverse(self, parent, basis=None,
                 left_rows=None, right_rows=None,
-                left_priming=None, right_priming=None):
+                left_priming=None, right_priming=None, snap=False):
         """Reverse pass; inverse of ``forward``.
 
         Non-butterfly mode:
@@ -2065,7 +2083,8 @@ class IntersectionLayer(GrammarLayer):
             mereology-guided recommender via
             :py:meth:`Ops.conjunctionReverse`: walks ``W = basis.getW()``
             for an operand pair ``(x1, x2)`` such that
-            ``intersection(x1, x2) ≈ parent``.
+            ``intersection(x1, x2) ≈ parent``. ``snap=True`` selects the
+            op-respecting MEET snap over ``left_rows`` (Alec 2026-07-14).
 
         Butterfly mode: cross-STM cascade reverse via the per-pair
         pseudo-inverse (broadcast averaged form); ``basis`` is ignored.
@@ -2095,7 +2114,8 @@ class IntersectionLayer(GrammarLayer):
                 return Ops.conjunctionReverse(
                     parent, parent, W, monotonic=self.monotonic,
                     left_rows=left_rows, right_rows=right_rows,
-                    left_priming=left_priming, right_priming=right_priming)
+                    left_priming=left_priming, right_priming=right_priming,
+                    snap=snap)
         # 2026-07-04 serial plan Task 1: the (parent, parent) pseudo-inverse
         # is revoked -- the min-fold is many-to-one with no residual.
         self.raise_no_inverse("AND-fold is many-to-one; supply a basis for "
@@ -2195,7 +2215,7 @@ class UnionLayer(GrammarLayer):
 
     def reverse(self, parent, basis=None,
                 left_rows=None, right_rows=None,
-                left_priming=None, right_priming=None):
+                left_priming=None, right_priming=None, snap=False):
         """Reverse pass; inverse of ``forward``.
 
         Non-butterfly mode:
@@ -2205,7 +2225,8 @@ class UnionLayer(GrammarLayer):
             mereology-guided recommender via
             :py:meth:`Ops.disjunctionReverse`: walks ``W = basis.getW()``
             for an operand pair ``(x1, x2)`` such that
-            ``union(x1, x2) ≈ parent``.
+            ``union(x1, x2) ≈ parent``. ``snap=True`` selects the
+            op-respecting JOIN snap over ``left_rows`` (Alec 2026-07-14).
 
         Butterfly mode: cross-STM cascade reverse; ``basis`` is ignored.
 
@@ -2231,7 +2252,8 @@ class UnionLayer(GrammarLayer):
                 return Ops.disjunctionReverse(
                     parent, parent, W, monotonic=self.monotonic,
                     left_rows=left_rows, right_rows=right_rows,
-                    left_priming=left_priming, right_priming=right_priming)
+                    left_priming=left_priming, right_priming=right_priming,
+                    snap=snap)
         # 2026-07-04 serial plan Task 1: the (parent, parent) pseudo-inverse
         # is revoked -- the max-fold is many-to-one with no residual.
         self.raise_no_inverse("OR-fold is many-to-one; supply a basis for "
@@ -3721,10 +3743,13 @@ class ConjunctionLayer(GrammarLayer):
         """
         if self.butterfly:
             return self._butterfly_forward(left)
-        return Ops.intersection(left, right, monotonic=True)
+        # radial (Alec 2026-07-13): radmin on signed ideas; identical
+        # to the lattice min on non-negative activations.
+        return Ops.intersection(
+            left, right, monotonic=not getattr(self, 'radial', False))
 
     def reverse(self, parent, basis=None, left_rows=None, right_rows=None,
-                left_priming=None, right_priming=None):
+                left_priming=None, right_priming=None, snap=False):
         """Reverse pass; inverse of ``forward``.
 
         ``basis`` supplied (a Codebook/Basis with ``getW()``) -> the mereology
@@ -3734,7 +3759,9 @@ class ConjunctionLayer(GrammarLayer):
         The AND-fold is many-to-one, so ``basis is None`` (no codebook handy)
         falls back to the lossy ``(parent, parent)`` pseudo-inverse. Mirrors
         ``IntersectionLayer.reverse``; the reconstruction driver passes
-        ``basis=space_role_basis`` at ``LanguageLayer.unreduce``.
+        ``basis=space_role_basis`` at ``LanguageLayer.unreduce``. ``snap=True``
+        selects the op-respecting MEET snap over ``left_rows`` (Alec
+        2026-07-14).
         """
         if self.butterfly:
             return self._butterfly_reverse(parent)
@@ -3744,7 +3771,9 @@ class ConjunctionLayer(GrammarLayer):
                 return Ops.conjunctionReverse(
                     parent, parent, W, monotonic=True,
                     left_rows=left_rows, right_rows=right_rows,
-                    left_priming=left_priming, right_priming=right_priming)
+                    left_priming=left_priming,
+                    right_priming=right_priming,
+                    radial=getattr(self, 'radial', False), snap=snap)
         # 2026-07-04 serial plan Task 1: stub revoked (fail loud).
         self.raise_no_inverse("AND-fold is many-to-one; supply a basis for "
                               "the recommender")
@@ -3754,7 +3783,10 @@ class ConjunctionLayer(GrammarLayer):
         if self.butterfly:
             x = torch.cat([left, right], dim=-2)
             return self._butterfly_forward(x)
-        return Ops.intersection(left, right, monotonic=True)
+        # radial (Alec 2026-07-13): radmin on signed ideas; identical
+        # to the lattice min on non-negative activations.
+        return Ops.intersection(
+            left, right, monotonic=not getattr(self, 'radial', False))
 
     def generate(self, parent, basis=None,
                  left_rows=None, right_rows=None,
@@ -3845,10 +3877,13 @@ class DisjunctionLayer(GrammarLayer):
         """
         if self.butterfly:
             return self._butterfly_forward(left)
-        return Ops.union(left, right, monotonic=True)
+        # radial (Alec 2026-07-13): radmax on signed ideas; identical
+        # to the lattice max on non-negative activations.
+        return Ops.union(
+            left, right, monotonic=not getattr(self, 'radial', False))
 
     def reverse(self, parent, basis=None, left_rows=None, right_rows=None,
-                left_priming=None, right_priming=None):
+                left_priming=None, right_priming=None, snap=False):
         """Reverse pass; inverse of ``forward``.
 
         ``basis`` supplied (a Codebook/Basis with ``getW()``) -> the mereology
@@ -3857,6 +3892,8 @@ class DisjunctionLayer(GrammarLayer):
         EXACT on a discrete vocabulary (the XOR reconstruction path). The
         OR-fold is many-to-one, so ``basis is None`` falls back to the lossy
         ``(parent, parent)`` pseudo-inverse. Mirrors ``UnionLayer.reverse``.
+        ``snap=True`` selects the op-respecting JOIN snap over ``left_rows``
+        (Alec 2026-07-14).
         """
         if self.butterfly:
             return self._butterfly_reverse(parent)
@@ -3866,7 +3903,9 @@ class DisjunctionLayer(GrammarLayer):
                 return Ops.disjunctionReverse(
                     parent, parent, W, monotonic=True,
                     left_rows=left_rows, right_rows=right_rows,
-                    left_priming=left_priming, right_priming=right_priming)
+                    left_priming=left_priming,
+                    right_priming=right_priming,
+                    radial=getattr(self, 'radial', False), snap=snap)
         # 2026-07-04 serial plan Task 1: stub revoked (fail loud).
         self.raise_no_inverse("OR-fold is many-to-one; supply a basis for "
                               "the recommender")
@@ -3876,7 +3915,10 @@ class DisjunctionLayer(GrammarLayer):
         if self.butterfly:
             x = torch.cat([left, right], dim=-2)
             return self._butterfly_forward(x)
-        return Ops.union(left, right, monotonic=True)
+        # radial (Alec 2026-07-13): radmax on signed ideas; identical
+        # to the lattice max on non-negative activations.
+        return Ops.union(
+            left, right, monotonic=not getattr(self, 'radial', False))
 
     def generate(self, parent, basis=None,
                  left_rows=None, right_rows=None,
@@ -4718,27 +4760,64 @@ def sentence_relative_mask(word_subspace, B, device=None):
                 return True
         return False
 
-    s_rules = None
-    for key in ('SS',):
-        if key in current_rules:
-            s_rules = current_rules[key]
-            break
-    if not s_rules:
+    def _mask_for(s_rules):
+        if not s_rules:
+            return false_mask
+        try:
+            n_outer = len(s_rules)
+        except TypeError:
+            return false_mask
+        if n_outer > 0 and not isinstance(s_rules[0], (list, tuple)):
+            shared = _row_is_relative(s_rules)
+            return torch.full((B,), bool(shared), dtype=torch.bool,
+                              device=device)
+        if n_outer == B:
+            flags = [_row_is_relative(row) for row in s_rules]
+            return torch.tensor(flags, dtype=torch.bool, device=device)
+        if n_outer == 1:
+            shared = _row_is_relative(s_rules[0])
+            return torch.full((B,), bool(shared), dtype=torch.bool,
+                              device=device)
         return false_mask
-    try:
-        n_outer = len(s_rules)
-    except TypeError:
-        return false_mask
-    if n_outer > 0 and not isinstance(s_rules[0], (list, tuple)):
-        shared = _row_is_relative(s_rules)
-        return torch.full((B,), bool(shared), dtype=torch.bool, device=device)
-    if n_outer == B:
-        flags = [_row_is_relative(row) for row in s_rules]
-        return torch.tensor(flags, dtype=torch.bool, device=device)
-    if n_outer == 1:
-        shared = _row_is_relative(s_rules[0])
-        return torch.full((B,), bool(shared), dtype=torch.bool, device=device)
-    return false_mask
+
+    # The relative producers (part/whole/equal) are CS-role rules, so the
+    # router appends their fired ids under 'CS'; 'SS' carries the padded
+    # stem cursor. The CS scan is ANCHOR-GATED (review finding, same day):
+    # fired ids are Viterbi-argmax picks at EVERY reduce site, so an
+    # untrained chooser fires a relative op on ABSOLUTE sentences at
+    # chance rate — requiring an anchored closed-class pid in the row's
+    # grid restores the documented conservatism (anchors are grammatical,
+    # not learned; no anchors / no grid means the CS scan contributes
+    # False, never a guess).
+    mask = false_mask
+    if 'SS' in current_rules:
+        mask = mask | _mask_for(current_rules['SS'])
+    if 'CS' in current_rules:
+        cs_mask = _mask_for(current_rules['CS'])
+        ws_sp = getattr(word_subspace, 'wholeSpace', None)
+        anch = getattr(ws_sp, '_anchored_pids', None)
+        grid = getattr(ws_sp, '_category_last_pid', None)
+        # Anchor evidence: the (one-sentence-stale) category pid grid OR
+        # the CURRENT sentence's PS forward-stash pids — the latter covers
+        # provisioning's first-presentation window (the anchor pid exists
+        # there as soon as promotion lands mid-read).
+        ps_sp = getattr(word_subspace, 'perceptualSpace', None)
+        if ps_sp is None:
+            ps_sp = getattr(getattr(word_subspace, 'subspace', None),
+                            'perceptualSpace', None)
+        cur = getattr(ps_sp, '_forward_input', None)
+        cur_idx = cur.get('indices') if isinstance(cur, dict) else None
+        anchored = torch.zeros(B, dtype=torch.bool, device=device)
+        if anch:
+            for b in range(B):
+                row = list(grid[b if b < len(grid) else -1]) if grid else []
+                if (torch.is_tensor(cur_idx) and cur_idx.dim() >= 2
+                        and b < int(cur_idx.shape[0])):
+                    row += cur_idx[b].reshape(-1).tolist()
+                if any(int(p) in anch for p in row):
+                    anchored[b] = True
+        mask = mask | (cs_mask & anchored)
+    return mask
 
 
 class LanguageLayer(Layer):
@@ -5054,12 +5133,25 @@ class LanguageLayer(Layer):
             return None
         B, N = int(x.shape[0]), int(x.shape[1])
         ctx = x.new_zeros(B, N, n_roles)
+        anch = getattr(ws, '_anchored_pids', None)
+        role_index = getattr(ws, '_category_role_index', None) or {}
         for b in range(min(B, len(last_pid))):
             prow = last_pid[b]
             for n in range(min(N, len(prow))):
                 pid = int(prow[n])
                 if pid < 0:
                     continue
+                # Syntactic anchor first (Alec 2026-07-13): a closed-class
+                # relation surface resolves its slot to the OPERATOR's
+                # output role directly — the NP-R-NP form is grammatical,
+                # not a learned centroid assignment.
+                if anch is not None:
+                    _op = anch.get(pid)
+                    if _op is not None:
+                        _ri = role_index.get(f"{_op}_O1")
+                        if _ri is not None:
+                            ctx[b, n, int(_ri)] = 1.0
+                            continue
                 ps_pos = row_to_pos.get(pid)
                 if ps_pos is None:
                     continue
@@ -5660,12 +5752,16 @@ class LanguageLayer(Layer):
         # collapses any heat-path failure back to a plain reverse so a bug
         # here can NEVER break generation. Decoding is row-0-canonical
         # (``where[0, ...]`` above), so the query / order are taken at batch
-        # row 0 to match. Lift/Lower use the algebraic inverse, not the
-        # recommender, so they are intentionally NOT wired here.
+        # row 0 to match. Lift/Lower joined the recommender family with the
+        # Track-1 G1 rework (their reverse routes through
+        # liftReverseAll/lowerReverseAll when a basis is present), so the
+        # G3 guard now includes them (open-fronts Task C) — still dormant
+        # while attention stays off.
         reverse_kwargs = {}
         ss = getattr(subspace, 'symbolSpace', None)
         if (ss is not None and arity == 2
-                and isinstance(layer, (IntersectionLayer, UnionLayer))):
+                and isinstance(layer, (IntersectionLayer, UnionLayer,
+                                       LiftLayer, LowerLayer))):
             space_role = str(getattr(syntactic_layer, 'space_role', ''))
             space = (getattr(ss, 'wholeSpace', None) if space_role == 'SS'
                      else getattr(ss, 'conceptualSpace', None) if space_role == 'CS'
@@ -5792,6 +5888,37 @@ class LanguageLayer(Layer):
                 except Exception:
                     # Any failure -> plain reverse (never break generation).
                     reverse_kwargs = {}
+
+        # Word-typed candidate rows (open-fronts Task C, gated
+        # <PartSpace><wordStore>, default off = byte-identical): on the
+        # SYMBOL tower, restrict the recommender ops' operand rows to the
+        # WS WORD-WHOLE rows (the ``_word_whole_ss`` text->position registry
+        # resolved through ``_ws_pos_to_row``) — the WS analogue of the
+        # un-fold's PS-row restriction. Heat-retrieval rows (above) take
+        # precedence; failures degrade to the unrestricted reverse.
+        if (ss is not None and arity == 2
+                and 'left_rows' not in reverse_kwargs
+                and str(getattr(syntactic_layer, 'space_role', '')) == 'SS'
+                and isinstance(layer, (IntersectionLayer, UnionLayer,
+                                       LiftLayer, LowerLayer))):
+            try:
+                _wst = TheXMLConfig.space('PartSpace', 'wordStore', False)
+            except Exception:
+                _wst = False
+            if _wst:
+                try:
+                    _ws_sp = getattr(ss, 'wholeSpace', None)
+                    _reg = getattr(_ws_sp, '_word_whole_ss', None)
+                    _p2r = getattr(_ws_sp, '_ws_pos_to_row', None)
+                    if _reg and isinstance(_p2r, dict):
+                        _rows = sorted({int(_p2r[p]) for p in _reg.values()
+                                        if p in _p2r})
+                        if _rows:
+                            _rt = torch.tensor(_rows, dtype=torch.long)
+                            reverse_kwargs['left_rows'] = _rt
+                            reverse_kwargs['right_rows'] = _rt
+                except Exception:
+                    pass  # never break generation; plain reverse
 
         # Reverse only when a FAITHFUL inverse is available. Two ways an op
         # opts out: (1) it declares ``reverse_dispatchable = False`` because
@@ -7043,11 +7170,17 @@ class BinaryStructuredReductionLayer(nn.Module):
         for name in self.op_names:
             c1 = _role_column(role_index, name, "I1")
             c2 = _role_column(role_index, name, "I2")
+            o1 = _role_column(role_index, name, "O1")
             score = left.new_zeros(left.shape[0], left.shape[1])
             if c1 is not None and c1 < left.shape[-1]:
                 score = score + left[..., c1]
             if c2 is not None and c2 < right.shape[-1]:
                 score = score + right[..., c2]
+            # Anchored slots carry the operator's OUTPUT role (<op>_O1,
+            # the syntactic-anchor short-circuit): credit pairs touching
+            # such a slot toward the operator's own rule.
+            if o1 is not None and o1 < left.shape[-1]:
+                score = score + left[..., o1] + right[..., o1]
             priors.append(0.5 * score)
         if not priors:
             return None

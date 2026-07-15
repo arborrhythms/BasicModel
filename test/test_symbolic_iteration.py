@@ -313,8 +313,7 @@ def test_csleg_naming_indices_thread_full_frame():
            "ID to recreate the full concept representation are not built "
            "yet; the forward currently emits the value reshape of the "
            "apoha frame and the reverse re-applies the S-space_role transform "
-           "instead of keying.",
-    strict=False)
+           "instead of keying.")
 def test_mm20m_second_order_reverse_keys_codebook():
     # THE 4-D SECOND-ORDER ACCEPTANCE (plan Step 4; MM_20M ships SS
     # quantize): the symbolic iteration emits narrow codes at the

@@ -15,23 +15,11 @@
        wall. Runs on MPS with PYTORCH_MPS_HIGH_WATERMARK_RATIO=0.0 (train.py sets
        this) at ~15-20s/step eager; the eager skip-padding loop keeps cost
        tracking the real sentence length. -->
-  <!-- MM_20M_grammar: the SERIAL sibling of MM_20M, now on the NEW DEFAULTS
-       synthesis=meronomy + analysis=meronomy (Task 6, plan
-       doc/plans/2026-07-03-reconstruction-fidelity-execution.md; Alec's
-       decision). The space dims are the XOR-proven meronomy shape
-       (data/MM_20M_xor.xml) adapted to serial mode, the SAME adaptation the
-       committed serial+radix sibling data/MM_mereology_serial.xml already
-       carries: IS 8192x1024 raw byte buffer; PS deep [B,8,1024] percepts from
-       a 65536-row MPHF codebook; CS deep hub [B,8,1024] (N=8=STM depth); WS
-       [8,1024] in, wide [1024,8] symbol slab out. Serial derivation is kept:
-       symbolicOrder=1 (no serial tag; derived true), per-word forward via
-       _forward_body_per_word, and grammatical composition (complete.grammar)
-       instead of the parallel per-stage butterfly bridges.
-
-       Under analysis=meronomy the lexer resolves to raw (Spaces.py
-       resolve_lexer), so use_byte_cursor=False and the supervised out_items
-       (the 0/1 XOR labels) reach the head; the byte-cursor AR stub-label
-       path this config trained on before the switch is retired. -->
+  <!-- Production serial grammar model. The N=64 percept/concept/STM budget
+       is the FineWeb-sized expansion of the smaller grammar fixture. FineWeb
+       supplies no labels, so the OutputSpace is structural only: training
+       uses reconstruction and predictive objectives, never a fabricated
+       zero-valued supervised target. -->
   <architecture>
     <!-- legacy serial: per-word forward dispatch via _forward_body_per_word. -->
     <symbolicOrder>1</symbolicOrder>
@@ -49,6 +37,7 @@
 
     <training>
       <numEpochs>1</numEpochs>
+      <seed>0</seed>
       <!-- Throughput knob (measured 2026-07-08, MPS eager): batchSize 256
            gives ~1.7x sentences/s over 64 (38s/step vs 16.4; the 64
            sequential per-word launches amortize sub-linearly); memory is not
@@ -59,7 +48,11 @@
       <batchSize>64</batchSize>
       <learningRate>0.0005</learningRate>
       <reconstructionScale>0.1</reconstructionScale>
+      <!-- Corpus-scale training must always leave a recoverable artifact. -->
+      <autosave>true</autosave>
+      <checkpointEveryBatches>100</checkpointEveryBatches>
     </training>
+    <weightsPath>../output/MM_20M_fineweb.ckpt</weightsPath>
   </architecture>
 
   <!-- InputSpace: raw byte intake, 8192-byte buffer x 1024-wide events (the
@@ -71,7 +64,7 @@
     <nDim>1024</nDim>
   </InputSpace>
 
-  <!-- PartSpace: deep [B, 8, 1024] meronomy percepts (was wide [B,1024,12]
+  <!-- PartSpace: deep [B, 64, 1024] meronomy percepts (was wide [B,1024,12]
        lexicon slots). nVectors=65536 is the MPHF percept-codebook budget and
        nDim=1024 the percept event width, both from the XOR-proven shape;
        nInput/nInputDim consume the IS byte buffer. Content slab 8*1020
@@ -86,14 +79,12 @@
 
     <invertible>true</invertible>
     <synthesis>meronomy</synthesis>
-    <!-- Promote a recurring word to a SINGLE percept after 2 sightings
-         (default 4) so PS climbs to word-size parts inside the small xor
-         dataset budget (mirrors MM_20M_xor; the round-trip decode needs the
-         promoted word percepts). -->
+    <!-- Promote a recurring word to a single percept after two sightings so
+         the corpus quickly develops word-sized parts. -->
     <chunkPromotionThreshold>2</chunkPromotionThreshold>
   </PartSpace>
 
-  <!-- ConceptualSpace: the deep hub [B, 8, 1024]; N=8 = STM depth. PS->CS is
+  <!-- ConceptualSpace: the deep hub [B, 64, 1024]; N=64 = STM depth. PS->CS is
        now an identity handoff (equal widths; was the wide-to-deep 12/1028
        regroup). Dims mirror MM_20M_xor / MM_mereology_serial. -->
   <ConceptualSpace>
@@ -134,10 +125,9 @@
     <invertible>true</invertible>
   </WholeSpace>
 
-  <!-- OutputSpace: the supervised XOR head (labels reach it post-switch).
-       nInput*nInputDim = 8*1024 matches the flattened WS symbol slab
-       (1024*8); nDim=1 is the 0/1 target width (was 4 under the stub-label
-       byte path). Mirrors MM_mereology_serial. -->
+  <!-- OutputSpace is retained as the model head, but FineWeb has no supervised
+       labels. nInput*nInputDim = 64*1024 matches the flattened WS symbol slab
+       (1024*64); the training loop suppresses output MSE for this corpus. -->
   <OutputSpace>
     <nInput>64</nInput>
     <nInputDim>1024</nInputDim>

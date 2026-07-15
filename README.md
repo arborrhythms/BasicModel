@@ -9,6 +9,7 @@
 | Document | Description |
 |---|---|
 | [Architecture](doc/Architecture.md) | Pipeline design, layer types, invertible LDU factorisation |
+| [Runtime architecture](doc/Componentization.md) | Live ownership map, non-modular mechanisms, and componentization sequence |
 | [Spaces](doc/Spaces.md) | Runtime spaces: Input, Part/Perceptual, Modal, Conceptual, Whole/Symbolic, Output, and SymbolSpace |
 | [Ergodic](doc/Ergodic.md) | Gradient energy sensor, adaptive exploration, factor-level noise injection |
 | [Training](doc/Training.md) | Two-phase training, SBOW embeddings, masked prediction modes |
@@ -38,6 +39,7 @@ Model configurations are specified in XML. See [doc/Architecture.md](doc/Archite
 | [bin/embed.py](bin/embed.py) | Word vector training: CBOW/SBOW with negative sampling, `WordVectors` (gensim-compatible `.kv`) |
 | [data/](data/) | XML model configurations |
 | [doc/Architecture.md](doc/Architecture.md) | Algorithm details: Sigma/Pi layers, ergodic exploration, gradient energy sensor |
+| [doc/Componentization.md](doc/Componentization.md) | Software ownership, consolidation targets, and extraction gates |
 | [doc/Params.md](doc/Params.md) | Full XML parameter reference |
 | [doc/Training.md](doc/Training.md) | Embedding pretraining, CBOW/SBOW, masked prediction, `<trainEmbedding>` modes |
 | [doc/Installation.md](doc/Installation.md) | Setup, Makefile targets, train.py options, remote training |

@@ -152,6 +152,23 @@
            WholeSpace codebooks. Default false: no table allocated, no raising
            (byte-identical). -->
       <xs:element name="mereologyRaise" type="xs:boolean" minOccurs="0"/>
+      <!-- Experimental replacement for the row-wide run-count passback.
+           Feeds overlapping PS part and WS whole .where candidates through
+           the existing subsymbolic pump, settles exact local agreement, and
+           routes sigma/pi per candidate. Requires mereologyRaise=true.
+           Default false until the corpus acceptance plan passes. -->
+      <xs:element name="overlapWhereTiling" type="xs:boolean" minOccurs="0"/>
+      <!-- Radial STM idea folds (Alec 2026-07-13): the bounded reducer's
+           conjunction/disjunction hosts use radmin/radmax and the radial
+           recommender filters (signed-safe; identical to the lattice pair
+           on non-negative activations). Default FALSE = byte-identical. -->
+      <xs:element name="radialStmReduce" type="xs:boolean" minOccurs="0"/>
+      <!-- Concept index-read (Alec 2026-07-15): the serial per-word idea
+           RESOLVES and lights up the already-known OBJECT concept (formed by
+           the parallel path) — its random signed-hypersphere similarity_codebook
+           row replaces the collapsing computed percept-binding in the idea's
+           content slice. Default FALSE = byte-identical. -->
+      <xs:element name="conceptIndexRead" type="xs:boolean" minOccurs="0"/>
       <!-- RETIRED (2026-07-02 P3 two-phase forward, decision 10): phase
            separation makes non-replacement structural; the symbolic
            phase's outputs feed the SS leg, the head-side losses, and the
@@ -673,7 +690,7 @@
       <!-- raw: InputSpace emits the unanalyzed [B,1,N] byte buffer; the
            meronymic analyzer (chunking="analyse") owns all tokenization. -->
       <xs:enumeration value="raw"/>
-      <!-- ``meronomy`` (doc/mereological.md): the canonical analyzer;
+      <!-- ``meronomy`` (doc/Mereology.md#mereological-algorithm): the canonical analyzer;
            meet-from-top (all-1), the 1-x mirror of the meronomy synthesizer,
            cutting a whole into subordinate parts by boundary properties
            (first approximation: OR(space, punct) word split). -->
@@ -787,6 +804,13 @@
            (the teacher runs materialize=false, so trace generation never
            writes LTM). 0.0 = off (byte-identical; the head is not built). -->
       <xs:element name="thinkingLossWeight" type="nonNegativeFloat" minOccurs="0"/>
+      <!-- Method-1 -> Method-2 leaf distillation weight (doc/plans/
+           2026-07-14-signed-space-snap-design.md, step 3): trains the
+           LeafDecoderHead to regenerate the EXACT per-word leaves (the
+           Method-1 teacher slab) from the collapsed sentence root, so the
+           root stays SEPARABLE per sentence (the measured attractor
+           collapse). 0.0 = off (byte-identical; the head is not built). -->
+      <xs:element name="leafDistillWeight" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="maskRate" type="unitInterval" minOccurs="0"/>
       <xs:element name="trainEmbedding" type="trainEnum" minOccurs="0"/>
       <xs:element name="embeddingScale" type="nonNegativeFloat" minOccurs="0"/>
@@ -948,7 +972,7 @@
                  the surface-form authoritative store; opt in with
                  ``<synthesis>radix</synthesis>``. -->
             <xs:enumeration value="radix"/>
-            <!-- ``meronomy`` (doc/mereological.md): the canonical synthesizer.
+            <!-- ``meronomy`` (doc/Mereology.md#mereological-algorithm): the canonical synthesizer.
                  Combines parts into a DOMINATING whole (join-from-bottom +
                  isotonic .where projection = the concept lattice, inert until
                  wired) AND isolates words (tags each percept by its WORD via
@@ -975,6 +999,13 @@
                   type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="chunkPromotionMinLength"
                   type="xs:positiveInteger" minOccurs="0"/>
+      <!-- The percept store's WORD collection (type="words",
+           RadixLayer.word_ids: promoted word-bounded entries) becomes the
+           reverse() recommenders' candidate basis (rows of PS .what,
+           restricted via left_rows/right_rows). Default FALSE (absent =
+           off, byte-identical basis pick). See
+           doc/plans/2026-07-12-word-store-typed-reverse.md. -->
+      <xs:element name="wordStore" type="xs:boolean" minOccurs="0"/>
     </xs:all>
   </xs:complexType>
 
@@ -1089,7 +1120,7 @@
                        today; the bottom-up merge integration follows with
                        the deeper SS analyzer work, Phases 5-6). -->
       <xs:element name="lexer" type="lexerEnum" minOccurs="0"/>
-      <!-- <analyzer> REPLACES <lexer> (doc/mereological.md): tokenization is
+      <!-- <analyzer> REPLACES <lexer> (doc/Mereology.md#mereological-algorithm): tokenization is
            analytic cutting, owned by the analysis side (the meet-from-top
            mereological analyzer). <lexer> is the deprecated spelling; the
            config reader accepts both, preferring <analyzer>. -->

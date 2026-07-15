@@ -28,10 +28,17 @@ PDFOPTS := --pdf-engine=xelatex \
           -V header-includes="\usepackage{amsmath} \usepackage{amssymb} \usepackage{unicode-math} \hyphenpenalty=10000 \exhyphenpenalty=10000 \makeatletter \renewcommand\section{\@startsection{section}{1}{\z@}{-3.5ex}{2.3ex}{\normalfont\Large\bfseries\centering}} \makeatother"
 
 # Ordered list of doc chapters for PDF generation
-PDF_CHAPTERS := README.md  doc/Installation.md doc/Architecture.md doc/BasicModel.md doc/Spaces.md doc/STM.md doc/Language.md doc/Mereology.md doc/Logic.md doc/Reasoning.md doc/Training.md doc/Ergodic.md doc/MachineMinds.md doc/Params.md
+PDF_CHAPTERS := README.md  doc/Installation.md doc/Architecture.md doc/Componentization.md doc/BasicModel.md doc/Spaces.md doc/STM.md doc/Language.md doc/Mereology.md doc/Logic.md doc/Reasoning.md doc/Training.md doc/Ergodic.md doc/MachineMinds.md doc/Params.md
+MOC7_POSTER_SOURCE := doc/moc7_poster.md
+MOC7_POSTER_BUILDER := doc/build_moc7_poster.mjs
+MOC7_POSTER_XLSX := doc/moc7_poster.xlsx
+NODE ?= node
+# Prefer a project install; Codex supplies the fallback runtime used to author
+# and verify this workbook. Override when artifact-tool lives elsewhere.
+ARTIFACT_TOOL_NODE_MODULES ?= $(if $(wildcard node_modules/@oai/artifact-tool),node_modules,$(HOME)/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules)
 XML1 ?= data/simple.xml
 XML2 ?= data/ergodic-only.xml
-MODEL ?= data/MM_20M_legacy.xml
+MODEL ?= data/MM_20M_fineweb.xml
 PYTHON := PYTHONPATH=bin $(VENV_PYTHON)
 
 # The shared MAKE_PDF macro drops later options due to a broken line
@@ -42,7 +49,7 @@ MAKE_PDF = pandoc $(PDFOPTS) \
 		--toc --toc-depth=3 \
 		--resource-path=.:doc
 
-.PHONY : all install xor tomatoes ergodic simple run compare test testp test_all bench doc clean \
+.PHONY : all install xor tomatoes ergodic simple run compare test testp test_all preflight preflight_full bench doc clean \
          train train_micro bench_local bench_sync bench_remote bench_pull
 
 all : xor
@@ -65,7 +72,7 @@ train : $(VENV_STAMP)
 
 train_micro : $(VENV_STAMP)
 	$(PYTHON) bin/train.py --model $(MODEL) --data text --log \
-		--max-docs 1000000 --num-shards 10 --num-epochs 1 --batches 1440 --random-shards
+		--max-docs 1000 --num-shards 1 --num-epochs 1 --batches 10 --random-shards
 
 xor : data/MM_xor.xml
 	PYTORCH_ENABLE_MPS_FALLBACK=1 $(MAKE) run XML1=$<
@@ -109,6 +116,14 @@ testp : $(VENV_STAMP)
 test_all : $(VENV_STAMP)
 	RUN_SLOW=1 BASICMODEL_DEVICE=cpu PYTHONPATH=bin $(VENV_PYTHON) test/test_report.py
 
+preflight : $(VENV_STAMP)
+	BASICMODEL_DEVICE=cpu MODEL_COMPILE=eager PYTHONPATH=bin:test \
+		$(VENV_PYTHON) -m pytest -q test/test_fineweb_preflight.py
+
+preflight_full : $(VENV_STAMP)
+	RUN_FINEWEB_STEP=1 BASICMODEL_DEVICE=cpu MODEL_COMPILE=eager PYTHONPATH=bin:test \
+		$(VENV_PYTHON) -m pytest -q test/test_fineweb_preflight.py
+
 bench : $(VENV_STAMP)
 	@echo "=== Baseline (no env tweaks) ==="
 	PYTHONPATH=bin $(VENV_PYTHON) test/bench_training.py
@@ -143,7 +158,7 @@ BENCH_EXCLUDES = --exclude .venv --exclude venv --exclude output --exclude .git 
 	--exclude data/MNIST --exclude data/mnist_test.csv \
 	--exclude 'data/*.ckpt' --exclude 'data/*.kv'
 
-# bench_* default MODEL to the grammar config (train keeps its legacy default); command-line MODEL=... still wins.
+# Benchmarks retain the compact grammar fixture; training defaults to FineWeb.
 bench_local bench_remote : MODEL = data/MM_20M_grammar.xml
 
 bench_local : $(VENV_STAMP)
@@ -167,11 +182,20 @@ bench_pull :
 
 clean :
 	rm -f BasicModel.pdf
+	rm -f $(MOC7_POSTER_XLSX)
 	rm -rf output/*
 
-doc : BasicModel.pdf
+doc : BasicModel.pdf $(MOC7_POSTER_XLSX)
 
 
 TITLE := Basic Model
 BasicModel.pdf : $(PDF_CHAPTERS)
 	$(MAKE_PDF) -o $@ $^
+
+$(MOC7_POSTER_XLSX) : $(MOC7_POSTER_SOURCE) $(MOC7_POSTER_BUILDER)
+	@test -d "$(ARTIFACT_TOOL_NODE_MODULES)" || { \
+		echo "@oai/artifact-tool not found; set ARTIFACT_TOOL_NODE_MODULES" >&2; \
+		exit 1; \
+	}
+	NODE_PATH="$(ARTIFACT_TOOL_NODE_MODULES)" "$(NODE)" \
+		$(MOC7_POSTER_BUILDER) $(MOC7_POSTER_SOURCE) $@

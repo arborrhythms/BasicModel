@@ -32,7 +32,7 @@ from util import TheXMLConfig
 
 
 # ---------------------------------------------------------------------------
-# The mereological algorithm (doc/mereological.md): one synthesizer
+# The mereological algorithm (doc/Mereology.md#mereological-algorithm): one synthesizer
 # (parts -> wholes, join from all-0) and one analyzer (wholes -> parts, the
 # 1-x mirror, meet from all-1), each monotone, building part/whole codes that
 # carry a partial order by construction. The order itself is `.where` byte-span
@@ -121,7 +121,7 @@ def mereological_synthesize(seed_codes, spans, iters=200):
     whole joined from its build parts via :func:`join_from_bottom`); ``spans``
     are their `.where` brackets. Projects onto the containment order so every
     whole dominates ALL its parts (cross-boundary included) -- the
-    redistribution. See doc/mereological.md sec.4-5.
+    redistribution. See doc/Mereology.md#mereological-algorithm.
     """
     return project_monotone(seed_codes, where_containment_edges(spans), iters=iters)
 
@@ -163,7 +163,7 @@ def project_codebook(codes, strings, iters=200):
     Convenience wrapper -- :func:`project_monotone` over
     :func:`substring_containment_edges`. Assumes the codes are ``[0,1]``
     presence (the mereological codebook); a signed lexicon must move to
-    ``[0,1]`` first (the percept-hypercube lexicon migration).
+    ``[0,1]`` first (the percept migration in doc/Spaces.md#percept-live-path).
     """
     return project_monotone(codes, substring_containment_edges(strings), iters=iters)
 

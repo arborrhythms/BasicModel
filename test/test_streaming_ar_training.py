@@ -43,15 +43,6 @@ def test_space_has_start_method():
     assert callable(getattr(Space, "Start", None))
 
 
-def test_arir_requires_reconstruct_not_none():
-    """Retired 2026-05-14: ``<maskedPrediction>`` was retired in the
-    IR-only refactor, so there is no ARIR mode whose coupling with
-    ``<reconstruct>`` needs validating.  ``<reconstruct>`` is now an
-    independent forward-only loss selector.
-    """
-    return  # retired check; see plan §1
-
-
 import pytest
 
 

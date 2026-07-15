@@ -96,13 +96,3 @@ def test_word_space_params_include_category_embedding():
     embed_param = ss.category_embedding.weight
     param_ids = {id(p) for p in ss.params}
     assert id(embed_param) in param_ids
-
-
-def test_word_space_params_include_stm_driver_scorer_params():
-    """Stage 3 (2026-05-27): the STM shift-reduce driver retired
-    alongside the chart. The signal router's per-space_role scorer
-    parameters are still registered via the LanguageLayer's
-    nn.Module walk (covered by test_signal_router_layer.py); this
-    test stub stays as a placeholder so the suite size is stable."""
-    import pytest
-    pytest.skip("STM shift-reduce driver retired in Stage 3")

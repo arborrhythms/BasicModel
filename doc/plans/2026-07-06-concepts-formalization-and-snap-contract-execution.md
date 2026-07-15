@@ -203,8 +203,8 @@ load-bearing (bin/util.py:1051 `def nObjects` property; bin/Models.py:568/
 
 ### T1c — ladder-terms prose sweep (fold into T1a or T1b commit)
 
-- doc/percept-hypercube.md — 6 "concepts/symbols" pairing lines:
-  153, 220, 272, 308, 310, 329 → the design §0 ladder terms (concepts =
+- doc/Spaces.md#percept-geometry-positive-unit-hypercube — the former six
+  "concepts/symbols" pairings → the design §0 ladder terms (concepts =
   CS regions; symbols = SS signed presence scalars; the pairing usually
   means "the signed sphere stores" — reword per site, don't mass-replace).
 - todo.md:56 "symbol/truth prototypes" (the WS codebook description in

@@ -313,9 +313,9 @@ mode (default butterfly). Closes the XOR convergence target
 
 | Space | Data Contract | Geometry |
 |-------|--------------|----------|
-| InputSpace | Data scaled -1..1 for scalars or vector norms | Signed unit interval `[-1,1]` |
-| PartSpace | Modal/demuxed (what/where/when encoding). Signed unit-magnitude scalars or vectors. No negation operator | Signed hypercube `[-1,1]^d` |
-| ConceptualSpace | Combined/muxed (event encoding). Signed unit-magnitude (tanh-bounded). Event norm on `subspace.activation` | `[-1,1]` per element (tanh) |
+| InputSpace | Measured tensor features scale to presence; signed text embeddings retain sign | `[0,1]` for presence data; `[-1,1]` for text embeddings |
+| PartSpace | Modal/demuxed what/where/when encoding. Marked radix/meronomy percept stores expose one-sided presence; the orthographic Lexicon remains signed | `[0,1]^d` for percept-store rows; signed projective unit ball for Lexicon rows |
+| ConceptualSpace | Combined/muxed event encoding. Positive concept atoms are scaled by signed, tanh-bounded activations | positive atom geometry with activation in `[-1,1]` |
 | WholeSpace | Whole-percepts (`[0,1]` presence). The compact emission is the symbol that references a concept; one symbol encoded at a time | `[0,1]` presence |
 | OutputSpace | Rescaled from activation range to original data range | Data range |
 
@@ -325,8 +325,9 @@ Grammar / chart machinery lives on `SymbolSpace` and is attached to
 
 **Data scaling.** `Data` computes global `input_min`/`input_max` and
 `output_min`/`output_max` at load time. InputSpace uses `Data.normalize(x,
-"input")` to scale to `[-1, 1]`; OutputSpace uses `Data.denormalize(x,
-"output")` to restore the original output range.
+"input")` to scale measured presence data to `[0,1]`; signed text embeddings
+remain in `[-1,1]`. OutputSpace uses `Data.denormalize(x, "output")` to restore
+the original output range.
 
 **Whole-percept presence.** Whole-percepts live in `[0, 1]`; since conceptual
 activations range `[-1, 1]`, the mapping is `presence = (activation + 1) / 2`.
@@ -340,21 +341,254 @@ see an identical muxed tensor via `materialize()`.
 
 ---
 
+## Percept Geometry: Positive Unit Hypercube {#percept-geometry-positive-unit-hypercube}
+
+> **Design.** A percept is a vector of independent **presence** features. Each
+> coordinate is a membership in `[0,1]`: `0` is absent or nothing, `1` is fully
+> present or everything, and intermediate values are partial presence. A
+> percept is one-sided; its opposite is the complement `1-x`, not the signed
+> negation `-x`.
+
+The percept hypercube is the grounded extent side of the architecture. An LLM
+usually learns such grounding indirectly through token statistics; BasicModel
+keeps percept presence as an explicit carrier. Formal Concept Analysis enters
+when perceptual extents are paired with whole/property intents to form concept
+order. DisCoCat enters later, when grammar composes conceptual meanings rather
+than raw percept memberships.
+
+Percepts and concepts therefore use different geometries: percepts use the cube
+for presence, while concepts use a positive atom whose signed scalar activation
+carries polarity and certainty. Keeping the roles distinct avoids treating a
+percept's unused negative half as if it were sensory content.
+
+### Presence, Not Signal {#percept-presence}
+
+A percept feature answers *how present is this?*
+
+| Value | Meaning |
+|---|---|
+| `0` | nothing or absent; the empty corner |
+| `1` | everything or fully present |
+| `x in (0,1)` | partial presence |
+
+There is no negative presence. On the percept path:
+
+- `PartSpace.factor_percept` in [`bin/Spaces.py`](../bin/Spaces.py) admits only
+  non-negative evidence; a zero percept yields zero evidence.
+- The meronymic membership folds (`SigmaLayer2` / `PiLayer2` in
+  [`bin/Layers.py`](../bin/Layers.py)) operate on memberships in `[0,1]` through
+  `log`/`exp`, flooring the bottom element with `EPS_LOG` before `log(0)`.
+- A marked radix/meronomy Codebook (`is_percept_store`) is read through a UNORM
+  straight-through clamp, so forward lookup and reverse decode see the same
+  `[0,1]` rows while the float master remains trainable.
+
+The signed orthographic Lexicon is a separate path. Its sign is form content,
+so it stays in the projective unit-ball geometry described under
+[Lexicon](#lexicon-projective-unit-ball).
+
+### Complement, Copart, and Negation {#percept-complement}
+
+A percept's opposite is its complement:
+
+```text
+antipode_percept(x) = 1 - x
+```
+
+Mereologically, the complement of a part is its **copart**, the rest of the
+whole. With the whole normalized to `1`, the carrier `[part, copart] = [x,
+1-x]` has dependent axes; the copart is derived rather than stored.
+
+This is not the catuskoti/tetralemma carrier. That truth representation has two
+independent axes so it can distinguish BOTH from NEITHER:
+
+| Carrier | Axes | Redundant? | Layer |
+|---|---|---|---|
+| part/copart `[x, 1-x]` | dependent | yes; collapse to one `[0,1]` coordinate | percept |
+| catuskoti `[TRUE, FALSE]` | independent | no | concept/truth |
+
+Complement on `[0,1]` and negation in centered signed coordinates are the same
+reflection. Let `y = x - 1/2`; then `1-x = 1/2-y`. The operation is shared, but
+the stored carriers and their semantics remain distinct.
+
+### Sigma/Pi Membership Lattice {#percept-membership-lattice}
+
+The meronymic fold/split operators form a bounded lattice:
+
+| Operator | Role | Identity | Absorber |
+|---|---|---|---|
+| sigma | synthesis / union | `0`: `x union empty = x` | `1`: `x union everything = everything` |
+| pi | analysis / intersection | `1`: `x intersection everything = x` | `0`: `x intersection empty = empty` |
+
+The log-space fold floors `0` because nothing absorbs multiplication and
+`log(0)` is unbounded. The membership value zero and the operator identity are
+different roles: zero is sigma's identity but pi's absorber.
+
+These lattice roles are not the same thing as the `SigmaLayer`/`PiLayer`
+butterfly ownership described above. The membership operators constrain
+mereological presence; the butterfly folds carry higher-order transformations.
+
+### Percept-to-Concept Seam {#percept-concept-seam}
+
+The percept origin and the concept origin have different readings:
+
+- percept `0` is observed absence;
+- concept activation `0` is uncertainty or no assertion.
+
+At the percept level, absence contributes no positive evidence. Presence enters
+the order-0 concept snap as a non-negative source term; it is not re-centered or
+injected as a concept vector. `PerceptDim` and `ConceptDim` remain decoupled.
+The iterated sparse conceptual wave grows signed structure through learned
+weights and activations. Negative conceptual content therefore comes from
+concept operations and signed relations, not from negative percept coordinates.
+
+The signed-to-membership chart `chi(a) = (1+a)/2` and its inverse belong at the
+truth/catuskoti boundary (`Ops.eval_chart` / `eval_chart_inv`), not at the
+percept-to-concept seam.
+
+### Geometry Split {#percept-geometry-split}
+
+The implementation keeps percept and concept/symbol carriers distinct:
+
+| Property | Percepts |
+|---|---|
+| space | positive unit hypercube `[0,1]^D` |
+| coordinate | per-axis presence |
+| opposite | complement `1-x` |
+| sides | one-sided |
+| metric | membership distance; presence MSE for the marked store |
+| magnitude | presence per axis |
+
+| Property | Concepts / symbols |
+|---|---|
+| space | positive concept atom; signed activation or signed Lexicon path |
+| coordinate | atom direction plus activation polarity and certainty |
+| opposite | negation `-x` |
+| sides | two-sided sign is semantic content |
+| metric | dot product for concepts; projective lookup for Lexicon rows |
+| magnitude | scalar activation carries certainty |
+
+In the sparse conceptual implementation, the stored `ConceptDim` atom is
+strictly positive (`softplus(atom)`). Sign and magnitude live in the scalar
+activation: `concept_code = signed_activation * softplus(atom)`. The phrase
+"signed sphere" describes the activation's role, not a signed stored atom.
+
+A symbol is also not a synonym for a concept or a whole. A concept is a
+`ConceptualSpace` relation over percepts; a symbol is a reference to a concept.
+Their epistemic roles remain distinct even when a signed geometry is shared by
+an implementation path.
+
+### SBOW Situates Concepts, Not Percepts {#percept-sbow}
+
+`conceptual_sbow_loss_codes` in [`bin/embed.py`](../bin/embed.py) situates
+concept codes by neighborhood attraction and pairwise negative-sample
+repulsion. The gradient is tangential: it changes a concept's angle without
+overwriting its certainty radius.
+
+Percepts are deliberately not SBOW-situated:
+
+1. Percept identity is grounded by nearest-row decode in its perceptual metric;
+   moving a row changes the token or signal it denotes.
+2. Byte spans, `.where`/`.when`, and the meronymic tower anchor its structural
+   role.
+
+Distributional movement would therefore break grounding even if the
+composition algebra remained invertible. Concept codes can move by
+substitutability because their identity is mediated; percept rows cannot.
+
+### Bounded Encodings {#percept-bounded-encodings}
+
+The bounded ranges admit efficient fixed-point storage:
+
+| Format | Range | Intended carrier |
+|---|---|---|
+| UNORM | `[0,1]` | percept presence |
+| SNORM | `[-1,1]` | signed concept/symbol values |
+| Q-format fractional | bounded signed or unsigned range | CPU/DSP equivalent |
+
+Training remains in `float32`/`bf16`. Forward-time quantization keeps a float
+master, applies a saturating function (`tanh` or `clamp`), and uses a
+straight-through estimator or stochastic rounding. Over a bounded unit range,
+SNORM16 has a roughly `3e-5` uniform grid and is finer than bf16 across most of
+the interval; SNORM8 is materially coarser.
+
+### Live Paths and Migration Status {#percept-live-path}
+
+The tracked baseline enables the global meronomy chart, but the actual carrier
+still depends on the input and synthesis mode:
+
+| Path | Live representation |
+|---|---|
+| measured tensor (`input_presence=True`) | normalized to `[0,1]` |
+| text embedding (`input_presence=False`) | retained in `[-1,1]` |
+| radix/meronomy percept store | UNORM `[0,1]`; presence decode |
+| orthographic Lexicon | signed projective unit ball |
+| conceptual atom | positive atom; signed activation |
+
+The `[0,1]` percept-store migration is complete: `Codebook.getW()` is the read
+chokepoint for both forward gather and reverse decode, so no seam adapter is
+needed. The store lives on the PartSpace subspace, the dataflow container. The
+remaining open decision is whether the orthographic Lexicon should ever move to
+`[0,1]`; doing only the input half would break signed embedding reconstruction.
+
+### Mereological Guarantees {#percept-guarantees}
+
+The encoding is hybrid.
+
+**Guaranteed by construction:**
+
+- Byte-position structure - radix longest-match, slot order, the exact
+  id-to-bytes table, `.where`/`.when` brackets, and run containment - does not
+  depend on vector position.
+- When a fold is configured as invertible/butterfly,
+  `compose(generate(y)) == y` follows from its LDU/butterfly form. A bare linear
+  fold does not provide that guarantee.
+
+**Anchored by the perceptual metric:**
+
+- Vector-to-token identity uses complement-aware presence MSE on the marked
+  percept store and wrapped/projective lookup on the signed Lexicon path.
+- The learned sigma composition determines which whole a part set produces.
+  Radix supplies ordered references through a trie; it is not place-value
+  arithmetic.
+
+Moving percept rows would leave byte structure and configured invertibility
+intact while redirecting nearest-row decode. The model could compose and
+decompose consistently yet name the wrong token, which is precisely why
+percepts remain anchored.
+
+See also [Mereology](Mereology.md), [Logic](Logic.md), and the conceptual-space
+design in
+[plans/2026-06-23-conceptual-similarity-space.md](plans/2026-06-23-conceptual-similarity-space.md).
+
+---
+
 ## Codebook Similarity Metric
 
 `Codebook` wraps `VectorQuantize`. Similarity metric per space:
 
-| Space | Codebook geometry | Stored | Metric | Retrieval |
-|-------|------------------|--------|--------|-----------|
-| PartSpace | $[-1, +1]^d$ hypercube | Feature *patterns* | Euclidean L2 | $\arg\max_i (x \cdot c_i - \tfrac{1}{2}\|c_i\|^2)$ |
-| WholeSpace | $[-1, +1]^d$ hypercube | Whole-percept *patterns* | Euclidean L2 | $\arg\max_i (x \cdot c_i - \tfrac{1}{2}\|c_i\|^2)$ |
-| ConceptualSpace | `similarity_codebook` rows (`use_dot_product`) — the concept dictionary / SBOW-situating metric, NOT the forward concept-production path | Concept atoms; input magnitude encodes belief certainty | Dot product | $\arg\max_i (x \cdot c_i)$ (situating/SBOW only) |
+| Store | Geometry and metric | Retrieves |
+|---|---|---|
+| PartSpace radix/meronomy | `[0,1]^d`; presence MSE | percept-presence row |
+| Lexicon and unmarked WholeSpace | `[-1,1]^d`; wrapped MSE | form or symbol row |
+| Conceptual similarity codebook | unit rows; dot product | SBOW concept row |
 
-### Euclidean (Perceptual — Part / Whole)
+The ConceptualSpace entry is the concept dictionary's *situating* metric, not
+the forward concept-production path. Its input magnitude carries belief
+certainty, and lookup ranks $\arg\max_i(x \cdot c_i)$.
 
-These codebooks store *what something looks like* --- $0.5 \cdot v$ carries half as
-much "of feature v" as $1.0 \cdot v$, so the right notion is coordinate-wise
-distance. Retrieval expands $\|x - c_i\|^2$:
+### Presence and Wrapped-MSE (Perceptual / Symbolic)
+
+These codebooks store *what something looks like*, so the right notion is
+coordinate-wise distance. The marked percept store uses
+`_presence_mse_score`: ordinary unwrapped MSE on `[0,1]^d`, monotonically
+remapped so identical rows score `1` and complementary corners score `-1`.
+The signed Lexicon and unmarked stores use `_wrapped_mse_score`, which first
+wraps the coordinate difference into the signed unit cell. In both cases,
+lookup chooses the row with the largest similarity (equivalently, the smallest
+MSE in the active geometry).
+
+For an ordinary, unwrapped Euclidean codebook, retrieval expands
+$\|x - c_i\|^2$:
 
 $$
 \|x - c_i\|^2 = \|x\|^2 + \|c_i\|^2 - 2\,(x \cdot c_i)
@@ -366,7 +600,7 @@ $$
 \arg\min_i \|x - c_i\|^2 = \arg\max_i (x \cdot c_i - \tfrac{1}{2}\,\|c_i\|^2)
 $$
 
-`VectorQuantize` keeps $\|c_i\|^2$ in `_b_norms_sq`:
+`VectorQuantize` can therefore keep $\|c_i\|^2$ in `_b_norms_sq`:
 
 ```python
 indices = (flat @ codebook.T - 0.5 * b_norms_sq).argmax(dim=-1)

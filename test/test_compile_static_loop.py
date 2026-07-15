@@ -25,7 +25,7 @@ def _build_gate_model():
     from Models import BaseModel
     from util import init_config, init_device
     init_device("cpu")
-    cfg = str(_root / "data" / "MM_20M_legacy.xml")
+    cfg = str(_root / "data" / "MM_20M_grammar.xml")
     init_config(path=cfg, defaults_path=str(_root / "data" / "model.xml"))
     TheData.load("text", shard_dir=str(_root / "data" / "fineweb"),
                  num_shards=1, max_docs=8)
@@ -34,13 +34,6 @@ def _build_gate_model():
     return m
 
 
-@pytest.mark.xfail(
-    reason="MM_20M_legacy.xml: percept_dim+nWhere+nWhen=12 != concept_dim+nWhere+"
-           "nWhen=1028 since Stage 1.C retired sigma_percept (the "
-           "percept-to-concept lift); the signal router replacement "
-           "(Stage 3) is not yet wired.",
-    strict=False,
-)
 def test_per_word_body_callable_with_static_signature():
     """The new ``_per_word_body_step(w, p, gate_b_1, out_slot)``
     signature must be callable. Smoke test for the refactor — the
@@ -52,7 +45,7 @@ def test_per_word_body_callable_with_static_signature():
     inp, _ = isp.getTrainData()
     isp.Start()
     inputTensor = isp.prepInput(list(inp[:1]))
-    in_sub = isp.forward(inputTensor)
+    in_sub = m._lex_embed_stem(inputTensor)
     assert isp._ar_embedded_N is not None
     assert isp._word_active_mask is not None
     N = int(isp.outputShape[0])

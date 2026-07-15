@@ -9,7 +9,7 @@
 > minor read-time $\varepsilon$ and the empirical $\lambda$, so T3+ are
 > design-unblocked pending Alec's final go. Framework: Alec (2026-07-05/06
 > session); terminology from *The Whole Part* (Alec). Companions:
-> [percept-hypercube.md](../percept-hypercube.md) (percept geometry),
+> [Spaces.md — Percept Geometry](../Spaces.md#percept-geometry-positive-unit-hypercube),
 > [2026-07-04-serial-derivation-reconstruction-design.md](2026-07-04-serial-derivation-reconstruction-design.md)
 > (Method-1/Method-2 duality),
 > [2026-07-04-union-difference-concept-ops.md](2026-07-04-union-difference-concept-ops.md)
@@ -35,7 +35,7 @@ Consequences for prose and code:
   the `[0,1]` lexicon move is its own open item, untouched here.
 - Known conflation sites to sweep (VERDICTS PENDING — renames touch code,
   Alec's call per site): `WholeSpace.insert_symbol` (inserts wholes);
-  percept-hypercube.md's recurring "concepts/symbols" pairing; todo.md's
+  the percept-geometry section's recurring "concepts/symbols" pairing; todo.md's
   "symbol/truth prototypes" description of the WS codebook; the `nObj` /
   ObjectSubSpace overload of "object" (per-word slots, not referents).
 
@@ -57,7 +57,7 @@ two orthogonal relations, at two epistemic levels:
 
 This is the load-bearing distinction, because it says WHERE sign belongs.
 Mereology is positive (percept presence; the `[0,1]` cube of
-[percept-hypercube.md](../percept-hypercube.md) §4 — absence is a
+[Spaces.md — Percept-to-Concept Seam](../Spaces.md#percept-concept-seam) — absence is a
 non-informative observation, not a negation). The minus sign is a *taxonomic*
 operation — one concept excluding another — never a negative part. So the
 signed-coefficient snap (§2) is a property of the taxonomic layer; the
@@ -299,7 +299,8 @@ names not behavior).
   definition first (rename only the ones inserting **wholes**, e.g.
   `WholeSpace.insert_symbol`; leave any genuine SS symbol insert). A blind
   find/replace would re-conflate, so read each def.
-- The "concepts/symbols" conflation prose in `percept-hypercube.md` and the
+- The "concepts/symbols" conflation prose in `Spaces.md`'s percept-geometry
+  section and the
   WS "symbol/truth prototypes" line in `todo.md` → the §0 ladder terms.
 - `nObj` → `nIdeas` (Alec, 2026-07-06 — each per-word slot holds an
   **idea**, not a referent object): ~159 sites; its own commit + full-suite

@@ -226,27 +226,26 @@ def test_default_router_wire_serial_is_both():
         "(default 'both') into self.router_wire_serial.")
 
 
-def test_per_word_compose_is_not_fired_in_serial_mode():
-    """NEW contract (space_role-free bounded-STM fold, Task 3): the per-word
-    ``symbolSpace.compose`` fire is DELETED — there is no grammar space_role and
-    no per-word re-parse anymore.
-
-    A serial forward in the default (``both``) mode therefore fires
-    ``symbolSpace.compose`` ZERO times: the only surviving ``compose`` call
-    site (the boundary ``_chart_compose_at_C``) is not on the serial forward
-    path. Instead the fold is carried by the bounded-STM primitives, which
-    we assert below are exercised and collapse the STM to a single root S
+def test_per_word_compose_fires_in_serial_mode():
+    """RE-PINNED contract (Alec 2026-07-13, per-word router fire): the
+    space_role-free fold (Task 3, 2026-06-05) DELETED the per-word
+    ``symbolSpace.compose`` fire, but ``_chart_compose_per_word``
+    re-introduced it — "the router should be firing as every word is
+    added, since the STM is not long enough to preserve the sentence
+    before parsing is initiated". A serial forward in the default
+    (``both``) mode therefore fires ``compose`` per word from the SECOND
+    word on (the N>=2 guard: a 1-slot stack has nothing to reduce), and
+    the bounded-STM fold still collapses the STM to a single root S
     within capacity.
     """
     model = _make_serial_model(router_wire_serial="both")
     probe = _run_forward_spying_fold(model)
 
-    # 1) The per-word re-parse is gone: compose is NOT fired per word
-    #    (nor at all, on the serial forward).
-    assert probe["compose"] == 0, (
-        f"Task 3 deleted the per-word symbolSpace.compose fire; a serial "
-        f"forward must fire compose 0 times (the boundary _chart_compose_"
-        f"at_C is not on the serial forward path). Got {probe['compose']}.")
+    # 1) The per-word fire is live: compose fires from the second word on.
+    assert probe["compose"] >= 1, (
+        f"the per-word router fire (_chart_compose_per_word, Alec "
+        f"2026-07-13) must fire compose over the growing STM in 'both' "
+        f"mode; got {probe['compose']}.")
 
     # 2) The bounded-STM fold still happens: the sentence-end sweep runs
     #    and the back-pressure / sweep reduce micro-step is exercised.
@@ -274,25 +273,19 @@ def test_per_word_compose_is_not_fired_in_serial_mode():
         f"the collapsed root idea S must be produced and finite; got {S!r}")
 
 
-def test_router_wire_serial_per_word_is_noop_for_compose():
-    """NEW contract: ``routerWireSerial='per-word'`` is now a NO-OP for the
-    per-word ``compose`` fire — that fire was deleted in Task 3, so the
-    ``per-word`` setting no longer has a per-word ``compose`` leg to gate.
-
-    A serial forward under ``per-word`` therefore fires ``compose`` ZERO
-    times (identical to ``both`` / ``off`` / ``boundary`` on the serial
-    forward), while the bounded-STM fold still collapses the STM to root.
-    This documents that ``<routerWireSerial>`` no longer affects the serial
-    per-word path; its only remaining live effect is on the reverse-path
-    boundary ``generate`` fire (see
-    ``test_boundary_generate_gated_by_router_wire_serial``).
+def test_router_wire_serial_per_word_fires_compose():
+    """RE-PINNED contract (Alec 2026-07-13): ``routerWireSerial='per-word'``
+    gates the LIVE per-word fire (``_chart_compose_per_word`` fires iff the
+    knob is 'per-word' or 'both'), so a serial forward under ``per-word``
+    fires ``compose`` per word from the second word on, while the
+    bounded-STM fold still collapses the STM to root. The 'off'/'boundary'
+    modes keep the serial forward compose-free (pinned below).
     """
     model = _make_serial_model(router_wire_serial="per-word")
     probe = _run_forward_spying_fold(model)
-    assert probe["compose"] == 0, (
-        f"routerWireSerial='per-word' has no per-word compose leg to fire "
-        f"anymore (Task 3 deleted it); expected 0 compose calls, got "
-        f"{probe['compose']}.")
+    assert probe["compose"] >= 1, (
+        f"routerWireSerial='per-word' must fire the per-word compose "
+        f"(_chart_compose_per_word); got {probe['compose']}.")
     # The fold is unaffected by the knob: it still sweeps to root in cap.
     assert probe["sweep"] >= 1 and probe["reduce"] >= 1, (
         f"the bounded-STM fold must run regardless of routerWireSerial; "

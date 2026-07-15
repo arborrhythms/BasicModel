@@ -209,6 +209,72 @@ def test_relative_mask_per_row_and_shared_shapes():
     assert m.tolist() == [False, True, False]
 
 
+def test_relative_mask_sees_cs_role_rules():
+    """complete.grammar's relative producers (part/whole/equal, ids 1-3)
+    are CS-role rules, so the router appends their fired ids under
+    ``current_rules['CS']`` — the mask must scan that list too. Measured
+    on the depth-3 campaign (2026-07-13): relative id 3 fired under 'CS'
+    while 'SS' carried only id_SS padding and the mask stayed False for
+    the whole read. The CS scan is ANCHOR-GATED (fired ids are argmax
+    picks at every reduce site — chance fires on absolute rows must not
+    flag): a row flips only when its pid grid carries an anchored
+    closed-class pid; without anchor state the CS scan contributes
+    False."""
+    model = _build_model()
+    B = 3
+    model.conceptualSpace.stm.ensure_batch(B)
+    rel_id = _forward_relative_rule_id()
+    abs_id = _forward_absolute_rule_id()
+    model.symbolSpace.current_rules = {
+        'SS': [[abs_id]] * B, 'CS': [[rel_id], [abs_id], [rel_id]]}
+
+    # No anchor state at all -> CS scan contributes False (conservatism).
+    ws = model.symbolSpace.wholeSpace
+    saved = (getattr(ws, '_anchored_pids', None),
+             getattr(ws, '_category_last_pid', None))
+    object.__setattr__(ws, '_anchored_pids', None)
+    object.__setattr__(ws, '_category_last_pid', None)
+    try:
+        m = model._sentence_relative_mask(B)
+        assert not bool(m.any())
+
+        # Anchored pid present in rows 0 and 2's grids: only the row that
+        # ALSO fired a relative rule under 'CS' flips (row 0); row 1 (no
+        # relative fire) and row 2's absolute twin stay per their rules.
+        object.__setattr__(ws, '_anchored_pids', {16: 'part'})
+        object.__setattr__(ws, '_category_last_pid',
+                           [[16, 3], [16, 3], [4, 5]])
+        m = model._sentence_relative_mask(B)
+        assert m.tolist() == [True, False, False]
+    finally:
+        object.__setattr__(ws, '_anchored_pids', saved[0])
+        object.__setattr__(ws, '_category_last_pid', saved[1])
+
+
+def test_category_prior_scores_anchored_operator_slot():
+    """The syntactic-anchor short-circuit labels a closed-class relation
+    slot with the operator's OUTPUT role (``<op>_O1``); the reduce prior
+    must credit pairs touching that slot toward the operator's own rule.
+    Pre-fix it read only I1/I2 and the anchored slot scored exactly 0
+    (the depth-3 campaign's no-flip cause, 2026-07-13)."""
+    from types import SimpleNamespace
+
+    role_index = {'part_I1': 0, 'part_I2': 1, 'part_O1': 2}
+    orig = Language._role_index_for_categories
+    Language._role_index_for_categories = lambda: role_index
+    try:
+        duck = SimpleNamespace(op_names=['part'])
+        cat_ctx = torch.zeros(1, 3, 3)
+        cat_ctx[0, 1, 2] = 1.0             # middle slot anchored part_O1
+        prior = Language.BinaryStructuredReductionLayer \
+            ._category_reduce_prior(duck, cat_ctx)
+        assert prior is not None and tuple(prior.shape) == (1, 2, 1)
+        assert float(prior[0, 0, 0]) > 0.0     # pair (0,1) touches anchor
+        assert float(prior[0, 1, 0]) > 0.0     # pair (1,2) touches anchor
+    finally:
+        Language._role_index_for_categories = orig
+
+
 # --------------------------------------------------------------------------
 # Part C / Part D -- reduce-site depth-3 preservation + absolute regression
 # --------------------------------------------------------------------------

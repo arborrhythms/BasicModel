@@ -34,7 +34,9 @@ required.
 | Target | Description |
 |---|---|
 | `make train` | Full training (Phase 1 embeddings + Phase 2 model), logged to `output/logs/` |
-| `make train_micro` | Small run: max 1,000,000 docs across 10 random shards, logged |
+| `make train_micro` | Smoke run: max 1,000 docs, one random shard, ten batches, logged |
+| `make preflight` | Fast FineWeb launch/config/data/checkpoint gates |
+| `make preflight_full` | Preflight plus one real N=64 optimizer step |
 
 ### Models
 
@@ -77,7 +79,7 @@ Override on the command line, e.g. `make run XML1=data/ergodic.xml`.
 
 | Variable | Default | Description |
 |---|---|---|
-| `MODEL` | `data/MM_20M_legacy.xml` | XML config for training |
+| `MODEL` | `data/MM_20M_fineweb.xml` | XML config for training |
 | `XML1` | `data/simple.xml` | Primary config for `make run` / `compare` |
 | `XML2` | `data/ergodic-only.xml` | Secondary config for `make compare` |
 

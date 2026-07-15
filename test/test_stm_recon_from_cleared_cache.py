@@ -412,8 +412,7 @@ def test_reverse_perceptual_preserves_finiteness_on_finite_seed():
            "fan-out vs the N>1 forward positions). The top-k recovered-word "
            "overlap is therefore 0.0, below atol=2e-1. NOT a cache-clear "
            "fault and NOT a NaN. Remove this xfail once the per-op reverses "
-           "reconstruct [B,N,D_c].",
-    strict=False)
+           "reconstruct [B,N,D_c].")
 def test_topk_recovered_words_overlap_input():
     """PLAN SUCCESS CRITERION: top-k recovered words at each position
     overlap the input above the atol=2e-1 closeness threshold, running

@@ -235,53 +235,6 @@ class TestPerceptualSpaceBPE(unittest.TestCase):
         self.assertLessEqual(len(layer.vocab), 260,
             f"vocab overflow: got {len(layer.vocab)}, cap was 260")
 
-    @unittest.expectedFailure
-    def test_mm_5m_xml_loads_and_forwards(self):
-        """Task 11: MM_20M_legacy.xml can be loaded and runs one forward pass.
-
-        Forces ``autoload=false`` so a stale on-disk checkpoint
-        (``data/MM_20M.ckpt``) doesn't block this smoke test -- we're
-        verifying the XML loads and forward runs, not weight loading.
-
-        Currently expected-failure (MM_20M_legacy.xml architectural mismatch):
-        PS percept_dim+nWhere+nWhen=12 vs CS concept_dim+nWhere+nWhen
-        =1028. Stage 1.C retired the ``sigma_percept`` lift; the signal
-        router replacement (Stage 3) is not yet wired.
-        """
-        import torch, tempfile
-        import xml.etree.ElementTree as ET
-        from Models import BaseModel
-
-        cfg_path = os.path.join(_PROJECT, "data", "MM_20M_legacy.xml")
-        tree = ET.parse(cfg_path)
-        root = tree.getroot()
-        arch = root.find("architecture")
-        training = arch.find("training")
-        if training is None:
-            training = ET.SubElement(arch, "training")
-        auto = training.find("autoload")
-        if auto is None:
-            auto = ET.SubElement(training, "autoload")
-        auto.text = "false"
-        tmp = tempfile.NamedTemporaryFile(mode="wb", suffix=".xml", delete=False)
-        tree.write(tmp, xml_declaration=True)
-        tmp.close()
-        cfg_path = tmp.name
-        model, cfg = BaseModel.from_config(config_path=cfg_path)
-        ps = model.perceptualSpace
-        self.assertEqual(ps.synthesis_mode, "bpe")
-        self.assertEqual(ps.nVectors, 4096)
-
-        input_text = ["hello world foo"]
-        inp_tensor = model.inputSpace.prepInput(input_text)
-        with torch.no_grad():
-            _ = model.forward(inp_tensor)
-        event = ps.subspace.event.getW()
-        self.assertIsNotNone(event)
-        self.assertTrue(torch.isfinite(event).all(),
-            "PartSpace output must be finite")
-
-
 class TestSharedByteStore(unittest.TestCase):
     """Task 4 (2026-06-09 build-batch plan): ONE shared byte/percept
     codebook across the chunking front ends. bpe/mphf construct a

@@ -2,9 +2,9 @@
 """Orchestrate BasicModel training: embeddings -> model.
 
 Usage:
-    python train.py                           # local, defaults
-    python train.py --model data/MM_20M_legacy.xml --compile-target gpu --batches 10
-    python train.py --model data/MM_20M_legacy.xml --compile-target mlx
+    python train.py                           # FineWeb production config
+    python train.py --model data/MM_20M_fineweb.xml --compile-target gpu --batches 10
+    python train.py --model data/MM_20M_fineweb.xml --compile-target mlx
     python train.py --host example.org        # remote execution via SSH
 """
 
@@ -33,8 +33,9 @@ def parse_args(argv=None):
     execution argument group. Returns the parsed Namespace.
     """
     p = argparse.ArgumentParser(description="Train BasicModel end-to-end")
-    p.add_argument("--model", "-m", default="data/BasicModel.xml",
-                   help="XML config file (default: data/BasicModel.xml)")
+    p.add_argument("--model", "-m", default="data/MM_20M_fineweb.xml",
+                   help="XML config file (default: "
+                        "data/MM_20M_fineweb.xml)")
     p.add_argument("--data", default=None,
                    help="Dataset name (e.g. text, mnist, xor). "
                         "Overrides <dataset> in XML config.")
@@ -44,6 +45,9 @@ def parse_args(argv=None):
                    help="Override numShards from XML config")
     p.add_argument("--num-epochs", type=int, default=None,
                    help="Override numEpochs from XML config")
+    p.add_argument("--batch-size", type=int, default=None,
+                   help="Override batchSize from XML config. Use 1 for a "
+                        "minimal launch smoke test.")
     p.add_argument("--max-tokens", type=int, default=None,
                    help="Cap AR training/eval positions per document for "
                         "quick smoke runs. Full training uses the XML "
@@ -377,10 +381,14 @@ def train_local(args):
         model_env["BASIC_NUM_SHARDS"] = str(args.num_shards)
     if args.num_epochs is not None:
         model_env["BASIC_NUM_EPOCHS"] = str(args.num_epochs)
+    if args.batch_size is not None:
+        model_env["BASIC_BATCH_SIZE"] = str(args.batch_size)
     if args.max_tokens is not None:
         model_env["BASIC_MAX_TOKENS"] = str(args.max_tokens)
     if args.batches is not None:
         model_env["BASIC_MAX_BATCHES"] = str(args.batches)
+    if args.random_shards:
+        model_env["BASIC_RANDOM_SHARDS"] = "1"
     # --test gating: env var encodes the request to runTrial in Models.py.
     #   unset             -> skip baseline + post-train test passes
     #   "" (empty string) -> run the test passes uncapped
@@ -469,8 +477,12 @@ def train_remote(args):
         remote_args += ["--num-shards", str(args.num_shards)]
     if args.num_epochs is not None:
         remote_args += ["--num-epochs", str(args.num_epochs)]
+    if args.batch_size is not None:
+        remote_args += ["--batch-size", str(args.batch_size)]
     if args.max_tokens is not None:
         remote_args += ["--max-tokens", str(args.max_tokens)]
+    if args.batches is not None:
+        remote_args += ["--batches", str(args.batches)]
     if args.test is not None:
         if args.test == -1:
             remote_args += ["--test"]
@@ -484,8 +496,16 @@ def train_remote(args):
         remote_args += ["--mlx-output", args.mlx_output]
     if args.random_shards:
         remote_args += ["--random-shards"]
+    if args.force_embeddings:
+        remote_args += ["--force-embeddings"]
+    if args.latent_vector_size is not None:
+        remote_args += ["--latent-vector-size", str(args.latent_vector_size)]
+    if args.embed_lr is not None:
+        remote_args += ["--embed-lr", str(args.embed_lr)]
     if args.profile:
         remote_args += ["--profile"]
+    if args.log is not None:
+        remote_args += ["--log", args.log]
     # SSH and run -- forward selected env vars that affect training behaviour
     remote_env_vars = "PYTHONUNBUFFERED=1 PYTHONPATH=bin"
     for var in ("BASICMODEL_DEVICE", "MODEL_COMPILE", "MODEL_COMPILE_MODE",

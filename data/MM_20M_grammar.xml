@@ -21,6 +21,12 @@
   <architecture>
     <!-- legacy serial: per-word forward dispatch via _forward_body_per_word. -->
     <symbolicOrder>1</symbolicOrder>
+    <!-- Mereological order-raising ON (Alec 2026-07-13): word-whole
+         sigma-binding + maybe_raise_order (higher-order percept parts,
+         the subsymbolic raise ladder) + percept .where band fill +
+         in-model word recognition. Without it there are no
+         subsymbolic raises on this config. -->
+    <mereologyRaise>true</mereologyRaise>
     <subsymbolicOrder>3</subsymbolicOrder>
     <l1Lambda>0.01</l1Lambda>
     <!-- sigmaPi=butterfly: PS.Pi and SS.Sigma use O(N log N) cross-position
