@@ -9,8 +9,7 @@
 > from typed syntax to vector meaning.
 
 > **2026-06-21 terminology note (one noun per-space).** This doc follows the
-> percept / concept / symbol convention
-> (`doc/old/2026-06-21-terminology-percepts-concepts-symbols.md`): a **percept**
+> percept / concept / symbol convention: a **percept**
 > is a PartSpace/WholeSpace thing (dimensionally-embedded, extensional; the two
 > subtypes are **part-percepts** = atoms, $\sigma$, and **whole-percepts** =
 > properties/regions, $\pi$); a **concept** is a ConceptualSpace relation tying one
@@ -31,7 +30,7 @@
 > scopes are renamed to `<PartSpace>` / `<WholeSpace>` to match. The
 > PS/SS shorthand in older notes reads part-side/whole-side. The freed
 > name `SymbolSpace` was **reintroduced 2026-06-19** as the grammar/word
-> space-role (formerly `WordSpace`); see `doc/old/2026-06-19-handoff.md`.
+> space-role (formerly `WordSpace`).
 >
 > **At the corpus callosum, objects are analysed and synthesized** —
 > by sending them back to PerceptualSpace: wholes get split and parts
@@ -59,9 +58,7 @@
 > existing `LETTER` / `WHITESPACE` / `DIGIT` / `PUNCT` classes of
 > `Layers.char_class_region`, one codebook code each. A whole is a
 > **maximal constant-type run**; words are runs of letters, punct, or
-> digits. (See `doc/plans/2026-07-10-wholes-are-types-segmentation.md`
-> for the full argument and the boundary-dichotomy framing it
-> supersedes.)
+> digits.
 > `materialize` hands the per-position selection (`subspace._index`,
 > renamed from `_active` 2026-06-12) to the codebook so it produces the
 > materialized object: atoms via `lookup`, or a per-position **region
@@ -112,8 +109,7 @@
 
 > **2026-06-09 update (analysis/synthesis orientation — supersedes the
 > ownership notes below).** The corrected orientation
-> (doc/old/2026-06-08-analysis-synthesis-dual-input.md, rev.
-> 2026-06-09; see [Philosophy.md](Philosophy.md)):
+> (rev. 2026-06-09; see [Philosophy.md](Philosophy.md)):
 >
 > * **InputSpace emits the DUAL VIEW**: `forward(x) -> (percepts_in,
 >   concepts_in)` — the atom view (content `[B, N, 1]`) for the
@@ -141,8 +137,7 @@
 > `_operation_positions` -- separate from the symbol codebook so the
 > symbol/idea/`.where` namespace is untouched), `resolve_ps_terminal` /
 > `null_sem` (PS-to-SS binding), and `operator_superposition`. The PS
-> meronymic analyzer lives in `bin/perceptual_analyzer.py`. See
-> [doc/old/2026-05-30-subsymbolic-analyzer-terminal-emitter.md](old/2026-05-30-subsymbolic-analyzer-terminal-emitter.md).
+> meronymic analyzer lives in `bin/perceptual_analyzer.py`.
 
 > **Status (2026-05-27):** updated for the substrate refactor. PS is a
 > single-arg input processor (`self.pi` + `self.sigma`). CS is an STM
@@ -253,7 +248,7 @@ internal Sigma / Pi (no substrate-borrowing).
 
 | Space | Owns | Forward signature |
 |---|---|---|
-| **PartSpace** | one `self.sigma` (SigmaLayer — the synthesis fold), the `<synthesis>` front ends, MPHF + index table, the surface-keyed Lexicon (`self.vocabulary`) | `PS.forward(in_sub, cs_out=None)` (dual-towers rev 2, doc/plans/2026-07-10-conceptual-wave-ff-pyramid-design.md). `in_sub` is PS's view of the input (the atoms); `cs_out` is PS's own conceptual feedback, stashed as `self._cs_feedback` (not yet folded on the PS leg). Body: `self.sigma(x.materialize())` after the synthesis front end embeds. |
+| **PartSpace** | one `self.sigma` (SigmaLayer — the synthesis fold), the `<synthesis>` front ends, MPHF + index table, the surface-keyed Lexicon (`self.vocabulary`) | `PS.forward(in_sub, cs_out=None)` (dual-towers rev 2). `in_sub` is PS's view of the input (the atoms); `cs_out` is PS's own conceptual feedback, stashed as `self._cs_feedback` (not yet folded on the PS leg). Body: `self.sigma(x.materialize())` after the synthesis front end embeds. |
 | **ConceptualSpace** | STM (`ShortTermMemory`, depth ~8) + (when sparse-active) the single untyped square `ConceptualAttentionLayer` (a `SparseLayer` subclass) + the relation store (`ConceptAllocator` + ordered records) + concept dictionary (`similarity_codebook`) | `CS.forward(subspace, word_subspace=None)` — STM bookkeeping only (`sigma_percept` fold retired); the symbolic transform (snap + FF pyramid) fires ONCE post-pump at `_forward_body`'s cutover (`cs_symbolic_phase`), never in-loop (2026-07-02 two-phase rework). Dispatches read-only grammar ops via the signal router. |
 | **WholeSpace** | one `self.pi` (PiLayer — the analysis fold), the `<analysis>` + `<lexer>` knobs, the unified word lexicon codebook with paired (orth, semantic) rows; `insert_paired_word(word, vec)` API; hosts codebook-write-required grammar ops | `WS.forward(in_sub, cs_out=None)` — symmetric signature with PS (dual-towers rev 2 + 2026-07-11 serial migration). ONE TYPED ROUTING LAW (`hasattr(in_sub, "is_empty")`): a raw unity tensor (`[B, 1, N]`, not SubSpace-like) routes **universe-primary** — `_stage0_unity_forward(in_sub)` analyses it directly and `cs_out` is stashed as `self._cs_feedback`; a SubSpace-like `in_sub` (or `in_sub=None`) routes the **carrier body** — the recurrent leg + grammar/snap machinery, with `cs_out` primary when given (legacy carrier-call shape when only one positional arg is passed). Lookup chain: surface $\to$ MPHF $\to$ orth row $\to$ parented semantic row (via `Codebook.set_part_parent`). |
 
@@ -597,9 +592,7 @@ intact while redirecting nearest-row decode. The model could compose and
 decompose consistently yet name the wrong token, which is precisely why
 percepts remain anchored.
 
-See also [Mereology](Mereology.md), [Logic](Logic.md), and the conceptual-space
-design in
-[plans/2026-06-23-conceptual-similarity-space.md](plans/2026-06-23-conceptual-similarity-space.md).
+See also [Mereology](Mereology.md) and [Logic](Logic.md).
 
 ---
 
@@ -920,7 +913,6 @@ scaled to `[-1, 1]` via the global data min/max.
 > (nWhere=4, nWhen=4) on every interior space, (0, 0) on OutputSpace
 > (the 2026-07-04 encoding pass widened `.when` 2 $\to$ 4; the 2026-07-09
 > multi-rung pass widened `.where` 2 $\to$ 4 to match, [`bin/architecture.py`](../bin/architecture.py)).
-> See [doc/old/2026-05-28-where-keyed-taxonomy.md](old/2026-05-28-where-keyed-taxonomy.md).
 
 **Invertibility.** Always non-invertible; reverse is a separate reconstruction
 using the span table.
@@ -1056,7 +1048,7 @@ def forward(self, in_sub, cs_out=None):
 single-pass subsymbolic decision; the per-stage recurrence advances
 through the ConceptualCombine, not repeated PS calls). `cs_out` is PS's
 symmetric counterpart to the `cs_out` WholeSpace also now accepts (the
-dual-towers rev 2 signature, doc/plans/2026-07-10-conceptual-wave-ff-pyramid-design.md).
+dual-towers rev 2 signature).
 
 **Math (the sigma fold — PS's synthesis operator):**
 
@@ -1154,8 +1146,7 @@ stage k > 0  folded = sym        (SS event from word_subspace.materialize())
 No additive mixing across space-roles; no residual lift; trivially invertible
 (read-back, no inverse-Sigma needed). The `STM_k = STM_{k-1} + SS_k`
 carry-forward variant was tested and reverted — the pure clean-stack
-form is the landing point. See
-[doc/old/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md](old/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md).
+form is the landing point.
 
 Because `sigma_in` / `sigma_cs` were dead-weight on the forward path (no
 gradient — they never fired) while `CS.reverse` applied `sigma_in.reverse`
@@ -1176,10 +1167,9 @@ the master plan, no per-stage caches. The sparse-coding reconstruction is
 referential — the untyped edge lists ARE the concept's decomposition —
 rather than an inverse fold.
 
-**The symbolic phase (two-phase forward, 2026-07-02,
-doc/plans/2026-07-02-two-phase-loops-sparse-relation.md; dual-towers rev 2
-FEEDFORWARD SIGMA-PYRAMID, 2026-07-10, superseding the v3 iterated wave,
-doc/plans/2026-07-10-conceptual-wave-ff-pyramid-design.md).** When
+**The symbolic phase (two-phase forward, 2026-07-02;
+dual-towers rev 2 FEEDFORWARD SIGMA-PYRAMID, 2026-07-10, superseding the
+v3 iterated wave).** When
 `_sparse_active()` (i.e. `_symbolic_order > 0` and parallel/`serial=false`),
 `BasicModel._forward_body` runs the purely subsymbolic pump for
 `subsymbolicOrder` passes and then ONE cutover on the settled terminal field
@@ -1356,8 +1346,7 @@ forward fold (the Pi/Sigma swap, rev. 2026-06-09, put Sigma/synthesis on
 PartSpace). The per-stage `ConceptualSpace.sigma_in` that once carried the
 two-loop pi-sigma additive math on CS has since been RETIRED (the 2026-05-29
 clean-stack STM experiment bypassed it on the forward path; it was later
-removed entirely — CS owns no fold). See
-[doc/old/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md](old/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md).)
+removed entirely — CS owns no fold).)
 
 `LiftLayer` and `LowerLayer` are now first-class **binary GrammarLayer
 subclasses**, each owning its own internal sub-layer for the pairwise
@@ -1475,9 +1464,7 @@ accommodate paired rows (e.g., MM_5M sets `nVectors=131072 = 2 * 65536`).
 
 **Multi-stage SS.** In multi-stage configs, the lexicon mirror is wired
 to **`self.wholeSpaces[-1]`** (the terminal stage; `model.wholeSpace`).
-The terminal SS must be sized for paired-row capacity. See
-[doc/old/2026-05-26-two-loop-pi-sigma-substrate.md](old/2026-05-26-two-loop-pi-sigma-substrate.md)
-for the dispatch rationale.
+The terminal SS must be sized for paired-row capacity.
 
 **Conceptual order.** `BasicModel` stores per-stage
 ConceptualSpace / WholeSpace instances for `subsymbolicOrder`. Symbol

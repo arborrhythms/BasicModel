@@ -40,10 +40,9 @@ from collections import namedtuple as _namedtuple
 # IsEqualLayer, PartLayer, QueryLayer) physically live in this module
 # below, after the Grammar singleton.
 from Layers import GrammarLayer
-from Layers import (
-    EqualLayer, TrueLayer, FalseLayer, SwapLayer, CopyLayer,
-    AreaLayer, LuminosityLayer, IsaPartLayer,
-)
+from Layers import EqualLayer
+# true/false/swap/copy/area/luminosity/isaPart were parked in bin/Legacy.py
+# in the 2026-07-17 cleanup (documented-dormant ops, not in this algebra).
 from Layers import (
     SurfaceSchema, T1_UNARY_AFFIX, T2_BINARY_INFIX,
     T3_BINARY_DIRECTIONAL, T4_BINARY_JUXTAPOSE, T5_BINARY_ELISION,
@@ -654,6 +653,10 @@ class Grammar:
         # carry space_role 'subsymbolic' and are consumed by the PS analyzer phases.
         self.ps_rules_upward = []
         self.ps_rules_downward = []
+        # Online category-collapse cache (participation.learned_collapse),
+        # keyed by direction. Computed lazily at runtime by category_collapse()
+        # when <categoryCollapse> is enabled; cleared on reload.
+        self._category_collapse_cache = {}
         self.ps_rules = []
         # Step 6: Layer-2.5 reverse productions, derived mechanically
         # from rules_upward at load time.  Each entry is
@@ -726,6 +729,28 @@ class Grammar:
     def space_role(self, rule_id):
         """Return the space_role tag ('subsymbolic' / 'CS' / 'SS') of rule ``rule_id``."""
         return self.rules[rule_id].space_role
+
+    def category_collapse(self, direction="compose"):
+        """Runtime online category collapse (``participation.learned_collapse``).
+
+        Merges this grammar's symbols into a smaller mutually-exclusive
+        category set by participation-signature similarity, accepting a merge
+        only when it keeps every grammar rule distinguishable
+        (``collapse_conflicts == 0``) — the "ADV and VP both operate on NP,
+        so collapse them" rule, determined purely by the grammatical
+        operations. Returns ``{symbol: class_id}`` (stable integer ids).
+
+        This is the same participation-driven collapse the offline D1 gate
+        measures, now runnable inside the live model (gated by
+        ``<categoryCollapse>``). Cached per ``direction``; deterministic and
+        side-effect-free, so it is safe to call at build/enable time.
+        """
+        cache = self._category_collapse_cache
+        if direction not in cache:
+            import participation
+            cache[direction] = participation.learned_collapse(
+                self, direction=direction)
+        return cache[direction]
 
     def binary_rules(self):
         """Return the list of rule_ids that have arity 2."""
@@ -4335,17 +4360,13 @@ GRAMMAR_LAYER_CLASSES = {
     'part':         PartLayer,
     'whole':        WholeLayer,
     'assertPart':   AssertPartLayer,
-    'true':         TrueLayer,
-    'false':        FalseLayer,
-    'swap':         SwapLayer,
-    'copy':         CopyLayer,
     'query':        QueryLayer,
     'queryEqual':   QueryEqualLayer,
     'queryPart':    QueryPartLayer,
     'exist':        ExistLayer,
-    'area':         AreaLayer,
-    'luminosity':   LuminosityLayer,
-    'isaPart':      IsaPartLayer,
+    # true/false/swap/copy/area/luminosity/isaPart parked in bin/Legacy.py
+    # (2026-07-17): documented-dormant, no live grammar dispatches them.
+    # Revive by moving the class back to Layers.py and re-adding it here.
 }
 
 
@@ -4477,11 +4498,8 @@ _OPERATOR_SURFACE_SCHEMAS = {
     'tense':        T1_UNARY_AFFIX,
     'aspect':       T1_UNARY_AFFIX,
     'morphology':   T1_UNARY_AFFIX,
-    # Surface elision policies (T5): copy keeps the survivor (order id),
-    # swap keeps the survivor with order swapped. Retired from the
-    # symbolic grammar; kept as the absorb/emit elision primitives.
-    'copy':         T5_BINARY_ELISION,
-    'swap':         T5_BINARY_ELISION,
+    # copy/swap (T5 BINARY_ELISION) were parked in bin/Legacy.py
+    # (2026-07-17); their surface schema is set there.
 }
 for _op_name, _op_schema in _OPERATOR_SURFACE_SCHEMAS.items():
     _op_cls = GRAMMAR_LAYER_CLASSES.get(_op_name)

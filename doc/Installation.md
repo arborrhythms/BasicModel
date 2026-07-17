@@ -5,7 +5,6 @@
 - **Python 3.12** with a virtual environment at `.venv/`
 - **PyTorch** with MPS (Apple Silicon) or CUDA
 - **pandoc** (optional, for PDF generation via `make doc`)
-- **Node.js** + `@oai/artifact-tool` (optional, only for `make doc`'s `doc/moc7_poster.xlsx` build; see below)
 
 ## Conceptual Orientation
 
@@ -64,17 +63,12 @@ required.
 | `make bench_sync` | rsync the working tree to the ArborStudio remote (excludes venvs, caches, large regenerable data) |
 | `make bench_remote` | `bench_sync` then run the reconstruction bench on ArborStudio's native path |
 | `make bench_pull` | rsync bench result JSON/profile files back from ArborStudio to `output/` |
-| `make doc` | Generate `BasicModel.pdf` via pandoc, and `doc/moc7_poster.xlsx` via Node (`@oai/artifact-tool`) |
+| `make doc` | Generate `BasicModel.pdf` via pandoc |
 
 PDF chapters in order: `README.md`, `doc/Installation.md`, `doc/Architecture.md`,
 `doc/Componentization.md`, `doc/BasicModel.md`, `doc/Spaces.md`, `doc/STM.md`,
 `doc/Language.md`, `doc/Mereology.md`, `doc/Logic.md`, `doc/Reasoning.md`,
 `doc/Training.md`, `doc/Ergodic.md`, `doc/MachineMinds.md`, `doc/Params.md`.
-
-`doc/moc7_poster.xlsx` is built from `doc/moc7_poster.md` via
-`doc/build_moc7_poster.mjs`, which needs a Node install of `@oai/artifact-tool`
-(override the lookup path with `ARTIFACT_TOOL_NODE_MODULES`); the build fails
-loudly if it isn't found.
 
 `make bench_local` / `bench_remote` use `data/MM_20M_grammar.xml` (a compact
 grammar fixture) rather than the FineWeb default. Bench variables:
@@ -93,7 +87,7 @@ grammar fixture) rather than the FineWeb default. Bench variables:
 
 | Target | Description |
 |---|---|
-| `make clean` | Remove generated files (`BasicModel.pdf`, `doc/moc7_poster.xlsx`, and `output/*`) |
+| `make clean` | Remove generated files (`BasicModel.pdf` and `output/*`) |
 | `make all` | Default; alias for `make xor` |
 
 ---

@@ -134,6 +134,12 @@
            structured grammar layers use those role vectors for all transform
            choosers. Unused centroids decay (natural collapse). Default true. -->
       <xs:element name="categoryCodebook" type="xs:boolean" minOccurs="0"/>
+      <!-- Online category collapse: run participation.learned_collapse over the
+           live grammar at category-codebook enable time, maintaining the
+           smaller mutually-exclusive category set the grammatical operations
+           mandate. Inspection-only for now (rule choice unchanged). Default
+           false. -->
+      <xs:element name="categoryCollapse" type="xs:boolean" minOccurs="0"/>
       <!-- Legacy/direct LiftLayer adverb helper flag. The live AdverbLayer
            grammar op force-builds the same zero-init eigenmodifier; this knob
            only affects ordinary LiftLayer instances. When true for plain

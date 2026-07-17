@@ -169,12 +169,8 @@ mapping (and the trust-sign-as-vedana / luminosity-as-joy reading of `LTM`) is i
 > - **LBG-style SS codebook splitting.** Gray (1990) EMA + per-row
 >   variance tracking; rows whose running variance exceeds a
 >   threshold split along the top-variance eigendirection.
->
-> See [doc/old/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md](old/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md)
-> for the consolidated rationale.
 
-> **Status (2026-05-27):** the **substrate refactor** has landed end-to-end
-> ([doc/old/2026-05-26-two-loop-pi-sigma-substrate.md](old/2026-05-26-two-loop-pi-sigma-substrate.md)).
+> **Status (2026-05-27):** the **substrate refactor** has landed end-to-end.
 > PS is a single-arg input processor (synthesis front end + sigma fold). CS is a STM container +
 > grammatical CPU (no atomic forward fold; sigma_percept retired). SS owns
 > the unified word lexicon codebook with paired (orth, semantic) rows. The
@@ -196,9 +192,8 @@ CS = ConceptualSpace, SS = SymbolSpace).
 
 ### A. Symbolic weights (the two-phase forward; reworked 2026-07-02, forward composition superseded 2026-07-10)
 
-**Implemented 2026-07-02** (doc/plans/2026-07-02-two-phase-loops-sparse-relation.md,
-superseding the forward-transform parts of
-2026-07-02-sparse-layer-conceptual-embedding.md) as a dedicated
+**Implemented 2026-07-02**, superseding the forward-transform parts of the
+prior sparse-layer conceptual-embedding design, as a dedicated
 **`SparseLayer`** (`bin/Layers.py`), NOT a SigmaLayer option: SigmaLayer's
 atanh-entry contract expects logit-domain codes in $[-1, 1]$, while these
 maps consume *presences/activations* -- a different input domain deserves its
@@ -278,8 +273,7 @@ the caps fall back to the pre-rev-2 `(n_snap, n_pool)` 50/50 split
 (`n_snap = max(1, N // 2)`), a fossil of the superseded design below.
 
 > **Historical note (forward composition superseded 2026-07-10).** The v3
-> iterated-symbolic-loop design (landed 2026-07-03,
-> [2026-07-02-iterated-symbolic-loop.md](plans/2026-07-02-iterated-symbolic-loop.md))
+> iterated-symbolic-loop design (landed 2026-07-03)
 > ran the store as an ITERATED WAVE with an additive source term every
 > step, $a^{i+1} = \tanh(W [a^i \mid 1] + s)$, $i = 0..K{-}1$, over a row
 > space split 50/50 into a SNAP block (rows $[0, n_{\text{snap}})$,
@@ -288,9 +282,8 @@ the caps fall back to the pre-rev-2 `(n_snap, n_pool)` 50/50 split
 > `MM_sparse_concept` found the wave DARK end-to-end -- sign-then-clamp
 > annihilation at the order-0 rectifier, scale-blindness between the
 > settled field and the codebook, and a capacity gap where `<nVectors>`
-> never reached the per-stage store --
-> [2026-07-10-conceptual-wave-ff-pyramid-design.md](plans/2026-07-10-conceptual-wave-ff-pyramid-design.md)
-> "Why". Rev 2's correction: the concept base is the 8-tile corpus-callosum
+> never reached the per-stage store (the dual-towers rev-2 design's
+> "Why"). Rev 2's correction: the concept base is the 8-tile corpus-callosum
 > frame, not the codebook inventory, so attention is a top-K taper over
 > that frame rather than a settling recurrence -- replacing the wave with
 > the feedforward pyramid above closes the darkness (no trivial fixed
@@ -338,9 +331,8 @@ does not exist in the current codebase (zero grep hits). It was the KRIPKE
 grounded/ungrounded reading of the v3 iterated wave, in two runs (source-driven,
 then source-released) -- a diagnostic over settling dynamics that the
 feedforward pyramid does not have. The design pass that replaced the wave
-accepted the loss outright ("the wave was dark anyway,"
-[2026-07-10-conceptual-wave-ff-pyramid-design.md](plans/2026-07-10-conceptual-wave-ff-pyramid-design.md)
-"Theory"). The posture on cycles it used to report stands as a design
+accepted the loss outright ("the wave was dark anyway," per the rev-2
+design's "Theory"). The posture on cycles it used to report stands as a design
 statement even without the probe: loops are a documented FACT -- of
 un-ramsified taxonomies and of human minds -- and nothing in the current
 codebase observes or damps them at runtime. Solutions are invited -- for
@@ -370,10 +362,7 @@ stored structure that `resolve_identities` never collapses (only ties
 between concrete raw codes resolve away). Sequencing depth under strict
 ramsification TRUNCATED the chain's weighted reading (same-order link
 references were dropped at the order cap) -- the defect that motivated the
-successor design
-([2026-07-02-iterated-symbolic-loop.md](plans/2026-07-02-iterated-symbolic-loop.md),
-landed 2026-07-03; execution plan
-[2026-07-03-iterated-symbolic-loop-execution.md](plans/2026-07-03-iterated-symbolic-loop-execution.md)),
+successor design (the iterated-symbolic-loop, landed 2026-07-03),
 which FIXES it: iteration over the one untyped square `ConceptualAttentionLayer`
 replaces stratification, so a link of any order simply arrives one rung
 later (originally a wave hop, now a feedforward pyramid rung -- the
@@ -665,8 +654,7 @@ are perceptual, but there is no shared intermediate base class. A thin
 `PerceptualSpace(Space)` base briefly existed (holding no params/submodules;
 only `NULL_PERCEPT_KEY` and isinstance sites) but was **removed 2026-07-10**
 as part of the dual-towers rev-2 pyramid rework
-([2026-07-10-conceptual-wave-ff-pyramid-design.md](plans/2026-07-10-conceptual-wave-ff-pyramid-design.md)
-decision 3): PS/WS became symmetric duals with the same `forward(in_sub,
+(decision 3): PS/WS became symmetric duals with the same `forward(in_sub,
 CS_out)` signature instead. At the corpus callosum, objects are analysed
 and synthesized by sending them back through the towers — wholes get
 split, parts get chunked. In symbolic "mode" the objects sent back are
@@ -676,8 +664,7 @@ the referent) or a *symbol* (an unrelated version of the referent, of
 much lower dimensionality). The freed name `SymbolSpace` was
 **reintroduced 2026-06-19** with new semantics — it is now the
 grammar/word space-role (formerly `WordSpace` / `WordSubSpace`, abbrev `ss`;
-the WholeSpace stream is now `ws`). See the full rename mapping in
-`doc/old/2026-06-19-handoff.md`.
+the WholeSpace stream is now `ws`).
 
 Gated `<mereologyRaise>` (default false, byte-identical off; the cross-tower
 binding is `ConceptualSpace._autobind_cross_tower`, the part/whole-ratio
@@ -692,8 +679,7 @@ is bridged by a **second-order meta-object** (synthesized in PartSpace, outside
 `.where`/`.when`: the MetaSymbol). The correctness signal is the **part/whole
 ratio** (many-parts$\to$one-whole = under-analysed; one-part$\to$one-whole = over-analysed),
 which requests further $\sigma$-synthesis / $\pi$-analysis in the offending `.where` — and is
-the principled fix for the MM_20M mean-collapse. Full design:
-[doc/old/mereological-order-raising.md](old/mereological-order-raising.md).
+the principled fix for the MM_20M mean-collapse.
 
 ### Spaces
 
@@ -737,8 +723,7 @@ higher-order whole via `synthesize_higher_order` (member edge values from
 the candidate statistics, top context concepts as weighted `sym_part`
 intent), which then competes in the pyramid like any other row.
 Re-support strengthens (Hebbian) instead of re-minting; unsupported
-wholes decay and retire. See
-doc/plans/2026-07-12-attention-promotion-execution.md.
+wholes decay and retire.
 
 See [Spaces.md Section "Sigma / Pi ownership"](Spaces.md#sigma-pi-ownership)
 for the cognitive rationale and the migration trail.
@@ -827,8 +812,7 @@ abstraction. Each maps to a knob (or, for the first, to the folds themselves):
    which WholeSpace analyses top-down). Optionally (`<mereologyRaise>`),
    perception builds a meronymic lattice over the towers and **raises
    abstraction order** as attention requires — see
-   [Mereology.md $\to$ Order-raising](Mereology.md) and
-   [doc/old/mereological-order-raising.md](old/mereological-order-raising.md).
+   [Mereology.md $\to$ Order-raising](Mereology.md).
 
 2. **Subsymbolic order** (`<subsymbolicOrder>`) — *iterating* the folds:
    codes are passed back to PartSpace / WholeSpace across `subsymbolicOrder`
@@ -847,9 +831,8 @@ abstraction. Each maps to a knob (or, for the first, to the folds themselves):
    > order; a *discontiguous* extent $\to$ **raise order** (another $\sigma$/$\pi$ fold, lifting
    > out of `.where`/`.when`); a *zero* `.where` $\to$ null. The number of contiguous
    > runs in a whole's `.where` *is* its part/whole ratio, so the same read also
-   > routes integrate-vs-disintegrate ($\to$PartSpace $\sigma$ vs $\to$WholeSpace $\pi$). See
-   > [doc/old/mereological-order-raising.md](old/mereological-order-raising.md)
-   > "The three-aspect loop". As of 2026-06-16 the contiguity read has its
+   > routes integrate-vs-disintegrate ($\to$PartSpace $\sigma$ vs $\to$WholeSpace $\pi$) — this is
+   > the three-aspect loop described above. As of 2026-06-16 the contiguity read has its
    > substrate: `.where` is an **endpoint-sum bracket** `[start, end]`
    > (`WhereEncoding.decode_span`), so extent and gaps are read directly off a
    > code (a zero-extent instant vs a span); see [doc/Spaces.md](Spaces.md).
@@ -869,15 +852,14 @@ the relational pump, and `serial` selects the serial grammatical loop over
 words.
 
 > **Current order semantics.** This section supersedes the older mode-selector
-> wording in [doc/old/orders.md](old/orders.md). The three order axes now have
+> wording. The three order axes now have
 > separate semantics, bounds, and composition rules:
 >
 > - **`subsymbolicOrder`** — the **analysis/synthesis refinement-pass count and
 >   the area of attention**. `T` parallel CS$\to$PS/WS iterations; each pass
 >   *refines* (contiguous `.where`) or *raises* (discontiguous), and attention
 >   scopes via a `.where` on the dual-input SECOND ARGUMENT (the top-down WS$\to$PS
->   handoff, gated `<mereologyRaise>`; see
->   [mereological-order-raising.md](old/mereological-order-raising.md)). The
+>   handoff, gated `<mereologyRaise>`). The
 >   serial-word reading supplies word `.where`s through the **same** channel.
 > - **`symbolicOrder`** — the **relational pump** budget. It spreads activation through the relation
 >   graph to surface *higher-order* (relations-of-relations) features that have
@@ -897,7 +879,7 @@ words.
 > leaves are words). `syntacticOrder` **layers over** the serial traversal
 > loop (it bounds depth; it does not replace the parallel-vs-serial switch).
 >
-> **Where this is headed (historical design note in [orders.md §6](old/orders.md)):** the three
+> **Where this is headed (historical design note):** the three
 > orders become **pump counts** over one connectionist attention substrate — a
 > cumulative priming hierarchy (mereological entries $\to$ relations/concepts $\to$
 > higher-order, each seeing all below) where reading is a learned `.where`
@@ -978,8 +960,7 @@ byte-exact. `valid_mask: [B, K]` handles partial-fill tails via NULL-padding.
 **Compute-brick contract.** No `.item()`, no `.tolist()`, no Python
 conditional on a tensor value, no GPU$\to$host copy inside `runBatch`. The
 chart's residual `.tolist()` calls retired with the `Chart` class itself in
-the substrate refactor. The historical host-sync audit is preserved in
-[the vectorization handoff](old/2026-04-27-brick-vectorization-and-legacy-removal-handoff.md).
+the substrate refactor.
 
 ### Two-File Architecture
 

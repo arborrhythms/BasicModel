@@ -29,13 +29,6 @@ PDFOPTS := --pdf-engine=xelatex \
 
 # Ordered list of doc chapters for PDF generation
 PDF_CHAPTERS := README.md  doc/Installation.md doc/Architecture.md doc/Componentization.md doc/BasicModel.md doc/Spaces.md doc/STM.md doc/Language.md doc/Mereology.md doc/Logic.md doc/Reasoning.md doc/Training.md doc/Ergodic.md doc/MachineMinds.md doc/Params.md
-MOC7_POSTER_SOURCE := doc/moc7_poster.md
-MOC7_POSTER_BUILDER := doc/build_moc7_poster.mjs
-MOC7_POSTER_XLSX := doc/moc7_poster.xlsx
-NODE ?= node
-# Prefer a project install; Codex supplies the fallback runtime used to author
-# and verify this workbook. Override when artifact-tool lives elsewhere.
-ARTIFACT_TOOL_NODE_MODULES ?= $(if $(wildcard node_modules/@oai/artifact-tool),node_modules,$(HOME)/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules)
 XML1 ?= data/simple.xml
 XML2 ?= data/ergodic-only.xml
 MODEL ?= data/MM_20M_fineweb.xml
@@ -126,7 +119,7 @@ preflight_full : $(VENV_STAMP)
 
 bench : $(VENV_STAMP)
 	@echo "=== Baseline (no env tweaks) ==="
-	PYTHONPATH=bin $(VENV_PYTHON) test/bench_training.py
+	PYTHONPATH=bin $(VENV_PYTHON) test/tools/bench_training.py
 
 # --- Recon fidelity/timing bench (bin/recon_bench.py; doc/plans/2026-07-03-reconstruction-fidelity-execution.md Task 2) ---
 # bench_local pins cpu+eager for reproducibility (MPS is seeded-nondeterministic; the iCloud path space breaks inductor).
@@ -182,20 +175,11 @@ bench_pull :
 
 clean :
 	rm -f BasicModel.pdf
-	rm -f $(MOC7_POSTER_XLSX)
 	rm -rf output/*
 
-doc : BasicModel.pdf $(MOC7_POSTER_XLSX)
+doc : BasicModel.pdf
 
 
 TITLE := Basic Model
 BasicModel.pdf : $(PDF_CHAPTERS)
 	$(MAKE_PDF) -o $@ $^
-
-$(MOC7_POSTER_XLSX) : $(MOC7_POSTER_SOURCE) $(MOC7_POSTER_BUILDER)
-	@test -d "$(ARTIFACT_TOOL_NODE_MODULES)" || { \
-		echo "@oai/artifact-tool not found; set ARTIFACT_TOOL_NODE_MODULES" >&2; \
-		exit 1; \
-	}
-	NODE_PATH="$(ARTIFACT_TOOL_NODE_MODULES)" "$(NODE)" \
-		$(MOC7_POSTER_BUILDER) $(MOC7_POSTER_SOURCE) $@

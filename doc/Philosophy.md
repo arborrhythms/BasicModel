@@ -3,8 +3,7 @@
 This document maps the model's machinery onto three philosophical accounts
 of cognition: Kant's analysis/synthesis pair, Ramsey's treatment of
 theoretical structure, and Buddhist epistemology (pramana theory). The
-through-line is the corrected analysis/synthesis orientation
-(doc/old/2026-06-08-analysis-synthesis-dual-input.md, rev. 2026-06-09):
+through-line is the corrected analysis/synthesis orientation:
 
 ```text
 WholeSpace (SS)                  PartSpace (PS)
@@ -107,9 +106,7 @@ conceptual construction, habit, and afflictive projection, so the mind
 no longer meets the object simply as it appears, but through an
 overlay of interpretation.
 
-The architecture realizes this distinction structurally
-(doc/old/MeronomySpec.md; doc/old/GrammarOpsPass.md §6c --- the section
-numbering lives only in that archived doc):
+The architecture realizes this distinction structurally:
 
 - **The first moment is the parallel prelude.** Percepts cross the
   corpus callosum **nameless** — the interface law (spec §3) factors

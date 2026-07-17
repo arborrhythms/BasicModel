@@ -14,11 +14,13 @@ import torch
 _project = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(_project, "bin"))
 
-from Layers import (
+from Legacy import (
     AreaLayer,
     IsaPartLayer,
-    GRAMMAR_LAYER_CLASSES,
     LuminosityLayer,
+)
+from Layers import (
+    GRAMMAR_LAYER_CLASSES,
     area_op,
     isa_part_op,
     luminosity_op,
@@ -115,13 +117,13 @@ class TestSTEWrapper(unittest.TestCase):
 class TestIntrospectionLayers(unittest.TestCase):
     """Layer-wrapper classes plug into the chart via GRAMMAR_LAYER_CLASSES."""
 
-    def test_layer_classes_registered(self):
-        for name, cls in [('area', AreaLayer),
-                          ('luminosity', LuminosityLayer),
-                          ('isaPart', IsaPartLayer)]:
-            self.assertIn(name, GRAMMAR_LAYER_CLASSES,
-                          f"{name!r} missing from GRAMMAR_LAYER_CLASSES")
-            self.assertIs(GRAMMAR_LAYER_CLASSES[name], cls)
+    def test_layer_classes_parked_in_legacy(self):
+        # These ops were parked in bin/Legacy.py (2026-07-17): documented-
+        # dormant, dispatched by no live grammar. They must NOT be in the
+        # live registry; revival re-registers them in GRAMMAR_LAYER_CLASSES.
+        for name in ('area', 'luminosity', 'isaPart'):
+            self.assertNotIn(name, GRAMMAR_LAYER_CLASSES,
+                             f"{name!r} should be parked in Legacy, not live")
 
     def test_arity_metadata(self):
         self.assertEqual(AreaLayer.arity, 1)

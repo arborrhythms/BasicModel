@@ -64,8 +64,7 @@ language layer composes these ordered meanings according to typed grammar.
 > `Ops.disjunctionReverse` / `Ops.conjunctionReverse`. The chart
 > reverse / signal-router dispatch (`bin/Language.py::unreduce()`)
 > passes `basis=space_role_basis` at the call site; no back-ref is stored
-> on the layer. See
-> [doc/old/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md](old/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md).
+> on the layer.
 
 > **Codebook IS the meronymic structure.** The standalone
 > `MereologicalTree` sidecar that formerly stored explicit parent /
@@ -85,7 +84,7 @@ language layer composes these ordered meanings according to typed grammar.
 Parthood is the single fundamental operation. Every other mereological
 relation is defined in terms of it.
 
-> **Terminology (per `doc/old/2026-06-21-terminology-percepts-concepts-symbols.md`).**
+> **Terminology.**
 > Below, $A, B$ are **percept** vectors (dimensionally-embedded codes in the
 > `PartSpace`/`WholeSpace` codebooks); `part`/`whole`/`equal` are geometric
 > relations over those percepts. "concept" is reserved for a `ConceptualSpace`
@@ -276,8 +275,7 @@ XML knobs (under WholeSpace):
 
 ## Order-raising (building the meronymic lattice)
 
-Gated behind `<mereologyRaise>` (default off $\to$ byte-identical). Full design +
-code map: [doc/old/mereological-order-raising.md](old/mereological-order-raising.md).
+Gated behind `<mereologyRaise>` (default off $\to$ byte-identical).
 
 > **Terminology note.** The cross-tower link that ties one part-percept to one
 > whole-percept by reference is a **concept** (a `ConceptualSpace` relation);
@@ -720,8 +718,7 @@ Implementation references:
   it): [`bin/Meronomy.py`](../bin/Meronomy.py)
 - presence and complement geometry:
   [Spaces.md](Spaces.md#percept-geometry-positive-unit-hypercube)
-- conceptual situating:
-  [conceptual-similarity-space plan](plans/2026-06-23-conceptual-similarity-space.md)
+- conceptual situating: conceptual-similarity-space plan
 
 **Same module, different topic.** `bin/Mereology.py` — home to the
 join/meet/projection primitives above — also carries the unrelated

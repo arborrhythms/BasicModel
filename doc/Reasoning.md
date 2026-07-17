@@ -8,8 +8,7 @@
 > `<codebook>none</codebook>` on WholeSpace the recommender has no
 > rows to walk and falls back to the lossy `(parent, parent)`
 > pseudo-inverse — degrading the reasoning loop's structural recovery
-> on multi-stage chart parses. See
-> [doc/old/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md](old/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md).
+> on multi-stage chart parses.
 
 Truth-aware model methods plus the query-reasoning helpers in
 `bin/reasoning.py`: `QuerySpec`, `TruthGroundedReasoner`, `NeuralToolUser`,
@@ -33,8 +32,7 @@ evidence.
 > non-dimensionally-embedded references emitted as `symbolSum` — not the
 > ConceptualSpace part$\leftrightarrow$whole relation table (those are *concepts*) and not
 > the dimensionally-embedded perceptual content of PartSpace/WholeSpace
-> (those are *percepts*: part-percepts and whole-percepts). See
-> [doc/old/2026-06-21-terminology-percepts-concepts-symbols.md](old/2026-06-21-terminology-percepts-concepts-symbols.md).
+> (those are *percepts*: part-percepts and whole-percepts).
 
 The symbol dimension is statically partitioned across conceptual orders
 using geometric decay. Each order writes only to its slice of `symbolSum`,
@@ -163,9 +161,8 @@ entry point. Inference query routing is enabled when `reasoningIterations > 0`.
 
 ## The Thinking Kernel
 
-`bin/thinking.py` implements the runtime-enforced execution loop of
-[doc/plans/thinking_kernel_spec.md](plans/thinking_kernel_spec.md) over the
-reasoner's hard tools (gate: `<architecture><thinkingBudget>`; absent/0 = off,
+`bin/thinking.py` implements the Thinking Kernel's runtime-enforced execution
+loop over the reasoner's hard tools (gate: `<architecture><thinkingBudget>`; absent/0 = off,
 byte-identical; positive N = the op budget of a top-level `think()` frame):
 
 1. `TruthInterval` — signed `[lower, upper]` contained in `[-1, 1]` + trust + provenance;
@@ -287,8 +284,7 @@ object grammar plus spatiotemporal contiguity. Every `conjunction` /
 `when()` support continuous. Differs from serial mode --- may reduce over all
 active percepts at once; rejects scattered object fields, not multi-percept
 fields. See
-[Philosophy.md](Philosophy.md#shamatha-speech-and-single-pointedness) and
-[plans/2026-04-28-shamatha-speech-contiguity-handoff.md](old/2026-04-28-shamatha-speech-contiguity-handoff.md).
+[Philosophy.md](Philosophy.md#shamatha-speech-and-single-pointedness).
 
 ## Testing
 

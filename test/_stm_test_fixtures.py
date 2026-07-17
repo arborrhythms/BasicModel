@@ -11,18 +11,10 @@ the retired `typed_stack.TypedStack` + `stm_driver.STMDriver` +
     ``_ref_id`` / ``_depth``, plus ``push`` / ``pop`` / ``top`` /
     ``reduce_admissibility``).
 
-  * ``make_driver(typed_stack, rule_signatures, payload_dim)`` -> a
-    ``ShortTermMemory`` Layer with the scorer initialised. Exposes
-    ``shift`` / ``reduce_step`` / ``reduce_step_soft`` /
-    ``train_scorer_step`` / ``_score_reduce`` taking a SymbolSubSpace
-    (the ``typed_stack`` arg). Mirrors the retired ``STMDriver`` API
-    where the driver was constructed once and methods looked up the
-    typed stack from ``self.typed_stack``; here we hold the
-    ``word_subspace`` reference for backward-compat.
-
-  * ``make_scorer(payload_dim, n_rules)`` -> the private
-    ``_RuleScorer`` (`bin/Layers.py`) created standalone. Used by tests
-    that exercise the scorer's forward shape directly.
+The ``STMDriver`` / ``_RuleScorer`` shift-reduce scorer surface these
+fixtures used to wrap was deleted in the 2026-07-17 cleanup (Tier-2 item 8;
+it had zero production callers). Only the live typed-stack storage factory
+remains.
 """
 import sys
 from pathlib import Path
@@ -85,79 +77,3 @@ def make_typed_stack(batch=1, max_depth=8, dim=4):
     return ss
 
 
-class _DriverWrapper:
-    """Thin compatibility wrapper around ``ShortTermMemory`` that holds a
-    reference to the ``word_subspace`` so legacy callers can do
-    ``driver.shift(b, ...)`` / ``driver.reduce_step_soft(b)`` without
-    threading the word_subspace through every call.
-
-    The retired ``STMDriver`` held its ``typed_stack`` as an attribute;
-    the post-refactor ``ShortTermMemory.shift`` takes ``word_subspace``
-    as an explicit argument. This wrapper preserves the old call surface
-    for tests while the underlying implementation lives on the Layer.
-    """
-
-    def __init__(self, stm_layer, typed_stack, rule_signatures):
-        self._stm = stm_layer
-        self.typed_stack = typed_stack
-        # Mirror ``rule_signatures`` so consumers like
-        # ``driver.rule_signatures`` and ``driver.scorer`` keep working.
-        self.rule_signatures = list(rule_signatures)
-
-    @property
-    def scorer(self):
-        return self._stm.scorer
-
-    def shift(self, b, payload, *, category, order, ref_id):
-        self._stm.shift(self.typed_stack, b, payload,
-                         category=category, order=order, ref_id=ref_id)
-
-    def reduce_step(self, b):
-        return self._stm.reduce_step(self.typed_stack, b)
-
-    def reduce_step_soft(self, b):
-        return self._stm.reduce_step_soft(self.typed_stack, b)
-
-    def _score_reduce(self, b):
-        return self._stm._score_reduce(self.typed_stack, b)
-
-    def parameters(self):
-        return self._stm.scorer.parameters()
-
-
-def make_driver(typed_stack, rule_signatures, payload_dim=None):
-    """ShortTermMemory + initialised scorer wrapped in a backward-compat
-    object that pins the SymbolSubSpace reference (mirrors the retired
-    ``STMDriver(typed_stack, rule_signatures, scorer)`` constructor).
-    """
-    from Layers import ShortTermMemory
-    if payload_dim is None:
-        payload_dim = int(getattr(typed_stack, 'dim', 0))
-    stm = ShortTermMemory(
-        batch=1, capacity=int(getattr(typed_stack, 'max_depth', 8)),
-        concept_dim=int(payload_dim))
-    stm.init_scorer(rule_signatures=rule_signatures,
-                    payload_dim=int(payload_dim))
-    return _DriverWrapper(stm, typed_stack, rule_signatures)
-
-
-def make_scorer(payload_dim, n_rules, hidden_dim=None):
-    """The private ``_RuleScorer`` (in bin/Layers.py) standalone."""
-    from Layers import _RuleScorer
-    return _RuleScorer(
-        payload_dim=int(payload_dim), n_rules=int(n_rules),
-        hidden_dim=hidden_dim)
-
-
-def make_train_step():
-    """Returns a ``train_step(driver, input_vectors, target_rule_ids,
-    snap_fn, optimizer=None)`` callable matching the retired
-    ``stm_trainer.train_step`` signature. Internally dispatches to
-    ``ShortTermMemory.train_scorer_step``.
-    """
-    def _train(driver, input_vectors, target_rule_ids, *,
-               snap_fn, optimizer=None):
-        return driver._stm.train_scorer_step(
-            driver.typed_stack, input_vectors, target_rule_ids,
-            snap_fn=snap_fn, optimizer=optimizer)
-    return _train

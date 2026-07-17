@@ -30,32 +30,11 @@ if _BIN not in sys.path:
 if _TEST not in sys.path:
     sys.path.insert(0, _TEST)
 
-from _stm_test_fixtures import make_typed_stack, make_driver
+from _stm_test_fixtures import make_typed_stack
 
-
-def test_stm_driver_is_nn_module():
-    """``ShortTermMemory`` (the STM driver Layer) is an ``nn.Module`` so
-    its registered scorer's parameters are reachable via the standard
-    ``parameters()`` walk."""
-    ts = make_typed_stack(batch=1, max_depth=4, dim=4)
-    driver = make_driver(ts, rule_signatures=[
-        {'lhs_category': 'S', 'lhs_order': 3,
-         'rhs_categories': ['S'], 'rhs_orders': [3],
-         'op_name': 'not', 'order_delta': 0}], payload_dim=4)
-    assert isinstance(driver._stm, nn.Module)
-
-
-def test_stm_driver_parameters_include_scorer_params():
-    """``ShortTermMemory.parameters()`` walks into the registered scorer."""
-    ts = make_typed_stack(batch=1, max_depth=4, dim=4)
-    driver = make_driver(ts, rule_signatures=[
-        {'lhs_category': 'S', 'lhs_order': 3,
-         'rhs_categories': ['S'], 'rhs_orders': [3],
-         'op_name': 'not', 'order_delta': 0}], payload_dim=4)
-    driver_param_ids = {id(p) for p in driver._stm.parameters()}
-    scorer_param_ids = {id(p) for p in driver.scorer.parameters()}
-    assert scorer_param_ids
-    assert scorer_param_ids.issubset(driver_param_ids)
+# The shift/reduce rule-scorer (STMDriver / _RuleScorer) these two tests
+# exercised was deleted in the 2026-07-17 cleanup (Tier-2 item 8; zero
+# production callers). The live typed-stack substrate tests below remain.
 
 
 def test_typed_stack_is_nn_module():

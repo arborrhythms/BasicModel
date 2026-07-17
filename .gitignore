@@ -1,3 +1,8 @@
+# Python bytecode caches (global — supersedes the per-dir rules below).
+__pycache__/
+*.pyc
+# Scratch/working dir.
+tmp/
 bin/__pycache__/*
 test/__init__.py
 test/__pycache__/*

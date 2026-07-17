@@ -14,12 +14,10 @@ untyped context vectors.
 > (`WholeSpace.insert_operations`, wired into `SymbolSubSpace.__init__`)
 > and resolved as a soft superposition over the operator-prefixed parse
 > tree; the STM idea slots hold only **combined meanings** -- an operator
-> defines *how* meanings combine, contributing none of its own. See
-> [doc/old/2026-05-30-subsymbolic-analyzer-terminal-emitter.md](old/2026-05-30-subsymbolic-analyzer-terminal-emitter.md).
+> defines *how* meanings combine, contributing none of its own.
 
 > **Status (2026-05-30):** new chapter for the STM serial / parallel
-> modes work
-> ([doc/old/2026-05-29-stm-serial-parallel-modes.md](old/2026-05-29-stm-serial-parallel-modes.md)).
+> modes work.
 > Documents the per-batch STM buffer, the predict-then-perceive cadence
 > (serial and parallel), the attentional-filtering regime (serial runs
 > **with** attention by design — the old serial-vs-attention guard was

@@ -22,11 +22,10 @@ import torch
 _project = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_project / "bin"))
 
+from Legacy import CopyLayer, SwapLayer  # noqa: E402  (parked 2026-07-17)
 from Layers import (  # noqa: E402
-    CopyLayer,
     GRAMMAR_LAYER_CLASSES,
     Ops,
-    SwapLayer,
     _DEFAULT_SUBSYMBOLIC_SIGMA,
     _gaussian_kernel_overlap,
     ste_answer,
@@ -220,9 +219,11 @@ class TestCopyLayer(unittest.TestCase):
         self.assertTrue(torch.equal(left, parent))
         self.assertTrue(torch.equal(right, parent))
 
-    def test_copy_layer_grammar_registration(self):
-        self.assertIn('copy', GRAMMAR_LAYER_CLASSES)
-        self.assertIsInstance(GRAMMAR_LAYER_CLASSES['copy'](), CopyLayer)
+    def test_copy_layer_parked_in_legacy(self):
+        # 'copy' was parked in bin/Legacy.py (2026-07-17): a retained
+        # utility, but dispatched by no live grammar, so it is no longer
+        # in the live registry.
+        self.assertNotIn('copy', GRAMMAR_LAYER_CLASSES)
 
     def test_swap_and_copy_dual(self):
         a = torch.tensor([[1.0, 2.0]])
@@ -230,15 +231,13 @@ class TestCopyLayer(unittest.TestCase):
         self.assertTrue(torch.equal(SwapLayer().forward(a, b), b))
         self.assertTrue(torch.equal(CopyLayer().forward(a, b), a))
 
-    def test_introspection_layers_registered(self):
-        # The 2026-05-12 conceptual-introspection refactor restored
-        # ``area`` / ``luminosity`` / ``isaPart`` as first-class
-        # GrammarLayers (see test_conceptual_introspection.py).  The
-        # measures still live on the Mereology mixin; the layers wrap
-        # them as chart-dispatch entry points.
-        self.assertIn('area', GRAMMAR_LAYER_CLASSES)
-        self.assertIn('luminosity', GRAMMAR_LAYER_CLASSES)
-        self.assertIn('isaPart', GRAMMAR_LAYER_CLASSES)
+    def test_introspection_layers_parked_in_legacy(self):
+        # ``area`` / ``luminosity`` / ``isaPart`` were parked in
+        # bin/Legacy.py (2026-07-17): documented-dormant, no live grammar
+        # dispatches them. The measures still live on the Mereology mixin;
+        # the wrapper layers are revivable from Legacy.
+        for name in ('area', 'luminosity', 'isaPart'):
+            self.assertNotIn(name, GRAMMAR_LAYER_CLASSES)
 
 
 class TestSTEAnswer(unittest.TestCase):

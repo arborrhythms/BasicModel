@@ -18,8 +18,7 @@ latent behaviors distributed across heads. Their operands are tied back to the
 Formal Concept Analysis side of the model through concept order, role
 participation, and part/whole support in the codebooks.
 
-> **2026-06-02 deltas (subsymbolic analyzer + terminal emitter).** Plan:
-> [doc/old/2026-05-30-subsymbolic-analyzer-terminal-emitter.md](old/2026-05-30-subsymbolic-analyzer-terminal-emitter.md).
+> **2026-06-02 deltas (subsymbolic analyzer + terminal emitter).**
 >
 > - **PS/SS grammar sections.** A `.grammar` file may nest its
 >   `<compose>`/`<generate>` under `<PartSpace>` and
@@ -87,7 +86,6 @@ participation, and part/whole support in the codebooks.
 > - `MetaLayer` was renamed to `SymbolizeLayer` (no semantic change).
 > - Word-mode parse appends a `\x00` null sentinel after the words
 >   slab for explicit end-of-sequence on the forward path.
-> - See [doc/old/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md](old/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md).
 
 ## Current Parser Surface
 
@@ -200,8 +198,7 @@ The per-operator contracts, as implemented (2026-07-14; every op's
 means the basis-threaded codebook walk (`Ops.conjunctionReverse` /
 `Ops.disjunctionReverse` $\to$ `Ops._binary_op_recommend`); "snap"
 means the op-respecting dot-metric word snap
-(`snap=True` $\to$ `Ops.word_pair_snap` — see
-`doc/plans/2026-07-14-signed-space-snap-design.md`). Ops with no
+(`snap=True` $\to$ `Ops.word_pair_snap`). Ops with no
 faithful inverse raise (`raise_no_inverse`, the fail-loud contract) —
 fabricating a split would corrupt the reconstruction.
 
@@ -413,9 +410,7 @@ none. The live unification is `reasoning.py`'s `_SURFACE_TO_KIND` table
 `isPart`, and `queryPart` alike — to the same `KIND_IS_PART` reduction
 kind (and symmetrically `equal` / `isEqual` / `queryEqual` $\to$
 `KIND_IS_EQUAL`). The operator codebook, soft
-superposition, and participation clustering are live and tested. See the
-status blocks in
-[doc/old/2026-06-02-unified-subsymbolic-analyzer-and-role-collapsed-grammar.md](old/2026-06-02-unified-subsymbolic-analyzer-and-role-collapsed-grammar.md).
+superposition, and participation clustering are live and tested.
 
 ### Participation Categories as the Chooser's Syntactic-Category Context
 
@@ -423,7 +418,7 @@ status blocks in
 perception, attached to the **MetaSymbol**, and threaded into the placement
 chooser as grammatical context.)*
 
-> **Terminology note** (per `doc/old/2026-06-21-terminology-percepts-concepts-symbols.md`):
+> **Terminology note**:
 > the CS part$\leftrightarrow$whole relation table is the **Concept codebook** (concepts), not a
 > "symbol table"; WholeSpace holds **whole-percepts**; only `SymbolSpace` / `MetaSymbol`
 > things are **symbols**. Code identifiers (e.g. `subspace.what`, `_sym_*`) are
@@ -592,8 +587,7 @@ section 5.6 for the full mapping.
 
 ## Future work: nouns from PartSpace, adjectives from WholeSpace
 
-The signed-space snap
-(`doc/plans/2026-07-14-signed-space-snap-design.md`) models a concrete
+The signed-space snap models a concrete
 noun as an adjective pre-applied to the top domain --- `black(cat($\ldots$))`
 treats "cat" as the same *kind* of function as "black", the later one
 already mapped over $\mathbb{1}$. That modeling choice is probably already

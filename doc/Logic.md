@@ -21,8 +21,7 @@ the order-theoretic reading of concept support and intent, DisCoCat gives the
 typed composition route that builds sentence meanings, and the truth operators
 test or accumulate the resulting propositions.
 
-> **Terminology (2026-06-21; see
-> [doc/old/2026-06-21-terminology-percepts-concepts-symbols.md](old/2026-06-21-terminology-percepts-concepts-symbols.md)).**
+> **Terminology (2026-06-21).**
 > One noun per-space: **percept** = a PartSpace/WholeSpace thing (dimensionally
 > embedded, EXTENSIONAL; *part* = atom / bottom-up $\sigma$, *whole* = property/region
 > / top-down $\pi$ are its two subtypes); **concept** = a ConceptualSpace relation
@@ -260,7 +259,7 @@ $a$ are mean and $R$ max pole masses). Keeping *conflict* (the set splits
 on a proposition) distinct from *ignorance* (the set is silent on it) is
 exactly the degeneracy a scalar $a_P - a_N$ collapse loses.
 
-> **Integration with the meronomy ([doc/old/mereological-order-raising.md](old/mereological-order-raising.md)).**
+> **Integration with the meronomy.**
 > The absolute truth set (propositions, e.g. `cat <= [animal() & orange() &
 > object()]`) and the `RelativeTruthStore` (relations between two ideas, e.g.
 > `[cats] <= [furry]`) are **the same two structures** the corpus callosum needs for

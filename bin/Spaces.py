@@ -19702,6 +19702,27 @@ class WholeSpace(Space):
         # Pending role evidence lives in Language.MetaSymbolCategoryLearner.
         self._category_assign = {}
         self._category_learner = MetaSymbolCategoryLearner(n_roles)
+        # Online category collapse (<categoryCollapse>, default off): run the
+        # participation-driven learned_collapse over the live grammar at enable
+        # time so the model maintains the smaller mutually-exclusive category
+        # set determined by its grammatical operations. Stored for inspection
+        # only here — the rule-choice wiring is unchanged (the chooser still
+        # reads the operator-role context); consuming the collapse in rule
+        # selection is a deliberate follow-up increment.
+        if bool(TheXMLConfig.get("architecture.categoryCollapse", default=False)):
+            try:
+                collapse = grammar.category_collapse(direction="compose")
+            except Exception as e:
+                raise RuntimeError(
+                    "enable_category_codebook: <categoryCollapse> is on but the "
+                    "online learned_collapse failed") from e
+            self._category_collapse = dict(collapse)
+            n_cat = len(set(collapse.values()))
+            TheMessage(
+                f"[categoryCollapse] online collapse: {len(collapse)} symbols "
+                f"-> {n_cat} categories (conflict-free) over the live grammar")
+        else:
+            self._category_collapse = None
         return True
 
     def category_codebook_enabled(self):

@@ -1,9 +1,9 @@
 # The Symbol Firewall
 
-*A governing architectural principle. Source proposal:
-[`doc/old/symbol_firewall.md`](old/symbol_firewall.md). This document is the
-code-anchored, normative version — it states the principle and maps each
-invariant onto the structures that already realize it (or names the gap).*
+*A governing architectural principle. This document is the code-anchored,
+normative version of an earlier source proposal — it states the principle
+and maps each invariant onto the structures that already realize it (or
+names the gap).*
 
 ## Relation to LLMs, Formal Concept Analysis, and DisCoCat
 
@@ -116,8 +116,8 @@ edit, just a different one from the removed residual. The live grammar path for
 the mask/mean mechanism described above is `adverb`, implemented by
 `AdverbLayer` (also its own class, subclassing `LiftLayer`), which force-builds
 the zero-init projection and calls `LiftLayer.apply_adverb`. `<adverbEigEdit>`
-remains only as the legacy direct-`LiftLayer` helper flag. Source proposal:
-[`doc/old/semantic_verb_np_mask_eigenvalue_proposal.md`](old/semantic_verb_np_mask_eigenvalue_proposal.md).
+remains only as the legacy direct-`LiftLayer` helper flag, following an
+earlier source proposal for semantic verb/NP mask eigenvalue edits.
 
 This is the firewall's verb example made real: the same NP participates in
 different computations because different operators activate different

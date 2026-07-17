@@ -30,8 +30,7 @@ treat that as the same thing as `nOutput`.
 > The band is architectural (`canonical_shape`, `bin/architecture.py`):
 > (nWhere=4, nWhen=4) on every interior space (2026-07-09 multi-rung
 > pass), (0, 0) on OutputSpace. The
-> `.where` field is the canonical positional identifier; see
-> [doc/old/2026-05-28-where-keyed-taxonomy.md](old/2026-05-28-where-keyed-taxonomy.md).
+> `.where` field is the canonical positional identifier.
 >
 > 2026-06-16: `.where` is an **endpoint-sum bracket** `[start,
 > end]` (angle = span center, magnitude = extent), the invertible
@@ -81,7 +80,7 @@ sub-elements `<training>` and `<data>` (see below).
 | `reconstructFromIdea` | bool | `false` | Reverse from the idea rather than replaying the forward parse. When true, `reverse()` clears the grammar/routing traces left by comprehension, then asks `SymbolSpace.generate()` to infer a fresh reverse rule path from the supplied idea snapshot. Default off keeps cached-derivation reverse. |
 | `categoryCodebook` | bool | `true` | MetaSymbol participation-category codebook for the role-collapsed grammar: a small role-space `VectorQuantize` initialized with one prototype per labelled grammar role (`op_I1`, `op_I2`, `op_O1`, ...). Unsettled MetaSymbols accumulate bounded temporary role evidence; once mass/confidence/margin/stability thresholds are met, the MetaSymbol commits to one category id and its pending row is discarded. Structured grammar layers use the role context for all `transformChooser` modes: as an input feature for `mlp`, and as a labelled-role score prior for anchordot/default routing. See [Language.md $\to$ Participation Categories](Language.md). |
 | `adverbEigEdit` | bool | `false` | Legacy/direct `LiftLayer` helper flag for the adverb sparse eigenvalue edit. The live `adverb` grammar operator force-builds the same zero-init projection and calls `LiftLayer.apply_adverb`, so ordinary grammar use does not depend on this flag. When enabled for plain `LiftLayer`, an adverb modifies a composed VP by `a2 = atanh(vp) + p_vp * delta_adv`, masked by the VP's own eigen-signature. Default off keeps plain `LiftLayer` byte-identical. |
-| `mereologyRaise` | bool | `false` | Mereological order-raising: perception's autobind hook builds a meronymic lattice over the two towers and raises a higher-order PART when a whole accumulates more than `K_many` parts (abstraction order tracked via the ramsification table; provenance in `part_chain`). Enables the table on the PartSpace + terminal WholeSpace codebooks at build; `subsymbolicOrder` sets the max order. Default off $\to$ no table, no raising (byte-identical). See [doc/old/mereological-order-raising.md](old/mereological-order-raising.md). |
+| `mereologyRaise` | bool | `false` | Mereological order-raising: perception's autobind hook builds a meronymic lattice over the two towers and raises a higher-order PART when a whole accumulates more than `K_many` parts (abstraction order tracked via the ramsification table; provenance in `part_chain`). Enables the table on the PartSpace + terminal WholeSpace codebooks at build; `subsymbolicOrder` sets the max order. Default off $\to$ no table, no raising (byte-identical). |
 | `embeddingPath` | string | (empty) | gensim `KeyedVectors` path. Empty disables embedding load. |
 | `weightsPath` | string | (empty) | Model weights checkpoint path. Empty falls back to `output/<name>.ckpt`. |
 | `maxResponseLength` | int | `4096` | Inference token budget (characters / bytes / tokens). Caps output alongside `InputSpace.nOutput`. |
@@ -277,7 +276,7 @@ multiplicative Pi fold moved to WholeSpace as top-down analysis).
 | `hasAttention` | bool | `false` | DEPRECATED and INERT: the legacy boolean no longer constructs a QKV attention pass; it is kept only as a backward-compat alias. Superseded by `<attention>` (off / primer / second-order / low-rank). |
 | `nonlinear` | bool | `true` | Tanh-bound output to $[-1, 1]$. |
 | `synthesis` | string | `"lexicon"` | Bottom-up union strategy (renamed from `<chunking>`, which is rejected loudly): `lexicon`, `bpe`, `mphf`, `byte` (canonical; `none` is its internal alias), `radix`, `meronomy`. `radix` routes through `RadixLayer`; `meronomy` aliases the radix path with meronomy word-group bookkeeping. `analyse` was removed from PartSpace; top-down cuts live on WholeSpace `<analysis>`. |
-| `butterfly` | bool | — | DEPRECATED per-space alias for the architecture-level `<sigmaPi>` enum (`true` $\to$ `butterfly`, `false` $\to$ `last`). The code default for `<sigmaPi>` is `butterfly`, so the FFT-style element-pair cascade on the PS fold (cross-element mixing on the flattened `[B, N*D]` view) is **ON by default**; configs set `false` to opt out. Required for `MM_xor.xml` convergence. See [doc/old/2026-05-26-two-loop-pi-sigma-substrate.md](old/2026-05-26-two-loop-pi-sigma-substrate.md). |
+| `butterfly` | bool | — | DEPRECATED per-space alias for the architecture-level `<sigmaPi>` enum (`true` $\to$ `butterfly`, `false` $\to$ `last`). The code default for `<sigmaPi>` is `butterfly`, so the FFT-style element-pair cascade on the PS fold (cross-element mixing on the flattened `[B, N*D]` view) is **ON by default**; configs set `false` to opt out. Required for `MM_xor.xml` convergence. |
 | `wordLearning` | int | `2` | Active lexicon-growth mode. `0` = frozen codebook; `>=1` = on first sight of a new word, insert into the lexicon and tag it on the meronomy. Several trained configs override this to `0` or `1`. |
 
 Sigma layer math: $y_j = \tanh(W x + b)$ (the additive/union fold). The

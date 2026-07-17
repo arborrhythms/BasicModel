@@ -42,7 +42,7 @@ reductions rather than only in distributional similarity.
 >   does set `<codebook>none</codebook>`, but that tag is on
 >   `WholeSpace`, not PartSpace. The orthographic Lexicon Embedding
 >   remains live regardless; only the VQ snap on top is retired.
-> - See [doc/old/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md](old/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md).
+> - See the 2026-05-29 clean-stack STM/basis-arg RadixLayer proposal.
 
 The Lexicon's narrative description and distance math have moved into
 [Spaces.md --- Lexicon (Projective Unit Ball)](Spaces.md#lexicon-projective-unit-ball),

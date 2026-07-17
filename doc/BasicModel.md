@@ -162,11 +162,10 @@ index. Repeating the same concept index across entries accumulates its set-like
 definition; recursively nesting relation concepts supplies vine order. See the
 relation-table entry contract in [Architecture.md](Architecture.md#relation-table-entry-contract).
 Where the relation does NOT need order (the word/object meta), the read-out
-is typed intersection, not slot order. See doc/Architecture.md sec A and
-doc/plans/2026-07-02-two-phase-loops-sparse-relation.md; the un-ramsified
-successor (iteration over one untyped square layer, with Kripke groundedness
-as the cycle diagnostic) is sketched in
-doc/plans/2026-07-02-iterated-symbolic-loop.md.
+is typed intersection, not slot order. See doc/Architecture.md sec A; the
+un-ramsified successor (iteration over one untyped square layer, with Kripke
+groundedness as the cycle diagnostic) was sketched separately during earlier
+design work.
 
 ## Symbolic Space
 

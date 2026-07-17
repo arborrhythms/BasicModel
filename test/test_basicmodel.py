@@ -39,6 +39,7 @@ import Models
 import Spaces
 import Language
 import Layers
+import Legacy
 from util import init_device, resolve_device
 
 
@@ -397,39 +398,39 @@ class TestInvertibleSigmaLayer(unittest.TestCase):
 
 class TestQKVAttentionLayer(unittest.TestCase):
     def test_asymmetric_forward_shape(self):
-        layer = Layers.QKVAttentionLayer(nInput=8, nOutput=4, type="asymmetric")
+        layer = Legacy.QKVAttentionLayer(nInput=8, nOutput=4, type="asymmetric")
         x = torch.randn(2, 5, 8).to(Models.TheDevice.get())
         y = layer(x)
         self.assertEqual(y.shape, (2, 5, 4))
 
     def test_symmetric_forward_shape(self):
-        layer = Layers.QKVAttentionLayer(nInput=8, nOutput=4, type="symmetric")
+        layer = Legacy.QKVAttentionLayer(nInput=8, nOutput=4, type="symmetric")
         x = torch.randn(2, 5, 8).to(Models.TheDevice.get())
         y = layer(x)
         self.assertEqual(y.shape, (2, 5, 4))
 
     def test_transformer_forward_shape(self):
-        layer = Layers.QKVAttentionLayer(nInput=8, nOutput=4, nHeads=2, type="transformer")
+        layer = Legacy.QKVAttentionLayer(nInput=8, nOutput=4, nHeads=2, type="transformer")
         x = torch.randn(2, 5, 8).to(Models.TheDevice.get())
         y = layer(x)
         self.assertEqual(y.shape, (2, 5, 4))
 
     def test_transformer_single_object(self):
         """Single-object 3D input [B, 1, D] -> [B, 1, nOut]."""
-        layer = Layers.QKVAttentionLayer(nInput=8, nOutput=4, nHeads=2, type="transformer")
+        layer = Legacy.QKVAttentionLayer(nInput=8, nOutput=4, nHeads=2, type="transformer")
         x = torch.randn(2, 1, 8).to(Models.TheDevice.get())
         y = layer(x)
         self.assertEqual(y.shape, (2, 1, 4))
 
     def test_inline(self):
-        Layers.QKVAttentionLayer.test()
+        Legacy.QKVAttentionLayer.test()
 
 
 class TestMemory(unittest.TestCase):
     def test_mem_update(self):
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", message="FigureCanvasAgg")
-            Layers.Mem.test()  # Runs the built-in test
+            Legacy.Mem.test()  # Runs the built-in test
 
 
 # ---------------------------------------------------------------------------

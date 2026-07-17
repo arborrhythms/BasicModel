@@ -1,5 +1,8 @@
 data/*.ckpt filter=lfs diff=lfs merge=lfs -text
 data/*.kv filter=lfs diff=lfs merge=lfs -text
+data/*.parquet filter=lfs diff=lfs merge=lfs -text
+data/**/*.parquet filter=lfs diff=lfs merge=lfs -text
+data/mnist_test.csv filter=lfs diff=lfs merge=lfs -text
 data/mnist_train.csv filter=lfs diff=lfs merge=lfs -text
 "data/mnist_train 2.csv" filter=lfs diff=lfs merge=lfs -text
 data/mnist_train[[:space:]]2.csv filter=lfs diff=lfs merge=lfs -text

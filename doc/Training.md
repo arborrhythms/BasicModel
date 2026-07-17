@@ -27,7 +27,6 @@
 > - **Supervised output loss restored.** `bin/Models.py::runBatch`
 >   computes MSE on labeled datasets. Unlabeled corpora such as FineWeb
 >   train only through reconstruction/prediction objectives.
-> - See [doc/old/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md](old/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md).
 
 ## Relation to LLMs, Formal Concept Analysis, and DisCoCat
 
@@ -87,10 +86,6 @@ separate global attention gets no reward); that is why prediction is the
 **substrate** here, not the goal — stages 4–5 train the deliberate layer, and the
 stochastic exploration finally earns its keep in stage 5 (search has only a
 distal reward, so it must explore to break symmetry).
-
-> Full design (with per-stage machinery, losses, and prerequisites):
-> `doc/old/training-stages.md`. The grammar-operation inverses stages 1–2 require
-> are enumerated in `doc/old/2026-06-19-grammar-inverses-handoff.md`.
 
 ---
 

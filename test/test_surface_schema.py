@@ -57,11 +57,13 @@ def test_unary_ops_use_unary_affix_template():
 
 
 def test_copy_swap_use_elision_template():
-    """copy / swap are the T5 BINARY_ELISION surface policies (retired from
-    the symbolic grammar, kept as the absorb/emit elision primitives)."""
-    from Language import GRAMMAR_LAYER_CLASSES
-    assert GRAMMAR_LAYER_CLASSES["copy"].surface_schema.template_id == "T5"
-    assert GRAMMAR_LAYER_CLASSES["swap"].surface_schema.template_id == "T5"
+    """copy / swap are the T5 BINARY_ELISION surface policies. They were
+    parked in bin/Legacy.py (2026-07-17) — retired from the live symbolic
+    grammar, kept as the absorb/emit elision primitives — so the schema is
+    now asserted on the Legacy classes, not the live registry."""
+    from Legacy import CopyLayer, SwapLayer
+    assert CopyLayer.surface_schema.template_id == "T5"
+    assert SwapLayer.surface_schema.template_id == "T5"
 
 
 # -- absorb / emit marker codification (Task #4) ----------------------
