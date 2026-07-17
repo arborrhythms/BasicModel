@@ -111,7 +111,17 @@ def test_xor_recon_grads_flow():
         "reconstruction term never carried grad_fn (channel dead?)"
     nz = captured.get("nz", [])
     assert len(nz) > 0, "reconstruction loss has no grad-bearing params"
-    assert "perceptualSpace.subspace.what.W" in nz, nz
+    # Re-scoped (2026-07-16 fold-width unification): the percept codebook
+    # is no longer a D3-trainable param. Pre-change, PS sigma folded the
+    # muxed event INCLUDING the where/when band, so the reverse replay's
+    # band scaffold leaked gradient into sigma/what.W -- and training
+    # could perturb the band the .where ladder decodes byte-exact.
+    # Content-width folds + band passthrough remove that leak; measured
+    # (probe 2026-07-16): D3 grad at the PS event is band-columns-only,
+    # content-column grad exactly zero, what_scale=0.7. The D3 trainable
+    # surface is the reverse-path body (CS/SS layers); assert THAT.
+    assert any("conceptualSpaces." in n or "_model_symbolSpace." in n
+               for n in nz), nz
 
 
 def test_recon_channel_within_decade_of_output():

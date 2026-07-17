@@ -12,7 +12,7 @@ functionality folded into `bin/Layers.py` and `bin/Language.py`.)
 The language layer is the architecture's DisCoCat-facing surface. Like
 Categorical Compositional Distributional semantics, it treats grammar as a typed
 composition discipline over vector meanings: reductions such as lift, lower,
-union, intersection, `part`, and `isEqual` decide how meanings combine. Unlike a
+union, intersection, `part`, and `equal` decide how meanings combine. Unlike a
 typical transformer LLM, these reductions are explicit operators rather than
 latent behaviors distributed across heads. Their operands are tied back to the
 Formal Concept Analysis side of the model through concept order, role
@@ -109,17 +109,25 @@ it once selected is now unconditional. The retired
 
 ## Retired XML Knobs
 
-These XML fields are no longer read by the runtime and should not appear
-in `data/*.xml`:
+`SymbolSpace.chartCompose`, `SymbolSpace.softChartCompose`, and
+`bivectorOutput` are no longer read by the runtime and should not appear
+in `data/*.xml`.
 
-- `SymbolSpace.useGrammar`
-- `SymbolSpace.chartCompose`
-- `SymbolSpace.softChartCompose`
-- `bivectorOutput`
+`SymbolSpace.useGrammar` is a different case: it is **still read**, not
+silently ignored. Its mere presence in a config trips a loud
+`DeprecationWarning` and forces a fallback load of `default.grammar`,
+discarding whatever `<grammar>` file the config actually named
+(`Language.py:1607-1622`). A surviving `<useGrammar>` tag therefore
+silently swaps in the wrong grammar rather than doing nothing — remove
+the tag, don't rely on the fallback.
 
-Grammar mode is derived from the loaded grammar: default-only unary
-`pi` / `sigma` rules derive `useGrammar == "none"` internally; any
-non-default operator rule derives `useGrammar == "all"`.
+Grammar mode is no longer a `useGrammar` string at all; the retired
+`"none"` / `"all"` vocabulary collapsed into one boolean,
+`SymbolSubSpace._grammar_is_default_only`. It is `True` when every
+compose rule is either an implicit passthrough or the default unary
+`pi` / `sigma` substrate fold (no operator grammar loaded), and flips to
+`False` the moment any non-default operator rule (`part`, `equal`,
+`conjunction`, ...) is present.
 
 > **SS-analysis vs CS-execution.** `SymbolSubSpace.compose` is the
 > SS-side *analysis* stage (it selects the per-space hard rule dict
@@ -159,30 +167,30 @@ string. Enumerating "the binary reverse ops" therefore filters on
 `.reverse in canonical` and the HOST's `arity == 2`
 (`BasicModel._grammar_reverse_ops`), not on `RuleDef.arity`.
 
-The grammar accepts explicit conceptual-order suffixes:
+The live grammar style is **operator-role categories**, not a declared
+part-of-speech taxonomy: every operator contributes its own
+`<op>_I1`, `<op>_I2` (inputs) and `<op>_O1` (output) categories. For
+example, from `data/complete.grammar`:
 
 ```text
-NP3
-NP4
-VP1
-MP1
-S4
-S5
+part_O1 = part.forward(part_I1, part_I2)
+lift_O1 = lift.forward(lift_I1, lift_I2)
+conjunction_O1 = conjunction.forward(conjunction_I1, conjunction_I2)
 ```
 
-The intended current style is explicit ordered rules, for example:
+All four shipped `.grammar` files (`default`, `complete`, `xor`,
+`shamatha`) are exclusively in this role-only form. See
+[Role-Collapsed Grammar and the Operator Codebook](#role-collapsed-grammar-and-the-operator-codebook)
+below for the full account, including how a word's category is
+recovered from role participation rather than declared.
 
-```text
-S4 = lift(NP3, VP1)
-S5 = lift(NP4, MP1)
-```
-
-Here all NPs share base category `NP`, but participate at different
-conceptual orders. The parser carries stack frames as `(category, order)`,
-so `NP3` and `NP4` both have `category == "NP"` but orders `3` and `4`.
-
-Kleene order forms such as `NP*` are still parsed for compatibility, but
-they are not required by the current grammar style.
+`RuleDef.lhs` / `.rhs_symbols` parsing (`Grammar._parse_category`) still
+accepts an explicit conceptual-order suffix — `NP3`, `S4 = lift(NP3,
+VP1)`, `NP*` Kleene forms — for backward compatibility, but that style is
+now **explicitly legacy**: `NP3`, `NP4`, `VP1`, `MP1`, `S4`, and `S5` are
+members of `_FORBIDDEN_STATE_TOKENS` in
+`test/test_role_collapsed_grammar.py`, and no shipped grammar file
+declares any of them.
 
 ### GrammarLayer forward / reverse inventory
 
@@ -242,15 +250,26 @@ lives in `bin/Layers.py`, all others in `bin/Language.py`.
 ## Knowledge Artifacts
 
 `embed.build_knowledge_section(grammar)` creates the parser knowledge
-section:
+section, five sub-sections in all:
 
+- `word_table`: bootstrap CSR word table (`build_word_table_initial(wv)`,
+  `embed.py:857`) — UTF-8 surface-form bytes keyed by
+  `keys_values`/`keys_offsets`, plus a `ref_ids` column initialized to
+  `-1` (unassigned) until a curated POS lexicon / tagger populates it.
 - `taxonomy`: base category refs plus explicit ordered refs.
 - `reference_codebook`: scalar prototypes and `order` per ref.
 - `typed_indexes`: `refs_by_category` and `refs_by_order`.
 - `grammar.rule_order_signatures`: serialized rule typing.
 
-For explicit ordered grammar, the taxonomy stores ordered refs as
-children of their base category:
+The `taxonomy` builder (`build_taxonomy_from_grammar`) still supports
+ordered-ref children of a base category — the machinery is generic,
+parsing whatever `Grammar._parse_category` finds — but that shape is now
+**legacy**: it only appears for a grammar declaring explicit-order
+categories (`NP3`, `NP4`, ...; see the [Grammar](#grammar) section
+above), and no shipped `.grammar` file declares any. On the live
+role-only grammars every category is order-flat (`part_O1`, `lift_I1`,
+...), so `taxonomy` has no ordered children in practice. Historically the
+illustration was:
 
 ```text
 NP
@@ -260,7 +279,8 @@ NP
 
 `KnowledgeView.category_of_ref(ref_id)` returns the base category
 (`NP`), while `KnowledgeView.order_of_ref(ref_id)` returns the
-conceptual order (`3`, `4`, etc.).
+conceptual order (`3`, `4`, etc.) — accurate for a grammar that still
+uses this legacy style.
 
 `SymbolSpace.category_codebook` has been retired. The live category
 embedding is:
@@ -271,46 +291,46 @@ SymbolSpace.category_embedding: nn.Embedding
 
 ## STM Shift/Reduce
 
-The STM backend is hosted by `ConceptualSpace.stm` and the owning
-`SymbolSubSpace` buffers:
+`ShortTermMemory.shift` / `.reduce_step` / `.reduce_step_soft` and the
+`_RuleScorer` MLP (`bin/Layers.py`) are a typed admissibility-masked
+shift/reduce driver — SHIFT snaps an input vector to the nearest live
+reference and pushes `(payload, category, order, ref_id)`; REDUCE masks
+rule logits by typed admissibility, softmaxes over what's admissible,
+and records the argmax. It has **zero production callers**: every call
+site is `test/_stm_test_fixtures.py`, which keeps the surface alive as a
+compat shim for tests written before the 2026-05-21 SymbolSubSpace
+refactor. The live parsing mechanism is `LanguageLayer.compose`'s
+soft-DP / Viterbi weighted deduction (`binary_tiling_soft_dp` /
+`binary_tiling_viterbi`); see [STM.md Section 5](STM.md#routing-parser)
+for the accurate, audited account of SS-analysis vs CS-execution.
 
-- `ShortTermMemory`: payload stack plus lazy rule scorer.
-- SymbolSubSpace typed buffers: category, order, and reference metadata.
-- `_RuleScorer`: MLP over top stack payloads.
-- admissibility masks: hard category/order masks over grammar rule signatures.
-
-SHIFT snaps each input vector to the nearest live reference, then pushes:
-
-```text
-payload, category, order, ref_id
-```
-
-REDUCE computes a typed admissibility mask, applies it to rule logits,
-softmaxes over admissible rules, chooses the argmax for the current
-greedy path, and records the chosen score/probability.
-
-Typed admissibility is exact for explicit rules:
-
-```text
-S4 = lift(NP3, VP1)
-```
-
-fires only when the stack top matches:
-
-```text
-left:  category NP, order 3
-right: category VP, order 1
-```
+`ConceptualSpace.stm` (a `ShortTermMemory` instance) is, in the live
+model, a plain payload/idea stack, not a typed parser stack: its
+per-batch slab and depth pointer (`_buffer` / `_depth`) are ordinary
+tensors written by `push_step_masked(ideas, gate)` (the gated
+newest-at-slot-0 push) and read back by `snapshot()`. It carries no
+category / order / ref-id typing — that typed buffer is what the dead
+shift/reduce driver above expects, and nothing in the live model
+populates it.
 
 ## Syntax And SVO
 
-`BasicModel.write_syntax_tree()` (in `bin/Models.py`) emits an XML
-syntax-tree dump per batch row when configured with a syntax output
-path. It reads the current grammar/STM routing state and symbolic category
-metadata; see the function docstring for the exact format. SVO extraction is performed by the STM path on the
-canonical subject lift over a transitive verb-phrase derivation; the
-object role is the NP operand inside that verb-phrase derivation, not a
-separate semantic category.
+`BasicModel.write_syntax_tree()` (`bin/Models.py`) is currently unwired
+infrastructure, not a live path. The function hardcodes `chart = None`
+and `traces = None` — the CKY chart is retired and the signal router
+does not yet populate per-leaf derivation traces to replace it — so
+every call emits a bare `<noTrace/>` element regardless of input. The
+docstring's `<node>`/`<leaf>` format is what the function would produce
+once a trace source is wired, not what it produces today.
+
+SVO extraction has the same status. `SymbolSpace.set_last_svo` /
+`get_last_svo` / `clear_last_svo` (`bin/Language.py`) exist, and
+`clear_last_svo` does fire from production code (every CS-forward cycle
+and at Reset / soft-reset boundaries), but `set_last_svo` itself has no
+production caller anywhere in `bin/*.py` — it is exercised only by
+`test/test_per_batch_state_isolation.py` and
+`test/test_subspace_context.py`. Until something calls it, `_last_svo`
+never leaves its post-clear zero state in the live model.
 
 ## Role-Collapsed Grammar and the Operator Codebook
 
@@ -318,8 +338,8 @@ The live role-only grammars replace part-of-speech categories with
 *operator roles*. Instead of a fixed
 `NP` / `VP` / `S` taxonomy, each operator contributes its own argument
 and result roles, named `<op>_I1`, `<op>_I2` (inputs) and `<op>_O1`
-(output). The rule `isEqual` therefore exposes `isEqual_I1`,
-`isEqual_I2`, `isEqual_O1`, and the grammatical "category" of a span is
+(output). The rule `equal` therefore exposes `equal_I1`,
+`equal_I2`, `equal_O1`, and the grammatical "category" of a span is
 just the set of operator roles it can fill. Dimensionality is recovered
 from participation (`bin/participation.py`) rather than declared up
 front: symbols that fill the same roles cluster into the same category.
@@ -329,7 +349,7 @@ Starts are scoped per space (`_configure_starts`):
 - `PartSpace.start` is the universal whole-input role `U` --- the
   analyzer begins from the entire surface and decomposes it.
 - `WholeSpace.start` is the set of operator output roles
-  (`isEqual_O1`, `isPart_O1`, `exist_O1`, ...) --- parsing begins from
+  (`equal_O1`, `part_O1`, `exist_O1`, ...) --- parsing begins from
   what an operator can *produce*.
 
 The **operator codebook** is a second codebook on `WholeSpace`,
@@ -338,10 +358,13 @@ separate from the whole-percept codebook:
 - `_operation_vectors`: operator name $\to$ identity vector.
 - `_operation_positions`: operator name $\to$ codebook position.
 
-It stores one prototype per operator (`isEqual`, `isPart`, `exist`,
-`conjunction`, `disjunction`, ...) and is kept CPU-explicit so the
-host-side identity lookup never mixes with an ambient MPS / CUDA default
-device.
+It stores one prototype per operator — the live codebook is `equal`,
+`part`, `whole`, `exist`, `conjunction`, `disjunction`, `adverb`, `bind`,
+`intersection`, `lift`, `lower`, `morphology`, `non`, `not`,
+`preposition`, `product`, `sum`, `tense`, `union`, `verb`
+(`insert_operations`, `bin/Spaces.py:19582`) — and is kept CPU-explicit
+so the host-side identity lookup never mixes with an ambient MPS / CUDA
+default device.
 
 ### Soft Operator Superposition
 
@@ -379,9 +402,17 @@ context-unique), so "recovers the grammar" means the parser's rule
 decisions survive the collapse, not exact rule regeneration. With the gate
 met, the former standalone role-collapse file has been absorbed into
 `complete.grammar`, which is the broad live role-only grammar used by
-`MentalModel.xml`. The part operator is unified there: the grammar declares the single relative op
-`isPart` and the query/assert split is recovered by dispatch (`isPart`
-$\to$ `queryPart` in a query context). The operator codebook, soft
+`MentalModel.xml`. The part relation is unified there: the grammar
+declares the single compositional op `part` (plus its converse `whole`);
+`isPart` / `queryPart` survive only as `<Queries>` predicates, outside
+`<compose>`. The query/assert split is *not* recovered by
+`_dispatch_method_name_for_rule` (`bin/Language.py:4187`) — that helper
+only fires for `query="true"` rules, and `complete.grammar` declares
+none. The live unification is `reasoning.py`'s `_SURFACE_TO_KIND` table
+(`bin/reasoning.py:27`), which maps every surface form — `part`,
+`isPart`, and `queryPart` alike — to the same `KIND_IS_PART` reduction
+kind (and symmetrically `equal` / `isEqual` / `queryEqual` $\to$
+`KIND_IS_EQUAL`). The operator codebook, soft
 superposition, and participation clustering are live and tested. See the
 status blocks in
 [doc/old/2026-06-02-unified-subsymbolic-analyzer-and-role-collapsed-grammar.md](old/2026-06-02-unified-subsymbolic-analyzer-and-role-collapsed-grammar.md).
@@ -431,7 +462,8 @@ perception:
   signal learned from the *word's* role participation directly shapes the
   *object's* category, and vice versa.
 - **A small Category codebook, not a permanent per-word count table.** The VQ
-  lives directly in role-participation space: $K \approx$ `n_roles` (~30) initial
+  lives directly in role-participation space: $K \approx$ `n_roles` (55 on the
+  live `complete.grammar`, `compute_role_vocabulary`) initial
   centroids, one seeded from each labelled role (`<op>_I<n>` inputs +
   `<op>_O1` outputs). Unlearned MetaSymbols have only a bounded temporary row in
   `MetaSymbolCategoryLearner`; learned MetaSymbols keep just

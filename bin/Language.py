@@ -25,7 +25,7 @@ from util import ProjectPaths, compile, TheXMLConfig, init_config, init_compile_
 from embed import WordVectors, PretrainModel
 from data import Data, TheData
 from Layers import Layer, PiLayer, SigmaLayer  # Import custom layers from Model.py
-from Layers import LinearLayer, InvertibleLinearLayer, QKVAttentionLayer, AssociationLayer, MapppingLayer, ChunkLayer
+from Layers import LinearLayer, InvertibleLinearLayer, AssociationLayer, MapppingLayer, ChunkLayer
 from Layers import CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon, Ops
 from Layers import SortingLayer, TruthLayer, RelativeTruthStore, TernaryTruthStore, LiftingLayer, InterSentenceLayer, SparsityRegLayer, SmoothingRegLayer, ImpenetrableLayer
 from util import parse
@@ -50,7 +50,7 @@ from Layers import (
 )
 
 from Spaces import ActiveEncoding, WhereEncoding, WhenEncoding, WhatEncoding, EventEncoding, WordEncoding
-from Spaces import Basis, Tensor, Codebook, Embedding
+from Spaces import Basis, Tensor, Codebook, Embedding, fold_content_apply
 from Spaces import SubSpace, Space, InputSpace, PartSpace, ModalSpace, ConceptualSpace, WholeSpace, OutputSpace
 
 import xml.etree.ElementTree as _ET
@@ -743,16 +743,6 @@ class Grammar:
     def ws_rules(self):
         """WholeSpace rule table (alias of the canonical ``rules``)."""
         return self.rules
-
-    @property
-    def ws_rules_upward(self):
-        """WholeSpace compose (synthesis) rules."""
-        return self.rules_upward
-
-    @property
-    def ws_rules_downward(self):
-        """WholeSpace generate (analysis) rules."""
-        return self.rules_downward
 
     # -- Phase 1 GrammarRegistry surface --------------------------------
     #
@@ -1710,14 +1700,6 @@ class Grammar:
                     names.add(sym)
         return tuple(sorted(names))
 
-    def _s_rule_ids(self):
-        """Return dict of method_name -> rule_id for SS-space_role operational rules."""
-        result = {}
-        for i, r in enumerate(self.rules):
-            if r.space_role == 'SS' and r.method_name is not None:
-                result[r.method_name] = i
-        return result
-
     # -- Relative-truth rule marker (Task 6a) --------------------------
     #
     # doc/plans/2026-05-29-stm-serial-parallel-modes.md §7. A RELATIVE
@@ -1821,103 +1803,6 @@ class Grammar:
     # cache by version and rebuild on mismatch.
 
     SUGAR_METHODS = frozenset({'absorb'})
-
-    def _ensure_packed_table(self, device=None):
-        """Return the packed rule-table dict, building it lazily.
-
-        Keys (all torch tensors, shape leading dim R = number of
-        productive rows; sugar rows are dropped):
-            'lhs'         Long[R]      LHS category id (0 if missing)
-            'rhs_left'    Long[R]      first RHS category id (0 = wildcard)
-            'rhs_right'   Long[R]      second RHS category id (0 if unary)
-            'arity'       Long[R]      1 or 2
-            'marker_mask' Bool[R, 2]   per-operand: True iff sugar may absorb here
-            'global_id'   Long[R]      back-reference to self.rules index
-        """
-        self._ensure_configured()
-        cached = getattr(self, '_rule_table_packed_cache', None)
-        if cached is not None and cached.get('device') == device:
-            return cached['table']
-        # Build a category index mirroring SyntacticLayer._ensure_category_table.
-        names = set()
-        for rule in self.rules:
-            for cat in str(rule.lhs).split(','):
-                cat = cat.strip()
-                if cat:
-                    names.add(cat)
-            for sym in (rule.rhs_symbols or ()):
-                if sym:
-                    names.add(sym)
-        ordered = ['?'] + sorted(n for n in names if n)
-        cat_index = {n: i for i, n in enumerate(ordered)}
-
-        # Step 1: identify sugar rules and the LHS categories they target.
-        # A sugar rule's lhs is the host category whose operand may be
-        # absorbed -- e.g. `S = absorb(S, S)` says "an S operand may be
-        # marked sugar inside a productive rule that produces S."
-        sugar_lhs = set()
-        for rule in self.rules:
-            if rule.method_name in self.SUGAR_METHODS:
-                sugar_lhs.add(rule.lhs.split(',', 1)[0].strip()
-                              if ',' in rule.lhs else rule.lhs)
-
-        # Step 2: build the packed table from productive rules only.
-        lhs_l, rl_l, rr_l, ar_l, mm_l, gid_l = [], [], [], [], [], []
-        wmin_l, wmax_l = [], []
-        for gid, rule in enumerate(self.rules):
-            if rule.method_name in self.SUGAR_METHODS:
-                continue  # marker-compiled away, not a freestanding row
-            if rule.arity not in (1, 2):
-                continue  # arity-0 (epsilon) and arity-3 not in chart
-            lhs_cat = (rule.lhs.split(',', 1)[0].strip()
-                       if ',' in rule.lhs else rule.lhs)
-            rhs = rule.rhs_symbols or ()
-            rl = cat_index.get(rhs[0], 0) if len(rhs) >= 1 else 0
-            rr = cat_index.get(rhs[1], 0) if len(rhs) >= 2 else 0
-            # Marker compilation: an operand of category X can be absorbed
-            # if a sugar rule's lhs matches X (the sugar rule licenses
-            # X-shaped sugar at this slot). Unary rules: only slot 0.
-            mm_left = bool(rhs) and rhs[0] in sugar_lhs and rule.arity == 2
-            mm_right = (len(rhs) >= 2 and rhs[1] in sugar_lhs
-                        and rule.arity == 2)
-            lhs_l.append(cat_index.get(lhs_cat, 0))
-            rl_l.append(rl)
-            rr_l.append(rr)
-            ar_l.append(rule.arity)
-            mm_l.append([mm_left, mm_right])
-            gid_l.append(gid)
-            wmin_l.append(int(getattr(rule, 'width_min', 0) or 0))
-            wmax_l.append(int(getattr(rule, 'width_max', 0) or 0))
-
-        device = device or torch.device('cpu')
-        if lhs_l:
-            table = {
-                'lhs':         torch.tensor(lhs_l, dtype=torch.long, device=device),
-                'rhs_left':    torch.tensor(rl_l,  dtype=torch.long, device=device),
-                'rhs_right':   torch.tensor(rr_l,  dtype=torch.long, device=device),
-                'arity':       torch.tensor(ar_l,  dtype=torch.long, device=device),
-                'marker_mask': torch.tensor(mm_l,  dtype=torch.bool, device=device),
-                'global_id':   torch.tensor(gid_l, dtype=torch.long, device=device),
-                'width_min':   torch.tensor(wmin_l, dtype=torch.long, device=device),
-                'width_max':   torch.tensor(wmax_l, dtype=torch.long, device=device),
-            }
-        else:
-            table = {
-                'lhs':         torch.empty(0, dtype=torch.long, device=device),
-                'rhs_left':    torch.empty(0, dtype=torch.long, device=device),
-                'rhs_right':   torch.empty(0, dtype=torch.long, device=device),
-                'arity':       torch.empty(0, dtype=torch.long, device=device),
-                'marker_mask': torch.empty((0, 2), dtype=torch.bool, device=device),
-                'global_id':   torch.empty(0, dtype=torch.long, device=device),
-                'width_min':   torch.empty(0, dtype=torch.long, device=device),
-                'width_max':   torch.empty(0, dtype=torch.long, device=device),
-            }
-        # Stash the category index alongside so SyntacticLayer can read
-        # the same view rather than rebuilding it.
-        table['_cat_index'] = cat_index
-        table['_cat_names'] = ordered
-        self._rule_table_packed_cache = {'device': device, 'table': table}
-        return table
 
     @property
     def rule_table_version(self):
@@ -4686,10 +4571,6 @@ class RuleCodebook(nn.Module):
         """Read-only accessor for the bound Grammar (or None)."""
         return self._grammar
 
-    def attach_grammar(self, grammar):
-        """Late-bind a Grammar reference (used when wiring after construction)."""
-        object.__setattr__(self, '_grammar', grammar)
-
     def location(self, rule_id):
         """Return the ``.where`` location for ``rule_id``.
 
@@ -5283,40 +5164,12 @@ class LanguageLayer(Layer):
         return None
 
     @property
-    def _last_unary_routing(self):
-        for space_role in sorted(self._last_space_role_routings.keys(), reverse=True):
-            tr = self._last_space_role_routings[space_role]
-            if "unary" in tr:
-                return tr["unary"]
-        return None
-
-    @property
     def _last_hard_slab(self):
         return self._last_output
 
     @property
     def _last_soft_slab(self):
         return self._last_output
-
-    def _collect_binary_rule_selections(self, routing):
-        """Extract per-row binary-op id lists from a single routing dict.
-
-        Returns ``[B][L_b]`` lists of *local* op ids (no rule_id mapping),
-        skipping non-reduce action kinds. Helper for diagnostics.
-        """
-        kind = routing["action_kind"]
-        op = routing["action_op"]
-        lengths = routing["lengths"]
-        B = kind.shape[0]
-        rows = []
-        for b in range(B):
-            row = []
-            L = int(lengths[b].item())
-            for j in range(L):
-                if int(kind[b, j].item()) == 1:
-                    row.append(int(op[b, j].item()))
-            rows.append(row)
-        return rows
 
     # -- Phase 4 stack-rewrite path -------------------------------------
     #
@@ -7473,8 +7326,19 @@ class UnaryStructuredLayer(nn.Module):
         if self.r_apply == 0:
             B, N, D = x.shape
             return x.new_zeros(B, N, 0, D)
-        per_op = [op(x) for op in self.ops]
+        per_op = [self._apply_op(op, x) for op in self.ops]
         return torch.stack(per_op, dim=2)
+
+    def _apply_op(self, op, x):
+        """Apply one unary op; a content-sized meronymic fold (nInput < D)
+        folds the leading .what columns and rides the where/when band
+        [nInput:] through unchanged -- ConceptualSpace's content-fold + band-
+        passthrough π contract (Spaces._pi_for_pass dispatch), so the stack
+        stays width D without resizing the layer."""
+        w = int(getattr(op, "nInput", 0) or 0)
+        if 0 < w < x.shape[-1]:
+            return torch.cat([op(x[..., :w]), x[..., w:]], dim=-1)
+        return op(x)
 
     def forward(self, x, cat_ctx=None):
         """Score, choose per-position action, return (hard, soft, routing).
@@ -7990,7 +7854,9 @@ class SyntacticLayer(Layer):
         x = self._read_subspace(subspace, layer=layer)
         if x is None:
             return subspace
-        y = layer.forward(x)
+        # Unified fold-width law: content-sized folds (0 < nInput < D) fold
+        # the leading content columns; the where/when band rides through.
+        y = fold_content_apply(layer.forward, getattr(layer, 'nInput', 0), x)
         self._write_subspace(subspace, y, layer=layer)
         return subspace
 
@@ -8049,7 +7915,9 @@ class SyntacticLayer(Layer):
         elif host is not None and rule_name == 'sigma' and hasattr(host, '_sigma_reverse'):
             x = host._sigma_reverse(y)
         else:
-            x = layer.reverse(y)
+            # Unified fold-width law (same trim as forward's dispatch).
+            x = fold_content_apply(
+                layer.reverse, getattr(layer, 'nInput', 0), y)
         self._write_subspace(subspace, x, layer=layer)
         return subspace
 
@@ -8647,10 +8515,6 @@ class Taxonomy:
         if b < 0 or b >= self._priming_B:
             return None
         return self._priming[b, :live]
-
-    @property
-    def priming_capacity(self):
-        return self._priming_capacity
 
     @property
     def priming_live(self):
@@ -10100,122 +9964,9 @@ class SymbolSubSpace(SubSpace):
         self._idea_depth = self._idea_depth + 1
         self._idea_max_depth_host = self._idea_max_depth_host + 1
 
-    def idea_push_step_masked(self, ideas, gate_b_1):
-        """Masked variant of ``idea_push_step`` (newest-at-slot-0).
-
-        For gated rows, shift RIGHT and write the new idea at slot 0; for
-        un-gated rows the buffer + depth are left unchanged.
-        """
-        B, D = ideas.shape
-        buf = self._idea_buffer
-        cap = int(buf.shape[1])
-        gate_b = gate_b_1.view(B)
-        gate_bool = gate_b.bool()
-        gate_col = gate_bool.view(B, 1, 1)
-        shifted = buf.clone()
-        if cap > 1:
-            shifted[:, 1:cap] = buf[:, 0:cap - 1]
-        shifted[:, 0] = ideas
-        self._idea_buffer = torch.where(gate_col, shifted, buf)
-        self._idea_depth = self._idea_depth + gate_bool.long()
-
-    def idea_push_window_batch(self, ideas):
-        """Push ``W`` consecutive ideas onto every batch row in one shot.
-        ``ideas`` shape ``[B, W, D]`` (position 0 is the OLDEST of the
-        window, position ``W-1`` the newest).
-
-        Newest-at-slot-0: shift the existing stack RIGHT by ``W`` and write
-        the window REVERSED into slots ``[0, W)`` so the window's newest
-        (position ``W-1``) lands at slot 0.
-        """
-        B, W, D = ideas.shape
-        if W == 0:
-            return
-        buf = self._idea_buffer
-        cap = int(buf.shape[1])
-        if cap > W:
-            buf[:, W:cap] = buf[:, 0:cap - W].clone()
-        # Reverse the window along its position axis so the newest window
-        # position (W-1) maps to slot 0.
-        buf[:, 0:W] = torch.flip(ideas, dims=[1])
-        self._idea_depth = self._idea_depth + W
-        self._idea_max_depth_host = self._idea_max_depth_host + int(W)
-
-    def idea_pop(self, b):
-        """Pop and return the top idea for row ``b``, or ``None`` when empty.
-
-        Newest-at-slot-0: the top (newest) is slot 0; pop it and shift the
-        remaining occupants LEFT (slots ``[1, depth)`` -> ``[0, depth-1)``).
-        """
-        depth = int(self._idea_depth[b].item())
-        if depth == 0:
-            return None
-        idea = self._idea_buffer[b, 0].clone()
-        if depth > 1:
-            self._idea_buffer[b, 0:depth - 1] = self._idea_buffer[
-                b, 1:depth].clone()
-        self._idea_buffer[b, depth - 1].zero_()
-        self._idea_depth[b] = depth - 1
-        return idea
-
-    def idea_peek(self, b, n=0):
-        """Return the ``n``-th item from top of row ``b``, or ``None``.
-
-        Newest-at-slot-0: ``n`` counts back from the newest, so the n-th
-        item lives directly at slot ``n``.
-        """
-        depth = int(self._idea_depth[b].item())
-        if depth <= n:
-            return None
-        return self._idea_buffer[b, n]
-
-    def idea_snapshot(self, detach=False):
-        """Return ``[B, max_depth, D]`` slice of the live idea buffer.
-
-        Newest-at-slot-0 convention: the returned slab is NEWEST-FIRST
-        along the slot axis (slot 0 = most-recent idea; the oldest live
-        slot is at index ``depth-1``). The slice bounds are unchanged.
-        """
-        B = int(self._idea_buffer.shape[0])
-        if B == 0:
-            return None
-        max_depth = int(self._idea_max_depth_host)
-        if max_depth == 0:
-            return None
-        if max_depth > self._idea_capacity:
-            max_depth = self._idea_capacity
-        snap = self._idea_buffer[:, :max_depth, :]
-        if detach:
-            snap = snap.detach().clone()
-        else:
-            snap = snap.clone()
-        return snap
-
     def idea_size(self, b):
         """Current depth (number of occupied slots) for row ``b``."""
         return int(self._idea_depth[b].item())
-
-    def idea_is_full(self, b):
-        """True when row ``b`` is at capacity."""
-        return self.idea_size(b) >= self._idea_capacity
-
-    def idea_is_empty(self, b):
-        """True when row ``b`` has no occupants."""
-        return self.idea_size(b) == 0
-
-    def idea_clear(self, b=None):
-        """Clear row ``b`` (or all rows when ``b`` is ``None``)."""
-        if b is None:
-            self._idea_buffer.zero_()
-            self._idea_depth.zero_()
-            self._idea_max_depth_host = 0
-            return
-        b = int(b)
-        if b < 0 or b >= int(self._idea_buffer.shape[0]):
-            return
-        self._idea_buffer[b].zero_()
-        self._idea_depth[b] = 0
-        self._idea_max_depth_host = int(self._idea_depth.max().item())
 
     def idea_ensure_capacity(self, capacity):
         """Grow the per-slot capacity to at least ``capacity`` (grow-only)."""
@@ -10232,21 +9983,6 @@ class SymbolSubSpace(SubSpace):
             new_buf[:, :old_cap, :] = self._idea_buffer
         self._idea_buffer = new_buf
         self._idea_capacity = capacity
-
-    def idea_ensure_batch(self, batch):
-        """Resize idea-stack buffers to ``batch`` rows (fresh allocation).
-
-        Idempotent. Used by ``ShortTermMemory.ensure_batch`` (the chart's
-        consumer surface), which delegates here.
-        """
-        batch = int(batch)
-        if int(self._idea_buffer.shape[0]) == batch:
-            return
-        device = self._idea_buffer.device
-        self._idea_buffer = torch.zeros(
-            batch, self._idea_capacity, self._stm_payload_dim, device=device)
-        self._idea_depth = torch.zeros(batch, dtype=torch.long, device=device)
-        self._idea_max_depth_host = 0
 
     # -- WS-side constituent stack (MeronomySpec §6 rev 2026-06-10c/11;
     # MeronomyPlan Stage 7) -------------------------------------------

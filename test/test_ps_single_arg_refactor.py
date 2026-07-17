@@ -167,17 +167,20 @@ class TestPSForwardReturnsValidSubspace(unittest.TestCase):
 
 
 class TestPSFoldShapes(unittest.TestCase):
-    """The PS fold (``sigma`` post Pi/Sigma swap) is
-    ``percept_dim -> percept_dim``."""
+    """The PS fold (``sigma`` post Pi/Sigma swap) is ``content ->
+    content`` (unified fold-width law, 2026-07-16): sized at one vector's
+    CONTENT width (``nDim``), the where/when band riding through
+    application sites via ``fold_content_apply`` -- the same law as
+    ``WholeSpace.pi``."""
 
     def test_fold_input_output_dims(self):
         model = _make_plain_model()
         ps = model.perceptualSpace
-        percept_dim = int(ps.subspace.getEncodedInputSize())
-        self.assertEqual(int(ps.sigma.nInput), percept_dim,
-                         "sigma.nInput must equal PS encoded input size.")
-        self.assertEqual(int(ps.sigma.nOutput), percept_dim,
-                         "sigma.nOutput must equal PS encoded input size.")
+        content = int(ps.nDim)
+        self.assertEqual(int(ps.sigma.nInput), content,
+                         "sigma.nInput must equal PS content width (nDim).")
+        self.assertEqual(int(ps.sigma.nOutput), content,
+                         "sigma.nOutput must equal PS content width (nDim).")
 
 
 class TestPSLegacyAttributesGone(unittest.TestCase):

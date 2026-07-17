@@ -194,7 +194,7 @@ mapping (and the trust-sign-as-vedana / luminosity-as-joy reading of `LTM`) is i
 A design pass clarifying four coupled pieces (PS = PartSpace, WS = WholeSpace,
 CS = ConceptualSpace, SS = SymbolSpace).
 
-### A. Symbolic weights (the two-phase forward; reworked 2026-07-02)
+### A. Symbolic weights (the two-phase forward; reworked 2026-07-02, forward composition superseded 2026-07-10)
 
 **Implemented 2026-07-02** (doc/plans/2026-07-02-two-phase-loops-sparse-relation.md,
 superseding the forward-transform parts of
@@ -209,8 +209,11 @@ kernel by default, `torch.sparse.mm` opt-in. Edges append host-side at mint
 pruning rounds (`remove_edges`; `ConceptualSpace.prune_concept_links` keeps
 the closest links using within-tower relations only). The iterated-loop
 rework (v3, landed 2026-07-03) kept this substrate and collapsed the
-per-order families into ONE square untyped **`ConceptualAttentionLayer`** subclass --
-described below.
+per-order families into ONE square untyped **`ConceptualAttentionLayer`**
+subclass; its *forward composition* was in turn superseded by the
+2026-07-10 dual-towers rev-2 feedforward sigma-pyramid (below) -- the
+`SparseLayer` substrate itself (edges, COO forward/reverse, `add_edge` /
+`remove_edges`) is unchanged by either rework.
 
 **The forward is TWO PHASES with one terminal cutover.** Phase A -- the
 purely continuous PS/WS$\leftrightarrow$CS pump: `subsymbolicOrder`
@@ -225,7 +228,7 @@ the conceptual codebook (`cs_snap_order0`: differentiable normalized-sum
 presence -- slot-mean projection onto the unit atom direction in
 hypercube-diagonal $\sqrt{D}$ units, magnitude-preserving, NOT cosine --
 with an EMA identity trace of the winning rows while training), then the
-conceptual wave runs ($K$ = `symbolicOrder` iterations over the
+concept pyramid runs ($K$ = `symbolicOrder` rungs over the
 `ConceptualAttentionLayer`, below) and its outputs feed the SS leg,
 the head-side losses (conceptual SBOW on the settled slab), and the concept
 table -- they are NEVER substituted back into the subsymbolic carrier (the
@@ -234,7 +237,7 @@ Quantization sits exactly at the seam because 0-D symbols lack the bandwidth
 to carry subsymbolic content.
 
 **The `ConceptualAttentionLayer` is SYMBOLIC-ONLY and owns BOTH readings of concept
-structure (v3, the iterated symbolic loop -- landed 2026-07-03).** The
+structure (dual-towers rev 2 -- landed 2026-07-12).** The
 weighted reading is ONE square untyped $[N \times N{+}1]$ store over the
 stacked concept inventory (`ConceptualAttentionLayer`, bin/Layers.py) -- named for
 what it IS, bottom-up attention over the concept inventory (see "Parse
@@ -245,27 +248,55 @@ writes one edge per SYMBOLIC constituent (row = the relation, col = the
 constituent; raw-code refs stay record-only), plus a trailing-bias-column
 edge (col $N$) for relations bounded above by the EVERYTHING pole
 (bias-bounded chain links, un-refined asserted concepts; a concrete whole
-retires it). The row space is two
-blocks: the SNAP block (rows $[0, n_{\text{snap}})$,
-$n_{\text{snap}} = \max(1, \lfloor N/2 \rfloor)$) holds order-0 concepts -- codebook rows,
-not compositions, so snap rows accept NO in-edges (fail loud) -- and the
-RELATION POOL (the rest) holds minted relations, first-come with a loud
-overflow warning. Self-edges raise (the Quine atom $x = \{x\}$); longer
-cycles are deliberate (below). The forward is the ITERATED WAVE
+retires it). Self-edges raise (the Quine atom $x = \{x\}$); longer cycles
+are deliberate -- a documented fact of un-ramsified taxonomies and of human
+minds, which nothing in the current codebase observes or damps at runtime
+(the diagnostic that used to watch them, `cs_groundedness_probe`, is
+retired -- see below).
 
-$$a^{i+1} = \tanh(W [a^i \mid 1] + s), \qquad i = 0..K{-}1,$$
+The forward is a FEEDFORWARD SIGMA-PYRAMID (`cs_forward_content`), ONE hop
+per order rung, NOT a settling recurrence: $a^0$ is the order-0 snap
+presence (`cs_snap_order0`) padded to the inventory; for each rung $k =
+1..K$ ($K$ = `symbolicOrder`, the pyramid-depth budget -- the maximum
+possible conceptual order, not a forced ramsification, so a depth-$d$ vine
+simply completes at rung $d$), one feedforward hop $\tanh(W [a \mid 1])$ is
+gathered onto that rung's `order_slice(k)` rows, then admits only the
+per-batch top-`caps[k]` winners by $|{\cdot}|$ magnitude (`_order_caps`;
+optionally rank-boosted by `_relevance_priority` spreading through $|W|$,
+sec C) -- non-admitted rows read 0 and carry nothing to the next rung. No
+fixed point, no re-injection: each rung is a strict feedforward pass over
+the PREVIOUS rung's admitted rows only. `_cs_wave_qe` is retired (set
+`None` every call, `# wave retired`); there is no settling residual left to
+report.
 
-where $s$ is the order-0 snap presence padded to the inventory, applied as
-an ADDITIVE source term EVERY step (snap rows carry no in-edges, so they
-read $\tanh(a^0)$ each step), and $K$ = `symbolicOrder` is the ITERATION
-BUDGET: we are NOT forcing ramsification -- $K$ is the maximum possible
-conceptual order, the order reached if a novel concept were introduced at
-every iteration. A depth-$d$ vine COMPLETES at iteration $d$, tail links
-first -- graded partial evidence accumulates before completion. The unroll
-is fixed-$K$ (no data-dependent control flow); the per-step wave residual
-(`_cs_wave_qe`, mean $|a^{i+1} - a^i|$) is recorded `no_grad` as a
-report-only wave-QE SETTLE statistic, the symbolic sibling of
-`snap_settle_qe`.
+`_order_caps()` sizes the per-rung taper. While the sparse concept
+transform is active (`_sparse_active`: `symbolicOrder > 0` in parallel
+mode), it is a tile-based taper `[base, base>>1, .., 1]` ($K{+}1$ entries,
+`base = min(outputShape[0], nVectors)`, shrunk until the taper fits the
+inventory) -- inventory rows past `sum(caps)` stay inert. Off that path,
+the caps fall back to the pre-rev-2 `(n_snap, n_pool)` 50/50 split
+(`n_snap = max(1, N // 2)`), a fossil of the superseded design below.
+
+> **Historical note (forward composition superseded 2026-07-10).** The v3
+> iterated-symbolic-loop design (landed 2026-07-03,
+> [2026-07-02-iterated-symbolic-loop.md](plans/2026-07-02-iterated-symbolic-loop.md))
+> ran the store as an ITERATED WAVE with an additive source term every
+> step, $a^{i+1} = \tanh(W [a^i \mid 1] + s)$, $i = 0..K{-}1$, over a row
+> space split 50/50 into a SNAP block (rows $[0, n_{\text{snap}})$,
+> order-0 concepts, no in-edges) and a RELATION POOL (the rest, minted
+> relations, first-come with a loud overflow warning). A fresh probe on
+> `MM_sparse_concept` found the wave DARK end-to-end -- sign-then-clamp
+> annihilation at the order-0 rectifier, scale-blindness between the
+> settled field and the codebook, and a capacity gap where `<nVectors>`
+> never reached the per-stage store --
+> [2026-07-10-conceptual-wave-ff-pyramid-design.md](plans/2026-07-10-conceptual-wave-ff-pyramid-design.md)
+> "Why". Rev 2's correction: the concept base is the 8-tile corpus-callosum
+> frame, not the codebook inventory, so attention is a top-K taper over
+> that frame rather than a settling recurrence -- replacing the wave with
+> the feedforward pyramid above closes the darkness (no trivial fixed
+> point left to go dark). The `(n_snap, n_pool)` split above is the only
+> surviving trace of the v3 design, kept as the `_order_caps` off-path
+> fallback.
 
 Alongside this weighted reading, the store holds the DISCRETE relation
 table: ordered role-tagged constituent records (`embed_pair` stores the
@@ -302,23 +333,18 @@ preserve the whole/part distinction exactly, while recursive nesting and wave
 iteration make the sequence order operational. In short: repeated entries for
 one concept define a set; recursively nested relation concepts define a vine.
 
-**Groundedness and cycles.** `cs_groundedness_probe` (host-side, eager,
-report-only) is the KRIPKE reading of the wave, in two runs. Run 1 iterates
-from $a^0 = 0$ WITH the source: whatever lights up is GROUNDED -- its
-support traces to perception (the least-fixed-point reading). Run 2
-continues from run 1's terminal state with the source RELEASED ($s = 0$):
-rows that persist are UNGROUNDED -- sustained by a loop, answering to
-nothing outside it (the rumination/addiction shape). The EVERYTHING-bias
-column is MASKED in both runs (Alec 2026-07-03): the pole is a standing
-axiom, not perception -- unmasked it would light bias-bounded rows in run 1
-and sustain them in run 2, polluting both halves of the reading. The
-posture on cycles is deliberate: loops are a documented FACT -- of
-un-ramsified taxonomies and of human minds -- so the diagnostics observe
-and nothing intervenes (no damping default). In the current codebase
-ungroundedness requires asserted mutual containment (the statement channel)
-with the loop gain pushed past $1$ (the Hebbian cap of $4.0$, or assertion
-weights); everything minted automatically is DAG-by-construction. Solutions
-are invited -- for both human and machine minds.
+**Groundedness and cycles -- REMOVED (2026-07-10).** `cs_groundedness_probe`
+does not exist in the current codebase (zero grep hits). It was the KRIPKE
+grounded/ungrounded reading of the v3 iterated wave, in two runs (source-driven,
+then source-released) -- a diagnostic over settling dynamics that the
+feedforward pyramid does not have. The design pass that replaced the wave
+accepted the loss outright ("the wave was dark anyway,"
+[2026-07-10-conceptual-wave-ff-pyramid-design.md](plans/2026-07-10-conceptual-wave-ff-pyramid-design.md)
+"Theory"). The posture on cycles it used to report stands as a design
+statement even without the probe: loops are a documented FACT -- of
+un-ramsified taxonomies and of human minds -- and nothing in the current
+codebase observes or damps them at runtime. Solutions are invited -- for
+both human and machine minds.
 
 The lattice poles are VECTORS of the presence domain: **NOTHING**
 $= [0,0,\ldots]$ (bottom; a part contributing $W \cdot 0 = 0$ -- no edge)
@@ -349,8 +375,9 @@ successor design
 landed 2026-07-03; execution plan
 [2026-07-03-iterated-symbolic-loop-execution.md](plans/2026-07-03-iterated-symbolic-loop-execution.md)),
 which FIXES it: iteration over the one untyped square `ConceptualAttentionLayer`
-replaces stratification, so a link of any order simply arrives one wave hop
-later; see "Parse time" sec C.
+replaces stratification, so a link of any order simply arrives one rung
+later (originally a wave hop, now a feedforward pyramid rung -- the
+2026-07-10 historical note above); see "Parse time" sec C.
 
 ### B. Reconstruction (parts $\to$ `.what`, wholes $\to$ `.where`)
 
@@ -435,6 +462,23 @@ which properties/level).
   scope is the span of the hottest-primed word-whole
   (`_primed_reading_step`, the learned producer's contract) — the
   symbols map onto the wholes that isolate words.
+
+**Priming diffusion (`<primingSpread>`, default 0.25, LIVE by default,
+Alec 2026-07-12).** Before the SEEN bump, `prime_seen` moves an `s =
+<primingSpread>` fraction of each connected row's standing priming energy
+to its neighbors via `_priming_edges` (the concept store's untyped edges,
+ConceptualSpace-only; `None` elsewhere $\to$ no diffusion) — a conservative
+transfer (dst gains exactly what src loses), not amplification, so
+successive SEEN events propagate energy further out into the connected
+symbols before decay + bump apply. `0` restores pure decay+bump (the
+pre-diffusion behavior).
+
+**Frozen concepts (`freeze_concept` / `_frozen_concepts`, Alec 2026-07-11).**
+A concept's relational structure can be FROZEN: no FORMING of new edges, no
+FORGETTING of existing ones, no WEIGHT drift on them
+(`_refresh_frozen_values_hook` zeros backprop gradient on the frozen rows'
+edge values) — the codebook row/content stays live and keeps tracking
+perception; only its DEFINITION is fixed.
 
 **The readout site is the concept pyramid's per-order top-K**
 (`cs_forward_content`; the FF pyramid is COMPOSITION, not attention — the
@@ -609,18 +653,24 @@ totalLoss = (1 - reconRatio) * outputLoss + reconRatio * reconstructionLoss
 
 The legacy `SubwholeSpace` and `SyntacticSpace` classes have been
 retired. The subsymbolic role is filled by `PartSpace`; syntax /
-grammar dispatch lives on `SymbolicSubSpace.languageLayer` (the signal router,
+grammar dispatch lives on `SymbolSubSpace.languageLayer` (the signal router,
 which subsumes the retired `Chart`). The `MereologicalTree` sidecar that
 backed `part` / `equals` / `query` is also retired --- those operations are
 pure-geometric clipped-cosine projections over WholeSpace codebook
 activations.
 
 `PartSpace` and `WholeSpace` (renamed 2026-06-12 from `PerceptualSpace`
-/ the original `SymbolSpace`) both subclass a thin shared
-`PerceptualSpace(Space)` base: both views are perceptual. At the corpus
-callosum, objects are analysed and synthesized by sending them back to
-PerceptualSpace — wholes get split, parts get chunked. In symbolic
-"mode" the objects sent back are symbols. Terminologically there are
+/ the original `SymbolSpace`) both subclass `Space` directly — both views
+are perceptual, but there is no shared intermediate base class. A thin
+`PerceptualSpace(Space)` base briefly existed (holding no params/submodules;
+only `NULL_PERCEPT_KEY` and isinstance sites) but was **removed 2026-07-10**
+as part of the dual-towers rev-2 pyramid rework
+([2026-07-10-conceptual-wave-ff-pyramid-design.md](plans/2026-07-10-conceptual-wave-ff-pyramid-design.md)
+decision 3): PS/WS became symmetric duals with the same `forward(in_sub,
+CS_out)` signature instead. At the corpus callosum, objects are analysed
+and synthesized by sending them back through the towers — wholes get
+split, parts get chunked. In symbolic "mode" the objects sent back are
+symbols. Terminologically there are
 objects and references; a reference is a *sign* (a quantized version of
 the referent) or a *symbol* (an unrelated version of the referent, of
 much lower dimensionality). The freed name `SymbolSpace` was
@@ -629,7 +679,11 @@ grammar/word space-role (formerly `WordSpace` / `WordSubSpace`, abbrev `ss`;
 the WholeSpace stream is now `ws`). See the full rename mapping in
 `doc/old/2026-06-19-handoff.md`.
 
-The corpus callosum **builds a single meronomy out of the two towers**: a part
+Gated `<mereologyRaise>` (default false, byte-identical off; the cross-tower
+binding is `ConceptualSpace._autobind_cross_tower`, the part/whole-ratio
+read-out is `RunStructureLayer` via `WholeSpace`'s `_mereology_ratio_obs`,
+threaded read-only, never persisted), the corpus callosum **builds a single
+meronomy out of the two towers**: a part
 `A` (PartSpace) and a whole `B` (WholeSpace) carry `.what` codes from different
 codebooks (incomparable), but their `.where` is comparable, so the callosum links
 **`A isa B`** (token `isa` type) when `A.where` is contained in `B.where` with no
@@ -647,8 +701,8 @@ the principled fix for the MM_20M mean-collapse. Full design:
 |-------|------|------|-------|
 | **InputSpace** | Lifts raw data into working dimensionality; surface tokenization | LiftingLayer; lexer wiring (text mode) | Reaches PS's lexicon via back-ref; no own lexicon |
 | **PartSpace** | Bottom-up SYNTHESIS branch (Pi/Sigma swap, rev. 2026-06-09): sigma fold + `<synthesis>` front ends + MPHF lookup | one `self.sigma` (SigmaLayer — the union fold), MPHF + index table | `forward(x_subspace)` takes one positional arg (the atom-view stem). Result = `sigma(x)` after the front end embeds. PS Lexicon (`self.vocabulary`) holds per-word vectors; MPHF maps surface $\to$ row. |
-| **ConceptualSpace** | STM container + main grammatical CPU + (when sparse-active) the POST-PUMP symbolic phase | STM (`ShortTermMemory`, depth ~8); the single untyped square `ConceptualAttentionLayer` (a `SparseLayer` subclass; registered via the `_sparse_fam` shim) + concept dictionary (`similarity_codebook`) + the relation store (`ConceptAllocator` + ordered records) when sparse-active | `forward(subspace, word_subspace=None)`: STM bookkeeping only — the pump is purely subsymbolic (P3 two-phase); the symbolic transform fires ONCE post-pump (`cs_symbolic_phase`: snap + iterated wave, $K$ = `symbolicOrder`, driven by `_forward_body`'s cutover). Dispatches read-only grammar ops via the signal router. |
-| **WholeSpace** | Top-down ANALYSIS branch: pi fold + `<analysis>`/`<lexer>` knobs; unified word lexicon codebook owner; dispatch site for codebook-write ops | one `self.pi` (PiLayer — the intersection fold), unified codebook with paired (orth, semantic) rows | `forward(CS_subspaceForWS, IS_concepts=None)` — stage 0 reads the unity view. `insert_paired_word(word, vec)` creates an orth row + random semantic row, parented via `Codebook.set_part_parent`. Lookup chain: surface $\to$ MPHF $\to$ orth row $\to$ semantic via parthood. |
+| **ConceptualSpace** | STM container + main grammatical CPU + (when sparse-active) the POST-PUMP symbolic phase | STM (`ShortTermMemory`, depth ~8); the single untyped square `ConceptualAttentionLayer` (a `SparseLayer` subclass; registered via the `_sparse_fam` shim) + concept dictionary (`similarity_codebook`) + the relation store (`ConceptAllocator` + ordered records) when sparse-active | `forward(subspace, word_subspace=None)`: STM bookkeeping only — the pump is purely subsymbolic (P3 two-phase); the symbolic transform fires ONCE post-pump (`cs_symbolic_phase`: snap + FF concept pyramid, $K$ = `symbolicOrder`, driven by `_forward_body`'s cutover). Dispatches read-only grammar ops via the signal router. |
+| **WholeSpace** | Top-down ANALYSIS branch: pi fold + `<analysis>`/`<lexer>` knobs; symbol-prototype codebook owner; dispatch site for codebook-write ops | one `self.pi` (PiLayer — the intersection fold), the symbol-prototype codebook (`self.subspace.what`) — NOT the word lexicon, which stays PS-local (below) | `forward(CS_subspaceForWS, IS_concepts=None)` — stage 0 reads the unity view. Lookup chain: surface $\to$ MPHF $\to$ PS lexicon row $\to$ inverse of `key_to_index` (identity when untied). |
 | **OutputSpace** | Final prediction | LinearLayer | nActive, nDim, nVectors |
 
 The cross-space fold contract has changed:
@@ -656,11 +710,11 @@ The cross-space fold contract has changed:
 ```
 PS.forward(x):  return self.sigma(x.materialize())
 CS.forward(subspace, word_subspace):
-    STM[0..6] = STM[1..7];  STM[7] = folded          # STM shift/push only (mode-dispatched); the pump stays subsymbolic
+    STM[1..7] = STM[0..6];  STM[0] = folded          # newest at slot 0, shift toward higher indices, oldest (slot 7) drops off; mode-dispatched, the pump stays subsymbolic
 # POST-PUMP cutover (sparse-active, once per forward, in _forward_body):
-#   content, acts = cs.cs_symbolic_phase(last_cs.materialize())   # snap -> iterated wave (K = symbolicOrder)
+#   content, acts = cs.cs_symbolic_phase(last_cs.materialize())   # snap -> concept pyramid (K = symbolicOrder)
 #   last_cs._concept_activations = acts;  SS leg built ONCE;  SBOW parks the settled slab
-SS:  no atomic forward operator; hosts insert_paired_word + write-required grammar ops
+SS:  no atomic forward operator; hosts write-required grammar ops
      (the CS->SS symbol bind leg is SymbolSpace.forward_concept_to_symbol, .forward()-mediated)
 ```
 
@@ -710,22 +764,6 @@ were **RETIRED** in A1, 2026-06-09; reconstruction is now seeded from concepts
    inverse of another. Reverse uses matrix `pinv` (may be numerically
    unstable from SVD convergence). `<invertible>true</invertible>` avoids
    this via shared-weight inversion.
-
-### Reconstruction Symbols
-
-The symbolic bottleneck can lose information needed for reconstruction. XOR
-maps 2 inputs to 1 output, but `XOR(0,0)=0` and `XOR(1,1)=0` are distinct
-inputs producing the same output. A single output symbol cannot reconstruct
-which input was presented.
-
-`nSymbols` is split:
-
-- **`nOutputSymbols`** `= OutputSpace.nActive` --- fed to OutputSpace for prediction
-- **`nReconSymbols`** `= nSymbols - nOutputSymbols` --- carried in `end_state`
-  for reconstruction
-
-A skip connection through the symbolic bottleneck. Reconstruction symbols
-receive gradient only from reconstruction loss.
 
 ### Single Optimizer with Overlapping Weight Spaces
 
@@ -873,7 +911,7 @@ Two operating modes, selected by `<architecture><serial>` (replaced the
 
 | Mode | Trigger | PS.forward argument | Iterations | STM behavior |
 |---|---|---|---|---|
-| **SERIAL / GRAMMATICAL** | `<serial>true</serial>` | `IS_t` per word | one per word; PS pushes one idea per word | shift-and-push (oldest dropped, newest at slot 7); signal router dispatches over STM contents per word or at sentence boundary |
+| **SERIAL / GRAMMATICAL** | `<serial>true</serial>` | `IS_t` per word | one per word; PS pushes one idea per word | shift-and-push (newest at slot 0, oldest dropped from the high end); signal router dispatches over STM contents per word or at sentence boundary |
 | **PARALLEL** | `<serial>false</serial>` | `IS` once, then `CS` for T-1 iterations | T = `<subsymbolicOrder>` | parallel write of T slots; signal router dispatches after STM population |
 
 SERIAL and GRAMMATICAL are not architecturally distinguished — grammar
@@ -976,7 +1014,7 @@ end-to-end alongside the model weights.
 ## Language System
 
 The grammar dispatch runs through the **signal router** (`LanguageLayer`,
-`bin/Language.py`) — the single canonical parser. `SymbolicSubSpace` owns it
+`bin/Language.py`) — the single canonical parser. `SymbolSubSpace` owns it
 directly as `self.languageLayer`. The pre-substrate CKY `Chart` and STM
 shift-reduce parsers retired in Stage 3 of the substrate refactor.
 
@@ -1028,16 +1066,17 @@ dispatches grammar ops over. Capacity defaults to 8 (within Miller's 7±2 band);
 `<ConceptualSpace><stmCapacity>N</stmCapacity></ConceptualSpace>` overrides.
 
 Post-substrate-refactor, `CS.forward(subspace, word_subspace=None)` is **STM
-bookkeeping** — shift slots left, push the new idea onto slot 7. The legacy
+bookkeeping** — shift existing slots toward higher indices, push the new idea
+onto slot 0 (newest-at-slot-0; `_stm_shift_and_push`). The legacy
 atomic forward fold (`sigma_percept`) is retired. (The symbolic
 transform no longer runs inside `forward` — P3 two-phase rework: the pump
 stays purely subsymbolic and `cs_symbolic_phase` fires ONCE at the post-pump
 cutover in `_forward_body`; its outputs feed the SS leg and the losses, never
 the STM content. See Architecture.md sec A.) The mode dispatch:
 
-- **SERIAL / GRAMMATICAL**: one idea pushed per word; STM shifts (oldest
-  dropped from slot 0). Grammar ops dispatched per word or at sentence
-  boundary.
+- **SERIAL / GRAMMATICAL**: one idea pushed per word; STM shifts (newest to
+  slot 0, oldest dropped from the high end). Grammar ops dispatched per word
+  or at sentence boundary.
 - **PARALLEL**: T = `<subsymbolicOrder>` iteration outputs written to STM
   slots simultaneously; no shift.
 
@@ -1060,17 +1099,20 @@ In SERIAL / GRAMMATICAL mode, each word traverses a per-word path:
 ```
 byte stream  ->  PS.forward(IS_t)    # MPHF surface lookup -> PS lexicon
                                      # then pi(x) + sigma(x), no outer tanh
-             ->  CS.forward(idea)    # STM shift; push idea onto slot 7
+             ->  CS.forward(idea)    # STM shift toward higher indices; push idea onto slot 0
              ->  signal router dispatches grammar ops over STM
                                      # (read-only via CS; write-required via SS)
 ```
 
 PS's `self.vocabulary` (Embedding) holds the per-word vectors keyed by
-MPHF. SS's codebook holds **paired (orthographic, semantic) rows** for
-the unified lexicon — the orth row is a copy of PS's per-word vector at
-insert time; the semantic row is random; the two are parented via
-`Codebook.set_part_parent`. Lookup chain: surface $\to$ MPHF $\to$ orth row $\to$
-parented semantic row.
+MPHF, including the authoritative `key_to_index` forward map. Lookup
+chain: surface $\to$ MPHF $\to$ PS lexicon row. The 2026-05-27 tied-storage
+plan (`insert_paired_word`: an orth row copied from PS's per-word vector,
+paired with a random semantic row via `Codebook.set_part_parent`, both
+living on WS's codebook) was **retired 2026-06-10** — the lexicon keeps
+PS-local, untied storage permanently. Decode (row $\to$ word) resolves
+through the INVERSE of `key_to_index`, not positional `index_to_key`
+(the two coincide for an untied lexicon).
 
 **Category information rides the symbol machinery.** The live category
 codebook learns role participation for MetaSymbols, and the router uses that

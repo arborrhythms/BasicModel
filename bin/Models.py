@@ -68,7 +68,7 @@ from data import Data, TheData
 
 from Layers import Layer, PiLayer, SigmaLayer  # Import custom layers from Model.py
 from Layers import ConceptualCombine
-from Layers import LinearLayer, QKVAttentionLayer
+from Layers import LinearLayer
 from Layers import LiftingLayer, CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon
 from Layers import Error, TheError
 from Layers import TernaryTruthStore
@@ -103,36 +103,6 @@ _DEDUPE_FLUSH_EVERY = 1000
 # remaining breaks while migrating host-side symbol creation onto
 # pre-allocated codebooks (insert-not-grow). Defaults to the strict gate.
 ENUM_FULLGRAPH = os.environ.get("BASIC_FULLGRAPH", "1") != "0"
-
-
-def _log_advisory_exception(stage: str, exc: BaseException) -> None:
-    """Log a caught pipeline-stage exception once with traceback,
-    then deduped counts. Surfacing a silent fall-through to the
-    fallback path is important: the chart's contribution becomes a
-    no-op and you stop training what the config says you train.
-    """
-    tb = exc.__traceback__
-    while tb is not None and tb.tb_next is not None:
-        tb = tb.tb_next
-    file = tb.tb_frame.f_code.co_filename if tb else "?"
-    line = tb.tb_lineno if tb else 0
-    key = (type(exc).__name__, file, line)
-    log = logging.getLogger(__name__)
-    seen = _PIPELINE_EXC_SEEN.get(key, 0)
-    _PIPELINE_EXC_SEEN[key] = seen + 1
-    if seen == 0:
-        log.warning(
-            "%s failed (%s: %s) at %s:%d -- "
-            "the chart's contribution is now a no-op. "
-            "Subsequent occurrences of this exact failure will be deduped.",
-            stage, type(exc).__name__, exc, file, line,
-            exc_info=True,
-        )
-    elif (seen + 1) % _DEDUPE_FLUSH_EVERY == 0:
-        log.warning(
-            "%s: %s at %s:%d has now fired %d times.",
-            stage, type(exc).__name__, file, line, seen + 1,
-        )
 
 
 class ReverseAdapter(nn.Module):
@@ -1372,34 +1342,6 @@ class BaseModel(Mereology, nn.Module):
                     f"entries are nan/inf."
                 )
 
-    def _debug_tensor_stats(self, name, value):
-        """Print compact tensor stats when MODEL_DEBUG is enabled.
-
-        Cannot use ``assert`` (printing has side effects), so only the
-        MODEL_DEBUG gate applies.
-        """
-        if not _util.MODEL_DEBUG:
-            return
-        if value is None or not torch.is_tensor(value):
-            TheMessage(f"[recon-debug] {name}: {value}")
-            return
-        x = value.detach()
-        finite = torch.isfinite(x)
-        count = x.numel()
-        bad = int((~finite).sum().item())
-        if finite.any():
-            xf = x[finite]
-            xmin = xf.min().item()
-            xmax = xf.max().item()
-            xmean = xf.float().mean().item()
-        else:
-            xmin = xmax = xmean = float("nan")
-        TheMessage(
-            f"[recon-debug] {name}: shape={tuple(x.shape)} "
-            f"bad={bad}/{count} range=[{xmin:.6g}, {xmax:.6g}] "
-            f"mean={xmean:.6g}"
-        )
-
     def run(self, numTrials=1, numEpochs=1, batchSize=10, lr=0.001, profile=None):
         """Run multiple independent trials, recreating the model each time.
 
@@ -1583,24 +1525,6 @@ class BaseModel(Mereology, nn.Module):
             max_new=max_new, attenuation=attenuation)
 
     # -- Contemplative Awareness Characterizations ---------------------
-
-    @staticmethod
-    def _is_one_component(adj):
-        """BFS over a small boolean adjacency matrix; True if the graph is
-        a single connected component. ``adj`` must be square and contain
-        the identity (self-loops) so isolated rows are detected.
-        """
-        K = adj.shape[0]
-        if K == 0:
-            return True
-        visited = torch.zeros(K, dtype=torch.bool, device=adj.device)
-        frontier = torch.zeros(K, dtype=torch.bool, device=adj.device)
-        frontier[0] = True
-        while frontier.any():
-            visited = visited | frontier
-            neighbors = adj[frontier].any(dim=0)
-            frontier = neighbors & ~visited
-        return bool(visited.all().item())
 
     # -- Contemplative Awareness Characterizations ---------------------
     # The measure family (Contiguous / Continuous / Peaceful / Area /
@@ -1787,26 +1711,6 @@ class BaseModel(Mereology, nn.Module):
             "word_learning": int(
                 getattr(cl, 'word_learning', 0) or 0),
         }
-
-    @staticmethod
-    def print_weights_info(path):
-        """Print a human-readable summary of a .ckpt weights artifact.
-
-        Does not require a model to be loaded.  Useful for diagnosing
-        mismatches between a saved checkpoint and a changed XML config.
-        """
-        if not os.path.exists(path):
-            TheMessage(f"Weights file not found: {path}")
-            return
-        saved = torch.load(path, map_location="cpu", weights_only=False)
-        state = saved["state_dict"] if isinstance(saved, dict) and "state_dict" in saved else saved
-        total = sum(v.numel() for v in state.values() if isinstance(v, torch.Tensor))
-        TheMessage(f"Weights file    : {path}")
-        TheMessage(f"  Total params  : {total:,}")
-        TheMessage(f"  Layers ({len(state)}):")
-        for key, tensor in state.items():
-            if isinstance(tensor, torch.Tensor):
-                TheMessage(f"    {key:<50s}  {list(tensor.shape)}")
 
     def load_weights(self, path=None, strict=False, require_match=False):
         """Load model state from a single .ckpt bundle.
@@ -2116,47 +2020,6 @@ class BaseModel(Mereology, nn.Module):
         }
         cl._next_id = int(extras.get("_next_id") or 0)
         cl._max_merge_len = int(extras.get("_max_merge_len") or 0)
-
-    def _restore_vocab(self, emb, saved_vocab,
-                       counts=None, total_count=0, pending_counts=None):
-        """Resize Embedding to match saved vocabulary exactly.
-
-        After resizing, refresh ``emb.null_percept_idx`` (used by IR
-        mode's mask injection) so it points to a valid row of the new
-        codebook. If the saved vocab already contains
-        ``PartSpace.NULL_PERCEPT_KEY`` (a kv saved after IR-mode
-        setup), we reuse its index. Otherwise we append a fresh
-        NULL_PERCEPT slot at the tail and grow the codebook by 1,
-        mirroring what ``Embedding.create`` does on a fresh build.
-        """
-        from Spaces import PartSpace
-        null_key = PartSpace.NULL_PERCEPT_KEY
-        dim = emb.wv._vectors.shape[1]
-        saved_vocab = list(saved_vocab)
-        had_null = null_key in saved_vocab
-        if not had_null:
-            saved_vocab.append(null_key)
-            if counts is not None:
-                counts = list(counts) + [0]
-        vocab_size = len(saved_vocab)
-
-        # Rebuild word mappings (shared between wv and pretrain)
-        emb.wv.index_to_key = list(saved_vocab)
-        emb.wv.key_to_index = {w: i for i, w in enumerate(saved_vocab)}
-        emb.pretrain.index_to_key = emb.wv.index_to_key
-        emb.pretrain.key_to_index = emb.wv.key_to_index
-        emb.wv._vectors = nn.Parameter(
-            torch.zeros(vocab_size, dim, device=TheDevice.get()), requires_grad=True)
-        emb.wv.counts = (np.asarray(counts, dtype=np.int64) if counts is not None
-                         else np.zeros(vocab_size, dtype=np.int64))
-        emb.wv.total_count = np.int64(total_count)
-        emb._pending_counts = dict(pending_counts) if pending_counts else {}
-        emb.wv._normed = None
-
-        # Re-anchor null_percept_idx to the canonical slot in the
-        # restored codebook. The slot was either present in the saved
-        # vocab (reuse its index) or just appended above (last row).
-        emb.null_percept_idx = emb.pretrain.key_to_index[null_key]
 
     def _get_sentences(self, split):
         """Return raw sentence strings for a data split.
@@ -2515,34 +2378,6 @@ class BasicModel(BaseModel):
             return x.clamp(min=-1 + epsilon, max=1 - epsilon)
         return x
 
-    def _symbol_feedback_from_vectors(self, sym_vectors, n_feedback, feedback_dim):
-        """Project symbolic state back to the percept-shaped feedback tensor.
-
-        Truncates / right-pads ``sym_vectors`` to ``n_feedback`` rows.
-        If dims already match ``feedback_dim``, returns the bounded
-        tensor; otherwise expands per-row norms to fill the feedback
-        dim so a scalar symbolic signal still drives every channel.
-        """
-        feedback = sym_vectors
-        if feedback.shape[1] >= n_feedback:
-            feedback = feedback[:, -n_feedback:, :]
-        else:
-            pad = torch.zeros(
-                feedback.shape[0],
-                n_feedback - feedback.shape[1],
-                feedback.shape[2],
-                device=feedback.device,
-                dtype=feedback.dtype,
-            )
-            feedback = torch.cat([feedback, pad], dim=1)
-
-        if feedback.shape[-1] == feedback_dim:
-            return self._bound_concept_input(feedback)
-
-        norms = feedback.norm(dim=-1, keepdim=True)
-        return self._bound_concept_input(norms.expand(-1, -1, feedback_dim))
-
-
     def _derive_use_grammar(self):
         """Derive ``useGrammar`` from the configured grammar rules.
 
@@ -2567,18 +2402,6 @@ class BasicModel(BaseModel):
         except Exception:
             pass
         return "none"
-
-    def _extract_prediction_sequential(self, fwd_out):
-        """Materialize OutputSpace's subspace and denormalize to task range."""
-        if fwd_out is None:
-            return None
-        if self.outputSpace.nonlinear_output:
-            outputData = fwd_out.materialize(mode="activation")
-        else:
-            outputData = fwd_out.materialize()
-        if outputData is None:
-            return None
-        return self.normalizer.denormalize(outputData, which="output")
 
     def End(self):
         """Per-batch teardown. Cascades End() to every Space.
@@ -2719,13 +2542,6 @@ class BasicModel(BaseModel):
                 (self.wholeSpaces[-1]
                  if getattr(self, "wholeSpaces", None) else None),
                 gain=self.priming_spread)
-
-    def _symbol_heat_source(self):
-        """The live symbolic-history heat ``{symbol_id: heat}`` or None.
-        Dark on every shipped config (<symbolicPriming>/<attention> off);
-        the projection law (``symbol_history_priority``) is implemented
-        regardless (sec C spec)."""
-        return None
 
     def store_truths(self, entries):
         """Store user-supplied truth entries (the request-body TruthSet).
@@ -4011,54 +3827,6 @@ class BasicModel(BaseModel):
             return snap if not serial else snap[:, :1, :]
         return None
 
-    def accumulate_output_symbol_residual(self, outputTensor, outputDataPred):
-        """Use supervised output targets to form a symbol-space residual.
-
-        The target output is reversed through OutputSpace into the symbol
-        domain, then compared with the output-facing symbols from the
-        forward pass.  This provides a primary symbol residual even for
-        continuous paths that intentionally avoid codebook quantization.
-        """
-        if not self.reversible or not hasattr(self, 'wholeSpace'):
-            return
-        residual_scale = getattr(
-            self.wholeSpace, 'output_symbol_residual_scale', 0.0)
-        if residual_scale <= 0.0:
-            return
-        try:
-            pred_symbols = self.wholeSpace.subspace.materialize()
-        except Exception:
-            return
-        if pred_symbols is None or pred_symbols.numel() == 0:
-            return
-        n = min(self.nSymbols, pred_symbols.shape[1])
-        pred_symbols = pred_symbols[:, :n, :]
-
-        target_event = outputTensor.to(outputDataPred.device)
-        while target_event.dim() < outputDataPred.dim():
-            target_event = target_event.unsqueeze(-1)
-        target_event = target_event.expand_as(outputDataPred)
-
-        target_event_norm = self.normalizer.normalize(target_event, which="output")
-        self.outputSpace.subspace.set_event(target_event_norm)
-        try:
-            target_space = self.outputSpace.reverse(self.outputSpace.subspace)
-            target_symbols = target_space.materialize()
-        finally:
-            self.outputSpace.subspace.set_event(outputDataPred)
-        if target_symbols is None or target_symbols.numel() == 0:
-            return
-        n = min(n, target_symbols.shape[1])
-        if n <= 0:
-            return
-        terms = self.wholeSpace._compute_symbol_terms(
-            pred_symbols[:, :n, :],
-            target=target_symbols[:, :n, :],
-            residual_scale=residual_scale,
-        )
-        self.wholeSpace._emit_symbol_terms(
-            self.outputSpace.subspace, terms)
-
     def _maybe_compile_brick(self):
         """One-shot Inductor / Dynamo / TF32 setup on first ``runBatch``.
 
@@ -4392,13 +4160,6 @@ class BasicModel(BaseModel):
         if getattr(self, "_intersentence_seed_staged", False):
             return self._staged_intersentence_seed
         return self._intersentence_seed()
-
-    @staticmethod
-    def _intersentence_seed_slab(payload_hat, like, D):
-        """Delegates to :meth:`ConceptualSpace._bind_seed_slab` -- the
-        calculation lives in the Space (processing contract, 2026-06-10).
-        The A6 seed primes the SYMBOLIC stream at stage 0 of the bind."""
-        return ConceptualSpace._bind_seed_slab(payload_hat, like, D)
 
     def _discourse_arma_loss(self):
         """Inter-sentence ARMA(p, q) loss term for this step, or ``None``.
@@ -6643,6 +6404,35 @@ class BasicModel(BaseModel):
         # symbolSpace.truth_layer = self.wholeSpace) see the terminal stage.
         self.conceptualSpace = self.conceptualSpaces[-1]
         self.wholeSpace = self.wholeSpaces[-1]
+
+        # Unified fold-width law (2026-07-16): every sigma/pi slot fold is
+        # sized at its space's CONTENT width (nDim) -- ONE parameter -- so
+        # the PS/WS fold sizes cannot silently diverge again. Dense "full"
+        # slab folds (nInput == sigma_pi_slab) are the one exemption: their
+        # content law is the flattened N*content slab.
+        _law_folds = []
+        if getattr(self, 'perceptualSpace', None) is not None:
+            _law_folds.append(("PartSpace.sigma", self.perceptualSpace,
+                               getattr(self.perceptualSpace, 'sigma', None)))
+        for _t, _lw in enumerate(self.wholeSpaces):
+            _law_folds.append((f"WholeSpace[{_t}].pi", _lw,
+                               getattr(_lw, 'pi', None)))
+        _law_widths = {}
+        for _nm, _sp, _fold in _law_folds:
+            _fw = int(getattr(_fold, 'nInput', 0) or 0)
+            _nd = int(getattr(_sp, 'nDim', 0) or 0)
+            if _fw <= 0 or _nd <= 0:
+                continue
+            if _fw == int(getattr(_sp, 'sigma_pi_slab', 0) or 0):
+                continue
+            assert _fw == _nd, (
+                f"unified fold-width law violated: {_nm}.nInput={_fw} != "
+                f"nDim={_nd} of its space; slot folds are sized at the "
+                f"space's content width (one parameter).")
+            _law_widths[_nm] = _fw
+        assert len(set(_law_widths.values())) <= 1, (
+            f"unified fold-width law violated across spaces: {_law_widths}; "
+            f"PS/WS slot folds must share ONE content width (nDim).")
 
         # §6d reference-partitioned codebook update law (GrammarOpsPass;
         # author 2026-06-11): percepts are shaped by the parallel pass,
@@ -9977,7 +9767,9 @@ class BasicModel(BaseModel):
         tool = NeuralToolUser(
             reasoner, generator=gen, ga=ga, spaces=spaces, iterations=N,
             beam=beam,
-            materialize=bool(getattr(self, "_ltm_consolidation", False)))
+            # Model-level flag is ltm_consolidation (:912); the underscored
+            # name lives on ConceptualSpace only (fixed 2026-07-16).
+            materialize=bool(getattr(self, "ltm_consolidation", False)))
         return tool.run(query_spec)
 
     @torch.no_grad()
@@ -10003,7 +9795,8 @@ class BasicModel(BaseModel):
             reasoner, budget=budget, generator=gen, ga=ga, spaces=spaces,
             policy=KernelPolicy(
                 next_op=getattr(self, "_next_op_policy", None)),
-            materialize=bool(getattr(self, "_ltm_consolidation", False)))
+            # Same ltm_consolidation naming fix as reason_about above.
+            materialize=bool(getattr(self, "ltm_consolidation", False)))
         return kernel.run(query_spec)
 
     def _thinking_policy_loss(self):

@@ -1726,11 +1726,6 @@ class ConceptualCombine(Layer):
         leading = tuple(x.shape[:-1])
         return x.reshape(-1, x.shape[-1]), leading
 
-    @staticmethod
-    def _restore_leading(x, leading):
-        """Inverse of :meth:`_flatten_leading`: ``[B', W] -> [*leading, W]``."""
-        return x.reshape(*leading, x.shape[-1])
-
     def forward(self, *streams):
         """The bind: ``CS = layer(flatten(stack[stream0 ; stream1 ; ...]))``.
 
@@ -2843,17 +2838,6 @@ class SigmaLayer(GrammarLayer):
             packed = torch.atanh(packed.clamp(-1 + epsilon, 1 - epsilon))
         out = (self.layer.forward(packed, gate=gate) if gate is not None
                else self.layer.forward(packed))
-        if self.nonlinear:
-            out = torch.tanh(out)
-        self.activation = out.detach()
-        return out
-
-    def _sigma_inner_reverse(self, packed, gate=None):
-        """Apply atanh -> linear.reverse -> tanh on a packed [..., 2D] tensor."""
-        if self.nonlinear:
-            packed = torch.atanh(packed.clamp(-1 + epsilon, 1 - epsilon))
-        out = (self.layer.reverse(packed, gate=gate) if gate is not None
-               else self.layer.reverse(packed))
         if self.nonlinear:
             out = torch.tanh(out)
         self.activation = out.detach()
@@ -4971,10 +4955,6 @@ class ConceptualAttentionLayer(SparseLayer):
         """Remove ``key`` + its records (retire)."""
         return self._constituents.pop(int(key), None)
 
-    def put_row_key(self, key, records):
-        """Install ``records`` for ``key`` wholesale."""
-        self._constituents[int(key)] = list(records or ())
-
     def constituents(self, key):
         """The ordered ``[(role, ref), ...]`` records of ``key`` (copy)."""
         return list(self._constituents.get(int(key), ()))
@@ -5773,10 +5753,6 @@ class QKVAttentionLayer(Layer):
                     f"nHidden ({self.nHidden}) must be divisible by nHeads ({self.nHeads})")
             self.headDim = self.nHidden // self.nHeads
             self.scale = self.headDim ** -0.5
-
-    def set_mask(self, mask: Optional[torch.Tensor]):
-        """Set an optional attention mask (used by all types)."""
-        self.mask = mask
 
     # --- Transformer helpers (multi-head) ---
 
@@ -7097,33 +7073,6 @@ class TruthLayer(Layer):
                                dtype=self.truths.dtype)
         stored = self.truths[:n] if indices is None else self.truths[indices]
         return stored.max(dim=0).values
-
-    def truth_conjunction(self, basis, pi_layer=None):
-        """Conjunction of all stored truths via bitonic intersection.
-
-        Folds stored truths with ``Basis.conjunction()`` (sign-aware
-        element-wise min), optionally projecting from symbolic to
-        conceptual space first via ``pi_layer.reverse()``.
-
-        Returns:
-            (D,) conjunction vector, or None if no truths stored.
-        """
-        n = self.count.item()
-        if n == 0:
-            return None
-
-        stored = self.truths[:n]                          # (n, symbol_dim)
-
-        # Project to conceptual space if needed
-        if pi_layer is not None:
-            stored = pi_layer.reverse(stored)              # (n, concept_dim)
-
-        # Fold via bitonic conjunction
-        conj = stored[0]
-        for i in range(1, n):
-            conj = Ops._conjunction_kernel(conj, stored[i])
-
-        return conj
 
     # -- Universality (Golden Rule) ------------------------------------
 
@@ -10150,24 +10099,6 @@ class ChunkLayer(Layer):
     # -- Boundary detection --------------------------------------------
 
     BOUNDARY_BYTES = frozenset({0x00, 0x09, 0x0A, 0x0D, 0x20})
-
-    def is_word_boundary(self, data, b, pos, subspace=None, byte_indices=None):
-        """True if position is a word boundary.
-
-        Byte mode: check byte_indices against BOUNDARY_BYTES (fast, exact).
-        Word mode: cosine similarity against space embedding (learned, soft).
-        """
-        if byte_indices is not None:
-            return byte_indices[b, pos].item() in self.BOUNDARY_BYTES
-        if subspace is None:
-            return False
-        try:
-            space_emb = subspace.vocabulary.get_space_embedding()
-        except (AttributeError, RuntimeError):
-            return False
-        vec = data[b, pos]
-        sim = F.cosine_similarity(vec.unsqueeze(0), space_emb.unsqueeze(0), dim=-1)
-        return sim.item() > 0.9
 
     # -- BPE forward + training ----------------------------------------
 
@@ -14827,14 +14758,6 @@ class Error:
         """
         self._disabled.discard(category)
 
-    @property
-    def disabled_categories(self):
-        """Disabled categories.
-        
-        See class docstring for the operation contract.
-        """
-        return frozenset(self._disabled)
-
     # ---- accumulation --------------------------------------------------
 
     def add(self, name: str, value, *, weight: float = 1.0,
@@ -15022,76 +14945,12 @@ class Error:
         cov = (centered.transpose(0, 1) @ centered) / denom
         return {"names": names, "cov": cov}
 
-    def format_breakdown(self) -> str:
-        """Single-line summary of all terms, ordered by weighted magnitude."""
-        bd = self.breakdown()
-        rows = []
-        for name, entry in bd.items():
-            w = entry["weighted"]
-            if w is None:
-                continue
-            rows.append((abs(w), name, entry["weight"], entry["value"], w,
-                         entry["category"]))
-        rows.sort(reverse=True)
-        parts = [
-            f"{name}[{cat}]={val:.4g}*{wt:.4g}={wval:.4g}"
-            for _, name, wt, val, wval, cat in rows
-        ]
-        return " | ".join(parts) if parts else "<empty>"
-
 # Module-level singleton.  Callers do ``from Layers import TheError`` and
 # then ``TheError.reset() / .add(...) / .total()``.  A single ``Error``
 # instance is kept at module scope so every space and every loss term
 # registers into the same bookkeeping store per process.
 TheError = Error()
 
-class CertaintyWeightedMAELoss(Loss):
-    """MAE loss weighted by prediction magnitude (certainty).
-
-    High-magnitude (confident) predictions are penalized more when wrong,
-    blended with unweighted MAE via ``alpha``.
-    """
-    def __init__(self, alpha=0.5):
-        """Initialize CertaintyWeightedMAELoss; allocate state for the class contract.
-        
-        See class docstring for invariants.
-        """
-        super().__init__()
-        self.alpha = alpha
-
-    def forward(self, predictions, targets):
-        """Forward pass.
-        
-        See class docstring for the operation this layer applies.
-        """
-        abs_error = torch.abs(targets - predictions)
-        certainty = torch.abs(predictions)
-        loss = abs_error * (self.alpha * certainty + (1 - self.alpha))
-        return torch.mean(loss)
-class CertaintyWeightedMSELoss(Loss):
-    """MSE loss weighted by prediction magnitude (certainty).
-
-    Hybrid of certainty-weighted MSE and plain MSE, blended by ``alpha``.
-    ``alpha=0`` collapses to plain MSE; ``alpha=1`` is purely weighted.
-    """
-    def __init__(self, alpha=0.5):
-        """Initialize CertaintyWeightedMSELoss; allocate state for the class contract.
-        
-        See class docstring for invariants.
-        """
-        super().__init__()
-        self.alpha = alpha
-
-    def forward(self, outputs, targets):
-        """Forward pass.
-        
-        See class docstring for the operation this layer applies.
-        """
-        certainty = outputs.abs().sum(dim=1)                # per-sample confidence
-        mse_loss = ((outputs - targets) ** 2).sum(dim=1)
-        cw_mse_loss = mse_loss * certainty
-        hybrid_loss = self.alpha * cw_mse_loss.mean() + (1 - self.alpha) * mse_loss.mean()
-        return hybrid_loss
 class CertaintyWeightedCrossEntropy(Loss):
     """Cross-entropy weighted by predicted probability of the true class.
 

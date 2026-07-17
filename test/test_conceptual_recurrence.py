@@ -631,10 +631,11 @@ def test_widening_ps_pi_sized_at_embedded_percept_width():
     m = _build("MM_20M_legacy.xml")
     ps = m.perceptualSpace
     assert int(ps._fold_width) == int(ps.nOutputDim) == 1024
-    # RE-PINNED (per-vector order-raise, Alec 2026-07-07): the cascade is
-    # sized at ONE embedded percept's width (percept_dim), not the whole
-    # nOutput*D slab -- the fold raises each word independently.
-    assert int(ps.butterflyN) == 1024
+    # RE-PINNED (unified fold-width law, Alec 2026-07-16): the cascade is
+    # sized at ONE vector's CONTENT width (nDim == percept_dim minus the
+    # where/when band), the same law as WholeSpace.pi; the band rides
+    # through application sites via fold_content_apply.
+    assert int(ps.butterflyN) == int(ps.nDim) == 1016
 
 
 def test_mm5m_grammar_builds_and_forwards():

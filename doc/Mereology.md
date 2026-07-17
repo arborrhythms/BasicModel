@@ -14,14 +14,18 @@ whole-percepts define a fuzzy extent/intent relation, and concepts are the
 ordered links over that relation. DisCoCat enters one level later, when the
 language layer composes these ordered meanings according to typed grammar.
 
-> **Part/whole spaces (2026-06-12).** The perceptual side now names the
-> duality directly: `PartSpace` (bottom-up synthesis over atoms) and
-> `WholeSpace` (top-down analysis over unity), both subclassing the thin
-> `PerceptualSpace` base. At the corpus callosum, objects are analysed
-> and synthesized by sending them back to PerceptualSpace — wholes get
-> split, parts get chunked. For the object/reference (sign/symbol)
-> vocabulary, see [Spaces.md](Spaces.md) and
-> [Philosophy.md](Philosophy.md).
+> **Part/whole spaces (2026-06-12; base class retired 2026-07-10).** The
+> perceptual side names the duality directly: `PartSpace` (bottom-up
+> synthesis over atoms) and `WholeSpace` (top-down analysis over unity),
+> both subclassing `Space` directly — there is no `PerceptualSpace` base.
+> A thin `PerceptualSpace(Space)` base briefly existed (no
+> params/submodules; only `NULL_PERCEPT_KEY` and isinstance sites) but was
+> removed as part of the dual-towers rev-2 pyramid rework, once PS/WS
+> became symmetric duals sharing one `forward(in_sub, CS_out)` signature.
+> At the corpus callosum, objects are analysed and synthesized by sending
+> them back through the towers — wholes get split, parts get chunked. For
+> the object/reference (sign/symbol) vocabulary, see [Spaces.md](Spaces.md)
+> and [Philosophy.md](Philosophy.md).
 
 > **Meronomy reconciliation (2026-06-11; MeronomySpec wins — plan §2).**
 > Four reframings of this page's claims:
@@ -103,16 +107,25 @@ $$
 
 because $(-B) \cdot (-A) = A \cdot B$ and norms are sign-invariant.
 
-**Empty-operand contract.** When $|A|$ or $|B|$ is near zero, `part` returns
-1.0 --- the empty set is part of everything.
+**Empty-operand contract (asymmetric).** `part(A, B)` returns $1$ when $|A|$
+is near zero regardless of $|B|$ --- the empty set is part of everything
+--- but returns $0$ when $|A|$ is non-empty and $|B|$ is near zero ---
+nothing non-empty is part of the empty set. Empty-vs-empty
+($|A| \approx |B| \approx 0$) resolves to $1$ (the $|A|$ branch wins the
+tie). See `Ops._part_kernel` (`bin/Layers.py`).
 
 ---
 
 ## The Full Suite
 
-Every member of the suite is expressible through `part`:
+Every member of the suite is expressible through `part`. Each `Basis`/`Space`
+method takes a `scalar` flag (default `scalar=False`, the *vector* form used
+inside the grammar layers, e.g. $\mathrm{part}(x,y) = x \cdot (y / \|y\|)$
+elementwise); `scalar=True` collapses it to the clipped-cosine scalar in
+$[0, 1]$ tabulated below, which is what every other formula on this page and
+`ImpenetrableLayer` actually consume (`Basis.part(..., scalar=True)`).
 
-| Method | Formula | Interpretation |
+| Method | Formula (`scalar=True`) | Interpretation |
 |--------|---------|----------------|
 | `part(A, B)` | $\max(0, A \cdot B) / (|A|\,|B|)$ | Fundamental. A is part of B. |
 | `whole(A, B)` | $\mathrm{part}(B, A)$ | A contains B. |
@@ -120,6 +133,16 @@ Every member of the suite is expressible through `part`:
 | `overlap(A, B)` | $0 < \mathrm{equal}(A, B) < 1$ | Strictly-partial mutual parthood (indicator). |
 | `underlap(A, B)` | $\mathrm{equal}(A, B) = 0$ | No mutual parthood (indicator). |
 | `boundary(A, B)` | $|\mathrm{part}(A, B) - \mathrm{part}(B, A)|$ | Asymmetry of containment (zero under clipped cosine; for bases with asymmetric `part`). |
+| `copart(A, B)` | $1 - \mathrm{part}(A, B)$, clamped to $[0, 1]$ | The part of B *not* accounted for by A. |
+
+**Exact dominance vs. retrieval score.** `part`/`whole`/`equal`/`overlap`/
+`underlap`/`boundary`/`copart` above are the graded clipped-cosine *score*
+(see the Meronomy reconciliation note above, item 1). The boolean dominance
+trio `Ops.partOf(S1, S2)` / `Ops.wholeOf(S1, S2)` / `Ops.overlapOf(S1, S2)`
+(`bin/Layers.py`) is the separate exact ground truth: elementwise $\le$ /
+$\ge$ reduced over the last dim with `all` (`overlapOf` is the zero-directed
+elementwise min, `Ops._radmin`) --- not a `part`-suite formula, and not what
+this page's scores approximate at retrieval time.
 
 ---
 
@@ -202,8 +225,12 @@ $$
    \left( 1 - \max(P[i,j],\ P[j,i])^k \right)
 $$
 
-with $k = \mathrm{equal\_suppression}$ (default 4.0). Penalty is zero for
-`disjoint`, `equal`, and strict `part`, active only for `overlap`.
+with $k = \mathrm{equal\_suppression}$ (default 4.0). This is a continuous
+formula, not the discrete five-way classification below it: $\min(P[i,j],
+P[j,i])$ already reads near-zero for `disjoint` and strict `part` (one or
+both scores near 0), so only `equal` needs an explicit damp --- the
+$(1 - \max(\dots)^k)$ factor pushes the penalty toward zero as a pair's
+mutual parthood approaches 1.
 
 A separate `variance_floor` term guards against row collapse.
 
@@ -229,8 +256,10 @@ When VQ is absent, trust falls back to $\|cb[i]\| / \max_j \|cb[j]\|$.
 
 ### Diagnostics
 
-After `forward()`: `last_overlap_loss`, `last_variance`,
-`last_relation_counts` (dict summing to $K(K-1)$).
+After `forward()`: `last_overlap_loss` and `last_variance` populate whenever
+their weight is nonzero. `last_relation_counts` (dict summing to $K(K-1)$)
+populates only under `MODEL_DEBUG` --- the five `.sum().item()` calls it
+needs are host syncs that would otherwise break CUDA-graph capture.
 
 ### Configuration
 
@@ -251,16 +280,18 @@ Gated behind `<mereologyRaise>` (default off $\to$ byte-identical). Full design 
 code map: [doc/old/mereological-order-raising.md](old/mereological-order-raising.md).
 
 > **Terminology note.** The cross-tower link that ties one part-percept to one
-> whole-percept by reference is a **concept** (a `ConceptualSpace` relation); the
-> `_sym_*`/`insert_meta` "META node" tables that hold these links are the
-> **Concept codebook**. Prose below uses "concept" for that relation; the
-> code identifiers (`insert_meta`, `_sym_*`) are left as-is pending the
-> code-identifier pass.
+> whole-percept by reference is a **concept** (a `ConceptualSpace` relation);
+> `insert_meta` allocates it into the **Concept codebook** --- the
+> `WholeSpace.taxonomy` / `taxonomy_parent_map` / `meta_pair_to_idx` /
+> `meta_trust` / `part_chain` tables. The earlier `_sym_*` placeholder name
+> no longer exists in code (it survives only in older comments); prose below
+> uses "concept" for the relation.
 
 The two towers stay **in-kind** — `PartSpace` $\sigma$ *composes parts $\to$ parts*,
 `WholeSpace` $\pi$ *analyses wholes $\to$ wholes* — and the **concept (META node) is the
 cross-tower link**, associated with both an overlapping part-percept and
-whole-percept (`insert_meta(ps_pos, ss_pos)`). An object's identity is
+whole-percept (`insert_meta(ps_pos, ws_pos, fused_vec=None, *, ema=0.1,
+trust=None)`; `ss_pos` is the pre-rename spelling). An object's identity is
 **isomorphic**: $\sigma$-up meets $\pi$-down at the object. At init there are only **atoms**
 (part-percepts in PartSpace) and the **universe** (the top whole-percept in
 WholeSpace); objects emerge from attention.
@@ -295,20 +326,30 @@ The full mechanism (see the spec): the **corpus callosum** in ConceptualSpace (t
 learned `[2N,N]` `self.callosum` glue) is what joins the towers into one meronomy. A
 part-percept `A` (PartSpace) and a whole-percept `B` (WholeSpace) have `.what`
 codes from *different* codebooks (incomparable), but their **`.where` is
-comparable** — so the callosum asks `WhereEncoding` whether `A.where` is *part of*
-`B.where`; when it is (and no greater part / lesser whole intervenes, per codebook
+comparable** — so the callosum asks whether `A.where` is *part of* `B.where`
+(a direct span-tuple containment test, `record_cross_tower_meronomy`; see the
+2026-07-09 delta below for why this is no longer a `WhereEncoding` decode);
+when it is (and no greater part / lesser whole intervenes, per codebook
 activation) it forms the **concept `A isa B`** (token `isa` type; the type *names*
 the token). Co-occurrence at the same `.where`/`.when` drives the link, weakening
 when they dissociate — a **Hebbian** coupling between codebooks.
 
-Since the 2026-06-16 redesign `.where` is an **endpoint-sum bracket**
-`[start, end]` (angle = span center, magnitude = extent), so this *part-of* test is
-a direct read: `WhereEncoding.decode_span` recovers each code's `(start, end)` and
-containment is `A.start >= B.start && A.end <= B.end`; **contiguity** (adjacency / gap)
-between sibling parts is the same endpoint comparison. An instant snaps to zero
-extent, so atoms compare as points. (See `doc/Spaces.md` for the encoding.
-2026-07-04: `.when` left the bracket — it is the 4-dim start ladder; temporal
-extents ride the record store / exact clock, not the band.)
+Since the 2026-06-16 redesign `.where` carried an **endpoint-sum bracket**
+`[start, end]` (angle = span center, magnitude = extent); containment was
+`A.start >= B.start && A.end <= B.end`, and **contiguity** (adjacency / gap)
+between sibling parts was the same endpoint comparison. An instant snaps to
+zero extent, so atoms compare as points. (See `doc/Spaces.md` for the
+encoding. 2026-07-04: `.when` left the bracket — it is the 4-dim start
+ladder; temporal extents ride the record store / exact clock, not the band.
+**2026-07-09:** the muxed `.where` band itself moved to a 2-rung quadrature
+*ladder* over the byte START only (`WhereEncoding`, `bin/Spaces.py`) — range
+rung + resolution rung, no END in the band. `WhereEncoding.decode_span` is
+retired; the endpoint-sum bracket codec survives only on the analyzer side,
+as `EndpointSumWhere` (`bin/perceptual_analyzer.py`), a distinct codec. The
+runtime containment test above no longer goes through a `WhereEncoding`
+decode at all: `WholeSpace.record_cross_tower_meronomy` (`bin/Spaces.py`) and
+`RunStructureLayer.contained_mask` (`bin/Layers.py`) read `.where` span
+tuples directly.)
 
 **Design decision (2026-06-29, REVISIT) -- the `.where` support of percepts vs
 symbols.** Every PERCEPT (a part from PartSpace or a whole from WholeSpace) MUST
@@ -386,11 +427,12 @@ covering exactly that `.where` (spell-out bounded by the span).
 
 > **Terminology note.** This section formerly called the explicit part$\leftrightarrow$whole
 > relation entry a "symbol." Per the convention, that relation — one part-percept
-> tied to one whole-percept by reference, held in the `_sym_*` tables — is a
-> **concept** (the Concept codebook). The 0-D `SymbolSpace` **symbol** is a
-> separate, intensional reference *to* such a concept and is not what the `_sym_*`
-> entries are. Prose below says "concept"; the `_sym_*` code identifiers are left
-> as-is pending the code-identifier pass.
+> tied to one whole-percept by reference, held in the Concept codebook's
+> `taxonomy` / `taxonomy_parent_map` / `meta_pair_to_idx` / `meta_trust` /
+> `part_chain` tables — is a **concept**. The 0-D `SymbolSpace` **symbol** is a
+> separate, intensional reference *to* such a concept and is not what those
+> entries are. Prose below says "concept"; the code no longer carries a
+> `_sym_*` placeholder (that name survives only in older comments).
 
 The architecture carries **two coordinating structures** for the same content — an
 **explicit relational** tower (the concepts) and an **implicit subsymbolic** one —
@@ -401,25 +443,34 @@ the other.
   index-value relation entry tying a `PartSpace` part-percept code to a `WholeSpace`
   whole-percept code, with self-reference (`('sym', id)` members) so concepts nest
   into the taxonomy. Concepts associate part-percepts and whole-percepts **in virtue
-  of a common whole**, and **identity on insertion is same-part-OR-same-whole** (the
-  same concept is reinforced, not duplicated). `.where` **varies trial-to-trial** and
-  is *not* the identity or trigger key — it keeps only its spatial/meronomy role
-  (extent, containment). The discrete `_sym_*` tables (the Concept codebook) are this
-  structure. (This refines the earlier `.where`/co-occurrence framing above: the
-  *trigger* to abstract is **many constituents under a common concept**, not a shared
-  `.where`.) These `_sym_*` relations are the INDEX side; the concept's subsymbolic
-  content (the `ConceptDim` atom + its untyped sparse edge decomposition,
-  populated at mint by `_populate_concept_weights`) is the representational side —
-  see the next bullet.
+  of a common whole**, and **identity on insertion is keyed to the exact ordered
+  pair** — `WholeSpace.meta_pair_to_idx[(ps_pos, ws_pos)]` for `insert_meta`,
+  `ConceptAllocator.relate_idx[(part, whole)]` (`bin/Layers.py`) for `relate` —
+  **not** same-part-OR-same-whole: a repeat insert of the identical pair
+  reinforces the existing concept, but a new pairing that merely shares a part
+  or a whole with an existing concept mints a distinct one. `.where`
+  **varies trial-to-trial** and is *not* the identity or trigger key — it keeps
+  only its spatial/meronomy role (extent, containment). The Concept codebook
+  (`taxonomy` / `taxonomy_parent_map` / `meta_pair_to_idx` / `meta_trust` /
+  `part_chain`) is this structure. (This refines the earlier
+  `.where`/co-occurrence framing above: the *trigger* to abstract is **many
+  constituents under a common concept**, not a shared `.where`.) These
+  relations are the INDEX side; the concept's subsymbolic content (the
+  `ConceptDim` atom + its untyped sparse edge decomposition, populated at mint
+  by `_populate_concept_weights`) is the representational side — see the next
+  bullet.
 - **Implicit (subsymbolic).** Each concept has a corresponding **learned vector** —
   a strictly-positive `ConceptDim` **atom** (a feature signature) stored in the CS
   concept dictionary (`similarity_codebook`, softplus-rectified). For a higher-order
-  concept the *production* is no longer "$\sigma$ then quantize"; it is the **iterated
-  sparse wave** (`cs_forward_content`, bin/Spaces.py): the single untyped square
-  `ConceptualAttentionLayer` propagates the order-0 snap presences one
-  membership-weighted hop per step ($a^{i+1} = \tanh(W [a^i \mid 1] + s)$,
-  $K$ = `symbolicOrder` steps, the snap as additive source), and the concept
-  code is the final activation
+  concept the *production* is no longer "$\sigma$ then quantize", nor the earlier
+  iterated sparse wave; it is a **feedforward $\sigma$-pyramid**
+  (`cs_forward_content`, bin/Spaces.py; dual-towers rev 2, 2026-07-12): the single
+  untyped square `ConceptualAttentionLayer` computes each rung $k$'s rows in one
+  hop, $a^k = \tanh(W [a^{<k} \mid 1])$, gathered under a per-batch top-K taper
+  (`order_slice(k)` / `_order_caps`), with $K$ = `symbolicOrder` bounding the
+  rung count — **no fixed point and no re-injection** (each rung reads only the
+  rows already settled below it; nothing is fed back into its own input). The
+  concept code is the final rung's activation
   scaling its positive atom ($a \cdot \mathrm{softplus}(atom)$; radial: magnitude = certainty,
   sign = present vs anti-present). The many$\to$one abstraction is carried by the sparse
   WEIGHTS (which sources contribute, with what sign), not by a $\sigma$-fold + VQ snap; the
@@ -503,8 +554,10 @@ grammar composes conceptual meanings; it does not define the perceptual order.
 ### The Adjoint Operators
 
 Parts and wholes form a bounded lattice. The operators start from opposite
-poles---`ATOM` ($\bot$, all zero, nothing) and `UNIVERSE` ($\top$, all one,
-everything)---already named in [`bin/Layers.py`](../bin/Layers.py):
+poles---`NOTHING` ($\bot$, all zero) and `EVERYTHING` ($\top$, all
+one)---already named in [`bin/Layers.py`](../bin/Layers.py). (`ATOM` /
+`UNIVERSE` were the pre-2026-07-02 names; both survive as back-compat
+aliases.)
 
 | Property | Synthesizer | Analyzer |
 |---|---|---|
@@ -641,21 +694,42 @@ words bottom-up, the same router reproduces word-level runs.
 byte-exact surface for replay.
 
 The live router and span bookkeeping establish the path and the complete order
-specification. The load-bearing next implementation boundary is the hard
-`join-from-bottom` plus isotonic projection guarantee; the relational analyzer
-basis and learned convergence criterion follow it. The existing butterfly
-folds and conceptual SBOW remain unaffected.
+specification. **(2026-06-25, LANDED standalone.)** The hard `join-from-bottom`
+plus isotonic-projection guarantee is implemented in
+[`bin/Mereology.py`](../bin/Mereology.py) (`join_from_bottom`, `meet_from_top`,
+`project_monotone`, `mereological_synthesize`, `mereological_analyze`) and
+exercised over projected trees in [`bin/Meronomy.py`](../bin/Meronomy.py)
+(`MeronomyTree` and friends), with `test/test_mereology.py`,
+`test/test_meronomy.py`, and `test/test_meronomy_laws.py` covering both. It is
+not yet applied to the live percept codebook; the relational analyzer basis
+and learned convergence criterion are the remaining next-boundary work. The
+existing butterfly folds and conceptual SBOW remain unaffected.
 
 Implementation references:
 
 - poles, membership folds, and character-class regions:
   [`bin/Layers.py`](../bin/Layers.py)
-- `.where` containment, `record_cross_tower_meronomy`, and
-  `stage_analysis_spans`: [`bin/Spaces.py`](../bin/Spaces.py)
+- `record_cross_tower_meronomy` and `stage_analysis_spans`:
+  [`bin/Spaces.py`](../bin/Spaces.py)
+- `.where` containment edges, the join/meet/isotonic-projection primitives,
+  and the mereological synthesizer/analyzer (`where_containment_edges`,
+  `join_from_bottom`, `meet_from_top`, `project_monotone`,
+  `mereological_synthesize`, `mereological_analyze`):
+  [`bin/Mereology.py`](../bin/Mereology.py)
+- the projected-tree exerciser (`MeronomyTree`, word/phrase synthesis over
+  it): [`bin/Meronomy.py`](../bin/Meronomy.py)
 - presence and complement geometry:
   [Spaces.md](Spaces.md#percept-geometry-positive-unit-hypercube)
 - conceptual situating:
   [conceptual-similarity-space plan](plans/2026-06-23-conceptual-similarity-space.md)
+
+**Same module, different topic.** `bin/Mereology.py` — home to the
+join/meet/projection primitives above — also carries the unrelated
+`Mereology` mixin: the contemplative-awareness measure family (`Contiguous`,
+`Continuous`, `Peaceful`, `Area`, `Luminosity`), mixed into `BaseModel` first
+in MRO (`class BaseModel(Mereology, nn.Module)`, `bin/Models.py`). See
+[doc/research/three-surfaces.md](research/three-surfaces.md) for that
+geometry — the two share a file and a name, not an implementation.
 
 ### `isPart` as a Grammar Layer
 

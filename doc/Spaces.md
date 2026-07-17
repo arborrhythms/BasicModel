@@ -95,8 +95,12 @@
 >   full-vector lookup.
 > * **The callosum**: percepts cross NAMELESS and FACTORED
 >   (`ConceptualSpace.factor_percept` — content selects the row,
->   evidence sets $a \in [0, +1]$); parallel mode is the `2N` mixing
->   matrix; serial mode bypasses it (fusion migrates into the shift).
+>   evidence sets the SIGNED $a \in [-1, +1]$, 2026-07-06 correction:
+>   the percept input stays non-negative, but the match against a
+>   CONCEPT row is un-clamped abs-argmax, so an anti-aligned row — a
+>   "known false" exclusion — is reachable); parallel mode is the `2N`
+>   mixing matrix; serial mode bypasses it (fusion migrates into the
+>   shift).
 > * **Two codebooks, one table**: the towers ARE the PS/SS codebooks
 >   (extent/intent; shared with IS recognition — recognition is tower
 >   lookup), linked by the word-keyed binding table
@@ -131,7 +135,7 @@
 
 > **2026-06-02 update (subsymbolic analyzer).** New `IdeaSubSpace`
 > (`bin/Language.py`) -- the PS-meronymic carrier analogue of
-> `SymbolicSubSpace` (spans, parent/child links, route ids, marker-route
+> `SymbolSubSpace` (spans, parent/child links, route ids, marker-route
 > replay fields). `WholeSpace` gains `insert_operations` (grammar
 > operations in a dedicated operator codebook -- `_operation_vectors` /
 > `_operation_positions` -- separate from the symbol codebook so the
@@ -145,7 +149,7 @@
 > container + grammatical CPU; no atomic forward fold. SS owns the
 > unified word lexicon codebook with paired (orth, semantic) rows.
 > Grammar dispatch lives on the signal router (`LanguageLayer`) at
-> `SymbolicSubSpace.languageLayer`; the CKY `Chart` and STM shift-reduce
+> `SymbolSubSpace.languageLayer`; the CKY `Chart` and STM shift-reduce
 > parsers are retired. `LiftLayer` / `LowerLayer` are binary
 > `GrammarLayer` subclasses with internal Sigma / Pi (no longer
 > substrate-borrowing). `GrammarLayer` gains an optional butterfly
@@ -160,8 +164,21 @@ reverse pass reconstructs the original input from the symbolic
 representation. The legacy `SubwholeSpace` and `SyntacticSpace`
 classes have been retired — the subsymbolic role is filled by
 `PartSpace` itself, and the grammar runs from
-`SymbolicSubSpace.languageLayer` (the signal router; subsumed the retired
+`SymbolSubSpace.languageLayer` (the signal router; subsumed the retired
 `Chart`).
+
+**`SymbolSpace` literally subclasses `Space`** (`class
+SymbolSpace(Space)`, [`bin/Language.py`](../bin/Language.py)) — it is a
+peer tower alongside PartSpace/WholeSpace (the third `.what`/`.where`
+carrier), not merely an attached "grammar host." It constructs via
+`nn.Module.__init__` directly, deliberately SKIPPING `Space.__init__`'s
+object/what/where/when VQ-basis build, and holds a `SymbolSubSpace`
+coordinator (the typed-STM stack + grammar dispatch carrier) as
+`self.subspace`. `SymbolSpace` is a transparent container: reads that
+miss its own attrs fall through `__getattr__` to the held coordinator,
+and writes forward through `__setattr__`, so `symbolSpace.X` call sites
+are unchanged whether `X` lives on `SymbolSpace` or on the coordinator
+it forwards to.
 
 ```
 Forward:  InputSpace -> PartSpace -> ConceptualSpace -> WholeSpace -> OutputSpace
@@ -172,7 +189,10 @@ The pre-2026-05-27 "two feedback loops" (S $\to$ C per-stage, C $\to$ P
 cross-forward) are retired. The recurrent character lives in (a) STM
 accumulation across words in SERIAL / GRAMMATICAL mode, and (b) the T-pass
 PARALLEL refinement loop driven by `<subsymbolicOrder>` via
-`PS.forward(CS)` iterations.
+`WS.forward(cs_out=...)` / `CS.forward(...)` iterations — PS itself runs
+ONCE, at stage 0 only; the per-stage recurrence advances through the prior
+stage's CS output, not repeated PS calls (see **Sigma / Pi ownership**
+below).
 
 ![WikiOracle Space Hierarchy](diagrams/vector_spaces.svg)
 
@@ -233,9 +253,9 @@ internal Sigma / Pi (no substrate-borrowing).
 
 | Space | Owns | Forward signature |
 |---|---|---|
-| **PartSpace** | one `self.sigma` (SigmaLayer — the synthesis fold), the `<synthesis>` front ends, MPHF + index table, the surface-keyed Lexicon (`self.vocabulary`) | `PS.forward(x_subspace)` — **single positional argument** (the atom-view stem). Body: `self.sigma(x.materialize())` after the synthesis front end embeds. |
-| **ConceptualSpace** | STM (`ShortTermMemory`, depth ~8) + (when sparse-active) the single untyped square `ConceptualAttentionLayer` (a `SparseLayer` subclass) + the relation store (`ConceptAllocator` + ordered records) + concept dictionary (`similarity_codebook`) | `CS.forward(subspace, word_subspace=None)` — STM bookkeeping only (`sigma_percept` fold retired); the symbolic transform (snap + iterated wave) fires ONCE post-pump at `_forward_body`'s cutover (`cs_symbolic_phase`), never in-loop (2026-07-02 two-phase rework). Dispatches read-only grammar ops via the signal router. |
-| **WholeSpace** | one `self.pi` (PiLayer — the analysis fold), the `<analysis>` + `<lexer>` knobs, the unified word lexicon codebook with paired (orth, semantic) rows; `insert_paired_word(word, vec)` API; hosts codebook-write-required grammar ops | `SS.forward(CS_subspaceForWS, IS_concepts=None)` — stage 0 reads the unity view (`IS_concepts`); later stages read the recurrent CS. Lookup chain: surface $\to$ MPHF $\to$ orth row $\to$ parented semantic row (via `Codebook.set_part_parent`). |
+| **PartSpace** | one `self.sigma` (SigmaLayer — the synthesis fold), the `<synthesis>` front ends, MPHF + index table, the surface-keyed Lexicon (`self.vocabulary`) | `PS.forward(in_sub, cs_out=None)` (dual-towers rev 2, doc/plans/2026-07-10-conceptual-wave-ff-pyramid-design.md). `in_sub` is PS's view of the input (the atoms); `cs_out` is PS's own conceptual feedback, stashed as `self._cs_feedback` (not yet folded on the PS leg). Body: `self.sigma(x.materialize())` after the synthesis front end embeds. |
+| **ConceptualSpace** | STM (`ShortTermMemory`, depth ~8) + (when sparse-active) the single untyped square `ConceptualAttentionLayer` (a `SparseLayer` subclass) + the relation store (`ConceptAllocator` + ordered records) + concept dictionary (`similarity_codebook`) | `CS.forward(subspace, word_subspace=None)` — STM bookkeeping only (`sigma_percept` fold retired); the symbolic transform (snap + FF pyramid) fires ONCE post-pump at `_forward_body`'s cutover (`cs_symbolic_phase`), never in-loop (2026-07-02 two-phase rework). Dispatches read-only grammar ops via the signal router. |
+| **WholeSpace** | one `self.pi` (PiLayer — the analysis fold), the `<analysis>` + `<lexer>` knobs, the unified word lexicon codebook with paired (orth, semantic) rows; `insert_paired_word(word, vec)` API; hosts codebook-write-required grammar ops | `WS.forward(in_sub, cs_out=None)` — symmetric signature with PS (dual-towers rev 2 + 2026-07-11 serial migration). ONE TYPED ROUTING LAW (`hasattr(in_sub, "is_empty")`): a raw unity tensor (`[B, 1, N]`, not SubSpace-like) routes **universe-primary** — `_stage0_unity_forward(in_sub)` analyses it directly and `cs_out` is stashed as `self._cs_feedback`; a SubSpace-like `in_sub` (or `in_sub=None`) routes the **carrier body** — the recurrent leg + grammar/snap machinery, with `cs_out` primary when given (legacy carrier-call shape when only one positional arg is passed). Lookup chain: surface $\to$ MPHF $\to$ orth row $\to$ parented semantic row (via `Codebook.set_part_parent`). |
 
 **Composition (per-mode):**
 
@@ -243,8 +263,10 @@ internal Sigma / Pi (no substrate-borrowing).
   iteration per word.
 
   ```
-  PS_t = PS.forward(IS_t)            # synthesis front end + sigma fold
-  CS_t = CS.forward(PS_t)             # STM shift + push
+  PS_t = PS.forward(word_t)                     # single positional arg; no CS feedback into PS
+  WS_t = WS.forward(ws_universe, cs_out=prevCS_forSS)  # universe every pump; cs_out is the carrier feedback
+  CS_t = CS.forward(PS_t, WS_t)                  # STM shift + push
+  prevCS_forPS, prevCS_forSS = CS_t's cs._subspaceForPS/_subspaceForWS  # carried to the next word
   router.dispatch_at_C(STM)           # read-only grammar ops on STM contents
   router.dispatch_at_S(STM)           # codebook-write-required ops via SS
   ```
@@ -253,10 +275,16 @@ internal Sigma / Pi (no substrate-borrowing).
   CS.
 
   ```
-  PS_0 = PS.forward(IS); CS_0 = PS_0
+  contribution = PS.forward(IS)      # PS runs ONCE, at stage 0 only -- not
+                                     # repeated per stage (single-pass subsymbolic decision)
   for t in 1..T = <subsymbolicOrder>:
-      PS_t = PS.forward(CS_{t-1})    # refinement pass
-      CS_t = CS.forward(PS_t)         # STM[t] = PS_t (parallel write; no shift)
+      # Universe glue contract (dual-towers rev 2): sparse-parallel
+      # (symbolicOrder > 0) offers the universe EVERY stage; otherwise it
+      # bootstraps stage 0 only and t > 0 stays carrier-driven.
+      WS_t = WS.forward(unity if (sparse_parallel or t == 0) else None,
+                        cs_out=prevCS_forSS)
+      CS_t = CS.forward(contribution, WS_t)   # STM[t] = combine (parallel write; no shift)
+      contribution = CS_t             # stage k+1's contribution IS stage k's CS output
   router.dispatch_at_C(STM)           # grammar ops after STM population
   ```
 
@@ -286,23 +314,32 @@ score head).
 
 ### Butterfly mode on `GrammarLayer` (Stage 5)
 
-`GrammarLayer(butterfly=True, N=N)` allocates a packed `nn.Parameter`
-of shape `[n_levels, N // 2, 2D, 2D]` (`n_levels = log2(N)`), a
-bit-reversal permutations buffer, and LDU-parameterized invertibility
-per node. Identity init: cascade is identity at construction. Each
-subclass implements `_butterfly_pair_op(x_pair, W_node)` with its
-per-pair math:
+`GrammarLayer(butterfly=True, N=N)` allocates an FFT-style
+**element-pair** cascade over a flattened `[B, M]` view (`M` = `N`
+padded to the next power of two; `n_levels = log2(M)`), NOT a packed
+per-node matrix Parameter. Storage is three per-node LDU-triplet
+`nn.Parameter`s shared by every `GrammarLayer` subclass ---
+`butterfly_L: [n_levels, M//2]`, `butterfly_d: [n_levels, M//2, 2]`,
+`butterfly_U: [n_levels, M//2]` (sub-diagonal, the two diagonal
+scalars, super-diagonal of each node's `2 x 2` LDU block) plus a
+`butterfly_perms` buffer (per-level bit-reversal permutations placing
+XOR-neighbour elements adjacent). Identity init (`L=0, d0=d1=1, U=0`)
+makes the cascade identity at construction. `_butterfly_pair_forward`
+/ `_butterfly_pair_reverse` (`GrammarLayer`,
+[`bin/Layers.py`](../bin/Layers.py)) implement the closed-form `2x2`
+LDU pair op ONCE at the base class -- sign-flip on the off-diagonals +
+reciprocals on the diagonals, no `torch.linalg.solve`. Every
+`GrammarLayer` subclass (`SigmaLayer`, `PiLayer`, `LiftLayer` /
+`LowerLayer`, `IntersectionLayer` / `UnionLayer`,
+`ConjunctionLayer` / `DisjunctionLayer`, ...) reuses this SAME pair op
+via `self._butterfly_forward` / `self._butterfly_reverse` in butterfly
+mode; there is no per-subclass `_butterfly_pair_op` override or
+distinct pairwise math (atanh/einsum/tanh, min/max, etc.) --- the
+subclass identity only matters for the non-butterfly forward/reverse
+math.
 
-- `PiLayer._butterfly_pair_op`: atanh $\to$ einsum $\to$ tanh (multiplicative
-  log-domain pairwise).
-- `SigmaLayer._butterfly_pair_op`: atanh $\to$ einsum $\to$ tanh (additive
-  pairwise — same surface, different gradient regime).
-- `LiftLayer` / `LowerLayer`: delegate to their internal sigma / pi.
-- `IntersectionLayer` / `UnionLayer`: min / max kernels.
-- `ConjunctionLayer` / `DisjunctionLayer`: hard-coded monotonic min / max.
-
-Parameter savings: `O(N · log N · D²)` cascade vs `O(N² · D²)` for a
-single big matrix. Wired into the space folds (`PartSpace.sigma` /
+Parameter savings: `O(N · log N)` scalars per cascade vs `O(N² · D²)`
+for a single big matrix. Wired into the space folds (`PartSpace.sigma` /
 `WholeSpace.pi` post the Pi/Sigma swap) by the global `<sigmaPi>`
 mode (default butterfly). Closes the XOR convergence target
 (`test_mm_xor.py`).
@@ -373,8 +410,12 @@ A percept feature answers *how present is this?*
 
 There is no negative presence. On the percept path:
 
-- `PartSpace.factor_percept` in [`bin/Spaces.py`](../bin/Spaces.py) admits only
-  non-negative evidence; a zero percept yields zero evidence.
+- `ConceptualSpace.factor_percept` (a staticmethod, [`bin/Spaces.py`](../bin/Spaces.py))
+  keeps the percept INPUT non-negative (`percept.clamp(min=0)`; percepts are
+  one-sided) but the EVIDENCE it returns against a CS concept row is
+  SIGNED in `[-1, +1]` (2026-07-06 correction: abs-argmax selection so an
+  anti-aligned row — a "known false" exclusion — is reachable, not clamped
+  away); a zero percept yields zero evidence (the dot-product tautology).
 - The meronymic membership folds (`SigmaLayer2` / `PiLayer2` in
   [`bin/Layers.py`](../bin/Layers.py)) operate on memberships in `[0,1]` through
   `log`/`exp`, flooring the bottom element with `EPS_LOG` before `log(0)`.
@@ -437,8 +478,8 @@ The percept origin and the concept origin have different readings:
 At the percept level, absence contributes no positive evidence. Presence enters
 the order-0 concept snap as a non-negative source term; it is not re-centered or
 injected as a concept vector. `PerceptDim` and `ConceptDim` remain decoupled.
-The iterated sparse conceptual wave grows signed structure through learned
-weights and activations. Negative conceptual content therefore comes from
+The sparse conceptual feedforward pyramid grows signed structure through
+learned weights and activations. Negative conceptual content therefore comes from
 concept operations and signed relations, not from negative percept coordinates.
 
 The signed-to-membership chart `chi(a) = (1+a)/2` and its inverse belong at the
@@ -614,9 +655,10 @@ $\|x\|^2$ add, and the cdist autograd plumbing.
 > **Note.** This dot-product metric is the `similarity_codebook`'s retrieval
 > metric (used by the substitutability / SBOW *situating* signal), NOT the
 > forward concept-production path. When the sparse transform is
-> active, a concept code is produced by the snap + iterated wave
-> ($a^{i+1} = \tanh(W [a^i \mid 1] + s)$, then $a \cdot
-> \mathrm{softplus}(atom)$) — there is no
+> active, a concept code is produced by the snap + feedforward sigma-pyramid
+> (order $k$: $\mathrm{cand} = \tanh(W [a \mid 1])$ gathered to
+> `order_slice(k)` with a per-batch top-K taper — one hop per order, no
+> re-injection — then $a \cdot \mathrm{softplus}(atom)$) — there is no
 > `argmax_i (x · c_i)` concept retrieval on the forward path, and the atoms
 > are softplus-positive rather than maintained unit-norm by EMA. See
 > **ConceptualSpace $\to$ The symbolic phase**.
@@ -705,7 +747,7 @@ Current enforcement:
 
 | Source | Mechanism | Status |
 |---|---|---|
-| WholeSpace codebook | `ImpenetrableLayer` overlap penalty + variance floor; five-relations classifier pushes pairs toward **disjoint** | Active by default |
+| WholeSpace codebook | `ImpenetrableLayer` overlap penalty + variance floor; five-relations classifier pushes pairs toward **disjoint** | Opt-in (`<impenetrableOverlap>` / `<impenetrableVariance>` default `0.0`, [`bin/Spaces.py`](../bin/Spaces.py)) |
 | ConceptualSpace codebook | `ImpenetrableLayer` available; not yet wired by default | Opt-in |
 | PartSpace Lexicon | Cosine-margin pode/antipode SBOW training | Active for trained Lexicons |
 | InputSpace vocabulary | Shares PartSpace's Lexicon | Inherited (text); manual (raw) |
@@ -814,21 +856,26 @@ of `(start, end, type)`. Each span $\to$ a vector with two components:
 
 - `nWhat` dims --- token content, encoded via `Basis` / `Codebook` (the word
   embedding lookup).
-- `nWhere` dims --- positional information, materialized via `WhereEncoding`
-  (see the 2026-05-28 where-keyed-taxonomy plan). As of the 2026-06-16 redesign
-  `.where` is an **endpoint-sum BRACKET** over a span `[start, end]` (the
-  invertible `EndpointSumWhere` form adopted into the muxed tail): the key is
-  $0.5\cdot[\sin(s\cdot\omega_0)+\sin(e\cdot\omega_0),\ \cos(s\cdot\omega_0)+\cos(e\cdot\omega_0)]$,
-  so the **angle decodes the
-  span center** and the **magnitude the span extent**. An INSTANT (`start==end`)
-  collapses to the legacy single-quadrature point $[\sin(p\cdot\omega_0),\ \cos(p\cdot\omega_0)]$
-  (byte-identical to the pre-bracket stamp). `decode` returns the center (the
-  canonical positional identifier across IS / PS / SS taxonomies, recoverable via
-  $\operatorname{atan2}(\sin, \cos)/\omega_0$); `decode_span` returns `(start, end)` for the
-  mereology **contiguity / containment** test (instants snap to zero extent).
-  The period is config-derived: `<architecture><wherePeriod>` (default 8192
-  input bytes), decoupled from `nObjects`; the build seam raise-to-fits with
-  a warn-once for longer inputs (2026-07-04 encoding pass).
+- `nWhere` dims (4) --- the **2-rung start LADDER** (`WhereEncoding`,
+  2026-07-09 multi-rung pass; mirrors the `.when` v2 ladder below):
+  $[\sin(p\,\omega_{lf}), \cos(p\,\omega_{lf}), \sin(p\,\omega_{hf}),
+  \cos(p\,\omega_{hf})]$ — two TRUE quadrature pairs over ONE quantity, the
+  byte **START** position $p$ only (the END is NOT in the band; content
+  terminates the tile), with $P_{lf} = $ `<wherePeriod>` (default 8192 input
+  bytes; the full-sentence RANGE) and $P_{hf} = P_{lf} / $ `<whereRungRatio>`
+  (default 32; the fine RESOLUTION rung — one byte at $\approx$ 0.0245 rad at
+  the default period, above the $\approx$ 0.02 rad measured reverse-transport
+  noise, the Gate-B closing measurement). `decode` = atan2 per pair + HF
+  branch resolution by LF (the canonical positional identifier across IS /
+  PS / SS taxonomies). The 2026-06-16 **endpoint-sum BRACKET** form (angle =
+  span center, magnitude = span extent, with a `decode_span`) was RETIRED
+  from `.where` on 2026-07-09 in favor of this start-only ladder;
+  `WhereEncoding` has no `decode_span` (the analyzer-side `EndpointSumWhere`
+  in `bin/perceptual_analyzer.py` is a separate codec that keeps the bracket
+  form for its own span key). The period is config-derived:
+  `<architecture><wherePeriod>`, decoupled from `nObjects`; the build seam
+  raise-to-fits with a warn-once for longer inputs (2026-07-04 encoding
+  pass).
 - `nWhen` dims (4) --- the **2-rung start LADDER** (`WhenStartDurationEncoding`,
   2026-07-04 encoding pass): $[\sin(s\,\omega_{lf}), \cos(s\,\omega_{lf}),
   \sin(s\,\omega_{hf}), \cos(s\,\omega_{hf})]$ — two TRUE quadrature pairs
@@ -843,10 +890,13 @@ of `(start, end, type)`. Each span $\to$ a vector with two components:
   band (it was write-only: `decode_span` had zero callers, tense rotates the
   onset only, aspect is retired) — exact extents belong to the record store
   when aspect is built. Tense is the onset-vs-`now` relation; `shift_time`
-  rotates BOTH pairs coherently, each at its own $\omega$. The endpoint-sum
-  bracket no longer serves `.when` (`WhereEncoding` keeps it).
+  rotates BOTH pairs coherently, each at its own $\omega$. Both `.where` and
+  `.when` are now START-only 2-rung ladders; the endpoint-sum bracket each
+  once carried in the muxed band is retired from both (`WhereEncoding` /
+  `WhenStartDurationEncoding`) and survives only in the analyzer-side
+  `EndpointSumWhere` span codec.
 
-Result: `[nActive, nWhat + nWhere]` tensor.
+Result: `[nActive, nWhat + nWhere + nWhen]` tensor.
 
 **Text mode reverse.** Inverts the span encoding: each vector $\to$ nearest
 codebook entry, then spans $\to$ characters via the stored offset table.
@@ -867,9 +917,10 @@ scaled to `[-1, 1]` via the global data min/max.
 
 > 2026-05-28: per-Space `<nWhere>` / `<nWhen>` XML knobs are retired.
 > The band is architectural: `architecture.canonical_shape(section)` —
-> (nWhere=2, nWhen=4) on every interior space, (0, 0) on OutputSpace
-> (the 2026-07-04 encoding pass widened `.when` 2→4). See
-> [doc/old/2026-05-28-where-keyed-taxonomy.md](old/2026-05-28-where-keyed-taxonomy.md).
+> (nWhere=4, nWhen=4) on every interior space, (0, 0) on OutputSpace
+> (the 2026-07-04 encoding pass widened `.when` 2 $\to$ 4; the 2026-07-09
+> multi-rung pass widened `.where` 2 $\to$ 4 to match, [`bin/architecture.py`](../bin/architecture.py)).
+> See [doc/old/2026-05-28-where-keyed-taxonomy.md](old/2026-05-28-where-keyed-taxonomy.md).
 
 **Invertibility.** Always non-invertible; reverse is a separate reconstruction
 using the span table.
@@ -972,9 +1023,11 @@ and the MPHF + index table for per-word surface $\to$ row lookup.
   flat-slab invariant).
 - `self._mphf_gpu_layer`: MPHF infrastructure for fast surface lookup.
 - `self.chunk_layer`: BPE machinery (the `ChunkLayer` from `bin/Layers.py`).
-- `self.radix_layer`: when `<synthesis>radix</synthesis>`, the input lookup
-  routes through `RadixLayer` (radix trie + inverse table + learned
-  codebook + byte fallback). `RadixLayer` is a first-class `Layer`
+- `self.percept_store` (there is no `self.radix_layer` attribute; `percept_store`
+  is a `Space` property that forwards to `self.subspace.percept_store`,
+  [`bin/Spaces.py`](../bin/Spaces.py)): when `<synthesis>radix</synthesis>`,
+  the input lookup routes through `RadixLayer` (radix trie + inverse table +
+  learned codebook + byte fallback). `RadixLayer` is a first-class `Layer`
   subclass in `bin/Layers.py` (formerly the standalone
   `PerceptStore`). `PartSpace.reverse` invokes
   `RadixLayer.reverse` for the structural decode (chunk-id $\to$ bytes $\to$
@@ -983,18 +1036,27 @@ and the MPHF + index table for per-word surface $\to$ row lookup.
 The legacy `pi_input` / `pi_concept` ModuleLists are retired, as is the
 sigma_percept-style additive fold on CS.
 
-**Forward (`PS.forward(x_subspace)`):**
+**Forward (`PS.forward(in_sub, cs_out=None)`):**
 
 ```python
-def forward(self, x_subspace):
+def forward(self, in_sub, cs_out=None):
+    # Dual-towers rev 2: PS's own conceptual feedback is stashed, not yet
+    # folded (self._cs_feedback = cs_out).
+    x_subspace = in_sub
+    self._cs_feedback = cs_out
     # synthesis front end embeds (lexicon/bpe/byte/radix/mphf), then:
-    x = self.forwardBegin(x_subspace, returnVectors=True)
-    return self.sigma.forward(x)   # the union fold; internal tanh
+    primary = self.forwardBegin(x_subspace, returnVectors=True)
+    # Unified fold-width law (fold_content_apply, bin/Spaces.py): the sigma
+    # fold is sized to the CONTENT columns only (Space.nDim); a wider event
+    # carries the trailing where/when band, which rides through unchanged.
+    return fold_content_apply(self.sigma.forward, self.sigma.nInput, primary)
 ```
 
-`x_subspace` is the atom-view stem (PS runs ONCE at stage 0 — the
+`in_sub` is the atom-view stem (PS runs ONCE at stage 0 — the
 single-pass subsymbolic decision; the per-stage recurrence advances
-through the ConceptualCombine, not repeated PS calls).
+through the ConceptualCombine, not repeated PS calls). `cs_out` is PS's
+symmetric counterpart to the `cs_out` WholeSpace also now accepts (the
+dual-towers rev 2 signature, doc/plans/2026-07-10-conceptual-wave-ff-pyramid-design.md).
 
 **Math (the sigma fold — PS's synthesis operator):**
 
@@ -1017,8 +1079,11 @@ auto-derived from the space shape (`nInput * nInputDim`, internally padded
 to the next power of two); there is no `<butterflyN>` knob (it was retired
 2026-06-05). `<butterfly>` itself is a deprecated alias for the
 architecture-level `<sigmaPi>` (new configs should use that). Internal
-storage becomes a packed `nn.Parameter[n_levels, N//2, 2D, 2D]` cascade
-with bit-reversal permutations. Closes the XOR convergence target. PartSpace
+storage becomes the per-node LDU triplet `butterfly_L` / `butterfly_d` /
+`butterfly_U` (`nn.Parameter`s over the flattened SCALAR element axis, not
+a packed per-pair matrix — see **Butterfly mode on `GrammarLayer`** above)
+plus a `butterfly_perms` bit-reversal buffer. Closes the XOR convergence
+target. PartSpace
 is subsymbolic and takes no `<codebook>` element (it was retired; PS is
 fixed to `none`); butterfly weight gradient flow therefore flows through the
 continuous `.event` passthrough on PS. STE-through-snap (for spaces that do
@@ -1037,10 +1102,12 @@ sparse transform is active (`symbolicOrder > 0` in parallel mode,
 `_sparse_active()`), a concept is a high-dimensional atom in **ConceptDim**
 (stored in the CS concept dictionary, the `similarity_codebook`) whose signed
 activation is produced by the POST-PUMP SYMBOLIC PHASE (2026-07-02 two-phase
-rework; v3 iterated wave 2026-07-03): the settled field is snapped to the
-ORDER-0 snap block
-(`cs_snap_order0`) and the conceptual wave iterates $K$ = `symbolicOrder`
-steps over the single untyped square `ConceptualAttentionLayer`, then each activation
+rework; dual-towers rev 2 feedforward sigma-pyramid, 2026-07-10, superseding
+the v3 iterated wave): the settled field is snapped to the ORDER-0 snap block
+(`cs_snap_order0`) and a feedforward pyramid runs up to $K$ = `symbolicOrder`
+order-indexed rungs over the single untyped square `ConceptualAttentionLayer`
+(one hop per rung, gathered to that order's rows via `order_slice`, with a
+per-batch top-K taper — no fixed point, no re-injection), then each activation
 scales its atom (the decode inlined in `cs_forward_content`). `PerceptDim`
 and `ConceptDim` are **decoupled** (the
 weights live in index/activation space); a concept is NOT an additive linear
@@ -1109,31 +1176,68 @@ the master plan, no per-stage caches. The sparse-coding reconstruction is
 referential — the untyped edge lists ARE the concept's decomposition —
 rather than an inverse fold.
 
-**The symbolic phase (two-phase forward, 2026-07-02;
-doc/plans/2026-07-02-two-phase-loops-sparse-relation.md; v3 iterated wave,
-2026-07-03, doc/plans/2026-07-02-iterated-symbolic-loop.md).** When
+**The symbolic phase (two-phase forward, 2026-07-02,
+doc/plans/2026-07-02-two-phase-loops-sparse-relation.md; dual-towers rev 2
+FEEDFORWARD SIGMA-PYRAMID, 2026-07-10, superseding the v3 iterated wave,
+doc/plans/2026-07-10-conceptual-wave-ff-pyramid-design.md).** When
 `_sparse_active()` (i.e. `_symbolic_order > 0` and parallel/`serial=false`),
 `BasicModel._forward_body` runs the purely subsymbolic pump for
-`subsymbolicOrder` passes and then ONE cutover on the settled terminal field:
+`subsymbolicOrder` passes and then ONE cutover on the settled terminal field
+(`cs_symbolic_phase` = the snap + `cs_forward_content`,
+[`bin/Spaces.py`](../bin/Spaces.py)):
 
 ```
-a_0      = cs_snap_order0(settled)     # tanh normalized-sum presence vs the
-                                       # ORDER-0 snap block (+ EMA trace)
-a^{i+1}  = tanh(W [a^i | 1] + s)       # the wave, i = 0..K-1, K = symbolicOrder;
-                                       # s = a_0 padded (additive source, every step)
-code[c]  = a[c] * softplus(atom[c])    # dictionary decode (inlined)
+a_0        = cs_snap_order0(settled)        # signed tanh normalized-sum presence
+                                            # vs the ORDER-0 snap block (+ EMA trace)
+a          = pad(a_0, N)                    # order-0 rows, zero-padded to the full inventory
+for k in 1..min(K, len(order_caps) - 1):    # K = symbolicOrder: a CEILING, not forced depth
+    start, end = order_slice(k)             # order k's row range in the stacked inventory
+    cand       = tanh(W [a | 1])[start:end] # ONE feedforward hop, gathered to order k's rows
+    winners    = top_k(rank(cand), caps[k]) # per-batch top-K taper (order_caps()[k])
+    a[start:end] = cand * winners_mask      # only the winners commit; losers stay 0
+code[c]    = a[c] * softplus(atom[c])       # dictionary decode (inlined)
 ```
 
-(`cs_symbolic_phase` = the snap + `cs_forward_content`.) The percept
-families AND the per-order role-split families are RETIRED: the store is ONE
+`cs_forward_content` ([`bin/Spaces.py`](../bin/Spaces.py)) is a strict
+**feedforward sigma-pyramid**, not an iterated fixed-point wave: order 0 is
+the snap, and each subsequent order $k$ is read straight off `order_slice(k)`
+and computed in exactly ONE hop through the shared store `W` — "No fixed
+point, no re-injection" (the function's own in-code comment). Unlike the
+retired v3 wave there is no repeated re-application of `W` to its own output
+and no additive source term `s` carried step to step; `order_caps()` derives
+each order's row budget as a tile-based taper `[base, base>>1, .., 1]`
+(`base` = `outputShape[0]` tiles, shrunk until the whole taper fits
+`nVectors`), and at each order only the top-`caps[k]` candidates by rank
+survive. Rank defaults to `|cand|`, optionally boosted by
+`self._relevance_priority` (an admitted-rows-only awareness-spreading score,
+`rank = |cand| * (1 + score)` with `score = p[row] + (|W| p)[row]`; absent by
+default, in which case ranking is byte-identical to plain `|cand|` top-K).
+The per-step wave-settle statistic once tracked as `_cs_wave_qe` is now
+hardcoded to `None` (`# wave retired`) — a single feedforward pass has no
+settle dynamics left to report, and the Kripke-groundedness diagnostic that
+read it, `cs_groundedness_probe`, was REMOVED 2026-07-10 along with the wave
+(zero grep hits in the current codebase; see
+[Architecture.md](Architecture.md#relation-table-entry-contract) "Groundedness
+and cycles"). Per-order diagnostics instead live on `_cs_level_acts` /
+`_cs_level_rows` (the winning activations / global row indices at each rung),
+the latter used to stage the pyramid's per-order winners onto the subspace
+index so a generic `materialize()` pulls exactly the selected codes.
+
+The percept families AND the per-order role-split families are RETIRED: the
+store is ONE
 square untyped `ConceptualAttentionLayer` (a `SparseLayer` subclass) over the stacked
 concept inventory, edges = fuzzy set-membership degrees, plus a
 bias-column edge for relations bounded above by the EVERYTHING pole (a
-concrete whole retires it). The row space is two blocks: the SNAP
-block ($[0, n_{\text{snap}})$, $n_{\text{snap}} = \max(1, \lfloor N/2 \rfloor)$) RESERVES
-codebook rows for order-0 concepts (no in-edges; their decomposition lives
-in the reference store), and the RELATION POOL (the rest) holds minted
-relations (first-come; overflow warns loudly). Self-edges raise (the Quine
+concrete whole retires it). The row space is order-tapered, not a flat
+two-block split: `order_caps()` ([`bin/Spaces.py`](../bin/Spaces.py)) gives
+`[base, base>>1, .., 1]` (`base = min(outputShape[0], N)`, shrunk until the
+whole taper fits `N = nVectors`), and `order_slice(k)` is the `[start, end)`
+row range of order `k` within that stacked taper. The SNAP block is
+`order_slice(0)` (width `base`) and RESERVES codebook rows for order-0
+concepts (no in-edges; their decomposition lives in the reference store);
+`order_slice(k)` for `k = 1..K` is the RELATION POOL, itself sub-divided
+per order (each order's cap is the prior order's `>> 1`, first-come within
+its own slice; overflow warns loudly). Self-edges raise (the Quine
 atom). Weights are **signed** and learnable (`SparseLayer.values`, grown
 host-side by `add_concept_edge`, surfaced via `getParameters()` and
 registered into the optimizer by `_maybe_rebuild_optimizer_for_csw`); the
@@ -1147,10 +1251,7 @@ links first). Concretely, each sparse entry pairs one concept row index with
 one symbol column index. Repeated entries with the same concept index form its
 set-like definition; recursive `[whole=current, part=rest]` relation concepts
 form a vine. The normative distinction is stated in
-[Architecture.md](Architecture.md#relation-table-entry-contract). The per-step
-wave residual (`_cs_wave_qe`) is a report-only
-settle statistic; `cs_groundedness_probe` gives the Kripke grounded /
-ungrounded reading (bias column masked; see Architecture.md sec A). The
+[Architecture.md](Architecture.md#relation-table-entry-contract). The
 phase outputs feed the SS leg, the head-side losses (conceptual SBOW on the
 settled slab), and the concept table — NEVER the subsymbolic carrier
 (`<sparseReplace>` retired). Off-path (`symbolicOrder = 0`) $\to$ no cutover $\to$
@@ -1196,7 +1297,7 @@ convergence suites). Whole-slab configs run one forward per sentence, so
 the stash is the whole sentence; a per-word/serial config commits the last
 forward's stash per reset.
 
-Two smaller forward-purity fixes accompany it: `SymbolicSubSpace._synthesize_
+Two smaller forward-purity fixes accompany it: `SymbolSubSpace._synthesize_
 rule_probs` normalizes branchlessly (`probs / row_sums.clamp_min(tiny)`
 instead of `if nz.any()`), and the fail-loud `isfinite` guards (here and in
 `insert_meta` / `record_lbg_pull`) are gated behind `util.MODEL_DEBUG` --- a
@@ -1234,7 +1335,7 @@ API: `push(b, idea)`, `pop(b)`, `peek(b, n=0)`, `snapshot(detach=False)`,
 - **PARALLEL**: T iterations of `PS.forward(CS)` write to STM slots
   simultaneously; no shift. T = `<subsymbolicOrder>`.
 
-The signal router (`SymbolicSubSpace.languageLayer`) consumes
+The signal router (`SymbolSubSpace.languageLayer`) consumes
 `stm.snapshot()` as its slab input for grammar op dispatch.
 
 Both transitions follow a **predict-then-perceive** discipline (the
@@ -1284,7 +1385,7 @@ class LowerLayer(GrammarLayer):
         return self._pi.generate(parent)
 ```
 
-Both register with the signal router (`SymbolicSubSpace.languageLayer`) as
+Both register with the signal router (`SymbolSubSpace.languageLayer`) as
 CS reduce ops via the existing host-layer registry path. Both
 inherit `GrammarLayer` butterfly mode (Stage 5) — set
 `butterfly=True, N=N` at construction to enable cross-position cascade.
@@ -1423,14 +1524,19 @@ prototypes when its XML weights are enabled. See
 
 ## SyntacticSpace --- retired
 
-The standalone `SyntacticSpace` class has been retired. Grammar /
-parser / derivation-tree machinery now lives on `SymbolSpace`, which
-attaches a `SyntacticLayer` to `WholeSpace` (the canonical grammar
-host). The binary-derivation behavior previously documented here
-is preserved by `WholeSpace.compose`; words are still
-concepts encoding grammatical rules, and the derivation is still
-stored as word tuples --- just on `WholeSpace` rather than on a separate
-Space.
+The standalone `SyntacticSpace` class has been retired. `WholeSpace`
+itself has no `compose` method — dispatch instead runs through two
+cooperating layers: `build_space_syntactic_layer`
+([`bin/Language.py`](../bin/Language.py)) constructs a per-space
+`SyntacticLayer` and stores it as `space.syntacticLayer` (one instance
+per PartSpace / ConceptualSpace / WholeSpace, registered with the
+`SymbolSpace` coordinator's host-layer registry), and the signal router
+`SymbolSubSpace.languageLayer` (a `LanguageLayer`) is the canonical
+parser — its `compose` / `generate` do the binary-derivation work the
+retired `SyntacticSpace` used to do. Words are still concepts encoding
+grammatical rules, and the derivation is still stored as word tuples ---
+just dispatched through `WholeSpace.syntacticLayer` /
+`symbolSpace.languageLayer` rather than living on a separate Space.
 
 See [Language.md](Language.md) for grammar and parser dispatch.
 
@@ -1438,14 +1544,45 @@ See [Language.md](Language.md) for grammar and parser dispatch.
 
 ## OutputSpace
 
-**Role.** Maps symbolic (or syntactic) vectors to task targets via linear
-projection.
+**Role.** Maps symbolic (or syntactic) vectors to task targets. Three
+branches, selected at construction ([`bin/Spaces.py`](../bin/Spaces.py)):
 
-**Forward.** `y = W_out * x + b_out`. Always `reshape=True` --- the
-`[B, nSymbols, symbolDim]` tensor is flattened before projection.
+- **Nonlinear / activation mode** (`<nonlinear>` on `<OutputSpace>`,
+  `self.nonlinear_output`): an `InvertibleLinearLayer` acts on the scalar
+  SYMBOL ACTIVATION vector (`[B, nSymbols] -> [B, nOutput]`), wrapped with
+  `atanh` $\to$ linear $\to$ `tanh` to reproduce the nonlinearity a
+  `PiLayer` would apply internally — only PS / CS may own a
+  `SigmaLayer`/`PiLayer`, so this path builds the same nonlinear surface
+  directly instead of delegating to one. `forward` reads
+  `vspace.materialize(mode="activation")`; `reverse` mirrors it:
+  `tanh(linearLayer.reverse(atanh(x)))`.
+- **Unquantized regression head** (`self._regression_head`, true when
+  `nVectors <= 1` or `<codebook>none</codebook>`): a head that can only
+  name a single codebook prototype would have a VQ snap collapse to the
+  row-mean, so this branch NEVER snaps regardless of a configured
+  `<codebook>quantize</codebook>`. `forwardLinear` is bias-free
+  (`x @ W`); a learned scalar intercept `self._readout_bias` (zero-init)
+  is added by `_apply_readout` so a `{0,1}` target (e.g. XOR) can still
+  shift off the feature mean. `reverse` undoes it via `_invert_readout`
+  before the inverse linear. The former `<readout>` enum
+  (`identity`/`sigmoid`) was retired 2026-06-19 — the head is always
+  linear+bias, never squashed.
+- **Codebook (quantized, symbolic) head** (`elif self.codebook`, when
+  `nVectors > 1` with a codebook): the post-linear event snaps through
+  `self.subspace.get_vectors().forward(output)` — genuinely symbolic,
+  multi-vector outputs only.
 
-**Reverse.** Pseudoinverse of `W_out`. Text mode snaps each output vector to
-the nearest codebook entry (nearest-neighbour lookup).
+**Forward.** Vector-mode (the two non-activation branches): `y = W_out * x +
+b_out` through the configured linear chain (`InvertibleLinearLayer` when
+`<invertible>`, else a `LinearLayer` pair), then the regression-head or
+codebook branch above. Always `reshape=True` --- the `[B, nSymbols,
+symbolDim]` tensor is flattened before projection (`OutputSpace` is the
+sole flattener, 2026-06-07 dim-explicitness pass).
+
+**Reverse.** Pseudoinverse of `W_out` (vector-mode; regression-head
+un-readout runs first), or the activation-mode inverse above. Text mode
+snaps each output vector to the nearest codebook entry (nearest-neighbour
+lookup).
 
 **`getEmbeddedIO()` override.** Returns raw target dimensions rather than
 encoded dimensions, so loss is computed in the output vocabulary space.
@@ -1456,9 +1593,13 @@ is snapped to its nearest codebook entry and fed back as input until
 
 **Key parameters.** `nActive`, `nDim`, `nVectors`.
 
-**Layer.** `LinearLayer` with `(bias, temp)` for ergodic mode.
+**Layer.** `LinearLayer` / `InvertibleLinearLayer` (vector-mode) or the
+wrapped `InvertibleLinearLayer` (activation-mode), with `(bias, temp)` for
+ergodic mode.
 
 **Range.** Forward rescales `[-1, 1]` to the original data range via
 `Data.denormalize()`. Reverse applies `Data.normalize(x, "output")`.
 
-**Invertibility.** Pseudoinverse; not exactly invertible in general.
+**Invertibility.** Pseudoinverse (vector-mode); the activation-mode branch
+is exactly invertible via its `InvertibleLinearLayer`; not exactly
+invertible in general.

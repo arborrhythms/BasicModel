@@ -20,10 +20,13 @@ reductions rather than only in distributional similarity.
 >   `ConceptualSpace._maybe_autobind_meta` at stage 0.
 > - **LBG-style splitting on SS codebook (2026-05-29 Task C).** The
 >   SS Codebook is updated under Gray (1990) EMA with per-row
->   running-variance tracking. When a row's variance exceeds a
->   threshold, it splits along the top-variance eigendirection; new
->   prototypes are seeded around the parent
->   $\pm \delta \cdot \text{variance\_axis}$. EMA continues independently on each
+>   running-variance tracking. When a row's per-coordinate variance
+>   exceeds a threshold, it splits along the unit-norm **mean
+>   displacement** direction (the principal "pull" the accumulated
+>   binding vectors exert on the row --- no eigendecomposition or SVD
+>   involved); new prototypes are seeded around the parent
+>   $\pm \varepsilon \cdot \hat{d}$, where $\hat{d}$ is that unit
+>   displacement direction. EMA continues independently on each
 >   child. This replaces the previous random-direction VQ init,
 >   which landed too many prototypes in degenerate basins on
 >   small-codebook configs.
@@ -31,10 +34,14 @@ reductions rather than only in distributional similarity.
 >   Embedding is unit-ball-projected via `Lexicon.normalize()` after
 >   each `optimizer.step()` so joint training doesn't drift the rows
 >   off the ball.
-> - **PS `<codebook>none</codebook>` mode.** `MM_xor.xml` and
->   `XOR_exact.xml` turn off the PS-side VQ snap so the butterfly
->   cascade weights actually train. The orthographic Lexicon
->   Embedding remains live; only the VQ snap on top is retired.
+> - **PartSpace's VQ snap is hardwired off.** PartSpace's `<codebook>`
+>   element was retired from the schema (2026-06-09 asymmetric-VQ
+>   plan): PS is unconditionally `codebook_mode="none"` in code, not
+>   via an XML tag, so the butterfly cascade weights actually train.
+>   `MM_xor.xml` carries no `<codebook>` tag at all; `XOR_exact.xml`
+>   does set `<codebook>none</codebook>`, but that tag is on
+>   `WholeSpace`, not PartSpace. The orthographic Lexicon Embedding
+>   remains live regardless; only the VQ snap on top is retired.
 > - See [doc/old/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md](old/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md).
 
 The Lexicon's narrative description and distance math have moved into

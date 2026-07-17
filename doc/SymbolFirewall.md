@@ -58,13 +58,13 @@ already built, plus a small set of identified gaps.
 
 | # | Invariant | Status | Anchor |
 |---|---|---|---|
-| 1 | No anonymous persistent state | **satisfied** | `Codebook` rows are addressed by integer position; `part_parents` meronomy ([Spaces.py:2669](../bin/Spaces.py#L2669), [set_part_parent:3297](../bin/Spaces.py#L3297)) |
+| 1 | No anonymous persistent state | **satisfied** | `Codebook` rows are addressed by integer position; `part_parents` meronomy (Spaces.py, `Codebook.part_parents`, `Codebook.set_part_parent`) |
 | 2 | No unrestricted global residual stream | **satisfied** | Five-Space pipeline; cross-module signal goes through STM + the grammar router, not a shared hidden vector ([Architecture.md](Architecture.md), [Spaces.md](Spaces.md)) |
-| 3 | All latent vectors owned by symbols | **satisfied** | META taxonomy binds every latent to a position: `insert_whole` ([Spaces.py:17915](../bin/Spaces.py#L17915)), `insert_meta` ([Spaces.py:18441](../bin/Spaces.py#L18441)), `taxonomy_parent` ([Spaces.py:18674](../bin/Spaces.py#L18674)) |
-| 4 | Operations declare read/write masks | **partial** | Mode-partitioned `reference_update_mask` ([Spaces.py:83](../bin/Spaces.py#L83)), `update_mask_fn` ([Spaces.py:7942](../bin/Spaces.py#L7942)), `intent_priming_weights` ([Spaces.py:104](../bin/Spaces.py#L104)). **No per-operation *feature* mask** until the verb edit below. |
+| 3 | All latent vectors owned by symbols | **satisfied** | META taxonomy binds every latent to a position: `WholeSpace.insert_whole`, `WholeSpace.insert_meta`, `WholeSpace.taxonomy_parent` (Spaces.py; note `ConceptualSpace` also defines an unrelated, same-named `taxonomy_parent` — disambiguate by class) |
+| 4 | Operations declare read/write masks | **partial** | Mode-partitioned `reference_update_mask`, `update_mask_fn` (installed by `install_reference_update_law`), `intent_priming_weights` (Spaces.py). **No per-operation *feature* mask** until the verb edit below. |
 | 5 | Semantic mutation emits a delta | **partial** | Truth-domain only: luminosity + `extrapolate` deltas ([Logic.md](Logic.md), [Reasoning.md](Reasoning.md)). Not yet generalized to all mutations. |
 | 6 | Temporary latent is compressed or discarded | **satisfied (by design)** | Bounded STM depth + reset cascade ([STM.md](STM.md), [Spaces.md](Spaces.md)); no indefinite latent workspace |
-| 7 | Recurrent useful patterns are promoted | **satisfied** | LBG codebook split + meta auto-bind `_maybe_autobind_meta` ([Spaces.py:13752](../bin/Spaces.py#L13752)) |
+| 7 | Recurrent useful patterns are promoted | **satisfied** | LBG codebook split + meta auto-bind `ConceptualSpace._maybe_autobind_meta` (Spaces.py) |
 
 "Partial" rows (#4, #5) are where this body of work makes concrete progress; the
 remaining gaps are listed under *Future work*.
@@ -98,17 +98,25 @@ eigen-signature** — its activated eigenfeatures in the codebook geometry, the
 learned class identity it already carries. Where the NP lacks a feature (out of
 class) `p_class` $\approx 0$ and that feature is preserved. The only per-verb parameter
 is a **sparse** eigenvalue edit `δ_v` over the shared lift operator's content
-eigenbasis (the LDU diagonal is the eigenvalue-like component,
-[Language.py:2642](../bin/Language.py#L2642)), made sparse by an in-forward
-soft-threshold plus the L1 hook `gate_l1_loss`. The edit is a **zero-init
-residual branch** (untrained ⇒ no-op ⇒ the sigma fold), and stashes an
-introspectable `adverb_purchase` diagnostic — a first, bounded form of the emitted
-semantic delta. NOTE (2026-06-20): the eig-based *verb* edit was removed (the verb
-is the lift operator itself); this mechanism is now the **adverb** eigenmodifier.
-The live grammar path is `adverb`, implemented by `AdverbLayer`, which
-force-builds the zero-init projection and calls `LiftLayer.apply_adverb`
-([Language.py:3049](../bin/Language.py#L3049)). `<adverbEigEdit>` remains only as the legacy
-direct-`LiftLayer` helper flag. Source proposal:
+eigenbasis (the LDU diagonal is the eigenvalue-like component, in `Layers.py`
+— not `Language.py`: `InvertibleLinearLayer`'s `d` factor, carried through
+`SigmaLayer`'s triangular L/D/U factorization), made sparse by an in-forward
+soft-threshold plus the L1 hook `gate_l1_loss`. The edit is a **zero-init residual branch**
+(untrained ⇒ no-op ⇒ the sigma fold), and stashes an introspectable
+`adverb_purchase` diagnostic — a first, bounded form of the emitted semantic
+delta. NOTE (2026-06-20, corrected): only the `verbEigEdit` **residual branch** in
+`LiftLayer.forward` was removed (the sparse edit that used to ride on top of the
+symmetric sigma fold); that mechanism is now the **adverb** eigenmodifier. A
+separate, still-live eigen-spectrum edit remains on the verb itself:
+`LiftLayer.apply_verb` / `unapply_verb` (inherited by `VerbLayer`) apply the
+verb's own sparse log-eigenvalue spectrum via `LiftLayer._verb_spectrum_w`,
+gated by `architecture.verbSpectrum` (force-built on by `VerbLayer`, its own
+class, subclassing `LiftLayer`) — so the verb still performs a live eigenvalue
+edit, just a different one from the removed residual. The live grammar path for
+the mask/mean mechanism described above is `adverb`, implemented by
+`AdverbLayer` (also its own class, subclassing `LiftLayer`), which force-builds
+the zero-init projection and calls `LiftLayer.apply_adverb`. `<adverbEigEdit>`
+remains only as the legacy direct-`LiftLayer` helper flag. Source proposal:
 [`doc/old/semantic_verb_np_mask_eigenvalue_proposal.md`](old/semantic_verb_np_mask_eigenvalue_proposal.md).
 
 This is the firewall's verb example made real: the same NP participates in

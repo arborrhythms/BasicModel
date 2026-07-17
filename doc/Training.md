@@ -7,11 +7,14 @@
 
 > **2026-05-29 deltas:**
 >
-> - **Embedding unit-ball normalization.** The training loop calls
->   `Lexicon.normalize()` (unit-ball projection on the per-row
->   vectors) right after `optimizer.step()` in
->   `bin/Models.py::runBatch`. Keeps embedding vectors from drifting
->   off the unit ball under `JOINT` / `BACKPROP` modes.
+> - **Embedding unit-cell wrap.** The training loop calls `normalize()`
+>   on the `Embedding` basis (`perceptualSpace.subspace.what`) right
+>   after `optimizer.step()` in `bin/Models.py::runBatch`. That
+>   `normalize()` is a periodic unit-cell **wrap** into $[-1, 1)$ via
+>   `embed._wrap_unit_ball` (torus geometry), *not* an L2 ball
+>   projection (`Layers.Lexicon.normalize` does ball-project, but is
+>   not on this path). Keeps embedding vectors from drifting out of
+>   the unit cell under `JOINT` / `BACKPROP` modes.
 > - **Seeded retries for MM_xor tests.** `test_learns_xor_signal`
 >   and `test_convergence` in `test/test_mm_xor.py` use
 >   `for seed in (42, 123, 7): torch.manual_seed(seed); …` (the
@@ -94,7 +97,9 @@ distal reward, so it must explore to break symmetry).
 ## Phase 1: Embedding Pretraining (`make train` / `embed.py train`)
 
 Produces a static embedding artifact (e.g. `BasicModel.kv`). Output path from
-`<embeddingPath>`.
+`<embeddingPath>`. Under `make train` (`bin/train.py`), Phase 1 runs **only**
+when the artifact is absent or `--force-embeddings` is passed (byte-lexer
+configs skip it entirely); Phase 2 always runs.
 
 ### Pipeline
 
@@ -115,7 +120,9 @@ word, samples a same-power random out-group, and trains two attractive terms:
 - the word vector is pulled toward its in-sentence pode;
 - random out-group vectors are pulled toward the pode's torus antipode.
 
-Implementation: `StreamingSBOWTrainer.train_sentence()` in `bin/embed.py`.
+Implementation: `StreamingSBOWTrainer._train_sentence()` (private) in
+`bin/embed.py`. `sim(...)` below is `Lexicon.similarity`, the wrapped-MSE
+torus similarity in $[-1, 1]$ --- not a dot product.
 
 ```python
 vecs = embeddings(idx)              # [N, D]
@@ -127,23 +134,28 @@ loss -= logsigmoid(sim(antipode, out_vecs)).mean()
 
 ### CBOW (Continuous Bag of Words)
 
-CBOW predicts a single target word from its context. Context mean (with
-padding for variable-length contexts):
+CBOW predicts each target word from its context; every in-vocab word in the
+sentence takes a turn as the target ($N$ examples per sentence), with a
+leave-one-out padded context mean:
 
 $$\bar{c}_i = \frac{1}{|C_i|} \sum_{j \in C_i} v_j$$
 
 Loss applies the same negative-sampling objective per-word to the padded
 context mean rather than the leave-one-out centroid:
 
-$$\mathcal{L}_{\text{CBOW}} = -\log \sigma({\bar{c}_i}^\top v_{w_i}) - \sum_{k=1}^{K} \log \sigma(-{\bar{c}_i}^\top v_{w_k^-})$$
+$$\mathcal{L}_{\text{CBOW}} = -\log \sigma\big(s(\bar{c}_i, v_{w_i})\big) - \frac{1}{K}\sum_{k=1}^{K} \log \sigma\big(-s(\bar{c}_i, v_{w_k^-})\big)$$
 
-where $K$ is the number of negative samples and $w_k^-$ are sampled words.
+where $s(a, b)$ is the wrapped-MSE torus similarity (`_wrapped_mse_score`,
+$1 - 2\,\mathrm{mean}(\delta_{\text{wrap}}^2)$ in $[-1, 1]$ --- not a dot
+product), $K = 64$ is the negative-sample count, and $w_k^-$ are uniformly
+sampled words. No full-softmax vocabulary head is involved. Implementation:
+`PretrainModel.train_step` $\to$ `_neg_sampling_loss` in `bin/embed.py`.
 
 ### Two-Pass Architecture
 
 - **Pass 1 (vocabulary):** Stream all documents, count every word. Words
-  meeting `min_count` are promoted; model (embedding + linear head) allocated
-  once at final vocab size.
+  meeting `min_count` are promoted; the model (a `Lexicon` embedding table
+  only --- no vocab-projection head) is allocated once at final vocab size.
 - **Pass 2 (training):** Stream documents again. Per sentence, run one SBOW
   step and discard examples. Multiple epochs re-stream the data.
 
@@ -155,8 +167,11 @@ where $K$ is the number of negative samples and $w_k^-$ are sampled words.
 | `BASIC_MAX_DOCS` | XML default | Max documents to process |
 | `BASIC_NUM_SHARDS` | XML default | FineWeb-EDU shard count |
 | `BASIC_NUM_EPOCHS` | XML default | Phase 2 epoch override |
+| `BASIC_BATCH_SIZE` | XML default | Phase 2 batch-size override (`--batch-size`) |
 | `BASIC_MAX_TOKENS` | XML default | Token budget |
 | `BASIC_MAX_BATCHES` | XML default | Phase 2 batch cap |
+| `BASIC_RANDOM_SHARDS` | `0` | `1` = randomize FineWeb shard order (`--random-shards`) |
+| `BASIC_CHECKPOINT_EVERY_BATCHES` | XML `checkpointEveryBatches` (0) | Mid-epoch periodic checkpoint cadence in batches; 0 disables |
 | `BASIC_RUN_TEST` | unset | Enable test passes; optional value caps test batches |
 
 ### Memory Considerations
@@ -181,9 +196,20 @@ embeddings.
 Within-sentence training is **always IR** (masked-LM at the subsymbolic (PS)).
 `create_ir_mask` replaces a `mask_rate` fraction of WHAT positions
 with `NULL_PERCEPT` and snapshots the pre-mask event on
-`_ir_pre_mask_input`; `runBatch` computes
+`_ir_pre_mask_input`. On the whole-slab / non-grammar path
+(`_per_word_enabled=False`) `runBatch` computes the dense masked-LM
 `MSE(perceptualSpace at masked positions, _ir_pre_mask_input at
-masked positions)` --- no head loss, no reverse pipeline.  The legacy
+masked positions)` via `compute_masked`. On the per-word grammar path the
+`reconstruction` slot is instead the D3 reverse($S$) reconstruction ---
+there `lossIn` IS the reverse pipeline. The supervised output-head loss is
+also back (2026-05-28): the `output` channel is scored at weight 1.0
+whenever labels exist (unlabeled corpora degrade it to zero). Two carve-outs
+qualify "reconstruction is always concepts-seeded": at train time the D3
+path **dedupes** the separate `reconstruction_reverse` term (`lossIn`
+already carries the reverse objective, so the concepts-seeded reverse is
+skipped to avoid double counting), and at serial EVAL the decode consumes
+the Method-1 stored-leaves replay (`_reverse_method1_leaves`) rather than
+decoding from the concept snapshot. The legacy
 `<maskedPrediction>` knob and the AR / ARUS / ARIR modes were
 retired 2026-05-14; sentence-level AR moved to
 `InterSentenceLayer` (see `doc/Architecture.md` Section "Sentence-level AR
@@ -214,17 +240,22 @@ enabled (CBOW, SBOW, or BOTH), implements EM-like alternation:
 
 ### Gradient Flow Through Codebook
 
-`<trainEmbedding>` determines whether the codebook weight is **detached**
-during forward/reverse and whether it appears in the main optimizer:
+`<trainEmbedding>` determines whether the embedding parameters appear in the
+**main optimizer** --- that is the whole freezing mechanism. There is no
+mode-conditional `detach()` of the codebook weight anywhere:
+`optimize_embedding = train_embedding not in ("NONE", "CBOW", "SBOW")`, and
+`getOptimizer` filters embedding params out of the main param list when it is
+False. Under NONE/CBOW/SBOW gradients may still flow through the lookup, but
+no main-optimizer step ever moves the rows:
 
-| `trainEmbedding` | `detach()` | In main optimizer | Method |
-|------------------|------------|-------------------|--------|
-| `NONE` | Yes | No | Frozen |
-| `CBOW` | Yes | No | CBOW (own optimizer) |
-| `SBOW` | Yes | No | SBOW (own optimizer) |
-| `BACKPROP` | No | Yes | Model loss only |
-| `BOTH` | No | Yes | SBOW + backprop |
-| `JOINT` | No | Yes | Single combined loss |
+| `trainEmbedding` | In main optimizer | Embedding rows moved by |
+|------------------|-------------------|-------------------------|
+| `NONE` | No | Nothing (frozen) |
+| `CBOW` | No | CBOW pretrainer (own optimizer) |
+| `SBOW` | No | SBOW pretrainer (own optimizer) |
+| `BACKPROP` | Yes | Model loss only |
+| `BOTH` | Yes | Model loss + post-batch SBOW step |
+| `JOINT` | Yes | Single combined loss |
 
 - **`NONE`** is recommended for constrained hardware (Apple MPS <16GB).
 - **`CBOW`/`SBOW`** maintains clean EM separation.
@@ -240,11 +271,13 @@ Avoids EM alternation by computing one combined loss before one backward:
 
 $$\mathcal{L}_{\text{total}} = \mathcal{L}_{\text{model}} + \lambda \cdot \mathcal{L}_{\text{SBOW}}$$
 
-where $\lambda$ is `trainEmbeddingRatio` (default 0.1).
+where $\lambda$ is `<embeddingScale>` (default 0.1).
 
-SBOW loss uses the same negative-sampling objective:
+SBOW loss uses the same negative-sampling objective, with $s(a, b)$ the
+wrapped-MSE torus similarity (`_wrapped_mse_score`) rather than a dot
+product:
 
-$$\mathcal{L}_{\text{SBOW}} = -\frac{1}{N} \sum_{i=1}^{N} \left[ \log \sigma(c_i^\top v_{w_i}) + \sum_{k=1}^{K} \log \sigma(-c_i^\top v_{w_k^-}) \right]$$
+$$\mathcal{L}_{\text{SBOW}} = -\frac{1}{N} \sum_{i=1}^{N} \left[ \log \sigma\big(s(c_i, v_{w_i})\big) + \frac{1}{K}\sum_{k=1}^{K} \log \sigma\big(-s(c_i, v_{w_k^-})\big) \right]$$
 
 **Advantages.** One optimizer, one momentum buffer; gradient coherence; no
 post-batch step.
@@ -267,7 +300,9 @@ Temporal context is coherent across steps. No per-epoch global shuffle.
 
 For each B-wide batch:
 
-1. `BasicModel.Start(inputData)` cascades reset through every Space.
+1. `_start_spaces_for_forward()` calls `Start()` on every Space
+   (`runBatch` pre-invokes it before the compiled step; `forward()`
+   self-invokes when not externally started).
 2. `InputSpace.forward()` lexes/embeds once into `[B, N, D]`
    (left-aligned, right-padded to N). No K axis, no cursor unfold.
 3. `create_ir_mask` replaces a `mask_rate` fraction of WHAT positions
@@ -278,15 +313,30 @@ For each B-wide batch:
 5. `_forward_head` produces `[B, N, predDim]` (a side channel --- IR
    loss is computed at the subsymbolic (PS), not at the head).
 6. `runBatch` computes loss via `TheError.add`:
+   - `output` (supervised head): MSE between the aligned head
+     prediction and the labels, weight 1.0 when labels exist
+     (zero-weighted otherwise).
    - `reconstruction` (subsymbolic (PS)): MSE between post-body
-     `perceptualSpace` and `_ir_pre_mask_input` at masked positions.
-   - `reconstruction_reverse` (concepts-seeded, unconditional):
-     the reverse pass is always seeded from the terminal
-     `ConceptualSpace` STM snapshot (the `<reconstruct>` enum was
-     retired), weighted by `reconstructionScale`.
+     `perceptualSpace` and `_ir_pre_mask_input` at masked positions
+     (on the per-word grammar path this slot is the D3 reverse($S$)
+     reconstruction instead).
+   - `reconstruction_reverse` (concepts-seeded): the reverse pass
+     seeded from the terminal `ConceptualSpace` STM snapshot (the
+     `<reconstruct>` enum was retired), weighted by
+     `reconstructionScale`; skipped at train time when D3 already
+     carries the reverse objective (dedupe).
+   - `embedding_sbow` (`JOINT` / byte-lexer perceptual SBOW), weighted
+     by `<embeddingScale>`.
    - `arma` (sentence-level): `InterSentenceLayer.observe(s_t)` MSE
      between the ARMA(p, q) prediction and the current sentence rep,
      weighted by `armaScale`.
+   - `intra` / `inter` / `inter_contrastive`: the intra-sentence
+     predict-then-perceive term, the inter-sentence end-state term,
+     and the InfoNCE next-idea contrastive term.
+   - Optional, default-off (weight 0.0 unless configured):
+     `conceptual_sbow`, `definition_sparsity`, `answer`, `thinking`,
+     `predict_next`, `leaf_distill`, `gate_l1` --- plus any auxiliary
+     terms the pipeline Spaces wrote to their shared `Error` instance.
 7. One `backward()` + `optimizer.step()` per DataLoader yield.
 8. Embedding training (`CBOW`/`SBOW`/`BOTH`) runs once per batch.
 
@@ -296,18 +346,21 @@ For each B-wide batch:
 
 | Property | CBOW | SBOW | Masked Prediction (Phase 2) |
 |----------|------|------|----------------------------|
-| Targets per sentence | 1 (pick one word) | N (every word) | N (one per masked pos) |
-| Context | Other N-1 words | LOO centroid of N-1 | All unmasked (+ future truncation for AR) |
-| Positive updates | 1 per step | N per step | N per step |
-| Repulsive force | vocab-1 implicit via softmax | random out-group to torus antipode | Implicit via MSE |
-| Signal density | Low | High | High |
-| Loss | Cross-entropy over vocab | two `-logsigmoid(sim(...))` terms | MSE over embeddings |
+| Targets per sentence | N (every in-vocab word) | N (every word) | N (one per masked pos) |
+| Context | Padded LOO mean of other in-vocab words | LOO centroid of N-1 | All unmasked |
+| Positive updates | N per step | N per step | N per step |
+| Repulsive force | K=64 random negatives pushed from the context mean | random out-group to torus antipode | Implicit via MSE |
+| Signal density | High | High | High |
+| Loss | two `-logsigmoid` negative-sampling terms (wrapped-MSE scores) | two `-logsigmoid(sim(...))` terms | MSE over embeddings |
 | Updates embeddings | Yes (own optimizer) | Yes (own optimizer) | Only for `BACKPROP`/`BOTH`/`JOINT` |
 | Used in (`<trainEmbedding>`) | `CBOW` | `SBOW`, `BOTH`, `JOINT` | `BACKPROP`, `BOTH`, `JOINT` |
 
-SBOW provides richer signal because every word acts as both context and target.
-The current implementation distributes vectors through pode/antipode geometry,
-not a full-softmax projection head.
+Both embedding trainers now make every in-vocab word a target under negative
+sampling; neither uses a full-softmax projection head. The remaining
+difference is geometric: CBOW queries a uniform padded context mean and
+pushes $K = 64$ random negatives away from it, while the streaming SBOW
+builds a Gaussian-weighted leave-one-out pode and pulls random out-group
+vectors toward its torus antipode.
 
 ---
 
@@ -339,9 +392,10 @@ the current geometry and the migration note.
 `--profile` wraps Phase 2 in `cProfile`:
 
 ```bash
-make train_micro_remote  # add --profile via train.py
-# Or:
 python bin/train.py --model data/BasicModel.xml --profile --max-docs 500
+# make train_micro is the capped micro run (no --profile flag of its own;
+# invoke bin/train.py directly to add it). make bench_remote profiles the
+# recon bench on ArborStudio via torch.profiler, not cProfile.
 ```
 
 Output: a `.prof` file in `output/profiles/` plus a top-30 summary to stdout.

@@ -309,7 +309,9 @@ def test_xor_exact_slots_keep_butterfly_under_meronomy():
         for raw in (ps.sigma.raw_bfly_L, ps.sigma.raw_bfly_U):
             raw.fill_(0.28)
         torch.manual_seed(31)
-        x = torch.rand(2, _N, _D) * 1.6 - 0.8
+        # Unified fold-width law (2026-07-16): the live fold is CONTENT-
+        # sized (sigma.nInput == ps.nDim); probe it at its own width.
+        x = torch.rand(2, _N, int(ps.sigma.nInput)) * 1.6 - 0.8
         x2 = x.clone()
         x2[:, 0, :] = (x2[:, 0, :] + 0.5).clamp(-0.95, 0.95)
         y, y2 = ps.sigma.forward(x), ps.sigma.forward(x2)

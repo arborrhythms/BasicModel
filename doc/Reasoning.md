@@ -58,7 +58,7 @@ precomputed once at model creation via `BasicModel._order_partitions`.
 ### `isConsistent() -> dict`
 
 Analyzes the TruthSet for internal consistency by folding all stored truths
-into a single summary via successive `Basis.disjunction()`. In bitonic mode,
+into a single summary via successive `Ops.disjunction`. In bitonic mode,
 conflicting +/- assertions on the same dimension cancel to zero. Returns
 `{'consistent': bool, 'score': float, 'sites': tensor, 'union_vector': tensor}`.
 
@@ -96,7 +96,7 @@ Additive loss penalty for false propositions, via `<TruthLoss>` in model.xml
 (default 0.0 = disabled).
 
 Measures the **union norm reduction** when a proposition is included in the
-TruthSet union via `Basis.disjunction()`:
+TruthSet union via `Ops.disjunction`:
 
 ```
 truth_union = disjunction(all stored truths)
@@ -113,8 +113,10 @@ penalty     = max(0, ||truth_union|| - ||extended||)
 DoT weighting is implicit: stored vectors carry DoT in magnitude, so
 contradicting a high-DoT truth causes a larger norm drop.
 
-TruthLoss is **additive** and coexists with **multiplicative** luminosity
-modulation (`totalLoss * (1 + lum_weight * (1 - luminosity))`).
+TruthLoss is **additive** and coexists with the **multiplicative**
+modulation applied by `SymbolSubSpace.truth_modulated_loss`, which carries
+both the luminosity and the universality term:
+$\mathrm{totalLoss} \cdot (1 + w_{lum}(1 - \mathrm{lum}) + w_{univ}(1 - u))$.
 
 ## Bidirectional Reasoning Loop
 
@@ -143,6 +145,19 @@ through:
 4. `policy_answer_loss`, which trains the soft query route while detaching the
    hard proof mask.
 
+**Step-2 next-idea blend.** `NeuralToolUser.reason_predict_next` (surfaced
+as `BasicModel.reason_predict_next`) blends the three hard tools
+`{arma, retrieval, deduction}` into ONE differentiable next-idea
+$\hat{e}$: the candidate ideas are detached (hard/grounded), and the
+gradient rides only the generator's query head — plus the optional
+`NextIdeaScorer`, a learned per-tool logit prior riding the state_dict —
+through the cosine-softmax blend weights (an absent tool gets a $-\infty$
+logit, so its weight is exactly 0). Two `<training>` knobs gate the
+associated losses, both defaulting to 0.0 (off, byte-identical):
+`<answerLossWeight>` trains the soft query route via the policy answer
+loss (NLL on the $[0, 1]$ proof score), and `<predictNextLossWeight>`
+trains the blend as a next-idea predictor.
+
 `BasicModel.reason(...)` remains as the model-level bidirectional reasoning
 entry point. Inference query routing is enabled when `reasoningIterations > 0`.
 
@@ -164,7 +179,11 @@ byte-identical; positive N = the op budget of a top-level `think()` frame):
    frame's evidence does not support is refused (unsupported assertion →
    unknown); budget exhaustion closes `bounded_unknown`; unknown is a valid
    terminal. LTM writes happen only inside the runtime: `_materialize_close`
-   (trusted derivation via `reasoner.materialize`, gated `<ltmConsolidation>`)
+   (trusted derivation via `reasoner.materialize`, gated
+   `<ltmConsolidation>` — read off the model's `ltm_consolidation` flag; a
+   dead underscored `getattr` that silently kept `materialize` off from
+   `reason_about` / `think_about` was fixed 2026-07-16, so lemma write-back
+   now fires from those entry points when the gate is on)
    and `incorporate` (testimony above the source×channel trust floor).
 4. `KernelPolicy` — the deterministic baseline: `lookup` (LTM-direct, no
    chaining) → close if luminous → climb `part(·, up)` opening one `think()`
@@ -176,8 +195,10 @@ byte-identical; positive N = the op budget of a top-level `think()` frame):
    testimony cannot manufacture luminosity); tensor testimony is content,
    never truth; the durable write stays the explicit `incorporate`.
 5. `compile_rewards` / `trace_examples` — the §12 reward compilation
-   (Δluminosity·trust·relevance − step cost, terminal on grounded closes) and
-   the `(state, op)` supervision exporters for next-operation training.
+   (per-op $\Delta\mathrm{luminosity} - \mathrm{step\_cost}$ plus the
+   terminal on grounded closes; the spec §12.2 trust/relevance factors are
+   NOT applied) and the `(state, op)` supervision exporters for
+   next-operation training.
 6. `NextOpPolicy` / `next_op_loss` / `traces_from_store` — §12.6 next-op
    learning: the head is behavior-cloned on grounded traces generated from
    the store's 2-hop chains (`<training><thinkingLossWeight>`, runBatch
@@ -185,7 +206,7 @@ byte-identical; positive N = the op budget of a top-level `think()` frame):
    LTM). At inference the head is consulted only at explore-vs-stop choice
    points over the legal option menu — it can waste budget, never assert.
 
-`BaseModel.think_about(query_spec)` builds the kernel from the model;
+`BasicModel.think_about(query_spec)` builds the kernel from the model;
 `answer_query` attaches the kernel's certified result under the payload's
 `kernel` key when the budget is positive. Tests:
 `test/test_thinking_kernel.py`.
@@ -230,6 +251,8 @@ argument/return order.
 | `<queryReasoning>` | `<architecture>` | false | Deprecated alias; `true` maps to depth 10 when `reasoningIterations` is unset. |
 | `<parserBackend>` | `<SymbolSpace>` | — | **RETIRED** (Stage 3, 2026-05-27): the chart and STM parsers are gone; the signal router (`LanguageLayer`) is the only parser. Setting this (or `routerKind` / `chartTau` / `chartTopK` / `chartNoiseEps`) raises a loud `ValueError` at config load. |
 | `truthCriterion` | `<architecture>` / `<ConceptualSpace>` / `<WholeSpace>` | 1.0 | Single continuous truth bar (0 $=$ all, 1 $=$ none; **default 1.0 $=$ off**, opt-in by lowering) governing BOTH WholeSpace truth **recording** (record a cell iff its clamped magnitude $\ge$ `truthCriterion`; fires in training + `store_truths` gold ingestion) AND learned relative-sentence **acceptance** (accept iff learn-score $\ge$ `truthCriterion`). Replaces the retired binary `<accumulateTruth>` / `<truthMinMagnitude>` switches. See [STM.md Section 9](STM.md#9-relative-vs-absolute-end-states). |
+| `answerLossWeight` | `<training>` | 0.0 | Policy answer loss weight (NLL on the $[0,1]$ proof score; trains the soft query route, hard proof mask detached). |
+| `predictNextLossWeight` | `<training>` | 0.0 | Step-2 next-idea blend loss weight (`reason_predict_next` over arma / retrieval / deduction + `NextIdeaScorer`). |
 | `intraLossWeight` | `<training>` | 0.1 | In-STM next-idea loss $\mathcal{L}_\text{intra}$ weight (`IntraSentenceLayer`). See [STM.md Section 6](STM.md#6-intrasentencelayer). |
 | `interLossWeight` | `<training>` | 0.1 | Inter-sentence next-end-state loss $\mathcal{L}_\text{inter}$ weight. See [STM.md Section 11](STM.md#11-inter-sentence-prediction). |
 | `routerWireSerial` | `<architecture>` | both | Per-word router-fire gating on the serial path (`per-word` / `boundary` / `both` / `off`). See [STM.md Section 7](STM.md#7-per-word-router-firing). |

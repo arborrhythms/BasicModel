@@ -11,15 +11,19 @@
 | [Architecture](doc/Architecture.md) | Pipeline design, layer types, invertible LDU factorisation |
 | [Runtime architecture](doc/Componentization.md) | Live ownership map, non-modular mechanisms, and componentization sequence |
 | [Spaces](doc/Spaces.md) | Runtime spaces: Input, Part/Perceptual, Modal, Conceptual, Whole/Symbolic, Output, and SymbolSpace |
+| [STM](doc/STM.md) | Short-term memory: shift/reduce slots, routing conditioning, ltmConsolidation |
 | [Ergodic](doc/Ergodic.md) | Gradient energy sensor, adaptive exploration, factor-level noise injection |
 | [Training](doc/Training.md) | Two-phase training, SBOW embeddings, masked prediction modes |
 | [Params](doc/Params.md) | XML configuration reference and migration notes |
 | [BasicModel](doc/BasicModel.md) | Cognitive science foundations |
 | [Language](doc/Language.md) | Grammar layers, signal routing, category codebook, and syntax output |
+| [Mereology](doc/Mereology.md) | Parthood as the fundamental operation, the five mereological relations, ImpenetrableLayer |
 | [Logic](doc/Logic.md) | Subsymbolic and symbolic logic operations |
 | [Reasoning](doc/Reasoning.md) | Truth methods, bidirectional reasoning, contemplative awareness stubs |
 | [Philosophy](doc/Philosophy.md) | Kant's analysis/synthesis, Ramsey's theoretical roles, Buddhist epistemology (pramana, tetralemma) |
 | [MachineMinds](doc/MachineMinds.md) | What machine minds are, feel, and know |
+| [Lexicon](doc/Lexicon.md) | Word-vector store: surface forms, codebook binding, LBG splitting |
+| [SymbolFirewall](doc/SymbolFirewall.md) | Governing principle: the boundary between subsymbolic and symbolic computation |
 | [Installation](doc/Installation.md) | Setup, Makefile targets, environment variables |
 
 ## Overview
@@ -33,10 +37,13 @@ Model configurations are specified in XML. See [doc/Architecture.md](doc/Archite
 
 | File | Description |
 |------|-------------|
+| [bin/train.py](bin/train.py) | Two-phase training orchestrator: embeddings (Phase 1) then model (Phase 2), local or remote via SSH |
 | [bin/Models.py](bin/Models.py) | Main entry point: model factory, training loop, `--compare`, optional `--report` |
 | [bin/Layers.py](bin/Layers.py) | Layer library: SigmaLayer, PiLayer, ErgodicLayer, LinearLayer, TruthLayer |
-| [bin/Spaces.py](bin/Spaces.py) | Space classes: InputSpace, PartSpace, ConceptualSpace, WholeSpace, OutputSpace, SymbolSpace |
+| [bin/Spaces.py](bin/Spaces.py) | Space classes: InputSpace, PartSpace, ModalSpace, ConceptualSpace, WholeSpace, OutputSpace |
+| [bin/Language.py](bin/Language.py) | Grammar layers and SymbolSpace: parsing, composition, category codebook |
 | [bin/embed.py](bin/embed.py) | Word vector training: CBOW/SBOW with negative sampling, `WordVectors` (gensim-compatible `.kv`) |
+| [bin/serve.py](bin/serve.py) | HTTP server: OpenAI-compatible `/chat/completions` endpoint for WikiOracle integration |
 | [data/](data/) | XML model configurations |
 | [doc/Architecture.md](doc/Architecture.md) | Algorithm details: Sigma/Pi layers, ergodic exploration, gradient energy sensor |
 | [doc/Componentization.md](doc/Componentization.md) | Software ownership, consolidation targets, and extraction gates |
@@ -74,7 +81,7 @@ Models are configured via XML files in `data/`. Training and data parameters liv
 <model>
   <architecture>
     <ergodic>false</ergodic>
-    <certainty>false</certainty>
+    <weightsPath>output/BasicModel.ckpt</weightsPath>
 
     <data>
       <dataset>xor</dataset>        <!-- xor | phrases | mnist | tomatoes | text | inline -->
@@ -86,7 +93,7 @@ Models are configured via XML files in `data/`. Training and data parameters liv
       <numEpochs>20</numEpochs>
       <batchSize>10</batchSize>
       <learningRate>0.001</learningRate>
-      <weightsPath>output/BasicModel.ckpt</weightsPath>
+      <certainty>false</certainty>
       <autoload>true</autoload>
       <autosave>false</autosave>
     </training>

@@ -139,6 +139,17 @@ def intent_priming_weights(intent, rows, *, gain=1.0):
     return 1.0 + float(gain) * sim
 
 
+def fold_content_apply(fold_fn, fold_width, y):
+    """Unified fold-width law (2026-07-16): sigma/pi butterflies are sized
+    to one vector's CONTENT columns (``Space.nDim``); a wider ``y`` carries
+    the trailing where/when band, which rides through unchanged. Same-width
+    inputs apply directly."""
+    w = int(fold_width or 0)
+    if 0 < w < int(y.shape[-1]):
+        return torch.cat([fold_fn(y[..., :w]), y[..., w:]], dim=-1)
+    return fold_fn(y)
+
+
 def registration_loss(pi_fold, sigma_fold, codes):
     """The drift-keeper: ``σπσ = σ`` on stored symbols (MeronomySpec §5;
     MeronomyPlan Stage 8).
@@ -1579,42 +1590,6 @@ class WhatEncoding(Encoding):
             out.append(row)
         return out
 
-    def tokens_to_decoded(self, tokens_per_batch, batch, nIdeas, nWhat):
-        """Host-side equivalent of ``decode_tokens(encode_tokens(...))``.
-
-        Returns the exact ``list[list[str]]`` that
-        ``decode_tokens(encode_tokens(tokens_per_batch, batch, nIdeas,
-        nWhat, dev))`` would produce, computed purely on the host with
-        **no tensor / no device round-trip**. The lexer already has the
-        token strings on the host (``InputSpace._lex_batch``); carrying
-        this forward lets ``PartSpace._embed`` skip the
-        ``decode_tokens`` ``buf.tolist()`` GPU->host sync (residual B,
-        doc/BrickHostSyncStatus.md) while staying bit-identical -- it
-        reproduces ``encode_tokens``'s ``nWhat-1`` UTF-8 truncation and
-        the null-terminated ``decode`` (including the rare embedded-NUL
-        early stop), so codebook OOV keys / indices are unchanged.
-        """
-        out = []
-        for b in range(batch):
-            row_in = tokens_per_batch[b] if b < len(tokens_per_batch) else []
-            row = []
-            for i in range(nIdeas):
-                text = row_in[i] if i < len(row_in) else ""
-                if not text:
-                    row.append("")
-                    continue
-                raw = text.encode('utf-8')[: nWhat - 1]
-                try:
-                    end = raw.index(0)
-                except ValueError:
-                    end = len(raw)
-                if end == 0:
-                    row.append("")
-                else:
-                    row.append(
-                        bytes(raw[:end]).decode('utf-8', errors='replace'))
-            out.append(row)
-        return out
 class EventEncoding(Encoding):
     """Handle the content-layout transform for a space's Event factor.
 
@@ -1926,16 +1901,6 @@ class Basis(nn.Module):
     def content_dim(self):
         return self.nDim
 
-    @property
-    def activeIndices(self):
-        """Active indices.
-        
-        See class docstring for the operation contract.
-        """
-        if self.activation is None:
-            return None
-        return self.activation != 0
-
     def clearActivation(self):
         """Clear activation.
 
@@ -2048,14 +2013,6 @@ class Basis(nn.Module):
         mask[indices] = False
         self.replace_W(w[mask])
         return self.getW()
-
-    def parameters_for_optimizer(self):
-        """Parameters for optimizer.
-        
-        See class docstring for the operation contract.
-        """
-        w = self.getW()
-        return [w] if isinstance(w, nn.Parameter) else []
 
     def _prototype_weight(self, weight=None, context="prototype lookup"):
         weight = self.getW() if weight is None else weight
@@ -2396,18 +2353,6 @@ class Basis(nn.Module):
         See class docstring for the operation contract.
         """
         return Ops.copart(x, y, monotonic=monotonic, scalar=scalar)
-
-    def active_dense(self):
-        """Active dense.
-        
-        See class docstring for the operation contract.
-        """
-        w = self.getW()
-        if self.activation is None or w is None:
-            return None
-        if self.activation.ndim == 1:
-            return self.activation.unsqueeze(-1) * w
-        return self.activation.unsqueeze(-1) * w.unsqueeze(0)
 
     # Removed (2026-05-02 Basis cleanup):
     #   * `_pairwise_sq_dists` / `_expand_sigma` / `kernel_overlap`
@@ -2815,13 +2760,6 @@ class Codebook(Tensor):
         self.W = value
         self._svd_dirty = True
 
-    def getSize(self):
-        """Get size.
-
-        See class docstring for the operation contract.
-        """
-        return self.nVectors
-
     # -- Spec-aligned codebook surface ----------------------------------
     # doc/specs/2026-05-21-subspace-slot-architecture.md: callers needing
     # the prototype matrix or a per-position row lookup should go through
@@ -2959,12 +2897,6 @@ class Codebook(Tensor):
         # are-types-segmentation.md, T2: the rows are the cut's source of truth).
         self._property_kind_version = int(
             getattr(self, "_property_kind_version", 0)) + 1
-
-    def get_property_kind(self, row):
-        """Return the char-class set tagged on ``row`` (``None`` if untagged)."""
-        if self.property_kind is None:
-            return None
-        return self.property_kind.get(int(row))
 
     def set_event(self, event_tensor):
         """Codebook-bearing slots DO NOT cache per-batch events.
@@ -3153,12 +3085,6 @@ class Codebook(Tensor):
                 "Codebook.set_category called on a non-category codebook")
         self.category_ids[int(idx)] = int(cat_id)
 
-    def get_category(self, idx):
-        """Return the category id of row ``idx`` (0 = '?' if untagged)."""
-        if self.category_ids is None:
-            return 0
-        return int(self.category_ids[int(idx)].item())
-
     # Phase 6 descriptor roles (analysis/synthesis dual-input plan sec.7,
     # rev. 2026-06-10): meaning-general / term-general / LF-coarse are
     # ROLES inside the ONE WS generality codebook. The Tibetan terms map:
@@ -3323,14 +3249,16 @@ class Codebook(Tensor):
                     raise ValueError(
                         "invert_ramsified: row recorded a FOLD_SIGMA pass "
                         "but no sigma layer was provided.")
-                y = s.reverse(y)
+                y = fold_content_apply(
+                    s.reverse, getattr(s, "nInput", 0), y)
             elif route == self.FOLD_PI:
                 p = self._fold_handle(pi, pass_idx)
                 if p is None:
                     raise ValueError(
                         "invert_ramsified: row recorded a FOLD_PI pass "
                         "but no pi layer was provided.")
-                y = p.reverse(y)
+                y = fold_content_apply(
+                    p.reverse, getattr(p, "nInput", 0), y)
             # FOLD_NEITHER -> identity
         return y
 
@@ -3356,14 +3284,14 @@ class Codebook(Tensor):
                     raise ValueError(
                         "refold_ramsified: row recorded a FOLD_SIGMA pass "
                         "but no sigma layer was provided.")
-                y = s(y)
+                y = fold_content_apply(s, getattr(s, "nInput", 0), y)
             elif route == self.FOLD_PI:
                 p = self._fold_handle(pi, pass_idx)
                 if p is None:
                     raise ValueError(
                         "refold_ramsified: row recorded a FOLD_PI pass "
                         "but no pi layer was provided.")
-                y = p(y)
+                y = fold_content_apply(p, getattr(p, "nInput", 0), y)
             # FOLD_NEITHER -> identity
         return y
 
@@ -3980,34 +3908,6 @@ class Codebook(Tensor):
         """
         return
 
-    def _ensure_svd_legacy(self):
-        """Lazily compute and cache U, Σ, V for ``W = U Σ V^T``.
-
-        Refreshes when ``_svd_dirty`` is True (set by ``setW`` or by
-        ``addVectors`` growth). Detached so factors are constants from
-        autograd's perspective — the project / project_reverse pair
-        train the input, not the codebook.
-
-        SVDs the codebook Parameter ``self.W`` directly. (The legacy
-        ``_active_payload`` shadow that could shadow ``W`` with a 3-D
-        per-batch slab was retired 2026-05-21; per-batch content now
-        lives on ``SubSpace.event.W`` and never touches ``self.W``.)
-
-        No-op when the codebook has no W yet.
-        """
-        if not self._svd_dirty:
-            return
-        W_param = self.W
-        if W_param is None or self.codebookSize == 0:
-            return
-        with torch.no_grad():
-            U, S, Vh = torch.linalg.svd(W_param, full_matrices=False)
-        # Vh is [K, D]; store V (= Vh.T) for downstream factored matmul.
-        self._svd_U = U.detach()
-        self._svd_S = S.detach()
-        self._svd_V = Vh.transpose(-2, -1).detach()
-        self._svd_dirty = False
-
     # Codebook.project and Codebook.project_reverse were
     # retired 2026-05-13 alongside the project=True paths on
     # forward / reverse.  The bivector projection surface
@@ -4297,28 +4197,6 @@ class Codebook(Tensor):
         w[target_idx] += delta
         self.normalize()
 
-    @staticmethod
-    def conceptParthood(A: torch.Tensor, B: torch.Tensor) -> float:
-        """Concept parthood.
-        
-        See class docstring for the operation contract.
-        """
-        A_norm = A / A.norm()
-        B_norm = B / B.norm()
-        cross_prod = torch.linalg.cross(A_norm, B_norm)
-        orthogonal_vector = cross_prod / cross_prod.norm()
-        distance = orthogonal_vector.norm()
-        return torch.clamp(distance, 0, 1)
-
-    @staticmethod
-    def perceptParthood(A: torch.Tensor, B: torch.Tensor) -> float:
-        """Percept parthood.
-        
-        See class docstring for the operation contract.
-        """
-        A, B = A.clamp(0, 1), B.clamp(0, 1)
-        ratio = torch.minimum(A / (B + epsilon), torch.ones_like(A))
-        return torch.prod(ratio).item()
 class ProjectionBasis(Basis):
     """Scalar projection basis with LDU-parameterized W.
 
@@ -5355,41 +5233,7 @@ class Embedding(Basis):
         print(f"Loading embeddings from {embedding_path}...")
         return wv
 
-    @staticmethod
-    def print_info(path):
-        """Print a human-readable summary of a .kv embedding artifact.
-
-        Does not require a model to be loaded.  Useful for diagnosing
-        mismatches between a saved artifact and a changed XML config.
-        """
-        if not os.path.exists(path):
-            print(f"Embedding file not found: {path}")
-            return
-        wv = WordVectors.load(path)
-        vocab_size = len(wv)
-        vector_size = wv.vector_size
-        total_count = int(wv.total_count)
-        print(f"Embedding file : {path}")
-        print(f"  Vocab size   : {vocab_size:,}")
-        print(f"  Vector size  : {vector_size}")
-        print(f"  Total tokens : {total_count:,}")
-        if vocab_size > 0 and wv.counts is not None and len(wv.counts) > 0:
-            top_n = min(5, vocab_size)
-            top_idx = np.argsort(wv.counts)[::-1][:top_n]
-            top_words = [(wv.index_to_key[i], int(wv.counts[i])) for i in top_idx]
-            print(f"  Top words    : {top_words}")
-
     # --- Public properties (encapsulate internals) --------------------
-    @property
-    def codebook_weight(self):
-        """nn.Embedding weight tensor (read-only reference)."""
-        return self.getW()
-
-    @property
-    def vocab_keys(self):
-        """Ordered list of words in the codebook."""
-        return self.wv.index_to_key
-
     @property
     def embedding_dim(self):
         """Content dimensionality (nWhat)."""
@@ -5415,13 +5259,6 @@ class Embedding(Basis):
         nV = int(getattr(self, 'nVectors', 0) or 0)
         self.sparse_grad = bool(nV >= int(threshold))
         return self.sparse_grad
-
-    def parameters_for_optimizer(self):
-        """Parameters for optimizer.
-        
-        See class docstring for the operation contract.
-        """
-        return self.embedding_parameters()
 
     def _ergodic_var(self, token_idx, device, dtype):
         """Map CBOW's per-word sigma to a noise scale in [0, 1].
@@ -5640,10 +5477,6 @@ class Embedding(Basis):
         if isinstance(decoded, dict):
             return decoded.get('tokens', [])
         return decoded
-
-    def _get_codebook(self):
-        """Return the live codebook parameter (Embedding uses WordVectors)."""
-        return self.getW()
 
     def reverse(self, y, return_meta=False, subspace=None):
         """Snap content vectors to the nearest embedding rows.
@@ -6817,60 +6650,6 @@ class SubSpace(nn.Module):
             return pres * modal_gate
         return pres
 
-    def dematerialize(self):
-        """Split event -> modalities, recover active flags.
-
-        Reads .event, splits into what/where/when by encoding widths,
-        computes active flags from which slices are nonzero, and
-        sets activation from event norms.
-
-        Returns:
-            dict with 'what', 'where', 'when' tensors (where present).
-        """
-        event = self.event.getW()
-        if event is None:
-            return None
-        what_tensor = event[:, :, :self.nWhat]
-        self.what.setW(what_tensor)
-
-        result = {'what': what_tensor}
-        where_tensor = None
-        when_tensor = None
-
-        if self.nWhere > 0:
-            where_tensor = event[:, :, self.nWhat:self.nWhat + self.nWhere]
-            self.where.setW(where_tensor)
-            result['where'] = where_tensor
-        if self.nWhen > 0:
-            when_tensor = event[:, :, self.nWhat + self.nWhere:]
-            self.when.setW(when_tensor)
-            result['when'] = when_tensor
-
-        self._demuxed = True
-        self._compute_active(what_tensor, where_tensor, when_tensor)
-        return result
-
-    def set_symbols(self, symbols_tensor):
-        """Store symbolic presence [0,1] by mapping to conceptual activation [-1,1].
-
-        Symbols are percepts: each dimension is the presence (1) or absence (0)
-        of a symbol.  Internally stored as activation via x = 2*y - 1.
-
-        Args:
-            symbols_tensor: [batch, nSymbols] values in [0, 1].
-        """
-        self.set_activation(symbols_tensor)
-
-    def get_symbols(self):
-        """Return symbolic presence [0,1] mapped from activation [-1,1].
-
-        Returns [batch, nSymbols] in [0,1] via y = (x+1)/2, or None.
-        """
-        act = self.get_activation()
-        if act is None:
-            return None
-        return act
-
     # ------------------------------------------------------------------
     # Word management
     # ------------------------------------------------------------------
@@ -7054,39 +6833,6 @@ class SubSpace(nn.Module):
         if nz.numel() == 0:
             return []
         return nz.squeeze(-1).tolist()
-
-    def top_of_stack(self, data=None):
-        """Find the last active (non-zero) position per batch element.
-
-        Returns:
-            list of int -- top-of-stack position for each batch element,
-            or -1 if the entire row is zero (empty stack).
-        """
-        if data is None:
-            data = self.materialize()
-        tops = []
-        for b in range(data.shape[0]):
-            active = self.active_positions(b, data)
-            tops.append(active[-1] if active else -1)
-        return tops
-
-    def top_two_of_stack(self, data=None):
-        """Find the last two active positions per batch element.
-
-        Returns:
-            list of (pos1, pos2) tuples -- pos1 is second-to-top, pos2 is top.
-            Either may be -1 if fewer than two active positions exist.
-        """
-        if data is None:
-            data = self.materialize()
-        result = []
-        for b in range(data.shape[0]):
-            active = self.active_positions(b, data)
-            if len(active) >= 2:
-                result.append((active[-2], active[-1]))
-            else:
-                result.append((-1, -1))
-        return result
 
     def _lookup_modality(self, basis, indices):
         """Look up vectors from a Basis using index tensor [B, N].
@@ -9061,27 +8807,6 @@ class InputSpace(Space):
         """
         return self.prepInput(list(sentences))
 
-    def _radix_token_stream(self, text):
-        """Orthographic base-token stream for radix mode.
-
-        Radix mode (2026-06-04) stores percept vectors in a Codebook on
-        ``perceptualSpace.subspace.what`` and exposes a ``PerceptStore``
-        (RadixLayer) as the vocabulary, so the Embedding that used to
-        carry ``_token_stream`` is gone. The base tokenizer is a property
-        of this InputSpace's lexer config, not of the vector store: a
-        ``byte`` lexer emits one token per byte; a ``word`` lexer emits
-        whitespace/word tokens with a trailing ``\\x00`` end-of-sequence
-        sentinel (mirrors ``Embedding._token_stream``). The radix trie
-        chunks/promotes these base tokens downstream in ``_embed_radix``.
-        """
-        if getattr(self, "byte_mode", False):
-            return parse(text, lex="bytes")
-        as_text = Embedding._to_text(text)
-        toks = list(parse(as_text, lex="words"))
-        if not toks or toks[-1][0] != "\x00":
-            toks.append(("\x00", len(as_text)))
-        return toks
-
     def _lex_batch(self, input):
         """DELIVERY, not lexing (Alec 2026-07-12; restores the 2026-06-08
         dual-input contract): IS hands its BYTES to PartSpace (the raw
@@ -9885,16 +9610,6 @@ class InputSpace(Space):
         self.subspace.normalize("input", target="what", normalize=True)
         return self.subspace
 
-    def get_forward_meta(self):
-        """Return the last forward-pass lexical metadata for text input."""
-        return getattr(self, '_forward_input', None)
-
-    def get_reconstruction_target(self):
-        """Return (target, mask) for reconstruction loss.
-
-        Always returns (None, None); callers fall back to forwardInput.
-        """
-        return None, None
 class PartSpace(Space):
     """InputSpace -> percepts via the configured synthesis front end and sigma fold.
 
@@ -10138,7 +9853,14 @@ class PartSpace(Space):
         # per-word call pad D up to N*D and, replayed once per word in the
         # serial loop, cost O(N^2 * D); at ``percept_dim`` the fold width is
         # constant in the word count and the loop is linear.
-        _butterfly_total = int(percept_dim)
+        # Unified fold-width law (2026-07-16): the butterfly folds one
+        # vector's CONTENT columns (self.nDim when the muxed event is wider);
+        # the where/when band rides through at application sites via
+        # fold_content_apply -- same law as WholeSpace.pi, so the PS/WS
+        # fold sizes cannot drift apart.
+        _nd = int(getattr(self, "nDim", 0) or 0)
+        _fold_content = _nd if 0 < _nd < int(percept_dim) else int(percept_dim)
+        _butterfly_total = _fold_content
         # Degenerate 0/1-element butterfly requests fall back to per-slot mode.
         _butterfly_built = bool(_butterfly and _butterfly_total >= 2)
 
@@ -10147,7 +9869,7 @@ class PartSpace(Space):
             # per-pass stack layers (identical modes/dims).
             if _butterfly_built:
                 ly = SigmaLayer(
-                    percept_dim, percept_dim,
+                    _fold_content, _fold_content,
                     naive=naive, ergodic=ergodic,
                     invertible=bool(invertible), nonlinear=nonlinear,
                     stable=True, monotonic=_mono,
@@ -10161,8 +9883,9 @@ class PartSpace(Space):
                     stable=True, monotonic=_mono,
                 )
             else:
+                # Per-slot fold follows the same unified fold-width law.
                 ly = SigmaLayer(
-                    percept_dim, percept_dim,
+                    _fold_content, _fold_content,
                     naive=naive, ergodic=ergodic,
                     invertible=bool(invertible), nonlinear=nonlinear,
                     stable=True, monotonic=_mono,
@@ -12378,7 +12101,9 @@ class PartSpace(Space):
         # P4: pass t selects stack layer t (identity when the slot is a
         # no-op); the single reused ``self.sigma`` when the stack is off.
         _sig = self._sigma_for_pass()
-        x = primary if _sig is None else _sig.forward(primary)
+        # Content-fold + band-passthrough (the unified fold-width law).
+        x = primary if _sig is None else fold_content_apply(
+            _sig.forward, getattr(_sig, "nInput", 0), primary)
         if os.environ.get("XHEAD_PROBE"):
             with torch.no_grad():
                 for _nm, _v in (("raw-pre-fold", primary), ("post-fold", x)):
@@ -12535,7 +12260,8 @@ class PartSpace(Space):
         # explicitly. The current decision parks the asymmetry.
         if self.invertible and hasattr(self, 'sigma'):
             if getattr(self.sigma, 'invertible', False):
-                y = self.sigma.reverse(y)
+                y = fold_content_apply(
+                    self.sigma.reverse, getattr(self.sigma, "nInput", 0), y)
         self.subspace.batch = y.shape[0]
         raw = (object_basis.reverse_raw(y)
                if hasattr(object_basis, 'reverse_raw') else y)
@@ -15303,15 +15029,13 @@ class ConceptualSpace(Space):
         return lam * total
 
     def cs_forward_content(self, a_0, dictionary):
-        """Iterated clamped-SOURCE wave over the single untyped layer (v3):
-        a^{i+1} = tanh(W [a^i | 1] + s), i = 0..K-1, K = symbolicOrder (the
-        MAXIMUM POSSIBLE conceptual order; we are NOT forcing ramsification).
-        ``s`` is the order-0 snap presence padded to the inventory -- an
-        ADDITIVE source term each step (Alec 2026-07-03): snap rows carry no
-        in-edges, so they read tanh(a_0) per step. A depth-d vine completes
-        at iteration d (tail links first -- graded partial evidence before
-        that). Fixed-K unroll, no data-dependent control flow; the per-step
-        wave-QE settle statistic is recorded no_grad, report-only. Returns
+        """Feedforward sigma-pyramid over the single untyped layer
+        (dual-towers rev 2, 2026-07-12; supersedes the v3 iterated wave):
+        rung k computes NEW rows via ``order_slice(k)`` gathered under the
+        per-batch top-K ``_order_caps()`` taper -- one tanh(W [a | 1]) hop
+        per rung, no fixed point, no re-injection; K = symbolicOrder bounds
+        the rung count. Optional ``_relevance_priority`` boosts candidate
+        rank. Fixed-K unroll, no data-dependent control flow. Returns
         ``(content [B, N, ConceptDim], a [N, B])`` -- the decoded content
         (activation scaling the softplus-positive atom; consumed by
         losses/the SS leg ONLY, never substituted -- P3) and the final
@@ -17240,16 +16964,6 @@ class ConceptualSpace(Space):
             trust = 1.0
         return max(0.0, min(1.0, trust))
 
-    def _scale_scalar_trust(self, trust):
-        """Apply model testimony trust to a signed scalar DoT."""
-        try:
-            raw = float(trust)
-        except (TypeError, ValueError):
-            raw = 0.0
-        if not math.isfinite(raw):
-            raw = 0.0
-        return max(-1.0, min(1.0, raw * self._incoming_trust_multiplier()))
-
     def _scale_tetralemma_trust(self, trust4):
         """Attenuate a tetralemma by testimony trust, moving withheld mass to
         NEITHER rather than renormalizing away the loss of confidence."""
@@ -19005,7 +18719,14 @@ class WholeSpace(Space):
             else TheXMLConfig.get("architecture.sigmaPi", default="butterfly"))
         _sigma_butterfly = (_sigma_mode == "butterfly")
         self.sigma_pi_slab = None  # set only for the "full" dense bridge
-        _sigma_butterfly_total = int(inputShape[0]) * int(_sigma_dim)
+        # Unified fold-width law (2026-07-16): the butterfly folds one
+        # vector's CONTENT columns (self.nDim when the muxed carrier is
+        # wider); the band rides through the dispatch trim at the
+        # application site -- same law as PartSpace.sigma, so the PS/WS
+        # fold sizes cannot drift apart.
+        _nd_ws = int(getattr(self, "nDim", 0) or 0)
+        _fold_dim = _nd_ws if 0 < _nd_ws < int(_sigma_dim) else int(_sigma_dim)
+        _sigma_butterfly_total = int(inputShape[0]) * int(_fold_dim)
         _pi_butterfly_built = bool(_sigma_butterfly
                                    and _sigma_butterfly_total >= 2)
 
@@ -19014,7 +18735,7 @@ class WholeSpace(Space):
             # per-pass stack layers (identical modes/dims).
             if _pi_butterfly_built:
                 ly = PiLayer(
-                    _sigma_dim, _sigma_dim,
+                    _fold_dim, _fold_dim,
                     naive=_sigma_naive, ergodic=_sigma_ergodic,
                     invertible=True, nonlinear=nonlinear,
                     stable=True, monotonic=_sigma_monotonic,
@@ -19028,8 +18749,9 @@ class WholeSpace(Space):
                     stable=True, monotonic=_sigma_monotonic,
                 )
             else:
+                # Per-slot fold follows the same unified fold-width law.
                 ly = PiLayer(
-                    _sigma_dim, _sigma_dim,
+                    _fold_dim, _fold_dim,
                     naive=_sigma_naive, ergodic=_sigma_ergodic,
                     invertible=True, nonlinear=nonlinear,
                     stable=True, monotonic=_sigma_monotonic,
@@ -21245,25 +20967,6 @@ class WholeSpace(Space):
             meta_pos = signed_to_pos[int(mi)]
             rekeyed_pairs[(ps_pos, ws_pos)] = meta_pos
         self.meta_pair_to_idx = rekeyed_pairs
-
-    def get_semantic_row(self, orth_idx):
-        """Look up the semantic row index for a given orthographic row.
-
-        Returns ``-1`` if the orth row has no paired semantic partner
-        (e.g. it pre-dates the paired-row contract, or was inserted
-        via the legacy ``mark_word_atom`` path).
-        """
-        cb = getattr(self.subspace, 'what', None)
-        if cb is None or not isinstance(cb, Codebook):
-            return -1
-        # Prefer the cached map (built at insert time) -- O(1).
-        if hasattr(self, '_paired_orth_to_sem'):
-            mapped = self._paired_orth_to_sem.get(int(orth_idx), None)
-            if mapped is not None:
-                return int(mapped)
-        # Fallback: read part_parents[orth_idx]; the paired-row
-        # contract stores the semantic partner there. -1 if unset.
-        return cb.get_part_parent(int(orth_idx))
 
     @property
     def vocabulary(self):
@@ -23887,20 +23590,6 @@ class WholeSpace(Space):
         result.normalize("concepts", target="what")
         result.normalize("concepts", target="where")
         return result
-
-    def evaluate_truth(self, vspace, symbolSpace=None):
-        """Top-level: evaluate truth of the full stack -> scalar.
-
-        Post-2026-05-01 refactor: routes through the standalone
-        ``TrueLayer`` GrammarLayer subclass (positive-pole projection).
-        """
-        act = vspace.materialize(mode="activation")
-        from Layers import GRAMMAR_LAYER_CLASSES
-        true_cls = GRAMMAR_LAYER_CLASSES.get('true')
-        if true_cls is None:
-            return act
-        return true_cls().forward(act)
-
 
 class OutputSpace(Space):
     """Maps symbolic vectors to task targets (classification logits, regression values).

@@ -27,15 +27,21 @@ LiftingLayer). Older docs sometimes call `nOutput` / `nInput` `nActive`;
 treat that as the same thing as `nOutput`.
 
 > 2026-05-28: `<nWhere>` / `<nWhen>` are retired from per-file configs.
-> The band is architectural (`canonical_shape`): (nWhere=2, nWhen=4) on
-> every interior space, (0, 0) on OutputSpace. The
+> The band is architectural (`canonical_shape`, `bin/architecture.py`):
+> (nWhere=4, nWhen=4) on every interior space (2026-07-09 multi-rung
+> pass), (0, 0) on OutputSpace. The
 > `.where` field is the canonical positional identifier; see
 > [doc/old/2026-05-28-where-keyed-taxonomy.md](old/2026-05-28-where-keyed-taxonomy.md).
 >
 > 2026-06-16: `.where` is an **endpoint-sum bracket** `[start,
 > end]` (angle = span center, magnitude = extent), the invertible
 > `EndpointSumWhere` form. An instant (`start==end`) is byte-identical to the
-> prior single-quadrature point.
+> prior single-quadrature point. **Superseded 2026-07-09**: the
+> endpoint-sum bracket is retired from the muxed band — `.where` is now
+> the same 4-dim 2-rung quadrature ladder as `.when`, over the byte
+> START only (LF period = `<wherePeriod>`, HF = `wherePeriod /
+> <whereRungRatio>`); the analyzer-side `EndpointSumWhere` keeps the
+> bracket form.
 >
 > 2026-07-04 (encoding pass): `.when` is the **4-dim 2-rung start ladder**
 > (`WhenStartDurationEncoding`; onset only — duration left the band; the
@@ -121,8 +127,8 @@ Data loading and filtering.
 | `maxDocs` | int | `10000` | Per-shard document cap. |
 | `shardDir` | string | (empty) | Text shard directory (e.g. `data/fineweb`). Only used when `dataset=text`. |
 | `minFrequency` | float | `0.0` | Vocabulary admission threshold (fraction of corpus). Words below it are held in a pending buffer until they accumulate enough occurrences. `0.0` admits everything. |
-| `classificationMin` | float | -- | Lower bound for classification-accuracy reporting. |
-| `classificationMax` | float | -- | Upper bound for classification-accuracy reporting. |
+| `classificationMin` | float | -- | **Unparsed**: declared in `data/model.xml` / the schema, read by nothing in `bin/`. |
+| `classificationMax` | float | -- | **Unparsed**: declared in `data/model.xml` / the schema, read by nothing in `bin/`. |
 
 Inline-mode configs additionally accept `<input use="train|test|validation">...|...|...</input>`
 and matching `<output>` elements directly inside `<data>`.
@@ -181,7 +187,7 @@ HTTP server settings (used by `serve.py`).
 |-----------|------|---------|-------------|
 | `host` | string | `"127.0.0.1"` | Bind address. |
 | `port` | int | `8001` | Port. Override per model to run several in parallel. |
-| `timeout` | int | `120` | Per-request timeout (s). |
+| `timeout` | int | `120` | **Unparsed**: declared in `data/model.xml`, read by nothing — `serve.py` reads only `host` and `port` from this block. |
 
 ---
 
@@ -238,7 +244,7 @@ Lifts raw data into the model's internal representation.
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `nOutput` | int | sentinel | Sequence length: max tokens per input. For XOR: 2. For text models, OOV words are spelled out as individual characters, so a single word may consume multiple slots --- a short sentence with many OOV words can exceed this limit and trigger a truncation warning suggesting a lower `<minFrequency>`. |
-| `nDim` | int | `1` | Per-vector content dim. |
+| `nDim` | int | `9` | Per-vector muxed EVENT width; content $\mathrm{nWhat} = \mathrm{nDim} - \mathrm{nWhere} - \mathrm{nWhen}$. Default 9 = 1 content + 4 `.where` + 4 `.when`. |
 | `nInputDim` / `nOutputDim` | int | `0` | Raw shape hints. `0` defers to the loader's native dim. |
 | `nVectors` | int | sentinel | Codebook size. Defaults to `nOutput`. |
 | `codebook` | mode | `none` | `none`, `quantize`, or `project`. Legacy `true`/`false` are accepted as `quantize`/`none`. |
@@ -265,13 +271,13 @@ multiplicative Pi fold moved to WholeSpace as top-down analysis).
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `nOutput` | int | sentinel | Number of active perceptual feature vectors. Should be $\geq$ `InputSpace.nOutput`. For XOR: 4. |
-| `nDim` | int | `1` | Per-vector content dim. |
+| `nDim` | int | `9` | Per-vector muxed EVENT width; content $\mathrm{nWhat} = \mathrm{nDim} - \mathrm{nWhere} - \mathrm{nWhen}$ (default 9 = 1 + 4 + 4). |
 | `nVectors` | int | sentinel | Codebook size. When `> nOutput`, enables vector quantization with top-k selection of `nOutput` from `nVectors`. |
 | `invertible` | bool | `false` | `true`: the PartSpace `SigmaLayer` uses the invertible LDU path for forward/reverse. |
-| `hasAttention` | bool | `true` | DEPRECATED and INERT: the legacy boolean no longer constructs a QKV attention pass; it is kept only as a backward-compat alias. Superseded by `<attention>` (off / primer / second-order / low-rank). |
+| `hasAttention` | bool | `false` | DEPRECATED and INERT: the legacy boolean no longer constructs a QKV attention pass; it is kept only as a backward-compat alias. Superseded by `<attention>` (off / primer / second-order / low-rank). |
 | `nonlinear` | bool | `true` | Tanh-bound output to $[-1, 1]$. |
 | `synthesis` | string | `"lexicon"` | Bottom-up union strategy (renamed from `<chunking>`, which is rejected loudly): `lexicon`, `bpe`, `mphf`, `byte` (canonical; `none` is its internal alias), `radix`, `meronomy`. `radix` routes through `RadixLayer`; `meronomy` aliases the radix path with meronomy word-group bookkeeping. `analyse` was removed from PartSpace; top-down cuts live on WholeSpace `<analysis>`. |
-| `butterfly` | bool | `false` | FFT-style element-pair butterfly cascade on the PS fold (`self.sigma` post-swap) for cross-element mixing on the flattened `[B, N*D]` view. Required for `MM_xor.xml` convergence. See [doc/old/2026-05-26-two-loop-pi-sigma-substrate.md](old/2026-05-26-two-loop-pi-sigma-substrate.md). |
+| `butterfly` | bool | — | DEPRECATED per-space alias for the architecture-level `<sigmaPi>` enum (`true` $\to$ `butterfly`, `false` $\to$ `last`). The code default for `<sigmaPi>` is `butterfly`, so the FFT-style element-pair cascade on the PS fold (cross-element mixing on the flattened `[B, N*D]` view) is **ON by default**; configs set `false` to opt out. Required for `MM_xor.xml` convergence. See [doc/old/2026-05-26-two-loop-pi-sigma-substrate.md](old/2026-05-26-two-loop-pi-sigma-substrate.md). |
 | `wordLearning` | int | `2` | Active lexicon-growth mode. `0` = frozen codebook; `>=1` = on first sight of a new word, insert into the lexicon and tag it on the meronomy. Several trained configs override this to `0` or `1`. |
 
 Sigma layer math: $y_j = \tanh(W x + b)$ (the additive/union fold). The
@@ -288,13 +294,13 @@ Transforms perceptual features into abstract concepts via Sigma layers
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `nOutput` | int | sentinel | Active concept vectors. For XOR: 3. |
-| `nDim` | int | `1` | Per-vector content dim. |
+| `nDim` | int | `9` | Per-vector muxed EVENT width; content $\mathrm{nWhat} = \mathrm{nDim} - \mathrm{nWhere} - \mathrm{nWhen}$ (default 9 = 1 + 4 + 4). |
 | `nVectors` | int | sentinel | Codebook size. |
 | `invertible` | bool | `false` | `true`: `SigmaLayer(invertible=True)` (exact inversion via `atanh` + $W^{-1}$); `false`: separate `sigma1` / `sigma2`. |
 | `hasAttention` | bool | `false` | DEPRECATED and INERT: no longer constructs an attention pass in conceptual processing; kept only as a backward-compat alias. Superseded by `<attention>` (off / primer / second-order / low-rank). |
 | `nonlinear` | bool | `true` | Tanh-bound output to $[-1, 1]$. |
 | `codebook` | mode | `none` | `none`, `quantize`, or `project`. |
-| `butterfly` | bool | `false` | Butterfly cascade on CS's PiLayer (same machinery as PartSpace). Required by `MM_xor.xml`. |
+| `butterfly` | bool | — | **Silently ignored**: ConceptualSpace never reads a per-space `<butterfly>` — only PartSpace and WholeSpace carry the per-space read (the deprecated alias for architecture-level `<sigmaPi>`). A `<ConceptualSpace><butterfly>` element in a config has no effect. |
 | `stmCapacity` | int | `8` | STM ring depth (within Miller's $7 \pm 2$ band). Per-batch buffer `[B, stmCapacity, nDim]` + depth pointers `[B]`. |
 
 Sigma layer math: $y_j = \tanh(W x + b)$. See [Architecture.md](Architecture.md).
@@ -316,11 +322,11 @@ perception and output, and (post the analysis/synthesis plan, rev.
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `nOutput` | int | sentinel | Total symbols. When reconstruction symbols are enabled, `nOutputSymbols = OutputSpace.nOutput` are fed to output; the rest carry reconstruction information. |
-| `nDim` | int | `1` | Per-vector content dim. |
+| `nDim` | int | `0` | `0` = inherit `ConceptualSpace.nDim` (`symbol_dim` must equal `concept_dim` under the ownership rule). A concrete positive value is allowed but must match `ConceptualSpace.nDim`. |
 | `nVectors` | int | sentinel | Codebook size. When `codebook=quantize`, equals the number of symbol prototypes. |
-| `codebook` | mode | `none` | `none`, `quantize`, or `project`. Required for the full symbolic pipeline. **Pending removal** (backlog #13: SS `quantize` becomes hardwired) — deliberately deferred until the reverse decodes pre-snap $z$ (backlog #16 / the asymmetric recon gather), because `XOR_exact.xml` relies on `none` for its byte-exact chain. |
+| `codebook` | mode | `quantize` | `none`, `quantize`, or `project`. Required for the full symbolic pipeline; when a config omits the element the code hard-defaults WholeSpace to `quantize` (`Spaces.py`). **Pending removal** (backlog #13: SS `quantize` becomes hardwired) — deliberately deferred until the reverse decodes pre-snap $z$ (backlog #16 / the asymmetric recon gather), because `XOR_exact.xml` relies on `none` for its byte-exact chain. |
 | `analysis` | string | `"byte"` | Top-down division strategy over the unity view: `byte`, `word`, `raw`, `sentence`, `grammatical`, or `meronomy`. The old `analyse` spelling is not accepted by the schema. |
-| `lexer` | string | — | Intake granularity InputSpace executes (`word`, `sentence`, `byte`, `raw`). Moved here from `<InputSpace>` (Phase 4b: lexing is analytic cutting). |
+| `lexer` | string | — | DEPRECATED spelling: the reader prefers the newer `<analyzer>` spelling, falling back to `<lexer>`; **both are deprecated in favor of the unified `<analysis>` knob** (its lexer-valued options `raw`/`byte`/`word`/`sentence` set the intake; `grammatical`/`meronomy` leave the lexer at `raw`). Intake granularity InputSpace executes; moved here from `<InputSpace>` (Phase 4b: lexing is analytic cutting — an InputSpace-side `<lexer>` is rejected loudly). |
 | `nonlinear` | bool | `true` | Tanh-bound the activation. |
 | `sortNetwork` | bool | `false` | Bitonic-sort regularizer on the codebook ordering. |
 | `sortPasses` | int | `0` | Sort-network depth. `0` disables. |
@@ -332,7 +338,7 @@ perception and output, and (post the analysis/synthesis plan, rev.
 | `decorrelationWeight` | decimal | `0.0` | `ImpenetrableLayer` decorrelation regularizer on codebook rows. |
 | `spectralFlatnessWeight` | decimal | `0.0` | `ImpenetrableLayer` spectral-flatness regularizer. |
 | `truthCriterion` | unitInterval | `1.0` | **Single continuous truth bar** governing BOTH (a) WholeSpace truth **recording** --- a per-cell activation is recorded into the TruthLayer iff its clamped magnitude $\ge$ `truthCriterion` (fires during training and `store_truths` gold ingestion alike), and (b) learned relative-sentence **acceptance** --- a relation `predicate(idea1, idea2)` enters the SS codebook iff its learn-score $\ge$ `truthCriterion` (learn-score $= \text{children\_in\_codebook} \times \text{is\_truth\_obvious} \times \text{resolves\_contradiction}$). At `1` nothing is recorded/learned; at `0` everything is. Read onto both ConceptualSpace and WholeSpace; per-space override of the `<architecture>` value. Replaces the retired binary `<accumulateTruth>` / `<truthMinMagnitude>` switches. See [STM.md Section 9](STM.md#9-relative-vs-absolute-end-states). |
-| `trust` | unitInterval | `1.0` | Model-level multiplier for incoming assertions/testimony. Runtime `store_truths` entries and static `<truthSet>` rows use `effective_trust = trust * incoming_trust` (clamped to `[-1, 1]`) before they enter the TruthLayer/LTM; persisted STM descriptions also use it, with absolute rows storing event trust and relative rows storing `trust * (t - f)`. The existing `truthCriterion` and TruthSet factors still decide whether testimony is strong enough to support learned relations. |
+| `trust` | unitInterval | `1.0` | **Architecture-level only** — read as `architecture.trust` (`Models.py`); a `<WholeSpace><trust>` element is not read. Model-level multiplier for incoming assertions/testimony. Runtime `store_truths` entries and static `<truthSet>` rows use `effective_trust = trust * incoming_trust` (clamped to `[-1, 1]`) before they enter the TruthLayer/LTM; persisted STM descriptions also use it, with absolute rows storing event trust and relative rows storing `trust * (t - f)`. The existing `truthCriterion` and TruthSet factors still decide whether testimony is strong enough to support learned relations. |
 
 WholeSpace owns one square invertible
 `PiLayer` at `self.pi` — the top-down analysis (product/intersection)
@@ -372,12 +378,12 @@ Grammar infrastructure (SyntacticLayers, TruthLayer). Lives outside
 | `ltmCapacity` | int | `1024` | Long-term-memory (LTM) chain capacity on `InterSentenceLayer`: the per-row bounded `deque` of STM end-states (the AR sequence feeding inter-sentence prediction) is capped at this many entries. Separate from `truthMaxEntries`. See [STM.md Section 10](STM.md#10-ltm-as-the-chain-of-stm-end-states). |
 | `parserBackend` | — | — | RETIRED (Stage 3 cleanup, 2026-05-27): the chart backend is gone and the signal router (`LanguageLayer`) is now the sole, fixed parser. The element is rejected — leaving it in an XML config raises a loud `ValueError` at load time (`Language._assert_retired_chart_knobs_absent`). |
 | `routerKind` | — | — | RETIRED (Stage 3 cleanup, 2026-05-27): there is no longer a selectable router; the signal router is fixed. Rejected with a loud `ValueError` if present in a config. |
-| `chartCollapse` | string | `"root"` | Soft-superposition output collapse mode, preserved for the signal router's root-state writeback contract: `root` (single root sentence node, other positions zero) or `broadcast` (replicate root across all positions). |
+| `chartCollapse` | string | `"root"` | **Unparsed**: declared in `data/model.xml` / the schema, read by nothing in `bin/` (the writeback contract it described rode out with the chart). |
 | `chartTau` | — | — | RETIRED (Stage 3 cleanup, 2026-05-27) alongside the chart. Rejected with a loud `ValueError` if present in a config. |
 | `wMax` | — | — | RETIRED: the legacy STM-capacity alias is no longer read. STM depth comes from `<stmCapacity>` (or the `DEFAULT_CAPACITY = 8` fallback). A config that still sets `<SymbolSpace><wMax>` now raises a loud `ValueError`. |
 | `chartTopK` | — | — | RETIRED (Stage 3 cleanup, 2026-05-27) alongside the chart. Rejected with a loud `ValueError` if present in a config. |
 | `chartNoiseEps` | — | — | RETIRED (Stage 3 cleanup, 2026-05-27) alongside the chart. Rejected with a loud `ValueError` if present in a config. |
-| `iterationsPerWord` | int | `1` | P->C iterations per word in the per-word stem path. |
+| `iterationsPerWord` | int | `1` | **Unparsed**: declared in `data/model.xml` / the schema, read by nothing in `bin/`. |
 | `downwardGeneration` | bool | `false` | Emit a codebook head via `SymbolSpace.reconstruct()` and stash on `self._predicted_head`. |
 | `language.interpretation` | float | `0.5` | Soft-interpolation weight between forward and generation directions. |
 
@@ -388,6 +394,105 @@ The `<language><grammar>` block contains space-role-scoped rules in
 which rule fires at each space-role (no code-level `default_rule` fallback).
 Legacy bare-space-role elements like `<P>P = sigma(P)</P>` directly under
 `<grammar>` are still accepted.
+
+---
+
+## Additional parsed knobs (2026-07 audit)
+
+Knobs that are parsed and live in `bin/` but were previously undocumented
+here. Every default below was verified against its read-site; `data/model.xsd`
+carries the full schema commentary. Site names are module + owning
+symbol (line anchors drift).
+
+### `<architecture>` level
+
+| Knob | Where read | Default | Purpose |
+|------|-----------|---------|---------|
+| `meronomy` (attr `dMaxStable`) | `Layers.py` (`meronomy_enabled` / `meronomy_d_max_stable`) | code `off`; `data/model.xml` ships `on` with `dMaxStable="4.0"` $\Rightarrow$ effectively **ON** | Binds the meronymic slots (PS.sigma / SS.pi) to the membership kernels; `dMaxStable` clamps the contractive diagonal. |
+| `sigmaPi` | `Models.py` (BaseModel init) + `Spaces.py` (PS/WS fold builders) | `butterfly` | Fold span enum `last` \| `butterfly` \| `full`; the per-space `<butterfly>` boolean is its deprecated alias (PS/WS only). |
+| `whereRungRatio` | `Spaces.py` (`WhereEncoding` construction) | `32` | LF/HF period ratio of the `.where` 2-rung ladder; HF period = `wherePeriod / ratio`. |
+| `syntacticOrder` | `Models.py` (BaseModel init) | `0` | Parse-tree depth cap for the serial reduce sweep; `0` = unbounded. Inert in parallel mode. |
+| `sentenceProtocol` | `Models.py` (BaseModel init) | = `serial` | Whole-sentence gist prelude (parallel `subsymbolicOrder` pumps, intent-only commit) before the serial per-word loop. |
+| `truthSet` (`<truth>` rows: text, `trust` / `kind` attrs) | `Models.py` (`provision_ltm`) | (none) | Config-provisioned trusted truths run through the real forward and appended to the consolidated LTM at load; row trust $\times$ `architecture.trust`. Read only when `<ltmConsolidation>` is on — otherwise ignored. |
+| `thinkingBudget` | `Models.py` (BaseModel init) | `0` | Thinking-kernel op budget per top-level `think()` frame; `0`/absent = off, positive attaches the kernel's certified result to `answer_query`. |
+| `reasoningIterations` | `Models.py` (BaseModel init) | `1` | Truth-grounded reasoning chain depth; a query routes to the recurrent tool-use loop at this depth. `0` = old generative-infer behavior. |
+| `queryReasoning` | `Models.py` (BaseModel init) | `false` | DEPRECATED alias: `true` $\Rightarrow$ `reasoningIterations = 10`. Read only when `<reasoningIterations>` is absent. |
+| `ltmConsolidation` | `Models.py`, `Language.py` (SymbolSubSpace) | `false` | Unifies the discourse LTM chain + RelativeTruthStore into one persisted `TernaryTruthStore` (`ltm_store`). |
+| `stateless` | `Models.py`, `Language.py` | `true` | Request-scoped user TruthSet rows: on state-dict load the consolidated LTM is revived without `ORIGIN_USER` rows. `false` = stateful deployment. |
+| `globalAttention` | `Models.py` (BaseModel init) | `false` | Typed addressable attention over input window / STM / LTM / codebook; the soft-read is parked on `_global_attention_obs`. |
+| `globalAttentionConsume` | `Models.py` (BaseModel init) | `false` | Feeds the parked soft-read back into the head (`Finish`) as a zero-init gated residual. Requires `<globalAttention>`. |
+| `readingAttention` | `Models.py` (BaseModel init) | `false` | Learned `.where` scope producer at each $t>0$ subsymbolic pass (feeds the `<mereologyRaise>` handoff). |
+| `relevance` | `Models.py` (BaseModel init) | `false` | Relevance-integration gate (Architecture.md sec C). |
+| `primingDecay` | `Models.py` (BaseModel init) | `0.9` | Priming-energy decay per prime event. |
+| `primingSpread` | `Models.py` (BaseModel init) | `0.25` | Fraction of a connected row's standing energy diffused to neighbors per prime event (live by default; `0` = pure decay+bump). |
+| `stmReduceTau` | `Models.py` (BaseModel init) | `0.5` | Mid-reading opportunistic STM reduce: fold the top-2 where the reducer DP's reduce marginal exceeds $\tau$. |
+| `radialStmReduce` | `Models.py` (`_create_per_stage`) | `false` | STM idea folds use the radial (signed-safe) radmin/radmax kernels. |
+| `symbolicPriming` | `Language.py` (`attach_knowledge` $\to$ `configure_priming`) | `false` | Taxonomy forward heat production (symbolic-heat retrieval). |
+| `symbolTower` | `Models.py` (BaseModel init) | `false` | 3-stream CS bind (PS + WS + SS): SymbolSpace becomes the symbol tower with its own codebook stream. |
+| `serialObjectMeta` | `Models.py` (BaseModel init) | `false` | Serial-only: per-word hard mask to the active word's span; STM push + eager mint fire once per word. |
+| `conceptIndexRead` | `Models.py` (BaseModel init) | `false` | Serial per-word idea reads through the index to the concept's `similarity_codebook` row instead of the computed percept-binding event. |
+| `ideaDecode` | `Models.py` (BaseModel init) | `false` | Chart-free reverse: generate the surface from the idea alone (no `generate_rules` rebuild). |
+| `verbSpectrum` | `Language.py` (`LiftLayer` init) | `false` | Verb eig-spectrum operator on the composed VP (VP parameterization). |
+| `prediction` | `Models.py` (BaseModel init) | `"none"` | `predictionEnum`: `none` \| `interSentence`; stored as the exact enum string for dispatch. |
+| `predictionTrialRatio` | `Models.py` (ModelLoss wiring) | `0.0` | Fraction of training batches run as pure next-idea prediction (recon terms zeroed). |
+| `overlapWhereTiling` | `Models.py` (BaseModel init) | `false` | Experimental overlapping PS/WS `.where` lattice; requires `<mereologyRaise>true</mereologyRaise>` (loud `ValueError` otherwise). |
+| `continuityNorm` | `Mereology.py` (contemplative mixin) | `'inf'` | Norm for the continuity measure (`'l2'` available). |
+| `continuityRatioTarget` | `Mereology.py` | `1.0` | Target ratio for the continuity measure. |
+| `continuitySharpness` | `Mereology.py` | `1.0` | Sharpness of the continuity squash. |
+| `TetralemmaPolicy` block (+ per-space `tetralemmaOverride`) | `util.py` (`tetralemma_policy`) | `allowExcludedMiddle=1`, `allowContradiction=0`, `neitherThreshold=0.1` | Shared catuskoti policy under `<architecture>`; a space sets `<tetralemmaOverride enabled="true">` + its own `<TetralemmaPolicy>` to override. Legacy top-level `<TetralemmaPolicy>` still read as fallback. |
+
+### `<architecture><training>` level
+
+| Knob | Where read | Default | Purpose |
+|------|-----------|---------|---------|
+| `seed` | `Models.py` (run entry; env `BASIC_SEED` overrides) | unset | RNG pin (torch/python/numpy) for reproducible single-CLI runs; the `XOR_exact` gates rely on it. |
+| `answerLossWeight` | `Models.py` (BaseModel init) | `0.0` | Reasoner answer loss weight. |
+| `predictNextLossWeight` | `Models.py` (BaseModel init) | `0.0` | Next-idea blend loss weight (`reason_predict_next` / `NextIdeaScorer`). |
+| `thinkingLossWeight` | `Models.py` (BaseModel init) | `0.0` | Thinking-kernel loss weight. |
+| `leafDistillWeight` | `Models.py` (BaseModel init) | `0.0` | Leaf-distillation loss weight. |
+| `interContrastiveWeight` | `Models.py` (ModelLoss), `Language.py` (discourse layer) | `0.0` | InfoNCE next-idea contrastive term weight; `0` = MSE-only. |
+| `interContrastiveTemp` | same | `0.1` | InfoNCE temperature. |
+| `conceptualSimilarityScale` | `Models.py` (ModelLoss wiring) | `0.0` | SBOW training weight for the concept `similarity_codebook`. |
+
+### Per-space
+
+| Knob (space) | Where read | Default | Purpose |
+|------|-----------|---------|---------|
+| `attention` (PartSpace / ConceptualSpace / WholeSpace) | `Spaces.py` (each space init) | `off` | Symbolic-retrieval attention mode enum: `off` \| `primer` \| `second-order` \| `low-rank`. Replaces the inert `hasAttention` booleans. |
+| `attentionPromotion` (ConceptualSpace) | `Spaces.py` (CS init) | `false` | Attention-to-relation promotion gate; the promotion bar is the same `truthCriterion` law as sentence learning. |
+| `wordStore` (PartSpace) | `Spaces.py`, `Language.py` | `false` | The percept store's WORD collection becomes the reverse recommenders' candidate basis. |
+| `chunkPromotionThreshold` (PartSpace) | `Spaces.py` (PS init) | `4` | Radix chunk promotion: recurrence count bar on the PerceptStore gate. |
+| `chunkPromotionMinLength` (PartSpace) | `Spaces.py` (PS init) | `2` | Radix chunk promotion: minimum chunk length. |
+| `demuxed` (InputSpace) | `Models.py` (`_make_perceptual_space`) | `false` | Routes what/where/when through the demuxed `ModalSpace` composite instead of the muxed PartSpace. |
+| `lrScale` (OutputSpace) | `Models.py` (`getOptimizer`) | `1.0` | Puts OutputSpace params in their own Adam group at `learningRate * lrScale`. |
+| `definitionFreeSize` (ConceptualSpace) | `Spaces.py` (CS init) | `2` | Symbols a concept's definition may use for free (genus + differentia); the rank-ordered soft-L0 penalizes only surplus ranks. |
+| `lbgThreshold` (WholeSpace) | `Spaces.py` (meta codebook) | `0.5` | LBG auto-granularity: variance threshold for splitting a codebook row. |
+| `lbgMinCount` (WholeSpace) | same | `8` | LBG: minimum hit count before a row may split. |
+| `lbgEpsilon` (WholeSpace) | same | `0.1` | LBG: split displacement magnitude. |
+| `divideWithinWhole` (WholeSpace) | `Spaces.py` (WS init + tiling site) | `true` | Divides unattested type-runs into attested concepts by greedy longest-match tiling; explicit `false` keeps the undivided span. |
+| `gradientMode` (WholeSpace) | `Spaces.py` (WS init) | `"ste"` | Codebook gradient coupling: `snap` \| `ste` \| `rotation` (invalid values raise). |
+| `useStackRouter` (WholeSpace) | `Spaces.py` (WS init) | `false` | Gates WS's stack-rewrite LanguageLayer dispatch; `false` keeps the legacy forward path. |
+| `initScale` (any space) | `Spaces.py` (`_read_init_scale`) | unset | Per-row seed magnitude for the space's codebooks; small values ($\approx 0.02$) keep the sigma/pi folds in their linear regime. Unset/0 = legacy unit prefill. |
+| `impenetrableOverlap` (WholeSpace) | `Spaces.py` (WS init) | `0.0` | ImpenetrableLayer separation penalty on codebook rows: overlap scaled by the absolute trust difference (replaces the legacy antisymmetry+transitivity pair). |
+| `impenetrableVariance` (WholeSpace) | `Spaces.py` (WS init) | `0.0` | ImpenetrableLayer variance regularizer. |
+| `commitmentDecay` (PS/CS/WS) | `Models.py` (VQ override loop) | unset ($\to$ VQ default `0.9`) | VQ-VAE EMA decay override; higher = slower, more stable assignment. |
+| `codebookEmaDeadThreshold` (PS/CS/WS) | same | unset ($\to$ VQ default: `1` if `codebookRetire` else `0`) | Dead-code retire: EMA `cluster_size` below this replaces the slot with a fresh row. |
+| `codebookGrowthEpsilon` (PS/CS/WS) | same | `0.0` | Stashed as `vq.growth_epsilon`; `runBatch` consults it for codebook growth. |
+
+### `<SymbolSpace>` level
+
+| Knob | Where read | Default | Purpose |
+|------|-----------|---------|---------|
+| `armaP` | `Language.py` (InterSentenceLayer build) | `5` | ARMA AR order for inter-sentence prediction. |
+| `armaQ` | same | `2` | ARMA MA order. |
+| `armaHiddenDim` | same | unset (auto) | ARMA predictor hidden width. |
+| `signal.temperature` | `Language.py` (signal-router build) | `1.0` | Signal-router softmax temperature. |
+| `language.useGrammar` | `Language.py` (grammar load) | — | DEPRECATED: still read, but only to warn loudly and force `default.grammar`. |
+| `language.start` | `Language.py` (grammar load) | `"S"` | Accepted completed-derivation shapes (start patterns); named starts tag `relative_truth` / `absolute_truth` sets. |
+
+**Config-only orphan**: `useSubspaceActivation` appears in the schema and
+in test fixtures (`test_basicmodel.py`) but is parsed nowhere in `bin/` —
+setting it in a config has no effect.
 
 ---
 

@@ -48,8 +48,11 @@ The model realizes the pair literally:
   without content are empty and intuitions without concepts are blind maps
   directly: symbolic generalities without perceptual particulars cannot
   spell out a surface; perceptual particulars without the symbolic scaffold
-  carry structure but no meaning. `InputSpace.reverse(percepts, concepts)`
-  recombines both branches.
+  carry structure but no meaning. `InputSpace.reverse(subspace)` recombines
+  both branches: the conceptual reconstruction rides the incoming SubSpace
+  (`_concepts_recon`), and the private helper `_paint_reconstruction`,
+  called inside `reverse`, paints it together with the atomic percept
+  branch.
 
 ## Epistemic Levels (Ramsey)
 
@@ -105,7 +108,8 @@ no longer meets the object simply as it appears, but through an
 overlay of interpretation.
 
 The architecture realizes this distinction structurally
-(MeronomySpec; GrammarOpsPass §6c):
+(doc/old/MeronomySpec.md; doc/old/GrammarOpsPass.md §6c --- the section
+numbering lives only in that archived doc):
 
 - **The first moment is the parallel prelude.** Percepts cross the
   corpus callosum **nameless** — the interface law (spec §3) factors
@@ -138,11 +142,13 @@ The architecture realizes this distinction structurally
 - **The two truths (satya-dvaya).** A completed sentence's meaning is
   either an **absolute truth** — an *idea*: a region-shaped extent,
   evaluable by the luminosity/coverage criterion, rooted at the
-  grammar's absolute-truth start state (``ABS_T``) — or a **relative
-  truth** — a *relation between ideas* (causal implication, ``NP1 at
-  t₁ -> VP -> NP2 at t₂``, is the worked example), verified
-  relationally or by simulation through the serial reasoning loop,
-  never by coverage. Only absolute truths feed the preattentive
+  grammar's absolute-truth start state (`exist_O1`, the EXISTS
+  operator's output: `<start name="absolute_truth">exist_O1</start>`
+  in `data/complete.grammar`; the legacy `ABS_T` token is retired) —
+  or a **relative truth** — a *relation between ideas* (causal
+  implication, $NP_1$ at $t_1 \to VP \to NP_2$ at $t_2$, is the worked
+  example), verified relationally or by simulation through the serial
+  reasoning loop, never by coverage. Only absolute truths feed the preattentive
   filter; relative truths are the conceptual overlay's own products
   and are evaluated within it.
 
@@ -255,10 +261,11 @@ Both recorded simultaneously without contradiction; truth is **frame-indexed**.
 
 ## Quaternary Truth and the Catuskoti
 
-WikiOracle's concept activation is a 2-dim bivector `[aP, aN]` encoding
-Nagarjuna's tetralemma (*catuskoti*), per *Mulamadhyamakakarika*:
+WikiOracle's truth analysis encodes Nagarjuna's tetralemma (*catuskoti*),
+per *Mulamadhyamakakarika*. Writing affirmation and negation as independent
+poles $[a_P, a_N]$:
 
-| State | Sanskrit | `[aP, aN]` | WikiOracle reading |
+| State | Sanskrit | $[a_P, a_N]$ | WikiOracle reading |
 | --- | --- | --- | --- |
 | True | *asti* | `[1, 0]` | affirmed |
 | False | *nasti* | `[0, 1]` | negated |
@@ -266,13 +273,27 @@ Nagarjuna's tetralemma (*catuskoti*), per *Mulamadhyamakakarika*:
 | Neither (unknown) | *anubhaya* | `[0, 0]` | neither affirmed nor negated |
 
 Operations are 4-valued, respecting De Morgan under pole-swap negation
-$\neg[aP, aN] = [aN, aP]$:
+$\neg[a_P, a_N] = [a_N, a_P]$:
 
-- Conjunction: `[min(aP, bP), max(aN, bN)]` (truth-min, falsity-max)
-- Disjunction: `[max(aP, bP), min(aN, bN)]`
+- Conjunction: $[\min(a_P, b_P), \max(a_N, b_N)]$ (truth-min, falsity-max)
+- Disjunction: $[\max(a_P, b_P), \min(a_N, b_N)]$
+
+> Implementation note (2026-07): the 2-dim bivector activation *substrate*
+> described above was retired in 2026-05 --- every inter-component
+> activation now carries one signed Degree-of-Truth scalar in $[-1, 1]$
+> (read it as $a_P - a_N$; `ActiveEncoding`, `bin/Spaces.py`). The
+> four-valued *analysis* survives where it matters, in `TruthLayer`
+> (`tetralemma_balance_penalty`, `consistency`, `suggest_clarifications`
+> are all live, `bin/Layers.py`). On the scalar carrier the grammar
+> operators reduce accordingly: conjunction/disjunction are plain
+> elementwise `torch.min` / `torch.max` over the whole activation vector
+> (`ConjunctionLayer` / `DisjunctionLayer`, `bin/Language.py`, via
+> `Ops.intersection` / `Ops.union` with `monotonic=True`), and negation
+> remains the flip (sign flip on the scalar; the pole-swap form survives
+> as the demuxed-bivector kernel, `Ops._negation_kernel(monotonic=True)`).
 
 The *Both* corner is no longer conflated with *indeterminate* nor exiled to
-`<feeling>`. Inconsistency is a first-class activation state which the loss
+feeling. Inconsistency is a first-class analysis state which the loss
 can detect and suppress (see `TruthLayer.tetralemma_balance_penalty` and
 `TruthLayer.consistency` / `suggest_clarifications`).
 
@@ -296,10 +317,15 @@ WikiOracle's operators map to Dharmakirti's theory of inference:
 
 | Operator | Buddhist | Sanskrit |
 | --- | --- | --- |
-| `<not>` | affirming negation / implies the opposite | *paryudasa* |
-| `<non>` | non-affirming negation / pure removal | *prasajya-pratisedha* |
-| `<and>` | positive concomitance / co-presence | *anvaya* |
-| `<or>` | negative concomitance / co-absence | *vyatireka* |
+| `not` (`NotLayer`) | affirming negation / implies the opposite | *paryudasa* |
+| `non` (`NonLayer`) | non-affirming negation / pure removal | *prasajya-pratisedha* |
+| `conjunction` (`ConjunctionLayer`) | positive concomitance / co-presence | *anvaya* |
+| `disjunction` (`DisjunctionLayer`) | negative concomitance / co-absence | *vyatireka* |
+
+> Implementation note (2026-07): these are **grammar operators** --- rule
+> names in `data/complete.grammar` dispatched to the layer classes in
+> `bin/Language.py` --- not markup. The corpus format is plain text; no
+> `<not>` / `<non>` / `<and>` / `<or>` XML tags are parsed anywhere.
 
 All operators are instances of **logical pervasion** (*vyapti*) --- the
 necessary connection between reason and conclusion grounding valid inference.
@@ -313,10 +339,10 @@ a truth-weighted energy landscape similar to a Hopfield memory.
 
 | State | Interpretation | Examples |
 | --- | --- | --- |
-| True (*asti*) | affirmed in frame | `<fact trust="+1">` |
-| False (*nasti*) | rejected in frame | `<fact trust="-1">` |
-| Both (*ubhaya*) | disagreement across frames | `<fact trust="0">` / frame-indexed contradiction |
-| Neither (*anubhaya*) | outside truth lattice | `<feeling>` --- excluded from training |
+| True (*asti*) | affirmed in frame | `<truth text="..." trust="+0.9"/>` (an XML `<truthSet>` row) |
+| False (*nasti*) | rejected in frame | `<truth text="..." trust="-0.9"/>` |
+| Both (*ubhaya*) | disagreement across frames | frame-indexed contradiction (what `TruthLayer.consistency` flags) |
+| Neither (*anubhaya*) | outside truth lattice | feeling --- excluded from training by design intent (see the implementation note below) |
 
 ## Feelings, Vedana, and the "Neither" Position
 
@@ -333,12 +359,21 @@ The $\pm$1 values correspond to **vedana** (hedonic tone):
 Vedana arises from contact (*sparsa*) --- the meeting of sense organ, sense
 object, and consciousness. Pre-conceptual and non-linguistic.
 
-In WikiOracle:
-- Feelings are **excluded from model training**.
-- Feelings are **excluded from TruthSets** --- they carry no epistemic weight.
+In WikiOracle (design intent):
+- Feelings are to be **excluded from model training**.
+- Feelings are to be **excluded from TruthSets** --- they carry no epistemic
+  weight.
 - Canonical examples: poetry, greetings, hedged claims, subjective expressions.
 
 This preserves the tetralemma without logical explosion.
+
+> Implementation note (2026-07): the exclusion above is stated design
+> intent, not implemented machinery. No `<feeling>` tag exists, and there
+> is no feeling-specific training or TruthSet filter; the `<truthSet>` /
+> trust machinery (provisioning in `bin/Models.py`, `TernaryTruthStore` in
+> `bin/Layers.py`) is real but generic over truth texts. The hedonic
+> *reading* of the stored trust sign (next subsection) is the current
+> stand-in for a feeling channel.
 
 ### Trust-sign as hedonic tone --- luminosity as joy
 
@@ -394,9 +429,18 @@ is the reification that **sunyata** (emptiness) challenges.
 | Emptiness | *sunyata* | phenomena are empty of inherent existence |
 
 Making existence explicit --- "fire exists" --- restores existence as a
-*relation* rather than an *attribute*. The grammar rule $VP \to \varepsilon$
-iff $MP \to \varepsilon$ reinforces this: absence of existential predicate
-implies absence of modal frame.
+*relation* rather than an *attribute*. The live grammar enforces this at
+the root: its absolute-truth start state is `exist_O1`, the output of the
+EXISTS operator (`<start name="absolute_truth">exist_O1</start>`,
+`data/complete.grammar`), so even the bare "Fire!" completes only by
+passing through an explicit existential predicate --- existence is
+supplied as a relation, never presumed as an attribute.
+
+> Implementation note (2026-07): an earlier grammar expressed the same
+> point as the rule $VP \to \varepsilon$ iff $MP \to \varepsilon$ (absence
+> of existential predicate implies absence of modal frame). That rule is
+> retired --- the role-collapsed grammar has no VP/MP nonterminals ---
+> and the `exist_O1` root above is its successor.
 
 ## Shamatha Speech and Single-Pointedness
 

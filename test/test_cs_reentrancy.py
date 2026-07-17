@@ -142,16 +142,19 @@ class TestSymbolicOwnsSigma(unittest.TestCase):
         # XOR_exact sets <butterfly>true</butterfly> on WholeSpace; the
         # flag must reach the fold constructor (cross-slot reach -- a
         # per-slot square fold cannot combine the two word slots for
-        # XOR). N is the flattened content count inputShape[0]*nOutputDim.
+        # XOR). N is the flattened content count inputShape[0]*nDim.
         m = _make_model()
         ws = m.wholeSpace
         # Stage 9 cutover (2026-06-11): with <meronomy>on (the model.xml default) the meronymic slot binds the membership kernel via MeronymicFoldAdapter; the OWNERSHIP contract is unchanged. Under the adapter the cascade is replaced by the
         # per-slot membership fold; the cross-slot SIZING contract
         # survives as fold.N (the construction-time flat total).
+        # RE-PINNED (unified fold-width law, Alec 2026-07-16): the flat
+        # total counts CONTENT columns (nDim), not the muxed event width;
+        # the where/when band rides through the dispatch trim.
         if isinstance(ws.pi, MeronymicFoldAdapter):
             self.assertEqual(
                 int(ws.pi.N),
-                int(ws.inputShape[0]) * int(ws.nOutputDim),
+                int(ws.inputShape[0]) * int(ws.nDim),
                 "adapter must record the legacy flat total as N")
         else:
             self.assertTrue(
@@ -160,8 +163,8 @@ class TestSymbolicOwnsSigma(unittest.TestCase):
                 "cascade into WholeSpace.pi.")
         self.assertEqual(
             int(ws.butterflyN),
-            int(ws.inputShape[0]) * int(ws.nOutputDim),
-            "SS fold butterfly N must be inputShape[0] * nOutputDim "
+            int(ws.inputShape[0]) * int(ws.nDim),
+            "SS fold butterfly N must be inputShape[0] * nDim "
             "(flattened content element count).")
 
 
@@ -182,7 +185,9 @@ class TestSymbolicSigmaStepRoundtrips(unittest.TestCase):
         self.assertIsNotNone(
             fold, "WholeSpace must own a pi to round-trip the carrier.")
         N = int(ws.inputShape[0])
-        D = int(ws.nOutputDim)            # content width the fold acts on
+        # Unified fold-width law (2026-07-16): the fold acts on CONTENT
+        # columns (fold.nInput == ws.nDim); drive it at its own width.
+        D = int(fold.nInput)
         torch.manual_seed(0)
         # Keep values inside the atanh domain so the nonlinear fold
         # round-trips to LDU precision.
