@@ -6965,6 +6965,84 @@ def _role_column(role_index, method, suffix):
         return None
     return role_index.get(f"{method}_{suffix}")
 
+
+# ----------------------------------------------------------------------
+# Online category-collapse consumption in rule selection (<categoryCollapse>).
+#
+# The category-role priors (_category_apply_prior / _category_reduce_prior)
+# read each operator role's column out of the per-position category context
+# and add it to that rule's routing score. When <categoryCollapse> is on, the
+# collapse (participation.learned_collapse via Grammar.category_collapse) tells
+# us which role columns belong to the same collapsed category. We POOL the
+# category context across those columns so every rule whose input category was
+# merged shares the same routing evidence -- rule choice by the probable
+# COLLAPSED word category, not the raw per-role activation.
+#
+# On the live (already role-collapsed) grammar the collapse is identity, so the
+# pooling matrix is None and this is a strict no-op; it only shifts routing when
+# a grammar carries genuinely redundant categories.
+# ----------------------------------------------------------------------
+_COLLAPSE_POOL_CACHE = {}
+
+
+def _build_collapse_pool(role_index, collapse, n_cols):
+    """Pure builder: ``[n_cols, n_cols]`` pooling matrix ``P`` where
+    ``P[j, i] == 1`` iff role column ``j`` shares role column ``i``'s collapsed
+    category. ``cat_ctx @ P`` then replaces each column ``i`` with the sum over
+    its collapsed-category members. Returns ``None`` when the collapse is
+    trivial (every occupied column is its own class), so callers skip the
+    matmul entirely."""
+    col_class = {}
+    for name, col in role_index.items():
+        if 0 <= col < n_cols:
+            # Roles absent from the collapse are their own singleton class.
+            col_class[col] = collapse.get(name, ("__self__", name))
+    occupied = [c for c in range(n_cols) if c in col_class]
+    if len({col_class[c] for c in occupied}) == len(occupied):
+        return None                              # identity -> nothing to pool
+    P = torch.zeros(n_cols, n_cols)
+    for i in occupied:
+        ci = col_class[i]
+        for j in occupied:
+            if col_class[j] == ci:
+                P[j, i] = 1.0
+    for i in range(n_cols):                       # unoccupied columns pass through
+        if i not in col_class:
+            P[i, i] = 1.0
+    return P
+
+
+def _collapse_pool_matrix(n_cols):
+    """Cached pooling matrix for the live grammar's collapse (or ``None`` when
+    identity). Keyed by ``(id(TheGrammar), n_cols)`` -- the collapse is static
+    per model, so this is built once."""
+    key = (id(TheGrammar), int(n_cols))
+    if key not in _COLLAPSE_POOL_CACHE:
+        try:
+            collapse = TheGrammar.category_collapse(direction="compose")
+        except Exception:
+            collapse = {}
+        _COLLAPSE_POOL_CACHE[key] = _build_collapse_pool(
+            _role_index_for_categories(), collapse, int(n_cols))
+    return _COLLAPSE_POOL_CACHE[key]
+
+
+def _collapsed_cat_ctx(cat_ctx):
+    """Pool the category context over collapsed-category siblings when
+    ``<categoryCollapse>`` is on; identity otherwise (or when the collapse is
+    trivial). Shared by the unary and binary category-role priors so rule
+    selection reads the collapsed (probable) word category."""
+    if cat_ctx is None:
+        return cat_ctx
+    if not bool(TheXMLConfig.get("architecture.categoryCollapse", default=False)):
+        return cat_ctx
+    P = _collapse_pool_matrix(int(cat_ctx.shape[-1]))
+    if P is None:
+        return cat_ctx
+    return torch.matmul(
+        cat_ctx, P.to(device=cat_ctx.device, dtype=cat_ctx.dtype))
+
+
 class BinaryStructuredReductionLayer(nn.Module):
     """One layer: contextualize, score, route, compact (hard + soft).
 
@@ -7035,6 +7113,9 @@ class BinaryStructuredReductionLayer(nn.Module):
         role_index = _role_index_for_categories()
         if not role_index:
             return None
+        # <categoryCollapse>: pool the context over merged categories first, so
+        # rules whose operand categories collapsed share routing evidence.
+        cat_ctx = _collapsed_cat_ctx(cat_ctx)
         left = cat_ctx[:, :-1, :]
         right = cat_ctx[:, 1:, :]
         priors = []
@@ -7328,6 +7409,9 @@ class UnaryStructuredLayer(nn.Module):
         role_index = _role_index_for_categories()
         if not role_index:
             return None
+        # <categoryCollapse>: pool the context over merged categories first, so
+        # rules whose input category collapsed share routing evidence.
+        cat_ctx = _collapsed_cat_ctx(cat_ctx)
         priors = []
         for name in self.op_names:
             col = _role_column(role_index, name, "I1")

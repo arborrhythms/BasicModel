@@ -80,3 +80,68 @@ def test_gated_on_runs_collapse_at_enable():
         TheXMLConfig.set("architecture.categoryCollapse", False)
     assert isinstance(ws._category_collapse, dict)
     assert len(set(ws._category_collapse.values())) < len(ws._category_collapse)
+
+
+# -- Consuming the collapse in rule selection ----------------------------------
+# The category-role priors pool the category context over collapsed-category
+# siblings (Language._collapsed_cat_ctx), so rules whose input category merged
+# share routing evidence. Identity on every shipping grammar (all pre-
+# collapsed); the pooling is proven here with a synthetic collapse.
+import torch  # noqa: E402
+from Language import _build_collapse_pool, _collapsed_cat_ctx  # noqa: E402
+
+
+def test_pooling_matrix_sums_merged_role_columns():
+    # a_I1 and b_I1 collapse to one category; c_I1, d_O1 stay singletons.
+    role_index = {"a_I1": 0, "b_I1": 1, "c_I1": 2, "d_O1": 3}
+    collapse = {"a_I1": 0, "b_I1": 0, "c_I1": 1, "d_O1": 2}
+    P = _build_collapse_pool(role_index, collapse, 4)
+    x = torch.tensor([[[1.0, 2.0, 4.0, 8.0]]])
+    pooled = x @ P
+    # merged columns 0,1 -> sum(1,2)=3; singletons unchanged.
+    assert pooled.flatten().tolist() == [3.0, 3.0, 4.0, 8.0]
+
+
+def test_pooling_matrix_is_none_for_identity_collapse():
+    role_index = {"a_I1": 0, "b_I1": 1}
+    identity = {"a_I1": 0, "b_I1": 1}
+    assert _build_collapse_pool(role_index, identity, 2) is None
+
+
+def test_collapsed_cat_ctx_passthrough_when_flag_off():
+    x = torch.randn(2, 3, 5)
+    TheXMLConfig.set("architecture.categoryCollapse", False)
+    assert torch.equal(_collapsed_cat_ctx(x), x)
+
+
+def test_consumption_is_clean_noop_in_serial_mode_on_live_grammar():
+    """serial=True forward is byte-identical with <categoryCollapse> on vs off
+    on the (already role-collapsed) live grammar — the consumption is wired
+    into the serial per-word path and correctly a no-op there."""
+    from data import TheData
+    from Models import BaseModel
+
+    def _build_serial():
+        TheData.load("xor")
+        m, _ = BaseModel.from_config("data/MM_xor.xml", data=TheData)
+        m.serial_mode = True
+        if hasattr(m, "perceptualSpace"):
+            m.perceptualSpace.serial_mode = True
+        if hasattr(m, "conceptualSpace"):
+            m.conceptualSpace.serial_mode = True
+        return m
+
+    inp = torch.tensor(
+        [[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]]).float().unsqueeze(1)
+    torch.manual_seed(0)
+    m_off = _build_serial()
+    TheXMLConfig.set("architecture.categoryCollapse", False)
+    out_off = m_off.forward(inp)[2].detach().clone()
+    torch.manual_seed(0)
+    m_on = _build_serial()
+    TheXMLConfig.set("architecture.categoryCollapse", True)
+    try:
+        out_on = m_on.forward(inp)[2].detach().clone()
+    finally:
+        TheXMLConfig.set("architecture.categoryCollapse", False)
+    assert torch.allclose(out_on, out_off, atol=1e-6)
