@@ -62,6 +62,7 @@ from Layers import GrammarLayer
 from Layers import LinearLayer, InvertibleLinearLayer, AssociationLayer, MapppingLayer, LiftingLayer, LoweringLayer, ChunkLayer
 from Layers import LiftingLayer, CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon, Ops
 from Layers import meronomy_enabled  # MeronomySpec §3 mode knob (Stage 4)
+from space_carrier import SpaceCarrierMixin
 
 
 def gauge_orient(u, referent):
@@ -1839,6 +1840,17 @@ class Basis(nn.Module):
         """
         return None
 
+    def _bind_vq_to_owned_parameter(self):
+        """Keep VQ's operational view on this Basis's sole Parameter."""
+        vq = getattr(self, 'vq', None)
+        W = self._parameters.get('W')
+        if (
+            vq is not None
+            and isinstance(W, nn.Parameter)
+            and hasattr(vq, 'bind_external_codebook')
+        ):
+            vq.bind_external_codebook(W)
+
     # -- Explicit prototype mutation API --------------------------------
     # ``replace_W`` is the single explicit API for changing the prototype
     # matrix (or plain backing tensor) AFTER construction. It distinguishes
@@ -2682,6 +2694,12 @@ class Codebook(Tensor):
         self._svd_V = None        # [D, K]
         self._svd_dirty = True
 
+    def _apply(self, fn, recurse=True):
+        """Move/cast the sole owner Parameter, then refresh VQ's view."""
+        result = super()._apply(fn, recurse=recurse)
+        result._bind_vq_to_owned_parameter()
+        return result
+
     def getW(self):
         """Return the codebook prototype matrix ``[V, D]`` (or ``None``
         when the codebook hasn't been built yet).
@@ -2740,12 +2758,14 @@ class Codebook(Tensor):
             if "W" not in self._parameters:
                 self.W = None
                 self._svd_dirty = True
+            self._bind_vq_to_owned_parameter()
             return
         if isinstance(value, nn.Parameter):
             if "W" in self._parameters:
                 del self._parameters["W"]
             self.W = value
             self._svd_dirty = True
+            self._bind_vq_to_owned_parameter()
             return
         if torch.is_tensor(value) and value.ndim >= 3:
             raise RuntimeError(
@@ -2949,12 +2969,14 @@ class Codebook(Tensor):
             if "W" not in self._parameters:
                 self.W = None
                 self._svd_dirty = True
+            self._bind_vq_to_owned_parameter()
             return
         if isinstance(new_W, nn.Parameter):
             if "W" in self._parameters:
                 del self._parameters["W"]
             self.W = new_W
             self._svd_dirty = True
+            self._bind_vq_to_owned_parameter()
             return
         if not torch.is_tensor(new_W) or new_W.ndim != 2:
             raise RuntimeError(
@@ -2974,13 +2996,46 @@ class Codebook(Tensor):
                 self.W = nn.Parameter(new_W.detach().clone(),
                                       requires_grad=param.requires_grad)
                 self._svd_dirty = True
+                self._bind_vq_to_owned_parameter()
                 return
             with torch.no_grad():
                 param.data.copy_(new_W)
             self._svd_dirty = True
+            self._bind_vq_to_owned_parameter()
             return
         self.W = new_W
         self._svd_dirty = True
+        self._bind_vq_to_owned_parameter()
+
+    def _load_from_state_dict(
+        self,
+        state_dict,
+        prefix,
+        local_metadata,
+        strict,
+        missing_keys,
+        unexpected_keys,
+        error_msgs,
+    ):
+        # Pre-single-owner checkpoints serialized the SAME Parameter twice as
+        # ``W`` and ``vq._codebook``. Prefer W (the structural owner's key),
+        # using the VQ key only for unusually stripped checkpoints.
+        old_vq_key = prefix + 'vq._codebook'
+        owner_key = prefix + 'W'
+        if old_vq_key in state_dict:
+            if owner_key not in state_dict:
+                state_dict[owner_key] = state_dict[old_vq_key]
+            del state_dict[old_vq_key]
+        super()._load_from_state_dict(
+            state_dict,
+            prefix,
+            local_metadata,
+            strict,
+            missing_keys,
+            unexpected_keys,
+            error_msgs,
+        )
+        self._bind_vq_to_owned_parameter()
 
     def create(self, nInput, nVectors, nDim, customVQ=True, monotonic=True,
                category=False,
@@ -3553,6 +3608,7 @@ class Codebook(Tensor):
                     self.vq.codebook = new_vq
             except Exception:
                 pass
+        self._bind_vq_to_owned_parameter()
         self.nVectors = new_n
         self.codebookSize = max(int(self.codebookSize), new_n)
         # Cached SVD factors are sized to the old W; invalidate.
@@ -5799,6 +5855,28 @@ class SubSpace(nn.Module):
     should use ``materialize(mode="event")``.
     """
 
+    def __getattr__(self, name):
+        """Preserve the legacy percept-store spelling without owning it.
+
+        ``PartSpace`` owns the durable radix store.  A few migration-era
+        callers still read or replace ``space.subspace.percept_store``; route
+        that compatibility access to the owner instead of registering a
+        second child module on this adapter.
+        """
+        if name == "percept_store":
+            owner = self.__dict__.get("_owner_space")
+            if owner is not None:
+                return owner.percept_store
+        return super().__getattr__(name)
+
+    def __setattr__(self, name, value):
+        if name == "percept_store":
+            owner = self.__dict__.get("_owner_space")
+            if owner is not None:
+                owner.percept_store = value
+                return
+        super().__setattr__(name, value)
+
     def __init__(self, inputShape, outputShape,
                  nInputDim=0, nOutputDim=0,
                  objectEncoding=None, activeEncoding=None, whatEncoding=None,
@@ -7525,7 +7603,7 @@ from Layers import ShortTermMemory as _ShortTermMemory_relocated
 ShortTermMemory = _ShortTermMemory_relocated
 
 
-class Space(nn.Module):
+class Space(SpaceCarrierMixin, nn.Module):
     """Base class for all spaces in the processing pipeline.
 
     The model is organized as a chain of spaces, each transforming object
@@ -7587,6 +7665,13 @@ class Space(nn.Module):
         See class docstring for invariants.
         """
         super(Space, self).__init__()
+        # Durable version metadata for read-only carrier capabilities.  These
+        # are model-state epochs, not per-execution pipeline fields: readers
+        # consult them to reject stale replicas while the actual codebook
+        # remains owned by this Space's legacy compatibility subtree.
+        self._codebook_parameter_version = 0
+        self._codebook_structure_versions = {}
+        self._codebook_owner_path = None
         # Phase 1: set by the model after construction. Spaces call
         # self.normalizer.{normalize,denormalize} instead of reaching into
         # the TheData global.
@@ -7720,6 +7805,13 @@ class Space(nn.Module):
         self.nWhat = self.subspace.nWhat
         self.muxedSize = self.subspace.muxedSize
 
+        # Structural ownership migration: the legacy SubSpace remains a
+        # per-execution compatibility adapter, but every durable Basis and
+        # Encoding module is registered exactly once under the Space.  The
+        # adapter keeps ordinary Python references so its existing methods
+        # continue to work without registering Parameters/children itself.
+        self._adopt_subspace_modules()
+
         # Tag each owned VQ with "SectionName.role" so VectorQuantize.forward's
         # OOM message can name the offending codebook ("PartSpace.what"
         # rather than an anonymous buffer-size traceback).
@@ -7739,6 +7831,51 @@ class Space(nn.Module):
         self.params = []   # parameters for the optimizer (excludes temperature params)
         self.layers = nn.ModuleList()   # layer instances for paramUpdate() delegation
         self._register_requirements()
+
+    def _adopt_subspace_modules(self):
+        """Move durable Basis/Encoding registration from SubSpace to Space.
+
+        ``object.__setattr__`` is deliberate: assigning an nn.Module through
+        ``SubSpace.__setattr__`` would immediately register a second owner.
+        The compatibility references are removed with Phase 6; new carrier
+        code never receives them.
+        """
+        sub = self.subspace
+
+        # Keep this one migration-only back-reference non-registering: it
+        # exists solely to redirect the historical
+        # ``subspace.percept_store`` spelling to the Space-owned store.
+        legacy_store = sub._modules.pop('percept_store', None)
+        if legacy_store is not None and getattr(self, '_percept_store', None) is None:
+            self.percept_store = legacy_store
+        object.__setattr__(sub, '_owner_space', self)
+
+        bases = nn.ModuleDict()
+        for role in ('event', 'what', 'where', 'when', 'activation'):
+            module = sub._modules.pop(role, None)
+            if module is None:
+                module = getattr(sub, role, None)
+            if isinstance(module, nn.Module):
+                bases[role] = module
+                object.__setattr__(sub, role, module)
+        self._owned_bases = bases
+
+        encoders = nn.ModuleDict()
+        for role in (
+            'activeEncoding',
+            'objectEncoding',
+            'whatEncoding',
+            'whereEncoding',
+            'whenEncoding',
+            'wordEncoding',
+        ):
+            module = sub._modules.pop(role, None)
+            if module is None:
+                module = getattr(sub, role, None)
+            if isinstance(module, nn.Module):
+                encoders[role] = module
+                object.__setattr__(sub, role, module)
+        self._owned_encoders = encoders
 
     def attach_symbolSpace(self, symbolSpace):
         """Wire the shared SymbolSpace as a non-Module routing pointer.
@@ -7794,21 +7931,16 @@ class Space(nn.Module):
 
     @property
     def percept_store(self):
-        """Radix percept operator/vocabulary, stored on ``self.subspace``
-        (the state container the Space carries), not as a bare Space
-        attribute -- subspaces are the data threaded through forward. Returns
-        None when the subspace has none (non-radix spaces, or pre-build)."""
-        sub = getattr(self, "subspace", None)
-        return getattr(sub, "percept_store", None) if sub is not None else None
+        """Space-owned radix percept operator/vocabulary, when configured."""
+        return getattr(self, "_percept_store", None)
 
     def __setattr__(self, name, value):
-        # ``percept_store`` is held on the subspace (the state container);
-        # route writes there so ``space.percept_store = X`` stays transparent
-        # while the state lives with the subspace, not bare on the Space.
-        # (A property setter can't do this: nn.Module.__setattr__ intercepts
-        # Module values before the descriptor runs.)
-        if name == "percept_store" and getattr(self, "subspace", None) is not None:
-            self.subspace.percept_store = value
+        # The radix store is durable learned/structural state. Route its public
+        # name to a Space-owned registered child rather than attaching it to
+        # the per-execution compatibility SubSpace. (A property setter cannot
+        # do this because nn.Module.__setattr__ intercepts Module values first.)
+        if name == "percept_store":
+            super().__setattr__("_percept_store", value)
             return
         super().__setattr__(name, value)
 
@@ -8791,7 +8923,7 @@ class InputSpace(Space):
         time mirror so ``forward()`` paths that consult it (cf. the
         WholeSpace forward stamping) continue to work.
         """
-        self._model_symbolSpace = ss
+        object.__setattr__(self, '_model_symbolSpace', ss)
         # Stamp the routing pointer on this InputSpace too so consumers
         # can read ``inputSpace.symbolSpace`` without going through the
         # Model. (SymbolSubSpace.__init__ also calls
@@ -9417,7 +9549,7 @@ class InputSpace(Space):
             nOutputDim=template._nOutputDim,
         )
         # Stamp symbolSpace so downstream skip-on-empty logic still sees it.
-        ws.symbolSpace = self._model_symbolSpace
+        object.__setattr__(ws, 'symbolSpace', self._model_symbolSpace)
         return ws
 
     def _lex_and_embed(self, input):
@@ -9960,8 +10092,9 @@ class PartSpace(Space):
         # Radix/meronomy builds the authoritative surface-form PerceptStore.
         if self.synthesis_mode == "radix":
             from Layers import RadixLayer as _PerceptStore
-            # RadixLayer stores vectors in the SubSpace-owned Codebook basis.
-            self.subspace.percept_store = _PerceptStore(
+            # RadixLayer refers to the Space-owned Codebook basis without
+            # registering it a second time.
+            self.percept_store = _PerceptStore(
                 self.nDim,
                 initial_cap=max(int(self.nVectors), 1),
                 promotion_threshold=self.chunk_promotion_threshold,
@@ -9972,7 +10105,7 @@ class PartSpace(Space):
         elif self.synthesis_mode in ("bpe", "mphf"):
             from Layers import RadixLayer as _PerceptStore
             # Mirror BPE/MPHF chunk ids into a private byte-level PerceptStore.
-            self.subspace.percept_store = _PerceptStore(
+            self.percept_store = _PerceptStore(
                 self.nDim,
                 initial_cap=max(int(self.nVectors), 256),
                 promotion_threshold=self.chunk_promotion_threshold,
@@ -9986,7 +10119,7 @@ class PartSpace(Space):
             elif not isinstance(_sw, nn.Parameter):
                 _sb.setW(nn.Parameter(_sw.detach().clone()))
         else:
-            self.subspace.percept_store = None
+            self.percept_store = None
         # Opt-in/opt-out: the frozen-vocab GPU BPE tokenizer
         # (``_embed_bpe_gpu``) is bit-identical to the trie path
         # (test/bpe_gpu_equiv.py) but is NOT the production default --

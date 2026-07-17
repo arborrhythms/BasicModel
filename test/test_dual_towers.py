@@ -16,13 +16,14 @@ from recon_bench import _build_model, _resolve_config
 import Spaces
 from Spaces import Space, PartSpace, WholeSpace
 
-# HEAD 2026-07-10 (captured pre-Task-A): structural pins that must survive
-# the PerceptualSpace removal byte-for-byte.
+# Structural pins. Re-baselined 2026-07-17 when durable Basis/Encoding
+# ownership moved from persistent SubSpaces to their Spaces and duplicate
+# terminal/body/SymbolSpace aliases stopped registering the same modules.
 _XOR_HEAD_NVEC = [8, 8, 8]
 _GRAMMAR_HEAD_NVEC = [4, 2, 2]
 _HEAD_SD = {  # (n_keys, sha16 of sorted state_dict key names)
-    "data/MM_20M_xor.xml": (1875, "8f4dc25033d09807"),
-    "data/MM_20M_grammar.xml": (2664, "3e5ff795238e7c59"),
+    "data/MM_20M_xor.xml": (760, "c2a259b71af0096c"),
+    "data/MM_20M_grammar.xml": (986, "6d9e69ce6192eeb0"),
 }
 
 
@@ -62,11 +63,46 @@ def test_off_path_stores_unchanged():
 
 
 def test_off_path_state_dict_keys_unchanged():
-    """The base held no params: key names must be identical post-removal."""
+    """The canonical, single-owner checkpoint key set stays pinned."""
     for cfg, (n, sha) in _HEAD_SD.items():
         keys = sorted(_build(cfg).state_dict().keys())
         h = hashlib.sha256("\n".join(keys).encode()).hexdigest()[:16]
         assert (len(keys), h) == (n, sha), (cfg, len(keys), h)
+
+
+def test_space_is_the_single_structural_owner_of_slot_modules():
+    """SubSpaces retain compatibility references, never registrations."""
+    m = _build("data/MM_20M_xor.xml")
+    spaces = [
+        m.inputSpace,
+        m.perceptualSpace,
+        *m.conceptualSpaces,
+        *m.wholeSpaces,
+        m.outputSpace,
+        m.symbolSpace,
+    ]
+    all_parameters = list(m.named_parameters(remove_duplicate=False))
+    for space in spaces:
+        for role in ("event", "what", "where", "when", "activation"):
+            assert role not in space.subspace._modules
+            assert space._owned_bases[role] is getattr(space.subspace, role)
+            basis = space._owned_bases[role]
+            vq = getattr(basis, "vq", None)
+            if vq is not None and getattr(basis, "W", None) is not None:
+                assert vq.codebook is basis.W
+                assert "_codebook" not in vq._parameters
+            for parameter in space._owned_bases[role].parameters():
+                occurrences = sum(
+                    candidate is parameter for _, candidate in all_parameters
+                )
+                assert occurrences == 1, (space._codebook_owner_path, role, occurrences)
+
+    keys = tuple(m.state_dict())
+    assert not any(key.startswith("wholeSpace.") for key in keys)
+    assert not any(key.startswith("conceptualSpace.") for key in keys)
+    assert not any(key.startswith("body_stages.") for key in keys)
+    assert not any("._model_symbolSpace." in key for key in keys)
+    assert not any(".symbolSpace." in key for key in keys)
 
 
 def test_dual_forward_signatures():

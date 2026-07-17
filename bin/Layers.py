@@ -14341,6 +14341,9 @@ class VectorQuantize(nn.Module):
         
         See class docstring for the operation contract.
         """
+        external = self.__dict__.get("_external_codebook")
+        if external is not None:
+            return external
         return self._parameters["_codebook"]
 
     @codebook.setter
@@ -14350,7 +14353,18 @@ class VectorQuantize(nn.Module):
         See class docstring for the operation contract.
         """
         param = value if isinstance(value, nn.Parameter) else nn.Parameter(value.detach().clone())
-        if "_codebook" in self._parameters:
+        external = self.__dict__.get("_external_codebook")
+        if external is not None:
+            # Preserve the authoritative owner's Parameter identity for the
+            # normal same-shape refresh. A shape change is temporarily held
+            # by reference; Codebook's structural mutation seam rebinds the
+            # newly registered owner Parameter immediately afterward.
+            if tuple(external.shape) == tuple(param.shape):
+                with torch.no_grad():
+                    external.data.copy_(param.data)
+                param = external
+            object.__setattr__(self, "_external_codebook", param)
+        elif "_codebook" in self._parameters:
             self._parameters["_codebook"] = param
         else:
             self.register_parameter("_codebook", param)
@@ -14372,6 +14386,21 @@ class VectorQuantize(nn.Module):
         # the row count changed.
         if "_b_norms_sq" in self._buffers:
             self._buffers["_b_norms_sq"] = (param.data ** 2).sum(dim=-1)
+
+    def bind_external_codebook(self, parameter):
+        """Use an owner-registered Parameter without registering it again.
+
+        A standalone VectorQuantize owns ``_codebook``. When embedded in a
+        ``Spaces.Codebook``, the parent Basis is the structural owner and VQ
+        is only an operational client. Both cases expose the same ``codebook``
+        property to the quantization kernels.
+        """
+        if not isinstance(parameter, nn.Parameter):
+            raise TypeError("external codebook must be an nn.Parameter")
+        self._parameters.pop("_codebook", None)
+        object.__setattr__(self, "_external_codebook", parameter)
+        self.codebook_size = int(parameter.shape[0])
+        self._sync_ema_buffers()
 
     def _sync_ema_buffers(self):
         """Repair EMA buffers when they drift from the live codebook shape.

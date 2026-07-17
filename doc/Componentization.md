@@ -5,6 +5,10 @@
 > perceptual, conceptual, whole, and symbolic space. It is a refactoring guide,
 > not a claim that the proposed components already exist.
 
+The focused ownership and pipeline-parallel contract for sparse, per-execution
+`SubSpace` carriers and Space-owned codebooks is specified in
+[`plans/2026-07-16-sparse-subspace-carrier-design.md`](plans/2026-07-16-sparse-subspace-carrier-design.md).
+
 The conceptual architecture is substantially more modular than its runtime.
 Layers, bases, spaces, grammar operations, and typed `SubSpace` carriers give
 the model a useful domain vocabulary. The non-modularity is concentrated in

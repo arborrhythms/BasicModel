@@ -12574,6 +12574,9 @@ class SymbolSpace(Space):
     def __init__(self, perceptualSpace, conceptualSpace, wholeSpace,
                  nPercepts, nConcepts, nSymbols, concept_dim, symbol_dim):
         nn.Module.__init__(self)
+        self._codebook_parameter_version = 0
+        self._codebook_structure_versions = {}
+        self._codebook_owner_path = None
         self.subspace = SymbolSubSpace(
             perceptualSpace=perceptualSpace,
             conceptualSpace=conceptualSpace,
@@ -12584,6 +12587,9 @@ class SymbolSpace(Space):
             concept_dim=concept_dim,
             symbol_dim=symbol_dim,
         )
+        # The coordinator owns grammar/STM state; its durable slot Bases and
+        # Encodings are registered exactly once on this Space.
+        self._adopt_subspace_modules()
         # SymbolSubSpace.__init__ pointed the home spaces' ``.symbolSpace``
         # back-ref at ITSELF (the coordinator); re-point them at THIS container so
         # ``perceptualSpace.symbolSpace is model.symbolSpace`` holds (the pipeline

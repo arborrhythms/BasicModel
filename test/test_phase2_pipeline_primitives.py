@@ -201,7 +201,7 @@ def _make_mm_xor_model():
 
 
 def test_build_pipelines_creates_body_stages():
-    """build_pipelines() constructs body_stages as an nn.ModuleList of ModuleDicts.
+    """build_pipelines() constructs a non-duplicating stage registry.
 
     Replaces the prior pipeline_fwd nn.Sequential check. After the
     2026-05-11 module consolidation, the entire pipeline is method-
@@ -214,8 +214,10 @@ def test_build_pipelines_creates_body_stages():
     assert isinstance(model.body_stages, nn_.ModuleList)
     assert len(model.body_stages) == model.subsymbolicOrder
     for stage in model.body_stages:
-        assert isinstance(stage, nn_.ModuleDict)
+        assert isinstance(stage, nn_.Module)
+        assert not isinstance(stage, nn_.ModuleDict)
         assert "cs" in stage and "ws" in stage
+        assert "cs" not in stage._modules and "ws" not in stage._modules
     # Pipeline boundaries are methods, not attributes. ``_forward_stem``
     # stays retired (the IR forward inlines InputSpace+PartSpace
     # directly into ``_forward_per_stage``); ``reverse()`` reconstructs input

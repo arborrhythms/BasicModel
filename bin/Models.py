@@ -174,6 +174,36 @@ class GrammarMergeGlue(nn.Module):
         return subspace
 
 
+class _BodyStage(nn.Module):
+    """Body-stage record with non-owning Conceptual/Whole Space references.
+
+    Those Spaces are already structurally owned by their model ModuleLists.
+    Registering them again in a ModuleDict duplicated every Parameter and
+    checkpoint key. Only the optional merge operator is a child here.
+    """
+
+    def __init__(self, cs, ws, merge=None):
+        super().__init__()
+        object.__setattr__(self, '_cs', cs)
+        object.__setattr__(self, '_ws', ws)
+        if merge is not None:
+            self.merge = merge
+
+    def __contains__(self, key):
+        return key in ('cs', 'ws') or (
+            key == 'merge' and 'merge' in self._modules
+        )
+
+    def __getitem__(self, key):
+        if key == 'cs':
+            return self._cs
+        if key == 'ws':
+            return self._ws
+        if key == 'merge' and 'merge' in self._modules:
+            return self._modules['merge']
+        raise KeyError(key)
+
+
 # FlattenKWrapper retired 2026-05-11: K-axis flatten/restore is now
 # handled inline by ``BasicModel._flatten_k`` / ``_restore_k`` around
 # each stem/body/head boundary in the pipeline methods.
@@ -1379,6 +1409,27 @@ class BaseModel(Mereology, nn.Module):
         # space walk above already cascades ``paramUpdate()`` to it (the dense
         # full/last ergodic path anneals; the butterfly path is a no-op).
 
+    def _advance_codebook_parameter_versions(self):
+        """Publish one model-wide parameter epoch after a write barrier.
+
+        Every Space receives the same epoch even when a particular codebook
+        had no gradient in this step.  Conservative invalidation is cheap and
+        guarantees that a pipeline execution can compare every selected
+        carrier against one model-wide ``parameter_version``.
+        """
+        version = int(getattr(self, '_parameter_epoch', 0)) + 1
+        self._parameter_epoch = version
+        for space in self.spaces:
+            # Compatibility/custom Spaces may still skip Space.__init__.
+            # Normal Spaces and SymbolSpace initialize this metadata and
+            # advance together at the write barrier.
+            if '_codebook_parameter_version' not in vars(space):
+                continue
+            setter = getattr(space, 'set_codebook_parameter_version', None)
+            if callable(setter):
+                setter(version)
+        return version
+
     def set_sigma(self, sigma):
         """Propagate exploration meta-parameters to all spaces.
 
@@ -1772,6 +1823,50 @@ class BaseModel(Mereology, nn.Module):
         # This produces an actionable diagnostic instead of a raw PyTorch error.
         model_state = dict(self.state_dict())
 
+        # Space-owned carrier-state migration (2026-07-17): durable Basis and
+        # Encoding modules moved from ``Space.subspace`` into the Space's
+        # authoritative ``_owned_bases`` / ``_owned_encoders`` containers.
+        # Rewrite only when the candidate is an exact live key, so unrelated
+        # nested SubSpaces (including SymbolSubSpace) retain their own paths.
+        _carrier_key_roles = {
+            **{
+                role: '_owned_bases'
+                for role in ('event', 'what', 'where', 'when', 'activation')
+            },
+            **{
+                role: '_owned_encoders'
+                for role in (
+                    'activeEncoding',
+                    'objectEncoding',
+                    'whatEncoding',
+                    'whereEncoding',
+                    'whenEncoding',
+                    'wordEncoding',
+                )
+            },
+        }
+        _carrier_renamed = 0
+        for _old_key in list(state.keys()):
+            _percept_token = '.subspace.percept_store.'
+            if _percept_token in _old_key:
+                _new_key = _old_key.replace(
+                    _percept_token, '._percept_store.', 1
+                )
+                if _new_key in model_state and _old_key not in model_state:
+                    state[_new_key] = state.pop(_old_key)
+                    _carrier_renamed += 1
+                    continue
+            for _role, _container in _carrier_key_roles.items():
+                _token = f'.subspace.{_role}.'
+                if _token not in _old_key:
+                    continue
+                _new_key = _old_key.replace(
+                    _token, f'.{_container}.{_role}.', 1
+                )
+                if _new_key in model_state and _old_key not in model_state:
+                    state[_new_key] = state.pop(_old_key)
+                    _carrier_renamed += 1
+                break
         # SymbolSpace migration (2026-06-21 refactor, Stage 3): the
         # SymbolSubSpace coordinator moved UNDER the new SymbolSpace container
         # (``m.symbolSpace`` is now a ``SymbolSpace(Space)`` that owns
@@ -1783,14 +1878,146 @@ class BaseModel(Mereology, nn.Module):
         _ss_new = "symbolSpace.subspace."
         _ss_renamed = 0
         for k in list(state.keys()):
-            if k.startswith(_ss_old) and not k.startswith(_ss_new):
-                state[_ss_new + k[len(_ss_old):]] = state.pop(k)
-                _ss_renamed += 1
+            if (
+                not k.startswith(_ss_old)
+                or k.startswith(_ss_new)
+                or k in model_state
+            ):
+                continue
+            remainder = k[len(_ss_old):]
+            candidates = [_ss_new + remainder]
+            head = remainder.split('.', 1)[0]
+            if head in ('event', 'what', 'where', 'when', 'activation'):
+                candidates.insert(
+                    0, f"symbolSpace._owned_bases.{remainder}"
+                )
+            elif head in (
+                'activeEncoding', 'objectEncoding', 'whatEncoding',
+                'whereEncoding', 'whenEncoding', 'wordEncoding',
+            ):
+                candidates.insert(
+                    0, f"symbolSpace._owned_encoders.{remainder}"
+                )
+            target = next(
+                (candidate for candidate in candidates if candidate in model_state),
+                candidates[-1],
+            )
+            state[target] = state.pop(k)
+            _ss_renamed += 1
         if _ss_renamed:
             warnings.warn(
                 f"SymbolSpace migration: rewrote {_ss_renamed} symbolSpace.* "
                 f"checkpoint keys to symbolSpace.subspace.* (the "
                 f"coordinator moved under the new SymbolSpace container).",
+                stacklevel=2,
+            )
+
+        # Remove pre-ownership duplicate module paths. Terminal aliases,
+        # body-stage ModuleDicts, and Space->SymbolSpace back-references used
+        # to register the same modules repeatedly. Canonical ModuleLists and
+        # ``model.symbolSpace`` are now their sole structural owners.
+        _alias_renamed = 0
+        _last_cs = len(getattr(self, 'conceptualSpaces', ())) - 1
+        _last_ws = len(getattr(self, 'wholeSpaces', ())) - 1
+        for _old_key in list(state.keys()):
+            _target = None
+            if _last_cs >= 0 and _old_key.startswith('conceptualSpace.'):
+                _target = (
+                    f'conceptualSpaces.{_last_cs}.'
+                    + _old_key[len('conceptualSpace.'):]
+                )
+            elif _last_ws >= 0 and _old_key.startswith('wholeSpace.'):
+                _target = (
+                    f'wholeSpaces.{_last_ws}.'
+                    + _old_key[len('wholeSpace.'):]
+                )
+            else:
+                _parts = _old_key.split('.')
+                if (
+                    len(_parts) >= 4
+                    and _parts[0] == 'body_stages'
+                    and _parts[1].isdigit()
+                    and _parts[2] in ('cs', 'ws')
+                ):
+                    _owner = (
+                        'conceptualSpaces'
+                        if _parts[2] == 'cs'
+                        else 'wholeSpaces'
+                    )
+                    _target = '.'.join(
+                        [_owner, _parts[1], *_parts[3:]]
+                    )
+                else:
+                    for _token in ('._model_symbolSpace.', '.symbolSpace.'):
+                        if _token in _old_key:
+                            _target = 'symbolSpace.' + _old_key.split(
+                                _token, 1
+                            )[1]
+                            break
+            if _target is None or _target == _old_key:
+                continue
+            if _target not in state:
+                state[_target] = state[_old_key]
+            del state[_old_key]
+            _alias_renamed += 1
+
+        # Alias canonicalization may have produced canonical legacy
+        # ``*.subspace.<slot>.*`` keys. Apply the ownership rewrite once more.
+        for _old_key in list(state.keys()):
+            _new_key = None
+            _percept_token = '.subspace.percept_store.'
+            if _percept_token in _old_key:
+                _candidate = _old_key.replace(
+                    _percept_token, '._percept_store.', 1
+                )
+                if _candidate in model_state:
+                    _new_key = _candidate
+            if _new_key is None:
+                for _role, _container in _carrier_key_roles.items():
+                    _token = f'.subspace.{_role}.'
+                    if _token in _old_key:
+                        _candidate = _old_key.replace(
+                            _token, f'.{_container}.{_role}.', 1
+                        )
+                        if _candidate in model_state:
+                            _new_key = _candidate
+                        break
+            if _new_key is not None:
+                if _new_key not in state:
+                    state[_new_key] = state[_old_key]
+                del state[_old_key]
+                _carrier_renamed += 1
+        if _alias_renamed:
+            warnings.warn(
+                f"Space ownership migration: removed {_alias_renamed} "
+                f"duplicate alias checkpoint keys.",
+                stacklevel=2,
+            )
+        if _carrier_renamed:
+            warnings.warn(
+                f"Space ownership migration: rewrote {_carrier_renamed} "
+                f"legacy Space.subspace Basis/Encoding checkpoint keys.",
+                stacklevel=2,
+            )
+
+        # VQ-backed Codebooks formerly registered one Parameter twice as
+        # ``W`` and ``vq._codebook``. The parent Basis now owns W exclusively;
+        # retain the VQ value only when an unusually stripped artifact lacks W.
+        _vq_aliases = 0
+        for _old_key in list(state.keys()):
+            if not _old_key.endswith('.vq._codebook'):
+                continue
+            _owner_key = _old_key[:-len('vq._codebook')] + 'W'
+            if _owner_key not in model_state:
+                continue
+            if _owner_key not in state:
+                state[_owner_key] = state[_old_key]
+            del state[_old_key]
+            _vq_aliases += 1
+        if _vq_aliases:
+            warnings.warn(
+                f"Codebook ownership migration: removed {_vq_aliases} "
+                f"duplicate VQ Parameter checkpoint keys.",
                 stacklevel=2,
             )
 
@@ -5115,6 +5342,7 @@ class BasicModel(BaseModel):
                     # Non-Lexicon subspace.what (Codebook, Tensor) has no
                     # normalize(); silently skip rather than crash.
                     pass
+            self._advance_codebook_parameter_versions()
             # Don't count the explore trial (pass B): the step counter drives
             # the periodic-checkpoint cadence, which should count sentences,
             # not the two trials per sentence.
@@ -5981,6 +6209,10 @@ class BasicModel(BaseModel):
         ``self.symbolSpace``, ``self.reversible``, etc.).
         """
         self.spaces = []
+        # Execution-only epoch used by immutable carrier/codebook identities.
+        # It intentionally does not ride in state_dict: no carrier or replica
+        # survives a model rebuild/checkpoint load.
+        self._parameter_epoch = 0
         # Serialized model clock (doc/plans/2026-06-07-model-time-when-
         # encoding.md): a 0-initialized ``long`` that increments once per
         # processed batch (train AND inference) in ``runBatch`` and rides
@@ -6402,8 +6634,10 @@ class BasicModel(BaseModel):
 
         # Backwards-compat aliases: read-only callers (e.g.
         # symbolSpace.truth_layer = self.wholeSpace) see the terminal stage.
-        self.conceptualSpace = self.conceptualSpaces[-1]
-        self.wholeSpace = self.wholeSpaces[-1]
+        # Terminal convenience aliases are routing references; the ModuleLists
+        # above are the sole structural owners.
+        object.__setattr__(self, 'conceptualSpace', self.conceptualSpaces[-1])
+        object.__setattr__(self, 'wholeSpace', self.wholeSpaces[-1])
 
         # Unified fold-width law (2026-07-16): every sigma/pi slot fold is
         # sized at its space's CONTENT width (nDim) -- ONE parameter -- so
@@ -6746,6 +6980,28 @@ class BasicModel(BaseModel):
         self.spaces.extend([self.outputSpace])
         self.spaces.append(self.symbolSpace)
 
+        # Bind stable, unique owner paths before any carrier reader is issued.
+        # The terminal aliases (``conceptualSpace`` / ``wholeSpace``) are not
+        # used because the ModuleLists are the structural owners.
+        _carrier_owners = [
+            ('inputSpace', self.inputSpace),
+            ('perceptualSpace', self.perceptualSpace),
+            *[
+                (f'conceptualSpaces.{i}', space)
+                for i, space in enumerate(self.conceptualSpaces)
+            ],
+            *[
+                (f'wholeSpaces.{i}', space)
+                for i, space in enumerate(self.wholeSpaces)
+            ],
+            ('outputSpace', self.outputSpace),
+            ('symbolSpace', self.symbolSpace),
+        ]
+        for _owner_path, _space in _carrier_owners:
+            binder = getattr(_space, 'bind_codebook_owner_path', None)
+            if callable(binder):
+                binder(_owner_path)
+
         self.inputSpace.outputSpace = self.outputSpace
         # Seed the pipeline context: InputSpace stamps every outgoing
         # subspace's ``symbolSpace`` with this reference so downstream stages
@@ -6889,7 +7145,7 @@ class BasicModel(BaseModel):
         # SymbolSpace ownership hangs off the terminal symbolic stage
         # (Rule 3): ``self.wholeSpace`` is the alias for
         # ``self.wholeSpaces[-1]``.
-        self.wholeSpace.symbolSpace = self.symbolSpace
+        self.wholeSpace.attach_symbolSpace(self.symbolSpace)
 
         # Stage 1.F substrate refactor (doc/plans/2026-05-26-two-loop-
         # pi-sigma-substrate.md): the per-stage forward capture lists
@@ -6922,15 +7178,19 @@ class BasicModel(BaseModel):
         # uniformly at C-space_role inside ``_forward_body`` for every stage.
         self.body_stages = nn.ModuleList()
         for t in range(T):
-            stage = nn.ModuleDict()
-            stage["cs"] = self.conceptualSpaces[t]
+            merge = None
             if use_grammar_merge:
                 stage_n = base_n // (2 ** t)
-                stage["merge"] = GrammarMergeGlue(
+                merge = GrammarMergeGlue(
                     stage_idx=t, initial_n=stage_n,
                     is_last=(t == T - 1))
-            stage["ws"] = self.wholeSpaces[t]
-            self.body_stages.append(stage)
+            self.body_stages.append(
+                _BodyStage(
+                    self.conceptualSpaces[t],
+                    self.wholeSpaces[t],
+                    merge=merge,
+                )
+            )
 
         # --- A4 (2026-06-06 parallel-conceptual-recurrence): per-stage
         # ConceptualCombine modules. One SQUARE augment-threaded invertible
