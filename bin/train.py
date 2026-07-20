@@ -57,6 +57,11 @@ def parse_args(argv=None):
                         "(across all epochs combined). Useful for "
                         "wall-clock-bounded runs: at ~7s/batch on GB10, "
                         "12000 batches is roughly 24 hours.")
+    p.add_argument("--max-seconds", type=float, default=None, metavar="SECONDS",
+                   help="Stop training cleanly after this many wall-clock "
+                        "seconds. The limit is checked between completed "
+                        "batches so the final checkpoint is never written "
+                        "from a half-applied update.")
     p.add_argument("--test", nargs="?", const=-1, type=int, default=None,
                    metavar="N",
                    help="Run the baseline + post-train test/validation "
@@ -317,8 +322,11 @@ def train_local(args):
     proj = project_dir()
     python = venv_python(proj)
     env = {**os.environ, "PYTHONPATH": os.path.join(proj, "bin"),
-           "PYTORCH_MPS_HIGH_WATERMARK_RATIO": "0.0",
            "PYTHONUNBUFFERED": "1"}
+    # Preserve the historical unlimited-MPS default, but let endurance runs
+    # provide a real allocator ceiling so Metal cannot consume all unified
+    # memory and force a system-wide OOM.
+    env.setdefault("PYTORCH_MPS_HIGH_WATERMARK_RATIO", "0.0")
     apply_compile_target_env(args, env)
 
     # Resolve the XML config path
@@ -387,6 +395,10 @@ def train_local(args):
         model_env["BASIC_MAX_TOKENS"] = str(args.max_tokens)
     if args.batches is not None:
         model_env["BASIC_MAX_BATCHES"] = str(args.batches)
+    if args.max_seconds is not None:
+        if args.max_seconds <= 0:
+            raise ValueError("--max-seconds must be positive")
+        model_env["BASIC_MAX_SECONDS"] = str(args.max_seconds)
     if args.random_shards:
         model_env["BASIC_RANDOM_SHARDS"] = "1"
     # --test gating: env var encodes the request to runTrial in Models.py.
@@ -483,6 +495,8 @@ def train_remote(args):
         remote_args += ["--max-tokens", str(args.max_tokens)]
     if args.batches is not None:
         remote_args += ["--batches", str(args.batches)]
+    if args.max_seconds is not None:
+        remote_args += ["--max-seconds", str(args.max_seconds)]
     if args.test is not None:
         if args.test == -1:
             remote_args += ["--test"]

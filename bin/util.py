@@ -632,6 +632,14 @@ def compile(model, verbose=True, fullgraph=False):
     # cursor logic is plain Python control flow, not graph structure,
     # so unspecializing it changes no numerics.
     import torch._dynamo as _dyn
+    # The fixed word-loop buckets legitimately acquire a small number of new
+    # specializations when a dynamic codebook crosses a power-of-two growth
+    # boundary.  PyTorch 2.12's default of eight made the old long MPS run
+    # fail hard under fullgraph=True at a WholeSpace resize.  WholeSpace is
+    # fixed now, but PartSpace remains deliberately dynamic, so give those
+    # bounded growth transitions room without changing graph semantics.
+    _dyn.config.recompile_limit = max(
+        64, int(getattr(_dyn.config, "recompile_limit", 0) or 0))
     _dyn.config.allow_unspec_int_on_nn_module = True
 
     # MPS: Inductor injects a device-side error buffer

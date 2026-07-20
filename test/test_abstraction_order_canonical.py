@@ -1,4 +1,4 @@
-"""Canonical abstraction order (todo "make abstraction order canonical").
+"""Canonical fold provenance (legacy name: abstraction order).
 
 The ramsification record is part of the normal codebook contract, not an
 optional sidecar:
@@ -12,8 +12,9 @@ optional sidecar:
     symbolic emission winner (pi, at the pump pass slot), insert_meta /
     word-whole autobind / property-class wholes / maybe_raise_order
     (mint-site sigma/pi stamps).
-  * DERIVED ORDER -- ``abstraction_order(row)`` = count(non-NEITHER
-    folds); stable across codebook growth and checkpoint reload.
+  * ORDERED PATH -- ``fold_path(row)`` retains every ``(pass, sigma|pi)``
+    pair; ``fold_depth(row)`` counts it. ``abstraction_order`` remains a
+    compatibility alias and does not define noun class or mereological rank.
   * PERSISTENCE -- the table rides the ``vocab_extras`` sidecar
     (``ramsification_extras``), never the state_dict.
   * EXPLICIT CONSTRAINTS -- ``apply_definition_constraint`` routes a
@@ -224,6 +225,20 @@ def test_lbg_split_inherits_fold_provenance():
     cb.copy_fold_provenance(2, 5)
     assert cb.abstraction_order(5) == 2
     assert torch.equal(cb.fold_sequence(5), cb.fold_sequence(2))
+
+
+def test_fold_path_preserves_route_order_and_noop_gaps():
+    cb = Codebook()
+    cb.create(4, 6, _D, customVQ=False, monotonic=False)
+    cb.enable_ramsification(4)
+    cb.record_fold(3, 0, Codebook.FOLD_PI)
+    cb.record_fold(3, 2, Codebook.FOLD_SIGMA)
+    assert cb.fold_path(3) == (
+        (0, Codebook.FOLD_PI),
+        (2, Codebook.FOLD_SIGMA),
+    )
+    assert cb.fold_depth(3) == 2
+    assert cb.abstraction_order(3) == 2
 
 
 # -- derived order: stability across growth ---------------------------------

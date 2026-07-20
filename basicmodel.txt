@@ -1,0 +1,278 @@
+BasicModel algorithm overview
+=============================
+
+This file describes the syntax-enabled model selected by
+data/BasicModel.xml. It records the current decisions explicitly so that a
+future experiment does not turn an implementation detail into an accidental
+architectural rule.
+
+Current dimensions
+------------------
+
+  vector/event width                         D = 512
+  compiled InputSpace word buckets           W = 16, 32, 64, 128
+  maximum sentence words in one invocation  Wmax = 128
+  live PartSpace locations                   8
+  live WholeSpace locations                  8
+  live ConceptualSpace result locations      8
+  ShortTermMemory capacity                   K = 8 by default (parameterized)
+  part codebook rows                         32768 allocated, 1048576 ceiling
+  conceptual codebook rows                   1048576 reserved, 32768 active
+                                               (one table shared by all folds)
+  initial WholeSpace property rows            8
+  subsymbolicOrder                            T = 4
+
+The widths above name different axes. In particular, W is neither a PS/WS/CS
+field width nor the STM capacity, and neither codebook cardinality is a live
+field width. The conceptual and whole-percept inventories are independent.
+
+
+1. InputSpace owns the word loop
+---------------------------------
+
+Before the compiled body, InputSpace counts the actual surface words in the
+batch and selects the smallest bucket which fits them. It then stages a
+rectangular W-position carrier and executes exactly W iterations through
+InputSpace.run_word_loop. Padding positions are tensor-masked no-ops. Four
+separate callable identities are compiled, one for each configured W, so W is
+static inside each graph while the batch may use the smallest suitable graph.
+
+A sentence longer than 128 words currently selects W=128, processes the first
+128 words, and sets the sentence-truncation diagnostic. Splitting such a
+sentence is not yet implemented. This sentence bound must not be confused
+with truncating a long word: within an admitted sentence, all residual
+constituents of each complete word are staged. Their local P axis is dynamic
+and is independent of PartSpace.nOutput=8.
+
+
+2. Canonical word decomposition and PS synthesis
+-------------------------------------------------
+
+The canonical BasicModel path is synthesis=mereology. The currently available
+discrete implementation uses the mereological radix store as follows:
+
+  1. InputSpace advances to word w and presents that word's complete local
+     part ids, mask, and byte locations to PartSpace.
+  2. The radix store spells the word from left to right by greedy longest-known
+     prefix. If no longer known prefix starts at a location, a one-byte
+     percept is the bottom case.
+  3. A word-bounded chunk of at least chunkPromotionMinLength bytes (2 by
+     default) seen chunkPromotionThreshold times (2 in BasicModel.xml) is
+     promoted to one stored percept, initialized from the mean of its previous
+     spell-out. An already stored chunk is not counted again. Thus familiar
+     words usually leave very few residual percepts, often one, while an
+     unfamiliar word may still have several.
+  4. Only after PS receives the local part state does
+     PartSpace.synthesize_word_parts gather all residual events and apply the
+     configured sigma M-to-1 set fold. No raw constituent is discarded merely
+     because the live PS field is eight positions wide.
+
+Steps 2 and 3 are the present radix/chunk policy, not a claim that this is the
+final mereological combination law. Moving promotion or part/whole
+combination into the subsymbolic loop remains a legitimate experiment. The
+important invariant is already enforced: InputSpace owns traversal, PS owns
+synthesis, and a complete word produces one base part state.
+
+BPE, MPHF, lexicon, byte/none, and the old explicitly named radix front ends
+are compatibility paths selected and dispatched through bin/Legacy.py. They
+do not participate in the synthesis=mereology branch. The canonical branch
+still uses the radix data structure internally because it is presently the
+implementation of the mereological store; this does not make the legacy
+"radix" configuration mode a second live synthesis law.
+
+
+3. Subsymbolic folds and actual concept order
+----------------------------------------------
+
+With subsymbolicOrder T=4, one word iteration has a base field followed by
+three cumulative folds on each tower:
+
+  P1 = sigma[0](P0)       H1 = pi[0](H0)
+  P2 = sigma[1](P1)       H2 = pi[1](H1)
+  P3 = sigma[2](P2)       H3 = pi[2](H2)
+
+The ordered path is stored, not inferred from the number of outputs. A strict
+aligned fold raises if an advertised sigma or pi rung is absent or cannot
+consume its input; an identity/no-fit rung is not silently counted as
+evidence.
+
+The word concept draws simultaneously from all three part folds and all three
+whole folds. ConceptualSpace retains the six-source carrier and its ordered
+fold-support map. Its actual subsymbolic order is stored explicitly as the
+deepest contributing fold (3 in this configuration), while the support map
+records that orders 1, 2, and 3 all contributed from both sides. Exactly one
+word concept, not three or six concepts, enters STM.
+
+This actual concept order is not called "order 0", and it is not inferred
+from a codebook row range. Raw percept order, cumulative fold depth,
+mereological rank, part of speech, and grammatical derivation depth are
+related empirical quantities but are not aliases. The current carrier records
+fold order and concept order; a future explicit per-percept order can be added
+without changing the STM contract.
+
+
+4. Location-aligned conceptual binding
+---------------------------------------
+
+PS and WS are two distinct eight-location source subspaces. They are not one
+undifferentiated sixteen-slot field:
+
+  PS = [p0, p1, ..., p7]
+  WS = [h0, h1, ..., h7]
+
+On conceptBinding=aligned, only equal locations bind. For every location n,
+ConceptualSpace stacks the contributing source views at n and currently emits
+their equal local mean while retaining the full stack for provenance and
+reverse recovery. A narrow source is zero-padded on the location axis. Feature
+coordinates are never reshaped into additional locations, and a source wider
+than CS fails instead of being truncated. In the serial word path the
+synthesized PS word occupies location 0, so the STM word concept is CS[0].
+
+The same location rule is used by the aligned parallel path. The learned
+ConceptualCombine mixing matrix is a separate, conditional parallel-only
+alternative; BasicModel does not allocate or call it. It must not be used to
+define serial alignment.
+
+
+5. Independent conceptual and whole-percept inventories
+--------------------------------------------------------
+
+ConceptualSpace.nVectors is the cardinality of the conceptual codebook. In
+BasicModel it reserves 1048576 rows, with 32768 initially active. The four
+aligned subsymbolic stages share that one physical table; stages do not carry
+four learned copies of the same namespace. ConceptualSpace owns concepts, META
+relations, and their taxonomy. SymbolSpace is strictly downstream: a symbol is
+a reference to a ConceptualSpace concept id, not a learned copy stored in
+WholeSpace.
+
+PartSpace has a separate 1048576-row logical ceiling. It initially allocates
+only 32768 rows. New radix/chunk percepts are queued as detached CPU values
+during a word pass, then installed at the post-backward/optimizer-step boundary
+while the physical table grows geometrically. The boundary migration preserves
+existing row ids and optimizer state, and invalidates compiled ownership before
+the next call. Exhausting maxVectors is atomic: no partial row or trie update is
+made. This avoids paying for a one-million-row PartSpace before the vocabulary
+requires it.
+
+The storage consequence is explicit. At fp32 and D=512, the one shared
+ConceptualSpace parameter is 2.0 GiB; its current VQ EMA mirror is another
+2.0 GiB. A fresh build has 2.149 GiB of unique parameters and 2.055 GiB of
+unique buffers in total, rather than multiplying those tables by four folds.
+The initial 32768x504 PartSpace parameter is about 63 MiB. If PS eventually
+fills its 1048576-row ceiling, that parameter will be about 1.97 GiB, and stock
+Adam can add about 3.94 GiB of moment tensors plus a dense gradient. Geometric
+growth defers that endpoint; it does not remove it. A row-local optimizer is
+therefore the appropriate follow-up if PS occupancy grows that far. Likewise,
+making the currently dormant CS EMA mirror active-prefix/lazy would recover
+almost 2 GiB without changing the one-million-row conceptual address space.
+
+WholeSpace.nVectors has a different meaning: it is the capacity of the
+whole-percept/property codebook. It starts with roughly eight ASCII-class
+properties. It may later grow as dynamic properties are learned, potentially
+toward PartSpace scale, but that growth is independent of conceptual capacity,
+symbol count, STM capacity, and WholeSpace.nOutput. WholeSpace contains no
+concept, META, taxonomy, or symbol-prototype rows and has no second
+concept-sized analysis codebook. Property rows are independent predicates and
+may overlap: a capital activates both LETTER and CAPITAL without allocating a
+new conjunction row.
+
+For aligned serial processing the conceptual dictionary is one fixed,
+unpartitioned namespace. Concepts of different actual orders may address the
+same dictionary; their order travels as metadata. The old snap/pool or
+per-order row partitions remain relevant only to their separate
+sparse-parallel code path and do not partition this model's serial conceptual
+inventory.
+
+"Aligned" refers only to the live location axis: PS fold location n binds with
+WS fold location n when forming a concept. It never asserts equal PS, WS, CS,
+or SymbolSpace inventory sizes. Conceptual reserve growth and WholeSpace
+property growth therefore have separate allocation and checkpoint policies.
+
+Checkpoint schema 2 records this ownership explicitly. On first load of an
+older checkpoint, the legacy concept/symbol-valued WholeSpace `.what` tensors
+and the duplicate `analysis_store` tensors are omitted rather than prefix-loaded
+as properties. Their Python taxonomy sidecars are quarantined for an explicit
+ConceptualSpace import; the newly initialized property rows remain intact.
+
+
+6. STM and the per-word grammar budget
+--------------------------------------
+
+STM is a parameterized bounded workspace with default capacity K=8. Every
+active word iteration inserts exactly one word concept. Concept order and
+grammar order are stored in parallel metadata slabs:
+
+  - insertion copies the word concept's actual subsymbolic order and starts
+    grammatical derivation depth at 0;
+  - a binary grammatical operator consumes two values and returns one,
+    reducing live STM depth by exactly one. The parent's concept order is the
+    maximum of its children; its grammatical depth is one plus the maximum
+    child grammatical depth;
+  - a unary grammatical operator consumes and replaces the top value without
+    changing STM depth. It preserves concept order and increments grammatical
+    depth when it actually applies.
+
+There is no separate cognitive operation named SHIFT here: insertion is the
+last part of the word iteration. REDUCE refers only to an actual licensed
+binary arity-2 grammar operation returning one value.
+
+Each word has a strict hot-loop budget of at most one actual binary operation
+and then at most one unary operation. If insertion would overflow STM, the
+binary opportunity occurs before insertion as a demand; that row does not get
+a second binary operation afterward. Otherwise the binary decision follows
+insertion. The unary decision then runs on the surviving top value. COPY/no-op
+router choices do not masquerade as applications.
+
+Below capacity, grammar confidence is compared with the occupancy-dependent
+threshold
+
+  threshold(d) = tau0 * (1 - clip((d - 2) / (K - 2), 0, 1)),
+
+where tau0=0.75 in BasicModel. Pressure is soft at low occupancy and becomes a
+demand at capacity. If no valid binary operation exists when space is
+required, the model raises rather than dropping a value or substituting an
+unlicensed mean. Sentence-boundary forest closure is separate from the
+per-word budget and may perform the additional binary operations required to
+produce the sentence result.
+
+
+7. MPS benchmark (2026-07-19)
+------------------------------
+
+bin/bench_word_buckets.py benchmarks the real BasicModel forward after eager
+surface/radix staging, including every masked word iteration, PS/WS fold,
+aligned binding, and bounded STM grammar step. On this Apple MPS machine,
+batch=1, one warm-up and three measured eager iterations gave:
+
+  bucket      median seconds      effective words/second
+  W=16            0.8638                    18.52
+  W=32            1.7848                    17.93
+  W=64            3.6116                    17.72
+  W=128           7.2497                    17.66
+
+The near-linear time above W=16 confirms that bucket width, rather than STM
+depth, controls this loop's work. The JSON record is
+output/bench_word_buckets_mps_eager.json.
+
+The MPS-default torch.compile backend (backend="eager", fullgraph=True) was
+then captured once per distinct fixed-W code object. Each post-capture sample
+was run with Dynamo's error_on_recompile enabled. W=16 was measured three
+times; the other widths use one post-capture sample because their first traces
+are expensive. No same-bucket call retraced, including the warm-to-promoted
+change in the dynamic residual-percept axis:
+
+  bucket   first call seconds   steady seconds   words/second   vs eager
+  W=16                 87.36           0.2875          55.65       3.00x
+  W=32                175.62           0.5079          63.01       3.51x
+  W=64                343.44           1.0830          59.09       3.33x
+  W=128               683.43           2.1723          58.92       3.34x
+
+Here "first call" includes Dynamo graph capture plus that call's execution; it
+is not steady-state latency. The backend removes Python-loop overhead but does
+not use Inductor kernel fusion on MPS. The measured graph should therefore be
+cached and reused within a process; eagerly capturing every bucket at startup
+would be counterproductive. The compiled JSON records are
+output/bench_word_buckets_mps_compile_eager_w16_final.json,
+output/bench_word_buckets_mps_compile_eager_w16_w32.json,
+output/bench_word_buckets_mps_compile_eager_w64.json, and
+output/bench_word_buckets_mps_compile_eager_w128.json.

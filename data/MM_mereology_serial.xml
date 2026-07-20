@@ -10,11 +10,11 @@
 
        WHY this file exists: no committed config combined serial mode with
        synthesis=radix; the serial+radix path was UNEXERCISED end-to-end. This
-       is the home for the Option-A build (Alec, 2026-06-17): force PartSpace +
-       WholeSpace to process the ACTIVE WORD ONLY (hard mask: PS parts inside
-       the word, WS whole covering it), so ConceptualSpace can create the
-       per-word Word-symbol A + object-symbol B + meta C BEFORE syntax. Hard
-       masking forgoes the word2vec-like contextual embedding (acknowledged).
+       is the home for the Option-A build (Alec, 2026-06-17): the sentence loop
+       advances over words, while PartSpace gathers and synthesizes only the
+       current word's local constituent slab inside that iteration. One result
+       reaches ConceptualSpace, which can create the per-word Word-symbol A +
+       object-symbol B + meta C BEFORE syntax.
 
        NEVER mutate the shared MM_20M_legacy.xml. With <mereologyRaise> OFF this would
        behave like a plain serial radix config; the gate is the behavioural
@@ -27,10 +27,10 @@
     <l1Lambda>0.01</l1Lambda>
     <sigmaPi>butterfly</sigmaPi>
     <mereologyRaise>true</mereologyRaise>
-    <!-- Serial word-at-a-time: HARD-MASK each per-word step to the active
-         word's span (PS on the word block via word_span_window) + fire the STM
-         push / A/B/C mint once per word. Context comes from the §6c prelude
-         (sentenceProtocol, on by default in serial). -->
+    <!-- Serial word-at-a-time: PartSpace's local P slots reset inside every
+         outer W-word step; fire the STM push / A/B/C mint once per word.
+         Context comes from the §6c prelude (sentenceProtocol, on by default in
+         serial). -->
     <serialObjectMeta>true</serialObjectMeta>
 
     <data>

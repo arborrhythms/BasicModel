@@ -183,6 +183,26 @@ class TestCudaSanityChecks(unittest.TestCase):
         finally:
             util.init_compile_backend(prior_backend)
 
+    @mock.patch("util._patch_inductor_paths")
+    @mock.patch("util.torch.compile", side_effect=lambda model, **_: model)
+    def test_compile_raises_dynamo_recompile_limit_for_codebook_growth(
+        self, compile_mock, patch_mock
+    ):
+        prior_backend = util.TheCompileBackend
+        prior_limit = util.torch._dynamo.config.recompile_limit
+        util.init_compile_backend("eager")
+        util.torch._dynamo.config.recompile_limit = 8
+        try:
+            model = object()
+            self.assertIs(util.compile(model, verbose=False), model)
+            self.assertGreaterEqual(
+                util.torch._dynamo.config.recompile_limit, 64)
+            compile_mock.assert_called_once()
+            patch_mock.assert_called_once()
+        finally:
+            util.torch._dynamo.config.recompile_limit = prior_limit
+            util.init_compile_backend(prior_backend)
+
 
 if __name__ == "__main__":
     unittest.main()

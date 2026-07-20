@@ -153,36 +153,57 @@ implemented in `ConceptualSpace.forward`
    newest slot); the oldest idea (the last slot $\text{cap}-1$) falls off.
    Below capacity it is a plain push: shift the occupants right and write
    slot $0$. Under `<serialObjectMeta>` (default off; doc/specs/mereological-
-   order-raising.md "Serial-mode word-at-a-time loop") the push instead
-   fires through `stm.push_step_masked(idea_bd, commit_b_1)` gated to
-   `commit_b_1 = inputSpace._word_last_slot_mask[:, p:p+1]` — the
-   **last-slot-of-word commit gate** — so a multi-slot (radix-spelled)
-   word pushes exactly **one** idea, not one per byte
-   (`BasicModel._per_word_body_step`, [Models.py](../bin/Models.py)). Flag
-   off (or no word index available) falls back to the per-slot `gate_b_1`
-   commit, byte-identical to the pre-`serialObjectMeta` path.
+   order-raising.md "Serial-mode word-at-a-time loop"), `p` indexes the
+   independent sentence-word slab. Inside that iteration PartSpace gathers
+   **all** of word $p$'s radix/chunk constituents and applies the configured
+   sigma set-fold; the batch-padded raw width may exceed the eight-wide PS
+   field. The live PS and WS folds bind strictly by location; the resulting
+   concept records its actual subsymbolic order and full ordered fold support.
+   Its current-word location is selected for
+   `stm.push_step_masked(idea_bd, commit_b_1, orders=..., grammar_orders=...)`.
+   That commits once using
+   the word-active column
+   `inputSpace._word_last_slot_mask[:, p:p+1]`
+   (`BasicModel._per_word_body_step`, [Models.py](../bin/Models.py)).  The local
+   Raw staging resets for word $p+1$; it is not an STM or PS-capacity axis.
+   Flag off (or a legacy input without the word-loop tensors) falls
+   back to the original per-slot path.
 3. **Accumulate the intra-loss.** The held prediction is scored against
    the just-perceived `idea` as $\mathcal{L}_\text{intra} =
    \mathrm{MSE}(\hat{c}_t, c_t)$ (see [Section 6](#6-intrasentencelayer)).
 4. **Language dispatch.** The signal router dispatches grammar ops over
    the STM contents (read-only via CS, write-required via SS).
-5. **Mid-reading opportunistic reduces (2b-2, Alec 2026-07-12).** Once the
-   per-word commit lands, the per-word router fire (`_chart_compose_per_word`,
+5. **Occupancy-driven grammatical reduction.** Once the per-word commit
+   lands, the per-word router fire (`_chart_compose_per_word`,
    [Section 7](#7-per-word-router-firing)) populates this sentence's
    `current_rules`, then `BasicModel._per_word_body_step`
-   ([Models.py](../bin/Models.py)) runs **two** scored opportunistic
-   `_stm_bounded_reduce_step(protect_depth=..., gate_tau=self.stm_reduce_tau)`
-   calls — the STM stack **is** the syntactic loop; the SymbolicLoop stays
-   the activation processor. Each call is a masked no-op wherever the
-   shift/reduce DP's reduce-marginal stays under `<stmReduceTau>` (default
-   `0.5`), and a structural no-op without an arity-2 grammar. `protect_depth`
-   is threaded through from `_sentence_relative_mask` so a relative row's
-   depth-3 end-state is never folded below its protected floor by a
-   mid-read reduce, mirroring the boundary sweep's protection
-   ([Section 9](#9-relative-vs-absolute-end-states)). This is independent
-   of the forced back-pressure reduce that fires when the host depth
-   mirror reaches capacity (same `_stm_bounded_reduce_step` primitive,
-   called unconditionally rather than tau-gated).
+   ([Models.py](../bin/Models.py)) allows at most **one actual binary
+   grammatical operation**, followed by at most **one unary operation**. The
+   controller first normalizes over the operator axis, so adding two equally
+   scored REDUCE rules does not change a neutral decision from $1/2$ to $2/3$.
+   It then compares that grammar confidence $g$ with
+
+   $$
+   \tau_d = \tau_0\left(1-
+     \operatorname{clip}\frac{d-2}{K-2}\right),
+   $$
+
+   where $d$ is live STM depth, $K$ is capacity, and `stmReduceTau` is the
+   low-occupancy threshold $\tau_0$ (the two NanoChat models use `0.75`). At
+   depth two the grammar must license the reduction on its own. As STM fills,
+   the falling threshold supplies soft memory pressure. At $d=K$, REDUCE is a
+   demand: the best binary grammatical operator fires even at zero confidence.
+   A full row is also checked immediately before the next insertion. If no binary
+   grammar operator exists, that demand raises an explicit error; the model
+   may not silently drop an old constituent or substitute a mean-fold.
+
+   `protect_depth` still preserves a relative row's depth-3 end-state. At the
+   sentence boundary, the corrected word-axis models likewise demand actual
+   grammar operators while closing the remaining forest to its root. A
+   capacity-demand binary operation before insertion consumes that word's
+   binary budget; it cannot be followed by another binary operation after the
+   insertion. Unary APPLY preserves concept order, increments grammatical
+   derivation depth, and does not change STM occupancy.
 
 > **Convention pin — newest-at-slot-0, shift-RIGHT.** The **free / newest**
 > slot is **slot $0$** and the rolling window shifts **right**, dropping
@@ -270,10 +291,23 @@ superseded by the `<attention>` element.
 > draft of this chapter claimed `<attention>primer</attention>` was set;
 > that was wrong. See also [Section 12](#12-nanochat-comparison-framing).
 
-**CS$\to$PS windowing — two policies.** On the per-word serial path the
-input to each word is not a raw slice but a windowed contextual trace
-over the per-sentence percept sequence $[B, T, D]$; which policy runs is
-gated by `<serialObjectMeta>` (default off).
+**CS$\to$PS word input.** The word-major radix path and legacy serial inputs use
+different representations.
+
+- **Word-loop mereology (`<serialObjectMeta>` on).** The outer sequence is
+  `[B,W,D]`, with one position per word and $W$ bounded independently by
+  one of the compiled `serialWordBuckets`, bounded by
+  `<serialWordCapacity>`. InputSpace owns iteration $w$ and presents that
+  word's local state to PartSpace; only then does PartSpace gather its
+  complete discrete ids `[B,P_raw]` and applies its sigma set-fold inside the
+  loop. $P_raw$ is the longest complete spelling in the current batch; it is
+  not bounded by `PartSpace.nOutput`. PS and WS retain their eight-wide live
+  fields in BasicModel, CS binds all three PS and three WS folds by equal
+  location, and one concept carrying its actual order enters the configured
+  STM (default capacity 8). Grammar reductions free STM slots while the outer
+  loop continues.
+
+Legacy serial inputs retain the following window policies:
 
 - **Gaussian window (default).** `gaussian_window_word(full_seq,
   center_k)` ([Models.py](../bin/Models.py)) forms a single envelope
@@ -293,8 +327,8 @@ gated by `<serialObjectMeta>` (default off).
   `create_ir_mask` on the per-word grammar path; it is not
   target-hiding — the center word is preserved. The centring is
   **hardcoded**: peak at the current word.
-- **`word_span_window` (HARD-MASK-TO-WORD-SPAN, `<serialObjectMeta>`
-  on).** `word_span_window(full_seq, center_k, word_idx)`
+- **`word_span_window` (legacy hard same-word fallback).**
+  `word_span_window(full_seq, center_k, word_idx)`
   ([Models.py](../bin/Models.py)) replaces the soft Gaussian tail with a
   **hard** same-word mask: the masked **sum** over exactly the slots
   sharing word $k$'s id (`word_idx == word_idx[:, k]`), so PS processes

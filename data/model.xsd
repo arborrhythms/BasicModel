@@ -59,6 +59,12 @@
            sigma_cs[k] (the per-stage SERIAL dispatch is a follow-up;
            currently the per-word loop uses the terminal CS). -->
       <xs:element name="subsymbolicOrder" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <!-- Concept formation at the serial PS/WS -> CS boundary.
+           mixing: the historical learned ConceptualCombine matrix, retained
+           as an explicit comparison option. aligned: preserve the location
+           axis and fuse every non-raw subsymbolic fold from BOTH PS and WS;
+           for subsymbolicOrder=T this is T-1 cumulative folds per side. -->
+      <xs:element name="conceptBinding" type="conceptBindingEnum" minOccurs="0"/>
       <!-- wherePeriod (2026-07-04 encoding pass): the .where quadrature
            period in input BYTES. Default 8192 (twice the 4096 inputLength
            cap). Decoupled from architecture.nObjects (the retired implicit
@@ -150,13 +156,12 @@
       <xs:element name="adverbEigEdit" type="xs:boolean" minOccurs="0"/>
       <!-- Mereological order-raising (doc/specs/mereological-order-raising.md).
            When true, perception's autobind hook builds a meronymic lattice over
-           the two towers: it mints objects at abstraction order 0 and raises
-           order as attention requires (subsymbolicOrder sets the max order) by
+           the two towers and raises mereological nodes as attention requires by
            synthesizing a higher-order PART when many parts collapse onto one
-           whole, relinking it and pruning the moot part-whole edges. The
-           ramsification table is enabled at build on the PartSpace + terminal
-           WholeSpace codebooks. Default false: no table allocated, no raising
-           (byte-identical). -->
+           whole, relinking it and pruning the moot part-whole edges. The exact
+           sigma/pi derivation path is recorded separately in the always-built
+           ramsification table; its depth is not the mereological rank. Default
+           false: no lattice raising (the provenance table still exists). -->
       <xs:element name="mereologyRaise" type="xs:boolean" minOccurs="0"/>
       <!-- Experimental replacement for the row-wide run-count passback.
            Feeds overlapping PS part and WS whole .where candidates through
@@ -183,8 +188,8 @@
       <xs:element name="sparseReplace" type="xs:boolean" minOccurs="0"/>
       <!-- P4 sigma/pi stacks (2026-07-02 two-phase plan; now CANONICAL,
            always built): distinct per-pass subsymbolic layers, PS sigmas[t]
-           / WS pis[t], t in 0..subsymbolicOrder-1 (depth IS mereological
-           order; the stack is the subsymbolic reasoning engine). Pass 0 is
+           / WS pis[t], t in 0..subsymbolicOrder-1. Fold depth is derivation
+           provenance, not mereological rank or part of speech. Pass 0 is
            the base sigma/pi; an order-1 config is the single reused fold,
            byte-identical (construction is RNG-neutral). The old
            subsymbolicStack boolean toggle is retired; the stack is no
@@ -212,10 +217,12 @@
            prime event; successive primes propagate energy further out.
            Live by default (0.25); 0 restores pure decay+bump. -->
       <xs:element name="primingSpread" type="xs:decimal" minOccurs="0"/>
-      <!-- Opportunistic STM reduce gate (2b-2): during serial reading, after
-           each word's push the top-2 folds where the reducer DP's reduce-vs-
-           copy marginal exceeds tau. Default 0.5; >=1 disables the
-           mid-sentence parse (capacity/end-of-sentence sweeps unaffected). -->
+      <!-- Base grammar-confidence threshold for online STM reduction.
+           Explicit word-axis models lower the effective threshold as STM
+           occupancy rises and demand the best binary grammar op at capacity;
+           thus >=1 suppresses only low-pressure reductions, not capacity or
+           sentence-boundary demands. Legacy serial configs keep the former
+           fixed-threshold semantics. Default 0.5. -->
       <xs:element name="stmReduceTau" type="xs:decimal" minOccurs="0"/>
       <!-- Attention-to-relation promotion (doc/plans/2026-07-04-attention-
            to-relation-promotion.md): when true, the pyramid's admitted
@@ -241,7 +248,7 @@
       <!-- Global attention (doc/specs/reading-attention.md "(B) Global
            attention"). When true, a free, content/relation-driven attention
            ranges over a TYPED addressable space - the input window, STM, LTM,
-           and the symbol/whole codebook (the meronomy+taxonomy inventory) -
+           and the ConceptualSpace codebook (the meronomy+taxonomy inventory) -
            emitting a typed .where (which space + the [start,end] bracket) and a
            soft-read of the addressed content (parked on _global_attention_obs).
            Unlike reading attention it has no monotonic mask and no next-word
@@ -301,14 +308,23 @@
       <xs:element name="queryReasoning" type="xs:boolean" minOccurs="0"/>
       <!-- Serial word-at-a-time object/meta (doc/specs/mereological-order-
            raising.md "Serial-mode word-at-a-time loop"). When true (serial
-           traversal only), the per-word body HARD-MASKS each step to
-           the active word's span (PartSpace processes the word block via
-           word_span_window instead of the soft gaussian window) and the STM
-           push + the eager A/B/C mint fire ONCE PER WORD (the last-slot commit
-           gate). Whole-sentence context re-enters via the §6c prelude's
-           gist/intent. Independent of <mereologyRaise>. Default false ->
-           gaussian window + per-slot push (byte-identical). -->
+           traversal only), InputSpace owns a fixed-width word loop and hands
+           each complete word's local percept ids/mask/locations to PartSpace.
+           PS performs the M-to-1 synthesis inside that iteration, then one
+           aligned word concept commits to STM. Whole-sentence context re-enters
+           via the §6c prelude's gist/intent. Independent of <mereologyRaise>.
+           Default false keeps the legacy per-slot path. -->
       <xs:element name="serialObjectMeta" type="xs:boolean" minOccurs="0"/>
+      <!-- Maximum number of surface words traversed by the OUTER serial
+           sentence loop. Independent of PartSpace/WholeSpace field width and
+           ConceptualSpace STM capacity: grammar reductions keep the bounded
+           STM live while this loop may traverse a much longer sentence. -->
+      <xs:element name="serialWordCapacity" type="xs:positiveInteger" minOccurs="0"/>
+      <!-- Comma-separated static loop widths compiled for serial traversal,
+           e.g. "16,32,64,128".  The eager InputSpace stem selects the
+           smallest width that contains the longest sentence in the batch;
+           serialWordCapacity remains the hard maximum. -->
+      <xs:element name="serialWordBuckets" type="xs:string" minOccurs="0"/>
       <!-- Truth / Ideas routing is structural, not flag-gated: accepted
            relative relations reduce to WS META when both entity operands snap
            to existing WS codebook rows; otherwise the composed-idea relation is
@@ -555,6 +571,13 @@
     <xs:restriction base="xs:string">
       <xs:enumeration value="tapered"/>
       <xs:enumeration value="uniform"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="conceptBindingEnum">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="mixing"/>
+      <xs:enumeration value="aligned"/>
     </xs:restriction>
   </xs:simpleType>
 
@@ -906,6 +929,9 @@
       <xs:element name="nInputDim" type="xs:integer" minOccurs="0"/>
       <xs:element name="nOutputDim" type="xs:integer" minOccurs="0"/>
       <xs:element name="nVectors" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <!-- Logical ceiling for boundary-safe radix percept growth.  When
+           omitted it resolves to nVectors (fixed physical capacity). -->
+      <xs:element name="maxVectors" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nWhere" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nWhen" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="passThrough" type="xs:boolean" minOccurs="0"/>
@@ -934,8 +960,9 @@
            (2026-06-09, asymmetric-VQ plan §7 task 7). PS behaviour is fixed
            to "none" (continuous .event passthrough; percept prototypes live
            on the .what Embedding). Only WholeSpace carries a <codebook>. -->
-      <!-- VQ-VAE EMA / growing-codebook knobs (shared semantics with
-           wholeSpaceType; see comments there). -->
+      <!-- Concept-dictionary VQ / growing-capacity knobs. Logical prefix
+           activation belongs only to ConceptualSpace; WholeSpace properties
+           use an independent inventory and growth lifecycle. -->
       <xs:element name="commitmentDecay" type="positiveFloat" minOccurs="0"/>
       <xs:element name="codebookRetire" type="xs:boolean" minOccurs="0"/>
       <xs:element name="codebookEmaDeadThreshold" type="xs:nonNegativeInteger" minOccurs="0"/>
@@ -956,6 +983,9 @@
       <xs:element name="synthesis" minOccurs="0">
         <xs:simpleType>
           <xs:restriction base="xs:string">
+            <!-- ``meronomy`` is the sole canonical implementation. The
+                 alternatives remain schema-valid only for older experiments;
+                 their validation/dispatch is parked in bin/Legacy.py. -->
             <xs:enumeration value="bpe"/>
             <xs:enumeration value="mphf"/>
             <xs:enumeration value="lexicon"/>
@@ -1068,6 +1098,11 @@
       <xs:element name="codebookRetire" type="xs:boolean" minOccurs="0"/>
       <xs:element name="codebookEmaDeadThreshold" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="codebookGrowthEpsilon" type="nonNegativeFloat" minOccurs="0"/>
+      <!-- Initially selectable prefix of the physically preallocated
+           nVectors inventory. Runtime growth activates more prefix rows in
+           place, preserving Parameter and optimizer identity. VQ computation
+           specializes once at each newly activated prefix width. -->
+      <xs:element name="activeVectors" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="tetralemmaOverride" type="tetralemmaOverrideType" minOccurs="0"/>
       <xs:element name="TetralemmaPolicy" type="tetralemmaPolicyType" minOccurs="0"/>
       <xs:element name="stmCapacity" type="xs:positiveInteger" minOccurs="0"/>
@@ -1090,6 +1125,11 @@
       <xs:element name="truthCriterion" type="unitInterval" minOccurs="0"/>
       <!-- Per-space override of architecture.attentionPromotion. -->
       <xs:element name="attentionPromotion" type="xs:boolean" minOccurs="0"/>
+      <!-- META taxonomy seed/advisory text. The runtime parent/child and
+           part-property -> concept maps are ConceptualSpace structure and
+           serialize through its structural checkpoint sidecar. WholeSpace is
+           upstream and contains property vectors only. -->
+      <xs:element name="taxonomy" type="xs:string" minOccurs="0"/>
     </xs:all>
   </xs:complexType>
 
@@ -1101,13 +1141,24 @@
       <xs:element name="nDim" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nInputDim" type="xs:integer" minOccurs="0"/>
       <xs:element name="nOutputDim" type="xs:integer" minOccurs="0"/>
+      <!-- Initial WholeSpace property-vector inventory. It is independent of
+           ConceptualSpace.nVectors and downstream symbol-reference capacity.
+           Canonical text models may begin with a small ASCII property basis;
+           future dynamic properties can grow it only at an explicit ownership
+           reset boundary. -->
       <xs:element name="nVectors" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nWhere" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nWhen" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <!-- Canonical role switch. true means .what is solely the upstream
+           property basis: no analysis_store, concept/META rows, or symbol
+           prototypes. Omitted/false preserves legacy fixture/checkpoint
+           construction until it is explicitly migrated. -->
+      <xs:element name="propertyBasis" type="xs:boolean" minOccurs="0"
+                  default="false"/>
       <!-- <initScale> (2026-07-06 fidelity leg, doc/plans/2026-07-06-concepts-
-           formalization-and-snap-contract-*.md): per-row SEED MAGNITUDE for
-           this space's codebooks (the .what symbol codebook + analysis_store,
-           and fresh insert_whole rows). Small values (~0.02) keep the
+           formalization-and-snap-contract-*.md): per-row seed magnitude for
+           this space's property codebook and freshly discovered properties.
+           Small values (~0.02) keep the
            sigma/pi folds in their linear regime (tanh saturation grows with
            fold depth x row scale). Omitted / 0 = current behavior (unit /
            [-1,1] hypercube prefill), byte-identical. Direction-preserving: a
@@ -1225,19 +1276,6 @@
       <xs:element name="impenetrableVariance" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="tetralemmaOverride" type="tetralemmaOverrideType" minOccurs="0"/>
       <xs:element name="TetralemmaPolicy" type="tetralemmaPolicyType" minOccurs="0"/>
-      <!-- Stage 8 (doc/plans/2026-05-27-perceptstore-meta-taxonomy-
-           reentrancy.md §Stage 8): META taxonomy storage placeholder.
-           The actual taxonomy graph (parent -> children, child -> parent,
-           and (ps_idx, ws_idx) -> meta_idx) is a runtime structure on
-           ``WholeSpace`` (``self.taxonomy``,
-           ``self.taxonomy_parent_map``, ``self.meta_pair_to_idx``);
-           it serialises through ``vocab_extras`` (the same sidecar that
-           carries WordVectors mappings). This optional XSD element exists
-           so configs can ship a comment about the storage location and
-           future seeded-taxonomy bootstraps without schema drift. The
-           string contents are advisory only; no runtime knob is
-           consumed from here. -->
-      <xs:element name="taxonomy" type="xs:string" minOccurs="0"/>
     </xs:all>
   </xs:complexType>
 

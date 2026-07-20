@@ -2285,6 +2285,31 @@ class TestWeightShapeMismatch(unittest.TestCase):
         finally:
             os.unlink(path)
 
+    def test_require_match_raises_on_unexpected_key(self):
+        """Autoload's architecture gate rejects checkpoint-only state."""
+        m1 = self._make_model(100)
+        with tempfile.NamedTemporaryFile(suffix=".pt", delete=False) as f:
+            path = f.name
+        try:
+            state = {
+                k: v.detach().clone() for k, v in m1.state_dict().items()
+            }
+            state["stale.lazy_module.weight"] = torch.ones(1)
+            torch.save({"state_dict": state}, path)
+
+            # Explicit non-autoload loads retain their backwards-compatible
+            # tolerance for benign legacy aliases.
+            self.assertTrue(self._make_model(100).load_weights(path))
+
+            with self.assertRaises(ValueError) as ctx:
+                self._make_model(100).load_weights(
+                    path, require_match=True)
+            msg = str(ctx.exception)
+            self.assertIn("Keys in file not present in model: 1", msg)
+            self.assertIn("correct the model XML", msg)
+        finally:
+            os.unlink(path)
+
 
 # ---------------------------------------------------------------------------
 # Training actually updates weights (regression: numEpochs=1 did nothing)

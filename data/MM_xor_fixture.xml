@@ -43,6 +43,9 @@
   <PartSpace>
     <nInput>8</nInput>
     <nVectors>8</nVectors>
+    <!-- The fixture begins tiny but several tests intentionally learn more
+         than eight distinct byte/chunk percepts. -->
+    <maxVectors>256</maxVectors>
     <nDim>16</nDim>
     <nOutput>8</nOutput>
     <invertible>true</invertible>
@@ -61,7 +64,9 @@
   <WholeSpace>
     <lexer>word</lexer>
     <nInput>8</nInput>
-    <nVectors>8</nVectors>
+    <!-- Rows 0..7 are reserved; learned wholes and META nodes require
+         additional fixed capacity without replacing the live codebook. -->
+    <nVectors>64</nVectors>
     <nDim>16</nDim>
     <nOutput>8</nOutput>
   </WholeSpace>

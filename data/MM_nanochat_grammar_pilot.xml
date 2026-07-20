@@ -2,7 +2,10 @@
 <model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:noNamespaceSchemaLocation="model.xsd">
   <!--
-    BasicModel
+    MM_nanochat_grammar_pilot
+
+    Historical frozen W=64 comparison fixture. The current training model is
+    data/BasicModel.xml; keep this file only to reproduce the original pilot.
 
     A Mac-sized, from-scratch language-learning pilot derived from
     MM_20M_fineweb.xml.  Its comparison target is NanoChat depth 4, not the
@@ -10,21 +13,18 @@
     about 118M parameters, while NanoChat d4 has about 36.7M at vocab 32768.
 
     Design budget:
-      * D=512, a 32768-row initial part dictionary, and a 1048576-row logical
-        part ceiling leave lexical storage proportional to observed growth.
-        Conceptual folds share one physical 1048576-row dictionary rather
-        than allocating one table per fold.
+      * D=512 and percept capacity=32768 reserve roughly half the parameters
+        for lexical/percept identity and the remainder for the recurrent
+        subsymbolic, symbolic, and explicit grammar machinery.
       * subsymbolicOrder=4 and symbolicOrder=4 are the middle of the proposed
         3..5 range.  symbolicOrder is an iteration budget over shared weights;
         it does not multiply parameters by four.
-      * Four compiled W={16,32,64,128} buckets bound only the outer
-        InputSpace sentence loop. PS, WS, CS, and STM retain their configured
-        8-wide instantaneous fields/workspace; grammar reductions make that
-        bounded workspace sufficient.
+      * W=64 bounds only the outer sentence loop. PS, WS, CS, and STM retain
+        their configured 8-wide instantaneous fields/workspace; grammar
+        reductions make that bounded workspace sufficient.
       * The grammar budget includes the contextual MLP transform chooser.  The
         soft tiling DP rescales unusually large finite chooser scores without
-        changing their ordering, so this learned router remains stable at the
-        configured loop widths.
+        changing their ordering, so this learned router is stable at N=64.
 
     The initial corpus gate is 2,000 documents from FineWeb-Edu shard 0
     (document-disjoint 8/1/1 train/validation/test split).  That is about
@@ -35,10 +35,6 @@
     <!-- Keep traversal separate from the symbolic iteration budget. -->
     <serial>true</serial>
     <subsymbolicOrder>4</subsymbolicOrder>
-    <!-- One base level plus three cumulative folds on EACH tower.  The
-         resulting concept is the aligned six-source PS/WS fusion; the learned
-         mixing-matrix binder remains a separate parallel-only option. -->
-    <conceptBinding>aligned</conceptBinding>
     <conceptualWidth>uniform</conceptualWidth>
     <symbolicOrder>4</symbolicOrder>
     <!-- Let sentence length, rather than an arbitrary cap, determine parse
@@ -46,11 +42,9 @@
     <syntacticOrder>0</syntacticOrder>
 
     <mereologyRaise>true</mereologyRaise>
-    <!-- Compile four regular word-axis graphs. InputSpace chooses the
-         smallest fit per batch; STM remains independently configurable at 8. -->
+    <!-- Traverse up to 64 words; leave configurable STM capacity at 8. -->
     <serialObjectMeta>true</serialObjectMeta>
-    <serialWordCapacity>128</serialWordCapacity>
-    <serialWordBuckets>16,32,64,128</serialWordBuckets>
+    <serialWordCapacity>64</serialWordCapacity>
     <sigmaPi>butterfly</sigmaPi>
     <l1Lambda>0.01</l1Lambda>
 
@@ -76,8 +70,6 @@
       <!-- Conservative MPS start: this tier doubles both N and D relative to
            the gate.  Raise only after a measured ArborStudio memory probe. -->
       <batchSize>4</batchSize>
-      <!-- One producer thread with a two-tick bounded prefetch queue. -->
-      <numWorkers>2</numWorkers>
       <learningRate>0.0005</learningRate>
 
       <!-- FineWeb is unlabeled.  On the serial grammar path the D3
@@ -97,7 +89,7 @@
       <autosave>true</autosave>
       <checkpointEveryBatches>100</checkpointEveryBatches>
     </training>
-    <weightsPath>../output/BasicModel.ckpt</weightsPath>
+    <weightsPath>../output/MM_nanochat_grammar_pilot_stm8.ckpt</weightsPath>
   </architecture>
 
   <!-- Raw UTF-8/byte surface.  The parameter budget is controlled by D and
@@ -115,10 +107,6 @@
     <nInput>8192</nInput>
     <nInputDim>512</nInputDim>
     <nVectors>32768</nVectors>
-    <!-- Allocate only this initial prefix.  Chunk promotion queues new rows
-         during a word pass, then grows geometrically at the post-step boundary
-         without exceeding this logical ceiling. -->
-    <maxVectors>1048576</maxVectors>
     <nDim>512</nDim>
     <nOutput>8</nOutput>
     <nOutputDim>512</nOutputDim>
@@ -131,14 +119,8 @@
   <ConceptualSpace>
     <nInput>8</nInput>
     <nInputDim>512</nInputDim>
-    <!-- Concept and downstream symbol-reference inventory. This is independent
-         of PartSpace's allocated prefix, WholeSpace's small property basis,
-         and the eight simultaneously live CS/WS locations. All four aligned
-         subsymbolic folds address this one shared physical dictionary. -->
-    <nVectors>1048576</nVectors>
-    <!-- Only this prefix participates in VQ initially.  The remaining rows
-         are an optimizer-owned reserve activated in power-of-two steps. -->
-    <activeVectors>32768</activeVectors>
+    <!-- Concept/code inventory is independent of the eight live slots. -->
+    <nVectors>64</nVectors>
     <stmCapacity>8</stmCapacity>
     <nDim>512</nDim>
     <nOutput>8</nOutput>
@@ -147,17 +129,14 @@
     <invertible>true</invertible>
   </ConceptualSpace>
 
-  <!-- WholeSpace is the upstream analysis/property tower. It begins with a
-       small ASCII-oriented property basis and contains no concept, META, or
-       symbol rows. Dynamic property discovery may grow this inventory later
-       at an explicit optimizer/compiled-graph reset boundary. -->
+  <!-- Deep concepts are reshaped to the wide symbol slab exactly as in the
+       FineWeb production config. -->
   <WholeSpace>
-    <propertyBasis>true</propertyBasis>
     <analysis>meronomy</analysis>
     <butterfly>false</butterfly>
     <nInput>8</nInput>
     <nInputDim>512</nInputDim>
-    <nVectors>8</nVectors>
+    <nVectors>32768</nVectors>
     <nDim>512</nDim>
     <nOutput>8</nOutput>
     <nOutputDim>512</nOutputDim>

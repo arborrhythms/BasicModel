@@ -1,7 +1,7 @@
 """Opportunistic (scored) STM reduce -- the 2b-2 refinement (Alec 2026-07-12).
 
 A "normal" grammatical parse runs on STM DURING the serial phase: after
-each word's push, a scored gate ``g`` (the reducer DP's reduce-vs-copy
+each word's insertion, a scored gate ``g`` (the reducer DP's reduce-vs-copy
 marginal on the top-2 window) decides per row whether to fold. This keeps
 the syntactic processing on the STM stack, distinct from the SymbolicLoop
 (the symbolicOrder budget), which stays the forward processor of symbolic
@@ -82,22 +82,98 @@ def test_no_reducer_is_noop():
     assert torch.equal(stm._buffer, buf0)
 
 
+def test_grammar_confidence_is_neutral_to_reduce_rule_count():
+    """Duplicating equally-scored grammatical operators must not turn a
+    neutral INSERT/BINARY decision from 1/2 into 2/3, 10/11, ... ."""
+    m = _build("data/MM_grammar.xml")
+    copy = torch.zeros(3, 2, 1)
+    for n_rules in (1, 2, 10):
+        routing = {
+            "copy_score": copy,
+            "reduce_score": torch.zeros(3, 1, n_rules),
+        }
+        confidence = m._stm_grammar_reduce_confidence(routing)
+        assert torch.allclose(confidence, torch.full((3,), 0.5))
+
+
+def test_occupancy_pressure_is_monotonic_and_reaches_zero_threshold():
+    m = _build("data/MM_grammar.xml")
+    depth = torch.arange(2, 9)
+    threshold, pressure = m._stm_occupancy_threshold(
+        depth, capacity=8, base_tau=0.75)
+    assert threshold[0].item() == 0.75
+    assert threshold[-1].item() == 0.0
+    assert pressure[0].item() == 0.0
+    assert pressure[-1].item() == 1.0
+    assert bool((threshold[1:] <= threshold[:-1]).all())
+    assert bool((pressure[1:] >= pressure[:-1]).all())
+
+
+def test_full_stm_demands_grammar_even_when_tau_disallows_soft_reduce():
+    """At low occupancy tau=1 rejects; at capacity the same setting is
+    overridden by the hard memory demand and the best grammar op fires."""
+    m = _build("data/MM_grammar.xml")
+    stm = _stm_with_depth2(m, B=2)
+    low = stm._depth.clone()
+    m._stm_bounded_reduce_step(
+        gate_tau=1.0, occupancy_pressure=True)
+    assert torch.equal(stm._depth, low)
+
+    D = int(stm.concept_dim)
+    while int(stm._depth.max().item()) < int(stm.capacity):
+        stm.push_step_masked(
+            torch.randn(2, D), torch.ones(2, 1, dtype=torch.bool))
+    full = stm._depth.clone()
+    reduced = m._stm_bounded_reduce_step(
+        gate_tau=1.0, occupancy_pressure=True)
+    assert bool(reduced.all())
+    assert torch.equal(stm._depth, full - 1)
+    routing = m._stm_last_reduce_routing
+    assert bool(routing["stm_demand_mask"].all())
+
+
+def test_capacity_demand_without_grammar_fails_loudly():
+    m = _build("data/MM_masked_semantic.xml")
+    assert m._stm_reducer() is None
+    stm = _stm_with_depth2(m, B=1)
+    D = int(stm.concept_dim)
+    while int(stm._depth.max().item()) < int(stm.capacity):
+        stm.push_step_masked(
+            torch.randn(1, D), torch.ones(1, 1, dtype=torch.bool))
+    try:
+        m._stm_bounded_reduce_step(
+            row_gate=torch.ones(1, dtype=torch.bool), demand=True)
+    except RuntimeError as exc:
+        assert "no binary grammatical operator" in str(exc)
+    else:
+        raise AssertionError("capacity demand silently used a non-grammar fold")
+
+
 def test_serial_loop_attempts_parse_per_word():
     """The serial per-word loop calls the scored step (a live incremental
     parse), with the configured <stmReduceTau> (default 0.5)."""
     m = _build("data/MM_grammar.xml")
     assert abs(float(getattr(m, "stm_reduce_tau")) - 0.5) < 1e-9
+    # The fixture's eight WS rows are stable upstream property classes.
+    # Serial parsing must mint word/object/META relations downstream in CS,
+    # never consume WholeSpace rows through the retired META allocator.
+    assert m.wholeSpace.property_basis is True
+    assert not hasattr(m.wholeSpace, "_paired_next_row")
     calls = []
     orig = m._stm_bounded_reduce_step
-    def spy(protect_depth=None, gate_tau=None, _o=orig, _c=calls):
+    def spy(protect_depth=None, gate_tau=None, _o=orig, _c=calls,
+            **controller):
         _c.append(gate_tau)
-        return _o(protect_depth=protect_depth, gate_tau=gate_tau)
+        return _o(protect_depth=protect_depth, gate_tau=gate_tau,
+                  **controller)
     m._stm_bounded_reduce_step = spy
     try:
         opt = m.getOptimizer(lr=0.01)
         m.runEpoch(optimizer=opt, batchSize=4, split="train", max_batches=1)
     finally:
         m._stm_bounded_reduce_step = orig
+    assert not hasattr(m.wholeSpace, "_paired_next_row")
+    assert not hasattr(m.wholeSpace, "meta_pair_to_idx")
     scored = [t for t in calls if t is not None]
     assert scored, "no opportunistic parse step fired during serial reading"
     assert all(abs(t - 0.5) < 1e-9 for t in scored)

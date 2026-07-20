@@ -11,6 +11,8 @@ of natural collapse. Exercised in isolation on a synthetic grammar + vectors
 
 import os
 import sys
+import json
+import pickle
 from collections import namedtuple
 
 os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
@@ -170,3 +172,123 @@ def test_category_vq_assign_is_pure_lookup():
     # The repeated lookup left the codebook and EMA buffers untouched.
     torch.testing.assert_close(ss._category_vq.codebook.detach(), cb_before)
     torch.testing.assert_close(ss._category_vq.cluster_size.detach(), cs_before)
+
+
+def test_checkpoint_prewarm_materializes_requested_category_codebook(
+        monkeypatch):
+    """Autoload prewarm creates the lazy terminal category state."""
+    import Language
+    import Models
+    from util import init_config, init_device
+
+    project = os.path.dirname(_BIN)
+    config = os.path.join(project, "data", "MM_xor.xml")
+    defaults = os.path.join(project, "data", "model.xml")
+    monkeypatch.setenv("BASIC_AUTOLOAD", "0")
+    init_device("cpu")
+    init_config(path=config, defaults_path=defaults)
+    Language.TheGrammar._configured = False
+    Models.TheData.load("xor")
+    model, _ = Models.BasicModel.from_config(config, data=Models.TheData)
+    ws = model.wholeSpace
+
+    assert ws._category_codebook_requested is True
+    assert not ws.category_codebook_enabled()
+    model._prewarm_checkpoint_shapes()
+    assert ws.category_codebook_enabled()
+    n_roles = compute_role_vocabulary(Language.TheGrammar)[2]
+    assert n_roles > 0
+    assert tuple(ws._category_role.shape) == (n_roles, n_roles)
+
+    state = model.state_dict()
+    terminal = len(model.wholeSpaces) - 1
+    expected = {
+        f"wholeSpaces.{terminal}._category_role",
+        f"wholeSpaces.{terminal}._category_vq._codebook",
+        f"wholeSpaces.{terminal}._category_vq.cluster_size",
+        f"wholeSpaces.{terminal}._category_vq.embed_avg",
+        f"wholeSpaces.{terminal}._category_vq._b_norms_sq",
+    }
+    assert expected <= set(state)
+
+
+def test_category_learning_vocab_extras_roundtrip_is_exact_and_json_safe():
+    """Committed and pending terminal-category state resumes exactly."""
+    source = _whole_space()
+    source.enable_category_codebook(_grammar())
+    learner = source._category_learner
+    learner.max_pending = 17
+    learner.min_mass = 3.0
+    learner.min_confidence = 0.55
+    learner.min_margin = 0.20
+    learner.stable_updates = 2
+    learner.evidence_decay = 1.0
+    learner.prototype_ema = 0.23
+
+    committed_vec = torch.zeros(source._category_n_roles)
+    committed_vec[source._category_role_index["isEqual_I1"]] = 1.0
+    pending_vec = torch.zeros(source._category_n_roles)
+    pending_vec[source._category_role_index["lift_I1"]] = 1.0
+    for _ in range(3):
+        committed = source.observe_category_roles(101, committed_vec)
+    assert committed is not None
+    assert source.observe_category_roles(202, pending_vec) is None
+    assert source.observe_category_roles(202, pending_vec) is None
+    assert learner.step == 5
+
+    extras = source.vocab_extras()
+    assert extras["category_assign"] == {101: committed}
+    assert 202 in extras["category_learner"]["pending"]
+    # JSON is the stricter contract (no tensors or tuple keys); exercise a
+    # pickle hop too because torch checkpoints use pickle internally.
+    portable = json.loads(json.dumps(extras, allow_nan=False))
+    portable = pickle.loads(pickle.dumps(portable))
+
+    # Load before lazy category enablement to cover the non-BasicModel restore
+    # ordering as well as the prewarmed production checkpoint path.
+    restored = _whole_space()
+    restored.load_vocab_extras(portable)
+    assert not restored.category_codebook_enabled()
+    deferred = restored.vocab_extras()
+    assert deferred["category_learner"] == portable["category_learner"]
+    restored.enable_category_codebook(_grammar())
+    restored_learner = restored._category_learner
+
+    assert restored._category_assign == source._category_assign
+    for name in (
+            "max_pending", "min_mass", "min_confidence", "min_margin",
+            "stable_updates", "evidence_decay", "prototype_ema"):
+        assert getattr(restored_learner, name) == getattr(learner, name)
+    assert restored_learner.step == learner.step
+    assert set(restored_learner.pending) == {202}
+    source_row = learner.pending[202]
+    restored_row = restored_learner.pending[202]
+    assert restored_row["mass"] == source_row["mass"]
+    assert restored_row["best"] == source_row["best"]
+    assert restored_row["stable"] == source_row["stable"]
+    assert restored_row["last"] == source_row["last"]
+    torch.testing.assert_close(
+        restored_row["evidence"], source_row["evidence"], rtol=0, atol=0)
+
+    # The very next observation produces the same transition on both copies.
+    source_result = source.observe_category_roles(202, pending_vec)
+    restored_result = restored.observe_category_roles(202, pending_vec)
+    assert restored_result == source_result
+    assert restored._category_assign == source._category_assign
+    assert restored_learner.step == learner.step == 6
+    assert restored_learner.pending == learner.pending == {}
+
+
+def test_category_learning_loads_legacy_vocab_extras_without_new_keys():
+    """Pre-category sidecars retain the freshly initialized defaults."""
+    source = _whole_space()
+    legacy = source.vocab_extras()
+    assert "category_assign" not in legacy
+    assert "category_learner" not in legacy
+
+    restored = _whole_space()
+    restored.enable_category_codebook(_grammar())
+    restored.load_vocab_extras(json.loads(json.dumps(legacy)))
+    assert restored._category_assign == {}
+    assert restored._category_learner.step == 0
+    assert restored._category_learner.pending == {}

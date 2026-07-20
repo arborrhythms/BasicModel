@@ -76,3 +76,41 @@ def test_soft_dp_gradient_reaches_scores():
     out["logZ"].sum().backward()
     assert cs.grad is not None and (cs.grad.abs().sum() > 0)
     assert rs.grad is not None and (rs.grad.abs().sum() > 0)
+
+
+def test_soft_dp_extreme_finite_scores_have_finite_marginals():
+    """Large anchor-dot scores must not overflow forward/backward marginals.
+
+    The ranges reproduce the scale seen on the first N=64 FineWeb grammar
+    pass before any optimiser step.  All inputs are finite; the old direct
+    float32 subtraction produced +inf and NaN marginals here.
+    """
+    N = 64
+    cs = torch.linspace(-110_104_816.0, 0.0, N).reshape(1, N, 1)
+    rs = torch.linspace(
+        -1_380_412_160.0,
+        584_686_784.0,
+        (N - 1) * 15,
+    ).reshape(1, N - 1, 15)
+
+    out = binary_tiling_soft_dp(cs, rs)
+
+    for name, value in out.items():
+        assert torch.isfinite(value).all(), name
+
+    # Every source position is covered by exactly one expected COPY or by a
+    # REDUCE beginning immediately before/at that position.
+    covered = out["copy_marginal"].clone()
+    covered[:, :-1] += out["reduce_marginal"]
+    covered[:, 1:] += out["reduce_marginal"]
+    assert torch.allclose(covered, torch.ones_like(covered), atol=2e-3)
+    assert torch.allclose(
+        out["copy_marginal_op"].sum(-1),
+        out["copy_marginal"],
+        atol=1e-5,
+    )
+    assert torch.allclose(
+        out["reduce_marginal_op"].sum(-1),
+        out["reduce_marginal"],
+        atol=1e-5,
+    )

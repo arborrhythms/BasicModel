@@ -1,10 +1,11 @@
-"""Retired / parked classes, kept for easy revival.
+"""Retired / parked compatibility code, kept for easy revival.
 
-These are NOT imported by the live model. The MATLAB-era ``Mem`` memory
-primitives, ``DecisionBoundaryLayer``, and the retired ``QKVAttentionLayer``,
-along with the documented-dormant grammar operators ``true`` / ``false`` /
-``swap`` / ``copy`` / ``area`` / ``luminosity`` / ``isaPart``, were moved out
-of ``bin/Layers.py`` in the 2026-07-17 legacy-code cleanup.
+The canonical model imports this module only when an older PartSpace synthesis
+mode is explicitly requested. The MATLAB-era ``Mem`` memory primitives,
+``DecisionBoundaryLayer``, and the retired ``QKVAttentionLayer``, along with
+the documented-dormant grammar operators ``true`` / ``false`` / ``swap`` /
+``copy`` / ``area`` / ``luminosity`` / ``isaPart``, were moved out of
+``bin/Layers.py`` in the 2026-07-17 legacy-code cleanup.
 
 Revive by moving a class back into ``bin/Layers.py`` (and, for the grammar
 operators, re-registering it in ``GRAMMAR_LAYER_CLASSES`` in
@@ -30,6 +31,61 @@ from Layers import (
     isa_part_op,
     luminosity_op,
 )
+
+
+# ---------------------------------------------------------------------------
+# Parked PartSpace synthesis front ends
+# ---------------------------------------------------------------------------
+#
+# The live architecture has one synthesis law: mereology.  Historical input
+# front ends remain loadable for old experiments/checkpoints, but their mode
+# selection and dispatch live here so adding a legacy tokenizer cannot change
+# the canonical PartSpace branch or its compiled serial word loop.
+
+LEGACY_PART_SYNTHESIS_MODES = frozenset({
+    "bpe", "mphf", "lexicon", "none", "byte", "radix",
+})
+
+
+def normalize_part_synthesis_mode(mode):
+    """Validate and normalize one parked PartSpace synthesis spelling."""
+    value = str(mode or "").strip().lower()
+    if value == "byte":
+        value = "none"
+    if value not in LEGACY_PART_SYNTHESIS_MODES:
+        raise ValueError(
+            "legacy PartSpace synthesis must be "
+            "bpe|mphf|lexicon|byte|none|radix, "
+            f"got {mode!r}")
+    return value
+
+
+def validate_part_synthesis(part_space, mode):
+    """Validate requirements that belong only to parked front ends."""
+    value = normalize_part_synthesis_mode(mode)
+    if value in ("bpe", "mphf", "none"):
+        if int(part_space.nVectors) < 256:
+            raise ValueError(
+                f"legacy PartSpace synthesis={value!r} requires "
+                f"nVectors>=256; got nVectors={part_space.nVectors}")
+        if part_space.model_type != "embedding":
+            raise ValueError(
+                f"legacy PartSpace synthesis={value!r} requires "
+                "<dataType>embedding</dataType>")
+    return value
+
+
+def embed_part_stem(part_space, upstream_vspace, mode):
+    """Run a parked eager synthesis front end for an older configuration."""
+    value = normalize_part_synthesis_mode(mode)
+    dispatch = {
+        "lexicon": part_space._embed_lexicon,
+        "bpe": part_space._embed_bpe,
+        "none": part_space._embed_byte,
+        "mphf": part_space._embed_mphf,
+        "radix": part_space._embed_radix,
+    }
+    return dispatch[value](upstream_vspace)
 
 
 class TrueLayer(GrammarLayer):

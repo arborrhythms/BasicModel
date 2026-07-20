@@ -52,6 +52,10 @@
          this the WS event is ALL BAND and unity evidence pools to zero
          (dual-towers: the universe must have somewhere to land). -->
     <nOutputDim>14</nOutputDim>
+    <!-- WholeSpace is the upstream eight-class property inventory. Word,
+         object, and META concepts are relation-only state owned downstream by
+         ConceptualSpace; this fixture must not consume WS rows while parsing. -->
+    <propertyBasis>true</propertyBasis>
     <nVectors>8</nVectors>
   </WholeSpace>
 
