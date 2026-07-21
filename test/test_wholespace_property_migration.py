@@ -14,6 +14,7 @@ import sys
 import warnings
 import xml.etree.ElementTree as ET
 
+import pytest
 import torch
 
 os.environ.setdefault("BASICMODEL_DEVICE", "cpu")
@@ -125,6 +126,10 @@ def test_aligned_property_folds_share_one_physical_concept_dictionary(tmp_path):
 
     # Logical growth mutates the one shared mask without reallocating W.
     cb = codebooks[0]
+    assert cb._capacity_frozen is True
+    assert cb._capacity_frozen_by == "aligned ConceptualSpace codebook"
+    with pytest.raises(RuntimeError, match="fixed capacity"):
+        cb.grow_to(17)
     cb.vq.set_active_rows(4)
     model._active_inventory_rows = 4
     identity = (id(cb.W), cb.W.data_ptr(), cb.vq.active_mask.data_ptr())

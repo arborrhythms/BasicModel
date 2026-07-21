@@ -688,6 +688,40 @@ def compile(model, verbose=True, fullgraph=False):
             if getattr(torch, "uint16", None) is not None:
                 _mps_cg.DTYPE_TO_METAL.setdefault(torch.uint16, "ushort")
                 _msg("MPS: inductor DTYPE_TO_METAL patched with uint16->ushort")
+            # PyTorch 2.12.1 Metal ``any`` reduction metadata bug: the
+            # accumulator is declared with Metal's spelling ``"bool"`` and
+            # that STRING is also stored on its CSEVariable as ``.dtype``.
+            # A fused boolean consumer (notably ``bitwise_and``) then asks
+            # generic dtype propagation to construct ``torch.empty(...,
+            # dtype="bool")`` and codegen fails with ``dtype=str``. Preserve
+            # the Metal declaration but restore the CSE metadata to the torch
+            # dtype supplied to the reducer. The guards make this MPS-only,
+            # idempotent, and a no-op once upstream returns torch dtype
+            # metadata itself.
+            _metal_kernel = _mps_cg.MetalKernel
+            _reduce_any = getattr(
+                _metal_kernel, "_reduction_nocache", None)
+            if (callable(_reduce_any)
+                    and not getattr(
+                        _reduce_any, "_basicmodel_any_dtype_patch", False)):
+                _reduce_any_original = _reduce_any
+
+                def _reduce_any_dtype_patched(
+                        self, dtype, src_dtype, reduction_type, value):
+                    result = _reduce_any_original(
+                        self, dtype, src_dtype, reduction_type, value)
+                    if (reduction_type == "any"
+                            and isinstance(dtype, torch.dtype)
+                            and hasattr(result, "dtype")
+                            and isinstance(result.dtype, str)):
+                        result.dtype = dtype
+                    return result
+
+                _reduce_any_dtype_patched._basicmodel_any_dtype_patch = True
+                _metal_kernel._reduction_nocache = (
+                    _reduce_any_dtype_patched)
+                _msg("MPS: inductor any-reduction dtype metadata patched "
+                     "(Metal 'bool' -> torch.bool)")
             # Metal caps kernel arguments at 31 buffers, but the inductor MPS
             # scheduler is limit-unaware: a large fusion binds one constant
             # buffer per distinct input, and the MM-scale forward produced

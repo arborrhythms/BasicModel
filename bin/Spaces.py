@@ -153,6 +153,18 @@ def fold_content_apply(fold_fn, fold_width, y):
     return fold_fn(y)
 
 
+@torch.compiler.disable
+def _sparse_embedding_eager(indices, weight):
+    """Indexed sparse-gradient read kept outside AOT/Inductor backward.
+
+    Inductor's reinplace pass currently asks sparse COO gradients for dense
+    storage and fails with ``Cannot access storage of SparseTensorImpl``.
+    Keeping only this operator eager preserves the row-sparse gradient used by
+    RowLocalAdam while dense tensor work on either side remains compilable.
+    """
+    return F.embedding(indices, weight, sparse=True)
+
+
 def registration_loss(pi_fold, sigma_fold, codes):
     """The drift-keeper: ``σπσ = σ`` on stored symbols (MeronomySpec §5;
     MeronomyPlan Stage 8).
@@ -2804,7 +2816,7 @@ class Codebook(Tensor):
             # ``sparse=True`` affects backward only: forward is the exact same
             # indexed row gather.  Repeated indices coalesce in RowLocalAdam;
             # no full-inventory gradient is ever materialized.
-            rows = F.embedding(idx, self.W, sparse=True)
+            rows = _sparse_embedding_eager(idx, self.W)
         else:
             rows = self.W[idx]
         if (getattr(self, "is_percept_store", False)
@@ -9356,6 +9368,12 @@ class InputSpace(Space):
         self._ar_word_concept_rows = None
         self._ar_word_concept_ids = None
         self._ar_word_concept_orders = None
+        # One grad-bearing sparse codebook gather per staged sentence.  The
+        # fixed-W word loop resolves both the current word and prior-STM
+        # references against this bank instead of graph-breaking around an
+        # F.embedding(sparse=True) call on every iteration.
+        self._ar_concept_lookup_rows = None
+        self._ar_concept_lookup_atoms = None
         self._ar_word_truncated_mask = None
         self._sentence_word_truncated_mask = None
         self._word_active_mask = None
@@ -9396,6 +9414,8 @@ class InputSpace(Space):
         self._ar_word_concept_rows = None
         self._ar_word_concept_ids = None
         self._ar_word_concept_orders = None
+        self._ar_concept_lookup_rows = None
+        self._ar_concept_lookup_atoms = None
         self._ar_word_truncated_mask = None
         self._sentence_word_truncated_mask = None
         self._word_active_mask = None
@@ -11434,10 +11454,11 @@ class PartSpace(Space):
 
         staged_rows = []
         # PyTorch specializes dimensions of size 0/1 even when marked
-        # dynamic. Keep a two-position identity-padded minimum so the residual
-        # constituent axis can vary without retracing the fixed-W graph after
-        # radix promotion collapses a word to one stored percept.
-        part_capacity = 2
+        # dynamic. Inductor also emits the guard ``P - 1 != 1`` for this
+        # gather/set-fold, so a declared dynamic range that includes P=2 is
+        # contradictory. Keep a three-position identity-padded minimum: the
+        # extra null rows are masked and no real constituent is truncated.
+        part_capacity = 3
         sentence_truncated_rows = []
         word_texts_rows = []
 
@@ -14777,7 +14798,7 @@ class ConceptualSpace(Space):
             # nothing falls off, depth unchanged.
         stm._depth = new_depth
 
-    def _intra_routing_for_predict(self):
+    def _intra_routing_for_predict(self, batch=None):
         """Resolve the dense rule distribution for the intra-sentence
         predictor, or ``None``.
 
@@ -14827,9 +14848,16 @@ class ConceptualSpace(Space):
         if routing.dim() != 2:
             return None
         # Resolve the predictor's context batch from the STM snapshot
-        # (the same source both predict-then-perceive callers consume).
-        snap = self.stm.snapshot()
-        b_ctx = int(snap.shape[0]) if (snap is not None and snap.dim() == 3) else None
+        # (the same source both predict-then-perceive callers consume).  The
+        # reusable compiled word cell supplies the already-static live batch:
+        # asking ``snapshot`` there would make its Python-trimmed slot width a
+        # guard and specialize one graph per word depth.
+        if batch is None:
+            snap = self.stm.snapshot()
+            b_ctx = (int(snap.shape[0])
+                     if (snap is not None and snap.dim() == 3) else None)
+        else:
+            b_ctx = int(batch)
         b_rp = int(routing.shape[0])
         if b_ctx is None or b_rp == b_ctx:
             return routing
@@ -15015,6 +15043,58 @@ class ConceptualSpace(Space):
         prediction = self._stm_run_intra_predict(
             context, routing, parallel=False)         # [B, D]
         self._accumulate_intra_loss(prediction, idea, row_gate=row_gate)
+
+    def _stm_predict_then_perceive_serial_fixed(self, idea, row_gate=None):
+        """Fixed-capacity equivalent of the serial predictor for chunk replay.
+
+        ``ShortTermMemory.snapshot`` trims its slot axis with the Python
+        ``_max_depth_host`` mirror.  That is harmless inside one statically
+        unrolled sentence graph, but a reusable compiled word/chunk callable
+        would guard on every successive width.  Compute the same PI-over-live-
+        prefix/Sigma-collapse on the full capacity slab, masking *after* PI so
+        PI's bias on excluded zero slots cannot leak into the fold.
+
+        The first-word case remains a zero held prediction with zero loss
+        weight.  A zero-weight term is still appended so every two-word chunk
+        has the same Python accumulator structure; ``consume_intra_loss``
+        divides by the accumulated tensor weight, so this is numerically
+        identical to omitting that first term.
+        """
+        stm = self.stm
+        buf = stm._buffer
+        if buf is None or buf.dim() != 3:
+            self._stm_predicted_idea = torch.zeros_like(idea)
+            return
+        B, cap = int(buf.shape[0]), int(buf.shape[1])
+        max_depth = stm._depth.max()
+        context_len = torch.where(
+            max_depth >= 2, max_depth - 1, max_depth)
+        slots = torch.arange(
+            cap, dtype=stm._depth.dtype,
+            device=stm._depth.device)
+        keep = slots < context_len
+
+        layer = self.intraSentenceLayer
+        lifted = layer.pi.forward(buf)
+        folded = (
+            lifted * keep.view(1, cap, 1).to(dtype=lifted.dtype)
+        ).sum(dim=1)
+        prediction = layer.sigma.forward(folded)
+        routing = self._intra_routing_for_predict(batch=B)
+        prediction = layer._apply_routing_bias(prediction, routing)
+        has_context = (max_depth > 0).reshape(1, 1)
+        prediction = torch.where(
+            has_context, prediction, torch.zeros_like(prediction))
+        self._stm_predicted_idea = prediction
+
+        if row_gate is None:
+            loss_gate = has_context.expand(B, 1)
+        else:
+            loss_gate = torch.logical_and(
+                row_gate.to(device=idea.device, dtype=torch.bool),
+                has_context.expand(B, 1))
+        self._accumulate_intra_loss(
+            prediction, idea, row_gate=loss_gate)
 
     def _stm_predict_then_perceive_parallel(self, folded):
         """PARALLEL predict step (whole-slab call). Snapshot the prev STM,
@@ -19396,7 +19476,8 @@ class ConceptualSpace(Space):
     # tensor ops and MUST stay fullgraph-traceable (test_ir_fullgraph_compile).
 
     def decode_sparse_concept_rows(self, rows, source_activations,
-                                   source_bands):
+                                   source_bands, staged_rows=None,
+                                   staged_atoms=None):
         """Decode native PS/WS/SS evidence through indexed concept rows.
 
         ``rows[B,N]`` is resolved before the compiled loop; ``-1`` means no
@@ -19406,10 +19487,18 @@ class ConceptualSpace(Space):
         feature coordinate is padded, repeated, projected, or compared with a
         conceptual coordinate.
 
+        ``staged_rows[B,L]`` and ``staged_atoms[B,L,D]`` optionally provide a
+        sentence-local row bank gathered once at the eager lexical boundary.
+        This is the canonical serial path: it keeps sparse-COO autograd outside
+        AOT/Inductor while the fixed-W loop remains one dense compiled graph.
+        The direct lookup fallback is retained for standalone and legacy
+        callers.
+
         Codebook WHERE/WHEN columns are ignored. The presented source band's
         exact values ride through unchanged, yielding one conceptual event per
-        source, ``[B,S,N,nWhat+nWhere+nWhen]``. The read touches exactly B*N
-        dictionary rows, independent of the inventory capacity.
+        source, ``[B,S,N,nWhat+nWhere+nWhen]``. The fallback touches exactly
+        B*N dictionary rows; the serial path shares one B*W sentence gather,
+        both independent of the inventory capacity.
         """
         if (not torch.is_tensor(rows) or rows.dim() != 2
                 or not torch.is_tensor(source_activations)
@@ -19438,20 +19527,53 @@ class ConceptualSpace(Space):
                 f"sparse concept decode expected band width {expected_band}, "
                 f"got {int(source_bands.shape[-1])}")
 
-        codebook = getattr(self, "similarity_codebook", None)
-        lookup = getattr(codebook, "lookup_rows", None)
-        if not callable(lookup):
-            lookup = getattr(codebook, "lookup", None)
-        if not callable(lookup):
-            raise RuntimeError(
-                "ConceptualSpace sparse decode requires an indexed codebook "
-                "lookup surface")
-
         # The -1 placeholder gathers row zero solely to keep the graph's shape
         # static. The explicit validity mask below makes both its forward value
         # and its codebook gradient exactly zero, so unknowns never alias it.
         valid = rows >= 0
-        atoms = lookup(rows.clamp_min(0).long())
+        staged = (
+            torch.is_tensor(staged_rows)
+            and torch.is_tensor(staged_atoms)
+            and staged_rows.dim() == 2
+            and staged_atoms.dim() == 3
+            and tuple(staged_rows.shape) == tuple(staged_atoms.shape[:2])
+            and int(staged_rows.shape[0]) == B)
+        if staged:
+            # Every exact lexical reference in STM is either the current word
+            # row or a COPY of an earlier word row; binary transforms and
+            # unary rewrites deliberately clear the reference to -1. Thus the
+            # sentence word bank is closed over every valid lookup performed
+            # by the loop. Duplicate surface rows are harmless: selecting the
+            # first occurrence still accumulates the identical total gradient
+            # into the one physical codebook row.
+            staged_rows = staged_rows.to(device=rows.device, dtype=torch.long)
+            matches = (
+                rows.unsqueeze(-1) == staged_rows.unsqueeze(1))
+            # Spell boolean conjunction as logical_and rather than ``&``.
+            # PyTorch 2.12's MPS Inductor dtype propagator can receive the
+            # emitted string literal for a compile-time bool through the
+            # bitwise_and rule and fail codegen with ``dtype=str``.
+            matches = torch.logical_and(
+                matches, staged_rows.unsqueeze(1).ge(0))
+            found = matches.any(dim=-1)
+            positions = matches.to(dtype=torch.long).argmax(dim=-1)
+            gather_index = positions.unsqueeze(-1).expand(
+                B, N, int(staged_atoms.shape[-1]))
+            atoms = staged_atoms.gather(1, gather_index)
+            # ``found`` already implies ``rows >= 0`` because matches require
+            # equality to a nonnegative staged row. Avoid a redundant hot-loop
+            # conjunction (and the MPS bitwise dtype bug it originally hit).
+            valid = found
+        else:
+            codebook = getattr(self, "similarity_codebook", None)
+            lookup = getattr(codebook, "lookup_rows", None)
+            if not callable(lookup):
+                lookup = getattr(codebook, "lookup", None)
+            if not callable(lookup):
+                raise RuntimeError(
+                    "ConceptualSpace sparse decode requires an indexed "
+                    "codebook lookup surface")
+            atoms = lookup(rows.clamp_min(0).long())
         if (not torch.is_tensor(atoms) or atoms.dim() != 3
                 or tuple(atoms.shape[:2]) != (B, N)
                 or int(atoms.shape[-1]) < int(self.nWhat)):
@@ -19464,7 +19586,8 @@ class ConceptualSpace(Space):
         decoded_what = active.unsqueeze(-1) * atom_what.unsqueeze(1)
         return torch.cat((decoded_what, source_bands), dim=-1)
 
-    def decode_prior_stm_peer(self, stm, active_rows):
+    def decode_prior_stm_peer(self, stm, active_rows, staged_rows=None,
+                              staged_atoms=None):
         """Decode the full prior STM slab as one location-aligned SS peer.
 
         STM slot ``i`` maps to CS location ``i``. Only occupied slots with an
@@ -19497,9 +19620,14 @@ class ConceptualSpace(Space):
             K, dtype=stm._depth.dtype,
             device=stm._depth.device).unsqueeze(0)
         occupied = slots < stm._depth.unsqueeze(1)
-        validity = (
-            occupied & (prior_rows >= 0)
-            & active_rows.to(
+        # ``prior_rows >= 0`` is compile-time false on the first word because
+        # STM begins empty. Keep these as logical operations: the PyTorch 2.12
+        # MPS backend's bitwise dtype rule mishandles a fused literal False
+        # (``dtype=str``) during Metal codegen.
+        validity = torch.logical_and(occupied, prior_rows >= 0)
+        validity = torch.logical_and(
+            validity,
+            active_rows.to(
                 device=buf.device, dtype=torch.bool).reshape(B, 1))
         rows = torch.where(
             validity, prior_rows, torch.full_like(prior_rows, -1))
@@ -19514,7 +19642,8 @@ class ConceptualSpace(Space):
         bands = torch.where(
             validity.unsqueeze(-1), bands, torch.zeros_like(bands))
         decoded = self.decode_sparse_concept_rows(
-            rows, activations.unsqueeze(1), bands.unsqueeze(1))
+            rows, activations.unsqueeze(1), bands.unsqueeze(1),
+            staged_rows=staged_rows, staged_atoms=staged_atoms)
         return decoded[:, 0], validity
 
     @staticmethod

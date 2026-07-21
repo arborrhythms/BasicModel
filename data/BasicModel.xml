@@ -24,10 +24,11 @@
       * subsymbolicOrder=4 and symbolicOrder=4 are the middle of the proposed
         3..5 range.  symbolicOrder is an iteration budget over shared weights;
         it does not multiply parameters by four.
-      * Four compiled W={16,32,64,128} buckets bound only the outer
-        InputSpace sentence loop. PS, WS, CS, and STM retain their configured
-        8-wide instantaneous fields/workspace; grammar reductions make that
-        bounded workspace sufficient.
+      * W={16,32,64,128} packing choices bound only the outer InputSpace
+        sentence loop and share one reusable compiled two-word recurrence.
+        PS, WS, CS, and STM retain their configured 8-wide instantaneous
+        fields/workspace; grammar reductions make that bounded workspace
+        sufficient.
       * The grammar budget includes the contextual MLP transform chooser.  The
         soft tiling DP rescales unusually large finite chooser scores without
         changing their ordering, so this learned router remains stable at the
@@ -56,8 +57,8 @@
     <syntacticOrder>0</syntacticOrder>
 
     <mereologyRaise>true</mereologyRaise>
-    <!-- Compile four regular word-axis graphs. InputSpace chooses the
-         smallest fit per batch; STM remains independently configurable at 8. -->
+    <!-- Choose among four regular word-axis packing widths. They share one
+         compiled K=2 recurrence; STM remains independently configurable at 8. -->
     <serialObjectMeta>true</serialObjectMeta>
     <!-- The historical whole-sentence prelude sends native PS/WS events
          directly through the generic CS compatibility path. Keep it dark for

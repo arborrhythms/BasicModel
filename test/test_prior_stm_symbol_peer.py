@@ -101,6 +101,26 @@ def test_full_eight_slot_prior_slab_is_one_indexed_ss_source():
             torch.full((4,), float(100 + row)))
 
 
+def test_staged_sentence_bank_matches_prior_peer_without_an_inner_lookup():
+    """Prior lexical COPY refs resolve from the same pre-gathered word bank."""
+    direct_cs = _bare_cs()
+    staged_cs = _bare_cs()
+    stm = _full_stm()
+    bank_rows = torch.arange(1, 9, dtype=torch.long).unsqueeze(0)
+    bank_atoms = staged_cs.similarity_codebook.lookup_rows(bank_rows)
+    staged_cs.similarity_codebook.calls.clear()
+
+    direct, direct_valid = direct_cs.decode_prior_stm_peer(
+        stm, torch.tensor([True]))
+    staged, staged_valid = staged_cs.decode_prior_stm_peer(
+        stm, torch.tensor([True]), staged_rows=bank_rows,
+        staged_atoms=bank_atoms)
+
+    torch.testing.assert_close(staged, direct)
+    assert torch.equal(staged_valid, direct_valid)
+    assert staged_cs.similarity_codebook.calls == []
+
+
 def test_ss_is_prior_tick_and_never_sees_a_later_push():
     cs = _bare_cs()
     stm = ShortTermMemory(batch=1, capacity=8, concept_dim=8)

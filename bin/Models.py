@@ -1694,6 +1694,12 @@ class BaseModel(Mereology, nn.Module):
                 "full-capacity concept VQ Codebooks were found")
         for cb in codebooks:
             cb.vq.set_active_rows(cs_active)
+            # This physical table is optimizer-owned at its final configured
+            # capacity. Logical growth reveals rows through the full-shape VQ
+            # mask below; it must never replace W and orphan RowLocalAdam or a
+            # compiled graph. PartSpace's structural radix store remains the
+            # intentionally dynamic exception and is not returned here.
+            cb.freeze_capacity("aligned ConceptualSpace codebook")
         self._active_inventory_rows = cs_active
         return cs_active
 
@@ -5144,6 +5150,43 @@ class BasicModel(BaseModel):
             category_owner.enable_category_codebook(
                 TheGrammar, device=device)
 
+    def _aligned_serial_word_mode(self):
+        """Return whether the canonical aligned per-word protocol is live."""
+        return bool(
+            getattr(self, "serial", False)
+            and getattr(getattr(self, "inputSpace", None),
+                        "_per_word_enabled", False)
+            and getattr(self, "serial_object_meta", False)
+            and getattr(self, "concept_binding", "mixing") == "aligned")
+
+    def _aligned_serial_sparse_bank_mode(self):
+        """Return whether aligned serial execution needs its sparse bank.
+
+        Stage 0 resolves relation identities while the terminal CS consumes
+        them.  The staged atoms are therefore sound only when both stages own
+        the same physical codebook Parameter, an invariant of the canonical
+        model that is checked here rather than assumed at decode time.
+        """
+        if not self._aligned_serial_word_mode():
+            return False
+        spaces = list(getattr(self, "conceptualSpaces", None) or ())
+        if not spaces:
+            return False
+        terminal = getattr(self, "conceptualSpace", None)
+        if terminal is None:
+            terminal = spaces[-1]
+        owner_cb = getattr(spaces[0], "similarity_codebook", None)
+        terminal_cb = getattr(terminal, "similarity_codebook", None)
+        sparse = any(
+            bool(getattr(getattr(space, "similarity_codebook", None),
+                         "sparse_lookup_grad", False))
+            for space in spaces)
+        if sparse and owner_cb is not terminal_cb:
+            raise RuntimeError(
+                "aligned serial sparse staging requires stage-0 and "
+                "terminal ConceptualSpace to share one physical codebook")
+        return sparse
+
     def enable_compiled_step(self):
         """Compile the per-batch forward and route runBatch through it.
 
@@ -5156,17 +5199,12 @@ class BasicModel(BaseModel):
         orchestration stays Python (streaming/staging outside the
         compiled region, per the compile-scoped-to-model design).
 
-        Strict gate, **all configs**: the recon-then-eliminate program
-        drove the forward to **0 graph breaks** (non-grammar *and*
-        grammar; ``total graph breaks: 0; graphs: 1``), so we compile
-        with ``fullgraph=True`` unconditionally -- any regression that
-        reintroduces a host sync / dynamic-shape op / data-dependent
-        control-flow break now *raises* at compile time instead of
-        silently degrading to eager (or wasting GPU hours on a
-        non-capturable run). The grammar path is no longer
-        ``@torch.compiler.disable``'d (a disabled call is itself a
-        break under ``fullgraph=True``); its breaks were eliminated in
-        the same recon loop.
+        Strict gate where the configured forward is host-island-free: the
+        recon-then-eliminate program drove that path to **0 graph breaks**
+        (``total graph breaks: 0; graphs: 1``). Configurations with an explicit
+        eager island relax ``fullgraph`` so the dense regions can still be
+        compiled. The canonical aligned serial path remains strict: its sparse
+        concept rows are gathered once before the graph, not inside it.
         """
         from util import compile as _compile
         # MPS compiles by default (2026-06-07): torch 2.12's inductor MPS
@@ -5229,8 +5267,19 @@ class BasicModel(BaseModel):
         # with the uint16 + 31-buffer workarounds in util.compile.
         _serial_per_word = bool(getattr(
             getattr(self, 'inputSpace', None), '_per_word_enabled', False))
+        _sparse_codebook_island = any(
+            bool(getattr(
+                getattr(_cs, "similarity_codebook", None),
+                "sparse_lookup_grad", False))
+            for _cs in (getattr(self, "conceptualSpaces", None) or ()))
+        _staged_sparse_bank = self._aligned_serial_word_mode()
+        _canonical_word_chunk = bool(
+            self._aligned_serial_sparse_bank_mode()
+            and getattr(_util, "TheCompileBackend", "none") != "none")
         _host_islands = ((_full_router and not _serial_per_word)
-                         or _symbol_tower)
+                         or _symbol_tower
+                         or (_sparse_codebook_island
+                             and not _staged_sparse_bank))
         # torch 2.12 inductor-MPS cannot codegen the FULL-ROUTER
         # forward: the generated Metal references undeclared reduction
         # indices ("use of undeclared identifier 'r0_1'" — an upstream
@@ -5254,11 +5303,32 @@ class BasicModel(BaseModel):
         _fullgraph = ENUM_FULLGRAPH and not _host_islands
         if ENUM_FULLGRAPH and _host_islands:
             TheMessage(
-                "fullgraph relaxed: host-island config (full-router grammar or "
-                "symbolTower forward_symbol is a tolerated graph break)")
+                "fullgraph relaxed: host-island config (full-router grammar, "
+                "symbolTower forward_symbol, or sparse indexed codebook is "
+                "a tolerated graph break)")
         _word_buckets = tuple(
             int(v) for v in getattr(self, "serial_word_buckets", ()) or ())
-        if (_serial_per_word and len(_word_buckets) > 1):
+        self._compiled_word_chunk_step = None
+        self._compiled_word_chunk_active = False
+        self._compiled_word_chunk_replaying = False
+        if _canonical_word_chunk:
+            # Compile one reusable, fixed K=2 word cell.  The sentence shell
+            # remains eager: it stages two-column views, replays this callable,
+            # and installs the returned contributions in sentence order.  In
+            # particular this avoids asking Inductor to lower four W-unrolled
+            # graphs whose compile time scales with 16/32/64/128 words.
+            self._compiled_word_steps = {}
+            self._compiled_word_chunk_step = _compile(
+                self._aligned_word_chunk2, verbose=True, fullgraph=True)
+            self._compiled_word_chunk_active = True
+            # A non-None sentinel makes runBatch perform the ordinary eager
+            # lexical/sparse-bank staging.  The selected outer callable is the
+            # bound eager forward; only the two-word cell above is compiled.
+            self._compiled_step = self.forward
+            TheMessage(
+                "Canonical aligned serial compile: reusable K=2 word cell "
+                "with eager sentence adapter")
+        elif (_serial_per_word and len(_word_buckets) > 1):
             # Four DISTINCT CODE OBJECTS give Dynamo/Inductor four stable,
             # packed static loop graphs. A closure factory is insufficient:
             # its products share ``__code__``, so Dynamo treats W=32 as a
@@ -5833,6 +5903,13 @@ class BasicModel(BaseModel):
         self._compiled_step = None
         self._compiled_word_steps = {}
         self._active_compiled_step = None
+        # Canonical aligned serial mode can compile one reusable two-word cell
+        # instead of asking Inductor to lower a W=16/32/64/128 unrolled
+        # sentence graph.  The outer sentence shell remains eager and stages
+        # fixed two-column views before each replay.
+        self._compiled_word_chunk_step = None
+        self._compiled_word_chunk_active = False
+        self._compiled_word_chunk_replaying = False
         object.__setattr__(self, "_compiled_word_step_sources", {})
         self._compiled_step_needs_rebuild = had_compiled
 
@@ -5899,10 +5976,9 @@ class BasicModel(BaseModel):
         isp._ar_word_concept_rows = None
         isp._ar_word_concept_ids = None
         isp._ar_word_concept_orders = None
-        aligned = (
-            bool(getattr(self, "serial", False))
-            and bool(getattr(self, "serial_object_meta", False))
-            and getattr(self, "concept_binding", "mixing") == "aligned")
+        isp._ar_concept_lookup_rows = None
+        isp._ar_concept_lookup_atoms = None
+        aligned = self._aligned_serial_word_mode()
         if not aligned:
             return None
 
@@ -6026,6 +6102,35 @@ class BasicModel(BaseModel):
             cid_host, dtype=torch.long, device=part_ids.device)
         isp._ar_word_concept_orders = torch.tensor(
             order_host, dtype=torch.long, device=part_ids.device)
+        # Perform the only sparse-gradient dictionary read once at this eager
+        # boundary. The compiled word loop resolves all current/prior lexical
+        # references against this small sentence bank. This is mathematically
+        # identical to repeated F.embedding calls (their row gradients sum),
+        # but avoids W graph breaks and repeated B*N gathers per iteration.
+        cb = getattr(owner, "similarity_codebook", None)
+        lookup = getattr(cb, "lookup_rows", None)
+        if callable(lookup):
+            # Keep this bank width invariant across the configured W buckets
+            # so the same K=2 graph serves 16/32/64/128-word slabs.  Padding
+            # rows gather row zero and are explicitly zero-masked; sparse
+            # autograd may retain that structural index, but RowLocalAdam
+            # already discards all-zero placeholder rows.
+            bank_width = max(
+                int(rows.shape[1]),
+                int(getattr(self, "serial_word_capacity", 0) or 0),
+                max(tuple(int(v) for v in
+                          (getattr(self, "serial_word_buckets", ()) or (0,)))))
+            bank_rows = torch.full(
+                (int(rows.shape[0]), bank_width), -1,
+                dtype=torch.long, device=rows.device)
+            bank_rows[:, :int(rows.shape[1])] = rows
+            lookup_rows = bank_rows.clamp_min(0).long()
+            lookup_atoms = lookup(lookup_rows)
+            if torch.is_tensor(lookup_atoms) and lookup_atoms.dim() == 3:
+                lookup_atoms = lookup_atoms * bank_rows.ge(0).unsqueeze(-1).to(
+                    dtype=lookup_atoms.dtype)
+                isp._ar_concept_lookup_rows = bank_rows
+                isp._ar_concept_lookup_atoms = lookup_atoms
         object.__setattr__(self, "_pending_sparse_concept_support", pending)
         return rows
 
@@ -6233,12 +6338,29 @@ class BasicModel(BaseModel):
         if isinstance(inputTensor, torch.Tensor):
             inputTensor = inputTensor.to(TheDevice.get())
         self._staged_in_sub = self._lex_embed_stem(inputTensor)
+        _requires_sparse_bank = self._aligned_serial_sparse_bank_mode()
+        if _requires_sparse_bank:
+            _bank_rows = getattr(
+                self.inputSpace, "_ar_concept_lookup_rows", None)
+            _bank_atoms = getattr(
+                self.inputSpace, "_ar_concept_lookup_atoms", None)
+            if (not torch.is_tensor(_bank_rows) or _bank_rows.dim() != 2
+                    or not torch.is_tensor(_bank_atoms)
+                    or _bank_atoms.dim() != 3
+                    or tuple(_bank_rows.shape)
+                    != tuple(_bank_atoms.shape[:2])):
+                raise RuntimeError(
+                    "compiled aligned serial forward requires the eager "
+                    "sparse concept row bank; lexical staging did not "
+                    "produce a shape-aligned rows/atoms pair")
         # W is deliberately static (one of 16/32/64/128); the number of
         # residual radix constituents inside one complete word is not. Mark
         # only that P axis dynamic so promotion (e.g. five pieces -> one
-        # stored percept) does not compile another W graph. A P>=2 padding
-        # minimum is installed by PartSpace because Dynamo specializes 0/1.
-        _part_max = max(2, int(getattr(
+        # stored percept) does not compile another W graph. P>=3 excludes the
+        # contradictory Inductor guard ``P - 1 != 1`` while masked identity
+        # padding preserves words with one or two real constituents.
+        _part_min = 3
+        _part_max = max(_part_min, int(getattr(
             self.inputSpace, "outputShape", (8192,))[0]))
         for _part_tensor in (
                 getattr(self.inputSpace, "_ar_word_part_ids", None),
@@ -6246,10 +6368,10 @@ class BasicModel(BaseModel):
                 getattr(self.inputSpace, "_ar_word_part_offsets", None)):
             if torch.is_tensor(_part_tensor) and _part_tensor.dim() == 3:
                 torch._dynamo.mark_dynamic(
-                    _part_tensor, 2, min=2, max=_part_max)
+                    _part_tensor, 2, min=_part_min, max=_part_max)
         _word_width = max(1, int(getattr(
             self.inputSpace, "_active_word_bucket", 1) or 1))
-        _flat_min = 2 * _word_width
+        _flat_min = _part_min * _word_width
         _flat_max = _part_max * _word_width
         _ps_forward = getattr(self.perceptualSpace, "_forward_input", None)
         if isinstance(_ps_forward, dict):
@@ -6263,7 +6385,7 @@ class BasicModel(BaseModel):
                 _value = _ps_forward.get(_name)
                 if torch.is_tensor(_value) and _value.dim() == 3:
                     torch._dynamo.mark_dynamic(
-                        _value, 2, min=2, max=_part_max)
+                        _value, 2, min=_part_min, max=_part_max)
         for _cs in (getattr(self, "conceptualSpaces", None) or ()):
             _validate_routing = getattr(_cs, "validate_intra_routing", None)
             if callable(_validate_routing):
@@ -9325,6 +9447,9 @@ class BasicModel(BaseModel):
         self._compiled_step = None
         self._compiled_word_steps = {}
         self._active_compiled_step = None
+        self._compiled_word_chunk_step = None
+        self._compiled_word_chunk_active = False
+        self._compiled_word_chunk_replaying = False
         self._pending_stm_end_state = None
         self._current_discourse_s = None
         # A6 stage-0 CS_{-1} interSentence seed staging (mirrors
@@ -11260,6 +11385,158 @@ class BasicModel(BaseModel):
             out.append(ok)
         return out
 
+    def _aligned_word_chunk2(self, words_b_2_d, gates_b_2):
+        """Run two canonical aligned word ticks as one reusable graph.
+
+        The eager driver presents a two-column view through InputSpace's
+        ordinary staged attributes, so the existing word cell can use local
+        positions 0 and 1.  No sentence-global ``p`` value or growing output
+        list enters this callable.  Contributions are returned as tensors and
+        installed in the sentence-wide lists by the driver after replay.
+        """
+        if (words_b_2_d.dim() != 3 or int(words_b_2_d.shape[1]) != 2
+                or gates_b_2.dim() != 2 or int(gates_b_2.shape[1]) != 2):
+            raise RuntimeError(
+                "aligned word chunk requires words [B,2,D] and gates [B,2]")
+
+        cs = self.conceptualSpace
+        # Keep the Python accumulator structure identical at every replay.
+        # The fixed-capacity predictor appends one term per local word,
+        # including a zero-weight first-word term when STM is empty.
+        cs._intra_loss_accum = None
+        cs._intra_loss_weight_accum = None
+        cs._intra_loss_count = 0
+        concept_slots = [None, None]
+        percept_slots = [None, None]
+        self._per_word_percept_contributions = percept_slots
+
+        for local_p in range(2):
+            self._per_word_body_step(
+                words_b_2_d[:, local_p:local_p + 1, :],
+                local_p,
+                gates_b_2[:, local_p:local_p + 1],
+                concept_slots,
+                active_host=True)
+
+        if (concept_slots[0] is None or concept_slots[1] is None
+                or percept_slots[0] is None or percept_slots[1] is None):
+            raise RuntimeError(
+                "canonical aligned chunk did not emit both concept and "
+                "percept contributions")
+        return (
+            torch.stack(concept_slots, dim=1),
+            torch.stack(percept_slots, dim=1),
+        )
+
+    @torch.compiler.disable
+    def _run_aligned_word_chunk_loop(self, out_slot, n_trips):
+        """Eager sentence driver around the reusable two-word graph.
+
+        Only fixed-shape, canonical-layout tensors cross into the compiled
+        callable. The full sparse concept bank remains installed and grad-bearing for the
+        whole sentence; the temporary InputSpace swaps affect only surfaces
+        whose second axis the legacy word cell indexes by ``p``.
+        """
+        step = self._compiled_word_chunk_step
+        isp = self.inputSpace
+        slab = getattr(isp, "_ar_embedded_N", None)
+        if (step is None or not torch.is_tensor(slab)
+                or int(n_trips) < 2 or int(n_trips) % 2 != 0):
+            return None
+        n_trips = int(n_trips)
+        if int(slab.shape[1]) < n_trips:
+            return None
+
+        active = getattr(isp, "_word_active_mask", None)
+        if active is None:
+            active = torch.ones(
+                int(slab.shape[0]), n_trips, dtype=torch.bool,
+                device=slab.device)
+
+        staged_names = (
+            "_ar_word_part_ids",
+            "_ar_word_part_mask",
+            "_ar_word_part_offsets",
+            "_ar_word_concept_rows",
+            "_ar_word_concept_orders",
+            "_word_last_slot_mask",
+        )
+        dynamic_part_names = {
+            "_ar_word_part_ids",
+            "_ar_word_part_mask",
+            "_ar_word_part_offsets",
+        }
+        part_min = 3
+        part_max = max(part_min, int(getattr(
+            isp, "outputShape", (8192,))[0]))
+        full = {name: getattr(isp, name, None) for name in staged_names}
+        required = tuple(full[name] for name in staged_names)
+        if not all(torch.is_tensor(value) for value in required):
+            return None
+
+        ps_out_slot = self._per_word_percept_contributions
+        cs = self.conceptualSpace
+        loss_terms = list(getattr(cs, "_intra_loss_accum", None) or [])
+        loss_weights = list(
+            getattr(cs, "_intra_loss_weight_accum", None) or [])
+        last_cs = None
+        was_replaying = bool(getattr(
+            self, "_compiled_word_chunk_replaying", False))
+        self._compiled_word_chunk_replaying = True
+        try:
+            for start in range(0, n_trips, 2):
+                stop = start + 2
+                for name in staged_names:
+                    value = full[name]
+                    # A view retains its sentence slab's W-dependent leading
+                    # stride, even though its visible shape is always K=2.
+                    # Force a fresh canonical layout so W=16/32/64/128 all
+                    # satisfy the same Dynamo guards (``contiguous()`` alone
+                    # may return the original view when B=1).
+                    chunk_value = value[:, start:stop].clone(
+                        memory_format=torch.contiguous_format)
+                    # ``mark_dynamic`` metadata belongs to a Tensor object and
+                    # is not inherited by a newly-created slice view.  Mark the
+                    # residual-part axis on each K=2 view before Dynamo sees it,
+                    # otherwise ordinary variation in parts/word specializes a
+                    # fresh graph despite the static word-chunk shape.
+                    if name in dynamic_part_names and chunk_value.dim() == 3:
+                        torch._dynamo.mark_dynamic(
+                            chunk_value, 2, min=part_min, max=part_max)
+                    object.__setattr__(isp, name, chunk_value)
+                word_chunk = slab[:, start:stop, :].clone(
+                    memory_format=torch.contiguous_format)
+                gate_chunk = active[:, start:stop].clone(
+                    memory_format=torch.contiguous_format)
+                concept_chunk, percept_chunk = step(
+                    word_chunk, gate_chunk)
+                out_slot[start] = concept_chunk[:, 0, :]
+                out_slot[start + 1] = concept_chunk[:, 1, :]
+                if isinstance(ps_out_slot, list):
+                    ps_out_slot[start] = percept_chunk[:, 0, :]
+                    ps_out_slot[start + 1] = percept_chunk[:, 1, :]
+                loss_terms.extend(
+                    list(getattr(cs, "_intra_loss_accum", None) or []))
+                loss_weights.extend(list(
+                    getattr(cs, "_intra_loss_weight_accum", None) or []))
+                last_cs = cs.subspace
+        finally:
+            for name, value in full.items():
+                object.__setattr__(isp, name, value)
+            self._per_word_percept_contributions = ps_out_slot
+            self._compiled_word_chunk_replaying = was_replaying
+
+        cs._intra_loss_accum = loss_terms or None
+        cs._intra_loss_weight_accum = loss_weights or None
+        cs._intra_loss_count = len(loss_terms)
+        stm = cs.stm
+        if stm is not None and torch.is_tensor(getattr(stm, "_depth", None)):
+            # One boundary sync, outside every compiled replay.  Snapshot and
+            # the NULL-seal reducer need the current logical width; no word
+            # cell reads this Python mirror in chunk mode.
+            stm._max_depth_host = int(stm._depth.max().item())
+        return last_cs
+
     def _per_word_body_step(self, w, p, gate_b_1, out_slot, active_host=True):
         """One per-word iteration of the static loop (replaces the
         legacy data-dependent ``while next_word()`` body).
@@ -11523,14 +11800,23 @@ class BasicModel(BaseModel):
                 event[..., whole_what:] for event in native_wholes
             ], dim=1)
             decoded_fold_sources = cs.decode_sparse_concept_rows(
-                concept_rows, activations, source_bands)
+                concept_rows, activations, source_bands,
+                staged_rows=getattr(
+                    isp, "_ar_concept_lookup_rows", None),
+                staged_atoms=getattr(
+                    isp, "_ar_concept_lookup_atoms", None))
 
             # Canonical SS peer: read the complete *prior* STM slab before
             # this word enters CS. Slot i maps directly to location i. The
             # indexed CS lookup is SS's sigma fold / dimensional increase;
             # there is no inventory scan and no current-tick CS->SS->CS edge.
             prior_symbol_source, prior_symbol_validity = (
-                cs.decode_prior_stm_peer(stm, active_rows))
+                cs.decode_prior_stm_peer(
+                    stm, active_rows,
+                    staged_rows=getattr(
+                        isp, "_ar_concept_lookup_rows", None),
+                    staged_atoms=getattr(
+                        isp, "_ar_concept_lookup_atoms", None)))
 
             # BasicModel contributes six native folds (three PS + three WS).
             # General aligned fixtures retain their configured fold count;
@@ -11712,8 +11998,12 @@ class BasicModel(BaseModel):
                     # freshly bound word concept. Its actual subsymbolic order
                     # is carried explicitly from the aligned fold support;
                     # grammatical depth starts separately at zero.
-                    cs._stm_predict_then_perceive_serial(
-                        idea_bd, row_gate=commit_b_1)
+                    if self._compiled_word_chunk_replaying:
+                        cs._stm_predict_then_perceive_serial_fixed(
+                            idea_bd, row_gate=commit_b_1)
+                    else:
+                        cs._stm_predict_then_perceive_serial(
+                            idea_bd, row_gate=commit_b_1)
                     _concept_orders = getattr(
                         CS_sub, "_concept_orders", None)
                     if (torch.is_tensor(_concept_orders)
@@ -11736,7 +12026,24 @@ class BasicModel(BaseModel):
                         int(idea_bd.shape[0]), dtype=torch.bool,
                         device=idea_bd.device)
                     _legacy_pre_binary = False
-                    if stm._max_depth_host >= stm.capacity:
+                    if self._compiled_word_chunk_replaying:
+                        # A replayable chunk cannot branch on the Python
+                        # high-water mirror.  Compute the ordinary demand gate
+                        # from the live tensor depth; rows below capacity are
+                        # exact masked no-ops.  The post-insert reducer below
+                        # still receives ``~_binary_used``, preserving the
+                        # one-binary-op budget when a demand fold did fire.
+                        _full_active = (
+                            (stm._depth >= int(stm.capacity))
+                            & commit_b_1.reshape(-1).to(
+                                device=stm._depth.device,
+                                dtype=torch.bool))
+                        _demand_reduced = self._stm_bounded_reduce_step(
+                            protect_depth=_protect,
+                            row_gate=_full_active,
+                            demand=True)
+                        _binary_used = _binary_used | _demand_reduced
+                    elif stm._max_depth_host >= stm.capacity:
                         if _pressure_controller:
                             _full_active = (
                                 (stm._depth >= int(stm.capacity))
@@ -11781,7 +12088,8 @@ class BasicModel(BaseModel):
                         stm.note_push_masked(
                             [g and not w for g, w in zip(gate_rows, wcol)],
                             "other")
-                    stm._max_depth_host = stm._max_depth_host + 1
+                    if not self._compiled_word_chunk_replaying:
+                        stm._max_depth_host = stm._max_depth_host + 1
                     # Per-word router fire (Alec 2026-07-13): parse as the
                     # word arrives — the STM cannot hold the sentence
                     # until a boundary-only parse. Eager-only.
@@ -12078,9 +12386,23 @@ class BasicModel(BaseModel):
             # walk then unwinds ALL of this sentence's folds.
             object.__setattr__(self, "_stm_reduce_op_trace", [])
             object.__setattr__(self, "_stm_trace_sentence_scope", True)
-        last_cs = self.inputSpace.run_word_loop(
-            self._per_word_body_step, out_slot, _n_trips,
-            active_host=True)
+        _chunk_replayed = False
+        if (self._compiled_word_chunk_active
+                and self._compiled_word_chunk_step is not None
+                and torch.is_grad_enabled()):
+            # The eager outer forward would otherwise choose the active-prefix
+            # trip count.  Replaying the static even bucket keeps K=2 shapes
+            # stable; inactive tail columns remain exact masked no-ops.
+            _n_trips = N_words
+            last_cs = self._run_aligned_word_chunk_loop(
+                out_slot, _n_trips)
+            _chunk_replayed = last_cs is not None
+        else:
+            last_cs = None
+        if last_cs is None:
+            last_cs = self.inputSpace.run_word_loop(
+                self._per_word_body_step, out_slot, _n_trips,
+                active_host=True)
         if protocol_on:
             # Sentence end: un-stamp the per-pump mode (the §6d law
             # falls back to the legacy read between sentences).
@@ -12106,11 +12428,14 @@ class BasicModel(BaseModel):
         # advances. Pins: test_bounded_stm_fold::test_cap_equivalence (the
         # high-water mark survives) + test_per_word_ss_padding_noop (the
         # per-forward advance == active-prefix count, not N).
-        if stm is not None:
+        if stm is not None and not _chunk_replayed:
             # Only the columns that ACTUALLY ran advanced the mirror, so the
             # over-count is ``_n_trips - N_loop`` (== ``N_words - N_loop`` on
             # the static/compiled path; 0 on the eager skip-padding path, which
-            # never ran the padding columns).
+            # never ran the padding columns).  The reusable chunk path never
+            # increments this host mirror inside a padded word cell and repins
+            # it from the live tensor depth once after replay, so applying the
+            # legacy subtraction there would double-correct short sentences.
             _pad_overcount = max(0, _n_trips - N_loop)
             if _pad_overcount:
                 stm._max_depth_host = max(

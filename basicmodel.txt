@@ -13,7 +13,7 @@ Current dimensions
   WholeSpace WHAT/event width                H = 128 / 136
   ConceptualSpace WHAT/event width           C = 1024 / 1032
   SS concept-code activation width               1024 / 1032
-  compiled InputSpace word buckets           W = 16, 32, 64, 128
+  InputSpace word packing buckets            W = 16, 32, 64, 128
   maximum sentence words in one invocation  Wmax = 128
   live PartSpace locations                   8
   live WholeSpace locations                  8
@@ -36,12 +36,15 @@ independent.
 1. InputSpace owns the word loop
 ---------------------------------
 
-Before the compiled body, InputSpace counts the actual surface words in the
-batch and selects the smallest bucket which fits them. It then stages a
-rectangular W-position carrier and executes exactly W iterations through
-InputSpace.run_word_loop. Padding positions are tensor-masked no-ops. Four
-separate callable identities are compiled, one for each configured W, so W is
-static inside each graph while the batch may use the smallest suitable graph.
+Before the compiled recurrence, InputSpace counts the actual surface words in
+the batch and selects the smallest bucket which fits them. It then stages a
+rectangular W-position carrier. An eager sentence adapter walks that carrier
+in order and replays one shared, compiled K=2 word cell exactly W/2 times.
+Padding positions are tensor-masked no-ops. The adapter copies each two-word
+slice into a canonical layout, so all four packing widths and dynamic residual
+part widths reuse the same compiled recurrence rather than producing four
+whole-sentence graphs. STM and the other recurrent state are returned from one
+cell invocation to the next, preserving strict serial word order.
 
 A sentence longer than 128 words currently selects W=128, processes the first
 128 words, and sets the sentence-truncation diagnostic. Splitting such a
