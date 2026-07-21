@@ -91,7 +91,7 @@
       <seed>42</seed>
       <!-- Conservative MPS start: this tier doubles both N and D relative to
            the gate.  Raise only after a measured ArborStudio memory probe. -->
-      <batchSize>2</batchSize>
+      <batchSize>1</batchSize>
       <!-- One CPU producer thread with a two-tick in-flight budget: one tick
            consumed by the model while the next is buffered. -->
       <numWorkers>2</numWorkers>
