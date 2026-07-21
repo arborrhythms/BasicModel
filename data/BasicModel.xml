@@ -92,7 +92,7 @@
       <!-- Conservative MPS start: this tier doubles both N and D relative to
            the gate.  Raise only after a measured ArborStudio memory probe. -->
       <batchSize>4</batchSize>
-      <!-- One producer thread with a two-tick bounded prefetch queue. -->
+      <!-- Two producer workers with a two-tick bounded prefetch queue. -->
       <numWorkers>2</numWorkers>
       <learningRate>0.0005</learningRate>
 
