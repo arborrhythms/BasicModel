@@ -10,10 +10,17 @@
     about 118M parameters, while NanoChat d4 has about 36.7M at vocab 32768.
 
     Design budget:
-      * D=512, a 32768-row initial part dictionary, and a 1048576-row logical
-        part ceiling leave lexical storage proportional to observed growth.
-        Conceptual folds share one physical 1048576-row dictionary rather
-        than allocating one table per fold.
+      * PartSpace and WholeSpace WHAT are 128-D (136-D events including the
+        fixed 8-D band), while ConceptualSpace WHAT is 1024-D (1032-D event).
+        PS, WS, and SS recurse as independent peers; each fold's sparse
+        sigma/codebook read emits a 1032-D concept activation before CS. The
+        codebook read owns the dimension increase. There is no PS->WS edge and
+        CS receives conceptual-width events rather than projecting them.
+        32768-row initial part dictionary and 1048576-row logical ceiling keep
+        lexical storage proportional to observed growth. Conceptual folds
+        share one physical 1048576-row high-D dictionary rather than allocating
+        one table per fold. Its indexed-only path omits the unused VQ EMA mirror
+        and stores row-local Adam moments in BF16, with fp32 touched-row math.
       * subsymbolicOrder=4 and symbolicOrder=4 are the middle of the proposed
         3..5 range.  symbolicOrder is an iteration budget over shared weights;
         it does not multiply parameters by four.
@@ -35,9 +42,12 @@
     <!-- Keep traversal separate from the symbolic iteration budget. -->
     <serial>true</serial>
     <subsymbolicOrder>4</subsymbolicOrder>
-    <!-- One base level plus three cumulative folds on EACH tower.  The
-         resulting concept is the aligned six-source PS/WS fusion; the learned
-         mixing-matrix binder remains a separate parallel-only option. -->
+    <!-- One parameter-free mereological base plus three cumulative learned
+         folds on EACH perceptual tower. The resulting concept uses all six
+         PS/WS fold activations plus the applicable prior-tick STM/SS row at
+         the same location. Each source enters through an indexed conceptual
+         codebook read; an absent SS row does not dilute the other six. The
+         learned mixing-matrix binder remains a separate parallel-only option. -->
     <conceptBinding>aligned</conceptBinding>
     <conceptualWidth>uniform</conceptualWidth>
     <symbolicOrder>4</symbolicOrder>
@@ -49,6 +59,12 @@
     <!-- Compile four regular word-axis graphs. InputSpace chooses the
          smallest fit per batch; STM remains independently configurable at 8. -->
     <serialObjectMeta>true</serialObjectMeta>
+    <!-- The historical whole-sentence prelude sends native PS/WS events
+         directly through the generic CS compatibility path. Keep it dark for
+         this model until it uses the same sparse concept-codebook activation
+         seam as the word recursion; otherwise it would reintroduce a hidden
+         136 -> 1032 coordinate pad before the aligned loop begins. -->
+    <sentenceProtocol>false</sentenceProtocol>
     <serialWordCapacity>128</serialWordCapacity>
     <serialWordBuckets>16,32,64,128</serialWordBuckets>
     <sigmaPi>butterfly</sigmaPi>
@@ -97,7 +113,9 @@
       <autosave>true</autosave>
       <checkpointEveryBatches>100</checkpointEveryBatches>
     </training>
-    <weightsPath>../output/BasicModel.ckpt</weightsPath>
+    <!-- Geometry changes always start fresh. Keep the canonical checkpoint
+         beside this model file so XML and weights have the same stem/path. -->
+    <weightsPath>BasicModel.ckpt</weightsPath>
   </architecture>
 
   <!-- Raw UTF-8/byte surface.  The parameter budget is controlled by D and
@@ -109,8 +127,10 @@
     <nDim>512</nDim>
   </InputSpace>
 
-  <!-- Eight instantaneous part percepts; arbitrary cold-word constituents
-       synthesize inside the word iteration before entering this field. -->
+  <!-- Eight instantaneous part percepts. WHAT is deliberately compact (128);
+       the trailing 8 event coordinates are the fixed where/when band.
+       Arbitrary cold-word constituents synthesize inside the word iteration
+       before entering this field. -->
   <PartSpace>
     <nInput>8192</nInput>
     <nInputDim>512</nInputDim>
@@ -119,9 +139,9 @@
          during a word pass, then grows geometrically at the post-step boundary
          without exceeding this logical ceiling. -->
     <maxVectors>1048576</maxVectors>
-    <nDim>512</nDim>
+    <nDim>136</nDim>
     <nOutput>8</nOutput>
-    <nOutputDim>512</nOutputDim>
+    <nOutputDim>136</nOutputDim>
 
     <invertible>true</invertible>
     <synthesis>meronomy</synthesis>
@@ -130,7 +150,9 @@
 
   <ConceptualSpace>
     <nInput>8</nInput>
-    <nInputDim>512</nInputDim>
+    <!-- PS/WS sigma folds have already emitted conceptual codebook
+         activations here. The CS boundary itself is width-preserving. -->
+    <nInputDim>1032</nInputDim>
     <!-- Concept and downstream symbol-reference inventory. This is independent
          of PartSpace's allocated prefix, WholeSpace's small property basis,
          and the eight simultaneously live CS/WS locations. All four aligned
@@ -140,35 +162,38 @@
          are an optimizer-owned reserve activated in power-of-two steps. -->
     <activeVectors>32768</activeVectors>
     <stmCapacity>8</stmCapacity>
-    <nDim>512</nDim>
+    <nDim>1032</nDim>
     <nOutput>8</nOutput>
-    <nOutputDim>512</nOutputDim>
+    <nOutputDim>1032</nOutputDim>
 
     <invertible>true</invertible>
   </ConceptualSpace>
 
-  <!-- WholeSpace is the upstream analysis/property tower. It begins with a
-       small ASCII-oriented property basis and contains no concept, META, or
-       symbol rows. Dynamic property discovery may grow this inventory later
-       at an explicit optimizer/compiled-graph reset boundary. -->
+  <!-- WholeSpace is the independent upstream analysis/property peer. It
+       begins with a small ASCII-oriented property basis and contains no
+       concept, META, or symbol rows. Its 1032-D input is recurrent conceptual
+       context; its native output remains 136-D and does not receive PS.
+       Dynamic property discovery may grow this inventory later at an explicit
+       optimizer/compiled-graph reset boundary. -->
   <WholeSpace>
     <propertyBasis>true</propertyBasis>
     <analysis>meronomy</analysis>
     <butterfly>false</butterfly>
     <nInput>8</nInput>
-    <nInputDim>512</nInputDim>
+    <nInputDim>1032</nInputDim>
     <nVectors>8</nVectors>
-    <nDim>512</nDim>
+    <nDim>136</nDim>
     <nOutput>8</nOutput>
-    <nOutputDim>512</nOutputDim>
+    <nOutputDim>136</nOutputDim>
 
     <invertible>true</invertible>
   </WholeSpace>
 
-  <!-- Structural only for unlabeled FineWeb. -->
+  <!-- Structural only for unlabeled FineWeb. The terminal head consumes CS
+       directly; WholeSpace is not an intermediate output producer. -->
   <OutputSpace>
     <nInput>8</nInput>
-    <nInputDim>512</nInputDim>
+    <nInputDim>1032</nInputDim>
     <nVectors>1</nVectors>
     <nDim>1</nDim>
     <nOutput>1</nOutput>

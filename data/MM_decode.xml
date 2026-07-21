@@ -75,7 +75,7 @@
   </WholeSpace>
 
   <OutputSpace>
-    <nInput>1024</nInput>
+    <nInput>8</nInput>
     <nInputDim>1024</nInputDim>
     <nVectors>1</nVectors>
     <nDim>1</nDim>

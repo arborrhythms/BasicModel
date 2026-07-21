@@ -272,6 +272,31 @@ def test_partspace_maxvectors_validation_and_omitted_default(tmp_path):
     init_config(path=str(config), defaults_path=defaults)
 
 
+def test_partspace_byte_fallback_has_one_optimizer_owner():
+    """The registered radix fallback codebook participates in training."""
+    import Language
+    import Models
+    from util import init_config
+
+    config = os.path.join(_PROJECT, "data", "MM_xor_fixture.xml")
+    defaults = os.path.join(_PROJECT, "data", "model.xml")
+    init_config(path=config, defaults_path=defaults)
+    Language.TheGrammar._configured = False
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        model, _ = Models.BasicModel.from_config(config)
+
+    fallback = model.perceptualSpace.percept_store.byte_fallback.byte_codebook
+    assert fallback.requires_grad
+    optimizer = model.getOptimizer(lr=1e-3)
+    occurrences = sum(
+        candidate is fallback
+        for group in optimizer.param_groups
+        for candidate in group["params"]
+    )
+    assert occurrences == 1
+
+
 def test_smaller_checkpoint_table_prefix_loads_into_configured_initial_rows():
     import Language
     import Models

@@ -9,7 +9,10 @@ architectural rule.
 Current dimensions
 ------------------
 
-  vector/event width                         D = 512
+  PartSpace WHAT/event width                 P = 128 / 136
+  WholeSpace WHAT/event width                H = 128 / 136
+  ConceptualSpace WHAT/event width           C = 1024 / 1032
+  SS concept-code activation width               1024 / 1032
   compiled InputSpace word buckets           W = 16, 32, 64, 128
   maximum sentence words in one invocation  Wmax = 128
   live PartSpace locations                   8
@@ -24,7 +27,10 @@ Current dimensions
 
 The widths above name different axes. In particular, W is neither a PS/WS/CS
 field width nor the STM capacity, and neither codebook cardinality is a live
-field width. The conceptual and whole-percept inventories are independent.
+field width. PS and WS are intentionally compact, independent perceptual
+peers. SS uses sparse concept-code activation. ConceptualSpace stays
+high-dimensional, and the conceptual and whole-percept inventories are
+independent.
 
 
 1. InputSpace owns the word loop
@@ -63,8 +69,10 @@ discrete implementation uses the mereological radix store as follows:
      words usually leave very few residual percepts, often one, while an
      unfamiliar word may still have several.
   4. Only after PS receives the local part state does
-     PartSpace.synthesize_word_parts gather all residual events and apply the
-     configured sigma M-to-1 set fold. No raw constituent is discarded merely
+     PartSpace.synthesize_word_parts gather all residual events and form the
+     parameter-free De Morgan M-to-1 mereological base P0. The learned sigma
+     rungs begin only after P0, so sigma[0] is the first order-raising fold,
+     not part of the base aggregation. No raw constituent is discarded merely
      because the live PS field is eight positions wide.
 
 Steps 2 and 3 are the present radix/chunk policy, not a claim that this is the
@@ -91,17 +99,39 @@ three cumulative folds on each tower:
   P2 = sigma[1](P1)       H2 = pi[1](H1)
   P3 = sigma[2](P2)       H3 = pi[2](H2)
 
+P0..P3 and H0..H3 remain in their respective 128-D native WHAT spaces. When
+a fold contributes to a concept, its sparse activation selects a row of the
+shared conceptual codebook. Reading that row emits the 1024-D conceptual WHAT
+value. This read is the sigma/codebook fold at the recursion boundary; it is
+the dimension increase. CS itself receives a 1032-D event and does not widen a
+136-D event.
+
 The ordered path is stored, not inferred from the number of outputs. A strict
 aligned fold raises if an advertised sigma or pi rung is absent or cannot
 consume its input; an identity/no-fit rung is not silently counted as
 evidence.
 
-The word concept draws simultaneously from all three part folds and all three
-whole folds. ConceptualSpace retains the six-source carrier and its ordered
-fold-support map. Its actual subsymbolic order is stored explicitly as the
-deepest contributing fold (3 in this configuration), while the support map
-records that orders 1, 2, and 3 all contributed from both sides. Exactly one
-word concept, not three or six concepts, enters STM.
+The word concept draws simultaneously from all three part-fold activations and
+all three whole-fold activations. ConceptualSpace retains the six-source
+carrier and its ordered fold-support map. The SS peer is the complete
+prior-tick STM slab: STM slot i supplies concept row i and its scalar
+activation to CS location i through the same indexed conceptual-codebook read.
+It is decoded before the current word is pushed, so no same-tick CS->SS->CS
+shortcut exists. An empty or unknown SS location is absent rather than a zero
+seventh vote: the local mean is over 6+valid_SS sources and the six perceptual
+folds are not diluted where SS has no exact row identity.
+
+The concept's actual subsymbolic order is stored explicitly as the deepest
+contributing perceptual fold (3 in this configuration), while the support map
+records that orders 1, 2, and 3 all contributed from both perceptual sides.
+Exactly one word concept, not three or six concepts, enters STM. Its exact row
+and lexical coefficient are stored beside the dense STM payload for later SS
+recursion. A unary or genuinely binary grammatical transform produces a dense
+composite with no single exact row, so its row becomes unknown and its SS
+activation becomes zero. A no-op preserves the reference, and an explicit
+hard COPY may preserve the selected operand's reference. This metadata is
+honest lexical provenance, not a claim that every dense composite has already
+been sparsely factorized.
 
 This actual concept order is not called "order 0", and it is not inferred
 from a codebook row range. Raw percept order, cumulative fold depth,
@@ -111,27 +141,53 @@ fold order and concept order; a future explicit per-percept order can be added
 without changing the STM contract.
 
 
-4. Location-aligned conceptual binding
----------------------------------------
+4. Three-peer, location-aligned concept activation
+---------------------------------------------------
 
-PS and WS are two distinct eight-location source subspaces. They are not one
+PS and WS are two distinct native 128-D, eight-location perceptual subspaces.
+SS supplies sparse symbolic activation over the conceptual codebook. They are
+peers feeding CS, not a serial tower, and PS and WS are not one
 undifferentiated sixteen-slot field:
 
   PS = [p0, p1, ..., p7]
   WS = [h0, h1, ..., h7]
 
-On conceptBinding=aligned, only equal locations bind. For every location n,
-ConceptualSpace stacks the contributing source views at n and currently emits
-their equal local mean while retaining the full stack for provenance and
-reverse recovery. A narrow source is zero-padded on the location axis. Feature
-coordinates are never reshaped into additional locations, and a source wider
-than CS fails instead of being truncated. In the serial word path the
-synthesized PS word occupies location 0, so the STM word concept is CS[0].
+On conceptBinding=aligned, only equal locations combine. At each recursion,
+PS, WS, and SS advance independently and feed sparse activations of the same
+concept-code namespace to CS. A PS or WS fold's scalar presence is measured
+only in its own native space for a known joint concept identity. The
+selected conceptual row is then read at 1024 WHAT dimensions; its trailing
+eight where/when coordinates remain a separate aligned band. CS combines
+already-conceptual-width activations at location n and retains each source and
+fold order for provenance and reverse recovery.
+
+There is no coordinate correspondence asserted between PS/WS WHAT dimensions
+and CS WHAT dimensions, no fixed isometry, and no CS-owned feature lift. A
+136-D PS event is never padded, repeated, or reshaped into a 1032-D concept.
+The dimension increase occurs only by sparse conceptual codebook activation,
+which is already the sigma fold that feeds CS. An unknown concept row remains
+unknown; it must not alias row zero or trigger a full million-row scan.
+
+The dependency graph is
+
+  {PS, WS, SS} --sparse sigma/codebook activation--> CS
+
+not PS -> WS -> CS. The native peer computations may therefore be batched or
+fused before their common CS synchronization point. A pipeline optimization
+must preserve that graph; it must not make one perceptual peer consume the
+other. In the serial word path the synthesized PS word occupies location 0,
+so the resulting word concept entering STM is CS[0].
+
+BasicModel explicitly disables the older whole-sentence ``sentenceProtocol``
+prelude. That compatibility path still presents raw native-width PS/WS events
+to a generic CS pad/trim routine, so enabling it would bypass the sparse
+codebook boundary described above. It may be restored only after its gist is
+formed from indexed conceptual activations rather than coordinate padding.
 
 The same location rule is used by the aligned parallel path. The learned
 ConceptualCombine mixing matrix is a separate, conditional parallel-only
 alternative; BasicModel does not allocate or call it. It must not be used to
-define serial alignment.
+define serial alignment or to supply the codebook dimension increase.
 
 
 5. Independent conceptual and whole-percept inventories
@@ -141,9 +197,10 @@ ConceptualSpace.nVectors is the cardinality of the conceptual codebook. In
 BasicModel it reserves 1048576 rows, with 32768 initially active. The four
 aligned subsymbolic stages share that one physical table; stages do not carry
 four learned copies of the same namespace. ConceptualSpace owns concepts, META
-relations, and their taxonomy. SymbolSpace is strictly downstream: a symbol is
-a reference to a ConceptualSpace concept id, not a learned copy stored in
-WholeSpace.
+relations, and their taxonomy. SymbolSpace owns no duplicate concept rows: a
+symbol is a sparse reference/activation of a ConceptualSpace concept id. That
+activation is an SS peer input at the recursion boundary, while the referenced
+identity and high-D code remain CS-owned; neither is stored in WholeSpace.
 
 PartSpace has a separate 1048576-row logical ceiling. It initially allocates
 only 32768 rows. New radix/chunk percepts are queued as detached CPU values
@@ -154,17 +211,33 @@ the next call. Exhausting maxVectors is atomic: no partial row or trie update is
 made. This avoids paying for a one-million-row PartSpace before the vocabulary
 requires it.
 
-The storage consequence is explicit. At fp32 and D=512, the one shared
-ConceptualSpace parameter is 2.0 GiB; its current VQ EMA mirror is another
-2.0 GiB. A fresh build has 2.149 GiB of unique parameters and 2.055 GiB of
-unique buffers in total, rather than multiplying those tables by four folds.
-The initial 32768x504 PartSpace parameter is about 63 MiB. If PS eventually
-fills its 1048576-row ceiling, that parameter will be about 1.97 GiB, and stock
-Adam can add about 3.94 GiB of moment tensors plus a dense gradient. Geometric
-growth defers that endpoint; it does not remove it. A row-local optimizer is
-therefore the appropriate follow-up if PS occupancy grows that far. Likewise,
-making the currently dormant CS EMA mirror active-prefix/lazy would recover
-almost 2 GiB without changing the one-million-row conceptual address space.
+The storage consequence is explicit. At fp32 and conceptual event width 1032,
+the one shared 1048576-row ConceptualSpace parameter is 4.03125 GiB. The
+canonical indexed-only dictionary does not allocate the unused VQ EMA mirror
+or cluster counts, removing another 4.035 GiB; legacy VQ codebooks retain their
+EMA state. Canonical aligned reads use sparse embedding gradients, and the
+dedicated row-local Adam keeps two power-of-two prefix moment slabs in BF16,
+while performing each touched-row update in fp32. At the initial 32768-row
+prefix, W, the two moments, the norm cache, and active mask total about
+4.162 GiB. Even at full occupancy that core is about 8.067 GiB, rather than
+about 20.16 GiB for W, an EMA mirror, a dense gradient, and two fp32 Adam
+moments. A normal word tick's sparse gradient contains only the indexed rows it
+touched, and exact-zero placeholder rows are discarded before optimizer state
+is changed. Keeping CS high-dimensional still dominates memory, but its
+million-row address space no longer implies three extra full fp32 copies.
+
+The initial 32768x128 PartSpace parameter is 16 MiB. If PS eventually fills
+its 1048576-row ceiling, that parameter is 512 MiB; stock Adam adds 1 GiB of
+moment tensors and a dense gradient adds another 512 MiB (2 GiB total for
+parameter, moments, and gradient). WS begins with only eight 128-D property
+rows, so its persistent inventory is negligible. Geometric PS growth defers
+the endpoint. A row-local PS optimizer remains a useful follow-up if occupancy
+grows that far.
+
+The PS128/WS128/CS1024 dimensional cutover starts from data/BasicModel.ckpt,
+beside data/BasicModel.xml. An old checkpoint is not implicitly prefix-loaded
+or partially reshaped; any future migration must be an explicit, separately
+tested operation.
 
 WholeSpace.nVectors has a different meaning: it is the capacity of the
 whole-percept/property codebook. It starts with roughly eight ASCII-class
@@ -182,6 +255,30 @@ same dictionary; their order travels as metadata. The old snap/pool or
 per-order row partitions remain relevant only to their separate
 sparse-parallel code path and do not partition this model's serial conceptual
 inventory.
+
+Concept ids and their learned rows are stable identities and are never
+recycled. In particular, retiring a transient concept does not make its id or
+row available to a different definition. Reuse means exact identity reuse
+through the existing word, relation, chain, and synthesis keys; it never means
+overwriting the least-recently-used learned row.
+
+A new word's A=WORD, B=OBJECT, and C=META concepts are one atomic three-id
+admission. The allocator checks room for all three and reveals the required
+active prefix before changing any relation table, so a two-row remainder
+cannot leave a half-built word. Explicit concept-construction APIs retain the
+same fail-loud rule for all grouped structures, including grammatical chains:
+if the complete allocation cannot fit, no member of it is minted.
+
+Evidence-driven automatic discovery has a different endpoint policy so a
+long training run can continue safely at the physical ceiling. Known exact
+identities remain live and continue accruing evidence. An unseen automatic
+word, location, sentence-chain candidate, or higher-order promotion remains a
+transient tensor/STM value instead of acquiring a durable id. The model logs
+the first refusal in each class and accumulates checkpointed admission-drop
+counts, exposed by ConceptualSpace.concept_admission_stats(). A rejected word
+also suppresses its presentation-local location fallback, so one or two spare
+rows cannot bypass the atomic A/B/C gate. No learned row, EMA state, sparse
+edge, optimizer state, or stale symbolic reference is silently reassigned.
 
 "Aligned" refers only to the live location axis: PS fold location n binds with
 WS fold location n when forming a concept. It never asserts equal PS, WS, CS,
@@ -235,9 +332,23 @@ unlicensed mean. Sentence-boundary forest closure is separate from the
 per-word budget and may perform the additional binary operations required to
 produce the sentence result.
 
+In serialObjectMeta mode the grammar/STM sentence result is the composition
+path; it replaces automatic durable sentence chains. The earlier
+create_joint_concept call built an additional right-branching Gallistel chain
+for nearly every presented sentence, consuming roughly one conceptual row per
+word even though the serial grammar had already reduced those words. That
+automatic sentence-sized inventory is now suppressed. The explicit chain API
+and the nonserial compatibility path remain available where a caller
+intentionally requests a named sequence type.
+
 
 7. MPS benchmark (2026-07-19)
 ------------------------------
+
+These measurements are the PS504/WS504/CS504 baseline from before the
+PS128/WS128/CS1024 dimensional cutover. They remain useful for comparison, but
+they are not a post-change speed claim; rerun the same benchmark after the
+next fresh MPS model starts.
 
 bin/bench_word_buckets.py benchmarks the real BasicModel forward after eager
 surface/radix staging, including every masked word iteration, PS/WS fold,

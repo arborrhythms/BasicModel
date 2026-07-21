@@ -65,7 +65,7 @@ from util import ProjectPaths, XMLConfig, compile, TheXMLConfig, init_config, in
 from architecture import canonical_shape
 import util as _util
 from embed import WordVectors, PretrainModel, _random_unit_ball
-from Optimizer import Adam, SparseAdam, MultiOptimizer
+from Optimizer import Adam, SparseAdam, RowLocalAdam, MultiOptimizer
 from checkpoint_migrations import (
     LEGACY_WHOLE_STRUCTURE_KEY,
     OPTIMIZER_PARAM_NAMES_KEY,
@@ -1449,11 +1449,33 @@ class BaseModel(Mereology, nn.Module):
         if not getattr(self, 'optimize_embedding', False):
             params = [p for p in params if p.data_ptr() not in embedding_ptrs]
             sparse_ptrs.clear()
-        # Split the remaining params into a SparseAdam group (sparse
-        # grads only) and an Adam group (everything else).  SparseAdam
-        # touches only the rows that received gradients per step --
-        # critical for V=1M-style perceptual codebooks where dense Adam
-        # would update O(V*D) optimizer state on every step.
+
+        # The shared aligned ConceptualSpace dictionary has a stronger memory
+        # contract than an ordinary sparse embedding. Stock SparseAdam still
+        # allocates TWO full-size dense moments, which would add ~8 GiB for the
+        # 1M x 1032 fp32 table. Its lookup surface emits sparse row gradients,
+        # so route that one physical Parameter to compact-prefix RowLocalAdam.
+        row_local_ptrs = set()
+        seen_codebooks = set()
+        for cs in list(getattr(self, "conceptualSpaces", None) or ()):
+            cb = getattr(cs, "similarity_codebook", None)
+            if cb is None or id(cb) in seen_codebooks:
+                continue
+            seen_codebooks.add(id(cb))
+            W = getattr(cb, "W", None)
+            if (bool(getattr(cb, "sparse_lookup_grad", False))
+                    and isinstance(W, nn.Parameter) and W.requires_grad):
+                row_local_ptrs.add(W.data_ptr())
+        if row_local_ptrs & sparse_ptrs:
+            raise RuntimeError(
+                "a parameter cannot be owned by both SparseAdam and "
+                "RowLocalAdam")
+
+        # Split the remaining params into ordinary dense Adam, perceptual
+        # SparseAdam, and conceptual RowLocalAdam groups. SparseAdam reduces
+        # arithmetic but not state size; RowLocalAdam is reserved for the
+        # monotonic aligned concept-row namespace where compact moments are a
+        # correctness-enforced memory requirement.
         # CUDA-graph capture (the brick body; test_brick_no_sync)
         # requires the optimizer keep its step counter on-device:
         # stock Adam's _multi_tensor_adam does _get_value(step).item()
@@ -1492,14 +1514,30 @@ class BaseModel(Mereology, nn.Module):
                 groups.append({"params": head, "lr": lr * out_lr_scale})
             return groups
 
-        if sparse_ptrs:
-            sparse_params = [p for p in params if p.data_ptr() in sparse_ptrs]
-            dense_params = [p for p in params if p.data_ptr() not in sparse_ptrs]
-            opt_sparse = SparseAdam(sparse_params, lr=lr)
-            opt_dense = Adam(_dense_arg(dense_params), lr=lr, capturable=_cap)
-            optimizer = MultiOptimizer([opt_dense, opt_sparse])
-        else:
-            optimizer = Adam(_dense_arg(params), lr=lr, capturable=_cap)
+        sparse_params = [p for p in params if p.data_ptr() in sparse_ptrs]
+        row_local_params = [
+            p for p in params if p.data_ptr() in row_local_ptrs]
+        dense_params = [
+            p for p in params
+            if p.data_ptr() not in sparse_ptrs
+            and p.data_ptr() not in row_local_ptrs]
+        optimizers = []
+        if dense_params:
+            optimizers.append(Adam(
+                _dense_arg(dense_params), lr=lr, capturable=_cap))
+        if row_local_params:
+            # Persistent moments are BF16 (same exponent range as fp32), while
+            # RowLocalAdam promotes every touched row to fp32 for the actual
+            # Adam update. At full 1M x 1032 occupancy this halves the two
+            # moments from 8.06 GiB to 4.03 GiB without fp16 underflow.
+            optimizers.append(RowLocalAdam(
+                row_local_params, lr=lr, moment_dtype=torch.bfloat16))
+        if sparse_params:
+            optimizers.append(SparseAdam(sparse_params, lr=lr))
+        if not optimizers:
+            raise RuntimeError("model exposes no trainable optimizer parameters")
+        optimizer = (optimizers[0] if len(optimizers) == 1
+                     else MultiOptimizer(optimizers))
         pending = getattr(self, "_pending_optimizer_state", None)
         if pending is not None:
             saved_manifest = getattr(
@@ -1994,19 +2032,24 @@ class BaseModel(Mereology, nn.Module):
             yield from BaseModel._optimizer_leaves(child)
 
     def _normalize_optimizer_state_shapes(self, optimizer):
-        """Pad loaded row-wise optimizer moments to live Parameter shapes.
+        """Validate or pad loaded row-wise optimizer moments.
 
         ``Optimizer.load_state_dict`` intentionally maps state by parameter
         order and accepts shape-drifted moment tensors.  The failure otherwise
         appears only on the first Adam step.  Normalize immediately after load:
         preserve the learned prefix, zero every new row, and reject any shape
-        change that is not a pure first-axis capacity extension.
+        change that is not a pure first-axis capacity extension. RowLocalAdam
+        is the deliberate exception: its prefix-shaped moments stay compact
+        and grow geometrically only when a later sparse gradient touches a new
+        row. Expanding them here would recreate the multi-gigabyte state this
+        optimizer exists to avoid.
         """
         padded = 0
         for leaf in self._optimizer_leaves(optimizer):
             state_by_param = getattr(leaf, "state", None)
             if state_by_param is None:
                 continue
+            row_local = bool(getattr(leaf, "row_local_state", False))
             for param, param_state in list(state_by_param.items()):
                 if not isinstance(param, nn.Parameter):
                     continue
@@ -2028,6 +2071,10 @@ class BaseModel(Mereology, nn.Module):
                             f"{tuple(value.shape)} cannot migrate to parameter "
                             f"shape {target_shape}; only first-axis growth is "
                             f"supported")
+                    if row_local:
+                        # Valid compact checkpoint state. The optimizer owns
+                        # its next-power-of-two growth boundary.
+                        continue
                     grown = value.new_zeros(target_shape)
                     grown[:value.shape[0]].copy_(value)
                     param_state[name] = grown
@@ -2114,9 +2161,15 @@ class BaseModel(Mereology, nn.Module):
             )
             if param.grad is not None:
                 grad = param.grad.detach()
-                assert torch.isfinite(grad).all(), (
+                # ``torch.isfinite`` has no SparseCPU/SparseMPS implementation
+                # for a COO tensor. Sparse gradients are finite exactly when
+                # their stored values are finite; absent entries are zeros.
+                checked_grad = (
+                    grad.coalesce().values() if grad.is_sparse else grad)
+                assert torch.isfinite(checked_grad).all(), (
                     f"Non-finite gradient for {name!r} {what}: "
-                    f"{int((~torch.isfinite(grad)).sum().item())}/{grad.numel()} "
+                    f"{int((~torch.isfinite(checked_grad)).sum().item())}/"
+                    f"{checked_grad.numel()} "
                     f"entries are nan/inf."
                 )
 
@@ -2576,6 +2629,7 @@ class BaseModel(Mereology, nn.Module):
             "_words_concept_id", "_percept_word_concept",
             "_object_word_concept", "_priming_bridge", "_frozen_concepts",
             "_frozen_named", "_promotion_cache_state",
+            "_concept_admission_drops",
         )
         legacy_ws_fields = (
             "_word_whole_ss", "_mereology_raised",
@@ -5028,12 +5082,13 @@ class BasicModel(BaseModel):
     def _prewarm_checkpoint_shapes(self):
         """Materialize lazy state whose final tensors ride in checkpoints.
 
-        The serial grammar reducer and category codebook are registered
-        lazily. A training checkpoint contains those final shapes, so they
-        must exist before ``load_state_dict``. Canonical WholeSpace properties
-        are not grown here: property growth is independent of concept capacity
-        and requires an explicit optimizer/compiled-graph reset boundary. This
-        helper is idempotent and shared by autoload and compilation pre-warm.
+        Resolve the serial grammar layer's non-owning cache and materialize the
+        lazy category codebook. A training checkpoint contains the latter's
+        final shapes, so they must exist before ``load_state_dict``. Canonical
+        WholeSpace properties are not grown here: property growth is
+        independent of concept capacity and requires an explicit
+        optimizer/compiled-graph reset boundary. This helper is idempotent and
+        shared by autoload and compilation pre-warm.
         """
         if getattr(self, "_stm_reducer_cached", None) is None:
             try:
@@ -5124,13 +5179,9 @@ class BasicModel(BaseModel):
         # any device.
         # D8 capture-gate (2026-05-19): pre-warm any LAZY-built caches
         # that the captured forward depends on, so Dynamo never traces
-        # their build path. ``_stm_reducer`` constructs a
-        # ``BinaryStructuredReductionLayer`` (calls ``nn.Parameter()``
-        # which Dynamo refuses to trace -- "Attempted to use
-        # torch.nn.Parameter() constructor with Dynamo"). Build it
-        # here, eagerly, before the compile wrapper closes over
-        # ``self.forward``. The build is one-shot and idempotent
-        # (cached on ``_stm_reducer_cached``).
+        # their build path. ``_stm_reducer`` resolves the already-wired
+        # LanguageLayer child and caches that non-owning reference here,
+        # eagerly, before the compile wrapper closes over ``self.forward``.
         # Build every lazy, checkpointed shape before capture. Autoload uses
         # the same helper before loading an existing training checkpoint.
         self._prewarm_checkpoint_shapes()
@@ -5140,7 +5191,7 @@ class BasicModel(BaseModel):
         # reducer build (above) and any module minted during ModelFactory's
         # build-on-CPU phase (``init_device("cpu")`` -> build ->
         # ``init_device(target)`` + ``m.to(target)``) can be left on CPU if it
-        # was created after the ``m.to`` or lives off the module registry; the
+        # was created after the ``m.to``; the
         # compiled forward's fake-tensor propagation then fails loud
         # ("two different devices mps:0, cpu") where eager might limp. The
         # sweep is an idempotent no-op when already coherent. The per-call
@@ -5828,6 +5879,156 @@ class BasicModel(BaseModel):
         if isinstance(emb, Embedding):
             emb.normalize()
 
+    def _stage_serial_concept_rows(self):
+        """Resolve each staged word to one exact joint CS identity eagerly.
+
+        The compiled word cell must never walk Python relation dictionaries or
+        scan the million-row concept inventory. At this boundary we therefore
+        resolve ``surface + PS parts + WS properties`` against the durable
+        word/location concept ``A`` and park only its codebook row. First-sight
+        identities are admitted atomically at this safe pre-graph boundary;
+        an admission refused at capacity remains the exact ``-1`` unknown.
+
+        Stage 0 owns the relation identities while every aligned CS stage
+        shares the same physical concept dictionary, so a row resolved here is
+        valid for the terminal serial cell's indexed decode.
+        """
+        isp = getattr(self, "inputSpace", None)
+        if isp is None:
+            return None
+        isp._ar_word_concept_rows = None
+        isp._ar_word_concept_ids = None
+        isp._ar_word_concept_orders = None
+        aligned = (
+            bool(getattr(self, "serial", False))
+            and bool(getattr(self, "serial_object_meta", False))
+            and getattr(self, "concept_binding", "mixing") == "aligned")
+        if not aligned:
+            return None
+
+        part_ids = getattr(isp, "_ar_word_part_ids", None)
+        part_mask = getattr(isp, "_ar_word_part_mask", None)
+        active = getattr(isp, "_word_active_mask", None)
+        ps_fwd = getattr(getattr(self, "perceptualSpace", None),
+                         "_forward_input", None)
+        word_texts = (ps_fwd.get("word_texts")
+                      if isinstance(ps_fwd, dict) else None)
+        if (not torch.is_tensor(part_ids) or part_ids.dim() != 3
+                or not torch.is_tensor(part_mask)
+                or tuple(part_mask.shape) != tuple(part_ids.shape)
+                or not torch.is_tensor(active) or active.dim() != 2
+                or tuple(active.shape) != tuple(part_ids.shape[:2])
+                or word_texts is None):
+            return None
+
+        spaces = list(getattr(self, "conceptualSpaces", None) or ())
+        owner = spaces[0] if spaces else getattr(self, "conceptualSpace", None)
+        ws = getattr(self, "wholeSpace", None)
+        alloc = getattr(owner, "_concept_allocator", None)
+        if owner is None or ws is None:
+            rows = torch.full(
+                active.shape, -1, dtype=torch.long, device=part_ids.device)
+            isp._ar_word_concept_rows = rows
+            isp._ar_word_concept_ids = rows.clone()
+            isp._ar_word_concept_orders = rows.clone()
+            return rows
+
+        B, W, P = (int(part_ids.shape[0]), int(part_ids.shape[1]),
+                   int(part_ids.shape[2]))
+        pid_host = part_ids.detach().to("cpu").reshape(B, W, P).tolist()
+        mask_host = part_mask.detach().to("cpu").reshape(B, W, P).tolist()
+        active_host = active.detach().to("cpu").reshape(B, W).tolist()
+        row_host = [[-1] * W for _ in range(B)]
+        cid_host = [[-1] * W for _ in range(B)]
+        order_host = [[-1] * W for _ in range(B)]
+        pending = []
+        # One base presentation plus T-1 cumulative native folds. The concept
+        # activation draws from all T-1 PS and all T-1 WS fold results, so that
+        # final cumulative depth is its actual subsymbolic order.
+        actual_order = max(0, int(getattr(self, "subsymbolicOrder", 1)) - 1)
+        fold_passes = tuple(range(actual_order))
+        fold_support = owner._ordered_fold_support(
+            fold_passes, fold_passes)
+        wom = getattr(alloc, "word_obj_meta", {}) if alloc is not None else {}
+
+        def _raw_int_refs(refs):
+            out = set()
+            for ref in refs or ():
+                if isinstance(ref, tuple):
+                    continue
+                try:
+                    out.add(int(ref))
+                except (TypeError, ValueError):
+                    continue
+            return out
+
+        for b in range(B):
+            texts_b = word_texts[b] if b < len(word_texts) else ()
+            for p in range(W):
+                if not bool(active_host[b][p]):
+                    continue
+                value = texts_b[p] if p < len(texts_b) else None
+                if value is None:
+                    pending.append((b, p, None))
+                    continue
+                key = str(value)
+                triple = wom.get(key)
+                current_parts = {
+                    int(pid_host[b][p][j]) for j in range(P)
+                    if bool(mask_host[b][p][j])
+                    and int(pid_host[b][p][j]) >= 0
+                }
+                current_wholes = set(int(v) for v in
+                                     ws.property_rows_for_bytes(key))
+                if triple is None:
+                    # First sight is admitted here, at the same eager boundary
+                    # that already owns radix growth and WS analysis. The
+                    # aligned dictionary is physically fixed-capacity, so this
+                    # mutates only bounded relation records, the active-prefix
+                    # mask, and row metadata before any graph uses them. At
+                    # capacity the automatic gate returns None and the exact
+                    # -1 unknown path below remains live.
+                    triple = owner._automatic_word_object_meta(
+                        sorted(current_parts), sorted(current_wholes), key=key)
+                    if triple is None:
+                        pending.append((b, p, key))
+                        continue
+                    alloc = getattr(owner, "_concept_allocator", None)
+                    wom = (getattr(alloc, "word_obj_meta", {})
+                           if alloc is not None else wom)
+                A = int(triple[0])
+                stored_parts = _raw_int_refs(owner.concept_parts(A))
+                stored_wholes = _raw_int_refs(owner.concept_wholes(A))
+                # Surface identity alone is not enough: the active PS/WS
+                # support must already belong to the durable concept. A trie
+                # promotion or newly-discovered property therefore receives an
+                # honest unknown tick, then autobind accrues it at Reset.
+                if (not current_parts.issubset(stored_parts)
+                        or not current_wholes.issubset(stored_wholes)):
+                    pending.append((b, p, key))
+                    continue
+                row = owner._csw_row_of(A)
+                if row is None:
+                    row = owner._csw_concept_row(
+                        owner._concept_source_order(A), A)
+                if row is None:
+                    pending.append((b, p, key))
+                    continue
+                row_host[b][p] = int(row)
+                cid_host[b][p] = A
+                record = owner.record_concept_fold_support(
+                    A, fold_support, actual_order)
+                order_host[b][p] = int(record["actual_order"])
+
+        rows = torch.tensor(row_host, dtype=torch.long, device=part_ids.device)
+        isp._ar_word_concept_rows = rows
+        isp._ar_word_concept_ids = torch.tensor(
+            cid_host, dtype=torch.long, device=part_ids.device)
+        isp._ar_word_concept_orders = torch.tensor(
+            order_host, dtype=torch.long, device=part_ids.device)
+        object.__setattr__(self, "_pending_sparse_concept_support", pending)
+        return rows
+
     # -- per-step lifecycle (model-level) ------------------------------
     #
     # ``runBatch`` orchestrates a step but must talk only to the *model*,
@@ -5995,6 +6196,11 @@ class BasicModel(BaseModel):
                 object.__setattr__(
                     self.perceptualSpace, "_radix_growth_callback", None)
             self.inputSpace.finalize_stem(in_sub, self.perceptualSpace)
+        # Resolve sparse concept identities only after the word-major PS stem
+        # has exposed its exact residual parts and WS has staged the matching
+        # property analysis. This remains wholly eager; the compiled word cell
+        # sees fixed tensors and performs no dictionary walk or host sync.
+        self._stage_serial_concept_rows()
         # The PS embed now exposes exact per-percept brackets.  Once both
         # towers have staged their candidates, precompute the fixed-T
         # structural schedule in the eager stem; learned content still runs
@@ -8293,16 +8499,20 @@ class BasicModel(BaseModel):
         obj_symbol  = self._obj_size("WholeSpace")
         obj_output  = self._obj_size("OutputSpace")
 
-        # 2026-06-06 dim-convention unification: every space carries the same
-        # (nWhere=2, nWhen=2) band, so ``nDim = nWhat + nWhere + nWhen`` is
-        # the uniform formula. The CS->WS and WS->OS handoffs are identity
-        # event-to-event chains (no demux subtraction); ``*_dim`` (= nWhat)
-        # is just ``event - band`` per space_role.
+        # Every interior space carries the canonical (nWhere=4, nWhen=4)
+        # band, so ``nDim = nWhat + nWhere + nWhen``. PS/WS native WHAT
+        # widths may differ from CS: their sparse codebook activation already
+        # emits a conceptual-width event before the CS boundary. ``*_dim`` is
+        # therefore the native WHAT width of that space, not evidence of a
+        # linear PS->WS->CS chain.
         input_event   = self._resolve_dim("InputSpace",      1)
         percept_event = self._resolve_dim("PartSpace", input_event)
         concept_event = self._resolve_dim("ConceptualSpace", percept_event)
         symbol_event  = self._resolve_dim("WholeSpace",   concept_event)
-        output_event  = self._resolve_dim("OutputSpace",     symbol_event)
+        # The task head consumes terminal CS directly.  An omitted OutputSpace
+        # width therefore inherits the conceptual event, not WholeSpace's
+        # native property width.
+        output_event  = self._resolve_dim("OutputSpace",    concept_event)
 
         input_dim   = input_event   - obj_input    # = nWhat (InputSpace)
         percept_dim = percept_event - obj_percept  # = nWhat (PartSpace)
@@ -8405,7 +8615,45 @@ class BasicModel(BaseModel):
         _share_concept_dictionary = (
             self.wholePropertyBasis
             and getattr(self, "concept_binding", "mixing") == "aligned")
+        _serial_meta_raw = TheXMLConfig.get(
+            "architecture.serialObjectMeta", default=False)
+        _serial_meta = (
+            _serial_meta_raw if isinstance(_serial_meta_raw, bool)
+            else str(_serial_meta_raw or "").strip().lower()
+            in ("true", "1", "yes", "on"))
+        # Construction precedes the public ``self.serial`` assignment below,
+        # so resolve the selector here with the same legacy fallback. Indexed
+        # sparse codebook reads are safe only on the canonical word-serial
+        # path; a parallel CS has differentiable dense inventory consumers.
+        _serial_raw = TheXMLConfig.get("architecture.serial", default=None)
+        if _serial_raw is None:
+            _symbolic_raw = TheXMLConfig.get(
+                "architecture.symbolicOrder", default=None)
+            _grammar_default_order = (
+                1 if self.useGrammar != "none" else 0)
+            _serial_requested = (
+                int(_symbolic_raw) > 0
+                if _symbolic_raw is not None
+                else _grammar_default_order > 0)
+        elif isinstance(_serial_raw, bool):
+            _serial_requested = _serial_raw
+        else:
+            _serial_requested = (
+                str(_serial_raw).strip().lower()
+                in ("true", "1", "yes", "on"))
+        _aligned_codebook_sources = bool(
+            _share_concept_dictionary
+            and _serial_meta
+            and _serial_requested)
         _shared_concept_dictionary = None
+        # Fold provenance is keyed by the same stable concept identities as the
+        # shared aligned dictionary.  Keep one host-side registry across every
+        # conceptual stage as well: stage 0 resolves/adopts identities, while
+        # the production checkpoint envelope is collected from the terminal CS.
+        # A shared mapping makes both views authoritative and also means loading
+        # the terminal checkpoint view immediately restores stage-0 lookups.
+        _shared_concept_fold_support = (
+            {} if _share_concept_dictionary else None)
         for t in range(T):
             is_last = (t == T - 1)
             if self.useGrammar == "all":
@@ -8452,7 +8700,13 @@ class BasicModel(BaseModel):
                 _uniform_width = (
                     self._conceptual_width_mode() == "uniform")
                 n_t = nPercepts if _uniform_width else (nPercepts >> t)
-                d_in = percept_dim + obj_percept
+                # In the aligned serial model PS/WS recurse at their native
+                # widths, then each rung's sigma/codebook read emits a
+                # conceptual-width activation. CS receives that activation;
+                # its boundary itself performs no feature-width change.
+                d_in = (concept_dim + obj_concept
+                        if _aligned_codebook_sources
+                        else percept_dim + obj_percept)
                 # CS output muxed width = concept_dim + obj_concept, so the CS
                 # SubSpace derives nWhat == concept_dim (= nDim) and the event
                 # carries where/when. The per-stage codebook content
@@ -8585,9 +8839,20 @@ class BasicModel(BaseModel):
                 shared_similarity_codebook=(
                     _shared_concept_dictionary
                     if _share_concept_dictionary else None),
+                indexed_similarity_codebook=_aligned_codebook_sources,
             )
+            if _shared_concept_fold_support is not None:
+                object.__setattr__(
+                    cs, "_concept_fold_support",
+                    _shared_concept_fold_support)
             if _share_concept_dictionary and _shared_concept_dictionary is None:
                 _shared_concept_dictionary = cs.similarity_codebook
+            if _aligned_codebook_sources:
+                # The serial aligned path reaches the million-row dictionary
+                # only through indexed concept identities.  Preserve that
+                # sparsity in backward so the dedicated row-local optimizer
+                # never allocates a dense 1M x ConceptDim gradient/moment set.
+                cs.similarity_codebook.sparse_lookup_grad = True
             ws = WholeSpace(ws_in, stage_space_symbol, ws_out,
                                conceptualSpace=cs)
             # Non-owning back-ref CS->WS (mirrors the perceptualSpace_ref
@@ -8607,11 +8872,13 @@ class BasicModel(BaseModel):
         object.__setattr__(self, 'conceptualSpace', self.conceptualSpaces[-1])
         object.__setattr__(self, 'wholeSpace', self.wholeSpaces[-1])
 
-        # Unified fold-width law (2026-07-16): every sigma/pi slot fold is
-        # sized at its space's CONTENT width (nDim) -- ONE parameter -- so
-        # the PS/WS fold sizes cannot silently diverge again. Dense "full"
-        # slab folds (nInput == sigma_pi_slab) are the one exemption: their
-        # content law is the flattened N*content slab.
+        # Per-tower fold-width law (2026-07-16): every sigma/pi slot fold is
+        # sized at its OWN space's CONTENT width (nDim). Dense "full" slab
+        # folds (nInput == sigma_pi_slab) are the one exemption: their content
+        # law is the flattened N*content slab. PS and WS are peer perceptual
+        # towers and therefore retain one shared native width. Their sparse
+        # sigma/codebook activations are already conceptual-width when they
+        # reach CS; neither peer is widened here and there is no PS->WS edge.
         _law_folds = []
         if getattr(self, 'perceptualSpace', None) is not None:
             _law_folds.append(("PartSpace.sigma", self.perceptualSpace,
@@ -8634,7 +8901,9 @@ class BasicModel(BaseModel):
             _law_widths[_nm] = _fw
         assert len(set(_law_widths.values())) <= 1, (
             f"unified fold-width law violated across spaces: {_law_widths}; "
-            f"PS/WS slot folds must share ONE content width (nDim).")
+            "PS/WS slot folds must share one native content width. The "
+            "conceptual dimension increase belongs to each source's sparse "
+            "sigma/codebook activation, not to either perceptual tower.")
 
         # §6d reference-partitioned codebook update law (GrammarOpsPass;
         # author 2026-06-11): percepts are shaped by the parallel pass,
@@ -8869,7 +9138,7 @@ class BasicModel(BaseModel):
         # infrastructure (SymbolSubSpace, three SyntacticLayers, the
         # TruthLayer, and conditionally the DiscourseSpace substrate).
         # Its ``__init__`` configures the grammar, sizes the word
-        # buffer from WholeSpace's column layout, builds each space_role's
+        # buffer from ConceptualSpace's column layout, builds each space_role's
         # SyntacticLayer, and back-wires the home spaces so
         # compose/decompose routes through ``self.symbolSpace``.
         self.symbolSpace = SymbolSpace(
@@ -8880,7 +9149,9 @@ class BasicModel(BaseModel):
             nConcepts=nPercepts,
             nSymbols=nSymbols,
             concept_dim=concept_dim + obj_concept,
-            symbol_dim=symbol_dim + obj_symbol,
+            # Symbol identities/operators live in CS WHAT coordinates.  The
+            # 128-D WholeSpace property basis is upstream and never sizes SS.
+            symbol_dim=concept_dim,
         )
 
         # MetaSymbol Category codebook (doc/Language.md
@@ -9029,7 +9300,7 @@ class BasicModel(BaseModel):
                     object.__setattr__(_cs, '_model_symbolSpace', self.symbolSpace)
 
         # Precompute partition boundaries for partitioned symbolSum
-        self._partitions = self._order_partitions(symbol_dim + obj_symbol,
+        self._partitions = self._order_partitions(concept_dim,
                                                    self.subsymbolicOrder)
         self.symbol_states = []
         # Per-step lifecycle slots, initialized explicitly so every
@@ -9879,7 +10150,7 @@ class BasicModel(BaseModel):
     # 2b-2-i: bounded binary grammar producer (STM -> single S).
     # ------------------------------------------------------------------
     def _stm_reducer(self):
-        """Lazily build + cache the bounded-reduce scorer/combiner.
+        """Lazily resolve + cache the bounded-reduce scorer/combiner.
 
         The bounded soft REDUCE reuses the EXISTING reduction math
         verbatim -- it is NOT re-authored here (two-loop spec
@@ -9887,17 +10158,18 @@ class BasicModel(BaseModel):
         soft reducer ... the ``BinaryStructuredReductionLayer``
         anchors, Language.py:1608"; "parent = Σ_op weight_op ·
         op(left,right)  # fixed op axis, one weighted reduce"). One
-        ``BinaryStructuredReductionLayer`` is constructed from the
-        grammar's S-space_role arity-2 reduce ops, each wrapped with the
-        SAME ``_BinaryGrammarOpAdapter`` ``_wire_signal_router_grammar_ops``
-        uses (so ``op(left,right)`` dispatches into the registered
-        host fold -- IntersectionLayer/UnionLayer/...). The layer's
+        ``BinaryStructuredReductionLayer`` already wired on this model's
+        SymbolSpace is reused directly.  Its op table and rule ids are an
+        immutable consequence of the grammar active when this model was
+        constructed; resolving them again through process-global
+        ``TheGrammar`` would let a later model's XML silently change this
+        model's lazy reducer. The layer's
         own forward computes ``chosen_reduced = Σ_op softmax(reduce_
         score)_op · op(left,right)`` over the fixed op axis (one
         weighted reduce, no shared in-place accumulator -- the proven
         ``_superposed_op`` pattern), which IS the spec's ``parent``.
 
-        Returns ``None`` when no S-space_role arity-2 host op is available
+        Returns ``None`` when no model-owned arity-2 host op is available
         (degenerate grammar) so the caller can skip the REDUCE
         (SHIFT-only, depth still bounded by back-pressure -- a forced
         no-op reduce simply pops the older slot).
@@ -9905,11 +10177,11 @@ class BasicModel(BaseModel):
         cached = getattr(self, "_stm_reducer_cached", None)
         if cached is not None:
             if cached is not False and not torch.compiler.is_compiling():
-                # Re-home to the live STM-buffer device: this reducer is built
-                # lazily and registered as a child, but the MPS build path
+                # Re-home to the live model device. The MPS build path
                 # (ModelFactory._run_hydrated) constructs the model on CPU and
-                # only then ``m.to(mps)``. A reducer first cached during the CPU
-                # phase would stay on CPU while the buffer it reads is MPS
+                # only then ``m.to(mps)``; this is normally handled through the
+                # LanguageLayer's registered ownership, and the check keeps
+                # hand-built/test models coherent with the STM it reads
                 # ("weight is on cpu but expected on mps"). ``.to`` is a no-op
                 # once the devices already match. HOST-SIDE ONLY: a
                 # ``torch.device`` ``!=`` compare is not traceable (its
@@ -9924,59 +10196,16 @@ class BasicModel(BaseModel):
                     if next(cached.parameters()).device != _dev:
                         cached = cached.to(_dev)
             return cached if cached is not False else None
-        ws = self.wholeSpace
-        # WholeSpace is strictly an upstream property analyzer in the
-        # canonical property-basis architecture.  Its downstream symbolic
-        # grammar dispatcher is consequently owned by SymbolSpace (and sized
-        # from ConceptualSpace geometry); looking on WholeSpace here makes the
-        # bounded controller appear grammar-free and fail as soon as STM fills.
-        # Legacy WholeSpace models retain their historical dispatcher owner.
-        property_basis = bool(
-            getattr(self, "wholePropertyBasis", False)
-            or getattr(ws, "property_basis", False))
-        grammar_owner = (getattr(self, "symbolSpace", None)
-                         if property_basis else ws)
-        sl = getattr(grammar_owner, "syntacticLayer", None)
-        if sl is None or not hasattr(sl, "_by_name"):
-            self._stm_reducer_cached = False
-            return None
-        try:
-            from Language import (TheGrammar,
-                                  BinaryStructuredReductionLayer,
-                                  _BinaryGrammarOpAdapter)
-        except ImportError:
-            self._stm_reducer_cached = False
-            return None
-        ops = []
-        op_names = []
-        op_space_roles = []
-        rule_ids = []
-        for rid in range(len(TheGrammar.rules)):
-            rdef = TheGrammar.rules[rid]
-            if int(getattr(rdef, "arity", 1)) != 2:
-                continue
-            mn = getattr(rdef, "method_name", None)
-            host = sl._by_name.get(mn) if mn else None
-            if host is None or not hasattr(host, "compose"):
-                continue
-            ops.append(_BinaryGrammarOpAdapter(host))
-            op_names.append(str(mn))
-            op_space_roles.append(str(getattr(rdef, "space_role", "CS")))
-            rule_ids.append(int(rid))
-        if not ops:
-            self._stm_reducer_cached = False
-            return None
-        D_c = int(self.conceptualSpace.stm.concept_dim)
-        layer = BinaryStructuredReductionLayer(
-            d_model=D_c, ops=ops, op_names=op_names,
-            op_space_roles=op_space_roles, r_copy=1, temperature=1.0,
-            chooser=getattr(self, "transform_chooser", "anchordot"))
-        layer.rule_ids = rule_ids
-        layer = layer.to(self.conceptualSpace.stm._buffer.device)
-        # Register as a child so its anchors/op params are optimised
-        # with the rest of the model (grad must shape the reducer).
-        self.add_module("_stm_reducer_module", layer)
-        self._stm_reducer_cached = layer
+        grammar_owner = getattr(self, "symbolSpace", None)
+        language = getattr(grammar_owner, "languageLayer", None)
+        layers = getattr(language, "_binary_layers", None)
+        layer = layers["CS"] if layers is not None and "CS" in layers else None
+        # This is a non-owning cache. LanguageLayer remains the sole nn.Module
+        # owner so optimizer/checkpoint traversal cannot register the same
+        # reducer twice under model-root aliases.
+        object.__setattr__(
+            self, "_stm_reducer_cached",
+            layer if layer is not None else False)
         return layer
 
     def _stm_unary_rewriter(self):
@@ -10044,6 +10273,7 @@ class BasicModel(BaseModel):
         object.__setattr__(self, "_stm_last_unary_routing", routing)
 
         order_slab, grammar_slab = stm.ensure_order_state()
+        concept_rows, concept_activations = stm.ensure_reference_state()
         buf_new = torch.where(
             applied.view(B, 1), candidate, buf[:, 0, :])
         stm._buffer = torch.cat([buf_new.unsqueeze(1), buf[:, 1:, :]], dim=1)
@@ -10057,6 +10287,16 @@ class BasicModel(BaseModel):
         grammar_new[:, 0] = torch.where(
             applied, raised_grammar, top_grammar)
         stm._grammar_orders = grammar_new
+        reference_rows_new = concept_rows.clone()
+        reference_activations_new = concept_activations.clone()
+        reference_rows_new[:, 0] = torch.where(
+            applied, torch.full_like(concept_rows[:, 0], -1),
+            concept_rows[:, 0])
+        reference_activations_new[:, 0] = torch.where(
+            applied, torch.zeros_like(concept_activations[:, 0]),
+            concept_activations[:, 0])
+        stm._concept_rows = reference_rows_new
+        stm._concept_activations = reference_activations_new
         routing["stm_apply_mask"] = applied
         return applied
 
@@ -10195,6 +10435,7 @@ class BasicModel(BaseModel):
         depth = stm._depth                                 # [B] long
         device = buf.device
         order_slab, grammar_slab = stm.ensure_order_state()
+        concept_rows, concept_activations = stm.ensure_reference_state()
         # Rows that CAN reduce: at least 2 constituents on the stack.
         can = (depth >= 2)                                 # [B] bool
         if row_gate is not None:
@@ -10343,6 +10584,39 @@ class BasicModel(BaseModel):
             # controlled pressure/demand modes returned above and can never
             # reach this unlicensed fallback.
             parent = 0.5 * (left + right)
+        # A hard grammar COPY returns one unchanged operand and therefore
+        # retains that operand's exact lexical reference. Every actual binary
+        # transform (including pressure/demand's chosen reduction and the
+        # degenerate mean fallback) has no single exact row identity.
+        parent_concept_row = torch.full(
+            (B,), -1, dtype=torch.long, device=device)
+        parent_concept_activation = torch.zeros(
+            (B,), dtype=buf.dtype, device=device)
+        if reducer is not None and not (occupancy_pressure or demand):
+            action_kind = routing.get("action_kind")
+            src_left = routing.get("src_left")
+            if (torch.is_tensor(action_kind) and action_kind.dim() == 2
+                    and int(action_kind.shape[1]) >= 1
+                    and torch.is_tensor(src_left) and src_left.dim() == 2
+                    and int(src_left.shape[1]) >= 1):
+                # Reducer input is [left=old slot 1, right=old slot 0].
+                reference_window_rows = torch.stack(
+                    [concept_rows[:, 1], concept_rows[:, 0]], dim=1)
+                reference_window_activations = torch.stack(
+                    [concept_activations[:, 1],
+                     concept_activations[:, 0]], dim=1)
+                source = src_left[:, 0].clamp(0, 1).long()
+                copy_selected = (
+                    (action_kind[:, 0] == 0) & (src_left[:, 0] >= 0))
+                copied_row = reference_window_rows.gather(
+                    1, source.unsqueeze(1)).squeeze(1)
+                copied_activation = reference_window_activations.gather(
+                    1, source.unsqueeze(1)).squeeze(1)
+                parent_concept_row = torch.where(
+                    copy_selected, copied_row, parent_concept_row)
+                parent_concept_activation = torch.where(
+                    copy_selected, copied_activation,
+                    parent_concept_activation)
         # C<->S idempotent snap of the parent (reused primitive;
         # passthrough for non-ProjectionBasis ``.what``).
         snapped = self._stm_symbolic_roundtrip(
@@ -10397,6 +10671,34 @@ class BasicModel(BaseModel):
             can.view(B, 1), shifted_orders, order_slab)
         stm._grammar_orders = torch.where(
             can.view(B, 1), shifted_grammar, grammar_slab)
+        reference_tail_rows = torch.full(
+            (B, 1), -1, dtype=torch.long, device=device)
+        reference_tail_activations = torch.zeros(
+            (B, 1), dtype=buf.dtype, device=device)
+        if cap >= 3:
+            shifted_concept_rows = torch.cat(
+                [parent_concept_row.unsqueeze(1),
+                 concept_rows[:, 2:cap], reference_tail_rows], dim=1)
+            shifted_concept_activations = torch.cat(
+                [parent_concept_activation.unsqueeze(1),
+                 concept_activations[:, 2:cap],
+                 reference_tail_activations], dim=1)
+        elif cap == 2:
+            shifted_concept_rows = torch.cat(
+                [parent_concept_row.unsqueeze(1), reference_tail_rows],
+                dim=1)
+            shifted_concept_activations = torch.cat(
+                [parent_concept_activation.unsqueeze(1),
+                 reference_tail_activations], dim=1)
+        else:
+            shifted_concept_rows = parent_concept_row.unsqueeze(1)
+            shifted_concept_activations = (
+                parent_concept_activation.unsqueeze(1))
+        stm._concept_rows = torch.where(
+            can.view(B, 1), shifted_concept_rows, concept_rows)
+        stm._concept_activations = torch.where(
+            can.view(B, 1), shifted_concept_activations,
+            concept_activations)
         # d <- d - 1 for rows that reduced (g==1 there); tensor op.
         dec = can.to(depth.dtype)                          # [B] {0,1}
         stm._depth = depth - dec
@@ -11135,10 +11437,131 @@ class BasicModel(BaseModel):
         commit_b_1 = (
             isp._word_last_slot_mask[:, p:p + 1]
             if word_commit_mode else gate_b_1)
+
+        decoded_fold_sources = None
+        concept_orders_full = None
+        prior_symbol_source = None
+        prior_symbol_validity = None
+        word_concept_row = None
+        word_concept_activation = None
+        if aligned_fold_binding:
+            # Each tower completes its native recursion first. Only the scalar
+            # activation normalized by that source crosses into concept-index
+            # space; this normalization is not another learned sigma/pi fold.
+            # The indexed CS dictionary read below is the dimensional increase.
+            # There is no PS->WS edge and no coordinate adapter owned by CS.
+            n_locations = int(cs.outputShape[0])
+
+            def _fit_locations(event, label):
+                if not torch.is_tensor(event) or event.dim() != 3:
+                    raise RuntimeError(
+                        f"{label} native fold must be a [B,N,D] tensor")
+                have = int(event.shape[1])
+                if have > n_locations:
+                    raise RuntimeError(
+                        f"{label} native fold has {have} locations but CS "
+                        f"accepts {n_locations}; locations cannot be truncated")
+                if have == n_locations:
+                    return event
+                return torch.cat([
+                    event,
+                    event.new_zeros(
+                        int(event.shape[0]), n_locations - have,
+                        int(event.shape[2])),
+                ], dim=1)
+
+            native_parts = tuple(
+                _fit_locations(event, f"PS fold {i + 1}")
+                for i, event in enumerate(part_folds))
+            native_wholes = tuple(
+                _fit_locations(event, f"WS fold {i + 1}")
+                for i, event in enumerate(whole_folds))
+            native_sources = native_parts + native_wholes
+            if not native_sources:
+                raise RuntimeError(
+                    "aligned concept activation requires native fold sources")
+
+            row_b = (isp.word_concept_rows_at(p)
+                     if hasattr(isp, "word_concept_rows_at") else None)
+            order_b = (isp.word_concept_orders_at(p)
+                       if hasattr(isp, "word_concept_orders_at") else None)
+            batch = int(native_sources[0].shape[0])
+            if row_b is None:
+                row_b = torch.full(
+                    (batch,), -1, dtype=torch.long,
+                    device=native_sources[0].device)
+            else:
+                row_b = row_b.to(
+                    device=native_sources[0].device, dtype=torch.long)
+            if order_b is None:
+                order_b = torch.full_like(row_b, -1)
+            else:
+                order_b = order_b.to(
+                    device=native_sources[0].device, dtype=torch.long)
+            active_rows = gate_b_1.reshape(-1).to(
+                device=row_b.device, dtype=torch.bool)
+            row_b = torch.where(active_rows, row_b,
+                                torch.full_like(row_b, -1))
+            order_b = torch.where(active_rows, order_b,
+                                  torch.full_like(order_b, -1))
+            concept_rows = row_b.unsqueeze(1).expand(-1, n_locations)
+            concept_orders_full = order_b.unsqueeze(1).expand(
+                -1, n_locations)
+
+            part_what = int(ps.nWhat)
+            whole_what = int(ws.nWhat)
+            activations = torch.stack([
+                ps.native_fold_activation(event, part_what)
+                for event in native_parts
+            ] + [
+                ws.native_fold_activation(event, whole_what)
+                for event in native_wholes
+            ], dim=1)
+            source_bands = torch.stack([
+                event[..., part_what:] for event in native_parts
+            ] + [
+                event[..., whole_what:] for event in native_wholes
+            ], dim=1)
+            decoded_fold_sources = cs.decode_sparse_concept_rows(
+                concept_rows, activations, source_bands)
+
+            # Canonical SS peer: read the complete *prior* STM slab before
+            # this word enters CS. Slot i maps directly to location i. The
+            # indexed CS lookup is SS's sigma fold / dimensional increase;
+            # there is no inventory scan and no current-tick CS->SS->CS edge.
+            prior_symbol_source, prior_symbol_validity = (
+                cs.decode_prior_stm_peer(stm, active_rows))
+
+            # BasicModel contributes six native folds (three PS + three WS).
+            # General aligned fixtures retain their configured fold count;
+            # SS increments the denominator only at locations where it exists.
+            native_count = int(decoded_fold_sources.shape[1])
+            denominator = (
+                torch.full_like(
+                    prior_symbol_validity, float(native_count),
+                    dtype=decoded_fold_sources.dtype)
+                + prior_symbol_validity.to(decoded_fold_sources.dtype))
+            concept_event = (
+                decoded_fold_sources.sum(dim=1) + prior_symbol_source
+            ) / denominator.unsqueeze(-1)
+            word_concept_row = row_b
+            word_concept_activation = (
+                activations[:, :, 0].sum(dim=1) / denominator[:, 0])
+            word_concept_activation = torch.where(
+                word_concept_row >= 0, word_concept_activation,
+                torch.zeros_like(word_concept_activation))
+            cs.subspace.copy_context(PS_sub)
+            cs.subspace.set_event(concept_event)
+            cs_input = cs.subspace
+            cs_symbol_input = None
+        else:
+            cs_input = PS_sub
+            cs_symbol_input = WS_sub
+
         object.__setattr__(cs, "_serial_row_gate", commit_b_1)
         object.__setattr__(cs, "_serial_defer_push", word_commit_mode)
         try:
-            CS_sub = cs.forward(PS_sub, WS_sub)
+            CS_sub = cs.forward(cs_input, cs_symbol_input)
         finally:
             object.__setattr__(cs, "_serial_row_gate", None)
             object.__setattr__(cs, "_serial_defer_push", False)
@@ -11153,10 +11576,23 @@ class BasicModel(BaseModel):
         # as a separate option.
         if word_commit_mode and CS_sub is not None:
             if aligned_fold_binding:
+                n_part = len(part_folds)
                 cs.bind_fold_streams(
-                    part_folds, whole_folds, CS_sub,
+                    tuple(decoded_fold_sources[:, i]
+                          for i in range(n_part)),
+                    tuple(decoded_fold_sources[:, n_part + i]
+                          for i in range(len(whole_folds))),
+                    CS_sub,
                     part_passes=fold_passes,
-                    whole_passes=fold_passes)
+                    whole_passes=fold_passes,
+                    concept_orders=concept_orders_full,
+                    # ConceptualSpace.forward has already applied and consumed
+                    # any inter-sentence/chat ``_c_prior``.  This second call is
+                    # provenance attachment only; replacing the target event
+                    # here would silently erase that prior before the STM push.
+                    preserve_target_event=True,
+                    symbol_source=prior_symbol_source,
+                    symbol_validity=prior_symbol_validity)
                 support = getattr(CS_sub, "_fold_support", None)
                 object.__setattr__(self, "_last_concept_fold_support", support)
                 # META minting is intentionally eager at the sentence
@@ -11324,7 +11760,9 @@ class BasicModel(BaseModel):
                     stm.push_step_masked(
                         idea_bd, commit_b_1,
                         orders=_word_concept_order,
-                        grammar_orders=_word_grammar_order)
+                        grammar_orders=_word_grammar_order,
+                        concept_row=word_concept_row,
+                        concept_activation=word_concept_activation)
                     # Slot-kind provenance (open-fronts Task B; dilution fix
                     # same day): a push is a WORD only when PS's word grid
                     # says column p carries a real word (pad groups are -1)
@@ -14689,10 +15127,10 @@ class ModelFactory:
         percept_dim = _resolve_dim("PartSpace", input_dim)
         concept_dim = _resolve_dim("ConceptualSpace", percept_dim)
         # 2026-06-06 uniform-band convention: every space_role carries the same
-        # (nWhere, nWhen) band, so nDim = nWhat + band uniformly. The
-        # CS->WS handoff is now an identity event-to-event chain (no
-        # demux subtraction); WS inherits the CS event width when its
-        # own <nDim> is unset.
+        # (nWhere, nWhen) band, so nDim = nWhat + band uniformly. An omitted WS
+        # width still inherits for legacy configs; canonical serialObjectMeta
+        # sets the native WS property width explicitly because WS is a peer,
+        # not a downstream copy of CS.
         symbol_dim = _resolve_dim("WholeSpace", concept_dim)
 
         # Bivector / projection configs let ConceptualSpace output a
@@ -14708,10 +15146,9 @@ class ModelFactory:
         effective_concept_dim = _cs_event - _cs_band          # CS nWhat
         symbol_nwhat = symbol_dim - _ws_band                  # WS nWhat
 
-        # WholeSpace owns no SigmaLayer/PiLayer; the C->S transform
-        # was previously a learned ``SigmaLayer(concept_dim, symbol_dim)``
-        # inside WS. With WS.sigma retired, the path is dimensionally a
-        # pass-through and the configured dims must match.
+        # WholeSpace owns no legacy C->S width-changing bridge. Parallel legacy
+        # configurations that treat WS as a pass-through still require equal
+        # widths; the serial peer architecture below does not.
         #
         # Skip only the explicit ``passthrough`` bypass mode. The CS->WS
         # dimensional pass-through (WS owns no Sigma) is real for both the
@@ -14724,13 +15161,11 @@ class ModelFactory:
         # "6+2+2" band subtraction would otherwise drive its CS content
         # negative and trip this check spuriously.
         # dimensional-governance (doc/specs/2026-06-05-dimensional-
-        # governance.md sec.4/sec.6): the CS->WS handoff is a dimensional
-        # pass-through ONLY when WS has no width-changing bridge. In SERIAL
-        # mode the bounded-STM grammar fold bridges CS<->WS (the symbol is a
-        # small code reconstituted through the fold, not a pass-through of
-        # the deep CS idea), so ``symbol_dim == concept_dim`` is RELAXED for
-        # serial configs -- the fold reconciles the widths. Parallel configs
-        # (square Pi/Sigma over the constant slab) still require the match.
+        # governance.md sec.4/sec.6): SERIAL mode treats WS as an independent
+        # native-width property tower whose sparse codebook activation enters
+        # CS at conceptual width. Therefore ``symbol_dim == concept_dim`` is
+        # relaxed for serial configs. Parallel legacy configs (square Pi/Sigma
+        # over the constant slab) still require the pass-through match.
         _serial_raw = arch.get("serial", None)
         if _serial_raw is None:
             try:
@@ -14744,13 +15179,10 @@ class ModelFactory:
             _ws_fold_bridged = (
                 str(_serial_raw).strip().lower()
                 in ("true", "1", "yes", "on"))
-        # The check is a PASS-THROUGH assumption: it only holds when WS keeps
-        # the CS-idea width on its output. When WS RESHAPES the deep CS idea
-        # into wide symbols (nInputDim != nOutputDim, e.g. [8,1024] -> [1024,8]
-        # with a small symbol code on the output), the CS->WS handoff matches
-        # on the INPUT side (CS.nOutputDim == WS.nInputDim) and the symbol
-        # width is intentionally different -- so the pass-through equality is
-        # relaxed (handoff-consistency, 2026-06-06).
+        # This remains only a legacy PASS-THROUGH assumption. An explicit
+        # nInputDim != nOutputDim likewise says WS's recurrent input and native
+        # peer output are distinct interfaces, so output-width equality with
+        # CS must not be imposed.
         def _ws_dim(key, fallback):
             try:
                 v = int(gsp(cfg, "WholeSpace", key))
@@ -14782,14 +15214,14 @@ class ModelFactory:
                 f"<ConceptualSpace><nDim>."
             )
 
-        # ---- Flat-slab invariant ------------------------------------
+        # ---- Concept-activation boundary ----------------------------
         # Stage 1.D refactor (doc/plans/2026-05-26-two-loop-pi-sigma-
-        # substrate.md): IS, PS, CS must carry the same FLAT slab width
-        # (nOutput * effective_out_dim) so the IS->PS->CS handoff is
-        # a pure reshape, not a re-dimensioning. The lexicon vector
-        # carried at PS is CS-space-dimensioned -- the flat-slab equality
-        # is the precondition for the WS.codebook paired-rows contract
-        # (the orth row is a copy of PS's per-word vector, sized to CS).
+        # substrate.md): legacy PS->CS tensor handoffs require equal flat
+        # content slabs (nOutput * content width). The canonical aligned
+        # serial-word architecture has a different boundary: PS, WS, and SS
+        # remain independent peers, and each source's sparse sigma/codebook
+        # activation reads a conceptual-width row before CS. Thus CS receives
+        # conceptual-width events and performs no feature-width conversion.
         #
         # Embedding-mode only: the numeric (dense-slab) path doesn't carry a
         # lexicon, so the "PS per-word is CS-space" rationale doesn't apply --
@@ -14834,9 +15266,12 @@ class ModelFactory:
         ps_n = _effective_out_count("PartSpace", is_n)
         cs_dim_e = _effective_out_dim("ConceptualSpace", ps_dim_e)
         cs_n = _effective_out_count("ConceptualSpace", ps_n)
-        is_dim = is_dim_e - sum(_cshape("InputSpace"))
-        ps_dim = ps_dim_e - sum(_cshape("PartSpace"))
-        cs_dim = cs_dim_e - sum(_cshape("ConceptualSpace"))
+        _is_band_shape = tuple(_cshape("InputSpace"))
+        _ps_band_shape = tuple(_cshape("PartSpace"))
+        _cs_band_shape = tuple(_cshape("ConceptualSpace"))
+        is_dim = is_dim_e - sum(_is_band_shape)
+        ps_dim = ps_dim_e - sum(_ps_band_shape)
+        cs_dim = cs_dim_e - sum(_cs_band_shape)
 
         is_slab = is_n * is_dim
         ps_slab = ps_n * ps_dim
@@ -14844,21 +15279,79 @@ class ModelFactory:
         # Handoff-consistency (dimensional-governance, 2026-06-06): IS is the
         # raw input and may be BIGGER than perception -- PS scopes it down via
         # chunking/embedding ("more input than output"), so the char input is
-        # NOT constrained to the PS/CS content slab. Only the PS->CS handoff
-        # (the deep hub) must be a pure reshape, so PS content slab == CS
-        # content slab. The CS->WS deep<->wide reshape is handled in the
-        # forward, not constrained here. (Was: IS == PS == CS, which wrongly
-        # forbade input-bigger-than-perception scoping.)
-        _serial_word_major = bool(
-            arch.get("serial", False)
-            and arch.get("serialObjectMeta", False))
-        if is_embedding_mode and not (ps_slab == cs_slab):
+        # NOT constrained to the PS/CS content slab. Historically PS->CS then
+        # had to be a pure reshape. The one narrow exception is the canonical
+        # aligned serial-word model: its native PS/WS peers share locations
+        # and width, then each sparse sigma/codebook activation reads the
+        # high-dimensional concept row. Mixing/parallel/legacy paths retain
+        # the flat-slab equality.
+        def _config_true(raw):
+            if isinstance(raw, bool):
+                return raw
+            return str(raw or "").strip().lower() in (
+                "true", "1", "yes", "on")
+
+        _serial_word_major = (
+            _config_true(arch.get("serial", False))
+            and _config_true(arch.get("serialObjectMeta", False)))
+        _aligned_serial_word = (
+            _serial_word_major
+            and str(arch.get("conceptBinding", "mixing")).strip().lower()
+            == "aligned")
+        try:
+            _cs_input_dim_raw = int(gsp(
+                cfg, "ConceptualSpace", "nInputDim"))
+        except (KeyError, TypeError, ValueError):
+            _cs_input_dim_raw = 0
+        _cs_input_dim = (
+            _cs_input_dim_raw if _cs_input_dim_raw > 0 else ps_dim_e)
+        try:
+            _cs_input_n_raw = int(gsp(cfg, "ConceptualSpace", "nInput"))
+        except (KeyError, TypeError, ValueError):
+            _cs_input_n_raw = 0
+        _cs_input_n = _cs_input_n_raw if _cs_input_n_raw > 0 else ps_n
+        _ws_band_shape = tuple(_cshape("WholeSpace"))
+        ws_dim_e = _effective_out_dim("WholeSpace", cs_dim_e)
+        ws_n = _effective_out_count("WholeSpace", cs_n)
+        ws_dim = ws_dim_e - sum(_ws_band_shape)
+        _sparse_activation_boundary = (
+            _aligned_serial_word
+            and ps_n == ws_n == cs_n == _cs_input_n
+            and ps_dim_e == ws_dim_e
+            and _ps_band_shape == _ws_band_shape == _cs_band_shape
+            and _cs_input_dim == cs_dim_e
+            and ps_dim == ws_dim
+            and 0 < ps_dim < cs_dim)
+        if (is_embedding_mode and not (ps_slab == cs_slab)
+                and not _sparse_activation_boundary):
             errors.append(
                 f"flat-slab invariant violated: PS.nOutput*content "
                 f"({ps_n}*{ps_dim}={ps_slab}) must equal CS.nOutput*content "
-                f"({cs_n}*{cs_dim}={cs_slab}). The PS->CS handoff is a pure "
-                f"reshape; IS may be larger (PS scopes the input down)."
+                f"({cs_n}*{cs_dim}={cs_slab}), except when aligned "
+                "serialObjectMeta uses equal native PS/WS peers followed by "
+                "sparse sigma/codebook activation. That activation must "
+                "already emit CS-width events. The configured geometry is "
+                f"PS {ps_n}x{ps_dim_e}, WS {ws_n}x{ws_dim_e}, and CS input "
+                f"{_cs_input_n}x{_cs_input_dim} -> output {cs_n}x{cs_dim_e}; "
+                "IS may be larger (PS scopes the input down)."
             )
+        if is_embedding_mode and _aligned_serial_word:
+            if (ps_n != ws_n or ps_dim_e != ws_dim_e
+                    or _ps_band_shape != _ws_band_shape):
+                errors.append(
+                    "aligned serialObjectMeta requires PS and WS to be "
+                    "independent peers with identical native event geometry; "
+                    f"got PS={ps_n}x{ps_dim_e} with band {_ps_band_shape} and "
+                    f"WS={ws_n}x{ws_dim_e} with band {_ws_band_shape}. The "
+                    "conceptual codebook activation widens both sources only "
+                    "after their native folds; PS must not feed WS.")
+            if (_cs_input_n != cs_n or _cs_input_dim != cs_dim_e):
+                errors.append(
+                    "aligned serialObjectMeta requires ConceptualSpace input "
+                    "to match its conceptual output geometry because source "
+                    "sigma/codebook activation owns the dimension increase; "
+                    f"got CS input={_cs_input_n}x{_cs_input_dim} and output="
+                    f"{cs_n}x{cs_dim_e}.")
         if is_embedding_mode and _serial_word_major:
             # The outer word traversal is configured independently by
             # <serialWordCapacity>.  PS/CS remain the canonical instantaneous
@@ -14876,29 +15369,19 @@ class ModelFactory:
                     f"stmCapacity={_stm_cap}. The independent outer sentence "
                     "limit belongs in <serialWordCapacity>.")
 
-        # ---- CS->WS and WS->OS handoff-consistency (fail-loud) ------
+        # ---- Recurrent WS input and direct CS->OS head (fail-loud) ---
         # dimensional-governance Task C1 (doc/specs/2026-06-05-dimensional-
         # governance.md sec.4/sec.6; doc/plans/2026-06-06-dimensional-
-        # governance-completion.md). The IS->PS->CS->WS->OS chain must be
-        # handoff-consistent on the FLATTENED content slab / input side.
-        # The PS->CS hub is a pure reshape (asserted by ps_slab==cs_slab
-        # above). The two remaining handoffs:
+        # governance-completion.md). BasicModel is not a linear
+        # IS->PS->WS->CS->OS chain: PS, WS, and SS are peers feeding CS. Two
+        # explicit shape contracts remain around that peer loop:
         #
-        #   CS->WS : matches on the INPUT side. WS may legitimately reshape
-        #            the deep CS idea ([8,1024]) into wide symbols
-        #            ([1024,8]) and emit a small symbol code on its OUTPUT
-        #            (the ``_ws_reshapes`` case the nWhat check relaxes), so
-        #            the consistent quantity is CS.nOutputDim == WS.nInputDim
-        #            (event width; both sides carry the same band). This is
-        #            the input-side equality the nWhat-relaxation comment at
-        #            ~7937 DESCRIBES but did not previously ASSERT. Making it
-        #            explicit is the core of C1.
-        #   WS->OS : the symbol space_role flattens its [nOutput, nOutputDim] slab
-        #            into the terminal output, so prod(WS output slab) ==
-        #            prod(OS input slab). For MM_20M this is 1024*8 == 8*1024
-        #            == 8192 (a flatten, NOT a per-event nOutputDim match --
-        #            a naive WS.nOutputDim==OS.nInputDim check would wrongly
-        #            reject it).
+        #   CS->WS : WS's recurrent INPUT accepts the prior conceptual event.
+        #            WS still emits its native property-width peer state; this
+        #            input compatibility is not a PS->WS dependency.
+        #   CS->OS : the terminal output head consumes terminal CS directly.
+        #            WholeSpace is an upstream property peer and is not an
+        #            intermediate terminal producer.
         #
         # An UNSET consumer dim means "inherit the producer's width" (the
         # resolvers fall back to the producer value), so an omitted
@@ -14927,35 +15410,29 @@ class ModelFactory:
             return int(fallback_count)
 
         if is_embedding_mode:
-            # CS->WS input-side handoff (event width). cs_dim_e is CS's
-            # effective output event width resolved above.
+            # CS recurrent feedback accepted by WS (event width). cs_dim_e is
+            # CS's effective output event width resolved above.
             ws_in_dim = _effective_in_dim("WholeSpace", cs_dim_e)
             if ws_in_dim != cs_dim_e:
                 errors.append(
-                    f"CS->WS handoff inconsistent: WS.nInputDim={ws_in_dim} "
-                    f"must equal CS.nOutputDim={cs_dim_e} (the CS->WS handoff "
-                    f"matches on the INPUT side; WS may then reshape deep->"
-                    f"wide internally and emit a narrower symbol code on its "
-                    f"OUTPUT). Fix: set <WholeSpace><nInputDim> to "
+                    f"CS->WS recurrent input inconsistent: "
+                    f"WS.nInputDim={ws_in_dim} must equal "
+                    f"CS.nOutputDim={cs_dim_e}. WS may then emit its native "
+                    f"property-width peer state. Fix: set "
+                    f"<WholeSpace><nInputDim> to "
                     f"{cs_dim_e} (or omit it to inherit CS.nOutputDim)."
                 )
-            # WS->OS flattened-slab handoff. WS flattens its output slab
-            # into the terminal output, so the PRODUCT must match (a
-            # flatten, not a per-event width match).
-            ws_out_dim = _effective_out_dim("WholeSpace", cs_dim_e)
-            ws_out_n = _effective_out_count("WholeSpace", cs_n)
-            os_in_dim = _effective_in_dim("OutputSpace", ws_out_dim)
-            os_in_n = _effective_in_count("OutputSpace", ws_out_n)
-            ws_out_slab = ws_out_n * ws_out_dim
-            os_in_slab = os_in_n * os_in_dim
-            if ws_out_slab != os_in_slab:
+            # The output head is constructed from terminal CS, not WS. Keep
+            # the direct event geometry exact; a coincidentally equal flattened
+            # product with swapped count/dimension is not the same interface.
+            os_in_dim = _effective_in_dim("OutputSpace", cs_dim_e)
+            os_in_n = _effective_in_count("OutputSpace", cs_n)
+            if os_in_n != cs_n or os_in_dim != cs_dim_e:
                 errors.append(
-                    f"WS->OS handoff inconsistent: WS flattened output slab "
-                    f"(WS.nOutput*WS.nOutputDim = {ws_out_n}*{ws_out_dim}="
-                    f"{ws_out_slab}) must equal OS expected input slab "
-                    f"(OS.nInput*OS.nInputDim = {os_in_n}*{os_in_dim}="
-                    f"{os_in_slab}). The WS->OS handoff is a flatten of the "
-                    f"symbol slab into the terminal output."
+                    f"CS->OS handoff inconsistent: terminal CS emits "
+                    f"{cs_n}x{cs_dim_e}, but OutputSpace expects "
+                    f"{os_in_n}x{os_in_dim}. The output head consumes CS "
+                    "directly; WholeSpace is not an intermediate producer."
                 )
 
         # Monotonicity ⟹ no ConceptualSpace projection codebook.

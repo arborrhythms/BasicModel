@@ -74,6 +74,7 @@ def test_integrated_checkpoint_restores_allocator_and_identity_caches(tmp_path):
         _priming_bridge={word: (frozenset({7}), 41)},
         _frozen_concepts={word},
         _frozen_named={"words": word},
+        _concept_admission_drops={"word/object/META": 2},
     )
     ws = types.SimpleNamespace(
         _word_whole_ss={"cat": 41},
@@ -113,6 +114,7 @@ def test_integrated_checkpoint_restores_allocator_and_identity_caches(tmp_path):
     assert restored_cs._joint_concepts is restored_alloc.joint
     assert restored_cs._percept_word_concept[7] == (word, obj)
     assert restored_cs._recognized_words == {"cat": 7}
+    assert restored_cs._concept_admission_drops == {"word/object/META": 2}
 
     assert restored_ws._word_whole_ss == {"cat": 41}
     assert restored_ws._mereology_raised == {41}

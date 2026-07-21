@@ -59,11 +59,15 @@
            sigma_cs[k] (the per-stage SERIAL dispatch is a follow-up;
            currently the per-word loop uses the terminal CS). -->
       <xs:element name="subsymbolicOrder" type="xs:nonNegativeInteger" minOccurs="0"/>
-      <!-- Concept formation at the serial PS/WS -> CS boundary.
+      <!-- Concept formation at the serial {PS,WS,SS} -> CS boundary.
            mixing: the historical learned ConceptualCombine matrix, retained
            as an explicit comparison option. aligned: preserve the location
-           axis and fuse every non-raw subsymbolic fold from BOTH PS and WS;
-           for subsymbolicOrder=T this is T-1 cumulative folds per side. -->
+           axis and fuse every non-raw subsymbolic fold from BOTH PS and WS,
+           together with the applicable symbolic activation; for
+           subsymbolicOrder=T this is T-1 cumulative folds per perceptual
+           side. PS and WS stay independent native-width peers. Their sparse
+           sigma/codebook reads emit conceptual-width activations before CS;
+           there is no PS->WS edge or CS-owned coordinate lift. -->
       <xs:element name="conceptBinding" type="conceptBindingEnum" minOccurs="0"/>
       <!-- wherePeriod (2026-07-04 encoding pass): the .where quadrature
            period in input BYTES. Default 8192 (twice the 4096 inputLength
@@ -925,6 +929,10 @@
       <xs:element name="nInput" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nOutput" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nActive" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <!-- Native part-event width (compact percept WHAT plus the canonical
+           band). In aligned serialObjectMeta it may be narrower than CS, but
+           its sparse sigma/codebook activation reads the conceptual-width
+           code before CS; CS does not project these coordinates. -->
       <xs:element name="nDim" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nInputDim" type="xs:integer" minOccurs="0"/>
       <xs:element name="nOutputDim" type="xs:integer" minOccurs="0"/>
@@ -1072,6 +1080,9 @@
       <xs:element name="nInput" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nOutput" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nActive" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <!-- Concept event width. In aligned serialObjectMeta, nInputDim must
+           already equal this width: PS/WS/SS sparse sigma/codebook activation
+           owns any dimension increase before the value reaches CS. -->
       <xs:element name="nDim" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nInputDim" type="xs:integer" minOccurs="0"/>
       <xs:element name="nOutputDim" type="xs:integer" minOccurs="0"/>
@@ -1138,6 +1149,10 @@
       <xs:element name="nInput" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nOutput" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nActive" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <!-- Native whole/property event width. Canonical aligned models keep it
+           equal to PartSpace's native event width. A conceptual-width
+           nInputDim is the recurrent input interface; it does not make WS a
+           downstream PS stage and does not change WS's native output width. -->
       <xs:element name="nDim" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nInputDim" type="xs:integer" minOccurs="0"/>
       <xs:element name="nOutputDim" type="xs:integer" minOccurs="0"/>

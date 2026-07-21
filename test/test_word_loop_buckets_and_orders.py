@@ -57,8 +57,19 @@ def test_basicmodel_declares_four_buckets_and_independent_inventories():
     assert root.findtext("./WholeSpace/propertyBasis") == "true"
     assert int(root.findtext("./ConceptualSpace/activeVectors")) == 32768
     assert root.find("./WholeSpace/activeVectors") is None
+    # PS/WS recurse in native 128-WHAT events. Their sparse codebook
+    # activations arrive at CS already decoded to 1024 WHAT; CS performs no
+    # feature-width conversion. XML dimensions include the shared 8-D band.
+    assert int(root.findtext("./PartSpace/nDim")) == 136
+    assert int(root.findtext("./PartSpace/nOutputDim")) == 136
+    assert int(root.findtext("./WholeSpace/nDim")) == 136
+    assert int(root.findtext("./WholeSpace/nOutputDim")) == 136
+    assert int(root.findtext("./ConceptualSpace/nInputDim")) == 1032
+    assert int(root.findtext("./ConceptualSpace/nDim")) == 1032
+    assert int(root.findtext("./ConceptualSpace/nOutputDim")) == 1032
     assert int(root.findtext("./ConceptualSpace/nOutput")) == 8
     assert int(root.findtext("./WholeSpace/nOutput")) == 8
+    assert root.findtext("./architecture/weightsPath") == "BasicModel.ckpt"
 
 
 @functools.lru_cache(maxsize=1)

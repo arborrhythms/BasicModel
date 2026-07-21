@@ -5281,27 +5281,27 @@ class MeronymicFoldAdapter(Layer):
         self.activation = out.detach()
         return out
 
-    def synthesize_over_set(self, part_codes, mask=None):
-        """Synthesize ``[..., M, D]`` constituents into one whole.
+    def _set_union_membership(self, part_codes, mask=None):
+        """Return the parameter-free De Morgan union of a constituent set.
 
-        The ordinary slot ``forward`` raises one vector's order.  This method
-        supplies the missing M-to-1 law needed by the serial word loop: all
-        constituents of the current word enter the meronymic sigma in the
-        same iteration, irrespective of the eight-wide perceptual field.
+        The serial word path needs two distinct operations: first, a base
+        mereological M-to-1 aggregation which forms one percept from all of a
+        word's residual parts; second, the learned unary sigma ladder which
+        may raise that percept's order.  Keeping the set union here, before
+        either learned kernel, prevents the first ladder layer from being
+        applied once during word assembly and then a second time as fold 0.
 
-        In butterfly mode, sigma is the De Morgan complement of the
-        log-mass pi law.  Summing ``log(1-m)`` over the set therefore gives
-        the exact order-invariant M-way extension before the existing
-        feature cascade.  Unary mode forms the same probabilistic union and
-        then applies its configured membership fold once.  Masked positions
-        are identities, not vague ``a=0`` operands.
+        Returns ``(union_membership, valid_mask, complements)``.  Masked
+        constituents are the sigma identity (membership zero, hence
+        complement one).  The complements are retained so the legacy learned
+        butterfly surface can preserve its pre-aggregation clamp semantics.
         """
         if self.kind != 'sigma':
             raise RuntimeError(
-                "synthesize_over_set is defined only for sigma adapters")
+                "set union is defined only for sigma adapters")
         if part_codes.dim() < 2:
             raise RuntimeError(
-                "synthesize_over_set expects a constituent axis")
+                "set union expects a constituent axis")
         if mask is None:
             valid = torch.ones(
                 part_codes.shape[:-1], dtype=torch.bool,
@@ -5314,15 +5314,52 @@ class MeronymicFoldAdapter(Layer):
                     f"codes={tuple(part_codes.shape)}, "
                     f"mask={tuple(valid.shape)}")
 
-        m = Ops.eval_chart(part_codes.clamp(-1.0, 1.0))
+        membership = Ops.eval_chart(part_codes.clamp(-1.0, 1.0))
         complement = torch.where(
-            valid.unsqueeze(-1), 1.0 - m, torch.ones_like(m))
+            valid.unsqueeze(-1), 1.0 - membership,
+            torch.ones_like(membership))
+        return 1.0 - complement.prod(dim=-2), valid, complement
+
+    def aggregate_over_set(self, part_codes, mask=None):
+        """Form the base M-to-1 whole without a learned feature fold.
+
+        This is the serial word assembler.  It is the exact order-invariant
+        De Morgan extension ``1 - product(1 - m_i)`` in the membership chart,
+        followed only by the chart inverse.  It intentionally does not call
+        ``self.fold`` or ``self._mem_cascade``; learned order-raising begins at
+        the subsequent unary sigma ladder.
+        """
+        union_m, valid, _complement = self._set_union_membership(
+            part_codes, mask=mask)
+        out = Ops.eval_chart_inv(union_m)
+        any_valid = valid.any(dim=-1, keepdim=True)
+        out = torch.where(any_valid, out, torch.zeros_like(out))
+        self.activation = out.detach()
+        return out
+
+    def synthesize_over_set(self, part_codes, mask=None):
+        """Synthesize ``[..., M, D]`` constituents through a learned fold.
+
+        The ordinary slot ``forward`` raises one vector's order.  This method
+        remains the learned M-to-1 surface for callers that explicitly want
+        set aggregation and feature folding in one operation.  The serial
+        word base uses :meth:`aggregate_over_set` instead, then invokes each
+        advertised unary sigma rung exactly once.
+
+        In butterfly mode, sigma is the De Morgan complement of the
+        log-mass pi law.  Summing ``log(1-m)`` over the set therefore gives
+        the exact order-invariant M-way extension before the existing
+        feature cascade.  Unary mode forms the same probabilistic union and
+        then applies its configured membership fold once.  Masked positions
+        are identities, not vague ``a=0`` operands.
+        """
+        union_m, valid, complement = self._set_union_membership(
+            part_codes, mask=mask)
         if self.butterfly:
             log_complement = torch.log(
                 complement.clamp(EPS_LOG, 1.0)).sum(dim=-2)
             out_m = 1.0 - torch.exp(self._mem_cascade(log_complement))
         else:
-            union_m = 1.0 - complement.prod(dim=-2)
             out_m = self.fold.forward(union_m)
         out = Ops.eval_chart_inv(out_m)
         any_valid = valid.any(dim=-1, keepdim=True)
@@ -12315,6 +12352,18 @@ class ShortTermMemory(Layer):
             self, '_live_grammar_orders',
             torch.full((self._init_batch, self._init_capacity), -1,
                        dtype=torch.long))
+        # Exact sparse concept provenance for each occupied idea.  A row of
+        # ``-1`` means the dense payload has no single durable concept-row
+        # identity (for example, it is the result of a grammatical
+        # transformation).  Activations carry the coefficient of the named
+        # lexical row; they are zero whenever the row is unknown.
+        object.__setattr__(
+            self, '_live_concept_rows',
+            torch.full((self._init_batch, self._init_capacity), -1,
+                       dtype=torch.long))
+        object.__setattr__(
+            self, '_live_concept_activations',
+            torch.zeros(self._init_batch, self._init_capacity))
         self._live_capacity = self._init_capacity
         self._live_max_depth_host = 0
 
@@ -12348,6 +12397,12 @@ class ShortTermMemory(Layer):
             object.__setattr__(
                 self, '_live_grammar_orders',
                 torch.full(shape, -1, dtype=torch.long, device=value.device))
+            object.__setattr__(
+                self, '_live_concept_rows',
+                torch.full(shape, -1, dtype=torch.long, device=value.device))
+            object.__setattr__(
+                self, '_live_concept_activations',
+                torch.zeros(shape, dtype=value.dtype, device=value.device))
 
     @property
     def _depth(self):
@@ -12372,6 +12427,22 @@ class ShortTermMemory(Layer):
     @_grammar_orders.setter
     def _grammar_orders(self, value):
         object.__setattr__(self, '_live_grammar_orders', value)
+
+    @property
+    def _concept_rows(self):
+        return self._live_concept_rows
+
+    @_concept_rows.setter
+    def _concept_rows(self, value):
+        object.__setattr__(self, '_live_concept_rows', value)
+
+    @property
+    def _concept_activations(self):
+        return self._live_concept_activations
+
+    @_concept_activations.setter
+    def _concept_activations(self, value):
+        object.__setattr__(self, '_live_concept_activations', value)
 
     @property
     def _max_depth_host(self):
@@ -12410,6 +12481,10 @@ class ShortTermMemory(Layer):
             (batch, cap), -1, dtype=torch.long, device=device)
         self._grammar_orders = torch.full(
             (batch, cap), -1, dtype=torch.long, device=device)
+        self._concept_rows = torch.full(
+            (batch, cap), -1, dtype=torch.long, device=device)
+        self._concept_activations = torch.zeros(
+            (batch, cap), dtype=dtype, device=device)
         self._max_depth_host = 0
 
     def ensure_order_state(self):
@@ -12435,6 +12510,34 @@ class ShortTermMemory(Layer):
             self._grammar_orders = grammar
         return orders, grammar
 
+    def ensure_reference_state(self):
+        """Return row/activation slabs aligned with the live STM payload.
+
+        Wholesale legacy writes to ``_buffer`` deliberately reset these
+        slabs.  This helper also repairs old checkpoint/test adapters that
+        supplied only the payload and order metadata.
+        """
+        buf = self._buffer
+        shape = tuple(buf.shape[:2])
+        rows = self._concept_rows
+        activations = self._concept_activations
+        if (rows is None or tuple(rows.shape) != shape
+                or rows.device != buf.device or rows.dtype != torch.long):
+            rows = torch.full(
+                shape, -1, dtype=torch.long, device=buf.device)
+            self._concept_rows = rows
+        if (activations is None or tuple(activations.shape) != shape
+                or activations.device != buf.device
+                or activations.dtype != buf.dtype):
+            activations = torch.zeros(
+                shape, dtype=buf.dtype, device=buf.device)
+        # Unknown rows never retain a coefficient. Apply this tensorially so
+        # the invariant is equally true in eager and compiled execution.
+        activations = torch.where(
+            rows >= 0, activations, torch.zeros_like(activations))
+        self._concept_activations = activations
+        return rows, activations
+
     @staticmethod
     def _coerce_order_rows(value, batch, device, *, default=-1):
         if value is None:
@@ -12444,6 +12547,35 @@ class ShortTermMemory(Layer):
             return value.to(device=device, dtype=torch.long).reshape(int(batch))
         return torch.full(
             (int(batch),), int(value), dtype=torch.long, device=device)
+
+    @staticmethod
+    def _coerce_concept_rows(value, batch, device):
+        if value is None:
+            return torch.full(
+                (int(batch),), -1, dtype=torch.long, device=device)
+        if torch.is_tensor(value):
+            return value.to(
+                device=device, dtype=torch.long).reshape(int(batch))
+        return torch.full(
+            (int(batch),), int(value), dtype=torch.long, device=device)
+
+    @staticmethod
+    def _coerce_concept_activations(value, batch, device, dtype,
+                                    concept_rows=None):
+        if value is None:
+            activations = torch.zeros(
+                (int(batch),), dtype=dtype, device=device)
+        elif torch.is_tensor(value):
+            activations = value.to(
+                device=device, dtype=dtype).reshape(int(batch))
+        else:
+            activations = torch.full(
+                (int(batch),), float(value), dtype=dtype, device=device)
+        if concept_rows is not None:
+            activations = torch.where(
+                concept_rows >= 0, activations,
+                torch.zeros_like(activations))
+        return activations
 
     # -- idea-stack API (chart compose consumer surface) ------------------
     #
@@ -12474,6 +12606,11 @@ class ShortTermMemory(Layer):
         self._grammar_orders = torch.full(
             (batch, int(self.capacity)), -1,
             dtype=torch.long, device=device)
+        self._concept_rows = torch.full(
+            (batch, int(self.capacity)), -1,
+            dtype=torch.long, device=device)
+        self._concept_activations = torch.zeros(
+            (batch, int(self.capacity)), dtype=dtype, device=device)
         self._max_depth_host = 0
         # Slot-kind provenance resets with the buffer (recording stays
         # enabled but the rows restart empty, matching depth 0).
@@ -12533,6 +12670,7 @@ class ShortTermMemory(Layer):
         device = buf.device
         B = int(buf.shape[0])
         orders, grammar = self.ensure_order_state()
+        concept_rows, concept_activations = self.ensure_reference_state()
         new_buf = torch.zeros(
             B, capacity, int(self.concept_dim),
             device=device, dtype=buf.dtype)
@@ -12543,15 +12681,25 @@ class ShortTermMemory(Layer):
             (B, capacity), -1, dtype=torch.long, device=device)
         new_grammar = torch.full(
             (B, capacity), -1, dtype=torch.long, device=device)
+        new_concept_rows = torch.full(
+            (B, capacity), -1, dtype=torch.long, device=device)
+        new_concept_activations = torch.zeros(
+            (B, capacity), dtype=buf.dtype, device=device)
         if old_cap > 0:
             new_orders[:, :old_cap] = orders[:, :old_cap]
             new_grammar[:, :old_cap] = grammar[:, :old_cap]
+            new_concept_rows[:, :old_cap] = concept_rows[:, :old_cap]
+            new_concept_activations[:, :old_cap] = (
+                concept_activations[:, :old_cap])
         self._orders = new_orders
         self._grammar_orders = new_grammar
+        self._concept_rows = new_concept_rows
+        self._concept_activations = new_concept_activations
         if self._word_subspace is None:
             self._live_capacity = capacity
 
-    def push(self, b, idea, order=None, grammar_order=None):
+    def push(self, b, idea, order=None, grammar_order=None,
+             concept_row=None, concept_activation=None):
         # Newest-at-slot-0: write the new idea at slot 0 and shift the
         # existing occupants RIGHT. Overflow RAISES (strict-bound
         # primitive; the rolling-window drop is _stm_shift_and_push).
@@ -12563,45 +12711,69 @@ class ShortTermMemory(Layer):
                 f"({cap}); reduce before pushing further.")
         buf = self._buffer
         orders, grammar = self.ensure_order_state()
+        concept_rows, concept_activations = self.ensure_reference_state()
         if depth > 0:
             buf[b, 1:depth + 1] = buf[b, 0:depth].clone()
             orders[b, 1:depth + 1] = orders[b, 0:depth].clone()
             grammar[b, 1:depth + 1] = grammar[b, 0:depth].clone()
+            concept_rows[b, 1:depth + 1] = (
+                concept_rows[b, 0:depth].clone())
+            concept_activations[b, 1:depth + 1] = (
+                concept_activations[b, 0:depth].clone())
         buf[b, 0] = idea
         orders[b, 0] = int(-1 if order is None else order)
         grammar[b, 0] = int(-1 if grammar_order is None else grammar_order)
+        inserted_row = self._coerce_concept_rows(
+            concept_row, 1, buf.device)
+        concept_rows[b, 0] = inserted_row[0]
+        concept_activations[b, 0] = self._coerce_concept_activations(
+            concept_activation, 1, buf.device, buf.dtype,
+            inserted_row)[0]
         self._depth[b] = depth + 1
         if depth + 1 > self._max_depth_host:
             self._max_depth_host = depth + 1
 
-    def push_step(self, ideas, orders=None, grammar_orders=None):
+    def push_step(self, ideas, orders=None, grammar_orders=None,
+                  concept_row=None, concept_activation=None):
         # Newest-at-slot-0: shift RIGHT by one slot, write slot 0.
         buf = self._buffer
         cap = int(buf.shape[1])
         order_slab, grammar_slab = self.ensure_order_state()
+        concept_slab, activation_slab = self.ensure_reference_state()
         B = int(buf.shape[0])
         order_rows = self._coerce_order_rows(
             orders, B, buf.device)
         grammar_rows = self._coerce_order_rows(
             grammar_orders, B, buf.device)
+        concept_rows = self._coerce_concept_rows(
+            concept_row, B, buf.device)
+        concept_activations = self._coerce_concept_activations(
+            concept_activation, B, buf.device, buf.dtype, concept_rows)
         if cap > 1:
             buf[:, 1:cap] = buf[:, 0:cap - 1].clone()
             order_slab[:, 1:cap] = order_slab[:, 0:cap - 1].clone()
             grammar_slab[:, 1:cap] = grammar_slab[:, 0:cap - 1].clone()
+            concept_slab[:, 1:cap] = concept_slab[:, 0:cap - 1].clone()
+            activation_slab[:, 1:cap] = (
+                activation_slab[:, 0:cap - 1].clone())
         buf[:, 0] = ideas
         order_slab[:, 0] = order_rows
         grammar_slab[:, 0] = grammar_rows
+        concept_slab[:, 0] = concept_rows
+        activation_slab[:, 0] = concept_activations
         self._depth = self._depth + 1
         self._max_depth_host = self._max_depth_host + 1
 
     def push_step_masked(self, ideas, gate_b_1, orders=None,
-                         grammar_orders=None):
+                         grammar_orders=None, concept_row=None,
+                         concept_activation=None):
         # Newest-at-slot-0 masked push: gated rows shift RIGHT + write
         # slot 0; un-gated rows are unchanged.
         B, D = ideas.shape
         buf = self._buffer
         cap = int(buf.shape[1])
         order_slab, grammar_slab = self.ensure_order_state()
+        concept_slab, activation_slab = self.ensure_reference_state()
         gate_b = gate_b_1.view(B)
         gate_bool = gate_b.bool()
         gate_col = gate_bool.view(B, 1, 1)
@@ -12612,22 +12784,36 @@ class ShortTermMemory(Layer):
         self._buffer = torch.where(gate_col, shifted, buf)
         shifted_orders = order_slab.clone()
         shifted_grammar = grammar_slab.clone()
+        shifted_concepts = concept_slab.clone()
+        shifted_activations = activation_slab.clone()
         if cap > 1:
             shifted_orders[:, 1:cap] = order_slab[:, 0:cap - 1]
             shifted_grammar[:, 1:cap] = grammar_slab[:, 0:cap - 1]
+            shifted_concepts[:, 1:cap] = concept_slab[:, 0:cap - 1]
+            shifted_activations[:, 1:cap] = activation_slab[:, 0:cap - 1]
         shifted_orders[:, 0] = self._coerce_order_rows(
             orders, B, buf.device)
         shifted_grammar[:, 0] = self._coerce_order_rows(
             grammar_orders, B, buf.device)
+        inserted_rows = self._coerce_concept_rows(
+            concept_row, B, buf.device)
+        shifted_concepts[:, 0] = inserted_rows
+        shifted_activations[:, 0] = self._coerce_concept_activations(
+            concept_activation, B, buf.device, buf.dtype, inserted_rows)
         gate_order = gate_bool.view(B, 1)
         self._orders = torch.where(
             gate_order, shifted_orders, order_slab)
         self._grammar_orders = torch.where(
             gate_order, shifted_grammar, grammar_slab)
+        self._concept_rows = torch.where(
+            gate_order, shifted_concepts, concept_slab)
+        self._concept_activations = torch.where(
+            gate_order, shifted_activations, activation_slab)
         self._depth = torch.clamp(
             self._depth + gate_bool.long(), max=cap)
 
-    def push_window_batch(self, ideas, orders=None, grammar_orders=None):
+    def push_window_batch(self, ideas, orders=None, grammar_orders=None,
+                          concept_rows=None, concept_activations=None):
         # Newest-at-slot-0: shift RIGHT by W; write the window REVERSED
         # into slots [0, W) so the window's newest position lands at 0.
         B, W, D = ideas.shape
@@ -12636,6 +12822,7 @@ class ShortTermMemory(Layer):
         buf = self._buffer
         cap = int(buf.shape[1])
         order_slab, grammar_slab = self.ensure_order_state()
+        concept_slab, activation_slab = self.ensure_reference_state()
         if orders is None:
             order_window = torch.full(
                 (B, W), -1, dtype=torch.long, device=buf.device)
@@ -12655,13 +12842,41 @@ class ShortTermMemory(Layer):
             grammar_window = torch.full(
                 (B, W), int(grammar_orders), dtype=torch.long,
                 device=buf.device)
+        if concept_rows is None:
+            concept_window = torch.full(
+                (B, W), -1, dtype=torch.long, device=buf.device)
+        elif torch.is_tensor(concept_rows):
+            concept_window = concept_rows.to(
+                device=buf.device, dtype=torch.long).reshape(B, W)
+        else:
+            concept_window = torch.full(
+                (B, W), int(concept_rows), dtype=torch.long,
+                device=buf.device)
+        if concept_activations is None:
+            activation_window = torch.zeros(
+                (B, W), dtype=buf.dtype, device=buf.device)
+        elif torch.is_tensor(concept_activations):
+            activation_window = concept_activations.to(
+                device=buf.device, dtype=buf.dtype).reshape(B, W)
+        else:
+            activation_window = torch.full(
+                (B, W), float(concept_activations), dtype=buf.dtype,
+                device=buf.device)
+        activation_window = torch.where(
+            concept_window >= 0, activation_window,
+            torch.zeros_like(activation_window))
         if cap > W:
             buf[:, W:cap] = buf[:, 0:cap - W].clone()
             order_slab[:, W:cap] = order_slab[:, 0:cap - W].clone()
             grammar_slab[:, W:cap] = grammar_slab[:, 0:cap - W].clone()
+            concept_slab[:, W:cap] = concept_slab[:, 0:cap - W].clone()
+            activation_slab[:, W:cap] = (
+                activation_slab[:, 0:cap - W].clone())
         buf[:, 0:W] = torch.flip(ideas, dims=[1])
         order_slab[:, 0:W] = torch.flip(order_window, dims=[1])
         grammar_slab[:, 0:W] = torch.flip(grammar_window, dims=[1])
+        concept_slab[:, 0:W] = torch.flip(concept_window, dims=[1])
+        activation_slab[:, 0:W] = torch.flip(activation_window, dims=[1])
         self._depth = self._depth + W
         self._max_depth_host = self._max_depth_host + int(W)
 
@@ -12672,14 +12887,21 @@ class ShortTermMemory(Layer):
             return None
         buf = self._buffer
         orders, grammar = self.ensure_order_state()
+        concept_rows, concept_activations = self.ensure_reference_state()
         idea = buf[b, 0].clone()
         if depth > 1:
             buf[b, 0:depth - 1] = buf[b, 1:depth].clone()
             orders[b, 0:depth - 1] = orders[b, 1:depth].clone()
             grammar[b, 0:depth - 1] = grammar[b, 1:depth].clone()
+            concept_rows[b, 0:depth - 1] = (
+                concept_rows[b, 1:depth].clone())
+            concept_activations[b, 0:depth - 1] = (
+                concept_activations[b, 1:depth].clone())
         buf[b, depth - 1].zero_()
         orders[b, depth - 1] = -1
         grammar[b, depth - 1] = -1
+        concept_rows[b, depth - 1] = -1
+        concept_activations[b, depth - 1] = 0
         self._depth[b] = depth - 1
         return idea
 
@@ -12728,6 +12950,24 @@ class ShortTermMemory(Layer):
         snap = self._grammar_orders[:, :max_depth]
         return snap.detach().clone() if detach else snap.clone()
 
+    def snapshot_concept_rows(self, detach=False):
+        """Return exact concept-row references aligned with ``snapshot()``."""
+        self.ensure_reference_state()
+        max_depth = min(int(self._max_depth_host), int(self.capacity))
+        if max_depth <= 0:
+            return None
+        snap = self._concept_rows[:, :max_depth]
+        return snap.detach().clone() if detach else snap.clone()
+
+    def snapshot_concept_activations(self, detach=False):
+        """Return lexical-row coefficients aligned with ``snapshot()``."""
+        self.ensure_reference_state()
+        max_depth = min(int(self._max_depth_host), int(self.capacity))
+        if max_depth <= 0:
+            return None
+        snap = self._concept_activations[:, :max_depth]
+        return snap.detach().clone() if detach else snap.clone()
+
     def size(self, b):
         return int(self._depth[b].item())
 
@@ -12748,6 +12988,9 @@ class ShortTermMemory(Layer):
             self.ensure_order_state()
             self._orders.fill_(-1)
             self._grammar_orders.fill_(-1)
+            self.ensure_reference_state()
+            self._concept_rows.fill_(-1)
+            self._concept_activations.zero_()
             self._max_depth_host = 0
             if ks is not None:
                 for row in ks:
@@ -12761,6 +13004,9 @@ class ShortTermMemory(Layer):
         self.ensure_order_state()
         self._orders[b].fill_(-1)
         self._grammar_orders[b].fill_(-1)
+        self.ensure_reference_state()
+        self._concept_rows[b].fill_(-1)
+        self._concept_activations[b].zero_()
         self._max_depth_host = int(self._depth.max().item())
         if ks is not None and b < len(ks):
             del ks[b][:]
@@ -14992,6 +15238,7 @@ class VectorQuantize(nn.Module):
         codebook_retire=False,
         learnable_codebook=False,
         ema_update=True,
+        allocate_ema_state=True,
         **kwargs,
     ):
         """Initialize VectorQuantize; allocate state for the class contract.
@@ -15026,6 +15273,19 @@ class VectorQuantize(nn.Module):
         # leg of the asymmetric routing). Distinct from ``learnable_codebook``
         # (which also flips the in-forward gradient estimator).
         self.ema_update = bool(ema_update)
+        # The aligned serial ConceptualSpace dictionary is an indexed-only,
+        # optimizer-trained table.  It never enters the VQ EMA writer, so a
+        # second full ``[V, D]`` copy in ``embed_avg`` would be pure storage
+        # (4.03 GiB at BasicModel's 1M x 1032 shape).  Keep allocation an
+        # explicit constructor contract rather than deleting buffers after
+        # construction: deletion would leave setter/load/growth paths with an
+        # ambiguous half-enabled EMA mode.  The default is deliberately True
+        # so every legacy VectorQuantize remains byte-for-byte unchanged.
+        self.ema_state_enabled = bool(allocate_ema_state)
+        if self.ema_update and not self.ema_state_enabled:
+            raise ValueError(
+                "VectorQuantize cannot enable ema_update when "
+                "allocate_ema_state=False")
         # Gate for the dead-code replacement path. Off by default because
         # reseeding expired rows with fresh samples can blow up the effective
         # number of distinct codes on non-stationary data.
@@ -15037,8 +15297,9 @@ class VectorQuantize(nn.Module):
         # zero). ``embed_avg`` is the running sum of the assigned inputs;
         # the codebook is rewritten as ``embed_avg / cluster_size`` (with
         # laplace smoothing) each training step.
-        self.register_buffer("cluster_size", torch.ones(codebook_size))
-        self.register_buffer("embed_avg", self.codebook.data.clone())
+        if self.ema_state_enabled:
+            self.register_buffer("cluster_size", torch.ones(codebook_size))
+            self.register_buffer("embed_avg", self.codebook.data.clone())
         # Cached squared L2 norms of each codebook row, refreshed in the
         # codebook setter and at the end of each EMA update. Used by the
         # Euclidean retrieval path to do
@@ -15163,6 +15424,14 @@ class VectorQuantize(nn.Module):
         self.codebook_size = int(parameter.shape[0])
         self._sync_ema_buffers()
 
+    def _require_ema_state(self, operation):
+        """Fail loudly when an EMA-only operation reaches a compact VQ."""
+        if not self.ema_state_enabled:
+            raise RuntimeError(
+                f"VectorQuantize.{operation} requires EMA state, but this "
+                "indexed-only codebook was constructed with "
+                "allocate_ema_state=False")
+
     def _sync_ema_buffers(self):
         """Repair EMA buffers when they drift from the live codebook shape.
 
@@ -15173,24 +15442,34 @@ class VectorQuantize(nn.Module):
         """
         codebook = self.codebook
         V, D = int(codebook.shape[0]), int(codebook.shape[1])
-        cluster_size = self.cluster_size
-        if (
-            cluster_size.ndim != 1
-            or int(cluster_size.shape[0]) != V
-            or cluster_size.device != codebook.device
-        ):
-            dtype = cluster_size.dtype if cluster_size.is_floating_point() else torch.float32
-            self._buffers["cluster_size"] = torch.ones(
-                V, device=codebook.device, dtype=dtype
-            )
-        embed_avg = self.embed_avg
-        if (
-            embed_avg.ndim != 2
-            or tuple(embed_avg.shape) != (V, D)
-            or embed_avg.device != codebook.device
-        ):
-            dtype = embed_avg.dtype if embed_avg.is_floating_point() else codebook.dtype
-            self._buffers["embed_avg"] = codebook.detach().to(dtype=dtype).clone()
+        if self.ema_state_enabled:
+            cluster_size = self.cluster_size
+            if (
+                cluster_size.ndim != 1
+                or int(cluster_size.shape[0]) != V
+                or cluster_size.device != codebook.device
+            ):
+                dtype = (cluster_size.dtype
+                         if cluster_size.is_floating_point()
+                         else torch.float32)
+                self._buffers["cluster_size"] = torch.ones(
+                    V, device=codebook.device, dtype=dtype
+                )
+            embed_avg = self.embed_avg
+            if (
+                embed_avg.ndim != 2
+                or tuple(embed_avg.shape) != (V, D)
+                or embed_avg.device != codebook.device
+            ):
+                dtype = (embed_avg.dtype
+                         if embed_avg.is_floating_point()
+                         else codebook.dtype)
+                self._buffers["embed_avg"] = (
+                    codebook.detach().to(dtype=dtype).clone())
+        elif "cluster_size" in self._buffers or "embed_avg" in self._buffers:
+            raise RuntimeError(
+                "VectorQuantize compact EMA contract drifted: an EMA buffer "
+                "was installed after allocate_ema_state=False")
         b_norms_sq = self._b_norms_sq
         if (
             b_norms_sq.ndim != 1
@@ -15250,6 +15529,13 @@ class VectorQuantize(nn.Module):
         error_msgs,
     ):
         """Load active occupancy while accepting pre-mask checkpoints."""
+        if not self.ema_state_enabled:
+            # A pre-compact checkpoint may carry these two derived EMA
+            # tensors.  They are not authoritative for an indexed-only,
+            # optimizer-trained codebook; consume them without allocating a
+            # destination so strict checkpoint restore remains possible.
+            state_dict.pop(prefix + "cluster_size", None)
+            state_dict.pop(prefix + "embed_avg", None)
         mask_key = prefix + "active_mask"
         if mask_key not in state_dict:
             # Preserve the occupancy configured on the newly constructed
@@ -15501,6 +15787,7 @@ class VectorQuantize(nn.Module):
         # idempotent for the perceptual codebook.
         if (self.training and not freeze_codebook
                 and not self.learnable_codebook and self.ema_update):
+            self._require_ema_state("forward EMA update")
             with torch.no_grad():
                 self._sync_ema_buffers()
                 flat_f = flat.float()
@@ -15693,6 +15980,7 @@ class VectorQuantize(nn.Module):
         """
         if eps <= 0.0 or not self.training:
             return 0
+        self._require_ema_state("grow_on_novelty")
         if free_threshold is None:
             free_threshold = (float(self.threshold_ema_dead_code)
                               if self.threshold_ema_dead_code > 0

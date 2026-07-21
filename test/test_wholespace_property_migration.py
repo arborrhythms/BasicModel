@@ -25,6 +25,7 @@ if str(BIN) not in sys.path:
 
 import Language  # noqa: E402
 import Models  # noqa: E402
+from Spaces import SubSpace  # noqa: E402
 from util import init_config  # noqa: E402
 
 
@@ -38,7 +39,10 @@ def _set_text(root: ET.Element, path: str, value: object) -> None:
     node.text = str(value).lower() if isinstance(value, bool) else str(value)
 
 
-def _small_property_model(tmp_path: Path):
+def _small_property_model(
+        tmp_path: Path, *, native_event: int | None = None,
+        concept_event: int | None = None, symbol_tower: bool = False,
+        symbolic_lift: bool = False):
     """Build aligned live-width-8 towers with CS=16 and WS=8 rows."""
     tree = ET.parse(ROOT / "data" / "MM_xor_fixture.xml")
     root = tree.getroot()
@@ -48,6 +52,24 @@ def _small_property_model(tmp_path: Path):
     _set_text(root, "ConceptualSpace/nVectors", 16)
     _set_text(root, "WholeSpace/nVectors", 8)
     _set_text(root, "WholeSpace/propertyBasis", True)
+    if native_event is not None or concept_event is not None:
+        assert native_event is not None and concept_event is not None
+        _set_text(root, "architecture/serialObjectMeta", True)
+        _set_text(root, "PartSpace/nDim", native_event)
+        _set_text(root, "PartSpace/nOutputDim", native_event)
+        _set_text(root, "ConceptualSpace/nInputDim", concept_event)
+        _set_text(root, "ConceptualSpace/nDim", concept_event)
+        _set_text(root, "ConceptualSpace/nOutputDim", concept_event)
+        _set_text(root, "WholeSpace/nInputDim", concept_event)
+        _set_text(root, "WholeSpace/nDim", native_event)
+        _set_text(root, "WholeSpace/nOutputDim", native_event)
+        _set_text(root, "OutputSpace/nInputDim", concept_event)
+    if symbol_tower:
+        _set_text(root, "architecture/symbolTower", True)
+    if symbolic_lift:
+        grammar = root.find("SymbolSpace/language/grammar")
+        assert grammar is not None
+        ET.SubElement(grammar, "S").text = "S = lift(S, S)"
     for section in ("ConceptualSpace", "WholeSpace"):
         active = root.find(f"{section}/activeVectors")
         if active is not None:
@@ -187,6 +209,49 @@ def test_property_model_stm_grammar_resolves_from_symbolspace(tmp_path):
     expected_unary = symbols.languageLayer._unary_layers["CS"]
     assert expected_unary is not None
     assert model._stm_unary_rewriter() is expected_unary
+
+
+def test_symbolspace_and_grammar_use_conceptual_not_property_width(tmp_path):
+    """SS state is CS-width even when the upstream property basis is narrow."""
+    model = _small_property_model(
+        tmp_path, native_event=16, concept_event=24,
+        symbol_tower=True, symbolic_lift=True)
+    cs = model.conceptualSpace
+    ws = model.wholeSpace
+    ss = model.symbolSpace
+
+    assert cs.subspace.nWhat == 16
+    assert cs.subspace.muxedSize == 24
+    assert ws.subspace.nWhat == 8
+    assert ws.subspace.muxedSize == 16
+
+    assert ss.nWhat == cs.subspace.nWhat
+    assert ss.muxedSize == cs.subspace.muxedSize
+    assert ss.languageLayer.feature_dim == cs.subspace.nWhat
+    assert ss.truth_layer.nDim == cs.subspace.nWhat
+    assert ss.relative_store.nDim == cs.subspace.nWhat
+    assert ss._stm_payload_dim == cs.subspace.muxedSize
+    assert ss.what.nDim == cs.subspace.nWhat
+
+    lift = ss.syntacticLayer._by_name["lift"]
+    assert lift.nInput == cs.subspace.nWhat
+    assert lift.nOutput == cs.subspace.nWhat
+    assert lift.nInput != ws.subspace.nWhat
+
+    # Sparse SS activation scales only the conceptual WHAT row.  The event's
+    # where/when band remains metadata and must survive the activation seam.
+    event = torch.randn(1, 8, cs.subspace.muxedSize)
+    concept_sub = SubSpace(
+        inputShape=(8, cs.subspace.muxedSize),
+        outputShape=(8, cs.subspace.muxedSize),
+        nInputDim=cs.subspace.muxedSize,
+        nOutputDim=cs.subspace.muxedSize)
+    concept_sub.set_event(event)
+    concept_sub._concept_activations = torch.ones(8, 1)
+    symbol_leg = ss.forward_concept_to_symbol(concept_sub).materialize()
+    assert tuple(symbol_leg.shape) == tuple(event.shape)
+    assert torch.equal(symbol_leg[..., cs.subspace.nWhat:],
+                       event[..., cs.subspace.nWhat:])
 
 
 def test_property_model_category_vq_and_parser_context_are_cs_owned(tmp_path):

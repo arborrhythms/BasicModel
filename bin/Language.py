@@ -9426,20 +9426,33 @@ class SymbolSubSpace(SubSpace):
         install ``syntacticLayer``, ``chart``, ``truthLayer``, the
         host_layer registry, per-row buffers, and the typed STM stack.
         """
-        # 1. Mirror WholeSpace's column layout for the Space-contract
-        # fields that downstream callers occasionally read off SymbolSpace
+        # 1. Symbolic operations consume conceptual activations, so mirror
+        # ConceptualSpace's column layout for the Space-contract fields that
+        # downstream callers occasionally read off SymbolSpace.  WholeSpace
+        # is an upstream, native-width property tower in the canonical model;
+        # its 128-D WHAT basis must never size the 1024-D grammar/STM path.
         # (``nDim`` / ``nWhat`` / ``nWhere`` / ``nWhen`` / ``muxedSize``).
-        sub = wholeSpace.subspace
+        geometry_space = (conceptualSpace
+                          if conceptualSpace is not None else wholeSpace)
+        if geometry_space is None:
+            raise ValueError(
+                "SymbolSubSpace requires ConceptualSpace geometry (or a "
+                "legacy WholeSpace fallback).")
+        sub = geometry_space.subspace
         nWhere = int(getattr(sub, 'nWhere', 0) or 0)
         nWhen  = int(getattr(sub, 'nWhen',  0) or 0)
         nWhat  = int(getattr(sub, 'nWhat',  0) or 0)
         muxed  = int(getattr(sub, 'muxedSize', nWhat + nWhere + nWhen)
                      or (nWhat + nWhere + nWhen))
+        # ``symbol_dim`` is the codebook/grammar CONTENT width.  Derive it
+        # from the conceptual carrier rather than trusting the legacy caller
+        # argument, which historically passed WholeSpace's event width.
+        symbol_dim = nWhat
 
         # 2. Initialise as a real SubSpace. The slot Bases stay empty
         # — SymbolSubSpace is a data carrier (typed STM stack), not a
         # pipeline space that produces tensors via ``.what`` / ``.event``.
-        # Pass encodings sized to mirror WholeSpace's band so encoding
+        # Pass encodings sized to mirror ConceptualSpace's band so encoding
         # nDim == self.nWhen / self.nWhere downstream readers expect (the
         # 2026-06-06 uniform-band convention gives WS (2, 2) so the
         # default WhereEncoding(0,0) / WhenEncoding(0,0) would drift).
@@ -9452,7 +9465,7 @@ class SymbolSubSpace(SubSpace):
             whereEncoding=_WhereEncoding(0, nWhere, nWhen) if nWhere else None,
             whenEncoding=_WhenEncoding(n_when=nWhen) if nWhen else None,
         )
-        # Restamp nWhat / nWhere / nWhen to mirror WholeSpace's column
+        # Restamp nWhat / nWhere / nWhen to mirror ConceptualSpace's column
         # layout (downstream callers read these to size projections).
         self.nWhat = nWhat
         self.nWhere = nWhere
@@ -9617,9 +9630,6 @@ class SymbolSubSpace(SubSpace):
         # and the diagnostics that used to call ``chart.grammar``).
         self.languageLayer.grammar = grammar
         self.layers.append(self.languageLayer)
-        for p in self.languageLayer.parameters():
-            if all(p is not q for q in self.params):
-                self.params.append(p)
         # Stage 3: the chart was the GrammarLayer ``_chart_authority``
         # gating per-rule firing via ``should_run_rule``. The chart is
         # retired; SymbolSubSpace itself now serves as the authority --
@@ -9675,6 +9685,15 @@ class SymbolSubSpace(SubSpace):
         # populated in step 5 above. Stage 3 (chart retirement): this
         # always runs -- the signal router is the canonical parser.
         self._wire_signal_router_grammar_ops()
+        # ``LanguageLayer`` starts with empty unary/binary ModuleDicts.  The
+        # wiring call above constructs their routing anchors, chooser MLPs,
+        # and comparator, so taking the optimizer snapshot before it would
+        # omit every router-local Parameter while still saving them in the
+        # state_dict.  Enlist only after wiring; identity dedup preserves the
+        # single optimizer owner for host grammar layers shared with CS.
+        for p in self.languageLayer.parameters():
+            if p.requires_grad and all(p is not q for q in self.params):
+                self.params.append(p)
 
         # 6. TruthLayer -- shared truth store for symbolic activations.
         # Lives on SymbolSpace so WholeSpace doesn't have to carry it
@@ -12212,28 +12231,40 @@ class SymbolSubSpace(SubSpace):
             # signal router as CS-space_role reduce ops via
             # ``_wire_signal_router_grammar_ops``.
             #
-            # Sized to the symbol codebook width via the back-reference
-            # to wholeSpace (``symbol_dim == concept_dim`` invariant
-            # holds post-bivector retirement; either dim works).
+            # These operators act on ConceptualSpace WHAT.  WholeSpace may be
+            # a much narrower property basis, so its codebook width is not an
+            # admissible sizing source.  Event-aware operators retain the
+            # ConceptualSpace where/when band around this content fold.
             grammar_C_methods = {
                 r.method_name for r in TheGrammar.rules
                 if r.space_role == 'CS' and r.method_name is not None}
             wholeSpace = getattr(self, 'wholeSpace', None)
             perceptualSpace = getattr(self, 'perceptualSpace', None)
+            conceptualSpace = getattr(self, 'conceptualSpace', None)
+            concept_width = int(getattr(
+                getattr(conceptualSpace, 'subspace', None), 'nWhat', 0) or 0)
             if 'lift' in grammar_C_methods:
                 from Layers import LiftLayer
                 builtin_layers['lift'] = LiftLayer(
-                    wholeSpace=wholeSpace)
+                    nInput=concept_width, nOutput=concept_width,
+                    wholeSpace=wholeSpace,
+                    conceptualSpace=conceptualSpace)
             if 'verb' in grammar_C_methods:
                 builtin_layers['verb'] = VerbLayer(
-                    wholeSpace=wholeSpace)
+                    nInput=concept_width, nOutput=concept_width,
+                    wholeSpace=wholeSpace,
+                    conceptualSpace=conceptualSpace)
             if 'adverb' in grammar_C_methods:
                 builtin_layers['adverb'] = AdverbLayer(
-                    wholeSpace=wholeSpace)
+                    nInput=concept_width, nOutput=concept_width,
+                    wholeSpace=wholeSpace,
+                    conceptualSpace=conceptualSpace)
             if 'lower' in grammar_C_methods:
                 from Layers import LowerLayer
                 builtin_layers['lower'] = LowerLayer(
-                    wholeSpace=wholeSpace)
+                    nInput=concept_width, nOutput=concept_width,
+                    wholeSpace=wholeSpace,
+                    conceptualSpace=conceptualSpace)
             # Stage 9 (2026-05-27 doc/plans/2026-05-27-perceptstore-meta-
             # taxonomy-reentrancy.md): SymbolizeLayer (originally
             # MetaLayer, renamed 2026-05-28) is the binary CS-space_role grammar
@@ -12245,8 +12276,10 @@ class SymbolSubSpace(SubSpace):
             if 'symbolize' in grammar_C_methods:
                 from Layers import SymbolizeLayer
                 builtin_layers['symbolize'] = SymbolizeLayer(
+                    nInput=concept_width, nOutput=concept_width,
                     wholeSpace=wholeSpace,
-                    perceptualSpace=perceptualSpace)
+                    perceptualSpace=perceptualSpace,
+                    conceptualSpace=conceptualSpace)
         elif space_role == 'SS':
             # Pi/Sigma swap (analysis/synthesis plan Phase 3, rev.
             # 2026-06-09): the WS-owned fold is ``self.pi`` (top-down
@@ -12281,6 +12314,9 @@ class SymbolSubSpace(SubSpace):
             grammar_S_methods = {
                 r.method_name for r in TheGrammar.rules
                 if r.space_role == 'SS' and r.method_name is not None}
+            conceptualSpace = getattr(self, 'conceptualSpace', None)
+            concept_width = int(getattr(
+                getattr(conceptualSpace, 'subspace', None), 'nWhat', 0) or 0)
             # Lift / Lower stay explicit: they are parametrized ops that
             # need host wiring (``wholeSpace=space``), so the generic
             # ``cls()`` below would mis-build them. They are wired first
@@ -12289,17 +12325,25 @@ class SymbolSubSpace(SubSpace):
             if 'lift' in grammar_S_methods:
                 from Layers import LiftLayer
                 builtin_layers['lift'] = LiftLayer(
-                    wholeSpace=space)
+                    nInput=concept_width, nOutput=concept_width,
+                    wholeSpace=space,
+                    conceptualSpace=conceptualSpace)
             if 'verb' in grammar_S_methods:
                 builtin_layers['verb'] = VerbLayer(
-                    wholeSpace=space)
+                    nInput=concept_width, nOutput=concept_width,
+                    wholeSpace=space,
+                    conceptualSpace=conceptualSpace)
             if 'adverb' in grammar_S_methods:
                 builtin_layers['adverb'] = AdverbLayer(
-                    wholeSpace=space)
+                    nInput=concept_width, nOutput=concept_width,
+                    wholeSpace=space,
+                    conceptualSpace=conceptualSpace)
             if 'lower' in grammar_S_methods:
                 from Layers import LowerLayer
                 builtin_layers['lower'] = LowerLayer(
-                    wholeSpace=space)
+                    nInput=concept_width, nOutput=concept_width,
+                    wholeSpace=space,
+                    conceptualSpace=conceptualSpace)
             # All other SS-space_role ops: instantiate the parameter-free ops
             # generically from the module-local GRAMMAR_LAYER_CLASSES
             # registry rather than a hardcoded per-op special-case chain.
@@ -13058,6 +13102,13 @@ class SymbolSpace(Space):
             cw = min(D, int(rows_w.shape[-1]))
             leg = a_t.new_zeros((int(a_t.shape[0]), N, D))
             leg[..., :cw] = a_t * rows_w[:, :cw].unsqueeze(0)
+            # The sparse symbol codebook names CONTENT only.  Positional and
+            # temporal coordinates are event metadata, so preserve their
+            # conceptual carrier values instead of silently zeroing the band
+            # when the SS WHAT width is smaller than the CS event width.
+            if D > cw:
+                leg[..., cw:] = sym_event[..., :N, cw:].to(
+                    leg.device, leg.dtype)
             sym_event = leg
         sub = SubSpace(inputShape=(N, D), outputShape=(N, D),
                        nInputDim=D, nOutputDim=D)

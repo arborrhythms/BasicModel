@@ -188,3 +188,21 @@ def test_config_default_keeps_anchordot_choosers():
     m = _build_model(None)        # no <transformChooser> -> default anchordot
     names = _router_choosers(m)
     assert all(n == "AnchorDotTransformChooser" for n in names), names
+
+
+def test_config_mlp_router_parameters_have_one_optimizer_owner():
+    """Router Parameters are enlisted after grammar-op ModuleDict wiring."""
+    m = _build_model("mlp")
+    optimizer = m.getOptimizer(lr=1e-3)
+    optimizer_params = [
+        parameter
+        for group in optimizer.param_groups
+        for parameter in group["params"]
+    ]
+    router = m.symbolSpace.languageLayer
+    router_params = [p for p in router.parameters() if p.requires_grad]
+
+    assert router_params, "the configured MLP router must own Parameters"
+    for parameter in router_params:
+        assert sum(candidate is parameter
+                   for candidate in optimizer_params) == 1

@@ -2631,6 +2631,19 @@ class Codebook(Tensor):
         self._capacity_frozen = False
         self._capacity_frozen_by = None
         self._frozen_parameter_id = None
+        # The canonical aligned ConceptualSpace dictionary opts into an
+        # indexed ``F.embedding(..., sparse=True)`` read.  Other codebooks
+        # retain ordinary tensor indexing: some apply elementwise transforms
+        # or have dense consumers and therefore cannot promise a sparse
+        # gradient to their optimizer.
+        self.sparse_lookup_grad = False
+        # VQ EMA storage policy is fixed before ``create``.  True preserves
+        # the historical VectorQuantize buffers and update law.  The canonical
+        # aligned ConceptualSpace dictionary explicitly opts out because it is
+        # indexed-only and trains W through sparse optimizer gradients; its
+        # unused ``embed_avg`` mirror would otherwise duplicate the complete
+        # million-row table.
+        self.vq_ema_state_enabled = True
         # Latest commitment loss from the most recent forward/quantize pass.
         # WholeSpace.forward reads it and emits "codebook_commit" into
         # vspace.errors.
@@ -2724,6 +2737,22 @@ class Codebook(Tensor):
         self._svd_V = None        # [D, K]
         self._svd_dirty = True
 
+    def configure_vq_ema(self, enabled):
+        """Choose whether a subsequently-created custom VQ owns EMA state.
+
+        The choice is construction-time and intentionally cannot be toggled
+        after :meth:`create`: adding/removing persistent buffers after an
+        optimizer or checkpoint manifest exists would make ownership
+        ambiguous.  ``True`` is the legacy default.  ``False`` installs a
+        lookup/optimizer-only VQ with no ``cluster_size`` or ``embed_avg`` and
+        with in-forward EMA updates disabled.
+        """
+        if self.vq is not None:
+            raise RuntimeError(
+                "Codebook.configure_vq_ema must be called before create()")
+        self.vq_ema_state_enabled = bool(enabled)
+        return self
+
     def _apply(self, fn, recurse=True):
         """Move/cast the sole owner Parameter, then refresh VQ's view."""
         result = super()._apply(fn, recurse=recurse)
@@ -2765,7 +2794,19 @@ class Codebook(Tensor):
         """
         if self.W is None:
             return None
-        rows = self.W[idx]
+        if (bool(getattr(self, "sparse_lookup_grad", False))
+                and not isinstance(idx, slice)):
+            if not torch.is_tensor(idx):
+                idx = torch.as_tensor(
+                    idx, dtype=torch.long, device=self.W.device)
+            else:
+                idx = idx.to(device=self.W.device, dtype=torch.long)
+            # ``sparse=True`` affects backward only: forward is the exact same
+            # indexed row gather.  Repeated indices coalesce in RowLocalAdam;
+            # no full-inventory gradient is ever materialized.
+            rows = F.embedding(idx, self.W, sparse=True)
+        else:
+            rows = self.W[idx]
         if (getattr(self, "is_percept_store", False)
                 and meronomy_enabled()):
             return _unorm_ste(rows)
@@ -3943,6 +3984,8 @@ class Codebook(Tensor):
             # codebook semantics. See doc/Spaces.md "Codebook similarity
             # metric".
             use_dot_product = bool(getattr(self, "use_dot_product", False))
+            ema_state = bool(getattr(
+                self, "vq_ema_state_enabled", True))
             self.vq = VectorQuantize(
                 dim=self.nDim,
                 codebook_size=nVec,
@@ -3951,6 +3994,8 @@ class Codebook(Tensor):
                 commitment_weight=1.0,
                 use_cosine_sim=use_dot_product,
                 codebook_retire=retire,
+                ema_update=ema_state,
+                allocate_ema_state=ema_state,
                 # Rotation-trick STE (arXiv:2410.06424) was reported to
                 # trigger gradient-accumulation OOMs on HIP/ROCm with
                 # microbatch AR.  Vanilla STE
@@ -8534,6 +8579,33 @@ class Space(SpaceCarrierMixin, nn.Module):
             f"<sigmaPi> must be last|butterfly|full (legacy true/false "
             f"accepted); got {raw!r}")
 
+    @staticmethod
+    def native_fold_activation(event, n_what):
+        """Normalize one source-native fold to a bounded activation scalar.
+
+        The source space's sigma/pi recursion has already produced ``event``
+        in that source's own coordinates.  This operation belongs to the
+        source (PS or WS): it reduces the native WHAT magnitude to the scalar
+        that activates an indexed conceptual codebook row.  It is activation
+        normalization, not an additional learned Sigma/Pi fold and not a
+        native-to-concept coordinate transform.
+
+        Dividing by ``sqrt(n_what)`` expresses magnitude in unit-hypercube
+        diagonal units, so widening a native source does not by itself make
+        every conceptual activation saturate at one.
+        """
+        if not torch.is_tensor(event) or event.dim() != 3:
+            raise ValueError(
+                "native fold activation expects [B,N,D] tensor")
+        width = int(n_what)
+        if width < 1 or int(event.shape[-1]) < width:
+            raise ValueError(
+                f"native fold activation cannot read WHAT width {width} "
+                f"from event width {int(event.shape[-1])}")
+        magnitude = torch.linalg.vector_norm(
+            event[..., :width], ord=2, dim=-1) / math.sqrt(width)
+        return torch.tanh(magnitude)
+
     @property
     def codebook_mode(self):
         """Tri-state codebook mode: ``'none'`` | ``'quantize'`` |
@@ -8708,9 +8780,26 @@ class Space(SpaceCarrierMixin, nn.Module):
         if not returnVectors:
             return y
         pre = getattr(self, '_pre_reshape_input', None)
-        if pre is not None:
+        # A serial word forward records the one-word native PS shape here,
+        # while reconstruction reverses the complete sentence idea.  Treat
+        # that cached shape as a matching-call descriptor, not an unconditional
+        # command: applying a stale [1, D_native] descriptor to the recovered
+        # [N, D_native] field either truncates its location semantics or raises.
+        _y_per_b = int(y.numel() // y.shape[0]) if int(y.shape[0]) else 0
+        if (pre is not None
+                and int(pre[0]) * int(pre[1]) == _y_per_b):
             y = y.reshape(y.shape[0], pre[0], pre[1])
         elif self.nInputDim != -1:
+            # ``reverseBegin`` may already have regrouped a conceptual-width
+            # seed into this space's complete native event field. Preserve that
+            # field verbatim. In the canonical serial model this is the inverse
+            # transport shape [B, 8, 136]; it must not be forced back through
+            # the raw InputSpace width (512) merely because the last forward
+            # iteration cached a one-word [1, 136] descriptor.
+            _fold_width = int(getattr(self, "_fold_width", 0) or 0)
+            if _fold_width > 0 and int(y.shape[-1]) == _fold_width:
+                self.subspace.set_event(y)
+                return self.subspace
             # Fallback: reshape from [B, ?, nInputDim] to [B, -1, inputShape[1]]
             if y.shape[-1] != self.inputShape[1]:
                 y = y.reshape(y.shape[0], -1, self.inputShape[1])
@@ -9260,6 +9349,13 @@ class InputSpace(Space):
         self._ar_word_part_ids = None
         self._ar_word_part_mask = None
         self._ar_word_part_offsets = None
+        # Eager-resolved joint concept identity for each word. ``-1`` is an
+        # exact unknown (never an alias). The paired order tensor records the
+        # word concept's actual subsymbolic fold depth rather than assuming
+        # order zero inside the compiled loop.
+        self._ar_word_concept_rows = None
+        self._ar_word_concept_ids = None
+        self._ar_word_concept_orders = None
         self._ar_word_truncated_mask = None
         self._sentence_word_truncated_mask = None
         self._word_active_mask = None
@@ -9297,6 +9393,9 @@ class InputSpace(Space):
         self._ar_word_part_ids = None
         self._ar_word_part_mask = None
         self._ar_word_part_offsets = None
+        self._ar_word_concept_rows = None
+        self._ar_word_concept_ids = None
+        self._ar_word_concept_orders = None
         self._ar_word_truncated_mask = None
         self._sentence_word_truncated_mask = None
         self._word_active_mask = None
@@ -9857,6 +9956,20 @@ class InputSpace(Space):
         if offsets is None or p < 0 or p >= offsets.shape[1]:
             return None
         return offsets[:, p, :]
+
+    def word_concept_rows_at(self, p):
+        """Return word ``p``'s staged CS codebook rows ``[B]``."""
+        rows = self._ar_word_concept_rows
+        if rows is None or p < 0 or p >= rows.shape[1]:
+            return None
+        return rows[:, p]
+
+    def word_concept_orders_at(self, p):
+        """Return word ``p``'s actual staged subsymbolic orders ``[B]``."""
+        orders = self._ar_word_concept_orders
+        if orders is None or p < 0 or p >= orders.shape[1]:
+            return None
+        return orders[:, p]
 
     def run_word_loop(self, step, out_slot, n_trips, *, active_host=True):
         """Own and execute one fixed-width serial sentence loop.
@@ -10530,6 +10643,20 @@ class PartSpace(Space):
             if (isinstance(_radix_w, nn.Parameter)
                     and all(_radix_w is not p for p in self.params)):
                 self.params.append(_radix_w)
+        # The radix store also owns the learned byte fallback used to encode
+        # residual surface bytes before promotion.  It is registered beneath
+        # ``percept_store`` (and therefore saved by ``state_dict``), but the
+        # Space optimizer walks this explicit ``params`` list rather than all
+        # registered Parameters.  Enlist the fallback after constructing the
+        # store so it cannot be silently checkpointed without ever learning.
+        if self.percept_store is not None:
+            _byte_fallback = getattr(
+                self.percept_store, "byte_fallback", None)
+            if _byte_fallback is not None:
+                for _p in _byte_fallback.parameters():
+                    if (_p.requires_grad
+                            and all(_p is not q for q in self.params)):
+                        self.params.append(_p)
         # Opt-in/opt-out: the frozen-vocab GPU BPE tokenizer
         # (``_embed_bpe_gpu``) is bit-identical to the trie path
         # (test/bpe_gpu_equiv.py) but is NOT the production default --
@@ -11236,12 +11363,35 @@ class PartSpace(Space):
                 f"ids={tuple(part_ids.shape)}, mask={tuple(mask.shape)}, "
                 f"events={tuple(events.shape)}")
         sigma = self._sigma_for_pass()
-        if sigma is None or not hasattr(sigma, "synthesize_over_set"):
+        if sigma is None or not hasattr(sigma, "aggregate_over_set"):
             raise RuntimeError(
-                "serial word synthesis requires a sigma fold with "
-                "synthesize_over_set; the raw constituents cannot be "
-                "silently summed or truncated")
-        word = sigma.synthesize_over_set(events, mask=mask)
+                "serial word synthesis requires a meronymic sigma with "
+                "parameter-free set aggregation; the raw constituents cannot "
+                "be silently summed or truncated")
+        # Base aggregation operates only on WHAT and deliberately does not run
+        # the learned sigma kernel.  The explicit fold ladder that follows PS
+        # forward owns sigma[0], sigma[1], ... exactly once.  The fixed
+        # where/when band must not inflate a compact percept fold from 128 to
+        # the 136-wide event.  Carry the first active constituent's band
+        # unchanged (the word begins where its first constituent begins; all
+        # members of one word tick share the same temporal context).
+        fold_width = int(getattr(sigma, "nInput", 0) or 0)
+        if 0 < fold_width < int(events.shape[-1]):
+            word_what = sigma.aggregate_over_set(
+                events[..., :fold_width], mask=mask)
+            band_events = events[..., fold_width:]
+            first = mask.to(dtype=torch.long).argmax(dim=-1)
+            gather_shape = list(first.shape) + [1, int(band_events.shape[-1])]
+            gather_index = first.unsqueeze(-1).unsqueeze(-1).expand(
+                *gather_shape)
+            word_band = band_events.gather(
+                -2, gather_index).squeeze(-2)
+            any_valid = mask.any(dim=-1, keepdim=True)
+            word_band = torch.where(
+                any_valid, word_band, torch.zeros_like(word_band))
+            word = torch.cat((word_what, word_band), dim=-1)
+        else:
+            word = sigma.aggregate_over_set(events, mask=mask)
         if word.dim() == 2:
             word = word.unsqueeze(1)
         return word
@@ -13916,15 +14066,18 @@ def _concept_alloc_of(host):
 class ConceptualSpace(Space):
     """STM bookkeeping (shift / push) + grammatical CPU on the C space_role.
 
-    In the forward data flow: PartSpace -> **ConceptualSpace** -> WholeSpace.
+    In the canonical forward data flow, independent PartSpace, WholeSpace, and
+    SymbolSpace recursions emit sparse concept-code activations into
+    **ConceptualSpace**. Their indexed dictionary reads already have CS event
+    width; ConceptualSpace owns no native-feature coordinate lift.
 
     Post Stage 1.C of the two-loop pi/sigma substrate refactor
     (doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md): the atomic
     forward C-space_role fold ``sigma_percept`` is RETIRED. The C space_role no
     longer holds a parameterised percept→concept fold at the
-    substrate level. ``forward(PS_subspace, WS_subspace)`` performs
-    STM bookkeeping only: shift the per-batch idea stack one slot
-    (``STM[0..N-2] = STM[1..N-1]``) and push the materialised PS+WS
+        substrate level. ``forward(primary, symbolic)`` performs
+        STM bookkeeping only: shift the per-batch idea stack one slot
+        (``STM[0..N-2] = STM[1..N-1]``) and push the materialised PS+WS
     combination onto the top slot (Miller cap). The signal-router
     grammar dispatch that consumes STM is Stage 3; until then,
     downstream consumers (WholeSpace.forward and the cross-pass
@@ -13951,7 +14104,8 @@ class ConceptualSpace(Space):
 
     def __init__(self, inputShape, spaceShape, outputShape,
                  stage_idx=None, is_last=False,
-                 shared_similarity_codebook=None):
+                 shared_similarity_codebook=None,
+                 indexed_similarity_codebook=False):
         """Initialize ConceptualSpace; allocate state for the class contract.
 
         See class docstring for invariants.
@@ -13979,6 +14133,11 @@ class ConceptualSpace(Space):
         self.stage_idx = (int(stage_idx)
                           if stage_idx is not None else 0)
         super().__init__(inputShape, spaceShape, outputShape)
+        # Canonical serial word concepts preserve their eight locations. PS,
+        # WS, and SS remain independent native-space recursions; their sigma /
+        # concept-codebook activation is responsible for producing a
+        # conceptual-width source before it reaches this space. CS therefore
+        # owns no learned or fixed PS/WS feature-width adapter.
         self.nonlinear = nonlinear
         self.ergodic = ergodic
         # DEPRECATED inert legacy alias: ``hasAttention`` no longer constructs a
@@ -14259,7 +14418,6 @@ class ConceptualSpace(Space):
         self._subspaceForPS = SubSpace(
             inputShape=(1, 1), outputShape=(1, 1),
             nInputDim=1, nOutputDim=1)
-
         # Symbol-learning Layer: detached accumulator + MDL-flavored
         # promotion policy. Off by default; enabled via
         # ``<architecture><symbolLearning enabled="true"/>``. Owned by
@@ -14294,6 +14452,8 @@ class ConceptualSpace(Space):
             _rng_state = torch.get_rng_state()
             _sim_cb = Codebook()
             _sim_cb.use_dot_product = True
+            if indexed_similarity_codebook:
+                _sim_cb.configure_vq_ema(False)
             _sim_cb.create(
                 self.inputShape[0], self.nVectors, int(self.outputShape[1]),
                 customVQ=getattr(self, "customVQ", True),
@@ -14309,6 +14469,14 @@ class ConceptualSpace(Space):
                     "shared ConceptualSpace similarity codebook shape drift: "
                     f"expected {_expected}, got "
                     f"{None if not torch.is_tensor(_W) else tuple(_W.shape)}")
+        if indexed_similarity_codebook:
+            _vq = getattr(_sim_cb, "vq", None)
+            if (_vq is None
+                    or bool(getattr(_vq, "ema_state_enabled", True))
+                    or bool(getattr(_vq, "ema_update", True))):
+                raise RuntimeError(
+                    "indexed ConceptualSpace similarity codebook must be "
+                    "constructed without VQ EMA state or updates")
         self.similarity_codebook = _sim_cb
         self.layers.append(_sim_cb)
         self.params = self.params + list(_sim_cb.parameters())
@@ -14408,6 +14576,7 @@ class ConceptualSpace(Space):
         slab = slab.detach()
         buf = stm._buffer
         order_slab, grammar_slab = stm.ensure_order_state()
+        concept_rows, concept_activations = stm.ensure_reference_state()
         depth_dtype = stm._depth.dtype
         depth_device = stm._depth.device
         if N >= cap:
@@ -14431,12 +14600,15 @@ class ConceptualSpace(Space):
         # boundary. Mark it explicitly unknown rather than calling it order 0.
         order_slab.fill_(-1)
         grammar_slab.fill_(-1)
+        concept_rows.fill_(-1)
+        concept_activations.zero_()
         if B > 0:
             cur_max = int(filled)
             if cur_max > int(stm._max_depth_host):
                 stm._max_depth_host = cur_max
 
-    def _stm_shift_and_push(self, idea, order=None, grammar_order=None):
+    def _stm_shift_and_push(self, idea, order=None, grammar_order=None,
+                            concept_row=None, concept_activation=None):
         """STM bookkeeping primitive: shift slots RIGHT by 1 on rows at
         capacity, then write the new idea to slot 0 (the newest slot).
         For rows below capacity, this degenerates to an ordinary push
@@ -14469,10 +14641,15 @@ class ConceptualSpace(Space):
         buf = stm._buffer
         depth = stm._depth
         order_slab, grammar_slab = stm.ensure_order_state()
+        concept_slab, activation_slab = stm.ensure_reference_state()
         order_rows = stm._coerce_order_rows(
             order, B, buf.device)
         grammar_rows = stm._coerce_order_rows(
             grammar_order, B, buf.device)
+        concept_rows = stm._coerce_concept_rows(
+            concept_row, B, buf.device)
+        concept_activations = stm._coerce_concept_activations(
+            concept_activation, B, buf.device, buf.dtype, concept_rows)
         # Row-by-row: rows at capacity get a right-shift of the slots
         # [0..cap-1) -> [1..cap), dropping the OLDEST (the slot that
         # rolls off the high end), then the new idea is written to slot
@@ -14514,9 +14691,17 @@ class ConceptualSpace(Space):
                 [order_rows.unsqueeze(1), order_slab[:, :cap - 1]], dim=1)
             stm._grammar_orders = torch.cat(
                 [grammar_rows.unsqueeze(1), grammar_slab[:, :cap - 1]], dim=1)
+            stm._concept_rows = torch.cat(
+                [concept_rows.unsqueeze(1), concept_slab[:, :cap - 1]],
+                dim=1)
+            stm._concept_activations = torch.cat(
+                [concept_activations.unsqueeze(1),
+                 activation_slab[:, :cap - 1]], dim=1)
         else:
             stm._orders = order_rows.unsqueeze(1)
             stm._grammar_orders = grammar_rows.unsqueeze(1)
+            stm._concept_rows = concept_rows.unsqueeze(1)
+            stm._concept_activations = concept_activations.unsqueeze(1)
         # depth_b -> min(depth_b + 1, cap): clamp reproduces the old
         # per-row ``new_depth[b] = d + 1`` (below cap) / ``d`` (at cap).
         stm._depth = torch.clamp(depth + 1, max=cap)
@@ -14568,6 +14753,7 @@ class ConceptualSpace(Space):
         buf = stm._buffer
         depth = stm._depth
         order_slab, grammar_slab = stm.ensure_order_state()
+        concept_rows, concept_activations = stm.ensure_reference_state()
         new_depth = depth.clone()
         for b in range(B):
             d = int(depth[b].item())
@@ -14578,8 +14764,14 @@ class ConceptualSpace(Space):
                 buf[b, 0].zero_()
                 order_slab[b, 1:cap] = order_slab[b, :cap - 1].clone()
                 grammar_slab[b, 1:cap] = grammar_slab[b, :cap - 1].clone()
+                concept_rows[b, 1:cap] = (
+                    concept_rows[b, :cap - 1].clone())
+                concept_activations[b, 1:cap] = (
+                    concept_activations[b, :cap - 1].clone())
                 order_slab[b, 0] = -1
                 grammar_slab[b, 0] = -1
+                concept_rows[b, 0] = -1
+                concept_activations[b, 0] = 0
                 new_depth[b] = cap - 1
             # else: below capacity -- there is already a free slot 0,
             # nothing falls off, depth unchanged.
@@ -15102,6 +15294,13 @@ class ConceptualSpace(Space):
         grp_host = (word_groups.detach().reshape(B, N).tolist()
                     if grouped else None)
         per_row = {}
+        # Capacity rejection must follow the word's byte extent, not merely
+        # its ordinal group index.  WholeSpace analyses TYPE runs, so one word
+        # (for example ``abc1``) can occupy several WS spans.  Keep the old
+        # group-index marker only as a fallback when no tile extent is
+        # available; otherwise every overlapping analysis span is suppressed.
+        rejected_spans = set()
+        rejected_intervals = set()
 
         def _surface_key(b, g, parts):
             if (word_texts is not None and b < len(word_texts)
@@ -15146,8 +15345,37 @@ class ConceptualSpace(Space):
                     except (IndexError, TypeError, ValueError):
                         raw = b""
                     prop_rows = ws.property_rows_for_bytes(raw)
-                A, _obj, _meta = self.create_word_object_meta(
-                    parts, prop_rows, key=key)
+                formed = ConceptualSpace._automatic_word_object_meta(
+                    self, parts, prop_rows, key=key)
+                if formed is None:
+                    # Capacity lookup-only mode: the unbound word remains a
+                    # transient carrier in this forward.  It must not acquire
+                    # a recycled or partially-built durable identity.
+                    rejected_extent = None
+                    if tile_spans is not None and b < len(tile_spans):
+                        try:
+                            row_tiles = tile_spans[b]
+                            word_tiles = [
+                                tuple(int(x) for x in row_tiles[n])
+                                for n in slots if n < len(row_tiles)
+                            ]
+                            word_tiles = [
+                                (s, e) for s, e in word_tiles if e > s
+                            ]
+                            if word_tiles:
+                                rejected_extent = (
+                                    int(b),
+                                    min(s for s, _e in word_tiles),
+                                    max(e for _s, e in word_tiles),
+                                )
+                        except (IndexError, TypeError, ValueError):
+                            rejected_extent = None
+                    if rejected_extent is None:
+                        rejected_spans.add((int(b), int(g)))
+                    else:
+                        rejected_intervals.add(rejected_extent)
+                    continue
+                A, _obj, _meta = formed
                 if (len(parts) == 1
                         and self._agg_span_matches_ws_property(
                             b, slots, tile_spans, ws, parts=parts,
@@ -15155,11 +15383,17 @@ class ConceptualSpace(Space):
                     self._register_recognized_word(A, key, parts[0])
                 per_row.setdefault(b, []).append((A, key))
 
-        for entries in per_row.values():
-            if len(entries) >= 2:
-                self.create_joint_concept(
-                    [a for a, _key in entries],
-                    key=tuple(key for _a, key in entries))
+        # SerialObjectMeta already combines one word-concept per iteration by
+        # grammatical reductions in bounded STM. Persisting an additional
+        # right-branching concept for every whole sentence duplicated that
+        # composition and consumed O(tokens) dictionary rows. Nonserial models
+        # retain their historical optional joint inventory.
+        if not getattr(self, "_serial_object_meta", False):
+            for entries in per_row.values():
+                if len(entries) >= 2:
+                    ConceptualSpace._automatic_joint_concept(
+                        self, [a for a, _key in entries],
+                        key=tuple(key for _a, key in entries))
 
         # The location concepts retain every observed part and whole-property;
         # identity resolution/refinement now runs wholly inside CS.
@@ -15168,7 +15402,8 @@ class ConceptualSpace(Space):
             self._populate_cs_symbols(
                 pid_2d, percept_where, spans,
                 percept_when=percept_when, word_texts=word_texts,
-                whole_space=ws)
+                whole_space=ws, rejected_spans=rejected_spans,
+                rejected_intervals=rejected_intervals)
             self.resolve_identities()
             self.refine_over_collected()
 
@@ -15267,8 +15502,11 @@ class ConceptualSpace(Space):
             per_row = {}
             for (b, w_parts, w_whole, w_key, w_slots) in (word_bindings
                                                           or ()):
-                A, _B, _C = self.create_word_object_meta(
-                    w_parts, w_whole, key=w_key)
+                formed = ConceptualSpace._automatic_word_object_meta(
+                    self, w_parts, w_whole, key=w_key)
+                if formed is None:
+                    continue
+                A, _B, _C = formed
                 # 1:1 recognition (plan v3, REFINED Alec 2026-07-13 second
                 # pass): the part-AGGREGATION (one promoted percept — the
                 # trie's created word) must be EQUAL IN SPAN to the WS
@@ -15281,15 +15519,16 @@ class ConceptualSpace(Space):
                     self._register_recognized_word(
                         A, w_key, w_parts[0], ws=ws, whole_pos=w_whole)
                 per_row.setdefault(b, []).append((A, w_key))
-            # JOINT/sentence concept (P2 decision 6): the SYMBOLIC joint
-            # mixing -- the ordered bias-bounded CHAIN over the row's
-            # word-symbols, one stable head per sentence type (the
-            # subsymbolic mixing is the pump; the two phases run in series).
-            for _b, wl in per_row.items():
-                if len(wl) >= 2:
-                    self.create_joint_concept(
-                        [a for (a, _k) in wl],
-                        key=tuple(k for (_a, k) in wl))
+            # Nonserial compatibility path: retain the historical SYMBOLIC
+            # joint (an ordered bias-bounded chain). SerialObjectMeta's
+            # grammar loop already reduces the words and must not persist a
+            # second, presentation-sized sentence inventory.
+            if not getattr(self, "_serial_object_meta", False):
+                for _b, wl in per_row.items():
+                    if len(wl) >= 2:
+                        ConceptualSpace._automatic_joint_concept(
+                            self, [a for (a, _k) in wl],
+                            key=tuple(k for (_a, k) in wl))
             # Cross-tower `.where`-gated binding (A4): percept-TYPE ⊑ generic
             # word-TYPE when the percept `.where` (subspace.where) nests inside a
             # WS whole `.where` (the staged analysis spans). The LATTICE
@@ -15527,7 +15766,8 @@ class ConceptualSpace(Space):
 
     def _populate_cs_symbols(self, pid_2d, percept_where, spans,
                              percept_when=None, word_texts=None,
-                             whole_space=None):
+                             whole_space=None, rejected_spans=None,
+                             rejected_intervals=None):
         """Populate the relation-only CS symbol table from the live `.where`
         binding (S2a; doc/old/mereological-order-raising.md "The CS symbol
         table"). For each analysis-span (a LOCATION), mint a symbol whose
@@ -15555,6 +15795,17 @@ class ConceptualSpace(Space):
                 e = int(spans[b, k, 1])
                 if e <= s:
                     continue                      # pad span
+                rejected_by_extent = any(
+                    int(rb) == int(b) and s < int(re) and int(rs) < e
+                    for rb, rs, re in (rejected_intervals or ()))
+                if (rejected_by_extent
+                        or (int(b), int(k)) in (rejected_spans or ())):
+                    # The enclosing word needed an atomic three-id admission
+                    # and was rejected. Do not consume a one-row remainder by
+                    # silently substituting a presentation-local location id.
+                    # Extent overlap handles words split into several WS
+                    # type-runs; the ordinal marker is only a no-tile fallback.
+                    continue
                 # A-merge (2026-07-02): a span whose word text is known REUSES
                 # the word A-symbol as its location concept (one knit per word,
                 # not a duplicate per presentation).
@@ -15586,7 +15837,13 @@ class ConceptualSpace(Space):
                                     f"of different moments knit into one "
                                     f"location-concept")
                         if loc_sym is None:
-                            loc_sym = self.new_concept()
+                            if not ConceptualSpace._automatic_concept_admitted(
+                                    self, 1, reason="location"):
+                                # Lookup-only capacity mode. No identity exists
+                                # to accrue, so leave this presentation in the
+                                # transient carrier and move to the next span.
+                                break
+                            loc_sym = ConceptualSpace.new_concept(self)
                         matched = True
                         self.add_part(loc_sym, pid)
                 if loc_sym is not None and matched:
@@ -15642,6 +15899,104 @@ class ConceptualSpace(Space):
         _concept_alloc_of(self)
         return self._concept_parts, self._concept_wholes
 
+    def _concept_capacity_window(self, count=1):
+        """Return ``(next_id, end, capacity)`` for a prospective allocation.
+
+        ``end`` is the allocator's one-past id after ``count`` fresh concepts.
+        A ``None`` capacity denotes the historical mixing-mode relation
+        sidecar, whose handles are deliberately not dense-codebook addresses.
+        This helper is inspection-only: neither the allocator nor an active
+        VQ prefix is mutated here.
+        """
+        n = int(count)
+        if n < 0:
+            raise ValueError("concept allocation count must be non-negative")
+        alloc = _concept_alloc_of(self)
+        nxt = int(alloc.next_id)
+        legacy_relation_store = (
+            getattr(self, "_concept_binding", None) == "mixing")
+        capacity_raw = (None if legacy_relation_store
+                        else getattr(self, "nVectors", None))
+        capacity = None if capacity_raw is None else int(capacity_raw)
+        return nxt, nxt + n, capacity
+
+    def _preflight_concept_allocation(self, count=1, *, context="concept"):
+        """Validate and reveal a grouped allocation before minting any id.
+
+        Multi-id structures (notably word/object/META triples and sequence
+        chains) must not leave a valid prefix plus a half-built tail when the
+        fixed physical inventory ends.  Capacity is checked for the complete
+        group first, then the aligned active prefix is revealed up front. Any
+        failure therefore occurs before ``ConceptAllocator.next_id`` or its
+        relation tables change.
+        """
+        nxt, end, capacity = ConceptualSpace._concept_capacity_window(
+            self, count)
+        if capacity is not None and end > capacity:
+            raise RuntimeError(
+                f"ConceptualSpace concept inventory exhausted while "
+                f"allocating {int(count)} id(s) for {context}: next id "
+                f"{nxt}, physical capacity {capacity}. No concept was minted.")
+        model = getattr(self, "_model", None)
+        ensure_active = getattr(model, "_ensure_aligned_active_rows", None)
+        if callable(ensure_active) and int(count) > 0:
+            ensure_active(end)
+        return nxt, end, capacity
+
+    def _new_concepts(self, count, *, context="concept"):
+        """Mint a preflighted group of stable ids, preserving row identity."""
+        n = int(count)
+        ConceptualSpace._preflight_concept_allocation(
+            self, n, context=context)
+        alloc = _concept_alloc_of(self)
+        return [alloc.new_concept() for _ in range(n)]
+
+    def _automatic_concept_admitted(self, count=1, *, reason="automatic"):
+        """Capacity gate for evidence-driven, optional concept discovery.
+
+        Existing identities are checked by callers *before* this gate.  On an
+        unseen miss at the physical ceiling, training remains in exact
+        lookup/reuse mode: no id or row is recycled, the transient tensor/STM
+        value continues through the forward path, and visible telemetry is
+        recorded.  Explicit construction APIs do not call this gate and keep
+        their fail-loud contract.
+        """
+        nxt, end, capacity = ConceptualSpace._concept_capacity_window(
+            self, count)
+        if capacity is None or end <= capacity:
+            return True
+        why = str(reason)
+        drops = getattr(self, "_concept_admission_drops", None)
+        if drops is None:
+            drops = {}
+            object.__setattr__(self, "_concept_admission_drops", drops)
+        drops[why] = int(drops.get(why, 0)) + 1
+        warned = getattr(self, "_concept_admission_warned", None)
+        if warned is None:
+            warned = set()
+            object.__setattr__(self, "_concept_admission_warned", warned)
+        if why not in warned:
+            warned.add(why)
+            TheMessage(
+                f"[ConceptualSpace] concept inventory cannot seat an "
+                f"automatic admission (next id {nxt}, requested "
+                f"{int(count)}, capacity {capacity}); unseen {why} concepts "
+                f"are being "
+                f"left transient while exact known identities remain live. "
+                f"No learned row is recycled.")
+        return False
+
+    def concept_admission_stats(self):
+        """Public, host-side capacity/admission telemetry."""
+        nxt, _end, capacity = ConceptualSpace._concept_capacity_window(self, 0)
+        return {
+            "next_id": nxt,
+            "capacity": capacity,
+            "remaining": (None if capacity is None else max(0, capacity - nxt)),
+            "lookup_only": bool(capacity is not None and nxt >= capacity),
+            "dropped": dict(getattr(self, "_concept_admission_drops", {}) or {}),
+        }
+
     def new_concept(self):
         """Allocate one bounded aligned concept id atomically.
 
@@ -15650,35 +16005,8 @@ class ConceptualSpace(Space):
         VQ before minting and fail before mutating ``next_id`` at physical
         exhaustion.
         """
-        alloc = _concept_alloc_of(self)
-        cid = int(alloc.next_id)
-        # The physical-row bound belongs to the aligned concept dictionary.
-        # Historical ``mixing`` models keep their relation table as a sparse,
-        # relation-only sidecar: its ids were never addresses into the dense
-        # CS VQ, and tiny fixtures intentionally use nVectors=8 while learning
-        # more than eight relations. Capping those ids at the VQ row count
-        # conflates the two stores. Missing mode metadata remains bounded so
-        # standalone aligned-capacity fixtures retain the fail-atomic contract.
-        legacy_relation_store = (
-            getattr(self, "_concept_binding", None) == "mixing")
-        capacity_raw = (None if legacy_relation_store
-                        else getattr(self, "nVectors", None))
-        # Duck-typed relation-store fixtures deliberately have no geometric
-        # inventory. Production ConceptualSpace instances always do and take
-        # the bounded path below.
-        if capacity_raw is None:
-            return alloc.new_concept()
-        capacity = int(capacity_raw)
-        if cid >= capacity:
-            raise RuntimeError(
-                f"ConceptualSpace concept inventory exhausted: next id "
-                f"{cid}, physical capacity {capacity}. No concept was minted.")
-        model = getattr(self, "_model", None)
-        ensure_active = getattr(
-            model, "_ensure_aligned_active_rows", None)
-        if callable(ensure_active):
-            ensure_active(cid + 1)
-        return alloc.new_concept()
+        return ConceptualSpace._new_concepts(
+            self, 1, context="one concept")[0]
 
     def add_part(self, sym, part):
         """Add ``part`` (a part-code or a sub-symbol ref) to Parts(sym)."""
@@ -15842,6 +16170,39 @@ class ConceptualSpace(Space):
         self._populate_concept_weights(H)          # per-order sparse decomposition
         return H
 
+    def _automatic_synthesize_higher_order(self, part_codes,
+                                            *, reason="higher-order"):
+        """Reuse an exact synthesis identity or admit one optional new row."""
+        alloc = _concept_alloc_of(self)
+        key = ("raise", frozenset(part_codes))
+        existing = alloc.relate_idx.get(key)
+        if existing is not None:
+            return int(existing)
+        if not ConceptualSpace._automatic_concept_admitted(
+                self, 1, reason=reason):
+            return None
+        return ConceptualSpace.synthesize_higher_order(self, part_codes)
+
+    def _chain_missing_concepts(self, concept_ids):
+        """Exact fresh-id count for a right-folded chain, without mutation."""
+        alloc = _concept_alloc_of(self)
+        ids = [int(c) for c in concept_ids]
+        if len(ids) < 2:
+            return 0
+        simulated_next = int(alloc.next_id)
+        simulated_rest = ids[-1]
+        missing = 0
+        for i in range(len(ids) - 2, -1, -1):
+            pair_key = (("sym", int(simulated_rest)),
+                        ("sym", int(ids[i])))
+            existing = alloc.relate_idx.get(pair_key)
+            if existing is not None:
+                simulated_rest = int(existing)
+            else:
+                simulated_rest = simulated_next + missing
+                missing += 1
+        return missing
+
     def conceptualize_chain(self, concept_ids, bias_bounded=False):
         """Order-1 CHAIN (Gallistel "unitization of behavior", Alec 2026-06-21):
         a tail-recursive list over ``[whole, part]`` concept pairs for learning
@@ -15864,6 +16225,14 @@ class ConceptualSpace(Space):
         if len(ids) == 1:
             chains[key] = ids[0]
             return ids[0]
+        # Determine the exact number of missing pair identities before
+        # changing anything.  Simulating the allocator's sequential ids makes
+        # this exact even when an existing suffix is shared with another
+        # chain.  The grouped preflight prevents a near-capacity chain from
+        # leaving a durable prefix and then failing half way through.
+        missing = ConceptualSpace._chain_missing_concepts(self, ids)
+        ConceptualSpace._preflight_concept_allocation(
+            self, missing, context="concept chain")
         # Fold right-to-left: rest starts as the terminal concept, then each
         # earlier concept becomes the whole over the accumulated rest (the part).
         rest = ids[-1]
@@ -16589,17 +16958,25 @@ class ConceptualSpace(Space):
             n_w = store.count_role(sym, "whole")
             if n_p <= kp and n_w <= kw:
                 continue                              # not over-collected
+            refinement_applied = True
             if n_p > kp:
                 codes = self.concept_parts(sym)
-                H = self.synthesize_higher_order(codes)   # σ: APPLIED
+                H = ConceptualSpace._automatic_synthesize_higher_order(
+                    self, codes, reason="mereological synthesis")
+                if H is None:
+                    # Keep the trigger live: retiring it without the
+                    # replacement would silently discard its definition.
+                    refinement_applied = False
+                else:
+                    requests.append({"sym": sym, "op": "synthesize",
+                                     "codes": codes, "result": H})
                 # synthesize_higher_order already populates H's per-order sparse
                 # weights from its constituents (gated; byte-identical when off).
-                requests.append({"sym": sym, "op": "synthesize",
-                                 "codes": codes, "result": H})
             if n_w > kw:
                 requests.append({"sym": sym, "op": "analyse",
                                  "codes": self.concept_wholes(sym)})
-            self.retire_concept(sym)                   # retire-on-trigger
+            if refinement_applied:
+                self.retire_concept(sym)               # retire-on-trigger
         # Periodic closest-links pruning: parts-of-parts / wholes-of-wholes
         # accumulated at mint are dropped here, not enforced at runtime.
         self.prune_concept_links()
@@ -17331,8 +17708,11 @@ class ConceptualSpace(Space):
             # _maybe_learn_relation (tc=0 promotes everything, tc=1 nothing).
             if score < tc or tc >= 1.0:
                 continue
-            H = self.synthesize_higher_order(
-                tuple(("sym", int(c)) for c in cids))
+            H = ConceptualSpace._automatic_synthesize_higher_order(
+                self, tuple(("sym", int(c)) for c in cids),
+                reason="attention promotion")
+            if H is None:
+                continue
             mx = float(e["member_w"].max())
             for (r, c) in pairs:
                 self._set_concept_edge_value(
@@ -17392,6 +17772,32 @@ class ConceptualSpace(Space):
             cache[k] = J
         return J
 
+    def _automatic_joint_concept(self, word_syms, key=None):
+        """Reuse a known sentence type or optionally admit its missing links."""
+        alloc = _concept_alloc_of(self)
+        k = tuple(key) if key is not None else None
+        if k is not None and k in alloc.joint:
+            return ConceptualSpace.create_joint_concept(
+                self, word_syms, key=k)
+        ids = [int(a) for a in word_syms]
+        missing = ConceptualSpace._chain_missing_concepts(self, ids)
+        if not ConceptualSpace._automatic_concept_admitted(
+                self, missing, reason="sentence-chain"):
+            return None
+        return ConceptualSpace.create_joint_concept(self, ids, key=k)
+
+    def _automatic_word_object_meta(self, word_parts, word_whole, key=None):
+        """Reuse a known surface triple or optionally admit one atomic triple."""
+        alloc = _concept_alloc_of(self)
+        if key is not None and key in alloc.word_obj_meta:
+            return ConceptualSpace.create_word_object_meta(
+                self, word_parts, word_whole, key=key)
+        if not ConceptualSpace._automatic_concept_admitted(
+                self, 3, reason="word/object/META"):
+            return None
+        return ConceptualSpace.create_word_object_meta(
+            self, word_parts, word_whole, key=key)
+
     def _register_recognized_word(self, A, key, pid, ws=None,
                                   whole_pos=None):
         """In-model word RECOGNITION registration (Alec 2026-07-13, plan v3):
@@ -17413,10 +17819,13 @@ class ConceptualSpace(Space):
             reg = {}
             object.__setattr__(self, '_recognized_words', reg)
         if key in reg:
-            return
+            return True
         wid = getattr(self, '_words_concept_id', None)
         if wid is None:
-            wid = self.new_concept()
+            if not ConceptualSpace._automatic_concept_admitted(
+                    self, 1, reason="WORDS class"):
+                return False
+            wid = ConceptualSpace.new_concept(self)
             object.__setattr__(self, '_words_concept_id', wid)
         self.add_part(wid, ("sym", int(A)))
         reg[str(key)] = int(pid)
@@ -17426,6 +17835,7 @@ class ConceptualSpace(Space):
         # the abstraction-order cap — one row, no order-cap fight.
         if ws is not None and whole_pos is not None:
             self._update_words_summary_row(ws, int(whole_pos), len(reg))
+        return True
 
     def _update_words_summary_row(self, ws, whole_pos, n_members):
         """STASH a WORDS summary-row update (the well-known 'words' atom,
@@ -17545,18 +17955,22 @@ class ConceptualSpace(Space):
             self._hebbian_strengthen(C)
             ConceptualSpace._record_percept_concept(self, A, B, word_parts)
             return A, B, C
-        A = ConceptualSpace.new_concept(self)      # the WORD-symbol
+        # A/B/C is one identity transaction.  Reserve all three handles before
+        # writing any constituent or cache entry so a capacity boundary can
+        # never leave a half-word in the learned relation store.
+        A, B, C = ConceptualSpace._new_concepts(
+            self, 3, context="word/object/META triple")
+        # the WORD-symbol
         for p in word_parts:
             self.add_part(A, int(p))
         for w in word_wholes:
             self.add_whole(A, int(w))
-        B = ConceptualSpace.new_concept(self)      # the OBJECT-symbol
+        # the OBJECT-symbol
         self.add_part(B, _NOTHING)                   # bottom pole — to be refined
         self.add_whole(B, _EVERYTHING)              # top pole — to be refined
         # META-concept: the sec-4c ordered pair [whole=word, part=object]
         # (P2 flip); a reified sym-sym pair persists as relation-table
         # content (resolve_identities skips it -- stored structure).
-        C = ConceptualSpace.new_concept(self)
         alloc.store_of(C).embed_pair(C, whole_ref=("sym", A),
                                      part_ref=("sym", B))
         alloc.settle(C)
@@ -17658,7 +18072,10 @@ class ConceptualSpace(Space):
         maintains near-unit-norm but ``getW()`` does not guarantee it on
         read — the signed hypersphere). Untied percepts give a zero row
         and ``mask=False`` (the caller keeps the computed idea there).
-        Host-side resolve; the gather is a plain codebook read."""
+        Host-side resolve; the gather goes through ``lookup_rows`` so an
+        indexed-only ConceptualSpace retains sparse row gradients even when
+        this optional concept-index read coexists with the ordinary sparse
+        fold decoder."""
         cb = getattr(self, "similarity_codebook", None)
         W = cb.getW() if (cb is not None and hasattr(cb, "getW")) else None
         if W is None or not torch.is_tensor(W) or pid_b is None:
@@ -17666,12 +18083,26 @@ class ConceptualSpace(Space):
         B = int(pid_b.reshape(-1).shape[0])
         out = W.new_zeros(B, int(W.shape[1]))
         mask = torch.zeros(B, dtype=torch.bool, device=W.device)
+        positions = []
+        rows = []
         pids = pid_b.reshape(-1).tolist()
         for b, pid in enumerate(pids):
             row = self.concept_codebook_row_of_percept(int(pid))
             if row is not None and 0 <= int(row) < int(W.shape[0]):
-                out[b] = F.normalize(W[int(row)], dim=-1, eps=1e-8)
+                positions.append(int(b))
+                rows.append(int(row))
                 mask[b] = True
+        if rows:
+            row_idx = torch.tensor(rows, dtype=torch.long, device=W.device)
+            pos_idx = torch.tensor(
+                positions, dtype=torch.long, device=W.device)
+            gathered = cb.lookup_rows(row_idx)
+            gathered = F.normalize(gathered, dim=-1, eps=1e-8)
+            # Functional index_copy preserves the lookup's autograd edge. In
+            # sparse mode that edge terminates at F.embedding(sparse=True), so
+            # combining this read with the normal fold decoder cannot densify
+            # the million-row codebook gradient.
+            out = out.index_copy(0, pos_idx, gathered)
         return out, mask
 
     def _priming_bridge_put(self, A, C, word_parts, word_whole, accrue=False):
@@ -18964,6 +19395,128 @@ class ConceptualSpace(Space):
     # iteration eager island) was retired WITH it -- ``bind_streams`` is pure
     # tensor ops and MUST stay fullgraph-traceable (test_ir_fullgraph_compile).
 
+    def decode_sparse_concept_rows(self, rows, source_activations,
+                                   source_bands):
+        """Decode native PS/WS/SS evidence through indexed concept rows.
+
+        ``rows[B,N]`` is resolved before the compiled loop; ``-1`` means no
+        durable identity exists yet. ``source_activations[B,S,N]`` contains
+        scalar evidence from each source's own recursion. The indexed
+        concept-codebook read is the *only* dimensional increase: no native
+        feature coordinate is padded, repeated, projected, or compared with a
+        conceptual coordinate.
+
+        Codebook WHERE/WHEN columns are ignored. The presented source band's
+        exact values ride through unchanged, yielding one conceptual event per
+        source, ``[B,S,N,nWhat+nWhere+nWhen]``. The read touches exactly B*N
+        dictionary rows, independent of the inventory capacity.
+        """
+        if (not torch.is_tensor(rows) or rows.dim() != 2
+                or not torch.is_tensor(source_activations)
+                or source_activations.dim() != 3
+                or not torch.is_tensor(source_bands)
+                or source_bands.dim() != 4):
+            raise ValueError(
+                "sparse concept decode expects rows [B,N], activations "
+                "[B,S,N], and bands [B,S,N,band]")
+        B, N = int(rows.shape[0]), int(rows.shape[1])
+        if (int(source_activations.shape[0]) != B
+                or int(source_activations.shape[2]) != N):
+            raise ValueError(
+                "sparse concept activation shape does not match rows: "
+                f"rows={tuple(rows.shape)}, activations="
+                f"{tuple(source_activations.shape)}")
+        S = int(source_activations.shape[1])
+        expected_band = int(self.nWhere) + int(self.nWhen)
+        if tuple(source_bands.shape[:3]) != (B, S, N):
+            raise ValueError(
+                "sparse concept band shape does not match activations: "
+                f"bands={tuple(source_bands.shape)}, activations="
+                f"{tuple(source_activations.shape)}")
+        if int(source_bands.shape[-1]) != expected_band:
+            raise ValueError(
+                f"sparse concept decode expected band width {expected_band}, "
+                f"got {int(source_bands.shape[-1])}")
+
+        codebook = getattr(self, "similarity_codebook", None)
+        lookup = getattr(codebook, "lookup_rows", None)
+        if not callable(lookup):
+            lookup = getattr(codebook, "lookup", None)
+        if not callable(lookup):
+            raise RuntimeError(
+                "ConceptualSpace sparse decode requires an indexed codebook "
+                "lookup surface")
+
+        # The -1 placeholder gathers row zero solely to keep the graph's shape
+        # static. The explicit validity mask below makes both its forward value
+        # and its codebook gradient exactly zero, so unknowns never alias it.
+        valid = rows >= 0
+        atoms = lookup(rows.clamp_min(0).long())
+        if (not torch.is_tensor(atoms) or atoms.dim() != 3
+                or tuple(atoms.shape[:2]) != (B, N)
+                or int(atoms.shape[-1]) < int(self.nWhat)):
+            raise RuntimeError(
+                "indexed concept codebook returned an invalid slab: "
+                f"{None if not torch.is_tensor(atoms) else tuple(atoms.shape)}")
+        atom_what = atoms[..., :int(self.nWhat)]
+        active = (source_activations
+                  * valid.unsqueeze(1).to(source_activations.dtype))
+        decoded_what = active.unsqueeze(-1) * atom_what.unsqueeze(1)
+        return torch.cat((decoded_what, source_bands), dim=-1)
+
+    def decode_prior_stm_peer(self, stm, active_rows):
+        """Decode the full prior STM slab as one location-aligned SS peer.
+
+        STM slot ``i`` maps to CS location ``i``. Only occupied slots with an
+        exact concept row participate; unknown or inactive positions have both
+        activation and WHERE/WHEN band zeroed before the indexed codebook read.
+        The caller must invoke this before pushing the current word, which is
+        what makes the recurrence strictly prior-tick.
+        """
+        if stm is None or not torch.is_tensor(getattr(stm, "_buffer", None)):
+            raise ValueError("prior-tick SS decode requires a live STM")
+        buf = stm._buffer
+        if buf.dim() != 3:
+            raise ValueError(
+                "prior-tick SS decode requires STM payload [B,K,D]")
+        B, K = int(buf.shape[0]), int(buf.shape[1])
+        n_locations = int(self.outputShape[0])
+        if K != n_locations:
+            raise RuntimeError(
+                "canonical prior-tick SS requires the full STM slab to map "
+                "one-to-one onto CS locations: "
+                f"STM capacity {K} != CS locations {n_locations}")
+        if (not torch.is_tensor(active_rows)
+                or int(active_rows.numel()) != B):
+            raise ValueError(
+                "prior-tick SS active mask must contain one value per "
+                f"batch row ({B})")
+
+        prior_rows, prior_activations = stm.ensure_reference_state()
+        slots = torch.arange(
+            K, dtype=stm._depth.dtype,
+            device=stm._depth.device).unsqueeze(0)
+        occupied = slots < stm._depth.unsqueeze(1)
+        validity = (
+            occupied & (prior_rows >= 0)
+            & active_rows.to(
+                device=buf.device, dtype=torch.bool).reshape(B, 1))
+        rows = torch.where(
+            validity, prior_rows, torch.full_like(prior_rows, -1))
+        activations = torch.where(
+            validity, prior_activations,
+            torch.zeros_like(prior_activations))
+        band_width = int(self.nWhere) + int(self.nWhen)
+        if band_width > 0:
+            bands = buf[..., -band_width:]
+        else:
+            bands = buf[..., :0]
+        bands = torch.where(
+            validity.unsqueeze(-1), bands, torch.zeros_like(bands))
+        decoded = self.decode_sparse_concept_rows(
+            rows, activations.unsqueeze(1), bands.unsqueeze(1))
+        return decoded[:, 0], validity
+
     @staticmethod
     def _ordered_fold_support(part_passes, whole_passes):
         """Build JSON-friendly provenance for a two-tower fold ladder.
@@ -18993,24 +19546,85 @@ class ConceptualSpace(Space):
             "source_count": len(parts) + len(wholes),
         }
 
+    def record_concept_fold_support(self, concept_id, support, actual_order):
+        """Persist one concept's ordered native-fold derivation.
+
+        Event carriers already retain this provenance for reverse/autograd.
+        This host-side companion makes it durable across presentations and
+        checkpoints, keyed by the stable concept identity rather than by a
+        codebook row range. It runs only in the eager concept-admission stem.
+        """
+        if not isinstance(support, dict):
+            raise ValueError("concept fold support must be a mapping")
+
+        def _copy_entries(name):
+            copied = []
+            for entry in support.get(name, ()):
+                path = [[int(step[0]), int(step[1])]
+                        for step in entry.get("path", ())]
+                copied.append({
+                    "depth": int(entry.get("depth", len(path))),
+                    "path": path,
+                })
+            return copied
+
+        normalized = {
+            "version": int(support.get("version", 1)),
+            "binding": str(support.get("binding", "aligned")),
+            "part_folds": _copy_entries("part_folds"),
+            "whole_folds": _copy_entries("whole_folds"),
+            "source_count": int(support.get("source_count", 0)),
+        }
+        if support.get("symbol_sources"):
+            normalized["symbol_sources"] = [
+                {
+                    "kind": str(entry.get("kind", "prior_stm")),
+                    "prior_tick": bool(entry.get("prior_tick", True)),
+                    "location_aligned": bool(
+                        entry.get("location_aligned", True)),
+                }
+                for entry in support.get("symbol_sources", ())
+            ]
+        records = getattr(self, "_concept_fold_support", None)
+        if records is None:
+            records = {}
+            object.__setattr__(self, "_concept_fold_support", records)
+        records[int(concept_id)] = {
+            "actual_order": int(actual_order),
+            "support": normalized,
+        }
+        return records[int(concept_id)]
+
+    def concept_fold_support(self, concept_id):
+        """Return durable fold provenance for ``concept_id``, if known."""
+        records = getattr(self, "_concept_fold_support", None) or {}
+        return records.get(int(concept_id))
+
     def _aligned_stream(self, sub, D, n_vectors, like, label):
         """Fit one fold source without mixing its location coordinates.
 
-        Narrow content is zero-padded on the feature axis. A source with fewer
-        locations is zero-padded on the location axis; unlike
+        Sources have already crossed their sigma/concept-codebook seam and
+        therefore arrive at conceptual width. A source with fewer locations
+        is zero-padded on the location axis; unlike
         :meth:`_bind_regroup`, no feature coordinates are reshaped into new
         locations. More locations than CS can represent is an ambiguity and
         therefore fails loudly instead of truncating.
         """
         if torch.is_tensor(sub):
             event = sub
-            content = (event[..., :int(D)]
-                       if event.dim() == 3 else None)
         else:
-            content, _, event = self._bind_demux(sub, D)
-        if event is None or content is None:
+            event = (None if sub is None or sub.is_empty()
+                     else sub.materialize())
+        if event is None or event.dim() != 3:
             raise RuntimeError(
                 f"aligned concept binding received an empty {label} source")
+        if int(event.shape[-1]) != int(D):
+            raise RuntimeError(
+                f"aligned concept binding requires conceptual-width "
+                f"{label}: expected {int(D)}, got "
+                f"{int(event.shape[-1])}; source sigma/codebook activation "
+                "must run before CS")
+        content = event[..., :int(D)]
         if int(event.shape[0]) != int(like.shape[0]):
             raise RuntimeError(
                 f"aligned concept binding batch mismatch for {label}: "
@@ -19034,22 +19648,62 @@ class ConceptualSpace(Space):
         return fitted
 
     def _commit_aligned_sources(self, sources, CS_sub, *, support,
-                                actual_order):
+                                actual_order, concept_orders=None,
+                                preserve_target_event=False,
+                                source_validity=None):
         """Commit a location-preserving source stack onto a CS carrier.
 
         ``sources`` are already conformed ``[B,N,D]`` tensors.  The full
         stack is retained for exact source recovery/provenance; the live CS
-        event is their equal local mean.  Order is explicit metadata, never a
-        row partition inferred from the codebook address.
+        event is their validity-masked local mean. Order is explicit metadata,
+        never a row partition inferred from the codebook address. This mask is
+        what lets an absent prior-tick SS peer leave the six PS/WS sources
+        byte-for-byte undiluted at that location.
         """
         carrier = torch.stack(list(sources), dim=1)       # [B,S,N,D]
-        advanced_ev = carrier.mean(dim=1)                 # [B,N,D]
+        B, S, N = (int(carrier.shape[0]), int(carrier.shape[1]),
+                   int(carrier.shape[2]))
+        if source_validity is None:
+            validity = torch.ones(
+                (B, S, N), dtype=torch.bool, device=carrier.device)
+        else:
+            if (not torch.is_tensor(source_validity)
+                    or tuple(source_validity.shape) != (B, S, N)):
+                raise ValueError(
+                    "aligned source validity must match [B,S,N] carrier "
+                    f"geometry {(B, S, N)}, got "
+                    f"{None if not torch.is_tensor(source_validity) else tuple(source_validity.shape)}")
+            validity = source_validity.to(
+                device=carrier.device, dtype=torch.bool)
+        weights = validity.to(dtype=carrier.dtype)
+        denominator = weights.sum(dim=1).clamp_min(1.0)
+        advanced_ev = (
+            (carrier * weights.unsqueeze(-1)).sum(dim=1)
+            / denominator.unsqueeze(-1))                 # [B,N,D]
         B, N = int(advanced_ev.shape[0]), int(advanced_ev.shape[1])
-        orders = torch.full(
-            (B, N), int(actual_order), dtype=torch.long,
-            device=advanced_ev.device)
-        CS_sub.set_event(advanced_ev)
+        if concept_orders is None:
+            orders = torch.full(
+                (B, N), int(actual_order), dtype=torch.long,
+                device=advanced_ev.device)
+        else:
+            if (not torch.is_tensor(concept_orders)
+                    or tuple(concept_orders.shape) != (B, N)):
+                raise ValueError(
+                    "aligned concept orders must match [B,N] carrier "
+                    f"geometry {(B, N)}, got "
+                    f"{None if not torch.is_tensor(concept_orders) else tuple(concept_orders.shape)}")
+            orders = concept_orders.to(
+                device=advanced_ev.device, dtype=torch.long)
+        # The serial model normally binds before consuming the event.  Its
+        # current aligned word cell instead calls this after ``cs.forward`` so
+        # it can attach fold/order provenance to the returned carrier.  That
+        # forward may have added and consumed ``_c_prior``; in provenance-only
+        # mode retain the already-materialized event exactly, rather than
+        # replacing it with the pre-prior source mean.
+        if not preserve_target_event:
+            CS_sub.set_event(advanced_ev)
         object.__setattr__(CS_sub, "_aligned_carrier", carrier)
+        object.__setattr__(CS_sub, "_aligned_source_validity", validity)
         object.__setattr__(CS_sub, "_fold_carrier", carrier)
         object.__setattr__(CS_sub, "_fold_support", support)
         object.__setattr__(CS_sub, "_concept_orders", orders)
@@ -19057,8 +19711,10 @@ class ConceptualSpace(Space):
 
         own = getattr(self, "subspace", None)
         if own is not None and own is not CS_sub:
-            own.set_event(advanced_ev)
+            if not preserve_target_event:
+                own.set_event(advanced_ev)
             object.__setattr__(own, "_aligned_carrier", carrier)
+            object.__setattr__(own, "_aligned_source_validity", validity)
             object.__setattr__(own, "_fold_carrier", carrier)
             object.__setattr__(own, "_fold_support", support)
             object.__setattr__(own, "_concept_orders", orders)
@@ -19068,8 +19724,10 @@ class ConceptualSpace(Space):
             if feedback is None:
                 continue
             feedback.copy_context(CS_sub)
-            feedback.set_event(advanced_ev)
+            if not preserve_target_event:
+                feedback.set_event(advanced_ev)
             object.__setattr__(feedback, "_fold_support", support)
+            object.__setattr__(feedback, "_aligned_source_validity", validity)
             object.__setattr__(feedback, "_concept_orders", orders)
         object.__setattr__(self, "_last_fold_support", support)
         object.__setattr__(self, "_last_fold_source_count", len(sources))
@@ -19093,8 +19751,10 @@ class ConceptualSpace(Space):
         D = int(cs_event.shape[-1])
         n_vectors = int(self.outputShape[0])
         like = cs_event.new_zeros(int(cs_event.shape[0]), n_vectors, D)
-        part = self._aligned_stream(PS_sub, D, n_vectors, like, "part stream")
-        whole = self._aligned_stream(WS_sub, D, n_vectors, like, "whole stream")
+        part = self._aligned_stream(
+            PS_sub, D, n_vectors, like, "part stream")
+        whole = self._aligned_stream(
+            WS_sub, D, n_vectors, like, "whole stream")
         support = {
             "version": 1,
             "binding": "aligned",
@@ -19106,16 +19766,20 @@ class ConceptualSpace(Space):
             (part, whole), CS_sub, support=support, actual_order=0)
 
     def bind_fold_streams(self, part_folds, whole_folds, CS_sub,
-                          *, part_passes=None, whole_passes=None):
+                          *, part_passes=None, whole_passes=None,
+                          concept_orders=None,
+                          preserve_target_event=False,
+                          symbol_source=None, symbol_validity=None):
         """Form an aligned concept from every PS and WS fold output.
 
         The two ordered sequences must contain the same positive number of
         cumulative folds. Each source is conformed without cross-location
         reshaping, stacked as ``[B, 2F, N, D]``, and given equal weight in the
-        current reference implementation. The resulting concept at location
-        ``n`` therefore has a gradient path to every part fold and every whole
-        fold at that same location. The exact source carrier and ordered
-        sigma/pi paths ride on ``CS_sub`` for inspection and later minting.
+        current reference implementation. An optional prior-tick symbol peer
+        adds a seventh, location-aligned source. Its validity is evaluated per
+        location, so an absent peer does not dilute the six perceptual sources.
+        The exact source carrier and ordered sigma/pi paths ride on ``CS_sub``
+        for inspection and later minting.
 
         This method contains no ``ConceptualCombine`` call; the learned mixing
         matrix remains isolated in :meth:`bind_streams`.
@@ -19163,11 +19827,47 @@ class ConceptualSpace(Space):
                 source, D, n_vectors, like, f"whole fold {fold_idx + 1}"))
 
         support = self._ordered_fold_support(part_passes, whole_passes)
+        validity = torch.ones(
+            (int(like.shape[0]), len(sources), n_vectors),
+            dtype=torch.bool, device=like.device)
+        if symbol_source is not None:
+            symbol = self._aligned_stream(
+                symbol_source, D, n_vectors, like,
+                "prior-tick symbol stream")
+            sources.append(symbol)
+            if symbol_validity is None:
+                symbol_valid = torch.ones(
+                    (int(like.shape[0]), n_vectors), dtype=torch.bool,
+                    device=like.device)
+            else:
+                if (not torch.is_tensor(symbol_validity)
+                        or tuple(symbol_validity.shape)
+                        != (int(like.shape[0]), n_vectors)):
+                    raise ValueError(
+                        "prior-tick symbol validity must match [B,N] "
+                        f"geometry {(int(like.shape[0]), n_vectors)}, got "
+                        f"{None if not torch.is_tensor(symbol_validity) else tuple(symbol_validity.shape)}")
+                symbol_valid = symbol_validity.to(
+                    device=like.device, dtype=torch.bool)
+            validity = torch.cat(
+                [validity, symbol_valid.unsqueeze(1)], dim=1)
+            support["symbol_sources"] = [{
+                "kind": "prior_stm",
+                "prior_tick": True,
+                "location_aligned": True,
+            }]
+            support["source_count"] = len(sources)
+        elif symbol_validity is not None:
+            raise ValueError(
+                "symbol_validity requires a prior-tick symbol_source")
         actual_order = max(
             [int(e["depth"]) for e in support["part_folds"]]
             + [int(e["depth"]) for e in support["whole_folds"]])
         return self._commit_aligned_sources(
-            sources, CS_sub, support=support, actual_order=actual_order)
+            sources, CS_sub, support=support, actual_order=actual_order,
+            concept_orders=concept_orders,
+            preserve_target_event=preserve_target_event,
+            source_validity=validity)
 
     def bind_streams(self, PS_sub, WS_sub, CS_sub, SS_sub=None,
                      seed_payload=None):
@@ -19328,12 +20028,32 @@ class ConceptualSpace(Space):
                 getattr(self, "subspace", None), "_aligned_carrier", None)
         if torch.is_tensor(aligned) and aligned.dim() == 4:
             S = int(aligned.shape[1])
+            support = getattr(target, "_fold_support", None)
+            if (support is None
+                    and target is not getattr(self, "subspace", None)):
+                support = getattr(
+                    getattr(self, "subspace", None), "_fold_support", None)
+            if isinstance(support, dict):
+                n_part = len(support.get("part_folds", ()))
+                n_whole = len(support.get("whole_folds", ()))
+                # SS is a forward recurrent peer, not a perceptual tower.
+                # Preserve unbind's established two-tuple API and recover the
+                # PS/WS means from their explicit support counts, ignoring any
+                # trailing prior-tick symbol carrier during reconstruction.
+                if (n_part > 0 and n_whole > 0
+                        and n_part + n_whole <= S):
+                    part = aligned[:, :n_part].mean(dim=1)
+                    whole = aligned[
+                        :, n_part:n_part + n_whole].mean(dim=1)
+                    return part, whole
             if S == 2:
-                return aligned[:, 0], aligned[:, 1]
+                part, whole = aligned[:, 0], aligned[:, 1]
+                return part, whole
             if S > 2 and S % 2 == 0:
                 half = S // 2
-                return (aligned[:, :half].mean(dim=1),
-                        aligned[:, half:].mean(dim=1))
+                part = aligned[:, :half].mean(dim=1)
+                whole = aligned[:, half:].mean(dim=1)
+                return part, whole
         combine = getattr(self, "combine", None)
         if combine is None:
             return None
@@ -19357,7 +20077,9 @@ class ConceptualSpace(Space):
         grammar dispatch that consumes STM contents is Stage 3.
 
         Args:
-            subspace: the perceptual content (was ``PS_subspace``).
+            subspace: the primary conceptual-width activation carrier. In the
+                aligned serial model it is already the mean of separately
+                decoded PS/WS fold activations.
                 Materialised event is shape ``[B, N, D]``; one idea
                 per batch row is derived (mean over N) and pushed to
                 the STM.
@@ -19370,7 +20092,7 @@ class ConceptualSpace(Space):
                 replace this simple sum with the proper rule
                 composition). Otherwise PS alone is pushed.
 
-        The cross-pass C→P / C→S feedback the per-word recurrence
+        The cross-pass C→P / C→W feedback the per-word recurrence
         consumes is still published by writing the pushed idea event
         to ``self._subspaceForPS`` / ``self._subspaceForWS`` (the
         persistent SubSpace objects allocated once in ``__init__``).
@@ -19406,6 +20128,17 @@ class ConceptualSpace(Space):
         # columns the reverse needs).
         primary = subspace.materialize()
         _stm_dim = int(self.concept_dim)
+        _aligned_serial = bool(
+            getattr(self, "_concept_binding", "mixing") == "aligned"
+            and getattr(self, "_serial", False))
+        if (_aligned_serial and primary is not None
+                and int(primary.shape[-1]) != _stm_dim):
+            raise RuntimeError(
+                "aligned serial ConceptualSpace requires a predecoded "
+                "concept-width primary event: expected "
+                f"{_stm_dim}, got {int(primary.shape[-1])}; source "
+                "recursion and indexed concept-codebook activation must "
+                "complete before CS.forward")
         if primary is not None and primary.shape[-1] != _stm_dim:
             # dimensional-governance flat-slab reshape (doc/specs/2026-06-05
             # -dimensional-governance.md): the WIDE perceptual slab
@@ -19451,6 +20184,14 @@ class ConceptualSpace(Space):
         sym = None
         if word_subspace is not None and not word_subspace.is_empty():
             sym = word_subspace.materialize()
+            if (_aligned_serial and sym is not None
+                    and int(sym.shape[-1]) != _stm_dim):
+                raise RuntimeError(
+                    "aligned serial ConceptualSpace requires a "
+                    "concept-width symbolic event: expected "
+                    f"{_stm_dim}, got {int(sym.shape[-1])}; symbolic "
+                    "concept-codebook activation must complete before "
+                    "CS.forward")
             if sym is not None and sym.shape[-1] != _stm_dim:
                 if sym.shape[-1] > _stm_dim:
                     sym = sym[..., :_stm_dim]
@@ -19614,14 +20355,14 @@ class ConceptualSpace(Space):
         ss = getattr(self, 'symbolSpace', None)
         if ss is not None:
             ss.clear_last_svo()
-        # Expose the two consumer views for the recurrent cell:
+        # Expose the two recurrent consumer views for the cell:
         #   _subspaceForWS -- the pushed-idea subspace WS.forward
         #     consumes next pass.
         #   _subspaceForPS -- the persistent C→P feedback carrier
         #     (mutated in place via ``set_event``) the per-word loop
-        #     reads next iteration. Stage 1.A retired PS's direct
-        #     consumption of this view, but the lift belongs to CS
-        #     architecturally so the carrier is still emitted.
+        #     reads next iteration. Stage 1.A retired PS's direct consumption
+        #     of this compatibility view. It is a conceptual event carrier,
+        #     not a feature-width lift.
         # ``object.__setattr__`` matches the pre-1.C reasoning: avoids
         # mutating ``self._modules`` under torch.compile guards.
         object.__setattr__(self, "_subspaceForWS", subspace)
@@ -19661,6 +20402,11 @@ class ConceptualSpace(Space):
             pending = getattr(self, "_pending_category_learner_extras", None)
             if isinstance(pending, dict):
                 extras["category_learner"] = pending
+        fold_support = getattr(self, "_concept_fold_support", None)
+        if isinstance(fold_support, dict) and fold_support:
+            extras["concept_fold_support"] = {
+                int(cid): record for cid, record in fold_support.items()
+            }
         legacy = getattr(self, "_legacy_whole_structure", None)
         if isinstance(legacy, dict) and legacy:
             extras["legacy_whole_structure"] = legacy
@@ -19690,6 +20436,20 @@ class ConceptualSpace(Space):
             else:
                 self._pending_category_learner_extras = learner_blob
 
+        fold_blob = extras.get("concept_fold_support")
+        if isinstance(fold_blob, dict):
+            restored = {}
+            for cid, record in fold_blob.items():
+                if not isinstance(record, dict):
+                    continue
+                support = record.get("support")
+                if not isinstance(support, dict):
+                    continue
+                normalized = ConceptualSpace.record_concept_fold_support(
+                    self, int(cid), support,
+                    int(record.get("actual_order", -1)))
+                restored[int(cid)] = normalized
+
         incoming_legacy = extras.get("legacy_whole_structure")
         if not isinstance(incoming_legacy, dict):
             # Calls from the schema-1 migrator contain the old WS envelope
@@ -19699,7 +20459,7 @@ class ConceptualSpace(Space):
                 str(k): v for k, v in extras.items()
                 if str(k) not in {
                     "version", "role", "category_assign",
-                    "category_learner",
+                    "category_learner", "concept_fold_support",
                 }
             }
         if incoming_legacy:
@@ -21974,13 +22734,32 @@ class WholeSpace(Space):
             raise ValueError(
                 "concept fold support must contain the same number of part "
                 "and whole folds")
-        return {
+        normalized = {
             "version": int(support.get("version", 1)),
             "binding": str(support.get("binding", "aligned")),
             "part_folds": parts,
             "whole_folds": wholes,
             "source_count": len(parts) + len(wholes),
         }
+        raw_symbols = support.get("symbol_sources")
+        if raw_symbols is not None:
+            if not isinstance(raw_symbols, (list, tuple)):
+                raise ValueError(
+                    "concept fold support symbol_sources must be a list")
+            symbols = []
+            for raw in raw_symbols:
+                if not isinstance(raw, dict):
+                    raise ValueError(
+                        "concept fold support symbol source must be a mapping")
+                symbols.append({
+                    "kind": str(raw.get("kind", "prior_stm")),
+                    "prior_tick": bool(raw.get("prior_tick", True)),
+                    "location_aligned": bool(
+                        raw.get("location_aligned", True)),
+                })
+            normalized["symbol_sources"] = symbols
+            normalized["source_count"] += len(symbols)
+        return normalized
 
     def insert_meta(self, ps_pos, ws_pos, fused_vec=None,
                     *, ema=0.1, trust=None, fold_support=None):
