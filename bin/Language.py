@@ -61,6 +61,58 @@ _GRAMMAR_DIR = _Path(__file__).parent.parent / "data"
 from dataclasses import dataclass, field as _dc_field
 
 
+def _active_basis_prototypes(basis):
+    """Return the logically selectable prototype prefix for ``basis``.
+
+    Learned Codebooks may reserve substantially more physical rows than are
+    logically active.  Selection/search consumers in this module must use the
+    Codebook's active read surface; ordinary Basis objects and raw tensors keep
+    their historical full-table behaviour.
+    """
+    if basis is None:
+        return None
+    active = getattr(basis, "active_prototypes", None)
+    if callable(active):
+        return active()
+    get_w = getattr(basis, "getW", None)
+    if callable(get_w):
+        return get_w()
+    return basis if torch.is_tensor(basis) else None
+
+
+def _active_percept_prototypes(percept_store):
+    """Return occupied radix rows without reading its physical reserve.
+
+    Real ``RadixLayer`` stores expose ``active_prototypes``.  The tensor
+    fallback preserves the small duck-typed stores used by legacy callers and
+    tests while still applying their explicit ``_size`` boundary.
+    """
+    if percept_store is None:
+        return None
+    active = getattr(percept_store, "active_prototypes", None)
+    if callable(active):
+        return active()
+    codebook = getattr(percept_store, "codebook", None)
+    if codebook is None or not torch.is_tensor(codebook):
+        return None
+    size = min(int(getattr(percept_store, "_size", 0)),
+               int(codebook.shape[0]))
+    return codebook[:size]
+
+
+def _filter_active_candidate_rows(rows, active_count):
+    """Drop explicit candidate ids outside an active prefix.
+
+    Active Codebooks use a contiguous prefix, so retained ids are still the
+    original/global row ids and need no remapping.
+    """
+    if rows is None:
+        return None
+    candidate = rows if torch.is_tensor(rows) else torch.as_tensor(rows)
+    candidate = candidate.long().reshape(-1)
+    return candidate[(candidate >= 0) & (candidate < int(active_count))]
+
+
 @dataclass
 class RoutingState:
     """First-class per-sentence routing decision produced by
@@ -277,6 +329,103 @@ class MetaSymbolCategoryLearner:
                 and int(row["stable"]) >= self.stable_updates):
             return self._commit(ws, meta_pos, int(best))
         return None
+
+    def vocab_extras(self):
+        """Return a JSON-safe snapshot of the pending E-step state.
+
+        Category centroids are registered tensors on ``WholeSpace`` and ride
+        in ``state_dict``.  This sidecar contains the complementary Python
+        state needed to resume the learner at the exact next observation:
+        its thresholds/EMA configuration, monotonic step, and every pending
+        evidence row with its stability and eviction metadata.
+        """
+        pending = {}
+        for meta_pos, row in self.pending.items():
+            evidence = row.get("evidence")
+            if not torch.is_tensor(evidence):
+                evidence = torch.tensor(evidence, dtype=torch.float32)
+            evidence = evidence.detach().to(
+                device="cpu", dtype=torch.float32).reshape(-1)
+            pending[int(meta_pos)] = {
+                "evidence": [float(x) for x in evidence.tolist()],
+                "mass": float(row.get("mass", evidence.sum().item())),
+                "best": (None if row.get("best") is None
+                         else int(row["best"])),
+                "stable": int(row.get("stable", 0)),
+                "last": int(row.get("last", 0)),
+            }
+        return {
+            "version": 1,
+            "n_roles": int(self.n_roles),
+            "config": {
+                "max_pending": int(self.max_pending),
+                "min_mass": float(self.min_mass),
+                "min_confidence": float(self.min_confidence),
+                "min_margin": float(self.min_margin),
+                "stable_updates": int(self.stable_updates),
+                "evidence_decay": float(self.evidence_decay),
+                "prototype_ema": float(self.prototype_ema),
+            },
+            "step": int(self.step),
+            "pending": pending,
+        }
+
+    def load_vocab_extras(self, extras):
+        """Restore a snapshot emitted by :meth:`vocab_extras`.
+
+        Evidence is deliberately rebuilt as CPU float32: ``_role_tensor``
+        canonicalizes every live observation to that representation too, so
+        restoring does not introduce a device-dependent continuation.
+        """
+        if not isinstance(extras, dict):
+            return False
+        saved_n_roles = int(extras.get("n_roles", self.n_roles))
+        if saved_n_roles != self.n_roles:
+            raise ValueError(
+                "MetaSymbolCategoryLearner role width mismatch: "
+                f"saved={saved_n_roles}, live={self.n_roles}")
+
+        config = extras.get("config") or {}
+        if not isinstance(config, dict):
+            raise ValueError("category learner config must be a mapping")
+        int_fields = ("max_pending", "stable_updates")
+        float_fields = (
+            "min_mass", "min_confidence", "min_margin",
+            "evidence_decay", "prototype_ema",
+        )
+        for name in int_fields:
+            if name in config:
+                setattr(self, name, int(config[name]))
+        for name in float_fields:
+            if name in config:
+                setattr(self, name, float(config[name]))
+
+        restored = {}
+        pending = extras.get("pending") or {}
+        if not isinstance(pending, dict):
+            raise ValueError("category learner pending state must be a mapping")
+        for raw_meta_pos, raw_row in pending.items():
+            if not isinstance(raw_row, dict):
+                raise ValueError("category learner row must be a mapping")
+            evidence = torch.tensor(
+                raw_row.get("evidence", []), dtype=torch.float32,
+                device="cpu").reshape(-1)
+            if evidence.numel() != self.n_roles:
+                raise ValueError(
+                    "MetaSymbolCategoryLearner evidence width mismatch for "
+                    f"meta {raw_meta_pos}: saved={evidence.numel()}, "
+                    f"live={self.n_roles}")
+            best = raw_row.get("best")
+            restored[int(raw_meta_pos)] = {
+                "evidence": evidence,
+                "mass": float(raw_row.get("mass", evidence.sum().item())),
+                "best": None if best is None else int(best),
+                "stable": int(raw_row.get("stable", 0)),
+                "last": int(raw_row.get("last", 0)),
+            }
+        self.pending = restored
+        self.step = int(extras.get("step", 0))
+        return True
 
 
 def load_grammar(filename):
@@ -2019,8 +2168,18 @@ class IntersectionLayer(GrammarLayer):
         if basis is not None:
             # Mereology recommender; falls back internally to
             # (parent, parent) when W is empty.
-            W = basis.getW() if hasattr(basis, 'getW') else None
+            W = _active_basis_prototypes(basis)
             if W is not None and torch.is_tensor(W) and W.dim() == 2:
+                active_count = int(W.shape[0])
+                left_rows = _filter_active_candidate_rows(
+                    left_rows, active_count)
+                right_rows = _filter_active_candidate_rows(
+                    right_rows, active_count)
+                # The pair-snap requires at least one real candidate.  When an
+                # explicit set contained only reserved rows, fall through to
+                # the sentinel-bearing recommender instead.
+                snap = bool(snap and left_rows is not None
+                            and left_rows.numel() > 0)
                 return Ops.conjunctionReverse(
                     parent, parent, W, monotonic=self.monotonic,
                     left_rows=left_rows, right_rows=right_rows,
@@ -2157,8 +2316,15 @@ class UnionLayer(GrammarLayer):
         if self.butterfly:
             return self._butterfly_reverse(parent)
         if basis is not None:
-            W = basis.getW() if hasattr(basis, 'getW') else None
+            W = _active_basis_prototypes(basis)
             if W is not None and torch.is_tensor(W) and W.dim() == 2:
+                active_count = int(W.shape[0])
+                left_rows = _filter_active_candidate_rows(
+                    left_rows, active_count)
+                right_rows = _filter_active_candidate_rows(
+                    right_rows, active_count)
+                snap = bool(snap and left_rows is not None
+                            and left_rows.numel() > 0)
                 return Ops.disjunctionReverse(
                     parent, parent, W, monotonic=self.monotonic,
                     left_rows=left_rows, right_rows=right_rows,
@@ -2275,9 +2441,13 @@ class ChunkLayer(GrammarLayer):
         if self.butterfly:
             return self._butterfly_reverse(parent)
         if basis is not None:
-            W = basis.getW() if hasattr(basis, 'getW') else basis
+            W = _active_basis_prototypes(basis)
             if W is not None and torch.is_tensor(W) and W.numel() > 0:
+                left_rows = _filter_active_candidate_rows(
+                    left_rows, int(W.shape[0]))
                 rows = W if left_rows is None else W[left_rows]
+                if rows.numel() == 0:
+                    return parent, torch.zeros_like(parent)
                 flat = parent.detach().reshape(-1).to(W.dtype)
                 if flat.shape[0] == rows.shape[-1]:
                     sims = torch.nn.functional.normalize(rows, dim=-1) @ \
@@ -2313,8 +2483,10 @@ class ChunkLayer(GrammarLayer):
         form rather than its folded order-0 shadow. ``support`` still indexes
         the codebook rows. ``None`` peels against the basis rows directly.
         """
-        W = basis.getW() if hasattr(basis, 'getW') else basis
-        ref = W if prototypes is None else prototypes
+        W = _active_basis_prototypes(basis)
+        # Unfolded prototypes are index-aligned with the physical codebook.
+        # Slice the same active prefix so support ids remain global prefix ids.
+        ref = W if prototypes is None else prototypes[:W.shape[0]]
         target = whole.detach().reshape(-1).to(W.dtype)
         residual = target.clone()
         floor = tol * (1.0 + float(target.norm()))
@@ -2582,6 +2754,14 @@ class LiftLayer(GrammarLayer):
     invertible = True
     space_role       = 'CS'
     event_aware = True          # operates on the muxed event (extends .when)
+    # The verb projection emits LOG eigenvalues.  Leaving those logits
+    # unbounded lets ``exp(w)`` overflow while the outer tanh still returns a
+    # perfectly finite +/-1.  Backward then encounters the indeterminate
+    # product ``0 * inf`` (including for an unselected eager router candidate)
+    # and poisons the complete input adjoint.  +/-8 keeps each positive gain
+    # in [exp(-8), exp(8)] and the diagonal condition ratio at most exp(16),
+    # while leaving the ordinary sparse-spectrum range bit-for-bit unchanged.
+    _VERB_LOG_GAIN_LIMIT = 8.0
 
     def __init__(self, nInput=None, nOutput=None, *,
                  wholeSpace=None, perceptualSpace=None,
@@ -2844,10 +3024,36 @@ class LiftLayer(GrammarLayer):
 
     def _verb_spectrum_w(self, verb_what):
         """The verb's SPARSE log-eigenvalues w_v from the verb code,
-        soft-thresholded so most eigs are 0 (-> e^0 = 1 -> identity)."""
+        soft-thresholded so most eigs are 0 (-> e^0 = 1 -> identity), then
+        constrained to a finite-condition spectrum.  The symmetric clamp is
+        also shared by ``apply_verb`` and ``unapply_verb``, so they retain the
+        same inverse pair; values already in range are exactly unchanged."""
         w = self._verb_spec(verb_what.to(self._verb_spec.weight.dtype))
         tau = 0.1
-        return torch.sign(w) * torch.clamp(w.abs() - tau, min=0.0)
+        sparse_w = torch.sign(w) * torch.clamp(w.abs() - tau, min=0.0)
+        return sparse_w.clamp(
+            min=-self._VERB_LOG_GAIN_LIMIT,
+            max=self._VERB_LOG_GAIN_LIMIT,
+        )
+
+    @staticmethod
+    def _verb_rail_transform(value, log_gain):
+        """Apply a diagonal gain in a numerically safe atanh chart.
+
+        Half and bfloat16 cannot represent ``1 - epsilon`` for the module's
+        small epsilon, so clamping in the input dtype can leave an exact rail
+        value for ``atanh`` and produce an infinite interior.  Keep the full
+        chart calculation in float32, including the gain exponential, and
+        cast only the bounded result back to the public input dtype.  Using
+        this same helper with opposite log gains keeps the forward and inverse
+        paths symmetric up to the unavoidable quantization of their outputs.
+        """
+        output_dtype = value.dtype
+        value_f32 = value.to(dtype=torch.float32)
+        log_gain_f32 = log_gain.to(dtype=torch.float32)
+        interior = torch.atanh(value_f32.clamp(-1.0 + epsilon, 1.0 - epsilon))
+        transformed = torch.tanh(torch.exp(log_gain_f32) * interior)
+        return transformed.to(dtype=output_dtype)
 
     def apply_verb(self, np_what, verb_what):
         """VERB eig-spectrum OPERATOR (Stage 1): act on the NP as the verb's
@@ -2859,8 +3065,8 @@ class LiftLayer(GrammarLayer):
         or ``VerbLayer`` built the projection."""
         if not getattr(self, '_verb_spectrum', False) or self._verb_spec is None:
             return np_what
-        a = torch.atanh(np_what.clamp(-1 + epsilon, 1 - epsilon))
-        return torch.tanh(torch.exp(self._verb_spectrum_w(verb_what)) * a)
+        return self._verb_rail_transform(
+            np_what, self._verb_spectrum_w(verb_what))
 
     def unapply_verb(self, vp_what, verb_what):
         """Inverse of ``apply_verb`` GIVEN the verb: NP = tanh(e^{-w_v} ⊙
@@ -2869,8 +3075,8 @@ class LiftLayer(GrammarLayer):
         reverse -- is a follow-on increment.)"""
         if not getattr(self, '_verb_spectrum', False) or self._verb_spec is None:
             return vp_what
-        a = torch.atanh(vp_what.clamp(-1 + epsilon, 1 - epsilon))
-        return torch.tanh(torch.exp(-self._verb_spectrum_w(verb_what)) * a)
+        return self._verb_rail_transform(
+            vp_what, -self._verb_spectrum_w(verb_what))
 
     def reverse(self, parent, gate=None, basis=None,
                 left_rows=None, right_rows=None,
@@ -2893,8 +3099,13 @@ class LiftLayer(GrammarLayer):
             raise RuntimeError(
                 "LiftLayer was constructed without operand-width "
                 "information; cannot run reverse.")
-        W = basis.getW() if (basis is not None
-                             and hasattr(basis, 'getW')) else None
+        W = _active_basis_prototypes(basis)
+        if W is not None and torch.is_tensor(W) and W.dim() == 2:
+            active_count = int(W.shape[0])
+            left_rows = _filter_active_candidate_rows(
+                left_rows, active_count)
+            right_rows = _filter_active_candidate_rows(
+                right_rows, active_count)
 
         def _split_what(p_what):
             if W is not None and hasattr(W, 'shape') and int(W.shape[0]) > 0:
@@ -3142,8 +3353,13 @@ class LowerLayer(GrammarLayer):
             raise RuntimeError(
                 "LowerLayer was constructed without operand-width "
                 "information; cannot run reverse.")
-        W = basis.getW() if (basis is not None
-                             and hasattr(basis, 'getW')) else None
+        W = _active_basis_prototypes(basis)
+        if W is not None and torch.is_tensor(W) and W.dim() == 2:
+            active_count = int(W.shape[0])
+            left_rows = _filter_active_candidate_rows(
+                left_rows, active_count)
+            right_rows = _filter_active_candidate_rows(
+                right_rows, active_count)
 
         def _split_what(p_what):
             if W is not None and hasattr(W, 'shape') and int(W.shape[0]) > 0:
@@ -3414,7 +3630,7 @@ class SymbolizeLayer(GrammarLayer):
         return getattr(ps_space, 'percept_store', None)
 
     def _ws_codebook(self):
-        """Resolve the WS codebook tensor (or None)."""
+        """Resolve the logically active WS prototype prefix (or ``None``)."""
         ws = getattr(self, 'wholeSpace', None)
         if ws is None:
             return None
@@ -3424,7 +3640,7 @@ class SymbolizeLayer(GrammarLayer):
         cb = getattr(sub, 'what', None)
         if cb is None:
             return None
-        return cb.getW()
+        return _active_basis_prototypes(cb)
 
     # ------------------------------------------------------------------
     # Forward / reverse / compose / generate
@@ -3444,7 +3660,7 @@ class SymbolizeLayer(GrammarLayer):
         # META node. This keeps SymbolizeLayer harmless in lexicon mode.
         if ws is None or ps_store is None:
             return (left + right) / 2.0
-        ps_codebook = getattr(ps_store, 'codebook', None)
+        ps_codebook = _active_percept_prototypes(ps_store)
         ws_W = self._ws_codebook()
         if ps_codebook is None or ws_W is None:
             return (left + right) / 2.0
@@ -3544,10 +3760,11 @@ class SymbolizeLayer(GrammarLayer):
         ws_row = int(ws_row)
         # Range-check the rows; a stale taxonomy entry could carry an
         # out-of-bounds row idx, which would crash the index op.
-        ps_codebook = getattr(ps_store, 'codebook', None)
+        ps_codebook = _active_percept_prototypes(ps_store)
+        ps_active = 0 if ps_codebook is None else int(ps_codebook.shape[0])
         if (ps_codebook is None
-                or ps_row >= ps_codebook.shape[0]
-                or ws_row >= ws_W.shape[0]):
+                or ps_row < 0 or ps_row >= ps_active
+                or ws_row < 0 or ws_row >= ws_W.shape[0]):
             half = parent / 2.0
             return half, half
         left = ps_codebook[ps_row]
@@ -3676,8 +3893,15 @@ class ConjunctionLayer(GrammarLayer):
         if self.butterfly:
             return self._butterfly_reverse(parent)
         if basis is not None:
-            W = basis.getW() if hasattr(basis, 'getW') else None
+            W = _active_basis_prototypes(basis)
             if W is not None and torch.is_tensor(W) and W.dim() == 2:
+                active_count = int(W.shape[0])
+                left_rows = _filter_active_candidate_rows(
+                    left_rows, active_count)
+                right_rows = _filter_active_candidate_rows(
+                    right_rows, active_count)
+                snap = bool(snap and left_rows is not None
+                            and left_rows.numel() > 0)
                 return Ops.conjunctionReverse(
                     parent, parent, W, monotonic=True,
                     left_rows=left_rows, right_rows=right_rows,
@@ -3808,8 +4032,15 @@ class DisjunctionLayer(GrammarLayer):
         if self.butterfly:
             return self._butterfly_reverse(parent)
         if basis is not None:
-            W = basis.getW() if hasattr(basis, 'getW') else None
+            W = _active_basis_prototypes(basis)
             if W is not None and torch.is_tensor(W) and W.dim() == 2:
+                active_count = int(W.shape[0])
+                left_rows = _filter_active_candidate_rows(
+                    left_rows, active_count)
+                right_rows = _filter_active_candidate_rows(
+                    right_rows, active_count)
+                snap = bool(snap and left_rows is not None
+                            and left_rows.numel() > 0)
                 return Ops.disjunctionReverse(
                     parent, parent, W, monotonic=True,
                     left_rows=left_rows, right_rows=right_rows,
@@ -4912,11 +5143,12 @@ class LanguageLayer(Layer):
         # MetaSymbol identity no longer maps 1:1 to a percept, so their
         # category is neutral.
         cat_e = None
-        _ss = getattr(word_space, 'wholeSpace', None)
-        if (_ss is not None
-                and getattr(_ss, 'category_codebook_enabled', None) is not None
-                and _ss.category_codebook_enabled()):
-            cat_e = self._build_category_context(x, _ss)
+        category_owner = self._category_owner(word_space)
+        if (category_owner is not None
+                and getattr(category_owner,
+                            'category_codebook_enabled', None) is not None
+                and category_owner.category_codebook_enabled()):
+            cat_e = self._build_category_context(x, category_owner)
         terminal_space_role = all_space_roles[0] if all_space_roles else None
 
         for space_role in all_space_roles:
@@ -4932,11 +5164,18 @@ class LanguageLayer(Layer):
                 rid_table = self._unary_rule_ids[space_role]
                 kind = u_routing["action_kind"]
                 op = u_routing["action_op"]
-                for b in range(B):
-                    for j in range(kind.shape[1]):
-                        if int(kind[b, j].item()) == 2:
+                # Rule ids are host bookkeeping only.  A scalar ``.item()``
+                # here for every (batch,row) pair serializes MPS thousands of
+                # times during per-word parsing.  Transfer the compact integer
+                # routing slab once, then decode it in ordinary Python; the
+                # differentiable ``u_soft`` path below is unchanged.
+                routing_rows = torch.stack(
+                    (kind, op), dim=-1).detach().cpu().tolist()
+                for b, routing_row in enumerate(routing_rows):
+                    for action_kind, action_op in routing_row:
+                        if int(action_kind) == 2:
                             space_role_rules_per_row[b].append(
-                                rid_table[int(op[b, j].item())])
+                                rid_table[int(action_op)])
                 # Propagate soft slab so gradient reaches unary ops at
                 # later space_roles / through the binary stage of this space_role.
                 x = u_soft
@@ -4967,13 +5206,18 @@ class LanguageLayer(Layer):
                     kind = b_routing["action_kind"]
                     op = b_routing["action_op"]
                     lengths = b_routing["lengths"]
-                    B_now = kind.shape[0]
-                    for b in range(B_now):
-                        L = int(lengths[b].item())
-                        for j in range(L):
-                            if int(kind[b, j].item()) == 1:
+                    # As above, collect the discrete diagnostic/rule path with
+                    # two bulk transfers per round instead of one MPS sync per
+                    # scalar.  ``b_soft`` retains the full gradient graph.
+                    routing_rows = torch.stack(
+                        (kind, op), dim=-1).detach().cpu().tolist()
+                    length_rows = lengths.detach().cpu().tolist()
+                    for b, routing_row in enumerate(routing_rows):
+                        L = int(length_rows[b])
+                        for action_kind, action_op in routing_row[:L]:
+                            if int(action_kind) == 1:
                                 space_role_rules_per_row[b].append(
-                                    rid_table[int(op[b, j].item())])
+                                    rid_table[int(action_op)])
                     x = b_soft
                 if round_routings:
                     # Last round's routing is the canonical "binary"
@@ -5000,40 +5244,64 @@ class LanguageLayer(Layer):
 
         # MetaSymbol category role observation (Phase 1; doc/Language.md
         # "Participation Categories as the Chooser's Syntactic-Category
-        # Context"). Gated: only when the terminal WholeSpace has the category
-        # codebook enabled. Captures the FIRST binary space_role's round-0 reduces
+        # Context"). Gated: only when the architecture's category owner has
+        # the codebook enabled. Captures the FIRST binary space_role's round-0 reduces
         # (the only round whose slab positions map 1:1 to the original
         # percepts) as per-row (left_pos, right_pos, method) tuples, stashed on
-        # the WS for the autobind hook (which holds pid_2d) to attribute to
-        # MetaSymbols. Off -> not computed (byte-identical).
-        ws = getattr(word_space, 'wholeSpace', None)
-        if (ws is not None
-                and getattr(ws, 'category_codebook_enabled', None) is not None
-                and ws.category_codebook_enabled()):
-            ws._category_role_obs = self._collect_round0_role_obs()
+        # the category owner for the autobind hook (which holds pid_2d) to
+        # attribute to MetaSymbols/concepts.  In the canonical property-basis
+        # architecture that owner is ConceptualSpace; legacy symbol-dictionary
+        # models retain WholeSpace ownership. Off -> not computed
+        # (byte-identical).
+        if (category_owner is not None
+                and getattr(category_owner,
+                            'category_codebook_enabled', None) is not None
+                and category_owner.category_codebook_enabled()):
+            category_owner._category_role_obs = (
+                self._collect_round0_role_obs())
 
         return rules
 
-    def _build_category_context(self, x, ws):
+    @staticmethod
+    def _category_owner(word_space):
+        """Return the live grammatical-category owner for ``word_space``.
+
+        ``WholeSpace`` is only an upstream property basis in the canonical
+        architecture, so category VQ state and concept participation live on
+        the sibling ``ConceptualSpace``.  Legacy WholeSpaces remain symbol
+        dictionaries and keep their historical ownership.  Resolve this from
+        the already-wired SymbolSubSpace rather than planting a downstream
+        back-reference on a property WholeSpace.
+        """
+        ws = getattr(word_space, 'wholeSpace', None)
+        if ws is not None and getattr(ws, 'property_basis', False):
+            return getattr(word_space, 'conceptualSpace', None)
+        return ws
+
+    def _build_category_context(self, x, category_owner):
         """Per-slot category role vector ``[B, N, n_roles]`` for grammar
         routing, or ``None`` when unavailable.
 
         Pure reads only (no E-step at score time): each terminal slot position
-        -> percept id (stashed by the autobind hook earlier this step) -> PS
-        position -> MetaSymbol -> assigned centroid -> role vector. Slots with
-        no percept, no binding, or no centroid yet map to ``-1`` and become a
-        zero (neutral) row via :meth:`category_role_of`. The position index
+        -> percept id (stashed by the autobind hook earlier this step) -> word
+        concept in property-basis mode, or PS position -> MetaSymbol in legacy
+        mode -> assigned centroid -> role vector. Slots with no percept,
+        binding, or centroid become a zero (neutral) row. The position index
         aligns with the round-0 slab (== original percept positions; the same
         correspondence Phase 1's role observation relies on)."""
-        last_pid = getattr(ws, '_category_last_pid', None)
-        n_roles = int(getattr(ws, '_category_n_roles', 0) or 0)
-        row_to_pos = getattr(ws, '_ps_row_to_pos', None)
-        if not last_pid or n_roles == 0 or row_to_pos is None:
+        last_pid = getattr(category_owner, '_category_last_pid', None)
+        n_roles = int(
+            getattr(category_owner, '_category_n_roles', 0) or 0)
+        if not last_pid or n_roles == 0:
             return None
         B, N = int(x.shape[0]), int(x.shape[1])
         ctx = x.new_zeros(B, N, n_roles)
-        anch = getattr(ws, '_anchored_pids', None)
-        role_index = getattr(ws, '_category_role_index', None) or {}
+        anch = getattr(category_owner, '_anchored_pids', None)
+        role_index = (
+            getattr(category_owner, '_category_role_index', None) or {})
+        concept_of_percept = getattr(
+            category_owner, 'concept_of_percept', None)
+        row_to_pos = getattr(category_owner, '_ps_row_to_pos', None)
         for b in range(min(B, len(last_pid))):
             prow = last_pid[b]
             for n in range(min(N, len(prow))):
@@ -5051,13 +5319,23 @@ class LanguageLayer(Layer):
                         if _ri is not None:
                             ctx[b, n, int(_ri)] = 1.0
                             continue
-                ps_pos = row_to_pos.get(pid)
-                if ps_pos is None:
-                    continue
-                meta_pos = ws.taxonomy_parent(ps_pos)
+                if callable(concept_of_percept):
+                    # propertyBasis: the category describes the downstream
+                    # WORD-concept minted from the percept, not an upstream
+                    # WholeSpace META position.
+                    meta_pos = concept_of_percept(pid)
+                else:
+                    # Legacy WS dictionary: retain the position-keyed
+                    # PS -> META lookup exactly as before.
+                    if row_to_pos is None:
+                        continue
+                    ps_pos = row_to_pos.get(pid)
+                    if ps_pos is None:
+                        continue
+                    meta_pos = category_owner.taxonomy_parent(ps_pos)
                 if meta_pos is None:
                     continue
-                role = ws.category_role_for_meta(
+                role = category_owner.category_role_for_meta(
                     int(meta_pos), device=x.device, dtype=x.dtype)
                 if role is not None:
                     ctx[b, n, :] = role.reshape(-1)[:n_roles]
@@ -5867,11 +6145,13 @@ class LanguageLayer(Layer):
                             and getattr(tax, 'priming_enabled', False)
                             and space_role_basis is not None
                             and hasattr(space_role_basis, 'getW')):
-                        W_rec = space_role_basis.getW()
+                        W_rec = _active_basis_prototypes(space_role_basis)
                         if W_rec is not None:
                             for vec, side in ((left[0], 'left_rows'),
                                               (right[0], 'right_rows')):
                                 cand = reverse_kwargs.get(side, None)
+                                cand = _filter_active_candidate_rows(
+                                    cand, int(W_rec.shape[0]))
                                 rid = self._recover_selected_row(
                                     vec, W_rec, cand)
                                 if rid is not None and rid >= 0:
@@ -6172,6 +6452,33 @@ def binary_tiling_soft_dp(
     c = copy_score / temperature                          # [B, N, R_copy]
     r = reduce_score / temperature                        # [B, N-1, R_reduce]
 
+    # The chooser scores are unnormalised dot products.  Early in training,
+    # repeated grammar transforms can therefore produce perfectly finite
+    # scores whose magnitude is large enough (observed around 1e9 at N=64)
+    # to make float32 forward/backward subtraction inaccurate by hundreds.
+    # A log marginal is theoretically <= 0, but that cancellation error can
+    # make it positive and ``exp`` then overflows.
+    #
+    # Rescale the complete score set for each batch row by one positive,
+    # detached constant.  This preserves every score ordering (and therefore
+    # the preferred routes/ops), leaves ordinary scores exactly unchanged,
+    # and bounds a length-N accumulated message closely enough for stable
+    # float32 subtraction.  Non-finite inputs are excluded ONLY from choosing
+    # the scale; they remain in c/r and still propagate to the fail-loud checks
+    # downstream rather than being silently repaired.
+    SOFT_DP_MAX_ABS_SCORE = 32.0
+    finite_c_abs = torch.where(
+        torch.isfinite(c), c.abs(), torch.zeros_like(c))
+    max_abs = finite_c_abs.reshape(B, -1).amax(dim=1)
+    if r.numel() > 0:
+        finite_r_abs = torch.where(
+            torch.isfinite(r), r.abs(), torch.zeros_like(r))
+        max_abs = torch.maximum(
+            max_abs, finite_r_abs.reshape(B, -1).amax(dim=1))
+    score_scale = (max_abs / SOFT_DP_MAX_ABS_SCORE).clamp_min(1.0).detach()
+    c = c / score_scale[:, None, None]
+    r = r / score_scale[:, None, None]
+
     # Per-action log-sum-exp over op axis = action-level log-score.
     c_action = torch.logsumexp(c, dim=-1)                 # [B, N]
     r_action = (torch.logsumexp(r, dim=-1)
@@ -6206,11 +6513,13 @@ def binary_tiling_soft_dp(
 
     # Action-level marginals.
     copy_log_marginal = alpha[:, :N] + c_action + beta[:, 1:N + 1] - logZ.unsqueeze(1)
-    copy_marginal = copy_log_marginal.exp()
+    # Exact log marginals cannot exceed zero.  Clamp the tiny positive residue
+    # that float32 cancellation can still leave at the probability boundary.
+    copy_marginal = copy_log_marginal.clamp_max(0.0).exp()
     if N > 1:
         reduce_log_marginal = (
             alpha[:, :N - 1] + r_action + beta[:, 2:N + 1] - logZ.unsqueeze(1))
-        reduce_marginal = reduce_log_marginal.exp()
+        reduce_marginal = reduce_log_marginal.clamp_max(0.0).exp()
     else:
         reduce_marginal = copy_score.new_zeros(B, 0)
 
@@ -7350,6 +7659,12 @@ class BinaryStructuredReductionLayer(nn.Module):
             "logZ": soft["logZ"],
             "gates": gates,
             "marginal_slab": marginal_slab,
+            # Conditional grammatical parent, independent of the outer
+            # SHIFT-vs-REDUCE decision.  A memory-capacity demand must choose
+            # the best grammar operator even when the unconstrained Viterbi
+            # route preferred COPY; using ``hard_slab[:, 0]`` in that case
+            # merely copied an operand while decrementing STM depth.
+            "chosen_reduced": chosen_reduced,
         }
         if span_start is not None and span_end is not None:
             routing["span_start"] = hard_meta["span_start"]
@@ -8106,14 +8421,15 @@ def _grammar_layer_classes():
     return dict(GRAMMAR_LAYER_CLASSES)
 
 def build_space_syntactic_layer(space, word_space, *, space_role,
-                                builtin_layers=None):
+                                builtin_layers=None, owner_space=None):
     """Construct a per-space SyntacticLayer.
 
     Args:
-        space: the host Space (PartSpace / ConceptualSpace /
-            WholeSpace). The constructed layer is stored on
-            ``space.syntacticLayer`` and registered in the symbolSpace's
-            host_layer registry.
+        space: the host Space whose geometry sizes host operations.
+        owner_space: optional architectural owner of the dispatcher.  When
+            omitted this is ``space``.  The split is used by the canonical
+            property-basis model: symbolic grammar is owned by SymbolSpace,
+            while its operands use ConceptualSpace geometry.
         word_space: the SymbolSpace coordinator. Owns the host_layer
             registry and the chart.
         space_role: space_role name ('subsymbolic' / 'CS' / 'SS') used as the registry key.
@@ -8150,7 +8466,7 @@ def build_space_syntactic_layer(space, word_space, *, space_role,
     layer = SyntacticLayer(
         space_role=space_role, word_space=word_space,
         host_layers=host_layers, host_space=space)
-    space.syntacticLayer = layer
+    (owner_space if owner_space is not None else space).syntacticLayer = layer
     return layer
 
 class CategoryStack:
@@ -9144,20 +9460,33 @@ class SymbolSubSpace(SubSpace):
         install ``syntacticLayer``, ``chart``, ``truthLayer``, the
         host_layer registry, per-row buffers, and the typed STM stack.
         """
-        # 1. Mirror WholeSpace's column layout for the Space-contract
-        # fields that downstream callers occasionally read off SymbolSpace
+        # 1. Symbolic operations consume conceptual activations, so mirror
+        # ConceptualSpace's column layout for the Space-contract fields that
+        # downstream callers occasionally read off SymbolSpace.  WholeSpace
+        # is an upstream, native-width property tower in the canonical model;
+        # its 128-D WHAT basis must never size the 1024-D grammar/STM path.
         # (``nDim`` / ``nWhat`` / ``nWhere`` / ``nWhen`` / ``muxedSize``).
-        sub = wholeSpace.subspace
+        geometry_space = (conceptualSpace
+                          if conceptualSpace is not None else wholeSpace)
+        if geometry_space is None:
+            raise ValueError(
+                "SymbolSubSpace requires ConceptualSpace geometry (or a "
+                "legacy WholeSpace fallback).")
+        sub = geometry_space.subspace
         nWhere = int(getattr(sub, 'nWhere', 0) or 0)
         nWhen  = int(getattr(sub, 'nWhen',  0) or 0)
         nWhat  = int(getattr(sub, 'nWhat',  0) or 0)
         muxed  = int(getattr(sub, 'muxedSize', nWhat + nWhere + nWhen)
                      or (nWhat + nWhere + nWhen))
+        # ``symbol_dim`` is the codebook/grammar CONTENT width.  Derive it
+        # from the conceptual carrier rather than trusting the legacy caller
+        # argument, which historically passed WholeSpace's event width.
+        symbol_dim = nWhat
 
         # 2. Initialise as a real SubSpace. The slot Bases stay empty
         # — SymbolSubSpace is a data carrier (typed STM stack), not a
         # pipeline space that produces tensors via ``.what`` / ``.event``.
-        # Pass encodings sized to mirror WholeSpace's band so encoding
+        # Pass encodings sized to mirror ConceptualSpace's band so encoding
         # nDim == self.nWhen / self.nWhere downstream readers expect (the
         # 2026-06-06 uniform-band convention gives WS (2, 2) so the
         # default WhereEncoding(0,0) / WhenEncoding(0,0) would drift).
@@ -9170,7 +9499,7 @@ class SymbolSubSpace(SubSpace):
             whereEncoding=_WhereEncoding(0, nWhere, nWhen) if nWhere else None,
             whenEncoding=_WhenEncoding(n_when=nWhen) if nWhen else None,
         )
-        # Restamp nWhat / nWhere / nWhen to mirror WholeSpace's column
+        # Restamp nWhat / nWhere / nWhen to mirror ConceptualSpace's column
         # layout (downstream callers read these to size projections).
         self.nWhat = nWhat
         self.nWhere = nWhere
@@ -9196,16 +9525,12 @@ class SymbolSubSpace(SubSpace):
         TheGrammar._ensure_configured()
         grammar = TheGrammar
 
-        # 3-op. Insert the grammar's operations into the WholeSpace
-        # codebook so the operator-prefixed parse tree's operation nodes
-        # are codebook-resolvable (doc/plans/2026-05-30-subsymbolic-
-        # analyzer-terminal-emitter.md, Phase 2 amended 2026-06-02): every
-        # node of the prefixed syntactic tree (operations + terminal
-        # symbols) exists in the codebook, while the computed ideas live in
-        # STM. Operators are tagged "op" (distinct from meaning-bearing
-        # symbols) and never written into the STM idea space. No-op when
-        # the WS .what is not a Codebook.
-        if wholeSpace is not None:
+        # Legacy WS-as-symbol-dictionary configurations stored operation
+        # identities beside their symbols.  A property-basis WholeSpace is
+        # upstream perceptual state, so grammar construction must not mutate or
+        # even annotate it; operators and parsing live on this SymbolSpace.
+        if (wholeSpace is not None
+                and not getattr(wholeSpace, 'property_basis', False)):
             wholeSpace.insert_operations(grammar)
 
         # 3a. Detect the default-only case (every operational rule is
@@ -9339,9 +9664,6 @@ class SymbolSubSpace(SubSpace):
         # and the diagnostics that used to call ``chart.grammar``).
         self.languageLayer.grammar = grammar
         self.layers.append(self.languageLayer)
-        for p in self.languageLayer.parameters():
-            if all(p is not q for q in self.params):
-                self.params.append(p)
         # Stage 3: the chart was the GrammarLayer ``_chart_authority``
         # gating per-rule firing via ``should_run_rule``. The chart is
         # retired; SymbolSubSpace itself now serves as the authority --
@@ -9378,10 +9700,18 @@ class SymbolSubSpace(SubSpace):
             conceptualSpace.attach_symbolSpace(self)
             self._attach_per_space_syntactic_layer(
                 conceptualSpace, space_role='CS')
-        if wholeSpace is not None:
+        if (wholeSpace is not None
+                and not getattr(wholeSpace, 'property_basis', False)):
             wholeSpace.attach_symbolSpace(self)
             self._attach_per_space_syntactic_layer(
                 wholeSpace, space_role='SS')
+        elif conceptualSpace is not None:
+            # Symbolic operators are downstream of concepts.  Keep their
+            # dispatcher physically on SymbolSpace, and use ConceptualSpace
+            # solely as the operand-geometry host.  This preserves the distinct
+            # CS-role dispatcher already owned by ConceptualSpace.
+            self._attach_per_space_syntactic_layer(
+                conceptualSpace, space_role='SS', owner_space=self)
 
         # 5b. Signal-router grammar wiring. The LanguageLayer needs
         # explicit op modules attached to its per-space_role scorers before
@@ -9389,6 +9719,15 @@ class SymbolSubSpace(SubSpace):
         # populated in step 5 above. Stage 3 (chart retirement): this
         # always runs -- the signal router is the canonical parser.
         self._wire_signal_router_grammar_ops()
+        # ``LanguageLayer`` starts with empty unary/binary ModuleDicts.  The
+        # wiring call above constructs their routing anchors, chooser MLPs,
+        # and comparator, so taking the optimizer snapshot before it would
+        # omit every router-local Parameter while still saving them in the
+        # state_dict.  Enlist only after wiring; identity dedup preserves the
+        # single optimizer owner for host grammar layers shared with CS.
+        for p in self.languageLayer.parameters():
+            if p.requires_grad and all(p is not q for q in self.params):
+                self.params.append(p)
 
         # 6. TruthLayer -- shared truth store for symbolic activations.
         # Lives on SymbolSpace so WholeSpace doesn't have to carry it
@@ -11873,7 +12212,8 @@ class SymbolSubSpace(SubSpace):
             pass
         return min(256, max(64, n_slots * 4))
 
-    def _attach_per_space_syntactic_layer(self, space, *, space_role):
+    def _attach_per_space_syntactic_layer(self, space, *, space_role,
+                                          owner_space=None):
         """Build the per-space SyntacticLayer for ``space`` (Step 4
         of doc/specs/2026-05-01-syntactic-layer-refactor.md).
 
@@ -11925,28 +12265,40 @@ class SymbolSubSpace(SubSpace):
             # signal router as CS-space_role reduce ops via
             # ``_wire_signal_router_grammar_ops``.
             #
-            # Sized to the symbol codebook width via the back-reference
-            # to wholeSpace (``symbol_dim == concept_dim`` invariant
-            # holds post-bivector retirement; either dim works).
+            # These operators act on ConceptualSpace WHAT.  WholeSpace may be
+            # a much narrower property basis, so its codebook width is not an
+            # admissible sizing source.  Event-aware operators retain the
+            # ConceptualSpace where/when band around this content fold.
             grammar_C_methods = {
                 r.method_name for r in TheGrammar.rules
                 if r.space_role == 'CS' and r.method_name is not None}
             wholeSpace = getattr(self, 'wholeSpace', None)
             perceptualSpace = getattr(self, 'perceptualSpace', None)
+            conceptualSpace = getattr(self, 'conceptualSpace', None)
+            concept_width = int(getattr(
+                getattr(conceptualSpace, 'subspace', None), 'nWhat', 0) or 0)
             if 'lift' in grammar_C_methods:
                 from Layers import LiftLayer
                 builtin_layers['lift'] = LiftLayer(
-                    wholeSpace=wholeSpace)
+                    nInput=concept_width, nOutput=concept_width,
+                    wholeSpace=wholeSpace,
+                    conceptualSpace=conceptualSpace)
             if 'verb' in grammar_C_methods:
                 builtin_layers['verb'] = VerbLayer(
-                    wholeSpace=wholeSpace)
+                    nInput=concept_width, nOutput=concept_width,
+                    wholeSpace=wholeSpace,
+                    conceptualSpace=conceptualSpace)
             if 'adverb' in grammar_C_methods:
                 builtin_layers['adverb'] = AdverbLayer(
-                    wholeSpace=wholeSpace)
+                    nInput=concept_width, nOutput=concept_width,
+                    wholeSpace=wholeSpace,
+                    conceptualSpace=conceptualSpace)
             if 'lower' in grammar_C_methods:
                 from Layers import LowerLayer
                 builtin_layers['lower'] = LowerLayer(
-                    wholeSpace=wholeSpace)
+                    nInput=concept_width, nOutput=concept_width,
+                    wholeSpace=wholeSpace,
+                    conceptualSpace=conceptualSpace)
             # Stage 9 (2026-05-27 doc/plans/2026-05-27-perceptstore-meta-
             # taxonomy-reentrancy.md): SymbolizeLayer (originally
             # MetaLayer, renamed 2026-05-28) is the binary CS-space_role grammar
@@ -11958,8 +12310,10 @@ class SymbolSubSpace(SubSpace):
             if 'symbolize' in grammar_C_methods:
                 from Layers import SymbolizeLayer
                 builtin_layers['symbolize'] = SymbolizeLayer(
+                    nInput=concept_width, nOutput=concept_width,
                     wholeSpace=wholeSpace,
-                    perceptualSpace=perceptualSpace)
+                    perceptualSpace=perceptualSpace,
+                    conceptualSpace=conceptualSpace)
         elif space_role == 'SS':
             # Pi/Sigma swap (analysis/synthesis plan Phase 3, rev.
             # 2026-06-09): the WS-owned fold is ``self.pi`` (top-down
@@ -11994,6 +12348,9 @@ class SymbolSubSpace(SubSpace):
             grammar_S_methods = {
                 r.method_name for r in TheGrammar.rules
                 if r.space_role == 'SS' and r.method_name is not None}
+            conceptualSpace = getattr(self, 'conceptualSpace', None)
+            concept_width = int(getattr(
+                getattr(conceptualSpace, 'subspace', None), 'nWhat', 0) or 0)
             # Lift / Lower stay explicit: they are parametrized ops that
             # need host wiring (``wholeSpace=space``), so the generic
             # ``cls()`` below would mis-build them. They are wired first
@@ -12002,17 +12359,25 @@ class SymbolSubSpace(SubSpace):
             if 'lift' in grammar_S_methods:
                 from Layers import LiftLayer
                 builtin_layers['lift'] = LiftLayer(
-                    wholeSpace=space)
+                    nInput=concept_width, nOutput=concept_width,
+                    wholeSpace=space,
+                    conceptualSpace=conceptualSpace)
             if 'verb' in grammar_S_methods:
                 builtin_layers['verb'] = VerbLayer(
-                    wholeSpace=space)
+                    nInput=concept_width, nOutput=concept_width,
+                    wholeSpace=space,
+                    conceptualSpace=conceptualSpace)
             if 'adverb' in grammar_S_methods:
                 builtin_layers['adverb'] = AdverbLayer(
-                    wholeSpace=space)
+                    nInput=concept_width, nOutput=concept_width,
+                    wholeSpace=space,
+                    conceptualSpace=conceptualSpace)
             if 'lower' in grammar_S_methods:
                 from Layers import LowerLayer
                 builtin_layers['lower'] = LowerLayer(
-                    wholeSpace=space)
+                    nInput=concept_width, nOutput=concept_width,
+                    wholeSpace=space,
+                    conceptualSpace=conceptualSpace)
             # All other SS-space_role ops: instantiate the parameter-free ops
             # generically from the module-local GRAMMAR_LAYER_CLASSES
             # registry rather than a hardcoded per-op special-case chain.
@@ -12052,7 +12417,7 @@ class SymbolSubSpace(SubSpace):
                     continue
         layer = build_space_syntactic_layer(
             space, self, space_role=space_role,
-            builtin_layers=builtin_layers)
+            builtin_layers=builtin_layers, owner_space=owner_space)
         # Register the new layer's parameters with the SymbolSpace param
         # list so the optimizer scan sees the lazily-constructed
         # GrammarLayer instances. The space already owns the built-in
@@ -12533,6 +12898,39 @@ _SYMBOLSPACE_FORWARD_WRITES = {
 }
 
 
+class LanguageSpace(nn.Module):
+    """Scheduling owner for the grammar layer without owning a second copy.
+
+    ``SymbolSubSpace.languageLayer`` remains the sole parameter/state owner.
+    This Space is the explicit pipeline stage that invokes it after CSsym/SS;
+    it returns reduction plans to ConceptualSpace instead of mutating CS.
+    """
+    def __init__(self, symbol_space):
+        super().__init__()
+        object.__setattr__(self, "_symbol_space", symbol_space)
+
+    @property
+    def language_layer(self):
+        return self._symbol_space.subspace.languageLayer
+
+    def compose(self, symbolic_snapshot):
+        self._symbol_space.forward(symbolic_snapshot)
+        return self.reduction_plan()
+
+    def generate(self, symbolic_snapshot):
+        self._symbol_space.reverse(symbolic_snapshot)
+        return self.reduction_plan()
+
+    def reduction_plan(self):
+        """Immutable description of the grammar result for a CS-owned commit."""
+        coordinator = self._symbol_space.subspace
+        return {
+            "rules": coordinator.current_rules,
+            "routing": coordinator.routing_state,
+            "generation": int(getattr(coordinator, "_compose_generation", 0)),
+        }
+
+
 class SymbolSpace(Space):
     """The unified grammar/symbol container (2026-06-21 SymbolSpace refactor,
     Stage 3).
@@ -12574,6 +12972,9 @@ class SymbolSpace(Space):
     def __init__(self, perceptualSpace, conceptualSpace, wholeSpace,
                  nPercepts, nConcepts, nSymbols, concept_dim, symbol_dim):
         nn.Module.__init__(self)
+        self._codebook_parameter_version = 0
+        self._codebook_structure_versions = {}
+        self._codebook_owner_path = None
         self.subspace = SymbolSubSpace(
             perceptualSpace=perceptualSpace,
             conceptualSpace=conceptualSpace,
@@ -12584,13 +12985,22 @@ class SymbolSpace(Space):
             concept_dim=concept_dim,
             symbol_dim=symbol_dim,
         )
+        # The coordinator owns grammar/STM state; its durable slot Bases and
+        # Encodings are registered exactly once on this Space.
+        self._adopt_subspace_modules()
+        # First-class scheduling boundary.  It holds a non-registering
+        # reference to this SymbolSpace, so LanguageLayer parameters and state
+        # remain registered exactly once under SymbolSubSpace.
+        self.languageSpace = LanguageSpace(self)
         # SymbolSubSpace.__init__ pointed the home spaces' ``.symbolSpace``
         # back-ref at ITSELF (the coordinator); re-point them at THIS container so
         # ``perceptualSpace.symbolSpace is model.symbolSpace`` holds (the pipeline
         # carry contract). ``attach_symbolSpace`` uses object.__setattr__ -> no
         # nn.Module cycle.
         for _sp in (perceptualSpace, conceptualSpace, wholeSpace):
-            if _sp is not None and hasattr(_sp, 'attach_symbolSpace'):
+            if (_sp is not None
+                    and not getattr(_sp, 'property_basis', False)
+                    and hasattr(_sp, 'attach_symbolSpace')):
                 _sp.attach_symbolSpace(self)
 
     # The SS (symbol) bind leg is produced by ``forward_concept_to_symbol``
@@ -12763,6 +13173,13 @@ class SymbolSpace(Space):
             cw = min(D, int(rows_w.shape[-1]))
             leg = a_t.new_zeros((int(a_t.shape[0]), N, D))
             leg[..., :cw] = a_t * rows_w[:, :cw].unsqueeze(0)
+            # The sparse symbol codebook names CONTENT only.  Positional and
+            # temporal coordinates are event metadata, so preserve their
+            # conceptual carrier values instead of silently zeroing the band
+            # when the SS WHAT width is smaller than the CS event width.
+            if D > cw:
+                leg[..., cw:] = sym_event[..., :N, cw:].to(
+                    leg.device, leg.dtype)
             sym_event = leg
         sub = SubSpace(inputShape=(N, D), outputShape=(N, D),
                        nInputDim=D, nOutputDim=D)

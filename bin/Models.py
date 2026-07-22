@@ -6,8 +6,10 @@ and outputs.  The same module also carries the project utilities used to
 load datasets, resolve config paths, plot results, and save reports.
 """
 
+import copy
 import logging
 import math, os, warnings
+import time
 from pathlib import Path
 from collections import namedtuple
 from contextlib import contextmanager, nullcontext
@@ -63,7 +65,17 @@ from util import ProjectPaths, XMLConfig, compile, TheXMLConfig, init_config, in
 from architecture import canonical_shape
 import util as _util
 from embed import WordVectors, PretrainModel, _random_unit_ball
-from Optimizer import Adam, SparseAdam, MultiOptimizer
+from Optimizer import (Adam, SparseAdam, RowLocalAdam, MultiOptimizer,
+                       preflight_finite_gradients)
+from checkpoint_migrations import (
+    LEGACY_WHOLE_STRUCTURE_KEY,
+    OPTIMIZER_PARAM_NAMES_KEY,
+    build_optimizer_param_manifest,
+    infer_legacy_optimizer_param_manifest,
+    migrate_wholespace_checkpoint,
+    remap_optimizer_state_by_name,
+    stamp_checkpoint_schema,
+)
 from data import Data, TheData
 
 from Layers import Layer, PiLayer, SigmaLayer  # Import custom layers from Model.py
@@ -79,7 +91,9 @@ from typing import List
 
 from Spaces import ActiveEncoding, WhereEncoding, WhenEncoding, WhatEncoding, EventEncoding
 from Spaces import Basis, Tensor, Codebook, Embedding
-from Spaces import SubSpace, Space, InputSpace, PartSpace, ModalSpace, ConceptualSpace, WholeSpace, OutputSpace, ShortTermMemory
+from Spaces import (SubSpace, SubSpaceView, guard_peer_views, Space, InputSpace,
+                    PartSpace, ModalSpace, ConceptualSpace, WholeSpace,
+                    OutputSpace, ShortTermMemory)
 from Spaces import ReadingAttention, GlobalAttention
 # ``normalize_codebook_mode`` moved onto ``Space`` as a staticmethod
 # (2026-05-21) so the parsing logic stays namespaced; callers below
@@ -105,6 +119,78 @@ _DEDUPE_FLUSH_EVERY = 1000
 ENUM_FULLGRAPH = os.environ.get("BASIC_FULLGRAPH", "1") != "0"
 
 
+def _checkpoint_host_copy(value):
+    """Detach a pure-Python checkpoint sidecar from live mutable state.
+
+    Structural dictionaries are intentionally not ``nn.Module`` state, but
+    several of them contain tensors (sparse edge values, LBG accumulators,
+    promotion evidence).  Copy tensors to CPU so the sidecar is portable and
+    recurse through the few container types used by the relation stores.
+    """
+    if torch.is_tensor(value):
+        return value.detach().to("cpu").clone()
+    if isinstance(value, dict):
+        return {
+            copy.deepcopy(k): _checkpoint_host_copy(v)
+            for k, v in value.items()
+        }
+    if isinstance(value, list):
+        return [_checkpoint_host_copy(v) for v in value]
+    if isinstance(value, tuple):
+        return tuple(_checkpoint_host_copy(v) for v in value)
+    if isinstance(value, set):
+        return {_checkpoint_host_copy(v) for v in value}
+    if isinstance(value, frozenset):
+        return frozenset(_checkpoint_host_copy(v) for v in value)
+    return copy.deepcopy(value)
+
+
+def _mps_rng_state_or_none():
+    """Return the Metal RNG state when this PyTorch build exposes it."""
+    get_state = getattr(getattr(torch, "mps", None), "get_rng_state", None)
+    if not callable(get_state):
+        return None
+    try:
+        return get_state().detach().to("cpu").clone()
+    except (RuntimeError, AttributeError):
+        # CPU-only hosts and older macOS runtimes may expose the Python symbol
+        # while having no usable MPS generator.
+        return None
+
+
+def _grammar_rows_for_report(rows):
+    """Normalize legacy and batched rule selections for text reporting.
+
+    Signal-router selections are normally ``list[list[int]]`` (one rule
+    path per batch row), while the serial SS cursor may expose its shared
+    path as ``list[int]``.  Reporting must accept both without mistaking
+    every rule id in a shared path for an iterable batch row.
+    """
+    if torch.is_tensor(rows):
+        rows = rows.detach().cpu().tolist()
+    if rows is None:
+        return []
+    if isinstance(rows, (int, np.integer)):
+        return [[int(rows)]]
+    rows = list(rows)
+    if not rows:
+        return []
+    if isinstance(rows[0], (list, tuple)):
+        return [list(row) for row in rows]
+    return [rows]
+
+
+def _grammar_row_preview(row, limit=64):
+    """Return ``(head, omitted, tail)`` for a bounded rule-path preview."""
+    row = list(row)
+    limit = max(2, int(limit))
+    if len(row) <= limit:
+        return row, 0, []
+    n_head = limit // 2
+    n_tail = limit - n_head
+    return row[:n_head], len(row) - limit, row[-n_tail:]
+
+
 class ReverseAdapter(nn.Module):
     """Wrap a module so its reverse() method is called via forward().
 
@@ -124,6 +210,54 @@ class ReverseAdapter(nn.Module):
     def forward(self, subspace):
         target = self.wrapped if self.wrapped is not None else self._wrapped_nonmodule
         return target.reverse(subspace)
+
+
+class StaticPeerPipeline:
+    """Compiler-visible three-stage peer scheduler.
+
+    The scheduler has a fixed W bucket and no data-dependent queue operations:
+    stage A produces PS/WS/CSsub for word ``w``; B consumes the completed
+    concept at ``w-1`` for CSsym/SS; C runs Language on B's result at ``w-2``.
+    Grammar feedback is a timestamped latch and is deliberately exposed to B
+    only at ``source + 2``.  Callbacks return values; only their owning stage
+    commits its own runtime storage.
+    """
+    WIDTHS = (16, 32, 64, 128)
+
+    def __init__(self, width):
+        width = int(width)
+        if width not in self.WIDTHS:
+            raise ValueError(f"pipeline width must be one of {self.WIDTHS}, got {width}")
+        self.width = width
+
+    def run(self, words, stage_a, stage_b, stage_c):
+        if len(words) != self.width:
+            raise ValueError("words must be padded to the pipeline's static width")
+        a_fifo = [None] * self.width
+        b_fifo = [None] * self.width
+        grammar_latch = [None] * self.width
+        trace = []
+        for tick in range(self.width + 2):
+            # A is first: B sees only a completed earlier A result, never a
+            # same-word partially-mutated CS lane.
+            if tick < self.width:
+                a_fifo[tick] = stage_a(words[tick], tick)
+                trace.append(("A", tick))
+            b_idx = tick - 1
+            if 0 <= b_idx < self.width:
+                feedback = (grammar_latch[b_idx - 2]
+                            if b_idx >= 2 else None)
+                b_fifo[b_idx] = stage_b(a_fifo[b_idx], b_idx, feedback)
+                # A B-stage result may expose grammar feedback as its second
+                # element. The representation itself remains the first.
+                if isinstance(b_fifo[b_idx], tuple) and len(b_fifo[b_idx]) == 2:
+                    b_fifo[b_idx], grammar_latch[b_idx] = b_fifo[b_idx]
+                trace.append(("B", b_idx))
+            c_idx = tick - 2
+            if 0 <= c_idx < self.width:
+                stage_c(b_fifo[c_idx], c_idx)
+                trace.append(("C", c_idx))
+        return trace
 
 
 class GrammarMergeGlue(nn.Module):
@@ -172,6 +306,36 @@ class GrammarMergeGlue(nn.Module):
         subspace.set_event(expanded)
         self._merge_diff = None
         return subspace
+
+
+class _BodyStage(nn.Module):
+    """Body-stage record with non-owning Conceptual/Whole Space references.
+
+    Those Spaces are already structurally owned by their model ModuleLists.
+    Registering them again in a ModuleDict duplicated every Parameter and
+    checkpoint key. Only the optional merge operator is a child here.
+    """
+
+    def __init__(self, cs, ws, merge=None):
+        super().__init__()
+        object.__setattr__(self, '_cs', cs)
+        object.__setattr__(self, '_ws', ws)
+        if merge is not None:
+            self.merge = merge
+
+    def __contains__(self, key):
+        return key in ('cs', 'ws') or (
+            key == 'merge' and 'merge' in self._modules
+        )
+
+    def __getitem__(self, key):
+        if key == 'cs':
+            return self._cs
+        if key == 'ws':
+            return self._ws
+        if key == 'merge' and 'merge' in self._modules:
+            return self._modules['merge']
+        raise KeyError(key)
 
 
 # FlattenKWrapper retired 2026-05-11: K-axis flatten/restore is now
@@ -240,6 +404,11 @@ class BaseModel(Mereology, nn.Module):
     # ``conceptualMode`` serial|parallel enum (2026-06-13).
     serial = False
     symbolicOrder = 0
+    # PS/WS concept binding at the serial word boundary. ``mixing`` keeps the
+    # historical learned ConceptualCombine path for every existing config;
+    # ``aligned`` is an explicit opt-in that preserves locations and consumes
+    # the complete non-raw fold ladder from both towers.
+    concept_binding = "mixing"
     # Class-level default for ``syntacticOrder`` (doc/specs/orders.md, NEW
     # 2026-06-19): the parse-tree DEPTH cap for the serial grammatical
     # reduction. 0 = unbounded (the reduction runs to its single-S fixpoint;
@@ -498,6 +667,15 @@ class BaseModel(Mereology, nn.Module):
         arch = cfg["architecture"]
         ModelFactory.validate_config(cfg)
 
+        _binding = str(TheXMLConfig.get(
+            "architecture.conceptBinding", default="mixing")
+        ).strip().lower()
+        if _binding not in ("mixing", "aligned"):
+            raise ValueError(
+                "<architecture><conceptBinding> must be mixing or aligned "
+                f"(got {_binding!r}).")
+        self.concept_binding = _binding
+
         _t = TheXMLConfig.training
         _s = TheXMLConfig.space
 
@@ -560,6 +738,12 @@ class BaseModel(Mereology, nn.Module):
             where_scale=_t("whereScale"),
             when_scale=_t("whenScale"),
         )
+        if (self.concept_binding == "aligned"
+                and int(getattr(self, "subsymbolicOrder", 0)) < 2):
+            raise ValueError(
+                "<conceptBinding>aligned</conceptBinding> requires "
+                "<subsymbolicOrder> >= 2: order T denotes one base level "
+                "plus T-1 folds per PS/WS tower.")
 
         # IR mask rate: Bernoulli probability that a P-space_role position is
         # replaced by NULL_PERCEPT for masked reconstruction. Default
@@ -622,6 +806,28 @@ class BaseModel(Mereology, nn.Module):
                     f"<architecture><serial> must be boolean "
                     f"(got {_serial_raw!r}).")
         self.serial = bool(_serial)
+        if self.serial and self.concept_binding == "mixing":
+            # Existing configs that omit conceptBinding retain their historical
+            # serial path for checkpoint compatibility.  An explicit request
+            # for the mixing matrix in serial mode is invalid: the learned
+            # cross-location matrix is a parallel-only ablation.
+            _explicit_binding = TheXMLConfig.get(
+                "architecture.conceptBinding", default=None)
+            if _explicit_binding is not None:
+                raise ValueError(
+                    "<conceptBinding>mixing</conceptBinding> is parallel-only; "
+                    "serial word concepts bind PS and WS at the same location")
+        for _cs in (getattr(self, "conceptualSpaces", None) or []):
+            object.__setattr__(_cs, "_concept_binding", self.concept_binding)
+            object.__setattr__(_cs, "_serial", self.serial)
+            # Non-registering owner link: ConceptualSpace can request a
+            # value-only aligned active-prefix expansion without making the
+            # model its nn.Module child (which would create an ownership
+            # cycle/state-dict aliases).
+            object.__setattr__(_cs, "_model", self)
+        for _ws in (getattr(self, "wholeSpaces", None) or []):
+            # Same non-owning expansion seam for WholeSpace.insert_whole.
+            object.__setattr__(_ws, "_model", self)
 
         # syntacticOrder (doc/specs/orders.md, NEW 2026-06-19): the parse-tree
         # DEPTH cap for the serial grammatical reduction. 0 (default) =
@@ -663,10 +869,8 @@ class BaseModel(Mereology, nn.Module):
         _sp_default = self.serial
         self.sentence_protocol = bool(TheXMLConfig.get(
             "architecture.sentenceProtocol", default=_sp_default))
-        # Pre-declare the prelude's pump counter: lazily minting it on the
-        # first forward (``getattr(self, '_prelude_pumps', 0) + 1``) makes
-        # torch.compile guard graph #1 on ``not hasattr(...)``, which fails
-        # on every later forward -- one wasted full retrace per process.
+        # Eager diagnostic only. It is pre-declared for stable object shape and
+        # deliberately not mutated while Dynamo captures the model.
         self._prelude_pumps = 0
 
         # TransformChooser kind. Mirrors the router-side read in
@@ -778,8 +982,9 @@ class BaseModel(Mereology, nn.Module):
                 "architecture.primingSpread", default=0.25))
         except (TypeError, ValueError):
             self.priming_spread = 0.25
-        # 2b-2 opportunistic STM reduce gate: fold the top-2 during serial
-        # reading where the reducer DP's reduce marginal exceeds tau.
+        # Base grammar-confidence threshold for online STM reduction.  The
+        # explicit word-axis controller lowers it with occupancy; legacy
+        # serial configs retain their fixed reduce-marginal comparison.
         try:
             self.stm_reduce_tau = float(TheXMLConfig.get(
                 "architecture.stmReduceTau", default=0.5))
@@ -850,13 +1055,55 @@ class BaseModel(Mereology, nn.Module):
 
         # Serial word-at-a-time object/meta (doc/specs/mereological-order-
         # raising.md "Serial-mode word-at-a-time loop"; Alec 2026-06-17). When
-        # on (serial only), the per-word body HARD-MASKS each step to the active
-        # word's span (PS processes the word block via word_span_window) and the
-        # STM push + the eager A/B/C mint fire ONCE PER WORD (last-slot commit
-        # gate). Independent of <mereologyRaise>. Default off -> the gaussian
-        # window + per-slot push (byte-identical).
+        # on (serial only), the radix stem keeps TWO distinct axes:
+        # sentence words (the outer traversal) and the constituent percepts
+        # of ONE word (synthesized inside that word's iteration).  Neither
+        # axis is the STM: STM remains the bounded, reducing grammatical
+        # workspace.  In particular, PartSpace.nOutput is the width of the
+        # instantaneous perceptual field, not a raw-character limit, and
+        # stmCapacity is not a sentence-length limit.
         self.serial_object_meta = bool(TheXMLConfig.get(
             "architecture.serialObjectMeta", default=False))
+        _word_cap = TheXMLConfig.get(
+            "architecture.serialWordCapacity", default=None)
+        try:
+            self.serial_word_capacity = (
+                None if _word_cap in (None, "") else max(1, int(_word_cap)))
+        except (TypeError, ValueError):
+            raise ValueError(
+                "<serialWordCapacity> must be a positive integer; got "
+                f"{_word_cap!r}")
+        _bucket_raw = TheXMLConfig.get(
+            "architecture.serialWordBuckets", default=None)
+        if _bucket_raw in (None, ""):
+            self.serial_word_buckets = (
+                (int(self.serial_word_capacity),)
+                if self.serial_word_capacity is not None else ())
+        else:
+            try:
+                if isinstance(_bucket_raw, (list, tuple)):
+                    _bucket_values = [int(v) for v in _bucket_raw]
+                else:
+                    _bucket_values = [
+                        int(v.strip()) for v in str(_bucket_raw).split(",")
+                        if v.strip()]
+                self.serial_word_buckets = tuple(sorted(set(_bucket_values)))
+            except (TypeError, ValueError):
+                raise ValueError(
+                    "<serialWordBuckets> must be a comma-separated list of "
+                    f"positive integers; got {_bucket_raw!r}")
+            if (not self.serial_word_buckets
+                    or any(v < 1 for v in self.serial_word_buckets)):
+                raise ValueError(
+                    "<serialWordBuckets> must contain positive integers; "
+                    f"got {_bucket_raw!r}")
+            if (self.serial_word_capacity is not None
+                    and self.serial_word_buckets[-1]
+                    != int(self.serial_word_capacity)):
+                raise ValueError(
+                    "the largest <serialWordBuckets> width must equal "
+                    f"<serialWordCapacity> ({self.serial_word_buckets[-1]} "
+                    f"!= {self.serial_word_capacity})")
 
         # Model-level trust in incoming assertions/testimony. Personal
         # experience remains the model's own evidence; third-party words enter
@@ -972,6 +1219,37 @@ class BaseModel(Mereology, nn.Module):
             # capturable word-index / per-word commit tensors only when on).
             object.__setattr__(self.inputSpace, '_serial_object_meta',
                                bool(self.serial_object_meta))
+            if self.serial and self.serial_object_meta:
+                # Sentence traversal and grammatical workspace are distinct.
+                # New configs state the traversal cap explicitly; the STM
+                # fallback preserves older serialObjectMeta fixtures without
+                # silently changing their loop length.
+                _word_capacity = self.serial_word_capacity
+                if _word_capacity is None:
+                    _word_capacity = int(getattr(
+                        getattr(self, 'conceptualSpace', None),
+                        'stm_capacity', 0) or 0)
+                if _word_capacity < 1:
+                    raise ValueError(
+                        "serialObjectMeta requires either a positive "
+                        "<serialWordCapacity> or ConceptualSpace "
+                        "<stmCapacity> >= 1")
+                object.__setattr__(self.inputSpace,
+                                   '_serial_word_capacity', _word_capacity)
+                object.__setattr__(
+                    self.inputSpace, '_serial_word_buckets',
+                    tuple(self.serial_word_buckets or (_word_capacity,)))
+                _ps = getattr(self, 'perceptualSpace', None)
+                if _ps is not None:
+                    object.__setattr__(_ps, '_serial_object_meta', True)
+                    object.__setattr__(
+                        _ps, '_serial_aligned_fold_ladder',
+                        self.concept_binding == "aligned")
+                    object.__setattr__(_ps,
+                                       '_serial_word_capacity', _word_capacity)
+                    object.__setattr__(
+                        _ps, '_serial_word_buckets',
+                        tuple(self.serial_word_buckets or (_word_capacity,)))
 
         # DOCTRINE (Task 4, doc/plans/2026-05-29-stm-serial-parallel-modes.md
         # §"Serial mode = attentional filtering"): serial mode **is** the
@@ -1084,11 +1362,31 @@ class BaseModel(Mereology, nn.Module):
         ))
         self._training_step_count = 0
 
-        if _t("autoload"):
+        # Separate physical capacity from logical occupancy before autoload.
+        # Legacy checkpoints have no active_mask key; VectorQuantize's load
+        # hook then preserves this configured prefix instead of exposing the
+        # entire preallocated reserve. Future masked checkpoints overwrite it
+        # with their persisted active prefix.
+        self._configure_aligned_active_codebooks()
+
+        _autoload_env = os.environ.get("BASIC_AUTOLOAD")
+        _autoload = bool(_t("autoload"))
+        if _autoload_env is not None:
+            _autoload = _autoload_env.strip().lower() in (
+                "1", "true", "yes", "on")
+        if _autoload:
             # Load from the same resolved path used by autosave. Previously an
             # empty <weightsPath> loaded "" while saving used the output-dir
             # fallback, so an autosaved run could never resume.
             wpath = self._checkpoint_path()
+            # Checkpoint tensors include lazily registered grammar state.
+            # Materialize those destination modules before loading an existing
+            # file; doing it afterward would silently discard learned keys.
+            # WholeSpace property growth is deliberately not prewarmed here:
+            # it is independent of ConceptualSpace capacity and must happen at
+            # an explicit optimizer/compiled-graph reset boundary.
+            if os.path.exists(wpath):
+                self._prewarm_checkpoint_shapes()
             # Single-artifact load: state_dict + vocab_extras +
             # bpe_extras all ride in the .ckpt. The separate .kv
             # embedding artifact was retired (2026-05-12).
@@ -1202,11 +1500,33 @@ class BaseModel(Mereology, nn.Module):
         if not getattr(self, 'optimize_embedding', False):
             params = [p for p in params if p.data_ptr() not in embedding_ptrs]
             sparse_ptrs.clear()
-        # Split the remaining params into a SparseAdam group (sparse
-        # grads only) and an Adam group (everything else).  SparseAdam
-        # touches only the rows that received gradients per step --
-        # critical for V=1M-style perceptual codebooks where dense Adam
-        # would update O(V*D) optimizer state on every step.
+
+        # The shared aligned ConceptualSpace dictionary has a stronger memory
+        # contract than an ordinary sparse embedding. Stock SparseAdam still
+        # allocates TWO full-size dense moments, which would add ~8 GiB for the
+        # 1M x 1032 fp32 table. Its lookup surface emits sparse row gradients,
+        # so route that one physical Parameter to compact-prefix RowLocalAdam.
+        row_local_ptrs = set()
+        seen_codebooks = set()
+        for cs in list(getattr(self, "conceptualSpaces", None) or ()):
+            cb = getattr(cs, "similarity_codebook", None)
+            if cb is None or id(cb) in seen_codebooks:
+                continue
+            seen_codebooks.add(id(cb))
+            W = getattr(cb, "W", None)
+            if (bool(getattr(cb, "sparse_lookup_grad", False))
+                    and isinstance(W, nn.Parameter) and W.requires_grad):
+                row_local_ptrs.add(W.data_ptr())
+        if row_local_ptrs & sparse_ptrs:
+            raise RuntimeError(
+                "a parameter cannot be owned by both SparseAdam and "
+                "RowLocalAdam")
+
+        # Split the remaining params into ordinary dense Adam, perceptual
+        # SparseAdam, and conceptual RowLocalAdam groups. SparseAdam reduces
+        # arithmetic but not state size; RowLocalAdam is reserved for the
+        # monotonic aligned concept-row namespace where compact moments are a
+        # correctness-enforced memory requirement.
         # CUDA-graph capture (the brick body; test_brick_no_sync)
         # requires the optimizer keep its step counter on-device:
         # stock Adam's _multi_tensor_adam does _get_value(step).item()
@@ -1245,19 +1565,74 @@ class BaseModel(Mereology, nn.Module):
                 groups.append({"params": head, "lr": lr * out_lr_scale})
             return groups
 
-        if sparse_ptrs:
-            sparse_params = [p for p in params if p.data_ptr() in sparse_ptrs]
-            dense_params = [p for p in params if p.data_ptr() not in sparse_ptrs]
-            opt_sparse = SparseAdam(sparse_params, lr=lr)
-            opt_dense = Adam(_dense_arg(dense_params), lr=lr, capturable=_cap)
-            optimizer = MultiOptimizer([opt_dense, opt_sparse])
-        else:
-            optimizer = Adam(_dense_arg(params), lr=lr, capturable=_cap)
+        sparse_params = [p for p in params if p.data_ptr() in sparse_ptrs]
+        row_local_params = [
+            p for p in params if p.data_ptr() in row_local_ptrs]
+        dense_params = [
+            p for p in params
+            if p.data_ptr() not in sparse_ptrs
+            and p.data_ptr() not in row_local_ptrs]
+        optimizers = []
+        if dense_params:
+            optimizers.append(Adam(
+                _dense_arg(dense_params), lr=lr, capturable=_cap))
+        if row_local_params:
+            # Persistent moments are BF16 (same exponent range as fp32), while
+            # RowLocalAdam promotes every touched row to fp32 for the actual
+            # Adam update. At full 1M x 1032 occupancy this halves the two
+            # moments from 8.06 GiB to 4.03 GiB without fp16 underflow.
+            optimizers.append(RowLocalAdam(
+                row_local_params, lr=lr, moment_dtype=torch.bfloat16))
+        if sparse_params:
+            optimizers.append(SparseAdam(sparse_params, lr=lr))
+        if not optimizers:
+            raise RuntimeError("model exposes no trainable optimizer parameters")
+        optimizer = (optimizers[0] if len(optimizers) == 1
+                     else MultiOptimizer(optimizers))
         pending = getattr(self, "_pending_optimizer_state", None)
         if pending is not None:
-            optimizer.load_state_dict(pending)
-            self._pending_optimizer_state = None
-            TheMessage(f"[{self.name}] Optimizer state restored")
+            saved_manifest = getattr(
+                self, "_pending_optimizer_manifest", None)
+            legacy_shapes = getattr(
+                self, "_pending_legacy_state_shapes", None) or {}
+            require_match = bool(getattr(
+                self, "_pending_optimizer_require_match", False))
+            reset_wholespace = bool(getattr(
+                self, "_pending_optimizer_reset_wholespace", False))
+            try:
+                live_manifest = build_optimizer_param_manifest(
+                    optimizer, self.named_parameters())
+                if saved_manifest is None:
+                    saved_manifest = infer_legacy_optimizer_param_manifest(
+                        live_manifest, legacy_shapes, pending)
+                remapped = remap_optimizer_state_by_name(
+                    pending, saved_manifest, optimizer.state_dict(),
+                    live_manifest,
+                    reset_wholespace=reset_wholespace)
+                optimizer.load_state_dict(remapped.state)
+                self._normalize_optimizer_state_shapes(optimizer)
+                TheMessage(
+                    f"[{self.name}] {remapped.diagnostics.message()}")
+            except ValueError as exc:
+                message = (
+                    f"[{self.name}] Optimizer checkpoint was not restored: "
+                    f"{exc}")
+                if require_match:
+                    raise ValueError(message) from exc
+                TheMessage(message)
+            finally:
+                self._pending_optimizer_state = None
+                self._pending_optimizer_manifest = None
+                self._pending_legacy_state_shapes = None
+                self._pending_optimizer_reset_wholespace = False
+                self._pending_optimizer_require_match = False
+        # PartSpace may have to install a previously unseen byte before the
+        # first codebook gather of a batch. Keep the current optimizer as a
+        # non-module boundary context so that eager growth can migrate Adam
+        # state and ownership instead of orphaning the old Parameter.
+        part_space = getattr(self, "perceptualSpace", None)
+        if part_space is not None:
+            object.__setattr__(part_space, "_radix_optimizer", optimizer)
         return optimizer
 
     def rebuild_optimizer(self):
@@ -1272,8 +1647,508 @@ class BaseModel(Mereology, nn.Module):
         lr = self._optimizer.param_groups[0]['lr']
         self._optimizer = self.getOptimizer(lr=lr)
 
+    def _aligned_inventory_capacity(self):
+        """Return the serial-aligned concept-reference capacity, or ``None``.
+
+        ConceptualSpace owns this address space.  Downstream symbols are
+        references into it; WholeSpace rows are upstream properties and are a
+        separate inventory whose size may differ.
+        """
+        if not (getattr(self, "concept_binding", None) == "aligned"
+                and bool(getattr(self, "serial", False))):
+            return None
+        n_concepts = int(getattr(self, "nConceptCodes", 0) or 0)
+        if n_concepts <= 0:
+            raise ValueError(
+                "aligned checkpoint migration requires a positive "
+                f"ConceptualSpace inventory; got CS={n_concepts}")
+        return n_concepts
+
+    def _aligned_capacity_codebooks(self):
+        """Return each physical full-capacity concept Codebook once.
+
+        Some ConceptualSpace dictionaries are registered through compatibility
+        aliases, so deduplicate by module identity rather than by state-dict
+        path.  WholeSpace property codebooks and legacy ``analysis_store``
+        modules never participate in concept-capacity activation.
+        """
+        capacity = self._aligned_inventory_capacity()
+        if capacity is None:
+            return []
+        candidates = []
+        for cs in list(getattr(self, "conceptualSpaces", None) or ()):
+            candidates.append(getattr(cs, "similarity_codebook", None))
+        out = []
+        seen = set()
+        for cb in candidates:
+            if not isinstance(cb, Codebook) or id(cb) in seen:
+                continue
+            W = cb.getW()
+            if (not torch.is_tensor(W) or W.ndim != 2
+                    or int(W.shape[0]) != capacity):
+                continue
+            vq = getattr(cb, "vq", None)
+            if vq is None or not hasattr(vq, "set_active_rows"):
+                continue
+            seen.add(id(cb))
+            out.append(cb)
+        return out
+
+    @staticmethod
+    def _active_prefix_rows(vq):
+        """Validate a contiguous nonempty active mask and return its length."""
+        mask = getattr(vq, "active_mask", None)
+        W = getattr(vq, "codebook", None)
+        if (not torch.is_tensor(mask) or mask.dtype != torch.bool
+                or not torch.is_tensor(W) or mask.ndim != 1
+                or int(mask.shape[0]) != int(W.shape[0])):
+            raise RuntimeError(
+                "aligned VQ active-mask shape/dtype drift: "
+                f"mask={None if not torch.is_tensor(mask) else tuple(mask.shape)}, "
+                f"codebook={None if not torch.is_tensor(W) else tuple(W.shape)}")
+        n = int(mask.sum().item())
+        if n < 1:
+            raise RuntimeError("aligned VQ must keep at least one active row")
+        if (not bool(mask[:n].all().item())
+                or (n < int(mask.shape[0])
+                    and bool(mask[n:].any().item()))):
+            raise RuntimeError(
+                "aligned VQ active rows must be one contiguous prefix")
+        cached = int(getattr(vq, "_active_rows_count", n))
+        if cached != n:
+            raise RuntimeError(
+                "aligned VQ active-prefix cache drift: "
+                f"mask has {n} rows, cached count is {cached}")
+        return n
+
+    def _configure_aligned_active_codebooks(self):
+        """Install the configured active prefix before checkpoint autoload.
+
+        Physical ``nVectors`` is the optimizer-owned capacity. Logical growth
+        only mutates full-shape bool masks, so W, EMA tensors and Adam ownership
+        never change identity or shape. VQ reads the active prefix only, so each
+        new power-of-two width causes one compiled-graph specialization.
+        """
+        capacity = self._aligned_inventory_capacity()
+        if capacity is None:
+            return None
+        cs_active = int(TheXMLConfig.space(
+            "ConceptualSpace", "activeVectors", default=capacity) or capacity)
+        if not (1 <= cs_active <= capacity):
+            raise ValueError(
+                "ConceptualSpace.activeVectors must be within physical "
+                f"concept capacity: active={cs_active}, capacity={capacity}")
+        codebooks = self._aligned_capacity_codebooks()
+        if not codebooks:
+            raise RuntimeError(
+                "ConceptualSpace.activeVectors is configured, but no "
+                "full-capacity concept VQ Codebooks were found")
+        for cb in codebooks:
+            cb.vq.set_active_rows(cs_active)
+            # This physical table is optimizer-owned at its final configured
+            # capacity. Logical growth reveals rows through the full-shape VQ
+            # mask below; it must never replace W and orphan RowLocalAdam or a
+            # compiled graph. PartSpace's structural radix store remains the
+            # intentionally dynamic exception and is not returned here.
+            cb.freeze_capacity("aligned ConceptualSpace codebook")
+        self._active_inventory_rows = cs_active
+        return cs_active
+
+    def _ensure_aligned_active_rows(self, required_rows):
+        """Reveal a power-of-two prefix across every aligned VQ in place."""
+        capacity = self._aligned_inventory_capacity()
+        if capacity is None:
+            return None
+        required = max(1, int(required_rows))
+        if required > capacity:
+            raise RuntimeError(
+                f"aligned codebook physical capacity exhausted: required "
+                f"{required} rows, capacity {capacity}; no mask was changed")
+        current = int(getattr(self, "_active_inventory_rows", 0) or 0)
+        if current < 1:
+            counts = {
+                self._active_prefix_rows(cb.vq)
+                for cb in self._aligned_capacity_codebooks()
+            }
+            if len(counts) != 1:
+                raise RuntimeError(
+                    f"aligned VQ active-prefix mismatch: {sorted(counts)}")
+            current = counts.pop()
+        if required <= current:
+            return current
+        codebooks = self._aligned_capacity_codebooks()
+        counts = {self._active_prefix_rows(cb.vq) for cb in codebooks}
+        if counts != {current}:
+            raise RuntimeError(
+                "aligned VQ active-prefix mismatch before growth: "
+                f"model={current}, codebooks={sorted(counts)}; no mask was "
+                "changed")
+        target = min(capacity, 1 << (required - 1).bit_length())
+        target = max(current, target)
+        for cb in codebooks:
+            cb.vq.set_active_rows(target)
+        self._active_inventory_rows = target
+        TheMessage(
+            f"[{self.name}] Activated aligned codebook prefix "
+            f"{current} -> {target} rows (physical capacity {capacity}; "
+            f"Parameter/optimizer shapes unchanged; compiled VQ paths "
+            f"specialize on the new active width)")
+        return target
+
+    def _resync_aligned_active_codebooks(self):
+        """Validate loaded masks and cover every restored concept id."""
+        if self._aligned_inventory_capacity() is None:
+            return None
+        codebooks = self._aligned_capacity_codebooks()
+        counts = {self._active_prefix_rows(cb.vq) for cb in codebooks}
+        if len(counts) != 1:
+            raise ValueError(
+                f"checkpoint aligned VQ active-prefix mismatch: "
+                f"{sorted(counts)}")
+        active = counts.pop()
+        self._active_inventory_rows = active
+        required = 1
+        for cs in list(getattr(self, "conceptualSpaces", None) or ()):
+            alloc = getattr(cs, "_concept_allocator", None)
+            if alloc is None:
+                continue
+            # next_id is one past every restored stable concept handle.
+            required = max(required, int(getattr(alloc, "next_id", 1) or 1))
+            for layer in getattr(alloc, "_layers", {}).values():
+                tensor_rows = getattr(layer, "_tensor_rows", None) or {}
+                if tensor_rows:
+                    required = max(
+                        required,
+                        max(int(v) for v in tensor_rows.values()) + 1)
+        return self._ensure_aligned_active_rows(required)
+
+    def _canonicalize_shared_concept_checkpoint_state(self, state,
+                                                       model_state):
+        """Make every shared CS Codebook alias load stage 0's state.
+
+        Before the aligned/property-basis architecture shared its conceptual
+        dictionary, each subsymbolic stage saved an independent W plus VQ/EMA
+        tables.  Stage 0 is authoritative during this migration: it owns the
+        word autobind and the late conceptual cutover.  Populate every live
+        alias from that one source before shape expansion/load_state_dict so a
+        legacy divergent checkpoint loads strictly without letting later
+        aliases overwrite the shared physical module.
+        """
+        if not (bool(getattr(self, "wholePropertyBasis", False))
+                and getattr(self, "concept_binding", None) == "aligned"):
+            return 0
+        spaces = list(getattr(self, "conceptualSpaces", None) or ())
+        if not spaces:
+            return 0
+        shared = getattr(spaces[0], "similarity_codebook", None)
+        if (not isinstance(shared, Codebook)
+                or any(getattr(cs, "similarity_codebook", None) is not shared
+                       for cs in spaces[1:])):
+            return 0
+
+        try:
+            named = self.named_modules(remove_duplicate=False)
+        except TypeError:  # older torch compatibility
+            named = self.named_modules()
+        prefixes = [
+            name for name, module in named
+            if module is shared and name
+        ]
+        if not prefixes:
+            return 0
+        preferred = "conceptualSpaces.0.similarity_codebook"
+        prefixes.sort(key=lambda name: (
+            0 if name == preferred else
+            1 if name.startswith("conceptualSpaces.0.") else 2,
+            name,
+        ))
+
+        replaced = 0
+        used_non_stage0 = False
+        for suffix in shared.state_dict().keys():
+            aliases = [
+                f"{prefix}.{suffix}" for prefix in prefixes
+                if f"{prefix}.{suffix}" in model_state
+            ]
+            if not aliases:
+                continue
+            source_key = next((key for key in aliases if key in state), None)
+            if source_key is None:
+                continue
+            if not source_key.startswith("conceptualSpaces.0."):
+                used_non_stage0 = True
+            source = state[source_key]
+            for key in aliases:
+                old = state.get(key)
+                if old is not None and old is not source:
+                    if (not torch.is_tensor(old) or not torch.is_tensor(source)
+                            or int(old.data_ptr()) != int(source.data_ptr())):
+                        replaced += 1
+                state[key] = source
+
+        if replaced or used_non_stage0:
+            fallback = (
+                " (stage 0 was absent for at least one tensor; the earliest "
+                "available alias was used)" if used_non_stage0 else "")
+            warnings.warn(
+                "Shared ConceptualSpace checkpoint migration: selected the "
+                "stage-0 similarity dictionary as canonical and replaced "
+                f"{replaced} divergent stage/alias tensor(s){fallback}.",
+                stacklevel=2,
+            )
+        return replaced
+
+    def _expand_aligned_codebook_checkpoint_state(self, state, model_state):
+        """Prefix-load a smaller aligned codebook into a larger build.
+
+        This runs during autoload: the model has its final configured shapes,
+        but no optimizer or compiled callable exists yet.  Existing rows keep
+        their exact ids and values.  New rows retain their freshly constructed
+        initialization (including VQ EMA/norm buffers); Adam's corresponding
+        moments are padded separately by
+        :meth:`_normalize_optimizer_state_shapes`.
+
+        Only row-aligned state belonging to one of the ConceptualSpace
+        dictionaries returned by :meth:`_aligned_capacity_codebooks` is
+        eligible.  WholeSpace property state and legacy ``analysis_store``
+        state are intentionally excluded, even when their row counts happen
+        to equal the concept capacity.
+        """
+        capacity = self._aligned_inventory_capacity()
+        if capacity is None:
+            return 0
+
+        try:
+            named = self.named_modules(remove_duplicate=False)
+        except TypeError:  # older torch compatibility
+            named = self.named_modules()
+        eligible = set()
+        concept_codebook_ids = {
+            id(cb) for cb in self._aligned_capacity_codebooks()
+        }
+        row_keys = ("W", "vq.cluster_size", "vq.embed_avg",
+                    "vq._b_norms_sq", "vq.active_mask")
+        for name, module in named:
+            if (not isinstance(module, Codebook)
+                    or id(module) not in concept_codebook_ids):
+                continue
+            W = module.getW()
+            if (not torch.is_tensor(W) or W.ndim != 2
+                    or int(W.shape[0]) != capacity):
+                continue
+            prefix = f"{name}." if name else ""
+            eligible.update(prefix + suffix for suffix in row_keys)
+
+        # Duplicate registered paths often point at the same live storage.
+        # The model was freshly constructed at final capacity, so preserve its
+        # initialized tail and copy the learned prefix DIRECTLY into that live
+        # storage once.  Point every state-dict alias back at the same detached
+        # view.  Cloning a 1M x 512 W and EMA table here would add roughly
+        # 4 GiB of avoidable checkpoint-migration peak memory.
+        prepared_by_storage = {}
+        source_storage_by_target = {}
+        expanded = 0
+        old_sizes = set()
+        for key in sorted(eligible):
+            if key not in state or key not in model_state:
+                continue
+            saved = state[key]
+            live = model_state[key]
+            if (not torch.is_tensor(saved) or not torch.is_tensor(live)
+                    or saved.ndim == 0 or saved.ndim != live.ndim
+                    or tuple(saved.shape[1:]) != tuple(live.shape[1:])
+                    or int(saved.shape[0]) >= int(live.shape[0])):
+                continue
+            if int(live.shape[0]) != capacity:
+                continue
+            storage_key = (
+                int(live.data_ptr()), tuple(live.shape), live.dtype,
+                live.device.type, live.device.index,
+            )
+            grown = prepared_by_storage.get(storage_key)
+            if grown is None:
+                grown = live.detach()
+                with torch.no_grad():
+                    grown[:saved.shape[0]].copy_(
+                        saved.detach().to(device=grown.device,
+                                          dtype=grown.dtype))
+                prepared_by_storage[storage_key] = grown
+                source_storage_by_target[storage_key] = int(saved.data_ptr())
+            else:
+                # Alias paths must describe the same learned prefix.  A
+                # disagreement is checkpoint corruption, not a migration.
+                if (int(saved.data_ptr()) !=
+                        source_storage_by_target[storage_key]
+                        and not torch.equal(
+                        grown[:saved.shape[0]],
+                        saved.detach().to(device=grown.device,
+                                          dtype=grown.dtype))):
+                    raise ValueError(
+                        f"aligned checkpoint aliases disagree for {key}")
+            state[key] = grown
+            old_sizes.add(int(saved.shape[0]))
+            expanded += 1
+
+        if expanded:
+            TheMessage(
+                f"[{self.name}] Expanded aligned codebook checkpoint rows "
+                f"{sorted(old_sizes)} -> {capacity} across {expanded} state "
+                f"keys ({len(prepared_by_storage)} physical tensors); "
+                f"learned prefixes copied in place and initialized tails "
+                f"preserved")
+        return expanded
+
+    def _expand_partspace_codebook_checkpoint_state(self, state, model_state):
+        """Prefix-load a smaller radix PS table into a larger initial build.
+
+        Runtime growth happens only at a batch boundary, but construction-time
+        capacity increases are safe before optimizer/compiled ownership exists.
+        Keep the checkpoint's learned rows exactly and retain the live model's
+        initialization for the newly configured tail.
+        """
+        part_space = getattr(self, "perceptualSpace", None)
+        basis = getattr(getattr(part_space, "subspace", None), "what", None)
+        store = getattr(part_space, "percept_store", None)
+        if (not isinstance(basis, Codebook) or store is None
+                or getattr(store, "_basis", None) is not basis):
+            return 0
+        live_w = basis.getW()
+        if not torch.is_tensor(live_w) or live_w.ndim != 2:
+            return 0
+        capacity = int(live_w.shape[0])
+
+        try:
+            named = self.named_modules(remove_duplicate=False)
+        except TypeError:
+            named = self.named_modules()
+        prefixes = [
+            f"{name}." if name else ""
+            for name, module in named if module is basis
+        ]
+        if not prefixes:
+            return 0
+        local_state = basis.state_dict()
+        eligible = set()
+        for suffix, value in local_state.items():
+            if (torch.is_tensor(value) and value.ndim > 0
+                    and int(value.shape[0]) == capacity):
+                eligible.update(prefix + suffix for prefix in prefixes)
+
+        # As above for CS, the final-capacity live allocation already owns the
+        # desired initialized tail.  Prefix-copy in place so migration never
+        # clones the entire percept table merely to feed load_state_dict.
+        prepared_by_storage = {}
+        expanded = 0
+        old_sizes = set()
+        for key in sorted(eligible):
+            if key not in state or key not in model_state:
+                continue
+            saved = state[key]
+            live = model_state[key]
+            if (not torch.is_tensor(saved) or not torch.is_tensor(live)
+                    or saved.ndim == 0 or saved.ndim != live.ndim
+                    or tuple(saved.shape[1:]) != tuple(live.shape[1:])
+                    or int(saved.shape[0]) >= int(live.shape[0])
+                    or int(live.shape[0]) != capacity):
+                continue
+            storage_key = (
+                int(live.data_ptr()), tuple(live.shape), live.dtype,
+                live.device.type, live.device.index,
+            )
+            grown = prepared_by_storage.get(storage_key)
+            if grown is None:
+                grown = live.detach()
+                with torch.no_grad():
+                    grown[:saved.shape[0]].copy_(saved.detach().to(
+                        device=grown.device, dtype=grown.dtype))
+                prepared_by_storage[storage_key] = grown
+            elif not torch.equal(
+                    grown[:saved.shape[0]], saved.detach().to(
+                        device=grown.device, dtype=grown.dtype)):
+                raise ValueError(
+                    f"PartSpace checkpoint aliases disagree for {key}")
+            state[key] = grown
+            old_sizes.add(int(saved.shape[0]))
+            expanded += 1
+        if expanded:
+            TheMessage(
+                f"[{self.name}] Expanded PartSpace checkpoint rows "
+                f"{sorted(old_sizes)} -> {capacity} across {expanded} "
+                "state key(s); learned prefix copied in place and initialized "
+                "tail preserved")
+        return expanded
+
+    @staticmethod
+    def _optimizer_leaves(optimizer):
+        """Yield concrete optimizer wrappers from a MultiOptimizer tree."""
+        children = getattr(optimizer, "optimizers", None)
+        if children is None:
+            yield optimizer
+            return
+        for child in children:
+            yield from BaseModel._optimizer_leaves(child)
+
+    def _normalize_optimizer_state_shapes(self, optimizer):
+        """Validate or pad loaded row-wise optimizer moments.
+
+        ``Optimizer.load_state_dict`` intentionally maps state by parameter
+        order and accepts shape-drifted moment tensors.  The failure otherwise
+        appears only on the first Adam step.  Normalize immediately after load:
+        preserve the learned prefix, zero every new row, and reject any shape
+        change that is not a pure first-axis capacity extension. RowLocalAdam
+        is the deliberate exception: its prefix-shaped moments stay compact
+        and grow geometrically only when a later sparse gradient touches a new
+        row. Expanding them here would recreate the multi-gigabyte state this
+        optimizer exists to avoid.
+        """
+        padded = 0
+        for leaf in self._optimizer_leaves(optimizer):
+            state_by_param = getattr(leaf, "state", None)
+            if state_by_param is None:
+                continue
+            row_local = bool(getattr(leaf, "row_local_state", False))
+            for param, param_state in list(state_by_param.items()):
+                if not isinstance(param, nn.Parameter):
+                    continue
+                target_shape = tuple(param.shape)
+                for name, value in list(param_state.items()):
+                    if not torch.is_tensor(value) or value.ndim == 0:
+                        continue
+                    if tuple(value.shape) == target_shape:
+                        continue
+                    # Adam's step can be a one-element tensor on some torch
+                    # versions/backends; it is scalar state, not row state.
+                    if str(name) == "step" and value.numel() == 1:
+                        continue
+                    if (value.ndim != param.ndim
+                            or tuple(value.shape[1:]) != target_shape[1:]
+                            or int(value.shape[0]) > int(target_shape[0])):
+                        raise ValueError(
+                            f"optimizer state {name!r} shape "
+                            f"{tuple(value.shape)} cannot migrate to parameter "
+                            f"shape {target_shape}; only first-axis growth is "
+                            f"supported")
+                    if row_local:
+                        # Valid compact checkpoint state. The optimizer owns
+                        # its next-power-of-two growth boundary.
+                        continue
+                    grown = value.new_zeros(target_shape)
+                    grown[:value.shape[0]].copy_(value)
+                    param_state[name] = grown
+                    padded += 1
+        if padded:
+            TheMessage(
+                f"[{self.name}] Zero-padded {padded} optimizer moment "
+                f"tensor(s) for larger configured inventories")
+        return padded
+
     def _checkpoint_path(self, suffix=None):
         """Resolve the configured checkpoint path, optionally adding a suffix.
+
+        ``BASIC_WEIGHTS_PATH`` is an explicit run-local override. Relative
+        override paths resolve from the project root (so ``output/foo.ckpt``
+        is stable regardless of the XML's directory); XML paths retain their
+        historical config-directory semantics when the override is unset.
 
         Falls back to ``output/<config-stem>.ckpt`` when no ``weightsPath``
         is set in the XML. Config-specific names prevent unrelated BasicModel
@@ -1281,14 +2156,21 @@ class BaseModel(Mereology, nn.Module):
         The ``suffix`` is inserted before the extension so emergency /
         autosave variants can coexist with the canonical checkpoint.
         """
-        path = TheXMLConfig.get("architecture.weightsPath", None)
-        if path:
-            path = self._resolve_artifact_path(path)
+        override = os.environ.get("BASIC_WEIGHTS_PATH", "").strip()
+        if override:
+            expanded = os.path.expanduser(override)
+            path = (expanded if os.path.isabs(expanded)
+                    else os.path.join(ProjectPaths.PROJECT_DIR, expanded))
+            path = os.path.abspath(path)
         else:
-            config_path = getattr(self, "_config_path", None)
-            stem = (Path(config_path).stem if config_path
-                    else str(self.name))
-            path = ProjectPaths.output_path(f"{stem}.ckpt")
+            path = TheXMLConfig.get("architecture.weightsPath", None)
+            if path:
+                path = self._resolve_artifact_path(path)
+            else:
+                config_path = getattr(self, "_config_path", None)
+                stem = (Path(config_path).stem if config_path
+                        else str(self.name))
+                path = ProjectPaths.output_path(f"{stem}.ckpt")
         if suffix:
             root, ext = os.path.splitext(path)
             path = f"{root}.{suffix}{ext or '.ckpt'}"
@@ -1336,9 +2218,15 @@ class BaseModel(Mereology, nn.Module):
             )
             if param.grad is not None:
                 grad = param.grad.detach()
-                assert torch.isfinite(grad).all(), (
+                # ``torch.isfinite`` has no SparseCPU/SparseMPS implementation
+                # for a COO tensor. Sparse gradients are finite exactly when
+                # their stored values are finite; absent entries are zeros.
+                checked_grad = (
+                    grad.coalesce().values() if grad.is_sparse else grad)
+                assert torch.isfinite(checked_grad).all(), (
                     f"Non-finite gradient for {name!r} {what}: "
-                    f"{int((~torch.isfinite(grad)).sum().item())}/{grad.numel()} "
+                    f"{int((~torch.isfinite(checked_grad)).sum().item())}/"
+                    f"{checked_grad.numel()} "
                     f"entries are nan/inf."
                 )
 
@@ -1378,6 +2266,27 @@ class BaseModel(Mereology, nn.Module):
         # A4: each ConceptualCombine is registered in its ``cs.layers``, so the
         # space walk above already cascades ``paramUpdate()`` to it (the dense
         # full/last ergodic path anneals; the butterfly path is a no-op).
+
+    def _advance_codebook_parameter_versions(self):
+        """Publish one model-wide parameter epoch after a write barrier.
+
+        Every Space receives the same epoch even when a particular codebook
+        had no gradient in this step.  Conservative invalidation is cheap and
+        guarantees that a pipeline execution can compare every selected
+        carrier against one model-wide ``parameter_version``.
+        """
+        version = int(getattr(self, '_parameter_epoch', 0)) + 1
+        self._parameter_epoch = version
+        for space in self.spaces:
+            # Compatibility/custom Spaces may still skip Space.__init__.
+            # Normal Spaces and SymbolSpace initialize this metadata and
+            # advance together at the write barrier.
+            if '_codebook_parameter_version' not in vars(space):
+                continue
+            setter = getattr(space, 'set_codebook_parameter_version', None)
+            if callable(setter):
+                setter(version)
+        return version
 
     def set_sigma(self, sigma):
         """Propagate exploration meta-parameters to all spaces.
@@ -1422,7 +2331,7 @@ class BaseModel(Mereology, nn.Module):
         return self.symbolSpace.truth_layer if self.symbolSpace is not None else None
 
     def _get_basis(self):
-        """Return the Basis from wholeSpace's subspace, else None."""
+        """Return the WholeSpace property Basis, if available."""
         ws = getattr(self, 'wholeSpace', None)
         if ws is None:
             return None
@@ -1430,13 +2339,12 @@ class BaseModel(Mereology, nn.Module):
 
     @torch.no_grad()
     def _clamp_symbolic_codebook(self):
-        """Keep the WholeSpace bivector codebook inside the [0,1] pair box.
+        """Keep the WholeSpace property codebook inside the [0,1] pair box.
 
-        Called after ``optimizer.step()``. The WholeSpace codebook is
-        monotonic (paired-index pos/neg poles), so each scalar lives in
-        [0,1]. Gradient updates can push entries outside this box; clamp
-        directly on the Parameter data so the invariant holds going into
-        the next forward pass.
+        The compatibility method name is retained for external callers.
+        Called after ``optimizer.step()`` when the property basis is monotonic;
+        gradient updates can push entries outside the box, so clamp directly
+        on the Parameter data before the next forward pass.
         """
         basis = self._get_basis()
         if basis is None or not getattr(basis, 'monotonic', False):
@@ -1445,6 +2353,43 @@ class BaseModel(Mereology, nn.Module):
         if W is None or not isinstance(W, torch.Tensor):
             return
         W.data.clamp_(0.0, 1.0)
+
+    @torch.no_grad()
+    def _normalize_conceptual_codebooks(self):
+        """Re-project updated concept rows onto their signed unit sphere.
+
+        Concept atoms are directions; certainty lives in the scalar that
+        activates them.  The indexed aligned dictionary therefore needs a
+        row-local constraint after Adam updates so ``activation * atom``
+        remains in ``[-1, 1]`` without a tanh seam.  Sparse gradients expose
+        exactly the rows touched by this sentence, keeping the operation
+        proportional to use rather than to the million-row capacity.
+        """
+        seen = set()
+        for cs in list(getattr(self, "conceptualSpaces", None) or ()):
+            cb = getattr(cs, "similarity_codebook", None)
+            if cb is None or id(cb) in seen:
+                continue
+            seen.add(id(cb))
+            W = getattr(cb, "W", None)
+            if not isinstance(W, torch.Tensor) or W.ndim < 2:
+                continue
+            grad = getattr(W, "grad", None)
+            if grad is None:
+                continue
+            if grad.layout == torch.sparse_coo:
+                rows = grad.coalesce().indices()[0].long()
+                if rows.numel() == 0:
+                    continue
+                updated = F.normalize(
+                    W.index_select(0, rows).float(), p=2, dim=-1,
+                    eps=1e-8).to(dtype=W.dtype)
+                W.index_copy_(0, rows, updated)
+            else:
+                # Dense concept dictionaries occur only in the smaller
+                # compatibility models; their full projection is affordable.
+                W.copy_(F.normalize(W.float(), p=2, dim=-1,
+                                    eps=1e-8).to(dtype=W.dtype))
 
     @torch.no_grad()
     def isConsistent(self):
@@ -1577,17 +2522,26 @@ class BaseModel(Mereology, nn.Module):
         * ``bpe_extras``: ChunkLayer merge table and vocabulary (pure
           Python state — merges list, vocab dict, id_to_bytes mapping,
           counters).
+        * ``structural_extras``: the non-Module concept allocator and its
+          identity/idempotency registries. Without this sidecar a resumed
+          model would re-mint word wholes and concepts even though their
+          tensor rows survived.
         """
         if path is None:
             path = os.path.join(ProjectPaths.OUTPUT_DIR, "weights.ckpt")
         os.makedirs(os.path.dirname(path), exist_ok=True)
+        optimizer = getattr(self, "_optimizer", None)
+        optimizer_manifest = (
+            build_optimizer_param_manifest(
+                optimizer, self.named_parameters())
+            if optimizer is not None else None)
         bundle = {
             "state_dict": dict(self.state_dict()),
             "vocab_extras": self._collect_vocab_extras(),
             "bpe_extras": self._collect_bpe_extras(),
+            "structural_extras": self._collect_structural_extras(),
             "optimizer_state": (
-                self._optimizer.state_dict()
-                if getattr(self, "_optimizer", None) is not None else None),
+                optimizer.state_dict() if optimizer is not None else None),
             "training_state": {
                 "training_step_count": int(getattr(
                     self, "_training_step_count", 0) or 0),
@@ -1603,6 +2557,7 @@ class BaseModel(Mereology, nn.Module):
                 "cuda_rng_state_all": (
                     torch.cuda.get_rng_state_all()
                     if torch.cuda.is_available() else None),
+                "mps_rng_state": _mps_rng_state_or_none(),
                 "data_manifest": getattr(
                     getattr(self, "inputSpace", None), "data", None
                 ).source_manifest if getattr(
@@ -1610,29 +2565,55 @@ class BaseModel(Mereology, nn.Module):
                 ) is not None else None,
             },
         }
+        if bool(getattr(self, "wholePropertyBasis", False)):
+            bundle = stamp_checkpoint_schema(
+                bundle, optimizer_param_names=optimizer_manifest)
+        elif optimizer_manifest is not None:
+            # Parameter names are safe/useful for legacy resumes too; only the
+            # schema-2 property-role marker is gated on explicit opt-in.
+            bundle[OPTIMIZER_PARAM_NAMES_KEY] = optimizer_manifest
         util.atomic_torch_save(bundle, path)
         TheMessage(f"[{self.name}] Weights saved to {path}")
 
     def _collect_vocab_extras(self):
-        """Gather WordVectors mappings + WholeSpace's well-known
-        atoms dict that don't ride in state_dict.
+        """Gather lexicon mappings and non-tensor space structure.
 
-        Returns ``None`` when no Embedding is present.
+        Returns ``None`` only when neither lexicon nor structural/property
+        metadata is present.
 
-        Stage 8 addition: also includes WholeSpace's META taxonomy
-        (``taxonomy``, ``taxonomy_parent``, ``meta_pair_to_idx``) so
-        the structural decode path survives a checkpoint roundtrip.
+        In canonical property-basis models, ConceptualSpace owns taxonomy,
+        META, and concept identity under ``conceptual_structure``. WholeSpace
+        contributes only property tags/provenance under ``whole_properties``.
+        Legacy configs retain the old WS envelope until explicitly migrated.
         """
         emb = self._get_embedding()
-        sym_space = getattr(self, 'wholeSpace', None)
-        # Always include WS taxonomy when WholeSpace exists, even if
-        # there's no Embedding on PS (the radix path replaces the
-        # Embedding with a PerceptStore; the lexicon-extras blob is
-        # vacuous but the taxonomy must still travel).
-        ws_extras = (sym_space.vocab_extras()
-                     if sym_space is not None
-                     and hasattr(sym_space, 'vocab_extras')
-                     else None)
+        whole_space = getattr(self, 'wholeSpace', None)
+        concept_space = getattr(self, 'conceptualSpace', None)
+        property_basis = bool(getattr(self, "wholePropertyBasis", False))
+        conceptual_extras = (
+            concept_space.vocab_extras()
+            if property_basis and concept_space is not None
+            and hasattr(concept_space, "vocab_extras") else None)
+        if property_basis and whole_space is not None:
+            if hasattr(whole_space, "property_extras"):
+                whole_extras = whole_space.property_extras()
+            elif hasattr(whole_space, "vocab_extras"):
+                # Transitional compatibility: never let an older broad
+                # WholeSpace serializer leak concept/taxonomy fields into a
+                # schema-2 checkpoint.
+                raw_whole = whole_space.vocab_extras() or {}
+                whole_extras = {
+                    key: value for key, value in raw_whole.items()
+                    if (str(key).startswith(("property", "type_"))
+                        or str(key) == "ramsification")
+                }
+            else:
+                whole_extras = None
+        else:
+            whole_extras = (
+                whole_space.vocab_extras()
+                if whole_space is not None
+                and hasattr(whole_space, "vocab_extras") else None)
         # Canonical abstraction-order provenance for the PS percept
         # codebook (the WS tables ride inside ws_extras). None when there
         # is nothing stamped, so pre-feature blobs stay byte-identical.
@@ -1652,20 +2633,26 @@ class BaseModel(Mereology, nn.Module):
                      and hasattr(ps_store, 'vocab_extras')
                      and len(ps_store) > 0 else None)
         if emb is None or getattr(emb, 'wv', None) is None:
-            if ws_extras is None and ps_rams is None and ps_pstore is None:
+            if (conceptual_extras is None and whole_extras is None
+                    and ps_rams is None and ps_pstore is None):
                 return None
-            # Lexicon-less radix mode: only the WS/PS state needs to
+            # Lexicon-less radix mode: only structural/PS state needs to
             # travel; we still wrap it in the standard envelope so
             # ``_restore_vocab_extras`` finds the keys.
             blob = {
                 "index_to_key": [],
                 "counts": [],
                 "total_count": 0,
-                "well_known_atoms": (ws_extras or {}).get(
-                    "well_known_atoms", {}),
             }
-            if ws_extras is not None:
-                blob["ws_taxonomy_extras"] = ws_extras
+            if property_basis:
+                if conceptual_extras is not None:
+                    blob["conceptual_structure"] = conceptual_extras
+                if whole_extras is not None:
+                    blob["whole_properties"] = whole_extras
+            elif whole_extras is not None:
+                blob["well_known_atoms"] = whole_extras.get(
+                    "well_known_atoms", {})
+                blob["ws_taxonomy_extras"] = whole_extras
             if ps_rams is not None:
                 blob["ps_ramsification"] = ps_rams
             if ps_pstore is not None:
@@ -1675,15 +2662,20 @@ class BaseModel(Mereology, nn.Module):
         counts = getattr(wv, 'counts', None)
         if counts is not None and hasattr(counts, 'tolist'):
             counts = counts.tolist()
-        well_known = dict(getattr(sym_space, 'well_known_atoms', {}) or {})
         blob = {
             "index_to_key": list(getattr(wv, 'index_to_key', []) or []),
             "counts": counts or [],
             "total_count": int(getattr(wv, 'total_count', 0) or 0),
-            "well_known_atoms": well_known,
         }
-        if ws_extras is not None:
-            blob["ws_taxonomy_extras"] = ws_extras
+        if property_basis:
+            if conceptual_extras is not None:
+                blob["conceptual_structure"] = conceptual_extras
+            if whole_extras is not None:
+                blob["whole_properties"] = whole_extras
+        elif whole_extras is not None:
+            blob["well_known_atoms"] = dict(
+                getattr(whole_space, 'well_known_atoms', {}) or {})
+            blob["ws_taxonomy_extras"] = whole_extras
         if ps_rams is not None:
             blob["ps_ramsification"] = ps_rams
         if ps_pstore is not None:
@@ -1712,6 +2704,357 @@ class BaseModel(Mereology, nn.Module):
                 getattr(cl, 'word_learning', 0) or 0),
         }
 
+    def _collect_structural_extras(self):
+        """Snapshot durable host-side concept and mereology state.
+
+        ``ConceptAllocator`` deliberately is not an ``nn.Module``: its ids,
+        ordered constituent records, row maps and idempotency dictionaries are
+        symbolic structure rather than tensor geometry.  The same is true of
+        the word-keyed WholeSpace registries.  They nevertheless form part of
+        the learned model; dropping them on reload makes the next observation
+        mint duplicate identities.  Keep them in one versioned sidecar.
+        """
+        alloc_fields = (
+            "placement", "raised", "singletons", "retired", "identity",
+            "relate_idx", "chain_idx", "word_obj_meta", "joint",
+        )
+        cs_fields = (
+            "_autobound_percept_ids", "_recognized_words",
+            "_words_concept_id", "_percept_word_concept",
+            "_object_word_concept", "_priming_bridge", "_frozen_concepts",
+            "_frozen_named", "_promotion_cache_state",
+            "_concept_admission_drops",
+        )
+        legacy_ws_fields = (
+            "_word_whole_ss", "_mereology_raised",
+            "_property_class_whole", "_anchored_pids",
+            "_pending_words_summary", "_standalone_run_bytes",
+            "_lbg_disp_sum", "_lbg_disp_sum_sq", "_lbg_count",
+        )
+        # Schema-2 WholeSpace sidecars contain perceptual analysis state only.
+        # LBG accumulators belong to the retired WS concept/META dictionary and
+        # must not be serialized beside the fixed property basis.
+        property_ws_fields = ("_standalone_run_bytes",)
+        property_basis = bool(getattr(self, "wholePropertyBasis", False))
+
+        conceptual = {}
+        for i, cs in enumerate(list(
+                getattr(self, "conceptualSpaces", None) or ())):
+            entry = {}
+            alloc = getattr(cs, "_concept_allocator", None)
+            if alloc is not None:
+                a = {"next_id": int(getattr(alloc, "next_id", 1))}
+                for name in alloc_fields:
+                    a[name] = _checkpoint_host_copy(getattr(alloc, name))
+                layers = {}
+                for order, layer in getattr(alloc, "_layers", {}).items():
+                    values = getattr(layer, "values", None)
+                    layers[int(order)] = {
+                        "nInput": int(layer.nInput),
+                        "nOutput": int(layer.nOutput),
+                        "constituents": _checkpoint_host_copy(
+                            getattr(layer, "_constituents", {})),
+                        "tensor_rows": _checkpoint_host_copy(
+                            getattr(layer, "_tensor_rows", {})),
+                        "row_next": _checkpoint_host_copy(
+                            getattr(layer, "_row_next", {})),
+                        "rows": [int(v) for v in getattr(layer, "_rows", ())],
+                        "cols": [int(v) for v in getattr(layer, "_cols", ())],
+                        "init_vals": [
+                            float(v) for v in getattr(layer, "_init_vals", ())
+                        ],
+                        "values": (
+                            None if values is None
+                            else _checkpoint_host_copy(values)),
+                        "values_requires_grad": bool(
+                            values is not None and values.requires_grad),
+                    }
+                a["layers"] = layers
+                entry["allocator"] = a
+            attrs = {
+                name: _checkpoint_host_copy(getattr(cs, name))
+                for name in cs_fields
+                if hasattr(cs, name) and getattr(cs, name) is not None
+            }
+            if attrs:
+                entry["attributes"] = attrs
+            if (property_basis and cs is getattr(
+                    self, "conceptualSpace", None)
+                    and hasattr(cs, "vocab_extras")):
+                snapshot = cs.vocab_extras()
+                if snapshot is not None:
+                    entry["conceptual_structure"] = (
+                        _checkpoint_host_copy(snapshot))
+            if entry:
+                conceptual[int(i)] = entry
+
+        wholes = {}
+        for i, ws in enumerate(list(
+                getattr(self, "wholeSpaces", None) or ())):
+            entry = {}
+            if property_basis and hasattr(ws, "property_extras"):
+                vocab_snapshot = ws.property_extras()
+            elif hasattr(ws, "vocab_extras"):
+                vocab_snapshot = ws.vocab_extras()
+                if property_basis:
+                    vocab_snapshot = {
+                        key: value for key, value in
+                        (vocab_snapshot or {}).items()
+                        if (str(key).startswith(("property", "type_"))
+                            or str(key) == "ramsification")
+                    }
+            else:
+                vocab_snapshot = None
+            if vocab_snapshot is not None:
+                # In schema 2 this is property metadata/provenance only.
+                # Legacy configs retain their broad per-stage WS snapshot.
+                entry["vocab_extras"] = _checkpoint_host_copy(vocab_snapshot)
+            attrs = {
+                name: _checkpoint_host_copy(getattr(ws, name))
+                for name in (property_ws_fields if property_basis
+                             else legacy_ws_fields)
+                if hasattr(ws, name) and getattr(ws, name) is not None
+            }
+            if attrs:
+                entry["attributes"] = attrs
+            if entry:
+                wholes[int(i)] = entry
+
+        if not conceptual and not wholes:
+            return None
+        return {
+            "version": 2 if property_basis else 1,
+            "conceptual_spaces": conceptual,
+            ("whole_properties" if property_basis else "whole_spaces"):
+                wholes,
+        }
+
+    def _restore_allocator_extras(self, cs, saved):
+        """Restore one ConceptAllocator without replacing its live aliases."""
+        alloc = getattr(cs, "_concept_allocator", None)
+        if alloc is None:
+            ensure = getattr(cs, "_concept_tables", None)
+            if callable(ensure):
+                ensure()
+            alloc = getattr(cs, "_concept_allocator", None)
+        if alloc is None:
+            raise ValueError(
+                "checkpoint contains ConceptAllocator state, but the live "
+                "ConceptualSpace cannot materialize an allocator")
+
+        fields = (
+            "placement", "raised", "singletons", "retired", "identity",
+            "relate_idx", "chain_idx", "word_obj_meta", "joint",
+        )
+        for name in fields:
+            if name not in saved:
+                continue
+            incoming = _checkpoint_host_copy(saved[name])
+            current = getattr(alloc, name, None)
+            # Preserve dict/set identities because ConceptualSpace exposes
+            # aliases such as ``_word_obj_meta`` and ``_joint_concepts``.
+            if isinstance(current, dict) and isinstance(incoming, dict):
+                current.clear()
+                current.update(incoming)
+            elif isinstance(current, set) and isinstance(incoming, set):
+                current.clear()
+                current.update(incoming)
+            else:
+                setattr(alloc, name, incoming)
+
+        next_id = int(saved.get("next_id", 1) or 1)
+        known_ids = {0}
+        for name in ("placement", "raised", "singletons", "retired",
+                     "identity"):
+            value = getattr(alloc, name, {})
+            known_ids.update(int(v) for v in (
+                value.keys() if isinstance(value, dict) else value))
+        # A stale counter must never collide with a restored concept. Exact
+        # checkpoints already satisfy this; max() is a corruption-safe guard.
+        alloc.next_id = max(next_id, max(known_ids) + 1)
+
+        layer_blobs = saved.get("layers") or {}
+        if len(layer_blobs) > 1:
+            raise ValueError(
+                "checkpoint has multiple ConceptAllocator layers; the live "
+                "single-store allocator supports exactly one")
+        for raw_order, blob in layer_blobs.items():
+            order = int(raw_order)
+            layer = alloc.layer(order)
+            saved_n_input = int(blob.get("nInput", layer.nInput))
+            saved_n_output = int(blob.get("nOutput", layer.nOutput))
+            live_n_input = int(layer.nInput)
+            live_n_output = int(layer.nOutput)
+            shape_mismatch = (
+                saved_n_input != live_n_input
+                or saved_n_output != live_n_output)
+            square_expansion = bool(
+                shape_mismatch
+                and self._aligned_inventory_capacity() is not None
+                and saved_n_input == saved_n_output + 1
+                and live_n_input == live_n_output + 1
+                and saved_n_output < live_n_output)
+            if shape_mismatch and not square_expansion:
+                raise ValueError(
+                    "ConceptAllocator store shape mismatch: checkpoint "
+                    f"[{blob.get('nOutput')}, {blob.get('nInput')}] vs live "
+                    f"[{layer.nOutput}, {layer.nInput}]")
+            rows = [int(v) for v in blob.get("rows", ())]
+            cols = [int(v) for v in blob.get("cols", ())]
+            if square_expansion:
+                # Ordinary row/column ids remain stable under first-axis
+                # capacity growth.  The sole exception is the trailing
+                # EVERYTHING pole: its coordinate is N, so move old N to new
+                # N.  A nonzero region base means the checkpoint partitioned
+                # the square into capacity-relative blocks; relocating those
+                # rows requires a full coordinated repartition and must not be
+                # guessed during load.
+                row_next = blob.get("row_next") or {}
+                nonzero_bases = [
+                    int(base) for base in row_next if int(base) != 0]
+                if nonzero_bases:
+                    raise ValueError(
+                        "ConceptAllocator capacity expansion is unsafe for "
+                        "a partitioned row map (nonzero region bases "
+                        f"{sorted(nonzero_bases)}). Increase capacity before "
+                        "training or migrate the partition explicitly.")
+                cols = [
+                    live_n_output if c == saved_n_output else c
+                    for c in cols
+                ]
+            if len(rows) != len(cols) or len(set(zip(rows, cols))) != len(rows):
+                raise ValueError(
+                    "ConceptAllocator sparse COO checkpoint is malformed")
+            if any(r < 0 or r >= int(layer.nOutput) for r in rows) or any(
+                    c < 0 or c >= int(layer.nInput) for c in cols):
+                raise ValueError(
+                    "ConceptAllocator sparse COO checkpoint is out of bounds")
+            values = blob.get("values")
+            if values is not None and int(values.numel()) != len(rows):
+                raise ValueError(
+                    "ConceptAllocator sparse values/indices length mismatch")
+            init_vals = [float(v) for v in blob.get("init_vals", ())]
+            if len(init_vals) != len(rows):
+                if values is None:
+                    raise ValueError(
+                        "ConceptAllocator sparse initial-values length mismatch")
+                init_vals = [float(v) for v in values.reshape(-1).tolist()]
+
+            layer._constituents = _checkpoint_host_copy(
+                blob.get("constituents") or {})
+            layer._tensor_rows = _checkpoint_host_copy(
+                blob.get("tensor_rows") or {})
+            layer._row_next = _checkpoint_host_copy(blob.get("row_next") or {})
+            layer._rows = rows
+            layer._cols = cols
+            layer._init_vals = init_vals
+            layer._index = {
+                (r, c): i for i, (r, c) in enumerate(zip(rows, cols))
+            }
+            layer._dev_cache = None
+            if values is None:
+                layer.values = None
+            else:
+                target = getattr(layer, "_target_device", None)
+                if target is None:
+                    target = next(
+                        (p.device for p in cs.parameters()), torch.device("cpu"))
+                layer.values = nn.Parameter(
+                    values.detach().to(target).clone(),
+                    requires_grad=bool(blob.get("values_requires_grad", True)),
+                )
+
+        object.__setattr__(cs, "_word_obj_meta", alloc.word_obj_meta)
+        object.__setattr__(cs, "_joint_concepts", alloc.joint)
+        register = getattr(cs, "_sparse_families", None)
+        if callable(register) and layer_blobs:
+            register(0)
+        object.__setattr__(
+            cs, "_csw_registered_count",
+            sum(int(layer.nnz) for layer in alloc._layers.values()))
+
+    def _restore_structural_extras(
+            self, extras, *, legacy_whole_structure=None):
+        """Inverse of :meth:`_collect_structural_extras` (old-safe)."""
+        if not isinstance(extras, dict):
+            return
+        version = int(extras.get("version", 0) or 0)
+        if version not in (1, 2):
+            raise ValueError(
+                f"unsupported structural checkpoint version {version}")
+        property_basis = bool(getattr(self, "wholePropertyBasis", False))
+
+        conceptual_spaces = list(
+            getattr(self, "conceptualSpaces", None) or ())
+        for raw_i, entry in (extras.get("conceptual_spaces") or {}).items():
+            i = int(raw_i)
+            if not 0 <= i < len(conceptual_spaces):
+                raise ValueError(
+                    f"checkpoint ConceptualSpace index {i} is not present")
+            cs = conceptual_spaces[i]
+            alloc_blob = entry.get("allocator")
+            if isinstance(alloc_blob, dict):
+                self._restore_allocator_extras(cs, alloc_blob)
+            for name, value in (entry.get("attributes") or {}).items():
+                object.__setattr__(cs, str(name), _checkpoint_host_copy(value))
+            conceptual_blob = entry.get("conceptual_structure")
+            if (isinstance(conceptual_blob, dict)
+                    and hasattr(cs, "load_vocab_extras")):
+                cs.load_vocab_extras(conceptual_blob)
+            refresh = getattr(cs, "_refresh_frozen_values_hook", None)
+            if callable(refresh):
+                refresh()
+
+        whole_spaces = list(getattr(self, "wholeSpaces", None) or ())
+        if property_basis:
+            whole_entries = extras.get("whole_properties") or {}
+        else:
+            whole_entries = extras.get("whole_spaces") or {}
+        for raw_i, entry in whole_entries.items():
+            i = int(raw_i)
+            if not 0 <= i < len(whole_spaces):
+                raise ValueError(
+                    f"checkpoint WholeSpace index {i} is not present")
+            ws = whole_spaces[i]
+            ws_vocab = entry.get("vocab_extras")
+            if isinstance(ws_vocab, dict):
+                if property_basis and hasattr(ws, "load_property_extras"):
+                    ws.load_property_extras(ws_vocab)
+                elif hasattr(ws, "load_vocab_extras"):
+                    ws.load_vocab_extras(ws_vocab)
+            cb = getattr(getattr(ws, "subspace", None), "what", None)
+            W = cb.getW() if cb is not None and hasattr(cb, "getW") else None
+            for name, value in (entry.get("attributes") or {}).items():
+                if (property_basis
+                        and str(name) != "_standalone_run_bytes"):
+                    continue
+                restored = _checkpoint_host_copy(value)
+                if (not property_basis
+                        and str(name).startswith("_lbg_disp_")
+                        and torch.is_tensor(W)):
+                    restored = {
+                        k: (v.to(W.device) if torch.is_tensor(v) else v)
+                        for k, v in restored.items()
+                    }
+                object.__setattr__(ws, str(name), restored)
+
+        if property_basis:
+            # Version-1 broad WS state is concept/META structure. Import all
+            # stage blobs through terminal CS's explicit merge policy; never
+            # replay them onto the eight-row property basis.
+            legacy_stages = extras.get("whole_spaces")
+            quarantine = (legacy_whole_structure
+                          if isinstance(legacy_whole_structure, dict) else {})
+            if not isinstance(legacy_stages, dict):
+                legacy_stages = quarantine.get("structural_whole_spaces")
+            terminal_cs = getattr(self, "conceptualSpace", None)
+            if (isinstance(legacy_stages, dict) and legacy_stages
+                    and terminal_cs is not None
+                    and hasattr(terminal_cs, "load_vocab_extras")):
+                terminal_cs.load_vocab_extras({
+                    "legacy_whole_spaces": legacy_stages,
+                })
+
     def load_weights(self, path=None, strict=False, require_match=False):
         """Load model state from a single .ckpt bundle.
 
@@ -1737,19 +3080,62 @@ class BaseModel(Mereology, nn.Module):
         if not os.path.exists(path):
             TheMessage(f"[{self.name}] No checkpoint at {path}, starting fresh")
             return False
-        saved = torch.load(path, map_location=TheDevice.get(), weights_only=False)
+        # Always inspect/migrate on CPU before any tensor reaches the live
+        # accelerator. In particular, a schema-1 checkpoint can contain GiB-
+        # scale retired WS concept/analysis tables; mapping it to MPS first
+        # would defeat the reset migration's peak-memory guarantee. mmap keeps
+        # those soon-to-be-discarded storages file-backed while filtering.
+        try:
+            saved = torch.load(
+                path, map_location="cpu", weights_only=False, mmap=True)
+        except (TypeError, RuntimeError) as exc:
+            # Older torch lacks the keyword; legacy non-zip serialization can
+            # expose it but reject mmap. Do not mask unrelated corruption.
+            detail = str(exc).lower()
+            if not any(token in detail for token in (
+                    "mmap", "memory map", "zip", "keyword")):
+                raise
+            saved = torch.load(
+                path, map_location="cpu", weights_only=False)
+        if bool(getattr(self, "wholePropertyBasis", False)):
+            migration = migrate_wholespace_checkpoint(
+                saved, dict(self.state_dict()))
+            saved = migration.checkpoint
+            for message in migration.diagnostics.messages():
+                TheMessage(f"[{self.name}] {message}")
+            legacy_state_shapes = migration.legacy_state_shapes
+            reset_wholespace_optimizer = bool(migration.migrated)
+        else:
+            # Legacy configs have not opted into the ownership migration; do
+            # not strip their WS tensors or stamp property-basis semantics.
+            state_for_shapes = (
+                saved.get("state_dict")
+                if isinstance(saved, dict) and "state_dict" in saved
+                else saved)
+            legacy_state_shapes = {
+                str(key): tuple(int(v) for v in value.shape)
+                for key, value in (state_for_shapes or {}).items()
+                if hasattr(value, "shape")
+            }
+            reset_wholespace_optimizer = False
 
         if isinstance(saved, dict) and "state_dict" in saved:
             state = saved["state_dict"]
             vocab_extras = saved.get("vocab_extras")
             bpe_extras = saved.get("bpe_extras")
+            structural_extras = saved.get("structural_extras")
             optimizer_state = saved.get("optimizer_state")
+            optimizer_manifest = saved.get(OPTIMIZER_PARAM_NAMES_KEY)
+            legacy_whole_structure = saved.get(LEGACY_WHOLE_STRUCTURE_KEY)
             training_state = saved.get("training_state") or {}
         else:
             state = saved
             vocab_extras = None
             bpe_extras = None
+            structural_extras = None
             optimizer_state = None
+            optimizer_manifest = None
+            legacy_whole_structure = None
             training_state = {}
 
         if vocab_extras is None and any("wv._vectors" in k for k in state):
@@ -1765,13 +3151,59 @@ class BaseModel(Mereology, nn.Module):
         # state_dict shape check. Otherwise the wv._vectors row count
         # mismatch (live model is freshly built with a smaller vocab;
         # saved bundle carries the grown vocab) would fail the load.
-        if vocab_extras is not None:
-            self._restore_vocab_extras(vocab_extras)
+        if vocab_extras is not None or legacy_whole_structure is not None:
+            self._restore_vocab_extras(
+                vocab_extras or {},
+                legacy_whole_structure=legacy_whole_structure)
 
         # Pre-check for shape mismatches before attempting to load.
         # This produces an actionable diagnostic instead of a raw PyTorch error.
         model_state = dict(self.state_dict())
 
+        # Space-owned carrier-state migration (2026-07-17): durable Basis and
+        # Encoding modules moved from ``Space.subspace`` into the Space's
+        # authoritative ``_owned_bases`` / ``_owned_encoders`` containers.
+        # Rewrite only when the candidate is an exact live key, so unrelated
+        # nested SubSpaces (including SymbolSubSpace) retain their own paths.
+        _carrier_key_roles = {
+            **{
+                role: '_owned_bases'
+                for role in ('event', 'what', 'where', 'when', 'activation')
+            },
+            **{
+                role: '_owned_encoders'
+                for role in (
+                    'activeEncoding',
+                    'objectEncoding',
+                    'whatEncoding',
+                    'whereEncoding',
+                    'whenEncoding',
+                    'wordEncoding',
+                )
+            },
+        }
+        _carrier_renamed = 0
+        for _old_key in list(state.keys()):
+            _percept_token = '.subspace.percept_store.'
+            if _percept_token in _old_key:
+                _new_key = _old_key.replace(
+                    _percept_token, '._percept_store.', 1
+                )
+                if _new_key in model_state and _old_key not in model_state:
+                    state[_new_key] = state.pop(_old_key)
+                    _carrier_renamed += 1
+                    continue
+            for _role, _container in _carrier_key_roles.items():
+                _token = f'.subspace.{_role}.'
+                if _token not in _old_key:
+                    continue
+                _new_key = _old_key.replace(
+                    _token, f'.{_container}.{_role}.', 1
+                )
+                if _new_key in model_state and _old_key not in model_state:
+                    state[_new_key] = state.pop(_old_key)
+                    _carrier_renamed += 1
+                break
         # SymbolSpace migration (2026-06-21 refactor, Stage 3): the
         # SymbolSubSpace coordinator moved UNDER the new SymbolSpace container
         # (``m.symbolSpace`` is now a ``SymbolSpace(Space)`` that owns
@@ -1783,9 +3215,32 @@ class BaseModel(Mereology, nn.Module):
         _ss_new = "symbolSpace.subspace."
         _ss_renamed = 0
         for k in list(state.keys()):
-            if k.startswith(_ss_old) and not k.startswith(_ss_new):
-                state[_ss_new + k[len(_ss_old):]] = state.pop(k)
-                _ss_renamed += 1
+            if (
+                not k.startswith(_ss_old)
+                or k.startswith(_ss_new)
+                or k in model_state
+            ):
+                continue
+            remainder = k[len(_ss_old):]
+            candidates = [_ss_new + remainder]
+            head = remainder.split('.', 1)[0]
+            if head in ('event', 'what', 'where', 'when', 'activation'):
+                candidates.insert(
+                    0, f"symbolSpace._owned_bases.{remainder}"
+                )
+            elif head in (
+                'activeEncoding', 'objectEncoding', 'whatEncoding',
+                'whereEncoding', 'whenEncoding', 'wordEncoding',
+            ):
+                candidates.insert(
+                    0, f"symbolSpace._owned_encoders.{remainder}"
+                )
+            target = next(
+                (candidate for candidate in candidates if candidate in model_state),
+                candidates[-1],
+            )
+            state[target] = state.pop(k)
+            _ss_renamed += 1
         if _ss_renamed:
             warnings.warn(
                 f"SymbolSpace migration: rewrote {_ss_renamed} symbolSpace.* "
@@ -1793,6 +3248,314 @@ class BaseModel(Mereology, nn.Module):
                 f"coordinator moved under the new SymbolSpace container).",
                 stacklevel=2,
             )
+
+        # Remove pre-ownership duplicate module paths. Terminal aliases,
+        # body-stage ModuleDicts, and Space->SymbolSpace back-references used
+        # to register the same modules repeatedly. Canonical ModuleLists and
+        # ``model.symbolSpace`` are now their sole structural owners.
+        _alias_renamed = 0
+        _legacy_ws_grammar_dropped = []
+        _legacy_ws_category_dropped = []
+        _last_cs = len(getattr(self, 'conceptualSpaces', ())) - 1
+        _last_ws = len(getattr(self, 'wholeSpaces', ())) - 1
+        for _old_key in list(state.keys()):
+            _target = None
+            _parts = _old_key.split('.')
+            if (
+                len(_parts) >= 4
+                and _parts[0] == 'wholeSpaces'
+                and _parts[1].isdigit()
+                and _parts[2] == 'conceptualSpace'
+            ):
+                # Historical WS->CS module registration duplicated the entire
+                # concept tree below each WholeSpace. CS is now a non-owning
+                # downstream pointer, so retain the learned value only under
+                # its canonical ConceptualSpace stage.
+                _target = '.'.join(
+                    ['conceptualSpaces', _parts[1], *_parts[3:]])
+            elif (
+                len(_parts) >= 3
+                and _parts[0] == 'wholeSpaces'
+                and _parts[1].isdigit()
+                and _parts[2] in ('_category_vq', '_category_role')
+            ):
+                _candidate = '.'.join(
+                    ['conceptualSpaces', _parts[1], *_parts[2:]])
+                if _candidate in model_state:
+                    _target = _candidate
+                elif bool(getattr(self, "wholePropertyBasis", False)):
+                    _legacy_ws_category_dropped.append(_old_key)
+                    del state[_old_key]
+                    continue
+            elif (_last_cs >= 0
+                  and _old_key.startswith('wholeSpace.conceptualSpace.')):
+                _target = (
+                    f'conceptualSpaces.{_last_cs}.'
+                    + _old_key[len('wholeSpace.conceptualSpace.'):])
+            elif (_last_cs >= 0 and _old_key.startswith(
+                    ('wholeSpace._category_vq.',
+                     'wholeSpace._category_role'))):
+                _rest = _old_key[len('wholeSpace.'):]
+                _candidate = f'conceptualSpaces.{_last_cs}.{_rest}'
+                if _candidate in model_state:
+                    _target = _candidate
+                elif bool(getattr(self, "wholePropertyBasis", False)):
+                    _legacy_ws_category_dropped.append(_old_key)
+                    del state[_old_key]
+                    continue
+            elif (
+                len(_parts) >= 5
+                and _parts[0] == 'body_stages'
+                and _parts[1].isdigit()
+                and _parts[2] == 'ws'
+                and _parts[3] == 'conceptualSpace'
+            ):
+                _target = '.'.join(
+                    ['conceptualSpaces', _parts[1], *_parts[4:]])
+            elif (
+                len(_parts) >= 4
+                and _parts[0] == 'body_stages'
+                and _parts[1].isdigit()
+                and _parts[2] == 'ws'
+                and _parts[3] in ('_category_vq', '_category_role')
+            ):
+                _candidate = '.'.join(
+                    ['conceptualSpaces', _parts[1], *_parts[3:]])
+                if _candidate in model_state:
+                    _target = _candidate
+                elif bool(getattr(self, "wholePropertyBasis", False)):
+                    _legacy_ws_category_dropped.append(_old_key)
+                    del state[_old_key]
+                    continue
+            elif (
+                len(_parts) >= 4
+                and _parts[0] == 'wholeSpaces'
+                and _parts[1].isdigit()
+                and _parts[2] == 'syntacticLayer'
+                and bool(getattr(self, "wholePropertyBasis", False))
+            ):
+                _rest = '.'.join(_parts[3:])
+                _grammar_candidates = (
+                    f'symbolSpace.syntacticLayer.{_rest}',
+                    f'symbolSpace.subspace.syntacticLayer.{_rest}',
+                )
+                _target = next((candidate for candidate in _grammar_candidates
+                                if candidate in model_state
+                                and tuple(model_state[candidate].shape)
+                                == tuple(state[_old_key].shape)), None)
+                if _target is None:
+                    _legacy_ws_grammar_dropped.append(_old_key)
+                    del state[_old_key]
+                    continue
+            elif (bool(getattr(self, "wholePropertyBasis", False))
+                  and _old_key.startswith('wholeSpace.syntacticLayer.')
+                  and _last_ws >= 0):
+                _rest = _old_key[len('wholeSpace.syntacticLayer.'):]
+                _grammar_candidates = (
+                    f'symbolSpace.syntacticLayer.{_rest}',
+                    f'symbolSpace.subspace.syntacticLayer.{_rest}',
+                )
+                _target = next((candidate for candidate in _grammar_candidates
+                                if candidate in model_state
+                                and tuple(model_state[candidate].shape)
+                                == tuple(state[_old_key].shape)), None)
+                if _target is None:
+                    _legacy_ws_grammar_dropped.append(_old_key)
+                    del state[_old_key]
+                    continue
+            elif (
+                len(_parts) >= 5
+                and _parts[0] == 'body_stages'
+                and _parts[1].isdigit()
+                and _parts[2] == 'ws'
+                and _parts[3] == 'syntacticLayer'
+                and bool(getattr(self, "wholePropertyBasis", False))
+            ):
+                _rest = '.'.join(_parts[4:])
+                _grammar_candidates = (
+                    f'symbolSpace.syntacticLayer.{_rest}',
+                    f'symbolSpace.subspace.syntacticLayer.{_rest}',
+                )
+                _target = next((candidate for candidate in _grammar_candidates
+                                if candidate in model_state
+                                and tuple(model_state[candidate].shape)
+                                == tuple(state[_old_key].shape)), None)
+                if _target is None:
+                    _legacy_ws_grammar_dropped.append(_old_key)
+                    del state[_old_key]
+                    continue
+            elif _last_cs >= 0 and _old_key.startswith('conceptualSpace.'):
+                _target = (
+                    f'conceptualSpaces.{_last_cs}.'
+                    + _old_key[len('conceptualSpace.'):]
+                )
+            elif _last_ws >= 0 and _old_key.startswith('wholeSpace.'):
+                _target = (
+                    f'wholeSpaces.{_last_ws}.'
+                    + _old_key[len('wholeSpace.'):]
+                )
+            else:
+                if (
+                    len(_parts) >= 4
+                    and _parts[0] == 'body_stages'
+                    and _parts[1].isdigit()
+                    and _parts[2] in ('cs', 'ws')
+                ):
+                    _owner = (
+                        'conceptualSpaces'
+                        if _parts[2] == 'cs'
+                        else 'wholeSpaces'
+                    )
+                    _target = '.'.join(
+                        [_owner, _parts[1], *_parts[3:]]
+                    )
+                else:
+                    for _token in ('._model_symbolSpace.', '.symbolSpace.'):
+                        if _token in _old_key:
+                            _target = 'symbolSpace.' + _old_key.split(
+                                _token, 1
+                            )[1]
+                            break
+            if _target is None or _target == _old_key:
+                continue
+            if _target not in state:
+                state[_target] = state[_old_key]
+            del state[_old_key]
+            _alias_renamed += 1
+
+        # Alias canonicalization may have produced canonical legacy
+        # ``*.subspace.<slot>.*`` keys. Apply the ownership rewrite once more.
+        for _old_key in list(state.keys()):
+            _new_key = None
+            _percept_token = '.subspace.percept_store.'
+            if _percept_token in _old_key:
+                _candidate = _old_key.replace(
+                    _percept_token, '._percept_store.', 1
+                )
+                if _candidate in model_state:
+                    _new_key = _candidate
+            if _new_key is None:
+                for _role, _container in _carrier_key_roles.items():
+                    _token = f'.subspace.{_role}.'
+                    if _token in _old_key:
+                        _candidate = _old_key.replace(
+                            _token, f'.{_container}.{_role}.', 1
+                        )
+                        if _candidate in model_state:
+                            _new_key = _candidate
+                        break
+            if _new_key is not None:
+                if _new_key not in state:
+                    state[_new_key] = state[_old_key]
+                del state[_old_key]
+                _carrier_renamed += 1
+
+        # The pre-ownership model also registered the signal router's CS binary
+        # reducer twice at the model root.  Both spellings are aliases of the
+        # canonical SymbolSpace LanguageLayer reducer; retain a value only at
+        # that downstream owner, with exact key/shape validation.
+        _stm_reducer_aliases = 0
+        for _old_key in list(state.keys()):
+            _prefix = next((p for p in (
+                "_stm_reducer_module.", "_stm_reducer_cached.")
+                if _old_key.startswith(p)), None)
+            if _prefix is None:
+                continue
+            _rest = _old_key[len(_prefix):]
+            _target = (
+                "symbolSpace.subspace.languageLayer._binary_layers.CS."
+                + _rest)
+            if _target not in model_state:
+                # Unknown reducer state remains present and will fail the strict
+                # mismatch audit below.
+                continue
+            if (_target in state
+                    and tuple(state[_target].shape)
+                    == tuple(model_state[_target].shape)):
+                # A canonical, current-shaped copy is already present.  Some
+                # historical root aliases were stale even within the same
+                # checkpoint (fewer grammar tools); discard that alias rather
+                # than overwriting the authoritative learned table.
+                del state[_old_key]
+                _stm_reducer_aliases += 1
+                continue
+            if (tuple(model_state[_target].shape)
+                    != tuple(state[_old_key].shape)):
+                # No authoritative canonical value and the alias cannot fit:
+                # leave it for the strict mismatch audit; never resize grammar
+                # semantics by guessing rows/feature columns.
+                continue
+            if _target not in state:
+                state[_target] = state[_old_key]
+            del state[_old_key]
+            _stm_reducer_aliases += 1
+        if _alias_renamed:
+            warnings.warn(
+                f"Space ownership migration: removed {_alias_renamed} "
+                f"duplicate alias checkpoint keys.",
+                stacklevel=2,
+            )
+        if _legacy_ws_grammar_dropped:
+            warnings.warn(
+                "WholeSpace ownership migration dropped "
+                f"{len(_legacy_ws_grammar_dropped)} obsolete syntactic-layer "
+                "checkpoint keys that have no exact downstream owner.",
+                stacklevel=2,
+            )
+        if _legacy_ws_category_dropped:
+            warnings.warn(
+                "WholeSpace ownership migration dropped "
+                f"{len(_legacy_ws_category_dropped)} category checkpoint "
+                "keys because no exact ConceptualSpace owner was present.",
+                stacklevel=2,
+            )
+        if _carrier_renamed:
+            warnings.warn(
+                f"Space ownership migration: rewrote {_carrier_renamed} "
+                f"legacy Space.subspace Basis/Encoding checkpoint keys.",
+                stacklevel=2,
+            )
+        if _stm_reducer_aliases:
+            warnings.warn(
+                "Space ownership migration: removed "
+                f"{_stm_reducer_aliases} duplicate STM reducer alias "
+                "checkpoint keys.",
+                stacklevel=2,
+            )
+
+        # VQ-backed Codebooks formerly registered one Parameter twice as
+        # ``W`` and ``vq._codebook``. The parent Basis now owns W exclusively;
+        # retain the VQ value only when an unusually stripped artifact lacks W.
+        _vq_aliases = 0
+        for _old_key in list(state.keys()):
+            if not _old_key.endswith('.vq._codebook'):
+                continue
+            _owner_key = _old_key[:-len('vq._codebook')] + 'W'
+            if _owner_key not in model_state:
+                continue
+            if _owner_key not in state:
+                state[_owner_key] = state[_old_key]
+            del state[_old_key]
+            _vq_aliases += 1
+        if _vq_aliases:
+            warnings.warn(
+                f"Codebook ownership migration: removed {_vq_aliases} "
+                f"duplicate VQ Parameter checkpoint keys.",
+                stacklevel=2,
+            )
+
+        # The live canonical architecture has one physical ConceptualSpace
+        # dictionary registered through each stage's compatibility aliases.
+        # Resolve old independent stage tables to stage 0 before capacity
+        # expansion so every alias receives the same grown tensor.
+        self._canonicalize_shared_concept_checkpoint_state(state, model_state)
+
+        # A configured capacity increase is a row-preserving migration, not
+        # the historical bivector pole-doubling migration below.  Expand first
+        # so (in particular) an exact 2x capacity increase cannot be mistaken
+        # for old positive/negative-pole layout.
+        self._expand_partspace_codebook_checkpoint_state(state, model_state)
+        self._expand_aligned_codebook_checkpoint_state(state, model_state)
 
         # Bivector migration: pre-bivector checkpoints have a [K, D] symbolic
         # codebook, while the current model expects [2K, D]. Duplicate each
@@ -1827,7 +3590,7 @@ class BaseModel(Mereology, nn.Module):
         ]
         missing = [k for k in model_state if k not in state]
         unexpected = [k for k in state if k not in model_state]
-        fatal_unexpected = unexpected if strict else []
+        fatal_unexpected = unexpected if (strict or require_match) else []
         # Under ``require_match`` (autoload path), tolerate missing-only
         # mismatches: the current architecture may have grown new
         # parameters since the checkpoint was saved (e.g., the S → S
@@ -1852,6 +3615,11 @@ class BaseModel(Mereology, nn.Module):
                 lines.append(f"  Keys in model but missing from file: {len(missing)} (initialized fresh)")
             if fatal_unexpected:
                 lines.append(f"  Keys in file not present in model: {len(fatal_unexpected)}")
+                for key in fatal_unexpected[:20]:
+                    lines.append(f"    {key}")
+                if len(fatal_unexpected) > 20:
+                    lines.append(
+                        f"    ... and {len(fatal_unexpected) - 20} more")
             if fatal:
                 lines.append("  The model config likely changed since this checkpoint was saved.")
                 lines.append(f"  To fix: correct the model XML to match the saved weights,")
@@ -1874,16 +3642,37 @@ class BaseModel(Mereology, nn.Module):
                 f"keys not present in the current model")
 
         # Restore Python-side WordVectors mappings (index_to_key etc.).
-        if vocab_extras is not None:
-            self._restore_vocab_extras(vocab_extras)
+        if vocab_extras is not None or legacy_whole_structure is not None:
+            self._restore_vocab_extras(
+                vocab_extras or {},
+                legacy_whole_structure=legacy_whole_structure)
         # Restore ChunkLayer BPE state (merges, vocab, id_to_bytes).
         if bpe_extras is not None:
             self._restore_bpe_extras(bpe_extras)
+        # Restore symbolic identity before the optimizer is constructed. The
+        # sidecar can materialize the ConceptAllocator's sparse values
+        # Parameter; getOptimizer must see that live Parameter (and its saved
+        # ordering) before loading optimizer_state.
+        if (structural_extras is not None
+                or legacy_whole_structure is not None):
+            self._restore_structural_extras(
+                structural_extras or {"version": 2},
+                legacy_whole_structure=legacy_whole_structure)
+
+        # Every aligned VQ must expose the same contiguous prefix after load.
+        # This also expands (value-only, power-of-two) if a restored allocator
+        # cursor already occupies rows beyond a stale saved mask.
+        self._resync_aligned_active_codebooks()
 
         # Model autoload runs before the optimizer exists, so defer optimizer
-        # restoration until getOptimizer(). Legacy checkpoints omit these
-        # fields and retain their historical weights-only behavior.
+        # restoration until getOptimizer(). Name manifests prevent retired WS
+        # parameters from shifting Adam moments onto unrelated live tensors.
         self._pending_optimizer_state = optimizer_state
+        self._pending_optimizer_manifest = optimizer_manifest
+        self._pending_legacy_state_shapes = legacy_state_shapes
+        self._pending_optimizer_reset_wholespace = (
+            reset_wholespace_optimizer)
+        self._pending_optimizer_require_match = bool(require_match)
         self._training_step_count = int(
             training_state.get("training_step_count", 0) or 0)
         self._train_batches_seen = int(
@@ -1915,11 +3704,22 @@ class BaseModel(Mereology, nn.Module):
         if (torch.cuda.is_available()
                 and training_state.get("cuda_rng_state_all") is not None):
             torch.cuda.set_rng_state_all(training_state["cuda_rng_state_all"])
+        mps_state = training_state.get("mps_rng_state")
+        set_mps_state = getattr(
+            getattr(torch, "mps", None), "set_rng_state", None)
+        if mps_state is not None and callable(set_mps_state):
+            try:
+                set_mps_state(mps_state.detach().to("cpu"))
+            except (RuntimeError, AttributeError):
+                # A checkpoint remains loadable on CPU/non-MPS hosts; the
+                # state is applied when the active runtime has a Metal RNG.
+                pass
 
         TheMessage(f"[{self.name}] Weights loaded from {path}")
         return True
 
-    def _restore_vocab_extras(self, extras):
+    def _restore_vocab_extras(
+            self, extras, *, legacy_whole_structure=None):
         """Restore the WordVectors mappings AND resize the live
         ``wv._vectors`` parameter to match the saved vocab size.
 
@@ -1928,29 +3728,97 @@ class BaseModel(Mereology, nn.Module):
         the subsequent ``load_state_dict`` call; here we just allocate
         the right-sized parameter and rebuild the Python mappings.
 
-        The WS-side restores (well-known atoms, META taxonomy, fold
-        provenance) run FIRST, independent of the Embedding: the radix
-        envelope carries them with an EMPTY lexicon (``index_to_key ==
-        []``), so the lexicon early-returns below must not skip them.
+        Space-side restores run first, independent of the Embedding: a radix
+        envelope may carry them with an empty lexicon. In property-basis mode,
+        concept/META structure goes only to terminal ConceptualSpace and WS
+        receives property metadata only. Legacy WS structural blobs are handed
+        to ConceptualSpace's explicit migration loader, never replayed on WS.
         """
-        # Restore the well-known atoms dict on WholeSpace so the
-        # "words" meronomy parent (and any future named parents) lines
-        # up with the rows in the saved codebook.
-        sym_space = getattr(self, 'wholeSpace', None)
-        well_known = extras.get("well_known_atoms")
-        if sym_space is not None and isinstance(well_known, dict) and well_known:
-            sym_space.well_known_atoms = {
-                str(k): int(v) for k, v in well_known.items()
-            }
-        # Stage 8: restore META taxonomy + parent map + meta-pair lookup
-        # so the structural decode path survives checkpoint roundtrip.
-        ws_extras = extras.get("ws_taxonomy_extras")
-        if (sym_space is not None
-                and isinstance(ws_extras, dict)
-                and hasattr(sym_space, 'load_vocab_extras')):
-            sym_space.load_vocab_extras(ws_extras)
-        # Canonical abstraction-order provenance for the PS percept
-        # codebook (absent in pre-feature blobs).
+        whole_space = getattr(self, 'wholeSpace', None)
+        concept_space = getattr(self, 'conceptualSpace', None)
+        property_basis = bool(getattr(self, "wholePropertyBasis", False))
+        if property_basis:
+            conceptual_blob = extras.get("conceptual_structure")
+            if (concept_space is not None
+                    and isinstance(conceptual_blob, dict)
+                    and hasattr(concept_space, "load_vocab_extras")):
+                concept_space.load_vocab_extras(conceptual_blob)
+            property_blob = extras.get("whole_properties")
+            if whole_space is not None and isinstance(property_blob, dict):
+                if hasattr(whole_space, "load_property_extras"):
+                    whole_space.load_property_extras(property_blob)
+                elif hasattr(whole_space, "load_vocab_extras"):
+                    whole_space.load_vocab_extras(property_blob)
+
+            # Raw version-1 fields (for callers that bypassed the checkpoint
+            # migrator) and quarantined fields both import downstream into CS.
+            legacy_vocab = {}
+            raw_ws = extras.get("ws_taxonomy_extras")
+            if isinstance(raw_ws, dict):
+                legacy_vocab.update(raw_ws)
+            raw_atoms = extras.get("well_known_atoms")
+            if isinstance(raw_atoms, dict) and raw_atoms:
+                legacy_vocab.setdefault("well_known_atoms", raw_atoms)
+            quarantine = (legacy_whole_structure
+                          if isinstance(legacy_whole_structure, dict) else {})
+            quarantined_vocab = quarantine.get("vocab_extras")
+            if isinstance(quarantined_vocab, dict):
+                old_ws = quarantined_vocab.get("ws_taxonomy_extras")
+                if isinstance(old_ws, dict):
+                    legacy_vocab.update(old_ws)
+                old_atoms = quarantined_vocab.get("well_known_atoms")
+                if isinstance(old_atoms, dict) and old_atoms:
+                    legacy_vocab.setdefault("well_known_atoms", old_atoms)
+            if (legacy_vocab and concept_space is not None
+                    and hasattr(concept_space, "load_vocab_extras")):
+                concept_space.load_vocab_extras(legacy_vocab)
+            legacy_stages = quarantine.get("structural_whole_spaces")
+            if (isinstance(legacy_stages, dict)
+                    and concept_space is not None
+                    and hasattr(concept_space, "load_vocab_extras")):
+                concept_space.load_vocab_extras({
+                    "legacy_whole_spaces": legacy_stages,
+                })
+        else:
+            # Legacy ownership path, retained only for unmigrated configs.
+            well_known = extras.get("well_known_atoms")
+            if (whole_space is not None and isinstance(well_known, dict)
+                    and well_known):
+                whole_space.well_known_atoms = {
+                    str(k): int(v) for k, v in well_known.items()
+                }
+            ws_extras = extras.get("ws_taxonomy_extras")
+            if (whole_space is not None and isinstance(ws_extras, dict)
+                    and hasattr(whole_space, 'load_vocab_extras')):
+                whole_space.load_vocab_extras(ws_extras)
+        # The PS percept store's trie/inverse-table state (the WORD
+        # surfaces; absent in pre-feature blobs). Runs pre-state-dict per
+        # the envelope contract: load_vocab_extras re-allocates the shared
+        # codebook capacity first so the shape pre-check sees matching dims.
+        ps_pstore = extras.get("ps_percept_extras")
+        if isinstance(ps_pstore, dict):
+            part_space = getattr(self, 'perceptualSpace', None)
+            store = getattr(part_space, 'percept_store', None)
+            if store is not None and hasattr(store, 'load_vocab_extras'):
+                old_parameter = getattr(
+                    getattr(store, "_basis", None), "_parameters", {}
+                ).get("W")
+                store.load_vocab_extras(ps_pstore)
+                new_parameter = getattr(
+                    getattr(store, "_basis", None), "_parameters", {}
+                ).get("W")
+                if new_parameter is not old_parameter:
+                    replace = getattr(
+                        part_space, "_replace_radix_codebook_parameter", None)
+                    if not callable(replace):
+                        raise RuntimeError(
+                            "checkpoint radix capacity restore replaced W, "
+                            "but PartSpace cannot repair Parameter ownership")
+                    replace(old_parameter, new_parameter, store.capacity)
+        # Canonical abstraction-order provenance for the PS percept codebook
+        # (absent in pre-feature blobs). Restore only after the radix sidecar
+        # has grown the physical table, otherwise fold rows in the saved tail
+        # would be silently discarded against the smaller XML initial prefix.
         ps_rams = extras.get("ps_ramsification")
         if isinstance(ps_rams, dict):
             ps_cb = getattr(getattr(getattr(self, 'perceptualSpace', None),
@@ -1958,16 +3826,6 @@ class BaseModel(Mereology, nn.Module):
             if ps_cb is not None and hasattr(ps_cb,
                                              'load_ramsification_extras'):
                 ps_cb.load_ramsification_extras(ps_rams)
-        # The PS percept store's trie/inverse-table state (the WORD
-        # surfaces; absent in pre-feature blobs). Runs pre-state-dict per
-        # the envelope contract: load_vocab_extras re-allocates the shared
-        # codebook capacity first so the shape pre-check sees matching dims.
-        ps_pstore = extras.get("ps_percept_extras")
-        if isinstance(ps_pstore, dict):
-            store = getattr(getattr(self, 'perceptualSpace', None),
-                            'percept_store', None)
-            if store is not None and hasattr(store, 'load_vocab_extras'):
-                store.load_vocab_extras(ps_pstore)
         emb = self._get_embedding()
         if emb is None or getattr(emb, 'wv', None) is None:
             return
@@ -3315,6 +5173,330 @@ class BasicModel(BaseModel):
         mcol = same.to(full_seq.dtype).unsqueeze(-1)      # [B,T,1] hard 0/1
         return (full_seq * mcol).sum(dim=1, keepdim=True)  # [B,1,D] word rep
 
+    def _prewarm_checkpoint_shapes(self):
+        """Materialize lazy state whose final tensors ride in checkpoints.
+
+        Resolve the serial grammar layer's non-owning cache and materialize the
+        lazy category codebook. A training checkpoint contains the latter's
+        final shapes, so they must exist before ``load_state_dict``. Canonical
+        WholeSpace properties are not grown here: property growth is
+        independent of concept capacity and requires an explicit
+        optimizer/compiled-graph reset boundary. This helper is idempotent and
+        shared by autoload and compilation pre-warm.
+        """
+        if getattr(self, "_stm_reducer_cached", None) is None:
+            try:
+                self._stm_reducer()
+            except Exception:
+                # Degenerate/no-grammar configs cache the absence, matching
+                # the existing compiled-forward behavior.
+                self._stm_reducer_cached = False
+        if getattr(self, "_stm_unary_rewriter_cached", None) is None:
+            self._stm_unary_rewriter()
+
+        # Compatibility-only: old configs used WholeSpace.nVectors as a
+        # terminal symbol-table target and relied on this pre-load resize.
+        # propertyBasis=true never takes this path.
+        if not bool(getattr(self, "wholePropertyBasis", False)):
+            try:
+                ws_cb = (self.wholeSpace.subspace.codebook()
+                         if getattr(self, "wholeSpace", None) is not None
+                         and hasattr(self.wholeSpace.subspace, "codebook")
+                         else None)
+                budget = int(TheXMLConfig.space(
+                    "WholeSpace", "nVectors", default=0) or 0)
+                if (ws_cb is not None and budget > 0
+                        and int(ws_cb.nVectors) < budget):
+                    ws_cb.grow_to(budget)
+            except Exception:
+                # A legacy config without WS/a codebook has no shape to grow.
+                pass
+
+        # Participation-category state is allocated on the first perception
+        # forward in a fresh model, but autoload necessarily runs before that
+        # forward. At this point SymbolSpace has configured the live grammar,
+        # so materialize the requested terminal VQ on the same device as the
+        # owning concept/property dictionary. Otherwise its learned
+        # prototype/buffer keys in a checkpoint are classified as stale.
+        category_owner = (
+            getattr(self, "conceptualSpace", None)
+            if bool(getattr(self, "wholePropertyBasis", False))
+            else getattr(self, "wholeSpace", None))
+        if (category_owner is not None
+                and getattr(category_owner,
+                            "_category_codebook_requested", False)
+                and hasattr(category_owner, "category_codebook_enabled")
+                and not category_owner.category_codebook_enabled()
+                and hasattr(category_owner, "enable_category_codebook")):
+            from Language import TheGrammar
+            cb = getattr(category_owner, "similarity_codebook", None)
+            if cb is None:
+                cb = getattr(getattr(
+                    category_owner, "subspace", None), "what", None)
+            W = cb.getW() if cb is not None and hasattr(cb, "getW") else None
+            device = W.device if torch.is_tensor(W) else None
+            category_owner.enable_category_codebook(
+                TheGrammar, device=device)
+
+    def _aligned_serial_word_mode(self):
+        """Return whether the canonical aligned per-word protocol is live."""
+        return bool(
+            getattr(self, "serial", False)
+            and getattr(getattr(self, "inputSpace", None),
+                        "_per_word_enabled", False)
+            and getattr(self, "serial_object_meta", False)
+            and getattr(self, "concept_binding", "mixing") == "aligned")
+
+    def _aligned_serial_sparse_bank_mode(self):
+        """Return whether aligned serial execution needs its sparse bank.
+
+        Stage 0 resolves relation identities while the terminal CS consumes
+        them.  The staged atoms are therefore sound only when both stages own
+        the same physical codebook Parameter, an invariant of the canonical
+        model that is checked here rather than assumed at decode time.
+        """
+        if not self._aligned_serial_word_mode():
+            return False
+        spaces = list(getattr(self, "conceptualSpaces", None) or ())
+        if not spaces:
+            return False
+        terminal = getattr(self, "conceptualSpace", None)
+        if terminal is None:
+            terminal = spaces[-1]
+        owner_cb = getattr(spaces[0], "similarity_codebook", None)
+        terminal_cb = getattr(terminal, "similarity_codebook", None)
+        sparse = any(
+            bool(getattr(getattr(space, "similarity_codebook", None),
+                         "sparse_lookup_grad", False))
+            for space in spaces)
+        if sparse and owner_cb is not terminal_cb:
+            raise RuntimeError(
+                "aligned serial sparse staging requires stage-0 and "
+                "terminal ConceptualSpace to share one physical codebook")
+        return sparse
+
+    def _aligned_part_fold_ladder(self, event):
+        """Fullgraph numerical PS ladder for one canonical word tick."""
+        passes = tuple(range(int(self.subsymbolicOrder) - 1))
+        return self.perceptualSpace.fold_event_ladder(
+            event, passes, strict=True)
+
+    def _aligned_whole_fold_ladder(self, event):
+        """Fullgraph numerical WS ladder for one canonical word tick."""
+        passes = tuple(range(int(self.subsymbolicOrder) - 1))
+        return self.wholeSpace.fold_event_ladder(
+            event, passes, strict=True)
+
+    def _enable_mps_fullgraph_fold_ladders(self, compile_fn):
+        """Compile the complete numerical PS and WS ladders on MPS.
+
+        This is the useful fullgraph boundary for the canonical recurrence:
+        each graph contains all three learned folds and their backward path,
+        while excluding the stateful carrier, sparse lookup, STM, and host
+        grammar machinery that make a whole word tick impractically large for
+        the Metal compiler.  It replaces six tiny compile dispatches per word
+        with two fullgraph calls.
+        """
+        os.environ.setdefault("BASICMODEL_MPS_IOBUF", "12")
+        os.environ.setdefault("BASICMODEL_MPS_FUSE", "32")
+        self._compiled_part_fold_ladder = compile_fn(
+            self._aligned_part_fold_ladder, verbose=True, fullgraph=True)
+        self._compiled_whole_fold_ladder = compile_fn(
+            self._aligned_whole_fold_ladder, verbose=True, fullgraph=True)
+
+    def _configure_lazy_fullgraph_word_loops(self, compile_fn, buckets):
+        """Install, but do not lower, one fullgraph sentence loop per W bucket.
+
+        The outer word bucket (W=16/32/64/128/256) and the masked residual
+        constituent layout are both static *inside* that loop.
+        Capture the *entire* W loop rather than a word cell replayed W times:
+        this gives Inductor visibility of the recurrent carrier chain and
+        permits fusion across adjacent word ticks. Lowering a complete
+        forward/backward is intentionally deferred until a W bucket is first
+        observed; a multi-day run pays that cost once per used W bucket, not
+        once per residual spelling, batch, or word.
+
+        Four separately-defined source functions are deliberate.  Dynamo keys
+        the Python code object in addition to shapes; a closure factory would
+        otherwise turn W=32 into a recompile of the W=16 graph.
+        """
+        widths = tuple(sorted(set(int(width) for width in buckets)))
+        required = (16, 32, 64, 128, 256)
+        unsupported = tuple(width for width in widths
+                            if width not in required)
+        if unsupported:
+            raise ValueError(
+                "canonical fullgraph word loops support W=16,32,64,128,256; "
+                f"got unsupported {list(unsupported)}")
+
+        def _forward_W16(input_data):
+            slab = self.inputSpace._ar_embedded_N
+            if slab is None or int(slab.shape[1]) != 16:
+                raise RuntimeError("fullgraph W=16 loop received a non-W=16 slab")
+            # The complete word loop consumes the eager-staged InputSpace
+            # slab, never the raw text tensor.  Keeping that variable-width
+            # lexer tensor in the compiled callable's signature gave Dynamo a
+            # second (unrelated) shape guard after the W loop had lowered.
+            return self.forward(None)
+
+        def _forward_W32(input_data):
+            slab = self.inputSpace._ar_embedded_N
+            if slab is None or int(slab.shape[1]) != 32:
+                raise RuntimeError("fullgraph W=32 loop received a non-W=32 slab")
+            return self.forward(None)
+
+        def _forward_W64(input_data):
+            slab = self.inputSpace._ar_embedded_N
+            if slab is None or int(slab.shape[1]) != 64:
+                raise RuntimeError("fullgraph W=64 loop received a non-W=64 slab")
+            return self.forward(None)
+
+        def _forward_W128(input_data):
+            slab = self.inputSpace._ar_embedded_N
+            if slab is None or int(slab.shape[1]) != 128:
+                raise RuntimeError("fullgraph W=128 loop received a non-W=128 slab")
+            return self.forward(None)
+
+        def _forward_W256(input_data):
+            slab = self.inputSpace._ar_embedded_N
+            if slab is None or int(slab.shape[1]) != 256:
+                raise RuntimeError("fullgraph W=256 loop received a non-W=256 slab")
+            return self.forward(None)
+
+        object.__setattr__(self, "_compiled_word_step_sources", {
+            16: _forward_W16,
+            32: _forward_W32,
+            64: _forward_W64,
+            128: _forward_W128,
+            256: _forward_W256,
+        })
+        self._compiled_word_steps = {}
+        self._compiled_word_loop_compile = compile_fn
+        self._compiled_word_loop_fullgraph = True
+
+    def _ensure_lazy_fullgraph_word_loop(self, width):
+        """Return the one complete fullgraph loop for the active W bucket."""
+        width = int(width)
+        steps = self._compiled_word_steps
+        compiled = steps.get(width)
+        if compiled is not None:
+            return compiled
+        source = getattr(self, "_compiled_word_step_sources", {}).get(width)
+        compile_fn = getattr(self, "_compiled_word_loop_compile", None)
+        if source is None or compile_fn is None:
+            raise RuntimeError(
+                f"no lazy fullgraph word-loop source is configured for W={width}")
+        TheMessage(
+            "Canonical MPS fullgraph lowering: compiling complete "
+            f"W={width} recurrent word loop (one-time cost for this bucket)")
+        compiled = compile_fn(source, verbose=True, fullgraph=True)
+        steps[width] = compiled
+        return compiled
+
+    def _stage_fixed_residual_part_capacity(self):
+        """Present one fixed, masked constituent layout to a W-loop graph.
+
+        ``P`` is an input layout extent, not the PS live-field width: PS/WS
+        still reduce their raw constituents into their configured eight live
+        locations.  It must nevertheless be static in the compiled outer
+        loop.  Marking P dynamic let Inductor create a second, delayed
+        specialization when a later sentence exposed a different radix
+        spelling, defeating the one-fullgraph-per-W contract.
+
+        Every word is padded with a valid masked identity percept to the
+        fixed capacity (16 by default).  No real constituent is discarded.
+        A word that cannot be represented by that radix/trie layout fails at
+        the eager boundary with its actual width, rather than being truncated
+        or silently requesting another full W-loop compilation.  Such a
+        failure is the explicit signal to improve the trie/compaction policy,
+        not to grow a hidden compilation bucket.
+        """
+        isp = self.inputSpace
+        ids = getattr(isp, "_ar_word_part_ids", None)
+        mask = getattr(isp, "_ar_word_part_mask", None)
+        offsets = getattr(isp, "_ar_word_part_offsets", None)
+        if (not torch.is_tensor(ids) or ids.dim() != 3
+                or not torch.is_tensor(mask)
+                or tuple(mask.shape) != tuple(ids.shape)):
+            return None
+        if offsets is not None and (not torch.is_tensor(offsets)
+                                    or tuple(offsets.shape) != tuple(ids.shape)):
+            raise RuntimeError(
+                "serial residual-part offsets do not align with part ids")
+
+        raw_width = int(ids.shape[-1])
+        capacity = int(os.environ.get(
+            "BASICMODEL_MPS_RESIDUAL_PARTS", "16"))
+        if capacity < 3:
+            raise ValueError(
+                "BASICMODEL_MPS_RESIDUAL_PARTS must be at least 3; got "
+                f"{capacity}")
+        if raw_width > capacity:
+            raise RuntimeError(
+                "a radix word needs "
+                f"{raw_width} residual percepts, beyond the fixed "
+                f"compiled P={capacity} contract; refusing to truncate it")
+        bucket = capacity
+
+        # A valid physical row (zero) is gathered before the false mask
+        # removes it.  ``-1`` would alias the final learnable codebook row
+        # during the gather and is therefore not a semantic identity.
+        pad_width = bucket - raw_width
+        pad_shape = tuple(ids.shape[:-1]) + (pad_width,)
+        padded_ids = torch.cat((
+            ids,
+            torch.zeros(pad_shape, dtype=ids.dtype, device=ids.device)),
+            dim=-1)
+        padded_mask = torch.cat((
+            mask,
+            torch.zeros(pad_shape, dtype=torch.bool, device=mask.device)),
+            dim=-1)
+        padded_offsets = None
+        if torch.is_tensor(offsets):
+            padded_offsets = torch.cat((
+                offsets,
+                torch.full(pad_shape, -1, dtype=offsets.dtype,
+                           device=offsets.device)), dim=-1)
+        isp._ar_word_part_ids = padded_ids
+        isp._ar_word_part_mask = padded_mask
+        isp._ar_word_part_offsets = padded_offsets
+
+        # Keep the eager PartSpace record shape-coherent with the fixed
+        # InputSpace presentation.  These fields must use the same physical
+        # P as the source ids; otherwise an apparently static word loop gains
+        # a hidden shape guard through the PartSpace staging record.
+        ps = self.perceptualSpace
+        fwd = getattr(ps, "_forward_input", None)
+        if isinstance(fwd, dict):
+            B, W = (int(ids.shape[0]), int(ids.shape[1]))
+            flat_width = W * raw_width
+            flat_bucket = W * bucket
+
+            def _pad_flat(name, fill):
+                value = fwd.get(name)
+                if (not torch.is_tensor(value) or value.dim() < 2
+                        or int(value.shape[0]) != B
+                        or int(value.shape[1]) != flat_width):
+                    return
+                view = value.reshape(B, W, raw_width, *value.shape[2:])
+                fill_shape = (B, W, pad_width, *value.shape[2:])
+                pad = torch.full(
+                    fill_shape, fill, dtype=value.dtype, device=value.device)
+                fwd[name] = torch.cat((view, pad), dim=2).reshape(
+                    B, flat_bucket, *value.shape[2:])
+
+            # ``indices`` is an id tensor and must remain in range; all
+            # structural values use their existing masked/padding sentinel.
+            _pad_flat("indices", 0)
+            _pad_flat("seed_event", 0.0)
+            _pad_flat("word_groups", -1)
+            _pad_flat("part_spans", 0)
+            _pad_flat("percept_where", -1)
+            fwd["word_part_indices"] = padded_ids
+            fwd["word_part_mask"] = padded_mask
+            fwd["word_part_capacity"] = capacity
+        return capacity
+
     def enable_compiled_step(self):
         """Compile the per-batch forward and route runBatch through it.
 
@@ -3327,17 +5509,12 @@ class BasicModel(BaseModel):
         orchestration stays Python (streaming/staging outside the
         compiled region, per the compile-scoped-to-model design).
 
-        Strict gate, **all configs**: the recon-then-eliminate program
-        drove the forward to **0 graph breaks** (non-grammar *and*
-        grammar; ``total graph breaks: 0; graphs: 1``), so we compile
-        with ``fullgraph=True`` unconditionally -- any regression that
-        reintroduces a host sync / dynamic-shape op / data-dependent
-        control-flow break now *raises* at compile time instead of
-        silently degrading to eager (or wasting GPU hours on a
-        non-capturable run). The grammar path is no longer
-        ``@torch.compiler.disable``'d (a disabled call is itself a
-        break under ``fullgraph=True``); its breaks were eliminated in
-        the same recon loop.
+        Strict gate where the configured forward is host-island-free: the
+        recon-then-eliminate program drove that path to **0 graph breaks**
+        (``total graph breaks: 0; graphs: 1``). Configurations with an explicit
+        eager island relax ``fullgraph`` so the dense regions can still be
+        compiled. The canonical aligned serial path remains strict: its sparse
+        concept rows are gathered once before the graph, not inside it.
         """
         from util import compile as _compile
         # MPS compiles by default (2026-06-07): torch 2.12's inductor MPS
@@ -3350,49 +5527,19 @@ class BasicModel(BaseModel):
         # any device.
         # D8 capture-gate (2026-05-19): pre-warm any LAZY-built caches
         # that the captured forward depends on, so Dynamo never traces
-        # their build path. ``_stm_reducer`` constructs a
-        # ``BinaryStructuredReductionLayer`` (calls ``nn.Parameter()``
-        # which Dynamo refuses to trace -- "Attempted to use
-        # torch.nn.Parameter() constructor with Dynamo"). Build it
-        # here, eagerly, before the compile wrapper closes over
-        # ``self.forward``. The build is one-shot and idempotent
-        # (cached on ``_stm_reducer_cached``).
-        if getattr(self, "_stm_reducer_cached", None) is None:
-            try:
-                self._stm_reducer()
-            except Exception:
-                # Build failure (degenerate grammar etc.) caches False;
-                # the per-word body's reducer call returns None
-                # gracefully and the SHIFT-only depth-bound stays via
-                # back-pressure. Not a compile blocker.
-                self._stm_reducer_cached = False
-        # Pre-grow the WS symbol codebook to its configured budget BEFORE the
-        # first trace: insert_whole grows it once-to-budget (recompile
-        # hygiene, Spaces.py), but if the first trace lands before the first
-        # insert, graph #1 records the tiny well-known-atoms shape and the
-        # derived [V] ``_intent_boosts`` guard fails once when the budget
-        # arrives -- one wasted full retrace. Growing here makes the traced
-        # shape final from the start. No-op when unconfigured or already
-        # at/above budget.
-        try:
-            _ws_cb = (self.wholeSpace.subspace.codebook()
-                      if getattr(self, "wholeSpace", None) is not None
-                      and hasattr(self.wholeSpace.subspace, "codebook")
-                      else None)
-            _budget = int(TheXMLConfig.space(
-                "WholeSpace", "nVectors", default=0) or 0)
-            if (_ws_cb is not None and _budget > 0
-                    and int(_ws_cb.nVectors) < _budget):
-                _ws_cb.grow_to(_budget)
-        except Exception:
-            pass  # degenerate configs (no WS / no codebook) keep going
+        # their build path. ``_stm_reducer`` resolves the already-wired
+        # LanguageLayer child and caches that non-owning reference here,
+        # eagerly, before the compile wrapper closes over ``self.forward``.
+        # Build every lazy, checkpointed shape before capture. Autoload uses
+        # the same helper before loading an existing training checkpoint.
+        self._prewarm_checkpoint_shapes()
         # Device-coherence sweep before the trace, against the CANONICAL
         # process device (util.TheDevice -- the single source of truth that
         # ``init_device`` keeps in sync with torch's default device). The lazy
         # reducer build (above) and any module minted during ModelFactory's
         # build-on-CPU phase (``init_device("cpu")`` -> build ->
         # ``init_device(target)`` + ``m.to(target)``) can be left on CPU if it
-        # was created after the ``m.to`` or lives off the module registry; the
+        # was created after the ``m.to``; the
         # compiled forward's fake-tensor propagation then fails loud
         # ("two different devices mps:0, cpu") where eager might limp. The
         # sweep is an idempotent no-op when already coherent. The per-call
@@ -3430,8 +5577,19 @@ class BasicModel(BaseModel):
         # with the uint16 + 31-buffer workarounds in util.compile.
         _serial_per_word = bool(getattr(
             getattr(self, 'inputSpace', None), '_per_word_enabled', False))
+        _sparse_codebook_island = any(
+            bool(getattr(
+                getattr(_cs, "similarity_codebook", None),
+                "sparse_lookup_grad", False))
+            for _cs in (getattr(self, "conceptualSpaces", None) or ()))
+        _staged_sparse_bank = self._aligned_serial_word_mode()
+        _canonical_word_chunk = bool(
+            self._aligned_serial_sparse_bank_mode()
+            and getattr(_util, "TheCompileBackend", "none") != "none")
         _host_islands = ((_full_router and not _serial_per_word)
-                         or _symbol_tower)
+                         or _symbol_tower
+                         or (_sparse_codebook_island
+                             and not _staged_sparse_bank))
         # torch 2.12 inductor-MPS cannot codegen the FULL-ROUTER
         # forward: the generated Metal references undeclared reduction
         # indices ("use of undeclared identifier 'r0_1'" — an upstream
@@ -3455,10 +5613,182 @@ class BasicModel(BaseModel):
         _fullgraph = ENUM_FULLGRAPH and not _host_islands
         if ENUM_FULLGRAPH and _host_islands:
             TheMessage(
-                "fullgraph relaxed: host-island config (full-router grammar or "
-                "symbolTower forward_symbol is a tolerated graph break)")
-        self._compiled_step = _compile(
-            self.forward, verbose=True, fullgraph=_fullgraph)
+                "fullgraph relaxed: host-island config (full-router grammar, "
+                "symbolTower forward_symbol, or sparse indexed codebook is "
+                "a tolerated graph break)")
+        _word_buckets = tuple(
+            int(v) for v in getattr(self, "serial_word_buckets", ()) or ())
+        self._compiled_word_chunk_step = None
+        self._compiled_word_chunk_active = False
+        self._compiled_word_chunk_replaying = False
+        self._compiled_word_chunk_width = 0
+        # Diagnostic only. Read once so the production W-loop never performs
+        # an environment lookup or constructs a SubSpaceView while captured.
+        self._debug_peer_mutation = (
+            os.environ.get("BASICMODEL_DEBUG_PEER_MUTATION", "0") == "1")
+        self._compiled_part_fold_ladder = None
+        self._compiled_whole_fold_ladder = None
+        self._compiled_word_loop_compile = None
+        self._compiled_word_loop_fullgraph = False
+        _mps_fullgraph_ladder_boundary = (
+            _canonical_word_chunk
+            and str(TheDevice.get()).startswith("mps"))
+        _mps_word_loop = os.environ.get(
+            "BASICMODEL_MPS_WORD_LOOP_FULLGRAPH", "1").strip().lower() not in (
+                "0", "false", "no", "off")
+        _mps_word_cell = os.environ.get(
+            "BASICMODEL_MPS_WORD_FULLGRAPH", "1").strip().lower() not in (
+                "0", "false", "no", "off")
+        if _mps_fullgraph_ladder_boundary and _mps_word_loop:
+            # The primary production boundary: one fullgraph encompasses the
+            # complete static W loop, including recurrence and backward. P is
+            # a fixed masked layout inside that loop, so it is compiled once
+            # for W=16/32/64/128 rather than once per radix constituent width.
+            # It is compiled lazily when the first input chooses a W bucket,
+            # rather than spending startup time lowering every bucket. A
+            # complete W=16 backward has substantially more live inputs than
+            # the old one-word cell. These conservative realization/fusion
+            # limits keep every generated Metal kernel beneath its 31
+            # constant-buffer cap.
+            os.environ.setdefault("BASICMODEL_MPS_IOBUF", "8")
+            os.environ.setdefault("BASICMODEL_MPS_FUSE", "16")
+            os.environ.setdefault("BASICMODEL_MPS_REALIZE", "4")
+            self._configure_lazy_fullgraph_word_loops(_compile, _word_buckets)
+            self._compiled_step = self.forward
+            TheMessage(
+                "Canonical MPS fullgraph compile: lazy complete W-loop "
+                "capture with one fixed residual-part axis")
+        elif _mps_fullgraph_ladder_boundary and _mps_word_cell:
+            # Fullgraph training kernel for the actual recurrent word tick.
+            # The fixed residual-part bucket below removes the old 3..8192
+            # symbolic P range, which was the dominant source of the earlier
+            # multi-minute compile. K=1 is the safe default; K=2 is a
+            # fullgraph packing option for MPS benchmarking once the common
+            # residual buckets are warm.
+            _mps_chunk_width = int(os.environ.get(
+                "BASICMODEL_MPS_WORD_CHUNK", "1"))
+            if _mps_chunk_width not in (1, 2):
+                raise ValueError(
+                    "BASICMODEL_MPS_WORD_CHUNK must be 1 or 2; got "
+                    f"{_mps_chunk_width}")
+            os.environ.setdefault("BASICMODEL_MPS_IOBUF", "12")
+            os.environ.setdefault("BASICMODEL_MPS_FUSE", "32")
+            self._compiled_word_steps = {}
+            self._compiled_word_chunk_step = _compile(
+                (self._aligned_word_chunk1 if _mps_chunk_width == 1
+                 else self._aligned_word_chunk2),
+                verbose=True, fullgraph=True)
+            self._compiled_word_chunk_active = True
+            self._compiled_word_chunk_width = _mps_chunk_width
+            self._compiled_step = self.forward
+            TheMessage(
+                "Canonical MPS fullgraph compile: reusable K="
+                f"{_mps_chunk_width} word cell with fixed residual-part "
+                "buckets")
+        elif _mps_fullgraph_ladder_boundary:
+            # Two fullgraph numerical ladders replace the previous six tiny
+            # fold calls per word. Capturing the whole K=1/K=2 word cell also
+            # captures carrier mutation, sparse lookup, STM, and grammar
+            # state; MPS spends minutes lowering that AOT backward before the
+            # first batch. The ladders retain the actual learned PS/WS work in
+            # fullgraph=True graphs and leave only those stateful boundaries
+            # eager.
+            self._compiled_word_steps = {}
+            self._enable_mps_fullgraph_fold_ladders(_compile)
+            self._compiled_step = self.forward
+            TheMessage(
+                "Canonical MPS compile: PS and WS fold ladders "
+                "fullgraph=True with eager state adapter")
+        elif _canonical_word_chunk:
+            # Compile one reusable, fixed K=2 word cell.  The sentence shell
+            # remains eager: it stages two-column views, replays this callable,
+            # and installs the returned contributions in sentence order.  In
+            # particular this avoids asking Inductor to lower four W-unrolled
+            # graphs whose compile time scales with 16/32/64/128 words.
+            self._compiled_word_steps = {}
+            self._compiled_word_chunk_step = _compile(
+                self._aligned_word_chunk2, verbose=True, fullgraph=True)
+            self._compiled_word_chunk_active = True
+            # A non-None sentinel makes runBatch perform the ordinary eager
+            # lexical/sparse-bank staging.  The selected outer callable is the
+            # bound eager forward; only the two-word cell above is compiled.
+            self._compiled_step = self.forward
+            TheMessage(
+                "Canonical aligned serial compile: reusable K=2 word cell "
+                "with eager sentence adapter")
+        elif (_serial_per_word and len(_word_buckets) > 1):
+            # Four DISTINCT CODE OBJECTS give Dynamo/Inductor four stable,
+            # packed static loop graphs. A closure factory is insufficient:
+            # its products share ``__code__``, so Dynamo treats W=32 as a
+            # recompile of W=16 even if their function identities/names differ.
+            self._compiled_word_steps = {}
+
+            def _forward_W16(input_data):
+                slab = self.inputSpace._ar_embedded_N
+                if slab is not None and int(slab.shape[1]) != 16:
+                    raise RuntimeError(
+                        f"compiled W=16 bucket received a W="
+                        f"{int(slab.shape[1])} staged slab")
+                return self.forward(input_data)
+
+            def _forward_W32(input_data):
+                slab = self.inputSpace._ar_embedded_N
+                if slab is not None and int(slab.shape[1]) != 32:
+                    raise RuntimeError(
+                        f"compiled W=32 bucket received a W="
+                        f"{int(slab.shape[1])} staged slab")
+                return self.forward(input_data)
+
+            def _forward_W64(input_data):
+                slab = self.inputSpace._ar_embedded_N
+                if slab is not None and int(slab.shape[1]) != 64:
+                    raise RuntimeError(
+                        f"compiled W=64 bucket received a W="
+                        f"{int(slab.shape[1])} staged slab")
+                return self.forward(input_data)
+
+            def _forward_W128(input_data):
+                slab = self.inputSpace._ar_embedded_N
+                if slab is not None and int(slab.shape[1]) != 128:
+                    raise RuntimeError(
+                        f"compiled W=128 bucket received a W="
+                        f"{int(slab.shape[1])} staged slab")
+                return self.forward(input_data)
+
+            def _forward_W256(input_data):
+                slab = self.inputSpace._ar_embedded_N
+                if slab is not None and int(slab.shape[1]) != 256:
+                    raise RuntimeError(
+                        f"compiled W=256 bucket received a W="
+                        f"{int(slab.shape[1])} staged slab")
+                return self.forward(input_data)
+
+            _fixed_sources = {
+                16: _forward_W16,
+                32: _forward_W32,
+                64: _forward_W64,
+                128: _forward_W128,
+                256: _forward_W256,
+            }
+            unsupported = [
+                width for width in _word_buckets
+                if width not in _fixed_sources]
+            if unsupported:
+                raise ValueError(
+                    "compiled serialWordBuckets supports exactly widths "
+                    f"16,32,64,128,256; got unsupported {unsupported}")
+            object.__setattr__(
+                self, "_compiled_word_step_sources", _fixed_sources)
+            for _width in _word_buckets:
+                self._compiled_word_steps[int(_width)] = _compile(
+                    _fixed_sources[int(_width)], verbose=True,
+                    fullgraph=_fullgraph)
+            self._compiled_step = self._compiled_word_steps[
+                max(_word_buckets)]
+        else:
+            self._compiled_word_steps = {}
+            self._compiled_step = _compile(
+                self.forward, verbose=True, fullgraph=_fullgraph)
 
     def _start_spaces_for_forward(self):
         for space in self.spaces:
@@ -3503,6 +5833,23 @@ class BasicModel(BaseModel):
 
         Returns a list of per-epoch test accuracies.
         """
+        max_seconds_raw = os.environ.get("BASIC_MAX_SECONDS", "").strip()
+        self._training_deadline_reached = False
+        self._training_deadline_monotonic = None
+        if max_seconds_raw:
+            try:
+                max_seconds = float(max_seconds_raw)
+            except ValueError as exc:
+                raise ValueError(
+                    "BASIC_MAX_SECONDS must be a number of seconds; got "
+                    f"{max_seconds_raw!r}") from exc
+            if max_seconds > 0.0:
+                self._training_deadline_monotonic = (
+                    time.monotonic() + max_seconds)
+                TheMessage(
+                    f"Training wall-clock cap armed: {max_seconds:g}s "
+                    "(checked between completed batches).")
+
         trainLosses       = [[],[]]  # [output_losses, reconstruction_losses]
         validationLosses  = [[],[]]
         testLosses        = [[],[]]
@@ -3555,6 +5902,18 @@ class BasicModel(BaseModel):
             trainLosses[0].append(outErr)
             trainLosses[1].append(inErr)
             TheMessage(f"Train Loss: output={outErr:.4f}, reconstruction={inErr:.4f}")
+
+            if getattr(self, "_training_deadline_reached", False):
+                # Do not start another epoch or an optional test traversal:
+                # return through the normal runTrial tail so ModelFactory's
+                # final autosave still records the last completed update.
+                accuracy += [0.0]
+                if len(accuracy) < int(numEpochs):
+                    accuracy.extend([0.0] * (int(numEpochs) - len(accuracy)))
+                TheMessage(
+                    "Training wall-clock cap reached; finishing normally "
+                    "for final reporting/checkpoint save.")
+                break
 
             if not _run_test:
                 # Per-epoch test pass skipped under --test gating.
@@ -3629,22 +5988,63 @@ class BasicModel(BaseModel):
                         return f"{rid}:{rd.canonical}"
                     return f"{rid}:?"
                 TheMessage("=== Signal-router-extracted grammar (Viterbi) ===")
+                def _decode_row(row):
+                    head, omitted, tail = _grammar_row_preview(row)
+                    decoded = [_decode(rid) for rid in head]
+                    if omitted:
+                        decoded.append(f"... {omitted} rules omitted ...")
+                        decoded.extend(_decode(rid) for rid in tail)
+                    return decoded
+                max_report_rows = int(os.environ.get(
+                    "BASIC_GRAMMAR_REPORT_MAX_ROWS", "4"))
                 for space_role, rows in (rules or {}).items():
                     TheMessage(f"  compose space_role={space_role!r}:")
-                    for b, row in enumerate(rows):
-                        decoded = [_decode(rid) for rid in row]
+                    report_rows = _grammar_rows_for_report(rows)
+                    shown_rows = (report_rows if max_report_rows <= 0
+                                  else report_rows[:max_report_rows])
+                    for b, row in enumerate(shown_rows):
+                        decoded = _decode_row(row)
                         TheMessage(f"    row[{b}] = {decoded}")
+                    if len(shown_rows) < len(report_rows):
+                        TheMessage(
+                            f"    ... {len(report_rows) - len(shown_rows)} "
+                            "batch rows omitted ...")
                 for space_role, rows in (gen_rules or {}).items():
                     TheMessage(f"  generate space_role={space_role!r}:")
-                    for b, row in enumerate(rows):
-                        decoded = [_decode(rid) for rid in row]
+                    report_rows = _grammar_rows_for_report(rows)
+                    shown_rows = (report_rows if max_report_rows <= 0
+                                  else report_rows[:max_report_rows])
+                    for b, row in enumerate(shown_rows):
+                        decoded = _decode_row(row)
                         TheMessage(f"    row[{b}] = {decoded}")
+                    if len(shown_rows) < len(report_rows):
+                        TheMessage(
+                            f"    ... {len(report_rows) - len(shown_rows)} "
+                            "batch rows omitted ...")
                 if getattr(router, '_last_root_state', None) is not None:
                     rs = router._last_root_state.detach()
                     TheMessage(f"  S root state shape = {tuple(rs.shape)}")
-                    for b in range(rs.shape[0]):
+                    n_root_rows = int(rs.shape[0])
+                    shown_root_rows = (n_root_rows if max_report_rows <= 0
+                                       else min(n_root_rows, max_report_rows))
+                    root_dim_limit = int(os.environ.get(
+                        "BASIC_GRAMMAR_REPORT_MAX_DIMS", "32"))
+                    for b in range(shown_root_rows):
                         vec = rs[b, 0].tolist()
-                        TheMessage(f"    row[{b}] root = {[round(v, 4) for v in vec]}")
+                        if root_dim_limit > 0:
+                            head, omitted, tail = _grammar_row_preview(
+                                vec, limit=root_dim_limit)
+                        else:
+                            head, omitted, tail = vec, 0, []
+                        preview = [round(v, 4) for v in head]
+                        if omitted:
+                            preview.append(f"... {omitted} dims omitted ...")
+                            preview.extend(round(v, 4) for v in tail)
+                        TheMessage(f"    row[{b}] root = {preview}")
+                    if shown_root_rows < n_root_rows:
+                        TheMessage(
+                            f"    ... {n_root_rows - shown_root_rows} root "
+                            "rows omitted ...")
         except Exception as _exc:
             import logging
             logging.getLogger(__name__).warning(
@@ -3887,17 +6287,264 @@ class BasicModel(BaseModel):
                 f"{type(e).__name__}: {e}. Continuing without these "
                 f"hints; util.compile's torch.compile is unaffected.")
 
+    def _invalidate_compiled_step_for_partspace_growth(self):
+        """Drop callables that captured the pre-growth PS Parameter.
+
+        Recompilation is deferred until the next batch entry, keeping the
+        completed batch boundary free of a multi-minute compile while ensuring
+        no old callable is ever replayed against the replacement Parameter.
+        """
+        had_compiled = bool(
+            getattr(self, "_compiled_step", None) is not None
+            or getattr(self, "_compiled_word_steps", None))
+        self._compiled_step = None
+        self._compiled_word_steps = {}
+        self._active_compiled_step = None
+        # Canonical aligned serial mode can compile one reusable two-word cell
+        # instead of asking Inductor to lower a W=16/32/64/128 unrolled
+        # sentence graph.  The outer sentence shell remains eager and stages
+        # fixed two-column views before each replay.
+        self._compiled_word_chunk_step = None
+        self._compiled_word_chunk_active = False
+        self._compiled_word_chunk_replaying = False
+        self._compiled_word_chunk_width = 0
+        self._compiled_part_fold_ladder = None
+        self._compiled_whole_fold_ladder = None
+        self._compiled_word_loop_compile = None
+        self._compiled_word_loop_fullgraph = False
+        object.__setattr__(self, "_compiled_word_step_sources", {})
+        self._compiled_step_needs_rebuild = had_compiled
+
+    def _flush_partspace_promotions(self, optimizer=None):
+        """Commit queued radix promotions at the explicit batch boundary."""
+        part_space = getattr(self, "perceptualSpace", None)
+        flush = getattr(part_space, "flush_pending_promotions", None)
+        if not callable(flush):
+            return None
+        result = flush(optimizer=optimizer)
+        if result.get("grew", False):
+            self._invalidate_compiled_step_for_partspace_growth()
+            TheMessage(
+                f"[{self.name}] PartSpace radix codebook grew "
+                f"{result['old_capacity']} -> {result['new_capacity']} rows "
+                f"at the batch boundary; installed {result['inserted']} "
+                "queued promotion(s) and invalidated compiled callables")
+        return result
+
+    def _on_partspace_eager_growth(self, result):
+        """Handle mandatory byte-row growth during the eager lexical stem."""
+        if not result.get("grew", False):
+            return
+        self._invalidate_compiled_step_for_partspace_growth()
+        TheMessage(
+            f"[{self.name}] PartSpace radix codebook grew "
+            f"{result['old_capacity']} -> {result['new_capacity']} rows "
+            f"at the eager lexical boundary; installed "
+            f"{result['inserted']} mandatory byte percept(s) and "
+            "invalidated compiled callables")
+
+    def _normalize_perceptual_embedding(self):
+        """Re-project only the legacy lexicon Embedding after a train step.
+
+        The post-step projection was introduced for ``Embedding`` rows.  A
+        radix PartSpace owns a ``Codebook`` in the same ``subspace.what``
+        position; calling generic ``Basis.normalize()`` there reads/transforms
+        every physical percept row and then rewrites the table.  Radix reads
+        are already bounded by the percept UNORM STE and must not take this
+        lexicon-only full-capacity path.
+        """
+        emb = getattr(
+            getattr(self.perceptualSpace, "subspace", None), "what", None)
+        if isinstance(emb, Embedding):
+            emb.normalize()
+
+    def _stage_serial_concept_rows(self):
+        """Resolve each staged word to one exact joint CS identity eagerly.
+
+        The compiled word cell must never walk Python relation dictionaries or
+        scan the million-row concept inventory. At this boundary we therefore
+        resolve ``surface + PS parts + WS properties`` against the durable
+        word/location concept ``A`` and park only its codebook row. First-sight
+        identities are admitted atomically at this safe pre-graph boundary;
+        an admission refused at capacity remains the exact ``-1`` unknown.
+
+        Stage 0 owns the relation identities while every aligned CS stage
+        shares the same physical concept dictionary, so a row resolved here is
+        valid for the terminal serial cell's indexed decode.
+        """
+        isp = getattr(self, "inputSpace", None)
+        if isp is None:
+            return None
+        isp._ar_word_concept_rows = None
+        isp._ar_word_concept_ids = None
+        isp._ar_word_concept_orders = None
+        isp._ar_concept_lookup_rows = None
+        isp._ar_concept_lookup_atoms = None
+        aligned = self._aligned_serial_word_mode()
+        if not aligned:
+            return None
+
+        part_ids = getattr(isp, "_ar_word_part_ids", None)
+        part_mask = getattr(isp, "_ar_word_part_mask", None)
+        active = getattr(isp, "_word_active_mask", None)
+        ps_fwd = getattr(getattr(self, "perceptualSpace", None),
+                         "_forward_input", None)
+        word_texts = (ps_fwd.get("word_texts")
+                      if isinstance(ps_fwd, dict) else None)
+        if (not torch.is_tensor(part_ids) or part_ids.dim() != 3
+                or not torch.is_tensor(part_mask)
+                or tuple(part_mask.shape) != tuple(part_ids.shape)
+                or not torch.is_tensor(active) or active.dim() != 2
+                or tuple(active.shape) != tuple(part_ids.shape[:2])
+                or word_texts is None):
+            return None
+
+        spaces = list(getattr(self, "conceptualSpaces", None) or ())
+        owner = spaces[0] if spaces else getattr(self, "conceptualSpace", None)
+        ws = getattr(self, "wholeSpace", None)
+        alloc = getattr(owner, "_concept_allocator", None)
+        if owner is None or ws is None:
+            rows = torch.full(
+                active.shape, -1, dtype=torch.long, device=part_ids.device)
+            isp._ar_word_concept_rows = rows
+            isp._ar_word_concept_ids = rows.clone()
+            isp._ar_word_concept_orders = rows.clone()
+            return rows
+
+        B, W, P = (int(part_ids.shape[0]), int(part_ids.shape[1]),
+                   int(part_ids.shape[2]))
+        pid_host = part_ids.detach().to("cpu").reshape(B, W, P).tolist()
+        mask_host = part_mask.detach().to("cpu").reshape(B, W, P).tolist()
+        active_host = active.detach().to("cpu").reshape(B, W).tolist()
+        row_host = [[-1] * W for _ in range(B)]
+        cid_host = [[-1] * W for _ in range(B)]
+        order_host = [[-1] * W for _ in range(B)]
+        pending = []
+        # One base presentation plus T-1 cumulative native folds. The concept
+        # activation draws from all T-1 PS and all T-1 WS fold results, so that
+        # final cumulative depth is its actual subsymbolic order.
+        actual_order = max(0, int(getattr(self, "subsymbolicOrder", 1)) - 1)
+        fold_passes = tuple(range(actual_order))
+        fold_support = owner._ordered_fold_support(
+            fold_passes, fold_passes)
+        wom = getattr(alloc, "word_obj_meta", {}) if alloc is not None else {}
+
+        def _raw_int_refs(refs):
+            out = set()
+            for ref in refs or ():
+                if isinstance(ref, tuple):
+                    continue
+                try:
+                    out.add(int(ref))
+                except (TypeError, ValueError):
+                    continue
+            return out
+
+        for b in range(B):
+            texts_b = word_texts[b] if b < len(word_texts) else ()
+            for p in range(W):
+                if not bool(active_host[b][p]):
+                    continue
+                value = texts_b[p] if p < len(texts_b) else None
+                if value is None:
+                    pending.append((b, p, None))
+                    continue
+                key = str(value)
+                triple = wom.get(key)
+                current_parts = {
+                    int(pid_host[b][p][j]) for j in range(P)
+                    if bool(mask_host[b][p][j])
+                    and int(pid_host[b][p][j]) >= 0
+                }
+                current_wholes = set(int(v) for v in
+                                     ws.property_rows_for_bytes(key))
+                if triple is None:
+                    # First sight is admitted here, at the same eager boundary
+                    # that already owns radix growth and WS analysis. The
+                    # aligned dictionary is physically fixed-capacity, so this
+                    # mutates only bounded relation records, the active-prefix
+                    # mask, and row metadata before any graph uses them. At
+                    # capacity the automatic gate returns None and the exact
+                    # -1 unknown path below remains live.
+                    triple = owner._automatic_word_object_meta(
+                        sorted(current_parts), sorted(current_wholes), key=key)
+                    if triple is None:
+                        pending.append((b, p, key))
+                        continue
+                    alloc = getattr(owner, "_concept_allocator", None)
+                    wom = (getattr(alloc, "word_obj_meta", {})
+                           if alloc is not None else wom)
+                A = int(triple[0])
+                stored_parts = _raw_int_refs(owner.concept_parts(A))
+                stored_wholes = _raw_int_refs(owner.concept_wholes(A))
+                # Surface identity alone is not enough: the active PS/WS
+                # support must already belong to the durable concept. A trie
+                # promotion or newly-discovered property therefore receives an
+                # honest unknown tick, then autobind accrues it at Reset.
+                if (not current_parts.issubset(stored_parts)
+                        or not current_wholes.issubset(stored_wholes)):
+                    pending.append((b, p, key))
+                    continue
+                row = owner._csw_row_of(A)
+                if row is None:
+                    row = owner._csw_concept_row(
+                        owner._concept_source_order(A), A)
+                if row is None:
+                    pending.append((b, p, key))
+                    continue
+                row_host[b][p] = int(row)
+                cid_host[b][p] = A
+                record = owner.record_concept_fold_support(
+                    A, fold_support, actual_order)
+                order_host[b][p] = int(record["actual_order"])
+
+        rows = torch.tensor(row_host, dtype=torch.long, device=part_ids.device)
+        isp._ar_word_concept_rows = rows
+        isp._ar_word_concept_ids = torch.tensor(
+            cid_host, dtype=torch.long, device=part_ids.device)
+        isp._ar_word_concept_orders = torch.tensor(
+            order_host, dtype=torch.long, device=part_ids.device)
+        # Perform the only sparse-gradient dictionary read once at this eager
+        # boundary. The compiled word loop resolves all current/prior lexical
+        # references against this small sentence bank. This is mathematically
+        # identical to repeated F.embedding calls (their row gradients sum),
+        # but avoids W graph breaks and repeated B*N gathers per iteration.
+        cb = getattr(owner, "similarity_codebook", None)
+        lookup = getattr(cb, "lookup_rows", None)
+        if callable(lookup):
+            # Keep this bank width invariant across the configured W buckets
+            # so the same K=2 graph serves 16/32/64/128-word slabs.  Padding
+            # rows gather row zero and are explicitly zero-masked; sparse
+            # autograd may retain that structural index, but RowLocalAdam
+            # already discards all-zero placeholder rows.
+            bank_width = max(
+                int(rows.shape[1]),
+                int(getattr(self, "serial_word_capacity", 0) or 0),
+                max(tuple(int(v) for v in
+                          (getattr(self, "serial_word_buckets", ()) or (0,)))))
+            bank_rows = torch.full(
+                (int(rows.shape[0]), bank_width), -1,
+                dtype=torch.long, device=rows.device)
+            bank_rows[:, :int(rows.shape[1])] = rows
+            lookup_rows = bank_rows.clamp_min(0).long()
+            lookup_atoms = lookup(lookup_rows)
+            if torch.is_tensor(lookup_atoms) and lookup_atoms.dim() == 3:
+                lookup_atoms = lookup_atoms * bank_rows.ge(0).unsqueeze(-1).to(
+                    dtype=lookup_atoms.dtype)
+                isp._ar_concept_lookup_rows = bank_rows
+                isp._ar_concept_lookup_atoms = lookup_atoms
+        object.__setattr__(self, "_pending_sparse_concept_support", pending)
+        return rows
+
     # -- per-step lifecycle (model-level) ------------------------------
     #
-    # ``runBatch`` orchestrates a step but must talk only to the *model*,
-    # never reach into model *contents* (``self.symbolSpace.discourse``,
-    # ``self.inputSpace`` ...). These three methods are that boundary:
-    # the model owns its discourse / input-staging lifecycle; runBatch
-    # just calls ``self._begin_step`` / ``self._discourse_arma_loss`` /
-    # ``self._end_step``. Per-batch timing (identical to the prior
-    # inline code) -- NOT the grammar ``soft_reset`` (that fires only on
-    # chart sentence-completion and never per-batch on the IR/MM_20M
-    # path, so relocating discourse there would silently stop ARMA).
+    # ``runBatch`` orchestrates a step but reaches only through the model,
+    # never into model *contents* (``self.symbolSpace.discourse``,
+    # ``self.inputSpace`` ...). The model owns the reusable helpers for its
+    # lex+embed stem, discourse loss, and post-forward teardown. Per-batch
+    # timing is NOT the grammar ``soft_reset`` (that fires only on chart
+    # sentence-completion and never per-batch on the IR/MM_20M path, so
+    # relocating discourse there would silently stop ARMA).
 
     def _lex_embed_stem(self, x):
         """Eager stem: lex (InputSpace) -> embed (PartSpace) -> finalize
@@ -3906,7 +6553,7 @@ class BasicModel(BaseModel):
         Replaces the retired ``InputSpace._peer_perceptual`` coupling: neither
         space holds a reference to the other; PartSpace is passed
         TRANSIENTLY to ``InputSpace.finalize_stem``. Runs in the EAGER pre-
-        forward region (``_begin_step`` for the compiled path; inline for the
+        forward region (the compiled branch of ``runBatch``; inline for the
         eager path) so PS's host-side tokenization never enters the fullgraph
         trace -- the compiled body's ``PartSpace.forward`` then sees
         ``stem_embedded=True`` and skips re-embedding (pi only). Numeric input
@@ -3921,7 +6568,25 @@ class BasicModel(BaseModel):
         orchestration-side shim the plan allows -- downstream contracts are
         unchanged.
         """
+        # Keep the gated word-major radix mode in sync with the model flag on
+        # every forward.  Tests/ablations may toggle ``serialObjectMeta`` on a
+        # live model; a construction-time PartSpace stamp must not leave the
+        # alternate representation active after the gate is disabled.
+        if getattr(self, "perceptualSpace", None) is not None:
+            object.__setattr__(
+                self.perceptualSpace, "_serial_object_meta",
+                bool(getattr(self, "serial_object_meta", False)
+                     and getattr(self.inputSpace,
+                                 "_serial_object_meta", False)))
         in_sub, concepts_in = self.inputSpace.forward(x)
+        if (getattr(self, "serial", False)
+                and getattr(self, "serial_object_meta", False)):
+            self.inputSpace.select_word_loop_bucket(
+                in_sub,
+                tuple(self.serial_word_buckets
+                      or (int(getattr(
+                          self.inputSpace, "_serial_word_capacity", 1)),)),
+                perceptual_space=self.perceptualSpace)
         self._staged_concepts_in = concepts_in
         # Dual-towers: an ALL-ZERO unity is NO unity -- validity is decided
         # HERE (host-eager stem, once per batch), never in routing. A None
@@ -3949,11 +6614,46 @@ class BasicModel(BaseModel):
                     and hasattr(_ws_list[0], "stage_overlapping_spans")):
                 _spans = _ws_list[0].stage_overlapping_spans(
                     concepts_in, _spans)
+            _kinds = getattr(_ws_list[0], "_staged_analysis_kinds", None)
             for _ss in _ws_list:
-                _ss._staged_analysis_spans = _spans
-                if _ss is not _ws_list[0]:
-                    _ss._staged_analysis_kinds = getattr(
-                        _ws_list[0], "_staged_analysis_kinds", None)
+                # Preserve the complete eager cut for diagnostics. The live
+                # WS kernel has exactly inputShape[0] locations and already
+                # consumed only that prefix via ``min(K, N)``. Fit it here so
+                # a compiled fixed-W graph does not specialize on the
+                # sentence-dependent number of type runs.
+                object.__setattr__(_ss, "_staged_analysis_spans_full", _spans)
+                object.__setattr__(_ss, "_staged_analysis_kinds_full", _kinds)
+                _live_spans = _spans
+                _live_kinds = _kinds
+                if (getattr(self, "serial_object_meta", False)
+                        and torch.is_tensor(_spans)):
+                    _n_live = max(1, int(_ss.inputShape[0]))
+                    _live_spans = _spans[:, :_n_live, :]
+                    if int(_live_spans.shape[1]) < _n_live:
+                        _live_spans = torch.cat([
+                            _live_spans,
+                            _live_spans.new_zeros(
+                                int(_live_spans.shape[0]),
+                                _n_live - int(_live_spans.shape[1]), 2),
+                        ], dim=1)
+                    # B=1 makes a sliced tensor report ``is_contiguous`` even
+                    # when its size-1 batch stride still reflects full K.
+                    # Force a compact allocation so stride guards are stable.
+                    _live_spans = _live_spans.clone(
+                        memory_format=torch.contiguous_format)
+                    if torch.is_tensor(_kinds):
+                        _live_kinds = _kinds[:, :_n_live]
+                        if int(_live_kinds.shape[1]) < _n_live:
+                            _live_kinds = torch.cat([
+                                _live_kinds,
+                                _live_kinds.new_zeros(
+                                    int(_live_kinds.shape[0]),
+                                    _n_live - int(_live_kinds.shape[1])),
+                            ], dim=1)
+                        _live_kinds = _live_kinds.clone(
+                            memory_format=torch.contiguous_format)
+                _ss._staged_analysis_spans = _live_spans
+                _ss._staged_analysis_kinds = _live_kinds
             # Phase 5 adopt-on-first-sight (host-eager): VIRGIN WS
             # codebook rows adopt the stage-0 evidence BEFORE the
             # compiled body snaps, so the STE substitutes data-
@@ -3989,8 +6689,23 @@ class BasicModel(BaseModel):
         if hasattr(in_sub, "is_empty") and in_sub.is_empty():
             return in_sub
         if getattr(in_sub, "stem_embedded", True) is False:
-            self.perceptualSpace.embed_stem(in_sub)
+            # The callback is transient to avoid a persistent model<->space
+            # reference cycle. Atomic byte growth occurs inside embed_stem,
+            # before its first W gather; queued word growth remains post-step.
+            object.__setattr__(
+                self.perceptualSpace, "_radix_growth_callback",
+                self._on_partspace_eager_growth)
+            try:
+                self.perceptualSpace.embed_stem(in_sub)
+            finally:
+                object.__setattr__(
+                    self.perceptualSpace, "_radix_growth_callback", None)
             self.inputSpace.finalize_stem(in_sub, self.perceptualSpace)
+        # Resolve sparse concept identities only after the word-major PS stem
+        # has exposed its exact residual parts and WS has staged the matching
+        # property analysis. This remains wholly eager; the compiled word cell
+        # sees fixed tensors and performs no dictionary walk or host sync.
+        self._stage_serial_concept_rows()
         # The PS embed now exposes exact per-percept brackets.  Once both
         # towers have staged their candidates, precompute the fixed-T
         # structural schedule in the eager stem; learned content still runs
@@ -4007,59 +6722,6 @@ class BasicModel(BaseModel):
                                          if _schedule else None)
         return in_sub
 
-    def _begin_step(self, inputTensor):
-        """Eager pre-forward staging for the compiled step.
-
-        Compiled path only: move the input onto the compute device
-        (outside the trace -- ``TheDevice.get()`` is unproxyable
-        inside it), park the lex+embed stem subspace, and stage the
-        inter-sentence ARMA prediction so the traced forward just reads
-        parked tensors. No-op on the eager/uncompiled path (the forward
-        lexes inline, behaviour unchanged). Returns the (possibly
-        device-moved) input.
-        """
-        if self._compiled_step is None:
-            return inputTensor
-        if isinstance(inputTensor, torch.Tensor):
-            inputTensor = inputTensor.to(TheDevice.get())
-        self._staged_in_sub = self._lex_embed_stem(inputTensor)
-        disc = (self.symbolSpace.discourse
-                if self.symbolSpace is not None else None)
-        if disc is not None:
-            disc.stage_prediction()
-            # Cast the staged ARMA prediction tuple to the active AMP
-            # dtype so a dtype mismatch inside the compiled forward
-            # doesn't split the graph
-            # (doc/plans/2026-05-20-static-per-word-loop-impl.md §2.7).
-            target_dtype = None
-            if _util.MODEL_AMP == "fp16":
-                target_dtype = torch.float16
-            elif _util.MODEL_AMP == "bf16":
-                target_dtype = torch.bfloat16
-            staged = getattr(disc, "_staged_prediction", None)
-            if target_dtype is not None and staged is not None:
-                pred, conf = staged
-                if (pred is not None
-                        and torch.is_tensor(pred)
-                        and pred.is_floating_point()
-                        and pred.dtype != target_dtype):
-                    pred = pred.to(target_dtype)
-                if (conf is not None
-                        and torch.is_tensor(conf)
-                        and conf.is_floating_point()
-                        and conf.dtype != target_dtype):
-                    conf = conf.to(target_dtype)
-                disc._staged_prediction = (pred, conf)
-        # A6: park the stage-0 CS_{-1} interSentence seed here too, for the
-        # SAME reason the ARMA prediction is staged -- ``predict_next_end_
-        # state`` is ``@torch.compiler.disable``'d and would graph-break the
-        # fullgraph capture if the body called it in-trace. The body reads the
-        # parked tuple via ``_consume_intersentence_seed`` (pure attr read).
-        # Gated to interSentence; a no-op (parks None) otherwise so none-mode
-        # stays byte-identical.
-        self._stage_intersentence_seed()
-        return inputTensor
-
     def _stage_intersentence_seed(self):
         """Eagerly compute + park the stage-0 CS_{-1} seed for the upcoming
         compiled forward (Task A6); ``_consume_intersentence_seed`` returns it
@@ -4072,13 +6734,29 @@ class BasicModel(BaseModel):
         self._intersentence_seed_staged = True
 
     def _end_step(self):
-        """Per-step teardown: drop the staging parked by ``_begin_step``
+        """Per-step teardown: drop the staging parked by ``runBatch``
         (consume-once; eager, post-forward)."""
+        # The complete captured W-loop uses only the live tensor depth for
+        # capacity demand; it intentionally never reads or mutates the host
+        # mirror inside the graph.  Synchronize that mirror once here for
+        # eager sentence-boundary consumers (reports, snapshots, and a later
+        # eager call) instead of letting its changing Python value fragment
+        # the fullgraph specialization.
+        if (getattr(self, "_compiled_word_loop_fullgraph", False)
+                and self._active_compiled_step is not None):
+            stm = getattr(getattr(self, "conceptualSpace", None), "stm", None)
+            depth = getattr(stm, "_depth", None) if stm is not None else None
+            if torch.is_tensor(depth) and depth.numel():
+                stm._max_depth_host = int(depth.max().item())
+        self._drain_pending_stm_end_state()
         self._staged_in_sub = None
         self._staged_concepts_in = None
+        self._active_compiled_step = None
         for _ss in (getattr(self, "wholeSpaces", None) or []):
             _ss._staged_analysis_spans = None
             _ss._staged_analysis_kinds = None
+            _ss._staged_analysis_spans_full = None
+            _ss._staged_analysis_kinds_full = None
             _ss._where_tiling_schedule = None
             _ss._where_tiling_obs = None
         self._staged_intersentence_seed = None
@@ -4092,6 +6770,58 @@ class BasicModel(BaseModel):
                 if self.symbolSpace is not None else None)
         if disc is not None:
             disc.clear_staged_prediction()
+
+    def _drain_pending_stm_end_state(self):
+        """Persist a compiled forward's parked STM boundary on the host.
+
+        The forward graph produces only tensors. Ragged payload construction,
+        ``tolist`` and persistent-store mutation run here, after the compiled
+        callable returns and before the rest of the batch consumes the staged
+        discourse prediction. Eager forwards continue using their existing
+        in-place boundary path and leave this slot empty.
+        """
+        pending = getattr(self, "_pending_stm_end_state", None)
+        object.__setattr__(self, "_pending_stm_end_state", None)
+        if pending is None:
+            return
+        cs_buf, rel_mask = pending
+        discourse = (self.symbolSpace.discourse
+                     if getattr(self, "symbolSpace", None) is not None
+                     else None)
+        ltm_store = getattr(self.symbolSpace, "ltm_store", None)
+        ltm_on = bool(
+            getattr(self.conceptualSpace, "_ltm_consolidation", False)
+            and ltm_store is not None)
+        discourse_live = bool(
+            discourse is not None
+            and hasattr(discourse, "observe_stm_end_state"))
+        if not (discourse_live or ltm_on):
+            return
+        B, cap = int(cs_buf.shape[0]), int(cs_buf.shape[1])
+        rel_rows = rel_mask.reshape(-1).to("cpu").tolist()
+        depths = [min(3 if bool(rel_rows[b]) else 1, cap)
+                  for b in range(B)]
+        payloads = [cs_buf[b, :depths[b], :] for b in range(B)]
+        tetralemmas = self.conceptualSpace.stm_end_state_trust(
+            cs_buf, rel_mask)
+        if discourse_live:
+            discourse.predict_and_observe_stm_end_state(
+                depths, payloads, tetralemmas=tetralemmas)
+        if ltm_on:
+            for b, payload in enumerate(payloads):
+                if payload is None or int(payload.shape[0]) < 1:
+                    continue
+                d = max(1, min(int(depths[b]), int(payload.shape[0])))
+                tet = (tetralemmas[b]
+                       if tetralemmas is not None and b < len(tetralemmas)
+                       else None)
+                trust = float(tet) if tet is not None else 0.0
+                if d >= 3:
+                    ltm_store.append_relation(
+                        payload[d - 2], payload[d - 1], payload[0],
+                        rel_type=TernaryTruthStore.REL_OTHER, trust=trust)
+                else:
+                    ltm_store.append_idea(payload[0], trust=trust)
 
     def _intersentence_seed(self):
         """The predicted next-end-state SHAPE for the stage-0 CS_{-1} seed,
@@ -4143,8 +6873,8 @@ class BasicModel(BaseModel):
         established ARMA staging idiom (``InterSentenceLayer.predict`` /
         ``stage_prediction``): ``predict_next_end_state`` is
         ``@torch.compiler.disable``'d, so it must NOT run inside the compiled
-        forward. ``_begin_step`` (eager pre-forward region, compiled path only)
-        parks the seed via ``_stage_intersentence_seed`` and sets
+        forward. ``runBatch``'s eager compiled pre-forward branch parks the
+        seed via ``_stage_intersentence_seed`` and sets
         ``_intersentence_seed_staged``; this accessor then returns the parked
         tuple -- a pure attribute read, trace-safe. On the eager/uncompiled
         path (direct ``forward``, unit tests) nothing is staged, so it computes
@@ -4291,6 +7021,20 @@ class BasicModel(BaseModel):
             (BatchResult, nextBatchNum) on success, or (None, batchNum) when
             the dataset is exhausted.
         """
+        # A caller may supply an optimizer built outside ``getOptimizer``.
+        # Make that live owner visible to the eager PartSpace byte-growth
+        # boundary before lexing this batch.
+        if optimizer is not None and getattr(
+                self, "perceptualSpace", None) is not None:
+            object.__setattr__(
+                self.perceptualSpace, "_radix_optimizer", optimizer)
+        # A radix growth boundary drops every callable that captured the old
+        # PartSpace W Parameter. Rebuild before staging the next batch so the
+        # new physical row count receives one safe specialization.
+        if getattr(self, "_compiled_step_needs_rebuild", False):
+            self.enable_compiled_step()
+            self._compiled_step_needs_rebuild = False
+
         # First-call hook: try to enable §7 torch.compile reduce-overhead
         # mode on CUDA targets. Idempotent; safe on non-CUDA hosts.
         self._maybe_compile_brick()
@@ -4386,14 +7130,155 @@ class BasicModel(BaseModel):
             # eager Python; only this forward+loss+backward unit is
             # torch.compiled. See doc/plans/2026-05-16-compiled-step-
             # boundary-design.md.
-            # Per-step lifecycle is model-owned (``_begin_step`` /
-            # ``_end_step``): runBatch stays out of model *contents*.
-            # ``_begin_step`` does the eager pre-forward staging on the
-            # compiled path -- device move (outside the trace), lex+embed
-            # stem park, ARMA prediction stage -- so the traced forward
-            # only reads parked tensors; no-op on the eager/uncompiled
-            # path (forward lexes inline, behaviour unchanged).
-            inputTensor = self._begin_step(inputTensor)
+            # Keep eager staging immediately beside the compiled invocation:
+            # the traced forward only reads these parked tensors.  The eager
+            # path intentionally remains unchanged and lexes inline.
+            if self._compiled_step is not None:
+                if isinstance(inputTensor, torch.Tensor):
+                    inputTensor = inputTensor.to(TheDevice.get())
+                self._staged_in_sub = self._lex_embed_stem(inputTensor)
+                _requires_sparse_bank = self._aligned_serial_sparse_bank_mode()
+                if _requires_sparse_bank:
+                    _bank_rows = getattr(
+                        self.inputSpace, "_ar_concept_lookup_rows", None)
+                    _bank_atoms = getattr(
+                        self.inputSpace, "_ar_concept_lookup_atoms", None)
+                    if (not torch.is_tensor(_bank_rows) or _bank_rows.dim() != 2
+                            or not torch.is_tensor(_bank_atoms)
+                            or _bank_atoms.dim() != 3
+                            or tuple(_bank_rows.shape)
+                            != tuple(_bank_atoms.shape[:2])):
+                        raise RuntimeError(
+                            "compiled aligned serial forward requires the eager "
+                            "sparse concept row bank; lexical staging did not "
+                            "produce a shape-aligned rows/atoms pair")
+                # A full W-loop owns one fixed, identity-masked residual-part
+                # layout.  Do not give MPS a symbolic P range or compile a
+                # separate full loop for every radix spelling.  The older
+                # word-cell path retains its broad dynamic contract below.
+                _fullgraph_word_loop = bool(getattr(
+                    self, "_compiled_word_loop_fullgraph", False))
+                if _fullgraph_word_loop:
+                    # Cold-start sentence state must be materialized before
+                    # Dynamo observes the word-loop module.  Creating this
+                    # attribute inside the captured prelude changes an
+                    # ``hasattr`` guard after the first forward and forces a
+                    # duplicate W specialization.
+                    _ss = getattr(self, "symbolSpace", None)
+                    if (_ss is not None
+                            and not getattr(_ss, "_per_sentence_initialized", False)):
+                        _ss.soft_reset()
+                        _ss._per_sentence_initialized = True
+                    if _ss is not None:
+                        # Establish every scalar/carrier attribute the
+                        # captured recurrence writes before its first guard
+                        # census.
+                        object.__setattr__(
+                            _ss, "_target_cursor_length", int(getattr(
+                                self.inputSpace, "_active_word_bucket", 0) or 0))
+                    _cs_owner = getattr(self, "conceptualSpace", None)
+                    if _cs_owner is not None:
+                        object.__setattr__(
+                            _cs_owner, "_peer_prev_sub", getattr(
+                                _cs_owner, "_peer_empty_sub", None))
+                        object.__setattr__(
+                            _cs_owner, "_peer_prev_sym", getattr(
+                                _cs_owner, "_peer_empty_sym", None))
+                    # ``_per_word_prelude`` creates a fresh STM working slab
+                    # inside the graph.  Establish the same MPS-backed state
+                    # before the first guard census; otherwise the
+                    # constructor's CPU placeholder is observed on call one
+                    # and the MPS replacement forces call two to compile
+                    # again.
+                    _staged_event = self._staged_in_sub.materialize()
+                    _stm = getattr(
+                        getattr(self, "conceptualSpace", None), "stm", None)
+                    if torch.is_tensor(_staged_event) and _stm is not None:
+                        _stm.begin_forward(
+                            int(_staged_event.shape[0]),
+                            device=_staged_event.device,
+                            dtype=(_staged_event.dtype
+                                   if _staged_event.is_floating_point() else None))
+                    self._stage_fixed_residual_part_capacity()
+                else:
+                    # W is deliberately static (one of 16/32/64/128); the
+                    # number of residual radix constituents inside one
+                    # complete word is not.  Mark only that P axis dynamic so
+                    # promotion (e.g. five pieces -> one stored percept) does
+                    # not compile another W graph. P>=3 excludes the
+                    # contradictory Inductor guard ``P - 1 != 1`` while
+                    # masked identity padding preserves words with one or two
+                    # real constituents.
+                    _part_min = 3
+                    _part_max = max(_part_min, int(getattr(
+                        self.inputSpace, "outputShape", (8192,))[0]))
+                    for _part_tensor in (
+                            getattr(self.inputSpace, "_ar_word_part_ids", None),
+                            getattr(self.inputSpace, "_ar_word_part_mask", None),
+                            getattr(self.inputSpace, "_ar_word_part_offsets", None)):
+                        if torch.is_tensor(_part_tensor) and _part_tensor.dim() == 3:
+                            torch._dynamo.mark_dynamic(
+                                _part_tensor, 2, min=_part_min, max=_part_max)
+                    _word_width = max(1, int(getattr(
+                        self.inputSpace, "_active_word_bucket", 1) or 1))
+                    _flat_min = _part_min * _word_width
+                    _flat_max = _part_max * _word_width
+                    _ps_forward = getattr(
+                        self.perceptualSpace, "_forward_input", None)
+                    if isinstance(_ps_forward, dict):
+                        for _name in ("indices", "seed_event", "word_groups",
+                                      "part_spans", "percept_where"):
+                            _value = _ps_forward.get(_name)
+                            if torch.is_tensor(_value) and _value.dim() >= 2:
+                                torch._dynamo.mark_dynamic(
+                                    _value, 1, min=_flat_min, max=_flat_max)
+                        for _name in ("word_part_indices", "word_part_mask"):
+                            _value = _ps_forward.get(_name)
+                            if torch.is_tensor(_value) and _value.dim() == 3:
+                                torch._dynamo.mark_dynamic(
+                                    _value, 2, min=_part_min, max=_part_max)
+                for _cs in (getattr(self, "conceptualSpaces", None) or ()):
+                    _validate_routing = getattr(_cs, "validate_intra_routing", None)
+                    if callable(_validate_routing):
+                        _validate_routing()
+                _active_bucket = int(getattr(
+                    self.inputSpace, "_active_word_bucket", 0) or 0)
+                if _fullgraph_word_loop:
+                    self._active_compiled_step = (
+                        self._ensure_lazy_fullgraph_word_loop(_active_bucket))
+                else:
+                    self._active_compiled_step = self._compiled_word_steps.get(
+                        _active_bucket, self._compiled_step)
+                disc = (self.symbolSpace.discourse
+                        if self.symbolSpace is not None else None)
+                if disc is not None:
+                    disc.stage_prediction()
+                    # Cast the staged ARMA prediction tuple to the active AMP
+                    # dtype so a dtype mismatch inside the compiled forward
+                    # doesn't split the graph
+                    # (doc/plans/2026-05-20-static-per-word-loop-impl.md §2.7).
+                    target_dtype = None
+                    if _util.MODEL_AMP == "fp16":
+                        target_dtype = torch.float16
+                    elif _util.MODEL_AMP == "bf16":
+                        target_dtype = torch.bfloat16
+                    staged = getattr(disc, "_staged_prediction", None)
+                    if target_dtype is not None and staged is not None:
+                        pred, conf = staged
+                        if (pred is not None
+                                and torch.is_tensor(pred)
+                                and pred.is_floating_point()
+                                and pred.dtype != target_dtype):
+                            pred = pred.to(target_dtype)
+                        if (conf is not None
+                                and torch.is_tensor(conf)
+                                and conf.is_floating_point()
+                                and conf.dtype != target_dtype):
+                            conf = conf.to(target_dtype)
+                        disc._staged_prediction = (pred, conf)
+                # Park the stage-0 CS_{-1} interSentence seed outside the
+                # fullgraph capture; the body consumes the parked tuple.
+                self._stage_intersentence_seed()
             # Two-pass learning: switch the structured layers to the pure
             # soft-superposition route at this trial's temperature (eager
             # forward, since the compiled step does not trace the branch).
@@ -4410,7 +7295,8 @@ class BasicModel(BaseModel):
                 # and forces a full retrace (~100-380s each on MPS), so
                 # non-grad passes take the eager forward -- the same
                 # precedent as the superposition_temperature override above.
-                _fwd = ((self._compiled_step or self.forward)
+                _fwd = ((self._active_compiled_step
+                         or self._compiled_step or self.forward)
                         if torch.is_grad_enabled() else self.forward)
             # Explore trial (pass B): gate the forward-internal per-sentence
             # commit (the LTM end-state append) so it does not fire a second
@@ -5087,16 +7973,25 @@ class BasicModel(BaseModel):
                 self._assert_finite_train_state("after backward")
                 if self.ergodic:
                     self.paramUpdate()
+                # CUDA fp16 GradScaler owns its fused unscale/non-finite
+                # check. In auto mode the optimizer wrapper's guard is also
+                # disabled, preserving the brick's zero-D2H contract.
                 amp_scaler.step(optimizer)
                 amp_scaler.update()
             else:
                 totalLoss.backward()
                 self._assert_finite_train_state("after backward")
+                preflight_finite_gradients(
+                    optimizer, self.named_parameters(),
+                    cache_for_step=hasattr(
+                        optimizer, "_step_without_finite_preflight"))
                 if self.ergodic:
                     self.paramUpdate()
                 optimizer.step()
             self._assert_finite_train_state("after optimizer.step")
+            self._flush_partspace_promotions(optimizer=optimizer)
             self._clamp_symbolic_codebook()
+            self._normalize_conceptual_codebooks()
             # 2026-05-28: enforce the |W| <= 1 invariant on the
             # Embedding (Lexicon) by re-projecting rows onto the unit
             # ball after each optimizer step. Matches the SBOW
@@ -5106,15 +8001,8 @@ class BasicModel(BaseModel):
             # which breaks the nearest-Embedding reverse decode -- the
             # bounded recon vector from pi.reverse cannot reach the
             # unbounded target rows.
-            _emb = getattr(getattr(self.perceptualSpace, 'subspace',
-                                   None), 'what', None)
-            if _emb is not None and hasattr(_emb, 'normalize'):
-                try:
-                    _emb.normalize()
-                except Exception:
-                    # Non-Lexicon subspace.what (Codebook, Tensor) has no
-                    # normalize(); silently skip rather than crash.
-                    pass
+            self._normalize_perceptual_embedding()
+            self._advance_codebook_parameter_versions()
             # Don't count the explore trial (pass B): the step counter drives
             # the periodic-checkpoint cadence, which should count sentences,
             # not the two trials per sentence.
@@ -5122,6 +8010,11 @@ class BasicModel(BaseModel):
                 self._training_step_count = (
                     int(getattr(self, "_training_step_count", 0) or 0) + 1
                 )
+        else:
+            # The eager lexical stem may discover promotions during no-grad
+            # inference too. The completed forward is its graph-safe boundary;
+            # install now so the next request can use the promoted row.
+            self._flush_partspace_promotions(optimizer=None)
 
         result = self.BatchResult(
             outputPred=outputDataPred,
@@ -5749,6 +8642,18 @@ class BasicModel(BaseModel):
             step = 0
             batches_run = 0
             while True:
+                deadline = getattr(
+                    self, "_training_deadline_monotonic", None)
+                if (training and split == "train"
+                        and not getattr(self, "_preflight_active", False)
+                        and deadline is not None
+                        and time.monotonic() >= float(deadline)):
+                    self._training_deadline_reached = True
+                    TheMessage(
+                        f"runEpoch({split}): hit BASIC_MAX_SECONDS after "
+                        f"{batches_run} completed batches this epoch; "
+                        "cursor exiting before the next tick.")
+                    break
                 if max_batches is not None and batches_run >= max_batches:
                     TheMessage(
                         f"runEpoch({split}): hit max_batches={max_batches} "
@@ -5981,6 +8886,10 @@ class BasicModel(BaseModel):
         ``self.symbolSpace``, ``self.reversible``, etc.).
         """
         self.spaces = []
+        # Execution-only epoch used by immutable carrier/codebook identities.
+        # It intentionally does not ride in state_dict: no carrier or replica
+        # survives a model rebuild/checkpoint load.
+        self._parameter_epoch = 0
         # Serialized model clock (doc/plans/2026-06-07-model-time-when-
         # encoding.md): a 0-initialized ``long`` that increments once per
         # processed batch (train AND inference) in ``runBatch`` and rides
@@ -5996,7 +8905,10 @@ class BasicModel(BaseModel):
         self.nInput = nInput
         self.nPercepts = nPercepts
         self.nConcepts = nConcepts
-        self.nSymbols = nSymbols
+        # The construction argument is the number of simultaneously live WS
+        # locations. Keep that geometry distinct from both the WholeSpace
+        # property inventory and the downstream concept-reference inventory.
+        self.nSymbolSlots = int(nSymbols)
         self.nOutput = nOutput
         self.nWords = nWords
         self.data = data
@@ -6019,6 +8931,11 @@ class BasicModel(BaseModel):
         # "codebook")`` read is gone -- it was dead (assigned, never consumed)
         # and would now KeyError on the removed element.
         self.conceptCodebook = TheXMLConfig.space("ConceptualSpace", "codebook")
+        # Canonical WS role: an upstream property basis, independent of the
+        # concept/symbol namespace. Legacy configs omit the knob and retain the
+        # pre-migration construction path until they are converted explicitly.
+        self.wholePropertyBasis = bool(TheXMLConfig.space(
+            "WholeSpace", "propertyBasis", default=False))
         self.subsymbolicOrder = subsymbolicOrder
 
         # Monotonic SigmaLayer weights (W >= 0). Mirrors PiLayer's monotonic
@@ -6104,11 +9021,12 @@ class BasicModel(BaseModel):
         # ``<reconstruct>`` enum RETIRED (A1, 2026-06-09): the schema element
         # + ``reconstructEnum`` were removed. The retired ``perfect`` mode
         # SKIPPED the per-stage ConceptualCombine (carrier carried unchanged
-        # for an exact round-trip); the surviving ``mixed`` behaviour -- the
-        # combine runs, mixing the PS/WS/CS streams -- is now UNCONDITIONAL.
+        # for an exact round-trip). Under ``conceptBinding=mixing`` the
+        # surviving learned combine runs unconditionally; ``aligned`` is a
+        # separate same-location binder and allocates no ConceptualCombine.
         # No ``self.reconstruct`` / ``self.perfect_reconstruction`` attribute
-        # is parsed; every forward/reverse gate that branched on
-        # ``perfect_reconstruction`` takes the combine-runs branch.
+        # is parsed; binding mode, not reconstruction mode, now selects the
+        # appropriate forward/reverse carrier.
         # ``<architecture><prediction>`` (predictionEnum: none|interSentence,
         # default "none"). Stored as the canonical XSD enum string (NOT
         # lowercased) so downstream dispatch matches "interSentence" exactly.
@@ -6155,16 +9073,20 @@ class BasicModel(BaseModel):
         obj_symbol  = self._obj_size("WholeSpace")
         obj_output  = self._obj_size("OutputSpace")
 
-        # 2026-06-06 dim-convention unification: every space carries the same
-        # (nWhere=2, nWhen=2) band, so ``nDim = nWhat + nWhere + nWhen`` is
-        # the uniform formula. The CS->WS and WS->OS handoffs are identity
-        # event-to-event chains (no demux subtraction); ``*_dim`` (= nWhat)
-        # is just ``event - band`` per space_role.
+        # Every interior space carries the canonical (nWhere=4, nWhen=4)
+        # band, so ``nDim = nWhat + nWhere + nWhen``. PS/WS native WHAT
+        # widths may differ from CS: their sparse codebook activation already
+        # emits a conceptual-width event before the CS boundary. ``*_dim`` is
+        # therefore the native WHAT width of that space, not evidence of a
+        # linear PS->WS->CS chain.
         input_event   = self._resolve_dim("InputSpace",      1)
         percept_event = self._resolve_dim("PartSpace", input_event)
         concept_event = self._resolve_dim("ConceptualSpace", percept_event)
         symbol_event  = self._resolve_dim("WholeSpace",   concept_event)
-        output_event  = self._resolve_dim("OutputSpace",     symbol_event)
+        # The task head consumes terminal CS directly.  An omitted OutputSpace
+        # width therefore inherits the conceptual event, not WholeSpace's
+        # native property width.
+        output_event  = self._resolve_dim("OutputSpace",    concept_event)
 
         input_dim   = input_event   - obj_input    # = nWhat (InputSpace)
         percept_dim = percept_event - obj_percept  # = nWhat (PartSpace)
@@ -6175,8 +9097,15 @@ class BasicModel(BaseModel):
         nvec_input   = self._nvec("InputSpace",      nInput)
         nvec_percept = self._nvec("PartSpace", nPercepts)
         nvec_concept = self._nvec("ConceptualSpace", nConcepts)
-        nvec_symbol  = self._nvec("WholeSpace",   nSymbols)
+        nvec_whole_properties = self._nvec("WholeSpace", nSymbols)
         nvec_output  = self._nvec("OutputSpace",     nOutput)
+        self.nConceptCodes = int(nvec_concept)
+        # Symbols are downstream references into the conceptual inventory;
+        # they do not allocate a second learned prototype table. Preserve the
+        # historical attribute name for consumers that ask for reference
+        # capacity, while spelling out the independent WS property count.
+        self.nSymbols = self.nConceptCodes
+        self.nWholeProperties = int(nvec_whole_properties)
 
         # Stage 2: the loopback is always wired -- ConceptualSpace's
         # per-stage input PiLayer is widened by ``symbolShape[1]`` at
@@ -6193,7 +9122,7 @@ class BasicModel(BaseModel):
         spaceShape_input   = [nvec_input,   input_dim]
         spaceShape_percept = [nvec_percept, percept_dim]
         spaceShape_concept = [nvec_concept, concept_dim]
-        spaceShape_symbol  = [nvec_symbol,  symbol_dim]
+        spaceShape_symbol  = [nvec_whole_properties, symbol_dim]
         spaceShape_output  = [nvec_output,  output_dim]
 
         rawInputShape = [nInput, input_dim]
@@ -6253,12 +9182,62 @@ class BasicModel(BaseModel):
         T = max(1, int(n_stages))
         self.conceptualSpaces = nn.ModuleList()
         self.wholeSpaces = nn.ModuleList()
+        # A canonical aligned/property-basis model has one unpartitioned
+        # conceptual namespace.  Build its large physical Codebook once at
+        # stage 0 and hand that module to later folds at construction time.
+        # Mixing and legacy WholeSpace models retain per-stage dictionaries.
+        _share_concept_dictionary = (
+            self.wholePropertyBasis
+            and getattr(self, "concept_binding", "mixing") == "aligned")
+        _serial_meta_raw = TheXMLConfig.get(
+            "architecture.serialObjectMeta", default=False)
+        _serial_meta = (
+            _serial_meta_raw if isinstance(_serial_meta_raw, bool)
+            else str(_serial_meta_raw or "").strip().lower()
+            in ("true", "1", "yes", "on"))
+        # Construction precedes the public ``self.serial`` assignment below,
+        # so resolve the selector here with the same legacy fallback. Indexed
+        # sparse codebook reads are safe only on the canonical word-serial
+        # path; a parallel CS has differentiable dense inventory consumers.
+        _serial_raw = TheXMLConfig.get("architecture.serial", default=None)
+        if _serial_raw is None:
+            _symbolic_raw = TheXMLConfig.get(
+                "architecture.symbolicOrder", default=None)
+            _grammar_default_order = (
+                1 if self.useGrammar != "none" else 0)
+            _serial_requested = (
+                int(_symbolic_raw) > 0
+                if _symbolic_raw is not None
+                else _grammar_default_order > 0)
+        elif isinstance(_serial_raw, bool):
+            _serial_requested = _serial_raw
+        else:
+            _serial_requested = (
+                str(_serial_raw).strip().lower()
+                in ("true", "1", "yes", "on"))
+        _aligned_codebook_sources = bool(
+            _share_concept_dictionary
+            and _serial_meta
+            and _serial_requested)
+        _shared_concept_dictionary = None
+        # Fold provenance is keyed by the same stable concept identities as the
+        # shared aligned dictionary.  Keep one host-side registry across every
+        # conceptual stage as well: stage 0 resolves/adopts identities, while
+        # the production checkpoint envelope is collected from the terminal CS.
+        # A shared mapping makes both views authoritative and also means loading
+        # the terminal checkpoint view immediately restores stage-0 lookups.
+        _shared_concept_fold_support = (
+            {} if _share_concept_dictionary else None)
         for t in range(T):
             is_last = (t == T - 1)
             if self.useGrammar == "all":
-                # Grammar path: each stage halves N (except last). Shapes
-                # follow _level_shapes but the per-stage ConceptualSpace /
-                # WholeSpace are plain.
+                # Grammar path. Tapered width halves N between stages;
+                # uniform width keeps the canonical instantaneous field
+                # unchanged at every order. `_level_shapes` has long exposed
+                # both modes, but construction historically ignored the
+                # uniform result and unconditionally shifted N -- making an
+                # eight-wide, order-4 field collapse 8->4->2->1 despite the
+                # explicit setting.
                 #
                 # Width contract (H3, 2026-05-18): the per-stage
                 # ConceptualSpace input is the true upstream percept
@@ -6292,8 +9271,16 @@ class BasicModel(BaseModel):
                 # width-preserving shapes (no-op); for MM_20M it
                 # activates the previously-dropped C->P feedback +
                 # snap (1024 vs the old 10).
-                n_t = nPercepts >> t
-                d_in = percept_dim + obj_percept
+                _uniform_width = (
+                    self._conceptual_width_mode() == "uniform")
+                n_t = nPercepts if _uniform_width else (nPercepts >> t)
+                # In the aligned serial model PS/WS recurse at their native
+                # widths, then each rung's sigma/codebook read emits a
+                # conceptual-width activation. CS receives that activation;
+                # its boundary itself performs no feature-width change.
+                d_in = (concept_dim + obj_concept
+                        if _aligned_codebook_sources
+                        else percept_dim + obj_percept)
                 # CS output muxed width = concept_dim + obj_concept, so the CS
                 # SubSpace derives nWhat == concept_dim (= nDim) and the event
                 # carries where/when. The per-stage codebook content
@@ -6301,7 +9288,9 @@ class BasicModel(BaseModel):
                 # muxed traces, not codebook rows.
                 d_out = concept_dim + obj_concept
                 cs_in = [n_t, d_in]
-                cs_out = [n_t, d_out] if is_last else [n_t >> 1, d_out]
+                cs_out = ([n_t, d_out]
+                          if is_last or _uniform_width
+                          else [n_t >> 1, d_out])
                 # WS is BARE concept_dim (the demux target; canonical WS=(0,0)).
                 # WS slot count is the PRE-merge stage input ``n_t`` -- NOT the
                 # post-merge ``cs_out[0]`` (= ``n_t >> 1`` for non-last stages).
@@ -6361,7 +9350,16 @@ class BasicModel(BaseModel):
             else:
                 _ser_v = str(_ser_raw).strip().lower() in (
                     "true", "1", "yes", "on")
-            if _so_v > 0 and not _ser_v:
+            if (self.wholePropertyBasis
+                    and getattr(self, "concept_binding", "mixing")
+                    == "aligned"):
+                # Canonical aligned models address concepts by CS inventory
+                # row. Every stage therefore owns the full preallocated CS
+                # dictionary; WholeSpace's much smaller property basis is not
+                # a fallback source of concept rows.
+                stage_space_concept = [spaceShape_concept[0],
+                                       spaceShape_concept[1]]
+            elif _so_v > 0 and not _ser_v:
                 stage_space_concept = [spaceShape_concept[0],
                                        spaceShape_concept[1]]
             else:
@@ -6375,19 +9373,60 @@ class BasicModel(BaseModel):
                 # EXPLICIT <ConceptualSpace><nVectors> as a floor, gated
                 # on <conceptIndexRead> so every existing config keeps
                 # byte-identical shapes.
-                if bool(TheXMLConfig.get("architecture.conceptIndexRead",
-                                         default=False)):
+                _explicit_word_traversal = TheXMLConfig.get(
+                    "architecture.serialWordCapacity", default=None)
+                if (bool(TheXMLConfig.get(
+                        "architecture.conceptIndexRead", default=False))
+                        or _explicit_word_traversal not in (None, "")):
                     _nv_cs = self._nvec("ConceptualSpace", 0)
                     if _nv_cs > 0:
                         stage_space_concept[0] = max(
                             int(stage_space_concept[0]), int(_nv_cs))
-            stage_space_symbol = [ws_out[0], spaceShape_symbol[1]]
+            # In the canonical property-basis mode every quantized WholeSpace
+            # stage draws from the configured property inventory. It is
+            # independent of live slot geometry and ConceptualSpace capacity.
+            # This is the initial physical seed only; later dynamic property
+            # growth must rebuild optimizer/compiled ownership at an explicit
+            # reset boundary. Legacy configs retain their prior terminal-only
+            # inventory sizing until explicitly migrated.
+            _ws_codebook_mode = Space.normalize_codebook_mode(
+                TheXMLConfig.space(
+                    "WholeSpace", "codebook", default="quantize"))
+            _whole_property_codebook = (
+                self.wholePropertyBasis
+                and _ws_codebook_mode == "quantize")
+            _legacy_terminal_dictionary = (
+                not self.wholePropertyBasis
+                and is_last and _ws_codebook_mode == "quantize")
+            stage_space_symbol = [
+                (spaceShape_symbol[0]
+                 if (_whole_property_codebook
+                     or _legacy_terminal_dictionary) else ws_out[0]),
+                spaceShape_symbol[1],
+            ]
             # Right-half loopback widening retired (see ConceptualSpace
             # docstring): per-order input sourcing replaces the concat,
             # so the C-space_role PiLayer input width is just nInputDim.
-            cs = ConceptualSpace(cs_in, stage_space_concept, cs_out,
-                                 stage_idx=t,
-                                 is_last=is_last)
+            cs = ConceptualSpace(
+                cs_in, stage_space_concept, cs_out,
+                stage_idx=t, is_last=is_last,
+                shared_similarity_codebook=(
+                    _shared_concept_dictionary
+                    if _share_concept_dictionary else None),
+                indexed_similarity_codebook=_aligned_codebook_sources,
+            )
+            if _shared_concept_fold_support is not None:
+                object.__setattr__(
+                    cs, "_concept_fold_support",
+                    _shared_concept_fold_support)
+            if _share_concept_dictionary and _shared_concept_dictionary is None:
+                _shared_concept_dictionary = cs.similarity_codebook
+            if _aligned_codebook_sources:
+                # The serial aligned path reaches the million-row dictionary
+                # only through indexed concept identities.  Preserve that
+                # sparsity in backward so the dedicated row-local optimizer
+                # never allocates a dense 1M x ConceptDim gradient/moment set.
+                cs.similarity_codebook.sparse_lookup_grad = True
             ws = WholeSpace(ws_in, stage_space_symbol, ws_out,
                                conceptualSpace=cs)
             # Non-owning back-ref CS->WS (mirrors the perceptualSpace_ref
@@ -6402,14 +9441,18 @@ class BasicModel(BaseModel):
 
         # Backwards-compat aliases: read-only callers (e.g.
         # symbolSpace.truth_layer = self.wholeSpace) see the terminal stage.
-        self.conceptualSpace = self.conceptualSpaces[-1]
-        self.wholeSpace = self.wholeSpaces[-1]
+        # Terminal convenience aliases are routing references; the ModuleLists
+        # above are the sole structural owners.
+        object.__setattr__(self, 'conceptualSpace', self.conceptualSpaces[-1])
+        object.__setattr__(self, 'wholeSpace', self.wholeSpaces[-1])
 
-        # Unified fold-width law (2026-07-16): every sigma/pi slot fold is
-        # sized at its space's CONTENT width (nDim) -- ONE parameter -- so
-        # the PS/WS fold sizes cannot silently diverge again. Dense "full"
-        # slab folds (nInput == sigma_pi_slab) are the one exemption: their
-        # content law is the flattened N*content slab.
+        # Per-tower fold-width law (2026-07-16): every sigma/pi slot fold is
+        # sized at its OWN space's CONTENT width (nDim). Dense "full" slab
+        # folds (nInput == sigma_pi_slab) are the one exemption: their content
+        # law is the flattened N*content slab. PS and WS are peer perceptual
+        # towers and therefore retain one shared native width. Their sparse
+        # sigma/codebook activations are already conceptual-width when they
+        # reach CS; neither peer is widened here and there is no PS->WS edge.
         _law_folds = []
         if getattr(self, 'perceptualSpace', None) is not None:
             _law_folds.append(("PartSpace.sigma", self.perceptualSpace,
@@ -6432,7 +9475,9 @@ class BasicModel(BaseModel):
             _law_widths[_nm] = _fw
         assert len(set(_law_widths.values())) <= 1, (
             f"unified fold-width law violated across spaces: {_law_widths}; "
-            f"PS/WS slot folds must share ONE content width (nDim).")
+            "PS/WS slot folds must share one native content width. The "
+            "conceptual dimension increase belongs to each source's sparse "
+            "sigma/codebook activation, not to either perceptual tower.")
 
         # §6d reference-partitioned codebook update law (GrammarOpsPass;
         # author 2026-06-11): percepts are shaped by the parallel pass,
@@ -6491,30 +9536,36 @@ class BasicModel(BaseModel):
             _vq.growth_epsilon = (float(_eps) if _eps is not None
                                   else 0.0)
 
-        # Asymmetric VQ training (asymmetric-vq plan sec.3 / sec.7 tasks
-        # 11-12, rev. 2026-06-09): the WS codebook drops the standard VQ
-        # crutches. Commitment is replaced by STE (the output objective's
-        # gradient reaches the encoder directly through the snap); EMA is
-        # replaced by the reconstruction gradient on the codebook (the
-        # input->codebook leg -- the recon gather lands with the 2-stream
-        # combiner, C-10). PS/CS codebooks keep their defaults.
-        # Step 2 (2026-06-10 symbolic-iteration plan): the asymmetric
-        # flags apply to BOTH WS codebook families -- the symbol codebook
-        # on ``subspace.what`` (the CS-leg iteration store) and the
-        # ``analysis_store`` (the stage-0 generality store under
-        # <analysis>, present regardless of the <codebook> knob).
+        # Whole-property VQ training: the canonical property-basis mode has
+        # exactly one WS dictionary (``subspace.what``). It drops EMA and
+        # learns selected properties from the reconstruction gradient. Legacy
+        # configs temporarily retain their separate ``analysis_store`` update
+        # path for checkpoint compatibility; it is never involved in aligned
+        # concept-capacity growth.
         for _ws_stage in self.wholeSpaces:
-            for _cb in (
-                    getattr(getattr(_ws_stage, 'subspace', None), 'what',
-                            None),
-                    getattr(_ws_stage, 'analysis_store', None)):
+            _ws_codebooks = [getattr(
+                getattr(_ws_stage, 'subspace', None), 'what', None)]
+            if not self.wholePropertyBasis:
+                _ws_codebooks.append(getattr(
+                    _ws_stage, 'analysis_store', None))
+            for _cb in _ws_codebooks:
                 _vq = getattr(_cb, 'vq', None) if _cb is not None else None
+                if self.wholePropertyBasis and _vq is None:
+                    # Canonical properties are a direct learned Parameter,
+                    # without VQ/EMA shadow tensors. WholeSpace constructs and
+                    # registers W; enlist that one physical owner explicitly.
+                    _W = (_cb.getW() if _cb is not None
+                          and hasattr(_cb, 'getW') else None)
+                    if (isinstance(_W, nn.Parameter)
+                            and all(_W is not p for p in _ws_stage.params)):
+                        _ws_stage.params += [_W]
+                    continue
                 if _vq is None:
                     continue
                 _vq.ema_update = False
                 _vq.commitment_weight = 0.0
                 # The recon leg (input -> codebook, asymmetric-vq sec.4):
-                # the WS codebook trains by the EXACT reconstruction
+                # the WS property codebook trains by the EXACT reconstruction
                 # gradient -- promote the VQ codebook to an nn.Parameter
                 # (auto-registered on the VQ module) and enlist it in the
                 # space's optimised params. The stage-0 unity path emits
@@ -6595,17 +9646,24 @@ class BasicModel(BaseModel):
         # raising.md "relation-only completion"). Like the META taxonomy, the
         # relation table is a SINGLE TERMINAL owner -- the terminal CS
         # (``conceptualSpaces[-1]`` == ``self.conceptualSpace``) -- so wire a
-        # ``terminalConceptualSpace_ref`` onto every cs AND every ws, mirroring
-        # the ``terminalSymbolSpace_ref`` fan-out, so any stage can reach the
-        # one canonical relation owner without fragmenting it into N tables.
+        # ``terminalConceptualSpace_ref`` onto every CS and onto legacy
+        # symbol-dictionary WS instances, mirroring the
+        # ``terminalSymbolSpace_ref`` fan-out, so any symbolic stage can reach
+        # the one canonical relation owner without fragmenting it into N
+        # tables. A property-basis WS is strictly upstream and receives no
+        # downstream ConceptualSpace pointer.
         # (Fix #1 ownership-by-reference: the physical position-keyed dicts are
         # still served from the terminal WholeSpace, which mints the codebook
         # rows atomically; CS owns the relation INTERFACE. A full physical move
         # is blocked on retiring the meta-vector seed -- a gradient-path change,
         # deferred -- and is NOT attempted here.)
-        for sp in list(self.conceptualSpaces) + list(self.wholeSpaces):
+        for sp in self.conceptualSpaces:
             object.__setattr__(sp, 'terminalConceptualSpace_ref',
                                self.conceptualSpace)
+        for sp in self.wholeSpaces:
+            if not bool(getattr(sp, 'property_basis', False)):
+                object.__setattr__(sp, 'terminalConceptualSpace_ref',
+                                   self.conceptualSpace)
 
         # Wire the back-ref WS <- Embedding (terminal stage:
         # ``wholeSpaces[-1]`` == ``self.wholeSpace``) so the
@@ -6654,7 +9712,7 @@ class BasicModel(BaseModel):
         # infrastructure (SymbolSubSpace, three SyntacticLayers, the
         # TruthLayer, and conditionally the DiscourseSpace substrate).
         # Its ``__init__`` configures the grammar, sizes the word
-        # buffer from WholeSpace's column layout, builds each space_role's
+        # buffer from ConceptualSpace's column layout, builds each space_role's
         # SyntacticLayer, and back-wires the home spaces so
         # compose/decompose routes through ``self.symbolSpace``.
         self.symbolSpace = SymbolSpace(
@@ -6665,15 +9723,23 @@ class BasicModel(BaseModel):
             nConcepts=nPercepts,
             nSymbols=nSymbols,
             concept_dim=concept_dim + obj_concept,
-            symbol_dim=symbol_dim + obj_symbol,
+            # Symbol identities/operators live in CS WHAT coordinates.  The
+            # 128-D WholeSpace property basis is upstream and never sizes SS.
+            symbol_dim=concept_dim,
         )
+        # Scheduling ownership is separate from SymbolSpace's parameter/state
+        # ownership. Keep a non-registering model reference so state_dict does
+        # not acquire a second LanguageLayer path.
+        object.__setattr__(self, 'languageSpace', self.symbolSpace.languageSpace)
 
         # MetaSymbol Category codebook (doc/Language.md
         # "Participation Categories"). Enabled by default via
-        # <categoryCodebook>: allocate a small role-space VQ on the TERMINAL
-        # WholeSpace (which owns the META taxonomy); the role columns are
-        # enumerated from the now-configured grammar (SymbolSubSpace.__init__
-        # ran _ensure_configured above).
+        # <categoryCodebook>: in property-basis mode request the small
+        # role-space VQ from terminal ConceptualSpace, which owns concepts and
+        # META structure. Legacy configs keep the prior WholeSpace host until
+        # they opt into the migration. Role columns are enumerated from the
+        # now-configured grammar (SymbolSubSpace.__init__ ran
+        # _ensure_configured above).
         # Read the flag from config HERE (not self.category_codebook): the
         # architecture flags are assigned in create_from_config AFTER the
         # spaces are built, so self.category_codebook is not yet set when
@@ -6681,13 +9747,16 @@ class BasicModel(BaseModel):
         # source (the config is loaded before any space is created).
         _category_codebook = bool(TheXMLConfig.get(
             "architecture.categoryCodebook", default=True))
-        if _category_codebook and terminal_ss is not None:
+        category_owner = (
+            self.conceptualSpace
+            if self.wholePropertyBasis else terminal_ss)
+        if _category_codebook and category_owner is not None:
             # REQUEST allocation; the actual enable runs LAZILY from the
             # autobind hook on the first perception forward, when TheGrammar is
             # fully configured with the (role-collapsed) operator roles. At
             # build the role rules may not be loaded yet, so a build-time
             # enable would see 0 roles and no-op.
-            terminal_ss._category_codebook_requested = True
+            category_owner._category_codebook_requested = True
 
         # Mereological order-raising (doc/specs/mereological-order-raising.md).
         # Opt-in via <mereologyRaise>: build a meronymic lattice in perception
@@ -6746,6 +9815,28 @@ class BasicModel(BaseModel):
         self.spaces.extend([self.outputSpace])
         self.spaces.append(self.symbolSpace)
 
+        # Bind stable, unique owner paths before any carrier reader is issued.
+        # The terminal aliases (``conceptualSpace`` / ``wholeSpace``) are not
+        # used because the ModuleLists are the structural owners.
+        _carrier_owners = [
+            ('inputSpace', self.inputSpace),
+            ('perceptualSpace', self.perceptualSpace),
+            *[
+                (f'conceptualSpaces.{i}', space)
+                for i, space in enumerate(self.conceptualSpaces)
+            ],
+            *[
+                (f'wholeSpaces.{i}', space)
+                for i, space in enumerate(self.wholeSpaces)
+            ],
+            ('outputSpace', self.outputSpace),
+            ('symbolSpace', self.symbolSpace),
+        ]
+        for _owner_path, _space in _carrier_owners:
+            binder = getattr(_space, 'bind_codebook_owner_path', None)
+            if callable(binder):
+                binder(_owner_path)
+
         self.inputSpace.outputSpace = self.outputSpace
         # Seed the pipeline context: InputSpace stamps every outgoing
         # subspace's ``symbolSpace`` with this reference so downstream stages
@@ -6769,6 +9860,8 @@ class BasicModel(BaseModel):
             if sub is not None:
                 sub.normalizer = self.normalizer
             if (space is not self.symbolSpace
+                    and not (self.wholePropertyBasis
+                             and isinstance(space, WholeSpace))
                     and getattr(space, 'symbolSpace', None) is None
                     and hasattr(space, 'attach_symbolSpace')):
                 space.attach_symbolSpace(self.symbolSpace)
@@ -6785,13 +9878,13 @@ class BasicModel(BaseModel):
                     object.__setattr__(_cs, '_model_symbolSpace', self.symbolSpace)
 
         # Precompute partition boundaries for partitioned symbolSum
-        self._partitions = self._order_partitions(symbol_dim + obj_symbol,
+        self._partitions = self._order_partitions(concept_dim,
                                                    self.subsymbolicOrder)
         self.symbol_states = []
         # Per-step lifecycle slots, initialized explicitly so every
         # read is a plain attribute access (no getattr-with-default):
         #   _staged_in_sub      -- lex+embed stem subspace parked by
-        #                          _begin_step for the compiled forward
+        #                          runBatch for the compiled forward
         #                          (None == not staged: eager/uncompiled
         #                          path lexes inline).
         #   _compiled_step      -- the torch.compiled callable, or None
@@ -6808,10 +9901,19 @@ class BasicModel(BaseModel):
         self._staged_in_sub = None
         self._staged_concepts_in = None
         self._compiled_step = None
+        self._compiled_word_steps = {}
+        self._active_compiled_step = None
+        self._compiled_word_chunk_step = None
+        self._compiled_word_chunk_active = False
+        self._compiled_word_chunk_replaying = False
+        self._compiled_word_chunk_width = 0
+        self._compiled_part_fold_ladder = None
+        self._compiled_whole_fold_ladder = None
+        self._pending_stm_end_state = None
         self._current_discourse_s = None
         # A6 stage-0 CS_{-1} interSentence seed staging (mirrors
         # _staged_in_sub): the predicted next-end-state tuple parked by
-        # _begin_step for the compiled forward (predict_next_end_state is
+        # runBatch for the compiled forward (predict_next_end_state is
         # @torch.compiler.disable'd, so it cannot run in-trace). The flag
         # distinguishes "staged None" (cold / none-mode) from "not staged"
         # (eager path computes live). Both reset by _end_step.
@@ -6837,6 +9939,16 @@ class BasicModel(BaseModel):
         # behaviour-identical to the prior fresh-per-forward seed.
         self._empty_seed_ps = self._empty_subspace()
         self._empty_seed_ss = self._empty_subspace()
+        # Routing state lives with the conceptual owner. BasicModel retains
+        # only construction-time empty sentinels for legacy parallel paths.
+        object.__setattr__(self.conceptualSpace, '_peer_empty_sub',
+                           self._empty_seed_ps)
+        object.__setattr__(self.conceptualSpace, '_peer_empty_sym',
+                           self._empty_seed_ss)
+        object.__setattr__(self.conceptualSpace, '_peer_prev_sub',
+                           self._empty_seed_ps)
+        object.__setattr__(self.conceptualSpace, '_peer_prev_sym',
+                           self._empty_seed_ss)
 
         # Phase 2: Sequential pipeline is the only path.
         self.build_pipelines()
@@ -6886,10 +9998,11 @@ class BasicModel(BaseModel):
         self.perceptualSpace.quantize = not (
             self.reversible and getattr(self.perceptualSpace, "invertible", False))
 
-        # SymbolSpace ownership hangs off the terminal symbolic stage
-        # (Rule 3): ``self.wholeSpace`` is the alias for
-        # ``self.wholeSpaces[-1]``.
-        self.wholeSpace.symbolSpace = self.symbolSpace
+        # Compatibility-only ownership: legacy WholeSpace doubled as the
+        # symbolic stage. Canonical property-basis WS is strictly upstream and
+        # must not retain a downstream SymbolSpace pointer.
+        if not self.wholePropertyBasis:
+            self.wholeSpace.attach_symbolSpace(self.symbolSpace)
 
         # Stage 1.F substrate refactor (doc/plans/2026-05-26-two-loop-
         # pi-sigma-substrate.md): the per-stage forward capture lists
@@ -6922,15 +10035,19 @@ class BasicModel(BaseModel):
         # uniformly at C-space_role inside ``_forward_body`` for every stage.
         self.body_stages = nn.ModuleList()
         for t in range(T):
-            stage = nn.ModuleDict()
-            stage["cs"] = self.conceptualSpaces[t]
+            merge = None
             if use_grammar_merge:
                 stage_n = base_n // (2 ** t)
-                stage["merge"] = GrammarMergeGlue(
+                merge = GrammarMergeGlue(
                     stage_idx=t, initial_n=stage_n,
                     is_last=(t == T - 1))
-            stage["ws"] = self.wholeSpaces[t]
-            self.body_stages.append(stage)
+            self.body_stages.append(
+                _BodyStage(
+                    self.conceptualSpaces[t],
+                    self.wholeSpaces[t],
+                    merge=merge,
+                )
+            )
 
         # --- A4 (2026-06-06 parallel-conceptual-recurrence): per-stage
         # ConceptualCombine modules. One SQUARE augment-threaded invertible
@@ -6981,8 +10098,18 @@ class BasicModel(BaseModel):
         # ``conceptual_combines`` list -- the combine learns through its cs,
         # like every other Space layer.
         _combine_naive = bool(TheXMLConfig.get("architecture.naive", False))
+        _combine_binding = str(TheXMLConfig.get(
+            "architecture.conceptBinding", default="mixing")
+        ).strip().lower()
         for t in range(T):
             cs = self.conceptualSpaces[t]
+            if _combine_binding != "mixing":
+                # Location-aligned binding is parameter-free and retains its
+                # source carrier directly on CS.  Do not allocate a dormant
+                # ConceptualCombine: the mixing matrix exists only for the
+                # explicitly selected parallel ablation.
+                object.__setattr__(cs, "combine", None)
+                continue
             # Slot-stack bind (geometry corrected 2026-06-10): the streams
             # stack along the VECTOR axis (N slots each, 2N total) and ONE
             # cascade runs over the flattened 2N*D slab -- 16*nDim for the
@@ -7382,11 +10509,16 @@ class BasicModel(BaseModel):
             # consumes the structured zero-pad (dropped) to invert the same
             # square map. (The retired ``reconstruct=perfect`` mode skipped the
             # combine -- only one stream live per stage, carrier carried
-            # unchanged for an exact round-trip; the combine now ALWAYS runs.)
+            # unchanged for an exact round-trip; when mixing is selected the
+            # combine now always runs. Aligned binding takes the sibling path.)
             combine = (getattr(cs, "combine", None)
                        if self.subsymbolicOrder >= 1
                        and "merge" not in stage else None)
-            if combine is not None:
+            _aligned_binding = bool(
+                getattr(self, "concept_binding", "mixing") == "aligned"
+                and self.subsymbolicOrder >= 1
+                and "merge" not in stage)
+            if combine is not None or _aligned_binding:
                 _tiling_schedule = getattr(
                     self.wholeSpaces[0], "_where_tiling_schedule", None)
                 _tiling_obs = (
@@ -7475,9 +10607,12 @@ class BasicModel(BaseModel):
                               and self.symbolSpace is not None
                               and not cs._sparse_active())
                           else None)
-                full_t = cs.bind_streams(
-                    ps_t, WS_sub, CS_sub, SS_sub=SS_sub,
-                    seed_payload=(seed_payload if t == 0 else None))
+                if _aligned_binding:
+                    full_t = cs.bind_aligned_streams(ps_t, WS_sub, CS_sub)
+                else:
+                    full_t = cs.bind_streams(
+                        ps_t, WS_sub, CS_sub, SS_sub=SS_sub,
+                        seed_payload=(seed_payload if t == 0 else None))
                 if full_t is not None and t == 0:
                     # Snapshot the stage-0 bind so round-trip tests can
                     # compare it against the threaded carrier.
@@ -7606,10 +10741,10 @@ class BasicModel(BaseModel):
         return last_cs
 
     # ------------------------------------------------------------------
-    # 2b-2-i: bounded soft shift-reduce producer (STM -> single S).
+    # 2b-2-i: bounded binary grammar producer (STM -> single S).
     # ------------------------------------------------------------------
     def _stm_reducer(self):
-        """Lazily build + cache the bounded-reduce scorer/combiner.
+        """Lazily resolve + cache the bounded-reduce scorer/combiner.
 
         The bounded soft REDUCE reuses the EXISTING reduction math
         verbatim -- it is NOT re-authored here (two-loop spec
@@ -7617,17 +10752,18 @@ class BasicModel(BaseModel):
         soft reducer ... the ``BinaryStructuredReductionLayer``
         anchors, Language.py:1608"; "parent = Σ_op weight_op ·
         op(left,right)  # fixed op axis, one weighted reduce"). One
-        ``BinaryStructuredReductionLayer`` is constructed from the
-        grammar's S-space_role arity-2 reduce ops, each wrapped with the
-        SAME ``_BinaryGrammarOpAdapter`` ``_wire_signal_router_grammar_ops``
-        uses (so ``op(left,right)`` dispatches into the registered
-        host fold -- IntersectionLayer/UnionLayer/...). The layer's
+        ``BinaryStructuredReductionLayer`` already wired on this model's
+        SymbolSpace is reused directly.  Its op table and rule ids are an
+        immutable consequence of the grammar active when this model was
+        constructed; resolving them again through process-global
+        ``TheGrammar`` would let a later model's XML silently change this
+        model's lazy reducer. The layer's
         own forward computes ``chosen_reduced = Σ_op softmax(reduce_
         score)_op · op(left,right)`` over the fixed op axis (one
         weighted reduce, no shared in-place accumulator -- the proven
         ``_superposed_op`` pattern), which IS the spec's ``parent``.
 
-        Returns ``None`` when no S-space_role arity-2 host op is available
+        Returns ``None`` when no model-owned arity-2 host op is available
         (degenerate grammar) so the caller can skip the REDUCE
         (SHIFT-only, depth still bounded by back-pressure -- a forced
         no-op reduce simply pops the older slot).
@@ -7635,11 +10771,11 @@ class BasicModel(BaseModel):
         cached = getattr(self, "_stm_reducer_cached", None)
         if cached is not None:
             if cached is not False and not torch.compiler.is_compiling():
-                # Re-home to the live STM-buffer device: this reducer is built
-                # lazily and registered as a child, but the MPS build path
+                # Re-home to the live model device. The MPS build path
                 # (ModelFactory._run_hydrated) constructs the model on CPU and
-                # only then ``m.to(mps)``. A reducer first cached during the CPU
-                # phase would stay on CPU while the buffer it reads is MPS
+                # only then ``m.to(mps)``; this is normally handled through the
+                # LanguageLayer's registered ownership, and the check keeps
+                # hand-built/test models coherent with the STM it reads
                 # ("weight is on cpu but expected on mps"). ``.to`` is a no-op
                 # once the devices already match. HOST-SIDE ONLY: a
                 # ``torch.device`` ``!=`` compare is not traceable (its
@@ -7654,51 +10790,187 @@ class BasicModel(BaseModel):
                     if next(cached.parameters()).device != _dev:
                         cached = cached.to(_dev)
             return cached if cached is not False else None
-        ws = self.wholeSpace
-        sl = getattr(ws, "syntacticLayer", None)
-        if sl is None or not hasattr(sl, "_by_name"):
-            self._stm_reducer_cached = False
-            return None
-        try:
-            from Language import (TheGrammar,
-                                  BinaryStructuredReductionLayer,
-                                  _BinaryGrammarOpAdapter)
-        except ImportError:
-            self._stm_reducer_cached = False
-            return None
-        ops = []
-        for rid in range(len(TheGrammar.rules)):
-            rdef = TheGrammar.rules[rid]
-            if int(getattr(rdef, "arity", 1)) != 2:
-                continue
-            mn = getattr(rdef, "method_name", None)
-            host = sl._by_name.get(mn) if mn else None
-            if host is None or not hasattr(host, "compose"):
-                continue
-            ops.append(_BinaryGrammarOpAdapter(host))
-        if not ops:
-            self._stm_reducer_cached = False
-            return None
-        D_c = int(self.conceptualSpace.stm.concept_dim)
-        layer = BinaryStructuredReductionLayer(
-            d_model=D_c, ops=ops, r_copy=1, temperature=1.0,
-            chooser=getattr(self, "transform_chooser", "anchordot"))
-        layer = layer.to(self.conceptualSpace.stm._buffer.device)
-        # Register as a child so its anchors/op params are optimised
-        # with the rest of the model (grad must shape the reducer).
-        self.add_module("_stm_reducer_module", layer)
-        self._stm_reducer_cached = layer
+        grammar_owner = getattr(self, "symbolSpace", None)
+        language = getattr(grammar_owner, "languageLayer", None)
+        layers = getattr(language, "_binary_layers", None)
+        layer = layers["CS"] if layers is not None and "CS" in layers else None
+        # This is a non-owning cache. LanguageLayer remains the sole nn.Module
+        # owner so optimizer/checkpoint traversal cannot register the same
+        # reducer twice under model-root aliases.
+        object.__setattr__(
+            self, "_stm_reducer_cached",
+            layer if layer is not None else False)
         return layer
 
-    def _stm_bounded_reduce_step(self, protect_depth=None, gate_tau=None):
-        """ONE statically-unrolled, masked REDUCE micro-step (forced).
+    def _stm_unary_rewriter(self):
+        """Return the already-wired conceptual unary grammar layer.
+
+        Unlike the bounded binary scorer, a unary structured layer already
+        operates independently at each position, so the signal router's CS
+        layer can be reused directly. No parameters or alternate unary math
+        are minted in the word-loop controller.
+        """
+        cached = getattr(self, "_stm_unary_rewriter_cached", None)
+        if cached is not None:
+            if cached is False:
+                return None
+            if not torch.compiler.is_compiling():
+                dev = self.conceptualSpace.stm._buffer.device
+                param = next(cached.parameters(), None)
+                if param is not None and param.device != dev:
+                    cached = cached.to(dev)
+                    object.__setattr__(
+                        self, "_stm_unary_rewriter_cached", cached)
+            return cached
+        ws = getattr(self, "wholeSpace", None)
+        property_basis = bool(
+            getattr(self, "wholePropertyBasis", False)
+            or getattr(ws, "property_basis", False))
+        grammar_owner = (getattr(self, "symbolSpace", None)
+                         if property_basis else ws)
+        language = getattr(grammar_owner, "languageLayer", None)
+        layers = getattr(language, "_unary_layers", None)
+        layer = layers["CS"] if layers is not None and "CS" in layers else None
+        object.__setattr__(
+            self, "_stm_unary_rewriter_cached",
+            layer if layer is not None else False)
+        return layer
+
+    def _stm_bounded_unary_step(self, row_gate=None):
+        """Permit at most one arity-1 grammatical operation per word.
+
+        The unary router may choose COPY; only an actual APPLY mutates slot 0.
+        STM depth is unchanged. Concept order is preserved, while grammatical
+        derivation depth increases by one, keeping the two notions of order
+        explicit and non-interchangeable.
+        """
+        stm = self.conceptualSpace.stm
+        layer = self._stm_unary_rewriter()
+        buf = stm._buffer
+        B = int(buf.shape[0])
+        can = stm._depth >= 1
+        if row_gate is not None:
+            can = can & row_gate.to(
+                device=buf.device, dtype=torch.bool).reshape(B)
+        if layer is None:
+            return torch.zeros_like(can)
+        hard, soft, routing = layer(buf[:, :1, :])
+        candidate = (soft + (hard - soft).detach())[:, 0, :]
+        snapped = self._stm_symbolic_roundtrip(candidate.unsqueeze(1))
+        if snapped is not None and snapped.dim() == 3:
+            candidate = snapped[:, 0, :]
+        apply_mask = routing.get("apply_mask")
+        if not torch.is_tensor(apply_mask) or apply_mask.shape[1] < 1:
+            applied = torch.zeros_like(can)
+        else:
+            applied = apply_mask[:, 0, :].bool().any(dim=-1) & can
+        object.__setattr__(self, "_stm_last_unary_routing", routing)
+
+        order_slab, grammar_slab = stm.ensure_order_state()
+        concept_rows, concept_activations = stm.ensure_reference_state()
+        buf_new = torch.where(
+            applied.view(B, 1), candidate, buf[:, 0, :])
+        stm._buffer = torch.cat([buf_new.unsqueeze(1), buf[:, 1:, :]], dim=1)
+        # ``_buffer`` replacement invalidates metadata by design; restore the
+        # transformed parallel slabs explicitly.
+        stm._orders = order_slab
+        top_grammar = grammar_slab[:, 0]
+        raised_grammar = torch.where(
+            top_grammar >= 0, top_grammar + 1, top_grammar)
+        grammar_new = grammar_slab.clone()
+        grammar_new[:, 0] = torch.where(
+            applied, raised_grammar, top_grammar)
+        stm._grammar_orders = grammar_new
+        reference_rows_new = concept_rows.clone()
+        reference_activations_new = concept_activations.clone()
+        reference_rows_new[:, 0] = torch.where(
+            applied, torch.full_like(concept_rows[:, 0], -1),
+            concept_rows[:, 0])
+        reference_activations_new[:, 0] = torch.where(
+            applied, torch.zeros_like(concept_activations[:, 0]),
+            concept_activations[:, 0])
+        stm._concept_rows = reference_rows_new
+        stm._concept_activations = reference_activations_new
+        routing["stm_apply_mask"] = applied
+        return applied
+
+    @staticmethod
+    def _stm_grammar_reduce_confidence(routing):
+        """Return a rule-count-neutral P(REDUCE) for a two-slot window.
+
+        ``routing['reduce_marginal']`` sums probability over every binary
+        grammar operator.  Consequently an untrained grammar with two
+        otherwise-equivalent REDUCE operators starts near 2/3 rather than
+        1/2 and appears to license a reduction after virtually every word.
+        The STM controller needs a hierarchical decision instead: first KEEP
+        versus BINARY-APPLY, then (conditional on APPLY) which operator.
+
+        Log-mean-exp over each action's operator axis removes that rule-count
+        prior.  The two COPY positions form one route, so their normalized
+        action scores add; the REDUCE route consumes the pair in one action.
+        The result remains differentiable with respect to chooser scores.
+        """
+        if not isinstance(routing, dict):
+            return None
+        copy_score = routing.get("copy_score")
+        reduce_score = routing.get("reduce_score")
+        if (not torch.is_tensor(copy_score)
+                or not torch.is_tensor(reduce_score)
+                or copy_score.dim() != 3
+                or reduce_score.dim() != 3
+                or copy_score.shape[1] < 2
+                or reduce_score.shape[1] < 1
+                or copy_score.shape[-1] < 1
+                or reduce_score.shape[-1] < 1):
+            return None
+        n_copy = float(copy_score.shape[-1])
+        n_reduce = float(reduce_score.shape[-1])
+        copy_action = (
+            torch.logsumexp(copy_score[:, :2, :], dim=-1)
+            - math.log(n_copy))
+        reduce_action = (
+            torch.logsumexp(reduce_score[:, 0, :], dim=-1)
+            - math.log(n_reduce))
+        return torch.sigmoid(reduce_action - copy_action.sum(dim=1))
+
+    @staticmethod
+    def _stm_occupancy_threshold(depth, capacity, base_tau):
+        """Interpolate grammar threshold from soft pressure to demand.
+
+        At depth two (the first reducible state) the grammar must clear the
+        configured ``base_tau`` on its own.  As the finite STM fills, the
+        threshold falls linearly.  At capacity the separate demand mask in
+        :meth:`_stm_bounded_reduce_step` makes the best grammatical operator
+        mandatory, including the exact-zero-confidence edge case.
+        """
+        cap = max(1, int(capacity))
+        tau = torch.as_tensor(
+            base_tau, device=depth.device, dtype=torch.float32).clamp(0.0, 1.0)
+        if tau.dim() == 0:
+            tau = tau.expand_as(depth)
+        else:
+            tau = tau.reshape(depth.shape).to(device=depth.device)
+        if cap <= 2:
+            pressure = torch.zeros_like(depth, dtype=tau.dtype)
+        else:
+            pressure = (
+                (depth.to(tau.dtype) - 2.0) / float(cap - 2)
+            ).clamp(0.0, 1.0)
+        return tau * (1.0 - pressure), pressure
+
+    def _stm_bounded_reduce_step(self, protect_depth=None, gate_tau=None,
+                                 row_gate=None, occupancy_pressure=False,
+                                 demand=False):
+        """ONE statically-unrolled, masked grammatical REDUCE micro-step.
 
         Operates on the live STM ``[B, cap, D]`` buffer + the tensor
-        depth (``stm._depth``). De-sync-safe: pure ``torch.where`` /
+        depth (``stm._depth``). The reduction itself is pure ``torch.where`` /
         gather / scatter over a fixed ``[B, cap, D]`` slab + a tensor
-        depth -- NO ``.item()``, NO data-dependent trip count (spec
+        depth, with no data-dependent trip count (spec
         STM-7: "Pop/push are masked roll/scatter/where over [B,7,D]
-        + a tensor depth -- never pop().item()").
+        + a tensor depth -- never pop().item()"). Eager word-axis execution
+        performs one post-commit scalar re-pin of the host snapshot-width
+        mirror; compiled execution skips that bookkeeping read.
 
         Mechanism (spec STM-7 controller, newest-at-slot-0 convention):
           * Take the top-2 STM constituents -- the two NEWEST, at slots
@@ -7721,15 +10993,20 @@ class BasicModel(BaseModel):
             fold associativity of the old scheme (so the collapsed root is
             byte-identical).
 
-        Both call sites (back-pressure at capacity AND the NULL-seal
-        sweep) want an unconditional fold whenever a row has >=2
-        constituents -- the FORCED reduce that replaces the legacy
-        ``ShortTermMemory.push`` capacity RuntimeError (spec STM-7:
-        "at d==7 the best reduce is FORCED"). A scored soft gate
-        ``g in (0,1)`` (opportunistic mid-sentence reduce) is the
-        2b-2 refinement; 2b-2-i's bound is the forced fold. Rows with
-        depth < 2 are no-ops (masked to gate 0). Returns nothing;
-        mutates the STM buffer/depth via out-of-place masked ops.
+        Three controller modes share this primitive:
+
+          * legacy/final-seal ``gate_tau is None`` folds every eligible row;
+          * ``occupancy_pressure=True`` compares a rule-count-neutral grammar
+            confidence with a threshold that falls as STM fills;
+          * ``demand=True`` forces the best *grammatical* operator on selected
+            full rows before admitting another word.
+
+        The latter two never use the degenerate mean-fold: a missing grammar
+        is a no-op under soft pressure and an explicit capacity failure under
+        demand. Rows with depth < 2 are no-ops. Returns the per-row boolean
+        mask that ACTUALLY reduced, and mutates the STM buffer/depth via
+        out-of-place masked ops. The return makes diagnostics count stack
+        changes rather than mistaking a reducer call for a reduction.
 
         ``protect_depth`` (Task 6a, §7): an optional per-row ``[B]``
         long tensor giving each row's MINIMUM retained depth -- a row
@@ -7747,16 +11024,17 @@ class BasicModel(BaseModel):
         """
         stm = self.conceptualSpace.stm
         reducer = self._stm_reducer()
-        if gate_tau is not None and reducer is None:
-            # 2b-2 scored (opportunistic) mode needs a grammar to license
-            # the fold; the degenerate mean-fold is an unlicensed parse.
-            return
         buf = stm._buffer                                  # [B, cap, D]
         B, cap, D = buf.shape
         depth = stm._depth                                 # [B] long
         device = buf.device
+        order_slab, grammar_slab = stm.ensure_order_state()
+        concept_rows, concept_activations = stm.ensure_reference_state()
         # Rows that CAN reduce: at least 2 constituents on the stack.
         can = (depth >= 2)                                 # [B] bool
+        if row_gate is not None:
+            can = can & row_gate.to(
+                device=device, dtype=torch.bool).reshape(B)
         # Task 6a per-row depth floor. ``protect_depth`` (a [B] long, or
         # None == floor 1) keeps RELATIVE rows from folding below their
         # depth-3 end-state. The extra ``depth > protect_depth`` term is
@@ -7764,6 +11042,20 @@ class BasicModel(BaseModel):
         # ``depth >= 2`` so ``can`` is bit-for-bit unchanged.
         if protect_depth is not None:
             can = can & (depth > protect_depth)            # [B] bool
+        grammar_controlled = bool(
+            gate_tau is not None or occupancy_pressure or demand)
+        if reducer is None and grammar_controlled:
+            # Soft pressure without a binary grammar cannot license a fold.
+            # A capacity demand, however, must fail loudly rather than let
+            # ``push_step_masked`` saturate and silently discard the oldest
+            # constituent.  The host sync exists only on this exceptional,
+            # grammar-free path.
+            if demand and not torch.compiler.is_compiling():
+                if bool(can.detach().any().item()):
+                    raise RuntimeError(
+                        "STM capacity reached but no binary grammatical "
+                        "operator can reduce the occupied constituents")
+            return torch.zeros_like(depth, dtype=torch.bool)
         # Gather the top-2 (the two NEWEST): right = newest = slot 0,
         # left = 2nd-newest = slot 1. The (older, newer) = (left, right)
         # operand assignment is preserved from the old convention so the
@@ -7774,6 +11066,21 @@ class BasicModel(BaseModel):
         idx_older = torch.ones(B, dtype=depth.dtype, device=device)    # 1
         right = buf[rows, idx_newer]                        # [B, D] newest
         left = buf[rows, idx_older]                         # [B, D] 2nd-newest
+        left_order = order_slab[:, 1] if cap > 1 else order_slab[:, 0]
+        right_order = order_slab[:, 0]
+        known_concept_order = (left_order >= 0) & (right_order >= 0)
+        parent_order = torch.where(
+            known_concept_order,
+            torch.maximum(left_order, right_order),
+            torch.full_like(left_order, -1))
+        left_grammar = (grammar_slab[:, 1]
+                        if cap > 1 else grammar_slab[:, 0])
+        right_grammar = grammar_slab[:, 0]
+        known_grammar_order = (left_grammar >= 0) & (right_grammar >= 0)
+        parent_grammar = torch.where(
+            known_grammar_order,
+            torch.maximum(left_grammar, right_grammar) + 1,
+            torch.full_like(left_grammar, -1))
         if reducer is not None:
             window = torch.stack([left, right], dim=1)      # [B, 2, D]
             hard, soft, routing = reducer(window)
@@ -7786,7 +11093,30 @@ class BasicModel(BaseModel):
             # names which op fired -- parked for interpretable readback.
             parent = (soft + (hard - soft).detach())[:, 0, :]   # [B, D]
             object.__setattr__(self, "_stm_last_reduce_routing", routing)
-            if gate_tau is not None:
+            if occupancy_pressure or demand:
+                # Conditional parent from an actual grammar operator.  This
+                # remains correct when memory pressure overrides a COPY route.
+                chosen = routing.get("chosen_reduced")
+                if torch.is_tensor(chosen) and chosen.shape[1] >= 1:
+                    parent = chosen[:, 0, :]
+            if occupancy_pressure:
+                confidence = self._stm_grammar_reduce_confidence(routing)
+                if confidence is None:
+                    can = torch.zeros_like(can)
+                else:
+                    threshold, pressure = self._stm_occupancy_threshold(
+                        depth, cap, self.stm_reduce_tau
+                        if gate_tau is None else gate_tau)
+                    # A full but inactive/protected batch row is not part of
+                    # this word's demand.  Mask with the eligibility computed
+                    # above so telemetry and the controller agree per row.
+                    demand_rows = (depth >= cap) & can
+                    can = can & (demand_rows | (confidence > threshold))
+                    routing["grammar_reduce_confidence"] = confidence
+                    routing["stm_reduce_threshold"] = threshold
+                    routing["stm_occupancy_pressure"] = pressure
+                    routing["stm_demand_mask"] = demand_rows
+            elif gate_tau is not None and not demand:
                 # 2b-2 scored gate: the DP's reduce-vs-copy marginal on the
                 # 2-window -- a row folds only where the grammar licenses
                 # the reduce above tau. Pure tensor mask, no host sync.
@@ -7843,21 +11173,53 @@ class BasicModel(BaseModel):
                             routing["reduce_marginal_op"].detach(),  # [B,1,R]
                             can.detach()))                           # [B] bool
         else:
-            # Degenerate grammar (no S-space_role arity-2 op): the FORCED
-            # reduce is a structural pop of the top onto its parent
-            # (mean of the two constituents -- the minimal lattice
-            # join), keeping depth bounded without a host op.
+            # Legacy degenerate grammar: the historical forced structural
+            # mean-fold remains for checkpoint compatibility. Grammar-
+            # controlled pressure/demand modes returned above and can never
+            # reach this unlicensed fallback.
             parent = 0.5 * (left + right)
+        # A hard grammar COPY returns one unchanged operand and therefore
+        # retains that operand's exact lexical reference. Every actual binary
+        # transform (including pressure/demand's chosen reduction and the
+        # degenerate mean fallback) has no single exact row identity.
+        parent_concept_row = torch.full(
+            (B,), -1, dtype=torch.long, device=device)
+        parent_concept_activation = torch.zeros(
+            (B,), dtype=buf.dtype, device=device)
+        if reducer is not None and not (occupancy_pressure or demand):
+            action_kind = routing.get("action_kind")
+            src_left = routing.get("src_left")
+            if (torch.is_tensor(action_kind) and action_kind.dim() == 2
+                    and int(action_kind.shape[1]) >= 1
+                    and torch.is_tensor(src_left) and src_left.dim() == 2
+                    and int(src_left.shape[1]) >= 1):
+                # Reducer input is [left=old slot 1, right=old slot 0].
+                reference_window_rows = torch.stack(
+                    [concept_rows[:, 1], concept_rows[:, 0]], dim=1)
+                reference_window_activations = torch.stack(
+                    [concept_activations[:, 1],
+                     concept_activations[:, 0]], dim=1)
+                source = src_left[:, 0].clamp(0, 1).long()
+                copy_selected = (
+                    (action_kind[:, 0] == 0) & (src_left[:, 0] >= 0))
+                copied_row = reference_window_rows.gather(
+                    1, source.unsqueeze(1)).squeeze(1)
+                copied_activation = reference_window_activations.gather(
+                    1, source.unsqueeze(1)).squeeze(1)
+                parent_concept_row = torch.where(
+                    copy_selected, copied_row, parent_concept_row)
+                parent_concept_activation = torch.where(
+                    copy_selected, copied_activation,
+                    parent_concept_activation)
         # C<->S idempotent snap of the parent (reused primitive;
         # passthrough for non-ProjectionBasis ``.what``).
         snapped = self._stm_symbolic_roundtrip(
             parent.unsqueeze(1))                            # [B, 1, D]
         if snapped is not None and snapped.dim() == 3:
             parent = snapped[:, 0, :]
-        # Forced fold (the ``can`` mask is what makes the static unroll
-        # safe -- a short / protected row is a pure no-op for this step; a
-        # scored soft gate g in (0,1) is the 2b-2 opportunistic-reduce
-        # refinement, 2b-2-i forces the fold).
+        # Masked fold: ``can`` incorporates the legacy fixed gate, the new
+        # occupancy-pressure decision, or a hard demand. A short/protected
+        # row is always a pure no-op.
         # Build the post-fold layout for the can-rows: the folded
         # ``parent`` becomes the new newest at slot 0, the surviving older
         # constituents (old slots ``2..cap-1``) shift DOWN into slots
@@ -7882,14 +11244,69 @@ class BasicModel(BaseModel):
         # rest keep their buffer unchanged.
         buf_new = torch.where(can.view(B, 1, 1), shifted, buf)
         stm._buffer = buf_new
-        # d <- d - 1 for rows that reduced (g==1 there); tensor op,
-        # no sync. ``_max_depth_host`` is the host mirror snapshot()
-        # reads; it tracks the max depth -- a reduce never increases
-        # it, and the post-sweep depth is read explicitly by the
-        # caller, so leave the mirror as the high-water mark (the
-        # snapshot slab is zero-padded past the live depth anyway).
+        order_tail = torch.full(
+            (B, 1), -1, dtype=torch.long, device=device)
+        if cap >= 3:
+            shifted_orders = torch.cat(
+                [parent_order.unsqueeze(1), order_slab[:, 2:cap],
+                 order_tail], dim=1)
+            shifted_grammar = torch.cat(
+                [parent_grammar.unsqueeze(1), grammar_slab[:, 2:cap],
+                 order_tail], dim=1)
+        elif cap == 2:
+            shifted_orders = torch.cat(
+                [parent_order.unsqueeze(1), order_tail], dim=1)
+            shifted_grammar = torch.cat(
+                [parent_grammar.unsqueeze(1), order_tail], dim=1)
+        else:
+            shifted_orders = parent_order.unsqueeze(1)
+            shifted_grammar = parent_grammar.unsqueeze(1)
+        stm._orders = torch.where(
+            can.view(B, 1), shifted_orders, order_slab)
+        stm._grammar_orders = torch.where(
+            can.view(B, 1), shifted_grammar, grammar_slab)
+        reference_tail_rows = torch.full(
+            (B, 1), -1, dtype=torch.long, device=device)
+        reference_tail_activations = torch.zeros(
+            (B, 1), dtype=buf.dtype, device=device)
+        if cap >= 3:
+            shifted_concept_rows = torch.cat(
+                [parent_concept_row.unsqueeze(1),
+                 concept_rows[:, 2:cap], reference_tail_rows], dim=1)
+            shifted_concept_activations = torch.cat(
+                [parent_concept_activation.unsqueeze(1),
+                 concept_activations[:, 2:cap],
+                 reference_tail_activations], dim=1)
+        elif cap == 2:
+            shifted_concept_rows = torch.cat(
+                [parent_concept_row.unsqueeze(1), reference_tail_rows],
+                dim=1)
+            shifted_concept_activations = torch.cat(
+                [parent_concept_activation.unsqueeze(1),
+                 reference_tail_activations], dim=1)
+        else:
+            shifted_concept_rows = parent_concept_row.unsqueeze(1)
+            shifted_concept_activations = (
+                parent_concept_activation.unsqueeze(1))
+        stm._concept_rows = torch.where(
+            can.view(B, 1), shifted_concept_rows, concept_rows)
+        stm._concept_activations = torch.where(
+            can.view(B, 1), shifted_concept_activations,
+            concept_activations)
+        # d <- d - 1 for rows that reduced (g==1 there); tensor op.
         dec = can.to(depth.dtype)                          # [B] {0,1}
         stm._depth = depth - dec
+        # Eager parser correctness: snapshot() and the next capacity check
+        # need the CURRENT maximum depth, not a historical high-water mark.
+        # Keeping the latter made every post-word snapshot include cleared
+        # tail slots and triggered an "emergency" reducer call on every word
+        # after word 8 even when licensed grammar had already reduced depth
+        # back to 1. Compiled mode keeps the tensor-only path; its static loop
+        # does not consult this host value for numerical gating.
+        if (not torch.compiler.is_compiling()
+                and getattr(self, "serial_word_capacity", None) is not None):
+            stm._max_depth_host = int(stm._depth.max().item())
+        return can
 
     def _sentence_relative_mask(self, B, device=None):
         """Per-row ``[B]`` bool: True where the current sentence is a
@@ -8004,8 +11421,16 @@ class BasicModel(BaseModel):
         _n_levels = max(0, cap - 1)
         if _syn > 0:
             _n_levels = min(_n_levels, _syn)
+        _grammar_boundary_demand = bool(
+            getattr(self, "serial_object_meta", False)
+            and getattr(self, "serial_word_capacity", None) is not None)
         for _ in range(_n_levels):
-            self._stm_bounded_reduce_step(protect_depth=protect_depth)
+            if _grammar_boundary_demand:
+                self._stm_bounded_reduce_step(
+                    protect_depth=protect_depth, demand=True)
+            else:
+                self._stm_bounded_reduce_step(
+                    protect_depth=protect_depth)
         # After cap-1 forced folds every ABSOLUTE row's stack is
         # collapsed to a single slot (slot 0, the newest accumulator):
         # that slot is the sentence idea S (the start-symbol root -- this
@@ -8154,8 +11579,8 @@ class BasicModel(BaseModel):
             Dynamo refuses to trace).
           * ``symbolSpace.recur_pass = 0`` -- invariant across the
             per-word loop (pass-index 0 throughout).
-          * ``self._prev_cs_for_ps`` / ``self._prev_cs_for_ss`` pre-
-            seeded to the persistent empty seeds so iteration 0's
+          * ConceptualSpace's peer lanes pre-seeded to the persistent empty
+            views so iteration 0's
             PS/WS forwards see a non-None feedback subspace (avoids a
             None-vs-SubSpace branch inside the captured body that
             would force a recompile after iteration 1). The body
@@ -8214,7 +11639,7 @@ class BasicModel(BaseModel):
         # (triggered by ``post_tick_compact`` when a sentence
         # completes); the first forward of the first sentence runs
         # BEFORE any soft_reset has fired, so cold-start allocation
-        # falls to this prelude. ``self._prev_cs_for_ps/ws`` are
+        # falls to this prelude. ConceptualSpace peer lanes are
         # UNCONDITIONALLY re-seeded to the empty seeds each forward so
         # the per-word loop's iteration 0 always sees the canonical
         # empty starting context -- never a stale SubSpace from a prior
@@ -8234,14 +11659,23 @@ class BasicModel(BaseModel):
             self.symbolSpace.soft_reset()
             self.symbolSpace._per_sentence_initialized = True
         self.symbolSpace.recur_pass = 0
-        self._prev_cs_for_ps = self._empty_seed_ps
-        self._prev_cs_for_ss = self._empty_seed_ss
+        # These are transient carrier pointers, not owned model children.
+        # Registering them through ``nn.Module.__setattr__`` on the first
+        # captured forward mutates ``self._modules`` and invalidates the just
+        # compiled W-loop guard on the next sentence.
+        # CS owns recurrence routing; model-level ``_prev_cs_*`` pointers
+        # were retired so peer stages cannot accidentally exchange mutable
+        # carrier references through BasicModel.
+        object.__setattr__(self.conceptualSpace, "_peer_prev_sub",
+                           self.conceptualSpace._peer_empty_sub)
+        object.__setattr__(self.conceptualSpace, "_peer_prev_sym",
+                           self.conceptualSpace._peer_empty_sym)
         # A6: the serial per-word path has no combine ``prev_cs_content`` leg
         # (that is the parallel-only carrier). Its CS_{-1} analog is the
         # ``_c_prior`` priming ``ConceptualSpace.forward`` adds across the
         # first ``depth`` STM slots -- the SAME mechanism
         # ``generate_sentence`` primes from. The seed comes from
-        # ``_consume_intersentence_seed`` (parked eagerly by ``_begin_step`` on
+        # ``_consume_intersentence_seed`` (parked eagerly by ``runBatch`` on
         # the compiled path so the disabled predictor never runs in the trace;
         # computed live on the eager path), gated to ``<prediction>
         # interSentence`` + a warm AR ring. ``prediction_mode == "none"``
@@ -8273,9 +11707,16 @@ class BasicModel(BaseModel):
         # ``inputSpace._word_active_mask`` (tensor-only, compile-stable);
         # the rule cursor itself stays aligned for downstream consumers
         # but does NOT drive control flow inside the captured body.
-        N_static = int(self.inputSpace.outputShape[0])
+        _word_slab = getattr(self.inputSpace, "_ar_embedded_N", None)
+        N_static = (int(_word_slab.shape[1])
+                    if torch.is_tensor(_word_slab)
+                    and _word_slab.dim() == 3
+                    else int(getattr(
+                        self.inputSpace, "_serial_word_capacity",
+                        self.inputSpace.outputShape[0])))
         if self.symbolSpace is not None:
-            self.symbolSpace._target_cursor_length = N_static
+            object.__setattr__(
+                self.symbolSpace, "_target_cursor_length", N_static)
         # ``_per_word_contributions`` holds the per-position ``[B, D_c]``
         # contributions (zero at inactive batch rows / padding columns) for
         # ``torch.stack`` after the loop; a python list + stack preserves
@@ -8331,8 +11772,14 @@ class BasicModel(BaseModel):
         T = max(1, int(getattr(self, 'subsymbolicOrder', 1) or 1))
         cs = self.conceptualSpace
         ws = self.wholeSpace
-        prev_ps, prev_ss = self._prev_cs_for_ps, self._prev_cs_for_ss
+        prev_ps = cs._peer_prev_sub
+        prev_ss = cs._peer_prev_sym
         self._set_serial_pump(False)
+        # Intent-only means exactly that: the parallel perceptual prelude may
+        # form a gist, but its eight-slot fields must not prefill the reducing
+        # STM before surface-word ingestion begins.
+        _defer_gist_push = bool(getattr(self, "serial_object_meta", False))
+        object.__setattr__(cs, "_serial_defer_push", _defer_gist_push)
         try:
             if in_event is not None:
                 word_carrier.set_event(in_event)
@@ -8352,10 +11799,10 @@ class BasicModel(BaseModel):
             for _i in range(T):
                 PS_sub = self.perceptualSpace.forward(word_carrier)
                 WS_sub = ws.forward(getattr(self, "_ws_universe", None),
-                                    cs_out=self._prev_cs_for_ss)
+                                    cs_out=cs._peer_prev_sym)
                 CS_sub = cs.forward(PS_sub, WS_sub)
-                self._prev_cs_for_ps = cs._subspaceForPS
-                self._prev_cs_for_ss = cs._subspaceForWS
+                object.__setattr__(cs, "_peer_prev_sub", cs.CSsub)
+                object.__setattr__(cs, "_peer_prev_sym", cs.CSsym)
                 if CS_sub is not None:
                     idea = CS_sub.materialize()
                     if idea is not None and idea.dim() == 3:
@@ -8363,12 +11810,13 @@ class BasicModel(BaseModel):
             self._last_gist = (gist.detach() if gist is not None
                                else None)
             self.set_intent(self._last_gist)
-            self._prelude_pumps = int(
-                getattr(self, '_prelude_pumps', 0)) + 1
+            if not torch.compiler.is_compiling():
+                self._prelude_pumps = int(self._prelude_pumps) + 1
         finally:
             # Intent-only: the star never becomes a workspace slot.
-            self._prev_cs_for_ps = prev_ps
-            self._prev_cs_for_ss = prev_ss
+            object.__setattr__(cs, "_serial_defer_push", False)
+            object.__setattr__(cs, "_peer_prev_sub", prev_ps)
+            object.__setattr__(cs, "_peer_prev_sym", prev_ss)
             self._set_serial_pump(True)
         return self._last_gist
 
@@ -8382,6 +11830,19 @@ class BasicModel(BaseModel):
         'other' (strict; no words until the towers say so)."""
         ps_fwd = (getattr(self.perceptualSpace, "_forward_input", None)
                   or {})
+        word_active = ps_fwd.get("word_active_mask")
+        word_truncated = ps_fwd.get("word_truncated_mask")
+        if (torch.is_tensor(word_active) and word_active.dim() == 2
+                and p < int(word_active.shape[1])):
+            active_col = word_active[:, p].detach().to("cpu").tolist()
+            if (torch.is_tensor(word_truncated)
+                    and tuple(word_truncated.shape)
+                    == tuple(word_active.shape)):
+                trunc_col = word_truncated[:, p].detach().to("cpu").tolist()
+            else:
+                trunc_col = [False] * len(active_col)
+            return [bool(a) and not bool(t)
+                    for a, t in zip(active_col, trunc_col)]
         pid = ps_fwd.get("indices")
         spans = ps_fwd.get("tile_spans")
         store = ps_fwd.get("percept_store")
@@ -8403,6 +11864,203 @@ class BasicModel(BaseModel):
                         ok = False
             out.append(ok)
         return out
+
+    def _aligned_word_chunk2(self, words_b_2_d, gates_b_2):
+        """Run two canonical aligned word ticks as one reusable graph.
+
+        The eager driver presents a two-column view through InputSpace's
+        ordinary staged attributes, so the existing word cell can use local
+        positions 0 and 1.  No sentence-global ``p`` value or growing output
+        list enters this callable.  Contributions are returned as tensors and
+        installed in the sentence-wide lists by the driver after replay.
+        """
+        if (words_b_2_d.dim() != 3 or int(words_b_2_d.shape[1]) != 2
+                or gates_b_2.dim() != 2 or int(gates_b_2.shape[1]) != 2):
+            raise RuntimeError(
+                "aligned word chunk requires words [B,2,D] and gates [B,2]")
+
+        cs = self.conceptualSpace
+        # Keep the Python accumulator structure identical at every replay.
+        # The fixed-capacity predictor appends one term per local word,
+        # including a zero-weight first-word term when STM is empty.
+        cs._intra_loss_accum = None
+        cs._intra_loss_weight_accum = None
+        cs._intra_loss_count = 0
+        concept_slots = [None, None]
+        percept_slots = [None, None]
+        self._per_word_percept_contributions = percept_slots
+
+        for local_p in range(2):
+            self._per_word_body_step(
+                words_b_2_d[:, local_p:local_p + 1, :],
+                local_p,
+                gates_b_2[:, local_p:local_p + 1],
+                concept_slots,
+                active_host=True)
+
+        if (concept_slots[0] is None or concept_slots[1] is None
+                or percept_slots[0] is None or percept_slots[1] is None):
+            raise RuntimeError(
+                "canonical aligned chunk did not emit both concept and "
+                "percept contributions")
+        return (
+            torch.stack(concept_slots, dim=1),
+            torch.stack(percept_slots, dim=1),
+        )
+
+    def _aligned_word_chunk1(self, words_b_1_d, gates_b_1):
+        """Run one canonical word tick in a static fullgraph kernel.
+
+        K=1 avoids the compilation blow-up of the two-tick stateful AOT
+        backward while still containing the complete numerical PS/WS/CS/STM
+        recurrence for one word.  The outer adapter establishes sentence order
+        and passes a fixed residual-part bucket on every replay.
+        """
+        if (words_b_1_d.dim() != 3 or int(words_b_1_d.shape[1]) != 1
+                or gates_b_1.dim() != 2 or int(gates_b_1.shape[1]) != 1):
+            raise RuntimeError(
+                "aligned word chunk requires words [B,1,D] and gates [B,1]")
+        cs = self.conceptualSpace
+        cs._intra_loss_accum = None
+        cs._intra_loss_weight_accum = None
+        cs._intra_loss_count = 0
+        concept_slots = [None]
+        percept_slots = [None]
+        self._per_word_percept_contributions = percept_slots
+        self._per_word_body_step(
+            words_b_1_d, 0, gates_b_1, concept_slots, active_host=True)
+        if concept_slots[0] is None or percept_slots[0] is None:
+            raise RuntimeError(
+                "canonical aligned chunk did not emit concept and percept "
+                "contributions")
+        return (
+            concept_slots[0].unsqueeze(1),
+            percept_slots[0].unsqueeze(1),
+        )
+
+    @torch.compiler.disable
+    def _run_aligned_word_chunk_loop(self, out_slot, n_trips):
+        """Eager sentence driver around the reusable two-word graph.
+
+        Only fixed-shape, canonical-layout tensors cross into the compiled
+        callable. The full sparse concept bank remains installed and grad-bearing for the
+        whole sentence; the temporary InputSpace swaps affect only surfaces
+        whose second axis the legacy word cell indexes by ``p``.
+        """
+        step = self._compiled_word_chunk_step
+        chunk_width = int(getattr(self, "_compiled_word_chunk_width", 2))
+        isp = self.inputSpace
+        slab = getattr(isp, "_ar_embedded_N", None)
+        if (step is None or not torch.is_tensor(slab)
+                or chunk_width < 1 or int(n_trips) < chunk_width
+                or int(n_trips) % chunk_width != 0):
+            return None
+        n_trips = int(n_trips)
+        if int(slab.shape[1]) < n_trips:
+            return None
+
+        active = getattr(isp, "_word_active_mask", None)
+        if active is None:
+            active = torch.ones(
+                int(slab.shape[0]), n_trips, dtype=torch.bool,
+                device=slab.device)
+
+        staged_names = (
+            "_ar_word_part_ids",
+            "_ar_word_part_mask",
+            "_ar_word_part_offsets",
+            "_ar_word_concept_rows",
+            "_ar_word_concept_orders",
+            "_word_last_slot_mask",
+        )
+        dynamic_part_names = {
+            "_ar_word_part_ids",
+            "_ar_word_part_mask",
+            "_ar_word_part_offsets",
+        }
+        full = {name: getattr(isp, name, None) for name in staged_names}
+        required = tuple(full[name] for name in staged_names)
+        if not all(torch.is_tensor(value) for value in required):
+            return None
+
+        # The residual-part axis is semantic but normally tiny.  Marking it
+        # dynamic over InputSpace's 8192-byte ceiling made MPS Inductor lower
+        # a very broad symbolic graph for every K=1/K=2 word cell.  Instead,
+        # stage an exact padded bucket (8/16/32/...) once per sentence.  The
+        # sentinel IDs and false mask make the added lanes identity elements;
+        # nothing is truncated.  A finite bucket set gives a bounded number of
+        # fullgraph specializations while retaining arbitrary long residual
+        # words through the next power-of-two fallback.
+        part_width = int(full["_ar_word_part_ids"].shape[-1])
+        part_bucket = next(
+            (width for width in (8, 16, 32, 64, 128)
+             if part_width <= width),
+            1 << max(0, part_width - 1).bit_length())
+        staged = dict(full)
+        if part_width < part_bucket:
+            for name in dynamic_part_names:
+                value = full[name]
+                pad_shape = tuple(value.shape[:-1]) + (
+                    part_bucket - part_width,)
+                fill = False if name == "_ar_word_part_mask" else -1
+                pad = torch.full(
+                    pad_shape, fill, dtype=value.dtype, device=value.device)
+                staged[name] = torch.cat((value, pad), dim=-1)
+
+        ps_out_slot = self._per_word_percept_contributions
+        cs = self.conceptualSpace
+        loss_terms = list(getattr(cs, "_intra_loss_accum", None) or [])
+        loss_weights = list(
+            getattr(cs, "_intra_loss_weight_accum", None) or [])
+        last_cs = None
+        was_replaying = bool(getattr(
+            self, "_compiled_word_chunk_replaying", False))
+        self._compiled_word_chunk_replaying = True
+        try:
+            for start in range(0, n_trips, chunk_width):
+                stop = start + chunk_width
+                for name in staged_names:
+                    value = staged[name]
+                    # A view retains its sentence slab's W-dependent leading
+                    # stride, even though its visible shape is always K=2.
+                    # Force a fresh canonical layout so W=16/32/64/128 all
+                    # satisfy the same Dynamo guards (``contiguous()`` alone
+                    # may return the original view when B=1).
+                    chunk_value = value[:, start:stop].clone(
+                        memory_format=torch.contiguous_format)
+                    object.__setattr__(isp, name, chunk_value)
+                word_chunk = slab[:, start:stop, :].clone(
+                    memory_format=torch.contiguous_format)
+                gate_chunk = active[:, start:stop].clone(
+                    memory_format=torch.contiguous_format)
+                concept_chunk, percept_chunk = step(
+                    word_chunk, gate_chunk)
+                for local_p in range(chunk_width):
+                    out_slot[start + local_p] = concept_chunk[:, local_p, :]
+                    if isinstance(ps_out_slot, list):
+                        ps_out_slot[start + local_p] = (
+                            percept_chunk[:, local_p, :])
+                loss_terms.extend(
+                    list(getattr(cs, "_intra_loss_accum", None) or []))
+                loss_weights.extend(list(
+                    getattr(cs, "_intra_loss_weight_accum", None) or []))
+                last_cs = cs.subspace
+        finally:
+            for name, value in full.items():
+                object.__setattr__(isp, name, value)
+            self._per_word_percept_contributions = ps_out_slot
+            self._compiled_word_chunk_replaying = was_replaying
+
+        cs._intra_loss_accum = loss_terms or None
+        cs._intra_loss_weight_accum = loss_weights or None
+        cs._intra_loss_count = len(loss_terms)
+        stm = cs.stm
+        if stm is not None and torch.is_tensor(getattr(stm, "_depth", None)):
+            # One boundary sync, outside every compiled replay.  Snapshot and
+            # the NULL-seal reducer need the current logical width; no word
+            # cell reads this Python mirror in chunk mode.
+            stm._max_depth_host = int(stm._depth.max().item())
+        return last_cs
 
     def _per_word_body_step(self, w, p, gate_b_1, out_slot, active_host=True):
         """One per-word iteration of the static loop (replaces the
@@ -8437,26 +12095,43 @@ class BasicModel(BaseModel):
         gate.
         """
         isp = self.inputSpace
+        ps = self.perceptualSpace
         cs = self.conceptualSpace
         ws = self.wholeSpace
         stm = cs.stm
         word_carrier = isp.subspace
 
-        # Gaussian window + MPHF route — unchanged. ``p`` is the static
-        # loop position; the legacy ``_per_word_cursor - 1`` mirror is
-        # retired with ``next_word()``.
+        # Word-major radix: InputSpace presents this word's discrete local
+        # part state; PartSpace consumes and synthesizes it inside PS.forward.
+        # The sentence loop advances over W words while the PS-local part axis
+        # is reset for each presentation.
+        local_part_ids = (isp.word_part_ids_at(p)
+                          if hasattr(isp, "word_part_ids_at") else None)
+        local_part_mask = (isp.word_part_mask_at(p)
+                           if hasattr(isp, "word_part_mask_at") else None)
+        local_part_offsets = (isp.word_part_offsets_at(p)
+                              if hasattr(isp, "word_part_offsets_at")
+                              else None)
+        word_major = local_part_ids is not None and local_part_mask is not None
+
+        # Gaussian window + MPHF route. ``p`` is the static loop position;
+        # the legacy ``_per_word_cursor - 1`` mirror is retired with
+        # ``next_word()``.
         _full_seq = isp._ar_embedded
         # serialObjectMeta: HARD-MASK-TO-WORD-SPAN — replace the soft gaussian
         # window with the hard same-word window so PS processes the ACTIVE WORD
         # ONLY (the word's block; no slot outside it). Whole-sentence context
         # re-enters via the §6c prelude's gist/intent, not this window. Flag-off
         # keeps the gaussian path byte-identical.
-        if getattr(self, 'serial_object_meta', False):
+        if word_major:
+            _ctx_w = None
+        elif getattr(self, 'serial_object_meta', False):
             _ctx_w = self.word_span_window(
                 _full_seq, p, getattr(isp, '_word_index_N', None))
         else:
             _ctx_w = self.gaussian_window_word(_full_seq, p)
-        if (_ctx_w is not None and torch.is_tensor(_ctx_w)
+        if (not word_major and _ctx_w is not None
+                and torch.is_tensor(_ctx_w)
                 and _ctx_w.dim() == 3
                 and _ctx_w.shape[1] == 1
                 and w is not None and torch.is_tensor(w)
@@ -8471,16 +12146,34 @@ class BasicModel(BaseModel):
 
         word_carrier.set_event(w)
         word_carrier.stem_embedded = True
+        object.__setattr__(word_carrier, "_word_local_parts", word_major)
+        object.__setattr__(word_carrier, "_word_part_ids", local_part_ids)
+        object.__setattr__(word_carrier, "_word_part_mask", local_part_mask)
+        object.__setattr__(word_carrier, "_word_part_offsets", local_part_offsets)
         word_sub = word_carrier
 
+        # The canonical word path commits once at the word boundary. Its
+        # aligned concept option interprets subsymbolicOrder=T as one base
+        # field plus T-1 cumulative folds on EACH tower, all inside this word
+        # iteration. Existing configs default to the learned mixing path.
+        word_commit_mode = bool(
+            getattr(self, 'serial_object_meta', False)
+            and getattr(isp, '_word_last_slot_mask', None) is not None)
+        aligned_fold_binding = bool(
+            word_commit_mode
+            and getattr(self, "concept_binding", "mixing") == "aligned")
+        fold_passes = (
+            tuple(range(int(self.subsymbolicOrder) - 1))
+            if aligned_fold_binding else ())
+
         # Read the cross-iteration C→P / C→S feedback off
-        # ``self._prev_cs_for_ps/ws``. The prelude seeds these to the
+        # ConceptualSpace peer lanes. The prelude seeds these to the
         # empty seeds for iteration 0; the tail of this method switches
         # them to the persistent ``cs._subspaceForPS/WS`` storage that
         # cs.forward mutates in place, so iterations 1+ pick up the
         # latest event without any explicit pointer update.
-        prevCS_forPS = self._prev_cs_for_ps
-        prevCS_forSS = self._prev_cs_for_ss
+        prevCS_forPS = cs._peer_prev_sub
+        prevCS_forSS = cs._peer_prev_sym
         # Snapshot the carriers' event tensors BEFORE cs.forward writes
         # new ones (set_event mutates in place; without snapshots the
         # masked-blend below would compare new-vs-new).
@@ -8498,15 +12191,283 @@ class BasicModel(BaseModel):
         # Stage 1.A substrate refactor: PartSpace.forward is
         # single-arg now (``pi(x) + sigma(x)`` on the same input —
         # no CS-feedback path entering PS at this level).
-        PS_sub = self.perceptualSpace.forward(word_sub)
+        # PS and WS are peers. In debug mode their calls are bracketed by
+        # storage-version guards over CS's prior lanes; neither may commit a
+        # viewed carrier. Production keeps the same zero-copy reads without
+        # Python guard overhead.
+        # Never construct Python view/guard objects inside an AOT word loop.
+        # The flag is frozen at model setup and this branch specializes away
+        # for production; debug runs remain eager by construction.
+        _peer_guard = (bool(getattr(self, "_debug_peer_mutation", False))
+                       and not torch.compiler.is_compiling())
+        if _peer_guard:
+            with guard_peer_views(prevCS_forPS.view(), prevCS_forSS.view()):
+                PS_base = ps.forward(word_sub)
+                WS_base = ws.forward(getattr(self, "_ws_universe", None),
+                                     cs_out=prevCS_forPS.view())
+        else:
+            PS_base = ps.forward(word_sub)
+            WS_base = ws.forward(getattr(self, "_ws_universe", None),
+                                 cs_out=prevCS_forPS)
+        part_folds = None
+        if aligned_fold_binding:
+            part_event = PS_base.materialize()
+            compiled_part_ladder = getattr(
+                self, "_compiled_part_fold_ladder", None)
+            if (compiled_part_ladder is not None
+                    and not torch.compiler.is_compiling()):
+                part_folds = compiled_part_ladder(part_event)
+            else:
+                part_folds = ps.fold_event_ladder(
+                    part_event, fold_passes, strict=True)
+            PS_base.set_event(part_folds[-1])
+            PS_sub = PS_base
+        else:
+            PS_sub = PS_base
+        # Retain one PartSpace result per word so post-loop loss/reverse
+        # readers see a word-aligned slab instead of only the last iteration.
+        if word_major and PS_sub is not None:
+            _ps_event = PS_sub.materialize()
+            _ps_slots = getattr(self, "_per_word_percept_contributions", None)
+            if (torch.is_tensor(_ps_event) and _ps_event.dim() == 3
+                    and int(_ps_event.shape[1]) >= 1
+                    and isinstance(_ps_slots, list)
+                    and 0 <= p < len(_ps_slots)):
+                _ps_slots[p] = torch.where(
+                    gate_b_1, _ps_event[:, 0, :],
+                    torch.zeros_like(_ps_event[:, 0, :]))
         # Universe every pump (the carrier arrives as cs_out feedback);
         # the earlier bootstrap-only law reacted to a misdiagnosed
         # flatline (valid_mask collapse -- exec notes item 36).
-        WS_sub = ws.forward(getattr(self, "_ws_universe", None),
-                            cs_out=prevCS_forSS)
-        object.__setattr__(cs, "_serial_row_gate", gate_b_1)
-        CS_sub = cs.forward(PS_sub, WS_sub)
-        object.__setattr__(cs, "_serial_row_gate", None)
+        # Preserve H0 before the cumulative pi ladder replaces WS_base's live
+        # event with H3. H0 is the whole-side peer of the parameter-free P0
+        # word union and contributes its own bounded RMS evidence to CS.
+        whole_base_event = (
+            WS_base.materialize() if aligned_fold_binding else None)
+        whole_folds = None
+        if aligned_fold_binding:
+            whole_event = WS_base.materialize()
+            compiled_whole_ladder = getattr(
+                self, "_compiled_whole_fold_ladder", None)
+            if (compiled_whole_ladder is not None
+                    and not torch.compiler.is_compiling()):
+                whole_folds = compiled_whole_ladder(whole_event)
+            else:
+                whole_folds = ws.fold_event_ladder(
+                    whole_event, fold_passes, strict=True)
+            WS_base.set_event(whole_folds[-1])
+            WS_sub = WS_base
+        else:
+            WS_sub = WS_base
+        # ``serialObjectMeta`` makes the grammar loop word-grained even when
+        # the radix store still spells an unfamiliar word with several
+        # percepts.  Predict/perceive only at the word's final percept: the
+        # hard ``word_span_window`` above has already assembled the complete
+        # word event by then.  Earlier percepts are representation-building
+        # steps, not extra language-model targets.
+        #
+        # The legacy flag-off path remains slot-grained.  In word mode the
+        # outer block below owns the single physical STM push (it also owns
+        # capacity back-pressure and grammar dispatch), so ConceptualSpace
+        # computes/stashes the prediction but defers its push to that block.
+        commit_b_1 = (
+            isp._word_last_slot_mask[:, p:p + 1]
+            if word_commit_mode else gate_b_1)
+
+        decoded_fold_sources = None
+        concept_orders_full = None
+        prior_symbol_source = None
+        prior_symbol_validity = None
+        word_concept_row = None
+        word_concept_activation = None
+        base_part_count = 0
+        base_whole_count = 0
+        if aligned_fold_binding:
+            # Each tower completes its native recursion first. Only the scalar
+            # activation normalized by that source crosses into concept-index
+            # space; this normalization is not another learned sigma/pi fold.
+            # The indexed CS dictionary read below is the dimensional increase.
+            # There is no PS->WS edge and no coordinate adapter owned by CS.
+            n_locations = int(cs.outputShape[0])
+
+            def _fit_locations(event, label):
+                if not torch.is_tensor(event) or event.dim() != 3:
+                    raise RuntimeError(
+                        f"{label} native fold must be a [B,N,D] tensor")
+                have = int(event.shape[1])
+                if have > n_locations:
+                    raise RuntimeError(
+                        f"{label} native fold has {have} locations but CS "
+                        f"accepts {n_locations}; locations cannot be truncated")
+                if have == n_locations:
+                    return event
+                return torch.cat([
+                    event,
+                    event.new_zeros(
+                        int(event.shape[0]), n_locations - have,
+                        int(event.shape[2])),
+                ], dim=1)
+
+            # P0 is the complete coordinatewise union of this word's residual
+            # parts. It is a distinct, parameter-free PS contribution: its
+            # activation is RMS(P0), i.e. RMS(union), before any learned sigma
+            # order raise. Keep P1..P3 as independent contributions as well.
+            # The word-local carrier is mutated to P0 inside PS.forward;
+            # PS_base is already the learned/quantized tower result and must
+            # not be substituted for this base state.
+            base_parts = ()
+            if word_major:
+                base_event = word_sub.materialize()
+                if torch.is_tensor(base_event):
+                    base_parts = (_fit_locations(base_event, "PS base P0"),)
+            base_part_count = len(base_parts)
+            native_parts = tuple(
+                _fit_locations(event, f"PS fold {i + 1}")
+                for i, event in enumerate(part_folds))
+            base_wholes = ()
+            if torch.is_tensor(whole_base_event):
+                base_wholes = (_fit_locations(whole_base_event, "WS base H0"),)
+            base_whole_count = len(base_wholes)
+            native_wholes = tuple(
+                _fit_locations(event, f"WS fold {i + 1}")
+                for i, event in enumerate(whole_folds))
+            native_part_sources = base_parts + native_parts
+            native_whole_sources = base_wholes + native_wholes
+            native_sources = native_part_sources + native_whole_sources
+            if not native_sources:
+                raise RuntimeError(
+                    "aligned concept activation requires native fold sources")
+
+            row_b = (isp.word_concept_rows_at(p)
+                     if hasattr(isp, "word_concept_rows_at") else None)
+            order_b = (isp.word_concept_orders_at(p)
+                       if hasattr(isp, "word_concept_orders_at") else None)
+            batch = int(native_sources[0].shape[0])
+            if row_b is None:
+                row_b = torch.full(
+                    (batch,), -1, dtype=torch.long,
+                    device=native_sources[0].device)
+            else:
+                row_b = row_b.to(
+                    device=native_sources[0].device, dtype=torch.long)
+            if order_b is None:
+                order_b = torch.full_like(row_b, -1)
+            else:
+                order_b = order_b.to(
+                    device=native_sources[0].device, dtype=torch.long)
+            active_rows = gate_b_1.reshape(-1).to(
+                device=row_b.device, dtype=torch.bool)
+            row_b = torch.where(active_rows, row_b,
+                                torch.full_like(row_b, -1))
+            order_b = torch.where(active_rows, order_b,
+                                  torch.full_like(order_b, -1))
+            concept_rows = row_b.unsqueeze(1).expand(-1, n_locations)
+            concept_orders_full = order_b.unsqueeze(1).expand(
+                -1, n_locations)
+
+            part_what = int(ps.nWhat)
+            whole_what = int(ws.nWhat)
+            activations = torch.stack([
+                ps.native_fold_activation(event, part_what)
+                for event in native_part_sources
+            ] + [
+                ws.native_fold_activation(event, whole_what)
+                for event in native_whole_sources
+            ], dim=1)
+            source_bands = torch.stack([
+                event[..., part_what:] for event in native_part_sources
+            ] + [
+                event[..., whole_what:] for event in native_whole_sources
+            ], dim=1)
+            decoded_fold_sources = cs.decode_sparse_concept_rows(
+                concept_rows, activations, source_bands,
+                staged_rows=getattr(
+                    isp, "_ar_concept_lookup_rows", None),
+                staged_atoms=getattr(
+                    isp, "_ar_concept_lookup_atoms", None))
+
+            # Canonical SS peer: read the complete *prior* STM slab before
+            # this word enters CS. Slot i maps directly to location i. The
+            # indexed CS lookup is SS's sigma fold / dimensional increase;
+            # there is no inventory scan and no current-tick CS->SS->CS edge.
+            prior_symbol_source, prior_symbol_validity = (
+                cs.decode_prior_stm_peer(
+                    stm, active_rows,
+                    staged_rows=getattr(
+                        isp, "_ar_concept_lookup_rows", None),
+                    staged_atoms=getattr(
+                        isp, "_ar_concept_lookup_atoms", None)))
+
+            # BasicModel contributes P0..P3 and H0..H3. General aligned
+            # fixtures retain their configured fold count; SS increments the
+            # denominator only at locations where it exists.
+            native_count = int(decoded_fold_sources.shape[1])
+            denominator = (
+                torch.full_like(
+                    prior_symbol_validity, float(native_count),
+                    dtype=decoded_fold_sources.dtype)
+                + prior_symbol_validity.to(decoded_fold_sources.dtype))
+            concept_event = (
+                decoded_fold_sources.sum(dim=1) + prior_symbol_source
+            ) / denominator.unsqueeze(-1)
+            word_concept_row = row_b
+            word_concept_activation = (
+                activations[:, :, 0].sum(dim=1) / denominator[:, 0])
+            word_concept_activation = torch.where(
+                word_concept_row >= 0, word_concept_activation,
+                torch.zeros_like(word_concept_activation))
+            cs.subspace.copy_context(PS_sub)
+            cs.subspace.set_event(concept_event)
+            cs_input = cs.subspace
+            cs_symbol_input = None
+        else:
+            cs_input = PS_sub
+            cs_symbol_input = WS_sub
+
+        object.__setattr__(cs, "_serial_row_gate", commit_b_1)
+        object.__setattr__(cs, "_serial_defer_push", word_commit_mode)
+        try:
+            CS_sub = cs.forward(cs_input, cs_symbol_input)
+        finally:
+            object.__setattr__(cs, "_serial_row_gate", None)
+            object.__setattr__(cs, "_serial_defer_push", False)
+
+        # The live PS and WS fields meet here, inside the current word
+        # iteration. CS.forward above is explicitly in defer mode, so field
+        # positions are not mistaken for separate workspace pushes.
+        #
+        # ``aligned``: preserve location indices and aggregate P0..P3 plus
+        # H0..H3 (BasicModel T=4 -> eight sources). ``mixing`` retains the
+        # historical learned matrix.
+        if word_commit_mode and CS_sub is not None:
+            if aligned_fold_binding:
+                n_part = len(part_folds)
+                cs.bind_fold_streams(
+                    tuple(decoded_fold_sources[:, base_part_count + i]
+                          for i in range(n_part)),
+                    tuple(decoded_fold_sources[
+                        :, (base_part_count + n_part
+                            + base_whole_count + i)]
+                          for i in range(len(whole_folds))),
+                    CS_sub,
+                    part_passes=fold_passes,
+                    whole_passes=fold_passes,
+                    concept_orders=concept_orders_full,
+                    # ConceptualSpace.forward has already applied and consumed
+                    # any inter-sentence/chat ``_c_prior``.  This second call is
+                    # provenance attachment only; replacing the target event
+                    # here would silently erase that prior before the STM push.
+                    preserve_target_event=True,
+                    symbol_source=prior_symbol_source,
+                    symbol_validity=prior_symbol_validity)
+                support = getattr(CS_sub, "_fold_support", None)
+                object.__setattr__(self, "_last_concept_fold_support", support)
+                # META minting is intentionally eager at the sentence
+                # boundary. Stage the tensor-free ordered support on its WS
+                # owner so those durable concepts retain the same paths.
+                object.__setattr__(ws, "_active_fold_support", support)
+            else:
+                cs.bind_streams(PS_sub, WS_sub, CS_sub)
 
         # Masked-blend the persistent CS carriers' new events with the
         # snapshots so padding columns preserve the recurrent state
@@ -8521,11 +12482,11 @@ class BasicModel(BaseModel):
 
         # Switch the prev pointer to the persistent CS storage so the
         # next iteration's first reads see CS.forward's in-place
-        # writes. After this line ``self._prev_cs_for_ps`` aliases
+        # writes. After this line ConceptualSpace publishes its CSsub lane
         # ``cs._subspaceForPS``; subsequent iterations read the same
         # object whose ``_event`` cs.forward keeps fresh.
-        self._prev_cs_for_ps = cs._subspaceForPS
-        self._prev_cs_for_ss = cs._subspaceForWS
+        object.__setattr__(cs, "_peer_prev_sub", cs.CSsub)
+        object.__setattr__(cs, "_peer_prev_sym", cs.CSsym)
 
         # Stage 1.F substrate refactor (doc/plans/2026-05-26-two-loop-
         # pi-sigma-substrate.md): the per-stage ``_cs_cache`` /
@@ -8569,15 +12530,13 @@ class BasicModel(BaseModel):
                     # trigger an early (but safe) reduce in radix multi-slot
                     # words; raise stmCapacity in the serial config if a long
                     # sentence would trip it.
-                    if (getattr(self, 'serial_object_meta', False)
-                            and getattr(isp, '_word_last_slot_mask', None)
-                            is not None):
-                        commit_b_1 = isp._word_last_slot_mask[:, p:p + 1]
-                    else:
-                        commit_b_1 = gate_b_1
-                    # Capacity back-pressure check fires here; the host
-                    # mirror is also advanced per real push so the
-                    # check is accurate inside the loop.
+                    # ``commit_b_1`` was resolved before CS.forward so the
+                    # predictor target and the physical STM commit share the
+                    # exact same word boundary.
+                    # Capacity demand fires here, immediately before a word
+                    # that would overflow a full row.  It may only select a
+                    # binary grammatical operator; silently rolling off the
+                    # oldest constituent would hide a failed parse.
                     # ``push_step_masked`` is gated on ``active_host``
                     # so padding iterations never index past depth and
                     # never trip a capacity OOB.
@@ -8596,8 +12555,8 @@ class BasicModel(BaseModel):
                     # Relative protection (depth-3 campaign, 2026-07-13 +
                     # review finding same day): computed ONCE per word from
                     # the rules the PREVIOUS fires populated, and threaded
-                    # into the back-pressure fold AND the two opportunistic
-                    # reduces below — the batch-global _max_depth_host mirror
+                    # into the capacity demand and the online pressure
+                    # decision below — the batch-global _max_depth_host mirror
                     # otherwise force-folds a finished relative row below its
                     # protected depth-3 end-state. Eager-only, like the
                     # per-word fire that feeds it (compile has no per-word
@@ -8616,10 +12575,88 @@ class BasicModel(BaseModel):
                                        device=_rel.device),
                             torch.ones(_Bp, dtype=stm._depth.dtype,
                                        device=_rel.device))
-                    if stm._max_depth_host >= stm.capacity:
-                        self._stm_bounded_reduce_step(protect_depth=_protect)
-                        stm._max_depth_host = stm.capacity - 1
-                    stm.push_step_masked(idea_bd, commit_b_1)
+                    # Predict from the retained reduced context against the
+                    # freshly bound word concept. Its actual subsymbolic order
+                    # is carried explicitly from the aligned fold support;
+                    # grammatical depth starts separately at zero.
+                    _compiled_recurrent = bool(
+                        self._compiled_word_chunk_replaying
+                        or (torch.compiler.is_compiling()
+                            and getattr(self,
+                                        "_compiled_word_loop_fullgraph",
+                                        False)))
+                    if _compiled_recurrent:
+                        cs._stm_predict_then_perceive_serial_fixed(
+                            idea_bd, row_gate=commit_b_1)
+                    else:
+                        cs._stm_predict_then_perceive_serial(
+                            idea_bd, row_gate=commit_b_1)
+                    _concept_orders = getattr(
+                        CS_sub, "_concept_orders", None)
+                    if (torch.is_tensor(_concept_orders)
+                            and _concept_orders.dim() == 2
+                            and int(_concept_orders.shape[0])
+                            == int(idea_bd.shape[0])):
+                        _word_concept_order = _concept_orders[:, 0].to(
+                            device=idea_bd.device, dtype=torch.long)
+                    else:
+                        _word_concept_order = torch.full(
+                            (int(idea_bd.shape[0]),), -1,
+                            dtype=torch.long, device=idea_bd.device)
+                    _word_grammar_order = torch.zeros_like(
+                        _word_concept_order)
+                    _pressure_controller = bool(
+                        getattr(self, "serial_object_meta", False)
+                        and getattr(self, "serial_word_capacity", None)
+                        is not None)
+                    _binary_used = torch.zeros(
+                        int(idea_bd.shape[0]), dtype=torch.bool,
+                        device=idea_bd.device)
+                    _legacy_pre_binary = False
+                    if _compiled_recurrent:
+                        # A captured recurrence cannot branch on the Python
+                        # high-water mirror.  Compute the ordinary demand
+                        # gate from the live tensor depth; rows below capacity
+                        # are exact masked no-ops.  The post-insert reducer
+                        # below still receives ``~_binary_used``, preserving
+                        # the one-binary-op budget when a demand fold did fire.
+                        _full_active = (
+                            (stm._depth >= int(stm.capacity))
+                            & commit_b_1.reshape(-1).to(
+                                device=stm._depth.device,
+                                dtype=torch.bool))
+                        _demand_reduced = self._stm_bounded_reduce_step(
+                            protect_depth=_protect,
+                            row_gate=_full_active,
+                            demand=True)
+                        _binary_used = _binary_used | _demand_reduced
+                    elif stm._max_depth_host >= stm.capacity:
+                        if _pressure_controller:
+                            _full_active = (
+                                (stm._depth >= int(stm.capacity))
+                                & commit_b_1.reshape(-1).to(
+                                    device=stm._depth.device,
+                                    dtype=torch.bool))
+                            _demand_reduced = self._stm_bounded_reduce_step(
+                                protect_depth=_protect,
+                                row_gate=_full_active,
+                                demand=True)
+                            _binary_used = _binary_used | _demand_reduced
+                        else:
+                            # Legacy serial configurations retain their
+                            # unconditional structural back-pressure fold.
+                            _demand_reduced = self._stm_bounded_reduce_step(
+                                protect_depth=_protect,
+                                gate_tau=self.stm_reduce_tau)
+                            _binary_used = _binary_used | _demand_reduced
+                            stm._max_depth_host = stm.capacity - 1
+                            _legacy_pre_binary = True
+                    stm.push_step_masked(
+                        idea_bd, commit_b_1,
+                        orders=_word_concept_order,
+                        grammar_orders=_word_grammar_order,
+                        concept_row=word_concept_row,
+                        concept_activation=word_concept_activation)
                     # Slot-kind provenance (open-fronts Task B; dilution fix
                     # same day): a push is a WORD only when PS's word grid
                     # says column p carries a real word (pad groups are -1)
@@ -8638,20 +12675,22 @@ class BasicModel(BaseModel):
                         stm.note_push_masked(
                             [g and not w for g, w in zip(gate_rows, wcol)],
                             "other")
-                    stm._max_depth_host = stm._max_depth_host + 1
+                    if not _compiled_recurrent:
+                        stm._max_depth_host = stm._max_depth_host + 1
                     # Per-word router fire (Alec 2026-07-13): parse as the
                     # word arrives — the STM cannot hold the sentence
                     # until a boundary-only parse. Eager-only.
                     if not torch.compiler.is_compiling():
                         self._chart_compose_per_word()
-                    # Normal grammatical parse DURING reading (2b-2, Alec
-                    # 2026-07-12): two scored opportunistic reduce steps per
-                    # word -- the STM stack IS the syntactic loop; the
-                    # SymbolicLoop stays the activation processor. Masked
-                    # no-ops where the DP's reduce marginal stays under
-                    # <stmReduceTau>; structural no-op without an arity-2
-                    # grammar. The host depth mirror keeps its high-water
-                    # mark (a conservative upper bound, as documented above).
+                    # Normal grammatical parse DURING reading: one controller
+                    # decision follows each word insertion. At low occupancy the
+                    # rule-count-neutral grammar confidence must clear
+                    # <stmReduceTau> by itself.  The threshold falls as the
+                    # configured STM fills and becomes a hard demand at
+                    # capacity.  This replaces the arbitrary two reduction
+                    # attempts per word, which collapsed random adjacent pairs
+                    # simply because two binary operators gave the summed DP
+                    # marginal a 2/3 prior.
                     # Relative protection (depth-3 campaign, 2026-07-13):
                     # the per-word fire above just populated THIS sentence's
                     # rules, so the mid-read folds honor the same depth-3
@@ -8671,12 +12710,29 @@ class BasicModel(BaseModel):
                                        device=_rel.device),
                             torch.ones(_Bp, dtype=stm._depth.dtype,
                                        device=_rel.device))
-                    self._stm_bounded_reduce_step(
-                        protect_depth=_protect,
-                        gate_tau=self.stm_reduce_tau)
-                    self._stm_bounded_reduce_step(
-                        protect_depth=_protect,
-                        gate_tau=self.stm_reduce_tau)
+                    # The word budget is strict: at most one binary grammar
+                    # application, even when a capacity-demand reduction was
+                    # needed before insertion. One unary decision may then apply
+                    # to the surviving top concept. This admits the useful
+                    # binary+unary pair without an unbounded per-word cascade.
+                    _post_binary_gate = (
+                        commit_b_1.reshape(-1).to(
+                            device=_binary_used.device, dtype=torch.bool)
+                        & ~_binary_used)
+                    if _pressure_controller:
+                        self._stm_bounded_reduce_step(
+                            protect_depth=_protect,
+                            gate_tau=self.stm_reduce_tau,
+                            row_gate=_post_binary_gate,
+                            occupancy_pressure=True)
+                    else:
+                        # Older serial configurations share the same bounded
+                        # performance contract: one binary opportunity.
+                        if not _legacy_pre_binary:
+                            self._stm_bounded_reduce_step(
+                                protect_depth=_protect,
+                                gate_tau=self.stm_reduce_tau)
+                    self._stm_bounded_unary_step(row_gate=commit_b_1)
                 # Masked contribution: at inactive batch rows / padding
                 # columns the contribution is zero so it doesn't push
                 # bogus state into downstream concept reads. ``out_slot``
@@ -8724,17 +12780,16 @@ class BasicModel(BaseModel):
         per-word loop -- **ONE forward = ONE sentence = ONE IR loss =
         ONE backward**:
 
-          ``while (w := inputSpace.next_word()) is not None:``
+          ``inputSpace.run_word_loop(per_word_cell, W)``:
             * the ``[B,1,D]`` ground-truth word ``w`` is run through the
               SAME per-stage PS->CS->WS recurrent cell as the whole-slab
               path (``subsymbolicOrder`` passes, with the C->P / C->S
               feedback identical to ``_forward_body``), but with a
               single-word ``in_sub`` instead of the whole slab;
             * the resulting per-word terminal concept (the last pass's
-              CS event, ``[B,1,D_c]``) is SHIFTed onto
-              ``conceptualSpace.stm`` via ``push_step`` (the existing
-              vectorised single-step push);
-          the NULL seal (``next_word`` returns ``None``) ends the loop.
+              CS event, ``[B,1,D_c]``) is inserted into
+              ``conceptualSpace.stm`` via the vectorised masked push;
+          the statically masked W-position loop ends the sentence traversal.
 
         Then the accumulated STM feeds the **EXISTING** compose-to-S
         chart (``_chart_compose_at_C``) and the method returns the
@@ -8765,7 +12820,7 @@ class BasicModel(BaseModel):
         """
         # Prelude: STM resize+clear, MPHF pre-warm, SymbolSubSpace
         # per-sentence invariants + CS-feedback pre-seed
-        # (``self._prev_cs_for_ps/ws``), fresh _cs/_ss caches. Hoisted
+        # (ConceptualSpace peer lanes), fresh _cs/_ss caches. Hoisted
         # into ``_per_word_prelude`` so the capture-gate test can
         # replay the same boundary-side contract. Now also: allocate /
         # zero the preallocated ``_per_word_concept_buf`` [B, N, D_c]
@@ -8819,7 +12874,7 @@ class BasicModel(BaseModel):
         # NOTE: cs/ws handles, prevCS_forPS/WS empty-seed init, MPHF
         # pre-warm, recur_pass reset, and STM resize+clear all folded
         # into ``_per_word_prelude`` (called above). The captured body
-        # reads ``self._prev_cs_for_ps/ws`` uniformly (prelude seeds
+        # reads ConceptualSpace peer lanes uniformly (prelude seeds
         # them to the empty seeds; the body switches to
         # ``cs._subspaceForPS/WS`` once cs.forward has run for the
         # first time) -- no per-iteration None branch.
@@ -8850,10 +12905,23 @@ class BasicModel(BaseModel):
                    else (int(N_target) if N_target is not None
                          else int(self.inputSpace.outputShape[0])))
         word_active = self.inputSpace._word_active_mask
-        K_host = int(self.inputSpace._valid_len_host)
-        N_loop = min(N_words, K_host)
+        _compiled_static_loop = bool(
+            torch.compiler.is_compiling()
+            and getattr(self, "_compiled_word_loop_fullgraph", False))
+        if _compiled_static_loop:
+            # The tensor word mask already makes padding columns exact
+            # no-ops.  Do not read the eager host summary here: every distinct
+            # sentence length otherwise becomes a Python guard and requests a
+            # new W-loop compilation despite the static W recurrence.
+            N_loop = N_words
+        else:
+            K_host = int(self.inputSpace._valid_len_host)
+            N_loop = min(N_words, K_host)
         out_slot = [None] * N_words
         self._per_word_contributions = out_slot
+        _word_major = getattr(self.inputSpace, "_ar_word_part_ids", None)
+        self._per_word_percept_contributions = (
+            [None] * N_words if torch.is_tensor(_word_major) else None)
 
         # Skip-padding (eager only): run the body only up to the batch's
         # LONGEST sentence (``N_loop == K_host`` is the last column with any
@@ -8907,7 +12975,7 @@ class BasicModel(BaseModel):
                     depths=stm._depth.detach().to("cpu").tolist(),
                     kind="other")
             # SENTENCE-scoped reverse-reduce trace (open-fronts Task B,
-            # second pass): the 2b-2 opportunistic reduces fold most of
+            # second pass): online grammatical reductions fold most of
             # the sentence DURING reading, so a sweep-local trace sees
             # only composite survivors and the un-fold cannot reach the
             # per-word operands. Reset HERE (sentence start) and mark the
@@ -8915,24 +12983,23 @@ class BasicModel(BaseModel):
             # walk then unwinds ALL of this sentence's folds.
             object.__setattr__(self, "_stm_reduce_op_trace", [])
             object.__setattr__(self, "_stm_trace_sentence_scope", True)
-        for p in range(_n_trips):
-            w = self.inputSpace.word_at(p)
-            if w is None:
-                # ``word_at`` returns None only past the padded slab width
-                # (``p >= _ar_embedded_N.shape[1] == N_words``); ``range(
-                # N_words)`` never reaches that, so this is a defensive
-                # fixed-bound guard, not a data-dependent (churning) break on
-                # the sentence length.
-                break
-            if word_active is not None:
-                gate_b_1 = word_active[:, p:p + 1]
-            else:
-                gate_b_1 = torch.ones(
-                    w.shape[0], 1, dtype=torch.bool, device=w.device)
-            CS_sub, idea_bd = self._per_word_body_step(
-                w, p, gate_b_1, out_slot, active_host=True)
-            if CS_sub is not None:
-                last_cs = CS_sub
+        _chunk_replayed = False
+        if (self._compiled_word_chunk_active
+                and self._compiled_word_chunk_step is not None
+                and torch.is_grad_enabled()):
+            # The eager outer forward would otherwise choose the active-prefix
+            # trip count.  Replaying the static even bucket keeps K=2 shapes
+            # stable; inactive tail columns remain exact masked no-ops.
+            _n_trips = N_words
+            last_cs = self._run_aligned_word_chunk_loop(
+                out_slot, _n_trips)
+            _chunk_replayed = last_cs is not None
+        else:
+            last_cs = None
+        if last_cs is None:
+            last_cs = self.inputSpace.run_word_loop(
+                self._per_word_body_step, out_slot, _n_trips,
+                active_host=True)
         if protocol_on:
             # Sentence end: un-stamp the per-pump mode (the §6d law
             # falls back to the legacy read between sentences).
@@ -8958,11 +13025,15 @@ class BasicModel(BaseModel):
         # advances. Pins: test_bounded_stm_fold::test_cap_equivalence (the
         # high-water mark survives) + test_per_word_ss_padding_noop (the
         # per-forward advance == active-prefix count, not N).
-        if stm is not None:
+        if (stm is not None and not _chunk_replayed
+                and not _compiled_static_loop):
             # Only the columns that ACTUALLY ran advanced the mirror, so the
             # over-count is ``_n_trips - N_loop`` (== ``N_words - N_loop`` on
             # the static/compiled path; 0 on the eager skip-padding path, which
-            # never ran the padding columns).
+            # never ran the padding columns).  The reusable chunk path never
+            # increments this host mirror inside a padded word cell and repins
+            # it from the live tensor depth once after replay, so applying the
+            # legacy subtraction there would double-correct short sentences.
             _pad_overcount = max(0, _n_trips - N_loop)
             if _pad_overcount:
                 stm._max_depth_host = max(
@@ -9024,6 +13095,24 @@ class BasicModel(BaseModel):
             cs_sub.copy_context(last_cs)
             cs_sub.set_event(stacked)
             last_cs = cs_sub
+        # Restore a word-aligned PartSpace slab for the existing P-space IR /
+        # reverse consumers.  During the loop PartSpace correctly held only
+        # the active word; without this stack, those readers would see the
+        # final word repeated as the whole sentence representation.
+        ps_word_contribs = self._per_word_percept_contributions
+        if isinstance(ps_word_contribs, list):
+            ps_real = next(
+                (c for c in ps_word_contribs if c is not None), None)
+            if ps_real is not None:
+                ps_zero = torch.zeros_like(ps_real)
+                ps_stacked = torch.stack([
+                    c if c is not None else ps_zero
+                    for c in ps_word_contribs
+                ], dim=1)
+                self.perceptualSpace.subspace.set_event(ps_stacked)
+                object.__setattr__(
+                    self.perceptualSpace, "_word_aligned_output", ps_stacked)
+        self._per_word_percept_contributions = None
         # S2 operand PROVENANCE (serial plan Task 2, 2026-07-05): stash the
         # serial derivation's LEAVES -- the per-word PERCEPT events the
         # bottom-up parse started from (``_ar_embedded_N``, ``[B, N, D]``,
@@ -9122,6 +13211,15 @@ class BasicModel(BaseModel):
                 and ltm_store is not None)
             discourse_live = (discourse is not None and hasattr(
                 discourse, 'observe_stm_end_state'))
+            if ((discourse_live or ltm_consolidation_on)
+                    and torch.compiler.is_compiling()):
+                # A compiled graph may only park fixed tensors. The eager step
+                # teardown reconstructs ragged rows and performs both sinks.
+                object.__setattr__(
+                    self, "_pending_stm_end_state",
+                    (cs_buf.detach(), rel_mask.detach()))
+                discourse_live = False
+                ltm_consolidation_on = False
             if discourse_live or ltm_consolidation_on:
                 B = int(cs_buf.shape[0])
                 cap = int(cs_buf.shape[1])
@@ -9250,7 +13348,7 @@ class BasicModel(BaseModel):
         # "[1016] at version 1" backward crash). The per-word fire exists
         # for the RULE BOOKKEEPING (current_rules); the boundary fire
         # keeps the gradient role.
-        self.symbolSpace.forward(snap.detach().clone())
+        self.languageSpace.compose(snap.detach().clone())
 
     def _chart_compose_at_C(self, stage_idx=0):
         """Fire the signal router at C-space_role over
@@ -9292,9 +13390,10 @@ class BasicModel(BaseModel):
         snap = self.conceptualSpace.stm.snapshot()
         if snap is None:
             return
-        # CS couples to SymbolSpace only via forward/reverse (the dispatch +
-        # eager-island handling now live on SymbolSpace; 2026-06-21 refactor).
-        self.symbolSpace.forward(snap)
+        # LanguageSpace schedules the existing SymbolSpace-owned parser and
+        # returns its reduction plan. CS remains the only owner that commits
+        # any conceptual/STM mutation from that plan.
+        self.languageSpace.compose(snap)
 
     def _reverse_seed_snapshot(self, seed):
         """Return a ``[B, N, D]`` idea snapshot from reverse's seed, if any."""
@@ -11219,8 +15318,21 @@ class BasicModel(BaseModel):
                 B = 1
                 device = TheDevice.get()
         else:
-            B = 1
-            device = TheDevice.get()
+            # Complete MPS W-loop callables deliberately receive no raw
+            # lexer tensor: that surface has already been staged eagerly and
+            # its varying byte extent must not become a Dynamo guard.  Recover
+            # the true batch/device from the staged carrier instead of
+            # assuming B=1, so the boundary remains correct for configured
+            # microbatches other than the current default.
+            _staged_ev = (
+                self._staged_in_sub.materialize()
+                if self._staged_in_sub is not None else None)
+            if torch.is_tensor(_staged_ev):
+                B = int(_staged_ev.shape[0])
+                device = _staged_ev.device
+            else:
+                B = 1
+                device = TheDevice.get()
         self.symbolic_state = self.wholeSpace.empty_state(batch=B).to(device)
 
         # Inter-sentence prior (read-only at forward time; the actual
@@ -11926,15 +16038,36 @@ class ModelFactory:
                 return prev_count
             return prev_count if raw == 0 else raw
 
+        # Aligned binding uses ConceptualSpace's concept-reference inventory.
+        # WholeSpace.nVectors is an independent upstream property inventory;
+        # live CS/WS slot counts are separate geometry as well.
+        if str(arch.get("conceptBinding", "mixing")).strip().lower() == "aligned":
+            try:
+                _cs_codes = int(gsp(cfg, "ConceptualSpace", "nVectors"))
+                try:
+                    _cs_active = int(gsp(
+                        cfg, "ConceptualSpace", "activeVectors"))
+                except KeyError:
+                    _cs_active = _cs_codes
+                if not (0 < _cs_active <= _cs_codes):
+                    errors.append(
+                        "ConceptualSpace.activeVectors must be positive and "
+                        f"no larger than its nVectors; got active={_cs_active}, "
+                        f"capacity={_cs_codes}")
+            except (KeyError, TypeError, ValueError):
+                errors.append(
+                    "aligned binding requires explicit positive nVectors in "
+                    "ConceptualSpace")
+
         from architecture import canonical_shape as _cshape
         input_dim = _resolve_dim("InputSpace", 1)
         percept_dim = _resolve_dim("PartSpace", input_dim)
         concept_dim = _resolve_dim("ConceptualSpace", percept_dim)
         # 2026-06-06 uniform-band convention: every space_role carries the same
-        # (nWhere, nWhen) band, so nDim = nWhat + band uniformly. The
-        # CS->WS handoff is now an identity event-to-event chain (no
-        # demux subtraction); WS inherits the CS event width when its
-        # own <nDim> is unset.
+        # (nWhere, nWhen) band, so nDim = nWhat + band uniformly. An omitted WS
+        # width still inherits for legacy configs; canonical serialObjectMeta
+        # sets the native WS property width explicitly because WS is a peer,
+        # not a downstream copy of CS.
         symbol_dim = _resolve_dim("WholeSpace", concept_dim)
 
         # Bivector / projection configs let ConceptualSpace output a
@@ -11950,10 +16083,9 @@ class ModelFactory:
         effective_concept_dim = _cs_event - _cs_band          # CS nWhat
         symbol_nwhat = symbol_dim - _ws_band                  # WS nWhat
 
-        # WholeSpace owns no SigmaLayer/PiLayer; the C->S transform
-        # was previously a learned ``SigmaLayer(concept_dim, symbol_dim)``
-        # inside WS. With WS.sigma retired, the path is dimensionally a
-        # pass-through and the configured dims must match.
+        # WholeSpace owns no legacy C->S width-changing bridge. Parallel legacy
+        # configurations that treat WS as a pass-through still require equal
+        # widths; the serial peer architecture below does not.
         #
         # Skip only the explicit ``passthrough`` bypass mode. The CS->WS
         # dimensional pass-through (WS owns no Sigma) is real for both the
@@ -11966,13 +16098,11 @@ class ModelFactory:
         # "6+2+2" band subtraction would otherwise drive its CS content
         # negative and trip this check spuriously.
         # dimensional-governance (doc/specs/2026-06-05-dimensional-
-        # governance.md sec.4/sec.6): the CS->WS handoff is a dimensional
-        # pass-through ONLY when WS has no width-changing bridge. In SERIAL
-        # mode the bounded-STM grammar fold bridges CS<->WS (the symbol is a
-        # small code reconstituted through the fold, not a pass-through of
-        # the deep CS idea), so ``symbol_dim == concept_dim`` is RELAXED for
-        # serial configs -- the fold reconciles the widths. Parallel configs
-        # (square Pi/Sigma over the constant slab) still require the match.
+        # governance.md sec.4/sec.6): SERIAL mode treats WS as an independent
+        # native-width property tower whose sparse codebook activation enters
+        # CS at conceptual width. Therefore ``symbol_dim == concept_dim`` is
+        # relaxed for serial configs. Parallel legacy configs (square Pi/Sigma
+        # over the constant slab) still require the pass-through match.
         _serial_raw = arch.get("serial", None)
         if _serial_raw is None:
             try:
@@ -11986,13 +16116,10 @@ class ModelFactory:
             _ws_fold_bridged = (
                 str(_serial_raw).strip().lower()
                 in ("true", "1", "yes", "on"))
-        # The check is a PASS-THROUGH assumption: it only holds when WS keeps
-        # the CS-idea width on its output. When WS RESHAPES the deep CS idea
-        # into wide symbols (nInputDim != nOutputDim, e.g. [8,1024] -> [1024,8]
-        # with a small symbol code on the output), the CS->WS handoff matches
-        # on the INPUT side (CS.nOutputDim == WS.nInputDim) and the symbol
-        # width is intentionally different -- so the pass-through equality is
-        # relaxed (handoff-consistency, 2026-06-06).
+        # This remains only a legacy PASS-THROUGH assumption. An explicit
+        # nInputDim != nOutputDim likewise says WS's recurrent input and native
+        # peer output are distinct interfaces, so output-width equality with
+        # CS must not be imposed.
         def _ws_dim(key, fallback):
             try:
                 v = int(gsp(cfg, "WholeSpace", key))
@@ -12024,14 +16151,14 @@ class ModelFactory:
                 f"<ConceptualSpace><nDim>."
             )
 
-        # ---- Flat-slab invariant ------------------------------------
+        # ---- Concept-activation boundary ----------------------------
         # Stage 1.D refactor (doc/plans/2026-05-26-two-loop-pi-sigma-
-        # substrate.md): IS, PS, CS must carry the same FLAT slab width
-        # (nOutput * effective_out_dim) so the IS->PS->CS handoff is
-        # a pure reshape, not a re-dimensioning. The lexicon vector
-        # carried at PS is CS-space-dimensioned -- the flat-slab equality
-        # is the precondition for the WS.codebook paired-rows contract
-        # (the orth row is a copy of PS's per-word vector, sized to CS).
+        # substrate.md): legacy PS->CS tensor handoffs require equal flat
+        # content slabs (nOutput * content width). The canonical aligned
+        # serial-word architecture has a different boundary: PS, WS, and SS
+        # remain independent peers, and each source's sparse sigma/codebook
+        # activation reads a conceptual-width row before CS. Thus CS receives
+        # conceptual-width events and performs no feature-width conversion.
         #
         # Embedding-mode only: the numeric (dense-slab) path doesn't carry a
         # lexicon, so the "PS per-word is CS-space" rationale doesn't apply --
@@ -12076,9 +16203,12 @@ class ModelFactory:
         ps_n = _effective_out_count("PartSpace", is_n)
         cs_dim_e = _effective_out_dim("ConceptualSpace", ps_dim_e)
         cs_n = _effective_out_count("ConceptualSpace", ps_n)
-        is_dim = is_dim_e - sum(_cshape("InputSpace"))
-        ps_dim = ps_dim_e - sum(_cshape("PartSpace"))
-        cs_dim = cs_dim_e - sum(_cshape("ConceptualSpace"))
+        _is_band_shape = tuple(_cshape("InputSpace"))
+        _ps_band_shape = tuple(_cshape("PartSpace"))
+        _cs_band_shape = tuple(_cshape("ConceptualSpace"))
+        is_dim = is_dim_e - sum(_is_band_shape)
+        ps_dim = ps_dim_e - sum(_ps_band_shape)
+        cs_dim = cs_dim_e - sum(_cs_band_shape)
 
         is_slab = is_n * is_dim
         ps_slab = ps_n * ps_dim
@@ -12086,42 +16216,109 @@ class ModelFactory:
         # Handoff-consistency (dimensional-governance, 2026-06-06): IS is the
         # raw input and may be BIGGER than perception -- PS scopes it down via
         # chunking/embedding ("more input than output"), so the char input is
-        # NOT constrained to the PS/CS content slab. Only the PS->CS handoff
-        # (the deep hub) must be a pure reshape, so PS content slab == CS
-        # content slab. The CS->WS deep<->wide reshape is handled in the
-        # forward, not constrained here. (Was: IS == PS == CS, which wrongly
-        # forbade input-bigger-than-perception scoping.)
-        if is_embedding_mode and not (ps_slab == cs_slab):
+        # NOT constrained to the PS/CS content slab. Historically PS->CS then
+        # had to be a pure reshape. The one narrow exception is the canonical
+        # aligned serial-word model: its native PS/WS peers share locations
+        # and width, then each sparse sigma/codebook activation reads the
+        # high-dimensional concept row. Mixing/parallel/legacy paths retain
+        # the flat-slab equality.
+        def _config_true(raw):
+            if isinstance(raw, bool):
+                return raw
+            return str(raw or "").strip().lower() in (
+                "true", "1", "yes", "on")
+
+        _serial_word_major = (
+            _config_true(arch.get("serial", False))
+            and _config_true(arch.get("serialObjectMeta", False)))
+        _aligned_serial_word = (
+            _serial_word_major
+            and str(arch.get("conceptBinding", "mixing")).strip().lower()
+            == "aligned")
+        try:
+            _cs_input_dim_raw = int(gsp(
+                cfg, "ConceptualSpace", "nInputDim"))
+        except (KeyError, TypeError, ValueError):
+            _cs_input_dim_raw = 0
+        _cs_input_dim = (
+            _cs_input_dim_raw if _cs_input_dim_raw > 0 else ps_dim_e)
+        try:
+            _cs_input_n_raw = int(gsp(cfg, "ConceptualSpace", "nInput"))
+        except (KeyError, TypeError, ValueError):
+            _cs_input_n_raw = 0
+        _cs_input_n = _cs_input_n_raw if _cs_input_n_raw > 0 else ps_n
+        _ws_band_shape = tuple(_cshape("WholeSpace"))
+        ws_dim_e = _effective_out_dim("WholeSpace", cs_dim_e)
+        ws_n = _effective_out_count("WholeSpace", cs_n)
+        ws_dim = ws_dim_e - sum(_ws_band_shape)
+        _sparse_activation_boundary = (
+            _aligned_serial_word
+            and ps_n == ws_n == cs_n == _cs_input_n
+            and ps_dim_e == ws_dim_e
+            and _ps_band_shape == _ws_band_shape == _cs_band_shape
+            and _cs_input_dim == cs_dim_e
+            and ps_dim == ws_dim
+            and 0 < ps_dim < cs_dim)
+        if (is_embedding_mode and not (ps_slab == cs_slab)
+                and not _sparse_activation_boundary):
             errors.append(
                 f"flat-slab invariant violated: PS.nOutput*content "
                 f"({ps_n}*{ps_dim}={ps_slab}) must equal CS.nOutput*content "
-                f"({cs_n}*{cs_dim}={cs_slab}). The PS->CS handoff is a pure "
-                f"reshape; IS may be larger (PS scopes the input down)."
+                f"({cs_n}*{cs_dim}={cs_slab}), except when aligned "
+                "serialObjectMeta uses equal native PS/WS peers followed by "
+                "sparse sigma/codebook activation. That activation must "
+                "already emit CS-width events. The configured geometry is "
+                f"PS {ps_n}x{ps_dim_e}, WS {ws_n}x{ws_dim_e}, and CS input "
+                f"{_cs_input_n}x{_cs_input_dim} -> output {cs_n}x{cs_dim_e}; "
+                "IS may be larger (PS scopes the input down)."
             )
+        if is_embedding_mode and _aligned_serial_word:
+            if (ps_n != ws_n or ps_dim_e != ws_dim_e
+                    or _ps_band_shape != _ws_band_shape):
+                errors.append(
+                    "aligned serialObjectMeta requires PS and WS to be "
+                    "independent peers with identical native event geometry; "
+                    f"got PS={ps_n}x{ps_dim_e} with band {_ps_band_shape} and "
+                    f"WS={ws_n}x{ws_dim_e} with band {_ws_band_shape}. The "
+                    "conceptual codebook activation widens both sources only "
+                    "after their native folds; PS must not feed WS.")
+            if (_cs_input_n != cs_n or _cs_input_dim != cs_dim_e):
+                errors.append(
+                    "aligned serialObjectMeta requires ConceptualSpace input "
+                    "to match its conceptual output geometry because source "
+                    "sigma/codebook activation owns the dimension increase; "
+                    f"got CS input={_cs_input_n}x{_cs_input_dim} and output="
+                    f"{cs_n}x{cs_dim_e}.")
+        if is_embedding_mode and _serial_word_major:
+            # The outer word traversal is configured independently by
+            # <serialWordCapacity>.  PS/CS remain the canonical instantaneous
+            # field and STM workspace, so their slot counts stay aligned with
+            # STM capacity rather than expanding to the surface-word cap.
+            try:
+                _stm_cap = int(gsp(cfg, "ConceptualSpace", "stmCapacity"))
+            except (KeyError, TypeError, ValueError):
+                _stm_cap = 8
+            if ps_n != _stm_cap or cs_n != _stm_cap:
+                errors.append(
+                    "serialObjectMeta field/workspace mismatch: "
+                    f"PartSpace.nOutput={ps_n} and "
+                    f"ConceptualSpace.nOutput={cs_n} must both equal "
+                    f"stmCapacity={_stm_cap}. The independent outer sentence "
+                    "limit belongs in <serialWordCapacity>.")
 
-        # ---- CS->WS and WS->OS handoff-consistency (fail-loud) ------
+        # ---- Recurrent WS input and direct CS->OS head (fail-loud) ---
         # dimensional-governance Task C1 (doc/specs/2026-06-05-dimensional-
         # governance.md sec.4/sec.6; doc/plans/2026-06-06-dimensional-
-        # governance-completion.md). The IS->PS->CS->WS->OS chain must be
-        # handoff-consistent on the FLATTENED content slab / input side.
-        # The PS->CS hub is a pure reshape (asserted by ps_slab==cs_slab
-        # above). The two remaining handoffs:
+        # governance-completion.md). BasicModel is not a linear
+        # IS->PS->WS->CS->OS chain: PS, WS, and SS are peers feeding CS. Two
+        # explicit shape contracts remain around that peer loop:
         #
-        #   CS->WS : matches on the INPUT side. WS may legitimately reshape
-        #            the deep CS idea ([8,1024]) into wide symbols
-        #            ([1024,8]) and emit a small symbol code on its OUTPUT
-        #            (the ``_ws_reshapes`` case the nWhat check relaxes), so
-        #            the consistent quantity is CS.nOutputDim == WS.nInputDim
-        #            (event width; both sides carry the same band). This is
-        #            the input-side equality the nWhat-relaxation comment at
-        #            ~7937 DESCRIBES but did not previously ASSERT. Making it
-        #            explicit is the core of C1.
-        #   WS->OS : the symbol space_role flattens its [nOutput, nOutputDim] slab
-        #            into the terminal output, so prod(WS output slab) ==
-        #            prod(OS input slab). For MM_20M this is 1024*8 == 8*1024
-        #            == 8192 (a flatten, NOT a per-event nOutputDim match --
-        #            a naive WS.nOutputDim==OS.nInputDim check would wrongly
-        #            reject it).
+        #   CS->WS : WS's recurrent INPUT accepts the prior conceptual event.
+        #            WS still emits its native property-width peer state; this
+        #            input compatibility is not a PS->WS dependency.
+        #   CS->OS : the terminal output head consumes terminal CS directly.
+        #            WholeSpace is an upstream property peer and is not an
+        #            intermediate terminal producer.
         #
         # An UNSET consumer dim means "inherit the producer's width" (the
         # resolvers fall back to the producer value), so an omitted
@@ -12150,35 +16347,29 @@ class ModelFactory:
             return int(fallback_count)
 
         if is_embedding_mode:
-            # CS->WS input-side handoff (event width). cs_dim_e is CS's
-            # effective output event width resolved above.
+            # CS recurrent feedback accepted by WS (event width). cs_dim_e is
+            # CS's effective output event width resolved above.
             ws_in_dim = _effective_in_dim("WholeSpace", cs_dim_e)
             if ws_in_dim != cs_dim_e:
                 errors.append(
-                    f"CS->WS handoff inconsistent: WS.nInputDim={ws_in_dim} "
-                    f"must equal CS.nOutputDim={cs_dim_e} (the CS->WS handoff "
-                    f"matches on the INPUT side; WS may then reshape deep->"
-                    f"wide internally and emit a narrower symbol code on its "
-                    f"OUTPUT). Fix: set <WholeSpace><nInputDim> to "
+                    f"CS->WS recurrent input inconsistent: "
+                    f"WS.nInputDim={ws_in_dim} must equal "
+                    f"CS.nOutputDim={cs_dim_e}. WS may then emit its native "
+                    f"property-width peer state. Fix: set "
+                    f"<WholeSpace><nInputDim> to "
                     f"{cs_dim_e} (or omit it to inherit CS.nOutputDim)."
                 )
-            # WS->OS flattened-slab handoff. WS flattens its output slab
-            # into the terminal output, so the PRODUCT must match (a
-            # flatten, not a per-event width match).
-            ws_out_dim = _effective_out_dim("WholeSpace", cs_dim_e)
-            ws_out_n = _effective_out_count("WholeSpace", cs_n)
-            os_in_dim = _effective_in_dim("OutputSpace", ws_out_dim)
-            os_in_n = _effective_in_count("OutputSpace", ws_out_n)
-            ws_out_slab = ws_out_n * ws_out_dim
-            os_in_slab = os_in_n * os_in_dim
-            if ws_out_slab != os_in_slab:
+            # The output head is constructed from terminal CS, not WS. Keep
+            # the direct event geometry exact; a coincidentally equal flattened
+            # product with swapped count/dimension is not the same interface.
+            os_in_dim = _effective_in_dim("OutputSpace", cs_dim_e)
+            os_in_n = _effective_in_count("OutputSpace", cs_n)
+            if os_in_n != cs_n or os_in_dim != cs_dim_e:
                 errors.append(
-                    f"WS->OS handoff inconsistent: WS flattened output slab "
-                    f"(WS.nOutput*WS.nOutputDim = {ws_out_n}*{ws_out_dim}="
-                    f"{ws_out_slab}) must equal OS expected input slab "
-                    f"(OS.nInput*OS.nInputDim = {os_in_n}*{os_in_dim}="
-                    f"{os_in_slab}). The WS->OS handoff is a flatten of the "
-                    f"symbol slab into the terminal output."
+                    f"CS->OS handoff inconsistent: terminal CS emits "
+                    f"{cs_n}x{cs_dim_e}, but OutputSpace expects "
+                    f"{os_in_n}x{os_in_dim}. The output head consumes CS "
+                    "directly; WholeSpace is not an intermediate producer."
                 )
 
         # Monotonicity ⟹ no ConceptualSpace projection codebook.
@@ -12506,7 +16697,12 @@ class ModelFactory:
                     batch_size,
                     lr=_t("learningRate", 0.01))
 
-        if _t("autosave", False):
+        _autosave_env = os.environ.get("BASIC_AUTOSAVE")
+        _autosave = bool(_t("autosave", False))
+        if _autosave_env is not None:
+            _autosave = _autosave_env.strip().lower() in (
+                "1", "true", "yes", "on")
+        if _autosave:
             m.save_training_checkpoint(reason="final autosave")
 
         return [(m.name, m.rCorrect, m)]

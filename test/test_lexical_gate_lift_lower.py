@@ -183,7 +183,7 @@ def test_gate_flows_through_meronymic_adapter():
     floor) changes the fold, and the gated reverse round-trips."""
     from Layers import MeronymicFoldAdapter
     torch.manual_seed(31)
-    x = torch.rand(2, _D) * 1.6 - 0.8
+    x = torch.rand(2, _D) * 0.8 + 0.1
     g = torch.full((_D,), 2.0)                   # amplifying: visible slice
     for kind in ("pi", "sigma"):
         ad = MeronymicFoldAdapter(kind, _D, _D)

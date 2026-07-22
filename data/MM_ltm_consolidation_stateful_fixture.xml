@@ -42,6 +42,7 @@
   <PartSpace>
     <nInput>8</nInput>
     <nVectors>8</nVectors>
+    <maxVectors>256</maxVectors>
     <nDim>14</nDim>
     <nOutput>8</nOutput>
     <invertible>true</invertible>

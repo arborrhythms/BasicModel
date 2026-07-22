@@ -934,7 +934,7 @@ def test_concept_row_content_lights_up_the_resolved_row(tmp_path_factory):
     content, mask = cs.concept_row_content(torch.tensor([3, 99]))
     assert mask.tolist() == [True, False]
     assert torch.allclose(content[0].norm(), torch.tensor(1.0), atol=1e-5)
-    assert float(content[1].abs().sum()) == 0.0            # untied -> zero row
+    assert not bool(content[1].detach().ne(0).any())       # untied -> zero row
     W = cs.similarity_codebook.getW()
     r1 = cs.concept_codebook_row_of_percept(3)
     assert torch.allclose(content[0], _F.normalize(W[r1], dim=-1, eps=1e-8),

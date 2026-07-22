@@ -1,8 +1,8 @@
 """P4 sigma/pi stacks (doc/plans/2026-07-02-two-phase-loops-sparse-relation.md).
 
 The per-pass subsymbolic stack is now CANONICAL (always built): PS sigmas[t]
-/ WS pis[t] for t in 0..subsymbolicOrder-1 (depth IS mereological order; the
-stack is the subsymbolic reasoning engine). Pass 0 IS the base reused
+/ WS pis[t] for t in 0..subsymbolicOrder-1. Fold depth records derivation; it
+does not by itself define mereological rank or part of speech. Pass 0 IS the base reused
 sigma/pi; an order-1 config is the single [sigma]/[pi] slot. <subsymbolicNoop>
 marks identity slots. Stack construction is RNG-NEUTRAL (save/restore) so the
 t>=1 minting never shifts the init streams downstream -- the old

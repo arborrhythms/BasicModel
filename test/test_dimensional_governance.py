@@ -100,22 +100,17 @@ def test_converted_grammars_load_role_collapsed():
 
 
 # ---------------------------------------------------------------------------
-# Task C1: IS->PS->CS->SS->OS handoff invariant is a FAIL-LOUD config error.
+# Task C1: recurrent WS input and direct CS->OS geometry fail loud.
 # (doc/specs/2026-06-05-dimensional-governance.md sec.4/sec.6;
 #  doc/plans/2026-06-06-dimensional-governance-completion.md)
 #
-# validate_config (bin/Models.py) asserts adjacent-space_role handoff consistency on
-# the flattened content slab / input side, consistent with the three existing
-# relaxations (passthrough / serial fold / SS reshape):
-#   PS->CS : pure reshape          (ps_slab == cs_slab, pre-existing)
-#   CS->SS : INPUT-side equality   (SS.nInputDim == CS.nOutputDim, NEW in C1)
-#   SS->OS : flattened-slab match  (SS.nOut*SS.nOutDim == OS.nIn*OS.nInDim, NEW)
-# An inconsistent handoff must RAISE at BasicModel.from_config, NOT be silently
-# absorbed by a downstream reshape/pad. These tests build a DELIBERATELY
-# inconsistent config and assert it raises; the reference configs must still
-# build (no false-positive rejection). Each test was authored to FAIL before
-# the CS->SS / SS->OS checks existed (the mismatch reached the forward reshape
-# and was absorbed) and to PASS after.
+# validate_config (bin/Models.py) pins the two interfaces around the peer loop:
+#   CS->WS : WS's recurrent input accepts a conceptual-width event; WS's
+#            native output remains an independent perceptual peer.
+#   CS->OS : the output head consumes terminal CS directly, with exact event
+#            count and width. WholeSpace is not an intermediate producer.
+# An inconsistent interface must RAISE at BasicModel.from_config, not be
+# silently absorbed by a reshape/pad.
 # ---------------------------------------------------------------------------
 import re
 import pytest
@@ -150,12 +145,10 @@ def _ref_text(cfg_name):
         return fh.read()
 
 
-def test_cs_ws_input_side_handoff_mismatch_raises():
-    # Break the CS->SS INPUT-side handoff: MM_20M has CS.nOutputDim=1024 and
-    # SS.nInputDim=1024 (equal). Force SS.nInputDim to a value that mismatches
-    # CS.nOutputDim. validate_config must FAIL LOUD (the deep CS idea no longer
-    # lines up with what SS claims to consume) rather than let the forward
-    # reshape silently fit it.
+def test_cs_ws_recurrent_input_mismatch_raises():
+    # Break WS's recurrent conceptual input: MM_20M has CS.nOutputDim=1024 and
+    # WS.nInputDim=1024. Force WS.nInputDim to mismatch while leaving its
+    # native peer output alone.
     src = _ref_text("MM_20M_legacy.xml")
     broken = src.replace(
         "<nInputDim>1024</nInputDim>\n    <nVectors>65536</nVectors>\n"
@@ -166,16 +159,14 @@ def test_cs_ws_input_side_handoff_mismatch_raises():
     with pytest.raises(ValueError) as ei:
         _build_from_text(broken, "cs_ws_mismatch")
     msg = str(ei.value)
-    assert "CS->WS handoff" in msg, msg
+    assert "CS->WS recurrent input" in msg, msg
     assert "999" in msg and "1024" in msg, msg
 
 
-def test_ws_os_flatten_handoff_mismatch_raises():
-    # Break the SS->OS FLATTEN handoff: MM_20M's SS flattened output slab is
-    # nOutput(1024)*nOutputDim(8)=8192, matched by OS.nInput(8)*nInputDim(1024)
-    # =8192. Force OS.nInput=7 so the OS slab (7*1024=7168) no longer equals the
-    # SS flattened slab. validate_config must FAIL LOUD; the SS->OS flatten is
-    # not a place to silently drop/pad a slot.
+def test_cs_os_direct_handoff_mismatch_raises():
+    # Break the direct terminal CS->OS interface. MM_20M emits CS [8,1024]
+    # and OS consumes [8,1024]. Force OS.nInput=7; exact event geometry, not a
+    # coincidentally equal flattened product, is the contract.
     src = _ref_text("MM_20M_legacy.xml")
     broken = src.replace("<OutputSpace>\n    <nInput>8</nInput>",
                          "<OutputSpace>\n    <nInput>7</nInput>")
@@ -183,15 +174,14 @@ def test_ws_os_flatten_handoff_mismatch_raises():
     with pytest.raises(ValueError) as ei:
         _build_from_text(broken, "ws_os_mismatch")
     msg = str(ei.value)
-    assert "WS->OS handoff" in msg, msg
-    assert "8192" in msg and "7168" in msg, msg
+    assert "CS->OS handoff" in msg, msg
+    assert "8x1024" in msg and "7x1024" in msg, msg
 
 
 def test_reference_configs_still_build_no_false_positive():
-    # The new CS->SS / SS->OS handoff checks must NOT reject the two reference
-    # configs. MM_20M exercises the LEGITIMATE deep->wide SS reshape (SS.nInputDim
-    # 1024 == CS.nOutputDim, SS emits a wide [1024,8] symbol slab flattened to
-    # the OS 8192). XOR_exact is the no-reshape all-14 case. Both must build.
+    # The recurrent WS input and direct CS->OS checks must not reject either
+    # reference config. MM_20M carries a deep conceptual event; XOR_exact is
+    # the equal-width case.
     for cfg in ("MM_20M_legacy.xml", "XOR_exact.xml"):
         m = _build(cfg)
         assert m is not None, cfg

@@ -1,0 +1,139 @@
+<?xml version="1.0" ?>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="model.xsd">
+  <!--
+    MM_nanochat_grammar_gate
+
+    Historical frozen W=64 evaluation fixture. The current training model is
+    data/BasicModel.xml; keep this file only to reproduce the original gate.
+
+    A cheap architecture gate for MM_nanochat_grammar_pilot.  It keeps the
+    same serial grammar, order-4 recurrence, learned MLP router, losses, and
+    FineWeb-Edu document split while halving the slab and feature width and
+    quartering both learned codebooks.  Passing this gate is evidence to spend
+    compute on the comparison-sized model; it is not itself the NanoChat
+    comparison.
+
+    The 200-document corpus contains about 8,452 sentences / 141k whitespace
+    words in the currently downloaded shard before the deterministic 8/1/1
+    train/validation/test document split.  Start with 20 documents for a
+    launch/overfit check, then use all 200 for the held-out language gate.
+  -->
+  <architecture>
+    <serial>true</serial>
+    <subsymbolicOrder>4</subsymbolicOrder>
+    <conceptualWidth>uniform</conceptualWidth>
+    <symbolicOrder>4</symbolicOrder>
+    <syntacticOrder>0</syntacticOrder>
+
+    <mereologyRaise>true</mereologyRaise>
+    <!-- Up to 64 surface words are traversed. This model leaves the
+         configurable perceptual fields and STM at their chosen/default 8. -->
+    <serialObjectMeta>true</serialObjectMeta>
+    <serialWordCapacity>64</serialWordCapacity>
+    <sigmaPi>butterfly</sigmaPi>
+    <l1Lambda>0.01</l1Lambda>
+
+    <transformChooser>mlp</transformChooser>
+    <categoryCodebook>true</categoryCodebook>
+    <!-- At low occupancy require more than an untrained 50/50 shift/reduce
+         preference. This threshold falls continuously to a forced best
+         grammatical reduction as the configured STM fills. -->
+    <stmReduceTau>0.75</stmReduceTau>
+    <!-- One route pass keeps the gate inexpensive.  Turn this on only for an
+         exploration-vs-exploitation ablation after the language gate moves. -->
+    <learning>false</learning>
+
+    <data>
+      <dataType>embedding</dataType>
+      <dataset>text</dataset>
+      <shardDir>data/fineweb</shardDir>
+      <numShards>1</numShards>
+      <maxDocs>200</maxDocs>
+    </data>
+
+    <training>
+      <numEpochs>1</numEpochs>
+      <seed>42</seed>
+      <!-- Conservative first MPS batch for the corrected STM8 model. The
+           earlier batch measurements used the rejected 64-deep workspace and
+           do not transfer to this architecture. -->
+      <batchSize>4</batchSize>
+      <learningRate>0.0005</learningRate>
+
+      <reconstructionScale>1.0</reconstructionScale>
+      <sentencePrediction>true</sentencePrediction>
+      <armaScale>0.1</armaScale>
+      <intraLossWeight>0.1</intraLossWeight>
+      <interLossWeight>0.1</interLossWeight>
+      <interContrastiveWeight>0.1</interContrastiveWeight>
+      <interContrastiveTemp>0.1</interContrastiveTemp>
+
+      <autoload>true</autoload>
+      <autosave>true</autosave>
+      <checkpointEveryBatches>100</checkpointEveryBatches>
+    </training>
+    <!-- Fresh basin: prior flat-axis and STM64 checkpoints are incompatible. -->
+    <weightsPath>../output/MM_nanochat_grammar_gate_stm8.ckpt</weightsPath>
+  </architecture>
+
+  <InputSpace>
+    <nOutput>8192</nOutput>
+    <nVectors>256</nVectors>
+    <nDim>256</nDim>
+  </InputSpace>
+
+  <PartSpace>
+    <nInput>8192</nInput>
+    <nInputDim>256</nInputDim>
+    <nVectors>8192</nVectors>
+    <nDim>256</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>256</nOutputDim>
+
+    <invertible>true</invertible>
+    <synthesis>meronomy</synthesis>
+    <chunkPromotionThreshold>2</chunkPromotionThreshold>
+  </PartSpace>
+
+  <ConceptualSpace>
+    <nInput>8</nInput>
+    <nInputDim>256</nInputDim>
+    <!-- Concept/code inventory is independent of the eight live slots. -->
+    <nVectors>32</nVectors>
+    <stmCapacity>8</stmCapacity>
+    <nDim>256</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>256</nOutputDim>
+
+    <invertible>true</invertible>
+  </ConceptualSpace>
+
+  <WholeSpace>
+    <analysis>meronomy</analysis>
+    <butterfly>false</butterfly>
+    <nInput>8</nInput>
+    <nInputDim>256</nInputDim>
+    <nVectors>8192</nVectors>
+    <nDim>256</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>256</nOutputDim>
+
+    <invertible>true</invertible>
+  </WholeSpace>
+
+  <OutputSpace>
+    <nInput>8</nInput>
+    <nInputDim>256</nInputDim>
+    <nVectors>1</nVectors>
+    <nDim>1</nDim>
+    <nOutput>1</nOutput>
+    <nOutputDim>1</nOutputDim>
+  </OutputSpace>
+
+  <SymbolSpace>
+    <language>
+      <grammar>complete.grammar</grammar>
+    </language>
+  </SymbolSpace>
+</model>

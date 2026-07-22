@@ -64,7 +64,11 @@
     <analysis>byte</analysis>
     <nInput>8</nInput>
     <nInputDim>14</nInputDim>
-    <nVectors>8</nVectors>
+    <!-- Eight rows are reserved by the core symbolic taxonomy before the
+         first learned word/whole/META is allocated.  Keep enough declared
+         fixed capacity for the complete XOR epoch; runtime codebook growth
+         would replace the optimizer-owned Parameter. -->
+    <nVectors>64</nVectors>
     <nDim>14</nDim>
     <nOutput>8</nOutput>
     <nOutputDim>14</nOutputDim>

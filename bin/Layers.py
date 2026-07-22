@@ -29,6 +29,25 @@ import util
 from util import TheXMLConfig, TheDevice
 from util import TheMessage
 
+
+def _active_codebook_prototypes(codebook):
+    """Return a Codebook's logically selectable prefix.
+
+    Raw tensors and ordinary bases retain their full-table semantics.  The
+    duck-typed call avoids a ``Spaces`` import cycle while letting fixed-shape
+    Codebooks hide their inactive physical reserve from direct searches.
+    """
+    if codebook is None:
+        return None
+    active = getattr(codebook, "active_prototypes", None)
+    if callable(active):
+        return active()
+    get_w = getattr(codebook, "getW", None)
+    if callable(get_w):
+        return get_w()
+    return codebook if torch.is_tensor(codebook) else None
+
+
 # ---------------------------------------------------------------------------
 # Meronomy constants (MeronomySpec §3-§4; MeronomyPlan Stage 0).
 #
@@ -1058,10 +1077,17 @@ class InvertibleLinearLayer(ErgodicLayer):
     def _D_embed(self):
         """Embed _d_effective() into [nInput, nOutput] rectangular diagonal."""
         d = self._d_effective()
-        D = torch.zeros(self.nInput, self.nOutput, device=d.device, dtype=d.dtype)
-        for i in range(self.rank):
-            D[i, i] = d[i]
-        return D
+        # ``D[i, i] = d[i]`` issued one MPS command per diagonal entry.  This
+        # helper is on every structured grammar operator's hot path, so the
+        # old Python loop created hundreds of tiny dispatches per sentence.
+        # Build the rank-square diagonal in one tensor operation, then pad it
+        # to the documented rectangular LDU shape.  Both routes have exactly
+        # the same gradients and zero off-diagonal entries.
+        square = torch.diag(d)
+        return F.pad(
+            square,
+            (0, int(self.nOutput) - int(self.rank),
+             0, int(self.nInput) - int(self.rank)))
 
     # --- Noise resampling ---
     def resample_noise(self):
@@ -1126,9 +1152,10 @@ class InvertibleLinearLayer(ErgodicLayer):
         L_inv = torch.linalg.solve_triangular(L, I_in,  upper=False, unitriangular=True)
         U_inv = torch.linalg.solve_triangular(U, I_out, upper=True,  unitriangular=True)
         d = self._d_effective()
-        D_inv = torch.zeros(self.nOutput, self.nInput, device=d.device, dtype=d.dtype)
-        for i in range(self.rank):
-            D_inv[i, i] = 1.0 / d[i]
+        D_inv = F.pad(
+            torch.diag(d.reciprocal()),
+            (0, int(self.nInput) - int(self.rank),
+             0, int(self.nOutput) - int(self.rank)))
         return U_inv @ D_inv @ L_inv
 
     def compute_W_current(self):
@@ -2969,7 +2996,7 @@ class SigmaLayer(GrammarLayer):
         self.activation = out.detach()
         return out
 
-    def synthesize_over_set(self, part_codes):
+    def synthesize_over_set(self, part_codes, mask=None):
         """σ-fold a SET of M codes ``[..., M, D]`` into ONE code ``[..., D]``
         that geometrically contains them (doc/specs/mereological-order-
         raising.md: a higher-order PART synthesized from its constituents).
@@ -2982,6 +3009,11 @@ class SigmaLayer(GrammarLayer):
         balanced split in :meth:`generate` inverts it (each constituent
         ``= tanh(s / M)``) when the inner layer is invertible -- the explicit
         ``part_chain`` provenance is the fallback when it is not."""
+        if mask is not None:
+            valid = mask.to(device=part_codes.device, dtype=torch.bool)
+            part_codes = torch.where(
+                valid.unsqueeze(-1), part_codes,
+                torch.zeros_like(part_codes))
         if self.nonlinear:
             a = torch.atanh(part_codes.clamp(-1 + epsilon, 1 - epsilon))
         else:
@@ -3501,7 +3533,13 @@ class WhereTilingLayer(Layer):
 # synthesis chunk. ASCII byte ranges (inclusive) per class; selecting a SET of
 # classes ORs them (the analysis-side OR over .index-selected properties, dual
 # to PartSpace's AND over particles).
+# Primitive byte properties.  These are predicates, not an exclusive token
+# vocabulary: an ASCII capital satisfies both LETTER and CAPITAL.  WholeSpace
+# owns one vector per primitive property; combinations are represented by
+# simultaneous property activation and become concepts only after the
+# PartSpace/WholeSpace streams meet in ConceptualSpace.
 LETTER, DIGIT, WHITESPACE, PUNCT = 0, 1, 2, 3
+CAPITAL, CONTROL, HIGH_BYTE, PAD = 4, 5, 6, 7
 # Key-only sentinel for the generic "word" whole-TYPE (a whole, not a tiling
 # predicate): used as a property_class_whole key, never passed to
 # char_class_region (whose spans come from the whitespace analysis cut).
@@ -3522,8 +3560,12 @@ ATOM = NOTHING          # back-compat alias (pre-2026-07-02 name)
 _CHAR_CLASS_RANGES = {
     LETTER: [(65, 90), (97, 122)],          # A-Z, a-z
     DIGIT: [(48, 57)],                       # 0-9
-    WHITESPACE: [(9, 9), (10, 10), (13, 13), (32, 32)],  # tab, LF, CR, space
+    WHITESPACE: [(9, 13), (32, 32)],         # tab, LF, VT, FF, CR, space
     PUNCT: [(33, 47), (58, 64), (91, 96), (123, 126)],   # ASCII punctuation
+    CAPITAL: [(65, 90)],                     # overlaps LETTER by design
+    CONTROL: [(1, 8), (14, 31), (127, 127)],
+    HIGH_BYTE: [(128, 255)],                 # UTF-8 lead/continuation bytes
+    PAD: [(0, 0)],                           # InputSpace NUL/pad sentinel
 }
 
 
@@ -3531,7 +3573,7 @@ def char_class_region(byte_input, class_ids):
     """Binary-tiling region of ``byte_input`` for a SET of char classes.
 
     ``byte_input`` ``[..., N]`` (byte values 0..255); ``class_ids`` an iterable
-    of ``LETTER`` / ``DIGIT`` / ``WHITESPACE`` / ``PUNCT``. Returns a signed
+    of the primitive byte-property ids above. Returns a signed
     region ``[..., N]`` in ``{+1, -1}``: ``+1`` where the byte is in ANY
     selected class (the OR-union -- the has-property whole), ``-1`` otherwise
     (the complement whole). Same ``>0 has / <=0 not`` convention as
@@ -4947,19 +4989,18 @@ class ConceptAllocator:
 
 
 class MeronymicFoldAdapter(Layer):
-    """K3-wire adapter binding a membership kernel at a meronymic slot
+    """Membership-native adapter for a meronymic sigma/pi slot
     (MeronomyPlan Stage 9 cutover; MeronomySpec §2, §4).
 
-    The wire keeps carrying the K3 scalar ``a in [-1, +1]`` (the
-    BivectorRetirementPlan invariant); the fold computes in the
-    membership chart: ``χ`` in, kernel, ``χ⁻¹`` out — epistemic scalars
-    enter membership folds only through the evaluation chart (§3),
-    applied exactly once per crossing, here at the slot boundary. The
-    same chart pair on ``reverse`` makes the adapter exactly invertible
-    wherever the kernel is.
+    The PS/WS wire carries membership directly: ``m in [0, 1]``. Sigma
+    and pi therefore consume and return membership coordinates without a
+    signed evaluation chart. The learned unary fold is invertible with a
+    closed-form bounded-domain inverse; the M-to-1 union used to
+    assemble a word is intentionally not invertible and is reversed from
+    retained constituent and fold-provenance records.
 
     At near-identity init the membership kernel is approximately the
-    identity on memberships (d ≈ 1, offdiag ≈ 0, b ≈ 0), so the adapter
+    identity on memberships (bounded shear/curve coefficients are near 0), so the adapter
     starts close to a pass-through: cutover begins from a benign
     operating point and training shapes the fold from there.
 
@@ -4970,56 +5011,25 @@ class MeronymicFoldAdapter(Layer):
     slot). Non-meronymic consumers keep the odds-kernel layers (plan §4
     item 4 — those operators are NOT legacy; only this slot rebinds).
 
-    **Butterfly mode (author, 2026-06-11 — the cutover correction).**
-    ``butterfly=True`` rebuilds the slot's cascade in the membership
-    chart instead of dropping it: the order-preservation law of the
-    meronymic slots constrains the KERNEL CLASS (contractive,
-    non-negative log-mass weights), never the fold's TOPOLOGY — and
-    order-preserving maps compose, so the FFT-style cross-slot cascade
-    with the contractive law at every 2×2 node preserves the partial
-    order end-to-end while keeping the cascade's cross-position reach
-    (which per-slot folds lack, and which functions like XOR over the
-    slab require: distinct word codes sit INCOMPARABLE in the partial
-    order, so monotonicity never excluded them — only the lost reach
-    did). Each node is the 2×2 contractive LDU law in log-mass via
-    the SQUARE reparam: off-diagonal taps ``raw² >= 0``, diagonal
-    ``(1 + raw_d²)`` clamped to ``[1, d_max]``, bias-free; the
-    REVERSE divides by ``d >= 1`` (contractive — strictly tamer than
-    the signed cascade's ``1/d`` blow-up guard). χ applies once at
-    the slot boundary; ``kind='sigma'`` conjugates the π-law cascade
-    by the complement involution (``σ = 1 − π(1 − ·)``), which
-    composes through the levels exactly. Near-identity init
-    (raw = 0.05: taps ~0.0025 with gradient scale ~0.10 — squares
-    decouple tap size from gradient scale, where softplus locks them
-    together and strangles learning) keeps the cutover's benign-start
-    contract. ``gate`` is not honoured in butterfly mode (same
-    contract as the legacy cascade).
+    **Butterfly mode.** ``butterfly=True`` composes gather-free 2x2
+    monotone coupling nodes across one vector's feature lanes; leading batch
+    and word/location axes never mix. Each node uses two bounded extensive
+    shears around an endpoint-fixing diagonal curve. Sigma runs that flow;
+    pi is its complement conjugate. Every constituent map preserves
+    ``[0,1]``, fixes 0 and 1, is order-preserving, and has a closed-form
+    reverse. The coefficient budget splits ``log(d_max)`` across levels, so
+    inverse gain remains bounded end-to-end. This replaces the former
+    log-power LDU, whose values were finite but whose cross-derivatives
+    diverged near a membership corner when an exponent lay between 0 and 1.
+    Near-identity raw initialization still yields taps near 0.0025 with useful
+    gradients. ``gate`` is not honoured in butterfly mode (same contract as
+    the legacy cascade).
 
-    **Recorded risk + contingency (author, 2026-06-11).** The lawful
-    node matrices are SPECTRALLY EXPANSIVE in log-mass by
-    construction: ``det(LDU) = d₀·d₁ >= 1`` per 2×2 node, so the
-    spectral radius of every level — hence of any composition of
-    membership folds — is ``>= 1`` there. One application per pump
-    is benign (near-identity init; ``d_max`` bounds per-application
-    drift), but ITERATED application necessarily migrates mass
-    toward the chart corners — π toward 𝟘 (the 0000 code), σ toward
-    𝟙 (the 1111 code) — and a saturated code carries no usable
-    specification. The eigenvalue floor is the law itself (order
-    preservation + memberships-stay-memberships forces non-negative
-    log-mass weights with ``d >= 1``), so it cannot be trained away —
-    only bounded (``d_max``, shallow application counts, the
-    σπσ = σ registration pressure on stored symbols).
-    **Contingency:** if the geometric constraint proves too
-    restrictive in practice — folds saturating, or solutions
-    excluded — the meronomy moves to an explicit PART-WHOLE TREE ON
-    THE CODES (parthood as stored structure over code atoms, the
-    order law enforced on the tree) rather than a geometric
-    constraint baked into the fold operators.
-    ``test_meronymic_butterfly.py`` pins both sides of this boundary:
-    discontiguous specifications survive — and are PRODUCED by —
-    repeated lawful application (scattered wholes are first-class;
-    the FFT pairing carries no contiguity bias), and the saturation
-    regime under an aggressive law is characterized explicitly.
+    Repeated extensive/contractive application can still migrate sigma/pi
+    toward a lattice corner; that semantic pressure is tested and is distinct
+    from a one-step numerical singularity. If the geometry proves too
+    restrictive, the contingency remains an explicit part-whole tree over
+    code atoms rather than weakening the range or invertibility contracts.
     """
     invertible = True
     # Legacy slot-surface attributes: consumers of the slot layers read
@@ -5112,6 +5122,12 @@ class MeronymicFoldAdapter(Layer):
         if self.fold is not None:
             self.layers.append(self.fold)
         self.activation = torch.zeros(1, nOutput, 1)
+        # MPS Inductor can compile the per-vector membership cascade, but not
+        # the entire stateful serial word cell within a practical cold-start
+        # budget.  This is deliberately an opt-in installed by BasicModel's
+        # MPS compilation boundary; ordinary layer use and all uncompiled
+        # paths keep calling ``_mem_cascade`` directly.
+        object.__setattr__(self, "_compiled_mem_cascade", None)
 
     # -- membership cascade (butterfly mode) ---------------------------
     # PER-VECTOR flatten (differs from GrammarLayer's whole-slab flatten):
@@ -5146,19 +5162,71 @@ class MeronymicFoldAdapter(Layer):
         return flat[:, :D].reshape(original_shape)
 
     def _mem_law(self):
-        """The per-node contractive law via the square reparam:
-        L, U = raw² >= 0; d = (1 + raw_d²) in [1, d_max]. Pad-touching
-        pairs are pinned to identity (L = U = 0, d = 1) so pads stay
-        exactly 𝟘 and the real-lane cascade inverts."""
+        """Return bounded coefficients for the monotone coupling flow.
+
+        Each level has three possible inverse-gain factors (upper shear,
+        diagonal curve, lower shear).  Splitting ``log(d_max)`` over those
+        factors and every level bounds the complete cascade's inverse gain by
+        ``d_max``.  ``cap*tanh(raw/sqrt(cap))²`` is ``raw²`` near identity,
+        stays non-negative, and approaches the cap smoothly. Pad-touching
+        pairs receive exact-zero coefficients and are identities.
+        """
         mask = self._bfly_pair_mask
-        L = self.raw_bfly_L.square() * mask
-        d = (1.0 + self.raw_bfly_d.square()).clamp(1.0, self.d_max)
-        d = d * mask.unsqueeze(-1) + (1.0 - mask.unsqueeze(-1))
-        U = self.raw_bfly_U.square() * mask
+        if not math.isfinite(self.d_max) or self.d_max < 1.0:
+            raise RuntimeError(
+                "meronymic d_max must be finite and >= 1 for a stable inverse; "
+                f"got {self.d_max}")
+        # An inverse exponential shear has both a direct derivative and a
+        # cross derivative. Conservatively, for coefficient b, each shear's
+        # induced 1/inf-norm gain is <= exp(2b); the scalar curve contributes
+        # <= exp(b). Two shears plus one curve over L levels are therefore
+        # bounded by exp(5bL). Splitting log(d_max) by 5L makes d_max a true
+        # whole-cascade inverse-gain ceiling, not merely a diagonal budget.
+        budget = math.log(max(1.0, self.d_max)) / (
+            5.0 * max(1, self.n_levels))
+        tap_cap = budget
+        diagonal_cap = 1.0 - math.exp(-budget)
+
+        def _bounded_square(raw, cap):
+            if cap <= 0.0:
+                return torch.zeros_like(raw)
+            return cap * torch.tanh(raw / math.sqrt(cap)).square()
+
+        L = _bounded_square(self.raw_bfly_L, tap_cap) * mask
+        d = (_bounded_square(self.raw_bfly_d, diagonal_cap)
+             * mask.unsqueeze(-1))
+        U = _bounded_square(self.raw_bfly_U, tap_cap) * mask
         return L, d, U
 
-    def _mem_cascade(self, l, inverse=False):
-        """Run the contractive cascade over flattened log-mass.
+    @staticmethod
+    def _membership_curve(x, coefficient, inverse=False, contractive=False):
+        """Bounded scalar curve and its closed-form inverse.
+
+        ``h_c(x) = x + c*x*(1-x)`` fixes 0 and 1, is monotone for
+        ``0 <= c < 1``, and has inverse derivative at most ``1/(1-c)``.
+        ``contractive=True`` uses its complement conjugate
+        ``k_c(x) = x - c*x*(1-x)`` for the pi flow.
+        """
+        if contractive:
+            if not inverse:
+                return x - coefficient * x * (1.0 - x)
+            one_minus = 1.0 - coefficient
+            discriminant = (one_minus.square()
+                            + 4.0 * coefficient * x).clamp_min(0.0)
+            denominator = one_minus + torch.sqrt(discriminant)
+            return (2.0 * x / denominator.clamp_min(
+                torch.finfo(x.dtype).tiny)).clamp(0.0, 1.0)
+        if not inverse:
+            return x + coefficient * x * (1.0 - x)
+        one_plus = 1.0 + coefficient
+        discriminant = (one_plus.square()
+                        - 4.0 * coefficient * x).clamp_min(0.0)
+        denominator = one_plus + torch.sqrt(discriminant)
+        return (2.0 * x / denominator.clamp_min(
+            torch.finfo(x.dtype).tiny)).clamp(0.0, 1.0)
+
+    def _mem_cascade(self, membership, inverse=False, contractive=False):
+        """Run an invertible monotone sigma/pi flow over memberships.
 
         GATHER-FREE pairing (MPS-compile requirement): bounds-checked
         index ops each demand an error-report buffer argument in the
@@ -5175,17 +5243,22 @@ class MeronymicFoldAdapter(Layer):
         ``butterfly_perms`` stays registered for the pad-mask
         construction and lane-pair lookups in tests).
 
-        Per node forward (all entries >= 0: order-preserving;
-        log-mass stays <= 0 so memberships stay in (0, 1] — the
-        §10.10 weight law): ``u0 = l0 + U·l1``; ``y0 = d0·u0``;
-        ``y1 = L·y0 + d1·l1``. Reverse is the closed-form 2×2 LDU
-        inverse, dividing by ``d >= 1`` (contractive — no blow-up).
+        One node is an upper extensive shear, two independent bounded
+        diagonal curves, then a lower extensive shear::
 
-        ``l``: ``[B, ...]`` log-mass (<= 0); flattened and zero-padded
-        to ``M_total`` — a log-mass pad of 0 is membership 𝟙, the
-        π-identity, so pad lanes contribute exactly nothing to real
-        lanes (the §10.2 identity theorem at the pad)."""
-        flat, original_shape = self._bfly_flatten(l)
+            a = 1 - (1-x0) exp(-U*x1)
+            a, b = h_d0(a), h_d1(x1)
+            y = 1 - (1-b) exp(-L*a)
+
+        Sigma uses the displayed extensive flow. Pi uses its complement
+        conjugate directly (multiplicative contractive shears and contractive
+        scalar curves), avoiding a numerical ``1-(1-x)`` round trip at the
+        poles. Every operation preserves the cube, is order-preserving, and
+        has a closed-form reverse executed in the opposite order. Unlike the
+        old log-power mixing, no derivative contains ``q**(w-1)``; forward
+        and reverse adjoints stay bounded at the membership corners.
+        """
+        flat, original_shape = self._bfly_flatten(membership)
         B = flat.shape[0]
         L, d, U = self._mem_law()
         levels = range(self.n_levels)
@@ -5194,8 +5267,8 @@ class MeronymicFoldAdapter(Layer):
         for level in levels:
             s = 1 << level
             blocks = flat.reshape(B, -1, 2, s)
-            l0 = blocks[..., 0, :]
-            l1 = blocks[..., 1, :]
+            x0 = blocks[..., 0, :]
+            x1 = blocks[..., 1, :]
             # Per-pair scalars at [nblocks, s]; flat pair index
             # blk·s + off matches the legacy perm-ordered layout.
             Lk = L[level].reshape(-1, s)
@@ -5203,24 +5276,69 @@ class MeronymicFoldAdapter(Layer):
             d1 = d[level, :, 1].reshape(-1, s)
             Uk = U[level].reshape(-1, s)
             if inverse:
-                a1 = l1 - Lk * l0
-                b0 = l0 / d0
-                b1 = a1 / d1
-                x0 = b0 - Uk * b1
-                flat = torch.stack([x0, b1], dim=-2).reshape(B, -1)
+                # Undo lower shear, the two scalar curves, then upper.
+                if contractive:
+                    b = x1 * torch.exp(Lk * (1.0 - x0))
+                else:
+                    b = x1 - (1.0 - x1) * torch.expm1(Lk * x0)
+                a = self._membership_curve(
+                    x0, d0, inverse=True, contractive=contractive)
+                b = self._membership_curve(
+                    b, d1, inverse=True, contractive=contractive)
+                if contractive:
+                    original0 = a * torch.exp(Uk * (1.0 - b))
+                else:
+                    original0 = a - (1.0 - a) * torch.expm1(Uk * b)
+                flat = torch.stack(
+                    [original0.clamp(0.0, 1.0), b.clamp(0.0, 1.0)],
+                    dim=-2).reshape(B, -1)
             else:
-                u0 = l0 + Uk * l1
-                y0 = d0 * u0
-                y1 = Lk * y0 + d1 * l1
-                flat = torch.stack([y0, y1], dim=-2).reshape(B, -1)
+                if contractive:
+                    a = x0 * torch.exp(-Uk * (1.0 - x1))
+                else:
+                    a = x0 - (1.0 - x0) * torch.expm1(-Uk * x1)
+                a = self._membership_curve(
+                    a, d0, contractive=contractive)
+                b = self._membership_curve(
+                    x1, d1, contractive=contractive)
+                if contractive:
+                    y1 = b * torch.exp(-Lk * (1.0 - a))
+                else:
+                    y1 = b - (1.0 - b) * torch.expm1(-Lk * a)
+                flat = torch.stack([a, y1], dim=-2).reshape(B, -1)
         return self._bfly_unflatten(flat, original_shape)
 
-    def forward(self, x, binary=False, gate=None):
-        """χ → membership fold → χ⁻¹ on the K3 wire.
+    def enable_compiled_mem_cascade(self):
+        """Install a narrow compiled forward kernel for the butterfly flow.
 
-        Butterfly mode: χ once at the boundary, complement involution
-        for the σ kind, log-mass cascade (width-agnostic over the
-        flattened slab, like the signed cascade it re-charters).
+        The stateful sentence/STM/grammar driver must stay eager on MPS: an
+        AOT graph spanning even two word ticks creates a huge backward graph
+        and spends minutes lowering before its first batch.  The membership
+        cascade is the hot, pure tensor portion of that driver.  Compiling it
+        separately gives Inductor a stable 136-wide graph whose parameters
+        remain normal differentiable inputs, so each PS/WS fold retains its
+        own gradients without tracing the Python recurrence.
+
+        ``util.compile`` also installs the MPS fusion limits required by
+        Metal's 31-buffer kernel-argument ceiling.  The wrapper is installed
+        only when a caller has explicitly enabled model compilation.
+        """
+        if not self.butterfly:
+            return False
+        if util.TheCompileBackend == "none":
+            return False
+        if getattr(self, "_compiled_mem_cascade", None) is not None:
+            return True
+        compiled = util.compile(
+            self._mem_cascade, verbose=False, fullgraph=True)
+        object.__setattr__(self, "_compiled_mem_cascade", compiled)
+        return True
+
+    def forward(self, x, binary=False, gate=None):
+        """Apply one invertible learned fold directly to membership.
+
+        Butterfly mode runs the bounded coupling flow for sigma and uses the
+        complement involution for pi, one percept/property vector at a time.
 
         Unary mode: width-mismatched calls (the legacy cascade was
         width-agnostic; the per-slot membership fold is not) fall back
@@ -5228,48 +5346,127 @@ class MeronymicFoldAdapter(Layer):
         parallel-fold dispatch uses for mismatched totals.
         """
         if self.butterfly:
-            m = Ops.eval_chart(x.clamp(-1.0, 1.0))
-            if self.kind == 'sigma':
-                m = 1.0 - m
-            l = torch.log(m.clamp(EPS_LOG, 1.0))
-            z = torch.exp(self._mem_cascade(l))
-            if self.kind == 'sigma':
-                z = 1.0 - z
-            out = Ops.eval_chart_inv(z)
+            m = x.clamp(0.0, 1.0)
+            compiled = getattr(self, "_compiled_mem_cascade", None)
+            # Do not nest a separately compiled fold inside an already traced
+            # parent.  The canonical MPS driver is intentionally eager, while
+            # legacy CPU/CUDA full-step tracing retains its original single
+            # graph behavior.
+            cascade = (compiled if compiled is not None
+                       and not torch.compiler.is_compiling()
+                       else self._mem_cascade)
+            z = cascade(m, contractive=(self.kind == 'pi'))
+            out = z.clamp(0.0, 1.0)
             self.activation = out.detach()
             return out
         if x.shape[-1] != self.nInput:
             self.activation = x.detach()
             return x
-        m = Ops.eval_chart(x.clamp(-1.0, 1.0))
-        z = self.fold.forward(m, gate=gate)
-        out = Ops.eval_chart_inv(z)
+        m = x.clamp(0.0, 1.0)
+        out = self.fold.forward(m, gate=gate).clamp(0.0, 1.0)
+        self.activation = out.detach()
+        return out
+
+    def _set_union_membership(self, part_codes, mask=None):
+        """Return the parameter-free De Morgan union of a constituent set.
+
+        The serial word path needs two distinct operations: first, a base
+        mereological M-to-1 aggregation which forms one percept from all of a
+        word's residual parts; second, the learned unary sigma ladder which
+        may raise that percept's order.  Keeping the set union here, before
+        either learned kernel, prevents the first ladder layer from being
+        applied once during word assembly and then a second time as fold 0.
+
+        Returns ``(union_membership, valid_mask, complements)``.  Masked
+        constituents are the sigma identity (membership zero, hence
+        complement one).  The complements are retained so the legacy learned
+        butterfly surface can preserve its pre-aggregation clamp semantics.
+        """
+        if self.kind != 'sigma':
+            raise RuntimeError(
+                "set union is defined only for sigma adapters")
+        if part_codes.dim() < 2:
+            raise RuntimeError(
+                "set union expects a constituent axis")
+        if mask is None:
+            valid = torch.ones(
+                part_codes.shape[:-1], dtype=torch.bool,
+                device=part_codes.device)
+        else:
+            valid = mask.to(device=part_codes.device, dtype=torch.bool)
+            if tuple(valid.shape) != tuple(part_codes.shape[:-1]):
+                raise RuntimeError(
+                    "meronymic set mask does not match constituent slab: "
+                    f"codes={tuple(part_codes.shape)}, "
+                    f"mask={tuple(valid.shape)}")
+
+        membership = part_codes.clamp(0.0, 1.0)
+        complement = torch.where(
+            valid.unsqueeze(-1), 1.0 - membership,
+            torch.ones_like(membership))
+        return 1.0 - complement.prod(dim=-2), valid, complement
+
+    def aggregate_over_set(self, part_codes, mask=None):
+        """Form the base M-to-1 whole without a learned feature fold.
+
+        This is the serial word assembler.  It is the exact order-invariant
+        De Morgan extension ``1 - product(1 - m_i)`` in membership space.
+        It intentionally does not call
+        ``self.fold`` or ``self._mem_cascade``; learned order-raising begins at
+        the subsequent unary sigma ladder.
+        """
+        union_m, valid, _complement = self._set_union_membership(
+            part_codes, mask=mask)
+        out = union_m
+        any_valid = valid.any(dim=-1, keepdim=True)
+        out = torch.where(any_valid, out, torch.zeros_like(out))
+        self.activation = out.detach()
+        return out
+
+    def synthesize_over_set(self, part_codes, mask=None):
+        """Synthesize ``[..., M, D]`` constituents through a learned fold.
+
+        The ordinary slot ``forward`` raises one vector's order.  This method
+        remains the learned M-to-1 surface for callers that explicitly want
+        set aggregation and feature folding in one operation.  The serial
+        word base uses :meth:`aggregate_over_set` instead, then invokes each
+        advertised unary sigma rung exactly once.
+
+        Both modes first form the exact order-invariant De Morgan union and
+        then apply their configured membership fold once. Masked positions
+        are identities, not vague ``a=0`` operands.
+        """
+        union_m, valid, complement = self._set_union_membership(
+            part_codes, mask=mask)
+        if self.butterfly:
+            out_m = self._mem_cascade(union_m)
+        else:
+            out_m = self.fold.forward(union_m)
+        out = out_m.clamp(0.0, 1.0)
+        any_valid = valid.any(dim=-1, keepdim=True)
+        out = torch.where(any_valid, out, torch.zeros_like(out))
         self.activation = out.detach()
         return out
 
     def reverse(self, y, gate=None):
-        """Exact inverse through the same chart pair (identity on
-        width-mismatched unary calls, mirroring forward; in butterfly
-        mode the cascade inverts level-by-level, dividing by
-        d >= 1)."""
+        """Invert the learned membership fold (not M-to-1 set assembly).
+
+        Width-mismatched unary calls remain identities. Butterfly mode
+        reverses each bounded shear and scalar curve in the opposite order.
+        """
         if self.butterfly:
-            z = Ops.eval_chart(y.clamp(-1.0, 1.0))
-            if self.kind == 'sigma':
-                z = 1.0 - z
-            lz = torch.log(z.clamp(torch.finfo(z.dtype).tiny, 1.0))
-            m = torch.exp(self._mem_cascade(lz, inverse=True)).clamp(
-                0.0, 1.0)
-            if self.kind == 'sigma':
-                m = 1.0 - m
-            x = Ops.eval_chart_inv(m)
+            z = y.clamp(0.0, 1.0)
+            m = self._mem_cascade(
+                z, inverse=True,
+                contractive=(self.kind == 'pi')).clamp(0.0, 1.0)
+            x = m.clamp(0.0, 1.0)
             self.activation = x.detach()
             return x
         if y.shape[-1] != self.nOutput:
             self.activation = y.detach()
             return y
-        z = Ops.eval_chart(y.clamp(-1.0, 1.0))
-        m = self.fold.reverse(z, gate=gate)
-        x = Ops.eval_chart_inv(m)
+        z = y.clamp(0.0, 1.0)
+        x = self.fold.reverse(z, gate=gate).clamp(0.0, 1.0)
         self.activation = x.detach()
         return x
 
@@ -5837,8 +6034,12 @@ class ImpenetrableLayer(Layer):
         vq = getattr(basis, "vq", None)
         if vq is not None and hasattr(vq, "cluster_size"):
             counts = vq.cluster_size
-            if torch.is_tensor(counts) and counts.numel() == codebook.shape[0]:
-                counts = counts.to(codebook.device).float()
+            K = int(codebook.shape[0])
+            if torch.is_tensor(counts) and counts.numel() >= K:
+                # ``codebook`` may be the active prefix of a fixed-capacity
+                # basis while the persistent EMA buffer retains physical
+                # width. Prefix ids align, so slice trust to the same rows.
+                counts = counts[:K].to(codebook.device).float()
                 return counts / counts.sum().clamp(min=1.0)
         n = codebook.norm(dim=-1).float()
         return n / n.max().clamp(min=epsilon)
@@ -10299,6 +10500,7 @@ class RadixLayer(Layer):
         dim: int,
         *,
         initial_cap: Optional[int] = None,
+        max_cap: Optional[int] = None,
         promotion_threshold: int = 4,
         promotion_min_length: int = 2,
         word_bounded: bool = False,
@@ -10318,7 +10520,17 @@ class RadixLayer(Layer):
         if cap <= 0:
             raise ValueError(
                 f"RadixLayer: initial_cap must be positive, got {cap}")
+        if max_cap is not None and int(max_cap) < cap:
+            raise ValueError(
+                "RadixLayer: max_cap must be at least initial_cap; "
+                f"got max_cap={int(max_cap)}, initial_cap={cap}")
         self._capacity: int = cap
+        # ``None`` retains the historical standalone-layer behaviour (grow
+        # immediately and without a logical ceiling).  PartSpace always
+        # supplies its configured ``maxVectors`` so the production radix
+        # store grows only at an explicit batch boundary.
+        self._max_capacity: Optional[int] = (
+            None if max_cap is None else int(max_cap))
         self._size: int = 0
         # 2026-06-04: vector storage is a Codebook *Basis*, not a raw
         # nn.Parameter. When ``basis`` is supplied (PartSpace passes
@@ -10352,6 +10564,12 @@ class RadixLayer(Layer):
         # counts. A spelled-out chunk is promoted to a single percept once
         # it recurs ``promotion_threshold`` times (see ``observe_chunk``).
         self._chunk_hits: Dict[bytes, int] = {}
+        # Promotions discovered by the eager lexical stem must not replace a
+        # Parameter that the current autograd/compiled graph already owns.
+        # Keep their initializers detached on CPU and install them only from
+        # ``flush_pending_promotions`` after backward + optimizer.step (or at
+        # the corresponding no-grad inference boundary).
+        self._pending_promotions: Dict[bytes, torch.Tensor] = {}
 
     @property
     def codebook(self):
@@ -10371,6 +10589,16 @@ class RadixLayer(Layer):
     @property
     def capacity(self) -> int:
         return self._capacity
+
+    @property
+    def max_capacity(self) -> Optional[int]:
+        """Logical row ceiling, or ``None`` for an unbounded standalone store."""
+        return self._max_capacity
+
+    @property
+    def pending_promotions(self) -> int:
+        """Number of word/chunk rows waiting for a safe growth boundary."""
+        return len(self._pending_promotions)
 
     def __contains__(self, key: bytes) -> bool:
         return bytes(key) in self.hash_map
@@ -10433,20 +10661,34 @@ class RadixLayer(Layer):
         # (byte-identical to ``self.codebook[pid]``; see Codebook.lookup_rows).
         return self._basis.lookup_rows(pid)
 
+    def active_prototypes(self) -> torch.Tensor:
+        """Return only occupied percept rows, transforming after the slice.
+
+        The backing Codebook's physical capacity may be much larger than the
+        radix inventory.  Reading ``self.codebook[:self._size]`` first invokes
+        ``Codebook.getW()``, which applies the percept UNORM STE to every
+        reserved row before slicing.  Gathering the prefix through
+        ``lookup_rows`` is value/gradient-identical and scales with occupancy.
+        """
+        return self._basis.lookup_rows(slice(0, self._size))
+
     def associate_span(self, vec, size=None):
         """Nearest ACTIVE percept by cosine (scale-robust to the reverse-path
         norm inflation), optionally RESTRICTED to percepts of byte-length
         ``size`` -- the .where contract's arm (a): a maximal part covering
         exactly the span. Returns a pid, or ``None`` when no candidate exists.
         NaN/Inf fail loud (mirrors :meth:`reverse`)."""
-        if not torch.is_tensor(vec) or self.codebook is None or self._size <= 0:
+        if not torch.is_tensor(vec) or self._size <= 0:
             return None
         finite = torch.isfinite(vec.detach().cpu())
         if not bool(finite.all()):
             raise RuntimeError(
                 "RadixLayer.associate_span: input vector contains NaN/Inf. "
                 "Numerical divergence must surface, not be silently masked.")
-        W = self.codebook[:self._size].detach()
+        W = self.active_prototypes()
+        if W is None:
+            return None
+        W = W.detach()
         target = vec.detach().to(W.device, W.dtype).reshape(-1)
         if target.shape[0] != W.shape[1]:
             return None
@@ -10481,6 +10723,58 @@ class RadixLayer(Layer):
     # Mutation
     # ------------------------------------------------------------------
 
+    def _capacity_exhausted(self, required: int) -> RuntimeError:
+        return RuntimeError(
+            "RadixLayer percept codebook capacity exhausted: "
+            f"required {int(required)} rows, maxVectors="
+            f"{int(self._max_capacity)}. No percept/trie row was allocated "
+            "and the current Parameter was not replaced. Increase "
+            "PartSpace <maxVectors> (and restart from the checkpoint), or "
+            "freeze online word promotion.")
+
+    def _queue_promotion(
+        self,
+        chunk: bytes,
+        init_vector: torch.Tensor,
+    ) -> None:
+        """Queue one full-chunk promotion without touching live row storage.
+
+        The queue is insertion ordered (ordinary ``dict`` on supported Python)
+        so ids are deterministic. Capacity is checked *before* the queue is
+        mutated; exhaustion is therefore atomic with respect to the radix
+        inventory and its pending state.
+        """
+        chunk_b = bytes(chunk)
+        if chunk_b in self.hash_map or chunk_b in self._pending_promotions:
+            return
+        required = self._size + len(self._pending_promotions) + 1
+        if (self._max_capacity is not None
+                and required > self._max_capacity):
+            raise self._capacity_exhausted(required)
+        if (not torch.is_tensor(init_vector)
+                or tuple(init_vector.shape) != (self.dim,)):
+            raise ValueError(
+                "RadixLayer queued promotion initializer must have shape "
+                f"({self.dim},), got "
+                f"{None if not torch.is_tensor(init_vector) else tuple(init_vector.shape)}")
+        self._pending_promotions[chunk_b] = (
+            init_vector.detach().to(device="cpu").clone())
+
+    def _promote_or_queue(
+        self,
+        chunk: bytes,
+        init_vector: torch.Tensor,
+    ) -> Optional[int]:
+        """Install with existing slack, otherwise defer to a safe boundary."""
+        if self._size < self._capacity:
+            return int(self.insert(chunk, init_vector=init_vector))
+        # Standalone RadixLayer users historically grow on insert. Only a
+        # configured logical cap opts into the production boundary protocol.
+        if self._max_capacity is None:
+            return int(self.insert(chunk, init_vector=init_vector))
+        self._queue_promotion(chunk, init_vector)
+        return None
+
     def insert(
         self,
         chunk: bytes,
@@ -10509,6 +10803,14 @@ class RadixLayer(Layer):
         new_id = self._size
         # Grow the codebook if the new ID would overflow.
         if new_id >= self._capacity:
+            if self._max_capacity is not None:
+                if new_id + 1 > self._max_capacity:
+                    raise self._capacity_exhausted(new_id + 1)
+                raise RuntimeError(
+                    "RadixLayer.insert would replace the PartSpace codebook "
+                    "Parameter outside a safe batch boundary. Queue a chunk "
+                    "promotion and call flush_pending_promotions() after "
+                    "backward + optimizer.step; no row was allocated.")
             self._grow_to(max(new_id + 1, self._capacity * 2))
         # Seed the new row. Write the MASTER parameter (self._basis.W), NOT
         # self.codebook: under the [0,1] percept-store STE, ``self.codebook``
@@ -10635,8 +10937,9 @@ class RadixLayer(Layer):
         if (full_hits >= self.promotion_threshold
                 and len(chunk_b) >= self.promotion_min_length
                 and self._promotable(chunk_b)):
-            new_pid = self.insert(chunk_b, init_vector=combined.detach())
-            return combined, int(new_pid)
+            new_pid = self._promote_or_queue(
+                chunk_b, init_vector=combined.detach())
+            return combined, (None if new_pid is None else int(new_pid))
         return combined, None
 
     # ------------------------------------------------------------------
@@ -10715,9 +11018,13 @@ class RadixLayer(Layer):
         with torch.no_grad():
             init = (self._basis.lookup_rows(pids).mean(dim=0).detach()
                     if pids else None)
-        new_id = self.insert(chunk_b, init_vector=init)
-        self._chunk_hits.pop(chunk_b, None)
-        return int(new_id)
+        new_id = self._promote_or_queue(chunk_b, init_vector=init)
+        # Once queued, further sightings must not repeatedly attempt the same
+        # promotion.  The byte spell-out returned by this batch remains live;
+        # the single promoted row becomes visible after the boundary flush.
+        if new_id is not None or chunk_b in self._pending_promotions:
+            self._chunk_hits.pop(chunk_b, None)
+        return None if new_id is None else int(new_id)
 
     # ------------------------------------------------------------------
     # Layer-API forward / reverse
@@ -10791,32 +11098,68 @@ class RadixLayer(Layer):
                 f"{int(vec.numel())}.")
         # Pick the comparison codebook. WS-driven walk if a WS peer is
         # supplied (preferred); else nearest-PS-codebook fallback.
+        candidate_row_ids = None
         if symbolic_space is not None:
             cb = getattr(symbolic_space.subspace, "what", None)
-            W = cb.getW() if cb is not None else None
+            W = _active_codebook_prototypes(cb)
             if W is None:
                 # WS codebook absent (e.g. <codebook>none</codebook>): there
                 # is no WS taxonomy to walk, so fall back to the standalone
                 # PS-table decode (nearest ACTIVE percept -> inverse_table)
                 # rather than emitting an empty slot for every word.
                 symbolic_space = None
-                W = self.codebook
+                W = self.active_prototypes()
+            else:
+                # A WS row is structurally decodable only when it is logically
+                # active AND its bound position reaches a META with a live PS
+                # child. Search that intersection directly: inactive reserve
+                # rows are random capacity, while plain/unbound WS rows have no
+                # surface-bytes path and must not shadow a slightly farther
+                # decodable row.
+                active_count = int(W.shape[0])
+
+                def _has_surface_path(pos):
+                    children = symbolic_space.taxonomy_children(int(pos))
+                    if not children:
+                        parent_pos = symbolic_space.taxonomy_parent(int(pos))
+                        if (parent_pos is None
+                                or not symbolic_space.is_meta(int(parent_pos))):
+                            return False
+                        children = symbolic_space.taxonomy_children(
+                            int(parent_pos))
+                    for child in children:
+                        child_pos = int(child)
+                        if symbolic_space._pos_kind.get(child_pos) != "ps":
+                            continue
+                        ps_row = symbolic_space._ps_pos_to_row.get(child_pos)
+                        if ps_row is not None and 0 <= int(ps_row) < self._size:
+                            return True
+                    return False
+
+                bound_rows = sorted(
+                    int(row)
+                    for row, pos in symbolic_space._ws_row_to_pos.items()
+                    if (0 <= int(row) < active_count
+                        and _has_surface_path(pos)))
+                if not bound_rows:
+                    return b""
+                candidate_row_ids = torch.tensor(
+                    bound_rows, dtype=torch.long, device=W.device)
+                W = W.index_select(0, candidate_row_ids)
         else:
-            W = self.codebook
+            W = self.active_prototypes()
         if W is None:
             return b""
         # Empty codebook is a clean no-symbol situation, not a
         # divergence -- bail before argmin sees a [0, D] tensor.
         if W.shape[0] == 0:
             return b""
-        # Bound the nearest-row search to ACTIVE percept rows [0, _size).
-        # The codebook is preallocated to capacity (nVectors); the unused
-        # reserve rows are untrained noise that must not win the argmin (and
-        # for the PS-table decode an out-of-active match has no inverse_table
-        # entry -> IndexError -> empty slot). Restricting to active rows keeps
-        # the decode on real percepts.
-        if symbolic_space is None and 0 < self._size < W.shape[0]:
-            W = W[:self._size]
+        # ``active_prototypes`` already bounded the standalone PS search to
+        # occupied rows before applying the percept read transform.  Keep the
+        # size guard explicit for malformed/restored empty stores.
+        if symbolic_space is None:
+            if self._size <= 0:
+                return b""
         # Move both to the same device + dtype; collapse to [D].
         target = vec.detach().to(W.device, W.dtype).reshape(-1)
         if target.shape[0] != W.shape[1]:
@@ -10840,7 +11183,9 @@ class RadixLayer(Layer):
         # Nearest-row search.
         diffs = W - target.unsqueeze(0)
         sq = (diffs * diffs).sum(dim=1)
-        nearest_row = int(torch.argmin(sq).item())
+        nearest_local = int(torch.argmin(sq).item())
+        nearest_row = (int(candidate_row_ids[nearest_local].item())
+                       if candidate_row_ids is not None else nearest_local)
         # Standalone fallback: no WS, decode directly via PS table.
         if symbolic_space is None:
             try:
@@ -10890,6 +11235,278 @@ class RadixLayer(Layer):
     # Growth
     # ------------------------------------------------------------------
 
+    @staticmethod
+    def _optimizer_leaves(optimizer):
+        """Yield concrete optimizer wrappers from a MultiOptimizer tree."""
+        children = getattr(optimizer, "optimizers", None)
+        if children is None:
+            yield optimizer
+            return
+        for child in children:
+            yield from RadixLayer._optimizer_leaves(child)
+
+    @staticmethod
+    def _migrate_optimizer_parameter(optimizer, old_param, new_param) -> int:
+        """Swap a grown Parameter into groups and prefix-pad row moments."""
+        if optimizer is None or old_param is new_param:
+            return 0
+        replaced = 0
+        old_rows = int(old_param.shape[0])
+        new_rows = int(new_param.shape[0])
+        for leaf in RadixLayer._optimizer_leaves(optimizer):
+            owns = False
+            for group in getattr(leaf, "param_groups", ()):
+                params = group.get("params", ())
+                for i, param in enumerate(params):
+                    if param is old_param:
+                        params[i] = new_param
+                        owns = True
+                        replaced += 1
+            state_by_param = getattr(leaf, "state", None)
+            if state_by_param is None or old_param not in state_by_param:
+                continue
+            old_state = state_by_param.pop(old_param)
+            migrated = {}
+            for name, value in old_state.items():
+                if (str(name) == "step" and torch.is_tensor(value)
+                        and value.numel() == 1):
+                    migrated[name] = value.clone()
+                elif (torch.is_tensor(value) and value.ndim > 0
+                        and int(value.shape[0]) == old_rows):
+                    target_shape = (new_rows, *tuple(value.shape[1:]))
+                    grown = value.new_zeros(target_shape)
+                    grown[:old_rows].copy_(value)
+                    migrated[name] = grown
+                elif torch.is_tensor(value):
+                    migrated[name] = value.clone()
+                else:
+                    migrated[name] = value
+            state_by_param[new_param] = migrated
+            # A state entry without a param-group owner is malformed; retain
+            # it on the new key for diagnostics but do not silently add a new
+            # optimizer group with unknown hyperparameters.
+            if not owns:
+                warnings.warn(
+                    "RadixLayer migrated optimizer state for a Parameter "
+                    "that was absent from optimizer param_groups.",
+                    RuntimeWarning,
+                )
+        return replaced
+
+    @staticmethod
+    def _optimizer_ownership_count(optimizer, parameter) -> int:
+        if optimizer is None or parameter is None:
+            return 0
+        return sum(
+            candidate is parameter
+            for leaf in RadixLayer._optimizer_leaves(optimizer)
+            for group in getattr(leaf, "param_groups", ())
+            for candidate in group.get("params", ())
+        )
+
+    def ensure_atomic_bytes(self, byte_chunks, optimizer=None,
+                            owner_space=None):
+        """Install required one-byte fallback rows at an eager boundary.
+
+        A multi-byte promotion can wait until the post-step boundary, but an
+        unseen byte cannot: :meth:`spell_out` needs its row in the current
+        lexical stem.  This routine is therefore the mandatory, pre-gather
+        counterpart to :meth:`flush_pending_promotions`.  It validates the
+        complete insertion/growth transaction first, grows geometrically,
+        repairs the owning Space and optimizer, and only then mutates the
+        trie inventory.
+
+        Callers must invoke it before any read of the current codebook in the
+        forward/autograd graph.  ``PartSpace._embed_radix*`` does so once for
+        all distinct bytes in the incoming batch.
+        """
+        requested = []
+        seen = set()
+        for chunk in byte_chunks:
+            if not isinstance(chunk, (bytes, bytearray)):
+                raise TypeError(
+                    "RadixLayer.ensure_atomic_bytes requires byte chunks; "
+                    f"got {type(chunk)!r}")
+            chunk_b = bytes(chunk)
+            if len(chunk_b) != 1:
+                raise ValueError(
+                    "RadixLayer.ensure_atomic_bytes requires exactly one "
+                    f"byte per chunk; got length {len(chunk_b)}")
+            if chunk_b not in seen:
+                seen.add(chunk_b)
+                requested.append(chunk_b)
+
+        missing = [chunk for chunk in requested
+                   if chunk not in self.hash_map]
+        if not missing:
+            return {
+                "inserted": 0,
+                "grew": False,
+                "old_capacity": self._capacity,
+                "new_capacity": self._capacity,
+                "optimizer_groups": 0,
+            }
+
+        # Pending word rows already reserve logical ids.  Include them in the
+        # ceiling check, but do not force them into the live table here: only
+        # the byte atoms are required to spell this batch losslessly.
+        pending_only = [
+            chunk for chunk in self._pending_promotions
+            if chunk not in self.hash_map and chunk not in seen
+        ]
+        required_now = self._size + len(missing)
+        required_logical = required_now + len(pending_only)
+        if (self._max_capacity is not None
+                and required_logical > self._max_capacity):
+            raise self._capacity_exhausted(required_logical)
+
+        old_capacity = self._capacity
+        target = old_capacity
+        while target < required_now:
+            target = max(target + 1, target * 2)
+            if self._max_capacity is not None:
+                target = min(target, self._max_capacity)
+            if (target < required_now
+                    and target == self._max_capacity):
+                raise self._capacity_exhausted(required_now)
+
+        old_param = self._basis._parameters.get("W")
+        target_will_grow = target > old_capacity
+        owners = 0
+        if target_will_grow:
+            if owner_space is not None and not callable(getattr(
+                    owner_space, "_replace_radix_codebook_parameter", None)):
+                raise RuntimeError(
+                    "RadixLayer eager atomic-byte growth owner lacks "
+                    "_replace_radix_codebook_parameter; no Parameter or "
+                    "radix row was changed.")
+            if optimizer is not None:
+                owners = self._optimizer_ownership_count(
+                    optimizer, old_param)
+                if owners != 1:
+                    raise RuntimeError(
+                        "RadixLayer eager atomic-byte growth requires exactly "
+                        "one optimizer param-group owner for PartSpace W; "
+                        f"found {owners}. No Parameter or radix row was "
+                        "changed.")
+
+        if target_will_grow:
+            self._grow_to(target)
+        new_param = self._basis._parameters.get("W")
+        optimizer_groups = 0
+        if new_param is not old_param:
+            if owner_space is not None:
+                owner_space._replace_radix_codebook_parameter(
+                    old_param, new_param, target)
+            optimizer_groups = self._migrate_optimizer_parameter(
+                optimizer, old_param, new_param)
+            if optimizer is not None and optimizer_groups != owners:
+                raise RuntimeError(
+                    "RadixLayer optimizer ownership changed during eager "
+                    "atomic-byte growth; refusing to continue with an "
+                    "unowned W")
+
+        # With enough physical slack installed, insert() cannot resize.  A
+        # byte that was somehow also pending is now satisfied immediately;
+        # remove that redundant deferred initializer.
+        for chunk in missing:
+            self.insert(chunk)
+            self._pending_promotions.pop(chunk, None)
+        return {
+            "inserted": len(missing),
+            "grew": target_will_grow,
+            "old_capacity": old_capacity,
+            "new_capacity": target,
+            "optimizer_groups": optimizer_groups,
+        }
+
+    def flush_pending_promotions(self, optimizer=None, owner_space=None):
+        """Commit deferred promotions at an explicit graph-safe boundary.
+
+        Growth is geometric and capped by ``max_capacity``.  The complete
+        capacity check and initializer validation happen before any trie,
+        codebook, owner, or optimizer mutation.  When growth replaces ``W``,
+        the owner parameter list and optimizer groups/states are migrated in
+        place; row-wise moments keep their prefix and receive zero tails.
+        """
+        pending = [
+            (chunk, init) for chunk, init in self._pending_promotions.items()
+            if chunk not in self.hash_map
+        ]
+        if not pending:
+            self._pending_promotions.clear()
+            return {"inserted": 0, "grew": False,
+                    "old_capacity": self._capacity,
+                    "new_capacity": self._capacity,
+                    "optimizer_groups": 0}
+
+        required = self._size + len(pending)
+        if (self._max_capacity is not None
+                and required > self._max_capacity):
+            raise self._capacity_exhausted(required)
+        for chunk, init in pending:
+            if not chunk or tuple(init.shape) != (self.dim,):
+                raise ValueError(
+                    "RadixLayer pending-promotion state is corrupt; "
+                    "no queued row was installed.")
+
+        old_capacity = self._capacity
+        old_param = self._basis._parameters.get("W")
+        if target_will_grow := (required > old_capacity):
+            if optimizer is not None:
+                owners = self._optimizer_ownership_count(
+                    optimizer, old_param)
+                if owners != 1:
+                    raise RuntimeError(
+                        "RadixLayer boundary growth requires exactly one "
+                        "optimizer param-group owner for PartSpace W; found "
+                        f"{owners}. No Parameter or radix row was changed.")
+            else:
+                owners = 0
+        else:
+            owners = 0
+        target = old_capacity
+        while target < required:
+            target = max(target + 1, target * 2)
+            if self._max_capacity is not None:
+                target = min(target, self._max_capacity)
+            if target < required and target == self._max_capacity:
+                raise self._capacity_exhausted(required)
+
+        if target > old_capacity:
+            self._grow_to(target)
+        new_param = self._basis._parameters.get("W")
+        optimizer_groups = 0
+        if new_param is not old_param:
+            if owner_space is not None:
+                replace = getattr(
+                    owner_space, "_replace_radix_codebook_parameter", None)
+                if not callable(replace):
+                    raise RuntimeError(
+                        "RadixLayer growth owner lacks "
+                        "_replace_radix_codebook_parameter; optimizer "
+                        "ownership cannot be repaired safely.")
+                replace(old_param, new_param, target)
+            optimizer_groups = self._migrate_optimizer_parameter(
+                optimizer, old_param, new_param)
+            if optimizer is not None and optimizer_groups != owners:
+                raise RuntimeError(
+                    "RadixLayer optimizer ownership changed during boundary "
+                    "growth; refusing to continue with an unowned W")
+
+        # Capacity and all ownership transitions are now valid.  ``insert``
+        # cannot grow in this loop and each queued initializer was prechecked.
+        for chunk, init in pending:
+            self.insert(chunk, init_vector=init)
+        self._pending_promotions.clear()
+        return {
+            "inserted": len(pending),
+            "grew": target > old_capacity,
+            "old_capacity": old_capacity,
+            "new_capacity": target,
+            "optimizer_groups": optimizer_groups,
+        }
+
     def _grow_to(self, new_cap: int) -> None:
         """Grow the codebook to ``new_cap`` rows, preserving existing rows.
 
@@ -10903,6 +11520,9 @@ class RadixLayer(Layer):
         new_cap = int(new_cap)
         if new_cap <= self._capacity:
             return
+        if (self._max_capacity is not None
+                and new_cap > self._max_capacity):
+            raise self._capacity_exhausted(new_cap)
         # Delegate growth to the Codebook Basis: it preserves the existing
         # rows and zero-inits the new ones (``insert`` seeds the new row
         # immediately after). Replaces the old raw-Parameter rebuild.
@@ -10924,6 +11544,7 @@ class RadixLayer(Layer):
         return {
             "dim": self.dim,
             "capacity": self._capacity,
+            "max_capacity": self._max_capacity,
             "size": self._size,
             "promotion_threshold": self.promotion_threshold,
             "promotion_min_length": self.promotion_min_length,
@@ -10931,6 +11552,11 @@ class RadixLayer(Layer):
             "hash_map": dict(self.hash_map),
             "inverse_table": list(self.inverse_table),
             "byte_fallback_hits": self.byte_fallback.extras_dump(),
+            "chunk_hits": dict(self._chunk_hits),
+            "pending_promotions": [
+                (chunk, init.detach().to(device="cpu").clone())
+                for chunk, init in self._pending_promotions.items()
+            ],
         }
 
     def load_vocab_extras(self, extras: Dict[str, object]) -> None:
@@ -10943,10 +11569,23 @@ class RadixLayer(Layer):
         """
         cap = int(extras["capacity"])
         size = int(extras["size"])
-        if cap != self._capacity:
-            # Re-allocate the codebook to the saved capacity, copying
-            # what we already have (typically the freshly-init'd state).
+        saved_max = extras.get("max_capacity", None)
+        if self._max_capacity is None and saved_max is not None:
+            self._max_capacity = int(saved_max)
+        if (self._max_capacity is not None
+                and cap > self._max_capacity):
+            raise ValueError(
+                "RadixLayer checkpoint physical capacity exceeds configured "
+                f"maxVectors: checkpoint={cap}, maxVectors="
+                f"{self._max_capacity}")
+        if cap > self._capacity:
+            # Never shrink a larger configured initial allocation.  This is
+            # the sidecar half of the prefix-load checkpoint migration.
             self._grow_to(cap)
+        if size > self._capacity:
+            raise ValueError(
+                f"RadixLayer checkpoint size {size} exceeds live physical "
+                f"capacity {self._capacity}")
         self._size = size
         self.promotion_threshold = int(extras["promotion_threshold"])
         self.promotion_min_length = int(extras["promotion_min_length"])
@@ -10965,6 +11604,25 @@ class RadixLayer(Layer):
                          for k, v in extras["hash_map"].items()}
         self.inverse_table = [bytes(b) for b in extras["inverse_table"]]
         self.byte_fallback.extras_load(extras["byte_fallback_hits"])
+        self._chunk_hits = {
+            bytes(k): int(v)
+            for k, v in (extras.get("chunk_hits", {}) or {}).items()
+        }
+        pending = {}
+        for chunk, init in extras.get("pending_promotions", ()) or ():
+            chunk_b = bytes(chunk)
+            init_t = torch.as_tensor(init).detach().to(device="cpu").clone()
+            if tuple(init_t.shape) != (self.dim,):
+                raise ValueError(
+                    "RadixLayer checkpoint pending initializer has shape "
+                    f"{tuple(init_t.shape)}, expected ({self.dim},)")
+            pending[chunk_b] = init_t
+        if (self._max_capacity is not None
+                and self._size + len(pending) > self._max_capacity):
+            raise ValueError(
+                "RadixLayer checkpoint pending promotions exceed configured "
+                f"maxVectors={self._max_capacity}")
+        self._pending_promotions = pending
 
 
 #endregion
@@ -11759,6 +12417,30 @@ class ShortTermMemory(Layer):
         object.__setattr__(
             self, '_live_depth',
             torch.zeros(self._init_batch, dtype=torch.long))
+        # Parallel provenance slabs. ``_live_orders`` is the actual
+        # subsymbolic/concept order of each idea; ``_live_grammar_orders`` is
+        # the syntactic derivation depth. Keeping them separate prevents a
+        # grammatical REDUCE from relabelling a word's mereological order.
+        object.__setattr__(
+            self, '_live_orders',
+            torch.full((self._init_batch, self._init_capacity), -1,
+                       dtype=torch.long))
+        object.__setattr__(
+            self, '_live_grammar_orders',
+            torch.full((self._init_batch, self._init_capacity), -1,
+                       dtype=torch.long))
+        # Exact sparse concept provenance for each occupied idea.  A row of
+        # ``-1`` means the dense payload has no single durable concept-row
+        # identity (for example, it is the result of a grammatical
+        # transformation).  Activations carry the coefficient of the named
+        # lexical row; they are zero whenever the row is unknown.
+        object.__setattr__(
+            self, '_live_concept_rows',
+            torch.full((self._init_batch, self._init_capacity), -1,
+                       dtype=torch.long))
+        object.__setattr__(
+            self, '_live_concept_activations',
+            torch.zeros(self._init_batch, self._init_capacity))
         self._live_capacity = self._init_capacity
         self._live_max_depth_host = 0
 
@@ -11779,6 +12461,25 @@ class ShortTermMemory(Layer):
     @_buffer.setter
     def _buffer(self, value):
         object.__setattr__(self, '_live_buffer', value)
+        # A wholesale carrier replacement invalidates provenance unless the
+        # caller immediately installs the correspondingly transformed slabs.
+        # Internal functional updates do exactly that; external legacy writes
+        # therefore degrade safely to "unknown" instead of inheriting orders
+        # from unrelated ideas.
+        if torch.is_tensor(value) and hasattr(self, '_live_orders'):
+            shape = tuple(value.shape[:2])
+            object.__setattr__(
+                self, '_live_orders',
+                torch.full(shape, -1, dtype=torch.long, device=value.device))
+            object.__setattr__(
+                self, '_live_grammar_orders',
+                torch.full(shape, -1, dtype=torch.long, device=value.device))
+            object.__setattr__(
+                self, '_live_concept_rows',
+                torch.full(shape, -1, dtype=torch.long, device=value.device))
+            object.__setattr__(
+                self, '_live_concept_activations',
+                torch.zeros(shape, dtype=value.dtype, device=value.device))
 
     @property
     def _depth(self):
@@ -11787,6 +12488,38 @@ class ShortTermMemory(Layer):
     @_depth.setter
     def _depth(self, value):
         object.__setattr__(self, '_live_depth', value)
+
+    @property
+    def _orders(self):
+        return self._live_orders
+
+    @_orders.setter
+    def _orders(self, value):
+        object.__setattr__(self, '_live_orders', value)
+
+    @property
+    def _grammar_orders(self):
+        return self._live_grammar_orders
+
+    @_grammar_orders.setter
+    def _grammar_orders(self, value):
+        object.__setattr__(self, '_live_grammar_orders', value)
+
+    @property
+    def _concept_rows(self):
+        return self._live_concept_rows
+
+    @_concept_rows.setter
+    def _concept_rows(self, value):
+        object.__setattr__(self, '_live_concept_rows', value)
+
+    @property
+    def _concept_activations(self):
+        return self._live_concept_activations
+
+    @_concept_activations.setter
+    def _concept_activations(self, value):
+        object.__setattr__(self, '_live_concept_activations', value)
 
     @property
     def _max_depth_host(self):
@@ -11821,7 +12554,105 @@ class ShortTermMemory(Layer):
         self._buffer = torch.zeros(
             batch, cap, dim, device=device, dtype=dtype)
         self._depth = torch.zeros(batch, dtype=torch.long, device=device)
+        self._orders = torch.full(
+            (batch, cap), -1, dtype=torch.long, device=device)
+        self._grammar_orders = torch.full(
+            (batch, cap), -1, dtype=torch.long, device=device)
+        self._concept_rows = torch.full(
+            (batch, cap), -1, dtype=torch.long, device=device)
+        self._concept_activations = torch.zeros(
+            (batch, cap), dtype=dtype, device=device)
         self._max_depth_host = 0
+
+    def ensure_order_state(self):
+        """Return shape/device-aligned concept and grammar order slabs.
+
+        A few older tests and checkpoint adapters assign ``_buffer``
+        directly. Treat such a replacement as provenance-unknown instead of
+        retaining a stale order slab with a coincidentally compatible prefix.
+        """
+        buf = self._buffer
+        shape = tuple(buf.shape[:2])
+        orders = self._orders
+        grammar = self._grammar_orders
+        if (orders is None or tuple(orders.shape) != shape
+                or orders.device != buf.device):
+            orders = torch.full(
+                shape, -1, dtype=torch.long, device=buf.device)
+            self._orders = orders
+        if (grammar is None or tuple(grammar.shape) != shape
+                or grammar.device != buf.device):
+            grammar = torch.full(
+                shape, -1, dtype=torch.long, device=buf.device)
+            self._grammar_orders = grammar
+        return orders, grammar
+
+    def ensure_reference_state(self):
+        """Return row/activation slabs aligned with the live STM payload.
+
+        Wholesale legacy writes to ``_buffer`` deliberately reset these
+        slabs.  This helper also repairs old checkpoint/test adapters that
+        supplied only the payload and order metadata.
+        """
+        buf = self._buffer
+        shape = tuple(buf.shape[:2])
+        rows = self._concept_rows
+        activations = self._concept_activations
+        if (rows is None or tuple(rows.shape) != shape
+                or rows.device != buf.device or rows.dtype != torch.long):
+            rows = torch.full(
+                shape, -1, dtype=torch.long, device=buf.device)
+            self._concept_rows = rows
+        if (activations is None or tuple(activations.shape) != shape
+                or activations.device != buf.device
+                or activations.dtype != buf.dtype):
+            activations = torch.zeros(
+                shape, dtype=buf.dtype, device=buf.device)
+        # Unknown rows never retain a coefficient. Apply this tensorially so
+        # the invariant is equally true in eager and compiled execution.
+        activations = torch.where(
+            rows >= 0, activations, torch.zeros_like(activations))
+        self._concept_activations = activations
+        return rows, activations
+
+    @staticmethod
+    def _coerce_order_rows(value, batch, device, *, default=-1):
+        if value is None:
+            return torch.full(
+                (int(batch),), int(default), dtype=torch.long, device=device)
+        if torch.is_tensor(value):
+            return value.to(device=device, dtype=torch.long).reshape(int(batch))
+        return torch.full(
+            (int(batch),), int(value), dtype=torch.long, device=device)
+
+    @staticmethod
+    def _coerce_concept_rows(value, batch, device):
+        if value is None:
+            return torch.full(
+                (int(batch),), -1, dtype=torch.long, device=device)
+        if torch.is_tensor(value):
+            return value.to(
+                device=device, dtype=torch.long).reshape(int(batch))
+        return torch.full(
+            (int(batch),), int(value), dtype=torch.long, device=device)
+
+    @staticmethod
+    def _coerce_concept_activations(value, batch, device, dtype,
+                                    concept_rows=None):
+        if value is None:
+            activations = torch.zeros(
+                (int(batch),), dtype=dtype, device=device)
+        elif torch.is_tensor(value):
+            activations = value.to(
+                device=device, dtype=dtype).reshape(int(batch))
+        else:
+            activations = torch.full(
+                (int(batch),), float(value), dtype=dtype, device=device)
+        if concept_rows is not None:
+            activations = torch.where(
+                concept_rows >= 0, activations,
+                torch.zeros_like(activations))
+        return activations
 
     # -- idea-stack API (chart compose consumer surface) ------------------
     #
@@ -11846,6 +12677,17 @@ class ShortTermMemory(Layer):
             batch, int(self.capacity), int(self.concept_dim),
             device=device, dtype=dtype)
         self._depth = torch.zeros(batch, dtype=torch.long, device=device)
+        self._orders = torch.full(
+            (batch, int(self.capacity)), -1,
+            dtype=torch.long, device=device)
+        self._grammar_orders = torch.full(
+            (batch, int(self.capacity)), -1,
+            dtype=torch.long, device=device)
+        self._concept_rows = torch.full(
+            (batch, int(self.capacity)), -1,
+            dtype=torch.long, device=device)
+        self._concept_activations = torch.zeros(
+            (batch, int(self.capacity)), dtype=dtype, device=device)
         self._max_depth_host = 0
         # Slot-kind provenance resets with the buffer (recording stays
         # enabled but the rows restart empty, matching depth 0).
@@ -11904,16 +12746,37 @@ class ShortTermMemory(Layer):
             return
         device = buf.device
         B = int(buf.shape[0])
+        orders, grammar = self.ensure_order_state()
+        concept_rows, concept_activations = self.ensure_reference_state()
         new_buf = torch.zeros(
             B, capacity, int(self.concept_dim),
             device=device, dtype=buf.dtype)
         if old_cap > 0:
             new_buf[:, :old_cap, :] = buf
         self._buffer = new_buf
+        new_orders = torch.full(
+            (B, capacity), -1, dtype=torch.long, device=device)
+        new_grammar = torch.full(
+            (B, capacity), -1, dtype=torch.long, device=device)
+        new_concept_rows = torch.full(
+            (B, capacity), -1, dtype=torch.long, device=device)
+        new_concept_activations = torch.zeros(
+            (B, capacity), dtype=buf.dtype, device=device)
+        if old_cap > 0:
+            new_orders[:, :old_cap] = orders[:, :old_cap]
+            new_grammar[:, :old_cap] = grammar[:, :old_cap]
+            new_concept_rows[:, :old_cap] = concept_rows[:, :old_cap]
+            new_concept_activations[:, :old_cap] = (
+                concept_activations[:, :old_cap])
+        self._orders = new_orders
+        self._grammar_orders = new_grammar
+        self._concept_rows = new_concept_rows
+        self._concept_activations = new_concept_activations
         if self._word_subspace is None:
             self._live_capacity = capacity
 
-    def push(self, b, idea):
+    def push(self, b, idea, order=None, grammar_order=None,
+             concept_row=None, concept_activation=None):
         # Newest-at-slot-0: write the new idea at slot 0 and shift the
         # existing occupants RIGHT. Overflow RAISES (strict-bound
         # primitive; the rolling-window drop is _stm_shift_and_push).
@@ -11924,29 +12787,70 @@ class ShortTermMemory(Layer):
                 f"ShortTermMemory.push: row {b} is at capacity "
                 f"({cap}); reduce before pushing further.")
         buf = self._buffer
+        orders, grammar = self.ensure_order_state()
+        concept_rows, concept_activations = self.ensure_reference_state()
         if depth > 0:
             buf[b, 1:depth + 1] = buf[b, 0:depth].clone()
+            orders[b, 1:depth + 1] = orders[b, 0:depth].clone()
+            grammar[b, 1:depth + 1] = grammar[b, 0:depth].clone()
+            concept_rows[b, 1:depth + 1] = (
+                concept_rows[b, 0:depth].clone())
+            concept_activations[b, 1:depth + 1] = (
+                concept_activations[b, 0:depth].clone())
         buf[b, 0] = idea
+        orders[b, 0] = int(-1 if order is None else order)
+        grammar[b, 0] = int(-1 if grammar_order is None else grammar_order)
+        inserted_row = self._coerce_concept_rows(
+            concept_row, 1, buf.device)
+        concept_rows[b, 0] = inserted_row[0]
+        concept_activations[b, 0] = self._coerce_concept_activations(
+            concept_activation, 1, buf.device, buf.dtype,
+            inserted_row)[0]
         self._depth[b] = depth + 1
         if depth + 1 > self._max_depth_host:
             self._max_depth_host = depth + 1
 
-    def push_step(self, ideas):
+    def push_step(self, ideas, orders=None, grammar_orders=None,
+                  concept_row=None, concept_activation=None):
         # Newest-at-slot-0: shift RIGHT by one slot, write slot 0.
         buf = self._buffer
         cap = int(buf.shape[1])
+        order_slab, grammar_slab = self.ensure_order_state()
+        concept_slab, activation_slab = self.ensure_reference_state()
+        B = int(buf.shape[0])
+        order_rows = self._coerce_order_rows(
+            orders, B, buf.device)
+        grammar_rows = self._coerce_order_rows(
+            grammar_orders, B, buf.device)
+        concept_rows = self._coerce_concept_rows(
+            concept_row, B, buf.device)
+        concept_activations = self._coerce_concept_activations(
+            concept_activation, B, buf.device, buf.dtype, concept_rows)
         if cap > 1:
             buf[:, 1:cap] = buf[:, 0:cap - 1].clone()
+            order_slab[:, 1:cap] = order_slab[:, 0:cap - 1].clone()
+            grammar_slab[:, 1:cap] = grammar_slab[:, 0:cap - 1].clone()
+            concept_slab[:, 1:cap] = concept_slab[:, 0:cap - 1].clone()
+            activation_slab[:, 1:cap] = (
+                activation_slab[:, 0:cap - 1].clone())
         buf[:, 0] = ideas
+        order_slab[:, 0] = order_rows
+        grammar_slab[:, 0] = grammar_rows
+        concept_slab[:, 0] = concept_rows
+        activation_slab[:, 0] = concept_activations
         self._depth = self._depth + 1
         self._max_depth_host = self._max_depth_host + 1
 
-    def push_step_masked(self, ideas, gate_b_1):
+    def push_step_masked(self, ideas, gate_b_1, orders=None,
+                         grammar_orders=None, concept_row=None,
+                         concept_activation=None):
         # Newest-at-slot-0 masked push: gated rows shift RIGHT + write
         # slot 0; un-gated rows are unchanged.
         B, D = ideas.shape
         buf = self._buffer
         cap = int(buf.shape[1])
+        order_slab, grammar_slab = self.ensure_order_state()
+        concept_slab, activation_slab = self.ensure_reference_state()
         gate_b = gate_b_1.view(B)
         gate_bool = gate_b.bool()
         gate_col = gate_bool.view(B, 1, 1)
@@ -11955,10 +12859,38 @@ class ShortTermMemory(Layer):
             shifted[:, 1:cap] = buf[:, 0:cap - 1]
         shifted[:, 0] = ideas
         self._buffer = torch.where(gate_col, shifted, buf)
+        shifted_orders = order_slab.clone()
+        shifted_grammar = grammar_slab.clone()
+        shifted_concepts = concept_slab.clone()
+        shifted_activations = activation_slab.clone()
+        if cap > 1:
+            shifted_orders[:, 1:cap] = order_slab[:, 0:cap - 1]
+            shifted_grammar[:, 1:cap] = grammar_slab[:, 0:cap - 1]
+            shifted_concepts[:, 1:cap] = concept_slab[:, 0:cap - 1]
+            shifted_activations[:, 1:cap] = activation_slab[:, 0:cap - 1]
+        shifted_orders[:, 0] = self._coerce_order_rows(
+            orders, B, buf.device)
+        shifted_grammar[:, 0] = self._coerce_order_rows(
+            grammar_orders, B, buf.device)
+        inserted_rows = self._coerce_concept_rows(
+            concept_row, B, buf.device)
+        shifted_concepts[:, 0] = inserted_rows
+        shifted_activations[:, 0] = self._coerce_concept_activations(
+            concept_activation, B, buf.device, buf.dtype, inserted_rows)
+        gate_order = gate_bool.view(B, 1)
+        self._orders = torch.where(
+            gate_order, shifted_orders, order_slab)
+        self._grammar_orders = torch.where(
+            gate_order, shifted_grammar, grammar_slab)
+        self._concept_rows = torch.where(
+            gate_order, shifted_concepts, concept_slab)
+        self._concept_activations = torch.where(
+            gate_order, shifted_activations, activation_slab)
         self._depth = torch.clamp(
             self._depth + gate_bool.long(), max=cap)
 
-    def push_window_batch(self, ideas):
+    def push_window_batch(self, ideas, orders=None, grammar_orders=None,
+                          concept_rows=None, concept_activations=None):
         # Newest-at-slot-0: shift RIGHT by W; write the window REVERSED
         # into slots [0, W) so the window's newest position lands at 0.
         B, W, D = ideas.shape
@@ -11966,9 +12898,62 @@ class ShortTermMemory(Layer):
             return
         buf = self._buffer
         cap = int(buf.shape[1])
+        order_slab, grammar_slab = self.ensure_order_state()
+        concept_slab, activation_slab = self.ensure_reference_state()
+        if orders is None:
+            order_window = torch.full(
+                (B, W), -1, dtype=torch.long, device=buf.device)
+        elif torch.is_tensor(orders):
+            order_window = orders.to(
+                device=buf.device, dtype=torch.long).reshape(B, W)
+        else:
+            order_window = torch.full(
+                (B, W), int(orders), dtype=torch.long, device=buf.device)
+        if grammar_orders is None:
+            grammar_window = torch.full(
+                (B, W), -1, dtype=torch.long, device=buf.device)
+        elif torch.is_tensor(grammar_orders):
+            grammar_window = grammar_orders.to(
+                device=buf.device, dtype=torch.long).reshape(B, W)
+        else:
+            grammar_window = torch.full(
+                (B, W), int(grammar_orders), dtype=torch.long,
+                device=buf.device)
+        if concept_rows is None:
+            concept_window = torch.full(
+                (B, W), -1, dtype=torch.long, device=buf.device)
+        elif torch.is_tensor(concept_rows):
+            concept_window = concept_rows.to(
+                device=buf.device, dtype=torch.long).reshape(B, W)
+        else:
+            concept_window = torch.full(
+                (B, W), int(concept_rows), dtype=torch.long,
+                device=buf.device)
+        if concept_activations is None:
+            activation_window = torch.zeros(
+                (B, W), dtype=buf.dtype, device=buf.device)
+        elif torch.is_tensor(concept_activations):
+            activation_window = concept_activations.to(
+                device=buf.device, dtype=buf.dtype).reshape(B, W)
+        else:
+            activation_window = torch.full(
+                (B, W), float(concept_activations), dtype=buf.dtype,
+                device=buf.device)
+        activation_window = torch.where(
+            concept_window >= 0, activation_window,
+            torch.zeros_like(activation_window))
         if cap > W:
             buf[:, W:cap] = buf[:, 0:cap - W].clone()
+            order_slab[:, W:cap] = order_slab[:, 0:cap - W].clone()
+            grammar_slab[:, W:cap] = grammar_slab[:, 0:cap - W].clone()
+            concept_slab[:, W:cap] = concept_slab[:, 0:cap - W].clone()
+            activation_slab[:, W:cap] = (
+                activation_slab[:, 0:cap - W].clone())
         buf[:, 0:W] = torch.flip(ideas, dims=[1])
+        order_slab[:, 0:W] = torch.flip(order_window, dims=[1])
+        grammar_slab[:, 0:W] = torch.flip(grammar_window, dims=[1])
+        concept_slab[:, 0:W] = torch.flip(concept_window, dims=[1])
+        activation_slab[:, 0:W] = torch.flip(activation_window, dims=[1])
         self._depth = self._depth + W
         self._max_depth_host = self._max_depth_host + int(W)
 
@@ -11978,10 +12963,22 @@ class ShortTermMemory(Layer):
         if depth == 0:
             return None
         buf = self._buffer
+        orders, grammar = self.ensure_order_state()
+        concept_rows, concept_activations = self.ensure_reference_state()
         idea = buf[b, 0].clone()
         if depth > 1:
             buf[b, 0:depth - 1] = buf[b, 1:depth].clone()
+            orders[b, 0:depth - 1] = orders[b, 1:depth].clone()
+            grammar[b, 0:depth - 1] = grammar[b, 1:depth].clone()
+            concept_rows[b, 0:depth - 1] = (
+                concept_rows[b, 1:depth].clone())
+            concept_activations[b, 0:depth - 1] = (
+                concept_activations[b, 1:depth].clone())
         buf[b, depth - 1].zero_()
+        orders[b, depth - 1] = -1
+        grammar[b, depth - 1] = -1
+        concept_rows[b, depth - 1] = -1
+        concept_activations[b, depth - 1] = 0
         self._depth[b] = depth - 1
         return idea
 
@@ -12012,6 +13009,42 @@ class ShortTermMemory(Layer):
             snap = snap.clone()
         return snap
 
+    def snapshot_orders(self, detach=False):
+        """Return concept/subsymbolic orders aligned with ``snapshot()``."""
+        self.ensure_order_state()
+        max_depth = min(int(self._max_depth_host), int(self.capacity))
+        if max_depth <= 0:
+            return None
+        snap = self._orders[:, :max_depth]
+        return snap.detach().clone() if detach else snap.clone()
+
+    def snapshot_grammar_orders(self, detach=False):
+        """Return syntactic derivation depths aligned with ``snapshot()``."""
+        self.ensure_order_state()
+        max_depth = min(int(self._max_depth_host), int(self.capacity))
+        if max_depth <= 0:
+            return None
+        snap = self._grammar_orders[:, :max_depth]
+        return snap.detach().clone() if detach else snap.clone()
+
+    def snapshot_concept_rows(self, detach=False):
+        """Return exact concept-row references aligned with ``snapshot()``."""
+        self.ensure_reference_state()
+        max_depth = min(int(self._max_depth_host), int(self.capacity))
+        if max_depth <= 0:
+            return None
+        snap = self._concept_rows[:, :max_depth]
+        return snap.detach().clone() if detach else snap.clone()
+
+    def snapshot_concept_activations(self, detach=False):
+        """Return lexical-row coefficients aligned with ``snapshot()``."""
+        self.ensure_reference_state()
+        max_depth = min(int(self._max_depth_host), int(self.capacity))
+        if max_depth <= 0:
+            return None
+        snap = self._concept_activations[:, :max_depth]
+        return snap.detach().clone() if detach else snap.clone()
+
     def size(self, b):
         return int(self._depth[b].item())
 
@@ -12029,6 +13062,12 @@ class ShortTermMemory(Layer):
         if b is None:
             buf.zero_()
             self._depth.zero_()
+            self.ensure_order_state()
+            self._orders.fill_(-1)
+            self._grammar_orders.fill_(-1)
+            self.ensure_reference_state()
+            self._concept_rows.fill_(-1)
+            self._concept_activations.zero_()
             self._max_depth_host = 0
             if ks is not None:
                 for row in ks:
@@ -12039,6 +13078,12 @@ class ShortTermMemory(Layer):
             return
         buf[b].zero_()
         self._depth[b] = 0
+        self.ensure_order_state()
+        self._orders[b].fill_(-1)
+        self._grammar_orders[b].fill_(-1)
+        self.ensure_reference_state()
+        self._concept_rows[b].fill_(-1)
+        self._concept_activations[b].zero_()
         self._max_depth_host = int(self._depth.max().item())
         if ks is not None and b < len(ks):
             del ks[b][:]
@@ -14270,6 +15315,7 @@ class VectorQuantize(nn.Module):
         codebook_retire=False,
         learnable_codebook=False,
         ema_update=True,
+        allocate_ema_state=True,
         **kwargs,
     ):
         """Initialize VectorQuantize; allocate state for the class contract.
@@ -14304,6 +15350,19 @@ class VectorQuantize(nn.Module):
         # leg of the asymmetric routing). Distinct from ``learnable_codebook``
         # (which also flips the in-forward gradient estimator).
         self.ema_update = bool(ema_update)
+        # The aligned serial ConceptualSpace dictionary is an indexed-only,
+        # optimizer-trained table.  It never enters the VQ EMA writer, so a
+        # second full ``[V, D]`` copy in ``embed_avg`` would be pure storage
+        # (4.03 GiB at BasicModel's 1M x 1032 shape).  Keep allocation an
+        # explicit constructor contract rather than deleting buffers after
+        # construction: deletion would leave setter/load/growth paths with an
+        # ambiguous half-enabled EMA mode.  The default is deliberately True
+        # so every legacy VectorQuantize remains byte-for-byte unchanged.
+        self.ema_state_enabled = bool(allocate_ema_state)
+        if self.ema_update and not self.ema_state_enabled:
+            raise ValueError(
+                "VectorQuantize cannot enable ema_update when "
+                "allocate_ema_state=False")
         # Gate for the dead-code replacement path. Off by default because
         # reseeding expired rows with fresh samples can blow up the effective
         # number of distinct codes on non-stationary data.
@@ -14315,8 +15374,9 @@ class VectorQuantize(nn.Module):
         # zero). ``embed_avg`` is the running sum of the assigned inputs;
         # the codebook is rewritten as ``embed_avg / cluster_size`` (with
         # laplace smoothing) each training step.
-        self.register_buffer("cluster_size", torch.ones(codebook_size))
-        self.register_buffer("embed_avg", self.codebook.data.clone())
+        if self.ema_state_enabled:
+            self.register_buffer("cluster_size", torch.ones(codebook_size))
+            self.register_buffer("embed_avg", self.codebook.data.clone())
         # Cached squared L2 norms of each codebook row, refreshed in the
         # codebook setter and at the end of each EMA update. Used by the
         # Euclidean retrieval path to do
@@ -14328,6 +15388,24 @@ class VectorQuantize(nn.Module):
             "_b_norms_sq",
             (self.codebook.data ** 2).sum(dim=-1),
         )
+        # Physical capacity and logical occupancy are deliberately separate.
+        # ``active_mask`` always has the full, construction-time codebook
+        # shape, so changing the active prefix neither replaces Parameters nor
+        # invalidates optimizer ownership.  The dense VQ reads only the active
+        # prefix for speed, so a new prefix width causes one compiled-graph
+        # specialization; power-of-two activation keeps those boundaries few.
+        # It is persistent
+        # checkpoint state (but never a Parameter).  All rows are active by
+        # default for backward compatibility; fixed-capacity users call
+        # ``set_active_rows`` before the first forward.
+        self.register_buffer(
+            "active_mask",
+            torch.ones(codebook_size, dtype=torch.bool),
+        )
+        # Host-side specialization boundary.  Forward reads this Python int;
+        # it never reduces/copies ``active_mask`` back to the host.  Only the
+        # explicit occupancy API and checkpoint load update it.
+        self._active_rows_count = int(codebook_size)
         # Owner-space tag for error messages (set post-construction by the
         # owning Space via ``_tag_vq_name``).
         self.name = ""
@@ -14341,6 +15419,9 @@ class VectorQuantize(nn.Module):
         
         See class docstring for the operation contract.
         """
+        external = self.__dict__.get("_external_codebook")
+        if external is not None:
+            return external
         return self._parameters["_codebook"]
 
     @codebook.setter
@@ -14350,7 +15431,18 @@ class VectorQuantize(nn.Module):
         See class docstring for the operation contract.
         """
         param = value if isinstance(value, nn.Parameter) else nn.Parameter(value.detach().clone())
-        if "_codebook" in self._parameters:
+        external = self.__dict__.get("_external_codebook")
+        if external is not None:
+            # Preserve the authoritative owner's Parameter identity for the
+            # normal same-shape refresh. A shape change is temporarily held
+            # by reference; Codebook's structural mutation seam rebinds the
+            # newly registered owner Parameter immediately afterward.
+            if tuple(external.shape) == tuple(param.shape):
+                with torch.no_grad():
+                    external.data.copy_(param.data)
+                param = external
+            object.__setattr__(self, "_external_codebook", param)
+        elif "_codebook" in self._parameters:
             self._parameters["_codebook"] = param
         else:
             self.register_parameter("_codebook", param)
@@ -14372,6 +15464,50 @@ class VectorQuantize(nn.Module):
         # the row count changed.
         if "_b_norms_sq" in self._buffers:
             self._buffers["_b_norms_sq"] = (param.data ** 2).sum(dim=-1)
+        if "active_mask" in self._buffers:
+            old = self._buffers["active_mask"]
+            if (old.ndim != 1
+                    or int(old.shape[0]) != int(param.shape[0])
+                    or old.device != param.device):
+                old_n = int(old.numel())
+                old_active = int(getattr(
+                    self, "_active_rows_count", old_n))
+                resized = torch.zeros(
+                    int(param.shape[0]), dtype=torch.bool,
+                    device=param.device)
+                # Preserve legacy physical-growth semantics when no logical
+                # active-prefix limit had been installed.  Once a prefix is
+                # limited, newly added physical rows remain inactive until an
+                # explicit set_active_rows call.
+                self._buffers["active_mask"] = resized
+                new_active = (
+                    int(param.shape[0])
+                    if old_active == old_n
+                    else min(old_active, int(param.shape[0])))
+                self.set_active_rows(new_active)
+
+    def bind_external_codebook(self, parameter):
+        """Use an owner-registered Parameter without registering it again.
+
+        A standalone VectorQuantize owns ``_codebook``. When embedded in a
+        ``Spaces.Codebook``, the parent Basis is the structural owner and VQ
+        is only an operational client. Both cases expose the same ``codebook``
+        property to the quantization kernels.
+        """
+        if not isinstance(parameter, nn.Parameter):
+            raise TypeError("external codebook must be an nn.Parameter")
+        self._parameters.pop("_codebook", None)
+        object.__setattr__(self, "_external_codebook", parameter)
+        self.codebook_size = int(parameter.shape[0])
+        self._sync_ema_buffers()
+
+    def _require_ema_state(self, operation):
+        """Fail loudly when an EMA-only operation reaches a compact VQ."""
+        if not self.ema_state_enabled:
+            raise RuntimeError(
+                f"VectorQuantize.{operation} requires EMA state, but this "
+                "indexed-only codebook was constructed with "
+                "allocate_ema_state=False")
 
     def _sync_ema_buffers(self):
         """Repair EMA buffers when they drift from the live codebook shape.
@@ -14383,24 +15519,34 @@ class VectorQuantize(nn.Module):
         """
         codebook = self.codebook
         V, D = int(codebook.shape[0]), int(codebook.shape[1])
-        cluster_size = self.cluster_size
-        if (
-            cluster_size.ndim != 1
-            or int(cluster_size.shape[0]) != V
-            or cluster_size.device != codebook.device
-        ):
-            dtype = cluster_size.dtype if cluster_size.is_floating_point() else torch.float32
-            self._buffers["cluster_size"] = torch.ones(
-                V, device=codebook.device, dtype=dtype
-            )
-        embed_avg = self.embed_avg
-        if (
-            embed_avg.ndim != 2
-            or tuple(embed_avg.shape) != (V, D)
-            or embed_avg.device != codebook.device
-        ):
-            dtype = embed_avg.dtype if embed_avg.is_floating_point() else codebook.dtype
-            self._buffers["embed_avg"] = codebook.detach().to(dtype=dtype).clone()
+        if self.ema_state_enabled:
+            cluster_size = self.cluster_size
+            if (
+                cluster_size.ndim != 1
+                or int(cluster_size.shape[0]) != V
+                or cluster_size.device != codebook.device
+            ):
+                dtype = (cluster_size.dtype
+                         if cluster_size.is_floating_point()
+                         else torch.float32)
+                self._buffers["cluster_size"] = torch.ones(
+                    V, device=codebook.device, dtype=dtype
+                )
+            embed_avg = self.embed_avg
+            if (
+                embed_avg.ndim != 2
+                or tuple(embed_avg.shape) != (V, D)
+                or embed_avg.device != codebook.device
+            ):
+                dtype = (embed_avg.dtype
+                         if embed_avg.is_floating_point()
+                         else codebook.dtype)
+                self._buffers["embed_avg"] = (
+                    codebook.detach().to(dtype=dtype).clone())
+        elif "cluster_size" in self._buffers or "embed_avg" in self._buffers:
+            raise RuntimeError(
+                "VectorQuantize compact EMA contract drifted: an EMA buffer "
+                "was installed after allocate_ema_state=False")
         b_norms_sq = self._b_norms_sq
         if (
             b_norms_sq.ndim != 1
@@ -14410,6 +15556,123 @@ class VectorQuantize(nn.Module):
             self._buffers["_b_norms_sq"] = (
                 codebook.detach() ** 2
             ).sum(dim=-1)
+        active_mask = self.active_mask
+        if (
+            active_mask.ndim != 1
+            or int(active_mask.shape[0]) != V
+            or active_mask.device != codebook.device
+        ):
+            raise RuntimeError(
+                "VectorQuantize active mask drifted from its physical "
+                "codebook; rebuild/rebind the module before forward: "
+                f"mask={tuple(active_mask.shape)} on {active_mask.device}, "
+                f"codebook={tuple(codebook.shape)} on {codebook.device}")
+
+    @torch.no_grad()
+    def set_active_rows(self, n):
+        """Activate exactly the prefix ``[0, n)`` of the physical table.
+
+        This is a value-only mutation of the persistent bool mask.  It never
+        resizes or replaces the codebook Parameter, EMA buffers, or the mask
+        itself, which keeps optimizer ownership and every physical tensor
+        shape stable.  Compiled VQ code specializes once for a newly activated
+        prefix width.  At least one row must remain active because nearest-neighbour
+        selection has no meaningful result for an empty dictionary.
+        """
+        n = int(n)
+        V = int(self.codebook.shape[0])
+        if n < 1 or n > V:
+            raise ValueError(
+                f"VectorQuantize.set_active_rows requires 1 <= n <= {V}; "
+                f"got {n}")
+        mask = self.active_mask
+        if mask.ndim != 1 or int(mask.shape[0]) != V:
+            raise RuntimeError(
+                "VectorQuantize active-mask shape drift: "
+                f"mask={tuple(mask.shape)}, codebook={tuple(self.codebook.shape)}")
+        mask.zero_()
+        mask[:n].fill_(True)
+        self._active_rows_count = n
+        return self
+
+    def _load_from_state_dict(
+        self,
+        state_dict,
+        prefix,
+        local_metadata,
+        strict,
+        missing_keys,
+        unexpected_keys,
+        error_msgs,
+    ):
+        """Load active occupancy while accepting pre-mask checkpoints."""
+        if not self.ema_state_enabled:
+            # A pre-compact checkpoint may carry these two derived EMA
+            # tensors.  They are not authoritative for an indexed-only,
+            # optimizer-trained codebook; consume them without allocating a
+            # destination so strict checkpoint restore remains possible.
+            state_dict.pop(prefix + "cluster_size", None)
+            state_dict.pop(prefix + "embed_avg", None)
+        mask_key = prefix + "active_mask"
+        if mask_key not in state_dict:
+            # Preserve the occupancy configured on the newly constructed
+            # module.  The default remains all-active for legacy standalone
+            # VQs, while a model migrating an old smaller checkpoint into a
+            # larger fixed-capacity table can configure the loaded-row prefix
+            # before load without exposing the random reserve.  Supplying the
+            # value here also lets strict=True loads succeed.
+            state_dict[mask_key] = self.active_mask.detach().clone()
+        incoming = state_dict[mask_key]
+        active_count = None
+        if not torch.is_tensor(incoming):
+            error_msgs.append(
+                f"{mask_key} must be a bool tensor, got "
+                f"{type(incoming).__name__}")
+        elif incoming.dtype != torch.bool:
+            error_msgs.append(
+                f"{mask_key} must have dtype bool, got {incoming.dtype}")
+        elif tuple(incoming.shape) != tuple(self.active_mask.shape):
+            # Let nn.Module's ordinary size-mismatch diagnostic report the
+            # exact source/destination shapes too.
+            error_msgs.append(
+                f"{mask_key} must match physical codebook capacity "
+                f"{tuple(self.active_mask.shape)}, got "
+                f"{tuple(incoming.shape)}")
+        else:
+            # This is a checkpoint boundary, not forward: one deliberate host
+            # copy validates the canonical contiguous-prefix representation
+            # and seeds the cached Python specialization boundary.
+            values = incoming.detach().to(device="cpu").tolist()
+            seen_inactive = False
+            prefix_ok = True
+            count = 0
+            for value in values:
+                if bool(value):
+                    if seen_inactive:
+                        prefix_ok = False
+                        break
+                    count += 1
+                else:
+                    seen_inactive = True
+            if count < 1:
+                prefix_ok = False
+            if not prefix_ok:
+                error_msgs.append(
+                    f"{mask_key} must contain one non-empty active prefix "
+                    "followed only by inactive rows")
+            else:
+                active_count = int(count)
+        super()._load_from_state_dict(
+            state_dict,
+            prefix,
+            local_metadata,
+            strict,
+            missing_keys,
+            unexpected_keys,
+            error_msgs,
+        )
+        if active_count is not None:
+            self._active_rows_count = active_count
 
     @staticmethod
     def _rotate_to(src, tgt):
@@ -14453,8 +15716,29 @@ class VectorQuantize(nn.Module):
         flat = x.reshape(-1, original_shape[-1])
         codebook = self.codebook
         N = flat.shape[0]
-        V = codebook.shape[0]
+        physical_V = int(codebook.shape[0])
+        V = int(self._active_rows_count)
         D = codebook.shape[1]
+        active_mask = self.active_mask
+        if (active_mask.ndim != 1
+                or int(active_mask.shape[0]) != physical_V):
+            raise RuntimeError(
+                "VectorQuantize active-mask shape drift before selection: "
+                f"mask={tuple(active_mask.shape)}, "
+                f"codebook={tuple(codebook.shape)}")
+        if active_mask.device != codebook.device:
+            raise RuntimeError(
+                "VectorQuantize active mask and codebook are on different "
+                f"devices: mask={active_mask.device}, "
+                f"codebook={codebook.device}")
+        if V < 1 or V > physical_V:
+            raise RuntimeError(
+                "VectorQuantize cached active-row boundary is invalid: "
+                f"active={V}, physical={physical_V}")
+        # ``V`` is a Python specialization boundary. This slice is a view of
+        # the fixed Parameter, so physical identity/shape stays unchanged
+        # while dense retrieval and its temporaries scale with active rows.
+        codebook_active = codebook[:V]
         gib = (N * V * 4) / (1024 ** 3)  # float32 bytes -> GiB
 
         # Chunk over rows of `flat`.  The [chunk, V] intermediate
@@ -14482,6 +15766,10 @@ class VectorQuantize(nn.Module):
         if boost_fn is not None:
             boosts = boost_fn(V, flat.device)
             if boosts is not None:
+                if tuple(boosts.shape) != (V,):
+                    raise RuntimeError(
+                        "VectorQuantize selection boost must be [A]: "
+                        f"got {tuple(boosts.shape)} for active rows A={V}")
                 log_boost = torch.log(
                     boosts.to(dtype=flat.dtype, device=flat.device)
                     .clamp_min(1e-12))
@@ -14503,14 +15791,14 @@ class VectorQuantize(nn.Module):
                     # belief-certainty signal in ConceptualSpace) end-to-end
                     # and saves an O(N*D) normalize op per chunk.
                     if N <= chunk:
-                        scores = flat @ codebook.T
+                        scores = flat @ codebook_active.T
                         if log_boost is not None:
                             scores = scores + log_boost
                         indices = scores.argmax(dim=-1)
                     else:
                         parts = []
                         for s in range(0, N, chunk):
-                            scores = flat[s:s+chunk] @ codebook.T
+                            scores = flat[s:s+chunk] @ codebook_active.T
                             if log_boost is not None:
                                 scores = scores + log_boost
                             parts.append(scores.argmax(dim=-1))
@@ -14528,9 +15816,10 @@ class VectorQuantize(nn.Module):
                     # FLOPs as cdist's mm-trick path, skips sqrt and
                     # the per-row ||x||^2 add, and gives Inductor a
                     # cleaner graph (no autograd plumbing for cdist).
-                    half_b_norms_sq = (0.5 * self._b_norms_sq).to(flat.dtype)
+                    half_b_norms_sq = (
+                        0.5 * self._b_norms_sq[:V]).to(flat.dtype)
                     if N <= chunk:
-                        scores = flat @ codebook.T
+                        scores = flat @ codebook_active.T
                         scores = scores - half_b_norms_sq
                         if log_boost is not None:
                             scores = scores + log_boost
@@ -14538,7 +15827,7 @@ class VectorQuantize(nn.Module):
                     else:
                         parts = []
                         for s in range(0, N, chunk):
-                            scores = flat[s:s+chunk] @ codebook.T
+                            scores = flat[s:s+chunk] @ codebook_active.T
                             scores = scores - half_b_norms_sq
                             if log_boost is not None:
                                 scores = scores + log_boost
@@ -14549,12 +15838,13 @@ class VectorQuantize(nn.Module):
             raise RuntimeError(
                 f"VectorQuantize[{owner}]: distance matrix allocation "
                 f"failed even after chunking. flat={tuple(flat.shape)}, "
-                f"codebook={tuple(codebook.shape)}, chunk={chunk}, "
+                f"active_codebook={tuple(codebook_active.shape)} "
+                f"(physical rows={physical_V}), chunk={chunk}, "
                 f"pairwise matrix = [{N}, {V}] float32 = {gib:.2f} GiB. "
                 f"Reduce {owner}.nVectors, reduce batchSize, or set "
                 f"vq._vq_chunk_rows to a smaller value. Original error: {e}"
             ) from e
-        quantized_raw = codebook[indices].reshape(original_shape)
+        quantized_raw = codebook_active[indices].reshape(original_shape)
         commit_loss = self.commitment_weight * F.mse_loss(
             x, quantized_raw.detach()
         )
@@ -14574,6 +15864,7 @@ class VectorQuantize(nn.Module):
         # idempotent for the perceptual codebook.
         if (self.training and not freeze_codebook
                 and not self.learnable_codebook and self.ema_update):
+            self._require_ema_state("forward EMA update")
             with torch.no_grad():
                 self._sync_ema_buffers()
                 flat_f = flat.float()
@@ -14603,76 +15894,84 @@ class VectorQuantize(nn.Module):
                     0, indices,
                     torch.ones_like(indices, dtype=flat_f.dtype),
                 )
-                # Reference-partitioned update law (GrammarOpsPass §6d;
-                # author 2026-06-11). An installed ``update_mask_fn``
-                # returns the rows ALLOWED to move this step (BoolTensor
-                # [V]) or None (= all rows; the legacy path below is
-                # byte-identical when no mask is installed). Frozen rows
-                # keep their codebook value AND their EMA accumulators
-                # (no decay, no batch mass — they simply do not
-                # participate this step) and are exempt from dead-code
-                # expiry, so a later mask change cannot make them jump
-                # from stale statistics.
+                cluster_active = self.cluster_size[:V]
+                embed_active = self.embed_avg[:V]
+                # Reference-partitioned update law (GrammarOpsPass §6d).
+                # ``V`` here is logical A, not physical capacity. A producer
+                # that still returns the physical-width legacy mask is
+                # accepted and sliced, easing migration of installed laws.
                 allowed = None
                 mask_fn = getattr(self, 'update_mask_fn', None)
                 if mask_fn is not None:
-                    allowed = mask_fn(V, flat_f.device)
-                if allowed is not None:
-                    allowed = allowed.to(device=self.cluster_size.device,
-                                         dtype=torch.bool)
-                    allow_f = allowed.to(self.cluster_size.dtype)
-                    decay_vec = self.decay * allow_f + (1.0 - allow_f)
-                    self.cluster_size.mul_(decay_vec).add_(
-                        cluster_size_batch.to(self.cluster_size.dtype)
-                        * allow_f,
+                    partition = mask_fn(V, flat_f.device)
+                    if partition is not None:
+                        partition = partition.to(
+                            device=self.cluster_size.device,
+                            dtype=torch.bool)
+                        if tuple(partition.shape) == (physical_V,):
+                            partition = partition[:V]
+                        elif tuple(partition.shape) != (V,):
+                            raise RuntimeError(
+                                "VectorQuantize update mask must be [A] (or "
+                                "legacy [physical_V]): "
+                                f"got {tuple(partition.shape)}, A={V}, "
+                                f"physical_V={physical_V}")
+                        allowed = partition
+                if allowed is None:
+                    # Preserve the original all-active/no-partition arithmetic
+                    # exactly, merely on the active prefix view.
+                    cluster_active.mul_(self.decay).add_(
+                        cluster_size_batch.to(cluster_active.dtype),
                         alpha=1.0 - self.decay,
                     )
-                    self.embed_avg.mul_(decay_vec.unsqueeze(-1)).add_(
-                        embed_sum.to(self.embed_avg.dtype)
-                        * allow_f.unsqueeze(-1),
+                    embed_active.mul_(self.decay).add_(
+                        embed_sum.to(embed_active.dtype),
                         alpha=1.0 - self.decay,
                     )
                 else:
-                    self.cluster_size.mul_(self.decay).add_(
-                        cluster_size_batch.to(self.cluster_size.dtype),
+                    allow_f = allowed.to(cluster_active.dtype)
+                    decay_vec = self.decay * allow_f + (1.0 - allow_f)
+                    cluster_active.mul_(decay_vec).add_(
+                        cluster_size_batch.to(cluster_active.dtype) * allow_f,
                         alpha=1.0 - self.decay,
                     )
-                    self.embed_avg.mul_(self.decay).add_(
-                        embed_sum.to(self.embed_avg.dtype),
+                    embed_active.mul_(decay_vec.unsqueeze(-1)).add_(
+                        embed_sum.to(embed_active.dtype)
+                        * allow_f.unsqueeze(-1),
                         alpha=1.0 - self.decay,
                     )
-                n = self.cluster_size.sum()
+                n = cluster_active.sum()
                 cs_smooth = (
-                    (self.cluster_size + self.eps)
+                    (cluster_active + self.eps)
                     / (n + V * self.eps)
                     * n
                 )
-                new_embed = self.embed_avg / cs_smooth.unsqueeze(-1)
+                new_embed = embed_active / cs_smooth.unsqueeze(-1)
                 if self.use_cosine_sim:
                     new_embed = F.normalize(new_embed, dim=-1)
                 if allowed is not None:
-                    # §6d: frozen rows keep their current value exactly.
+                    # §6d: partition-frozen active rows remain bit exact.
                     new_embed = torch.where(
                         allowed.unsqueeze(-1),
-                        new_embed.to(self.codebook.dtype),
-                        self.codebook,
+                        new_embed.to(codebook_active.dtype),
+                        codebook_active,
                     )
-                self.codebook.copy_(new_embed.to(self.codebook.dtype))
+                codebook_active.copy_(new_embed.to(codebook_active.dtype))
                 # Refresh the cached ||c_i||^2 so the Euclidean retrieval
                 # path on the next forward sees the updated codebook. In
                 # cosine mode every row is unit-norm by construction, so
                 # we still write 1.0 here -- harmless for the dot-product
                 # path (which doesn't read this buffer) and keeps the
                 # invariant true if useDotProduct is later toggled off.
-                self._b_norms_sq.copy_(
-                    (self.codebook.detach() ** 2).sum(dim=-1)
+                self._b_norms_sq[:V].copy_(
+                    (codebook_active.detach() ** 2).sum(dim=-1)
                 )
                 if self.codebook_retire and self.threshold_ema_dead_code > 0:
                     expired = (
-                        self.cluster_size < self.threshold_ema_dead_code
+                        cluster_active < self.threshold_ema_dead_code
                     ).reshape(-1)
                     if allowed is not None:
-                        # §6d: frozen rows never expire or get revived.
+                        # Reference-frozen rows never expire or get revived.
                         expired = expired & allowed
                     if int(expired.numel()) != V:
                         raise RuntimeError(
@@ -14688,13 +15987,13 @@ class VectorQuantize(nn.Module):
                         sample_idx = torch.randint(
                             0, flat.shape[0], (n_expired,), device=flat.device,
                         )
-                        sampled = flat[sample_idx].to(self.codebook.dtype)
+                        sampled = flat[sample_idx].to(codebook_active.dtype)
                         if self.use_cosine_sim:
                             sampled = F.normalize(sampled, dim=-1)
-                        self.codebook.index_copy_(0, expired_idx, sampled)
+                        codebook_active.index_copy_(0, expired_idx, sampled)
                         thr = float(self.threshold_ema_dead_code)
-                        self.cluster_size.index_fill_(0, expired_idx, thr)
-                        self.embed_avg.index_copy_(
+                        cluster_active.index_fill_(0, expired_idx, thr)
+                        embed_active.index_copy_(
                             0,
                             expired_idx,
                             sampled.to(self.embed_avg.dtype) * thr,
@@ -14758,6 +16057,7 @@ class VectorQuantize(nn.Module):
         """
         if eps <= 0.0 or not self.training:
             return 0
+        self._require_ema_state("grow_on_novelty")
         if free_threshold is None:
             free_threshold = (float(self.threshold_ema_dead_code)
                               if self.threshold_ema_dead_code > 0
@@ -14765,7 +16065,16 @@ class VectorQuantize(nn.Module):
         flat = x.reshape(-1, x.shape[-1])
         if self.use_cosine_sim:
             flat = F.normalize(flat, dim=-1)
-        live_mask = (self.cluster_size > free_threshold).reshape(-1)
+        A = int(self._active_rows_count)
+        physical_V = int(self.cluster_size.shape[0])
+        if A < 1 or A > physical_V:
+            raise RuntimeError(
+                "VectorQuantize.grow_on_novelty cached active-row boundary "
+                f"is invalid: active={A}, physical={physical_V}")
+        cluster_active = self.cluster_size[:A]
+        codebook_active = self.codebook[:A]
+        embed_active = self.embed_avg[:A]
+        live_mask = (cluster_active > free_threshold).reshape(-1)
         free_idx = torch.nonzero(
             ~live_mask, as_tuple=False).flatten()
         if int(free_idx.numel()) == 0:
@@ -14779,14 +16088,14 @@ class VectorQuantize(nn.Module):
             # cold-start path.
             n_seed = min(int(free_idx.numel()), int(flat.shape[0]))
             target = free_idx[:n_seed]
-            sampled = flat[:n_seed].to(self.codebook.dtype)
-            self.codebook.index_copy_(0, target, sampled)
-            self.cluster_size.index_fill_(0, target, seed_val)
-            self.embed_avg.index_copy_(
+            sampled = flat[:n_seed].to(codebook_active.dtype)
+            codebook_active.index_copy_(0, target, sampled)
+            cluster_active.index_fill_(0, target, seed_val)
+            embed_active.index_copy_(
                 0, target,
-                sampled.to(self.embed_avg.dtype) * seed_val)
+                sampled.to(embed_active.dtype) * seed_val)
             return n_seed
-        live_codes = self.codebook.index_select(0, live_idx)
+        live_codes = codebook_active.index_select(0, live_idx)
         if self.use_cosine_sim:
             live_codes = F.normalize(live_codes, dim=-1)
         # Pairwise squared L2; min over codes per row.
@@ -14803,12 +16112,12 @@ class VectorQuantize(nn.Module):
         n_insert = min(int(novel_rows.numel()),
                        int(free_idx.numel()))
         sampled = flat[novel_rows[:n_insert]].to(
-            self.codebook.dtype)
+            codebook_active.dtype)
         target = free_idx[:n_insert]
-        self.codebook.index_copy_(0, target, sampled)
-        self.cluster_size.index_fill_(0, target, seed_val)
-        self.embed_avg.index_copy_(
-            0, target, sampled.to(self.embed_avg.dtype) * seed_val)
+        codebook_active.index_copy_(0, target, sampled)
+        cluster_active.index_fill_(0, target, seed_val)
+        embed_active.index_copy_(
+            0, target, sampled.to(embed_active.dtype) * seed_val)
         return n_insert
 
 

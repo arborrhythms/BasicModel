@@ -1,0 +1,162 @@
+<?xml version="1.0" ?>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="model.xsd">
+  <!--
+    MM_nanochat_grammar_pilot
+
+    Historical frozen W=64 comparison fixture. The current training model is
+    data/BasicModel.xml; keep this file only to reproduce the original pilot.
+
+    A Mac-sized, from-scratch language-learning pilot derived from
+    MM_20M_fineweb.xml.  Its comparison target is NanoChat depth 4, not the
+    misleading historical "20M" filename: the live MM_20M_fineweb graph has
+    about 118M parameters, while NanoChat d4 has about 36.7M at vocab 32768.
+
+    Design budget:
+      * D=512 and percept capacity=32768 reserve roughly half the parameters
+        for lexical/percept identity and the remainder for the recurrent
+        subsymbolic, symbolic, and explicit grammar machinery.
+      * subsymbolicOrder=4 and symbolicOrder=4 are the middle of the proposed
+        3..5 range.  symbolicOrder is an iteration budget over shared weights;
+        it does not multiply parameters by four.
+      * W=64 bounds only the outer sentence loop. PS, WS, CS, and STM retain
+        their configured 8-wide instantaneous fields/workspace; grammar
+        reductions make that bounded workspace sufficient.
+      * The grammar budget includes the contextual MLP transform chooser.  The
+        soft tiling DP rescales unusually large finite chooser scores without
+        changing their ordering, so this learned router is stable at N=64.
+
+    The initial corpus gate is 2,000 documents from FineWeb-Edu shard 0
+    (document-disjoint 8/1/1 train/validation/test split).  That is about
+    1.5M whitespace words before the split on the currently downloaded shard.
+    It is a language-acquisition gate, not a compute-optimal pretraining run.
+  -->
+  <architecture>
+    <!-- Keep traversal separate from the symbolic iteration budget. -->
+    <serial>true</serial>
+    <subsymbolicOrder>4</subsymbolicOrder>
+    <conceptualWidth>uniform</conceptualWidth>
+    <symbolicOrder>4</symbolicOrder>
+    <!-- Let sentence length, rather than an arbitrary cap, determine parse
+         depth during the pilot.  This knob adds no parameters. -->
+    <syntacticOrder>0</syntacticOrder>
+
+    <mereologyRaise>true</mereologyRaise>
+    <!-- Traverse up to 64 words; leave configurable STM capacity at 8. -->
+    <serialObjectMeta>true</serialObjectMeta>
+    <serialWordCapacity>64</serialWordCapacity>
+    <sigmaPi>butterfly</sigmaPi>
+    <l1Lambda>0.01</l1Lambda>
+
+    <!-- Allocate explicit capacity to contextual grammar routing. -->
+    <transformChooser>mlp</transformChooser>
+    <categoryCodebook>true</categoryCodebook>
+    <!-- Low-occupancy grammar threshold; pressure lowers it to a hard
+         grammatical demand at the configured capacity boundary. -->
+    <stmReduceTau>0.75</stmReduceTau>
+    <learning>false</learning>
+
+    <data>
+      <dataType>embedding</dataType>
+      <dataset>text</dataset>
+      <shardDir>data/fineweb</shardDir>
+      <numShards>1</numShards>
+      <maxDocs>2000</maxDocs>
+    </data>
+
+    <training>
+      <numEpochs>1</numEpochs>
+      <seed>42</seed>
+      <!-- Conservative MPS start: this tier doubles both N and D relative to
+           the gate.  Raise only after a measured ArborStudio memory probe. -->
+      <batchSize>4</batchSize>
+      <learningRate>0.0005</learningRate>
+
+      <!-- FineWeb is unlabeled.  On the serial grammar path the D3
+           reconstruction term is the within-sentence training signal; the
+           output head is structural and receives no fabricated labels. -->
+      <reconstructionScale>1.0</reconstructionScale>
+
+      <!-- Concept-space counterparts of within/across-sentence prediction. -->
+      <sentencePrediction>true</sentencePrediction>
+      <armaScale>0.1</armaScale>
+      <intraLossWeight>0.1</intraLossWeight>
+      <interLossWeight>0.1</interLossWeight>
+      <interContrastiveWeight>0.1</interContrastiveWeight>
+      <interContrastiveTemp>0.1</interContrastiveTemp>
+
+      <autoload>true</autoload>
+      <autosave>true</autosave>
+      <checkpointEveryBatches>100</checkpointEveryBatches>
+    </training>
+    <weightsPath>../output/MM_nanochat_grammar_pilot_stm8.ckpt</weightsPath>
+  </architecture>
+
+  <!-- Raw UTF-8/byte surface.  The parameter budget is controlled by D and
+       the percept capacity; the 8192-byte ceiling is retained for compatibility
+       and is not a learned 8192 x D table. -->
+  <InputSpace>
+    <nOutput>8192</nOutput>
+    <nVectors>256</nVectors>
+    <nDim>512</nDim>
+  </InputSpace>
+
+  <!-- Eight instantaneous part percepts; arbitrary cold-word constituents
+       synthesize inside the word iteration before entering this field. -->
+  <PartSpace>
+    <nInput>8192</nInput>
+    <nInputDim>512</nInputDim>
+    <nVectors>32768</nVectors>
+    <nDim>512</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>512</nOutputDim>
+
+    <invertible>true</invertible>
+    <synthesis>meronomy</synthesis>
+    <chunkPromotionThreshold>2</chunkPromotionThreshold>
+  </PartSpace>
+
+  <ConceptualSpace>
+    <nInput>8</nInput>
+    <nInputDim>512</nInputDim>
+    <!-- Concept/code inventory is independent of the eight live slots. -->
+    <nVectors>64</nVectors>
+    <stmCapacity>8</stmCapacity>
+    <nDim>512</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>512</nOutputDim>
+
+    <invertible>true</invertible>
+  </ConceptualSpace>
+
+  <!-- Deep concepts are reshaped to the wide symbol slab exactly as in the
+       FineWeb production config. -->
+  <WholeSpace>
+    <analysis>meronomy</analysis>
+    <butterfly>false</butterfly>
+    <nInput>8</nInput>
+    <nInputDim>512</nInputDim>
+    <nVectors>32768</nVectors>
+    <nDim>512</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>512</nOutputDim>
+
+    <invertible>true</invertible>
+  </WholeSpace>
+
+  <!-- Structural only for unlabeled FineWeb. -->
+  <OutputSpace>
+    <nInput>8</nInput>
+    <nInputDim>512</nInputDim>
+    <nVectors>1</nVectors>
+    <nDim>1</nDim>
+    <nOutput>1</nOutput>
+    <nOutputDim>1</nOutputDim>
+  </OutputSpace>
+
+  <SymbolSpace>
+    <language>
+      <grammar>complete.grammar</grammar>
+    </language>
+  </SymbolSpace>
+</model>

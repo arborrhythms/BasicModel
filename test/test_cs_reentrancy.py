@@ -189,16 +189,15 @@ class TestSymbolicSigmaStepRoundtrips(unittest.TestCase):
         # columns (fold.nInput == ws.nDim); drive it at its own width.
         D = int(fold.nInput)
         torch.manual_seed(0)
-        # Keep values inside the atanh domain so the nonlinear fold
-        # round-trips to LDU precision.
-        ev = torch.randn(1, N, D).clamp(-0.5, 0.5)
+        # PS/WS folds operate directly on percept memberships.
+        ev = torch.rand(1, N, D)
         with torch.no_grad():
             fwd = fold.forward(ev.clone())
             rec = fold.reverse(fwd)
         err = (ev - rec).abs().max().item()
         self.assertLess(
             err, 1e-3,
-            f"ws.pi forward->reverse must round-trip the carrier to LDU "
+            f"ws.pi forward->reverse must round-trip the membership carrier "
             f"precision; got max abs error {err:g}.")
 
 

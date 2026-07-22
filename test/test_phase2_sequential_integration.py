@@ -49,7 +49,7 @@ def test_sequential_non_ar_forward_shape():
 
 def test_sequential_builds_body_stages_and_invertible_path():
     """Construction produces ``body_stages`` (an nn.ModuleList of
-    ModuleDicts driven by ``_forward_body``).  The reverse pipeline
+    non-owning stage records driven by ``_forward_body``). The reverse pipeline
     ``reverse()`` reconstructs input from the terminal ConceptualSpace
     state; ``midpoint_cache`` survives as a no-op attribute.
     """
@@ -66,7 +66,7 @@ def test_sequential_builds_body_stages_and_invertible_path():
 
 
 def test_sequential_unrolls_subsymbolic_order():
-    """body_stages has T (subsymbolicOrder) per-stage ModuleDicts.
+    """body_stages has T (subsymbolicOrder) non-owning stage records.
 
     Replaces the prior pipeline_fwd.modules() walk: the per-stage
     structure is now first-class in ``body_stages`` (no more buried

@@ -14,10 +14,11 @@
 > subtypes are **part-percepts** = atoms, $\sigma$, and **whole-percepts** =
 > properties/regions, $\pi$); a **concept** is a ConceptualSpace relation tying one
 > part-percept $\leftrightarrow$ one whole-percept (the Concept codebook); a **symbol** is a
-> SymbolSpace 0-D reference to a concept (the symbol codebook). The prose below
+> SymbolSpace 0-D reference to a concept. The prose below
 > reserves "symbol" for genuine SymbolSpace things; WholeSpace content is
-> whole-percepts, and its compact `[0,1]` emission is the symbol that migrates to
-> SymbolSpace. Code identifiers (e.g. `get_symbols`, `subspace.what`) are
+> whole-percepts. Symbols are formed strictly downstream of ConceptualSpace;
+> they are references to concept ids, not WholeSpace rows. Code identifiers
+> (e.g. `get_symbols`, `subspace.what`) are
 > unchanged — those get a separate code pass.
 
 > **2026-06-12 update (part/whole rename — the perceptual split).**
@@ -40,12 +41,11 @@
 > **Terminology (semiotics).** There are **objects** and
 > **references**. A reference is either a **sign** or a **symbol**. A
 > *sign* is a quantized version of the referent (same space, snapped
-> to a codebook row). A *symbol* is an unrelated version of the
-> referent — an arbitrary code of much lower dimensionality (cf. the
-> zero-banded symbol codes below: whole-percepts of symbols carry
-> `.where = .when = 0`).
+> to a codebook row). A *symbol* is a downstream, zero-dimensional
+> reference to a concept id. It is not a special kind of WholeSpace
+> percept and has no learned WS row.
 >
-> **`subspace.what`: atoms vs properties — wholes are types.** On
+> **2026-07-20 inventory migration — `subspace.what`: atoms vs properties.** On
 > `PartSpace` the `.what` rows are **atoms** (letters and words — the
 > existing lexicon / BPE / MPHF front ends, gathered by
 > `Codebook.lookup`). On `WholeSpace` the `.what` rows are **properties**,
@@ -53,10 +53,15 @@
 > proposition over the field, and only a proposition can bifurcate the
 > input into two clearly-identified regions (`+1` has-type / `-1`
 > complement) the way `materialize_property` does below. Types apply to
-> **runs of characters, not single characters**: the four canonical
-> properties are `isLetter`, `isSpace`, `isDigit`, `isPunctuation` — the
-> existing `LETTER` / `WHITESPACE` / `DIGIT` / `PUNCT` classes of
-> `Layers.char_class_region`, one codebook code each. A whole is a
+> **runs of characters, not single characters**. BasicModel begins with a
+> small basis of roughly eight ASCII-class properties (letters, capitals,
+> digits, punctuation, whitespace, and the remaining byte classes), one
+> codebook row per property. This is an initial learned basis rather than a
+> permanently closed ontology: dynamic properties may grow the WS inventory,
+> potentially toward PartSpace scale. Such growth never allocates a concept or
+> symbol in WholeSpace. Property activation may overlap: for example, an ASCII
+> capital activates both `letter` and `capital`; that conjunction does not mint
+> a ninth property row. A whole is a
 > **maximal constant-type run**; words are runs of letters, punct, or
 > digits.
 > `materialize` hands the per-position selection (`subspace._index`,
@@ -95,17 +100,15 @@
 >   evidence sets the SIGNED $a \in [-1, +1]$, 2026-07-06 correction:
 >   the percept input stays non-negative, but the match against a
 >   CONCEPT row is un-clamped abs-argmax, so an anti-aligned row — a
->   "known false" exclusion — is reachable); parallel mode is the `2N`
->   mixing matrix; serial mode bypasses it (fusion migrates into the
->   shift).
-> * **Two codebooks, one table**: the towers ARE the PS/SS codebooks
->   (extent/intent; shared with IS recognition — recognition is tower
->   lookup), linked by the word-keyed binding table
->   (`References.ReferenceTable`) hosted on WholeSpace
->   (search-then-mint gate; `adopt_stage0_evidence` stays ground-half
->   memory, not naming). Symbols are atomic, zero-banded codes —
->   whole-percepts of symbols carry `.where = .when = 0` (the Mind
->   marker).
+>   "known false" exclusion — is reachable); `conceptBinding=mixing` is
+>   the learned `2N` matrix, while `conceptBinding=aligned` preserves
+>   locations and fuses every non-raw cumulative PS/WS fold inside the
+>   word loop.
+> * **Two percept inventories, then concepts**: PS stores part-percepts and WS
+>   stores whole-percept properties. Equal live locations from their fold
+>   towers are bound downstream in ConceptualSpace, which owns the resulting
+>   concepts, META relations, and taxonomy. SymbolSpace then names concepts by
+>   reference. No concept or symbol row is stored in either perceptual tower.
 
 > **2026-06-09 update (analysis/synthesis orientation — supersedes the
 > ownership notes below).** The corrected orientation
@@ -118,12 +121,12 @@
 > * **PS = bottom-up SYNTHESIS**: owns ONE `SigmaLayer` (`self.sigma`,
 >   additive/union; the Pi/Sigma swap) and the `<synthesis>` front ends
 >   (radix/bpe/byte/lexicon/mphf — was `<chunking>`).
-> * **SS = top-down ANALYSIS**: owns ONE `PiLayer` (`self.pi`,
+> * **WS = top-down ANALYSIS**: owns ONE `PiLayer` (`self.pi`,
 >   multiplicative/intersection), the `<analysis>` division knob
->   (`byte`/`word`/`raw`/`sentence`/`grammatical`/`meronomy`). Stage 0 consumes the unity view as symbolic evidence
->   (per-part coarse means, snapped through the live SS codebook with
->   the asymmetric STE forward leg).
-> * The meronymic analyzer (`bin/perceptual_analyzer.py`) is SS-side
+>   (`byte`/`word`/`raw`/`sentence`/`grammatical`/`meronomy`). Stage 0
+>   consumes the unity view as perceptual evidence and selects from the
+>   property codebook.
+> * The meronymic analyzer (`bin/perceptual_analyzer.py`) is WS-side
 >   analysis machinery now; PS `<synthesis>analyse` was removed.
 >
 > Sections below that predate this orientation are marked or should be
@@ -132,17 +135,15 @@
 > **2026-06-02 update (subsymbolic analyzer).** New `IdeaSubSpace`
 > (`bin/Language.py`) -- the PS-meronymic carrier analogue of
 > `SymbolSubSpace` (spans, parent/child links, route ids, marker-route
-> replay fields). `WholeSpace` gains `insert_operations` (grammar
-> operations in a dedicated operator codebook -- `_operation_vectors` /
-> `_operation_positions` -- separate from the symbol codebook so the
-> symbol/idea/`.where` namespace is untouched), `resolve_ps_terminal` /
-> `null_sem` (PS-to-SS binding), and `operator_superposition`. The PS
+> replay fields). Historical WholeSpace-hosted grammar/operator state from
+> this phase migrated downstream with the 2026-07-20 property-basis cutover.
+> The PS
 > meronymic analyzer lives in `bin/perceptual_analyzer.py`.
 
-> **Status (2026-05-27):** updated for the substrate refactor. PS is a
+> **Historical status (2026-05-27; ownership superseded 2026-07-20):** PS is a
 > single-arg input processor (`self.pi` + `self.sigma`). CS is an STM
-> container + grammatical CPU; no atomic forward fold. SS owns the
-> unified word lexicon codebook with paired (orth, semantic) rows.
+> container + grammatical CPU; no atomic forward fold. The then-SS-owned
+> paired word codebook has since been removed from WholeSpace ownership.
 > Grammar dispatch lives on the signal router (`LanguageLayer`) at
 > `SymbolSubSpace.languageLayer`; the CKY `Chart` and STM shift-reduce
 > parsers are retired. `LiftLayer` / `LowerLayer` are binary
@@ -163,9 +164,9 @@ classes have been retired — the subsymbolic role is filled by
 `Chart`).
 
 **`SymbolSpace` literally subclasses `Space`** (`class
-SymbolSpace(Space)`, [`bin/Language.py`](../bin/Language.py)) — it is a
-peer tower alongside PartSpace/WholeSpace (the third `.what`/`.where`
-carrier), not merely an attached "grammar host." It constructs via
+SymbolSpace(Space)`, [`bin/Language.py`](../bin/Language.py)), but it is the
+downstream reference/grammar coordinator rather than a third learned percept
+inventory. It constructs via
 `nn.Module.__init__` directly, deliberately SKIPPING `Space.__init__`'s
 object/what/where/when VQ-basis build, and holds a `SymbolSubSpace`
 coordinator (the typed-STM stack + grammar dispatch carrier) as
@@ -176,8 +177,8 @@ are unchanged whether `X` lives on `SymbolSpace` or on the coordinator
 it forwards to.
 
 ```
-Forward:  InputSpace -> PartSpace -> ConceptualSpace -> WholeSpace -> OutputSpace
-Reverse:  OutputSpace -> WholeSpace -> ConceptualSpace -> PartSpace -> InputSpace
+Forward:  InputSpace -> {PartSpace, WholeSpace} -> ConceptualSpace -> SymbolSpace -> OutputSpace
+Reverse:  OutputSpace -> SymbolSpace -> ConceptualSpace -> {PartSpace, WholeSpace} -> InputSpace
 ```
 
 The pre-2026-05-27 "two feedback loops" (S $\to$ C per-stage, C $\to$ P
@@ -250,7 +251,7 @@ internal Sigma / Pi (no substrate-borrowing).
 |---|---|---|
 | **PartSpace** | one `self.sigma` (SigmaLayer — the synthesis fold), the `<synthesis>` front ends, MPHF + index table, the surface-keyed Lexicon (`self.vocabulary`) | `PS.forward(in_sub, cs_out=None)` (dual-towers rev 2). `in_sub` is PS's view of the input (the atoms); `cs_out` is PS's own conceptual feedback, stashed as `self._cs_feedback` (not yet folded on the PS leg). Body: `self.sigma(x.materialize())` after the synthesis front end embeds. |
 | **ConceptualSpace** | STM (`ShortTermMemory`, depth ~8) + (when sparse-active) the single untyped square `ConceptualAttentionLayer` (a `SparseLayer` subclass) + the relation store (`ConceptAllocator` + ordered records) + concept dictionary (`similarity_codebook`) | `CS.forward(subspace, word_subspace=None)` — STM bookkeeping only (`sigma_percept` fold retired); the symbolic transform (snap + FF pyramid) fires ONCE post-pump at `_forward_body`'s cutover (`cs_symbolic_phase`), never in-loop (2026-07-02 two-phase rework). Dispatches read-only grammar ops via the signal router. |
-| **WholeSpace** | one `self.pi` (PiLayer — the analysis fold), the `<analysis>` + `<lexer>` knobs, the unified word lexicon codebook with paired (orth, semantic) rows; `insert_paired_word(word, vec)` API; hosts codebook-write-required grammar ops | `WS.forward(in_sub, cs_out=None)` — symmetric signature with PS (dual-towers rev 2 + 2026-07-11 serial migration). ONE TYPED ROUTING LAW (`hasattr(in_sub, "is_empty")`): a raw unity tensor (`[B, 1, N]`, not SubSpace-like) routes **universe-primary** — `_stage0_unity_forward(in_sub)` analyses it directly and `cs_out` is stashed as `self._cs_feedback`; a SubSpace-like `in_sub` (or `in_sub=None`) routes the **carrier body** — the recurrent leg + grammar/snap machinery, with `cs_out` primary when given (legacy carrier-call shape when only one positional arg is passed). Lookup chain: surface $\to$ MPHF $\to$ orth row $\to$ parented semantic row (via `Codebook.set_part_parent`). |
+| **WholeSpace** | one `self.pi` (PiLayer — the analysis fold), the `<analysis>` + `<lexer>` knobs, and one property-percept codebook | `WS.forward(in_sub, cs_out=None)` — symmetric signature with PS. A raw unity tensor (`[B, 1, N]`) routes universe-primary and is analysed against WS properties. Conceptual feedback may condition analysis, but it does not make WS an owner of concepts or symbols. |
 
 **Composition (per-mode):**
 
@@ -348,12 +349,13 @@ mode (default butterfly). Closes the XOR convergence target
 | InputSpace | Measured tensor features scale to presence; signed text embeddings retain sign | `[0,1]` for presence data; `[-1,1]` for text embeddings |
 | PartSpace | Modal/demuxed what/where/when encoding. Marked radix/meronomy percept stores expose one-sided presence; the orthographic Lexicon remains signed | `[0,1]^d` for percept-store rows; signed projective unit ball for Lexicon rows |
 | ConceptualSpace | Combined/muxed event encoding. Positive concept atoms are scaled by signed, tanh-bounded activations | positive atom geometry with activation in `[-1,1]` |
-| WholeSpace | Whole-percepts (`[0,1]` presence). The compact emission is the symbol that references a concept; one symbol encoded at a time | `[0,1]` presence |
+| WholeSpace | Whole-percept property memberships | `[0,1]` presence |
+| SymbolSpace | 0-D references to ConceptualSpace concept ids | reference activation |
 | OutputSpace | Rescaled from activation range to original data range | Data range |
 
 `SyntacticSpace` is retired (see Section "SyntacticSpace --- retired" below).
-Grammar / chart machinery lives on `SymbolSpace` and is attached to
-`WholeSpace` (the canonical grammar host).
+Grammar / chart machinery lives on downstream `SymbolSpace`; it is not owned
+by the WholeSpace property inventory.
 
 **Data scaling.** `Data` computes global `input_min`/`input_max` and
 `output_min`/`output_max` at load time. InputSpace uses `Data.normalize(x,
@@ -496,17 +498,18 @@ The implementation keeps percept and concept/symbol carriers distinct:
 
 | Property | Concepts / symbols |
 |---|---|
-| space | positive concept atom; signed activation or signed Lexicon path |
+| space | signed unit concept atom scaled by a signed activation |
 | coordinate | atom direction plus activation polarity and certainty |
 | opposite | negation `-x` |
 | sides | two-sided sign is semantic content |
 | metric | dot product for concepts; projective lookup for Lexicon rows |
 | magnitude | scalar activation carries certainty |
 
-In the sparse conceptual implementation, the stored `ConceptDim` atom is
-strictly positive (`softplus(atom)`). Sign and magnitude live in the scalar
-activation: `concept_code = signed_activation * softplus(atom)`. The phrase
-"signed sphere" describes the activation's role, not a signed stored atom.
+In the aligned sparse conceptual implementation, the stored `ConceptDim` atom
+is a signed unit direction. Magnitude lives in the scalar activation:
+`concept_code = signed_activation * atom`. Updated rows are reprojected to the
+unit sphere after each optimizer step, so every coordinate stays in `[-1,1]`
+without a tanh seam.
 
 A symbol is also not a synonym for a concept or a whole. A concept is a
 `ConceptualSpace` relation over percepts; a symbol is a reference to a concept.
@@ -541,9 +544,9 @@ The bounded ranges admit efficient fixed-point storage:
 | SNORM | `[-1,1]` | signed concept/symbol values |
 | Q-format fractional | bounded signed or unsigned range | CPU/DSP equivalent |
 
-Training remains in `float32`/`bf16`. Forward-time quantization keeps a float
-master, applies a saturating function (`tanh` or `clamp`), and uses a
-straight-through estimator or stochastic rounding. Over a bounded unit range,
+Training remains in `float32`/`bf16`. Forward-time range enforcement keeps a
+float master and uses a straight-through clamp or row projection; the
+percept-to-concept seam does not use tanh/atanh. Over a bounded unit range,
 SNORM16 has a roughly `3e-5` uniform grid and is finer than bf16 across most of
 the interval; SNORM8 is materially coarser.
 
@@ -558,13 +561,13 @@ still depends on the input and synthesis mode:
 | text embedding (`input_presence=False`) | retained in `[-1,1]` |
 | radix/meronomy percept store | UNORM `[0,1]`; presence decode |
 | orthographic Lexicon | signed projective unit ball |
-| conceptual atom | positive atom; signed activation |
+| conceptual atom | signed unit atom; bounded signed concept value |
 
-The `[0,1]` percept-store migration is complete: `Codebook.getW()` is the read
-chokepoint for both forward gather and reverse decode, so no seam adapter is
-needed. The store lives on the PartSpace subspace, the dataflow container. The
-remaining open decision is whether the orthographic Lexicon should ever move to
-`[0,1]`; doing only the input half would break signed embedding reconstruction.
+The canonical radix/property path is membership-native throughout: codebook
+read, many-to-one word union, and learned invertible sigma/pi order raises all
+consume and return `[0,1]` directly. The signed truth evaluation chart is not
+used at this seam. The orthographic Lexicon remains a compatibility store and
+is not the canonical `BasicModel.xml` surface path.
 
 ### Mereological Guarantees {#percept-guarantees}
 
@@ -603,7 +606,8 @@ See also [Mereology](Mereology.md) and [Logic](Logic.md).
 | Store | Geometry and metric | Retrieves |
 |---|---|---|
 | PartSpace radix/meronomy | `[0,1]^d`; presence MSE | percept-presence row |
-| Lexicon and unmarked WholeSpace | `[-1,1]^d`; wrapped MSE | form or symbol row |
+| WholeSpace property basis | `[0,1]^d`; property-membership metric | whole-percept property row |
+| SymbolSpace | reference identity + signed activation | ConceptualSpace concept id |
 | Conceptual similarity codebook | unit rows; dot product | SBOW concept row |
 
 The ConceptualSpace entry is the concept dictionary's *situating* metric, not
@@ -1108,6 +1112,18 @@ partitioning perceptual space." `CS.forward` itself is ALWAYS STM bookkeeping
 only (the transform fires once per forward at `_forward_body`'s cutover,
 never in-loop). See **The symbolic phase** below.
 
+**Aligned serial geometry.** The BasicModel path is distinct from the
+sparse-parallel phase described below. PS and WS each expose eight live
+locations. With `subsymbolicOrder=4`, their three cumulative sigma/pi folds
+are fitted without moving feature coordinates across locations and stacked as
+`[B, 6, 8, D]`. CS emits the equal local mean while retaining that six-source
+carrier and the ordered fold paths. The concept written to STM carries actual
+subsymbolic order 3 plus support from orders 1, 2, and 3 on both towers. Its
+row comes from one fixed, unpartitioned `nVectors` namespace; row address does
+not imply order. The same location rule applies when aligned binding is chosen
+in parallel. `ConceptualCombine` is the separate conditional mixing-matrix
+path and is not part of serial BasicModel.
+
 **Geometry.** A concept code is `signed_activation × softplus(atom)`: the
 dictionary atom is a **strictly-positive** ConceptDim feature signature
 (`F.softplus`), and the **sign / magnitude** live in the signed scalar
@@ -1265,13 +1281,11 @@ space-wide output mode.
 ### Word auto-bind deferred to `Reset` (fullgraph forward)
 
 The compiled per-batch forward (`BaseModel.enable_compiled_step`,
-`torch.compile(fullgraph=True)`) must carry **zero graph breaks**. The
-word auto-bind --- `ConceptualSpace._maybe_autobind_meta`, which grows the
-WholeSpace codebook and META taxonomy when a freshly-seen percept first
-lands --- is irreducibly host-side: `.item()` loops, `if pid < 0` branches,
-Python dict/set taxonomy mutation, and (pre-allocation aside) codebook
-growth. Dynamo cannot trace any of those, so the auto-bind no longer runs
-on the `forward` path.
+`torch.compile(fullgraph=True)`) must carry **zero graph breaks**. Concept/META
+allocation and ConceptualSpace taxonomy updates are irreducibly host-side:
+`.item()` loops, Python dict/set mutation, and reserve activation cannot be
+traced safely. They therefore do not run inside the compiled forward. This
+allocation is entirely separate from any dynamic WholeSpace property growth.
 
 Instead (2026-06-03 refactor) it is **deferred to the sentence/document
 boundary**. `PartSpace._embed_radix` stashes the encountered percept
@@ -1395,81 +1409,44 @@ GrammarLayer specifics.
 
 ## WholeSpace
 
-**Role.** Owns the **unified word lexicon codebook** with paired
-(orthographic, semantic) rows. Hosts grammar ops that need codebook write
-access. The information bottleneck for word identity.
+**Role.** WholeSpace is the top-down analysis tower over whole-percepts. Its
+inventory consists only of properties that divide the input field into regions.
+It is perceptual and therefore strictly upstream of concepts and symbols.
 
 **Owned state.**
 
-- `self.subspace.what`: a `Codebook` carrying whole-percept prototypes at
-  width `nDim`. Includes per-row meronomy storage (`category_ids`,
-  `part_parents`, `category_logits`). When the configured codebook is
-  `<codebook>quantize</codebook>`, the codebook is a trainable
-  `nn.Parameter` updated under Gray (1990) EMA with **LBG-style
-  variance tracking and splitting**: rows whose running per-component
-  variance exceeds a threshold split along the top-variance
-  eigendirection, with children seeded around the parent ±
-  $\delta \cdot \text{variance\_axis}$. (2026-05-29 Task C.) Set
-  `<codebook>none</codebook>` to retire the SS codebook entirely
-  (degraded mode; the grammar bivector recommender has no `W` to walk
-  on reverse — see `test_mm_grammar_without_vqvae_learns_xor_signal`.)
-- `insert_paired_word(word, ps_vector)` API: at OOV insert time, creates
-  a paired (orth, semantic) entry — the orth row is initialized from
-  `ps_vector` (a CS-space-dimensioned per-word vector from PS's
-  Lexicon, per the flat-slab invariant); the semantic row is randomly
-  initialized; the two are parented via `Codebook.set_part_parent(orth_idx, sem_idx)`.
-- `get_semantic_row(orth_idx)`: O(1) lookup via `_paired_orth_to_sem` map
-  precomputed at insert time.
-- **META taxonomy** (2026-05-27 Stage 8): a separate cross-codebook
-  taxonomy mapping `(ps_row, ws_row) -> meta_row`. Originally keyed by
-  signed-int refs (positive=PS, negative=SS); the 2026-05-28 plan
-  migrates this to a `.where`-keyed integer-position scheme. META
-  entries are populated by `ConceptualSpace._maybe_autobind_meta` at
-  stage 0 when PS promotes a chunk and SS has a Codebook
-  (2026-05-29 Task G — the auto-bind moved from PS to CS so the
-  cross-space allocation fires from the layer that sees both
-  contributions).
-- Signal router dispatch site for **codebook-write-required grammar ops**
-  (insert, EMA updates, codebook expansion / culling).
+- `self.subspace.what` is the one canonical whole-percept/property codebook at
+  width `nDim`. BasicModel initially contains roughly eight ASCII-class
+  properties. There is no second `analysis_store` codebook.
+- `self.pi` and the `<analysis>` policy apply and fold those property percepts.
+- Dynamic property learning may add rows to this inventory. Its allocator and
+  checkpoint policy are independent of ConceptualSpace capacity.
 
-No atomic forward fold layer on SS. The pre-substrate-refactor
-`self.sigma` (C $\leftrightarrow$ S monotonic SigmaLayer) is retired; the C $\to$ S "naming"
-is now the codebook snap performed in CS via `SS_subspace.materialize()`
-or directly via `insert_paired_word` at write time. Symbol-side grammar
-math lives on the GrammarLayer subclasses (intersection, union,
-lift, lower, etc.), not on SS itself.
+WholeSpace does **not** own word meanings, concepts, META relations, taxonomy,
+grammar symbols, or symbol prototypes. Those old responsibilities migrated to
+ConceptualSpace (concepts/META/taxonomy) and SymbolSpace (downstream references
+and grammar dispatch). Consequently a WholeSpace state dict must not contain a
+tensor sized like the conceptual inventory merely because aligned binding is
+enabled.
 
-**Whole-percept presence.** Each whole-percept represents presence (`1`) or
-absence (`0`) of a named entity (the compact emission migrating to SymbolSpace
-is the symbol; WholeSpace itself holds whole-percepts). Mapping:
-`presence = (activation + 1) / 2`.
+**Whole-percept presence.** Each property records graded presence in `[0, 1]`.
+For a signed carrier, `presence = (activation + 1) / 2`.
 
-**Lookup chain (surface $\to$ meaning):**
-
-1. Surface bytes enter PS via `InputSpace`.
-2. MPHF on PS produces a row index into `PS.vocabulary` (the Lexicon
-   Embedding).
-3. The PS Lexicon vector (CS-space-dimensioned) flows through
-   `PS.forward` $\to$ CS via STM push.
-4. When CS-state activations need to match a whole-percept, they quantize
-   against `SS.subspace.what` (the codebook).
-5. Quantization can resolve to an orth row; `get_semantic_row(orth_idx)`
-   returns the parented semantic row $\to$ the meaning.
+**Alignment.** At concept formation, a PS fold and WS fold bind only when they
+have the same live location. This is an alignment of the transient `nOutput`
+axis, not equality of the two codebook inventories. PS, WS, and CS may therefore
+have different `nVectors` values.
 
 **Codebook geometry.** `subspace.what.getW().shape == (nVectors, nDim)`.
-Each row is a free coefficient vector over conceptual axes; not unit-norm.
-Retrieved via Euclidean L2 (per Codebook's metric contract).
-`SS.nVectors` must be sized to at least `2 * expected_OOV_word_count` to
-accommodate paired rows (e.g., MM_5M sets `nVectors=131072 = 2 * 65536`).
+Each row describes one whole-percept property. As new properties become useful,
+`nVectors` may eventually approach PartSpace scale without changing what the
+rows mean.
 
-**Multi-stage SS.** In multi-stage configs, the lexicon mirror is wired
-to **`self.wholeSpaces[-1]`** (the terminal stage; `model.wholeSpace`).
-The terminal SS must be sized for paired-row capacity.
-
-**Conceptual order.** `BasicModel` stores per-stage
-ConceptualSpace / WholeSpace instances for `subsymbolicOrder`. Symbol
-dimension is geometrically partitioned per order. See
-[Reasoning.md](Reasoning.md).
+**Checkpoint boundary.** Schema-1 checkpoints used the same WS paths for
+concept/symbol prototypes and carried a second `analysis_store`. Schema 2 drops
+those semantically incompatible tensors instead of treating their leading rows
+as properties, and quarantines their host-side WS taxonomy state for explicit
+ConceptualSpace import. This migration never rewrites the source artifact.
 
 See [Philosophy.md](Philosophy.md), [Logic.md](Logic.md),
 [Mereology.md](Mereology.md), and [Language.md](Language.md).

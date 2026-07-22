@@ -1,9 +1,44 @@
 # Runtime Architecture and Componentization
 
+## Peer-pipelined space execution (2026-07-22)
+
+Runtime carriers have an ownership boundary. A space owns its mutable
+`SubSpace`; peers receive a zero-copy `SubSpaceView`, which exposes only
+materialization, resolution, shape/mask, and context reads. A peer that needs
+scratch state allocates an explicit working tensor. Debug peer guards compare
+both carrier write epochs and PyTorch storage versions around a peer call.
+
+`ConceptualSpace` has two runtime lanes rather than model-owned previous-CS
+pointers: `CSsub` carries the PS/WS recurrent subsymbolic field and `CSsym`
+carries the completed conceptual snapshot for SS. The legacy compatibility
+aliases remain internal to CS only.
+
+The word scheduler is a static three-stage pipeline for W in `{16,32,64,128,256}`.
+Input selection uses the smallest bucket that contains the complete sentence;
+an overlong row is rejected before emission rather than truncating its tail:
+
+1. A: Input fans one input view to PS and WS; both consume the prior CSsub
+   view, then CSsub commits after both peer computations finish.
+2. B: CSsym and SS consume A's completed word concept from `w-1` and a common
+   prior symbolic snapshot.
+3. C: `LanguageSpace` executes the existing `LanguageLayer` for B's result at
+   `w-2`.
+
+`LanguageSpace` is a scheduling owner only: its `LanguageLayer` parameters and
+grammar state continue to be registered exactly once under `SymbolSubSpace`.
+Grammar results are timestamped latches and first reach B at source index + 2;
+the scheduler drains A, B, C, and latches in order at sentence end. Language
+returns an explicit reduction plan; any conceptual STM mutation remains a
+ConceptualSpace commit.
+
 > **Status: architectural assessment, 2026-07-13.** This document describes
 > the live software boundaries in `bin/`, not the cognitive decomposition of
 > perceptual, conceptual, whole, and symbolic space. It is a refactoring guide,
 > not a claim that the proposed components already exist.
+
+The focused ownership and pipeline-parallel contract for sparse, per-execution
+`SubSpace` carriers and Space-owned codebooks is specified in
+[`plans/2026-07-16-sparse-subspace-carrier-design.md`](plans/2026-07-16-sparse-subspace-carrier-design.md).
 
 The conceptual architecture is substantially more modular than its runtime.
 Layers, bases, spaces, grammar operations, and typed `SubSpace` carriers give
@@ -56,7 +91,7 @@ The result is a system with named domain modules but implicit runtime APIs:
   `BasicModel.runEpoch`, and `BasicModel.runBatch` share responsibility.
   Dataset mode, cursor semantics, reset policy, and device conversion leak into
   the model.
-- **Forward execution.** `BasicModel._begin_step`, `_forward_body`,
+- **Forward execution.** `BasicModel.runBatch`, `_forward_body`,
   `_forward_body_per_word`, `_forward_per_stage`, and mutable attributes on
   several spaces collectively define the path. A stage's true input includes
   hidden state left by earlier calls.
@@ -203,8 +238,8 @@ This replaces the model-as-message-bus pattern. In particular, values like
 should be passed, not discovered on sibling objects. Persistent state should be
 listed and checkpointable; everything else should die with the frame.
 
-Do not attempt this as one rewrite. Start with `_begin_step` / `_end_step`, then
-thread the existing carrier values through the per-word loop while leaving the
+Do not attempt this as one rewrite. Start with `runBatch` staging / `_end_step`,
+then thread the existing carrier values through the per-word loop while leaving the
 underlying `Space.forward` methods unchanged.
 
 **Acceptance seam:** running two model instances interleaved in one process

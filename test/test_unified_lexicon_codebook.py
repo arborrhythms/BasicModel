@@ -765,33 +765,38 @@ class TestSSCodebookPairedInsertRetired(unittest.TestCase):
 
 
 class TestFlatSlabInvariant(unittest.TestCase):
-    """Config validator must enforce IS.nOutput*IS.nDim ==
-    CS.nOutput*CS.nDim == PS.nOutput*PS.nDim. Loud error on mismatch.
-    """
+    """Validate legacy flat slabs and aligned sparse concept activation."""
 
     def _build_config_dict(self, is_out, is_dim, ps_out, ps_dim,
-                           cs_out, cs_dim):
+                           cs_out, cs_dim, *, aligned_serial=False,
+                           cs_input_event=None):
         """Build a minimal cfg dict the validator can chew on.
 
-        ``is_dim`` / ``ps_dim`` / ``cs_dim`` are the per-space_role CONTENT
-        widths. Under "6+2+2" the (2,2) muxed space_roles (IS/PS/CS) carry an
-        EVENT ``nDim`` = content + .where/.when band, while the (0,0)
-        content space_roles (SS/OS) carry the bare content width. Both the
-        flat-slab invariant and the SS==CS pass-through compare CONTENT,
-        so adding the band uniformly to the muxed space_roles preserves the
-        slab-match / mismatch semantics these tests exercise while keeping
-        the call sites expressed in content widths.
+        ``is_dim`` / ``ps_dim`` / ``cs_dim`` are per-space CONTENT widths.
+        Each event width adds that space's canonical where/when band. In the
+        aligned serial case WS is a PS-width native peer and CS.nInputDim is
+        already conceptual-width because sparse sigma/codebook activation owns
+        the increase. The output head also consumes terminal CS directly.
         """
         from architecture import canonical_shape
         is_event = is_dim + sum(canonical_shape("InputSpace"))
         ps_event = ps_dim + sum(canonical_shape("PartSpace"))
         cs_event = cs_dim + sum(canonical_shape("ConceptualSpace"))
-        return {
-            "architecture": {
+        ws_dim = ps_dim if aligned_serial else cs_dim
+        ws_event = ws_dim + sum(canonical_shape("WholeSpace"))
+        architecture = {
                 "dataType": "embedding",
                 "monotonic": False,
                 "naive": False,
-            },
+        }
+        if aligned_serial:
+            architecture.update({
+                "serial": True,
+                "serialObjectMeta": True,
+                "conceptBinding": "aligned",
+            })
+        return {
+            "architecture": architecture,
             "InputSpace": {
                 "nOutput": is_out, "nDim": is_event,
                 "nInputDim": 0, "flatten": False, "hasAttention": False,
@@ -803,18 +808,25 @@ class TestFlatSlabInvariant(unittest.TestCase):
                 "codebook": "quantize",
             },
             "ConceptualSpace": {
-                "nInput": ps_out, "nInputDim": ps_event,
+                "nInput": ps_out,
+                "nInputDim": ((cs_event if aligned_serial else ps_event)
+                              if cs_input_event is None
+                              else int(cs_input_event)),
                 "nOutput": cs_out, "nDim": cs_event,
+                "nOutputDim": cs_event,
                 "invertible": True, "hasAttention": False,
                 "codebook": "quantize",
+                "nVectors": 1024, "activeVectors": 32,
+                "stmCapacity": 8,
             },
             "WholeSpace": {
                 "nInput": cs_out, "nInputDim": cs_event,
-                "nOutput": cs_out, "nDim": cs_dim,
+                "nOutput": cs_out, "nDim": ws_event,
+                "nOutputDim": ws_event,
                 "codebook": "quantize",
             },
             "OutputSpace": {
-                "nInput": cs_out, "nInputDim": cs_dim,
+                "nInput": cs_out, "nInputDim": cs_event,
                 "nOutput": 1,
             },
         }
@@ -843,6 +855,38 @@ class TestFlatSlabInvariant(unittest.TestCase):
             Models.ModelFactory.validate_config(cfg)
         msg = str(ctx.exception)
         self.assertIn("flat-slab", msg.lower())
+
+    def test_aligned_serial_allows_compact_ps_into_high_dim_cs(self):
+        cfg = self._build_config_dict(
+            is_out=8, is_dim=504,
+            ps_out=8, ps_dim=128,
+            cs_out=8, cs_dim=1024,
+            aligned_serial=True)
+        Models.ModelFactory.validate_config(cfg)  # no raise expected
+
+    def test_aligned_serial_requires_predecoded_cs_input_boundary(self):
+        from architecture import canonical_shape
+        ps_event = 128 + sum(canonical_shape("PartSpace"))
+        cfg = self._build_config_dict(
+            is_out=8, is_dim=504,
+            ps_out=8, ps_dim=128,
+            cs_out=8, cs_dim=1024,
+            aligned_serial=True,
+            cs_input_event=ps_event)
+        with self.assertRaises((ValueError, AssertionError, KeyError)) as ctx:
+            Models.ModelFactory.validate_config(cfg)
+        self.assertIn("sigma/codebook", str(ctx.exception).lower())
+
+    def test_aligned_parallel_does_not_receive_sparse_boundary_relaxation(self):
+        cfg = self._build_config_dict(
+            is_out=8, is_dim=504,
+            ps_out=8, ps_dim=128,
+            cs_out=8, cs_dim=1024,
+            aligned_serial=True)
+        cfg["architecture"]["serial"] = False
+        with self.assertRaises((ValueError, AssertionError, KeyError)) as ctx:
+            Models.ModelFactory.validate_config(cfg)
+        self.assertIn("flat-slab", str(ctx.exception).lower())
 
 
 class TestExistingConfigsSatisfyFlatSlab(unittest.TestCase):

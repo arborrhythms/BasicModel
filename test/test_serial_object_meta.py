@@ -1,12 +1,8 @@
-"""Serial-mode word-at-a-time (Option A; doc/specs/mereological-order-raising.md
-"Serial-mode word-at-a-time loop"). Increment 2 = HARD-MASK-TO-WORD-SPAN: the
-``word_span_window`` helper isolates the ACTIVE WORD (sum over the slots sharing
-its word index) so PartSpace processes one word at a time -- no part with a
-``.where`` outside the word. The pure ``word_span_window`` helper is unit-tested
-in isolation (it reads none of ``self``, so it runs with ``self=None``); the
-INTEGRATION tests at the bottom exercise the captured-loop wiring (2b): the
-``_word_index_N`` / ``_word_last_slot_mask`` device tensors, the per-word commit
-gate, and the gaussian->word_span_window branch, gated ``serialObjectMeta``.
+"""Serial word-loop object/meta tests.
+
+The outer axis is a sentence slab of W words. Inside each word iteration all
+of that word's radix constituents are synthesized before the canonical live
+PS field enters CS; raw constituent width is neither PS.nOutput nor STM depth.
 """
 
 import os
@@ -128,6 +124,93 @@ def test_serial_object_meta_stamps_and_word_index_device_tensors():
     assert ie._word_last_slot_mask.dtype == torch.bool
 
 
+def test_serial_radix_has_distinct_word_and_local_part_axes():
+    """The sentence loop is [B,W]; raw constituent staging is [B,W,P_raw].
+
+    The XOR rows contain exactly two words. P_raw follows the longest complete
+    spelling in this batch and is independent of the eight-wide PS field.
+    """
+    m, x = _serial_model_and_batch()
+    with torch.no_grad():
+        m.forward(x)
+    ie = m.inputSpace
+    assert ie._ar_embedded_N.shape[:2] == (4, 8)       # sentence W
+    assert ie._ar_word_part_ids.shape[:2] == (4, 8)
+    assert ie._ar_word_part_ids.shape == ie._ar_word_part_mask.shape
+    assert ie._ar_word_part_ids.shape[-1] == 6         # longest full spelling
+    assert ie._ar_word_part_ids.shape[-1] != m.perceptualSpace.outputShape[0]
+    assert ie._word_active_mask.sum(dim=1).tolist() == [2, 2, 2, 2]
+    assert ie._word_last_slot_mask.sum(dim=1).tolist() == [2, 2, 2, 2]
+    assert torch.equal(
+        ie._word_index_N[:, :2],
+        torch.tensor([[0, 1]]).expand(4, -1))
+    assert bool((ie._word_index_N[:, 2:] == -1).all())
+
+
+def test_serial_ws_analysis_view_is_fixed_width_and_compact():
+    """Full eager cut metadata must not specialize the compiled WS carrier.
+
+    Batch size one is the important stride case: a narrow slice can report
+    contiguous while retaining its full parent's batch stride. The live view
+    must have a canonical compact stride independent of full cut length.
+    """
+    m, _ = _serial_model_and_batch()
+    # The compact serial fixture keeps WS analysis=raw; engage the same
+    # meronymic cut BasicModel uses so this test has full span metadata.
+    for stage_ws in m.wholeSpaces:
+        stage_ws.analysis_mode = "meronomy"
+    one = m.inputSpace.prepInput(["alpha beta gamma"])
+    with torch.no_grad():
+        m._lex_embed_stem(one)
+    ws = m.wholeSpace
+    live = ws._staged_analysis_spans
+    full = ws._staged_analysis_spans_full
+    n_live = int(ws.inputShape[0])
+    assert live.shape == (1, n_live, 2)
+    assert live.stride() == (n_live * 2, 2, 1)
+    assert full is not None and full.dim() == 3
+    prefix = min(n_live, int(full.shape[1]))
+    assert torch.equal(live[:, :prefix], full[:, :prefix])
+
+
+def test_partspace_runs_once_per_word_not_once_per_constituent():
+    """Two-word rows produce two batch-wide PS calls, each with one whole."""
+    m, x = _serial_model_and_batch()
+    calls = []
+    original = m.perceptualSpace.forward
+
+    def spy(sub, *args, **kwargs):
+        event = sub.materialize()
+        calls.append(tuple(event.shape))
+        return original(sub, *args, **kwargs)
+
+    m.perceptualSpace.forward = spy
+    try:
+        with torch.no_grad():
+            m.forward(x)
+    finally:
+        m.perceptualSpace.forward = original
+    # The optional sentence prelude contributes whole-slab calls; the serial
+    # reading loop itself contributes exactly the two one-word calls below.
+    local_calls = [shape for shape in calls if shape[1] == 1]
+    assert local_calls == [(4, 1, 1024), (4, 1, 1024)]
+
+
+def test_outer_word_cap_reports_but_complete_word_parts_do_not_truncate():
+    """W overflow is reported; an 11-part cold word survives PS width 8."""
+    m, _ = _serial_model_and_batch()
+    text = "abcdefghijk b c d e f g h i"  # 9 words; first has 11 cold bytes
+    x = m.inputSpace.prepInput([text])
+    with torch.no_grad():
+        m.forward(x)
+    ie = m.inputSpace
+    assert ie._word_active_mask.sum().item() == 8
+    assert ie._sentence_word_truncated_mask.tolist() == [True]
+    assert ie._ar_word_part_ids.shape[-1] == 11
+    assert int(ie._ar_word_part_mask[0, 0].sum().item()) == 11
+    assert not bool(ie._ar_word_truncated_mask.any())
+
+
 def test_serial_commit_gate_fires_once_per_active_word():
     """The per-word commit boundary is True exactly ONCE per word (at the word's
     last active slot) -- so the STM push fires once per word, not once per slot
@@ -150,6 +233,41 @@ def test_serial_commit_gate_fires_once_per_active_word():
         for n in range(last.shape[1]):
             if bool(last[b, n]):
                 assert bool(active[b, n])
+
+
+def test_word_prediction_and_physical_push_share_one_commit_boundary():
+    """Word mode must neither predict from nor push partial radix spellings.
+
+    ConceptualSpace captures the predictor gate while a spy sums the physical
+    STM push gates. The intent-only sentence prelude deliberately leaves STM
+    empty, so word 1 has no retained context to predict from; every later word
+    has one captured target. Physical commits still occur once per word.
+    """
+    m, x = _serial_model_and_batch()
+    stm = m.conceptualSpace.stm
+    pushed = [0]
+    original = stm.push_step_masked
+
+    def spy(ideas, row_gate, **metadata):
+        pushed[0] += int(row_gate.sum().item())
+        return original(ideas, row_gate, **metadata)
+
+    stm.push_step_masked = spy
+    try:
+        with torch.no_grad(), \
+                m.conceptualSpace.capture_intra_predictions() as trace:
+            m.forward(x)
+    finally:
+        stm.push_step_masked = original
+
+    commits = m.inputSpace._word_last_slot_mask.sum(dim=1)
+    assert pushed[0] == int(commits.sum().item())
+    captured = torch.zeros_like(commits)
+    for entry in trace:
+        gate = entry["row_gate"]
+        if gate is not None:
+            captured += gate.reshape(-1).to(captured.dtype)
+    assert torch.equal(captured, (commits - 1).clamp_min(0))
 
 
 def test_serial_object_meta_off_does_not_build_word_index():

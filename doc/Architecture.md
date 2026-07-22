@@ -24,8 +24,9 @@ parallel, the third is serial:
    never surfaced. In BasicModel it is percept-based and symbolic: two
    towers — the $\sigma$ tower ascending bottom-up (part-percept extents, the PS
    codebook) and the $\pi$ tower descending top-down (whole-percept intents, the
-   SS codebook) — linked by the word/object Concept codebook
-   (`bin/References.py`), whose rows are the concepts (part$\leftrightarrow$whole references).
+   WS property codebook) — bound by location into the ConceptualSpace
+   dictionary, whose rows are concepts (part$\leftrightarrow$whole relations).
+   SymbolSpace references those concept ids downstream.
 2. **Attention.** In an LLM, attention is QKV per subsymbolic layer.
    In BasicModel: **bases of relevance guide attention; attention
    determines the contents of awareness.** Relevance is carried as
@@ -116,8 +117,8 @@ $\sum_k \alpha_k \cdot \mathrm{key}_k$. Six stores (the `SPACE_*` ids):
 | `STM` | the live short-term-memory rows |
 | `LTM` | the consolidated truth store (rows + trust value) |
 | `PART` | the PartSpace codebook (part-percepts) |
-| `WHOLE` | the WholeSpace codebook (whole-percepts + meronomy/taxonomy) |
-| `SYMBOL` | the SymbolSpace codebook (symbols, 1:1 with concepts) |
+| `WHOLE` | the WholeSpace property codebook (whole-percepts only) |
+| `SYMBOL` | the downstream SymbolSpace reference namespace (1:1 with concepts) |
 
 `PART`/`WHOLE` appear whenever their tower has a codebook; `SYMBOL` only under
 `<symbolTower>`. Pointing `.where` at a codebook/LTM store is recall; at the input
@@ -125,12 +126,11 @@ window it is reading — one mechanism, the type tag distinguishes them. Under
 `<globalAttentionConsume>` the soft-read is fed back into the head as a zero-init
 gated residual, so the output loss trains the retrieval.
 
-The symbol codebook is a **reference**, not a learned copy: it tracks the concept
-codes so the two cannot diverge or dissociate. Its training objective is kept
-separate from reconstruction (the source concepts are shaped by their own pass):
-the symbol's IDENTITY (the codebook row) stays EMA-only/detached, while the
-symbol's VALUE (the signed 0-D activation from the symbolic phase) is
-grad-bearing. (Two-phase update, 2026-07-02: the activations' gradient path is
+The symbol namespace is a **reference**, not a learned copy: it tracks concept
+ids so the two cannot diverge or dissociate. A symbol's IDENTITY is that integer
+concept reference and allocates no independent learned or EMA row; its VALUE,
+the signed 0-D activation from the symbolic phase, is grad-bearing. (Two-phase
+update, 2026-07-02: the activations' gradient path is
 the conceptual SBOW over the settled slab parked at the post-pump cutover --
 the once-built SS leg itself is a state-contract sync whose product no loss
 consumes; pre-P3 the in-loop leg carried the gradient.)
@@ -166,14 +166,15 @@ mapping (and the trust-sign-as-vedana / luminosity-as-joy reading of `LTM`) is i
 >   `Ops._conjunction_kernel` default to LogSumExp smooth variants
 >   when `monotonic=False`; the hard branch is retained for
 >   monotonic-mode and exact idempotency tests.
-> - **LBG-style SS codebook splitting.** Gray (1990) EMA + per-row
->   variance tracking; rows whose running variance exceeds a
->   threshold split along the top-variance eigendirection.
+> - **LBG-style WS property splitting.** Gray (1990) EMA + per-row variance
+>   tracking can split a dynamic property along its top-variance
+>   eigendirection. This grows properties, never concepts or symbols.
 
-> **Status (2026-05-27):** the **substrate refactor** has landed end-to-end.
+> **Historical status (2026-05-27; ownership superseded 2026-07-20):** the
+> **substrate refactor** had landed end-to-end.
 > PS is a single-arg input processor (synthesis front end + sigma fold). CS is a STM container +
-> grammatical CPU (no atomic forward fold; sigma_percept retired). SS owns
-> the unified word lexicon codebook with paired (orth, semantic) rows. The
+> grammatical CPU (no atomic forward fold; sigma_percept retired). The paired
+> word-codebook ownership described then no longer belongs to WholeSpace. The
 > CKY `Chart` and STM shift-reduce parsers retire entirely; `LanguageLayer`
 > (signal router) is the canonical parser. `LiftLayer` / `LowerLayer` are
 > binary `GrammarLayer` subclasses with internal Sigma / Pi (no longer
@@ -615,8 +616,8 @@ BasicModel is a bidirectional neural architecture organized as a pipeline of fiv
 representational transformation:
 
 ```
-Forward:  InputSpace -> PartSpace -> ConceptualSpace -> WholeSpace -> OutputSpace
-Reverse:  OutputSpace -> WholeSpace -> ConceptualSpace -> PartSpace -> InputSpace
+Forward:  InputSpace -> {PartSpace, WholeSpace} -> ConceptualSpace -> SymbolSpace -> OutputSpace
+Reverse:  OutputSpace -> SymbolSpace -> ConceptualSpace -> {PartSpace, WholeSpace} -> InputSpace
 ```
 
 The pre-2026-05-27 "two feedback loops" (S $\to$ C symbolic loopback per stage,
@@ -688,7 +689,7 @@ the principled fix for the MM_20M mean-collapse.
 | **InputSpace** | Lifts raw data into working dimensionality; surface tokenization | LiftingLayer; lexer wiring (text mode) | Reaches PS's lexicon via back-ref; no own lexicon |
 | **PartSpace** | Bottom-up SYNTHESIS branch (Pi/Sigma swap, rev. 2026-06-09): sigma fold + `<synthesis>` front ends + MPHF lookup | one `self.sigma` (SigmaLayer — the union fold), MPHF + index table | `forward(x_subspace)` takes one positional arg (the atom-view stem). Result = `sigma(x)` after the front end embeds. PS Lexicon (`self.vocabulary`) holds per-word vectors; MPHF maps surface $\to$ row. |
 | **ConceptualSpace** | STM container + main grammatical CPU + (when sparse-active) the POST-PUMP symbolic phase | STM (`ShortTermMemory`, depth ~8); the single untyped square `ConceptualAttentionLayer` (a `SparseLayer` subclass; registered via the `_sparse_fam` shim) + concept dictionary (`similarity_codebook`) + the relation store (`ConceptAllocator` + ordered records) when sparse-active | `forward(subspace, word_subspace=None)`: STM bookkeeping only — the pump is purely subsymbolic (P3 two-phase); the symbolic transform fires ONCE post-pump (`cs_symbolic_phase`: snap + FF concept pyramid, $K$ = `symbolicOrder`, driven by `_forward_body`'s cutover). Dispatches read-only grammar ops via the signal router. |
-| **WholeSpace** | Top-down ANALYSIS branch: pi fold + `<analysis>`/`<lexer>` knobs; symbol-prototype codebook owner; dispatch site for codebook-write ops | one `self.pi` (PiLayer — the intersection fold), the symbol-prototype codebook (`self.subspace.what`) — NOT the word lexicon, which stays PS-local (below) | `forward(CS_subspaceForWS, IS_concepts=None)` — stage 0 reads the unity view. Lookup chain: surface $\to$ MPHF $\to$ PS lexicon row $\to$ inverse of `key_to_index` (identity when untied). |
+| **WholeSpace** | Top-down ANALYSIS branch over whole-percept properties | one `self.pi` (PiLayer — the intersection fold), one small property codebook (`self.subspace.what`), and the `<analysis>` policy | Stage 0 reads the unity view; its property folds bind with equal PS live locations downstream in CS. It owns no concept, META, taxonomy, or symbol rows. |
 | **OutputSpace** | Final prediction | LinearLayer | nActive, nDim, nVectors |
 
 The cross-space fold contract has changed:
@@ -815,14 +816,13 @@ abstraction. Each maps to a knob (or, for the first, to the folds themselves):
    [Mereology.md $\to$ Order-raising](Mereology.md).
 
 2. **Subsymbolic order** (`<subsymbolicOrder>`) — *iterating* the folds:
-   codes are passed back to PartSpace / WholeSpace across `subsymbolicOrder`
-   passes (the CS$\to$PS loop). Synthesis chunks the codes into higher-order
+   live carriers iterate through PartSpace / WholeSpace across
+   `subsymbolicOrder` passes. Synthesis chunks the codes into higher-order
    percepts (fewer each pass); analysis re-expands, attention selecting what
    to expand (a top-k over the priming, applied after the WholeSpace
-   codebook lookup). Symbolic composition is no longer a separate CS$\to$PS
-   passback flag: the recurrent symbolic leg always flows through
-   `WholeSpace.forward(prevCS_forSS)`, and the symbolic-iteration codebook
-   handles higher-order symbolic composition on the CS$\to$SS path.
+   property lookup). Conceptual feedback may condition a later perceptual fold,
+   but concepts and symbols remain owned downstream; no feedback value is
+   inserted into the WholeSpace property inventory.
 
    > **Proposed refinement (mereological-order-raising spec).** This single
    > subsymbolic loop is really **two** moves CS should choose between *per
@@ -841,9 +841,8 @@ abstraction. Each maps to a knob (or, for the first, to the folds themselves):
 
 3. **Symbolic order** (`<symbolicOrder>`) — the symbolic / relational loop
    budget. In serial mode (`<serial>true</serial>`), words are read **one at a
-   time** from WholeSpace (reading isolated words to ConceptualSpace *is*
-   attention) and processed grammatically in ConceptualSpace's STM and on the
-   PartSpace side. `symbolicOrder` limits how many symbolic / SS loops may run;
+   time** from InputSpace and processed grammatically in ConceptualSpace's STM
+   and SymbolSpace. `symbolicOrder` limits how many symbolic loops may run;
    `<serial>` selects whether the per-word traversal is active.
 
 So: granularity is intrinsic to the folds, subsymbolic order iterates the

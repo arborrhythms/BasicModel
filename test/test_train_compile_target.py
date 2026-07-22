@@ -33,12 +33,27 @@ def test_gpu_compile_target_sets_defaults_without_clobbering():
     env = {}
     train.apply_compile_target_env(_args("gpu"), env)
     assert env["BASICMODEL_DEVICE"] == "gpu"
-    assert env["MODEL_COMPILE"] == "auto"
+    assert "MODEL_COMPILE" not in env
 
     env = {"BASICMODEL_DEVICE": "cuda:1", "MODEL_COMPILE": "eager"}
     train.apply_compile_target_env(_args("gpu"), env)
     assert env["BASICMODEL_DEVICE"] == "cuda:1"
     assert env["MODEL_COMPILE"] == "eager"
+
+
+def test_mps_allocator_defaults_are_bounded_and_preserve_overrides():
+    env = {}
+    train.apply_mps_allocator_env(env)
+    assert env["PYTORCH_MPS_HIGH_WATERMARK_RATIO"] == "1.0"
+    assert env["PYTORCH_MPS_LOW_WATERMARK_RATIO"] == "0.9"
+
+    env = {
+        "PYTORCH_MPS_HIGH_WATERMARK_RATIO": "1.2",
+        "PYTORCH_MPS_LOW_WATERMARK_RATIO": "0.8",
+    }
+    train.apply_mps_allocator_env(env)
+    assert env["PYTORCH_MPS_HIGH_WATERMARK_RATIO"] == "1.2"
+    assert env["PYTORCH_MPS_LOW_WATERMARK_RATIO"] == "0.8"
 
 
 def test_compile_mode_is_forwarded_for_gpu_target():

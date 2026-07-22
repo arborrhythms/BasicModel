@@ -57,6 +57,11 @@ def parse_args(argv=None):
                         "(across all epochs combined). Useful for "
                         "wall-clock-bounded runs: at ~7s/batch on GB10, "
                         "12000 batches is roughly 24 hours.")
+    p.add_argument("--max-seconds", type=float, default=None, metavar="SECONDS",
+                   help="Stop training cleanly after this many wall-clock "
+                        "seconds. The limit is checked between completed "
+                        "batches so the final checkpoint is never written "
+                        "from a half-applied update.")
     p.add_argument("--test", nargs="?", const=-1, type=int, default=None,
                    metavar="N",
                    help="Run the baseline + post-train test/validation "
@@ -80,8 +85,10 @@ def parse_args(argv=None):
     p.add_argument("--compile-target", default="gpu",
                    choices=("gpu", "mlx"),
                    help="Compilation target. gpu runs normal training with "
-                        "BASICMODEL_DEVICE=gpu and MODEL_COMPILE=auto by "
-                        "default. mlx exports the model tensor core to an "
+                        "BASICMODEL_DEVICE=gpu and a device-aware compile "
+                        "default (eager on MPS, auto elsewhere). An explicit "
+                        "MODEL_COMPILE is preserved. mlx exports the model "
+                        "tensor core to an "
                         "ExecuTorch/MLX .pte and skips Phase 2 training.")
     p.add_argument("--mlx-output", default=None,
                    help="Output .pte path for --compile-target mlx. "
@@ -169,9 +176,17 @@ def apply_compile_target_env(args, env):
     """Populate compile-target defaults without clobbering caller overrides."""
     if args.compile_target == "gpu":
         env.setdefault("BASICMODEL_DEVICE", "gpu")
-        env.setdefault("MODEL_COMPILE", "auto")
+        # Leave MODEL_COMPILE unset unless the caller supplied it.  util.py's
+        # device-aware selector uses the Dynamo eager backend on MPS (where
+        # Inductor/Metal remains unreliable) and the auto path elsewhere.
     if args.compile_mode is not None:
         env["MODEL_COMPILE_MODE"] = args.compile_mode
+
+
+def apply_mps_allocator_env(env):
+    """Install conservative MPS allocator defaults, preserving overrides."""
+    env.setdefault("PYTORCH_MPS_HIGH_WATERMARK_RATIO", "1.0")
+    env.setdefault("PYTORCH_MPS_LOW_WATERMARK_RATIO", "0.9")
 
 
 def export_mlx_local(args, proj, python, xml_path):
@@ -317,8 +332,10 @@ def train_local(args):
     proj = project_dir()
     python = venv_python(proj)
     env = {**os.environ, "PYTHONPATH": os.path.join(proj, "bin"),
-           "PYTORCH_MPS_HIGH_WATERMARK_RATIO": "0.0",
            "PYTHONUNBUFFERED": "1"}
+    # Keep Metal below the unlimited-allocation mode by default so endurance
+    # runs cannot consume all unified memory.  Explicit caller values win.
+    apply_mps_allocator_env(env)
     apply_compile_target_env(args, env)
 
     # Resolve the XML config path
@@ -387,6 +404,10 @@ def train_local(args):
         model_env["BASIC_MAX_TOKENS"] = str(args.max_tokens)
     if args.batches is not None:
         model_env["BASIC_MAX_BATCHES"] = str(args.batches)
+    if args.max_seconds is not None:
+        if args.max_seconds <= 0:
+            raise ValueError("--max-seconds must be positive")
+        model_env["BASIC_MAX_SECONDS"] = str(args.max_seconds)
     if args.random_shards:
         model_env["BASIC_RANDOM_SHARDS"] = "1"
     # --test gating: env var encodes the request to runTrial in Models.py.
@@ -483,6 +504,8 @@ def train_remote(args):
         remote_args += ["--max-tokens", str(args.max_tokens)]
     if args.batches is not None:
         remote_args += ["--batches", str(args.batches)]
+    if args.max_seconds is not None:
+        remote_args += ["--max-seconds", str(args.max_seconds)]
     if args.test is not None:
         if args.test == -1:
             remote_args += ["--test"]

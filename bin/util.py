@@ -632,6 +632,14 @@ def compile(model, verbose=True, fullgraph=False):
     # cursor logic is plain Python control flow, not graph structure,
     # so unspecializing it changes no numerics.
     import torch._dynamo as _dyn
+    # The fixed word-loop buckets legitimately acquire a small number of new
+    # specializations when a dynamic codebook crosses a power-of-two growth
+    # boundary.  PyTorch 2.12's default of eight made the old long MPS run
+    # fail hard under fullgraph=True at a WholeSpace resize.  WholeSpace is
+    # fixed now, but PartSpace remains deliberately dynamic, so give those
+    # bounded growth transitions room without changing graph semantics.
+    _dyn.config.recompile_limit = max(
+        64, int(getattr(_dyn.config, "recompile_limit", 0) or 0))
     _dyn.config.allow_unspec_int_on_nn_module = True
 
     # MPS: Inductor injects a device-side error buffer
@@ -680,6 +688,132 @@ def compile(model, verbose=True, fullgraph=False):
             if getattr(torch, "uint16", None) is not None:
                 _mps_cg.DTYPE_TO_METAL.setdefault(torch.uint16, "ushort")
                 _msg("MPS: inductor DTYPE_TO_METAL patched with uint16->ushort")
+            # PyTorch 2.12.1 Metal ``any`` reduction metadata bug: the
+            # accumulator is declared with Metal's spelling ``"bool"`` and
+            # that STRING is also stored on its CSEVariable as ``.dtype``.
+            # A fused boolean consumer (notably ``bitwise_and``) then asks
+            # generic dtype propagation to construct ``torch.empty(...,
+            # dtype="bool")`` and codegen fails with ``dtype=str``. Preserve
+            # the Metal declaration but restore the CSE metadata to the torch
+            # dtype supplied to the reducer. The guards make this MPS-only,
+            # idempotent, and a no-op once upstream returns torch dtype
+            # metadata itself.
+            _metal_kernel = _mps_cg.MetalKernel
+            _reduce_any = getattr(
+                _metal_kernel, "_reduction_nocache", None)
+            if (callable(_reduce_any)
+                    and not getattr(
+                        _reduce_any, "_basicmodel_any_dtype_patch", False)):
+                _reduce_any_original = _reduce_any
+
+                def _reduce_any_dtype_patched(
+                        self, dtype, src_dtype, reduction_type, value):
+                    result = _reduce_any_original(
+                        self, dtype, src_dtype, reduction_type, value)
+                    if (reduction_type == "any"
+                            and isinstance(dtype, torch.dtype)
+                            and hasattr(result, "dtype")
+                            and isinstance(result.dtype, str)):
+                        result.dtype = dtype
+                    return result
+
+                _reduce_any_dtype_patched._basicmodel_any_dtype_patch = True
+                _metal_kernel._reduction_nocache = (
+                    _reduce_any_dtype_patched)
+                _msg("MPS: inductor any-reduction dtype metadata patched "
+                     "(Metal 'bool' -> torch.bool)")
+            # A full W=16 recurrence accumulates a shared scalar bias
+            # gradient once for each of its 16 word ticks (two linear uses per
+            # tick).  Inductor represents that as one generated Metal kernel
+            # with 32 constant scalar inputs.  Metal permits only 31 buffers,
+            # and neither the normal fusion nor realization limits split this
+            # post-AOT scalar accumulation.  Do not broaden the fallback to
+            # arbitrary kernels: recognize only a one-output, >31-input,
+            # scalar ``in_ptrN[0]`` sum and emit its call as normal MPS
+            # stack/sum/copy operations in the generated Python wrapper.  The
+            # W-loop remains one fullgraph=True Inductor callable; this is
+            # merely a backend-safe lowering for an otherwise unrepresentable
+            # scalar-gradient kernel.
+            _scheduling = _mps_cg.MetalScheduling
+            _define_kernel = getattr(_scheduling, "define_kernel", None)
+            if (callable(_define_kernel)
+                    and not getattr(
+                        _define_kernel, "_basicmodel_scalar_sum_patch", False)):
+                _define_kernel_original = _define_kernel
+
+                def _is_oversized_scalar_sum(src_code):
+                    inputs = re.findall(r"constant [^*]+\* in_ptr(\d+),",
+                                        src_code)
+                    if len(inputs) <= 31:
+                        return False
+                    if src_code.count("device ") != 1:
+                        return False
+                    if src_code.count("out_ptr") < 1:
+                        return False
+                    # All inputs must be scalar element-zero reads, and the
+                    # sole result must be a scalar element-zero write.
+                    for index in range(len(inputs)):
+                        if src_code.count(f"in_ptr{index}[0]") != 1:
+                            return False
+                    return (src_code.count("[x0]") == 0
+                            and re.search(
+                                r"out_ptr\d+\[0\] = static_cast<[^>]+>\(tmp\d+\);",
+                                src_code) is not None)
+
+                def _define_kernel_scalar_sum_patched(
+                        scheduler, src_code, node_schedule, kernel):
+                    # The Python wrapper has torch in scope.  C++ wrappers
+                    # cannot express this tiny eager MPS fallback, so retain
+                    # the stock codegen there (the training path is Python).
+                    from torch._inductor.virtualized import V
+                    if (not V.graph.cpp_wrapper
+                            and _is_oversized_scalar_sum(src_code)):
+                        name = (
+                            f"basicmodel_mps_scalar_sum_"
+                            f"{scheduler._kernel_fn_counter}")
+                        scheduler._kernel_fn_counter += 1
+                        kernel._basicmodel_mps_scalar_sum = True
+                        return name
+                    return _define_kernel_original(
+                        scheduler, src_code, node_schedule, kernel)
+
+                _define_kernel_scalar_sum_patched._basicmodel_scalar_sum_patch = True
+                _scheduling.define_kernel = _define_kernel_scalar_sum_patched
+
+            _call_kernel = getattr(_metal_kernel, "call_kernel", None)
+            if (callable(_call_kernel)
+                    and not getattr(
+                        _call_kernel, "_basicmodel_scalar_sum_patch", False)):
+                _call_kernel_original = _call_kernel
+
+                def _call_kernel_scalar_sum_patched(
+                        kernel, name, node=None, deallocate_ws=True):
+                    if not getattr(kernel, "_basicmodel_mps_scalar_sum", False):
+                        return _call_kernel_original(
+                            kernel, name, node=node,
+                            deallocate_ws=deallocate_ws)
+                    from torch._inductor.virtualized import V
+                    output_names = [
+                        arg for arg in kernel.args.output_buffers.keys()
+                        if arg not in kernel.removed_buffers]
+                    input_names = [
+                        arg for arg in kernel.args.input_buffers.keys()
+                        if arg not in kernel.removed_buffers]
+                    if len(output_names) != 1 or len(input_names) <= 31:
+                        raise RuntimeError(
+                            "MPS scalar-sum fallback received an unexpected "
+                            "kernel signature")
+                    # ``copy_`` preserves Inductor's preallocated output
+                    # buffer and stack/sum use ordinary MPS kernels, neither
+                    # of which has a 32-buffer argument interface.
+                    V.graph.wrapper_code.writeline(
+                        f"{output_names[0]}.copy_(torch.stack(("
+                        f"{', '.join(input_names)}), dim=0).sum(dim=0))")
+
+                _call_kernel_scalar_sum_patched._basicmodel_scalar_sum_patch = True
+                _metal_kernel.call_kernel = _call_kernel_scalar_sum_patched
+                _msg("MPS: oversized scalar-gradient sums lowered via "
+                     "stack/sum/copy wrapper fallback")
             # Metal caps kernel arguments at 31 buffers, but the inductor MPS
             # scheduler is limit-unaware: a large fusion binds one constant
             # buffer per distinct input, and the MM-scale forward produced
