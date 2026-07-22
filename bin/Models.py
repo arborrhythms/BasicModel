@@ -91,7 +91,9 @@ from typing import List
 
 from Spaces import ActiveEncoding, WhereEncoding, WhenEncoding, WhatEncoding, EventEncoding
 from Spaces import Basis, Tensor, Codebook, Embedding
-from Spaces import SubSpace, Space, InputSpace, PartSpace, ModalSpace, ConceptualSpace, WholeSpace, OutputSpace, ShortTermMemory
+from Spaces import (SubSpace, SubSpaceView, guard_peer_views, Space, InputSpace,
+                    PartSpace, ModalSpace, ConceptualSpace, WholeSpace,
+                    OutputSpace, ShortTermMemory)
 from Spaces import ReadingAttention, GlobalAttention
 # ``normalize_codebook_mode`` moved onto ``Space`` as a staticmethod
 # (2026-05-21) so the parsing logic stays namespaced; callers below
@@ -208,6 +210,54 @@ class ReverseAdapter(nn.Module):
     def forward(self, subspace):
         target = self.wrapped if self.wrapped is not None else self._wrapped_nonmodule
         return target.reverse(subspace)
+
+
+class StaticPeerPipeline:
+    """Compiler-visible three-stage peer scheduler.
+
+    The scheduler has a fixed W bucket and no data-dependent queue operations:
+    stage A produces PS/WS/CSsub for word ``w``; B consumes the completed
+    concept at ``w-1`` for CSsym/SS; C runs Language on B's result at ``w-2``.
+    Grammar feedback is a timestamped latch and is deliberately exposed to B
+    only at ``source + 2``.  Callbacks return values; only their owning stage
+    commits its own runtime storage.
+    """
+    WIDTHS = (16, 32, 64, 128)
+
+    def __init__(self, width):
+        width = int(width)
+        if width not in self.WIDTHS:
+            raise ValueError(f"pipeline width must be one of {self.WIDTHS}, got {width}")
+        self.width = width
+
+    def run(self, words, stage_a, stage_b, stage_c):
+        if len(words) != self.width:
+            raise ValueError("words must be padded to the pipeline's static width")
+        a_fifo = [None] * self.width
+        b_fifo = [None] * self.width
+        grammar_latch = [None] * self.width
+        trace = []
+        for tick in range(self.width + 2):
+            # A is first: B sees only a completed earlier A result, never a
+            # same-word partially-mutated CS lane.
+            if tick < self.width:
+                a_fifo[tick] = stage_a(words[tick], tick)
+                trace.append(("A", tick))
+            b_idx = tick - 1
+            if 0 <= b_idx < self.width:
+                feedback = (grammar_latch[b_idx - 2]
+                            if b_idx >= 2 else None)
+                b_fifo[b_idx] = stage_b(a_fifo[b_idx], b_idx, feedback)
+                # A B-stage result may expose grammar feedback as its second
+                # element. The representation itself remains the first.
+                if isinstance(b_fifo[b_idx], tuple) and len(b_fifo[b_idx]) == 2:
+                    b_fifo[b_idx], grammar_latch[b_idx] = b_fifo[b_idx]
+                trace.append(("B", b_idx))
+            c_idx = tick - 2
+            if 0 <= c_idx < self.width:
+                stage_c(b_fifo[c_idx], c_idx)
+                trace.append(("C", c_idx))
+        return trace
 
 
 class GrammarMergeGlue(nn.Module):
@@ -5257,7 +5307,7 @@ class BasicModel(BaseModel):
     def _configure_lazy_fullgraph_word_loops(self, compile_fn, buckets):
         """Install, but do not lower, one fullgraph sentence loop per W bucket.
 
-        The outer word bucket (W=16/32/64/128) and the masked residual
+        The outer word bucket (W=16/32/64/128/256) and the masked residual
         constituent layout are both static *inside* that loop.
         Capture the *entire* W loop rather than a word cell replayed W times:
         this gives Inductor visibility of the recurrent carrier chain and
@@ -5271,12 +5321,12 @@ class BasicModel(BaseModel):
         otherwise turn W=32 into a recompile of the W=16 graph.
         """
         widths = tuple(sorted(set(int(width) for width in buckets)))
-        required = (16, 32, 64, 128)
+        required = (16, 32, 64, 128, 256)
         unsupported = tuple(width for width in widths
                             if width not in required)
         if unsupported:
             raise ValueError(
-                "canonical fullgraph word loops support W=16,32,64,128; "
+                "canonical fullgraph word loops support W=16,32,64,128,256; "
                 f"got unsupported {list(unsupported)}")
 
         def _forward_W16(input_data):
@@ -5307,11 +5357,18 @@ class BasicModel(BaseModel):
                 raise RuntimeError("fullgraph W=128 loop received a non-W=128 slab")
             return self.forward(None)
 
+        def _forward_W256(input_data):
+            slab = self.inputSpace._ar_embedded_N
+            if slab is None or int(slab.shape[1]) != 256:
+                raise RuntimeError("fullgraph W=256 loop received a non-W=256 slab")
+            return self.forward(None)
+
         object.__setattr__(self, "_compiled_word_step_sources", {
             16: _forward_W16,
             32: _forward_W32,
             64: _forward_W64,
             128: _forward_W128,
+            256: _forward_W256,
         })
         self._compiled_word_steps = {}
         self._compiled_word_loop_compile = compile_fn
@@ -5565,6 +5622,10 @@ class BasicModel(BaseModel):
         self._compiled_word_chunk_active = False
         self._compiled_word_chunk_replaying = False
         self._compiled_word_chunk_width = 0
+        # Diagnostic only. Read once so the production W-loop never performs
+        # an environment lookup or constructs a SubSpaceView while captured.
+        self._debug_peer_mutation = (
+            os.environ.get("BASICMODEL_DEBUG_PEER_MUTATION", "0") == "1")
         self._compiled_part_fold_ladder = None
         self._compiled_whole_fold_ladder = None
         self._compiled_word_loop_compile = None
@@ -5694,11 +5755,20 @@ class BasicModel(BaseModel):
                         f"{int(slab.shape[1])} staged slab")
                 return self.forward(input_data)
 
+            def _forward_W256(input_data):
+                slab = self.inputSpace._ar_embedded_N
+                if slab is not None and int(slab.shape[1]) != 256:
+                    raise RuntimeError(
+                        f"compiled W=256 bucket received a W="
+                        f"{int(slab.shape[1])} staged slab")
+                return self.forward(input_data)
+
             _fixed_sources = {
                 16: _forward_W16,
                 32: _forward_W32,
                 64: _forward_W64,
                 128: _forward_W128,
+                256: _forward_W256,
             }
             unsupported = [
                 width for width in _word_buckets
@@ -5706,7 +5776,7 @@ class BasicModel(BaseModel):
             if unsupported:
                 raise ValueError(
                     "compiled serialWordBuckets supports exactly widths "
-                    f"16,32,64,128; got unsupported {unsupported}")
+                    f"16,32,64,128,256; got unsupported {unsupported}")
             object.__setattr__(
                 self, "_compiled_word_step_sources", _fixed_sources)
             for _width in _word_buckets:
@@ -7106,12 +7176,14 @@ class BasicModel(BaseModel):
                         object.__setattr__(
                             _ss, "_target_cursor_length", int(getattr(
                                 self.inputSpace, "_active_word_bucket", 0) or 0))
-                    object.__setattr__(
-                        self, "_prev_cs_for_ps", getattr(
-                            self, "_empty_seed_ps", None))
-                    object.__setattr__(
-                        self, "_prev_cs_for_ss", getattr(
-                            self, "_empty_seed_ss", None))
+                    _cs_owner = getattr(self, "conceptualSpace", None)
+                    if _cs_owner is not None:
+                        object.__setattr__(
+                            _cs_owner, "_peer_prev_sub", getattr(
+                                _cs_owner, "_peer_empty_sub", None))
+                        object.__setattr__(
+                            _cs_owner, "_peer_prev_sym", getattr(
+                                _cs_owner, "_peer_empty_sym", None))
                     # ``_per_word_prelude`` creates a fresh STM working slab
                     # inside the graph.  Establish the same MPS-backed state
                     # before the first guard census; otherwise the
@@ -9655,6 +9727,10 @@ class BasicModel(BaseModel):
             # 128-D WholeSpace property basis is upstream and never sizes SS.
             symbol_dim=concept_dim,
         )
+        # Scheduling ownership is separate from SymbolSpace's parameter/state
+        # ownership. Keep a non-registering model reference so state_dict does
+        # not acquire a second LanguageLayer path.
+        object.__setattr__(self, 'languageSpace', self.symbolSpace.languageSpace)
 
         # MetaSymbol Category codebook (doc/Language.md
         # "Participation Categories"). Enabled by default via
@@ -9863,6 +9939,16 @@ class BasicModel(BaseModel):
         # behaviour-identical to the prior fresh-per-forward seed.
         self._empty_seed_ps = self._empty_subspace()
         self._empty_seed_ss = self._empty_subspace()
+        # Routing state lives with the conceptual owner. BasicModel retains
+        # only construction-time empty sentinels for legacy parallel paths.
+        object.__setattr__(self.conceptualSpace, '_peer_empty_sub',
+                           self._empty_seed_ps)
+        object.__setattr__(self.conceptualSpace, '_peer_empty_sym',
+                           self._empty_seed_ss)
+        object.__setattr__(self.conceptualSpace, '_peer_prev_sub',
+                           self._empty_seed_ps)
+        object.__setattr__(self.conceptualSpace, '_peer_prev_sym',
+                           self._empty_seed_ss)
 
         # Phase 2: Sequential pipeline is the only path.
         self.build_pipelines()
@@ -11493,8 +11579,8 @@ class BasicModel(BaseModel):
             Dynamo refuses to trace).
           * ``symbolSpace.recur_pass = 0`` -- invariant across the
             per-word loop (pass-index 0 throughout).
-          * ``self._prev_cs_for_ps`` / ``self._prev_cs_for_ss`` pre-
-            seeded to the persistent empty seeds so iteration 0's
+          * ConceptualSpace's peer lanes pre-seeded to the persistent empty
+            views so iteration 0's
             PS/WS forwards see a non-None feedback subspace (avoids a
             None-vs-SubSpace branch inside the captured body that
             would force a recompile after iteration 1). The body
@@ -11553,7 +11639,7 @@ class BasicModel(BaseModel):
         # (triggered by ``post_tick_compact`` when a sentence
         # completes); the first forward of the first sentence runs
         # BEFORE any soft_reset has fired, so cold-start allocation
-        # falls to this prelude. ``self._prev_cs_for_ps/ws`` are
+        # falls to this prelude. ConceptualSpace peer lanes are
         # UNCONDITIONALLY re-seeded to the empty seeds each forward so
         # the per-word loop's iteration 0 always sees the canonical
         # empty starting context -- never a stale SubSpace from a prior
@@ -11577,8 +11663,13 @@ class BasicModel(BaseModel):
         # Registering them through ``nn.Module.__setattr__`` on the first
         # captured forward mutates ``self._modules`` and invalidates the just
         # compiled W-loop guard on the next sentence.
-        object.__setattr__(self, "_prev_cs_for_ps", self._empty_seed_ps)
-        object.__setattr__(self, "_prev_cs_for_ss", self._empty_seed_ss)
+        # CS owns recurrence routing; model-level ``_prev_cs_*`` pointers
+        # were retired so peer stages cannot accidentally exchange mutable
+        # carrier references through BasicModel.
+        object.__setattr__(self.conceptualSpace, "_peer_prev_sub",
+                           self.conceptualSpace._peer_empty_sub)
+        object.__setattr__(self.conceptualSpace, "_peer_prev_sym",
+                           self.conceptualSpace._peer_empty_sym)
         # A6: the serial per-word path has no combine ``prev_cs_content`` leg
         # (that is the parallel-only carrier). Its CS_{-1} analog is the
         # ``_c_prior`` priming ``ConceptualSpace.forward`` adds across the
@@ -11681,7 +11772,8 @@ class BasicModel(BaseModel):
         T = max(1, int(getattr(self, 'subsymbolicOrder', 1) or 1))
         cs = self.conceptualSpace
         ws = self.wholeSpace
-        prev_ps, prev_ss = self._prev_cs_for_ps, self._prev_cs_for_ss
+        prev_ps = cs._peer_prev_sub
+        prev_ss = cs._peer_prev_sym
         self._set_serial_pump(False)
         # Intent-only means exactly that: the parallel perceptual prelude may
         # form a gist, but its eight-slot fields must not prefill the reducing
@@ -11707,10 +11799,10 @@ class BasicModel(BaseModel):
             for _i in range(T):
                 PS_sub = self.perceptualSpace.forward(word_carrier)
                 WS_sub = ws.forward(getattr(self, "_ws_universe", None),
-                                    cs_out=self._prev_cs_for_ss)
+                                    cs_out=cs._peer_prev_sym)
                 CS_sub = cs.forward(PS_sub, WS_sub)
-                object.__setattr__(self, "_prev_cs_for_ps", cs._subspaceForPS)
-                object.__setattr__(self, "_prev_cs_for_ss", cs._subspaceForWS)
+                object.__setattr__(cs, "_peer_prev_sub", cs.CSsub)
+                object.__setattr__(cs, "_peer_prev_sym", cs.CSsym)
                 if CS_sub is not None:
                     idea = CS_sub.materialize()
                     if idea is not None and idea.dim() == 3:
@@ -11723,8 +11815,8 @@ class BasicModel(BaseModel):
         finally:
             # Intent-only: the star never becomes a workspace slot.
             object.__setattr__(cs, "_serial_defer_push", False)
-            object.__setattr__(self, "_prev_cs_for_ps", prev_ps)
-            object.__setattr__(self, "_prev_cs_for_ss", prev_ss)
+            object.__setattr__(cs, "_peer_prev_sub", prev_ps)
+            object.__setattr__(cs, "_peer_prev_sym", prev_ss)
             self._set_serial_pump(True)
         return self._last_gist
 
@@ -12075,13 +12167,13 @@ class BasicModel(BaseModel):
             if aligned_fold_binding else ())
 
         # Read the cross-iteration C→P / C→S feedback off
-        # ``self._prev_cs_for_ps/ws``. The prelude seeds these to the
+        # ConceptualSpace peer lanes. The prelude seeds these to the
         # empty seeds for iteration 0; the tail of this method switches
         # them to the persistent ``cs._subspaceForPS/WS`` storage that
         # cs.forward mutates in place, so iterations 1+ pick up the
         # latest event without any explicit pointer update.
-        prevCS_forPS = self._prev_cs_for_ps
-        prevCS_forSS = self._prev_cs_for_ss
+        prevCS_forPS = cs._peer_prev_sub
+        prevCS_forSS = cs._peer_prev_sym
         # Snapshot the carriers' event tensors BEFORE cs.forward writes
         # new ones (set_event mutates in place; without snapshots the
         # masked-blend below would compare new-vs-new).
@@ -12099,7 +12191,24 @@ class BasicModel(BaseModel):
         # Stage 1.A substrate refactor: PartSpace.forward is
         # single-arg now (``pi(x) + sigma(x)`` on the same input —
         # no CS-feedback path entering PS at this level).
-        PS_base = ps.forward(word_sub)
+        # PS and WS are peers. In debug mode their calls are bracketed by
+        # storage-version guards over CS's prior lanes; neither may commit a
+        # viewed carrier. Production keeps the same zero-copy reads without
+        # Python guard overhead.
+        # Never construct Python view/guard objects inside an AOT word loop.
+        # The flag is frozen at model setup and this branch specializes away
+        # for production; debug runs remain eager by construction.
+        _peer_guard = (bool(getattr(self, "_debug_peer_mutation", False))
+                       and not torch.compiler.is_compiling())
+        if _peer_guard:
+            with guard_peer_views(prevCS_forPS.view(), prevCS_forSS.view()):
+                PS_base = ps.forward(word_sub)
+                WS_base = ws.forward(getattr(self, "_ws_universe", None),
+                                     cs_out=prevCS_forPS.view())
+        else:
+            PS_base = ps.forward(word_sub)
+            WS_base = ws.forward(getattr(self, "_ws_universe", None),
+                                 cs_out=prevCS_forPS)
         part_folds = None
         if aligned_fold_binding:
             part_event = PS_base.materialize()
@@ -12130,8 +12239,6 @@ class BasicModel(BaseModel):
         # Universe every pump (the carrier arrives as cs_out feedback);
         # the earlier bootstrap-only law reacted to a misdiagnosed
         # flatline (valid_mask collapse -- exec notes item 36).
-        WS_base = ws.forward(getattr(self, "_ws_universe", None),
-                             cs_out=prevCS_forSS)
         # Preserve H0 before the cumulative pi ladder replaces WS_base's live
         # event with H3. H0 is the whole-side peer of the parameter-free P0
         # word union and contributes its own bounded RMS evidence to CS.
@@ -12375,11 +12482,11 @@ class BasicModel(BaseModel):
 
         # Switch the prev pointer to the persistent CS storage so the
         # next iteration's first reads see CS.forward's in-place
-        # writes. After this line ``self._prev_cs_for_ps`` aliases
+        # writes. After this line ConceptualSpace publishes its CSsub lane
         # ``cs._subspaceForPS``; subsequent iterations read the same
         # object whose ``_event`` cs.forward keeps fresh.
-        object.__setattr__(self, "_prev_cs_for_ps", cs._subspaceForPS)
-        object.__setattr__(self, "_prev_cs_for_ss", cs._subspaceForWS)
+        object.__setattr__(cs, "_peer_prev_sub", cs.CSsub)
+        object.__setattr__(cs, "_peer_prev_sym", cs.CSsym)
 
         # Stage 1.F substrate refactor (doc/plans/2026-05-26-two-loop-
         # pi-sigma-substrate.md): the per-stage ``_cs_cache`` /
@@ -12713,7 +12820,7 @@ class BasicModel(BaseModel):
         """
         # Prelude: STM resize+clear, MPHF pre-warm, SymbolSubSpace
         # per-sentence invariants + CS-feedback pre-seed
-        # (``self._prev_cs_for_ps/ws``), fresh _cs/_ss caches. Hoisted
+        # (ConceptualSpace peer lanes), fresh _cs/_ss caches. Hoisted
         # into ``_per_word_prelude`` so the capture-gate test can
         # replay the same boundary-side contract. Now also: allocate /
         # zero the preallocated ``_per_word_concept_buf`` [B, N, D_c]
@@ -12767,7 +12874,7 @@ class BasicModel(BaseModel):
         # NOTE: cs/ws handles, prevCS_forPS/WS empty-seed init, MPHF
         # pre-warm, recur_pass reset, and STM resize+clear all folded
         # into ``_per_word_prelude`` (called above). The captured body
-        # reads ``self._prev_cs_for_ps/ws`` uniformly (prelude seeds
+        # reads ConceptualSpace peer lanes uniformly (prelude seeds
         # them to the empty seeds; the body switches to
         # ``cs._subspaceForPS/WS`` once cs.forward has run for the
         # first time) -- no per-iteration None branch.
@@ -13241,7 +13348,7 @@ class BasicModel(BaseModel):
         # "[1016] at version 1" backward crash). The per-word fire exists
         # for the RULE BOOKKEEPING (current_rules); the boundary fire
         # keeps the gradient role.
-        self.symbolSpace.forward(snap.detach().clone())
+        self.languageSpace.compose(snap.detach().clone())
 
     def _chart_compose_at_C(self, stage_idx=0):
         """Fire the signal router at C-space_role over
@@ -13283,9 +13390,10 @@ class BasicModel(BaseModel):
         snap = self.conceptualSpace.stm.snapshot()
         if snap is None:
             return
-        # CS couples to SymbolSpace only via forward/reverse (the dispatch +
-        # eager-island handling now live on SymbolSpace; 2026-06-21 refactor).
-        self.symbolSpace.forward(snap)
+        # LanguageSpace schedules the existing SymbolSpace-owned parser and
+        # returns its reduction plan. CS remains the only owner that commits
+        # any conceptual/STM mutation from that plan.
+        self.languageSpace.compose(snap)
 
     def _reverse_seed_snapshot(self, seed):
         """Return a ``[B, N, D]`` idea snapshot from reverse's seed, if any."""

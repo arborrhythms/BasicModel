@@ -6007,6 +6007,91 @@ class Embedding(Basis):
         """Return a zero vector the same size as a codebook entry."""
         return torch.zeros(self.getW().shape[1], device=TheDevice.get())
 
+class SubSpaceView:
+    """Read-only, zero-copy capability for a :class:`SubSpace`.
+
+    A view is the only object a peer space should receive.  It deliberately
+    exposes the materialisation/selection surface, but none of the storage
+    setters.  The owner keeps the mutable ``SubSpace`` and commits a result
+    after its peer computation has finished.  This is a Python capability
+    boundary (not a clone): tensors returned by ``materialize`` are the live
+    zero-copy read surface, so a consumer that needs scratch storage must make
+    an explicit ``clone()``/working tensor.
+    """
+    __slots__ = ("__subspace", "owner")
+
+    def __init__(self, subspace, owner=None):
+        self.__subspace = subspace
+        self.owner = owner if owner is not None else getattr(
+            subspace, "_owner_space", None)
+
+    def materialize(self, k=None, mode="active"):
+        return self.__subspace.materialize(k=k, mode=mode)
+
+    def resolve(self):
+        return self.__subspace.resolve()
+
+    def is_empty(self):
+        return self.__subspace.is_empty()
+
+    def shape(self, mode="event"):
+        value = self.materialize(mode=mode)
+        return None if value is None else tuple(value.shape)
+
+    def mask(self):
+        """Return the selection/mask read surface (never a writable API)."""
+        return self.__subspace._index
+
+    def context(self, name=None):
+        """Read pipeline context without leaking the mutable carrier."""
+        allowed = {"valid_mask", "stem_embedded", "errors", "serial_cache"}
+        if name is None:
+            return {key: getattr(self.__subspace, key) for key in allowed}
+        if name not in allowed:
+            raise AttributeError(f"{name!r} is not a SubSpaceView context read")
+        return getattr(self.__subspace, name)
+
+    @property
+    def valid_mask(self):
+        return self.__subspace.valid_mask
+
+    @property
+    def stem_embedded(self):
+        return self.__subspace.stem_embedded
+
+    @property
+    def errors(self):
+        return self.__subspace.errors
+
+    @property
+    def serial_cache(self):
+        return self.__subspace.serial_cache
+
+    def storage_versions(self):
+        return self.__subspace.storage_versions()
+
+    def assert_unchanged(self, before):
+        return self.__subspace.assert_storage_unchanged(before)
+
+
+@contextmanager
+def guard_peer_views(*views):
+    """Debug guard for a peer compute call.
+
+    It catches both sanctioned setter writes (the SubSpace epoch) and direct
+    in-place tensor writes (PyTorch's tensor version counter).  The guard is
+    intentionally eager/debug-only; a compiled graph must remain pure tensor
+    work and does not need Python-side diagnostics.
+    """
+    snapshots = [(view, view.storage_versions()) for view in views
+                 if view is not None]
+    yield
+    if torch.compiler.is_compiling():
+        return
+    for view, before in snapshots:
+        view.assert_unchanged(before)
+
+
 class SubSpace(nn.Module):
     """Per-space runtime state container.
 
@@ -6161,6 +6246,10 @@ class SubSpace(nn.Module):
         See class docstring for invariants.
         """
         super().__init__()
+        # Mutable runtime storage belongs to the Space which adopts this
+        # carrier. Standalone fixtures remain ownerless until adopted.
+        self._owner_space = None
+        self._write_epoch = 0
         # Phase 1: default normalizer uses the global TheData. Model
         # construction overrides this with its own Normalizer instance
         # (so tests can mock TheData via a different source).
@@ -6322,6 +6411,53 @@ class SubSpace(nn.Module):
         if isinstance(payload, torch.Tensor) and payload.ndim > 0:
             self.batch = payload.shape[0]
 
+    # -- ownership / peer-view boundary ---------------------------------
+    def view(self):
+        """Return a read-only capability for handing this carrier to a peer."""
+        return SubSpaceView(self)
+
+    def _note_write(self):
+        # Python scalar intentionally stays outside state_dict/runtime tensor
+        # storage. It is only an eager debug epoch; tensor versions below also
+        # catch an illicit direct in-place write which bypasses our setters.
+        # Never mutate it while Dynamo is tracing/replaying: a changing Python
+        # scalar becomes a guard and forces a whole-W fullgraph recompile.
+        if torch.compiler.is_compiling():
+            return
+        self._write_epoch = int(getattr(self, "_write_epoch", 0)) + 1
+
+    def storage_versions(self):
+        """Snapshot mutable storage identities/versions for peer guards."""
+        versions = [int(getattr(self, "_write_epoch", 0))]
+        for slot in (self.event, self.what, self.where, self.when,
+                     self.activation):
+            value = slot.getW() if slot is not None and hasattr(slot, "getW") else None
+            if torch.is_tensor(value):
+                versions.extend((id(value), int(getattr(value, "_version", 0))))
+            else:
+                versions.extend((id(value), -1))
+        index = getattr(self, "_index", None)
+        if torch.is_tensor(index):
+            versions.extend((id(index), int(getattr(index, "_version", 0))))
+        else:
+            versions.extend((id(index), -1))
+        return tuple(versions)
+
+    def assert_storage_unchanged(self, before):
+        after = self.storage_versions()
+        if after != before:
+            owner = getattr(self, "_owner_space", None)
+            label = (getattr(owner, "config_section", None)
+                     or getattr(owner, "name", None) or "unowned SubSpace")
+            raise RuntimeError(
+                f"peer mutation guard: non-owner changed viewed {label} storage")
+
+    def commit_event(self, owner, event_tensor, compute_activation=False):
+        """Owner-checked event commit for new peer-pipelined stages."""
+        if owner is not self._owner_space:
+            raise PermissionError("only the owning Space may commit its SubSpace")
+        self.set_event(event_tensor, compute_activation=compute_activation)
+
     def copy_context(self, other):
         """Adopt cross-stage/cross-forward state from ``other``.
 
@@ -6473,6 +6609,7 @@ class SubSpace(nn.Module):
         # nDim): silently skip the redundant write. Selection is the
         # source of truth; the stale per-batch payload was the band-aid
         # the migration retired.
+        self._note_write()
         if self.muxed and event_tensor.shape[-1] == self.event.nDim:
             self.event.forward(event_tensor, _vspace=self)
         elif self.muxed:
@@ -6492,6 +6629,7 @@ class SubSpace(nn.Module):
             where_tensor: [B, N, nWhere] positional encoding (or None)
             when_tensor: [B, N, nWhen] temporal encoding (or None)
         """
+        self._note_write()
         self.what.setW(what_tensor)
         if where_tensor is not None:
             self.where.setW(where_tensor)
@@ -6685,6 +6823,7 @@ class SubSpace(nn.Module):
             event_tensor: [B, N, D] muxed event vector.
             compute_activation: if True, recompute activation from event norms.
         """
+        self._note_write()
         if self.event is None:
             self.event = Tensor()
         self.set_muxed(event_tensor)
@@ -6716,6 +6855,7 @@ class SubSpace(nn.Module):
 
         Invalidates cached event so materialize() re-concatenates.
         """
+        self._note_write()
         if (self.codebook_slot == 'what'
                 and isinstance(self.what, Codebook)
                 and what_tensor.shape[-1] == self.what.nDim):
@@ -6736,6 +6876,7 @@ class SubSpace(nn.Module):
 
         Invalidates cached event so materialize() re-concatenates.
         """
+        self._note_write()
         self.where.setW(where_tensor)
         self.event.setW(None)
         self._per_batch_event = None
@@ -6746,6 +6887,7 @@ class SubSpace(nn.Module):
 
         Invalidates cached event so materialize() re-concatenates.
         """
+        self._note_write()
         self.when.setW(when_tensor)
         self.event.setW(None)
         self._per_batch_event = None
@@ -6915,6 +7057,7 @@ class SubSpace(nn.Module):
         Args:
             activation_tensor: ``[N]``, ``[B, N]`` or ``[B, N, 1]`` scalar.
         """
+        self._note_write()
         nd = self.activeEncoding.nDim
         # Accept 1-D [N] (legacy direct-setW callers / squeezed tensors)
         # by treating it as a single-batch [1, N]. Strict shapes
@@ -8173,6 +8316,15 @@ class Space(SpaceCarrierMixin, nn.Module):
                 encoders[role] = module
                 object.__setattr__(sub, role, module)
         self._owned_encoders = encoders
+
+    def view(self):
+        """Read-only view of this Space's runtime carrier for peer compute."""
+        return self.subspace.view()
+
+    def commit_event(self, event_tensor, compute_activation=False):
+        """Commit runtime state owned by this Space (never by a peer)."""
+        self.subspace.commit_event(
+            self, event_tensor, compute_activation=compute_activation)
 
     def attach_symbolSpace(self, symbolSpace):
         """Wire the shared SymbolSpace as a non-Module routing pointer.
@@ -9957,8 +10109,9 @@ class InputSpace(Space):
         """Choose the smallest compiled W bucket that contains this batch.
 
         Selection is eager and host-side, before PartSpace builds its
-        rectangular word-major tensors. The final bucket remains a hard cap;
-        overlong rows are reported by the existing sentence-truncation mask.
+        rectangular word-major tensors.  A row must fit a configured bucket:
+        silently dropping its tail would corrupt the recurrent sentence
+        state, so an overlong row is rejected before representation emission.
         """
         widths = tuple(sorted(set(int(v) for v in buckets)))
         if not widths or widths[0] < 1:
@@ -9974,6 +10127,11 @@ class InputSpace(Space):
                     for text in row if text is not None)
                 max_words = max(max_words, len(Meronomy.word_spans(raw)))
         needed = max(1, int(max_words))
+        if needed > widths[-1]:
+            raise ValueError(
+                "sentence has %d words but the largest configured serial "
+                "word bucket is W=%d; add a bucket before training rather "
+                "than clipping the sentence" % (needed, widths[-1]))
         chosen = widths[-1]
         for width in widths:
             if needed <= width:
@@ -14472,6 +14630,17 @@ class ConceptualSpace(Space):
         self._subspaceForPS = SubSpace(
             inputShape=(1, 1), outputShape=(1, 1),
             nInputDim=1, nOutputDim=1)
+        # Two explicit recurrent lanes.  They are runtime state, not two
+        # conceptual parameter sets: CSsub is the PS/WS fold feedback and
+        # CSsym is the completed conceptual snapshot consumed by SS/grammar.
+        # Compatibility aliases below keep legacy consumers working while all
+        # new peer scheduling obtains read-only ``.view()`` capabilities.
+        object.__setattr__(self, "CSsub", self._subspaceForPS)
+        self.CSsym = SubSpace(
+            inputShape=(1, 1), outputShape=(1, 1),
+            nInputDim=1, nOutputDim=1)
+        object.__setattr__(self.CSsub, '_owner_space', self)
+        object.__setattr__(self.CSsym, '_owner_space', self)
         # Symbol-learning Layer: detached accumulator + MDL-flavored
         # promotion policy. Off by default; enabled via
         # ``<architecture><symbolLearning enabled="true"/>``. Owned by
@@ -14951,7 +15120,10 @@ class ConceptualSpace(Space):
                 "row_gate": (None if row_gate is None
                              else row_gate.detach().clone()),
             })
-        if not torch.is_grad_enabled():
+        # Inference benchmarks keep grad enabled solely to select the compiled
+        # callable, but do not consume this training-only loss. Do not let that
+        # create a Python ``None -> list`` state transition inside a fullgraph.
+        if not self.training or not torch.is_grad_enabled():
             return
         if float(self.intra_loss_weight) <= 0.0:
             return
@@ -20393,7 +20565,7 @@ class ConceptualSpace(Space):
         # at the post-pump cutover (``cs_symbolic_phase`` on the settled
         # field, driven by ``BasicModel._forward_body``). None clears any
         # stale activation stamp from a prior pass on the same object.
-        object.__setattr__(subspace, "_concept_activations", None)
+        object.__setattr__(self.subspace, "_concept_activations", None)
         object.__setattr__(self.subspace, "_index", None)  # stale top-K clear
         # STM bookkeeping (2026-05-28 fix). Mode-dependent:
         #
@@ -20512,7 +20684,9 @@ class ConceptualSpace(Space):
         # Write the pushed-idea event back to the carrier subspace so
         # downstream consumers (WholeSpace.forward via
         # ``_subspaceForWS``) see the bookkept event.
-        subspace.set_event(event_for_carrier)
+        # Commit only the CS-owned carrier. ``subspace`` is a peer input view
+        # in the pipelined path and must remain read-only to ConceptualSpace.
+        self.subspace.commit_event(self, event_for_carrier)
         # ``clear_last_svo`` was an end-of-CS-forward bookkeeping hook
         # in the prior fold-and-snap design; retained here because the
         # SymbolSubSpace consumers still expect the SVO slot cleared at
@@ -20530,9 +20704,14 @@ class ConceptualSpace(Space):
         #     not a feature-width lift.
         # ``object.__setattr__`` matches the pre-1.C reasoning: avoids
         # mutating ``self._modules`` under torch.compile guards.
-        object.__setattr__(self, "_subspaceForWS", subspace)
+        # Publish both recurrent lanes only after this Space has completed its
+        # own commit. Peers get views at the scheduler boundary; the legacy
+        # aliases remain raw solely for old in-space call sites.
+        self.CSsub.commit_event(self, event_for_carrier)
+        self.CSsym.commit_event(self, event_for_carrier)
+        object.__setattr__(self, "_subspaceForWS", self.CSsym)
         if event_for_carrier is not None and event_for_carrier.dim() == 3:
-            self._subspaceForPS.set_event(event_for_carrier)
+            self._subspaceForPS = self.CSsub
         else:
             # Degenerate edge fallback (preserved from pre-1.C
             # behavior; not the hot path).
@@ -20540,7 +20719,7 @@ class ConceptualSpace(Space):
                 inputShape=(0, 1), outputShape=(0, 1),
                 nInputDim=1, nOutputDim=1)
             object.__setattr__(self, "_subspaceForPS", fallbackForPS)
-        return subspace
+        return self.subspace
 
     def vocab_extras(self):
         """Schema-2 non-tensor state owned by ConceptualSpace.

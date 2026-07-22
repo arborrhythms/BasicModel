@@ -1,5 +1,36 @@
 # Runtime Architecture and Componentization
 
+## Peer-pipelined space execution (2026-07-22)
+
+Runtime carriers have an ownership boundary. A space owns its mutable
+`SubSpace`; peers receive a zero-copy `SubSpaceView`, which exposes only
+materialization, resolution, shape/mask, and context reads. A peer that needs
+scratch state allocates an explicit working tensor. Debug peer guards compare
+both carrier write epochs and PyTorch storage versions around a peer call.
+
+`ConceptualSpace` has two runtime lanes rather than model-owned previous-CS
+pointers: `CSsub` carries the PS/WS recurrent subsymbolic field and `CSsym`
+carries the completed conceptual snapshot for SS. The legacy compatibility
+aliases remain internal to CS only.
+
+The word scheduler is a static three-stage pipeline for W in `{16,32,64,128,256}`.
+Input selection uses the smallest bucket that contains the complete sentence;
+an overlong row is rejected before emission rather than truncating its tail:
+
+1. A: Input fans one input view to PS and WS; both consume the prior CSsub
+   view, then CSsub commits after both peer computations finish.
+2. B: CSsym and SS consume A's completed word concept from `w-1` and a common
+   prior symbolic snapshot.
+3. C: `LanguageSpace` executes the existing `LanguageLayer` for B's result at
+   `w-2`.
+
+`LanguageSpace` is a scheduling owner only: its `LanguageLayer` parameters and
+grammar state continue to be registered exactly once under `SymbolSubSpace`.
+Grammar results are timestamped latches and first reach B at source index + 2;
+the scheduler drains A, B, C, and latches in order at sentence end. Language
+returns an explicit reduction plan; any conceptual STM mutation remains a
+ConceptualSpace commit.
+
 > **Status: architectural assessment, 2026-07-13.** This document describes
 > the live software boundaries in `bin/`, not the cognitive decomposition of
 > perceptual, conceptual, whole, and symbolic space. It is a refactoring guide,

@@ -66,8 +66,8 @@
          seam as the word recursion; otherwise it would reintroduce a hidden
          136 -> 1032 coordinate pad before the aligned loop begins. -->
     <sentenceProtocol>false</sentenceProtocol>
-    <serialWordCapacity>128</serialWordCapacity>
-    <serialWordBuckets>16,32,64,128</serialWordBuckets>
+    <serialWordCapacity>256</serialWordCapacity>
+    <serialWordBuckets>16,32,64,128,256</serialWordBuckets>
     <sigmaPi>butterfly</sigmaPi>
     <l1Lambda>0.01</l1Lambda>
 

@@ -12,6 +12,7 @@ os.environ.setdefault("MODEL_COMPILE", "eager")
 
 import torch
 import torch.nn as nn
+import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "bin"))
@@ -27,9 +28,9 @@ def _surface(n):
 def test_smallest_fixed_word_bucket_is_selected():
     inp = SimpleNamespace()
     ps = SimpleNamespace()
-    widths = (16, 32, 64, 128)
+    widths = (16, 32, 64, 128, 256)
     for n, expected in ((1, 16), (16, 16), (17, 32), (33, 64),
-                        (65, 128), (129, 128)):
+                        (65, 128), (129, 256), (256, 256)):
         sub = SimpleNamespace(_host_tokens=[[_surface(n)]])
         got = InputSpace.select_word_loop_bucket(
             inp, sub, widths, perceptual_space=ps)
@@ -39,11 +40,18 @@ def test_smallest_fixed_word_bucket_is_selected():
         assert inp._serial_word_count_host == n
 
 
+def test_overlong_sentence_is_rejected_not_clipped():
+    inp = SimpleNamespace()
+    sub = SimpleNamespace(_host_tokens=[[_surface(257)]])
+    with pytest.raises(ValueError, match="rather than clipping"):
+        InputSpace.select_word_loop_bucket(inp, sub, (16, 32, 64, 128, 256))
+
+
 def test_basicmodel_declares_four_buckets_and_independent_inventories():
     root = ET.parse(ROOT / "data" / "BasicModel.xml").getroot()
     assert root.findtext("./architecture/serialWordBuckets") == (
-        "16,32,64,128")
-    assert int(root.findtext("./architecture/serialWordCapacity")) == 128
+        "16,32,64,128,256")
+    assert int(root.findtext("./architecture/serialWordCapacity")) == 256
     ps = int(root.findtext("./PartSpace/nVectors"))
     ps_max = int(root.findtext("./PartSpace/maxVectors"))
     cs = int(root.findtext("./ConceptualSpace/nVectors"))

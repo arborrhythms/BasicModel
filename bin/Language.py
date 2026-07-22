@@ -12898,6 +12898,39 @@ _SYMBOLSPACE_FORWARD_WRITES = {
 }
 
 
+class LanguageSpace(nn.Module):
+    """Scheduling owner for the grammar layer without owning a second copy.
+
+    ``SymbolSubSpace.languageLayer`` remains the sole parameter/state owner.
+    This Space is the explicit pipeline stage that invokes it after CSsym/SS;
+    it returns reduction plans to ConceptualSpace instead of mutating CS.
+    """
+    def __init__(self, symbol_space):
+        super().__init__()
+        object.__setattr__(self, "_symbol_space", symbol_space)
+
+    @property
+    def language_layer(self):
+        return self._symbol_space.subspace.languageLayer
+
+    def compose(self, symbolic_snapshot):
+        self._symbol_space.forward(symbolic_snapshot)
+        return self.reduction_plan()
+
+    def generate(self, symbolic_snapshot):
+        self._symbol_space.reverse(symbolic_snapshot)
+        return self.reduction_plan()
+
+    def reduction_plan(self):
+        """Immutable description of the grammar result for a CS-owned commit."""
+        coordinator = self._symbol_space.subspace
+        return {
+            "rules": coordinator.current_rules,
+            "routing": coordinator.routing_state,
+            "generation": int(getattr(coordinator, "_compose_generation", 0)),
+        }
+
+
 class SymbolSpace(Space):
     """The unified grammar/symbol container (2026-06-21 SymbolSpace refactor,
     Stage 3).
@@ -12955,6 +12988,10 @@ class SymbolSpace(Space):
         # The coordinator owns grammar/STM state; its durable slot Bases and
         # Encodings are registered exactly once on this Space.
         self._adopt_subspace_modules()
+        # First-class scheduling boundary.  It holds a non-registering
+        # reference to this SymbolSpace, so LanguageLayer parameters and state
+        # remain registered exactly once under SymbolSubSpace.
+        self.languageSpace = LanguageSpace(self)
         # SymbolSubSpace.__init__ pointed the home spaces' ``.symbolSpace``
         # back-ref at ITSELF (the coordinator); re-point them at THIS container so
         # ``perceptualSpace.symbolSpace is model.symbolSpace`` holds (the pipeline
