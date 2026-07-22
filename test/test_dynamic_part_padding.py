@@ -72,19 +72,28 @@ def test_single_real_part_is_identity_padded_to_three(serial_model):
         padded, input_space._ar_embedded_N[:, :1], rtol=0, atol=0)
 
 
-def test_begin_step_declares_p3_and_flattened_3w_minima(
+def test_runbatch_staging_declares_p3_and_flattened_3w_minima(
         serial_model, monkeypatch):
-    """Every staged part view uses min P=3; flattened views use min 3*W."""
+    """Compiled ``runBatch`` staging marks P=3 and flattened 3*W minima."""
     calls = []
+
+    class _StagingComplete(Exception):
+        pass
 
     def mark_dynamic_spy(tensor, axis, **bounds):
         calls.append((tensor, axis, bounds))
 
     monkeypatch.setattr(torch._dynamo, "mark_dynamic", mark_dynamic_spy)
-    serial_model._compiled_step = lambda *args, **kwargs: None
+    def _stop_after_staging(*args, **kwargs):
+        raise _StagingComplete
+
+    serial_model._compiled_word_loop_fullgraph = False
+    serial_model._compiled_step = _stop_after_staging
     batch = serial_model.inputSpace.prepInput(["a"])
-    with torch.no_grad():
-        serial_model._begin_step(batch)
+    with pytest.raises(_StagingComplete):
+        serial_model.runBatch(
+            train=False, split="runtime", batchSize=1,
+            batch_override=(batch, None))
 
     input_space = serial_model.inputSpace
     forward_input = serial_model.perceptualSpace._forward_input
@@ -113,3 +122,4 @@ def test_begin_step_declares_p3_and_flattened_3w_minima(
                     if tensor is expected and axis == 1]
         assert matching, f"flat view {tuple(expected.shape)} was not marked"
         assert all(bounds["min"] == 3 * word_width for bounds in matching)
+    serial_model._end_step()

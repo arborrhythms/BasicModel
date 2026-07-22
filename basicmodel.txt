@@ -78,6 +78,13 @@ discrete implementation uses the mereological radix store as follows:
      not part of the base aggregation. No raw constituent is discarded merely
      because the live PS field is eight positions wide.
 
+The radix rows and P0 are direct membership vectors in [0,1]^128. For
+constituents m_i, the base operation is 1-product_i(1-m_i), with 0 as the
+sigma identity. It is many-to-one and therefore is not claimed to be
+invertible; reconstruction uses the retained constituent ids and fold-order
+record. In particular, there is no signed chart at this boundary: applying
+(1+x)/2 here would turn two absent percepts into positive evidence.
+
 Steps 2 and 3 are the present radix/chunk policy, not a claim that this is the
 final mereological combination law. Moving promotion or part/whole
 combination into the subsymbolic loop remains a legitimate experiment. The
@@ -102,32 +109,46 @@ three cumulative folds on each tower:
   P2 = sigma[1](P1)       H2 = pi[1](H1)
   P3 = sigma[2](P2)       H3 = pi[2](H2)
 
-P0..P3 and H0..H3 remain in their respective 128-D native WHAT spaces. When
-a fold contributes to a concept, its sparse activation selects a row of the
-shared conceptual codebook. Reading that row emits the 1024-D conceptual WHAT
-value. This read is the sigma/codebook fold at the recursion boundary; it is
-the dimension increase. CS itself receives a 1032-D event and does not widen a
-136-D event.
+P0..P3 and H0..H3 remain in their respective 128-D native WHAT spaces. Each
+learned unary sigma/pi rung is an invertible membership-domain map
+[0,1]^128 -> [0,1]^128. It uses a bounded monotone coupling butterfly: two
+endpoint-safe shears around an endpoint-fixing scalar curve, all with
+closed-form inverses. It does not use tanh/atanh activation squashing, a
+log-membership chart, or the signed truth chart. Exact 0/1 endpoints remain
+finite in both directions and in their adjoints. (A bounded tanh
+parameterization is used only for the learned coupling coefficients.)
+
+When a fold contributes to a concept, the RMS of its native WHAT coordinates
+is already a scalar in [0,1]. That scalar selects and scales a signed unit row
+of the shared conceptual codebook. Reading the row emits the 1024-D conceptual
+WHAT value in [-1,1]; this indexed dictionary read, not sigma itself, is the
+dimension increase. CS receives a 1032-D event and does not widen a 136-D
+event. P0's RMS(union), H0's RMS(property state), and the six learned PS/WS
+values (plus a valid prior-STM peer when present) are
+averaged, which preserves the signed bound. Updated dictionary rows are
+reprojected locally to unit length after the optimizer step, using only the
+rows named by the sparse gradient rather than scanning the million-row table.
 
 The ordered path is stored, not inferred from the number of outputs. A strict
 aligned fold raises if an advertised sigma or pi rung is absent or cannot
 consume its input; an identity/no-fit rung is not silently counted as
 evidence.
 
-The word concept draws simultaneously from all three part-fold activations and
-all three whole-fold activations. ConceptualSpace retains the six-source
-carrier and its ordered fold-support map. The SS peer is the complete
+The word concept draws simultaneously from P0's RMS(union), all three
+part-fold activations, H0's RMS(property state), and all three whole-fold
+activations. ConceptualSpace retains the eight-source carrier and its ordered
+fold-support map. The SS peer is the complete
 prior-tick STM slab: STM slot i supplies concept row i and its scalar
 activation to CS location i through the same indexed conceptual-codebook read.
 It is decoded before the current word is pushed, so no same-tick CS->SS->CS
 shortcut exists. An empty or unknown SS location is absent rather than a zero
-seventh vote: the local mean is over 6+valid_SS sources and the six perceptual
-folds are not diluted where SS has no exact row identity.
+ninth vote: the local mean is over 8+valid_SS sources and the eight perceptual
+sources are not diluted where SS has no exact row identity.
 
 The concept's actual subsymbolic order is stored explicitly as the deepest
 contributing perceptual fold (3 in this configuration), while the support map
 records that orders 1, 2, and 3 all contributed from both perceptual sides.
-Exactly one word concept, not three or six concepts, enters STM. Its exact row
+Exactly one word concept, not three or eight concepts, enters STM. Its exact row
 and lexical coefficient are stored beside the dense STM payload for later SS
 recursion. A unary or genuinely binary grammatical transform produces a dense
 composite with no single exact row, so its row becomes unknown and its SS
@@ -168,7 +189,7 @@ There is no coordinate correspondence asserted between PS/WS WHAT dimensions
 and CS WHAT dimensions, no fixed isometry, and no CS-owned feature lift. A
 136-D PS event is never padded, repeated, or reshaped into a 1032-D concept.
 The dimension increase occurs only by sparse conceptual codebook activation,
-which is already the sigma fold that feeds CS. An unknown concept row remains
+after the invertible native sigma/pi fold. An unknown concept row remains
 unknown; it must not alias row zero or trigger a full million-row scan.
 
 The dependency graph is

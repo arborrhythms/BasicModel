@@ -165,6 +165,22 @@ def test_source_native_fold_activation_is_normalized_before_concept_decode():
     a_small = Space.native_fold_activation(small, 8)
     a_wide = Space.native_fold_activation(wide, 128)
 
-    expected = torch.full((1, 2), torch.tanh(torch.tensor(1.0)))
+    expected = torch.ones(1, 2)
     assert torch.allclose(a_small, expected)
     assert torch.allclose(a_wide, expected)
+
+
+def test_membership_activations_decode_to_signed_bounded_concepts():
+    torch.manual_seed(19)
+    codebook = torch.nn.functional.normalize(
+        torch.randn(7, 1032), dim=-1)
+    cs = _bare_cs(codebook)
+    rows = torch.tensor([[1, 5, 3]], dtype=torch.long)
+    activation = torch.rand(1, 6, 3)
+    band = torch.zeros(1, 6, 3, 8)
+
+    decoded = _decode(cs, rows, activation, band)
+
+    what = decoded[..., :1024]
+    assert bool((what >= -1.0).all())
+    assert bool((what <= 1.0).all())

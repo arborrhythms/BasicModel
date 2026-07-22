@@ -498,17 +498,18 @@ The implementation keeps percept and concept/symbol carriers distinct:
 
 | Property | Concepts / symbols |
 |---|---|
-| space | positive concept atom; signed activation or signed Lexicon path |
+| space | signed unit concept atom scaled by a signed activation |
 | coordinate | atom direction plus activation polarity and certainty |
 | opposite | negation `-x` |
 | sides | two-sided sign is semantic content |
 | metric | dot product for concepts; projective lookup for Lexicon rows |
 | magnitude | scalar activation carries certainty |
 
-In the sparse conceptual implementation, the stored `ConceptDim` atom is
-strictly positive (`softplus(atom)`). Sign and magnitude live in the scalar
-activation: `concept_code = signed_activation * softplus(atom)`. The phrase
-"signed sphere" describes the activation's role, not a signed stored atom.
+In the aligned sparse conceptual implementation, the stored `ConceptDim` atom
+is a signed unit direction. Magnitude lives in the scalar activation:
+`concept_code = signed_activation * atom`. Updated rows are reprojected to the
+unit sphere after each optimizer step, so every coordinate stays in `[-1,1]`
+without a tanh seam.
 
 A symbol is also not a synonym for a concept or a whole. A concept is a
 `ConceptualSpace` relation over percepts; a symbol is a reference to a concept.
@@ -543,9 +544,9 @@ The bounded ranges admit efficient fixed-point storage:
 | SNORM | `[-1,1]` | signed concept/symbol values |
 | Q-format fractional | bounded signed or unsigned range | CPU/DSP equivalent |
 
-Training remains in `float32`/`bf16`. Forward-time quantization keeps a float
-master, applies a saturating function (`tanh` or `clamp`), and uses a
-straight-through estimator or stochastic rounding. Over a bounded unit range,
+Training remains in `float32`/`bf16`. Forward-time range enforcement keeps a
+float master and uses a straight-through clamp or row projection; the
+percept-to-concept seam does not use tanh/atanh. Over a bounded unit range,
 SNORM16 has a roughly `3e-5` uniform grid and is finer than bf16 across most of
 the interval; SNORM8 is materially coarser.
 
@@ -560,13 +561,13 @@ still depends on the input and synthesis mode:
 | text embedding (`input_presence=False`) | retained in `[-1,1]` |
 | radix/meronomy percept store | UNORM `[0,1]`; presence decode |
 | orthographic Lexicon | signed projective unit ball |
-| conceptual atom | positive atom; signed activation |
+| conceptual atom | signed unit atom; bounded signed concept value |
 
-The `[0,1]` percept-store migration is complete: `Codebook.getW()` is the read
-chokepoint for both forward gather and reverse decode, so no seam adapter is
-needed. The store lives on the PartSpace subspace, the dataflow container. The
-remaining open decision is whether the orthographic Lexicon should ever move to
-`[0,1]`; doing only the input half would break signed embedding reconstruction.
+The canonical radix/property path is membership-native throughout: codebook
+read, many-to-one word union, and learned invertible sigma/pi order raises all
+consume and return `[0,1]` directly. The signed truth evaluation chart is not
+used at this seam. The orthographic Lexicon remains a compatibility store and
+is not the canonical `BasicModel.xml` surface path.
 
 ### Mereological Guarantees {#percept-guarantees}
 

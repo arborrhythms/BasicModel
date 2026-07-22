@@ -58,7 +58,7 @@ def _adapter(kind, randomize=False, seed=3):
 
 def _slab(seed=11):
     torch.manual_seed(seed)
-    return torch.rand(2, _N, _D) * 1.6 - 0.8
+    return torch.rand(2, _N, _D) * 0.8 + 0.1
 
 
 @pytest.mark.parametrize("kind", ["sigma", "pi"])
@@ -76,7 +76,7 @@ def test_near_identity_at_init(kind):
 @pytest.mark.parametrize("kind", ["sigma", "pi"])
 def test_exact_roundtrip_under_arbitrary_law(kind):
     ad = _adapter(kind, randomize=True)
-    x = _slab(seed=13) * 0.9
+    x = _slab(seed=13)
     with torch.no_grad():
         y = ad.forward(x)
         back = ad.reverse(y)
@@ -86,14 +86,73 @@ def test_exact_roundtrip_under_arbitrary_law(kind):
 
 
 @pytest.mark.parametrize("kind", ["sigma", "pi"])
+def test_three_fold_corner_adjoint_is_finite_and_bounded(kind):
+    """The learned order ladder must be stable where membership unions live.
+
+    The retired log-power cross-coupling had a finite forward but produced
+    input gradients in the thousands near 1. This exercises exact poles and
+    their adjacent float32 values through three aggressive learned rungs and
+    their inverses.
+    """
+    folds = [_adapter(kind, randomize=False) for _ in range(3)]
+    torch.manual_seed(41)
+    with torch.no_grad():
+        for fold in folds:
+            for raw in (fold.raw_bfly_L, fold.raw_bfly_d,
+                        fold.raw_bfly_U):
+                raw.normal_(mean=0.0, std=2.0)
+    pattern = torch.tensor(
+        [0.0, 1.0, 1e-7, 1.0 - 1e-7, 1e-4, 1.0 - 1e-4, 0.25],
+        dtype=torch.float32)
+    x = pattern.repeat((_N * _D + pattern.numel() - 1)
+                       // pattern.numel())[:_N * _D]
+    x = x.reshape(1, _N, _D).requires_grad_()
+
+    y = x
+    for fold in folds:
+        y = fold(y)
+    recovered = y
+    for fold in reversed(folds):
+        recovered = fold.reverse(recovered)
+    (y.mean() + recovered.mean()).backward()
+
+    assert torch.isfinite(y).all() and torch.isfinite(recovered).all()
+    assert torch.allclose(recovered, x, atol=1e-5, rtol=0.0)
+    assert x.grad is not None and torch.isfinite(x.grad).all()
+    assert float(x.grad.abs().max()) < 0.1
+    for fold in folds:
+        for parameter in fold.parameters():
+            assert parameter.grad is not None
+            assert torch.isfinite(parameter.grad).all()
+            assert float(parameter.grad.abs().max()) < 0.1
+
+
+@pytest.mark.parametrize("kind", ["sigma", "pi"])
+def test_membership_poles_and_extension_law(kind):
+    ad = _adapter(kind, randomize=True, seed=43)
+    zero = torch.zeros(1, _N, _D)
+    one = torch.ones(1, _N, _D)
+    x = torch.rand(1, _N, _D)
+    with torch.no_grad():
+        assert torch.equal(ad(zero), zero)
+        assert torch.equal(ad(one), one)
+        y = ad(x)
+    if kind == "sigma":
+        assert torch.all(y >= x)
+    else:
+        assert torch.all(y <= x)
+    assert torch.all((y >= 0.0) & (y <= 1.0))
+
+
+@pytest.mark.parametrize("kind", ["sigma", "pi"])
 def test_order_preserved_through_cascade(kind):
-    """m <= m' elementwise on the K3 wire => fold(m) <= fold(m'):
+    """m <= m' elementwise in membership space => fold(m) <= fold(m'):
     every node carries the contractive non-negative law, and
     order-preserving maps compose."""
     ad = _adapter(kind, randomize=True, seed=5)
     torch.manual_seed(17)
-    x_lo = torch.rand(2, _N, _D) * 1.2 - 0.8
-    x_hi = (x_lo + torch.rand(2, _N, _D) * 0.4).clamp(max=0.95)
+    x_lo = torch.rand(2, _N, _D) * 0.7 + 0.05
+    x_hi = (x_lo + torch.rand(2, _N, _D) * 0.2).clamp(max=0.95)
     with torch.no_grad():
         y_lo = ad.forward(x_lo)
         y_hi = ad.forward(x_hi)
@@ -112,7 +171,7 @@ def test_per_vector_isolation(kind):
     ad = _adapter(kind, randomize=True, seed=7)
     x = _slab(seed=19)
     x2 = x.clone()
-    x2[:, 0, :] = (x2[:, 0, :] + 0.5).clamp(-0.95, 0.95)
+    x2[:, 0, :] = (x2[:, 0, :] + 0.25).clamp(max=0.95)
     with torch.no_grad():
         y = ad.forward(x)
         y2 = ad.forward(x2)
@@ -157,6 +216,35 @@ def test_unary_mode_unchanged():
     assert torch.equal(ident, x.reshape(2, -1))
 
 
+def test_compiled_butterfly_opt_in_keeps_forward_and_parameter_gradients(
+        monkeypatch):
+    """The narrow MPS boundary wraps only the pure cascade, not its law."""
+    import util
+
+    ad = _adapter('sigma', randomize=True, seed=61)
+    x = _slab(seed=67).requires_grad_()
+    eager = ad(x.detach()).detach()
+    compile_calls = []
+
+    def _capture_compile(callable_, **kwargs):
+        compile_calls.append((callable_, kwargs))
+        return callable_
+
+    monkeypatch.setattr(util, "TheCompileBackend", "inductor")
+    monkeypatch.setattr(util, "compile", _capture_compile)
+    assert ad.enable_compiled_mem_cascade() is True
+    assert len(compile_calls) == 1
+    assert compile_calls[0][1]["fullgraph"] is True
+
+    compiled = ad(x)
+    torch.testing.assert_close(compiled, eager)
+    compiled.square().mean().backward()
+    assert x.grad is not None and torch.isfinite(x.grad).all()
+    for parameter in ad.parameters():
+        assert parameter.grad is not None
+        assert torch.isfinite(parameter.grad).all()
+
+
 # -- Discontiguous specifications + the saturation boundary ---------------
 # (author concern, 2026-06-11: the membership folds may saturate to the
 # unusable 0000/1111 corners or exclude solutions; contingency = a
@@ -184,9 +272,9 @@ def test_repeated_application_preserves_discontiguous_spec():
     for kind in ("sigma", "pi"):
         ad = MeronymicFoldAdapter(kind, _D, _D, legacy_N=_N * _D,
                                   butterfly=True)
-        x = torch.full((1, _N, _D), -0.8)
-        x[:, 1, :] = 0.8                      # slot 1 high
-        x[:, 6, :] = 0.8                      # slot 6 high — scattered
+        x = torch.full((1, _N, _D), 0.1)
+        x[:, 1, :] = 0.9                      # slot 1 high
+        x[:, 6, :] = 0.9                      # slot 6 high — scattered
         y = x
         with torch.no_grad():
             for _ in range(3):
@@ -195,7 +283,7 @@ def test_repeated_application_preserves_discontiguous_spec():
         lo = y[:, (0, 2, 3, 4, 5, 7), :]
         assert float(hi.min()) > float(lo.max()) + 0.5, (
             f"{kind}: scattered selection lost under repetition")
-        assert float(y.abs().max()) < 0.999, (
+        assert float(y.min()) > 0.001 and float(y.max()) < 0.999, (
             f"{kind}: corner saturation at the benign law")
 
 
@@ -224,8 +312,8 @@ def test_repeated_application_produces_discontiguous_spec():
             ad.raw_bfly_L[lvl_mid,
                           _pair_index(ad, lvl_mid, 8 + i, 12 + i)] = 1.0
 
-    vec = torch.full((1, 1, _D), -0.8)
-    vec[0, 0, 0:2] = 0.8                     # contiguous spec: lanes 0..1
+    vec = torch.full((1, 1, _D), 0.1)
+    vec[0, 0, 0:2] = 0.9                     # contiguous spec: lanes 0..1
     with torch.no_grad():
         app1 = ad.forward(vec)
         app2 = ad.forward(app1)
@@ -237,29 +325,30 @@ def test_repeated_application_produces_discontiguous_spec():
         return float(t[0, 0, sl].max())
 
     # App 1: the whole accretes lanes 8..9 — already discontiguous
-    # (a gap of low lanes 2..7 between its parts).
-    assert hi(app1, slice(8, 10)) > 0.5, "first hop did not accrete"
-    assert lo(app1, slice(12, 14)) < 0.0, "second hop fired too early"
-    assert lo(app1, slice(2, 8)) < 0.0
-    # App 2: a further application extends the scattered whole to
-    # lanes 12..13 while keeping the earlier parts — three separated
-    # bands, produced by repetition, nothing saturated.
-    assert hi(app2, slice(0, 2)) > 0.5
-    assert hi(app2, slice(8, 10)) > 0.5
-    assert hi(app2, slice(12, 14)) > 0.5, "repetition did not extend"
-    assert lo(app2, slice(2, 8)) < 0.0
-    assert lo(app2, slice(10, 12)) < 0.0
-    assert float(app2.abs().max()) < 0.999, "corner saturation"
+    # (a gap of unchanged low lanes 2..7 between its parts). The bounded
+    # inverse-gain law deliberately grows this evidence gradually.
+    assert hi(app1, slice(8, 10)) > 0.15, "first hop did not accrete"
+    assert lo(app1, slice(2, 8)) == pytest.approx(0.1)
+    # App 2 strengthens the first scattered band and propagates farther to
+    # lanes 12..13 while keeping both gaps unchanged.
+    assert hi(app2, slice(0, 2)) >= hi(app1, slice(0, 2))
+    assert hi(app2, slice(8, 10)) > hi(app1, slice(8, 10))
+    assert hi(app2, slice(12, 14)) > hi(app1, slice(12, 14)), (
+        "repetition did not extend")
+    assert lo(app2, slice(2, 8)) == pytest.approx(0.1)
+    assert lo(app2, slice(10, 12)) == pytest.approx(0.1)
+    assert float(app2.min()) > 0.001 and float(app2.max()) < 0.999, (
+        "corner saturation")
 
 
-def test_iterated_aggressive_law_saturates_to_corner():
-    """The documented failure mode, pinned as a characterization test
-    (the author's recorded concern; docstring 'Recorded risk'): under
-    an aggressive law, iterated application drives EVERY lane to the
-    same corner — σ to 𝟙 (the 1111 code) — erasing the
-    specification. det(LDU) >= 1 per node makes this an eigenvalue
-    floor of the law itself, not a trainable defect; if it binds in
-    practice, the contingency is a part-whole tree on the codes."""
+def test_iterated_aggressive_law_concentrates_without_singular_collapse():
+    """Repeated sigma can concentrate evidence but stays finite and gradual.
+
+    The bounded coefficient budget deliberately prevents the old LDU law's
+    fast corner collapse. Repetition still exerts a semantic pressure toward
+    a whole, so this test characterizes that pressure without accepting a
+    numerical singularity as its implementation.
+    """
     from Layers import MeronymicFoldAdapter
     ad = MeronymicFoldAdapter('sigma', _D, _D, legacy_N=_N * _D,
                               butterfly=True)
@@ -267,16 +356,16 @@ def test_iterated_aggressive_law_saturates_to_corner():
         for raw in (ad.raw_bfly_L, ad.raw_bfly_d, ad.raw_bfly_U):
             raw.fill_(0.9)                   # taps 0.81, d = 1.81
     torch.manual_seed(37)
-    x = torch.rand(1, _N, _D) * 1.6 - 0.8    # an informative spec
+    x = torch.rand(1, _N, _D) * 0.8 + 0.1    # an informative spec
     y = x
     with torch.no_grad():
         for _ in range(6):
             y = ad.forward(y)
     spread = float(y.max() - y.min())
-    assert float(y.mean()) > 0.95 and spread < 0.1, (
-        f"expected corner collapse (mean {float(y.mean()):.3f}, "
-        f"spread {spread:.3f}) — if this stops saturating, the "
-        f"documented risk envelope has changed; update the docstring")
+    assert torch.isfinite(y).all()
+    assert float(y.mean()) > float(x.mean()) + 0.25
+    assert spread < float(x.max() - x.min())
+    assert float(y.max()) < 1.0
 
 
 def test_xor_exact_slots_keep_butterfly_under_meronomy():
@@ -311,9 +400,9 @@ def test_xor_exact_slots_keep_butterfly_under_meronomy():
         torch.manual_seed(31)
         # Unified fold-width law (2026-07-16): the live fold is CONTENT-
         # sized (sigma.nInput == ps.nDim); probe it at its own width.
-        x = torch.rand(2, _N, int(ps.sigma.nInput)) * 1.6 - 0.8
+        x = torch.rand(2, _N, int(ps.sigma.nInput)) * 0.8 + 0.1
         x2 = x.clone()
-        x2[:, 0, :] = (x2[:, 0, :] + 0.5).clamp(-0.95, 0.95)
+        x2[:, 0, :] = (x2[:, 0, :] + 0.25).clamp(max=0.95)
         y, y2 = ps.sigma.forward(x), ps.sigma.forward(x2)
         moved_self = (y2[:, 0, :] - y[:, 0, :]).abs().max()
         moved_other = (y2[:, 1:, :] - y[:, 1:, :]).abs().max()

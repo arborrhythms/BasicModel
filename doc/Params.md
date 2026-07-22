@@ -409,7 +409,7 @@ symbol (line anchors drift).
 
 | Knob | Where read | Default | Purpose |
 |------|-----------|---------|---------|
-| `meronomy` (attr `dMaxStable`) | `Layers.py` (`meronomy_enabled` / `meronomy_d_max_stable`) | code `off`; `data/model.xml` ships `on` with `dMaxStable="4.0"` $\Rightarrow$ effectively **ON** | Binds the meronymic slots (PS.sigma / SS.pi) to the membership kernels; `dMaxStable` clamps the contractive diagonal. |
+| `meronomy` (attr `dMaxStable`) | `Layers.py` (`meronomy_enabled` / `meronomy_d_max_stable`) | code `off`; `data/model.xml` ships `on` with `dMaxStable="4.0"` $\Rightarrow$ effectively **ON** | Binds the meronymic slots (PS.sigma / WS.pi) directly to `[0,1]` membership kernels; `dMaxStable` bounds the complete learned fold's inverse gain. |
 | `sigmaPi` | `Models.py` (BaseModel init) + `Spaces.py` (PS/WS fold builders) | `butterfly` | Fold span enum `last` \| `butterfly` \| `full`; the per-space `<butterfly>` boolean is its deprecated alias (PS/WS only). |
 | `conceptBinding` | `Models.py` (serial word loop) + `Spaces.py` (`ConceptualSpace`) | `mixing`; BasicModel sets `aligned` | Selects historical learned mixing or strict same-location fusion over all non-raw PS/WS folds. |
 | `whereRungRatio` | `Spaces.py` (`WhereEncoding` construction) | `32` | LF/HF period ratio of the `.where` 2-rung ladder; HF period = `wherePeriod / ratio`. |

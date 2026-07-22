@@ -2958,35 +2958,58 @@ class TestSubspaceNormalize(unittest.TestCase):
         return Models.SubSpace(inputShape=[4, 3], outputShape=[4, 3])
 
     def test_percepts_range(self):
-        """normalize('percepts') produces values in [-1, 1] via tanh."""
+        """Valid percept memberships remain unchanged in [0, 1]."""
         ws = self._make_ss()
-        x = torch.randn(2, 4, 3)
+        x = torch.rand(2, 4, 3)
         ws.set_event(x.clone())
         ws.normalize("percepts", target="what", normalize=True)
         y = ws.select("what")
-        self.assertTrue(torch.all(y >= -1) and torch.all(y <= 1))
-        self.assertTrue(torch.allclose(y, torch.tanh(x)))
+        self.assertTrue(torch.all(y >= 0) and torch.all(y <= 1))
+        self.assertTrue(torch.equal(y, x))
 
     def test_percepts_reverse_normalize_roundtrip(self):
-        """reverse=True applies atanh as the inverse percept normalization."""
+        """Percept reverse normalization is the same stable identity map."""
         ws = self._make_ss()
-        x = torch.randn(2, 4, 3) * 0.25
+        x = torch.rand(2, 4, 3)
         ws.set_event(x.clone())
         ws.normalize("percepts", target="event", normalize=True)
         ws.normalize("percepts", target="event", normalize=True, reverse=True)
-        self.assertTrue(torch.allclose(ws.materialize(), x, atol=1e-6))
+        self.assertTrue(torch.equal(ws.materialize(), x))
+
+    def test_percept_event_preserves_signed_auxiliary_band(self):
+        """Only WHAT is membership; WHERE/WHEN remain signed and unsquashed."""
+        ws = self._make_ss()
+        ws.nWhat = 1
+        event = torch.tensor([[[0.0, -1.0, 1.0],
+                               [1.0, 0.5, -0.5],
+                               [0.25, -0.25, 0.75],
+                               [0.75, 1.0, -1.0]]])
+        ws.set_event(event.clone())
+
+        ws.normalize("percepts", target="event", normalize=True)
+        ws.normalize("percepts", target="event", normalize=True, reverse=True)
+
+        self.assertTrue(torch.equal(ws.materialize(), event))
 
     def test_concepts_range(self):
-        """normalize('concepts') maps the signed scalar activation into
-        ``[-1, 1]`` via tanh (the bivector pole lift was retired 2026-05).
-        """
+        """Valid signed concepts remain unchanged in [-1, 1]."""
         ws = self._make_ss()
-        scalar = torch.randn(2, 4)
+        scalar = torch.rand(2, 4) * 2.0 - 1.0
         ws.set_activation(scalar.clone())
         ws.normalize("concepts", target="activation", normalize=True)
         y = ws.get_activation()
         self.assertTrue(torch.all(y >= -1) and torch.all(y <= 1))
-        self.assertTrue(torch.allclose(y, torch.tanh(scalar), atol=1e-6))
+        self.assertTrue(torch.equal(y, scalar))
+
+    def test_concept_endpoints_reverse_without_atanh(self):
+        ws = self._make_ss()
+        values = torch.tensor([[-1.0, 0.0, 1.0, -1.0]])
+        ws.set_activation(values.clone())
+        ws.normalize("concepts", target="activation", normalize=True)
+        ws.normalize(
+            "concepts", target="activation", normalize=True, reverse=True)
+        self.assertTrue(torch.equal(ws.get_activation(), values))
+        self.assertTrue(torch.isfinite(ws.get_activation()).all())
 
     def test_reverse_requires_normalize_true(self):
         """reverse=True is an inverse transform, not a range check."""
@@ -3148,7 +3171,7 @@ class TestNormalizeFlag(unittest.TestCase):
         import util
         _populate_test_config(inputDim=4, nInput=4)
         ws = Models.SubSpace(inputShape=[4, 4], outputShape=[4, 4])
-        # Set vectors that are NOT in [-1,1] range
+        # Set vectors that are NOT in the percept [0,1] range.
         x = torch.randn(2, 4, 4) * 5
         ws.set_event(x.clone())
         original = ws.materialize().clone()
@@ -3169,18 +3192,16 @@ class TestNormalizeFlag(unittest.TestCase):
         finally:
             util.init_model_debug(None)  # restore from MODEL_DEBUG env
 
-    def test_normalize_true_does_modify(self):
-        """normalize=True modifies the tensor."""
+    def test_normalize_true_preserves_valid_percepts(self):
+        """normalize=True does not squash an already-valid membership."""
         _populate_test_config(inputDim=4, nInput=4)
         ws = Models.SubSpace(inputShape=[4, 4], outputShape=[4, 4])
-        x = torch.randn(2, 4, 4) * 5
+        x = torch.rand(2, 4, 4)
         ws.set_event(x.clone())
-        original = ws.materialize().clone()
         ws.normalize("percepts", target="what", normalize=True)
         after = ws.materialize()
-        self.assertFalse(torch.equal(original, after),
-                         "normalize=True should modify the tensor")
-        self.assertTrue(torch.all(after >= -1) and torch.all(after <= 1))
+        self.assertTrue(torch.equal(x, after))
+        self.assertTrue(torch.all(after >= 0) and torch.all(after <= 1))
 
 
 class TestInputSpaceScaling(unittest.TestCase):

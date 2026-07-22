@@ -1,5 +1,5 @@
 """Staged discourse prediction tensors are cast to the active autocast
-dtype in ``_begin_step`` so the compiled forward never sees a dtype
+dtype in ``runBatch`` so the compiled forward never sees a dtype
 mismatch that would split the graph.
 
 Doc: doc/plans/2026-05-20-static-per-word-loop-impl.md §2.7.
@@ -37,7 +37,7 @@ def _build_gate_model():
     ("off",  None),
 ])
 def test_staged_prediction_cast_to_amp_dtype(mode, dtype):
-    """``_begin_step`` re-casts the parked ``(pred, conf)`` tuple to the
+    """Compiled ``runBatch`` re-casts the parked ``(pred, conf)`` tuple to the
     active autocast dtype. When MODEL_AMP=off, no cast is applied."""
     import util as _util
     saved_mode = _util.MODEL_AMP
@@ -50,10 +50,18 @@ def test_staged_prediction_cast_to_amp_dtype(mode, dtype):
         disc._staged_prediction = (
             torch.randn(1, 4, dtype=torch.float32),
             torch.ones(1, dtype=torch.float32))
-        if m._compiled_step is None:
-            m._compiled_step = lambda *a, **kw: None  # enable cast branch
+        class _StagingComplete(Exception):
+            pass
+
+        def _stop_after_staging(*args, **kwargs):
+            raise _StagingComplete
+
+        m._compiled_word_loop_fullgraph = False
+        m._compiled_step = _stop_after_staging
         inp = m.inputSpace.prepInput(list(m.inputSpace.getTrainData()[0][:1]))
-        m._begin_step(inp)
+        with pytest.raises(_StagingComplete):
+            m.runBatch(train=False, split="runtime", batchSize=1,
+                       batch_override=(inp, None))
         staged = disc._staged_prediction
         if staged is None:
             pytest.skip("discourse cleared staged tuple")
@@ -64,5 +72,6 @@ def test_staged_prediction_cast_to_amp_dtype(mode, dtype):
             assert pred is None or pred.dtype == dtype, (
                 f"pred.dtype={pred.dtype if pred is not None else None}, "
                 f"expected {dtype}")
+        m._end_step()
     finally:
         _util.MODEL_AMP = saved_mode

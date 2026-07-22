@@ -19,10 +19,12 @@ _BIN = os.path.join(
 if _BIN not in sys.path:
     sys.path.insert(0, _BIN)
 
+import pytest
 import torch
+from torch import nn
 
 from util import TheXMLConfig
-from Language import LiftLayer
+from Language import BinaryStructuredReductionLayer, LiftLayer, VerbLayer
 
 _D = 8
 
@@ -120,3 +122,142 @@ def test_spectrum_is_sparse():
         assert float((w.abs() < 1e-9).float().mean()) > 0.0
     finally:
         _set_flag(False)
+
+
+def test_spectrum_log_gain_is_bounded_and_preserves_normal_range():
+    """The condition bound is an identity inside +/-8 and clips only an
+    already numerically destructive spectrum."""
+    layer = VerbLayer(nInput=_D, nOutput=_D)
+    raw = torch.tensor(
+        [-20.0, -7.0, -0.05, 0.0, 0.05, 3.0, 7.0, 20.0])
+    with torch.no_grad():
+        layer._verb_spec.weight.zero_()
+        layer._verb_spec.bias.copy_(raw)
+
+    got = layer._verb_spectrum_w(torch.zeros(1, _D)).squeeze(0)
+    sparse = torch.sign(raw) * (raw.abs() - 0.1).clamp_min(0.0)
+    expected = sparse.clamp(-8.0, 8.0)
+    torch.testing.assert_close(got, expected, rtol=0.0, atol=0.0)
+    # Explicitly pin the identity-on-normal-range part of the contract.
+    torch.testing.assert_close(got[1:-1], sparse[1:-1], rtol=0.0, atol=0.0)
+
+
+class _LeftOperand(nn.Module):
+    """Finite binary control op for the eager-router adjoint regression."""
+
+    def forward(self, left, right):
+        return left
+
+
+def _overflow_router_case(selected_op):
+    """Build the historical failure: Verb's raw log gain is far beyond the
+    float32 exp range, while the router hard-selects either Verb (0) or the
+    finite control op (1)."""
+    verb = VerbLayer(nInput=4, nOutput=4)
+    with torch.no_grad():
+        verb._verb_spec.weight.fill_(100.0)
+        verb._verb_spec.bias.zero_()
+
+    router = BinaryStructuredReductionLayer(
+        d_model=4, ops=[verb, _LeftOperand()], r_copy=1,
+        chooser="anchordot")
+    with torch.no_grad():
+        # Make REDUCE beat two COPY actions, then choose the requested op.
+        router.copy_anchor.fill_(-100.0)
+        router.reduce_anchor.zero_()
+        router.reduce_anchor[selected_op].fill_(100.0)
+
+    x = torch.tensor(
+        [[[0.5, 0.5, 0.5, 0.5], [1.0, 1.0, 1.0, 1.0]]],
+        requires_grad=True)
+    hard, soft, routing = router(x)
+    assert int(routing["reduce_mask"].argmax(-1).item()) == selected_op
+    assert torch.isfinite(hard).all()
+    assert torch.isfinite(soft).all()
+
+    soft.sum().backward()
+    assert torch.isfinite(x.grad).all()
+    for parameter in verb.parameters():
+        if parameter.grad is not None:
+            assert torch.isfinite(parameter.grad).all()
+
+
+def test_selected_overflowing_verb_candidate_has_finite_adjoint():
+    """A selected saturated verb remains finite in forward and backward."""
+    _overflow_router_case(selected_op=0)
+
+
+def test_unselected_overflowing_verb_candidate_has_finite_adjoint():
+    """All grammar candidates are evaluated eagerly.  Before the log-spectrum
+    bound, even a hard-unselected Verb returned finite +1 in forward but sent
+    NaNs through ExpBackward's 0*inf product."""
+    _overflow_router_case(selected_op=1)
+
+
+_CPU_LOW_PRECISION_DTYPES = (torch.float16, torch.bfloat16)
+
+
+def _require_cpu_low_precision(dtype):
+    """Skip only when the installed torch cannot construct this CPU dtype."""
+    try:
+        torch.ones(1, dtype=dtype).float()
+    except (RuntimeError, TypeError, NotImplementedError) as exc:
+        pytest.skip(f"CPU {dtype} is unavailable: {exc}")
+
+
+def _low_precision_spectrum_layer():
+    layer = VerbLayer(nInput=_D, nOutput=_D)
+    with torch.no_grad():
+        layer._verb_spec.weight.zero_()
+        layer._verb_spec.bias.copy_(torch.tensor(
+            [0.35, -0.35, 0.20, -0.20, 0.50, -0.50, 0.10, -0.10]))
+    return layer
+
+
+@pytest.mark.parametrize("dtype", _CPU_LOW_PRECISION_DTYPES)
+def test_low_precision_exact_rails_have_finite_forward_and_backward(dtype):
+    """Half-precision 1-epsilon rounds to 1, so the rail chart itself must
+    run in float32 rather than merely relying on the outer tanh to hide inf."""
+    _require_cpu_low_precision(dtype)
+    layer = _low_precision_spectrum_layer()
+    np_what = torch.tensor(
+        [[-1.0, 1.0, -0.5, 0.5, -0.25, 0.25, 0.0, 0.75]],
+        dtype=dtype, requires_grad=True)
+    verb_what = torch.zeros_like(np_what, requires_grad=True)
+
+    vp_what = layer.apply_verb(np_what, verb_what)
+    recovered = layer.unapply_verb(vp_what, verb_what)
+
+    assert vp_what.dtype == dtype
+    assert recovered.dtype == dtype
+    assert torch.isfinite(vp_what).all()
+    assert torch.isfinite(recovered).all()
+
+    (vp_what.float().square().sum()
+     + recovered.float().square().sum()).backward()
+    assert np_what.grad is not None and torch.isfinite(np_what.grad).all()
+    assert float(np_what.grad.abs().sum()) > 0.0
+    assert verb_what.grad is not None and torch.isfinite(verb_what.grad).all()
+    for parameter in layer.parameters():
+        if parameter.grad is not None:
+            assert torch.isfinite(parameter.grad).all()
+
+
+@pytest.mark.parametrize("dtype", _CPU_LOW_PRECISION_DTYPES)
+def test_low_precision_roundtrip_is_accurate_to_output_quantization(dtype):
+    """Forward and inverse share one float32 rail path; only their public
+    low-precision outputs are quantized between the two operations."""
+    _require_cpu_low_precision(dtype)
+    layer = _low_precision_spectrum_layer()
+    np_what = torch.tensor(
+        [[-0.25, -0.125, -0.0625, 0.0625,
+          0.125, 0.25, 0.375, -0.375]], dtype=dtype)
+    verb_what = torch.zeros_like(np_what)
+
+    vp_what = layer.apply_verb(np_what, verb_what)
+    recovered = layer.unapply_verb(vp_what, verb_what)
+
+    assert vp_what.dtype == dtype
+    assert recovered.dtype == dtype
+    torch.testing.assert_close(
+        recovered, np_what, rtol=0.0, atol=torch.finfo(dtype).eps)

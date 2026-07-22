@@ -80,6 +80,7 @@ Known limits
 """
 
 import math
+import os
 
 import torch
 import torch.optim as _optim
@@ -87,7 +88,184 @@ import torch.optim as _optim
 
 __all__ = [
     "Optimizer", "Adam", "SparseAdam", "RowLocalAdam", "MultiOptimizer",
+    "finite_gradient_guard_enabled", "preflight_finite_gradients",
 ]
+
+
+_FINITE_GRAD_GUARD_ENV = "MODEL_FINITE_GRAD_GUARD"
+_FINITE_GRAD_GUARD_MODES = frozenset(("auto", "on", "off"))
+
+
+def _optimizer_parameters(optimizer):
+    """Yield each optimizer-owned parameter once, across all child groups."""
+    seen = set()
+    for group in getattr(optimizer, "param_groups", ()):
+        for param in group.get("params", ()):
+            identity = id(param)
+            if identity in seen:
+                continue
+            seen.add(identity)
+            yield param
+
+
+def _finite_gradient_guard_mode():
+    mode = os.environ.get(_FINITE_GRAD_GUARD_ENV, "auto").strip().lower()
+    if not mode:
+        mode = "auto"
+    if mode not in _FINITE_GRAD_GUARD_MODES:
+        choices = "|".join(sorted(_FINITE_GRAD_GUARD_MODES))
+        raise ValueError(
+            f"{_FINITE_GRAD_GUARD_ENV} must be {choices}; got {mode!r}")
+    return mode
+
+
+def finite_gradient_guard_enabled(optimizer):
+    """Return the finite-gradient policy for an optimizer's devices.
+
+    ``auto`` protects CPU and MPS training.  It deliberately disables the
+    check for the *complete* optimizer when any parameter is on CUDA: even a
+    scalar result read would add a D2H synchronization to the captured brick.
+    Set ``MODEL_FINITE_GRAD_GUARD=on`` to explicitly accept that CUDA cost.
+    """
+    mode = _finite_gradient_guard_mode()
+    if mode != "auto":
+        return mode == "on"
+    return not any(
+        getattr(getattr(param, "device", None), "type", None) == "cuda"
+        for param in _optimizer_parameters(optimizer)
+    )
+
+
+def _gradient_fingerprint(optimizer):
+    """Cheap host-metadata identity used for one runBatch->step handoff."""
+    fingerprint = []
+    for param in _optimizer_parameters(optimizer):
+        grad = getattr(param, "grad", None)
+        if grad is None:
+            continue
+        fingerprint.append((id(param), id(grad), int(grad._version)))
+    return tuple(fingerprint)
+
+
+def _parameter_name_map(named_parameters):
+    if named_parameters is None:
+        return {}
+    names = {}
+    for name, param in named_parameters:
+        names.setdefault(id(param), str(name))
+    return names
+
+
+def preflight_finite_gradients(optimizer, named_parameters=None, *,
+                               cache_for_step=False):
+    """Validate every optimizer-owned gradient before any parameter update.
+
+    Dense gradients are checked directly. Sparse COO gradients are coalesced
+    first (so duplicate finite entries whose sum overflows are also caught),
+    written back to ``param.grad``, and represented only by their stored
+    values. Consequently a million-row sparse codebook costs O(touched rows),
+    not O(codebook capacity), to inspect.
+
+    Tensors are grouped by device and dtype and scanned with AMP's fused
+    foreach non-finite primitive using an identity unscale. This incurs one
+    scalar host read per populated group. A slow per-parameter name/count pass
+    runs only after the fused scan reports a failure.
+
+    ``cache_for_step`` records a metadata fingerprint for the optimizer
+    wrappers. ``BaseModel.runBatch`` uses it to pass the successful preflight
+    to ``Optimizer.step`` without performing the fused scan twice; any
+    intervening in-place gradient mutation invalidates the fingerprint.
+    """
+    if not finite_gradient_guard_enabled(optimizer):
+        if hasattr(optimizer, "_finite_grad_preflight_fingerprint"):
+            optimizer._finite_grad_preflight_fingerprint = None
+        return False
+
+    names = _parameter_name_map(named_parameters)
+    if names:
+        optimizer._finite_grad_parameter_names = names
+    else:
+        names = getattr(optimizer, "_finite_grad_parameter_names", {})
+
+    # (parameter, logical gradient values, tensor actually scanned, label)
+    #
+    # The AMP foreach primitive does not accept complex tensors.  Present
+    # complex gradients through view_as_real instead of casting: both real
+    # and imaginary components are then checked without allocation or loss of
+    # information.  resolve_conj() makes the view valid for conjugate grads
+    # while remaining a no-op for ordinary tensors.
+    records = []
+    groups = {}
+    for ordinal, param in enumerate(_optimizer_parameters(optimizer)):
+        grad = getattr(param, "grad", None)
+        if grad is None:
+            continue
+        if grad.layout == torch.sparse_coo:
+            # Coalescing is part of the safety check: duplicate coordinates
+            # can each be finite yet overflow while being summed.
+            grad = grad.coalesce()
+            param.grad = grad
+            checked = grad.values()
+        elif grad.layout == torch.strided:
+            checked = grad
+        else:
+            raise RuntimeError(
+                "finite-gradient preflight supports dense and sparse COO "
+                f"gradients; got layout={grad.layout} for optimizer "
+                f"parameter {ordinal}")
+        if checked.numel() == 0:
+            continue
+        scanned = (torch.view_as_real(checked.resolve_conj())
+                   if checked.is_complex() else checked)
+        label = names.get(id(param), f"optimizer parameter {ordinal}")
+        record = (param, checked, scanned, label)
+        records.append(record)
+        key = (scanned.device.type, scanned.device.index, scanned.dtype)
+        groups.setdefault(key, []).append(record)
+
+    failed_keys = []
+    for key, group_records in groups.items():
+        device = group_records[0][2].device
+        found_inf = torch.zeros((), dtype=torch.float32, device=device)
+        inv_scale = torch.ones((), dtype=torch.float32, device=device)
+        torch._amp_foreach_non_finite_check_and_unscale_(
+            [record[2] for record in group_records], found_inf, inv_scale)
+        # This is the sole normal-path host synchronization for the group.
+        if bool(found_inf.detach().cpu().item()):
+            failed_keys.append(key)
+
+    if failed_keys:
+        failed = set(failed_keys)
+        for _param, checked, scanned, label in records:
+            key = (scanned.device.type, scanned.device.index, scanned.dtype)
+            if key not in failed:
+                continue
+            nonfinite = ~torch.isfinite(checked)
+            count = int(nonfinite.sum().detach().cpu().item())
+            if count:
+                raise FloatingPointError(
+                    f"Non-finite gradient for {label!r} before optimizer.step: "
+                    f"{count}/{checked.numel()} stored entries are nan/inf "
+                    f"(layout={getattr(_param.grad, 'layout', None)}, "
+                    f"device={checked.device}, dtype={checked.dtype}).")
+        # The fused primitive is authoritative; retain fail-loud behavior even
+        # if a backend's diagnostic reduction cannot reproduce its flag.
+        raise FloatingPointError(
+            "Non-finite gradient detected before optimizer.step; the "
+            "per-parameter diagnostic pass could not isolate it")
+
+    if cache_for_step:
+        optimizer._finite_grad_preflight_fingerprint = (
+            _gradient_fingerprint(optimizer))
+    return True
+
+
+def _consume_cached_finite_preflight(optimizer):
+    cached = getattr(optimizer, "_finite_grad_preflight_fingerprint", None)
+    if cached is None:
+        return False
+    optimizer._finite_grad_preflight_fingerprint = None
+    return cached == _gradient_fingerprint(optimizer)
 
 
 class _RowLocalAdam(_optim.Optimizer):
@@ -326,7 +504,7 @@ class Optimizer:
 
     # ------------------------------------------------------------------ step
 
-    def step(self, closure=None):
+    def _step_without_finite_preflight(self, closure=None):
         """Run ``inner.step`` with default device pinned to CPU.
 
         See module docstring for the MPS rationale. The flip is a
@@ -352,6 +530,26 @@ class Optimizer:
             return self._inner.step(closure=closure)
         finally:
             torch.set_default_device(str(TheDevice.get()))
+
+    def step(self, closure=None):
+        """Reject non-finite gradients before the wrapped optimizer mutates.
+
+        Optimizer closures create the gradients that the step consumes, so a
+        closure must run before the finite-gradient preflight.  Execute it
+        exactly once under grad mode, then call the inner optimizer without a
+        closure; standard torch optimizer semantics return that closure loss.
+        """
+        if closure is not None:
+            # A cached runBatch preflight necessarily predates this closure.
+            self._finite_grad_preflight_fingerprint = None
+            with torch.enable_grad():
+                loss = closure()
+            preflight_finite_gradients(self)
+            self._step_without_finite_preflight()
+            return loss
+        if not _consume_cached_finite_preflight(self):
+            preflight_finite_gradients(self)
+        return self._step_without_finite_preflight()
 
     # --------------------------------------------------------- forwarding API
 
@@ -450,14 +648,34 @@ class MultiOptimizer:
             flat.extend(o.param_groups)
         self.param_groups = flat
 
-    def step(self, closure=None):
+    def _step_without_finite_preflight(self):
         results = []
         for o in self.optimizers:
-            if closure is None:
-                results.append(o.step())
+            unchecked = getattr(o, "_step_without_finite_preflight", None)
+            if unchecked is not None:
+                results.append(unchecked())
             else:
-                results.append(o.step(closure=closure))
+                results.append(o.step())
         return results
+
+    def step(self, closure=None):
+        """Preflight the union of child grads before the first child step.
+
+        A shared closure is evaluated exactly once.  All child gradients are
+        then checked together and every child is stepped without receiving the
+        closure, preventing both repeated evaluation and partial commits.
+        """
+        if closure is not None:
+            # A cached runBatch preflight necessarily predates this closure.
+            self._finite_grad_preflight_fingerprint = None
+            with torch.enable_grad():
+                loss = closure()
+            preflight_finite_gradients(self)
+            self._step_without_finite_preflight()
+            return loss
+        if not _consume_cached_finite_preflight(self):
+            preflight_finite_gradients(self)
+        return self._step_without_finite_preflight()
 
     def zero_grad(self, set_to_none=True):
         for o in self.optimizers:

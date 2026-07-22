@@ -60,7 +60,7 @@ The result is a system with named domain modules but implicit runtime APIs:
   `BasicModel.runEpoch`, and `BasicModel.runBatch` share responsibility.
   Dataset mode, cursor semantics, reset policy, and device conversion leak into
   the model.
-- **Forward execution.** `BasicModel._begin_step`, `_forward_body`,
+- **Forward execution.** `BasicModel.runBatch`, `_forward_body`,
   `_forward_body_per_word`, `_forward_per_stage`, and mutable attributes on
   several spaces collectively define the path. A stage's true input includes
   hidden state left by earlier calls.
@@ -207,8 +207,8 @@ This replaces the model-as-message-bus pattern. In particular, values like
 should be passed, not discovered on sibling objects. Persistent state should be
 listed and checkpointable; everything else should die with the frame.
 
-Do not attempt this as one rewrite. Start with `_begin_step` / `_end_step`, then
-thread the existing carrier values through the per-word loop while leaving the
+Do not attempt this as one rewrite. Start with `runBatch` staging / `_end_step`,
+then thread the existing carrier values through the per-word loop while leaving the
 underlying `Space.forward` methods unchanged.
 
 **Acceptance seam:** running two model instances interleaved in one process

@@ -1754,12 +1754,12 @@ class Basis(nn.Module):
         self.nDim = 0
         self.monotonic = True
         self.ergodic = False
-        # [0,1] percept-presence marker. Default False; set True ONLY on the
-        # radix percept Codebook (rows on the positive unit cube), never on the
-        # signed lexicon Embedding nor the concept/symbol sphere. `unit_ball`
-        # alone can't discriminate (True for percept Codebook AND lexicon
-        # Embedding), so the [0,1] decode at _snap_content / _nearest_idx /
-        # codebookDistance keys on this. See doc/Spaces.md#percept-live-path.
+        # [0,1] percept-membership marker. Default False; set on membership-
+        # native stores (the radix PartSpace codebook and canonical WholeSpace
+        # property basis), never on the signed lexicon Embedding nor the
+        # concept/symbol sphere. `unit_ball` alone can't discriminate (True for
+        # these Codebooks AND the lexicon Embedding), so [0,1] readers key on
+        # this explicit marker. See doc/Spaces.md#percept-live-path.
         self.is_percept_store = False
 
     @property
@@ -2776,9 +2776,10 @@ class Codebook(Tensor):
         """Return the codebook prototype matrix ``[V, D]`` (or ``None``
         when the codebook hasn't been built yet).
 
-        On the radix percept Codebook (``is_percept_store``) under
-        ``meronomy_enabled()`` the read is re-homed onto the positive unit
-        cube ``[0,1]^D`` via a UNORM straight-through clamp
+        On a membership-native Codebook (``is_percept_store``: radix PS or
+        canonical WS properties) under ``meronomy_enabled()`` the read is
+        re-homed onto the positive unit cube ``[0,1]^D`` via a UNORM
+        straight-through clamp
         (doc/Spaces.md#percept-bounded-encodings): every reader -- the forward gather
         (PartSpace._embed_radix), the forward VQ snap, and the reverse
         nearest-row decode -- then sees [0,1] codes, while the master
@@ -2800,8 +2801,8 @@ class Codebook(Tensor):
         Byte-identical to ``getW()[idx]`` because ``_unorm_ste`` is elementwise
         (``x + (clamp(x)-x).detach()`` per coordinate, so the clamp and its
         straight-through gradient commute with a row gather). The win is
-        O(|idx|) instead of O(V): the radix per-slot gathers were each clamping
-        the whole ``[V, D]`` store (65536x1024) to read one row. ``idx`` may be
+        O(|idx|) instead of O(V): selected percept/property gathers need not
+        clamp the whole ``[V, D]`` store to read one row. ``idx`` may be
         an int, a list/LongTensor of ids, or a slice.
         """
         if self.W is None:
@@ -2899,18 +2900,19 @@ class Codebook(Tensor):
     # doc/specs/2026-05-21-subspace-slot-architecture.md: callers needing
     # the prototype matrix or a per-position row lookup should go through
     # ``prototype()`` / ``lookup(indices)`` rather than ``getW()``. These
-    # bypass the ``_active_payload`` band-aid by reading ``self.W``
-    # directly — the Parameter when registered, or the plain backing
-    # tensor for hand-constructed Codebooks. Never the shadow.
+    # delegate to the canonical Codebook read surfaces: ``getW`` for a full
+    # prototype view and ``lookup_rows`` for a selected view.  That keeps
+    # read-time geometry (notably the percept/property UNORM STE) identical
+    # for every public API without reviving the retired active-payload shadow.
 
     def prototype(self):
         """Return the ``[V, D]`` codebook prototype matrix.
 
-        Reads ``self.W`` directly so the pre-migration
-        ``_active_payload`` shadow can't intercept. Returns ``None``
-        when the codebook hasn't been built yet (pre-``addVectors``).
+        Uses :meth:`getW` so marked percept/property stores expose their
+        membership-native ``[0, 1]`` view. Returns ``None`` when the codebook
+        hasn't been built yet (pre-``addVectors``).
         """
-        return self.W
+        return self.getW()
 
     def active_row_count(self):
         """Return the selectable prefix length of this codebook.
@@ -2971,14 +2973,18 @@ class Codebook(Tensor):
         Returns ``[..., D]`` — the prototype rows indexed by the
         leading-shape selection.
 
-        Reads ``self.W`` directly (same band-aid bypass rationale as
-        ``prototype()``). Raises if the codebook isn't built.
+        Gathers through :meth:`lookup_rows`, so a marked percept/property
+        store applies exactly the same row-local membership transform as
+        ``getW()[indices]`` without transforming the full inventory. Raises
+        if the codebook isn't built.
 
         Indices are clamped on-device to ``[0, V-1]`` so out-of-range
         selections (e.g. stale ``_index`` from a different config)
         gather row 0 rather than crashing. The clamp is data-flow only
         (no host sync) so it's safe under ``torch.compile`` fullgraph.
         """
+        # Raw storage is consulted only for existence and shape.  Prototype
+        # values are read below through ``lookup_rows``.
         proto = self.W
         if proto is None or not torch.is_tensor(proto) or proto.ndim != 2:
             raise RuntimeError(
@@ -2989,7 +2995,7 @@ class Codebook(Tensor):
         # autograd-tracked tensor at a saved-for-backward index would
         # break gradient computation downstream.
         idx = indices.long().clamp(min=0, max=V - 1)
-        return proto[idx]
+        return self.lookup_rows(idx)
 
     # -- property materialization (WholeSpace) -----------------------------
     # A row read as a PROPERTY (rather than as an atom) no longer names one
@@ -7656,13 +7662,15 @@ class SubSpace(nn.Module):
         in the expected range for the space kind.  In ergodic mode,
         violations emit a warning; otherwise they raise AssertionError.
 
-        When normalize=True: applies the normalizing transform in-place
-        (e.g. tanh for percepts/concepts, STE for symbols).
+        When normalize=True: applies the native-range transform in-place
+        (STE rails for percepts/concepts, STE for symbols).
 
         When reverse=True with normalize=True: applies the inverse transform.
 
         Range contracts:
-          - "percepts", "concepts": elements in [-1, 1]
+          - percept WHAT/activation: membership in [0, 1]
+          - percept WHERE/WHEN: signed auxiliary coordinates in [-1, 1]
+          - concepts: signed values in [-1, 1]
           - "symbols": elements in [0, 1]
           - "input": elements in [-1, 1]
 
@@ -7713,7 +7721,9 @@ class SubSpace(nn.Module):
                 else:
                     warnings.warn(msg)
                 return
-            # Range check -- vectors are always [-1, 1]; symbol activations are [0, 1]
+            # Range check. Percept WHAT is membership-native [0,1]; its
+            # muxed WHERE/WHEN band remains signed [-1,1]. Concept values
+            # remain signed throughout.
             is_vector = target in ("what", "where", "when", "event")
             if kind == "bivector":
                 # Bivector regime (CSBP): values are sums of relu projections,
@@ -7728,7 +7738,31 @@ class SubSpace(nn.Module):
                     else:
                         warnings.warn(msg)
                 return
-            if kind == "symbols" and not is_vector:
+            if kind == "percepts" and target == "event":
+                what = xd[..., :self.nWhat]
+                band = xd[..., self.nWhat:]
+                bad_what = (what.numel() > 0 and
+                            (what.min().item() < -1e-2 or
+                             what.max().item() > 1.0 + 1e-2))
+                bad_band = (band.numel() > 0 and
+                            (band.min().item() < -1.0 - 1e-2 or
+                             band.max().item() > 1.0 + 1e-2))
+                if bad_what or bad_band:
+                    what_range = (None if what.numel() == 0 else
+                                  (what.min().item(), what.max().item()))
+                    band_range = (None if band.numel() == 0 else
+                                  (band.min().item(), band.max().item()))
+                    msg = ("Range violation: percept event WHAT range "
+                           f"{what_range} outside [0, 1] or auxiliary band "
+                           f"range {band_range} outside [-1, 1].")
+                    if strict:
+                        assert False, msg
+                    else:
+                        warnings.warn(msg)
+                return
+            if kind == "percepts" and target in ("what", "activation"):
+                lo, hi = 0, 1
+            elif kind == "symbols" and not is_vector:
                 lo, hi = 0, 1
             else:
                 lo, hi = -1, 1
@@ -7750,27 +7784,26 @@ class SubSpace(nn.Module):
         self.put(target, normalized)
 
     def _apply_normalization(self, kind, x, target="activation"):
-        """Apply normalization function to tensor x.
+        """Enforce the carrier's native range without tanh squashing.
 
-        The combination of kind and target determines the geometry:
-          - Perceptual vectors and activations use clamped tanh -> [-(1-eps), 1-eps].
-          - Conceptual vectors and activations use clamped tanh -> [-(1-eps), 1-eps].
-          - Activations use scalar transfer functions (tanh/STE).
-
-        Forward and reverse are made symmetric by clamping both sides
-        into the closed interval ``[-(1-eps), 1-eps]``.  Any bijection
-        between R and a closed sub-interval of (-1, 1) must fail at the
-        boundary (``atanh`` diverges at +-1), so we accept a tiny
-        roundtrip error in the saturated tail in exchange for the same
-        bounded domain on both paths -- this lets reverse absorb
-        codebook/STE outputs that can sit exactly at +-1 without
-        special-casing.
+        Valid inputs are unchanged. A straight-through clamp is only a
+        safety rail for producer drift; reverse is the identity, including
+        at exact membership/signed-domain endpoints.
         """
         is_vector = target in ("what", "where", "when", "event")
         if kind == "percepts":
-            return torch.tanh(x).clamp(min=-1.0 + epsilon, max=1.0 - epsilon)
+            if target == "event":
+                what = x[..., :self.nWhat]
+                bounded = what + (what.clamp(0.0, 1.0) - what).detach()
+                if int(x.shape[-1]) == int(self.nWhat):
+                    return bounded
+                return torch.cat((bounded, x[..., self.nWhat:]), dim=-1)
+            if target in ("what", "activation"):
+                return x + (x.clamp(0.0, 1.0) - x).detach()
+            # WHERE/WHEN are positional auxiliaries, not memberships.
+            return x
         elif kind == "concepts":
-            return torch.tanh(x).clamp(min=-1.0 + epsilon, max=1.0 - epsilon)
+            return x + (x.clamp(-1.0, 1.0) - x).detach()
         elif kind == "symbols":
             soft = torch.sigmoid(x)
             hard = torch.round(soft)
@@ -7783,18 +7816,15 @@ class SubSpace(nn.Module):
             raise ValueError(f"Unknown normalization kind: {kind!r}")
 
     def _apply_reverse_normalization(self, kind, x, target="activation"):
-        """Apply the (approximate) inverse of ``_apply_normalization``.
+        """Reverse native range enforcement.
 
-        Forward is ``y = clamp(tanh(x), -(1-eps), 1-eps)``; reverse is
-        ``x = atanh(clamp(y, -(1-eps), 1-eps))``.  The clamp is
-        symmetric so that codebook/STE values sitting exactly at +-1
-        round-trip through ``atanh`` without diverging.  For non-
-        saturated ``x``, the roundtrip is exact to ``atanh`` precision.
+        Percept and concept carriers are already stored in their bounded
+        coordinates, so no chart inverse is required (and exact 0/1 or
+        -1/+1 endpoints remain finite).
         """
         is_vector = target in ("what", "where", "when", "event")
         if kind in ("percepts", "concepts"):
-            z = x.clamp(min=-1.0 + epsilon, max=1.0 - epsilon)
-            return torch.atanh(z)
+            return x
         elif kind == "input" and is_vector:
             return self.normalizer.denormalize(x, which="input")
         elif kind == "symbols":
@@ -7810,8 +7840,8 @@ class SubSpace(nn.Module):
           - "output" on vectors -> scale from [output_min, output_max] to [-1,1]
 
         Invertible transforms:
-          - "percepts" -> atanh (inverse tanh): [-1,1] -> R
-          - "concepts" -> atanh (inverse tanh): [-1,1] -> R
+          - "percepts" -> identity in native membership coordinates
+          - "concepts" -> identity in native signed coordinates
           - "input" on vectors -> scale from [-1,1] back to [input_min, input_max]
           - "output" on vectors -> scale from [output_min, output_max] to [-1,1]
           - "symbols" (STE round) is not invertible and is skipped.
@@ -8616,7 +8646,10 @@ class Space(SpaceCarrierMixin, nn.Module):
                 f"from event width {int(event.shape[-1])}")
         magnitude = torch.linalg.vector_norm(
             event[..., :width], ord=2, dim=-1) / math.sqrt(width)
-        return torch.tanh(magnitude)
+        # WHAT is membership-native: every coordinate is already in [0,1],
+        # so its RMS is intrinsically in [0,1]. Keep a numerical rail for
+        # producer drift, but do not compress valid evidence with tanh.
+        return magnitude.clamp(0.0, 1.0)
 
     @property
     def codebook_mode(self):
@@ -16390,7 +16423,7 @@ class ConceptualSpace(Space):
     # bias). The forward is the iterated wave + dictionary decoder:
     #
     #     a^{i+1}         = tanh(W [a^i | 1] + s)     (s = padded snap a_0)
-    #     concept_code[c] = a^K[c] * softplus(what[c])    (dictionary atom)
+    #     concept_code[c] = a^K[c] * what[c]              (signed unit atom)
     #
     # so percepts (PerceptDim) and concepts (ConceptDim) never share a
     # vector space -- the matrix lives in index/activation space.
@@ -16648,9 +16681,8 @@ class ConceptualSpace(Space):
         per-concept code slab ``[B, n_concepts_o, ConceptDim]`` -- concept
         ``c``'s row is ``activation[c] * what[slice_start + c]`` (so percepts in
         PerceptDim and concepts in ConceptDim never share a vector space).
-        Standalone/diagnostic helper: the live forward inlines this decode
-        over the full inventory with SOFTPLUS-rectified atoms
-        (:meth:`cs_forward_content`); this helper scales raw rows."""
+        The live forward uses the same signed-row decode over the full
+        inventory (:meth:`cs_forward_content`)."""
         start, end = self.order_slice(order)
         atoms = what_W[start:end]                    # [n_concepts_o, ConceptDim]
         a = concept_activation.t().unsqueeze(-1)     # [B, n_concepts_o, 1]
@@ -16738,7 +16770,7 @@ class ConceptualSpace(Space):
         the rung count. Optional ``_relevance_priority`` boosts candidate
         rank. Fixed-K unroll, no data-dependent control flow. Returns
         ``(content [B, N, ConceptDim], a [N, B])`` -- the decoded content
-        (activation scaling the softplus-positive atom; consumed by
+        (activation scaling the signed unit atom; consumed by
         losses/the SS leg ONLY, never substituted -- P3) and the final
         signed activations (the SS feed)."""
         N = int(self.nVectors)
@@ -16746,7 +16778,11 @@ class ConceptualSpace(Space):
         caps = self._order_caps()
         K = int(getattr(self, "_symbolic_order", 0) or 0)
         ly = _concept_alloc_of(self).layer(0)
-        atoms = F.softplus(dictionary)               # [N, CDim] > 0
+        # Concept atoms are stored directly as signed unit directions.
+        # ``a`` is tanh-bounded below, so a*atom is intrinsically in [-1,1]
+        # without a squashing seam or unstable inverse. Post-step row-local
+        # projection maintains this dictionary contract.
+        atoms = dictionary                           # [N, CDim], signed unit
         # Feedforward sigma-pyramid (dual-towers rev 2): a^0 = the SIGNED
         # order-0 tiles padded to the inventory; each rung k is ONE
         # feedforward hop tanh(W [a|1]) gathered to order-k rows with a
@@ -21387,7 +21423,7 @@ class WholeSpace(Space):
                     "WholeSpace <sigmaPi>full</> requires sigma_dim "
                     f"({_sigma_dim}) > band ({_band})")
             self.sigma_pi_slab = int(inputShape[0]) * _content
-        # Construction (all three modes + the Stage-9 MERONYMIC K3-wire
+        # Construction (all three modes + the Stage-9 membership-native
         # adapter wrap) lives in _mint_pi, shared verbatim with the P4 stack
         # so the base path's RNG draws stay order-identical.
         self.pi = _mint_pi()
@@ -24113,6 +24149,11 @@ class WholeSpace(Space):
         if getattr(self, "property_basis", False):
             basis = Codebook()
             basis.use_dot_product = False
+            # WholeSpace properties are perceptual memberships just like PS
+            # parts: concept/symbol signs are strictly downstream. Reuse the
+            # selected/full-read UNORM rail so every consumer sees [0,1]
+            # even between an optimizer update and the post-step projection.
+            basis.is_percept_store = True
             basis.create(
                 self.inputShape[0], self.nVectors, self.nDim,
                 customVQ=False, monotonic=True, category=False,

@@ -2754,6 +2754,14 @@ class LiftLayer(GrammarLayer):
     invertible = True
     space_role       = 'CS'
     event_aware = True          # operates on the muxed event (extends .when)
+    # The verb projection emits LOG eigenvalues.  Leaving those logits
+    # unbounded lets ``exp(w)`` overflow while the outer tanh still returns a
+    # perfectly finite +/-1.  Backward then encounters the indeterminate
+    # product ``0 * inf`` (including for an unselected eager router candidate)
+    # and poisons the complete input adjoint.  +/-8 keeps each positive gain
+    # in [exp(-8), exp(8)] and the diagonal condition ratio at most exp(16),
+    # while leaving the ordinary sparse-spectrum range bit-for-bit unchanged.
+    _VERB_LOG_GAIN_LIMIT = 8.0
 
     def __init__(self, nInput=None, nOutput=None, *,
                  wholeSpace=None, perceptualSpace=None,
@@ -3016,10 +3024,36 @@ class LiftLayer(GrammarLayer):
 
     def _verb_spectrum_w(self, verb_what):
         """The verb's SPARSE log-eigenvalues w_v from the verb code,
-        soft-thresholded so most eigs are 0 (-> e^0 = 1 -> identity)."""
+        soft-thresholded so most eigs are 0 (-> e^0 = 1 -> identity), then
+        constrained to a finite-condition spectrum.  The symmetric clamp is
+        also shared by ``apply_verb`` and ``unapply_verb``, so they retain the
+        same inverse pair; values already in range are exactly unchanged."""
         w = self._verb_spec(verb_what.to(self._verb_spec.weight.dtype))
         tau = 0.1
-        return torch.sign(w) * torch.clamp(w.abs() - tau, min=0.0)
+        sparse_w = torch.sign(w) * torch.clamp(w.abs() - tau, min=0.0)
+        return sparse_w.clamp(
+            min=-self._VERB_LOG_GAIN_LIMIT,
+            max=self._VERB_LOG_GAIN_LIMIT,
+        )
+
+    @staticmethod
+    def _verb_rail_transform(value, log_gain):
+        """Apply a diagonal gain in a numerically safe atanh chart.
+
+        Half and bfloat16 cannot represent ``1 - epsilon`` for the module's
+        small epsilon, so clamping in the input dtype can leave an exact rail
+        value for ``atanh`` and produce an infinite interior.  Keep the full
+        chart calculation in float32, including the gain exponential, and
+        cast only the bounded result back to the public input dtype.  Using
+        this same helper with opposite log gains keeps the forward and inverse
+        paths symmetric up to the unavoidable quantization of their outputs.
+        """
+        output_dtype = value.dtype
+        value_f32 = value.to(dtype=torch.float32)
+        log_gain_f32 = log_gain.to(dtype=torch.float32)
+        interior = torch.atanh(value_f32.clamp(-1.0 + epsilon, 1.0 - epsilon))
+        transformed = torch.tanh(torch.exp(log_gain_f32) * interior)
+        return transformed.to(dtype=output_dtype)
 
     def apply_verb(self, np_what, verb_what):
         """VERB eig-spectrum OPERATOR (Stage 1): act on the NP as the verb's
@@ -3031,8 +3065,8 @@ class LiftLayer(GrammarLayer):
         or ``VerbLayer`` built the projection."""
         if not getattr(self, '_verb_spectrum', False) or self._verb_spec is None:
             return np_what
-        a = torch.atanh(np_what.clamp(-1 + epsilon, 1 - epsilon))
-        return torch.tanh(torch.exp(self._verb_spectrum_w(verb_what)) * a)
+        return self._verb_rail_transform(
+            np_what, self._verb_spectrum_w(verb_what))
 
     def unapply_verb(self, vp_what, verb_what):
         """Inverse of ``apply_verb`` GIVEN the verb: NP = tanh(e^{-w_v} ⊙
@@ -3041,8 +3075,8 @@ class LiftLayer(GrammarLayer):
         reverse -- is a follow-on increment.)"""
         if not getattr(self, '_verb_spectrum', False) or self._verb_spec is None:
             return vp_what
-        a = torch.atanh(vp_what.clamp(-1 + epsilon, 1 - epsilon))
-        return torch.tanh(torch.exp(-self._verb_spectrum_w(verb_what)) * a)
+        return self._verb_rail_transform(
+            vp_what, -self._verb_spectrum_w(verb_what))
 
     def reverse(self, parent, gate=None, basis=None,
                 left_rows=None, right_rows=None,

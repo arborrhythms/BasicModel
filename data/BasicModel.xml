@@ -43,11 +43,11 @@
     <!-- Keep traversal separate from the symbolic iteration budget. -->
     <serial>true</serial>
     <subsymbolicOrder>4</subsymbolicOrder>
-    <!-- One parameter-free mereological base plus three cumulative learned
-         folds on EACH perceptual tower. The resulting concept uses all six
-         PS/WS fold activations plus the applicable prior-tick STM/SS row at
+    <!-- One parameter-free base plus three cumulative learned folds on EACH
+         perceptual tower. The resulting concept uses P0's RMS(union), H0's
+         RMS(property state), and all six learned-fold activations, plus the applicable prior-tick STM/SS row at
          the same location. Each source enters through an indexed conceptual
-         codebook read; an absent SS row does not dilute the other six. The
+         codebook read; an absent SS row does not dilute the other eight. The
          learned mixing-matrix binder remains a separate parallel-only option. -->
     <conceptBinding>aligned</conceptBinding>
     <conceptualWidth>uniform</conceptualWidth>
@@ -180,7 +180,9 @@
   <WholeSpace>
     <propertyBasis>true</propertyBasis>
     <analysis>meronomy</analysis>
-    <butterfly>false</butterfly>
+    <!-- Per-vector invertible membership coupling. This is not the optional
+         parallel CS mixing matrix and never mixes word/location slots. -->
+    <butterfly>true</butterfly>
     <nInput>8</nInput>
     <nInputDim>1032</nInputDim>
     <nVectors>8</nVectors>

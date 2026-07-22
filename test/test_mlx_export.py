@@ -5,15 +5,14 @@ Carves an EXPORTABLE tensor core out of the model forward so
 later MLX lowering (D2/D3). The fullgraph-clean forward from Task A5
 is the prerequisite (met).
 
-The model's ``runBatch`` already factors a boundary:
-``_begin_step`` (EAGER host pre-step: lex+embed -> parks
-``_staged_in_sub``) -> the compiled forward (TENSOR core) ->
-``_end_step`` (EAGER host post-step). D1 re-expresses that boundary as
+The model's ``runBatch`` already factors a boundary: its EAGER host pre-step
+(lex+embed -> parks ``_staged_in_sub``) -> the compiled forward (TENSOR core)
+-> ``_end_step`` (EAGER host post-step). D1 re-expresses that boundary as
 two PUBLIC, ARGUMENT-passing methods that ``torch.export`` can consume:
 
   * ``stage_for_core(x) -> staged_tensor``  -- the host pre-step
     (lex + chunk + embed), returning the already-staged TENSOR the
-    core consumes (what ``_begin_step`` parks, but RETURNED, not
+    core consumes (what ``runBatch`` parks, but RETURNED, not
     parked on ``self``).
   * ``forward_core(staged) -> output_tensors`` -- the TENSOR-ONLY
     forward (IS-embed already done -> PS -> CS -> SS -> OS) that takes

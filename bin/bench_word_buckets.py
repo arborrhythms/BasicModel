@@ -9,10 +9,10 @@ Examples::
     BASICMODEL_DEVICE=mps .venv/bin/python bin/bench_word_buckets.py \
         --backend inductor --widths 16,32,64,128 --warmup 1 --iters 5
 
-The eager stem is restaged before every sample and excluded from timing. Each
-sample therefore measures the selected fixed-W forward graph, including its
-masked padding iterations, PS/WS folds, aligned CS binding, and bounded STM
-grammar.
+Each sample measures one complete compiled ``runBatch`` inference step,
+including eager staging and teardown as well as the selected fixed-W forward
+graph. The graph itself includes its masked padding iterations, PS/WS folds,
+aligned CS binding, and bounded STM grammar.
 """
 
 from __future__ import annotations
@@ -100,31 +100,23 @@ def main(argv=None):
 
     rows = []
     prior_grad = torch.is_grad_enabled()
-    torch.set_grad_enabled(False)
+    # The compiled callable is selected only when grad is enabled; runtime
+    # inference still returns before loss/backward in ``runBatch``.
+    torch.set_grad_enabled(True)
     try:
         for width in requested:
             text = _sentence(width)
 
-            def _stage_once():
-                # A forward consumes/mutates its carriers. Recreate the eager
-                # stem before every sample, but start timing only afterward.
-                model._end_step()
+            def _run_once():
                 x = model.inputSpace.prepInput([text] * int(args.batch))
-                model._start_spaces_for_forward()
-                staged_arg = model._begin_step(x)
-                chosen = int(model.inputSpace._active_word_bucket)
-                if chosen != width:
-                    raise RuntimeError(
-                        f"W={width} fixture selected W={chosen}; bucket "
-                        "routing is not measuring the requested graph")
-                fn = model._active_compiled_step or model._compiled_step
-                return staged_arg, fn
+                return model.runBatch(
+                    train=False, split="runtime", batchSize=int(args.batch),
+                    batch_override=(x, None))
 
             compile_wall = 0.0
             for i in range(int(args.warmup)):
-                staged_arg, fn = _stage_once()
                 t0 = time.perf_counter()
-                result = fn(staged_arg)
+                result, _ = _run_once()
                 _sync(torch, device)
                 if i == 0:
                     compile_wall = time.perf_counter() - t0
@@ -135,9 +127,8 @@ def main(argv=None):
                 import torch._dynamo as _dynamo
                 _dynamo.config.error_on_recompile = True
             for _ in range(int(args.iters)):
-                staged_arg, fn = _stage_once()
                 t0 = time.perf_counter()
-                result = fn(staged_arg)
+                result, _ = _run_once()
                 _sync(torch, device)
                 samples.append(time.perf_counter() - t0)
                 del result
@@ -174,7 +165,7 @@ def main(argv=None):
         "n_concept_codes": int(getattr(model, "nConceptCodes", -1)),
         "n_symbols": int(getattr(model, "nSymbols", -1)),
         "n_symbol_slots": int(getattr(model, "nSymbolSlots", -1)),
-        "stem_in_timing": False,
+        "stem_in_timing": True,
         "rows": rows,
     }
     if args.json_path:

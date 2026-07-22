@@ -248,6 +248,32 @@ def test_sparse_decoder_leaves_shared_codebook_gradient_sparse():
     assert sorted(cb.W.grad.coalesce().indices()[0].tolist()) == [2, 11]
 
 
+def test_post_step_concept_projection_is_row_local_and_signed_bounded():
+    """Only touched concept atoms are restored to their unit directions."""
+    torch.manual_seed(23)
+    cb = Codebook()
+    cb.W = nn.Parameter(F.normalize(torch.randn(64, 8), dim=-1))
+    cb.sparse_lookup_grad = True
+    cs = types.SimpleNamespace(similarity_codebook=cb)
+    model = BaseModel()
+    model.conceptualSpaces = [cs, cs]  # shared physical dictionary
+
+    untouched_before = cb.W.detach()[5].clone()
+    selected = torch.tensor([2, 11, 2])
+    cb.lookup_rows(selected).mul(100.0).sum().backward()
+    RowLocalAdam([cb.W], lr=0.2).step()
+    assert not torch.allclose(
+        cb.W.detach()[torch.tensor([2, 11])].norm(dim=-1),
+        torch.ones(2))
+
+    model._normalize_conceptual_codebooks()
+
+    touched = cb.W.detach()[torch.tensor([2, 11])]
+    torch.testing.assert_close(touched.norm(dim=-1), torch.ones(2))
+    assert bool((touched.abs() <= 1.0).all())
+    torch.testing.assert_close(cb.W.detach()[5], untouched_before)
+
+
 def test_parallel_aligned_meta_model_does_not_enable_sparse_lookup_mode():
     """serialObjectMeta alone cannot opt a dense parallel CS into RowLocalAdam."""
     _populate_test_config(

@@ -13,6 +13,7 @@ segmentation.md, T1).
 
 import os
 import sys
+from types import SimpleNamespace
 
 os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
 os.environ.setdefault("BASICMODEL_DEVICE", "cpu")
@@ -25,7 +26,8 @@ if _BIN not in sys.path:
 import torch
 import torch.nn as nn
 
-from Spaces import Codebook, SubSpace
+import Spaces
+from Spaces import Codebook, SubSpace, WholeSpace
 
 
 def _property_codebook(V=6, D=8, seed=0):
@@ -110,3 +112,64 @@ def test_subspace_property_mode_none_without_index():
     sub = SubSpace([4, D], [4, D], nInputDim=D, nOutputDim=D)
     sub.what = _property_codebook(V=4, D=D, seed=2)
     assert sub.materialize(mode="property") is None   # no _index set
+
+
+def test_property_codebook_public_reads_share_membership_view(monkeypatch):
+    """No public row-read surface may expose a property's raw Parameter.
+
+    Optimizer state is allowed to drift outside the unit cube between the
+    update and its post-step projection.  ``getW``, full prototypes, selected
+    lookups, and sinusoidal property materialization must nevertheless observe
+    the same UNORM-STE membership values.
+    """
+    monkeypatch.setattr(Spaces, "meronomy_enabled", lambda: True)
+    raw = torch.tensor([
+        [-2.0, 0.25, 2.0, 0.75],
+        [1.50, -0.50, 0.40, 0.60],
+        [0.10, 0.20, 0.30, 0.40],
+    ])
+    cb = Codebook()
+    cb.is_percept_store = True
+    cb.W = nn.Parameter(raw.clone())
+    expected = raw.clamp(0.0, 1.0)
+
+    assert torch.allclose(cb.getW(), expected)
+    assert torch.allclose(cb.prototype(), expected)
+    idx = torch.tensor([[1, 0, 1]])
+    assert torch.allclose(cb.lookup_rows(idx), expected[idx])
+    assert torch.allclose(cb.lookup(idx), expected[idx])
+
+    # The whole-ranging sinusoidal reader is downstream of ``lookup``.  A
+    # control codebook holding the already-clamped rows therefore has to be
+    # exactly equivalent to the marked store with out-of-range raw storage.
+    control = Codebook()
+    control.W = nn.Parameter(expected.clone())
+    got = cb.materialize_property(idx, n_positions=7)
+    want = control.materialize_property(idx, n_positions=7)
+    assert torch.allclose(got, want)
+
+
+def test_canonical_ws_stage_composes_transformed_property_rows(monkeypatch):
+    """Stage-0 property mixing reads memberships, never raw coefficients."""
+    monkeypatch.setattr(Spaces, "meronomy_enabled", lambda: True)
+    P, D, N = 8, 6, 2
+    cb = Codebook()
+    cb.is_percept_store = True
+    cb.W = nn.Parameter(torch.full((P, D), -2.0))
+    stage = SimpleNamespace(
+        property_basis=True,
+        subspace=SimpleNamespace(what=cb, muxedSize=D),
+        inputShape=(N, D),
+        nWhere=0,
+        nWhen=0,
+        nDim=D,
+    )
+    input_bytes = torch.tensor([[[65, 49]]])       # capital letter + digit
+    carrier, width = WholeSpace._stage0_carrier(stage, input_bytes, None)
+
+    # Both bytes activate canonical property predicates, so this would be a
+    # negative carrier if stage-0 reached into raw W.  The transformed rows
+    # are all zero and therefore so is their mixture.
+    assert stage._stage0_property_membership.sum() > 0
+    assert width == D
+    assert torch.equal(carrier, torch.zeros_like(carrier))

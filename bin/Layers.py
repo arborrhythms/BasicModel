@@ -1077,10 +1077,17 @@ class InvertibleLinearLayer(ErgodicLayer):
     def _D_embed(self):
         """Embed _d_effective() into [nInput, nOutput] rectangular diagonal."""
         d = self._d_effective()
-        D = torch.zeros(self.nInput, self.nOutput, device=d.device, dtype=d.dtype)
-        for i in range(self.rank):
-            D[i, i] = d[i]
-        return D
+        # ``D[i, i] = d[i]`` issued one MPS command per diagonal entry.  This
+        # helper is on every structured grammar operator's hot path, so the
+        # old Python loop created hundreds of tiny dispatches per sentence.
+        # Build the rank-square diagonal in one tensor operation, then pad it
+        # to the documented rectangular LDU shape.  Both routes have exactly
+        # the same gradients and zero off-diagonal entries.
+        square = torch.diag(d)
+        return F.pad(
+            square,
+            (0, int(self.nOutput) - int(self.rank),
+             0, int(self.nInput) - int(self.rank)))
 
     # --- Noise resampling ---
     def resample_noise(self):
@@ -1145,9 +1152,10 @@ class InvertibleLinearLayer(ErgodicLayer):
         L_inv = torch.linalg.solve_triangular(L, I_in,  upper=False, unitriangular=True)
         U_inv = torch.linalg.solve_triangular(U, I_out, upper=True,  unitriangular=True)
         d = self._d_effective()
-        D_inv = torch.zeros(self.nOutput, self.nInput, device=d.device, dtype=d.dtype)
-        for i in range(self.rank):
-            D_inv[i, i] = 1.0 / d[i]
+        D_inv = F.pad(
+            torch.diag(d.reciprocal()),
+            (0, int(self.nInput) - int(self.rank),
+             0, int(self.nOutput) - int(self.rank)))
         return U_inv @ D_inv @ L_inv
 
     def compute_W_current(self):
@@ -4981,19 +4989,18 @@ class ConceptAllocator:
 
 
 class MeronymicFoldAdapter(Layer):
-    """K3-wire adapter binding a membership kernel at a meronymic slot
+    """Membership-native adapter for a meronymic sigma/pi slot
     (MeronomyPlan Stage 9 cutover; MeronomySpec §2, §4).
 
-    The wire keeps carrying the K3 scalar ``a in [-1, +1]`` (the
-    BivectorRetirementPlan invariant); the fold computes in the
-    membership chart: ``χ`` in, kernel, ``χ⁻¹`` out — epistemic scalars
-    enter membership folds only through the evaluation chart (§3),
-    applied exactly once per crossing, here at the slot boundary. The
-    same chart pair on ``reverse`` makes the adapter exactly invertible
-    wherever the kernel is.
+    The PS/WS wire carries membership directly: ``m in [0, 1]``. Sigma
+    and pi therefore consume and return membership coordinates without a
+    signed evaluation chart. The learned unary fold is invertible with a
+    closed-form bounded-domain inverse; the M-to-1 union used to
+    assemble a word is intentionally not invertible and is reversed from
+    retained constituent and fold-provenance records.
 
     At near-identity init the membership kernel is approximately the
-    identity on memberships (d ≈ 1, offdiag ≈ 0, b ≈ 0), so the adapter
+    identity on memberships (bounded shear/curve coefficients are near 0), so the adapter
     starts close to a pass-through: cutover begins from a benign
     operating point and training shapes the fold from there.
 
@@ -5004,56 +5011,25 @@ class MeronymicFoldAdapter(Layer):
     slot). Non-meronymic consumers keep the odds-kernel layers (plan §4
     item 4 — those operators are NOT legacy; only this slot rebinds).
 
-    **Butterfly mode (author, 2026-06-11 — the cutover correction).**
-    ``butterfly=True`` rebuilds the slot's cascade in the membership
-    chart instead of dropping it: the order-preservation law of the
-    meronymic slots constrains the KERNEL CLASS (contractive,
-    non-negative log-mass weights), never the fold's TOPOLOGY — and
-    order-preserving maps compose, so the FFT-style cross-slot cascade
-    with the contractive law at every 2×2 node preserves the partial
-    order end-to-end while keeping the cascade's cross-position reach
-    (which per-slot folds lack, and which functions like XOR over the
-    slab require: distinct word codes sit INCOMPARABLE in the partial
-    order, so monotonicity never excluded them — only the lost reach
-    did). Each node is the 2×2 contractive LDU law in log-mass via
-    the SQUARE reparam: off-diagonal taps ``raw² >= 0``, diagonal
-    ``(1 + raw_d²)`` clamped to ``[1, d_max]``, bias-free; the
-    REVERSE divides by ``d >= 1`` (contractive — strictly tamer than
-    the signed cascade's ``1/d`` blow-up guard). χ applies once at
-    the slot boundary; ``kind='sigma'`` conjugates the π-law cascade
-    by the complement involution (``σ = 1 − π(1 − ·)``), which
-    composes through the levels exactly. Near-identity init
-    (raw = 0.05: taps ~0.0025 with gradient scale ~0.10 — squares
-    decouple tap size from gradient scale, where softplus locks them
-    together and strangles learning) keeps the cutover's benign-start
-    contract. ``gate`` is not honoured in butterfly mode (same
-    contract as the legacy cascade).
+    **Butterfly mode.** ``butterfly=True`` composes gather-free 2x2
+    monotone coupling nodes across one vector's feature lanes; leading batch
+    and word/location axes never mix. Each node uses two bounded extensive
+    shears around an endpoint-fixing diagonal curve. Sigma runs that flow;
+    pi is its complement conjugate. Every constituent map preserves
+    ``[0,1]``, fixes 0 and 1, is order-preserving, and has a closed-form
+    reverse. The coefficient budget splits ``log(d_max)`` across levels, so
+    inverse gain remains bounded end-to-end. This replaces the former
+    log-power LDU, whose values were finite but whose cross-derivatives
+    diverged near a membership corner when an exponent lay between 0 and 1.
+    Near-identity raw initialization still yields taps near 0.0025 with useful
+    gradients. ``gate`` is not honoured in butterfly mode (same contract as
+    the legacy cascade).
 
-    **Recorded risk + contingency (author, 2026-06-11).** The lawful
-    node matrices are SPECTRALLY EXPANSIVE in log-mass by
-    construction: ``det(LDU) = d₀·d₁ >= 1`` per 2×2 node, so the
-    spectral radius of every level — hence of any composition of
-    membership folds — is ``>= 1`` there. One application per pump
-    is benign (near-identity init; ``d_max`` bounds per-application
-    drift), but ITERATED application necessarily migrates mass
-    toward the chart corners — π toward 𝟘 (the 0000 code), σ toward
-    𝟙 (the 1111 code) — and a saturated code carries no usable
-    specification. The eigenvalue floor is the law itself (order
-    preservation + memberships-stay-memberships forces non-negative
-    log-mass weights with ``d >= 1``), so it cannot be trained away —
-    only bounded (``d_max``, shallow application counts, the
-    σπσ = σ registration pressure on stored symbols).
-    **Contingency:** if the geometric constraint proves too
-    restrictive in practice — folds saturating, or solutions
-    excluded — the meronomy moves to an explicit PART-WHOLE TREE ON
-    THE CODES (parthood as stored structure over code atoms, the
-    order law enforced on the tree) rather than a geometric
-    constraint baked into the fold operators.
-    ``test_meronymic_butterfly.py`` pins both sides of this boundary:
-    discontiguous specifications survive — and are PRODUCED by —
-    repeated lawful application (scattered wholes are first-class;
-    the FFT pairing carries no contiguity bias), and the saturation
-    regime under an aggressive law is characterized explicitly.
+    Repeated extensive/contractive application can still migrate sigma/pi
+    toward a lattice corner; that semantic pressure is tested and is distinct
+    from a one-step numerical singularity. If the geometry proves too
+    restrictive, the contingency remains an explicit part-whole tree over
+    code atoms rather than weakening the range or invertibility contracts.
     """
     invertible = True
     # Legacy slot-surface attributes: consumers of the slot layers read
@@ -5146,6 +5122,12 @@ class MeronymicFoldAdapter(Layer):
         if self.fold is not None:
             self.layers.append(self.fold)
         self.activation = torch.zeros(1, nOutput, 1)
+        # MPS Inductor can compile the per-vector membership cascade, but not
+        # the entire stateful serial word cell within a practical cold-start
+        # budget.  This is deliberately an opt-in installed by BasicModel's
+        # MPS compilation boundary; ordinary layer use and all uncompiled
+        # paths keep calling ``_mem_cascade`` directly.
+        object.__setattr__(self, "_compiled_mem_cascade", None)
 
     # -- membership cascade (butterfly mode) ---------------------------
     # PER-VECTOR flatten (differs from GrammarLayer's whole-slab flatten):
@@ -5180,19 +5162,71 @@ class MeronymicFoldAdapter(Layer):
         return flat[:, :D].reshape(original_shape)
 
     def _mem_law(self):
-        """The per-node contractive law via the square reparam:
-        L, U = raw² >= 0; d = (1 + raw_d²) in [1, d_max]. Pad-touching
-        pairs are pinned to identity (L = U = 0, d = 1) so pads stay
-        exactly 𝟘 and the real-lane cascade inverts."""
+        """Return bounded coefficients for the monotone coupling flow.
+
+        Each level has three possible inverse-gain factors (upper shear,
+        diagonal curve, lower shear).  Splitting ``log(d_max)`` over those
+        factors and every level bounds the complete cascade's inverse gain by
+        ``d_max``.  ``cap*tanh(raw/sqrt(cap))²`` is ``raw²`` near identity,
+        stays non-negative, and approaches the cap smoothly. Pad-touching
+        pairs receive exact-zero coefficients and are identities.
+        """
         mask = self._bfly_pair_mask
-        L = self.raw_bfly_L.square() * mask
-        d = (1.0 + self.raw_bfly_d.square()).clamp(1.0, self.d_max)
-        d = d * mask.unsqueeze(-1) + (1.0 - mask.unsqueeze(-1))
-        U = self.raw_bfly_U.square() * mask
+        if not math.isfinite(self.d_max) or self.d_max < 1.0:
+            raise RuntimeError(
+                "meronymic d_max must be finite and >= 1 for a stable inverse; "
+                f"got {self.d_max}")
+        # An inverse exponential shear has both a direct derivative and a
+        # cross derivative. Conservatively, for coefficient b, each shear's
+        # induced 1/inf-norm gain is <= exp(2b); the scalar curve contributes
+        # <= exp(b). Two shears plus one curve over L levels are therefore
+        # bounded by exp(5bL). Splitting log(d_max) by 5L makes d_max a true
+        # whole-cascade inverse-gain ceiling, not merely a diagonal budget.
+        budget = math.log(max(1.0, self.d_max)) / (
+            5.0 * max(1, self.n_levels))
+        tap_cap = budget
+        diagonal_cap = 1.0 - math.exp(-budget)
+
+        def _bounded_square(raw, cap):
+            if cap <= 0.0:
+                return torch.zeros_like(raw)
+            return cap * torch.tanh(raw / math.sqrt(cap)).square()
+
+        L = _bounded_square(self.raw_bfly_L, tap_cap) * mask
+        d = (_bounded_square(self.raw_bfly_d, diagonal_cap)
+             * mask.unsqueeze(-1))
+        U = _bounded_square(self.raw_bfly_U, tap_cap) * mask
         return L, d, U
 
-    def _mem_cascade(self, l, inverse=False):
-        """Run the contractive cascade over flattened log-mass.
+    @staticmethod
+    def _membership_curve(x, coefficient, inverse=False, contractive=False):
+        """Bounded scalar curve and its closed-form inverse.
+
+        ``h_c(x) = x + c*x*(1-x)`` fixes 0 and 1, is monotone for
+        ``0 <= c < 1``, and has inverse derivative at most ``1/(1-c)``.
+        ``contractive=True`` uses its complement conjugate
+        ``k_c(x) = x - c*x*(1-x)`` for the pi flow.
+        """
+        if contractive:
+            if not inverse:
+                return x - coefficient * x * (1.0 - x)
+            one_minus = 1.0 - coefficient
+            discriminant = (one_minus.square()
+                            + 4.0 * coefficient * x).clamp_min(0.0)
+            denominator = one_minus + torch.sqrt(discriminant)
+            return (2.0 * x / denominator.clamp_min(
+                torch.finfo(x.dtype).tiny)).clamp(0.0, 1.0)
+        if not inverse:
+            return x + coefficient * x * (1.0 - x)
+        one_plus = 1.0 + coefficient
+        discriminant = (one_plus.square()
+                        - 4.0 * coefficient * x).clamp_min(0.0)
+        denominator = one_plus + torch.sqrt(discriminant)
+        return (2.0 * x / denominator.clamp_min(
+            torch.finfo(x.dtype).tiny)).clamp(0.0, 1.0)
+
+    def _mem_cascade(self, membership, inverse=False, contractive=False):
+        """Run an invertible monotone sigma/pi flow over memberships.
 
         GATHER-FREE pairing (MPS-compile requirement): bounds-checked
         index ops each demand an error-report buffer argument in the
@@ -5209,17 +5243,22 @@ class MeronymicFoldAdapter(Layer):
         ``butterfly_perms`` stays registered for the pad-mask
         construction and lane-pair lookups in tests).
 
-        Per node forward (all entries >= 0: order-preserving;
-        log-mass stays <= 0 so memberships stay in (0, 1] — the
-        §10.10 weight law): ``u0 = l0 + U·l1``; ``y0 = d0·u0``;
-        ``y1 = L·y0 + d1·l1``. Reverse is the closed-form 2×2 LDU
-        inverse, dividing by ``d >= 1`` (contractive — no blow-up).
+        One node is an upper extensive shear, two independent bounded
+        diagonal curves, then a lower extensive shear::
 
-        ``l``: ``[B, ...]`` log-mass (<= 0); flattened and zero-padded
-        to ``M_total`` — a log-mass pad of 0 is membership 𝟙, the
-        π-identity, so pad lanes contribute exactly nothing to real
-        lanes (the §10.2 identity theorem at the pad)."""
-        flat, original_shape = self._bfly_flatten(l)
+            a = 1 - (1-x0) exp(-U*x1)
+            a, b = h_d0(a), h_d1(x1)
+            y = 1 - (1-b) exp(-L*a)
+
+        Sigma uses the displayed extensive flow. Pi uses its complement
+        conjugate directly (multiplicative contractive shears and contractive
+        scalar curves), avoiding a numerical ``1-(1-x)`` round trip at the
+        poles. Every operation preserves the cube, is order-preserving, and
+        has a closed-form reverse executed in the opposite order. Unlike the
+        old log-power mixing, no derivative contains ``q**(w-1)``; forward
+        and reverse adjoints stay bounded at the membership corners.
+        """
+        flat, original_shape = self._bfly_flatten(membership)
         B = flat.shape[0]
         L, d, U = self._mem_law()
         levels = range(self.n_levels)
@@ -5228,8 +5267,8 @@ class MeronymicFoldAdapter(Layer):
         for level in levels:
             s = 1 << level
             blocks = flat.reshape(B, -1, 2, s)
-            l0 = blocks[..., 0, :]
-            l1 = blocks[..., 1, :]
+            x0 = blocks[..., 0, :]
+            x1 = blocks[..., 1, :]
             # Per-pair scalars at [nblocks, s]; flat pair index
             # blk·s + off matches the legacy perm-ordered layout.
             Lk = L[level].reshape(-1, s)
@@ -5237,24 +5276,69 @@ class MeronymicFoldAdapter(Layer):
             d1 = d[level, :, 1].reshape(-1, s)
             Uk = U[level].reshape(-1, s)
             if inverse:
-                a1 = l1 - Lk * l0
-                b0 = l0 / d0
-                b1 = a1 / d1
-                x0 = b0 - Uk * b1
-                flat = torch.stack([x0, b1], dim=-2).reshape(B, -1)
+                # Undo lower shear, the two scalar curves, then upper.
+                if contractive:
+                    b = x1 * torch.exp(Lk * (1.0 - x0))
+                else:
+                    b = x1 - (1.0 - x1) * torch.expm1(Lk * x0)
+                a = self._membership_curve(
+                    x0, d0, inverse=True, contractive=contractive)
+                b = self._membership_curve(
+                    b, d1, inverse=True, contractive=contractive)
+                if contractive:
+                    original0 = a * torch.exp(Uk * (1.0 - b))
+                else:
+                    original0 = a - (1.0 - a) * torch.expm1(Uk * b)
+                flat = torch.stack(
+                    [original0.clamp(0.0, 1.0), b.clamp(0.0, 1.0)],
+                    dim=-2).reshape(B, -1)
             else:
-                u0 = l0 + Uk * l1
-                y0 = d0 * u0
-                y1 = Lk * y0 + d1 * l1
-                flat = torch.stack([y0, y1], dim=-2).reshape(B, -1)
+                if contractive:
+                    a = x0 * torch.exp(-Uk * (1.0 - x1))
+                else:
+                    a = x0 - (1.0 - x0) * torch.expm1(-Uk * x1)
+                a = self._membership_curve(
+                    a, d0, contractive=contractive)
+                b = self._membership_curve(
+                    x1, d1, contractive=contractive)
+                if contractive:
+                    y1 = b * torch.exp(-Lk * (1.0 - a))
+                else:
+                    y1 = b - (1.0 - b) * torch.expm1(-Lk * a)
+                flat = torch.stack([a, y1], dim=-2).reshape(B, -1)
         return self._bfly_unflatten(flat, original_shape)
 
-    def forward(self, x, binary=False, gate=None):
-        """χ → membership fold → χ⁻¹ on the K3 wire.
+    def enable_compiled_mem_cascade(self):
+        """Install a narrow compiled forward kernel for the butterfly flow.
 
-        Butterfly mode: χ once at the boundary, complement involution
-        for the σ kind, log-mass cascade (width-agnostic over the
-        flattened slab, like the signed cascade it re-charters).
+        The stateful sentence/STM/grammar driver must stay eager on MPS: an
+        AOT graph spanning even two word ticks creates a huge backward graph
+        and spends minutes lowering before its first batch.  The membership
+        cascade is the hot, pure tensor portion of that driver.  Compiling it
+        separately gives Inductor a stable 136-wide graph whose parameters
+        remain normal differentiable inputs, so each PS/WS fold retains its
+        own gradients without tracing the Python recurrence.
+
+        ``util.compile`` also installs the MPS fusion limits required by
+        Metal's 31-buffer kernel-argument ceiling.  The wrapper is installed
+        only when a caller has explicitly enabled model compilation.
+        """
+        if not self.butterfly:
+            return False
+        if util.TheCompileBackend == "none":
+            return False
+        if getattr(self, "_compiled_mem_cascade", None) is not None:
+            return True
+        compiled = util.compile(
+            self._mem_cascade, verbose=False, fullgraph=True)
+        object.__setattr__(self, "_compiled_mem_cascade", compiled)
+        return True
+
+    def forward(self, x, binary=False, gate=None):
+        """Apply one invertible learned fold directly to membership.
+
+        Butterfly mode runs the bounded coupling flow for sigma and uses the
+        complement involution for pi, one percept/property vector at a time.
 
         Unary mode: width-mismatched calls (the legacy cascade was
         width-agnostic; the per-slot membership fold is not) fall back
@@ -5262,22 +5346,24 @@ class MeronymicFoldAdapter(Layer):
         parallel-fold dispatch uses for mismatched totals.
         """
         if self.butterfly:
-            m = Ops.eval_chart(x.clamp(-1.0, 1.0))
-            if self.kind == 'sigma':
-                m = 1.0 - m
-            l = torch.log(m.clamp(EPS_LOG, 1.0))
-            z = torch.exp(self._mem_cascade(l))
-            if self.kind == 'sigma':
-                z = 1.0 - z
-            out = Ops.eval_chart_inv(z)
+            m = x.clamp(0.0, 1.0)
+            compiled = getattr(self, "_compiled_mem_cascade", None)
+            # Do not nest a separately compiled fold inside an already traced
+            # parent.  The canonical MPS driver is intentionally eager, while
+            # legacy CPU/CUDA full-step tracing retains its original single
+            # graph behavior.
+            cascade = (compiled if compiled is not None
+                       and not torch.compiler.is_compiling()
+                       else self._mem_cascade)
+            z = cascade(m, contractive=(self.kind == 'pi'))
+            out = z.clamp(0.0, 1.0)
             self.activation = out.detach()
             return out
         if x.shape[-1] != self.nInput:
             self.activation = x.detach()
             return x
-        m = Ops.eval_chart(x.clamp(-1.0, 1.0))
-        z = self.fold.forward(m, gate=gate)
-        out = Ops.eval_chart_inv(z)
+        m = x.clamp(0.0, 1.0)
+        out = self.fold.forward(m, gate=gate).clamp(0.0, 1.0)
         self.activation = out.detach()
         return out
 
@@ -5314,7 +5400,7 @@ class MeronymicFoldAdapter(Layer):
                     f"codes={tuple(part_codes.shape)}, "
                     f"mask={tuple(valid.shape)}")
 
-        membership = Ops.eval_chart(part_codes.clamp(-1.0, 1.0))
+        membership = part_codes.clamp(0.0, 1.0)
         complement = torch.where(
             valid.unsqueeze(-1), 1.0 - membership,
             torch.ones_like(membership))
@@ -5324,14 +5410,14 @@ class MeronymicFoldAdapter(Layer):
         """Form the base M-to-1 whole without a learned feature fold.
 
         This is the serial word assembler.  It is the exact order-invariant
-        De Morgan extension ``1 - product(1 - m_i)`` in the membership chart,
-        followed only by the chart inverse.  It intentionally does not call
+        De Morgan extension ``1 - product(1 - m_i)`` in membership space.
+        It intentionally does not call
         ``self.fold`` or ``self._mem_cascade``; learned order-raising begins at
         the subsequent unary sigma ladder.
         """
         union_m, valid, _complement = self._set_union_membership(
             part_codes, mask=mask)
-        out = Ops.eval_chart_inv(union_m)
+        out = union_m
         any_valid = valid.any(dim=-1, keepdim=True)
         out = torch.where(any_valid, out, torch.zeros_like(out))
         self.activation = out.detach()
@@ -5346,50 +5432,41 @@ class MeronymicFoldAdapter(Layer):
         word base uses :meth:`aggregate_over_set` instead, then invokes each
         advertised unary sigma rung exactly once.
 
-        In butterfly mode, sigma is the De Morgan complement of the
-        log-mass pi law.  Summing ``log(1-m)`` over the set therefore gives
-        the exact order-invariant M-way extension before the existing
-        feature cascade.  Unary mode forms the same probabilistic union and
-        then applies its configured membership fold once.  Masked positions
+        Both modes first form the exact order-invariant De Morgan union and
+        then apply their configured membership fold once. Masked positions
         are identities, not vague ``a=0`` operands.
         """
         union_m, valid, complement = self._set_union_membership(
             part_codes, mask=mask)
         if self.butterfly:
-            log_complement = torch.log(
-                complement.clamp(EPS_LOG, 1.0)).sum(dim=-2)
-            out_m = 1.0 - torch.exp(self._mem_cascade(log_complement))
+            out_m = self._mem_cascade(union_m)
         else:
             out_m = self.fold.forward(union_m)
-        out = Ops.eval_chart_inv(out_m)
+        out = out_m.clamp(0.0, 1.0)
         any_valid = valid.any(dim=-1, keepdim=True)
         out = torch.where(any_valid, out, torch.zeros_like(out))
         self.activation = out.detach()
         return out
 
     def reverse(self, y, gate=None):
-        """Exact inverse through the same chart pair (identity on
-        width-mismatched unary calls, mirroring forward; in butterfly
-        mode the cascade inverts level-by-level, dividing by
-        d >= 1)."""
+        """Invert the learned membership fold (not M-to-1 set assembly).
+
+        Width-mismatched unary calls remain identities. Butterfly mode
+        reverses each bounded shear and scalar curve in the opposite order.
+        """
         if self.butterfly:
-            z = Ops.eval_chart(y.clamp(-1.0, 1.0))
-            if self.kind == 'sigma':
-                z = 1.0 - z
-            lz = torch.log(z.clamp(torch.finfo(z.dtype).tiny, 1.0))
-            m = torch.exp(self._mem_cascade(lz, inverse=True)).clamp(
-                0.0, 1.0)
-            if self.kind == 'sigma':
-                m = 1.0 - m
-            x = Ops.eval_chart_inv(m)
+            z = y.clamp(0.0, 1.0)
+            m = self._mem_cascade(
+                z, inverse=True,
+                contractive=(self.kind == 'pi')).clamp(0.0, 1.0)
+            x = m.clamp(0.0, 1.0)
             self.activation = x.detach()
             return x
         if y.shape[-1] != self.nOutput:
             self.activation = y.detach()
             return y
-        z = Ops.eval_chart(y.clamp(-1.0, 1.0))
-        m = self.fold.reverse(z, gate=gate)
-        x = Ops.eval_chart_inv(m)
+        z = y.clamp(0.0, 1.0)
+        x = self.fold.reverse(z, gate=gate).clamp(0.0, 1.0)
         self.activation = x.detach()
         return x
 
