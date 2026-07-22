@@ -181,6 +181,37 @@ Forward:  InputSpace -> {PartSpace, WholeSpace} -> ConceptualSpace -> SymbolSpac
 Reverse:  OutputSpace -> SymbolSpace -> ConceptualSpace -> {PartSpace, WholeSpace} -> InputSpace
 ```
 
+### SymbolSpace and LanguageSpace: reference, grammar, and scheduling
+
+`SymbolSpace` is the discrete, inspectable boundary of the model: a symbol is
+a typed, zero-dimensional reference to a ConceptualSpace concept, carrying its
+reference activation rather than a third perceptual codebook row.  This makes
+the concept-to-symbol transition the natural place to expose grammatical role,
+derivation provenance, and a stable reference for an external truth or
+reasoning system.  It does **not** make SymbolSpace the owner of a separate
+continuous concept store; concept allocation, conceptual STM, and their
+mutation remain ConceptualSpace responsibilities.
+
+The grammar operator inventory is executed by `LanguageLayer`, registered once
+under `SymbolSubSpace.languageLayer`.  `LanguageSpace` is the runtime
+scheduling facade for that same layer: in the serial peer pipeline it consumes
+the completed symbolic result, returns grammar observations and an explicit
+conceptual reduction plan, and owns the grammar latch timing.  It does not
+duplicate `LanguageLayer` parameters or grammar state, and it cannot directly
+mutate ConceptualSpace STM.  ConceptualSpace validates and commits any returned
+reduction plan.  This preserves an inspectable separation between:
+
+- **concept references** (`SymbolSpace`),
+- **grammar execution and its persistent state** (`SymbolSubSpace` /
+  `LanguageLayer`), and
+- **pipeline timing** (`LanguageSpace`).
+
+An application-level truth engine may bind those stable references to typed
+propositions, provenance, certainty, or an operator tree.  That policy belongs
+above the BasicModel runtime; the model's invariant is that a symbolic result
+can be traced back to its concept reference and grammar operation without
+silently collapsing it into a perceptual row.
+
 The pre-2026-05-27 "two feedback loops" (S $\to$ C per-stage, C $\to$ P
 cross-forward) are retired. The recurrent character lives in (a) STM
 accumulation across words in SERIAL / GRAMMATICAL mode, and (b) the T-pass
