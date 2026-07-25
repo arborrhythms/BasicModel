@@ -48,8 +48,8 @@ runtime word counts 16/32/64 without recompilation.
 
 | Target | Description |
 |---|---|
-| `make train` | Full training (Phase 1 embeddings + Phase 2 model), logged to `output/logs/`; pins `--data text` (overrides the XML `<dataset>`) |
-| `make train_micro` | Smoke run: max 1,000 docs, one random shard, ten batches, logged; also pins `--data text` and caps `--num-epochs 1` |
+| `make train` | Full training (Phase 1 embeddings + Phase 2 model), logged to `output/logs/`; pins `--data text` (overrides the XML `<dataset>`). On macOS the process tree is capped at 60% of physical RAM by default. |
+| `make train_micro` | Smoke run: max 1,000 docs, one random shard, ten batches, logged; also pins `--data text`, caps `--num-epochs 1`, and uses the same memory bounds as `make train`. |
 | `make preflight` | Fast FineWeb launch/config/data/checkpoint gates |
 | `make preflight_full` | Preflight plus one real N=64 optimizer step |
 
@@ -175,7 +175,9 @@ training).
 | `BASICMODEL_PYTHON` | Python executable for train.py subprocesses; overrides the in-project `.venv` lookup |
 | `MODEL_COMPILE` | torch.compile backend selector (`auto`, `none`, `inductor`, `eager`, `aot_eager`) |
 | `MODEL_COMPILE_MODE` | torch.compile mode (`default`, `reduce-overhead`, `max-autotune`, `max-autotune-no-cudagraphs`). When unset, MPS uses `default`. PyTorch 2.12/2.13 MPS safely reduce CUDA-graph-bearing requests to their non-CUDAGraph equivalent because their reverse `while_loop` scheduler can crash while releasing a Metal command buffer. PyTorch 2.14+ MPS and real CUDA retain the requested mode unchanged; MPS still skips actual CUDA-only graph capture. |
-| `PYTORCH_MPS_HIGH_WATERMARK_RATIO` | MPS memory limit; set to `0.0` by `train.py` |
+| `PYTORCH_MPS_HIGH_WATERMARK_RATIO` | Hard MPS allocator watermark; defaults to `0.60` while preserving an explicit caller value |
+| `PYTORCH_MPS_LOW_WATERMARK_RATIO` | Soft MPS allocator watermark; defaults to `0.50` while preserving an explicit caller value |
+| `TRAIN_MEMORY_PERCENT` | macOS `make train`/`make train_micro` process-tree memory limit as a percentage of physical RAM; defaults to `60` |
 | `BASICMODEL_MPS_IOBUF` | MPS inductor fusion cap (`max_fusion_unique_io_buffers`, default 24) — keeps fused Metal kernels under the hardware 31-buffer kernel-arg limit; lower (e.g. 12) for wide configs |
 | `BASICMODEL_MPS_FUSE` | Optional MPS inductor `max_fusion_size` (nodes per fusion); unset leaves the torch default |
 | `PYTHONUNBUFFERED` | Set to `1` by `train.py` for real-time log streaming |

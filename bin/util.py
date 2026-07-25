@@ -11,6 +11,14 @@ import tempfile
 import warnings
 from contextlib import nullcontext
 from functools import lru_cache
+
+from mps_memory import apply_mps_allocator_env
+
+# Apply these before importing torch.  MPS uses unified system memory, so an
+# unlimited allocator can make the whole Mac (including SSH) unresponsive.
+# Explicit environment values still win.
+apply_mps_allocator_env()
+
 import torch
 
 

@@ -31,6 +31,8 @@ import time
 import xml.etree.ElementTree as ET
 import warnings
 
+from mps_memory import apply_mps_allocator_env
+
 
 PROJECT = Path(__file__).resolve().parent.parent
 BIN = PROJECT / "bin"
@@ -1037,7 +1039,7 @@ def main(argv=None):
         # the lazy Models/data imports in ``build_eval_model``.
         os.environ["BASICMODEL_DEVICE"] = args.device
         os.environ.setdefault("MODEL_COMPILE", "none")
-        os.environ.setdefault("PYTORCH_MPS_HIGH_WATERMARK_RATIO", "0.0")
+        apply_mps_allocator_env()
         return run_score(args) if args.command == "score" else run_trace(args)
     os.environ.setdefault("BASICMODEL_DEVICE", "cpu")
     return generate_manifest(args)

@@ -33,6 +33,10 @@ XML1 ?= data/simple.xml
 XML2 ?= data/ergodic-only.xml
 MODEL ?= data/MM_20M_fineweb.xml
 PYTHON := PYTHONPATH=bin $(VENV_PYTHON)
+TRAIN_ARGS ?=
+TRAIN_MEMORY_PERCENT ?= 60
+PYTORCH_MPS_HIGH_WATERMARK_RATIO ?= 0.60
+PYTORCH_MPS_LOW_WATERMARK_RATIO ?= 0.50
 
 # The shared MAKE_PDF macro drops later options due to a broken line
 # continuation, so override it locally with the reader extensions these docs use.
@@ -61,11 +65,38 @@ run : $(VENV_STAMP)
 	cd bin && PYTHONPATH=. $(VENV_PYTHON_FROM_BIN) Models.py $(XML1)
 
 train : $(VENV_STAMP)
-	$(PYTHON) bin/train.py --model $(MODEL) --data text --log
+	@set -eu; \
+	case "$(TRAIN_MEMORY_PERCENT)" in \
+		''|*[!0-9]*) echo "TRAIN_MEMORY_PERCENT must be an integer from 1 to 100" >&2; exit 2 ;; \
+	esac; \
+	if [ "$(TRAIN_MEMORY_PERCENT)" -lt 1 ] || [ "$(TRAIN_MEMORY_PERCENT)" -gt 100 ]; then \
+		echo "TRAIN_MEMORY_PERCENT must be an integer from 1 to 100" >&2; \
+		exit 2; \
+	fi; \
+	if [ "$$(uname -s)" = "Darwin" ]; then \
+		taskpolicy_bin=$$(command -v taskpolicy 2>/dev/null || true); \
+		if [ -z "$$taskpolicy_bin" ]; then \
+			echo "taskpolicy is required for bounded macOS training" >&2; \
+			exit 2; \
+		fi; \
+		total_bytes=$$(sysctl -n hw.memsize); \
+		limit_mib=$$((total_bytes / 1024 / 1024 * $(TRAIN_MEMORY_PERCENT) / 100)); \
+		echo "[BasicModel] MPS watermarks: $(PYTORCH_MPS_HIGH_WATERMARK_RATIO)/$(PYTORCH_MPS_LOW_WATERMARK_RATIO); process memory limit: $${limit_mib} MiB ($(TRAIN_MEMORY_PERCENT)%)"; \
+		env PYTORCH_MPS_HIGH_WATERMARK_RATIO="$(PYTORCH_MPS_HIGH_WATERMARK_RATIO)" \
+			PYTORCH_MPS_LOW_WATERMARK_RATIO="$(PYTORCH_MPS_LOW_WATERMARK_RATIO)" \
+			PYTHONPATH=bin \
+			"$$taskpolicy_bin" -b -m "$$limit_mib" -P kill \
+			"$(VENV_PYTHON)" bin/train.py --model "$(MODEL)" --data text --log $(TRAIN_ARGS); \
+	else \
+		echo "[BasicModel] macOS process limit unavailable; applying allocator environment bounds only"; \
+		env PYTORCH_MPS_HIGH_WATERMARK_RATIO="$(PYTORCH_MPS_HIGH_WATERMARK_RATIO)" \
+			PYTORCH_MPS_LOW_WATERMARK_RATIO="$(PYTORCH_MPS_LOW_WATERMARK_RATIO)" \
+			PYTHONPATH=bin \
+			"$(VENV_PYTHON)" bin/train.py --model "$(MODEL)" --data text --log $(TRAIN_ARGS); \
+	fi
 
 train_micro : $(VENV_STAMP)
-	$(PYTHON) bin/train.py --model $(MODEL) --data text --log \
-		--max-docs 1000 --num-shards 1 --num-epochs 1 --batches 10 --random-shards
+	@$(MAKE) train MODEL="$(MODEL)" TRAIN_ARGS="--max-docs 1000 --num-shards 1 --num-epochs 1 --batches 10 --random-shards $(TRAIN_ARGS)"
 
 xor : data/MM_xor.xml
 	PYTORCH_ENABLE_MPS_FALLBACK=1 $(MAKE) run XML1=$<

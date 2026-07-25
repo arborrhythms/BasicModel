@@ -12,9 +12,9 @@
        sigma/pi mereological fold now raises each word over its own D features
        independently (fold width percept_dim, not nOutput*D), so the serial loop
        is LINEAR in the word count. Before that fix N=32/64 hit an O(N^2) memory
-       wall. Runs on MPS with PYTORCH_MPS_HIGH_WATERMARK_RATIO=0.0 (train.py sets
-       this) at ~15-20s/step eager; the eager skip-padding loop keeps cost
-       tracking the real sentence length. -->
+       wall. Runs on MPS with bounded allocator defaults (high=0.60,
+       low=0.50) at ~15-20s/step eager; the eager skip-padding loop keeps
+       cost tracking the real sentence length. -->
   <!-- Production serial grammar model. The N=64 percept/concept/STM budget
        is the FineWeb-sized expansion of the smaller grammar fixture. FineWeb
        supplies no labels, so the OutputSpace is structural only: training

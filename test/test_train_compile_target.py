@@ -44,8 +44,8 @@ def test_gpu_compile_target_sets_defaults_without_clobbering():
 def test_mps_allocator_defaults_are_bounded_and_preserve_overrides():
     env = {}
     train.apply_mps_allocator_env(env)
-    assert env["PYTORCH_MPS_HIGH_WATERMARK_RATIO"] == "1.0"
-    assert env["PYTORCH_MPS_LOW_WATERMARK_RATIO"] == "0.9"
+    assert env["PYTORCH_MPS_HIGH_WATERMARK_RATIO"] == "0.60"
+    assert env["PYTORCH_MPS_LOW_WATERMARK_RATIO"] == "0.50"
 
     env = {
         "PYTORCH_MPS_HIGH_WATERMARK_RATIO": "1.2",

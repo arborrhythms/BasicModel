@@ -20,6 +20,7 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+from mps_memory import apply_mps_allocator_env
 from util import TheMessage
 
 WEIGHT_PATTERNS = ("*.ckpt", "*.kv")
@@ -181,12 +182,6 @@ def apply_compile_target_env(args, env):
         # Inductor/Metal remains unreliable) and the auto path elsewhere.
     if args.compile_mode is not None:
         env["MODEL_COMPILE_MODE"] = args.compile_mode
-
-
-def apply_mps_allocator_env(env):
-    """Install conservative MPS allocator defaults, preserving overrides."""
-    env.setdefault("PYTORCH_MPS_HIGH_WATERMARK_RATIO", "1.0")
-    env.setdefault("PYTORCH_MPS_LOW_WATERMARK_RATIO", "0.9")
 
 
 def export_mlx_local(args, proj, python, xml_path):
