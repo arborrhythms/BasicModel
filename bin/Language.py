@@ -26,7 +26,8 @@ from embed import WordVectors, PretrainModel
 from data import Data, TheData
 from Layers import Layer, PiLayer, SigmaLayer  # Import custom layers from Model.py
 from Layers import LinearLayer, InvertibleLinearLayer, AssociationLayer, MapppingLayer, ChunkLayer
-from Layers import CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon, Ops
+from Layers import (CertaintyWeightedCrossEntropy, LeafDecoderHead, Loss,
+                    ModelLoss, epsilon, Ops)
 from Layers import SortingLayer, TruthLayer, RelativeTruthStore, TernaryTruthStore, LiftingLayer, InterSentenceLayer, SparsityRegLayer, SmoothingRegLayer, ImpenetrableLayer
 from util import parse
 from collections import namedtuple as _namedtuple
@@ -50,7 +51,8 @@ from Layers import (
 
 from Spaces import ActiveEncoding, WhereEncoding, WhenEncoding, WhatEncoding, EventEncoding, WordEncoding
 from Spaces import Basis, Tensor, Codebook, Embedding, fold_content_apply
-from Spaces import SubSpace, Space, InputSpace, PartSpace, ModalSpace, ConceptualSpace, WholeSpace, OutputSpace
+from Spaces import (SubSpace, SubSpaceView, Space, InputSpace, PartSpace,
+                    ModalSpace, ConceptualSpace, WholeSpace, OutputSpace)
 
 import xml.etree.ElementTree as _ET
 from pathlib import Path as _Path
@@ -3016,10 +3018,11 @@ class LiftLayer(GrammarLayer):
         # [0, 1]; no learned parameter (the adverb edits the verb's active eigs).
         amax = a.abs().amax(dim=-1, keepdim=True)
         p_vp = a.abs() / (amax + epsilon)
-        with torch.no_grad():
-            num = (p_vp * a).norm(dim=-1)
-            den = a.norm(dim=-1) + epsilon
-            self._adverb_purchase = (num / den).detach()
+        if not torch.compiler.is_compiling():
+            with torch.no_grad():
+                num = (p_vp * a).norm(dim=-1)
+                den = a.norm(dim=-1) + epsilon
+                self._adverb_purchase = (num / den).detach()
         return torch.tanh(a + p_vp * delta)
 
     def _verb_spectrum_w(self, verb_what):
@@ -3443,6 +3446,13 @@ class ContextualBindLayer(GrammarLayer):
             if vec is not None:
                 return vec.expand_as(left) if vec.shape != left.shape else vec
         return left
+    def compose_with_context(self, left, right, slab):
+        """Pure BIND using the live constituent slab as a tensor input."""
+        if slab is None or slab.dim() != 3:
+            return left
+        prior = torch.cat(
+            [slab[:, :1, :], slab[:, :-1, :]], dim=1)
+        return prior[:, :-1, :]
     def reverse(self, parent):
         # 2026-07-04 serial plan Task 1: stub revoked (fail loud).
         self.raise_no_inverse("contextual binding is not recoverable")
@@ -4862,6 +4872,19 @@ class _BinaryGrammarOpAdapter(nn.Module):
 
     def forward(self, left, right):
         """Forward ``(left, right)`` to the wrapped grammar layer's compose."""
+        return self.gl.compose(left, right)
+
+    def forward_with_context(self, left, right, slab):
+        """Apply an op with explicit read-only parse context.
+
+        Contextual BIND used to install ``slab`` on its GrammarLayer before
+        calling forward.  That module mutation is illegal inside
+        ``torch.while_loop``; the explicit tensor input preserves the same
+        nearest-left computation without persistent state.
+        """
+        compose = getattr(self.gl, "compose_with_context", None)
+        if callable(compose):
+            return compose(left, right, slab)
         return self.gl.compose(left, right)
 
 
@@ -6400,6 +6423,50 @@ def _masked_softmax_lastdim(scores: torch.Tensor) -> torch.Tensor:
     return post
 
 
+def _bounded_rule_contrast(logits: torch.Tensor,
+                           energies: torch.Tensor) -> torch.Tensor:
+    """Return a bounded per-site contrast over type-valid grammar rules.
+
+    ``energies`` is detached structural evidence in ``[0, 1]``; ``logits``
+    is recomputed from detached operands by the caller, so this objective can
+    update the grammar chooser without opening a gradient through the prior
+    recurrent folds.  The first term minimizes expected structural energy.
+    The second ranks the lowest-energy rule above every alternative.  Both
+    terms lie in ``[0, 1]`` and use tanh-bounded scores, keeping the local
+    backward independent of sentence length and numerically bounded.
+    """
+    if (logits.numel() == 0 or logits.shape[-1] <= 1
+            or energies.shape != logits.shape):
+        return logits.new_zeros(logits.shape[:-1])
+    score = torch.tanh(logits)
+    energy = energies.detach().clamp(0.0, 1.0)
+    prob = F.softmax(score, dim=-1)
+    expected = (prob * energy).sum(dim=-1)
+
+    best = energy.argmin(dim=-1, keepdim=True)
+    best_score = score.gather(-1, best)
+    is_best = F.one_hot(
+        best.squeeze(-1), num_classes=score.shape[-1]).to(score.dtype)
+    # Positive margin in score space: at equal scores the penalty is > 0.5;
+    # it falls toward zero only when the structurally preferred rule wins.
+    pair = torch.sigmoid(score - best_score + 0.25) * (1.0 - is_best)
+    pair = pair.sum(dim=-1) / float(max(1, score.shape[-1] - 1))
+    return 0.5 * (expected + pair)
+
+
+def _carrier_closure_energy(candidate: torch.Tensor) -> torch.Tensor:
+    """Bounded distance to the signed conceptual carrier ``[-1, 1]``.
+
+    Projection onto this box is an idempotent local closure.  It is not
+    presented as the full data-derived FCA double-prime closure; it is the
+    stable carrier closure available at every grammar site without a global
+    codebook scan.  The result has the candidate-rule axis intact.
+    """
+    closed = candidate.clamp(-1.0, 1.0)
+    delta = (candidate - closed).abs().clamp(max=1.0)
+    return delta.mean(dim=-1)
+
+
 def superposition_scale(temperature):
     """Score scale for the soft-superposition temperature (the parser's
     differentiable route, replacing Viterbi + straight-through under
@@ -7407,6 +7474,9 @@ class BinaryStructuredReductionLayer(nn.Module):
         self.chooser = make_transform_chooser(
             chooser, d_model=self.d_model,
             n_copy=self.r_copy, n_op=self.r_reduce, n_role_cats=n_role_cats)
+        # Enabled explicitly by <forwardGrammarWeight>.  The local objective
+        # is otherwise absent, preserving legacy routing and capture cost.
+        self.local_objective_enabled = False
         self.comparator = ComparatorMixer(
             d_model=self.d_model, temperature=temperature)
         # Per-rule name / space_role metadata retained for op identification
@@ -7453,7 +7523,12 @@ class BinaryStructuredReductionLayer(nn.Module):
             return x.new_zeros(x.shape[0], 0, self.r_reduce, x.shape[-1])
         left = x[:, :-1, :]
         right = x[:, 1:, :]
-        per_op = [op(left, right) for op in self.ops]
+        per_op = [
+            op.forward_with_context(left, right, x)
+            if hasattr(op, "forward_with_context")
+            else op(left, right)
+            for op in self.ops
+        ]
         return torch.stack(per_op, dim=2)                      # [B, N-1, R, D]
 
     def _selected_reduced(self, stacked, route_op):
@@ -7517,14 +7592,14 @@ class BinaryStructuredReductionLayer(nn.Module):
             return x, x, routing
 
         h = self.context_net(x)
-        # Wire contextual BIND to live parse state: stash the current
-        # constituent slab on any op that resolves a missing NP against the
-        # constructed left-context. Applied before _stacked_reduced so the
-        # op's compose(left, right) over all pairs sees the live slab.
-        for _op in self.ops:
-            _gl = getattr(_op, 'gl', _op)          # unwrap _BinaryGrammarOpAdapter
-            if hasattr(_gl, 'set_bind_context'):
-                _gl.set_bind_context(slab=x)
+        # Preserve the eager diagnostic surface used by grammar inspection.
+        # Captured recurrent execution uses the explicit tensor context in
+        # ``_stacked_reduced`` and must not write module attributes.
+        if not torch.compiler.is_compiling():
+            for op in self.ops:
+                grammar_op = getattr(op, "gl", op)
+                if hasattr(grammar_op, "set_bind_context"):
+                    grammar_op.set_bind_context(slab=x)
         stacked_reduced = self._stacked_reduced(x)             # [B, N-1, R, D]
 
         # Anchor-based scoring (replaces the old scorer MLP):
@@ -7547,6 +7622,33 @@ class BinaryStructuredReductionLayer(nn.Module):
         if cat_prior is not None and cat_prior.shape == reduce_score.shape:
             reduce_score = reduce_score + cat_prior.to(
                 device=reduce_score.device, dtype=reduce_score.dtype)
+
+        # Local construction pressure.  Re-score DETACHED operands/candidates
+        # through the same chooser parameters, then contrast the type-valid
+        # binary rules by bounded carrier-closure + child-incidence energy.
+        # This branch therefore trains the chooser at one fold while carrying
+        # no gradient into x, prior STM folds, or the candidate operators.
+        local_structural_loss = None
+        if self.local_objective_enabled and self.r_reduce > 1:
+            local_cat = cat_ctx.detach() if torch.is_tensor(cat_ctx) else None
+            _, local_logits = self.chooser.score_binary(
+                x_score.detach(), sr_score.detach(),
+                self.copy_anchor, self.reduce_anchor,
+                cat_ctx=local_cat)
+            if cat_prior is not None and cat_prior.shape == local_logits.shape:
+                local_logits = local_logits + cat_prior.detach().to(
+                    device=local_logits.device, dtype=local_logits.dtype)
+            candidate = sr_score.detach()
+            left_local = torch.tanh(x_score.detach()[:, :-1, :]).unsqueeze(2)
+            right_local = torch.tanh(x_score.detach()[:, 1:, :]).unsqueeze(2)
+            candidate_local = torch.tanh(candidate)
+            incidence = 0.25 * (
+                (candidate_local - left_local).abs().mean(dim=-1)
+                + (candidate_local - right_local).abs().mean(dim=-1))
+            closure = _carrier_closure_energy(candidate)
+            energy = (0.8 * incidence + 0.2 * closure).clamp(0.0, 1.0)
+            local_structural_loss = _bounded_rule_contrast(
+                local_logits, energy)
 
         # Soft-superposition temperature (the parser's differentiable route
         # under <learning>; doc/Language.md "weighted deduction"). When set,
@@ -7666,6 +7768,8 @@ class BinaryStructuredReductionLayer(nn.Module):
             # merely copied an operand while decrementing STM depth.
             "chosen_reduced": chosen_reduced,
         }
+        if local_structural_loss is not None:
+            routing["local_structural_loss"] = local_structural_loss
         if span_start is not None and span_end is not None:
             routing["span_start"] = hard_meta["span_start"]
             routing["span_end"] = hard_meta["span_end"]
@@ -7715,6 +7819,7 @@ class UnaryStructuredLayer(nn.Module):
         self.chooser = make_transform_chooser(
             chooser, d_model=self.d_model,
             n_copy=self.r_copy, n_op=self.r_apply, n_role_cats=n_role_cats)
+        self.local_objective_enabled = False
         self.op_names = list(op_names) if op_names is not None else None
 
     def _category_apply_prior(self, cat_ctx):
@@ -7790,6 +7895,29 @@ class UnaryStructuredLayer(nn.Module):
         if cat_prior is not None and cat_prior.shape == apply_score.shape:
             apply_score = apply_score + cat_prior.to(
                 device=apply_score.device, dtype=apply_score.dtype)
+
+        # Unary counterpart of the bounded local construction objective.
+        # Copy is not an alternative grammar rule here: compare the type-valid
+        # APPLY rules with one another, using preservation of the child plus
+        # signed-carrier closure as the detached structural evidence.
+        local_structural_loss = None
+        if self.local_objective_enabled and self.r_apply > 1:
+            local_cat = cat_ctx.detach() if torch.is_tensor(cat_ctx) else None
+            _, local_logits = self.chooser.score_unary(
+                x_score.detach(), applied_score.detach(),
+                self.copy_anchor, self.apply_anchor,
+                cat_ctx=local_cat)
+            if cat_prior is not None and cat_prior.shape == local_logits.shape:
+                local_logits = local_logits + cat_prior.detach().to(
+                    device=local_logits.device, dtype=local_logits.dtype)
+            candidate = applied_score.detach()
+            child = torch.tanh(x_score.detach()).unsqueeze(2)
+            incidence = 0.5 * (
+                torch.tanh(candidate) - child).abs().mean(dim=-1)
+            closure = _carrier_closure_energy(candidate)
+            energy = (0.8 * incidence + 0.2 * closure).clamp(0.0, 1.0)
+            local_structural_loss = _bounded_rule_contrast(
+                local_logits, energy)
         # Soft-superposition temperature (the differentiable route under
         # <learning>; same contract as the binary layer). When set, the
         # forward is the pure softmax superposition at this temperature
@@ -7860,6 +7988,8 @@ class UnaryStructuredLayer(nn.Module):
             "action_op": action_op,
             "lengths": torch.full((B,), N, device=x.device, dtype=torch.long),
         }
+        if local_structural_loss is not None:
+            routing["local_structural_loss"] = local_structural_loss
         return hard_slab, soft_slab, routing
 
 def copy_penalty(route_traces, lambda_copy: float = 1e-3):
@@ -8545,12 +8675,22 @@ class CategoryStack:
             self._entries[b] = []
 
 class ReconstructionStack:
-    """Per-row tuple stack of (rule_id, word_id). Tensor-backed for B>1.
+    """SymbolSpace-owned, sentence-scoped forward-construction trace.
 
-    Storage is ``[B, max_depth, 2] long`` with a ``[B] long`` top index.
-    Push-only in production today; peek/pop kept for tests and future
-    generation-from-meaning consumers. Not consumed by the rule
-    predictor or sentence prediction.
+    ``_entries`` preserves the original per-row ``(rule_id, word_id)`` stack
+    API.  The live serial path also records the two sufficient teacher
+    artifacts that used to be parked on ``BasicModel``:
+
+    * the ordered word identities and exact percept leaves; and
+    * the grammatical reduction choices made while constructing the idea.
+
+    All artifacts are detached observations of the forward construction.
+    They are authoritative targets for reconstruction / reverse-choice
+    training, not hidden inputs to a free reverse derivation.  Compatibility
+    evaluators may still replay the stored leaves or legacy reduction trace;
+    a learned idea-only reverse must consume ``S`` alone.  Keeping the teacher
+    here gives it one lifecycle and one owner (SymbolSpace) without putting
+    request-scoped state in checkpoints.
     """
 
     def __init__(self, batch=1, max_depth=64):
@@ -8560,6 +8700,41 @@ class ReconstructionStack:
         self._entries = torch.zeros(self._batch, self._max_depth, 2,
                                     dtype=torch.long)
         self._top = torch.zeros(self._batch, dtype=torch.long)
+        self._word_ids = None
+        self._word_mask = None
+        self._word_part_ids = None
+        self._word_part_mask = None
+        self._leaf_slab = None
+        self._reductions = None
+        self._reductions_sentence_scoped = False
+        self._choice_rule_ids = None
+        self._choice_arities = None
+        self._choice_mask = None
+        self._unary_rule_map = None
+        self._binary_rule_map = None
+        self._forward_losses = None
+        self._forward_loss_mask = None
+
+    @staticmethod
+    def _detached_clone(value):
+        return value.detach().clone() if torch.is_tensor(value) else None
+
+    def begin_sentence(self):
+        """Clear every artifact before recording one sentence."""
+        self._entries.zero_()
+        self._top.zero_()
+        self._word_ids = None
+        self._word_mask = None
+        self._word_part_ids = None
+        self._word_part_mask = None
+        self._leaf_slab = None
+        self._reductions = []
+        self._reductions_sentence_scoped = True
+        self._choice_rule_ids = None
+        self._choice_arities = None
+        self._choice_mask = None
+        self._forward_losses = None
+        self._forward_loss_mask = None
 
     def ensure_batch(self, batch):
         """Reallocate backing tensors if ``batch`` width changed."""
@@ -8570,6 +8745,20 @@ class ReconstructionStack:
         self._entries = torch.zeros(batch, self._max_depth, 2,
                                     dtype=torch.long)
         self._top = torch.zeros(batch, dtype=torch.long)
+        self._word_ids = None
+        self._word_mask = None
+        self._word_part_ids = None
+        self._word_part_mask = None
+        self._leaf_slab = None
+        self._reductions = None
+        self._reductions_sentence_scoped = False
+        self._choice_rule_ids = None
+        self._choice_arities = None
+        self._choice_mask = None
+        self._unary_rule_map = None
+        self._binary_rule_map = None
+        self._forward_losses = None
+        self._forward_loss_mask = None
 
     def push(self, b, rule_id, word_id):
         """Push ``(rule_id, word_id)`` onto row ``b``'s stack.
@@ -8608,10 +8797,388 @@ class ReconstructionStack:
             return
         self._entries[s:e].zero_()
         self._top[s:e] = 0
+        if (torch.is_tensor(self._word_mask)
+                and int(self._word_mask.shape[0]) >= e):
+            self._word_mask[s:e] = False
+        if (torch.is_tensor(self._word_ids)
+                and int(self._word_ids.shape[0]) >= e):
+            self._word_ids[s:e] = -1
+        if (torch.is_tensor(self._word_part_mask)
+                and int(self._word_part_mask.shape[0]) >= e):
+            self._word_part_mask[s:e] = False
+        if (torch.is_tensor(self._word_part_ids)
+                and int(self._word_part_ids.shape[0]) >= e):
+            self._word_part_ids[s:e] = -1
+        if (torch.is_tensor(self._leaf_slab)
+                and int(self._leaf_slab.shape[0]) >= e):
+            self._leaf_slab[s:e].zero_()
+        if self._reductions:
+            cleared = []
+            for step in self._reductions:
+                values = list(step)
+                # Slot 1 is the per-row ``can`` mask; optional slots 2/3 are
+                # the corresponding left/right word-provenance masks.
+                for i in range(1, min(4, len(values))):
+                    value = values[i]
+                    if (torch.is_tensor(value) and value.dim() >= 1
+                            and int(value.shape[0]) >= e):
+                        value = value.clone()
+                        value[s:e] = False
+                        values[i] = value
+                cleared.append(tuple(values))
+            self._reductions = cleared
+        if (torch.is_tensor(self._choice_mask)
+                and int(self._choice_mask.shape[0]) >= e):
+            self._choice_mask[s:e] = False
+            self._choice_rule_ids[s:e] = -1
+            self._choice_arities[s:e] = 0
+        if (torch.is_tensor(self._forward_loss_mask)
+                and int(self._forward_loss_mask.shape[0]) >= e):
+            self._forward_loss_mask[s:e] = False
+            self._forward_losses[s:e] = 0
 
     def depth(self, b):
         """Return current stack depth for row ``b`` (number of entries)."""
         return int(self._top[b].item())
+
+    # -- sentence teacher artifacts -----------------------------------
+    def store_words(self, word_ids, mask=None):
+        """Store ordered durable word identities and their validity mask."""
+        if not torch.is_tensor(word_ids) or word_ids.dim() != 2:
+            raise ValueError("ReconstructionStack word_ids must be [B, W]")
+        if mask is None:
+            mask = word_ids >= 0
+        if (not torch.is_tensor(mask) or mask.shape != word_ids.shape):
+            raise ValueError(
+                "ReconstructionStack word mask must match word_ids [B, W]")
+        self._word_ids = self._detached_clone(word_ids).to(dtype=torch.long)
+        self._word_mask = self._detached_clone(mask).to(dtype=torch.bool)
+
+    def words(self):
+        """Return ``(word_ids, valid_mask)`` for the current sentence."""
+        return self._word_ids, self._word_mask
+
+    def store_word_parts(self, part_ids, mask):
+        """Store each word's exact radix spelling as ``[B, W, P]`` IDs.
+
+        A promoted word may have one percept ID while an open-vocabulary word
+        has several.  This representation is therefore the lossless discrete
+        surface teacher even when no single durable concept ID exists yet.
+        """
+        if (not torch.is_tensor(part_ids) or part_ids.dim() != 3
+                or not torch.is_tensor(mask)
+                or tuple(mask.shape) != tuple(part_ids.shape)):
+            raise ValueError(
+                "ReconstructionStack word parts must be matching [B, W, P]")
+        self._word_part_ids = self._detached_clone(part_ids).to(
+            dtype=torch.long)
+        self._word_part_mask = self._detached_clone(mask).to(dtype=torch.bool)
+
+    def word_parts(self):
+        """Return the exact ``(part_ids, mask)`` surface-word teacher."""
+        return self._word_part_ids, self._word_part_mask
+
+    def store_leaves(self, slab):
+        """Store the exact ``[B, W, D]`` percept leaves used by forward."""
+        if not torch.is_tensor(slab) or slab.dim() != 3:
+            raise ValueError("ReconstructionStack leaves must be [B, W, D]")
+        self._leaf_slab = self._detached_clone(slab)
+
+    def leaves(self):
+        """Return the detached exact-leaf teacher for the current sentence."""
+        return self._leaf_slab
+
+    def begin_reductions(self, *, sentence_scoped=False):
+        """Reset and enable grammatical-choice recording."""
+        self._reductions = []
+        self._reductions_sentence_scoped = bool(sentence_scoped)
+
+    @property
+    def reductions_sentence_scoped(self):
+        return bool(self._reductions_sentence_scoped)
+
+    def record_reduction(self, marginal, can, left_word=None, right_word=None):
+        """Append one detached grammatical reduction decision.
+
+        ``marginal`` is ``[B, 1, R]`` in the reducer's fixed local-op order;
+        its argmax plus LanguageLayer's immutable local-op -> global-rule map
+        is the hard teacher choice.  ``can`` records which rows actually
+        committed the fold.  Optional word-provenance masks retain the legacy
+        trace-walk information without creating another model-owned cache.
+        """
+        if self._reductions is None:
+            return
+        if (not torch.is_tensor(marginal) or marginal.dim() != 3
+                or not torch.is_tensor(can) or can.dim() != 1
+                or int(marginal.shape[0]) != int(can.shape[0])):
+            raise ValueError(
+                "ReconstructionStack reduction must be [B,1,R] plus [B]")
+        values = [self._detached_clone(marginal),
+                  self._detached_clone(can).to(dtype=torch.bool)]
+        if left_word is not None or right_word is not None:
+            if (not torch.is_tensor(left_word)
+                    or not torch.is_tensor(right_word)
+                    or left_word.shape != can.shape
+                    or right_word.shape != can.shape):
+                raise ValueError(
+                    "ReconstructionStack word provenance must match can [B]")
+            values.extend([
+                self._detached_clone(left_word).to(dtype=torch.bool),
+                self._detached_clone(right_word).to(dtype=torch.bool),
+            ])
+        self._reductions.append(tuple(values))
+
+    def reduction_trace(self):
+        """Return the current grammatical-choice trace as an immutable tuple."""
+        return tuple(self._reductions or ())
+
+    def clear_reductions(self):
+        """Disable and discard grammatical-choice recording."""
+        self._reductions = None
+        self._reductions_sentence_scoped = False
+
+    # -- compiler-visible hard choices --------------------------------
+    def prepare_choices(self, batch, max_steps, *, device,
+                        unary_rule_ids=(), binary_rule_ids=()):
+        """Allocate a fixed hard-choice slab before a captured W loop.
+
+        The fullgraph loop writes only small integer/mask tensors here; no
+        Python list append, tensor-to-host read, or dense activation copy sits
+        in the captured recurrence.  A fresh sentence overwrites every slot.
+        """
+        batch, max_steps = int(batch), int(max_steps)
+        if batch <= 0 or max_steps <= 0:
+            raise ValueError("ReconstructionStack choice slab must be non-empty")
+        self._choice_rule_ids = torch.full(
+            (batch, max_steps), -1, dtype=torch.long, device=device)
+        self._choice_arities = torch.zeros(
+            batch, max_steps, dtype=torch.int8, device=device)
+        self._choice_mask = torch.zeros(
+            batch, max_steps, dtype=torch.bool, device=device)
+        # Float loss slots deliberately remain ordinary tensors.  A copy from
+        # a grad-bearing local objective gives the slab a CopySlices grad_fn;
+        # consuming its masked mean after the compiled sentence body preserves
+        # the chooser gradient without Python list appends in the W loop.
+        self._forward_losses = torch.zeros(
+            batch, max_steps, dtype=torch.float32, device=device)
+        self._forward_loss_mask = torch.zeros(
+            batch, max_steps, dtype=torch.bool, device=device)
+        self._unary_rule_map = torch.as_tensor(
+            tuple(int(v) for v in unary_rule_ids),
+            dtype=torch.long, device=device)
+        self._binary_rule_map = torch.as_tensor(
+            tuple(int(v) for v in binary_rule_ids),
+            dtype=torch.long, device=device)
+
+    def rule_map(self, arity):
+        """Return the immutable local-op -> global-rule map for ``arity``."""
+        return self._unary_rule_map if int(arity) == 1 else self._binary_rule_map
+
+    def record_choice(self, slot, rule_ids, arity, mask,
+                      local_structural_loss=None):
+        """Commit one hard choice and its optional bounded local objective."""
+        if self._choice_rule_ids is None:
+            return
+        slot = int(slot)
+        if slot < 0 or slot >= int(self._choice_rule_ids.shape[1]):
+            raise IndexError(
+                f"ReconstructionStack choice slot {slot} out of range")
+        active = mask.to(device=self._choice_mask.device, dtype=torch.bool)
+        chosen = rule_ids.to(
+            device=self._choice_rule_ids.device, dtype=torch.long)
+        chosen = torch.where(active, chosen, torch.full_like(chosen, -1))
+        self._choice_rule_ids[:, slot].copy_(chosen)
+        self._choice_arities[:, slot].copy_(torch.where(
+            active,
+            torch.full_like(chosen, int(arity), dtype=torch.int8),
+            torch.zeros_like(chosen, dtype=torch.int8)))
+        self._choice_mask[:, slot].copy_(active)
+        if (torch.is_tensor(local_structural_loss)
+                and torch.is_tensor(self._forward_losses)):
+            local = local_structural_loss.reshape(-1).to(
+                device=self._forward_losses.device,
+                dtype=self._forward_losses.dtype)
+            local = torch.where(active, local, torch.zeros_like(local))
+            self._forward_losses[:, slot].copy_(local)
+            self._forward_loss_mask[:, slot].copy_(active)
+
+    def choices(self):
+        """Return ``(rule_ids, arities, mask)`` for reverse supervision."""
+        return (self._choice_rule_ids, self._choice_arities,
+                self._choice_mask)
+
+    def forward_loss_slots(self):
+        """Return fixed local-loss values/mask for compiler-safe remapping."""
+        return self._forward_losses, self._forward_loss_mask
+
+    def forward_loss(self):
+        """Mean bounded local grammar loss over choices that actually fired."""
+        values, mask = self.forward_loss_slots()
+        if (not torch.is_tensor(values) or not torch.is_tensor(mask)
+                or not values.requires_grad):
+            return None
+        weight = mask.to(values.dtype)
+        return (values * weight).sum() / weight.sum().clamp_min(1.0)
+
+
+class ReverseConstructionChooser(nn.Module):
+    """Idea-only student for the detached sentence-construction teacher.
+
+    The only semantic input is the completed idea ``S``.  Slot embeddings are
+    fixed query coordinates, not forward decisions.  Rule IDs, arities, masks,
+    and exact leaves from :class:`ReconstructionStack` are read only as loss
+    targets.  Consequently the reverse objective trains this module while its
+    gradient boundary ends at ``stopgrad(S)``.
+    """
+
+    def __init__(self, *, idea_dim, n_rules, max_words, max_steps, leaf_dim,
+                 hidden=256):
+        super().__init__()
+        self.idea_dim = int(idea_dim)
+        self.n_rules = max(1, int(n_rules))
+        self.max_words = max(1, int(max_words))
+        self.max_steps = max(1, int(max_steps))
+        self.leaf_dim = max(1, int(leaf_dim))
+        hidden = max(8, int(hidden))
+        self.idea_projection = nn.Linear(self.idea_dim, hidden)
+        self.choice_slots = nn.Embedding(self.max_steps, hidden)
+        self.kind_head = nn.Linear(hidden, 3)  # inactive, unary, binary
+        self.rule_head = nn.Linear(hidden, self.n_rules)
+        # Reuse the existing Method-1 -> Method-2 decoder implementation;
+        # static max-word sizing avoids replacing its parameters per bucket.
+        self.leaf_decoder = LeafDecoderHead(
+            self.idea_dim, self.max_words, self.leaf_dim, hidden=hidden)
+
+    def _conform_idea(self, S):
+        if not torch.is_tensor(S):
+            return None
+        if S.dim() == 3:
+            S = S[:, 0, :]
+        if S.dim() != 2:
+            return None
+        if int(S.shape[-1]) > self.idea_dim:
+            S = S[..., :self.idea_dim]
+        elif int(S.shape[-1]) < self.idea_dim:
+            S = F.pad(S, (0, self.idea_dim - int(S.shape[-1])))
+        return S.detach()
+
+    def _hidden(self, S):
+        seed = self._conform_idea(S)
+        return None if seed is None else torch.tanh(self.idea_projection(seed))
+
+    def choice_logits(self, S, n_steps):
+        """Predict inactive/unary/binary and global rule IDs from idea only."""
+        h = self._hidden(S)
+        if h is None:
+            return None, None
+        count = min(max(0, int(n_steps)), self.max_steps)
+        slots = torch.arange(count, device=h.device)
+        z = torch.tanh(h.unsqueeze(1) + self.choice_slots(slots).unsqueeze(0))
+        # Bounding logits makes both CE values and their derivatives independent
+        # of sentence length even before optimizer statistics settle.
+        return torch.tanh(self.kind_head(z)), torch.tanh(self.rule_head(z))
+
+    def decode_leaves(self, S, n_words):
+        seed = self._conform_idea(S)
+        if seed is None:
+            return None
+        return self.leaf_decoder(seed)[:, :min(int(n_words), self.max_words), :]
+
+    @staticmethod
+    def _word_valid(trace, leaves, *, device):
+        part_ids, part_mask = trace.word_parts()
+        if torch.is_tensor(part_mask) and part_mask.dim() == 3:
+            return part_mask.to(device=device, dtype=torch.bool).any(dim=-1)
+        _word_ids, word_mask = trace.words()
+        if torch.is_tensor(word_mask) and word_mask.dim() == 2:
+            return word_mask.to(device=device, dtype=torch.bool)
+        return (leaves.detach().abs().sum(dim=-1) > 0).to(device=device)
+
+    def loss(self, S, trace, *, surface_weight=1.0):
+        """Return ``(total, components)`` with no gradient into ``S``.
+
+        Kind supervision includes structurally relevant inactive slots so the
+        student learns when a derivation ends.  Rule CE is applied only where
+        forward committed a unary/binary rule.  Surface reconstruction uses a
+        tanh-bounded MSE against exact detached leaves.
+        """
+        h = self._hidden(S)
+        leaves = trace.leaves() if trace is not None else None
+        if (h is None or trace is None or not torch.is_tensor(leaves)
+                or leaves.dim() != 3
+                or int(leaves.shape[0]) != int(h.shape[0])):
+            return None, {}
+
+        B = int(h.shape[0])
+        word_count = min(int(leaves.shape[1]), self.max_words)
+        word_valid = self._word_valid(
+            trace, leaves[:, :word_count], device=h.device)[:, :word_count]
+
+        rule_ids, arities, choice_mask = trace.choices()
+        trace_loss = h.sum() * 0.0
+        kind_loss = h.sum() * 0.0
+        rule_loss = h.sum() * 0.0
+        if (torch.is_tensor(rule_ids) and torch.is_tensor(arities)
+                and torch.is_tensor(choice_mask)
+                and rule_ids.dim() == arities.dim() == choice_mask.dim() == 2
+                and int(rule_ids.shape[0]) == B):
+            steps = min(int(rule_ids.shape[1]), self.max_steps)
+            kind_logits, rule_logits = self.choice_logits(S, steps)
+            target_kind = arities[:, :steps].to(
+                device=h.device, dtype=torch.long).clamp(0, 2)
+            active = choice_mask[:, :steps].to(
+                device=h.device, dtype=torch.bool)
+
+            # The first 3*W slots are two binary + one unary opportunity per
+            # word.  The bounded drain can require at most W-1 further folds.
+            word_slots = word_valid.repeat_interleave(3, dim=1)
+            word_prefix = min(steps, int(word_slots.shape[1]))
+            domain_parts = [word_slots[:, :word_prefix]]
+            drain_width = steps - word_prefix
+            if drain_width > 0:
+                drain_index = torch.arange(
+                    drain_width, device=h.device).unsqueeze(0)
+                drain_count = (word_valid.long().sum(dim=1) - 1).clamp_min(0)
+                domain_parts.append(drain_index < drain_count.unsqueeze(1))
+            domain = torch.cat(domain_parts, dim=1) if domain_parts else active
+            domain = domain | active
+
+            kind_each = F.cross_entropy(
+                kind_logits.reshape(-1, 3), target_kind.reshape(-1),
+                reduction="none").reshape(B, steps)
+            domain_f = domain.to(kind_each.dtype)
+            kind_loss = ((kind_each * domain_f).sum()
+                         / domain_f.sum().clamp_min(1.0))
+
+            target_rule = rule_ids[:, :steps].to(
+                device=h.device, dtype=torch.long)
+            valid_rule = active & (target_rule >= 0) & (
+                target_rule < self.n_rules)
+            safe_rule = target_rule.clamp(0, self.n_rules - 1)
+            rule_each = F.cross_entropy(
+                rule_logits.reshape(-1, self.n_rules), safe_rule.reshape(-1),
+                reduction="none").reshape(B, steps)
+            valid_f = valid_rule.to(rule_each.dtype)
+            rule_loss = ((rule_each * valid_f).sum()
+                         / valid_f.sum().clamp_min(1.0))
+            trace_loss = kind_loss + rule_loss
+
+        pred = self.leaf_decoder(self._conform_idea(S))[:, :word_count, :]
+        target = leaves[:, :word_count, :].detach().to(
+            device=pred.device, dtype=pred.dtype)
+        width = min(int(pred.shape[-1]), int(target.shape[-1]))
+        pred = torch.tanh(pred[..., :width])
+        target = torch.tanh(target[..., :width])
+        word_f = word_valid.to(pred.dtype)
+        surface_each = 0.25 * (pred - target).square().mean(dim=-1)
+        surface_loss = ((surface_each * word_f).sum()
+                        / word_f.sum().clamp_min(1.0))
+        total = trace_loss + float(surface_weight) * surface_loss
+        return total, {
+            "reverse_kind": kind_loss,
+            "reverse_rule": rule_loss,
+            "reverse_surface": surface_loss,
+        }
 
 def _intersect_long_rows(a, b):
     """LongTensor intersection by row index, preserving sort order.
@@ -9862,9 +10429,17 @@ class SymbolSubSpace(SubSpace):
         # vectors during parsing. One frame per reduction step.
         self.category_stack = CategoryStack(dim=pos_dim)
 
-        # 6c'. Reconstruction stack -- (rule_id, word_id) entries for surface
-        # reconstruction. Placeholder until generation-from-meaning is solved.
-        self.reconstruction_stack = ReconstructionStack()
+        # 6c'. Reconstruction stack -- SymbolSpace owns the sentence's
+        # detached forward-construction teacher.  A W-position may contribute
+        # a word, a binary choice, a unary choice, and a boundary fold, so the
+        # configured word capacity needs four trace slots per position.
+        try:
+            trace_words = int(TheXMLConfig.get(
+                "architecture.serialWordCapacity", default=16) or 16)
+        except (TypeError, ValueError):
+            trace_words = 16
+        self.reconstruction_stack = ReconstructionStack(
+            max_depth=max(64, 4 * trace_words))
 
         # 6d. Rule predictor -- nonlinear head over the flattened PoS stack.
         # Task 4.2: emits softmax logits over TheGrammar.rule_table, the
@@ -9902,6 +10477,33 @@ class SymbolSubSpace(SubSpace):
         for p in self.rule_predictor.parameters():
             if all(p is not q for q in self.params):
                 self.params.append(p)
+
+        # Detached reverse construction student.  It is static-sized over the
+        # configured sentence bucket ceiling and registered before optimizer
+        # construction, unlike the retired per-bucket lazy leaf head.  The
+        # forward ReconstructionStack is its teacher only; its semantic input
+        # is stopgrad(S).
+        self.detached_reverse = bool(TheXMLConfig.training(
+            "detachedReverse", False))
+        self.reverse_chooser = None
+        if self.detached_reverse:
+            try:
+                # ReconstructionStack stores InputSpace's exact embedded word
+                # leaves, i.e. the PartSpace INPUT width, before PS folds them
+                # to its native output width.
+                leaf_dim = int(perceptualSpace.inputShape[1])
+            except (AttributeError, IndexError, TypeError, ValueError):
+                leaf_dim = int(symbol_dim)
+            stm = getattr(conceptualSpace, "stm", None)
+            stm_capacity = int(getattr(stm, "capacity", 1) or 1)
+            choice_steps = 3 * trace_words + max(0, stm_capacity - 1)
+            self.reverse_chooser = ReverseConstructionChooser(
+                idea_dim=int(concept_dim), n_rules=max(1, n_rules),
+                max_words=trace_words, max_steps=choice_steps,
+                leaf_dim=max(1, leaf_dim), hidden=256)
+            for p in self.reverse_chooser.parameters():
+                if p.requires_grad and all(p is not q for q in self.params):
+                    self.params.append(p)
 
         # 7. InterSentenceLayer -- optional ARMA(p, q) next-sentence
         # predictor.  Gated on <architecture><training><sentencePrediction>;
@@ -11205,8 +11807,9 @@ class SymbolSubSpace(SubSpace):
     def record_derivation(self, rule_id, word_id, b=0):
         """Record a (rule_id, word_id) derivation step on row ``b``'s reconstruction stack.
 
-        Placeholder surface until generation-from-meaning is solved. The
-        stack is not consumed by the rule predictor or sentence prediction.
+        Compatibility surface for explicit derivation producers. The live
+        serial path records its tensor teachers on the same stack via
+        ``store_words`` / ``store_leaves`` / ``record_reduction``.
         """
         self.reconstruction_stack.push(b, rule_id, word_id)
 
@@ -12908,10 +13511,94 @@ class LanguageSpace(nn.Module):
     def __init__(self, symbol_space):
         super().__init__()
         object.__setattr__(self, "_symbol_space", symbol_space)
+        object.__setattr__(
+            self, "_language_layer_ref",
+            getattr(symbol_space.subspace, "languageLayer", None))
+        layer = self._language_layer_ref
+        unary_ids = tuple(
+            int(value)
+            for value in ((getattr(layer, "_unary_rule_ids", {}) or {}).get(
+                "CS", ()) or ()))
+        binary_ids = tuple(
+            int(value)
+            for value in ((getattr(layer, "_binary_rule_ids", {}) or {}).get(
+                "CS", ()) or ()))
+        self.register_buffer(
+            "_cs_unary_rule_ids",
+            torch.tensor(unary_ids, dtype=torch.long), persistent=False)
+        self.register_buffer(
+            "_cs_binary_rule_ids",
+            torch.tensor(binary_ids, dtype=torch.long), persistent=False)
+        self._n_rules = int(len(TheGrammar.rule_table))
 
     @property
     def language_layer(self):
-        return self._symbol_space.subspace.languageLayer
+        return self._language_layer_ref
+
+    @staticmethod
+    def _scatter_rule_counts(base, rule_ids, counts):
+        if (not torch.is_tensor(counts) or counts.dim() != 2
+                or int(counts.shape[1]) == 0
+                or int(rule_ids.numel()) == 0):
+            return base
+        width = min(int(counts.shape[1]), int(rule_ids.numel()))
+        ids = rule_ids[:width].to(device=base.device)
+        valid = torch.logical_and(ids >= 0, ids < int(base.shape[1]))
+        safe = ids.clamp(0, max(0, int(base.shape[1]) - 1))
+        columns = counts[:, :width] * valid.to(counts.dtype).reshape(1, width)
+        return base.index_add(1, safe, columns.to(base.dtype))
+
+    def compute_local_plan(self, symbolic_snapshot, depth):
+        """Compute a tensor-only Language plan for the newest pair.
+
+        This is the compiled C-stage surface.  It uses the very same
+        Language-owned CS unary and binary chooser modules as the eager parser
+        and returns their differentiable global-rule distribution
+        ``[B, n_rules]``.  The Python rule dictionaries, cursors, and diagnostic
+        cache remain an eager boundary concern.
+        """
+        if (not torch.is_tensor(symbolic_snapshot)
+                or symbolic_snapshot.dim() != 3):
+            raise ValueError(
+                "local Language plan expects symbolic snapshot [B,K,D]")
+        B = int(symbolic_snapshot.shape[0])
+        if not torch.is_tensor(depth) or tuple(depth.shape) != (B,):
+            raise ValueError(
+                "local Language plan depth must contain one value per row")
+        n_rules = int(self._n_rules)
+        if n_rules <= 0:
+            return symbolic_snapshot.new_zeros(B, 0)
+
+        # The online controller owns one binary opportunity per word, so
+        # Language scores exactly the two newest constituents. Rows that have
+        # not accumulated two constituents are masked from the returned plan.
+        x = symbolic_snapshot[:, :2, :]
+        plan = symbolic_snapshot.new_zeros(B, n_rules)
+        layer = self.language_layer
+        unary = (layer._unary_layers["CS"]
+                 if "CS" in layer._unary_layers else None)
+        if unary is not None:
+            _hard, x, routing = unary(x)
+            action = routing.get("action_probs")
+            if torch.is_tensor(action):
+                counts = action[..., int(unary.r_copy):].sum(dim=1)
+                plan = self._scatter_rule_counts(
+                    plan, self._cs_unary_rule_ids, counts)
+
+        binary = (layer._binary_layers["CS"]
+                  if "CS" in layer._binary_layers else None)
+        if binary is not None:
+            _hard, _soft, routing = binary(x)
+            marginal = routing.get("reduce_marginal_op")
+            if torch.is_tensor(marginal):
+                counts = marginal.sum(dim=1)
+                plan = self._scatter_rule_counts(
+                    plan, self._cs_binary_rule_ids, counts)
+
+        live = (depth >= 2).reshape(B, 1)
+        plan = torch.where(live, plan, torch.zeros_like(plan))
+        mass = plan.sum(dim=1, keepdim=True)
+        return plan / mass.clamp_min(torch.finfo(plan.dtype).tiny)
 
     def compose(self, symbolic_snapshot):
         self._symbol_space.forward(symbolic_snapshot)
@@ -12921,12 +13608,37 @@ class LanguageSpace(nn.Module):
         self._symbol_space.reverse(symbolic_snapshot)
         return self.reduction_plan()
 
+    @staticmethod
+    def _snapshot_plan_value(value):
+        """Detach the small grammar-plan surface from later C-stage writes."""
+        if torch.is_tensor(value):
+            return value.detach().clone()
+        if isinstance(value, RoutingState):
+            return RoutingState(
+                rules_by_space_role=LanguageSpace._snapshot_plan_value(
+                    value.rules_by_space_role),
+                selected_rules=LanguageSpace._snapshot_plan_value(
+                    value.selected_rules),
+                rule_probs=LanguageSpace._snapshot_plan_value(
+                    value.rule_probs),
+            )
+        if isinstance(value, dict):
+            return {key: LanguageSpace._snapshot_plan_value(item)
+                    for key, item in value.items()}
+        if isinstance(value, list):
+            return [LanguageSpace._snapshot_plan_value(item)
+                    for item in value]
+        if isinstance(value, tuple):
+            return tuple(LanguageSpace._snapshot_plan_value(item)
+                         for item in value)
+        return value
+
     def reduction_plan(self):
         """Immutable description of the grammar result for a CS-owned commit."""
         coordinator = self._symbol_space.subspace
         return {
-            "rules": coordinator.current_rules,
-            "routing": coordinator.routing_state,
+            "rules": self._snapshot_plan_value(coordinator.current_rules),
+            "routing": self._snapshot_plan_value(coordinator.routing_state),
             "generation": int(getattr(coordinator, "_compose_generation", 0)),
         }
 
@@ -13114,7 +13826,39 @@ class SymbolSpace(Space):
         self.generate(snap)
 
     # -- CS -> SS: the .forward()-mediated symbol leg --------------------------
-    def forward_concept_to_symbol(self, concept_sub):
+    def _publish_symbol_snapshot(self, event, source=None, *,
+                                 prior_symbolic=None, language_plan=None):
+        """Return an SS-owned transient result carrier for one peer tick.
+
+        The carrier has no parameters and is intentionally not registered as a
+        second state path.  Its event is a zero-copy reference to ``event``;
+        ownership exists solely so a consumer can receive a read-only view and
+        the debug guard has a concrete owner to report.
+        """
+        if not torch.is_tensor(event):
+            return None
+        payload = event.unsqueeze(1) if event.dim() == 2 else event
+        if payload.dim() != 3:
+            return None
+        sub = SubSpace(
+            inputShape=(int(payload.shape[1]), int(payload.shape[-1])),
+            outputShape=(int(payload.shape[1]), int(payload.shape[-1])),
+            nInputDim=int(payload.shape[-1]), nOutputDim=int(payload.shape[-1]))
+        object.__setattr__(sub, "_owner_space", self)
+        if source is not None and not isinstance(source, SubSpaceView):
+            sub.copy_context(source)
+        sub.commit_event(self, payload)
+        if prior_symbolic is not None:
+            prior = (prior_symbolic.materialize(mode="event")
+                     if hasattr(prior_symbolic, "materialize")
+                     else prior_symbolic)
+            object.__setattr__(sub, "_prior_symbolic_snapshot", prior)
+        if language_plan is not None:
+            object.__setattr__(sub, "_language_plan", language_plan)
+        return sub
+
+    def forward_concept_to_symbol(self, concept_sub, *, prior_symbolic=None,
+                                  language_plan=None):
         """CS -> SS: the symbol (representation) leg of a concept -- the
         reverse/decode direction of the row-aligned concept<->symbol
         dictionary, in a sparse autoencoder ``PS/WS -(W)-> CS -> SS -(edges)->
@@ -13139,9 +13883,20 @@ class SymbolSpace(Space):
         ``None`` for an empty / degenerate concept (-> ``bind_streams`` fills a
         zero leg), matching the old leg's ``None`` contract.
         """
-        if concept_sub is None or concept_sub.is_empty():
+        # The peer scheduler hands SS a completed CS tensor rather than the
+        # live mutable CS carrier: A(w+1) may already have reused that carrier
+        # when B(w) begins.  Keep the legacy SubSpace/read-view API as well so
+        # parallel callers remain unchanged.
+        raw_event = torch.is_tensor(concept_sub)
+        read_view = isinstance(concept_sub, SubSpaceView)
+        if concept_sub is None:
             return None
-        event = concept_sub.materialize()
+        if raw_event:
+            event = concept_sub
+        else:
+            if concept_sub.is_empty():
+                return None
+            event = concept_sub.materialize()
         if event is None or event.dim() < 2:
             return None
         sym_event = event.detach()
@@ -13160,7 +13915,8 @@ class SymbolSpace(Space):
                 with torch.no_grad():
                     W[:rows, :cw] = sym_event[:, :rows, :cw].mean(dim=0).to(
                         W.device, W.dtype)
-        acts = getattr(concept_sub, "_concept_activations", None)
+        acts = (None if raw_event or read_view
+                else getattr(concept_sub, "_concept_activations", None))
         if (acts is not None and torch.is_tensor(acts)
                 and int(acts.shape[0]) >= N and W is not None):
             # 0-D symbol: the signed activation scales the row-aligned identity
@@ -13181,11 +13937,9 @@ class SymbolSpace(Space):
                 leg[..., cw:] = sym_event[..., :N, cw:].to(
                     leg.device, leg.dtype)
             sym_event = leg
-        sub = SubSpace(inputShape=(N, D), outputShape=(N, D),
-                       nInputDim=D, nOutputDim=D)
-        sub.copy_context(concept_sub)
-        sub.set_event(sym_event)
-        return sub
+        return self._publish_symbol_snapshot(
+            sym_event, concept_sub, prior_symbolic=prior_symbolic,
+            language_plan=language_plan)
 
 
 # The historical ``SymbolSpace = SymbolSubSpace`` alias (retired Phase G of

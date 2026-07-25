@@ -177,9 +177,16 @@ are unchanged whether `X` lives on `SymbolSpace` or on the coordinator
 it forwards to.
 
 ```
-Forward:  InputSpace -> {PartSpace, WholeSpace} -> ConceptualSpace -> SymbolSpace -> OutputSpace
-Reverse:  OutputSpace -> SymbolSpace -> ConceptualSpace -> {PartSpace, WholeSpace} -> InputSpace
+Forward (space ownership): InputSpace -> {PartSpace, WholeSpace, SymbolSpace,
+                              LanguageSpace} -> ConceptualSpace -> OutputSpace
+Reverse:                    OutputSpace -> SymbolSpace -> ConceptualSpace
+                              -> {PartSpace, WholeSpace} -> InputSpace
 ```
+
+The forward line describes ownership rather than a same-tick linear chain:
+PS/WS form the subsymbolic peer result; SS returns a symbol reference; and
+LanguageSpace returns a grammar/routing plan. ConceptualSpace is the sole
+reducer and owner of its `CSsub`, `CSsym`, and STM commits.
 
 ### SymbolSpace and LanguageSpace: reference, grammar, and scheduling
 
@@ -205,6 +212,32 @@ reduction plan.  This preserves an inspectable separation between:
 - **grammar execution and its persistent state** (`SymbolSubSpace` /
   `LanguageLayer`), and
 - **pipeline timing** (`LanguageSpace`).
+
+`SymbolSubSpace.reconstruction_stack` is the sole owner of the detached
+sentence-construction teacher. It retains the exact radix spelling of every
+word (`[B,W,P]` IDs plus mask), optional durable concept IDs, the exact percept
+leaves, and the committed grammar rule IDs/arities. The complete compiled
+sentence loop carries fixed tensor slots (two binary opportunities and one
+unary opportunity per capacity position, followed by the bounded drain), but
+its `torch.while_loop` writes only live word positions. Dense surface targets
+are copied at the eager lexical boundary, outside capture. The compatibility
+K=1/K=2 word cell writes the same fixed local layout; its eager adapter remaps
+that slab into sentence-global slots without putting a changing chunk offset
+in the compiled graph.
+The old `BasicModel._stm_pre_reduce_slab`, `_stm_reduce_op_trace`, and
+`_stm_trace_sentence_scope` caches no longer exist. These records are detached
+targets for the statically registered `ReverseConstructionChooser`; the
+chooser's only semantic input is `stopgrad(S)`. It predicts active
+unary/binary slots, global rule IDs, and exact percept leaves. Compatibility
+evaluation may still replay the trace, but canonical training does not: no
+reverse loss derivative crosses back into the completed idea or its recurrent
+construction.
+
+When `forwardGrammarWeight` is nonzero, the same fixed trace layout also
+carries a bounded local loss for each committed fold. Unary and binary layers
+contrast their type-valid alternatives using detached child/candidate
+evidence, so only the grammar chooser is updated. This gives the forward
+derivation direct pressure without extending the autograd path across words.
 
 An application-level truth engine may bind those stable references to typed
 propositions, provenance, certainty, or an operator tree.  That policy belongs
@@ -290,13 +323,16 @@ internal Sigma / Pi (no substrate-borrowing).
   iteration per word.
 
   ```
-  PS_t = PS.forward(word_t)                     # single positional arg; no CS feedback into PS
-  WS_t = WS.forward(ws_universe, cs_out=prevCS_forSS)  # universe every pump; cs_out is the carrier feedback
-  CS_t = CS.forward(PS_t, WS_t)                  # STM shift + push
-  prevCS_forPS, prevCS_forSS = CS_t's cs._subspaceForPS/_subspaceForWS  # carried to the next word
-  router.dispatch_at_C(STM)           # read-only grammar ops on STM contents
-  router.dispatch_at_S(STM)           # codebook-write-required ops via SS
+  A(w):   IS_t -> { PS_t, WS_t } -> CSsub_t
+  B(w-1): published(CSsub_t, prior-CSsym) -> { CSsym, SS } -> CS-owned STM
+  C(w-2): LanguageSpace(B-result) -> immutable plan -> CS at B(w+2)
   ```
+
+  The braces are peers, not a left-to-right call order. Input is never routed
+  from PS into WS. `CSsub`/`CSsym` snapshots handed to a peer are read-only;
+  the only conceptual writes are the later CS owner commits. Production
+  carries these three stages through a tensor `while_loop`; W is a storage
+  capacity and the loop drains after the last live word.
 
 - **PARALLEL** (`<serial>false</serial>`): T iterations of PS over
   CS.
@@ -538,9 +574,16 @@ The implementation keeps percept and concept/symbol carriers distinct:
 
 In the aligned sparse conceptual implementation, the stored `ConceptDim` atom
 is a signed unit direction. Magnitude lives in the scalar activation:
-`concept_code = signed_activation * atom`. Updated rows are reprojected to the
-unit sphere after each optimizer step, so every coordinate stays in `[-1,1]`
-without a tanh seam.
+`concept_code = signed_activation * atom`. The canonical serial dictionary is
+initialized on that sphere and is not an Adam parameter: after a sentence
+completes, its owner takes one detached contextual snapshot, reduces all
+evidence for a row, and applies an exact tangent rotation. Its
+construction-time Parameter is converted into a persistent non-grad buffer.
+Its eager read-only lookup boundary gives compiled consumers a working tensor
+without an autograd edge to the dictionary. A rotation keeps the original unit
+norm, so there is no post-step codebook normalization pass or large-table
+indexed Adam write. The percept input is still *not* normalized; only the
+temporary contextual update direction is normalized.
 
 A symbol is also not a synonym for a concept or a whole. A concept is a
 `ConceptualSpace` relation over percepts; a symbol is a reference to a concept.
@@ -549,10 +592,14 @@ an implementation path.
 
 ### SBOW Situates Concepts, Not Percepts {#percept-sbow}
 
-`conceptual_sbow_loss_codes` in [`bin/embed.py`](../bin/embed.py) situates
-concept codes by neighborhood attraction and pairwise negative-sample
-repulsion. The gradient is tangential: it changes a concept's angle without
-overwriting its certainty radius.
+The legacy `conceptual_sbow_loss_codes` path in
+[`bin/embed.py`](../bin/embed.py) remains available for non-serial experiments.
+The canonical serial path instead uses a detached, deterministic contextual
+SBOW reducer: leave-one-out sentence context attracts each observed concept
+atom, hashed detached negatives repel it, repeated observations are reduced by
+row, and the codebook owner commits one tangent rotation. This has the same
+angular geometry without making the million-row dictionary optimizer-owned or
+allocating RowLocalAdam state in the recurrent training path.
 
 Percepts are deliberately not SBOW-situated:
 
@@ -698,7 +745,9 @@ c_i$ gives the *signed strength of belief that $x$ affirms concept $i$*:
 
 Two consequences:
 
-1. **Codebook must be unit L2-norm.** EMA renormalizes after each update.
+1. **Codebook must be unit L2-norm.** The canonical concept table is unit at
+   initialization and context-owned updates are exact rotations; compatibility
+   VQ/EMA paths maintain their own unit invariant.
 2. **Input must NOT be normalized.** The magnitude *is* the certainty signal.
    Cosine similarity would divide it out.
 

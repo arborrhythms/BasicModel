@@ -194,15 +194,18 @@ with `NULL_PERCEPT` and snapshots the pre-mask event on
 `_ir_pre_mask_input`. On the whole-slab / non-grammar path
 (`_per_word_enabled=False`) `runBatch` computes the dense masked-LM
 `MSE(perceptualSpace at masked positions, _ir_pre_mask_input at
-masked positions)` via `compute_masked`. On the per-word grammar path the
-`reconstruction` slot is instead the D3 reverse($S$) reconstruction ---
-there `lossIn` IS the reverse pipeline. The supervised output-head loss is
-also back (2026-05-28): the `output` channel is scored at weight 1.0
+masked positions)` via `compute_masked`. On the per-word grammar path with
+`detachedReverse=true`, the `reconstruction` slot instead trains the
+idea-only reverse construction chooser from $\operatorname{stopgrad}(S)$.
+The old D3 reverse-pipeline loss remains available only to legacy configs and
+compatibility evaluation. The supervised output-head loss is also back
+(2026-05-28): the `output` channel is scored at weight 1.0
 whenever labels exist (unlabeled corpora degrade it to zero). Two carve-outs
-qualify "reconstruction is always concepts-seeded": at train time the D3
-path **dedupes** the separate `reconstruction_reverse` term (`lossIn`
-already carries the reverse objective, so the concepts-seeded reverse is
-skipped to avoid double counting), and at serial EVAL the decode consumes
+qualify "reconstruction is always concepts-seeded": at train time either the
+detached reverse chooser or legacy D3 path **dedupes** the separate
+`reconstruction_reverse` term (`lossIn` already carries the reverse
+objective, so the concepts-seeded reverse is skipped to avoid double
+counting), and at serial EVAL the decode consumes
 the Method-1 stored-leaves replay (`_reverse_method1_leaves`) rather than
 decoding from the concept snapshot. The legacy
 `<maskedPrediction>` knob and the AR / ARUS / ARIR modes were
@@ -214,7 +217,105 @@ retired 2026-05-14; sentence-level AR moved to
 |------|--------|
 | `maskRate` | Bernoulli mask probability at the subsymbolic (PS) (BERT default 0.15) |
 | `reconstructionScale` | Blend weight between output and reconstruction loss; `total = (1 - r)*output + r*recon`.  Legacy `<reverseScale>` parsed with deprecation warning. |
+| `detachedReverse` | On the serial grammar training path, replace D3 trace replay with the static idea-only reverse chooser. Its input is `stopgrad(S)` and its targets live in `SymbolSubSpace.reconstruction_stack`. |
+| `leafDistillWeight` | With `detachedReverse`, weight the chooser's bounded exact-leaf surface term. Without it, retain the legacy standalone root-to-leaf distillation head. |
+| `forwardGrammarWeight` | Weight the bounded, one-fold structural contrast recorded for committed unary/binary grammar choices. `0` disables this branch. |
 | `<reconstruct>` | RETIRED (A1, 2026-06-09; `reconstructEnum` removed).  There is no longer a target space-role knob: reconstruction is unconditionally concepts-seeded from the terminal `ConceptualSpace` STM snapshot, weighted by `reconstructionScale`. |
+
+### Construction trace and derivation pressure
+
+The forward construction teacher now has one owner:
+`SymbolSubSpace.reconstruction_stack`. Before a compiled sentence body runs,
+the eager boundary stores detached exact leaves, lossless radix word
+spellings, and any available durable word-concept IDs. The body then records
+committed unary/binary grammar choices in a fixed
+`[B, 3*W + stmCapacity - 1]` rule-ID/arity/mask slab. There is no model-owned
+parallel leaf or reduction cache, and no Python trace append in the captured
+loop.
+
+That trace supervises the *reverse chooser*; it never becomes a chooser input.
+`ReverseConstructionChooser` is statically registered under `SymbolSubSpace`
+before optimizer creation and predicts the active arity, global rule ID, and
+exact percept leaf at every fixed slot. Its live gradient boundary is:
+
+$$
+\mathcal L_{\mathrm{reverse}}
+= \operatorname{CE}\!\left(
+q_\phi(\text{word parts},\text{rules}\mid
+\operatorname{stopgrad}(S)),\;T_{\mathrm{stack}}
+\right).
+$$
+
+The implementation detaches $S$ inside the chooser and detaches every teacher
+artifact when it enters `ReconstructionStack`. Reverse therefore learns the
+observed construction from the completed idea without sending a derivative
+through any of the $W$ recurrent forward folds. The remaining trace-replay
+reverse is a compatibility/evaluation path; canonical `BasicModel.xml`
+training does not call it.
+
+For the *forward* chooser, whole-sentence degraded reconstruction is useful as
+a small auxiliary but is a poor primary signal: a jointly trained decoder can
+collude with the encoder, punish legitimate paraphrases, and recreate the same
+long recurrent Jacobian that produced the W=256 instability. The implemented
+pressure is local to each candidate fold. For every type-valid unary or binary
+rule, the layer re-scores detached children and detached candidate results
+through the same chooser parameters. It uses the bounded proxy
+
+$$
+E_r = 0.2\,d(c_r,\operatorname{clip}_{[-1,1]}(c_r))
+    + 0.8\,d(\tanh(c_r),\tanh(x),\tanh(y)),
+\qquad
+\mathcal L_{\mathrm{forward},t}
+= \tfrac12\left[\sum_r p_\theta(r\mid x,y)E_r
++ \operatorname{rank}(r^*,r^- )\right].
+$$
+
+The first distance is an idempotent signed-carrier closure and the second is a
+child-incidence preservation proxy (one child for unary, both for binary).
+This is deliberately **not** claimed to be the data-derived FCA double-prime
+closure; the latter remains a stronger future replacement once a bounded
+codebook closure query is available. The expected energy plus pairwise rank
+term lies in $[0,1]$. It is copied into a fixed `ReconstructionStack` loss slab
+and averaged only over committed folds. Because the evidence tensors are
+detached, credit assignment ends at that chooser call and cannot reopen the
+sentence recurrence. The forward chooser is not trained by cross-entropy
+against its own argmax trace, which would be self-confirming evidence.
+
+`BasicModel.xml` currently leaves `forwardGrammarWeight=0`. A July 2026 MPS
+production probe showed that its extra candidate re-score is substantial when
+paid at every live fold. The objective and its compiler-safe fixed loss slab
+remain available and tested, but production activation waits for a dedicated
+quality/throughput measurement (or a compact-evidence re-score at the eager
+sentence boundary). This cost decision is independent of `detachedReverse`,
+which remains enabled as the numerical-stability gate.
+
+The literature supports this split rather than an exact global inverse:
+
+- Original DisCoCat lifts grammatical reductions to semantic morphisms that
+  compose constituent meanings into a whole; it does not require those
+  generally information-losing maps to be invertible
+  ([Coecke, Sadrzadeh, and Clark, 2010](https://arxiv.org/abs/1003.4394)).
+- Functorial language models obtain a probability distribution over word
+  sequences from a grammar-to-meaning monoidal functor, suggesting grammatical
+  likelihood as a generative objective
+  ([Toumi and Koziell-Pipe, 2021](https://arxiv.org/abs/2103.14411)). A recent
+  DisCoCat tensor encoder also found that contrastive training over explicit
+  derivations improves sensitivity to word order and predicate roles
+  ([Lo et al., 2025](https://aclanthology.org/2025.starsem-1.25/)).
+- FCA defines concepts as fixed points of the Galois connection, and formal
+  concepts are sufficient optimal factors for reconstructing Boolean
+  object--attribute incidence matrices
+  ([Denniston, Melton, and Rodabaugh, 2013](https://arxiv.org/abs/1309.5134),
+  [Belohlavek and Vychodil, 2010](https://doi.org/10.1016/j.jcss.2009.05.002)).
+  For graded activations, fuzzy Galois connections extend the same construction
+  to complete residuated lattices
+  ([Belohlavek, 1999](https://belohlavek.inf.upol.cz/publications/Bel_Fgc.pdf)).
+
+The bounded exact-leaf term in the detached reverse chooser is the retained
+degraded surface objective. It updates only that reverse student; it neither
+updates $S$ nor unfolds a grammar recurrence. Its role is an anti-collapse
+check, while the local carrier/incidence contrast is the direct derivation
+signal.
 
 ### `<trainEmbedding>`: Embedding Update Mode
 

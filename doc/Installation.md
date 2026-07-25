@@ -25,6 +25,21 @@ Makefile targets invoke the project virtual environment (`.venv/bin/python` on
 Unix, `.venv/Scripts/python.exe` on Windows), so no manual activation is
 required.
 
+For the currently tested PyTorch 2.14 Apple-MPS compiler path, install the
+matching official nightly pair after `make install`:
+
+```bash
+uv pip install --python .venv/bin/python --pre \
+  torchvision==0.29.0.dev20260723 \
+  --index-url https://download.pytorch.org/whl/nightly/cpu
+```
+
+That torchvision build selects its compatible
+`torch==2.14.0.dev20260722`. Verify the environment with
+`uv pip check --python .venv/bin/python`. The paired builds compile the complete
+W=256 tensor peer loop with raw `max-autotune`, differentiated backward, and
+runtime word counts 16/32/64 without recompilation.
+
 ---
 
 ## Makefile Targets
@@ -159,7 +174,7 @@ training).
 | `BASICMODEL_DEVICE` | Force device, e.g. `cpu`. Used by `make test` and the `bench_*` targets |
 | `BASICMODEL_PYTHON` | Python executable for train.py subprocesses; overrides the in-project `.venv` lookup |
 | `MODEL_COMPILE` | torch.compile backend selector (`auto`, `none`, `inductor`, `eager`, `aot_eager`) |
-| `MODEL_COMPILE_MODE` | torch.compile mode (`default`, `reduce-overhead`, `max-autotune`, `max-autotune-no-cudagraphs`) |
+| `MODEL_COMPILE_MODE` | torch.compile mode (`default`, `reduce-overhead`, `max-autotune`, `max-autotune-no-cudagraphs`). When unset, MPS uses `default`. PyTorch 2.12/2.13 MPS safely reduce CUDA-graph-bearing requests to their non-CUDAGraph equivalent because their reverse `while_loop` scheduler can crash while releasing a Metal command buffer. PyTorch 2.14+ MPS and real CUDA retain the requested mode unchanged; MPS still skips actual CUDA-only graph capture. |
 | `PYTORCH_MPS_HIGH_WATERMARK_RATIO` | MPS memory limit; set to `0.0` by `train.py` |
 | `BASICMODEL_MPS_IOBUF` | MPS inductor fusion cap (`max_fusion_unique_io_buffers`, default 24) — keeps fused Metal kernels under the hardware 31-buffer kernel-arg limit; lower (e.g. 12) for wide configs |
 | `BASICMODEL_MPS_FUSE` | Optional MPS inductor `max_fusion_size` (nodes per fusion); unset leaves the torch default |

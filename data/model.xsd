@@ -324,10 +324,12 @@
            ConceptualSpace STM capacity: grammar reductions keep the bounded
            STM live while this loop may traverse a much longer sentence. -->
       <xs:element name="serialWordCapacity" type="xs:positiveInteger" minOccurs="0"/>
-      <!-- Comma-separated static loop widths compiled for serial traversal,
-           e.g. "16,32,64,128".  The eager InputSpace stem selects the
-           smallest width that contains the longest sentence in the batch;
-           serialWordCapacity remains the hard maximum. -->
+      <!-- Comma-separated staging capacities for serial traversal. The eager
+           InputSpace stem selects the smallest width that contains the
+           longest sentence in the batch; serialWordCapacity remains the hard
+           maximum. A tensor while-loop configuration may provide only that
+           maximum (for example "256"): runtime execution then stops at the
+           final live column without compiling smaller shapes. -->
       <xs:element name="serialWordBuckets" type="xs:string" minOccurs="0"/>
       <!-- Truth / Ideas routing is structural, not flag-gated: accepted
            relative relations reduce to WS META when both entity operands snap
@@ -811,6 +813,14 @@
            Legacy name reverseScale still parsed (with deprecation
            warning) by util.TheXMLConfig. -->
       <xs:element name="reconstructionScale" type="unitInterval" minOccurs="0"/>
+      <!-- When true, serial reconstruction trains an idea-only reverse
+           construction student from stopgrad(S), with ReconstructionStack's
+           rule/arity/leaves as detached targets. This removes the long
+           reverse-through-forward recurrent gradient. -->
+      <xs:element name="detachedReverse" type="xs:boolean" minOccurs="0"/>
+      <!-- Weight on the bounded one-fold grammar-choice objective. 0 leaves
+           legacy routing byte-identical. -->
+      <xs:element name="forwardGrammarWeight" type="nonNegativeFloat" minOccurs="0"/>
       <!-- Deprecated legacy alias for reconstructionScale; util.TheXMLConfig
            remaps it (with a deprecation warning). Accepted here so
            unmigrated configs still validate. -->
@@ -853,6 +863,15 @@
            Default 0.0 = the SBOW does not fire and the forward is byte-identical;
            > 0 trains the codebook in the parallel (symbolicOrder=0) forward. -->
       <xs:element name="conceptualSimilarityScale" type="nonNegativeFloat" minOccurs="0"/>
+      <!-- Context-owned update law for the aligned serial concept dictionary.
+           Positive values convert its construction Parameter into a persistent
+           non-grad buffer, remove it from all optimizer/RowLocalAdam groups,
+           and rotate the initially unit-norm atoms once per completed
+           sentence. Mutually exclusive with conceptualSimilarityScale. -->
+      <xs:element name="conceptualContextLearningRate" type="nonNegativeFloat" minOccurs="0"/>
+      <!-- Number of deterministic detached negative prototype rows used by
+           the contextual rotation reducer. Default 4 when omitted. -->
+      <xs:element name="conceptualContextNegatives" type="xs:nonNegativeInteger" minOccurs="0"/>
       <!-- <definitionSparsityScale> (snap contract sec 5, 2026-07-06): lambda
            for the rank-ordered soft-L0 that keeps concept definitions compact
            (shrinks the surplus concept->symbol in-edges past definitionFreeSize).

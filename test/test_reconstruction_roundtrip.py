@@ -615,7 +615,8 @@ def test_mm20m_grammar_derivation_roundtrip(tmp_path):
 
     GREEN 2026-07-05 (S2 operand provenance): the serial derivation stashes
     its LEAVES -- the per-word percept events -- on the forward
-    (``_stm_pre_reduce_slab``) and the eval decode replays them straight
+    (``SymbolSpace.reconstruction_stack.leaves()``) and the eval decode
+    replays them straight
     through the percept store (radix nearest-neighbour), so every word is
     recovered untrained, by construction (a percept's vector position IS its
     identity). Method-1 is the exact TEACHER; ``_reverse_from_S`` (the

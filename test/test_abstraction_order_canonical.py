@@ -317,6 +317,11 @@ def test_model_blob_carries_ps_ramsification():
     m = _model()
     store = m.perceptualSpace.percept_store
     cb = m.perceptualSpace.subspace.what
+    # Earlier tests deliberately reuse and fill this model's tiny eight-row
+    # fixture.  Install any missing byte atoms through the production eager
+    # boundary before inserting the multi-byte row; a direct insert must not
+    # replace the PartSpace Parameter when the table is full.
+    m.perceptualSpace._ensure_radix_atomic_bytes([[b"w9k"]])
     pid = store.insert(b"w9k")                          # sigma-stamped
     blob = m._collect_vocab_extras()
     assert blob is not None and "ps_ramsification" in blob

@@ -411,6 +411,45 @@ _COMPILE_MODES = (
     "max-autotune-no-cudagraphs",
 )
 
+
+def _torch_version_at_least(major, minor):
+    """Return whether the running torch release is at least ``major.minor``."""
+    match = re.match(r"^\s*(\d+)\.(\d+)", str(torch.__version__))
+    if match is None:
+        return False
+    return tuple(map(int, match.groups())) >= (int(major), int(minor))
+
+
+def _effective_compile_mode(mode, device):
+    """Return the backend mode that is meaningful on ``device``.
+
+    CUDA-graph-bearing modes are CUDA policies, not generic GPU policies.
+    PyTorch 2.12/2.13 nevertheless let ``triton.cudagraphs=True`` perturb MPS
+    lowering.  For the differentiated ``torch.while_loop`` sentence graph
+    that moves the reverse-loop condition from a CPU comparison to a
+    one-thread Metal comparison followed by an MPS-to-host scalar read.  Metal
+    then reproducibly crashes while releasing that command buffer
+    (``MTLResourceListChunkFreeEntries``).
+
+    PyTorch 2.14 fixes the failing scheduler/runtime path: the complete W=256
+    training graph runs with raw ``max-autotune``, reports one graph and no
+    recompiles, and correctly skips actual CUDAGraph capture on MPS.  Retain
+    the compatibility downgrade only for pre-2.14 MPS builds.  Real CUDA and
+    2.14+ MPS retain the requested mode unchanged.
+    """
+    mode = str(mode)
+    device_type = (
+        device.type if isinstance(device, torch.device)
+        else str(device).split(":", 1)[0].lower()
+    )
+    if device_type == "mps" and not _torch_version_at_least(2, 14):
+        if mode == "max-autotune":
+            return "max-autotune-no-cudagraphs"
+        if mode == "reduce-overhead":
+            return "default"
+    return mode
+
+
 def auto_compile_mode():
     """Select torch.compile mode from ``MODEL_COMPILE_MODE`` env var.
 
@@ -420,9 +459,9 @@ def auto_compile_mode():
       max-autotune     -> Inductor + CUDAGraphs + autotune.
       max-autotune-no-cudagraphs
                        -> autotune without CUDAGraphs.
-      (empty / unset)  -> "max-autotune".
+      (empty / unset)  -> "default" on MPS, "max-autotune" elsewhere.
 
-    Default is ``max-autotune`` -- empirical winner on the GB10
+    The non-MPS default is ``max-autotune`` -- empirical winner on the GB10
     training bench (basicmodel/bin/bench_compile.py, MM_20M_legacy.xml,
     bf16 + trie BPE, training pass, --batches 8 each):
 
@@ -445,6 +484,23 @@ def auto_compile_mode():
     """
     override = os.environ.get("MODEL_COMPILE_MODE", "").strip().lower()
     if not override:
+        # The complete higher-order word loop's max-autotune backward can
+        # crash inside Metal's completion-queue resource release
+        # (EXC_BAD_ACCESS in MTLResourceListChunkFreeEntries) even though the
+        # identical fullgraph is stable in Inductor's default mode.  This is a
+        # backend lifetime failure, not a model exception that Python can
+        # catch.  Keep autotuning as the measured winner on CUDA/CPU, but make
+        # the safe single-graph Metal schedule the MPS default. An explicit
+        # MODEL_COMPILE_MODE remains the requested policy; ``compile`` removes
+        # only CUDA-graph capture when that policy is applied to MPS.
+        try:
+            _dev = str(resolve_device(
+                os.environ.get(
+                    "BASICMODEL_DEVICE", "").strip().lower() or "gpu"))
+        except Exception:
+            _dev = "cpu"
+        if _dev.startswith("mps"):
+            return "default"
         return "max-autotune"
     if override in _COMPILE_MODES:
         return override
@@ -599,9 +655,11 @@ def compile(model, verbose=True, fullgraph=False):
       "reduce-overhead" -> Inductor + CUDAGraphs; faster runtime, slow compile.
       "max-autotune"    -> Inductor + CUDAGraphs + autotune; slowest compile.
 
-    Default mode is ``default`` (Inductor fusion, no CUDAGraph capture).
-    Set ``MODEL_COMPILE_MODE=reduce-overhead`` (or ``max-autotune``) to
-    opt into CUDAGraph capture. The CUDAGraph-bearing modes recompile
+    The device default is ``default`` on MPS and ``max-autotune`` elsewhere.
+    Set ``MODEL_COMPILE_MODE`` to override it explicitly. CUDA-graph-bearing
+    requests are reduced to their non-CUDAGraph equivalent on MPS; CUDA
+    retains the requested mode unchanged. The
+    CUDAGraph-bearing modes recompile
     per distinct static shape; for architectures with many shapes
     (N-halving / subsymbolicOrder), wall-clock can be dominated by
     per-shape capture. ``default`` skips that entirely.
@@ -722,6 +780,34 @@ def compile(model, verbose=True, fullgraph=False):
                     _reduce_any_dtype_patched)
                 _msg("MPS: inductor any-reduction dtype metadata patched "
                      "(Metal 'bool' -> torch.bool)")
+            # A carried zero-width metadata tensor in the real W=256
+            # while-loop reaches Inductor's read-realization heuristic. In
+            # PyTorch 2.12.1 the heuristic divides total read size by the
+            # largest dependency size without handling the legitimate
+            # all-zero case (0 / 0). Such a dependency has no storage work to
+            # realize, so preserve the stock decision everywhere else and
+            # return False only for that upstream ZeroDivisionError.
+            from torch._inductor import ir as _inductor_ir
+            _enough_reads = getattr(
+                _inductor_ir.StorageBox,
+                "has_accumulated_enough_reads_by_size", None)
+            if (callable(_enough_reads)
+                    and not getattr(
+                        _enough_reads,
+                        "_basicmodel_zero_read_patch", False)):
+                _enough_reads_original = _enough_reads
+
+                def _enough_reads_without_zero_division(self, threshold):
+                    try:
+                        return _enough_reads_original(self, threshold)
+                    except ZeroDivisionError:
+                        return False
+
+                _enough_reads_without_zero_division._basicmodel_zero_read_patch = True
+                _inductor_ir.StorageBox.has_accumulated_enough_reads_by_size = (
+                    _enough_reads_without_zero_division)
+                _msg("MPS: zero-size while-loop dependencies excluded from "
+                     "Inductor read-realization ratio")
             # A full W=16 recurrence accumulates a shared scalar bias
             # gradient once for each of its 16 word ticks (two linear uses per
             # tick).  Inductor represents that as one generated Metal kernel
@@ -735,6 +821,174 @@ def compile(model, verbose=True, fullgraph=False):
             # merely a backend-safe lowering for an otherwise unrepresentable
             # scalar-gradient kernel.
             _scheduling = _mps_cg.MetalScheduling
+            # PyTorch 2.12.1 gives each MPS scheduler instance its own
+            # ``generated_kernel_N`` counter. Higher-order operators create
+            # one scheduler for the parent graph and additional schedulers
+            # for their subgraphs, so ``torch.while_loop`` emits several
+            # different kernels all named ``generated_kernel_0`` into the
+            # same Python wrapper/Metal library. Besides making the batched
+            # Metal source fail to compile with a duplicate mangled name,
+            # the repeated Python global would make every subgraph call the
+            # final kernel assigned to that name.
+            #
+            # SubgraphPythonWrapperCodegen.next_kernel_suffix() already
+            # delegates to the root wrapper specifically to prevent kernel
+            # clashes. Seed MPS's local counter from that shared allocator
+            # for each new source. This preserves deterministic cache keys
+            # while making parent, condition, and body kernels unique.
+            _define_kernel_names = getattr(
+                _scheduling, "define_kernel", None)
+            if (callable(_define_kernel_names)
+                    and not getattr(
+                        _define_kernel_names,
+                        "_basicmodel_subgraph_name_patch", False)):
+                _define_kernel_names_original = _define_kernel_names
+
+                def _define_kernel_subgraph_names_patched(
+                        scheduler, src_code, node_schedule, kernel):
+                    from torch._inductor.virtualized import V
+                    wrapper = V.graph.wrapper_code
+                    if (not V.graph.cpp_wrapper
+                            and src_code not in wrapper.src_to_kernel):
+                        scheduler._kernel_fn_counter = int(
+                            wrapper.next_kernel_suffix())
+                    return _define_kernel_names_original(
+                        scheduler, src_code, node_schedule, kernel)
+
+                _define_kernel_subgraph_names_patched._basicmodel_subgraph_name_patch = True
+                _scheduling.define_kernel = (
+                    _define_kernel_subgraph_names_patched)
+                _msg("MPS: inductor subgraph Metal kernel names allocated "
+                     "from the shared wrapper (torch.while_loop)")
+
+            # The autograd implementation of ``torch.while_loop`` indexes its
+            # saved-tensor tape with the runtime trip count. Those views have
+            # an unbacked symbolic storage offset. The post-grad add+mm ->
+            # addmm pattern in PyTorch 2.12.1 tries to re-create every matched
+            # FakeTensor in the enclosing fake mode; doing that compares the
+            # symbolic offset to zero and raises GuardOnDataDependentSymNode.
+            # Both directions of the optional rewrite touch FakeTensor
+            # metadata: add+mm -> addmm and addmm -> pointwise add+mm. Skip
+            # only those matches when any node contains an unbacked symbol.
+            # Ordinary (statically addressed) addmm matches, and every other
+            # post-grad optimization, remain enabled.
+            try:
+                from torch._inductor.fx_passes import post_grad as _post_grad
+                from torch.fx.experimental.symbolic_shapes import (
+                    has_free_unbacked_symbols as _has_unbacked,
+                )
+                for _pattern_entries in (
+                        _post_grad.pass_patterns[2].patterns.values()):
+                    for _entry in _pattern_entries:
+                        if (getattr(_entry, "handler", None) not in (
+                                _post_grad.addmm,
+                                _post_grad.unfuse_bias_add_to_pointwise)
+                                or getattr(
+                                    _entry,
+                                    "_basicmodel_unbacked_addmm_patch",
+                                    False)):
+                            continue
+                        _addmm_check_original = _entry.extra_check
+
+                        def _addmm_check_without_unbacked_tape(
+                                match,
+                                _original=_addmm_check_original):
+                            matched_values = torch.utils._pytree.tree_leaves(
+                                (match.args, match.kwargs))
+                            for node in matched_values:
+                                if not isinstance(node, torch.fx.Node):
+                                    continue
+                                value = node.meta.get("val")
+                                if (isinstance(value, torch.Tensor)
+                                        and _has_unbacked(value)):
+                                    return False
+                            return _original(match)
+
+                        _entry.extra_check = (
+                            _addmm_check_without_unbacked_tape)
+                        _entry._basicmodel_unbacked_addmm_patch = True
+                _msg("MPS: unbacked while-loop tape views excluded from "
+                     "post-grad addmm fuse/unfuse rewrites")
+            except Exception:
+                pass
+
+            # The generated reverse of ``torch.while_loop`` carries one
+            # accumulated gradient for every differentiable captured input.
+            # Metal graph results can expose an aligned physical row stride
+            # (for example 1056 for a logical width of 1032), while the
+            # one-step reverse graph returns the logical contiguous stride.
+            #
+            # The generic HOP fake-tensor check rejects that stride-only
+            # difference before Inductor sees the loop. Inductor's WhileLoop
+            # lowering immediately applies ``require_exact_strides`` to every
+            # body output, specifically because an output becomes the next
+            # iteration's input. Permit only this MPS stride difference here;
+            # shape, dtype, device, quantization, and all other metadata must
+            # remain identical, after which the lowerer restores the exact
+            # carried layout.
+            try:
+                import importlib as _importlib
+                _while_loop_module = _importlib.import_module(
+                    "torch._higher_order_ops.while_loop")
+                _check_loop_meta = (
+                    _while_loop_module.check_meta_consistency)
+                if (callable(_check_loop_meta)
+                        and not getattr(
+                            _check_loop_meta,
+                            "_basicmodel_mps_carry_layout_patch", False)):
+                    _check_loop_meta_original = _check_loop_meta
+
+                    def _check_loop_meta_allow_mps_stride(
+                            lhs, rhs, lhs_name, rhs_name,
+                            include_contiguity=True):
+                        try:
+                            return _check_loop_meta_original(
+                                lhs, rhs, lhs_name, rhs_name,
+                                include_contiguity=include_contiguity)
+                        except torch._dynamo.exc.UncapturedHigherOrderOpError as exc:
+                            # The stock checker has already compared every
+                            # pair, including device, and reports one
+                            # ``differ in`` line for every failed field. Its
+                            # own report is more robust for int/SymInt pairs
+                            # than duplicating that private logic here.
+                            differences = [
+                                line.strip()
+                                for line in str(exc).splitlines()
+                                if " differ in " in line
+                            ]
+                            stride_only = (
+                                bool(differences)
+                                and all(
+                                    (" differ in 'stride:" in line
+                                     or " differ in 'memory_format:" in line)
+                                    for line in differences))
+                            differing_indices = [
+                                int(match.group(1))
+                                for line in differences
+                                if (match := re.search(
+                                    r"pair\[(\d+)\]", line)) is not None
+                            ]
+                            mps_only = (
+                                len(differing_indices) == len(differences)
+                                and all(
+                                    isinstance(lhs[index], torch.Tensor)
+                                    and isinstance(rhs[index], torch.Tensor)
+                                    and lhs[index].device.type == "mps"
+                                    and rhs[index].device == lhs[index].device
+                                    for index in differing_indices))
+                            if stride_only and mps_only:
+                                return None
+                            raise
+
+                    _check_loop_meta_allow_mps_stride._basicmodel_mps_carry_layout_patch = True
+                    _while_loop_module.check_meta_consistency = (
+                        _check_loop_meta_allow_mps_stride)
+                    _msg("MPS: stride-only reverse while-loop metadata "
+                         "differences delegated to Inductor exact-stride "
+                         "lowering")
+            except Exception:
+                pass
+
             _define_kernel = getattr(_scheduling, "define_kernel", None)
             if (callable(_define_kernel)
                     and not getattr(
@@ -854,17 +1108,28 @@ def compile(model, verbose=True, fullgraph=False):
     except Exception:
         pass
 
+    effective_mode = _effective_compile_mode(TheCompileMode, TheDevice.get())
+    if effective_mode != TheCompileMode:
+        _msg(
+            "MPS: CUDA-graph compile option disabled "
+            f"({TheCompileMode} -> {effective_mode}); "
+            "real CUDA targets retain the requested mode")
+
     backends = _COMPILE_BACKENDS if TheCompileBackend == "auto" else (TheCompileBackend,)
     for backend in backends:
         try:
             compiled = torch.compile(
-                model, mode=TheCompileMode, backend=backend,
+                model, mode=effective_mode, backend=backend,
                 fullgraph=fullgraph)
-            _msg(f"Model compiled ({backend}, mode={TheCompileMode}, "
-                 f"fullgraph={fullgraph})")
+            requested = (
+                "" if effective_mode == TheCompileMode
+                else f", requested_mode={TheCompileMode}")
+            _msg(f"Model compiled ({backend}, mode={effective_mode}"
+                 f"{requested}, fullgraph={fullgraph})")
             return compiled
         except Exception as e:
-            _msg(f"Model compile failed ({backend}, mode={TheCompileMode}): {e}")
+            _msg(
+                f"Model compile failed ({backend}, mode={effective_mode}): {e}")
 
     _msg("Model compilation failed, running eager")
     return model

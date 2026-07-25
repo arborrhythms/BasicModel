@@ -125,6 +125,53 @@ class TestCudaSanityChecks(unittest.TestCase):
         self.assertIn(f'-I"{prefix}"/include', rewritten)
         self.assertIn(f'-L"{prefix}"/lib', rewritten)
 
+    @mock.patch.dict(
+        os.environ,
+        {"BASICMODEL_DEVICE": "mps", "MODEL_COMPILE_MODE": ""},
+        clear=False,
+    )
+    @mock.patch("util.resolve_device", return_value="mps")
+    def test_auto_compile_mode_uses_safe_mps_default(self, resolve_mock):
+        self.assertEqual(util.auto_compile_mode(), "default")
+        resolve_mock.assert_called_once_with("mps")
+
+    @mock.patch.dict(
+        os.environ,
+        {"BASICMODEL_DEVICE": "mps", "MODEL_COMPILE_MODE": "max-autotune"},
+        clear=False,
+    )
+    def test_auto_compile_mode_honors_explicit_mps_override(self):
+        self.assertEqual(util.auto_compile_mode(), "max-autotune")
+
+    def test_effective_compile_mode_version_gates_mps_workaround(self):
+        with mock.patch.object(util.torch, "__version__", "2.12.1"):
+            self.assertEqual(
+                util._effective_compile_mode("max-autotune", "mps"),
+                "max-autotune-no-cudagraphs",
+            )
+            self.assertEqual(
+                util._effective_compile_mode("reduce-overhead", "mps"),
+                "default",
+            )
+        with mock.patch.object(
+                util.torch, "__version__", "2.14.0.dev20260723"):
+            self.assertEqual(
+                util._effective_compile_mode("max-autotune", "mps"),
+                "max-autotune",
+            )
+            self.assertEqual(
+                util._effective_compile_mode("reduce-overhead", "mps"),
+                "reduce-overhead",
+            )
+        self.assertEqual(
+            util._effective_compile_mode("max-autotune", "cuda"),
+            "max-autotune",
+        )
+        self.assertEqual(
+            util._effective_compile_mode("reduce-overhead", "cuda:1"),
+            "reduce-overhead",
+        )
+
     @mock.patch("util._patch_inductor_paths")
     @mock.patch("util.torch.compile")
     def test_compile_tries_successive_backends(self, compile_mock, patch_mock):

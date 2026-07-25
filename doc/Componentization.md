@@ -9,20 +9,50 @@ scratch state allocates an explicit working tensor. Debug peer guards compare
 both carrier write epochs and PyTorch storage versions around a peer call.
 
 `ConceptualSpace` has two runtime lanes rather than model-owned previous-CS
-pointers: `CSsub` carries the PS/WS recurrent subsymbolic field and `CSsym`
-carries the completed conceptual snapshot for SS. The legacy compatibility
-aliases remain internal to CS only.
+pointers: `CSsub` is the owner-committed PS/WS reduction for A, and `CSsym` is
+the delayed symbolic publication for B.  Peers retain completed tensor
+snapshots rather than mutable carriers because the next A tick reuses its
+Space-owned storage. The legacy compatibility aliases remain internal to CS
+only.
 
-The word scheduler is a static three-stage pipeline for W in `{16,32,64,128,256}`.
-Input selection uses the smallest bucket that contains the complete sentence;
-an overlong row is rejected before emission rather than truncating its tail:
+The production word scheduler is a tensor-only three-stage
+`torch.while_loop`. `BasicModel.xml` stages one `[B,256,...]` capacity, derives
+the final live column on device, executes through that column, and then performs
+the two B/C drain ticks. Each row has its own activity mask, so completed short
+sentences remain exact no-ops while a longer peer row finishes. A sentence
+longer than 256 words is rejected before emission rather than truncated.
+The recurrent carry is split by ownership rather than duplicating a mutable
+`SubSpace` per word: one CS/STM bank, one A-owner bank (`CSsub` plus the PS
+contribution slab), one B-owner bank (`CSsym`, objectives, and reconstruction
+trace), and exactly one FIFO slot for each of the A and B word ages. The
+capacity axis belongs only to staged inputs and result slabs. Codebooks remain
+single Space-owned tensors captured by reference across every statically
+unrolled fold; optimizer and contextual updates occur after the drained brick.
+`StaticPeerPipeline` is the ordering reference and eager compatibility
+fallback:
 
-1. A: Input fans one input view to PS and WS; both consume the prior CSsub
-   view, then CSsub commits after both peer computations finish.
-2. B: CSsym and SS consume A's completed word concept from `w-1` and a common
-   prior symbolic snapshot.
+1. A: Input fans its atom and unity views to PS and WS. They have no edge to
+   one another. Their completed peer results are reduced and committed by CS
+   into `CSsub` only after both computations finish.
+2. B: CS publishes A's completed concept and the prior symbolic state as
+   zero-copy read-only snapshots. CSsym and SS consume those common inputs in
+   parallel; SS returns its symbol reference to CS, and **CS alone** commits
+   the delayed `CSsym`/STM update.
 3. C: `LanguageSpace` executes the existing `LanguageLayer` for B's result at
-   `w-2`.
+   `w-2` and returns an immutable routing/reduction plan. CS consumes that
+   plan at B's explicit latch point.
+
+The write topology is therefore deliberately one-way:
+
+```
+IS ──► { PS, WS } ──► CSsub
+           SS ───────► CSsym / CS-owned STM
+           LS ───────► CS-owned routing/reduction plan
+```
+
+Read-only recurrent snapshots may flow from CS to a later peer stage, but no
+peer receives a writable CS carrier and no peer commits CS state. In shorthand,
+the owner reduction is `{PS, WS, SS, LS} -> CS`.
 
 `LanguageSpace` is a scheduling owner only: its `LanguageLayer` parameters and
 grammar state continue to be registered exactly once under `SymbolSubSpace`.
@@ -31,10 +61,29 @@ the scheduler drains A, B, C, and latches in order at sentence end. Language
 returns an explicit reduction plan; any conceptual STM mutation remains a
 ConceptualSpace commit.
 
-> **Status: architectural assessment, 2026-07-13.** This document describes
-> the live software boundaries in `bin/`, not the cognitive decomposition of
-> perceptual, conceptual, whole, and symbolic space. It is a refactoring guide,
-> not a claim that the proposed components already exist.
+> **Status: live serial runtime.** On the normal MPS
+> `BASICMODEL_MPS_WORD_LOOP_FULLGRAPH=1` path, one `fullgraph=True` graph
+> contains the tensor higher-order loop and its A/B/C carried state. Runtime
+> sentence length is a device scalar, so changing it does not retrace the
+> graph. Read-only capabilities reduce to zero-copy tensor reads inside the
+> loop; complete owner state is cloned and committed once after the drain.
+> Debug mutation guards remain eager-only.
+> `BASICMODEL_MPS_WORD_LOOP_FULLGRAPH=0` is the explicit fallback, where PS/WS
+> numerical fold bodies compile independently and the static scheduler runs on
+> the host.
+> On MPS, Inductor `default` is the production compile mode. PyTorch 2.12.1
+> `max-autotune` enables a CUDA-graph option which changes the reverse
+> higher-order-loop condition from a CPU comparison into a one-thread Metal
+> comparison plus a host scalar read; Metal then crashes in completion-queue
+> resource release. MPS therefore strips only that CUDA-graph component
+> (`max-autotune` becomes `max-autotune-no-cudagraphs`), while a CUDA target
+> retains the requested mode. PyTorch currently emits `torch.while_loop` as a
+> host-side loop. Its CUDA graph partitioner can wrap the CUDA-only body
+> partitions inside that host loop, but it does not capture the complete
+> dynamic sentence wrapper as one CUDA graph. The training benchmark reports
+> requested/effective modes and raw Inductor CUDAGraph counters so capture and
+> its speedup can be proven on the final CUDA hardware rather than inferred
+> from `fullgraph=True`.
 
 The focused ownership and pipeline-parallel contract for sparse, per-execution
 `SubSpace` carriers and Space-owned codebooks is specified in

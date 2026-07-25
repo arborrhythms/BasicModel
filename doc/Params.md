@@ -147,6 +147,10 @@ Training loop and I/O.
 | `numWorkers` | int | `0` | DataLoader prefetch workers. `0` = synchronous in-process batch assembly. |
 | `learningRate` | float | `0.001` | Adam learning rate. |
 | `reconstructionScale` | float | `0.5` | Weight of reconstruction loss vs prediction loss in $[0, 1]$: $\mathcal{L}_{\text{total}} = (1-r)\,\mathcal{L}_{\text{output}} + r\,\mathcal{L}_{\text{recon}}$.  Legacy name `reverseScale` is still parsed with a one-shot deprecation warning. |
+| `conceptualContextLearningRate` | float | `0.0` | Enables the context-owned ConceptualSpace dictionary updater. Each completed sentence produces one deterministic, reduced tangent rotation per observed codebook row; `similarity_codebook.W` is a persistent non-grad buffer, read through an eager compiler boundary, and never enters Adam. Mutually exclusive with `conceptualSimilarityScale`. |
+| `conceptualContextNegatives` | int | `4` | Number of deterministic detached negative prototype rows in the contextual SBOW rotation. |
+| `detachedReverse` | bool | `false` | On serial grammar training, supervise the static idea-only reverse chooser from `stopgrad(S)` using detached `ReconstructionStack` rule/arity/leaf targets instead of replaying the D3 recurrence. |
+| `forwardGrammarWeight` | float | `0.0` | Weight of the bounded local structural contrast for committed unary/binary folds. Its candidate evidence is detached, so it updates only the chooser at that fold. |
 | `whatScale` | float | `0.7` | Loss weight on the `.what` (content) channel. |
 | `whereScale` | float | `0.2` | Loss weight on the `.where` (positional) channel. |
 | `whenScale` | float | `0.1` | Loss weight on the `.when` (temporal) channel. |
@@ -428,8 +432,8 @@ symbol (line anchors drift).
 | `primingDecay` | `Models.py` (BaseModel init) | `0.9` | Priming-energy decay per prime event. |
 | `primingSpread` | `Models.py` (BaseModel init) | `0.25` | Fraction of a connected row's standing energy diffused to neighbors per prime event (live by default; `0` = pure decay+bump). |
 | `stmReduceTau` | `Models.py` (BaseModel init) | `0.5`; NanoChat models `0.75` | Low-occupancy grammar-confidence threshold for online STM reduction. With an explicit independent word axis, occupancy pressure lowers the effective threshold linearly to a mandatory best grammatical reduction at full STM. |
-| `serialWordCapacity` | `Models.py` (BaseModel init) | legacy fallback: `stmCapacity` | Hard maximum surface words traversed by one outer serial loop. Independent of PS/WS/CS field width and STM depth; BasicModel sets 128 while keeping those fields/workspace at 8. |
-| `serialWordBuckets` | `Models.py` / `InputSpace` | one bucket equal to `serialWordCapacity` | Sorted comma-separated fixed loop widths. InputSpace selects the smallest fitting bucket before PS staging; BasicModel compiles `16,32,64,128`. The largest value must equal `serialWordCapacity`. |
+| `serialWordCapacity` | `Models.py` (BaseModel init) | legacy fallback: `stmCapacity` | Hard maximum surface words staged for one outer serial loop. Independent of PS/WS/CS field width and STM depth; BasicModel sets 256 while keeping those fields/workspace at 8. The tensor loop executes only through the final live column. |
+| `serialWordBuckets` | `Models.py` / `InputSpace` | one bucket equal to `serialWordCapacity` | Comma-separated staging capacities. The largest value must equal `serialWordCapacity`; an overlong sentence fails rather than clipping. BasicModel uses only `256`, because its compiled `torch.while_loop` has a runtime trip count and therefore needs neither padding execution nor separate 16/32/64/128 graphs. Multiple buckets remain a compatibility/performance option for the static scheduler. |
 | `radialStmReduce` | `Models.py` (`_create_per_stage`) | `false` | STM idea folds use the radial (signed-safe) radmin/radmax kernels. |
 | `symbolicPriming` | `Language.py` (`attach_knowledge` $\to$ `configure_priming`) | `false` | Taxonomy forward heat production (symbolic-heat retrieval). |
 | `symbolTower` | `Models.py` (BaseModel init) | `false` | 3-stream CS bind (PS + WS + SS): SymbolSpace becomes the symbol tower with its own codebook stream. |
@@ -453,10 +457,12 @@ symbol (line anchors drift).
 | `answerLossWeight` | `Models.py` (BaseModel init) | `0.0` | Reasoner answer loss weight. |
 | `predictNextLossWeight` | `Models.py` (BaseModel init) | `0.0` | Next-idea blend loss weight (`reason_predict_next` / `NextIdeaScorer`). |
 | `thinkingLossWeight` | `Models.py` (BaseModel init) | `0.0` | Thinking-kernel loss weight. |
-| `leafDistillWeight` | `Models.py` (BaseModel init) | `0.0` | Leaf-distillation loss weight. |
+| `leafDistillWeight` | `Models.py` (BaseModel init) | `0.0` | With `detachedReverse`, weight the reverse chooser's bounded exact-leaf surface term; otherwise weight the legacy standalone root-to-leaf distillation head. |
 | `interContrastiveWeight` | `Models.py` (ModelLoss), `Language.py` (discourse layer) | `0.0` | InfoNCE next-idea contrastive term weight; `0` = MSE-only. |
 | `interContrastiveTemp` | same | `0.1` | InfoNCE temperature. |
-| `conceptualSimilarityScale` | `Models.py` (ModelLoss wiring) | `0.0` | SBOW training weight for the concept `similarity_codebook`. |
+| `conceptualSimilarityScale` | `Models.py` (ModelLoss wiring) | `0.0` | Legacy autograd SBOW weight for non-serial experimental configurations. It cannot be combined with `conceptualContextLearningRate`. |
+| `conceptualContextLearningRate` | `Models.py` (BaseModel init) | `0.0` | Detached post-sentence update rate for the shared serial ConceptualSpace dictionary. Positive values convert `similarity_codebook.W` from its construction Parameter into a persistent non-grad buffer, then rotate reduced contextual evidence directly on its initial unit sphere. |
+| `conceptualContextNegatives` | `Models.py` (BaseModel init) | `4` | Deterministic negative rows per observed concept in the context-owned SBOW reducer. |
 
 ### Per-space
 

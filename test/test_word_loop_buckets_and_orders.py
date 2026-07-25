@@ -47,10 +47,22 @@ def test_overlong_sentence_is_rejected_not_clipped():
         InputSpace.select_word_loop_bucket(inp, sub, (16, 32, 64, 128, 256))
 
 
-def test_basicmodel_declares_four_buckets_and_independent_inventories():
+def test_single_dynamic_capacity_accepts_short_and_long_complete_sentences():
+    inp = SimpleNamespace()
+    ps = SimpleNamespace()
+    for n in (1, 64, 65, 128, 256):
+        sub = SimpleNamespace(_host_tokens=[[_surface(n)]])
+        assert InputSpace.select_word_loop_bucket(
+            inp, sub, (256,), perceptual_space=ps) == 256
+        assert inp._serial_word_count_host == n
+    with pytest.raises(ValueError, match="rather than clipping"):
+        InputSpace.select_word_loop_bucket(
+            inp, SimpleNamespace(_host_tokens=[[_surface(257)]]), (256,))
+
+
+def test_basicmodel_declares_one_dynamic_capacity_and_independent_inventories():
     root = ET.parse(ROOT / "data" / "BasicModel.xml").getroot()
-    assert root.findtext("./architecture/serialWordBuckets") == (
-        "16,32,64,128,256")
+    assert root.findtext("./architecture/serialWordBuckets") == "256"
     assert int(root.findtext("./architecture/serialWordCapacity")) == 256
     ps = int(root.findtext("./PartSpace/nVectors"))
     ps_max = int(root.findtext("./PartSpace/maxVectors"))

@@ -668,17 +668,66 @@ def remap_optimizer_state_by_name(
     live_leaves = _optimizer_state_leaves(live_optimizer_state)
     saved_mleaves = _manifest_leaves(saved_manifest)
     live_mleaves = _manifest_leaves(live_manifest)
-    counts = {
-        len(saved_leaves), len(live_leaves),
-        len(saved_mleaves), len(live_mleaves),
-    }
-    if len(counts) != 1:
+    if len(saved_leaves) != len(saved_mleaves):
+        raise ValueError("saved optimizer state/manifest leaf counts differ")
+    if len(live_leaves) != len(live_mleaves):
+        raise ValueError("live optimizer state/manifest leaf counts differ")
+
+    # A storage owner can deliberately retire an entire optimizer family.
+    # The contextual ConceptualSpace dictionary is one example: it used to be
+    # the sole RowLocalAdam leaf, and is now a persistent, non-autograd buffer
+    # rotated by the contextual reducer.  Preserve the ordinary Adam moments
+    # from an older checkpoint, but only discard a whole saved leaf when every
+    # manifest name in it is absent from the live optimizer.  In particular,
+    # do not let a topology mismatch conceal a leaf that still owns a live
+    # parameter.
+    dropped_from_retired_leaves: list[str] = []
+    if len(saved_leaves) != len(live_leaves):
+        def _leaf_entries(state_leaf, manifest_leaf):
+            groups = state_leaf.get("param_groups")
+            manifest_groups = manifest_leaf.get("param_groups")
+            if not (
+                isinstance(groups, list)
+                and isinstance(manifest_groups, list)
+                and len(groups) == len(manifest_groups)
+            ):
+                raise ValueError("optimizer parameter-group layout differs")
+            entries = []
+            state = state_leaf.get("state") or {}
+            for group, manifest_entries in zip(groups, manifest_groups):
+                ids = list(group.get("params", ()))
+                if len(ids) != len(manifest_entries):
+                    raise ValueError(
+                        "optimizer manifest group length differs")
+                for parameter_id, entry in zip(ids, manifest_entries):
+                    entries.append((_entry_name(entry), state.get(parameter_id)))
+            return entries
+
+        live_names = {
+            name
+            for leaf, manifest_leaf in zip(live_leaves, live_mleaves)
+            for name, _state in _leaf_entries(leaf, manifest_leaf)
+        }
+        retained_saved = []
+        for leaf, manifest_leaf in zip(saved_leaves, saved_mleaves):
+            entries = _leaf_entries(leaf, manifest_leaf)
+            names = {name for name, _state in entries}
+            if names and names.isdisjoint(live_names):
+                dropped_from_retired_leaves.extend(
+                    name for name, state in entries
+                    if isinstance(state, Mapping))
+                continue
+            retained_saved.append((leaf, manifest_leaf))
+        saved_leaves = [leaf for leaf, _manifest in retained_saved]
+        saved_mleaves = [manifest for _leaf, manifest in retained_saved]
+
+    if len(saved_leaves) != len(live_leaves):
         raise ValueError("optimizer state/manifest leaf counts differ")
 
     remapped_leaves: list[dict[str, Any]] = []
     restored = 0
     reset: list[str] = []
-    dropped: list[str] = []
+    dropped: list[str] = list(dropped_from_retired_leaves)
 
     for saved_leaf, saved_ml, live_leaf, live_ml in zip(
         saved_leaves, saved_mleaves, live_leaves, live_mleaves

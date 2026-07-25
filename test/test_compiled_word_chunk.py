@@ -10,6 +10,7 @@ import warnings
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
+import pytest
 import torch
 from torch import nn
 
@@ -23,6 +24,7 @@ if str(_BIN) not in sys.path:
 from Layers import IntraSentenceLayer, ShortTermMemory  # noqa: E402
 import Language  # noqa: E402
 import Models  # noqa: E402
+import util  # noqa: E402
 from Models import BasicModel  # noqa: E402
 from Spaces import ConceptualSpace  # noqa: E402
 from util import init_config, init_device  # noqa: E402
@@ -185,6 +187,55 @@ def test_k2_adapter_matches_legacy_loop_stm_loss_and_gradients():
             chunk_param.grad, legacy_param.grad, rtol=2e-5, atol=2e-6)
 
 
+def test_k2_adapter_maps_local_choice_trace_into_sentence_slots():
+    """A reused local p=0/1 graph must not overwrite earlier word choices."""
+    torch.manual_seed(73)
+    words = torch.randn(1, 4, 5)
+    gates = torch.ones(1, 4, dtype=torch.bool)
+    model = _harness(words, gates, chunk=True)
+    trace = Language.ReconstructionStack(batch=1, max_depth=16)
+    trace.prepare_choices(
+        1, 3 * int(words.shape[1]) + 2, device=words.device,
+        unary_rule_ids=(15, 16), binary_rule_ids=(5, 6))
+    model.symbolSpace = types.SimpleNamespace(reconstruction_stack=trace)
+    model.trace_scale = nn.Parameter(torch.tensor(0.25))
+    original_body = model._per_word_body_step
+
+    def traced_body(self, word, p, gate, out_slot, active_host=True):
+        result = original_body(word, p, gate, out_slot, active_host)
+        active = gate.reshape(-1).bool()
+        trace.record_choice(
+            3 * p, torch.full_like(active, 5 + p, dtype=torch.long),
+            arity=2, mask=active,
+            local_structural_loss=(self.trace_scale * float(p + 1)).expand(
+                active.shape[0]))
+        trace.record_choice(
+            3 * p + 2,
+            torch.full_like(active, 15 + p, dtype=torch.long),
+            arity=1, mask=active,
+            local_structural_loss=(self.trace_scale * float(p + 1)).expand(
+                active.shape[0]))
+        return result
+
+    model._per_word_body_step = types.MethodType(traced_body, model)
+    model._compiled_word_chunk_step = torch.compile(
+        model._aligned_word_chunk2, backend="eager", fullgraph=True)
+    result = model._run_aligned_word_chunk_loop(
+        model._per_word_contributions, int(words.shape[1]))
+    assert result is model.conceptualSpace.subspace
+
+    ids, arities, mask = trace.choices()
+    expected_ids = [5, -1, 15, 6, -1, 16] * 2
+    expected_arities = [2, 0, 1, 2, 0, 1] * 2
+    assert ids[0, :12].tolist() == expected_ids
+    assert arities[0, :12].tolist() == expected_arities
+    assert mask[0, :12].tolist() == [value >= 0 for value in expected_ids]
+    local = trace.forward_loss()
+    assert local is not None
+    local.backward()
+    torch.testing.assert_close(model.trace_scale.grad, torch.tensor(1.5))
+
+
 def test_chunk_views_keep_one_graph_across_part_and_bucket_widths():
     """K=2 layouts avoid specialization by residual P or outer W."""
     torch.manual_seed(151)
@@ -257,7 +308,9 @@ def test_chunk_views_keep_one_graph_across_part_and_bucket_widths():
         torch._dynamo.reset()
 
 
-def _tiny_canonical_model(tmp_path, monkeypatch):
+def _tiny_canonical_model(
+        tmp_path, monkeypatch, *, input_width=128, batch_size=2,
+        word_buckets="16,32,64,128,256"):
     """Build the real aligned serial model with 16-coordinate events."""
     tree = ET.parse(_ROOT / "data" / "BasicModel.xml")
     root = tree.getroot()
@@ -267,9 +320,9 @@ def _tiny_canonical_model(tmp_path, monkeypatch):
         assert node is not None, path
         node.text = str(value).lower() if isinstance(value, bool) else str(value)
 
-    _set("./InputSpace/nOutput", 128)
+    _set("./InputSpace/nOutput", input_width)
     _set("./InputSpace/nDim", 16)
-    _set("./PartSpace/nInput", 128)
+    _set("./PartSpace/nInput", input_width)
     _set("./PartSpace/nInputDim", 16)
     _set("./PartSpace/nVectors", 64)
     _set("./PartSpace/maxVectors", 256)
@@ -284,10 +337,11 @@ def _tiny_canonical_model(tmp_path, monkeypatch):
     _set("./WholeSpace/nDim", 16)
     _set("./WholeSpace/nOutputDim", 16)
     _set("./OutputSpace/nInputDim", 16)
-    _set("./architecture/training/batchSize", 2)
+    _set("./architecture/training/batchSize", batch_size)
     _set("./architecture/training/numWorkers", 0)
     _set("./architecture/training/autoload", False)
     _set("./architecture/training/autosave", False)
+    _set("./architecture/serialWordBuckets", word_buckets)
     _set("./architecture/weightsPath", tmp_path / "unused.ckpt")
     config = tmp_path / "tiny_chunk_model.xml"
     tree.write(config, encoding="unicode")
@@ -304,6 +358,26 @@ def _tiny_canonical_model(tmp_path, monkeypatch):
             str(config), data=Models.TheData)
     model.train()
     return model
+
+
+def _stage_fullgraph_tensor_peer(model, samples):
+    """Mirror runBatch's eager sentence staging for a focused graph probe."""
+    model._start_spaces_for_forward()
+    raw = model.inputSpace.prepInput(samples)
+    model._staged_in_sub = model._lex_embed_stem(raw)
+    symbol = model.symbolSpace
+    if not getattr(symbol, "_per_sentence_initialized", False):
+        symbol.soft_reset()
+        symbol._per_sentence_initialized = True
+    model._stage_reconstruction_teacher()
+    slab = model.inputSpace._ar_embedded_N
+    model._prepare_reconstruction_choices(
+        int(slab.shape[0]), int(slab.shape[1]), slab.device)
+    model.conceptualSpace.stm.begin_forward(
+        int(slab.shape[0]), device=slab.device, dtype=slab.dtype)
+    model._stage_fixed_residual_part_capacity()
+    model._stage_intersentence_seed()
+    return raw
 
 
 def test_real_aligned_loop_matches_prior_compiled_semantics_across_chunks(
@@ -348,7 +422,341 @@ def test_real_aligned_loop_matches_prior_compiled_semantics_across_chunks(
     legacy_loss = legacy.conceptualSpace.consume_intra_loss()
     chunk_loss = chunked.conceptualSpace.consume_intra_loss()
     torch.testing.assert_close(chunk_loss, legacy_loss, rtol=1e-6, atol=1e-7)
-    assert chunked.inputSpace._ar_concept_lookup_rows.shape[1] == 128
+    assert (chunked.inputSpace._ar_concept_lookup_rows.shape[1]
+            == chunked.serial_word_capacity)
+
+
+def test_tensor_peer_while_matches_static_pipeline_and_releases_owner_state(
+        tmp_path, monkeypatch):
+    """The production HOP is exact and its committed tensors are reusable."""
+    torch.manual_seed(211)
+    reference = _tiny_canonical_model(tmp_path, monkeypatch)
+    tensor_loop = copy.deepcopy(reference)
+    reference._chart_compose_per_word = lambda: None
+    tensor_loop._chart_compose_per_word = lambda: None
+    tensor_loop._tensor_peer_while_eager = True
+
+    samples = ["alpha beta gamma delta", "epsilon zeta"]
+    reference_input = reference.inputSpace.prepInput(samples)
+    tensor_input = tensor_loop.inputSpace.prepInput(samples)
+    torch.manual_seed(991)
+    expected = reference.forward(reference_input)
+    torch.manual_seed(991)
+    actual = tensor_loop.forward(tensor_input)
+
+    assert int(tensor_loop._tensor_peer_trip_count) == 4
+    for got, wanted in zip(actual, expected):
+        if torch.is_tensor(wanted):
+            torch.testing.assert_close(got, wanted, rtol=0, atol=0)
+        else:
+            assert got is wanted is None
+    for name in _STM_ATTRS:
+        torch.testing.assert_close(
+            getattr(tensor_loop.conceptualSpace.stm, name),
+            getattr(reference.conceptualSpace.stm, name), rtol=0, atol=0)
+
+    reference_trace = reference.symbolSpace.reconstruction_stack
+    tensor_trace = tensor_loop.symbolSpace.reconstruction_stack
+    for got, wanted in zip(tensor_trace.choices(),
+                           reference_trace.choices()):
+        torch.testing.assert_close(got, wanted, rtol=0, atol=0)
+    for got, wanted in zip(tensor_trace.forward_loss_slots(),
+                           reference_trace.forward_loss_slots()):
+        torch.testing.assert_close(got, wanted, rtol=0, atol=0)
+
+    expected_intra = reference.conceptualSpace.consume_intra_loss()
+    actual_intra = tensor_loop.conceptualSpace.consume_intra_loss()
+    torch.testing.assert_close(actual_intra, expected_intra, rtol=0, atol=0)
+    (actual[0].square().mean()
+     + actual[2].square().mean()
+     + actual_intra).backward()
+    for parameter in tensor_loop.parameters():
+        grad = parameter.grad
+        if grad is None:
+            continue
+        values = grad.coalesce().values() if grad.is_sparse else grad
+        assert bool(torch.isfinite(values).all())
+
+    # The HOP returns a multi-output view family. Owner-boundary clones must
+    # make the normal next-sentence in-place reset legal after backward.
+    tensor_loop.symbolSpace.soft_reset()
+
+
+def test_compiled_sentence_state_is_an_explicit_result_not_a_side_effect():
+    """Dead sentence products survive even if compiler side effects do not."""
+
+    class _SentenceHarness(nn.Module):
+        _forward_with_compiled_sentence_state = (
+            BasicModel._forward_with_compiled_sentence_state)
+        _publish_compiled_sentence_state = (
+            BasicModel._publish_compiled_sentence_state)
+
+        def __init__(self):
+            super().__init__()
+            self._spaces_started_for_forward = False
+            self._stm_single_S = None
+            self._stm_post_depth = None
+            self._tensor_peer_trip_count = None
+
+        def _start_spaces_for_forward(self):
+            self._spaces_started_for_forward = True
+
+        def _forward_per_stage(
+                self, value, in_sub_override=None, *,
+                return_sentence_state=False):
+            del in_sub_override
+            idea = value * 2
+            post_depth = torch.ones(
+                value.shape[0], dtype=torch.long, device=value.device)
+            trip_count = torch.tensor(
+                3, dtype=torch.long, device=value.device)
+            public = (value, value + 1, value + 2, None)
+            return ((*public, idea, post_depth, trip_count)
+                    if return_sentence_state else public)
+
+    harness = _SentenceHarness()
+    compiled = torch.compile(
+        harness._forward_with_compiled_sentence_state,
+        backend="eager", fullgraph=True)
+    explicit = compiled(torch.randn(2, 4))
+    assert len(explicit) == 7
+
+    # Simulate a compiler/runtime that does not replay Python attribute
+    # assignments made inside the captured callable.
+    harness._stm_single_S = None
+    harness._stm_post_depth = None
+    harness._tensor_peer_trip_count = None
+    public = harness._publish_compiled_sentence_state(explicit)
+
+    assert len(public) == 4
+    torch.testing.assert_close(harness._stm_single_S, explicit[4])
+    torch.testing.assert_close(harness._stm_post_depth, explicit[5])
+    torch.testing.assert_close(harness._tensor_peer_trip_count, explicit[6])
+
+
+@pytest.mark.skipif(
+    os.getenv("RUN_SLOW") != "1",
+    reason="strict real-model fullgraph trace is ~15s; set RUN_SLOW=1",
+)
+def test_tensor_peer_complete_forward_is_one_graph_across_runtime_lengths(
+        tmp_path, monkeypatch):
+    """The real forward/backward reuses one graph as the trip count changes."""
+    torch.manual_seed(313)
+    model = _tiny_canonical_model(tmp_path, monkeypatch)
+    model._prewarm_checkpoint_shapes()
+    model._compiled_word_loop_fullgraph = True
+    raw = _stage_fullgraph_tensor_peer(
+        model, ["alpha beta gamma delta", "epsilon zeta"])
+    torch._dynamo.reset()
+    torch._dynamo.utils.counters.clear()
+    compiled = torch.compile(
+        lambda _unused: model._forward_with_compiled_sentence_state(None),
+        backend="eager", fullgraph=True)
+    try:
+        first = model._publish_compiled_sentence_state(compiled(raw))
+        assert int(model._tensor_peer_trip_count) == 4
+        (first[0].square().mean() + first[2].square().mean()).backward()
+        assert int(torch._dynamo.utils.counters["stats"]["unique_graphs"]) == 1
+
+        model.zero_grad(set_to_none=True)
+        model.End()
+        model.symbolSpace.soft_reset()
+        raw = _stage_fullgraph_tensor_peer(
+            model,
+            ["one two three four five six seven", "one two"])
+        second = model._publish_compiled_sentence_state(compiled(raw))
+        assert int(model._tensor_peer_trip_count) == 7
+        (second[0].square().mean() + second[2].square().mean()).backward()
+        assert int(torch._dynamo.utils.counters["stats"]["unique_graphs"]) == 1
+        assert all(
+            parameter.grad is None
+            or bool(torch.isfinite(
+                parameter.grad.coalesce().values()
+                if parameter.grad.is_sparse else parameter.grad).all())
+            for parameter in model.parameters())
+    finally:
+        torch._dynamo.reset()
+
+
+@pytest.mark.skipif(
+    os.getenv("RUN_MPS_SLOW") != "1"
+    or not torch.backends.mps.is_available(),
+    reason="requires explicit slow MPS Inductor run",
+)
+def test_mps_while_loop_backward_accepts_padded_captured_view():
+    """Inductor conforms reverse-body grads to Metal's saved-view stride."""
+    previous_backend = util.TheCompileBackend
+    previous_mode = util.TheCompileMode
+    try:
+        init_device("mps")
+        util.TheCompileBackend = "inductor"
+        util.TheCompileMode = "default"
+        backing = torch.randn(1056, device="mps", requires_grad=True)
+        captured = torch.as_strided(
+            backing, (1, 1032), (1056, 1))
+        carry = torch.zeros(
+            1, 1032, device="mps", requires_grad=True)
+        assert captured.stride() == (1056, 1)
+
+        def source(initial, peer):
+            index = torch.zeros(
+                (), dtype=torch.int64, device=initial.device)
+
+            def cond(tick, value):
+                del value
+                return tick < 3
+
+            def body(tick, value):
+                return tick + 1, value + peer
+
+            _tick, result = torch.while_loop(
+                cond, body, (index, initial))
+            return result
+
+        torch._dynamo.reset()
+        torch._dynamo.utils.counters.clear()
+        compiled = util.compile(source, verbose=False, fullgraph=True)
+        result = compiled(carry, captured)
+        result.square().mean().backward()
+        torch.mps.synchronize()
+
+        assert backing.grad is not None
+        assert carry.grad is not None
+        assert bool(torch.isfinite(backing.grad).all())
+        assert bool(torch.isfinite(carry.grad).all())
+        assert int(
+            torch._dynamo.utils.counters["stats"]["unique_graphs"]) == 1
+    finally:
+        torch._dynamo.reset()
+        util.TheCompileBackend = previous_backend
+        util.TheCompileMode = previous_mode
+        init_device("cpu")
+
+
+@pytest.mark.skipif(
+    os.getenv("RUN_MPS_SLOW") != "1"
+    or not torch.backends.mps.is_available(),
+    reason="requires explicit slow MPS Inductor run",
+)
+@pytest.mark.parametrize(
+    ("first_words", "second_words", "expected_capacity", "input_width"),
+    ((10, 14, 16, 128), (40, 50, 64, 512)),
+)
+def test_tensor_peer_mps_inductor_w16_w64_fullgraph_smoke(
+        tmp_path, monkeypatch, first_words, second_words,
+        expected_capacity, input_width):
+    """MPS lowers real forward/backward once per static capacity."""
+    previous_backend = util.TheCompileBackend
+    previous_mode = util.TheCompileMode
+    model = None
+    try:
+        torch.manual_seed(617 + expected_capacity)
+        model = _tiny_canonical_model(
+            tmp_path, monkeypatch, input_width=input_width).to("mps")
+        init_device("mps")
+        model._prewarm_checkpoint_shapes()
+        model._compiled_word_loop_fullgraph = True
+        util.TheCompileBackend = "inductor"
+        util.TheCompileMode = "default"
+
+        def _sentences(words):
+            return [
+                " ".join(["a"] * int(words)),
+                " ".join(["b"] * max(1, int(words) - 3)),
+            ]
+
+        raw = _stage_fullgraph_tensor_peer(
+            model, _sentences(first_words))
+        assert int(model.inputSpace._ar_embedded_N.shape[1]) == (
+            expected_capacity)
+        torch._dynamo.reset()
+        torch._dynamo.utils.counters.clear()
+        source = (
+            lambda _unused:
+            model._forward_with_compiled_sentence_state(None))
+        compiled = util.compile(source, verbose=False, fullgraph=True)
+        assert compiled is not source
+
+        for expected_trip, words in (
+                (first_words, first_words),
+                (second_words, second_words)):
+            if words != first_words:
+                model.zero_grad(set_to_none=True)
+                model.End()
+                model.symbolSpace.soft_reset()
+                raw = _stage_fullgraph_tensor_peer(
+                    model, _sentences(words))
+            result = model._publish_compiled_sentence_state(compiled(raw))
+            (result[0].square().mean()
+             + result[2].square().mean()).backward()
+            torch.mps.synchronize()
+            assert int(model._tensor_peer_trip_count) == expected_trip
+            assert all(
+                parameter.grad is None
+                or bool(torch.isfinite(
+                    parameter.grad.coalesce().values()
+                    if parameter.grad.is_sparse else parameter.grad).all())
+                for parameter in model.parameters())
+        assert int(torch._dynamo.utils.counters["stats"]["unique_graphs"]) == 1
+    finally:
+        torch._dynamo.reset()
+        util.TheCompileBackend = previous_backend
+        util.TheCompileMode = previous_mode
+        init_device("cpu")
+
+
+def test_tiny_canonical_detached_reverse_stops_at_root(tmp_path, monkeypatch):
+    """The integrated canonical reverse student must not differentiate S."""
+    torch.manual_seed(109)
+    model = _tiny_canonical_model(tmp_path, monkeypatch)
+    assert model.detached_reverse
+    chooser = model.symbolSpace.reverse_chooser
+    assert chooser is not None
+
+    input_tensor = model.inputSpace.prepInput(
+        ["alpha beta gamma", "delta epsilon"])
+    model.forward(input_tensor)
+    root = model._stm_single_S
+    assert root is not None and root.grad_fn is not None
+    root.retain_grad()
+    loss, _metric = model._detached_reverse_construction_loss()
+    assert loss is not None and torch.isfinite(loss)
+    local = model.symbolSpace.reconstruction_stack.forward_loss()
+    assert local is not None and torch.isfinite(local)
+    assert 0.0 <= float(local.detach()) <= 1.0
+    (loss + model.forward_grammar_weight * local).backward()
+
+    assert root.grad is None
+    grads = [p.grad for p in chooser.parameters() if p.grad is not None]
+    assert grads and any(bool(g.abs().sum() > 0) for g in grads)
+    assert all(bool(torch.isfinite(g).all()) for g in grads)
+
+
+def test_tiny_canonical_detached_reverse_train_step_is_finite(
+        tmp_path, monkeypatch):
+    """One real optimizer step uses the split objectives without bad grads."""
+    torch.manual_seed(127)
+    model = _tiny_canonical_model(tmp_path, monkeypatch)
+    chooser = model.symbolSpace.reverse_chooser
+    before = [p.detach().clone() for p in chooser.parameters()]
+    optimizer = model.getOptimizer(lr=1e-3)
+    input_tensor = model.inputSpace.prepInput(
+        ["alpha beta gamma", "delta epsilon"])
+    result, _ = model.runBatch(
+        train=True, batchNum=0, batchSize=2, split="train",
+        optimizer=optimizer,
+        batch_override=(input_tensor, torch.empty(2, 0)))
+    assert result is not None
+    def _finite_grad(parameter):
+        grad = parameter.grad
+        if grad is None:
+            return True
+        checked = grad.coalesce().values() if grad.is_sparse else grad
+        return bool(torch.isfinite(checked).all())
+
+    assert all(_finite_grad(p) for p in model.parameters())
+    assert any(not torch.equal(old, new.detach())
+               for old, new in zip(before, chooser.parameters()))
 
 
 def test_no_grad_fallback_retains_eager_stm_depth_semantics(

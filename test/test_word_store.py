@@ -195,7 +195,9 @@ def _spy_unfold(m):
     R = len(reducer.ops)
     marg = torch.zeros(1, 1, R); marg[0, 0, idx] = 1.0
     can = torch.tensor([True])
-    object.__setattr__(m, "_stm_reduce_op_trace", [(marg, can)])
+    trace = m.symbolSpace.reconstruction_stack
+    trace.begin_reductions()
+    trace.record_reduction(marg, can)
     captured = []
 
     def spy(parent, basis=None, left_rows=None, right_rows=None, **kwargs):
@@ -210,7 +212,7 @@ def _spy_unfold(m):
         assert out is not None and out.shape[:2] == (1, 2)
     finally:
         gl.reverse = orig
-        object.__setattr__(m, "_stm_reduce_op_trace", None)
+        trace.clear_reductions()
     assert len(captured) == 1
     return captured[0]
 
@@ -499,10 +501,37 @@ def test_forward_records_kind_tagged_trace(tmp_path_factory):
     ks = getattr(stm, "_slot_kinds", None)
     assert ks is not None and len(ks) == len(items), \
         "kind recording must be live on wordStore configs"
-    trace = getattr(m, "_stm_reduce_op_trace", None)
+    reconstruction = m.symbolSpace.reconstruction_stack
+    trace = reconstruction.reduction_trace()
     assert trace, "the sweep must have traced folds"
     assert all(len(step) == 4 for step in trace), \
         "trace steps must carry operand kinds while recording"
+    word_ids, word_mask = reconstruction.words()
+    word_part_ids, word_part_mask = reconstruction.word_parts()
+    leaves = reconstruction.leaves()
+    # A durable CS identity is optional on the unaligned smoke config, but the
+    # exact open-vocabulary radix spelling is always the discrete word target.
+    if word_ids is not None or word_mask is not None:
+        assert torch.is_tensor(word_ids) and torch.is_tensor(word_mask)
+        assert tuple(word_ids.shape) == tuple(word_mask.shape)
+    assert torch.is_tensor(word_part_ids) and torch.is_tensor(word_part_mask)
+    assert tuple(word_part_ids.shape) == tuple(word_part_mask.shape)
+    assert int(word_part_ids.shape[0]) == len(items)
+    assert bool(word_part_mask.any())
+    assert torch.is_tensor(leaves) and int(leaves.shape[0]) == len(items)
+    assert leaves.grad_fn is None
+    choice_ids, choice_arities, choice_mask = reconstruction.choices()
+    assert torch.is_tensor(choice_ids)
+    assert torch.is_tensor(choice_arities)
+    assert torch.is_tensor(choice_mask)
+    assert bool(choice_mask.any()), "at least one committed fold must be traced"
+    for arity in (1, 2):
+        selected = choice_mask & (choice_arities == arity)
+        if bool(selected.any()):
+            allowed = set(reconstruction.rule_map(arity).tolist())
+            assert set(choice_ids[selected].tolist()).issubset(allowed)
+    assert not hasattr(m, "_stm_pre_reduce_slab")
+    assert not hasattr(m, "_stm_reduce_op_trace")
 
 
 # -- cross-batch graph severing (LAST in file: builds a DIFFERENT config) ----
@@ -725,11 +754,13 @@ def test_unfold_word_word_step_snaps_to_store_rows(tmp_path_factory):
     can = torch.tensor([True])
     lw = torch.tensor([True])
     rw = torch.tensor([True])
-    object.__setattr__(m, "_stm_reduce_op_trace", [(marg, can, lw, rw)])
+    trace = m.symbolSpace.reconstruction_stack
+    trace.begin_reductions()
+    trace.record_reduction(marg, can, lw, rw)
     try:
         out = m._reverse_reduce_unfold(S)
     finally:
-        object.__setattr__(m, "_stm_reduce_op_trace", None)
+        trace.clear_reductions()
         for c, reg in zip(cs_list, saved_reg):
             object.__setattr__(c, "_recognized_words", reg)
     assert out is not None and int(out.shape[1]) >= 2
@@ -756,7 +787,7 @@ def test_unfold_trace_free_recovers_two_word_root(tmp_path_factory):
     saved_reg = [getattr(c, "_recognized_words", None) for c in cs_list]
     for c in cs_list:
         object.__setattr__(c, "_recognized_words", None)
-    object.__setattr__(m, "_stm_reduce_op_trace", None)   # NO forward record
+    m.symbolSpace.reconstruction_stack.clear_reductions()  # NO forward record
     try:
         wid = store.word_ids()
         assert int(wid.numel()) >= 2
@@ -855,7 +886,8 @@ def test_leaf_distill_trains_root_toward_leaves(tmp_path_factory):
     """Step 3 (Alec: 'the training of method-1 will give information to
     method-2'): with the knob on, a train batch adds the leaf_distill term —
     the leaf-decoder head regenerates the Method-1 EXACT leaves
-    (_stm_pre_reduce_slab) from the collapsed root (_stm_single_S), so the
+    (SymbolSpace.reconstruction_stack.leaves()) from the collapsed root
+    (_stm_single_S), so the
     root cannot satisfy it while collapsing distinct sentences to one
     attractor. The head exists, carries gradients after the step, and is
     handed to the optimizer."""

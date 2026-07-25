@@ -296,16 +296,16 @@ different representations.
 
 - **Word-loop mereology (`<serialObjectMeta>` on).** The outer sequence is
   `[B,W,D]`, with one position per word and $W$ bounded independently by
-  one of the compiled `serialWordBuckets`, bounded by
-  `<serialWordCapacity>`. InputSpace owns iteration $w$ and presents that
-  word's local state to PartSpace; only then does PartSpace gather its
-  complete discrete ids `[B,P_raw]` and applies its sigma set-fold inside the
-  loop. $P_raw$ is the longest complete spelling in the current batch; it is
-  not bounded by `PartSpace.nOutput`. PS and WS retain their eight-wide live
-  fields in BasicModel, CS binds all three PS and three WS folds by equal
-  location, and one concept carrying its actual order enters the configured
-  STM (default capacity 8). Grammar reductions free STM slots while the outer
-  loop continues.
+  `<serialWordCapacity>`. BasicModel stages W=256 but its compiled
+  `torch.while_loop` stops at the final live column in the batch. InputSpace
+  owns iteration $w$ and presents that word's local state to PartSpace; only
+  then does PartSpace gather its complete discrete ids `[B,P_raw]` and apply
+  its sigma set-fold inside the loop. $P_raw$ is the longest complete spelling
+  in the current batch; it is not bounded by `PartSpace.nOutput`. PS and WS
+  retain their eight-wide live fields in BasicModel, CS binds all three PS and
+  three WS folds by equal location, and one concept carrying its actual order
+  enters the configured STM (default capacity 8). Grammar reductions free STM
+  slots while the outer loop continues.
 
 Legacy serial inputs retain the following window policies:
 
@@ -493,13 +493,12 @@ when the router fires on the serial path:
 | `both` | **(default)** per-word AND boundary both fire |
 | `off` | neither fires |
 
-The **per-word fire** (`BasicModel._chart_compose_per_word`,
-[Models.py](../bin/Models.py)) runs `symbolSpace.compose` over the current
-STM snapshot *before* `cs.forward` for the next word, populating
-`symbolSpace.current_rules` for the SS dispatch. It lives in the
-host-side loop, outside the per-iteration captured graph, so even a full
-`languageLayer` path that introduces a host sync cannot break the
-per-word capture gate. The **boundary fire**
+The **per-word fire** is the C stage of the peer pipeline:
+`LanguageSpace.compose` runs over the B-stage STM snapshot and its timestamped
+result becomes visible to B two symbolic indices later. On the normal MPS
+fullgraph it is part of the tensor `while_loop` and the serial grammar route
+remains capture-clean. With `BASICMODEL_MPS_WORD_LOOP_FULLGRAPH=0`, the same C
+stage runs in the static host scheduler. The **boundary fire**
 (`BasicModel._chart_compose_at_C`, [Models.py](../bin/Models.py)) runs
 iff `router_wire_serial in ('boundary', 'both')`.
 

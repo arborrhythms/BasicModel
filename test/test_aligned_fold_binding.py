@@ -274,9 +274,15 @@ def test_mini_basicmodel_ps128_ws128_cs1024_runs_forward_backward(
     loss = sum(value.square().mean() for value in differentiable)
     loss.backward()
     shared_W = model.conceptualSpace.similarity_codebook.W
-    assert shared_W.grad is not None
-    assert shared_W.grad.layout == torch.sparse_coo
-    assert bool(torch.isfinite(shared_W.grad.coalesce().values()).all())
+    # Contextual SBOW owns this dictionary as a persistent buffer. The eager
+    # read-only boundary keeps the compiled recurrent graph partitioned, but
+    # reverse/backward must never recreate a codebook gradient.
+    assert not isinstance(shared_W, torch.nn.Parameter)
+    assert not shared_W.requires_grad
+    assert shared_W.grad is None
+    assert model.conceptualSpace.similarity_codebook.vq.codebook is shared_W
+    assert all(p.data_ptr() != shared_W.data_ptr()
+               for p in model.parameters())
 
     def _finite_nonzero_grad(param):
         grad = param.grad

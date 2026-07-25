@@ -200,6 +200,67 @@ def test_optimizer_remap_keeps_stage_zero_and_drops_old_stage_aliases():
     assert result.diagnostics.dropped_saved_states == (stage1,)
 
 
+def test_optimizer_remap_drops_fully_retired_optimizer_leaf():
+    """A contextual no-grad codebook may retire its whole RowLocalAdam leaf.
+
+    A checkpoint from the former trainable-codebook design has a separate
+    optimizer leaf containing only that table.  It is safe to retain the
+    ordinary optimizer state while dropping that leaf, because its sole name
+    is absent from the live optimizer manifest.
+    """
+    from checkpoint_migrations import remap_optimizer_state_by_name
+
+    dense_name = "perceptualSpace.sigma.raw_bfly_L"
+    retired_name = "conceptualSpaces.0.layers.2.W"
+    dense_shape = [7, 64]
+    retired_shape = [16, 32]
+
+    def manifest(leaves):
+        return {"version": 1, "leaves": [
+            {"param_groups": [[
+                {"name": name, "shape": shape}
+                for name, shape in entries
+            ]]}
+            for entries in leaves
+        ]}
+
+    dense_state = {
+        "step": torch.tensor(3.0),
+        "exp_avg": torch.ones(dense_shape),
+        "exp_avg_sq": torch.full(dense_shape, 2.0),
+    }
+    retired_state = {
+        "step": torch.tensor(3.0),
+        "exp_avg": torch.ones(retired_shape),
+        "exp_avg_sq": torch.full(retired_shape, 2.0),
+    }
+    saved_optimizer = {
+        "optimizers": [
+            {"state": {0: dense_state},
+             "param_groups": [{"params": [0], "lr": 1e-3}]},
+            {"state": {1: retired_state},
+             "param_groups": [{"params": [1], "lr": 1e-3}]},
+        ],
+    }
+    live_optimizer = {
+        "state": {},
+        "param_groups": [{"params": [10], "lr": 1e-3}],
+    }
+
+    result = remap_optimizer_state_by_name(
+        saved_optimizer,
+        manifest([[(dense_name, dense_shape)],
+                  [(retired_name, retired_shape)]]),
+        live_optimizer,
+        manifest([[(dense_name, dense_shape)]]),
+    )
+
+    assert result.state["state"] == {10: dense_state}
+    assert result.state["param_groups"][0]["params"] == [10]
+    assert result.diagnostics.restored_parameter_states == 1
+    assert result.diagnostics.dropped_saved_states == (retired_name,)
+
+
 def test_manifestless_182_param_layout_restores_shared_stage_zero_only():
     """Reconstruct the pre-manifest 15-minute checkpoint topology.
 

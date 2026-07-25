@@ -165,6 +165,44 @@ def _sparse_embedding_eager(indices, weight):
     return F.embedding(indices, weight, sparse=True)
 
 
+class _ReadOnlyCodebookLookup(torch.autograd.Function):
+    """Eager autograd boundary for a non-trainable codebook read.
+
+    The contextual ConceptualSpace dictionary is deliberately a buffer: its
+    sentence-boundary rotation is its only update law.  MPS AOT nevertheless
+    needs an autograd boundary between the eager indexed read and the compiled
+    recurrent sentence body.  ``boundary_token`` gives the returned rows that
+    boundary without making the storage differentiable; backward explicitly
+    returns no gradients for either input.
+    """
+
+    @staticmethod
+    def forward(ctx, weight, indices, boundary_token):
+        """Gather rows while keeping ``weight`` read-only."""
+        return F.embedding(indices, weight)
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        """The dictionary and boundary token have no backward ownership."""
+        return None, None, None
+
+
+@torch.compiler.disable
+def _read_only_codebook_lookup_eager(indices, weight):
+    """Read contextual codebook rows outside AOT without a ``W`` gradient.
+
+    ``weight`` is a persistent buffer with ``requires_grad=False``.  The tiny
+    ephemeral token is not model state and receives no gradient; it exists
+    only so the returned working tensor retains the same eager-to-AOT
+    partition as a trainable sparse embedding read.  Consumers may therefore
+    differentiate their own computation through the rows, while the codebook
+    itself remains entirely outside autograd.
+    """
+    token = torch.zeros(
+        (), device=weight.device, dtype=weight.dtype, requires_grad=True)
+    return _ReadOnlyCodebookLookup.apply(weight, indices, token)
+
+
 def registration_loss(pi_fold, sigma_fold, codes):
     """The drift-keeper: ``σπσ = σ`` on stored symbols (MeronomySpec §5;
     MeronomyPlan Stage 8).
@@ -1855,12 +1893,23 @@ class Basis(nn.Module):
         return None
 
     def _bind_vq_to_owned_parameter(self):
-        """Keep VQ's operational view on this Basis's sole Parameter."""
+        """Keep VQ's operational view on this Basis's registered storage.
+
+        Most codebooks own a trainable ``nn.Parameter``.  A contextual
+        ConceptualSpace dictionary instead owns a persistent read-only buffer;
+        its VQ has EMA disabled and is only an operational reader.  Keep the
+        legacy method name because the surrounding construction code uses it,
+        but bind whichever registered storage owns ``W``.
+        """
         vq = getattr(self, 'vq', None)
         W = self._parameters.get('W')
+        if W is None:
+            W = self._buffers.get('W')
         if (
             vq is not None
-            and isinstance(W, nn.Parameter)
+            and (isinstance(W, nn.Parameter)
+                 or (bool(getattr(self, "contextual_rotation_only", False))
+                     and isinstance(W, torch.Tensor)))
             and hasattr(vq, 'bind_external_codebook')
         ):
             vq.bind_external_codebook(W)
@@ -2635,20 +2684,31 @@ class Codebook(Tensor):
         self.vq = None
         # A learned codebook may be declared fixed-capacity once its owner has
         # finished construction.  The lock is deliberately plain Python
-        # metadata (not checkpoint state): it protects Parameter *identity*
-        # for the lifetime of this module instance, so an optimizer can never
-        # keep training an orphaned pre-growth Parameter.  Dynamic stores such
-        # as the radix PerceptStore do not take this lock and retain the legacy
-        # ``grow_to`` surface.
+        # metadata (not checkpoint state): it protects registered storage
+        # identity for the lifetime of this module instance, so an optimizer
+        # can never keep training an orphaned pre-growth Parameter.  A
+        # context-owned conceptual dictionary switches that frozen storage to
+        # a buffer after construction; dynamic stores such as the radix
+        # PerceptStore do not take this lock and retain the legacy ``grow_to``
+        # surface.
         self._capacity_frozen = False
         self._capacity_frozen_by = None
         self._frozen_parameter_id = None
+        self._frozen_storage_kind = None
         # The canonical aligned ConceptualSpace dictionary opts into an
         # indexed ``F.embedding(..., sparse=True)`` read.  Other codebooks
         # retain ordinary tensor indexing: some apply elementwise transforms
         # or have dense consumers and therefore cannot promise a sparse
         # gradient to their optimizer.
         self.sparse_lookup_grad = False
+        # Context-owned ConceptualSpace dictionaries replace their construction
+        # Parameter with a persistent non-grad buffer, remain out of every
+        # optimizer, and update by one detached rotation per sentence. Their
+        # eager read barrier gives compiled consumers a working tensor without
+        # creating an autograd edge to the dictionary. Plain Python metadata
+        # deliberately stays out of state_dict: it is a runtime ownership
+        # policy selected by the model configuration.
+        self.contextual_rotation_only = False
         # VQ EMA storage policy is fixed before ``create``.  True preserves
         # the historical VectorQuantize buffers and update law.  The canonical
         # aligned ConceptualSpace dictionary explicitly opts out because it is
@@ -2766,9 +2826,19 @@ class Codebook(Tensor):
         return self
 
     def _apply(self, fn, recurse=True):
-        """Move/cast the sole owner Parameter, then refresh VQ's view."""
+        """Move/cast owned storage, then refresh VQ's view.
+
+        ``Module._apply`` may replace a buffer object on a device/dtype move.
+        That is the one legitimate identity change for a frozen contextual
+        dictionary, so refresh the stored identity before enforcing the
+        capacity invariant.
+        """
         result = super()._apply(fn, recurse=recurse)
         result._bind_vq_to_owned_parameter()
+        if (getattr(result, "_capacity_frozen", False)
+                and getattr(result, "_frozen_storage_kind", None) == "buffer"
+                and isinstance(result._buffers.get("W"), torch.Tensor)):
+            result._frozen_parameter_id = id(result._buffers["W"])
         result._assert_frozen_parameter_identity()
         return result
 
@@ -2807,8 +2877,20 @@ class Codebook(Tensor):
         """
         if self.W is None:
             return None
-        if (bool(getattr(self, "sparse_lookup_grad", False))
+        if (bool(getattr(self, "contextual_rotation_only", False))
                 and not isinstance(idx, slice)):
+            if not torch.is_tensor(idx):
+                idx = torch.as_tensor(
+                    idx, dtype=torch.long, device=self.W.device)
+            else:
+                idx = idx.to(device=self.W.device, dtype=torch.long)
+            # The context-owned table is a buffer, not a trainable embedding.
+            # Keep an eager custom-autograd boundary for MPS AOT, but its
+            # backward returns no W gradient.  A mutating consumer must make
+            # its own working tensor; this zero-copy gather is read-only.
+            rows = _read_only_codebook_lookup_eager(idx, self.W)
+        elif (bool(getattr(self, "sparse_lookup_grad", False))
+              and not isinstance(idx, slice)):
             if not torch.is_tensor(idx):
                 idx = torch.as_tensor(
                     idx, dtype=torch.long, device=self.W.device)
@@ -2823,6 +2905,113 @@ class Codebook(Tensor):
         if (getattr(self, "is_percept_store", False)
                 and meronomy_enabled()):
             return _unorm_ste(rows)
+        return rows
+
+    def enable_contextual_rotation(self, *, shared_storage=None):
+        """Make this codebook a context-owned, rotation-only dictionary.
+
+        Concept atoms are initialized on the unit sphere by :meth:`addVectors`.
+        In this mode ``W`` is a persistent buffer, so it cannot enter an
+        optimizer or acquire a gradient.  The indexed read retains an explicit
+        eager read-only boundary for compiled consumers; it is not a codebook
+        learning path.  BaseModel instead takes one detached sentence snapshot
+        after the ordinary optimizer step, reduces contextual SBOW evidence by
+        row, and calls :meth:`rotate_rows` once.
+
+        ``shared_storage`` lets peer ConceptualSpace wrappers retain one exact
+        buffer object.  It is used only while converting the already-aligned
+        construction-time Parameters; normal callers use the default.
+        """
+        W = self._parameters.get("W", self._buffers.get(
+            "W", getattr(self, "W", None)))
+        if not isinstance(W, torch.Tensor) or W.ndim != 2:
+            raise RuntimeError(
+                "Codebook.enable_contextual_rotation requires an allocated "
+                "2-D W")
+        if shared_storage is None:
+            if not isinstance(W, nn.Parameter):
+                raise RuntimeError(
+                    "Codebook.enable_contextual_rotation requires a "
+                    "construction-time nn.Parameter W")
+            storage = W.detach()
+        else:
+            storage = shared_storage
+            if (not isinstance(storage, torch.Tensor)
+                    or storage.ndim != 2
+                    or tuple(storage.shape) != tuple(W.shape)
+                    or storage.data_ptr() != W.data_ptr()):
+                raise RuntimeError(
+                    "contextual peer codebooks must share the same 2-D W "
+                    "storage before buffer conversion")
+        if "W" in self._parameters:
+            del self._parameters["W"]
+        if "W" in self._buffers:
+            del self._buffers["W"]
+        self.register_buffer("W", storage, persistent=True)
+        with torch.no_grad():
+            self.W.requires_grad_(False)
+        self.contextual_rotation_only = True
+        if getattr(self, "_capacity_frozen", False):
+            self._frozen_storage_kind = "buffer"
+            self._frozen_parameter_id = id(self.W)
+        self._bind_vq_to_owned_parameter()
+        self._assert_frozen_parameter_identity()
+        return self.W
+
+    @torch.no_grad()
+    def rotate_rows(self, rows, tangent, step_size):
+        """Apply one reduced tangent update as an exact sphere rotation.
+
+        ``rows`` must name unique codebook rows and ``tangent`` supplies one
+        accumulated contextual direction per row.  The radial component is
+        removed and the exponential-map update
+
+        ``cos(theta) * atom + sin(theta) * tangent_hat``
+
+        preserves the initial unit norm without a later normalization pass.
+        The update is intentionally detached and uses a single indexed write;
+        on MPS ``index_put_`` avoids the large-destination ``index_copy_``
+        path that dominated the former RowLocalAdam/normalizer boundary.
+        """
+        if not bool(getattr(self, "contextual_rotation_only", False)):
+            raise RuntimeError(
+                "Codebook.rotate_rows requires enable_contextual_rotation()")
+        W = self._parameters.get("W", getattr(self, "W", None))
+        if not isinstance(W, torch.Tensor) or W.ndim != 2:
+            raise RuntimeError("Codebook.rotate_rows requires a 2-D W")
+        if not torch.is_tensor(rows) or not torch.is_tensor(tangent):
+            raise TypeError("Codebook.rotate_rows expects tensor rows/tangent")
+        rows = rows.reshape(-1).to(device=W.device, dtype=torch.long)
+        if rows.numel() == 0:
+            return rows
+        if tangent.ndim != 2 or int(tangent.shape[0]) != int(rows.shape[0]):
+            raise ValueError(
+                "Codebook.rotate_rows tangent must be [len(rows), D]")
+        if int(tangent.shape[1]) != int(W.shape[1]):
+            raise ValueError(
+                "Codebook.rotate_rows tangent width does not match W")
+
+        # All working arithmetic remains local to the touched rows.  The
+        # codebook's construction invariant is unit norm; unlike the former
+        # post-step projection this method never normalizes stored atoms.
+        atom = W.index_select(0, rows).float()
+        direction = tangent.to(device=W.device, dtype=torch.float32)
+        direction = direction - (direction * atom).sum(
+            dim=-1, keepdim=True) * atom
+        magnitude = direction.norm(p=2, dim=-1, keepdim=True)
+        unit_direction = direction / magnitude.clamp_min(1e-12)
+        theta = float(step_size) * magnitude
+        rotated = (torch.cos(theta) * atom
+                   + torch.sin(theta) * unit_direction)
+        # A zero tangent has undefined direction but a zero angle; selecting
+        # the old atom makes that identity exact even for a denormal input.
+        rotated = torch.where(magnitude > 1e-12, rotated, atom)
+        rotated = rotated.to(dtype=W.dtype)
+        if W.device.type == "mps":
+            W.index_put_((rows,), rotated, accumulate=False)
+        else:
+            W.index_copy_(0, rows, rotated)
+        self._svd_dirty = True
         return rows
 
     def _refresh_frozen_W(self, value, operation):
@@ -2840,7 +3029,12 @@ class Codebook(Tensor):
                 f"{self._capacity_frozen_by or 'learned codebook'} requires "
                 f"a 2-D same-shape refresh; got "
                 f"{None if not torch.is_tensor(value) else tuple(value.shape)}.")
-        W = self._parameters["W"]
+        W = self._parameters.get("W")
+        if W is None:
+            W = self._buffers.get("W")
+        if not isinstance(W, torch.Tensor):
+            raise RuntimeError(
+                f"Codebook.{operation}: frozen codebook lost its W storage")
         if tuple(value.shape) != tuple(W.shape):
             raise RuntimeError(
                 f"Codebook.{operation}: frozen "
@@ -2862,16 +3056,20 @@ class Codebook(Tensor):
         ONLY the prototype. Per-batch content reconstructs via
         ``SubSpace.materialize`` from prototype + selection.
 
-        ``None`` clears a plain-tensor (non-Parameter) ``W``.
-        ``nn.Parameter`` writes replace the Parameter.
+        ``None`` clears a plain-tensor (non-registered) ``W``.
+        ``nn.Parameter`` writes replace Parameter storage; registered buffers
+        accept only same-shape in-place refreshes.
 
         Any setW that touches the codebook invalidates the cached SVD
         factors used by the invertible project / project_reverse paths.
         """
         if value is None:
-            if "W" not in self._parameters:
+            if "W" not in self._parameters and "W" not in self._buffers:
                 self.W = None
                 self._svd_dirty = True
+            elif "W" in self._buffers:
+                raise RuntimeError(
+                    "Codebook.setW cannot clear registered buffer storage")
             self._bind_vq_to_owned_parameter()
             return
         if self._refresh_frozen_W(value, "setW"):
@@ -2879,6 +3077,8 @@ class Codebook(Tensor):
         if isinstance(value, nn.Parameter):
             if "W" in self._parameters:
                 del self._parameters["W"]
+            if "W" in self._buffers:
+                del self._buffers["W"]
             self.W = value
             self._svd_dirty = True
             self._bind_vq_to_owned_parameter()
@@ -2893,6 +3093,19 @@ class Codebook(Tensor):
                 "SubSpace.set_forward_content(...) / "
                 "set_activation(...) instead, or run "
                 "Codebook.forward(_vspace=...) to snap.")
+        if "W" in self._buffers:
+            storage = self._buffers["W"]
+            if (not torch.is_tensor(value)
+                    or tuple(value.shape) != tuple(storage.shape)):
+                raise RuntimeError(
+                    "Codebook.setW: registered buffer storage requires a "
+                    "same-shape tensor refresh")
+            with torch.no_grad():
+                storage.copy_(value.detach().to(
+                    device=storage.device, dtype=storage.dtype))
+            self._svd_dirty = True
+            self._bind_vq_to_owned_parameter()
+            return
         self.W = value
         self._svd_dirty = True
 
@@ -3132,14 +3345,19 @@ class Codebook(Tensor):
           VQ EMA updates and gradient training). Shape must match.
         * Plain-tensor slot (hand-constructed Codebook pre-addVectors):
           direct reassignment.
-        * ``None`` clears a plain-tensor slot; Parameter slots are
-          preserved (use ``del`` directly if you really need to drop one).
+        * Buffer-backed slot: same-shape in-place copy (keeps state_dict and
+          tied read ownership intact).
+        * ``None`` clears a plain-tensor slot; registered storage is
+          preserved (use an explicit rebuild to remove it).
         * Always invalidates the cached SVD factors.
         """
         if new_W is None:
-            if "W" not in self._parameters:
+            if "W" not in self._parameters and "W" not in self._buffers:
                 self.W = None
                 self._svd_dirty = True
+            elif "W" in self._buffers:
+                raise RuntimeError(
+                    "Codebook.replace_W cannot clear registered buffer storage")
             self._bind_vq_to_owned_parameter()
             return
         if self._refresh_frozen_W(new_W, "replace_W"):
@@ -3147,6 +3365,8 @@ class Codebook(Tensor):
         if isinstance(new_W, nn.Parameter):
             if "W" in self._parameters:
                 del self._parameters["W"]
+            if "W" in self._buffers:
+                del self._buffers["W"]
             self.W = new_W
             self._svd_dirty = True
             self._bind_vq_to_owned_parameter()
@@ -3173,6 +3393,18 @@ class Codebook(Tensor):
                 return
             with torch.no_grad():
                 param.data.copy_(new_W)
+            self._svd_dirty = True
+            self._bind_vq_to_owned_parameter()
+            return
+        if "W" in self._buffers:
+            storage = self._buffers["W"]
+            if new_W.shape != storage.shape:
+                raise RuntimeError(
+                    "Codebook.replace_W: registered buffer storage cannot "
+                    "change shape")
+            with torch.no_grad():
+                storage.copy_(new_W.detach().to(
+                    device=storage.device, dtype=storage.dtype))
             self._svd_dirty = True
             self._bind_vq_to_owned_parameter()
             return
@@ -3717,7 +3949,7 @@ class Codebook(Tensor):
         self.part_parents[int(idx)] = int(parent_idx)
 
     def freeze_capacity(self, owner="learned codebook"):
-        """Freeze this codebook's row capacity and Parameter identity.
+        """Freeze this codebook's row capacity and construction identity.
 
         Call this only after construction has allocated the final configured
         inventory and before an optimizer snapshots parameters.  Subsequent
@@ -3744,21 +3976,33 @@ class Codebook(Tensor):
         self._capacity_frozen = True
         self._capacity_frozen_by = str(owner)
         self._frozen_parameter_id = id(W)
+        self._frozen_storage_kind = "parameter"
         self._assert_frozen_parameter_identity()
         return W
 
     def _assert_frozen_parameter_identity(self):
-        """Fail if a fixed-capacity codebook's owner Parameter was swapped."""
+        """Fail if fixed-capacity owner storage was swapped or reshaped."""
         if not getattr(self, "_capacity_frozen", False):
             return
         W = self._parameters.get("W")
+        storage_kind = "parameter"
+        if W is None:
+            W = self._buffers.get("W")
+            storage_kind = "buffer"
         expected = getattr(self, "_frozen_parameter_id", None)
-        if not isinstance(W, nn.Parameter) or id(W) != expected:
+        expected_kind = getattr(self, "_frozen_storage_kind", None)
+        if expected_kind is None:
+            # Checkpoints / hand-built legacy fixtures predate buffer-owned
+            # contextual dictionaries, so their frozen W is a Parameter.
+            expected_kind = "parameter"
+        if (not isinstance(W, torch.Tensor)
+                or storage_kind != expected_kind
+                or id(W) != expected):
             raise RuntimeError(
                 f"{self._capacity_frozen_by or 'learned codebook'} replaced "
-                f"its frozen W Parameter after optimizer ownership was "
+                f"its frozen W {expected_kind} after ownership was "
                 f"established. Rebuild the model with the required fixed "
-                f"capacity; runtime Parameter replacement is forbidden.")
+                f"capacity; runtime storage replacement is forbidden.")
         if W.ndim != 2 or int(W.shape[0]) != int(self.nVectors):
             raise RuntimeError(
                 f"{self._capacity_frozen_by or 'learned codebook'} changed "
@@ -3769,7 +4013,7 @@ class Codebook(Tensor):
             raise RuntimeError(
                 f"{self._capacity_frozen_by or 'learned codebook'} lost "
                 f"single ownership: VectorQuantize no longer references the "
-                f"same W Parameter.")
+                f"same W storage.")
 
     def grow_to(self, new_nVectors):
         """Resize this codebook so it carries at least ``new_nVectors``
@@ -6018,20 +6262,56 @@ class SubSpaceView:
     zero-copy read surface, so a consumer that needs scratch storage must make
     an explicit ``clone()``/working tensor.
     """
-    __slots__ = ("__subspace", "owner")
+    __slots__ = ("__subspace", "__event", "__context", "owner")
 
-    def __init__(self, subspace, owner=None):
+    def __init__(self, subspace=None, owner=None, *, event=None, context=None):
+        """Build a view over a live carrier or a published event snapshot.
+
+        The normal form wraps a :class:`SubSpace`.  ``snapshot`` below is the
+        pipeline form: its event is a *zero-copy* reference to a completed
+        tensor, while its owner remains the Space that published it.  This
+        avoids allocating one temporary ``SubSpace`` (and five Basis modules)
+        per A/B hand-off merely to preserve the read-only capability boundary.
+        """
+        if subspace is None and event is None:
+            raise ValueError("SubSpaceView needs a SubSpace or an event snapshot")
         self.__subspace = subspace
+        self.__event = event
+        self.__context = dict(context or {})
         self.owner = owner if owner is not None else getattr(
             subspace, "_owner_space", None)
 
+    @classmethod
+    def snapshot(cls, event, *, owner=None, context=None):
+        """Publish ``event`` as a zero-copy, read-only peer surface.
+
+        It intentionally does not clone or detach: consumers may retain the
+        completed tensor through the next producer tick, and autograd retains
+        the same graph.  A debug ``guard_peer_views`` block still catches an
+        illicit in-place write through the tensor version counter.
+        """
+        return cls(None, owner=owner, event=event, context=context)
+
     def materialize(self, k=None, mode="active"):
+        if self.__subspace is None:
+            # A published event is already the complete materialized surface.
+            # It has no separate modality/codebook storage, so all ordinary
+            # read modes intentionally resolve to the same tensor.
+            return self.__event
         return self.__subspace.materialize(k=k, mode=mode)
 
     def resolve(self):
+        if self.__subspace is None:
+            return self.__event
         return self.__subspace.resolve()
 
     def is_empty(self):
+        if self.__subspace is None:
+            event = self.__event
+            return (event is None
+                    or (torch.is_tensor(event)
+                        and (event.numel() == 0
+                             or (event.dim() >= 2 and event.shape[-2] == 0))))
         return self.__subspace.is_empty()
 
     def shape(self, mode="event"):
@@ -6040,37 +6320,78 @@ class SubSpaceView:
 
     def mask(self):
         """Return the selection/mask read surface (never a writable API)."""
+        if self.__subspace is None:
+            return self.__context.get("mask")
         return self.__subspace._index
 
     def context(self, name=None):
         """Read pipeline context without leaking the mutable carrier."""
-        allowed = {"valid_mask", "stem_embedded", "errors", "serial_cache"}
+        allowed = {
+            "valid_mask", "stem_embedded", "errors", "serial_cache",
+            # Word-local staging metadata is InputSpace-owned context.  PS
+            # needs these reads to synthesize its own working tensor, but must
+            # never receive the mutable InputSpace carrier.
+            "word_local_parts", "word_part_ids", "word_part_mask",
+            "word_part_offsets",
+        }
         if name is None:
-            return {key: getattr(self.__subspace, key) for key in allowed}
+            if self.__subspace is None:
+                return {key: self.__context.get(key) for key in allowed}
+            return {
+                key: getattr(self.__subspace, "_" + key, None)
+                if key.startswith("word_") else getattr(self.__subspace, key)
+                for key in allowed
+            }
         if name not in allowed:
             raise AttributeError(f"{name!r} is not a SubSpaceView context read")
-        return getattr(self.__subspace, name)
+        if self.__subspace is None:
+            return self.__context.get(name)
+        attr = "_" + name if name.startswith("word_") else name
+        return getattr(self.__subspace, attr, None)
 
     @property
     def valid_mask(self):
+        if self.__subspace is None:
+            return self.__context.get("valid_mask")
         return self.__subspace.valid_mask
 
     @property
     def stem_embedded(self):
+        if self.__subspace is None:
+            return self.__context.get("stem_embedded", False)
         return self.__subspace.stem_embedded
 
     @property
     def errors(self):
+        if self.__subspace is None:
+            return self.__context.get("errors")
         return self.__subspace.errors
 
     @property
     def serial_cache(self):
+        if self.__subspace is None:
+            return self.__context.get("serial_cache")
         return self.__subspace.serial_cache
 
     def storage_versions(self):
+        if self.__subspace is None:
+            event = self.__event
+            if torch.is_tensor(event):
+                return (id(event), int(getattr(event, "_version", 0)))
+            return (id(event), -1)
         return self.__subspace.storage_versions()
 
     def assert_unchanged(self, before):
+        if self.__subspace is None:
+            after = self.storage_versions()
+            if after != before:
+                owner = self.owner
+                label = (getattr(owner, "config_section", None)
+                         or getattr(owner, "name", None)
+                         or "published peer snapshot")
+                raise RuntimeError(
+                    f"peer mutation guard: non-owner changed viewed {label} storage")
+            return
         return self.__subspace.assert_storage_unchanged(before)
 
 
@@ -8326,6 +8647,19 @@ class Space(SpaceCarrierMixin, nn.Module):
         self.subspace.commit_event(
             self, event_tensor, compute_activation=compute_activation)
 
+    def commit_from(self, source, event_tensor, compute_activation=False):
+        """Adopt peer read-context and commit an event on this Space only.
+
+        Orchestrators may request this owner operation, but never write a
+        sibling's ``SubSpace`` themselves.  ``source`` may be a full carrier
+        or a read-only :class:`SubSpaceView`; ``copy_context`` consumes only
+        its documented read surface.
+        """
+        if source is not None:
+            self.subspace.copy_context(source)
+        self.commit_event(event_tensor, compute_activation=compute_activation)
+        return self.subspace
+
     def attach_symbolSpace(self, symbolSpace):
         """Wire the shared SymbolSpace as a non-Module routing pointer.
 
@@ -10105,6 +10439,24 @@ class InputSpace(Space):
             return None
         return slab[:, p:p + 1, :]
 
+    def present_word(self, event, *, word_local_parts=False,
+                     part_ids=None, part_mask=None, part_offsets=None):
+        """Commit one InputSpace-owned word presentation.
+
+        The model scheduler chooses *when* a word is presented, but InputSpace
+        remains the only writer of its carrier.  PS receives this carrier as a
+        read surface and allocates its own local working event when it needs to
+        synthesize radix parts.
+        """
+        self.commit_event(event)
+        sub = self.subspace
+        sub.stem_embedded = True
+        object.__setattr__(sub, "_word_local_parts", bool(word_local_parts))
+        object.__setattr__(sub, "_word_part_ids", part_ids)
+        object.__setattr__(sub, "_word_part_mask", part_mask)
+        object.__setattr__(sub, "_word_part_offsets", part_offsets)
+        return sub
+
     def select_word_loop_bucket(self, sub, buckets, *, perceptual_space=None):
         """Choose the smallest compiled W bucket that contains this batch.
 
@@ -11554,7 +11906,7 @@ class PartSpace(Space):
         return event
 
     def synthesize_word_parts(self, part_ids, part_mask,
-                              part_offsets=None):
+                              part_offsets=None, *, functional=False):
         """Synthesize every constituent of one word inside its word tick.
 
         Called from ``BasicModel._per_word_body_step``.  The live codebook
@@ -11579,6 +11931,10 @@ class PartSpace(Space):
                 "serial word synthesis requires a meronymic sigma with "
                 "parameter-free set aggregation; the raw constituents cannot "
                 "be silently summed or truncated")
+        aggregate = (
+            sigma.compute_aggregate_over_set
+            if functional and hasattr(sigma, "compute_aggregate_over_set")
+            else sigma.aggregate_over_set)
         # Base aggregation operates only on WHAT and deliberately does not run
         # the learned sigma kernel.  The explicit fold ladder that follows PS
         # forward owns sigma[0], sigma[1], ... exactly once.  The fixed
@@ -11588,7 +11944,7 @@ class PartSpace(Space):
         # members of one word tick share the same temporal context).
         fold_width = int(getattr(sigma, "nInput", 0) or 0)
         if 0 < fold_width < int(events.shape[-1]):
-            word_what = sigma.aggregate_over_set(
+            word_what = aggregate(
                 events[..., :fold_width], mask=mask)
             band_events = events[..., fold_width:]
             first = mask.to(dtype=torch.long).argmax(dim=-1)
@@ -11602,10 +11958,30 @@ class PartSpace(Space):
                 any_valid, word_band, torch.zeros_like(word_band))
             word = torch.cat((word_what, word_band), dim=-1)
         else:
-            word = sigma.aggregate_over_set(events, mask=mask)
+            word = aggregate(events, mask=mask)
         if word.dim() == 2:
             word = word.unsqueeze(1)
         return word
+
+    def compute_word_fold_sources(self, part_ids, part_mask,
+                                  part_offsets, pass_indices):
+        """Return P0 plus cumulative learned folds without carrier writes.
+
+        ``P0`` remains the parameter-free constituent union used by aligned
+        concept evidence.  The learned ladder consumes the range-railed
+        percept event, exactly as :meth:`forward` followed by
+        :meth:`fold_event_ladder` does on the owning-space path.
+        """
+        base = self.synthesize_word_parts(
+            part_ids, part_mask, part_offsets, functional=True)
+        if base is None:
+            raise RuntimeError(
+                "functional word fold requires staged part ids and mask")
+        percept = self.subspace._apply_normalization(
+            "percepts", base, target="event")
+        folds = self.fold_event_ladder(
+            percept, pass_indices, strict=True)
+        return (base, *folds)
 
     def _embed_radix_word_major(self, upstream_vspace):
         """Eager radix lookup for the serial word-major contract.
@@ -13191,7 +13567,7 @@ class PartSpace(Space):
                  else int(getattr(self, "_recurrent_pass_idx", 0) or 0))
         return stack[min(max(0, int(t)), len(stack) - 1)]
 
-    def _synthesize_event(self, ev, t, *, strict=False):
+    def _synthesize_event(self, ev, t, *, strict=False, functional=False):
         """Tensor-only application of one sigma stack layer."""
         stack = getattr(self, "sigmas", None)
         if stack is None:
@@ -13214,14 +13590,18 @@ class PartSpace(Space):
         flattened_width = int(getattr(fold, "N", 0) or 0)
         actual_width = int(ev.shape[-1]) * (
             int(ev.shape[-2]) if ev.dim() >= 3 else 1)
+        apply_fold = (
+            fold.compute_forward
+            if functional and hasattr(fold, "compute_forward")
+            else fold.forward)
         if flattened_width and actual_width == flattened_width:
-            return fold.forward(ev)
+            return apply_fold(ev)
         if ev.dim() >= 3 and int(ev.shape[-1]) > fold_width:
             return torch.cat(
-                [fold.forward(ev[..., :fold_width]),
+                [apply_fold(ev[..., :fold_width]),
                  ev[..., fold_width:]], dim=-1)
         if int(ev.shape[-1]) == fold_width:
-            return fold.forward(ev)
+            return apply_fold(ev)
         if strict:
             raise RuntimeError(
                 f"PartSpace sigma fold {int(t)} cannot consume event "
@@ -13276,7 +13656,7 @@ class PartSpace(Space):
         outputs = []
         for pass_idx in tuple(int(t) for t in pass_indices):
             current = self._synthesize_event(
-                current, pass_idx, strict=strict)
+                current, pass_idx, strict=strict, functional=True)
             outputs.append(current)
         return tuple(outputs)
 
@@ -13332,8 +13712,12 @@ class PartSpace(Space):
         changing this public PS/WS-symmetric signature.
         """
         x_subspace = in_sub
-        word_local_parts = bool(
-            getattr(x_subspace, "_word_local_parts", False))
+        if isinstance(x_subspace, SubSpaceView):
+            word_local_parts = bool(
+                x_subspace.context("word_local_parts"))
+        else:
+            word_local_parts = bool(
+                getattr(x_subspace, "_word_local_parts", False))
         # Dual-towers: feedback is stashed, not yet folded (Task B/C consume it).
         object.__setattr__(self, "_cs_feedback", cs_out)
         if x_subspace.is_empty():
@@ -13342,16 +13726,36 @@ class PartSpace(Space):
             # InputSpace owns the outer word iteration and presents a local
             # part state.  Synthesis happens only after PS receives that
             # state, inside PS.forward—not in the model's loop orchestrator.
+            #
+            # ``in_sub`` is an InputSpace carrier.  It is a peer read surface
+            # here: PS must not synthesize the local word by writing back into
+            # InputSpace's storage.  Materialize the explicit PS-owned working
+            # event instead, preserving the input view for the concurrent WS
+            # branch and for the debug peer-mutation guard.
+            if isinstance(x_subspace, SubSpaceView):
+                part_ids = x_subspace.context("word_part_ids")
+                part_mask = x_subspace.context("word_part_mask")
+                part_offsets = x_subspace.context("word_part_offsets")
+            else:
+                part_ids = getattr(x_subspace, "_word_part_ids", None)
+                part_mask = getattr(x_subspace, "_word_part_mask", None)
+                part_offsets = getattr(x_subspace, "_word_part_offsets", None)
             local_word = self.synthesize_word_parts(
-                getattr(x_subspace, "_word_part_ids", None),
-                getattr(x_subspace, "_word_part_mask", None),
-                getattr(x_subspace, "_word_part_offsets", None))
+                part_ids, part_mask, part_offsets)
             if local_word is None:
                 raise RuntimeError(
                     "PartSpace received an incomplete serial word-part state")
-            x_subspace.set_event(local_word)
-        self.subspace.copy_context(x_subspace)
-        vspace = x_subspace
+            self.subspace.copy_context(x_subspace)
+            self.subspace.set_event(local_word)
+            # P0 is an explicit PS-owned source for aligned CS binding.  Keep
+            # it on PS instead of mutating the InputSpace carrier just so the
+            # model can rediscover it after this forward has completed.
+            object.__setattr__(
+                self.subspace, "_word_local_base_event", local_word)
+            vspace = self.subspace
+        else:
+            self.subspace.copy_context(x_subspace)
+            vspace = x_subspace
         quantize = getattr(self, "quantize", True)
 
         # Serial-mode warm path: upstream has pre-embedded AR buffer, cold
@@ -15033,10 +15437,17 @@ class ConceptualSpace(Space):
         FAIL LOUD: a non-finite ``rule_probs`` raises (no silent gating
         beyond the documented None-fallback).
         """
-        ss = getattr(self, 'symbolSpace', None)
-        if ss is None:
-            return None
-        rstate = getattr(ss, 'routing_state', None)
+        # In the peer scheduler LanguageSpace returns an immutable plan and
+        # CS explicitly latches it before this B-stage predictor runs.  Prefer
+        # that hand-off over peeking through the SymbolSpace runtime object;
+        # the latter remains the legacy/non-pipelined fallback.
+        plan = getattr(self, "_language_feedback_plan", None)
+        rstate = (plan.get("routing") if isinstance(plan, dict) else None)
+        if rstate is None:
+            ss = getattr(self, 'symbolSpace', None)
+            if ss is None:
+                return None
+            rstate = getattr(ss, 'routing_state', None)
         routing = getattr(rstate, 'rule_probs', None) if rstate is not None else None
         if routing is None or not torch.is_tensor(routing):
             return None
@@ -15072,8 +15483,11 @@ class ConceptualSpace(Space):
 
     def validate_intra_routing(self):
         """Eager preflight for routing tensors consumed by a compiled step."""
-        ss = getattr(self, "symbolSpace", None)
-        state = getattr(ss, "routing_state", None) if ss is not None else None
+        plan = getattr(self, "_language_feedback_plan", None)
+        state = plan.get("routing") if isinstance(plan, dict) else None
+        if state is None:
+            ss = getattr(self, "symbolSpace", None)
+            state = getattr(ss, "routing_state", None) if ss is not None else None
         routing = getattr(state, "rule_probs", None) if state is not None else None
         if torch.is_tensor(routing) and not torch.isfinite(routing).all():
             raise ValueError(
@@ -19806,11 +20220,11 @@ class ConceptualSpace(Space):
         """
         if stm is None or not torch.is_tensor(getattr(stm, "_buffer", None)):
             raise ValueError("prior-tick SS decode requires a live STM")
-        buf = stm._buffer
-        if buf.dim() != 3:
+        buffer = stm._buffer
+        if buffer.dim() != 3:
             raise ValueError(
                 "prior-tick SS decode requires STM payload [B,K,D]")
-        B, K = int(buf.shape[0]), int(buf.shape[1])
+        B, K = int(buffer.shape[0]), int(buffer.shape[1])
         n_locations = int(self.outputShape[0])
         if K != n_locations:
             raise RuntimeError(
@@ -19824,10 +20238,48 @@ class ConceptualSpace(Space):
                 f"batch row ({B})")
 
         prior_rows, prior_activations = stm.ensure_reference_state()
+        return self.decode_prior_stm_tensors(
+            buffer, stm._depth, prior_rows, prior_activations,
+            active_rows, staged_rows=staged_rows,
+            staged_atoms=staged_atoms)
+
+    def decode_prior_stm_tensors(
+            self, buffer, depth, prior_rows, prior_activations,
+            active_rows, staged_rows=None, staged_atoms=None):
+        """Pure tensor-state equivalent of :meth:`decode_prior_stm_peer`.
+
+        The fixed-capacity STM slabs are explicit inputs and no
+        ``ShortTermMemory`` property is read or repaired.  This is the SS read
+        surface used by the compiled while-loop A stage.
+        """
+        if not torch.is_tensor(buffer) or buffer.dim() != 3:
+            raise ValueError(
+                "prior-tick SS decode requires STM payload [B,K,D]")
+        B, K = int(buffer.shape[0]), int(buffer.shape[1])
+        n_locations = int(self.outputShape[0])
+        if K != n_locations:
+            raise RuntimeError(
+                "canonical prior-tick SS requires the full STM slab to map "
+                "one-to-one onto CS locations: "
+                f"STM capacity {K} != CS locations {n_locations}")
+        if (not torch.is_tensor(depth) or tuple(depth.shape) != (B,)):
+            raise ValueError(
+                "prior-tick SS depth must contain one value per batch row")
+        if (not torch.is_tensor(prior_rows)
+                or tuple(prior_rows.shape) != (B, K)
+                or not torch.is_tensor(prior_activations)
+                or tuple(prior_activations.shape) != (B, K)):
+            raise ValueError(
+                "prior-tick SS provenance slabs must have shape [B,K]")
+        if (not torch.is_tensor(active_rows)
+                or int(active_rows.numel()) != B):
+            raise ValueError(
+                "prior-tick SS active mask must contain one value per "
+                f"batch row ({B})")
+
         slots = torch.arange(
-            K, dtype=stm._depth.dtype,
-            device=stm._depth.device).unsqueeze(0)
-        occupied = slots < stm._depth.unsqueeze(1)
+            K, dtype=depth.dtype, device=depth.device).unsqueeze(0)
+        occupied = slots < depth.unsqueeze(1)
         # ``prior_rows >= 0`` is compile-time false on the first word because
         # STM begins empty. Keep these as logical operations: the PyTorch 2.12
         # MPS backend's bitwise dtype rule mishandles a fused literal False
@@ -19836,7 +20288,7 @@ class ConceptualSpace(Space):
         validity = torch.logical_and(
             validity,
             active_rows.to(
-                device=buf.device, dtype=torch.bool).reshape(B, 1))
+                device=buffer.device, dtype=torch.bool).reshape(B, 1))
         rows = torch.where(
             validity, prior_rows, torch.full_like(prior_rows, -1))
         activations = torch.where(
@@ -19844,15 +20296,99 @@ class ConceptualSpace(Space):
             torch.zeros_like(prior_activations))
         band_width = int(self.nWhere) + int(self.nWhen)
         if band_width > 0:
-            bands = buf[..., -band_width:]
+            bands = buffer[..., -band_width:]
         else:
-            bands = buf[..., :0]
+            bands = buffer[..., :0]
         bands = torch.where(
             validity.unsqueeze(-1), bands, torch.zeros_like(bands))
         decoded = self.decode_sparse_concept_rows(
             rows, activations.unsqueeze(1), bands.unsqueeze(1),
             staged_rows=staged_rows, staged_atoms=staged_atoms)
         return decoded[:, 0], validity
+
+    def compute_aligned_word_peer(
+            self, part_sources, whole_sources, concept_row, concept_order,
+            active_rows, stm_state, *, staged_rows=None, staged_atoms=None,
+            part_n_what, whole_n_what):
+        """Pure aligned ``{PS, WS, prior SS} -> CSsub`` computation.
+
+        Source-native fold ladders have already completed.  This method
+        reduces each source to an activation, performs the indexed conceptual
+        read, includes the location-aligned prior STM/SS source, and returns
+        the current word event plus the provenance needed by the delayed B
+        stage.  It owns no carrier commits.
+        """
+        part_sources = tuple(part_sources)
+        whole_sources = tuple(whole_sources)
+        native_sources = part_sources + whole_sources
+        if not native_sources:
+            raise ValueError("aligned word peer requires native fold sources")
+        n_locations = int(self.outputShape[0])
+        B = int(native_sources[0].shape[0])
+
+        def fit_locations(event):
+            if not torch.is_tensor(event) or event.dim() != 3:
+                raise ValueError(
+                    "aligned native fold source must be [B,N,D]")
+            have = int(event.shape[1])
+            if have > n_locations:
+                raise RuntimeError(
+                    "aligned native fold has more locations than CS")
+            if have == n_locations:
+                return event
+            return torch.cat(
+                (event, event.new_zeros(
+                    B, n_locations - have, int(event.shape[2]))), dim=1)
+
+        fitted_parts = tuple(fit_locations(value) for value in part_sources)
+        fitted_wholes = tuple(fit_locations(value) for value in whole_sources)
+        fitted = fitted_parts + fitted_wholes
+        active = active_rows.reshape(B).to(
+            device=fitted[0].device, dtype=torch.bool)
+        row = concept_row.reshape(B).to(
+            device=fitted[0].device, dtype=torch.long)
+        order = concept_order.reshape(B).to(
+            device=fitted[0].device, dtype=torch.long)
+        row = torch.where(active, row, torch.full_like(row, -1))
+        order = torch.where(active, order, torch.full_like(order, -1))
+        rows = row.reshape(B, 1).expand(B, n_locations)
+        orders = order.reshape(B, 1).expand(B, n_locations)
+
+        activations = torch.stack(
+            tuple(self.native_fold_activation(value, int(part_n_what))
+                  for value in fitted_parts)
+            + tuple(self.native_fold_activation(value, int(whole_n_what))
+                    for value in fitted_wholes),
+            dim=1)
+        bands = torch.stack(
+            tuple(value[..., int(part_n_what):] for value in fitted_parts)
+            + tuple(value[..., int(whole_n_what):]
+                    for value in fitted_wholes),
+            dim=1)
+        decoded = self.decode_sparse_concept_rows(
+            rows, activations, bands,
+            staged_rows=staged_rows, staged_atoms=staged_atoms)
+
+        (buffer, depth, _orders, _grammar_orders,
+         prior_rows, prior_activations) = tuple(stm_state)
+        prior_symbol, prior_validity = self.decode_prior_stm_tensors(
+            buffer, depth, prior_rows, prior_activations, active,
+            staged_rows=staged_rows, staged_atoms=staged_atoms)
+        native_count = int(decoded.shape[1])
+        denominator = (
+            torch.full_like(
+                prior_validity, float(native_count), dtype=decoded.dtype)
+            + prior_validity.to(dtype=decoded.dtype))
+        event = (
+            decoded.sum(dim=1) + prior_symbol
+        ) / denominator.unsqueeze(-1)
+        word_activation = (
+            activations[:, :, 0].sum(dim=1) / denominator[:, 0])
+        word_activation = torch.where(
+            row >= 0, word_activation, torch.zeros_like(word_activation))
+        return (
+            event, orders, row, word_activation,
+            prior_symbol, prior_validity)
 
     @staticmethod
     def _ordered_fold_support(part_passes, whole_passes):
@@ -20402,6 +20938,68 @@ class ConceptualSpace(Space):
             return None
         return combine.reverse(carrier)
 
+    # -- peer-pipeline lane commits -------------------------------------
+    def publish_peer_view(self, event_tensor, *, context=None):
+        """Publish one completed CS event as a zero-copy read-only snapshot.
+
+        The live CS lanes are deliberately reused by the following A tick.
+        A delayed peer must therefore receive the completed tensor binding,
+        not a view of that mutable carrier.  ``SubSpaceView.snapshot`` retains
+        the binding without cloning it and still exposes the ownership/debug
+        capability boundary.
+        """
+        if event_tensor is None:
+            return None
+        return SubSpaceView.snapshot(
+            event_tensor, owner=self, context=context)
+
+    def clear_language_plan(self):
+        """Begin a sentence with no stale LanguageSpace feedback latch."""
+        object.__setattr__(self, "_language_feedback_plan", None)
+
+    def commit_symbolic_peer_results(self, event_tensor, *,
+                                     symbol_event=None,
+                                     prior_symbolic_event=None,
+                                     language_plan=None):
+        """CS-owned B-stage reduction of CSsym, SS, and Language results.
+
+        The symbolic reference emitted by SS and the grammar plan emitted by
+        Language are not alternate writable CS carriers.  They are explicit
+        inputs to this owner commit: ``CSsym`` stores the conceptual event,
+        while the reference and plan remain inspectable sidecars for the
+        conceptual predictor/reduction logic.  This is the runtime form of
+        ``{PS, WS, SS, LS} -> CS`` -- peers compute their own outputs; only CS
+        publishes or mutates conceptual runtime state.
+        """
+        if language_plan is not None:
+            self.accept_language_plan(language_plan)
+        if event_tensor is not None:
+            self.CSsym.commit_event(self, event_tensor)
+            object.__setattr__(self, "_subspaceForWS", self.CSsym)
+        object.__setattr__(self.CSsym, "_symbol_peer_event", symbol_event)
+        object.__setattr__(self.CSsym, "_prior_symbolic_event",
+                           prior_symbolic_event)
+        return self.CSsym
+
+    def commit_symbolic_event(self, event_tensor):
+        """Compatibility wrapper for a B-stage commit without peer sidecars."""
+        return self.commit_symbolic_peer_results(event_tensor)
+
+    def accept_language_plan(self, plan):
+        """Latch a LanguageSpace result for the next CS-owned reduction.
+
+        Language owns grammar execution and returns a descriptive plan; it
+        never writes conceptual storage.  Keeping the latest plan on CS makes
+        the hand-off explicit and gives the B stage one stable, timestamped
+        input.  Python grammar dictionaries are intentionally not installed
+        while a graph is being captured.
+        """
+        if plan is None:
+            return None
+        if not torch.compiler.is_compiling():
+            object.__setattr__(self, "_language_feedback_plan", plan)
+        return plan
+
     def forward(self, subspace, word_subspace=None):
         """STM bookkeeping: shift the per-batch idea stack and push the
         new idea onto the Miller-cap top slot.
@@ -20449,6 +21047,12 @@ class ConceptualSpace(Space):
         row_gate = getattr(self, "_serial_row_gate", None)
         defer_serial_push = bool(
             getattr(self, "_serial_defer_push", False))
+        # The static peer scheduler runs the A stage before the B symbolic
+        # stage.  A may publish its own CSsub result, but CSsym is held until
+        # B has completed SS work.  Legacy callers leave this false and retain
+        # the old atomic two-lane publication.
+        defer_symbolic_lane = bool(
+            getattr(self, "_serial_defer_symbolic_lane", False))
         if subspace.is_empty():
             return subspace
         self.subspace.copy_context(subspace)
@@ -20708,8 +21312,8 @@ class ConceptualSpace(Space):
         # own commit. Peers get views at the scheduler boundary; the legacy
         # aliases remain raw solely for old in-space call sites.
         self.CSsub.commit_event(self, event_for_carrier)
-        self.CSsym.commit_event(self, event_for_carrier)
-        object.__setattr__(self, "_subspaceForWS", self.CSsym)
+        if not defer_symbolic_lane:
+            self.commit_symbolic_event(event_for_carrier)
         if event_for_carrier is not None and event_for_carrier.dim() == 3:
             self._subspaceForPS = self.CSsub
         else:
@@ -25589,8 +26193,13 @@ class WholeSpace(Space):
         repel = (a_n * F.normalize(antipode, dim=0, eps=1e-8)).sum(-1)
         return w * (attract.mean() + repel.mean())
 
-    def _stage0_carrier(self, IS_concepts, spans):
-        """Build the stage-0 evidence CARRIER ``[B, N, W]`` from the unity.
+    def compute_stage0_carrier(self, IS_concepts, spans):
+        """Purely compute the stage-0 carrier and optional property weights.
+
+        Returns ``(carrier, width, membership)``.  ``membership`` is ``None``
+        outside the canonical property-basis path.  No runtime carrier or
+        diagnostic attribute is written here, which makes this surface safe
+        inside a tensor-only recurrent higher-order op.
 
         Shared by the compiled stage-0 forward (``_stage0_unity_forward``)
         and the host-eager adopt-on-first-sight pass
@@ -25658,8 +26267,7 @@ class WholeSpace(Space):
             norm = weights.sum(dim=-1, keepdim=True).clamp_min(1.0)
             weights = weights / norm
             carrier = torch.matmul(weights.to(rows.device), rows)
-            object.__setattr__(self, "_stage0_property_membership", weights)
-            return carrier, int(rows.shape[-1])
+            return carrier, int(rows.shape[-1]), weights
         if spans is not None and spans.numel() > 0:
             flat = u[:, 0, :] if u.dim() == 3 else u
             pref = F.pad(flat.cumsum(dim=1), (1, 0))
@@ -25675,7 +26283,56 @@ class WholeSpace(Space):
         else:
             pooled = Workarounds.adaptive_avg_pool1d(u, N * W)
             carrier = torch.tanh(pooled.reshape(B, N, W) / 128.0)
-        return carrier, W
+        return carrier, W, None
+
+    def _stage0_carrier(self, IS_concepts, spans):
+        """Compatibility wrapper that commits diagnostic property metadata."""
+        carrier, width, membership = WholeSpace.compute_stage0_carrier(
+            self, IS_concepts, spans)
+        if membership is not None:
+            object.__setattr__(
+                self, "_stage0_property_membership", membership)
+        return carrier, width
+
+    def compute_stage0_unity_event(self, IS_concepts, spans=None):
+        """Return canonical WS stage-0 output without mutating WholeSpace.
+
+        The property-basis BasicModel has no secondary analysis codebook, so
+        its stage-0 numerical result is the narrow projection of the carrier.
+        Keeping that calculation here lets the A stage of
+        :class:`TensorPeerWhilePipeline` read the same input unity while
+        carrying all recurrent state explicitly.
+        """
+        if not getattr(self, "property_basis", False):
+            raise RuntimeError(
+                "pure stage-0 unity event currently requires propertyBasis")
+        B = int(IS_concepts.shape[0])
+        N = int(self.inputShape[0])
+        D = int(self.subspace.muxedSize)
+        band = int(self.nWhere + self.nWhen)
+        content = max(1, D - band)
+        if self.held_at_zero:
+            event = torch.zeros(
+                B, N, D, device=IS_concepts.device,
+                dtype=torch.get_default_dtype())
+            return event, None
+        carrier, width, membership = self.compute_stage0_carrier(
+            IS_concepts, spans)
+        if int(width) == content:
+            narrow = carrier
+        else:
+            narrow = Workarounds.adaptive_avg_pool1d(
+                carrier.reshape(B * N, 1, int(width)), content
+            ).reshape(B, N, content)
+        return F.pad(narrow, (0, D - content)), membership
+
+    def compute_unity_fold_sources(self, IS_concepts, spans, pass_indices):
+        """Return H0 plus cumulative learned folds without carrier writes."""
+        base, membership = self.compute_stage0_unity_event(
+            IS_concepts, spans)
+        folds = self.fold_event_ladder(
+            base, pass_indices, strict=True)
+        return (base, *folds), membership
 
     # -- The interpret-as-word gate and the serial shift -----------------
     # MeronomySpec §6 (rev 2026-06-11), §10.8/§10.11; MeronomyPlan
@@ -26252,7 +26909,7 @@ class WholeSpace(Space):
             t = int(getattr(self, "_pump_pass_idx", 0) or 0)
         return stack[min(max(0, int(t)), len(stack) - 1)]
 
-    def _analyze_event(self, ev, t, *, strict=False):
+    def _analyze_event(self, ev, t, *, strict=False, functional=False):
         """Tensor-only application of one pi stack layer."""
         stack = getattr(self, "pis", None)
         if stack is None:
@@ -26275,14 +26932,18 @@ class WholeSpace(Space):
         flattened_width = int(getattr(fold, "N", 0) or 0)
         actual_width = int(ev.shape[-1]) * (
             int(ev.shape[-2]) if ev.dim() >= 3 else 1)
+        apply_fold = (
+            fold.compute_forward
+            if functional and hasattr(fold, "compute_forward")
+            else fold.forward)
         if flattened_width and actual_width == flattened_width:
-            return fold.forward(ev)
+            return apply_fold(ev)
         if ev.dim() >= 3 and int(ev.shape[-1]) > fold_width:
             return torch.cat(
-                [fold.forward(ev[..., :fold_width]),
+                [apply_fold(ev[..., :fold_width]),
                  ev[..., fold_width:]], dim=-1)
         if int(ev.shape[-1]) == fold_width:
-            return fold.forward(ev)
+            return apply_fold(ev)
         if strict:
             raise RuntimeError(
                 f"WholeSpace pi fold {int(t)} cannot consume event "
@@ -26330,7 +26991,7 @@ class WholeSpace(Space):
         outputs = []
         for pass_idx in tuple(int(t) for t in pass_indices):
             current = self._analyze_event(
-                current, pass_idx, strict=strict)
+                current, pass_idx, strict=strict, functional=True)
             outputs.append(current)
         return tuple(outputs)
 

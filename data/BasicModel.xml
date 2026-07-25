@@ -19,16 +19,20 @@
         32768-row initial part dictionary and 1048576-row logical ceiling keep
         lexical storage proportional to observed growth. Conceptual folds
         share one physical 1048576-row high-D dictionary rather than allocating
-        one table per fold. Its indexed-only path omits the unused VQ EMA mirror
-        and stores row-local Adam moments in BF16, with fp32 touched-row math.
+        one table per fold. Its indexed-only path omits the unused VQ EMA
+        mirror. The table is initialized on the unit sphere and then receives
+        one detached, context-owned rotational SBOW update per completed
+        sentence; it has no Adam moments or post-step normalizer.
       * subsymbolicOrder=4 and symbolicOrder=4 are the middle of the proposed
         3..5 range.  symbolicOrder is an iteration budget over shared weights;
         it does not multiply parameters by four.
-      * W={16,32,64,128} packing choices bound only the outer InputSpace
-        sentence loop and share one reusable compiled two-word recurrence.
-        PS, WS, CS, and STM retain their configured 8-wide instantaneous
-        fields/workspace; grammar reductions make that bounded workspace
-        sufficient.
+      * W=256 is a storage capacity, not a fixed execution length. One
+        fullgraph torch.while_loop runs only through the longest live sentence
+        in the batch and then drains B/C; per-row masks make shorter sentences
+        exact no-ops. This avoids both sentence clipping and one compiled graph
+        per 16/32/64/128/256 bucket. PS, WS, CS, and STM retain their
+        configured 8-wide instantaneous fields/workspace; grammar reductions
+        make that bounded workspace sufficient.
       * The grammar budget includes the contextual MLP transform chooser.  The
         soft tiling DP rescales unusually large finite chooser scores without
         changing their ordering, so this learned router remains stable at the
@@ -57,8 +61,10 @@
     <syntacticOrder>0</syntacticOrder>
 
     <mereologyRaise>true</mereologyRaise>
-    <!-- Choose among four regular word-axis packing widths. They share one
-         compiled K=2 recurrence; STM remains independently configurable at 8. -->
+    <!-- One generous word-axis storage capacity. The compiled tensor while
+         loop stops at the batch's last live column, so short batches do not
+         execute 256 word folds; using one shape also avoids bucket recompiles.
+         STM remains independently configurable at 8. -->
     <serialObjectMeta>true</serialObjectMeta>
     <!-- The historical whole-sentence prelude sends native PS/WS events
          directly through the generic CS compatibility path. Keep it dark for
@@ -67,7 +73,7 @@
          136 -> 1032 coordinate pad before the aligned loop begins. -->
     <sentenceProtocol>false</sentenceProtocol>
     <serialWordCapacity>256</serialWordCapacity>
-    <serialWordBuckets>16,32,64,128,256</serialWordBuckets>
+    <serialWordBuckets>256</serialWordBuckets>
     <sigmaPi>butterfly</sigmaPi>
     <l1Lambda>0.01</l1Lambda>
 
@@ -98,10 +104,27 @@
       <numWorkers>2</numWorkers>
       <learningRate>0.0005</learningRate>
 
+      <!-- The shared ConceptualSpace dictionary is a persistent non-grad
+           buffer, not an optimizer/Adam parameter. A deterministic
+           leave-one-out contextual SBOW reducer snapshots the completed
+           sentence, contrasts four detached negative rows, then commits one
+           unit-sphere rotation per observed concept row. -->
+      <conceptualContextLearningRate>0.01</conceptualContextLearningRate>
+      <conceptualContextNegatives>4</conceptualContextNegatives>
+
       <!-- FineWeb is unlabeled.  On the serial grammar path the D3
-           reconstruction term is the within-sentence training signal; the
-           output head is structural and receives no fabricated labels. -->
+           reconstruction term is replaced by the idea-only reverse student:
+           exact leaves and grammar choices are detached teacher targets, and
+           no reverse gradient traverses the recurrent sentence construction.
+           The output head is structural and receives no fabricated labels. -->
       <reconstructionScale>1.0</reconstructionScale>
+      <detachedReverse>true</detachedReverse>
+      <leafDistillWeight>1.0</leafDistillWeight>
+      <!-- Keep the bounded local chooser objective available but outside this
+           production run for now. Its extra candidate re-score is paid on
+           every live fold; benchmark that pressure separately before
+           assigning a nonzero weight here. Detached reverse is the NaN gate. -->
+      <forwardGrammarWeight>0.0</forwardGrammarWeight>
 
       <!-- Concept-space counterparts of within/across-sentence prediction. -->
       <sentencePrediction>true</sentencePrediction>

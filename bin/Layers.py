@@ -1074,6 +1074,13 @@ class InvertibleLinearLayer(ErgodicLayer):
             return d.sign() * d.abs().clamp(epsilon, 1.0)
         return d
 
+    def _d_effective_for_gate(self, gate):
+        """Pure counterpart of ``_d_effective`` with an explicit gate."""
+        d = self.d if gate is None else self.d * gate
+        if self.stable:
+            return d.sign() * d.abs().clamp(epsilon, 1.0)
+        return d
+
     def _D_embed(self):
         """Embed _d_effective() into [nInput, nOutput] rectangular diagonal."""
         d = self._d_effective()
@@ -1133,6 +1140,14 @@ class InvertibleLinearLayer(ErgodicLayer):
         noise_d is unit-normalised so var is the exact L2 norm of the perturbation.
         When stable=True, clamp magnitude to [eps, 1] so W_inv never blows up."""
         d = self.bias * self._d_effective() + self.var * self.noise_d
+        if self.stable:
+            d = d.sign() * d.abs().clamp(epsilon, 1.0)
+        return d
+
+    def _d_eff_for_gate(self, gate):
+        d = (
+            self.bias * self._d_effective_for_gate(gate)
+            + self.var * self.noise_d)
         if self.stable:
             d = d.sign() * d.abs().clamp(epsilon, 1.0)
         return d
@@ -1283,6 +1298,32 @@ class InvertibleLinearLayer(ErgodicLayer):
         finally:
             self._current_gate = None
 
+    def functional_forward(self, x, gate=None):
+        """Apply the current factors without per-call module mutation.
+
+        Recurrent higher-order operators cannot stash ``_current_gate`` or
+        resample noise on a captured module.  Their ungated path uses the
+        already-current factors and returns the same numerical transform as
+        ``forward(x)`` for non-ergodic layers.
+        """
+        L = self._L_eff() if self.ergodic else self._L()
+        U = self._U_eff() if self.ergodic else self._U()
+        d = (
+            self._d_eff_for_gate(gate) if self.ergodic
+            else self._d_effective_for_gate(gate))
+        if self.naive:
+            W = L @ F.pad(
+                torch.diag(d),
+                (0, int(self.nOutput) - int(self.rank),
+                 0, int(self.nInput) - int(self.rank))) @ U
+            orig_shape = x.shape
+            out_shape = list(orig_shape)
+            out_shape[-1] = self.nOutput
+            y = (x.reshape(-1, self.nInput) @ W).reshape(out_shape)
+        else:
+            y = self._apply_ldu(x, L, d, U)
+        return self.forwardBias(y)
+
     # --- Forward / Reverse ---
     def forward(self, x, gate=None):
         """Apply the LDU transform with optional ergodic noise injection.
@@ -1307,6 +1348,8 @@ class InvertibleLinearLayer(ErgodicLayer):
         ``gate=None`` (default), behavior is unchanged from the un-gated
         baseline.
         """
+        if not self.ergodic:
+            return self.functional_forward(x, gate=gate)
         self._current_gate = gate
         try:
             if self.ergodic:
@@ -1864,6 +1907,14 @@ class NonNegativeInvertibleLinearLayer(InvertibleLinearLayer):
             d = d.clamp(epsilon, 1.0)
         return d
 
+    def _d_effective_for_gate(self, gate):
+        d = nn.functional.softplus(self.d)
+        if gate is not None:
+            d = d * gate
+        if self.stable:
+            d = d.clamp(epsilon, 1.0)
+        return d
+
     # --- Ergodic overrides ---
     def _L_eff(self):
         """Ergodic L with non-negative off-diagonals."""
@@ -1883,6 +1934,16 @@ class NonNegativeInvertibleLinearLayer(InvertibleLinearLayer):
         d = self.bias * d_base + self.var * self.noise_d
         d = nn.functional.softplus(d)  # ensure positive after noise
         gate = getattr(self, '_current_gate', None)
+        if gate is not None:
+            d = d * gate
+        if self.stable:
+            d = d.clamp(epsilon, 1.0)
+        return d
+
+    def _d_eff_for_gate(self, gate):
+        d_base = nn.functional.softplus(self.d)
+        d = self.bias * d_base + self.var * self.noise_d
+        d = nn.functional.softplus(d)
         if gate is not None:
             d = d * gate
         if self.stable:
@@ -2012,6 +2073,14 @@ class ContractiveInvertibleLinearLayer(NonNegativeInvertibleLinearLayer):
             d = d.clamp(1.0, self.d_max)
         return d
 
+    def _d_effective_for_gate(self, gate):
+        d = 1.0 + nn.functional.softplus(self.d)
+        if gate is not None:
+            d = d * gate
+        if self.stable:
+            d = d.clamp(1.0, self.d_max)
+        return d
+
     # --- Ergodic overrides (noise enters raw domain; law preserved) ---
     def _L_eff(self):
         """Ergodic _L: perturb raw, then reapply the per-entry law."""
@@ -2041,6 +2110,15 @@ class ContractiveInvertibleLinearLayer(NonNegativeInvertibleLinearLayer):
         raw = self.bias * self.d + self.var * self.noise_d
         d = 1.0 + nn.functional.softplus(raw)
         gate = getattr(self, '_current_gate', None)
+        if gate is not None:
+            d = d * gate
+        if self.stable:
+            d = d.clamp(1.0, self.d_max)
+        return d
+
+    def _d_eff_for_gate(self, gate):
+        raw = self.bias * self.d + self.var * self.noise_d
+        d = 1.0 + nn.functional.softplus(raw)
         if gate is not None:
             d = d * gate
         if self.stable:
@@ -2894,6 +2972,23 @@ class SigmaLayer(GrammarLayer):
             out = torch.tanh(out)
         return out
 
+    def compute_forward(self, x, binary=False):
+        """Pure ungated Sigma computation for a recurrent HOP body."""
+        if self.butterfly:
+            if self.nonlinear:
+                x = torch.atanh(x.clamp(-1 + epsilon, 1 - epsilon))
+            y = self._butterfly_forward(x)
+            return torch.tanh(y) if self.nonlinear else y
+        if binary:
+            x = Ops.top2_select_ste(x)
+        if self.nonlinear:
+            x = torch.atanh(x.clamp(-1 + epsilon, 1 - epsilon))
+        if hasattr(self.layer, "functional_forward"):
+            y = self.layer.functional_forward(x)
+        else:
+            y = self.layer.forward(x)
+        return torch.tanh(y) if self.nonlinear else y
+
     def forward(self, x, binary=False, gate=None):
         """Apply the additive OR fold.
 
@@ -2993,7 +3088,8 @@ class SigmaLayer(GrammarLayer):
                else self.layer.forward(a_sum))
         if self.nonlinear:
             out = torch.tanh(out)
-        self.activation = out.detach()
+        if not torch.compiler.is_compiling():
+            self.activation = out.detach()
         return out
 
     def synthesize_over_set(self, part_codes, mask=None):
@@ -3970,6 +4066,28 @@ class PiLayer(GrammarLayer):
 
     # -- forward / reverse --------------------------------------------
 
+    def compute_forward(self, x, binary=False, gate=None):
+        """Pure ungated Pi computation for a recurrent HOP body."""
+        if self.butterfly:
+            if binary:
+                x = Ops.top2_select_ste(x)
+            m = self._to_mult(x)
+            l = torch.log(m)
+            wl = self._butterfly_forward(l)
+            return torch.tanh(wl / 2) if self.nonlinear else torch.exp(wl)
+        if binary:
+            x = Ops.top2_select_ste(x)
+        m = self._to_mult(x)
+        l = torch.log(m)
+        if hasattr(self.layer, "functional_forward"):
+            l = l.to(self.layer.d.device)
+            wl = self.layer.functional_forward(l, gate=gate)
+        else:
+            W = self.layer.compute_W_current()
+            l = l.to(W.device)
+            wl = l @ W + self.layer._effective_bias()
+        return torch.tanh(wl / 2) if self.nonlinear else torch.exp(wl)
+
     def forward(self, x, binary=False, gate=None):
         """Apply the log-domain multiplicative AND fold.
 
@@ -4001,6 +4119,8 @@ class PiLayer(GrammarLayer):
             else:
                 out = torch.exp(wl)
             return out
+        if not self.layer.ergodic:
+            return self.compute_forward(x, binary=binary, gate=gate)
         # Inline inner-forward: log-domain multiplicative AND fold.
         self.layer._current_gate = gate
         try:
@@ -4141,6 +4261,18 @@ class PiLayer(GrammarLayer):
         Returns:
             ``[..., nOutput]`` in [-1, 1].
         """
+        if not self.layer.ergodic or torch.compiler.is_compiling():
+            device = self.layer.d.device
+            left = left.to(device)
+            right = right.to(device)
+            if self.nonlinear:
+                l_l = torch.log(self._to_mult(left))
+                l_r = torch.log(self._to_mult(right))
+            else:
+                l_l = torch.log(left)
+                l_r = torch.log(right)
+            wl = self.layer.functional_forward(l_l + l_r, gate=gate)
+            return torch.tanh(wl / 2) if self.nonlinear else torch.exp(wl)
         self.layer._current_gate = gate
         try:
             if self.layer.ergodic:
@@ -5334,7 +5466,7 @@ class MeronymicFoldAdapter(Layer):
         object.__setattr__(self, "_compiled_mem_cascade", compiled)
         return True
 
-    def forward(self, x, binary=False, gate=None):
+    def compute_forward(self, x, binary=False, gate=None):
         """Apply one invertible learned fold directly to membership.
 
         Butterfly mode runs the bounded coupling flow for sigma and uses the
@@ -5356,14 +5488,15 @@ class MeronymicFoldAdapter(Layer):
                        and not torch.compiler.is_compiling()
                        else self._mem_cascade)
             z = cascade(m, contractive=(self.kind == 'pi'))
-            out = z.clamp(0.0, 1.0)
-            self.activation = out.detach()
-            return out
+            return z.clamp(0.0, 1.0)
         if x.shape[-1] != self.nInput:
-            self.activation = x.detach()
             return x
         m = x.clamp(0.0, 1.0)
-        out = self.fold.forward(m, gate=gate).clamp(0.0, 1.0)
+        return self.fold.forward(m, gate=gate).clamp(0.0, 1.0)
+
+    def forward(self, x, binary=False, gate=None):
+        """Owner/diagnostic wrapper around the pure fold computation."""
+        out = self.compute_forward(x, binary=binary, gate=gate)
         self.activation = out.detach()
         return out
 
@@ -5406,20 +5539,26 @@ class MeronymicFoldAdapter(Layer):
             torch.ones_like(membership))
         return 1.0 - complement.prod(dim=-2), valid, complement
 
-    def aggregate_over_set(self, part_codes, mask=None):
+    def compute_aggregate_over_set(self, part_codes, mask=None):
         """Form the base M-to-1 whole without a learned feature fold.
 
         This is the serial word assembler.  It is the exact order-invariant
         De Morgan extension ``1 - product(1 - m_i)`` in membership space.
         It intentionally does not call
         ``self.fold`` or ``self._mem_cascade``; learned order-raising begins at
-        the subsequent unary sigma ladder.
+        the subsequent unary sigma ladder.  This computation has no diagnostic
+        cache write and is therefore safe inside a higher-order recurrent op.
         """
         union_m, valid, _complement = self._set_union_membership(
             part_codes, mask=mask)
         out = union_m
         any_valid = valid.any(dim=-1, keepdim=True)
         out = torch.where(any_valid, out, torch.zeros_like(out))
+        return out
+
+    def aggregate_over_set(self, part_codes, mask=None):
+        """Owner/diagnostic wrapper around :meth:`compute_aggregate_over_set`."""
+        out = self.compute_aggregate_over_set(part_codes, mask=mask)
         self.activation = out.detach()
         return out
 
@@ -12848,46 +12987,122 @@ class ShortTermMemory(Layer):
         # slot 0; un-gated rows are unchanged.
         B, D = ideas.shape
         buf = self._buffer
-        cap = int(buf.shape[1])
         order_slab, grammar_slab = self.ensure_order_state()
         concept_slab, activation_slab = self.ensure_reference_state()
-        gate_b = gate_b_1.view(B)
-        gate_bool = gate_b.bool()
-        gate_col = gate_bool.view(B, 1, 1)
-        shifted = buf.clone()
-        if cap > 1:
-            shifted[:, 1:cap] = buf[:, 0:cap - 1]
-        shifted[:, 0] = ideas
-        self._buffer = torch.where(gate_col, shifted, buf)
-        shifted_orders = order_slab.clone()
-        shifted_grammar = grammar_slab.clone()
-        shifted_concepts = concept_slab.clone()
-        shifted_activations = activation_slab.clone()
-        if cap > 1:
-            shifted_orders[:, 1:cap] = order_slab[:, 0:cap - 1]
-            shifted_grammar[:, 1:cap] = grammar_slab[:, 0:cap - 1]
-            shifted_concepts[:, 1:cap] = concept_slab[:, 0:cap - 1]
-            shifted_activations[:, 1:cap] = activation_slab[:, 0:cap - 1]
-        shifted_orders[:, 0] = self._coerce_order_rows(
+        inserted_orders = self._coerce_order_rows(
             orders, B, buf.device)
-        shifted_grammar[:, 0] = self._coerce_order_rows(
+        inserted_grammar = self._coerce_order_rows(
             grammar_orders, B, buf.device)
         inserted_rows = self._coerce_concept_rows(
             concept_row, B, buf.device)
-        shifted_concepts[:, 0] = inserted_rows
-        shifted_activations[:, 0] = self._coerce_concept_activations(
+        inserted_activations = self._coerce_concept_activations(
             concept_activation, B, buf.device, buf.dtype, inserted_rows)
-        gate_order = gate_bool.view(B, 1)
-        self._orders = torch.where(
-            gate_order, shifted_orders, order_slab)
-        self._grammar_orders = torch.where(
-            gate_order, shifted_grammar, grammar_slab)
-        self._concept_rows = torch.where(
-            gate_order, shifted_concepts, concept_slab)
-        self._concept_activations = torch.where(
-            gate_order, shifted_activations, activation_slab)
-        self._depth = torch.clamp(
-            self._depth + gate_bool.long(), max=cap)
+        state = self.functional_push_step_masked(
+            buf, self._depth, order_slab, grammar_slab,
+            concept_slab, activation_slab,
+            ideas, gate_b_1, inserted_orders, inserted_grammar,
+            inserted_rows, inserted_activations)
+        (self._buffer, self._depth, self._orders,
+         self._grammar_orders, self._concept_rows,
+         self._concept_activations) = state
+
+    @staticmethod
+    def functional_push_step_masked(
+            buffer, depth, orders, grammar_orders,
+            concept_rows, concept_activations,
+            ideas, gate_b_1, inserted_orders, inserted_grammar_orders,
+            inserted_concept_rows, inserted_concept_activations):
+        """Return a masked newest-first push without mutating an STM object.
+
+        This is the tensor-state primitive used by compiled recurrent
+        schedulers.  Every input and output has fixed metadata, so it is safe
+        to carry through :func:`torch.while_loop`; the ordinary
+        :meth:`push_step_masked` method above is now only the owning-space
+        commit wrapper around this computation.
+
+        ``gate_b_1`` contains one boolean per batch row.  Gated rows shift
+        right and install the supplied value/provenance at slot zero.
+        Ungated rows are bit-identical, including their depth and every
+        provenance slab.
+        """
+        if buffer.dim() != 3 or ideas.dim() != 2:
+            raise ValueError(
+                "functional STM push expects buffer [B,K,D] and ideas [B,D]")
+        B, cap, D = buffer.shape
+        if tuple(ideas.shape) != (B, D):
+            raise ValueError(
+                "functional STM push idea shape must match buffer batch/dim")
+        slab_shape = (B, cap)
+        for name, slab in (
+                ("orders", orders),
+                ("grammar_orders", grammar_orders),
+                ("concept_rows", concept_rows),
+                ("concept_activations", concept_activations)):
+            if tuple(slab.shape) != slab_shape:
+                raise ValueError(
+                    f"functional STM push {name} must have shape {slab_shape}")
+
+        gate_bool = gate_b_1.reshape(B).to(
+            device=buffer.device, dtype=torch.bool)
+        gate_col = gate_bool.reshape(B, 1, 1)
+        gate_slab = gate_bool.reshape(B, 1)
+
+        # Concatenation expresses the shift without slice assignment.  Besides
+        # being easier for functionalization to prove alias-free, it works for
+        # capacity one without a Python special case in the captured body.
+        shifted_buffer = torch.cat(
+            (ideas.unsqueeze(1), buffer[:, :cap - 1, :]), dim=1)
+        shifted_orders = torch.cat(
+            (inserted_orders.reshape(B, 1),
+             orders[:, :cap - 1]), dim=1)
+        shifted_grammar = torch.cat(
+            (inserted_grammar_orders.reshape(B, 1),
+             grammar_orders[:, :cap - 1]), dim=1)
+        shifted_rows = torch.cat(
+            (inserted_concept_rows.reshape(B, 1),
+             concept_rows[:, :cap - 1]), dim=1)
+        shifted_activations = torch.cat(
+            (inserted_concept_activations.reshape(B, 1),
+             concept_activations[:, :cap - 1]), dim=1)
+
+        next_buffer = torch.where(gate_col, shifted_buffer, buffer)
+        next_orders = torch.where(gate_slab, shifted_orders, orders)
+        next_grammar = torch.where(
+            gate_slab, shifted_grammar, grammar_orders)
+        next_rows = torch.where(gate_slab, shifted_rows, concept_rows)
+        next_activations = torch.where(
+            gate_slab, shifted_activations, concept_activations)
+        next_depth = torch.clamp(
+            depth + gate_bool.to(dtype=depth.dtype), max=cap)
+        return (
+            next_buffer, next_depth, next_orders, next_grammar,
+            next_rows, next_activations)
+
+    @staticmethod
+    def functional_snapshot_mask(buffer, depth, active_rows=None):
+        """Return the fixed-capacity STM snapshot and its occupied mask.
+
+        Unlike :meth:`snapshot`, this operation never trims the slot axis
+        using a Python high-water mark.  Consumers use the returned mask, so a
+        single compiled graph supports every runtime sentence length and
+        every independently progressing row in a large batch.
+        """
+        if buffer.dim() != 3 or depth.dim() != 1:
+            raise ValueError(
+                "functional STM snapshot expects [B,K,D] and depth [B]")
+        B, cap = int(buffer.shape[0]), int(buffer.shape[1])
+        if int(depth.shape[0]) != B:
+            raise ValueError(
+                "functional STM snapshot depth must contain one value per row")
+        slots = torch.arange(
+            cap, dtype=depth.dtype, device=depth.device).reshape(1, cap)
+        occupied = slots < depth.reshape(B, 1)
+        if active_rows is not None:
+            occupied = torch.logical_and(
+                occupied,
+                active_rows.reshape(B, 1).to(
+                    device=occupied.device, dtype=torch.bool))
+        return buffer, occupied
 
     def push_window_batch(self, ideas, orders=None, grammar_orders=None,
                           concept_rows=None, concept_activations=None):
@@ -15486,19 +15701,26 @@ class VectorQuantize(nn.Module):
                     else min(old_active, int(param.shape[0])))
                 self.set_active_rows(new_active)
 
-    def bind_external_codebook(self, parameter):
-        """Use an owner-registered Parameter without registering it again.
+    def bind_external_codebook(self, storage):
+        """Use owner-registered codebook storage without registering it again.
 
         A standalone VectorQuantize owns ``_codebook``. When embedded in a
         ``Spaces.Codebook``, the parent Basis is the structural owner and VQ
         is only an operational client. Both cases expose the same ``codebook``
-        property to the quantization kernels.
+        property to the quantization kernels.  Ordinary VQ keeps a Parameter;
+        the contextual ConceptualSpace dictionary may bind a persistent buffer
+        only when EMA mutation has been disabled.
         """
-        if not isinstance(parameter, nn.Parameter):
-            raise TypeError("external codebook must be an nn.Parameter")
+        if not isinstance(storage, torch.Tensor) or storage.ndim != 2:
+            raise TypeError("external codebook must be a 2-D tensor")
+        if (not isinstance(storage, nn.Parameter)
+                and bool(getattr(self, "ema_state_enabled", True))):
+            raise TypeError(
+                "external non-Parameter codebook requires EMA updates "
+                "to be disabled")
         self._parameters.pop("_codebook", None)
-        object.__setattr__(self, "_external_codebook", parameter)
-        self.codebook_size = int(parameter.shape[0])
+        object.__setattr__(self, "_external_codebook", storage)
+        self.codebook_size = int(storage.shape[0])
         self._sync_ema_buffers()
 
     def _require_ema_state(self, operation):

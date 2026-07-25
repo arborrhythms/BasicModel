@@ -181,6 +181,8 @@ def test_per_word_step_compiles_fullgraph_clean():
     isp = _stage_for_per_word(m)
     w = isp.next_word()
     assert w is not None, "stage produced a valid first word"
+    m._prepare_reconstruction_choices(
+        int(w.shape[0]), int(isp._ar_embedded_N.shape[1]), w.device)
 
     # Compile the bound method; fullgraph=True turns ANY graph break
     # into a hard ``Unsupported``. Use the eager backend (already in
@@ -196,6 +198,11 @@ def test_per_word_step_compiles_fullgraph_clean():
     # refactor (w, p, gate_b_1, out_slot, active_host).
     out_slot = m._per_word_contributions
     compiled(w, 0, _gate_for(isp, w), out_slot)
+    choice_ids, choice_arities, choice_mask = (
+        m.symbolSpace.reconstruction_stack.choices())
+    assert torch.is_tensor(choice_ids)
+    assert torch.is_tensor(choice_arities)
+    assert torch.is_tensor(choice_mask)
 
 
 def test_per_word_loop_completes_two_steps_under_fullgraph():
@@ -209,6 +216,9 @@ def test_per_word_loop_completes_two_steps_under_fullgraph():
         pytest.skip("extraction not yet landed (see RED gate #1)")
 
     isp = _stage_for_per_word(m)
+    m._prepare_reconstruction_choices(
+        int(isp._ar_embedded_N.shape[0]),
+        int(isp._ar_embedded_N.shape[1]), isp._ar_embedded_N.device)
     # backend="eager" -- skip Inductor codegen (the gate is about
     # graph breaks, not codegen quality). The default backend
     # (Inductor) C++ compiles, which fails on paths containing

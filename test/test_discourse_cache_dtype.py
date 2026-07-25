@@ -75,3 +75,21 @@ def test_staged_prediction_cast_to_amp_dtype(mode, dtype):
         m._end_step()
     finally:
         _util.MODEL_AMP = saved_mode
+
+
+def test_full_sentence_loop_skips_legacy_discourse_tuple_staging():
+    """The W-loop uses the separate tensor seed, never the ARMA tuple.
+
+    This prevents the cold ``(None, None)`` tuple from becoming a Dynamo
+    guard that recompiles the full sentence graph when the discourse ring
+    first becomes warm.
+    """
+    from Models import BaseModel
+
+    class _Discourse:
+        def stage_prediction(self):
+            raise AssertionError("full sentence loop must not stage legacy ARMA")
+
+    model = BaseModel()
+    assert not model._stage_legacy_discourse_prediction(
+        _Discourse(), fullgraph_word_loop=True)

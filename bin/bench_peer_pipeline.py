@@ -37,10 +37,13 @@ def measure(width, device, repeats):
             result = _work(a)
             if feedback is not None:
                 result = result + feedback
-            return result, _work(result)
+            return result
 
         def stage_c(result, _index):
-            _work(result)
+            # C is the sole grammar-feedback producer.  StaticPeerPipeline
+            # latches this return for B[index + 2]; B results themselves are
+            # intentionally opaque (they may legitimately be tuples).
+            return _work(result)
 
         pipeline.run(words, stage_a, stage_b, stage_c)
 
