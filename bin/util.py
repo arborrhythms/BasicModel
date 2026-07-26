@@ -279,7 +279,103 @@ def buffer(*size, **kwargs):
 # ---------------------------------------------------------------------------
 
 _PARSE_WORD_RE     = re.compile(r'[a-zA-Z]+|[0-9]|[^a-zA-Z0-9\s]|\s')
-_PARSE_SENTENCE_RE = re.compile(r'[^.!?]*[.!?]+|[^.!?]+$')
+_PARSE_SENTENCE_END_RE = re.compile(r'[.!?]+|\r?\n+')
+_SENTENCE_CLOSERS = frozenset("\"')]}»”’")
+_SENTENCE_ABBREVIATIONS = frozenset({
+    "co", "corp", "dr", "e.g", "etc", "fig", "i.e", "inc", "jr",
+    "ltd", "mr", "mrs", "ms", "no", "prof", "sr", "st", "u.k",
+    "u.s", "vs",
+})
+_SENTENCE_TITLE_ABBREVIATIONS = frozenset({
+    "dr", "mr", "mrs", "ms", "prof", "sr", "st",
+})
+_SENTENCE_DOTTED_NAME_ABBREVIATIONS = frozenset({"u.k", "u.s"})
+
+
+def _sentence_chunks(text):
+    """Yield ``(surface, char_start)`` for conservative sentence boundaries.
+
+    A period is a boundary only when it is followed (after closing quotes or
+    brackets) by whitespace/end-of-input and is not part of a decimal,
+    abbreviation, initial, or dotted acronym. This avoids the old FineWeb
+    failure where ``(i.e., ... etc.).`` became ``"i."``, ``"e."``, a
+    fragment, and the zero-word pseudo-sentence ``")."``.
+    """
+    start = 0
+    for match in _PARSE_SENTENCE_END_RE.finditer(text):
+        punct_start, punct_end = match.span()
+        terminal = match.group()
+        if terminal.startswith(("\r", "\n")):
+            # FineWeb newlines are structural paragraph/list boundaries. The
+            # old punctuation-only splitter fused headings, table rows, and
+            # bullet items into several-hundred-word pseudo-sentences.
+            raw = text[start:punct_start]
+            stripped = raw.strip()
+            if stripped and any(char.isalnum() for char in stripped):
+                leading = len(raw) - len(raw.lstrip())
+                yield stripped, start + leading
+            start = punct_end
+            continue
+        # Internal punctuation (decimal/domain/abbreviation component) cannot
+        # end a sentence without an intervening whitespace boundary.
+        if punct_end < len(text) and not text[punct_end].isspace() \
+                and text[punct_end] not in _SENTENCE_CLOSERS:
+            continue
+
+        end = punct_end
+        while end < len(text) and text[end] in _SENTENCE_CLOSERS:
+            end += 1
+        if end < len(text) and not text[end].isspace():
+            continue
+
+        if terminal == ".":
+            # Decimal point: the no-whitespace rule above handles the usual
+            # ``3.14`` form; keep this explicit for separated source quirks.
+            before = text[punct_start - 1] if punct_start > 0 else ""
+            after = text[punct_end] if punct_end < len(text) else ""
+            if before.isdigit() and after.isdigit():
+                continue
+
+            prefix = text[start:punct_start]
+            token_match = re.search(
+                r"([A-Za-z]+(?:\.[A-Za-z]+)*)$", prefix)
+            token = token_match.group(1).lower() if token_match else ""
+            dotted_initials = (
+                "." in token
+                and all(len(piece) == 1 for piece in token.split(".")))
+            next_nonspace = end
+            while (next_nonspace < len(text)
+                   and text[next_nonspace].isspace()):
+                next_nonspace += 1
+            followed_by_name = (
+                next_nonspace < len(text)
+                and text[next_nonspace].isupper())
+            followed_by_lower = (
+                next_nonspace < len(text)
+                and text[next_nonspace].islower())
+            if (token in _SENTENCE_TITLE_ABBREVIATIONS
+                    or token in {"e.g", "i.e"}
+                    or (token in _SENTENCE_ABBREVIATIONS
+                        and followed_by_lower)
+                    or (dotted_initials
+                        and (followed_by_lower
+                             or token
+                             in _SENTENCE_DOTTED_NAME_ABBREVIATIONS))
+                    or (len(token) == 1 and followed_by_name)):
+                continue
+
+        raw = text[start:end]
+        stripped = raw.strip()
+        if stripped and any(char.isalnum() for char in stripped):
+            leading = len(raw) - len(raw.lstrip())
+            yield stripped, start + leading
+        start = end
+
+    raw = text[start:]
+    stripped = raw.strip()
+    if stripped and any(char.isalnum() for char in stripped):
+        leading = len(raw) - len(raw.lstrip())
+        yield stripped, start + leading
 
 
 def parse(data, lex="words"):
@@ -326,13 +422,7 @@ def parse(data, lex="words"):
 
     if lex in ("sentences", "sentence"):
         spans = []
-        for m in _PARSE_SENTENCE_RE.finditer(text):
-            chunk = m.group()
-            stripped = chunk.lstrip()
-            if not stripped:
-                continue
-            leading = len(chunk) - len(stripped)
-            char_start = m.start() + leading
+        for stripped, char_start in _sentence_chunks(text):
             byte_start = len(text[:char_start].encode('utf-8'))
             spans.append((stripped, byte_start))
         return spans

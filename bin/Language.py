@@ -9181,6 +9181,221 @@ class ReverseConstructionChooser(nn.Module):
             "reverse_surface": surface_loss,
         }
 
+    def packed_loss(
+            self, sentence_roots, trace, *,
+            word_positions, sentence_end_for_word=None, sentence_ids=None,
+            sentence_end_mask,
+            surface_weight=1.0):
+        """Vectorized detached reconstruction loss for packed sentences.
+
+        ``sentence_roots`` is a compact chronological ``[B,S,D]`` FIFO.
+        ``sentence_ids`` maps every word to its root slot, and
+        ``word_positions`` supplies its sentence-local leaf slot. The legacy
+        W-wide/end-position layout remains accepted for compatibility.
+        The shared LeafDecoderHead is evaluated only once per real packed word
+        (using its existing trunk/slot/output parameters), rather than
+        expanding every sentence to the full W=512 ceiling.
+        """
+        leaves = trace.leaves() if trace is not None else None
+        if (trace is None or not torch.is_tensor(sentence_roots)
+                or sentence_roots.dim() != 3
+                or not torch.is_tensor(leaves) or leaves.dim() != 3
+                or int(sentence_roots.shape[0]) != int(leaves.shape[0])
+                or not torch.is_tensor(word_positions)
+                or tuple(word_positions.shape) != tuple(leaves.shape[:2])
+                or not torch.is_tensor(sentence_end_mask)
+                or tuple(sentence_end_mask.shape) != tuple(
+                    leaves.shape[:2])):
+            return None, {}
+
+        B, W = int(leaves.shape[0]), int(leaves.shape[1])
+        D_root = int(sentence_roots.shape[-1])
+        root_slots = int(sentence_roots.shape[1])
+        if (torch.is_tensor(sentence_ids)
+                and tuple(sentence_ids.shape) == tuple(leaves.shape[:2])):
+            safe_end = sentence_ids.to(
+                device=sentence_roots.device, dtype=torch.long).clamp(
+                    0, root_slots - 1)
+        elif (root_slots == W
+              and torch.is_tensor(sentence_end_for_word)
+              and tuple(sentence_end_for_word.shape)
+              == tuple(leaves.shape[:2])):
+            safe_end = sentence_end_for_word.to(
+                device=sentence_roots.device, dtype=torch.long).clamp(
+                    0, W - 1)
+        else:
+            return None, {}
+        roots_by_word = torch.gather(
+            sentence_roots, 1,
+            safe_end.unsqueeze(-1).expand(B, W, D_root))
+        local_word = word_positions.to(
+            device=sentence_roots.device, dtype=torch.long)
+        safe_word = local_word.clamp(0, self.max_words - 1)
+        word_valid = self._word_valid(
+            trace, leaves, device=sentence_roots.device)
+        word_valid = (
+            word_valid[:, :W]
+            & local_word.ge(0)
+            & local_word.lt(self.max_words))
+
+        # Exact query form of LeafDecoderHead.forward:
+        # out(tanh(trunk(S_sentence) + slot_e[word_in_sentence])).
+        leaf_seed = self._conform_idea(
+            roots_by_word.reshape(B * W, D_root))
+        leaf_hidden = self.leaf_decoder.trunk(leaf_seed).reshape(B, W, -1)
+        leaf_hidden = leaf_hidden + self.leaf_decoder.slot_e.index_select(
+            0, safe_word.reshape(-1)).reshape(B, W, -1)
+        pred = self.leaf_decoder.out(torch.tanh(leaf_hidden))
+        target = leaves.detach().to(
+            device=pred.device, dtype=pred.dtype)
+        leaf_width = min(int(pred.shape[-1]), int(target.shape[-1]))
+        pred = torch.tanh(pred[..., :leaf_width])
+        target = torch.tanh(target[..., :leaf_width])
+        word_f = word_valid.to(pred.dtype)
+        surface_each = 0.25 * (pred - target).square().mean(dim=-1)
+        surface_loss = (
+            (surface_each * word_f).sum()
+            / word_f.sum().clamp_min(1.0))
+
+        rule_ids, arities, choice_mask = trace.choices()
+        zero = leaf_hidden.sum() * 0.0
+        kind_numerator = zero
+        kind_denominator = word_f.sum() * 0.0
+        rule_numerator = zero
+        rule_denominator = word_f.sum() * 0.0
+        if (torch.is_tensor(rule_ids) and torch.is_tensor(arities)
+                and torch.is_tensor(choice_mask)
+                and rule_ids.dim() == arities.dim() == choice_mask.dim() == 2
+                and int(rule_ids.shape[0]) == B
+                and int(rule_ids.shape[1]) >= 3 * W):
+            root_hidden = torch.tanh(
+                self.idea_projection(self._conform_idea(
+                    roots_by_word.reshape(B * W, D_root)))
+            ).reshape(B, W, -1)
+            opportunity = torch.arange(
+                3, device=root_hidden.device, dtype=torch.long).reshape(
+                    1, 1, 3)
+            online_slots = (
+                3 * safe_word.unsqueeze(-1) + opportunity).clamp(
+                    0, self.max_steps - 1)
+            online_hidden = torch.tanh(
+                root_hidden.unsqueeze(2)
+                + self.choice_slots(
+                    online_slots.expand(B, W, 3)))
+            kind_logits = torch.tanh(self.kind_head(online_hidden))
+            rule_logits = torch.tanh(self.rule_head(online_hidden))
+            target_kind = arities[:, :3 * W].reshape(B, W, 3).to(
+                device=root_hidden.device, dtype=torch.long).clamp(0, 2)
+            active_choice = choice_mask[:, :3 * W].reshape(B, W, 3).to(
+                device=root_hidden.device, dtype=torch.bool)
+            target_rule = rule_ids[:, :3 * W].reshape(B, W, 3).to(
+                device=root_hidden.device, dtype=torch.long)
+            online_domain = word_valid.unsqueeze(-1).expand(B, W, 3)
+            kind_each = F.cross_entropy(
+                kind_logits.reshape(-1, 3), target_kind.reshape(-1),
+                reduction="none").reshape(B, W, 3)
+            online_domain_f = online_domain.to(kind_each.dtype)
+            kind_numerator = (
+                kind_numerator + (kind_each * online_domain_f).sum())
+            kind_denominator = (
+                kind_denominator + online_domain_f.sum())
+            valid_rule = (
+                active_choice & target_rule.ge(0)
+                & target_rule.lt(self.n_rules))
+            safe_rule = target_rule.clamp(0, self.n_rules - 1)
+            rule_each = F.cross_entropy(
+                rule_logits.reshape(-1, self.n_rules),
+                safe_rule.reshape(-1), reduction="none").reshape(B, W, 3)
+            valid_rule_f = valid_rule.to(rule_each.dtype)
+            rule_numerator = (
+                rule_numerator + (rule_each * valid_rule_f).sum())
+            rule_denominator = (
+                rule_denominator + valid_rule_f.sum())
+
+            # Boundary choices are stored in one cap-1 group per end-word
+            # column, but use the same fixed post-word slot embeddings as the
+            # ordinary one-sentence chooser.
+            seal_width = max(0, self.max_steps - 3 * self.max_words)
+            stored_seal_width = (
+                (int(rule_ids.shape[1]) - 3 * W) // W if W else 0)
+            seal_width = min(seal_width, stored_seal_width)
+            if seal_width > 0:
+                end_mask = sentence_end_mask.to(
+                    device=root_hidden.device, dtype=torch.bool)
+                seal_ids = rule_ids[
+                    :, 3 * W:3 * W + W * stored_seal_width
+                ].reshape(B, W, stored_seal_width)[..., :seal_width]
+                seal_arities = arities[
+                    :, 3 * W:3 * W + W * stored_seal_width
+                ].reshape(B, W, stored_seal_width)[..., :seal_width]
+                seal_active = choice_mask[
+                    :, 3 * W:3 * W + W * stored_seal_width
+                ].reshape(B, W, stored_seal_width)[..., :seal_width]
+                seal_index = torch.arange(
+                    seal_width, device=root_hidden.device,
+                    dtype=torch.long).reshape(1, 1, seal_width)
+                query_slots = (
+                    3 * self.max_words + seal_index).clamp(
+                        0, self.max_steps - 1)
+                seal_hidden = torch.tanh(
+                    root_hidden.unsqueeze(2)
+                    + self.choice_slots(
+                        query_slots.expand(B, W, seal_width)))
+                seal_kind_logits = torch.tanh(
+                    self.kind_head(seal_hidden))
+                seal_rule_logits = torch.tanh(
+                    self.rule_head(seal_hidden))
+                seal_target_kind = seal_arities.to(
+                    device=root_hidden.device,
+                    dtype=torch.long).clamp(0, 2)
+                # A sentence with N words has at most N-1 boundary folds.
+                sentence_drain = safe_word.clamp_min(0).unsqueeze(-1)
+                seal_domain = (
+                    end_mask.unsqueeze(-1)
+                    & (seal_index < sentence_drain))
+                seal_domain = seal_domain | seal_active.to(
+                    device=root_hidden.device, dtype=torch.bool)
+                seal_kind_each = F.cross_entropy(
+                    seal_kind_logits.reshape(-1, 3),
+                    seal_target_kind.reshape(-1),
+                    reduction="none").reshape(B, W, seal_width)
+                seal_domain_f = seal_domain.to(seal_kind_each.dtype)
+                kind_numerator = (
+                    kind_numerator
+                    + (seal_kind_each * seal_domain_f).sum())
+                kind_denominator = (
+                    kind_denominator + seal_domain_f.sum())
+                seal_target_rule = seal_ids.to(
+                    device=root_hidden.device, dtype=torch.long)
+                seal_valid_rule = (
+                    seal_active.to(
+                        device=root_hidden.device, dtype=torch.bool)
+                    & seal_target_rule.ge(0)
+                    & seal_target_rule.lt(self.n_rules))
+                seal_safe_rule = seal_target_rule.clamp(
+                    0, self.n_rules - 1)
+                seal_rule_each = F.cross_entropy(
+                    seal_rule_logits.reshape(-1, self.n_rules),
+                    seal_safe_rule.reshape(-1),
+                    reduction="none").reshape(B, W, seal_width)
+                seal_valid_f = seal_valid_rule.to(seal_rule_each.dtype)
+                rule_numerator = (
+                    rule_numerator
+                    + (seal_rule_each * seal_valid_f).sum())
+                rule_denominator = (
+                    rule_denominator + seal_valid_f.sum())
+
+        kind_loss = kind_numerator / kind_denominator.clamp_min(1.0)
+        rule_loss = rule_numerator / rule_denominator.clamp_min(1.0)
+        total = (
+            kind_loss + rule_loss
+            + float(surface_weight) * surface_loss)
+        return total, {
+            "reverse_kind": kind_loss,
+            "reverse_rule": rule_loss,
+            "reverse_surface": surface_loss,
+        }
+
 def _intersect_long_rows(a, b):
     """LongTensor intersection by row index, preserving sort order.
 
@@ -14080,6 +14295,49 @@ class SymbolSpace(Space):
         orders = torch.where(
             valid, concept_orders, torch.full_like(concept_orders, -1))
         return rows, activations, bands, orders, valid
+
+    def commit_word_reference_slab(
+            self, rows, activations, active_rows, *, orders=None):
+        """Own the word-aligned, quantized CSLang -> SymbolSpace handoff.
+
+        ConceptualSpace retains continuous ideas only in its eight-slot STM.
+        A completed word crosses into SymbolSpace as a sparse reference:
+        identity ``rows`` plus one signed activation.  Keeping this owner API
+        explicit prevents callers from replacing that compact representation
+        with a duplicate ``[B,W,concept_dim]`` concept history.
+        """
+        if (not torch.is_tensor(rows) or rows.dim() != 2
+                or not torch.is_tensor(activations)
+                or activations.dim() != 3
+                or int(activations.shape[-1]) != 1
+                or tuple(rows.shape) != tuple(activations.shape[:2])
+                or not torch.is_tensor(active_rows)
+                or tuple(active_rows.shape) != tuple(rows.shape)):
+            raise ValueError(
+                "word references require rows [B,W], activations [B,W,1], "
+                "and an aligned activity mask")
+        valid = active_rows.to(device=rows.device, dtype=torch.bool)
+        valid = torch.logical_and(valid, rows >= 0)
+        committed_rows = torch.where(
+            valid, rows, torch.full_like(rows, -1))
+        committed_activations = torch.where(
+            valid.unsqueeze(-1), activations,
+            torch.zeros_like(activations))
+        object.__setattr__(
+            self, "_word_reference_rows", committed_rows)
+        object.__setattr__(
+            self, "_word_reference_activations", committed_activations)
+        object.__setattr__(self, "_word_reference_mask", valid)
+        if orders is not None:
+            if (not torch.is_tensor(orders)
+                    or tuple(orders.shape) != tuple(rows.shape)):
+                raise ValueError(
+                    "word reference orders must align with rows [B,W]")
+            object.__setattr__(
+                self, "_word_reference_orders",
+                torch.where(
+                    valid, orders, torch.full_like(orders, -1)))
+        return committed_activations
 
     def _publish_symbol_snapshot(self, event, source=None, *,
                                  prior_symbolic=None, language_plan=None):

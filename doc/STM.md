@@ -296,7 +296,7 @@ different representations.
 
 - **Word-loop mereology (`<serialObjectMeta>` on).** The outer sequence is
   `[B,W,D]`, with one position per word and $W$ bounded independently by
-  `<serialWordCapacity>`. BasicModel stages W=512 but its compiled
+  `<serialWordCapacity>`. BasicModel stages W=256 but its compiled
   `torch.while_loop` stops at the final live column in the batch. InputSpace
   owns iteration $w$ and presents that word's local state to PartSpace; only
   then does PartSpace gather its complete discrete ids `[B,P_raw]` and apply
@@ -306,6 +306,13 @@ different representations.
   three WS folds by equal location, and one concept carrying its actual order
   enters the configured STM (default capacity 8). Grammar reductions free STM
   slots while the outer loop continues.
+
+  With packed training, consecutive complete sentences share the W=256 slab
+  but not conceptual state: CSLang commits a row-local soft boundary between
+  them. Full resolved concepts remain only in the CS-owned `[B,8,D_c]` STM.
+  SymbolSpace receives a scalar `[B,W,1]` activation/reference slab and
+  quantizes that value; it does not retain a dense `[B,W,D_c]` concept
+  history.
 
 Legacy serial inputs retain the following window policies:
 

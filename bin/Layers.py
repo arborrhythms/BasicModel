@@ -8774,7 +8774,8 @@ class InterSentenceLayer(Layer):
 
     # -- LTM: long-term memory chain of STM end-states (Task 7) --------
     @torch.compiler.disable
-    def observe_stm_end_state(self, depths, payloads, tetralemmas=None):
+    def observe_stm_end_state(
+            self, depths, payloads, tetralemmas=None, mask=None):
         """Append one STM end-state PER ROW to the LTM chain.
 
         Called from the sentence-boundary hook AFTER the reduce /
@@ -8817,12 +8818,22 @@ class InterSentenceLayer(Layer):
         else:
             depth_list = [int(d) for d in depths]
         B = len(payloads)
+        if mask is None:
+            active_rows = [True] * B
+        elif isinstance(mask, torch.Tensor):
+            active_rows = [
+                bool(value)
+                for value in mask.detach().reshape(-1).to("cpu").tolist()]
+        else:
+            active_rows = [bool(value) for value in mask]
         if len(self._stm_end_states) != B:
             # The chain list lags an un-cascaded batch reshape; grow /
             # shrink to match this boundary's row count. (ensure_batch
             # normally keeps these in lockstep; this is defensive.)
             self.ensure_batch(B)
         for b in range(B):
+            if b >= len(active_rows) or not active_rows[b]:
+                continue
             payload = payloads[b]
             depth = depth_list[b] if b < len(depth_list) else (
                 int(payload.shape[0]) if payload is not None else 0)
@@ -8915,8 +8926,8 @@ class InterSentenceLayer(Layer):
                 self._stm_end_states[b].append((int(depth), payload, tet))
 
     @torch.compiler.disable
-    def predict_and_observe_stm_end_state(self, depths, payloads,
-                                          tetralemmas=None):
+    def predict_and_observe_stm_end_state(
+            self, depths, payloads, tetralemmas=None, mask=None):
         """Stage the next-end-state prediction THEN observe the arriving
         end-state, in one call — the foolproof AR ordering for the TRAINING
         sentence-boundary hook.
@@ -8959,13 +8970,23 @@ class InterSentenceLayer(Layer):
         # no predictor), which ``observe_stm_end_state`` then scores.
         if self._inter_predictor is not None:
             B = len(payloads)
+            if mask is None:
+                active_rows = [True] * B
+            elif isinstance(mask, torch.Tensor):
+                active_rows = [
+                    bool(value)
+                    for value in mask.detach().reshape(-1).to("cpu").tolist()]
+            else:
+                active_rows = [bool(value) for value in mask]
             for b in range(B):
-                self.predict_next_end_state(b)
+                if b < len(active_rows) and active_rows[b]:
+                    self.predict_next_end_state(b)
         # Score each staged prediction against the arriving end-state
         # (accumulating ``L_inter``) and append to the chain. Reusing the
         # existing method keeps the fail-loud / detach / ragged-payload /
         # tetralemma handling identical and avoids any duplication.
-        self.observe_stm_end_state(depths, payloads, tetralemmas=tetralemmas)
+        self.observe_stm_end_state(
+            depths, payloads, tetralemmas=tetralemmas, mask=mask)
 
     def get_stm_chain(self, n=None, b=0):
         """Return the last ``n`` LTM end-states for row ``b``.

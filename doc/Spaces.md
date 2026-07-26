@@ -1038,6 +1038,16 @@ with `hard_eos = [True] * B`. The runEpoch outer loop drives `ds.next_tick()`
 directly for both modes; the DataLoader exists only so existing tests can
 grab `loader.dataset`.
 
+**Packed word-loop training.** A self-supervised word model may instead set
+`<packSentences>true</packSentences>`. `runEpoch` then drives
+`next_packed_tick()` over the same B contiguous streams. Each row appends
+chronologically consecutive, complete sentences until another sentence would
+overflow W, the raw byte slab, or the root FIFO. Boundary tensors let CSLang
+soft-reset that row between sentences without padding all rows to a shared
+sentence length. The last sentence drains through loss and backward before
+the eager boundary resets it. `hard_eos` retains its stronger meaning:
+exhaustion of that row's contiguous corpus stream.
+
 `_end_of_stream` is a host-side `list[bool]` diagnostic only; the canonical
 hard-reset signal is the cursor's `hard_eos`.
 

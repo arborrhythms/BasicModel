@@ -394,6 +394,17 @@ ordered training list is split into `B = batchSize` contiguous slabs of
 length `L = len(split) // B`; at step `t`, row `b` is item `b * L + t`.
 Temporal context is coherent across steps. No per-epoch global shuffle.
 
+When `<packSentences>true</packSentences>`, the real `runEpoch` optimizer
+loop advances each contiguous row until the next complete sentence would
+exceed `serialWordCapacity`, the raw byte slab, or the fixed sentence-root
+FIFO. Thus one B-wide optimizer brick can contain a different number of
+sentences in every row while preserving each row's corpus chronology. A
+sentence never crosses a brick. Explicit word-to-sentence IDs drive the
+row-local soft resets inside CSLang; the final sentence in each row remains
+live through loss, backward, discourse, and the contextual concept update,
+then resets at the eager brick boundary. The log reports complete sentences
+per second at epoch or wall-clock-cap exit.
+
 For each B-wide batch:
 
 1. `_start_spaces_for_forward()` calls `Start()` on every Space

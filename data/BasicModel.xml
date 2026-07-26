@@ -30,13 +30,14 @@
       * subsymbolicOrder=4 and symbolicOrder=4 are the middle of the proposed
         3..5 range.  symbolicOrder is an iteration budget over shared weights;
         it does not multiply parameters by four.
-      * W=512 is a storage capacity, not a fixed execution length. One
+      * W=256 is a storage capacity, not a fixed execution length. One
          fullgraph torch.while_loop runs only through the longest live sentence
          in the batch and then drains the final conceptual word and both grammar
-         latches; per-row masks make shorter sentences exact no-ops. This avoids
-        both sentence clipping and one compiled graph per
-        16/32/64/128/256/512
-         bucket. PS, WS, CS, and STM retain their
+         latches; per-row masks make shorter sentences exact no-ops. Consecutive
+         complete sentences pack into each row with a row-local soft reset, so
+         the capacity is used without clipping or reordering the corpus. This
+         also avoids one compiled graph per 16/32/64/128/256 bucket. PS, WS,
+         CS, and STM retain their
         configured 8-wide instantaneous fields/workspace; grammar reductions
         make that bounded workspace sufficient.
       * The grammar budget includes the contextual MLP transform chooser.  The
@@ -70,7 +71,7 @@
     <mereologyRaise>true</mereologyRaise>
     <!-- One generous word-axis storage capacity. The compiled tensor while
          loop stops at the batch's last live column, so short batches do not
-         execute 512 word folds; using one shape also avoids bucket recompiles.
+         execute 256 word folds; using one shape also avoids bucket recompiles.
          STM remains independently configurable at 8. -->
     <serialObjectMeta>true</serialObjectMeta>
     <!-- The historical whole-sentence prelude sends native PS/WS events
@@ -79,8 +80,14 @@
          seam as the word recursion; otherwise it would reintroduce a hidden
          136 -> 1032 coordinate pad before the aligned loop begins. -->
     <sentenceProtocol>false</sentenceProtocol>
-    <serialWordCapacity>512</serialWordCapacity>
-    <serialWordBuckets>512</serialWordBuckets>
+    <serialWordCapacity>256</serialWordCapacity>
+    <serialWordBuckets>256</serialWordBuckets>
+    <!-- Fixed compiler input extent; words remain complete and PS still
+         reduces them into its configured eight live locations. P64 means at
+         most 64 radix/subword integer IDs per cold spelling, not 64 dense byte
+         vectors. As the trie learns longer chunks, the live masked count
+         contracts without changing this compiler shape. -->
+    <serialResidualPartCapacity>64</serialResidualPartCapacity>
     <sigmaPi>butterfly</sigmaPi>
     <l1Lambda>0.01</l1Lambda>
 
@@ -98,14 +105,21 @@
       <shardDir>data/fineweb</shardDir>
       <numShards>1</numShards>
       <maxDocs>2000</maxDocs>
+      <!-- W256 is the protected-memory B28 operating point on the 36 GB MPS
+           host.
+           Exclude (never clip) the rare longer splitter records so every
+           admitted training example remains one complete sentence. -->
+      <maxSentenceWords>256</maxSentenceWords>
     </data>
 
     <training>
       <numEpochs>1</numEpochs>
       <seed>42</seed>
-      <!-- Conservative MPS start: this tier doubles both N and D relative to
-           the gate.  Raise only after a measured ArborStudio memory probe. -->
-      <batchSize>1</batchSize>
+      <!-- Each of 28 contiguous corpus streams packs consecutive complete
+           sentences into a W256 brick. Sentences remain chronological within
+           a row, and row-local soft reset seals every sentence boundary. -->
+      <batchSize>28</batchSize>
+      <packSentences>true</packSentences>
       <!-- One CPU producer thread with a two-tick in-flight budget: one tick
            consumed by the model while the next is buffered. -->
       <numWorkers>2</numWorkers>

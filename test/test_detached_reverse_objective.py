@@ -69,6 +69,70 @@ def test_reverse_construction_loss_stops_at_sentence_idea():
     assert all(bool(torch.isfinite(g).all()) for g in grads)
 
 
+def test_packed_reverse_loss_matches_serial_sentence_layout():
+    """A packed sentence remaps storage, not chooser semantics or logits."""
+    torch.manual_seed(19)
+    words, leaf_dim, idea_dim = 4, 7, 9
+    seal_width = 2
+    chooser = ReverseConstructionChooser(
+        idea_dim=idea_dim, n_rules=6, max_words=words,
+        max_steps=3 * words + seal_width,
+        leaf_dim=leaf_dim, hidden=16).to("cpu")
+    leaves = torch.randn(1, words, leaf_dim)
+    part_ids = torch.arange(1, words + 1).reshape(1, words, 1)
+    part_mask = torch.ones_like(part_ids, dtype=torch.bool)
+
+    serial = ReconstructionStack(batch=1, max_depth=16)
+    packed = ReconstructionStack(batch=1, max_depth=16)
+    for stack, steps in (
+            (serial, 3 * words + seal_width),
+            (packed, 3 * words + words * seal_width)):
+        stack.store_leaves(leaves)
+        stack.store_word_parts(part_ids, part_mask)
+        stack.prepare_choices(
+            1, steps, device="cpu", unary_rule_ids=(1, 2),
+            binary_rule_ids=(3, 4))
+
+    # Identical online decisions retain their global word columns.
+    for index, rule, arity in ((0, 3, 2), (2, 1, 1),
+                               (6, 4, 2), (11, 2, 1)):
+        for stack in (serial, packed):
+            stack.record_choice(
+                index, torch.tensor([rule]), arity=arity,
+                mask=torch.tensor([True]))
+    # The serial trace compacts its NULL-seal choices immediately after 3W.
+    # Packed storage places the same choices in the group owned by the
+    # sentence's end-word column.
+    for offset, rule in enumerate((3, 4)):
+        serial.record_choice(
+            3 * words + offset, torch.tensor([rule]), arity=2,
+            mask=torch.tensor([True]))
+        packed.record_choice(
+            3 * words + (words - 1) * seal_width + offset,
+            torch.tensor([rule]), arity=2, mask=torch.tensor([True]))
+
+    idea = torch.randn(1, idea_dim, requires_grad=True)
+    serial_loss, serial_terms = chooser.loss(
+        idea, serial, surface_weight=1.0)
+    roots = idea.unsqueeze(1)
+    packed_loss, packed_terms = chooser.packed_loss(
+        roots, packed,
+        word_positions=torch.arange(words).reshape(1, words),
+        sentence_end_for_word=torch.full((1, words), words - 1),
+        sentence_ids=torch.zeros(1, words, dtype=torch.long),
+        sentence_end_mask=torch.tensor([[False, False, False, True]]),
+        surface_weight=1.0)
+
+    torch.testing.assert_close(
+        packed_loss, serial_loss, rtol=1e-6, atol=1e-7)
+    assert packed_terms.keys() == serial_terms.keys()
+    for name in serial_terms:
+        torch.testing.assert_close(
+            packed_terms[name], serial_terms[name], rtol=1e-6, atol=1e-7)
+    packed_loss.backward()
+    assert idea.grad is None, "packed reconstruction must also stopgrad(S)"
+
+
 def test_fixed_forward_loss_slab_preserves_chooser_gradient():
     stack = ReconstructionStack(batch=1, max_depth=8)
     stack.prepare_choices(

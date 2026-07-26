@@ -467,19 +467,23 @@ def test_tensor_peer_while_runs_symbolic_reference_transaction_and_releases_owne
         or bool(torch.isfinite(value).all())
         for value in actual)
 
-    # The public per-word conceptual slab is the post-reference object idea,
-    # not the orthographic word-concept row.  Its content therefore has the
-    # same direction as the staged paired object atom wherever evidence is
-    # nonzero. (The activation supplies only a nonnegative scalar.)
-    contribution = tensor_loop.conceptualSpace.subspace.materialize()
-    object_atoms = tensor_loop.inputSpace._ar_word_object_atoms
+    # CSLang keeps continuous concepts only in CS's fixed eight-slot STM.
+    # Its word-aligned handoff to SymbolSpace is the quantized sparse
+    # reference: row identity plus one signed activation, never a duplicate
+    # [B,W,D_c] concept history.
+    stm_buffer = tensor_loop.conceptualSpace.stm._buffer
+    assert tuple(stm_buffer.shape[1:]) == (
+        tensor_loop.conceptualSpace.stm.capacity,
+        tensor_loop.conceptualSpace.stm.concept_dim)
+    symbol_activations = (
+        tensor_loop.symbolSpace._word_reference_activations)
+    symbol_rows = tensor_loop.symbolSpace._word_reference_rows
     active = tensor_loop.inputSpace._word_active_mask
-    n_what = int(tensor_loop.conceptualSpace.nWhat)
-    got = contribution[..., :n_what]
-    wanted = object_atoms[..., :n_what]
-    live = torch.logical_and(active, got.square().sum(dim=-1) > 0)
-    cosine = torch.nn.functional.cosine_similarity(got, wanted, dim=-1)
-    assert bool((cosine[live] > 1.0 - 1e-5).all())
+    assert tuple(symbol_activations.shape) == (*active.shape, 1)
+    assert tuple(symbol_rows.shape) == tuple(active.shape)
+    assert bool((symbol_rows[~active] == -1).all())
+    assert bool((symbol_activations[~active] == 0).all())
+    assert bool(torch.isfinite(symbol_activations).all())
 
     actual_intra = tensor_loop.conceptualSpace.consume_intra_loss()
     assert torch.isfinite(actual_intra)
@@ -594,6 +598,40 @@ def test_compiled_sentence_state_is_an_explicit_result_not_a_side_effect():
     torch.testing.assert_close(harness._stm_single_S, explicit[4])
     torch.testing.assert_close(harness._stm_post_depth, explicit[5])
     torch.testing.assert_close(harness._tensor_peer_trip_count, explicit[6])
+
+
+def test_functional_soft_reset_clears_only_selected_owner_rows():
+    """Packed sentence boundaries reset CS-owned STM without peer mutation."""
+    batch, capacity, dim = 3, 4, 5
+    state = (
+        torch.arange(batch * capacity * dim, dtype=torch.float32).reshape(
+            batch, capacity, dim),
+        torch.tensor([4, 3, 2], dtype=torch.long),
+        torch.arange(batch * capacity, dtype=torch.long).reshape(
+            batch, capacity),
+        torch.arange(batch * capacity, dtype=torch.long).reshape(
+            batch, capacity) + 20,
+        torch.arange(batch * capacity, dtype=torch.long).reshape(
+            batch, capacity) + 40,
+        torch.arange(batch * capacity, dtype=torch.float32).reshape(
+            batch, capacity) / 10.0,
+    )
+    before = tuple(value.clone() for value in state)
+    reset = Models.FunctionalPeerSTM.soft_reset_rows(
+        state, torch.tensor([False, True, False]))
+
+    # Functional owner update: the viewed source tensors are untouched.
+    for got, expected in zip(state, before):
+        torch.testing.assert_close(got, expected, rtol=0, atol=0)
+    # Only row 1 is reset; row 0 and row 2 remain bitwise identical.
+    for got, expected in zip(reset, before):
+        torch.testing.assert_close(
+            got[[0, 2]], expected[[0, 2]], rtol=0, atol=0)
+    assert torch.count_nonzero(reset[0][1]) == 0
+    assert reset[1][1].item() == 0
+    for metadata in reset[2:5]:
+        assert metadata[1].eq(-1).all()
+    assert torch.count_nonzero(reset[5][1]) == 0
 
 
 @pytest.mark.skipif(

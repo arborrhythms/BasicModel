@@ -9575,6 +9575,11 @@ class InputSpace(Space):
     """
     name = "Inputs"
     config_section = "InputSpace"
+    # Root FIFOs need not be W-wide. Limiting a brick to 32 complete
+    # sentences per row changes no ordering or sentence content; it prevents
+    # torch.while_loop autograd from taping a second [B,W,Dc] carrier at every
+    # word (quadratic W memory).
+    PACKED_SENTENCE_SLOTS = 32
 
     def _register_requirements(self):
         """InputSpace vocabularies are inherently sampling-with-replacement.
@@ -9678,6 +9683,23 @@ class InputSpace(Space):
         # to compute the outer-loop iteration count N without rethreading
         # inp_items through runBatch's call signature.
         self._last_sentences = None
+        # Optional whole-sentence packing metadata. ``prepPackedInput`` joins
+        # several consecutive corpus sentences into one surface row while
+        # retaining their word boundaries as fixed [B,W] tensors.  The
+        # tensors are consumed by the compiled CSLang lane; no Python
+        # sentence list enters the captured word loop.
+        self._sentence_pack_enabled = False
+        self._packed_sentence_rows = None
+        self._packed_sentence_counts_host = None
+        self._packed_sentence_max_count = 0
+        self._packed_sentence_start_mask = None
+        self._packed_sentence_end_mask = None
+        self._packed_sentence_intermediate_end_mask = None
+        self._packed_sentence_ids = None
+        self._packed_sentence_word_positions = None
+        self._packed_sentence_end_for_word = None
+        self._packed_sentence_slot_end_positions = None
+        self._packed_sentence_slot_mask = None
         # Optional pre-built embedding bypass: callers (chat-loop /
         # generate_sentence) stage a tensor here so forward() skips
         # the lex/embed step on that call.  None during training.
@@ -9756,6 +9778,7 @@ class InputSpace(Space):
         
         See class docstring for the operation contract.
         """
+        self._clear_sentence_pack()
         if (isinstance(inputBatch, list) and inputBatch
                 and isinstance(inputBatch[0], str)):
             self._last_sentences = list(inputBatch)
@@ -9781,6 +9804,150 @@ class InputSpace(Space):
             return host.to(TheDevice.get())
         self._host_input_slab = None  # no host origin -> device fallback
         return inputBatch  # already [B, D, 1] and on device after toDevice()
+
+    def _clear_sentence_pack(self):
+        """Drop request-scoped packed-sentence metadata."""
+        self._sentence_pack_enabled = False
+        self._packed_sentence_rows = None
+        self._packed_sentence_counts_host = None
+        self._packed_sentence_max_count = 0
+        self._packed_sentence_start_mask = None
+        self._packed_sentence_end_mask = None
+        self._packed_sentence_intermediate_end_mask = None
+        self._packed_sentence_ids = None
+        self._packed_sentence_word_positions = None
+        self._packed_sentence_end_for_word = None
+        self._packed_sentence_slot_end_positions = None
+        self._packed_sentence_slot_mask = None
+
+    def packed_sentence_slot_capacity(self):
+        """Static root FIFO width for the current compiled word capacity."""
+        word_capacity = int(
+            getattr(self, "_serial_word_capacity", 0) or 0)
+        return max(1, min(word_capacity, int(self.PACKED_SENTENCE_SLOTS)))
+
+    def prepPackedInput(self, sentence_rows):
+        """Stage B chronological rows of complete sentences in one word slab.
+
+        ``sentence_rows[b]`` is the consecutive time sequence for corpus row
+        ``b``.  Sentences are joined only at the raw surface boundary; their
+        exact word starts, ends, local positions, and root destinations remain
+        explicit tensors.  A row may be empty when its contiguous stream has
+        already drained.  No sentence may cross the configured word capacity.
+        """
+        if not isinstance(sentence_rows, (list, tuple)) or not sentence_rows:
+            raise ValueError("packed input requires a non-empty batch of rows")
+        capacity = int(getattr(self, "_serial_word_capacity", 0) or 0)
+        if capacity < 1:
+            raise RuntimeError(
+                "packed sentence input requires serialWordCapacity")
+
+        import Meronomy
+        normalized = []
+        counts_per_row = []
+        joined_rows = []
+        for b, row in enumerate(sentence_rows):
+            if not isinstance(row, (list, tuple)):
+                raise TypeError(
+                    f"packed row {b} must be a sentence sequence")
+            sentences = []
+            word_counts = []
+            for sentence in row:
+                if not isinstance(sentence, str):
+                    raise TypeError(
+                        "packed sentence input currently requires strings; "
+                        f"row {b} received {type(sentence).__name__}")
+                # ``Data.stringTensor`` is the authoritative raw surface and
+                # ASCII-replaces non-ASCII characters before PartSpace sees
+                # them. Count that exact byte representation so boundary
+                # metadata cannot drift from the staged word mask.
+                count = len(Meronomy.word_spans(
+                    sentence.encode("ascii", errors="replace")))
+                if count < 1:
+                    raise ValueError(
+                        f"packed row {b} contains an empty sentence")
+                if count > capacity:
+                    raise ValueError(
+                        f"packed row {b} sentence has {count} words, exceeding "
+                        f"the complete-sentence capacity W={capacity}")
+                sentences.append(sentence)
+                word_counts.append(int(count))
+            total = sum(word_counts)
+            if total > capacity:
+                raise ValueError(
+                    f"packed row {b} contains {total} words, exceeding W="
+                    f"{capacity}; the packer must start a new brick")
+            joined = " ".join(sentences)
+            encoded_bytes = len(joined.encode("ascii", errors="replace"))
+            byte_capacity = int(getattr(self.data, "inputLength", 0) or 0)
+            if byte_capacity > 0 and encoded_bytes > byte_capacity:
+                raise ValueError(
+                    f"packed row {b} contains {encoded_bytes} bytes, "
+                    f"exceeding InputSpace capacity {byte_capacity}; "
+                    "refusing implicit stringTensor clipping")
+            joined_count = len(Meronomy.word_spans(
+                joined.encode("ascii", errors="replace"))) if joined else 0
+            if joined_count != total:
+                raise RuntimeError(
+                    "joining packed sentence surfaces changed lexer word "
+                    f"count on row {b}: individual={total}, joined="
+                    f"{joined_count}")
+            normalized.append(tuple(sentences))
+            counts_per_row.append(tuple(word_counts))
+            joined_rows.append(joined)
+
+        # prepInput owns the ordinary byte staging and deliberately clears any
+        # prior pack. Install this request's boundary tensors afterwards.
+        result = self.prepInput(joined_rows)
+        B = len(normalized)
+        slot_capacity = self.packed_sentence_slot_capacity()
+        max_sentences = max(1, max(len(row) for row in normalized))
+        if max_sentences > slot_capacity:
+            raise ValueError(
+                f"packed input has {max_sentences} sentences in one row, "
+                f"exceeding the fixed root FIFO {slot_capacity}; the packer "
+                "must start a new brick")
+        starts = torch.zeros(B, capacity, dtype=torch.bool)
+        ends = torch.zeros(B, capacity, dtype=torch.bool)
+        intermediate_ends = torch.zeros(B, capacity, dtype=torch.bool)
+        sentence_ids = torch.full(
+            (B, capacity), -1, dtype=torch.long)
+        word_positions = torch.full(
+            (B, capacity), -1, dtype=torch.long)
+        end_for_word = torch.zeros(B, capacity, dtype=torch.long)
+        slot_end = torch.zeros(B, slot_capacity, dtype=torch.long)
+        slot_mask = torch.zeros(B, slot_capacity, dtype=torch.bool)
+        for b, word_counts in enumerate(counts_per_row):
+            cursor = 0
+            for sentence_id, count in enumerate(word_counts):
+                end = cursor + int(count) - 1
+                starts[b, cursor] = True
+                ends[b, end] = True
+                if sentence_id + 1 < len(word_counts):
+                    intermediate_ends[b, end] = True
+                sentence_ids[b, cursor:end + 1] = sentence_id
+                word_positions[b, cursor:end + 1] = torch.arange(count)
+                end_for_word[b, cursor:end + 1] = end
+                slot_end[b, sentence_id] = end
+                slot_mask[b, sentence_id] = True
+                cursor = end + 1
+
+        dev = TheDevice.get()
+        self._sentence_pack_enabled = True
+        self._packed_sentence_rows = tuple(normalized)
+        self._packed_sentence_counts_host = tuple(
+            len(row) for row in normalized)
+        self._packed_sentence_max_count = int(max_sentences)
+        self._packed_sentence_start_mask = starts.to(dev)
+        self._packed_sentence_end_mask = ends.to(dev)
+        self._packed_sentence_intermediate_end_mask = (
+            intermediate_ends.to(dev))
+        self._packed_sentence_ids = sentence_ids.to(dev)
+        self._packed_sentence_word_positions = word_positions.to(dev)
+        self._packed_sentence_end_for_word = end_for_word.to(dev)
+        self._packed_sentence_slot_end_positions = slot_end.to(dev)
+        self._packed_sentence_slot_mask = slot_mask.to(dev)
+        return result
 
     def set_word_space(self, ss):
         """Register the Model's SymbolSpace so the pipeline can reach it.
@@ -9990,6 +10157,7 @@ class InputSpace(Space):
         self._active_word_bucket = int(
             getattr(self, "_serial_word_capacity", 0) or 0)
         self._cached_embedding = None
+        self._clear_sentence_pack()
         # _end_of_stream is a host-side ``list[bool]`` under the
         # rolling-cursor contract (the canonical hard-reset signal is
         # the cursor's ``hard_eos`` from ``next_tick``). Clear the
@@ -10319,6 +10487,7 @@ class InputSpace(Space):
         object.__setattr__(sub, "_word_local_parts", False)
 
         self._word_active_mask = active
+        self._finalize_sentence_word_layout(active)
         # One column now IS one word.  Keep explicit 0-based word ids for the
         # evaluator and grammar metadata, with -1 on padding columns.
         widx = torch.arange(
@@ -10334,6 +10503,72 @@ class InputSpace(Space):
         if ss is not None:
             ss.ensure_microbatch(B, 1)
         return sub
+
+    def _finalize_sentence_word_layout(self, active):
+        """Validate/install the fixed sentence-boundary tensor layout."""
+        B, W = int(active.shape[0]), int(active.shape[1])
+        dev = active.device
+        if self._sentence_pack_enabled:
+            required = (
+                self._packed_sentence_start_mask,
+                self._packed_sentence_end_mask,
+                self._packed_sentence_intermediate_end_mask,
+                self._packed_sentence_ids,
+                self._packed_sentence_word_positions,
+                self._packed_sentence_end_for_word,
+            )
+            if (not all(torch.is_tensor(value) for value in required)
+                    or any(tuple(value.shape) != (B, W)
+                           for value in required)):
+                raise RuntimeError(
+                    "packed sentence metadata is missing or shape-misaligned "
+                    f"with staged words {(B, W)}")
+            expected_active = self._packed_sentence_ids >= 0
+            if not torch.equal(
+                    expected_active.detach().to("cpu"),
+                    active.detach().to("cpu")):
+                raise RuntimeError(
+                    "packed surface word layout differs from the staged "
+                    "sentence boundaries; refusing to train misaligned roots")
+            return
+
+        # Ordinary input is one sentence per active row. Install the same
+        # tensor contract so the compiled loop never branches on whether the
+        # caller used packing. There are no intermediate ends, hence no
+        # in-loop reset; the existing post-loop NULL seal remains authoritative.
+        positions = torch.arange(
+            W, dtype=torch.long, device=dev).unsqueeze(0).expand(B, -1)
+        prefix = active.long().cumsum(dim=1)
+        suffix = torch.flip(
+            torch.flip(active.long(), dims=[1]).cumsum(dim=1), dims=[1])
+        start = active & prefix.eq(1)
+        end = active & suffix.eq(1)
+        last = torch.where(
+            active, positions, torch.zeros_like(positions)).amax(
+                dim=1, keepdim=True)
+        any_active = active.any(dim=1, keepdim=True)
+        self._packed_sentence_start_mask = start
+        self._packed_sentence_end_mask = end
+        self._packed_sentence_intermediate_end_mask = torch.zeros_like(active)
+        self._packed_sentence_ids = torch.where(
+            active, torch.zeros_like(positions),
+            torch.full_like(positions, -1))
+        self._packed_sentence_word_positions = torch.where(
+            active, positions, torch.full_like(positions, -1))
+        self._packed_sentence_end_for_word = last.expand(B, W)
+        slot_capacity = self.packed_sentence_slot_capacity()
+        slot_end = torch.zeros(
+            B, slot_capacity, dtype=torch.long, device=dev)
+        slot_mask = torch.zeros(
+            B, slot_capacity, dtype=torch.bool, device=dev)
+        slot_end[:, :1] = last
+        slot_mask[:, :1] = any_active
+        self._packed_sentence_slot_end_positions = slot_end
+        self._packed_sentence_slot_mask = slot_mask
+        self._packed_sentence_counts_host = tuple(
+            1 if bool(value) else 0
+            for value in any_active.detach().to("cpu").reshape(-1).tolist())
+        self._packed_sentence_max_count = 1
 
     def finalize_stem(self, sub, ps):
         """Model-orchestrated stem bookkeeping for TEXT mode (2026-06-07).
@@ -15943,10 +16178,10 @@ class ConceptualSpace(Space):
     def Reset(self, batch=None, hard=True):
         """Clear the subspace event so next forward() does a full recompute.
 
-        On hard reset (sentence boundary), also clears the
-        ShortTermMemory: the per-batch idea stack does not persist
-        across sentences (matching the existing soft/hard reset
-        semantics for ``_last_svo`` and ``_stm_fired`` on SymbolSpace).
+        On either hard or soft sentence reset, also clears the selected
+        ShortTermMemory rows: the per-sentence idea stack does not persist
+        across sentences. A soft reset preserves discourse/codebooks; a hard
+        reset additionally performs document-boundary learning/teardown.
 
         See ``Space.Reset`` for ``batch`` / ``hard`` semantics.
         """
@@ -15994,6 +16229,9 @@ class ConceptualSpace(Space):
         self._intra_loss_weight_accum = None
         self._intra_loss_count = 0
         if not hard:
+            stm = getattr(self, 'stm', None)
+            if stm is not None:
+                stm.clear(b=batch)
             return
         sub = getattr(self, 'subspace', None)
         if sub is not None and getattr(sub, 'event', None) is not None:

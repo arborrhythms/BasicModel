@@ -61,6 +61,90 @@ def test_dataloader_prefetch_preserves_stream_order():
             assert batch[b] == f"doc_{b * 5 + t:04d}"
 
 
+def test_packed_streams_preserve_row_chronology_and_whole_sentences():
+    """Variable packs never transpose, sort, split, or clip a row's stream."""
+    sentences = [
+        f"r{row}_t{time} " + " ".join(["w"] * (time + 1))
+        for row in range(2) for time in range(5)
+    ]
+    ds = SentenceStreamDataset(sentences, num_streams=2)
+
+    def words(value):
+        return len(str(value).split())
+
+    seen = [[], []]
+    while not ds.packed_done():
+        rows, outputs, hard_eos = ds.next_packed_tick(9, words)
+        assert outputs is None
+        for b, row in enumerate(rows):
+            assert sum(words(sentence) for sentence in row) <= 9
+            seen[b].extend(row)
+        assert hard_eos == [
+            len(seen[b]) == ds.stream_length for b in range(2)]
+
+    assert seen[0] == sentences[:5]
+    assert seen[1] == sentences[5:10]
+
+
+def test_packed_stream_progress_tracks_consumed_sentences():
+    ds = SentenceStreamDataset(
+        ["a", "b", "c", "d", "e", "f"], num_streams=2)
+    assert ds.progress() == 0.0
+    rows, _, _ = ds.next_packed_tick(
+        2, lambda value: len(value.split()))
+    assert rows == [["a", "b"], ["d", "e"]]
+    assert ds.progress() == pytest.approx(4 / 6)
+    ds.next_packed_tick(2, lambda value: len(value.split()))
+    assert ds.progress() == 1.0
+
+
+def test_packed_stream_refuses_one_oversized_sentence():
+    ds = SentenceStreamDataset(
+        ["one two three four", "ok"], num_streams=1)
+    with pytest.raises(ValueError, match="refusing to clip"):
+        ds.next_packed_tick(3, lambda value: len(value.split()))
+
+
+def test_packed_stream_skips_zero_word_separators_in_place():
+    ds = SentenceStreamDataset(
+        ["first", "   ", "second", "\n", "third"], num_streams=1)
+    rows, _, hard = ds.next_packed_tick(
+        2, lambda value: len(value.split()))
+    assert rows == [["first", "second"]]
+    assert hard == [False]
+    rows, _, hard = ds.next_packed_tick(
+        2, lambda value: len(value.split()))
+    assert rows == [["third"]]
+    assert hard == [True]
+
+
+def test_packed_stream_respects_raw_byte_capacity():
+    ds = SentenceStreamDataset(
+        ["aaaa", "bbbb", "c", "d"], num_streams=1)
+    rows, _, hard = ds.next_packed_tick(
+        10, lambda value: 1, max_bytes=9)
+    # One joining space means 4 + 1 + 4 exactly fills the raw slab.
+    assert rows == [["aaaa", "bbbb"]]
+    assert hard == [False]
+    rows, _, hard = ds.next_packed_tick(
+        10, lambda value: 1, max_bytes=9)
+    assert rows == [["c", "d"]]
+    assert hard == [True]
+
+
+def test_packed_stream_respects_fixed_root_slot_capacity():
+    ds = SentenceStreamDataset(
+        ["a", "b", "c", "d", "e"], num_streams=1)
+    rows, _, hard = ds.next_packed_tick(
+        10, lambda value: 1, max_sentences=3)
+    assert rows == [["a", "b", "c"]]
+    assert hard == [False]
+    rows, _, hard = ds.next_packed_tick(
+        10, lambda value: 1, max_sentences=3)
+    assert rows == [["d", "e"]]
+    assert hard == [True]
+
+
 def test_loadshards_preserves_order(tmp_path, monkeypatch):
     """loadShards keeps documents in canonical shard order so the streaming
     DataLoader can produce contiguous per-row streams."""
@@ -86,6 +170,29 @@ def test_loadshards_preserves_order(tmp_path, monkeypatch):
         "d0", "d1", "d2", "d3", "d4", "d5", "d6", "d7", "d10", "d11"]
     assert td.validation_input[:2] == ["d8", "d18"]
     assert td.test_input[:2] == ["d9", "d19"]
+
+
+def test_loadshards_word_limit_excludes_whole_sentence_without_clipping(
+        tmp_path, monkeypatch):
+    import data as data_mod
+
+    monkeypatch.setattr(
+        data_mod, "iter_documents",
+        lambda paths, max_docs=None:
+            iter(["one two. one two three. final."]))
+    monkeypatch.setattr(
+        data_mod, "get_shard_paths",
+        lambda d, num_shards=1, random_select=False:
+            ["fake_shard.parquet"])
+
+    td = data_mod.Data()
+    td.loadShards(
+        num_shards=1, max_docs=1, shard_dir=str(tmp_path),
+        max_sentence_words=2)
+
+    assert td.train_input == ["one two.", "final."]
+    assert "one two three." not in td.train_input
+    assert td.source_manifest["max_sentence_words"] == 2
 
 
 def test_data_loader_uses_train_input_in_order():

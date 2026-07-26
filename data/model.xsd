@@ -324,6 +324,10 @@
            ConceptualSpace STM capacity: grammar reductions keep the bounded
            STM live while this loop may traverse a much longer sentence. -->
       <xs:element name="serialWordCapacity" type="xs:positiveInteger" minOccurs="0"/>
+      <!-- Fixed raw radix-residual extent P presented to the compiled word
+           loop. It is an input layout, not PartSpace's live field width. -->
+      <xs:element name="serialResidualPartCapacity"
+                  type="xs:positiveInteger" minOccurs="0"/>
       <!-- Comma-separated staging capacities for serial traversal. The eager
            InputSpace stem selects the smallest width that contains the
            longest sentence in the batch; serialWordCapacity remains the hard
@@ -765,6 +769,9 @@
       <xs:element name="dataset" type="datasetEnum"/>
       <xs:element name="numShards" type="xs:positiveInteger"/>
       <xs:element name="maxDocs" type="xs:positiveInteger"/>
+      <!-- Whole-sentence admission ceiling. Records above the limit are
+           excluded intact; they are never truncated into partial examples. -->
+      <xs:element name="maxSentenceWords" type="xs:positiveInteger"/>
       <xs:element name="shardDir" type="xs:string"/>
       <xs:element name="minFrequency" type="nonNegativeFloat"/>
       <xs:element name="classificationMin" type="xs:string"/>
@@ -803,6 +810,10 @@
            BASIC_SEED. -->
       <xs:element name="seed" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="batchSize" type="xs:positiveInteger" minOccurs="0"/>
+      <!-- Pack consecutive complete sentences independently within each
+           contiguous batch row up to serialWordCapacity. The compiled brick
+           owns row-local soft sentence boundaries; no sentence is clipped. -->
+      <xs:element name="packSentences" type="xs:boolean" minOccurs="0"/>
       <!-- DataLoader prefetch workers. 0 means synchronous in-process
            batch assembly. -->
       <xs:element name="numWorkers" type="xs:nonNegativeInteger" minOccurs="0"/>

@@ -180,7 +180,7 @@ class TestConceptualSpaceHasSTM(unittest.TestCase):
 
 
 class TestSTMClearedOnReset(unittest.TestCase):
-    """Sentence-boundary semantics: hard Reset clears the STM."""
+    """Sentence-boundary semantics: hard and soft Reset clear the STM."""
 
     @classmethod
     def setUpClass(cls):
@@ -202,16 +202,21 @@ class TestSTMClearedOnReset(unittest.TestCase):
                          "Hard Reset (sentence boundary) must "
                          "clear the STM.")
 
-    def test_soft_reset_does_not_clear_stm(self):
+    def test_soft_reset_clears_only_selected_stm_row(self):
         c = self.model.conceptualSpace
         concept_dim = int(c.stm.concept_dim)
         c.stm.clear()  # known empty
         c.stm.push(0, torch.ones(concept_dim))
-        c.Reset(hard=False)
-        # Soft reset is not a sentence boundary; STM persists
-        self.assertEqual(c.stm.size(0), 1,
-                         "Soft Reset must NOT clear the STM "
-                         "(only hard reset / sentence boundary does).")
+        if int(c.stm._buffer.shape[0]) > 1:
+            c.stm.push(1, 2.0 * torch.ones(concept_dim))
+        c.Reset(batch=0, hard=False)
+        self.assertEqual(
+            c.stm.size(0), 0,
+            "Soft sentence reset must clear the selected row's STM.")
+        if int(c.stm._buffer.shape[0]) > 1:
+            self.assertEqual(
+                c.stm.size(1), 1,
+                "A row-local soft reset must preserve peer batch rows.")
         # Clean up so other tests start with empty STM
         c.stm.clear()
 

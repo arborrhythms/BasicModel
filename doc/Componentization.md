@@ -62,22 +62,33 @@ pre-deposit safety opportunity and is retained. Binary then Unary are
 dependency-ordered because the Unary chooser reads the Binary-applied parent;
 the ownership split does not speculate or change that derivation.
 
-`BasicModel.xml` stages one `[B,512,...]` capacity, derives the final live
+`BasicModel.xml` stages one `[B,256,...]` capacity, derives the final live
 column on device, executes through that column, and then drains the final
 CSSym transaction, the final CSLang transaction, and the grammar-feedback
-register. Each row has its own
-activity mask, so completed short sentences remain exact no-ops while a longer
-peer row finishes. A sentence longer than 512 words is rejected before emission
-rather than truncated.
+register. Consecutive complete sentences pack into each contiguous corpus row.
+A row-local `Reset(hard=False)` is part of the CSLang transaction between
+sentences; it clears only that row's CS STM and grammar latch. Sentences are
+never split, reordered, or padded as independent batch items. A sentence over
+256 words is excluded intact at corpus admission rather than truncated.
 
 The recurrent carry is split by ownership rather than duplicating a mutable
 `SubSpace` per word: a CSSub owner bank (CSsub, the PS contribution slab, and
-terminal WS state), a CSSym owner bank, a CSLang owner bank (concept
-contributions, objectives, and reconstruction trace), the one CS-owned STM
-bank, and the fixed CSSub→CSSym and CSSym→CSLang FIFO payloads. The capacity
-axis belongs only to staged inputs and result slabs. Codebooks remain single
-Space-owned tensors captured by reference across every statically unrolled
-fold; optimizer and contextual updates occur after the drained brick.
+terminal WS state), a CSSym owner bank, a CSLang owner bank (scalar symbol
+activations, objectives, and reconstruction trace), the one CS-owned STM bank,
+and the fixed CSSub→CSSym and CSSym→CSLang FIFO payloads. CSLang's continuous
+state is only the non-quantized `[B,8,concept_dim]` STM. Its word-aligned output
+is the SymbolSpace-owned sparse reference — row ID plus signed activation
+`[B,W,1]` — not a `[B,W,concept_dim]` copy. This distinction is also required
+for bounded memory: `torch.while_loop` tapes every carried value at every step,
+so carrying a changing concept-history slab would scale as
+`W × B × W × concept_dim`.
+
+The capacity axis otherwise belongs only to staged inputs and compact result
+slabs. The radix spelling surface is `[B,W,P]` integer subword IDs plus a mask;
+P64 is not 64 dense byte vectors, and the live count falls as longer trie
+chunks are learned. Codebooks remain single Space-owned tensors captured by
+reference across every statically unrolled fold; optimizer and contextual
+updates occur after the drained brick.
 `StaticPeerPipeline` remains a legacy A/B/C compatibility scheduler for older
 configurations; it is not the canonical aligned transaction above.
 

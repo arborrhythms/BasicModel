@@ -1069,7 +1069,6 @@ class TensorPeerWhilePipeline:
             final_stm, final_cs_sub, final_cs_sym, final_cs_lang,
             feedback, trip_count)
 
-
 class FunctionalPeerSTM:
     """Pure tensor implementations of the online STM controller.
 
@@ -1078,6 +1077,39 @@ class FunctionalPeerSTM:
     return a complete six-tensor STM state, so a peer-pipeline callback can
     execute them inside :func:`torch.while_loop`.
     """
+
+    @staticmethod
+    def soft_reset_rows(state, row_gate):
+        """Return CS-owned sentence state with selected batch rows cleared.
+
+        This is the tensor, batch-specific form of ``Reset(hard=False)`` used
+        at a packed sentence boundary.  Learned/codebook state and discourse
+        history are outside this six-tensor owner bank and therefore remain
+        untouched.
+        """
+        (buffer, depth, orders, grammar_orders,
+         concept_rows, concept_activations) = state
+        B = int(buffer.shape[0])
+        gate = row_gate.reshape(B).to(
+            device=buffer.device, dtype=torch.bool)
+        return (
+            torch.where(
+                gate.reshape(B, 1, 1), torch.zeros_like(buffer), buffer),
+            torch.where(gate, torch.zeros_like(depth), depth),
+            torch.where(
+                gate.reshape(B, 1),
+                torch.full_like(orders, -1), orders),
+            torch.where(
+                gate.reshape(B, 1),
+                torch.full_like(grammar_orders, -1), grammar_orders),
+            torch.where(
+                gate.reshape(B, 1),
+                torch.full_like(concept_rows, -1), concept_rows),
+            torch.where(
+                gate.reshape(B, 1),
+                torch.zeros_like(concept_activations),
+                concept_activations),
+        )
 
     @staticmethod
     def predict(state, idea, row_gate, layer, routing=None,
@@ -2004,6 +2036,18 @@ class BaseModel(Mereology, nn.Module):
             raise ValueError(
                 "<serialWordCapacity> must be a positive integer; got "
                 f"{_word_cap!r}")
+        _residual_cap = TheXMLConfig.get(
+            "architecture.serialResidualPartCapacity", default=16)
+        try:
+            self.serial_residual_part_capacity = int(_residual_cap)
+        except (TypeError, ValueError):
+            raise ValueError(
+                "<serialResidualPartCapacity> must be an integer >= 3; "
+                f"got {_residual_cap!r}")
+        if self.serial_residual_part_capacity < 3:
+            raise ValueError(
+                "<serialResidualPartCapacity> must be >= 3; got "
+                f"{self.serial_residual_part_capacity}")
         _bucket_raw = TheXMLConfig.get(
             "architecture.serialWordBuckets", default=None)
         if _bucket_raw in (None, ""):
@@ -2250,6 +2294,12 @@ class BaseModel(Mereology, nn.Module):
             TheXMLConfig.training("detachedReverse", False))
         self.forward_grammar_weight = float(
             TheXMLConfig.training("forwardGrammarWeight", 0.0) or 0.0)
+        _pack_env = os.environ.get("BASIC_PACK_SENTENCES")
+        self.pack_sentences = bool(
+            TheXMLConfig.training("packSentences", False))
+        if _pack_env is not None:
+            self.pack_sentences = _pack_env.strip().lower() in (
+                "1", "true", "yes", "on")
         _language = getattr(getattr(self, "symbolSpace", None),
                             "languageLayer", None)
         for _layers_name in ("_unary_layers", "_binary_layers"):
@@ -3505,8 +3555,6 @@ class BaseModel(Mereology, nn.Module):
         rows = rows.to(device=W.device, dtype=torch.long)
         active = active.to(device=W.device, dtype=torch.bool)
         valid = active & rows.ge(0) & rows.lt(active_rows)
-        sentence_count = valid.sum(dim=1, keepdim=True)
-        valid = valid & sentence_count.gt(1)
 
         # A harmless in-range source is gathered for unknown/padded positions,
         # then immediately masked.  That keeps the contextual snapshot wholly
@@ -3514,11 +3562,49 @@ class BaseModel(Mereology, nn.Module):
         # inside the production word loop.
         safe_rows = rows.clamp(min=0, max=active_rows - 1)
         atoms = W[safe_rows]
+        sentence_ids = getattr(isp, "_packed_sentence_ids", None)
+        if (bool(getattr(isp, "_sentence_pack_enabled", False))
+                and torch.is_tensor(sentence_ids)
+                and tuple(sentence_ids.shape) == tuple(valid.shape)):
+            sentence_ids = sentence_ids.to(
+                device=W.device, dtype=torch.long)
+            n_sentences = max(
+                1, int(getattr(
+                    isp, "_packed_sentence_max_count", 1) or 1))
+            safe_sentence = sentence_ids.clamp(
+                min=0, max=n_sentences - 1)
+            counts = torch.zeros(
+                int(rows.shape[0]), n_sentences,
+                dtype=atoms.dtype, device=W.device)
+            counts.scatter_add_(
+                1, safe_sentence,
+                valid.to(dtype=atoms.dtype))
+            sums = torch.zeros(
+                int(rows.shape[0]), n_sentences, int(atoms.shape[-1]),
+                dtype=atoms.dtype, device=W.device)
+            sums.scatter_add_(
+                1,
+                safe_sentence.unsqueeze(-1).expand_as(atoms),
+                atoms * valid.unsqueeze(-1).to(dtype=atoms.dtype))
+            word_count = counts.gather(1, safe_sentence)
+            valid = valid & word_count.gt(1)
+            sentence_sum = sums.gather(
+                1, safe_sentence.unsqueeze(-1).expand_as(atoms))
+            denom = (word_count - 1.0).clamp_min(1.0)
+            context = (
+                sentence_sum - atoms * valid.unsqueeze(-1).to(atoms.dtype))
+            context = context / denom.unsqueeze(-1)
+        else:
+            sentence_count = valid.sum(dim=1, keepdim=True)
+            valid = valid & sentence_count.gt(1)
+            atom_mask = valid.unsqueeze(-1).to(dtype=atoms.dtype)
+            masked_atoms = atoms * atom_mask
+            denom = (
+                sentence_count.to(dtype=atoms.dtype) - 1.0).clamp_min(1.0)
+            context = (
+                masked_atoms.sum(dim=1, keepdim=True) - masked_atoms)
+            context = context / denom.unsqueeze(-1)
         atom_mask = valid.unsqueeze(-1).to(dtype=atoms.dtype)
-        masked_atoms = atoms * atom_mask
-        denom = (sentence_count.to(dtype=atoms.dtype) - 1.0).clamp_min(1.0)
-        context = (masked_atoms.sum(dim=1, keepdim=True) - masked_atoms)
-        context = context / denom.unsqueeze(-1)
         # This normalizes only the *ephemeral context direction*.  It never
         # normalizes a percept input or re-projects a stored codebook row.
         context = F.normalize(context.float(), p=2, dim=-1, eps=1e-12)
@@ -6640,6 +6726,8 @@ class BasicModel(BaseModel):
         :meth:`forward`'s public contract; the final three are small tensors
         produced by the completed sentence recurrence.  ``runBatch`` publishes
         them onto their diagnostic/consumer attributes after the compiled call.
+        The fourth state output is a sparse-by-word slab whose nonzero end
+        columns hold every packed sentence root.
         """
         external_start = bool(getattr(
             self, "_spaces_started_for_forward", False))
@@ -6657,25 +6745,45 @@ class BasicModel(BaseModel):
             raise RuntimeError(
                 "model forward must return a tuple or list of tensors")
         if len(result) == 4:
+            self._packed_sentence_roots = None
             return tuple(result)
-        if len(result) != 7:
+        # Keep accepting the pre-packing explicit-state contract for small
+        # harnesses and external callers that produce no root slab. Canonical
+        # packed/fullgraph execution returns the eight-value form below.
+        if len(result) == 7:
+            public = tuple(result[:4])
+            idea, post_depth, trip_count = result[4:]
+            if not all(torch.is_tensor(value)
+                       for value in (idea, post_depth, trip_count)):
+                raise RuntimeError(
+                    "compiled sentence state must contain tensor "
+                    "(S, post_depth, trip_count) values")
+            self._stm_single_S = idea
+            self._stm_post_depth = post_depth
+            self._packed_sentence_roots = None
+            object.__setattr__(self, "_tensor_peer_trip_count", trip_count)
+            return public
+        if len(result) != 8:
             raise RuntimeError(
                 "compiled sentence forward returned "
                 f"{len(result)} values; expected 4 public values or "
-                "4 plus (S, post_depth, trip_count)")
+                "4 plus (S, post_depth, trip_count[, sentence_roots])")
         public = tuple(result[:4])
-        idea, post_depth, trip_count = result[4:]
+        idea, post_depth, trip_count, sentence_roots = result[4:]
         if not all(torch.is_tensor(value)
-                   for value in (idea, post_depth, trip_count)):
+                   for value in (
+                       idea, post_depth, trip_count, sentence_roots)):
             state_types = tuple(
                 type(value).__name__
-                for value in (idea, post_depth, trip_count))
+                for value in (
+                    idea, post_depth, trip_count, sentence_roots))
             raise RuntimeError(
                 "compiled sentence state must contain tensor "
-                "(S, post_depth, trip_count) values; got "
+                "(S, post_depth, trip_count, sentence_roots) values; got "
                 f"{state_types}")
         self._stm_single_S = idea
         self._stm_post_depth = post_depth
+        self._packed_sentence_roots = sentence_roots
         object.__setattr__(self, "_tensor_peer_trip_count", trip_count)
         return public
 
@@ -6731,7 +6839,8 @@ class BasicModel(BaseModel):
 
         raw_width = int(ids.shape[-1])
         capacity = int(os.environ.get(
-            "BASICMODEL_MPS_RESIDUAL_PARTS", "16"))
+            "BASICMODEL_MPS_RESIDUAL_PARTS",
+            str(getattr(self, "serial_residual_part_capacity", 16))))
         if capacity < 3:
             raise ValueError(
                 "BASICMODEL_MPS_RESIDUAL_PARTS must be at least 3; got "
@@ -8154,7 +8263,17 @@ class BasicModel(BaseModel):
             depth = getattr(stm, "_depth", None) if stm is not None else None
             if torch.is_tensor(depth) and depth.numel():
                 stm._max_depth_host = int(depth.max().item())
-        self._drain_pending_stm_end_state()
+        isp = getattr(self, "inputSpace", None)
+        if (isp is not None
+                and bool(getattr(isp, "_sentence_pack_enabled", False))
+                and torch.is_tensor(getattr(
+                    self, "_packed_sentence_roots", None))):
+            self._drain_packed_stm_end_states()
+            # The ordinary compiled boundary parked the final sentence too;
+            # packed draining already consumed it in chronological slot order.
+            object.__setattr__(self, "_pending_stm_end_state", None)
+        else:
+            self._drain_pending_stm_end_state()
         self._staged_in_sub = None
         self._staged_concepts_in = None
         self._active_compiled_step = None
@@ -8230,6 +8349,52 @@ class BasicModel(BaseModel):
                         rel_type=TernaryTruthStore.REL_OTHER, trust=trust)
                 else:
                     ltm_store.append_idea(payload[0], trust=trust)
+
+    def _drain_packed_stm_end_states(self):
+        """Commit packed sentence roots to discourse in row/time order."""
+        roots = getattr(self, "_packed_sentence_roots", None)
+        isp = getattr(self, "inputSpace", None)
+        discourse = (self.symbolSpace.discourse
+                     if getattr(self, "symbolSpace", None) is not None
+                     else None)
+        if (not torch.is_tensor(roots) or isp is None or discourse is None):
+            return
+        positions = isp._packed_sentence_slot_end_positions
+        valid = isp._packed_sentence_slot_mask
+        if (not torch.is_tensor(positions) or not torch.is_tensor(valid)
+                or tuple(positions.shape) != tuple(valid.shape)
+                or int(positions.shape[0]) != int(roots.shape[0])):
+            raise RuntimeError(
+                "packed STM roots are missing chronological sentence slots")
+        B, root_slots, _D = (
+            int(roots.shape[0]), int(roots.shape[1]),
+            int(roots.shape[2]))
+        if int(positions.shape[1]) != root_slots:
+            raise RuntimeError(
+                "packed STM root FIFO differs from its chronological slots")
+        ltm_store = getattr(self.symbolSpace, "ltm_store", None)
+        ltm_on = bool(
+            getattr(self.conceptualSpace, "_ltm_consolidation", False)
+            and ltm_store is not None)
+        counts = tuple(getattr(
+            isp, "_packed_sentence_counts_host", ()) or ())
+        for t in range(int(positions.shape[1])):
+            sentence = roots[:, t, :]
+            mask = valid[:, t].to(
+                device=roots.device, dtype=torch.bool)
+            payloads = [
+                sentence[b:b + 1]
+                if b < len(counts) and t < int(counts[b]) else None
+                for b in range(B)
+            ]
+            depths = [1 if payload is not None else 0
+                      for payload in payloads]
+            discourse.predict_and_observe_stm_end_state(
+                depths, payloads, mask=mask)
+            if ltm_on:
+                for payload in payloads:
+                    if payload is not None:
+                        ltm_store.append_idea(payload[0], trust=0.0)
 
     def _intersentence_seed(self):
         """The predicted next-end-state SHAPE for the stage-0 CS_{-1} seed,
@@ -8312,6 +8477,41 @@ class BasicModel(BaseModel):
                 if self.symbolSpace is not None else None)
         if disc is None or self._current_discourse_s is None:
             return None
+        isp = getattr(self, "inputSpace", None)
+        roots = getattr(self, "_packed_sentence_roots", None)
+        if (isp is not None
+                and bool(getattr(isp, "_sentence_pack_enabled", False))
+                and torch.is_tensor(roots)):
+            positions = isp._packed_sentence_slot_end_positions
+            valid = isp._packed_sentence_slot_mask
+            if (not torch.is_tensor(positions)
+                    or not torch.is_tensor(valid)
+                    or int(positions.shape[0]) != int(roots.shape[0])
+                    or tuple(valid.shape) != tuple(positions.shape)):
+                raise RuntimeError(
+                    "packed discourse roots are missing their sentence slots")
+            B, root_slots, _D = roots.shape
+            if int(positions.shape[1]) != int(root_slots):
+                raise RuntimeError(
+                    "packed discourse root FIFO differs from its "
+                    "chronological slots")
+            loss_sum = roots.sum() * 0.0
+            weight_sum = roots.new_zeros(())
+            # Chronological time is the sentence-slot axis. Row b at slot t is
+            # therefore followed only by row b at slot t+1, never by another
+            # batch row or a length-sorted sentence.
+            for t in range(int(positions.shape[1])):
+                sentence = roots[:, t, :]
+                mask = valid[:, t].to(
+                    device=roots.device, dtype=torch.bool)
+                primed = torch.logical_and(
+                    disc._s_count.to(mask.device) > 0, mask)
+                weight = primed.sum().to(dtype=roots.dtype)
+                local = disc.observe(sentence, mask=mask)
+                if local is not None:
+                    loss_sum = loss_sum + local * weight
+                    weight_sum = weight_sum + weight
+            return loss_sum / weight_sum.clamp_min(1.0)
         return disc.observe(self._current_discourse_s)
 
     def _discourse_inter_loss(self):
@@ -9633,6 +9833,31 @@ class BasicModel(BaseModel):
         for b in completed:
             ss.soft_reset(batch=b)
 
+    def dispatch_packed_soft_reset(self, hard_eos=None):
+        """Soft-reset rows whose final packed sentence completed this brick.
+
+        Intermediate sentences were reset functionally inside CSLang. The
+        final sentence must remain available through reconstruction,
+        discourse loss, backward, and contextual updates; this eager boundary
+        clears it afterwards. Rows receiving a simultaneous hard EOS are
+        skipped because the subsequent hard-reset dispatch subsumes the soft
+        reset.
+        """
+        isp = getattr(self, "inputSpace", None)
+        counts = tuple(getattr(
+            isp, "_packed_sentence_counts_host", ()) or ())
+        if not bool(getattr(isp, "_sentence_pack_enabled", False)) or not counts:
+            return
+        hard = list(hard_eos or [False] * len(counts))
+        if len(hard) < len(counts):
+            hard.extend([False] * (len(counts) - len(hard)))
+        for b, count in enumerate(counts):
+            if int(count) < 1 or bool(hard[b]):
+                continue
+            for space in self.spaces:
+                if hasattr(space, "Reset"):
+                    space.Reset(batch=b, hard=False)
+
     def post_tick_compact(self):
         """Run post-tick host work: truth-layer compaction.
 
@@ -9745,6 +9970,7 @@ class BasicModel(BaseModel):
                 for hl in reg.values():
                     _sever_dict(getattr(hl, "_bind_context", None))
         _sever(self, "_stm_single_S")
+        _sever(self, "_packed_sentence_roots")
         _sever_dict(getattr(self, "_stm_last_reduce_routing", None))
 
     def flush_word_buffers(self):
@@ -9776,9 +10002,9 @@ class BasicModel(BaseModel):
         return [torch.zeros(1) for _ in range(int(B))]
 
     class _TickPrefetcher:
-        """Background-thread prefetch over ``ds.next_tick()``.
+        """Background-thread prefetch over a dataset cursor callable.
 
-        A *single* worker thread calls ``ds.next_tick()`` ahead of the
+        A *single* worker thread calls ``next_fn`` ahead of the
         consumer and queues the ``(inp_items, out_items, hard_eos)``
         tuple. The main ``runEpoch`` loop pulls from the queue, hiding
         the per-tick CPU cost behind GPU compute (which releases the
@@ -9791,14 +10017,14 @@ class BasicModel(BaseModel):
         not thread count. Queue depth = ``queue_size``: at most one
         tick consumed by main + ``queue_size - 1`` buffered ahead.
 
-        ``next_tick`` is safe to call from this worker because it is a
+        The cursor callable is safe to call from this worker because it is a
         pure state machine over ``ds``'s internal cursor: no main-
         thread feedback, no shared mutable state outside ``ds``.
         """
 
         _SENTINEL = object()
 
-        def __init__(self, ds, queue_size):
+        def __init__(self, ds, queue_size, next_fn=None, done_fn=None):
             """Spawn the prefetch worker and size the bounded queue.
 
             ``queue_size`` of N permits up to N-1 in-flight ticks buffered
@@ -9808,6 +10034,8 @@ class BasicModel(BaseModel):
             from queue import Queue
             from threading import Thread, Event
             self._ds = ds
+            self._next_fn = next_fn or ds.next_tick
+            self._done_fn = done_fn or ds.all_done
             self._queue = Queue(maxsize=max(1, int(queue_size)))
             self._stop = Event()
             self._exc = None
@@ -9823,8 +10051,8 @@ class BasicModel(BaseModel):
             ``_SENTINEL`` on exit so the consumer doesn't deadlock.
             """
             try:
-                while not self._stop.is_set() and not self._ds.all_done():
-                    tick = self._ds.next_tick()
+                while not self._stop.is_set() and not self._done_fn():
+                    tick = self._next_fn()
                     while not self._stop.is_set():
                         try:
                             self._queue.put(tick, timeout=0.1)
@@ -9993,6 +10221,14 @@ class BasicModel(BaseModel):
         )
         byte_lexer = getattr(self, 'lexer', None) in ('byte', 'bytes')
         use_byte_cursor = (text_input and byte_lexer)
+        use_packed_cursor = bool(
+            training
+            and split == "train"
+            and text_input
+            and not byte_lexer
+            and getattr(self, "pack_sentences", False)
+            and getattr(self, "_tensor_peer_while_enabled", False)
+            and int(getattr(self, "serial_word_capacity", 0) or 0) > 0)
 
         if use_byte_cursor:
             # InputSpace.outputShape[0] (= ``nIdeas``) is the byte-buffer
@@ -10029,6 +10265,29 @@ class BasicModel(BaseModel):
         ds = loader.dataset
         B_eff = ds.num_streams
 
+        packed_next = None
+        packed_done = None
+        if use_packed_cursor:
+            if getattr(self.inputSpace.data,
+                       "has_supervised_outputs", False):
+                raise ValueError(
+                    "packed sentence training currently requires a "
+                    "self-supervised text corpus")
+            import Meronomy
+
+            def _packed_word_count(sentence):
+                return len(Meronomy.word_spans(
+                    str(sentence).encode("ascii", errors="replace")))
+
+            packed_next = partial(
+                ds.next_packed_tick,
+                int(self.serial_word_capacity),
+                _packed_word_count,
+                max_bytes=int(self.inputSpace.data.inputLength),
+                max_sentences=(
+                    self.inputSpace.packed_sentence_slot_capacity()))
+            packed_done = ds.packed_done
+
         # A mid-epoch checkpoint contains the update state *after* the saved
         # number of cursor ticks. Recreate the deterministic cursor and skip
         # those ticks before resuming updates. A different stream count would
@@ -10050,8 +10309,12 @@ class BasicModel(BaseModel):
         # Async tick prefetch. ``<numWorkers>`` becomes the in-flight
         # tick budget (1 tick consumed by main + N-1 buffered). 0
         # preserves the legacy synchronous path.
-        prefetcher = (BasicModel._TickPrefetcher(ds, queue_size=num_workers)
-                      if num_workers > 0 else None)
+        prefetcher = (
+            BasicModel._TickPrefetcher(
+                ds, queue_size=num_workers,
+                next_fn=packed_next if use_packed_cursor else None,
+                done_fn=packed_done if use_packed_cursor else None)
+            if num_workers > 0 else None)
 
         # Pre-build the AR stub outputs once for the byte-cursor path
         # (every tick reuses them; the AR target is the input bytes).
@@ -10060,6 +10323,9 @@ class BasicModel(BaseModel):
                 self._stub_outputs(B_eff))
         else:
             byte_stub_output = None
+        packed_stub_output = (
+            self.outputSpace.prepOutput(self._stub_outputs(B_eff))
+            if use_packed_cursor else None)
 
         # BASIC_MAX_BATCHES caps the cumulative training-batch count
         # across all epochs (train.py forwards --batches here).
@@ -10082,6 +10348,8 @@ class BasicModel(BaseModel):
         with ctx:
             step = 0
             batches_run = 0
+            packed_sentences_run = 0
+            epoch_started = time.monotonic()
             while True:
                 deadline = getattr(
                     self, "_training_deadline_monotonic", None)
@@ -10115,13 +10383,19 @@ class BasicModel(BaseModel):
                         break
                     inp_items, out_items, hard_eos = tick
                 else:
-                    if ds.all_done():
+                    cursor_done = (
+                        packed_done() if use_packed_cursor else ds.all_done())
+                    if cursor_done:
                         break
-                    inp_items, out_items, hard_eos = ds.next_tick()
+                    if use_packed_cursor:
+                        inp_items, out_items, hard_eos = packed_next()
+                    else:
+                        inp_items, out_items, hard_eos = ds.next_tick()
                 if resume_skip > 0:
                     resume_skip -= 1
                     self._resume_batches_to_skip = resume_skip
                     continue
+                packed_batch_sentences = 0
                 if use_byte_cursor:
                     # Byte slab: convert uint8 -> int8 [B, 1, slab_bytes]
                     # to match prepInput's expected shape downstream.
@@ -10142,6 +10416,15 @@ class BasicModel(BaseModel):
                     # callers.
                     self.inputSpace._host_input_slab = inp_items
                     outputTensor = byte_stub_output
+                    B_step = B_eff
+                elif use_packed_cursor:
+                    packed_batch_sentences = sum(
+                        len(row) for row in inp_items)
+                    if packed_batch_sentences < 1:
+                        raise RuntimeError(
+                            "packed cursor emitted no live sentences")
+                    inputTensor = self.inputSpace.prepPackedInput(inp_items)
+                    outputTensor = packed_stub_output
                     B_step = B_eff
                 else:
                     # Trial mode: caller supplies raw inputs/outputs;
@@ -10227,11 +10510,14 @@ class BasicModel(BaseModel):
                 # materialized ``subspace.word`` is available to any
                 # post-tick consumer the Reset path might touch.
                 self.flush_word_buffers()
+                if use_packed_cursor:
+                    self.dispatch_packed_soft_reset(hard_eos)
                 self.dispatch_per_row_reset(hard_eos)
                 self.dispatch_soft_reset()
                 self.post_tick_compact()
                 step += B_step
                 batches_run += 1
+                packed_sentences_run += packed_batch_sentences
                 if (training and split == "train"
                         and not getattr(self, "_preflight_active", False)):
                     self._train_batches_seen += 1
@@ -10251,11 +10537,16 @@ class BasicModel(BaseModel):
                         and text_input
                         and isinstance(inp_items, list)
                         and inp_items
-                        and isinstance(inp_items[0], str)):
+                        and (isinstance(inp_items[0], str)
+                             or (use_packed_cursor
+                                 and isinstance(inp_items[0], list)))):
                     te = getattr(self, 'train_embedding', 'NONE')
                     if te in ('CBOW', 'SBOW', 'BOTH'):
                         method = 'CBOW' if te == 'CBOW' else 'SBOW'
-                        for sentence in inp_items:
+                        sentences = (
+                            [sentence for row in inp_items for sentence in row]
+                            if use_packed_cursor else inp_items)
+                        for sentence in sentences:
                             words = [t for t, _
                                      in parse(sentence, lex='words')]
                             self.perceptualSpace.train_embeddings(
@@ -10268,7 +10559,19 @@ class BasicModel(BaseModel):
         if prefetcher is not None:
             prefetcher.close()
 
-        if training and split == "train" and ds.all_done():
+        cursor_all_done = (
+            packed_done() if use_packed_cursor else ds.all_done())
+        if use_packed_cursor:
+            elapsed = max(1e-9, time.monotonic() - epoch_started)
+            TheMessage(
+                "Packed training throughput: "
+                f"{packed_sentences_run} complete sentences in "
+                f"{elapsed:.3f}s = "
+                f"{packed_sentences_run / elapsed:.3f} sentences/s "
+                f"({batches_run} optimizer bricks, "
+                f"B={B_eff}, W={self.serial_word_capacity}).")
+
+        if training and split == "train" and cursor_all_done:
             self._epoch_batches_seen = 0
             self._resume_batches_to_skip = 0
 
@@ -11380,6 +11683,7 @@ class BasicModel(BaseModel):
         # publication does not depend on Dynamo replaying Python attributes.
         self._stm_single_S = None
         self._stm_post_depth = None
+        self._packed_sentence_roots = None
         self._tensor_peer_trip_count = None
         # A6 stage-0 CS_{-1} interSentence seed staging (mirrors
         # _staged_in_sub): the predicted next-end-state tuple parked by
@@ -12258,9 +12562,14 @@ class BasicModel(BaseModel):
         binary = (getattr(language, "_binary_rule_ids", {}) or {}).get(
             "CS", ())
         cap = int(getattr(stm, "capacity", 1) or 1)
-        # Two binary opportunities plus one unary opportunity per word,
-        # followed by at most cap-1 boundary reductions.
-        max_steps = 3 * int(word_width) + max(0, cap - 1)
+        # Two binary opportunities plus one unary opportunity per word. Each
+        # word column also owns cap-1 boundary slots; ordinary one-sentence
+        # input uses only the first such group, while packed input writes the
+        # group attached to every row-local sentence end. The fixed slab keeps
+        # the compiled graph identical across packed/non-packed calls.
+        max_steps = (
+            3 * int(word_width)
+            + int(word_width) * max(0, cap - 1))
         trace.prepare_choices(
             int(batch), max_steps, device=device,
             unary_rule_ids=unary, binary_rule_ids=binary)
@@ -14713,6 +15022,9 @@ class BasicModel(BaseModel):
             getattr(isp, "_ar_word_object_atoms", None),
             getattr(isp, "_ar_concept_lookup_rows", None),
             getattr(isp, "_ar_concept_lookup_atoms", None),
+            getattr(isp, "_packed_sentence_end_mask", None),
+            getattr(isp, "_packed_sentence_intermediate_end_mask", None),
+            getattr(isp, "_packed_sentence_ids", None),
             getattr(ws, "_staged_word_property_weights", None),
             getattr(stm, "_buffer", None),
             getattr(stm, "_depth", None),
@@ -14740,8 +15052,11 @@ class BasicModel(BaseModel):
     def _tensor_write_word_column(slab, index, values):
         """Return ``slab`` with one dynamic word column replaced."""
         B, width, D = slab.shape
-        safe = index.clamp(0, width - 1).reshape(1, 1, 1)
-        scatter_index = safe.expand(B, 1, D)
+        safe = index.clamp(0, width - 1)
+        if int(safe.numel()) == 1:
+            scatter_index = safe.reshape(1, 1, 1).expand(B, 1, D)
+        else:
+            scatter_index = safe.reshape(B, 1, 1).expand(B, 1, D)
         return slab.scatter(1, scatter_index, values.unsqueeze(1))
 
     @staticmethod
@@ -14826,6 +15141,11 @@ class BasicModel(BaseModel):
         lookup_rows = isp._ar_concept_lookup_rows
         lookup_atoms = isp._ar_concept_lookup_atoms
         word_property_weights = ws._staged_word_property_weights
+        sentence_end_mask = isp._packed_sentence_end_mask.to(
+            dtype=torch.bool)
+        intermediate_end_mask = (
+            isp._packed_sentence_intermediate_end_mask.to(dtype=torch.bool))
+        sentence_ids = isp._packed_sentence_ids.to(dtype=torch.long)
         commit_mask = getattr(isp, "_word_last_slot_mask", None)
         if not torch.is_tensor(commit_mask):
             commit_mask = active
@@ -14853,13 +15173,15 @@ class BasicModel(BaseModel):
         forward_slots = (
             trace.forward_loss_slots()
             if trace is not None else (None, None))
+        seal_trace_width = max(0, capacity - 1)
+        required_trace_width = 3 * width + seal_trace_width * width
         trace_ready = (
             all(torch.is_tensor(value) for value in choices)
             and all(torch.is_tensor(value) for value in forward_slots)
             and int(choices[0].shape[0]) == B
-            and int(choices[0].shape[1]) >= 3 * width)
+            and int(choices[0].shape[1]) >= required_trace_width)
         if not trace_ready:
-            trace_width = 3 * width + max(0, capacity - 1)
+            trace_width = required_trace_width
             choices = (
                 torch.full(
                     (B, trace_width), -1, dtype=torch.long,
@@ -14890,9 +15212,19 @@ class BasicModel(BaseModel):
             stm._buffer, stm._depth, stm._orders, stm._grammar_orders,
             stm._concept_rows, stm._concept_activations)
         zero_concept = words.new_zeros(B, n_locations, concept_dim)
-        zero_concept_words = words.new_zeros(B, width, concept_dim)
+        # CSLang keeps the eight full, non-quantized concepts in its owned
+        # STM.  Its word-aligned output crosses the symbolic boundary as the
+        # quantized zero-dimensional activation/reference only.  Carrying a
+        # [B,W,D_c] concept history here is both semantically wrong and, under
+        # while_loop autograd, quadratic in W because every loop step tapes
+        # the entire changing slab.
+        zero_symbol_activations = words.new_zeros(B, width, 1)
         zero_percept_words = words.new_zeros(B, width, percept_dim)
         zero_prediction = words.new_zeros(B, concept_dim)
+        root_slots = int(
+            isp._packed_sentence_slot_end_positions.shape[1])
+        zero_sentence_roots = words.new_zeros(
+            B, root_slots, concept_dim)
         zero_scalar = words.new_zeros(())
         zero_whole = words.new_zeros(
             B, whole_locations, whole_dim)
@@ -14905,12 +15237,13 @@ class BasicModel(BaseModel):
             zero_concept.clone(),         # published CSSym lane
         )
         cs_lang_state = (
-            zero_concept_words,
+            zero_symbol_activations,
             zero_scalar,
             zero_scalar.clone(),
             zero_prediction,
             *choices,
             *forward_slots,
+            zero_sentence_roots,
         )
         empty_cs_sub = (
             zero_concept.clone(),
@@ -15035,10 +15368,29 @@ class BasicModel(BaseModel):
             # currently consumes the conceptual reference itself; the plan is
             # carried beside that reference to CSLang's routed predictor
             # without placing Language-owned state inside ConceptualSpace.
+            # CSLang feedback has a two-symbolic-index latency. At a packed
+            # boundary those two earlier source words may belong to the prior
+            # sentence; compare the explicit sentence identities so no
+            # grammar choice crosses the row-local soft reset.
+            current_sentence = _gather_word(
+                sentence_ids, index).reshape(B)
+            feedback_source_index = (index - 2).clamp(0, width - 1)
+            feedback_sentence = _gather_word(
+                sentence_ids, feedback_source_index).reshape(B)
+            same_sentence = torch.logical_and(
+                index >= 2,
+                torch.logical_and(
+                    current_sentence >= 0,
+                    current_sentence == feedback_sentence))
+            routed_feedback = torch.where(
+                same_sentence.reshape(B, 1),
+                feedback[0], torch.zeros_like(feedback[0]))
+            routed_valid = torch.logical_and(
+                feedback[1], same_sentence.reshape(B, 1))
             payload = (
                 symbolic_event, symbolic_orders, row, activation,
                 object_row, object_order, object_atom, row_gate, commit,
-                feedback[0], feedback[1])
+                routed_feedback, routed_valid)
             return payload, (next_sym,)
 
         def stage_cs_lang(cs_sym_payload, index, _live,
@@ -15110,24 +15462,79 @@ class BasicModel(BaseModel):
                 unary_loss, 1, unary_map,
                 record_loss=unary_local_objective)
 
-            resolved_idea = torch.where(
-                object_gate.reshape(B, 1), object_idea, word_idea)
-            contribution = torch.where(
-                row_gate, resolved_idea, torch.zeros_like(resolved_idea))
-            next_concept_slab = self._tensor_write_word_column(
-                current_cs_lang[0], index, contribution)
+            # The full resolved concept remains only in ``final_stm`` above.
+            # SymbolSpace receives the concept's quantized 0-D reference
+            # activation; identity is the staged object row.  Do not retain a
+            # second word-wide copy of the continuous concept dictionary.
+            symbol_activation = torch.where(
+                row_gate,
+                activation.reshape(B, 1),
+                torch.zeros(B, 1, dtype=activation.dtype,
+                            device=activation.device))
+            next_symbol_activations = self._tensor_write_word_column(
+                current_cs_lang[0], index, symbol_activation)
             next_loss_sum = (
                 current_cs_lang[1] + loss_sum
                 if capture_intra else current_cs_lang[1])
             next_loss_weight = (
                 current_cs_lang[2] + loss_weight
                 if capture_intra else current_cs_lang[2])
+            # Every non-final packed sentence receives the same bounded NULL
+            # seal as the ordinary post-loop sentence boundary. The root is
+            # stored at that sentence's end-word column, then only those rows
+            # receive the CS-owned soft reset before the next word arrives.
+            intermediate_end = _gather_word(
+                intermediate_end_mask, index).reshape(B)
+            sealed_stm = final_stm
+            seal_width = max(0, capacity - 1)
+            for seal_index in range(seal_width):
+                seal_choice = language.choose_capacity_binary(
+                    sealed_stm, intermediate_end,
+                    base_tau=self.stm_reduce_tau)
+                (sealed_stm, _seal_applied, seal_op,
+                 seal_valid, seal_loss) = (
+                    cs.apply_binary_language_choice(
+                        sealed_stm, seal_choice))
+                trace_state = self._tensor_record_choice(
+                    trace_state,
+                    3 * width + index * seal_width + seal_index,
+                    seal_op, seal_valid, seal_loss, 2, binary_map,
+                    record_loss=binary_local_objective)
+            sealed_depth = sealed_stm[1]
+            root_index = (sealed_depth - 1).clamp(
+                min=0, max=max(0, capacity - 1))
+            root_rows = torch.arange(B, device=words.device)
+            sealed_root = sealed_stm[0][root_rows, root_index].detach()
+            root_slot = _gather_word(
+                sentence_ids, index).reshape(B).clamp(
+                    0, root_slots - 1)
+            root_candidate = self._tensor_write_word_column(
+                current_cs_lang[9], root_slot, sealed_root)
+            next_sentence_roots = torch.where(
+                intermediate_end.reshape(B, 1, 1),
+                root_candidate, current_cs_lang[9])
+            final_stm = FunctionalPeerSTM.soft_reset_rows(
+                sealed_stm, intermediate_end)
+
             next_cs_lang = (
-                next_concept_slab, next_loss_sum, next_loss_weight,
-                prediction, *trace_state)
+                next_symbol_activations, next_loss_sum, next_loss_weight,
+                prediction, *trace_state, next_sentence_roots)
             language_feedback = language.feedback_from_local_choices(
                 (pre_op, post_op), (pre_valid, post_valid),
                 unary_op, unary_valid, like=word_idea)
+            # A sentence-final choice has no legal consumer in the following
+            # sentence. The sentence-id check in CSSym is the second,
+            # explicit guard; clearing validity here also drains the latch.
+            sentence_end = _gather_word(
+                sentence_end_mask, index).reshape(B, 1)
+            language_feedback = (
+                torch.where(
+                    sentence_end, torch.zeros_like(language_feedback[0]),
+                    language_feedback[0]),
+                torch.logical_and(
+                    language_feedback[1],
+                    torch.logical_not(sentence_end)),
+            )
             return (
                 next_cs_lang,
                 final_stm,
@@ -15192,7 +15599,17 @@ class BasicModel(BaseModel):
             cs._intra_loss_accum = None
             cs._intra_loss_weight_accum = None
             cs._intra_loss_count = 0
-        self._per_word_contributions = final[8]
+        # The W-wide CSLang result is symbolic, not another conceptual event:
+        # one row identity plus one signed activation per word.  SymbolSpace
+        # owns that quantized slab; CS continues to own the full eight-slot
+        # non-quantized STM installed above.
+        symbol_rows = torch.where(
+            object_rows >= 0, object_rows, concept_rows)
+        symbol_orders = torch.where(
+            object_rows >= 0, object_orders, concept_orders)
+        ss.commit_word_reference_slab(
+            symbol_rows, final[8], active, orders=symbol_orders)
+        self._per_word_contributions = []
         self._per_word_percept_contributions = final[9]
         if trace is not None:
             trace._choice_rule_ids = final[13]
@@ -15200,11 +15617,12 @@ class BasicModel(BaseModel):
             trace._choice_mask = final[15]
             trace._forward_losses = final[16]
             trace._forward_loss_mask = final[17]
+        sentence_roots = final_cs_lang[9].clone()
         object.__setattr__(self, "_tensor_peer_trip_count", trip_count)
         object.__setattr__(
             self, "_tensor_symbolic_iterations", len(symbolic_passes))
         object.__setattr__(self, "_tensor_peer_feedback", feedback)
-        return cs.subspace, trip_count
+        return cs.subspace, trip_count, sentence_roots
 
     def _run_peer_word_pipeline(self, out_slot, width):
         """Execute the legacy A/B/C schedule for a padded sentence bucket.
@@ -15500,13 +15918,14 @@ class BasicModel(BaseModel):
         _peer_pipeline = bool(getattr(self, "_peer_pipeline_enabled", True))
         _chunk_replayed = False
         tensor_trip_count = None
+        tensor_sentence_roots = None
         _tensor_peer_pipeline = (
             _peer_pipeline and self._tensor_peer_while_ready(N_words))
         if _tensor_peer_pipeline:
             # W is a capacity. The tensor loop stops at the last live column,
             # drains the final conceptual transaction, and advances both
             # grammar-feedback latches.
-            last_cs, tensor_trip_count = (
+            last_cs, tensor_trip_count, tensor_sentence_roots = (
                 self._run_tensor_peer_word_pipeline(N_words))
             _n_trips = N_words
         elif _peer_pipeline:
@@ -15693,6 +16112,23 @@ class BasicModel(BaseModel):
             S, post_depth = self._stm_reduce_to_single_S()
             sentence_idea = S
             sentence_post_depth = post_depth
+            if torch.is_tensor(tensor_sentence_roots):
+                final_end = torch.logical_and(
+                    self.inputSpace._packed_sentence_end_mask,
+                    torch.logical_not(
+                        self.inputSpace
+                        ._packed_sentence_intermediate_end_mask))
+                final_valid = final_end.any(dim=1)
+                final_slot = (
+                    self.inputSpace._packed_sentence_ids.amax(dim=1)
+                    .clamp(
+                        0, int(tensor_sentence_roots.shape[1]) - 1))
+                root_candidate = self._tensor_write_word_column(
+                    tensor_sentence_roots, final_slot, S.detach())
+                tensor_sentence_roots = torch.where(
+                    final_valid.reshape(
+                        int(S.shape[0]), 1, 1),
+                    root_candidate, tensor_sentence_roots)
             # Verification handles for the end-to-end probe / future
             # 2b-2-ii consumer: the single sentence idea S [B, D_c]
             # and the post-sweep STM depth (must be 1 across rows).
@@ -15857,12 +16293,13 @@ class BasicModel(BaseModel):
                     "peer while-loop")
             if not all(torch.is_tensor(value) for value in (
                     sentence_idea, sentence_post_depth,
-                    tensor_trip_count)):
+                    tensor_trip_count, tensor_sentence_roots)):
                 raise RuntimeError(
                     "serial sentence body did not produce tensor "
-                    "(S, post_depth, trip_count) state")
+                    "(S, post_depth, trip_count, roots) state")
             return last_cs, (
-                sentence_idea, sentence_post_depth, tensor_trip_count)
+                sentence_idea, sentence_post_depth, tensor_trip_count,
+                tensor_sentence_roots)
         return last_cs
 
     def _chart_compose_per_word(self):
@@ -17232,10 +17669,24 @@ class BasicModel(BaseModel):
         if (S is None or trace is None or chooser is None
                 or not torch.is_tensor(S) or S.dim() != 2):
             return None, None
-        loss, terms = chooser.loss(
-            S, trace,
-            surface_weight=float(
-                getattr(self, "leaf_distill_weight", 0.0) or 0.0))
+        isp = getattr(self, "inputSpace", None)
+        roots = getattr(self, "_packed_sentence_roots", None)
+        if (isp is not None and bool(getattr(
+                isp, "_sentence_pack_enabled", False))
+                and torch.is_tensor(roots)):
+            loss, terms = chooser.packed_loss(
+                roots, trace,
+                word_positions=isp._packed_sentence_word_positions,
+                sentence_end_for_word=isp._packed_sentence_end_for_word,
+                sentence_ids=isp._packed_sentence_ids,
+                sentence_end_mask=isp._packed_sentence_end_mask,
+                surface_weight=float(
+                    getattr(self, "leaf_distill_weight", 0.0) or 0.0))
+        else:
+            loss, terms = chooser.loss(
+                S, trace,
+                surface_weight=float(
+                    getattr(self, "leaf_distill_weight", 0.0) or 0.0))
         if loss is None:
             return None, None
         object.__setattr__(self, "_detached_reverse_terms", terms)
@@ -19215,6 +19666,12 @@ class ModelFactory:
         max_docs = int(os.environ.get("BASIC_MAX_DOCS", dat.get("maxDocs", 10000)))
         max_tokens_env = os.environ.get("BASIC_MAX_TOKENS")
         max_tokens = int(max_tokens_env) if max_tokens_env else None
+        max_sentence_words_env = os.environ.get(
+            "BASIC_MAX_SENTENCE_WORDS")
+        max_sentence_words = int(
+            max_sentence_words_env
+            if max_sentence_words_env is not None
+            else dat.get("maxSentenceWords", 0) or 0) or None
         random_shards = os.environ.get("BASIC_RANDOM_SHARDS", "0") == "1"
 
         TheData.load(dataset,
@@ -19223,7 +19680,8 @@ class ModelFactory:
                      shard_dir=dat.get("shardDir"),
                      dat=dat,
                      random_shards=random_shards,
-                     max_tokens=max_tokens)
+                     max_tokens=max_tokens,
+                     max_sentence_words=max_sentence_words)
 
         target_device = TheDevice.get()
         if target_device.type == "mps":

@@ -125,6 +125,7 @@ Data loading and filtering.
 | `dataset` | string | `"xor"` | Dataset key: `xor`, `mnist`, `tomatoes`, `text`, `inline`. Omit for inference-only models. |
 | `numShards` | int | `1` | Shard count (streaming text datasets). |
 | `maxDocs` | int | `10000` | Per-shard document cap. |
+| `maxSentenceWords` | int | *(unbounded)* | Whole-sentence admission ceiling for text shards. Longer splitter records are excluded intact, never clipped. Set this no higher than `serialWordCapacity` when packed training is enabled. |
 | `shardDir` | string | (empty) | Text shard directory (e.g. `data/fineweb`). Only used when `dataset=text`. |
 | `minFrequency` | float | `0.0` | Vocabulary admission threshold (fraction of corpus). Words below it are held in a pending buffer until they accumulate enough occurrences. `0.0` admits everything. |
 | `classificationMin` | float | -- | **Unparsed**: declared in `data/model.xml` / the schema, read by nothing in `bin/`. |
@@ -144,6 +145,7 @@ Training loop and I/O.
 | `numTrials` | int | `1` | Independent training runs per invocation. |
 | `numEpochs` | int | `3` | Epochs per trial. |
 | `batchSize` | int | `64` | Contiguous streams through the dataset. Each batch row `b` receives the next item from stream `b`, so temporal context is coherent across steps. Capped at split length, so small eval sets yield one rectangular batch. |
+| `packSentences` | bool | `false` | For self-supervised word-loop training, pack consecutive complete sentences independently in each contiguous batch row up to `serialWordCapacity`. Row-local sentence boundaries are explicit and reset softly; sentences are never split, clipped, transposed, or reordered. Environment override: `BASIC_PACK_SENTENCES`. |
 | `numWorkers` | int | `0` | DataLoader prefetch workers. `0` = synchronous in-process batch assembly. |
 | `learningRate` | float | `0.001` | Adam learning rate. |
 | `reconstructionScale` | float | `0.5` | Weight of reconstruction loss vs prediction loss in $[0, 1]$: $\mathcal{L}_{\text{total}} = (1-r)\,\mathcal{L}_{\text{output}} + r\,\mathcal{L}_{\text{recon}}$.  Legacy name `reverseScale` is still parsed with a one-shot deprecation warning. |
@@ -433,6 +435,7 @@ symbol (line anchors drift).
 | `primingSpread` | `Models.py` (BaseModel init) | `0.25` | Fraction of a connected row's standing energy diffused to neighbors per prime event (live by default; `0` = pure decay+bump). |
 | `stmReduceTau` | `Models.py` (BaseModel init) | `0.5`; NanoChat models `0.75` | Low-occupancy grammar-confidence threshold for online STM reduction. With an explicit independent word axis, occupancy pressure lowers the effective threshold linearly to a mandatory best grammatical reduction at full STM. |
 | `serialWordCapacity` | `Models.py` (BaseModel init) | legacy fallback: `stmCapacity` | Hard maximum surface words staged for one outer serial loop. Independent of PS/WS/CS field width and STM depth; BasicModel sets 256 while keeping those fields/workspace at 8. The tensor loop executes only through the final live column. |
+| `serialResidualPartCapacity` | `Models.py` / `InputSpace` | `16` | Fixed compiler-visible integer radix/subword-ID extent for one cold spelling. It is not a dense percept-vector axis; the masked PS fold reduces those IDs into PS's configured live field. BasicModel uses 64. |
 | `serialWordBuckets` | `Models.py` / `InputSpace` | one bucket equal to `serialWordCapacity` | Comma-separated staging capacities. The largest value must equal `serialWordCapacity`; an overlong sentence fails rather than clipping. BasicModel uses only `256`, because its compiled `torch.while_loop` has a runtime trip count and therefore needs neither padding execution nor separate 16/32/64/128 graphs. Multiple buckets remain a compatibility/performance option for the static scheduler. |
 | `radialStmReduce` | `Models.py` (`_create_per_stage`) | `false` | STM idea folds use the radial (signed-safe) radmin/radmax kernels. |
 | `symbolicPriming` | `Language.py` (`attach_knowledge` $\to$ `configure_priming`) | `false` | Taxonomy forward heat production (symbolic-heat retrieval). |

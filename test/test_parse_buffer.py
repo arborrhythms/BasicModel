@@ -34,6 +34,43 @@ class TestParseSentences(unittest.TestCase):
         spans = parse("Hello! How are you? Fine.", lex='sentences')
         self.assertEqual(len(spans), 3)
 
+    def test_abbreviation_and_parenthetical_punctuation_stay_together(self):
+        text = (
+            "Material remains (i.e., osteological, architectural, etc.). "
+            "Related categories.")
+        spans = parse(text, lex='sentences')
+        self.assertEqual(
+            [surface for surface, _ in spans],
+            [
+                "Material remains (i.e., osteological, architectural, etc.).",
+                "Related categories.",
+            ])
+
+    def test_titles_dotted_acronyms_and_decimals_do_not_split(self):
+        text = "Dr. Smith joined the U.S. team at 3.14 p.m. He left."
+        spans = parse(text, lex='sentences')
+        self.assertEqual(
+            [surface for surface, _ in spans],
+            ["Dr. Smith joined the U.S. team at 3.14 p.m.", "He left."])
+
+    def test_punctuation_only_fragments_are_not_sentences(self):
+        spans = parse("One sentence. ). ... Two sentences.", lex='sentences')
+        self.assertEqual(
+            [surface for surface, _ in spans],
+            ["One sentence.", "Two sentences."])
+
+    def test_newlines_separate_headings_and_list_rows(self):
+        text = "HOW TO SUBMIT DATA\nThere are two ways.\nfirst item\nsecond item"
+        spans = parse(text, lex='sentences')
+        self.assertEqual(
+            [surface for surface, _ in spans],
+            [
+                "HOW TO SUBMIT DATA",
+                "There are two ways.",
+                "first item",
+                "second item",
+            ])
+
 
 class TestParseWords(unittest.TestCase):
     def test_word_split(self):

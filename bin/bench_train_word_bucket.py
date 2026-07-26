@@ -300,6 +300,11 @@ def main(argv=None):
     ap.add_argument(
         "--corpus", action="store_true",
         help="Benchmark real configured training sentences instead of a fixed synthetic sentence")
+    ap.add_argument(
+        "--pack-words", type=int, default=0,
+        help=(
+            "with --corpus, pack consecutive complete sentences per "
+            "contiguous batch row up to this word capacity"))
     ap.add_argument("--batch", type=int, default=1)
     ap.add_argument("--warmup", type=int, default=1,
                     help="Unmeasured compiled training steps before timing")
@@ -324,6 +329,7 @@ def main(argv=None):
     args = ap.parse_args(argv)
     if (args.width < 1 or args.batch < 1 or args.warmup < 0
             or args.seconds < 0 or args.profile_repeats < 1
+            or args.pack_words < 0
             or (args.steps is not None and args.steps < 1)):
         ap.error(
             "width/batch/steps must be positive; warmup/seconds must be non-negative")
@@ -341,6 +347,8 @@ def main(argv=None):
     text = _sentence(args.width)
     corpus_batches = None
     corpus_batch_max_words = None
+    corpus_sentence_counts = None
+    corpus_hard_eos = None
     if args.corpus:
         import Meronomy
 
@@ -348,14 +356,45 @@ def main(argv=None):
             split="train", num_streams=args.batch)
         corpus_batches = []
         corpus_batch_max_words = []
-        for raw_batch in loader:
-            texts = raw_batch[0] if isinstance(raw_batch, (tuple, list)) \
-                and len(raw_batch) == 2 else raw_batch
-            texts = list(texts)
-            corpus_batches.append(texts)
-            corpus_batch_max_words.append(max(
-                len(Meronomy.word_spans(str(sentence).encode("utf-8")))
-                for sentence in texts))
+        corpus_sentence_counts = []
+        corpus_hard_eos = []
+        if args.pack_words:
+            configured = int(getattr(
+                model.inputSpace, "_serial_word_capacity", 0) or 0)
+            if int(args.pack_words) != configured:
+                raise ValueError(
+                    f"--pack-words={args.pack_words} must match the model's "
+                    f"compiled serialWordCapacity={configured}")
+            dataset = loader.dataset
+
+            def word_count(sentence):
+                return len(Meronomy.word_spans(
+                    str(sentence).encode("ascii", errors="replace")))
+
+            while not dataset.packed_done():
+                rows, _outputs, hard_eos = dataset.next_packed_tick(
+                    args.pack_words, word_count,
+                    max_bytes=int(model.inputSpace.data.inputLength),
+                    max_sentences=(
+                        model.inputSpace.packed_sentence_slot_capacity()))
+                corpus_batches.append(rows)
+                row_words = [
+                    sum(word_count(sentence) for sentence in row)
+                    for row in rows]
+                corpus_batch_max_words.append(max(row_words, default=0))
+                corpus_sentence_counts.append(sum(len(row) for row in rows))
+                corpus_hard_eos.append(list(hard_eos))
+        else:
+            for raw_batch in loader:
+                texts = raw_batch[0] if isinstance(raw_batch, (tuple, list)) \
+                    and len(raw_batch) == 2 else raw_batch
+                texts = list(texts)
+                corpus_batches.append(texts)
+                corpus_batch_max_words.append(max(
+                    len(Meronomy.word_spans(str(sentence).encode("utf-8")))
+                    for sentence in texts))
+                corpus_sentence_counts.append(len(texts))
+                corpus_hard_eos.append([True] * len(texts))
         if not corpus_batches:
             raise RuntimeError("configured corpus produced no training batches")
     optimizer = model.getOptimizer(lr=float(args.lr))
@@ -385,27 +424,35 @@ def main(argv=None):
         if corpus_batches is None:
             texts = [text] * args.batch
             batch_max_words = args.width
+            sentence_count = args.batch
+            hard_eos = [True] * args.batch
         else:
             slot = corpus_cursor % len(corpus_batches)
             texts = corpus_batches[slot]
             batch_max_words = corpus_batch_max_words[slot]
+            sentence_count = corpus_sentence_counts[slot]
+            hard_eos = corpus_hard_eos[slot]
             corpus_cursor += 1
-        x = model.inputSpace.prepInput(texts)
+        if args.pack_words:
+            x = model.inputSpace.prepPackedInput(texts)
+        else:
+            x = model.inputSpace.prepInput(texts)
         result, _ = model.runBatch(
             train=True, split="train", batchNum=index,
             batchSize=args.batch, optimizer=optimizer,
             batch_override=(x, target))
-        # Mirror runEpoch's complete trial-cursor boundary. Every corpus item
-        # here is one complete sentence, so every row has hard EOS. Besides
-        # preserving real training semantics, post_tick_compact severs the
-        # completed autograd graph before the next dynamic while-loop tape is
-        # allocated; omitting it retains one differently-sized tape per batch.
+        # Mirror runEpoch's complete boundary. Packed intermediate sentences
+        # were sealed/reset inside CSLang; the last one is reset here only
+        # after its loss/backward finished. Hard EOS remains a row-stream
+        # boundary rather than a sentence boundary.
         model.flush_word_buffers()
-        model.dispatch_per_row_reset([True] * len(texts))
+        if args.pack_words:
+            model.dispatch_packed_soft_reset(hard_eos)
+        model.dispatch_per_row_reset(hard_eos)
         model.dispatch_soft_reset()
         model.post_tick_compact()
         _sync(torch, device)
-        return result, batch_max_words
+        return result, batch_max_words, sentence_count
 
     def release_step(result):
         del result
@@ -419,7 +466,8 @@ def main(argv=None):
             torch.cuda.synchronize(device)
 
     for index in range(args.warmup):
-        result, _batch_max_words = step(-args.warmup + index)
+        result, _batch_max_words, _sentence_count = step(
+            -args.warmup + index)
         release_step(result)
 
     if args.error_on_recompile:
@@ -428,18 +476,23 @@ def main(argv=None):
 
     samples = []
     measured_batch_max_words = []
+    measured_sentence_counts = []
     started = time.monotonic()
     index = 0
     while (index < args.steps if args.steps is not None
            else (index == 0 or time.monotonic() - started < args.seconds)):
         t0 = time.perf_counter()
-        result, batch_max_words = step(index)
+        result, batch_max_words, sentence_count = step(index)
         release_step(result)
         elapsed = time.perf_counter() - t0
         samples.append(elapsed)
         measured_batch_max_words.append(batch_max_words)
+        measured_sentence_counts.append(sentence_count)
         index += 1
-        print(f"step={index}\tseconds={elapsed:.6f}", flush=True)
+        print(
+            f"step={index}\tseconds={elapsed:.6f}"
+            f"\tsentences={sentence_count}",
+            flush=True)
 
     dynamo_report = {}
     if dynamo_counters is not None:
@@ -468,13 +521,19 @@ def main(argv=None):
         "compile_mode_effective": str(model_util._effective_compile_mode(
             model_util.TheCompileMode, device)),
         "empty_device_cache": bool(args.empty_device_cache),
-        "input_mode": "corpus" if args.corpus else "synthetic",
-        "sentence_boundary": "runEpoch-equivalent",
+        "input_mode": (
+            "corpus-packed" if args.corpus and args.pack_words
+            else ("corpus" if args.corpus else "synthetic")),
+        "sentence_boundary": (
+            "row-specific-soft-reset"
+            if args.pack_words else "runEpoch-equivalent"),
+        "packed_word_capacity": int(args.pack_words),
         "width": args.width,
         "staged_capacity": int(getattr(
             model.inputSpace, "_active_word_bucket", 0) or 0),
         "runtime_trip_count": runtime_trip,
         "measured_batch_max_words": measured_batch_max_words,
+        "measured_sentence_counts": measured_sentence_counts,
         "batch": args.batch,
         "warmup_steps": args.warmup,
         "requested_steps": args.steps,
@@ -483,9 +542,11 @@ def main(argv=None):
         "samples_s": samples,
         "median_s": statistics.median(samples),
         "mean_s": statistics.fmean(samples),
-        "sentences_per_s": args.batch / statistics.median(samples),
+        "sentences_per_s": statistics.median(
+            count / elapsed for count, elapsed
+            in zip(measured_sentence_counts, samples)),
         "aggregate_sentences_per_s": (
-            args.batch * len(samples) / sum(samples)),
+            sum(measured_sentence_counts) / sum(samples)),
         "dynamo_counters": dynamo_report,
         "peer_leg_profile": peer_legs,
     }

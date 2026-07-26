@@ -197,6 +197,12 @@ class SentenceStreamDataset(IterableDataset):
             self._encoded_cache = {}  # doc_idx -> bytes, populated lazily
         else:
             self._trial_step = 0
+        # Whole-sentence packing has an independent per-row cursor because
+        # variable sentence lengths let one row admit a different number of
+        # sentences into the same fixed word brick.  It is initialized lazily
+        # by ``next_packed_tick`` so the legacy one-trial-per-tick iterator and
+        # cursor remain byte-identical.
+        self._packed_steps = None
 
     def __len__(self):
         """Number of timesteps in one epoch (per-stream length)."""
@@ -315,6 +321,132 @@ class SentenceStreamDataset(IterableDataset):
             return self._trial_next_tick()
         return self._byte_next_tick()
 
+    def next_packed_tick(
+            self, max_words, word_counter, *, max_bytes=None,
+            byte_counter=None, max_sentences=None):
+        """Pack chronological whole sentences into each contiguous row.
+
+        This is the trial-cursor analogue used by fixed-word compiled models.
+        Row ``b`` still owns the contiguous corpus window
+        ``[b * stream_length, (b + 1) * stream_length)``.  Within that window
+        it appends consecutive complete sentences until the next sentence
+        would exceed ``max_words``.  A sentence is never split or clipped.
+
+        Args:
+          max_words: fixed word capacity of one compiled brick.
+          word_counter: callable mapping one input item to its complete word
+            count under the model's lexer (normally ``Meronomy.word_spans``).
+          max_sentences: optional fixed root-slot capacity per row. When the
+            next complete sentence would exceed it, that sentence starts the
+            next brick.
+
+        Returns ``(rows, output_rows, hard_eos)``:
+          * ``rows[b]`` is a list of consecutive input sentences for row b;
+          * ``output_rows[b]`` mirrors those items when outputs exist, else
+            ``None``;
+          * ``hard_eos[b]`` is true only when row b consumed its entire
+            contiguous corpus window.
+
+        Exhausted rows emit an empty list while other rows finish.  This keeps
+        the batch width static without inventing or reordering a sentence.
+        """
+        if self.slab_bytes is not None:
+            raise RuntimeError(
+                "whole-sentence word packing is only valid in trial mode")
+        max_words = int(max_words)
+        if max_words < 1:
+            raise ValueError(
+                f"packed sentence capacity must be positive, got {max_words}")
+        if not callable(word_counter):
+            raise TypeError("word_counter must be callable")
+        if max_sentences is not None:
+            max_sentences = int(max_sentences)
+            if max_sentences < 1:
+                raise ValueError(
+                    "packed sentence-slot capacity must be positive, got "
+                    f"{max_sentences}")
+        if max_bytes is not None:
+            max_bytes = int(max_bytes)
+            if max_bytes < 1:
+                raise ValueError(
+                    f"packed byte capacity must be positive, got {max_bytes}")
+            if byte_counter is None:
+                byte_counter = lambda value: len(str(value).encode("ascii",
+                                                                    errors="replace"))
+            if not callable(byte_counter):
+                raise TypeError("byte_counter must be callable")
+        if self._packed_steps is None:
+            self._packed_steps = [0] * self.num_streams
+
+        rows = []
+        output_rows = [] if self.outputs is not None else None
+        hard_eos = []
+        L = self.stream_length
+        for b in range(self.num_streams):
+            row_items = []
+            row_outputs = [] if output_rows is not None else None
+            used = 0
+            used_bytes = 0
+            cursor = int(self._packed_steps[b])
+            while cursor < L:
+                if (max_sentences is not None
+                        and len(row_items) >= max_sentences):
+                    break
+                source_index = b * L + cursor
+                item = (self.inputs[source_index]
+                        if not isinstance(self.inputs, torch.Tensor)
+                        else self.inputs[source_index])
+                count = int(word_counter(item))
+                byte_count = (
+                    int(byte_counter(item)) if max_bytes is not None else 0)
+                if count < 1:
+                    # FineWeb's surface splitter can retain whitespace-only
+                    # records between real sentences. They contain no model
+                    # transaction and therefore consume neither a word slot
+                    # nor a reconstruction target. Advance the row cursor in
+                    # place so chronology is preserved without manufacturing
+                    # a NULL sentence.
+                    cursor += 1
+                    continue
+                if count > max_words:
+                    raise ValueError(
+                        "complete sentence exceeds the packed word capacity: "
+                        f"source index {source_index} has {count} words, "
+                        f"capacity is {max_words}; refusing to clip it")
+                if max_bytes is not None and byte_count > max_bytes:
+                    raise ValueError(
+                        "complete sentence exceeds the packed byte capacity: "
+                        f"source index {source_index} has {byte_count} bytes, "
+                        f"capacity is {max_bytes}; refusing to clip it")
+                separator_bytes = 1 if row_items else 0
+                if row_items and (
+                        used + count > max_words
+                        or (max_bytes is not None
+                            and used_bytes + separator_bytes + byte_count
+                            > max_bytes)):
+                    break
+                row_items.append(item)
+                if row_outputs is not None:
+                    row_outputs.append(
+                        self.outputs[source_index]
+                        if not isinstance(self.outputs, torch.Tensor)
+                        else self.outputs[source_index])
+                used += count
+                used_bytes += separator_bytes + byte_count
+                cursor += 1
+            self._packed_steps[b] = cursor
+            rows.append(row_items)
+            if output_rows is not None:
+                output_rows.append(row_outputs)
+            hard_eos.append(cursor >= L)
+        return rows, output_rows, hard_eos
+
+    def packed_done(self):
+        """Whether every contiguous row has been consumed by packing."""
+        return (self._packed_steps is not None
+                and all(int(step) >= self.stream_length
+                        for step in self._packed_steps))
+
     def _byte_next_tick(self):
         """Read one byte-cursor tick of ``slab_bytes`` bytes per row.
 
@@ -384,6 +516,7 @@ class SentenceStreamDataset(IterableDataset):
         """
         if self.slab_bytes is None:
             self._trial_step = 0
+            self._packed_steps = None
             return
         self.doc_idx = [
             b * self.stream_length for b in range(self.num_streams)]
@@ -412,6 +545,11 @@ class SentenceStreamDataset(IterableDataset):
             L = self.stream_length
             if L <= 0:
                 return 1.0
+            if self._packed_steps is not None:
+                return min(1.0, max(
+                    0.0,
+                    sum(self._packed_steps)
+                    / float(self.num_streams * L)))
             return min(1.0, max(0.0, self._trial_step / L))
         total_docs = self.num_streams * self.stream_length
         if total_docs <= 0:
@@ -535,7 +673,8 @@ class Data():
         return 1
 
     def load(self, dataset, num_shards=1, max_docs=10000, shard_dir=None,
-             dat=None, random_shards=False, max_tokens=None):
+             dat=None, random_shards=False, max_tokens=None,
+             max_sentence_words=None):
         """Dispatch to the per-dataset loader, then compute ranges + move to device.
 
         ``dataset`` selects ``mnist`` / ``xor`` / ``tomatoes`` / ``text``
@@ -562,7 +701,8 @@ class Data():
         if dataset == "text":
             self.loadShards(num_shards, max_docs, shard_dir,
                             random_shards=random_shards,
-                            max_tokens=max_tokens)
+                            max_tokens=max_tokens,
+                            max_sentence_words=max_sentence_words)
         if dataset == "inline":
             self.loadInline(dat or {})
         if dataset == "mnist":
@@ -1028,7 +1168,8 @@ class Data():
             torch.save(data, cache_file)
         self.processLM(data)
     def loadShards(self, num_shards, max_docs, shard_dir,
-                   random_shards=False, max_tokens=None):
+                   random_shards=False, max_tokens=None,
+                   max_sentence_words=None):
         """Load training text from FineWeb-EDU parquet shards.
 
         Uses the same shard infrastructure as embed.py so the model trains
@@ -1056,6 +1197,9 @@ class Data():
             "max_docs": int(max_docs) if max_docs is not None else None,
             "max_tokens": (int(max_tokens)
                            if max_tokens is not None else None),
+            "max_sentence_words": (
+                int(max_sentence_words)
+                if max_sentence_words is not None else None),
             "random_shards": bool(random_shards),
             "split": "document_mod10_8_1_1",
         }
@@ -1074,8 +1218,10 @@ class Data():
         # word tokens vs. ~3000 for a full document under the per-char
         # whitespace/punct lexer).
         from util import parse
+        import Meronomy
         split_sentences = {"train": [], "validation": [], "test": []}
         docs_seen = 0
+        overlong_sentences = 0
         for doc_idx, doc in enumerate(
                 iter_documents(shard_paths, max_docs=max_docs)):
             residue = doc_idx % 10
@@ -1083,6 +1229,15 @@ class Data():
                      "validation" if residue == 8 else "test")
             for sent_text, _ in parse(doc, lex='sentences'):
                 if sent_text.strip():
+                    if max_sentence_words is not None:
+                        n_words = len(Meronomy.word_spans(
+                            sent_text.encode("ascii", errors="replace")))
+                        if n_words > int(max_sentence_words):
+                            # Whole-sentence contract: exclude the rare
+                            # outlier rather than clipping it into a
+                            # semantically incomplete training example.
+                            overlong_sentences += 1
+                            continue
                     if max_tokens is not None:
                         words = sent_text.split()
                         sent_text = " ".join(
@@ -1106,9 +1261,13 @@ class Data():
             "test":       {"text": test_texts,  "label": []},
         }
 
+        dropped = (
+            f", dropped {overlong_sentences} whole sentences over "
+            f"{int(max_sentence_words)} words"
+            if max_sentence_words is not None else "")
         print(f"Loaded {docs_seen} docs -> {n} sentences "
               f"({len(train_texts)} train, {len(val_texts)} val, "
-              f"{len(test_texts)} test)")
+              f"{len(test_texts)} test){dropped}")
         self.processLM(data)
     def processLM(self, data):
         """Stash text splits as lists; tensorize labels eagerly when numeric.
