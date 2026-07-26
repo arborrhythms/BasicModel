@@ -10479,6 +10479,12 @@ class BasicModel(BaseModel):
                 )
                 if result is not None:
                     record(result)
+                # Training record() retains no BatchResult tensors. Release
+                # the graph-attached outputs before the next brick so the
+                # preceding forward tape cannot overlap the next forward's
+                # while-loop allocation. The benchmark already enforced this
+                # boundary explicitly; the production cursor must match it.
+                del result
                 if _two_pass:
                     # Pass B: explore trial. A separate forward/loss/backward/
                     # step; its result is NOT recorded -- trimmed from the
