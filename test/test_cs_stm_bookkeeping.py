@@ -44,6 +44,7 @@ if _BIN not in sys.path:
 
 import Models
 import Language
+from Spaces import SubSpaceView
 from util import init_config
 
 _DATA_DIR = os.path.join(_PROJECT, 'data')
@@ -255,14 +256,18 @@ class TestCSPredictThenPerceive(unittest.TestCase):
             marker = torch.full(
                 (D,), float(k + 1), dtype=dtype, device=device)
             synth = marker.view(1, 1, D).expand(B, 1, D).clone()
-            ps_sub.set_event(synth)
-            cs.forward(ps_sub)
+            incoming = SubSpaceView.snapshot(
+                synth,
+                owner=getattr(ps_sub, "_owner_space", None),
+                context=ps_sub.view().context())
+            cs.forward(incoming)
 
     def test_predicted_idea_populated_after_per_word_push(self):
         """After a per-word push, ``cs._stm_predicted_idea`` is a
         populated ``[B, D]`` tensor (degenerate zeros on the first word,
         a real prediction thereafter)."""
         model = _make_plain_model()
+        model.train()
         cs = model.conceptualSpace
         # Ensure the loss weight is positive so accumulation is active.
         cs.intra_loss_weight = 0.1
@@ -309,6 +314,7 @@ class TestCSPredictThenPerceive(unittest.TestCase):
         enabled, ``consume_intra_loss`` returns a finite scalar tensor
         that carries grad; a second consume returns ``None`` (reset)."""
         model = _make_plain_model()
+        model.train()
         cs = model.conceptualSpace
         cs.intra_loss_weight = 0.1
         ps = model.perceptualSpace
@@ -355,6 +361,7 @@ class TestCSPredictThenPerceive(unittest.TestCase):
         graph-growth guard); ``consume_intra_loss`` returns ``None`` even
         though the prediction is still stashed."""
         model = _make_plain_model()
+        model.train()
         cs = model.conceptualSpace
         cs.intra_loss_weight = 0.1
         ps = model.perceptualSpace

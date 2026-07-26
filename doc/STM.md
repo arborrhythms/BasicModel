@@ -296,7 +296,7 @@ different representations.
 
 - **Word-loop mereology (`<serialObjectMeta>` on).** The outer sequence is
   `[B,W,D]`, with one position per word and $W$ bounded independently by
-  `<serialWordCapacity>`. BasicModel stages W=256 but its compiled
+  `<serialWordCapacity>`. BasicModel stages W=512 but its compiled
   `torch.while_loop` stops at the final live column in the batch. InputSpace
   owns iteration $w$ and presents that word's local state to PartSpace; only
   then does PartSpace gather its complete discrete ids `[B,P_raw]` and apply

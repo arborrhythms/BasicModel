@@ -213,25 +213,25 @@ class ReverseAdapter(nn.Module):
 
 
 class StaticPeerPipeline:
-    """Static three-stage peer scheduler.
+    """Legacy static three-stage peer scheduler.
 
     The scheduler has a fixed W bucket and no data-dependent queue operations:
     stage A produces PS/WS/CSsub for word ``w``; B consumes the completed
     concept at ``w-1`` for CSsym/SS; C runs Language on B's result at ``w-2``.
     Grammar feedback is a timestamped latch and is deliberately exposed to B
     only at ``source + 2``.  Callbacks return values; only their owning stage
-    commits its own runtime storage. It is the serial ordering reference and
-    eager/fallback implementation. The normal MPS fullgraph uses
-    :class:`TensorPeerWhilePipeline` to express the same FIFO ordering with a
-    runtime trip count; this class can still use separately compiled PS/WS fold
-    ladders when the outer tensor graph is disabled.
+    commits its own runtime storage. It remains the compatibility scheduler for
+    older configurations and the generic A/B/C ordering tests. The canonical
+    aligned model instead uses
+    :meth:`TensorPeerWhilePipeline.run_cs_lanes_banked`, with the same A/B/C
+    timing named explicitly as CSSub/CSSym/CSLang.
     """
     # W=8 is the legacy grammar/STM-capacity fallback when a config does not
     # declare an independent word capacity. The remaining widths are the
     # explicit serial-word staging capacities. Keeping all of them peer
     # scheduled avoids silently reverting older grammar fixtures to the
     # pre-pipeline PS->CS->WS loop.
-    WIDTHS = (8, 16, 32, 64, 128, 256)
+    WIDTHS = (8, 16, 32, 64, 128, 256, 512)
 
     def __init__(self, width):
         width = int(width)
@@ -280,15 +280,20 @@ class StaticPeerPipeline:
 
 
 class TensorPeerWhilePipeline:
-    """Tensor-only dynamic A/B/C scheduler for a compiled word loop.
+    """Tensor-only dynamic peer schedulers for compiled word loops.
 
-    ``StaticPeerPipeline`` is the serial-reference implementation and the
-    fallback for eager diagnostics.  This scheduler expresses the same
-    ordering with :func:`torch.while_loop`, carrying only fixed-shape tensors:
+    The generic :meth:`run` and :meth:`run_banked` methods express the legacy
+    A/B/C protocol with :func:`torch.while_loop`, carrying only fixed-shape
+    tensors:
 
     * A computes PS/WS/CSsub for word ``w``.
     * B consumes A's result for ``w - 1`` plus the grammar latch.
     * C consumes B's result for ``w - 2`` and produces the next latch.
+
+    The canonical aligned model uses :meth:`run_cs_lanes_banked` instead. It
+    overlaps CSSub/PS/WS for word ``w``, CSSym/SS for ``w - 1``, and CSLang for
+    ``w - 2``. Within CSSym, ``CS -> SS -> CS`` is a fixed sequential
+    recurrence, not a peer edge.
 
     The runtime trip count is derived on device from ``active_b_w``.  The
     staged slab may therefore have a generous capacity (for example 256 or
@@ -663,6 +668,407 @@ class TensorPeerWhilePipeline:
          final_stm, final_a, final_b) = _unpack(tuple(flat_result))
         return final_stm, final_a, final_b, feedback, trip_count
 
+    def run_percept_concept_banked(
+            self, words_b_w_d, active_b_w, *,
+            stm_state, percept_state, concept_state,
+            empty_percept, empty_feedback,
+            stage_percept, stage_concept):
+        """Pipeline perceptual word ``w`` against conceptual word ``w-1``.
+
+        PS and WS form the independent perceptual leg.  Its completed tensor
+        payload is retained for one tick while the next word begins.  The
+        conceptual leg then performs CSsub reduction, the fixed CS->SS order
+        loop, word-reference deposit/object resolution, and one Language tree
+        step.  Thus the only cross-word overlap is dependency-safe:
+
+        ``{PS(w), WS(w)} || {CS/SS/Language(w-1)}``.
+
+        Language feedback uses two tensor latches, so a plan produced at
+        symbolic index ``w`` first reaches the conceptual recurrence at
+        ``w+2``.  After the final conceptual word, two masked ticks drain
+        those latches without constructing extra words or mutating owner state.
+        """
+        if words_b_w_d.dim() != 3:
+            raise ValueError("words_b_w_d must be a [B,W,D] tensor")
+        if (active_b_w.dim() != 2
+                or tuple(active_b_w.shape) != tuple(words_b_w_d.shape[:2])
+                or active_b_w.dtype is not torch.bool):
+            raise ValueError(
+                "active_b_w must be bool with words_b_w_d's [B,W] shape")
+        width = int(words_b_w_d.shape[1])
+        if width < 1:
+            raise ValueError("the staged word capacity must be positive")
+
+        stm_state = self._tensor_tuple(stm_state, "STM state")
+        percept_state = self._tensor_tuple(
+            percept_state, "percept owner state")
+        concept_state = self._tensor_tuple(
+            concept_state, "concept owner state")
+        empty_percept = self._tensor_tuple(
+            empty_percept, "empty percept payload")
+        empty_feedback = self._tensor_tuple(
+            empty_feedback, "empty feedback")
+
+        percept_payload_shapes = tuple(
+            tuple(item.shape) for item in empty_percept)
+        feedback_shapes = tuple(
+            tuple(item.shape) for item in empty_feedback)
+        stm_shapes = tuple(tuple(item.shape) for item in stm_state)
+        percept_state_shapes = tuple(
+            tuple(item.shape) for item in percept_state)
+        concept_state_shapes = tuple(
+            tuple(item.shape) for item in concept_state)
+
+        def _flatten(items):
+            return tuple(item.reshape(-1).clone() for item in items)
+
+        empty_percept = _flatten(empty_percept)
+        empty_feedback = _flatten(empty_feedback)
+        stm_state = _flatten(stm_state)
+        percept_state = _flatten(percept_state)
+        concept_state = _flatten(concept_state)
+        # ``empty_*`` remain body templates (additional HOP inputs).  Carried
+        # initial values must use different storages: AOT functionalization
+        # rejects a tensor that appears both as a carried input and as a
+        # captured/template input, even when every use is read-only.
+        initial_percept = tuple(item.clone() for item in empty_percept)
+        initial_young_feedback = tuple(
+            item.clone() for item in empty_feedback)
+        initial_visible_feedback = tuple(
+            item.clone() for item in empty_feedback)
+        trip_count = self.active_trip_count(active_b_w)
+        zero = torch.zeros((), dtype=torch.int64, device=words_b_w_d.device)
+
+        n_percept_payload = len(empty_percept)
+        n_feedback = len(empty_feedback)
+        n_stm = len(stm_state)
+        n_percept_state = len(percept_state)
+        n_concept_state = len(concept_state)
+
+        def _restore(items, shapes):
+            return tuple(
+                item.reshape(shape) for item, shape in zip(items, shapes))
+
+        def _unpack(flat):
+            offset = 0
+            prior_percept = _restore(
+                tuple(flat[offset:offset + n_percept_payload]),
+                percept_payload_shapes)
+            offset += n_percept_payload
+            young_feedback = _restore(
+                tuple(flat[offset:offset + n_feedback]), feedback_shapes)
+            offset += n_feedback
+            old_feedback = _restore(
+                tuple(flat[offset:offset + n_feedback]), feedback_shapes)
+            offset += n_feedback
+            current_stm = _restore(
+                tuple(flat[offset:offset + n_stm]), stm_shapes)
+            offset += n_stm
+            current_percept = _restore(
+                tuple(flat[offset:offset + n_percept_state]),
+                percept_state_shapes)
+            offset += n_percept_state
+            current_concept = _restore(
+                tuple(flat[offset:offset + n_concept_state]),
+                concept_state_shapes)
+            return (
+                prior_percept, young_feedback, old_feedback,
+                current_stm, current_percept, current_concept)
+
+        def cond(tick, remaining, *flat):
+            del tick, flat
+            return remaining > 0
+
+        def body(tick, remaining, *flat):
+            (prior_percept, young_feedback, visible_feedback,
+             current_stm, current_percept,
+             current_concept) = _unpack(flat)
+
+            percept_live = remaining > 3
+            gather_index = torch.minimum(
+                tick, torch.full_like(tick, width - 1)).reshape(1)
+            word = torch.index_select(words_b_w_d, 1, gather_index)
+            row_gate = (
+                torch.index_select(
+                    active_b_w, 1, gather_index) & percept_live)
+            proposed_percept, proposed_percept_state = stage_percept(
+                word, row_gate, tick, percept_live, current_percept)
+            proposed_percept = self._tensor_tuple(
+                proposed_percept, "percept payload")
+            proposed_percept_state = self._tensor_tuple(
+                proposed_percept_state, "percept owner state")
+            next_percept_payload = self._select(
+                percept_live, proposed_percept,
+                _restore(empty_percept, percept_payload_shapes))
+            next_percept_state = self._select(
+                percept_live, proposed_percept_state, current_percept)
+
+            concept_index = tick - 1
+            concept_live = torch.logical_and(
+                tick >= 1, remaining > 2)
+            (proposed_concept, proposed_stm,
+             proposed_feedback) = stage_concept(
+                prior_percept, visible_feedback,
+                concept_index, concept_live,
+                current_concept, current_stm)
+            proposed_concept = self._tensor_tuple(
+                proposed_concept, "concept owner state")
+            proposed_stm = self._tensor_tuple(
+                proposed_stm, "STM state")
+            proposed_feedback = self._tensor_tuple(
+                proposed_feedback, "Language feedback")
+            next_concept = self._select(
+                concept_live, proposed_concept, current_concept)
+            next_stm = self._select(
+                concept_live, proposed_stm, current_stm)
+            produced_feedback = self._select(
+                concept_live, proposed_feedback,
+                _restore(empty_feedback, feedback_shapes))
+
+            return (
+                tick + 1, remaining - 1,
+                *(item.reshape(-1) for item in next_percept_payload),
+                *(item.reshape(-1) for item in produced_feedback),
+                # The second grammar latch is a value transfer, but HOP
+                # bodies may not return an input alias.  Materialize the
+                # latch hand-off explicitly; it remains a tiny [B,R] copy
+                # and is the sole storage transition required for the
+                # deterministic w+2 delay.
+                *(item.reshape(-1).clone() for item in young_feedback),
+                *(item.reshape(-1) for item in next_stm),
+                *(item.reshape(-1) for item in next_percept_state),
+                *(item.reshape(-1) for item in next_concept))
+
+        initial = (
+            zero, trip_count + 3,
+            *initial_percept,
+            *initial_young_feedback,
+            *initial_visible_feedback,
+            *stm_state, *percept_state, *concept_state)
+        result = torch.while_loop(cond, body, initial)
+        _tick, _remaining, *flat_result = result
+        (_percept, _young, feedback, final_stm,
+         final_percept, final_concept) = _unpack(tuple(flat_result))
+        return (
+            final_stm, final_percept, final_concept,
+            feedback, trip_count)
+
+    def run_cs_lanes_banked(
+            self, words_b_w_d, active_b_w, *,
+            stm_state, cs_sub_state, cs_sym_state, cs_lang_state,
+            empty_cs_sub, empty_cs_sym, empty_feedback,
+            stage_cs_sub, stage_cs_sym, stage_cs_lang):
+        """Run the canonical ``CSSub -> CSSym -> CSLang`` word pipeline.
+
+        ConceptualSpace nominally owns all three transactions and their state
+        banks. Peer Spaces retain their own parameters and return tensor-only
+        proposals:
+
+        * ``CSSub(w)`` fans the word to PS/WS and reduces their completed
+          subsymbolic ladders.
+        * ``CSSym(w-1)`` performs the fixed CS->SS->CS order recurrence.
+        * ``CSLang(w-2)`` predicts, deposits/resolves the word reference,
+          invokes Language's tree planner, and proposes the CS-owned STM
+          commit.
+
+        The CSSub and CSSym payloads are the two ordinary pipeline registers.
+        Grammar feedback is a separate one-tick register from CSLang back to
+        CSSym. Because CSLang for source word ``w`` executes two pipeline
+        stages after CSSub(w), that one physical register makes the feedback
+        first visible to ``CSSym(w+2)`` -- exactly two symbolic indices after
+        its source. The final masked tick drains that register after the last
+        live CSLang transaction.
+        """
+        if words_b_w_d.dim() != 3:
+            raise ValueError("words_b_w_d must be a [B,W,D] tensor")
+        if (active_b_w.dim() != 2
+                or tuple(active_b_w.shape) != tuple(words_b_w_d.shape[:2])
+                or active_b_w.dtype is not torch.bool):
+            raise ValueError(
+                "active_b_w must be bool with words_b_w_d's [B,W] shape")
+        width = int(words_b_w_d.shape[1])
+        if width < 1:
+            raise ValueError("the staged word capacity must be positive")
+
+        stm_state = self._tensor_tuple(stm_state, "STM state")
+        cs_sub_state = self._tensor_tuple(cs_sub_state, "CSSub state")
+        cs_sym_state = self._tensor_tuple(cs_sym_state, "CSSym state")
+        cs_lang_state = self._tensor_tuple(cs_lang_state, "CSLang state")
+        empty_cs_sub = self._tensor_tuple(
+            empty_cs_sub, "empty CSSub payload")
+        empty_cs_sym = self._tensor_tuple(
+            empty_cs_sym, "empty CSSym payload")
+        empty_feedback = self._tensor_tuple(
+            empty_feedback, "empty CSLang feedback")
+
+        cs_sub_payload_shapes = tuple(
+            tuple(item.shape) for item in empty_cs_sub)
+        cs_sym_payload_shapes = tuple(
+            tuple(item.shape) for item in empty_cs_sym)
+        feedback_shapes = tuple(
+            tuple(item.shape) for item in empty_feedback)
+        stm_shapes = tuple(tuple(item.shape) for item in stm_state)
+        cs_sub_state_shapes = tuple(
+            tuple(item.shape) for item in cs_sub_state)
+        cs_sym_state_shapes = tuple(
+            tuple(item.shape) for item in cs_sym_state)
+        cs_lang_state_shapes = tuple(
+            tuple(item.shape) for item in cs_lang_state)
+
+        def _flatten(items):
+            return tuple(item.reshape(-1).clone() for item in items)
+
+        empty_cs_sub = _flatten(empty_cs_sub)
+        empty_cs_sym = _flatten(empty_cs_sym)
+        empty_feedback = _flatten(empty_feedback)
+        stm_state = _flatten(stm_state)
+        cs_sub_state = _flatten(cs_sub_state)
+        cs_sym_state = _flatten(cs_sym_state)
+        cs_lang_state = _flatten(cs_lang_state)
+        # Templates are closure inputs to the HOP. Give every carried initial
+        # value independent storage so AOT functionalization never sees a
+        # template/carry alias.
+        initial_cs_sub = tuple(item.clone() for item in empty_cs_sub)
+        initial_cs_sym = tuple(item.clone() for item in empty_cs_sym)
+        initial_feedback = tuple(item.clone() for item in empty_feedback)
+        trip_count = self.active_trip_count(active_b_w)
+        zero = torch.zeros(
+            (), dtype=torch.int64, device=words_b_w_d.device)
+
+        n_cs_sub_payload = len(empty_cs_sub)
+        n_cs_sym_payload = len(empty_cs_sym)
+        n_feedback = len(empty_feedback)
+        n_stm = len(stm_state)
+        n_cs_sub_state = len(cs_sub_state)
+        n_cs_sym_state = len(cs_sym_state)
+        n_cs_lang_state = len(cs_lang_state)
+
+        def _restore(items, shapes):
+            return tuple(
+                item.reshape(shape) for item, shape in zip(items, shapes))
+
+        def _unpack(flat):
+            offset = 0
+            prior_cs_sub = _restore(
+                tuple(flat[offset:offset + n_cs_sub_payload]),
+                cs_sub_payload_shapes)
+            offset += n_cs_sub_payload
+            prior_cs_sym = _restore(
+                tuple(flat[offset:offset + n_cs_sym_payload]),
+                cs_sym_payload_shapes)
+            offset += n_cs_sym_payload
+            feedback = _restore(
+                tuple(flat[offset:offset + n_feedback]), feedback_shapes)
+            offset += n_feedback
+            current_stm = _restore(
+                tuple(flat[offset:offset + n_stm]), stm_shapes)
+            offset += n_stm
+            current_cs_sub = _restore(
+                tuple(flat[offset:offset + n_cs_sub_state]),
+                cs_sub_state_shapes)
+            offset += n_cs_sub_state
+            current_cs_sym = _restore(
+                tuple(flat[offset:offset + n_cs_sym_state]),
+                cs_sym_state_shapes)
+            offset += n_cs_sym_state
+            current_cs_lang = _restore(
+                tuple(flat[offset:offset + n_cs_lang_state]),
+                cs_lang_state_shapes)
+            return (
+                prior_cs_sub, prior_cs_sym, feedback, current_stm,
+                current_cs_sub, current_cs_sym, current_cs_lang)
+
+        def cond(tick, remaining, *flat):
+            del tick, flat
+            return remaining > 0
+
+        def body(tick, remaining, *flat):
+            (prior_cs_sub, prior_cs_sym, feedback, current_stm,
+             current_cs_sub, current_cs_sym,
+             current_cs_lang) = _unpack(flat)
+
+            cs_sub_live = remaining > 3
+            gather_index = torch.minimum(
+                tick, torch.full_like(tick, width - 1)).reshape(1)
+            word = torch.index_select(words_b_w_d, 1, gather_index)
+            row_gate = (
+                torch.index_select(
+                    active_b_w, 1, gather_index) & cs_sub_live)
+            proposed_cs_sub, proposed_cs_sub_state = stage_cs_sub(
+                word, row_gate, tick, cs_sub_live, current_cs_sub)
+            proposed_cs_sub = self._tensor_tuple(
+                proposed_cs_sub, "CSSub payload")
+            proposed_cs_sub_state = self._tensor_tuple(
+                proposed_cs_sub_state, "CSSub state")
+            next_cs_sub_payload = self._select(
+                cs_sub_live, proposed_cs_sub,
+                _restore(empty_cs_sub, cs_sub_payload_shapes))
+            next_cs_sub_state = self._select(
+                cs_sub_live, proposed_cs_sub_state, current_cs_sub)
+
+            cs_sym_index = tick - 1
+            cs_sym_live = torch.logical_and(
+                tick >= 1, remaining > 2)
+            proposed_cs_sym, proposed_cs_sym_state = stage_cs_sym(
+                prior_cs_sub, feedback, cs_sym_index,
+                cs_sym_live, current_cs_sym)
+            proposed_cs_sym = self._tensor_tuple(
+                proposed_cs_sym, "CSSym payload")
+            proposed_cs_sym_state = self._tensor_tuple(
+                proposed_cs_sym_state, "CSSym state")
+            next_cs_sym_payload = self._select(
+                cs_sym_live, proposed_cs_sym,
+                _restore(empty_cs_sym, cs_sym_payload_shapes))
+            next_cs_sym_state = self._select(
+                cs_sym_live, proposed_cs_sym_state, current_cs_sym)
+
+            cs_lang_index = tick - 2
+            cs_lang_live = torch.logical_and(
+                tick >= 2, remaining > 1)
+            (proposed_cs_lang, proposed_stm,
+             proposed_feedback) = stage_cs_lang(
+                prior_cs_sym, cs_lang_index, cs_lang_live,
+                current_cs_lang, current_stm)
+            proposed_cs_lang = self._tensor_tuple(
+                proposed_cs_lang, "CSLang state")
+            proposed_stm = self._tensor_tuple(
+                proposed_stm, "STM state")
+            proposed_feedback = self._tensor_tuple(
+                proposed_feedback, "CSLang feedback")
+            next_cs_lang = self._select(
+                cs_lang_live, proposed_cs_lang, current_cs_lang)
+            next_stm = self._select(
+                cs_lang_live, proposed_stm, current_stm)
+            next_feedback = self._select(
+                cs_lang_live, proposed_feedback,
+                _restore(empty_feedback, feedback_shapes))
+
+            return (
+                tick + 1, remaining - 1,
+                *(item.reshape(-1) for item in next_cs_sub_payload),
+                *(item.reshape(-1) for item in next_cs_sym_payload),
+                *(item.reshape(-1) for item in next_feedback),
+                *(item.reshape(-1) for item in next_stm),
+                *(item.reshape(-1) for item in next_cs_sub_state),
+                *(item.reshape(-1) for item in next_cs_sym_state),
+                *(item.reshape(-1) for item in next_cs_lang))
+
+        # W live CSSub ticks, one CSSym drain, one CSLang drain, and one
+        # feedback-register drain. No drain tick is allowed to mutate owner
+        # state because all three owner commits are independently masked.
+        initial = (
+            zero, trip_count + 3,
+            *initial_cs_sub, *initial_cs_sym, *initial_feedback,
+            *stm_state, *cs_sub_state, *cs_sym_state, *cs_lang_state)
+        result = torch.while_loop(cond, body, initial)
+        _tick, _remaining, *flat_result = result
+        (_cs_sub, _cs_sym, feedback, final_stm,
+         final_cs_sub, final_cs_sym,
+         final_cs_lang) = _unpack(tuple(flat_result))
+        return (
+            final_stm, final_cs_sub, final_cs_sym, final_cs_lang,
+            feedback, trip_count)
+
 
 class FunctionalPeerSTM:
     """Pure tensor implementations of the online STM controller.
@@ -724,183 +1130,48 @@ class FunctionalPeerSTM:
         return prediction, loss_sum, loss_weight
 
     @staticmethod
-    def _occupancy_threshold(depth, capacity, base_tau):
-        tau = torch.as_tensor(
-            base_tau, dtype=torch.float32, device=depth.device)
-        if int(capacity) <= 2:
-            pressure = torch.zeros_like(depth, dtype=tau.dtype)
-        else:
-            pressure = (
-                (depth.to(tau.dtype) - 2.0) / float(int(capacity) - 2)
-            ).clamp(0.0, 1.0)
-        return tau * (1.0 - pressure), pressure
+    def resolve_top_reference(
+            state, object_idea, object_row, object_order,
+            object_activation, row_gate):
+        """Replace a newly deposited word reference by its object concept.
 
-    @staticmethod
-    def _reduce_confidence(routing):
-        copy_score = routing["copy_score"]
-        reduce_score = routing["reduce_score"]
-        copy_action = (
-            torch.logsumexp(copy_score[:, :2, :], dim=-1)
-            - math.log(float(copy_score.shape[-1])))
-        reduce_action = (
-            torch.logsumexp(reduce_score[:, 0, :], dim=-1)
-            - math.log(float(reduce_score.shape[-1])))
-        return torch.sigmoid(reduce_action - copy_action.sum(dim=1))
-
-    @staticmethod
-    def reduce(state, reducer, row_gate, *, base_tau,
-               occupancy_pressure=False, demand=False):
-        """Return one bounded binary grammar update and trace tensors."""
+        The word push and this replacement are deliberately separate pure
+        operations: the former records that the symbolic loop completed a
+        word concept; the latter is the automatic referential interpretation
+        that Language must see.  Only the newest CS-owned STM slot changes.
+        """
         (buffer, depth, orders, grammar_orders,
          concept_rows, concept_activations) = state
-        B, capacity, D = buffer.shape
-        if int(capacity) < 2:
-            applied = torch.zeros_like(depth, dtype=torch.bool)
-            local_op = torch.full_like(depth, -1)
-            return state, applied, local_op, applied, buffer.new_zeros(B)
-
+        B, _capacity, D = buffer.shape
+        if (not torch.is_tensor(object_idea)
+                or tuple(object_idea.shape) != (B, D)):
+            raise ValueError(
+                "object reference replacement expects idea [B,D]")
         gate = row_gate.reshape(B).to(
             device=buffer.device, dtype=torch.bool)
-        can = torch.logical_and(depth >= 2, gate)
-        left = buffer[:, 1, :]
-        right = buffer[:, 0, :]
-        window = torch.stack((left, right), dim=1)
-        hard, soft, routing = reducer(window)
-        parent = (soft + (hard - soft).detach())[:, 0, :]
-        if occupancy_pressure or demand:
-            parent = routing["chosen_reduced"][:, 0, :]
-        if occupancy_pressure:
-            confidence = FunctionalPeerSTM._reduce_confidence(routing)
-            threshold, _pressure = FunctionalPeerSTM._occupancy_threshold(
-                depth, int(capacity), base_tau)
-            demand_rows = torch.logical_and(depth >= int(capacity), can)
-            can = torch.logical_and(
-                can, torch.logical_or(demand_rows, confidence > threshold))
-
-        left_order, right_order = orders[:, 1], orders[:, 0]
-        parent_order = torch.where(
-            torch.logical_and(left_order >= 0, right_order >= 0),
-            torch.maximum(left_order, right_order),
-            torch.full_like(left_order, -1))
-        left_grammar, right_grammar = (
-            grammar_orders[:, 1], grammar_orders[:, 0])
-        parent_grammar = torch.where(
-            torch.logical_and(left_grammar >= 0, right_grammar >= 0),
-            torch.maximum(left_grammar, right_grammar) + 1,
-            torch.full_like(left_grammar, -1))
-
-        parent_rows = torch.full_like(concept_rows[:, 0], -1)
-        parent_activations = torch.zeros_like(concept_activations[:, 0])
-        if not (occupancy_pressure or demand):
-            action_kind = routing["action_kind"][:, 0]
-            source_left = routing["src_left"][:, 0]
-            source = source_left.clamp(0, 1).reshape(B, 1)
-            reference_rows = torch.stack(
-                (concept_rows[:, 1], concept_rows[:, 0]), dim=1)
-            reference_activations = torch.stack(
-                (concept_activations[:, 1],
-                 concept_activations[:, 0]), dim=1)
-            copy_selected = torch.logical_and(
-                action_kind == 0, source_left >= 0)
-            parent_rows = torch.where(
-                copy_selected,
-                reference_rows.gather(1, source).reshape(B),
-                parent_rows)
-            parent_activations = torch.where(
-                copy_selected,
-                reference_activations.gather(1, source).reshape(B),
-                parent_activations)
-
-        zero_event = buffer.new_zeros(B, 1, D)
-        shifted_buffer = torch.cat(
-            (parent.unsqueeze(1), buffer[:, 2:, :], zero_event), dim=1)
-        unknown = torch.full(
-            (B, 1), -1, dtype=torch.long, device=buffer.device)
-        shifted_orders = torch.cat(
-            (parent_order.reshape(B, 1), orders[:, 2:], unknown), dim=1)
-        shifted_grammar = torch.cat(
-            (parent_grammar.reshape(B, 1),
-             grammar_orders[:, 2:], unknown), dim=1)
-        shifted_rows = torch.cat(
-            (parent_rows.reshape(B, 1),
-             concept_rows[:, 2:], unknown), dim=1)
-        zero_activation = concept_activations.new_zeros(B, 1)
-        shifted_activations = torch.cat(
-            (parent_activations.reshape(B, 1),
-             concept_activations[:, 2:], zero_activation), dim=1)
-        gate_event = can.reshape(B, 1, 1)
-        gate_slab = can.reshape(B, 1)
-        next_state = (
-            torch.where(gate_event, shifted_buffer, buffer),
-            depth - can.to(dtype=depth.dtype),
-            torch.where(gate_slab, shifted_orders, orders),
-            torch.where(gate_slab, shifted_grammar, grammar_orders),
-            torch.where(gate_slab, shifted_rows, concept_rows),
+        row = object_row.reshape(B).to(
+            device=buffer.device, dtype=torch.long)
+        gate = torch.logical_and(gate, row >= 0)
+        order = object_order.reshape(B).to(
+            device=buffer.device, dtype=torch.long)
+        activation = object_activation.reshape(B).to(
+            device=buffer.device, dtype=concept_activations.dtype)
+        top = torch.where(
+            gate.reshape(B, 1), object_idea, buffer[:, 0, :])
+        next_buffer = torch.cat((top.unsqueeze(1), buffer[:, 1:, :]), dim=1)
+        next_orders = torch.cat((
+            torch.where(gate, order, orders[:, 0]).reshape(B, 1),
+            orders[:, 1:]), dim=1)
+        next_rows = torch.cat((
+            torch.where(gate, row, concept_rows[:, 0]).reshape(B, 1),
+            concept_rows[:, 1:]), dim=1)
+        next_activations = torch.cat((
             torch.where(
-                gate_slab, shifted_activations, concept_activations),
-        )
-
-        marginal = routing["reduce_marginal_op"][:, 0, :]
-        local_op = marginal.argmax(dim=-1)
-        trace_valid = can
-        if not (occupancy_pressure or demand):
-            trace_valid = torch.logical_and(
-                trace_valid, routing["action_kind"][:, 0] == 1)
-        local_loss = routing.get("local_structural_loss")
-        if (not torch.is_tensor(local_loss) or local_loss.dim() < 2
-                or int(local_loss.shape[1]) < 1):
-            local_loss = buffer.new_zeros(B)
-        else:
-            local_loss = local_loss[:, 0]
-        return next_state, can, local_op, trace_valid, local_loss
-
-    @staticmethod
-    def unary(state, layer, row_gate):
-        """Return one unary grammar update and trace tensors."""
-        (buffer, depth, orders, grammar_orders,
-         concept_rows, concept_activations) = state
-        B = int(buffer.shape[0])
-        can = torch.logical_and(
-            depth >= 1,
-            row_gate.reshape(B).to(
-                device=buffer.device, dtype=torch.bool))
-        hard, soft, routing = layer(buffer[:, :1, :])
-        candidate = (soft + (hard - soft).detach())[:, 0, :]
-        applied = torch.logical_and(
-            routing["apply_mask"][:, 0, :].bool().any(dim=-1), can)
-        next_buffer = torch.cat(
-            (torch.where(
-                applied.reshape(B, 1), candidate, buffer[:, 0, :]
-            ).unsqueeze(1), buffer[:, 1:, :]), dim=1)
-        top_grammar = grammar_orders[:, 0]
-        raised = torch.where(
-            top_grammar >= 0, top_grammar + 1, top_grammar)
-        next_grammar = torch.cat(
-            (torch.where(
-                applied, raised, top_grammar).reshape(B, 1),
-             grammar_orders[:, 1:]), dim=1)
-        next_rows = torch.cat(
-            (torch.where(
-                applied, torch.full_like(concept_rows[:, 0], -1),
-                concept_rows[:, 0]).reshape(B, 1),
-             concept_rows[:, 1:]), dim=1)
-        next_activations = torch.cat(
-            (torch.where(
-                applied, torch.zeros_like(concept_activations[:, 0]),
-                concept_activations[:, 0]).reshape(B, 1),
-             concept_activations[:, 1:]), dim=1)
-        next_state = (
-            next_buffer, depth, orders, next_grammar,
+                gate, activation, concept_activations[:, 0]).reshape(B, 1),
+            concept_activations[:, 1:]), dim=1)
+        return (
+            next_buffer, depth, next_orders, grammar_orders,
             next_rows, next_activations)
-        local_op = routing["action_op"][:, 0].long()
-        local_loss = routing.get("local_structural_loss")
-        if (not torch.is_tensor(local_loss) or local_loss.dim() < 2
-                or int(local_loss.shape[1]) < 1):
-            local_loss = buffer.new_zeros(B)
-        else:
-            local_loss = local_loss[:, 0]
-        return next_state, applied, local_op, applied, local_loss
-
 
 # Per-word stage records deliberately carry tensors, not mutable SubSpace
 # carriers.  The next A tick reuses each Space's live carrier in place; a B/C
@@ -6281,24 +6552,25 @@ class BasicModel(BaseModel):
         The staged word capacity and masked residual-constituent layout are
         static graph shapes. The peer recurrence itself is a tensor
         ``while_loop`` whose device-side trip count is the last live word plus
-        two drain ticks. Capturing the complete callable makes its carried
-        A/B/C state compiler-visible without Python-unrolling W. Lowering is
-        deferred until a capacity is first observed. BasicModel uses only
-        W=256, so a run pays one specialization while short batches still stop
-        at their real length; multiple capacities remain supported for
-        compatibility.
+        one CSSym drain, one CSLang drain, and one grammar-register drain.
+        Capturing the complete callable makes all three cross-word stages
+        compiler-visible without Python-unrolling W. Lowering is deferred until
+        a capacity is first observed. BasicModel uses only W=512, so a run pays
+        one specialization while short batches still stop at their real
+        length; multiple capacities remain supported for compatibility.
 
-        Four separately-defined source functions are deliberate.  Dynamo keys
+        Separately-defined source functions are deliberate. Dynamo keys
         the Python code object in addition to shapes; a closure factory would
         otherwise turn W=32 into a recompile of the W=16 graph.
         """
         widths = tuple(sorted(set(int(width) for width in buckets)))
-        required = (16, 32, 64, 128, 256)
+        required = (16, 32, 64, 128, 256, 512)
         unsupported = tuple(width for width in widths
                             if width not in required)
         if unsupported:
             raise ValueError(
-                "canonical fullgraph word loops support W=16,32,64,128,256; "
+                "canonical fullgraph word loops support "
+                "W=16,32,64,128,256,512; "
                 f"got unsupported {list(unsupported)}")
 
         def _forward_W16(input_data):
@@ -6335,12 +6607,20 @@ class BasicModel(BaseModel):
                 raise RuntimeError("fullgraph W=256 loop received a non-W=256 slab")
             return self._forward_with_compiled_sentence_state(None)
 
+        def _forward_W512(input_data):
+            slab = self.inputSpace._ar_embedded_N
+            if slab is None or int(slab.shape[1]) != 512:
+                raise RuntimeError(
+                    "fullgraph W=512 loop received a non-W=512 slab")
+            return self._forward_with_compiled_sentence_state(None)
+
         object.__setattr__(self, "_compiled_word_step_sources", {
             16: _forward_W16,
             32: _forward_W32,
             64: _forward_W64,
             128: _forward_W128,
             256: _forward_W256,
+            512: _forward_W512,
         })
         self._compiled_word_steps = {}
         self._compiled_word_loop_compile = compile_fn
@@ -6591,7 +6871,7 @@ class BasicModel(BaseModel):
         # full-router grammar, its disabled call is itself a graph break, so it
         # needs fullgraph relaxed too. ``_host_islands`` gates both.
         _symbol_tower = bool(getattr(self, 'symbol_tower', False))
-        # The serial fixed-W recurrence, including the peer C stage, has a
+        # The serial fixed-W recurrence, including its Language plan, has a
         # fullgraph-clean grammar route. Full-router state is represented by
         # the static grammar tensors used by that route; only the separate
         # symbol-tower and sparse indexed-codebook modes below are true outer
@@ -6609,9 +6889,10 @@ class BasicModel(BaseModel):
             self._aligned_serial_sparse_bank_mode()
             and getattr(_util, "TheCompileBackend", "none") != "none")
         # K=1/K=2 cells contain the legacy monolithic word body and therefore
-        # cannot express the A/B/C FIFO. Peer mode uses the fixed W-loop graph
-        # below; its explicit fallback still compiles the independent numerical
-        # PS/WS ladders while leaving the scheduler eager.
+        # cannot express the cross-word dependency lanes. Peer mode uses the
+        # fixed W-loop graph below; its explicit fallback still compiles the
+        # independent numerical PS/WS ladders while leaving the scheduler
+        # eager.
         _canonical_word_chunk = bool(
             _aligned_serial_stage_bodies and not _peer_pipeline)
         _host_islands = ((_full_router and not _serial_per_word)
@@ -6668,14 +6949,15 @@ class BasicModel(BaseModel):
         _mps_word_cell = os.environ.get(
             "BASICMODEL_MPS_WORD_FULLGRAPH", "1").strip().lower() not in (
                 "0", "false", "no", "off")
-        # The outer graph is the compiler-visible realization of the peer
-        # A/B/C recurrence. A tensor higher-order loop carries A(w), B(w-1),
-        # C(w-2), the grammar latch, and all CS-owned state; its runtime trip
-        # count does not become a Python guard. Do not disable that graph
-        # merely because peer mode is selected: doing so leaves PS/WS as the
-        # only compiled work and makes the stateful CS/SS/Language stages pay
-        # host dispatch per word. BASICMODEL_MPS_WORD_LOOP_FULLGRAPH=0 remains
-        # the explicit diagnostic/backend fallback.
+        # The outer graph is the compiler-visible realization of the three
+        # cross-word stages: CSSub/PS/WS(w), CSSym/SS(w-1), and CSLang(w-2).
+        # The tensor higher-order loop also carries the one grammar register
+        # and all CS-owned state; its runtime trip count does not become a
+        # Python guard. Do not disable that graph merely
+        # because peer mode is selected: doing so leaves PS/WS as the only
+        # compiled work and makes the stateful conceptual leg pay host dispatch
+        # per word. BASICMODEL_MPS_WORD_LOOP_FULLGRAPH=0 remains the explicit
+        # diagnostic/backend fallback.
         _peer_outer_host_island = bool(
             _symbol_tower
             or (_sparse_codebook_island and not _staged_sparse_bank))
@@ -6688,7 +6970,7 @@ class BasicModel(BaseModel):
             _mps_word_cell = False
         if _mps_fullgraph_ladder_boundary and _mps_word_loop:
             # The primary production boundary: one fullgraph encompasses the
-            # dynamic tensor word loop, peer A/B/C recurrence, and backward.
+            # dynamic tensor word loop, both dependency legs, and backward.
             # P and the maximum W are fixed masked layouts; only live words
             # execute. It lowers lazily on first use. The complete backward
             # still has substantially more live inputs than the old one-word
@@ -6770,7 +7052,8 @@ class BasicModel(BaseModel):
             self._compiled_step = self.forward
             TheMessage(
                 "Peer pipeline: static PS/WS stage bodies compiled separately; "
-                "A/B/C scheduler remains outside fullgraph capture")
+                "legacy compatibility scheduler remains outside fullgraph "
+                "capture")
         elif (_serial_per_word and len(_word_buckets) > 1):
             # Four DISTINCT CODE OBJECTS give Dynamo/Inductor four stable,
             # packed static loop graphs. A closure factory is insufficient:
@@ -6818,12 +7101,21 @@ class BasicModel(BaseModel):
                         f"{int(slab.shape[1])} staged slab")
                 return self.forward(input_data)
 
+            def _forward_W512(input_data):
+                slab = self.inputSpace._ar_embedded_N
+                if slab is not None and int(slab.shape[1]) != 512:
+                    raise RuntimeError(
+                        f"compiled W=512 bucket received a W="
+                        f"{int(slab.shape[1])} staged slab")
+                return self.forward(input_data)
+
             _fixed_sources = {
                 16: _forward_W16,
                 32: _forward_W32,
                 64: _forward_W64,
                 128: _forward_W128,
                 256: _forward_W256,
+                512: _forward_W512,
             }
             unsupported = [
                 width for width in _word_buckets
@@ -6831,7 +7123,7 @@ class BasicModel(BaseModel):
             if unsupported:
                 raise ValueError(
                     "compiled serialWordBuckets supports exactly widths "
-                    f"16,32,64,128,256; got unsupported {unsupported}")
+                    f"16,32,64,128,256,512; got unsupported {unsupported}")
             object.__setattr__(
                 self, "_compiled_word_step_sources", _fixed_sources)
             for _width in _word_buckets:
@@ -7431,9 +7723,18 @@ class BasicModel(BaseModel):
         isp = getattr(self, "inputSpace", None)
         if isp is None:
             return None
+        ws = getattr(self, "wholeSpace", None)
+        if ws is not None:
+            object.__setattr__(ws, "_staged_word_property_weights", None)
+            object.__setattr__(ws, "_staged_word_property_spans", None)
         isp._ar_word_concept_rows = None
         isp._ar_word_concept_ids = None
         isp._ar_word_concept_orders = None
+        isp._ar_word_object_rows = None
+        isp._ar_word_object_ids = None
+        isp._ar_word_object_orders = None
+        isp._ar_word_concept_atoms = None
+        isp._ar_word_object_atoms = None
         isp._ar_concept_lookup_rows = None
         isp._ar_concept_lookup_atoms = None
         aligned = self._aligned_serial_word_mode()
@@ -7457,7 +7758,6 @@ class BasicModel(BaseModel):
 
         spaces = list(getattr(self, "conceptualSpaces", None) or ())
         owner = spaces[0] if spaces else getattr(self, "conceptualSpace", None)
-        ws = getattr(self, "wholeSpace", None)
         alloc = getattr(owner, "_concept_allocator", None)
         if owner is None or ws is None:
             rows = torch.full(
@@ -7465,16 +7765,32 @@ class BasicModel(BaseModel):
             isp._ar_word_concept_rows = rows
             isp._ar_word_concept_ids = rows.clone()
             isp._ar_word_concept_orders = rows.clone()
+            isp._ar_word_object_rows = rows.clone()
+            isp._ar_word_object_ids = rows.clone()
+            isp._ar_word_object_orders = rows.clone()
             return rows
 
         B, W, P = (int(part_ids.shape[0]), int(part_ids.shape[1]),
                    int(part_ids.shape[2]))
+        stage_word_properties = getattr(
+            ws, "stage_word_property_weights", None)
+        if callable(stage_word_properties):
+            word_offsets = None
+            part_offsets = getattr(isp, "_ar_word_part_offsets", None)
+            if (torch.is_tensor(part_offsets)
+                    and tuple(part_offsets.shape) == tuple(part_ids.shape)):
+                word_offsets = part_offsets[:, :, 0]
+            stage_word_properties(
+                word_texts, active, word_offsets=word_offsets)
         pid_host = part_ids.detach().to("cpu").reshape(B, W, P).tolist()
         mask_host = part_mask.detach().to("cpu").reshape(B, W, P).tolist()
         active_host = active.detach().to("cpu").reshape(B, W).tolist()
         row_host = [[-1] * W for _ in range(B)]
         cid_host = [[-1] * W for _ in range(B)]
         order_host = [[-1] * W for _ in range(B)]
+        object_row_host = [[-1] * W for _ in range(B)]
+        object_cid_host = [[-1] * W for _ in range(B)]
+        object_order_host = [[-1] * W for _ in range(B)]
         pending = []
         # One base presentation plus T-1 cumulative native folds. The concept
         # activation draws from all T-1 PS and all T-1 WS fold results, so that
@@ -7531,6 +7847,7 @@ class BasicModel(BaseModel):
                     wom = (getattr(alloc, "word_obj_meta", {})
                            if alloc is not None else wom)
                 A = int(triple[0])
+                object_id = int(triple[1])
                 stored_parts = _raw_int_refs(owner.concept_parts(A))
                 stored_wholes = _raw_int_refs(owner.concept_wholes(A))
                 # Surface identity alone is not enough: the active PS/WS
@@ -7548,18 +7865,36 @@ class BasicModel(BaseModel):
                 if row is None:
                     pending.append((b, p, key))
                     continue
+                object_order = int(owner._concept_source_order(object_id))
+                object_row = owner._csw_row_of(object_id)
+                if object_row is None:
+                    object_row = owner._csw_concept_row(
+                        object_order, object_id)
+                if object_row is None:
+                    pending.append((b, p, key))
+                    continue
                 row_host[b][p] = int(row)
                 cid_host[b][p] = A
                 record = owner.record_concept_fold_support(
                     A, fold_support, actual_order)
                 order_host[b][p] = int(record["actual_order"])
+                object_row_host[b][p] = int(object_row)
+                object_cid_host[b][p] = object_id
+                object_order_host[b][p] = object_order
 
         rows = torch.tensor(row_host, dtype=torch.long, device=part_ids.device)
+        object_rows = torch.tensor(
+            object_row_host, dtype=torch.long, device=part_ids.device)
         isp._ar_word_concept_rows = rows
         isp._ar_word_concept_ids = torch.tensor(
             cid_host, dtype=torch.long, device=part_ids.device)
         isp._ar_word_concept_orders = torch.tensor(
             order_host, dtype=torch.long, device=part_ids.device)
+        isp._ar_word_object_rows = object_rows
+        isp._ar_word_object_ids = torch.tensor(
+            object_cid_host, dtype=torch.long, device=part_ids.device)
+        isp._ar_word_object_orders = torch.tensor(
+            object_order_host, dtype=torch.long, device=part_ids.device)
         # Perform the only contextual dictionary read once at this eager
         # boundary. The compiled word loop resolves all current/prior lexical
         # references against this small sentence bank. The read-only boundary
@@ -7579,9 +7914,13 @@ class BasicModel(BaseModel):
                 max(tuple(int(v) for v in
                           (getattr(self, "serial_word_buckets", ()) or (0,)))))
             bank_rows = torch.full(
-                (int(rows.shape[0]), bank_width), -1,
+                (int(rows.shape[0]), 2 * bank_width), -1,
                 dtype=torch.long, device=rows.device)
             bank_rows[:, :int(rows.shape[1])] = rows
+            object_start = bank_width
+            bank_rows[
+                :, object_start:object_start + int(object_rows.shape[1])
+            ] = object_rows
             lookup_rows = bank_rows.clamp_min(0).long()
             lookup_atoms = lookup(lookup_rows)
             if torch.is_tensor(lookup_atoms) and lookup_atoms.dim() == 3:
@@ -7589,6 +7928,17 @@ class BasicModel(BaseModel):
                     dtype=lookup_atoms.dtype)
                 isp._ar_concept_lookup_rows = bank_rows
                 isp._ar_concept_lookup_atoms = lookup_atoms
+                # These are carried into the ``while_loop`` beside the full
+                # sentence lookup bank.  HOP inputs may not alias one another,
+                # even when both are read-only, so give the two lexical
+                # convenience slabs independent storage at this eager
+                # boundary.  This is not a per-word copy and the contextual
+                # codebook remains a single owner/read.
+                isp._ar_word_concept_atoms = lookup_atoms[
+                    :, :int(rows.shape[1])].clone()
+                isp._ar_word_object_atoms = lookup_atoms[
+                    :, object_start:object_start + int(object_rows.shape[1])
+                ].clone()
         object.__setattr__(self, "_pending_sparse_concept_support", pending)
         return rows
 
@@ -7813,6 +8163,8 @@ class BasicModel(BaseModel):
             _ss._staged_analysis_kinds = None
             _ss._staged_analysis_spans_full = None
             _ss._staged_analysis_kinds_full = None
+            _ss._staged_word_property_weights = None
+            _ss._staged_word_property_spans = None
             _ss._where_tiling_schedule = None
             _ss._where_tiling_obs = None
         self._staged_intersentence_seed = None
@@ -10997,10 +11349,10 @@ class BasicModel(BaseModel):
         self._compiled_word_chunk_replaying = False
         self._compiled_word_chunk_trace_active = False
         self._compiled_word_chunk_width = 0
-        # All serial paths use the A/B/C peer contract. Production expresses
-        # it with tensor-carried state below; the switch exists only for
-        # direct legacy-comparison tests and is read at construction, never
-        # inside a captured word loop.
+        # Canonical aligned serial execution uses the three-stage peer contract.
+        # Older configurations retain the legacy static A/B/C compatibility
+        # scheduler. The switch is read at construction, never inside a
+        # captured word loop.
         self._peer_pipeline_enabled = (
             os.environ.get("BASICMODEL_PEER_PIPELINE", "1").strip().lower()
             not in ("0", "false", "no", "off"))
@@ -14356,10 +14708,12 @@ class BasicModel(BaseModel):
             getattr(isp, "_ar_word_part_offsets", None),
             getattr(isp, "_ar_word_concept_rows", None),
             getattr(isp, "_ar_word_concept_orders", None),
+            getattr(isp, "_ar_word_object_rows", None),
+            getattr(isp, "_ar_word_object_orders", None),
+            getattr(isp, "_ar_word_object_atoms", None),
             getattr(isp, "_ar_concept_lookup_rows", None),
             getattr(isp, "_ar_concept_lookup_atoms", None),
-            getattr(self, "_ws_universe", None),
-            getattr(ws, "_staged_analysis_spans", None),
+            getattr(ws, "_staged_word_property_weights", None),
             getattr(stm, "_buffer", None),
             getattr(stm, "_depth", None),
         )
@@ -14436,41 +14790,51 @@ class BasicModel(BaseModel):
             next_losses, next_loss_mask)
 
     def _run_tensor_peer_word_pipeline(self, width):
-        """Run the canonical word recurrence as one tensor ``while_loop``.
+        """Run the aligned word transaction in one tensor ``while_loop``.
 
-        No Space or ReconstructionStack object is mutated by A/B/C.  The HOP
-        returns complete owner-state tensors; this method commits them exactly
-        once after the FIFO has drained.
+        The loop exposes the three ConceptualSpace-owned transactions as
+        separate compiler-visible stages: CSSub performs ``IS->{PS,WS}`` and
+        reduces word ``w``; CSSym performs the fixed ``CS->SS->CS`` recurrence
+        for ``w-1``; CSLang deposits/resolves the reference and applies
+        LanguageSpace's explicit tree plan for ``w-2``.  Grammar feedback has
+        its own register and first reaches CSSym two symbolic indices after
+        the Language decision that produced it.
         """
         width = int(width)
         isp = self.inputSpace
         ps = self.perceptualSpace
         ws = self.wholeSpace
         cs = self.conceptualSpace
-        stm = cs.stm
+        ss = self.symbolSpace
+        stm = cs.CSLang
         words = isp._ar_embedded_N
         active = isp._word_active_mask.to(dtype=torch.bool)
         B = int(words.shape[0])
         capacity = int(stm.capacity)
         concept_dim = int(stm.concept_dim)
         fold_passes = tuple(range(max(0, int(self.subsymbolicOrder) - 1)))
+        symbolic_passes = tuple(range(max(0, int(self.symbolicOrder))))
 
         part_ids = isp._ar_word_part_ids
         part_mask = isp._ar_word_part_mask
         part_offsets = isp._ar_word_part_offsets
         concept_rows = isp._ar_word_concept_rows
         concept_orders = isp._ar_word_concept_orders
+        object_rows = isp._ar_word_object_rows
+        object_orders = isp._ar_word_object_orders
+        object_atoms = isp._ar_word_object_atoms
         lookup_rows = isp._ar_concept_lookup_rows
         lookup_atoms = isp._ar_concept_lookup_atoms
+        word_property_weights = ws._staged_word_property_weights
         commit_mask = getattr(isp, "_word_last_slot_mask", None)
         if not torch.is_tensor(commit_mask):
             commit_mask = active
         else:
             commit_mask = commit_mask.to(dtype=torch.bool)
 
-        whole_sources, _membership = ws.compute_unity_fold_sources(
-            self._ws_universe, ws._staged_analysis_spans, fold_passes)
         percept_dim = int(ps.subspace.muxedSize)
+        whole_dim = int(ws.subspace.muxedSize)
+        whole_locations = int(ws.inputShape[0])
         n_locations = int(cs.outputShape[0])
         reducer = self._stm_reducer()
         unary = self._stm_unary_rewriter()
@@ -14530,12 +14894,17 @@ class BasicModel(BaseModel):
         zero_percept_words = words.new_zeros(B, width, percept_dim)
         zero_prediction = words.new_zeros(B, concept_dim)
         zero_scalar = words.new_zeros(())
-        a_state = (
-            zero_concept,                 # CSsub lane
+        zero_whole = words.new_zeros(
+            B, whole_locations, whole_dim)
+        cs_sub_state = (
+            zero_concept,                 # published CSSub lane
             zero_percept_words,
+            zero_whole,                   # terminal WS fold
         )
-        b_state = (
-            zero_concept.clone(),         # CSsym lane
+        cs_sym_state = (
+            zero_concept.clone(),         # published CSSym lane
+        )
+        cs_lang_state = (
             zero_concept_words,
             zero_scalar,
             zero_scalar.clone(),
@@ -14543,21 +14912,40 @@ class BasicModel(BaseModel):
             *choices,
             *forward_slots,
         )
-        empty_a = (
-            zero_concept.clone(),         # completed CSsub word event
+        empty_cs_sub = (
+            zero_concept.clone(),
             torch.full(
                 (B, n_locations), -1, dtype=torch.long,
                 device=words.device),
             torch.full(
                 (B,), -1, dtype=torch.long, device=words.device),
             words.new_zeros(B),
+            words.new_zeros(B, n_locations),
+            torch.full(
+                (B,), -1, dtype=torch.long, device=words.device),
+            torch.full(
+                (B,), -1, dtype=torch.long, device=words.device),
+            words.new_zeros(B, concept_dim),
             torch.zeros(B, 1, dtype=torch.bool, device=words.device),
-            words.new_zeros(B, percept_dim),
             torch.zeros(B, 1, dtype=torch.bool, device=words.device),
         )
-        empty_b = (
-            stm._buffer.new_zeros(B, capacity, concept_dim),
-            torch.zeros(B, dtype=torch.long, device=words.device),
+        empty_cs_sym = (
+            zero_concept.clone(),
+            torch.full(
+                (B, n_locations), -1, dtype=torch.long,
+                device=words.device),
+            torch.full(
+                (B,), -1, dtype=torch.long, device=words.device),
+            words.new_zeros(B),
+            torch.full(
+                (B,), -1, dtype=torch.long, device=words.device),
+            torch.full(
+                (B,), -1, dtype=torch.long, device=words.device),
+            words.new_zeros(B, concept_dim),
+            torch.zeros(B, 1, dtype=torch.bool, device=words.device),
+            torch.zeros(B, 1, dtype=torch.bool, device=words.device),
+            words.new_zeros(B, n_rules),
+            torch.zeros(B, 1, dtype=torch.bool, device=words.device),
         )
         empty_feedback = (
             words.new_zeros(B, n_rules),
@@ -14571,73 +14959,146 @@ class BasicModel(BaseModel):
             safe = index.clamp(0, width - 1).reshape(1)
             return torch.index_select(source, 1, safe)
 
-        def stage_a(_word, row_gate, index, _live,
-                    current_a, current_stm):
+        def stage_cs_sub(_word, row_gate, index, _live, current_cs_sub):
+            """IS(w) -> {PS(w),WS(w)} -> CSSub(w), with peer-only reads."""
             del _word, _live
             local_ids = _gather_word(part_ids, index)
             local_mask = _gather_word(part_mask, index)
             local_offsets = _gather_word(part_offsets, index)
+            local_properties = _gather_word(
+                word_property_weights, index).reshape(
+                    B, whole_locations, int(word_property_weights.shape[-1]))
             row = _gather_word(concept_rows, index).reshape(B)
             order = _gather_word(concept_orders, index).reshape(B)
+            object_row = _gather_word(object_rows, index).reshape(B)
+            object_order = _gather_word(object_orders, index).reshape(B)
+            object_atom = _gather_word(object_atoms, index).reshape(
+                B, concept_dim)
             commit = _gather_word(commit_mask, index).reshape(B, 1)
             commit = torch.logical_and(commit, row_gate)
             part_sources = ps.compute_word_fold_sources(
                 local_ids, local_mask, local_offsets, fold_passes)
-            (event, orders, row, activation,
-             _prior_symbol, _prior_validity) = cs.compute_aligned_word_peer(
-                part_sources, whole_sources, row, order,
-                row_gate.reshape(B), current_stm,
-                staged_rows=lookup_rows, staged_atoms=lookup_atoms,
-                part_n_what=int(ps.nWhat), whole_n_what=int(ws.nWhat))
-            next_sub = torch.where(
-                row_gate.unsqueeze(-1), event, current_a[0])
+            whole_sources = ws.compute_word_property_fold_sources(
+                local_properties, fold_passes)
             percept = part_sources[-1][:, 0, :]
             percept = torch.where(
                 row_gate, percept, torch.zeros_like(percept))
             next_percept_slab = self._tensor_write_word_column(
-                current_a[1], index, percept)
-            payload = (
-                next_sub, orders, row, activation,
-                row_gate, percept, commit)
-            return payload, (next_sub, next_percept_slab)
+                current_cs_sub[1], index, percept)
+            next_whole = torch.where(
+                row_gate.unsqueeze(-1),
+                whole_sources[-1], current_cs_sub[2])
 
-        def stage_b(a_payload, feedback, index, _live,
-                    current_b, current_stm):
-            del _live
             (event, orders, row, activation,
-             row_gate, _percept, commit) = a_payload
-            idea = event[:, 0, :]
+             _unused_symbol, _unused_validity,
+             location_activations) = cs.reduce_aligned_percept_peers(
+                part_sources, whole_sources, row, order,
+                row_gate.reshape(B),
+                staged_rows=lookup_rows, staged_atoms=lookup_atoms,
+                part_n_what=int(ps.nWhat), whole_n_what=int(ws.nWhat))
+            next_sub = torch.where(
+                row_gate.unsqueeze(-1), event, current_cs_sub[0])
+            payload = (
+                event, orders, row, activation, location_activations,
+                object_row, object_order, object_atom, row_gate, commit)
+            return payload, (
+                next_sub, next_percept_slab, next_whole)
+
+        def stage_cs_sym(cs_sub_payload, feedback, index, _live,
+                         current_cs_sym):
+            """Promote CSSub(w) through the fixed CS/SS recurrence."""
+            del _live
+            (event, orders, row, activation, location_activations,
+             object_row, object_order, object_atom,
+             row_gate, commit) = cs_sub_payload
+
+            # A symbol is the zero-dimensional row/activation reference to
+            # this concept.  Each pass is SS-owned interpretation followed by
+            # CS-owned dictionary decode/order commit; the loop is fixed and
+            # compiler-visible.
+            symbolic_event = event
+            symbolic_orders = orders
+            for _symbolic_pass in symbolic_passes:
+                del _symbolic_pass
+                reference = ss.compute_symbolic_reference(
+                    symbolic_event, row, location_activations,
+                    symbolic_orders, row_gate.reshape(B),
+                    n_what=int(cs.nWhat))
+                symbolic_event, symbolic_orders = (
+                    cs.promote_symbol_reference(
+                        *reference, prior_event=symbolic_event,
+                        staged_rows=lookup_rows, staged_atoms=lookup_atoms))
             next_sym = torch.where(
-                row_gate.unsqueeze(-1), event, current_b[0])
+                row_gate.unsqueeze(-1),
+                symbolic_event, current_cs_sym[0])
+            # Language's grammar plan is visible at this CSSym boundary.  SS
+            # currently consumes the conceptual reference itself; the plan is
+            # carried beside that reference to CSLang's routed predictor
+            # without placing Language-owned state inside ConceptualSpace.
+            payload = (
+                symbolic_event, symbolic_orders, row, activation,
+                object_row, object_order, object_atom, row_gate, commit,
+                feedback[0], feedback[1])
+            return payload, (next_sym,)
+
+        def stage_cs_lang(cs_sym_payload, index, _live,
+                          current_cs_lang, current_stm):
+            """Alternate LS choices with CS-owned applications/STM commit.
+
+            LanguageSpace owns every grammar decision and returns immutable
+            tensor choices. ConceptualSpace alone turns those choices into the
+            next STM tensors. Binary still precedes Unary: each later chooser
+            reads the CS-applied result of the preceding operation.
+            """
+            del _live
+            (symbolic_event, symbolic_orders, row, activation,
+             object_row, object_order, object_atom, row_gate, commit,
+             routing, routing_valid) = cs_sym_payload
+            word_idea = symbolic_event[:, 0, :]
 
             prediction, loss_sum, loss_weight = FunctionalPeerSTM.predict(
-                current_stm, idea, commit, predictor,
-                routing=feedback[0], routing_valid=feedback[1])
+                current_stm, word_idea, commit, predictor,
+                routing=routing, routing_valid=routing_valid)
             full_active = torch.logical_and(
                 current_stm[1] >= capacity, commit.reshape(B))
-            pre_state, pre_applied, pre_op, pre_valid, pre_loss = (
-                FunctionalPeerSTM.reduce(
-                    current_stm, reducer, full_active,
-                    base_tau=self.stm_reduce_tau, demand=True))
-            word_order = orders[:, 0].to(dtype=torch.long)
+            pre_choice = language.choose_capacity_binary(
+                current_stm, full_active,
+                base_tau=self.stm_reduce_tau)
+            (pre_state, pre_applied, pre_op,
+             pre_valid, pre_loss) = cs.apply_binary_language_choice(
+                current_stm, pre_choice)
+            word_order = symbolic_orders[:, 0].to(dtype=torch.long)
             grammar_order = torch.zeros_like(word_order)
-            pushed = ShortTermMemory.functional_push_step_masked(
-                *pre_state, idea, commit, word_order, grammar_order,
+            pushed_word = ShortTermMemory.functional_push_step_masked(
+                *pre_state, word_idea, commit, word_order, grammar_order,
                 row, activation)
-            grammar_buffer = pushed[0].clone()
-            grammar_depth = pushed[1].clone()
 
-            post_gate = torch.logical_and(
-                commit.reshape(B), torch.logical_not(pre_applied))
-            post_state, _post_applied, post_op, post_valid, post_loss = (
-                FunctionalPeerSTM.reduce(
-                    pushed, reducer, post_gate,
-                    base_tau=self.stm_reduce_tau,
-                    occupancy_pressure=True))
-            final_stm, _unary_applied, unary_op, unary_valid, unary_loss = (
-                FunctionalPeerSTM.unary(post_state, unary, commit))
+            # Treating the deposited word concept as a reference resolves its
+            # paired object concept before Language observes the stack.  The
+            # reference keeps the word's signed evidence and positional band.
+            object_content = (
+                object_atom[:, :int(cs.nWhat)]
+                * activation.reshape(B, 1))
+            object_idea = torch.cat(
+                (object_content, word_idea[:, int(cs.nWhat):]), dim=-1)
+            object_gate = torch.logical_and(
+                commit.reshape(B), object_row >= 0)
+            resolved = FunctionalPeerSTM.resolve_top_reference(
+                pushed_word, object_idea, object_row, object_order,
+                activation, object_gate)
 
-            trace_state = current_b[5:10]
+            post_choice = language.choose_post_binary(
+                resolved, commit, pre_applied,
+                base_tau=self.stm_reduce_tau)
+            (post_state, _post_applied, post_op,
+             post_valid, post_loss) = cs.apply_binary_language_choice(
+                resolved, post_choice)
+            unary_choice = language.choose_unary(post_state, commit)
+            (final_stm, _unary_applied, unary_op,
+             unary_valid, unary_loss) = cs.apply_unary_language_choice(
+                post_state, unary_choice)
+
+            trace_state = current_cs_lang[4:9]
             trace_state = self._tensor_record_choice(
                 trace_state, 3 * index, pre_op, pre_valid, pre_loss, 2,
                 binary_map, record_loss=binary_local_objective)
@@ -14649,48 +15110,51 @@ class BasicModel(BaseModel):
                 unary_loss, 1, unary_map,
                 record_loss=unary_local_objective)
 
+            resolved_idea = torch.where(
+                object_gate.reshape(B, 1), object_idea, word_idea)
             contribution = torch.where(
-                row_gate, idea, torch.zeros_like(idea))
+                row_gate, resolved_idea, torch.zeros_like(resolved_idea))
             next_concept_slab = self._tensor_write_word_column(
-                current_b[1], index, contribution)
+                current_cs_lang[0], index, contribution)
             next_loss_sum = (
-                current_b[2] + loss_sum
-                if capture_intra else current_b[2])
+                current_cs_lang[1] + loss_sum
+                if capture_intra else current_cs_lang[1])
             next_loss_weight = (
-                current_b[3] + loss_weight
-                if capture_intra else current_b[3])
-            next_b_state = (
-                next_sym, next_concept_slab,
-                next_loss_sum, next_loss_weight, prediction,
-                *trace_state,
-            )
+                current_cs_lang[2] + loss_weight
+                if capture_intra else current_cs_lang[2])
+            next_cs_lang = (
+                next_concept_slab, next_loss_sum, next_loss_weight,
+                prediction, *trace_state)
+            language_feedback = language.feedback_from_local_choices(
+                (pre_op, post_op), (pre_valid, post_valid),
+                unary_op, unary_valid, like=word_idea)
             return (
-                (grammar_buffer, grammar_depth),
-                next_b_state,
+                next_cs_lang,
                 final_stm,
+                language_feedback,
             )
 
-        def stage_c(b_payload, index, _live):
-            del index, _live
-            plan = language.compute_local_plan(
-                b_payload[0], b_payload[1])
-            valid = plan.sum(dim=1, keepdim=True) > 0
-            return (plan, valid)
-
-        (final_stm, final_a, final_b,
-         feedback, trip_count) = TensorPeerWhilePipeline().run_banked(
+        (final_stm, final_cs_sub, final_cs_sym, final_cs_lang,
+         feedback, trip_count) = (
+            TensorPeerWhilePipeline().run_cs_lanes_banked(
             words, active,
-            stm_state=stm_state, a_state=a_state, b_state=b_state,
-            empty_a=empty_a, empty_b=empty_b,
+            stm_state=stm_state,
+            cs_sub_state=cs_sub_state,
+            cs_sym_state=cs_sym_state,
+            cs_lang_state=cs_lang_state,
+            empty_cs_sub=empty_cs_sub,
+            empty_cs_sym=empty_cs_sym,
             empty_feedback=empty_feedback,
-            stage_a=stage_a, stage_b=stage_b, stage_c=stage_c)
+            stage_cs_sub=stage_cs_sub,
+            stage_cs_sym=stage_cs_sym,
+            stage_cs_lang=stage_cs_lang))
         final = (
             *final_stm,
-            final_a[0],
-            final_b[0],
-            final_b[1],
-            final_a[1],
-            *final_b[2:],
+            final_cs_sub[0],
+            final_cs_sym[0],
+            final_cs_lang[0],
+            final_cs_sub[1],
+            *final_cs_lang[1:],
         )
 
         # A higher-order op returns its carried values as a multi-output view
@@ -14702,19 +15166,16 @@ class BasicModel(BaseModel):
         # the live autograd edge for STM/reconstruction losses while removing
         # every alias to the HOP's result tuple.
         final = tuple(value.clone() for value in final)
+        final_whole = final_cs_sub[2].clone()
         feedback = tuple(value.clone() for value in feedback)
 
         (stm._buffer, stm._depth, stm._orders, stm._grammar_orders,
          stm._concept_rows, stm._concept_activations) = final[:6]
         if not torch.compiler.is_compiling():
             stm._max_depth_host = int(stm._depth.max().item())
-        # ``compute_unity_fold_sources`` is deliberately side-effect free so
-        # WS can run as A's peer inside the higher-order loop.  Publish its
-        # terminal H fold once, at the owner boundary, just as the static
-        # per-word path leaves the last ``ws.forward`` result on WS.  The
-        # value is sentence-global (every A tick reads the same IS unity), so
-        # no per-word carrier write is required.
-        ws.commit_event(whole_sources[-1])
+        # PS/WS callbacks are side-effect free inside the HOP. Publish the
+        # terminal live WS fold once at its owner boundary.
+        ws.commit_event(final_whole)
         cs.CSsub.commit_event(cs, final[6])
         cs.commit_symbolic_peer_results(
             final[7], symbol_event=final[7].detach(),
@@ -14740,16 +15201,19 @@ class BasicModel(BaseModel):
             trace._forward_losses = final[16]
             trace._forward_loss_mask = final[17]
         object.__setattr__(self, "_tensor_peer_trip_count", trip_count)
+        object.__setattr__(
+            self, "_tensor_symbolic_iterations", len(symbolic_passes))
         object.__setattr__(self, "_tensor_peer_feedback", feedback)
         return cs.subspace, trip_count
 
     def _run_peer_word_pipeline(self, out_slot, width):
-        """Execute the fixed A/B/C schedule for one padded sentence bucket.
+        """Execute the legacy A/B/C schedule for a padded sentence bucket.
 
         All FIFOs live in :class:`StaticPeerPipeline`; the closures merely bind
-        this sentence's InputSpace views and fixed output slots.  During a
-        fullgraph trace the diagnostic trace is suppressed, leaving a fixed
-        unrolled schedule whose tensor dependencies are compiler-visible.
+        this sentence's InputSpace views and fixed output slots. Canonical
+        aligned execution takes :meth:`_run_tensor_peer_word_pipeline`; this
+        path remains for older configurations that do not satisfy its staged
+        tensor contract.
         """
         width = int(width)
         if width not in StaticPeerPipeline.WIDTHS:
@@ -15040,7 +15504,8 @@ class BasicModel(BaseModel):
             _peer_pipeline and self._tensor_peer_while_ready(N_words))
         if _tensor_peer_pipeline:
             # W is a capacity. The tensor loop stops at the last live column,
-            # then performs the two required drain ticks.
+            # drains the final conceptual transaction, and advances both
+            # grammar-feedback latches.
             last_cs, tensor_trip_count = (
                 self._run_tensor_peer_word_pipeline(N_words))
             _n_trips = N_words

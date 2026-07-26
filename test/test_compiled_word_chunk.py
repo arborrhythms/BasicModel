@@ -25,6 +25,7 @@ from Layers import IntraSentenceLayer, ShortTermMemory  # noqa: E402
 import Language  # noqa: E402
 import Models  # noqa: E402
 import util  # noqa: E402
+from bench_train_word_bucket import _profile_peer_legs  # noqa: E402
 from Models import BasicModel  # noqa: E402
 from Spaces import ConceptualSpace  # noqa: E402
 from util import init_config, init_device  # noqa: E402
@@ -310,7 +311,7 @@ def test_chunk_views_keep_one_graph_across_part_and_bucket_widths():
 
 def _tiny_canonical_model(
         tmp_path, monkeypatch, *, input_width=128, batch_size=2,
-        word_buckets="16,32,64,128,256"):
+        word_buckets="16,32,64,128,256", forward_grammar_weight=0.0):
     """Build the real aligned serial model with 16-coordinate events."""
     tree = ET.parse(_ROOT / "data" / "BasicModel.xml")
     root = tree.getroot()
@@ -341,6 +342,12 @@ def _tiny_canonical_model(
     _set("./architecture/training/numWorkers", 0)
     _set("./architecture/training/autoload", False)
     _set("./architecture/training/autosave", False)
+    _set(
+        "./architecture/training/forwardGrammarWeight",
+        forward_grammar_weight)
+    _set(
+        "./architecture/serialWordCapacity",
+        max(int(value) for value in str(word_buckets).split(",")))
     _set("./architecture/serialWordBuckets", word_buckets)
     _set("./architecture/weightsPath", tmp_path / "unused.ckpt")
     config = tmp_path / "tiny_chunk_model.xml"
@@ -422,51 +429,60 @@ def test_real_aligned_loop_matches_prior_compiled_semantics_across_chunks(
     legacy_loss = legacy.conceptualSpace.consume_intra_loss()
     chunk_loss = chunked.conceptualSpace.consume_intra_loss()
     torch.testing.assert_close(chunk_loss, legacy_loss, rtol=1e-6, atol=1e-7)
-    assert (chunked.inputSpace._ar_concept_lookup_rows.shape[1]
-            == chunked.serial_word_capacity)
+    lookup_rows = chunked.inputSpace._ar_concept_lookup_rows
+    capacity = int(chunked.serial_word_capacity)
+    assert int(lookup_rows.shape[1]) == 2 * capacity
+    words = int(chunked.inputSpace._ar_word_concept_rows.shape[1])
+    torch.testing.assert_close(
+        lookup_rows[:, :words],
+        chunked.inputSpace._ar_word_concept_rows)
+    torch.testing.assert_close(
+        lookup_rows[:, capacity:capacity + words],
+        chunked.inputSpace._ar_word_object_rows)
+    assert bool((lookup_rows[:, words:capacity] == -1).all())
+    assert bool((lookup_rows[:, capacity + words:] == -1).all())
 
 
-def test_tensor_peer_while_matches_static_pipeline_and_releases_owner_state(
+def test_tensor_peer_while_runs_symbolic_reference_transaction_and_releases_owner_state(
         tmp_path, monkeypatch):
-    """The production HOP is exact and its committed tensors are reusable."""
+    """The production HOP promotes words, resolves objects, and is reusable."""
     torch.manual_seed(211)
-    reference = _tiny_canonical_model(tmp_path, monkeypatch)
-    tensor_loop = copy.deepcopy(reference)
-    reference._chart_compose_per_word = lambda: None
+    tensor_loop = _tiny_canonical_model(tmp_path, monkeypatch)
     tensor_loop._chart_compose_per_word = lambda: None
     tensor_loop._tensor_peer_while_eager = True
 
     samples = ["alpha beta gamma delta", "epsilon zeta"]
-    reference_input = reference.inputSpace.prepInput(samples)
     tensor_input = tensor_loop.inputSpace.prepInput(samples)
-    torch.manual_seed(991)
-    expected = reference.forward(reference_input)
     torch.manual_seed(991)
     actual = tensor_loop.forward(tensor_input)
 
+    assert tensor_loop.conceptualSpace.CSLang is (
+        tensor_loop.conceptualSpace.stm)
+    assert not any(
+        "CSLang" in key for key in tensor_loop.state_dict())
     assert int(tensor_loop._tensor_peer_trip_count) == 4
-    for got, wanted in zip(actual, expected):
-        if torch.is_tensor(wanted):
-            torch.testing.assert_close(got, wanted, rtol=0, atol=0)
-        else:
-            assert got is wanted is None
-    for name in _STM_ATTRS:
-        torch.testing.assert_close(
-            getattr(tensor_loop.conceptualSpace.stm, name),
-            getattr(reference.conceptualSpace.stm, name), rtol=0, atol=0)
+    assert tensor_loop._tensor_symbolic_iterations == tensor_loop.symbolicOrder
+    assert all(
+        value is None or not torch.is_tensor(value)
+        or bool(torch.isfinite(value).all())
+        for value in actual)
 
-    reference_trace = reference.symbolSpace.reconstruction_stack
-    tensor_trace = tensor_loop.symbolSpace.reconstruction_stack
-    for got, wanted in zip(tensor_trace.choices(),
-                           reference_trace.choices()):
-        torch.testing.assert_close(got, wanted, rtol=0, atol=0)
-    for got, wanted in zip(tensor_trace.forward_loss_slots(),
-                           reference_trace.forward_loss_slots()):
-        torch.testing.assert_close(got, wanted, rtol=0, atol=0)
+    # The public per-word conceptual slab is the post-reference object idea,
+    # not the orthographic word-concept row.  Its content therefore has the
+    # same direction as the staged paired object atom wherever evidence is
+    # nonzero. (The activation supplies only a nonnegative scalar.)
+    contribution = tensor_loop.conceptualSpace.subspace.materialize()
+    object_atoms = tensor_loop.inputSpace._ar_word_object_atoms
+    active = tensor_loop.inputSpace._word_active_mask
+    n_what = int(tensor_loop.conceptualSpace.nWhat)
+    got = contribution[..., :n_what]
+    wanted = object_atoms[..., :n_what]
+    live = torch.logical_and(active, got.square().sum(dim=-1) > 0)
+    cosine = torch.nn.functional.cosine_similarity(got, wanted, dim=-1)
+    assert bool((cosine[live] > 1.0 - 1e-5).all())
 
-    expected_intra = reference.conceptualSpace.consume_intra_loss()
     actual_intra = tensor_loop.conceptualSpace.consume_intra_loss()
-    torch.testing.assert_close(actual_intra, expected_intra, rtol=0, atol=0)
+    assert torch.isfinite(actual_intra)
     (actual[0].square().mean()
      + actual[2].square().mean()
      + actual_intra).backward()
@@ -480,6 +496,52 @@ def test_tensor_peer_while_matches_static_pipeline_and_releases_owner_state(
     # The HOP returns a multi-output view family. Owner-boundary clones must
     # make the normal next-sentence in-place reset legal after backward.
     tensor_loop.symbolSpace.soft_reset()
+
+
+def test_tensor_peer_ws_stages_distinct_word_local_property_views(
+        tmp_path, monkeypatch):
+    """WS classifies each IS word once instead of rescanning the sentence."""
+    model = _tiny_canonical_model(tmp_path, monkeypatch)
+    _stage_fullgraph_tensor_peer(
+        model, ["Alpha 7 !", "lower case"])
+    weights = model.wholeSpace._staged_word_property_weights
+    active = model.inputSpace._word_active_mask
+
+    assert tuple(weights.shape[:2]) == tuple(active.shape)
+    assert tuple(weights.shape[2:]) == (
+        int(model.wholeSpace.inputShape[0]),
+        int(model.wholeSpace.subspace.what.getW().shape[0]))
+    # Canonical property rows: letter=0, digit=1, capital=4.
+    assert bool(weights[0, 0, :, 0].any())
+    assert bool(weights[0, 0, :, 4].any())
+    assert not bool(weights[1, 0, :, 4].any())
+    assert bool(weights[0, 1, :, 1].any())
+    model._tensor_peer_while_eager = True
+    assert model._tensor_peer_while_ready(int(active.shape[1]))
+
+
+def test_peer_leg_profiler_executes_real_ps_ws_and_conceptual_bodies(
+        tmp_path, monkeypatch):
+    model = _tiny_canonical_model(tmp_path, monkeypatch)
+    previous_backend = util.TheCompileBackend
+    try:
+        util.TheCompileBackend = "eager"
+        result = _profile_peer_legs(
+            torch, model, torch.device("cpu"),
+            ["alpha beta", "gamma"], repeats=2)
+    finally:
+        torch._dynamo.reset()
+        util.TheCompileBackend = previous_backend
+    assert result["longest_perceptual_leg"] in ("PS", "WS")
+    assert result["ps"]["median_s"] > 0
+    assert result["ws"]["median_s"] > 0
+    assert result["cs_sub_reduce"]["median_s"] > 0
+    assert result["cs_sub"]["median_s"] > 0
+    assert result["cs_sym"]["median_s"] > 0
+    assert result["cs_lang"]["median_s"] > 0
+    assert result["slowest_pipeline_stage"] in (
+        "CSSub", "CSSym", "CSLang")
+    assert result["serial_to_ideal_pipeline_ratio"] >= 1.0
 
 
 def test_compiled_sentence_state_is_an_explicit_result_not_a_side_effect():
@@ -708,7 +770,8 @@ def test_tensor_peer_mps_inductor_w16_w64_fullgraph_smoke(
 def test_tiny_canonical_detached_reverse_stops_at_root(tmp_path, monkeypatch):
     """The integrated canonical reverse student must not differentiate S."""
     torch.manual_seed(109)
-    model = _tiny_canonical_model(tmp_path, monkeypatch)
+    model = _tiny_canonical_model(
+        tmp_path, monkeypatch, forward_grammar_weight=0.25)
     assert model.detached_reverse
     chooser = model.symbolSpace.reverse_chooser
     assert chooser is not None

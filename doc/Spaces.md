@@ -186,7 +186,7 @@ Reverse:                    OutputSpace -> SymbolSpace -> ConceptualSpace
 The forward line describes ownership rather than a same-tick linear chain:
 PS/WS form the subsymbolic peer result; SS returns a symbol reference; and
 LanguageSpace returns a grammar/routing plan. ConceptualSpace is the sole
-reducer and owner of its `CSsub`, `CSsym`, and STM commits.
+reducer and owner of its `CSsub`, `CSsym`, and `CSLang`/STM commits.
 
 ### SymbolSpace and LanguageSpace: reference, grammar, and scheduling
 
@@ -202,11 +202,14 @@ mutation remain ConceptualSpace responsibilities.
 The grammar operator inventory is executed by `LanguageLayer`, registered once
 under `SymbolSubSpace.languageLayer`.  `LanguageSpace` is the runtime
 scheduling facade for that same layer: in the serial peer pipeline it consumes
-the completed symbolic result, returns grammar observations and an explicit
-conceptual reduction plan, and owns the grammar latch timing.  It does not
-duplicate `LanguageLayer` parameters or grammar state, and it cannot directly
-mutate ConceptualSpace STM.  ConceptualSpace validates and commits any returned
-reduction plan.  This preserves an inspectable separation between:
+the completed symbolic result, chooses grammar operations, returns immutable
+choice tensors, and owns the grammar latch timing. It does not duplicate
+`LanguageLayer` parameters or grammar state, and it cannot directly mutate
+ConceptualSpace STM. ConceptualSpace applies each returned Binary or Unary
+choice to its own buffer/depth/order/reference tensors through its `CSLang`
+transaction lane. `CSLang` is only the ownership name of the existing CS STM;
+it does not register another module or copy its state. This preserves an
+inspectable separation between:
 
 - **concept references** (`SymbolSpace`),
 - **grammar execution and its persistent state** (`SymbolSubSpace` /
@@ -323,16 +326,33 @@ internal Sigma / Pi (no substrate-borrowing).
   iteration per word.
 
   ```
-  A(w):   IS_t -> { PS_t, WS_t } -> CSsub_t
-  B(w-1): published(CSsub_t, prior-CSsym) -> { CSsym, SS } -> CS-owned STM
-  C(w-2): LanguageSpace(B-result) -> immutable plan -> CS at B(w+2)
+  CSSub(w):    IS(w) -> { PS(w), WS(w) } -> CS reduction
+  CSSym(w-1):  symbolicOrder x (CS -> SS -> CS)
+  CSLang(w-2): word-reference deposit -> object-reference resolution
+               -> LS Binary choice -> CS Binary apply
+               -> LS Unary choice  -> CS Unary apply/STM commit
   ```
 
-  The braces are peers, not a left-to-right call order. Input is never routed
-  from PS into WS. `CSsub`/`CSsym` snapshots handed to a peer are read-only;
-  the only conceptual writes are the later CS owner commits. Production
-  carries these three stages through a tensor `while_loop`; W is a storage
-  capacity and the loop drains after the last live word.
+  These are three peer-pipelined dependency stages over adjacent word indices.
+  The braces inside CSSub are peers, not a left-to-right call order: Input is
+  never routed from PS into WS. The eager lexical boundary stages a separate
+  property activation for every WS word, so WS reads only the current word
+  rather than repeatedly analysing the full padded sentence. Within CSSym,
+  the `CS -> SS -> CS` recurrence is intentionally sequential and runs exactly
+  `<symbolicOrder>` times to promote conceptual order. CSLang deposits the
+  word concept into CS STM; interpreting that reference replaces it with the
+  paired object concept before Language builds the object concepts into a
+  syntax tree. The pre-deposit capacity Binary and ordinary post-deposit
+  Binary are separate grammar opportunities and both remain present; the
+  ordinary Binary is the reduction that constructs a parent. Binary apply
+  precedes Unary choose because Unary reads that parent. `CSsub`/`CSsym`
+  snapshots handed to a non-owner are read-only, and only CS computes or
+  commits conceptual or STM transitions. Production carries all three stages
+  through one tensor `while_loop`; W is a storage capacity, and the
+  loop drains the final CSSym product, final CSLang transaction, and one
+  deterministic CSLang-to-CSSym grammar register after the last live word.
+  The forward CSSub→CSSym and CSSym→CSLang “latches” merely retain completed
+  tensor products; they are not duplicated Space state.
 
 - **PARALLEL** (`<serial>false</serial>`): T iterations of PS over
   CS.

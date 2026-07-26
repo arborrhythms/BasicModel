@@ -439,7 +439,7 @@ def _effective_compile_mode(mode, device):
     then reproducibly crashes while releasing that command buffer
     (``MTLResourceListChunkFreeEntries``).
 
-    PyTorch 2.14 fixes the failing scheduler/runtime path: the complete W=256
+    PyTorch 2.14 fixes the failing scheduler/runtime path: the complete W=512
     training graph runs with raw ``max-autotune``, reports one graph and no
     recompiles, and correctly skips actual CUDAGraph capture on MPS.  Retain
     the compatibility downgrade only for pre-2.14 MPS builds.  Real CUDA and
@@ -788,7 +788,7 @@ def compile(model, verbose=True, fullgraph=False):
                     _reduce_any_dtype_patched)
                 _msg("MPS: inductor any-reduction dtype metadata patched "
                      "(Metal 'bool' -> torch.bool)")
-            # A carried zero-width metadata tensor in the real W=256
+            # A carried zero-width metadata tensor in the real W=512
             # while-loop reaches Inductor's read-realization heuristic. In
             # PyTorch 2.12.1 the heuristic divides total read size by the
             # largest dependency size without handling the legitimate

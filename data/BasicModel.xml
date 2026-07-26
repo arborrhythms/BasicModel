@@ -12,10 +12,14 @@
     Design budget:
       * PartSpace and WholeSpace WHAT are 128-D (136-D events including the
         fixed 8-D band), while ConceptualSpace WHAT is 1024-D (1032-D event).
-        PS, WS, and SS recurse as independent peers; each fold's sparse
-        sigma/codebook read emits a 1032-D concept activation before CS. The
-        codebook read owns the dimension increase. There is no PS->WS edge and
-        CS receives conceptual-width events rather than projecting them.
+        Input fans one word view to independent PS and WS folds; each fold's
+        sparse sigma/codebook read emits a 1032-D concept activation before CS.
+        The codebook read owns the dimension increase. There is no PS->WS edge
+        and CS receives conceptual-width events rather than projecting them.
+        Across words, that perceptual leg overlaps the prior word's conceptual
+        leg. Within the conceptual leg, CS->SS->CS runs exactly symbolicOrder
+        times to promote conceptual order before CS commits the word/object
+        reference and Language tree plan.
         32768-row initial part dictionary and 1048576-row logical ceiling keep
         lexical storage proportional to observed growth. Conceptual folds
         share one physical 1048576-row high-D dictionary rather than allocating
@@ -26,11 +30,13 @@
       * subsymbolicOrder=4 and symbolicOrder=4 are the middle of the proposed
         3..5 range.  symbolicOrder is an iteration budget over shared weights;
         it does not multiply parameters by four.
-      * W=256 is a storage capacity, not a fixed execution length. One
-        fullgraph torch.while_loop runs only through the longest live sentence
-        in the batch and then drains B/C; per-row masks make shorter sentences
-        exact no-ops. This avoids both sentence clipping and one compiled graph
-        per 16/32/64/128/256 bucket. PS, WS, CS, and STM retain their
+      * W=512 is a storage capacity, not a fixed execution length. One
+         fullgraph torch.while_loop runs only through the longest live sentence
+         in the batch and then drains the final conceptual word and both grammar
+         latches; per-row masks make shorter sentences exact no-ops. This avoids
+        both sentence clipping and one compiled graph per
+        16/32/64/128/256/512
+         bucket. PS, WS, CS, and STM retain their
         configured 8-wide instantaneous fields/workspace; grammar reductions
         make that bounded workspace sufficient.
       * The grammar budget includes the contextual MLP transform chooser.  The
@@ -48,11 +54,12 @@
     <serial>true</serial>
     <subsymbolicOrder>4</subsymbolicOrder>
     <!-- One parameter-free base plus three cumulative learned folds on EACH
-         perceptual tower. The resulting concept uses P0's RMS(union), H0's
-         RMS(property state), and all six learned-fold activations, plus the applicable prior-tick STM/SS row at
-         the same location. Each source enters through an indexed conceptual
-         codebook read; an absent SS row does not dilute the other eight. The
-         learned mixing-matrix binder remains a separate parallel-only option. -->
+         perceptual tower. The resulting CSsub concept uses P0's RMS(union),
+         H0's RMS(property state), and all six learned-fold activations. Each
+         of those eight sources enters through an indexed conceptual-codebook
+         read. CS then performs exactly symbolicOrder CS->SS->CS promotion
+         steps; SS is not a ninth same-tick perceptual source. The learned
+         mixing-matrix binder remains a separate parallel-only option. -->
     <conceptBinding>aligned</conceptBinding>
     <conceptualWidth>uniform</conceptualWidth>
     <symbolicOrder>4</symbolicOrder>
@@ -63,7 +70,7 @@
     <mereologyRaise>true</mereologyRaise>
     <!-- One generous word-axis storage capacity. The compiled tensor while
          loop stops at the batch's last live column, so short batches do not
-         execute 256 word folds; using one shape also avoids bucket recompiles.
+         execute 512 word folds; using one shape also avoids bucket recompiles.
          STM remains independently configurable at 8. -->
     <serialObjectMeta>true</serialObjectMeta>
     <!-- The historical whole-sentence prelude sends native PS/WS events
@@ -72,8 +79,8 @@
          seam as the word recursion; otherwise it would reintroduce a hidden
          136 -> 1032 coordinate pad before the aligned loop begins. -->
     <sentenceProtocol>false</sentenceProtocol>
-    <serialWordCapacity>256</serialWordCapacity>
-    <serialWordBuckets>256</serialWordBuckets>
+    <serialWordCapacity>512</serialWordCapacity>
+    <serialWordBuckets>512</serialWordBuckets>
     <sigmaPi>butterfly</sigmaPi>
     <l1Lambda>0.01</l1Lambda>
 

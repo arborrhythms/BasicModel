@@ -19,6 +19,8 @@ if str(BIN) not in sys.path:
     sys.path.insert(0, str(BIN))
 
 from Layers import ShortTermMemory  # noqa: E402
+from Language import SymbolSpace  # noqa: E402
+from Models import FunctionalPeerSTM  # noqa: E402
 from Spaces import ConceptualSpace, WholeSpace  # noqa: E402
 
 
@@ -176,6 +178,68 @@ def test_prior_peer_requires_canonical_stm_location_geometry():
     stm = ShortTermMemory(batch=1, capacity=7, concept_dim=8)
     with pytest.raises(RuntimeError, match="STM capacity 7 != CS locations 8"):
         cs.decode_prior_stm_peer(stm, torch.tensor([True]))
+
+
+def test_fixed_symbolic_loop_preserves_reference_and_raises_order_each_pass():
+    cs = _bare_cs()
+    batch, locations = 1, 8
+    row = torch.tensor([3])
+    activation = torch.linspace(0.1, 0.8, locations).reshape(batch, locations)
+    band = torch.arange(
+        batch * locations * 4, dtype=torch.float32
+    ).reshape(batch, locations, 4)
+    atom = cs.similarity_codebook.lookup_rows(
+        row.reshape(batch, 1))
+    event = torch.cat(
+        (activation.unsqueeze(-1) * atom[:, :, :4], band), dim=-1)
+    orders = torch.full((batch, locations), 3, dtype=torch.long)
+    active = torch.tensor([True])
+    staged_rows = row.reshape(batch, 1)
+    staged_atoms = atom
+
+    promoted = event
+    promoted_orders = orders
+    for _ in range(4):
+        reference = SymbolSpace.compute_symbolic_reference(
+            object(), promoted, row, activation,
+            promoted_orders, active, n_what=4)
+        promoted, promoted_orders = cs.promote_symbol_reference(
+            *reference, prior_event=promoted,
+            staged_rows=staged_rows, staged_atoms=staged_atoms)
+
+    torch.testing.assert_close(promoted, event, rtol=0, atol=0)
+    torch.testing.assert_close(
+        promoted_orders, torch.full_like(orders, 7))
+
+
+def test_word_push_then_object_reference_replacement_is_cs_owned_and_masked():
+    batch, capacity, dim = 2, 3, 5
+    stm = ShortTermMemory(batch=batch, capacity=capacity, concept_dim=dim)
+    stm.begin_forward(batch, dtype=torch.float32)
+    initial = (
+        stm._buffer, stm._depth, stm._orders, stm._grammar_orders,
+        stm._concept_rows, stm._concept_activations)
+    gate = torch.tensor([[True], [False]])
+    word = torch.arange(batch * dim, dtype=torch.float32).reshape(batch, dim)
+    pushed = ShortTermMemory.functional_push_step_masked(
+        *initial, word, gate,
+        torch.tensor([7, 8]), torch.tensor([0, 0]),
+        torch.tensor([10, 11]), torch.tensor([0.5, 0.6]))
+    object_idea = word + 100.0
+    resolved = FunctionalPeerSTM.resolve_top_reference(
+        pushed, object_idea,
+        torch.tensor([20, 21]), torch.tensor([2, 3]),
+        torch.tensor([0.5, 0.6]), gate)
+
+    torch.testing.assert_close(resolved[0][0, 0], object_idea[0])
+    assert int(resolved[1][0]) == 1
+    assert int(resolved[2][0, 0]) == 2
+    assert int(resolved[3][0, 0]) == 0
+    assert int(resolved[4][0, 0]) == 20
+    assert float(resolved[5][0, 0]) == pytest.approx(0.5)
+    # The inactive row is unchanged through both the deposit and resolution.
+    for got, wanted in zip(resolved, initial):
+        torch.testing.assert_close(got[1], wanted[1])
 
 
 def test_seventh_source_is_location_masked_and_unbind_ignores_ss():

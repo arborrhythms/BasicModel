@@ -329,29 +329,30 @@ def test_forward_content_kernels_agree():
     assert torch.allclose(a1, a2, atol=1e-6)
 
 
-def test_forward_content_positive_atoms_and_signed_activation():
-    """dual-towers rev 2: atoms stay softplus-positive; SIGNED activations
-    survive both for rung winners and the signed order-0 pass-through."""
+def test_forward_content_signed_atoms_and_signed_activation():
+    """Concept atoms are signed unit directions and activation is evidence.
+
+    A negative activation reverses the stored direction; the forward path
+    must not softplus or otherwise normalize the codebook on every read.
+    """
     cs = _cs(nS=16, order=1)
     B = 1
     a_0 = torch.rand(8, B) + 0.1                       # snap presences > 0...
     a_0[1, 0] = -0.3                                   # ...plus a SIGNED entry
-    what = torch.randn(16, _D)                         # has negative entries
+    import torch.nn.functional as F
+    what = F.normalize(torch.randn(16, _D), dim=-1)    # stored unit atoms
     r = _mint_row(cs, 1, 101)                          # selected (only alloc)
     cs.add_concept_edge(r, 0, weight=-1.0)             # NEGATIVE weight
     content, a = cs.cs_forward_content(a_0, what)
     # the winner's activation is negative (neg weight * pos presence)
     assert a[r, 0] < 0
-    # the atom used is softplus(what[r]) -> strictly positive
-    import torch.nn.functional as F
-    atom = F.softplus(what[r])
-    assert (atom > 0).all()
-    # code row = a * positive_atom -> points opposite the atom (anti-present)
-    assert torch.allclose(content[0, r], a[r, 0] * atom, atol=1e-5)
+    # code row = evidence * stored signed atom, with no read normalization.
+    assert torch.allclose(content[0, r], a[r, 0] * what[r], atol=1e-5)
+    assert torch.dot(content[0, r], what[r]) < 0
     # the negative order-0 entry passes 1:1: content sign follows activation
-    assert torch.allclose(content[0, 1], a_0[1, 0] * F.softplus(what[1]),
-                          atol=1e-5)
-    assert (content[0, 1] < 0).all()
+    assert torch.allclose(
+        content[0, 1], a_0[1, 0] * what[1], atol=1e-5)
+    assert torch.dot(content[0, 1], what[1]) < 0
 
 
 def test_forward_content_differentiable():

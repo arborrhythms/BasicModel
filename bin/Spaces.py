@@ -67,6 +67,40 @@ from Layers import meronomy_enabled  # MeronomySpec §3 mode knob (Stage 4)
 from space_carrier import SpaceCarrierMixin
 
 
+LanguageBinaryChoice = namedtuple(
+    "LanguageBinaryChoice",
+    (
+        "parent",
+        "applied",
+        "local_op",
+        "trace_valid",
+        "local_loss",
+        "copy_selected",
+        "copy_source",
+    ),
+)
+"""Immutable Language-owned decision for one binary CS reduction.
+
+LanguageSpace may read a CS-owned STM snapshot to score grammar alternatives,
+but it must not construct or publish the next STM state.  The choice therefore
+contains only the selected parent and routing metadata.  ConceptualSpace
+consumes it through :meth:`ConceptualSpace.apply_binary_language_choice`.
+"""
+
+
+LanguageUnaryChoice = namedtuple(
+    "LanguageUnaryChoice",
+    (
+        "candidate",
+        "applied",
+        "local_op",
+        "trace_valid",
+        "local_loss",
+    ),
+)
+"""Immutable Language-owned decision for one unary CS rewrite."""
+
+
 def gauge_orient(u, referent):
     """Fix the stored-sign gauge at mint (MeronomySpec §3; Stage 5).
 
@@ -9887,6 +9921,14 @@ class InputSpace(Space):
         self._ar_word_concept_rows = None
         self._ar_word_concept_ids = None
         self._ar_word_concept_orders = None
+        # The word concept is what the CS->SS symbolic loop constructs.  Its
+        # paired object concept is the referent that replaces the word
+        # reference at the CS STM owner boundary before Language sees it.
+        self._ar_word_object_rows = None
+        self._ar_word_object_ids = None
+        self._ar_word_object_orders = None
+        self._ar_word_concept_atoms = None
+        self._ar_word_object_atoms = None
         # One grad-bearing sparse codebook gather per staged sentence.  The
         # fixed-W word loop resolves both the current word and prior-STM
         # references against this bank instead of graph-breaking around an
@@ -9933,6 +9975,11 @@ class InputSpace(Space):
         self._ar_word_concept_rows = None
         self._ar_word_concept_ids = None
         self._ar_word_concept_orders = None
+        self._ar_word_object_rows = None
+        self._ar_word_object_ids = None
+        self._ar_word_object_orders = None
+        self._ar_word_concept_atoms = None
+        self._ar_word_object_atoms = None
         self._ar_concept_lookup_rows = None
         self._ar_concept_lookup_atoms = None
         self._ar_word_truncated_mask = None
@@ -14884,6 +14931,11 @@ class ConceptualSpace(Space):
         self.concept_dim = int(concept_dim)
         self.stm = ShortTermMemory(
             batch=1, capacity=stm_capacity, concept_dim=concept_dim)
+        # CSLang is the ConceptualSpace-owned language transaction lane.  It
+        # is an ownership name for the existing STM, not a second registered
+        # module: LanguageSpace owns grammar/tree choice, while this CS-owned
+        # lane alone applies those immutable choices to the one physical STM.
+        object.__setattr__(self, "CSLang", self.stm)
         # <definitionFreeSize> (snap contract sec 5, 2026-07-06): the number of
         # symbols a concept's definition may use for free (genus + differentia
         # = 2); the rank-ordered L0 penalty (definition_sparsity_loss) pulls
@@ -15155,6 +15207,119 @@ class ConceptualSpace(Space):
                 f"({nV}) >= nActive ({nA}) (inventory decoupled post-P3)")
             return
         super()._register_requirements()
+
+    @staticmethod
+    def apply_binary_language_choice(state, choice):
+        """Apply one Language-owned binary choice to CS-owned STM tensors.
+
+        This is the mutation side of the Language/ConceptualSpace ownership
+        boundary.  ``LanguageSpace`` chooses an operation from a read-only
+        snapshot; only ConceptualSpace constructs the proposed next buffer,
+        depth, order, grammar-order, and reference tensors.  The method is
+        functional so the compiled word loop can carry the owner state and
+        commit it once after drain.
+        """
+        (buffer, depth, orders, grammar_orders,
+         concept_rows, concept_activations) = state
+        (parent, applied, local_op, trace_valid, local_loss,
+         copy_selected, copy_source) = choice
+        B, capacity, D = buffer.shape
+        if int(capacity) < 2:
+            return (
+                state, applied, local_op, trace_valid, local_loss)
+
+        left_order, right_order = orders[:, 1], orders[:, 0]
+        parent_order = torch.where(
+            torch.logical_and(left_order >= 0, right_order >= 0),
+            torch.maximum(left_order, right_order),
+            torch.full_like(left_order, -1))
+        left_grammar, right_grammar = (
+            grammar_orders[:, 1], grammar_orders[:, 0])
+        parent_grammar = torch.where(
+            torch.logical_and(left_grammar >= 0, right_grammar >= 0),
+            torch.maximum(left_grammar, right_grammar) + 1,
+            torch.full_like(left_grammar, -1))
+
+        reference_rows = torch.stack(
+            (concept_rows[:, 1], concept_rows[:, 0]), dim=1)
+        reference_activations = torch.stack(
+            (concept_activations[:, 1],
+             concept_activations[:, 0]), dim=1)
+        source = copy_source.clamp(0, 1).reshape(B, 1)
+        parent_rows = torch.where(
+            copy_selected,
+            reference_rows.gather(1, source).reshape(B),
+            torch.full_like(concept_rows[:, 0], -1))
+        parent_activations = torch.where(
+            copy_selected,
+            reference_activations.gather(1, source).reshape(B),
+            torch.zeros_like(concept_activations[:, 0]))
+
+        zero_event = buffer.new_zeros(B, 1, D)
+        shifted_buffer = torch.cat(
+            (parent.unsqueeze(1), buffer[:, 2:, :], zero_event), dim=1)
+        unknown = torch.full(
+            (B, 1), -1, dtype=torch.long, device=buffer.device)
+        shifted_orders = torch.cat(
+            (parent_order.reshape(B, 1), orders[:, 2:], unknown), dim=1)
+        shifted_grammar = torch.cat(
+            (parent_grammar.reshape(B, 1),
+             grammar_orders[:, 2:], unknown), dim=1)
+        shifted_rows = torch.cat(
+            (parent_rows.reshape(B, 1),
+             concept_rows[:, 2:], unknown), dim=1)
+        zero_activation = concept_activations.new_zeros(B, 1)
+        shifted_activations = torch.cat(
+            (parent_activations.reshape(B, 1),
+             concept_activations[:, 2:], zero_activation), dim=1)
+        gate_event = applied.reshape(B, 1, 1)
+        gate_slab = applied.reshape(B, 1)
+        next_state = (
+            torch.where(gate_event, shifted_buffer, buffer),
+            depth - applied.to(dtype=depth.dtype),
+            torch.where(gate_slab, shifted_orders, orders),
+            torch.where(gate_slab, shifted_grammar, grammar_orders),
+            torch.where(gate_slab, shifted_rows, concept_rows),
+            torch.where(
+                gate_slab, shifted_activations, concept_activations),
+        )
+        return (
+            next_state, applied, local_op, trace_valid, local_loss)
+
+    @staticmethod
+    def apply_unary_language_choice(state, choice):
+        """Apply one Language-owned unary choice to CS-owned STM tensors."""
+        (buffer, depth, orders, grammar_orders,
+         concept_rows, concept_activations) = state
+        (candidate, applied, local_op,
+         trace_valid, local_loss) = choice
+        B = int(buffer.shape[0])
+        next_buffer = torch.cat(
+            (torch.where(
+                applied.reshape(B, 1), candidate, buffer[:, 0, :]
+            ).unsqueeze(1), buffer[:, 1:, :]), dim=1)
+        top_grammar = grammar_orders[:, 0]
+        raised = torch.where(
+            top_grammar >= 0, top_grammar + 1, top_grammar)
+        next_grammar = torch.cat(
+            (torch.where(
+                applied, raised, top_grammar).reshape(B, 1),
+             grammar_orders[:, 1:]), dim=1)
+        next_rows = torch.cat(
+            (torch.where(
+                applied, torch.full_like(concept_rows[:, 0], -1),
+                concept_rows[:, 0]).reshape(B, 1),
+             concept_rows[:, 1:]), dim=1)
+        next_activations = torch.cat(
+            (torch.where(
+                applied, torch.zeros_like(concept_activations[:, 0]),
+                concept_activations[:, 0]).reshape(B, 1),
+             concept_activations[:, 1:]), dim=1)
+        next_state = (
+            next_buffer, depth, orders, next_grammar,
+            next_rows, next_activations)
+        return (
+            next_state, applied, local_op, trace_valid, local_loss)
 
     def _stm_set_all_slots(self, slab):
         """STM primitive (parallel mode): write all N positions of
@@ -20310,13 +20475,48 @@ class ConceptualSpace(Space):
             self, part_sources, whole_sources, concept_row, concept_order,
             active_rows, stm_state, *, staged_rows=None, staged_atoms=None,
             part_n_what, whole_n_what):
-        """Pure aligned ``{PS, WS, prior SS} -> CSsub`` computation.
+        """Compatibility wrapper for the pure aligned peer reduction.
 
-        Source-native fold ladders have already completed.  This method
-        reduces each source to an activation, performs the indexed conceptual
-        read, includes the location-aligned prior STM/SS source, and returns
-        the current word event plus the provenance needed by the delayed B
-        stage.  It owns no carrier commits.
+        The canonical peer scheduler now computes SS independently, then calls
+        :meth:`reduce_aligned_word_peers` at the CS barrier.  Older callers
+        may still supply an STM state here; this wrapper performs the same
+        prior-tick SS read and delegates to that owner reduction.
+        """
+        part_sources = tuple(part_sources)
+        whole_sources = tuple(whole_sources)
+        native_sources = part_sources + whole_sources
+        if not native_sources:
+            raise ValueError("aligned word peer requires native fold sources")
+        B = int(native_sources[0].shape[0])
+        active = active_rows.reshape(B).to(
+            device=native_sources[0].device, dtype=torch.bool)
+        (buffer, depth, _orders, _grammar_orders,
+         prior_rows, prior_activations) = tuple(stm_state)
+        prior_symbol, prior_validity = self.decode_prior_stm_tensors(
+            buffer, depth, prior_rows, prior_activations, active,
+            staged_rows=staged_rows, staged_atoms=staged_atoms)
+        return self.reduce_aligned_word_peers(
+            part_sources, whole_sources,
+            prior_symbol, prior_validity,
+            concept_row, concept_order, active,
+            staged_rows=staged_rows, staged_atoms=staged_atoms,
+            part_n_what=part_n_what, whole_n_what=whole_n_what)
+
+    def reduce_aligned_word_peers(
+            self, part_sources, whole_sources,
+            symbol_source, symbol_validity,
+            concept_row, concept_order, active_rows, *,
+            staged_rows=None, staged_atoms=None,
+            part_n_what, whole_n_what,
+            return_location_activations=False):
+        """Pure CS reduction of completed ``{PS, WS, SS}`` peer outputs.
+
+        PS and WS supply their complete native fold ladders.  SS supplies the
+        independently decoded, strictly prior-tick symbolic field and its
+        per-location validity.  This method performs the indexed conceptual
+        reads and local mean only after all three peers have completed.  It
+        owns no carrier commit, so the scheduler remains the sole recurrent
+        write barrier.
         """
         part_sources = tuple(part_sources)
         whole_sources = tuple(whole_sources)
@@ -20369,11 +20569,21 @@ class ConceptualSpace(Space):
             rows, activations, bands,
             staged_rows=staged_rows, staged_atoms=staged_atoms)
 
-        (buffer, depth, _orders, _grammar_orders,
-         prior_rows, prior_activations) = tuple(stm_state)
-        prior_symbol, prior_validity = self.decode_prior_stm_tensors(
-            buffer, depth, prior_rows, prior_activations, active,
-            staged_rows=staged_rows, staged_atoms=staged_atoms)
+        if (not torch.is_tensor(symbol_source)
+                or tuple(symbol_source.shape)
+                != (B, n_locations, int(decoded.shape[-1]))):
+            raise ValueError(
+                "aligned SS peer source must match the conceptual "
+                f"[B,N,D] geometry {(B, n_locations, int(decoded.shape[-1]))}")
+        if (not torch.is_tensor(symbol_validity)
+                or tuple(symbol_validity.shape) != (B, n_locations)):
+            raise ValueError(
+                "aligned SS peer validity must match [B,N] geometry "
+                f"{(B, n_locations)}")
+        prior_symbol = symbol_source.to(
+            device=decoded.device, dtype=decoded.dtype)
+        prior_validity = symbol_validity.to(
+            device=decoded.device, dtype=torch.bool)
         native_count = int(decoded.shape[1])
         denominator = (
             torch.full_like(
@@ -20382,13 +20592,90 @@ class ConceptualSpace(Space):
         event = (
             decoded.sum(dim=1) + prior_symbol
         ) / denominator.unsqueeze(-1)
-        word_activation = (
-            activations[:, :, 0].sum(dim=1) / denominator[:, 0])
+        location_activations = activations.sum(dim=1) / denominator
+        word_activation = location_activations[:, 0]
         word_activation = torch.where(
             row >= 0, word_activation, torch.zeros_like(word_activation))
-        return (
+        result = (
             event, orders, row, word_activation,
             prior_symbol, prior_validity)
+        if return_location_activations:
+            location_activations = torch.where(
+                rows >= 0, location_activations,
+                torch.zeros_like(location_activations))
+            return (*result, location_activations)
+        return result
+
+    def reduce_aligned_percept_peers(
+            self, part_sources, whole_sources,
+            concept_row, concept_order, active_rows, *,
+            staged_rows=None, staged_atoms=None,
+            part_n_what, whole_n_what):
+        """Form CSsub from the completed PS/WS ladders only.
+
+        The aligned serial word transaction has two distinct recurrences:
+        PS/WS first construct the subsymbolic word field, then the CS->SS
+        symbolic loop raises that field's conceptual order.  A prior STM
+        snapshot is therefore not smuggled in as an additional perceptual
+        source.  This method returns the per-location reference activation
+        needed by the subsequent zero-dimensional SymbolSpace hand-off.
+        """
+        part_sources = tuple(part_sources)
+        whole_sources = tuple(whole_sources)
+        native_sources = part_sources + whole_sources
+        if not native_sources:
+            raise ValueError(
+                "aligned percept peer reduction requires native sources")
+        B = int(native_sources[0].shape[0])
+        N = int(self.outputShape[0])
+        D = int(self.concept_dim)
+        empty_symbol = native_sources[0].new_zeros(B, N, D)
+        empty_validity = torch.zeros(
+            B, N, dtype=torch.bool, device=native_sources[0].device)
+        return self.reduce_aligned_word_peers(
+            part_sources, whole_sources,
+            empty_symbol, empty_validity,
+            concept_row, concept_order, active_rows,
+            staged_rows=staged_rows, staged_atoms=staged_atoms,
+            part_n_what=part_n_what, whole_n_what=whole_n_what,
+            return_location_activations=True)
+
+    def promote_symbol_reference(
+            self, symbol_rows, symbol_activations, symbol_bands,
+            symbol_orders, symbol_validity, *,
+            prior_event, staged_rows=None, staged_atoms=None):
+        """Decode one SS reference pass and raise conceptual order once.
+
+        SymbolSpace transports identity and signed activation, not a second
+        continuous concept store.  CS owns the dictionary read that turns the
+        zero-dimensional reference back into a conceptual event.  Repeating
+        this owner transition ``symbolicOrder`` times is the explicit
+        CS->SS->CS order-promotion loop used by aligned serial execution.
+        """
+        if (not torch.is_tensor(symbol_rows) or symbol_rows.dim() != 2
+                or not torch.is_tensor(symbol_activations)
+                or tuple(symbol_activations.shape) != tuple(symbol_rows.shape)
+                or not torch.is_tensor(symbol_bands)
+                or tuple(symbol_bands.shape[:2]) != tuple(symbol_rows.shape)
+                or not torch.is_tensor(symbol_orders)
+                or tuple(symbol_orders.shape) != tuple(symbol_rows.shape)
+                or not torch.is_tensor(symbol_validity)
+                or tuple(symbol_validity.shape) != tuple(symbol_rows.shape)):
+            raise ValueError(
+                "symbol promotion expects aligned [B,N] reference tensors")
+        decoded = self.decode_sparse_concept_rows(
+            symbol_rows,
+            symbol_activations.unsqueeze(1),
+            symbol_bands.unsqueeze(1),
+            staged_rows=staged_rows,
+            staged_atoms=staged_atoms)[:, 0]
+        valid = symbol_validity.to(
+            device=decoded.device, dtype=torch.bool)
+        event = torch.where(
+            valid.unsqueeze(-1), decoded, prior_event)
+        raised = torch.where(
+            valid, symbol_orders + 1, symbol_orders)
+        return event, raised
 
     @staticmethod
     def _ordered_fold_support(part_passes, whole_passes):
@@ -22074,6 +22361,14 @@ class WholeSpace(Space):
             self.divide_within_whole = (
                 str(_dww).strip().lower() not in ("false", "0", "no", "off"))
         self._staged_analysis_spans = None
+        # The serial word loop consumes one WholeSpace view per word, not the
+        # sentence-wide analysis slab.  The eager lexical boundary stages the
+        # primitive-property activations for every word once; the compiled
+        # CSSub lane dynamically selects one [B, N, P] column.  This keeps the
+        # hot path word-local and preserves a gradient only through the
+        # canonical property table and the learned WS folds.
+        self._staged_word_property_weights = None
+        self._staged_word_property_spans = None
         # The canonical property inventory is itself the analyzer.  The old
         # path allocated a second concept-sized VQ (``analysis_store``) to
         # quantize scalar byte-run means; that duplicated the WS dictionary
@@ -22816,6 +23111,103 @@ class WholeSpace(Space):
         return tuple(
             row for row in range(min(int(self.nVectors), 63))
             if signature & (1 << row))
+
+    def stage_word_property_weights(
+            self, word_texts, active_b_w, *, word_offsets=None):
+        """Stage word-local primitive-property evidence for the CSSub loop.
+
+        ``word_texts`` is the host lexical stem's rectangular batch of
+        complete word surfaces and ``active_b_w`` is its fixed W-bucket mask.
+        Each word is divided into maximal constant property-signature runs
+        (for example lower-case letters, capital letters, or punctuation).
+        At most ``inputShape[0]`` runs are retained, matching WholeSpace's
+        fixed live field.  No learned value is copied here: the result is only
+        a dense [B,W,N,P] activation over primitive property row ids.  The
+        compiled body multiplies it by the owning Codebook table, so table and
+        fold gradients keep their ordinary path.
+
+        ``_staged_word_property_spans`` records the corresponding absolute
+        byte brackets for the future ``.where`` feedback path.  It is eager
+        structural metadata and is not yet used to alter PS attention.
+        """
+        object.__setattr__(self, "_staged_word_property_weights", None)
+        object.__setattr__(self, "_staged_word_property_spans", None)
+        if (not getattr(self, "property_basis", False)
+                or not torch.is_tensor(active_b_w)
+                or active_b_w.dim() != 2):
+            return None
+        basis = getattr(getattr(self, "subspace", None), "what", None)
+        rows = basis.getW() if isinstance(basis, Codebook) else None
+        if not torch.is_tensor(rows) or rows.dim() != 2:
+            return None
+
+        B, width = int(active_b_w.shape[0]), int(active_b_w.shape[1])
+        N, P = int(self.inputShape[0]), int(rows.shape[0])
+        active = active_b_w.detach().to("cpu", dtype=torch.bool).tolist()
+        offsets = None
+        if torch.is_tensor(word_offsets):
+            if tuple(word_offsets.shape) != (B, width):
+                raise ValueError(
+                    "word_offsets must match active_b_w's [B,W] shape")
+            offsets = word_offsets.detach().to("cpu", dtype=torch.long).tolist()
+        weights = torch.zeros(
+            B, width, N, P, dtype=torch.float32, device="cpu")
+        spans = torch.zeros(
+            B, width, N, 2, dtype=torch.long, device="cpu")
+        lut, discard = _analysis_property_signature(self)
+        lut_values = lut.tolist()
+
+        for b in range(B):
+            row_texts = (
+                word_texts[b]
+                if word_texts is not None and b < len(word_texts) else ())
+            for w in range(width):
+                if not bool(active[b][w]):
+                    continue
+                surface = row_texts[w] if w < len(row_texts) else ""
+                if isinstance(surface, str):
+                    try:
+                        values = list(surface.encode("latin1"))
+                    except UnicodeEncodeError:
+                        values = list(surface.encode("utf-8"))
+                elif isinstance(surface, (bytes, bytearray)):
+                    values = list(bytes(surface))
+                else:
+                    try:
+                        values = [int(value) & 0xFF for value in surface]
+                    except (TypeError, ValueError):
+                        values = []
+                if not values:
+                    continue
+                signatures = [int(lut_values[value & 0xFF])
+                              for value in values]
+                base = (
+                    max(0, int(offsets[b][w]))
+                    if offsets is not None and int(offsets[b][w]) >= 0 else 0)
+                slot = 0
+                start = 0
+                while start < len(signatures) and slot < N:
+                    signature = signatures[start]
+                    end = start + 1
+                    while (end < len(signatures)
+                           and signatures[end] == signature):
+                        end += 1
+                    if signature and not (signature & int(discard)):
+                        for prop in range(min(P, 63)):
+                            if signature & (1 << prop):
+                                weights[b, w, slot, prop] = 1.0
+                        spans[b, w, slot, 0] = base + start
+                        spans[b, w, slot, 1] = base + end
+                        slot += 1
+                    start = end
+
+        staged = weights.to(device=rows.device, dtype=rows.dtype)
+        staged_spans = spans.to(device=active_b_w.device)
+        object.__setattr__(
+            self, "_staged_word_property_weights", staged)
+        object.__setattr__(
+            self, "_staged_word_property_spans", staged_spans)
+        return staged
 
     # ------------------------------------------------------------------
     # Lexicon ownership (post-lexicon-migration)
@@ -26325,6 +26717,60 @@ class WholeSpace(Space):
                 carrier.reshape(B * N, 1, int(width)), content
             ).reshape(B, N, content)
         return F.pad(narrow, (0, D - content)), membership
+
+    def compute_word_property_event(self, weights_b_n_p):
+        """Materialize one staged word's WS event from primitive row weights.
+
+        This is the word-local equivalent of the property-basis branch in
+        :meth:`compute_stage0_unity_event`.  The host has already performed
+        byte classification and run cutting; only the learned, compiler-visible
+        row composition remains here.  The input is a read-only [B,N,P] view
+        into ``_staged_word_property_weights`` and is never mutated.
+        """
+        if not getattr(self, "property_basis", False):
+            raise RuntimeError(
+                "word property events require WholeSpace propertyBasis")
+        if weights_b_n_p.dim() != 3:
+            raise ValueError(
+                "word property weights must be a [B,N,P] tensor")
+        basis = getattr(self.subspace, "what", None)
+        rows = basis.getW() if isinstance(basis, Codebook) else None
+        if rows is None or not torch.is_tensor(rows) or rows.dim() != 2:
+            raise RuntimeError(
+                "WholeSpace word analysis requires its canonical property "
+                "table")
+        B, N, P = (int(weights_b_n_p.shape[0]),
+                   int(weights_b_n_p.shape[1]),
+                   int(weights_b_n_p.shape[2]))
+        if N != int(self.inputShape[0]) or P != int(rows.shape[0]):
+            raise ValueError(
+                "word property weights do not match WholeSpace's [N,P] "
+                "layout")
+        D = int(self.subspace.muxedSize)
+        band = int(self.nWhere + self.nWhen)
+        content = max(1, D - band)
+        if self.held_at_zero:
+            return torch.zeros(
+                B, N, D, device=weights_b_n_p.device,
+                dtype=rows.dtype)
+        norm = weights_b_n_p.sum(dim=-1, keepdim=True).clamp_min(1.0)
+        weights = weights_b_n_p / norm
+        carrier = torch.matmul(weights.to(dtype=rows.dtype), rows)
+        width = int(rows.shape[-1])
+        if width == content:
+            narrow = carrier
+        else:
+            narrow = Workarounds.adaptive_avg_pool1d(
+                carrier.reshape(B * N, 1, width), content
+            ).reshape(B, N, content)
+        return F.pad(narrow, (0, D - content))
+
+    def compute_word_property_fold_sources(
+            self, weights_b_n_p, pass_indices):
+        """Return one word's H0 plus cumulative learned WholeSpace folds."""
+        base = self.compute_word_property_event(weights_b_n_p)
+        folds = self.fold_event_ladder(base, pass_indices, strict=True)
+        return (base, *folds)
 
     def compute_unity_fold_sources(self, IS_concepts, spans, pass_indices):
         """Return H0 plus cumulative learned folds without carrier writes."""

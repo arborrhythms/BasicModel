@@ -52,7 +52,8 @@ from Layers import (
 from Spaces import ActiveEncoding, WhereEncoding, WhenEncoding, WhatEncoding, EventEncoding, WordEncoding
 from Spaces import Basis, Tensor, Codebook, Embedding, fold_content_apply
 from Spaces import (SubSpace, SubSpaceView, Space, InputSpace, PartSpace,
-                    ModalSpace, ConceptualSpace, WholeSpace, OutputSpace)
+                    ModalSpace, ConceptualSpace, WholeSpace, OutputSpace,
+                    LanguageBinaryChoice, LanguageUnaryChoice)
 
 import xml.etree.ElementTree as _ET
 from pathlib import Path as _Path
@@ -13501,12 +13502,143 @@ _SYMBOLSPACE_FORWARD_WRITES = {
 }
 
 
+class _FunctionalLanguageChooser:
+    """Pure grammar-choice kernels used by ``LanguageSpace``.
+
+    These functions receive a read-only snapshot of ConceptualSpace STM and
+    return immutable tensor choices.  They never construct the next STM state:
+    buffer/depth/order/reference transitions belong exclusively to
+    ``ConceptualSpace.apply_*_language_choice``.
+    """
+
+    @staticmethod
+    def _occupancy_threshold(depth, capacity, base_tau):
+        tau = torch.as_tensor(
+            base_tau, dtype=torch.float32, device=depth.device)
+        if int(capacity) <= 2:
+            pressure = torch.zeros_like(depth, dtype=tau.dtype)
+        else:
+            pressure = (
+                (depth.to(tau.dtype) - 2.0)
+                / float(int(capacity) - 2)
+            ).clamp(0.0, 1.0)
+        return tau * (1.0 - pressure), pressure
+
+    @staticmethod
+    def _reduce_confidence(routing):
+        copy_score = routing["copy_score"]
+        reduce_score = routing["reduce_score"]
+        copy_action = (
+            torch.logsumexp(copy_score[:, :2, :], dim=-1)
+            - math.log(float(copy_score.shape[-1])))
+        reduce_action = (
+            torch.logsumexp(reduce_score[:, 0, :], dim=-1)
+            - math.log(float(reduce_score.shape[-1])))
+        return torch.sigmoid(reduce_action - copy_action.sum(dim=1))
+
+    @staticmethod
+    def choose_binary(state, reducer, row_gate, *, base_tau,
+                      occupancy_pressure=False, demand=False):
+        """Choose one bounded binary grammar operation without applying it."""
+        (buffer, depth, orders, grammar_orders,
+         concept_rows, concept_activations) = state
+        del orders, grammar_orders, concept_rows, concept_activations
+        B, capacity, _D = buffer.shape
+        if int(capacity) < 2:
+            applied = torch.zeros_like(depth, dtype=torch.bool)
+            local_op = torch.full_like(depth, -1)
+            return LanguageBinaryChoice(
+                buffer[:, 0, :],
+                applied,
+                local_op,
+                applied,
+                buffer.new_zeros(B),
+                applied,
+                local_op,
+            )
+
+        gate = row_gate.reshape(B).to(
+            device=buffer.device, dtype=torch.bool)
+        can = torch.logical_and(depth >= 2, gate)
+        left = buffer[:, 1, :]
+        right = buffer[:, 0, :]
+        window = torch.stack((left, right), dim=1)
+        hard, soft, routing = reducer(window)
+        parent = (soft + (hard - soft).detach())[:, 0, :]
+        if occupancy_pressure or demand:
+            parent = routing["chosen_reduced"][:, 0, :]
+        if occupancy_pressure:
+            confidence = _FunctionalLanguageChooser._reduce_confidence(
+                routing)
+            threshold, _pressure = (
+                _FunctionalLanguageChooser._occupancy_threshold(
+                    depth, int(capacity), base_tau))
+            demand_rows = torch.logical_and(depth >= int(capacity), can)
+            can = torch.logical_and(
+                can, torch.logical_or(demand_rows, confidence > threshold))
+
+        action_kind = routing["action_kind"][:, 0]
+        source_left = routing["src_left"][:, 0]
+        copy_selected = torch.zeros_like(can)
+        if not (occupancy_pressure or demand):
+            copy_selected = torch.logical_and(
+                action_kind == 0, source_left >= 0)
+
+        marginal = routing["reduce_marginal_op"][:, 0, :]
+        local_op = marginal.argmax(dim=-1)
+        trace_valid = can
+        if not (occupancy_pressure or demand):
+            trace_valid = torch.logical_and(
+                trace_valid, routing["action_kind"][:, 0] == 1)
+        local_loss = routing.get("local_structural_loss")
+        if (not torch.is_tensor(local_loss) or local_loss.dim() < 2
+                or int(local_loss.shape[1]) < 1):
+            local_loss = buffer.new_zeros(B)
+        else:
+            local_loss = local_loss[:, 0]
+        return LanguageBinaryChoice(
+            parent,
+            can,
+            local_op,
+            trace_valid,
+            local_loss,
+            copy_selected,
+            source_left,
+        )
+
+    @staticmethod
+    def choose_unary(state, layer, row_gate):
+        """Choose one bounded unary grammar operation without applying it."""
+        (buffer, depth, orders, grammar_orders,
+         concept_rows, concept_activations) = state
+        del orders, grammar_orders, concept_rows, concept_activations
+        B = int(buffer.shape[0])
+        can = torch.logical_and(
+            depth >= 1,
+            row_gate.reshape(B).to(
+                device=buffer.device, dtype=torch.bool))
+        hard, soft, routing = layer(buffer[:, :1, :])
+        candidate = (soft + (hard - soft).detach())[:, 0, :]
+        applied = torch.logical_and(
+            routing["apply_mask"][:, 0, :].bool().any(dim=-1), can)
+        local_op = routing["action_op"][:, 0].long()
+        local_loss = routing.get("local_structural_loss")
+        if (not torch.is_tensor(local_loss) or local_loss.dim() < 2
+                or int(local_loss.shape[1]) < 1):
+            local_loss = buffer.new_zeros(B)
+        else:
+            local_loss = local_loss[:, 0]
+        return LanguageUnaryChoice(
+            candidate, applied, local_op, applied, local_loss)
+
+
 class LanguageSpace(nn.Module):
     """Scheduling owner for the grammar layer without owning a second copy.
 
     ``SymbolSubSpace.languageLayer`` remains the sole parameter/state owner.
     This Space is the explicit pipeline stage that invokes it after CSsym/SS;
-    it returns reduction plans to ConceptualSpace instead of mutating CS.
+    it chooses immutable Binary/Unary results for ConceptualSpace to apply
+    instead of constructing or mutating the next CS state.
     """
     def __init__(self, symbol_space):
         super().__init__()
@@ -13534,6 +13666,44 @@ class LanguageSpace(nn.Module):
     @property
     def language_layer(self):
         return self._language_layer_ref
+
+    def _tree_layer(self, arity):
+        layers = (
+            getattr(self.language_layer, "_binary_layers", None)
+            if int(arity) == 2
+            else getattr(self.language_layer, "_unary_layers", None))
+        return layers["CS"] if layers is not None and "CS" in layers else None
+
+    def choose_capacity_binary(self, state, row_gate, *, base_tau):
+        """Choose the pre-deposit capacity Binary; CS applies the choice."""
+        layer = self._tree_layer(2)
+        if layer is None:
+            raise RuntimeError(
+                "LanguageSpace has no CS binary layer for STM capacity")
+        return _FunctionalLanguageChooser.choose_binary(
+            state, layer, row_gate, base_tau=base_tau, demand=True)
+
+    def choose_post_binary(
+            self, state, row_gate, pre_applied, *, base_tau):
+        """Choose the ordinary post-deposit Binary; CS applies the choice."""
+        binary = self._tree_layer(2)
+        if binary is None:
+            raise RuntimeError("LanguageSpace requires a CS binary tree layer")
+        post_gate = torch.logical_and(
+            row_gate.reshape(-1).to(
+                device=state[1].device, dtype=torch.bool),
+            torch.logical_not(pre_applied.reshape(-1)))
+        return _FunctionalLanguageChooser.choose_binary(
+            state, binary, post_gate, base_tau=base_tau,
+            occupancy_pressure=True)
+
+    def choose_unary(self, state, row_gate):
+        """Choose the post-Binary unary rewrite; CS applies the choice."""
+        unary = self._tree_layer(1)
+        if unary is None:
+            raise RuntimeError("LanguageSpace requires a CS unary tree layer")
+        return _FunctionalLanguageChooser.choose_unary(
+            state, unary, row_gate)
 
     @staticmethod
     def _scatter_rule_counts(base, rule_ids, counts):
@@ -13599,6 +13769,51 @@ class LanguageSpace(nn.Module):
         plan = torch.where(live, plan, torch.zeros_like(plan))
         mass = plan.sum(dim=1, keepdim=True)
         return plan / mass.clamp_min(torch.finfo(plan.dtype).tiny)
+
+    def feedback_from_local_choices(
+            self, binary_ops, binary_valid, unary_op, unary_valid,
+            *, like):
+        """Convert the tree step's actual local choices to global feedback.
+
+        No chooser is re-run here.  LanguageSpace owns the local-to-global
+        grammar map and emits one normalized plan from the binary/unary
+        decisions that actually built the tree.
+        """
+        B = int(like.shape[0])
+        plan = like.new_zeros(B, int(self._n_rules))
+
+        def add(local_op, valid, rule_ids, current):
+            width = int(rule_ids.numel())
+            if width < 1 or int(self._n_rules) < 1:
+                return current
+            local = local_op.reshape(B).to(
+                device=current.device, dtype=torch.long)
+            active = valid.reshape(B).to(
+                device=current.device, dtype=torch.bool)
+            active = torch.logical_and(active, local >= 0)
+            active = torch.logical_and(active, local < width)
+            safe = local.clamp(0, width - 1)
+            global_ids = rule_ids.to(
+                device=current.device, dtype=torch.long
+            ).index_select(0, safe)
+            in_range = torch.logical_and(
+                global_ids >= 0, global_ids < int(self._n_rules))
+            active = torch.logical_and(active, in_range)
+            global_ids = global_ids.clamp(
+                0, max(0, int(self._n_rules) - 1))
+            values = active.to(dtype=current.dtype).reshape(B, 1)
+            return current.scatter_add(
+                1, global_ids.reshape(B, 1), values)
+
+        for local_op, valid in zip(tuple(binary_ops), tuple(binary_valid)):
+            plan = add(
+                local_op, valid, self._cs_binary_rule_ids, plan)
+        plan = add(unary_op, unary_valid, self._cs_unary_rule_ids, plan)
+        mass = plan.sum(dim=1, keepdim=True)
+        valid = mass > 0
+        return (
+            plan / mass.clamp_min(torch.finfo(plan.dtype).tiny),
+            valid)
 
     def compose(self, symbolic_snapshot):
         self._symbol_space.forward(symbolic_snapshot)
@@ -13826,6 +14041,46 @@ class SymbolSpace(Space):
         self.generate(snap)
 
     # -- CS -> SS: the .forward()-mediated symbol leg --------------------------
+    def compute_symbolic_reference(
+            self, concept_event, concept_row, concept_activations,
+            concept_orders, active_rows, *, n_what):
+        """Expose one completed CS concept as a zero-dimensional reference.
+
+        SymbolSpace owns reference interpretation but no duplicate continuous
+        concept dictionary.  Its compiler-visible output is consequently the
+        row identity, signed activation, derivation order, and the positional
+        band that must survive the round trip.  ConceptualSpace alone decodes
+        that reference and commits the promoted conceptual event.
+        """
+        if not torch.is_tensor(concept_event) or concept_event.dim() != 3:
+            raise ValueError(
+                "symbolic reference expects concept event [B,N,D]")
+        B, N = int(concept_event.shape[0]), int(concept_event.shape[1])
+        if (not torch.is_tensor(concept_row)
+                or tuple(concept_row.reshape(B).shape) != (B,)
+                or not torch.is_tensor(concept_activations)
+                or tuple(concept_activations.shape) != (B, N)
+                or not torch.is_tensor(concept_orders)
+                or tuple(concept_orders.shape) != (B, N)):
+            raise ValueError(
+                "symbolic reference identity/order tensors do not align")
+        active = active_rows.reshape(B).to(
+            device=concept_event.device, dtype=torch.bool)
+        rows = concept_row.reshape(B, 1).expand(B, N).to(
+            device=concept_event.device, dtype=torch.long)
+        valid = torch.logical_and(active.reshape(B, 1), rows >= 0)
+        rows = torch.where(valid, rows, torch.full_like(rows, -1))
+        activations = torch.where(
+            valid, concept_activations,
+            torch.zeros_like(concept_activations))
+        band_start = int(n_what)
+        bands = concept_event[..., band_start:]
+        bands = torch.where(
+            valid.unsqueeze(-1), bands, torch.zeros_like(bands))
+        orders = torch.where(
+            valid, concept_orders, torch.full_like(concept_orders, -1))
+        return rows, activations, bands, orders, valid
+
     def _publish_symbol_snapshot(self, event, source=None, *,
                                  prior_symbolic=None, language_plan=None):
         """Return an SS-owned transient result carrier for one peer tick.

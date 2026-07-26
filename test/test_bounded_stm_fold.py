@@ -84,37 +84,18 @@ def test_lift_lower_stay_invertible_cs_ops():
 
 
 def test_cap_equivalence_short_sentence():
-    """Task 9: STM capacity parameter — equivalence gate.
+    """A non-binding hard capacity leaves the sentence root unchanged.
 
-    Spec claim: for N_total_pushes <= capacity, the force-to-fit
-    back-pressure check (_max_depth_host >= capacity) is NEVER True before
-    any push, so the forced reduce is a no-op.  When the condition never
-    fires, two runs of the same sentence with cap=N_total and cap=N_total+K
-    produce bit-identical STM end-states (same S, same depth).
-
-    Implementation note — the xor/MM_grammar model uses depth-before-push
-    semantics: just before the N_total-th push, _max_depth_host is
-    N_total-1.  The check N_total-1 >= N_total is False, so NO reduce fires.
-    This is the force-to-fit no-op condition ("capacity >= N_total").
-
-    Architecture of STM pushes for this model:
-      * ConceptualSpace.forward calls _stm_shift_and_push once per word
-        position (parallel CS stage push, no back-pressure guard).
-      * _per_word_body_step calls push_step_masked once per word position
-        (serial loop push, back-pressure-guarded).
-    With N_static=8 word positions, total pushes = 16 per forward pass.
-    The DEFAULT_CAPACITY=8 is below N_total=16, so back-pressure fires
-    for the default cap; we must use cap >= N_total to enter the no-op
-    regime.  This test establishes N_total empirically with a large cap,
-    then verifies the two-runs equivalence under cap=N_total and
-    cap=N_total+4 (both in the no-pressure regime).
-
-    Approach: one model, vary capacity between two reset runs (avoids
-    cross-model random-init differences).  eval()+no_grad() makes each
-    forward deterministic — no weight updates, no dropout variation.
+    Capacity now also controls the *soft* occupancy-pressure threshold, so
+    arbitrary capacities are intentionally not equivalent at a nonzero
+    ``stmReduceTau``. Set that threshold to zero here to isolate the hard
+    demand controller, then compare two capacities larger than the observed
+    live-stack peak. Neither run may apply a demand reduction and both must
+    produce the same final root/depth.
     """
     m = _model()
     m.eval()
+    m.stm_reduce_tau = 0.0
 
     stm = m.conceptualSpace.stm
     ss = stm._word_subspace
@@ -123,10 +104,9 @@ def test_cap_equivalence_short_sentence():
     items, _ = next(iter(loader))
     x = m.inputSpace.prepInput(items)
 
-    # --- Phase 1: measure N_total using a large cap (no pressure possible)
+    # Measure the live-stack peak with a deliberately loose capacity.
     LARGE_CAP = 32
     ss.idea_ensure_capacity(LARGE_CAP)
-    # Reset to clean state before measurement pass
     m.conceptualSpace.Reset(hard=True)
     ss._idea_capacity = LARGE_CAP
     ss._idea_buffer = torch.zeros(
@@ -138,15 +118,13 @@ def test_cap_equivalence_short_sentence():
     with torch.no_grad(), warnings.catch_warnings():
         warnings.filterwarnings("ignore")
         m.forward(x)
-    N_total = int(stm._max_depth_host)
-    assert N_total > 0, "forward produced zero STM pushes; data/model mismatch"
-    assert N_total <= LARGE_CAP, (
-        f"N_total={N_total} exceeded measurement cap={LARGE_CAP}; "
+    peak_depth = int(stm._max_depth_host)
+    assert peak_depth > 0, "forward produced zero STM pushes; data/model mismatch"
+    assert peak_depth < LARGE_CAP, (
+        f"peak_depth={peak_depth} reached measurement cap={LARGE_CAP}; "
         f"increase LARGE_CAP")
 
-    # --- Phase 2: run with cap=N_total, verify no back-pressure fires
     def _reset_to_cap(cap):
-        """Hard-reset the STM and set idea-stack capacity to `cap`."""
         m.conceptualSpace.Reset(hard=True)
         ss._idea_capacity = cap
         ss._idea_buffer = torch.zeros(
@@ -155,65 +133,45 @@ def test_cap_equivalence_short_sentence():
         ss._idea_max_depth_host = 0
         ss._idea_depth.zero_()
 
-    # cap=N_total: depth-before-push semantics guarantee the last push sees
-    # _max_depth_host = N_total - 1 < N_total = cap → no reduce fires.
-    _reset_to_cap(N_total)
-    bp_count_tight = [0]
-    _orig_reduce = m._stm_bounded_reduce_step
-    def _counting_reduce(*args, **kwargs):
-        # Force-to-fit (ingestion back-pressure) calls
-        # _stm_bounded_reduce_step() with no protect_depth; the sentence-end
-        # sweep passes protect_depth=, and the per-word opportunistic parse
-        # passes gate_tau= (scored, not back-pressure). Discriminate on the
-        # arguments, not a hard-coded line number, so this robustly counts
-        # ONLY ingestion fires (a line-number check would silently miscount
-        # after any Models.py edit).
-        if (not args and kwargs.get('protect_depth') is None
-                and kwargs.get('gate_tau') is None):
-            bp_count_tight[0] += 1
-        return _orig_reduce(*args, **kwargs)
-    m._stm_bounded_reduce_step = _counting_reduce
-    try:
-        with torch.no_grad(), warnings.catch_warnings():
-            warnings.filterwarnings("ignore")
-            m.forward(x)
-    finally:
-        m._stm_bounded_reduce_step = _orig_reduce
+    def _run_without_demand(cap):
+        _reset_to_cap(cap)
+        demand_applied = []
+        original_reduce = m._stm_bounded_reduce_step
 
-    assert bp_count_tight[0] == 0, (
-        f"force-to-fit back-pressure fired {bp_count_tight[0]} time(s) "
-        f"with cap={N_total} == N_total; expected 0 (no-op regime). "
-        f"depth-before-push semantics: max_depth_host reaches N_total-1 "
-        f"before the last push, so N_total-1 >= N_total is False.")
-    assert int(stm._max_depth_host) == N_total, (
-        f"expected max_depth_host=={N_total} after no-pressure run, "
-        f"got {stm._max_depth_host}")
+        def _recording_reduce(*args, **kwargs):
+            reduced = original_reduce(*args, **kwargs)
+            if kwargs.get("demand", False):
+                demand_applied.append(reduced.detach().clone())
+            return reduced
 
-    # --- Phase 3: snapshot end-state for cap=N_total
-    S_tight = (m._stm_single_S.detach().clone()
-               if getattr(m, "_stm_single_S", None) is not None
-               else stm._buffer[:, :1, :].detach().clone())
-    depth_tight = stm._depth.clone()
+        m._stm_bounded_reduce_step = _recording_reduce
+        try:
+            with torch.no_grad(), warnings.catch_warnings():
+                warnings.filterwarnings("ignore")
+                m.forward(x)
+        finally:
+            m._stm_bounded_reduce_step = original_reduce
+        assert not any(bool(mask.any()) for mask in demand_applied), (
+            f"hard capacity demand applied with non-binding cap={cap}")
+        root = (m._stm_single_S.detach().clone()
+                if getattr(m, "_stm_single_S", None) is not None
+                else stm._buffer[:, :1, :].detach().clone())
+        return root, stm._depth.clone()
 
-    # --- Phase 4: run with cap=N_total+4, same input
-    _reset_to_cap(N_total + 4)
-    with torch.no_grad(), warnings.catch_warnings():
-        warnings.filterwarnings("ignore")
-        m.forward(x)
-    S_loose = (m._stm_single_S.detach().clone()
-               if getattr(m, "_stm_single_S", None) is not None
-               else stm._buffer[:, :1, :].detach().clone())
-    depth_loose = stm._depth.clone()
+    # Leave explicit headroom above the observed peak so neither capacity can
+    # enter the demand path. Sixteen is also the historical upper bound for
+    # this eight-column fixture, keeping the assertion stable if grammar
+    # choices reduce its current peak.
+    tight_cap = max(16, peak_depth + 1)
+    S_tight, depth_tight = _run_without_demand(tight_cap)
+    S_loose, depth_loose = _run_without_demand(tight_cap + 4)
 
-    # --- Phase 5: assert equivalence — cap >= N_total in both runs means
-    # no back-pressure fired in either; the reduce-to-S collapse operates
-    # on the same full N_total-item STM, so the outputs are bit-identical.
     assert torch.equal(depth_tight, depth_loose), (
-        f"STM depth differs: cap={N_total} → {depth_tight.tolist()}, "
-        f"cap={N_total+4} → {depth_loose.tolist()}")
+        f"STM depth differs: cap={tight_cap} → {depth_tight.tolist()}, "
+        f"cap={tight_cap+4} → {depth_loose.tolist()}")
     assert torch.equal(S_tight, S_loose), (
-        f"STM sentence-S differs between cap={N_total} and cap={N_total+4}; "
+        f"STM sentence-S differs between cap={tight_cap} and "
+        f"cap={tight_cap+4}; "
         f"max |Δ| = {(S_tight - S_loose).abs().max().item():.3e}. "
-        f"Both runs are in the no-pressure regime (cap >= N_total={N_total}), "
-        f"so identical STM content before reduce-to-S should yield "
-        f"identical S.")
+        "Both runs are outside hard capacity demand and use the same "
+        "capacity-independent zero soft threshold.")

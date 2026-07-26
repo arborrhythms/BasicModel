@@ -37,8 +37,9 @@ uv pip install --python .venv/bin/python --pre \
 That torchvision build selects its compatible
 `torch==2.14.0.dev20260722`. Verify the environment with
 `uv pip check --python .venv/bin/python`. The paired builds compile the complete
-W=256 tensor peer loop with raw `max-autotune`, differentiated backward, and
-runtime word counts 16/32/64 without recompilation.
+W=512 tensor peer loop with raw `max-autotune`, differentiated backward, and
+runtime word counts through the configured sentence capacity without
+recompilation.
 
 ---
 

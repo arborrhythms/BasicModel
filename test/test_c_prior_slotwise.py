@@ -47,6 +47,7 @@ if _BIN not in sys.path:
 
 import Models
 import Language
+from Spaces import SubSpaceView
 from util import init_config
 
 _DATA_DIR = os.path.join(_PROJECT, 'data')
@@ -106,21 +107,30 @@ class _CPriorBase(unittest.TestCase):
         ``N > 1`` keeps the parallel whole-slab path so ``event_for_carrier
         == folded`` is the full ``[B, N, D]`` slot stack the production
         block stages into. A zero base means the read-back equals exactly
-        the staged prior."""
+        the staged prior. The fixture publishes that base as a read-only
+        snapshot: mutating PS's owned carrier to manufacture CS input would
+        violate the peer ownership contract this path now enforces."""
         base = torch.zeros(
             self.B, N, self.D, dtype=self.dtype, device=self.device)
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore")
             with torch.no_grad():
-                self.ps_sub.set_event(base)
                 # Stage the prior on the REAL attributes the production
                 # block reads -- this is the live injection surface that
                 # BasicModel.generate_sentence / InterSentenceLayer.cast
                 # populate. The block consumes and clears them.
                 self.cs._c_prior = prior
                 self.cs._c_prior_slotwise = slotwise
-                out = self.cs.forward(self.ps_sub)
-                event_out = out.materialize()
+                incoming = SubSpaceView.snapshot(
+                    base,
+                    owner=self.model.perceptualSpace,
+                    context=self.ps_sub.view().context())
+                self.cs.forward(incoming)
+                # The canonical peer consumer reads the CS-owned recurrent
+                # lane. ``cs.subspace`` is the compatibility/codebook carrier
+                # and may quantize its return value; CSsub is the exact
+                # completed conceptual event published to the next peer tick.
+                event_out = self.cs.CSsub.materialize(mode="event")
         return event_out, self.cs._c_prior, self.cs._c_prior_slotwise
 
 

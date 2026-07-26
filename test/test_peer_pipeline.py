@@ -11,10 +11,124 @@ import pytest
 import torch
 from types import SimpleNamespace
 
-from Spaces import ConceptualSpace, SubSpace, SubSpaceView, guard_peer_views
+from Spaces import (
+    ConceptualSpace,
+    LanguageBinaryChoice,
+    LanguageUnaryChoice,
+    SubSpace,
+    SubSpaceView,
+    guard_peer_views,
+)
 from Models import StaticPeerPipeline, TensorPeerWhilePipeline
 from Language import LanguageSpace, RoutingState
 from Layers import ShortTermMemory
+
+
+class _DeterministicBinaryChooser(torch.nn.Module):
+    def forward(self, window):
+        parent = window.sum(dim=1, keepdim=True)
+        B = int(window.shape[0])
+        routing = {
+            "chosen_reduced": parent,
+            "copy_score": window.new_zeros(B, 2, 1),
+            "reduce_score": window.new_full((B, 1, 1), 10.0),
+            "action_kind": torch.ones(
+                B, 1, dtype=torch.long, device=window.device),
+            "src_left": torch.full(
+                (B, 1), -1, dtype=torch.long, device=window.device),
+            "reduce_marginal_op": window.new_tensor(
+                [[[0.25, 0.75]]]).expand(B, 1, 2),
+            "local_structural_loss": window.new_full((B, 1), 0.125),
+        }
+        return parent, parent, routing
+
+
+class _DeterministicUnaryChooser(torch.nn.Module):
+    def forward(self, window):
+        candidate = -window
+        B = int(window.shape[0])
+        routing = {
+            "apply_mask": torch.ones(
+                B, 1, 1, dtype=torch.bool, device=window.device),
+            "action_op": torch.full(
+                (B, 1), 3, dtype=torch.long, device=window.device),
+            "local_structural_loss": window.new_full((B, 1), 0.25),
+        }
+        return candidate, candidate, routing
+
+
+def _language_choice_harness():
+    layer = SimpleNamespace(
+        _binary_layers={"CS": _DeterministicBinaryChooser()},
+        _unary_layers={"CS": _DeterministicUnaryChooser()},
+        _binary_rule_ids={"CS": (0, 1)},
+        _unary_rule_ids={"CS": (2,)},
+    )
+    coordinator = SimpleNamespace(languageLayer=layer)
+    return LanguageSpace(SimpleNamespace(subspace=coordinator))
+
+
+def test_language_chooses_and_conceptual_space_alone_applies_stm_update():
+    language = _language_choice_harness()
+    state = (
+        torch.tensor([
+            [[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]],
+            [[10.0, 20.0], [30.0, 40.0], [50.0, 60.0]],
+        ]),
+        torch.tensor([3, 1]),
+        torch.tensor([[2, 1, 0], [5, -1, -1]]),
+        torch.tensor([[4, 2, 0], [7, -1, -1]]),
+        torch.tensor([[12, 11, 10], [15, -1, -1]]),
+        torch.tensor([[0.9, 0.8, 0.7], [0.6, 0.0, 0.0]]),
+    )
+    before = tuple(value.clone() for value in state)
+    versions = tuple(value._version for value in state)
+    gate = torch.tensor([True, False])
+
+    binary = language.choose_capacity_binary(
+        state, gate, base_tau=0.75)
+    assert isinstance(binary, LanguageBinaryChoice)
+    assert not hasattr(language, "apply_binary_language_choice")
+    assert tuple(value._version for value in state) == versions
+    for actual, expected in zip(state, before):
+        torch.testing.assert_close(actual, expected, rtol=0, atol=0)
+
+    (binary_state, binary_applied, binary_op,
+     binary_valid, binary_loss) = (
+        ConceptualSpace.apply_binary_language_choice(state, binary))
+    assert tuple(value._version for value in state) == versions
+    for actual, expected in zip(state, before):
+        torch.testing.assert_close(actual, expected, rtol=0, atol=0)
+    torch.testing.assert_close(
+        binary_state[0][0],
+        torch.tensor([[4.0, 6.0], [5.0, 6.0], [0.0, 0.0]]))
+    torch.testing.assert_close(binary_state[1], torch.tensor([2, 1]))
+    torch.testing.assert_close(binary_state[2][0], torch.tensor([2, 0, -1]))
+    torch.testing.assert_close(binary_state[3][0], torch.tensor([5, 0, -1]))
+    torch.testing.assert_close(
+        binary_state[4][0], torch.tensor([-1, 10, -1]))
+    torch.testing.assert_close(
+        binary_state[5][0], torch.tensor([0.0, 0.7, 0.0]))
+    torch.testing.assert_close(
+        binary_applied, torch.tensor([True, False]))
+    torch.testing.assert_close(binary_valid, binary_applied)
+    torch.testing.assert_close(binary_op, torch.tensor([1, 1]))
+    torch.testing.assert_close(
+        binary_loss, torch.tensor([0.125, 0.125]))
+
+    unary = language.choose_unary(binary_state, gate)
+    assert isinstance(unary, LanguageUnaryChoice)
+    final_state, unary_applied, unary_op, unary_valid, unary_loss = (
+        ConceptualSpace.apply_unary_language_choice(binary_state, unary))
+    torch.testing.assert_close(
+        final_state[0][0, 0], torch.tensor([-4.0, -6.0]))
+    torch.testing.assert_close(final_state[3][0], torch.tensor([6, 0, -1]))
+    torch.testing.assert_close(
+        unary_applied, torch.tensor([True, False]))
+    torch.testing.assert_close(unary_valid, unary_applied)
+    torch.testing.assert_close(unary_op, torch.tensor([3, 3]))
+    torch.testing.assert_close(
+        unary_loss, torch.tensor([0.25, 0.25]))
 
 
 def test_subspace_view_has_no_setters_and_owner_commits():
@@ -325,6 +439,213 @@ def test_tensor_banked_pipeline_is_one_fullgraph_and_reusable():
         torch.arange(12).unsqueeze(0)
         < torch.tensor([3, 6, 2, 5]).unsqueeze(1))
     second = compiled(words, active_short)
+    assert int(first[-1]) == 11
+    assert int(second[-1]) == 6
+    assert int(
+        torch._dynamo.utils.counters["stats"]["unique_graphs"]) == graph_count
+
+
+def _tensor_percept_concept_probe(words, active):
+    """Record the corrected two-leg word schedule entirely on device."""
+    capacity = int(words.shape[1])
+    batch = int(words.shape[0])
+    device = words.device
+    missing = torch.full(
+        (capacity,), -1, dtype=torch.int64, device=device)
+    stm_state = (missing.clone(),)
+    percept_state = (missing.clone(),)
+    concept_state = (missing.clone(), missing.clone())
+    empty_percept = (
+        torch.zeros(
+            batch, int(words.shape[2]), dtype=words.dtype, device=device),
+        torch.zeros(batch, 1, dtype=torch.bool, device=device),
+        torch.full((), -1, dtype=torch.int64, device=device),
+    )
+    empty_feedback = (
+        torch.full((), -1, dtype=torch.int64, device=device),
+    )
+
+    def _put(vector, index, value):
+        safe = index.clamp(0, capacity - 1).reshape(1)
+        return vector.scatter(0, safe, value.reshape(1))
+
+    def stage_percept(word, row_gate, index, live, current):
+        del live
+        next_state = (_put(current[0], index, index),)
+        return (word[:, 0, :], row_gate, index), next_state
+
+    def stage_concept(payload, feedback, index, live,
+                      current_concept, current_stm):
+        del live
+        _word, _row_gate, source_index = payload
+        next_concept = (
+            _put(current_concept[0], index, source_index),
+            _put(current_concept[1], index, feedback[0]),
+        )
+        next_stm = (_put(current_stm[0], index, source_index),)
+        # The feedback source is this completed conceptual/Language index.
+        return next_concept, next_stm, (source_index,)
+
+    final_stm, final_percept, final_concept, feedback, trip_count = (
+        TensorPeerWhilePipeline().run_percept_concept_banked(
+            words, active,
+            stm_state=stm_state,
+            percept_state=percept_state,
+            concept_state=concept_state,
+            empty_percept=empty_percept,
+            empty_feedback=empty_feedback,
+            stage_percept=stage_percept,
+            stage_concept=stage_concept))
+    return (
+        final_stm[0], final_percept[0],
+        final_concept[0], final_concept[1],
+        feedback[0], trip_count)
+
+
+def test_percept_concept_pipeline_overlaps_adjacent_words_and_drains_latches():
+    words = torch.randn(3, 9, 4)
+    active = (
+        torch.arange(9).reshape(1, 9)
+        < torch.tensor([7, 4, 2]).reshape(3, 1))
+    stm, percept, concept, seen_feedback, feedback, trip_count = (
+        _tensor_percept_concept_probe(words, active))
+    expected = torch.tensor([0, 1, 2, 3, 4, 5, 6, -1, -1])
+    torch.testing.assert_close(percept, expected)
+    torch.testing.assert_close(concept, expected)
+    torch.testing.assert_close(stm, expected)
+    # Concept w sees Language's choice from w-2, never w or w-1.
+    torch.testing.assert_close(
+        seen_feedback,
+        torch.tensor([-1, -1, 0, 1, 2, 3, 4, -1, -1]))
+    # Two post-concept ticks drain both grammar latches.
+    assert int(feedback) == -1
+    assert int(trip_count) == 7
+
+
+def test_percept_concept_pipeline_is_one_fullgraph_across_runtime_lengths():
+    pytest.importorskip("torch._dynamo")
+    torch._dynamo.reset()
+    torch._dynamo.utils.counters.clear()
+    compiled = torch.compile(
+        _tensor_percept_concept_probe, backend="eager", fullgraph=True)
+    words = torch.randn(4, 12, 5)
+    long_rows = (
+        torch.arange(12).reshape(1, 12)
+        < torch.tensor([11, 7, 4, 9]).reshape(4, 1))
+    first = compiled(words, long_rows)
+    graph_count = int(
+        torch._dynamo.utils.counters["stats"]["unique_graphs"])
+    short_rows = (
+        torch.arange(12).reshape(1, 12)
+        < torch.tensor([3, 6, 2, 5]).reshape(4, 1))
+    second = compiled(words, short_rows)
+    assert int(first[-1]) == 11
+    assert int(second[-1]) == 6
+    assert int(
+        torch._dynamo.utils.counters["stats"]["unique_graphs"]) == graph_count
+
+
+def _tensor_cs_lane_probe(words, active):
+    capacity = int(words.shape[1])
+    device = words.device
+    empty = torch.full(
+        (capacity,), -1, dtype=torch.int64, device=device)
+    stm_state = (empty.clone(),)
+    cs_sub_state = (empty.clone(),)
+    cs_sym_state = (empty.clone(), empty.clone())
+    cs_lang_state = (empty.clone(),)
+    empty_cs_sub = (
+        torch.full((), -1, dtype=torch.int64, device=device),)
+    empty_cs_sym = (
+        torch.full((), -1, dtype=torch.int64, device=device),)
+    empty_feedback = (
+        torch.full((), -1, dtype=torch.int64, device=device),)
+
+    def _put(vector, index, value):
+        safe = index.clamp(0, capacity - 1).reshape(1)
+        return vector.scatter(0, safe, value.reshape(1))
+
+    def stage_cs_sub(word, row_gate, index, live, current):
+        del word, row_gate, live
+        return (index,), (_put(current[0], index, index),)
+
+    def stage_cs_sym(payload, feedback, index, live, current):
+        del live
+        source = payload[0]
+        return (
+            (source,),
+            (
+                _put(current[0], index, source),
+                _put(current[1], index, feedback[0]),
+            ),
+        )
+
+    def stage_cs_lang(payload, index, live, current, stm):
+        del live
+        source = payload[0]
+        return (
+            (_put(current[0], index, source),),
+            (_put(stm[0], index, source),),
+            (source,),
+        )
+
+    (final_stm, final_cs_sub, final_cs_sym, final_cs_lang,
+     feedback, trip_count) = TensorPeerWhilePipeline().run_cs_lanes_banked(
+        words, active,
+        stm_state=stm_state,
+        cs_sub_state=cs_sub_state,
+        cs_sym_state=cs_sym_state,
+        cs_lang_state=cs_lang_state,
+        empty_cs_sub=empty_cs_sub,
+        empty_cs_sym=empty_cs_sym,
+        empty_feedback=empty_feedback,
+        stage_cs_sub=stage_cs_sub,
+        stage_cs_sym=stage_cs_sym,
+        stage_cs_lang=stage_cs_lang)
+    return (
+        final_stm[0], final_cs_sub[0],
+        final_cs_sym[0], final_cs_sym[1],
+        final_cs_lang[0], feedback[0], trip_count)
+
+
+def test_cs_lane_pipeline_orders_three_stages_and_latches_feedback_by_index():
+    words = torch.randn(3, 9, 4)
+    active = (
+        torch.arange(9).reshape(1, 9)
+        < torch.tensor([7, 4, 2]).reshape(3, 1))
+    (stm, cs_sub, cs_sym, seen_feedback,
+     cs_lang, feedback, trip_count) = _tensor_cs_lane_probe(words, active)
+    expected = torch.tensor([0, 1, 2, 3, 4, 5, 6, -1, -1])
+    torch.testing.assert_close(cs_sub, expected)
+    torch.testing.assert_close(cs_sym, expected)
+    torch.testing.assert_close(cs_lang, expected)
+    torch.testing.assert_close(stm, expected)
+    # CSLang(w) executes at tick w+2. Its one physical feedback register is
+    # read by CSSym(w+2) on the following tick.
+    torch.testing.assert_close(
+        seen_feedback,
+        torch.tensor([-1, -1, 0, 1, 2, 3, 4, -1, -1]))
+    assert int(feedback) == -1
+    assert int(trip_count) == 7
+
+
+def test_cs_lane_pipeline_is_one_fullgraph_across_runtime_lengths():
+    pytest.importorskip("torch._dynamo")
+    torch._dynamo.reset()
+    torch._dynamo.utils.counters.clear()
+    compiled = torch.compile(
+        _tensor_cs_lane_probe, backend="eager", fullgraph=True)
+    words = torch.randn(4, 12, 5)
+    long_rows = (
+        torch.arange(12).reshape(1, 12)
+        < torch.tensor([11, 7, 4, 9]).reshape(4, 1))
+    first = compiled(words, long_rows)
+    graph_count = int(
+        torch._dynamo.utils.counters["stats"]["unique_graphs"])
+    short_rows = (
+        torch.arange(12).reshape(1, 12)
+        < torch.tensor([3, 6, 2, 5]).reshape(4, 1))
+    second = compiled(words, short_rows)
     assert int(first[-1]) == 11
     assert int(second[-1]) == 6
     assert int(

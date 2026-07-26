@@ -8,62 +8,106 @@ materialization, resolution, shape/mask, and context reads. A peer that needs
 scratch state allocates an explicit working tensor. Debug peer guards compare
 both carrier write epochs and PyTorch storage versions around a peer call.
 
-`ConceptualSpace` has two runtime lanes rather than model-owned previous-CS
-pointers: `CSsub` is the owner-committed PS/WS reduction for A, and `CSsym` is
-the delayed symbolic publication for B.  Peers retain completed tensor
-snapshots rather than mutable carriers because the next A tick reuses its
+`ConceptualSpace` exposes three scheduling lanes rather than model-owned
+previous-CS pointers. `CSsub` is the owner-committed PS/WS reduction, `CSsym`
+is the owner-committed result of the symbolic recurrence, and `CSLang` names
+the CS-owned STM transaction boundary. `CSLang` is an alias for the existing
+STM, not a second module or parameter set. Peers retain completed tensor
+snapshots rather than mutable carriers because the next word reuses its
 Space-owned storage. The legacy compatibility aliases remain internal to CS
 only.
 
-The production word scheduler is a tensor-only three-stage
-`torch.while_loop`. `BasicModel.xml` stages one `[B,256,...]` capacity, derives
-the final live column on device, executes through that column, and then performs
-the two B/C drain ticks. Each row has its own activity mask, so completed short
-sentences remain exact no-ops while a longer peer row finishes. A sentence
-longer than 256 words is rejected before emission rather than truncated.
-The recurrent carry is split by ownership rather than duplicating a mutable
-`SubSpace` per word: one CS/STM bank, one A-owner bank (`CSsub` plus the PS
-contribution slab), one B-owner bank (`CSsym`, objectives, and reconstruction
-trace), and exactly one FIFO slot for each of the A and B word ages. The
-capacity axis belongs only to staged inputs and result slabs. Codebooks remain
-single Space-owned tensors captured by reference across every statically
-unrolled fold; optimizer and contextual updates occur after the drained brick.
-`StaticPeerPipeline` is the ordering reference and eager compatibility
-fallback:
+The production word scheduler is one tensor-only, three-stage
+`torch.while_loop`:
 
-1. A: Input fans its atom and unity views to PS and WS. They have no edge to
-   one another. Their completed peer results are reduced and committed by CS
-   into `CSsub` only after both computations finish.
-2. B: CS publishes A's completed concept and the prior symbolic state as
-   zero-copy read-only snapshots. CSsym and SS consume those common inputs in
-   parallel; SS returns its symbol reference to CS, and **CS alone** commits
-   the delayed `CSsym`/STM update.
-3. C: `LanguageSpace` executes the existing `LanguageLayer` for B's result at
-   `w-2` and returns an immutable routing/reduction plan. CS consumes that
-   plan at B's explicit latch point.
+```
+CSSub(w):    IS(w) -> { PS(w), WS(w) } -> CS reduction
+CSSym(w-1):  symbolicOrder x (CS -> SS -> CS)
+CSLang(w-2): word-reference deposit
+             -> automatic object-reference resolution
+             -> LS Binary choice -> CS Binary apply
+             -> LS Unary choice  -> CS Unary apply/STM commit
+```
+
+The three rows execute on adjacent word indices in every steady-state tick.
+PS and WS receive word-local read-only views derived from the same InputSpace
+slot and have no edge to one another. WS byte/property classification is
+staged once per word at the eager lexical boundary; the captured loop reads
+only that word's `[B,N,P]` primitive-property activation and the one owned
+property table, rather than rescanning the padded sentence. Within CSSym,
+`CS -> SS -> CS` is deliberately sequential: SS promotes conceptual order,
+and CS decodes that promotion before the next of the fixed `symbolicOrder`
+iterations. CSLang then deposits the completed word concept in CS STM.
+Treating that entry as a reference automatically replaces it with the paired
+object concept before `LanguageSpace` builds the object concepts into a syntax
+tree.
+
+Within CSLang, choosing and applying are separate ownership operations, not
+separate mutable stacks. `LanguageSpace` owns the registered grammar modules
+and returns immutable tensor choices containing the selected parent/candidate,
+validity, rule identity, and loss metadata. `ConceptualSpace` alone applies
+those choices to its buffer, depth, derivation orders, grammar orders, and
+reference metadata. The exact transaction is:
+
+```
+LS choose capacity Binary -> CS apply (when STM pressure licenses it)
+CS deposit/resolve word reference
+LS choose ordinary Binary -> CS apply
+LS choose Unary           -> CS apply
+```
+
+The ordinary Binary remains the construction operation that reduces two
+constituents to their grammatical parent. The capacity Binary is a distinct
+pre-deposit safety opportunity and is retained. Binary then Unary are
+dependency-ordered because the Unary chooser reads the Binary-applied parent;
+the ownership split does not speculate or change that derivation.
+
+`BasicModel.xml` stages one `[B,512,...]` capacity, derives the final live
+column on device, executes through that column, and then drains the final
+CSSym transaction, the final CSLang transaction, and the grammar-feedback
+register. Each row has its own
+activity mask, so completed short sentences remain exact no-ops while a longer
+peer row finishes. A sentence longer than 512 words is rejected before emission
+rather than truncated.
+
+The recurrent carry is split by ownership rather than duplicating a mutable
+`SubSpace` per word: a CSSub owner bank (CSsub, the PS contribution slab, and
+terminal WS state), a CSSym owner bank, a CSLang owner bank (concept
+contributions, objectives, and reconstruction trace), the one CS-owned STM
+bank, and the fixed CSSub→CSSym and CSSym→CSLang FIFO payloads. The capacity
+axis belongs only to staged inputs and result slabs. Codebooks remain single
+Space-owned tensors captured by reference across every statically unrolled
+fold; optimizer and contextual updates occur after the drained brick.
+`StaticPeerPipeline` remains a legacy A/B/C compatibility scheduler for older
+configurations; it is not the canonical aligned transaction above.
 
 The write topology is therefore deliberately one-way:
 
 ```
-IS ──► { PS, WS } ──► CSsub
-           SS ───────► CSsym / CS-owned STM
-           LS ───────► CS-owned routing/reduction plan
+IS ──► { PS, WS } ──► CSSub ──► CSSym/SS × K ──► CSLang ──► CS-owned STM
+                                    ▲                 │
+                                    └── grammar w+2 ──┘
 ```
 
-Read-only recurrent snapshots may flow from CS to a later peer stage, but no
-peer receives a writable CS carrier and no peer commits CS state. In shorthand,
-the owner reduction is `{PS, WS, SS, LS} -> CS`.
+Read-only recurrent snapshots may flow from CS to a later operation, but no
+non-owner receives a writable CS carrier and no non-owner commits CS state. In
+shorthand, the ownership reduction is `{PS, WS, SS, LS} -> CS`; this describes
+write ownership, not simultaneous execution of all four spaces.
 
-`LanguageSpace` is a scheduling owner only: its `LanguageLayer` parameters and
-grammar state continue to be registered exactly once under `SymbolSubSpace`.
-Grammar results are timestamped latches and first reach B at source index + 2;
-the scheduler drains A, B, C, and latches in order at sentence end. Language
-returns an explicit reduction plan; any conceptual STM mutation remains a
-ConceptualSpace commit.
+`LanguageSpace` is a scheduling and choice owner only: its `LanguageLayer`
+parameters and grammar state continue to be registered exactly once under
+`SymbolSubSpace`.
+Grammar results use one timestamped CSLang→CSSym register and first reach
+CSSym at source symbolic index + 2. The other two “latches” are ordinary
+forward pipeline registers holding completed CSSub and CSSym products; none is
+model state, and none duplicates a codebook. The scheduler drains all three
+registers in order at sentence end. Language returns explicit immutable
+choices; only ConceptualSpace computes and commits the corresponding STM
+transitions.
 
 > **Status: live serial runtime.** On the normal MPS
 > `BASICMODEL_MPS_WORD_LOOP_FULLGRAPH=1` path, one `fullgraph=True` graph
-> contains the tensor higher-order loop and its A/B/C carried state. Runtime
+> contains the tensor higher-order loop and both dependency legs. Runtime
 > sentence length is a device scalar, so changing it does not retrace the
 > graph. Read-only capabilities reduce to zero-copy tensor reads inside the
 > loop; complete owner state is cloned and committed once after the drain.
