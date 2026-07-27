@@ -15235,7 +15235,7 @@ class ConceptualSpace(Space):
         # Read once at construction; consumed by the later training-path
         # wiring (Task 3). Defaults to 0.1 when the knob is absent.
         self.intra_loss_weight = float(
-            TheXMLConfig.training("intraLossWeight", 0.1) or 0.1)
+            TheXMLConfig.training("intraLossWeight", 0.1))
 
         # Acceptance bar in [0, 1] for content-aware learned-relation
         # insertion into the relative-sentence codebook. Declared under
@@ -16049,6 +16049,9 @@ class ConceptualSpace(Space):
             stash ``torch.zeros_like(idea)`` and SKIP loss accumulation
             for this step (no prior context to predict from).
         """
+        if float(self.intra_loss_weight) <= 0.0:
+            self._stm_predicted_idea = torch.zeros_like(idea)
+            return
         snap = self.stm.snapshot()
         if snap is None or snap.dim() != 3 or int(snap.shape[1]) == 0:
             # First word / empty STM: degenerate prediction, no loss.
@@ -16079,6 +16082,9 @@ class ConceptualSpace(Space):
         divides by the accumulated tensor weight, so this is numerically
         identical to omitting that first term.
         """
+        if float(self.intra_loss_weight) <= 0.0:
+            self._stm_predicted_idea = torch.zeros_like(idea)
+            return
         stm = self.stm
         buf = stm._buffer
         if buf is None or buf.dim() != 3:
@@ -16136,6 +16142,9 @@ class ConceptualSpace(Space):
             (we do not fabricate an overlap). Loss resumes once the STM
             steady-state slot count matches the slab width.
         """
+        if float(self.intra_loss_weight) <= 0.0:
+            self._stm_predicted_slab = torch.zeros_like(folded)
+            return
         prev = self.stm.snapshot()
         if prev is None or prev.dim() != 3 or int(prev.shape[1]) == 0:
             # First pass / empty STM: degenerate prediction, no loss.

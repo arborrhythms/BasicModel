@@ -8,6 +8,7 @@ FineWeb-EDU streaming downloads and reads parquet shards from HuggingFace,
 shared by both embed.py (embedding training) and BasicModel.py (model training).
 """
 
+import hashlib
 import os
 import random
 import time
@@ -37,6 +38,28 @@ MAX_SHARD = 1822
 
 def _shard_filename(index):
     return f"shard_{index:05d}.parquet"
+
+
+def _file_fingerprint(path):
+    """Return immutable local provenance for one corpus shard."""
+    if not os.path.isfile(path):
+        # Test/fake iterators may supply a logical shard name without a local
+        # payload. Production ``get_shard_paths`` only returns real files.
+        return {
+            "name": os.path.basename(path),
+            "bytes": None,
+            "sha256": None,
+        }
+    digest = hashlib.sha256()
+    with open(path, "rb") as source:
+        for chunk in iter(lambda: source.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return {
+        "name": os.path.basename(path),
+        "bytes": int(os.path.getsize(path)),
+        "sha256": digest.hexdigest(),
+    }
+
 
 def download_shard(index, data_dir):
     """Download a single shard if not already present. Returns filepath or None.
@@ -203,6 +226,10 @@ class SentenceStreamDataset(IterableDataset):
         # by ``next_packed_tick`` so the legacy one-trial-per-tick iterator and
         # cursor remain byte-identical.
         self._packed_steps = None
+        # Exact source rows emitted by the most recent cursor call. This is
+        # copied into the prefetch queue beside its tick, so Teacher addressing
+        # remains exact even when the producer has already advanced again.
+        self.last_source_indices = None
 
     def __len__(self):
         """Number of timesteps in one epoch (per-stream length)."""
@@ -379,11 +406,13 @@ class SentenceStreamDataset(IterableDataset):
             self._packed_steps = [0] * self.num_streams
 
         rows = []
+        source_rows = []
         output_rows = [] if self.outputs is not None else None
         hard_eos = []
         L = self.stream_length
         for b in range(self.num_streams):
             row_items = []
+            row_sources = []
             row_outputs = [] if output_rows is not None else None
             used = 0
             used_bytes = 0
@@ -426,6 +455,7 @@ class SentenceStreamDataset(IterableDataset):
                             > max_bytes)):
                     break
                 row_items.append(item)
+                row_sources.append(source_index)
                 if row_outputs is not None:
                     row_outputs.append(
                         self.outputs[source_index]
@@ -436,9 +466,11 @@ class SentenceStreamDataset(IterableDataset):
                 cursor += 1
             self._packed_steps[b] = cursor
             rows.append(row_items)
+            source_rows.append(row_sources)
             if output_rows is not None:
                 output_rows.append(row_outputs)
             hard_eos.append(cursor >= L)
+        self.last_source_indices = source_rows
         return rows, output_rows, hard_eos
 
     def packed_done(self):
@@ -458,11 +490,14 @@ class SentenceStreamDataset(IterableDataset):
         slab = torch.zeros(
             self.num_streams, self.slab_bytes, dtype=torch.uint8)
         hard_eos = [False] * self.num_streams
+        source_rows = []
         for b in range(self.num_streams):
             window_end = (b + 1) * self.stream_length
             if self.doc_idx[b] >= window_end:
                 # Row exhausted its assigned window; emit pure NULLs.
+                source_rows.append([])
                 continue
+            source_rows.append([int(self.doc_idx[b])])
             doc = self._doc_bytes(self.doc_idx[b])
             remaining = len(doc) - self.offset[b]
             advance = min(self.slab_bytes, remaining)
@@ -479,6 +514,7 @@ class SentenceStreamDataset(IterableDataset):
                 self.doc_idx[b] += 1
                 self.offset[b] = 0
         # Byte mode: AR is self-supervised, no separate output.
+        self.last_source_indices = source_rows
         return slab, None, hard_eos
 
     def _trial_next_tick(self):
@@ -496,12 +532,14 @@ class SentenceStreamDataset(IterableDataset):
             empty_inp = self._slice(self.inputs, [])
             empty_out = (self._slice(self.outputs, [])
                          if self.outputs is not None else None)
+            self.last_source_indices = [[] for _ in range(self.num_streams)]
             return empty_inp, empty_out, [True] * self.num_streams
         L = self.stream_length
         indices = [b * L + self._trial_step for b in range(self.num_streams)]
         inp = self._slice(self.inputs, indices)
         out = (self._slice(self.outputs, indices)
                if self.outputs is not None else None)
+        self.last_source_indices = list(indices)
         self._trial_step += 1
         # Each trial is its own atomic unit -> hard_eos True every row.
         return inp, out, [True] * self.num_streams
@@ -517,11 +555,13 @@ class SentenceStreamDataset(IterableDataset):
         if self.slab_bytes is None:
             self._trial_step = 0
             self._packed_steps = None
+            self.last_source_indices = None
             return
         self.doc_idx = [
             b * self.stream_length for b in range(self.num_streams)]
         self.offset = [0] * self.num_streams
         self._encoded_cache.clear()
+        self.last_source_indices = None
 
     def progress(self):
         """Return cursor progress as a fraction in ``[0.0, 1.0]``.
@@ -623,6 +663,15 @@ class Data():
         # for batching, but those placeholders are not supervised targets.
         self.has_supervised_outputs = False
         self.source_manifest = None
+        # Parallel objective addresses for the Teacher's direct
+        # What(where, when) lookup. FineWeb fills document/sentence/span
+        # coordinates; other datasets receive deterministic row addresses.
+        self.source_addresses = {
+            "train": [], "validation": [], "test": []
+        }
+        # Teacher-owned discourse scope. This is request-scoped metadata,
+        # never a clean reconstruction target and never checkpoint state.
+        self.active_context = None
         # ``_runtime_mode`` retired 2026-05-14 alongside ARIR; runtime
         # callers no longer pass a mode token.  Field kept on the class
         # at None so legacy ``getattr(data, '_runtime_mode', None)``
@@ -684,6 +733,9 @@ class Data():
         """
         self.has_supervised_outputs = False
         self.source_manifest = {"dataset": str(dataset)}
+        self.source_addresses = {
+            "train": [], "validation": [], "test": []
+        }
         if dataset == "mnist":
             self.loadMNist()
         if dataset == "xor":
@@ -822,20 +874,64 @@ class Data():
                 return x
             return (x + 1) / 2 * (self.output_max - self.output_min) + self.output_min
 
+    def set_context_whole(self, context):
+        """Install the corpus/book/conversation whole for subsequent reads."""
+        self.active_context = context
+        return context
+
+    def source_address(self, split, row):
+        """Return the lossless objective address for one source row."""
+        split = str(split)
+        row = int(row)
+        addresses = self.source_addresses.get(split)
+        if addresses is None:
+            raise KeyError(f"unknown data split {split!r}")
+        if row < 0 or row >= len(addresses):
+            raise IndexError(
+                f"source row {row} is outside {split} address length "
+                f"{len(addresses)}"
+            )
+        return dict(addresses[row])
+
     @contextmanager
-    def runtime_batch(self, inputs, outputs=None, mode=None):
+    def runtime_batch(self, inputs, outputs=None, mode=None, context=None):
         """Stage transient inference data into ``train_input`` / ``train_output``.
 
-        Saves and restores the previous contents so training data is
-        not corrupted (training and inference never overlap in
-        practice).  ``mode`` is accepted for back-compat and ignored;
-        the legacy ARIR-mode signalling retired 2026-05-14.
+        Saves and restores the previous contents so training data is not
+        corrupted (training and inference never overlap in practice).
+        ``context`` optionally scopes the transient input to an explicit
+        corpus/book/conversation whole and is restored on exit. ``mode`` is
+        accepted for back-compat and ignored; the legacy ARIR-mode signalling
+        retired 2026-05-14.
         """
         del mode  # retained for signature back-compat only
         saved_input = self.train_input
         saved_output = self.train_output
+        saved_context = self.active_context
+        had_runtime_addresses = "runtime" in self.source_addresses
+        saved_runtime_addresses = self.source_addresses.get("runtime")
         self.train_input = inputs
         self.train_output = outputs
+        values = (
+            list(inputs)
+            if not isinstance(inputs, torch.Tensor)
+            else [inputs[row] for row in range(int(inputs.shape[0]))]
+        )
+        self.source_addresses["runtime"] = [
+            {
+                "split": "runtime",
+                "row": row,
+                "document": row,
+                "sentence": 0,
+                "char_start": 0,
+                "char_end": len(value) if isinstance(value, str) else 0,
+                "external_id": None,
+                "source_time": None,
+            }
+            for row, value in enumerate(values)
+        ]
+        if context is not None:
+            self.active_context = context
         if isinstance(inputs, torch.Tensor) and self.input_min is not None:
             xmin = inputs.min().item()
             xmax = inputs.max().item()
@@ -849,6 +945,11 @@ class Data():
         finally:
             self.train_input = saved_input
             self.train_output = saved_output
+            self.active_context = saved_context
+            if had_runtime_addresses:
+                self.source_addresses["runtime"] = saved_runtime_addresses
+            else:
+                self.source_addresses.pop("runtime", None)
 
     def pushInput(self, token):
         """Append a token to train_input[0] during inference.
@@ -1193,7 +1294,9 @@ class Data():
                                "Run 'make basic_data' first.")
         self.source_manifest = {
             "dataset": "text",
-            "shards": [os.path.basename(p) for p in shard_paths],
+            "corpus": "karpathy/fineweb-edu-100b-shuffle",
+            "source": BASE_URL,
+            "shards": [_file_fingerprint(path) for path in shard_paths],
             "max_docs": int(max_docs) if max_docs is not None else None,
             "max_tokens": (int(max_tokens)
                            if max_tokens is not None else None),
@@ -1220,6 +1323,7 @@ class Data():
         from util import parse
         import Meronomy
         split_sentences = {"train": [], "validation": [], "test": []}
+        split_addresses = {"train": [], "validation": [], "test": []}
         docs_seen = 0
         overlong_sentences = 0
         for doc_idx, doc in enumerate(
@@ -1227,7 +1331,8 @@ class Data():
             residue = doc_idx % 10
             split = ("train" if residue < 8 else
                      "validation" if residue == 8 else "test")
-            for sent_text, _ in parse(doc, lex='sentences'):
+            for sentence_idx, (sent_text, char_start) in enumerate(
+                    parse(doc, lex='sentences')):
                 if sent_text.strip():
                     if max_sentence_words is not None:
                         n_words = len(Meronomy.word_spans(
@@ -1242,7 +1347,24 @@ class Data():
                         words = sent_text.split()
                         sent_text = " ".join(
                             words[:max(1, int(max_tokens))])
+                    row = len(split_sentences[split])
                     split_sentences[split].append(sent_text)
+                    split_addresses[split].append({
+                        "split": split,
+                        "row": row,
+                        # ``doc_idx`` is canonical across the ordered shard
+                        # manifest, hence unambiguous inside this corpus
+                        # snapshot even when multiple shards are loaded.
+                        "document": int(doc_idx),
+                        "sentence": int(sentence_idx),
+                        "char_start": int(char_start),
+                        "char_end": int(char_start) + len(sent_text),
+                        # The FineWeb-Edu shard schema contains only text.
+                        # DOI/date remain optional aliases, not fabricated
+                        # coordinates.
+                        "external_id": None,
+                        "source_time": None,
+                    })
             docs_seen += 1
 
         if docs_seen == 0:
@@ -1269,6 +1391,7 @@ class Data():
               f"({len(train_texts)} train, {len(val_texts)} val, "
               f"{len(test_texts)} test){dropped}")
         self.processLM(data)
+        self.source_addresses = split_addresses
     def processLM(self, data):
         """Stash text splits as lists; tensorize labels eagerly when numeric.
 
@@ -1292,6 +1415,56 @@ class Data():
         self.train_input  = list(train_tokens)
         self.validation_input  = list(validation_tokens)
         self.test_input  = list(test_tokens)
+
+        # Text datasets without immutable shard fingerprints still need a
+        # stable snapshot identity. Hash the exact split/row/text sequence;
+        # loader limits remain outside this intrinsic source version.
+        manifest = dict(self.source_manifest or {})
+        text_values = (
+            self.train_input + self.validation_input + self.test_input
+        )
+        if ("shards" not in manifest
+                and "content_sha256" not in manifest
+                and all(isinstance(value, (str, bytes, bytearray))
+                        for value in text_values)):
+            digest = hashlib.sha256()
+            for split, values in (
+                    ("train", self.train_input),
+                    ("validation", self.validation_input),
+                    ("test", self.test_input)):
+                digest.update(split.encode("utf-8") + b"\0")
+                for value in values:
+                    payload = (
+                        value.encode("utf-8")
+                        if isinstance(value, str) else bytes(value)
+                    )
+                    digest.update(len(payload).to_bytes(8, "big"))
+                    digest.update(payload)
+            manifest["content_sha256"] = digest.hexdigest()
+            self.source_manifest = manifest
+
+        # Non-FineWeb datasets still receive an objective address. Loaders
+        # with richer provenance replace this table after processLM returns.
+        self.source_addresses = {}
+        for split, values in (
+                ("train", self.train_input),
+                ("validation", self.validation_input),
+                ("test", self.test_input)):
+            self.source_addresses[split] = [
+                {
+                    "split": split,
+                    "row": row,
+                    "document": row,
+                    "sentence": 0,
+                    "char_start": 0,
+                    "char_end": (
+                        len(value) if isinstance(value, str) else 0
+                    ),
+                    "external_id": None,
+                    "source_time": None,
+                }
+                for row, value in enumerate(values)
+            ]
 
         # For masked LM, labels are target word strings -- store for later
         # conversion to embedding vectors by prepare_lm_targets().

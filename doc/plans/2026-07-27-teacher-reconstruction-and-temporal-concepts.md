@@ -1,10 +1,14 @@
 # Teacher reconstruction, event concepts, and learned verbs
 
-> **Status:** proposal only, 2026-07-27. This plan consolidates the intended
-> learning model and its ontology. It does not describe the current serial
-> implementation as complete: in particular, the current `symbolicOrder` loop
-> promotes and decodes an already-selected concept row but does not yet learn
-> synchronic or diachronic concepts.
+> **Status:** partially implemented, 2026-07-27. The clean Teacher boundary,
+> loss ownership, exact objective source address, legacy-predictor removal,
+> and clean endurance benchmark have landed. The objective query is exposed
+> but is not yet consumed by a trainable student encoder. This plan does not
+> describe the serial concept loop as complete: in particular, the current
+> `symbolicOrder` loop promotes and decodes an already-selected concept row
+> but does not yet learn synchronic or diachronic concepts. The operational
+> teaching modes and immediate implementation handoff are specified in
+> `doc/specs/2026-07-27-teaching-modes-and-next-iteration.md`.
 >
 > **Directive:** replace the collection of independent prediction and learning
 > losses with a Teacher-owned reconstruction objective. Concepts are learned
@@ -115,6 +119,7 @@ Reading supplies:
 ```text
 reading mode
 active text/domain concept
+objective source address
 subjective attention .where/.when
 Perception
 STM/LTM
@@ -131,19 +136,47 @@ order, and document boundaries. Packed B28 rows may contain consecutive
 sentences from one document but must never carry discourse state across a
 document boundary.
 
-## 4. Teacher-owned reconstruction
-
-The public cognitive query is:
+The Teacher's objective address is separate from subjective attention:
 
 ```text
-Model.What(subjective_where, subjective_when,
+objective_where =
+    (corpus_snapshot, split, document, sentence, character_span)
+objective_when =
+    (snapshot_or_revision_identity, optional_source_time)
+```
+
+The ordered split row is retained as a direct lookup index alongside the
+document/sentence/span provenance. A DOI may replace or alias the document
+coordinate when supplied, but a DOI and date alone do not identify a sentence,
+and FineWeb's shard schema provides neither. The local shard SHA-256, corpus
+release, ordered document index, sentence index, and character span therefore
+form the initial lossless address.
+
+These objective coordinates are categorical source-query data that the student
+must learn to use. They are never written into, substituted for, or derived
+from the model's existing subjective `.where` and `.when` bands.
+
+## 4. Teacher-owned reconstruction
+
+The Teacher's truth query is:
+
+```text
+Teacher.What(objective_where, objective_when) -> clean what
+```
+
+The student's public cognitive query receives that objective address as
+external conditioning while retaining its own subjective attention state:
+
+```text
+Model.What(objective_where, objective_when,
            perception, ltm, discourse_context)
 ```
 
 The returned `what` is an imagination in the broad sense: reconstruction of
-the requested present, past, or future subjective event. Prediction is not a
-separate faculty. A future query is reconstruction with unavailable current
-perception and a later requested `.when`.
+the requested present, past, or future event. Prediction is not a separate
+faculty. A future query is reconstruction with unavailable current perception
+and a later objective target time. The student's subjective `.when` still
+orders its own presentation and computation; Teacher does not set it.
 
 Introduce a `Teacher` that owns lesson construction, target access, masking,
 loss composition, and reporting. The student may read only its presented
@@ -154,19 +187,21 @@ caches, or grammar inputs.
 The canonical lesson is present-input reconstruction:
 
 1. Contextualize clean text as the current reading event.
-2. Have the Teacher choose and expose student-visible subjective `.where` and
-   `.when` attention coordinates for that event.
+2. Resolve and expose the separate objective source address for that event.
 3. Run the student's bottom-up perceptual and top-down grammatical processes.
-4. Ask the student to reconstruct the clean `what` at those coordinates.
+4. Ask the student to reconstruct the clean `what` for that objective address.
 5. Let the Teacher compare the reconstruction with the clean text and assign
    the complete loss.
 
-The first implementation supplies `.where/.when` explicitly. They are
-directional attention signals in the individual's subjective space, not
-world coordinates and not hidden target content. After explicit-coordinate
-reconstruction is stable, the curriculum may progressively replace them with
-relative or in-sentence reconstruction cues. The Teacher must retain the
-resolved coordinates privately so it can score the same requested event.
+The first implementation supplies exact objective coordinates as padded
+integer tensors on a boundary separate from the event carrier. Integer
+magnitudes are not semantic; a student-side address encoder must treat corpus,
+snapshot, split, and external identifiers categorically and positions as
+ordered coordinates. Clean reconstruction is benchmarked before that encoder
+is allowed to affect the numerical path. After objective-coordinate
+conditioning is stable, the curriculum may progressively replace explicit
+addresses with relative or in-sentence reconstruction cues. Teacher retains
+the resolved address privately so it always scores the same requested event.
 
 Use a mixed degradation curriculum:
 
@@ -178,15 +213,14 @@ all phases:  reserve 10% clean anchor lessons
 ```
 
 Degradation masks content, lexical identity, and leaked constituent labels,
-while retaining the active discourse concept, reading mode, query
-`.where/.when`, prior student memory, and grammar state. Fully blank perception
-therefore asks the student to reconstruct the present from history and
-context.
+while retaining the active discourse concept, reading mode, objective query,
+prior student memory, and grammar state. Fully blank perception therefore asks
+the student to reconstruct the present from history, address, and context.
 
 Teacher loss includes:
 
 - clean `what` reconstruction;
-- reference/address consistency for subjective `.where/.when`;
+- objective source-address consistency;
 - grammar validity and, on clean lessons only, an available derivation trace;
 - ConceptualSpace/codebook commitment and required boundedness terms;
 - temporal-concept and verb-application reconstruction once enabled.
@@ -506,8 +540,9 @@ induction.
 
 2. **Land the Teacher seam on clean reconstruction.**
    - Centralize current reconstruction losses in `Teacher`.
-   - Have the Teacher supply explicit subjective `.where/.when` query signals,
-     retaining private resolved coordinates for scoring.
+   - Have the Teacher supply lossless objective source coordinates on a
+     separate query seam, retaining private resolved coordinates for scoring.
+   - Do not read, stamp, or replace the model's subjective `.where/.when`.
    - Preserve exact clean-input behavior and disable legacy predictor/forced
      grammar rerun weights.
    - Sample one derivation from the full retained forest, including occasional
@@ -532,8 +567,8 @@ induction.
    - Apply the 10/70/20 curriculum with 10% clean anchors.
    - Progress through partial and blank perception only after clean
      reconstruction and verb learning are causal and measurable.
-   - After explicit coordinate use is stable, test replacing student-visible
-     `.where/.when` with relative and in-sentence reconstruction cues.
+   - After explicit objective-address use is stable, test replacing it with
+     relative and in-sentence reconstruction cues.
 
 6. **Ablate conceptual width.**
    - Test 512 and 256 independently of native PS/WS widths.
@@ -558,8 +593,8 @@ induction.
 
 - Complete-input Teacher reconstruction matches the existing clean path.
 - Partial and blank inputs never recover clean targets through leakage.
-- The Teacher-provided `.where/.when` resolves the same requested event used
-  for scoring, without encoding world-event location.
+- The Teacher-provided objective address resolves the same requested input
+  used for scoring and never mutates subjective `.where/.when`.
 - B28 discourse rows remain isolated and reset at document boundaries.
 - The truth store distinguishes assertion time from represented event support.
 - Legacy predictor and forced grammar-rerun losses remain zero.
