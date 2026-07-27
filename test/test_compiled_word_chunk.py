@@ -448,6 +448,17 @@ def test_tensor_peer_while_runs_symbolic_reference_transaction_and_releases_owne
     """The production HOP promotes words, resolves objects, and is reusable."""
     torch.manual_seed(211)
     tensor_loop = _tiny_canonical_model(tmp_path, monkeypatch)
+    capacity_calls = 0
+
+    def forbidden_capacity_choice(*_args, **_kwargs):
+        nonlocal capacity_calls
+        capacity_calls += 1
+        raise AssertionError(
+            "canonical CSLang evaluated its retired pre-capacity grammar")
+
+    monkeypatch.setattr(
+        tensor_loop.languageSpace, "choose_capacity_binary",
+        forbidden_capacity_choice)
     tensor_loop._chart_compose_per_word = lambda: None
     tensor_loop._tensor_peer_while_eager = True
 
@@ -461,6 +472,7 @@ def test_tensor_peer_while_runs_symbolic_reference_transaction_and_releases_owne
     assert not any(
         "CSLang" in key for key in tensor_loop.state_dict())
     assert int(tensor_loop._tensor_peer_trip_count) == 4
+    assert capacity_calls == 0
     assert tensor_loop._tensor_symbolic_iterations == tensor_loop.symbolicOrder
     assert all(
         value is None or not torch.is_tensor(value)
@@ -524,9 +536,34 @@ def test_tensor_peer_ws_stages_distinct_word_local_property_views(
     assert model._tensor_peer_while_ready(int(active.shape[1]))
 
 
+def test_tensor_peer_word_loop_rejects_external_full_stm(
+        tmp_path, monkeypatch):
+    """The removed pre-capacity pass is protected by an entry invariant."""
+    model = _tiny_canonical_model(tmp_path, monkeypatch)
+    _stage_fullgraph_tensor_peer(model, ["alpha beta", "gamma"])
+    stm = model.conceptualSpace.stm
+    stm._depth.fill_(int(stm.capacity))
+
+    with pytest.raises(
+            RuntimeError, match="entered a word loop with full STM"):
+        model._run_tensor_peer_word_pipeline(
+            int(model.inputSpace._ar_embedded_N.shape[1]))
+
+
 def test_peer_leg_profiler_executes_real_ps_ws_and_conceptual_bodies(
         tmp_path, monkeypatch):
     model = _tiny_canonical_model(tmp_path, monkeypatch)
+    capacity_calls = 0
+
+    def forbidden_capacity_choice(*_args, **_kwargs):
+        nonlocal capacity_calls
+        capacity_calls += 1
+        raise AssertionError(
+            "canonical CSLang must not profile the retired pre-capacity pass")
+
+    monkeypatch.setattr(
+        model.languageSpace, "choose_capacity_binary",
+        forbidden_capacity_choice)
     previous_backend = util.TheCompileBackend
     try:
         util.TheCompileBackend = "eager"
@@ -546,6 +583,46 @@ def test_peer_leg_profiler_executes_real_ps_ws_and_conceptual_bodies(
     assert result["slowest_pipeline_stage"] in (
         "CSSub", "CSSym", "CSLang")
     assert result["serial_to_ideal_pipeline_ratio"] >= 1.0
+    assert capacity_calls == 0
+
+
+def test_cuda_selects_lazy_fullgraph_word_loop_and_cudagraph_policy(
+        tmp_path, monkeypatch):
+    """CUDA uses the complete fused W loop, not the eager peer scheduler."""
+    model = _tiny_canonical_model(
+        tmp_path, monkeypatch, word_buckets="16")
+    previous_device = util.TheDevice.get()
+    previous_backend = util.TheCompileBackend
+    previous_mode = util.TheCompileMode
+    compile_calls = []
+
+    def fake_compile(source, **kwargs):
+        compile_calls.append((source, kwargs))
+        return source
+
+    try:
+        # Exercise selection without requiring CUDA hardware: construction is
+        # complete on CPU, and lazy loop installation performs no CUDA work.
+        monkeypatch.setattr(
+            model, "to",
+            types.MethodType(lambda self, *_args, **_kwargs: self, model))
+        monkeypatch.setattr(util, "compile", fake_compile)
+        util.TheCompileBackend = "inductor"
+        util.TheCompileMode = "max-autotune"
+        util.TheDevice.set(util.DeviceHandle("cuda"))
+
+        model.enable_compiled_step()
+
+        assert model._compiled_word_loop_fullgraph
+        assert model._compiled_word_loop_compile is fake_compile
+        assert model._compiled_word_steps == {}
+        assert compile_calls == [], "fixed-W lowering must remain first-use lazy"
+        assert model._brick_compiled
+        assert model._brick_cuda_graph_mode == "max-autotune"
+    finally:
+        util.TheDevice.set(previous_device)
+        util.TheCompileBackend = previous_backend
+        util.TheCompileMode = previous_mode
 
 
 def test_compiled_sentence_state_is_an_explicit_result_not_a_side_effect():

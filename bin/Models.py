@@ -6800,7 +6800,7 @@ class BasicModel(BaseModel):
             raise RuntimeError(
                 f"no lazy fullgraph word-loop source is configured for W={width}")
         TheMessage(
-            "Canonical MPS fullgraph lowering: compiling complete "
+            "Canonical fullgraph lowering: compiling complete "
             f"W={width} recurrent word loop (one-time cost for this bucket)")
         compiled = compile_fn(source, verbose=True, fullgraph=True)
         steps[width] = compiled
@@ -7049,9 +7049,13 @@ class BasicModel(BaseModel):
         self._compiled_whole_fold_ladder = None
         self._compiled_word_loop_compile = None
         self._compiled_word_loop_fullgraph = False
+        _compiled_device_type = str(TheDevice.get()).split(":", 1)[0]
         _mps_fullgraph_ladder_boundary = (
             _aligned_serial_stage_bodies
-            and str(TheDevice.get()).startswith("mps"))
+            and _compiled_device_type == "mps")
+        _cuda_fullgraph_word_loop_boundary = (
+            _aligned_serial_stage_bodies
+            and _compiled_device_type == "cuda")
         _mps_word_loop = os.environ.get(
             "BASICMODEL_MPS_WORD_LOOP_FULLGRAPH", "1").strip().lower() not in (
                 "0", "false", "no", "off")
@@ -7077,22 +7081,29 @@ class BasicModel(BaseModel):
             # fallback only for those configurations.
             _mps_word_loop = False
             _mps_word_cell = False
-        if _mps_fullgraph_ladder_boundary and _mps_word_loop:
+            _cuda_fullgraph_word_loop_boundary = False
+        if ((_mps_fullgraph_ladder_boundary and _mps_word_loop)
+                or _cuda_fullgraph_word_loop_boundary):
             # The primary production boundary: one fullgraph encompasses the
             # dynamic tensor word loop, both dependency legs, and backward.
             # P and the maximum W are fixed masked layouts; only live words
-            # execute. It lowers lazily on first use. The complete backward
-            # still has substantially more live inputs than the old one-word
-            # cell, so conservative realization/fusion limits keep generated
-            # Metal kernels beneath the 31 constant-buffer cap.
-            os.environ.setdefault("BASICMODEL_MPS_IOBUF", "8")
-            os.environ.setdefault("BASICMODEL_MPS_FUSE", "16")
-            os.environ.setdefault("BASICMODEL_MPS_REALIZE", "4")
+            # execute. It lowers lazily on first use. On Metal the complete
+            # backward still has substantially more live inputs than the old
+            # one-word cell, so conservative realization/fusion limits keep
+            # generated kernels beneath the 31 constant-buffer cap. CUDA
+            # keeps its native Inductor/Triton fusion policy and, with a
+            # CUDAGraph-bearing compile mode, captures eligible fixed-shape
+            # body partitions for replay.
+            if _mps_fullgraph_ladder_boundary:
+                os.environ.setdefault("BASICMODEL_MPS_IOBUF", "8")
+                os.environ.setdefault("BASICMODEL_MPS_FUSE", "16")
+                os.environ.setdefault("BASICMODEL_MPS_REALIZE", "4")
             self._configure_lazy_fullgraph_word_loops(_compile, _word_buckets)
             self._compiled_step = self.forward
             TheMessage(
-                "Canonical MPS fullgraph compile: lazy tensor while-loop "
-                "capture with fixed capacity and residual-part axes")
+                "Canonical fullgraph compile: lazy fused tensor word-loop "
+                f"lowering on {_compiled_device_type} with fixed capacity "
+                "and residual-part axes")
         elif _mps_fullgraph_ladder_boundary and _mps_word_cell:
             # Fullgraph training kernel for the actual recurrent word tick.
             # The fixed residual-part bucket below removes the old 3..8192
@@ -7245,6 +7256,15 @@ class BasicModel(BaseModel):
             self._compiled_word_steps = {}
             self._compiled_step = _compile(
                 self.forward, verbose=True, fullgraph=_fullgraph)
+
+        _cuda_graph_mode = str(
+            getattr(_util, "TheCompileMode", "default"))
+        self._brick_compiled = bool(
+            _compiled_device_type == "cuda"
+            and self._compiled_word_loop_fullgraph
+            and _cuda_graph_mode in ("reduce-overhead", "max-autotune"))
+        self._brick_cuda_graph_mode = (
+            _cuda_graph_mode if self._brick_compiled else None)
 
     def _start_spaces_for_forward(self):
         for space in self.spaces:
@@ -7728,13 +7748,14 @@ class BasicModel(BaseModel):
                 torch._inductor.config.triton.cudagraph_dynamic_shape_warn_limit = 128
             except Exception:
                 pass
-            # Skip CUDAGraph capture for graph segments whose Inductor
-            # specialization count crosses the dynamic-shape threshold.
-            # Keeps Inductor fusion / Triton codegen wins while
-            # sidestepping the per-shape CUDAGraph capture cost on
-            # architectures with many distinct static shapes.
+            # The complete canonical word loop has one fixed W/B layout and
+            # is exactly the graph we want CUDA to capture. Older segmented
+            # paths retain the dynamic-shape skip so their many N-halving
+            # specializations do not each pay a capture cost.
             try:
-                torch._inductor.config.triton.cudagraph_skip_dynamic_graphs = True
+                torch._inductor.config.triton.cudagraph_skip_dynamic_graphs = (
+                    not bool(getattr(
+                        self, "_compiled_word_loop_fullgraph", False)))
             except Exception:
                 pass
         except Exception as e:
@@ -7765,6 +7786,11 @@ class BasicModel(BaseModel):
         self._compiled_word_chunk_replaying = False
         self._compiled_word_chunk_trace_active = False
         self._compiled_word_chunk_width = 0
+        # CUDA fullgraph/capture diagnostics. ``enable_compiled_step`` stamps
+        # these only when the complete recurrent W loop is selected together
+        # with a CUDAGraph-bearing Inductor mode.
+        self._brick_compiled = False
+        self._brick_cuda_graph_mode = None
         self._compiled_part_fold_ladder = None
         self._compiled_whole_fold_ladder = None
         self._compiled_word_loop_compile = None
@@ -11658,6 +11684,8 @@ class BasicModel(BaseModel):
         self._compiled_word_chunk_replaying = False
         self._compiled_word_chunk_trace_active = False
         self._compiled_word_chunk_width = 0
+        self._brick_compiled = False
+        self._brick_cuda_graph_mode = None
         # Canonical aligned serial execution uses the three-stage peer contract.
         # Older configurations retain the legacy static A/B/C compatibility
         # scheduler. The switch is read at construction, never inside a
@@ -15217,6 +15245,18 @@ class BasicModel(BaseModel):
         stm_state = (
             stm._buffer, stm._depth, stm._orders, stm._grammar_orders,
             stm._concept_rows, stm._concept_activations)
+        # The ordinary post-deposit Binary is a capacity demand at depth K,
+        # so every reachable canonical word boundary has depth < K. A full
+        # entry row means state was installed outside that recurrence. Keep
+        # the check at the eager/debug boundary; the compiled loop relies on
+        # the inductive invariant and must not pay for a device reduction or
+        # an otherwise unused grammar evaluation on every word.
+        if not torch.compiler.is_compiling():
+            full_entry = stm._depth >= capacity
+            if bool(full_entry.detach().any().item()):
+                raise RuntimeError(
+                    "canonical CSLang entered a word loop with full STM; "
+                    "post-deposit Binary must leave depth < capacity")
         zero_concept = words.new_zeros(B, n_locations, concept_dim)
         # CSLang keeps the eight full, non-quantized concepts in its owned
         # STM.  Its word-aligned output crosses the symbolic boundary as the
@@ -15417,14 +15457,19 @@ class BasicModel(BaseModel):
             prediction, loss_sum, loss_weight = FunctionalPeerSTM.predict(
                 current_stm, word_idea, commit, predictor,
                 routing=routing, routing_valid=routing_valid)
-            full_active = torch.logical_and(
-                current_stm[1] >= capacity, commit.reshape(B))
-            pre_choice = language.choose_capacity_binary(
-                current_stm, full_active,
-                base_tau=self.stm_reduce_tau)
-            (pre_state, pre_applied, pre_op,
-             pre_valid, pre_loss) = cs.apply_binary_language_choice(
-                current_stm, pre_choice)
+            # Reachable canonical state always enters below capacity: the
+            # post-deposit Binary below is a hard demand whenever a push
+            # reaches K. The former pre-deposit chooser nevertheless ran all
+            # binary experts on every word before masking their result; it was
+            # observed to apply 0/728 times on the first FineWeb probe. Keep
+            # its three-slot reconstruction ABI as an explicit inactive
+            # sentinel, but perform no grammar evaluation here.
+            pre_state = current_stm
+            pre_applied = torch.zeros_like(
+                current_stm[1], dtype=torch.bool)
+            pre_op = torch.full_like(current_stm[1], -1)
+            pre_valid = torch.zeros_like(pre_applied)
+            pre_loss = word_idea.new_zeros(B)
             word_order = symbolic_orders[:, 0].to(dtype=torch.long)
             grammar_order = torch.zeros_like(word_order)
             pushed_word = ShortTermMemory.functional_push_step_masked(
@@ -15494,7 +15539,7 @@ class BasicModel(BaseModel):
             sealed_stm = final_stm
             seal_width = max(0, capacity - 1)
             for seal_index in range(seal_width):
-                seal_choice = language.choose_capacity_binary(
+                seal_choice = language.choose_sentence_seal_binary(
                     sealed_stm, intermediate_end,
                     base_tau=self.stm_reduce_tau)
                 (sealed_stm, _seal_applied, seal_op,

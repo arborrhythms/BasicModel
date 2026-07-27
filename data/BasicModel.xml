@@ -97,6 +97,11 @@
     <!-- Low-occupancy grammar threshold; pressure lowers it to a hard
          grammatical demand at the configured capacity boundary. -->
     <stmReduceTau>0.75</stmReduceTau>
+    <!-- This Boolean controls the legacy second full exploration trial.
+         false still trains the chooser through the normal pass's shared
+         Viterbi-forward / sum-product-marginal backward surface. The
+         canonical sentence-wide packed-forest replacement is specified in
+         doc/Language.md and must not pay for a duplicate sentence parse. -->
     <learning>false</learning>
 
     <data>

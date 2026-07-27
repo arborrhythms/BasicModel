@@ -117,12 +117,12 @@ choices; only ConceptualSpace computes and commits the corresponding STM
 transitions.
 
 > **Status: live serial runtime.** On the normal MPS
-> `BASICMODEL_MPS_WORD_LOOP_FULLGRAPH=1` path, one `fullgraph=True` graph
-> contains the tensor higher-order loop and both dependency legs. Runtime
-> sentence length is a device scalar, so changing it does not retrace the
-> graph. Read-only capabilities reduce to zero-copy tensor reads inside the
-> loop; complete owner state is cloned and committed once after the drain.
-> Debug mutation guards remain eager-only.
+> `BASICMODEL_MPS_WORD_LOOP_FULLGRAPH=1` path and on CUDA, one
+> `fullgraph=True` graph contains the tensor higher-order loop and both
+> dependency legs. Runtime sentence length is a device scalar, so changing it
+> does not retrace the graph. Read-only capabilities reduce to zero-copy
+> tensor reads inside the loop; complete owner state is cloned and committed
+> once after the drain. Debug mutation guards remain eager-only.
 > `BASICMODEL_MPS_WORD_LOOP_FULLGRAPH=0` is the explicit fallback, where PS/WS
 > numerical fold bodies compile independently and the static scheduler runs on
 > the host.
@@ -133,12 +133,29 @@ transitions.
 > resource release. MPS therefore strips only that CUDA-graph component
 > (`max-autotune` becomes `max-autotune-no-cudagraphs`), while a CUDA target
 > retains the requested mode. PyTorch currently emits `torch.while_loop` as a
-> host-side loop. Its CUDA graph partitioner can wrap the CUDA-only body
-> partitions inside that host loop, but it does not capture the complete
-> dynamic sentence wrapper as one CUDA graph. The training benchmark reports
-> requested/effective modes and raw Inductor CUDAGraph counters so capture and
-> its speedup can be proven on the final CUDA hardware rather than inferred
-> from `fullgraph=True`.
+> host-side loop. CUDA now lowers this complete outer fullgraph rather than
+> compiling only the independent PS/WS ladders. Its CUDA graph partitioner can
+> wrap eligible fixed-shape body partitions inside that host loop, but it does
+> not capture the complete dynamic sentence wrapper as one CUDA graph. The
+> training benchmark reports requested/effective modes and raw Inductor
+> CUDAGraph counters so capture and its speedup can be proven on the final CUDA
+> hardware rather than inferred from `fullgraph=True`.
+
+> **Packed-root scan experiment (2026-07-26).** Replacing the detached
+> `[B,S,D]` sentence-root FIFO with a per-word `torch.scan` output preserved
+> roots bit-for-bit, but PyTorch 2.14's prototype scan increased saved
+> autograd state from 720,900 to 2,742,395 bytes on the W16 canonical probe
+> (3.8×). A same-width integer bit-transport probe also left peak memory
+> unchanged, confirming that AOTAutograd already excludes the detached FIFO
+> from the effective differentiated tape. Neither variant is retained.
+
+> **CSLang capacity invariant (2026-07-26).** The canonical tensor recurrence
+> no longer evaluates a pre-deposit Binary on every word. Its ordinary
+> post-deposit Binary is already a hard grammatical demand when a push reaches
+> STM capacity, proving that the next word begins below capacity. The retired
+> evaluation applied 0/728 times on the first FineWeb probe but consumed about
+> half of the isolated CSLang stage. Its reconstruction-trace position remains
+> an explicit inactive sentinel; demanded sentence-root sealing is unchanged.
 
 The focused ownership and pipeline-parallel contract for sparse, per-execution
 `SubSpace` carriers and Space-owned codebooks is specified in

@@ -573,6 +573,30 @@ the exploration gradient updates the same anchors. `BasicModel`
 `_binary_layers` (and the STM reducer) to stamp $t$; `runBatch` sets it
 before the forward and resets to `None` in a `finally`.
 
+> **Canonical single-pass target.** `<learning>false>` does **not** freeze the
+> grammar chooser. The default structured layer already scores each candidate
+> once, reads one Viterbi route for the hard forward, and uses the sum-product
+> marginals as its straight-through backward surface. The Boolean `learning`
+> flag controls the additional full exploration trial described above.
+>
+> The current online CSLang controller presents only the newest two STM slots
+> to that shared Viterbi/sum-product computation. It therefore explores every
+> legal local COPY/REDUCE rule alternative, but not every complete
+> sentence-level derivation. Canonical grammar learning is to replace that
+> local scope with one LanguageSpace-owned packed derivation forest:
+>
+> - score each legal span/split/rule hyperedge once;
+> - compute max-semiring backpointers for the committed tree;
+> - compute log-sum-exp inside/outside marginals over the entire forest for
+>   learning, using the same hyperedge scores and no second parse;
+> - retain the forest so a later top-k/diverse-semiring readout can expose
+>   multiple interpretations for metaphor without rescoring or reparsing.
+>
+> ConceptualSpace applies only the selected immutable plan(s); it does not own
+> or mutate the syntax forest. Until the sentence-wide forest is implemented,
+> the production canonical configuration keeps the costly two-trial Boolean
+> mode off and uses the existing single-pass straight-through marginals.
+
 **Reading a tree.** A hard derivation is always recoverable on demand: pin
 $t = 0$, run a temp-0 analysis, and read the argmax routing trace
 (`action_kind` / `action_op` / the copy / reduce masks) that

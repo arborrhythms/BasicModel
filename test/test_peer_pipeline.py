@@ -87,7 +87,11 @@ def test_language_chooses_and_conceptual_space_alone_applies_stm_update():
 
     binary = language.choose_capacity_binary(
         state, gate, base_tau=0.75)
+    seal_binary = language.choose_sentence_seal_binary(
+        state, gate, base_tau=0.75)
     assert isinstance(binary, LanguageBinaryChoice)
+    for actual, expected in zip(seal_binary, binary):
+        torch.testing.assert_close(actual, expected, rtol=0, atol=0)
     assert not hasattr(language, "apply_binary_language_choice")
     assert tuple(value._version for value in state) == versions
     for actual, expected in zip(state, before):

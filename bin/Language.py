@@ -13890,11 +13890,31 @@ class LanguageSpace(nn.Module):
         return layers["CS"] if layers is not None and "CS" in layers else None
 
     def choose_capacity_binary(self, state, row_gate, *, base_tau):
-        """Choose the pre-deposit capacity Binary; CS applies the choice."""
+        """Choose a legacy pre-deposit capacity Binary.
+
+        The canonical tensor recurrence no longer calls this on every word:
+        its post-deposit demand proves ``depth < capacity`` at the following
+        word boundary. The method remains for legacy/eager controllers that
+        explicitly encounter an externally installed full STM.
+        """
         layer = self._tree_layer(2)
         if layer is None:
             raise RuntimeError(
                 "LanguageSpace has no CS binary layer for STM capacity")
+        return _FunctionalLanguageChooser.choose_binary(
+            state, layer, row_gate, base_tau=base_tau, demand=True)
+
+    def choose_sentence_seal_binary(self, state, row_gate, *, base_tau):
+        """Choose one demanded Binary while closing a sentence forest.
+
+        Sentence sealing is semantically distinct from the retired recurring
+        pre-deposit capacity guard: it may require up to ``capacity - 1``
+        actual grammar applications to produce the sentence root.
+        """
+        layer = self._tree_layer(2)
+        if layer is None:
+            raise RuntimeError(
+                "LanguageSpace has no CS binary layer for sentence sealing")
         return _FunctionalLanguageChooser.choose_binary(
             state, layer, row_gate, base_tau=base_tau, demand=True)
 

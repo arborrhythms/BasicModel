@@ -193,17 +193,23 @@ implemented in `ConceptualSpace.forward`
    depth two the grammar must license the reduction on its own. As STM fills,
    the falling threshold supplies soft memory pressure. At $d=K$, REDUCE is a
    demand: the best binary grammatical operator fires even at zero confidence.
-   A full row is also checked immediately before the next insertion. If no binary
-   grammar operator exists, that demand raises an explicit error; the model
-   may not silently drop an old constituent or substitute a mean-fold.
+   In the canonical tensor recurrence that post-insertion demand establishes
+   the inductive invariant `depth < capacity` at every following word
+   boundary, so it does not re-evaluate all Binary experts immediately before
+   every insertion. Entering the recurrence with an externally installed full
+   STM is an invariant failure. Legacy eager controllers retain their
+   exceptional pre-insertion check. If no binary grammatical operator exists,
+   a capacity demand raises an explicit error; the model may not silently drop
+   an old constituent or substitute a mean-fold.
 
    `protect_depth` still preserves a relative row's depth-3 end-state. At the
    sentence boundary, the corrected word-axis models likewise demand actual
    grammar operators while closing the remaining forest to its root. A
-   capacity-demand binary operation before insertion consumes that word's
-   binary budget; it cannot be followed by another binary operation after the
-   insertion. Unary APPLY preserves concept order, increments grammatical
-   derivation depth, and does not change STM occupancy.
+   Legacy execution still counts a capacity-demand operation before insertion
+   against that word's binary budget. Canonical execution reaches the same
+   one-Binary budget through its post-insertion controller alone. Unary APPLY
+   preserves concept order, increments grammatical derivation depth, and does
+   not change STM occupancy.
 
 > **Convention pin — newest-at-slot-0, shift-RIGHT.** The **free / newest**
 > slot is **slot $0$** and the rolling window shifts **right**, dropping

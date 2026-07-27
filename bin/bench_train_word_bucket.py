@@ -74,7 +74,6 @@ def _profile_peer_legs(torch, model, device, texts, repeats):
     fold_passes = tuple(range(max(0, int(model.subsymbolicOrder) - 1)))
     symbolic_passes = tuple(range(max(0, int(model.symbolicOrder))))
     batch = int(isp._ar_embedded_N.shape[0])
-    capacity = int(stm.capacity)
 
     part_ids = isp._ar_word_part_ids[:, :1, :]
     part_mask = isp._ar_word_part_mask[:, :1, :]
@@ -171,13 +170,12 @@ def _profile_peer_legs(torch, model, device, texts, repeats):
         prediction, loss_sum, loss_weight = FunctionalPeerSTM.predict(
             stm_state, word_idea, commit, predictor,
             routing=feedback[0], routing_valid=feedback[1])
-        full_active = torch.logical_and(
-            stm_state[1] >= capacity, commit.reshape(batch))
-        pre_choice = language.choose_capacity_binary(
-            stm_state, full_active, base_tau=model.stm_reduce_tau)
-        (pre_state, pre_applied, pre_op,
-         pre_valid, _pre_loss) = cs.apply_binary_language_choice(
-            stm_state, pre_choice)
+        # Match the production canonical body: its entry-depth invariant
+        # makes the retired pre-capacity chooser an inactive trace sentinel.
+        pre_state = stm_state
+        pre_applied = torch.zeros_like(stm_state[1], dtype=torch.bool)
+        pre_op = torch.full_like(stm_state[1], -1)
+        pre_valid = torch.zeros_like(pre_applied)
         word_order = symbol_orders[:, 0].to(dtype=torch.long)
         pushed_word = ShortTermMemory.functional_push_step_masked(
             *pre_state, word_idea, commit, word_order,
