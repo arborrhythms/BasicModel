@@ -1,13 +1,15 @@
-# Teaching modes, contextual grammar, and the next iteration
+# Teaching modes, the symbolic mind, and the next iteration
 
 > **Status:** implementation specification and maintainer handoff,
-> 2026-07-27.
+> 2026-07-27; cognitive-boundary and curriculum directives added 2026-07-28.
 >
 > **Immediate scope:** teach the student the objective coordinate system,
 > make reading an explicit query/response process, and replace the retired
-> next-sentence predictor with one context-conditioned `What` mechanism.
-> Thinking is specified as the inference-time continuation of that mechanism,
-> but autonomous truth-store admission remains deferred.
+> next-sentence predictor with one addressed `What` mechanism whose thinking
+> remains grammatical. Establish a noun-first linguistic curriculum before
+> adding state transitions and modifiers. Thinking is specified as the
+> inference-time continuation of the same mechanism, but autonomous truth-store
+> admission remains deferred.
 
 ## 1. Current boundary
 
@@ -95,6 +97,36 @@ DOIs, publication dates, URLs, and titles are optional aliases or provenance.
 They do not uniquely identify a passage. FineWeb supplies none of them
 reliably, so the lossless local address remains corpus snapshot plus ordered
 document/sentence/span coordinates.
+
+## 2A. Non-negotiable boundary of the student mind
+
+The student may have access to the subsymbolic content carried by percepts,
+words, and concepts, but it may transform that content only by applying an
+explicit grammatical operation. The symbolic content of those operations is
+the mind's control language.
+
+Consequently:
+
+- perception and the lexicon may present subsymbolic content to the mind;
+- the mind may retain and bind references to that content;
+- every deliberate subsymbolic transformation of it must be an application of
+  a named grammatical operation with explicit operands and result;
+- LTM lookup, comparison, binding, and other reasoning actions must enter the
+  computation as grammatical actions rather than as an unrecorded neural
+  side-channel;
+- grammar choice, word choice, and memory use must leave a replayable symbolic
+  trace;
+- no general MLP, attention blend, or hidden context path may bypass the
+  grammar by mapping word/concept content directly to control or output.
+
+This restriction is the intended safety and human-interpretability boundary:
+the subsymbolic meaning of a word may remain unanalyzed, while the thought
+that acts on it is expressed by syntax.
+
+The exact software mechanism that enforces this boundary remains open. Sealed
+semantic payloads, typed operation capabilities, trace validation, and
+restricted operator parameterizations are possible implementations, not
+requirements selected by this specification.
 
 ## 3. Query, observation, and scoring contracts
 
@@ -288,12 +320,12 @@ properly provenance-tagged claim under a future truth-admission policy.
 Thinking therefore follows:
 
 ```text
-query policy
-  -> addressed LTM/perception retrieval
-  -> cached contextual state
+syntactic query action
+  -> addressed LTM/perception records
+  -> grammatical operations over those records
   -> one grammatical/conceptual What construction
   -> provisional ThoughtRecord
-  -> next query or stop
+  -> next syntactic query/action or stop
 ```
 
 Use explicit step, wall-clock, novelty, and confidence budgets so inference
@@ -304,50 +336,28 @@ derivation per thought.
 ## 5. Replacement for the next-sentence predictor
 
 The benchmark shows that the independent predictor was the dominant long leg.
-Do not restore it under another name. Replace its useful function with a
-contextual state computed once per sentence or thought and reused by the
-existing grammar chooser.
+Do not restore it under another name. The global attention/reasoning path must
+be connected to the model and become responsible for choosing grammar over
+words. To the greatest extent possible, its reasoning must itself be
+syntactic rather than an MLP selecting grammar as an external tool.
 
-### 5.1 Context encoder
+### 5.1 Required behavior
 
-Compute:
+Perception, symbolic activation, STM, LTM, the objective address, and the
+current teaching/operating mode may all inform the mind. Their use must obey
+the boundary in section 2A:
 
-```text
-h_context = ContextEncoder(
-    perception summary,
-    current ConceptualSpace state,
-    top-k LTM retrieval,
-    discourse/history state,
-    objective address embedding,
-    source-version embedding,
-    teaching/operating mode)
-```
+- LTM and perception reads are explicit syntactic query actions;
+- retrieved items remain identifiable records rather than disappearing into
+  an untraceable blended context;
+- grammatical operations determine how subsymbolic word/concept content is
+  transformed;
+- the derivation determines the grammatical role before lexical realization
+  chooses a word;
+- the reasoning and the resulting sentence share one inspectable derivation
+  where possible.
 
-Recommended starting geometry:
-
-- objective address embedding: 128 dimensions;
-- cached context state: 256 dimensions;
-- two-layer context MLP with 512 hidden units;
-- top eight detached LTM records;
-- one context computation per sentence/thought, not per candidate rule.
-
-These are initial ablation points. Keep the context state narrower than the
-ConceptualSpace carrier unless quality shows a need for parity.
-
-### 5.2 Context-conditioned grammar
-
-The grammar chooser should not become a token-generating LLM. It continues to
-score explicit symbolic alternatives in the retained derivation forest:
-
-```text
-score(rule_or_leaf, chart_state, h_context)
-    = base_score(rule_or_leaf, chart_state)
-    + low_rank_bilinear(rule_or_leaf, h_context)
-    + mode_bias
-```
-
-Start with rank-32 bilinear or FiLM-style conditioning. Cache the projected
-context once and reuse it at every chart decision. Preserve:
+Preserve:
 
 - one forest construction;
 - one stochastic derivation selection;
@@ -355,23 +365,33 @@ context once and reuse it at every chart decision. Preserve:
 - nonzero probability for second-, third-, and tail-ranked derivations;
 - no independent predictive parse.
 
-Historical and semantic computation belongs primarily in `ContextEncoder` and
-LTM retrieval. Grammar consumes that state to choose syntax, concepts, and
-operators; it should not repeatedly rediscover the entire history at each
-node.
+Bounded retrieval may be cached and reused across a derivation so the same LTM
+query is not repeated for every candidate rule.
 
-### 5.3 Query policy
+### 5.2 Open architecture
 
-Add a small head over `h_context` that chooses relative cursor actions and,
-later, associative retrieval targets. This head replaces the control function
-of the old next-sentence predictor:
+This specification intentionally does not select the internal architecture of
+the syntactic reasoner. Open possibilities include a grammar-native agenda or
+forest policy, explicit additive rule evidence, or a hybrid construction.
+Whether internal thought uses surface linguistic syntax or a richer but still
+human-readable grammar is also open.
 
-```text
-QueryPolicy(h_context) -> next objective where/when action
-```
+An MLP tool-user that consumes context and selects grammatical tools remains a
+useful experimental comparison, and may work functionally. It is not the
+preferred interpretation of the symbolic architecture because its reasoning
+would remain opaque. The previously proposed fixed context-MLP dimensions,
+rank-32 conditioning, and FiLM design are therefore withdrawn as requirements.
 
-The result determines what the unified `What` path tries to reconstruct. It
-does not generate the sentence itself.
+The implementation must first settle the smallest mechanism that connects
+global attention/reasoning to grammar while satisfying section 2A, then
+measure it against the MLP baseline.
+
+### 5.3 Query as syntax
+
+Relative cursor movement and associative retrieval should be expressible as
+syntactic actions whose result determines the objective `where`/`when` that
+the unified `What` path reconstructs. The exact query grammar, scoring rule,
+and search procedure remain open.
 
 ## 6. Address representation and losses
 
@@ -411,6 +431,41 @@ the former next-sentence learning signal. There is no additional
 next-sentence loss.
 
 ## 7. Proposed curriculum
+
+The Teacher controls two independent curriculum axes: linguistic complexity
+and the availability of perception. Linguistic structure must be staged first;
+the 10/70/20 degradation schedule then applies within the currently permitted
+linguistic stage.
+
+### Linguistic curriculum: nouns, transitions, and modifiers
+
+The Teacher's objective spacetime continuum is approximated in the student's
+subjective universe by nouns and verbs:
+
+```text
+noun at t      = an object or object-state
+verb over t    = a transformation from prior noun-state(s)
+                 to subsequent noun-state(s)
+```
+
+The required teaching order is:
+
+1. **Nouns.** Establish objects and object-states before asking the student to
+   explain change.
+2. **Nouns and verbs.** Once noun representations are sufficiently stable,
+   learn verbs from repeated transitions between earlier and later noun
+   states.
+3. **Adjectives.** Add linguistic refinement of noun states.
+4. **Adverbs.** Add linguistic refinement of verbs and transitions.
+5. **Further linguistic complexity.** Introduce the remaining constructions
+   progressively rather than assuming the complete grammar from the start.
+
+The Teacher should be able to restrict both lessons and available grammar
+productions to the current stage. The exact stability criterion for promoting
+between stages, the mining of aligned state transitions, and the detailed
+production subsets remain open.
+
+### Perception curriculum
 
 Retain the previously chosen 10/70/20 progression and a ten-percent clean
 anchor, but make the mode mixture explicit.
@@ -508,17 +563,17 @@ Then introduce light degradation and require shuffled addresses to worsen
 surface reconstruction. If reconstruction is unaffected, stop: the address
 encoder is being ignored.
 
-### Step 4: add one cached contextual state
+### Step 4: connect global attention and reasoning through grammar
 
-Add `ContextEncoder` once per sentence boundary. Retrieve only bounded,
-detached student-visible history. Feed its cached projection to:
+Make bounded, student-visible perception/STM/LTM reads available to the
+grammatical derivation. Memory queries and their returned records must appear
+in the symbolic trace, and no dense semantic-to-control bypass may choose
+grammar or words outside that trace.
 
-- the grammar chooser;
-- the query-policy head;
-- concept/lexical selection where an existing explicit seam exists.
-
-Do not feed Teacher's private `what`, future truth, or clean grammar labels.
-Do not invoke the context MLP once per forest candidate.
+Do not expose Teacher's private `what`, future truth, or clean grammar labels.
+Do not repeat an identical memory retrieval for every forest candidate. The
+query grammar, rule-scoring mechanism, and internal reasoner representation
+remain open.
 
 ### Step 5: enable constrained student requests
 
@@ -539,7 +594,14 @@ Each uses the same single grammar forest and surface reconstruction loss.
 Only after all three pass leakage and throughput gates should the full
 curriculum be enabled.
 
-### Step 7: specify, but defer, autonomous thinking writes
+### Step 7: scaffold the linguistic curriculum
+
+Add explicit curriculum-stage metadata and the ability to restrict lessons
+and productions to the noun stage. Specify the transition examples required
+by the later noun-and-verb stage, but leave full diachronic verb induction
+until addressed reading and stable noun learning are demonstrated.
+
+### Step 8: specify, but defer, autonomous thinking writes
 
 Implement `ThoughtRecord` and a bounded read-only thinking loop only after
 addressed prediction works. Store thought records in working memory or a
@@ -579,9 +641,21 @@ self-reward remain separate follow-up work.
 - The grammar forest is constructed once per lesson.
 - One derivation is sampled and reconstructed; no predictor-triggered second
   parse occurs.
-- Context is computed once per sentence/thought.
+- Identical bounded memory reads are not recomputed per candidate.
 - Second-, third-, and tail-ranked derivations retain nonzero support.
 - Clean reconstruction remains finite through address and context ablations.
+
+### Symbolic mind boundary
+
+- Every deliberate transformation of subsymbolic word/concept content is
+  attributable to a named grammatical operation.
+- LTM queries and returned records appear in the replayable derivation trace.
+- No direct dense path maps semantic payloads to grammar control or words
+  outside the grammatical derivation.
+- Replaying the recorded operations and memory reads reproduces the same
+  grammatical construction.
+- Noun-stage lessons cannot silently invoke productions reserved for verbs,
+  adjectives, adverbs, or later complexity.
 
 ### Thinking safety
 
@@ -637,14 +711,35 @@ The next iteration is complete when:
 3. A constrained student query advances the reading cursor and retrieves the
    requested passage.
 4. Lightly degraded reconstruction causally benefits from the correct address.
-5. One cached historical/semantic context conditions the grammar chooser.
-6. Next-sentence behavior is expressed as blank-perception reconstruction at
+5. Global attention/reasoning evidence reaches grammar through traceable
+   syntactic query and reasoning actions, without a dense semantic-to-control
+   bypass.
+6. Grammar, memory use, and word realization produce a replayable symbolic
+   trace.
+7. The Teacher can enforce a noun-only curriculum stage and represent the
+   later noun-and-verb, adjective, adverb, and further-complexity stages.
+8. Next-sentence behavior is expressed as blank-perception reconstruction at
    the next address, with no independent predictor or second parse.
-7. Provisional thoughts and predictions remain outside historical truth.
-8. Correctness tests pass and clean throughput remains above the 15%
+9. Provisional thoughts and predictions remain outside historical truth.
+10. Correctness tests pass and clean throughput remains above the 15%
    regression gate.
 
-## 12. Deferred work
+## 12. Open architectural questions
+
+The directives above deliberately leave these decisions unresolved:
+
+- how the code prevents non-grammatical access to subsymbolic payloads;
+- the query grammar and the representation of retrieved records;
+- how the syntactic reasoner scores and searches legal actions;
+- whether internal syntax is surface language or a richer readable grammar;
+- how noun stability is measured before verbs are introduced;
+- how repeated state transitions are aligned and promoted into verbs.
+
+Resolve these with the smallest measured implementation that preserves the
+symbolic trace. Do not treat the speculative mechanisms in this document as a
+settled design.
+
+## 13. Deferred work
 
 The following remain intentionally outside the next iteration:
 
@@ -652,7 +747,8 @@ The following remain intentionally outside the next iteration:
 - reward from unverified self-generated thoughts;
 - unrestricted associative query over all LTM;
 - multiple simultaneous parses for metaphor;
-- full diachronic verb induction and sparse verb experts;
+- full diachronic verb induction and sparse verb experts (the curriculum
+  scaffold and noun-first gate are not deferred);
 - creation/destruction and identity-split ontology;
 - grounding/re-anchoring repair;
 - replacing explicit objective addresses with purely in-sentence cues.
