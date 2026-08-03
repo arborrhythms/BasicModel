@@ -1,15 +1,18 @@
 # Teaching modes, the symbolic mind, and the next iteration
 
 > **Status:** implementation specification and maintainer handoff,
-> 2026-07-27; cognitive-boundary and curriculum directives added 2026-07-28.
+> 2026-07-27; cognitive-boundary and curriculum directives added 2026-07-28;
+> oracle/student API and future-state revisions added 2026-08-03.
 >
 > **Immediate scope:** teach the student the objective coordinate system,
 > make reading an explicit query/response process, and replace the retired
-> next-sentence predictor with one addressed `What` mechanism whose thinking
-> remains grammatical. Establish a noun-first linguistic curriculum before
-> adding state transitions and modifiers. Thinking is specified as the
-> inference-time continuation of the same mechanism, but autonomous truth-store
-> admission remains deferred.
+> next-sentence predictor with `Teacher.Data(address)` as a private truth oracle
+> and `model.what(address)` as the student's addressed estimate. The estimate
+> must cover a future conceptual state as well as present reconstruction, while
+> its reasoning remains grammatical. Establish a noun-first linguistic
+> curriculum before adding state transitions and modifiers. Thinking is
+> specified as the inference-time continuation of the same mechanism, but
+> autonomous truth-store admission remains deferred.
 
 ## 1. Current boundary
 
@@ -19,18 +22,26 @@ reading.
 Today:
 
 1. The data cursor selects a passage.
-2. `Teacher` resolves its objective source address and clean `what`.
+2. `Teacher` resolves its objective source address and clean `what` through
+   the method currently named `Teacher.What`.
 3. The complete passage is presented to the student.
 4. The existing perceptual and grammatical path reconstructs it.
 5. Teacher owns the reconstruction loss and scoring boundary.
+
+The current `Teacher.What` is an exact dataset lookup, not a learned student
+prediction. The revised interface calls that privileged lookup
+`Teacher.Data(address)` and reserves `model.what(address)` for the student's
+best estimate from evidence available at the time of the query.
 
 The objective query is exposed as CPU categorical tensors, but no trainable
 student module consumes it. The student therefore does not yet:
 
 - learn the objective coordinate system;
+- expose a learned, address-conditioned `model.what(address)`;
 - choose or request a `where`/`when`;
 - retrieve the perception at a requested address;
-- depend on the address when perception is degraded or blank.
+- depend on the address when perception is degraded or blank;
+- predict a future state before the future perception has been presented.
 
 The accepted clean B24 benchmark is 41.989 complete sentences/s. That result
 is an upper bound for the current computational core, not the throughput of
@@ -42,6 +53,10 @@ The next iteration should spend some capacity and some lessons learning
 objective coordinates. A modest throughput regression is expected and
 acceptable if ablations prove that those coordinates causally improve
 degraded, recall, and prediction lessons.
+
+The clean reconstruction benchmark must therefore remain labelled a
+reconstruction baseline. It does not yet measure the predictive ability of
+`model.what(address)`.
 
 ## 2. Non-negotiable coordinate separation
 
@@ -130,18 +145,59 @@ requirements selected by this specification.
 
 ## 3. Query, observation, and scoring contracts
 
-Active reading requires three logically distinct actors even if Teacher v1
-implements two of them in one Python object:
+Active reading requires a strict separation between truth lookup, permitted
+observation, and student estimation, even if Teacher v1 implements the first
+two in one Python object:
 
 ```text
 Student.Query(context) -> ObjectiveAddress
 SourceOracle.Observe(ObjectiveAddress, observation_policy) -> Perception
-Teacher.Score(ObjectiveAddress, Student.What, private clean What) -> loss
+model.observe(ObjectiveAddress, Perception) -> updated student state
+model.what(ObjectiveAddress) -> WhatEstimate
+Teacher.Data(ObjectiveAddress) -> private TeacherDatum
+Teacher.Score(ObjectiveAddress, WhatEstimate, TeacherDatum) -> loss
 ```
 
 - **Student** selects an address or accepts an assigned address.
 - **SourceOracle** returns only the perception permitted by the lesson mode.
-- **Teacher** retains the clean target privately and scores the result.
+- **`model.what(address)`** returns the student's best current estimate. Its
+  only explicit argument is the objective address; current perception,
+  conceptual state, STM, and LTM are student-owned evidence, not extra truth
+  arguments supplied by Teacher.
+- **`Teacher.Data(address)`** is the exact corpus/world oracle. It returns the
+  clean datum and provenance for scoring, and is callable only by the teaching
+  controller, evaluation harness, and tests. The model, its memory, its query
+  machinery, and its grammar must have no reference to this callable.
+- **Teacher** retains the `TeacherDatum` privately and scores the estimate.
+
+`Teacher.Data` and `model.what` must not be aliases or wrappers around the same
+lookup, and the learned student call graph must have no capability to invoke
+`Teacher.Data`. An outer training facade may coordinate both APIs, but only in
+separate controller and student scopes. The capitalization in this
+specification deliberately distinguishes the privileged dataset API from the
+learned model API. The minimum records are:
+
+```text
+TeacherDatum:
+    resolved objective address
+    source version and provenance
+    clean perceptual/source value
+    optional clean surface rendering
+
+WhatEstimate:
+    requested objective address
+    predicted conceptual state in [-1, 1]
+    grammatical derivation distribution or sampled derivation
+    optional reconstructed perceptual/surface value
+    root and constituent WhatFrame trace references
+    references to the student-visible evidence and memory reads used
+    confidence and provisional/verified status
+```
+
+The public `model.what(address)` signature remains small because the model
+owns its current state. Internally it must construct a typed evidence record so
+tests can identify which conceptual, perceptual, STM, and LTM values were
+available. No field of `TeacherDatum` may appear in that record.
 
 The source response must not expose the private clean target on degraded or
 blank lessons. Teacher-only content must never enter LTM, discourse caches,
@@ -157,10 +213,13 @@ TeachingLesson:
     source_version
     observation_policy
     presented_perception
-    private_clean_what
-    student_what
+    private_teacher_datum
+    private_detached_target_concept_if_available
+    student_what_estimate
+    student_what_frames_and_evidence_refs
+    prediction_asserted_at
     address_targets
-    grammar_trace_if_permitted
+    grammar_and_query_trace
     loss_components
 ```
 
@@ -275,21 +334,51 @@ student's subjective `.when`.
 
 ### 4.6 `PREDICT`
 
-Prediction is blank-perception reconstruction at a next or later objective
-address. It is not a separate faculty and must not restore the retired
-next-sentence predictor:
+Prediction is an estimate of the `what` state at a next or later objective
+address. Surface next-sentence reconstruction is one textual supervision for
+that state, not the definition of the faculty. Prediction must not restore the
+retired independent next-sentence predictor:
 
 ```text
-query = next objective address
-perception = blank
-context = history + LTM + current concepts + discourse
-student.What(query, context) -> predicted what
-Teacher.Score(predicted what, future source truth)
+current_address = address at t
+future_address = address at t + delta
+
+model.observe(current_address, permitted current perception)
+predicted_future = model.what(future_address)
+
+# Only after predicted_future is complete and isolated from the target:
+future_datum = Teacher.Data(future_address)
+Teacher.Score(future_address, predicted_future, future_datum)
 ```
+
+The call to `model.what(future_address)` receives blank target perception. It
+may use the model's current conceptual state, current permitted perceptual
+state, STM/discourse, explicit LTM reads, and the target address including its
+relative time. It may not use a forward activation, reverse cache, grammar
+trace, or target encoding computed from `future_datum`.
+
+For state-level supervision, capture the future conceptual carrier when the
+clean future datum is processed by its ordinary later analysis, or by the same
+ordered packed batch. Detach that carrier before using it as a target for the
+earlier estimate. Do not construct another grammar forest solely to obtain a
+target. If a target carrier is not yet available, defer the state-alignment
+term and score the decoded source/surface estimate; do not leak the future
+through an auxiliary student-visible pass. Any target-only analysis must be
+stateless and must not populate student STM, LTM, discourse, runtime caches, or
+evidence records. Decoded source/surface reconstruction remains a second
+target, preventing a collapsed conceptual carrier from satisfying the state
+loss by itself.
+
+The LTM view is also taken **as of the prediction**, not as of target scoring.
+It may include a properly tagged earlier prediction about the future address,
+but it may not include an observation learned from the future datum merely
+because the offline loader has already prefetched it.
 
 The target may be known to the offline Teacher, but it must remain inaccessible
 to the student until scoring. Any prediction stored before verification is a
-claim with target time and provenance, not truth.
+claim with target time and provenance, not truth. When reality at that address
+is later observed, `VERIFY` compares the prior estimate with a fresh
+`Teacher.Data` result; it does not retroactively make the estimate true.
 
 ### 4.7 `THINK`
 
@@ -303,6 +392,7 @@ record is conceptual:
 ThoughtRecord:
     requested objective or internal address
     conceptual what
+    root/constituent WhatFrame references
     optional grammatical derivation
     optional surface rendering
     parent thought/memory references
@@ -320,12 +410,13 @@ properly provenance-tagged claim under a future truth-admission policy.
 Thinking therefore follows:
 
 ```text
-syntactic query action
-  -> addressed LTM/perception records
-  -> grammatical operations over those records
-  -> one grammatical/conceptual What construction
+desire_to_know what(address) -> root WhatFrame
+  -> bounded constituent-What stack
+  -> syntactic perception/STM/LTM queries
+  -> grammatical reductions over returned constituent Whats
+  -> one root grammatical/conceptual What construction
   -> provisional ThoughtRecord
-  -> next syntactic query/action or stop
+  -> next desire_to_know or stop
 ```
 
 Use explicit step, wall-clock, novelty, and confidence budgets so inference
@@ -347,7 +438,7 @@ Perception, symbolic activation, STM, LTM, the objective address, and the
 current teaching/operating mode may all inform the mind. Their use must obey
 the boundary in section 2A:
 
-- LTM and perception reads are explicit syntactic query actions;
+- perception, STM, and LTM reads are explicit syntactic query actions;
 - retrieved items remain identifiable records rather than disappearing into
   an untraceable blended context;
 - grammatical operations determine how subsymbolic word/concept content is
@@ -393,6 +484,166 @@ syntactic actions whose result determines the objective `where`/`when` that
 the unified `What` path reconstructs. The exact query grammar, scoring rule,
 and search procedure remain open.
 
+Reasoning itself is an unresolved **desire to know `what(address)`**. Satisfying
+one `what` may require constituent `what` tasks, so the reasoner owns a bounded
+stack (or equivalent explicit agenda) of `WhatFrame` records:
+
+```text
+WhatFrame:
+    task id and parent task id
+    requested objective or internal address
+    grammatical role expected by the parent
+    permitted evidence sources
+    evidence cutoff / as_of coordinate
+    selected grammatical query operations
+    constituent WhatEstimate results
+    reduction operation and partial result
+    remaining step/depth budget
+    status = unresolved | waiting | resolved | failed
+```
+
+The logical execution is:
+
+```text
+push desire_to_know(target_address)
+while a WhatFrame is unresolved and budgets remain:
+    choose a legal grammatical query/reduction operation
+    query_perception(...) | query_stm(...) | query_ltm(...)
+    push any required constituent what(subaddress_or_internal_question)
+    reduce returned constituent Whats with a named grammatical operation
+pop the resolved WhatEstimate into its parent, or return the root estimate
+```
+
+Perception, STM, and LTM therefore connect to the syntactic reasoner through
+three explicit families of grammatical query operations. A returned value is
+a referenced `WhatEstimate` or evidence record, not an anonymous attention
+blend. The trace must show the query, address/pattern, source, returned record
+identity, parent frame, and grammatical reduction that consumed it.
+
+The stack is a semantic requirement, not a requirement for slow Python
+recursion. Independent constituent queries may be batched, memoized within one
+reasoning episode, or represented by an iterative chart/agenda, provided the
+parent/constituent dependency graph and evaluation order remain replayable.
+Constituent results are conceptual by default: they do not each trigger a
+surface rendering or an independent full grammar forest. They are nodes or
+subderivations in the root reasoning episode, and only the root is rendered
+unless an explicit grammatical operation requests a constituent rendering.
+Repeated `(source, query, as_of)` requests should reuse the same bounded result.
+Cycle detection plus depth, step, and retrieval budgets must fail closed rather
+than silently reading arbitrary memory or recursing indefinitely.
+
+In a teacher-led lesson, Teacher supplies an addressed root task and later
+scores the root answer. In `THINK`, the student may originate the root desire.
+Teacher never prescribes constituent questions, pushes frames, chooses memory
+records, or places private targets on the stack; those are student reasoning
+actions.
+
+### 5.4 Decouple model-level analysis and synthesis
+
+At the model boundary, `forward()` and `reverse()` must no longer mean that
+one is the numerical inverse of the other or that reverse can run only from
+the most recent forward trace. That coupling is adequate for reconstructing a
+present input, but it cannot generically generate the state at an address
+whose perception has not yet occurred.
+
+The required logical interfaces are:
+
+```text
+model.forward(perception, current_address) -> ObservedState
+    # bottom-up analysis; updates permitted student state
+
+model.what(target_address) -> WhatEstimate
+    # evidence-conditioned estimate; target perception may be blank
+
+model.reverse(WhatEstimate.conceptual_state,
+              WhatEstimate.derivation) -> reconstructed/generative What
+    # top-down synthesis from the estimated state, not from a cached input
+```
+
+`analyze` and `generate` may be introduced as clearer names while retaining
+`forward`/`reverse` compatibility adapters. The behavioral requirements are:
+
+- `model.what(address)` and top-down generation work after per-forward caches
+  are cleared; they require no immediately preceding forward of the target;
+- the root of generation is the estimated target conceptual state, not the
+  conceptual state encoded from the current or target source value;
+- present reconstruction is the special case
+  `generate(model.what(current_address)) ~= Teacher.Data(current_address)`,
+  not a requirement that `reverse(forward(x)) == x` by construction;
+- analysis and generation may share lexicons, codebooks, grammar definitions,
+  and selected parameters, but may have direction-specific parameters and
+  losses;
+- the causal transition from current evidence to a future state is
+  forward-only. No inverse of that transition is required or used;
+- current perception may influence a future estimate only as an explicit
+  evidence operand of `model.what`, never as a hidden reverse cache.
+
+This is a model-level change. Local grammatical operators may retain
+`forward`/`reverse` or `compose`/`generate` pairs where inversion is meaningful.
+Their local invertibility must not impose an inverse relationship between an
+observed present state and an imagined future state.
+
+### 5.5 Initial future-state prediction operation
+
+The initial implementation should introduce one named grammatical operation,
+`predict_state`, whose result is a conceptual carrier bounded to `[-1, 1]`.
+The existing nonlinear `SigmaLayer` is a reasonable first implementation of
+the bounded transform. Because the current `SigmaLayer` is substrate rather
+than a chart-dispatched grammar operation, it must be owned by a traced
+`predict_state` wrapper; it must not become an unrecorded global neural path.
+
+The minimum typed operands are:
+
+```text
+PredictionEvidence:
+    target objective address and relative target time
+    current conceptual state
+    current permitted perceptual state plus availability mask
+    bounded LTM records returned by constituent syntactic What queries
+    optional STM/discourse records returned by constituent syntactic queries
+    prior grammatical state and the WhatFrame dependency trace
+```
+
+Conceptual, perceptual, memory, and address spaces need not have equal
+dimensions. Give each role an explicit adapter into the predictor's input
+width, preserve role identity when packing the operands, and record the
+adapter, operand references, availability masks, and prediction operation in
+the derivation trace. A missing perception is represented by an availability
+mask and configured blank carrier, not by silently treating an ordinary zero
+state as missing.
+
+A concrete minimum implementation is:
+
+```text
+z_address = address_adapter(target_address, relative_time)
+z_concept = concept_adapter(current_conceptual_state)
+z_percept = percept_adapter(current_perceptual_state, percept_available)
+z_memory  = memory_adapter(grammar_fold(explicit_ltm_records))
+z_stm     = stm_adapter(grammar_fold(explicit_stm_records))       # optional
+
+evidence = fixed_role_pack(z_address, z_concept, z_percept,
+                           z_memory, z_stm, availability_masks)
+future_concept = predict_state.SigmaLayer(
+    invertible=False, nonlinear=True).forward(evidence)
+```
+
+`fixed_role_pack` is part of the named prediction operation, not a general
+attention side-channel. `grammar_fold` must retain the identities and trace of
+the bounded records it combines. Memory and perception operands may enter this
+pack only after the corresponding query/constituent frame has resolved. The
+initial predictor is forward-only: do not call
+`predict_state.SigmaLayer.reverse()` and do not force its input and output
+widths to match. The ordinary top-down grammatical generator decodes
+`future_concept`.
+
+The model may later replace this single-state estimate with several sampled
+or scored future hypotheses. For the first implementation, uncertainty over
+words and constructions remains in the stochastic grammatical derivation;
+the continuous conceptual carrier is one bounded state estimate. Teacher must
+score both its future-state agreement and its grammatical/surface realization
+so a deterministic state loss cannot be satisfied merely by averaging or
+collapsing incompatible continuations.
+
 ## 6. Address representation and losses
 
 ### 6.1 Encoder
@@ -406,6 +657,12 @@ Use separate components:
 - a mask for absent optional fields;
 - a small fusion MLP producing one address atom.
 
+The address atom used by `predict_state` must pass through the explicit
+address-role adapter described in section 5.5. Every predictor adapter must
+emit a finite bounded value before the values are packed for nonlinear
+`SigmaLayer`; no adapter may assume perceptual and conceptual dimensions are
+equal.
+
 Raw stable hash magnitude has no semantic meaning. Hashes may key embedding
 rows but must never be interpreted as ordered scalars.
 
@@ -415,6 +672,7 @@ Initial scales:
 
 ```text
 surface What reconstruction                 1.00
+future conceptual-state alignment            0.25  (PREDICT only)
 address/What in-batch contrastive match      0.10
 relative cursor or position objective        0.05
 student query-action objective               0.05
@@ -427,8 +685,15 @@ Do not spend a second parse merely to predict an address. Report every
 component separately and ablate each one.
 
 For blank prediction lessons, the same surface reconstruction term supplies
-the former next-sentence learning signal. There is no additional
-next-sentence loss.
+the former next-sentence learning signal. Reuse the detached conceptual state
+from the future address's ordinary analysis in the ordered training sequence;
+do not parse the target a second time. If ordered target-state reuse is not
+available for a lesson, mask the state-alignment term rather than fabricating
+a target from a privileged input path. Begin with the same normalized
+bounded-carrier distance used elsewhere, weighted as above, and retain the
+decoded surface and grammar losses to prevent representational collapse.
+Report state and surface accuracy separately. There is no additional
+independent next-sentence loss or parse.
 
 ## 7. Proposed curriculum
 
@@ -524,6 +789,9 @@ In `Teacher.py`:
 
 - add `TeachingMode`, `SourceVersion`, `ObjectiveAddress`, `StudentQuery`, and
   the expanded `TeachingLesson`;
+- expose the exact privileged lookup as `Teacher.Data(address)`;
+- keep the old `Teacher.What(address)` only as a deprecated controller-side
+  compatibility alias, never as the student's prediction API;
 - move snapshot validity out of objective target time;
 - retain compatibility adapters for v1 checkpoints/configuration;
 - add deterministic mode scheduling;
@@ -531,12 +799,39 @@ In `Teacher.py`:
 
 In `data.py`:
 
-- expose `observe(address, policy)` separately from `truth(address)`;
+- expose `observe(address, policy)` separately from the exact lookup used by
+  `Teacher.Data(address)`;
 - preserve document boundaries and exact source provenance;
 - add legal relative-cursor resolution;
 - never let a request cross context/document boundaries silently.
 
-### Step 2: add the objective-address encoder
+The learned student computation must not own or receive a `Teacher`,
+data-loader, target callback, or other capability that reaches `Teacher.Data`.
+The existing top-level training facade may coordinate Teacher and student
+during migration, but must pass only the permitted observation and public
+address across the student boundary.
+
+### Step 2: add `model.what(address)` and split model-level directions
+
+Add `WhatEstimate` and `PredictionEvidence` records, then expose one learned
+`model.what(ObjectiveAddress)` entry point. It must collect only model-owned
+conceptual state, permitted perception, STM/discourse, explicit LTM query
+results, and address information.
+
+Split the current model-level execution into independently callable analysis
+and generation stages. Compatibility methods may retain the names
+`forward()` and `reverse()`, but generation must accept a conceptual estimate
+as its root and work with target-forward caches cleared. Preserve local
+invertible grammar operators; remove only the requirement that whole-model
+generation numerically invert the most recent analysis.
+
+Add a present-input compatibility test before changing training behavior:
+complete `READ_ASSIGNED` reconstruction through
+`forward -> model.what(current_address) -> generate` must match the existing
+path within an agreed numerical tolerance and remain within the throughput
+gate.
+
+### Step 3: add the objective-address encoder
 
 Create a focused module such as `Addressing.py` rather than expanding
 `Models.py` further. It should contain:
@@ -550,11 +845,11 @@ Create a focused module such as `Addressing.py` rather than expanding
 Wire one address atom into the student boundary without using subjective event
 bands. Begin with `READ_ASSIGNED` and `LOCATE` only.
 
-### Step 3: prove causal address use
+### Step 4: prove causal address use
 
 Before degradation:
 
-- round-trip every exact address through `Teacher.What`;
+- round-trip every exact address through `Teacher.Data`;
 - predict/match held-out addresses above hard-negative chance;
 - swap addresses within a batch and verify address-matching loss increases;
 - verify subjective `.where/.when` tensors remain byte-identical.
@@ -563,26 +858,54 @@ Then introduce light degradation and require shuffled addresses to worsen
 surface reconstruction. If reconstruction is unaffected, stop: the address
 encoder is being ignored.
 
-### Step 4: connect global attention and reasoning through grammar
+### Step 5: connect global attention and reasoning through grammar
 
 Make bounded, student-visible perception/STM/LTM reads available to the
 grammatical derivation. Memory queries and their returned records must appear
 in the symbolic trace, and no dense semantic-to-control bypass may choose
 grammar or words outside that trace.
 
+Represent each root desire to know as a `WhatFrame`, with an explicit bounded
+stack/agenda for constituent `what` tasks. Add named grammatical operations
+for perception, STM, and LTM queries and for reducing returned constituent
+estimates into their parent. Implement memoization by `(source, query, as_of)`,
+cycle detection, and hard depth/retrieval/step limits. Keep the logical
+dependency graph even if execution is vectorized or batched.
+
 Do not expose Teacher's private `what`, future truth, or clean grammar labels.
 Do not repeat an identical memory retrieval for every forest candidate. The
 query grammar, rule-scoring mechanism, and internal reasoner representation
 remain open.
 
-### Step 5: enable constrained student requests
+### Step 6: implement the forward-only future-state operation
+
+Add a traced `predict_state` grammatical operation containing a nonlinear,
+non-invertible `SigmaLayer`. Add bounded role adapters for objective address,
+current conceptual state, permitted perceptual state, explicit LTM results,
+and optional STM/discourse state. Do not assume equal carrier dimensions, do
+not call the predictor's `reverse()`, and do not let its output bypass the
+ordinary grammatical generator.
+
+Add configuration gates for the prediction operation and its separately
+reported future-state loss, retaining old-checkpoint behavior when disabled.
+Construct `model.what(future_address)` before making the future datum visible.
+Obtain the detached target conceptual state when that address is processed by
+the ordinary subsequent analysis, preferably in an ordered packed batch. If
+it is unavailable, mask or defer state alignment; a second grammar parse is
+not an acceptable fallback.
+
+First train and test on deliberately predictable local transitions. Compare
+against previous-state copying and corpus-prior baselines before enabling the
+general corpus mixture.
+
+### Step 7: enable constrained student requests
 
 Implement `READ_REQUESTED` over the small relative action set. Teacher scores
 the requested versus intended cursor action and reconstructs the returned
 passage. Keep normal corpus order as the dominant policy initially so query
 exploration cannot destroy discourse continuity.
 
-### Step 6: add the first partial and blank modes
+### Step 8: add the first partial and blank modes
 
 Enable:
 
@@ -590,18 +913,19 @@ Enable:
 2. past-address `RECALL`;
 3. next-address `PREDICT`.
 
-Each uses the same single grammar forest and surface reconstruction loss.
-Only after all three pass leakage and throughput gates should the full
-curriculum be enabled.
+Each uses the same single grammar forest. `PREDICT` additionally uses the
+detached future conceptual-state alignment described above, but no second
+grammar parse. Only after all three pass leakage and throughput gates should
+the full curriculum be enabled.
 
-### Step 7: scaffold the linguistic curriculum
+### Step 9: scaffold the linguistic curriculum
 
 Add explicit curriculum-stage metadata and the ability to restrict lessons
 and productions to the noun stage. Specify the transition examples required
 by the later noun-and-verb stage, but leave full diachronic verb induction
 until addressed reading and stable noun learning are demonstrated.
 
-### Step 8: specify, but defer, autonomous thinking writes
+### Step 10: specify, but defer, autonomous thinking writes
 
 Implement `ThoughtRecord` and a bounded read-only thinking loop only after
 addressed prediction works. Store thought records in working memory or a
@@ -620,11 +944,19 @@ self-reward remain separate follow-up work.
 
 ### Query correctness
 
-- Exact source addresses return exact passages.
+- `Teacher.Data(address)` returns the exact passage/state and provenance for
+  every valid source address.
+- `model.what(address)` returns a `WhatEstimate` and never invokes
+  `Teacher.Data`, the dataset, or a target callback.
 - Relative cursor actions resolve deterministically.
 - Invalid context, split, version, or span combinations fail closed.
 - Packed-row prefetch preserves the address associated with each sentence.
 - Document and domain resets prevent cross-document cursor leakage.
+- A root `model.what` can push two or more constituent `WhatFrame` tasks,
+  resolve them, and reduce their estimates into the root in deterministic
+  dependency order under a fixed seed.
+- Repeated identical constituent queries reuse one bounded result; cycles and
+  exhausted budgets fail closed.
 
 ### Learning and leakage
 
@@ -633,14 +965,40 @@ self-reward remain separate follow-up work.
 - Blank lessons cannot access clean input through LTM, caches, traces, or
   Teacher fields.
 - Future truth is unavailable to the student before prediction scoring.
+- Capturing/detaching a future target state performs no extra student-visible
+  STM, LTM, discourse, query, grammar-cache, or runtime-state writes beyond
+  that address's ordinary analysis.
 - Removing history worsens `PREDICT` relative to the full contextual model.
 - Removing the address worsens addressed `RECALL` and `PREDICT`.
+- On controlled factor-specific transitions, independently masking or
+  shuffling conceptual state, current perception, and retrieved LTM records
+  each worsens the cases constructed to require that factor.
+- Held-out future-state prediction beats previous-state copying and a
+  corpus-prior baseline before general `PREDICT` lessons are enabled.
+
+### Direction and future-state independence
+
+- `model.what(future_address)` runs before the target is observed and after
+  target-forward/reverse caches have been cleared.
+- Top-down generation from its predicted conceptual state works without an
+  immediately preceding forward of the target datum.
+- Present reconstruction still works through the decoupled interfaces.
+- The `predict_state` `SigmaLayer` is nonlinear and bounded, is configured
+  `invertible=False`, and its `reverse()` is never called.
+- Predictor input and output dimensions may differ without adding a
+  pseudoinverse or hidden projection outside the traced operation.
+- Changing a current evidence operand can change the future estimate only
+  through the recorded `predict_state` operands; no stale cache changes it.
+- Future conceptual-state loss and decoded source/surface loss are finite,
+  separately reported, and both resist a constant-state solution.
 
 ### Grammar and performance
 
 - The grammar forest is constructed once per lesson.
 - One derivation is sampled and reconstructed; no predictor-triggered second
   parse occurs.
+- Producing or scoring a future conceptual target does not construct a second
+  grammar forest.
 - Identical bounded memory reads are not recomputed per candidate.
 - Second-, third-, and tail-ranked derivations retain nonzero support.
 - Clean reconstruction remains finite through address and context ablations.
@@ -649,11 +1007,14 @@ self-reward remain separate follow-up work.
 
 - Every deliberate transformation of subsymbolic word/concept content is
   attributable to a named grammatical operation.
-- LTM queries and returned records appear in the replayable derivation trace.
+- Perception, STM, and LTM queries and returned records appear in the
+  replayable derivation trace.
+- Every constituent `what` records its parent, requested address/question,
+  evidence source, result identity, and consuming grammatical reduction.
 - No direct dense path maps semantic payloads to grammar control or words
   outside the grammatical derivation.
 - Replaying the recorded operations and memory reads reproduces the same
-  grammatical construction.
+  constituent stack and grammatical construction.
 - Noun-stage lessons cannot silently invoke productions reserved for verbs,
   adjectives, adverbs, or later complexity.
 
@@ -679,11 +1040,16 @@ For the first address-conditioned implementation:
 - clean B24 throughput should remain at least 35.69 sentences/s, a maximum
   15% regression;
 - report address matching and cursor accuracy alongside reconstruction;
+- report `model.what` latency and the added future-state predictor parameter
+  count separately from analysis and grammatical generation;
 - report B28 separately after confirming memory headroom;
 - report lessons/s, complete target sentences/s, and words/s because locate
   or query lessons may not be equivalent to one reconstructed sentence;
 - report clean, degraded, recall, and prediction modes separately and as a
-  fixed mixture.
+  fixed mixture;
+- demonstrate in the profiler that future-state supervision adds no second
+  grammar forest and identify the cost of retaining or pairing the ordinary
+  future target state.
 
 A one-million-sentence run is an engineering endurance benchmark, not by
 itself a capability speedrun. At an aggregate 100 complete sentences/s it
@@ -704,25 +1070,34 @@ fixed-count benchmark the “1M-sentence mode-mixed endurance run.”
 
 The next iteration is complete when:
 
-1. A student address encoder consumes objective coordinates without touching
+1. `Teacher.Data(address)` is an exact private oracle and
+   `model.what(address)` is a learned estimate with no route to that oracle.
+2. A student address encoder consumes objective coordinates without touching
    subjective bands.
-2. The student can match a passage to its objective address against hard
+3. The student can match a passage to its objective address against hard
    negatives.
-3. A constrained student query advances the reading cursor and retrieves the
+4. A constrained student query advances the reading cursor and retrieves the
    requested passage.
-4. Lightly degraded reconstruction causally benefits from the correct address.
-5. Global attention/reasoning evidence reaches grammar through traceable
-   syntactic query and reasoning actions, without a dense semantic-to-control
-   bypass.
-6. Grammar, memory use, and word realization produce a replayable symbolic
-   trace.
-7. The Teacher can enforce a noun-only curriculum stage and represent the
-   later noun-and-verb, adjective, adverb, and further-complexity stages.
-8. Next-sentence behavior is expressed as blank-perception reconstruction at
-   the next address, with no independent predictor or second parse.
-9. Provisional thoughts and predictions remain outside historical truth.
-10. Correctness tests pass and clean throughput remains above the 15%
-   regression gate.
+5. Lightly degraded reconstruction causally benefits from the correct address.
+6. Model-level analysis and generation run independently: generation from a
+   predicted conceptual state needs no target forward or inverse cache, while
+   present reconstruction remains functional.
+7. A traced, forward-only nonlinear `SigmaLayer` prediction operation uses
+   typed objective-address, conceptual, perceptual, and explicit memory
+   evidence to produce a bounded future conceptual state.
+8. Held-out future-state and decoded-`What` prediction beat previous-state
+   copying and corpus-prior baselines without an independent predictor or
+   second grammar parse.
+9. Global attention/reasoning evidence reaches grammar through traceable
+   perception/STM/LTM query actions and bounded constituent `what` frames,
+   without a dense semantic-to-control bypass.
+10. Grammar, the parent/constituent reasoning stack, memory use, prediction
+    operands, and word realization produce a replayable symbolic trace.
+11. The Teacher can enforce a noun-only curriculum stage and represent the
+    later noun-and-verb, adjective, adverb, and further-complexity stages.
+12. Provisional thoughts and predictions remain outside historical truth;
+    correctness tests pass and clean throughput remains above the 15%
+    regression gate.
 
 ## 12. Open architectural questions
 
@@ -731,7 +1106,13 @@ The directives above deliberately leave these decisions unresolved:
 - how the code prevents non-grammatical access to subsymbolic payloads;
 - the query grammar and the representation of retrieved records;
 - how the syntactic reasoner scores and searches legal actions;
+- how independent constituent `what` frames are scheduled and batched without
+  losing their explicit dependency graph;
 - whether internal syntax is surface language or a richer readable grammar;
+- how to stabilize a learned future conceptual target while its analysis
+  representation is itself changing;
+- when a single bounded state estimate should become multiple scored future
+  hypotheses;
 - how noun stability is measured before verbs are introduced;
 - how repeated state transitions are aligned and promoted into verbs.
 
@@ -746,7 +1127,8 @@ The following remain intentionally outside the next iteration:
 - persistent admission of student-generated truth;
 - reward from unverified self-generated thoughts;
 - unrestricted associative query over all LTM;
-- multiple simultaneous parses for metaphor;
+- multiple simultaneous parses or future-state hypotheses for metaphor and
+  multimodal prediction;
 - full diachronic verb induction and sparse verb experts (the curriculum
   scaffold and noun-first gate are not deferred);
 - creation/destruction and identity-split ontology;
