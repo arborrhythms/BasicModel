@@ -1,8 +1,11 @@
-# Teaching modes, the symbolic mind, and the next iteration
+# Teacher, addressed What, and concept learning: unified specification
 
 > **Status:** implementation specification and maintainer handoff,
 > 2026-07-27; cognitive-boundary and curriculum directives added 2026-07-28;
-> oracle/student API and future-state revisions added 2026-08-03.
+> oracle/student API and future-state revisions added 2026-08-03;
+> consolidated with the earlier Teacher reconstruction and temporal-concept
+> plan on 2026-09-03. This is the single normative specification for both the
+> addressed-reading iteration and the explicitly deferred concept roadmap.
 >
 > **Immediate scope:** teach the student the objective coordinate system,
 > make reading an explicit query/response process, and replace the retired
@@ -13,6 +16,20 @@
 > curriculum before adding state transitions and modifiers. Thinking is
 > specified as the inference-time continuation of the same mechanism, but
 > autonomous truth-store admission remains deferred.
+
+The earlier plan has been removed after incorporating its ontology, concept
+learning, verb representation, loss, and acceptance requirements here. The
+revised oracle/student APIs, time/version separation, B24 performance gate,
+and addressed-reading-before-verb-induction sequence govern throughout.
+Preserved long-term requirements are in sections 14-17; they are not claims
+about implemented capabilities or prerequisites for the first addressed
+reading milestone.
+
+The companion [What and queryable spacetime design](../WhatSpacetimeDesign.md)
+explains interface ownership, the constituent-What stack, and the chooser's
+derivation/location context. It is a high-level design view of this spec, not
+a second implementation plan. Runtime behavior remains documented separately
+in [Componentization](../Componentization.md) and [Language](../Language.md).
 
 ## 1. Current boundary
 
@@ -57,6 +74,14 @@ degraded, recall, and prediction lessons.
 The clean reconstruction benchmark must therefore remain labelled a
 reconstruction baseline. It does not yet measure the predictive ability of
 `model.what(address)`.
+
+The serial `symbolicOrder` path also remains incomplete as a concept learner:
+it stages a word/object concept row, repeats `compute_symbolic_reference` and
+`promote_symbol_reference`, decodes the selected row, and advances its order.
+It does not yet combine different rows into higher-order nouns, compare
+adjacent-time noun states, or induce reusable diachronic verb meanings.
+`VerbLayer` applying an operand is not evidence that such a meaning was
+learned. The later work in section 14 must change that recurrence explicitly.
 
 ## 2. Non-negotiable coordinate separation
 
@@ -143,6 +168,69 @@ semantic payloads, typed operation capabilities, trace validation, and
 restricted operator parameterizations are possible implementations, not
 requirements selected by this specification.
 
+## 2B. Conceptual and event foundations
+
+Keep perceptual/event mereology, conceptual identity/taxonomy, subjective
+attention, and grammatical operations distinct. PartSpace and WholeSpace
+percepts generate a spatiotemporally localized event partial order; its
+transitive closure, not just its directly stored edges, is the mereology.
+ConceptualSpace assigns persistent indices to hypothesized individuals and
+kinds. Grammar selects and applies learned concepts; a lexical embedding is
+not a substitute for a noun's identity or a verb's learned meaning.
+
+The learned bridge from presentation to event support is:
+
+```text
+presents(subjective_where, subjective_when,
+         concept_or_object, world_event_support)
+```
+
+World-event validity is separate from subjective attention. Transitive
+consequences of relations supported on `A` and `B` hold on `A ∩ B`, not on
+their union. No "tightest whole" truncates actual event parthood.
+
+An order-0 concept is an indexed opening between a PartSpace construction
+from `NOTHING` and a WholeSpace restriction from `EVERYTHING`:
+
+```text
+0 = NOTHING
+1 = EVERYTHING
+C_i = (identity_index_i, opening(P_i, W_i))
+
+P_i < W_i     open: admits optional realizations or fillers
+P_i = W_i     closed: determined at this description
+P_i ≰ W_i     inconsistent: construction crossed its restriction
+```
+
+The opening is structural room in the event order, not a probability or a
+three-valued parthood judgment. Type-level `fit()` describes possible
+parthood; a localized compatible realization establishes actual parthood.
+Neither a possible fit nor an open interval asserts necessary membership.
+Zero retains its literal meaning, not a reinterpretation as uncertainty.
+
+A car may retain its index while passengers, cargo, replacement components,
+and containing wholes vary. During a passenger's presence in a house, the
+passenger, their parts, the house, and its containing wholes participate in
+the same transitive event hierarchy on that validity support. Stable identity
+is a hypothesis over a trajectory of event realizations. If continuity or
+integrity fails, close the denotation's validity interval; never silently
+reuse a historical index. Creation, destruction, splitting, and merging are
+later ontology work.
+
+A book or text is also an indexed conceptual particle, possibly sharing
+conceptual wholes with sibling texts beneath `EVERYTHING`. A title is
+metadata, a stable document ID is discourse identity, and a book's physical
+container is an event-local relation. The active text/domain concept scopes
+reading without being encoded into subjective `.where` or `.when`.
+Re-reading or moving a book need not change its identity.
+
+Corpus loading must preserve corpus/document identity, sentence order, exact
+character spans, and document boundaries. The split row is a lookup index
+alongside independently checkable provenance. Packed rows must never carry
+discourse state across a document/domain boundary. Objective coordinates
+follow section 2, including separate source version and target time; the
+older snapshot-as-`ObjectiveWhen` layout is compatibility data only.
+
 ## 3. Query, observation, and scoring contracts
 
 Active reading requires a strict separation between truth lookup, permitted
@@ -227,6 +315,28 @@ The resolved address used for scoring must equal the address that generated
 the presented perception. A student request may be snapped to a legal source
 coordinate, but both the request and resolved address must be retained so
 query accuracy can be scored.
+
+The aggregate `TeachingLesson` is controller-private. The student receives a
+separate public task/observation view containing only the permitted address,
+mode, curriculum constraints, masks, and perception. Calling a field
+`private_teacher_datum` does not make it private if the student can reach the
+same object. Do not pass the whole lesson, Teacher, data loader, or privileged
+spacetime source into the learned computation.
+
+A queryable spacetime view provides the semantic operation
+`view.what(address) -> evidence | unavailable`. Each view is bound to its
+source namespace, access policy, source revision, and evidence cutoff. The
+Teacher's privileged "what is there?" operation remains named `Data` in the
+public controller API; `Teacher.What(where, when)` is only its legacy adapter.
+Student perception/STM/LTM views cannot call that oracle or widen their own
+access. An absent or forbidden observation is not permission to retrieve it
+from another view. Internal thought addresses are explicitly tagged and
+cannot resolve as corpus addresses.
+
+The source address of a sentence and the grammatical position of an operand
+within that sentence are separate types. Neither is the student's subjective
+attention coordinate. Section 5.6 defines their use by the chooser, and the
+companion design gives the high-level interfaces.
 
 ## 4. Teaching and operating modes
 
@@ -644,6 +754,64 @@ score both its future-state agreement and its grammatical/surface realization
 so a deterministic state loss cannot be satisfied merely by averaging or
 collapsing incompatible continuations.
 
+### 5.6 Chooser context, derivation, and sentence location
+
+The chooser consumes a typed, student-visible `ChooserContext`, not Teacher's
+lesson object or an opaque concatenation of unrestricted semantic state:
+
+```text
+ChooserContext:
+    root request, active WhatFrame, parent role, partial construction
+    mode and linguistic-stage production constraints
+    active context/document, resolved target address, current reading cursor
+    legal relative cursor actions and known sentence/span boundaries
+    permitted perception references and availability masks
+    current conceptual references and bound object/argument identities
+    explicit STM/LTM query results, provenance, confidence, and as_of cutoff
+    legal grammar rules, operand slots/spans, and partial derivation trace
+    remaining budgets and seeded exploration state
+
+Choice:
+    grammatical query, reduction, or realization operation
+    operand/result references and their grammatical slots/spans
+    optional StudentQuery (relative cursor action or exact permitted address)
+    rule/derivation log probability and supporting evidence references
+```
+
+This context exposes references and typed constraints. Any comparison or
+transformation of subsymbolic payloads used to evaluate a choice is itself a
+named, traced grammatical operation. A general semantic-to-control MLP or
+unrecorded attention blend is not the implementation of this contract. The
+exact lawful scoring mechanism remains an architectural choice to measure.
+
+There are two decisions, which may share one reasoning episode:
+
+1. **Source location:** a traced cursor/query operation selects a requested
+   document/sentence/span. The source resolver validates the request against
+   legal boundaries and reports the resolved address. Assigned lessons fix
+   this root target; the chooser cannot move it to improve its score. In
+   requested reading, selection happens before the requested perception is
+   returned, and both requested and resolved addresses are recorded.
+2. **Grammatical location and derivation:** legal rule/operand/slot choices
+   determine how the conceptual answer is constructed and where each
+   constituent belongs. On blank generation these are generated slots, not
+   spans or word counts copied from a hidden target. Role selection precedes
+   lexical realization; a generated output span is not a source address.
+
+A query such as `next sentence` can therefore be selected from the active
+document, cursor, discourse, parent task, and available history. After the
+permitted response arrives, its public evidence can inform the construction.
+Hidden future text, clean constituent labels, and Teacher's preferred
+derivation must not participate in the earlier location decision. Once
+resolved, all root outputs remain associated with that same target address.
+
+Maintain one shared root grammar forest, one sampled root derivation, and one
+top-down reconstruction. Constituent frames extend the same reasoning
+episode; they do not each allocate a new sentence forest or render a sentence.
+Resolve and memoize bounded evidence queries for reuse, retaining nonzero
+support for every admissible derivation. Retaining a forest does not require
+materializing every complete derivation; a packed representation is allowed.
+
 ## 6. Address representation and losses
 
 ### 6.1 Encoder
@@ -694,6 +862,40 @@ bounded-carrier distance used elsewhere, weighted as above, and retain the
 decoded surface and grammar losses to prevent representational collapse.
 Report state and surface accuracy separately. There is no additional
 independent next-sentence loss or parse.
+
+### 6.3 Stochastic choice and credit assignment
+
+Retain the complete admissible forest and sample one derivation rather than
+reconstructing alternatives. The initial exploration target from the earlier
+plan is approximately `0.80 / 0.15 / 0.04 / 0.01` probability mass for the
+best, second, third, and remaining derivations. With fewer alternatives,
+transfer unused tail mass to the lowest-ranked available choice. These are
+initialization/ablation targets, not fixed ranks that prevent learning.
+Anneal toward exploitation while retaining at least one percent total tail
+mass when alternatives exist; do not permanently prune admissible candidates.
+
+Stochastic exploration requires a learning signal. For the initial discrete
+chooser use one sampled task loss and a detached, pre-update EMA baseline:
+
+```text
+advantage = stop_gradient(L_task(sampled_derivation) - EMA_loss_baseline)
+L_chooser = advantage * log p(sampled_derivation) - 0.01 * entropy(p)
+```
+
+`L_task` excludes `L_chooser`; the baseline for this sample must not depend
+on the sampled action. `p` is the actual sampling distribution, including any
+exploration mixture. The score-function term supplies discrete-choice credit;
+ordinary differentiable task losses still train the executed operations.
+Computing log probabilities and entropy over a packed forest must not execute
+a second reconstruction. The `0.01` entropy coefficient above is the chooser
+entropy entry in section 6.2, not a second independently added entropy loss.
+The chooser auxiliary scale is an initial ablation value, not ontology.
+
+Teacher also retains required codebook commitment and boundedness terms. An
+initial commitment scale is `0.25`; grounding/re-anchoring remains `0.00` in
+this iteration. Later verb-transition and sparse-expert penalties belong to
+section 15, not an additional independent next-sentence predictor. Legacy
+predictor and forced grammar-rerun weights remain zero on the canonical path.
 
 ## 7. Proposed curriculum
 
@@ -779,9 +981,21 @@ the checkpoint so a resumed run preserves the curriculum.
 
 ## 8. Concrete next-iteration implementation
 
-The next code iteration should stop after addressed, contextualized reading
-and the first controlled degraded lessons. It should not attempt autonomous
-truth learning, full verb induction, and metaphor simultaneously.
+Implement the addressed-reading iteration as gated milestones, not as one
+indivisible change. Its full scope includes controlled recall and future-state
+prediction; its first milestone is smaller. Autonomous truth learning, full
+verb induction, and metaphor remain deferred.
+
+| Milestone | Work | Exit gate |
+|---|---|---|
+| A: addressed clean reading | Steps 1-4 plus noun-stage metadata from step 9 | Private/public separation, present compatibility, address matching, clean B24 throughput |
+| B: contextual and controlled blank reading | Steps 5-8 plus noun-only production enforcement | Traced stack and chooser, constrained requests, causal light denoising, recall and future-state baselines |
+| C: bounded thinking evaluation | Step 10 after milestone B | Provisional records, bounded termination, no autonomous truth writes |
+
+Section 11 is the completion gate for the addressed-reading iteration
+(milestones A and B). Milestone C and sections 14-17 are later work, not hidden
+requirements for declaring milestone A complete. Light degradation in step 4
+is a diagnostic to prove address use; the full mode mixture remains gated.
 
 ### Step 1: revise the Teacher contract
 
@@ -790,12 +1004,19 @@ In `Teacher.py`:
 - add `TeachingMode`, `SourceVersion`, `ObjectiveAddress`, `StudentQuery`, and
   the expanded `TeachingLesson`;
 - expose the exact privileged lookup as `Teacher.Data(address)`;
-- keep the old `Teacher.What(address)` only as a deprecated controller-side
+- keep the old `Teacher.What(where, when)` only as a deprecated controller-side
   compatibility alias, never as the student's prediction API;
 - move snapshot validity out of objective target time;
 - retain compatibility adapters for v1 checkpoints/configuration;
 - add deterministic mode scheduling;
 - keep private clean targets inaccessible to the student.
+
+Fix the existing temporary-context lifecycle during this migration: restore
+source/snapshot identity together with context on normal and exceptional exit,
+and isolate nested runtime lessons and staged cursors. Preserve validity of
+previous corpus addresses. Separate public task data from the current
+`ReconstructionLesson.clean_input` / `clean_what` fields before blank lessons
+can run; a model-owned `teacher` reference is not a capability boundary.
 
 In `data.py`:
 
@@ -804,6 +1025,11 @@ In `data.py`:
 - preserve document boundaries and exact source provenance;
 - add legal relative-cursor resolution;
 - never let a request cross context/document boundaries silently.
+
+Missing or inconsistent provenance must fail closed, not fabricate a document,
+sentence, or span from a fallback row. Known inline/runtime sources must
+construct their explicit provenance at ingestion. Compatibility adapters may
+translate a complete v1 address but must not invent absent coordinates.
 
 The learned student computation must not own or receive a `Teacher`,
 data-loader, target callback, or other capability that reaches `Teacher.Data`.
@@ -952,6 +1178,10 @@ self-reward remain separate follow-up work.
 - Invalid context, split, version, or span combinations fail closed.
 - Packed-row prefetch preserves the address associated with each sentence.
 - Document and domain resets prevent cross-document cursor leakage.
+- Temporary and nested contexts restore snapshot/version, lesson, and cursor
+  state on normal and exceptional exits; earlier source addresses remain valid.
+- Absent provenance is rejected; supported inline/runtime input has explicitly
+  constructed addresses, not silently invented lookup fallbacks.
 - A root `model.what` can push two or more constituent `WhatFrame` tasks,
   resolve them, and reduce their estimates into the root in deterministic
   dependency order under a fixed seed.
@@ -1002,6 +1232,12 @@ self-reward remain separate follow-up work.
 - Identical bounded memory reads are not recomputed per candidate.
 - Second-, third-, and tail-ranked derivations retain nonzero support.
 - Clean reconstruction remains finite through address and context ablations.
+- Holding a forest fixed, chooser training raises the probability of a
+  lower-task-loss derivation without evaluating a second derivation per lesson.
+- Assigned targets cannot be changed by a chooser; requested cursor decisions
+  precede receipt of the requested perception and retain resolution provenance.
+- Source addresses, grammatical slots/spans, and subjective attention remain
+  distinct, including on blank lessons without target-derived output lengths.
 
 ### Symbolic mind boundary
 
@@ -1138,3 +1374,206 @@ The following remain intentionally outside the next iteration:
 Those features should build on a measured addressed `What` loop rather than
 being introduced before the student can demonstrably read, locate, recall,
 and predict through one shared mechanism.
+
+## 14. Preserved roadmap: noun and verb concept formation
+
+This and the following sections preserve the earlier plan's requirements.
+They follow addressed reading and stable noun learning, rather than delaying
+all degraded lessons until full verb induction is complete. The initial
+`predict_state` operation is not itself a learned reusable verb inventory.
+
+### 14.1 Synchronic and diachronic concept order
+
+The symbolic-order recurrence must eventually learn concepts from percepts
+and concepts of the preceding order, in two explicitly typed forms:
+
+```text
+N^(k+1)_t = synchronic_lift(P_t, W_t, C^k_t, ...)
+V^(k+1)_(t1->t2) = diachronic_lift(C^k_t1, C^k_t2)
+
+V^1 = [part = C^0_before, whole = C^0_after, kind = temporal,
+       from_event = t1, to_event = t2]
+```
+
+Same-time combinations form higher-order nouns: composite objects and
+configurations. Cross-time combinations form verbs. Ordered before/after
+roles retain direction even when the sparse activation reader is untyped.
+The event-support coordinates above are not assignments to subjective
+`.when`; provenance records both event order and presentation time.
+
+Verb learning should satisfy:
+
+```text
+verb(initial noun concept) ~= final noun concept
+L_VP = E[distance(T_VP(C_NP,t), C_NP,t+1)]
+```
+
+Repeated `grow(seed_i) -> sprout_i` examples across different tracked
+individuals must improve one reusable temporal concept, not memorize a
+separate sentence-pair identity. Training evidence must identify the initial
+object state, action word or anonymous action, resulting state, and continuity
+of the affected individual. Begin with unary transformations; later extend
+to role-bound argument tuples.
+
+Not every later change is explained by the intervening VP. As initial
+admission thresholds, require at least four eligible transitions across at
+least two tracked noun identities, and retain a provisional VP only when its
+EMA transition error is at least five percent below the identity/no-verb
+baseline. Confirm improvement on held-out eligible transitions. These are
+ablation thresholds, not guarantees of causal identification from text.
+
+### 14.2 Meaning learning versus grammatical application
+
+A surface verb's MetaSymbol binds to one or more learned diachronic concept
+rows. The grammatical role, argument bindings, and context select the intended
+sense; its atom is passed to the shared executor. `VerbLayer` applies a verb
+but does not mint its meaning. Noun selection likewise uses learned concepts,
+not the surface word row as the object's meaning.
+
+The diachronic event record retains references to its verb and constituents
+for grammatical reconstruction. The causal transformation may be forward-only
+and many-to-one: grammatical decomposability does not imply causal
+invertibility. Inferring a past object from a result is an abductive
+`model.what` using explicit memory, not a required algebraic inverse.
+
+### 14.3 Row-local transition evidence
+
+Retain completed two-slot sentences in structured NP-VP form until the next
+eligible state of the same tracked noun is observed:
+
+```text
+E_t = (NP_t, VP_t, discourse_id, identity_binding,
+       subjective_when_t, objective_event_support)
+E_next.NP = next compatible state of that tracked individual
+eligible_transition = (E_t.NP, E_t.VP, E_next.NP)
+```
+
+This bounded row-local LTM cache is evidence transport, not the verb
+representation or an already implemented v1 guarantee. Preserve sparse NP/VP
+row IDs, signed activations, discourse identity, time/provenance, and required
+role bindings; do not retain the entire concept inventory, an undifferentiated
+sentence activation, or a previous autograd graph.
+
+- Commit only detached student-produced concept states, never private Teacher
+  targets; keep persistent/global truth admission separate.
+- Update sequentially at each intermediate packed-sentence boundary and reset
+  on document/domain boundaries.
+- Do not train a transition for a first sentence, across different domains,
+  or between unsupported object identities.
+- Compare the affected noun states, not whole-sentence activation differences.
+- Keep ambiguous or unmatched records provisional; adjacency alone is not
+  evidence that two sentences describe the same individual or one verb.
+
+Concept learning belongs inside the symbolic-order process. The compiled
+loop may compute candidates, activations, and losses, then queue structural
+admission/relation growth for the safe eager/reset boundary. Deferring those
+mutations does not move meaning creation into grammar. Implement genuine
+same-time and temporal combination rather than describing repeated promotion
+of one selected row as concept induction.
+
+## 15. Preserved roadmap: shared sparse verb executor
+
+Do not allocate a private dense invertible matrix per English verb. Use a
+shared bank of low-rank transformation experts with sparse gates and a
+bias/control code supplied by the learned diachronic concept:
+
+```text
+z_after = z_before
+        + sum(j in top_k(g_V)) g_V[j] U_j phi(R_j z_before)
+        + B b_V
+```
+
+`U_j`, `R_j`, and `B` are shared. Begin with 32 rank-32 experts, four active
+per VP occurrence. Condition gates on the VP concept and argument roles so
+different senses can select different mixtures. The residual path preserves
+unaffected structure; the selected sparse subspace carries the change.
+Existing sparse spectral gain may be one expert, but is not sufficient by
+itself for general state and relation transformations.
+
+If quality saturates, first ablate expert count, rank, and two-step
+composition. Vocabulary and verb count should primarily grow rows and sparse
+relations, not private dense operators. A learned past reconstructor is
+optional; forward transition reconstruction is normative. Growth, movement,
+possession, integrity, and activation are changes in `what`, not meanings
+encoded directly in subjective `.when`.
+
+Add verb-transition weight `0.25` and sparse expert-gate penalty `1e-4` as
+initial ablation values, reporting them separately. Ramp the transition
+weight from zero to `0.25` over the first ten percent of the verb-learning
+phase. Do not conflate this later reusable-verb objective with the earlier
+`PREDICT` future-state alignment term, and do not silently double-count one
+transition under both losses. Keep one grammatical reconstruction per lesson.
+
+## 16. Preserved roadmap: dimensions and grounding
+
+PartSpace, WholeSpace, and ConceptualSpace widths are independent. A concept
+is defined by percept references and their activations, not by a
+coordinatewise PS-to-CS identity handoff:
+
+```text
+{PS percept references, WS percept references}
+    -> ConceptualSpace identity row and atom
+```
+
+Constituent richness grows sparse edges and activations, not a required
+conceptual width. Equal-width 1024 configurations are experimental choices,
+not ontological constraints. Preserve the indexed activation/dictionary-decode
+interface; do not introduce a dense PS-to-CS projection merely because widths
+differ. Explicit role adapters inside `predict_state` are a separate,
+traceable interface and do not redefine concept identity.
+
+After addressed reading and temporal learning work, ablate ConceptualSpace
+width 512 then 256, initially retaining PartSpace width 1024 and choosing
+WholeSpace width independently for its property inventory. Explore shared
+operator rank 32-64 and approximately 4-8 active primitives. Select widths
+using reconstruction, grammar, transition quality, memory, and throughput,
+not parameter count alone.
+
+Perceptual part structure provides a current extension of an object; its
+conceptual opening and relations provide a learned intension. Their sparse
+reference interface permits drift. Grounding/re-anchoring is deferred: later
+replay high-trust perceptual exemplars, measure PS/WS-to-CS reference stability,
+and repair unsupported concepts without collapsing the spaces' independent
+dimensions. Preserve historical indices and event validity during repair.
+
+## 17. Acceptance gates for the preserved roadmap
+
+These gates apply when the corresponding deferred capability is implemented;
+they do not relabel the clean v1 benchmark as proof of concept induction.
+
+### Ontology and mereology
+
+- `0` and `1` remain `NOTHING` and `EVERYTHING`; open, closed, and inconsistent
+  conceptual openings are distinguishable.
+- Optional fillers can enter and leave without changing a tracked index.
+- Actual parthood composes transitively only over intersecting event support.
+  Direct generating links and their closure give the same event order.
+- Subjective attention, conceptual identity, and objective event location
+  cannot be substituted for one another.
+
+### Concepts, verbs, and memory
+
+- Order-0 concepts derive from PS/WS references at independent native widths.
+- Symbolic order 1 can learn both a same-time noun and an ordered temporal
+  concept; reversing before/after produces a distinct temporal relation.
+- Repeated seed-to-sprout examples reuse and improve one `grow` concept.
+- A retained VP trains only upon an eligible later NP state of the same
+  tracked identity; rows and documents cannot contaminate one another.
+- An admitted VP improves expected held-out transition error over identity
+  copying. Applying the selected verb improves final-noun reconstruction.
+- Grammar selects a role-conditioned learned temporal meaning rather than a
+  raw lexical row. Distinct VPs can use distinct sparse shared-expert mixtures.
+- No verb owns a private dense invertible matrix. Constituents remain
+  grammatically recoverable even when the causal transformation is many-to-one.
+- Historical truth distinguishes assertion time from represented event support;
+  private targets and unverified predictions never become student truth by
+  default.
+
+### Quality and performance
+
+- Report clean/degraded/blank reconstruction, grammar validity, transition
+  quality, verb-sense selection, and sentences/s separately.
+- Use the matched B24 baseline and 15% clean-regression gate from section 10;
+  establish and report B28 separately rather than comparing B28 against B24.
+- Attribute concept-admission, transition-cache, and verb-expert overhead
+  separately. Width ablations must report quality as well as speed and memory.
