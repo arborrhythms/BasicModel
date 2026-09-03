@@ -10770,15 +10770,15 @@ class SymbolSubSpace(SubSpace):
                 # predictor's loss accumulation with it. The model also reads
                 # this weight (see BasicModel) to scale the consumed term.
                 _inter_w = float(
-                    TheXMLConfig.training("interLossWeight", 0.1) or 0.1)
+                    TheXMLConfig.training("interLossWeight", 0.1))
                 self.discourse.set_inter_loss_weight(_inter_w)
                 # InfoNCE next-idea contrastive term (<interContrastiveWeight> /
                 # <interContrastiveTemp>). 0.0 weight -> MSE-only (byte-identical).
                 self.discourse.set_inter_contrastive(
-                    float(TheXMLConfig.training("interContrastiveWeight", 0.0)
-                          or 0.0),
-                    float(TheXMLConfig.training("interContrastiveTemp", 0.1)
-                          or 0.1))
+                    float(TheXMLConfig.training(
+                        "interContrastiveWeight", 0.0)),
+                    float(TheXMLConfig.training(
+                        "interContrastiveTemp", 0.1)))
                 self.layers.append(self.discourse)
                 # ``self.discourse.parameters()`` now also enumerates the
                 # inter-level ``_inter_predictor`` (registered as a submodule

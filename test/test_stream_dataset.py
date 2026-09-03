@@ -1,4 +1,6 @@
 """Tests for the streaming sentence-batch DataLoader path."""
+import time
+
 import pytest
 import torch
 
@@ -59,6 +61,42 @@ def test_dataloader_prefetch_preserves_stream_order():
     for t, batch in enumerate(batches):
         for b in range(B):
             assert batch[b] == f"doc_{b * 5 + t:04d}"
+
+
+def test_tick_prefetcher_preserves_exhaustion_after_full_queue():
+    """A full bounded queue must not discard the terminal sentinel.
+
+    The consumer can spend longer than a second in one accelerator brick.
+    Exhaustion therefore has to wait for queue space rather than timing out
+    once and leaving the next consumer read blocked forever.
+    """
+    from Models import BasicModel
+
+    class TwoTickCursor:
+        def __init__(self):
+            self.index = 0
+            self.last_source_indices = None
+
+        def all_done(self):
+            return self.index >= 2
+
+        def next_tick(self):
+            value = self.index
+            self.last_source_indices = [value]
+            self.index += 1
+            return value
+
+    prefetcher = BasicModel._TickPrefetcher(
+        TwoTickCursor(), queue_size=2)
+    try:
+        # Let both data slots fill and outlive the retired one-second
+        # sentinel attempt before the consumer frees either slot.
+        time.sleep(1.2)
+        assert prefetcher.next() == (0, [0])
+        assert prefetcher.next() == (1, [1])
+        assert prefetcher.next() is None
+    finally:
+        prefetcher.close()
 
 
 def test_packed_streams_preserve_row_chronology_and_whole_sentences():

@@ -342,6 +342,10 @@ def _tiny_canonical_model(
     _set("./architecture/training/numWorkers", 0)
     _set("./architecture/training/autoload", False)
     _set("./architecture/training/autosave", False)
+    # BasicModel's production Teacher configuration deliberately disables the
+    # independent intra-sentence predictor. This fixture tests predictor/HOP
+    # parity, so opt that auxiliary back in explicitly.
+    _set("./architecture/training/intraLossWeight", 1.0)
     _set(
         "./architecture/training/forwardGrammarWeight",
         forward_grammar_weight)

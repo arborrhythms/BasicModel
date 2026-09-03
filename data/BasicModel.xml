@@ -108,6 +108,9 @@
       <dataType>embedding</dataType>
       <dataset>text</dataset>
       <shardDir>data/fineweb</shardDir>
+      <!-- Objective source-address scope. It conditions Teacher lessons but
+           never replaces the model's subjective .where/.when bands. -->
+      <contextWhole>FineWeb-Edu 100B shuffle</contextWhole>
       <numShards>1</numShards>
       <maxDocs>2000</maxDocs>
       <!-- W256 is the protected-memory B28 operating point on the 36 GB MPS
@@ -144,6 +147,7 @@
            no reverse gradient traverses the recurrent sentence construction.
            The output head is structural and receives no fabricated labels. -->
       <reconstructionScale>1.0</reconstructionScale>
+      <teacherReconstruction>true</teacherReconstruction>
       <detachedReverse>true</detachedReverse>
       <leafDistillWeight>1.0</leafDistillWeight>
       <!-- Keep the bounded local chooser objective available but outside this
@@ -152,15 +156,17 @@
            assigning a nonzero weight here. Detached reverse is the NaN gate. -->
       <forwardGrammarWeight>0.0</forwardGrammarWeight>
 
-      <!-- Concept-space counterparts of within/across-sentence prediction. -->
-      <sentencePrediction>true</sentencePrediction>
-      <armaScale>0.1</armaScale>
-      <intraLossWeight>0.1</intraLossWeight>
-      <interLossWeight>0.1</interLossWeight>
-      <interContrastiveWeight>0.1</interContrastiveWeight>
+      <!-- Teacher reconstruction replaces the independent predictor losses.
+           Future/past What queries will vary objective input availability
+           rather than paying for a second predictive faculty. -->
+      <sentencePrediction>false</sentencePrediction>
+      <armaScale>0.0</armaScale>
+      <intraLossWeight>0.0</intraLossWeight>
+      <interLossWeight>0.0</interLossWeight>
+      <interContrastiveWeight>0.0</interContrastiveWeight>
       <interContrastiveTemp>0.1</interContrastiveTemp>
 
-      <autoload>true</autoload>
+      <autoload>false</autoload>
       <autosave>true</autosave>
       <checkpointEveryBatches>100</checkpointEveryBatches>
     </training>

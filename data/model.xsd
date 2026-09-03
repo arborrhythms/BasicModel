@@ -773,6 +773,10 @@
            excluded intact; they are never truncated into partial examples. -->
       <xs:element name="maxSentenceWords" type="xs:positiveInteger"/>
       <xs:element name="shardDir" type="xs:string"/>
+      <!-- Stable name of the corpus/book/conversation whole that scopes
+           objective Teacher addresses. This is not written into the model's
+           subjective .where/.when event bands. -->
+      <xs:element name="contextWhole" type="xs:string"/>
       <xs:element name="minFrequency" type="nonNegativeFloat"/>
       <xs:element name="classificationMin" type="xs:string"/>
       <xs:element name="classificationMax" type="xs:string"/>
@@ -824,6 +828,11 @@
            Legacy name reverseScale still parsed (with deprecation
            warning) by util.TheXMLConfig. -->
       <xs:element name="reconstructionScale" type="unitInterval" minOccurs="0"/>
+      <!-- Centralize complete-present-input reconstruction, clean targets,
+           objective corpus addresses, and loss reporting in Teacher. The
+           objective address is separate supervision/conditioning metadata;
+           Teacher never overwrites subjective .where/.when. -->
+      <xs:element name="teacherReconstruction" type="xs:boolean" minOccurs="0"/>
       <!-- When true, serial reconstruction trains an idea-only reverse
            construction student from stopgrad(S), with ReconstructionStack's
            rule/arity/leaves as detached targets. This removes the long
