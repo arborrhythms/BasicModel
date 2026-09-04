@@ -1,312 +1,273 @@
-# What, queryable spacetime, and grammatical thinking
+# What, spacetime, and thinking
 
-> **Status:** high-level target design, 2026-09-03. The
-> [unified Teacher specification](specs/2026-07-27-teaching-modes-and-next-iteration.md)
-> is normative for scope, learning objectives, migration, and acceptance gates.
-> This document explains the interfaces and their ownership; it does not claim
-> that the addressed student, thinking stack, or contextual chooser is already
-> implemented.
+> **Status:** high-level target design, revised 2026-09-04. This design uses
+> the existing `Data`, `Model`, and `Model.run()` framework. The
+> [teaching-modes specification](specs/2026-07-27-teaching-modes-and-next-iteration.md)
+> predates this revision and must be brought into alignment after this design
+> is agreed.
 
 ## 1. One question, different authority
 
-The common question is **what is at this place and time?** Its answer depends
-on who is allowed to look and whether the answer is observed or estimated.
+The common question is **what?** The question may ask what is present, what
+was present, what will be present, or for a response that is not a
+reconstruction of the input at all. Its answer depends on which existing
+object is answering:
 
-| Interface | Meaning | Caller and authority |
+- `Data.what(question)` retrieves the answer available from the dataset.
+- `Model.what(question)` produces the model's answer from its conceptual
+  representation and memory.
+- `Model.run()` remains the framework that presents data, runs the model,
+  evaluates the result, and optionally trains it.
+
+These are logical interfaces that delegate to the infrastructure already
+owned by `Data` and `Model`; they do not introduce a new execution framework.
+In particular, there is no Teacher class and no separate Student class in the
+target design. `TheData` is the existing `Data` instance, and all learned
+behavior remains on the existing `Model`.
+
+The current reconstruction task is the first instance of this interface. It
+has effectively asked `What(present)`: given the presented input, reproduce
+what is happening now. Making that question explicit generalizes the same
+training loop to:
+
+- `What(past)`, which asks for data at an earlier time;
+- `What(present)`, which includes the existing reconstruction task;
+- `What(future)`, which asks for data at a later time; and
+- supervised questions whose correct response is determined by the question
+  rather than by copying any temporal input.
+
+`Data.what()` and `Model.what()` therefore answer the same question with
+different authority. `Data` can use its data coordinate to retrieve the
+desired answer during learning or evaluation. `Model` must answer using its
+own learned conceptual and memory state. The answer returned by `Data` is a
+training target, not an additional model input.
+
+Conceptually, the existing run path becomes:
+
+```text
+question and input = Data presentation
+model_response     = Model.what(question)
+
+if learning or evaluation:
+    desired_response = Data.what(question)
+    compare(model_response.what, desired_response.what)
+
+if learning:
+    update Model through the existing Model.run() training path
+
+if inference:
+    the Model response may become the presentation's Data output
+```
+
+The `what()` methods identify where the existing work is delegated. They do
+not require a second lesson controller, scoring API, source oracle, spacetime
+view hierarchy, or parallel generation API.
+
+## 2. Questions, data coordinates, and time
+
+The where and when of an answer are always part of the question. They are not
+separate privileged arguments supplied beside the question, and the model is
+not trained to reproduce them. They provide context for producing the `what`;
+the cost function compares only the desired and produced `what`.
+
+For the present design, `when` is the zero-based presentation index in
+`TheData`. For text, this is the sentence index. It provides an ordered data
+coordinate that `Data.what()` can use as an index into the dataset. A question
+can identify the desired time directly or relative to the presented time:
+
+```text
+presentation 8 + What(present)     -> data at index 8
+presentation 8 + What(past, -1)   -> data at index 7
+presentation 8 + What(future, +1) -> data at index 9
+```
+
+The exact representation of those semantics may be grammatical, conceptual,
+or both. The requirement is that they occur within the question context seen
+by the model. There is no separate objective-address structure that silently
+selects a different target.
+
+`where` is omitted from the initial implementation. A later design may use it
+to address a location within the datum presented at one trial, which for the
+current text data is a sentence. The model may map data `where` and `when`
+coordinates to its own internal `.where` and `.when`, but it is not required
+to do so. Data coordinates and model coordinates need not share a
+representation.
+
+Each stable presentation index reserves both sides of an interaction:
+
+```text
+DataPresentation:
+    when: zero-based presentation index
+    input: question/presentation
+    output: desired or generated response, possibly absent
+```
+
+In learning mode, a presentation has an input and a desired output. In
+inference mode, it initially has only an input; `Model.what()` supplies the
+output. Reserving both fields means that recording an inferred output does
+not renumber later sentence coordinates. Generated outputs should retain
+their model provenance so that writing an inference to `TheData` does not
+silently turn it into supervised source data.
+
+This also makes clear that temporal prediction is not restricted to
+one-step-next prediction. A question may ask for any represented past,
+present, or future time. Existing prediction models are the special case in
+which the question increments `when` by one.
+
+## 3. Queryable spacetime through `Data` and `Model`
+
+Training across past, present, and future questions teaches a queryable
+spacetime representation of `TheData`:
+
+- reconstruction associates a present question with the present datum;
+- recall associates a past question with remembered data;
+- prediction associates a future question with later data; and
+- supervised pairs associate a question with an answer that may differ from
+  every presented temporal datum.
+
+The same `Model.run()` path performs evaluation and optional learning in each
+case. The question selects the desired response. This matters because the
+input alone does not imply that the correct response is its reconstruction.
+For example, an input may ask for a missing past token, a future sentence, or
+the answer to “what is your name?”. All are `what()` questions; the temporal
+and grammatical content of the question determines what counts as accurate.
+
+Automatic completion of missing past, present, and future content trains the
+model's world representation. Supervised training uses an explicit desired
+response. Inference without a desired response produces a model output that
+may be returned to the caller or recorded as the output side of the
+`TheData` presentation.
+
+## 4. LTM records inputs and responses
+
+LTM records the model's conceptual representation of both sides of an
+interaction:
+
+```text
+LTMSlot:
+    input:  optional conceptual representation
+    output: optional conceptual representation
+```
+
+The input representation is the existing one-, two-, or three-slot
+representation of the input sentence in conceptual space. The output is the
+model's conceptual representation of its own response. It is not necessarily
+a reconstruction of the input: for `What(past)`, `What(future)`, and ordinary
+question answering, it will normally differ.
+
+During supervised learning, the desired `Data` output supplies the loss, but
+the response stored in LTM is the response actually made by the model. This
+keeps memory a record of the model's experience and reasoning rather than a
+hidden route by which the desired answer is copied into its context.
+
+The two fields are independently optional within each LTM slot. That property
+lets the existing sequential LTM act as a thinking stack:
+
+- `(input, —)` pushes an unanswered question;
+- `(input, output)` is a complete stimulus/response slot and leaves the
+  stack depth unchanged; and
+- `(—, output)` answers and pops the most recent unanswered question.
+
+A slot with neither input nor output has no meaning. A question without an
+answer in one slot begins the stack of internal dialogue. A later answer
+without a question closes the most recent open question. Stack state is thus
+the imbalance represented by the sequence of LTM slots; it does not require a
+new recursive frame tree, a separate stack object, or an in-place update to
+the opening slot. **Parity** means that there are no unmatched input-only
+slots.
+
+## 5. Thinking is iterative `what()` evaluation
+
+All model questions are queries into conceptual space. When the truth or
+illumination of the relevant conceptual spaces is insufficient, the model
+may think by asking a subquestion through its own `what()` interface.
+Internal subquestions do not use the sentence index known by `TheData`; the
+model cannot supply a data coordinate it does not possess. They are formed
+from the model's current conceptual question and memory.
+
+Thinking is iterative program evaluation, not recursive model evaluation.
+Each iteration appends an LTM slot. The next iteration receives the original
+question together with the enlarged LTM context, so a completed subquestion
+can transform how the still-open question is evaluated.
+
+For the supervised pair:
+
+```text
+Q: what is your name?
+A: Alec
+```
+
+one possible LTM sequence is:
+
+| Iteration | LTM slot | Derived open-question stack |
 |---|---|---|
-| `Teacher.Data(address)` | Exact source datum and provenance for scoring | Teaching controller/evaluation only; privileged source access |
-| `SourceOracle.Observe(address, policy)` | Only the perception this lesson permits | Controller applies the observation policy before presenting evidence |
-| `SpacetimeView.what(address)` | Records available in this particular view | Read-only, source-scoped, policy-bound, and limited to an evidence cutoff |
-| `model.what(address)` | Student's best conceptual estimate of the requested state | Student-owned evidence and grammar; no Teacher/data-source capability |
-| `model.generate(estimate)` | Grammatical/surface realization of an estimate | Uses the estimate and its derivation, not the hidden target's forward cache |
+| Understand the root but defer its answer | `(what is your name?, —)` | `[what is your name?]` |
+| Ask and answer a subquestion | `(who is asking?, OpenAI)` | `[what is your name?]` |
+| Answer the pending root using the new context | `(—, Alec)` | `[]` |
 
-The Teacher's semantic `what()` is deliberately spelled `Data` at the API
-boundary so it cannot be confused with the student's learned `what()`.
-The existing `Teacher.What(where, when)` becomes a deprecated controller-side
-adapter to `Data`; it is not a student reasoning operation. No new synonymous
-`teacher.what` entry point is required.
+The second slot is balanced by itself, but its result is now part of LTM and
+therefore part of the context used to answer the root. The output-only third
+slot balances the earlier input-only slot. Once parity is restored, the
+answer requested by `TheData` is available and the ordinary supervised loss
+can be evaluated.
 
-Queryable spacetime is an interface over addressed records, not one global
-store that everyone can read. A private source view can contain the complete
-corpus; a student's perception view contains only permitted observations;
-STM/LTM views contain student-visible records; a thought view contains
-provisional constructions. Sharing a query shape does not share authority.
+Thinking must conclude. A closure pressure increases with each unbalanced
+iteration. It is supplied to the existing grammar chooser as part of its
+context: as pressure rises, opening another input-only slot becomes less
+favored and producing an output for the most recent unanswered input becomes
+more favored. A finite iteration limit remains a safety boundary. At that
+limit, the model must emit its best-effort answer for the most recent
+unanswered input; `unknown`, `unresolved`, or a failure status cannot be used
+as an escape from answering. The answer may carry low confidence, but it is
+still an output-only slot and therefore restores one level of parity. If more
+than one input remains open, forced best-effort answers continue from the top
+of the stack until parity is restored. The exact monotonic pressure schedule
+remains a specification decision.
 
-```mermaid
-flowchart LR
-    Source["Private source spacetime"] --> Teacher["Teacher.Data and scoring"]
-    Source --> Observe["SourceOracle.Observe: apply lesson policy"]
-    Observe --> Evidence["Student perception / STM / LTM views"]
-    Task["Assigned task or student query"] --> Stack["model.what: bounded WhatFrame stack"]
-    Evidence -->|"traced query results"| Stack
-    Stack --> Chooser["Grammar chooser: operation and location"]
-    Chooser -->|"child queries and reductions"| Stack
-    Stack --> Estimate["WhatEstimate and evidence trace"]
-    Estimate --> Teacher
-    Estimate --> Generate["Optional grammatical generation"]
-```
+## 6. Context for the grammar chooser
 
-There is no student-to-Teacher lookup edge. Scores train the student after an
-estimate is produced; clean targets are not fed back as evidence for that
-same estimate.
+The grammar chooser already operates over a richer context than a new
+address-specific list would describe. Its context includes symbolic
+activation, STM, LTM, percepts, and grammatical operations, among the other
+state already supplied by the model.
 
-## 2. Addresses, locations, and time
+This design does not replace or duplicate that context. It requires the
+chooser to be able to distinguish only the new, relevant state:
 
-For text, the resolved objective address identifies context/corpus, split,
-document, sentence, and character span, with a direct row index and source
-version. Target sequence/event time and relative offsets distinguish past,
-present, and future. Other source adapters can represent world-event support
-without pretending that a text row is a physical coordinate.
+- the temporal meaning contained in the active `what()` question;
+- the input and output sides of LTM slots;
+- whether unmatched input-only slots remain; and
+- the current closure pressure while thinking.
 
-Keep the following independently typed:
+The chooser may use that context to answer, to leave an input unanswered
+while posing a subquestion, or to emit an output for the latest pending input.
+Those are grammatical/model choices within the existing run path, not calls
+to a separate query planner.
 
-| Coordinate | Example | Purpose |
-|---|---|---|
-| Objective source/event address | Document D, sentence 8; object O at event t | State being asked about |
-| Source version | Corpus snapshot/content digest | Which recorded source is authoritative |
-| Evidence cutoff (`as_of`) | Information visible before predicting sentence 8 | Which observations/memories may support the estimate |
-| Assertion time and event validity | Claim made at t, about t+1 | Provenance of memories and predictions |
-| Grammatical location | Argument role, input span, generated constituent slot | Where an operation consumes or places a constituent |
-| Subjective `.where` / `.when` | Student's current attentional presentation | Internal workspace; never supplied or supervised by Teacher |
+## 7. Prediction, supervision, and completion
 
-Opaque identity hashes key categorical embeddings; their numerical order has
-no meaning. Ordered positions are represented separately. An absent field has
-an explicit mask, not a fabricated ID or an ordinary zero-valued concept.
-
-An internal question has a tagged address such as an episode/frame ID plus a
-role-bound query. It is not silently converted into a corpus row. Public
-`model.what(ObjectiveAddress)` starts the addressed task; its internal frames
-may ask typed constituent questions as well as objective-address queries.
-Only source-supported objective addresses can be passed to `Teacher.Data`.
-
-## 3. Queryable spacetime and Teacher interfaces
-
-The following are logical contracts, not prescribed Python class layouts:
+Prediction and verification remain part of the existing `Model.run()`
+training and evaluation loop. The substantive change is that the question
+determines the desired output:
 
 ```text
-SpacetimeResolver.resolve(StudentQuery, public_cursor_context)
-    -> ResolvedQuery(requested, resolved_address, resolution_trace)
-
-SpacetimeView.what(address)
-    -> EvidenceResult(status, records, provenance)
-
-SourceOracle.Observe(resolved_address, observation_policy)
-    -> PresentedObservation(address, perception, availability_mask)
-
-Teacher.Data(resolved_address)
-    -> TeacherDatum(address, source_version, clean_value, provenance)
-
-Teacher.Score(resolved_address, WhatEstimate, TeacherDatum)
-    -> separately reported loss_components
+question asks What(present) -> desired output may reconstruct the input
+question asks What(past)    -> desired output comes from an earlier index
+question asks What(future)  -> desired output comes from a later index
+supervised question         -> desired output is the supplied answer
+inference question          -> no Data output; Model supplies it
 ```
 
-The resolver checks source version, context, split, document/sentence/span,
-and legal cursor movements. It never silently crosses a document or invents
-missing provenance. If a request is explicitly snapped to a legal location,
-both forms are preserved. An assigned target is fixed; a chooser cannot
-replace it with a more convenient target. A permitted context switch must be
-an explicit action with the corresponding row-local state reset.
+The model always receives the temporal or other intent as part of the
+question. It is rewarded for accurately completing the missing `what`, not
+for reproducing the coordinates. If the question cannot yet be answered
+directly, the same supervised presentation may include the iterative thinking
+process described above. Training occurs after thinking returns the LTM stack
+to parity and produces the requested response.
 
-Each `SpacetimeView` is bound at construction to a source namespace, immutable
-read snapshot, access policy, and `as_of` cutoff. Student calls cannot request
-a broader capability or a later cutoff. An `EvidenceResult` retains record
-IDs, address/version, observation/assertion time, represented-event support,
-availability, confidence, and epistemic status. A retrieved prediction is
-still a prediction, not an observation. Unavailable or denied content returns
-no hidden payload, clean trace, or target-derived shape metadata.
-
-The conceptual common operation is `what`; it has distinct implementations:
-
-- The Teacher's private source adapter looks up an exact recorded datum.
-- The observation adapter degrades or blanks the permitted presentation.
-- Student perception/STM/LTM adapters retrieve only admitted evidence.
-- The student constructs an estimate from that evidence through grammar.
-
-Read operations do not automatically write memory, advance the cursor, or
-admit truth. `model.observe` is the explicit ingestion boundary; cursor moves
-and provisional thought writes are explicit traced actions. Future source
-records may be prefetched privately without becoming visible in any student
-view. During recall/prediction, a failed memory query cannot fall back to the
-private source. If the Teacher lacks a valid datum, scoring is unavailable or
-deferred; the student's estimate is not manufactured into ground truth.
-
-### Ownership of a teaching episode
-
-The controller owns the complete lesson, scheduling, observation policy, and
-private `TeacherDatum`. It passes a separate public task and permitted
-observation to the student. Naming fields "private" inside a shared lesson
-does not establish this boundary.
-
-The student owns conceptual state, current permitted perception, STM/LTM
-views, grammar state, query policy, and the episode stack. It owns no Teacher,
-loader, target callback, or privileged source view. Policy enforcement belongs
-outside the student's mutable state. A physical in-process split is possible,
-but the learned call graph must still lack those capabilities.
-
-The current `Model.teacher` / shared `ReconstructionLesson` arrangement is a
-migration concern, not the proposed boundary. Temporary source contexts must
-restore source version, cursor, and lesson state as well as context identity.
-
-## 4. The student's What and thinking stack
-
-```text
-model.observe(address, permitted_perception) -> updated student state
-model.what(address) -> WhatEstimate
-model.generate(WhatEstimate) -> optional surface/perceptual realization
-```
-
-`model.what` snapshots the episode's permitted evidence views and budgets.
-Its estimate contains the requested/resolved target, bounded conceptual
-state, derivation, root/constituent frame references, evidence references,
-confidence, and provisional/verified status. Generation can run after the
-target's forward/reverse caches are cleared. A thought need not become a
-sentence before it can support another thought.
-
-A `WhatFrame` is one unresolved question and its continuation:
-
-```text
-WhatFrame:
-    id, parent_id, target_address_or_internal_question
-    expected_role, identity_bindings, permitted_sources, as_of
-    selected_query_or_reduction, pending_children, returned_evidence
-    partial_conceptual_result, trace_ref, remaining_budget
-    status = unresolved | waiting | resolved | failed
-```
-
-The stack supplies work to the chooser; the chooser decides the next legal
-grammatical action. For example, `query_perception`, `query_stm`, and
-`query_ltm` return identifiable records. `bind`, `compare`, and a named
-construction or `predict_state` reduction consume those records explicitly.
-These names illustrate operation families rather than fixing a new grammar
-file format.
-
-1. Push the root desire to know `what(address)`.
-2. Construct the public chooser context for the active frame.
-3. Choose a legal evidence query, child question, reduction, or completion.
-4. Push unresolved constituents; mark the parent waiting.
-5. Return each resolved child's conceptual result to its parent role.
-6. Apply the recorded reduction; pop the parent when complete.
-7. Return the root estimate, optionally generate its surface, then score it
-   if a Teacher datum exists.
-
-For example, a controlled future-state question may create two child tasks:
-obtain the current object's state from permitted perception/STM, and retrieve
-relevant transition evidence from LTM as of the prediction. Their results are
-bound to the same tracked object and reduced by the traced `predict_state`
-operation into an estimated future noun state. This does not assume the later
-reusable verb-induction machinery already exists.
-
-The Teacher supplies and scores the root task, but does not push child frames,
-select memory records, or choose a hidden target derivation. In `THINK`, the
-student originates the root task as well. Its result enters bounded working
-memory or a provisional claim log, not the historical truth store.
-
-### Bounded and replayable, not recursive oracle access
-
-The stack is a logical dependency structure, not a requirement for Python
-recursion. A chart or iterative agenda can batch independent children while
-retaining parent/child roles and deterministic replay order. All frames share
-the root's decreasing step, depth, retrieval, and wall-clock budgets; pushing
-a child does not reset them. Cycles or exhausted budgets terminate with an
-explicit failure/partial status, never an unrestricted fallback query.
-
-Memoization uses source/query/`as_of` within an episode whose namespace,
-source version, policy, and read snapshot are fixed. Those identities must
-also be included in a cache key if results outlive that scope. No cache reuse
-may cross a policy, version, or evidence-cutoff change.
-
-Constituents are conceptual results within one shared root derivation, not
-independent sentence parses. Construct one root forest, sample one root
-derivation, and normally render only the root. Retrieval results are reused
-across applicable candidates. The trace records queries, returned record IDs,
-bindings, operations, locations, random choices, and model/grammar version
-needed to replay the answer under the same parameters.
-
-## 5. Context for the grammar chooser
-
-The chooser must decide both **which grammatical construction applies** and
-**where its operands/results belong**. Some choices also issue a source query
-that determines which sentence is read. These are related but distinct
-decisions, with the following context:
-
-| Context | Contribution to a choice |
-|---|---|
-| Root question and active frame | Intended target, expected parent role, unresolved dependencies |
-| Mode and linguistic stage | Allowed observations, actions, and productions; noun-first constraints |
-| Active domain, document, and cursor | Legal source sentence locations and relative movements |
-| Objective address and `as_of` | Requested event/offset and cutoff on supporting evidence |
-| Permitted perception and masks | Which surface evidence is actually present |
-| Conceptual references and identity/role bindings | Which objects and operands participate |
-| Explicit STM/LTM results | Accessible history, referents, transition evidence, confidence/provenance |
-| Partial derivation and grammatical state | Admissible rules, unresolved roles, input spans, and output slots |
-| Episode budgets and seeded exploration | Legal remaining work and reproducible stochastic selection |
-
-These are public references and typed constraints, not permission to turn
-every semantic payload into an unrecorded context vector. Any subsymbolic
-comparison/transformation used in choice evaluation must be a named operation
-in the symbolic trace. The exact grammar-native scoring architecture remains
-open; this design does not reinstate the withdrawn context-MLP/FiLM proposal.
-
-### Source sentence versus grammatical position
-
-For `READ_REQUESTED`, a cursor operation such as `next sentence` is chosen
-from the current public context **before** receiving the next passage. The
-resolver returns a legal source address; the controller then returns the
-permitted observation at that address. Source selection is traceable even
-when it is one action inside a larger derivation. In `READ_ASSIGNED`, source
-selection is fixed by the task and cannot be optimized away by the chooser.
-
-Within a construction, the chooser selects a legal rule and operand locations:
-for instance, bind one returned concept to a subject role and another to a
-predicate argument, then place their realizations in that rule's output
-slots. An input token span, an output constituent slot, and a source sentence
-address are never interchangeable. For blank prediction, output slots and
-length are constructed by grammar, not copied from a private target mask or
-parse. Explicitly supplied public address spans do not license reading hidden
-constituent boundaries or clean tokenization.
-
-The resolved root address remains fixed while the derivation is completed.
-Word choice follows the selected grammatical role and concept binding. A
-future-state estimate passes through the ordinary generator; it does not
-directly select output words through an independent prediction head.
-
-The chooser retains admissible alternatives and learns from one sampled
-derivation's Teacher-scored task loss, with the exploration and credit
-assignment specified in section 6.3 of the unified spec. It does not render
-every candidate to decide which one is best. The required trace ties each
-choice to its evidence, operation, source request if any, and grammatical
-location. Changing location cannot change the hidden scoring target.
-
-## 6. Prediction, verification, and failure boundaries
-
-A prediction episode has this ordering:
-
-```text
-observe permitted current data
-freeze student evidence views as of the prediction
-estimate = model.what(future_address)       # blank target perception
-isolate estimate and its evidence/trace
-future_datum = Teacher.Data(future_address) # controller-only scoring
-score estimate against future_datum
-```
-
-The exact datum may already exist in the offline source, but it cannot enter
-the student stack, chooser, address encoder, or memory. A detached future
-conceptual target is paired when that address undergoes ordinary later
-analysis; if unavailable, state alignment is deferred. Scoring does not run
-a second target grammar forest. Surface reconstruction also remains a target
-so a collapsed conceptual estimate cannot satisfy learning by itself.
-
-When reality becomes observable, a later `VERIFY` event compares the stored
-prediction with newly available evidence. It may label a provisional claim
-supported or contradicted without rewriting history. Predictions keep their
-assertion time, represented-event support, confidence, and provenance. Reads,
-thoughts, and scores do not autonomously admit global truth.
-
-Before enabling the full design, tests must demonstrate oracle isolation,
-as-of-correct retrieval and caches, address-sensitive reconstruction, distinct
-source/grammar/subjective locations, bounded stack termination, trace replay,
-target-independent generation, and one-forest operation. The unified spec
-defines the capability and throughput gates. Concrete class extraction,
-grammar-native scoring, and future truth-admission policy remain implementation
-decisions or explicitly deferred work.
+This design deliberately leaves the existing batching, forward execution,
+loss calculation, optimizer, grammar chooser, STM, and LTM machinery in
+place. Implementation work should extend those components with `what()`
+delegation, question-relative target selection, paired LTM input/output
+representations, and iterative parity handling rather than building a second
+Teacher/student architecture beside them.
