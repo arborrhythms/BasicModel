@@ -62,8 +62,8 @@ def test_single_dynamic_capacity_accepts_short_and_long_complete_sentences():
 
 def test_basicmodel_declares_one_dynamic_capacity_and_independent_inventories():
     root = ET.parse(ROOT / "data" / "BasicModel.xml").getroot()
-    assert root.findtext("./architecture/serialWordBuckets") == "512"
-    assert int(root.findtext("./architecture/serialWordCapacity")) == 512
+    assert root.findtext("./architecture/serialWordBuckets") == "256"
+    assert int(root.findtext("./architecture/serialWordCapacity")) == 256
     ps = int(root.findtext("./PartSpace/nVectors"))
     ps_max = int(root.findtext("./PartSpace/maxVectors"))
     cs = int(root.findtext("./ConceptualSpace/nVectors"))

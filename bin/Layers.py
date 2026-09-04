@@ -28,6 +28,7 @@ epsilon = 1e-7  # to avoid log(0)
 import util
 from util import TheXMLConfig, TheDevice
 from util import TheMessage
+from What import LTMSlot, WhatSlotOperation
 
 
 def _active_codebook_prototypes(codebook):
@@ -4262,7 +4263,11 @@ class PiLayer(GrammarLayer):
             ``[..., nOutput]`` in [-1, 1].
         """
         if not self.layer.ergodic or torch.compiler.is_compiling():
-            device = self.layer.d.device
+            # ``PiLayer(invertible=False)`` owns a plain LinearLayer, which
+            # has ``W`` but no LDU diagonal ``d``.  Composition is valid for
+            # both variants; choose the device from the registered parameters
+            # instead of assuming the invertible implementation.
+            device = next(self.layer.parameters()).device
             left = left.to(device)
             right = right.to(device)
             if self.nonlinear:
@@ -4271,7 +4276,14 @@ class PiLayer(GrammarLayer):
             else:
                 l_l = torch.log(left)
                 l_r = torch.log(right)
-            wl = self.layer.functional_forward(l_l + l_r, gate=gate)
+            l_sum = l_l + l_r
+            if hasattr(self.layer, "functional_forward"):
+                wl = self.layer.functional_forward(l_sum, gate=gate)
+            else:
+                # Plain LinearLayer (the non-invertible Pi variant) has no
+                # functional LDU helper; apply its current affine map directly.
+                wl = (l_sum @ self.layer.compute_W_current()
+                      + self.layer._effective_bias())
             return torch.tanh(wl / 2) if self.nonlinear else torch.exp(wl)
         self.layer._current_gate = gate
         try:
@@ -8486,6 +8498,13 @@ class InterSentenceLayer(Layer):
         self._stm_end_states = [
             collections.deque(maxlen=self.ltm_capacity)
             for _ in range(self._batch)]
+        # Paired question/response interactions share this existing
+        # inter-sentence LTM owner.  They are intentionally separate records
+        # from the predictor's legacy ragged end-state tuples, but not a
+        # second memory or recursive frame hierarchy.  Open stack state is
+        # always derived by scanning these chronological slots.
+        self._what_slots = [collections.deque() for _ in range(self._batch)]
+        self._what_closure_pressure = [0.0 for _ in range(self._batch)]
 
         # ``self.layers`` (parent Layer's ergodic-walk list) only holds
         # objects that implement ``set_sigma`` / ``observe_sigma`` etc.
@@ -8612,6 +8631,8 @@ class InterSentenceLayer(Layer):
         self._stm_end_states = [
             collections.deque(maxlen=self.ltm_capacity)
             for _ in range(batch)]
+        self._what_slots = [collections.deque() for _ in range(batch)]
+        self._what_closure_pressure = [0.0 for _ in range(batch)]
         # Per-row last-predicted-root parks reset on a batch reshape too
         # (the prior document's pending prediction does not survive, same
         # as the LTM chain / ARMA rings above).
@@ -8771,6 +8792,156 @@ class InterSentenceLayer(Layer):
             self._e_history, self._e_count = _ring_push(
                 self._e_history, self._e_count, self.q, residual)
         return loss
+
+    # -- LTM question/response interactions ----------------------------
+    @staticmethod
+    def _detach_what_value(value):
+        """Detach an interaction snapshot from the live autograd graph."""
+        if value is None:
+            return None
+        if torch.is_tensor(value):
+            if not bool(torch.isfinite(value).all()):
+                raise FloatingPointError(
+                    "InterSentenceLayer.append_what_slot: response contains "
+                    "NaN/Inf; refusing to store corrupt LTM state")
+            return value.detach().clone()
+        materialize = getattr(value, "materialize", None)
+        if callable(materialize):
+            return InterSentenceLayer._detach_what_value(materialize())
+        if isinstance(value, tuple):
+            return tuple(InterSentenceLayer._detach_what_value(v) for v in value)
+        if isinstance(value, list):
+            return [InterSentenceLayer._detach_what_value(v) for v in value]
+        if isinstance(value, dict):
+            return {
+                k: InterSentenceLayer._detach_what_value(v)
+                for k, v in value.items()
+            }
+        return value
+
+    @staticmethod
+    def _what_open_indices(slots):
+        """Derive the unanswered-input stack from chronological slots."""
+        stack = []
+        for index, slot in enumerate(slots):
+            if slot.operation is WhatSlotOperation.OPEN:
+                stack.append(index)
+            elif slot.operation is WhatSlotOperation.CLOSE:
+                if not stack:
+                    raise ValueError(
+                        "an output-only LTM slot has no open input to close")
+                stack.pop()
+        return stack
+
+    @staticmethod
+    def _trim_balanced_what_prefix(slots, capacity):
+        """Bound memory by evicting only complete chronological prefixes."""
+        slots = list(slots)
+        while len(slots) > capacity:
+            depth = 0
+            cut = None
+            for index, slot in enumerate(slots):
+                if slot.operation is WhatSlotOperation.OPEN:
+                    depth += 1
+                elif slot.operation is WhatSlotOperation.CLOSE:
+                    depth -= 1
+                if depth == 0:
+                    cut = index + 1
+                    break
+            if cut is None:
+                raise OverflowError(
+                    "LTM capacity exhausted by unanswered questions; close "
+                    "the newest question before opening another")
+            del slots[:cut]
+        return slots
+
+    @torch.compiler.disable
+    def append_what_slot(self, slot, b=0):
+        """Append one detached interaction and enforce LIFO/parity invariants.
+
+        A complete slot has no stack effect, an input-only slot pushes, and
+        an output-only slot pops the newest unanswered input.  Opening slots
+        are immutable; closures are later chronological records.
+        """
+        if not isinstance(slot, LTMSlot):
+            raise TypeError("append_what_slot expects an LTMSlot")
+        bi = int(b)
+        if bi < 0 or bi >= len(self._what_slots):
+            raise IndexError(f"LTM row {bi} is outside batch size {self._batch}")
+        current = list(self._what_slots[bi])
+        open_before = self._what_open_indices(current)
+        if slot.operation is WhatSlotOperation.CLOSE and not open_before:
+            raise ValueError("an output-only LTM slot requires an open input")
+        if open_before and slot.closure_pressure < self._what_closure_pressure[bi]:
+            raise ValueError(
+                "closure pressure must be monotonic while questions remain open")
+
+        trace = slot.grammar_trace + ({
+            "operation": f"what_{slot.operation.value}",
+            "iteration": int(slot.iteration),
+            "closure_pressure": float(slot.closure_pressure),
+            "forced": bool(slot.forced),
+            "temporal": (
+                slot.question.context_values()
+                if slot.question is not None else None),
+        },)
+        stored = LTMSlot(
+            input=self._detach_what_value(slot.input),
+            output=self._detach_what_value(slot.output),
+            question=slot.question,
+            iteration=slot.iteration,
+            closure_pressure=slot.closure_pressure,
+            forced=slot.forced,
+            grammar_trace=trace,
+        )
+        candidate = self._trim_balanced_what_prefix(
+            current + [stored], self.ltm_capacity)
+        open_after = self._what_open_indices(candidate)
+        self._what_slots[bi] = collections.deque(candidate)
+        self._what_closure_pressure[bi] = (
+            float(slot.closure_pressure) if open_after else 0.0)
+        return stored
+
+    def get_what_slots(self, n=None, b=0):
+        """Return detached interaction slots, oldest first."""
+        bi = int(b)
+        if bi < 0 or bi >= len(self._what_slots):
+            return []
+        slots = list(self._what_slots[bi])
+        if n is None:
+            return slots
+        n = int(n)
+        return [] if n <= 0 else slots[-n:]
+
+    def open_what_slots(self, b=0):
+        """Return unanswered input slots in stack order, newest last."""
+        slots = self.get_what_slots(b=b)
+        return [slots[index] for index in self._what_open_indices(slots)]
+
+    def what_open_depth(self, b=0):
+        return len(self.open_what_slots(b=b))
+
+    def what_at_parity(self, b=0):
+        return self.what_open_depth(b=b) == 0
+
+    def what_context(self, question=None, b=0):
+        """Return the new, target-free portion of grammar chooser context."""
+        bi = int(b)
+        slots = self.get_what_slots(b=bi)
+        open_depth = len(self._what_open_indices(slots))
+        pressure = (float(self._what_closure_pressure[bi])
+                    if 0 <= bi < len(self._what_closure_pressure) else 0.0)
+        return {
+            "temporal": (question.context_values()
+                         if question is not None else None),
+            "input_mask": tuple(slot.input is not None for slot in slots),
+            "output_mask": tuple(slot.output is not None for slot in slots),
+            "input_representations": tuple(slot.input for slot in slots),
+            "output_representations": tuple(slot.output for slot in slots),
+            "open_depth": open_depth,
+            "parity": open_depth == 0,
+            "closure_pressure": pressure,
+        }
 
     # -- LTM: long-term memory chain of STM end-states (Task 7) --------
     @torch.compiler.disable
@@ -9315,6 +9486,9 @@ class InterSentenceLayer(Layer):
             # way ``_s_history`` zeros — the next document starts cold.
             for dq in self._stm_end_states:
                 dq.clear()
+            for dq in self._what_slots:
+                dq.clear()
+            self._what_closure_pressure = [0.0] * self._batch
             # Drop any pending inter-sentence prediction + the live loss
             # accumulator (Task 8): the next document predicts cold, and a
             # boundary must not leak a half-formed grad term across the
@@ -9332,6 +9506,9 @@ class InterSentenceLayer(Layer):
             self._e_count[bi] = 0
             if 0 <= bi < len(self._stm_end_states):
                 self._stm_end_states[bi].clear()
+            if 0 <= bi < len(self._what_slots):
+                self._what_slots[bi].clear()
+                self._what_closure_pressure[bi] = 0.0
             if 0 <= bi < len(self._inter_last_pred_root):
                 self._inter_last_pred_root[bi] = None
     reset = Reset

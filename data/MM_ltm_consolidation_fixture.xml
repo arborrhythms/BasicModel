@@ -60,7 +60,9 @@
   <WholeSpace>
     <lexer>word</lexer>
     <nInput>8</nInput>
-    <nVectors>8</nVectors>
+    <!-- Rows 0..7 are reserved well-known atoms; provisioning needs room
+         for dynamically bound truth-set symbols. -->
+    <nVectors>64</nVectors>
     <nDim>14</nDim>
     <nOutput>8</nOutput>
   </WholeSpace>

@@ -67,7 +67,9 @@ def test_mm_5m_reconstructs():
     sig = m.wholeSpace.pi
     n = int(m.wholeSpace.inputShape[0])
     d = int(getattr(m.wholeSpace, "nOutputDim", 0) or m.wholeSpace.nDim)
-    x = torch.randn(2, n, d).clamp(-0.5, 0.5)
+    # PiLayer2's values are fuzzy-membership degrees, so its invertibility
+    # contract is defined over [0, 1], not signed feature coordinates.
+    x = torch.rand(2, n, d).clamp(0.05, 0.95)
     y = sig.forward(x)
     x_rec = sig.reverse(y)
     assert torch.isfinite(y).all() and torch.isfinite(x_rec).all()

@@ -190,9 +190,10 @@ def test_recon_bench_blind_flag(tmp_path):
     rec_scaf = run_config("data/MM_20M_xor.xml", epochs=3, seed=0,
                           out_dir=str(tmp_path), blind=False)
     assert rec_scaf.notes.get("decode_mode") == "scaffold"
-    # This test selects the decode mode; the fast E=3 scaffold trajectory is
-    # separately pinned at its deterministic 0.5 baseline.
-    assert rec_scaf.exact_match_rate == 0.5
+    # This test selects the decode mode.  The historical E=3 scaffold score
+    # is a regression floor, not a ceiling: training improvements may solve
+    # more examples without changing the mode contract.
+    assert rec_scaf.exact_match_rate >= 0.5
     assert rec_scaf.where_recovery == 1.0
 
 

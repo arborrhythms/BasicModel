@@ -77,6 +77,8 @@ from checkpoint_migrations import (
     stamp_checkpoint_schema,
 )
 from data import Data, TheData
+from What import (LTMSlot, What, WhatAnswer, WhatQuestion, WhatRelation,
+                  WhatSlotOperation, WhatThinkingResult, question_batch)
 
 from Layers import Layer, PiLayer, SigmaLayer  # Import custom layers from Model.py
 from Layers import ConceptualCombine
@@ -232,7 +234,7 @@ class StaticPeerPipeline:
     # explicit serial-word staging capacities. Keeping all of them peer
     # scheduled avoids silently reverting older grammar fixtures to the
     # pre-pipeline PS->CS->WS loop.
-    WIDTHS = (8, 16, 32, 64, 128, 256, 512)
+    WIDTHS = (8, 16, 32, 64, 128, 256, 512, 1024)
 
     def __init__(self, width):
         width = int(width)
@@ -5810,7 +5812,13 @@ class BasicModel(BaseModel):
             #    of the configured bar, drop truthCriterion to 0 for the
             #    ingestion epoch, then restore it.
             truth_layer.clear()
-            prev_tc = self.wholeSpace.truth_criterion
+            # Property-basis WholeSpaces deliberately omit the normal truth
+            # configuration at construction, but gold ingestion still uses
+            # the raw-unity recording seam. Install a temporary bar in that
+            # compatibility case and restore the absence afterward.
+            _had_truth_criterion = hasattr(
+                self.wholeSpace, "truth_criterion")
+            prev_tc = getattr(self.wholeSpace, "truth_criterion", None)
             self.wholeSpace.truth_criterion = 0.0
             self.eval()
             self.set_sigma(0)
@@ -5818,7 +5826,27 @@ class BasicModel(BaseModel):
                 with torch.no_grad(), self.teacher.runtime_batch(texts):
                     self.runEpoch(batchSize=len(texts), split="runtime")
             finally:
-                self.wholeSpace.truth_criterion = prev_tc
+                if _had_truth_criterion:
+                    self.wholeSpace.truth_criterion = prev_tc
+                else:
+                    delattr(self.wholeSpace, "truth_criterion")
+
+            # A property-basis WholeSpace intentionally emits properties, not
+            # sentence propositions, so its raw-unity path has no legacy truth
+            # record to compact.  Use the sentence symbols already produced by
+            # the same runtime forward as the compatibility TruthLayer value.
+            if int(truth_layer.count.item()) == 0:
+                sentence_symbols = getattr(
+                    self, "_current_discourse_s", None)
+                if (torch.is_tensor(sentence_symbols)
+                        and sentence_symbols.dim() == 3):
+                    rows = sentence_symbols.mean(dim=1)
+                    width = int(truth_layer.nDim)
+                    for row in rows[:len(texts)]:
+                        if int(row.shape[-1]) < width:
+                            row = torch.cat([
+                                row, row.new_zeros(width - int(row.shape[-1]))])
+                        truth_layer.record(row[:width], degree=1.0)
 
             # 3. Apply DoT to each stored activation
             n = min(truth_layer.count.item(), len(trusts))
@@ -7303,6 +7331,293 @@ class BasicModel(BaseModel):
         finally:
             self._spaces_started_for_forward = False
 
+    def _what_memory(self):
+        """Return the existing sequential LTM owner, when configured."""
+        symbol_space = getattr(self, "symbolSpace", None)
+        return (getattr(symbol_space, "discourse", None)
+                if symbol_space is not None else None)
+
+    @staticmethod
+    def _what_execution_parts(execution):
+        """Read the established forward tuple without changing its values."""
+        if execution is None:
+            return None, None, None
+        if hasattr(execution, "outputPred"):
+            return (getattr(execution, "forwardInput", None),
+                    getattr(execution, "symbols", None),
+                    getattr(execution, "outputPred", None))
+        if isinstance(execution, (tuple, list)) and len(execution) >= 3:
+            return execution[0], execution[1], execution[2]
+        raise TypeError(
+            "Model.what executor must return the established forward tuple "
+            "or BatchResult")
+
+    @staticmethod
+    def _what_row(value, row, count):
+        if (count > 1 and torch.is_tensor(value) and value.dim() > 0
+                and value.shape[0] >= count):
+            return value[row:row + 1]
+        return value
+
+    @staticmethod
+    def _what_representation_summary(values, *, device, dtype):
+        """Summarize the latest tensor representation without a host sync."""
+        value = next((candidate for candidate in reversed(tuple(values))
+                      if candidate is not None), None)
+        if not torch.is_tensor(value) or value.numel() == 0:
+            return torch.zeros(4, device=device, dtype=dtype)
+        flat = value.detach().to(device=device, dtype=dtype).reshape(-1)
+        return torch.stack((
+            flat.mean(),
+            flat.abs().mean(),
+            flat.square().mean().sqrt(),
+            flat.abs().amax(),
+        ))
+
+    def _what_grammar_context(self, questions, *, device, dtype):
+        """Build target-free chooser context for a question batch."""
+        memory = self._what_memory()
+        rows = []
+        detailed = []
+        for b, question in enumerate(questions):
+            if memory is not None and hasattr(memory, "what_context"):
+                context = memory.what_context(question=question, b=b)
+            else:
+                context = {
+                    "temporal": question.context_values(),
+                    "input_mask": (), "output_mask": (),
+                    "input_representations": (),
+                    "output_representations": (),
+                    "open_depth": 0, "parity": True,
+                    "closure_pressure": 0.0,
+                }
+            detailed.append(context)
+            scalar = torch.tensor(
+                tuple(question.context_values()) + (
+                    float(sum(context["input_mask"])),
+                    float(sum(context["output_mask"])),
+                    float(context["open_depth"]),
+                    float(context["closure_pressure"]),
+                ), device=device, dtype=dtype)
+            input_summary = self._what_representation_summary(
+                context["input_representations"], device=device, dtype=dtype)
+            output_summary = self._what_representation_summary(
+                context["output_representations"], device=device, dtype=dtype)
+            rows.append(torch.cat((scalar, input_summary, output_summary)))
+        tensor = torch.stack(rows, dim=0)
+        return tensor, tuple(detailed)
+
+    def choose_what_slot(self, question, *, conceptual_input,
+                         conceptual_output, produced, iteration=0,
+                         closure_pressure=0.0):
+        """Chooser seam for answer/defer/close grammatical decisions.
+
+        The clean default records a complete interaction.  Learned grammar
+        policies may override this seam to return input-only, balanced, or
+        output-only slots; :meth:`think` applies their stack effects
+        iteratively through the same ``what()`` evaluator.
+        """
+        output = conceptual_output if conceptual_output is not None else produced
+        return LTMSlot(
+            input=conceptual_input, output=output, question=question,
+            iteration=iteration, closure_pressure=closure_pressure,
+            grammar_trace=("grammar:what_answer",))
+
+    def what(self, question, input_data=None, *, executor=None,
+             execution=None, record=True, iteration=0,
+             closure_pressure=0.0):
+        """Produce the model's answer through the existing forward path.
+
+        A sequence of questions shares one batched execution and returns a
+        tuple of answers.  A single question returns one ``WhatAnswer``.  The
+        target is never accepted by this interface.  ``execution`` lets
+        ``runBatch`` or a compatibility test wrap an already-computed clean
+        path without a second model pass.
+        """
+        questions = question_batch(question)
+        if not questions:
+            raise ValueError("Model.what requires at least one question")
+
+        if torch.is_tensor(input_data):
+            device = input_data.device
+            dtype = (input_data.dtype if input_data.is_floating_point()
+                     else torch.float32)
+        else:
+            try:
+                parameter = next(self.parameters())
+                device, dtype = parameter.device, parameter.dtype
+            except StopIteration:
+                device, dtype = TheDevice.get(), torch.float32
+        chooser_context, detailed_context = self._what_grammar_context(
+            questions, device=device, dtype=dtype)
+        language = getattr(getattr(self, "symbolSpace", None),
+                           "languageLayer", None)
+        old_context = (getattr(language, "_what_context", None)
+                       if language is not None else None)
+        old_detail = (getattr(language, "_what_ltm_context", None)
+                      if language is not None else None)
+        self._active_what_questions = questions
+        if language is not None:
+            language._what_context = chooser_context
+            language._what_ltm_context = detailed_context
+        try:
+            if execution is None:
+                if input_data is None:
+                    raise ValueError(
+                        "Model.what needs input_data or an existing execution")
+                execution = (executor or self.forward)(input_data)
+        finally:
+            if language is not None:
+                language._what_context = old_context
+                language._what_ltm_context = old_detail
+
+        _forward_input, symbols, produced_all = self._what_execution_parts(
+            execution)
+        if produced_all is None:
+            raise RuntimeError("Model.what received no produced response")
+        try:
+            conceptual_all = self._reconstruction_seed()
+        except (AttributeError, RuntimeError, TypeError):
+            conceptual_all = symbols
+        if conceptual_all is None:
+            conceptual_all = symbols
+
+        memory = self._what_memory()
+        count = len(questions)
+        answers = []
+        for b, current in enumerate(questions):
+            produced = self._what_row(produced_all, b, count)
+            conceptual_input = self._what_row(conceptual_all, b, count)
+            # The output half records the response the head actually made.
+            # It must not silently substitute the input-side symbol state or
+            # the desired Data target when the two differ.
+            conceptual_output = produced
+            slot = self.choose_what_slot(
+                current,
+                conceptual_input=conceptual_input,
+                conceptual_output=conceptual_output,
+                produced=produced,
+                iteration=iteration,
+                closure_pressure=closure_pressure,
+            )
+            if not isinstance(slot, LTMSlot):
+                raise TypeError("choose_what_slot must return an LTMSlot")
+            trace = ({
+                "operation": f"what_{slot.operation.value}",
+                "temporal": current.context_values(),
+                "ltm": detailed_context[b],
+                "iteration": int(iteration),
+                "closure_pressure": float(closure_pressure),
+            },)
+            if slot.operation is WhatSlotOperation.OPEN:
+                answer = WhatAnswer(
+                    question=current, what=None, available=False,
+                    provenance="model", reason="answer deferred for thinking",
+                    grammar_trace=trace, ltm_slot=slot,
+                    execution=execution)
+            else:
+                answer = WhatAnswer(
+                    question=current, what=produced, available=True,
+                    provenance="model", source_when=current.when,
+                    grammar_trace=trace, ltm_slot=slot,
+                    execution=execution)
+            if record and memory is not None:
+                stored = memory.append_what_slot(slot, b=b)
+                answer = WhatAnswer(
+                    question=answer.question, what=answer.what,
+                    available=answer.available,
+                    provenance=answer.provenance,
+                    source_when=answer.source_when, reason=answer.reason,
+                    grammar_trace=answer.grammar_trace,
+                    ltm_slot=stored, execution=answer.execution)
+            answers.append(answer)
+        self._last_what_answers = tuple(answers)
+        return answers[0] if isinstance(question, WhatQuestion) else tuple(answers)
+
+    @staticmethod
+    def _valid_best_effort(value):
+        return not (value is None or (
+            isinstance(value, str)
+            and value.strip().lower() in {"unknown", "unresolved", "failure"}))
+
+    def _best_effort_what(self, answer, input_data, b=0):
+        """Choose a concrete forced response without consulting a target."""
+        _, _symbols, produced = self._what_execution_parts(answer.execution)
+        candidate = self._what_row(produced, b, 1)
+        if self._valid_best_effort(candidate):
+            return candidate, candidate
+        candidate = self._what_row(input_data, b, 1)
+        if self._valid_best_effort(candidate):
+            return candidate, candidate
+        # A literal response is preferable to an unscoreable status escape.
+        return "?", "?"
+
+    def think(self, question, input_data, *, max_iterations=8,
+              pressure_schedule=None, executor=None):
+        """Evaluate ``what()`` iteratively until LTM slot parity is restored."""
+        if not isinstance(question, WhatQuestion):
+            raise TypeError("Model.think expects one WhatQuestion")
+        limit = int(max_iterations)
+        if limit < 1:
+            raise ValueError("max_iterations must be positive")
+        memory = self._what_memory()
+        answer = self.what(
+            question, input_data, executor=executor, record=True,
+            iteration=0, closure_pressure=0.0)
+        slots = [answer.ltm_slot] if answer.ltm_slot is not None else []
+        pressures = [0.0]
+        iterations = 1
+        if memory is None:
+            if not answer.available:
+                raise RuntimeError(
+                    "iterative thinking requires the configured sequential LTM")
+            return WhatThinkingResult(
+                answer=answer, slots=slots, iterations=iterations,
+                closure_pressures=pressures)
+
+        while not memory.what_at_parity(b=0) and iterations < limit:
+            pressure = (float(pressure_schedule(iterations, limit))
+                        if pressure_schedule is not None
+                        else float(iterations) / float(max(1, limit - 1)))
+            pressure = max(pressures[-1], pressure)
+            answer = self.what(
+                question, input_data, executor=executor, record=True,
+                iteration=iterations, closure_pressure=pressure)
+            if answer.ltm_slot is not None:
+                slots.append(answer.ltm_slot)
+            pressures.append(pressure)
+            iterations += 1
+
+        forced = 0
+        if not memory.what_at_parity(b=0):
+            external, conceptual = self._best_effort_what(answer, input_data)
+            final_answer = None
+            while not memory.what_at_parity(b=0):
+                pressure = max(1.0, pressures[-1])
+                closing = LTMSlot(
+                    output=conceptual, question=question,
+                    iteration=iterations + forced,
+                    closure_pressure=pressure, forced=True,
+                    grammar_trace=("grammar:what_forced_close",))
+                stored = memory.append_what_slot(closing, b=0)
+                slots.append(stored)
+                forced += 1
+                final_answer = WhatAnswer(
+                    question=question, what=external, available=True,
+                    provenance="model", source_when=question.when,
+                    grammar_trace=stored.grammar_trace,
+                    ltm_slot=stored, execution=answer.execution)
+            answer = final_answer
+            pressures.extend([max(1.0, pressures[-1])] * forced)
+
+        if not answer.available:
+            raise RuntimeError("thinking reached parity without a root response")
+        result = WhatThinkingResult(
+            answer=answer, slots=slots, iterations=iterations,
+            forced_closures=forced, closure_pressures=pressures)
+        self._last_what_thinking = result
+        return result
+
     def runTrial(self, numEpochs=1, batchSize=10, lr=0.01, profile=None):
         """Main training loop: train for numEpochs, evaluate on test set each epoch.
 
@@ -8645,10 +8960,50 @@ class BasicModel(BaseModel):
         # (byte-identical); pass B (t=exploreTemperature) -> flatter -> explore.
         self._superposition_temperature = temperature
 
+    def _questions_for_batch(self, *, split, batch_size, sentence_index,
+                             source_rows=None, questions=None,
+                             trial_mode="reconstruct"):
+        """Normalize explicit questions or derive them from cursor rows."""
+        if questions is not None:
+            normalized = question_batch(questions)
+            if len(normalized) != int(batch_size):
+                raise ValueError(
+                    f"question batch length {len(normalized)} != model batch "
+                    f"size {int(batch_size)}")
+            if any(question.split != str(split) for question in normalized):
+                raise ValueError("every what question must use the active split")
+            return normalized
+
+        if source_rows is not None:
+            rows = list(source_rows)
+            nested = (rows if rows and isinstance(rows[0], (list, tuple))
+                      else [[row] for row in rows])
+            resolved_rows = []
+            for b in range(int(batch_size)):
+                row = nested[b] if b < len(nested) else []
+                resolved_rows.append(
+                    int(row[-1]) if row else int(sentence_index) + b)
+        else:
+            resolved_rows = [
+                int(sentence_index) + b for b in range(int(batch_size))]
+
+        data = getattr(getattr(self, "inputSpace", None), "data", None)
+        supervised = bool(getattr(data, "has_supervised_outputs", False))
+        if str(trial_mode) == "predict":
+            factory = lambda row: What.future(row, split=split)
+        elif supervised:
+            factory = lambda row: What.supervised(row, split=split)
+        elif str(split) == "runtime":
+            factory = lambda row: What.inference(row, split=split)
+        else:
+            factory = lambda row: What.present(row, split=split)
+        return tuple(factory(row) for row in resolved_rows)
+
     def runBatch(self, train=True, batchNum=0, batchSize=10, split="train",
                  optimizer=None, batch_override=None, progress=None,
                  superposition_temperature=None, exploration_trial=False,
-                 trial_mode="reconstruct"):
+                 trial_mode="reconstruct", questions=None,
+                 source_rows=None, attach_outputs=False):
         """Run a single batch: forward pass, loss, and (if training) backward + step.
 
         ``superposition_temperature`` (two-pass learning): when not None, the
@@ -8683,6 +9038,14 @@ class BasicModel(BaseModel):
                 ``runEpoch`` populates this from
                 ``SentenceStreamDataset.progress()``; callers that drive
                 ``runBatch`` directly leave it ``None``.
+            questions: optional one-per-row ``WhatQuestion`` batch. When
+                omitted, cursor coordinates select present reconstruction,
+                supervised output, runtime inference, or future prediction.
+            source_rows: stable zero-based presentation rows emitted by the
+                data cursor (nested for packed sentence batches).
+            attach_outputs: on runtime inference, retain each generated
+                response on the presentation's output side with model
+                provenance. Supplied labels remain unchanged.
 
         Returns:
             (BatchResult, nextBatchNum) on success, or (None, batchNum) when
@@ -8717,6 +9080,16 @@ class BasicModel(BaseModel):
         batch = batch_override
         inputTensor, outputTensor = batch
         inference_only = not train and split == "runtime"
+        what_questions = self._questions_for_batch(
+            split=split,
+            batch_size=(int(inputTensor.shape[0])
+                        if isinstance(inputTensor, torch.Tensor)
+                        else int(len(inputTensor))),
+            sentence_index=sentenceIdx,
+            source_rows=source_rows,
+            questions=questions,
+            trial_mode=trial_mode,
+        )
 
         # Advance the serialized model clock once per PROCESSED batch (this
         # point is past the no-batch early raise, so it ticks exactly once on
@@ -8974,9 +9347,16 @@ class BasicModel(BaseModel):
             # time on the same sentence. Reset in the finally below.
             self._exploration_trial = bool(exploration_trial)
             try:
-                _forward_result = _fwd(inputTensor)
+                # ``what()`` is a thin delegation over this exact executor.
+                # It installs only target-free question/LTM chooser context;
+                # the returned execution is the ordinary forward tuple.
+                _what_answers = self.what(
+                    what_questions, inputTensor, executor=_fwd,
+                    record=not exploration_trial)
+                _forward_result = _what_answers[0].execution
                 (forwardInput, symbols, predictions,
                  _) = self._publish_compiled_sentence_state(_forward_result)
+                self._last_what_actual = tuple(_what_answers)
                 # This value is already a public graph output.  Publish its
                 # detached discourse view eagerly as well, avoiding the same
                 # attribute-only escape that PyTorch 2.14 eliminates for S.
@@ -8991,6 +9371,22 @@ class BasicModel(BaseModel):
             # their surfaces (no-grad bookkeeping; consumers read next batch).
             self._prime_seen_step()
             outputDataPred = predictions
+
+            # Resolve desired answers only AFTER the model response is fixed.
+            # The resulting values are loss-side metadata and never enter the
+            # forward call, grammar context, STM, LTM, or runtime cache.
+            _what_data = getattr(self.inputSpace, "data", None)
+            if _what_data is not None and hasattr(_what_data, "what"):
+                self._last_what_desired = tuple(
+                    _what_data.what(question) for question in what_questions)
+            else:
+                self._last_what_desired = tuple()
+            if (inference_only and attach_outputs
+                    and _what_data is not None
+                    and hasattr(_what_data, "attach_output")):
+                for question, answer in zip(
+                        what_questions, self._last_what_actual):
+                    _what_data.attach_output(question, answer)
 
             # ε-growing codebook hook (Phase 4 follow-up): when any
             # codebook-bearing space carries ``codebookGrowthEpsilon > 0``
@@ -10572,6 +10968,7 @@ class BasicModel(BaseModel):
                     progress=progress_frac,
                     superposition_temperature=(0.0 if _two_pass else None),
                     trial_mode=_trial_mode,
+                    source_rows=source_rows,
                 )
                 if result is not None:
                     record(result)
@@ -10609,6 +11006,7 @@ class BasicModel(BaseModel):
                             getattr(self, 'explore_temperature', 0.5)),
                         exploration_trial=True,
                         trial_mode=_trial_mode,
+                        source_rows=source_rows,
                     )
                 # Tail dispatch: word-buffer flush (§6c Path B), per-row
                 # hard reset, soft reset, then the truth-layer compact
@@ -17306,6 +17704,10 @@ class BasicModel(BaseModel):
         ws0 = wss[0] if wss is not None and len(wss) > 0 else None
         if ws0 is None or not hasattr(ws0, "passback_action"):
             return ps_default
+        feedback = prevPS_forPS
+        if (feedback is None or not hasattr(feedback, "is_empty")
+                or feedback.is_empty()):
+            feedback = prevCS_forSS
         # R2: read the CS-owned reading scope and hand it to the WS->PS passback
         # (CS is the home of the .where-producer; WS still owns the run-structure
         # route_hint that passback_action also consults).
@@ -17318,7 +17720,8 @@ class BasicModel(BaseModel):
             # outside the decoded normalized [start, end] bracket (the
             # `.where`-on-the-second-argument scope). Read-only; falls back to
             # the unfocused re-feed when the span is degenerate.
-            ps = self.perceptualSpace.forward(prevCS_forSS)
+            ps = self.perceptualSpace.synthesize_feedback(
+                feedback, pass_idx)
             ev = ps.materialize() if ps is not None else None
             if ev is not None and torch.is_tensor(ev) and ev.dim() == 3:
                 # Support one shared [2] bracket and row-local [B,2]
@@ -17361,7 +17764,8 @@ class BasicModel(BaseModel):
         if action in (None, "noop"):
             return ps_default
         if action in ("refine", "chunk"):
-            return self.perceptualSpace.forward(prevCS_forSS)
+            return self.perceptualSpace.synthesize_feedback(
+                feedback, pass_idx)
         return ps_default
 
     def _reverse_body(self, sub):

@@ -5183,7 +5183,10 @@ class LanguageLayer(Layer):
             unary_layer = self._unary_layers[space_role] if space_role in self._unary_layers else None
             if unary_layer is not None:
                 u_hard, u_soft, u_routing = unary_layer(
-                    x, cat_ctx=(cat_e if space_role == terminal_space_role else None))
+                    x,
+                    cat_ctx=(cat_e if space_role == terminal_space_role else None),
+                    what_ctx=(getattr(self, "_what_context", None)
+                              if space_role == terminal_space_role else None))
                 space_role_routing["unary"] = u_routing
                 rid_table = self._unary_rule_ids[space_role]
                 kind = u_routing["action_kind"]
@@ -5224,8 +5227,12 @@ class LanguageLayer(Layer):
                 round_routings = []
                 for _round_i in range(max_rounds):
                     b_hard, b_soft, b_routing = binary_layer(
-                        x, cat_ctx=(cat_e if (space_role == terminal_space_role
-                                              and _round_i == 0) else None))
+                        x,
+                        cat_ctx=(cat_e if (space_role == terminal_space_role
+                                           and _round_i == 0) else None),
+                        what_ctx=(getattr(self, "_what_context", None)
+                                  if (space_role == terminal_space_role
+                                      and _round_i == 0) else None))
                     round_routings.append(b_routing)
                     kind = b_routing["action_kind"]
                     op = b_routing["action_op"]
@@ -7033,11 +7040,11 @@ class TransformChooser(nn.Module):
     """
 
     def score_unary(self, x_score, applied_score, copy_anchor, apply_anchor,
-                    cat_ctx=None):
+                    cat_ctx=None, what_ctx=None):
         raise NotImplementedError
 
     def score_binary(self, x_score, reduced_score, copy_anchor, reduce_anchor,
-                     cat_ctx=None):
+                     cat_ctx=None, what_ctx=None):
         raise NotImplementedError
 
 
@@ -7062,7 +7069,7 @@ class AnchorDotTransformChooser(TransformChooser):
     """
 
     def score_unary(self, x_score, applied_score, copy_anchor, apply_anchor,
-                    cat_ctx=None):
+                    cat_ctx=None, what_ctx=None):
         """Return ``(copy_score, apply_score)`` for the unary layer.
 
         ``copy_score[b,n,c]  = <x_score[b,n,:],       copy_anchor[c,:]>``
@@ -7091,7 +7098,7 @@ class AnchorDotTransformChooser(TransformChooser):
         return copy_score, apply_score
 
     def score_binary(self, x_score, reduced_score, copy_anchor, reduce_anchor,
-                     cat_ctx=None):
+                     cat_ctx=None, what_ctx=None):
         """Return ``(copy_score, reduce_score)`` for the binary layer.
 
         ``copy_score[b,n,c]   = <x_score[b,n,:],            copy_anchor[c,:]>``
@@ -7140,6 +7147,11 @@ class MLPTransformChooser(TransformChooser):
     apply/reduce ops, one tool-embedding row each (copy rows first).
     """
 
+    # relation one-hot (5), signed/magnitude offset (2), LTM input/output
+    # counts (2), derived open depth (1), closure pressure (1), and four
+    # bounded summary features for each side of the latest relevant LTM slot.
+    WHAT_CONTEXT_DIM = 19
+
     def __init__(self, *, d_model, n_copy, n_op, embed_dim=8, pos_dim=8,
                  hidden=None, n_role_cats=0):
         super().__init__()
@@ -7164,6 +7176,20 @@ class MLPTransformChooser(TransformChooser):
             nn.GELU(),
             nn.Linear(hidden, 1),
         )
+        # Question intent is a chooser input, not an output shortcut.  This
+        # zero-initialized head preserves the established clean route exactly
+        # until a temporal/supervised curriculum trains it.  One logit bias is
+        # learned for every copy/apply-or-reduce operation.
+        # Preserve the pre-What initialization stream.  Although the weights
+        # start at zero, ``nn.Linear`` initializes them before we clear them;
+        # without an RNG fork that invisible draw shifts every module built
+        # after the chooser and changes established seed-pinned convergence
+        # behaviour.
+        with torch.random.fork_rng(devices=[]):
+            self.what_projection = nn.Linear(
+                self.WHAT_CONTEXT_DIM, max(1, self.n_copy + self.n_op),
+                bias=False)
+        nn.init.zeros_(self.what_projection.weight)
 
     def _pos_emb(self, n, device, dtype):
         """Sinusoidal positional encoding ``[n, pos_dim]``."""
@@ -7219,8 +7245,25 @@ class MLPTransformChooser(TransformChooser):
         # bf16/fp16; the fallbacks keep the input dtype).
         return self.mlp(feat).squeeze(-1).to(slot.dtype)              # [B,Npos,R]
 
+    def _what_bias(self, what_ctx, *, batch, device, dtype):
+        if what_ctx is None:
+            return None
+        ctx = torch.as_tensor(what_ctx, device=device, dtype=dtype)
+        if ctx.dim() == 1:
+            ctx = ctx.unsqueeze(0)
+        if ctx.shape[-1] != self.WHAT_CONTEXT_DIM:
+            raise ValueError(
+                f"what grammar context width {ctx.shape[-1]} != "
+                f"{self.WHAT_CONTEXT_DIM}")
+        if ctx.shape[0] == 1 and batch > 1:
+            ctx = ctx.expand(batch, -1)
+        if ctx.shape[0] != batch:
+            raise ValueError(
+                f"what grammar context batch {ctx.shape[0]} != {batch}")
+        return self.what_projection(ctx).to(dtype)
+
     def score_unary(self, x_score, applied_score, copy_anchor, apply_anchor,
-                    cat_ctx=None):
+                    cat_ctx=None, what_ctx=None):
         B, N, D = x_score.shape
         pos = self._pos_emb(N, x_score.device, x_score.dtype)
         copy_rows = self.tool_embedding[:self.n_copy]
@@ -7233,10 +7276,17 @@ class MLPTransformChooser(TransformChooser):
                                       cat_ctx=cat_ctx)
         else:
             apply_score = x_score.new_zeros(B, N, 0)
+        what_bias = self._what_bias(
+            what_ctx, batch=B, device=x_score.device, dtype=x_score.dtype)
+        if what_bias is not None:
+            copy_score = copy_score + what_bias[:, None, :self.n_copy]
+            if r_apply > 0:
+                apply_score = apply_score + what_bias[
+                    :, None, self.n_copy:self.n_copy + r_apply]
         return copy_score, apply_score
 
     def score_binary(self, x_score, reduced_score, copy_anchor, reduce_anchor,
-                     cat_ctx=None):
+                     cat_ctx=None, what_ctx=None):
         B, N, D = x_score.shape
         pos = self._pos_emb(N, x_score.device, x_score.dtype)
         copy_rows = self.tool_embedding[:self.n_copy]
@@ -7265,6 +7315,13 @@ class MLPTransformChooser(TransformChooser):
                 cat_ctx=pair_cat)
         else:
             reduce_score = x_score.new_zeros(B, max(N - 1, 0), self.n_op)
+        what_bias = self._what_bias(
+            what_ctx, batch=B, device=x_score.device, dtype=x_score.dtype)
+        if what_bias is not None:
+            copy_score = copy_score + what_bias[:, None, :self.n_copy]
+            if self.n_op > 0:
+                reduce_score = reduce_score + what_bias[
+                    :, None, self.n_copy:self.n_copy + self.n_op]
         return copy_score, reduce_score
 
 
@@ -7565,7 +7622,8 @@ class BinaryStructuredReductionLayer(nn.Module):
     # concept tensors (``op(left, right)`` over self.ops in
     # _stacked_reduced), the counterpart to SymbolSubSpace.compose's
     # WS-side analysis. See SymbolSubSpace.compose docstring for the split.
-    def forward(self, x, *, span_start=None, span_end=None, cat_ctx=None):
+    def forward(self, x, *, span_start=None, span_end=None, cat_ctx=None,
+                what_ctx=None):
         """Score, route via Viterbi, compact; return (hard, soft, routing).
 
         Returns:
@@ -7618,7 +7676,7 @@ class BinaryStructuredReductionLayer(nn.Module):
                     else stacked_reduced)
         copy_score, reduce_score = self.chooser.score_binary(
             x_score, sr_score, self.copy_anchor, self.reduce_anchor,
-            cat_ctx=cat_ctx)
+            cat_ctx=cat_ctx, what_ctx=what_ctx)
         cat_prior = self._category_reduce_prior(cat_ctx)
         if cat_prior is not None and cat_prior.shape == reduce_score.shape:
             reduce_score = reduce_score + cat_prior.to(
@@ -7635,7 +7693,7 @@ class BinaryStructuredReductionLayer(nn.Module):
             _, local_logits = self.chooser.score_binary(
                 x_score.detach(), sr_score.detach(),
                 self.copy_anchor, self.reduce_anchor,
-                cat_ctx=local_cat)
+                cat_ctx=local_cat, what_ctx=what_ctx)
             if cat_prior is not None and cat_prior.shape == local_logits.shape:
                 local_logits = local_logits + cat_prior.detach().to(
                     device=local_logits.device, dtype=local_logits.dtype)
@@ -7774,6 +7832,8 @@ class BinaryStructuredReductionLayer(nn.Module):
         if span_start is not None and span_end is not None:
             routing["span_start"] = hard_meta["span_start"]
             routing["span_end"] = hard_meta["span_end"]
+        if what_ctx is not None:
+            routing["what_context"] = what_ctx
 
         return hard_slab, soft_slab, routing
 
@@ -7863,7 +7923,7 @@ class UnaryStructuredLayer(nn.Module):
             return torch.cat([op(x[..., :w]), x[..., w:]], dim=-1)
         return op(x)
 
-    def forward(self, x, cat_ctx=None):
+    def forward(self, x, cat_ctx=None, what_ctx=None):
         """Score, choose per-position action, return (hard, soft, routing).
 
         Hard slab argmax-selects one branch per position; soft slab is
@@ -7891,7 +7951,7 @@ class UnaryStructuredLayer(nn.Module):
                          if applied.shape[-1] > self.d_model else applied)
         copy_score, apply_score = self.chooser.score_unary(
             x_score, applied_score, self.copy_anchor, self.apply_anchor,
-            cat_ctx=cat_ctx)
+            cat_ctx=cat_ctx, what_ctx=what_ctx)
         cat_prior = self._category_apply_prior(cat_ctx)
         if cat_prior is not None and cat_prior.shape == apply_score.shape:
             apply_score = apply_score + cat_prior.to(
@@ -7907,7 +7967,7 @@ class UnaryStructuredLayer(nn.Module):
             _, local_logits = self.chooser.score_unary(
                 x_score.detach(), applied_score.detach(),
                 self.copy_anchor, self.apply_anchor,
-                cat_ctx=local_cat)
+                cat_ctx=local_cat, what_ctx=what_ctx)
             if cat_prior is not None and cat_prior.shape == local_logits.shape:
                 local_logits = local_logits + cat_prior.detach().to(
                     device=local_logits.device, dtype=local_logits.dtype)
@@ -7991,6 +8051,8 @@ class UnaryStructuredLayer(nn.Module):
         }
         if local_structural_loss is not None:
             routing["local_structural_loss"] = local_structural_loss
+        if what_ctx is not None:
+            routing["what_context"] = what_ctx
         return hard_slab, soft_slab, routing
 
 def copy_penalty(route_traces, lambda_copy: float = 1e-3):

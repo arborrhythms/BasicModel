@@ -14,6 +14,7 @@ from Meronomy import (synthesize, analyze, class_segments, class_dichotomies,
                       intersect_wholes, default_embed_table)
 from Mereology import join_from_bottom, meet_from_top, where_containment_edges
 from Layers import LETTER, WHITESPACE, DIGIT, PUNCT
+from Layers import _CHAR_CLASS_RANGES
 
 
 # --- synthesizer (on the character points) --------------------------------
@@ -119,7 +120,8 @@ def test_char_dichotomy_basis_is_complete():
 def test_class_dichotomy_is_or_of_char_basis():
     # left-of-space (class) == union of left-of-c over the whitespace bytes.
     codes = char_boundary_codes()
-    ws = [9, 10, 13, 32]
+    ws = [c for lo, hi in _CHAR_CLASS_RANGES[WHITESPACE]
+          for c in range(lo, hi + 1)]
     expect = join_from_bottom(torch.stack([codes["left-of-%d" % c] for c in ws]))
     assert torch.allclose(class_dichotomy_code(WHITESPACE, "left"), expect,
                           atol=1e-6)
