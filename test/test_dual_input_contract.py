@@ -292,10 +292,10 @@ def test_ws_vq_asymmetric_flags():
     # commitment weight 0 (STE carries the output->encoder leg) and the
     # in-forward EMA codebook update OFF (the input->codebook leg is the
     # recon gather). The FIRST training forward may legitimately mutate
-    # the codebook ONCE: adopt-on-first-sight (Phase 5) data-initialises
-    # VIRGIN rows from the stage-0 evidence in the eager stem. After
-    # adoption has named the rows, further training forwards must be
-    # bit-stable (no EMA, no drift).
+    # the codebook during warm-up: stage-0 adoption happens immediately,
+    # while the documented CS-leg adoption consumes one-step-stale evidence
+    # on the following call. After both legs have named their virgin rows,
+    # further training forwards must be bit-stable (no EMA, no drift).
     m = _build("MM_20M_legacy.xml")
     x = _staged_batch(m)
     ws = m.wholeSpace
@@ -313,7 +313,19 @@ def test_ws_vq_asymmetric_flags():
     sym_vq = ws.subspace.what.vq
     m.train()
     try:
-        m.forward(x)  # adoption + in-body role naming settle here
+        # Adoption can expose a new nearest virgin prototype, so settle to a
+        # fixed point rather than assuming one particular random initializer
+        # always needs exactly two calls.
+        settled = False
+        previous = None
+        for _ in range(8):
+            m.forward(x)
+            current = sym_vq.codebook.detach().clone()
+            if previous is not None and torch.equal(previous, current):
+                settled = True
+                break
+            previous = current
+        assert settled, "symbol adoption must settle under repeated evidence"
         before = vq.codebook.detach().clone()
         before_sym = sym_vq.codebook.detach().clone()
         m.forward(x)
@@ -326,8 +338,7 @@ def test_ws_vq_asymmetric_flags():
         "the recon gradient)")
     assert torch.equal(before_sym, sym_vq.codebook.detach()), (
         "the SYMBOL codebook must be bit-stable too (no stage-0 writes "
-        "land on it after the Step-2 split; the CS leg never runs at "
-        "subsymbolicOrder=1)")
+        "land on it after stage-0/CS-leg warm-up)")
 
 
 def test_ws_codebook_recon_gradient():

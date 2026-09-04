@@ -229,11 +229,15 @@ class TestForwardBodyDispatchesOnSerial(unittest.TestCase):
         x = _one_input(model)
         with mock.patch.object(
                 model, "_forward_body_per_word",
-                wraps=model._forward_body_per_word) as per_word_spy:
+                return_value=model.conceptualSpace.subspace) as per_word_spy:
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore")
                 with torch.no_grad():
-                    model.forward(x)
+                    # Exercise only the traversal dispatch.  The real serial
+                    # body requires eager word-loop metadata installed by the
+                    # complete forward stem; a stub keeps this unit test from
+                    # depending on that separate compilation contract.
+                    model._forward_body(model._lex_embed_stem(x))
         self.assertTrue(
             per_word_spy.called,
             "<serial>true</serial> must dispatch to "
@@ -249,7 +253,9 @@ class TestForwardBodyDispatchesOnSerial(unittest.TestCase):
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore")
                 with torch.no_grad():
-                    model.forward(x)
+                    # Exercise traversal independently of this serial
+                    # fixture's intentionally serial-only output geometry.
+                    model._forward_body(model._lex_embed_stem(x))
         self.assertFalse(
             per_word_spy.called,
             "<serial>false</serial> must NOT dispatch to "

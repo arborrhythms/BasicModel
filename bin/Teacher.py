@@ -24,6 +24,7 @@ from typing import Any, Mapping
 import torch
 
 from Layers import ModelLoss, Error, TheError
+from What import What
 
 
 NOTHING_CONTEXT_ID = 0
@@ -318,7 +319,7 @@ class Teacher:
         )
 
     def What(self, where: ObjectiveWhere, when: ObjectiveWhen):
-        """Answer ``What(where, when)`` directly from Teacher-owned data."""
+        """Compatibility adapter for the canonical ``Data.what()`` lookup."""
         if int(where.context_identity) != int(self.context.identity):
             raise KeyError(
                 "objective where belongs to a different context whole"
@@ -337,19 +338,11 @@ class Teacher:
             raise KeyError(
                 "objective when does not match the canonical source version"
             )
-        split = str(where.split)
-        effective_split = "train" if split == "runtime" else split
-        values = getattr(self.data, f"{split}_input", None)
-        if values is None:
-            values = getattr(self.data, f"{effective_split}_input", None)
-        if values is None:
-            raise KeyError(f"unknown data split {split!r}")
-        row = int(where.row)
-        if row < 0 or row >= len(values):
-            raise IndexError(
-                f"source row {row} is outside {split} input length {len(values)}"
-            )
-        return values[row]
+        answer = self.data.what(What.present(
+            int(where.row), split=str(where.split)))
+        if not answer.available:
+            raise KeyError(answer.reason)
+        return answer.what
 
     def stage_batch_sources(self, split: str, source_rows) -> None:
         """Stage row indices emitted by the data cursor for the next lesson."""

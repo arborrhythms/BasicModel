@@ -19,6 +19,7 @@ if _BIN not in sys.path:
     sys.path.insert(0, _BIN)
 
 import torch
+import pytest
 
 import Models
 import Language
@@ -173,8 +174,8 @@ def test_serial_ws_analysis_view_is_fixed_width_and_compact():
     assert torch.equal(live[:, :prefix], full[:, :prefix])
 
 
-def test_partspace_runs_once_per_word_not_once_per_constituent():
-    """Two-word rows produce two batch-wide PS calls, each with one whole."""
+def test_partspace_runs_once_per_word_per_pass_not_per_constituent():
+    """Each pass makes one batch-wide PS call per word, never per part."""
     m, x = _serial_model_and_batch()
     calls = []
     original = m.perceptualSpace.forward
@@ -190,25 +191,22 @@ def test_partspace_runs_once_per_word_not_once_per_constituent():
             m.forward(x)
     finally:
         m.perceptualSpace.forward = original
-    # The optional sentence prelude contributes whole-slab calls; the serial
-    # reading loop itself contributes exactly the two one-word calls below.
+    # The optional sentence prelude contributes whole-slab calls.  The serial
+    # loop revisits each word once per subsymbolic pass; an eleven-constituent
+    # spelling must still contribute one call, not eleven.
     local_calls = [shape for shape in calls if shape[1] == 1]
-    assert local_calls == [(4, 1, 1024), (4, 1, 1024)]
+    assert local_calls == [
+        (4, 1, 1024)] * (2 * (int(m.subsymbolicOrder) + 1))
 
 
-def test_outer_word_cap_reports_but_complete_word_parts_do_not_truncate():
-    """W overflow is reported; an 11-part cold word survives PS width 8."""
+def test_outer_word_cap_rejects_instead_of_truncating():
+    """A ninth word fails loudly instead of silently truncating the row."""
     m, _ = _serial_model_and_batch()
     text = "abcdefghijk b c d e f g h i"  # 9 words; first has 11 cold bytes
     x = m.inputSpace.prepInput([text])
-    with torch.no_grad():
-        m.forward(x)
-    ie = m.inputSpace
-    assert ie._word_active_mask.sum().item() == 8
-    assert ie._sentence_word_truncated_mask.tolist() == [True]
-    assert ie._ar_word_part_ids.shape[-1] == 11
-    assert int(ie._ar_word_part_mask[0, 0].sum().item()) == 11
-    assert not bool(ie._ar_word_truncated_mask.any())
+    with pytest.raises(ValueError, match="rather than clipping"):
+        with torch.no_grad():
+            m.forward(x)
 
 
 def test_serial_commit_gate_fires_once_per_active_word():

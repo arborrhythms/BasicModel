@@ -72,7 +72,9 @@
   <WholeSpace>
     <nOutput>8</nOutput>
     <nDim>14</nDim>
-    <nVectors>8</nVectors>
+    <!-- Rows 0..7 are reserved well-known atoms; serial provisioning and
+         conversation ingestion both bind additional symbols. -->
+    <nVectors>64</nVectors>
   </WholeSpace>
 
   <OutputSpace>

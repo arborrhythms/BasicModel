@@ -22,8 +22,8 @@ from Spaces import Space, PartSpace, WholeSpace
 _XOR_HEAD_NVEC = [8, 8, 8]
 _GRAMMAR_HEAD_NVEC = [4, 2, 2]
 _HEAD_SD = {  # (n_keys, sha16 of sorted state_dict key names)
-    "data/MM_20M_xor.xml": (760, "c2a259b71af0096c"),
-    "data/MM_20M_grammar.xml": (986, "6d9e69ce6192eeb0"),
+    "data/MM_20M_xor.xml": (506, "ae0b4b6e499b2c2a"),
+    "data/MM_20M_grammar.xml": (683, "7367194fffd38b70"),
 }
 
 

@@ -72,7 +72,9 @@
   <WholeSpace>
     <nInput>8</nInput>
     <nInputDim>12</nInputDim>
-    <nVectors>8</nVectors>
+    <!-- Rows 0..7 are reserved well-known atoms; leave dynamic capacity
+         for the runtime autobind exercised by this fixture. -->
+    <nVectors>64</nVectors>
     <!-- 2026-06-06 uniform-band migration: nDim is the EVENT width
          (nWhat + nWhere + nWhen). SS now carries (2, 2) like every other
          tier, so nDim was bumped 4 -> 8 to preserve nWhat=4. -->

@@ -185,13 +185,19 @@ def test_compiled_step_relaxes_only_for_unstaged_sparse_concept_codebook(
 
         model.enable_compiled_step()
 
-        assert len(compile_calls) == 1
-        assert compile_calls[0][1]["fullgraph"] is expected_fullgraph
         if staged_serial_bank and sparse_lookup_grad:
-            assert model._compiled_word_chunk_active is True
-            assert model._compiled_word_chunk_step is compile_calls[0][0]
+            # The peer scheduler stays eager on CPU while each independent
+            # tower's complete numerical fold ladder is a strict fullgraph.
+            assert len(compile_calls) == 2
+            assert all(call[1]["fullgraph"] is True
+                       for call in compile_calls)
+            assert model._compiled_part_fold_ladder is compile_calls[0][0]
+            assert model._compiled_whole_fold_ladder is compile_calls[1][0]
+            assert model._compiled_word_chunk_active is False
             assert model._compiled_step is model.forward
         else:
+            assert len(compile_calls) == 1
+            assert compile_calls[0][1]["fullgraph"] is expected_fullgraph
             assert model._compiled_word_chunk_active is False
             assert model._compiled_step is compile_calls[0][0]
     finally:

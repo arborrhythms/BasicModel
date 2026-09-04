@@ -26,6 +26,7 @@ if _TEST not in sys.path:
 
 import Spaces
 import Language
+from architecture import canonical_shape
 from test_basicmodel import _populate_test_config
 
 
@@ -46,9 +47,16 @@ def _make_ws(batch=2, nSymbols=3, symbolDim=4, conceptDim=4, nPercepts=3):
         nWhere=0,
         nWhen=0,
     )
-    inputShape   = [nPercepts,  conceptDim]
-    spaceShape   = [nSymbols,   symbolDim]
-    outputShape  = [nSymbols,   symbolDim]
+    # Constructor shapes are physical event widths, while conceptDim and
+    # symbolDim below are content widths.  Include the canonical where/when
+    # bands just as from_config does; passing the content width directly
+    # creates a zero-width ``what`` channel.
+    inputShape = [
+        nPercepts, conceptDim + sum(canonical_shape("PartSpace"))]
+    spaceShape = [
+        nSymbols, symbolDim + sum(canonical_shape("ConceptualSpace"))]
+    outputShape = [
+        nSymbols, symbolDim + sum(canonical_shape("WholeSpace"))]
     percept_space   = Spaces.PartSpace(inputShape, spaceShape, outputShape)
     concept_space   = Spaces.ConceptualSpace(inputShape, spaceShape, outputShape)
     symbolic_space  = Spaces.WholeSpace(inputShape, spaceShape, outputShape)

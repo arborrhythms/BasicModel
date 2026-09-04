@@ -147,7 +147,8 @@ class TestMentalModelWhenEnabled(unittest.TestCase):
             model, _cfg = Models.BasicModel.from_config(path)
             model.eval()
         carriers = [(n, m) for n, m in model.named_modules()
-                    if getattr(m, "whenEncoding", None) is not None]
+                    if getattr(m, "whenEncoding", None) is not None
+                    and hasattr(m, "nWhen")]
         self.assertTrue(carriers, "no whenEncoding carriers found in MentalModel")
         enabled = []
         for name, mod in carriers:

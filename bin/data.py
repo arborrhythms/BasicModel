@@ -25,6 +25,8 @@ from datasets import load_dataset
 
 import util
 from util import ProjectPaths
+from What import (DataPresentation, What, WhatAnswer, WhatQuestion,
+                  WhatRelation)
 
 TheDevice = util.TheDevice
 
@@ -669,6 +671,12 @@ class Data():
         self.source_addresses = {
             "train": [], "validation": [], "test": []
         }
+        # Model-produced presentation outputs are kept apart from supplied
+        # labels.  This preserves stable presentation indices without ever
+        # turning an inference response into a supervised target.
+        self._generated_outputs = {
+            "train": {}, "validation": {}, "test": {}, "runtime": {}
+        }
         # Teacher-owned discourse scope. This is request-scoped metadata,
         # never a clean reconstruction target and never checkpoint state.
         self.active_context = None
@@ -735,6 +743,9 @@ class Data():
         self.source_manifest = {"dataset": str(dataset)}
         self.source_addresses = {
             "train": [], "validation": [], "test": []
+        }
+        self._generated_outputs = {
+            "train": {}, "validation": {}, "test": {}, "runtime": {}
         }
         if dataset == "mnist":
             self.loadMNist()
@@ -893,6 +904,135 @@ class Data():
             )
         return dict(addresses[row])
 
+    def _what_split_values(self, split, role="input"):
+        """Return one logical split side without manufacturing a target."""
+        split = str(split)
+        if split == "runtime":
+            # ``runtime_batch`` stages its transient values into the training
+            # fields, but its questions retain their honest runtime split.
+            attr = f"train_{role}"
+        else:
+            attr = f"{split}_{role}"
+        if not hasattr(self, attr):
+            raise KeyError(f"unknown data split {split!r}")
+        return getattr(self, attr)
+
+    @staticmethod
+    def _what_value_at(values, row, *, split, role):
+        row = int(row)
+        if values is None or row < 0 or row >= len(values):
+            length = 0 if values is None else len(values)
+            raise IndexError(
+                f"presentation {row} is outside {split} {role} length {length}")
+        return values[row]
+
+    def _same_what_document(self, question, target_when):
+        """Whether a relative lookup stays inside one addressed document."""
+        addresses = self.source_addresses.get(question.split)
+        if addresses is None:
+            return False
+        if (question.when < 0 or target_when < 0
+                or question.when >= len(addresses)
+                or target_when >= len(addresses)):
+            return False
+        origin = addresses[question.when]
+        target = addresses[target_when]
+        return (str(origin.get("split", question.split))
+                == str(target.get("split", question.split))
+                == question.split
+                and origin.get("document") == target.get("document"))
+
+    def what(self, question):
+        """Resolve the dataset's desired answer to a model-visible question.
+
+        Present answers come from the current input, temporal answers from a
+        document-safe relative input row, and supervised answers from the
+        supplied output side.  Inference has no dataset answer.  Unavailable
+        temporal coordinates are ordinary results rather than exceptions.
+        """
+        if not isinstance(question, WhatQuestion):
+            raise TypeError("Data.what expects a WhatQuestion")
+        if question.where is not None:
+            return WhatAnswer.unavailable(
+                question, "within-presentation where lookup is not implemented")
+
+        relation = question.relation
+        if relation is WhatRelation.INFERENCE:
+            return WhatAnswer.unavailable(
+                question, "inference presentations have no supplied answer")
+
+        try:
+            if relation is WhatRelation.SUPERVISED:
+                if not bool(self.has_supervised_outputs):
+                    return WhatAnswer.unavailable(
+                        question, "the split has no supplied supervised output")
+                values = self._what_split_values(question.split, "output")
+                value = self._what_value_at(
+                    values, question.when, split=question.split, role="output")
+                return WhatAnswer(
+                    question=question, what=value, provenance="data",
+                    source_when=question.when)
+
+            values = self._what_split_values(question.split, "input")
+            target_when = question.target_when
+            # Validate the presented row too; a relative target cannot make
+            # an invalid anchor presentation valid.
+            self._what_value_at(
+                values, question.when, split=question.split, role="input")
+            if relation in (WhatRelation.PAST, WhatRelation.FUTURE):
+                if not self._same_what_document(question, target_when):
+                    return WhatAnswer.unavailable(
+                        question,
+                        "relative temporal target crosses a split/document boundary")
+            value = self._what_value_at(
+                values, target_when, split=question.split, role="input")
+            return WhatAnswer(
+                question=question, what=value, provenance="data",
+                source_when=target_when)
+        except (KeyError, IndexError) as exc:
+            return WhatAnswer.unavailable(question, str(exc))
+
+    def presentation(self, question, *, include_desired=True):
+        """Return the stable input/output reservation for ``question.when``."""
+        if not isinstance(question, WhatQuestion):
+            raise TypeError("Data.presentation expects a WhatQuestion")
+        values = self._what_split_values(question.split, "input")
+        source = self._what_value_at(
+            values, question.when, split=question.split, role="input")
+        presented_input = question.prompt if question.prompt is not None else source
+        generated = self._generated_outputs.get(question.split, {}).get(
+            question.when)
+        if generated is not None:
+            output = generated
+        elif include_desired:
+            desired = self.what(question)
+            output = desired if desired.available else None
+        else:
+            output = None
+        return DataPresentation(
+            question=question, input=presented_input, output=output)
+
+    def attach_output(self, question, answer):
+        """Attach one model response without changing indices or labels."""
+        if not isinstance(question, WhatQuestion):
+            raise TypeError("Data.attach_output expects a WhatQuestion")
+        if not isinstance(answer, WhatAnswer):
+            raise TypeError("Data.attach_output expects a WhatAnswer")
+        if not answer.available:
+            raise ValueError("cannot attach an unavailable model response")
+        if answer.provenance != "model":
+            raise ValueError("only model-provenance responses may be attached")
+        if (answer.question.split != question.split
+                or answer.question.when != question.when):
+            raise ValueError("answer belongs to a different presentation")
+        # Bounds-check the reserved presentation before writing its output.
+        values = self._what_split_values(question.split, "input")
+        self._what_value_at(
+            values, question.when, split=question.split, role="input")
+        outputs = self._generated_outputs.setdefault(question.split, {})
+        outputs[question.when] = answer
+        return self.presentation(question, include_desired=False)
+
     @contextmanager
     def runtime_batch(self, inputs, outputs=None, mode=None, context=None):
         """Stage transient inference data into ``train_input`` / ``train_output``.
@@ -910,6 +1050,7 @@ class Data():
         saved_context = self.active_context
         had_runtime_addresses = "runtime" in self.source_addresses
         saved_runtime_addresses = self.source_addresses.get("runtime")
+        saved_runtime_outputs = self._generated_outputs.get("runtime", {})
         self.train_input = inputs
         self.train_output = outputs
         values = (
@@ -930,6 +1071,7 @@ class Data():
             }
             for row, value in enumerate(values)
         ]
+        self._generated_outputs["runtime"] = {}
         if context is not None:
             self.active_context = context
         if isinstance(inputs, torch.Tensor) and self.input_min is not None:
@@ -950,6 +1092,7 @@ class Data():
                 self.source_addresses["runtime"] = saved_runtime_addresses
             else:
                 self.source_addresses.pop("runtime", None)
+            self._generated_outputs["runtime"] = saved_runtime_outputs
 
     def pushInput(self, token):
         """Append a token to train_input[0] during inference.

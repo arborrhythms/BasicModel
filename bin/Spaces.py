@@ -15937,7 +15937,7 @@ class ConceptualSpace(Space):
         # Inference benchmarks keep grad enabled solely to select the compiled
         # callable, but do not consume this training-only loss. Do not let that
         # create a Python ``None -> list`` state transition inside a fullgraph.
-        if not self.training or not torch.is_grad_enabled():
+        if not bool(getattr(self, "training", False)) or not torch.is_grad_enabled():
             return
         if float(self.intra_loss_weight) <= 0.0:
             return
@@ -22040,7 +22040,7 @@ class ConceptualSpace(Space):
 # they keep their word-char behavior by mapping to the letter type). Byte codes
 # only reach 0..255; values >= 256 clamp to the LETTER slot.
 _TYPE_SPACE, _TYPE_LETTER, _TYPE_DIGIT, _TYPE_PUNCT = 0, 1, 2, 3
-_ANALYSIS_WS = (0, 9, 10, 13, 32)
+_ANALYSIS_WS = (0, 9, 10, 11, 12, 13, 32)
 _ANALYSIS_PUNCT = tuple(sorted(
     set(range(33, 48)) | set(range(58, 65))
     | set(range(91, 97)) | set(range(123, 127))))

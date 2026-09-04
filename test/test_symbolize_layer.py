@@ -455,11 +455,13 @@ class TestSymbolizeLayerWiredIntoAttachPerSpace(unittest.TestCase):
         import Language as _Lang
         orig_builder = _Lang.build_space_syntactic_layer
 
-        def _capture_builder(space, ss, *, space_role, builtin_layers):
+        def _capture_builder(space, ss, *, space_role, builtin_layers,
+                             owner_space=None):
             captured.setdefault(space_role, dict(builtin_layers))
             return orig_builder(space, ss,
                                 space_role=space_role,
-                                builtin_layers=builtin_layers)
+                                builtin_layers=builtin_layers,
+                                owner_space=owner_space)
         try:
             Language.TheGrammar.rules = prev_rules + [synthetic_meta]
             _Lang.build_space_syntactic_layer = _capture_builder
