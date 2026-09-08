@@ -93,6 +93,7 @@ from dataclasses import dataclass, field
 from typing import List
 
 from Spaces import ActiveEncoding, WhereEncoding, WhenEncoding, WhatEncoding, EventEncoding
+from Spaces import _WHERE_RUNG_RATIO
 from Spaces import Basis, Tensor, Codebook, Embedding
 from Spaces import (SubSpace, SubSpaceView, guard_peer_views, Space, InputSpace,
                     PartSpace, ModalSpace, ConceptualSpace, WholeSpace,
@@ -4398,6 +4399,29 @@ class BaseModel(Mereology, nn.Module):
                     "legacy_whole_spaces": legacy_stages,
                 })
 
+    @staticmethod
+    def _widen_what_projection_checkpoint_state(state, model_state):
+        """Zero-pad a narrower saved ``what_projection.weight`` to the live
+        ``WHAT_CONTEXT_DIM``. Only the context (last) axis may grow; any
+        other difference is left for the shape-mismatch audit."""
+        widened = 0
+        for key in list(state.keys()):
+            if not key.endswith("what_projection.weight"):
+                continue
+            live = model_state.get(key)
+            saved = state[key]
+            if (live is None or not torch.is_tensor(saved)
+                    or saved.dim() != 2 or live.dim() != 2
+                    or saved.shape[0] != live.shape[0]
+                    or saved.shape[1] >= live.shape[1]):
+                continue
+            padded = torch.zeros(
+                live.shape, dtype=saved.dtype, device=saved.device)
+            padded[:, :saved.shape[1]] = saved
+            state[key] = padded
+            widened += 1
+        return widened
+
     def load_weights(self, path=None, strict=False, require_match=False):
         """Load model state from a single .ckpt bundle.
 
@@ -4925,6 +4949,12 @@ class BaseModel(Mereology, nn.Module):
                     f"(positive poles only; negative poles zero).",
                     stacklevel=2,
                 )
+
+        # A widened What chooser context (2026-09-08: absolute .where
+        # positions joined the target-free context) only adds zero columns
+        # to the zero-initialized ``what_projection``; older heads load with
+        # the new columns at zero, exactly like a fresh head.
+        self._widen_what_projection_checkpoint_state(state, model_state)
 
         mismatches = [
             (k, list(state[k].shape), list(model_state[k].shape))
@@ -7374,8 +7404,42 @@ class BasicModel(BaseModel):
             flat.abs().amax(),
         ))
 
+    def _what_where_encoder(self, split):
+        """The absolute ``.where`` ladder for a question's dataset position.
+
+        A presentation index is a position in the dataset (which exists all
+        at once), so it is encoded with the model's ``.where`` ladder rather
+        than its ``.when`` clock. The period is the split extent (number of
+        presentations); one plain, parameter-free ``WhereEncoding`` is cached
+        per split and re-perioded when the extent changes.
+        """
+        data = getattr(getattr(self, "inputSpace", None), "data", None)
+        extent = 1
+        if data is not None and hasattr(data, "what_extent"):
+            try:
+                extent = max(1, int(data.what_extent(split)))
+            except (KeyError, TypeError, ValueError):
+                extent = 1
+        cache = self.__dict__.setdefault("_what_where_encoders", {})
+        encoder = cache.get(str(split))
+        if encoder is None:
+            encoder = WhereEncoding(
+                extent, 4, 0,
+                rung_ratio=int(TheXMLConfig.get(
+                    "architecture.whereRungRatio", _WHERE_RUNG_RATIO)))
+            cache[str(split)] = encoder
+        elif int(encoder.maxVal) != extent:
+            encoder.set_period(extent)
+        return encoder
+
     def _what_grammar_context(self, questions, *, device, dtype):
-        """Build target-free chooser context for a question batch."""
+        """Build target-free chooser context for a question batch.
+
+        The question's absolute dataset position and its target position are
+        given to the chooser both normalized by the split extent and through
+        the model's own ``.where`` ladder (``_what_where_encoder``); the
+        zero-initialized ``what_projection`` learns the mapping.
+        """
         memory = self._what_memory()
         rows = []
         detailed = []
@@ -7392,18 +7456,31 @@ class BasicModel(BaseModel):
                     "closure_pressure": 0.0,
                 }
             detailed.append(context)
+            encoder = self._what_where_encoder(question.split)
+            extent = float(max(1, int(encoder.maxVal)))
+            *relation_offset, where, target_where = question.context_values()
+            # Out-of-range targets (an unavailable past/future) are left
+            # unclamped: the ladder folds them and the normalized scalar
+            # leaves [0, 1], so "no such position" stays learnable.
             scalar = torch.tensor(
-                tuple(question.context_values()) + (
-                    float(sum(context["input_mask"])),
-                    float(sum(context["output_mask"])),
-                    float(context["open_depth"]),
-                    float(context["closure_pressure"]),
+                tuple(relation_offset) + (
+                    where / extent, target_where / extent,
                 ), device=device, dtype=dtype)
+            where_ladder = torch.cat((
+                encoder.encode(where), encoder.encode(target_where),
+            )).to(device=device, dtype=dtype)
+            memory_scalar = torch.tensor((
+                float(sum(context["input_mask"])),
+                float(sum(context["output_mask"])),
+                float(context["open_depth"]),
+                float(context["closure_pressure"]),
+            ), device=device, dtype=dtype)
             input_summary = self._what_representation_summary(
                 context["input_representations"], device=device, dtype=dtype)
             output_summary = self._what_representation_summary(
                 context["output_representations"], device=device, dtype=dtype)
-            rows.append(torch.cat((scalar, input_summary, output_summary)))
+            rows.append(torch.cat((scalar, where_ladder, memory_scalar,
+                                   input_summary, output_summary)))
         tensor = torch.stack(rows, dim=0)
         return tensor, tuple(detailed)
 
@@ -7518,7 +7595,7 @@ class BasicModel(BaseModel):
             else:
                 answer = WhatAnswer(
                     question=current, what=produced, available=True,
-                    provenance="model", source_when=current.when,
+                    provenance="model", source_where=current.where,
                     grammar_trace=trace, ltm_slot=slot,
                     execution=execution)
             if record and memory is not None:
@@ -7527,7 +7604,7 @@ class BasicModel(BaseModel):
                     question=answer.question, what=answer.what,
                     available=answer.available,
                     provenance=answer.provenance,
-                    source_when=answer.source_when, reason=answer.reason,
+                    source_where=answer.source_where, reason=answer.reason,
                     grammar_trace=answer.grammar_trace,
                     ltm_slot=stored, execution=answer.execution)
             answers.append(answer)
@@ -7604,7 +7681,7 @@ class BasicModel(BaseModel):
                 forced += 1
                 final_answer = WhatAnswer(
                     question=question, what=external, available=True,
-                    provenance="model", source_when=question.when,
+                    provenance="model", source_where=question.where,
                     grammar_trace=stored.grammar_trace,
                     ltm_slot=stored, execution=answer.execution)
             answer = final_answer

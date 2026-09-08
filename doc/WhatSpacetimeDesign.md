@@ -70,10 +70,14 @@ separate privileged arguments supplied beside the question, and the model is
 not trained to reproduce them. They provide context for producing the `what`;
 the cost function compares only the desired and produced `what`.
 
-For the present design, `when` is the zero-based presentation index in
-`TheData`. For text, this is the sentence index. It provides an ordered data
-coordinate that `Data.what()` can use as an index into the dataset. A question
-can identify the desired time directly or relative to the presented time:
+The question's coordinate is `where`: the zero-based presentation index in
+`TheData` (for text, the sentence index). The dataset exists all at once, so a
+presentation index is a *position* in the dataset, an absolute `.where`, not a
+time. The model's `.when` is its own clock (`when_time`, advanced once per
+processed batch) and is never carried by a question. `Data.what()` uses `where`
+as an index into the dataset; a question can identify the desired position
+directly or relative to the presented one (`past`/`future` are displacements
+along the dataset):
 
 ```text
 presentation 8 + What(present)     -> data at index 8
@@ -86,18 +90,34 @@ or both. The requirement is that they occur within the question context seen
 by the model. There is no separate objective-address structure that silently
 selects a different target.
 
-`where` is omitted from the initial implementation. A later design may use it
-to address a location within the datum presented at one trial, which for the
-current text data is a sentence. The model may map data `where` and `when`
-coordinates to its own internal `.where` and `.when`, but it is not required
-to do so. Data coordinates and model coordinates need not share a
-representation.
+The absolute position is given to the model. `WhatQuestion.context_values()`
+carries `where` and `target_where` alongside the relation bits and offset, and
+`Model._what_grammar_context` maps both positions into the model's own
+`.where` coordinate system: normalized by the split extent and through a
+4-dim `.where` ladder (`WhereEncoding`, period = number of presentations) whose
+output feeds the zero-initialized, learned `what_projection` of the grammar
+chooser. The model therefore learns the mapping between dataset positions and
+its internal coordinates; `Data` never writes the model's `.where`/`.when`.
+Positions name locations, never content, so this adds no target to the model
+context.
+
+An implicit lockstep between dataset order and the model clock is not a
+substitute: batch lanes share one `when_time` tick, an epoch wrap re-presents
+the same row much later, and exploration trials do not tick the clock, so
+"one presentation back" in dataset coordinates is not "one tick back" in model
+time.
+
+A finer rung of the same `.where` (a location within the datum presented at
+one trial, for text a span within the sentence) is deferred; it is not a
+separate coordinate. A corpus byte address as a coarser rung, and a
+document-boundary bit for `past` questions at a document start, are noted
+follow-ons.
 
 Each stable presentation index reserves both sides of an interaction:
 
 ```text
 DataPresentation:
-    when: zero-based presentation index
+    where: zero-based presentation index (an absolute .where)
     input: question/presentation
     output: desired or generated response, possibly absent
 ```
@@ -112,7 +132,7 @@ silently turn it into supervised source data.
 This also makes clear that temporal prediction is not restricted to
 one-step-next prediction. A question may ask for any represented past,
 present, or future time. Existing prediction models are the special case in
-which the question increments `when` by one.
+which the question increments `where` by one.
 
 ## 3. Queryable spacetime through `Data` and `Model`
 

@@ -1,4 +1,5 @@
-"""Contracts for queryable spacetime and iterative LTM parity."""
+"""Contracts for queryable spacetime, absolute dataset ``where``, and
+iterative LTM parity."""
 
 from types import SimpleNamespace
 
@@ -10,6 +11,7 @@ from data import Data
 from Language import MLPTransformChooser
 from Layers import InterSentenceLayer
 from Models import BasicModel
+from Spaces import WhereEncoding
 from What import (LTMSlot, What, WhatAnswer, WhatRelation,
                   WhatSlotOperation)
 
@@ -42,15 +44,23 @@ def _data():
 
 
 def test_question_validation_and_target_coordinate():
-    assert What.present(3).target_when == 3
-    assert What.past(3, -2).target_when == 1
-    assert What.future(3, 4).target_when == 7
+    assert What.present(3).target_where == 3
+    assert What.past(3, -2).target_where == 1
+    assert What.future(3, 4).target_where == 7
     with pytest.raises(ValueError):
-        What(when=0, relation=WhatRelation.PAST, offset=1)
+        What(where=0, relation=WhatRelation.PAST, offset=1)
     with pytest.raises(ValueError):
-        What(when=0, relation=WhatRelation.PRESENT, offset=1)
+        What(where=0, relation=WhatRelation.PRESENT, offset=1)
     with pytest.raises(ValueError):
-        What(when=-1)
+        What(where=-1)
+
+
+def test_context_values_carry_absolute_where():
+    # The dataset exists all at once: a presentation index is an absolute
+    # position (a .where), and the model is allowed to see it.
+    assert What.past(8, -1).context_values()[-2:] == (8.0, 7.0)
+    assert What.present(0).context_values() != What.present(1).context_values()
+    assert len(What.present(0).context_values()) == 9
 
 
 def test_data_what_present_temporal_supervised_and_inference():
@@ -58,7 +68,7 @@ def test_data_what_present_temporal_supervised_and_inference():
 
     present = data.what(What.present(1))
     assert present.available and present.what == "one"
-    assert present.source_when == 1 and present.provenance == "data"
+    assert present.source_where == 1 and present.provenance == "data"
     assert data.what(What.past(2)).what == "one"
     assert data.what(What.future(1)).what == "two"
     assert data.what(What.supervised(1)).what == "O"
@@ -95,7 +105,7 @@ def test_attached_model_output_keeps_index_and_supplied_target_separate():
     before_targets = list(data.train_output)
     presentation = data.attach_output(question, answer)
 
-    assert presentation.when == 1
+    assert presentation.where == 1
     assert presentation.input == "answer this"
     assert presentation.output.what == "generated"
     assert data.train_input == before_inputs
@@ -286,10 +296,10 @@ def test_mlp_grammar_chooser_consumes_target_free_what_context():
     applied = torch.tensor([[[[0.5, 0.25]]]])
     copy_anchor = torch.zeros(1, 2)
     apply_anchor = torch.zeros(1, 2)
-    context = torch.tensor([[1.0, 0.0, 0.0, 0.0, 0.0,
-                             0.0, 0.0, 1.0, 1.0, 0.0, 0.0,
-                             0.0, 0.0, 0.0, 0.0,
-                             0.0, 0.0, 0.0, 0.0]])
+    context = torch.zeros(1, MLPTransformChooser.WHAT_CONTEXT_DIM)
+    context[0, 0] = 1.0                       # relation: present
+    context[0, 17] = 1.0                      # one LTM input
+    context[0, 18] = 1.0                      # one LTM output
 
     baseline = chooser.score_unary(
         x, applied, copy_anchor, apply_anchor)
@@ -304,3 +314,48 @@ def test_mlp_grammar_chooser_consumes_target_free_what_context():
         x, applied, copy_anchor, apply_anchor, what_ctx=context)
     assert torch.equal(shifted[0], baseline[0])
     assert torch.allclose(shifted[1], baseline[1] + 2.0)
+
+
+def test_what_grammar_context_uses_model_where_ladder():
+    data = _data()
+    model = _TinyWhatModel()
+    model.inputSpace = SimpleNamespace(data=data)
+    question = What.past(2)
+    rows, detailed = model._what_grammar_context(
+        (question,), device=torch.device("cpu"), dtype=torch.float32)
+    row = rows[0]
+    assert row.shape[-1] == MLPTransformChooser.WHAT_CONTEXT_DIM
+    extent = data.what_extent("train")
+    assert extent == 4
+    assert torch.allclose(row[7:9], torch.tensor([2 / 4, 1 / 4]))
+    ladder = WhereEncoding(extent, 4, 0)
+    assert torch.allclose(row[9:13], ladder.encode(2).float())
+    assert torch.allclose(row[13:17], ladder.encode(1).float())
+    assert detailed[0]["temporal"] == question.context_values()
+
+    other, _ = model._what_grammar_context(
+        (What.present(2),), device=torch.device("cpu"), dtype=torch.float32)
+    # Same relation and offset as What.present(2) would give at row 1 ...
+    shifted, _ = model._what_grammar_context(
+        (What.present(1),), device=torch.device("cpu"), dtype=torch.float32)
+    # ... but the absolute position separates otherwise identical questions.
+    assert not torch.equal(other[0], shifted[0])
+
+
+def test_what_projection_checkpoint_widens_from_19():
+    live = torch.zeros(2, MLPTransformChooser.WHAT_CONTEXT_DIM)
+    saved = torch.arange(38, dtype=torch.float32).reshape(2, 19)
+    state = {"symbolSpace.chooser.what_projection.weight": saved.clone(),
+             "other.weight": torch.ones(3)}
+    model_state = {"symbolSpace.chooser.what_projection.weight": live,
+                   "other.weight": torch.ones(3)}
+    assert BasicModel._widen_what_projection_checkpoint_state(
+        state, model_state) == 1
+    widened = state["symbolSpace.chooser.what_projection.weight"]
+    assert widened.shape == live.shape
+    assert torch.equal(widened[:, :19], saved)
+    assert torch.equal(widened[:, 19:], torch.zeros(2, live.shape[1] - 19))
+    # A mismatch on the row axis is not our migration; leave it for the audit.
+    state["symbolSpace.chooser.what_projection.weight"] = torch.zeros(3, 19)
+    assert BasicModel._widen_what_projection_checkpoint_state(
+        state, model_state) == 0

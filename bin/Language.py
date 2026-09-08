@@ -7147,10 +7147,13 @@ class MLPTransformChooser(TransformChooser):
     apply/reduce ops, one tool-embedding row each (copy rows first).
     """
 
-    # relation one-hot (5), signed/magnitude offset (2), LTM input/output
-    # counts (2), derived open depth (1), closure pressure (1), and four
-    # bounded summary features for each side of the latest relevant LTM slot.
-    WHAT_CONTEXT_DIM = 19
+    # relation one-hot (5), signed/magnitude offset (2), the question's
+    # absolute dataset position and its target position normalized by the
+    # split extent (2), the model's 4-dim .where ladder of each of those two
+    # positions (8), LTM input/output counts (2), derived open depth (1),
+    # closure pressure (1), and four bounded summary features for each side
+    # of the latest relevant LTM slot (8).
+    WHAT_CONTEXT_DIM = 29
 
     def __init__(self, *, d_model, n_copy, n_op, embed_dim=8, pos_dim=8,
                  hidden=None, n_role_cats=0):

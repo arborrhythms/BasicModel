@@ -34,32 +34,32 @@ class WhatSlotOperation(str, Enum):
 
 @dataclass(frozen=True)
 class WhatQuestion:
-    """A model-visible question with a zero-based presentation coordinate.
+    """A model-visible question with an absolute dataset ``where``.
 
-    ``offset`` is zero for present/non-temporal questions, negative for past
-    questions, and positive for future questions.  The desired answer is
-    intentionally absent: supervised answers remain on ``Data`` and cannot
-    leak into the model call graph through this object.
+    ``where`` is the zero-based presentation index in the split: a position
+    in the dataset, which exists all at once, not a time.  ``offset`` is a
+    displacement along the dataset: zero for present/non-temporal questions,
+    negative for past questions, and positive for future questions.  The
+    model's own ``.when`` is its clock and is never carried by a question.
+    The desired answer is intentionally absent: supervised answers remain on
+    ``Data`` and cannot leak into the model call graph through this object.
     """
 
-    when: int
+    where: int
     relation: WhatRelation = WhatRelation.PRESENT
     offset: int = 0
     split: str = "train"
     prompt: Any = None
-    where: Any = None
 
     def __post_init__(self) -> None:
         relation = (self.relation if isinstance(self.relation, WhatRelation)
                     else WhatRelation(str(self.relation).lower()))
         object.__setattr__(self, "relation", relation)
-        object.__setattr__(self, "when", int(self.when))
+        object.__setattr__(self, "where", int(self.where))
         object.__setattr__(self, "offset", int(self.offset))
         object.__setattr__(self, "split", str(self.split))
-        if self.when < 0:
-            raise ValueError("what question 'when' must be zero based and non-negative")
-        if self.where is not None:
-            raise ValueError("what question 'where' is reserved for a later iteration")
+        if self.where < 0:
+            raise ValueError("what question 'where' must be zero based and non-negative")
         if relation is WhatRelation.PAST and self.offset >= 0:
             raise ValueError("past questions require a negative offset")
         if relation is WhatRelation.FUTURE and self.offset <= 0:
@@ -68,45 +68,47 @@ class WhatQuestion:
             raise ValueError(f"{relation.value} questions require offset=0")
 
     @property
-    def target_when(self) -> int:
+    def target_where(self) -> int:
         """Return the requested presentation index (which may be invalid)."""
-        return self.when + self.offset
+        return self.where + self.offset
 
     @classmethod
-    def present(cls, when: int, *, split: str = "train", prompt: Any = None):
-        return cls(when=when, relation=WhatRelation.PRESENT,
+    def present(cls, where: int, *, split: str = "train", prompt: Any = None):
+        return cls(where=where, relation=WhatRelation.PRESENT,
                    split=split, prompt=prompt)
 
     @classmethod
-    def past(cls, when: int, offset: int = -1, *, split: str = "train",
+    def past(cls, where: int, offset: int = -1, *, split: str = "train",
              prompt: Any = None):
-        return cls(when=when, relation=WhatRelation.PAST, offset=offset,
+        return cls(where=where, relation=WhatRelation.PAST, offset=offset,
                    split=split, prompt=prompt)
 
     @classmethod
-    def future(cls, when: int, offset: int = 1, *, split: str = "train",
+    def future(cls, where: int, offset: int = 1, *, split: str = "train",
                prompt: Any = None):
-        return cls(when=when, relation=WhatRelation.FUTURE, offset=offset,
+        return cls(where=where, relation=WhatRelation.FUTURE, offset=offset,
                    split=split, prompt=prompt)
 
     @classmethod
-    def supervised(cls, when: int, *, split: str = "train", prompt: Any = None):
-        return cls(when=when, relation=WhatRelation.SUPERVISED,
+    def supervised(cls, where: int, *, split: str = "train", prompt: Any = None):
+        return cls(where=where, relation=WhatRelation.SUPERVISED,
                    split=split, prompt=prompt)
 
     @classmethod
-    def inference(cls, when: int, *, split: str = "runtime", prompt: Any = None):
-        return cls(when=when, relation=WhatRelation.INFERENCE,
+    def inference(cls, where: int, *, split: str = "runtime", prompt: Any = None):
+        return cls(where=where, relation=WhatRelation.INFERENCE,
                    split=split, prompt=prompt)
 
     def context_values(self) -> Tuple[float, ...]:
         """Return a stable, target-free encoding for grammar context.
 
-        The five relation bits and signed relative offset describe the
-        question.  Neither the answer nor a dataset-derived feature is
-        present, which makes this safe to install before model execution.
-        Absolute presentation coordinates remain represented separately by
-        the model's established ``.when`` machinery.
+        The five relation bits, the signed relative offset and its magnitude,
+        and the absolute dataset positions (``where`` and ``target_where``)
+        describe the question.  The positions name locations in the dataset,
+        never their content, so nothing here derives from an answer and the
+        tuple is safe to install before model execution.  The model maps the
+        raw positions into its own ``.where`` ladder (``Models.BasicModel.
+        _what_grammar_context``); the model's ``.when`` clock stays separate.
         """
         relations = tuple(
             1.0 if self.relation is candidate else 0.0
@@ -114,7 +116,8 @@ class WhatQuestion:
         )
         signed_offset = float(self.offset)
         magnitude = abs(signed_offset)
-        return relations + (signed_offset, magnitude)
+        return relations + (signed_offset, magnitude,
+                            float(self.where), float(self.target_where))
 
 
 # The design and specification use the concise ``What(present)`` spelling.
@@ -129,7 +132,7 @@ class WhatAnswer:
     what: Any = None
     available: bool = True
     provenance: str = "model"
-    source_when: Optional[int] = None
+    source_where: Optional[int] = None
     reason: Optional[str] = None
     grammar_trace: Tuple[Any, ...] = field(default_factory=tuple)
     ltm_slot: Optional["LTMSlot"] = field(default=None, compare=False)
@@ -159,8 +162,8 @@ class DataPresentation:
     output: Optional[WhatAnswer] = None
 
     @property
-    def when(self) -> int:
-        return self.question.when
+    def where(self) -> int:
+        return self.question.where
 
 
 @dataclass(frozen=True)

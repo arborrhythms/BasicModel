@@ -926,17 +926,22 @@ class Data():
                 f"presentation {row} is outside {split} {role} length {length}")
         return values[row]
 
-    def _same_what_document(self, question, target_when):
+    def what_extent(self, split):
+        """Number of presentations in ``split``: the period of the absolute
+        ``.where`` ladder the model uses to encode a question's position."""
+        return len(self._what_split_values(split, "input") or ())
+
+    def _same_what_document(self, question, target_where):
         """Whether a relative lookup stays inside one addressed document."""
         addresses = self.source_addresses.get(question.split)
         if addresses is None:
             return False
-        if (question.when < 0 or target_when < 0
-                or question.when >= len(addresses)
-                or target_when >= len(addresses)):
+        if (question.where < 0 or target_where < 0
+                or question.where >= len(addresses)
+                or target_where >= len(addresses)):
             return False
-        origin = addresses[question.when]
-        target = addresses[target_when]
+        origin = addresses[question.where]
+        target = addresses[target_where]
         return (str(origin.get("split", question.split))
                 == str(target.get("split", question.split))
                 == question.split
@@ -952,9 +957,6 @@ class Data():
         """
         if not isinstance(question, WhatQuestion):
             raise TypeError("Data.what expects a WhatQuestion")
-        if question.where is not None:
-            return WhatAnswer.unavailable(
-                question, "within-presentation where lookup is not implemented")
 
         relation = question.relation
         if relation is WhatRelation.INFERENCE:
@@ -968,40 +970,40 @@ class Data():
                         question, "the split has no supplied supervised output")
                 values = self._what_split_values(question.split, "output")
                 value = self._what_value_at(
-                    values, question.when, split=question.split, role="output")
+                    values, question.where, split=question.split, role="output")
                 return WhatAnswer(
                     question=question, what=value, provenance="data",
-                    source_when=question.when)
+                    source_where=question.where)
 
             values = self._what_split_values(question.split, "input")
-            target_when = question.target_when
+            target_where = question.target_where
             # Validate the presented row too; a relative target cannot make
             # an invalid anchor presentation valid.
             self._what_value_at(
-                values, question.when, split=question.split, role="input")
+                values, question.where, split=question.split, role="input")
             if relation in (WhatRelation.PAST, WhatRelation.FUTURE):
-                if not self._same_what_document(question, target_when):
+                if not self._same_what_document(question, target_where):
                     return WhatAnswer.unavailable(
                         question,
                         "relative temporal target crosses a split/document boundary")
             value = self._what_value_at(
-                values, target_when, split=question.split, role="input")
+                values, target_where, split=question.split, role="input")
             return WhatAnswer(
                 question=question, what=value, provenance="data",
-                source_when=target_when)
+                source_where=target_where)
         except (KeyError, IndexError) as exc:
             return WhatAnswer.unavailable(question, str(exc))
 
     def presentation(self, question, *, include_desired=True):
-        """Return the stable input/output reservation for ``question.when``."""
+        """Return the stable input/output reservation for ``question.where``."""
         if not isinstance(question, WhatQuestion):
             raise TypeError("Data.presentation expects a WhatQuestion")
         values = self._what_split_values(question.split, "input")
         source = self._what_value_at(
-            values, question.when, split=question.split, role="input")
+            values, question.where, split=question.split, role="input")
         presented_input = question.prompt if question.prompt is not None else source
         generated = self._generated_outputs.get(question.split, {}).get(
-            question.when)
+            question.where)
         if generated is not None:
             output = generated
         elif include_desired:
@@ -1023,14 +1025,14 @@ class Data():
         if answer.provenance != "model":
             raise ValueError("only model-provenance responses may be attached")
         if (answer.question.split != question.split
-                or answer.question.when != question.when):
+                or answer.question.where != question.where):
             raise ValueError("answer belongs to a different presentation")
         # Bounds-check the reserved presentation before writing its output.
         values = self._what_split_values(question.split, "input")
         self._what_value_at(
-            values, question.when, split=question.split, role="input")
+            values, question.where, split=question.split, role="input")
         outputs = self._generated_outputs.setdefault(question.split, {})
-        outputs[question.when] = answer
+        outputs[question.where] = answer
         return self.presentation(question, include_desired=False)
 
     @contextmanager

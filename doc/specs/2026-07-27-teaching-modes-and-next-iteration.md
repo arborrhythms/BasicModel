@@ -107,11 +107,13 @@ fully grammatical. Regardless of encoding:
 - it is not itself part of the desired answer; and
 - the loss compares only the produced and desired `what`.
 
-### 3.2 Initial `when`
+### 3.2 Absolute `where`
 
-For this iteration, `when` is the zero-based presentation index in
-`TheData`. For text data, it is the sentence index and encodes presentation
-order. `Data.what()` must resolve at least:
+The question's coordinate is `where`: the zero-based presentation index in
+`TheData`. For text data, it is the sentence index. The dataset exists all at
+once, so this is a position in the dataset (an absolute `.where`), not a time;
+the model's `.when` clock is never part of a question. `Data.what()` must
+resolve at least:
 
 ```text
 at index n, What(present)     -> data[n]
@@ -126,16 +128,17 @@ head.
 Document boundaries remain hard boundaries. A relative temporal lookup must
 return unavailable rather than crossing into another document or split.
 
-### 3.3 Deferred `where`
+### 3.3 The model sees the absolute `where`
 
-`where` is omitted from the immediate implementation. A later iteration may
-use it to address part of the datum presented in one trial—for text, a
-location within the sentence.
+`where` and the resolved `target_where` are part of the target-free question
+context. The model maps them into its own `.where` coordinate system
+(normalized by the split extent plus a `.where` ladder over the presentation
+index) and a learned, zero-initialized projection consumes the result; see
+`WhatSpacetimeDesign.md` §2. `Data` must not overwrite or supervise the
+model's internal coordinates directly.
 
-Data coordinates and the model's subjective `.where` / `.when` encodings are
-not required to be identical. The model may learn a mapping between them.
-`Data` must not overwrite or supervise the model's internal coordinates
-directly.
+A finer rung addressing part of the datum presented in one trial (for text, a
+span within the sentence) is deferred and is not a separate coordinate.
 
 ### 3.4 Presentations reserve input and output
 
@@ -143,7 +146,7 @@ Each presentation index has an input side and an output side:
 
 ```text
 DataPresentation:
-    when:  zero-based presentation index
+    where: zero-based presentation index (an absolute .where)
     input: question/presentation
     output: desired or generated response, possibly absent
 ```
