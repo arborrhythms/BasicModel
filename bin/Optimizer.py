@@ -89,6 +89,8 @@ import torch.optim as _optim
 __all__ = [
     "Optimizer", "Adam", "SparseAdam", "RowLocalAdam", "MultiOptimizer",
     "finite_gradient_guard_enabled", "preflight_finite_gradients",
+    "reconstruction_priority_gradient", "backward_reconstruction_priority",
+    "configure_l1_proximal",
 ]
 
 
@@ -106,6 +108,117 @@ def _optimizer_parameters(optimizer):
                 continue
             seen.add(identity)
             yield param
+
+
+def reconstruction_priority_gradient(reconstruction, output, *, max_ratio=0.5):
+    """Project conflicting output credit away from reconstruction, then cap it.
+
+    Applied independently to each protected parameter tensor: if r.o < 0,
+    q = o - (r.o / r.r) r; otherwise q = o. Return q scaled so its norm is
+    at most max_ratio * ||r||, with 0 <= max_ratio < 1. A missing/zero r
+    permits no output contribution on that parameter. Output-only parameters
+    should not be passed here. This is a first-order *gradient* contract;
+    momentum, adaptive preconditioning and finite step sizes do not imply a
+    monotonic reconstruction-loss guarantee.
+
+    Sparse codebook gradients are aligned only over their touched COO entries,
+    never over dictionary capacity. Mixed layouts can occur when another path
+    already produces a dense gradient; only that case uses a dense result.
+    """
+    if not math.isfinite(max_ratio) or not 0.0 <= max_ratio < 1.0:
+        raise ValueError("output gradient max_ratio must satisfy 0 <= ratio < 1")
+    if output is None or reconstruction is None:
+        return None
+    r, o = reconstruction.detach(), output.detach()
+    if r.shape != o.shape or r.device != o.device:
+        raise ValueError("reconstruction/output gradients must match shape and device")
+    if r.layout not in (torch.strided, torch.sparse_coo) or o.layout not in (
+            torch.strided, torch.sparse_coo):
+        raise ValueError("gradient projection supports dense and sparse COO only")
+    sparse = r.is_sparse and o.is_sparse
+    if sparse:
+        r, o = r.coalesce(), o.coalesce()
+        if r.sparse_dim() != o.sparse_dim():
+            raise ValueError("sparse gradients must have matching sparse dimensions")
+        indices, inverse = torch.unique(
+            torch.cat((r.indices(), o.indices()), dim=1), dim=1,
+            sorted=True, return_inverse=True)
+        r_values = r.values().new_zeros(
+            (indices.shape[1],) + tuple(r.values().shape[1:]))
+        o_values = torch.zeros_like(r_values)
+        r_values.index_add_(0, inverse[:r._nnz()], r.values())
+        o_values.index_add_(0, inverse[r._nnz():], o.values())
+    else:
+        r_values = r.to_dense() if r.is_sparse else r
+        o_values = o.to_dense() if o.is_sparse else o
+
+    if r_values.numel() == 0:
+        return o
+    dtype = torch.float64 if r_values.dtype == torch.float64 else torch.float32
+    rv, ov = r_values.to(dtype), o_values.to(dtype)
+    # Normalize before taking dot products: squaring raw fp16/large fp32
+    # gradients can overflow even though the projected answer is finite.
+    r_max, o_max = rv.abs().amax(), ov.abs().amax()
+    r_scaled = rv / torch.where(r_max > 0, r_max, 1.0)
+    o_scaled = ov / torch.where(o_max > 0, o_max, 1.0)
+    r_norm = torch.linalg.vector_norm(r_scaled)
+    r_unit = r_scaled / torch.where(r_norm > 0, r_norm, 1.0)
+    dot = (r_unit * o_scaled).sum()
+    q = o_scaled - dot.clamp(max=0.0) * r_unit
+    q_norm = torch.linalg.vector_norm(q)
+    scale = torch.minimum(
+        o_max,
+        (max_ratio * r_max) * (
+            r_norm / torch.where(q_norm > 0, q_norm, 1.0)))
+    result = (q * scale).to(o_values.dtype)
+    if sparse:
+        return torch.sparse_coo_tensor(
+            indices, result, size=o.shape, dtype=o.dtype, device=o.device,
+            is_coalesced=True)
+    return result
+
+
+def backward_reconstruction_priority(total_loss, reconstruction_loss,
+                                     output_loss, protected_parameters, *,
+                                     max_ratio=0.5):
+    """Populate .grad once per objective at one unchanged parameter version.
+
+    The caller zeroes gradients first and performs ONE optimizer step later.
+    Loss arguments include their actual weights and any truth modulation;
+    total_loss includes output_loss exactly once. Scale all three equally
+    when using AMP. Reconstruction is inspected with autograd.grad, output
+    is differentiated, and the remaining objective is differentiated before
+    adding the protected output contribution. Output-only heads keep their
+    ordinary gradients, and auxiliary losses are unchanged.
+
+    Do not subtract an enormous output gradient from an already-accumulated
+    total .grad: cancellation can erase the smaller reconstruction gradient.
+    Clear the protected output .grad before differentiating total - output.
+    The partition is at the loss graph, before the upstream derivatives.
+    """
+    if not math.isfinite(max_ratio) or not 0.0 <= max_ratio < 1.0:
+        raise ValueError("output gradient max_ratio must satisfy 0 <= ratio < 1")
+    protected = list(dict.fromkeys(
+        p for p in protected_parameters if p.requires_grad))
+    if not protected or not output_loss.requires_grad:
+        total_loss.backward()
+        return
+    if any(p.grad is not None for p in protected):
+        raise RuntimeError("reconstruction-priority backward requires zeroed gradients")
+    reference = (
+        torch.autograd.grad(
+            reconstruction_loss, protected, retain_graph=True, allow_unused=True)
+        if reconstruction_loss.requires_grad else (None,) * len(protected))
+    output_loss.backward(retain_graph=True)
+    projected = [
+        reconstruction_priority_gradient(r, p.grad, max_ratio=max_ratio)
+        for p, r in zip(protected, reference)]
+    for p in protected:
+        p.grad = None
+    (total_loss - output_loss).backward()
+    for p, q in zip(protected, projected):
+        if q is not None:
+            p.grad = q if p.grad is None else p.grad + q
 
 
 def _finite_gradient_guard_mode():
@@ -314,6 +427,47 @@ class _RowLocalAdam(_optim.Optimizer):
             maximize=bool(maximize), moment_dtype=moment_dtype,
         )
         super().__init__(params, defaults)
+        # Per-batch observation policies, not durable optimizer state. The
+        # caller stages these after zero_grad; skipped AMP steps cannot leak
+        # a previous batch's reference mask into the next update.
+        self._l1_proximal = {}
+
+    def set_l1_proximal(self, param, rows, mask, strength):
+        """Stage a row-local L1 prox for one update, after smooth gradients.
+
+        ``strength`` already includes the caller's concept-count normalization.
+        ``mask`` identifies penalized coefficients, normally excluding bias
+        and unadmitted reference slots. No L1 subgradient may also be added
+        to .grad: that would count the same objective twice.
+        """
+        strength = float(strength)
+        if not math.isfinite(strength) or strength < 0:
+            raise ValueError("proximal L1 strength must be finite and nonnegative")
+        group = next((g for g in self.param_groups
+                      if any(p is param for p in g["params"])), None)
+        if group is None:
+            raise ValueError("proximal L1 parameter is not owned by this optimizer")
+        if not strength:
+            self._l1_proximal.pop(param, None)
+            return
+        if group["maximize"] or group["eps"] <= 0:
+            raise ValueError("proximal L1 requires minimizing Adam with positive epsilon")
+        if (rows.dtype != torch.long or rows.ndim != 1
+                or rows.device != param.device or mask.device != param.device
+                or mask.dtype != torch.bool
+                or tuple(mask.shape) != (rows.numel(), *param.shape[1:])):
+            raise ValueError("proximal L1 requires long rows and a matching boolean coefficient mask")
+        if (bool(((rows < 0) | (rows >= param.shape[0])).any())
+                or bool((rows[1:] <= rows[:-1]).any())):
+            raise ValueError("proximal L1 rows must be sorted, unique, and in bounds")
+        if rows.numel():
+            self._l1_proximal[param] = (rows.detach().clone(), mask.detach().clone(), strength)
+        else:
+            self._l1_proximal.pop(param, None)
+
+    def zero_grad(self, set_to_none=True):
+        self._l1_proximal.clear()
+        return super().zero_grad(set_to_none=set_to_none)
 
     @staticmethod
     def _grow_prefix_state(param, state, required_rows, moment_dtype):
@@ -349,6 +503,7 @@ class _RowLocalAdam(_optim.Optimizer):
             group.get("moment_dtype", torch.float32)
             for group in self.param_groups]
         result = super().load_state_dict(state_dict)
+        self._l1_proximal.clear()
         for group_index, group in enumerate(self.param_groups):
             # Checkpoints from the initial fp32 RowLocalAdam implementation
             # predate this param-group field. In that one migration case, use
@@ -378,6 +533,7 @@ class _RowLocalAdam(_optim.Optimizer):
             with torch.enable_grad():
                 loss = closure()
 
+        proximal, self._l1_proximal = self._l1_proximal, {}
         for group in self.param_groups:
             beta1, beta2 = group["betas"]
             moment_dtype = group.get("moment_dtype", torch.float32)
@@ -399,7 +555,8 @@ class _RowLocalAdam(_optim.Optimizer):
                         "RowLocalAdam supports sparsity only on parameter "
                         f"axis 0; gradient indices shape={tuple(indices.shape)}")
                 rows = indices[0].long()
-                if rows.numel() == 0:
+                policy = proximal.get(param)
+                if rows.numel() == 0 and policy is None:
                     continue
                 values = grad.values()
                 if tuple(values.shape[1:]) != tuple(param.shape[1:]):
@@ -409,13 +566,31 @@ class _RowLocalAdam(_optim.Optimizer):
                         f"parameter={tuple(param.shape)}")
                 if group["maximize"]:
                     values = -values
+                l1_mask = None
+                if policy is not None:
+                    observed_rows, observed_mask, l1_strength = policy
+                    # Include observed definitions even at a zero smooth
+                    # gradient (the L1 objective still exists). Unknown row-0
+                    # placeholders are never admitted by the caller. A wholly
+                    # disconnected parameter (grad=None above) stays untouched.
+                    merged_rows = torch.unique(torch.cat((rows, observed_rows)), sorted=True)
+                    merged_values = values.new_zeros((merged_rows.numel(), *param.shape[1:]))
+                    merged_values.index_add_(0, torch.searchsorted(merged_rows, rows), values)
+                    l1_mask = torch.zeros_like(merged_values, dtype=torch.bool)
+                    l1_mask.index_copy_(
+                        0, torch.searchsorted(merged_rows, observed_rows), observed_mask)
+                    rows, values = merged_rows, merged_values
                 # Masked unknown concept ids are gathered through a safe row-0
                 # placeholder and multiplied by zero in forward. Autograd can
                 # still emit a structurally present COO row whose complete
-                # value is exactly zero. Treat it as absent: letting it reach
+                # value is exactly zero. Treat it as absent unless explicitly
+                # observed by the L1 policy: letting a placeholder reach
                 # Adam would decay old row-0 moments and move that real concept
                 # despite the unknown identity carrying no gradient.
                 live = values.reshape(values.shape[0], -1).ne(0).any(dim=1)
+                if l1_mask is not None:
+                    live = live | l1_mask.reshape(l1_mask.shape[0], -1).any(dim=1)
+                    l1_mask = l1_mask[live]
                 rows = rows[live]
                 values = values[live]
                 if rows.numel() == 0:
@@ -480,8 +655,32 @@ class _RowLocalAdam(_optim.Optimizer):
                          / math.sqrt(bias_correction2)).add_(group["eps"])
                 updated = param.index_select(0, rows).float()
                 updated.addcdiv_(avg_rows, denom, value=-step_size)
+                if l1_mask is not None:
+                    # Diagonal-metric proximal Adam: with D=sqrt(v_hat)+eps,
+                    # minimize .5/eta * ||z-y||_D^2 + strength*|z|_1, where
+                    # y=theta-eta*m_hat/D. Its coordinate threshold is
+                    # eta*strength/D, NOT eta*strength and NOT step_size
+                    # (m_hat's first-moment bias correction is already in y).
+                    # This is the L1 prox specialized to a positive diagonal
+                    # metric; see arxiv.org/abs/1910.10094 and Parikh/Boyd §6.5.2.
+                    threshold = (group["lr"] * l1_strength) / denom
+                    shrunk = updated.sign() * (updated.abs() - threshold).clamp_min(0)
+                    updated = torch.where(l1_mask, shrunk, updated)
                 param.index_copy_(0, rows, updated.to(dtype=param.dtype))
         return loss
+
+
+def configure_l1_proximal(optimizer, param, rows, mask, strength):
+    """Find the sole row-local owner through ordinary/MultiOptimizer wrappers."""
+    leaves = getattr(optimizer, "optimizers", (optimizer,))
+    owners = [leaf for leaf in leaves if any(
+        p is param for group in leaf.param_groups for p in group["params"])]
+    if len(owners) != 1:
+        raise ValueError("proximal L1 requires exactly one optimizer owner")
+    inner = getattr(owners[0], "inner", owners[0])
+    if not isinstance(inner, _RowLocalAdam):
+        raise TypeError("concept readout L1 requires its RowLocalAdam optimizer")
+    inner.set_l1_proximal(param, rows, mask, strength)
 
 
 class Optimizer:

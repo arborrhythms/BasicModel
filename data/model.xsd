@@ -828,6 +828,17 @@
            Legacy name reverseScale still parsed (with deprecation
            warning) by util.TheXMLConfig. -->
       <xs:element name="reconstructionScale" type="unitInterval" minOccurs="0"/>
+      <!-- Asymmetric gradient policy on optimizer-owned P/W/concept
+           parameters. No reconstruction gradient means no output budget. -->
+      <xs:element name="reconstructionPriority" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="outputGradientRatio" minOccurs="0">
+        <xs:simpleType>
+          <xs:restriction base="xs:double">
+            <xs:minInclusive value="0"/>
+            <xs:maxExclusive value="1"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:element>
       <!-- Centralize complete-present-input reconstruction, clean targets,
            objective corpus addresses, and loss reporting in Teacher. The
            objective address is separate supervision/conditioning metadata;
@@ -1117,6 +1128,9 @@
 
   <xs:complexType name="conceptualSpaceType">
     <xs:all>
+      <!-- Incoming-connection L1 for the indexed conceptsFromPercepts Sigma.
+           0 disables; BasicModel opts into weak 0.01. Not activation shrink. -->
+      <xs:element name="conceptReadoutL1" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="nInput" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nOutput" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nActive" type="xs:nonNegativeInteger" minOccurs="0"/>

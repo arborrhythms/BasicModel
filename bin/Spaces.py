@@ -42,7 +42,9 @@ from embed import (
 )
 from data import Data, TheData
 from Layers import (Layer, PiLayer, SigmaLayer, NegationLayer,
-                    RunStructureLayer, WhereTilingLayer)  # custom layers
+                    RunStructureLayer, WhereTilingLayer,
+                    SigmaConceptsFromPercepts,
+                    IndexedSigmaConceptsFromPercepts)  # custom layers
 from Layers import PropertyTilingLayer, char_class_region, WORD as _WORD_CLASS  # char-class property tiling (S6/B1)
 from Layers import (LETTER as _CLS_LETTER, DIGIT as _CLS_DIGIT,
                     WHITESPACE as _CLS_WHITESPACE, PUNCT as _CLS_PUNCT,
@@ -4658,6 +4660,12 @@ class Codebook(Tensor):
         # the original input identity. ``input + (x - input).detach()``
         # equals ``x`` in forward and routes ``d/dinput = identity`` in
         # backward. Shape-guarded: only wrap when input and snap match.
+        # This does not approximate the forward lookup: the actual selected
+        # code is used above. Hard nearest-code selection is locally constant
+        # in the encoder input (and argmin supplies no derivative), so removing
+        # the estimator would sever reconstruction/output credit to that
+        # encoder. A larger or full codebook does not change that fact. Indexed
+        # row reads need no selection STE; they use ordinary gather gradients.
         if (self.STE and torch.is_tensor(input) and torch.is_tensor(x)
                 and input.shape == x.shape and input.requires_grad):
             x = input + (x - input).detach()
@@ -9141,36 +9149,6 @@ class Space(SpaceCarrierMixin, nn.Module):
             f"<sigmaPi> must be last|butterfly|full (legacy true/false "
             f"accepted); got {raw!r}")
 
-    @staticmethod
-    def native_fold_activation(event, n_what):
-        """Normalize one source-native fold to a bounded activation scalar.
-
-        The source space's sigma/pi recursion has already produced ``event``
-        in that source's own coordinates.  This operation belongs to the
-        source (PS or WS): it reduces the native WHAT magnitude to the scalar
-        that activates an indexed conceptual codebook row.  It is activation
-        normalization, not an additional learned Sigma/Pi fold and not a
-        native-to-concept coordinate transform.
-
-        Dividing by ``sqrt(n_what)`` expresses magnitude in unit-hypercube
-        diagonal units, so widening a native source does not by itself make
-        every conceptual activation saturate at one.
-        """
-        if not torch.is_tensor(event) or event.dim() != 3:
-            raise ValueError(
-                "native fold activation expects [B,N,D] tensor")
-        width = int(n_what)
-        if width < 1 or int(event.shape[-1]) < width:
-            raise ValueError(
-                f"native fold activation cannot read WHAT width {width} "
-                f"from event width {int(event.shape[-1])}")
-        magnitude = torch.linalg.vector_norm(
-            event[..., :width], ord=2, dim=-1) / math.sqrt(width)
-        # WHAT is membership-native: every coordinate is already in [0,1],
-        # so its RMS is intrinsically in [0,1]. Keep a numerical rail for
-        # producer drift, but do not compress valid evidence with tanh.
-        return magnitude.clamp(0.0, 1.0)
-
     @property
     def codebook_mode(self):
         """Tri-state codebook mode: ``'none'`` | ``'quantize'`` |
@@ -10102,6 +10080,10 @@ class InputSpace(Space):
         # F.embedding(sparse=True) call on every iteration.
         self._ar_concept_lookup_rows = None
         self._ar_concept_lookup_atoms = None
+        for name in ("_ar_percept_reference_codes", "_ar_percept_reference_roles",
+                     "_ar_part_reference_vectors", "_ar_whole_reference_vectors",
+                     "_ar_readout_coefficients", "_ar_whole_reference_presence"):
+            setattr(self, name, None)
         self._ar_word_truncated_mask = None
         self._sentence_word_truncated_mask = None
         self._word_active_mask = None
@@ -10149,6 +10131,10 @@ class InputSpace(Space):
         self._ar_word_object_atoms = None
         self._ar_concept_lookup_rows = None
         self._ar_concept_lookup_atoms = None
+        for name in ("_ar_percept_reference_codes", "_ar_percept_reference_roles",
+                     "_ar_part_reference_vectors", "_ar_whole_reference_vectors",
+                     "_ar_readout_coefficients", "_ar_whole_reference_presence"):
+            setattr(self, name, None)
         self._ar_word_truncated_mask = None
         self._sentence_word_truncated_mask = None
         self._word_active_mask = None
@@ -14964,10 +14950,11 @@ def _concept_alloc_of(host):
 class ConceptualSpace(Space):
     """STM bookkeeping (shift / push) + grammatical CPU on the C space_role.
 
-    In the canonical forward data flow, independent PartSpace, WholeSpace, and
-    SymbolSpace recursions emit sparse concept-code activations into
-    **ConceptualSpace**. Their indexed dictionary reads already have CS event
-    width; ConceptualSpace owns no native-feature coordinate lift.
+    In the canonical forward data flow, independent PartSpace and WholeSpace
+    recursions retain their native fields. Code-specific evidence feeds a
+    plain Sigma conceptsFromPercepts readout; one indexed concept-row decode
+    then supplies the CS-width event. SymbolSpace's prior is a separate peer.
+    There is no dense native-feature coordinate lift or RMS/mean handoff.
 
     Post Stage 1.C of the two-loop pi/sigma substrate refactor
     (doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md): the atomic
@@ -15003,7 +14990,8 @@ class ConceptualSpace(Space):
     def __init__(self, inputShape, spaceShape, outputShape,
                  stage_idx=None, is_last=False,
                  shared_similarity_codebook=None,
-                 indexed_similarity_codebook=False):
+                 indexed_similarity_codebook=False,
+                 shared_percept_readout=None):
         """Initialize ConceptualSpace; allocate state for the class contract.
 
         See class docstring for invariants.
@@ -15031,11 +15019,10 @@ class ConceptualSpace(Space):
         self.stage_idx = (int(stage_idx)
                           if stage_idx is not None else 0)
         super().__init__(inputShape, spaceShape, outputShape)
-        # Canonical serial word concepts preserve their eight locations. PS,
-        # WS, and SS remain independent native-space recursions; their sigma /
-        # concept-codebook activation is responsible for producing a
-        # conceptual-width source before it reaches this space. CS therefore
-        # owns no learned or fixed PS/WS feature-width adapter.
+        # Native PS/WS fields keep their widths and locations. The bounded
+        # conceptsFromPercepts readout below operates on identified code
+        # evidence, not native feature coordinates. Only the subsequent
+        # concept-row decode produces conceptual-width content.
         self.nonlinear = nonlinear
         self.ergodic = ergodic
         # DEPRECATED inert legacy alias: ``hasAttention`` no longer constructs a
@@ -15055,9 +15042,7 @@ class ConceptualSpace(Space):
                 f"{sorted(_VALID_ATTENTION_MODES)} (plan 2026-06-06-symbolic-heat-retrieval).")
         self.attention_mode = _attn
         # Right-half loopback widening retired: ConceptualSpace.forward
-        # takes its two inputs as explicit args (``PS_subspace``,
-        # ``WS_subspace``) from the recurrent cell and shape-matched
-        # averages them after a bivector lift on the symbolic side. The
+        # takes its inputs as explicit args from the recurrent cell. The
         # legacy ``subsymbolic_widen_dim`` constructor parameter and the
         # ``[P_event || S_event]`` concat it gated were removed together
         # with ``SubwholeSpace``.
@@ -15397,6 +15382,137 @@ class ConceptualSpace(Space):
         # Dual-towers rev 2: the pyramid stages its top-K winners on the
         # subspace index; the codebook is the lookup basis materialize uses.
         object.__setattr__(self.subspace, "_index_basis", _sim_cb)
+
+        # The simplest effective readout from the controlled comparison:
+        # affine Sigma + tanh, with optional weak connection lasso and no gates.
+        # Concept rows own their typed reference slots and coefficients;
+        # there is no vocabulary-wide projection or magnitude-only activation.
+        self.concepts_from_percepts = (
+            shared_percept_readout if shared_percept_readout is not None else
+            IndexedSigmaConceptsFromPercepts(
+                8, max(1, int(self.nVectors)),
+                l1_lambda=float(TheXMLConfig.space(
+                    section, "conceptReadoutL1", default=0.0))))
+        self.layers.append(self.concepts_from_percepts)
+        self.params += list(self.concepts_from_percepts.parameters())
+        # Compatibility binders already receive conceptual coordinates. Use
+        # the same Sigma law across those sources, retaining their full stack
+        # for inverse recovery. Never average WHERE/WHEN bands.
+        source_capacity = max(8, 2 * int(TheXMLConfig.get(
+            "architecture.subsymbolicOrder", default=1) or 1)) + 1
+        rng_state = torch.get_rng_state()
+        self.concept_source_readout = SigmaConceptsFromPercepts(source_capacity, 1)
+        torch.set_rng_state(rng_state)
+        with torch.no_grad():
+            self.concept_source_readout.input_weights.fill_(.5)
+            self.concept_source_readout.concept_bias.zero_()
+        self.layers.append(self.concept_source_readout)
+        self.params += list(self.concept_source_readout.parameters())
+
+    def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
+                              missing_keys, unexpected_keys, error_msgs):
+        # Pre-readout checkpoints have neither new module. Initialize only
+        # entirely absent modules; a partial new checkpoint must still fail
+        # strict loading. Existing modules/optimizer state are not rewritten.
+        for name, module in (("concepts_from_percepts", self.concepts_from_percepts),
+                             ("concept_source_readout", self.concept_source_readout)):
+            module_prefix = prefix + name + "."
+            index = next(i for i, child in enumerate(self.layers) if child is module)
+            alias_prefix = prefix + f"layers.{index}."
+            if not any(key.startswith((module_prefix, alias_prefix)) for key in state_dict):
+                for key, value in module.state_dict().items():
+                    state_dict[module_prefix + key] = value
+                    state_dict[alias_prefix + key] = value
+        super()._load_from_state_dict(state_dict, prefix, local_metadata, strict,
+                                     missing_keys, unexpected_keys, error_msgs)
+
+    @staticmethod
+    def matched_code_evidence(event, references, n_what):
+        """Signed evidence for identified native codes, not source RMS.
+
+        1 - ||x-code||^2 / ||code||^2 gives +1 for an exact match, zero
+        for no stimulation, and negative evidence for a sufficiently wrong
+        pattern. Dot products retain code direction without a [B,N,K,D]
+        temporary. Only the prototype energy normalizes this distance;
+        the native field is never replaced by an unaddressed magnitude.
+        """
+        width = int(n_what)
+        if (event.dim() != 3 or references.dim() != 3 or width < 1
+                or int(event.shape[-1]) < width
+                or int(references.shape[-1]) < width):
+            raise ValueError("code evidence requires [B,N,D] events and [B,K,D] codes")
+        x = event[..., :width]
+        codes = references[..., :width]
+        energy = codes.square().sum(dim=-1).unsqueeze(1)
+        distance = (x.square().sum(dim=-1, keepdim=True) + energy
+                    - 2 * torch.matmul(x, codes.transpose(-1, -2)))
+        score = (1 - distance.clamp_min(0) / energy.clamp_min(epsilon)).clamp(-1, 1)
+        return torch.where(energy > epsilon, score, torch.zeros_like(score))
+
+    def percept_code_evidence(self, part_event, whole_event, part_references,
+                              whole_references, reference_roles, active_rows, *,
+                              part_n_what, whole_n_what, whole_presence=None):
+        """Keep spatial/code identities while matching the completed native fields."""
+        B, N = int(part_event.shape[0]), int(self.outputShape[0])
+        def fit(event):
+            have = int(event.shape[1])
+            if have > N:
+                raise ValueError("native locations cannot be truncated to conceptual locations")
+            return F.pad(event, (0, 0, 0, N - have)), have
+        parts, n_parts = fit(part_event)
+        wholes, n_wholes = fit(whole_event)
+        p = self.matched_code_evidence(parts, part_references, part_n_what)
+        w = self.matched_code_evidence(wholes, whole_references, whole_n_what)
+        roles = reference_roles.unsqueeze(1)
+        locations = torch.arange(N, device=parts.device).reshape(1, N, 1)
+        part_valid = torch.logical_and(roles == 0, locations < n_parts)
+        whole_valid = torch.logical_and(roles == 1, locations < n_wholes)
+        if whole_presence is not None:
+            # Staging distinguishes observed property absence (0) from an
+            # unobserved/padded location (-1). Absence is negative evidence;
+            # padding has neither an activation nor a gradient contribution.
+            presence = F.pad(whole_presence, (0, 0, 0, N - n_wholes), value=-1)
+            w = torch.where(presence > 0, w, -torch.ones_like(w))
+            whole_valid = torch.logical_and(whole_valid, presence >= 0)
+        mask = torch.logical_and(
+            torch.logical_or(part_valid, whole_valid), active_rows.reshape(B, 1, 1))
+        evidence = torch.where(roles == 0, p, w)
+        return torch.where(mask, evidence, torch.zeros_like(evidence)), mask
+
+    def commit_percept_field(self, part_sources, whole_sources, *,
+                             reference_codes, reference_roles, evidence, evidence_mask,
+                             target=None, active_rows=None):
+        """Publish the full processed parallel field beside its scalar readout.
+
+        Source stacks keep native widths and exact fold order. They are not
+        quantization residuals or raw text, and symbolic selection cannot
+        overwrite them. The tuple can travel with an Understanding snapshot.
+        """
+        parts = (torch.stack(tuple(part_sources), dim=1)
+                 if not torch.is_tensor(part_sources) else part_sources)
+        wholes = (torch.stack(tuple(whole_sources), dim=1)
+                  if not torch.is_tensor(whole_sources) else whole_sources)
+        field = (parts, wholes, reference_codes, reference_roles, evidence, evidence_mask)
+        if active_rows is not None:
+            # The eager/K=2 word cell also executes padding ticks. Preserve
+            # the last observed field per row just as the tensor-loop carry
+            # does; a shorter row must not lose its context to another row's
+            # later word or to the common W-bucket padding.
+            previous = getattr(target if target is not None else self.CSsub,
+                               "_percept_field", None)
+            selected = []
+            for index, value in enumerate(field):
+                gate = active_rows.reshape(value.shape[0], *([1] * (value.dim() - 1)))
+                prior = previous[index] if previous is not None else None
+                if prior is None or tuple(prior.shape) != tuple(value.shape):
+                    prior = torch.full_like(value, -1 if index in (2, 3) else 0)
+                selected.append(torch.where(gate, value, prior))
+            field = tuple(selected)
+        targets = (target, self.CSsub, self.subspace)
+        for sub in targets:
+            if sub is not None:
+                object.__setattr__(sub, "_percept_field", field)
+        return field
 
     def _build_what_basis(self):
         """Bivector regime: build a ``ProjectionBasis`` on ``.what`` so
@@ -16184,6 +16300,34 @@ class ConceptualSpace(Space):
         """
         return x.T @ x
 
+    def _clear_percept_field(self, batch=None):
+        """Release native analysis state without touching learned reference rows."""
+        for name in ("subspace", "CSsub", "CSsym"):
+            sub = getattr(self, name, None)
+            field = getattr(sub, "_percept_field", None)
+            if field is None:
+                continue
+            if batch is None:
+                object.__setattr__(sub, "_percept_field", None)
+                continue
+            cleared = []
+            for index, value in enumerate(field):
+                keep = torch.arange(value.shape[0], device=value.device) != int(batch)
+                keep = keep.reshape(value.shape[0], *([1] * (value.dim() - 1)))
+                fill = -1 if index in (2, 3) else 0
+                cleared.append(torch.where(keep, value, torch.full_like(value, fill)))
+            object.__setattr__(sub, "_percept_field", tuple(cleared))
+
+    def Start(self):
+        super().Start()
+        self._clear_percept_field()
+
+    def End(self):
+        super().End()
+        # The native fold stacks carry autograd history. Do not retain the
+        # previous batch's graph merely because its symbolic carrier survived.
+        self._clear_percept_field()
+
     def Reset(self, batch=None, hard=True):
         """Clear the subspace event so next forward() does a full recompute.
 
@@ -16227,7 +16371,8 @@ class ConceptualSpace(Space):
                 self.promotion_observe()
                 self.promotion_pass()
         super().Reset(batch=batch, hard=hard)
-        # Task 3: clear the predict-then-perceive held predictions and the
+        self._clear_percept_field(batch=batch)
+        # Clear the predict-then-perceive held predictions and the
         # intra-loss accumulator on EVERY reset (hard or soft) so neither a
         # stale prediction nor a dangling grad-bearing loss tensor leaks
         # across a sentence/document boundary. Hoisted above the soft-reset
@@ -20721,7 +20866,8 @@ class ConceptualSpace(Space):
     def compute_aligned_word_peer(
             self, part_sources, whole_sources, concept_row, concept_order,
             active_rows, stm_state, *, staged_rows=None, staged_atoms=None,
-            part_n_what, whole_n_what):
+            part_n_what, whole_n_what, percept_evidence=None,
+            evidence_mask=None, readout_coefficients=None):
         """Compatibility wrapper for the pure aligned peer reduction.
 
         The canonical peer scheduler now computes SS independently, then calls
@@ -20747,7 +20893,9 @@ class ConceptualSpace(Space):
             prior_symbol, prior_validity,
             concept_row, concept_order, active,
             staged_rows=staged_rows, staged_atoms=staged_atoms,
-            part_n_what=part_n_what, whole_n_what=whole_n_what)
+            part_n_what=part_n_what, whole_n_what=whole_n_what,
+            percept_evidence=percept_evidence, evidence_mask=evidence_mask,
+            readout_coefficients=readout_coefficients)
 
     def reduce_aligned_word_peers(
             self, part_sources, whole_sources,
@@ -20755,13 +20903,16 @@ class ConceptualSpace(Space):
             concept_row, concept_order, active_rows, *,
             staged_rows=None, staged_atoms=None,
             part_n_what, whole_n_what,
-            return_location_activations=False):
+            return_location_activations=False, percept_evidence=None,
+            evidence_mask=None, readout_coefficients=None):
         """Pure CS reduction of completed ``{PS, WS, SS}`` peer outputs.
 
         PS and WS supply their complete native fold ladders.  SS supplies the
         independently decoded, strictly prior-tick symbolic field and its
         per-location validity.  This method performs the indexed conceptual
-        reads and local mean only after all three peers have completed.  It
+        reads and plain Sigma readout after the native peers complete. SS
+        remains a separately identified prior field, never averaged into the
+        current word's concept. This
         owns no carrier commit, so the scheduler remains the sole recurrent
         write barrier.
         """
@@ -20801,19 +20952,29 @@ class ConceptualSpace(Space):
         rows = row.reshape(B, 1).expand(B, n_locations)
         orders = order.reshape(B, 1).expand(B, n_locations)
 
-        activations = torch.stack(
-            tuple(self.native_fold_activation(value, int(part_n_what))
-                  for value in fitted_parts)
-            + tuple(self.native_fold_activation(value, int(whole_n_what))
-                    for value in fitted_wholes),
-            dim=1)
-        bands = torch.stack(
-            tuple(value[..., int(part_n_what):] for value in fitted_parts)
-            + tuple(value[..., int(whole_n_what):]
-                    for value in fitted_wholes),
-            dim=1)
+        K = int(self.concepts_from_percepts.nInput)
+        if (not torch.is_tensor(percept_evidence)
+                or tuple(percept_evidence.shape) != (B, n_locations, K)
+                or not torch.is_tensor(evidence_mask)
+                or tuple(evidence_mask.shape) != (B, n_locations, K)
+                or evidence_mask.dtype != torch.bool):
+            raise ValueError("aligned concept readout requires identified [B,N,K] evidence and mask")
+        if readout_coefficients is None:
+            readout_coefficients = self.concepts_from_percepts.lookup_coefficients(row)
+        admitted = torch.logical_and(evidence_mask, rows.ge(0).unsqueeze(-1))
+        location_activations = SigmaConceptsFromPercepts.from_coefficients(
+            percept_evidence, readout_coefficients.unsqueeze(1), mask=admitted)
+        # Coordinates are explicit metadata. Use a real part location where
+        # it exists, otherwise the corresponding whole location; padding and
+        # the number of folds must never rescale WHERE/WHEN.
+        part_band = fitted_parts[0][..., int(part_n_what):]
+        whole_band = fitted_wholes[0][..., int(whole_n_what):]
+        has_part = (torch.arange(n_locations, device=rows.device)
+                    < int(part_sources[0].shape[1])).reshape(1, n_locations, 1)
+        band = torch.where(has_part, part_band, whole_band)
+        band = torch.where(active.reshape(B, 1, 1), band, torch.zeros_like(band))
         decoded = self.decode_sparse_concept_rows(
-            rows, activations, bands,
+            rows, location_activations.unsqueeze(1), band.unsqueeze(1),
             staged_rows=staged_rows, staged_atoms=staged_atoms)
 
         if (not torch.is_tensor(symbol_source)
@@ -20831,15 +20992,9 @@ class ConceptualSpace(Space):
             device=decoded.device, dtype=decoded.dtype)
         prior_validity = symbol_validity.to(
             device=decoded.device, dtype=torch.bool)
-        native_count = int(decoded.shape[1])
-        denominator = (
-            torch.full_like(
-                prior_validity, float(native_count), dtype=decoded.dtype)
-            + prior_validity.to(dtype=decoded.dtype))
-        event = (
-            decoded.sum(dim=1) + prior_symbol
-        ) / denominator.unsqueeze(-1)
-        location_activations = activations.sum(dim=1) / denominator
+        prior_symbol = torch.where(prior_validity.unsqueeze(-1), prior_symbol,
+                                   torch.zeros_like(prior_symbol))
+        event = decoded[:, 0]
         word_activation = location_activations[:, 0]
         word_activation = torch.where(
             row >= 0, word_activation, torch.zeros_like(word_activation))
@@ -20857,7 +21012,8 @@ class ConceptualSpace(Space):
             self, part_sources, whole_sources,
             concept_row, concept_order, active_rows, *,
             staged_rows=None, staged_atoms=None,
-            part_n_what, whole_n_what):
+            part_n_what, whole_n_what, percept_evidence=None,
+            evidence_mask=None, readout_coefficients=None):
         """Form CSsub from the completed PS/WS ladders only.
 
         The aligned serial word transaction has two distinct recurrences:
@@ -20885,7 +21041,9 @@ class ConceptualSpace(Space):
             concept_row, concept_order, active_rows,
             staged_rows=staged_rows, staged_atoms=staged_atoms,
             part_n_what=part_n_what, whole_n_what=whole_n_what,
-            return_location_activations=True)
+            return_location_activations=True,
+            percept_evidence=percept_evidence, evidence_mask=evidence_mask,
+            readout_coefficients=readout_coefficients)
 
     def promote_symbol_reference(
             self, symbol_rows, symbol_activations, symbol_bands,
@@ -21007,7 +21165,7 @@ class ConceptualSpace(Space):
         records = getattr(self, "_concept_fold_support", None) or {}
         return records.get(int(concept_id))
 
-    def _aligned_stream(self, sub, D, n_vectors, like, label):
+    def _aligned_stream(self, sub, D, n_vectors, like, label, *, return_validity=False):
         """Fit one fold source without mixing its location coordinates.
 
         Sources have already crossed their sigma/concept-codebook seam and
@@ -21052,6 +21210,9 @@ class ConceptualSpace(Space):
                 fitted.new_zeros(
                     int(fitted.shape[0]), int(n_vectors) - n_source, int(D)),
             ], dim=-2)
+        if return_validity:
+            valid = (torch.arange(n_vectors, device=like.device) < n_source)
+            return fitted, valid.unsqueeze(0).expand(int(like.shape[0]), -1)
         return fitted
 
     def _commit_aligned_sources(self, sources, CS_sub, *, support,
@@ -21061,11 +21222,10 @@ class ConceptualSpace(Space):
         """Commit a location-preserving source stack onto a CS carrier.
 
         ``sources`` are already conformed ``[B,N,D]`` tensors.  The full
-        stack is retained for exact source recovery/provenance; the live CS
-        event is their validity-masked local mean. Order is explicit metadata,
-        never a row partition inferred from the codebook address. This mask is
-        what lets an absent prior-tick SS peer leave the six PS/WS sources
-        byte-for-byte undiluted at that location.
+        stack is retained for exact source recovery/provenance. A plain Sigma
+        readout replaces the old local mean; its coordinate readout is not
+        mistaken for the complete inverse carrier. Order and WHERE/WHEN are
+        metadata, never averaged or passed through the readout.
         """
         carrier = torch.stack(list(sources), dim=1)       # [B,S,N,D]
         B, S, N = (int(carrier.shape[0]), int(carrier.shape[1]),
@@ -21082,11 +21242,21 @@ class ConceptualSpace(Space):
                     f"{None if not torch.is_tensor(source_validity) else tuple(source_validity.shape)}")
             validity = source_validity.to(
                 device=carrier.device, dtype=torch.bool)
-        weights = validity.to(dtype=carrier.dtype)
-        denominator = weights.sum(dim=1).clamp_min(1.0)
-        advanced_ev = (
-            (carrier * weights.unsqueeze(-1)).sum(dim=1)
-            / denominator.unsqueeze(-1))                 # [B,N,D]
+        K = int(self.concept_source_readout.nInput)
+        if S > K:
+            raise ValueError("aligned source count exceeds configured Sigma readout capacity")
+        n_what = min(int(self.nWhat), int(carrier.shape[-1]))
+        evidence = carrier[..., :n_what].permute(0, 2, 3, 1)
+        mask = validity.permute(0, 2, 1).unsqueeze(2).expand_as(evidence)
+        evidence = F.pad(evidence, (0, K - S))
+        mask = F.pad(mask, (0, K - S), value=False)
+        what = self.concept_source_readout(evidence, mask=mask).squeeze(-1)
+        band_width = int(carrier.shape[-1]) - n_what
+        first = validity.to(dtype=torch.long).argmax(dim=1)
+        band = carrier[..., n_what:].gather(
+            1, first[:, None, :, None].expand(B, 1, N, band_width))[:, 0]
+        band = torch.where(validity.any(dim=1).unsqueeze(-1), band, torch.zeros_like(band))
+        advanced_ev = torch.cat((what, band), dim=-1)
         B, N = int(advanced_ev.shape[0]), int(advanced_ev.shape[1])
         if concept_orders is None:
             orders = torch.full(
@@ -21106,7 +21276,7 @@ class ConceptualSpace(Space):
         # it can attach fold/order provenance to the returned carrier.  That
         # forward may have added and consumed ``_c_prior``; in provenance-only
         # mode retain the already-materialized event exactly, rather than
-        # replacing it with the pre-prior source mean.
+        # replacing it with a fresh source readout.
         if not preserve_target_event:
             CS_sub.set_event(advanced_ev)
         object.__setattr__(CS_sub, "_aligned_carrier", carrier)
@@ -21115,6 +21285,7 @@ class ConceptualSpace(Space):
         object.__setattr__(CS_sub, "_fold_support", support)
         object.__setattr__(CS_sub, "_concept_orders", orders)
         object.__setattr__(CS_sub, "_bind_carrier", None)
+        object.__setattr__(CS_sub, "_percept_field", None)
 
         own = getattr(self, "subspace", None)
         if own is not None and own is not CS_sub:
@@ -21126,6 +21297,7 @@ class ConceptualSpace(Space):
             object.__setattr__(own, "_fold_support", support)
             object.__setattr__(own, "_concept_orders", orders)
             object.__setattr__(own, "_bind_carrier", None)
+            object.__setattr__(own, "_percept_field", None)
         for feedback_name in ("_subspaceForPS", "_subspaceForWS"):
             feedback = getattr(self, feedback_name, None)
             if feedback is None:
@@ -21146,8 +21318,8 @@ class ConceptualSpace(Space):
 
         This is the base aligned rule used by parallel stages and by serial
         models with no higher fold ladder.  The source pair remains attached
-        to the CS carrier, so reverse can recover both views without asking a
-        mean to be invertible.
+        to the CS carrier, so reverse recovers complete views without
+        inverting the scalar Sigma readout.
         """
         if CS_sub is None or CS_sub.is_empty():
             raise RuntimeError("aligned concept binding requires live CS")
@@ -21158,10 +21330,10 @@ class ConceptualSpace(Space):
         D = int(cs_event.shape[-1])
         n_vectors = int(self.outputShape[0])
         like = cs_event.new_zeros(int(cs_event.shape[0]), n_vectors, D)
-        part = self._aligned_stream(
-            PS_sub, D, n_vectors, like, "part stream")
-        whole = self._aligned_stream(
-            WS_sub, D, n_vectors, like, "whole stream")
+        part, part_valid = self._aligned_stream(
+            PS_sub, D, n_vectors, like, "part stream", return_validity=True)
+        whole, whole_valid = self._aligned_stream(
+            WS_sub, D, n_vectors, like, "whole stream", return_validity=True)
         support = {
             "version": 1,
             "binding": "aligned",
@@ -21170,7 +21342,8 @@ class ConceptualSpace(Space):
             "source_count": 2,
         }
         return self._commit_aligned_sources(
-            (part, whole), CS_sub, support=support, actual_order=0)
+            (part, whole), CS_sub, support=support, actual_order=0,
+            source_validity=torch.stack((part_valid, whole_valid), dim=1))
 
     def bind_fold_streams(self, part_folds, whole_folds, CS_sub,
                           *, part_passes=None, whole_passes=None,
@@ -21181,10 +21354,9 @@ class ConceptualSpace(Space):
 
         The two ordered sequences must contain the same positive number of
         cumulative folds. Each source is conformed without cross-location
-        reshaping, stacked as ``[B, 2F, N, D]``, and given equal weight in the
-        current reference implementation. An optional prior-tick symbol peer
-        adds a seventh, location-aligned source. Its validity is evaluated per
-        location, so an absent peer does not dilute the six perceptual sources.
+        reshaping, stacked as ``[B, 2F, N, D]``, and read through a plain
+        learnable Sigma. An optional prior-tick symbol peer is a separate
+        source with explicit validity, not a change to a mean denominator.
         The exact source carrier and ordered sigma/pi paths ride on ``CS_sub``
         for inspection and later minting.
 
@@ -21225,27 +21397,29 @@ class ConceptualSpace(Space):
         n_vectors = int(self.outputShape[0])
         like = cs_event.new_zeros(
             int(cs_event.shape[0]), n_vectors, D)
-        sources = []
+        sources, validities = [], []
         for fold_idx, source in enumerate(part_folds):
-            sources.append(self._aligned_stream(
-                source, D, n_vectors, like, f"part fold {fold_idx + 1}"))
+            field, valid = self._aligned_stream(
+                source, D, n_vectors, like, f"part fold {fold_idx + 1}",
+                return_validity=True)
+            sources.append(field)
+            validities.append(valid)
         for fold_idx, source in enumerate(whole_folds):
-            sources.append(self._aligned_stream(
-                source, D, n_vectors, like, f"whole fold {fold_idx + 1}"))
+            field, valid = self._aligned_stream(
+                source, D, n_vectors, like, f"whole fold {fold_idx + 1}",
+                return_validity=True)
+            sources.append(field)
+            validities.append(valid)
 
         support = self._ordered_fold_support(part_passes, whole_passes)
-        validity = torch.ones(
-            (int(like.shape[0]), len(sources), n_vectors),
-            dtype=torch.bool, device=like.device)
+        validity = torch.stack(validities, dim=1)
         if symbol_source is not None:
-            symbol = self._aligned_stream(
+            symbol, symbol_extent = self._aligned_stream(
                 symbol_source, D, n_vectors, like,
-                "prior-tick symbol stream")
+                "prior-tick symbol stream", return_validity=True)
             sources.append(symbol)
             if symbol_validity is None:
-                symbol_valid = torch.ones(
-                    (int(like.shape[0]), n_vectors), dtype=torch.bool,
-                    device=like.device)
+                symbol_valid = symbol_extent
             else:
                 if (not torch.is_tensor(symbol_validity)
                         or tuple(symbol_validity.shape)
@@ -21256,6 +21430,7 @@ class ConceptualSpace(Space):
                         f"{None if not torch.is_tensor(symbol_validity) else tuple(symbol_validity.shape)}")
                 symbol_valid = symbol_validity.to(
                     device=like.device, dtype=torch.bool)
+                symbol_valid = torch.logical_and(symbol_valid, symbol_extent)
             validity = torch.cat(
                 [validity, symbol_valid.unsqueeze(1)], dim=1)
             support["symbol_sources"] = [{
@@ -21429,6 +21604,11 @@ class ConceptualSpace(Space):
         Returns None when no combine / no carrier is available.
         """
         target = sub if sub is not None else getattr(self, "subspace", None)
+        field = getattr(target, "_percept_field", None)
+        if field is not None:
+            # Forward keeps every native level. The tower inverse expects its
+            # actual terminal fold, never a mean of incompatible fold depths.
+            return field[0][:, -1], field[1][:, -1]
         aligned = getattr(target, "_aligned_carrier", None)
         if aligned is None and target is not getattr(self, "subspace", None):
             aligned = getattr(
@@ -21445,21 +21625,20 @@ class ConceptualSpace(Space):
                 n_whole = len(support.get("whole_folds", ()))
                 # SS is a forward recurrent peer, not a perceptual tower.
                 # Preserve unbind's established two-tuple API and recover the
-                # PS/WS means from their explicit support counts, ignoring any
+                # terminal PS/WS folds by their explicit counts, ignoring any
                 # trailing prior-tick symbol carrier during reconstruction.
                 if (n_part > 0 and n_whole > 0
                         and n_part + n_whole <= S):
-                    part = aligned[:, :n_part].mean(dim=1)
-                    whole = aligned[
-                        :, n_part:n_part + n_whole].mean(dim=1)
+                    part = aligned[:, n_part - 1]
+                    whole = aligned[:, n_part + n_whole - 1]
                     return part, whole
             if S == 2:
                 part, whole = aligned[:, 0], aligned[:, 1]
                 return part, whole
             if S > 2 and S % 2 == 0:
                 half = S // 2
-                part = aligned[:, :half].mean(dim=1)
-                whole = aligned[:, half:].mean(dim=1)
+                part = aligned[:, half - 1]
+                whole = aligned[:, -1]
                 return part, whole
         combine = getattr(self, "combine", None)
         if combine is None:
@@ -21889,6 +22068,9 @@ class ConceptualSpace(Space):
             extras["concept_fold_support"] = {
                 int(cid): record for cid, record in fold_support.items()
             }
+        readout = getattr(self, "concepts_from_percepts", None)
+        if readout is not None:
+            extras["percept_readout_references"] = readout.reference_state()
         legacy = getattr(self, "_legacy_whole_structure", None)
         if isinstance(legacy, dict) and legacy:
             extras["legacy_whole_structure"] = legacy
@@ -21904,6 +22086,10 @@ class ConceptualSpace(Space):
         """
         if not isinstance(extras, dict):
             return
+
+        reference_state = extras.get("percept_readout_references")
+        if reference_state is not None:
+            self.concepts_from_percepts.load_reference_state(reference_state)
 
         assign = extras.get("category_assign")
         if isinstance(assign, dict):
@@ -21941,7 +22127,7 @@ class ConceptualSpace(Space):
                 str(k): v for k, v in extras.items()
                 if str(k) not in {
                     "version", "role", "category_assign",
-                    "category_learner", "concept_fold_support",
+                    "category_learner", "concept_fold_support", "percept_readout_references",
                 }
             }
         if incoming_legacy:
@@ -27014,13 +27200,13 @@ class WholeSpace(Space):
 
     def compute_word_property_fold_sources(
             self, weights_b_n_p, pass_indices):
-        """Return one word's H0 plus cumulative learned WholeSpace folds."""
+        """Return one word's W0 plus cumulative learned WholeSpace folds."""
         base = self.compute_word_property_event(weights_b_n_p)
         folds = self.fold_event_ladder(base, pass_indices, strict=True)
         return (base, *folds)
 
     def compute_unity_fold_sources(self, IS_concepts, spans, pass_indices):
-        """Return H0 plus cumulative learned folds without carrier writes."""
+        """Return W0 plus cumulative learned folds without carrier writes."""
         base, membership = self.compute_stage0_unity_event(
             IS_concepts, spans)
         folds = self.fold_event_ladder(

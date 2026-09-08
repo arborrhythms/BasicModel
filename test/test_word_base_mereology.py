@@ -17,7 +17,7 @@ if _BIN not in sys.path:
     sys.path.insert(0, _BIN)
 
 from Layers import MeronymicFoldAdapter  # noqa: E402
-from Spaces import PartSpace, Space  # noqa: E402
+from Spaces import ConceptualSpace, PartSpace  # noqa: E402
 
 
 def _expected_union(codes, mask):
@@ -73,7 +73,7 @@ def test_base_set_aggregation_preserves_zero_union_identity(butterfly):
 
 
 @pytest.mark.parametrize("butterfly", [False, True])
-def test_concept_activation_is_rms_of_the_complete_part_union(butterfly):
+def test_concept_evidence_matches_identified_codes_after_complete_part_union(butterfly):
     """Concept evidence is measured after, never before, word synthesis."""
     fold = MeronymicFoldAdapter(
         "sigma", 4, 4, stable=True, butterfly=butterfly, legacy_N=4)
@@ -83,13 +83,16 @@ def test_concept_activation_is_rms_of_the_complete_part_union(butterfly):
     mask = torch.tensor([[True, True, True]])
 
     union = fold.aggregate_over_set(parts, mask=mask)
-    activation = Space.native_fold_activation(union.unsqueeze(1), n_what=4)
+    activation = ConceptualSpace.matched_code_evidence(
+        union.unsqueeze(1), parts, n_what=4)
     expected_union = 1.0 - (1.0 - parts).prod(dim=-2)
-    expected = expected_union.square().mean(dim=-1).sqrt().unsqueeze(1)
+    distance = (expected_union.unsqueeze(1) - parts).square().sum(-1)
+    expected = (1 - distance / parts.square().sum(-1)).clamp(-1, 1).unsqueeze(1)
 
     torch.testing.assert_close(union, expected_union)
     torch.testing.assert_close(activation, expected)
-    assert bool((activation >= 0.0).all())
+    assert activation.shape == (1, 1, 3)  # three identified references, not one RMS
+    assert bool((activation >= -1.0).all())
     assert bool((activation <= 1.0).all())
 
 

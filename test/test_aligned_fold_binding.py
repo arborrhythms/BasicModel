@@ -107,8 +107,8 @@ def test_aligned_binder_uses_all_six_sources_without_location_mixing():
     # Actual serial geometry: the current word's PS carrier has one location,
     # while WS exposes the eight-location field. Aligned binding pads PS on
     # the location axis; it never reinterprets feature coordinates as slots.
-    part_values = [1.0, 2.0, 3.0]
-    whole_values = [4.0, 5.0, 6.0]
+    part_values = [0.1, 0.2, 0.3]
+    whole_values = [0.4, 0.5, 0.6]
     part_tensors = [
         torch.full((1, 1, 4), value, requires_grad=True)
         for value in part_values
@@ -131,12 +131,16 @@ def test_aligned_binder_uses_all_six_sources_without_location_mixing():
     assert torch.equal(out._concept_orders, torch.full((1, 8), 3))
     # Location 0 receives all six sources; later locations receive WS and
     # explicit zero PS padding, never coordinate-regrouped PS fragments.
-    assert torch.allclose(out.materialize()[:, 0], torch.full((1, 4), 3.5))
-    assert torch.allclose(out.materialize()[:, 1], torch.full((1, 4), 2.5))
+    assert torch.allclose(out.materialize()[:, 0], torch.full((1, 4), 1.05).tanh())
+    assert torch.allclose(out.materialize()[:, 1], torch.full((1, 4), .75).tanh())
+    assert not torch.allclose(out.materialize()[:, 0], carrier[:, :, 0].mean(1))
     out.materialize().sum().backward()
     for source in part_tensors + whole_tensors:
         assert source.grad is not None
         assert bool((source.grad != 0).all())
+    part_back, whole_back = cs.unbind(out)
+    torch.testing.assert_close(part_back[:, :1], part_tensors[-1])
+    torch.testing.assert_close(whole_back, whole_tensors[-1])
 
     support = out._fold_support
     assert support["source_count"] == 6
@@ -240,6 +244,9 @@ def test_mini_basicmodel_ps128_ws128_cs1024_runs_forward_backward(
     # one shared object, not merely equivalent snapshots.
     registries = [cs._concept_fold_support for cs in model.conceptualSpaces]
     assert all(registry is registries[0] for registry in registries[1:])
+    readouts = [cs.concepts_from_percepts for cs in model.conceptualSpaces]
+    assert all(readout is readouts[0] for readout in readouts[1:])
+    expected_refs = readouts[0].admit_references(17, [1, 2], [3])
     support = ConceptualSpace._ordered_fold_support(
         (0, 1, 2), (0, 1, 2))
     expected = model.conceptualSpaces[0].record_concept_fold_support(
@@ -250,9 +257,12 @@ def test_mini_basicmodel_ps128_ws128_cs1024_runs_forward_backward(
     conceptual_blob = copy.deepcopy(
         checkpoint_extras["conceptual_structure"])
     assert conceptual_blob["concept_fold_support"][17] == expected
+    assert conceptual_blob["percept_readout_references"]["references"][17] == expected_refs
     registries[0].clear()
+    readouts[0].references.clear()
     model.conceptualSpace.load_vocab_extras(conceptual_blob)
     assert model.conceptualSpaces[0].concept_fold_support(17) == expected
+    assert readouts[0].references[17] == expected_refs
 
     result = model.forward(model.inputSpace.prepInput(["alpha beta"]))
     differentiable = [
@@ -295,6 +305,18 @@ def test_mini_basicmodel_ps128_ws128_cs1024_runs_forward_backward(
     assert any(
         _finite_nonzero_grad(p)
         for p in model.parameters() if p.requires_grad)
+    coefficients = readouts[0].coefficients
+    assert _finite_nonzero_grad(coefficients)
+    assert coefficients.grad.is_sparse
+    optimizer = model.getOptimizer()
+    assert any(p is coefficients for p in model._reconstruction_priority_parameters(optimizer))
+    leaves = getattr(optimizer, "optimizers", [optimizer])
+    assert any(type(leaf.inner).__name__ == "_RowLocalAdam" and any(
+        p is coefficients for group in leaf.param_groups for p in group["params"])
+        for leaf in leaves)
+    before = coefficients.detach().clone()
+    optimizer.step()
+    assert not torch.equal(before, coefficients)
 
 
 def test_meta_fold_support_roundtrips_with_vocab_extras():

@@ -116,22 +116,34 @@ def _profile_peer_legs(torch, model, device, texts, repeats):
         torch.zeros(batch, 1, dtype=torch.bool, device=device),
     )
     predictor = cs.intraSentenceLayer
+    part_references = isp._ar_part_reference_vectors[:, 0]
+    whole_references = isp._ar_whole_reference_vectors[:, 0]
+    reference_roles = isp._ar_percept_reference_roles[:, 0]
+    coefficients = isp._ar_readout_coefficients[:, 0]
+    whole_presence = isp._ar_whole_reference_presence[:, 0]
+
+    def readout(local_parts, local_wholes, gate):
+        evidence, evidence_mask = cs.percept_code_evidence(
+            local_parts[-1], local_wholes[-1], part_references, whole_references,
+            reference_roles, gate.reshape(batch),
+            part_n_what=int(ps.nWhat), whole_n_what=int(ws.nWhat),
+            whole_presence=whole_presence)
+        return cs.reduce_aligned_percept_peers(
+            local_parts, local_wholes, row, order, gate.reshape(batch),
+            staged_rows=lookup_rows, staged_atoms=lookup_atoms,
+            part_n_what=int(ps.nWhat), whole_n_what=int(ws.nWhat),
+            percept_evidence=evidence, evidence_mask=evidence_mask,
+            readout_coefficients=coefficients)
 
     def cs_sub_leg(ids, mask, offsets, weights, gate):
         local_parts = ps.compute_word_fold_sources(
             ids, mask, offsets, fold_passes)
         local_wholes = ws.compute_word_property_fold_sources(
             weights, fold_passes)
-        return cs.reduce_aligned_percept_peers(
-            local_parts, local_wholes, row, order, gate.reshape(batch),
-            staged_rows=lookup_rows, staged_atoms=lookup_atoms,
-            part_n_what=int(ps.nWhat), whole_n_what=int(ws.nWhat))
+        return readout(local_parts, local_wholes, gate)
 
     def cs_sub_reduce_leg(gate):
-        return cs.reduce_aligned_percept_peers(
-            part_sources, whole_sources, row, order, gate.reshape(batch),
-            staged_rows=lookup_rows, staged_atoms=lookup_atoms,
-            part_n_what=int(ps.nWhat), whole_n_what=int(ws.nWhat))
+        return readout(part_sources, whole_sources, gate)
 
     compiled_cs_sub = model_util.compile(
         cs_sub_leg, verbose=False, fullgraph=True)

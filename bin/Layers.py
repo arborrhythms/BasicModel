@@ -1045,6 +1045,18 @@ class InvertibleLinearLayer(ErgodicLayer):
                 self.register_buffer('biasNoise', torch.randn(1, nOutput))
 
     # --- Factor helpers ---
+    @staticmethod
+    def _stable_diagonal(d):
+        """Bound |d| away from zero, choosing the positive branch at zero.
+
+        ``sign(d) * clamp(abs(d))`` leaves an exactly zero learned, gated,
+        or noise-cancelled diagonal at zero because sign(0) == 0. That makes
+        the supposedly invertible LDU singular. Both directions must use
+        this same effective diagonal, including the ergodic path.
+        """
+        sign = torch.where(d < 0, -torch.ones_like(d), torch.ones_like(d))
+        return sign * d.abs().clamp(epsilon, 1.0)
+
     def _L(self):
         """Unit-lower-triangular: strict lower of raw_L + I."""
         return torch.tril(self.raw_L, diagonal=-1) + torch.eye(
@@ -1072,14 +1084,14 @@ class InvertibleLinearLayer(ErgodicLayer):
         if gate is not None:
             d = d * gate
         if self.stable:
-            return d.sign() * d.abs().clamp(epsilon, 1.0)
+            return self._stable_diagonal(d)
         return d
 
     def _d_effective_for_gate(self, gate):
         """Pure counterpart of ``_d_effective`` with an explicit gate."""
         d = self.d if gate is None else self.d * gate
         if self.stable:
-            return d.sign() * d.abs().clamp(epsilon, 1.0)
+            return self._stable_diagonal(d)
         return d
 
     def _D_embed(self):
@@ -1142,7 +1154,7 @@ class InvertibleLinearLayer(ErgodicLayer):
         When stable=True, clamp magnitude to [eps, 1] so W_inv never blows up."""
         d = self.bias * self._d_effective() + self.var * self.noise_d
         if self.stable:
-            d = d.sign() * d.abs().clamp(epsilon, 1.0)
+            d = self._stable_diagonal(d)
         return d
 
     def _d_eff_for_gate(self, gate):
@@ -1150,7 +1162,7 @@ class InvertibleLinearLayer(ErgodicLayer):
             self.bias * self._d_effective_for_gate(gate)
             + self.var * self.noise_d)
         if self.stable:
-            d = d.sign() * d.abs().clamp(epsilon, 1.0)
+            d = self._stable_diagonal(d)
         return d
 
     # --- W materialisation ---
@@ -2566,6 +2578,27 @@ class GrammarLayer(Layer):
             n *= d
         return flat[:, :n].reshape((B,) + original_shape)
 
+    def _butterfly_live_factors(self, level, n_live):
+        """Pin every pair touching padding to identity in BOTH directions.
+
+        Zero-padding alone is not invertible after training: a learned pair
+        can move live information into a padded coordinate which unflatten
+        discards. Identity on those pairs makes the zero-pad subspace
+        invariant, so the stripped result still has a genuine inverse.
+        Use the actual flattened input width (callers may use less than N).
+        Masks are derived from existing permutation buffers, introducing no
+        checkpoint state and costing nothing on the unpadded path.
+        """
+        L = self.butterfly_L[level]
+        d = self.butterfly_d[level]
+        U = self.butterfly_U[level]
+        if n_live == self.M_total:
+            return L, d, U
+        live = (self.butterfly_perms[level].reshape(-1, 2) < n_live).all(-1)
+        return (torch.where(live, L, 0.0),
+                torch.where(live.unsqueeze(-1), d, 1.0),
+                torch.where(live, U, 0.0))
+
     def _butterfly_forward(self, x):
         """FFT-style element-pair butterfly cascade forward.
 
@@ -2582,16 +2615,14 @@ class GrammarLayer(Layer):
         at init (modulo the zero-pad strip).
         """
         flat, original_shape = self._butterfly_flatten(x)
+        n_live = math.prod(original_shape)
         for level in range(self.n_levels):
             perm = self.butterfly_perms[level]
             inv_perm = self._butterfly_inverse_perm(perm)
             flat = flat[:, perm]
             pair = flat.reshape(flat.shape[0], -1, 2)
             pair = self._butterfly_pair_forward(
-                pair,
-                self.butterfly_L[level],
-                self.butterfly_d[level],
-                self.butterfly_U[level])
+                pair, *self._butterfly_live_factors(level, n_live))
             flat = pair.reshape(flat.shape[0], -1)
             flat = flat[:, inv_perm]
         return self._butterfly_unflatten(flat, original_shape)
@@ -2601,20 +2632,18 @@ class GrammarLayer(Layer):
 
         Runs the per-level inverse pair op in reverse level order.
         Composed with ``_butterfly_forward`` this restores the input
-        up to numerical precision (zero-pad slots stay at zero
-        through the inverse cascade since identity init).
+        up to numerical precision. Pairs touching padding remain identity
+        after training too, so stripping the pad cannot discard information.
         """
         flat, original_shape = self._butterfly_flatten(y)
+        n_live = math.prod(original_shape)
         for level in reversed(range(self.n_levels)):
             perm = self.butterfly_perms[level]
             inv_perm = self._butterfly_inverse_perm(perm)
             flat = flat[:, perm]
             pair = flat.reshape(flat.shape[0], -1, 2)
             pair = self._butterfly_pair_reverse(
-                pair,
-                self.butterfly_L[level],
-                self.butterfly_d[level],
-                self.butterfly_U[level])
+                pair, *self._butterfly_live_factors(level, n_live))
             flat = pair.reshape(flat.shape[0], -1)
             flat = flat[:, inv_perm]
         return self._butterfly_unflatten(flat, original_shape)
@@ -3926,6 +3955,352 @@ def isa_part_op(child, parent, sigma=None):
 # `(parent, parent)` or a pole projection -- so a leaf whose path
 # includes any of them carries degraded contiguity information.
 CONTIGUITY_PRESERVING_OPS = frozenset({'pi', 'sigma', 'lift', 'lower', 'not', 'non'})
+
+
+class ConceptsFromPercepts(Layer):
+    """Common interface for a first-level concept-activation readout.
+
+    ``percepts[..., i]`` is signed evidence for ONE identified part or
+    whole code, not an RMS summary of its native vector. Input positions
+    must have stable (space, code) identities; output positions identify
+    concepts. The caller owns that mapping, spatial alignment, candidate
+    admission (normally at most eight references), and the full parallel
+    content needed by reconstruction. This small dense primitive does not
+    search a vocabulary or replace that content with scalar activations.
+
+    Multiple references knit into each concept; multiple concepts may be
+    present simultaneously. The result is independent tanh activations in
+    [-1, 1], not a softmax over concepts. A boolean ``mask`` broadcastable
+    to the input marks observed/admitted evidence. Missing references are
+    omitted, not treated as observed absence (-1). With no evidence at all
+    the result is zero (unknown), even if a learned bias is nonzero.
+
+    ``forward`` and ``conceptsFromPercepts`` have the same tensor contract.
+    This readout is not generally invertible: deliberately reject the
+    identity ``Layer.reverse`` inherited by ordinary utility layers.
+    """
+
+    def __init__(self, nInput, nOutput):
+        if not isinstance(nInput, int) or isinstance(nInput, bool) or nInput < 1:
+            raise ValueError("nInput must be a positive integer")
+        if not isinstance(nOutput, int) or isinstance(nOutput, bool) or nOutput < 1:
+            raise ValueError("nOutput must be a positive integer")
+        super().__init__(nInput, nOutput)
+        # Use the existing additive substrate, but NOT its legacy atanh
+        # input chart: the agreed evidence formula is tanh(b + sum(w*g*e)).
+        # No inverse is claimed for a scalar concept-activation readout.
+        self.sigma = SigmaLayer(nInput, nOutput, nonlinear=False,
+                                invertible=False, ergodic=False)
+        self.layers.append(self.sigma)
+
+    @property
+    def input_weights(self):
+        """Actual connection coefficients [input code, output concept]."""
+        return self.sigma.layer.W
+
+    @property
+    def concept_bias(self):
+        """Per-concept bias [1, output concept], not an ergodic multiplier."""
+        return self.sigma.layer.biasWeight
+
+    def _preactivation(self, percepts, context):
+        raise NotImplementedError("choose Gated or SigmaConceptsFromPercepts")
+
+    def forward(self, percepts, *, mask=None, context=None):
+        if percepts.ndim < 1 or percepts.shape[-1] != self.nInput:
+            raise ValueError("percepts must end in nInput code-specific activations")
+        if not percepts.is_floating_point():
+            raise TypeError("percepts must be floating-point signed evidence")
+        if mask is not None:
+            if mask.dtype != torch.bool:
+                raise TypeError("mask must be boolean; absence is an evidence value")
+            mask = torch.broadcast_to(mask, percepts.shape)
+            # Multiplication by zero would retain NaNs in padding. Missing
+            # evidence is excluded from both the value and its gradient.
+            percepts = torch.where(mask, percepts, torch.zeros_like(percepts))
+        activation = torch.tanh(self._preactivation(percepts, context))
+        if mask is not None:
+            activation = torch.where(mask.any(dim=-1, keepdim=True), activation,
+                                     torch.zeros_like(activation))
+        return activation
+
+    def conceptsFromPercepts(self, percepts, *, mask=None, context=None):
+        """Named entry point; use __call__ so module hooks still run."""
+        return self(percepts, mask=mask, context=context)
+
+    def regularization_loss(self):
+        """Explicit, device-local scalar; no hidden training-loop mutation."""
+        return self.input_weights.new_zeros(())
+
+    def reverse(self, y):
+        raise NotImplementedError(
+            "concept activation is not an inverse carrier; decode the collective field")
+
+
+class GatedConceptsFromPercepts(ConceptsFromPercepts):
+    r"""Learned participation followed by a weighted tanh readout.
+
+    g_ic = sigmoid(gate_logits_ic + sum_d context_d * context_weights_dic)
+    a_c  = tanh(b_c + sum_i evidence_i * g_ic * input_weights_ic)
+
+    The gate intercept identifies a reference/concept pair; optional local
+    context modulates that participation. Context is never a direct output
+    shortcut. Sigmoids are not normalized against one another, and there is
+    no fixed-two preference, hard top-k, STE, or automatic sparsity penalty.
+    Serial recognition can use two inputs, serial construction can use
+    more, and parallel recognition can keep a richer selected set.
+    """
+
+    def __init__(self, nInput, nOutput, *, context_dim=0):
+        if (not isinstance(context_dim, int) or isinstance(context_dim, bool)
+                or context_dim < 0):
+            raise ValueError("context_dim must be a nonnegative integer")
+        super().__init__(nInput, nOutput)
+        self.context_dim = context_dim
+        self.gate_logits = nn.Parameter(torch.zeros(nInput, nOutput))
+        if context_dim:
+            self.context_weights = nn.Parameter(
+                torch.zeros(context_dim, nInput, nOutput))
+        else:
+            self.register_parameter("context_weights", None)
+
+    def gates(self, context=None):
+        """Return [I,C] or [...,I,C] participation; no evidence is consumed."""
+        logits = self.gate_logits
+        if context is not None:
+            if not self.context_dim:
+                raise ValueError("context requires context_dim > 0")
+            if context.ndim < 1 or context.shape[-1] != self.context_dim:
+                raise ValueError("context must end in context_dim features")
+            logits = logits + torch.einsum(
+                "...d,dic->...ic", context, self.context_weights)
+        # An omitted context means neutral, zero-valued context, leaving
+        # the learned reference-specific gate intercepts active.
+        return torch.sigmoid(logits)
+
+    def _preactivation(self, percepts, context):
+        gates = self.gates(context)
+        if context is not None:
+            # Context may be shared across the batch, but must not expand
+            # the evidence batch or silently create additional locations.
+            gates = torch.broadcast_to(
+                gates, (*percepts.shape[:-1], self.nInput, self.nOutput))
+        weights = self.input_weights * gates
+        value = torch.einsum("...i,...ic->...c", percepts, weights)
+        # LinearLayer deliberately separates its affine bias from forward.
+        return self.sigma.layer.forwardBias(value).reshape(
+            *percepts.shape[:-1], self.nOutput)
+
+
+class SigmaConceptsFromPercepts(ConceptsFromPercepts):
+    r"""Simpler tanh(Sigma(e) + b), optionally with connection-wise lasso.
+
+    R(W) = l1_lambda * sum_ic |W_ic| / nOutput
+
+    The penalty is a mean over concepts of each concept's incoming L1
+    norm. It does NOT penalize percept activations, bias, whole-codebook
+    rows, or LDU factors. A code remains available to other concepts when
+    one connection becomes zero. ``l1_lambda=0`` is the unregularized
+    control, and no context-dependent selector is present in this variant.
+
+    Choose ONE training route: add ``regularization_loss()`` to the smooth
+    loss, OR backpropagate the smooth loss alone, take a plain SGD step,
+    then call ``proximal_step_(learning_rate)``. Do not count L1 twice.
+    The latter gives exact zeros via the L1 proximal operator; ordinary
+    Adam plus an L1 gradient need not. Neither route guarantees a support
+    budget of eight, and zero weights alone do not accelerate a dense GEMM.
+    """
+
+    def __init__(self, nInput, nOutput, *, l1_lambda=0.0):
+        l1_lambda = float(l1_lambda)
+        if not math.isfinite(l1_lambda) or l1_lambda < 0:
+            raise ValueError("l1_lambda must be finite and nonnegative")
+        super().__init__(nInput, nOutput)
+        self.l1_lambda = l1_lambda
+
+    def _preactivation(self, percepts, context):
+        if context is not None:
+            raise ValueError("Sigma baseline has no context selector")
+        value = self.sigma(percepts)
+        return self.sigma.layer.forwardBias(value).reshape(
+            *percepts.shape[:-1], self.nOutput)
+
+    def regularization_loss(self):
+        return self.l1_lambda * self.input_weights.abs().sum() / self.nOutput
+
+    @staticmethod
+    def from_coefficients(percepts, coefficients, *, mask=None):
+        """The same affine/tanh law for an indexed bank of concept rows.
+
+        Each ``coefficients[..., I+1]`` row contains I input weights and
+        one bias. Leading dimensions broadcast across locations; this avoids
+        evaluating an entire concept inventory to read a handful of rows.
+        """
+        if int(coefficients.shape[-1]) != int(percepts.shape[-1]) + 1:
+            raise ValueError("Sigma coefficients must contain I weights and one bias")
+        if mask is not None:
+            if mask.dtype != torch.bool:
+                raise TypeError("evidence mask must be boolean")
+            mask = torch.broadcast_to(mask, percepts.shape)
+            percepts = torch.where(mask, percepts, torch.zeros_like(percepts))
+        result = torch.tanh(
+            (percepts * coefficients[..., :-1]).sum(dim=-1)
+            + coefficients[..., -1])
+        if mask is not None:
+            result = torch.where(mask.any(dim=-1), result, torch.zeros_like(result))
+        return result
+
+    @torch.no_grad()
+    def proximal_step_(self, learning_rate):
+        """Soft-threshold W after plain SGD on the smooth loss, not Adam.
+
+        Threshold lr*lambda/nOutput matches the exact normalization of
+        regularization_loss. Bias is untouched, and a later smooth step
+        may reactivate a zero edge. This is not permanent topology pruning.
+        See Parikh & Boyd, Proximal Algorithms, section 6.5.2 (L1 norm).
+        """
+        learning_rate = float(learning_rate)
+        if not math.isfinite(learning_rate) or learning_rate < 0:
+            raise ValueError("learning_rate must be finite and nonnegative")
+        threshold = learning_rate * self.l1_lambda / self.nOutput
+        if threshold:
+            weight = self.input_weights
+            weight.copy_(weight.sign() * (weight.abs() - threshold).clamp_min(0))
+        return self
+
+
+class IndexedSigmaConceptsFromPercepts(Layer):
+    """Plain Sigma readouts, stored row-locally for a large concept bank.
+
+    This is the indexed storage form of SigmaConceptsFromPercepts, not a
+    different activation formula. One concept owns up to ``nInput`` stable
+    (part/whole, code) reference slots and one affine row. There are no gates,
+    source means, or learned selectors. Optional weak connection L1 is applied
+    by the row-local optimizer's diagonal-metric proximal step, not by an
+    additional autograd penalty. Lookup is O(admitted concepts), with sparse
+    gradients for RowLocalAdam; compiled loops consume the gathered rows.
+
+    Reference admission happens only at the eager vocabulary boundary. Slots
+    never silently change identity when new references arrive. All source
+    percepts remain in the collective field even when this bounded readout
+    cannot admit another reference.
+    """
+
+    def __init__(self, nInput, capacity, *, l1_lambda=0.0):
+        super().__init__(int(nInput), int(capacity))
+        if self.nInput < 1 or self.nOutput < 1:
+            raise ValueError("indexed Sigma dimensions must be positive")
+        self.l1_lambda = float(l1_lambda)
+        if not math.isfinite(self.l1_lambda) or self.l1_lambda < 0:
+            raise ValueError("readout L1 must be finite and nonnegative")
+        self.coefficients = nn.Parameter(torch.full((self.nOutput, self.nInput + 1), .5))
+        with torch.no_grad():
+            self.coefficients[:, -1].zero_()
+        self.references = {}
+
+    def admit_references(self, row, parts, wholes):
+        """Append stable typed slots, reserving neither fillers nor four per role."""
+        row = int(row)
+        if not 0 <= row < self.nOutput:
+            raise ValueError("concept row is outside indexed Sigma capacity")
+        slots = list(self.references.get(row, ()))
+        parts = sorted(set(int(code) for code in parts if int(code) >= 0))
+        wholes = sorted(set(int(code) for code in wholes if int(code) >= 0))
+        # Interleave initially so both mereological roles are represented;
+        # either side can use spare slots when the other has fewer references.
+        for rank in range(max(len(parts), len(wholes))):
+            for role, codes in ((0, parts), (1, wholes)):
+                if rank < len(codes):
+                    ref = (role, codes[rank])
+                    if ref not in slots and len(slots) < self.nInput:
+                        slots.append(ref)
+        self.references[row] = tuple(slots)
+        return tuple(slots)
+
+    def lookup_coefficients(self, rows):
+        known = rows >= 0
+        values = F.embedding(rows.clamp_min(0).long(), self.coefficients, sparse=True)
+        return torch.where(known.unsqueeze(-1), values, torch.zeros_like(values))
+
+    def forward(self, percepts, rows, *, mask=None):
+        known = rows >= 0
+        admitted = known.unsqueeze(-1).expand_as(percepts)
+        if mask is not None:
+            admitted = torch.logical_and(admitted, mask)
+        return SigmaConceptsFromPercepts.from_coefficients(
+            percepts, self.lookup_coefficients(rows), mask=admitted)
+
+    def conceptsFromPercepts(self, percepts, rows, *, mask=None):
+        return self(percepts, rows, mask=mask)
+
+    @torch.no_grad()
+    def l1_batch(self, rows, reference_roles):
+        """Observed rows, connection mask, normalized strength and report cost.
+
+        Average incoming L1 over DISTINCT observed concepts, not sentence
+        occurrences or dictionary capacity. Only admitted typed references
+        count; reserved slots and bias are excluded. Returned cost is detached:
+        the optimizer applies this objective once via its proximal update.
+        No vocabulary-wide scan or dense gradient is constructed.
+        """
+        if not self.l1_lambda:
+            return None
+        if (rows.dtype != torch.long or reference_roles.dtype != torch.long
+                or rows.device != self.coefficients.device
+                or reference_roles.device != rows.device
+                or tuple(reference_roles.shape) != (*rows.shape, self.nInput)):
+            raise ValueError("readout L1 requires concept rows and their typed reference slots")
+        flat_rows = rows.reshape(-1)
+        roles = reference_roles.reshape(-1, self.nInput)
+        connections = (roles == 0) | (roles == 1)
+        valid = (flat_rows >= 0) & connections.any(dim=-1)
+        selected, inverse = torch.unique(flat_rows[valid], sorted=True, return_inverse=True)
+        if not selected.numel():
+            return None
+        counts = torch.zeros(selected.numel(), self.nInput,
+                             dtype=torch.long, device=rows.device)
+        counts.index_add_(0, inverse, connections[valid].long())
+        mask = F.pad(counts > 0, (0, 1), value=False)  # bias is not an input
+        coefficients = self.coefficients.index_select(0, selected)
+        strength = self.l1_lambda / selected.numel()
+        cost = strength * torch.where(mask, coefficients.abs(), 0).sum()
+        return selected, mask, strength, cost
+
+    def reverse(self, y):
+        raise NotImplementedError("decode the collective percept field, not the scalar readout")
+
+    def reference_state(self):
+        """Metadata saved with ConceptualSpace.vocab_extras, not tensor state."""
+        return {"version": 1, "references": dict(self.references)}
+
+    def load_reference_state(self, state):
+        if not isinstance(state, dict) or state.get("version") != 1:
+            raise ValueError("unsupported indexed Sigma reference schema")
+        references = {}
+        for row, slots in state.get("references", {}).items():
+            row = int(row)
+            slots = tuple((int(role), int(code)) for role, code in slots)
+            if (not 0 <= row < self.nOutput or len(slots) > self.nInput
+                    or len(set(slots)) != len(slots)
+                    or any(role not in (0, 1) or code < 0 for role, code in slots)):
+                raise ValueError("invalid indexed Sigma reference slots")
+            references[row] = slots
+        self.references = references
+
+    def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
+                              missing_keys, unexpected_keys, error_msgs):
+        key = prefix + "coefficients"
+        value = state_dict.get(key)
+        if torch.is_tensor(value) and tuple(value.shape) != tuple(self.coefficients.shape):
+            if value.dim() == 2 and int(value.shape[1]) == self.nInput + 1:
+                # A larger reserve adds unused rows; learned rows and their
+                # reference identities retain their original addresses.
+                restored = self.coefficients.detach().clone()
+                count = min(int(value.shape[0]), self.nOutput)
+                restored[:count].copy_(value[:count])
+                state_dict[key] = restored
+        super()._load_from_state_dict(state_dict, prefix, local_metadata, strict,
+                                     missing_keys, unexpected_keys, error_msgs)
 
 
 class PiLayer(GrammarLayer):

@@ -119,6 +119,12 @@ def _harness(words, gates, *, chunk, predictor_state=None):
         _ar_word_concept_orders=(
             torch.arange(width).view(1, width).expand(batch, -1) + 2),
         _word_last_slot_mask=gates.clone(),
+        _ar_percept_reference_codes=part_ids.expand(batch, width, 8).clone(),
+        _ar_percept_reference_roles=torch.zeros(batch, width, 8, dtype=torch.long),
+        _ar_part_reference_vectors=torch.zeros(batch, width, 8, dim),
+        _ar_whole_reference_vectors=torch.zeros(batch, width, 8, dim),
+        _ar_readout_coefficients=torch.ones(batch, width, 9),
+        _ar_whole_reference_presence=torch.ones(batch, width, 3, 8),
         # These sentence-wide surfaces must not be sliced by the adapter.
         _ar_concept_lookup_rows=torch.arange(8).view(1, 8).expand(batch, -1),
         _ar_concept_lookup_atoms=torch.randn(batch, 8, dim),

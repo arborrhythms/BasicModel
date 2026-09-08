@@ -66,6 +66,11 @@ def _bare_cs(n_locations=8, n_rows=16):
         rows[row, :4] = float(row)
         rows[row, 4:] = 999.0  # bands must come from STM, not the codebook
     cs.similarity_codebook = _IndexedRows(rows)
+    from Layers import SigmaConceptsFromPercepts
+    cs.concept_source_readout = SigmaConceptsFromPercepts(9, 1)
+    with torch.no_grad():
+        cs.concept_source_readout.input_weights.fill_(.05)
+        cs.concept_source_readout.concept_bias.zero_()
     return cs
 
 
@@ -258,11 +263,11 @@ def test_seventh_source_is_location_masked_and_unbind_ignores_ss():
         symbol_validity=valid)
 
     assert carrier.shape == (1, 7, 8, 8)
-    assert torch.equal(
-        out.materialize()[:, 0], torch.full((1, 8), 5.0))
-    # No fixed-seven dilution: absent SS leaves mean(1..6) == 3.5.
-    assert torch.equal(
-        out.materialize()[:, 1], torch.full((1, 8), 3.5))
+    torch.testing.assert_close(out.materialize()[:, 0, :4], torch.full((1, 4), 1.75).tanh())
+    # No divisor: absent SS contributes nothing to the same Sigma readout.
+    torch.testing.assert_close(out.materialize()[:, 1, :4], torch.full((1, 4), 1.05).tanh())
+    # The first source's exact band is metadata, not a learned/averaged value.
+    torch.testing.assert_close(out.materialize()[..., 4:], part[0][..., 4:])
     assert out._fold_support["source_count"] == 7
     assert out._fold_support["symbol_sources"] == [{
         "kind": "prior_stm",
@@ -277,5 +282,5 @@ def test_seventh_source_is_location_masked_and_unbind_ignores_ss():
         out._fold_support)["symbol_sources"][0]["prior_tick"] is True
 
     recovered_part, recovered_whole = cs.unbind(out)
-    assert torch.equal(recovered_part, torch.full((1, 8, 8), 2.0))
-    assert torch.equal(recovered_whole, torch.full((1, 8, 8), 5.0))
+    assert torch.equal(recovered_part, part[-1])
+    assert torch.equal(recovered_whole, whole[-1])

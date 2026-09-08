@@ -217,6 +217,8 @@ retired 2026-05-14; sentence-level AR moved to
 |------|--------|
 | `maskRate` | Bernoulli mask probability at the subsymbolic (PS) (BERT default 0.15) |
 | `reconstructionScale` | Blend weight between output and reconstruction loss; `total = (1 - r)*output + r*recon`.  Legacy `<reverseScale>` parsed with deprecation warning. |
+| `reconstructionPriority` | Remove opposing output-gradient components on optimizer-owned PartSpace, WholeSpace, and ConceptualSpace parameters, then cap their norms relative to reconstruction. BasicModel enables this; legacy configs default off. Uses separate autograd traversals and one optimizer step. |
+| `outputGradientRatio` | Maximum protected output/reconstruction gradient-norm ratio, per parameter tensor; default `0.5`, required `0 <= ratio < 1`. A missing/zero reconstruction gradient gives output no budget there. Independent SymbolSpace/OutputSpace heads retain ordinary credit. |
 | `detachedReverse` | On the serial grammar training path, replace D3 trace replay with the static idea-only reverse chooser. Its input is `stopgrad(S)` and its targets live in `SymbolSubSpace.reconstruction_stack`. |
 | `leafDistillWeight` | With `detachedReverse`, weight the chooser's bounded exact-leaf surface term. Without it, retain the legacy standalone root-to-leaf distillation head. |
 | `forwardGrammarWeight` | Weight the bounded, one-fold structural contrast recorded for committed unary/binary grammar choices. `0` disables this branch. |
@@ -369,6 +371,15 @@ $$\mathcal{L}_{\text{total}} = \mathcal{L}_{\text{model}} + \lambda \cdot \mathc
 
 where $\lambda$ is `<embeddingScale>` (default 0.1).
 
+When `reconstructionPriority` is enabled and a supervised output loss is
+active, the optimizer seam separates the primary branch gradients before the
+single update. It removes output's opposing component on P/W/concept
+parameters and caps the remainder by `outputGradientRatio`; SBOW remains an
+auxiliary contribution. This is a first-order gradient constraint, not a
+monotonic-loss guarantee under Adam or momentum. Unlabeled batches keep the
+ordinary single backward. A detached reconstruction supplies no protected
+output budget; the policy does not reconnect its graph.
+
 SBOW loss uses the same negative-sampling objective, with $s(a, b)$ the
 wrapped-MSE torus similarity (`_wrapped_mse_score`) rather than a dot
 product:
@@ -388,6 +399,34 @@ very different curvature, $\lambda$ may need tuning.
 - Output dim is the embedding dim (~100) vs. vocab size (~200K).
 
 ### Training Loop
+
+The live aligned P/W-to-concept handoff uses plain Sigma:
+`a_c = tanh(b_c + sum_i W_ci * evidence_i)`. Inputs are up to eight identified
+part/whole-code references at a location, not fold RMS scalars; there is no
+source-count mean or gate. BasicModel opts into weak incoming-connection L1
+with `ConceptualSpace/conceptReadoutL1=0.01` (absent/zero disables it). Each
+concept's weights/bias are gathered from `IndexedSigmaConceptsFromPercepts`
+at sentence staging, then consumed by
+the eager or compiled word loop. Sparse gradients use the compact row-local
+optimizer and participate in the same reconstruction-priority parameter set.
+Within the single optimizer step, a diagonal-metric L1 prox soft-thresholds
+only admitted input connections. Its threshold is
+`lr * (lambda / distinct_observed_concepts) / (sqrt(v_hat) + eps)`;
+biases and unused slots are excluded. `concept_readout_l1` is a separate
+detached reporting cost, not another backpropagated penalty. Output-gradient
+projection stays unchanged; L1 itself is an intentional sparsity/accuracy
+tradeoff, not a promise of monotonic reconstruction improvement. Policies are
+batch-local, never applied in evaluation, and cleared at the next `zero_grad`
+after a skipped update.
+If the readout has no learning gradient (`grad=None`), it is left untouched:
+the current detached reverse boundary can still disconnect it from accuracy
+feedback, and sparsity alone must not collapse the definition. Coupled
+reconstruction updates and detached no-update behavior are tested separately.
+There is no second optimization step. Full processed native fold state remains
+separate from this scalar readout and is released at batch/sentence teardown.
+Checkpoint coefficient tensors and the conceptual vocabulary's reference
+manifest must be restored together. See the unified spec, section 5.5, for
+the remaining collective-decoding and benchmark acceptance gates.
 
 Data flows through `SentenceStreamDataset` wrapped in `DataLoader`. The
 ordered training list is split into `B = batchSize` contiguous slabs of
@@ -444,7 +483,9 @@ For each B-wide batch:
      `conceptual_sbow`, `definition_sparsity`, `answer`, `thinking`,
      `predict_next`, `leaf_distill`, `gate_l1` --- plus any auxiliary
      terms the pipeline Spaces wrote to their shared `Error` instance.
-7. One `backward()` + `optimizer.step()` per DataLoader yield.
+7. One `optimizer.step()` per DataLoader yield. Normally one `backward()`;
+   active `reconstructionPriority` uses separate branch traversals before
+   projection and the same single update.
 8. Embedding training (`CBOW`/`SBOW`/`BOTH`) runs once per batch.
 
 ---

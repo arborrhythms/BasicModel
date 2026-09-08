@@ -105,9 +105,12 @@ def _unorm_ste(x: torch.Tensor) -> torch.Tensor:
     (doc/Spaces.md#percept-bounded-encodings): the forward VALUE is
     ``clamp(x, 0, 1)`` (so every READER sees a
     coordinate on the positive unit cube), but the gradient passes straight
-    through to the unclamped master ``x``. Without the STE, JOINT backprop
-    would push the codes back off the cube (task fact #1); with it, the
-    optimizer keeps a float master while every read is on [0,1].
+    through to the unclamped master ``x``. An ordinary clamp has zero
+    derivative outside the cube, so an out-of-range master coordinate can
+    be stranded there despite a reconstruction gradient pointing back in.
+    The STE retains that corrective gradient; it does NOT constrain the
+    master parameter itself. This is a bounded-read estimator, not nearest-
+    code selection: lookup_rows already gathers the exact selected rows.
 
     Identity on rows already inside [0,1]; the ``.detach()`` term makes the
     saturation gradient-transparent (``d/dx == 1`` everywhere). The upper

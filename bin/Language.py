@@ -12994,7 +12994,7 @@ class SymbolSubSpace(SubSpace):
                              allow_excluded_middle=1,
                              allow_contradiction=0,
                              balance_weight=0.1,
-                             model=None):
+                             model=None, gradient_objectives=None):
         """Apply the SymbolSpace-owned TruthLayer modulation to a loss.
 
         The transform has two parts:
@@ -13027,6 +13027,12 @@ class SymbolSubSpace(SubSpace):
         ``symbol_acts``, ``universality_score``, the three weights)
         are passed explicitly so SymbolSpace never needs a back-
         reference to the model.
+
+        When supplied, ``gradient_objectives`` contains weighted primary
+        losses used for reconstruction-priority differentiation. Apply the
+        SAME live multiplier to those branches, including its derivative;
+        detaching it would misattribute credit to shared parameters. Additive
+        truth/balance penalties remain independent auxiliary objectives.
         """
         if self.truth_layer is None or self.truth_layer.is_empty():
             return total_loss
@@ -13050,8 +13056,12 @@ class SymbolSubSpace(SubSpace):
         else:
             u_norm = torch.tensor(0.0, device=total_loss.device)
 
-        total_loss = total_loss * (1 + luminosity_weight * (1 - lum_norm)
-                                     + universality_weight * (1 - u_norm))
+        multiplier = (1 + luminosity_weight * (1 - lum_norm)
+                      + universality_weight * (1 - u_norm))
+        total_loss = total_loss * multiplier
+        if gradient_objectives is not None:
+            for name, objective in gradient_objectives.items():
+                gradient_objectives[name] = objective * multiplier
 
         if truth_loss_weight > 0 and symbol_acts is not None:
             basis = getattr(

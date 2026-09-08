@@ -156,18 +156,16 @@ def test_sparse_decode_cost_tracks_selected_rows_not_inventory_width():
     assert cs.similarity_codebook.lookup_sizes == [rows.numel()]
 
 
-def test_source_native_fold_activation_is_normalized_before_concept_decode():
-    """Native width cannot become an accidental activation-strength prior."""
-    small = torch.ones(1, 2, 8)
-    wide = torch.ones(1, 2, 128)
-
-    assert not hasattr(ConceptualSpace, "native_fold_presence")
-    a_small = Space.native_fold_activation(small, 8)
-    a_wide = Space.native_fold_activation(wide, 128)
-
-    expected = torch.ones(1, 2)
-    assert torch.allclose(a_small, expected)
-    assert torch.allclose(a_wide, expected)
+def test_code_specific_evidence_distinguishes_equal_energy_patterns():
+    assert not hasattr(Space, "native_fold_activation")
+    events = torch.tensor([[[1., 0.], [0., 1.], [0., 0.]]])
+    codes = torch.tensor([[[1., 0.], [0., 1.]]])
+    evidence = ConceptualSpace.matched_code_evidence(events, codes, 2)
+    torch.testing.assert_close(evidence, torch.tensor([[[1., -1.], [-1., 1.], [0., 0.]]]))
+    # Replicating the native coordinates preserves the code match, not just
+    # an unaddressed native magnitude.
+    torch.testing.assert_close(evidence, ConceptualSpace.matched_code_evidence(
+        events.repeat_interleave(4, -1), codes.repeat_interleave(4, -1), 8))
 
 
 def test_membership_activations_decode_to_signed_bounded_concepts():

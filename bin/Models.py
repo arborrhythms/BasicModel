@@ -66,7 +66,8 @@ from architecture import canonical_shape
 import util as _util
 from embed import WordVectors, PretrainModel, _random_unit_ball
 from Optimizer import (Adam, SparseAdam, RowLocalAdam, MultiOptimizer,
-                       preflight_finite_gradients)
+                       preflight_finite_gradients,
+                       backward_reconstruction_priority, configure_l1_proximal)
 from checkpoint_migrations import (
     LEGACY_WHOLE_STRUCTURE_KEY,
     OPTIMIZER_PARAM_NAMES_KEY,
@@ -2308,6 +2309,16 @@ class BaseModel(Mereology, nn.Module):
         # layers and returned through ReconstructionStack's fixed loss slab.
         self.detached_reverse = bool(
             TheXMLConfig.training("detachedReverse", False))
+        # Opt-in for legacy experiments; BasicModel enables this policy.
+        # It protects P/W/concept parameters, including tied inverse uses,
+        # without suppressing the independent symbolic/output decoder heads.
+        self.reconstruction_priority = bool(
+            TheXMLConfig.training("reconstructionPriority", False))
+        self.output_gradient_ratio = float(
+            TheXMLConfig.training("outputGradientRatio", 0.5))
+        if (not math.isfinite(self.output_gradient_ratio)
+                or not 0.0 <= self.output_gradient_ratio < 1.0):
+            raise ValueError("outputGradientRatio must satisfy 0 <= ratio < 1")
         self.forward_grammar_weight = float(
             TheXMLConfig.training("forwardGrammarWeight", 0.0) or 0.0)
         _pack_env = os.environ.get("BASIC_PACK_SENTENCES")
@@ -2472,6 +2483,70 @@ class BaseModel(Mereology, nn.Module):
         """
         pass
 
+    def _reconstruction_priority_parameters(self, optimizer):
+        """Live optimizer-owned perceptual/conceptual parameters, once each.
+
+        Walk all orders, including WholeSpace (W = whole), rather than only
+        the final concept carrier. Non-grad context-rotation dictionaries
+        and parameters excluded by trainEmbedding retain their own ownership.
+        SymbolSpace and OutputSpace's independent heads are not protected.
+        """
+        owned = {
+            p.data_ptr(): p for group in optimizer.param_groups
+            for p in group["params"] if p.requires_grad}
+        selected = {}
+        for space in self.spaces:
+            if isinstance(space, (PartSpace, WholeSpace, ConceptualSpace)):
+                for p in space.getParameters():
+                    ptr = p.data_ptr()
+                    if ptr in owned:
+                        selected[ptr] = owned[ptr]
+        return list(selected.values())
+
+    def _backward_training_loss(self, total_loss, objectives, optimizer,
+                                amp_scaler=None):
+        """One parameter version and one later optimizer step for both costs."""
+        if objectives is None:
+            loss = (amp_scaler.scale(total_loss)
+                    if amp_scaler is not None else total_loss)
+            loss.backward()
+            return
+        reconstruction, output = (
+            objectives["reconstruction"], objectives["output"])
+        if amp_scaler is not None:
+            total_loss = amp_scaler.scale(total_loss)
+            reconstruction = amp_scaler.scale(reconstruction)
+            output = amp_scaler.scale(output)
+        backward_reconstruction_priority(
+            total_loss, reconstruction, output,
+            self._reconstruction_priority_parameters(optimizer),
+            max_ratio=self.output_gradient_ratio)
+
+    def _configure_concept_readout_l1(self, optimizer):
+        """Stage one weak-L1 update and return its detached reporting cost.
+
+        Match the first-stage owner used by _stage_sparse_concept_support;
+        shared stage aliases must not multiply either the cost or the update.
+        L1 is an intentional sparse-basis tradeoff, not reconstruction or
+        output error, and does not enter their gradient projection twice.
+        """
+        spaces = list(getattr(self, "conceptualSpaces", None) or ())
+        owner = spaces[0] if spaces else getattr(self, "conceptualSpace", None)
+        readout = getattr(owner, "concepts_from_percepts", None)
+        if readout is None or not readout.l1_lambda:
+            return None
+        isp = getattr(self, "inputSpace", None)
+        rows = getattr(isp, "_ar_word_concept_rows", None)
+        roles = getattr(isp, "_ar_percept_reference_roles", None)
+        if not torch.is_tensor(rows) or not torch.is_tensor(roles):
+            return None  # no live indexed concept readout in this presentation
+        batch = readout.l1_batch(rows, roles)
+        if batch is None:
+            return None
+        selected, mask, strength, cost = batch
+        configure_l1_proximal(optimizer, readout.coefficients, selected, mask, strength)
+        return cost
+
     def getOptimizer(self, lr=0.01):
         """Build an Adam optimizer over all trainable parameters.
 
@@ -2571,6 +2646,10 @@ class BaseModel(Mereology, nn.Module):
         row_local_ptrs = set()
         seen_codebooks = set()
         for cs in list(getattr(self, "conceptualSpaces", None) or ()):
+            readout = getattr(cs, "concepts_from_percepts", None)
+            coefficients = getattr(readout, "coefficients", None)
+            if isinstance(coefficients, nn.Parameter) and coefficients.requires_grad:
+                row_local_ptrs.add(coefficients.data_ptr())
             cb = getattr(cs, "similarity_codebook", None)
             if cb is None or id(cb) in seen_codebooks:
                 continue
@@ -3083,9 +3162,11 @@ class BaseModel(Mereology, nn.Module):
         moments are padded separately by
         :meth:`_normalize_optimizer_state_shapes`.
 
-        Only row-aligned state belonging to one of the ConceptualSpace
-        dictionaries returned by :meth:`_aligned_capacity_codebooks` is
-        eligible.  WholeSpace property state and legacy ``analysis_store``
+        Only row-aligned state belonging to the ConceptualSpace dictionaries
+        or their indexed Sigma readouts is eligible. Readout rows use the
+        same stable concept addresses and must expand before autoload's
+        shape preflight, not just inside a module load hook. WholeSpace
+        property state and legacy ``analysis_store``
         state are intentionally excluded, even when their row counts happen
         to equal the concept capacity.
         """
@@ -3101,9 +3182,17 @@ class BaseModel(Mereology, nn.Module):
         concept_codebook_ids = {
             id(cb) for cb in self._aligned_capacity_codebooks()
         }
+        readout_ids = {
+            id(cs.concepts_from_percepts)
+            for cs in list(getattr(self, "conceptualSpaces", None) or ())
+            if getattr(cs, "concepts_from_percepts", None) is not None
+        }
         row_keys = ("W", "vq.cluster_size", "vq.embed_avg",
                     "vq._b_norms_sq", "vq.active_mask")
         for name, module in named:
+            if id(module) in readout_ids:
+                eligible.add(f"{name}.coefficients" if name else "coefficients")
+                continue
             if (not isinstance(module, Codebook)
                     or id(module) not in concept_codebook_ids):
                 continue
@@ -8278,6 +8367,10 @@ class BasicModel(BaseModel):
         isp._ar_word_object_atoms = None
         isp._ar_concept_lookup_rows = None
         isp._ar_concept_lookup_atoms = None
+        for name in ("_ar_percept_reference_codes", "_ar_percept_reference_roles",
+                     "_ar_part_reference_vectors", "_ar_whole_reference_vectors",
+                     "_ar_readout_coefficients", "_ar_whole_reference_presence"):
+            setattr(isp, name, None)
         aligned = self._aligned_serial_word_mode()
         if not aligned:
             return None
@@ -8332,10 +8425,12 @@ class BasicModel(BaseModel):
         object_row_host = [[-1] * W for _ in range(B)]
         object_cid_host = [[-1] * W for _ in range(B)]
         object_order_host = [[-1] * W for _ in range(B)]
+        reference_codes = [[[-1] * 8 for _ in range(W)] for _ in range(B)]
+        reference_roles = [[[-1] * 8 for _ in range(W)] for _ in range(B)]
         pending = []
         # One base presentation plus T-1 cumulative native folds. The concept
-        # activation draws from all T-1 PS and all T-1 WS fold results, so that
-        # final cumulative depth is its actual subsymbolic order.
+        # activation reads the completed native fields while retaining the
+        # full fold ladders, so final depth is its actual subsymbolic order.
         actual_order = max(0, int(getattr(self, "subsymbolicOrder", 1)) - 1)
         fold_passes = tuple(range(actual_order))
         fold_support = owner._ordered_fold_support(
@@ -8415,6 +8510,11 @@ class BasicModel(BaseModel):
                     pending.append((b, p, key))
                     continue
                 row_host[b][p] = int(row)
+                slots = owner.concepts_from_percepts.admit_references(
+                    row, stored_parts, stored_wholes)
+                for slot, (role, code) in enumerate(slots):
+                    reference_codes[b][p][slot] = code
+                    reference_roles[b][p][slot] = role
                 cid_host[b][p] = A
                 record = owner.record_concept_fold_support(
                     A, fold_support, actual_order)
@@ -8436,6 +8536,34 @@ class BasicModel(BaseModel):
             object_cid_host, dtype=torch.long, device=part_ids.device)
         isp._ar_word_object_orders = torch.tensor(
             object_order_host, dtype=torch.long, device=part_ids.device)
+        codes = torch.tensor(reference_codes, dtype=torch.long, device=part_ids.device)
+        roles = torch.tensor(reference_roles, dtype=torch.long, device=part_ids.device)
+        isp._ar_percept_reference_codes = codes
+        isp._ar_percept_reference_roles = roles
+        part_codes = torch.where(roles == 0, codes, torch.zeros_like(codes))
+        whole_codes = torch.where(roles == 1, codes, torch.zeros_like(codes))
+        ps = self.perceptualSpace
+        part_vectors = ps.subspace.what.lookup_rows(part_codes)
+        whole_vectors = ws.subspace.what.lookup_rows(whole_codes)
+        # These are exact selected prototype reads, never a vocabulary scan.
+        # The compiler sees the small sentence bank; sparse encoder gradients
+        # and indexed Sigma gradients are formed outside the while-loop HOP.
+        isp._ar_part_reference_vectors = F.pad(
+            part_vectors[..., :int(ps.nWhat)],
+            (0, max(0, int(ps.nWhat) - int(part_vectors.shape[-1]))))
+        isp._ar_whole_reference_vectors = F.pad(
+            whole_vectors[..., :int(ws.nWhat)],
+            (0, max(0, int(ws.nWhat) - int(whole_vectors.shape[-1]))))
+        isp._ar_readout_coefficients = owner.concepts_from_percepts.lookup_coefficients(rows)
+        properties = ws._staged_word_property_weights
+        if torch.is_tensor(properties):
+            indices = whole_codes.unsqueeze(2).expand(B, W, int(properties.shape[2]), 8)
+            gathered = properties.gather(-1, indices)
+            isp._ar_whole_reference_presence = torch.where(
+                properties.any(dim=-1, keepdim=True), gathered,
+                torch.full_like(gathered, -1))
+        else:
+            isp._ar_whole_reference_presence = None
         # Perform the only contextual dictionary read once at this eager
         # boundary. The compiled word loop resolves all current/prior lexical
         # references against this small sentence bank. The read-only boundary
@@ -9848,6 +9976,19 @@ class BasicModel(BaseModel):
                 intra_loss = None
 
             totalLoss = self.teacher.primary_loss(lossOut, lossIn, sbow)
+            # Mirror the actual weighted branches, not just their logged raw
+            # losses. The legacy ModelLoss uses complementary rr / (1-rr)
+            # weights; independent primary weights belong to the output-path
+            # migration. Unlabeled/rr=1 runs pay no extra autograd traversals.
+            gradient_objectives = None
+            _rr = float(self.loss.reconstruction_scale)
+            if (train and trial_mode != "predict"
+                    and getattr(self, "reconstruction_priority", False)
+                    and lossOut.requires_grad and (1.0 - _rr) > 0.0):
+                gradient_objectives = {
+                    "reconstruction": _rr * lossIn,
+                    "output": (1.0 - _rr) * lossOut,
+                }
             grammar_local = None
             _fgw = float(getattr(
                 self, "forward_grammar_weight", 0.0) or 0.0)
@@ -9885,6 +10026,9 @@ class BasicModel(BaseModel):
                 totalLoss = totalLoss + (
                     float(getattr(self.loss, 'reconstruction_scale', 0.0)
                           or 0.0) * lossRev)
+                if gradient_objectives is not None:
+                    gradient_objectives["reconstruction"] = (
+                        gradient_objectives["reconstruction"] + _rr * lossRev)
             if arma_loss is not None:
                 totalLoss = totalLoss + self.arma_scale * arma_loss
                 self.teacher.add(
@@ -9927,6 +10071,12 @@ class BasicModel(BaseModel):
                 if aux_total is not None:
                     totalLoss = totalLoss + aux_total
                     for name, tensor, weight, space, category in pipeline_errors.terms():
+                        if (gradient_objectives is not None
+                                and category == "reconstruction"
+                                and category not in pipeline_errors._disabled):
+                            gradient_objectives["reconstruction"] = (
+                                gradient_objectives["reconstruction"]
+                                + weight * tensor)
                         self.teacher.add(
                             name, tensor, weight=weight,
                             space=space, category=category)
@@ -10000,6 +10150,10 @@ class BasicModel(BaseModel):
                     ld_loss = None     # distillation must not abort training
                 if ld_loss is not None:
                     totalLoss = totalLoss + self.leaf_distill_weight * ld_loss
+                    if gradient_objectives is not None:
+                        gradient_objectives["reconstruction"] = (
+                            gradient_objectives["reconstruction"]
+                            + self.leaf_distill_weight * ld_loss)
                     self.teacher.add(
                         "leaf_distill", ld_loss,
                         weight=self.leaf_distill_weight,
@@ -10035,6 +10189,7 @@ class BasicModel(BaseModel):
                     allow_excluded_middle=getattr(self, 'allow_excluded_middle', 1),
                     allow_contradiction=getattr(self, 'allow_contradiction', 0),
                     model=self,
+                    gradient_objectives=gradient_objectives,
                 )
                 # Gate-L1 sparsity penalty on LiftLayer / LowerLayer
                 # raw_gate parameters. Pulls unused singular-component
@@ -10054,6 +10209,17 @@ class BasicModel(BaseModel):
                 # bookkeeping retired with the chart itself. The
                 # <loadBalanceWeight> knob stands by for any future
                 # signal-router rule load-balancing; no consumer yet.
+
+            if train:
+                readout_l1 = self._configure_concept_readout_l1(optimizer)
+                if readout_l1 is not None:
+                    # Reporting only: the single optimizer step handles the
+                    # non-smooth L1 term in Adam's diagonal metric. Adding its
+                    # subgradient here would penalize every connection twice.
+                    totalLoss = totalLoss + readout_l1
+                    self.teacher.add(
+                        "concept_readout_l1", readout_l1, weight=1.0,
+                        space="ConceptualSpace", category="reg")
 
             # Snapshot the breakdown before the backward pass so later
             # calls to TheError.covariance() can see it in the history
@@ -10148,7 +10314,8 @@ class BasicModel(BaseModel):
             if amp_scaler is not None:
                 # fp16 on CUDA: scale grads to avoid underflow, then unscale
                 # inside scaler.step() before the actual optimizer update.
-                amp_scaler.scale(totalLoss).backward()
+                self._backward_training_loss(
+                    totalLoss, gradient_objectives, optimizer, amp_scaler)
                 self._assert_finite_train_state("after backward")
                 if self.ergodic:
                     self.paramUpdate()
@@ -10158,7 +10325,8 @@ class BasicModel(BaseModel):
                 amp_scaler.step(optimizer)
                 amp_scaler.update()
             else:
-                totalLoss.backward()
+                self._backward_training_loss(
+                    totalLoss, gradient_objectives, optimizer)
                 self._assert_finite_train_state("after backward")
                 preflight_finite_gradients(
                     optimizer, self.named_parameters(),
@@ -11560,6 +11728,7 @@ class BasicModel(BaseModel):
             and _serial_meta
             and _serial_requested)
         _shared_concept_dictionary = None
+        _shared_percept_readout = None
         # Fold provenance is keyed by the same stable concept identities as the
         # shared aligned dictionary.  Keep one host-side registry across every
         # conceptual stage as well: stage 0 resolves/adopts identities, while
@@ -11754,6 +11923,8 @@ class BasicModel(BaseModel):
                     _shared_concept_dictionary
                     if _share_concept_dictionary else None),
                 indexed_similarity_codebook=_aligned_codebook_sources,
+                shared_percept_readout=(
+                    _shared_percept_readout if _share_concept_dictionary else None),
             )
             if _shared_concept_fold_support is not None:
                 object.__setattr__(
@@ -11761,6 +11932,7 @@ class BasicModel(BaseModel):
                     _shared_concept_fold_support)
             if _share_concept_dictionary and _shared_concept_dictionary is None:
                 _shared_concept_dictionary = cs.similarity_codebook
+                _shared_percept_readout = cs.concepts_from_percepts
             if _aligned_codebook_sources:
                 # The serial aligned path reaches the million-row dictionary
                 # only through indexed concept identities.  Preserve that
@@ -14450,6 +14622,9 @@ class BasicModel(BaseModel):
             "_ar_word_concept_rows",
             "_ar_word_concept_orders",
             "_word_last_slot_mask",
+            "_ar_percept_reference_codes", "_ar_percept_reference_roles",
+            "_ar_part_reference_vectors", "_ar_whole_reference_vectors",
+            "_ar_readout_coefficients", "_ar_whole_reference_presence",
         )
         dynamic_part_names = {
             "_ar_word_part_ids",
@@ -14812,9 +14987,10 @@ class BasicModel(BaseModel):
         # Universe every pump (the carrier arrives as cs_out feedback);
         # the earlier bootstrap-only law reacted to a misdiagnosed
         # flatline (valid_mask collapse -- exec notes item 36).
-        # Preserve H0 before the cumulative pi ladder replaces WS_base's live
-        # event with H3. H0 is the whole-side peer of the parameter-free P0
-        # word union and contributes its own bounded RMS evidence to CS.
+        # Preserve W0 before the cumulative pi ladder replaces WS_base's live
+        # event with W3. W0 is the whole-side peer of the parameter-free P0
+        # word union. The entire processed field is kept beside the addressed
+        # concept readout; no fold is collapsed to RMS evidence.
         whole_base_event = (
             WS_base.materialize() if aligned_fold_binding else None)
         whole_folds = None
@@ -14847,44 +15023,19 @@ class BasicModel(BaseModel):
             isp._word_last_slot_mask[:, p:p + 1]
             if word_commit_mode else gate_b_1)
 
-        decoded_fold_sources = None
         concept_orders_full = None
         prior_symbol_source = None
         prior_symbol_validity = None
         word_concept_row = None
         word_concept_activation = None
-        base_part_count = 0
-        base_whole_count = 0
         if aligned_fold_binding:
-            # Each tower completes its native recursion first. Only the scalar
-            # activation normalized by that source crosses into concept-index
-            # space; this normalization is not another learned sigma/pi fold.
-            # The indexed CS dictionary read below is the dimensional increase.
-            # There is no PS->WS edge and no coordinate adapter owned by CS.
+            # Each tower completes its native recursion before the addressed
+            # part/whole-code evidence enters the plain Sigma readout. Full
+            # native fields remain alongside that readout for reconstruction.
             n_locations = int(cs.outputShape[0])
 
-            def _fit_locations(event, label):
-                if not torch.is_tensor(event) or event.dim() != 3:
-                    raise RuntimeError(
-                        f"{label} native fold must be a [B,N,D] tensor")
-                have = int(event.shape[1])
-                if have > n_locations:
-                    raise RuntimeError(
-                        f"{label} native fold has {have} locations but CS "
-                        f"accepts {n_locations}; locations cannot be truncated")
-                if have == n_locations:
-                    return event
-                return torch.cat([
-                    event,
-                    event.new_zeros(
-                        int(event.shape[0]), n_locations - have,
-                        int(event.shape[2])),
-                ], dim=1)
-
-            # P0 is the complete coordinatewise union of this word's residual
-            # parts. It is a distinct, parameter-free PS contribution: its
-            # activation is RMS(P0), i.e. RMS(union), before any learned sigma
-            # order raise. Keep P1..P3 as independent contributions as well.
+            # P0 is the parameter-free union of the word's residual parts.
+            # Keep it and the complete learned ladder, not scalar summaries.
             # P0 is retained on PS's own working carrier.  InputSpace remains
             # read-only to the PS peer, so the raw input carrier is never used
             # as a cross-space scratch surface.
@@ -14893,18 +15044,12 @@ class BasicModel(BaseModel):
                 base_event = getattr(
                     PS_base, "_word_local_base_event", None)
                 if torch.is_tensor(base_event):
-                    base_parts = (_fit_locations(base_event, "PS base P0"),)
-            base_part_count = len(base_parts)
-            native_parts = tuple(
-                _fit_locations(event, f"PS fold {i + 1}")
-                for i, event in enumerate(part_folds))
+                    base_parts = (base_event,)
+            native_parts = tuple(part_folds)
             base_wholes = ()
             if torch.is_tensor(whole_base_event):
-                base_wholes = (_fit_locations(whole_base_event, "WS base H0"),)
-            base_whole_count = len(base_wholes)
-            native_wholes = tuple(
-                _fit_locations(event, f"WS fold {i + 1}")
-                for i, event in enumerate(whole_folds))
+                base_wholes = (whole_base_event,)
+            native_wholes = tuple(whole_folds)
             native_part_sources = base_parts + native_parts
             native_whole_sources = base_wholes + native_wholes
             native_sources = native_part_sources + native_whole_sources
@@ -14935,30 +15080,22 @@ class BasicModel(BaseModel):
                                 torch.full_like(row_b, -1))
             order_b = torch.where(active_rows, order_b,
                                   torch.full_like(order_b, -1))
-            concept_rows = row_b.unsqueeze(1).expand(-1, n_locations)
             concept_orders_full = order_b.unsqueeze(1).expand(
                 -1, n_locations)
 
             part_what = int(ps.nWhat)
             whole_what = int(ws.nWhat)
-            activations = torch.stack([
-                ps.native_fold_activation(event, part_what)
-                for event in native_part_sources
-            ] + [
-                ws.native_fold_activation(event, whole_what)
-                for event in native_whole_sources
-            ], dim=1)
-            source_bands = torch.stack([
-                event[..., part_what:] for event in native_part_sources
-            ] + [
-                event[..., whole_what:] for event in native_whole_sources
-            ], dim=1)
-            decoded_fold_sources = cs.decode_sparse_concept_rows(
-                concept_rows, activations, source_bands,
-                staged_rows=getattr(
-                    isp, "_ar_concept_lookup_rows", None),
-                staged_atoms=getattr(
-                    isp, "_ar_concept_lookup_atoms", None))
+            reference_codes = isp._ar_percept_reference_codes[:, p]
+            reference_roles = isp._ar_percept_reference_roles[:, p]
+            presence_bank = isp._ar_whole_reference_presence
+            presence = None if presence_bank is None else presence_bank[:, p]
+            evidence, evidence_mask = cs.percept_code_evidence(
+                native_part_sources[-1],
+                native_whole_sources[-1],
+                isp._ar_part_reference_vectors[:, p],
+                isp._ar_whole_reference_vectors[:, p], reference_roles, active_rows,
+                part_n_what=part_what, whole_n_what=whole_what,
+                whole_presence=presence)
 
             # Canonical SS peer: read the complete *prior* STM slab before
             # this word enters CS. Slot i maps directly to location i. The
@@ -14972,24 +15109,17 @@ class BasicModel(BaseModel):
                     staged_atoms=getattr(
                         isp, "_ar_concept_lookup_atoms", None)))
 
-            # BasicModel contributes P0..P3 and H0..H3. General aligned
-            # fixtures retain their configured fold count; SS increments the
-            # denominator only at locations where it exists.
-            native_count = int(decoded_fold_sources.shape[1])
-            denominator = (
-                torch.full_like(
-                    prior_symbol_validity, float(native_count),
-                    dtype=decoded_fold_sources.dtype)
-                + prior_symbol_validity.to(decoded_fold_sources.dtype))
-            concept_event = (
-                decoded_fold_sources.sum(dim=1) + prior_symbol_source
-            ) / denominator.unsqueeze(-1)
-            word_concept_row = row_b
-            word_concept_activation = (
-                activations[:, :, 0].sum(dim=1) / denominator[:, 0])
-            word_concept_activation = torch.where(
-                word_concept_row >= 0, word_concept_activation,
-                torch.zeros_like(word_concept_activation))
+            (concept_event, concept_orders_full, word_concept_row,
+             word_concept_activation, prior_symbol_source,
+             prior_symbol_validity) = cs.reduce_aligned_word_peers(
+                native_part_sources, native_whole_sources,
+                prior_symbol_source, prior_symbol_validity,
+                row_b, order_b, active_rows,
+                staged_rows=isp._ar_concept_lookup_rows,
+                staged_atoms=isp._ar_concept_lookup_atoms,
+                part_n_what=part_what, whole_n_what=whole_what,
+                percept_evidence=evidence, evidence_mask=evidence_mask,
+                readout_coefficients=isp._ar_readout_coefficients[:, p])
             cs_input = cs.commit_from(PS_sub, concept_event)
             cs_symbol_input = None
         else:
@@ -15015,30 +15145,24 @@ class BasicModel(BaseModel):
         # positions are not mistaken for separate workspace pushes.
         #
         # ``aligned``: preserve location indices and aggregate P0..P3 plus
-        # H0..H3 (BasicModel T=4 -> eight sources). ``mixing`` retains the
+        # W0..W3 (BasicModel T=4 -> eight sources). ``mixing`` retains the
         # historical learned matrix.
         if word_commit_mode and CS_sub is not None:
             if aligned_fold_binding:
-                n_part = len(part_folds)
-                cs.bind_fold_streams(
-                    tuple(decoded_fold_sources[:, base_part_count + i]
-                          for i in range(n_part)),
-                    tuple(decoded_fold_sources[
-                        :, (base_part_count + n_part
-                            + base_whole_count + i)]
-                          for i in range(len(whole_folds))),
-                    CS_sub,
-                    part_passes=fold_passes,
-                    whole_passes=fold_passes,
-                    concept_orders=concept_orders_full,
-                    # ConceptualSpace.forward has already applied and consumed
-                    # any inter-sentence/chat ``_c_prior``.  This second call is
-                    # provenance attachment only; replacing the target event
-                    # here would silently erase that prior before the STM push.
-                    preserve_target_event=True,
-                    symbol_source=prior_symbol_source,
-                    symbol_validity=prior_symbol_validity)
-                support = getattr(CS_sub, "_fold_support", None)
+                # Attach complete processed fields without re-evaluating or
+                # overwriting the live event (which may now contain _c_prior).
+                cs.commit_percept_field(
+                    native_part_sources, native_whole_sources,
+                    reference_codes=reference_codes, reference_roles=reference_roles,
+                    evidence=evidence, evidence_mask=evidence_mask, target=CS_sub,
+                    active_rows=active_rows)
+                support = cs._ordered_fold_support(fold_passes, fold_passes)
+                support["source_count"] = len(native_sources)
+                support["includes_base_fields"] = True
+                object.__setattr__(CS_sub, "_fold_support", support)
+                object.__setattr__(CS_sub, "_concept_orders", concept_orders_full)
+                object.__setattr__(CS_sub, "_prior_symbolic_event", prior_symbol_source)
+                object.__setattr__(CS_sub, "_prior_symbolic_validity", prior_symbol_validity)
                 object.__setattr__(self, "_last_concept_fold_support", support)
                 # META minting is intentionally eager at the sentence
                 # boundary. Stage the tensor-free ordered support on its WS
@@ -15620,6 +15744,12 @@ class BasicModel(BaseModel):
             getattr(isp, "_ar_word_object_atoms", None),
             getattr(isp, "_ar_concept_lookup_rows", None),
             getattr(isp, "_ar_concept_lookup_atoms", None),
+            getattr(isp, "_ar_percept_reference_codes", None),
+            getattr(isp, "_ar_percept_reference_roles", None),
+            getattr(isp, "_ar_part_reference_vectors", None),
+            getattr(isp, "_ar_whole_reference_vectors", None),
+            getattr(isp, "_ar_readout_coefficients", None),
+            getattr(isp, "_ar_whole_reference_presence", None),
             getattr(isp, "_packed_sentence_end_mask", None),
             getattr(isp, "_packed_sentence_intermediate_end_mask", None),
             getattr(isp, "_packed_sentence_ids", None),
@@ -15739,6 +15869,12 @@ class BasicModel(BaseModel):
         lookup_rows = isp._ar_concept_lookup_rows
         lookup_atoms = isp._ar_concept_lookup_atoms
         word_property_weights = ws._staged_word_property_weights
+        reference_codes = isp._ar_percept_reference_codes
+        reference_roles = isp._ar_percept_reference_roles
+        part_reference_vectors = isp._ar_part_reference_vectors
+        whole_reference_vectors = isp._ar_whole_reference_vectors
+        readout_coefficients = isp._ar_readout_coefficients
+        whole_reference_presence = isp._ar_whole_reference_presence
         sentence_end_mask = isp._packed_sentence_end_mask.to(
             dtype=torch.bool)
         intermediate_end_mask = (
@@ -15842,6 +15978,12 @@ class BasicModel(BaseModel):
             zero_concept,                 # published CSSub lane
             zero_percept_words,
             zero_whole,                   # terminal WS fold
+            words.new_zeros(B, len(fold_passes) + 1, 1, percept_dim),
+            words.new_zeros(B, len(fold_passes) + 1, whole_locations, whole_dim),
+            torch.full((B, 8), -1, dtype=torch.long, device=words.device),
+            torch.full((B, 8), -1, dtype=torch.long, device=words.device),
+            words.new_zeros(B, n_locations, 8),
+            torch.zeros(B, n_locations, 8, dtype=torch.bool, device=words.device),
         )
         cs_sym_state = (
             zero_concept.clone(),         # published CSSym lane
@@ -15923,6 +16065,16 @@ class BasicModel(BaseModel):
                 local_ids, local_mask, local_offsets, fold_passes)
             whole_sources = ws.compute_word_property_fold_sources(
                 local_properties, fold_passes)
+            local_codes = _gather_word(reference_codes, index).reshape(B, 8)
+            local_roles = _gather_word(reference_roles, index).reshape(B, 8)
+            local_coefficients = _gather_word(readout_coefficients, index).reshape(B, 9)
+            evidence, evidence_mask = cs.percept_code_evidence(
+                part_sources[-1], whole_sources[-1],
+                _gather_word(part_reference_vectors, index).squeeze(1),
+                _gather_word(whole_reference_vectors, index).squeeze(1),
+                local_roles, row_gate.reshape(B),
+                part_n_what=int(ps.nWhat), whole_n_what=int(ws.nWhat),
+                whole_presence=_gather_word(whole_reference_presence, index).squeeze(1))
             percept = part_sources[-1][:, 0, :]
             percept = torch.where(
                 row_gate, percept, torch.zeros_like(percept))
@@ -15938,14 +16090,24 @@ class BasicModel(BaseModel):
                 part_sources, whole_sources, row, order,
                 row_gate.reshape(B),
                 staged_rows=lookup_rows, staged_atoms=lookup_atoms,
-                part_n_what=int(ps.nWhat), whole_n_what=int(ws.nWhat))
+                part_n_what=int(ps.nWhat), whole_n_what=int(ws.nWhat),
+                percept_evidence=evidence, evidence_mask=evidence_mask,
+                readout_coefficients=local_coefficients)
             next_sub = torch.where(
                 row_gate.unsqueeze(-1), event, current_cs_sub[0])
             payload = (
                 event, orders, row, activation, location_activations,
                 object_row, object_order, object_atom, row_gate, commit)
             return payload, (
-                next_sub, next_percept_slab, next_whole)
+                next_sub, next_percept_slab, next_whole,
+                torch.where(row_gate.reshape(B, 1, 1, 1),
+                            torch.stack(part_sources, dim=1), current_cs_sub[3]),
+                torch.where(row_gate.reshape(B, 1, 1, 1),
+                            torch.stack(whole_sources, dim=1), current_cs_sub[4]),
+                torch.where(row_gate, local_codes, current_cs_sub[5]),
+                torch.where(row_gate, local_roles, current_cs_sub[6]),
+                torch.where(row_gate.unsqueeze(-1), evidence, current_cs_sub[7]),
+                torch.where(row_gate.unsqueeze(-1), evidence_mask, current_cs_sub[8]))
 
         def stage_cs_sym(cs_sub_payload, feedback, index, _live,
                          current_cs_sym):
@@ -16212,6 +16374,11 @@ class BasicModel(BaseModel):
             final[7], symbol_event=final[7].detach(),
             prior_symbolic_event=None, language_plan=None)
         cs.commit_event(final[7])
+        cs.commit_percept_field(
+            final_cs_sub[3].clone(), final_cs_sub[4].clone(),
+            reference_codes=final_cs_sub[5].clone(),
+            reference_roles=final_cs_sub[6].clone(),
+            evidence=final_cs_sub[7].clone(), evidence_mask=final_cs_sub[8].clone())
         object.__setattr__(cs, "_peer_prev_sub", cs.CSsub)
         object.__setattr__(cs, "_peer_prev_sym", cs.CSsym)
         cs._stm_predicted_idea = final[12]

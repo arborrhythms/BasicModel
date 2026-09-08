@@ -55,10 +55,10 @@
     <serial>true</serial>
     <subsymbolicOrder>4</subsymbolicOrder>
     <!-- One parameter-free base plus three cumulative learned folds on EACH
-         perceptual tower. The resulting CSsub concept uses P0's RMS(union),
-         H0's RMS(property state), and all six learned-fold activations. Each
-         of those eight sources enters through an indexed conceptual-codebook
-         read. CS then performs exactly symbolicOrder CS->SS->CS promotion
+         perceptual tower. CSsub reads up to eight identified P/W references
+         through Sigma+tanh with weak connection L1, retaining the full native
+         fold stacks separately. There is no RMS or source mean. CS then
+         performs exactly symbolicOrder CS->SS->CS promotion
          steps; SS is not a ninth same-tick perceptual source. The learned
          mixing-matrix binder remains a separate parallel-only option. -->
     <conceptBinding>aligned</conceptBinding>
@@ -147,6 +147,13 @@
            no reverse gradient traverses the recurrent sentence construction.
            The output head is structural and receives no fabricated labels. -->
       <reconstructionScale>1.0</reconstructionScale>
+      <!-- On supervised batches remove opposing output credit on P/W/concept
+           parameters and cap the remainder below reconstruction's norm.
+           A detached/zero reconstruction gradient gives output no budget on
+           those parameters; independent decoder heads can still learn.
+           FineWeb has no output loss, so this adds no backward work here. -->
+      <reconstructionPriority>true</reconstructionPriority>
+      <outputGradientRatio>0.5</outputGradientRatio>
       <teacherReconstruction>true</teacherReconstruction>
       <detachedReverse>true</detachedReverse>
       <leafDistillWeight>1.0</leafDistillWeight>
@@ -206,6 +213,9 @@
   </PartSpace>
 
   <ConceptualSpace>
+    <!-- Weak lasso on admitted Sigma input connections, not concept/percept
+         activations or biases. Applied once by row-local proximal Adam. -->
+    <conceptReadoutL1>0.01</conceptReadoutL1>
     <nInput>8</nInput>
     <!-- PS/WS sigma folds have already emitted conceptual codebook
          activations here. The CS boundary itself is width-preserving. -->
