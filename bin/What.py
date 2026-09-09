@@ -208,9 +208,12 @@ class WhatThinkingResult:
     iterations: int
     forced_closures: int = 0
     closure_pressures: Tuple[float, ...] = field(default_factory=tuple)
+    answers: Tuple[WhatAnswer, ...] = field(default_factory=tuple)   # per row
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "slots", tuple(self.slots))
+        object.__setattr__(self, "answers",
+                           tuple(self.answers) or (self.answer,))
         object.__setattr__(self, "iterations", int(self.iterations))
         object.__setattr__(self, "forced_closures", int(self.forced_closures))
         object.__setattr__(self, "closure_pressures",

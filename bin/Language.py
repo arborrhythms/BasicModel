@@ -7127,6 +7127,90 @@ class AnchorDotTransformChooser(TransformChooser):
         return copy_score, reduce_score
 
 
+class WhatStepChooser(nn.Module):
+    """Hard-choice head for the thinking resolve step (mathematical
+    thinking spec 6.3): among ``ANSWER``, ``OPEN(v)`` and
+    ``EXECUTE(op, operands)`` candidates for one batch row.
+
+    Scores every candidate from the same target-free 29-dim What context
+    the grammar chooser sees plus the closure pressure and a small
+    per-candidate feature block (kind, primitive, whether the operand is the
+    active question's referent, whether it is bound / applied, its position).
+    The output layer is ZERO-INITIALISED so an untrained head scores every
+    candidate identically and ``choose`` breaks the tie toward the FIRST
+    candidate -- ``ANSWER`` -- which is exactly today's single-step
+    behaviour.  Training samples (policy credit, spec 8.3); evaluation takes
+    the argmax.  The head never executes anything: the runtime does.
+    """
+
+    KINDS = ("answer", "open", "execute")
+    OPS = ("lookup", "evaluate", "bind", "substitute", "constrain")
+    # kind one-hot (3) + op one-hot (5) + active-referent flag + bound flag
+    # + applied flag + normalized position + closure pressure
+    CANDIDATE_FEATURES = 3 + 5 + 4 + 1
+
+    def __init__(self, *, context_dim=29, hidden=16):
+        super().__init__()
+        self.context_dim = int(context_dim)
+        self.hidden = int(hidden)
+        in_dim = self.context_dim + self.CANDIDATE_FEATURES
+        with torch.random.fork_rng(devices=[]):
+            self.mlp = nn.Sequential(
+                nn.Linear(in_dim, self.hidden), nn.GELU(),
+                nn.Linear(self.hidden, 1))
+        nn.init.zeros_(self.mlp[-1].weight)
+        nn.init.zeros_(self.mlp[-1].bias)
+
+    def featurize(self, candidates, *, pressure, device, dtype):
+        rows = []
+        for cand in candidates:
+            f = torch.zeros(self.CANDIDATE_FEATURES)
+            f[self.KINDS.index(cand["kind"])] = 1.0
+            op = cand.get("op")
+            if op in self.OPS:
+                f[3 + self.OPS.index(op)] = 1.0
+            f[8] = 1.0 if cand.get("active") else 0.0
+            f[9] = 1.0 if cand.get("bound") else 0.0
+            f[10] = 1.0 if cand.get("applied") else 0.0
+            f[11] = float(cand.get("position", 0.0))
+            f[12] = float(pressure)
+            rows.append(f)
+        if not rows:
+            return torch.zeros(0, self.CANDIDATE_FEATURES, device=device, dtype=dtype)
+        return torch.stack(rows).to(device=device, dtype=dtype)
+
+    def logits(self, context, candidates, *, pressure=0.0):
+        """``[K]`` scores for ``candidates`` given one row's ``[C]`` context."""
+        context = torch.as_tensor(context)
+        device, dtype = context.device, context.dtype
+        if context.dim() == 2:
+            context = context[0]
+        if context.shape[-1] != self.context_dim:
+            raise ValueError(
+                f"what step context width {context.shape[-1]} != {self.context_dim}")
+        feats = self.featurize(candidates, pressure=pressure, device=device, dtype=dtype)
+        K = int(feats.shape[0])
+        if K == 0:
+            return context.new_zeros(0)
+        ctx = context.unsqueeze(0).expand(K, -1)
+        return self.mlp(torch.cat([ctx, feats], dim=-1)).squeeze(-1)
+
+    def choose(self, context, candidates, *, pressure=0.0, sample=False,
+               temperature=1.0):
+        """Return ``(index, log_prob)``: the argmax (ties -> first) or a
+        sample from the softmax at ``temperature``.  ``log_prob`` stays on
+        the graph for the policy objective."""
+        logits = self.logits(context, candidates, pressure=pressure)
+        if logits.numel() == 0:
+            raise ValueError("WhatStepChooser.choose needs at least one candidate")
+        log_probs = torch.log_softmax(logits / max(1e-6, float(temperature)), dim=-1)
+        if sample and logits.numel() > 1:
+            index = int(torch.multinomial(log_probs.detach().exp(), 1).item())
+        else:
+            index = int(torch.argmax(logits.detach()).item())
+        return index, log_probs[index]
+
+
 class MLPTransformChooser(TransformChooser):
     """Contextual MLP placement scorer -- the expressive cutover chooser.
 

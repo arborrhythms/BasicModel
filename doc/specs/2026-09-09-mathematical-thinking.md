@@ -171,8 +171,17 @@ Every execution appends to the derivation trace:
 
 ```text
 {"operation": "exact:<op>", "operands": (...), "result": ...,
- "iteration": t, "references": (concept ids of the operand referents)}
+ "iteration": t, "references": (token positions of the operand referents
+                                 in the presented surface)}
 ```
+
+The references are the intra-datum `.where` rung of section 5.1 (token
+positions), not concept ids: binding a referent to its concept row is a
+follow-on once the word registry exposes a surface lookup (section 12,
+Q3). Every step *choice* is also traced
+(`{"operation": "step:<kind>", "choice", "candidates", "index", "role",
+"referent", "iteration", "closure_pressure"}`), so the replay has both the
+alternatives offered and the one taken.
 
 ### 5.4 External tools
 
@@ -237,11 +246,21 @@ over `v`: the referent's concept code installed in the root slot with the
 interrogative role, the same `_install_root_slot` mechanism recall uses.
 The subquestion carries no dataset coordinate.
 
-A computed `Num` sets the answer symbol through `exact.numeral_code(n)`:
-the lexicon row of the numeral surface when present, else a fixed
-binary-digit code in the root slot. The symbol then descends through
-`ConceptualSpace.synthesize` → `PerceptualSpace.synthesize` →
-`OutputSpace.from_percepts` exactly as any answer.
+A computed `Num` sets the answer symbol through `exact.numeral_code(n)`,
+the fixed binary-digit code in the root slot (the lexicon-row variant of
+section 12 Q3 is not implemented: the word registry has no surface lookup
+today). A deferred question's QUERY symbol uses `exact.referent_code(v)`
+(a stable hash of the name, disjoint from every numeral code). The symbol
+then descends through `ConceptualSpace.synthesize` →
+`PerceptualSpace.synthesize` → `OutputSpace.from_percepts` exactly as any
+answer. Implementation: `Model._resolve_step`, candidates from
+`_enumerate_step_candidates` (ANSWER first, then OPEN(v) for unbound
+variables not in play, then the applicable EXECUTE primitives, bounded at
+32), the chooser `Language.WhatStepChooser`, the slot rules in the default
+`choose_what_slot`. Which question a row answers is derived, not stored:
+the subquestion posed at the previous iteration (*pending*), else the
+newest open LTM input's referent (read from the slot's trace), else the
+root.
 
 ### 6.4 Closure pressure and forcing
 

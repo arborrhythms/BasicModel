@@ -219,7 +219,7 @@ BasicModel has two distinct iterative loops, and they must not be confused:
 | Terminal | true / false / unknown / mixed / conflicting / bounded_unknown | a concrete answer symbol; `unknown` is not a valid escape; forced best-effort LIFO closure at the iteration limit |
 | Answer route | `answer_query` payload (`kernel` key) | `reverseOutput()` (answer symbol -> conceptual / perceptual synthesis -> `OutputSpace`) |
 | Credit | next-op behaviour cloning on grounded traces (`thinkingLossWeight`) | root `answer_construction` after parity; hard slot / step choices by a policy objective (planned) |
-| Gate | `<thinkingBudget>` | `<whatThinkingIterations>` (planned; `think()` exists today but training does not drive it) |
+| Gate | `<thinkingBudget>` | `<whatThinkingIterations>` / `<whatThinkingPrimitives>` (the resolve step with `WhatStepChooser` and the exact primitives; training does not yet drive episodes -- plan Phase 4) |
 
 The kernel is reachable from a What resolve step as an external tool
 (prompted questions consult `answer_query` when `reasoningIterations > 0`),

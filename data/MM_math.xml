@@ -1,0 +1,95 @@
+<?xml version="1.0" ?>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="model.xsd">
+  <!-- MM_math: the mathematical-thinking pilot fixture
+       (doc/specs/2026-09-09-mathematical-thinking.md). MM_xor's topology
+       with the answer path, the standalone interaction memory, an
+       8-iteration episode with 4 exact primitives per iteration, and the
+       exact dependency-arithmetic dataset (one-hot answers over [0, R), so
+       OutputSpace.nOutput = R). Small dims on purpose: it is a mechanism
+       and learning-floor fixture, not a capacity experiment. -->
+  <architecture>
+    <subsymbolicOrder>3</subsymbolicOrder>
+    <symbolicOrder>0</symbolicOrder>
+    <answerSynthesis>true</answerSynthesis>
+    <whatThinkingMemory>true</whatThinkingMemory>
+    <whatThinkingDetach>episode</whatThinkingDetach>
+    <whatThinkingIterations>8</whatThinkingIterations>
+    <whatThinkingPressure>linear</whatThinkingPressure>
+    <whatThinkingPrimitives>4</whatThinkingPrimitives>
+    <data>
+      <dataType>embedding</dataType>
+      <dataset>math</dataset>
+      <mathRange>16</mathRange>
+      <mathDepths>1-2</mathDepths>
+      <mathTestDepths>3</mathTestDepths>
+      <mathDistractors>1</mathDistractors>
+      <mathStage>1</mathStage>
+      <mathSeed>0</mathSeed>
+      <mathProblems>64</mathProblems>
+    </data>
+    <training>
+      <numEpochs>50</numEpochs>
+      <learningRate>0.005</learningRate>
+      <reconstructionScale>0.1</reconstructionScale>
+      <trainEmbedding>JOINT</trainEmbedding>
+      <embeddingScale>0.05</embeddingScale>
+      <autoload>false</autoload>
+    </training>
+  </architecture>
+
+  <InputSpace>
+    <nVectors>32</nVectors>
+    <nDim>14</nDim>
+    <nOutput>32</nOutput>
+    <nOutputDim>14</nOutputDim>
+  </InputSpace>
+
+  <PartSpace>
+    <nInput>32</nInput>
+    <nInputDim>14</nInputDim>
+    <nVectors>200</nVectors>
+    <nDim>14</nDim>
+    <nOutput>32</nOutput>
+    <nOutputDim>14</nOutputDim>
+    <invertible>true</invertible>
+    <synthesis>radix</synthesis>
+    <butterfly>true</butterfly>
+  </PartSpace>
+
+  <ConceptualSpace>
+    <nInput>32</nInput>
+    <nInputDim>14</nInputDim>
+    <nVectors>8</nVectors>
+    <nDim>14</nDim>
+    <nOutput>32</nOutput>
+    <nOutputDim>14</nOutputDim>
+    <invertible>true</invertible>
+    <butterfly>true</butterfly>
+  </ConceptualSpace>
+
+  <WholeSpace>
+    <analysis>byte</analysis>
+    <nInput>32</nInput>
+    <nInputDim>14</nInputDim>
+    <nVectors>128</nVectors>
+    <nDim>14</nDim>
+    <nOutput>32</nOutput>
+    <nOutputDim>14</nOutputDim>
+  </WholeSpace>
+
+  <OutputSpace>
+    <nInput>32</nInput>
+    <nInputDim>14</nInputDim>
+    <nVectors>1</nVectors>
+    <nOutput>16</nOutput>
+  </OutputSpace>
+
+  <SymbolSpace>
+    <language>
+      <start>S</start>
+      <grammar>math.grammar</grammar>
+    </language>
+  </SymbolSpace>
+
+</model>

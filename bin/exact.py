@@ -395,6 +395,27 @@ def numeral_code(n: int, width: int, bits: Optional[int] = None):
     return code
 
 
+def referent_code(name: str, width: int, bits: int = 16):
+    """Fixed, parameter-free code for a variable referent used as the root
+    slot of a QUERY(v) symbol (spec 6.3): +-1 digits of a stable hash of
+    the name over the first ``bits`` coordinates and, when room remains, a
+    +1 interrogative marker in the last coordinate.  Never collides with a
+    numeral code of the same width in practice (numeral codes are zero
+    beyond their digit band)."""
+    import torch
+
+    width = int(width)
+    digest = hashlib.sha1(str(name).encode("utf-8")).digest()
+    value = int.from_bytes(digest[:8], "big")
+    bits = min(int(bits), width)
+    code = torch.zeros(width)
+    for k in range(bits):
+        code[k] = 1.0 if (value >> k) & 1 else -1.0
+    if width > bits:
+        code[-1] = 1.0
+    return code
+
+
 # -- problems (spec 4) --------------------------------------------------------
 
 @dataclass(frozen=True)

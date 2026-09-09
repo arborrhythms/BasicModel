@@ -430,6 +430,9 @@ symbol (line anchors drift).
 | `whatCurriculumRatio` | `Models.py` (`_curriculum_questions`) | `0.25` | Fraction of training batches that are curriculum trials. |
 | `whatThinkingMemory` | `Language.py` (SymbolSubSpace init), `Models.py` (`_what_memory`) | `false` | Build the standalone `Layers.WhatInteractionMemory` (the What interaction slots: push / complete / pop, parity, closure pressure) when `<sentencePrediction>` is off, so `Model.think()` no longer needs the ARMA predictor. Same capacity knob (`<SymbolSpace><ltmCapacity>`), same hard-reset cascade. |
 | `whatThinkingDetach` | `Models.py` (`_what_memory` applies it to the slot owner) | `slot` | Episode credit boundary (mathematical thinking spec 8.2): `slot` detaches every interaction value at append (established); `episode` keeps values appended between `begin_what_episode` / `end_what_episode` live until the episode ends. |
+| `whatThinkingIterations` | `Models.py` (BaseModel init; `think()`) | `1` | Iteration limit `L` of a `Model.think()` episode (spec 6.2). `1` = the single `what()`; `> 1` (or primitives on) enables the resolve step with the `WhatStepChooser` (built on first use, neutral at init: an untrained head always ANSWERs, i.e. single step). |
+| `whatThinkingPressure` | `Models.py` (`_thinking_pressure`) | `linear` | Closure-pressure schedule (spec 6.4): `linear` \| `quadratic` \| `step`; all monotone with `p(L-1) = 1`. |
+| `whatThinkingPrimitives` | `Models.py` (`_begin_exact_states`, `_resolve_step`) | `0` | Exact primitive executions allowed per iteration (spec 8.4); `0` = primitives off (no scratchpad is lexed). Positive values lex each row's presented surface with `exact.ExactLexer` at iteration 0. |
 | `reasoningIterations` | `Models.py` (BaseModel init) | `1` | Truth-grounded reasoning chain depth; a query routes to the recurrent tool-use loop at this depth. `0` = old generative-infer behavior. |
 | `queryReasoning` | `Models.py` (BaseModel init) | `false` | DEPRECATED alias: `true` $\Rightarrow$ `reasoningIterations = 10`. Read only when `<reasoningIterations>` is absent. |
 | `ltmConsolidation` | `Models.py`, `Language.py` (SymbolSubSpace) | `false` | Unifies the discourse LTM chain + RelativeTruthStore into one persisted `TernaryTruthStore` (`ltm_store`). |
@@ -475,18 +478,15 @@ symbol (line anchors drift).
 | `conceptualContextLearningRate` | `Models.py` (BaseModel init) | `0.0` | Detached post-sentence update rate for the shared serial ConceptualSpace dictionary. Positive values convert `similarity_codebook.W` from its construction Parameter into a persistent non-grad buffer, then rotate reduced contextual evidence directly on its initial unit sphere. |
 | `conceptualContextNegatives` | `Models.py` (BaseModel init) | `4` | Deterministic negative rows per observed concept in the context-owned SBOW reducer. |
 
-### Planned: `whatThinking*` (mathematical thinking plan, Phases 3–4)
+### Planned: `whatThinking*` (mathematical thinking plan, Phase 4)
 
-Not yet read by any code (`whatThinkingMemory` / `whatThinkingDetach` landed
-in Phase 2 and are in the table above). Listed so the names are reserved and the
+Not yet read by any code (the memory, detach, iteration, pressure and
+primitive knobs landed in Phases 2–3 and are in the table above). Listed so the names are reserved and the
 defaults are on record; each lands default-off / byte-identical. See the
 [mathematical thinking specification](specs/2026-09-09-mathematical-thinking.md).
 
 | Knob | Level | Planned default | Purpose |
 |------|-------|-----------------|---------|
-| `whatThinkingIterations` | `<architecture>` | `1` | Iteration limit `L` of a `Model.think()` episode; `1` = no internal dialogue (today's single `what()`). |
-| `whatThinkingPressure` | `<architecture>` | `linear` | Closure-pressure schedule: `linear` \| `quadratic` \| `step` (all monotone, `p(L-1) = 1`). |
-| `whatThinkingPrimitives` | `<architecture>` | `0` | Exact primitive executions allowed per iteration; `0` = primitives off. |
 | `whatThinkingPolicyWeight` | `<architecture><training>` | `0.0` | Weight of the `WhatStepChooser` policy objective (hard open / answer / execute choices). |
 | `whatThinkingCloneWeight` | `<architecture><training>` | `0.0` | Weight of behaviour cloning on the model's own verifier-accepted traces. |
 

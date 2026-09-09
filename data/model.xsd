@@ -323,6 +323,23 @@
           </xs:restriction>
         </xs:simpleType>
       </xs:element>
+      <!-- whatThinkingIterations (spec 6.2): iteration limit L of a
+           Model.think() episode; 1 (default) = the single what(). -->
+      <xs:element name="whatThinkingIterations" type="xs:positiveInteger" minOccurs="0"/>
+      <!-- whatThinkingPressure (spec 6.4): closure-pressure schedule,
+           monotone with p(L-1) = 1. -->
+      <xs:element name="whatThinkingPressure" minOccurs="0">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:enumeration value="linear"/>
+            <xs:enumeration value="quadratic"/>
+            <xs:enumeration value="step"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:element>
+      <!-- whatThinkingPrimitives (spec 8.4): exact primitive executions
+           allowed per iteration; 0 (default) = primitives off. -->
+      <xs:element name="whatThinkingPrimitives" type="xs:nonNegativeInteger" minOccurs="0"/>
       <!-- Reconstruct from the idea rather than replaying the forward parse.
            When true, reverse() clears SymbolSpace's current/generate rules and
            the signal-router's last route, then calls generate on the supplied
