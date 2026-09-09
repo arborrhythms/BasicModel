@@ -213,9 +213,16 @@ succession (`next(one) = two`); `mathOperators=succ` is the rung below.
 `test_verb_successor.py` shows the VP is the successor by construction
 and exposed a dead zone (zero-init readout under a zero-derivative
 threshold: no verb could learn by gradient), now fixed straight-through.
-Next: the successor run on the fixed verb, then counting ("n plus m")
-through the thinking loop with unseen pairs held out, then multi-digit
-numerals as wholes over digit parts with serial carries through LTM.
+Result (pilot report, "The successor is learned as a VP"): after the
+answer path was seeded from the root idea (`Understanding.answer_seed`;
+the `symbols` tensor was constant across sentences on the serial path)
+and the reduce gate lowered so short sentences compose, the successor is
+learned exactly over the single-digit nouns; every failure is a
+two-digit numeral read as one of its digit parts. Next: multi-digit
+numerals as wholes over digit parts with `.where` as position (the
+compound representation), then counting ("n plus m") through the
+thinking loop with unseen pairs held out, with serial carries through
+LTM.
 
 ## Test evidence rule
 

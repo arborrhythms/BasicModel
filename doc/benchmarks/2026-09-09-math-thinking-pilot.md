@@ -324,3 +324,43 @@ lr 5e-3 diverges the 1024-wide adapter (predictions swinging to +-100)
 with either an invertible or a plain linear adapter. The successor run
 is relaunched with the seed and lr 1e-3; the earlier verb runs are
 superseded.
+
+## The successor is learned as a VP; two-digit numerals are not yet nouns (2026-09-09)
+
+Successor corpus (`mathOperators=succ`, "n plus one" -> the next noun,
+512 presentations of 15 facts, R = 16) on `MM_add_verb.xml` after the
+three repairs of this day (verb readout dead zone fixed, answer path
+seeded from the root idea, reduce gate 0.05 with the MLP chooser), lr
+1e-3, batch 8, CPU:
+
+| epoch | answer loss | exact accuracy (train presentations) |
+|---:|---:|---:|
+| 0 | -- | 0.000 |
+| 5 | 0.0266 | 0.523 |
+| 10 | 0.0288 | 0.574 |
+| 15 | 0.0299 | 0.719 |
+| 20 | 0.0187 | 0.797 |
+| 30 | 0.0152 | 0.758 |
+
+Per fact at epoch 30 (376 / 512 presentations correct):
+
+| fact | correct | prediction |
+|---|---:|---|
+| 0..9 plus 1 (except 1) | 100 % each | the successor |
+| 1 plus 1 -> 2 | 0 / 28 | 12 |
+| 10 plus 1 -> 11 | 0 / 29 | 1 |
+| 11 plus 1 -> 12 | 40 / 40 | 12 |
+| 12 plus 1 -> 13 | 2 / 34 | 3 (24), 12 (7) |
+| 13 plus 1 -> 14 | 26 / 42 | 14 (26), 4 (16) |
+| 14 plus 1 -> 15 | 0 / 31 | 5 (26), 12 (5) |
+
+Reading: the successor VP is learned exactly over the single-digit
+nouns. Every failure is a two-digit numeral read as one of its digit
+parts ("12" as 2, "14" as 4, "10" as 1) or a single digit confused with
+a two-digit numeral that contains it ("1" with 12). The byte lexer's
+word whole for "12" is not yet a noun distinct from "1" and "2": the
+compound representation (a whole over digit parts with `.where` as the
+position) is the next rung, exactly the multi-digit question of the
+theoretical note. This is the first learned arithmetic on the syntactic
+route: no primitive, no anchor, `plus` a verb the grammar selected and
+trained by the answer loss alone.
