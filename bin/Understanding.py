@@ -29,6 +29,13 @@ class Understanding:
     reconstruction_carriers: Mapping[str, Any] = field(
         default_factory=lambda: MappingProxyType({}))
     execution: Any = field(default=None, repr=False, compare=False)
+    # The resolved INPUT symbol the answer path is seeded from (spec 5.3).
+    # On the serial grammar path this is the grammar's root idea (the
+    # STM-folded S, which varies with the sentence); the ``symbols``
+    # tensor there is the symbol-space activation over a codebook that is
+    # nearly empty at initialization and so is the same for every
+    # sentence.  ``None`` means "use ``symbolic_state``".
+    answer_seed: Any = field(default=None, repr=False, compare=False)
 
     def __post_init__(self) -> None:
         carriers = self.reconstruction_carriers

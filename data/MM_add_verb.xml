@@ -21,6 +21,12 @@
     <symbolTower>true</symbolTower>
     <ideaDecode>true</ideaDecode>
     <answerSynthesis>true</answerSynthesis>
+    <!-- The parser must COMPOSE these short sentences: the untrained
+         reducer's operator marginals are uniform (~1/15) and never pass
+         the default 0.5 gate, and three words never reach the capacity
+         fold, so no binary rule (no verb) would ever fire. -->
+    <stmReduceTau>0.05</stmReduceTau>
+    <transformChooser>mlp</transformChooser>
 
     <data>
       <dataType>embedding</dataType>
@@ -33,7 +39,9 @@
     <training>
       <numEpochs>30</numEpochs>
       <batchSize>12</batchSize>
-      <learningRate>0.01</learningRate>
+      <!-- 5e-3 diverges the 1024-wide answer path; 1e-3 memorizes
+           (test_output_path_supervised). -->
+      <learningRate>0.001</learningRate>
       <reconstructionScale>0.1</reconstructionScale>
     </training>
   </architecture>

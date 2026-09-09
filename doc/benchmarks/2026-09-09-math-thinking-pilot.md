@@ -305,3 +305,22 @@ verb code, `Q = I`):
 The successor corpus (`mathOperators=succ`, "n plus one", every fact
 trained) is being re-run on `MM_add_verb.xml` with the fix; the earlier
 `plus` run predates it and is superseded.
+
+## Supervised training on the output path (2026-09-09)
+
+Alec asked whether tests show supervised training on the new
+`reverseOutput()` path. They existed only for the parallel XOR topology.
+`test/test_output_path_supervised.py` now covers the serial grammar
+topology the verb runs use, and writing it found the defect behind every
+flat run above: the `symbols` tensor the answer path was seeded from is
+the symbol-space activation over a WholeSpace codebook that has TWO
+active rows of 65,536 at initialization, so it is the same for every
+sentence (relative spread 0.027 across eight phrases, against 0.534 for
+the grammar's root idea in the conceptual state). The answer path was
+input-blind. `Understanding.answer_seed` now seeds it from the root idea
+on the serial path (the parallel path keeps `symbols`); with that, eight
+supervised labels are memorized (100 % at epoch 30, lr 1e-3), whereas
+lr 5e-3 diverges the 1024-wide adapter (predictions swinging to +-100)
+with either an invertible or a plain linear adapter. The successor run
+is relaunched with the seed and lr 1e-3; the earlier verb runs are
+superseded.

@@ -7644,6 +7644,18 @@ class BasicModel(BaseModel):
             "combine_last_cs_sub": getattr(self, "_combine_last_cs_sub", None),
             "merge_diffs": merge_diffs,
         }
+        # The answer path's seed (spec 5.3): on the serial grammar path the
+        # resolved input symbol is the grammar's ROOT IDEA (the STM-folded
+        # S in the terminal conceptual state), which varies with the
+        # sentence; the ``symbols`` tensor there is the symbol-space
+        # activation over a codebook with almost no rows at init and is
+        # the same for every sentence (test_output_path_supervised).  The
+        # parallel path keeps ``symbols``.
+        answer_seed = None
+        if (bool(getattr(self, "serial", False)) and torch.is_tensor(conceptual)
+                and torch.is_tensor(symbols) and conceptual.dim() == 3
+                and symbols.dim() == 3 and conceptual.shape[-1] == symbols.shape[-1]):
+            answer_seed = conceptual
         return Understanding(
             perceptual_context=perceptual,
             conceptual_state=conceptual,
@@ -7651,6 +7663,7 @@ class BasicModel(BaseModel):
             reconstruction_carriers=carriers,
             execution=(tuple(execution)
                        if isinstance(execution, (tuple, list)) else execution),
+            answer_seed=answer_seed,
         )
 
     def understand(self, input_data, *, executor=None):
@@ -7785,6 +7798,9 @@ class BasicModel(BaseModel):
         questions = question_batch(question)
         first = questions[0] if questions else None
         symbolic = understanding.symbolic_state
+        seed = getattr(understanding, "answer_seed", None)
+        if torch.is_tensor(seed):
+            symbolic = seed
         if not torch.is_tensor(symbolic):
             raise RuntimeError("cannot resolve an answer without a symbolic state")
         B = int(symbolic.shape[0])
