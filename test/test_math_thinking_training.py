@@ -425,7 +425,9 @@ def successor_config(tmp_path_factory):
     successor corpus: ``n plus one`` -> the next numeral, single-digit
     facts only (R = 10), 256 presentations per epoch."""
     src = (_DATA / "MM_add_verb.xml").read_text()
+    assert src.count("<nOutput>16</nOutput>") == 1          # the one-hot head
     src = (src.replace("<mathRange>16</mathRange>", "<mathRange>10</mathRange>")
+              .replace("<nOutput>16</nOutput>", "<nOutput>10</nOutput>")
               .replace("<mathProblems>2048</mathProblems>", "<mathProblems>256</mathProblems>")
               .replace("<mathSeed>0</mathSeed>",
                        "<mathSeed>0</mathSeed>\n      <mathOperators>succ</mathOperators>"))
@@ -452,7 +454,10 @@ def test_successor_is_learned_as_a_verb(successor_config):
     best = 0.0
     for epoch in range(1, 31):
         m.train()
-        m.runEpoch(optimizer=opt, batchSize=8, split="train")
+        out_err, _, _, _ = m.runEpoch(optimizer=opt, batchSize=8, split="train")
+        # A zero answer loss means the target never reached the head (the
+        # shape gate zeroes an irreconcilable pair): no learning claim.
+        assert float(out_err) > 0.0, "answer loss is zero: target/head mismatch"
         if epoch % 5 == 0:
             best = max(best, _exact_accuracy(m, "train", limit=256))
             if best >= 0.9:

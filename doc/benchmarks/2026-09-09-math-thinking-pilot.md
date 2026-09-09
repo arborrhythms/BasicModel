@@ -352,7 +352,11 @@ destabilised (answer loss rising from 0.015, predictions collapsing onto
 one or two numerals; 38 % at epoch 60): the fixture needs a learning-rate
 decay or early stopping at the plateau, not more epochs. The
 `RUN_SLOW` test `test_successor_is_learned_as_a_verb` trains the same
-topology on single-digit facts only (R = 10) and stops at 90 %.
+topology on single-digit facts only (R = 10, 256 presentations per epoch,
+lr 1e-3) and passes the 90 % gate within ten epochs (about three minutes
+on CPU). Trap met on the way: the one-hot head width must equal R, or
+the output shape gate zeroes the answer loss with only a warning; the
+test now fails fast on a zero answer loss.
 
 Per fact at epoch 30 (376 / 512 presentations correct):
 
