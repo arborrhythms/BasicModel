@@ -163,13 +163,13 @@ gates are frozen before evaluation (section 10).
 ### 5.1 Lexical exposure
 
 `exact.ExactLexer.lex(surface) -> (E, query)` is a deterministic,
-parameter-free clause lexer, part of the lexicon level of perception (the
-symbolic-mind boundary permits the lexicon to *present* content). It runs
-inside `Model.understand()` when `<whatThinkingPrimitives>` is positive and
-attaches its result to the derivation context, not to the `Understanding`
-value (which stays free of answer-side state). Premise index `i` is an
-explicit operand and is the minimal intra-datum `.where` rung deferred in
-[WhatSpacetimeDesign](../WhatSpacetimeDesign.md) §2.
+parameter-free clause lexer used by the generator, the verifier and the
+evaluation script. It does NOT run in the model: the earlier form ran it
+inside `Model.understand()` under `<whatThinkingPrimitives>`, which is
+retired and raises at load. The model sees the surface through its own
+lexicon (`Meronomy.word_spans`), as for any sentence. Premise index `i` is
+an operand of the verifier's replay only; the intra-datum `.where` rung of
+[WhatSpacetimeDesign](../WhatSpacetimeDesign.md) §2 remains deferred.
 
 ### 5.2 Operations
 
@@ -300,11 +300,15 @@ today). A deferred question's QUERY symbol uses `exact.referent_code(v)`
 (a stable hash of the name, disjoint from every numeral code). The symbol
 then descends through `ConceptualSpace.synthesize` →
 `PerceptualSpace.synthesize` → `OutputSpace.from_percepts` exactly as any
-answer. Implementation: `Model._resolve_step`, candidates from
-`_enumerate_step_candidates` (ANSWER first, then OPEN(v) for unbound
-variables not in play, then the applicable EXECUTE primitives, bounded at
-32), the chooser `Language.WhatStepChooser`, the slot rules in the default
-`choose_what_slot`. Which question a row answers is derived, not stored:
+answer. (Historical: the numeral and referent codes are no longer in the
+runtime.) Implementation today: `Model._resolve_step`, candidates from
+`_enumerate_step_candidates` (ANSWER first, then OPEN(w) for every
+presented word not already open or active, bounded at 32), the chooser
+`Language.WhatStepChooser`, the slot rules in the default
+`choose_what_slot`. An ANSWER for an open subquestion starts from QUERY(w)
+(the referent's presented slot in the root position) and attends over the
+row's LTM outputs; an ANSWER for the root starts from the root idea. Which
+question a row answers is derived, not stored:
 the subquestion posed at the previous iteration (*pending*), else the
 newest open LTM input's referent (read from the slot's trace), else the
 root.
@@ -424,9 +428,9 @@ verifier-accepted traces (the `next_op_loss` pattern) is NOT implemented
 
 ### 8.4 Per-iteration bound
 
-`<whatThinkingPrimitives>` bounds primitive executions per iteration; the
-iteration limit bounds the episode; together they bound compute and
-memory.
+The iteration limit `<whatThinkingIterations>` bounds the episode (one
+hard choice per row per iteration); there are no primitive executions to
+bound (`<whatThinkingPrimitives>` is retired and raises at load).
 
 ## 9. Verification and measurement (evaluation side only)
 

@@ -8116,11 +8116,13 @@ class BasicModel(BaseModel):
                           "position": float(i) / float(n)})
         return cands[: self.WHAT_STEP_MAX_CANDIDATES]
 
-    def _referent_representation(self, understanding, b, referents, word, answer_row):
+    def _referent_representation(self, understanding, b, referents, word,
+                                 answer_row, *, detach=True):
         """The QUERY(w) symbol: the referent's perceptual slot (the lexicon's
         presentation of the word, by surface position) installed in the
         root slot of the row's symbolic state; the symbolic root itself
-        when no slot is available."""
+        when no slot is available.  Detached when it is stored as an LTM
+        input (an opening); live when it seeds the subquestion's answer."""
         field = understanding.perceptual_context
         rep = None
         if torch.is_tensor(field) and field.dim() == 3 and word in referents:
@@ -8129,7 +8131,9 @@ class BasicModel(BaseModel):
                 rep = field[b, position, :]
         if rep is None:
             rep = answer_row[0, 0, :]
-        return self._install_root_slot(answer_row.detach(), rep.detach())
+        if detach:
+            return self._install_root_slot(answer_row.detach(), rep.detach())
+        return self._install_root_slot(answer_row, rep)
 
     def _resolve_step(self, understanding, questions, per_row, answer):
         """Run the resolve step for every unsettled row (spec 6.3).
@@ -8194,9 +8198,17 @@ class BasicModel(BaseModel):
                     operand=cand["operand"], question_rep=question_rep,
                     log_prob=log_prob, index=int(index), candidates=labels))
             else:
-                # ANSWER: the root slot attends over this row's LTM outputs
-                # (the answers to its subquestions), so completed
-                # subquestions transform the parent's answer (spec 7.3).
+                # ANSWER: a subquestion's answer starts from QUERY(w) (the
+                # active referent's presented slot in the root position,
+                # live so the answer loss reaches it); the root's answer
+                # starts from the root idea.  Either root slot then attends
+                # over this row's LTM outputs (the answers to its
+                # subquestions), so completed subquestions transform the
+                # parent's answer (spec 7.3).
+                if role != "root" and active is not None:
+                    rows[b] = self._referent_representation(
+                        understanding, b, referents, active, answer[b:b + 1],
+                        detach=False)[0]
                 if memory is not None and hasattr(memory, "what_context"):
                     ltm = (detail[min(b, len(detail) - 1)] if detail else {})
                     outputs = [v for v in ltm.get("output_representations", ())

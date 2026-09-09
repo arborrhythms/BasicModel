@@ -415,3 +415,46 @@ def test_stage_one_dependency_chains_learn_as_syntax(stage_one_config):
                                      "mathTestDepths": "3", "mathDistractors": 1,
                                      "mathProblems": 384, "mathSeed": 0}, 30)
     assert min(best) >= 0.9, best
+
+
+# -- the first learned rung: the successor as a verb (RUN_SLOW) -----------------
+
+@pytest.fixture(scope="module")
+def successor_config(tmp_path_factory):
+    """``MM_add_verb`` (the serial verb grammar, 230M parameters) on the
+    successor corpus: ``n plus one`` -> the next numeral, single-digit
+    facts only (R = 10), 256 presentations per epoch."""
+    src = (_DATA / "MM_add_verb.xml").read_text()
+    src = (src.replace("<mathRange>16</mathRange>", "<mathRange>10</mathRange>")
+              .replace("<mathProblems>2048</mathProblems>", "<mathProblems>256</mathProblems>")
+              .replace("<mathSeed>0</mathSeed>",
+                       "<mathSeed>0</mathSeed>\n      <mathOperators>succ</mathOperators>"))
+    assert "<mathOperators>succ</mathOperators>" in src
+    path = tmp_path_factory.mktemp("cfg") / "MM_succ_verb.xml"
+    path.write_text(src)
+    return path
+
+
+@pytest.mark.skipif(not os.environ.get("RUN_SLOW"), reason="RUN_SLOW: ~20 min on CPU")
+def test_successor_is_learned_as_a_verb(successor_config):
+    """Alec 2026-09-09: addition is iterated succession, and the successor
+    must be learnable by the existing VP.  On the verb grammar with the
+    answer path seeded from the root idea, every single-digit fact
+    ``n plus one`` is answered (pilot report, "The successor is learned as
+    a VP").  Gate: at least 90 % exact accuracy on the presented facts
+    within 30 epochs at lr 1e-3 (two-digit numerals are excluded: they
+    are read as their digit parts until the multi-digit rung lands)."""
+    m = _build(successor_config, dat={"mathStage": 0, "mathRange": 10,
+                                      "mathProblems": 256, "mathSeed": 0,
+                                      "mathOperators": "succ"})
+    assert _exact_accuracy(m, "train") < 0.5
+    opt = m.getOptimizer(lr=1e-3)
+    best = 0.0
+    for epoch in range(1, 31):
+        m.train()
+        m.runEpoch(optimizer=opt, batchSize=8, split="train")
+        if epoch % 5 == 0:
+            best = max(best, _exact_accuracy(m, "train", limit=256))
+            if best >= 0.9:
+                break
+    assert best >= 0.9, best

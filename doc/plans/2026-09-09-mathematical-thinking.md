@@ -72,6 +72,11 @@ Acceptance: `sentencePrediction` fixtures byte-identical; new tests green.
 
 ## Phase 3 — resolve step, `WhatStepChooser`, primitives in the loop
 
+> Superseded by Phase 8: the EXECUTE candidates, `ExactLexer` in
+> `understand()`, `math.grammar` and `<whatThinkingPrimitives>` were
+> removed from the runtime. The text below is the record of what was
+> built and measured before the decision.
+
 Files: `bin/Output.py` (`AnswerDerivation.step`, `StepChoice`),
 `bin/Language.py` (`WhatStepChooser(nn.Module)`: 29-dim what-context +
 candidate features → logits over {ANSWER, OPEN(v), EXECUTE(op, operands)};
@@ -223,6 +228,17 @@ numerals as wholes over digit parts with `.where` as position (the
 compound representation), then counting ("n plus m") through the
 thinking loop with unseen pairs held out, with serial carries through
 LTM.
+
+Review follow-up (Codex, 2026-09-09): the ANSWER step for a pending
+subquestion used the root idea, so the subanswer did not depend on which
+subquestion was active (confirmed: identical COMPLETE-slot outputs for
+two different words on a fresh model). Fixed: the subquestion's answer
+starts from QUERY(w) (live, so the answer loss reaches it) and then
+attends over the row's LTM outputs; the root's answer still starts from
+the root idea. Test: `test_subanswer_is_conditioned_on_the_active_subquestion`
+(controlled for the forward path's priming drift by comparing
+same-position episodes on fresh models). The spec's section 5.1 / 6.3 /
+8.4 text now describes the retired primitives as history.
 
 ## Test evidence rule
 

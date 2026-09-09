@@ -208,6 +208,46 @@ def test_subquestion_answers_condition_the_root_through_ltm(model, monkeypatch):
         attention["out"].weight.zero_()
 
 
+def _subanswer_for(model, monkeypatch, x, word):
+    """Open the root, answer the subquestion about ``word``, answer the
+    root; return the subquestion's answer (the COMPLETE slot's output)."""
+    model.symbolSpace.Reset(batch=0, hard=True)
+    _script(monkeypatch, WhatStepChooser, [f"open:{word}", "answer", "answer"])
+    with torch.no_grad():
+        result = model.think(What.supervised(0), x)
+    ops = [s.operation for s in result.slots]
+    assert ops == [WhatSlotOperation.OPEN, WhatSlotOperation.COMPLETE,
+                   WhatSlotOperation.CLOSE], ops
+    return result.slots[1].output.detach().clone()
+
+
+def _two_subanswers(monkeypatch, first_word, second_word):
+    """Two consecutive episodes on a FRESH model (the forward path primes
+    across calls, so only same-position runs are comparable)."""
+    m = _build()
+    m.eval()
+    x, _ = _batch(m, rows=1)
+    return (_subanswer_for(m, monkeypatch, x, first_word),
+            _subanswer_for(m, monkeypatch, x, second_word))
+
+
+def test_subanswer_is_conditioned_on_the_active_subquestion(model, monkeypatch):
+    """With the input and the memory fixed, answering a different
+    subquestion yields a different subanswer: the ANSWER step for a
+    pending subquestion starts from QUERY(w), not from the root idea."""
+    problem = _problem(model, 0)
+    words = [w for w in problem.order[:-1]] or []
+    presented = [w for w in model.inputSpace.data.math_problems["train"][0].surface().split()
+                 if w not in ("equals", ";", "what", "is", "plus", "minus", "times")]
+    words = list(dict.fromkeys(words + presented))
+    assert len(words) >= 2, words
+    control_a, control_b = _two_subanswers(monkeypatch, words[0], words[0])
+    assert torch.equal(control_a, control_b)          # same word: same answer
+    first, other = _two_subanswers(monkeypatch, words[0], words[1])
+    assert torch.equal(first, control_a)               # same position: same answer
+    assert not torch.equal(first, other), (words[0], words[1])
+
+
 # -- invariant 3: the desired answer is unreachable ----------------------------
 
 def test_think_never_consults_the_desired_answer(model, monkeypatch):
