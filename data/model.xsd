@@ -306,6 +306,23 @@
       </xs:element>
       <xs:element name="whatCurriculumDistance" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="whatCurriculumRatio" type="unitInterval" minOccurs="0"/>
+      <!-- whatThinkingMemory (mathematical thinking spec 7.1): build the
+           standalone WhatInteractionMemory (the What interaction slots)
+           when the discourse predictor (<sentencePrediction>) is off.
+           Default false = no object, byte-identical. -->
+      <xs:element name="whatThinkingMemory" type="xs:boolean" minOccurs="0"/>
+      <!-- whatThinkingDetach (spec 8.2): the episode credit boundary.
+           slot = detach every interaction value at append (established);
+           episode = values appended inside begin/end_what_episode stay live
+           until the episode ends (after the optimizer step). -->
+      <xs:element name="whatThinkingDetach" minOccurs="0">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:enumeration value="slot"/>
+            <xs:enumeration value="episode"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:element>
       <!-- Reconstruct from the idea rather than replaying the forward parse.
            When true, reverse() clears SymbolSpace's current/generate rules and
            the signal-router's last route, then calls generate on the supplied

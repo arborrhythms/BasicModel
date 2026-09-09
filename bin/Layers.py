@@ -8720,6 +8720,301 @@ class TernaryTruthStore(Layer):
         self._texts = []
 
 
+class WhatInteractionMemory:
+    """Per-row chronological LTM interaction slots for the What loop.
+
+    What spec section 6 / STM.md section 13: each ``LTMSlot`` has
+    independently optional input / output halves; an input-only slot pushes
+    an unanswered question, an output-only slot pops the newest one (LIFO),
+    a complete slot has no stack effect.  The stack is the imbalance of the
+    chronological sequence -- there is no frame object and opening slots
+    are never edited in place.  ``InterSentenceLayer`` composes one of
+    these; ``<whatThinkingMemory>true`` builds one standalone when the
+    discourse predictor is off (mathematical thinking spec 7.1).
+
+    Credit boundary (spec 8.2): ``detach_mode == "slot"`` detaches every
+    value at append (the established behaviour).  ``detach_mode ==
+    "episode"`` keeps values appended between ``begin_what_episode(b)`` and
+    ``end_what_episode(b)`` LIVE on the autograd graph so the root answer
+    loss can reach states created at earlier iterations; ``end`` detaches
+    them (call it after the optimizer step).
+    """
+
+    DETACH_MODES = ("slot", "episode")
+
+    def __init__(self, batch=1, capacity=1024, detach_mode="slot"):
+        self.batch = max(1, int(batch))
+        self.capacity = int(capacity)
+        self.detach_mode = str(detach_mode)
+        self._what_slots = [collections.deque() for _ in range(self.batch)]
+        self._what_closure_pressure = [0.0 for _ in range(self.batch)]
+        self._episode_live = {}          # row -> [live LTMSlot, ...]
+
+    # -- sizing / resets ----------------------------------------------------
+
+    @property
+    def ltm_capacity(self):
+        return self.capacity
+
+    def ensure_batch(self, batch):
+        """Reallocate fresh per-row state when the batch size changes
+        (a new microbatch shape does not inherit the old rows' dialogue)."""
+        batch = max(1, int(batch))
+        if batch == self.batch:
+            return
+        self.batch = batch
+        self._what_slots = [collections.deque() for _ in range(batch)]
+        self._what_closure_pressure = [0.0 for _ in range(batch)]
+        self._episode_live = {}
+
+    def reset(self, batch=None):
+        """Clear one row (``batch`` = row index) or every row."""
+        if batch is None:
+            for dq in self._what_slots:
+                dq.clear()
+            self._what_closure_pressure = [0.0] * self.batch
+            self._episode_live = {}
+            return
+        bi = int(batch)
+        if 0 <= bi < len(self._what_slots):
+            self._what_slots[bi].clear()
+            self._what_closure_pressure[bi] = 0.0
+            self._episode_live.pop(bi, None)
+
+    def Reset(self, batch=None, hard=True):
+        """Space-style cascade entry: only a HARD (document) reset clears
+        the dialogue; a soft sentence reset keeps it."""
+        if hard:
+            self.reset(batch)
+
+    # -- value snapshots ----------------------------------------------------
+
+    @staticmethod
+    def _detach_what_value(value):
+        """Detach an interaction snapshot from the live autograd graph."""
+        if value is None:
+            return None
+        if torch.is_tensor(value):
+            if not bool(torch.isfinite(value).all()):
+                raise FloatingPointError(
+                    "WhatInteractionMemory.append_what_slot: response contains "
+                    "NaN/Inf; refusing to store corrupt LTM state")
+            return value.detach().clone()
+        materialize = getattr(value, "materialize", None)
+        if callable(materialize):
+            return WhatInteractionMemory._detach_what_value(materialize())
+        if isinstance(value, tuple):
+            return tuple(WhatInteractionMemory._detach_what_value(v) for v in value)
+        if isinstance(value, list):
+            return [WhatInteractionMemory._detach_what_value(v) for v in value]
+        if isinstance(value, dict):
+            return {
+                k: WhatInteractionMemory._detach_what_value(v)
+                for k, v in value.items()
+            }
+        return value
+
+    @staticmethod
+    def _live_what_value(value):
+        """Materialize a snapshot WITHOUT detaching (episode mode)."""
+        if value is None:
+            return None
+        if torch.is_tensor(value):
+            if not bool(torch.isfinite(value).all()):
+                raise FloatingPointError(
+                    "WhatInteractionMemory.append_what_slot: response contains "
+                    "NaN/Inf; refusing to store corrupt LTM state")
+            return value
+        materialize = getattr(value, "materialize", None)
+        if callable(materialize):
+            return WhatInteractionMemory._live_what_value(materialize())
+        if isinstance(value, tuple):
+            return tuple(WhatInteractionMemory._live_what_value(v) for v in value)
+        if isinstance(value, list):
+            return [WhatInteractionMemory._live_what_value(v) for v in value]
+        if isinstance(value, dict):
+            return {k: WhatInteractionMemory._live_what_value(v)
+                    for k, v in value.items()}
+        return value
+
+    @staticmethod
+    def _what_open_indices(slots):
+        """Derive the unanswered-input stack from chronological slots."""
+        stack = []
+        for index, slot in enumerate(slots):
+            if slot.operation is WhatSlotOperation.OPEN:
+                stack.append(index)
+            elif slot.operation is WhatSlotOperation.CLOSE:
+                if not stack:
+                    raise ValueError(
+                        "an output-only LTM slot has no open input to close")
+                stack.pop()
+        return stack
+
+    @staticmethod
+    def _trim_balanced_what_prefix(slots, capacity):
+        """Bound memory by evicting only complete chronological prefixes."""
+        slots = list(slots)
+        while len(slots) > capacity:
+            depth = 0
+            cut = None
+            for index, slot in enumerate(slots):
+                if slot.operation is WhatSlotOperation.OPEN:
+                    depth += 1
+                elif slot.operation is WhatSlotOperation.CLOSE:
+                    depth -= 1
+                if depth == 0:
+                    cut = index + 1
+                    break
+            if cut is None:
+                raise OverflowError(
+                    "LTM capacity exhausted by unanswered questions; close "
+                    "the newest question before opening another")
+            del slots[:cut]
+        return slots
+
+    # -- episodes (spec 8.2) -------------------------------------------------
+
+    def begin_what_episode(self, b=0):
+        """Mark row ``b``: slots appended until ``end_what_episode`` stay
+        live when ``detach_mode == "episode"``."""
+        self._episode_live[int(b)] = []
+
+    def in_episode(self, b=0):
+        return int(b) in self._episode_live
+
+    def end_what_episode(self, b=0, detach=True):
+        """Close row ``b``'s episode; with ``detach`` (the default) every
+        slot appended during it is replaced by its detached copy.  Returns
+        the number of slots detached."""
+        live = self._episode_live.pop(int(b), [])
+        if not detach or not live:
+            return 0
+        bi = int(b)
+        ids = {id(s) for s in live}
+        replaced = 0
+        if 0 <= bi < len(self._what_slots):
+            out = []
+            for slot in self._what_slots[bi]:
+                if id(slot) in ids:
+                    slot = LTMSlot(
+                        input=self._detach_what_value(slot.input),
+                        output=self._detach_what_value(slot.output),
+                        question=slot.question, iteration=slot.iteration,
+                        closure_pressure=slot.closure_pressure,
+                        forced=slot.forced, grammar_trace=slot.grammar_trace)
+                    replaced += 1
+                out.append(slot)
+            self._what_slots[bi] = collections.deque(out)
+        return replaced
+
+    # -- the slot API ---------------------------------------------------------
+
+    def append_what_slot(self, slot, b=0):
+        """Append one interaction and enforce LIFO/parity invariants.
+
+        A complete slot has no stack effect, an input-only slot pushes, and
+        an output-only slot pops the newest unanswered input.  Opening slots
+        are immutable; closures are later chronological records.  Values are
+        detached at append unless the row is inside an ``episode``-mode
+        episode.
+        """
+        if not isinstance(slot, LTMSlot):
+            raise TypeError("append_what_slot expects an LTMSlot")
+        bi = int(b)
+        if bi < 0 or bi >= len(self._what_slots):
+            raise IndexError(f"LTM row {bi} is outside batch size {self.batch}")
+        current = list(self._what_slots[bi])
+        open_before = self._what_open_indices(current)
+        if slot.operation is WhatSlotOperation.CLOSE and not open_before:
+            raise ValueError("an output-only LTM slot requires an open input")
+        if open_before and slot.closure_pressure < self._what_closure_pressure[bi]:
+            raise ValueError(
+                "closure pressure must be monotonic while questions remain open")
+
+        trace = slot.grammar_trace + ({
+            "operation": f"what_{slot.operation.value}",
+            "iteration": int(slot.iteration),
+            "closure_pressure": float(slot.closure_pressure),
+            "forced": bool(slot.forced),
+            "temporal": (
+                slot.question.context_values()
+                if slot.question is not None else None),
+        },)
+        live = (self.detach_mode == "episode" and bi in self._episode_live)
+        snapshot = self._live_what_value if live else self._detach_what_value
+        stored = LTMSlot(
+            input=snapshot(slot.input),
+            output=snapshot(slot.output),
+            question=slot.question,
+            iteration=slot.iteration,
+            closure_pressure=slot.closure_pressure,
+            forced=slot.forced,
+            grammar_trace=trace,
+        )
+        candidate = self._trim_balanced_what_prefix(
+            current + [stored], self.capacity)
+        open_after = self._what_open_indices(candidate)
+        self._what_slots[bi] = collections.deque(candidate)
+        self._what_closure_pressure[bi] = (
+            float(slot.closure_pressure) if open_after else 0.0)
+        if live:
+            self._episode_live[bi].append(stored)
+        return stored
+
+    def get_what_slots(self, n=None, b=0):
+        """Return interaction slots, oldest first."""
+        bi = int(b)
+        if bi < 0 or bi >= len(self._what_slots):
+            return []
+        slots = list(self._what_slots[bi])
+        if n is None:
+            return slots
+        n = int(n)
+        return [] if n <= 0 else slots[-n:]
+
+    def open_what_slots(self, b=0):
+        """Return unanswered input slots in stack order, newest last."""
+        slots = self.get_what_slots(b=b)
+        return [slots[index] for index in self._what_open_indices(slots)]
+
+    def what_open_depth(self, b=0):
+        return len(self.open_what_slots(b=b))
+
+    def what_at_parity(self, b=0):
+        return self.what_open_depth(b=b) == 0
+
+    def what_context(self, question=None, b=0):
+        """Return the new, target-free portion of grammar chooser context.
+
+        ``open_question`` is the newest unanswered input representation
+        and ``latest_output`` the newest output representation (spec 7.3:
+        the resolve step consumes them directly); both ``None`` when absent.
+        """
+        bi = int(b)
+        slots = self.get_what_slots(b=bi)
+        open_indices = self._what_open_indices(slots)
+        open_depth = len(open_indices)
+        pressure = (float(self._what_closure_pressure[bi])
+                    if 0 <= bi < len(self._what_closure_pressure) else 0.0)
+        latest_output = next((slot.output for slot in reversed(slots)
+                              if slot.output is not None), None)
+        return {
+            "temporal": (question.context_values()
+                         if question is not None else None),
+            "input_mask": tuple(slot.input is not None for slot in slots),
+            "output_mask": tuple(slot.output is not None for slot in slots),
+            "input_representations": tuple(slot.input for slot in slots),
+            "output_representations": tuple(slot.output for slot in slots),
+            "open_depth": open_depth,
+            "parity": open_depth == 0,
+            "closure_pressure": pressure,
+            "open_question": (slots[open_indices[-1]].input
+                              if open_indices else None),
+            "latest_output": latest_output,
+        }
+
+
 class InterSentenceLayer(Layer):
     """Inter-sentence ARMA(p, q) next-sentence predictor.
 
@@ -8878,8 +9173,8 @@ class InterSentenceLayer(Layer):
         # from the predictor's legacy ragged end-state tuples, but not a
         # second memory or recursive frame hierarchy.  Open stack state is
         # always derived by scanning these chronological slots.
-        self._what_slots = [collections.deque() for _ in range(self._batch)]
-        self._what_closure_pressure = [0.0 for _ in range(self._batch)]
+        self.what_memory = WhatInteractionMemory(
+            batch=self._batch, capacity=self.ltm_capacity)
 
         # ``self.layers`` (parent Layer's ergodic-walk list) only holds
         # objects that implement ``set_sigma`` / ``observe_sigma`` etc.
@@ -9006,8 +9301,7 @@ class InterSentenceLayer(Layer):
         self._stm_end_states = [
             collections.deque(maxlen=self.ltm_capacity)
             for _ in range(batch)]
-        self._what_slots = [collections.deque() for _ in range(batch)]
-        self._what_closure_pressure = [0.0 for _ in range(batch)]
+        self.what_memory.ensure_batch(batch)
         # Per-row last-predicted-root parks reset on a batch reshape too
         # (the prior document's pending prediction does not survive, same
         # as the LTM chain / ARMA rings above).
@@ -9168,155 +9462,57 @@ class InterSentenceLayer(Layer):
                 self._e_history, self._e_count, self.q, residual)
         return loss
 
-    # -- LTM question/response interactions ----------------------------
-    @staticmethod
-    def _detach_what_value(value):
-        """Detach an interaction snapshot from the live autograd graph."""
-        if value is None:
-            return None
-        if torch.is_tensor(value):
-            if not bool(torch.isfinite(value).all()):
-                raise FloatingPointError(
-                    "InterSentenceLayer.append_what_slot: response contains "
-                    "NaN/Inf; refusing to store corrupt LTM state")
-            return value.detach().clone()
-        materialize = getattr(value, "materialize", None)
-        if callable(materialize):
-            return InterSentenceLayer._detach_what_value(materialize())
-        if isinstance(value, tuple):
-            return tuple(InterSentenceLayer._detach_what_value(v) for v in value)
-        if isinstance(value, list):
-            return [InterSentenceLayer._detach_what_value(v) for v in value]
-        if isinstance(value, dict):
-            return {
-                k: InterSentenceLayer._detach_what_value(v)
-                for k, v in value.items()
-            }
-        return value
+    # -- LTM question/response interactions: owned by WhatInteractionMemory
+    # (``self.what_memory``); these delegates keep the layer's public API.
+    _detach_what_value = staticmethod(WhatInteractionMemory._detach_what_value)
+    _what_open_indices = staticmethod(WhatInteractionMemory._what_open_indices)
+    _trim_balanced_what_prefix = staticmethod(
+        WhatInteractionMemory._trim_balanced_what_prefix)
 
-    @staticmethod
-    def _what_open_indices(slots):
-        """Derive the unanswered-input stack from chronological slots."""
-        stack = []
-        for index, slot in enumerate(slots):
-            if slot.operation is WhatSlotOperation.OPEN:
-                stack.append(index)
-            elif slot.operation is WhatSlotOperation.CLOSE:
-                if not stack:
-                    raise ValueError(
-                        "an output-only LTM slot has no open input to close")
-                stack.pop()
-        return stack
+    @property
+    def _what_slots(self):
+        return self.what_memory._what_slots
 
-    @staticmethod
-    def _trim_balanced_what_prefix(slots, capacity):
-        """Bound memory by evicting only complete chronological prefixes."""
-        slots = list(slots)
-        while len(slots) > capacity:
-            depth = 0
-            cut = None
-            for index, slot in enumerate(slots):
-                if slot.operation is WhatSlotOperation.OPEN:
-                    depth += 1
-                elif slot.operation is WhatSlotOperation.CLOSE:
-                    depth -= 1
-                if depth == 0:
-                    cut = index + 1
-                    break
-            if cut is None:
-                raise OverflowError(
-                    "LTM capacity exhausted by unanswered questions; close "
-                    "the newest question before opening another")
-            del slots[:cut]
-        return slots
+    @property
+    def _what_closure_pressure(self):
+        return self.what_memory._what_closure_pressure
+
+    @property
+    def detach_mode(self):
+        return self.what_memory.detach_mode
+
+    @detach_mode.setter
+    def detach_mode(self, value):
+        self.what_memory.detach_mode = str(value)
 
     @torch.compiler.disable
     def append_what_slot(self, slot, b=0):
-        """Append one detached interaction and enforce LIFO/parity invariants.
-
-        A complete slot has no stack effect, an input-only slot pushes, and
-        an output-only slot pops the newest unanswered input.  Opening slots
-        are immutable; closures are later chronological records.
-        """
-        if not isinstance(slot, LTMSlot):
-            raise TypeError("append_what_slot expects an LTMSlot")
-        bi = int(b)
-        if bi < 0 or bi >= len(self._what_slots):
-            raise IndexError(f"LTM row {bi} is outside batch size {self._batch}")
-        current = list(self._what_slots[bi])
-        open_before = self._what_open_indices(current)
-        if slot.operation is WhatSlotOperation.CLOSE and not open_before:
-            raise ValueError("an output-only LTM slot requires an open input")
-        if open_before and slot.closure_pressure < self._what_closure_pressure[bi]:
-            raise ValueError(
-                "closure pressure must be monotonic while questions remain open")
-
-        trace = slot.grammar_trace + ({
-            "operation": f"what_{slot.operation.value}",
-            "iteration": int(slot.iteration),
-            "closure_pressure": float(slot.closure_pressure),
-            "forced": bool(slot.forced),
-            "temporal": (
-                slot.question.context_values()
-                if slot.question is not None else None),
-        },)
-        stored = LTMSlot(
-            input=self._detach_what_value(slot.input),
-            output=self._detach_what_value(slot.output),
-            question=slot.question,
-            iteration=slot.iteration,
-            closure_pressure=slot.closure_pressure,
-            forced=slot.forced,
-            grammar_trace=trace,
-        )
-        candidate = self._trim_balanced_what_prefix(
-            current + [stored], self.ltm_capacity)
-        open_after = self._what_open_indices(candidate)
-        self._what_slots[bi] = collections.deque(candidate)
-        self._what_closure_pressure[bi] = (
-            float(slot.closure_pressure) if open_after else 0.0)
-        return stored
+        """Append one interaction (see ``WhatInteractionMemory``)."""
+        return self.what_memory.append_what_slot(slot, b=b)
 
     def get_what_slots(self, n=None, b=0):
-        """Return detached interaction slots, oldest first."""
-        bi = int(b)
-        if bi < 0 or bi >= len(self._what_slots):
-            return []
-        slots = list(self._what_slots[bi])
-        if n is None:
-            return slots
-        n = int(n)
-        return [] if n <= 0 else slots[-n:]
+        return self.what_memory.get_what_slots(n=n, b=b)
 
     def open_what_slots(self, b=0):
-        """Return unanswered input slots in stack order, newest last."""
-        slots = self.get_what_slots(b=b)
-        return [slots[index] for index in self._what_open_indices(slots)]
+        return self.what_memory.open_what_slots(b=b)
 
     def what_open_depth(self, b=0):
-        return len(self.open_what_slots(b=b))
+        return self.what_memory.what_open_depth(b=b)
 
     def what_at_parity(self, b=0):
-        return self.what_open_depth(b=b) == 0
+        return self.what_memory.what_at_parity(b=b)
 
     def what_context(self, question=None, b=0):
-        """Return the new, target-free portion of grammar chooser context."""
-        bi = int(b)
-        slots = self.get_what_slots(b=bi)
-        open_depth = len(self._what_open_indices(slots))
-        pressure = (float(self._what_closure_pressure[bi])
-                    if 0 <= bi < len(self._what_closure_pressure) else 0.0)
-        return {
-            "temporal": (question.context_values()
-                         if question is not None else None),
-            "input_mask": tuple(slot.input is not None for slot in slots),
-            "output_mask": tuple(slot.output is not None for slot in slots),
-            "input_representations": tuple(slot.input for slot in slots),
-            "output_representations": tuple(slot.output for slot in slots),
-            "open_depth": open_depth,
-            "parity": open_depth == 0,
-            "closure_pressure": pressure,
-        }
+        return self.what_memory.what_context(question=question, b=b)
+
+    def begin_what_episode(self, b=0):
+        return self.what_memory.begin_what_episode(b=b)
+
+    def in_episode(self, b=0):
+        return self.what_memory.in_episode(b=b)
+
+    def end_what_episode(self, b=0, detach=True):
+        return self.what_memory.end_what_episode(b=b, detach=detach)
 
     # -- LTM: long-term memory chain of STM end-states (Task 7) --------
     @torch.compiler.disable
@@ -9861,9 +10057,7 @@ class InterSentenceLayer(Layer):
             # way ``_s_history`` zeros — the next document starts cold.
             for dq in self._stm_end_states:
                 dq.clear()
-            for dq in self._what_slots:
-                dq.clear()
-            self._what_closure_pressure = [0.0] * self._batch
+            self.what_memory.reset()
             # Drop any pending inter-sentence prediction + the live loss
             # accumulator (Task 8): the next document predicts cold, and a
             # boundary must not leak a half-formed grad term across the
@@ -9881,9 +10075,7 @@ class InterSentenceLayer(Layer):
             self._e_count[bi] = 0
             if 0 <= bi < len(self._stm_end_states):
                 self._stm_end_states[bi].clear()
-            if 0 <= bi < len(self._what_slots):
-                self._what_slots[bi].clear()
-                self._what_closure_pressure[bi] = 0.0
+            self.what_memory.reset(bi)
             if 0 <= bi < len(self._inter_last_pred_root):
                 self._inter_last_pred_root[bi] = None
     reset = Reset

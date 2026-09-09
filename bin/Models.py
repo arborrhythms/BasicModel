@@ -2027,6 +2027,20 @@ class BaseModel(Mereology, nn.Module):
         except (TypeError, ValueError):
             self.what_curriculum_ratio = 0.25
 
+        # <whatThinkingMemory> / <whatThinkingDetach> (mathematical thinking
+        # spec 7.1 / 8.2): a standalone interaction memory when the discourse
+        # predictor is off, and the episode credit boundary ("slot" = detach
+        # at append, the established behaviour; "episode" = slots appended
+        # inside begin/end_what_episode stay live until the episode ends).
+        self.what_thinking_memory = bool(TheXMLConfig.get(
+            "architecture.whatThinkingMemory", default=False))
+        self.what_thinking_detach = str(TheXMLConfig.get(
+            "architecture.whatThinkingDetach", default="slot") or "slot").lower()
+        if self.what_thinking_detach not in ("slot", "episode"):
+            raise ValueError(
+                "<whatThinkingDetach> must be 'slot' or 'episode', got "
+                f"{self.what_thinking_detach!r}")
+
         # Reconstruction from an idea with the forward derivation erased.
         # When on, reverse() clears the grammar/routing traces built during
         # comprehension, then asks SymbolSpace.generate to infer the reverse
@@ -7509,10 +7523,22 @@ class BasicModel(BaseModel):
             self._spaces_started_for_forward = False
 
     def _what_memory(self):
-        """Return the existing sequential LTM owner, when configured."""
+        """Return the interaction-slot owner: the discourse layer when the
+        ARMA predictor is configured, else the standalone
+        ``WhatInteractionMemory`` built under ``<whatThinkingMemory>``
+        (mathematical thinking spec 7.1).  The configured credit boundary
+        (``<whatThinkingDetach>``) is applied to whichever owns the slots."""
         symbol_space = getattr(self, "symbolSpace", None)
-        return (getattr(symbol_space, "discourse", None)
-                if symbol_space is not None else None)
+        if symbol_space is None:
+            return None
+        memory = getattr(symbol_space, "discourse", None)
+        if memory is None:
+            memory = getattr(symbol_space, "what_memory", None)
+        mode = getattr(self, "what_thinking_detach", None)
+        if memory is not None and mode is not None and hasattr(memory, "detach_mode"):
+            if memory.detach_mode != mode:
+                memory.detach_mode = mode
+        return memory
 
     @staticmethod
     def _what_execution_parts(execution):
@@ -11989,6 +12015,8 @@ class BasicModel(BaseModel):
         ss = self.symbolSpace
         if ss is not None and getattr(ss, 'discourse', None) is not None:
             ss.discourse.reset()
+        if ss is not None and getattr(ss, 'what_memory', None) is not None:
+            ss.what_memory.reset()
         ctx = torch.no_grad() if not training else nullcontext()
 
         # Runtime / inference (split="runtime", no optimizer) shares the

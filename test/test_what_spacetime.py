@@ -9,7 +9,7 @@ import torch.nn as nn
 
 from data import Data
 from Language import MLPTransformChooser
-from Layers import InterSentenceLayer
+from Layers import InterSentenceLayer, WhatInteractionMemory
 from Models import BasicModel
 from Spaces import WhereEncoding
 from What import (LTMSlot, What, WhatAnswer, WhatRelation,
@@ -117,14 +117,24 @@ def test_attached_model_output_keeps_index_and_supplied_target_separate():
             WhatAnswer(question=question, what="source", provenance="data"))
 
 
-def _memory(capacity=16):
+def _memory(capacity=16, standalone=False):
+    # The interaction slots are owned by ``WhatInteractionMemory``; the
+    # discourse layer composes one and keeps the same API, so every slot
+    # contract below holds for both owners.
+    if standalone:
+        return WhatInteractionMemory(batch=1, capacity=capacity)
     return InterSentenceLayer(
         n_symbols=2, max_depth=3, n_dim=4, p=1, q=0,
         concept_dim=None, batch=1, ltm_capacity=capacity)
 
 
-def test_ltm_slot_stack_parity_lifo_and_immutable_openings():
-    memory = _memory()
+_OWNERS = pytest.mark.parametrize("standalone", [False, True],
+                                  ids=["discourse", "standalone"])
+
+
+@_OWNERS
+def test_ltm_slot_stack_parity_lifo_and_immutable_openings(standalone):
+    memory = _memory(standalone=standalone)
     root = memory.append_what_slot(LTMSlot(input=torch.tensor([1.0])))
     assert memory.what_open_depth() == 1
     assert not memory.what_at_parity()
@@ -151,8 +161,9 @@ def test_ltm_slot_stack_parity_lifo_and_immutable_openings():
         WhatSlotOperation.CLOSE]
 
 
-def test_ltm_rejects_empty_or_unmatched_close_and_detaches_actual_response():
-    memory = _memory()
+@_OWNERS
+def test_ltm_rejects_empty_or_unmatched_close_and_detaches_actual_response(standalone):
+    memory = _memory(standalone=standalone)
     with pytest.raises(ValueError):
         LTMSlot()
     with pytest.raises(ValueError):
@@ -167,8 +178,9 @@ def test_ltm_rejects_empty_or_unmatched_close_and_detaches_actual_response():
     assert torch.equal(stored.output, actual)
 
 
-def test_ltm_pressure_is_monotonic_until_parity_and_reset_clears_slots():
-    memory = _memory()
+@_OWNERS
+def test_ltm_pressure_is_monotonic_until_parity_and_reset_clears_slots(standalone):
+    memory = _memory(standalone=standalone)
     memory.append_what_slot(LTMSlot(input="root", closure_pressure=0.1))
     memory.append_what_slot(LTMSlot(input="child", closure_pressure=0.5))
     with pytest.raises(ValueError):
@@ -181,14 +193,15 @@ def test_ltm_pressure_is_monotonic_until_parity_and_reset_clears_slots():
     assert memory.get_what_slots() == []
 
 
-def test_ltm_capacity_evicts_only_balanced_prefixes():
-    memory = _memory(capacity=2)
+@_OWNERS
+def test_ltm_capacity_evicts_only_balanced_prefixes(standalone):
+    memory = _memory(capacity=2, standalone=standalone)
     memory.append_what_slot(LTMSlot(input="q0", output="a0"))
     memory.append_what_slot(LTMSlot(input="q1", output="a1"))
     memory.append_what_slot(LTMSlot(input="q2", output="a2"))
     assert [slot.input for slot in memory.get_what_slots()] == ["q1", "q2"]
 
-    blocked = _memory(capacity=2)
+    blocked = _memory(capacity=2, standalone=standalone)
     blocked.append_what_slot(LTMSlot(input="q0"))
     blocked.append_what_slot(LTMSlot(input="q1", closure_pressure=0.5))
     with pytest.raises(OverflowError):

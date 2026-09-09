@@ -428,6 +428,8 @@ symbol (line anchors drift).
 | `whatCurriculum` | `Models.py` (`_curriculum_questions`) | `none`; BasicModel `full` | `none` \| `present` \| `temporal` \| `full`: a Bresenham fraction (`whatCurriculumRatio`) of training batches asks past/future (`temporal`) or also inference (`full`) questions instead of the default family. `none` is byte-identical. |
 | `whatCurriculumDistance` | `Models.py` (`_curriculum_questions`) | `1` | Presentation offset of the past/future curriculum questions. |
 | `whatCurriculumRatio` | `Models.py` (`_curriculum_questions`) | `0.25` | Fraction of training batches that are curriculum trials. |
+| `whatThinkingMemory` | `Language.py` (SymbolSubSpace init), `Models.py` (`_what_memory`) | `false` | Build the standalone `Layers.WhatInteractionMemory` (the What interaction slots: push / complete / pop, parity, closure pressure) when `<sentencePrediction>` is off, so `Model.think()` no longer needs the ARMA predictor. Same capacity knob (`<SymbolSpace><ltmCapacity>`), same hard-reset cascade. |
+| `whatThinkingDetach` | `Models.py` (`_what_memory` applies it to the slot owner) | `slot` | Episode credit boundary (mathematical thinking spec 8.2): `slot` detaches every interaction value at append (established); `episode` keeps values appended between `begin_what_episode` / `end_what_episode` live until the episode ends. |
 | `reasoningIterations` | `Models.py` (BaseModel init) | `1` | Truth-grounded reasoning chain depth; a query routes to the recurrent tool-use loop at this depth. `0` = old generative-infer behavior. |
 | `queryReasoning` | `Models.py` (BaseModel init) | `false` | DEPRECATED alias: `true` $\Rightarrow$ `reasoningIterations = 10`. Read only when `<reasoningIterations>` is absent. |
 | `ltmConsolidation` | `Models.py`, `Language.py` (SymbolSubSpace) | `false` | Unifies the discourse LTM chain + RelativeTruthStore into one persisted `TernaryTruthStore` (`ltm_store`). |
@@ -473,9 +475,10 @@ symbol (line anchors drift).
 | `conceptualContextLearningRate` | `Models.py` (BaseModel init) | `0.0` | Detached post-sentence update rate for the shared serial ConceptualSpace dictionary. Positive values convert `similarity_codebook.W` from its construction Parameter into a persistent non-grad buffer, then rotate reduced contextual evidence directly on its initial unit sphere. |
 | `conceptualContextNegatives` | `Models.py` (BaseModel init) | `4` | Deterministic negative rows per observed concept in the context-owned SBOW reducer. |
 
-### Planned: `whatThinking*` (mathematical thinking plan, Phases 2–4)
+### Planned: `whatThinking*` (mathematical thinking plan, Phases 3–4)
 
-Not yet read by any code. Listed so the names are reserved and the
+Not yet read by any code (`whatThinkingMemory` / `whatThinkingDetach` landed
+in Phase 2 and are in the table above). Listed so the names are reserved and the
 defaults are on record; each lands default-off / byte-identical. See the
 [mathematical thinking specification](specs/2026-09-09-mathematical-thinking.md).
 
@@ -484,8 +487,6 @@ defaults are on record; each lands default-off / byte-identical. See the
 | `whatThinkingIterations` | `<architecture>` | `1` | Iteration limit `L` of a `Model.think()` episode; `1` = no internal dialogue (today's single `what()`). |
 | `whatThinkingPressure` | `<architecture>` | `linear` | Closure-pressure schedule: `linear` \| `quadratic` \| `step` (all monotone, `p(L-1) = 1`). |
 | `whatThinkingPrimitives` | `<architecture>` | `0` | Exact primitive executions allowed per iteration; `0` = primitives off. |
-| `whatThinkingMemory` | `<architecture>` | `false` | Build the standalone `WhatInteractionMemory` when `sentencePrediction` is off. |
-| `whatThinkingDetach` | `<architecture>` | `episode` | Credit boundary: `episode` (detach after the optimizer step) \| `slot` (detach at append, today's behaviour). |
 | `whatThinkingPolicyWeight` | `<architecture><training>` | `0.0` | Weight of the `WhatStepChooser` policy objective (hard open / answer / execute choices). |
 | `whatThinkingCloneWeight` | `<architecture><training>` | `0.0` | Weight of behaviour cloning on the model's own verifier-accepted traces. |
 

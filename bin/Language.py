@@ -29,6 +29,7 @@ from Layers import LinearLayer, InvertibleLinearLayer, AssociationLayer, Mapppin
 from Layers import (CertaintyWeightedCrossEntropy, LeafDecoderHead, Loss,
                     ModelLoss, epsilon, Ops)
 from Layers import SortingLayer, TruthLayer, RelativeTruthStore, TernaryTruthStore, LiftingLayer, InterSentenceLayer, SparsityRegLayer, SmoothingRegLayer, ImpenetrableLayer
+from Layers import WhatInteractionMemory
 from util import parse
 from collections import namedtuple as _namedtuple
 
@@ -10809,6 +10810,19 @@ class SymbolSubSpace(SubSpace):
         # Contrastive cosine machinery retired 2026-05-14 alongside
         # <maskedPrediction>.
         self.discourse = None
+        # Standalone What interaction memory (mathematical thinking spec
+        # 7.1): the discourse layer owns the interaction slots when the
+        # ARMA predictor is on; <architecture><whatThinkingMemory>true
+        # builds the same WhatInteractionMemory without it, so thinking no
+        # longer requires <sentencePrediction>. Default false: no object.
+        self.what_memory = None
+        if (not bool(TheXMLConfig.training("sentencePrediction", False))
+                and bool(TheXMLConfig.get("architecture.whatThinkingMemory",
+                                          default=False))):
+            self.what_memory = WhatInteractionMemory(
+                batch=1,
+                capacity=int(TheXMLConfig.space(
+                    "SymbolSpace", "ltmCapacity", default=1024) or 1024))
         if bool(TheXMLConfig.training("sentencePrediction", False)):
             try:
                 n_sym_rows = int(wholeSpace.outputShape[0])
@@ -13502,6 +13516,8 @@ class SymbolSubSpace(SubSpace):
         for layer in self.layers:
             if hasattr(layer, 'Reset'):
                 layer.Reset(batch=batch, hard=hard)
+        if getattr(self, 'what_memory', None) is not None:
+            self.what_memory.Reset(batch=batch, hard=hard)
         if not hard:
             # Soft reset (sentence boundary): callers should use
             # soft_reset(batch=b) directly. Treat a soft Reset as a
@@ -13786,6 +13802,8 @@ class SymbolSubSpace(SubSpace):
             self._stm_fired = torch.zeros(int(B), dtype=torch.bool, device=device)
         if self.discourse is not None and hasattr(self.discourse, 'ensure_batch'):
             self.discourse.ensure_batch(int(B))
+        if getattr(self, 'what_memory', None) is not None:
+            self.what_memory.ensure_batch(int(B))
         # _sentence_completed: per-source-row host bool, drained by the
         # outer doc-streaming loop after each runBatch. Resized in step
         # with the source-row count B so soft-reset signaling tracks the

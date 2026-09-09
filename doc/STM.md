@@ -964,13 +964,22 @@ opening slot; a later output-only slot closes it. The API on the layer
   not.
 
 The output half always records the response the model actually produced,
-never the desired `Data` answer. Today the memory exists only when the
-discourse layer is built (`<training><sentencePrediction>true`); the
-[mathematical thinking plan](plans/2026-09-09-mathematical-thinking.md)
-Phase 2 extracts it into a standalone `WhatInteractionMemory` with an
-explicit episode credit boundary (`begin_what_episode` /
-`end_what_episode`) so it can be used without the ARMA predictor and so
-root loss can reach states created earlier in one bounded episode.
+never the desired `Data` answer.
+
+The slots are owned by `Layers.WhatInteractionMemory`; `InterSentenceLayer`
+composes one (`discourse.what_memory`) and keeps the delegating API above,
+and `<architecture><whatThinkingMemory>true` builds one standalone on
+`SymbolSubSpace.what_memory` when `<sentencePrediction>` is off, so
+`Model.think()` no longer requires the ARMA predictor
+(`Model._what_memory()` returns whichever exists). The **episode credit
+boundary** (mathematical thinking spec 8.2) is explicit:
+`begin_what_episode(b)` / `end_what_episode(b, detach=True)`; under
+`<whatThinkingDetach>episode` the values appended inside an episode stay
+live on the autograd graph until `end` (called after the optimizer step),
+so a root answer loss can reach states created at earlier iterations;
+under the default `slot` every value is detached at append (the
+established behaviour). `what_context()` also exposes `open_question` (the
+newest unanswered input) and `latest_output` for the resolve step.
 
 ---
 
