@@ -192,6 +192,24 @@ epoch 5. The RUN_SLOW xfail is replaced by
 (default suite, ~50 s). Remaining: depths 4–6, stage 2 (substitute /
 constrain), the policy's sampling variance on train, and episode length.
 
+## Phase 8 — the syntactic route (Alec, 2026-09-09)
+
+Decision: no mathematical machinery in the runtime; math is a syntax that
+tests the UG; `plus` is a transitive verb with the existing verb
+definition; intermediate thoughts are LTM slots. Landed: the exact
+scratchpad, the EXECUTE candidates, the binding credit, the READY /
+DEPENDENCY features and the numeral / referent codes are removed from
+the runtime (`bin/exact.py` is data generation and evaluation only;
+`<whatThinkingPrimitives>` retired, raises at load; `math.grammar`
+deleted). The resolve step chooses ANSWER or OPEN(word) over the
+presented words; the root answer attends over the row's LTM outputs
+(`ltm_attention`, zero-initialised); corpora render as words (`3 plus
+4`, `b equals a plus 4 ; what is b`). The stage-0 / stage-1 learning
+tests are strict xfails on the syntactic route. Next: the verb grammar
+configuration (`complete.grammar`, serial word analysis, a large model)
+and the long stage-0 run that must learn `plus`; then LTM-only thinking
+on stage 1.
+
 ## Test evidence rule
 
 Interface tests and scripted traces are reported as *mechanism*; only the

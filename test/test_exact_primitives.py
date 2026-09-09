@@ -24,7 +24,11 @@ from exact import (Bound, Equation, ExactLexer, ExactState, ExactVerifier,  # no
 def test_lexer_parses_the_spec_examples():
     eqs, q = ExactLexer.lex("a = 3 ; b = a + 4 ; c = 2 * b ; what is c ?")
     assert q == "c"
-    assert [e.render() for e in eqs] == ["a = 3", "b = a + 4", "c = 2 * b"]
+    assert [e.render(words=False) for e in eqs] == ["a = 3", "b = a + 4", "c = 2 * b"]
+    assert [e.render() for e in eqs] == ["a equals 3", "b equals a plus 4", "c equals 2 times b"]
+    # word surfaces lex identically to glyph surfaces
+    assert ExactLexer.lex("a equals 3 ; b equals a plus 4 ; what is b") == ExactLexer.lex(
+        "a = 3 ; b = a + 4 ; what is b ?")
     assert eqs[2].rhs == ("mul", num(2), var("b"))
     eqs, q = ExactLexer.lex("x + y = 12 ; y = 2 * x ; what is x ?")
     assert q == "x" and eqs[0].solved_var is None and eqs[1].solved_var == "y"

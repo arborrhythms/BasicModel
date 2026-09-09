@@ -4,13 +4,10 @@
 Mathematical thinking spec section 9 / 10 (plan Phase 5): run one
 checkpoint (or a fresh model) at several iteration budgets with an equal
 primitive allowance per iteration, and report -- by depth and budget --
-exact-answer accuracy, derivation validity (the independent verifier),
-rejected steps, forced closures, mean iterations, primitive counts,
-candidate reduction (illumination), latency, and the memory ablation.
-
-Every number is measured on the evaluation side: the verifier and the
-oracle candidate sets read the generated ``Problem`` records that ``Data``
-keeps beside the presentations; nothing here enters the model's context.
+exact-answer accuracy, forced closures, mean iterations, latency, and the
+memory ablation.  (The runtime carries no exact primitives -- Alec
+2026-09-09 -- so there is no derivation to verify; the exact code is data
+generation only.)
 
 Usage:
 
@@ -93,14 +90,13 @@ def evaluate(model, *, split, budget, rows=None, batch=8, ablate_memory=False,
     per-problem measurements."""
     import torch
     from What import What
-    from exact import ExactVerifier
 
     data = model.inputSpace.data
     problems = data.math_problems[split]
     n = len(problems) if rows is None else min(int(rows), len(problems))
     memory = model._what_memory()
     restore = _hide_memory(memory) if (ablate_memory and memory is not None) else None
-    verifier = ExactVerifier(measure_illumination=bool(illumination))
+    del illumination                # retained for CLI compatibility
     out = []
     try:
         for start in range(0, n, int(batch)):
@@ -121,26 +117,16 @@ def evaluate(model, *, split, budget, rows=None, batch=8, ablate_memory=False,
             with torch.no_grad():
                 result = model.think(questions, x, max_iterations=int(budget))
             latency = (time.time() - t0) / max(1, len(idx))
-            states = dict(model.__dict__.get("_what_exact_states") or {})
             target = y.reshape(len(idx), -1).argmax(-1)
             for b, i in enumerate(idx):
                 problem = problems[i]
                 answer = result.answers[b].what
                 predicted = int(torch.as_tensor(answer).reshape(-1).argmax())
-                state = states.get(b, (None, None))[0]
-                trace = list(state.trace) if state is not None else []
-                report = verifier.check(trace, problem, answer=predicted)
                 out.append({
                     "row": i, "depth": problem.depth, "budget": int(budget),
                     "correct": int(predicted == int(target[b])),
-                    "valid": int(report.valid), "accepted": report.accepted,
-                    "rejected": report.rejected,
-                    "primitives": int(getattr(state, "executions", 0) or 0),
                     "iterations": result.iterations,
                     "forced": result.forced_closures,
-                    "illumination_gain": (
-                        (report.illumination[-1] - report.illumination[0])
-                        if report.illumination else None),
                     "latency_s": latency,
                 })
     finally:
@@ -161,22 +147,14 @@ def summarize(rows):
         table[key] = {
             "n": len(items),
             "accuracy": sum(r["correct"] for r in items) / n,
-            "validity": sum(r["valid"] for r in items) / n,
-            "rejected": sum(r["rejected"] for r in items) / n,
             "forced": sum(r["forced"] for r in items) / n,
             "iterations": sum(r["iterations"] for r in items) / n,
-            "primitives": sum(r["primitives"] for r in items) / n,
-            "illumination_gain": (
-                sum(r["illumination_gain"] for r in items
-                    if r["illumination_gain"] is not None)
-                / max(1, sum(1 for r in items if r["illumination_gain"] is not None))),
             "latency_s": sum(r["latency_s"] for r in items) / n,
         }
     return table
 
 
-REPORT_COLUMNS = ("n", "accuracy", "validity", "rejected", "forced", "iterations",
-                  "primitives", "illumination_gain", "latency_s")
+REPORT_COLUMNS = ("n", "accuracy", "forced", "iterations", "latency_s")
 
 
 def render(tables, *, config, weights, seeds, split, extra=None):
@@ -212,7 +190,7 @@ def main(argv=None):
     parser.add_argument("--batch", type=int, default=8)
     parser.add_argument("--ablate-memory", action="store_true")
     parser.add_argument("--illumination", action="store_true",
-                        help="measure candidate reduction (brute force; small R only)")
+                        help="retained for compatibility; no effect")
     parser.add_argument("--out", default=None, help="Markdown report path")
     parser.add_argument("--json", default=None, help="raw rows path")
     args = parser.parse_args(argv)

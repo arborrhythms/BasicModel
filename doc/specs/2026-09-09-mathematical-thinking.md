@@ -12,6 +12,21 @@
 > here. Nothing in this document claims learned behaviour; section 11 names
 > the mechanism invariants and section 10 the learning gates.
 
+> **Decision (Alec, 2026-09-09):** no logical machinery for mathematical
+> reasoning in the runtime. Math is a simple syntax that tests the
+> universal grammar and is expected to demonstrate reasoning more easily
+> than English. `plus` is a transitive VERB with the grammar's existing
+> verb definition (it maps its two noun arguments to a third concept,
+> their sum); numerals are nouns the lexicon learns; intermediate thoughts
+> are LTM slots of successive `what()` queries that establish truth in new
+> regions of conceptual space. Section 5's primitives therefore live ONLY
+> on the data / evaluation side (`bin/exact.py`: generation, the oracle,
+> the verifier for scripted traces); the runtime resolve step (6.3)
+> chooses only between answering and opening a subquestion about a
+> presented word, and the root answer is conditioned on the row's LTM
+> outputs by a learned attention. The learning gates are open (strict
+> xfails) until the large stage-0 run learns `plus`.
+
 ## 1. Objective
 
 Make `Model` choose useful subquestions through recurrent `what()`
@@ -134,7 +149,12 @@ independently of answers.
 held-out depth band (4–6) appears only in `test`. Datasets, seeds and
 gates are frozen before evaluation (section 10).
 
-## 5. Exact primitives
+## 5. Exact primitives (data and evaluation side only)
+
+> Per the decision above, nothing in this section executes in the model.
+> The primitives define the generator, the oracle answer, and the
+> verifier's replay of a *scripted* trace; the "resolve step" that
+> chooses them is the evaluation harness's, not the model's.
 
 ### 5.1 Lexical exposure
 
@@ -240,6 +260,17 @@ the enlarged LTM context. Rows already at parity are masked from further
 slots.
 
 ### 6.3 Resolve step
+
+> Runtime form (Alec 2026-09-09): `_resolve_step` offers ANSWER and
+> OPEN(w) for each presented word `w` (the lexicon's segmentation of the
+> input; `Meronomy.word_spans`), with lexical / mnemonic candidate
+> features only (kind, surface position, already answered in this row's
+> LTM). ANSWER conditions the root slot on the row's LTM output
+> representations through a zero-initialised attention (`ltm_attention`);
+> OPEN installs the referent's perceptual slot as the QUERY symbol. No
+> EXECUTE kind, no bindings, no numeral or referent codes. The text
+> below records the earlier exact-route form for the history of the
+> pilot; it is not the runtime.
 
 `_resolve_answer(understanding, question, ltm_context, pressure, σ)` runs
 the `WhatStepChooser` once per iteration and returns an `AnswerDerivation`
@@ -358,9 +389,10 @@ A_t    = G_row − b        (b: running mean baseline per model)
 L_pol  = −mean_t A_t · log π(step_t | context_t)
 ```
 
-`c_bind · |β_row|` is dense credit for every variable the row's OWN
-scratchpad bound during the episode (no oracle enters: the scratchpad is
-model state). Without it the depth-1 chain (four primitives before any
+(Runtime form: the root answer is the only reward -- `c_bind` is gone
+with the scratchpad.) Historical note on the exact route: `c_bind ·
+|β_row|` was dense credit for every variable the row's scratchpad bound
+during the episode. Without it the depth-1 chain (four primitives before any
 answer reward) is not found by sampling; with it the policy discovers
 open → evaluate → bind → answer (pilot report, "Stage 1"). The candidate
 features the chooser reads are content, not position: kind, primitive,

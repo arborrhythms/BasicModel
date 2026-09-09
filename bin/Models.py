@@ -2040,11 +2040,9 @@ class BaseModel(Mereology, nn.Module):
             raise ValueError(
                 "<whatThinkingDetach> must be 'slot' or 'episode', got "
                 f"{self.what_thinking_detach!r}")
-        # <whatThinkingIterations> / <whatThinkingPressure> /
-        # <whatThinkingPrimitives> (spec 6.2 / 6.4 / 8.4): the episode
-        # iteration limit L (1 = today's single what()), the monotone
-        # closure-pressure schedule, and the exact primitive executions
-        # allowed per iteration (0 = primitives off).  All default off.
+        # <whatThinkingIterations> / <whatThinkingPressure> (spec 6.2 /
+        # 6.4): the episode iteration limit L (1 = today's single what())
+        # and the monotone closure-pressure schedule.  Default off.
         try:
             self.what_thinking_iterations = max(1, int(TheXMLConfig.get(
                 "architecture.whatThinkingIterations", default=1) or 1))
@@ -2056,11 +2054,11 @@ class BaseModel(Mereology, nn.Module):
             raise ValueError(
                 "<whatThinkingPressure> must be linear, quadratic or step, got "
                 f"{self.what_thinking_pressure!r}")
-        try:
-            self.what_thinking_primitives = max(0, int(TheXMLConfig.get(
-                "architecture.whatThinkingPrimitives", default=0) or 0))
-        except (TypeError, ValueError):
-            self.what_thinking_primitives = 0
+        if TheXMLConfig.get("architecture.whatThinkingPrimitives", default=None) is not None:
+            raise ValueError(
+                "<whatThinkingPrimitives> is retired (Alec 2026-09-09): no "
+                "mathematical machinery in the runtime; arithmetic is a "
+                "syntax the grammar learns (plus is a transitive verb)")
 
         # Reconstruction from an idea with the forward derivation erased.
         # When on, reverse() clears the grammar/routing traces built during
@@ -7833,9 +7831,9 @@ class BasicModel(BaseModel):
         steps, step_trace, exact_steps = (), (), ()
         if self._thinking_enabled():
             # The thinking resolve step (mathematical thinking spec 6.3):
-            # one hard choice per row among ANSWER / OPEN / EXECUTE, exact
-            # primitives executed by the runtime, the answer symbol's root
-            # slot set from an exactly bound value when there is one.
+            # one hard choice per row between ANSWER (root conditioned on
+            # the row's LTM outputs) and OPEN a subquestion about a
+            # presented referent.
             answer, steps, step_trace, exact_steps = self._resolve_step(
                 understanding, questions, per_row, answer)
         answer = self._condition_answer_on_question(answer, questions)
@@ -7862,11 +7860,20 @@ class BasicModel(BaseModel):
             row_sources=tuple(row_sources), step=steps,
             exact_steps=exact_steps)
 
-    # -- thinking: the resolve step (mathematical thinking spec 5-6) ---------
+    # -- thinking: the resolve step (mathematical thinking spec 6) -----------
+    #
+    # Alec 2026-09-09: NO mathematical machinery in the runtime.  Math is a
+    # simple syntax that exercises the general grammar and the LTM thinking
+    # loop; ``plus`` is a transitive verb the grammar learns.  The resolve
+    # step therefore chooses only between ANSWERING the active question and
+    # OPENING a subquestion about one of the REFERENTS the lexicon presents
+    # (the words of the presented input); intermediate results live in LTM
+    # slots as the model's own representations, and the root answer is
+    # conditioned on them through a learned attention.  The exact
+    # arithmetic in ``bin/exact.py`` is data generation and evaluation only.
     WHAT_STEP_MAX_CANDIDATES = 32
     WHAT_STEP_COST = 0.01          # per-iteration cost in the policy reward
     WHAT_FORCED_COST = 0.1         # per forced closure
-    WHAT_BIND_REWARD = 0.1         # per variable the row's scratchpad bound
 
     def _what_or_think(self, questions, input_data, *, executor, record):
         """``runBatch``'s evaluation of the batch's questions: a thinking
@@ -7897,8 +7904,8 @@ class BasicModel(BaseModel):
     def _what_step_policy_loss(self, answer_loss):
         """REINFORCE credit for the resolve-step choices of the last episode
         (spec 8.3): ``G = -L_answer - c_step * iterations - c_forced *
-        forced``, an EMA baseline, ``L = -mean((G - b) * log pi)``.  ``None``
-        without recorded choices.  Reported distinctly in ``what_report()``."""
+        forced``, an EMA baseline, ``L = -mean((G - b) * log pi)``.  The
+        root answer is the only reward.  ``None`` without recorded choices."""
         records = [r for r in (self.__dict__.get("_what_policy_records") or ())
                    if torch.is_tensor(r[2]) and r[2].requires_grad]
         if not records:
@@ -7908,27 +7915,13 @@ class BasicModel(BaseModel):
         forced = int(getattr(thinking, "forced_closures", 0) or 0)
         answer = (float(answer_loss.detach()) if torch.is_tensor(answer_loss)
                   else float(answer_loss or 0.0))
-        # Dense credit on the model's OWN scratchpad (no oracle): every
-        # variable a row bound during the episode is progress toward an
-        # exact answer, so the return is per row.
-        states = self.__dict__.get("_what_exact_states") or {}
-        def bound(b):
-            state = states.get(b, (None, None))[0]
-            return len(getattr(state, "bindings", {}) or {})
-        rows = sorted({r[0] for r in records})
-        G = {b: (-answer + self.WHAT_BIND_REWARD * bound(b)
-                 - self.WHAT_STEP_COST * iterations
-                 - self.WHAT_FORCED_COST * forced) for b in rows}
-        mean_G = sum(G.values()) / max(1, len(G))
+        G = -answer - self.WHAT_STEP_COST * iterations - self.WHAT_FORCED_COST * forced
         baseline = self.__dict__.get("_what_policy_baseline")
-        base = baseline if baseline is not None else 0.0
-        self._what_policy_baseline = (mean_G if baseline is None
-                                      else 0.9 * baseline + 0.1 * mean_G)
-        advantages = torch.tensor([G[r[0]] - base for r in records],
-                                  dtype=torch.float32)
+        advantage = G - (baseline if baseline is not None else 0.0)
+        self._what_policy_baseline = (G if baseline is None
+                                      else 0.9 * baseline + 0.1 * G)
         log_probs = torch.stack([r[2] for r in records])
-        loss = -(advantages.to(log_probs.device, log_probs.dtype) * log_probs).mean()
-        G = mean_G
+        loss = -(float(advantage) * log_probs).mean()
         report = self._what_report_state()
         report["policy_thinking_credit_sum"] = (
             report.get("policy_thinking_credit_sum", 0.0) + float(loss.detach()))
@@ -7940,10 +7933,8 @@ class BasicModel(BaseModel):
         return loss
 
     def _thinking_enabled(self):
-        """True when an episode may take more than one iteration or use
-        exact primitives; false keeps the established single what()."""
-        return (int(getattr(self, "what_thinking_iterations", 1) or 1) > 1
-                or int(getattr(self, "what_thinking_primitives", 0) or 0) > 0)
+        """True when an episode may take more than one iteration."""
+        return int(getattr(self, "what_thinking_iterations", 1) or 1) > 1
 
     def _what_step_chooser(self, *, device=None, dtype=None):
         """The learned hard-choice head of the resolve step, built on first
@@ -7967,10 +7958,50 @@ class BasicModel(BaseModel):
             self.what_step_chooser = module
         return module
 
-    def _exact_surface(self, question):
+    def _ltm_attention(self, width, key_width, *, device, dtype):
+        """The learned conditioning of the root answer symbol on the row's
+        LTM OUTPUT representations (spec 7.3): a single-head attention
+        whose query is the root slot and whose keys / values are the
+        stored responses, with a ZERO-initialised output projection so the
+        answer path starts independent of memory.  Built on first use."""
+        module = getattr(self, "ltm_attention", None)
+        if (module is None or int(module["query"].in_features) != int(width)
+                or int(module["key"].in_features) != int(key_width)):
+            module = nn.ModuleDict({
+                "query": nn.Linear(int(width), int(width), bias=False),
+                "key": nn.Linear(int(key_width), int(width), bias=False),
+                "value": nn.Linear(int(key_width), int(width), bias=False),
+                "out": nn.Linear(int(width), int(width), bias=False),
+            })
+            nn.init.zeros_(module["out"].weight)
+            module = module.to(device=device, dtype=dtype)
+            self.ltm_attention = module
+        return module
+
+    def _attend_ltm(self, root, outputs):
+        """``root`` ``[D]`` attends over ``outputs`` (a list of stored
+        response tensors); returns the delta to add to the root slot."""
+        if not outputs:
+            return None
+        keys = []
+        for value in outputs:
+            if torch.is_tensor(value) and value.numel() > 0:
+                keys.append(value.to(device=root.device, dtype=root.dtype).reshape(-1))
+        if not keys:
+            return None
+        width = min(k.numel() for k in keys)
+        stack = torch.stack([k[:width] for k in keys])          # [K, W]
+        module = self._ltm_attention(root.numel(), width,
+                                     device=root.device, dtype=root.dtype)
+        q = module["query"](root)                                # [D]
+        k = module["key"](stack)                                 # [K, D]
+        v = module["value"](stack)                               # [K, D]
+        weights = torch.softmax(k @ q / float(root.numel()) ** 0.5, dim=0)
+        return module["out"](weights @ v)
+
+    def _presented_surface(self, question):
         """The PRESENTED surface of ``question`` (its prompt, else the
-        dataset input at its ``where``): the input side only, never the
-        desired answer."""
+        dataset input at its ``where``): the input side only."""
         prompt = getattr(question, "prompt", None)
         if isinstance(prompt, str) and prompt.strip():
             return prompt
@@ -7984,29 +8015,29 @@ class BasicModel(BaseModel):
         value = presentation.input
         return value if isinstance(value, str) else None
 
-    def _begin_exact_states(self, questions):
-        """Lex each row's presented surface into its ExactState scratchpad
-        (spec 5.1) at iteration 0; rows whose surface is not an exact
-        problem simply have no scratchpad."""
-        states = {}
-        self._what_exact_states = states
-        if int(getattr(self, "what_thinking_primitives", 0) or 0) <= 0:
-            return states
-        from exact import ExactLexer, ExactState
-        data = getattr(getattr(self, "inputSpace", None), "data", None)
-        R = int(getattr(data, "math_range", 0) or 0) or 64
+    def _begin_referents(self, questions):
+        """The REFERENTS each row may open a subquestion about: the distinct
+        words of its presented surface, as the lexicon segments them
+        (``Meronomy.word_spans``), in surface order.  Purely lexical: no
+        structure is read from the surface."""
+        import Meronomy
+        referents = {}
+        self._what_referents = referents
+        if not self._thinking_enabled():
+            return referents
         for b, question in enumerate(questions):
-            surface = self._exact_surface(question)
-            if surface is None:
+            surface = self._presented_surface(question)
+            if not surface:
                 continue
-            try:
-                equations, query = ExactLexer.lex(surface)
-            except ValueError:
-                continue
-            state = ExactState(list(equations), range=R)
-            state.tokens = tuple(surface.replace("?", " ? ").split())
-            states[b] = (state, query)
-        return states
+            raw = surface.encode("ascii", errors="replace")
+            words = []
+            for span in Meronomy.word_spans(raw):
+                a, z = int(span[0]), int(span[1])
+                word = raw[a:z].decode("ascii", errors="replace")
+                if word and word not in words:
+                    words.append(word)
+            referents[b] = tuple(words)
+        return referents
 
     def _open_referents(self, b):
         """Referent names of row ``b``'s open LTM inputs, oldest first
@@ -8024,204 +8055,150 @@ class BasicModel(BaseModel):
             out.append(referent)
         return out
 
-    def _active_referent(self, b, query):
+    def _answered_referents(self, b):
+        """Referents whose subquestion row ``b`` already answered (from the
+        LTM slot traces): the model's own record of what it has thought."""
+        memory = self._what_memory()
+        if memory is None:
+            return set()
+        out = set()
+        for slot in memory.get_what_slots(b=b):
+            for entry in slot.grammar_trace:
+                if (isinstance(entry, dict)
+                        and entry.get("operation") == "what_answer_referent"
+                        and entry.get("referent")):
+                    out.add(entry["referent"])
+        return out
+
+    def _active_referent(self, b):
         """Which question row ``b`` answers now: the subquestion posed at
         the previous iteration (``pending``), else the newest open LTM input
-        (``open``), else the root (``root``)."""
+        (``open``), else the root (``root``, referent ``None``)."""
         pending = (self.__dict__.get("_what_pending") or {}).get(b)
         if pending is not None:
             return pending, "pending"
         opens = self._open_referents(b)
-        if opens and opens[-1] is not None and opens[-1] != query:
+        if opens and opens[-1] is not None:
             return opens[-1], "open"
-        return query, "root"          # the root, whether or not it is open
+        return None, "root"
 
-    def _enumerate_step_candidates(self, state, query, active, open_refs):
+    def _enumerate_step_candidates(self, referents, active, open_refs, answered):
         """Candidate actions for one row (spec 6.3): ANSWER first (the
-        neutral chooser's tie-break), then OPEN(v) for unbound variables not
-        already in play, then EXECUTE for the primitives that apply."""
-        from exact import Bound
-        cands = [{"kind": "answer", "op": None, "operand": (), "label": "answer",
-                  "active": True, "bound": bool(state and active in state.bindings),
-                  "applied": False, "position": 0.0}]
-        if state is None:
-            return cands
-        n = max(1, len(state.equations))
-        bound = set(state.bindings)
-        variables = sorted(set().union(*(e.vars for e in state.equations)))
-        busy = {r for r in open_refs if r} | {active}
-        # The active question's own premise and what it still needs: the
-        # content features the chooser reads (spec 6.3), so a policy can
-        # generalize across problems instead of memorizing positions.
-        active_needs = set()
-        for eq in state.equations:
-            if eq.solved_var == active:
-                active_needs = {v for v in eq.vars if v != active and v not in bound}
-        for v in variables:
-            if v not in bound and v not in busy:
-                cands.append({"kind": "open", "op": None, "operand": v,
-                              "label": f"open:{v}", "active": False,
-                              "bound": False, "applied": False, "position": 0.0,
-                              "dependency": v in active_needs})
-        justified = {}
-        for step in state.trace:
-            op, res = step["operation"], step["result"]
-            if op == "exact:evaluate" and isinstance(res, int):
-                eq = state._equation(step["operands"][0])
-                if eq is not None and eq.solved_var:
-                    justified.setdefault(eq.solved_var, res)
-            elif op == "exact:constrain" and isinstance(res, Bound):
-                justified.setdefault(res.var, res.value)
-        for i, eq in enumerate(state.equations):
-            sv = eq.solved_var
-            pos = float(i) / float(n)
-            # A premise whose value is already justified is offered as its
-            # BIND, not evaluated again (keeps the action menu small).
-            if sv is not None and sv not in bound and sv not in justified:
-                needs = {v for v in eq.vars if v != sv}
-                cands.append({"kind": "execute", "op": "evaluate", "operand": (i,),
-                              "label": f"evaluate:{i}", "active": sv == active,
-                              "bound": False, "applied": i in state.applied,
-                              "position": pos, "referent": sv,
-                              "ready": needs <= bound,
-                              "dependency": sv in active_needs})
-            if sv is None:
-                cands.append({"kind": "execute", "op": "constrain", "operand": (i,),
-                              "label": f"constrain:{i}", "active": active in eq.vars,
-                              "bound": False, "applied": i in state.applied,
-                              "position": pos})
-                for j, other in enumerate(state.equations):
-                    ov = other.solved_var
-                    if (j != i and ov is not None and ov in eq.vars
-                            and ov not in bound):
-                        cands.append({"kind": "execute", "op": "substitute",
-                                      "operand": (i, j),
-                                      "label": f"substitute:{i},{j}",
-                                      "active": active in eq.vars, "bound": False,
-                                      "applied": j in state.applied,
-                                      "position": pos})
-        for v, value in justified.items():
-            if v not in bound:
-                cands.append({"kind": "execute", "op": "bind", "operand": (v, value),
-                              "label": f"bind:{v}={value}", "active": v == active,
-                              "bound": False, "applied": False, "position": 0.0,
-                              "referent": v, "ready": True,
-                              "dependency": v in active_needs})
-        # ``lookup`` stays a primitive (the verifier replays it) but is not
-        # on the action menu: a bound active referent is answered by ANSWER.
+        neutral chooser's tie-break), then OPEN(w) for every presented
+        referent not already open or active.  Features are lexical
+        (surface position) and mnemonic (already answered in this row's
+        LTM); nothing is computed about the referent."""
+        cands = [{"kind": "answer", "operand": None, "label": "answer",
+                  "active": True, "answered": False, "position": 0.0}]
+        busy = {r for r in open_refs if r} | ({active} if active else set())
+        n = max(1, len(referents))
+        for i, word in enumerate(referents):
+            if word in busy:
+                continue
+            cands.append({"kind": "open", "operand": word, "label": f"open:{word}",
+                          "active": False, "answered": word in answered,
+                          "position": float(i) / float(n)})
         return cands[: self.WHAT_STEP_MAX_CANDIDATES]
 
-    @staticmethod
-    def _referent_positions(state, operands):
-        """Token positions of the operand referents in the presented
-        surface (the intra-datum ``.where`` rung of spec 5.1)."""
-        tokens = tuple(getattr(state, "tokens", ()) or ())
-        names = {o for o in operands if isinstance(o, str)}
-        return tuple(i for i, tok in enumerate(tokens) if tok in names)
+    def _referent_representation(self, understanding, b, referents, word, answer_row):
+        """The QUERY(w) symbol: the referent's perceptual slot (the lexicon's
+        presentation of the word, by surface position) installed in the
+        root slot of the row's symbolic state; the symbolic root itself
+        when no slot is available."""
+        field = understanding.perceptual_context
+        rep = None
+        if torch.is_tensor(field) and field.dim() == 3 and word in referents:
+            position = referents.index(word)
+            if position < int(field.shape[1]):
+                rep = field[b, position, :]
+        if rep is None:
+            rep = answer_row[0, 0, :]
+        return self._install_root_slot(answer_row.detach(), rep.detach())
 
     def _resolve_step(self, understanding, questions, per_row, answer):
         """Run the resolve step for every unsettled row (spec 6.3).
 
-        Returns ``(answer_symbol, steps, trace_entries, exact_steps)``: the
-        symbol with each row's root slot set from an exactly bound value
-        (ANSWER) or the deferred question's referent code (OPEN), one
-        ``StepChoice`` per row (``None`` for settled rows), the replayable
-        trace of every choice, and the primitive execution records.
+        Returns ``(answer_symbol, steps, trace_entries, ())``: the symbol
+        with each row's root slot conditioned on its LTM outputs (ANSWER)
+        or replaced by the deferred question's referent representation
+        (OPEN), one ``StepChoice`` per row (``None`` for settled rows), and
+        the replayable trace of every choice.
         """
         from Output import StepChoice
-        from exact import numeral_code, referent_code
         B, _N, D = answer.shape
         iteration = int(getattr(self, "_what_current_iteration", 0) or 0)
         pressure = float(getattr(self, "_what_current_closure_pressure", 0.0) or 0.0)
-        budget = int(getattr(self, "what_thinking_primitives", 0) or 0)
-        states = self.__dict__.get("_what_exact_states") or {}
+        referents_all = self.__dict__.get("_what_referents") or {}
         pending = self.__dict__.setdefault("_what_pending", {})
         records = self.__dict__.setdefault("_what_policy_records", [])
         memory = self._what_memory()
         sample = (bool(self.training)
                   and float(getattr(self, "what_thinking_policy_weight", 0.0) or 0.0) > 0.0)
         chooser = self._what_step_chooser(device=answer.device, dtype=answer.dtype)
-        context, _detail = self._what_grammar_context(
+        context, detail = self._what_grammar_context(
             questions, device=answer.device, dtype=answer.dtype)
         roots = self.__dict__.setdefault("_what_root_symbols", {})
-        out = answer.clone()
-        steps, trace_entries, exact_steps = [], [], []
+        # Rows are rebuilt functionally (no in-place writes: the attention
+        # and the stored roots keep views of these tensors on the graph).
+        rows = [answer[b] for b in range(B)]
+        steps, trace_entries = [], []
         for b in range(B):
             settled = (iteration > 0 and memory is not None
                        and memory.what_at_parity(b=b) and pending.get(b) is None)
             if settled:
-                # The row's ROOT answer symbol (recorded when it answered)
-                # carries through to the final construction, so the root is
-                # what runBatch scores after parity (spec 8.1).
                 stored = roots.get(b)
-                if torch.is_tensor(stored) and stored.shape == out[b].shape:
-                    out[b] = stored
+                if torch.is_tensor(stored) and stored.shape == rows[b].shape:
+                    rows[b] = stored
                 steps.append(None)
                 continue
-            entry = states.get(b)
-            state, query = entry if entry is not None else (None, None)
-            active, role = self._active_referent(b, query)
+            referents = tuple(referents_all.get(b, ()))
+            active, role = self._active_referent(b)
             ctx_row = context[min(b, int(context.shape[0]) - 1)]
-            executed = 0
-            choice = None
-            index = 0
-            log_prob = None
-            labels = ()
-            while True:
-                cands = self._enumerate_step_candidates(
-                    state, query, active, self._open_referents(b))
-                if executed >= budget:
-                    cands = [c for c in cands if c["kind"] != "execute"]
-                index, log_prob = chooser.choose(
-                    ctx_row, cands, pressure=pressure, sample=sample)
-                cand = cands[index]
-                labels = tuple(c["label"] for c in cands)
-                trace_entries.append({
-                    "operation": f"step:{cand['kind']}", "row": b,
-                    "choice": cand["label"], "candidates": labels,
-                    "index": int(index), "iteration": iteration,
-                    "closure_pressure": pressure, "role": role,
-                    "referent": active})
-                if log_prob is not None:
-                    records.append((b, iteration, log_prob))
-                if cand["kind"] == "execute":
-                    record = state.execute(
-                        cand["op"], *cand["operand"], iteration=iteration,
-                        references=self._referent_positions(state, cand["operand"]))
-                    exact_steps.append({**record, "row": b})
-                    executed += 1
-                    continue
-                choice = cand
-                break
+            cands = self._enumerate_step_candidates(
+                referents, active, self._open_referents(b), self._answered_referents(b))
+            index, log_prob = chooser.choose(ctx_row, cands, pressure=pressure, sample=sample)
+            cand = cands[index]
+            labels = tuple(c["label"] for c in cands)
+            trace_entries.append({
+                "operation": f"step:{cand['kind']}", "row": b,
+                "choice": cand["label"], "candidates": labels,
+                "index": int(index), "iteration": iteration,
+                "closure_pressure": pressure, "role": role, "referent": active})
+            if log_prob is not None:
+                records.append((b, iteration, log_prob))
             question_rep = None
-            if state is not None and isinstance(active, str):
-                question_rep = self._install_root_slot(
-                    answer[b:b + 1].detach(), referent_code(active, D))
-            if choice["kind"] == "open":
-                out[b, 0, :] = referent_code(active, D).to(
-                    device=out.device, dtype=out.dtype)
+            if active is not None:
+                question_rep = self._referent_representation(
+                    understanding, b, referents, active, answer[b:b + 1])
+            if cand["kind"] == "open":
+                if active is not None and question_rep is not None:
+                    rows[b] = question_rep[0]
                 steps.append(StepChoice(
-                    kind="open", row=b, role=role,
-                    referent=active if isinstance(active, str) else None,
-                    operand=choice["operand"], question_rep=question_rep,
+                    kind="open", row=b, role=role, referent=active,
+                    operand=cand["operand"], question_rep=question_rep,
                     log_prob=log_prob, index=int(index), candidates=labels))
             else:
-                value = state.lookup(active) if (state is not None
-                                                 and isinstance(active, str)) else None
-                if value is not None:
-                    out[b, 0, :] = numeral_code(
-                        int(value), D,
-                        answer_range=int(getattr(state, "range", 0) or 0),
-                    ).to(device=out.device, dtype=out.dtype)
+                # ANSWER: the root slot attends over this row's LTM outputs
+                # (the answers to its subquestions), so completed
+                # subquestions transform the parent's answer (spec 7.3).
+                if memory is not None and hasattr(memory, "what_context"):
+                    ltm = (detail[min(b, len(detail) - 1)] if detail else {})
+                    outputs = [v for v in ltm.get("output_representations", ())
+                               if v is not None]
+                    root = rows[b][0]
+                    delta = self._attend_ltm(root, outputs)
+                    if delta is not None:
+                        rows[b] = torch.cat(
+                            [(root + delta).unsqueeze(0), rows[b][1:]], dim=0)
                 if role == "root":
-                    roots[b] = out[b]
+                    roots[b] = rows[b]
                 steps.append(StepChoice(
-                    kind="answer", row=b, role=role,
-                    referent=active if isinstance(active, str) else None,
-                    value=value, question_rep=question_rep, log_prob=log_prob,
+                    kind="answer", row=b, role=role, referent=active,
+                    question_rep=question_rep, log_prob=log_prob,
                     index=int(index), candidates=labels))
         self.__dict__.setdefault("_what_episode_steps", []).extend(trace_entries)
-        return out, tuple(steps), tuple(trace_entries), tuple(exact_steps)
+        out = torch.stack(rows, dim=0)
+        return out, tuple(steps), tuple(trace_entries), ()
 
     def _step_choice_for_row(self, row):
         construction = getattr(self, "_last_answer_construction", None)
@@ -8549,6 +8526,12 @@ class BasicModel(BaseModel):
             nn.init.zeros_(module.weight)
             self.question_conditioner = module.to(device=device, dtype=dtype)
             built += 1
+        key_q, key_k = "ltm_attention.query.weight", "ltm_attention.key.weight"
+        if key_q in state and key_k in state and getattr(self, "ltm_attention", None) is None:
+            width = int(state[key_q].shape[1])
+            key_width = int(state[key_k].shape[1])
+            self._ltm_attention(width, key_width, device=device, dtype=dtype)
+            built += 1
         key = "what_step_chooser.mlp.0.weight"
         if key in state and getattr(self, "what_step_chooser", None) is None:
             from Language import WhatStepChooser
@@ -8573,7 +8556,8 @@ class BasicModel(BaseModel):
         registered = self.__dict__.setdefault("_registered_synthesis_modules", set())
         fresh = self.__dict__.setdefault("_fresh_synthesis_params", [])
         for module in (getattr(self, "question_conditioner", None),
-                       getattr(self, "what_step_chooser", None)):
+                       getattr(self, "what_step_chooser", None),
+                       getattr(self, "ltm_attention", None)):
             if module is not None and id(module) not in registered:
                 registered.add(id(module))
                 fresh.extend(p for p in module.parameters() if p.requires_grad)
@@ -8916,9 +8900,6 @@ class BasicModel(BaseModel):
         report["thinking"]["episodes"] += 1
         report["thinking"]["iterations"] += int(result.iterations)
         report["thinking"]["forced_closures"] += int(result.forced_closures)
-        states = self.__dict__.get("_what_exact_states") or {}
-        report["thinking"]["primitives"] = report["thinking"].get("primitives", 0) + sum(
-            int(getattr(state, "executions", 0) or 0) for (state, _q) in states.values())
 
     def what_report(self):
         """Separate means per question family plus thinking and throughput."""
@@ -8937,9 +8918,7 @@ class BasicModel(BaseModel):
             "episodes": th["episodes"],
             "mean_iterations": th["iterations"] / episodes if th["episodes"] else 0.0,
             "forced_closure_rate": th["forced_closures"] / max(1, th["iterations"]),
-            "primitives": th.get("primitives", 0),
             "iteration_limit": int(getattr(self, "what_thinking_iterations", 1) or 1),
-            "primitive_budget": int(getattr(self, "what_thinking_primitives", 0) or 0),
             "detach": str(getattr(self, "what_thinking_detach", "slot") or "slot"),
         }
         # Hard-choice POLICY credit (the chooser's bounded local objective,
@@ -9110,7 +9089,7 @@ class BasicModel(BaseModel):
                 **kwargs)
         pending.pop(row, None)
         answered = {"operation": "what_answer_referent",
-                    "referent": choice.referent, "value": choice.value}
+                    "referent": choice.referent}
         if choice.role == "pending":
             return LTMSlot(
                 input=(choice.question_rep if choice.question_rep is not None
@@ -9148,7 +9127,7 @@ class BasicModel(BaseModel):
             self._what_policy_records = []
             self._what_root_symbols = {}
             self._what_episode_steps = []          # every iteration's step trace
-            self._begin_exact_states(questions)
+            self._begin_referents(questions)
 
         if torch.is_tensor(input_data):
             device = input_data.device

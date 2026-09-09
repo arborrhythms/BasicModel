@@ -18,14 +18,12 @@ from typing import Any, Mapping, Optional, Tuple
 class StepChoice:
     """One row's hard resolve-step choice (mathematical thinking spec 6.3).
 
-    ``kind`` is ``"answer"`` (answer the active question), ``"open"`` (defer
-    it and pose the subquestion ``operand``), or -- only transiently inside
-    the step loop -- ``"execute"``.  ``role`` says which question was
+    ``kind`` is ``"answer"`` (answer the active question) or ``"open"``
+    (defer it and pose the subquestion ``operand``, a presented referent).  ``role`` says which question was
     active: ``"root"`` (the presented question), ``"pending"`` (the
     subquestion posed at the previous iteration) or ``"open"`` (the newest
     unanswered LTM input).  ``referent`` names it (``None`` for the root);
-    ``question_rep`` is its QUERY symbol; ``value`` is the exact integer
-    answered when one was bound.  ``log_prob`` is the chooser's log
+    ``question_rep`` is its QUERY symbol.  ``log_prob`` is the chooser's log
     probability of this choice (a tensor while the graph is live) for the
     policy objective; ``candidates`` are the labels it chose among.
     """
@@ -35,14 +33,13 @@ class StepChoice:
     role: str = "root"
     referent: Optional[str] = None
     operand: Any = None
-    value: Optional[int] = None
     question_rep: Any = field(default=None, repr=False, compare=False)
     log_prob: Any = field(default=None, repr=False, compare=False)
     index: int = 0
     candidates: Tuple[str, ...] = field(default_factory=tuple)
 
     def __post_init__(self) -> None:
-        if self.kind not in ("answer", "open", "execute"):
+        if self.kind not in ("answer", "open"):
             raise ValueError(f"unknown step kind {self.kind!r}")
         object.__setattr__(self, "candidates", tuple(self.candidates))
 
@@ -53,7 +50,8 @@ class AnswerDerivation:
 
     ``step`` carries one :class:`StepChoice` per batch row when the
     thinking resolve step ran (``None`` per row otherwise); ``exact_steps``
-    are the spec 5.3 primitive execution records of this iteration.
+    is retained for trace-shape compatibility and is always empty (the
+    runtime carries no exact primitives).
     """
 
     answer_symbol: Any

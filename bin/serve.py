@@ -182,8 +182,7 @@ def _response_text_from_infer(items):
 
 def _thinking_payload(user_msg, thought_free):
     """Run one bounded thinking episode over ``user_msg`` and summarize it
-    (iterations, forced closures, the slot operations, the step choices,
-    the exact primitive count and the answered value when one was bound).
+    (iterations, forced closures, the slot operations, the step choices).
     ``None`` when the model does not think, when the request is
     thought-free, or when the episode fails."""
     enabled = getattr(_model, "_thinking_enabled", None)
@@ -191,7 +190,7 @@ def _thinking_payload(user_msg, thought_free):
         return None
     if thought_free:
         return {"thought_free": True, "iterations": 1, "forced_closures": 0,
-                "slots": [], "steps": [], "primitives": 0, "value": None}
+                "slots": [], "steps": []}
     try:
         from What import What
         with torch.no_grad(), _model._runtime_batch([user_msg]):
@@ -205,16 +204,12 @@ def _thinking_payload(user_msg, thought_free):
                   "referent": e.get("referent"), "iteration": e.get("iteration")}
                  for e in trace if isinstance(e, dict)
                  and str(e.get("operation", "")).startswith("step:")]
-        states = dict(getattr(_model, "_what_exact_states", {}) or {})
-        state, query = states.get(0, (None, None))
         return {
             "thought_free": False,
             "iterations": int(result.iterations),
             "forced_closures": int(result.forced_closures),
             "slots": [s.operation.value for s in result.slots],
             "steps": steps,
-            "primitives": int(getattr(state, "executions", 0) or 0),
-            "value": (state.lookup(query) if state is not None and query else None),
         }
     except Exception as exc:
         logger.warning("Thinking episode failed, falling back: %s", exc)

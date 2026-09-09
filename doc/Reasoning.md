@@ -219,7 +219,7 @@ BasicModel has two distinct iterative loops, and they must not be confused:
 | Terminal | true / false / unknown / mixed / conflicting / bounded_unknown | a concrete answer symbol; `unknown` is not a valid escape; forced best-effort LIFO closure at the iteration limit |
 | Answer route | `answer_query` payload (`kernel` key) | `reverseOutput()` (answer symbol -> conceptual / perceptual synthesis -> `OutputSpace`) |
 | Credit | next-op behaviour cloning on grounded traces (`thinkingLossWeight`) | root `answer_construction` after parity; the resolve-step choices by the `WhatStepChooser` policy objective (`whatThinkingPolicyWeight`) |
-| Gate | `<thinkingBudget>` | `<whatThinkingIterations>` / `<whatThinkingPrimitives>` (the resolve step with `WhatStepChooser` and the exact primitives; `runBatch` drives the episode when the limit exceeds one) |
+| Gate | `<thinkingBudget>` | `<whatThinkingIterations>` (the resolve step with `WhatStepChooser`: ANSWER or OPEN a subquestion about a presented word; `runBatch` drives the episode when the limit exceeds one) |
 
 The kernel is reachable from a What resolve step as an external tool
 (prompted questions consult `answer_query` when `reasoningIterations > 0`),

@@ -1,8 +1,8 @@
 """Phase 3 of the mathematical thinking plan: the resolve step
-(``WhatStepChooser`` + exact primitives) inside ``Model.think()`` on the
-``MM_math`` fixture.  Spec section 11 invariants 1, 2, 3, 5, 6, 8, 9 and the
-checkpoint round trip.  Scripted choosers exercise the MECHANISM; nothing
-here claims learned thinking."""
+(``WhatStepChooser`` over ANSWER / OPEN a presented referent) inside
+``Model.think()`` on the ``MM_math`` fixture.  Spec section 11 invariants
+1, 2, 3, 5, 9 and the checkpoint round trip.  The runtime carries no
+arithmetic (Alec 2026-09-09); scripted choosers exercise the MECHANISM."""
 import os
 import sys
 from pathlib import Path
@@ -23,7 +23,6 @@ if str(_BIN) not in sys.path:
 from Language import WhatStepChooser  # noqa: E402
 from Layers import WhatInteractionMemory  # noqa: E402
 from What import What, WhatSlotOperation  # noqa: E402
-from exact import ExactVerifier, numeral_code, referent_code  # noqa: E402
 
 _MATH_DAT = {"mathRange": 16, "mathDepths": "1-2", "mathTestDepths": "3",
              "mathDistractors": 1, "mathProblems": 64, "mathSeed": 0}
@@ -82,24 +81,18 @@ def _problem(m, row):
 
 
 def _solver_labels(problem):
-    """Labels of a solver-order derivation under the LIFO discipline: from
-    the root open the first chain variable, evaluate / bind / answer it,
-    return to the (still open) root, open the next one, ... and finally
-    evaluate / bind / answer the query, which closes the root."""
-    order = list(problem.order)          # [x0, x1, ..., query]
+    """Labels of a chain-shaped dialogue under the LIFO discipline: from
+    the root open each chain variable in order, answer it, return to the
+    (still open) root, and finally answer the root."""
     labels = []
-    for v in order[:-1]:
-        i = problem.index_of(v)
-        labels += [f"open:{v}", f"evaluate:{i}",
-                   f"bind:{v}={problem.solution[v]}", "answer"]
-    q = order[-1]
-    labels += [f"evaluate:{problem.index_of(q)}",
-               f"bind:{q}={problem.solution[q]}", "answer"]
+    for v in problem.order[:-1]:
+        labels += [f"open:{v}", "answer"]
+    labels.append("answer")
     return labels
 
 
 def _expected_ops(problem):
-    n = len(problem.order) - 1           # chain variables before the query
+    n = len(problem.order) - 1
     if n == 0:
         return [WhatSlotOperation.COMPLETE]
     return ([WhatSlotOperation.OPEN] + [WhatSlotOperation.COMPLETE] * n
@@ -118,13 +111,11 @@ def test_neutral_chooser_is_single_step_and_iterations_one_builds_no_chooser(mod
     trace = model._last_answer_construction.derivation.grammar_trace
     steps = [e for e in trace if e.get("operation", "").startswith("step:")]
     assert steps and all(e["choice"] == "answer" and e["index"] == 0 for e in steps)
-    # A configuration with the limit at 1 and primitives off never builds
-    # the chooser: its state dict is that of the established model.
+    # A configuration with the limit at 1 never builds the chooser: its
+    # state dict is that of the established model.
     src = (_DATA / "MM_math.xml").read_text()
     off = src.replace("<whatThinkingIterations>8</whatThinkingIterations>",
                       "<whatThinkingIterations>1</whatThinkingIterations>")
-    off = off.replace("<whatThinkingPrimitives>4</whatThinkingPrimitives>",
-                      "<whatThinkingPrimitives>0</whatThinkingPrimitives>")
     path = tmp_path / "MM_math_off.xml"
     path.write_text(off)
     m_off = _build(path)
@@ -158,74 +149,63 @@ def test_scripted_episode_opens_executes_and_closes_in_lifo_order(model, monkeyp
     assert ops == _expected_ops(problem), (ops, chosen)
     memory = model._what_memory()
     assert memory.what_at_parity(b=0)
-    # Every choice and every primitive execution is in the trace with
-    # operands and results (invariant 9); executions per iteration are
-    # within the budget (invariant 8); the verifier accepts the derivation.
-    steps = model._what_exact_states[0][0].trace
-    assert all(s["operation"].startswith("exact:") and "operands" in s
-               and "result" in s for s in steps)
-    per_iteration = {}
-    for s in steps:
-        per_iteration[s["iteration"]] = per_iteration.get(s["iteration"], 0) + 1
-    assert max(per_iteration.values()) <= model.what_thinking_primitives
-    report = ExactVerifier().check(steps, problem, answer=problem.answer)
-    assert report.rejected == 0 and report.valid
-    # The root answer symbol's root slot is the exact numeral code of the
-    # bound query value.
-    symbol = model._last_answer_construction.derivation.answer_symbol
-    D = symbol.shape[-1]
-    code = numeral_code(problem.answer, D)
-    # (the question conditioner adds a zero-initialised delta: exact match)
-    assert torch.allclose(symbol[0, 0, :], code)
+    # Every step choice is in the replayable trace with its candidates
+    # (invariant 9); the referents are the presented WORDS, nothing more.
+    steps = [e for e in model._what_episode_steps if e.get("operation", "").startswith("step:")]
+    assert steps and all("candidates" in e and "choice" in e for e in steps)
+    words = model._what_referents[0]
+    assert all(c == "answer" or c[5:] in words
+               for e in steps for c in e["candidates"])
     # Slot traces carry the referents so the open stack is derivable from
-    # LTM alone; the answers name their values.
+    # LTM alone; the root's answer is not a computed value.
     referents = [e.get("referent") for s in result.slots for e in s.grammar_trace
                  if isinstance(e, dict) and e.get("operation") == "what_answer_referent"]
-    assert referents[-1] == problem.query
-    values = [e.get("value") for s in result.slots for e in s.grammar_trace
-              if isinstance(e, dict) and e.get("operation") == "what_answer_referent"]
-    assert values[-1] == problem.answer
+    assert referents[-1] is None                       # the root
+    assert set(referents[:-1]) == set(problem.order[:-1])
+    assert "value" not in [k for s in result.slots for e in s.grammar_trace
+                           if isinstance(e, dict) for k in e]
 
 
-# -- invariant 6: answer causality --------------------------------------------
+# -- completed subquestions transform the root answer (spec 7.3) ---------------
 
-def test_changing_a_necessary_intermediate_changes_the_answer(model, monkeypatch):
+def test_subquestion_answers_condition_the_root_through_ltm(model, monkeypatch):
+    """The root's answer symbol attends over the row's LTM outputs; with a
+    non-neutral attention, a different subquestion answer changes the root
+    answer, and editing the trace alone does not."""
     problem = _problem(model, 0)
     x, _ = _batch(model, rows=1)
     _script(monkeypatch, WhatStepChooser, _solver_labels(problem))
     with torch.no_grad():
         model.think(What.supervised(0), x)
-    honest = model._last_answer_construction
-    honest_actual = honest.actual.detach().clone()
-    honest_symbol = honest.derivation.answer_symbol.detach().clone()
-    # Editing the trace afterwards changes nothing about the emitted answer.
-    trace_edit = list(model._what_exact_states[0][0].trace)
-    trace_edit[-1] = {**trace_edit[-1], "result": 99}
-    assert torch.equal(model._last_answer_construction.actual, honest_actual)
-    # Corrupt the exact evaluation of the first chain variable: the bound
-    # values, the answer symbol and the emitted answer all change.
-    from exact import ExactState
-    real_evaluate = ExactState.evaluate
-
-    def wrong_evaluate(self, i):
-        value = real_evaluate(self, i)
-        return (value + 1) % self.range if isinstance(value, int) else value
-
-    monkeypatch.setattr(ExactState, "evaluate", wrong_evaluate)
-    _script(monkeypatch, WhatStepChooser, [
-        lbl if not lbl.startswith("bind:") else
-        f"bind:{lbl[5:].split('=')[0]}={(int(lbl.split('=')[1]) + 1) % 16}"
-        for lbl in _solver_labels(problem)])
+    attention = model.ltm_attention
+    with torch.no_grad():
+        attention["out"].weight.add_(0.1 * torch.randn_like(attention["out"].weight))
+    _script(monkeypatch, WhatStepChooser, _solver_labels(problem))
     with torch.no_grad():
         model.think(What.supervised(0), x)
-    corrupted = model._last_answer_construction
-    # the first chain variable's bind differs, so the derivation differs
-    assert model._what_exact_states[0][0].bindings[problem.order[0]] != problem.solution[problem.order[0]]
-    assert not torch.equal(corrupted.derivation.answer_symbol[0, 0, :], honest_symbol[0, 0, :])
-    assert not torch.equal(corrupted.actual, honest_actual)
-    report = ExactVerifier().check(model._what_exact_states[0][0].trace, problem,
-                                   answer=problem.answer)
-    assert not report.valid                                 # verifier catches it
+    honest = model._last_answer_construction.actual.detach().clone()
+    # Edit the trace afterwards: nothing changes.
+    model._what_episode_steps[-1] = {**model._what_episode_steps[-1], "choice": "edited"}
+    assert torch.equal(model._last_answer_construction.actual, honest)
+    # Corrupt the stored subquestion outputs in LTM before the root answers:
+    # the root construction changes.
+    memory = model._what_memory()
+    real_context = memory.what_context
+
+    def corrupted(question=None, b=0):
+        ctx = dict(real_context(question=question, b=b))
+        ctx["output_representations"] = tuple(
+            (v * -3.0 + 1.0) if torch.is_tensor(v) else v
+            for v in ctx["output_representations"])
+        return ctx
+
+    monkeypatch.setattr(memory, "what_context", corrupted)
+    _script(monkeypatch, WhatStepChooser, _solver_labels(problem))
+    with torch.no_grad():
+        model.think(What.supervised(0), x)
+    assert not torch.equal(model._last_answer_construction.actual, honest)
+    with torch.no_grad():
+        attention["out"].weight.zero_()
 
 
 # -- invariant 3: the desired answer is unreachable ----------------------------
@@ -243,9 +223,9 @@ def test_think_never_consults_the_desired_answer(model, monkeypatch):
     with torch.no_grad():
         result = model.think((What.supervised(0), What.supervised(1)), x[1:2])
     assert result.answer.available
-    # The presented surface (the INPUT side) is what the scratchpad lexed.
-    state, query = model._what_exact_states[0]
-    assert query == _problem(model, 0).query or query == problem.query
+    # The presented surface (the INPUT side) is what the referents come from.
+    assert set(model._what_referents[0]) <= set(
+        model._presented_surface(What.supervised(0)).replace(";", " ").split())
 
 
 # -- invariant 5: forced closure ------------------------------------------------
@@ -331,14 +311,6 @@ def test_checkpoint_round_trips_the_step_chooser(model, tmp_path):
         a = model.think(What.supervised(0), x).answer.what
         b = fresh.think(What.supervised(0), x).answer.what
     assert torch.allclose(a, b)
-
-
-def test_referent_and_numeral_codes_are_distinct():
-    D = 14
-    numerals = {tuple(numeral_code(n, D, bits=6).tolist()) for n in range(16)}
-    referents = {tuple(referent_code(v, D).tolist()) for v in "abcxyz"}
-    assert not (numerals & referents)
-    assert len(referents) == 6
 
 
 def test_forced_closure_answers_are_row_shaped_in_a_batch(model, monkeypatch):

@@ -53,9 +53,8 @@ def _post(serve, payload):
 def test_thinking_payload_is_attached_for_a_thinking_model(served, monkeypatch):
     serve, model = served
     problem = model.inputSpace.data.math_problems["train"][0]
-    # Script the chooser: open the first chain variable, answer it, then
-    # answer the root (values may stay unbound; the mechanism is what is
-    # under test here).
+    # Script the chooser: open a subquestion about the first chain word,
+    # answer it, then answer the root (the mechanism is what is under test).
     labels = [f"open:{problem.order[0]}", "answer", "answer"]
 
     def choose(self, context, candidates, *, pressure=0.0, sample=False,
@@ -92,7 +91,7 @@ def test_thought_free_request_opens_no_dialogue(served):
     assert resp.status_code == 200, resp.get_json()
     thinking = resp.get_json().get("thinking")
     assert thinking == {"thought_free": True, "iterations": 1, "forced_closures": 0,
-                        "slots": [], "steps": [], "primitives": 0, "value": None}
+                        "slots": [], "steps": []}
     assert not calls
     memory = model._what_memory()
     assert memory.what_at_parity(b=0)
@@ -100,11 +99,11 @@ def test_thought_free_request_opens_no_dialogue(served):
 
 def test_non_thinking_model_has_no_payload(served):
     serve, model = served
-    saved = (model.what_thinking_iterations, model.what_thinking_primitives)
-    model.what_thinking_iterations, model.what_thinking_primitives = 1, 0
+    saved = model.what_thinking_iterations
+    model.what_thinking_iterations = 1
     try:
-        resp = _post(serve, {"messages": [{"role": "user", "content": "a = 1 ; what is a ?"}]})
+        resp = _post(serve, {"messages": [{"role": "user", "content": "a equals 1 ; what is a"}]})
     finally:
-        model.what_thinking_iterations, model.what_thinking_primitives = saved
+        model.what_thinking_iterations = saved
     assert resp.status_code == 200
     assert "thinking" not in resp.get_json()

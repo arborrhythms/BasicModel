@@ -39,6 +39,12 @@ from typing import Any, Dict, FrozenSet, List, Optional, Sequence, Tuple, Union
 Expr = Tuple[Any, ...]
 _OPS = {"add": "+", "sub": "-", "mul": "*"}
 _SYMBOLS = {v: k for k, v in _OPS.items()}
+# Word surfaces (the presented form, Alec 2026-09-09): arithmetic is a
+# syntax the grammar learns, so the operators are WORDS -- transitive verbs
+# (``plus``) and the copula (``equals``) -- not glyphs, which the word lexer
+# drops.  The lexer accepts both spellings.
+_WORDS = {"add": "plus", "sub": "minus", "mul": "times"}
+_WORD_SYMBOLS = {"plus": "+", "minus": "-", "times": "*", "equals": "="}
 
 
 def num(n: int) -> Expr:
@@ -49,13 +55,14 @@ def var(name: str) -> Expr:
     return ("var", str(name))
 
 
-def render_expr(expr: Expr) -> str:
+def render_expr(expr: Expr, words: bool = True) -> str:
     kind = expr[0]
     if kind == "num":
         return str(expr[1])
     if kind == "var":
         return expr[1]
-    return f"{render_expr(expr[1])} {_OPS[kind]} {render_expr(expr[2])}"
+    op = _WORDS[kind] if words else _OPS[kind]
+    return f"{render_expr(expr[1], words)} {op} {render_expr(expr[2], words)}"
 
 
 def expr_vars(expr: Expr) -> FrozenSet[str]:
@@ -146,8 +153,9 @@ class Equation:
     lhs: Expr
     rhs: Expr
 
-    def render(self) -> str:
-        return f"{render_expr(self.lhs)} = {render_expr(self.rhs)}"
+    def render(self, words: bool = True) -> str:
+        copula = "equals" if words else "="
+        return f"{render_expr(self.lhs, words)} {copula} {render_expr(self.rhs, words)}"
 
     @property
     def solved_var(self) -> Optional[str]:
@@ -183,7 +191,7 @@ class ExactLexer:
     def _tokens(text: str) -> List[str]:
         out = []
         for raw in text.replace("?", " ? ").split():
-            out.append(raw)
+            out.append(_WORD_SYMBOLS.get(raw.lower(), raw))
         return out
 
     @classmethod
@@ -226,6 +234,7 @@ class ExactLexer:
 
     @classmethod
     def parse_equation(cls, clause: str) -> Equation:
+        clause = " ".join(cls._tokens(clause))
         if clause.count("=") != 1:
             raise ValueError(f"clause needs exactly one '=': {clause!r}")
         lhs, rhs = clause.split("=")
@@ -240,7 +249,8 @@ class ExactLexer:
         clauses = [c for c in clauses if c]
         if not clauses:
             raise ValueError("empty problem surface")
-        if len(clauses) == 1 and "=" not in clauses[0] and not clauses[0].lower().startswith("what"):
+        if (len(clauses) == 1 and "=" not in cls._tokens(clauses[0])
+                and not clauses[0].lower().startswith("what")):
             # Stage 0: a bare expression IS the question ("what is a + b");
             # present it as one solved-form premise ``_ = expr`` so the
             # same primitives (evaluate / bind) answer it exactly.
@@ -450,12 +460,15 @@ class Problem:
     solution: Dict[str, int] = field(default_factory=dict, compare=False)
     expression: Optional[Expr] = None        # stage 0: the bare expression
 
-    def surface(self) -> str:
+    def surface(self, words: bool = True) -> str:
+        """The presented surface, in WORDS by default (``3 plus 4``,
+        ``b equals a plus 4 ; what is b``): arithmetic as a syntax."""
         if self.stage == 0 and self.expression is not None:
             # Stage 0 (direct arithmetic): the presented input IS the
             # expression; the answer is its value.
-            return render_expr(self.expression)
-        return " ; ".join(e.render() for e in self.equations) + f" ; what is {self.query} ?"
+            return render_expr(self.expression, words)
+        tail = f" ; what is {self.query}" + ("" if words else " ?")
+        return " ; ".join(e.render(words) for e in self.equations) + tail
 
     def index_of(self, v: str) -> Optional[int]:
         for i, e in enumerate(self.equations):

@@ -337,9 +337,6 @@
           </xs:restriction>
         </xs:simpleType>
       </xs:element>
-      <!-- whatThinkingPrimitives (spec 8.4): exact primitive executions
-           allowed per iteration; 0 (default) = primitives off. -->
-      <xs:element name="whatThinkingPrimitives" type="xs:nonNegativeInteger" minOccurs="0"/>
       <!-- Reconstruct from the idea rather than replaying the forward parse.
            When true, reverse() clears SymbolSpace's current/generate rules and
            the signal-router's last route, then calls generate on the supplied

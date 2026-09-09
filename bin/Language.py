@@ -7129,27 +7129,25 @@ class AnchorDotTransformChooser(TransformChooser):
 
 class WhatStepChooser(nn.Module):
     """Hard-choice head for the thinking resolve step (mathematical
-    thinking spec 6.3): among ``ANSWER``, ``OPEN(v)`` and
-    ``EXECUTE(op, operands)`` candidates for one batch row.
+    thinking spec 6.3): ANSWER the active question or OPEN a subquestion
+    about one of the presented referents, for one batch row.
 
     Scores every candidate from the same target-free 29-dim What context
     the grammar chooser sees plus the closure pressure and a small
-    per-candidate feature block (kind, primitive, whether the operand is the
-    active question's referent, whether it is bound / applied, its position).
-    The output layer is ZERO-INITIALISED so an untrained head scores every
-    candidate identically and ``choose`` breaks the tie toward the FIRST
-    candidate -- ``ANSWER`` -- which is exactly today's single-step
-    behaviour.  Training samples (policy credit, spec 8.3); evaluation takes
-    the argmax.  The head never executes anything: the runtime does.
+    per-candidate block of LEXICAL / MNEMONIC features (kind, surface
+    position of the referent, whether this row's LTM already answered it).
+    Nothing is computed about a referent: the runtime carries no
+    mathematical machinery (Alec 2026-09-09).  The output layer is
+    ZERO-INITIALISED so an untrained head ties every candidate and
+    ``choose`` breaks the tie toward the FIRST candidate -- ANSWER -- which
+    is exactly today's single-step behaviour.  Training samples (policy
+    credit, spec 8.3); evaluation takes the argmax.
     """
 
-    KINDS = ("answer", "open", "execute")
-    OPS = ("lookup", "evaluate", "bind", "substitute", "constrain")
-    # kind one-hot (3) + op one-hot (5) + active-referent flag + bound flag
-    # + applied flag + normalized position + closure pressure + READY (an
-    # evaluate whose operands are all bound) + DEPENDENCY (an open / bind
-    # whose referent the active question's premise needs)
-    CANDIDATE_FEATURES = 3 + 5 + 4 + 1 + 2
+    KINDS = ("answer", "open")
+    # kind one-hot (2) + active flag + answered flag + normalized position
+    # + closure pressure
+    CANDIDATE_FEATURES = 2 + 3 + 1
 
     def __init__(self, *, context_dim=29, hidden=16):
         super().__init__()
@@ -7168,16 +7166,10 @@ class WhatStepChooser(nn.Module):
         for cand in candidates:
             f = torch.zeros(self.CANDIDATE_FEATURES)
             f[self.KINDS.index(cand["kind"])] = 1.0
-            op = cand.get("op")
-            if op in self.OPS:
-                f[3 + self.OPS.index(op)] = 1.0
-            f[8] = 1.0 if cand.get("active") else 0.0
-            f[9] = 1.0 if cand.get("bound") else 0.0
-            f[10] = 1.0 if cand.get("applied") else 0.0
-            f[11] = float(cand.get("position", 0.0))
-            f[12] = float(pressure)
-            f[13] = 1.0 if cand.get("ready") else 0.0
-            f[14] = 1.0 if cand.get("dependency") else 0.0
+            f[2] = 1.0 if cand.get("active") else 0.0
+            f[3] = 1.0 if cand.get("answered") else 0.0
+            f[4] = float(cand.get("position", 0.0))
+            f[5] = float(pressure)
             rows.append(f)
         if not rows:
             return torch.zeros(0, self.CANDIDATE_FEATURES, device=device, dtype=dtype)

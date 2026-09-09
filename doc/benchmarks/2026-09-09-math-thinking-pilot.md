@@ -218,3 +218,17 @@ Gates: unseen structures at trained depths >= 95 % -- met (100 %); the
 never-trained next depth -- 83 % (depth 2 from depth 1) and 100 % (depth
 3 from depths 1-2); depths 4-6 and stage 2 not evaluated; every accepted
 derivation verifies (validity tracks accuracy in every table above).
+
+## Decision (Alec, 2026-09-09): the exact route is retired from the runtime
+
+The stage-0 and stage-1 results above were obtained with exact
+primitives executing inside the model's resolve step. That over-specifies
+the solver as mathematical: the number of unbound variables was Python
+state, not something the model could know from its LTM. Math is to be a
+simple syntax testing the universal grammar; `plus` is a transitive verb
+with the grammar's existing verb definition; intermediate thoughts are
+LTM slots. The runtime now chooses only between answering and opening a
+subquestion about a presented word, and conditions the root answer on
+its LTM outputs; the exact code remains for data generation and
+evaluation. The learning gates re-open as strict xfails until the large
+stage-0 run learns `plus` over numeral nouns.

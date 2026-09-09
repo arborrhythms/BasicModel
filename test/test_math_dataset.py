@@ -43,7 +43,8 @@ def test_generator_invariants(stage):
         if stage == 1:
             assert p.depth == len(p.order) - 1
         surface = p.surface()
-        assert surface.endswith(f"what is {p.query} ?") and " ; " in surface
+        assert surface.endswith(f"what is {p.query}") and " ; " in surface
+        assert p.surface(words=False).endswith(f"what is {p.query} ?")
 
 
 def test_split_by_structure_is_disjoint_and_holds_out_deep_problems():
@@ -73,8 +74,8 @@ def test_positions_are_independent_of_answers_and_premise_order_varies():
     positions = []
     for text in a.train_input:
         clauses = [s.strip() for s in text.split(";")][:-1]
-        q = text.split("what is")[1].split("?")[0].strip()
-        positions.append([i for i, s in enumerate(clauses) if s.startswith(q + " =")][0]
+        q = text.split("what is")[1].strip()
+        positions.append([i for i, s in enumerate(clauses) if s.startswith(q + " equals")][0]
                          == len(clauses) - 1)
     assert not all(positions)
 
@@ -125,7 +126,8 @@ def test_stage_zero_problems_are_direct_and_in_range(operators):
         assert a[0] == "num" and b[0] == "num"
         value = {"add": a[1] + b[1], "sub": a[1] - b[1], "mul": a[1] * b[1]}[op]
         assert p.answer == value and 0 <= value < R
-        assert p.surface() == f"{a[1]} {'+' if op == 'add' else '-' if op == 'sub' else '*'} {b[1]}"
+        assert p.surface(words=False) == f"{a[1]} {'+' if op == 'add' else '-' if op == 'sub' else '*'} {b[1]}"
+        assert p.surface() == f"{a[1]} {'plus' if op == 'add' else 'minus' if op == 'sub' else 'times'} {b[1]}"
     assert seen_ops == set(operators)
 
 
@@ -150,7 +152,7 @@ def test_data_stage_zero_presents_expression_and_onehot_value():
     for row in range(4):
         problem = data.math_problems["train"][row]
         assert data.train_input[row] == problem.surface()
-        a, b = problem.surface().split(" + ")
+        a, b = problem.surface().split(" plus ")
         target = torch.as_tensor(data.what(What.supervised(row)).what)
         assert int(target.argmax()) == int(a) + int(b) == problem.answer
     train_pairs = {p.surface() for p in data.math_problems["train"]}

@@ -28,9 +28,8 @@ def test_eval_script_emits_every_report_column(tmp_path):
     assert rows and {r["budget"] for r in rows} == {1, 4}
     assert {r["ablation"] for r in rows} == {"none", "memory"}
     for r in rows:
-        assert set(r) >= {"row", "depth", "budget", "correct", "valid", "accepted",
-                          "rejected", "primitives", "iterations", "forced",
-                          "illumination_gain", "latency_s", "seed", "ablation"}
+        assert set(r) >= {"row", "depth", "budget", "correct", "iterations",
+                          "forced", "latency_s", "seed", "ablation"}
         assert r["iterations"] <= r["budget"] + r["forced"] or r["forced"] >= 0
     text = out.read_text()
     assert "# Mathematical thinking evaluation" in text
