@@ -24,8 +24,12 @@
 > the verifier for scripted traces); the runtime resolve step (6.3)
 > chooses only between answering and opening a subquestion about a
 > presented word, and the root answer is conditioned on the row's LTM
-> outputs by a learned attention. The learning gates are open (strict
-> xfails) until the large stage-0 run learns `plus`.
+> outputs by a learned attention. Addition is iterated SUCCESSION: a
+> successor VP (`next(one) = two`) and counting through the thinking
+> loop; `VerbLayer` is sufficient for the successor by construction
+> (`test_verb_successor`), and its readout's dead zone at zero init is
+> fixed so verbs can be learned by gradient. The learning gates are open
+> (strict xfails) until the successor run learns the counting facts.
 
 ## 1. Objective
 

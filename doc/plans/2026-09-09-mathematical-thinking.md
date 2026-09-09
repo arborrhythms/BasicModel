@@ -208,10 +208,14 @@ presented words; the root answer attends over the row's LTM outputs
 tests are strict xfails on the syntactic route. The verb grammar
 configuration is `data/MM_add_verb.xml` (230M parameters); its first
 30-epoch run stayed at the majority baseline (pilot report, "Stage 0 as
-syntax"). Next: the two-band numeral-code sufficiency test on the
-existing `VerbLayer` (report, theoretical note), longer / accelerated
-runs, then multi-digit numerals as wholes over digit parts with serial
-carries through LTM.
+syntax"). Alec's correction: addition is iterated
+succession (`next(one) = two`); `mathOperators=succ` is the rung below.
+`test_verb_successor.py` shows the VP is the successor by construction
+and exposed a dead zone (zero-init readout under a zero-derivative
+threshold: no verb could learn by gradient), now fixed straight-through.
+Next: the successor run on the fixed verb, then counting ("n plus m")
+through the thinking loop with unseen pairs held out, then multi-digit
+numerals as wholes over digit parts with serial carries through LTM.
 
 ## Test evidence rule
 

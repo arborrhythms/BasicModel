@@ -3036,6 +3036,14 @@ class LiftLayer(GrammarLayer):
         w = self._verb_spec(verb_what.to(self._verb_spec.weight.dtype))
         tau = 0.1
         sparse_w = torch.sign(w) * torch.clamp(w.abs() - tau, min=0.0)
+        # Straight-through the soft threshold (2026-09-09): the readout is
+        # ZERO-initialised, and inside the dead zone |w| < tau the threshold's
+        # derivative is zero, so no gradient ever reached the readout and no
+        # verb could start learning by gradient (the successor VP included --
+        # test_verb_successor).  The FORWARD is unchanged (sparse, most eigs
+        # identity); the gradient is that of the raw readout, so a verb can
+        # leave the dead zone when its loss asks for it.
+        sparse_w = w + (sparse_w - w).detach()
         return sparse_w.clamp(
             min=-self._VERB_LOG_GAIN_LIMIT,
             max=self._VERB_LOG_GAIN_LIMIT,

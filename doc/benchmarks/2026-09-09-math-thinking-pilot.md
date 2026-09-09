@@ -276,3 +276,32 @@ itself ("n plus one", `mathOperators=succ`, every fact trained), and
 generalization to unseen pairs is compositional (iteration), not
 interpolative. Multi-digit numerals are wholes over digit parts with
 `.where` = position; carries are serial subquestions.
+
+## The successor VP: sufficiency by construction, and a dead zone (2026-09-09)
+
+`test/test_verb_successor.py` pins two facts about the existing
+`VerbLayer` (`VP(NP) = tanh(e^w ⊙ atanh(NP))`, `w` a sparse readout of the
+verb code, `Q = I`):
+
+- **Sufficiency by construction.** With number codes on a geometric
+  progression per coordinate (`atanh(code_n) = a · r^n`) and one verb
+  whose readout is `log r`, the layer advances every noun to its
+  successor exactly (15 / 15 one-step at R = 16), iterated application
+  with the codebook snap counts from zero to fifteen, and `unapply_verb`
+  is the exact predecessor. So the current VP form can be the successor;
+  the number line is a direction in conceptual space along which the
+  nouns are geometrically spaced, and precision falls with magnitude
+  under the tanh saturation.
+- **A dead zone at initialization.** The spectrum readout is
+  zero-initialised and its sparsity soft-threshold (`|w| < 0.1 -> 0`)
+  has zero derivative there, so the gradient into the readout was
+  exactly zero at construction: no verb could begin to learn by gradient,
+  which is why the 30-epoch `plus` run above never moved. The forward is
+  now unchanged and the gradient passes straight through the threshold
+  (`LiftLayer._verb_spectrum_w`); from the real zero init the successor
+  is then learned exactly in about 1,500 steps on the standalone problem
+  (codes, verb code and readout all free), and snapped counting is exact.
+
+The successor corpus (`mathOperators=succ`, "n plus one", every fact
+trained) is being re-run on `MM_add_verb.xml` with the fix; the earlier
+`plus` run predates it and is superseded.
