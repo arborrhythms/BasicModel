@@ -232,3 +232,47 @@ subquestion about a presented word, and conditions the root answer on
 its LTM outputs; the exact code remains for data generation and
 evaluation. The learning gates re-open as strict xfails until the large
 stage-0 run learns `plus` over numeral nouns.
+
+## Stage 0 as syntax: the large plus-as-verb run (2026-09-09)
+
+`data/MM_add_verb.xml`: the `MM_phrase_decode` topology (serial single-S
+idea, `complete.grammar` with the verb / adverb VP operators, WholeSpace
+word analysis, 1024-wide, 230M parameters) on the word-rendered stage-0
+corpus (`3 plus 4` -> one-hot 7, R = 16, 2048 problems, 1633 train rows,
+344 unseen pairs), answer synthesis on, thinking off, `runEpoch` batch 8,
+lr 5e-3, CPU. Nothing mathematical runs in the model: `plus` is a lexical
+verb, the numerals are lexicon nouns.
+
+| epoch | answer loss (epoch mean) | train acc | unseen pairs | prediction histogram |
+|---:|---:|---:|---:|---|
+| 0 | -- | 0.047 | -- | always 0 |
+| 5 | 0.0566 | 0.078 | 0.098 | 8 / 10 / 6 |
+| 10 | 0.0677 | 0.055 | 0.078 | 8 / 6 / 13 |
+| 15 | 0.0501 | 0.066 | 0.035 | 15 / 13 / 6 |
+| 20 | 0.0420 | 0.070 | 0.035 | 13 / 0 / 12 |
+| 25 | 0.0519 | 0.070 | 0.039 | 15 / 13 |
+| 30 | 0.0461 | 0.098 | 0.035 | 6 / 12 / 9 |
+
+Majority baseline 0.085; chance 0.0625. The input reconstruction term
+was present and small throughout (0.032 on the first batches, below
+5e-5 later): the input is reconstructed, the sum is not produced. The
+answer loss eases only by re-centering a constant prediction (the MSE
+mean over one-hot targets), the signature of no verb being learned. 96
+minutes of CPU training; "lots of training of a large network" is the
+regime, and this is the first point on that curve, not its end.
+
+Theoretical note (the sufficiency question): `VerbLayer` is a diagonal
+gain in atanh space (`y_i = tanh(g_i · atanh(x_i))`, `log g` read from the
+verb operand by a learned projection). On a LINEAR numeral code it can
+only scale (multiply by a constant); on an EXPONENTIAL code
+(`atanh(x_i) ∝ e^n`) the gain `e^m` computes `n + m` exactly and
+independently of `n`, so one VP generalizes to every argument in range,
+with precision falling with magnitude under the tanh saturation. The
+operator therefore suffices for `plus` iff the lexicon learns a two-band
+numeral code: an exponential band (the noun as argument) and a linear
+band the log-gain projection reads (the noun as the verb's object). That
+is checkable by construction on the existing layer, and it is what this
+run asks the lexicon to discover from data. Multi-digit numerals are
+wholes over digit parts with `.where` = position (already what the byte
+lexer and word analysis produce); carries cannot be a single diagonal VP
+and are naturally serial `what()` subquestions through LTM.

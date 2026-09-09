@@ -205,10 +205,13 @@ deleted). The resolve step chooses ANSWER or OPEN(word) over the
 presented words; the root answer attends over the row's LTM outputs
 (`ltm_attention`, zero-initialised); corpora render as words (`3 plus
 4`, `b equals a plus 4 ; what is b`). The stage-0 / stage-1 learning
-tests are strict xfails on the syntactic route. Next: the verb grammar
-configuration (`complete.grammar`, serial word analysis, a large model)
-and the long stage-0 run that must learn `plus`; then LTM-only thinking
-on stage 1.
+tests are strict xfails on the syntactic route. The verb grammar
+configuration is `data/MM_add_verb.xml` (230M parameters); its first
+30-epoch run stayed at the majority baseline (pilot report, "Stage 0 as
+syntax"). Next: the two-band numeral-code sufficiency test on the
+existing `VerbLayer` (report, theoretical note), longer / accelerated
+runs, then multi-digit numerals as wholes over digit parts with serial
+carries through LTM.
 
 ## Test evidence rule
 
