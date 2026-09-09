@@ -1265,6 +1265,10 @@ class GrammarMergeGlue(nn.Module):
             return subspace
         if self.is_last:
             return subspace
+        if getattr(subspace, "carrier_pure", False):
+            # An answer-path carrier never consumes the forward-cached
+            # reconstruction diff (What spec 5.4); nothing to expand.
+            return subspace
         diff = self._merge_diff
         assert diff is not None, (
             "GrammarMergeGlue.reverse called without prior forward")
@@ -5996,7 +6000,7 @@ class BasicModel(BaseModel):
             self.eval()
             self.set_sigma(0)
             try:
-                with torch.no_grad(), self.teacher.runtime_batch(texts):
+                with torch.no_grad(), self._runtime_batch(texts):
                     self.runEpoch(batchSize=len(texts), split="runtime")
             finally:
                 if _had_truth_criterion:
@@ -6212,9 +6216,9 @@ class BasicModel(BaseModel):
         for text in texts:
             start = len(store)
             try:
-                with torch.no_grad(), self.teacher.runtime_batch([text]):
+                with torch.no_grad(), self._runtime_batch([text]):
                     inp = self.inputSpace.prepInput(
-                        list(self.teacher.data.train_input))
+                        list(self.data.train_input))
                     self.forward(inp)
                 # Each truth text IS a sentence: fire the sentence-boundary
                 # hard Reset the real reading loop fires, so the
@@ -6268,9 +6272,9 @@ class BasicModel(BaseModel):
         self.eval()
         self.set_sigma(0)
 
-        with torch.no_grad(), self.teacher.runtime_batch([text]):
+        with torch.no_grad(), self._runtime_batch([text]):
             inputTensor = self.inputSpace.prepInput(
-                list(self.teacher.data.train_input))
+                list(self.data.train_input))
             forwardInput, _symbols, _predictions, _ = self.forward(inputTensor)
             if forwardInput is None:
                 return []
@@ -8384,6 +8388,46 @@ class BasicModel(BaseModel):
             return None, None
         return stacked, mask_t
 
+    # -- model-owned training seam (What spec 12.16) ----------------------
+    @property
+    def errors(self):
+        """The per-batch loss registry: the attached Teacher adapter's when
+        present, else the process registry ``TheError``."""
+        teacher = self.__dict__.get("teacher")
+        if teacher is not None and getattr(teacher, "errors", None) is not None:
+            return teacher.errors
+        return TheError
+
+    def record_loss(self, name, value, *, weight=1.0, space=None,
+                    category="other"):
+        """Register one loss component on the model's registry."""
+        self.errors.add(name, value, weight=weight, space=space,
+                        category=category)
+
+    def _primary_loss(self, loss_out, loss_in=None, sbow=None):
+        """Compose the established task and reconstruction objective."""
+        return self.loss.total(loss_out, loss_in, sbow)
+
+    def _open_batch(self, *, split, batch_size, training, clean_input=None):
+        """Open a batch: reset the registry and, when a Teacher adapter is
+        attached, let it open its provenance lesson too."""
+        self.errors.reset()
+        self.errors.attach(self.loss)
+        teacher = getattr(self, "teacher", None)
+        if teacher is None:
+            return None
+        return teacher.begin_batch(
+            split=split, batch_size=batch_size, training=training,
+            clean_input=clean_input)
+
+    def _runtime_batch(self, inputs, outputs=None, *, context=None):
+        """Stage interactive data; through the Teacher adapter when attached
+        (it also installs the interactive context), else directly on Data."""
+        teacher = getattr(self, "teacher", None)
+        if teacher is not None:
+            return teacher.runtime_batch(inputs, outputs, context=context)
+        return self.data.runtime_batch(inputs, outputs, context=context)
+
     def _what_report_state(self):
         return self.__dict__.setdefault("_what_report", {
             "families": {}, "thinking": {"episodes": 0, "iterations": 0,
@@ -8435,6 +8479,16 @@ class BasicModel(BaseModel):
             "episodes": th["episodes"],
             "mean_iterations": th["iterations"] / episodes if th["episodes"] else 0.0,
             "forced_closure_rate": th["forced_closures"] / max(1, th["iterations"]),
+        }
+        # Hard-choice POLICY credit (the chooser's bounded local objective,
+        # <forwardGrammarWeight>) is reported distinctly from the continuous
+        # answer credit; no test assumes autograd differentiates an argmax.
+        out["policy"] = {
+            "forward_grammar_weight": float(
+                getattr(self, "forward_grammar_weight", 0.0) or 0.0),
+            "credit": report.get("policy_credit_sum", 0.0)
+                      / max(1, report.get("policy_batches", 0)),
+            "batches": report.get("policy_batches", 0),
         }
         out["throughput"] = {
             "batches": report["batches"],
@@ -8577,14 +8631,24 @@ class BasicModel(BaseModel):
             questions, device=device, dtype=dtype)
         language = getattr(getattr(self, "symbolSpace", None),
                            "languageLayer", None)
-        old_context = (getattr(language, "_what_context", None)
-                       if language is not None else None)
-        old_detail = (getattr(language, "_what_ltm_context", None)
-                      if language is not None else None)
+        # Install the target-free question context on the LanguageLayer AND
+        # on every grammar layer with a chooser: the STM bounded-reduce pass
+        # calls the grammar layers directly (no ``what_ctx`` threaded), and
+        # its choices are the ones the policy objective credits.
+        holders = [language] if language is not None else []
+        symbol_space = getattr(self, "symbolSpace", None)
+        named_modules = getattr(symbol_space, "named_modules", None)
+        if callable(named_modules):
+            for _name, module in named_modules():
+                if (hasattr(module, "chooser") and hasattr(module, "forward")
+                        and module is not language):
+                    holders.append(module)
+        saved = [(h, getattr(h, "_what_context", None),
+                  getattr(h, "_what_ltm_context", None)) for h in holders]
         self._active_what_questions = questions
-        if language is not None:
-            language._what_context = chooser_context
-            language._what_ltm_context = detailed_context
+        for h in holders:
+            h._what_context = chooser_context
+            h._what_ltm_context = detailed_context
         try:
             if execution is None:
                 if input_data is None:
@@ -8592,9 +8656,9 @@ class BasicModel(BaseModel):
                         "Model.what needs input_data or an existing execution")
                 execution = (executor or self.forward)(input_data)
         finally:
-            if language is not None:
-                language._what_context = old_context
-                language._what_ltm_context = old_detail
+            for h, ctx, detail in saved:
+                h._what_context = ctx
+                h._what_ltm_context = detail
 
         _forward_input, symbols, produced_all = self._what_execution_parts(
             execution)
@@ -10364,7 +10428,7 @@ class BasicModel(BaseModel):
         # registration window. Objective corpus addresses staged by runEpoch
         # are resolved here; the model's subjective .where/.when state is not
         # an input to Teacher and remains untouched.
-        self.teacher.begin_batch(
+        self._open_batch(
             split=split,
             batch_size=(
                 int(inputTensor.shape[0])
@@ -10745,7 +10809,7 @@ class BasicModel(BaseModel):
                     "output_loss_exception",
                     f"supervised output loss zeroed by "
                     f"{type(_out_exc).__name__}: {_out_exc}")
-            self.teacher.add(
+            self.record_loss(
                 "output", lossOut,
                 weight=output_weight,
                 space="OutputSpace", category="prediction",
@@ -10829,7 +10893,7 @@ class BasicModel(BaseModel):
                     f"({_missing}); percept .what={type(_cb).__name__}, "
                     f"pred_full shape="
                     f"{tuple(pred_full.shape) if torch.is_tensor(pred_full) else None}")
-            self.teacher.add(
+            self.record_loss(
                 "reconstruction", lossIn,
                 weight=1.0,
                 space="InputSpace", category="reconstruction",
@@ -10879,7 +10943,7 @@ class BasicModel(BaseModel):
                 # training step.
                 lossRev = torch.zeros((), device=TheDevice.get())
             if not _rev_dedupe:
-                self.teacher.add(
+                self.record_loss(
                     "reconstruction_reverse", lossRev,
                     weight=float(getattr(self.loss, 'reconstruction_scale',
                                          0.0) or 0.0),
@@ -10920,7 +10984,7 @@ class BasicModel(BaseModel):
                     if psbow is not None:
                         sbow = psbow if sbow is None else sbow + psbow
                 if sbow is not None:
-                    self.teacher.add(
+                    self.record_loss(
                         "embedding_sbow", sbow,
                         weight=self.loss.embedding_scale,
                         space="SymbolSpace", category="embedding",
@@ -10937,7 +11001,7 @@ class BasicModel(BaseModel):
             # into the persistent ARMA rings (disc.observe). Re-running it on a
             # sentence pass A already observed would double-push the rings and
             # corrupt the lagged history the next batch reads.
-            legacy_prediction = self.teacher.legacy_prediction_enabled
+            legacy_prediction = bool(getattr(self, "legacy_prediction_enabled", False))
             arma_loss = (self._discourse_arma_loss()
                          if (train and legacy_prediction
                              and not exploration_trial) else None)
@@ -10990,7 +11054,7 @@ class BasicModel(BaseModel):
                 arma_loss = None
                 intra_loss = None
 
-            totalLoss = self.teacher.primary_loss(lossOut, lossIn, sbow)
+            totalLoss = self._primary_loss(lossOut, lossIn, sbow)
             # Mirror the actual weighted branches, not just their logged raw
             # losses. The legacy ModelLoss uses complementary rr / (1-rr)
             # weights; independent primary weights belong to the output-path
@@ -11013,16 +11077,22 @@ class BasicModel(BaseModel):
                     trace.forward_loss() if trace is not None else None)
                 if grammar_local is not None:
                     totalLoss = totalLoss + _fgw * grammar_local
-                    self.teacher.add(
+                    self.record_loss(
                         "forward_grammar", grammar_local, weight=_fgw,
                         space="LanguageSpace", category="grammar")
+                    # Distinct hard-choice policy credit (what_report()).
+                    _rep = self._what_report_state()
+                    _rep["policy_credit_sum"] = (
+                        _rep.get("policy_credit_sum", 0.0)
+                        + float(grammar_local.detach()))
+                    _rep["policy_batches"] = _rep.get("policy_batches", 0) + 1
             _cscale = float(getattr(
                 self.loss, "conceptual_similarity_scale", 0.0) or 0.0)
             if train and not self.serial and _cscale > 0.0:
                 csbow = self.conceptual_sbow_loss()
                 if csbow is not None:
                     totalLoss = totalLoss + _cscale * csbow
-                    self.teacher.add(
+                    self.record_loss(
                         "conceptual_sbow", csbow, weight=_cscale,
                         space="ConceptualSpace", category="embedding",
                     )
@@ -11034,7 +11104,7 @@ class BasicModel(BaseModel):
                 defsp = self.conceptualSpace.definition_sparsity_loss(lam=_dss)
                 if defsp is not None:
                     totalLoss = totalLoss + defsp
-                    self.teacher.add(
+                    self.record_loss(
                         "definition_sparsity", defsp, weight=_dss,
                         space="ConceptualSpace", category="reg")
             if lossRev is not None:
@@ -11046,7 +11116,7 @@ class BasicModel(BaseModel):
                         gradient_objectives["reconstruction"] + _rr * lossRev)
             if arma_loss is not None:
                 totalLoss = totalLoss + self.arma_scale * arma_loss
-                self.teacher.add(
+                self.record_loss(
                     "arma", arma_loss,
                     weight=self.arma_scale,
                     space="DiscourseSpace", category="discourse",
@@ -11055,7 +11125,7 @@ class BasicModel(BaseModel):
                 totalLoss = (totalLoss
                              + self.conceptualSpace.intra_loss_weight
                              * intra_loss)
-                self.teacher.add(
+                self.record_loss(
                     "intra", intra_loss,
                     weight=self.conceptualSpace.intra_loss_weight,
                     space="ConceptualSpace", category="intra",
@@ -11063,7 +11133,7 @@ class BasicModel(BaseModel):
             if inter_loss is not None:
                 totalLoss = (totalLoss
                              + self.inter_loss_weight * inter_loss)
-                self.teacher.add(
+                self.record_loss(
                     "inter", inter_loss,
                     weight=self.inter_loss_weight,
                     space="DiscourseSpace", category="inter",
@@ -11071,7 +11141,7 @@ class BasicModel(BaseModel):
             if inter_contrastive is not None:
                 totalLoss = (totalLoss
                              + self.inter_contrastive_weight * inter_contrastive)
-                self.teacher.add(
+                self.record_loss(
                     "inter_contrastive", inter_contrastive,
                     weight=self.inter_contrastive_weight,
                     space="DiscourseSpace", category="inter",
@@ -11092,7 +11162,7 @@ class BasicModel(BaseModel):
                             gradient_objectives["reconstruction"] = (
                                 gradient_objectives["reconstruction"]
                                 + weight * tensor)
-                        self.teacher.add(
+                        self.record_loss(
                             name, tensor, weight=weight,
                             space=space, category=category)
                 pipeline_errors.clear()
@@ -11111,7 +11181,7 @@ class BasicModel(BaseModel):
                     a_loss = None          # a reasoning hiccup must not abort training
                 if a_loss is not None:
                     totalLoss = totalLoss + self.answer_loss_weight * a_loss
-                    self.teacher.add(
+                    self.record_loss(
                         "answer", a_loss,
                         weight=self.answer_loss_weight,
                         space="SymbolSpace", category="policy")
@@ -11134,7 +11204,7 @@ class BasicModel(BaseModel):
                     tk_loss = None         # a kernel hiccup must not abort training
                 if tk_loss is not None:
                     totalLoss = totalLoss + self.thinking_loss_weight * tk_loss
-                    self.teacher.add(
+                    self.record_loss(
                         "thinking", tk_loss,
                         weight=self.thinking_loss_weight,
                         space="SymbolSpace", category="policy")
@@ -11147,7 +11217,7 @@ class BasicModel(BaseModel):
                     pn_loss = None
                 if pn_loss is not None:
                     totalLoss = totalLoss + self.predict_next_loss_weight * pn_loss
-                    self.teacher.add(
+                    self.record_loss(
                         "predict_next", pn_loss,
                         weight=self.predict_next_loss_weight,
                         space="SymbolSpace", category="policy")
@@ -11169,7 +11239,7 @@ class BasicModel(BaseModel):
                         gradient_objectives["reconstruction"] = (
                             gradient_objectives["reconstruction"]
                             + self.leaf_distill_weight * ld_loss)
-                    self.teacher.add(
+                    self.record_loss(
                         "leaf_distill", ld_loss,
                         weight=self.leaf_distill_weight,
                         space="ConceptualSpace", category="reconstruction")
@@ -11215,7 +11285,7 @@ class BasicModel(BaseModel):
                     lam=getattr(self, 'gate_l1_lambda', 0.0))
                 if gate_l1 is not None:
                     totalLoss = totalLoss + gate_l1
-                    self.teacher.add(
+                    self.record_loss(
                         "gate_l1", gate_l1,
                         weight=getattr(self, 'gate_l1_lambda', 0.0),
                         space="SymbolSpace", category="reg")
@@ -11232,7 +11302,7 @@ class BasicModel(BaseModel):
                     # non-smooth L1 term in Adam's diagonal metric. Adding its
                     # subgradient here would penalize every connection twice.
                     totalLoss = totalLoss + readout_l1
-                    self.teacher.add(
+                    self.record_loss(
                         "concept_readout_l1", readout_l1, weight=1.0,
                         space="ConceptualSpace", category="reg")
 
@@ -11245,7 +11315,7 @@ class BasicModel(BaseModel):
             # training-loop consumer). Gate behind MODEL_DEBUG, like the
             # finite-loss guard just below.
             if _util.MODEL_DEBUG:
-                self.teacher.errors.snapshot()
+                self.errors.snapshot()
 
         # Per-batch finite-loss guard is a GPU sync (.all() materializes).
         # Gate it behind MODEL_DEBUG so production training pays no per-batch
@@ -12296,7 +12366,8 @@ class BasicModel(BaseModel):
                     # opened its lesson. Pass B reuses the exact same source
                     # presentation, so restage the same rows rather than
                     # silently constructing an unaddressed lesson.
-                    self.teacher.stage_batch_sources(split, source_rows)
+                    if getattr(self, "teacher", None) is not None:
+                        self.teacher.stage_batch_sources(split, source_rows)
                     _cur_questions = self._curriculum_questions(
                         step, split=split, batch_size=B_step,
                         sentence_index=step, source_rows=source_rows,
@@ -12619,9 +12690,18 @@ class BasicModel(BaseModel):
                 "nWhen": canonical_shape("OutputSpace")[1],
             },
         )
-        # Transitional compatibility: existing reconstruction helpers read
-        # ``self.loss``. Teacher is now the owner of that object.
+        # The model owns its data authority, loss registry and loss
+        # composition (What spec 12.16); Teacher is an optional adapter for
+        # source provenance / lessons / interactive context and may be
+        # detached (``model.teacher = None``) without breaking training.
+        self.data = teacher_data
+        # ``errors`` is a PROPERTY (below): the shared registry must not be an
+        # instance attribute, or ``copy.deepcopy(model)`` would recurse into
+        # the non-leaf loss tensors another batch left in it (Teacher shields
+        # it the same way in its ``__deepcopy__``).
         self.loss = self.teacher.loss
+        self.legacy_prediction_enabled = bool(
+            self.teacher.legacy_prediction_enabled)
         # Optional swappable loss head fed STM snapshots during the
         # body forward (Phase 3, 2026-05-12). Installed by
         # ``embed.py embed_pretrain`` for CBOW-over-STM pretraining;
@@ -13426,7 +13506,7 @@ class BasicModel(BaseModel):
         # constructor wires P/C/S spaces; here we mirror that wiring onto
         # every other space (InputSpace / OutputSpace / ModalSpace) so
         # ``space.symbolSpace`` is non-None project-wide.
-        self.normalizer = Normalizer(self.teacher.data)
+        self.normalizer = Normalizer(self.data)
         for space in self.spaces:
             space.normalizer = self.normalizer
             sub = getattr(space, 'subspace', None)
@@ -19164,8 +19244,10 @@ class BasicModel(BaseModel):
                         # model-level ``carriers`` handle remains a
                         # fallback for reverses driven from a foreign
                         # subspace.
-                        rec = stage["cs"].unbind(stage["cs"].subspace)
-                        if (rec is None and carriers is not None
+                        _pure = bool(getattr(sub, "carrier_pure", False))
+                        rec = (None if _pure
+                               else stage["cs"].unbind(stage["cs"].subspace))
+                        if (not _pure and rec is None and carriers is not None
                                 and t < len(carriers)
                                 and carriers[t] is not None):
                             rec = combine.reverse(carriers[t])

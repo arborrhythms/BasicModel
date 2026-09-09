@@ -596,3 +596,176 @@ def test_recall_returns_the_most_recent_sentence_during_ring_fill(synth_discours
     assert not torch.equal(d.answer_symbol[:, 0, :width], seen[0][:, :width])
     # The ring tail still holds the FIRST observation during fill: the bug.
     assert torch.equal(memory._s_history[:, -1, :width], seen[0][:, :width])
+
+
+# -- the three items Alec asked to close (2026-09-09) --------------------------
+
+def _live_state_fingerprint(m):
+    """Every piece of live Space state a downward path could touch."""
+    import types
+    out = {}
+    def tensor_fp(t):
+        return ("T", tuple(t.shape), float(t.detach().float().sum()) if t.numel() else 0.0)
+    spaces = {"inputSpace": m.inputSpace, "perceptualSpace": m.perceptualSpace,
+              "conceptualSpace": m.conceptualSpace, "wholeSpace": m.wholeSpace,
+              "outputSpace": m.outputSpace}
+    for i, sp in enumerate(m.conceptualSpaces or []):
+        spaces[f"conceptualSpaces[{i}]"] = sp
+    for i, sp in enumerate(m.wholeSpaces or []):
+        spaces[f"wholeSpaces[{i}]"] = sp
+    for name, sp in spaces.items():
+        sub = getattr(sp, "subspace", None)
+        if sub is not None:
+            ev = sub.materialize() if hasattr(sub, "materialize") else None
+            out[f"{name}.event"] = tensor_fp(ev) if torch.is_tensor(ev) else None
+            for k, v in vars(sub).items():
+                if torch.is_tensor(v):
+                    out[f"{name}.sub.{k}"] = tensor_fp(v)
+            out[f"{name}.sub.batch"] = getattr(sub, "batch", None)
+        for k in ("concepts", "reconstructed", "input", "_recovered_input",
+                  "_recovered_input_thunk", "_embedded_input", "_ar_embedded"):
+            v = getattr(sp, k, None) if k in vars(sp) else None
+            out[f"{name}.{k}"] = tensor_fp(v) if torch.is_tensor(v) else (
+                None if v is None else type(v).__name__)
+        for role in ("event", "what", "where", "when", "activation"):
+            basis = getattr(sub, role, None) if sub is not None else None
+            W = basis.getW() if basis is not None and hasattr(basis, "getW") else None
+            if torch.is_tensor(W):
+                out[f"{name}.basis.{role}"] = tensor_fp(W)
+    for t, stage in enumerate(m.body_stages):
+        if "merge" in stage:
+            d = stage["merge"]._merge_diff
+            out[f"merge[{t}]"] = tensor_fp(d) if torch.is_tensor(d) else None
+    out["_combine_carriers"] = type(getattr(m, "_combine_carriers", None)).__name__
+    ss = m.symbolSpace.subspace
+    out["generate_rules"] = repr(sorted((k, len(v) if hasattr(v, "__len__") else v)
+                                        for k, v in (getattr(ss, "generate_rules", {}) or {}).items()))
+    out["_generate_generation"] = getattr(ss, "_generate_generation", None)
+    return out
+
+
+def test_reverse_output_is_carrier_pure_without_the_guard(synth_config, monkeypatch):
+    """Step 1 residue closed: the answer path writes only into its own fresh
+    carriers. With the synthesis guard disabled, reverseOutput() leaves every
+    live Space subspace, basis, by-product stash, merge carrier and grammar
+    cursor exactly as it found them."""
+    from contextlib import nullcontext
+    m = _build(synth_config)
+    x, _ = _batch(m)
+    with torch.no_grad():
+        u = m.understand(x)
+        m.reverseOutput(u, What.supervised(0))       # builds answer-path modules
+    monkeypatch.setattr(m, "_synthesis_guard", lambda: nullcontext(), raising=True)
+    before = _live_state_fingerprint(m)
+    with torch.no_grad():
+        m.reverseOutput(u, What.supervised(0))
+        m.reverseOutput(u, What.past(1, -1))
+    after = _live_state_fingerprint(m)
+    changed = {k: (before.get(k), after.get(k)) for k in set(before) | set(after)
+               if before.get(k) != after.get(k)}
+    assert not changed, changed
+
+
+def test_model_trains_with_teacher_detached(synth_config):
+    """12.16 closed: the model owns its data authority, loss registry and loss
+    composition; Teacher is an optional provenance adapter."""
+    m = _build(synth_config)
+    assert m.errors is not None and m.loss is not None and m.data is not None
+    m.teacher = None
+    opt = m.getOptimizer(lr=1e-3)
+    batch = _batch(m)
+    result, _ = m.runBatch(train=True, batchSize=2, split="train",
+                           optimizer=opt, batch_override=batch)
+    assert torch.isfinite(result.lossOut)
+    names = [t[0] for t in m.errors.terms()]
+    assert "output" in names and "reconstruction" in names
+    m.runEpoch(optimizer=opt, batchSize=2, split="train", max_batches=2)
+    with torch.no_grad():
+        answer = m.what(What.supervised(0), input_data=batch[0])
+    assert answer.available
+    assert m.inputSpace.data.what(What.supervised(0)).provenance == "data"
+
+
+@pytest.fixture(scope="module")
+def synth_policy_config(tmp_path_factory):
+    # MM_phrase_decode has 5 unary / 15 binary rules: real chooser
+    # decisions, so the bounded local (policy) objective fires on its STM
+    # reduce pass. MM_xor has one rule per arity and nothing to choose.
+    src = (_DATA / "MM_phrase_decode.xml").read_text()
+    assert "<transformChooser>" not in src
+    patched = src.replace(
+        "<architecture>",
+        "<architecture>\n    <answerSynthesis>true</answerSynthesis>"
+        "\n    <transformChooser>mlp</transformChooser>", 1)
+    patched = patched.replace(
+        "</training>",
+        "      <forwardGrammarWeight>0.5</forwardGrammarWeight>\n    </training>", 1)
+    path = tmp_path_factory.mktemp("cfg") / "MM_xor_policy.xml"
+    path.write_text(patched)
+    return path
+
+
+def test_chooser_question_bias_trains_through_the_policy_objective(synth_policy_config):
+    """The chooser's hard choice is credited by its bounded local (policy)
+    objective, reported distinctly from the continuous answer credit (spec
+    section 11); the question context reaches it through what_projection."""
+    import Language
+    from util import init_config
+    from data import TheData
+    import Models
+    init_config(path=str(synth_policy_config), defaults_path=str(_DATA / "model.xml"))
+    Language.TheGrammar._configured = False
+    TheData.load("phrases")
+    torch.manual_seed(0)
+    m, _ = Models.BaseModel.from_config(str(synth_policy_config), data=TheData)
+    m = m.to("cpu")
+    assert m.forward_grammar_weight > 0.0
+    opt = m.getOptimizer(lr=1e-2)
+    batch = _batch(m)
+    seen = {}
+    orig = m._backward_training_loss
+
+    def spy(total_loss, objectives, optimizer, *a, **k):
+        wp = {name: mod.what_projection.weight for name, mod in m.named_modules()
+              if type(mod).__name__ == "MLPTransformChooser"}
+        grads = torch.autograd.grad(total_loss, list(wp.values()),
+                                    retain_graph=True, allow_unused=True)
+        seen["grads"] = {name: (None if g is None else float(g.abs().sum()))
+                         for name, g in zip(wp, grads)}
+        return orig(total_loss, objectives, optimizer, *a, **k)
+
+    m._backward_training_loss = spy
+    try:
+        m.runBatch(train=True, batchSize=2, split="train", optimizer=opt,
+                   batch_override=batch,
+                   questions=(What.supervised(0), What.supervised(1)))
+    finally:
+        m._backward_training_loss = orig
+    # The chooser whose choices the policy objective credited (the binary
+    # reduce chooser on this grammar) receives gradient through its What
+    # bias; a chooser with a single rule records no choice and none is due.
+    credited = {n: g for n, g in seen["grads"].items() if g is not None}
+    assert credited, seen["grads"]
+    assert any(g > 0.0 for g in credited.values()), seen["grads"]
+    assert any("_binary_layers" in n for n in credited), seen["grads"]
+    report = m.what_report()
+    assert report["policy"]["forward_grammar_weight"] == 0.5
+    assert report["policy"]["batches"] == 1
+    assert report["policy"]["credit"] == report["policy"]["credit"]   # finite
+    assert "answer_construction" in report["families"]["supervised"]
+
+
+def test_fresh_model_deep_copies_after_another_model_trained(synth_config):
+    # The shared loss registry keeps the previous batch's (non-leaf) loss
+    # tensors; a fresh model must not expose it as an instance attribute or
+    # ``copy.deepcopy`` (used by the compiled word-chunk tests) fails.
+    import copy
+    trained = _build(synth_config)
+    opt = trained.getOptimizer(lr=1e-3)
+    trained.runBatch(train=True, batchSize=2, split="train", optimizer=opt,
+                     batch_override=_batch(trained))
+    fresh = _build(synth_config)
+    assert "errors" not in vars(fresh)
+    assert fresh.errors is trained.errors            # one process registry
+    clone = copy.deepcopy(fresh)
+    assert clone is not fresh and clone.errors is not None   # Teacher's deepcopy gives the clone its own registry

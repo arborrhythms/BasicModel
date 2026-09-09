@@ -6737,6 +6737,9 @@ class SubSpace(nn.Module):
         # 'intersection', 'union'.
         self.knowing = None
         self.batch = 0
+        # A fresh answer-path carrier (``carrier_like``): Space reverses
+        # write their results INTO it instead of the Space's live subspace.
+        self.carrier_pure = False
 
         # Pipeline-carried context. These travel with the subspace through
         # every Space.forward via copy_context(), replacing the old pattern
@@ -6826,6 +6829,14 @@ class SubSpace(nn.Module):
         and bases but none of its per-batch state.  Answer synthesis writes
         generated content into such a carrier so it never reuses a cached
         reconstruction carrier (What spec section 5.4)."""
+        def _shared(basis):
+            # Share only PARAMETER-bearing bases (codebooks, embeddings,
+            # projection bases); a plain ``Tensor`` basis is per-batch
+            # storage and must be fresh, or the carrier would write into
+            # the live subspace's storage.
+            if basis is None or type(basis) is Tensor:
+                return None
+            return basis
         fresh = SubSpace(
             inputShape=self.inputShape, outputShape=self.outputShape,
             nInputDim=self._nInputDim, nOutputDim=self._nOutputDim,
@@ -6833,9 +6844,11 @@ class SubSpace(nn.Module):
             activeEncoding=self.activeEncoding,
             whatEncoding=self.whatEncoding, whereEncoding=self.whereEncoding,
             whenEncoding=self.whenEncoding, wordEncoding=self.wordEncoding,
-            object=self.event, what=self.what, where=self.where,
-            when=self.when, activation=self.activation)
+            object=_shared(self.event), what=_shared(self.what),
+            where=_shared(self.where), when=_shared(self.when),
+            activation=_shared(self.activation))
         fresh.normalizer = self.normalizer
+        fresh.carrier_pure = True
         return fresh
 
     def copy_context(self, other):
@@ -9255,6 +9268,32 @@ class Space(SpaceCarrierMixin, nn.Module):
         self.subspace.set_event(x, compute_activation=compute_activation)
         return self.subspace
 
+    # -- carrier-pure reverse seam (What spec Step 1) ----------------------
+    def _reverse_target(self, vspace):
+        """Where a reverse writes its result: the incoming carrier when it
+        is a fresh answer-path carrier (``carrier_pure``), else the live
+        ``self.subspace`` (the established reconstruction path)."""
+        if vspace is not None and getattr(vspace, "carrier_pure", False):
+            return vspace
+        return self.subspace
+
+    def _adopt_reverse_carrier(self, vspace):
+        """Start of a reverse: adopt context from the carrier (live path) or
+        keep the pure carrier untouched; remember it for ``reverseEnd``."""
+        if vspace is not None and getattr(vspace, "carrier_pure", False):
+            object.__setattr__(self, "_reverse_carrier", vspace)
+            return vspace
+        self.subspace.copy_context(vspace)
+        object.__setattr__(self, "_reverse_carrier", None)
+        return self.subspace
+
+    def _reverse_stash(self, vspace):
+        """Owner of reverse by-products (recovered input, concepts, render
+        thunks): the pure carrier, else this Space."""
+        if vspace is not None and getattr(vspace, "carrier_pure", False):
+            return vspace
+        return self
+
     def synthesis_operator(self, width, *, device=None, dtype=None):
         """This Space's DEDICATED answer-direction operator (Alec 2026-09-09).
 
@@ -9329,11 +9368,14 @@ class Space(SpaceCarrierMixin, nn.Module):
                 undo the output reshape. If False, pass the SubSpace
                 through without materializing.
         """
+        object.__setattr__(
+            self, "_reverse_carrier",
+            vspace if getattr(vspace, "carrier_pure", False) else None)
         if not returnVectors:
-            self.subspace.batch = vspace.batch
+            self._reverse_target(vspace).batch = vspace.batch
             return vspace
         y = vspace.materialize()
-        self.subspace.batch = y.shape[0]
+        self._reverse_target(vspace).batch = y.shape[0]
         pre = getattr(self, '_pre_reshape_output', None)
         # Use the stored forward reshape only when its element count matches the
         # tensor being reversed. A standalone reverse (no matching forward, e.g.
@@ -9420,13 +9462,16 @@ class Space(SpaceCarrierMixin, nn.Module):
             # iteration cached a one-word [1, 136] descriptor.
             _fold_width = int(getattr(self, "_fold_width", 0) or 0)
             if _fold_width > 0 and int(y.shape[-1]) == _fold_width:
-                self.subspace.set_event(y)
-                return self.subspace
+                target = self._reverse_target(
+                    getattr(self, "_reverse_carrier", None))
+                target.set_event(y)
+                return target
             # Fallback: reshape from [B, ?, nInputDim] to [B, -1, inputShape[1]]
             if y.shape[-1] != self.inputShape[1]:
                 y = y.reshape(y.shape[0], -1, self.inputShape[1])
-        self.subspace.set_event(y)
-        return self.subspace
+        target = self._reverse_target(getattr(self, "_reverse_carrier", None))
+        target.set_event(y)
+        return target
 
     # _2d/_3d removed -- all layers now operate on [..., D] natively.
 
@@ -11089,7 +11134,9 @@ class InputSpace(Space):
         """
         if hasattr(subspace, "is_empty") and subspace.is_empty():
             return subspace
-        self.subspace.copy_context(subspace)
+        target = self._adopt_reverse_carrier(subspace)
+        stash = self._reverse_stash(subspace)
+        pure = bool(getattr(subspace, "carrier_pure", False))
         vspace = subspace
         if self.model_type == "embedding":
             # Text mode: PartSpace already ran the text reverse and
@@ -11101,7 +11148,7 @@ class InputSpace(Space):
             # target_sq.
             y = vspace.materialize()
             if y is not None:
-                self.subspace.set_event(y)
+                target.set_event(y)
                 # Phase 7 painting: the COMBINED surface (universal
                 # background + atoms averaged in) rides the SubSpace as
                 # ``_painted_event``. The event itself stays the ATOMIC
@@ -11113,9 +11160,8 @@ class InputSpace(Space):
                 painted = self._paint_reconstruction(
                     y, getattr(vspace, "_concepts_recon", None))
                 if painted is not y:
-                    object.__setattr__(
-                        self.subspace, "_painted_event", painted)
-            return self.subspace
+                    object.__setattr__(target, "_painted_event", painted)
+            return target
         y = self.reverseBegin(vspace, returnVectors=True)
         # Store full vector (all subspaces) for MSE loss BEFORE partitioning
         object_basis = self.subspace.get_vectors()
@@ -11123,7 +11169,7 @@ class InputSpace(Space):
         raw = (object_basis.reverse_raw(y)
                if hasattr(object_basis, 'reverse_raw')
                else y)
-        self.reconstructed = raw.detach()
+        stash.reconstructed = raw.detach()
         nWhat = content_basis.content_dim
         object_encoding = self.subspace.objectEncoding
         if object_encoding is not None:
@@ -11135,33 +11181,37 @@ class InputSpace(Space):
                 content, aux = y[:, :, :nWhat].clone(), y[:, :, nWhat:].clone()
         content = content_basis.reverse(content)
         if object_encoding is not None:
-            self.input = object_encoding.restore_aux(content, aux)
+            _input = object_encoding.restore_aux(content, aux)
         elif aux is not None:
-            self.input = torch.cat([content, aux], dim=-1)
+            _input = torch.cat([content, aux], dim=-1)
         else:
-            self.input = content
-        content_basis.setW(self.input)
-        object_basis.setW(self.input)
-        self.subspace.set_event(self.input)
+            _input = content
+        stash.input = _input
+        if not pure:
+            # Reconstruction by-products: the bases carry the recovered
+            # input for the render/decode helpers; an answer carrier never
+            # writes them.
+            content_basis.setW(_input)
+            object_basis.setW(_input)
+        target.set_event(_input)
         # Phase 7 painting (numeric path): the combined surface rides the
         # SubSpace as ``_painted_event``; the decode chain below reads the
         # UNPAINTED input (exactness lives in the atomic reverse).
         _painted = self._paint_reconstruction(
-            self.input, getattr(vspace, "_concepts_recon", None))
-        if _painted is not self.input:
-            object.__setattr__(self.subspace, "_painted_event", _painted)
+            _input, getattr(vspace, "_concepts_recon", None))
+        if _painted is not _input:
+            object.__setattr__(target, "_painted_event", _painted)
 
         # Word recovery -- content is already denormalized; Embedding.reverse()
         # snaps under the active lexicon geometry.
         if isinstance(content_basis, Embedding):
-            self._recovered_input = content_basis.decode_reverse_meta(
-                self.input, subspace=self.subspace)
+            stash._recovered_input = content_basis.decode_reverse_meta(
+                _input, subspace=target)
         else:
-            self._recovered_input = None
+            stash._recovered_input = None
 
-        self.subspace.normalize("input", target="what", normalize=True)
-        return self.subspace
-
+        target.normalize("input", target="what", normalize=True)
+        return target
 class PartSpace(Space):
     """InputSpace -> percepts via the configured synthesis front end and sigma fold.
 
@@ -14298,14 +14348,15 @@ class PartSpace(Space):
         """
         if subspace.is_empty():
             return subspace
-        self.subspace.copy_context(subspace)
+        target = self._adopt_reverse_carrier(subspace)
+        stash = self._reverse_stash(subspace)
         vspace = subspace
         # NOTE: When ``self.subspace.what`` is an Embedding (text mode),
         # `_reverse_text` returns earlier and bypasses the numeric
         # inverse chain below.
         if isinstance(self.subspace.what, Embedding):
             self._reverse_text(vspace)
-            return self.subspace
+            return target
         if self.invertible:
             vspace.normalize("percepts", target="event",
                              normalize=True, reverse=True)
@@ -14318,8 +14369,8 @@ class PartSpace(Space):
         if isinstance(getattr(self, "vocabulary", None), _Radix):
             ev = vspace.materialize()
             if ev is not None and torch.is_tensor(ev):
-                self._recovered_input = None
-                self._recovered_input_thunk = (
+                stash._recovered_input = None
+                stash._recovered_input_thunk = (
                     "radix", self.vocabulary, ev.detach(), self.subspace)
         vspace.normalize("input", target="what", normalize=True)
         return vspace
@@ -14354,10 +14405,12 @@ class PartSpace(Space):
             if getattr(self.sigma, 'invertible', False):
                 y = fold_content_apply(
                     self.sigma.reverse, getattr(self.sigma, "nInput", 0), y)
-        self.subspace.batch = y.shape[0]
+        target = self._reverse_target(vspace)
+        stash = self._reverse_stash(vspace)
+        target.batch = y.shape[0]
         raw = (object_basis.reverse_raw(y)
                if hasattr(object_basis, 'reverse_raw') else y)
-        self.reconstructed = raw.detach()
+        stash.reconstructed = raw.detach()
         nWhat = content_basis.content_dim
         object_encoding = self.subspace.objectEncoding
         if object_encoding is not None:
@@ -14373,22 +14426,23 @@ class PartSpace(Space):
         # flow for reconstruction loss.
         content = content.clone()
         if object_encoding is not None:
-            self.input = object_encoding.restore_aux(content, aux)
+            _input = object_encoding.restore_aux(content, aux)
         elif aux is not None:
-            self.input = torch.cat([content, aux], dim=-1)
+            _input = torch.cat([content, aux], dim=-1)
         else:
-            self.input = content
-        # Stage 4: dropped the legacy ``content_basis.setW(self.input)``
-        # and ``object_basis.setW(self.input)`` lines. Both were
+            _input = content
+        # Stage 4: dropped the legacy ``content_basis.setW(_input)``
+        # and ``object_basis.setW(_input)`` lines. Both were
         # band-aid-era duplicates of the SubSpace setter below:
         #   * ``content_basis`` is the Embedding (.what) — Embedding.setW
         #     was already a no-op.
         #   * ``object_basis`` is .event — the per-batch write goes
         #     through ``SubSpace.set_event`` (which snaps via codebook
         #     for muxed configs; stores on event.W for pure-event).
-        # ``self.input`` is still kept on the PartSpace itself
+        # ``_input`` is still kept on the PartSpace itself
         # for the text-render path (``_recovered_input_thunk`` below).
-        self.subspace.set_event(self.input)
+        stash.input = _input
+        target.set_event(_input)
         # Lazy: word recovery is report-only (reconstruct_data /
         # reconstruct_to_buffer / get_recovered_word /
         # _reconstructionReport) and never feeds the gradient, but its
@@ -14397,10 +14451,10 @@ class PartSpace(Space):
         # contract. Defer the decode to first consumer access (a no-op
         # during pure training); the captured tensors are held by ref
         # so the deferred result is bit-identical to the eager one.
-        self._recovered_input = None
-        self._recovered_input_thunk = (
-            content_basis, self.input, self.subspace)
-        self.subspace.normalize("input", target="what", normalize=True)
+        stash._recovered_input = None
+        stash._recovered_input_thunk = (
+            content_basis, _input, self.subspace)
+        target.normalize("input", target="what", normalize=True)
 
     def _materialize_recovered_input(self):
         """Run the deferred reverse word-recovery decode on first access.
@@ -14787,7 +14841,7 @@ class ModalSpace(Space):
         """
         if subspace.is_empty():
             return subspace
-        self.subspace.copy_context(subspace)
+        self._adopt_reverse_carrier(subspace)
         vspace = subspace
         event = vspace.materialize()
         what_in = event[..., :self.nWhat]
@@ -22242,7 +22296,23 @@ class ConceptualSpace(Space):
         carrier_owner = ws if (reverse_chain is None and ws is not None) else self
         carrier = carrier_owner.subspace.carrier_like()
         carrier.set_event(answer_symbol)
-        realized = chain(carrier)
+        # The symbolic inverse pops grammar generate-rule cursors; those are
+        # per-reverse transient state regenerated by every reconstruction,
+        # but synthesis must leave them exactly as found.
+        ss_sub = getattr(symbol_space, "subspace", None)
+        saved_rules = None
+        if ss_sub is not None and hasattr(ss_sub, "generate_rules"):
+            saved_rules = (
+                {k: (list(v) if isinstance(v, list) else v)
+                 for k, v in dict(ss_sub.generate_rules or {}).items()},
+                getattr(ss_sub, "_generate_generation", None))
+        try:
+            realized = chain(carrier)
+        finally:
+            if saved_rules is not None:
+                ss_sub.generate_rules = saved_rules[0]
+                if saved_rules[1] is not None:
+                    ss_sub._generate_generation = saved_rules[1]
         event = (realized.materialize()
                  if hasattr(realized, "materialize") else realized)
         event = self._apply_synthesis_operator(event)
@@ -22299,14 +22369,15 @@ class ConceptualSpace(Space):
         """
         if subspace.is_empty():
             return subspace
-        self.subspace.copy_context(subspace)
+        target = self._adopt_reverse_carrier(subspace)
+        stash = self._reverse_stash(subspace)
         vspace = subspace
         y = self.reverseBegin(vspace, returnVectors=True)
         if isinstance(self.subspace.what, ProjectionBasis):
             # Codebook-side LDU inverse: own contract of ProjectionBasis,
             # not the retired substrate fold. Keeps the reverse shape
             # contract intact for downstream PS.reverse consumers.
-            V_orig = int(self.inputShape[0])
+            V_orig = int(_inputShape[0])
             y = self.subspace.what.reverse(y, V=V_orig)
         # 2026-06-04 parallel-symbolic-substrate refactor: the
         # ``sigma_cs`` residual subtraction and the ``sigma_in.reverse``
@@ -22323,7 +22394,7 @@ class ConceptualSpace(Space):
         if self._right_half_dim > 0 and y is not None and y.dim() == 3:
             y = y[..., :-self._right_half_dim]
         if y is not None:
-            self.concepts = y.detach()
+            stash.concepts = y.detach()
         vspace = self.reverseEnd(y, returnVectors=True)
         if y is not None and not isinstance(
                 self.subspace.what, ProjectionBasis):
@@ -28687,7 +28758,7 @@ class WholeSpace(Space):
         # refactor.
         if getattr(self, "use_stack_router", False):
             return self._stack_route_reverse(subspace)
-        self.subspace.copy_context(subspace)
+        target = self._adopt_reverse_carrier(subspace)
         vspace = subspace
         symbolSpace = getattr(self, "symbolSpace", None)
         vspace = self.reverseBegin(vspace)
@@ -28724,11 +28795,11 @@ class WholeSpace(Space):
                 vspace = self.syntacticLayer.reverse(vspace)
             act = vspace.materialize()
         if self.codebook:
-            self.subspace.set_event(act)
-            result = self.reverseEnd(self.subspace)
+            target.set_event(act)
+            result = self.reverseEnd(target)
         else:
-            self.subspace.set_event(act)
-            result = self.subspace
+            target.set_event(act)
+            result = target
         # Range check (no in-place normalisation) on the concept-space
         # output. The forward path range-checks "symbols" without
         # applying tanh; the reverse path mirrors that with a range
@@ -29003,7 +29074,7 @@ class OutputSpace(Space):
         """
         if subspace.is_empty():
             return subspace
-        self.subspace.copy_context(subspace)
+        target = self._adopt_reverse_carrier(subspace)
         vspace = subspace
         if self.nonlinear_output:
             # Activation-mode reverse: tanh(linear.reverse(atanh(x)))
@@ -29011,13 +29082,12 @@ class OutputSpace(Space):
             act = vspace.materialize(mode="activation")
             act_pre = torch.atanh(act.clamp(-1 + epsilon, 1 - epsilon))
             symbol_act = torch.tanh(self._linearLayer.reverse(act_pre))
-            self.subspace.set_activation(symbol_act)
-            return self.subspace
-
+            target.set_activation(symbol_act)
+            return target
         y = self.reverseBegin(vspace, returnVectors=True)
-        self.subspace.set_event(y)
-        self.subspace.denormalize("output", target="what")
-        y = self.subspace.materialize()
+        target.set_event(y)
+        target.denormalize("output", target="what")
+        y = target.materialize()
         if self._regression_head:
             # Undo the linear+bias readout before the inverse linear so
             # the symbol-space reconstruction sees the pre-squash activation.

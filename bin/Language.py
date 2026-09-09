@@ -7627,6 +7627,13 @@ class BinaryStructuredReductionLayer(nn.Module):
     # WS-side analysis. See SymbolSubSpace.compose docstring for the split.
     def forward(self, x, *, span_start=None, span_end=None, cat_ctx=None,
                 what_ctx=None):
+        if what_ctx is None:
+            # The question context is installed per batch by ``Model.what()``
+            # (LanguageLayer AND each grammar layer); callers that do not
+            # thread it explicitly -- the STM bounded-reduce pass, whose
+            # choices are the ones credited by the policy objective -- still
+            # score with it.
+            what_ctx = getattr(self, "_what_context", None)
         """Score, route via Viterbi, compact; return (hard, soft, routing).
 
         Returns:
@@ -7927,6 +7934,13 @@ class UnaryStructuredLayer(nn.Module):
         return op(x)
 
     def forward(self, x, cat_ctx=None, what_ctx=None):
+        if what_ctx is None:
+            # The question context is installed per batch by ``Model.what()``
+            # (LanguageLayer AND each grammar layer); callers that do not
+            # thread it explicitly -- the STM bounded-reduce pass, whose
+            # choices are the ones credited by the policy objective -- still
+            # score with it.
+            what_ctx = getattr(self, "_what_context", None)
         """Score, choose per-position action, return (hard, soft, routing).
 
         Hard slab argmax-selects one branch per position; soft slab is

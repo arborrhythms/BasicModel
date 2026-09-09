@@ -50,17 +50,31 @@ the checkpoint audit (reload round-trips); per-row question resolution
 config on MPS, 12-step matched bench -- a8a5142 baseline 12.27, cutover
 12.20 sentences/s (~0.5% cost; band 15%).
 
-Needs doing: carrier-pure Space-level inverses (Step 1 residue; the
-`_synthesis_guard` isolates the live `Space.subspace` writes meanwhile and
-the order-independence tests pass); moving the per-batch error registry off
-Teacher (12.16 partial); Step 5's past/future targets (scoreable only once
-the head emits input-shaped answers) -- now handled by the surface path;
-the grammar chooser's What bias entering the loss graph (the chooser path is
-still not differentiable; the answer path now carries the question instead); Step 8 root scoring through
-`reverseOutput()`; Step 9 cutover, curriculum, B24. The per-step table and §11
-coverage matrix live in
-[2026-09-08-what-spec-deliverables](../plans/2026-09-08-what-spec-deliverables.md);
-update both as steps land.
+Closed 2026-09-09 (the last three items):
+
+- Carrier-pure Space inverses (Step 1 residue): every `Space.reverse()`
+  writes into the carrier it is given when that carrier is a fresh
+  answer-path carrier (`SubSpace.carrier_pure`, allocated with its own
+  per-batch bases by `carrier_like`); the live `Space.subspace`, the bases,
+  reverse by-products, merge carriers and grammar cursors are untouched.
+  `test_reverse_output_is_carrier_pure_without_the_guard` proves it with the
+  synthesis guard disabled. The established reconstruction path is
+  byte-identical (the seam only diverts for pure carriers).
+- 12.16: the model owns its data authority (`model.data`), loss registry
+  (`model.errors`, `record_loss`), loss composition (`_primary_loss`) and
+  batch opening (`_open_batch`); Teacher is an optional provenance /
+  interactive-context adapter and may be detached
+  (`test_model_trains_with_teacher_detached`).
+- Grammar-chooser question context: the STM bounded-reduce pass -- the one
+  whose choices the bounded local (policy) objective credits -- never
+  received `what_ctx`; grammar layers now default it from the installed
+  context and `Model.what()` installs it on every grammar layer. With
+  `<forwardGrammarWeight>` on, the chooser's What bias receives gradient
+  through the policy objective, which `what_report()["policy"]` reports
+  distinctly from the continuous answer credit (section 11).
+
+Remaining by design: the chooser's hard choice is credited by its policy
+objective, not by differentiating the answer loss through an argmax.
 
 The companion [What, spacetime, and thinking design](../WhatSpacetimeDesign.md)
 defines the governing architecture. This document turns that design into an
@@ -734,6 +748,10 @@ The opening input-only slot remains unchanged. A later output-only slot closes
 it; implementations must not depend on filling the old slot in place.
 
 ## 7. Iterative thinking
+
+The [mathematical thinking plan and tests](../plans/2026-09-09-mathematical-thinking.md)
+define a bounded implementation milestone and behavioral acceptance tests for
+this loop, using dependency arithmetic and progressive constraint resolution.
 
 ### 7.1 When thinking starts
 

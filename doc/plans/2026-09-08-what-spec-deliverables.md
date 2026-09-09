@@ -190,3 +190,25 @@ Finer intra-datum `.where` rung, corpus-byte rung, document-boundary bit
   no promotion, and an unchanged carrier.
 - Step 7 numbers: untrained right = wrong = 0.34446; trained right 0.00054,
   wrong 0.6751.
+
+## 10. The three formerly-open items, closed 2026-09-09
+
+- Carrier purity: `SubSpace.carrier_pure` + `carrier_like` with fresh
+  per-batch bases (sharing only parameter-bearing bases); `Space`
+  `_reverse_target` / `_adopt_reverse_carrier` / `_reverse_stash` route every
+  reverse write (event, activation, painted event, recovered-input stash,
+  concepts, basis `setW`) to the carrier for pure carriers; merge glue and
+  `_reverse_body` never read reconstruction carriers for pure carriers;
+  `ConceptualSpace.synthesize` restores grammar cursors. Leak found on the
+  way: the fresh carrier had SHARED the live event basis object.
+- Teacher decoupling: `record_loss` (18 sites), `_primary_loss`,
+  `_open_batch`, `_runtime_batch`, model-owned `data`/`errors`/`loss`/
+  `legacy_prediction_enabled`; `stage_batch_sources` and `bind_input`
+  guarded. Detached-Teacher training test.
+- Chooser context: root cause was that `_stm_bounded_reduce_step` calls the
+  grammar layers without `what_ctx`, and those are the only choices
+  `record_choice` credits. Fixed at both ends (layer default + installation
+  on grammar layers). `test_chooser_question_bias_trains_through_the_policy_objective`
+  on MM_phrase_decode (5/15 rules; MM_xor has one rule per arity, XOR_grammar
+  is not a pipeline width) shows `what_projection.grad` on the credited
+  (binary) chooser and a distinct `what_report()["policy"]` entry.
