@@ -14,8 +14,10 @@
 | [STM](doc/STM.md) | Short-term memory: shift/reduce slots, routing conditioning, ltmConsolidation |
 | [Ergodic](doc/Ergodic.md) | Gradient energy sensor, adaptive exploration, factor-level noise injection |
 | [Training](doc/Training.md) | Two-phase training, SBOW embeddings, masked prediction modes |
-| [Teacher specification](doc/specs/2026-07-27-teaching-modes-and-next-iteration.md) | Unified addressed-reading requirements, milestones, and deferred concept/verb roadmap |
-| [What and spacetime design](doc/WhatSpacetimeDesign.md) | Teacher/student interfaces, queryable evidence, thinking stack, and grammar-chooser context |
+| [What specification](doc/specs/2026-07-27-teaching-modes-and-next-iteration.md) | `Data.what()` / `Model.what()`, the two downward paths, LTM parity thinking, joint losses, and the deferred concept/verb roadmap |
+| [What and spacetime design](doc/WhatSpacetimeDesign.md) | One understanding, reconstruction vs output synthesis, queryable spacetime, thinking stack, and grammar-chooser context |
+| [Mathematical thinking specification](doc/specs/2026-09-09-mathematical-thinking.md) | Bounded iterative `what()` thinking with exact arithmetic primitives, episode credit, verifier, and pilot gates |
+| [Mathematical thinking plan](doc/plans/2026-09-09-mathematical-thinking.md) | Phase-ordered execution plan for the thinking specification |
 | [Params](doc/Params.md) | XML configuration reference and migration notes |
 | [BasicModel](doc/BasicModel.md) | Cognitive science foundations |
 | [Language](doc/Language.md) | Grammar layers, signal routing, category codebook, and syntax output |

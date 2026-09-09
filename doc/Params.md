@@ -423,6 +423,11 @@ symbol (line anchors drift).
 | `sentenceProtocol` | `Models.py` (BaseModel init) | = `serial` | Whole-sentence gist prelude (parallel `subsymbolicOrder` pumps, intent-only commit) before the serial per-word loop. |
 | `truthSet` (`<truth>` rows: text, `trust` / `kind` attrs) | `Models.py` (`provision_ltm`) | (none) | Config-provisioned trusted truths run through the real forward and appended to the consolidated LTM at load; row trust $\times$ `architecture.trust`. Read only when `<ltmConsolidation>` is on — otherwise ignored. |
 | `thinkingBudget` | `Models.py` (BaseModel init) | `0` | Thinking-kernel op budget per top-level `think()` frame; `0`/absent = off, positive attaches the kernel's certified result to `answer_query`. |
+| `answerSynthesis` | `Models.py` (BaseModel init; `what()` / `reverseOutput()`) | `false`; `data/BasicModel.xml` ships `true` | Construct the answer through `_resolve_answer` $\to$ `ConceptualSpace.synthesize` $\to$ `PerceptualSpace.synthesize` $\to$ `OutputSpace.from_percepts` (dedicated `synthesis_layer` weights) instead of the direct symbol projection, which stays as the migration oracle. `false` is byte-identical. See the [What spec](specs/2026-07-27-teaching-modes-and-next-iteration.md#5-analysis-reconstruction-and-output-synthesis). |
+| `synthesisBindings` | `Models.py` (`_select_perceptual_bindings`) | `0`; BasicModel `4` | Number of most-salient perceptual context slots a derivation may NAME as bindings for answer synthesis; they ride in the derivation trace. `0` keeps perceptual context out of the answer. |
+| `whatCurriculum` | `Models.py` (`_curriculum_questions`) | `none`; BasicModel `full` | `none` \| `present` \| `temporal` \| `full`: a Bresenham fraction (`whatCurriculumRatio`) of training batches asks past/future (`temporal`) or also inference (`full`) questions instead of the default family. `none` is byte-identical. |
+| `whatCurriculumDistance` | `Models.py` (`_curriculum_questions`) | `1` | Presentation offset of the past/future curriculum questions. |
+| `whatCurriculumRatio` | `Models.py` (`_curriculum_questions`) | `0.25` | Fraction of training batches that are curriculum trials. |
 | `reasoningIterations` | `Models.py` (BaseModel init) | `1` | Truth-grounded reasoning chain depth; a query routes to the recurrent tool-use loop at this depth. `0` = old generative-infer behavior. |
 | `queryReasoning` | `Models.py` (BaseModel init) | `false` | DEPRECATED alias: `true` $\Rightarrow$ `reasoningIterations = 10`. Read only when `<reasoningIterations>` is absent. |
 | `ltmConsolidation` | `Models.py`, `Language.py` (SymbolSubSpace) | `false` | Unifies the discourse LTM chain + RelativeTruthStore into one persisted `TernaryTruthStore` (`ltm_store`). |
@@ -459,13 +464,30 @@ symbol (line anchors drift).
 | `seed` | `Models.py` (run entry; env `BASIC_SEED` overrides) | unset | RNG pin (torch/python/numpy) for reproducible single-CLI runs; the `XOR_exact` gates rely on it. |
 | `answerLossWeight` | `Models.py` (BaseModel init) | `0.0` | Reasoner answer loss weight. |
 | `predictNextLossWeight` | `Models.py` (BaseModel init) | `0.0` | Next-idea blend loss weight (`reason_predict_next` / `NextIdeaScorer`). |
-| `thinkingLossWeight` | `Models.py` (BaseModel init) | `0.0` | Thinking-kernel loss weight. |
+| `thinkingLossWeight` | `Models.py` (BaseModel init) | `0.0` | Thinking-kernel next-op behaviour-cloning loss weight (`_thinking_policy_loss`). |
+| `branchDiagnosticsEvery` | `Models.py` (BaseModel init; `branch_gradient_diagnostics`) | `0` | Every N training batches, read (never update) the reconstruction / answer gradient norms and cosine at the conceptual and symbolic branch points (What spec 9.4). `0` = off. |
 | `leafDistillWeight` | `Models.py` (BaseModel init) | `0.0` | With `detachedReverse`, weight the reverse chooser's bounded exact-leaf surface term; otherwise weight the legacy standalone root-to-leaf distillation head. |
 | `interContrastiveWeight` | `Models.py` (ModelLoss), `Language.py` (discourse layer) | `0.0` | InfoNCE next-idea contrastive term weight; `0` = MSE-only. |
 | `interContrastiveTemp` | same | `0.1` | InfoNCE temperature. |
 | `conceptualSimilarityScale` | `Models.py` (ModelLoss wiring) | `0.0` | Legacy autograd SBOW weight for non-serial experimental configurations. It cannot be combined with `conceptualContextLearningRate`. |
 | `conceptualContextLearningRate` | `Models.py` (BaseModel init) | `0.0` | Detached post-sentence update rate for the shared serial ConceptualSpace dictionary. Positive values convert `similarity_codebook.W` from its construction Parameter into a persistent non-grad buffer, then rotate reduced contextual evidence directly on its initial unit sphere. |
 | `conceptualContextNegatives` | `Models.py` (BaseModel init) | `4` | Deterministic negative rows per observed concept in the context-owned SBOW reducer. |
+
+### Planned: `whatThinking*` (mathematical thinking plan, Phases 2–4)
+
+Not yet read by any code. Listed so the names are reserved and the
+defaults are on record; each lands default-off / byte-identical. See the
+[mathematical thinking specification](specs/2026-09-09-mathematical-thinking.md).
+
+| Knob | Level | Planned default | Purpose |
+|------|-------|-----------------|---------|
+| `whatThinkingIterations` | `<architecture>` | `1` | Iteration limit `L` of a `Model.think()` episode; `1` = no internal dialogue (today's single `what()`). |
+| `whatThinkingPressure` | `<architecture>` | `linear` | Closure-pressure schedule: `linear` \| `quadratic` \| `step` (all monotone, `p(L-1) = 1`). |
+| `whatThinkingPrimitives` | `<architecture>` | `0` | Exact primitive executions allowed per iteration; `0` = primitives off. |
+| `whatThinkingMemory` | `<architecture>` | `false` | Build the standalone `WhatInteractionMemory` when `sentencePrediction` is off. |
+| `whatThinkingDetach` | `<architecture>` | `episode` | Credit boundary: `episode` (detach after the optimizer step) \| `slot` (detach at append, today's behaviour). |
+| `whatThinkingPolicyWeight` | `<architecture><training>` | `0.0` | Weight of the `WhatStepChooser` policy objective (hard open / answer / execute choices). |
+| `whatThinkingCloneWeight` | `<architecture><training>` | `0.0` | Weight of behaviour cloning on the model's own verifier-accepted traces. |
 
 ### Per-space
 

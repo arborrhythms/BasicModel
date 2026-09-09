@@ -208,6 +208,28 @@ byte-identical; positive N = the op budget of a top-level `think()` frame):
 `kernel` key when the budget is positive. Tests:
 `test/test_thinking_kernel.py`.
 
+## Two thinking loops
+
+BasicModel has two distinct iterative loops, and they must not be confused:
+
+| | Thinking Kernel (`bin/thinking.py`) | What thinking (`Model.think()`, `bin/Models.py`) |
+|---|---|---|
+| Question kind | `isTrue` / `isPart` / `isEqual` over stored truth | `what` over conceptual state (present / past / future / supervised / inference) |
+| Stack | its own `Frame` stack, budgeted per op | the parity of LTM interaction slots (`LTMSlot`: input-only pushes, output-only pops); no frame object |
+| Terminal | true / false / unknown / mixed / conflicting / bounded_unknown | a concrete answer symbol; `unknown` is not a valid escape; forced best-effort LIFO closure at the iteration limit |
+| Answer route | `answer_query` payload (`kernel` key) | `reverseOutput()` (answer symbol -> conceptual / perceptual synthesis -> `OutputSpace`) |
+| Credit | next-op behaviour cloning on grounded traces (`thinkingLossWeight`) | root `answer_construction` after parity; hard slot / step choices by a policy objective (planned) |
+| Gate | `<thinkingBudget>` | `<whatThinkingIterations>` (planned; `think()` exists today but training does not drive it) |
+
+The kernel is reachable from a What resolve step as an external tool
+(prompted questions consult `answer_query` when `reasoningIterations > 0`),
+so the two compose rather than compete. The What loop's content (a learned
+resolve step, exact arithmetic primitives, the episode credit boundary) is
+specified in the
+[mathematical thinking specification](specs/2026-09-09-mathematical-thinking.md);
+the substrate (`WhatQuestion`, `LTMSlot`, parity, closure pressure) is in
+[STM.md Section 13](STM.md#13-interaction-ltm-and-the-what-stack).
+
 ## Parser And Conceptual Order
 
 Grammar mode is derived from the loaded grammar block. Default-only unary

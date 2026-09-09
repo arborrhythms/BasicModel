@@ -929,6 +929,51 @@ objective a system like nanochat trains.
 
 ---
 
+## 13. Interaction LTM and the What stack
+
+Beside the chain of STM end-states (Section 10), `InterSentenceLayer` keeps
+a per-row chronological sequence of **interaction slots** for the What
+loop ([What spec Section 6](specs/2026-07-27-teaching-modes-and-next-iteration.md#6-ltm-interaction-slots)).
+Each slot (`What.LTMSlot`) has two independently optional halves:
+
+| Slot | Operation | Stack effect |
+|---|---|---|
+| `(input, —)` | OPEN | pushes an unanswered question |
+| `(input, output)` | COMPLETE | no change |
+| `(—, output)` | CLOSE | pops the most recent unanswered input (LIFO) |
+
+The stack is the *imbalance* of the sequence: **parity** means no unmatched
+input-only slot. There is no frame object and no in-place edit of an
+opening slot; a later output-only slot closes it. The API on the layer
+(`bin/Layers.py`):
+
+- `append_what_slot(slot, b)` — validates (an empty slot and an unmatched
+  close are rejected; closure pressure must not decrease while questions
+  are open), detaches both halves from the live graph, appends the
+  chronological record with its grammar trace, and trims only *balanced*
+  prefixes when `ltmCapacity` is exceeded (an open question is never
+  evicted).
+- `get_what_slots` / `open_what_slots` / `what_open_depth` /
+  `what_at_parity` — read-only views, oldest first.
+- `what_context(question, b)` — the target-free chooser context: the
+  question's coordinates, the input / output presence masks and
+  representations, the open depth, parity, and the current closure
+  pressure. `Model._what_grammar_context` folds it into the 29-dim vector
+  the grammar chooser's `what_projection` consumes.
+- Row hard resets clear the row's slots and its pressure; soft resets do
+  not.
+
+The output half always records the response the model actually produced,
+never the desired `Data` answer. Today the memory exists only when the
+discourse layer is built (`<training><sentencePrediction>true`); the
+[mathematical thinking plan](plans/2026-09-09-mathematical-thinking.md)
+Phase 2 extracts it into a standalone `WhatInteractionMemory` with an
+explicit episode credit boundary (`begin_what_episode` /
+`end_what_episode`) so it can be used without the ARMA predictor and so
+root loss can reach states created earlier in one bounded episode.
+
+---
+
 ## See also
 
 - [Spaces.md](Spaces.md) — ConceptualSpace as STM container; the
@@ -945,3 +990,6 @@ objective a system like nanochat trains.
 - [Params.md](Params.md) — `<stmCapacity>`, `<intraLossWeight>`,
   `<interLossWeight>`, `<routerWireSerial>`, `<ltmCapacity>`,
   `<truthCriterion>` (the single continuous truth bar).
+- [What spec](specs/2026-07-27-teaching-modes-and-next-iteration.md) and
+  the [mathematical thinking specification](specs/2026-09-09-mathematical-thinking.md)
+  — the interaction slots' role in thinking (Section 13).

@@ -490,6 +490,38 @@ For each B-wide batch:
 
 ---
 
+## What questions and the two primary costs
+
+Since the What spec cutover (basicmodel 195b129 / 077c18d), every
+training batch is a batch of `WhatQuestion`s (`bin/What.py`), not a bare
+input/output tensor pair. `runBatch` derives them from the cursor rows
+(`_questions_for_batch`: supervised when the dataset has outputs, present
+otherwise, future on `predict` trials, inference at runtime) or from the
+`<whatCurriculum>` schedule, and scores two independently weighted,
+independently normalized primary costs recorded before `backward()`:
+
+| Cost (`primary_costs()`) | Compares | Trains |
+|---|---|---|
+| `input_reconstruction` (+ `input_reconstruction_reverse`, `reverseReconstruct()`'s own cost) | the reconstructed input with the presented (or clean) input | the bottom-up understanding and its input-associated inverse |
+| `answer_construction` | the response constructed by `reverseOutput()` with `Data.what(question)` (`_what_answer_target`, rows without an available answer masked out, never substituted) | the resolve step, the question conditioner, the dedicated synthesis layers, the output adapter, and the shared understanding under reconstruction priority |
+
+The desired answer is resolved only after the model response is fixed and
+enters loss preparation only. `reconstructionPriority` differentiates the
+two branches separately at one parameter version, removes the opposing
+output component on protected perceptual / conceptual parameters, caps the
+remainder at `outputGradientRatio` times the reconstruction norm, and takes
+one optimizer step. `what_report()` gives per-family means of both costs,
+thinking statistics (episodes, mean iterations, forced-closure rate), the
+hard-choice policy credit (`forwardGrammarWeight`) separately from the
+continuous answer credit, and sentences/s. Full contract: the
+[What spec, Section 9](specs/2026-07-27-teaching-modes-and-next-iteration.md#9-training-and-loss);
+training *through* multi-iteration thinking episodes (root scored after
+parity, episode credit boundary, step-chooser policy credit) is planned in
+the [mathematical thinking specification](specs/2026-09-09-mathematical-thinking.md)
+and is not yet wired.
+
+---
+
 ## SBOW vs CBOW
 
 | Property | CBOW | SBOW | Masked Prediction (Phase 2) |

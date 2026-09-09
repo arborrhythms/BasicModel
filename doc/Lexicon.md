@@ -110,6 +110,6 @@ backward compatibility, see
 - [Spaces.md](Spaces.md) --- full per-space geometry discussion, including
   the contrast between the projective Lexicon (PartSpace,
   WholeSpace) and ConceptualSpace's unit-direction codebook.
-- [test/bench_codebook_lookup.py](../test/bench_codebook_lookup.py) ---
+- [test/tools/bench_codebook_lookup.py](../test/tools/bench_codebook_lookup.py) ---
   performance comparison of the broadcast, matmul, pole-aligned, and
   chunked-wrap forms.
