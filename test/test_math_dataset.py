@@ -16,7 +16,7 @@ _BIN = _ROOT / "bin"
 if str(_BIN) not in sys.path:
     sys.path.insert(0, str(_BIN))
 
-from exact import MathProblemGenerator, split_by_structure  # noqa: E402
+from exact import MathProblemGenerator, split_by_structure, split_by_surface  # noqa: E402
 from What import What  # noqa: E402
 
 
@@ -109,3 +109,49 @@ def test_xor_dataset_is_unchanged():
     data = Data(); data.load("xor")
     assert data.train_input[:2] == ["hello world", "hello there"]
     assert not hasattr(data, "math_problems")
+
+
+# -- stage 0: direct arithmetic ---------------------------------------------------
+
+@pytest.mark.parametrize("operators", [("add",), ("add", "sub", "mul")])
+def test_stage_zero_problems_are_direct_and_in_range(operators):
+    R = 32
+    gen = MathProblemGenerator(seed=7, range=R, stage=0, operators=operators)
+    seen_ops = set()
+    for p in gen.problems(300):
+        assert p.stage == 0 and p.depth == 0 and p.equations == () and p.order == ()
+        op, a, b = p.expression
+        seen_ops.add(op)
+        assert a[0] == "num" and b[0] == "num"
+        value = {"add": a[1] + b[1], "sub": a[1] - b[1], "mul": a[1] * b[1]}[op]
+        assert p.answer == value and 0 <= value < R
+        assert p.surface() == f"{a[1]} {'+' if op == 'add' else '-' if op == 'sub' else '*'} {b[1]}"
+    assert seen_ops == set(operators)
+
+
+def test_stage_zero_split_holds_out_unseen_pairs():
+    gen = MathProblemGenerator(seed=1, range=32, stage=0)
+    splits = split_by_surface(gen.problems(2000))
+    surfaces = {k: {p.surface() for p in v} for k, v in splits.items()}
+    assert surfaces["train"] and surfaces["test"]
+    assert not (surfaces["train"] & surfaces["test"])
+    assert not (surfaces["train"] & surfaces["validation"])
+    # a repeated pair always lands in the split it first landed in
+    assert sum(len(v) for v in splits.values()) == 2000
+
+
+def test_data_stage_zero_presents_expression_and_onehot_value():
+    from data import Data
+    data = Data()
+    data.load("math", dat={"mathStage": 0, "mathRange": 16, "mathProblems": 200,
+                           "mathOperators": "add"})
+    assert data.has_supervised_outputs and data.math_range == 16
+    assert all(p.stage == 0 for p in data.math_problems["train"])
+    for row in range(4):
+        problem = data.math_problems["train"][row]
+        assert data.train_input[row] == problem.surface()
+        a, b = problem.surface().split(" + ")
+        target = torch.as_tensor(data.what(What.supervised(row)).what)
+        assert int(target.argmax()) == int(a) + int(b) == problem.answer
+    train_pairs = {p.surface() for p in data.math_problems["train"]}
+    assert all(p.surface() not in train_pairs for p in data.math_problems["test"])

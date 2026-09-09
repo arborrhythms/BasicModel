@@ -853,7 +853,9 @@
       <xs:element name="mathDepths" type="xs:string"/>
       <xs:element name="mathTestDepths" type="xs:string"/>
       <xs:element name="mathDistractors" type="xs:nonNegativeInteger"/>
-      <xs:element name="mathStage" type="xs:positiveInteger"/>
+      <xs:element name="mathStage" type="xs:nonNegativeInteger"/>
+      <!-- stage 0 operators: comma list of add / sub / mul (default add). -->
+      <xs:element name="mathOperators" type="xs:string"/>
       <xs:element name="mathSeed" type="xs:nonNegativeInteger"/>
       <xs:element name="mathProblems" type="xs:positiveInteger"/>
       <xs:element name="input">

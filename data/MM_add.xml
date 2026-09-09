@@ -1,0 +1,94 @@
+<?xml version="1.0" ?>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="model.xsd">
+  <!-- MM_add: the DIRECT-arithmetic curriculum stage (mathematical
+       thinking spec section 4, stage 0): the presented input is "a + b",
+       the desired answer is the one-hot value c over [0, R), and the input
+       is reconstructed as usual. No variables, no subquestions, no
+       thinking (iterations 1, primitives 0): the stack must answer direct
+       problems before any substitution. Many stochastic examples, split
+       by unseen operand pairs. MM_xor topology otherwise. -->
+  <architecture>
+    <subsymbolicOrder>3</subsymbolicOrder>
+    <symbolicOrder>0</symbolicOrder>
+    <answerSynthesis>true</answerSynthesis>
+    <data>
+      <dataType>embedding</dataType>
+      <dataset>math</dataset>
+      <mathStage>0</mathStage>
+      <mathOperators>add</mathOperators>
+      <mathRange>32</mathRange>
+      <mathSeed>0</mathSeed>
+      <mathProblems>4096</mathProblems>
+    </data>
+    <training>
+      <numEpochs>20</numEpochs>
+      <batchSize>32</batchSize>
+      <learningRate>0.005</learningRate>
+      <reconstructionScale>0.1</reconstructionScale>
+      <trainEmbedding>JOINT</trainEmbedding>
+      <embeddingScale>0.05</embeddingScale>
+      <autoload>false</autoload>
+    </training>
+  </architecture>
+
+  <InputSpace>
+    <nVectors>8</nVectors>
+    <nDim>14</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>14</nOutputDim>
+  </InputSpace>
+
+  <PartSpace>
+    <nInput>8</nInput>
+    <nInputDim>14</nInputDim>
+    <!-- radix trie / percept rows promoted online from the corpus -->
+    <nVectors>4096</nVectors>
+    <nDim>14</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>14</nOutputDim>
+    <invertible>true</invertible>
+    <synthesis>radix</synthesis>
+    <butterfly>true</butterfly>
+  </PartSpace>
+
+  <ConceptualSpace>
+    <nInput>8</nInput>
+    <nInputDim>14</nInputDim>
+    <!-- Every distinct numeral / whole allocates aligned CS/WS rows; the
+         stochastic corpus needs thousands, and runtime growth cannot
+         happen inside the word loop. -->
+    <nVectors>512</nVectors>
+    <nDim>14</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>14</nOutputDim>
+    <invertible>true</invertible>
+    <butterfly>true</butterfly>
+  </ConceptualSpace>
+
+  <WholeSpace>
+    <analysis>byte</analysis>
+    <nInput>8</nInput>
+    <nInputDim>14</nInputDim>
+    <nVectors>4096</nVectors>
+    <nDim>14</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>14</nOutputDim>
+  </WholeSpace>
+
+  <OutputSpace>
+    <nInput>8</nInput>
+    <nInputDim>14</nInputDim>
+    <nVectors>1</nVectors>
+    <!-- R output vectors of width 1: the one-hot value over [0, R). -->
+    <nOutput>32</nOutput>
+  </OutputSpace>
+
+  <SymbolSpace>
+    <language>
+      <start>S</start>
+      <grammar>xor.grammar</grammar>
+    </language>
+  </SymbolSpace>
+
+</model>

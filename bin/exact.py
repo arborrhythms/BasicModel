@@ -430,8 +430,13 @@ class Problem:
     chain: FrozenSet[str]                    # variables on the query's chain
     order: Tuple[str, ...]                   # the solver's binding order
     solution: Dict[str, int] = field(default_factory=dict, compare=False)
+    expression: Optional[Expr] = None        # stage 0: the bare expression
 
     def surface(self) -> str:
+        if self.stage == 0 and self.expression is not None:
+            # Stage 0 (direct arithmetic): the presented input IS the
+            # expression; the answer is its value.
+            return render_expr(self.expression)
         return " ; ".join(e.render() for e in self.equations) + f" ; what is {self.query} ?"
 
     def index_of(self, v: str) -> Optional[int]:
@@ -442,10 +447,15 @@ class Problem:
 
 
 _NAMES = tuple("abcdefghjkmnpqrstuvwxyz")
+# Operand sentinels of the stage-1 chain builder: a fresh constant or the
+# zero constant (never a string -- a chain VARIABLE may be named "c").
+_CONST = object()
+_ZERO = object()
 
 
 class MathProblemGenerator:
-    """Stage-1 dependency chains and stage-2 simultaneous linear systems.
+    """Stage-0 direct arithmetic, stage-1 dependency chains and stage-2
+    simultaneous linear systems.
 
     All draws come from one ``random.Random(seed)`` so a seed is a dataset.
     Variable names and constants are fresh per problem; premise order is
@@ -454,12 +464,41 @@ class MathProblemGenerator:
 
     def __init__(self, seed: int = 0, range: int = 64,
                  depths: Sequence[int] = (1, 2, 3),
-                 distractors: Sequence[int] = (0, 1, 2), stage: int = 1):
+                 distractors: Sequence[int] = (0, 1, 2), stage: int = 1,
+                 operators: Sequence[str] = ("add",)):
         self.rng = random.Random(int(seed))
         self.range = int(range)
         self.depths = tuple(int(d) for d in depths)
         self.distractors = tuple(int(d) for d in distractors)
         self.stage = int(stage)
+        self.operators = tuple(str(o) for o in operators) or ("add",)
+
+    # -- stage 0: direct arithmetic ------------------------------------------
+
+    def _stage0(self) -> Problem:
+        """One stochastic binary operation ``a op b`` with its value in
+        ``[0, R)``: the presented input is the expression, the answer its
+        value, depth 0, no variables, no chain (the direct-arithmetic
+        curriculum stage that precedes any substitution)."""
+        R = self.range
+        op = self.rng.choice(self.operators)
+        if op == "sub":
+            a = self.rng.randrange(0, R)
+            b = self.rng.randrange(0, a + 1)
+            value = a - b
+        elif op == "mul":
+            a = self.rng.randrange(0, R)
+            b = self.rng.randrange(0, (R - 1) // max(1, a) + 1) if a else self.rng.randrange(0, R)
+            value = a * b
+        else:
+            op = "add"
+            a = self.rng.randrange(0, R)
+            b = self.rng.randrange(0, R - a)
+            value = a + b
+        expr = (op, num(a), num(b))
+        structure = hashlib.sha1(f"s0|{op}".encode()).hexdigest()[:12]
+        return Problem((), "", int(value), 0, structure, R, 0, frozenset(), (),
+                       {}, expression=expr)
 
     # -- stage 1 ------------------------------------------------------------
 
@@ -486,20 +525,20 @@ class MathProblemGenerator:
             pv = values[prev]
             # add constant
             if pv + 1 < R:
-                choices.append(("add", "c"))
+                choices.append(("add", _CONST))
             if pv > 0:
-                choices.append(("sub", "c"))
+                choices.append(("sub", _CONST))
             if pv > 0 and 2 * pv < R:
-                choices.append(("mul", "c"))
+                choices.append(("mul", _CONST))
             # add an earlier chain variable (structure variety)
             if k >= 2:
                 other = chain[self.rng.randrange(0, k - 1)]
                 if pv + values[other] < R:
                     choices.append(("add", other))
             if not choices:
-                choices.append(("add", "zero"))
+                choices.append(("add", _ZERO))
             op, operand = self.rng.choice(choices)
-            if operand == "c":
+            if operand is _CONST:
                 if op == "add":
                     c = self.rng.randrange(1, R - pv)
                     rhs, val = ("add", var(prev), num(c)), pv + c
@@ -513,7 +552,7 @@ class MathProblemGenerator:
                     rhs, val = (("mul", num(c), var(prev)) if self.rng.random() < 0.5
                                 else ("mul", var(prev), num(c))), c * pv
                 skeleton.append(f"{op}c{k - 1}")
-            elif operand == "zero":
+            elif operand is _ZERO:
                 rhs, val = ("add", var(prev), num(0)), pv
                 skeleton.append(f"addz{k - 1}")
             else:
@@ -605,6 +644,8 @@ class MathProblemGenerator:
         depth = int(depth) if depth is not None else self.rng.choice(self.depths)
         n_d = (int(n_distractors) if n_distractors is not None
                else self.rng.choice(self.distractors))
+        if self.stage == 0:
+            return self._stage0()
         if self.stage == 2:
             return self._stage2(depth, n_d)
         return self._stage1(depth, n_d)
@@ -650,6 +691,26 @@ class MathProblemGenerator:
                    for e in problem.equations):
                 out.append(b)
         return out
+
+
+def split_by_surface(problems: Sequence[Problem], *, val_share: int = 1,
+                     test_share: int = 2, modulus: int = 10):
+    """Partition by the hash of the presented surface (stage 0: every
+    problem shares one structure, so the held-out set is a set of UNSEEN
+    operand pairs; a pair seen in train never appears in test)."""
+    out = {"train": [], "validation": [], "test": []}
+    seen = {}
+    for p in problems:
+        key = p.surface()
+        if key in seen:
+            out[seen[key]].append(p)
+            continue
+        h = int(hashlib.sha1(key.encode()).hexdigest(), 16) % int(modulus)
+        name = ("train" if h < modulus - val_share - test_share
+                else "validation" if h < modulus - test_share else "test")
+        seen[key] = name
+        out[name].append(p)
+    return out
 
 
 def split_by_structure(problems: Sequence[Problem], *, train_depths: Sequence[int],

@@ -150,6 +150,20 @@ session (the canonical `BasicModel.xml` keeps `whatThinkingIterations`
 at its default 1, so the gate-off path is byte-identical by
 construction, pinned by the existing suites).
 
+## Phase 6 — direct arithmetic first (Alec, 2026-09-09)
+
+Diagnosis: stage-1 problems were not answered because the stack had not
+learned direct arithmetic; there were not enough simple subproblems.
+Stage 0 (`mathStage=0`): the input is `a + b`, the answer `c` (one-hot),
+the input reconstructed as usual, many stochastic examples split by
+unseen pairs, no thinking (`whatThinkingIterations` 1). Files:
+`bin/exact.py` (`_stage0`, `split_by_surface`, `<mathOperators>`),
+`bin/data.py`, `data/MM_add.xml`, tests in `test/test_math_dataset.py`.
+Acceptance: measured train / held-out-pair accuracy and both primary
+costs over epochs, reported in the pilot report; the answer-synthesis
+path compared against the direct head. Only after stage 0 is learned does
+the curriculum proceed to variables (stage 1) and substitution (stage 2).
+
 ## Test evidence rule
 
 Interface tests and scripted traces are reported as *mechanism*; only the

@@ -8797,13 +8797,22 @@ class BasicModel(BaseModel):
         # fully available target is byte-identical to the loader's tensor.
         while stacked.dim() < output_tensor.dim():
             stacked = stacked.unsqueeze(1)
-        if stacked.shape[0] != output_tensor.shape[0] or stacked.shape != output_tensor.shape:
+        if stacked.shape[0] != output_tensor.shape[0]:
             self._warn_zeroed_channel(
                 "what_answer_target_shape",
                 f"Data.what target {tuple(stacked.shape)} does not match the "
-                f"loader output {tuple(output_tensor.shape)}; answer loss "
-                "falls back to the loader tensor")
+                f"loader output {tuple(output_tensor.shape)} batch; answer "
+                "loss falls back to the loader tensor")
             return None, None
+        if stacked.shape != output_tensor.shape:
+            # ``Data.what()`` is the authority (What spec Step 5): a loader
+            # tensor of another shape is a placeholder (the byte cursor
+            # yields no labels and runEpoch fabricates [B, 1, 1]); the head
+            # prediction is aligned to THIS target by _align_output_pred.
+            self._warn_zeroed_channel(
+                "what_answer_target_shape",
+                f"Data.what target {tuple(stacked.shape)} replaces the loader "
+                f"output {tuple(output_tensor.shape)} (placeholder labels)")
         return stacked, mask_t
 
     # -- model-owned training seam (What spec 12.16) ----------------------

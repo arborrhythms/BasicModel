@@ -23,6 +23,7 @@ can be measured rather than asserted.
 
 | Stage | Example | Capability under test |
 |---|---|---|
+| 0 Direct arithmetic | `25 + 6` → `31` | answer a direct problem (and reconstruct its input) with no variables and no subquestions; the prerequisite for everything below |
 | 1 Dependency arithmetic | `a = 3 ; b = a + 4 ; c = 2 * b ; what is c ?` → `14` | resolve dependencies in a useful order, retain `b = 7`, use it for the parent |
 | 2 Simultaneous constraints | `x + y = 12 ; y = 2 * x ; what is x ?` → `4` | combine constraints on the same variables until the answer is determined |
 
@@ -95,9 +96,16 @@ by the kernel; it never enters model context.
 
 ### 4.1 Presentation
 
-One presentation (one `where`) is one problem: the premises, distractors
-and question rendered as a single sentence with `;` clause separators and
-a terminal `what is q ?`. The desired answer is the one-hot vector
+Stage 0 presents the bare expression (`a + b`; `sub` / `mul` under
+`<mathOperators>`), its value as the one-hot answer, and holds out unseen
+operand PAIRS (`exact.split_by_surface`); it is a stochastic sample with
+replacement, so `<mathProblems>` should be large (thousands). No
+scratchpad is lexed for a stage-0 row (the lexer needs a `what is`
+clause), so a thinking-configured model answers it in one iteration.
+
+For stages 1 and 2, one presentation (one `where`) is one problem: the
+premises, distractors and question rendered as a single sentence with `;`
+clause separators and a terminal `what is q ?`. The desired answer is the one-hot vector
 `onehot(answer, R)`; `Data.what(What.supervised(where))` returns it.
 Premise order is shuffled per presentation; positions are assigned
 independently of answers.

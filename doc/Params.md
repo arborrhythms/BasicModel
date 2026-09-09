@@ -479,6 +479,17 @@ symbol (line anchors drift).
 | `conceptualContextLearningRate` | `Models.py` (BaseModel init) | `0.0` | Detached post-sentence update rate for the shared serial ConceptualSpace dictionary. Positive values convert `similarity_codebook.W` from its construction Parameter into a persistent non-grad buffer, then rotate reduced contextual evidence directly on its initial unit sphere. |
 | `conceptualContextNegatives` | `Models.py` (BaseModel init) | `4` | Deterministic negative rows per observed concept in the context-owned SBOW reducer. |
 
+### `<architecture><data>` math dataset
+
+| Knob | Default | Purpose |
+|------|---------|---------|
+| `mathStage` | `1` | `0` = direct arithmetic (`a op b` in, its value out, split by unseen pairs); `1` = dependency chains; `2` = simultaneous linear constraints. |
+| `mathOperators` | `add` | Stage-0 operators, comma list of `add` / `sub` / `mul`. |
+| `mathRange` | `64` | `R`: answers are one-hot over `[0, R)`; `OutputSpace.nOutput` must equal it. |
+| `mathDepths` / `mathTestDepths` | `1,2,3` / `4,5,6` | Trained / held-out chain depths (stage 1); comma lists (the XML loader evaluates `1-3`). |
+| `mathDistractors` | `2` | Maximum distractor premises. |
+| `mathSeed` / `mathProblems` | `0` / `256` | Generator seed and problem count (use thousands for stage 0). |
+
 ### Per-space
 
 | Knob (space) | Where read | Default | Purpose |

@@ -1330,16 +1330,22 @@ class Data():
         ``dat`` is the parsed ``<data>`` block: ``mathRange`` (64),
         ``mathDepths`` ("1,2,3"; a "1-3" range is also accepted from
         Python callers, but the XML loader evaluates it), ``mathTestDepths`` ("4,5,6"),
-        ``mathDistractors`` (2), ``mathStage`` (1), ``mathSeed`` (0),
-        ``mathProblems`` (256).
+        ``mathDistractors`` (2), ``mathStage`` (1; 0 = direct arithmetic
+        ``a op b`` with the value as the answer, split by unseen operand
+        pairs), ``mathOperators`` ("add"; comma list of add / sub / mul),
+        ``mathSeed`` (0), ``mathProblems`` (256).
         """
-        from exact import MathProblemGenerator, split_by_structure
+        from exact import (MathProblemGenerator, split_by_structure,
+                           split_by_surface)
 
         dat = dat or {}
 
         def _int(key, default):
+            value = dat.get(key, default)
+            if value is None or value == "":
+                value = default
             try:
-                return int(dat.get(key, default) or default)
+                return int(value)
             except (TypeError, ValueError):
                 return int(default)
 
@@ -1370,16 +1376,22 @@ class Data():
         stage = _int("mathStage", 1)
         seed = _int("mathSeed", 0)
         count = _int("mathProblems", 256)
+        operators = tuple(o.strip() for o in str(dat.get("mathOperators", "add")
+                                                  or "add").split(",") if o.strip())
         gen = MathProblemGenerator(seed=seed, range=R, depths=depths,
                                    distractors=tuple(range(max_d + 1)),
-                                   stage=stage)
+                                   stage=stage, operators=operators)
         problems = gen.problems(count)
         if stage == 1 and test_depths:
             deep = MathProblemGenerator(seed=seed + 1, range=R, depths=test_depths,
                                         distractors=tuple(range(max_d + 1)),
                                         stage=stage)
             problems += deep.problems(max(1, count // 4))
-        splits = split_by_structure(problems, train_depths=depths)
+        if stage == 0:
+            # Direct arithmetic: hold out unseen operand PAIRS.
+            splits = split_by_surface(problems)
+        else:
+            splits = split_by_structure(problems, train_depths=depths)
         # Presentation positions are independent of answers: a seeded
         # shuffle per split, never sorted by anything the answer determines.
         order_rng = random.Random(seed + 7)
