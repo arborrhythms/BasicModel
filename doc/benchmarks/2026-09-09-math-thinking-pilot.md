@@ -191,6 +191,7 @@ four-primitive chain and the head guesses. With `WHAT_BIND_REWARD`
 | depth 1 | 40 | 1.00 / 1.00 | depth 1: 1.00 | depth 2: 0.83 | 5.0 |
 | depths 1-2 | 10 | 1.00 / 1.00 | depth 2: 1.00; depth 1: 0.07 | depth 3: 1.00 | 4.25 |
 | depths 1-2 | 30 | 1.00 / 1.00 | depth 2: 1.00; depth 1: 1.00 | depth 3: 0.71 | 7.0 |
+| depths 1-2 | 40 | 1.00 / 1.00 | depth 2: 1.00; depth 1: 0.08 | depth 3: 1.00 | 4.5 |
 
 The depth-1 held-out failure in the depths-1-2 run was positional: every
 training depth-1 problem has a distractor (three premises) and every
@@ -202,12 +203,13 @@ features shift with premise count. With the READY / DEPENDENCY features:
 | depths 1-2 + features | 5 | 0.82 / 0.76 | 1.00 | 0.96 | 1.00 | 5.0 |
 | depths 1-2 + features | 10 | 0.65 / 0.57 | 1.00 | 0.43 | 1.00 | 3.0 |
 | depths 1-2 + features | 20 | 0.68 / 0.62 | 1.00 | 0.39 | 1.00 | 3.0 |
+| depths 1-2 + features | 30 | 0.74 / 0.69 | 1.00 | 0.39 | 1.00 | 3.0 |
 
 Training accuracy oscillates under sampled exploration (the policy is
-still being sampled during training; evaluation is the argmax), and the
-run without the features also reaches 100 % on unseen depth-1 structures
-by epoch 30, so the features buy sample efficiency on the held-out
-structures rather than a capability; the
+still being sampled during training; evaluation is the argmax). The run without the features touches 100 %
+on unseen depth-1 structures at epoch 30 but falls back to 8 % at epoch
+40, whereas the feature run holds 100 % there at every checkpoint: the
+content features make that generalization stable, not merely faster; the
 small default-suite configuration (384 problems, 32 wide) reaches 100 %
 held-out by epoch 10 and 99 % train by epoch 20
 (`test_stage_one_dependency_chains_learn_through_the_exact_route`).
