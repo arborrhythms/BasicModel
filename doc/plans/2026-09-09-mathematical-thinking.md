@@ -87,7 +87,7 @@ eagerly so checkpoints round-trip), `data/model.xsd`, `doc/Params.md`,
 Fixture: `data/MM_math.xml` (from `MM_xor.xml`: `<answerSynthesis>true`,
 `<transformChooser>mlp`, `<whatThinkingMemory>true`,
 `<whatThinkingIterations>8`, `<whatThinkingPrimitives>4`, dataset `math`,
-grammar `math.grammar`, `OutputSpace.nOutput = R`).
+grammar `math.grammar`, `OutputSpace.nOutput = R` (the one-hot width)).
 Tests (`test/test_what_thinking_episode.py`): spec invariants 1, 2, 3, 5,
 6, 8, 9; `think()` on `MM_math` opens / executes / closes with a scripted
 chooser (monkeypatched logits) and with the untrained neutral chooser
@@ -102,8 +102,8 @@ Files: `bin/Models.py` (`runBatch` drives `think()` when iterations > 1;
 root scoring after parity; `_what_thinking_policy_loss` with baseline,
 weighted by `<whatThinkingPolicyWeight>`; `what_report()` gains
 `policy.thinking`, `thinking.detach`, `thinking.primitives`;
-`end_what_episode` after the optimizer step; optional self-cloning from
-verifier-accepted traces under `<whatThinkingCloneWeight>`),
+`end_what_episode` after the optimizer step; self-cloning from
+verifier-accepted traces was NOT implemented -- spec section 12 Q2),
 `bin/Optimizer.py` only if the chooser needs its own `add_param_group`
 (reuse the `_collect_fresh_synthesis_modules` queue first),
 `doc/Training.md`, `doc/Params.md`.
@@ -116,6 +116,12 @@ trend on a fixed tiny set); `RUN_SLOW`-gated learning test (depth 1–2
 problems reach > 50 % exact accuracy on CPU — a floor, not the pilot gate).
 Acceptance: byte-identical when iterations = 1; smoke green in the default
 suite; the slow test green under `RUN_SLOW=1`.
+Status 2026-09-09: landed; the slow floor is a strict xfail (12.5 % exact
+accuracy after 150 steps on the fixture; see the Phase 5 pilot report).
+Found on the way: list-label datasets prep `[N]` rows to `[B, 1, N]` while
+the one-hot head emits `[B, N, 1]`, which the output shape gate rejected
+(the answer loss was silently zero on the math dataset);
+`_align_output_pred` now reconciles that transpose.
 
 ## Phase 5 — serve, reporting, evaluation script, pilot
 
@@ -135,6 +141,14 @@ runs on a 4-problem set and emits every report column).
 Acceptance: the spec §10 gates evaluated and reported; the B24 band
 re-measured with thinking off (expected unchanged: the gate-off path is
 untouched).
+Status 2026-09-09: serve payload, evaluation script and pilot report
+landed; the §10 learning gates are NOT met (report); the illumination
+*probe* (a learned readout over conceptual states) is not implemented --
+the report's candidate reduction is the oracle-side measure over the
+accepted derivation steps; the B24 band was not re-measured in this
+session (the canonical `BasicModel.xml` keeps `whatThinkingIterations`
+at its default 1, so the gate-off path is byte-identical by
+construction, pinned by the existing suites).
 
 ## Test evidence rule
 

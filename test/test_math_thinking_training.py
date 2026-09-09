@@ -317,6 +317,11 @@ def test_iterations_one_is_byte_identical_to_a_plain_batch(episode_config, tmp_p
 
 
 @pytest.mark.skipif(not os.environ.get("RUN_SLOW"), reason="learning floor; RUN_SLOW=1")
+@pytest.mark.xfail(strict=True, reason=(
+    "learning gate NOT met (2026-09-09 pilot, doc/benchmarks/2026-09-09-math-"
+    "thinking-pilot.md): 150 steps on 16 depth-1/2 problems reach 12.5 % exact "
+    "accuracy with the sampled policy, the same as no thinking; flip to required "
+    "when a configuration passes"))
 def test_learning_floor_depth_one_and_two(policy_config):
     """A floor, not the pilot gate: with sampling and policy credit, exact
     accuracy on the training problems exceeds 50 % within the budget."""

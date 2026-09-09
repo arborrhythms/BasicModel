@@ -18,6 +18,7 @@
 | [What and spacetime design](doc/WhatSpacetimeDesign.md) | One understanding, reconstruction vs output synthesis, queryable spacetime, thinking stack, and grammar-chooser context |
 | [Mathematical thinking specification](doc/specs/2026-09-09-mathematical-thinking.md) | Bounded iterative `what()` thinking with exact arithmetic primitives, episode credit, verifier, and pilot gates |
 | [Mathematical thinking plan](doc/plans/2026-09-09-mathematical-thinking.md) | Phase-ordered execution plan for the thinking specification |
+| [Mathematical thinking pilot](doc/benchmarks/2026-09-09-math-thinking-pilot.md) | Mechanism evidence and the (unmet) learning gates on the `MM_math` fixture |
 | [Params](doc/Params.md) | XML configuration reference and migration notes |
 | [BasicModel](doc/BasicModel.md) | Cognitive science foundations |
 | [Language](doc/Language.md) | Grammar layers, signal routing, category codebook, and syntax output |

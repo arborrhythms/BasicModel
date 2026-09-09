@@ -191,6 +191,21 @@ Finer intra-datum `.where` rung, corpus-byte rung, document-boundary bit
 - Step 7 numbers: untrained right = wrong = 0.34446; trained right 0.00054,
   wrong 0.6751.
 
+## 11. Thinking (What spec sections 7-9.5), 2026-09-09
+
+Built under the [mathematical thinking plan](2026-09-09-mathematical-thinking.md)
+(Phases 0-5 landed on `claude/math-thinking-spec-formalize-055ce3`):
+`WhatInteractionMemory` + episode boundary, `WhatStepChooser` resolve step
+with exact primitives (`bin/exact.py`, `<Queries>` ops in `math.grammar`),
+per-row `think()` over one forward, `runBatch` episodes with root scoring
+after parity and `whatThinkingPolicyWeight` credit, `serve.py` thinking
+payload, `bin/eval_math_thinking.py`. Mechanism tests:
+`test_what_episode_memory`, `test_what_thinking_episode`,
+`test_math_thinking_training`, `test_serve_thinking`,
+`test_eval_math_thinking`, `test_exact_primitives`, `test_math_dataset`.
+Learning gates: NOT met (pilot report in `doc/benchmarks/`); the RUN_SLOW
+floor is a strict xfail until a configuration passes.
+
 ## 10. The three formerly-open items, closed 2026-09-09
 
 - Carrier purity: `SubSpace.carrier_pure` + `carrier_like` with fresh

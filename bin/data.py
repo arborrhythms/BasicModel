@@ -1328,7 +1328,8 @@ class Data():
         they are never part of a presentation.
 
         ``dat`` is the parsed ``<data>`` block: ``mathRange`` (64),
-        ``mathDepths`` ("1,2,3" or "1-3"), ``mathTestDepths`` ("4-6"),
+        ``mathDepths`` ("1,2,3"; a "1-3" range is also accepted from
+        Python callers, but the XML loader evaluates it), ``mathTestDepths`` ("4,5,6"),
         ``mathDistractors`` (2), ``mathStage`` (1), ``mathSeed`` (0),
         ``mathProblems`` (256).
         """
@@ -1343,19 +1344,24 @@ class Data():
                 return int(default)
 
         def _depths(key, default):
-            raw = str(dat.get(key, default) or default)
+            # Comma lists ("1,2,3") or ranges ("1-3"); the XML loader may
+            # evaluate "1-3" arithmetically, so a bare (even negative)
+            # integer is read as that single depth's magnitude.
+            raw = dat.get(key, default)
+            if isinstance(raw, (int, float)):
+                return (max(1, abs(int(raw))),)
+            raw = str(raw or default)
             out = []
             for part in raw.replace(";", ",").split(","):
                 part = part.strip()
                 if not part:
                     continue
-                if "-" in part:
-                    lo, hi = part.split("-", 1)
+                if "-" in part.strip("-"):
+                    lo, hi = part.strip("-").split("-", 1)
                     out.extend(range(int(lo), int(hi) + 1))
                 else:
-                    out.append(int(part))
-            return tuple(out) or tuple(default if isinstance(default, tuple)
-                                       else (1,))
+                    out.append(max(1, abs(int(part))))
+            return tuple(out) or (1,)
 
         R = _int("mathRange", 64)
         depths = _depths("mathDepths", "1,2,3")

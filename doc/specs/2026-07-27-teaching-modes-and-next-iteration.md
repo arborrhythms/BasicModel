@@ -76,6 +76,17 @@ Closed 2026-09-09 (the last three items):
 Remaining by design: the chooser's hard choice is credited by its policy
 objective, not by differentiating the answer loss through an argmax.
 
+Thinking (sections 7-9.5), 2026-09-09: specified and built as the
+[mathematical thinking specification](2026-09-09-mathematical-thinking.md)
+/ [plan](../plans/2026-09-09-mathematical-thinking.md): the standalone
+interaction memory with an explicit episode credit boundary, the resolve
+step (`WhatStepChooser` over ANSWER / OPEN / EXECUTE with the exact
+primitives of `bin/exact.py`), per-row `think()` over one `forward()`,
+`runBatch` driving episodes with the root scored after parity and the
+step-chooser policy credit, the serve payload, and the evaluation script.
+Mechanism invariants are tested; the learning gates are NOT met on the
+`MM_math` pilot (see the [pilot report](../benchmarks/2026-09-09-math-thinking-pilot.md)).
+
 The companion [What, spacetime, and thinking design](../WhatSpacetimeDesign.md)
 defines the governing architecture. This document turns that design into an
 implementation sequence, test requirements, and acceptance gates. Runtime

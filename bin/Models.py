@@ -6433,6 +6433,14 @@ class BasicModel(BaseModel):
             for d, t in enumerate(tgt.shape):
                 if t == 1 and _pred.shape[d] != 1:
                     _pred = _pred.mean(dim=d, keepdim=True)
+        # A one-hot / multi-class head emits [B, N, 1] (N output vectors of
+        # width 1) while list-label datasets prep their [N] rows to
+        # [B, 1, N]: exact transposes with a singleton axis are the same
+        # values in the other layout (the math dataset's one-hot answers).
+        if (_pred.dim() == 3 and tgt.dim() == 3 and _pred.shape[0] == tgt.shape[0]
+                and _pred.shape[1] == tgt.shape[2] and _pred.shape[2] == tgt.shape[1]
+                and 1 in (int(_pred.shape[1]), int(_pred.shape[2]))):
+            _pred = _pred.transpose(1, 2)
         if _pred.shape == tgt.shape:
             return _pred
         self._warn_zeroed_channel(
@@ -8184,6 +8192,7 @@ class BasicModel(BaseModel):
                     referent=active if isinstance(active, str) else None,
                     value=value, question_rep=question_rep, log_prob=log_prob,
                     index=int(index), candidates=labels))
+        self.__dict__.setdefault("_what_episode_steps", []).extend(trace_entries)
         return out, tuple(steps), tuple(trace_entries), tuple(exact_steps)
 
     def _step_choice_for_row(self, row):
@@ -9101,6 +9110,7 @@ class BasicModel(BaseModel):
             self._what_pending = {}
             self._what_policy_records = []
             self._what_root_symbols = {}
+            self._what_episode_steps = []          # every iteration's step trace
             self._begin_exact_states(questions)
 
         if torch.is_tensor(input_data):

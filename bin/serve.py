@@ -180,6 +180,47 @@ def _response_text_from_infer(items):
     return " ".join(words)
 
 
+def _thinking_payload(user_msg, thought_free):
+    """Run one bounded thinking episode over ``user_msg`` and summarize it
+    (iterations, forced closures, the slot operations, the step choices,
+    the exact primitive count and the answered value when one was bound).
+    ``None`` when the model does not think, when the request is
+    thought-free, or when the episode fails."""
+    enabled = getattr(_model, "_thinking_enabled", None)
+    if not callable(enabled) or not enabled():
+        return None
+    if thought_free:
+        return {"thought_free": True, "iterations": 1, "forced_closures": 0,
+                "slots": [], "steps": [], "primitives": 0, "value": None}
+    try:
+        from What import What
+        with torch.no_grad(), _model._runtime_batch([user_msg]):
+            x = _model.inputSpace.prepInput(list(_model.data.train_input))
+            result = _model.think(
+                What.inference(0, split="runtime", prompt=user_msg), x)
+        # Every iteration's step choices (the model accumulates them over
+        # the episode; the last construction's trace holds only its own).
+        trace = tuple(getattr(_model, "_what_episode_steps", ()) or ())
+        steps = [{"choice": e.get("choice"), "role": e.get("role"),
+                  "referent": e.get("referent"), "iteration": e.get("iteration")}
+                 for e in trace if isinstance(e, dict)
+                 and str(e.get("operation", "")).startswith("step:")]
+        states = dict(getattr(_model, "_what_exact_states", {}) or {})
+        state, query = states.get(0, (None, None))
+        return {
+            "thought_free": False,
+            "iterations": int(result.iterations),
+            "forced_closures": int(result.forced_closures),
+            "slots": [s.operation.value for s in result.slots],
+            "steps": steps,
+            "primitives": int(getattr(state, "executions", 0) or 0),
+            "value": (state.lookup(query) if state is not None and query else None),
+        }
+    except Exception as exc:
+        logger.warning("Thinking episode failed, falling back: %s", exc)
+        return None
+
+
 @app.route("/chat/completions", methods=["POST"])
 def chat_completions():
     """OpenAI-compatible chat completions endpoint.
@@ -260,6 +301,14 @@ def chat_completions():
                 logger.warning("Reasoning path failed, falling back: %s", exc)
                 reasoning_payload = None
 
+        # Mathematical thinking (doc/specs/2026-09-09-mathematical-thinking.md
+        # section 6): when the model is configured to think (an iteration
+        # limit above one or exact primitives), answer the prompt through a
+        # bounded Model.think() episode and attach its summary. Thought-free
+        # (Shamatha) requests never open an internal dialogue. A thinking
+        # error degrades to the ordinary path (do not 500).
+        thinking_payload = _thinking_payload(user_msg, thought_free)
+
         # IR inference returns (slot, original, predicted) triples.
         predictions = _model.infer(user_msg, max_length=gen_budget)
         response_text = _response_text_from_infer(predictions)
@@ -282,6 +331,8 @@ def chat_completions():
                 response["choices"][0]["message"]["content"] = (
                     f"<reasoning posture=\"{reasoning_payload['posture']}\">"
                     f"{answer}</reasoning>")
+        if thinking_payload is not None:
+            response["thinking"] = thinking_payload
         clarifications = getattr(_model, "_last_clarifications", None)
         if clarifications:
             response["clarifications"] = list(clarifications)

@@ -21,7 +21,7 @@
       <dataType>embedding</dataType>
       <dataset>math</dataset>
       <mathRange>16</mathRange>
-      <mathDepths>1-2</mathDepths>
+      <mathDepths>1,2</mathDepths>
       <mathTestDepths>3</mathTestDepths>
       <mathDistractors>1</mathDistractors>
       <mathStage>1</mathStage>
@@ -82,6 +82,9 @@
     <nInput>32</nInput>
     <nInputDim>14</nInputDim>
     <nVectors>1</nVectors>
+    <!-- R output vectors of width 1: the one-hot answer over [0, R)
+         (the head emits [B, R, 1]; the loader's [R] labels prep to
+         [B, 1, R]; Model._align_output_pred reconciles the transpose). -->
     <nOutput>16</nOutput>
   </OutputSpace>
 
