@@ -960,6 +960,10 @@
            (the teacher runs materialize=false, so trace generation never
            writes LTM). 0.0 = off (byte-identical; the head is not built). -->
       <xs:element name="thinkingLossWeight" type="nonNegativeFloat" minOccurs="0"/>
+      <!-- whatThinkingPolicyWeight (mathematical thinking spec 8.3): weight
+           of the WhatStepChooser policy objective (REINFORCE on the
+           resolve-step choices, root answer loss as reward). 0 = off. -->
+      <xs:element name="whatThinkingPolicyWeight" type="nonNegativeFloat" minOccurs="0"/>
       <!-- Method-1 -> Method-2 leaf distillation weight (doc/plans/
            2026-07-14-signed-space-snap-design.md, step 3): trains the
            LeafDecoderHead to regenerate the EXACT per-word leaves (the

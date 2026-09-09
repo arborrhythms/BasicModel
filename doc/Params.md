@@ -470,6 +470,7 @@ symbol (line anchors drift).
 | `answerLossWeight` | `Models.py` (BaseModel init) | `0.0` | Reasoner answer loss weight. |
 | `predictNextLossWeight` | `Models.py` (BaseModel init) | `0.0` | Next-idea blend loss weight (`reason_predict_next` / `NextIdeaScorer`). |
 | `thinkingLossWeight` | `Models.py` (BaseModel init) | `0.0` | Thinking-kernel next-op behaviour-cloning loss weight (`_thinking_policy_loss`). |
+| `whatThinkingPolicyWeight` | `Models.py` (`_what_step_policy_loss`, runBatch hook) | `0.0` | Weight of the `WhatStepChooser` policy objective (mathematical thinking spec 8.3): REINFORCE on the episode's resolve-step choices with `G = -L_answer - 0.01 * iterations - 0.1 * forced_closures` and an EMA baseline; positive values also make the chooser SAMPLE during training. Reported under `what_report()["policy"]["thinking"]`. `0` = off, argmax choices, byte-identical. |
 | `branchDiagnosticsEvery` | `Models.py` (BaseModel init; `branch_gradient_diagnostics`) | `0` | Every N training batches, read (never update) the reconstruction / answer gradient norms and cosine at the conceptual and symbolic branch points (What spec 9.4). `0` = off. |
 | `leafDistillWeight` | `Models.py` (BaseModel init) | `0.0` | With `detachedReverse`, weight the reverse chooser's bounded exact-leaf surface term; otherwise weight the legacy standalone root-to-leaf distillation head. |
 | `interContrastiveWeight` | `Models.py` (ModelLoss), `Language.py` (discourse layer) | `0.0` | InfoNCE next-idea contrastive term weight; `0` = MSE-only. |
@@ -477,18 +478,6 @@ symbol (line anchors drift).
 | `conceptualSimilarityScale` | `Models.py` (ModelLoss wiring) | `0.0` | Legacy autograd SBOW weight for non-serial experimental configurations. It cannot be combined with `conceptualContextLearningRate`. |
 | `conceptualContextLearningRate` | `Models.py` (BaseModel init) | `0.0` | Detached post-sentence update rate for the shared serial ConceptualSpace dictionary. Positive values convert `similarity_codebook.W` from its construction Parameter into a persistent non-grad buffer, then rotate reduced contextual evidence directly on its initial unit sphere. |
 | `conceptualContextNegatives` | `Models.py` (BaseModel init) | `4` | Deterministic negative rows per observed concept in the context-owned SBOW reducer. |
-
-### Planned: `whatThinking*` (mathematical thinking plan, Phase 4)
-
-Not yet read by any code (the memory, detach, iteration, pressure and
-primitive knobs landed in Phases 2–3 and are in the table above). Listed so the names are reserved and the
-defaults are on record; each lands default-off / byte-identical. See the
-[mathematical thinking specification](specs/2026-09-09-mathematical-thinking.md).
-
-| Knob | Level | Planned default | Purpose |
-|------|-------|-----------------|---------|
-| `whatThinkingPolicyWeight` | `<architecture><training>` | `0.0` | Weight of the `WhatStepChooser` policy objective (hard open / answer / execute choices). |
-| `whatThinkingCloneWeight` | `<architecture><training>` | `0.0` | Weight of behaviour cloning on the model's own verifier-accepted traces. |
 
 ### Per-space
 

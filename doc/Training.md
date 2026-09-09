@@ -515,10 +515,14 @@ thinking statistics (episodes, mean iterations, forced-closure rate), the
 hard-choice policy credit (`forwardGrammarWeight`) separately from the
 continuous answer credit, and sentences/s. Full contract: the
 [What spec, Section 9](specs/2026-07-27-teaching-modes-and-next-iteration.md#9-training-and-loss);
-training *through* multi-iteration thinking episodes (root scored after
-parity, episode credit boundary, step-chooser policy credit) is planned in
-the [mathematical thinking specification](specs/2026-09-09-mathematical-thinking.md)
-and is not yet wired.
+training *through* multi-iteration thinking episodes is the
+[mathematical thinking specification](specs/2026-09-09-mathematical-thinking.md):
+with `<whatThinkingIterations>` above one, `runBatch` drives
+`Model.think()` (one `forward()`, iterated resolve steps, LIFO closure),
+scores the root answers after parity, adds the `WhatStepChooser` policy
+term (`<whatThinkingPolicyWeight>`), takes the one optimizer step, and
+then ends the episode (`<whatThinkingDetach>`), all reported under
+`what_report()["thinking"]` and `["policy"]["thinking"]`.
 
 ---
 

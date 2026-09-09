@@ -319,6 +319,10 @@ construction after parity is `_last_answer_construction`;
 `answer_construction` is scored on it against `Data.what()` (What spec
 §9.5). Intermediate subanswers are not compared with the root target.
 Exactly one optimizer step follows (reconstruction priority unchanged).
+Implementation: `Model._what_or_think` (the `runBatch` seam; exploration
+trials never think); a row's root answer symbol is recorded when it
+answers and carried through the later iterations' constructions, so the
+final construction holds every row's root.
 
 ### 8.2 Credit boundary
 
@@ -345,9 +349,15 @@ reported under `what_report()["policy"]["thinking"]` separately from the
 grammar chooser's `forwardGrammarWeight` credit and from the continuous
 `answer_construction`. Continuous operands (the answer symbol, synthesis
 layers, the question conditioner) train through the answer loss as today.
-Optionally the chooser is also behaviour-cloned on the model's own
-verifier-accepted traces (the `next_op_loss` pattern); which estimators
-are active is recorded in the report (section 12, Q2).
+Implementation (`_what_step_policy_loss`, weight
+`<whatThinkingPolicyWeight>`): the reward uses the batch's
+`answer_construction` value, `c_step = 0.01`, `c_forced = 0.1`, an
+exponential-moving-average baseline (`0.9 / 0.1`), and the mean over the
+episode's recorded choices; a positive weight also makes the chooser
+*sample* during training (the untrained head is uniform over candidates,
+so exploration starts wide). Behaviour cloning on the model's own
+verifier-accepted traces (the `next_op_loss` pattern) is NOT implemented
+(section 12, Q2); which estimators are active is visible in the report.
 
 ### 8.4 Per-iteration bound
 

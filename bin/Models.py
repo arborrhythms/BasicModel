@@ -7856,6 +7856,65 @@ class BasicModel(BaseModel):
 
     # -- thinking: the resolve step (mathematical thinking spec 5-6) ---------
     WHAT_STEP_MAX_CANDIDATES = 32
+    WHAT_STEP_COST = 0.01          # per-iteration cost in the policy reward
+    WHAT_FORCED_COST = 0.1         # per forced closure
+
+    def _what_or_think(self, questions, input_data, *, executor, record):
+        """``runBatch``'s evaluation of the batch's questions: a thinking
+        EPISODE (``think()``; the root answers are scored after parity, spec
+        8.1) when the iteration limit exceeds one, else the single ``what()``.
+        Exploration trials (``record=False``) never think."""
+        if (record and int(getattr(self, "what_thinking_iterations", 1) or 1) > 1
+                and getattr(self, "answer_synthesis", False)
+                and self._what_memory() is not None):
+            result = self.think(questions, input_data, executor=executor)
+            return tuple(result.answers)
+        return self.what(questions, input_data, executor=executor, record=record)
+
+    def _end_what_episodes(self):
+        """Close every row's episode (detaching its slots under ``episode``
+        mode) -- called after the optimizer step (spec 8.2)."""
+        memory = self._what_memory()
+        if memory is None or not hasattr(memory, "end_what_episode"):
+            return 0
+        rows = int(getattr(memory, "batch", 0) or getattr(memory, "_batch", 0) or 0)
+        detached = 0
+        for b in range(rows):
+            if not hasattr(memory, "in_episode") or memory.in_episode(b):
+                detached += int(memory.end_what_episode(b) or 0)
+        self._what_policy_records = []
+        return detached
+
+    def _what_step_policy_loss(self, answer_loss):
+        """REINFORCE credit for the resolve-step choices of the last episode
+        (spec 8.3): ``G = -L_answer - c_step * iterations - c_forced *
+        forced``, an EMA baseline, ``L = -mean((G - b) * log pi)``.  ``None``
+        without recorded choices.  Reported distinctly in ``what_report()``."""
+        records = [r for r in (self.__dict__.get("_what_policy_records") or ())
+                   if torch.is_tensor(r[2]) and r[2].requires_grad]
+        if not records:
+            return None
+        thinking = getattr(self, "_last_what_thinking", None)
+        iterations = int(getattr(thinking, "iterations", 1) or 1)
+        forced = int(getattr(thinking, "forced_closures", 0) or 0)
+        answer = (float(answer_loss.detach()) if torch.is_tensor(answer_loss)
+                  else float(answer_loss or 0.0))
+        G = -answer - self.WHAT_STEP_COST * iterations - self.WHAT_FORCED_COST * forced
+        baseline = self.__dict__.get("_what_policy_baseline")
+        advantage = G - (baseline if baseline is not None else 0.0)
+        self._what_policy_baseline = (G if baseline is None
+                                      else 0.9 * baseline + 0.1 * G)
+        log_probs = torch.stack([r[2] for r in records])
+        loss = -(float(advantage) * log_probs).mean()
+        report = self._what_report_state()
+        report["policy_thinking_credit_sum"] = (
+            report.get("policy_thinking_credit_sum", 0.0) + float(loss.detach()))
+        report["policy_thinking_batches"] = report.get("policy_thinking_batches", 0) + 1
+        report["policy_thinking_choices"] = (
+            report.get("policy_thinking_choices", 0) + len(records))
+        report["policy_thinking_return_sum"] = (
+            report.get("policy_thinking_return_sum", 0.0) + G)
+        return loss
 
     def _thinking_enabled(self):
         """True when an episode may take more than one iteration or use
@@ -7950,9 +8009,9 @@ class BasicModel(BaseModel):
         if pending is not None:
             return pending, "pending"
         opens = self._open_referents(b)
-        if opens and opens[-1] is not None:
+        if opens and opens[-1] is not None and opens[-1] != query:
             return opens[-1], "open"
-        return query, "root"
+        return query, "root"          # the root, whether or not it is open
 
     def _enumerate_step_candidates(self, state, query, active, open_refs):
         """Candidate actions for one row (spec 6.3): ANSWER first (the
@@ -8050,12 +8109,19 @@ class BasicModel(BaseModel):
         chooser = self._what_step_chooser(device=answer.device, dtype=answer.dtype)
         context, _detail = self._what_grammar_context(
             questions, device=answer.device, dtype=answer.dtype)
+        roots = self.__dict__.setdefault("_what_root_symbols", {})
         out = answer.clone()
         steps, trace_entries, exact_steps = [], [], []
         for b in range(B):
             settled = (iteration > 0 and memory is not None
                        and memory.what_at_parity(b=b) and pending.get(b) is None)
             if settled:
+                # The row's ROOT answer symbol (recorded when it answered)
+                # carries through to the final construction, so the root is
+                # what runBatch scores after parity (spec 8.1).
+                stored = roots.get(b)
+                if torch.is_tensor(stored) and stored.shape == out[b].shape:
+                    out[b] = stored
                 steps.append(None)
                 continue
             entry = states.get(b)
@@ -8111,6 +8177,8 @@ class BasicModel(BaseModel):
                 if value is not None:
                     out[b, 0, :] = numeral_code(int(value), D).to(
                         device=out.device, dtype=out.dtype)
+                if role == "root":
+                    roots[b] = out[b]
                 steps.append(StepChoice(
                     kind="answer", row=b, role=role,
                     referent=active if isinstance(active, str) else None,
@@ -8802,6 +8870,9 @@ class BasicModel(BaseModel):
         report["thinking"]["episodes"] += 1
         report["thinking"]["iterations"] += int(result.iterations)
         report["thinking"]["forced_closures"] += int(result.forced_closures)
+        states = self.__dict__.get("_what_exact_states") or {}
+        report["thinking"]["primitives"] = report["thinking"].get("primitives", 0) + sum(
+            int(getattr(state, "executions", 0) or 0) for (state, _q) in states.values())
 
     def what_report(self):
         """Separate means per question family plus thinking and throughput."""
@@ -8820,6 +8891,10 @@ class BasicModel(BaseModel):
             "episodes": th["episodes"],
             "mean_iterations": th["iterations"] / episodes if th["episodes"] else 0.0,
             "forced_closure_rate": th["forced_closures"] / max(1, th["iterations"]),
+            "primitives": th.get("primitives", 0),
+            "iteration_limit": int(getattr(self, "what_thinking_iterations", 1) or 1),
+            "primitive_budget": int(getattr(self, "what_thinking_primitives", 0) or 0),
+            "detach": str(getattr(self, "what_thinking_detach", "slot") or "slot"),
         }
         # Hard-choice POLICY credit (the chooser's bounded local objective,
         # <forwardGrammarWeight>) is reported distinctly from the continuous
@@ -8830,6 +8905,18 @@ class BasicModel(BaseModel):
             "credit": report.get("policy_credit_sum", 0.0)
                       / max(1, report.get("policy_batches", 0)),
             "batches": report.get("policy_batches", 0),
+            # The resolve-step chooser's credit (mathematical thinking spec
+            # 8.3), distinct from the grammar chooser's and from the
+            # continuous answer credit.
+            "thinking": {
+                "weight": float(getattr(self, "what_thinking_policy_weight", 0.0) or 0.0),
+                "credit": report.get("policy_thinking_credit_sum", 0.0)
+                          / max(1, report.get("policy_thinking_batches", 0)),
+                "mean_return": report.get("policy_thinking_return_sum", 0.0)
+                               / max(1, report.get("policy_thinking_batches", 0)),
+                "batches": report.get("policy_thinking_batches", 0),
+                "choices": report.get("policy_thinking_choices", 0),
+            },
         }
         out["throughput"] = {
             "batches": report["batches"],
@@ -9013,6 +9100,7 @@ class BasicModel(BaseModel):
         if int(iteration) == 0:
             self._what_pending = {}
             self._what_policy_records = []
+            self._what_root_symbols = {}
             self._begin_exact_states(questions)
 
         if torch.is_tensor(input_data):
@@ -11115,7 +11203,7 @@ class BasicModel(BaseModel):
                 # ``what()`` is a thin delegation over this exact executor.
                 # It installs only target-free question/LTM chooser context;
                 # the returned execution is the ordinary forward tuple.
-                _what_answers = self.what(
+                _what_answers = self._what_or_think(
                     what_questions, inputTensor, executor=_fwd,
                     record=not exploration_trial)
                 _forward_result = _what_answers[0].execution
@@ -11678,6 +11766,21 @@ class BasicModel(BaseModel):
                         weight=self.thinking_loss_weight,
                         space="SymbolSpace", category="policy")
 
+            # Mathematical thinking spec 8.3: the WhatStepChooser's hard
+            # open / answer / execute choices are credited by their policy
+            # objective (root answer loss as reward), never by autograd
+            # through an argmax. Default weight 0.0 -> skipped, and the
+            # chooser takes the argmax -> byte-identical.
+            if train and float(
+                    getattr(self, "what_thinking_policy_weight", 0.0) or 0.0) > 0.0:
+                pol_loss = self._what_step_policy_loss(lossOut)
+                if pol_loss is not None:
+                    totalLoss = totalLoss + self.what_thinking_policy_weight * pol_loss
+                    self.record_loss(
+                        "what_step_policy", pol_loss,
+                        weight=self.what_thinking_policy_weight,
+                        space="SymbolSpace", category="policy")
+
             if train and float(
                     getattr(self, "predict_next_loss_weight", 0.0) or 0.0) > 0.0:
                 try:
@@ -11899,6 +12002,9 @@ class BasicModel(BaseModel):
                     self.paramUpdate()
                 optimizer.step()
             self._assert_finite_train_state("after optimizer.step")
+            # The episode credit boundary (spec 8.2): durable LTM detaches
+            # here, after the one optimizer step of the episode.
+            self._end_what_episodes()
             self._flush_partspace_promotions(optimizer=optimizer)
             self._clamp_symbolic_codebook()
             # Context-owned concept atoms are updated exactly once from the
@@ -13097,6 +13203,12 @@ class BasicModel(BaseModel):
         # from the reasoning store. 0.0 -> no term -> byte-identical.
         self.thinking_loss_weight = float(
             TheXMLConfig.training("thinkingLossWeight", default=0.0) or 0.0)
+        # Mathematical thinking spec 8.3: the WhatStepChooser policy weight
+        # (REINFORCE on the resolve-step choices with the root answer loss
+        # as reward and an EMA baseline). 0.0 -> no term, argmax choices ->
+        # byte-identical.
+        self.what_thinking_policy_weight = float(
+            TheXMLConfig.training("whatThinkingPolicyWeight", default=0.0) or 0.0)
         # Method-1 -> Method-2 leaf distillation weight (root separability;
         # snap design doc step 3). 0.0 -> no term -> byte-identical.
         self.leaf_distill_weight = float(
