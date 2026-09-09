@@ -341,6 +341,18 @@ seeded from the root idea, reduce gate 0.05 with the MLP chooser), lr
 | 15 | 0.0299 | 0.719 |
 | 20 | 0.0187 | 0.797 |
 | 30 | 0.0152 | 0.758 |
+| 40 | 0.0189 | 0.770 |
+| 50 | 0.0213 | 0.750 |
+| 55 | 0.0239 | 0.570 |
+| 60 | 0.0239 | 0.375 |
+
+The plateau (epochs 20-50, 75-80 %) is the single-digit ceiling of the
+per-fact table below. After epoch 50 the run at a constant lr 1e-3
+destabilised (answer loss rising from 0.015, predictions collapsing onto
+one or two numerals; 38 % at epoch 60): the fixture needs a learning-rate
+decay or early stopping at the plateau, not more epochs. The
+`RUN_SLOW` test `test_successor_is_learned_as_a_verb` trains the same
+topology on single-digit facts only (R = 10) and stops at 90 %.
 
 Per fact at epoch 30 (376 / 512 presentations correct):
 
