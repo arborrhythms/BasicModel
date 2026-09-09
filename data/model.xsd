@@ -851,7 +851,9 @@
       <xs:element name="mathTestDepths" type="xs:string"/>
       <xs:element name="mathDistractors" type="xs:nonNegativeInteger"/>
       <xs:element name="mathStage" type="xs:nonNegativeInteger"/>
-      <!-- stage 0 operators: comma list of add / sub / mul (default add). -->
+      <!-- stage 0 operators: comma list of add / sub / mul (default add), or
+           succ: the successor "n plus one", every fact trained (Alec 2026-09-09:
+           addition is iterated succession). -->
       <xs:element name="mathOperators" type="xs:string"/>
       <xs:element name="mathSeed" type="xs:nonNegativeInteger"/>
       <xs:element name="mathProblems" type="xs:positiveInteger"/>

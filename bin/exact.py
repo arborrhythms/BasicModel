@@ -517,7 +517,14 @@ class MathProblemGenerator:
         # that produce it: sampling a then b < R - a skews sums toward
         # R - 1 (13.5 % of a corpus at R = 32), and a majority-answer head
         # then matches that plateau without learning arithmetic.
-        if op == "sub":
+        if op == "succ":
+            # The SUCCESSOR (Alec 2026-09-09): "n plus one" -> the next number
+            # noun.  Addition is iterated succession performed by the
+            # thinking loop, so this is the rung below "a plus b": one fixed
+            # symbol-to-symbol map the verb must learn.
+            a = self.rng.randrange(0, R - 1)
+            b, value, op = 1, a + 1, "add"
+        elif op == "sub":
             value = self.rng.randrange(0, R)
             b = self.rng.randrange(0, R - value)
             a = value + b

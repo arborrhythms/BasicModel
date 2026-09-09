@@ -261,18 +261,18 @@ mean over one-hot targets), the signature of no verb being learned. 96
 minutes of CPU training; "lots of training of a large network" is the
 regime, and this is the first point on that curve, not its end.
 
-Theoretical note (the sufficiency question): `VerbLayer` is a diagonal
-gain in atanh space (`y_i = tanh(g_i · atanh(x_i))`, `log g` read from the
-verb operand by a learned projection). On a LINEAR numeral code it can
-only scale (multiply by a constant); on an EXPONENTIAL code
-(`atanh(x_i) ∝ e^n`) the gain `e^m` computes `n + m` exactly and
-independently of `n`, so one VP generalizes to every argument in range,
-with precision falling with magnitude under the tanh saturation. The
-operator therefore suffices for `plus` iff the lexicon learns a two-band
-numeral code: an exponential band (the noun as argument) and a linear
-band the log-gain projection reads (the noun as the verb's object). That
-is checkable by construction on the existing layer, and it is what this
-run asks the lexicon to discover from data. Multi-digit numerals are
-wholes over digit parts with `.where` = position (already what the byte
-lexer and word analysis produce); carries cannot be a single diagonal VP
-and are naturally serial `what()` subquestions through LTM.
+Theoretical note (the sufficiency question, corrected by Alec): addition
+is not computed as a value. A successor VP maps one number noun to the
+next (`next(one) = two`), and "three plus two" is `next(next(three))`:
+counting, performed by the thinking loop as iterated `what()`
+subquestions whose answers land in LTM, with the parity stack as the
+counter. `VerbLayer` (a diagonal gain in atanh space) therefore has to
+implement ONE fixed symbol-to-symbol map that advances every number noun
+to its successor, with the codebook snap keeping each step a discrete
+symbol; numeral codes on a geometric progression per coordinate make
+that exact for a single learned gain. The second operand is never read
+as a magnitude. So the curriculum rung below "a plus b" is the successor
+itself ("n plus one", `mathOperators=succ`, every fact trained), and
+generalization to unseen pairs is compositional (iteration), not
+interpolative. Multi-digit numerals are wholes over digit parts with
+`.where` = position; carries are serial subquestions.

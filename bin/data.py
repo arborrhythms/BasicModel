@@ -1332,7 +1332,8 @@ class Data():
         Python callers, but the XML loader evaluates it), ``mathTestDepths`` ("4,5,6"),
         ``mathDistractors`` (2), ``mathStage`` (1; 0 = direct arithmetic
         ``a op b`` with the value as the answer, split by unseen operand
-        pairs), ``mathOperators`` ("add"; comma list of add / sub / mul),
+        pairs), ``mathOperators`` ("add"; comma list of add / sub / mul, or ``succ`` --
+        the successor "n plus one", every fact trained),
         ``mathSeed`` (0), ``mathProblems`` (256).
         """
         from exact import (MathProblemGenerator, split_by_structure,
@@ -1387,7 +1388,15 @@ class Data():
                                         distractors=tuple(range(max_d + 1)),
                                         stage=stage)
             problems += deep.problems(max(1, count // 4))
-        if stage == 0:
+        if stage == 0 and operators == ("succ",):
+            # The successor map is a finite set of facts (the counting
+            # sequence); every fact is trained and the same facts are the
+            # evaluation -- generalization is tested later by iterated
+            # succession on unseen (a, b) pairs.
+            splits = {"train": list(problems),
+                      "validation": list(problems[: max(1, len(problems) // 8)]),
+                      "test": list(problems[: max(1, len(problems) // 4)])}
+        elif stage == 0:
             # Direct arithmetic: hold out unseen operand PAIRS.
             splits = split_by_surface(problems)
         else:
