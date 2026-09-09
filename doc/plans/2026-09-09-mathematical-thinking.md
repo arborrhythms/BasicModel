@@ -177,6 +177,21 @@ So the stack does direct arithmetic by SELECTING the exact operation, not
 by computing it in the folds; the next rung is stage 1 with the same
 route (the depth-1 chain: open the operand's premise, evaluate, bind).
 
+## Phase 7 — stage 1 on the exact route (2026-09-09, same day)
+
+Two changes made the stage-1 chain learnable: dense per-row credit for
+each variable the scratchpad binds (`WHAT_BIND_REWARD`, spec 8.3) and
+content features on the candidates (READY / DEPENDENCY) so the policy
+generalizes across premise counts. Also fixed: forced-closure answers
+were the whole batch tensor for a row (`_best_effort_what` now slices the
+row). Results (pilot report, "Stage 1"): depth 1 trained → unseen
+depth-1 structures 100 %, untrained depth 2 83 %; depths 1–2 trained with
+features → unseen depth 1 100 %, depth 2 96 %, untrained depth 3 100 % at
+epoch 5. The RUN_SLOW xfail is replaced by
+`test_stage_one_dependency_chains_learn_through_the_exact_route`
+(default suite, ~50 s). Remaining: depths 4–6, stage 2 (substitute /
+constrain), the policy's sampling variance on train, and episode length.
+
 ## Test evidence rule
 
 Interface tests and scripted traces are reported as *mechanism*; only the

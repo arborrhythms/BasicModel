@@ -7146,8 +7146,10 @@ class WhatStepChooser(nn.Module):
     KINDS = ("answer", "open", "execute")
     OPS = ("lookup", "evaluate", "bind", "substitute", "constrain")
     # kind one-hot (3) + op one-hot (5) + active-referent flag + bound flag
-    # + applied flag + normalized position + closure pressure
-    CANDIDATE_FEATURES = 3 + 5 + 4 + 1
+    # + applied flag + normalized position + closure pressure + READY (an
+    # evaluate whose operands are all bound) + DEPENDENCY (an open / bind
+    # whose referent the active question's premise needs)
+    CANDIDATE_FEATURES = 3 + 5 + 4 + 1 + 2
 
     def __init__(self, *, context_dim=29, hidden=16):
         super().__init__()
@@ -7174,6 +7176,8 @@ class WhatStepChooser(nn.Module):
             f[10] = 1.0 if cand.get("applied") else 0.0
             f[11] = float(cand.get("position", 0.0))
             f[12] = float(pressure)
+            f[13] = 1.0 if cand.get("ready") else 0.0
+            f[14] = 1.0 if cand.get("dependency") else 0.0
             rows.append(f)
         if not rows:
             return torch.zeros(0, self.CANDIDATE_FEATURES, device=device, dtype=dtype)

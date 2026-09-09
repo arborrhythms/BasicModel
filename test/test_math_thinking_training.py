@@ -316,34 +316,84 @@ def test_iterations_one_is_byte_identical_to_a_plain_batch(episode_config, tmp_p
     assert m.what_report()["thinking"]["episodes"] == 0
 
 
-@pytest.mark.skipif(not os.environ.get("RUN_SLOW"), reason="learning floor; RUN_SLOW=1")
-@pytest.mark.xfail(strict=True, reason=(
-    "learning gate NOT met (2026-09-09 pilot, doc/benchmarks/2026-09-09-math-"
-    "thinking-pilot.md): 150 steps on 16 depth-1/2 problems reach 12.5 % exact "
-    "accuracy with the sampled policy, the same as no thinking; flip to required "
-    "when a configuration passes"))
-def test_learning_floor_depth_one_and_two(policy_config):
-    """A floor, not the pilot gate: with sampling and policy credit, exact
-    accuracy on the training problems exceeds 50 % within the budget."""
-    m = _build(policy_config)
-    opt = m.getOptimizer(lr=5e-3)
-    m.train()
+@pytest.fixture(scope="module")
+def stage_one_config(tmp_path_factory):
+    """MM_math (dependency chains, depths 1-2, depth 3 held out, up to one
+    distractor) at R = 16, 32 wide, 384 problems, eight-iteration episodes
+    with four primitives, policy credit; codebooks sized for the corpus."""
+    src = (_DATA / "MM_math.xml").read_text()
+    for tag in ("nDim", "nInputDim", "nOutputDim"):
+        src = src.replace(f"<{tag}>14</{tag}>", f"<{tag}>32</{tag}>")
+    src = (src.replace("<mathProblems>64</mathProblems>", "<mathProblems>384</mathProblems>")
+              .replace("</training>",
+                       "      <whatThinkingPolicyWeight>0.5</whatThinkingPolicyWeight>\n"
+                       "    </training>", 1)
+              .replace("<nVectors>8</nVectors>\n    <nDim>", "<nVectors>512</nVectors>\n    <nDim>", 1)
+              .replace("<nVectors>128</nVectors>", "<nVectors>2048</nVectors>")
+              .replace("<nVectors>200</nVectors>", "<nVectors>2048</nVectors>"))
+    path = tmp_path_factory.mktemp("cfg") / "MM_math_learn.xml"
+    path.write_text(src)
+    return path
+
+
+def _stage_one_accuracy(m, split, limit=128):
+    """Exact-answer accuracy and verifier validity over ``split``."""
+    from exact import ExactVerifier
     data = m.inputSpace.data
-    n = min(16, data.what_extent("train"))
-    loader = data.data_loader(split="train", num_streams=n)
-    inp_items, out_items = next(iter(loader))
-    x = m.inputSpace.prepInput(inp_items)
-    y = m.outputSpace.prepOutput(out_items)
-    for _ in range(150):
-        m.runBatch(train=True, batchSize=n, split="train", optimizer=opt,
-                   batch_override=(x, y))
+    n = min(limit, data.what_extent(split))
+    correct = valid = 0
+    verifier = ExactVerifier()
     m.eval()
     with torch.no_grad():
-        result = m.think(tuple(What.supervised(b) for b in range(n)), x)
-    predicted = torch.stack([a.what.reshape(-1) for a in result.answers]).argmax(-1)
-    target = y.reshape(n, -1).argmax(-1)
-    accuracy = float((predicted == target).float().mean())
-    assert accuracy > 0.5, accuracy
+        for start in range(0, n, 32):
+            idx = list(range(start, min(n, start + 32)))
+            x = m.inputSpace.prepInput(
+                [data._what_split_values(split, "input")[i] for i in idx])
+            y = m.outputSpace.prepOutput(
+                [data._what_split_values(split, "output")[i] for i in idx])
+            result = m.think(tuple(What.supervised(i, split=split) for i in idx), x)
+            pred = torch.stack([a.what.reshape(-1) for a in result.answers]).argmax(-1)
+            target = y.reshape(len(idx), -1).argmax(-1)
+            correct += int((pred == target).sum())
+            for b, i in enumerate(idx):
+                state = m._what_exact_states.get(b, (None, None))[0]
+                if state is not None:
+                    valid += int(verifier.check(
+                        state.trace, data.math_problems[split][i],
+                        answer=int(pred[b])).valid)
+    m.train()
+    return correct / max(1, n), valid / max(1, n)
+
+
+def test_stage_one_dependency_chains_learn_through_the_exact_route(stage_one_config):
+    """The original variable-substitution problems (spec section 1, stage
+    1): with a stage-0 policy in reach (evaluate / bind / answer), dense
+    credit for each binding, and content features (ready / dependency),
+    the learned chooser resolves dependency chains -- open the operand's
+    premise, evaluate, bind, return, evaluate the query, bind, answer --
+    and generalizes to UNSEEN structures and to the held-out depth: at
+    least 90 % exact accuracy with verifier-valid derivations on training
+    and test within 30 epochs of the small configuration (the 2026-09-09
+    pilot report gives the 2048-problem, 64-wide numbers)."""
+    m = _build_stage_zero(stage_one_config)
+    data = m.inputSpace.data
+    assert {p.depth for p in data.math_problems["train"]} == {1, 2}
+    assert any(p.depth == 3 for p in data.math_problems["test"])
+    assert _stage_one_accuracy(m, "train")[0] < 0.5
+    opt = m.getOptimizer(lr=0.01)
+    train = test = (0.0, 0.0)
+    for epoch in range(1, 31):
+        m.train()
+        m.runEpoch(optimizer=opt, batchSize=32, split="train")
+        if epoch % 5 == 0:
+            train, test = _stage_one_accuracy(m, "train"), _stage_one_accuracy(m, "test")
+            if min(train) >= 0.9 and min(test) >= 0.9:
+                break
+    assert min(train) >= 0.9 and min(test) >= 0.9, (train, test)
+    report = m.what_report()
+    assert report["thinking"]["episodes"] > 0
+    assert 1.0 < report["thinking"]["mean_iterations"] <= 8.0
+    assert report["policy"]["thinking"]["choices"] > 0
 
 
 # -- stage 0 through the exact route (Alec, 2026-09-09) -------------------------

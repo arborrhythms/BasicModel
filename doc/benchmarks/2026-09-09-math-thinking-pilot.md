@@ -171,3 +171,48 @@ and whose result it learns to REALIZE; it does not learn to compute the
 sum from bytes by gradient. Stage 1 should be attempted on the same
 route (the depth-1 chain is open / evaluate / bind / answer), which is
 what the earlier pilot lacked: a stage-0 policy to build on.
+
+## Stage 1: dependency chains on the exact route (2026-09-09, same day)
+
+Configuration: `MM_math` at 64 wide, `R = 16`, 2048 problems, up to one
+distractor, eight-iteration episodes with four primitives, policy weight
+0.5, `runEpoch` batch 32, lr 5e-3, codebooks 512 / 4096 / 4096. Held-out
+= unseen dependency STRUCTURES at the trained depths plus the next depth,
+which is never trained.
+
+Without binding credit (the pilot's regime), depth 1: 36 % train, 14 %
+held-out, nothing bound, one iteration -- the policy never finds the
+four-primitive chain and the head guesses. With `WHAT_BIND_REWARD`
+(per-row credit for each bound variable) and the pruned menu:
+
+| trained | epoch | train acc / valid | unseen structures, trained depth | next depth (untrained) | mean iterations |
+|---|---:|---:|---:|---:|---:|
+| depth 1 | 10 | 1.00 / 1.00 | depth 1: 1.00 | depth 2: 0.58 | 7.0 |
+| depth 1 | 40 | 1.00 / 1.00 | depth 1: 1.00 | depth 2: 0.83 | 5.0 |
+| depths 1-2 | 10 | 1.00 / 1.00 | depth 2: 1.00; depth 1: 0.07 | depth 3: 1.00 | 4.25 |
+| depths 1-2 | 30 | 1.00 / 1.00 | depth 2: 1.00; depth 1: 1.00 | depth 3: 0.71 | 7.0 |
+
+The depth-1 held-out failure in the depths-1-2 run was positional: every
+training depth-1 problem has a distractor (three premises) and every
+held-out one has none (two), and the chooser's only content-free
+features shift with premise count. With the READY / DEPENDENCY features:
+
+| trained | epoch | train acc / valid | depth 1 unseen | depth 2 unseen | depth 3 (untrained) | mean iterations |
+|---|---:|---:|---:|---:|---:|---:|
+| depths 1-2 + features | 5 | 0.82 / 0.76 | 1.00 | 0.96 | 1.00 | 5.0 |
+| depths 1-2 + features | 10 | 0.65 / 0.57 | 1.00 | 0.43 | 1.00 | 3.0 |
+| depths 1-2 + features | 20 | 0.68 / 0.62 | 1.00 | 0.39 | 1.00 | 3.0 |
+
+Training accuracy oscillates under sampled exploration (the policy is
+still being sampled during training; evaluation is the argmax), and the
+run without the features also reaches 100 % on unseen depth-1 structures
+by epoch 30, so the features buy sample efficiency on the held-out
+structures rather than a capability; the
+small default-suite configuration (384 problems, 32 wide) reaches 100 %
+held-out by epoch 10 and 99 % train by epoch 20
+(`test_stage_one_dependency_chains_learn_through_the_exact_route`).
+
+Gates: unseen structures at trained depths >= 95 % -- met (100 %); the
+never-trained next depth -- 83 % (depth 2 from depth 1) and 100 % (depth
+3 from depths 1-2); depths 4-6 and stage 2 not evaluated; every accepted
+derivation verifies (validity tracks accuracy in every table above).

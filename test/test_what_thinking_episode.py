@@ -339,3 +339,19 @@ def test_referent_and_numeral_codes_are_distinct():
     referents = {tuple(referent_code(v, D).tolist()) for v in "abcxyz"}
     assert not (numerals & referents)
     assert len(referents) == 6
+
+
+def test_forced_closure_answers_are_row_shaped_in_a_batch(model, monkeypatch):
+    """A forced best-effort answer is the ROW's constructed response, not
+    the whole batch tensor (found by the stage-1 runs: a forced row's
+    answer had B * R elements)."""
+    p0, p1 = _problem(model, 0), _problem(model, 1)
+    variables = sorted(set().union(*(e.vars for e in p0.equations)) | set().union(*(e.vars for e in p1.equations)))
+    _script(monkeypatch, WhatStepChooser, [f"open:{v}" for v in variables] * 6)
+    x, y = _batch(model, rows=2)
+    with torch.no_grad():
+        result = model.think((What.supervised(0), What.supervised(1)), x, max_iterations=2)
+    assert result.forced_closures >= 1
+    for b, answer in enumerate(result.answers):
+        assert torch.is_tensor(answer.what)
+        assert answer.what.shape[0] == 1 and answer.what.numel() == y[b].numel()

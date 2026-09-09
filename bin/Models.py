@@ -7866,6 +7866,7 @@ class BasicModel(BaseModel):
     WHAT_STEP_MAX_CANDIDATES = 32
     WHAT_STEP_COST = 0.01          # per-iteration cost in the policy reward
     WHAT_FORCED_COST = 0.1         # per forced closure
+    WHAT_BIND_REWARD = 0.1         # per variable the row's scratchpad bound
 
     def _what_or_think(self, questions, input_data, *, executor, record):
         """``runBatch``'s evaluation of the batch's questions: a thinking
@@ -7907,13 +7908,27 @@ class BasicModel(BaseModel):
         forced = int(getattr(thinking, "forced_closures", 0) or 0)
         answer = (float(answer_loss.detach()) if torch.is_tensor(answer_loss)
                   else float(answer_loss or 0.0))
-        G = -answer - self.WHAT_STEP_COST * iterations - self.WHAT_FORCED_COST * forced
+        # Dense credit on the model's OWN scratchpad (no oracle): every
+        # variable a row bound during the episode is progress toward an
+        # exact answer, so the return is per row.
+        states = self.__dict__.get("_what_exact_states") or {}
+        def bound(b):
+            state = states.get(b, (None, None))[0]
+            return len(getattr(state, "bindings", {}) or {})
+        rows = sorted({r[0] for r in records})
+        G = {b: (-answer + self.WHAT_BIND_REWARD * bound(b)
+                 - self.WHAT_STEP_COST * iterations
+                 - self.WHAT_FORCED_COST * forced) for b in rows}
+        mean_G = sum(G.values()) / max(1, len(G))
         baseline = self.__dict__.get("_what_policy_baseline")
-        advantage = G - (baseline if baseline is not None else 0.0)
-        self._what_policy_baseline = (G if baseline is None
-                                      else 0.9 * baseline + 0.1 * G)
+        base = baseline if baseline is not None else 0.0
+        self._what_policy_baseline = (mean_G if baseline is None
+                                      else 0.9 * baseline + 0.1 * mean_G)
+        advantages = torch.tensor([G[r[0]] - base for r in records],
+                                  dtype=torch.float32)
         log_probs = torch.stack([r[2] for r in records])
-        loss = -(float(advantage) * log_probs).mean()
+        loss = -(advantages.to(log_probs.device, log_probs.dtype) * log_probs).mean()
+        G = mean_G
         report = self._what_report_state()
         report["policy_thinking_credit_sum"] = (
             report.get("policy_thinking_credit_sum", 0.0) + float(loss.detach()))
@@ -8035,19 +8050,41 @@ class BasicModel(BaseModel):
         bound = set(state.bindings)
         variables = sorted(set().union(*(e.vars for e in state.equations)))
         busy = {r for r in open_refs if r} | {active}
+        # The active question's own premise and what it still needs: the
+        # content features the chooser reads (spec 6.3), so a policy can
+        # generalize across problems instead of memorizing positions.
+        active_needs = set()
+        for eq in state.equations:
+            if eq.solved_var == active:
+                active_needs = {v for v in eq.vars if v != active and v not in bound}
         for v in variables:
             if v not in bound and v not in busy:
                 cands.append({"kind": "open", "op": None, "operand": v,
                               "label": f"open:{v}", "active": False,
-                              "bound": False, "applied": False, "position": 0.0})
+                              "bound": False, "applied": False, "position": 0.0,
+                              "dependency": v in active_needs})
+        justified = {}
+        for step in state.trace:
+            op, res = step["operation"], step["result"]
+            if op == "exact:evaluate" and isinstance(res, int):
+                eq = state._equation(step["operands"][0])
+                if eq is not None and eq.solved_var:
+                    justified.setdefault(eq.solved_var, res)
+            elif op == "exact:constrain" and isinstance(res, Bound):
+                justified.setdefault(res.var, res.value)
         for i, eq in enumerate(state.equations):
             sv = eq.solved_var
             pos = float(i) / float(n)
-            if sv is not None and sv not in bound:
+            # A premise whose value is already justified is offered as its
+            # BIND, not evaluated again (keeps the action menu small).
+            if sv is not None and sv not in bound and sv not in justified:
+                needs = {v for v in eq.vars if v != sv}
                 cands.append({"kind": "execute", "op": "evaluate", "operand": (i,),
                               "label": f"evaluate:{i}", "active": sv == active,
                               "bound": False, "applied": i in state.applied,
-                              "position": pos, "referent": sv})
+                              "position": pos, "referent": sv,
+                              "ready": needs <= bound,
+                              "dependency": sv in active_needs})
             if sv is None:
                 cands.append({"kind": "execute", "op": "constrain", "operand": (i,),
                               "label": f"constrain:{i}", "active": active in eq.vars,
@@ -8063,26 +8100,15 @@ class BasicModel(BaseModel):
                                       "active": active in eq.vars, "bound": False,
                                       "applied": j in state.applied,
                                       "position": pos})
-        justified = {}
-        for step in state.trace:
-            op, res = step["operation"], step["result"]
-            if op == "exact:evaluate" and isinstance(res, int):
-                eq = state._equation(step["operands"][0])
-                if eq is not None and eq.solved_var:
-                    justified.setdefault(eq.solved_var, res)
-            elif op == "exact:constrain" and isinstance(res, Bound):
-                justified.setdefault(res.var, res.value)
         for v, value in justified.items():
             if v not in bound:
                 cands.append({"kind": "execute", "op": "bind", "operand": (v, value),
                               "label": f"bind:{v}={value}", "active": v == active,
                               "bound": False, "applied": False, "position": 0.0,
-                              "referent": v})
-        if active in bound:
-            cands.append({"kind": "execute", "op": "lookup", "operand": (active,),
-                          "label": f"lookup:{active}", "active": True,
-                          "bound": True, "applied": False, "position": 0.0,
-                          "referent": active})
+                              "referent": v, "ready": True,
+                              "dependency": v in active_needs})
+        # ``lookup`` stays a primitive (the verifier replays it) but is not
+        # on the action menu: a bound active referent is answered by ANSWER.
         return cands[: self.WHAT_STEP_MAX_CANDIDATES]
 
     @staticmethod
@@ -9266,13 +9292,26 @@ class BasicModel(BaseModel):
             isinstance(value, str)
             and value.strip().lower() in {"unknown", "unresolved", "failure"}))
 
+    @staticmethod
+    def _batch_row(value, b):
+        """Row ``b`` of a batched tensor (``[1, ...]``); scalars and
+        non-tensors pass through."""
+        if torch.is_tensor(value) and value.dim() > 0 and value.shape[0] > int(b):
+            return value[int(b):int(b) + 1]
+        return value
+
     def _best_effort_what(self, answer, input_data, b=0):
-        """Choose a concrete forced response without consulting a target."""
-        _, _symbols, produced = self._what_execution_parts(answer.execution)
-        candidate = self._what_row(produced, b, 1)
+        """Choose a concrete forced response for ROW ``b`` without consulting
+        a target: the row's constructed response (through ``reverseOutput``
+        when the answer path is on), else its input, else a literal."""
+        construction = getattr(self, "_last_answer_construction", None)
+        produced = getattr(construction, "actual", None)
+        if not torch.is_tensor(produced):
+            _, _symbols, produced = self._what_execution_parts(answer.execution)
+        candidate = self._batch_row(produced, b)
         if self._valid_best_effort(candidate):
             return candidate, candidate
-        candidate = self._what_row(input_data, b, 1)
+        candidate = self._batch_row(input_data, b)
         if self._valid_best_effort(candidate):
             return candidate, candidate
         # A literal response is preferable to an unscoreable status escape.

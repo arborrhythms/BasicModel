@@ -352,10 +352,25 @@ evaluation. Its credit is a policy objective, weighted by
 `<whatThinkingPolicyWeight>`:
 
 ```text
-G      = −L_answer(root) − c_step · iterations − c_forced · forced_closures
-A_t    = G − b            (b: running mean baseline per model)
-L_pol  = −Σ_t A_t · log π(step_t | context_t)
+G_row  = −L_answer(root) + c_bind · |β_row| − c_step · iterations
+         − c_forced · forced_closures
+A_t    = G_row − b        (b: running mean baseline per model)
+L_pol  = −mean_t A_t · log π(step_t | context_t)
 ```
+
+`c_bind · |β_row|` is dense credit for every variable the row's OWN
+scratchpad bound during the episode (no oracle enters: the scratchpad is
+model state). Without it the depth-1 chain (four primitives before any
+answer reward) is not found by sampling; with it the policy discovers
+open → evaluate → bind → answer (pilot report, "Stage 1"). The candidate
+features the chooser reads are content, not position: kind, primitive,
+active-referent, bound, applied, position, closure pressure, READY (an
+`evaluate` whose operands are all bound) and DEPENDENCY (an `open` /
+`bind` whose referent the active question's premise needs); the last two
+are what lets a policy trained on three-premise problems answer
+two-premise ones. `lookup` remains a primitive but is not on the action
+menu; an `evaluate` whose result is already justified is offered as its
+`bind`.
 
 reported under `what_report()["policy"]["thinking"]` separately from the
 grammar chooser's `forwardGrammarWeight` credit and from the continuous
@@ -395,6 +410,14 @@ memory.
   section 10.
 
 ## 10. Acceptance
+
+Status 2026-09-09 (pilot report, "Stage 1"): the trained-depth gates are
+met on the exact route -- unseen structures at the trained depths 100 %,
+the never-trained next depth 100 % (depths 1–2 → 3) with the content
+features -- on the 2048-problem, 64-wide configuration, and the small
+configuration is a default-suite regression
+(`test_stage_one_dependency_chains_learn_through_the_exact_route`).
+Depths 4–6 and stage 2 are not yet evaluated.
 
 Pilot gates (frozen before evaluation; three seeds):
 
