@@ -26,9 +26,13 @@ def test_reconstruct_enum_retired():
     # carries NEITHER the ``reconstruct`` enum string NOR the derived
     # ``perfect_reconstruction`` bool.
     m = _build("MM_20M_legacy.xml")
-    assert not hasattr(m, "reconstruct"), (
+    # ``Model.reverseReconstruct(understanding)`` is the What-spec inverse path
+    # (Step 2, 2026-09-09); the retired ENUM was a string-valued instance
+    # attribute, so the pin is: no enum value, only the bound method.
+    assert callable(getattr(m, "reverseReconstruct", None)) and \
+        not isinstance(vars(m).get("reconstruct"), str), (
         "the <reconstruct> enum was retired (A1); the model must not carry a "
-        "self.reconstruct attribute")
+        "self.reconstruct enum attribute")
     assert not hasattr(m, "perfect_reconstruction"), (
         "the derived perfect_reconstruction bool was retired with the enum")
 

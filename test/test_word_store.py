@@ -438,6 +438,11 @@ def test_words_summary_row_running_mean(tmp_path_factory):
     running mean of member word-whole rows, fold record stamped full."""
     m = _build(tmp_path_factory, word_store=True)
     _train_forward(m)
+    # The word auto-bind commits at the sentence boundary (hard Reset), not
+    # inside forward(); drive it here so this test is self-sufficient under
+    # xdist (the module's cached model may not have been primed by an
+    # earlier test on this worker).
+    m.dispatch_per_row_reset([True] * 4)
     ws = m.wholeSpace
     cs = m.conceptualSpace
     ww = getattr(ws, "_word_whole_ss", {}) or {}
@@ -478,7 +483,13 @@ def test_words_summary_row_running_mean(tmp_path_factory):
 
 def test_ws_word_whole_registry_resolves_to_rows(tmp_path_factory):
     m = _build(tmp_path_factory, word_store=True)
+    # The word auto-bind is committed at the SENTENCE BOUNDARY
+    # (``ConceptualSpace.Reset(hard=True)`` -> ``_commit_autobind_from_stash``),
+    # not inside ``forward()``; drive the real path the way the outer
+    # doc-streaming loop does so this test does not depend on an earlier
+    # test in the module having bound word-wholes on the cached model.
     _train_forward(m)
+    m.dispatch_per_row_reset([True] * 4)
     ws = m.wholeSpace
     reg = getattr(ws, "_word_whole_ss", None)
     p2r = getattr(ws, "_ws_pos_to_row", None)

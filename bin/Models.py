@@ -20,6 +20,7 @@ warnings.filterwarnings(
     category=UserWarning,
 )
 import torch
+import collections
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.multiprocessing as _torch_mp
@@ -78,6 +79,9 @@ from checkpoint_migrations import (
     stamp_checkpoint_schema,
 )
 from data import Data, TheData
+from Understanding import Understanding
+from Output import AnswerConstruction, AnswerDerivation
+from contextlib import contextmanager as _contextmanager
 from What import (LTMSlot, What, WhatAnswer, WhatQuestion, WhatRelation,
                   WhatSlotOperation, WhatThinkingResult, question_batch)
 
@@ -1985,6 +1989,39 @@ class BaseModel(Mereology, nn.Module):
         # untouched, the rule-driven reverse is unchanged (byte-identical).
         self.idea_decode = bool(TheXMLConfig.get(
             "architecture.ideaDecode", default=False))
+        # <answerSynthesis> (What spec Steps 3-4): answer construction runs
+        # resolve -> conceptual synthesis -> perceptual synthesis ->
+        # OutputSpace.from_percepts instead of the direct symbol projection.
+        # Exposed as a model.xml parameter (live-wiring directive): default
+        # false keeps every established path byte-identical until the
+        # temporal/supervised curriculum trains the synthesis adapter.
+        self.answer_synthesis = bool(TheXMLConfig.get(
+            "architecture.answerSynthesis", default=False))
+        # <synthesisBindings>: how many perceptual context slots a derivation
+        # may NAME as bindings for output synthesis (spec 5.3: context reaches
+        # the answer only through named, replayable bindings). 0 = none.
+        try:
+            self.synthesis_bindings = int(TheXMLConfig.get(
+                "architecture.synthesisBindings", default=0) or 0)
+        except (TypeError, ValueError):
+            self.synthesis_bindings = 0
+        # <whatCurriculum> (Step 9): none | present | temporal | full.
+        #   present  -> clean present reconstruction + supervised answers;
+        #   temporal -> also one-step past/future completion trials;
+        #   full     -> also inference trials; temporal distance grows with
+        #               <whatCurriculumDistance> (default 1).
+        self.what_curriculum = str(TheXMLConfig.get(
+            "architecture.whatCurriculum", default="none") or "none").lower()
+        try:
+            self.what_curriculum_distance = max(1, int(TheXMLConfig.get(
+                "architecture.whatCurriculumDistance", default=1) or 1))
+        except (TypeError, ValueError):
+            self.what_curriculum_distance = 1
+        try:
+            self.what_curriculum_ratio = float(TheXMLConfig.get(
+                "architecture.whatCurriculumRatio", default=0.25) or 0.0)
+        except (TypeError, ValueError):
+            self.what_curriculum_ratio = 0.25
 
         # Reconstruction from an idea with the forward derivation erased.
         # When on, reverse() clears the grammar/routing traces built during
@@ -1993,6 +2030,15 @@ class BaseModel(Mereology, nn.Module):
         # <ideaDecode>, which deliberately skips the chart/router rebuild.
         self.reconstruct_from_idea = bool(TheXMLConfig.get(
             "architecture.reconstructFromIdea", default=False))
+        # <branchDiagnosticsEvery> (What spec Step 6): every N training
+        # batches, sample gradient norms / cosine of the two primary costs at
+        # the conceptual and symbolic branch points before backward.  A read,
+        # never an update.  0 (default) disables the sampling.
+        try:
+            self.branch_diagnostics_every = int(
+                TheXMLConfig.training("branchDiagnosticsEvery", 0) or 0)
+        except (KeyError, TypeError, ValueError):
+            self.branch_diagnostics_every = 0
 
         # Concept index-read (snap design doc §ontology, Alec 2026-07-15):
         # when on, the serial per-word idea READS THROUGH THE INDEX to the
@@ -4612,6 +4658,14 @@ class BaseModel(Mereology, nn.Module):
                 vocab_extras or {},
                 legacy_whole_structure=legacy_whole_structure)
 
+        # Answer-path modules (What spec Steps 3-4, 7) are built lazily; a
+        # checkpoint that carries them must find them on the fresh model
+        # before the audit below classifies their keys as unexpected.
+        # (``BaseModel`` stubs without the answer path skip this.)
+        _materialize = getattr(self, "_materialize_answer_path", None)
+        if _materialize is not None:
+            _materialize()
+            self._materialize_answer_path_from_checkpoint(state)
         # Pre-check for shape mismatches before attempting to load.
         # This produces an actionable diagnostic instead of a raw PyTorch error.
         model_state = dict(self.state_dict())
@@ -6310,7 +6364,7 @@ class BasicModel(BaseModel):
         out = self._infer_ir(seed_text)
         # Commit the produced sentence to the ARMA ring.
         if discourse is not None and self._current_discourse_s is not None:
-            discourse.observe(self._current_discourse_s)
+            self._observe_discourse(discourse, self._current_discourse_s)
         return out
 
     def _warn_zeroed_channel(self, site, detail):
@@ -7493,6 +7547,911 @@ class BasicModel(BaseModel):
             flat.abs().amax(),
         ))
 
+    def _capture_understanding(self, execution):
+        """Snapshot the logical products of the forward that just ran.
+
+        What spec Step 1: the live perceptual context (the activated parts
+        and wholes), the terminal conceptual state (the same live carrier
+        ``_reconstruction_seed`` reads), the symbolic state, and the
+        routing/mask handles the inverse needs.  The pre-mask input and any
+        dataset answer are deliberately absent: they are scoring targets
+        the caller keeps, never carriers.  The established forward tuple is
+        attached as the compatibility adapter.
+        """
+        _forward_input, symbols, _produced = self._what_execution_parts(
+            execution)
+        percept_sub = getattr(getattr(self, "perceptualSpace", None),
+                              "subspace", None)
+        try:
+            perceptual = (percept_sub.materialize()
+                          if percept_sub is not None
+                          and hasattr(percept_sub, "materialize") else None)
+        except (RuntimeError, AttributeError, TypeError):
+            perceptual = None
+        try:
+            conceptual = self._reconstruction_seed()
+        except (AttributeError, RuntimeError, TypeError):
+            conceptual = None
+        # Forward-local binding carriers the inverse consumes: the grammar
+        # merge glue caches the N-halving difference of each stage and
+        # ``GrammarMergeGlue.reverse`` clears it after use, so a second
+        # reconstruction of the same understanding would otherwise walk
+        # without it.  Held here and reinstalled by ``reconstruct()``.
+        merge_diffs = tuple(
+            getattr(stage["merge"], "_merge_diff", None)
+            if "merge" in stage else None
+            for stage in (getattr(self, "body_stages", None) or ()))
+        carriers = {
+            "ir_mask_positions": getattr(self, "_ir_mask_positions", None),
+            "terminal_idea": conceptual,
+            "combine_last_cs_sub": getattr(self, "_combine_last_cs_sub", None),
+            "merge_diffs": merge_diffs,
+        }
+        return Understanding(
+            perceptual_context=perceptual,
+            conceptual_state=conceptual,
+            symbolic_state=symbols,
+            reconstruction_carriers=carriers,
+            execution=(tuple(execution)
+                       if isinstance(execution, (tuple, list)) else execution),
+        )
+
+    def understand(self, input_data, *, executor=None):
+        """One bottom-up analysis pass returning its ``Understanding``."""
+        execution = (executor or self.forward)(input_data)
+        understanding = self._capture_understanding(execution)
+        self._last_understanding = understanding
+        return understanding
+
+    def reverseReconstruct(self, understanding, *, target=None, train=False):
+        """Reconstruct the presented input from ``understanding`` (Step 2).
+
+        Named ``reverseReconstruct`` because it is the dual of ``forward()``
+        along the input-associated inverse path (``reverseOutput`` is the
+        other dual, along the answer path).  The top-down inverse of the
+        analysis: terminal conceptual state ->
+        inverse conceptual/symbolic path -> inverse perceptual path ->
+        ``InputSpace``.  ``Space.reverse()`` keeps its algebraic meaning;
+        this orchestrates it and owns the result.  Returns
+        ``(reconstructed_event, input_reconstruction)``; the cost is ``None``
+        unless ``target`` (the forward input carrier or event) is supplied,
+        and the target is used only for scoring, never as a carrier.
+        Migration note: the reverse chain still commits the seed onto the
+        live ``ConceptualSpace.subspace`` before walking it; a carrier-pure
+        reverse is the remaining Step 1 work.
+        """
+        if not isinstance(understanding, Understanding):
+            raise TypeError("reconstruct expects an Understanding")
+        train = bool(train)
+        # Install this understanding's forward-local carriers so the walk is
+        # a function of the understanding, not of whichever path ran last.
+        merge_diffs = understanding.reconstruction_carriers.get("merge_diffs")
+        stages = getattr(self, "body_stages", None) or ()
+        if merge_diffs is not None and len(merge_diffs) == len(stages):
+            for stage, diff in zip(stages, merge_diffs):
+                if "merge" in stage:
+                    stage["merge"]._merge_diff = diff
+        rev_sub = None
+        rev_ev = None
+        # 2026-07-05 serial plan Task 2 (Method-1 routing): at
+        # EVAL the SERIAL decode consumes the STORED-derivation
+        # LEAVES replay (_reverse_method1_leaves stages the radix
+        # render thunk on the per-word percept leaves), so
+        # reconstruct_data reads the exact derivation surface, not
+        # the single-slot tensor arm. Method-1 is the exact
+        # TEACHER -- by construction, no training needed. The
+        # tensor arm stays the explicit debug fallback
+        # (serial_tensor_reverse_debug -- the --scaffold analogue);
+        # TRAIN paths (the D3 reverse-from-S student) are untouched.
+        if (not train and bool(getattr(self, 'serial', False))
+                and not getattr(
+                    self, 'serial_tensor_reverse_debug', False)):
+            rev_ev = self._reverse_method1_leaves()
+        if rev_ev is None:
+            terminal_idea = understanding.conceptual_state
+            # Method-2 reverse-reduce (serial plan Task 4): on the
+            # FREE-derivation decode (reconstruct_from_idea, eval),
+            # un-fold the collapsed root back into per-word ideas by
+            # walking the recorded fold steps backward -- each step
+            # the chosen op's basis-threaded reverse, the
+            # codebook-walk recommender (a LOOKUP that reconstitutes
+            # the operand pair, not a subtraction). Falls through to
+            # the single-slot seed when no trace/basis exists.
+            if (terminal_idea is not None and not train
+                    and bool(getattr(
+                        self, 'reconstruct_from_idea', False))):
+                # Invalidate any prior batch's render-priority
+                # slab; the un-fold re-stashes it ONLY on the
+                # word-rows path (review finding: an ungated
+                # stash swapped the NON-wordstore ceiling's
+                # render source).
+                _psp = getattr(self, 'perceptualSpace', None)
+                if _psp is not None:
+                    object.__setattr__(
+                        _psp, '_unfold_recovered_slab', None)
+                unfolded = self._reverse_reduce_unfold(
+                    terminal_idea[:, 0, :])
+                if unfolded is not None:
+                    terminal_idea = unfolded   # [B, N_words, D_c]
+            if terminal_idea is not None:
+                cs = self.conceptualSpace
+                cs.commit_event(terminal_idea)
+                rev_sub = self.reverse(
+                    cs.subspace)
+            rev_ev = (rev_sub.materialize()
+                      if rev_sub is not None
+                      and hasattr(rev_sub, 'materialize')
+                      else None)
+        cost = None
+        if target is not None:
+            fwd_ev = (target.materialize()
+                      if hasattr(target, 'materialize') else target)
+            if (rev_ev is not None and fwd_ev is not None
+                    and torch.is_tensor(rev_ev) and torch.is_tensor(fwd_ev)
+                    and rev_ev.dim() == fwd_ev.dim() and rev_ev.dim() == 3):
+                # Band-aware seam: the input event's where/when widths, not ModelLoss's (0,0) OutputSpace band.
+                cost = self._reverse_event_loss(rev_ev, fwd_ev)
+                # Spec section 11: an EXACT, unmasked inverse identity has zero
+                # error and therefore no learning signal.  Flag it rather than
+                # let a perfect round trip pass as reconstruction learning.
+                masked = understanding.reconstruction_carriers.get(
+                    "ir_mask_positions") is not None
+                identity = bool(float(cost.detach()) == 0.0) and not masked
+                self._reconstruction_identity_flag = identity
+                if identity:
+                    self._warn_zeroed_channel(
+                        "reconstruction_identity",
+                        "input reconstruction is an exact unmasked identity: "
+                        "zero cost carries no learning signal (mask or "
+                        "degrade the input to create one)")
+        return rev_ev, cost
+
+    def _resolve_answer(self, understanding, question):
+        """Rational symbolic evaluation of ``question`` over the understanding.
+
+        Grammatical resolution by relation (What spec section 5.3):
+
+        * ``present`` / ``supervised`` / ``inference``: the symbolic state
+          itself (identity); the output adapter realizes the response.
+        * ``past -k``: RECALL -- the sentence rep observed ``k`` sentences
+          ago from the discourse ARMA ring (``_s_history``, newest at -1).
+        * ``future +k``: PREDICTION -- the discourse predictor's next
+          sentence rep, rolled forward ``k`` steps through the ring.
+
+        A recalled/predicted rep replaces the ROOT slot (row 0, the slot the
+        start-symbol reduction wrote) of the symbolic state, so the answer
+        symbol keeps the established ``[B, N, D]`` layout.  When the memory
+        is cold the derivation falls back to identity with
+        ``resolved=False`` so ``think()`` can keep the question open; the
+        derivation records which source answered.
+        """
+        questions = question_batch(question)
+        first = questions[0] if questions else None
+        symbolic = understanding.symbolic_state
+        if not torch.is_tensor(symbolic):
+            raise RuntimeError("cannot resolve an answer without a symbolic state")
+        B = int(symbolic.shape[0])
+        # Per-row questions: one question broadcasts; otherwise row b answers
+        # its own question (mixed relations / offsets / cold lanes are
+        # resolved independently).
+        per_row = [questions[b] if b < len(questions) else questions[-1]
+                   for b in range(B)] if questions else []
+        temporal = tuple(q.context_values() for q in questions)
+        answer = symbolic.clone()
+        row_sources = []
+        resolved_all = True
+        reasoning = None
+        prompt = getattr(first, "prompt", None) if first is not None else None
+        if (isinstance(prompt, str) and prompt.strip()
+                and int(getattr(self, "reasoning_iterations", 0) or 0) > 0
+                and first.relation in (WhatRelation.INFERENCE,
+                                       WhatRelation.SUPERVISED)):
+            # Prompted questions consult the truth-grounded reasoner; its
+            # posture/confidence become part of the replayable derivation.
+            try:
+                reasoning = self.answer_query(prompt)
+            except Exception:
+                reasoning = None
+        for b, q in enumerate(per_row):
+            source = "reasoning" if reasoning is not None else "identity"
+            if q.relation in (WhatRelation.PAST, WhatRelation.FUTURE):
+                rep = self._temporal_answer_rep_row(
+                    q.relation, q.offset, b, symbolic.shape[-1])
+                if rep is None:
+                    source = "identity:cold-memory"
+                    resolved_all = False
+                else:
+                    answer[b:b + 1] = self._install_root_slot(
+                        symbolic[b:b + 1], rep)
+                    source = ("recall" if q.relation is WhatRelation.PAST
+                              else "prediction")
+            row_sources.append(source)
+        distinct = set(row_sources)
+        source = (row_sources[0] if len(distinct) == 1
+                  else ("mixed" if row_sources else "identity"))
+        relation = first.relation if first is not None else WhatRelation.PRESENT
+        offset = int(first.offset) if first is not None else 0
+        answer = self._condition_answer_on_question(answer, questions)
+        references = self._select_perceptual_bindings(understanding)
+        trace = ({"operation": f"resolve:{source}",
+                  "relation": relation.value,
+                  "offset": offset,
+                  "row_sources": tuple(row_sources),
+                  "temporal": temporal,
+                  "conditioned": True,
+                  "bindings": references},)
+        if reasoning is not None:
+            trace = trace + ({"operation": "reason",
+                              "posture": reasoning.get("posture"),
+                              "confidence": reasoning.get("confidence"),
+                              "support_true": reasoning.get("support_true"),
+                              "support_false": reasoning.get("support_false")},)
+        return AnswerDerivation(
+            answer_symbol=answer, grammar_trace=trace,
+            bindings={"perceptual_slots": references},
+            synthesis_references=references, sentence_location=0, prefix=None,
+            resolved=resolved_all, source=source,
+            row_sources=tuple(row_sources))
+
+    def _select_perceptual_bindings(self, understanding):
+        """NAME the perceptual context slots output synthesis may bind.
+
+        Spec 5.3: the live perceptual field primes the answer only through
+        selected, replayable bindings, never as an unrestricted residual.
+        The selection is the ``<synthesisBindings>`` most active slots of
+        the understanding's perceptual context (activation = event norm),
+        recorded in the derivation and its trace.  0 (default) binds nothing.
+        """
+        k = int(getattr(self, "synthesis_bindings", 0) or 0)
+        field = understanding.perceptual_context
+        if k <= 0 or not torch.is_tensor(field) or field.dim() != 3:
+            return ()
+        salience = field.detach().float().norm(dim=-1).mean(dim=0)   # [N]
+        k = min(k, int(salience.shape[0]))
+        chosen = torch.topk(salience, k).indices.tolist()
+        return tuple(sorted(int(i) for i in chosen))
+
+    def _question_conditioner(self, width, *, device, dtype):
+        """The learned question -> answer-symbol operator (What spec Step 7).
+
+        Maps the target-free question context (relation bits, offset, the
+        absolute ``.where`` ladder, LTM scalars -- the same vector the grammar
+        chooser sees) onto the answer symbol's root slot.  Zero-initialised,
+        so the answer path starts independent of the question; built on
+        first use (state-dict keys unchanged for configurations that never
+        synthesize) and handed to the live optimizer by ``runBatch``.  It is
+        the differentiable consumer of the question: ``answer_construction``
+        trains it, which is what makes temporal question content CAUSALLY
+        used rather than merely present in context.
+        """
+        module = getattr(self, "question_conditioner", None)
+        ctx_dim = int(getattr(getattr(getattr(self, "symbolSpace", None),
+                                      "languageLayer", None),
+                              "WHAT_CONTEXT_DIM", 0) or 0)
+        if module is None or module.out_features != int(width):
+            from Language import MLPTransformChooser
+            in_dim = ctx_dim or MLPTransformChooser.WHAT_CONTEXT_DIM
+            module = nn.Linear(in_dim, int(width), bias=False)
+            nn.init.zeros_(module.weight)
+            module = module.to(device=device, dtype=dtype)
+            self.question_conditioner = module
+        return module
+
+    def _condition_answer_on_question(self, answer, questions):
+        """Add the question conditioner's output to the root slot."""
+        if not torch.is_tensor(answer) or answer.dim() != 3:
+            return answer
+        context, _detail = self._what_grammar_context(
+            questions, device=answer.device, dtype=answer.dtype)
+        module = self._question_conditioner(
+            answer.shape[-1], device=answer.device, dtype=answer.dtype)
+        if context.shape[-1] != module.in_features:
+            return answer
+        delta = module(context)                             # [B, D]
+        if delta.shape[0] == 1 and answer.shape[0] > 1:
+            delta = delta.expand(answer.shape[0], -1)
+        if delta.shape[0] != answer.shape[0]:
+            return answer
+        out = answer.clone()
+        out[:, 0, :] = out[:, 0, :] + delta
+        return out
+
+    def _recall_history(self):
+        """Per-row chronological sentence reps for ``past`` recall.
+
+        The discourse ARMA ring changes layout between its fill phase and
+        its rolling phase, so ``what()`` keeps its own plain history: every
+        sentence rep the discourse layer observes is appended here (newest
+        last), per row, cleared with the row's hard reset.  ``past -k`` is
+        ``history[b][-k]`` -- exactly "what row b observed k sentences ago".
+        """
+        return self.__dict__.setdefault("_what_recall_history", {})
+
+    def _observe_discourse(self, disc, sentence, mask=None):
+        """Route every discourse observation through one seam so the recall
+        history stays in step with the ARMA ring."""
+        result = disc.observe(sentence, mask=mask) if mask is not None else disc.observe(sentence)
+        pooled = disc._pool_sentence_rep(sentence) if hasattr(disc, "_pool_sentence_rep") else None
+        if torch.is_tensor(pooled):
+            if pooled.dim() == 1:
+                pooled = pooled.unsqueeze(0)
+            history = self._recall_history()
+            keep = max(8, int(getattr(disc, "p", 0) or 0), 64)
+            for b in range(int(pooled.shape[0])):
+                if mask is not None:
+                    try:
+                        if not bool(mask[b]):
+                            continue
+                    except (IndexError, TypeError):
+                        pass
+                row = history.setdefault(b, collections.deque(maxlen=keep))
+                row.append(pooled[b].detach().clone())
+        return result
+
+    def _temporal_answer_rep_row(self, relation, offset, b, width):
+        """Row ``b``'s recalled (past) or predicted (future) sentence rep,
+        or ``None`` when that row's memory is cold."""
+        k = abs(int(offset))
+        if relation is WhatRelation.PAST:
+            row = self._recall_history().get(int(b))
+            if row is None or k < 1 or len(row) < k:
+                return None
+            return row[-k]
+        memory = self._what_memory()
+        history = getattr(memory, "_s_history", None)
+        counts = getattr(memory, "_s_count", None)
+        predict = getattr(memory, "predict_next", None)
+        if (memory is None or predict is None
+                or getattr(memory, "predictor", None) is None
+                or not torch.is_tensor(history) or history.dim() != 3
+                or int(b) >= int(history.shape[0])):
+            return None
+        if torch.is_tensor(counts) and int(counts[int(b)]) <= 0:
+            return None
+        saved = history[int(b)].clone()
+        try:
+            rep = None
+            for _ in range(max(1, k)):
+                rep = predict(b=int(b))
+                if rep is None:
+                    return None
+                rolled = torch.roll(history[int(b)], shifts=-1, dims=0).clone()
+                rolled[-1, :] = rep.detach()
+                history[int(b)].copy_(rolled)
+            return rep
+        finally:
+            history[int(b)].copy_(saved)
+
+    def _temporal_answer_rep(self, relation, offset, symbolic):
+        """The recalled (past) or predicted (future) ``[B, sentence_dim]``
+        sentence rep from the discourse layer, or ``None`` when cold."""
+        memory = self._what_memory()
+        history = getattr(memory, "_s_history", None)
+        counts = getattr(memory, "_s_count", None)
+        if memory is None or not torch.is_tensor(history) or history.dim() != 3:
+            return None
+        B = int(symbolic.shape[0])
+        if history.shape[0] != B:
+            return None
+        k = abs(int(offset))
+        if relation is WhatRelation.PAST:
+            if k < 1 or k > history.shape[1]:
+                return None
+            if torch.is_tensor(counts) and bool((counts < k).any()):
+                return None                      # some row has no such memory
+            return history[:, -k, :]
+        # FUTURE: predict, then roll the ring forward without committing.
+        predict = getattr(memory, "predict_next", None)
+        if predict is None or getattr(memory, "predictor", None) is None:
+            return None
+        if torch.is_tensor(counts) and bool((counts <= 0).any()):
+            return None
+        saved = history.clone()
+        try:
+            rep = None
+            for _ in range(max(1, k)):
+                rep = predict(b=None)
+                if rep is None:
+                    return None
+                if rep.dim() == 1:
+                    rep = rep.unsqueeze(0)
+                rolled = torch.roll(history, shifts=-1, dims=1).clone()
+                rolled[:, -1, :] = rep.detach()
+                history.copy_(rolled)
+            return rep
+        finally:
+            history.copy_(saved)
+
+    @staticmethod
+    def _install_root_slot(symbolic, rep):
+        """Return ``symbolic`` with the root slot (row 0) replaced by ``rep``
+        (right-padded / truncated to the slot width)."""
+        B, N, D = symbolic.shape
+        rep = rep.to(device=symbolic.device, dtype=symbolic.dtype)
+        if rep.dim() == 1:
+            rep = rep.unsqueeze(0).expand(B, -1)
+        if rep.shape[-1] < D:
+            rep = torch.nn.functional.pad(rep, (0, D - rep.shape[-1]))
+        elif rep.shape[-1] > D:
+            rep = rep[..., :D]
+        out = symbolic.clone()
+        out[:, 0, :] = rep
+        return out
+
+    def _synthesis_state_objects(self):
+        """Objects whose per-batch state the inverse operators write."""
+        objs = []
+        seen = set()
+        def add(o):
+            if o is not None and id(o) not in seen:
+                seen.add(id(o)); objs.append(o)
+        spaces = list(getattr(self, "spaces", []) or [])
+        for name in ("inputSpace", "perceptualSpace", "conceptualSpace",
+                     "wholeSpace", "outputSpace"):
+            add(getattr(self, name, None))
+        for group in ("conceptualSpaces", "wholeSpaces"):
+            for sp in (getattr(self, group, None) or []):
+                add(sp)
+        for stage in (getattr(self, "body_stages", None) or ()):
+            for key in ("cs", "ws"):
+                add(stage[key])
+            if "merge" in stage:
+                add(stage["merge"])
+        for sp in spaces:
+            add(sp)
+        symbol_space = getattr(self, "symbolSpace", None)
+        add(getattr(symbol_space, "subspace", None))
+        for sp in list(objs):
+            sub = getattr(sp, "subspace", None)
+            if sub is not None:
+                add(sub)
+                for role in ("event", "activation", "what", "where", "when"):
+                    add(getattr(sub, role, None))
+            add(getattr(sp, "syntacticLayer", None))
+        return objs
+
+    @staticmethod
+    def _snapshot_vars(obj):
+        saved = {}
+        for k, v in vars(obj).items():
+            if torch.is_tensor(v) and not isinstance(v, nn.Parameter):
+                saved[k] = v.clone()
+            else:
+                saved[k] = v
+        return saved
+
+    @_contextmanager
+    def _synthesis_guard(self):
+        """Run answer synthesis without disturbing reconstruction state.
+
+        The Space-level inverse operators write their results into the live
+        ``Space.subspace`` (and consume forward-local carriers).  Inside this
+        guard every such object is snapshotted, the reconstruction-only
+        carriers are hidden (so synthesis cannot read them, spec 5.4), and
+        the live state is restored afterwards -- reconstruction and output
+        can therefore run in either order with identical results.
+        """
+        objs = self._synthesis_state_objects()
+        saved = [(o, self._snapshot_vars(o)) for o in objs]
+        saved_combine = getattr(self, "_combine_carriers", None)
+        try:
+            object.__setattr__(self, "_combine_carriers", None)
+            for o in objs:
+                if isinstance(o, GrammarMergeGlue):
+                    o._merge_diff = None
+                for attr in ("_bind_carrier", "_aligned_carrier",
+                             "_percept_field", "_fold_support"):
+                    if attr in vars(o):
+                        object.__setattr__(o, attr, None)
+            yield
+        finally:
+            for o, state in saved:
+                vars(o).clear()
+                vars(o).update(state)
+            object.__setattr__(self, "_combine_carriers", saved_combine)
+
+    def _materialize_answer_path(self):
+        """Build the answer-path modules whose widths are known at
+        construction (both Space synthesis operators and the question
+        conditioner) so a checkpoint written by a synthesizing model reloads
+        into a fresh model without unexpected keys.  The percept adapter's
+        slot count is only known once an answer has been realized, so it is
+        restored from checkpoint metadata instead
+        (``_materialize_answer_path_from_checkpoint``)."""
+        if not getattr(self, "answer_synthesis", False):
+            return
+        try:
+            device = next(self.parameters()).device
+            dtype = next(self.parameters()).dtype
+        except StopIteration:
+            device, dtype = TheDevice.get(), torch.float32
+        for space in (getattr(self, "conceptualSpace", None),
+                      getattr(self, "perceptualSpace", None)):
+            width = int(getattr(getattr(space, "subspace", None), "muxedSize", 0) or 0)
+            if space is not None and width > 0 and getattr(space, "synthesis_layer", None) is None:
+                space.synthesis_operator(width, device=device, dtype=dtype)
+        ws = getattr(self, "wholeSpace", None)
+        width = int(getattr(getattr(ws, "subspace", None), "muxedSize", 0) or 0)
+        if width > 0 and getattr(self, "question_conditioner", None) is None:
+            self._question_conditioner(width, device=device, dtype=dtype)
+        self._collect_fresh_synthesis_modules()
+
+    def _materialize_answer_path_from_checkpoint(self, state):
+        """Instantiate answer-path modules named in a checkpoint (shapes from
+        the saved tensors) before the key audit, so their learned weights
+        load instead of being reported unexpected or silently dropped."""
+        from Layers import InvertibleLinearLayer
+        try:
+            device = next(self.parameters()).device
+            dtype = next(self.parameters()).dtype
+        except StopIteration:
+            device, dtype = TheDevice.get(), torch.float32
+        built = 0
+        for space_name in ("conceptualSpace", "perceptualSpace", "outputSpace"):
+            space = getattr(self, space_name, None)
+            if space is None:
+                continue
+            for module_name in ("synthesis_layer", "percept_adapter"):
+                if getattr(space, module_name, None) is not None:
+                    continue
+                key_L = f"{space_name}.{module_name}.raw_L"
+                key_U = f"{space_name}.{module_name}.raw_U"
+                if key_L in state and key_U in state:
+                    n_in = int(state[key_L].shape[0])
+                    n_out = int(state[key_U].shape[0])
+                    setattr(space, module_name, InvertibleLinearLayer(
+                        n_in, n_out, hasBias=True).to(device=device, dtype=dtype))
+                    built += 1
+        key = "question_conditioner.weight"
+        if key in state and getattr(self, "question_conditioner", None) is None:
+            out_dim, in_dim = (int(v) for v in state[key].shape)
+            module = nn.Linear(in_dim, out_dim, bias=False)
+            nn.init.zeros_(module.weight)
+            self.question_conditioner = module.to(device=device, dtype=dtype)
+            built += 1
+        if built:
+            self._collect_fresh_synthesis_modules()
+        return built
+
+    def _collect_fresh_synthesis_modules(self):
+        """Queue lazily built answer-path modules for the live optimizer.
+
+        The dedicated synthesis operators and the percept adapter are built
+        on first use, after ``getOptimizer`` ran; ``runBatch`` hands their
+        parameters to the optimizer through ``add_param_group`` exactly once
+        (the leaf-distill head idiom), otherwise they would never be stepped.
+        """
+        registered = self.__dict__.setdefault("_registered_synthesis_modules", set())
+        fresh = self.__dict__.setdefault("_fresh_synthesis_params", [])
+        conditioner = getattr(self, "question_conditioner", None)
+        if conditioner is not None and id(conditioner) not in registered:
+            registered.add(id(conditioner))
+            fresh.extend(p for p in conditioner.parameters() if p.requires_grad)
+        for space in (getattr(self, "conceptualSpace", None),
+                      getattr(self, "perceptualSpace", None),
+                      getattr(self, "outputSpace", None)):
+            if space is None:
+                continue
+            for name in ("synthesis_layer", "percept_adapter"):
+                module = getattr(space, name, None)
+                if module is None or id(module) in registered:
+                    continue
+                registered.add(id(module))
+                fresh.extend(p for p in module.parameters() if p.requires_grad)
+
+    def synthesis_parameters(self):
+        """Parameters that belong to the answer path only (never shared with
+        reconstruction): the Spaces' synthesis operators and the percept
+        adapter."""
+        params = []
+        conditioner = getattr(self, "question_conditioner", None)
+        if conditioner is not None:
+            params.extend(conditioner.parameters())
+        for space in (getattr(self, "conceptualSpace", None),
+                      getattr(self, "perceptualSpace", None),
+                      getattr(self, "outputSpace", None)):
+            for name in ("synthesis_layer", "percept_adapter"):
+                module = getattr(space, name, None) if space is not None else None
+                if module is not None:
+                    params.extend(module.parameters())
+        return params
+
+    def reverseOutput(self, understanding, question):
+        """Construct the answer to ``question`` from ``understanding``
+        (What spec section 5.3).  Named ``reverseOutput``: the dual of
+        ``forward()`` along the answer path, sharing the inverse-direction
+        operators with ``reverseReconstruct`` but seeded by a resolved answer
+        symbol and ending in ``OutputSpace``.  Resolve the answer symbol, synthesize it
+        through conceptual and perceptual space, and adapt it to the output
+        modality.  Never reads a reconstruction carrier and never overwrites
+        state reconstruction needs."""
+        if not isinstance(understanding, Understanding):
+            raise TypeError("output expects an Understanding")
+        derivation = self._resolve_answer(understanding, question)
+        cs = self.conceptualSpace
+        ps = self.perceptualSpace
+        questions = question_batch(question)
+        temporal = bool(questions) and questions[0].relation in (
+            WhatRelation.PAST, WhatRelation.FUTURE)
+        surface = None
+        with self._synthesis_guard():
+            concepts = cs.synthesize(
+                derivation.answer_symbol, derivation.bindings,
+                context=understanding.conceptual_state,
+                selections=derivation.synthesis_references)
+            percepts = ps.synthesize(
+                concepts, context=understanding.perceptual_context,
+                selections=derivation.synthesis_references,
+                reverse_chain=self._reverse_body)
+            actual = self.outputSpace.from_percepts(percepts)
+            if temporal:
+                # A past/future answer is a datum: realize the answer
+                # percepts down to the input event so it can be scored
+                # against the embedded target sentence (Step 5).
+                try:
+                    carrier = ps.subspace.carrier_like()
+                    carrier.set_event(percepts)
+                    realized = self.inputSpace.reverse(
+                        self._reverse_perceptual(carrier))
+                    surface = (realized.materialize()
+                               if hasattr(realized, "materialize")
+                               else realized)
+                except (RuntimeError, AssertionError, ValueError,
+                        TypeError, AttributeError) as exc:
+                    self._warn_zeroed_channel(
+                        "answer_surface",
+                        f"temporal answer surface unavailable: {exc}")
+                    surface = None
+        trace = derivation.grammar_trace + (
+            {"operation": "synthesize:conceptual",
+             "shape": tuple(concepts.shape) if torch.is_tensor(concepts) else None},
+            {"operation": "synthesize:perceptual",
+             "shape": tuple(percepts.shape) if torch.is_tensor(percepts) else None,
+             "selections": derivation.synthesis_references},
+            {"operation": "output:from_percepts",
+             "shape": tuple(actual.shape) if torch.is_tensor(actual) else None},
+        )
+        self._collect_fresh_synthesis_modules()
+        if surface is not None:
+            trace = trace + ({"operation": "output:surface",
+                              "shape": tuple(surface.shape)
+                              if torch.is_tensor(surface) else None},)
+        construction = AnswerConstruction(
+            actual=actual, derivation=derivation, concepts=concepts,
+            percepts=percepts, surface=surface, trace=trace)
+        self._last_answer_construction = construction
+        return construction
+
+    def branch_gradient_diagnostics(self, costs=None, understanding=None):
+        """Gradient norms and cosine of the primary costs at the branch points.
+
+        For ``input_reconstruction`` and ``answer_construction`` (from
+        ``primary_costs()`` unless ``costs`` is given), differentiate each
+        with respect to the understanding's conceptual and symbolic states.
+        Uses ``torch.autograd.grad`` with ``retain_graph`` so the caller's
+        backward is untouched and no parameter is updated.  Returns a dict
+        ``{branch: {"reconstruction_norm", "answer_norm", "cosine"}}``;
+        branches or costs without a live graph are reported as ``None``.
+        """
+        costs = dict(costs if costs is not None else self.primary_costs())
+        understanding = understanding or getattr(self, "_last_understanding", None)
+        report = {}
+        if understanding is None:
+            return report
+        branches = {"conceptual": understanding.conceptual_state,
+                    "symbolic": understanding.symbolic_state}
+        for name, state in branches.items():
+            entry = {"reconstruction_norm": None, "answer_norm": None,
+                     "cosine": None}
+            if torch.is_tensor(state) and state.requires_grad:
+                grads = {}
+                for key, label in (("input_reconstruction", "reconstruction"),
+                                   ("answer_construction", "answer")):
+                    cost = costs.get(key)
+                    if (label == "reconstruction" and not (
+                            torch.is_tensor(cost) and cost.grad_fn is not None)):
+                        # The legacy channel may be zeroed (no masked-LM
+                        # inputs); fall back to reconstruct()'s own cost.
+                        cost = costs.get("input_reconstruction_reverse")
+                    if (torch.is_tensor(cost) and cost.requires_grad
+                            and cost.grad_fn is not None):
+                        try:
+                            (g,) = torch.autograd.grad(
+                                cost, state, retain_graph=True,
+                                allow_unused=True)
+                        except RuntimeError:
+                            g = None
+                        if g is not None:
+                            grads[label] = g.detach().reshape(-1)
+                            entry[f"{label}_norm"] = float(g.norm())
+                if "reconstruction" in grads and "answer" in grads:
+                    r, a = grads["reconstruction"], grads["answer"]
+                    denom = float(r.norm() * a.norm())
+                    entry["cosine"] = (float(torch.dot(r, a)) / denom
+                                       if denom > 0 else None)
+            report[name] = entry
+        self._last_branch_diagnostics = report
+        return report
+
+    def _embed_answer_texts(self, texts):
+        """Embed desired answer sentences into the input-event space.
+
+        A READ-ONLY encoding: the real stem (lex -> PartSpace embed) runs on
+        the target texts inside the synthesis guard with online learning
+        frozen on every Space, so no word is promoted into the percept store
+        and no live carrier changes (spec section 11, learning isolation);
+        the model-level stem stash is saved and restored too.  Returns a
+        detached ``[B, N, D_in]`` scoring target, the same event the forward
+        input carries for a presented sentence (never a model input).
+        """
+        stash = (self.__dict__.get("_staged_concepts_in"),
+                 self.__dict__.get("_ws_universe"))
+        try:
+            with self._synthesis_guard():
+                for space in (getattr(self, "inputSpace", None),
+                              getattr(self, "perceptualSpace", None),
+                              getattr(self, "conceptualSpace", None),
+                              getattr(self, "wholeSpace", None)):
+                    if space is not None:
+                        object.__setattr__(space, "_online_learning_frozen", True)
+                prepared = self.inputSpace.prepInput(list(texts))
+                in_sub = self._lex_embed_stem(prepared)
+                event = (in_sub.materialize()
+                         if hasattr(in_sub, "materialize") else in_sub)
+                if not torch.is_tensor(event):
+                    event = getattr(self.inputSpace, "_ar_embedded", None)
+                if not torch.is_tensor(event):
+                    event = getattr(self.perceptualSpace, "_embedded_input", None)
+                return event.detach().clone() if torch.is_tensor(event) else None
+        finally:
+            self._staged_concepts_in = stash[0]
+            object.__setattr__(self, "_ws_universe", stash[1])
+
+    def _what_answer_target(self, questions, output_tensor):
+        """Assemble the answer-construction target from ``Data.what()``.
+
+        Step 5 of the What spec: the dataset's answer to each question, not
+        the loader's incidental ``outputTensor``, is the answer target. Rows
+        whose desired answer is unavailable (inference, an out-of-document
+        past/future, or a non-tensor answer the head cannot be scored
+        against yet) are masked out of the loss rather than substituted.
+        Returns ``(target, mask)``; ``target`` is ``None`` when no row is
+        scoreable, and ``mask`` is a bool ``[B]`` tensor. Resolved only after
+        the model response is fixed; never enters any model-visible context.
+        """
+        desired = tuple(getattr(self, "_last_what_desired", ()) or ())
+        if not desired or output_tensor is None or not torch.is_tensor(output_tensor):
+            return None, None
+        rows = []
+        mask = []
+        self._answer_surface_target = None
+        construction = getattr(self, "_last_answer_construction", None)
+        surface = getattr(construction, "surface", None)
+        texts = [answer.what if (answer.available
+                                 and isinstance(answer.what, str)) else None
+                 for answer in desired]
+        if torch.is_tensor(surface) and any(t is not None for t in texts):
+            # Text answers (past/future data) are scored in input-event
+            # space against the constructed surface; rows without a text
+            # answer are masked.  Fill the masked rows with any available
+            # text so the stem batch is well-formed.
+            filler = next(t for t in texts if t is not None)
+            try:
+                embedded = self._embed_answer_texts(
+                    [t if t is not None else filler for t in texts])
+            except (RuntimeError, ValueError, TypeError) as exc:
+                self._warn_zeroed_channel(
+                    "answer_text_target",
+                    f"text answer target unavailable: {exc}")
+                embedded = None
+            if (torch.is_tensor(embedded) and embedded.dim() == 3
+                    and embedded.shape[0] == surface.shape[0]):
+                mask_t = torch.tensor([t is not None for t in texts],
+                                      dtype=torch.bool, device=surface.device)
+                self._answer_surface_target = embedded.to(surface.device)
+                return embedded.to(surface.device), mask_t
+        for answer in desired:
+            value = answer.what if answer.available else None
+            if value is not None and not torch.is_tensor(value):
+                try:
+                    value = torch.as_tensor(value, dtype=output_tensor.dtype)
+                except (TypeError, ValueError):
+                    value = None       # e.g. a text answer the head cannot score
+            if value is None:
+                rows.append(None)
+                mask.append(False)
+            else:
+                rows.append(value.to(device=output_tensor.device,
+                                     dtype=output_tensor.dtype))
+                mask.append(True)
+        mask_t = torch.tensor(mask, dtype=torch.bool, device=output_tensor.device)
+        if not any(mask):
+            return None, mask_t
+        template = next(row for row in rows if row is not None)
+        stacked = torch.stack([
+            row if row is not None else torch.zeros_like(template)
+            for row in rows], dim=0)
+        # Mirror ``OutputSpace.prepOutput`` ([B, D] rows -> [B, 1, D]) so a
+        # fully available target is byte-identical to the loader's tensor.
+        while stacked.dim() < output_tensor.dim():
+            stacked = stacked.unsqueeze(1)
+        if stacked.shape[0] != output_tensor.shape[0] or stacked.shape != output_tensor.shape:
+            self._warn_zeroed_channel(
+                "what_answer_target_shape",
+                f"Data.what target {tuple(stacked.shape)} does not match the "
+                f"loader output {tuple(output_tensor.shape)}; answer loss "
+                "falls back to the loader tensor")
+            return None, None
+        return stacked, mask_t
+
+    def _what_report_state(self):
+        return self.__dict__.setdefault("_what_report", {
+            "families": {}, "thinking": {"episodes": 0, "iterations": 0,
+                                         "forced_closures": 0},
+            "batches": 0, "sentences": 0, "seconds": 0.0})
+
+    def _record_what_batch(self, questions, answer_cost, recon_cost,
+                           *, seconds=None, sentences=None):
+        """Accumulate per-family answer quality and the primary costs
+        (spec section 11 'Grammar and performance': present reconstruction,
+        past recall, future completion, supervised answer quality, both
+        primary losses and sentences/s are reported SEPARATELY)."""
+        report = self._what_report_state()
+        report["batches"] += 1
+        if sentences:
+            report["sentences"] += int(sentences)
+        if seconds:
+            report["seconds"] += float(seconds)
+        for question in question_batch(questions):
+            fam = report["families"].setdefault(question.relation.value, {
+                "batches": 0, "answer_cost_sum": 0.0,
+                "reconstruction_cost_sum": 0.0})
+            fam["batches"] += 1
+            if torch.is_tensor(answer_cost):
+                fam["answer_cost_sum"] += float(answer_cost.detach())
+            if torch.is_tensor(recon_cost):
+                fam["reconstruction_cost_sum"] += float(recon_cost.detach())
+
+    def _record_thinking(self, result):
+        report = self._what_report_state()
+        report["thinking"]["episodes"] += 1
+        report["thinking"]["iterations"] += int(result.iterations)
+        report["thinking"]["forced_closures"] += int(result.forced_closures)
+
+    def what_report(self):
+        """Separate means per question family plus thinking and throughput."""
+        report = self._what_report_state()
+        out = {"families": {}, "thinking": {}, "throughput": {}}
+        for name, fam in report["families"].items():
+            n = max(1, fam["batches"])
+            out["families"][name] = {
+                "batches": fam["batches"],
+                "answer_construction": fam["answer_cost_sum"] / n,
+                "input_reconstruction": fam["reconstruction_cost_sum"] / n,
+            }
+        th = report["thinking"]
+        episodes = max(1, th["episodes"])
+        out["thinking"] = {
+            "episodes": th["episodes"],
+            "mean_iterations": th["iterations"] / episodes if th["episodes"] else 0.0,
+            "forced_closure_rate": th["forced_closures"] / max(1, th["iterations"]),
+        }
+        out["throughput"] = {
+            "batches": report["batches"],
+            "sentences": report["sentences"],
+            "sentences_per_second": (report["sentences"] / report["seconds"]
+                                     if report["seconds"] > 0 else None),
+        }
+        return out
+
+    def primary_costs(self):
+        """The two primary costs of the last batch under their spec names:
+        ``input_reconstruction`` (the input-associated inverse branch) and
+        ``answer_construction`` (the question's answer scored against
+        ``Data.what()``). Values are the raw normalized terms before their
+        independent weights."""
+        return dict(getattr(self, "_last_primary_costs", {}) or {})
+
     def _what_where_encoder(self, split):
         """The absolute ``.where`` ladder for a question's dataset position.
 
@@ -7641,6 +8600,13 @@ class BasicModel(BaseModel):
             execution)
         if produced_all is None:
             raise RuntimeError("Model.what received no produced response")
+        self._last_understanding = self._capture_understanding(execution)
+        self._last_answer_construction = None
+        if getattr(self, "answer_synthesis", False):
+            # Step 4: the answer is constructed through reverseOutput(), not read
+            # from the direct symbol projection (kept as migration oracle).
+            construction = self.reverseOutput(self._last_understanding, questions)
+            produced_all = construction.actual
         try:
             conceptual_all = self._reconstruction_seed()
         except (AttributeError, RuntimeError, TypeError):
@@ -7737,10 +8703,13 @@ class BasicModel(BaseModel):
             if not answer.available:
                 raise RuntimeError(
                     "iterative thinking requires the configured sequential LTM")
-            return WhatThinkingResult(
+            result = WhatThinkingResult(
                 answer=answer, slots=slots, iterations=iterations,
                 closure_pressures=pressures)
+            self._record_thinking(result)
+            return result
 
+        self._thinking_active = True
         while not memory.what_at_parity(b=0) and iterations < limit:
             pressure = (float(pressure_schedule(iterations, limit))
                         if pressure_schedule is not None
@@ -7782,6 +8751,7 @@ class BasicModel(BaseModel):
             answer=answer, slots=slots, iterations=iterations,
             forced_closures=forced, closure_pressures=pressures)
         self._last_what_thinking = result
+        self._record_thinking(result)
         return result
 
     def runTrial(self, numEpochs=1, batchSize=10, lr=0.01, profile=None):
@@ -9086,12 +10056,12 @@ class BasicModel(BaseModel):
                 primed = torch.logical_and(
                     disc._s_count.to(mask.device) > 0, mask)
                 weight = primed.sum().to(dtype=roots.dtype)
-                local = disc.observe(sentence, mask=mask)
+                local = self._observe_discourse(disc, sentence, mask=mask)
                 if local is not None:
                     loss_sum = loss_sum + local * weight
                     weight_sum = weight_sum + weight
             return loss_sum / weight_sum.clamp_min(1.0)
-        return disc.observe(self._current_discourse_s)
+        return self._observe_discourse(disc, self._current_discourse_s)
 
     def _discourse_inter_loss(self):
         """Inter-sentence end-state prediction loss term (Task 8, plan §9),
@@ -9165,6 +10135,45 @@ class BasicModel(BaseModel):
         # (byte-identical); pass B (t=exploreTemperature) -> flatter -> explore.
         self._superposition_temperature = temperature
 
+    def _curriculum_questions(self, step, *, split, batch_size, sentence_index,
+                              source_rows=None, training=True):
+        """Question family for this training batch under <whatCurriculum>.
+
+        Bresenham-style (no RNG): every ``1/ratio``-th batch is a curriculum
+        trial.  ``present`` keeps the default family (present reconstruction
+        / supervised answers); ``temporal`` alternates past and future at
+        the configured distance on trial batches; ``full`` also cycles
+        inference trials.  ``None`` means "use the default family".
+        """
+        mode = str(getattr(self, "what_curriculum", "none") or "none").lower()
+        if not training or mode in ("none", "present"):
+            return None
+        ratio = float(getattr(self, "what_curriculum_ratio", 0.0) or 0.0)
+        if ratio <= 0.0:
+            return None
+        # Count TRAINING BATCHES on the model: ``runEpoch``'s ``step`` advances
+        # by the batch size, so a schedule keyed on it would skip trials.
+        count = int(self.__dict__.get("_curriculum_batches", 0))
+        self.__dict__["_curriculum_batches"] = count + 1
+        if int((count + 1) * ratio) == int(count * ratio):
+            return None
+        trial = int((count + 1) * ratio)
+        distance = int(getattr(self, "what_curriculum_distance", 1) or 1)
+        default = self._questions_for_batch(
+            split=split, batch_size=batch_size, sentence_index=sentence_index,
+            source_rows=source_rows, questions=None, trial_mode="reconstruct")
+        cycle = ["past", "future"] + (["inference"] if mode == "full" else [])
+        family = cycle[(trial - 1) % len(cycle)]       # first trial = past
+        out = []
+        for q in default:
+            if family == "past":
+                out.append(What.past(q.where, -distance, split=split))
+            elif family == "future":
+                out.append(What.future(q.where, distance, split=split))
+            else:
+                out.append(What.inference(q.where, split=split))
+        return tuple(out)
+
     def _questions_for_batch(self, *, split, batch_size, sentence_index,
                              source_rows=None, questions=None,
                              trial_mode="reconstruct"):
@@ -9179,20 +10188,38 @@ class BasicModel(BaseModel):
                 raise ValueError("every what question must use the active split")
             return normalized
 
+        data = getattr(getattr(self, "inputSpace", None), "data", None)
+        # A presentation index is a real position in the split.  Drivers whose
+        # batch counter is not a row (the throughput bench warms up with
+        # negative indices; cyclic corpus cursors) are folded into the split
+        # extent; negative cursor pads (``-1``) count as "no source row".
+        extent = 0
+        if data is not None and hasattr(data, "what_extent"):
+            try:
+                extent = int(data.what_extent(split))
+            except (KeyError, TypeError, ValueError):
+                extent = 0
+
+        def _fold(row):
+            row = int(row)
+            if extent > 0:
+                return row % extent
+            return max(0, row)
+
         if source_rows is not None:
             rows = list(source_rows)
             nested = (rows if rows and isinstance(rows[0], (list, tuple))
                       else [[row] for row in rows])
             resolved_rows = []
             for b in range(int(batch_size)):
-                row = nested[b] if b < len(nested) else []
+                row = [r for r in (nested[b] if b < len(nested) else [])
+                       if r is not None and int(r) >= 0]
                 resolved_rows.append(
-                    int(row[-1]) if row else int(sentence_index) + b)
+                    _fold(row[-1]) if row else _fold(int(sentence_index) + b))
         else:
             resolved_rows = [
-                int(sentence_index) + b for b in range(int(batch_size))]
+                _fold(int(sentence_index) + b) for b in range(int(batch_size))]
 
-        data = getattr(getattr(self, "inputSpace", None), "data", None)
         supervised = bool(getattr(data, "has_supervised_outputs", False))
         if str(trial_mode) == "predict":
             factory = lambda row: What.future(row, split=split)
@@ -9562,6 +10589,17 @@ class BasicModel(BaseModel):
                 (forwardInput, symbols, predictions,
                  _) = self._publish_compiled_sentence_state(_forward_result)
                 self._last_what_actual = tuple(_what_answers)
+                # Answer-path modules built during this what() join the live
+                # optimizer now (they post-date getOptimizer).
+                _fresh_synth = getattr(self, "_fresh_synthesis_params", None)
+                if (train and optimizer is not None and _fresh_synth
+                        and hasattr(optimizer, "add_param_group")):
+                    _present = {id(p) for g in optimizer.param_groups
+                                for p in g.get("params", ())}
+                    _new = [p for p in _fresh_synth if id(p) not in _present]
+                    if _new:
+                        optimizer.add_param_group({"params": _new})
+                    _fresh_synth.clear()
                 # This value is already a public graph output.  Publish its
                 # detached discourse view eagerly as well, avoiding the same
                 # attribute-only escape that PyTorch 2.14 eliminates for S.
@@ -9576,6 +10614,11 @@ class BasicModel(BaseModel):
             # their surfaces (no-grad bookkeeping; consumers read next batch).
             self._prime_seen_step()
             outputDataPred = predictions
+            _construction = getattr(self, "_last_answer_construction", None)
+            if (getattr(self, "answer_synthesis", False)
+                    and _construction is not None
+                    and torch.is_tensor(_construction.actual)):
+                outputDataPred = _construction.actual
 
             # Resolve desired answers only AFTER the model response is fixed.
             # The resulting values are loss-side metadata and never enter the
@@ -9655,20 +10698,44 @@ class BasicModel(BaseModel):
             # than crashing the step).
             lossOut = torch.zeros((), device=TheDevice.get())
             output_weight = 0.0
+            # ``Data.what()`` is the answer-loss authority (What spec Step 5):
+            # the question's desired answer replaces the loader's incidental
+            # ``outputTensor``; unavailable rows are masked out of the term.
+            _answer_target, _answer_mask = self._what_answer_target(
+                what_questions, outputTensor)
+            self._last_answer_target = _answer_target
+            self._last_answer_mask = _answer_mask
+            _answer_authority = _answer_target is not None
+            _scored_target = _answer_target if _answer_authority else (
+                None if _answer_mask is not None else outputTensor)
+            _surface_target = getattr(self, "_answer_surface_target", None)
+            _surface = getattr(getattr(self, "_last_answer_construction", None),
+                               "surface", None)
             try:
-                if (getattr(self.inputSpace.data,
+                if (_surface_target is not None and torch.is_tensor(_surface)
+                        and _answer_mask is not None and bool(_answer_mask.any())):
+                    # Temporal text answer: constructed surface vs embedded
+                    # target sentence, band-aware, masked to answerable rows.
+                    lossOut = self._reverse_event_loss(
+                        _surface[_answer_mask], _surface_target[_answer_mask])
+                    output_weight = 1.0
+                elif (getattr(self.inputSpace.data,
                             "has_supervised_outputs", True)
-                        and outputTensor is not None
-                        and torch.is_tensor(outputTensor)
-                        and outputTensor.numel() > 0
+                        and _scored_target is not None
+                        and torch.is_tensor(_scored_target)
+                        and _scored_target.numel() > 0
                         and outputDataPred is not None
                         and torch.is_tensor(outputDataPred)
                         and outputDataPred.numel() > 0):
                     # shape reconciliation lives in _align_output_pred; irreconcilable warns once and zeroes the term.
                     _pred = self._align_output_pred(outputDataPred,
-                                                    outputTensor)
+                                                    _scored_target)
                     if _pred is not None:
-                        lossOut = self.loss.compute(_pred, outputTensor)
+                        if (_answer_authority
+                                and not bool(_answer_mask.all())):
+                            _pred = _pred[_answer_mask]
+                            _scored_target = _scored_target[_answer_mask]
+                        lossOut = self.loss.compute(_pred, _scored_target)
                         output_weight = 1.0
             except Exception as _out_exc:
                 # Best-effort degrade to zero, but never SILENTLY (5b fail-loud).
@@ -9783,95 +10850,29 @@ class BasicModel(BaseModel):
             _rev_dedupe = bool(self._d3_active) and train
             try:
                 if forwardInput is not None and not _rev_dedupe:
-                    # C3 (spec sec 7): reconstruction is UNCONDITIONALLY
-                    # from concepts. The ``<reconstruct>`` enum
-                    # (none/symbols/concepts/both) was retired in A1, so
-                    # the old ``rev_mode in ('concepts','both')`` gate is
-                    # gone -- whenever reconstruction fires (the
-                    # ``reconstruction_scale`` weighting below gates it),
-                    # the reverse pass is always concepts-seeded from the
-                    # terminal ConceptualSpace ShortTermMemory snapshot.
-                    #
-                    # Stage 1.F substrate refactor (doc/plans/
-                    # 2026-05-26-two-loop-pi-sigma-substrate.md): the
-                    # per-stage ``_cs_cache`` forward capture is retired.
-                    # The reverse-path seed comes from the canonical
-                    # ConceptualSpace ShortTermMemory snapshot.
-                    #
-                    # 2026-05-28 fix: mode-dependent seed shape.
-                    # In PARALLEL the STM is the [B, N, D] slab --
-                    # every position is its own slot and the
-                    # reverse pipeline should walk them all back.
-                    # In SERIAL the STM accumulates per-word ideas and
-                    # reduces a simple sentence to a SINGLE S at slot 0
-                    # (newest-at-slot-0 convention; _stm_reduce_to_single_S
-                    # leaves the root there). ``snap[:, :1, :]`` is that
-                    # reduced idea; the prior ``snap[:, -1:, :]`` read the
-                    # OLDEST/empty padding slot (slot 0 holds the single S, so
-                    # for a depth-1 reduced sentence slot -1 is empty) -> the
-                    # reverse decoded an empty seed.
-                    rev_sub = None
-                    rev_ev = None
-                    # 2026-07-05 serial plan Task 2 (Method-1 routing): at
-                    # EVAL the SERIAL decode consumes the STORED-derivation
-                    # LEAVES replay (_reverse_method1_leaves stages the radix
-                    # render thunk on the per-word percept leaves), so
-                    # reconstruct_data reads the exact derivation surface, not
-                    # the single-slot tensor arm. Method-1 is the exact
-                    # TEACHER -- by construction, no training needed. The
-                    # tensor arm stays the explicit debug fallback
-                    # (serial_tensor_reverse_debug -- the --scaffold analogue);
-                    # TRAIN paths (the D3 reverse-from-S student) are untouched.
-                    if (not train and bool(getattr(self, 'serial', False))
-                            and not getattr(
-                                self, 'serial_tensor_reverse_debug', False)):
-                        rev_ev = self._reverse_method1_leaves()
-                    if rev_ev is None:
-                        terminal_idea = self._reconstruction_seed()
-                        # Method-2 reverse-reduce (serial plan Task 4): on the
-                        # FREE-derivation decode (reconstruct_from_idea, eval),
-                        # un-fold the collapsed root back into per-word ideas by
-                        # walking the recorded fold steps backward -- each step
-                        # the chosen op's basis-threaded reverse, the
-                        # codebook-walk recommender (a LOOKUP that reconstitutes
-                        # the operand pair, not a subtraction). Falls through to
-                        # the single-slot seed when no trace/basis exists.
-                        if (terminal_idea is not None and not train
-                                and bool(getattr(
-                                    self, 'reconstruct_from_idea', False))):
-                            # Invalidate any prior batch's render-priority
-                            # slab; the un-fold re-stashes it ONLY on the
-                            # word-rows path (review finding: an ungated
-                            # stash swapped the NON-wordstore ceiling's
-                            # render source).
-                            _psp = getattr(self, 'perceptualSpace', None)
-                            if _psp is not None:
-                                object.__setattr__(
-                                    _psp, '_unfold_recovered_slab', None)
-                            unfolded = self._reverse_reduce_unfold(
-                                terminal_idea[:, 0, :])
-                            if unfolded is not None:
-                                terminal_idea = unfolded   # [B, N_words, D_c]
-                        if terminal_idea is not None:
-                            cs = self.conceptualSpace
-                            cs.commit_event(terminal_idea)
-                            rev_sub = self.reverse(
-                                cs.subspace)
-                        rev_ev = (rev_sub.materialize()
-                                  if rev_sub is not None
-                                  and hasattr(rev_sub, 'materialize')
-                                  else None)
+                    # Step 2 (What spec): the input-associated inverse path is
+                    # ``Model.reverseReconstruct(understanding)``; the seed, the
+                    # method-1 leaves, the reduce-unfold, and ``reverse()`` all
+                    # live there.  ``runBatch`` only scores and reports.
+                    # One understanding for both downward paths (Step 6):
+                    # reuse the one ``what()`` captured for this execution.
+                    understanding = getattr(self, "_last_understanding", None)
+                    if (understanding is None
+                            or understanding.execution is not (
+                                tuple(_forward_result)
+                                if isinstance(_forward_result, list)
+                                else _forward_result)
+                            and understanding.symbolic_state is not symbols):
+                        understanding = self._capture_understanding(
+                            _forward_result)
+                    self._last_understanding = understanding
+                    rev_ev, lossRev_rec = self.reverseReconstruct(
+                        understanding, target=forwardInput, train=train)
                     if (not train and rev_ev is not None
                             and torch.is_tensor(rev_ev)):
                         inputDataPred = rev_ev.detach()
-                    fwd_ev = (forwardInput.materialize()
-                              if hasattr(forwardInput, 'materialize')
-                              else forwardInput)
-                    if (rev_ev is not None and fwd_ev is not None
-                            and rev_ev.dim() == fwd_ev.dim()
-                            and rev_ev.dim() == 3):
-                        # Band-aware seam: the input event's where/when widths, not ModelLoss's (0,0) OutputSpace band.
-                        lossRev = self._reverse_event_loss(rev_ev, fwd_ev)
+                    if lossRev_rec is not None:
+                        lossRev = lossRev_rec
             except Exception:
                 # Reverse round-trip is approximate through averaged
                 # loops; never let a reconstruction edge case stop the
@@ -9893,6 +10894,20 @@ class BasicModel(BaseModel):
             # reconstruction carrier; the IR P-space_role ``reconstruction`` loss
             # remains the active forward gradient source. (No behaviour
             # moved out of the deleted branch -- it never executed any.)
+            # Primary costs under their spec names, recorded BEFORE backward
+            # so ``branch_gradient_diagnostics`` can differentiate them.
+            # ``input_reconstruction`` is the legacy channel (D3/masked-LM);
+            # ``input_reconstruction_reverse`` is ``reconstruct()``'s own cost.
+            self._last_primary_costs = {
+                "input_reconstruction": lossIn,
+                "input_reconstruction_reverse": lossRev,
+                "answer_construction": lossOut,
+            }
+            self._record_what_batch(
+                what_questions, lossOut,
+                lossIn if (torch.is_tensor(lossIn) and float(lossIn.detach()) != 0.0)
+                else lossRev,
+                sentences=len(what_questions))
 
             # JOINT mode: compute SBOW embedding loss
             sbow = None
@@ -10311,6 +11326,15 @@ class BasicModel(BaseModel):
             pass
 
         if train:
+            _every = int(getattr(self, "branch_diagnostics_every", 0) or 0)
+            if (_every > 0 and int(getattr(
+                    self, "_training_step_count", 0) or 0) % _every == 0):
+                try:
+                    self.branch_gradient_diagnostics()
+                except RuntimeError as _diag_exc:
+                    self._warn_zeroed_channel(
+                        "branch_diagnostics",
+                        f"branch diagnostics skipped: {_diag_exc}")
             if amp_scaler is not None:
                 # fp16 on CUDA: scale grads to avoid underflow, then unscale
                 # inside scaler.step() before the actual optimizer update.
@@ -10377,6 +11401,13 @@ class BasicModel(BaseModel):
             inputPred=inputDataPred,
             forwardInput=forwardInput,
         )
+        # Spec names for the two primary costs (``primary_costs()``); the
+        # legacy lossOut/lossIn fields stay for existing callers.
+        self._last_primary_costs = {
+            **(getattr(self, "_last_primary_costs", None) or {}),
+            "input_reconstruction": lossIn,
+            "answer_construction": lossOut,
+        }
         # Pure compute brick: no Reset, no truth-layer compact, no host
         # sync inside runBatch. The outer doc-streaming loop in runEpoch
         # (or any per-tick driver) is responsible for:
@@ -10483,6 +11514,16 @@ class BasicModel(BaseModel):
         self.End()
         return result, batchNum
 
+    def _clear_recall_history(self, rows=None):
+        history = self.__dict__.get("_what_recall_history")
+        if not history:
+            return
+        if rows is None:
+            history.clear()
+            return
+        for b in rows:
+            history.pop(int(b), None)
+
     def dispatch_per_row_reset(self, hard_eos):
         """Fire per-row hard Reset on rows whose ``hard_eos[b]`` is True.
 
@@ -10503,6 +11544,12 @@ class BasicModel(BaseModel):
         every Reset-capable space. Every Reset accepts the per-row
         signature now (the §8d legacy zero-arg fallback was removed).
         """
+        try:
+            self._clear_recall_history(
+                [b for b, flag in enumerate(hard_eos) if flag]
+                if hard_eos else None)
+        except TypeError:
+            self._clear_recall_history()
         if not hard_eos:
             return
         if all(hard_eos):
@@ -11205,6 +12252,14 @@ class BasicModel(BaseModel):
                                if (training and _ptr > 0.0
                                    and int((step + 1) * _ptr) != int(step * _ptr))
                                else "reconstruct")
+                # What curriculum (Step 9): a deterministic fraction of
+                # training batches ask past/future (temporal) or inference
+                # questions instead of the default family; distance grows
+                # with <whatCurriculumDistance>. "none" -> byte-identical.
+                _cur_questions = self._curriculum_questions(
+                    step, split=split, batch_size=B_step,
+                    sentence_index=step, source_rows=source_rows,
+                    training=training)
                 result, _ = self.runBatch(
                     train=training, batchNum=step,
                     batchSize=B_step, split=split,
@@ -11212,6 +12267,7 @@ class BasicModel(BaseModel):
                     batch_override=(inputTensor, outputTensor),
                     progress=progress_frac,
                     superposition_temperature=(0.0 if _two_pass else None),
+                    questions=_cur_questions,
                     trial_mode=_trial_mode,
                     source_rows=source_rows,
                 )
@@ -11241,6 +12297,10 @@ class BasicModel(BaseModel):
                     # presentation, so restage the same rows rather than
                     # silently constructing an unaddressed lesson.
                     self.teacher.stage_batch_sources(split, source_rows)
+                    _cur_questions = self._curriculum_questions(
+                        step, split=split, batch_size=B_step,
+                        sentence_index=step, source_rows=source_rows,
+                        training=training)
                     self.runBatch(
                         train=True, batchNum=step,
                         batchSize=B_step, split=split,
@@ -11250,7 +12310,8 @@ class BasicModel(BaseModel):
                         superposition_temperature=float(
                             getattr(self, 'explore_temperature', 0.5)),
                         exploration_trial=True,
-                        trial_mode=_trial_mode,
+                        questions=_cur_questions,
+                    trial_mode=_trial_mode,
                         source_rows=source_rows,
                     )
                 # Tail dispatch: word-buffer flush (§6c Path B), per-row

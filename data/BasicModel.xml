@@ -93,6 +93,17 @@
 
     <!-- Allocate explicit capacity to contextual grammar routing. -->
     <transformChooser>mlp</transformChooser>
+    <!-- What spec Step 9 cutover (2026-09-09): the canonical model answers
+         through the separate reverseOutput() path (resolve -> conceptual /
+         perceptual synthesis with dedicated weights -> OutputSpace adapter),
+         names up to 4 perceptual bindings per derivation, and trains a
+         present -> temporal -> full question curriculum. Fixture configs
+         keep the defaults (off), so their pinned behaviour is unchanged. -->
+    <answerSynthesis>true</answerSynthesis>
+    <synthesisBindings>4</synthesisBindings>
+    <whatCurriculum>full</whatCurriculum>
+    <whatCurriculumDistance>1</whatCurriculumDistance>
+    <whatCurriculumRatio>0.25</whatCurriculumRatio>
     <categoryCodebook>true</categoryCodebook>
     <!-- Low-occupancy grammar threshold; pressure lowers it to a hard
          grammatical demand at the configured capacity boundary. -->

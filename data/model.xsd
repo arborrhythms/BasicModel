@@ -281,6 +281,31 @@
            concept) and skips the chart rule rebuild. Default false -> the
            rule-driven reverse is unchanged (byte-identical). -->
       <xs:element name="ideaDecode" type="xs:boolean" minOccurs="0"/>
+      <!-- answerSynthesis (What spec Steps 3-4, 2026-09-09): construct the
+           answer through resolve -> ConceptualSpace.synthesize ->
+           PerceptualSpace.synthesize -> OutputSpace.from_percepts instead of
+           the direct symbol projection. Default false keeps the established
+           projected head byte-identical. -->
+      <xs:element name="answerSynthesis" type="xs:boolean" minOccurs="0"/>
+      <!-- synthesisBindings: number of perceptual context slots a derivation
+           may NAME as bindings for answer synthesis (spec 5.3). 0 = none. -->
+      <xs:element name="synthesisBindings" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <!-- whatCurriculum (Step 9): none | present | temporal | full; a
+           deterministic fraction (whatCurriculumRatio) of training batches ask
+           past/future (temporal) or inference (full) questions at
+           whatCurriculumDistance. none -> byte-identical. -->
+      <xs:element name="whatCurriculum" minOccurs="0">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:enumeration value="none"/>
+            <xs:enumeration value="present"/>
+            <xs:enumeration value="temporal"/>
+            <xs:enumeration value="full"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:element>
+      <xs:element name="whatCurriculumDistance" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="whatCurriculumRatio" type="unitInterval" minOccurs="0"/>
       <!-- Reconstruct from the idea rather than replaying the forward parse.
            When true, reverse() clears SymbolSpace's current/generate rules and
            the signal-router's last route, then calls generate on the supplied
@@ -831,6 +856,11 @@
       <!-- Asymmetric gradient policy on optimizer-owned P/W/concept
            parameters. No reconstruction gradient means no output budget. -->
       <xs:element name="reconstructionPriority" type="xs:boolean" minOccurs="0"/>
+      <!-- What spec Step 6: every N training batches, sample gradient
+           norms/cosine of input_reconstruction vs answer_construction at
+           the conceptual and symbolic branch points (a read before
+           backward; never an update). 0 disables. -->
+      <xs:element name="branchDiagnosticsEvery" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="outputGradientRatio" minOccurs="0">
         <xs:simpleType>
           <xs:restriction base="xs:double">

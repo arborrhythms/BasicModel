@@ -246,11 +246,15 @@ class TestReconstructConceptsLoss(unittest.TestCase):
         TheData.load("xor")
         m, _ = Models.BaseModel.from_config(
             os.path.join(_DATA, "MM_xor.xml"), data=TheData)
-        # The retired enum leaves NO attribute behind.
-        self.assertFalse(
-            hasattr(m, "reconstruct"),
+        # The retired enum leaves NO enum value behind. (The What-spec
+        # ``Model.reverseReconstruct(understanding)`` METHOD (``reverseReconstruct``), Step 2 of
+        # doc/specs/2026-07-27-teaching-modes-and-next-iteration.md, is the
+        # inverse path and is expected to exist.)
+        self.assertNotIsInstance(
+            vars(m).get("reconstruct"), str,
             "the <reconstruct> enum was retired (A1); BaseModel must not "
-            "carry a self.reconstruct attribute")
+            "carry a self.reconstruct enum attribute")
+        self.assertTrue(callable(getattr(m, "reverseReconstruct", None)))
         # The reconstruction term is gated by reconstruction_scale > 0
         # (MM_xor.xml configures 0.1); without that gate there is nothing
         # to assert.

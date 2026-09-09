@@ -53,8 +53,8 @@ Conceptually, the run path becomes:
 ```text
 question and input   = Data presentation
 understanding        = Model.forward(input)
-input_reconstruction = Model.reconstruct(understanding)
-model_response       = Model.output(understanding, question)
+input_reconstruction = Model.reverseReconstruct(understanding)
+model_response       = Model.reverseOutput(understanding, question)
 
 if learning or evaluation:
     desired_response = Data.what(question)
@@ -69,7 +69,7 @@ if inference:
 ```
 
 `Model.what()` is the public question-answering delegation over `forward()`
-plus `output()`; it is not a direct projection head. The methods identify
+plus `reverseOutput()`; it is not a direct projection head. The methods identify
 where existing work is delegated and do not require a second lesson
 controller, scoring API, source oracle, spacetime view hierarchy, or second
 model.
@@ -173,6 +173,22 @@ may be returned to the caller or recorded as the output side of the
 
 ## 4. One understanding, two downward paths
 
+> **Naming (2026-09-09):** the two downward paths are `Model.reverseReconstruct()`
+> and `Model.reverseOutput()` — each is a dual of `forward()` along the reverse
+> path, one seeded by the analysed input and ending at `InputSpace`, the other
+> seeded by a resolved answer symbol and ending at `OutputSpace`. The Space-level
+> algebraic inverse keeps the name `reverse()`; top-down realization of a
+> generated state is `synthesize()`.
+>
+> **Dedicated weights (2026-09-09):** `reverseOutput()` is a true dual of
+> `forward()` with its own parameters. The shared inverse-direction chain is the
+> backbone; each Space applies its own invertible `synthesis_layer` (built on
+> first use at identity, so the answer path starts exactly at the shared
+> inverse) and `OutputSpace` adapts constructed percepts through its
+> `percept_adapter`. `answer_construction` trains these operators;
+> `reverseReconstruct()` never touches them, so reconstruction priority applies
+> only to the genuinely shared parameters.
+
 Bottom-up processing produces one internal understanding:
 
 ```text
@@ -244,7 +260,7 @@ answer symbol
     -> OutputSpace
 ```
 
-At a high level, `Model.output()` delegates as follows:
+At a high level, `Model.reverseOutput()` delegates as follows:
 
 ```text
 derivation = SymbolicSpace.resolve(
@@ -264,7 +280,7 @@ thinking stack rather than call synthesis. Its replayable result also carries
 the grammatical derivation, answer-sentence location, constructed prefix, and
 named conceptual/perceptual bindings used by the next output step.
 
-`output()` is the model-level orchestrator for this path. At the space level,
+`reverseOutput()` is the model-level orchestrator for this path. At the space level,
 `forward()` means bottom-up analysis, `reverse()` means input-associated
 inverse reconstruction, and `synthesize()` means top-down realization of a
 generated state. A synthesis operation may share an invertible layer's

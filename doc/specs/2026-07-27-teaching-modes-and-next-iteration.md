@@ -8,9 +8,59 @@
 >
 > **Immediate scope:** retain the implemented `what()` addressing and LTM
 > parity substrate; make `Data.what()` the real answer-loss target; reserve
-> `reverse()` for input reconstruction; add `output()` from rational symbolic
+> `reverse()` for input reconstruction; add `reverseOutput()` from rational symbolic
 > decoding through conceptual and perceptual synthesis to `OutputSpace`; and
 > make reconstruction-primary learning protect one collective understanding.
+
+## Status record (2026-09-09)
+
+Done (on `main`): Step 0 question/`Data.what()`/LTM-parity/thinking
+substrate (PR #8); the absolute dataset `where` given to the model
+(8975365); Step 2's collective-field repair and Step 6's
+reconstruction-priority projection + single optimizer step (a8a5142); Step 5's
+`Data.what()`-authoritative answer target with row masking and the
+`input_reconstruction` / `answer_construction` cost names (`primary_costs()`,
+`test/test_what_training.py`).
+
+Landed 2026-09-09 (parameter-gated where noted): Step 1 `Understanding`
+(`bin/Understanding.py`); Step 2 `Model.reverseReconstruct()`; Step 3 `synthesize()`
+entry points, `OutputSpace.from_percepts()` and `Model.reverseOutput()`; Step 4
+`what()` through `reverseOutput()` -- Steps 3-4 under `<answerSynthesis>` (default
+false, byte-identical); Step 6 shared `Understanding` + sampled branch-point
+gradient diagnostics (`<branchDiagnosticsEvery>`); Step 8 root answer through
+`reverseOutput()`.
+
+Also landed 2026-09-09: relation-driven answer resolution (past = recall
+from the discourse ring, future = prediction, cold memory flagged
+unresolved); temporal text answers realized to an input-space surface and
+scored against the embedded target sentence (Step 5 complete for every
+question family); the tied-operator autograd-vs-finite-difference test.
+
+Also landed 2026-09-09 (spec sweep): Step 7 causal temporal use via the
+learned `question_conditioner` on the answer path (ablation test); named
+perceptual bindings (`<synthesisBindings>`); the exact-identity guard;
+`what_report()` per-family reporting; the reasoning hook for prompted
+questions; the `<whatCurriculum>` and the canonical `BasicModel.xml` cutover
+to `reverseOutput()` (Step 9); the joint-training band test (12.14).
+
+Review fixes 2026-09-09 (Codex): answer-path modules materialize before
+the checkpoint audit (reload round-trips); per-row question resolution
+(`row_sources`); `past -k` recall reads a chronological per-row history
+(the ARMA ring's fill layout is newest-at-low-end). Throughput (12.15): canonical
+config on MPS, 12-step matched bench -- a8a5142 baseline 12.27, cutover
+12.20 sentences/s (~0.5% cost; band 15%).
+
+Needs doing: carrier-pure Space-level inverses (Step 1 residue; the
+`_synthesis_guard` isolates the live `Space.subspace` writes meanwhile and
+the order-independence tests pass); moving the per-batch error registry off
+Teacher (12.16 partial); Step 5's past/future targets (scoreable only once
+the head emits input-shaped answers) -- now handled by the surface path;
+the grammar chooser's What bias entering the loss graph (the chooser path is
+still not differentiable; the answer path now carries the question instead); Step 8 root scoring through
+`reverseOutput()`; Step 9 cutover, curriculum, B24. The per-step table and §11
+coverage matrix live in
+[2026-09-08-what-spec-deliverables](../plans/2026-09-08-what-spec-deliverables.md);
+update both as steps land.
 
 The companion [What, spacetime, and thinking design](../WhatSpacetimeDesign.md)
 defines the governing architecture. This document turns that design into an
@@ -93,8 +143,8 @@ The target exposes the following methods on the existing classes:
 ```text
 Data.what(question)  -> desired What or unavailable
 Model.forward(input) -> Understanding
-Model.reconstruct(understanding) -> reconstructed input
-Model.output(understanding, question) -> produced What
+Model.reverseReconstruct(understanding) -> reconstructed input
+Model.reverseOutput(understanding, question) -> produced What
 Model.what(question, input) -> forward(input) followed by output(...)
 ```
 
@@ -104,12 +154,12 @@ These methods delegate to infrastructure already owned by their class:
   evaluation.
 - `Model.forward()` performs bottom-up perceptual, conceptual, and serial
   symbolic understanding without seeing the desired answer.
-- `Model.reconstruct()` uses the input-associated inverse path and ends at
+- `Model.reverseReconstruct()` uses the input-associated inverse path and ends at
   `InputSpace`.
-- `Model.output()` rationally decodes the question, constructs an answer
+- `Model.reverseOutput()` rationally decodes the question, constructs an answer
   symbol, and synthesizes it through conceptual and perceptual space before
   the final `OutputSpace` adapter.
-- `Model.what()` delegates to the same `forward()` and `output()` operations;
+- `Model.what()` delegates to the same `forward()` and `reverseOutput()` operations;
   it is not a direct task head or second generator.
 - `Model.run()` remains responsible for presentation, execution, loss, and
   optional optimization.
@@ -124,8 +174,8 @@ The logical run path is:
 ```text
 question, input     = Data presentation
 understanding       = Model.forward(input)
-reconstructed_input = Model.reconstruct(understanding)
-actual              = Model.output(understanding, question)
+reconstructed_input = Model.reverseReconstruct(understanding)
+actual              = Model.reverseOutput(understanding, question)
 
 if learning or evaluation:
     desired = Data.what(question)
@@ -236,6 +286,13 @@ reconstruction, wider temporal offsets, and non-temporal supervised answers.
 
 ## 5. Analysis, reconstruction, and output synthesis
 
+> **Naming (2026-09-09):** the two downward paths are `Model.reverseReconstruct()`
+> and `Model.reverseOutput()` — each is a dual of `forward()` along the reverse
+> path, one seeded by the analysed input and ending at `InputSpace`, the other
+> seeded by a resolved answer symbol and ending at `OutputSpace`. The Space-level
+> algebraic inverse keeps the name `reverse()`; top-down realization of a
+> generated state is `synthesize()`.
+
 ### 5.1 One bottom-up understanding
 
 `Model.forward()` remains the one bottom-up analysis pass:
@@ -269,7 +326,7 @@ output synthesis can consume it without overwriting one another.
 
 ### 5.2 Input reconstruction
 
-`Model.reconstruct(understanding)` replaces the ambiguous generative meaning
+`Model.reverseReconstruct(understanding)` replaces the ambiguous generative meaning
 of model-level `reverse()`. It reconstructs the presented input through the
 top-down inverse of its analysis:
 
@@ -289,12 +346,12 @@ inverse, but not a pre-analysis surface tensor or other payload that bypasses
 the processed activation of mereonymic parts and wholes.
 
 At the `Space` level, `reverse()` retains its algebraic inverse meaning. At
-the `Model` level, `reconstruct()` orchestrates the reverse calls and owns the
+the `Model` level, `reverseReconstruct()` orchestrates the reverse calls and owns the
 input-reconstruction result.
 
 ### 5.3 Rational output construction
 
-`Model.output(understanding, question)` replaces direct projection from the
+`Model.reverseOutput(understanding, question)` replaces direct projection from the
 input symbol to `OutputSpace`. It first performs serial symbolic decoding. An
 interrogative symbol represents an operation with an unresolved position, not
 a response surface to replay:
@@ -333,11 +390,13 @@ extends the LTM thinking stack. A resolved derivation carries the answer
 symbol, grammar trace, output sentence location, constructed prefix, and named
 synthesis references. It contains no desired `Data` answer.
 
-`synthesize()` is top-down realization from a generated state. It may share
-an invertible layer's parameters and inverse direction, but it accepts the
-answer carrier rather than a cached reconstruction carrier. Non-invertible
-operations require their existing or learned synthesis direction. Do not
-create a second model or an unrelated language generator.
+`synthesize()` is top-down realization from a generated state. It shares the
+inverse-direction chain as its backbone but applies each Space's DEDICATED,
+identity-initialized invertible `synthesis_layer` (decision 2026-09-09: the
+answer dual has its own weights, trained by `answer_construction` and never
+by reconstruction). It accepts the answer carrier rather than a cached
+reconstruction carrier. Do not create a second model or an unrelated
+language generator.
 
 Output synthesis may use the live perceptual field as context. Activated
 parts and wholes can prime concrete names, objects, words, and grammatical
@@ -785,8 +844,8 @@ For one presentation it constructs this graph:
 ```text
 understanding = Model.forward(input)
 
-input_prediction = Model.reconstruct(understanding)
-actual_answer = Model.output(understanding, question)
+input_prediction = Model.reverseReconstruct(understanding)
+actual_answer = Model.reverseOutput(understanding, question)
 
 desired_answer = Data.what(question)  # loss authority only
 
@@ -807,7 +866,7 @@ implies a plain gradient sum on protected parameters. Do not detach the shared
 understanding between branches or update parameters between traversals.
 
 The desired answer may be selected before or independently of model execution,
-but it remains unavailable to `Model.forward()`, `Model.output()`, grammar,
+but it remains unavailable to `Model.forward()`, `Model.reverseOutput()`, grammar,
 STM, LTM, perceptual context, and generated output. It enters only target
 preparation and loss calculation. A target-preparation adapter is allowed; a
 second full model pass over the clean answer to manufacture privileged
@@ -828,7 +887,7 @@ degraded. It trains the bottom-up representation and its input-associated
 inverse. It does not compare against a past, future, or supervised answer.
 
 `L_answer_construction` compares only the response constructed by
-`Model.output()` with `Data.what(question)`. Question coordinates are model
+`Model.reverseOutput()` with `Data.what(question)`. Question coordinates are model
 context, not output targets. For present, past, future, and supervised
 questions, the resolved `Data.what()` value replaces the loader's incidental
 output tensor as the authoritative answer target. When `Data.what()` is
@@ -1033,7 +1092,7 @@ without requiring one symbol to contain the field, retaining quantization
 residuals, or mistaking cached native-state recovery for concept-only inversion.
 The explicit snapshot API and that broader field/STM migration remain unfinished.
 
-Implement `Model.reconstruct(understanding)` over the current inverse path and
+Implement `Model.reverseReconstruct(understanding)` over the current inverse path and
 reserve `Space.reverse()` for input-associated algebraic inversion. When
 `invertible` is enabled, keep the forward and inverse matrices tied; do not
 clone a second reconstruction model. Return the reconstructed input and a
@@ -1056,7 +1115,7 @@ binding inputs for perceptual context, then make `OutputSpace` consume the
 constructed answer percepts as a modality adapter.
 
 Keep a narrow old projection only as a migration oracle. The completed
-`Model.output()` path is:
+`Model.reverseOutput()` path is:
 
 ```text
 symbolic answer/thought -> conceptual synthesis -> perceptual synthesis
@@ -1066,7 +1125,7 @@ symbolic answer/thought -> conceptual synthesis -> perceptual synthesis
 ### Step 4: route `Model.what()` through thought and synthesis
 
 Change `Model.what()` from a wrapper around the established projected head to
-`forward()` followed by rational symbolic evaluation and `output()`. Connect
+`forward()` followed by rational symbolic evaluation and `reverseOutput()`. Connect
 the existing grammar chooser, LTM context, answer symbol, derivation, sentence
 location, constructed prefix, and named synthesis references. Simple truth or
 binding questions may terminate in one operation; unresolved questions enter
@@ -1133,8 +1192,8 @@ each architectural cutover.
   reconstruction.
 - One bottom-up `forward()` result is shared by reconstruction and answer
   construction; neither branch performs a second privileged encoding.
-- `Model.reconstruct()` returns the input reconstruction, and `Model.what()`
-  reaches `Model.output()` rather than the legacy projected head.
+- `Model.reverseReconstruct()` returns the input reconstruction, and `Model.what()`
+  reaches `Model.reverseOutput()` rather than the legacy projected head.
 - Reconstruction and output can run in either order with identical results
   and without overwriting one another's carriers.
 - A compatibility adapter is byte-identical to the established clean path

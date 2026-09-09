@@ -359,3 +359,21 @@ def test_what_projection_checkpoint_widens_from_19():
     state["symbolSpace.chooser.what_projection.weight"] = torch.zeros(3, 19)
     assert BasicModel._widen_what_projection_checkpoint_state(
         state, model_state) == 0
+
+
+def test_questions_for_batch_folds_driver_counters_into_the_split():
+    # Drivers whose batch counter is not a row (negative warm-up indices,
+    # cyclic cursors) still get real presentation positions; -1 pads in
+    # source_rows mean "no source row" and fall back to the counter.
+    model = _TinyWhatModel()
+    model.inputSpace = SimpleNamespace(data=_data())          # extent 4
+    rows = [q.where for q in model._questions_for_batch(
+        split="train", batch_size=2, sentence_index=-2)]
+    assert rows == [2, 3]
+    rows = [q.where for q in model._questions_for_batch(
+        split="train", batch_size=2, sentence_index=5)]
+    assert rows == [1, 2]
+    rows = [q.where for q in model._questions_for_batch(
+        split="train", batch_size=2, sentence_index=0,
+        source_rows=[[-1], [7]])]
+    assert rows == [0, 3]

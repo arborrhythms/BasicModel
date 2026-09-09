@@ -57,6 +57,16 @@
          reverse rule path from the supplied idea snapshot. -->
     <reconstructFromIdea>false</reconstructFromIdea>
 
+    <!-- Construct answers through the separate output() path (resolve ->
+         conceptual synthesis -> perceptual synthesis -> OutputSpace adapter)
+         rather than the direct symbol projection. Off until the temporal /
+         supervised curriculum trains the synthesis adapter. -->
+    <answerSynthesis>false</answerSynthesis>
+    <synthesisBindings>0</synthesisBindings>
+    <whatCurriculum>none</whatCurriculum>
+    <whatCurriculumDistance>1</whatCurriculumDistance>
+    <whatCurriculumRatio>0.25</whatCurriculumRatio>
+
     <!-- Apply extra symbolic processing steps after Sigma. -->
     <processSymbols>false</processSymbols>
 

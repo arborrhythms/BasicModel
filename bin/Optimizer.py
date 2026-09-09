@@ -837,15 +837,42 @@ class MultiOptimizer:
     ``RowLocalAdam``, and everything else under ``Adam``. The wrapper exposes
     a flattened ``param_groups`` view so callers that read or set
     ``param_groups[i]['lr']`` (rebuild_optimizer, LR scheduling) keep
-    working.
+    working, a merged ``state`` view keyed by parameter (``optimizer.state[p]``
+    as on a torch optimizer), and ``add_param_group`` for heads built lazily
+    after construction. ``state_dict()`` keeps the per-child ``optimizers``
+    layout the checkpoint remapper consumes and adds torch-style ``state`` /
+    ``param_groups`` views (state keyed by the flattened parameter index).
     """
 
     def __init__(self, optimizers):
         self.optimizers = list(optimizers)
+        self._refresh_param_groups()
+
+    def _refresh_param_groups(self):
         flat = []
         for o in self.optimizers:
             flat.extend(o.param_groups)
         self.param_groups = flat
+
+    @property
+    def state(self):
+        """Merged parameter -> state view over every child optimizer."""
+        return _MergedOptimizerState(self.optimizers)
+
+    def _dense_child(self):
+        """The child that owns ordinary dense parameters (never the sparse
+        or row-local family): the first child without those markers."""
+        for o in self.optimizers:
+            if (getattr(o, "row_local_state", False)
+                    or type(o).__name__ == "SparseAdam"):
+                continue
+            return o
+        return self.optimizers[0]
+
+    def add_param_group(self, param_group):
+        """Hand a late-built head to the dense child (torch semantics)."""
+        self._dense_child().add_param_group(param_group)
+        self._refresh_param_groups()
 
     def _step_without_finite_preflight(self):
         results = []
@@ -881,8 +908,91 @@ class MultiOptimizer:
             o.zero_grad(set_to_none=set_to_none)
 
     def state_dict(self):
-        return {"optimizers": [o.state_dict() for o in self.optimizers]}
+        children = [o.state_dict() for o in self.optimizers]
+        # torch-style views: state keyed by the FLATTENED parameter index
+        # (child offsets applied), param_groups with re-indexed ``params``.
+        merged_state = {}
+        merged_groups = []
+        offset = 0
+        for child in children:
+            for key, value in (child.get("state") or {}).items():
+                merged_state[offset + int(key)] = value
+            for group in child.get("param_groups") or ():
+                shifted = dict(group)
+                shifted["params"] = [offset + int(i) for i in group.get("params", ())]
+                merged_groups.append(shifted)
+            offset += sum(len(g.get("params", ())) for g in child.get("param_groups") or ())
+        return {"optimizers": children, "state": merged_state,
+                "param_groups": merged_groups}
 
     def load_state_dict(self, state):
-        for o, s in zip(self.optimizers, state.get("optimizers", [])):
-            o.load_state_dict(s)
+        children = state.get("optimizers")
+        if children is not None:
+            for o, s in zip(self.optimizers, children):
+                o.load_state_dict(s)
+            self._refresh_param_groups()
+            return
+        # torch-style dict: split back by the children's parameter counts.
+        merged_state = state.get("state") or {}
+        merged_groups = list(state.get("param_groups") or [])
+        offset = 0
+        cursor = 0
+        for o in self.optimizers:
+            n_groups = len(o.param_groups)
+            groups = merged_groups[cursor:cursor + n_groups]
+            cursor += n_groups
+            count = sum(len(g.get("params", ())) for g in groups)
+            local_groups = []
+            for g in groups:
+                lg = dict(g)
+                lg["params"] = [int(i) - offset for i in g.get("params", ())]
+                local_groups.append(lg)
+            local_state = {int(k) - offset: v for k, v in merged_state.items()
+                           if offset <= int(k) < offset + count}
+            o.load_state_dict({"state": local_state, "param_groups": local_groups})
+            offset += count
+        self._refresh_param_groups()
+
+
+class _MergedOptimizerState:
+    """Read-through ``optimizer.state`` over MultiOptimizer children."""
+
+    def __init__(self, optimizers):
+        self._optimizers = optimizers
+
+    def _owner(self, param):
+        for o in self._optimizers:
+            if param in o.state:
+                return o
+        return None
+
+    def __contains__(self, param):
+        return self._owner(param) is not None
+
+    def __getitem__(self, param):
+        owner = self._owner(param)
+        if owner is None:
+            raise KeyError(param)
+        return owner.state[param]
+
+    def get(self, param, default=None):
+        owner = self._owner(param)
+        return default if owner is None else owner.state[param]
+
+    def items(self):
+        for o in self._optimizers:
+            yield from o.state.items()
+
+    def keys(self):
+        for o in self._optimizers:
+            yield from o.state.keys()
+
+    def values(self):
+        for o in self._optimizers:
+            yield from o.state.values()
+
+    def __iter__(self):
+        return self.keys()
+
+    def __len__(self):
+        return sum(len(o.state) for o in self._optimizers)

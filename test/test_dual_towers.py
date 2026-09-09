@@ -19,11 +19,15 @@ from Spaces import Space, PartSpace, WholeSpace
 # Structural pins. Re-baselined 2026-07-17 when durable Basis/Encoding
 # ownership moved from persistent SubSpaces to their Spaces and duplicate
 # terminal/body/SymbolSpace aliases stopped registering the same modules.
+# Re-baselined 2026-09-09 (a8a5142): every ConceptualSpace gained the live
+# ``concepts_from_percepts`` readout and ``concept_source_readout`` sigma,
+# and the stage butterfly moved from ``layers.3`` to ``layers.5`` (+63/-15
+# keys on MM_20M_xor); no other key changed.
 _XOR_HEAD_NVEC = [8, 8, 8]
 _GRAMMAR_HEAD_NVEC = [4, 2, 2]
 _HEAD_SD = {  # (n_keys, sha16 of sorted state_dict key names)
-    "data/MM_20M_xor.xml": (506, "ae0b4b6e499b2c2a"),
-    "data/MM_20M_grammar.xml": (683, "7367194fffd38b70"),
+    "data/MM_20M_xor.xml": (554, "3eb1cc3a2392044d"),
+    "data/MM_20M_grammar.xml": (731, "6eea8571d26d4e91"),
 }
 
 

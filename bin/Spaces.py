@@ -6821,6 +6821,23 @@ class SubSpace(nn.Module):
             raise PermissionError("only the owning Space may commit its SubSpace")
         self.set_event(event_tensor, compute_activation=compute_activation)
 
+    def carrier_like(self):
+        """A fresh, ownerless carrier with this SubSpace's shapes, encodings
+        and bases but none of its per-batch state.  Answer synthesis writes
+        generated content into such a carrier so it never reuses a cached
+        reconstruction carrier (What spec section 5.4)."""
+        fresh = SubSpace(
+            inputShape=self.inputShape, outputShape=self.outputShape,
+            nInputDim=self._nInputDim, nOutputDim=self._nOutputDim,
+            objectEncoding=self.objectEncoding,
+            activeEncoding=self.activeEncoding,
+            whatEncoding=self.whatEncoding, whereEncoding=self.whereEncoding,
+            whenEncoding=self.whenEncoding, wordEncoding=self.wordEncoding,
+            object=self.event, what=self.what, where=self.where,
+            when=self.when, activation=self.activation)
+        fresh.normalizer = self.normalizer
+        return fresh
+
     def copy_context(self, other):
         """Adopt cross-stage/cross-forward state from ``other``.
 
@@ -9237,6 +9254,68 @@ class Space(SpaceCarrierMixin, nn.Module):
             self._pre_reshape_output = None
         self.subspace.set_event(x, compute_activation=compute_activation)
         return self.subspace
+
+    def synthesis_operator(self, width, *, device=None, dtype=None):
+        """This Space's DEDICATED answer-direction operator (Alec 2026-09-09).
+
+        ``reverseOutput`` is a dual of ``forward()`` with its own weights: the
+        shared inverse-direction chain is the backbone, and each Space applies
+        a learned, invertible ``[D, D]`` operator to the synthesized event.
+        Built on first use at IDENTITY (``InvertibleLinearLayer`` starts at
+        L = U = I, d = 1, zero bias), so enabling the answer path starts
+        exactly at the shared inverse; ``answer_construction`` then trains it
+        while reconstruction never touches it.  Lazily built so a
+        configuration that never synthesizes keeps its state-dict keys; the
+        owning model registers it with the live optimizer.
+        """
+        layer = getattr(self, "synthesis_layer", None)
+        if layer is None or int(getattr(layer, "nInput", width)) != int(width):
+            layer = InvertibleLinearLayer(int(width), int(width), hasBias=True)
+            if device is not None or dtype is not None:
+                layer = layer.to(device=device, dtype=dtype)
+            self.synthesis_layer = layer
+        return layer
+
+    def _apply_synthesis_operator(self, event):
+        if not torch.is_tensor(event) or event.dim() != 3:
+            return event
+        B, N, D = event.shape
+        layer = self.synthesis_operator(D, device=event.device, dtype=event.dtype)
+        return layer.forward(event.reshape(B * N, D)).reshape(B, N, D)
+
+    def synthesize(self, source, *, context=None, selections=(),
+                   reverse_chain=None):
+        """Top-down realization of a GENERATED state (What spec section 5.3).
+
+        ``source`` is an event tensor produced by the answer path (never a
+        cached reconstruction carrier).  It is written into a fresh carrier
+        and pushed through ``reverse_chain`` (default: this Space's own
+        ``reverse``), which may share the inverse-direction operators and
+        tied parameters used by reconstruction.  ``context`` is the live
+        field from the understanding; only the slots named in
+        ``selections`` may contribute, so perceptual context reaches the
+        answer through a named binding recorded by the caller, not through
+        an unrestricted residual.  Returns the realized event tensor.
+        """
+        if not torch.is_tensor(source):
+            raise TypeError("synthesize expects an event tensor")
+        carrier = self.subspace.carrier_like()
+        carrier.set_event(source)
+        chain = reverse_chain if reverse_chain is not None else self.reverse
+        realized = chain(carrier)
+        event = (realized.materialize()
+                 if hasattr(realized, "materialize") else realized)
+        event = self._apply_synthesis_operator(event)
+        if (selections and torch.is_tensor(context)
+                and torch.is_tensor(event) and context.dim() == event.dim() == 3
+                and context.shape[0] == event.shape[0]
+                and context.shape[-1] == event.shape[-1]):
+            event = event.clone()
+            for slot in selections:
+                slot = int(slot)
+                if 0 <= slot < min(context.shape[1], event.shape[1]):
+                    event[:, slot] = event[:, slot] + context[:, slot]
+        return event
 
     def reverseBegin(self, vspace, returnVectors=False):
         """Prepare input for space-specific reverse processing.
@@ -22137,6 +22216,47 @@ class ConceptualSpace(Space):
                 object.__setattr__(self, "_legacy_whole_structure", legacy)
             legacy.update(incoming_legacy)
 
+    def synthesize(self, answer_symbol, bindings=None, *, context=None,
+                   selections=(), reverse_chain=None):
+        """Concepts for a resolved answer symbol (What spec section 5.3).
+
+        The symbol->concept direction is the WholeSpace inverse (``Pi^-1``)
+        of the terminal symbolic stage, applied to a fresh carrier holding
+        the answer symbol.  ``bindings`` are recorded by the caller in the
+        derivation; ``context`` is the understanding's conceptual state and
+        contributes only through ``selections``.
+        """
+        if reverse_chain is None:
+            symbol_space = getattr(self, "symbolSpace", None)
+            ws = getattr(symbol_space, "wholeSpace", None)
+            if ws is None:
+                raise RuntimeError(
+                    "ConceptualSpace.synthesize needs the terminal WholeSpace")
+            chain = lambda carrier: ws.reverse(carrier)
+        else:
+            chain = reverse_chain
+        if not torch.is_tensor(answer_symbol):
+            raise TypeError("synthesize expects the answer symbol event")
+        symbol_space = getattr(self, "symbolSpace", None)
+        ws = getattr(symbol_space, "wholeSpace", None)
+        carrier_owner = ws if (reverse_chain is None and ws is not None) else self
+        carrier = carrier_owner.subspace.carrier_like()
+        carrier.set_event(answer_symbol)
+        realized = chain(carrier)
+        event = (realized.materialize()
+                 if hasattr(realized, "materialize") else realized)
+        event = self._apply_synthesis_operator(event)
+        if (selections and torch.is_tensor(context)
+                and torch.is_tensor(event) and context.dim() == event.dim() == 3
+                and context.shape[0] == event.shape[0]
+                and context.shape[-1] == event.shape[-1]):
+            event = event.clone()
+            for slot in selections:
+                slot = int(slot)
+                if 0 <= slot < min(context.shape[1], event.shape[1]):
+                    event[:, slot] = event[:, slot] + context[:, slot]
+        return event
+
     def reverse(self, subspace):
         """Reverse pass: undo this stage's owned folds.
 
@@ -28818,6 +28938,29 @@ class OutputSpace(Space):
             return torch.stack(outputBatch, dim=0).unsqueeze(1).to(
                 TheDevice.get())
         return outputBatch  # already [B, D, 1] and on device after toDevice()
+    def from_percepts(self, percepts):
+        """Modality adapter over CONSTRUCTED answer percepts (spec 5.3).
+
+        ``percepts`` is ``[B, N_p, D_p]`` from ``PerceptualSpace.synthesize``.
+        A percept-width invertible linear adapter (built on first use, so a
+        configuration that never synthesizes answers keeps its state-dict
+        keys) maps the flattened percepts to this Space's ``outputShape``.
+        The legacy symbol projection (``forward``) stays as the migration
+        oracle; it does not receive the unresolved input symbol here.
+        """
+        if not torch.is_tensor(percepts) or percepts.dim() != 3:
+            raise TypeError("from_percepts expects a [B, N, D] percept event")
+        B, N, D = percepts.shape
+        n_out = int(self.outputShape[0]) * int(self.outputShape[1])
+        adapter = getattr(self, "percept_adapter", None)
+        if adapter is None or int(getattr(adapter, "nInput", N * D)) != N * D:
+            adapter = InvertibleLinearLayer(N * D, n_out, hasBias=True).to(
+                device=percepts.device, dtype=percepts.dtype)
+            self.percept_adapter = adapter
+        flat = percepts.reshape(B, N * D)
+        out = adapter.forward(flat)
+        return out.reshape(B, int(self.outputShape[0]), int(self.outputShape[1]))
+
     def forward(self, subspace):
         """Acting: project symbols to task output.
 
