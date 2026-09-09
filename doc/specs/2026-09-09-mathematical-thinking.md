@@ -143,12 +143,23 @@ one unit of the per-iteration primitive budget.
 ```text
 lookup(v)           -> β(v) | ⊥
 evaluate(i)         -> Num | Unbound(vars)      # rhs of E_i under β
-bind(v, n)          -> σ' with β' = β[v ↦ n]
-substitute(i, v)    -> E_i with v replaced by β(v)     (stage 2)
+bind(v, n)          -> σ' with β' = β[v ↦ n]    # n clamped into [0, R)
+substitute(i, j)    -> E_i rewritten with the variable E_j defines
+                       (solved form v = expr) replaced by expr; the
+                       rewritten E_i replaces the old one in σ   (stage 2)
 constrain(i)        -> the linear constraint E_i applied under β; returns
-                       the bound variable and value when E_i determines
-                       one, else Unbound(vars)          (stage 2)
+                       Bound(v, n) when exactly one variable is unbound and
+                       the integral solution lies in [0, R), else
+                       Unbound(vars)                              (stage 2)
 ```
+
+`substitute` is algebraic elimination (the draft's "substitution"); with
+`x + y = 12 ; y = 2 * x` nothing is bound, so `substitute(0, 1)` gives
+`x + 2 * x = 12`, `constrain(0)` gives `Bound(x, 4)`, `bind(x, 4)`, and
+`constrain(1)` then gives `Bound(y, 8)`. Implementation: `bin/exact.py`
+`ExactState`; justification of a `bind` (an earlier `evaluate` /
+`constrain` producing that value for that variable) is checked by the
+verifier (section 9), not by the scratchpad.
 
 They are declared as `<Queries>` introspection ops in `data/math.grammar`
 (parse-NOPs, like `isTrue`), so they are named grammatical operations with

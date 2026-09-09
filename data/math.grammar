@@ -1,0 +1,103 @@
+<?xml version="1.0"?>
+<!--
+  math grammar: the default grammar plus the EXACT arithmetic introspection
+  ops of doc/specs/2026-09-09-mathematical-thinking.md section 5.2. They are
+  <Queries> (parse-NOPs executed by bin/exact.py ExactState), never chart
+  rules: named operations with explicit operands and results, recorded in
+  the derivation trace (spec 5.3). Otherwise identical to
+  default.grammar, which declares ONLY operator roles: each operand's
+  input role (op_I[n]) and the operator's output role (op_O1). POS /
+  construction membership is LEARNED from participation, not declared here.
+
+  RELOCATED 2026-07-12 to complete.grammar's operator form: the relation
+  family (part / equal) are COMPOSITIONAL operators (query="false" only);
+  their is-prefixed boolean-predicate cousins live in <Queries> (queries
+  are not parse structure). The 2026-07-05 FULL-removal relocation broke
+  the MM_grammar XOR bar (0.164 vs 0.15) and was reverted; this gentler
+  operator form keeps the parse producers and was re-measured green
+  against the same bar (test_mm_grammar_learns_xor_signal).
+-->
+<grammar name="math">
+
+  <PartSpace>
+    <!-- Analyzer root U; marker-free structural cover (stop / boundary /
+         uniform). compose = parts to whole (PS reverse); generate = whole
+         to parts (PS forward). -->
+    <start name="everything">U</start>
+    <Synthesize>
+      <rule>U = stop.forward(U)</rule>
+      <rule>U = boundary.forward(U, U)</rule>
+      <rule>U = uniform.forward(U, U)</rule>
+    </Synthesize>
+    <Analyze>
+      <rule>U = stop.reverse(U)</rule>
+      <rule>U, U = boundary.reverse(U)</rule>
+      <rule>U, U = uniform.reverse(U)</rule>
+    </Analyze>
+  </PartSpace>
+
+  <Symbolic>
+    <!-- The truth-producing relations are the start states; the connective
+         / composition outputs are intermediate ideas. -->
+    <start name="relative_truth">equal_O1</start>
+    <start name="relative_truth">part_O1</start>
+
+    <compose>
+      <!-- Subsymbolic tier (C): continuous activations. -->
+      <rule>union_O1 = union.forward(union_I1, union_I2)</rule>
+      <rule>intersection_O1 = intersection.forward(intersection_I1, intersection_I2)</rule>
+      <rule>verb_O1 = verb.forward(verb_I1, verb_I2)</rule>
+      <rule>adverb_O1 = adverb.forward(adverb_I1, adverb_I2)</rule>
+      <rule>lower_O1 = lower.forward(lower_I1, lower_I2)</rule>
+
+      <!-- Symbolic tier (S): resolved codebook activations. -->
+      <rule>not_O1 = not.forward(not_I1)</rule>
+      <rule>conjunction_O1 = conjunction.forward(conjunction_I1, conjunction_I2)</rule>
+      <rule>disjunction_O1 = disjunction.forward(disjunction_I1, disjunction_I2)</rule>
+
+      <!-- Relational truths: ASSERTIVE compose only (the operator form).
+           The interrogative query="true" twins are retired; the
+           boolean-predicate queries live in <Queries>. -->
+      <rule query="false">part_O1 = part.forward(part_I1, part_I2)</rule>
+      <rule query="false">equal_O1 = equal.forward(equal_I1, equal_I2)</rule>
+    </compose>
+
+    <generate>
+      <!-- Mirror of compose: output role back to input roles. -->
+      <rule>union_I1, union_I2 = union.reverse(union_O1)</rule>
+      <rule>intersection_I1, intersection_I2 = intersection.reverse(intersection_O1)</rule>
+      <rule>verb_I1, verb_I2 = verb.reverse(verb_O1)</rule>
+      <rule>adverb_I1, adverb_I2 = adverb.reverse(adverb_O1)</rule>
+      <rule>lower_I1, lower_I2 = lower.reverse(lower_O1)</rule>
+
+      <rule>not_I1 = not.reverse(not_O1)</rule>
+      <rule>conjunction_I1, conjunction_I2 = conjunction.reverse(conjunction_O1)</rule>
+      <rule>disjunction_I1, disjunction_I2 = disjunction.reverse(disjunction_O1)</rule>
+
+      <rule query="false">equal_I1, equal_I2 = equal.reverse(equal_O1)</rule>
+      <rule query="false">part_I1, part_I2 = part.reverse(part_O1)</rule>
+    </generate>
+  </Symbolic>
+
+  <Queries>
+    <!-- INTROSPECTION ops (parse-NOPs; see complete.grammar for the full
+         commentary). The truth-grounded reasoner + the Thinking Kernel
+         implement them. -->
+    <query>isTrue(X)</query>
+    <query>isEqual(X, Y)</query>
+    <query>isPart(X, Y)</query>
+    <query>parts(X)</query>
+    <query>wholes(X)</query>
+    <query>quantize(X)</query>
+    <query>query(X, Y)</query>
+    <!-- EXACT arithmetic primitives (mathematical thinking spec 5.2).
+         X, N are variable / numeral referents; E, F are premise indices
+         (the minimal intra-datum .where rung). -->
+    <query>lookup(X)</query>
+    <query>evaluate(E)</query>
+    <query>bind(X, N)</query>
+    <query>substitute(E, F)</query>
+    <query>constrain(E)</query>
+  </Queries>
+
+</grammar>

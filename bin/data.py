@@ -768,6 +768,8 @@ class Data():
                             max_sentence_words=max_sentence_words)
         if dataset == "inline":
             self.loadInline(dat or {})
+        if dataset == "math":
+            self.loadMath(dat or {})
         if dataset == "mnist":
             self.has_supervised_outputs = True
         self._compute_ranges()
@@ -1302,6 +1304,100 @@ class Data():
             "train":      {"text": docs, "label": labels},
             "validation": {"text": docs, "label": labels},
             "test":       {"text": docs, "label": labels},
+        }
+        self.train_input       = data["train"]["text"]
+        self.train_output      = data["train"]["label"]
+        self.validation_input  = data["validation"]["text"]
+        self.validation_output = data["validation"]["label"]
+        self.test_input        = data["test"]["text"]
+        self.test_output       = data["test"]["label"]
+        self.processLM(data)
+
+    def loadMath(self, dat=None):
+        """Exact dependency-arithmetic / linear-constraint problems
+        (doc/specs/2026-09-09-mathematical-thinking.md section 4).
+
+        Each presentation is one problem surface (premises, distractors and
+        the ``what is q ?`` clause, premise order shuffled); the label is the
+        one-hot answer over ``[0, R)``, so ``Data.what(What.supervised(row))``
+        returns it and ``has_supervised_outputs`` is true.  Splits partition
+        problems by dependency STRUCTURE; the held-out test depths appear
+        only in ``test``; positions are assigned independently of answers.
+        The generated ``Problem`` records (solver order, chain, structure)
+        stay on ``self.math_problems`` for the evaluation-side verifier;
+        they are never part of a presentation.
+
+        ``dat`` is the parsed ``<data>`` block: ``mathRange`` (64),
+        ``mathDepths`` ("1,2,3" or "1-3"), ``mathTestDepths`` ("4-6"),
+        ``mathDistractors`` (2), ``mathStage`` (1), ``mathSeed`` (0),
+        ``mathProblems`` (256).
+        """
+        from exact import MathProblemGenerator, split_by_structure
+
+        dat = dat or {}
+
+        def _int(key, default):
+            try:
+                return int(dat.get(key, default) or default)
+            except (TypeError, ValueError):
+                return int(default)
+
+        def _depths(key, default):
+            raw = str(dat.get(key, default) or default)
+            out = []
+            for part in raw.replace(";", ",").split(","):
+                part = part.strip()
+                if not part:
+                    continue
+                if "-" in part:
+                    lo, hi = part.split("-", 1)
+                    out.extend(range(int(lo), int(hi) + 1))
+                else:
+                    out.append(int(part))
+            return tuple(out) or tuple(default if isinstance(default, tuple)
+                                       else (1,))
+
+        R = _int("mathRange", 64)
+        depths = _depths("mathDepths", "1,2,3")
+        test_depths = _depths("mathTestDepths", "4,5,6")
+        max_d = _int("mathDistractors", 2)
+        stage = _int("mathStage", 1)
+        seed = _int("mathSeed", 0)
+        count = _int("mathProblems", 256)
+        gen = MathProblemGenerator(seed=seed, range=R, depths=depths,
+                                   distractors=tuple(range(max_d + 1)),
+                                   stage=stage)
+        problems = gen.problems(count)
+        if stage == 1 and test_depths:
+            deep = MathProblemGenerator(seed=seed + 1, range=R, depths=test_depths,
+                                        distractors=tuple(range(max_d + 1)),
+                                        stage=stage)
+            problems += deep.problems(max(1, count // 4))
+        splits = split_by_structure(problems, train_depths=depths)
+        # Presentation positions are independent of answers: a seeded
+        # shuffle per split, never sorted by anything the answer determines.
+        order_rng = random.Random(seed + 7)
+        for name in ("train", "validation", "test"):
+            order_rng.shuffle(splits[name])
+        # Never leave a split empty (tiny counts in tests): fall back to the
+        # train problems for a missing validation / test split.
+        for name in ("validation", "test"):
+            if not splits[name]:
+                splits[name] = list(splits["train"][: max(1, len(splits["train"]) // 4)])
+        if not splits["train"]:
+            splits["train"] = list(problems[: max(1, len(problems) // 2)])
+        self.math_problems = {k: list(v) for k, v in splits.items()}
+        self.math_range = R
+
+        def onehot(n):
+            row = [0.0] * R
+            row[int(n)] = 1.0
+            return row
+
+        data = {
+            name: {"text": [p.surface() for p in splits[name]],
+                   "label": [onehot(p.answer) for p in splits[name]]}
+            for name in ("train", "validation", "test")
         }
         self.train_input       = data["train"]["text"]
         self.train_output      = data["train"]["label"]

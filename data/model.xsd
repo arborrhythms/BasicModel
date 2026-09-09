@@ -744,6 +744,9 @@
       <xs:enumeration value="tomatoes"/>
       <xs:enumeration value="text"/>
       <xs:enumeration value="inline"/>
+      <!-- exact dependency-arithmetic / linear-constraint problems
+           (bin/exact.py MathProblemGenerator; mathematical thinking spec 4). -->
+      <xs:enumeration value="math"/>
     </xs:restriction>
   </xs:simpleType>
 
@@ -805,6 +808,20 @@
       <xs:element name="minFrequency" type="nonNegativeFloat"/>
       <xs:element name="classificationMin" type="xs:string"/>
       <xs:element name="classificationMax" type="xs:string"/>
+      <!-- <dataset>math</dataset> generator parameters (mathematical
+           thinking spec 4): integer range R (answers are one-hot over
+           [0, R) so OutputSpace.nOutput must equal it), the trained
+           depth list, the held-out test depth list, the maximum number of
+           distractor premises, the stage (1 = dependency chains, 2 =
+           simultaneous linear constraints), the generator seed, and the
+           number of generated problems. -->
+      <xs:element name="mathRange" type="xs:positiveInteger"/>
+      <xs:element name="mathDepths" type="xs:string"/>
+      <xs:element name="mathTestDepths" type="xs:string"/>
+      <xs:element name="mathDistractors" type="xs:nonNegativeInteger"/>
+      <xs:element name="mathStage" type="xs:positiveInteger"/>
+      <xs:element name="mathSeed" type="xs:nonNegativeInteger"/>
+      <xs:element name="mathProblems" type="xs:positiveInteger"/>
       <xs:element name="input">
         <xs:complexType>
           <xs:simpleContent>
