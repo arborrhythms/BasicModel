@@ -8183,8 +8183,10 @@ class BasicModel(BaseModel):
                 value = state.lookup(active) if (state is not None
                                                  and isinstance(active, str)) else None
                 if value is not None:
-                    out[b, 0, :] = numeral_code(int(value), D).to(
-                        device=out.device, dtype=out.dtype)
+                    out[b, 0, :] = numeral_code(
+                        int(value), D,
+                        answer_range=int(getattr(state, "range", 0) or 0),
+                    ).to(device=out.device, dtype=out.dtype)
                 if role == "root":
                     roots[b] = out[b]
                 steps.append(StepChoice(

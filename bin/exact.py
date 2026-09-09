@@ -232,12 +232,20 @@ class ExactLexer:
         return Equation(cls.parse_expr(cls._tokens(lhs)),
                         cls.parse_expr(cls._tokens(rhs)))
 
+    QUERY_VAR = "_"        # the synthetic referent of a bare expression
+
     @classmethod
     def lex(cls, surface: str) -> Tuple[Tuple[Equation, ...], str]:
         clauses = [c.strip() for c in str(surface).split(";")]
         clauses = [c for c in clauses if c]
         if not clauses:
             raise ValueError("empty problem surface")
+        if len(clauses) == 1 and "=" not in clauses[0] and not clauses[0].lower().startswith("what"):
+            # Stage 0: a bare expression IS the question ("what is a + b");
+            # present it as one solved-form premise ``_ = expr`` so the
+            # same primitives (evaluate / bind) answer it exactly.
+            expr = cls.parse_expr(cls._tokens(clauses[0]))
+            return (Equation(var(cls.QUERY_VAR), expr),), cls.QUERY_VAR
         question = cls._tokens(clauses[-1])
         if question and question[-1] == "?":
             question = question[:-1]
@@ -376,15 +384,25 @@ class ExactState:
 
 # -- numeral code (spec 6.3 fallback) -----------------------------------------
 
-def numeral_code(n: int, width: int, bits: Optional[int] = None):
+def numeral_code(n: int, width: int, bits: Optional[int] = None,
+                 answer_range: Optional[int] = None):
     """Fixed, parameter-free code for integer ``n`` in a ``width``-wide
-    slot: the binary digits of ``n`` as +-1 over the first ``bits``
-    coordinates (LSB first), zero elsewhere.  Distinct integers give
-    distinct codes; the model's answer symbol root slot receives it when
-    no lexicon row exists for the numeral surface."""
+    slot.  With ``answer_range`` given and ``answer_range <= width`` the code is ONE-HOT
+    (+1 at coordinate ``n``, -1 elsewhere over the first ``range``
+    coordinates): a linear output adapter can then realize the one-hot
+    answer directly.  Otherwise the binary digits of ``n`` as +-1 over the
+    first ``bits`` coordinates (LSB first), zero elsewhere.  Distinct
+    integers give distinct codes; the model's answer symbol root slot
+    receives it when no lexicon row exists for the numeral surface."""
     import torch
 
     width = int(width)
+    if (answer_range is not None and 0 < int(answer_range) <= width
+            and 0 <= int(n) < int(answer_range)):
+        code = torch.zeros(width)
+        code[: int(answer_range)] = -1.0
+        code[int(n)] = 1.0
+        return code
     if bits is None:
         bits = max(1, int(n).bit_length()) if n >= 0 else 1
         bits = max(bits, min(width, 8))
@@ -482,19 +500,23 @@ class MathProblemGenerator:
         curriculum stage that precedes any substitution)."""
         R = self.range
         op = self.rng.choice(self.operators)
+        # Sample the ANSWER uniformly over [0, R) first, then the operands
+        # that produce it: sampling a then b < R - a skews sums toward
+        # R - 1 (13.5 % of a corpus at R = 32), and a majority-answer head
+        # then matches that plateau without learning arithmetic.
         if op == "sub":
-            a = self.rng.randrange(0, R)
-            b = self.rng.randrange(0, a + 1)
-            value = a - b
+            value = self.rng.randrange(0, R)
+            b = self.rng.randrange(0, R - value)
+            a = value + b
         elif op == "mul":
             a = self.rng.randrange(0, R)
             b = self.rng.randrange(0, (R - 1) // max(1, a) + 1) if a else self.rng.randrange(0, R)
             value = a * b
         else:
             op = "add"
-            a = self.rng.randrange(0, R)
-            b = self.rng.randrange(0, R - a)
-            value = a + b
+            value = self.rng.randrange(0, R)
+            a = self.rng.randrange(0, value + 1)
+            b = value - a
         expr = (op, num(a), num(b))
         structure = hashlib.sha1(f"s0|{op}".encode()).hexdigest()[:12]
         return Problem((), "", int(value), 0, structure, R, 0, frozenset(), (),

@@ -163,6 +163,19 @@ Acceptance: measured train / held-out-pair accuracy and both primary
 costs over epochs, reported in the pilot report; the answer-synthesis
 path compared against the direct head. Only after stage 0 is learned does
 the curriculum proceed to variables (stage 1) and substitution (stage 2).
+Result 2026-09-09 (pilot report, "Stage 0"): the LEARNED direct answer
+(gradient only, no primitives) stays at chance at 14 and 64 wide, for
+two-digit and single-digit sums, and collapses to the majority answer
+when the answer distribution is skewed; a linear probe of the untrained
+states recovers the operands only partly and the sum not at all. Through
+the EXACT route (bare expression lexed as `_ = a + b`, learned chooser
+under policy credit choosing evaluate / bind / answer, one-hot numeral
+code) the model reaches 100 % on training and on unseen pairs by epoch 10
+(4096 problems, R = 32, 64 wide) and by epoch 25 on the small test
+configuration (`test_stage_zero_direct_arithmetic_learns_through_the_exact_route`).
+So the stack does direct arithmetic by SELECTING the exact operation, not
+by computing it in the folds; the next rung is stage 1 with the same
+route (the depth-1 chain: open the operand's premise, evaluate, bind).
 
 ## Test evidence rule
 

@@ -109,3 +109,65 @@ the gate-off path is byte-identical by construction (pinned by the What
 suites). The illumination *probe* (a learned readout over conceptual
 states) is not implemented; `illumination_gain` in the script is the
 oracle-side candidate measure over accepted derivation steps.
+
+## Stage 0: direct arithmetic (Alec, 2026-09-09, later the same day)
+
+Alec's diagnosis: stage-1 problems were not answered because the stack
+could not yet do direct arithmetic. `data/MM_add.xml` presents `a + b`,
+expects the one-hot `c`, reconstructs the input; 4096 stochastic problems
+at `R = 32`, answers sampled uniformly (sampling `a` then `b < R - a`
+skews sums to `R - 1` at 13.5 %, and a majority-answer head matched that
+plateau exactly), held-out set = unseen operand pairs (384 of 528 pairs
+seen in training). Codebooks were raised (CS 512, WS 4096, PS 4096 rows):
+128 / 200 rows were exhausted by the numerals and promoted chunks.
+
+Learned direct answer (gradient only; `runEpoch`, batch 32, lr 5e-3):
+
+| run | width | corpus | epochs | train acc | held-out acc | prediction histogram |
+|---|---:|---|---:|---:|---:|---|
+| skewed, synthesis | 14 | R=32 | 20 | 0.127 | 0.088 | always 31 (majority) |
+| skewed, direct head | 14 | R=32 | 20 | 0.127 | 0.088 | always 31 |
+| skewed, synthesis | 64 | R=32 | 50 | 0.127 | 0.088 | always 31 |
+| uniform, synthesis | 14 | R=32 | 100 | 0.043 | 0.037 | 20 / 2 / 28 |
+| uniform, synthesis | 64 | R=32 | 100 | 0.043 | 0.029 | 20 / 2 / 8 |
+| uniform, synthesis | 14 | R=10 (single digit) | 50 | 0.129 | 0.000 | 1 / 3 / 2 |
+
+Chance is 1/32 (0.031) and 1/10; the majority baselines are 0.135, 0.047
+and 0.133. Reconstruction stayed tiny throughout (`input_reconstruction`
+3e-4, `reverseReconstruct` cost 5e-5): the input is reconstructed, the
+sum is not computed. Linear probes from the UNTRAINED 64-wide states to
+the answer (2048 train rows, 512 held-out):
+
+| state | -> a | -> b | -> a + b |
+|---|---:|---:|---:|
+| percepts (512-d) | 0.369 | 0.441 | 0.010 |
+| concepts (128-d) | 0.277 | 0.449 | 0.014 |
+| symbols (256-d) | 0.297 | 0.477 | 0.008 |
+
+The operands are only partly linearly present (multi-digit numerals at
+shifting byte positions) and the sum is absent from every state: the
+stack would have to compute it in the folds, and in this topology and
+budget it does not.
+
+Exact route (the design's intent: primitives supplied, selection
+learned). The lexer presents the bare expression as `_ = a + b`; the
+learned `WhatStepChooser` chooses among ANSWER / `evaluate:0` /
+`bind:_=v` with `<whatThinkingPolicyWeight>0.5`; a bound value sets the
+root slot to the ONE-HOT numeral code (width 64 >= R); the answer path
+realizes it. Same corpus, `runEpoch`, batch 32, lr 5e-3, 64 wide:
+
+| epoch | answer loss | train acc | held-out acc | rows bound | mean iterations |
+|---:|---:|---:|---:|---:|---:|
+| 0 | -- | 0.014 | -- | 0.00 | 1.0 |
+| 10 | 0.0000 | 1.000 | 1.000 | 1.00 / 1.00 | 1.0 |
+
+The small test configuration (R = 16, 32 wide, 256 problems, lr 1e-2)
+reaches 1.000 / 1.000 by epoch 25 in about eight seconds
+(`test_stage_zero_direct_arithmetic_learns_through_the_exact_route`).
+
+Reading: the stack answers direct arithmetic exactly and generalizes to
+unseen pairs when arithmetic is a named operation it learns to SELECT
+and whose result it learns to REALIZE; it does not learn to compute the
+sum from bytes by gradient. Stage 1 should be attempted on the same
+route (the depth-1 chain is open / evaluate / bind / answer), which is
+what the earlier pilot lacked: a stage-0 policy to build on.

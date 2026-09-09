@@ -344,3 +344,109 @@ def test_learning_floor_depth_one_and_two(policy_config):
     target = y.reshape(n, -1).argmax(-1)
     accuracy = float((predicted == target).float().mean())
     assert accuracy > 0.5, accuracy
+
+
+# -- stage 0 through the exact route (Alec, 2026-09-09) -------------------------
+
+@pytest.fixture(scope="module")
+def stage_zero_config(tmp_path_factory):
+    """MM_add (direct arithmetic) at R = 16, 32 wide (the one-hot numeral
+    code needs width >= R), 256 stochastic problems split by unseen pairs,
+    a two-iteration episode with three primitives and policy credit."""
+    src = (_DATA / "MM_add.xml").read_text()
+    for tag in ("nDim", "nInputDim", "nOutputDim"):
+        src = src.replace(f"<{tag}>14</{tag}>", f"<{tag}>32</{tag}>")
+    src = (src.replace("<mathRange>32</mathRange>", "<mathRange>16</mathRange>")
+              .replace("<nOutput>32</nOutput>", "<nOutput>16</nOutput>")
+              .replace("<mathProblems>4096</mathProblems>", "<mathProblems>256</mathProblems>")
+              .replace("<answerSynthesis>true</answerSynthesis>",
+                       "<answerSynthesis>true</answerSynthesis>\n"
+                       "    <whatThinkingMemory>true</whatThinkingMemory>\n"
+                       "    <whatThinkingDetach>episode</whatThinkingDetach>\n"
+                       "    <whatThinkingIterations>2</whatThinkingIterations>\n"
+                       "    <whatThinkingPrimitives>3</whatThinkingPrimitives>")
+              .replace("</training>",
+                       "      <whatThinkingPolicyWeight>0.5</whatThinkingPolicyWeight>\n"
+                       "    </training>", 1))
+    path = tmp_path_factory.mktemp("cfg") / "MM_add_exact.xml"
+    path.write_text(src)
+    return path
+
+
+def _build_stage_zero(config_path):
+    import Language
+    from util import init_config
+    from data import TheData
+    import Models
+
+    init_config(path=str(config_path), defaults_path=str(_DATA / "model.xml"))
+    Language.TheGrammar._configured = False
+    cfg = Models.BaseModel.load_config(str(config_path))
+    TheData.load("math", dat=cfg["architecture"]["data"])
+    torch.manual_seed(0)
+    m, _ = Models.BaseModel.from_config(str(config_path), data=TheData)
+    return m.to("cpu")
+
+
+def _exact_accuracy(m, split):
+    data = m.inputSpace.data
+    n = data.what_extent(split)
+    correct = 0
+    m.eval()
+    with torch.no_grad():
+        for start in range(0, n, 64):
+            idx = list(range(start, min(n, start + 64)))
+            x = m.inputSpace.prepInput(
+                [data._what_split_values(split, "input")[i] for i in idx])
+            y = m.outputSpace.prepOutput(
+                [data._what_split_values(split, "output")[i] for i in idx])
+            result = m.think(tuple(What.supervised(i, split=split) for i in idx), x)
+            pred = torch.stack([a.what.reshape(-1) for a in result.answers]).argmax(-1)
+            correct += int((pred == y.reshape(len(idx), -1).argmax(-1)).sum())
+    m.train()
+    return correct / max(1, n)
+
+
+def test_stage_zero_direct_arithmetic_learns_through_the_exact_route(stage_zero_config):
+    """Alec 2026-09-09: the stack must answer direct problems ("a + b" in,
+    c out, the input reconstructed) before any substitution.  The learned
+    direct head stays at chance (pilot report); through the exact route --
+    the bare expression lexed as ``_ = a + b``, the learned WhatStepChooser
+    choosing evaluate / bind / answer under policy credit, the one-hot
+    numeral code realized by the answer path -- the model reaches exact
+    accuracy on training AND unseen operand pairs within 40 epochs."""
+    m = _build_stage_zero(stage_zero_config)
+    data = m.inputSpace.data
+    assert all(p.stage == 0 for p in data.math_problems["train"])
+    assert _exact_accuracy(m, "train") < 0.5              # untrained: chance
+    opt = m.getOptimizer(lr=0.01)
+    best = (0.0, 0.0)
+    for epoch in range(1, 41):
+        m.train()
+        m.runEpoch(optimizer=opt, batchSize=32, split="train")
+        if epoch % 5 == 0:
+            best = (_exact_accuracy(m, "train"), _exact_accuracy(m, "test"))
+            if best[0] >= 0.9 and best[1] >= 0.9:
+                break
+    assert best[0] >= 0.9 and best[1] >= 0.9, best
+    # The derivation is exact and replayable: every row bound its query
+    # through evaluate + bind, and the answer symbol's root slot carries
+    # the one-hot numeral code of that value.
+    from exact import numeral_code
+    x = m.inputSpace.prepInput([data.train_input[0]])
+    m.eval()
+    with torch.no_grad():
+        result = m.think(What.supervised(0), x)
+    state, query = m._what_exact_states[0]
+    assert query == "_" and state.lookup("_") == data.math_problems["train"][0].answer
+    ops = [s["operation"] for s in state.trace]
+    assert "exact:evaluate" in ops and "exact:bind" in ops
+    symbol = m._last_answer_construction.derivation.answer_symbol
+    code = numeral_code(state.lookup("_"), symbol.shape[-1], answer_range=16)
+    # The root slot is the one-hot code plus the (trained) question
+    # conditioner's delta: the answer band's argmax is the bound value.
+    assert int(symbol[0, 0, :16].argmax()) == int(code[:16].argmax()) == state.lookup("_")
+    assert float((symbol[0, 0, :16] - code[:16]).abs().max()) < 0.5
+    report = m.what_report()
+    assert report["policy"]["thinking"]["choices"] > 0
+    assert torch.isfinite(torch.tensor(report["families"]["supervised"]["answer_construction"]))

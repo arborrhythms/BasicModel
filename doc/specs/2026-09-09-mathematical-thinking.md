@@ -99,9 +99,13 @@ by the kernel; it never enters model context.
 Stage 0 presents the bare expression (`a + b`; `sub` / `mul` under
 `<mathOperators>`), its value as the one-hot answer, and holds out unseen
 operand PAIRS (`exact.split_by_surface`); it is a stochastic sample with
-replacement, so `<mathProblems>` should be large (thousands). No
-scratchpad is lexed for a stage-0 row (the lexer needs a `what is`
-clause), so a thinking-configured model answers it in one iteration.
+replacement, so `<mathProblems>` should be large (thousands). A
+stage-0 row IS lexed: a bare expression is the question, presented as
+the single solved-form premise `_ = a + b` with query `_`, so the same
+primitives answer it (`evaluate(0)`, `bind(_, value)`, ANSWER). The
+numeral code is one-hot inside the root slot when the symbol width is at
+least `R` (a linear adapter then realizes the one-hot answer directly; a
+binary code is not linearly decodable to one-hot), else the binary code.
 
 For stages 1 and 2, one presentation (one `where`) is one problem: the
 premises, distractors and question rendered as a single sentence with `;`
