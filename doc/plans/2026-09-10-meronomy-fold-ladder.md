@@ -202,9 +202,11 @@ is withdrawn. The contract:
   therefore happens only where the tiling ladder has a coarser whole,
   never by a synthesis rung on its own.
 - Overlength wholes (more than `M` atoms) are divided by the analysis
-  ladder at the finest available boundary, and if none exists, cut at `M`
-  with the cut position recorded on the witness (an explicit, visible
-  fallback, not a silent truncation).
+  ladder at the finest available boundary once the learned predicates
+  exist; until then the compiled loop's fixed residual capacity keeps its
+  documented fail-loud contract (a unit it cannot lay out fails at the
+  eager boundary with its width; nothing is truncated silently), and the
+  eager stem presents every atom of a unit.
 - The analysis ladder's top is the unity and its floor is the byte-complete
   tiling; contract 3's bootstrap decides which intermediate tilings exist
   on the first epoch. The loop-placement table below says so.
@@ -457,6 +459,17 @@ names, checkpoint keys, masks, losses and outputs on the fixtures before
 and after (a pinned-output test per touched fixture), not by unchanged
 test counts alone.
 
+Status (2026-09-10): landed. `LanguageSpace.forward` / `reverse` are the
+entries (`compose` / `generate` delegate to them); the three model call
+sites use `forward`; `Legacy.LEGACY_WHOLE_ANALYSIS_MODES` and
+`stage_analysis_spans_legacy` dispatch the non-meronomy cuts, and the
+canonical branch reads one mode; the PartSpace side needed no code (radix
+was already a Legacy front end; `meronomy` stays radix-backed until
+Phase 1). Pinned outputs (answers, symbolic state, staged spans) on
+`MM_xor`, the verb fixture and the canonical successor config are
+identical before and after. Tests: `test/test_meronomy_ladder.py`
+(Phase 0 section).
+
 ### Phase 1 — synthesis as the fold ladder
 
 Step 0 (prerequisite): fix the aligned-protocol checkpoint round trip of
@@ -496,6 +509,31 @@ the aligned fold-ladder wrappers and `embed_stem`'s PartSpace part retire),
 `utilityMinCount`), `doc/Params.md`, `doc/Mereology.md`, `doc/Spaces.md`,
 `doc/Componentization.md`.
 
+Status (2026-09-10, step A landed): `PartSpace._embed_ladder_word_major`
+is the canonical stem on the aligned serial path: the units are the
+staged wholes (the model hands the tiling to PartSpace transiently, as it
+does the growth callback), the atoms are byte rows with exact spans (the
+witness is the existing ids / mask / offsets / part-spans record), no
+longest match and no promotion run; an overlength unit is cut at the
+residual capacity and marked. Rung 0 joins by max
+(`MeronymicFoldAdapter.set_law = "max"` on the canonical adapters). The
+non-word-major meronomy path is still radix-backed (pending). Fixture
+`data/MM_ladder.xml` (3.4M parameters, BasicModel topology, successor
+corpus, digit wholes); tests in `test/test_meronomy_ladder.py` (step A
+section): units, byte atoms, byte-exact witness replay under permutation
+and repetition, the capacity cut, the max law.
+
+Status (2026-09-10, step D-0 landed): rung-0 admission by recurrence in
+the ladder stem: a unit seen `chunkPromotionThreshold` times (the
+admission count) gets a row seeded with its rung-0 code (the max over its
+atom rows), queued and committed at the boundary flush, never while online
+learning is frozen; digits are separate units so `12` is never admitted.
+The word store therefore fills from units, not trie chunks
+(`test_word_store.py` green). Successor corpus on the canonical config
+with the ladder stem, 20 epochs: 19 % (the digit-whole floor was 21 %),
+same per-fact pattern (digit count separated, digit identity not read),
+so the stem is a non-regression and the identity work is step D proper.
+
 Acceptance checkpoints, in order: (a) ordered carriers and byte coverage
 (the contract 1 tests, including permutations, repeated bytes, `11`;
 empty and overlength input; batch-row isolation; finite gradients); (b)
@@ -533,6 +571,18 @@ Files: `bin/Spaces.py` WholeSpace (`forward`: the tiling ladder from the
 learned predicate; `Reset`: predicate update), `bin/Layers.py` (the
 predicate parameters on the property SubSpace), `doc/Mereology.md`
 "Analyzer" section, `doc/Architecture.md`.
+
+Status (2026-09-10, step 1 landed): `WholeSpace.stage_analysis_spans`
+(canonical branch) stages the two-rung tiling ladder at pass 0, the
+space-bounded coarse tiling over the unit tiling, and the unit-to-whole
+parent map (`_staged_tiling_ladder`, `_staged_unit_parent`); the unity
+and the byte floor are implicit. The unit tiling follows the contract 3
+priors: space and punctuation are boundaries, letter / digit flips are not
+(`w0`, `abc123` are one unit each; the property-signature cut still
+divides them as the WholeSpace view inside the unit), and the digit
+singleton makes every digit a unit when `<digitWholes>` is on. The
+learned predicates (contract 3) and the boundary-type admission (step 3)
+are next; until then the two rungs are the canonical priors.
 
 Acceptance: the untagged cold start learns space as the basic boundary on
 a small text corpus with the canonical fallback verified off; the digit

@@ -10438,11 +10438,22 @@ class BasicModel(BaseModel):
             object.__setattr__(
                 self.perceptualSpace, "_radix_growth_callback",
                 self._on_partspace_eager_growth)
+            # The analysis tiling staged above is the ladder stem's unit
+            # list (meronomy fold-ladder plan, contract 2: the towers share
+            # one tiling); handed over transiently, like the callback.
+            _unit_rows = None
+            _spans_full = (getattr(_ws_list[0], "_staged_unit_spans", None)
+                           if _ws_list else None)
+            if torch.is_tensor(_spans_full) and _spans_full.dim() == 3:
+                _unit_rows = [[(int(a), int(z)) for (a, z) in row.tolist() if z > a]
+                              for row in _spans_full.detach().to("cpu")]
+            object.__setattr__(self.perceptualSpace, "_staged_unit_spans", _unit_rows)
             try:
                 self.perceptualSpace.embed_stem(in_sub)
             finally:
                 object.__setattr__(
                     self.perceptualSpace, "_radix_growth_callback", None)
+                object.__setattr__(self.perceptualSpace, "_staged_unit_spans", None)
             self.inputSpace.finalize_stem(in_sub, self.perceptualSpace)
         # Resolve sparse concept identities only after the word-major PS stem
         # has exposed its exact residual parts and WS has staged the matching
@@ -10529,6 +10540,9 @@ class BasicModel(BaseModel):
             _ss._staged_analysis_kinds = None
             _ss._staged_analysis_spans_full = None
             _ss._staged_analysis_kinds_full = None
+            _ss._staged_unit_spans = None
+            _ss._staged_tiling_ladder = None
+            _ss._staged_unit_parent = None
             _ss._staged_word_property_weights = None
             _ss._staged_word_property_spans = None
             _ss._where_tiling_schedule = None
@@ -17505,7 +17519,7 @@ class BasicModel(BaseModel):
         if getattr(self, 'router_wire_serial', 'both') not in (
                 'per-word', 'both'):
             return None
-        return self.languageSpace.compose(b_result.symbolic_snapshot)
+        return self.languageSpace.forward(b_result.symbolic_snapshot)
 
     def _tensor_peer_while_ready(self, width):
         """Whether the staged sentence satisfies the functional HOP contract.
@@ -18925,7 +18939,7 @@ class BasicModel(BaseModel):
         # "[1016] at version 1" backward crash). The per-word fire exists
         # for the RULE BOOKKEEPING (current_rules); the boundary fire
         # keeps the gradient role.
-        self.languageSpace.compose(snap.detach().clone())
+        self.languageSpace.forward(snap.detach().clone())
 
     def _chart_compose_at_C(self, stage_idx=0):
         """Fire the signal router at C-space_role over
@@ -18970,7 +18984,7 @@ class BasicModel(BaseModel):
         # LanguageSpace schedules the existing SymbolSpace-owned parser and
         # returns its reduction plan. CS remains the only owner that commits
         # any conceptual/STM mutation from that plan.
-        self.languageSpace.compose(snap)
+        self.languageSpace.forward(snap)
 
     def _reverse_seed_snapshot(self, seed):
         """Return a ``[B, N, D]`` idea snapshot from reverse's seed, if any."""

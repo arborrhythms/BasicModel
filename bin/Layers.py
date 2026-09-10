@@ -5936,6 +5936,22 @@ class MeronymicFoldAdapter(Layer):
         the subsequent unary sigma ladder.  This computation has no diagnostic
         cache write and is therefore safe inside a higher-order recurrent op.
         """
+        if getattr(self, "set_law", "union") == "max":
+            # Meronomy fold ladder (contract 1): the join is the max over
+            # parts per coordinate, the idempotent lattice join (a category
+            # does not count its parts; multiplicity and order live on the
+            # witness).  Masked constituents are the join identity (zero).
+            if mask is None:
+                valid = torch.ones(part_codes.shape[:-1], dtype=torch.bool,
+                                   device=part_codes.device)
+            else:
+                valid = mask.to(device=part_codes.device, dtype=torch.bool)
+            membership = part_codes.clamp(0.0, 1.0)
+            membership = torch.where(valid.unsqueeze(-1), membership,
+                                     torch.zeros_like(membership))
+            out = membership.amax(dim=-2)
+            any_valid = valid.any(dim=-1, keepdim=True)
+            return torch.where(any_valid, out, torch.zeros_like(out))
         union_m, valid, _complement = self._set_union_membership(
             part_codes, mask=mask)
         out = union_m

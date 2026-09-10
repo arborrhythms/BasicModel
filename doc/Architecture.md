@@ -448,6 +448,8 @@ which properties/level).
   dissociate from each other behaviorally (selection/reward history
   captures attention even AGAINST current goals: Awh, Belopolsky &
   Theeuwes 2012) — both channels WRITE, neither vetoes.
+  (Since 2026-09-10 the wholes the symbols map onto are the units of the
+  meronomy fold ladder, doc/plans/2026-09-10-meronomy-fold-ladder.md.)
   **`readingAttention` is HARD-CODED over this surface**: the reading
   scope is the span of the hottest-primed word-whole
   (`_primed_reading_step`, the learned producer's contract) — the

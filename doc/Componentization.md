@@ -84,7 +84,7 @@ so carrying a changing concept-history slab would scale as
 `W × B × W × concept_dim`.
 
 The capacity axis otherwise belongs only to staged inputs and compact result
-slabs. The radix spelling surface is `[B,W,P]` integer subword IDs plus a mask;
+slabs. The spelling surface is `[B,W,P]` integer IDs plus a mask (under the canonical meronomy fold ladder the IDs are byte atoms per unit, one unit per staged whole; under the legacy radix front end they are trie chunk ids);
 P64 is not 64 dense byte vectors, and the live count falls as longer trie
 chunks are learned. Codebooks remain single Space-owned tensors captured by
 reference across every statically unrolled fold; optimizer and contextual

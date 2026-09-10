@@ -46,6 +46,40 @@ LEGACY_PART_SYNTHESIS_MODES = frozenset({
     "bpe", "mphf", "lexicon", "none", "byte", "radix",
 })
 
+# The WholeSpace analysis cuts other than ``meronomy`` (meronomy fold-ladder
+# plan, Phase 0): ``byte`` / ``raw`` / ``sentence`` stage no division;
+# ``word`` / ``grammatical`` stage the type-run cut.  Their dispatch lives
+# here so the canonical WholeSpace branch reads one mode.
+LEGACY_WHOLE_ANALYSIS_MODES = frozenset({
+    "byte", "raw", "sentence", "word", "grammatical",
+})
+
+
+def normalize_whole_analysis_mode(mode):
+    """Validate one parked WholeSpace analysis spelling."""
+    value = str(mode or "").strip().lower()
+    if value not in LEGACY_WHOLE_ANALYSIS_MODES:
+        raise ValueError(
+            "legacy WholeSpace analysis must be "
+            "byte|raw|sentence|word|grammatical, "
+            f"got {mode!r}")
+    return value
+
+
+def stage_analysis_spans_legacy(whole_space, IS_concepts, mode):
+    """Run a parked analysis cut for an older configuration.
+
+    ``byte`` / ``raw`` / ``sentence``: no division (the analyzer stages no
+    spans; the pooling default needs none).  ``word`` / ``grammatical``: the
+    type-run cut, byte-identical to the canonical ``meronomy`` cut.
+    """
+    value = normalize_whole_analysis_mode(mode)
+    if value in ("byte", "raw", "sentence") or IS_concepts is None:
+        object.__setattr__(whole_space, "_staged_property_signatures", None)
+        return None
+    from Spaces import WholeSpace   # lazy: Spaces imports this module
+    return WholeSpace._stage_type_run_spans(whole_space, IS_concepts)
+
 
 def normalize_part_synthesis_mode(mode):
     """Validate and normalize one parked PartSpace synthesis spelling."""

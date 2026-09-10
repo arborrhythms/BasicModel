@@ -14245,13 +14245,27 @@ class LanguageSpace(nn.Module):
             plan / mass.clamp_min(torch.finfo(plan.dtype).tiny),
             valid)
 
-    def compose(self, symbolic_snapshot):
+    def forward(self, symbolic_snapshot):
+        """The symbolic loop's compose step: run the grammar over the STM
+        snapshot (``SymbolSpace.forward``) and return the reduction plan.
+        Called as ``forward()`` like every other Space (meronomy fold-ladder
+        plan, "Loop placement")."""
         self._symbol_space.forward(symbolic_snapshot)
         return self.reduction_plan()
 
-    def generate(self, symbolic_snapshot):
+    def reverse(self, symbolic_snapshot):
+        """The symbolic loop's generate step (``SymbolSpace.reverse``);
+        returns the reduction plan."""
         self._symbol_space.reverse(symbolic_snapshot)
         return self.reduction_plan()
+
+    # Legacy spellings of the two entries above (kept for older callers;
+    # the model calls ``forward`` / ``reverse``).
+    def compose(self, symbolic_snapshot):
+        return self.forward(symbolic_snapshot)
+
+    def generate(self, symbolic_snapshot):
+        return self.reverse(symbolic_snapshot)
 
     @staticmethod
     def _snapshot_plan_value(value):

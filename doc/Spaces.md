@@ -552,6 +552,28 @@ These lattice roles are not the same thing as the `SigmaLayer`/`PiLayer`
 butterfly ownership described above. The membership operators constrain
 mereological presence; the butterfly folds carry higher-order transformations.
 
+### The Fold Ladder (2026-09-10) {#fold-ladder}
+
+Under the canonical `<synthesis>meronomy</synthesis>` (doc/plans/
+2026-09-10-meronomy-fold-ladder.md) PartSpace no longer spells a word
+through a radix trie. The serial loop's **units** are the wholes of the
+analysis tiling (`WholeSpace.stage_analysis_spans` stages the four-class
+type runs with the digit singleton; the model hands them to PartSpace
+transiently), and a unit's **atoms** are its bytes: the one-byte rows of
+the percept store, in surface order with exact spans. That ordered record
+(ids, mask, offsets, part spans) is the **witness**; input reconstruction
+replays it byte-exactly. **Rung 0** is the max over the unit's atom rows
+(`MeronymicFoldAdapter.set_law = "max"`, the idempotent lattice join: a
+category does not count its parts); the learned sigma rungs raise order
+above it. A unit that recurs `chunkPromotionThreshold` times is
+**admitted**: it gets a row seeded with its rung-0 code, queued and
+committed at the boundary flush, never while online learning is frozen.
+Digits cut as wholes are separate units, so `12` is never fused below the
+grammar. The WholeSpace value of a whole is the **meet** of its positions'
+property activations (min over positions), so the two towers are a max
+join from nothing and a min meet from everything; negation enters first
+at the conceptual level.
+
 ### Percept-to-Concept Seam {#percept-concept-seam}
 
 The percept origin and the concept origin have different readings:

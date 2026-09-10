@@ -674,10 +674,18 @@ operational basic level. The current boundary rule pins that level to words as
 a first approximation; learning the more general Rosch-style basic level is an
 open extension.
 
-The adjoint pair can subsume alternate text front ends, but the implementation
-continues to support the existing synthesis modes (`radix`, `lexicon`, `bpe`,
-`mphf`, and `byte`) and analysis cuts (`byte`, `word`, `raw`, `sentence`,
-`grammatical`, and `meronomy`).
+Since 2026-09-10 (doc/plans/2026-09-10-meronomy-fold-ladder.md) `meronomy`
+is the only canonical mode on both sides: PartSpace synthesis is the fold
+ladder (units = the staged wholes, atoms = bytes with an ordered witness,
+rung 0 = the max over atoms, admission of recurring units at the boundary
+flush) and WholeSpace analysis is the descending tiling ladder (the
+four-class unit tiling with the digit singleton until the boundary
+predicates are learned). The other synthesis modes (`radix`, `lexicon`,
+`bpe`, `mphf`, `byte`) and analysis cuts (`byte`, `word`, `raw`,
+`sentence`, `grammatical`) are legacy front ends dispatched by
+`bin/Legacy.py`. The two towers are not duals: the join is the only OR in
+perception, the meet over positions is the only AND, and negation enters
+first at the conceptual level.
 
 ### Live Routing and Implementation Boundary
 

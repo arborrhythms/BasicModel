@@ -11537,6 +11537,12 @@ class PartSpace(Space):
                 _stack.append(_ly)
         torch.set_rng_state(_rng_state)
         self.sigmas = _stack
+        # Canonical meronomy: rung 0 joins by max (fold-ladder plan,
+        # contract 1); legacy front ends keep the membership union.
+        if getattr(self, "_meronomy", False):
+            for _ly in _stack:
+                if _ly is not None and hasattr(_ly, "compute_aggregate_over_set"):
+                    object.__setattr__(_ly, "set_law", "max")
         # Register the fresh t>=1 layers as SUBMODULES (state_dict /
         # model-wide .to()); a plain list would silently drop them from
         # checkpoints and leave them behind on the CPU->device move.
@@ -12581,6 +12587,187 @@ class PartSpace(Space):
             "word_part_capacity": int(part_capacity),
             "word_active_mask": word_active,
             "word_truncated_mask": word_truncated,
+            "sentence_word_truncated_mask": sentence_truncated,
+        }
+        return self.subspace
+
+    def _embed_ladder(self, upstream_vspace):
+        """Canonical meronomy stem (fold ladder, Phase 1)."""
+        if (getattr(self, "_serial_object_meta", False)
+                and int(getattr(self, "_serial_word_capacity", 0) or 0) > 0):
+            return self._embed_ladder_word_major(upstream_vspace)
+        return self._embed_radix(upstream_vspace)
+
+    def _embed_ladder_word_major(self, upstream_vspace):
+        """Eager stem of the fold ladder for the serial word-major contract.
+
+        Same outputs as :meth:`_embed_radix_word_major` (``[B, W, P]`` atom
+        ids / mask / offsets, the no-grad per-unit aggregate, the
+        ``_forward_input`` record) with two differences (meronomy fold-ladder
+        plan, contracts 1-2 and 6):
+
+          * the UNITS of the outer loop are the staged wholes of the analysis
+            tiling (``_staged_unit_spans``, handed over transiently by the
+            model from ``WholeSpace.stage_analysis_spans``; whitespace words
+            when no tiling is staged), so a numeral cut into digit wholes is
+            two units and a punctuation run is its own unit;
+          * the ATOMS are bytes: every unit's constituents are its byte rows
+            (the store's one-byte alphabet), in surface order with their
+            exact spans -- the ordered constituent witness.  No longest
+            match, no promotion: rung 0 joins the atoms inside
+            ``PartSpace.forward``.
+
+        Every atom of a unit is presented; the compiled loop's fixed
+        residual capacity keeps its fail-loud contract for a unit it cannot
+        lay out (no silent truncation).
+        """
+        what_buf = upstream_vspace.materialize(mode="what")
+        if what_buf is None:
+            raise RuntimeError(
+                "PartSpace._embed_ladder_word_major: upstream what is empty")
+        dev = TheDevice.get()
+        batch = int(what_buf.shape[0])
+        word_capacity = int(getattr(self, "_serial_word_capacity", 0) or 0)
+        if word_capacity < 1:
+            raise RuntimeError(
+                "serial word-major ladder requires a positive outer word "
+                "capacity")
+        ps = self.percept_store
+        host_tokens = getattr(upstream_vspace, "_host_tokens", None)
+        if host_tokens is None:
+            host_tokens = upstream_vspace.whatEncoding.decode_tokens(what_buf)
+        self._ensure_radix_atomic_bytes(host_tokens)
+        null_pid = ps.get_id(b"\x00")
+        if null_pid is None:
+            null_pid = ps.insert(b"\x00")
+        # No unit is cut here: every atom of a unit is presented (the
+        # ``[B, W, P]`` width is batch-dynamic in the eager stem, exactly as
+        # the radix stem's was), and the compiled loop's fixed-capacity
+        # staging keeps its fail-loud contract for a unit it cannot lay out.
+        unit_spans_rows = getattr(self, "_staged_unit_spans", None)
+
+        import Meronomy
+        staged_rows, sentence_truncated_rows, word_texts_rows = [], [], []
+        part_capacity = 3
+        # Rung-0 admission by recurrence (fold-ladder plan, contract 4,
+        # step D-0): a unit seen ``chunk_promotion_threshold`` times gets a
+        # row of its own, seeded with its rung-0 code (the max over its
+        # atom rows).  The row is the unit's CATEGORY; the atoms stay bytes
+        # (the witness).  Queued rows are committed at the boundary flush;
+        # nothing is admitted while online learning is frozen (evaluation).
+        admit = not getattr(self, "_online_learning_frozen", False)
+        hits = self.__dict__.setdefault("_unit_hits", {})
+        threshold = max(1, int(getattr(self, "chunk_promotion_threshold", 2) or 2))
+        for b, row in enumerate(host_tokens):
+            raw = b"".join(
+                (text.encode("utf-8") if isinstance(text, str)
+                 else bytes(text))
+                for text in row if text is not None)
+            spans = None
+            if unit_spans_rows is not None and b < len(unit_spans_rows):
+                spans = [(int(s0), int(e0)) for (s0, e0) in unit_spans_rows[b]
+                         if int(e0) > int(s0) and int(e0) <= len(raw)]
+            if not spans:
+                spans = [(int(s0), int(e0)) for (s0, e0) in Meronomy.word_spans(raw)]
+            word_texts_rows.append([raw[s0:e0].decode("latin1") for s0, e0 in spans])
+            staged_words = []
+            for word_index in range(word_capacity):
+                if word_index < len(spans):
+                    start, end = spans[word_index]
+                    truncated = False
+                    stop = end
+                    pids = [int(ps.get_id(bytes([raw[i]]))) for i in range(start, stop)]
+                    part_capacity = max(part_capacity, len(pids))
+                    unit = raw[start:stop]
+                    if (admit and len(unit) >= 2 and not truncated
+                            and ps.get_id(unit) is None
+                            and unit not in getattr(ps, "_pending_promotions", {})):
+                        hits[unit] = hits.get(unit, 0) + 1
+                        if hits[unit] >= threshold:
+                            with torch.no_grad():
+                                init = ps._basis.lookup_rows(
+                                    torch.tensor(pids, dtype=torch.long)
+                                ).clamp(0.0, 1.0).amax(dim=0).detach()
+                            ps._promote_or_queue(unit, init_vector=init)
+                            hits.pop(unit, None)
+                    staged_words.append({
+                        "pids": pids, "start": int(start), "end": int(end),
+                        "word_index": int(word_index),
+                        "part_spans": [(i, i + 1) for i in range(start, stop)],
+                        "active": True, "truncated": bool(truncated),
+                    })
+                else:
+                    staged_words.append({
+                        "pids": [], "start": -1, "end": -1, "word_index": -1,
+                        "part_spans": [], "active": False, "truncated": False,
+                    })
+            staged_rows.append(staged_words)
+            sentence_truncated_rows.append(len(spans) > word_capacity)
+
+        pid_rows, mask_rows, offset_rows, group_rows = [], [], [], []
+        tile_span_rows, part_span_rows, word_active_rows, word_truncated_rows = [], [], [], []
+        for staged_words in staged_rows:
+            row_pids, row_mask, row_offsets, row_groups = [], [], [], []
+            row_tile_spans, row_part_spans, row_active, row_trunc = [], [], [], []
+            for rec in staged_words:
+                pids = rec["pids"]
+                active_n = len(pids)
+                pad_n = part_capacity - active_n
+                row_pids.append(pids + [int(null_pid)] * pad_n)
+                row_mask.append([True] * active_n + [False] * pad_n)
+                row_offsets.append([rec["start"]] * active_n + [-1] * pad_n)
+                row_groups.append([rec["word_index"]] * active_n + [-1] * pad_n)
+                row_tile_spans.append(
+                    [(rec["start"], rec["end"])] * active_n + [(-1, -1)] * pad_n)
+                row_part_spans.append(rec["part_spans"] + [(0, 0)] * pad_n)
+                row_active.append(bool(rec["active"]))
+                row_trunc.append(bool(rec["truncated"]))
+            pid_rows.append(row_pids); mask_rows.append(row_mask)
+            offset_rows.append(row_offsets); group_rows.append(row_groups)
+            tile_span_rows.append(row_tile_spans); part_span_rows.append(row_part_spans)
+            word_active_rows.append(row_active); word_truncated_rows.append(row_trunc)
+
+        pid_grid = torch.tensor(pid_rows, dtype=torch.long, device=dev)
+        part_mask = torch.tensor(mask_rows, dtype=torch.bool, device=dev)
+        part_offsets = torch.tensor(offset_rows, dtype=torch.long, device=dev)
+        word_active = torch.tensor(word_active_rows, dtype=torch.bool, device=dev)
+        word_truncated = torch.tensor(word_truncated_rows, dtype=torch.bool, device=dev)
+        sentence_truncated = torch.tensor(
+            sentence_truncated_rows, dtype=torch.bool, device=dev)
+        with torch.no_grad():
+            part_events = self._radix_part_events(pid_grid, part_offsets)
+            word_event = self.synthesize_word_parts(pid_grid, part_mask, part_offsets)
+        self.subspace.whereEncoding.p = 0
+        self.subspace.set_event(word_event)
+        if getattr(self, "_mereology_raise", False):
+            self.subspace.where.setW(part_offsets[:, :, 0])
+        flat_pids = pid_grid.reshape(batch, -1)
+        flat_groups = torch.tensor(
+            group_rows, dtype=torch.long, device=dev).reshape(batch, -1)
+        flat_offsets = part_offsets.reshape(batch, -1)
+        flat_part_spans = torch.tensor(
+            part_span_rows, dtype=torch.long, device=dev).reshape(batch, -1, 2)
+        flat_seed = part_events.reshape(
+            batch, word_capacity * part_capacity, part_events.shape[-1])
+        flat_tile_spans = [[span for word in row for span in word]
+                           for row in tile_span_rows]
+        self._embedded_input = word_event
+        self._last_tokens = host_tokens
+        self._serial_word_major = True
+        self._serial_word_part_ids = pid_grid
+        self._serial_word_part_mask = part_mask
+        self._serial_word_part_offsets = part_offsets
+        self._serial_word_active_mask = word_active
+        self._serial_word_truncated_mask = word_truncated
+        self._serial_sentence_word_truncated_mask = sentence_truncated
+        self._forward_input = {
+            "tokens": host_tokens, "indices": flat_pids, "seed_event": flat_seed,
+            "percept_store": ps, "word_groups": flat_groups,
+            "word_texts": word_texts_rows, "tile_spans": flat_tile_spans,
+            "part_spans": flat_part_spans, "percept_where": flat_offsets,
+            "word_part_indices": pid_grid, "word_part_mask": part_mask,
+            "word_part_capacity": int(part_capacity),
+            "word_active_mask": word_active, "word_truncated_mask": word_truncated,
             "sentence_word_truncated_mask": sentence_truncated,
         }
         return self.subspace
@@ -13946,9 +14133,12 @@ class PartSpace(Space):
             from Legacy import embed_part_stem
             return embed_part_stem(
                 self, upstream_vspace, self._legacy_synthesis_mode)
-        # Canonical synthesis=mereology is backed by the radix store, with
-        # complete word-local parts preserved for the PS sigma fold.
-        return self._embed_radix(upstream_vspace)
+        # Canonical synthesis=meronomy: the fold ladder (doc/plans/
+        # 2026-09-10-meronomy-fold-ladder.md, Phase 1).  On the word-major
+        # serial path the units are the staged wholes and the atoms are
+        # bytes; no trie lookup, no promotion.  The non-word-major path is
+        # still radix-backed (pending).
+        return self._embed_ladder(upstream_vspace)
 
     def _sigma_for_pass(self, t=None):
         """The pass-``t`` sigma: the per-pass stack layer (``None`` = the
@@ -27032,11 +27222,76 @@ class WholeSpace(Space):
         (2) a multi-char punctuation run is ONE span, no longer one span
         per punct char (``...`` -> one span)."""
         mode = getattr(self, "analysis_mode", "byte")
-        # byte/raw/sentence = NO division (the analyzer stages no spans);
-        # word/grammatical/meronomy stage the boundary spans below.
-        if mode in ("byte", "raw", "sentence") or IS_concepts is None:
+        # Canonical: ``meronomy``.  Every other spelling is a parked cut
+        # dispatched by Legacy (meronomy fold-ladder plan, Phase 0); the
+        # ``word`` / ``grammatical`` cuts are byte-identical to today's
+        # meronomy cut, which Phase 2 replaces with the descending ladder.
+        if mode != "meronomy":
+            from Legacy import stage_analysis_spans_legacy
+            return stage_analysis_spans_legacy(self, IS_concepts, mode)
+        if IS_concepts is None:
             object.__setattr__(self, "_staged_property_signatures", None)
+            object.__setattr__(self, "_staged_unit_spans", None)
+            object.__setattr__(self, "_staged_tiling_ladder", None)
+            object.__setattr__(self, "_staged_unit_parent", None)
             return None
+        # Unbound call: ``self`` may be a namespace double in the cut tests.
+        spans = WholeSpace._stage_type_run_spans(self, IS_concepts)
+        # The UNIT tiling of the fold ladder (Phase 1): the wholes the serial
+        # loop iterates.  Until Phase 2 learns the boundary predicates, the
+        # units are the four-class type runs (space discarded, punctuation a
+        # unit, letters one run whatever their case) with the digit
+        # singleton when <digitWholes> is on -- contract 3's priors.  The
+        # property-signature cut above stays the WholeSpace view inside a
+        # unit (a capital run is a whole of the unit, not a unit).
+        u = IS_concepts
+        if u.dim() == 3:
+            u = u[:, 0, :]
+        idx = u.detach().to("cpu").long().clamp(0, 255)
+        type_ids = _analysis_type_lut(self)[idx]
+        single = (_analysis_digit_mask(self, type_ids, False)
+                  if getattr(self, "digit_wholes", False) else None)
+        # Contract 3's priors: space and punctuation are boundaries, letter
+        # and digit flips are not (``w0`` and ``abc123`` are one unit each;
+        # the property-signature cut above still divides them as the
+        # WholeSpace view INSIDE the unit); the digit singleton, when on,
+        # makes every digit its own unit.
+        unit_types = torch.where(type_ids == _TYPE_DIGIT,
+                                 torch.full_like(type_ids, _TYPE_LETTER), type_ids)
+        fine = _type_run_spans(unit_types, singleton=single)
+        object.__setattr__(self, "_staged_unit_spans", fine.to(IS_concepts.device))
+        # The descending tiling ladder (Phase 2, contract 2): the coarse rung
+        # is the space-bounded tiling (whitespace words: every non-space run
+        # is one whole, so digits, letters and punctuation fuse), the fine
+        # rung is the unit tiling above.  Both nest: every fine unit lies in
+        # exactly one coarse whole (``_staged_unit_parent``, ``[B, K_fine]``,
+        # -1 for pad).  The unity is the top and bytes the floor by
+        # construction; neither is materialised.
+        space_only = torch.where(unit_types == _TYPE_SPACE,
+                                 torch.full_like(unit_types, _TYPE_SPACE),
+                                 torch.full_like(unit_types, _TYPE_LETTER))
+        coarse = _type_run_spans(space_only)
+        Bn, Kf = int(fine.shape[0]), int(fine.shape[1])
+        parent = torch.full((Bn, Kf), -1, dtype=torch.long)
+        for b in range(Bn):
+            cs = [(int(a), int(z)) for (a, z) in coarse[b].tolist() if z > a]
+            for k in range(Kf):
+                a, z = int(fine[b, k, 0]), int(fine[b, k, 1])
+                if z <= a:
+                    continue
+                for j, (ca, cz) in enumerate(cs):
+                    if ca <= a and z <= cz:
+                        parent[b, k] = j
+                        break
+        object.__setattr__(self, "_staged_tiling_ladder",
+                           (coarse.to(IS_concepts.device), fine.to(IS_concepts.device)))
+        object.__setattr__(self, "_staged_unit_parent", parent.to(IS_concepts.device))
+        return spans
+
+    def _stage_type_run_spans(self, IS_concepts):
+        """The type-run cut over the unity (shared by the canonical
+        ``meronomy`` mode until Phase 2 and by the Legacy ``word`` /
+        ``grammatical`` cuts)."""
         u = IS_concepts
         if u.dim() == 3:
             u = u[:, 0, :]

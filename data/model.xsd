@@ -1128,9 +1128,11 @@
       <xs:element name="synthesis" minOccurs="0">
         <xs:simpleType>
           <xs:restriction base="xs:string">
-            <!-- ``meronomy`` is the sole canonical implementation. The
-                 alternatives remain schema-valid only for older experiments;
-                 their validation/dispatch is parked in bin/Legacy.py. -->
+            <!-- ``meronomy`` is the sole canonical implementation (the
+                 PartSpace fold ladder, doc/plans/2026-09-10-meronomy-fold-
+                 ladder.md). Every other value is LEGACY: schema-valid for
+                 older experiments and checkpoints, validated and dispatched
+                 by bin/Legacy.py, never entering the canonical branch. -->
             <xs:enumeration value="bpe"/>
             <xs:enumeration value="mphf"/>
             <xs:enumeration value="lexicon"/>
@@ -1351,7 +1353,10 @@
                  deprecated spellings) PLUS the analysis-only modes. The
                  lexer-valued options set the surface lexer; the analysis-only
                  values (grammatical/meronomy) leave the lexer at raw and select
-                 the division. -->
+                 the division. ``meronomy`` is the sole canonical division (the
+                 WholeSpace descending ladder, doc/plans/2026-09-10-meronomy-
+                 fold-ladder.md); every other value is LEGACY, dispatched by
+                 bin/Legacy.py. -->
             <xs:enumeration value="byte"/>
             <xs:enumeration value="word"/>
             <xs:enumeration value="raw"/>
