@@ -122,6 +122,11 @@
            The MLP OWNS parameters, so selecting it changes the state_dict
            and starts a fresh basin (a deliberate cutover). -->
       <xs:element name="transformChooser" type="transformChooserEnum" minOccurs="0"/>
+      <!-- MLP capacity only: hidden=0 derives max(8, grammar feature width).
+           Depth counts hidden Linear/GELU blocks, not recurrent passes.
+           Defaults 0/1 preserve existing parameters and initialization. -->
+      <xs:element name="transformChooserHidden" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="transformChooserDepth" type="xs:positiveInteger" minOccurs="0"/>
       <!-- Two-pass soft-superposition training for the grammar chooser
            (doc/Language.md "Soft-superposition route"). When true, each
            TRAINING batch runs twice as two separate trials: pass A at
@@ -326,6 +331,10 @@
       <!-- whatThinkingIterations (spec 6.2): iteration limit L of a
            Model.think() episode; 1 (default) = the single what(). -->
       <xs:element name="whatThinkingIterations" type="xs:positiveInteger" minOccurs="0"/>
+      <!-- Thought-step MLP capacity: defaults hidden=16, depth=1. These
+           do not enable episodes, memory, or policy training. -->
+      <xs:element name="whatThinkingHidden" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="whatThinkingDepth" type="xs:positiveInteger" minOccurs="0"/>
       <!-- whatThinkingPressure (spec 6.4): closure-pressure schedule,
            monotone with p(L-1) = 1. -->
       <xs:element name="whatThinkingPressure" minOccurs="0">

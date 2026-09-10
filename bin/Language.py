@@ -7135,6 +7135,27 @@ class AnchorDotTransformChooser(TransformChooser):
         return copy_score, reduce_score
 
 
+def _chooser_size(value, name, *, minimum=1):
+    """Validate architectural dimensions without silently truncating them."""
+    try:
+        size = int(value)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(f"{name} must be an integer >= {minimum}, got {value!r}") from exc
+    if (isinstance(value, bool) or size < minimum
+            or (not isinstance(value, str) and size != value)):
+        raise ValueError(f"{name} must be an integer >= {minimum}, got {value!r}")
+    return size
+
+
+def _chooser_mlp(in_dim, hidden, depth):
+    """Hidden Linear/GELU blocks plus a scalar score; preserve depth-1 keys."""
+    layers = []
+    for i in range(depth):
+        layers.extend((nn.Linear(in_dim if i == 0 else hidden, hidden), nn.GELU()))
+    layers.append(nn.Linear(hidden, 1))
+    return nn.Sequential(*layers)
+
+
 class WhatStepChooser(nn.Module):
     """Hard-choice head for the thinking resolve step (mathematical
     thinking spec 6.3): ANSWER the active question or OPEN a subquestion
@@ -7157,15 +7178,14 @@ class WhatStepChooser(nn.Module):
     # + closure pressure
     CANDIDATE_FEATURES = 2 + 3 + 1
 
-    def __init__(self, *, context_dim=29, hidden=16):
+    def __init__(self, *, context_dim=29, hidden=16, depth=1):
         super().__init__()
         self.context_dim = int(context_dim)
-        self.hidden = int(hidden)
+        self.hidden = _chooser_size(hidden, "whatThinkingHidden")
+        self.depth = _chooser_size(depth, "whatThinkingDepth")
         in_dim = self.context_dim + self.CANDIDATE_FEATURES
         with torch.random.fork_rng(devices=[]):
-            self.mlp = nn.Sequential(
-                nn.Linear(in_dim, self.hidden), nn.GELU(),
-                nn.Linear(self.hidden, 1))
+            self.mlp = _chooser_mlp(in_dim, self.hidden, self.depth)
         nn.init.zeros_(self.mlp[-1].weight)
         nn.init.zeros_(self.mlp[-1].bias)
 
@@ -7245,7 +7265,7 @@ class MLPTransformChooser(TransformChooser):
     WHAT_CONTEXT_DIM = 29
 
     def __init__(self, *, d_model, n_copy, n_op, embed_dim=8, pos_dim=8,
-                 hidden=None, n_role_cats=0):
+                 hidden=None, n_role_cats=0, depth=1):
         super().__init__()
         self.d_model = int(d_model)
         self.n_copy = int(n_copy)
@@ -7258,16 +7278,15 @@ class MLPTransformChooser(TransformChooser):
         # then concatenates the per-slot role vector (zeros when no
         # ``cat_ctx`` is supplied at call time).
         self.n_role_cats = int(n_role_cats)
-        hidden = int(hidden) if hidden is not None else max(8, self.d_model)
+        self.hidden = _chooser_size(
+            hidden if hidden is not None else max(8, self.d_model),
+            "transformChooserHidden")
+        self.depth = _chooser_size(depth, "transformChooserDepth")
         self.tool_embedding = nn.Parameter(
             torch.randn(max(1, self.n_copy + self.n_op), self.embed_dim) * 0.02)
         in_dim = (2 * self.d_model + self.embed_dim
                   + self.n_role_cats + self.pos_dim)
-        self.mlp = nn.Sequential(
-            nn.Linear(in_dim, hidden),
-            nn.GELU(),
-            nn.Linear(hidden, 1),
-        )
+        self.mlp = _chooser_mlp(in_dim, self.hidden, self.depth)
         # Question intent is a chooser input, not an output shortcut.  This
         # zero-initialized head preserves the established clean route exactly
         # until a temporal/supervised curriculum trains it.  One logit bias is
@@ -7431,8 +7450,15 @@ def make_transform_chooser(kind, *, d_model, n_copy, n_op, n_role_cats=0):
     """
     k = str(kind or "anchordot").strip().lower()
     if k == "mlp":
+        hidden = _chooser_size(TheXMLConfig.get(
+            "architecture.transformChooserHidden", default=0),
+            "transformChooserHidden", minimum=0)
+        depth = _chooser_size(TheXMLConfig.get(
+            "architecture.transformChooserDepth", default=1),
+            "transformChooserDepth")
         return MLPTransformChooser(
-            d_model=d_model, n_copy=n_copy, n_op=n_op, n_role_cats=n_role_cats)
+            d_model=d_model, n_copy=n_copy, n_op=n_op, n_role_cats=n_role_cats,
+            hidden=hidden or None, depth=depth)
     # Accept exactly the values the <transformChooser> XSD enum allows, so
     # the factory and schema validation agree on the legal set.
     if k != "anchordot":

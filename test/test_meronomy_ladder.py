@@ -248,7 +248,9 @@ def test_recurring_units_are_admitted_at_rung_zero_and_digits_never_fuse():
 def test_tiling_ladder_nests_units_in_space_bounded_wholes():
     fake = types.SimpleNamespace(analysis_mode="meronomy", digit_wholes=True)
     WholeSpace.stage_analysis_spans(fake, _bytes("12 plus 1, ok"))
-    coarse, fine = fake._staged_tiling_ladder
+    clause, coarse, fine = fake._staged_tiling_ladder
+    assert [tuple(x) for x in clause[0].tolist() if x[1] > x[0]] == [(0, 9), (10, 13)]   # cut at the comma
+    assert fake._staged_unit_clause[0].tolist() == [0, 0, 0, 0, -1, 1]   # the comma bounds, belongs to none
     assert [tuple(x) for x in coarse[0].tolist() if x[1] > x[0]] == [(0, 2), (3, 7), (8, 10), (11, 13)]
     assert [tuple(x) for x in fine[0].tolist() if x[1] > x[0]] == \
         [(0, 1), (1, 2), (3, 7), (8, 9), (9, 10), (11, 13)]
@@ -284,7 +286,7 @@ def test_chunk_is_licensed_only_inside_one_coarse_whole(ladder):
     stm = m.conceptualSpace.stm
     stm.wholes_enable(1)
     # Two newest slots from different wholes: chunk forbidden.
-    stm.note_whole_masked([True], [0], unit=0); stm.note_whole_masked([True], [1], unit=1)
+    stm.note_whole_masked([True], [0], unit=0, clauses=[0]); stm.note_whole_masked([True], [1], unit=1, clauses=[1])
     window = torch.zeros(1, 2, int(stm.concept_dim))
     prior = m._chunk_structural_prior(stm, 1, window)
     idx = m._chunk_op_index()
@@ -292,14 +294,14 @@ def test_chunk_is_licensed_only_inside_one_coarse_whole(ladder):
     assert float(prior[0, 0].abs().sum()) == float(prior[0, 0, idx].abs())
     # Same whole: licensed with the learned prior (zero at init).
     stm.wholes_enable(1)
-    stm.note_whole_masked([True], [3], unit=0); stm.note_whole_masked([True], [3], unit=1)
+    stm.note_whole_masked([True], [3], unit=0, clauses=[0]); stm.note_whole_masked([True], [3], unit=1, clauses=[0])
     prior = m._chunk_structural_prior(stm, 1, window)
     assert float(prior[0, 0, idx]) == float(m._concept_owner().ensure_chunk_prior())
     assert stm.same_whole_rows(1) == [True]
     # A fold keeps the whole when both operands shared it.
     assert stm.newest_units(1) == [(0, 1)]
     stm.note_reduce_wholes([True])
-    assert stm._slot_wholes[0] == [(3, -1)]
+    assert stm._slot_wholes[0] == [(3, -1, 0)]
 
 
 def test_utility_counts_accrue_once_per_presentation():
@@ -438,3 +440,64 @@ def test_cold_start_learns_space_as_the_basic_boundary(tmp_path):
     assert not any(on[r] for r in letter_rows)
     units, atoms, ids, mask, offsets = _stage(m, ["12 plus 1"])
     assert "plus" in units[0]                        # space now bounds words
+
+
+# -- Phase 1 acceptance (c): digit identity, order, repetition, translation ------
+
+def test_digit_identity_order_and_repetition_are_distinct_occurrences(ladder):
+    """``12``, ``21`` and ``11`` share the digit concepts and differ as
+    ordered occurrences: the witness (atoms with spans) and the STM units
+    differ, while a digit's concept is the same at any position."""
+    m = ladder
+    units, atoms, ids, mask, offsets = _stage(m, ["12 plus 1", "21 plus 1", "11 plus 1"])
+    assert units[0][:2] == ["1", "2"] and units[1][:2] == ["2", "1"] and units[2][:2] == ["1", "1"]
+    # Same digit, same atom row (reusable concept), different positions.
+    one_rows = {int(ids[b, w][mask[b, w]][0]) for b, row in enumerate(units) for w, u in enumerate(row) if u == "1"}
+    assert len(one_rows) == 1
+    # The ordered witness distinguishes the three numerals.
+    witness = [tuple((u, int(offsets[b, w, 0])) for w, u in enumerate(row) if u in ("1", "2"))
+               for b, row in enumerate(units)]
+    assert witness[0] != witness[1] != witness[2] and witness[0] != witness[2]
+    # A digit's concept identity is the same at another position (translation).
+    with torch.no_grad():
+        m._lex_embed_stem(m.inputSpace.prepInput(["1 plus 12"]))
+    cids = m.inputSpace._ar_word_concept_ids[0].tolist()
+    u2 = m.perceptualSpace._forward_input["word_texts"][0]
+    ones = [cids[w] for w, u in enumerate(u2) if u == "1"]
+    assert len(ones) == 2 and ones[0] == ones[1] and ones[0] >= 0
+
+
+# -- Phase 2b acceptance (mechanism): phrases on a text corpus ------------------
+
+def test_recurring_phrases_are_admitted_on_a_text_corpus_with_positive_gain():
+    """On the inline idiom / literal corpus (``kick the bucket`` vs ``kick
+    the ball``, frequency-matched) adjacent words share a clause, so
+    ``chunk`` is licensed; recurring pairs are admitted as concepts over
+    their member concepts with a positive utility gain.  What is NOT yet
+    shown: the admitted idiom's row diverging from the additive
+    composition while the literal control stays compositional (that needs
+    the phrase row wired into the answer path; plan, Phase 2b)."""
+    import Language
+    from util import init_config
+    from data import TheData
+    import Models
+    config = _DATA / "MM_ladder_idiom.xml"
+    init_config(path=str(config), defaults_path=str(_DATA / "model.xml"))
+    Language.TheGrammar._configured = False
+    cfg = Models.BaseModel.load_config(str(config))
+    TheData.load("inline", dat=dict(cfg["architecture"]["data"]))
+    torch.manual_seed(0)
+    m, _ = Models.BaseModel.from_config(str(config), data=TheData)
+    cs = m._concept_owner()
+    with torch.no_grad():
+        cs.ensure_chunk_prior().fill_(50.0)
+    opt = m.getOptimizer(lr=1e-3)
+    for _ in range(4):
+        m.runEpoch(optimizer=opt, batchSize=4, split="train")
+    admitted = cs.__dict__.get("_chunk_admitted", {})
+    gains = cs.__dict__.get("_chunk_utility_gain", {})
+    assert admitted, "no phrase admitted on the text corpus"
+    assert all(gains[k] > 0.0 for k in admitted)
+    for members, A in admitted.items():
+        assert set(cs.concept_parts(A)) == {("sym", int(mm)) for mm in members}
+    assert len(set(admitted.values())) == len(admitted)        # distinct concepts

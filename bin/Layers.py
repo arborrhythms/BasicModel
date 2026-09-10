@@ -13654,39 +13654,47 @@ class ShortTermMemory(Layer):
     def wholes_enable(self, batch):
         object.__setattr__(self, "_slot_wholes", [[] for _ in range(int(batch))])
 
-    def note_whole_masked(self, gate_rows, wholes, unit=-1):
-        """Record ``(whole, unit)`` for a slot-0 push on the gated rows:
-        the coarser whole's index and the unit's loop position (``-1`` for
-        a fold, which is no single unit)."""
+    def note_whole_masked(self, gate_rows, wholes, unit=-1, clauses=None):
+        """Record ``(whole, unit, clause)`` for a slot-0 push on the gated
+        rows: the coarser word-whole's index, the unit's loop position
+        (``-1`` for a fold, which is no single unit) and the clause-whole's
+        index (the rung above the words)."""
         ws = getattr(self, "_slot_wholes", None)
         if ws is None:
             return
         cap = int(self.capacity)
         for b, on in enumerate(gate_rows):
             if on and b < len(ws):
-                ws[b].insert(0, (int(wholes[b]) if b < len(wholes) else -1, int(unit)))
+                w = int(wholes[b]) if b < len(wholes) else -1
+                c = int(clauses[b]) if clauses is not None and b < len(clauses) else -1
+                ws[b].insert(0, (w, int(unit), c))
                 del ws[b][cap:]
 
     def note_reduce_wholes(self, reduced_rows):
-        """Mirror a top-2 fold: the parent keeps the whole when both
-        operands shared it, else -1; a fold is no single unit."""
+        """Mirror a top-2 fold: the parent keeps a whole when both operands
+        shared it (at each rung), else -1; a fold is no single unit."""
         ws = getattr(self, "_slot_wholes", None)
         if ws is None:
             return
         for b, on in enumerate(reduced_rows):
             if on and b < len(ws) and len(ws[b]) >= 2:
-                w0, w1 = ws[b][0][0], ws[b][1][0]
-                ws[b][0:2] = [(w0 if w0 == w1 else -1, -1)]
+                (w0, _u0, c0), (w1, _u1, c1) = ws[b][0][:3], ws[b][1][:3]
+                ws[b][0:2] = [(w0 if w0 == w1 else -1, -1, c0 if c0 == c1 else -1)]
 
     def same_whole_rows(self, batch):
-        """[B] bool: the two newest slots belong to one coarser whole."""
+        """[B] bool: the two newest slots share a coarser whole at some
+        rung above the unit (the same word, or the same clause)."""
         ws = getattr(self, "_slot_wholes", None)
         out = [False] * int(batch)
         if ws is None:
             return out
         for b in range(min(int(batch), len(ws))):
             k = ws[b]
-            out[b] = len(k) >= 2 and k[0][0] >= 0 and k[0][0] == k[1][0]
+            if len(k) < 2:
+                continue
+            same_word = k[0][0] >= 0 and k[0][0] == k[1][0]
+            same_clause = len(k[0]) > 2 and k[0][2] >= 0 and k[0][2] == k[1][2]
+            out[b] = bool(same_word or same_clause)
         return out
 
     def newest_units(self, batch):

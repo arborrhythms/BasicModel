@@ -654,8 +654,16 @@ admits a recurring proposal (`admissionCount`) as a concept over its
 member concepts. Landed after: the utility-gain gate on admission (a recurring
 proposal is admitted only when the phrase's utility exceeds its members'
 best) and the score update of `chunk_prior` by that gain
-(`utilityPriorRate`). Not yet done: the idiom / literal test with
-frequency-matched controls, and the compiled-path mirror. Tests: ladder grammar has
+(`utilityPriorRate`); the clause rung of the tiling ladder (runs bounded
+by punctuation; the whole two adjacent words share), without which no
+two words ever shared a whole and `chunk` never fired on text; the
+inline idiom / literal fixture `data/MM_ladder_idiom.xml` (`kick the
+bucket` vs `kick the ball`, frequency-matched), on which recurring
+pairs are admitted with positive gains. Not yet done: the admitted
+phrase's own row wired into the answer path so that the idiom's meaning
+can diverge from the additive composition while the literal control
+stays compositional (today an admitted phrase is a relation-only concept
+over its members), and the compiled-path mirror. Tests: ladder grammar has
 `chunk`; licensing only inside one whole; counts accrue once per
 presentation; a recurring same-whole pair is admitted as a phrase.
 

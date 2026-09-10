@@ -27585,6 +27585,7 @@ class WholeSpace(Space):
             object.__setattr__(self, "_staged_unit_spans", None)
             object.__setattr__(self, "_staged_tiling_ladder", None)
             object.__setattr__(self, "_staged_unit_parent", None)
+            object.__setattr__(self, "_staged_unit_clause", None)
             return None
         # Unbound call: ``self`` may be a namespace double in the cut tests.
         spans = WholeSpace._stage_type_run_spans(self, IS_concepts)
@@ -27650,10 +27651,23 @@ class WholeSpace(Space):
                                  torch.full_like(unit_types, _TYPE_SPACE),
                                  torch.full_like(unit_types, _TYPE_LETTER))
         coarse = _type_run_spans(space_only)
+        # The clause rung above the words: runs bounded by punctuation (and
+        # the pad); whitespace is content of a clause.  It is the next step
+        # of the descent from everything, and the whole two adjacent words
+        # share, which is what licenses the grammar's ``chunk`` on them.
+        clause_types = torch.where(
+            type_ids == _TYPE_PUNCT, torch.full_like(type_ids, _TYPE_SPACE),
+            torch.where(type_ids == _TYPE_SPACE, torch.full_like(type_ids, _TYPE_LETTER),
+                        torch.full_like(type_ids, _TYPE_LETTER)))
+        pad = (idx == 0)
+        clause_types = torch.where(pad, torch.full_like(type_ids, _TYPE_SPACE), clause_types)
+        clause = _type_run_spans(clause_types)
         Bn, Kf = int(fine.shape[0]), int(fine.shape[1])
         parent = torch.full((Bn, Kf), -1, dtype=torch.long)
+        clause_parent = torch.full((Bn, Kf), -1, dtype=torch.long)
         for b in range(Bn):
             cs = [(int(a), int(z)) for (a, z) in coarse[b].tolist() if z > a]
+            cl = [(int(a), int(z)) for (a, z) in clause[b].tolist() if z > a]
             for k in range(Kf):
                 a, z = int(fine[b, k, 0]), int(fine[b, k, 1])
                 if z <= a:
@@ -27662,9 +27676,15 @@ class WholeSpace(Space):
                     if ca <= a and z <= cz:
                         parent[b, k] = j
                         break
+                for j, (ca, cz) in enumerate(cl):
+                    if ca <= a and z <= cz:
+                        clause_parent[b, k] = j
+                        break
         object.__setattr__(self, "_staged_tiling_ladder",
-                           (coarse.to(IS_concepts.device), fine.to(IS_concepts.device)))
+                           (clause.to(IS_concepts.device), coarse.to(IS_concepts.device),
+                            fine.to(IS_concepts.device)))
         object.__setattr__(self, "_staged_unit_parent", parent.to(IS_concepts.device))
+        object.__setattr__(self, "_staged_unit_clause", clause_parent.to(IS_concepts.device))
         return spans
 
     def _stage_type_run_spans(self, IS_concepts):

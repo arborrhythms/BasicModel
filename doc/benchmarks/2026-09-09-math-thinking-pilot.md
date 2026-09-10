@@ -427,3 +427,31 @@ the answer path's own operators were protected and got no gradient at
 all (fixed, exempt now); a checkpoint of the aligned protocol does not
 round-trip the word concept identities on this corpus (open), so the
 per-fact table above was taken on the live model.
+
+## The fold ladder: end of the first slice (2026-09-10)
+
+The meronomy fold ladder (doc/plans/2026-09-10-meronomy-fold-ladder.md,
+Phases 0 through 2b) replaced the radix trie on the canonical serial
+path: units are the staged wholes, atoms are bytes with an exact
+witness, rung 0 joins by max, recurring units are admitted at the
+boundary, the tiling ladder (clause over word over unit) is staged at
+pass 0 with learned boundary predicates, and `chunk` is a reduce
+candidate licensed inside one whole. Successor corpus (R = 16, 512
+presentations) on the canonical topology with `ladder.grammar`, 20
+epochs, lr 1e-3, batch 8, CPU, digit wholes on:
+
+| epoch | answer loss | accuracy |
+|---:|---:|---:|
+| 5 | 0.0423 | 0.125 |
+| 10 | 0.0562 | 0.094 |
+| 15 | 0.0465 | 0.090 |
+| 20 | 0.0363 | 0.203 |
+
+Per fact at epoch 20 (live model): every two-digit input is answered 14
+(13 -> 14 correct, 42/42; the others wrong), the one-digit inputs are
+spread over 1, 5 and 6 (0 -> 1 in 18/39, 5 -> 6 in 20/44). The same
+picture as the digit-whole run before the ladder (21 %): the whole-level
+signal separates one-digit from two-digit inputs, the digit identity is
+not yet read from the parts. Non-regression against the 21 % floor holds;
+the identity work (the attended rung's code reaching the answer path, and
+the admitted phrase's own row) is the next slice.

@@ -51,6 +51,14 @@
          behaviour. -->
     <routerWireSerial>both</routerWireSerial>
 
+    <!-- Chooser capacity, independent of parsing/episode iteration budgets.
+         Grammar hidden=0 derives max(8, grammar feature width). Depth is the
+         number of hidden Linear/GELU blocks before the scalar score. -->
+    <transformChooserHidden>0</transformChooserHidden>
+    <transformChooserDepth>1</transformChooserDepth>
+    <whatThinkingHidden>16</whatThinkingHidden>
+    <whatThinkingDepth>1</whatThinkingDepth>
+
     <!-- Reverse from the idea rather than replaying the forward grammar trace.
          When true, reverse() clears current_rules/generate_rules and the
          router's last route, then asks SymbolSpace.generate() to infer a fresh

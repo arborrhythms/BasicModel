@@ -1867,6 +1867,21 @@ class BaseModel(Mereology, nn.Module):
         # "anchordot" -> stateless, basin unchanged.
         self.transform_chooser = str(TheXMLConfig.get(
             "architecture.transformChooser", default="anchordot"))
+        # Validate even when the selected scorer is stateless. Zero hidden
+        # width retains the established grammar-width-derived default.
+        from Language import _chooser_size
+        self.transform_chooser_hidden = _chooser_size(TheXMLConfig.get(
+            "architecture.transformChooserHidden", default=0),
+            "transformChooserHidden", minimum=0)
+        self.transform_chooser_depth = _chooser_size(TheXMLConfig.get(
+            "architecture.transformChooserDepth", default=1),
+            "transformChooserDepth")
+        self.what_thinking_hidden = _chooser_size(TheXMLConfig.get(
+            "architecture.whatThinkingHidden", default=16),
+            "whatThinkingHidden")
+        self.what_thinking_depth = _chooser_size(TheXMLConfig.get(
+            "architecture.whatThinkingDepth", default=1),
+            "whatThinkingDepth")
 
         # MetaSymbol role-participation Category codebook (doc/Language.md
         # "Participation Categories"). Learn a small role-space VQ during
@@ -7973,7 +7988,10 @@ class BasicModel(BaseModel):
                                "languageLayer", None)
             ctx_dim = (int(getattr(language, "WHAT_CONTEXT_DIM", 0) or 0)
                        or MLPTransformChooser.WHAT_CONTEXT_DIM)
-            module = WhatStepChooser(context_dim=ctx_dim)
+            module = WhatStepChooser(
+                context_dim=ctx_dim,
+                hidden=getattr(self, "what_thinking_hidden", 16),
+                depth=getattr(self, "what_thinking_depth", 1))
             if device is None or dtype is None:
                 try:
                     parameter = next(self.parameters())
@@ -8574,9 +8592,27 @@ class BasicModel(BaseModel):
         if key in state and getattr(self, "what_step_chooser", None) is None:
             from Language import WhatStepChooser
             hidden, in_dim = (int(v) for v in state[key].shape)
+            # Hidden blocks occupy indices 0, 2, ...; the last Linear is
+            # the scalar head. Infer topology when loading a lazily absent
+            # chooser, including checkpoints made with nondefault depth.
+            prefix = "what_step_chooser.mlp."
+            indices = sorted(int(k[len(prefix):].split(".")[0])
+                             for k in state
+                             if k.startswith(prefix) and k.endswith(".weight")
+                             and k[len(prefix):].split(".")[0].isdigit())
+            if len(indices) < 2 or indices != list(range(0, 2 * len(indices), 2)):
+                raise ValueError("invalid WhatStepChooser checkpoint layer layout")
+            for layer, index in enumerate(indices):
+                expected = ((1, hidden) if layer == len(indices) - 1 else
+                            (hidden, in_dim if layer == 0 else hidden))
+                weight_key = f"{prefix}{index}.weight"
+                if tuple(state[weight_key].shape) != expected:
+                    raise ValueError(
+                        f"invalid WhatStepChooser checkpoint shape for {weight_key}: "
+                        f"expected {expected}, got {tuple(state[weight_key].shape)}")
             module = WhatStepChooser(
                 context_dim=in_dim - WhatStepChooser.CANDIDATE_FEATURES,
-                hidden=hidden)
+                hidden=hidden, depth=len(indices) - 1)
             self.what_step_chooser = module.to(device=device, dtype=dtype)
             built += 1
         if built:
@@ -15419,8 +15455,9 @@ class BasicModel(BaseModel):
                         and u_left < int(ids.shape[1]) and u_right < int(ids.shape[1])):
                     a_left, a_right = int(ids[b, u_left]), int(ids[b, u_right])
                     if a_left >= 0 and a_right >= 0:
-                        proposals.append(
-                            (b, (a_left, a_right), int(stm._slot_wholes[b][0][0])))
+                        rec = stm._slot_wholes[b][0]
+                        shared = rec[0] if (rec[0] >= 0 and rec[0] == stm._slot_wholes[b][1][0]) else (rec[2] if len(rec) > 2 else -1)
+                        proposals.append((b, (a_left, a_right), int(shared)))
         stm.note_reduce_wholes(rows_can)
 
     @staticmethod
@@ -17308,12 +17345,16 @@ class BasicModel(BaseModel):
                         _ws0 = (self.wholeSpaces[0]
                                 if getattr(self, "wholeSpaces", None) else self.wholeSpace)
                         _parent = getattr(_ws0, "_staged_unit_parent", None)
+                        _clause = getattr(_ws0, "_staged_unit_clause", None)
+                        _clause = getattr(_ws0, "_staged_unit_clause", None)
                         if torch.is_tensor(_parent) and p < int(_parent.shape[1]):
                             _rows = commit_b_1.view(-1).detach().to("cpu").tolist()
                             if getattr(stm, "_slot_wholes", None) is None:
                                 stm.wholes_enable(len(_rows))
                             stm.note_whole_masked(
-                                _rows, _parent[:, p].detach().to("cpu").tolist(), unit=p)
+                                _rows, _parent[:, p].detach().to("cpu").tolist(), unit=p,
+                                clauses=(_clause[:, p].detach().to("cpu").tolist()
+                                         if torch.is_tensor(_clause) else None))
                     if not _compiled_recurrent:
                         stm._max_depth_host = stm._max_depth_host + 1
                     # Per-word router fire (Alec 2026-07-13): parse as the
@@ -17549,12 +17590,15 @@ class BasicModel(BaseModel):
                     _ws0 = (self.wholeSpaces[0]
                             if getattr(self, "wholeSpaces", None) else self.wholeSpace)
                     _parent = getattr(_ws0, "_staged_unit_parent", None)
+                    _clause = getattr(_ws0, "_staged_unit_clause", None)
                     if torch.is_tensor(_parent) and p < int(_parent.shape[1]):
                         _rows = a_result.commit_b_1.view(-1).detach().to("cpu").tolist()
                         if getattr(stm, "_slot_wholes", None) is None:
                             stm.wholes_enable(len(_rows))
                         stm.note_whole_masked(
-                            _rows, _parent[:, p].detach().to("cpu").tolist(), unit=p)
+                            _rows, _parent[:, p].detach().to("cpu").tolist(), unit=p,
+                            clauses=(_clause[:, p].detach().to("cpu").tolist()
+                                     if torch.is_tensor(_clause) else None))
                 if not _compiled_recurrent:
                     stm._max_depth_host = stm._max_depth_host + 1
 

@@ -363,6 +363,34 @@ It stores one prototype per operator — the live codebook is `equal`,
 so the host-side identity lookup never mixes with an ambient MPS / CUDA
 default device.
 
+### Chooser architecture capacity
+
+The grammar placement policy and the thought-step policy are separate modules.
+`MLPTransformChooser` scores a grammar operation at a slot/pair from its current
+state, candidate result, role context, tool embedding and position. With
+`transformChooser=mlp`, `<architecture><transformChooserHidden>` selects its
+hidden width (`0` means `max(8, d_model)`) and `transformChooserDepth` selects
+the number of hidden Linear/GELU blocks (default `1`). Every block has the same
+width; a scalar Linear head follows. The 29-dimensional What context still
+enters through a separate linear operation bias, not through this MLP.
+
+`WhatStepChooser` controls ANSWER versus OPEN within `Model.think()`; its
+architecture knobs are `whatThinkingHidden` (default `16`) and
+`whatThinkingDepth` (default `1`). The input remains 29 What-context values plus
+six lexical/memory-status features. Increasing depth does not add missing
+semantic query or candidate representations, expand the action vocabulary, or
+enable episodes. Its final layer remains zero-initialized, so an untrained
+evaluation policy ties and chooses ANSWER.
+
+Omitting these settings preserves the previous parameter keys, initialization
+and default topology. Changing them is an architecture change: use a matching
+checkpoint/configuration, not an implicit weight migration. A lazily absent
+thought-step module can recover its width/depth from checkpoint tensor shapes;
+an already constructed incompatible module must still fail the weight audit.
+Tests: [chooser architecture](../test/test_chooser_architecture.py). For current
+reasoning limits and the required behavioral tests, see
+[Reasoning](Reasoning.md#learned-thought-capacity-and-current-limits).
+
 ### Soft Operator Superposition
 
 `operator_superposition(query_vec)` is a softmax over the cosine

@@ -223,12 +223,75 @@ BasicModel has two distinct iterative loops, and they must not be confused:
 
 The kernel is reachable from a What resolve step as an external tool
 (prompted questions consult `answer_query` when `reasoningIterations > 0`),
-so the two compose rather than compete. The What loop's content (a learned
-resolve step, exact arithmetic primitives, the episode credit boundary) is
+but its truth/support values currently enter the derivation trace rather than
+setting the What answer symbol. The What loop's content (a learned ANSWER/OPEN
+resolve step, attention over LTM outputs, and the episode credit boundary) is
 specified in the
 [mathematical thinking specification](specs/2026-09-09-mathematical-thinking.md);
-the substrate (`WhatQuestion`, `LTMSlot`, parity, closure pressure) is in
+its former runtime arithmetic primitives are retired. Mathematics is an
+evaluation domain for general syntax and memory, not a separate solver.
+The substrate (`WhatQuestion`, `LTMSlot`, parity, closure pressure) is in
 [STM.md Section 13](STM.md#13-interaction-ltm-and-the-what-stack).
+
+## Learned thought: capacity and current limits
+
+Implementation audit, 2026-09-10. Thought is distributed across representation,
+grammatical composition, memory access, action selection and answer construction;
+neither chooser alone is the whole reasoning system. Conceptual activation can
+be interpreted as illumination of a learned basis, but What LTM does not simply
+save and restore the entire field: slots contain conceptual inputs and emitted
+responses, while temporal recall uses pooled sentence representations. Future
+queries use an optional predictor, not stored future truth.
+
+| Policy | Default capacity | What it sees / does |
+|---|---|---|
+| `MLPTransformChooser` | One hidden layer, width `max(8,D)`; canonical grammar `D=1024`, approximately 2.17M parameters per chooser | Scores grammatical composition from slot and candidate vectors, tool identity, role context and position; What context adds a separate linear bias. |
+| `WhatStepChooser` | `35 -> 16 -> 1`, one hidden layer, 593 parameters | Chooses ANSWER or OPEN a presented lexical referent, using temporal/address context, detached scalar LTM summaries and action/status/position features. |
+
+Both use GELU hidden activations and a scalar score. Architecture settings are
+`transformChooserHidden` / `transformChooserDepth` and `whatThinkingHidden` /
+`whatThinkingDepth` (see [Params](Params.md)). Depth counts hidden layers, not
+thought steps. For grammar input width `F=2D+8+8+C`, hidden width `H`, depth `L`
+and `T=max(1,n_copy+n_op)`, the parameter count is
+`H*(F+2)+1+(L-1)*(H*H+H)+37*T`; `C` is the role-context width. The thought-step
+count is `H*37+1+(L-1)*(H*H+H)`. These settings preserve existing defaults;
+canonical BasicModel still leaves thinking iterations at one, standalone memory
+off and thinking-policy loss off. Capacity changes do not enable those paths.
+
+The current information and credit boundaries matter more than the raw count:
+
+- `think()` performs one comprehension forward per episode and repeats answer
+  resolution with growing LTM; it does not re-run the complete grammar each step.
+  Active subquestion representations now seed their own answer before attention.
+- The thought chooser has no direct semantic root/query/candidate vector input.
+  Its memory summaries are detached mean, mean-absolute, RMS and max-absolute
+  values. Deeper layers cannot distinguish meanings collapsed by those summaries.
+- Under `whatThinkingDetach=episode`, root loss can reach earlier continuous
+  subanswers and memory-reading parameters until the single optimizer step, then
+  durable memory detaches. Hard choices receive a separate policy objective;
+  gradients do not pass through argmax, exact truth search or all past LTM writes.
+- Explicit truth/parthood/equality search and kernel syllogism tests do not prove
+  that the What policy learns to select a conditional and apply it to a grounded
+  antecedent. The trace-only reasoner connection is an outstanding output-causality
+  gap. Current arithmetic/dependency learning gates remain expected failures.
+
+Mechanism evidence: [What episodes](../test/test_what_thinking_episode.py) cover
+active-query and memory interventions, target isolation, parity and checkpoints;
+[episode training](../test/test_math_thinking_training.py) covers earlier-state
+gradients and policy updates; [chooser architecture](../test/test_chooser_architecture.py)
+covers capacity, default parity and saved topology. Several mechanism tests
+script choices or set attention weights; they are not learned-reasoning results.
+
+Before claiming learned multistep reasoning, add a general syntax/LTM evaluation
+with `A implies B`, `B implies C`, evidence `A`, and query `C`. Require emitted
+answers to change when a necessary antecedent or rule is removed/negated, with
+unsupported distinguished from false. Hold positions, stack sizes and scalar
+summaries fixed while changing which semantic subquestion is useful. Compare
+the same trained checkpoint across iteration budgets and memory ablations, then
+test renamed symbols and unseen chains. Report continuous-state, memory-reader,
+grammar-policy and thought-policy credit separately. Measure capacity only after
+those semantic inputs and causal paths are connected; wider/deeper choosers are
+an experiment, not evidence of reasoning by themselves.
 
 ## Parser And Conceptual Order
 

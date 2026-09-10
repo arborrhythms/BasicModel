@@ -80,8 +80,8 @@
          seam as the word recursion; otherwise it would reintroduce a hidden
          136 -> 1032 coordinate pad before the aligned loop begins. -->
     <sentenceProtocol>false</sentenceProtocol>
-    <serialWordCapacity>256</serialWordCapacity>
-    <serialWordBuckets>256</serialWordBuckets>
+    <serialWordCapacity>8</serialWordCapacity>
+    <serialWordBuckets>8</serialWordBuckets>
     <!-- Fixed compiler input extent; words remain complete and PS still
          reduces them into its configured eight live locations. P64 means at
          most 64 radix/subword integer IDs per cold spelling, not 64 dense byte
@@ -93,14 +93,6 @@
 
     <!-- Allocate explicit capacity to contextual grammar routing. -->
     <transformChooser>mlp</transformChooser>
-    <!-- Capacity is explicit without changing the existing architecture:
-         grammar width follows its feature width; thought-step width is 16.
-         Depth counts hidden layers, not thought iterations. These settings
-         do not enable thinking or change its policy-loss weight. -->
-    <transformChooserHidden>0</transformChooserHidden>
-    <transformChooserDepth>1</transformChooserDepth>
-    <whatThinkingHidden>16</whatThinkingHidden>
-    <whatThinkingDepth>1</whatThinkingDepth>
     <!-- What spec Step 9 cutover (2026-09-09): the canonical model answers
          through the separate reverseOutput() path (resolve -> conceptual /
          perceptual synthesis with dedicated weights -> OutputSpace adapter),
@@ -109,9 +101,6 @@
          keep the defaults (off), so their pinned behaviour is unchanged. -->
     <answerSynthesis>true</answerSynthesis>
     <synthesisBindings>4</synthesisBindings>
-    <whatCurriculum>full</whatCurriculum>
-    <whatCurriculumDistance>1</whatCurriculumDistance>
-    <whatCurriculumRatio>0.25</whatCurriculumRatio>
     <categoryCodebook>true</categoryCodebook>
     <!-- Low-occupancy grammar threshold; pressure lowers it to a hard
          grammatical demand at the configured capacity boundary. -->
@@ -125,18 +114,11 @@
 
     <data>
       <dataType>embedding</dataType>
-      <dataset>text</dataset>
-      <shardDir>data/fineweb</shardDir>
-      <!-- Objective source-address scope. It conditions Teacher lessons but
-           never replaces the model's subjective .where/.when bands. -->
-      <contextWhole>FineWeb-Edu 100B shuffle</contextWhole>
-      <numShards>1</numShards>
-      <maxDocs>2000</maxDocs>
-      <!-- W256 is the protected-memory B28 operating point on the 36 GB MPS
-           host.
-           Exclude (never clip) the rare longer splitter records so every
-           admitted training example remains one complete sentence. -->
-      <maxSentenceWords>256</maxSentenceWords>
+      <dataset>inline</dataset>
+      <input use="train">kick the bucket|he will kick the bucket|they kick the bucket soon|we saw him kick the bucket|she may kick the bucket|to kick the bucket is sad|old men kick the bucket|kick the bucket at last|kick the ball|he will kick the ball|they kick the ball soon|we saw him kick the ball|she may kick the ball|to kick the ball is fun|old men kick the ball|kick the ball at last</input>
+      <output use="train">1|1|1|1|1|1|1|1|0|0|0|0|0|0|0|0</output>
+      <input use="test">kick the bucket|he will kick the bucket|they kick the bucket soon|we saw him kick the bucket|she may kick the bucket|to kick the bucket is sad|old men kick the bucket|kick the bucket at last|kick the ball|he will kick the ball|they kick the ball soon|we saw him kick the ball|she may kick the ball|to kick the ball is fun|old men kick the ball|kick the ball at last</input>
+      <output use="test">1|1|1|1|1|1|1|1|0|0|0|0|0|0|0|0</output>
     </data>
 
     <training>
@@ -145,12 +127,12 @@
       <!-- Each of 28 contiguous corpus streams packs consecutive complete
            sentences into a W256 brick. Sentences remain chronological within
            a row, and row-local soft reset seals every sentence boundary. -->
-      <batchSize>28</batchSize>
-      <packSentences>true</packSentences>
+      <batchSize>8</batchSize>
+      <packSentences>false</packSentences>
       <!-- One CPU producer thread with a two-tick in-flight budget: one tick
            consumed by the model while the next is buffered. -->
       <numWorkers>2</numWorkers>
-      <learningRate>0.0005</learningRate>
+      <learningRate>0.001</learningRate>
 
       <!-- The shared ConceptualSpace dictionary is a persistent non-grad
            buffer, not an optimizer/Adam parameter. A deterministic
@@ -165,17 +147,12 @@
            exact leaves and grammar choices are detached teacher targets, and
            no reverse gradient traverses the recurrent sentence construction.
            The output head is structural and receives no fabricated labels. -->
-      <reconstructionScale>1.0</reconstructionScale>
+      <reconstructionScale>0.1</reconstructionScale>
       <!-- On supervised batches remove opposing output credit on P/W/concept
            parameters and cap the remainder below reconstruction's norm.
            A detached/zero reconstruction gradient gives output no budget on
            those parameters; independent decoder heads can still learn.
            FineWeb has no output loss, so this adds no backward work here. -->
-      <reconstructionPriority>true</reconstructionPriority>
-      <outputGradientRatio>0.5</outputGradientRatio>
-      <teacherReconstruction>true</teacherReconstruction>
-      <detachedReverse>true</detachedReverse>
-      <leafDistillWeight>1.0</leafDistillWeight>
       <!-- Keep the bounded local chooser objective available but outside this
            production run for now. Its extra candidate re-score is paid on
            every live fold; benchmark that pressure separately before
@@ -207,7 +184,7 @@
   <InputSpace>
     <nOutput>8192</nOutput>
     <nVectors>256</nVectors>
-    <nDim>512</nDim>
+    <nDim>136</nDim>
   </InputSpace>
 
   <!-- Eight instantaneous part percepts. WHAT is deliberately compact (128);
@@ -216,8 +193,8 @@
        before entering this field. -->
   <PartSpace>
     <nInput>8192</nInput>
-    <nInputDim>512</nInputDim>
-    <nVectors>32768</nVectors>
+    <nInputDim>136</nInputDim>
+    <nVectors>4096</nVectors>
     <!-- Allocate only this initial prefix.  Chunk promotion queues new rows
          during a word pass, then grows geometrically at the post-step boundary
          without exceeding this logical ceiling. -->
@@ -238,19 +215,19 @@
     <nInput>8</nInput>
     <!-- PS/WS sigma folds have already emitted conceptual codebook
          activations here. The CS boundary itself is width-preserving. -->
-    <nInputDim>1032</nInputDim>
+    <nInputDim>136</nInputDim>
     <!-- Concept and downstream symbol-reference inventory. This is independent
          of PartSpace's allocated prefix, WholeSpace's small property basis,
          and the eight simultaneously live CS/WS locations. All four aligned
          subsymbolic folds address this one shared physical dictionary. -->
-    <nVectors>1048576</nVectors>
+    <nVectors>4096</nVectors>
     <!-- Only this prefix participates in VQ initially.  The remaining rows
          are an optimizer-owned reserve activated in power-of-two steps. -->
-    <activeVectors>32768</activeVectors>
+    <activeVectors>4096</activeVectors>
     <stmCapacity>8</stmCapacity>
-    <nDim>1032</nDim>
+    <nDim>136</nDim>
     <nOutput>8</nOutput>
-    <nOutputDim>1032</nOutputDim>
+    <nOutputDim>136</nOutputDim>
 
     <invertible>true</invertible>
   </ConceptualSpace>
@@ -263,13 +240,14 @@
        optimizer/compiled-graph reset boundary. -->
   <WholeSpace>
     <propertyBasis>true</propertyBasis>
+    <digitWholes>false</digitWholes>
     <analysis>meronomy</analysis>
     <!-- Per-vector invertible membership coupling. This is not the optional
          parallel CS mixing matrix and never mixes word/location slots. -->
     <butterfly>true</butterfly>
     <nInput>8</nInput>
-    <nInputDim>1032</nInputDim>
-    <nVectors>8</nVectors>
+    <nInputDim>136</nInputDim>
+    <nVectors>4096</nVectors>
     <nDim>136</nDim>
     <nOutput>8</nOutput>
     <nOutputDim>136</nOutputDim>
@@ -281,16 +259,16 @@
        directly; WholeSpace is not an intermediate output producer. -->
   <OutputSpace>
     <nInput>8</nInput>
-    <nInputDim>1032</nInputDim>
+    <nInputDim>136</nInputDim>
     <nVectors>1</nVectors>
     <nDim>1</nDim>
-    <nOutput>1</nOutput>
+    <nOutput>2</nOutput>
     <nOutputDim>1</nOutputDim>
   </OutputSpace>
 
   <SymbolSpace>
     <language>
-      <grammar>complete.grammar</grammar>
+      <grammar>ladder.grammar</grammar>
     </language>
   </SymbolSpace>
 </model>
