@@ -17,6 +17,7 @@
 | [What specification](doc/specs/2026-07-27-teaching-modes-and-next-iteration.md) | `Data.what()` / `Model.what()`, the two downward paths, LTM parity thinking, joint losses, and the deferred concept/verb roadmap |
 | [What and spacetime design](doc/WhatSpacetimeDesign.md) | One understanding, reconstruction vs output synthesis, queryable spacetime, thinking stack, and grammar-chooser context |
 | [Mathematical thinking specification](doc/specs/2026-09-09-mathematical-thinking.md) | Bounded iterative `what()` thinking with exact arithmetic primitives, episode credit, verifier, and pilot gates |
+| [Meronomy as the fold ladder (plan)](doc/plans/2026-09-10-meronomy-fold-ladder.md) | Synthesis and analysis as two mereological towers, joining upward from nothing and dividing downward from everything, meeting at the basic level; the radix trie and the other front ends move to Legacy. |
 | [Mathematical thinking plan](doc/plans/2026-09-09-mathematical-thinking.md) | Phase-ordered execution plan for the thinking specification |
 | [Mathematical thinking pilot](doc/benchmarks/2026-09-09-math-thinking-pilot.md) | Mechanism evidence and the (unmet) learning gates on the `MM_math` fixture |
 | [Params](doc/Params.md) | XML configuration reference and migration notes |

@@ -258,6 +258,10 @@ Phase 5 report may claim learned thinking, with the checkpoint and commit.
 
 ## Phase 9 — wholes smaller than words (Alec, 2026-09-10)
 
+> Continued in [meronomy as the fold ladder](2026-09-10-meronomy-fold-ladder.md):
+> synthesis and analysis become the subsymbolic ladder and its dual, the
+> radix trie and the other front ends move to Legacy.
+
 Finding (pilot report, "The successor is learned as a VP"): every
 failure of the successor run was a two-digit numeral read as one of its
 digit parts. On the trained checkpoint `12` and `14` are attested store

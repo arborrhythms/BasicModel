@@ -1,0 +1,610 @@
+# Meronomy as the fold ladder: synthesis and analysis without the radix trie
+
+Status: plan, 2026-09-10 (Alec; reviewed against BasicModel `fc93560`).
+Drives the perception change that the
+[mathematical thinking plan](2026-09-09-mathematical-thinking.md) Phase 9
+ran into. Design background:
+[Mereology.md, "Mereological Algorithm"](../Mereology.md#mereological-algorithm)
+(the two mereological towers; its adjoint framing is superseded by the meeting rule below) and [Architecture.md](../Architecture.md)
+§C (attention as the origin of the reading scope).
+
+## Context
+
+The successor experiments of 2026-09-09/10 showed where the stack binds
+concepts to words: the radix trie promotes `12` into an opaque chunk by
+recurrence, the aligned word loop keys a concept on the word's surface
+string, and the analysis cut uses four fixed byte types. Decisions (Alec,
+2026-09-10): concepts must not be bound to words; a run of digits is a
+compound concept, never one stored concept per number; chunking should stop
+where concepts say the basic level is; the subsymbolic loop takes over the
+radix trie's role (a likely speed-up, to be measured, not assumed);
+the WholeSpace tower begins with everything and synthesizes downward by
+division, learning types by learning boundaries ("spaces bound words"),
+and the two towers meet at Rosch's basic level (they need not be duals);
+all synthesis / analysis modes except `meronomy`
+move to `Legacy.py`, and `meronomy` gets the new implementation. The old
+`meronomy` was an alias of `radix` in PartSpace and of the word cut in
+WholeSpace, so nothing that worked is lost.
+
+The plan is written as a set of contracts first (algebra, carriers,
+boundary predicate, statistics, mutation boundary, identity, phrase
+meaning) and phases second, because the reused code does not by itself
+provide the properties the phases need; each contract names what the code
+provides today and what the phase must add.
+
+## What exists (reuse)
+
+| piece | where | role in the new design |
+|---|---|---|
+| parameter-free set union in membership space, `1 - prod(1 - m_i)` (probabilistic sum) | `Layers.MeronymicFoldAdapter.compute_aggregate_over_set` (the serial word assembler) | today's rung 0; replaced by the max join (contract 1) |
+| learned sigma folds, M-way `atanh`-sum fold, balanced split | `Layers.SigmaLayer.synthesize_over_set`, `generate` | the learned rungs and their numerical inverse |
+| isotonic projection | `bin/Mereology.py` `project_monotone` (edge loop, POCS), `where_containment_edges` (quadratic in spans); `join_from_bottom` / `meet_from_top` stay as utilities, unused by the design | the cross-tower order guarantee, bounded per contract 5 |
+| compiled fold ladders per word tick | `Models._aligned_part_fold_ladder`, `_aligned_whole_fold_ladder`; `PartSpace.fold_event_ladder`, `WholeSpace.fold_event_ladder` | unary feature folds on an assembled event; retire into the forwards (they do not join spans, contract 2) |
+| per-concept fold depth | `Spaces.record_concept_fold_support` | a derivation record; the basic level is estimated separately (contract 4) |
+| vectorised type-run cut over property signatures | `Spaces._type_run_spans` (CPU factories, `.item()`), `_build_property_signature_lut` (untagged rows absent, rows >= 63 ignored, canonical fallback when tags are empty), `stage_analysis_spans`, `stage_word_property_weights` | the cutter's run logic; its predicate becomes learned (contract 3) and its host-side parts move behind the mutation boundary (contract 5) |
+| digit whole (2026-09-10) | `<digitWholes>`, `Spaces._digit_signature_bits`, the singleton mask of `_type_run_spans` | the explicit form of the singleton predicate the learner must express (contract 3) |
+| standalone router (Viterbi / soft-DP tiling to byte terminals) | `perceptual_analyzer.MeronymicRouter`, `MeronymicAnalyzer` | reference for the routing pressure; not on the live path |
+| radix store + byte fallback | `Layers.RadixLayer` (longest match, promotion gates), `BytesFallbackEncoder` | Legacy; the test oracle for Phase 4 |
+| legacy selection | `Legacy.LEGACY_PART_SYNTHESIS_MODES` (already contains `radix`), `normalize_part_synthesis_mode`, `embed_part_stem`; canonical `meronomy` still sets `synthesis_mode = "radix"` directly in `Spaces.py` | remove the canonical dependency on radix; add the analysis cuts |
+| word-major staging | `Spaces._embed_radix_word_major`, `synthesize_word_parts`, `_radix_part_events`; `Models._stage_serial_concept_rows` (surface-keyed, `key = str(value)`) | replaced by ladder staging and identity per whole (contract 6) |
+| concept relations | `ConceptualSpace.concept_parts`, `concept_wholes` (deduplicated relation sets, not counts), `_automatic_concept_admitted` (capacity gate only), `cs_forward_content` / `_order_caps` (per-order top-K) | the admission site and the readout window; counts are new state (contract 4) |
+| grammar chunk | `Language.ChunkLayer` (`chunk(C, C) = left + right`; PEEL reverse), `complete.grammar` rules; `forwardGrammarWeight` (a bounded local structural contrast on committed folds, chooser-only) | the phrase-level site (contract 7) |
+| analysis-mode resolver | `Spaces.py` (`grammatical` / `meronomy` resolve to `raw` at the InputSpace seam) | collapse to one mode |
+
+Mode inventory (`data/*.xml`): synthesis `radix` 17 fixtures, `bpe` 5,
+`lexicon` 4 (incl. the `model.xml` default), `meronomy` 6 (BasicModel,
+MM_20M_*, nanochat); analysis `word` 8, `raw` 8, `byte` 6, `meronomy` 7.
+26 tests touch `RadixLayer` / `percept_store` / `synthesis_mode`. The
+inventory is refreshed at the start of Phase 0.
+
+## Decision
+
+- `<synthesis>meronomy</synthesis>` is the subsymbolic fold ladder: bytes
+  are atoms; rung 0 joins the atoms of a whole by max; the learned rungs raise the
+  order of that code; a code is admitted to the PartSpace codebook by the
+  `chunk` operation; no trie in perception.
+- `<analysis>meronomy</analysis>` is the descending ladder: the unity at
+  the top, the byte-complete tiling at the floor, and one tiling per
+  admitted boundary predicate between them, all computed at pass 0; a
+  divided whole's code is the meet of its positions' property activations
+  (min over positions, contract 1); a property becomes a boundary type when the
+  wholes it yields are attested. The two towers are not duals: each
+  synthesizes codes monotonically, one upward by joining, one downward by
+  dividing, and they meet at the basic level (contract 4).
+- All other modes move to `Legacy.py`; the old behaviour stays reachable as
+  `radix` / `word` through Legacy as the oracle for the Phase 4 comparison
+  and is removed after it.
+
+Why the ladder rather than feedback to the trie ("bigger / smaller
+chunk"): the trie is a host island (Python longest-match, hit-count
+dictionaries, a growth callback before every compiled body) while the fold
+ladder is already compiled and fixed-shape. Whether that is a speed-up is a
+Phase 4 measurement (graph breaks, recompilations, peak memory, bytes per
+second), not a premise.
+
+## Contracts
+
+### 1. Algebra and the information kept for reconstruction
+
+Two laws exist in the code for joining parts: the serial word assembler's
+membership union `1 - prod(1 - m_i)` (`MeronymicFoldAdapter`), the
+probabilistic sum, and `Mereology.join_from_bottom`'s `tanh(sum atanh)`,
+the Einstein sum. Both are strict t-conorms, each with an exact `1 - x`
+dual, and both make the joined whole grow with the number of parts.
+
+Decision: neither. The PartSpace join is the max over parts per
+coordinate, and with the WholeSpace meet as the min over positions (below)
+the two towers use the Gödel pair, the only idempotent t-norm and
+t-conorm, the lattice proper. Reasons: the code is the category, and a
+category does not count its parts (multiplicity and order live on the
+witness and in the occurrence's `.where` bindings, contracts 1 and 6, so
+`11` and `1` are distinct occurrences with the same rung-0 category code);
+a whole's max dominates every sub-span's max by construction, so the
+containment order holds inside a whole without projection and the isotonic
+projection is needed only across the towers; and max is the operation the
+grammar already calls `union`. The stated cost: max passes gradient only
+to the strongest part per coordinate, where a sum would reach every part;
+with a wide event and few parts per whole this is mild, and the learned
+rungs above the base have dense gradients regardless. The learned sigma
+rungs keep their `atanh` algebra: they are feature folds that raise order,
+not lattice operations, and need not share the base's law. The strict sums
+are recorded as the alternative considered; `join_from_bottom` and the
+assembler's union stay in the code as utilities and Legacy respectively.
+
+The WholeSpace value is a meet in the literal sense, the intersection over
+the whole's positions: a divided whole's code is the activation of the
+properties that hold at every position of its extent. For the type-run cut
+this is exact by construction (a run is the maximal span with a constant
+property signature, so "common to all positions" is the signature). With
+the learned soft predicates of contract 3 the intersection is a soft AND
+over positions, and it must be the idempotent one, the min (Gödel t-norm):
+a property holds in a whole to the degree it holds at its weakest position,
+independent of length; a strict t-norm such as the Einstein product would
+decay with the number of positions and make long wholes propertyless. Join
+by max over parts and meet by min over positions are the Gödel pair, both
+idempotent, so a whole's category code depends neither on how many times a
+part recurs nor on how long the whole is; neither is derived from the
+other by complement. Descent from
+everything is then literal: the unity's meet is the properties common to
+the whole sentence (usually almost none), and every division yields wholes
+with more properties in common, so the meet grows as the extent shrinks
+while the join grows as the extent grows. Above the base, the learned pi
+rungs raise order from the whole's meet as the sigma rungs do from the
+part's join. `meet_from_top` stays in `Mereology.py` as a utility but is
+not part of the design; the order between the towers (whole dominates
+part) is carried by the isotonic projection over `.where` containment,
+which is indifferent to how either tower produced its codes. The live assembler's rung 0 changes law in
+Phase 1 (it changes anyway when its inputs become byte atoms); Phase 0
+byte-identity concerns the Legacy move, not rung 0.
+
+Where the logic lives: the join is the only OR in perception; there is no
+AND in either tower, which is what keeps both monotone and orderable by
+containment. Negation enters first at ConceptualSpace: a concept is
+defined by having some perceptual building blocks and lacking others, an
+AND over present parts with a NOT over absent ones, expressed in the
+concept's part relations and the `not` / `non` grammar operations.
+
+Neither the balanced split (`SigmaLayer.generate`, which recomposes to the
+parent, not to the original children) nor De Morgan duality gives
+byte-sequence invertibility. Reconstruction therefore does not rely on
+numerical inversion. The carrier keeps an **ordered constituent witness**
+per whole: the constituent codebook ids in surface order, their relative
+byte positions within the whole, multiplicity (repeated ids), lengths, and
+the valid mask; fixed capacity per whole (the whole-length cap of contract
+2), padded. Reconstruction of the INPUT replays the witness exactly.
+Generated content has no input witness and must not read one. Its
+descent is: the learned rungs invert numerically (the balanced split,
+which recomposes to the parent within tolerance); rung 0, being a max, has
+no numerical inverse, so its constituents are recovered by domination
+against the atom rows (an atom is present in a generated whole when the
+whole's code dominates that atom's row per coordinate, within the
+admission radius: the PEEL step of `chunk.reverse` restricted to atoms),
+and their ORDER comes from the symbolic side, the parse that generated the
+whole or the witness stored with the admitted concept the whole was
+retrieved as. A generated whole that is neither an admitted concept nor
+the product of a parse has a constituent set but no order, and is reported
+as such rather than serialised in an arbitrary order.
+
+Tests, kept separate: numerical inversion of the learned rungs (the split
+recomposes to the parent within tolerance); constituent recovery at rung 0
+(domination against the atom rows recovers exactly the atoms of a whole,
+including under permutation and repetition); stored-surface replay (byte-exact,
+including permutations of the same atoms, repeated bytes, identical
+adjacent digits such as `11`); and answer-side generation with the input
+witness deliberately unavailable.
+
+### 2. Spatial composition versus fold depth
+
+The reused ladders apply unary feature folds to an already assembled event;
+another rung does not join adjacent spans. So chunk length is NOT bounded
+by the rung count, and the earlier claim that four rungs give 16-byte parts
+is withdrawn. The contract:
+
+- Carrier axes: `[B, W, M, D]` at rung 0, where `W` is the whole capacity
+  per presentation (the analysis ladder's widest tiling, bounded by
+  `<wholeCapacity>`), `M` the constituent capacity per whole
+  (`<wholeLength>`, the maximum atoms a rung-0 union consumes), `D` the
+  event width. Rungs t >= 1 are `[B, W, D]`: one code per whole per rung.
+- The tiling ladder is computed at once, at pass 0, by WholeSpace: the
+  predicates of contract 3 ordered by boundary weight give a nested set of
+  tilings, the unity at the top (everything), the byte-complete tiling at
+  the floor, with the same vectorised run labelling the type-run cut uses
+  today applied once per rung. "Descent from everything" is the order of
+  that ladder, not a sequence of passes. WholeSpace's value at each rung is
+  the min over positions (contract 1), also computed at once.
+- Which spans a synthesis rung consumes: PartSpace climbs the tiling
+  ladder with the pass index. Rung 0 (pass 0) joins the atoms of each
+  whole of the finest tiling; at pass t >= 1 the sigma fold raises the
+  order of each whole's code, and wholes that first appear at the coarser
+  tiling of rung t take the max over the codes of the finer wholes they
+  contain (a coarser whole's base is the max over its atoms, which the
+  finer wholes' maxes already dominate). Spatial joining across wholes
+  therefore happens only where the tiling ladder has a coarser whole,
+  never by a synthesis rung on its own.
+- Overlength wholes (more than `M` atoms) are divided by the analysis
+  ladder at the finest available boundary, and if none exists, cut at `M`
+  with the cut position recorded on the witness (an explicit, visible
+  fallback, not a silent truncation).
+- The analysis ladder's top is the unity and its floor is the byte-complete
+  tiling; contract 3's bootstrap decides which intermediate tilings exist
+  on the first epoch. The loop-placement table below says so.
+- Nested tilings and coverage: the analysis ladder produces tilings that
+  nest (each rung's wholes are unions of the finer rung's wholes). Top-k
+  selection (`<fieldRetrieve>` / `<fieldAttend>`) chooses which wholes
+  ConceptualSpace attends this pass; the unattended wholes stay on the
+  carrier and are re-offered on the next pass under a coverage schedule
+  (a whole not attended by the last pass is attended by the forced sweep,
+  the analogue of the thinking loop's forced closure), so nothing in the
+  input is silently discarded.
+
+### 3. A learned boundary predicate
+
+`set_property_kind` assigns existing character-class predicates to rows,
+and the signature LUT omits untagged rows, ignores rows above 62, and
+restores the canonical predicates when tags are empty; that machinery
+cannot learn a boundary. The contract replaces the tag with a predicate:
+
+- Representation: per WholeSpace property row `p`, two learned bounded
+  parameters on the property codebook's SubSpace, a boundary weight `b_p`
+  (does a flip of `p` end a whole) and a singleton weight `s_p` (does every
+  occurrence of `p` stand alone), both in `[0, 1]` through a sigmoid with a
+  straight-through hard threshold in the cut. The signature slab becomes a
+  bool `[B, N, P]` (no 63-row limit), and the cut at position `i` is
+  `OR_p (b_p AND flip_p(i)) OR OR_p (s_p AND p(i))`, the same run logic
+  `_type_run_spans` implements today with its singleton mask. `11` is cut
+  by `s_digit`, not by a flip; the learner expresses the digit rule the same
+  way `<digitWholes>` does, without a digit-specific answer.
+- Credit: two channels. Through the straight-through threshold, the
+  reconstruction and answer costs reach `b_p` and `s_p` by autograd like
+  any parameter. The category utility of contract 4 is a count statistic,
+  not differentiable in the predicates, so it credits them by a score
+  update at epoch end in `Reset`: each predicate's weight moves by a step
+  proportional to the utility of the wholes its cut yielded during the
+  epoch minus the utility of the wholes at the rung above (the gain from
+  cutting there), clipped to `[0, 1]`. They are the only new parameters of
+  the analysis ladder.
+- Bootstrap: the four canonical classes initialise `b_p` for their rows as
+  priors (space and punctuation high, letter and digit low, `s_p` zero);
+  `<boundaryTypes>none</boundaryTypes>` disables that initialisation and the
+  canonical fallback entirely (the "no tagged types" test requires this
+  switch and asserts the fallback is really off).
+
+### 4. The category-utility estimator and its bootstrap
+
+`concept_parts` / `concept_wholes` are deduplicated relation sets and
+`record_concept_fold_support` records a derivation; neither estimates a
+basic level. The contract adds explicit statistics as fixed-capacity
+tensor state on the ConceptualSpace SubSpace:
+
+- Observation unit: one presentation (one sentence in the serial loop),
+  counted once, after the last pass, never per recurrent pass or per
+  backward replay; frozen during held-out evaluation and under `eval()`.
+- Counts: `n_c` per admitted category row, `n_cf` per (category row,
+  feature row) where a feature is a constituent id (rung below) or a
+  containing whole id (rung above), and `n_f` per feature; Laplace
+  smoothing with `<utilitySmoothing>` (default 1), a minimum evidence
+  `<utilityMinCount>` (default 4) before a row's utility is trusted, ties
+  broken toward the coarser rung.
+- Utility per rung (Corter & Gluck 1992):
+  `CU(c) = P(c) * (sum_f P(f|c)^2 - sum_f P(f)^2)`, normalised across
+  rungs by the number of candidate rows at each rung so that a rung with
+  more rows is not favoured by count alone. This is a feature-predictability
+  hypothesis about where the basic level lies; whether it discovers idioms
+  is a Phase 2b test, not a premise.
+- Recurrence gate: `P(c) > 0` after one observation is not recurrence; a
+  candidate becomes admissible when it has been seen `<admissionCount>`
+  times (default 2) within the admission radius, and the rung is then
+  chosen by utility among admissible candidates.
+- The meeting rule: the basic level of a presentation is the rung at
+  which a part synthesized from below and a whole divided from above
+  coincide in extent and are both attested (the callosum's part-is-whole
+  identity, `insert_meta`). Utility is the estimator and tie-breaker at
+  that meeting, not the definition.
+- Reconciling with the two memory pressures: `P(c)` is the working-memory
+  term (few, frequent wholes) and the predictability term is the long-term
+  memory term (a bounded set of distinct wholes that predict their parts);
+  "coarsest attested" is the tie rule, not a separate criterion.
+- Bootstrap of the circular dependency (synthesis needs domains before
+  boundaries are learned; boundaries need attested wholes): the initial
+  cut is byte-complete (every byte a whole) plus the canonical priors of
+  contract 3; synthesis admits within those domains on the first epoch;
+  boundary weights update at epoch boundaries (`Reset`) from the counts
+  accrued during the epoch; synthesis admission commits per presentation.
+
+### 5. The mutation and compilation boundary
+
+Moving code into `forward()` does not make it graph-safe: the admission
+allocator, fold-support records and property tags mutate Python
+containers; `_type_run_spans` uses CPU factories, data-dependent sizes and
+`.item()`; `project_monotone` loops over edges with scalar extraction. The
+contract:
+
+- Inside the captured forwards: fixed-capacity tensor state only (counts,
+  ids, witness, the bool signature slab), bounded loops (the rung count,
+  `M`, `W`), no `.item()`. The cut is re-expressed as a tensor run
+  labelling (cumulative sums over the boundary mask) with a fixed `W`.
+- Proposals, not mutations: a forward writes admission proposals (rung,
+  code, witness, utility) into a fixed-size proposal buffer on the
+  SubSpace; the owner commits them in `Reset` at the presentation boundary,
+  outside the captured graph, exactly once (a committed proposal is marked,
+  so a backward replay or a second pass cannot admit twice, and the tensors
+  the backward needs are never mutated in place).
+- Visibility: new ids, counts, tags and projected codes become visible at
+  the next presentation, never mid-graph.
+- Monotone projection scope: only the admitted row's containment
+  neighbourhood (its constituents and its containing wholes on the current
+  witness), so the edge set is linear in `M` rather than quadratic in the
+  number of spans; the global projection stays an offline consistency pass.
+- Measurements before any speed claim: graph breaks, recompilations, peak
+  memory and bytes per second on identical checkpoints, corpora, hardware
+  and budgets, against the Legacy `radix` path.
+
+### 6. Persistent identity versus an occurrence's `.where`
+
+A primitive concept must be reusable at another position, in another
+sentence and after save / load; an occurrence must keep ordered spatial
+bindings. Two keys:
+
+- Persistent identity: `(rung, nearest codebook row)` with the row's
+  admission radius as the metric; no absolute address in the key (or one
+  concept per observation follows), and no unordered aggregate alone (or
+  `12` and `21` collapse).
+- Occurrence: `(identity, ordered .where bindings of its constituents)` on
+  the carrier's witness; two occurrences of the same identity at different
+  positions are the same concept twice.
+- Prototype motion: when learned weights or the monotone projection move a
+  row, the nearest-row metric is evaluated against the row's current code;
+  an occurrence that no longer falls within the radius of its row is a
+  miss, never a silent re-keying.
+- Checkpoints: the aligned-protocol round-trip defect (math plan Phase 9)
+  is a prerequisite of this contract, not an open question: ids,
+  references, selected rungs, utility counts, boundary predicates and the
+  next allocation round-trip through save / load; capacity exhaustion is
+  tested without row recycling.
+- Numerals: `12`, `21` and `11` use reusable digit concepts and distinct
+  ordered occurrences; no stored concept per numeral string.
+
+### 7. Chunk admission and idiomatic meaning
+
+`ChunkLayer` adds its children and PEEL recovers a basis element with a
+residual; that does not supply a non-compositional meaning or identify the
+parse uniquely. The contract: an admitted phrase is a concept, that is a
+concept id with a row in ConceptualSpace's concept dictionary (the
+`nVectors` signed-unit atoms `cs_forward_content` reads; the table a
+word's concept `A` gets a row in through `create_word_object_meta`),
+initialised from the additive composition and then trained by the
+reconstruction and answer costs like any row, so its meaning can diverge
+from its parts; it is not a PartSpace percept row or a WholeSpace property
+row. The witness keeps the parse (the constituent phrase ids and order),
+so reconstruction is unaffected. Credit: the chooser's existing
+`forwardGrammarWeight` is a bounded local structural contrast and is left as
+it is; the new loss is the admission objective, the category-utility gain
+of the phrase over its parts, which updates the boundary and admission
+parameters, and its effect on the intended choices is shown by a test that
+perturbs the utility and observes the chooser's pick change. Tests use
+idiomatic and literal uses of the same phrase with frequency-matched
+compositional controls; "stays two" means no atomic lexicalisation, not
+prevention of the ordinary grammatical reduction.
+
+## Chunking as a conceptual operation
+
+Background: the basic level is the level of a taxonomy at which categories
+carry the most information, have the highest cue validity, and are most
+differentiated from one another (Rosch, Mervis, Gray, Johnson & Boyes-Braem
+1976, "Basic objects in natural categories"; Rosch 1978, "Principles of
+categorization"); it is the entry point of perception (Jolicoeur, Gluck &
+Kosslyn 1984) and the most codable level in language. It is not fixed: with
+expertise the subordinate level becomes as differentiated and as fast as
+the basic level (Tanaka & Taylor 1991), so the level is learned per domain.
+The computable form is category utility (Corter & Gluck 1992), the gain in
+predicting a category's features from knowing the category (contract 4).
+
+`chunk` is ONE conceptual operation, owned by ConceptualSpace, applied at
+three sites with one criterion (contract 4) and one credit (contract 7):
+
+1. **Subsymbolic loop.** At pass `t` ConceptualSpace reads the attended
+   wholes at every rung and applies `chunk`: admit (or retrieve) the
+   concept at the rung of maximal utility among admissible candidates. The
+   loop continues from the chunked concept; "a bigger / smaller context" is
+   one rung up or down. The recorded fold depth is the derivation; the
+   utility counts are the estimate of the basic level, and their drift with
+   evidence is the expertise effect.
+2. **Word loop.** The units pushed to STM are the chunked concepts, bounded
+   by `<fieldAttend>` under the coverage schedule of contract 2.
+3. **Grammar (idioms).** The structural op `chunk(C, C)` is the same
+   operation at the phrase level under contract 7.
+
+## Loop placement
+
+Every rung of both ladders and the `chunk` operation live inside the
+subsymbolic and symbolic loops, that is inside the Spaces' `forward()` /
+`reverse()` (the processing contract: calculations in Spaces' `__init__` /
+`forward` / `reverse` / `Reset` only; data in SubSpaces). No new public
+methods on Spaces; helpers are private and called only from those entry
+points; the model orchestrator only sequences passes; durable mutation
+happens in `Reset` per contract 5.
+
+| loop | pass | forward (Spaces entry point) | reverse (mirrored) |
+|---|---|---|---|
+| subsymbolic | 0 | `InputSpace.forward`: byte atoms with `.where`, unity view (both exist) | `InputSpace.reverse`: bytes from the witness |
+| subsymbolic | 0 | `WholeSpace.forward`: the whole tiling ladder from the learned predicates (unity at the top, byte-complete at the floor) and the min value per whole per rung | `WholeSpace.reverse` |
+| subsymbolic | 0 | `PartSpace.forward`: rung 0 = max over each whole's atoms, witness written | `PartSpace.reverse`: witness replay (input) or domination against the atom rows with order from the parse (generated) |
+| subsymbolic | t >= 1 | `WholeSpace.forward`: pi_t over each whole's meet at the rung-t tiling; `PartSpace.forward`: sigma_t over each whole's rung t-1 code, and the max over contained finer wholes for wholes first present at the rung-t tiling | the same `reverse` at the mirrored pass |
+| subsymbolic | every t | `ConceptualSpace.forward`: `chunk` over the attended wholes (retrieve-k / attend-k, proposals by utility) | `ConceptualSpace.reverse` |
+| symbolic | reduce | `LanguageSpace.forward(snapshot)` -> `SymbolSpace.forward` (the grammar chooser): `chunk` as a candidate op | `LanguageSpace.reverse(snapshot)` -> `SymbolSpace.reverse`: `chunk.reverse` (PEEL) |
+| boundary | presentation end | `Reset`: commit proposals, update counts, at epoch end update boundary weights | |
+
+The symbolic loop is called as `forward()` / `reverse()` like every other
+Space. Today `SymbolSpace.forward` / `reverse` already wrap `compose` /
+`generate`, but `LanguageSpace` exposes `compose(snapshot)` /
+`generate(snapshot)` and the model calls `languageSpace.compose(...)` at
+three sites. Phase 0 makes `LanguageSpace.forward` / `reverse` the public
+entries (returning the reduction plan exactly as `compose` / `generate`
+do), the model calls them, and `compose` / `generate` become private
+helpers of the forwards.
+
+Consequences for existing code: `fold_event_ladder`,
+`_aligned_part_fold_ladder` / `_aligned_whole_fold_ladder` and the
+`stage_analysis_spans` / `stage_word_property_weights` staging retire into
+the forwards (rung outputs are the forward's event ladder, carried on the
+SubSpace as the fold carriers already are). The eager `embed_stem` exists
+only to keep host tokenization out of the compiled body; with no trie there
+is no host tokenization, so the stem reduces to `InputSpace.forward` (byte
+lexing) and `PartSpace.forward` runs inside the body. The compilation
+boundary changes in content (contract 5), not in kind.
+
+## Phases
+
+First execution slice (Alec): Phases 0 through 2b, with a separate
+acceptance checkpoint after each phase so that a single final successor
+score cannot hide which replacement helped or broke; Phases 3 and 4 after
+review.
+
+### Phase 0 — Legacy move and the loop entry rename
+
+Refresh the inventory. `radix` is already in Legacy's synthesis set and
+dispatch; the remaining change is removing the canonical `meronomy`
+dependency on radix (`synthesis_mode = "radix"` in the PartSpace
+constructor) and migrating analysis ownership: add
+`LEGACY_WHOLE_ANALYSIS_MODES` and a `stage_analysis_spans` legacy
+dispatch for `byte` / `raw` / `sentence` / `word` / `grammatical`.
+`model.xsd` keeps the enums with a "legacy" note; the `model.xml` default
+`lexicon` resolves through Legacy. Rename the symbolic loop entries
+(`LanguageSpace.forward` / `reverse`).
+
+Acceptance: byte-identical behaviour, established by comparing parameter
+names, checkpoint keys, masks, losses and outputs on the fixtures before
+and after (a pinned-output test per touched fixture), not by unchanged
+test counts alone.
+
+### Phase 1 — synthesis as the fold ladder
+
+Step 0 (prerequisite): fix the aligned-protocol checkpoint round trip of
+concept identities (contract 6) with its own test.
+
+1. Atoms are bytes: the PartSpace codebook's byte alphabet rows, `.where`
+   = byte start (`InputSpace.forward`, exists).
+2. Domains from the analysis tiling of the current pass: a part never
+   crosses a whole boundary (with the digit predicate, `12` never fuses
+   below the grammar).
+3. Rung 0 = max over a whole's atoms with the witness written (contract
+   1); rungs t >= 1 = the sigma folds over the whole's code (contract 2).
+   Carrier `[B, W, M, D]` -> `[B, W, D]` per rung.
+4. Admission by `chunk` under contract 4 (admissible after
+   `<admissionCount>` sightings within `<admissionRadius>`, rung by
+   utility), as proposals committed in `Reset` (contract 5); the admitted
+   row records its rung, its witness surface and its local containment
+   projection.
+5. Selection: retrieve-k / attend-k over the ladder (`<fieldRetrieve>` 16,
+   `<fieldAttend>` 8) with the coverage schedule (contract 2).
+6. Reverse: witness replay for input reconstruction; for generated
+   content the split through the learned rungs, domination against the
+   atom rows at rung 0, and order from the parse (contract 1).
+7. Word loop: identity per whole (contract 6) replaces the surface-keyed
+   word concept; a whitespace word with two digit wholes pushes two
+   concepts.
+
+Files: `bin/Spaces.py` (`PartSpace.forward` / `reverse`, `InputSpace.reverse`
+witness replay, `ConceptualSpace.forward` proposals, `Reset` commits),
+`bin/Layers.py` (the witness and proposal carriers as SubSpace data; the
+max join and min meet as private helpers of the forwards),
+`bin/Mereology.py` (the local containment projection), `bin/Models.py`
+(orchestration only;
+the aligned fold-ladder wrappers and `embed_stem`'s PartSpace part retire),
+`data/model.xsd` (`wholeCapacity`, `wholeLength`, `fieldRetrieve`,
+`fieldAttend`, `admissionRadius`, `admissionCount`, `utilitySmoothing`,
+`utilityMinCount`), `doc/Params.md`, `doc/Mereology.md`, `doc/Spaces.md`,
+`doc/Componentization.md`.
+
+Acceptance checkpoints, in order: (a) ordered carriers and byte coverage
+(the contract 1 tests, including permutations, repeated bytes, `11`;
+empty and overlength input; batch-row isolation; finite gradients); (b)
+stable admission and checkpointing (admission at the recurring rung, no
+double admission across a backward replay, frozen inventory under
+evaluation, save / load round trip of contract 6); (c) the digit-identity
+tests: matched-length facts distinguished by digit identity, reordered and
+repeated digits, translation of an occurrence to another position; the
+successor corpus on the canonical topology is a non-regression floor only
+(21 %, attributed to digit count in the pilot report), with the per-fact
+table showing two digit parts per two-digit word.
+
+### Phase 2 — analysis as the descending ladder
+
+1. Candidates: every WholeSpace property row, with the learned predicate of
+   contract 3 (`b_p`, `s_p`) and the bool signature slab.
+2. Rungs: the tiling ladder is computed at pass 0 from the predicates
+   ordered by boundary weight (contract 2): the unity at the top, the
+   byte-complete tiling at the floor, and one intermediate tiling per
+   admitted predicate (on the first epoch: the canonical priors, or none
+   under `<boundaryTypes>none</boundaryTypes>`); the output is the ladder of
+   nested tilings with the min value per whole per rung.
+3. Boundary-type admission: at epoch end (`Reset`), a property's boundary
+   weight is updated by the utility of the wholes its cut yielded during
+   the epoch (contract 4), so space wins for text, digit stands alone
+   inside numerals, and letter flips stay below the basic level, none of
+   them privileged in advance.
+4. The meeting rule (contract 4): analysis gives synthesis its domains, a
+   whole that synthesis cannot admit sends analysis down a rung (the
+   within-whole division, generalised), and where a synthesized part and a
+   divided whole coincide in extent and are both attested, that is the
+   basic level and the callosum records the identity.
+
+Files: `bin/Spaces.py` WholeSpace (`forward`: the tiling ladder from the
+learned predicate; `Reset`: predicate update), `bin/Layers.py` (the
+predicate parameters on the property SubSpace), `doc/Mereology.md`
+"Analyzer" section, `doc/Architecture.md`.
+
+Acceptance: the untagged cold start learns space as the basic boundary on
+a small text corpus with the canonical fallback verified off; the digit
+singleton is learned on the successor corpus; the tilings nest; the cut is
+byte-identical to today's when the predicates equal the four classes.
+
+### Phase 2b — chunk in the grammar (idioms)
+
+The `chunk` structural op becomes a chooser candidate on the STM reduce
+pass with admission under contract 7; a chunked phrase is one concept in
+STM and in LTM slots with its own trained row; `chunk.reverse` (PEEL
+against the store) plus the witness is its analysis.
+
+Files: `bin/Language.py` (`ChunkLayer` role, the admission proposal, the
+admission objective), `data/complete.grammar` (already lists the rules),
+`bin/Spaces.py` (utility for phrases), `doc/Language.md`, `doc/STM.md`,
+`doc/Training.md`.
+
+Acceptance: idiomatic and literal uses of the same phrase with
+frequency-matched compositional controls; the idiom is admitted with a row
+that diverges from the additive composition, the control is not
+lexicalised; perturbing the utility changes the chooser's pick.
+
+### Phase 3 — configs, tests, docs
+
+Fixtures naming `radix` / `word` move to `meronomy` / `meronomy` once the
+Phase 1-2 gates pass; the 26 radix-touching tests are re-pointed or moved
+to a Legacy test module; `doc/Mereology.md` "Convergence and Supported
+Modes", the `doc/Params.md` `synthesis` / `analysis` rows and the What
+specification's reconstruction / answer separation describe the ladder;
+`README.md` links this plan. Historical radix results and newly
+demonstrated behaviour are labelled separately in the benchmarks.
+
+### Phase 4 — measurement against the radix path
+
+On the successor corpus and on a text corpus (the B24 band), against the
+Legacy `radix` oracle on identical checkpoints, corpora, hardware and
+budgets: identity (an admitted part recurs to the same row),
+reconstruction exactness, answer quality, bytes per second, compile and
+startup cost, graph breaks and recompilations, peak memory, and the
+digit-whole successor pair. Gate for removing the Legacy front ends: no
+loss on identity, reconstruction or answers, and a throughput gain on
+text; the oracle stays for one release after the gate.
+
+## Documentation per phase
+
+Runtime documentation is updated with each phase, not only in Phase 3:
+[Architecture](../Architecture.md), [Componentization](../Componentization.md)
+and [Spaces](../Spaces.md) for ownership, carrier shapes and loop
+placement (Phases 1-2); [Language](../Language.md), [STM](../STM.md) and
+[Training](../Training.md) for admission, retained constituents, credit
+and update timing (Phases 1, 2b); [Params](../Params.md),
+[Mereology](../Mereology.md) and the
+[What specification](../specs/2026-07-27-teaching-modes-and-next-iteration.md)
+for configuration, algebra and the reconstruction / answer separation.
+
+## Open questions
+
+- Q1 The admission radius and `lbgThreshold`: one knob or two.
+- Q2 Whether the coverage schedule of contract 2 should share the thinking
+  loop's forced-closure pressure knob or have its own.
+- Q3 Whether category utility, normalised across rungs as in contract 4,
+  is stable under the byte-complete cold start, or needs the canonical
+  priors of contract 3 as a permanent floor.
+
+## Verification
+
+- Phase 0: pinned outputs, parameter names, checkpoint keys, masks and
+  losses identical on the touched fixtures; the suite green.
+- Phase 1: the acceptance checkpoints (a), (b), (c) above, each with its
+  named tests in `test/test_meronomy_ladder.py`; the reconstruction
+  round-trip and radix spell-out tests green in their Legacy scope.
+- Phase 2 / 2b: the acceptance tests above; the type-run cut
+  byte-identical under the four-class predicates.
+- Phase 4: the measurement table in `doc/benchmarks/`.
