@@ -22539,6 +22539,29 @@ def _derive_type_lut(property_kind):
     return lut
 
 
+def _digit_signature_bits(space):
+    """The property-signature bits of the digit-tagged WholeSpace rows."""
+    cb = getattr(getattr(space, "subspace", None), "what", None)
+    pk = getattr(cb, "property_kind", None) if cb is not None else None
+    if not pk:
+        pk = {row: {cls} for row, (_name, cls)
+              in enumerate(_CANONICAL_PROPERTY_ROWS)}
+    bits = 0
+    for raw_row, classes in pk.items():
+        row = int(raw_row)
+        if 0 <= row < 63 and _CLS_DIGIT in {int(c) for c in classes}:
+            bits |= 1 << row
+    return bits
+
+
+def _analysis_digit_mask(space, type_ids, property_basis):
+    """``[B, N]`` bool: positions of DIGIT type (legacy four-way TYPE LUT) or
+    carrying any digit-tagged property bit (property-basis signatures)."""
+    if not property_basis:
+        return type_ids == _TYPE_DIGIT
+    return (type_ids & _digit_signature_bits(space)) != 0
+
+
 def _analysis_type_lut(space):
     """Return the 256-entry byte->TYPE LUT for ``space``'s analysis cut,
     derived from the tags on the frozen TYPE subspace's ``.what`` codebook
@@ -22569,10 +22592,14 @@ def _analysis_type_lut(space):
     return space._type_lut_cache
 
 
-def _type_run_spans(type_ids, discard_mask=None):
+def _type_run_spans(type_ids, discard_mask=None, singleton=None):
     """Vectorised token spans from per-position TYPE ids (``[B, N]`` long, on
     CPU). A whole is a MAXIMAL CONSTANT-TYPE RUN; runs of the SPACE type
     (``_TYPE_SPACE``, incl. the ``\\0`` pad sentinel) are discarded.
+    ``singleton`` (``[B, N]`` bool, optional) marks positions that are
+    wholes BY THEMSELVES: a singleton position starts and ends its own
+    span, and it bounds the runs on either side (the digit whole,
+    ``<digitWholes>``: ``12`` -> ``1``, ``2``).
 
     Returns ``LongTensor [B, K, 2]`` of ``(start, end)`` exclusive spans in
     left-to-right order, zero-padded ``(0, 0)`` for rows with fewer tokens
@@ -22599,6 +22626,12 @@ def _type_run_spans(type_ids, discard_mask=None):
         [type_ids[:, :-1] == type_ids[:, 1:], first], 1)    # same type as next
     run_start = is_run & ~prev_same                  # first char of a run
     run_end = is_run & ~nxt_same                     # last char of a run (incl)
+    if singleton is not None:
+        single = singleton.to(torch.bool) & is_run
+        after_single = torch.cat([first, single[:, :-1]], 1)   # prev is single
+        before_single = torch.cat([single[:, 1:], first], 1)   # next is single
+        run_start = run_start | (is_run & (single | after_single))
+        run_end = run_end | (is_run & (single | before_single))
     ar = torch.arange(N, device="cpu").unsqueeze(0).expand(B, N)
     starts = torch.where(run_start, ar, torch.full_like(ar, N))
     ends = torch.full_like(ar, -1)
@@ -22984,6 +23017,20 @@ class WholeSpace(Space):
         else:
             self.divide_within_whole = (
                 str(_dww).strip().lower() not in ("false", "0", "no", "off"))
+        # <digitWholes> (WholeSpace): every digit is its own whole at the
+        # analysis cut (Alec 2026-09-10: a numeral word breaks apart into
+        # digit wholes). Default false -> byte-identical cut.
+        try:
+            _dw = TheXMLConfig.space(section, "digitWholes")
+        except KeyError:
+            _dw = None
+        if _dw is None:
+            self.digit_wholes = False
+        elif isinstance(_dw, bool):
+            self.digit_wholes = _dw
+        else:
+            self.digit_wholes = (
+                str(_dw).strip().lower() in ("true", "1", "yes", "on"))
         self._staged_analysis_spans = None
         # The serial word loop consumes one WholeSpace view per word, not the
         # sentence-wide analysis slab.  The eager lexical boundary stages the
@@ -23780,6 +23827,10 @@ class WholeSpace(Space):
             B, width, N, 2, dtype=torch.long, device="cpu")
         lut, discard = _analysis_property_signature(self)
         lut_values = lut.tolist()
+        # <digitWholes>: a digit is a whole by itself inside the word too
+        # (the per-word view the serial loop reads), each with its own span.
+        digit_bits = (_digit_signature_bits(self)
+                      if getattr(self, "digit_wholes", False) else 0)
 
         for b in range(B):
             row_texts = (
@@ -23814,7 +23865,8 @@ class WholeSpace(Space):
                     signature = signatures[start]
                     end = start + 1
                     while (end < len(signatures)
-                           and signatures[end] == signature):
+                           and signatures[end] == signature
+                           and not (signature & digit_bits)):
                         end += 1
                     if signature and not (signature & int(discard)):
                         for prop in range(min(P, 63)):
@@ -26998,15 +27050,25 @@ class WholeSpace(Space):
         # Configs whose ``.what`` carries no tags (byte-mode stubs, non-Codebook
         # bases) fall back to the frozen module LUT, byte-identical.
         idx = vals.clamp(0, 255)
+        # The digit whole (<digitWholes>, Alec 2026-09-10): every digit is a
+        # whole by itself, so a numeral word divides into its digits at the
+        # cut (the wholes smaller than the word the multi-digit rung needs);
+        # each digit keeps its own ``.where``. Default off: byte-identical.
+        _digit_wholes = bool(getattr(self, "digit_wholes", False))
         if getattr(self, "property_basis", False):
             prop_lut, discard_mask = _analysis_property_signature(self)
             type_ids = prop_lut[idx]
             object.__setattr__(self, "_staged_property_signatures", type_ids)
-            t = _type_run_spans(type_ids, discard_mask=discard_mask)
+            single = (_analysis_digit_mask(self, type_ids, True)
+                      if _digit_wholes else None)
+            t = _type_run_spans(type_ids, discard_mask=discard_mask,
+                                singleton=single)
         else:
             object.__setattr__(self, "_staged_property_signatures", None)
             type_ids = _analysis_type_lut(self)[idx]
-            t = _type_run_spans(type_ids)
+            single = (_analysis_digit_mask(self, type_ids, False)
+                      if _digit_wholes else None)
+            t = _type_run_spans(type_ids, singleton=single)
         # T3 within-whole division (same plan doc): an UNATTESTED type-run
         # divides by longest-match tiling over attested standalone percepts
         # (the peer PS RadixLayer store); attested wholes stay one span.

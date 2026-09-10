@@ -255,3 +255,39 @@ Phase 5 report may claim learned thinking, with the checkpoint and commit.
 | 3 | "Resolve step with WhatStepChooser and exact primitives" | bump |
 | 4 | "Train through thinking episodes (root scoring, policy credit)" | bump |
 | 5 | "Serve/eval for thinking; pilot report" | bump + Implementation.md row |
+
+## Phase 9 — wholes smaller than words (Alec, 2026-09-10)
+
+Finding (pilot report, "The successor is learned as a VP"): every
+failure of the successor run was a two-digit numeral read as one of its
+digit parts. On the trained checkpoint `12` and `14` are attested store
+entries, so the within-whole division leaves them as single wholes, and
+the radix word vector max-fuses sub-tokens without order.
+
+Landed: the **digit whole** — `<digitWholes>true</digitWholes>` on
+WholeSpace makes every digit byte a whole by itself at the analysis
+cut (`_type_run_spans(..., singleton=...)`; `12 plus 1` -> `1`, `2`,
+`plus`, `1`, each digit with its own `.where`). Default off,
+byte-identical. Tests: `test_type_run_spans.py` (digit whole section).
+Two cutters exist: the sentence-wide `stage_analysis_spans` (stage-0
+evidence and meronomy bookkeeping) and the per-word
+`stage_word_property_weights`, whose view the serial word loop's concept
+evidence reads (`_ar_whole_reference_presence`). The per-word cutter runs
+only under the aligned per-word protocol (`propertyBasis`,
+`conceptBinding` aligned, `serialObjectMeta`: BasicModel's settings),
+and that protocol requires the STM depth to equal the concept location
+count, which the three-stage verb topology violates (its stages halve
+locations to 4, 2, 2). On the verb fixture the digit whole was therefore
+byte-identical (a run reproduced the earlier losses exactly). The
+experiment moved to the canonical topology: BasicModel's configuration
+with the successor corpus, a one-hot head and a 65k concept inventory
+(43M parameters), digit wholes on versus off.
+
+Next (Alec): treat the field width as a top-k over a wider retrieval —
+retrieve 16 parts / wholes per step, attend 8 (or fewer), and feed only
+the attended ones back to PerceptualSpace to determine future context;
+both numbers as model-file knobs. With the field laid out as lower /
+basic / higher bands, "no smaller (larger) whole at this `.where`" is an
+empty band and is the signal to provide a smaller (larger) context. The
+serial word stream is unchanged by the digit whole: `12` is still one
+word step whose WholeSpace view now carries two digit wholes.

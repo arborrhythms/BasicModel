@@ -505,6 +505,7 @@ symbol (line anchors drift).
 | `lbgMinCount` (WholeSpace) | same | `8` | LBG: minimum hit count before a row may split. |
 | `lbgEpsilon` (WholeSpace) | same | `0.1` | LBG: split displacement magnitude. |
 | `divideWithinWhole` (WholeSpace) | `Spaces.py` (WS init + tiling site) | `true` | Divides unattested type-runs into attested concepts by greedy longest-match tiling; explicit `false` keeps the undivided span. |
+| `digitWholes` (WholeSpace) | `Spaces.py` (WS init + `stage_analysis_spans`) | `false` | Every digit byte is a whole by itself at the analysis cut (`12` -> `1`, `2`, each with its own `.where`), so the multi-digit numeral is a whole over digit parts rather than one type-run. Default off, byte-identical. |
 | `gradientMode` (WholeSpace) | `Spaces.py` (WS init) | `"ste"` | Codebook gradient coupling: `snap` \| `ste` \| `rotation` (invalid values raise). |
 | `useStackRouter` (WholeSpace) | `Spaces.py` (WS init) | `false` | Gates WS's stack-rewrite LanguageLayer dispatch; `false` keeps the legacy forward path. |
 | `initScale` (any space) | `Spaces.py` (`_read_init_scale`) | unset | Per-row seed magnitude for the space's codebooks; small values ($\approx 0.02$) keep the sigma/pi folds in their linear regime. Unset/0 = legacy unit prefill. |

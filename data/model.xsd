@@ -1376,6 +1376,10 @@
            percepts alone do not attest. Default TRUE (live wiring); explicit
            false keeps the undivided span (the pre-T3 unattested fallback). -->
       <xs:element name="divideWithinWhole" type="xs:boolean" minOccurs="0"/>
+      <!-- Every DIGIT byte is a whole by itself at the analysis cut, so a
+           numeral word divides into its digits (each with its own .where).
+           Default false (byte-identical). Alec 2026-09-10: the digit whole. -->
+      <xs:element name="digitWholes" type="xs:boolean" minOccurs="0"/>
       <xs:element name="passThrough" type="xs:boolean" minOccurs="0"/>
       <!-- Symbolic-retrieval mode (off|primer|second-order|low-rank);
            default off. WholeSpace has no hasAttention legacy alias:

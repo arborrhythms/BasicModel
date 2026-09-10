@@ -344,3 +344,40 @@ def test_type_subspace_is_not_a_parameter_and_survives_a_backward():
     assert torch.equal(tc.getW(), before)
     assert tc.property_kind == {0: {WHITESPACE}, 1: {LETTER},
                                 2: {DIGIT}, 3: {PUNCT}}
+
+
+# == the digit whole (<digitWholes>, Alec 2026-09-10) ==========================
+
+def _digit_spans(s, n=None):
+    from Spaces import _analysis_digit_mask
+    t = _types(s, n)
+    return _type_run_spans(t, singleton=_analysis_digit_mask(None, t, False))[0].tolist()
+
+
+def test_digit_wholes_cut_each_digit():
+    assert _digit_spans("12 plus 1") == [[0, 1], [1, 2], [3, 7], [8, 9]]
+    assert _digit_spans("ab12cd") == [[0, 2], [2, 3], [3, 4], [4, 6]]
+    assert _digit_spans("7") == [[0, 1]]
+    assert _digit_spans("abc def") == _spans("abc def")      # no digits: unchanged
+
+
+def test_stage_digit_wholes_knob():
+    fake = types.SimpleNamespace(analysis_mode="word", digit_wholes=True)
+    assert WholeSpace.stage_analysis_spans(fake, _bytes("14 plus 1"))[0].tolist() == \
+        [[0, 1], [1, 2], [3, 7], [8, 9]]
+    fake = types.SimpleNamespace(analysis_mode="word", digit_wholes=False)
+    assert WholeSpace.stage_analysis_spans(fake, _bytes("14 plus 1"))[0].tolist() == \
+        [[0, 2], [3, 7], [8, 9]]
+    assert WholeSpace.stage_analysis_spans(
+        types.SimpleNamespace(analysis_mode="word"), _bytes("14 plus 1"))[0].tolist() == \
+        [[0, 2], [3, 7], [8, 9]]                                  # default: unchanged
+
+
+def test_digit_wholes_property_basis_signature():
+    from Spaces import (_analysis_digit_mask, _LUT_PROPERTY_SIGNATURE,
+                        _PROPERTY_DISCARD_MASK)
+    sig = _LUT_PROPERTY_SIGNATURE[_bytes("x12 9")]
+    single = _analysis_digit_mask(types.SimpleNamespace(), sig, True)
+    assert single[0].tolist() == [False, True, True, False, True]
+    out = _type_run_spans(sig, discard_mask=_PROPERTY_DISCARD_MASK, singleton=single)
+    assert out[0].tolist() == [[0, 1], [1, 2], [2, 3], [4, 5]]
