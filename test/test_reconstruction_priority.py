@@ -228,3 +228,49 @@ def test_real_runbatch_uses_priority_and_one_optimizer_step(monkeypatch):
             batch_override=batch)
         assert result is not None
     assert len(calls) == len(steps) == 2
+
+
+def test_answer_path_operators_are_not_protected_and_keep_learning(monkeypatch, tmp_path):
+    """The Spaces' synthesis operators, the percept adapter and the question
+    conditioner belong to the answer path only; reconstruction never reaches
+    them, so protecting them would cap the answer gradient there at zero
+    (2026-09-10: the canonical regime's answer cost was flat for this reason).
+    They are exempt from the protected set and change under one priority step."""
+    import Models
+    from data import TheData
+    from util import init_config
+    from What import What
+
+    monkeypatch.setenv("MODEL_COMPILE", "none")
+    project = os.path.dirname(os.path.dirname(__file__))
+    src = open(os.path.join(project, "data", "MM_xor.xml")).read()
+    assert src.count("<architecture>") == 1
+    config = tmp_path / "MM_xor_synthesis_priority.xml"
+    config.write_text(src.replace(
+        "<architecture>", "<architecture>\n    <answerSynthesis>true</answerSynthesis>", 1))
+    init_config(path=str(config), defaults_path=os.path.join(project, "data", "model.xml"))
+    TheData.load("xor")
+    torch.manual_seed(0)
+    model, _ = Models.BaseModel.from_config(str(config), data=TheData)
+    loader = model.inputSpace.data.data_loader(split="train", num_streams=2)
+    inputs, outputs = next(iter(loader))
+    batch = (model.inputSpace.prepInput(inputs), model.outputSpace.prepOutput(outputs))
+    model.eval()
+    with torch.no_grad():
+        model.what((What.supervised(0), What.supervised(1)), batch[0])   # builds the answer path
+    model.train()
+    model.reconstruction_priority = True
+    model.output_gradient_ratio = 0.5
+    optimizer = model.getOptimizer(lr=1e-2)
+    answer_only = list(model.synthesis_parameters())
+    assert answer_only
+    before = [p.detach().clone() for p in answer_only]
+    result, _ = model.runBatch(train=True, batchSize=2, split="train",
+                               optimizer=optimizer, batch_override=batch)
+    assert result is not None
+    protected = {p.data_ptr() for p in model._reconstruction_priority_parameters(optimizer)}
+    assert protected                                            # shared forward parameters
+    assert not protected & {p.data_ptr() for p in answer_only}  # answer path exempt
+    owned = {p.data_ptr() for g in optimizer.param_groups for p in g["params"]}
+    assert {p.data_ptr() for p in answer_only} <= owned          # handed to the optimizer
+    assert any(not torch.equal(a, b) for a, b in zip(before, answer_only))

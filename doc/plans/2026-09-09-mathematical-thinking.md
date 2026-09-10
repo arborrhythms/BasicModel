@@ -283,6 +283,31 @@ experiment moved to the canonical topology: BasicModel's configuration
 with the successor corpus, a one-hot head and a 65k concept inventory
 (43M parameters), digit wholes on versus off.
 
+Two regime facts found on the way to that experiment, both fixed or
+recorded: (1) BasicModel's `serialWordCapacity` / `serialWordBuckets` of
+256 make every batch iterate 256 word steps whatever the sentence
+length (29 minutes per epoch on the three-word corpus; 40 seconds at
+capacity 8), and its `whatCurriculum` replaces the supervised questions,
+zeroing the answer loss on a supervised corpus; the experiment config
+sets capacity 8 and no curriculum. (2) Under `reconstructionPriority`
+the protected set included the answer path's own operators (the
+Spaces' synthesis layers, the percept adapter, the question
+conditioner); reconstruction never reaches them, so their answer
+gradient was capped at zero and the answer cost could not move at all.
+They are now exempt (`_reconstruction_priority_parameters` skips
+`synthesis_parameters()`); test
+`test_answer_path_operators_are_not_protected_and_keep_learning`.
+
+Open defect found while scoring: on the aligned protocol a checkpoint
+does not round-trip the eagerly resolved word concept identities. After
+`save_weights` / `load_weights` the words of `12 plus 1` resolve to no
+concept row (`_ar_word_concept_rows` all -1; the radix part ids also
+differ from the fresh model's), so a loaded model answers a constant
+while the live model in the same process answers per fact. Per-fact
+tables are therefore taken on the live model. The aligned checkpoint
+tests cover capacity growth and allocator resync, not this identity
+round trip on a math corpus; a minimal reproduction is the next step.
+
 Next (Alec): treat the field width as a top-k over a wider retrieval —
 retrieve 16 parts / wholes per step, attend 8 (or fewer), and feed only
 the attended ones back to PerceptualSpace to determine future context;

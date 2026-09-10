@@ -2577,12 +2577,22 @@ class BaseModel(Mereology, nn.Module):
         owned = {
             p.data_ptr(): p for group in optimizer.param_groups
             for p in group["params"] if p.requires_grad}
+        # The answer path's own operators (the Spaces' synthesis layers, the
+        # percept adapter, the question conditioner) are never reached by
+        # reconstruction; protecting them would give the answer loss no
+        # budget there at all (a zero reconstruction gradient caps the
+        # output gradient at zero), so the answer path could never train
+        # under reconstruction priority.  They keep their ordinary
+        # gradients, like the independent heads.
+        synthesis = getattr(self, "synthesis_parameters", None)
+        answer_only = ({p.data_ptr() for p in synthesis()}
+                       if callable(synthesis) else set())
         selected = {}
         for space in self.spaces:
             if isinstance(space, (PartSpace, WholeSpace, ConceptualSpace)):
                 for p in space.getParameters():
                     ptr = p.data_ptr()
-                    if ptr in owned:
+                    if ptr in owned and ptr not in answer_only:
                         selected[ptr] = owned[ptr]
         return list(selected.values())
 
