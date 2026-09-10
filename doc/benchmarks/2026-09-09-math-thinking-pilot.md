@@ -455,3 +455,10 @@ signal separates one-digit from two-digit inputs, the digit identity is
 not yet read from the parts. Non-regression against the 21 % floor holds;
 the identity work (the attended rung's code reaching the answer path, and
 the admitted phrase's own row) is the next slice.
+
+The same run with digit wholes off (`12` one unit), 20 epochs: 12 % at
+epoch 20 (loss 0.040), and no class separation: two-digit inputs are
+answered with 12, 14 and one-digit numerals alike, one-digit inputs with
+14 as often as anything. So on the ladder path, as before it, the digit
+whole is what separates the classes; the ladder itself changed neither
+result, which is the non-regression the slice was gated on.
