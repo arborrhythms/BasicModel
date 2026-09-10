@@ -391,5 +391,50 @@ def test_boundary_types_none_starts_without_boundaries(tmp_path):
     assert not bool((torch.sigmoid(ws.boundary_weight) > 0.5).any())
     assert not bool((torch.sigmoid(ws.singleton_weight) > 0.5).any())
     units, atoms, ids, mask, offsets = _stage(m, ["12 plus 1"])
-    assert units[0] == ["12 plus 1"]                 # one unit: no boundary, space kept
-    assert b"".join(atoms[0][0]) == b"12 plus 1"
+    # The cold start is byte-complete (every byte a unit; whitespace stays a
+    # discarded boundary-only class until it is demoted to a whole type).
+    assert units[0] == ["1", "2", "p", "l", "u", "s", "1"]
+
+
+# -- Phase 2, step 3: the cold start learns space as the basic boundary ---------
+
+def test_cold_start_learns_space_as_the_basic_boundary(tmp_path):
+    """Under <boundaryTypes>none</boundaryTypes> with the learner on, the
+    successor corpus (words bounded by spaces, digits, punctuation-free)
+    turns the whitespace row's boundary logit on within a few epochs,
+    while the letter row's stays off: cutting at space flips yields the
+    most recurring wholes at the lowest density."""
+    import Language
+    from util import init_config
+    from data import TheData
+    import Models
+    from Layers import WHITESPACE, LETTER
+    src = (_DATA / "MM_ladder.xml").read_text()
+    config = tmp_path / "MM_ladder_learn.xml"
+    config.write_text(src.replace(
+        "<digitWholes>true</digitWholes>",
+        "<digitWholes>true</digitWholes>\n    <boundaryTypes>none</boundaryTypes>\n"
+        "    <boundaryLearningRate>8.0</boundaryLearningRate>", 1))
+    init_config(path=str(config), defaults_path=str(_DATA / "model.xml"))
+    Language.TheGrammar._configured = False
+    cfg = Models.BaseModel.load_config(str(config))
+    TheData.load("math", dat=dict(cfg["architecture"]["data"]))
+    torch.manual_seed(0)
+    m, _ = Models.BaseModel.from_config(str(config), data=TheData)
+    ws = m.wholeSpaces[0]
+    rows = ws._predicate_rows
+    space_rows = [r for r, cl in rows.items() if WHITESPACE in cl and r < ws.boundary_weight.shape[0]]
+    letter_rows = [r for r, cl in rows.items() if cl == {LETTER} and r < ws.boundary_weight.shape[0]]
+    assert space_rows and letter_rows
+    assert not bool((torch.sigmoid(ws.boundary_weight) > 0.5).any())
+    opt = m.getOptimizer(lr=1e-3)
+    for _ in range(3):
+        m.runEpoch(optimizer=opt, batchSize=8, split="train", max_batches=8)
+    on = (torch.sigmoid(ws.boundary_weight) > 0.5).tolist()
+    # Whitespace turns on (its cut beats the byte-complete start on recurrence
+    # and density); a row whose flips add no cut beyond the whitespace
+    # boundaries (letters on this corpus) earns nothing and stays off.
+    assert all(on[r] for r in space_rows), (ws.boundary_weight.tolist(), rows)
+    assert not any(on[r] for r in letter_rows)
+    units, atoms, ids, mask, offsets = _stage(m, ["12 plus 1"])
+    assert "plus" in units[0]                        # space now bounds words

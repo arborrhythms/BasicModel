@@ -598,6 +598,25 @@ start learn space as the basic boundary, is next; the chunk prior's score
 update by utility gain (`utilityPriorRate`) and the utility-gain gate on
 phrase admission landed with Phase 2b.
 
+Status (2026-09-10, step 3 landed): the boundary learner
+(`WholeSpace._observe_candidate_tilings`, `_update_boundary_predicates`,
+`WholeSpace.Reset`): at every presentation the canonical cut also stages,
+per property row, the tiling "cut where this row flips" (whitespace / pad
+discarded), the discard-only tiling and the current tiling, and accrues
+their wholes' surfaces; at the boundary a row's logit moves by
+`boundaryLearningRate` times its tiling's score (recurrence of its
+wholes minus `boundaryDensityWeight` times wholes per presentation)
+against the current tiling's, a row whose flips add no cut beyond the
+discard boundaries earning nothing and the discard rows earning the
+discard tiling's score. The cold start is byte-complete. Test: under
+`<boundaryTypes>none</boundaryTypes>` the successor corpus turns the
+whitespace rows on within three short epochs and leaves the letter rows
+off, and `plus` emerges as a unit. Limits: whitespace is still a
+boundary-only (discarded) class rather than a whole type (demoting it is
+a later step), the learner is a score update at the boundary rather than
+autograd through the cut, and the singleton weights are not yet learned
+(the digit singleton stays a prior).
+
 Acceptance: the untagged cold start learns space as the basic boundary on
 a small text corpus with the canonical fallback verified off; the digit
 singleton is learned on the successor corpus; the tilings nest; the cut is

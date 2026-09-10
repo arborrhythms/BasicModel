@@ -23432,6 +23432,16 @@ class WholeSpace(Space):
         except KeyError:
             _bt = None
         self.boundary_types = str(_bt or "canonical").strip().lower()
+        try:
+            self.boundary_learning_rate = float(
+                TheXMLConfig.space(section, "boundaryLearningRate") or 0.0)
+        except (KeyError, TypeError, ValueError):
+            self.boundary_learning_rate = 0.0
+        try:
+            self.boundary_density_weight = float(
+                TheXMLConfig.space(section, "boundaryDensityWeight") or 0.05)
+        except (KeyError, TypeError, ValueError):
+            self.boundary_density_weight = 0.05
         if self.boundary_types not in ("canonical", "none"):
             raise ValueError(
                 f"WholeSpace.boundaryTypes must be canonical|none; got {_bt!r}")
@@ -24056,6 +24066,91 @@ class WholeSpace(Space):
         ("type_digit", _CLS_DIGIT),
         ("type_punct", _CLS_PUNCT),
     )
+
+    def _observe_candidate_tilings(self, byte_idx, sig, n_rows, discard_bits,
+                                   current=None):
+        """Accrue, per property row, the surfaces of the wholes that the
+        tiling "cut at this row's flips" yields (host-side counters, one
+        pass over the presentation).  The boundary learner scores a row by
+        how well those wholes recur and how few there are."""
+        if getattr(self, "_online_learning_frozen", False):
+            return
+        tab = self.__dict__.setdefault("_boundary_evidence", {})
+        vals = byte_idx.tolist()
+        # -1: the current tiling (the baseline); -2: the discard-only tiling
+        # (cut at whitespace / pad alone), which is what a row's own flips
+        # are measured against -- a row whose flips add no cut beyond it
+        # earns nothing, while the discard rows themselves earn its score.
+        candidates = [(r, None) for r in range(n_rows)]
+        candidates.append((-2, _predicate_unit_spans(sig, discard_bits, 0, discard_bits)))
+        if current is not None:
+            candidates.append((-1, current))
+        for r, given in candidates:
+            spans = (given if given is not None else
+                     _predicate_unit_spans(sig, (1 << r) | discard_bits, 0, discard_bits))
+            rec = tab.setdefault(r, {"surfaces": {}, "units": 0, "presentations": 0})
+            for b in range(int(spans.shape[0])):
+                rec["presentations"] += 1
+                for a, z in spans[b].tolist():
+                    if z > a:
+                        key = bytes(vals[b][a:z])
+                        rec["surfaces"][key] = rec["surfaces"].get(key, 0) + 1
+                        rec["units"] += 1
+
+    def _update_boundary_predicates(self):
+        """Score update of ``boundary_weight`` (contract 3, step 3): a row's
+        tiling is credited by the recurrence of its wholes (the fraction of
+        whole occurrences whose surface recurred) and debited by its
+        density (wholes per presentation, the working-memory pressure);
+        the logit moves toward on when its score beats the current
+        tiling's, clipped.  Runs at the boundary, outside autograd."""
+        tab = self.__dict__.pop("_boundary_evidence", None)
+        bw = getattr(self, "boundary_weight", None)
+        if not tab or not torch.is_tensor(bw):
+            return
+        rate = float(getattr(self, "boundary_learning_rate", 0.0) or 0.0)
+        if rate <= 0.0:
+            return
+        scores = {}
+        for r, rec in tab.items():
+            occ = sum(rec["surfaces"].values())
+            if occ <= 0 or rec["presentations"] <= 0:
+                continue
+            recurring = sum(c for c in rec["surfaces"].values() if c >= 2)
+            recurrence = recurring / float(occ)
+            density = rec["units"] / float(rec["presentations"])
+            scores[r] = recurrence - float(getattr(self, "boundary_density_weight", 0.05)) * density
+        if not scores:
+            return
+        with torch.no_grad():
+            baseline = scores.pop(-1, None)
+            discard_score = scores.pop(-2, None)
+            discard_units = tab.get(-2, {}).get("units", None)
+            if baseline is None:
+                on = (torch.sigmoid(bw) > 0.5).tolist()
+                current = [scores[r] for r in scores if r < len(on) and on[r]]
+                baseline = max(current) if current else min(scores.values())
+            rows = getattr(self, "_predicate_rows", {})
+            for r, sc in scores.items():
+                if not (0 <= r < int(bw.shape[0])):
+                    continue
+                cls = rows.get(r, set())
+                is_discard = bool(cls & {_CLS_WHITESPACE, _CLS_PAD})
+                distinct = (discard_units is None
+                            or tab[r]["units"] != discard_units)
+                if is_discard and discard_score is not None:
+                    bw[r] += rate * (discard_score - baseline)
+                elif distinct:
+                    bw[r] += rate * (sc - baseline)
+            bw.clamp_(-8.0, 8.0)
+
+    def Reset(self, batch=None, hard=True):
+        """Sentence / document boundary: commit the boundary learner's score
+        update (fold-ladder plan, contract 3, step 3) before the base reset;
+        nothing is learned while online learning is frozen."""
+        if hard and not getattr(self, "_online_learning_frozen", False):
+            self._update_boundary_predicates()
+        super().Reset(batch=batch, hard=hard)
 
     def _build_boundary_predicates(self):
         """Learned boundary / singleton predicates over the property rows
@@ -27527,13 +27622,20 @@ class WholeSpace(Space):
                 s_on = (torch.sigmoid(self.singleton_weight) > 0.5).tolist()
             boundary_bits = sum((1 << r) for r in range(n_rows) if b_on[r])
             singleton_bits = sum((1 << r) for r in range(n_rows) if s_on[r])
+            # Whitespace and pad stay boundary-only (discarded) classes even
+            # under the cold start; demoting whitespace to a whole type is a
+            # later step (the canonical discard mask is the bootstrap).
             discard_bits = int(discard_mask)
-            if getattr(self, "boundary_types", "canonical") == "none":
-                pad_bits = sum((1 << r) for r, cl in getattr(self, "_predicate_rows", {}).items()
-                               if r < n_rows and _CLS_PAD in cl)
-                discard_bits = pad_bits
+            if boundary_bits == 0 and singleton_bits == 0:
+                # Cold start (contract 4 bootstrap): byte-complete tiling.
+                singleton_bits = (1 << n_rows) - 1
             fine = _predicate_unit_spans(sig, boundary_bits | discard_bits,
                                          singleton_bits, discard_bits)
+            # Candidate-tiling evidence for the boundary learner (step 3):
+            # for every property row, the tiling "cut where this row flips"
+            # (space rows discarded as today), scored at the boundary
+            # against the CURRENT tiling (key -1).
+            self._observe_candidate_tilings(idx, sig, n_rows, discard_bits, fine)
         else:
             fine = _type_run_spans(unit_types, singleton=single)
         object.__setattr__(self, "_staged_unit_spans", fine.to(IS_concepts.device))

@@ -680,10 +680,15 @@ ladder (units = the staged wholes, atoms = bytes with an ordered witness,
 rung 0 = the max over atoms, admission of recurring units at the boundary
 flush) and WholeSpace analysis is the descending tiling ladder (the
 four-class unit tiling with the digit singleton until the boundary
-predicates are learned). The other synthesis modes (`radix`, `lexicon`,
-`bpe`, `mphf`, `byte`) and analysis cuts (`byte`, `word`, `raw`,
-`sentence`, `grammatical`) are legacy front ends dispatched by
-`bin/Legacy.py`. The two towers are not duals: the join is the only OR in
+predicates are learned). The analysis side's boundaries are learned predicates over the
+WholeSpace property rows (`boundary_weight`, `singleton_weight`),
+initialised from the four classes or, under `<boundaryTypes>none</boundaryTypes>`,
+from a byte-complete cold start, and moved at each sentence boundary by
+the recurrence and density of the wholes each row's cut would yield (the
+memory-load criterion: whitespace turns on first). The other synthesis
+modes (`radix`, `lexicon`, `bpe`, `mphf`, `byte`) and analysis cuts
+(`byte`, `word`, `raw`, `sentence`, `grammatical`) are legacy front ends
+dispatched by `bin/Legacy.py`. The two towers are not duals: the join is the only OR in
 perception, the meet over positions is the only AND, and negation enters
 first at the conceptual level.
 

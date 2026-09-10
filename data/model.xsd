@@ -1396,6 +1396,8 @@
       <!-- Initialisation of the learned boundary predicates (fold-ladder
            plan, contract 3): canonical (the four classes as priors) or none
            (no boundary type; the cold-start test). -->
+      <xs:element name="boundaryLearningRate" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="boundaryDensityWeight" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="boundaryTypes" minOccurs="0">
         <xs:simpleType>
           <xs:restriction base="xs:string">
