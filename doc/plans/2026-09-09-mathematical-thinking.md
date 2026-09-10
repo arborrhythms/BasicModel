@@ -281,7 +281,10 @@ locations to 4, 2, 2). On the verb fixture the digit whole was therefore
 byte-identical (a run reproduced the earlier losses exactly). The
 experiment moved to the canonical topology: BasicModel's configuration
 with the successor corpus, a one-hot head and a 65k concept inventory
-(43M parameters), digit wholes on versus off.
+(43M parameters), digit wholes on versus off. Result (pilot report, "The
+digit whole on the canonical topology"): on 21 % versus off 10.5 % at
+epoch 30; the digit wholes separate one-digit from two-digit inputs
+perfectly but the digit identity is not yet read from the parts.
 
 Two regime facts found on the way to that experiment, both fixed or
 recorded: (1) BasicModel's `serialWordCapacity` / `serialWordBuckets` of

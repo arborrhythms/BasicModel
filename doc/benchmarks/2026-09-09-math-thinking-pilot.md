@@ -380,3 +380,50 @@ position) is the next rung, exactly the multi-digit question of the
 theoretical note. This is the first learned arithmetic on the syntactic
 route: no primitive, no anchor, `plus` a verb the grammar selected and
 trained by the answer loss alone.
+
+## The digit whole on the canonical topology (2026-09-10)
+
+`<digitWholes>true</digitWholes>` cuts every digit as its own whole
+(`12` -> `1`, `2`, each with its own `.where`). On the verb topology it
+was byte-identical: the per-word WholeSpace view the serial loop reads
+is staged only under the aligned per-word protocol, which that
+topology cannot run (its stages halve the concept locations). The
+experiment therefore ran on the canonical topology: `BasicModel.xml`
+with the successor corpus (R = 16, 512 presentations of 15 facts), a
+one-hot head, a 65k concept inventory (43M parameters), serial word
+capacity 8, no question curriculum, the verb fixture's training regime
+(lr 1e-3, reconstruction scale 0.1, no reconstruction priority), batch
+8, CPU. Digit wholes on versus off at otherwise identical settings:
+
+| epoch | on: answer loss | on: accuracy | off: answer loss | off: accuracy |
+|---:|---:|---:|---:|---:|
+| 0 | -- | 0.070 | -- | 0.070 |
+| 5 | 0.0379 | 0.180 | 0.0430 | 0.066 |
+| 10 | 0.0381 | 0.168 | 0.0414 | 0.098 |
+| 15 | 0.0365 | 0.203 | 0.0402 | 0.105 |
+| 20 | 0.0370 | 0.184 | 0.0404 | 0.105 |
+| 30 | 0.0368 | 0.207 | 0.0402 | 0.105 |
+
+Per fact at epoch 20 (digit wholes on, live model, 94 / 512 correct):
+
+| input | answers given |
+|---|---|
+| one-digit facts | 1, 3, 5, 6 (a few facts partly right: 0 -> 1 in 21/39, 5 -> 6 in 13/44) |
+| two-digit facts | 12 or 14 only (11 -> 12 in 21/40, 13 -> 14 in 26/42) |
+
+Reading: with digit wholes the model separates one-digit from
+two-digit inputs perfectly (every two-digit input is answered with a
+two-digit numeral and vice versa) but does not identify WHICH digit:
+the per-word WholeSpace view carries the digit property and the count
+of digit wholes, while digit identity has to come from the parts. That
+is exactly the doubling from 10 % to 21 %: a count-of-digits feature.
+The canonical topology's answer path is otherwise far weaker on this
+corpus than the verb topology's (which learned every single-digit fact),
+so the next comparison is the digit whole on a topology that both runs
+the aligned per-word view and answers as well as the verb fixture.
+
+Also found on the way (plan, Phase 9): under `reconstructionPriority`
+the answer path's own operators were protected and got no gradient at
+all (fixed, exempt now); a checkpoint of the aligned protocol does not
+round-trip the word concept identities on this corpus (open), so the
+per-fact table above was taken on the live model.
