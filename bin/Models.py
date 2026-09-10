@@ -10184,6 +10184,11 @@ class BasicModel(BaseModel):
                     reference_codes[b][p][slot] = code
                     reference_roles[b][p][slot] = role
                 cid_host[b][p] = A
+                # One utility observation per resolved unit (contract 4):
+                # counted once per presentation at the boundary Reset.
+                if hasattr(owner, "propose_utility_observation"):
+                    owner.propose_utility_observation(
+                        A, sorted(current_parts) + [10_000_000 + w for w in sorted(current_wholes)])
                 record = owner.record_concept_fold_support(
                     A, fold_support, actual_order)
                 order_host[b][p] = int(record["actual_order"])
@@ -15349,6 +15354,75 @@ class BasicModel(BaseModel):
             trace_slot, routing, applied, arity=1)
         return applied
 
+    def _concept_owner(self):
+        """The ConceptualSpace that owns the concept store and the utility
+        counts (stage 0 of an aligned body; the only stage otherwise)."""
+        spaces = list(getattr(self, "conceptualSpaces", None) or ())
+        return spaces[0] if spaces else getattr(self, "conceptualSpace", None)
+
+    def _chunk_op_index(self):
+        cached = self.__dict__.get("_chunk_op_index_cached", None)
+        if cached is not None:
+            return cached if cached >= 0 else None
+        reducer = self._stm_reducer()
+        names = list(getattr(reducer, "op_names", None) or []) if reducer is not None else []
+        idx = names.index("chunk") if "chunk" in names else -1
+        self.__dict__["_chunk_op_index_cached"] = idx
+        return idx if idx >= 0 else None
+
+    def _chunk_structural_prior(self, stm, B, window):
+        """[B, 1, R] additive logits: ``chunk`` is licensed (bias) on a pair
+        the analysis tiling places in one coarser whole and forbidden
+        elsewhere (fold-ladder plan, Phase 2b).  None when the grammar has
+        no chunk op or provenance is off."""
+        idx = self._chunk_op_index()
+        if idx is None or torch.compiler.is_compiling():
+            return None
+        same = stm.same_whole_rows(B)
+        if not any(same) and getattr(stm, "_slot_wholes", None) is None:
+            return None
+        reducer = self._stm_reducer()
+        R = int(reducer.r_reduce)
+        prior = window.new_zeros(B, 1, R)
+        owner = self._concept_owner()
+        bias = owner.ensure_chunk_prior() if hasattr(owner, "ensure_chunk_prior") else None
+        if torch.is_tensor(bias) and not self.__dict__.get("_chunk_prior_registered"):
+            # Hand the lazily built parameter to the live optimizer once.
+            self.__dict__.setdefault("_fresh_synthesis_params", []).append(bias)
+            self.__dict__["_chunk_prior_registered"] = True
+        bias_v = bias if torch.is_tensor(bias) else window.new_zeros(())
+        for b, s in enumerate(same):
+            prior[b, 0, idx] = bias_v if s else window.new_tensor(-1e4)
+        return prior
+
+    def _note_chunk_reductions(self, stm, routing, can):
+        """Mirror folds on the whole stacks and propose chunked phrases for
+        admission (contract 7): a ``chunk`` chosen on a same-whole pair
+        records the pair's concept rows and the whole as a proposal that
+        ``ConceptualSpace.Reset`` counts and may admit."""
+        if torch.compiler.is_compiling() or getattr(stm, "_slot_wholes", None) is None:
+            return
+        idx = self._chunk_op_index()
+        rows_can = can.detach().to("cpu").tolist()
+        same = stm.same_whole_rows(len(rows_can))
+        chosen = routing.get("reduce_mask")
+        op = (chosen[:, 0].argmax(-1).detach().to("cpu").tolist()
+              if torch.is_tensor(chosen) and chosen.numel() else None)
+        cs = self._concept_owner()
+        proposals = cs.__dict__.setdefault("_chunk_proposals", [])
+        ids = getattr(self.inputSpace, "_ar_word_concept_ids", None)
+        units = stm.newest_units(len(rows_can))
+        for b, c in enumerate(rows_can):
+            if c and idx is not None and op is not None and op[b] == idx and same[b]:
+                u_left, u_right = units[b]
+                if (torch.is_tensor(ids) and u_left >= 0 and u_right >= 0
+                        and u_left < int(ids.shape[1]) and u_right < int(ids.shape[1])):
+                    a_left, a_right = int(ids[b, u_left]), int(ids[b, u_right])
+                    if a_left >= 0 and a_right >= 0:
+                        proposals.append(
+                            (b, (a_left, a_right), int(stm._slot_wholes[b][0][0])))
+        stm.note_reduce_wholes(rows_can)
+
     @staticmethod
     def _stm_grammar_reduce_confidence(routing):
         """Return a rule-count-neutral P(REDUCE) for a two-slot window.
@@ -15538,7 +15612,9 @@ class BasicModel(BaseModel):
             torch.full_like(left_grammar, -1))
         if reducer is not None:
             window = torch.stack([left, right], dim=1)      # [B, 2, D]
-            hard, soft, routing = reducer(window)
+            _op_prior = self._chunk_structural_prior(stm, B, window)
+            hard, soft, routing = (reducer(window, op_prior=_op_prior)
+                                   if _op_prior is not None else reducer(window))
             # Discrete chosen op (Alec 2026-06-22): a symbol reduce must be a
             # SINGLE grammatical op so it is INTERPRETABLE -- not the soft
             # Σ weight·op blend. Forward = the argmax-chosen op (``hard``,
@@ -15621,6 +15697,7 @@ class BasicModel(BaseModel):
                     trace.record_reduction(
                         marginal_op, can,
                         left_word=lw, right_word=rw)
+                self._note_chunk_reductions(stm, routing, can)
             choice_can = can
             if not (occupancy_pressure or demand):
                 # A legacy/final-seal call may physically compact the stack
@@ -17224,6 +17301,19 @@ class BasicModel(BaseModel):
                         stm.note_push_masked(
                             [g and not w for g, w in zip(gate_rows, wcol)],
                             "other")
+                    if not torch.compiler.is_compiling():
+                        # Coarser-whole provenance of this unit (fold-ladder
+                        # plan, Phase 2b): the tiling ladder's parent map,
+                        # recorded whether or not kind recording is on.
+                        _ws0 = (self.wholeSpaces[0]
+                                if getattr(self, "wholeSpaces", None) else self.wholeSpace)
+                        _parent = getattr(_ws0, "_staged_unit_parent", None)
+                        if torch.is_tensor(_parent) and p < int(_parent.shape[1]):
+                            _rows = commit_b_1.view(-1).detach().to("cpu").tolist()
+                            if getattr(stm, "_slot_wholes", None) is None:
+                                stm.wholes_enable(len(_rows))
+                            stm.note_whole_masked(
+                                _rows, _parent[:, p].detach().to("cpu").tolist(), unit=p)
                     if not _compiled_recurrent:
                         stm._max_depth_host = stm._max_depth_host + 1
                     # Per-word router fire (Alec 2026-07-13): parse as the
@@ -17454,6 +17544,17 @@ class BasicModel(BaseModel):
                     stm.note_push_masked(
                         [g and not w for g, w in zip(gate_rows, wcol)],
                         "other")
+                if not torch.compiler.is_compiling():
+                    # Coarser-whole provenance (fold-ladder plan, Phase 2b).
+                    _ws0 = (self.wholeSpaces[0]
+                            if getattr(self, "wholeSpaces", None) else self.wholeSpace)
+                    _parent = getattr(_ws0, "_staged_unit_parent", None)
+                    if torch.is_tensor(_parent) and p < int(_parent.shape[1]):
+                        _rows = a_result.commit_b_1.view(-1).detach().to("cpu").tolist()
+                        if getattr(stm, "_slot_wholes", None) is None:
+                            stm.wholes_enable(len(_rows))
+                        stm.note_whole_masked(
+                            _rows, _parent[:, p].detach().to("cpu").tolist(), unit=p)
                 if not _compiled_recurrent:
                     stm._max_depth_host = stm._max_depth_host + 1
 

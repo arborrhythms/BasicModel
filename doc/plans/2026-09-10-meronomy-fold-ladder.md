@@ -584,6 +584,20 @@ singleton makes every digit a unit when `<digitWholes>` is on. The
 learned predicates (contract 3) and the boundary-type admission (step 3)
 are next; until then the two rungs are the canonical priors.
 
+Status (2026-09-10, step 2 landed): the boundary / singleton predicates
+are parameters on every canonical WholeSpace (`boundary_weight`,
+`singleton_weight`, logits over the property rows, hard 0.5 threshold in
+the cut; `_build_boundary_predicates`), initialised from the canonical
+priors or, under `<boundaryTypes>none</boundaryTypes>`, all off; the unit
+tiling is cut from them (`_predicate_unit_spans`) when the property basis
+is on, byte-identical to the priors cut. Under `none` a sentence is one
+unit with whitespace kept as content (the cold start of step 3). The
+pinned state-dict keys of the meronomy configs moved by two per WS stage
+(`test_dual_towers.py`). Step 3, the score update that lets the cold
+start learn space as the basic boundary, is next; the chunk prior's score
+update by utility gain (`utilityPriorRate`) and the utility-gain gate on
+phrase admission landed with Phase 2b.
+
 Acceptance: the untagged cold start learns space as the basic boundary on
 a small text corpus with the canonical fallback verified off; the digit
 singleton is learned on the successor corpus; the tilings nest; the cut is
@@ -605,6 +619,26 @@ Acceptance: idiomatic and literal uses of the same phrase with
 frequency-matched compositional controls; the idiom is admitted with a row
 that diverges from the additive composition, the control is not
 lexicalised; perturbing the utility changes the chooser's pick.
+
+Status (2026-09-10, mechanism landed): `data/ladder.grammar` is
+`complete.grammar` plus the `chunk` compose / generate rules, so `chunk`
+is a candidate of the CS reducer (`MM_ladder.xml` uses it; other configs
+are unchanged). The STM mirrors each slot's coarser whole and unit
+position (host-eager, like the slot kinds; the compiled tensor peer is
+deferred); the reduce step passes a structural prior to the reducer
+(`BinaryStructuredReductionLayer.forward(op_prior=...)`): `chunk` is
+forbidden across wholes and carries the learned `chunk_prior` logit
+(zero at init) inside one. A `chunk` chosen on a same-whole pair proposes
+the pair's concept ids; `ConceptualSpace` commits utility counts
+(contract 4: once per presentation, at the training path's boundary) and
+admits a recurring proposal (`admissionCount`) as a concept over its
+member concepts. Landed after: the utility-gain gate on admission (a recurring
+proposal is admitted only when the phrase's utility exceeds its members'
+best) and the score update of `chunk_prior` by that gain
+(`utilityPriorRate`). Not yet done: the idiom / literal test with
+frequency-matched controls, and the compiled-path mirror. Tests: ladder grammar has
+`chunk`; licensing only inside one whole; counts accrue once per
+presentation; a recurring same-whole pair is admitted as a phrase.
 
 ### Phase 3 — configs, tests, docs
 
@@ -638,6 +672,17 @@ and update timing (Phases 1, 2b); [Params](../Params.md),
 [Mereology](../Mereology.md) and the
 [What specification](../specs/2026-07-27-teaching-modes-and-next-iteration.md)
 for configuration, algebra and the reconstruction / answer separation.
+
+## Open defects found on the way
+
+- The Phase 2b provenance mirrors (slot wholes and units) are host-eager;
+  the compiled tensor peer (`functional_push_step_masked`) carries no such
+  slab yet, so `chunk` licensing is eager-only for now (contract 5).
+- `BaseModel.dispatch_per_row_reset` on the aligned ladder fixture fails
+  in `WholeSpace._whole_ancestors` (`taxonomy_parent_map` is absent under
+  the property basis) before any fold-ladder code runs; the training
+  path's sentence boundary (`runEpoch`) does not take that route. Tests
+  drive boundaries through the training path until this is fixed.
 
 ## Open questions
 

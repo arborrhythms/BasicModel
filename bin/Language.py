@@ -7715,7 +7715,7 @@ class BinaryStructuredReductionLayer(nn.Module):
     # _stacked_reduced), the counterpart to SymbolSubSpace.compose's
     # WS-side analysis. See SymbolSubSpace.compose docstring for the split.
     def forward(self, x, *, span_start=None, span_end=None, cat_ctx=None,
-                what_ctx=None):
+                what_ctx=None, op_prior=None):
         if what_ctx is None:
             # The question context is installed per batch by ``Model.what()``
             # (LanguageLayer AND each grammar layer); callers that do not
@@ -7779,6 +7779,13 @@ class BinaryStructuredReductionLayer(nn.Module):
         cat_prior = self._category_reduce_prior(cat_ctx)
         if cat_prior is not None and cat_prior.shape == reduce_score.shape:
             reduce_score = reduce_score + cat_prior.to(
+                device=reduce_score.device, dtype=reduce_score.dtype)
+        # Structural prior (meronomy fold-ladder plan, Phase 2b): a per-op
+        # additive logit supplied by the owner, e.g. the analysis tiling
+        # licensing ``chunk`` on a pair inside one coarser whole.
+        if (torch.is_tensor(op_prior) and reduce_score.numel() > 0
+                and op_prior.shape[-1] == reduce_score.shape[-1]):
+            reduce_score = reduce_score + op_prior.to(
                 device=reduce_score.device, dtype=reduce_score.dtype)
 
         # Local construction pressure.  Re-score DETACHED operands/candidates

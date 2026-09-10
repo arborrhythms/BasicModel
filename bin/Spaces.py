@@ -15718,6 +15718,21 @@ class ConceptualSpace(Space):
                     section, "conceptReadoutL1", default=0.0))))
         self.layers.append(self.concepts_from_percepts)
         self.params += list(self.concepts_from_percepts.parameters())
+        # Category utility and chunk admission (fold-ladder plan, contracts
+        # 4 and 7): Laplace smoothing, minimum evidence, the recurrence count
+        # before a candidate is admissible, and the structural prior logit of
+        # ``chunk`` on a same-whole pair (learned; zero at init).
+        self.utility_smoothing = float(TheXMLConfig.space(
+            section, "utilitySmoothing", default=1.0) or 1.0)
+        self.utility_min_count = int(TheXMLConfig.space(
+            section, "utilityMinCount", default=4) or 4)
+        self.admission_count = int(TheXMLConfig.space(
+            section, "admissionCount", default=2) or 2)
+        self.utility_prior_rate = float(TheXMLConfig.space(
+            section, "utilityPriorRate", default=1.0) or 0.0)
+        # ``chunk_prior`` is built lazily by ``ensure_chunk_prior`` (only a
+        # grammar with a ``chunk`` reduce candidate needs it), so configs
+        # without one keep their state_dict keys.
         # Compatibility binders already receive conceptual coordinates. Use
         # the same Sigma law across those sources, retaining their full stack
         # for inverse recovery. Never average WHERE/WHEN bands.
@@ -16651,6 +16666,132 @@ class ConceptualSpace(Space):
         # previous batch's graph merely because its symbolic carrier survived.
         self._clear_percept_field()
 
+    # -- category utility and chunk admission (fold-ladder plan, contract 4 / 7)
+
+    def ensure_chunk_prior(self):
+        """The learned structural prior logit of ``chunk`` on a same-whole
+        pair (fold-ladder plan, Phase 2b); zero at init, registered on first
+        use so that only ladder grammars carry the parameter."""
+        prior = getattr(self, "chunk_prior", None)
+        if not torch.is_tensor(prior):
+            prior = nn.Parameter(torch.zeros(()))
+            self.chunk_prior = prior
+            self.params.append(prior)
+        return prior
+
+    def utility_counts(self):
+        """Host-side counters, updated once per presentation at ``Reset``:
+        ``n_c[concept]``, ``n_cf[concept][feature]``, ``n_f[feature]`` and
+        the number of presentations.  Features are a concept's constituent
+        rows (parts) and containing property rows (wholes)."""
+        cu = self.__dict__.get("_cu")
+        if cu is None:
+            cu = {"n_c": {}, "n_cf": {}, "n_f": {}, "n": 0}
+            self.__dict__["_cu"] = cu
+        return cu
+
+    def propose_utility_observation(self, concept_id, features):
+        """Queue one unit's (concept, features) for the boundary count."""
+        self.__dict__.setdefault("_cu_proposals", []).append(
+            (int(concept_id), tuple(int(f) for f in features)))
+
+    def category_utility(self, concept_id, smoothing=None, min_count=None):
+        """Corter & Gluck (1992) utility of one concept from the counters:
+        ``P(c) * (sum_f P(f|c)^2 - sum_f P(f)^2)`` over the concept's
+        features, Laplace-smoothed; ``None`` below the minimum evidence."""
+        cu = self.utility_counts()
+        a = float(self.utility_smoothing if smoothing is None else smoothing)
+        k = int(self.utility_min_count if min_count is None else min_count)
+        n_c = cu["n_c"].get(int(concept_id), 0)
+        if n_c < k or cu["n"] <= 0:
+            return None
+        feats = cu["n_cf"].get(int(concept_id), {})
+        if not feats:
+            return None
+        n = float(cu["n"])
+        p_c = (n_c + a) / (n + a * 2.0)
+        gain = 0.0
+        for f, n_cf in feats.items():
+            p_fc = (n_cf + a) / (n_c + a * 2.0)
+            p_f = (cu["n_f"].get(f, 0) + a) / (n + a * 2.0)
+            gain += p_fc * p_fc - p_f * p_f
+        return p_c * gain
+
+    def _commit_utility_counts(self):
+        proposals = self.__dict__.pop("_cu_proposals", None) or []
+        if not proposals:
+            return
+        cu = self.utility_counts()
+        cu["n"] += 1
+        # A presentation counts a concept (and a concept-feature pair) at
+        # most once: P(c) is the fraction of presentations containing c.
+        per_concept = {}
+        for concept_id, feats in proposals:
+            per_concept.setdefault(concept_id, set()).update(feats)
+        seen_f = set()
+        for concept_id, feats in per_concept.items():
+            cu["n_c"][concept_id] = cu["n_c"].get(concept_id, 0) + 1
+            row = cu["n_cf"].setdefault(concept_id, {})
+            for f in feats:
+                row[f] = row.get(f, 0) + 1
+                seen_f.add(f)
+        for f in seen_f:
+            cu["n_f"][f] = cu["n_f"].get(f, 0) + 1
+
+    def _commit_chunk_admissions(self):
+        """Admit a chunked phrase (contract 7) once it has recurred
+        ``admissionCount`` times and its utility gain over its members is
+        positive: a concept of its own, parts = the member concepts."""
+        proposals = self.__dict__.pop("_chunk_proposals", None) or []
+        if not proposals:
+            return
+        hits = self.__dict__.setdefault("_chunk_hits", {})
+        admitted = self.__dict__.setdefault("_chunk_admitted", {})
+        need = int(getattr(self, "admission_count", 2) or 2)
+        for _b, members, _whole in proposals:
+            if members in admitted:
+                continue
+            hits[members] = hits.get(members, 0) + 1
+            if hits[members] < need:
+                continue
+            # Utility gain (contract 7): the phrase as a category, with its
+            # members as features, against the members' own utilities.  The
+            # phrase's counts are its recurrences (hits) among the
+            # presentations seen; its features are the two member concepts,
+            # each present in every phrase occurrence.
+            cu = self.utility_counts()
+            n = float(cu["n"]) if cu["n"] > 0 else 1.0
+            a = float(self.utility_smoothing)
+            p_phrase = (hits[members] + a) / (n + 2.0 * a)
+            gain_phrase = 0.0
+            for m in members:
+                p_fc = (hits[members] + a) / (hits[members] + 2.0 * a)   # ~1
+                p_f = (cu["n_c"].get(int(m), 0) + a) / (n + 2.0 * a)
+                gain_phrase += p_fc * p_fc - p_f * p_f
+            phrase_cu = p_phrase * gain_phrase
+            member_cu = [g for g in (self.category_utility(m) for m in members)
+                         if g is not None]
+            baseline = max(member_cu) if member_cu else 0.0
+            utility_gain = phrase_cu - baseline
+            self.__dict__.setdefault("_chunk_utility_gain", {})[members] = utility_gain
+            if utility_gain <= 0.0:
+                continue
+            # Credit the structural prior by score (contract 3 / 7): the
+            # gain moves the chunk logit, clipped, outside autograd.
+            prior = getattr(self, "chunk_prior", None)
+            if torch.is_tensor(prior):
+                with torch.no_grad():
+                    prior.add_(float(self.utility_prior_rate) * utility_gain).clamp_(-8.0, 8.0)
+            if not ConceptualSpace._automatic_concept_admitted(
+                    self, 1, reason="chunked phrase"):
+                continue
+            (A,) = ConceptualSpace._new_concepts(self, 1, context="chunked phrase")
+            for m in members:
+                self.add_part(A, ("sym", int(m)))      # a concept over concepts
+            self._populate_concept_weights(A)
+            admitted[members] = int(A)
+            hits.pop(members, None)
+
     def Reset(self, batch=None, hard=True):
         """Clear the subspace event so next forward() does a full recompute.
 
@@ -16669,6 +16810,8 @@ class ConceptualSpace(Space):
         # taxonomy, in eager Python, before the reset wipes per-sentence
         # state. Hard reset only (a soft reset is not a sentence boundary).
         if hard and not getattr(self, "_online_learning_frozen", False):
+            self._commit_utility_counts()
+            self._commit_chunk_admissions()
             self._commit_autobind_from_stash()
             # Sentence-boundary relation learning, HOISTED off the compiled
             # forward (fullgraph): ``learn_relations_from_stm`` does
@@ -22782,6 +22925,66 @@ def _analysis_type_lut(space):
     return space._type_lut_cache
 
 
+def _spans_from_run_masks(is_run, run_start, run_end):
+    """``[B, K, 2]`` spans from explicit per-position run masks (the
+    anchor / rank / scatter of :func:`_type_run_spans`, factored so the
+    learned boundary predicates can supply the masks)."""
+    B, N = int(is_run.shape[0]), int(is_run.shape[1])
+    if N == 0:
+        return torch.zeros(B, 1, 2, dtype=torch.long, device="cpu")
+    run_start = run_start & is_run
+    run_end = run_end & is_run
+    ar = torch.arange(N, device="cpu").unsqueeze(0).expand(B, N)
+    starts = torch.where(run_start, ar, torch.full_like(ar, N))
+    ends = torch.full_like(ar, -1)
+    n_re = int(run_end.long().sum(1).max().item()) if N else 0
+    if n_re > 0:
+        re_rank = torch.cumsum(run_end.long(), 1) - 1
+        rs_rank = torch.cumsum(run_start.long(), 1) - 1
+        re_end = torch.full((B, n_re), N, dtype=torch.long, device="cpu")
+        rep = run_end.nonzero(as_tuple=False)
+        if rep.numel():
+            bb, ii = rep[:, 0], rep[:, 1]
+            re_end[bb, re_rank[bb, ii]] = ii + 1
+        rsp = run_start.nonzero(as_tuple=False)
+        if rsp.numel():
+            bb, ii = rsp[:, 0], rsp[:, 1]
+            ends[bb, ii] = re_end[bb, rs_rank[bb, ii]]
+    K = int(max(1, run_start.long().sum(1).max().item()))
+    tok_rank = torch.cumsum(run_start.long(), 1) - 1
+    out = torch.zeros(B, K, 2, dtype=torch.long, device="cpu")
+    sp = run_start.nonzero(as_tuple=False)
+    if sp.numel():
+        bb, ii = sp[:, 0], sp[:, 1]
+        r = tok_rank[bb, ii]
+        out[bb, r, 0] = starts[bb, ii]
+        out[bb, r, 1] = ends[bb, ii]
+    return out
+
+
+def _predicate_unit_spans(sig_bits, boundary_bits, singleton_bits, discard_bits):
+    """The unit tiling from learned predicates (fold-ladder plan, contract
+    3).  ``sig_bits`` ``[B, N]`` long: per-position property signature;
+    ``boundary_bits`` / ``singleton_bits`` / ``discard_bits``: int masks of
+    the property rows whose flips end a whole, whose every occurrence
+    stands alone, and whose positions are discarded (pad, and whitespace
+    unless whitespace has been demoted to a whole type)."""
+    B, N = int(sig_bits.shape[0]), int(sig_bits.shape[1])
+    first = torch.zeros(B, 1, dtype=torch.bool, device="cpu")
+    is_run = (sig_bits & int(discard_bits)) == 0
+    b_sig = sig_bits & int(boundary_bits)
+    flip = torch.cat([first, (b_sig[:, 1:] != b_sig[:, :-1])], 1)       # flip at i
+    flip_next = torch.cat([(b_sig[:, 1:] != b_sig[:, :-1]), first], 1)  # flip at i+1
+    single = ((sig_bits & int(singleton_bits)) != 0) & is_run
+    after_single = torch.cat([first, single[:, :-1]], 1)
+    before_single = torch.cat([single[:, 1:], first], 1)
+    prev_run = torch.cat([first, is_run[:, :-1]], 1)
+    next_run = torch.cat([is_run[:, 1:], first], 1)
+    run_start = is_run & (~prev_run | flip | single | after_single)
+    run_end = is_run & (~next_run | flip_next | single | before_single)
+    return _spans_from_run_masks(is_run, run_start, run_end)
+
+
 def _type_run_spans(type_ids, discard_mask=None, singleton=None):
     """Vectorised token spans from per-position TYPE ids (``[B, N]`` long, on
     CPU). A whole is a MAXIMAL CONSTANT-TYPE RUN; runs of the SPACE type
@@ -23221,6 +23424,17 @@ class WholeSpace(Space):
         else:
             self.digit_wholes = (
                 str(_dw).strip().lower() in ("true", "1", "yes", "on"))
+        # <boundaryTypes> (WholeSpace): ``canonical`` initialises the learned
+        # boundary predicates from the four classes; ``none`` starts with no
+        # boundary type at all (the cold-start test of contract 3).
+        try:
+            _bt = TheXMLConfig.space(section, "boundaryTypes")
+        except KeyError:
+            _bt = None
+        self.boundary_types = str(_bt or "canonical").strip().lower()
+        if self.boundary_types not in ("canonical", "none"):
+            raise ValueError(
+                f"WholeSpace.boundaryTypes must be canonical|none; got {_bt!r}")
         self._staged_analysis_spans = None
         # The serial word loop consumes one WholeSpace view per word, not the
         # sentence-wide analysis slab.  The eager lexical boundary stages the
@@ -23561,6 +23775,7 @@ class WholeSpace(Space):
         self._type_lut_version = None
         self.type_subspace = None
         self._build_type_subspace()
+        self._build_boundary_predicates()
 
         # Phase 3 of the SubSpace.what STM refactor: wire V_sym into the
         # global Grammar so where_id_for_rule produces correct offsets
@@ -23841,6 +24056,47 @@ class WholeSpace(Space):
         ("type_digit", _CLS_DIGIT),
         ("type_punct", _CLS_PUNCT),
     )
+
+    def _build_boundary_predicates(self):
+        """Learned boundary / singleton predicates over the property rows
+        (fold-ladder plan, contract 3): ``boundary_weight[p]`` (a flip of
+        ``p`` ends a whole) and ``singleton_weight[p]`` (every occurrence of
+        ``p`` stands alone), logits with a hard 0.5 threshold in the cut.
+        Initialised from the canonical priors (space / punctuation / pad as
+        boundaries; the digit singleton under ``<digitWholes>``) or, under
+        ``<boundaryTypes>none</boundaryTypes>``, all off."""
+        pk = None
+        if getattr(self, "property_basis", False):
+            cb = getattr(getattr(self, "subspace", None), "what", None)
+            pk = getattr(cb, "property_kind", None) if cb is not None else None
+            n_rows = int(getattr(cb, "nVectors", 0) or 0) if cb is not None else 0
+        else:
+            ts = getattr(self, "type_subspace", None)
+            cb = getattr(ts, "what", None) if ts is not None else None
+            pk = getattr(cb, "property_kind", None) if cb is not None else None
+            n_rows = int(getattr(cb, "nVectors", 0) or 0) if cb is not None else 0
+        if not pk or n_rows <= 0:
+            self.boundary_weight = None
+            self.singleton_weight = None
+            return
+        n_rows = min(n_rows, 63)
+        b = torch.full((n_rows,), -4.0)
+        sgl = torch.full((n_rows,), -4.0)
+        if getattr(self, "boundary_types", "canonical") != "none":
+            for raw_row, classes in pk.items():
+                row = int(raw_row)
+                if not (0 <= row < n_rows):
+                    continue
+                cls = {int(c) for c in classes}
+                if cls & {_CLS_WHITESPACE, _CLS_PUNCT, _CLS_PAD}:
+                    b[row] = 4.0
+                if _CLS_DIGIT in cls and getattr(self, "digit_wholes", False):
+                    sgl[row] = 4.0
+        self.boundary_weight = nn.Parameter(b)
+        self.singleton_weight = nn.Parameter(sgl)
+        self.params.append(self.boundary_weight)
+        self.params.append(self.singleton_weight)
+        self._predicate_rows = {int(r): {int(c) for c in cl} for r, cl in pk.items()}
 
     def _build_type_subspace(self, tags=None):
         """Build the frozen TYPE subspace (doc/plans/2026-07-10-wholes-are-
@@ -27258,7 +27514,28 @@ class WholeSpace(Space):
         # makes every digit its own unit.
         unit_types = torch.where(type_ids == _TYPE_DIGIT,
                                  torch.full_like(type_ids, _TYPE_LETTER), type_ids)
-        fine = _type_run_spans(unit_types, singleton=single)
+        bw = getattr(self, "boundary_weight", None)
+        if torch.is_tensor(bw) and getattr(self, "property_basis", False):
+            # The learned predicates decide the unit tiling (contract 3):
+            # boundary rows by flip, singleton rows by occurrence; pad and
+            # (unless demoted) whitespace rows are discarded.
+            prop_lut, discard_mask = _analysis_property_signature(self)
+            sig = prop_lut[idx]
+            n_rows = int(bw.shape[0])
+            with torch.no_grad():
+                b_on = (torch.sigmoid(bw) > 0.5).tolist()
+                s_on = (torch.sigmoid(self.singleton_weight) > 0.5).tolist()
+            boundary_bits = sum((1 << r) for r in range(n_rows) if b_on[r])
+            singleton_bits = sum((1 << r) for r in range(n_rows) if s_on[r])
+            discard_bits = int(discard_mask)
+            if getattr(self, "boundary_types", "canonical") == "none":
+                pad_bits = sum((1 << r) for r, cl in getattr(self, "_predicate_rows", {}).items()
+                               if r < n_rows and _CLS_PAD in cl)
+                discard_bits = pad_bits
+            fine = _predicate_unit_spans(sig, boundary_bits | discard_bits,
+                                         singleton_bits, discard_bits)
+        else:
+            fine = _type_run_spans(unit_types, singleton=single)
         object.__setattr__(self, "_staged_unit_spans", fine.to(IS_concepts.device))
         # The descending tiling ladder (Phase 2, contract 2): the coarse rung
         # is the space-bounded tiling (whitespace words: every non-space run

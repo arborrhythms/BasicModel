@@ -596,3 +596,14 @@ For live profiling, `py-spy` can attach by PID (requires root on macOS):
 pip install py-spy
 sudo py-spy record -o profile.svg --pid <PID> --duration 30
 ```
+
+## Category utility and chunk admission (2026-09-10)
+
+At the training path's sentence boundary `ConceptualSpace` commits the
+presentation's utility observations (one per resolved unit: the concept
+with its constituent rows and property rows as features; a concept counts
+at most once per presentation) and the chunk proposals made by the reduce
+step; a proposal that has recurred `admissionCount` times is admitted as a
+concept over its member concepts. `category_utility` (Corter & Gluck 1992,
+Laplace-smoothed, withheld below `utilityMinCount`) is the estimator of
+the basic level (doc/plans/2026-09-10-meronomy-fold-ladder.md, contract 4).

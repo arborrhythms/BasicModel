@@ -269,7 +269,7 @@
 
   <SymbolSpace>
     <language>
-      <grammar>complete.grammar</grammar>
+      <grammar>ladder.grammar</grammar>
     </language>
   </SymbolSpace>
 </model>

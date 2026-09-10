@@ -13614,6 +13614,9 @@ class ShortTermMemory(Layer):
         if getattr(self, "_slot_kinds", None) is not None:
             object.__setattr__(
                 self, "_slot_kinds", [[] for _ in range(batch)])
+        if getattr(self, "_slot_wholes", None) is not None:
+            object.__setattr__(
+                self, "_slot_wholes", [[] for _ in range(batch)])
 
     # -- slot-kind provenance (word-bearing-fold filtering) ----------------
     # doc/plans/2026-07-13-word-grain-open-fronts.md Task B: per-row host
@@ -13642,6 +13645,61 @@ class ShortTermMemory(Layer):
             if on and b < len(ks):
                 ks[b].insert(0, str(kind))
                 del ks[b][cap:]
+
+    # -- slot-whole provenance (meronomy fold-ladder plan, Phase 2b) --------
+    # Per-row host stacks mirroring the buffer discipline: the index of the
+    # coarser analysis whole each slot's unit belongs to (-1 = none / a fold
+    # across wholes).  ``None`` = recording off.  Host-eager only.
+
+    def wholes_enable(self, batch):
+        object.__setattr__(self, "_slot_wholes", [[] for _ in range(int(batch))])
+
+    def note_whole_masked(self, gate_rows, wholes, unit=-1):
+        """Record ``(whole, unit)`` for a slot-0 push on the gated rows:
+        the coarser whole's index and the unit's loop position (``-1`` for
+        a fold, which is no single unit)."""
+        ws = getattr(self, "_slot_wholes", None)
+        if ws is None:
+            return
+        cap = int(self.capacity)
+        for b, on in enumerate(gate_rows):
+            if on and b < len(ws):
+                ws[b].insert(0, (int(wholes[b]) if b < len(wholes) else -1, int(unit)))
+                del ws[b][cap:]
+
+    def note_reduce_wholes(self, reduced_rows):
+        """Mirror a top-2 fold: the parent keeps the whole when both
+        operands shared it, else -1; a fold is no single unit."""
+        ws = getattr(self, "_slot_wholes", None)
+        if ws is None:
+            return
+        for b, on in enumerate(reduced_rows):
+            if on and b < len(ws) and len(ws[b]) >= 2:
+                w0, w1 = ws[b][0][0], ws[b][1][0]
+                ws[b][0:2] = [(w0 if w0 == w1 else -1, -1)]
+
+    def same_whole_rows(self, batch):
+        """[B] bool: the two newest slots belong to one coarser whole."""
+        ws = getattr(self, "_slot_wholes", None)
+        out = [False] * int(batch)
+        if ws is None:
+            return out
+        for b in range(min(int(batch), len(ws))):
+            k = ws[b]
+            out[b] = len(k) >= 2 and k[0][0] >= 0 and k[0][0] == k[1][0]
+        return out
+
+    def newest_units(self, batch):
+        """[B] (unit of slot 1, unit of slot 0), -1 where unknown."""
+        ws = getattr(self, "_slot_wholes", None)
+        out = [(-1, -1)] * int(batch)
+        if ws is None:
+            return out
+        for b in range(min(int(batch), len(ws))):
+            k = ws[b]
+            if len(k) >= 2:
+                out[b] = (k[1][1], k[0][1])
+        return out
 
     def note_push_all(self, kind):
         """Kind mirror of an unmasked all-rows slot-0 push."""

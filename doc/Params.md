@@ -506,6 +506,11 @@ symbol (line anchors drift).
 | `lbgEpsilon` (WholeSpace) | same | `0.1` | LBG: split displacement magnitude. |
 | `divideWithinWhole` (WholeSpace) | `Spaces.py` (WS init + tiling site) | `true` | Divides unattested type-runs into attested concepts by greedy longest-match tiling; explicit `false` keeps the undivided span. |
 | `digitWholes` (WholeSpace) | `Spaces.py` (WS init + `stage_analysis_spans`) | `false` | Every digit byte is a whole by itself at the analysis cut (`12` -> `1`, `2`, each with its own `.where`), so the multi-digit numeral is a whole over digit parts rather than one type-run. Default off, byte-identical. |
+| `boundaryTypes` (WholeSpace) | `Spaces.py` (WS init; `_build_boundary_predicates`) | `canonical` | Initialisation of the learned boundary / singleton predicates over the property rows (fold-ladder plan, contract 3): `canonical` = space, punctuation and pad as boundaries, the digit singleton under `digitWholes`; `none` = no boundary type (cold start). The predicates are parameters (`boundary_weight`, `singleton_weight`, logits thresholded at 0.5 in the cut). |
+| `utilitySmoothing` (ConceptualSpace) | `Spaces.py` (CS init; `category_utility`) | `1.0` | Laplace smoothing of the category-utility counts (doc/plans/2026-09-10-meronomy-fold-ladder.md, contract 4). |
+| `utilityMinCount` (ConceptualSpace) | same | `4` | Minimum presentations of a concept before its utility is trusted. |
+| `admissionCount` (ConceptualSpace) | same | `2` | Recurrences of a chunked phrase before it is admitted as a concept of its own (contract 7). |
+| `utilityPriorRate` (ConceptualSpace) | same | `1.0` | Step of the score update that moves the `chunk` structural prior by the admitted phrase's utility gain (contract 7); 0 freezes the prior. |
 | `gradientMode` (WholeSpace) | `Spaces.py` (WS init) | `"ste"` | Codebook gradient coupling: `snap` \| `ste` \| `rotation` (invalid values raise). |
 | `useStackRouter` (WholeSpace) | `Spaces.py` (WS init) | `false` | Gates WS's stack-rewrite LanguageLayer dispatch; `false` keeps the legacy forward path. |
 | `initScale` (any space) | `Spaces.py` (`_read_init_scale`) | unset | Per-row seed magnitude for the space's codebooks; small values ($\approx 0.02$) keep the sigma/pi folds in their linear regime. Unset/0 = legacy unit prefill. |

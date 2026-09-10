@@ -208,7 +208,7 @@ fabricating a split would corrupt the reconstruction.
 | `non` | 1 | CS | non-affirming complement | self-inverse |
 | `intersection` | 2 | CS | `Ops.intersection` (RadMin / lattice min; ADJ mask, meet) | recommender w/ basis; `snap=True` $\to$ MEET-aware snap (priming-led — the meet is lossy); no basis $\to$ raise |
 | `union` | 2 | CS | `Ops.union` (RadMax / lattice max, OR-region, join) | recommender w/ basis; `snap=True` $\to$ JOIN snap (fit-determined); no basis $\to$ raise |
-| `chunk` | 2 | CS | additive `left + right` (PS-style chunking) | PEEL w/ basis: best-cosine row `x1`, exact residual `(x1, parent − x1)`; empty-set decomposition `(parent, 0)` without |
+| `chunk` | 2 | CS | additive `left + right` (PS-style chunking); in `ladder.grammar` a reducer candidate licensed only on a pair the analysis tiling places in one coarser whole (doc/plans/2026-09-10-meronomy-fold-ladder.md, Phase 2b); an admitted chunk is a concept over its member concepts | PEEL w/ basis: best-cosine row `x1`, exact residual `(x1, parent − x1)`; empty-set decomposition `(parent, 0)` without |
 | `sum` | 2 | CS | element-wise `left + right` | empty-set decomposition `(parent, 0)` — recomposes exactly |
 | `product` | 2 | CS | element-wise `left * right` | **raise** (zeros annihilate; many-to-one) |
 | `lift` | 2 | CS | order-raising fold (internal SigmaLayer; optional gate) | `Ops.liftReverseAll` w/ basis ($\to$ disjunctionReverse); balanced `_sigma.generate` split without |

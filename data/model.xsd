@@ -1219,6 +1219,14 @@
       <!-- Incoming-connection L1 for the indexed conceptsFromPercepts Sigma.
            0 disables; BasicModel opts into weak 0.01. Not activation shrink. -->
       <xs:element name="conceptReadoutL1" type="nonNegativeFloat" minOccurs="0"/>
+      <!-- Category utility / chunk admission (doc/plans/2026-09-10-meronomy-
+           fold-ladder.md, contracts 4 and 7): Laplace smoothing of the
+           utility counts, the minimum evidence before a concept's utility is
+           trusted, and the recurrence count before a candidate is admitted. -->
+      <xs:element name="utilitySmoothing" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="utilityMinCount" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="admissionCount" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="utilityPriorRate" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="nInput" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nOutput" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nActive" type="xs:nonNegativeInteger" minOccurs="0"/>
@@ -1385,6 +1393,17 @@
            numeral word divides into its digits (each with its own .where).
            Default false (byte-identical). Alec 2026-09-10: the digit whole. -->
       <xs:element name="digitWholes" type="xs:boolean" minOccurs="0"/>
+      <!-- Initialisation of the learned boundary predicates (fold-ladder
+           plan, contract 3): canonical (the four classes as priors) or none
+           (no boundary type; the cold-start test). -->
+      <xs:element name="boundaryTypes" minOccurs="0">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:enumeration value="canonical"/>
+            <xs:enumeration value="none"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:element>
       <xs:element name="passThrough" type="xs:boolean" minOccurs="0"/>
       <!-- Symbolic-retrieval mode (off|primer|second-order|low-rank);
            default off. WholeSpace has no hasAttention legacy alias:

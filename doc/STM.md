@@ -1002,3 +1002,13 @@ newest unanswered input) and `latest_output` for the resolve step.
 - [What spec](specs/2026-07-27-teaching-modes-and-next-iteration.md) and
   the [mathematical thinking specification](specs/2026-09-09-mathematical-thinking.md)
   — the interaction slots' role in thinking (Section 13).
+
+## Slot provenance for the fold ladder (2026-09-10)
+
+Beside the slot kinds, the STM keeps a host-eager mirror of each slot's
+coarser analysis whole and unit position (`note_whole_masked`,
+`note_reduce_wholes`, `same_whole_rows`, `newest_units`; see
+doc/plans/2026-09-10-meronomy-fold-ladder.md, Phase 2b). The reduce step
+reads it to license the grammar's `chunk` on a pair inside one whole and
+to propose the pair's concepts for admission; a fold across wholes has no
+whole and is no single unit.

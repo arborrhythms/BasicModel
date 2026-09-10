@@ -262,3 +262,134 @@ def test_tiling_ladder_nests_units_in_space_bounded_wholes():
     fake = types.SimpleNamespace(analysis_mode="meronomy", digit_wholes=False)
     WholeSpace.stage_analysis_spans(fake, _bytes("12 plus 1"))
     assert fake._staged_unit_parent[0].tolist() == [0, 1, 2]
+
+
+# -- Phase 2b: chunk in the grammar, licensed by the tiling, admitted by utility --
+
+def _present(m, surfaces):
+    x = m.inputSpace.prepInput(list(surfaces))
+    with torch.no_grad():
+        m.forward(x)
+    return x
+
+
+def test_ladder_grammar_has_chunk_as_a_reduce_candidate(ladder):
+    reducer = ladder._stm_reducer()
+    assert reducer is not None and "chunk" in list(reducer.op_names)
+    assert ladder._chunk_op_index() == list(reducer.op_names).index("chunk")
+
+
+def test_chunk_is_licensed_only_inside_one_coarse_whole(ladder):
+    m = ladder
+    stm = m.conceptualSpace.stm
+    stm.wholes_enable(1)
+    # Two newest slots from different wholes: chunk forbidden.
+    stm.note_whole_masked([True], [0], unit=0); stm.note_whole_masked([True], [1], unit=1)
+    window = torch.zeros(1, 2, int(stm.concept_dim))
+    prior = m._chunk_structural_prior(stm, 1, window)
+    idx = m._chunk_op_index()
+    assert prior is not None and float(prior[0, 0, idx]) <= -1e3
+    assert float(prior[0, 0].abs().sum()) == float(prior[0, 0, idx].abs())
+    # Same whole: licensed with the learned prior (zero at init).
+    stm.wholes_enable(1)
+    stm.note_whole_masked([True], [3], unit=0); stm.note_whole_masked([True], [3], unit=1)
+    prior = m._chunk_structural_prior(stm, 1, window)
+    assert float(prior[0, 0, idx]) == float(m._concept_owner().ensure_chunk_prior())
+    assert stm.same_whole_rows(1) == [True]
+    # A fold keeps the whole when both operands shared it.
+    assert stm.newest_units(1) == [(0, 1)]
+    stm.note_reduce_wholes([True])
+    assert stm._slot_wholes[0] == [(3, -1)]
+
+
+def test_utility_counts_accrue_once_per_presentation():
+    """Counts commit at the training path's sentence boundary, once per
+    presentation (the bare per-row reset cascade is not the training path
+    on this fixture; see the plan's open defects)."""
+    m = _build_ladder()
+    cs = m._concept_owner()
+    opt = m.getOptimizer(lr=1e-3)
+    m.runEpoch(optimizer=opt, batchSize=1, split="train", max_batches=2)
+    cu = cs.utility_counts()
+    assert cu["n"] == 2 and cu["n_c"] and cu["n_f"]
+    assert all(1 <= v <= 2 for v in cu["n_c"].values())
+    assert not cs.__dict__.get("_cu_proposals")      # drained at the boundary
+    # Below the minimum evidence the utility is withheld; above it, defined.
+    cs.utility_min_count = 3
+    assert all(cs.category_utility(c) is None for c in cu["n_c"])
+    cs.utility_min_count = 1
+    defined = [cs.category_utility(c) for c in cu["n_c"]]
+    assert any(v is not None for v in defined)       # units with features
+
+
+def test_recurring_same_whole_pair_is_proposed_and_admitted_as_a_phrase():
+    """Under digit wholes a two-digit numeral is a coarse whole over two
+    digit units; a chunk chosen on that pair recurring ``admissionCount``
+    times is admitted as a concept over the two member concepts.  (On a
+    text corpus numerals rarely recur; here the mechanism is under test.)"""
+    m = _build_ladder()
+    cs = m._concept_owner()
+    before = len(cs.__dict__.get("_chunk_admitted", {}))
+    # Force the chooser toward chunk on licensed pairs so the mechanism fires
+    # without training: a large structural prior.
+    with torch.no_grad():
+        cs.ensure_chunk_prior().fill_(50.0)
+    opt = m.getOptimizer(lr=1e-3)
+    m.runEpoch(optimizer=opt, batchSize=8, split="train", max_batches=6)
+    admitted = cs.__dict__.get("_chunk_admitted", {})
+    assert len(admitted) > before, "no chunked phrase was admitted"
+    members, A = next(iter(admitted.items()))
+    parts = cs.concept_parts(A)
+    assert set(parts) == {("sym", int(mm)) for mm in members}
+    with torch.no_grad():
+        cs.chunk_prior.zero_()
+
+
+# -- Phase 2, step 2: learned boundary predicates ---------------------------------
+
+def test_boundary_predicates_reproduce_the_priors_tiling(ladder):
+    ws = ladder.wholeSpaces[0]
+    assert torch.is_tensor(ws.boundary_weight) and torch.is_tensor(ws.singleton_weight)
+    rows = ws._predicate_rows
+    on_b = (torch.sigmoid(ws.boundary_weight) > 0.5).tolist()
+    on_s = (torch.sigmoid(ws.singleton_weight) > 0.5).tolist()
+    from Layers import WHITESPACE, PUNCT, DIGIT, LETTER
+    for r, cls in rows.items():
+        if r >= len(on_b):
+            continue
+        if cls & {WHITESPACE, PUNCT}:
+            assert on_b[r]
+        if LETTER in cls and not (cls & {WHITESPACE, PUNCT}):
+            assert not on_b[r]
+        if DIGIT in cls:
+            assert on_s[r]                           # digit wholes on this fixture
+    # The learned-predicate cut equals the priors cut on the fixture surfaces.
+    units, atoms, ids, mask, offsets = _stage(ladder, ["12 plus 1", "hi, there", "w0 abc123"])
+    # Digit wholes are on for this fixture: every digit stands alone.
+    assert units == [["1", "2", "plus", "1"], ["hi", ",", "there"],
+                     ["w", "0", "abc", "1", "2", "3"]]
+
+
+def test_boundary_types_none_starts_without_boundaries(tmp_path):
+    import Language
+    from util import init_config
+    from data import TheData
+    import Models
+    src = (_DATA / "MM_ladder.xml").read_text()
+    assert "<digitWholes>true</digitWholes>" in src
+    config = tmp_path / "MM_ladder_none.xml"
+    config.write_text(src.replace("<digitWholes>true</digitWholes>",
+                                  "<digitWholes>true</digitWholes>\n    <boundaryTypes>none</boundaryTypes>", 1))
+    init_config(path=str(config), defaults_path=str(_DATA / "model.xml"))
+    Language.TheGrammar._configured = False
+    cfg = Models.BaseModel.load_config(str(config))
+    TheData.load("math", dat=dict(cfg["architecture"]["data"]))
+    torch.manual_seed(0)
+    m, _ = Models.BaseModel.from_config(str(config), data=TheData)
+    ws = m.wholeSpaces[0]
+    assert ws.boundary_types == "none"
+    assert not bool((torch.sigmoid(ws.boundary_weight) > 0.5).any())
+    assert not bool((torch.sigmoid(ws.singleton_weight) > 0.5).any())
+    units, atoms, ids, mask, offsets = _stage(m, ["12 plus 1"])
+    assert units[0] == ["12 plus 1"]                 # one unit: no boundary, space kept
+    assert b"".join(atoms[0][0]) == b"12 plus 1"
