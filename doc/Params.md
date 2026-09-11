@@ -505,7 +505,7 @@ symbol (line anchors drift).
 | `demuxed` (InputSpace) | `Models.py` (`_make_perceptual_space`) | `false` | Routes what/where/when through the demuxed `ModalSpace` composite instead of the muxed PartSpace. |
 | `lrScale` (OutputSpace) | `Models.py` (`getOptimizer`) | `1.0` | Puts OutputSpace params in their own Adam group at `learningRate * lrScale`. |
 | `definitionFreeSize` (ConceptualSpace) | `Spaces.py` (CS init) | `2` | Symbols a concept's definition may use for free (genus + differentia); the rank-ordered soft-L0 penalizes only surplus ranks. |
-| `lbgThreshold` (WholeSpace) | `Spaces.py` (property codebook) | `0.5` | LBG auto-granularity: variance threshold for splitting a dynamic property row. |
+| `lbgThreshold` (WholeSpace) | `Spaces.py` (`record_lbg_pull` / `maybe_split_lbg`) | `0.5` | LBG auto-granularity: a WS row splits along its mean-displacement direction when the max per-coordinate assignment variance of the codes bound to it exceeds this (see Mereology.md, "Automatic analysis: dividing wholes"). Today gated off under `propertyBasis`; the fold-ladder plan lifts the gate. |
 | `lbgMinCount` (WholeSpace) | same | `8` | LBG: minimum hit count before a row may split. |
 | `lbgEpsilon` (WholeSpace) | same | `0.1` | LBG: split displacement magnitude. |
 | `divideWithinWhole` (WholeSpace) | `Spaces.py` (WS init + tiling site) | `true` | Divides unattested type-runs into attested concepts by greedy longest-match tiling; explicit `false` keeps the undivided span. |

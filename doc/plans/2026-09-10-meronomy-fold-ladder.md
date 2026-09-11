@@ -173,125 +173,120 @@ including permutations of the same atoms, repeated bytes, identical
 adjacent digits such as `11`); and answer-side generation with the input
 witness deliberately unavailable.
 
-### 2. Spatial composition versus fold depth
+### 2. The two towers run automatically: join up, divide down
 
-The reused ladders apply unary feature folds to an already assembled event;
-another rung does not join adjacent spans. So chunk length is NOT bounded
-by the rung count, and the earlier claim that four rungs give 16-byte parts
-is withdrawn. The contract:
+Synthesis and analysis are both automatic, every pass, and neither
+waits for a loss:
 
-- Carrier axes: `[B, W, M, D]` at rung 0, where `W` is the whole capacity
-  per presentation (the analysis ladder's widest tiling, bounded by
-  `<wholeCapacity>`), `M` the constituent capacity per whole
-  (`<wholeLength>`, the maximum atoms a rung-0 union consumes), `D` the
-  event width. Rungs t >= 1 are `[B, W, D]`: one code per whole per rung.
-- The tiling ladder is computed at once, at pass 0, by WholeSpace: the
-  predicates of contract 3 ordered by boundary weight give a nested set of
-  tilings, the unity at the top (everything), the byte-complete tiling at
-  the floor, with the same vectorised run labelling the type-run cut uses
-  today applied once per rung. "Descent from everything" is the order of
-  that ladder, not a sequence of passes. WholeSpace's value at each rung is
-  the min over positions (contract 1), also computed at once.
-- Which spans a synthesis rung consumes: PartSpace climbs the tiling
-  ladder with the pass index. Rung 0 (pass 0) joins the atoms of each
-  whole of the finest tiling; at pass t >= 1 the sigma fold raises the
-  order of each whole's code, and wholes that first appear at the coarser
-  tiling of rung t take the max over the codes of the finer wholes they
-  contain (a coarser whole's base is the max over its atoms, which the
-  finer wholes' maxes already dominate). Spatial joining across wholes
-  therefore happens only where the tiling ladder has a coarser whole,
-  never by a synthesis rung on its own.
-- Overlength wholes (more than `M` atoms) are divided by the analysis
-  ladder at the finest available boundary once the learned predicates
-  exist; until then the compiled loop's fixed residual capacity keeps its
-  documented fail-loud contract (a unit it cannot lay out fails at the
-  eager boundary with its width; nothing is truncated silently), and the
-  eager stem presents every atom of a unit.
-- The analysis ladder's top is the unity and its floor is the byte-complete
-  tiling; contract 3's bootstrap decides which intermediate tilings exist
-  on the first epoch. The loop-placement table below says so.
-- Nested tilings and coverage: the analysis ladder produces tilings that
-  nest (each rung's wholes are unions of the finer rung's wholes). Top-k
-  selection (`<fieldRetrieve>` / `<fieldAttend>`) chooses which wholes
-  ConceptualSpace attends this pass; the unattended wholes stay on the
-  carrier and are re-offered on the next pass under a coverage schedule
-  (a whole not attended by the last pass is attended by the forced sweep,
-  the analogue of the thinking loop's forced closure), so nothing in the
-  input is silently discarded.
+- **Synthesis (join by similarity).** Within each whole of the current
+  tiling, the part is the max over the atoms under it (contract 1); at
+  rungs above, the sigma folds raise its order. Nothing decides whether
+  to join; the tiling decides where.
+- **Analysis (divide by difference).** Each whole divides wherever the
+  codes under it differ. Two sources of difference, both read from what
+  is already there:
+  1. **Property differences** between adjacent positions: the symmetric
+     difference of the two signatures, typed by the property that
+     changes and in which direction. A property absent at `i-1` and
+     present at `i` is the **left boundary** of a run of it (it begins);
+     present at `i-1` and absent at `i`, the **right boundary** (it
+     ends). Consecutive occurrences of a property produce no boundary.
+     These give the class rungs (letter run, digit run, space run,
+     punctuation) and replace the "left of X" predicates.
+  2. **Part-code differences** inside a class run: adjacent positions
+     whose atom codes are farther apart than the admission radius (the
+     radius identity uses, contract 6) divide the run below the class
+     level without any sub-class being defined.
+- **New whole rows (unsupervised).** When the positions bound to a whole
+  row cluster in their codes, the row splits along its principal pull
+  by the LBG rule already on WholeSpace ([Mereology.md, "Automatic
+  analysis: dividing wholes"](../Mereology.md#lbg-division)); the new
+  row's analyzer predicate is the set of atoms whose codes fall on its
+  side, read through the callosum. Its begins / ends boundaries are then
+  candidates like any other. This is how "vowels" comes to exist. The
+  LBG gate under the property basis is lifted for this.
+- **Carrier axes.** `[B, W, M, D]` at rung 0 (whole capacity, atoms per
+  whole, event width), `[B, W, D]` above; a rung consumes the atoms of
+  one whole (rung 0) or the whole's previous-rung code; spatial joining
+  across wholes happens only where the tiling ladder has a coarser whole
+  (a coarser whole's base is the max over its atoms). The tiling ladder
+  is computed at once at pass 0 (the unity at the top, the byte floor at
+  the bottom, one tiling per admitted boundary type between); PartSpace
+  climbs it with the pass index. Overlength wholes divide by the finest
+  available boundary; the compiled loop's fixed residual capacity keeps
+  its fail-loud contract for a whole it cannot lay out.
+- **Coverage.** Top-k selection (`fieldRetrieve` / `fieldAttend`)
+  chooses which wholes ConceptualSpace attends this pass; unattended
+  wholes stay on the carrier and are re-offered under the thinking
+  loop's forced-closure pressure knob (open question Q2, resolved: one
+  knob).
 
-### 3. A learned boundary predicate
+### 3. Boundary types, the sameness level, and what the learner decides
 
-`set_property_kind` assigns existing character-class predicates to rows,
-and the signature LUT omits untagged rows, ignores rows above 62, and
-restores the canonical predicates when tags are empty; that machinery
-cannot learn a boundary. The contract replaces the tag with a predicate:
+- **Representation.** Per WholeSpace property row `p`, two learned
+  bounded weights: `begins_p` (the left boundary of a run of `p` bounds a
+  whole) and `ends_p` (its right boundary does). Per property class, one
+  **sameness level**: whether a run of `p` coheres at the class rung
+  (letters: a run is one whole) or at the atom rung (digits: every atom
+  its own whole). The sameness level replaces the singleton weight; it
+  generalises `<digitWholes>` without a digit-specific rule, and it is a
+  Rosch question (which rung is basic for this class) the learner
+  answers. The signature slab is a bool `[B, N, P]`; the cut at `i` is
+  `OR_p (begins_p AND p begins at i) OR OR_p (ends_p AND p ends at i)`,
+  plus every atom boundary inside a class whose level is the atom.
+- **Whitespace.** A space run is a whole like any other; it enters the
+  loop as a unit whose grammatical operation is the null operation
+  (`stop`), which the reduce pass applies at once, so it costs no STM
+  and no discard mask exists. "Space begins" and "space ends" compete
+  as boundary types like the others.
+- **Pre-seeding.** The class rows (letter, digit, whitespace,
+  punctuation, capital, control, high byte, pad) are the coarsest
+  wholes and are seeded; boundary types are derived from them, never
+  stored; and the class **concepts** are seeded too: each is the class
+  part (the max over the class's atom rows) joined to the class whole.
+  Everything narrower than a class is a division of a row or an
+  admitted part from data. The cold start begins from the class
+  concepts, not from bytes.
+- **What the learner decides.** Not whether finer wholes exist (that is
+  automatic, contract 2) but which are salient: the score update over
+  `begins_p` / `ends_p` and the sameness level per class, by the
+  recurrence and density of the wholes each candidate tiling yields
+  against the current tiling (the memory-load criterion), at the
+  presentation boundary, outside autograd; the reconstruction and
+  answer costs reach the weights through the straight-through threshold
+  as well. `<boundaryTypes>none</boundaryTypes>` starts with no boundary
+  type on (the cold-start test); the class concepts remain seeded.
 
-- Representation: per WholeSpace property row `p`, two learned bounded
-  parameters on the property codebook's SubSpace, a boundary weight `b_p`
-  (does a flip of `p` end a whole) and a singleton weight `s_p` (does every
-  occurrence of `p` stand alone), both in `[0, 1]` through a sigmoid with a
-  straight-through hard threshold in the cut. The signature slab becomes a
-  bool `[B, N, P]` (no 63-row limit), and the cut at position `i` is
-  `OR_p (b_p AND flip_p(i)) OR OR_p (s_p AND p(i))`, the same run logic
-  `_type_run_spans` implements today with its singleton mask. `11` is cut
-  by `s_digit`, not by a flip; the learner expresses the digit rule the same
-  way `<digitWholes>` does, without a digit-specific answer.
-- Credit: two channels. Through the straight-through threshold, the
-  reconstruction and answer costs reach `b_p` and `s_p` by autograd like
-  any parameter. The category utility of contract 4 is a count statistic,
-  not differentiable in the predicates, so it credits them by a score
-  update at epoch end in `Reset`: each predicate's weight moves by a step
-  proportional to the utility of the wholes its cut yielded during the
-  epoch minus the utility of the wholes at the rung above (the gain from
-  cutting there), clipped to `[0, 1]`. They are the only new parameters of
-  the analysis ladder.
-- Bootstrap: the four canonical classes initialise `b_p` for their rows as
-  priors (space and punctuation high, letter and digit low, `s_p` zero);
-  `<boundaryTypes>none</boundaryTypes>` disables that initialisation and the
-  canonical fallback entirely (the "no tagged types" test requires this
-  switch and asserts the fallback is really off).
+### 4. Category utility, the meeting rule, and the basic level
 
-### 4. The category-utility estimator and its bootstrap
-
-`concept_parts` / `concept_wholes` are deduplicated relation sets and
-`record_concept_fold_support` records a derivation; neither estimates a
-basic level. The contract adds explicit statistics as fixed-capacity
-tensor state on the ConceptualSpace SubSpace:
-
-- Observation unit: one presentation (one sentence in the serial loop),
-  counted once, after the last pass, never per recurrent pass or per
-  backward replay; frozen during held-out evaluation and under `eval()`.
-- Counts: `n_c` per admitted category row, `n_cf` per (category row,
-  feature row) where a feature is a constituent id (rung below) or a
-  containing whole id (rung above), and `n_f` per feature; Laplace
-  smoothing with `<utilitySmoothing>` (default 1), a minimum evidence
-  `<utilityMinCount>` (default 4) before a row's utility is trusted, ties
-  broken toward the coarser rung.
-- Utility per rung (Corter & Gluck 1992):
-  `CU(c) = P(c) * (sum_f P(f|c)^2 - sum_f P(f)^2)`, normalised across
-  rungs by the number of candidate rows at each rung so that a rung with
-  more rows is not favoured by count alone. This is a feature-predictability
-  hypothesis about where the basic level lies; whether it discovers idioms
-  is a Phase 2b test, not a premise.
-- Recurrence gate: `P(c) > 0` after one observation is not recurrence; a
-  candidate becomes admissible when it has been seen `<admissionCount>`
-  times (default 2) within the admission radius, and the rung is then
-  chosen by utility among admissible candidates.
-- The meeting rule: the basic level of a presentation is the rung at
-  which a part synthesized from below and a whole divided from above
-  coincide in extent and are both attested (the callosum's part-is-whole
-  identity, `insert_meta`). Utility is the estimator and tie-breaker at
-  that meeting, not the definition.
-- Reconciling with the two memory pressures: `P(c)` is the working-memory
-  term (few, frequent wholes) and the predictability term is the long-term
-  memory term (a bounded set of distinct wholes that predict their parts);
-  "coarsest attested" is the tie rule, not a separate criterion.
-- Bootstrap of the circular dependency (synthesis needs domains before
-  boundaries are learned; boundaries need attested wholes): the initial
-  cut is byte-complete (every byte a whole) plus the canonical priors of
-  contract 3; synthesis admits within those domains on the first epoch;
-  boundary weights update at epoch boundaries (`Reset`) from the counts
-  accrued during the epoch; synthesis admission commits per presentation.
+- **One estimator.** For any category `c`, admitted or candidate, over
+  the presentations seen: `n_c` (presentations containing `c`), `n_cf`
+  (containing `c` with feature `f`), `n_f`; a feature is a constituent
+  row (the rung below) or a containing whole row (the rung above);
+  Laplace smoothing `utilitySmoothing`, minimum evidence
+  `utilityMinCount`; a concept and a concept-feature pair count at most
+  once per presentation; counts commit at the training path's boundary
+  and are frozen under evaluation. `CU(c) = P(c) * (Σ_f P(f|c)² −
+  Σ_f P(f)²)`, normalised across rungs by the number of candidates at
+  the rung. A candidate phrase's `n_c` is its recurrence and its
+  features are its member concepts, the same formula; its gain is
+  `CU(phrase)` minus the best of its members'.
+- **The meeting rule.** The basic level of a presentation is the rung at
+  which a part joined from below and a whole divided from above
+  coincide in extent and are both attested (the callosum's
+  part-is-whole identity); utility is the estimator and the tie-breaker
+  there, ties toward the coarser rung. `P(c)` is the working-memory
+  pressure (few, frequent wholes), the predictability term the
+  long-term-memory pressure (a bounded set of distinct wholes that
+  predict their parts).
+- **Bootstrap.** The seeded class concepts give synthesis its first
+  domains; boundary types and sameness levels update at the boundary
+  from the epoch's counts; synthesis admission commits per presentation.
+  The circularity (synthesis needs domains, boundaries need attested
+  wholes) is broken by the seeded classes rather than by a byte floor.
+- **Salience of a division.** A row split by LBG exists regardless; its
+  begins / ends boundaries earn salience only if the wholes they yield
+  recur (the same learner, contract 3).
 
 ### 5. The mutation and compilation boundary
 
@@ -699,6 +694,51 @@ and update timing (Phases 1, 2b); [Params](../Params.md),
 [Mereology](../Mereology.md) and the
 [What specification](../specs/2026-07-27-teaching-modes-and-next-iteration.md)
 for configuration, algebra and the reconstruction / answer separation.
+
+## Resolutions (2026-09-11)
+
+The gaps listed at the end of the first slice, resolved as decisions:
+
+1. **What reaches the answer path.** A unit's STM slot holds its concept
+   row's atom (its identity at the meeting rung) with its position band;
+   digit identity reaches the answer through the grammar's composition
+   of slots, not through a separate attended-rung feed. The answer seed
+   stays the root idea. The experiment that tests this is the successor
+   pair on the ladder path with the per-unit concepts now carrying atom
+   identity (Phase 1 step 7 landed); its result decides whether the
+   answer path's capacity, not the representation, is the limit.
+2. **The admitted phrase's row.** An admitted phrase gets a codebook row
+   (the concept row allocation the word concept uses), initialised from
+   the additive composition of its members; the reduce step's `chunk`
+   result snaps to that row when the pair matches an admitted phrase
+   (the C-to-S round trip), so the row is what STM holds and what the
+   reconstruction and answer costs train; the witness keeps the parse.
+   That is what lets an idiom's meaning diverge from its parts while a
+   literal control stays compositional, and it is the idiom test's
+   remaining prerequisite.
+3. **Utility across rungs.** One estimator (contract 4) for admitted
+   and candidate categories; the improvised phrase formula is retired.
+4. **Persistence.** The utility counts, phrase hits and admissions, and
+   the boundary evidence ride the structural extras of the checkpoint
+   and round-trip with it (contract 6); the predicates are parameters
+   and already do.
+5. **The compiled path.** Eager-only licensing of `chunk` is accepted
+   for the slice; the provenance slab `(whole, unit, clause)` per STM
+   slot becomes a fixed-shape tensor carried through the functional
+   push in the next slice.
+6. **Open questions.** Q1: two knobs, because they play different roles:
+   the admission radius decides identity (nearest row), the LBG variance
+   threshold decides division; neither is derived from the other. Q2:
+   the coverage schedule shares the thinking loop's forced-closure
+   pressure knob. Q3: the cold start is re-tested under the difference
+   construction with the class concepts seeded and no byte floor.
+
+Implementation of these resolutions is the next slice: the difference-
+typed boundaries and the sameness level (replacing the flip weight and
+the singleton), whitespace as a null-operation unit, the seeded class
+concepts, the LBG gate lifted on the property inventory with predicate
+acquisition, the phrase row, the persistence of the counts, and the
+compiled provenance slab.
 
 ## Open defects found on the way
 

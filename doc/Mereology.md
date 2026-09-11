@@ -318,6 +318,52 @@ pass: the raise fires correctly when a whole has many parts; the live pid-keyed
 autobind binds 1 percept$\to$1 concept, so similarity-based many-to-one binding + the
 prune-and-rebind of moot edges are noted follow-ups.)
 
+### Automatic analysis: dividing wholes by LBG splitting {#lbg-division}
+
+Parts are synthesized automatically (the join over atoms, every pass);
+wholes are analysed automatically too, by division, and the mechanism is
+the Linde-Buzo-Gray split already on WholeSpace (`bin/Spaces.py`,
+`record_lbg_pull` / `maybe_split_lbg`, 2026-05-28). As implemented:
+
+- **Pull accumulation.** Every time a percept binds to a WholeSpace row
+  (the autobind path in `ConceptualSpace`), the row records the pull the
+  percept's code exerts on it: per row, the displacement sum
+  `Σ (v − W[row])`, the sum of squares `Σ (v − W[row])²` and the count.
+  Cost O(D) per binding; only WS-side rows (raw wholes and META rows
+  whose vectors live on the WS codebook) participate; non-finite pulls
+  raise (fail loud).
+- **Trigger.** A row splits when its count is at least `lbgMinCount`
+  (default 8) and the maximum per-coordinate assignment variance,
+  `E[x²] − E[x]²` over the accumulated displacements, exceeds
+  `lbgThreshold` (default 0.5): the positions bound to the row have
+  come to lie in (at least) two places.
+- **Direction and split.** The split direction is the unit-norm mean
+  displacement, the principal pull (no eigendecomposition). The
+  original row moves to `old + ε·d` in place; a fresh row is allocated
+  at `old − ε·d` through `insert_whole` (`lbgEpsilon`, default 0.1). The
+  split-off row inherits the original's fold provenance, and if the
+  original was the child of a META node a META edge is registered for
+  the new row too, so both halves stay reachable on the reverse walk.
+  The accumulators of the original row reset.
+- **Unsupervised.** Nothing about the trigger reads a loss: the
+  variance is a property of where the bound codes lie. Training only
+  shapes the code geometry over time; the division itself is automatic.
+
+**Where it stands and where it goes.** Today the split is gated off
+under the canonical property basis (`propertyBasis` true): the
+comment in the constructor calls the eight-class inventory stable and
+neither growing nor splitting, so the accumulators are not even built
+there. The fold-ladder plan (doc/plans/2026-09-10-meronomy-fold-ladder.md,
+contract 3) lifts that gate: the class rows are the coarsest wholes,
+every finer whole is a division of them, and a divided row acquires its
+analyzer predicate from the parts, the set of atoms whose codes fall on
+its side of the split, read through the callosum. From then on "row
+begins" and "row ends" are candidate boundary types under the
+difference construction. That is how a whole such as "vowels" comes to
+exist without being defined: the letter row's members separate in code,
+the row splits, the new row's predicate is the vowel set, and whether
+"vowel begins" ever bounds anything is the utility learner's decision.
+
 ### The corpus callosum links the towers (part `isa` whole)
 
 The full mechanism (see the spec): the **corpus callosum** in ConceptualSpace (the
