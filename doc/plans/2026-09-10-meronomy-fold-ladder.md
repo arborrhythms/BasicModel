@@ -778,10 +778,30 @@ acquired from the pulls' bytes, `_grow_boundary_weights`); the phrase row
 matching chunk in the reduce step); persistence of the utility counts,
 phrase hits / admissions / rows / gains and the acquired predicates
 through the structural extras; `admissionRadius` defined from
-`lbgThreshold`. Not done: the compiled provenance slab (eager-only
-licensing stands), the vowel test (a corpus whose codes split the letter
-row; the mechanism is exercised only by construction), and training the
-phrase row through the answer path end to end.
+`lbgThreshold`.
+
+Third slice (2026-09-11, Alec: "compilation is essential, with
+fullgraph"): the provenance is fixed-shape tensor state.  The STM carries
+a `[B, capacity, 3]` whole/unit/clause slab beside its six tensors, the
+ConceptualSpace a `[B, 32, 3]` proposal slab with a count and a `[64, 3]`
+admitted phrase-row table; the compiled word loop (`torch.while_loop`,
+one graph) pushes, folds and resets the slab with pure primitives
+(`functional_wholes_push` / `_reduce` / `_reset`), derives the `chunk`
+licensing as an `op_prior` tensor into the Language chooser, appends
+proposals and snaps a matching chunk to its phrase row inside the loop;
+`Reset` drains the proposal slab into the admission counts.  The eager
+reduce step uses the same primitives; the host mirrors are gone.  Two
+measures Alec asked for ride the epoch report (doc/Training.md "Epoch
+report"): sentences/s, and the word-unit fraction (whitespace words
+staged as exactly one unit), the assurance that the learned tiling
+operates over words; numbers and the defects they exposed (the compiled
+STM commit lost after the word loop, unit-based packing, device pinning)
+are in doc/benchmarks/2026-09-11-fold-ladder-throughput.md.  The legacy
+radix comparison (Phase 4) could not be built on this topology (dense
+lexer matrices; see the benchmark).  Not
+done: the vowel test (a corpus whose codes split the letter row; the
+mechanism is exercised only by construction) and training the phrase row
+through the answer path end to end.
 
 Implementation of these resolutions was the second slice (status above); what remains of it: the difference-
 typed boundaries and the sameness level (replacing the flip weight and
@@ -792,9 +812,9 @@ compiled provenance slab.
 
 ## Open defects found on the way
 
-- The Phase 2b provenance mirrors (slot wholes and units) are host-eager;
-  the compiled tensor peer (`functional_push_step_masked`) carries no such
-  slab yet, so `chunk` licensing is eager-only for now (contract 5).
+- (Resolved in the third slice.) The Phase 2b provenance was host-eager;
+  it is now the loop-carried `_wholes` slab and `chunk` licensing runs
+  inside the fullgraph word loop (contract 5).
 - `BaseModel.dispatch_per_row_reset` on the aligned ladder fixture fails
   in `WholeSpace._whole_ancestors` (`taxonomy_parent_map` is absent under
   the property basis) before any fold-ladder code runs; the training

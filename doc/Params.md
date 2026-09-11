@@ -149,7 +149,7 @@ Training loop and I/O.
 | `numTrials` | int | `1` | Independent training runs per invocation. |
 | `numEpochs` | int | `3` | Epochs per trial. |
 | `batchSize` | int | `64` | Contiguous streams through the dataset. Each batch row `b` receives the next item from stream `b`, so temporal context is coherent across steps. Capped at split length, so small eval sets yield one rectangular batch. |
-| `packSentences` | bool | `false` | For self-supervised word-loop training, pack consecutive complete sentences independently in each contiguous batch row up to `serialWordCapacity`. Row-local sentence boundaries are explicit and reset softly; sentences are never split, clipped, transposed, or reordered. Environment override: `BASIC_PACK_SENTENCES`. |
+| `packSentences` | bool | `false` | For self-supervised word-loop training, pack consecutive complete sentences independently in each contiguous batch row up to `serialWordCapacity`. Row-local sentence boundaries are explicit and reset softly; sentences are never split, clipped, transposed, or reordered. Under the canonical `<analysis>meronomy</analysis>` the brick budget and the row layout count the ladder's units (whitespace and digit units included), not whitespace words. Environment override: `BASIC_PACK_SENTENCES`. |
 | `numWorkers` | int | `0` | DataLoader prefetch workers. `0` = synchronous in-process batch assembly. |
 | `learningRate` | float | `0.001` | Adam learning rate. |
 | `reconstructionScale` | float | `0.5` | Weight of reconstruction loss vs prediction loss in $[0, 1]$: $\mathcal{L}_{\text{total}} = (1-r)\,\mathcal{L}_{\text{output}} + r\,\mathcal{L}_{\text{recon}}$.  Legacy name `reverseScale` is still parsed with a one-shot deprecation warning. |

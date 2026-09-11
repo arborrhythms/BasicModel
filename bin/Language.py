@@ -3746,7 +3746,7 @@ class SymbolizeLayer(GrammarLayer):
         if nearest_row is None:
             half = parent / 2.0
             return half, half
-        nearest_pos = ws._ws_row_to_pos.get(nearest_row)
+        nearest_pos = getattr(ws, "_ws_row_to_pos", {}).get(nearest_row)
         if nearest_pos is None:
             # Row isn't bound to a position (pre-Stage-3 WS row); no
             # taxonomy entry to walk.
@@ -14011,8 +14011,15 @@ class _FunctionalLanguageChooser:
 
     @staticmethod
     def choose_binary(state, reducer, row_gate, *, base_tau,
-                      occupancy_pressure=False, demand=False):
-        """Choose one bounded binary grammar operation without applying it."""
+                      occupancy_pressure=False, demand=False, op_prior=None):
+        """Choose one bounded binary grammar operation without applying it.
+
+        ``op_prior`` (``[B, 1, R]`` additive logits over the reduce ops, or
+        ``None``) is the structural licensing the caller derives from the
+        STM provenance slab (the fold-ladder ``chunk`` gate); it enters the
+        reducer's scores like any other tensor input, so the choice stays
+        one fixed-shape computation under ``torch.while_loop``.
+        """
         (buffer, depth, orders, grammar_orders,
          concept_rows, concept_activations) = state
         del orders, grammar_orders, concept_rows, concept_activations
@@ -14036,7 +14043,9 @@ class _FunctionalLanguageChooser:
         left = buffer[:, 1, :]
         right = buffer[:, 0, :]
         window = torch.stack((left, right), dim=1)
-        hard, soft, routing = reducer(window)
+        hard, soft, routing = (
+            reducer(window, op_prior=op_prior)
+            if torch.is_tensor(op_prior) else reducer(window))
         parent = (soft + (hard - soft).detach())[:, 0, :]
         if occupancy_pressure or demand:
             parent = routing["chosen_reduced"][:, 0, :]
@@ -14162,7 +14171,8 @@ class LanguageSpace(nn.Module):
         return _FunctionalLanguageChooser.choose_binary(
             state, layer, row_gate, base_tau=base_tau, demand=True)
 
-    def choose_sentence_seal_binary(self, state, row_gate, *, base_tau):
+    def choose_sentence_seal_binary(self, state, row_gate, *, base_tau,
+                                    op_prior=None):
         """Choose one demanded Binary while closing a sentence forest.
 
         Sentence sealing is semantically distinct from the retired recurring
@@ -14174,11 +14184,15 @@ class LanguageSpace(nn.Module):
             raise RuntimeError(
                 "LanguageSpace has no CS binary layer for sentence sealing")
         return _FunctionalLanguageChooser.choose_binary(
-            state, layer, row_gate, base_tau=base_tau, demand=True)
+            state, layer, row_gate, base_tau=base_tau, demand=True,
+            op_prior=op_prior)
 
     def choose_post_binary(
-            self, state, row_gate, pre_applied, *, base_tau):
-        """Choose the ordinary post-deposit Binary; CS applies the choice."""
+            self, state, row_gate, pre_applied, *, base_tau, op_prior=None):
+        """Choose the ordinary post-deposit Binary; CS applies the choice.
+
+        ``op_prior`` is the CS-derived structural licensing of the reduce
+        ops (see :meth:`_FunctionalLanguageChooser.choose_binary`)."""
         binary = self._tree_layer(2)
         if binary is None:
             raise RuntimeError("LanguageSpace requires a CS binary tree layer")
@@ -14188,7 +14202,7 @@ class LanguageSpace(nn.Module):
             torch.logical_not(pre_applied.reshape(-1)))
         return _FunctionalLanguageChooser.choose_binary(
             state, binary, post_gate, base_tau=base_tau,
-            occupancy_pressure=True)
+            occupancy_pressure=True, op_prior=op_prior)
 
     def choose_unary(self, state, row_gate):
         """Choose the post-Binary unary rewrite; CS applies the choice."""

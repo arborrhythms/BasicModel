@@ -5730,19 +5730,24 @@ class MeronymicFoldAdapter(Layer):
             if not inverse:
                 return x - coefficient * x * (1.0 - x)
             one_minus = 1.0 - coefficient
+            # The discriminant floor keeps d/dx sqrt finite at the
+            # degenerate point (x = 0 with c -> 1: a unit whose memberships
+            # are all zero, e.g. a whitespace unit); sqrt(0) has an
+            # infinite derivative and the packed-row backward overflowed
+            # to NaN (2026-09-11, packed FineWeb rows).
+            floor = 1e-6
             discriminant = (one_minus.square()
-                            + 4.0 * coefficient * x).clamp_min(0.0)
+                            + 4.0 * coefficient * x).clamp_min(floor)
             denominator = one_minus + torch.sqrt(discriminant)
-            return (2.0 * x / denominator.clamp_min(
-                torch.finfo(x.dtype).tiny)).clamp(0.0, 1.0)
+            return (2.0 * x / denominator.clamp_min(floor)).clamp(0.0, 1.0)
         if not inverse:
             return x + coefficient * x * (1.0 - x)
         one_plus = 1.0 + coefficient
+        floor = 1e-6
         discriminant = (one_plus.square()
-                        - 4.0 * coefficient * x).clamp_min(0.0)
+                        - 4.0 * coefficient * x).clamp_min(floor)
         denominator = one_plus + torch.sqrt(discriminant)
-        return (2.0 * x / denominator.clamp_min(
-            torch.finfo(x.dtype).tiny)).clamp(0.0, 1.0)
+        return (2.0 * x / denominator.clamp_min(floor)).clamp(0.0, 1.0)
 
     def _mem_cascade(self, membership, inverse=False, contractive=False):
         """Run an invertible monotone sigma/pi flow over memberships.
@@ -12058,7 +12063,8 @@ class RadixLayer(Layer):
 
                 bound_rows = sorted(
                     int(row)
-                    for row, pos in symbolic_space._ws_row_to_pos.items()
+                    for row, pos in getattr(
+                        symbolic_space, "_ws_row_to_pos", {}).items()
                     if (0 <= int(row) < active_count
                         and _has_surface_path(pos)))
                 if not bound_rows:
@@ -12118,7 +12124,7 @@ class RadixLayer(Layer):
         # and no surface-bytes path -- return b"" rather than
         # mis-indexing the PS table with an WS row id.
         ws = symbolic_space
-        nearest_pos = ws._ws_row_to_pos.get(nearest_row)
+        nearest_pos = getattr(ws, "_ws_row_to_pos", {}).get(nearest_row)
         if nearest_pos is None:
             return b""
         # Walk to a META node: either the nearest row IS a META, or
@@ -13374,13 +13380,38 @@ class ShortTermMemory(Layer):
     # -- per-forward live working buffer ---------------------------------
     # Fresh, plain-attribute tensors avoid torch.compile input mutation.
 
+    @staticmethod
+    def _assign_live(owner, name, value):
+        """Install a live STM tensor.
+
+        Under the compiler this is an in-place copy whenever the existing
+        tensor has the same shape/dtype/device: with a ``torch.while_loop``
+        in the graph, dynamo (torch 2.14 nightly) drops a later attribute
+        *assignment* of an attribute assigned earlier in the same graph
+        (the per-forward seed), so the reads after the word loop -- the
+        sentence reduce and the reconstruction loss -- saw the empty seed.
+        An in-place copy is tracked correctly and keeps the gradient.
+        Eager execution keeps the plain assignment (the buffer may change
+        shape, and a persisted buffer must not be mutated in place).
+        """
+        current = owner.__dict__.get(name)
+        if (torch.compiler.is_compiling() and torch.is_tensor(value)
+                and torch.is_tensor(current)
+                and tuple(current.shape) == tuple(value.shape)
+                and current.dtype == value.dtype
+                and current.device == value.device
+                and current is not value):
+            current.copy_(value)
+            return
+        object.__setattr__(owner, name, value)
+
     @property
     def _buffer(self):
         return self._live_buffer
 
     @_buffer.setter
     def _buffer(self, value):
-        object.__setattr__(self, '_live_buffer', value)
+        self._assign_live(self, '_live_buffer', value)
         # A wholesale carrier replacement invalidates provenance unless the
         # caller immediately installs the correspondingly transformed slabs.
         # Internal functional updates do exactly that; external legacy writes
@@ -13407,7 +13438,7 @@ class ShortTermMemory(Layer):
 
     @_depth.setter
     def _depth(self, value):
-        object.__setattr__(self, '_live_depth', value)
+        self._assign_live(self, '_live_depth', value)
 
     @property
     def _orders(self):
@@ -13415,7 +13446,7 @@ class ShortTermMemory(Layer):
 
     @_orders.setter
     def _orders(self, value):
-        object.__setattr__(self, '_live_orders', value)
+        self._assign_live(self, '_live_orders', value)
 
     @property
     def _grammar_orders(self):
@@ -13423,7 +13454,7 @@ class ShortTermMemory(Layer):
 
     @_grammar_orders.setter
     def _grammar_orders(self, value):
-        object.__setattr__(self, '_live_grammar_orders', value)
+        self._assign_live(self, '_live_grammar_orders', value)
 
     @property
     def _concept_rows(self):
@@ -13431,7 +13462,7 @@ class ShortTermMemory(Layer):
 
     @_concept_rows.setter
     def _concept_rows(self, value):
-        object.__setattr__(self, '_live_concept_rows', value)
+        self._assign_live(self, '_live_concept_rows', value)
 
     @property
     def _concept_activations(self):
@@ -13439,7 +13470,7 @@ class ShortTermMemory(Layer):
 
     @_concept_activations.setter
     def _concept_activations(self, value):
-        object.__setattr__(self, '_live_concept_activations', value)
+        self._assign_live(self, '_live_concept_activations', value)
 
     @property
     def _max_depth_host(self):
@@ -13614,9 +13645,9 @@ class ShortTermMemory(Layer):
         if getattr(self, "_slot_kinds", None) is not None:
             object.__setattr__(
                 self, "_slot_kinds", [[] for _ in range(batch)])
-        if getattr(self, "_slot_wholes", None) is not None:
-            object.__setattr__(
-                self, "_slot_wholes", [[] for _ in range(batch)])
+        self._wholes = torch.full(
+            (batch, int(self.capacity), 3), -1,
+            dtype=torch.long, device=device)
 
     # -- slot-kind provenance (word-bearing-fold filtering) ----------------
     # doc/plans/2026-07-13-word-grain-open-fronts.md Task B: per-row host
@@ -13647,67 +13678,136 @@ class ShortTermMemory(Layer):
                 del ks[b][cap:]
 
     # -- slot-whole provenance (meronomy fold-ladder plan, Phase 2b) --------
-    # Per-row host stacks mirroring the buffer discipline: the index of the
-    # coarser analysis whole each slot's unit belongs to (-1 = none / a fold
-    # across wholes).  ``None`` = recording off.  Host-eager only.
+    # One fixed-shape slab ``_wholes`` ``[B, capacity, 3]`` of longs mirrors
+    # the buffer discipline (newest at slot 0): per slot the index of the
+    # coarser analysis whole (the word) the unit belongs to, the unit's loop
+    # position and the clause whole's index; ``-1`` = none / a fold across
+    # wholes.  It is carried through the compiled word loop like the
+    # reference slabs, so the pure ``functional_wholes_*`` primitives below
+    # are the only mutation paths (eager methods wrap them).
 
-    def wholes_enable(self, batch):
-        object.__setattr__(self, "_slot_wholes", [[] for _ in range(int(batch))])
+    @property
+    def _wholes(self):
+        return self.__dict__.get('_live_wholes')
+
+    @_wholes.setter
+    def _wholes(self, value):
+        self._assign_live(self, '_live_wholes', value)
+
+    def ensure_whole_state(self):
+        """Return the ``[B, capacity, 3]`` provenance slab aligned with the
+        live STM payload (allocated empty when a legacy write dropped it)."""
+        buf = self._buffer
+        shape = (int(buf.shape[0]), int(buf.shape[1]), 3)
+        wholes = getattr(self, "_wholes", None)
+        if (not torch.is_tensor(wholes) or tuple(wholes.shape) != shape
+                or wholes.device != buf.device or wholes.dtype != torch.long):
+            wholes = torch.full(
+                shape, -1, dtype=torch.long, device=buf.device)
+            self._wholes = wholes
+        return wholes
+
+    @staticmethod
+    def functional_wholes_push(wholes, gate_b, whole_b, unit_b, clause_b):
+        """Masked newest-first push of ``(whole, unit, clause)`` at slot 0."""
+        B, cap, _ = wholes.shape
+        gate = gate_b.reshape(B).to(device=wholes.device, dtype=torch.bool)
+        entry = torch.stack(
+            (whole_b.reshape(B).to(dtype=torch.long, device=wholes.device),
+             unit_b.reshape(B).to(dtype=torch.long, device=wholes.device),
+             clause_b.reshape(B).to(dtype=torch.long, device=wholes.device)),
+            dim=-1).reshape(B, 1, 3)
+        shifted = torch.cat((entry, wholes[:, :cap - 1]), dim=1)
+        return torch.where(gate.reshape(B, 1, 1), shifted, wholes)
+
+    @staticmethod
+    def functional_wholes_reduce(wholes, applied_b):
+        """Fold the two newest slots: the parent keeps a whole (and a clause)
+        when both operands shared it, else ``-1``; a fold is no single
+        unit.  Rows where ``applied_b`` is off are bit-identical."""
+        B, cap, _ = wholes.shape
+        if int(cap) < 2:
+            return wholes
+        gate = applied_b.reshape(B).to(
+            device=wholes.device, dtype=torch.bool)
+        newer, older = wholes[:, 0], wholes[:, 1]
+        same_w = torch.logical_and(newer[:, 0] >= 0, newer[:, 0] == older[:, 0])
+        same_c = torch.logical_and(newer[:, 2] >= 0, newer[:, 2] == older[:, 2])
+        minus = torch.full_like(newer[:, 0], -1)
+        parent = torch.stack(
+            (torch.where(same_w, newer[:, 0], minus), minus,
+             torch.where(same_c, newer[:, 2], minus)), dim=-1).reshape(B, 1, 3)
+        shifted = torch.cat(
+            (parent, wholes[:, 2:], torch.full_like(wholes[:, :1], -1)), dim=1)
+        return torch.where(gate.reshape(B, 1, 1), shifted, wholes)
+
+    @staticmethod
+    def functional_wholes_reset(wholes, gate_b):
+        """Clear the provenance of the gated rows (a sentence boundary)."""
+        B = int(wholes.shape[0])
+        gate = gate_b.reshape(B).to(device=wholes.device, dtype=torch.bool)
+        return torch.where(
+            gate.reshape(B, 1, 1), torch.full_like(wholes, -1), wholes)
+
+    @staticmethod
+    def same_whole(wholes):
+        """``[B]`` bool: the two newest slots share a coarser whole at some
+        rung above the unit (the same word, or the same clause)."""
+        if int(wholes.shape[1]) < 2:
+            return torch.zeros(
+                int(wholes.shape[0]), dtype=torch.bool, device=wholes.device)
+        newer, older = wholes[:, 0], wholes[:, 1]
+        same_w = torch.logical_and(newer[:, 0] >= 0, newer[:, 0] == older[:, 0])
+        same_c = torch.logical_and(newer[:, 2] >= 0, newer[:, 2] == older[:, 2])
+        return torch.logical_or(same_w, same_c)
+
+    @staticmethod
+    def shared_whole(wholes):
+        """``[B]`` long: the whole the two newest slots share (the word, else
+        the clause), ``-1`` when none."""
+        B = int(wholes.shape[0])
+        if int(wholes.shape[1]) < 2:
+            return torch.full((B,), -1, dtype=torch.long, device=wholes.device)
+        newer, older = wholes[:, 0], wholes[:, 1]
+        same_w = torch.logical_and(newer[:, 0] >= 0, newer[:, 0] == older[:, 0])
+        same_c = torch.logical_and(newer[:, 2] >= 0, newer[:, 2] == older[:, 2])
+        minus = torch.full_like(newer[:, 0], -1)
+        return torch.where(
+            same_w, newer[:, 0], torch.where(same_c, newer[:, 2], minus))
+
+    @staticmethod
+    def newest_units(wholes):
+        """``[B, 2]`` long: (unit of slot 1, unit of slot 0), ``-1`` unknown."""
+        B = int(wholes.shape[0])
+        if int(wholes.shape[1]) < 2:
+            return torch.full((B, 2), -1, dtype=torch.long, device=wholes.device)
+        return torch.stack((wholes[:, 1, 1], wholes[:, 0, 1]), dim=-1)
 
     def note_whole_masked(self, gate_rows, wholes, unit=-1, clauses=None):
-        """Record ``(whole, unit, clause)`` for a slot-0 push on the gated
-        rows: the coarser word-whole's index, the unit's loop position
-        (``-1`` for a fold, which is no single unit) and the clause-whole's
-        index (the rung above the words)."""
-        ws = getattr(self, "_slot_wholes", None)
-        if ws is None:
-            return
-        cap = int(self.capacity)
-        for b, on in enumerate(gate_rows):
-            if on and b < len(ws):
-                w = int(wholes[b]) if b < len(wholes) else -1
-                c = int(clauses[b]) if clauses is not None and b < len(clauses) else -1
-                ws[b].insert(0, (w, int(unit), c))
-                del ws[b][cap:]
+        """Eager wrapper: record ``(whole, unit, clause)`` for a slot-0 push
+        on the gated rows (tensors or lists; ``unit`` may be one int)."""
+        slab = self.ensure_whole_state()
+        B = int(slab.shape[0])
+        gate = torch.as_tensor(gate_rows, device=slab.device).reshape(B)
+        whole = torch.as_tensor(wholes, device=slab.device).reshape(B)
+        unit_t = (torch.as_tensor(unit, device=slab.device).reshape(-1)
+                  .expand(B) if torch.is_tensor(unit) or isinstance(unit, (list, tuple))
+                  else torch.full((B,), int(unit), dtype=torch.long, device=slab.device))
+        clause = (torch.as_tensor(clauses, device=slab.device).reshape(B)
+                  if clauses is not None
+                  else torch.full((B,), -1, dtype=torch.long, device=slab.device))
+        self._wholes = self.functional_wholes_push(
+            slab, gate, whole, unit_t, clause)
 
     def note_reduce_wholes(self, reduced_rows):
-        """Mirror a top-2 fold: the parent keeps a whole when both operands
-        shared it (at each rung), else -1; a fold is no single unit."""
-        ws = getattr(self, "_slot_wholes", None)
-        if ws is None:
-            return
-        for b, on in enumerate(reduced_rows):
-            if on and b < len(ws) and len(ws[b]) >= 2:
-                (w0, _u0, c0), (w1, _u1, c1) = ws[b][0][:3], ws[b][1][:3]
-                ws[b][0:2] = [(w0 if w0 == w1 else -1, -1, c0 if c0 == c1 else -1)]
+        """Eager wrapper of :meth:`functional_wholes_reduce`."""
+        slab = self.ensure_whole_state()
+        gate = torch.as_tensor(reduced_rows, device=slab.device)
+        self._wholes = self.functional_wholes_reduce(slab, gate)
 
-    def same_whole_rows(self, batch):
-        """[B] bool: the two newest slots share a coarser whole at some
-        rung above the unit (the same word, or the same clause)."""
-        ws = getattr(self, "_slot_wholes", None)
-        out = [False] * int(batch)
-        if ws is None:
-            return out
-        for b in range(min(int(batch), len(ws))):
-            k = ws[b]
-            if len(k) < 2:
-                continue
-            same_word = k[0][0] >= 0 and k[0][0] == k[1][0]
-            same_clause = len(k[0]) > 2 and k[0][2] >= 0 and k[0][2] == k[1][2]
-            out[b] = bool(same_word or same_clause)
-        return out
-
-    def newest_units(self, batch):
-        """[B] (unit of slot 1, unit of slot 0), -1 where unknown."""
-        ws = getattr(self, "_slot_wholes", None)
-        out = [(-1, -1)] * int(batch)
-        if ws is None:
-            return out
-        for b in range(min(int(batch), len(ws))):
-            k = ws[b]
-            if len(k) >= 2:
-                out[b] = (k[1][1], k[0][1])
-        return out
+    def same_whole_rows(self):
+        """Eager wrapper of :meth:`same_whole` on the live slab."""
+        return self.same_whole(self.ensure_whole_state())
 
     def note_push_all(self, kind):
         """Kind mirror of an unmasked all-rows slot-0 push."""
@@ -13758,6 +13858,12 @@ class ShortTermMemory(Layer):
         self._grammar_orders = new_grammar
         self._concept_rows = new_concept_rows
         self._concept_activations = new_concept_activations
+        wholes = getattr(self, "_wholes", None)
+        new_wholes = torch.full(
+            (B, capacity, 3), -1, dtype=torch.long, device=device)
+        if torch.is_tensor(wholes) and old_cap > 0:
+            new_wholes[:, :old_cap] = wholes[:, :old_cap]
+        self._wholes = new_wholes
         if self._word_subspace is None:
             self._live_capacity = capacity
 

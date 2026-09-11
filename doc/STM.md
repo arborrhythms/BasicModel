@@ -1005,10 +1005,43 @@ newest unanswered input) and `latest_output` for the resolve step.
 
 ## Slot provenance for the fold ladder (2026-09-10)
 
-Beside the slot kinds, the STM keeps a host-eager mirror of each slot's
-coarser analysis whole and unit position (`note_whole_masked`,
-`note_reduce_wholes`, `same_whole_rows`, `newest_units`; see
-doc/plans/2026-09-10-meronomy-fold-ladder.md, Phase 2b). The reduce step
-reads it to license the grammar's `chunk` on a pair inside one whole and
-to propose the pair's concepts for admission; a fold across wholes has no
-whole and is no single unit.
+Beside the slot kinds, the STM keeps one fixed-shape provenance slab
+`_wholes` `[B, capacity, 3]` of longs, newest at slot 0 like the buffer:
+per slot the index of the coarser analysis whole (the word) the unit
+belongs to, the unit's loop position and the clause whole's index; `-1`
+means none (a fold across wholes has no whole and is no single unit).
+The slab is CS-owned sentence state exactly like the reference slabs: the
+compiled word loop carries it through `torch.while_loop` beside the six
+STM tensors (fullgraph), and the only mutation paths are the pure
+primitives `ShortTermMemory.functional_wholes_push` (masked slot-0 push),
+`functional_wholes_reduce` (a top-2 fold keeps a whole or clause only when
+both operands shared it) and `functional_wholes_reset` (a sentence
+boundary); the eager methods `note_whole_masked`, `note_reduce_wholes`
+and `same_whole_rows` wrap them.  `same_whole` / `shared_whole` /
+`newest_units` are the tensor reads.
+
+The reduce step (eager and compiled alike) turns the slab into the
+grammar's `chunk` licensing: `_chunk_structural_prior` is a `[B, 1, R]`
+additive logit, the learned `chunk_prior` on a pair the tiling places in
+one whole (word or clause) and `-1e4` elsewhere, handed to the Language
+chooser as `op_prior`.  After the fold, `_chunk_reduce_provenance`
+appends a chosen chunk of two units with concept ids to the
+ConceptualSpace's fixed proposal slab (`[B, 32, 3]` plus a count, also
+loop-carried), looks the pair up in the admitted phrase-row table
+(`chunk_row_table`, `[64, 3]`) and, when admitted, references the phrase's
+row at the folded slot (`apply_phrase_rows`).  `ConceptualSpace.Reset`
+drains the proposal slab into the host counts that admit phrases
+(doc/plans/2026-09-10-meronomy-fold-ladder.md, Phase 2b, contract 7).
+
+Committing live state under the compiler (2026-09-11): every STM
+property setter (`_buffer`, `_depth`, the order and reference slabs,
+`_wholes`) goes through `ShortTermMemory._assign_live`, which copies in
+place when compiling and the shapes match. With a `torch.while_loop` in
+the graph, dynamo (torch 2.14 nightly) drops a later attribute
+*assignment* of an attribute assigned earlier in the same graph (the
+per-forward seed in `_per_word_prelude`), so the sentence reduce and the
+reconstruction loss after the word loop read the empty seed; an in-place
+copy is tracked and keeps the gradient. Eager execution keeps the plain
+assignment. Anything an eager consumer reads after a compiled call is an
+explicit output of `_forward_with_compiled_sentence_state`, never an
+attribute escape.

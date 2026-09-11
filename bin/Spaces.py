@@ -9772,6 +9772,12 @@ class InputSpace(Space):
         # propagate via copy_context. Registered by BaseModel.create_from_config
         # once SymbolSpace exists.
         self._model_symbolSpace = None
+        # Unit tiler injected by the model when the analysis ladder is live
+        # (meronomy fold-ladder plan): ``bytes -> [(start, end), ...]``.
+        # Packers count a sentence's UNITS with it (whitespace and digit
+        # units included) instead of its whitespace words; ``None`` keeps the
+        # whitespace-word layout of the legacy cuts.
+        self._unit_span_fn = None
         # End-of-stream diagnostic: ``list[bool]`` of per-row "this row
         # has no valid windows in the current tick" flags. Sized lazily
         # by the AR forward() path. Under the rolling-cursor handoff
@@ -9928,6 +9934,38 @@ class InputSpace(Space):
             getattr(self, "_serial_word_capacity", 0) or 0)
         return max(1, min(word_capacity, int(self.PACKED_SENTENCE_SLOTS)))
 
+    def sentence_unit_count(self, sentence, trailing_space=False):
+        """Units of one sentence surface under the live tiling (the unit
+        tiler when injected, else whitespace words).  ``trailing_space``
+        counts the sentence as it sits inside a packed row, followed by the
+        joining space (one more unit when whitespace units are on)."""
+        import Meronomy
+        raw = str(sentence).encode("ascii", errors="replace")
+        fn = self._unit_span_fn
+        if fn is None:
+            return len(Meronomy.word_spans(raw))
+        if trailing_space:
+            raw = raw + b" "
+        return len(fn(raw))
+
+    def _unit_counts_by_sentence(self, sentences):
+        """Per-sentence unit counts of the joined row (``" ".join``), each
+        joining space attributed to the sentence before it."""
+        joined = " ".join(sentences).encode("ascii", errors="replace")
+        spans = self._unit_span_fn(joined)
+        starts = []
+        cursor = 0
+        for sentence in sentences:
+            starts.append(cursor)
+            cursor += len(sentence.encode("ascii", errors="replace")) + 1
+        counts = [0] * len(sentences)
+        k = 0
+        for a, _z in sorted(spans):
+            while k + 1 < len(starts) and a >= starts[k + 1]:
+                k += 1
+            counts[k] += 1
+        return counts
+
     def prepPackedInput(self, sentence_rows):
         """Stage B chronological rows of complete sentences in one word slab.
 
@@ -9963,8 +10001,7 @@ class InputSpace(Space):
                 # ASCII-replaces non-ASCII characters before PartSpace sees
                 # them. Count that exact byte representation so boundary
                 # metadata cannot drift from the staged word mask.
-                count = len(Meronomy.word_spans(
-                    sentence.encode("ascii", errors="replace")))
+                count = self.sentence_unit_count(sentence)
                 if count < 1:
                     raise ValueError(
                         f"packed row {b} contains an empty sentence")
@@ -9980,6 +10017,16 @@ class InputSpace(Space):
                     f"packed row {b} contains {total} words, exceeding W="
                     f"{capacity}; the packer must start a new brick")
             joined = " ".join(sentences)
+            if self._unit_span_fn is not None and sentences:
+                # Units of the joined row, attributed to sentences by byte
+                # range; the joining space (a unit when whitespace units
+                # are on) belongs to the sentence it follows.
+                word_counts = self._unit_counts_by_sentence(sentences)
+                total = sum(word_counts)
+                if total > capacity:
+                    raise ValueError(
+                        f"packed row {b} contains {total} units, exceeding W="
+                        f"{capacity}; the packer must start a new brick")
             encoded_bytes = len(joined.encode("ascii", errors="replace"))
             byte_capacity = int(getattr(self.data, "inputLength", 0) or 0)
             if byte_capacity > 0 and encoded_bytes > byte_capacity:
@@ -9987,8 +10034,11 @@ class InputSpace(Space):
                     f"packed row {b} contains {encoded_bytes} bytes, "
                     f"exceeding InputSpace capacity {byte_capacity}; "
                     "refusing implicit stringTensor clipping")
-            joined_count = len(Meronomy.word_spans(
-                joined.encode("ascii", errors="replace"))) if joined else 0
+            joined_count = (
+                len(self._unit_span_fn(joined.encode("ascii", errors="replace")))
+                if self._unit_span_fn is not None
+                else len(Meronomy.word_spans(
+                    joined.encode("ascii", errors="replace")))) if joined else 0
             if joined_count != total:
                 raise RuntimeError(
                     "joining packed sentence surfaces changed lexer word "
@@ -10869,7 +10919,9 @@ class InputSpace(Space):
                     (text.encode("utf-8") if isinstance(text, str)
                      else bytes(text))
                     for text in row if text is not None)
-                max_words = max(max_words, len(Meronomy.word_spans(raw)))
+                fn = getattr(self, "_unit_span_fn", None)
+                max_words = max(max_words, len(fn(raw)) if fn is not None
+                                else len(Meronomy.word_spans(raw)))
         needed = max(1, int(max_words))
         if needed > widths[-1]:
             raise ValueError(
@@ -16688,6 +16740,111 @@ class ConceptualSpace(Space):
             self.params.append(prior)
         return prior
 
+    # Fixed capacities of the tensor-side chunk state carried through the
+    # compiled word loop (fold-ladder plan, Phase 2b): admitted phrase rows
+    # as a ``[T, 3]`` lookup (left member, right member, row; ``-2`` pads)
+    # and per-row proposal slabs ``[B, P, 3]`` (left, right, shared whole).
+    CHUNK_TABLE_CAPACITY = 64
+    CHUNK_PROPOSAL_CAPACITY = 32
+
+    def chunk_row_table(self, device):
+        """``[T, 3]`` long: the admitted phrase rows as a fixed-shape lookup.
+
+        Rebuilt eagerly (the stem's ``_ensure_chunk_machinery`` and every
+        admission) and stored as ``_chunk_row_table``; compiled bodies read
+        that tensor as a loop constant, so an admission changes values, not
+        the graph.
+        """
+        rows = self.__dict__.get("_chunk_rows") or {}
+        T = int(self.CHUNK_TABLE_CAPACITY)
+        table = torch.full((T, 3), -2, dtype=torch.long)
+        for i, ((a, b), row) in enumerate(sorted(rows.items())[:T]):
+            table[i, 0], table[i, 1], table[i, 2] = int(a), int(b), int(row)
+        table = table.to(device)
+        self._chunk_row_table = table
+        return table
+
+    def ensure_chunk_proposal_state(self, batch, device):
+        """Return ``(slab [B, P, 3], count [B])``: the pending phrase
+        proposals of this presentation, fixed-shape so the compiled word
+        loop can carry and return them; drained at ``Reset``."""
+        B, P = int(batch), int(self.CHUNK_PROPOSAL_CAPACITY)
+        slab = getattr(self, "_chunk_prop_slab", None)
+        count = getattr(self, "_chunk_prop_count", None)
+        if (not torch.is_tensor(slab) or tuple(slab.shape) != (B, P, 3)
+                or slab.device != torch.device(device)):
+            slab = torch.full((B, P, 3), -1, dtype=torch.long, device=device)
+            count = torch.zeros(B, dtype=torch.long, device=device)
+            # Plain attributes (not ``__dict__`` stores): the compiled word
+            # loop commits the carried slabs back through ordinary
+            # attribute assignment, which the compiler replays.
+            self._chunk_prop_slab = slab
+            self._chunk_prop_count = count
+        return slab, count
+
+    @staticmethod
+    def functional_chunk_propose(slab, count, write_b, left_b, right_b, shared_b):
+        """Append ``(left, right, shared)`` at each gated row's next free
+        proposal column (saturating at the capacity); pure and fixed-shape."""
+        B, P, _ = slab.shape
+        gate = write_b.reshape(B).to(device=slab.device, dtype=torch.bool)
+        col = count.clamp(0, P - 1).reshape(B, 1, 1).expand(B, 1, 3)
+        entry = torch.stack(
+            (left_b.reshape(B), right_b.reshape(B), shared_b.reshape(B)),
+            dim=-1).to(dtype=torch.long, device=slab.device).reshape(B, 1, 3)
+        written = slab.scatter(1, col, entry)
+        next_slab = torch.where(gate.reshape(B, 1, 1), written, slab)
+        next_count = count + torch.logical_and(gate, count < P).to(count.dtype)
+        return next_slab, next_count
+
+    @staticmethod
+    def lookup_chunk_rows(table, left_b, right_b):
+        """``[B]`` long: the admitted phrase row of each ``(left, right)``
+        member pair, ``-1`` when none (fixed-shape match over the table)."""
+        B = int(left_b.shape[0])
+        hit = torch.logical_and(
+            table[:, 0].reshape(1, -1) == left_b.reshape(B, 1),
+            table[:, 1].reshape(1, -1) == right_b.reshape(B, 1))
+        any_hit = hit.any(dim=1)
+        first = hit.to(torch.long).argmax(dim=1)
+        rows = table[:, 2][first]
+        return torch.where(any_hit, rows, torch.full_like(rows, -1))
+
+    @staticmethod
+    def apply_phrase_rows(state, phrase_row, applied):
+        """A chunk on an admitted pair references the phrase's own row at
+        the folded slot 0 (contract 7) so later reads and the answer path
+        use it; pure over the six CS-owned STM tensors."""
+        (buffer, depth, orders, grammar_orders,
+         concept_rows, concept_activations) = state
+        B = int(buffer.shape[0])
+        snap = torch.logical_and(applied.reshape(B), phrase_row.reshape(B) >= 0)
+        top = torch.where(snap, phrase_row.reshape(B), concept_rows[:, 0])
+        top_act = torch.where(
+            snap, torch.ones_like(concept_activations[:, 0]),
+            concept_activations[:, 0])
+        return (
+            buffer, depth, orders, grammar_orders,
+            torch.cat((top.reshape(B, 1), concept_rows[:, 1:]), dim=1),
+            torch.cat((top_act.reshape(B, 1), concept_activations[:, 1:]), dim=1))
+
+    def _drain_chunk_proposal_slab(self):
+        """Move the tensor proposals of the finished presentation into the
+        host list ``_commit_chunk_admissions`` counts (eager, at Reset)."""
+        slab = getattr(self, "_chunk_prop_slab", None)
+        count = getattr(self, "_chunk_prop_count", None)
+        if not torch.is_tensor(slab) or not torch.is_tensor(count):
+            return
+        counts = count.detach().to("cpu").tolist()
+        rows = slab.detach().to("cpu").tolist()
+        proposals = self.__dict__.setdefault("_chunk_proposals", [])
+        for b, n in enumerate(counts):
+            for left, right, shared in rows[b][:int(n)]:
+                if left >= 0 and right >= 0:
+                    proposals.append((b, (int(left), int(right)), int(shared)))
+        self._chunk_prop_slab = torch.full_like(slab, -1)
+        self._chunk_prop_count = torch.zeros_like(count)
+
     def utility_counts(self):
         """Host-side counters, updated once per presentation at ``Reset``:
         ``n_c[concept]``, ``n_cf[concept][feature]``, ``n_f[feature]`` and
@@ -16751,6 +16908,7 @@ class ConceptualSpace(Space):
         """Admit a chunked phrase (contract 7) once it has recurred
         ``admissionCount`` times and its utility gain over its members is
         positive: a concept of its own, parts = the member concepts."""
+        self._drain_chunk_proposal_slab()
         proposals = self.__dict__.pop("_chunk_proposals", None) or []
         if not proposals:
             return
@@ -16821,6 +16979,9 @@ class ConceptualSpace(Space):
                 pass
             admitted[members] = int(A)
             hits.pop(members, None)
+        cached = getattr(self, "_chunk_row_table", None)
+        if torch.is_tensor(cached):
+            self.chunk_row_table(cached.device)
 
     def Reset(self, batch=None, hard=True):
         """Clear the subspace event so next forward() does a full recompute.
@@ -23006,8 +23167,9 @@ def _predicate_unit_spans(slab, begins_on, ends_on, atom_on, discard_on):
     B, N, C = int(slab.shape[0]), int(slab.shape[1]), int(slab.shape[2])
     first = torch.zeros(B, 1, dtype=torch.bool, device="cpu")
     is_run = ~((slab & discard_on.view(1, 1, C)).any(dim=-1))
-    prev = torch.cat([torch.zeros(B, 1, C, dtype=torch.bool), slab[:, :-1]], 1)
-    nxt = torch.cat([slab[:, 1:], torch.zeros(B, 1, C, dtype=torch.bool)], 1)
+    edge = torch.zeros(B, 1, C, dtype=torch.bool, device=slab.device)
+    prev = torch.cat([edge, slab[:, :-1]], 1)
+    nxt = torch.cat([slab[:, 1:], edge], 1)
     begins_here = (slab & ~prev & begins_on.view(1, 1, C)).any(dim=-1)   # left boundary at i
     ends_next = (slab & ~nxt & ends_on.view(1, 1, C)).any(dim=-1)        # right boundary after i
     begins_next = torch.cat([begins_here[:, 1:], first], 1)
@@ -24149,9 +24311,12 @@ class WholeSpace(Space):
         the byte's atomic column, every tagged property row holding at the
         byte (from ``property_kind``), and every split row whose acquired
         predicate contains the byte (``_row_bytes``)."""
+        idx = idx.detach().to("cpu")
         B, N = int(idx.shape[0]), int(idx.shape[1])
         C = self._predicate_column_count()
-        slab = torch.zeros(B, N, C, dtype=torch.bool)
+        # Host tensors throughout (a default-device context must not move
+        # this host-side tiling onto the accelerator).
+        slab = torch.zeros(B, N, C, dtype=torch.bool, device="cpu")
         slab.scatter_(2, idx.clamp(0, 255).unsqueeze(-1), True)
         lut = self.__dict__.get("_predicate_byte_lut")
         if lut is None or int(lut.shape[1]) != C - self._ATOMIC_COLUMNS:
@@ -24163,7 +24328,7 @@ class WholeSpace(Space):
     def _build_predicate_byte_lut(self, n_rows):
         """``[256, n_rows]`` bool: which property rows hold at which byte,
         from the tagged classes and the acquired predicates of split rows."""
-        lut = torch.zeros(256, max(0, n_rows), dtype=torch.bool)
+        lut = torch.zeros(256, max(0, n_rows), dtype=torch.bool, device="cpu")
         rows = getattr(self, "_predicate_rows", {}) or {}
         for r, classes in rows.items():
             if not (0 <= int(r) < n_rows):
@@ -24182,16 +24347,16 @@ class WholeSpace(Space):
     def _predicate_masks(self):
         C = self._predicate_column_count()
         bw = getattr(self, "begins_weight", None)
+        zeros = lambda: torch.zeros(C, dtype=torch.bool, device="cpu")
         with torch.no_grad():
-            begins_on = torch.sigmoid(bw) > 0.5 if torch.is_tensor(bw) else torch.zeros(C, dtype=torch.bool)
-            ends_on = (torch.sigmoid(self.ends_weight) > 0.5
-                       if torch.is_tensor(getattr(self, "ends_weight", None)) else torch.zeros(C, dtype=torch.bool))
-            atom_on = (torch.sigmoid(self.atom_level) > 0.5
-                       if torch.is_tensor(getattr(self, "atom_level", None)) else torch.zeros(C, dtype=torch.bool))
+            begins_on = (torch.sigmoid(bw) > 0.5).to("cpu") if torch.is_tensor(bw) else zeros()
+            ends_on = ((torch.sigmoid(self.ends_weight) > 0.5).to("cpu")
+                       if torch.is_tensor(getattr(self, "ends_weight", None)) else zeros())
+            atom_on = ((torch.sigmoid(self.atom_level) > 0.5).to("cpu")
+                       if torch.is_tensor(getattr(self, "atom_level", None)) else zeros())
         if int(begins_on.shape[0]) != C:
-            begins_on = torch.zeros(C, dtype=torch.bool); ends_on = torch.zeros(C, dtype=torch.bool)
-            atom_on = torch.zeros(C, dtype=torch.bool)
-        discard_on = torch.zeros(C, dtype=torch.bool)
+            begins_on = zeros(); ends_on = zeros(); atom_on = zeros()
+        discard_on = zeros()
         discard_on[0] = True                                # the pad byte
         if not getattr(self, "whitespace_units", False):
             # Whitespace stays a discarded boundary-only class until
@@ -24200,14 +24365,40 @@ class WholeSpace(Space):
                 discard_on[int(lo):int(hi) + 1] = True
         return begins_on, ends_on, atom_on, discard_on
 
+    def unit_spans_of_bytes(self, byte_values):
+        """``[(start, end), ...]`` unit spans of one raw byte string under
+        the current tiling (the learned predicates, else the class runs):
+        the same cut ``stage_analysis_spans`` stages, so packers can count
+        a sentence's units before the stem runs.  Host-side."""
+        raw = bytes(byte_values)
+        if not raw:
+            return []
+        idx = torch.tensor([list(raw)], dtype=torch.long, device="cpu").clamp(0, 255)
+        bw = getattr(self, "begins_weight", None)
+        if torch.is_tensor(bw) and getattr(self, "property_basis", False):
+            fine, _slab = self._unit_tiling_from_predicates(idx)
+        else:
+            type_ids = _analysis_type_lut(self)[idx]
+            single = (_analysis_digit_mask(self, type_ids, False)
+                      if getattr(self, "digit_wholes", False) else None)
+            unit_types = torch.where(type_ids == _TYPE_DIGIT,
+                                     torch.full_like(type_ids, _TYPE_LETTER), type_ids)
+            fine = _type_run_spans(unit_types, singleton=single)
+        return [(int(a), int(z)) for (a, z) in fine[0].tolist() if z > a]
+
     def _unit_tiling_from_predicates(self, idx):
         """The unit tiling and the slab; the cold start (no column on) is
         the atomic tiling, every byte a whole."""
-        slab = self._predicate_slab(idx)
-        begins_on, ends_on, atom_on, discard_on = self._predicate_masks()
+        # Host computation (the boundary learner reads the slab through
+        # host counters); the spans return on the input's device.
+        idx_host = idx.detach().to("cpu")
+        slab = self._predicate_slab(idx_host)
+        begins_on, ends_on, atom_on, discard_on = (
+            m.to("cpu") for m in self._predicate_masks())
         if not bool(begins_on.any() or ends_on.any() or atom_on.any()):
             atom_on = torch.ones_like(atom_on)
-        return _predicate_unit_spans(slab, begins_on, ends_on, atom_on, discard_on), slab
+        spans = _predicate_unit_spans(slab, begins_on, ends_on, atom_on, discard_on)
+        return spans.to(idx.device), slab
 
     def _observe_candidate_tilings(self, byte_idx, slab, current):
         """Accrue, per candidate boundary type present in the batch, the
@@ -24331,7 +24522,8 @@ class WholeSpace(Space):
         d = int(min(v.shape[0], W.shape[1]))
         delta = (v[:d] - W[int(row), :d].detach()).clone()
         tab = self.__dict__.setdefault("_property_lbg", {})
-        rec = tab.setdefault(int(row), {"sum": torch.zeros(d), "sq": torch.zeros(d), "n": 0, "pulls": []})
+        rec = tab.setdefault(int(row), {"sum": torch.zeros(d, device="cpu"),
+                                        "sq": torch.zeros(d, device="cpu"), "n": 0, "pulls": []})
         rec["sum"] = rec["sum"] + delta.to("cpu"); rec["sq"] = rec["sq"] + (delta * delta).to("cpu"); rec["n"] += 1
         rec["pulls"].append((delta.to("cpu").clone(), tuple(int(x) & 0xFF for x in byte_values)))
         if len(rec["pulls"]) > 512:
@@ -24390,7 +24582,7 @@ class WholeSpace(Space):
         for name in ("begins_weight", "ends_weight", "atom_level"):
             w = getattr(self, name, None)
             if torch.is_tensor(w) and int(w.shape[0]) < C:
-                grown = torch.full((C,), -4.0)
+                grown = torch.full((C,), -4.0, device=w.device, dtype=w.dtype)
                 grown[: int(w.shape[0])] = w.detach()
                 new_p = nn.Parameter(grown)
                 setattr(self, name, new_p)

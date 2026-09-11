@@ -438,7 +438,13 @@ loop advances each contiguous row until the next complete sentence would
 exceed `serialWordCapacity`, the raw byte slab, or the fixed sentence-root
 FIFO. Thus one B-wide optimizer brick can contain a different number of
 sentences in every row while preserving each row's corpus chronology. A
-sentence never crosses a brick. Explicit word-to-sentence IDs drive the
+sentence never crosses a brick. Under the canonical `<analysis>meronomy
+</analysis>` the brick budget and the word-to-sentence layout are counted
+in the analysis ladder's units (whitespace and digit units included; the
+joining space belongs to the sentence it follows), the same cut the stem
+stages, so the packed layout and the staged unit mask agree by
+construction (`WholeSpace.unit_spans_of_bytes`,
+`InputSpace.sentence_unit_count`). Explicit word-to-sentence IDs drive the
 row-local soft resets inside CSLang; the final sentence in each row remains
 live through loss, backward, discourse, and the contextual concept update,
 then resets at the eager brick boundary. The log reports complete sentences
@@ -525,6 +531,24 @@ then ends the episode (`<whatThinkingDetach>`), all reported under
 `what_report()["thinking"]` and `["policy"]["thinking"]`.
 
 ---
+
+
+## Epoch report: throughput and word units
+
+`runEpoch` closes a packed epoch with one line, e.g.
+`Packed training throughput: 412 complete sentences in 61.2s = 6.73
+sentences/s (16 optimizer bricks, B=8, W=64; word units 99.6% of 5,120
+words)`.  The per-batch `batch = k (Δ=…s)` lines give the steady-state
+rate once compilation has warmed up.  `word units` is the assurance that
+the model operates over words now that the analysis tiling is learned
+rather than fixed (`<boundaryTypes>`, doc/Mereology.md): the fraction of
+whitespace-delimited words of the epoch's presentations that were staged
+as exactly one unit (`BaseModel.word_unit_fraction()`; counters reset per
+epoch).  Under the canonical boundary types plain text reads 100%; a
+numeral under `<digitWholes>` is deliberately several digit units, so it
+counts as a word that is not one unit; the atomic cold start
+(`<boundaryTypes>none</boundaryTypes>`) reads 0% until the boundary
+learner has acquired the whitespace boundary (test/test_meronomy_ladder.py).
 
 ## SBOW vs CBOW
 

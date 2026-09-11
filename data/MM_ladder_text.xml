@@ -80,8 +80,8 @@
          seam as the word recursion; otherwise it would reintroduce a hidden
          136 -> 1032 coordinate pad before the aligned loop begins. -->
     <sentenceProtocol>false</sentenceProtocol>
-    <serialWordCapacity>32</serialWordCapacity>
-    <serialWordBuckets>32</serialWordBuckets>
+    <serialWordCapacity>128</serialWordCapacity>
+    <serialWordBuckets>128</serialWordBuckets>
     <!-- Fixed compiler input extent; words remain complete and PS still
          reduces them into its configured eight live locations. P64 means at
          most 64 radix/subword integer IDs per cold spelling, not 64 dense byte
@@ -114,11 +114,9 @@
 
     <data>
       <dataType>embedding</dataType>
-      <dataset>inline</dataset>
-      <input use="train">kick the bucket|he will kick the bucket|they kick the bucket soon|we saw him kick the bucket|she may kick the bucket|to kick the bucket is sad|old men kick the bucket|kick the bucket at last|kick the ball|he will kick the ball|they kick the ball soon|we saw him kick the ball|she may kick the ball|to kick the ball is fun|old men kick the ball|kick the ball at last</input>
-      <output use="train">1|1|1|1|1|1|1|1|0|0|0|0|0|0|0|0</output>
-      <input use="test">kick the bucket|he will kick the bucket|they kick the bucket soon|we saw him kick the bucket|she may kick the bucket|to kick the bucket is sad|old men kick the bucket|kick the bucket at last|kick the ball|he will kick the ball|they kick the ball soon|we saw him kick the ball|she may kick the ball|to kick the ball is fun|old men kick the ball|kick the ball at last</input>
-      <output use="test">1|1|1|1|1|1|1|1|0|0|0|0|0|0|0|0</output>
+      <dataset>text</dataset>
+      <shardDir>data/fineweb</shardDir>
+      <maxDocs>400</maxDocs>
     </data>
 
     <training>
@@ -170,8 +168,8 @@
       <interContrastiveTemp>0.1</interContrastiveTemp>
 
       <autoload>false</autoload>
-      <autosave>true</autosave>
-      <checkpointEveryBatches>100</checkpointEveryBatches>
+      <autosave>false</autosave>
+      <checkpointEveryBatches>0</checkpointEveryBatches>
     </training>
     <!-- Geometry changes always start fresh. Keep the canonical checkpoint
          beside this model file so XML and weights have the same stem/path. -->
@@ -240,7 +238,7 @@
        optimizer/compiled-graph reset boundary. -->
   <WholeSpace>
     <propertyBasis>true</propertyBasis>
-    <digitWholes>false</digitWholes>
+    <digitWholes>true</digitWholes>
     <whitespaceUnits>true</whitespaceUnits>
     <analysis>meronomy</analysis>
     <!-- Per-vector invertible membership coupling. This is not the optional
@@ -263,7 +261,7 @@
     <nInputDim>136</nInputDim>
     <nVectors>1</nVectors>
     <nDim>1</nDim>
-    <nOutput>2</nOutput>
+    <nOutput>16</nOutput>
     <nOutputDim>1</nOutputDim>
   </OutputSpace>
 

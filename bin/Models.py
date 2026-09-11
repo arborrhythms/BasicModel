@@ -7065,11 +7065,28 @@ class BasicModel(BaseModel):
             self._packed_sentence_roots = None
             object.__setattr__(self, "_tensor_peer_trip_count", trip_count)
             return public
+        if len(result) == 11:
+            # Fold-ladder provenance (Phase 2b): the STM whole slab and the
+            # chunk proposal slab/count, published to their owners.
+            wholes, prop_slab, prop_count = result[8:]
+            if not all(torch.is_tensor(value)
+                       for value in (wholes, prop_slab, prop_count)):
+                raise RuntimeError(
+                    "compiled sentence state must contain tensor "
+                    "(wholes, proposals, proposal_count) values")
+            stm = getattr(self.conceptualSpace, "stm", None)
+            if stm is not None:
+                stm._wholes = wholes
+            owner = self._concept_owner()
+            owner._chunk_prop_slab = prop_slab
+            owner._chunk_prop_count = prop_count
+            result = tuple(result[:8])
         if len(result) != 8:
             raise RuntimeError(
                 "compiled sentence forward returned "
                 f"{len(result)} values; expected 4 public values or "
-                "4 plus (S, post_depth, trip_count[, sentence_roots])")
+                "4 plus (S, post_depth, trip_count[, sentence_roots"
+                "[, wholes, proposals, proposal_count]])")
         public = tuple(result[:4])
         idea, post_depth, trip_count, sentence_roots = result[4:]
         if not all(torch.is_tensor(value)
@@ -10347,6 +10364,21 @@ class BasicModel(BaseModel):
     # sentence-completion and never per-batch on the IR/MM_20M path, so
     # relocating discourse there would silently stop ARMA).
 
+    def _install_unit_span_fn(self):
+        """Hand the InputSpace the analysis ladder's unit tiler (packers and
+        bucket choice count units, not whitespace words) when the canonical
+        ``meronomy`` analysis is live; legacy cuts keep ``None``."""
+        isp = getattr(self, "inputSpace", None)
+        ws_list = getattr(self, "wholeSpaces", None) or []
+        ws = ws_list[0] if ws_list else getattr(self, "wholeSpace", None)
+        if isp is None or ws is None:
+            return
+        fn = None
+        if (getattr(ws, "analysis_mode", "byte") == "meronomy"
+                and hasattr(ws, "unit_spans_of_bytes")):
+            fn = ws.unit_spans_of_bytes
+        isp._unit_span_fn = fn
+
     def _lex_embed_stem(self, x):
         """Eager stem: lex (InputSpace) -> embed (PartSpace) -> finalize
         bookkeeping (InputSpace), model-orchestrated (2026-06-07).
@@ -10506,6 +10538,7 @@ class BasicModel(BaseModel):
                 _unit_rows = [[(int(a), int(z)) for (a, z) in row.tolist() if z > a]
                               for row in _spans_full.detach().to("cpu")]
             object.__setattr__(self.perceptualSpace, "_staged_unit_spans", _unit_rows)
+            self._observe_word_units(concepts_in, _unit_rows)
             try:
                 self.perceptualSpace.embed_stem(in_sub)
             finally:
@@ -10514,6 +10547,7 @@ class BasicModel(BaseModel):
                 object.__setattr__(self.perceptualSpace, "_staged_unit_spans", None)
             self.inputSpace.finalize_stem(in_sub, self.perceptualSpace)
             self._record_unit_pulls(_ws_list[0] if _ws_list else None)
+        self._ensure_chunk_machinery()
         # Resolve sparse concept identities only after the word-major PS stem
         # has exposed its exact residual parts and WS has staged the matching
         # property analysis. This remains wholly eager; the compiled word cell
@@ -11054,6 +11088,7 @@ class BasicModel(BaseModel):
             (BatchResult, nextBatchNum) on success, or (None, batchNum) when
             the dataset is exhausted.
         """
+        self._install_unit_span_fn()
         # A caller may supply an optimizer built outside ``getOptimizer``.
         # Make that live owner visible to the eager PartSpace byte-growth
         # boundary before lexing this batch.
@@ -12849,9 +12884,13 @@ class BasicModel(BaseModel):
                     "self-supervised text corpus")
             import Meronomy
 
+            self._install_unit_span_fn()
+
             def _packed_word_count(sentence):
-                return len(Meronomy.word_spans(
-                    str(sentence).encode("ascii", errors="replace")))
+                # Units as the sentence sits in a brick (its joining space
+                # included), so bricks are budgeted in the loop's own units.
+                return self.inputSpace.sentence_unit_count(
+                    sentence, trailing_space=True)
 
             packed_next = partial(
                 ds.next_packed_tick,
@@ -12923,6 +12962,7 @@ class BasicModel(BaseModel):
             step = 0
             batches_run = 0
             packed_sentences_run = 0
+            self.reset_word_unit_stats()
             epoch_started = time.monotonic()
             while True:
                 deadline = getattr(
@@ -13170,15 +13210,24 @@ class BasicModel(BaseModel):
 
         cursor_all_done = (
             packed_done() if use_packed_cursor else ds.all_done())
+        if not use_packed_cursor and self.word_unit_fraction() is not None:
+            # The word-unit assurance also for one-sentence-per-row epochs.
+            elapsed = max(1e-9, time.monotonic() - epoch_started)
+            TheMessage(
+                "Training throughput: "
+                f"{batches_run} batches in {elapsed:.3f}s; "
+                f"{self._word_unit_report()}.")
         if use_packed_cursor:
             elapsed = max(1e-9, time.monotonic() - epoch_started)
+            _wu_text = self._word_unit_report()
+            _wu_text = f"; {_wu_text}" if _wu_text else ""
             TheMessage(
                 "Packed training throughput: "
                 f"{packed_sentences_run} complete sentences in "
                 f"{elapsed:.3f}s = "
                 f"{packed_sentences_run / elapsed:.3f} sentences/s "
                 f"({batches_run} optimizer bricks, "
-                f"B={B_eff}, W={self.serial_word_capacity}).")
+                f"B={B_eff}, W={self.serial_word_capacity}{_wu_text}).")
 
         if training and split == "train" and cursor_all_done:
             self._epoch_batches_seen = 0
@@ -15457,75 +15506,190 @@ class BasicModel(BaseModel):
         self.__dict__["_chunk_op_index_cached"] = idx
         return idx if idx >= 0 else None
 
-    def _chunk_structural_prior(self, stm, B, window):
-        """[B, 1, R] additive logits: ``chunk`` is licensed (bias) on a pair
-        the analysis tiling places in one coarser whole and forbidden
-        elsewhere (fold-ladder plan, Phase 2b).  None when the grammar has
-        no chunk op or provenance is off."""
-        idx = self._chunk_op_index()
-        if idx is None or torch.compiler.is_compiling():
+    _WHITESPACE_BYTES = (9, 10, 11, 12, 13, 32)
+
+    def _observe_word_units(self, concepts_in, unit_rows):
+        """Word-unit assurance (Alec 2026-09-11): with the analysis tiling
+        learned rather than fixed, count how many whitespace-delimited
+        words of the presentation are exactly one staged unit.  Host
+        bookkeeping on the eager stem (the unit rows are already host
+        lists); reported per epoch as ``word units`` and readable through
+        :meth:`word_unit_fraction`."""
+        if unit_rows is None or not torch.is_tensor(concepts_in):
+            return
+        rows = concepts_in.reshape(int(concepts_in.shape[0]), -1)
+        rows = rows.detach().to("cpu").to(torch.long).tolist()
+        words = hits = letter_words = letter_hits = 0
+        for b, values in enumerate(rows):
+            units = set(unit_rows[b]) if b < len(unit_rows) else set()
+            start = None
+            for i, v in enumerate(values + [0]):
+                inside = v > 0 and v not in self._WHITESPACE_BYTES
+                if inside and start is None:
+                    start = i
+                elif not inside and start is not None:
+                    one_unit = int((start, i) in units)
+                    words += 1
+                    hits += one_unit
+                    # Letters-only words: the tokens the canonical tiling
+                    # must keep whole (punctuation and digits are units of
+                    # their own by design, so "word," is two units).
+                    if all(chr(c).isalpha() for c in values[start:i]):
+                        letter_words += 1
+                        letter_hits += one_unit
+                    start = None
+        stats = self.__dict__.setdefault("_word_unit_stats", [0, 0, 0, 0])
+        stats[0] += words
+        stats[1] += hits
+        stats[2] += letter_words
+        stats[3] += letter_hits
+
+    def word_unit_fraction(self):
+        """Fraction of whitespace-delimited words staged as exactly one
+        unit since the counters were last reset (``None`` before any)."""
+        stats = self.__dict__.get("_word_unit_stats")
+        if not stats or stats[0] <= 0:
             return None
-        same = stm.same_whole_rows(B)
-        if not any(same) and getattr(stm, "_slot_wholes", None) is None:
+        return float(stats[1]) / float(stats[0])
+
+    def letter_word_unit_fraction(self):
+        """The same fraction over letters-only words (``None`` before any)."""
+        stats = self.__dict__.get("_word_unit_stats")
+        if not stats or len(stats) < 4 or stats[2] <= 0:
             return None
-        reducer = self._stm_reducer()
-        R = int(reducer.r_reduce)
-        prior = window.new_zeros(B, 1, R)
+        return float(stats[3]) / float(stats[2])
+
+    def _word_unit_report(self):
+        """``word units A% of N words (letters-only B% of M)`` or ``""``."""
+        wu = self.word_unit_fraction()
+        if wu is None:
+            return ""
+        stats = self.__dict__["_word_unit_stats"]
+        text = f"word units {100.0 * wu:.1f}% of {stats[0]} words"
+        lw = self.letter_word_unit_fraction()
+        if lw is not None:
+            text += f" (letters-only {100.0 * lw:.1f}% of {stats[2]})"
+        return text
+
+    def reset_word_unit_stats(self):
+        self.__dict__["_word_unit_stats"] = [0, 0, 0, 0]
+
+    def _ensure_chunk_machinery(self):
+        """Eager (pre-loop) allocation of every tensor the ``chunk`` gate
+        reads inside the word loop (fold-ladder plan, Phase 2b): the learned
+        prior parameter (registered with the live optimizer once), the STM
+        provenance slab, the proposal slab and the phrase-row table.  No
+        allocation or host sync then happens inside the compiled body."""
+        if self._chunk_op_index() is None:
+            return
         owner = self._concept_owner()
         bias = owner.ensure_chunk_prior() if hasattr(owner, "ensure_chunk_prior") else None
         if torch.is_tensor(bias) and not self.__dict__.get("_chunk_prior_registered"):
-            # Hand the lazily built parameter to the live optimizer once.
             self.__dict__.setdefault("_fresh_synthesis_params", []).append(bias)
             self.__dict__["_chunk_prior_registered"] = True
-        bias_v = bias if torch.is_tensor(bias) else window.new_zeros(())
-        for b, s in enumerate(same):
-            prior[b, 0, idx] = bias_v if s else window.new_tensor(-1e4)
-        return prior
-
-    def _note_chunk_reductions(self, stm, routing, can):
-        """Mirror folds on the whole stacks and propose chunked phrases for
-        admission (contract 7): a ``chunk`` chosen on a same-whole pair
-        records the pair's concept rows and the whole as a proposal that
-        ``ConceptualSpace.Reset`` counts and may admit."""
-        if torch.compiler.is_compiling() or getattr(stm, "_slot_wholes", None) is None:
+        stm = getattr(self.conceptualSpace, "stm", None)
+        if stm is None or not torch.is_tensor(getattr(stm, "_buffer", None)):
             return
+        wholes = stm.ensure_whole_state()
+        owner.ensure_chunk_proposal_state(int(wholes.shape[0]), wholes.device)
+        owner.chunk_row_table(wholes.device)
+
+    def _unit_provenance(self, p, B, device):
+        """``(whole, unit, clause)`` ``[B]`` longs of loop position ``p``
+        from the staged tiling ladder (``-1`` when no ladder is staged)."""
+        ws0 = (self.wholeSpaces[0]
+               if getattr(self, "wholeSpaces", None) else self.wholeSpace)
+        parent = getattr(ws0, "_staged_unit_parent", None)
+        clause = getattr(ws0, "_staged_unit_clause", None)
+        minus = torch.full((B,), -1, dtype=torch.long, device=device)
+        if not torch.is_tensor(parent) or p >= int(parent.shape[1]):
+            return minus, minus, minus
+        unit = torch.full((B,), int(p), dtype=torch.long, device=device)
+        whole = parent[:, p].to(device=device, dtype=torch.long)
+        clause_col = (clause[:, p].to(device=device, dtype=torch.long)
+                      if torch.is_tensor(clause) and p < int(clause.shape[1])
+                      else minus)
+        return whole, unit, clause_col
+
+    def _push_unit_provenance(self, stm, commit_b_1, p):
+        """Eager push of loop position ``p``'s provenance on the STM slab."""
+        wholes = stm.ensure_whole_state()
+        B = int(wholes.shape[0])
+        whole, unit, clause = self._unit_provenance(p, B, wholes.device)
+        stm._wholes = ShortTermMemory.functional_wholes_push(
+            wholes, commit_b_1.reshape(B), whole, unit, clause)
+
+    def _chunk_structural_prior(self, wholes, B, window):
+        """``[B, 1, R]`` additive logits: ``chunk`` is licensed (the learned
+        bias) on a pair the analysis tiling places in one coarser whole and
+        forbidden elsewhere (fold-ladder plan, Phase 2b), read from the STM
+        provenance slab ``wholes`` ``[B, cap, 3]``.  ``None`` when the
+        grammar has no chunk op or the prior is not built.  Pure tensor
+        arithmetic: the same code runs eagerly and under ``while_loop``."""
         idx = self._chunk_op_index()
-        rows_can = can.detach().to("cpu").tolist()
-        same = stm.same_whole_rows(len(rows_can))
-        chosen = routing.get("reduce_mask")
-        op = (chosen[:, 0].argmax(-1).detach().to("cpu").tolist()
-              if torch.is_tensor(chosen) and chosen.numel() else None)
-        cs = self._concept_owner()
-        proposals = cs.__dict__.setdefault("_chunk_proposals", [])
+        if idx is None or not torch.is_tensor(wholes):
+            return None
+        owner = self._concept_owner()
+        bias = getattr(owner, "chunk_prior", None)
+        if not torch.is_tensor(bias):
+            return None
+        reducer = self._stm_reducer()
+        R = int(reducer.r_reduce)
+        same = ShortTermMemory.same_whole(wholes)
+        column = torch.zeros(R, dtype=window.dtype, device=window.device)
+        column = column.scatter(
+            0, torch.tensor([idx], device=window.device),
+            torch.ones(1, dtype=window.dtype, device=window.device))
+        forbidden = torch.full(
+            (), -1e4, dtype=window.dtype, device=window.device)
+        gate = torch.where(same, bias.to(window.dtype), forbidden)
+        return gate.reshape(B, 1, 1) * column.reshape(1, 1, R)
+
+    def _chunk_reduce_provenance(self, wholes, op_b, can_b, prop_slab, prop_count,
+                                 table=None):
+        """Pure, fixed-shape bookkeeping of one top-2 fold (contract 7):
+
+        * a ``chunk`` chosen on a same-whole pair whose units carry concept
+          ids is appended to the proposal slab (counted and possibly admitted
+          at ``Reset``);
+        * an already admitted pair yields its phrase row (``-1`` otherwise);
+        * the provenance slab folds (shared whole/clause kept, else ``-1``).
+
+        Returns ``(wholes', phrase_row [B], prop_slab', prop_count')``.
+        """
+        B = int(wholes.shape[0])
+        idx = self._chunk_op_index()
         ids = getattr(self.inputSpace, "_ar_word_concept_ids", None)
-        units = stm.newest_units(len(rows_can))
-        for b, c in enumerate(rows_can):
-            if c and idx is not None and op is not None and op[b] == idx and same[b]:
-                u_left, u_right = units[b]
-                if (torch.is_tensor(ids) and u_left >= 0 and u_right >= 0
-                        and u_left < int(ids.shape[1]) and u_right < int(ids.shape[1])):
-                    a_left, a_right = int(ids[b, u_left]), int(ids[b, u_right])
-                    if a_left >= 0 and a_right >= 0:
-                        rec = stm._slot_wholes[b][0]
-                        shared = rec[0] if (rec[0] >= 0 and rec[0] == stm._slot_wholes[b][1][0]) else (rec[2] if len(rec) > 2 else -1)
-                        proposals.append((b, (a_left, a_right), int(shared)))
-        # A chunk on an admitted pair snaps to the phrase's row (contract 7).
-        phrase_rows = cs.__dict__.get("_chunk_rows") or {}
-        if phrase_rows and idx is not None and op is not None:
-            rows_slab, _acts = stm.ensure_reference_state()
-            for b, c in enumerate(rows_can):
-                if not (c and op[b] == idx and same[b]):
-                    continue
-                u_left, u_right = units[b]
-                if not (torch.is_tensor(ids) and u_left >= 0 and u_right >= 0
-                        and u_left < int(ids.shape[1]) and u_right < int(ids.shape[1])):
-                    continue
-                key = (int(ids[b, u_left]), int(ids[b, u_right]))
-                row = phrase_rows.get(key)
-                if row is not None:
-                    stm._pending_phrase_rows = getattr(stm, "_pending_phrase_rows", {})
-                    stm._pending_phrase_rows[b] = int(row)
-        stm.note_reduce_wholes(rows_can)
+        phrase_row = torch.full(
+            (B,), -1, dtype=torch.long, device=wholes.device)
+        if idx is not None and torch.is_tensor(ids) and int(ids.shape[1]) > 0:
+            cs = self._concept_owner()
+            same = ShortTermMemory.same_whole(wholes)
+            units = ShortTermMemory.newest_units(wholes)          # [B, 2]
+            W = int(ids.shape[1])
+            valid_units = torch.logical_and(units >= 0, units < W).all(dim=1)
+            safe = units.clamp(0, W - 1)
+            ids_dev = ids.to(device=wholes.device, dtype=torch.long)
+            members = ids_dev.gather(1, safe)                     # [B, 2]
+            valid = torch.logical_and(
+                valid_units, (members >= 0).all(dim=1))
+            chunked = torch.logical_and(
+                can_b.reshape(B).to(torch.bool),
+                torch.logical_and(op_b.reshape(B) == idx, same))
+            write = torch.logical_and(chunked, valid)
+            shared = ShortTermMemory.shared_whole(wholes)
+            prop_slab, prop_count = cs.functional_chunk_propose(
+                prop_slab, prop_count, write,
+                members[:, 0], members[:, 1], shared)
+            if not torch.is_tensor(table):
+                table = getattr(cs, "_chunk_row_table", None)
+            if not torch.is_tensor(table):
+                table = cs.chunk_row_table(wholes.device)
+            table = table.to(device=wholes.device)
+            rows = cs.lookup_chunk_rows(table, members[:, 0], members[:, 1])
+            phrase_row = torch.where(write, rows, phrase_row)
+        next_wholes = ShortTermMemory.functional_wholes_reduce(wholes, can_b)
+        return next_wholes, phrase_row, prop_slab, prop_count
 
     @staticmethod
     def _stm_grammar_reduce_confidence(routing):
@@ -15714,9 +15878,11 @@ class BasicModel(BaseModel):
             known_grammar_order,
             torch.maximum(left_grammar, right_grammar) + 1,
             torch.full_like(left_grammar, -1))
+        _phrase_row = None
         if reducer is not None:
             window = torch.stack([left, right], dim=1)      # [B, 2, D]
-            _op_prior = self._chunk_structural_prior(stm, B, window)
+            _op_prior = self._chunk_structural_prior(
+                stm.ensure_whole_state(), B, window)
             hard, soft, routing = (reducer(window, op_prior=_op_prior)
                                    if _op_prior is not None else reducer(window))
             # Discrete chosen op (Alec 2026-06-22): a symbol reduce must be a
@@ -15801,7 +15967,17 @@ class BasicModel(BaseModel):
                     trace.record_reduction(
                         marginal_op, can,
                         left_word=lw, right_word=rw)
-                self._note_chunk_reductions(stm, routing, can)
+            _chosen = routing.get("reduce_mask")
+            if torch.is_tensor(_chosen) and _chosen.numel():
+                _op_b = _chosen[:, 0].argmax(-1)
+                _cs_owner = self._concept_owner()
+                _slab, _count = _cs_owner.ensure_chunk_proposal_state(
+                    B, stm._buffer.device)
+                (stm._wholes, _phrase_row, _slab, _count) = (
+                    self._chunk_reduce_provenance(
+                        stm.ensure_whole_state(), _op_b, can, _slab, _count))
+                _cs_owner._chunk_prop_slab = _slab
+                _cs_owner._chunk_prop_count = _count
             choice_can = can
             if not (occupancy_pressure or demand):
                 # A legacy/final-seal call may physically compact the stack
@@ -15932,19 +16108,17 @@ class BasicModel(BaseModel):
                 parent_concept_activation.unsqueeze(1))
         stm._concept_rows = torch.where(
             can.view(B, 1), shifted_concept_rows, concept_rows)
-        pending_rows = getattr(stm, "_pending_phrase_rows", None)
-        if pending_rows and not torch.compiler.is_compiling():
-            # The folded parent at slot 0 IS the admitted phrase: reference
-            # its row so later reads and the answer path use it.
-            new_rows = stm._concept_rows.clone()
-            for b_, r_ in pending_rows.items():
-                if 0 <= int(b_) < B and bool(can[int(b_)]):
-                    new_rows[int(b_), 0] = int(r_)
-            stm._concept_rows = new_rows
-            stm._pending_phrase_rows = {}
         stm._concept_activations = torch.where(
             can.view(B, 1), shifted_concept_activations,
             concept_activations)
+        if torch.is_tensor(_phrase_row):
+            # The folded parent at slot 0 IS the admitted phrase: reference
+            # its row so later reads and the answer path use it.
+            (_, _, _, _, stm._concept_rows, stm._concept_activations) = (
+                ConceptualSpace.apply_phrase_rows(
+                    (stm._buffer, stm._depth, stm._orders, stm._grammar_orders,
+                     stm._concept_rows, stm._concept_activations),
+                    _phrase_row, can))
         # d <- d - 1 for rows that reduced (g==1 there); tensor op.
         dec = can.to(depth.dtype)                          # [B] {0,1}
         stm._depth = depth - dec
@@ -17415,23 +17589,10 @@ class BasicModel(BaseModel):
                         stm.note_push_masked(
                             [g and not w for g, w in zip(gate_rows, wcol)],
                             "other")
-                    if not torch.compiler.is_compiling():
-                        # Coarser-whole provenance of this unit (fold-ladder
-                        # plan, Phase 2b): the tiling ladder's parent map,
-                        # recorded whether or not kind recording is on.
-                        _ws0 = (self.wholeSpaces[0]
-                                if getattr(self, "wholeSpaces", None) else self.wholeSpace)
-                        _parent = getattr(_ws0, "_staged_unit_parent", None)
-                        _clause = getattr(_ws0, "_staged_unit_clause", None)
-                        _clause = getattr(_ws0, "_staged_unit_clause", None)
-                        if torch.is_tensor(_parent) and p < int(_parent.shape[1]):
-                            _rows = commit_b_1.view(-1).detach().to("cpu").tolist()
-                            if getattr(stm, "_slot_wholes", None) is None:
-                                stm.wholes_enable(len(_rows))
-                            stm.note_whole_masked(
-                                _rows, _parent[:, p].detach().to("cpu").tolist(), unit=p,
-                                clauses=(_clause[:, p].detach().to("cpu").tolist()
-                                         if torch.is_tensor(_clause) else None))
+                    # Coarser-whole provenance of this unit (fold-ladder
+                    # plan, Phase 2b): the tiling ladder's parent map,
+                    # pushed on the STM provenance slab (tensor-pure).
+                    self._push_unit_provenance(stm, commit_b_1, p)
                     if not _compiled_recurrent:
                         stm._max_depth_host = stm._max_depth_host + 1
                     # Per-word router fire (Alec 2026-07-13): parse as the
@@ -17662,20 +17823,8 @@ class BasicModel(BaseModel):
                     stm.note_push_masked(
                         [g and not w for g, w in zip(gate_rows, wcol)],
                         "other")
-                if not torch.compiler.is_compiling():
-                    # Coarser-whole provenance (fold-ladder plan, Phase 2b).
-                    _ws0 = (self.wholeSpaces[0]
-                            if getattr(self, "wholeSpaces", None) else self.wholeSpace)
-                    _parent = getattr(_ws0, "_staged_unit_parent", None)
-                    _clause = getattr(_ws0, "_staged_unit_clause", None)
-                    if torch.is_tensor(_parent) and p < int(_parent.shape[1]):
-                        _rows = a_result.commit_b_1.view(-1).detach().to("cpu").tolist()
-                        if getattr(stm, "_slot_wholes", None) is None:
-                            stm.wholes_enable(len(_rows))
-                        stm.note_whole_masked(
-                            _rows, _parent[:, p].detach().to("cpu").tolist(), unit=p,
-                            clauses=(_clause[:, p].detach().to("cpu").tolist()
-                                     if torch.is_tensor(_clause) else None))
+                # Coarser-whole provenance (fold-ladder plan, Phase 2b).
+                self._push_unit_provenance(stm, a_result.commit_b_1, p)
                 if not _compiled_recurrent:
                     stm._max_depth_host = stm._max_depth_host + 1
 
@@ -17982,6 +18131,45 @@ class BasicModel(BaseModel):
         stm_state = (
             stm._buffer, stm._depth, stm._orders, stm._grammar_orders,
             stm._concept_rows, stm._concept_activations)
+        # Provenance and chunk bookkeeping (fold-ladder plan, Phase 2b) ride
+        # the CSLang bank as fixed-shape tensors: the STM whole slab, the
+        # phrase proposal slab and its count.  Staged parent/clause maps are
+        # constants of this sentence ([B, W] or absent -> -1).
+        # The whole/unit/clause indices are per staged sentence, so the
+        # slab starts empty at every loop entry (carried roots from an
+        # earlier forward are folds: no whole, no unit).  Built fresh, not
+        # read from the STM attribute: a first-seen attribute tensor as a
+        # loop input suppressed the STM's buffer/depth replay on the first
+        # compiled call (torch 2.14 nightly).
+        wholes_state = torch.full(
+            (B, capacity, 3), -1, dtype=torch.long, device=words.device)
+        chunk_owner = self._concept_owner()
+        prop_slab, prop_count = chunk_owner.ensure_chunk_proposal_state(
+            B, words.device)
+        chunk_table = getattr(chunk_owner, "_chunk_row_table", None)
+        if not torch.is_tensor(chunk_table):
+            chunk_table = chunk_owner.chunk_row_table(words.device)
+        chunk_table = chunk_table.to(device=words.device)
+        _ws0 = (self.wholeSpaces[0]
+                if getattr(self, "wholeSpaces", None) else ws)
+        unit_parent = getattr(_ws0, "_staged_unit_parent", None)
+        unit_clause = getattr(_ws0, "_staged_unit_clause", None)
+        minus_column = torch.full(
+            (B, 1), -1, dtype=torch.long, device=words.device)
+        unit_parent = (unit_parent.to(dtype=torch.long)
+                       if torch.is_tensor(unit_parent) else minus_column)
+        unit_clause = (unit_clause.to(dtype=torch.long)
+                       if torch.is_tensor(unit_clause) else minus_column)
+
+        def _gather_unit_column(source, index):
+            """``[B]`` column of a ``[B, K]`` map, ``-1`` past its width."""
+            K = int(source.shape[1])
+            safe = index.clamp(0, K - 1).reshape(1, 1).expand(B, 1)
+            value = source.gather(1, safe).reshape(B)
+            return torch.where(
+                index.reshape(1).expand(B) < K, value,
+                torch.full_like(value, -1))
+
         # The ordinary post-deposit Binary is a capacity demand at depth K,
         # so every reachable canonical word boundary has depth < K. A full
         # entry row means state was installed outside that recurrence. Keep
@@ -18033,6 +18221,9 @@ class BasicModel(BaseModel):
             *choices,
             *forward_slots,
             zero_sentence_roots,
+            wholes_state,
+            prop_slab,
+            prop_count,
         )
         empty_cs_sub = (
             zero_concept.clone(),
@@ -18247,6 +18438,12 @@ class BasicModel(BaseModel):
             pushed_word = ShortTermMemory.functional_push_step_masked(
                 *pre_state, word_idea, commit, word_order, grammar_order,
                 row, activation)
+            wholes = ShortTermMemory.functional_wholes_push(
+                current_cs_lang[10], commit,
+                _gather_unit_column(unit_parent, index),
+                index.reshape(1).expand(B),
+                _gather_unit_column(unit_clause, index))
+            chunk_slab, chunk_count = current_cs_lang[11], current_cs_lang[12]
 
             # Treating the deposited word concept as a reference resolves its
             # paired object concept before Language observes the stack.  The
@@ -18264,10 +18461,18 @@ class BasicModel(BaseModel):
 
             post_choice = language.choose_post_binary(
                 resolved, commit, pre_applied,
-                base_tau=self.stm_reduce_tau)
-            (post_state, _post_applied, post_op,
+                base_tau=self.stm_reduce_tau,
+                op_prior=self._chunk_structural_prior(
+                    wholes, B, resolved[0]))
+            (post_state, post_applied, post_op,
              post_valid, post_loss) = cs.apply_binary_language_choice(
                 resolved, post_choice)
+            (wholes, phrase_row, chunk_slab, chunk_count) = (
+                self._chunk_reduce_provenance(
+                    wholes, post_op, post_applied, chunk_slab, chunk_count,
+                    table=chunk_table))
+            post_state = cs.apply_phrase_rows(
+                post_state, phrase_row, post_applied)
             unary_choice = language.choose_unary(post_state, commit)
             (final_stm, _unary_applied, unary_op,
              unary_valid, unary_loss) = cs.apply_unary_language_choice(
@@ -18313,11 +18518,19 @@ class BasicModel(BaseModel):
             for seal_index in range(seal_width):
                 seal_choice = language.choose_sentence_seal_binary(
                     sealed_stm, intermediate_end,
-                    base_tau=self.stm_reduce_tau)
-                (sealed_stm, _seal_applied, seal_op,
+                    base_tau=self.stm_reduce_tau,
+                    op_prior=self._chunk_structural_prior(
+                        wholes, B, sealed_stm[0]))
+                (sealed_stm, seal_applied, seal_op,
                  seal_valid, seal_loss) = (
                     cs.apply_binary_language_choice(
                         sealed_stm, seal_choice))
+                (wholes, seal_phrase_row, chunk_slab, chunk_count) = (
+                    self._chunk_reduce_provenance(
+                        wholes, seal_op, seal_applied,
+                        chunk_slab, chunk_count, table=chunk_table))
+                sealed_stm = cs.apply_phrase_rows(
+                    sealed_stm, seal_phrase_row, seal_applied)
                 trace_state = self._tensor_record_choice(
                     trace_state,
                     3 * width + index * seal_width + seal_index,
@@ -18338,10 +18551,13 @@ class BasicModel(BaseModel):
                 root_candidate, current_cs_lang[9])
             final_stm = FunctionalPeerSTM.soft_reset_rows(
                 sealed_stm, intermediate_end)
+            wholes = ShortTermMemory.functional_wholes_reset(
+                wholes, intermediate_end)
 
             next_cs_lang = (
                 next_symbol_activations, next_loss_sum, next_loss_weight,
-                prediction, *trace_state, next_sentence_roots)
+                prediction, *trace_state, next_sentence_roots,
+                wholes, chunk_slab, chunk_count)
             language_feedback = language.feedback_from_local_choices(
                 (pre_op, post_op), (pre_valid, post_valid),
                 unary_op, unary_valid, like=word_idea)
@@ -18399,8 +18615,26 @@ class BasicModel(BaseModel):
         final_whole = final_cs_sub[2].clone()
         feedback = tuple(value.clone() for value in feedback)
 
-        (stm._buffer, stm._depth, stm._orders, stm._grammar_orders,
-         stm._concept_rows, stm._concept_activations) = final[:6]
+        # Commit the owner state.  Under the compiler the commit is an
+        # in-place copy into the tensors the loop started from: with a
+        # ``torch.while_loop`` in the graph, dynamo (torch 2.14 nightly)
+        # drops a later attribute *assignment* when the attribute was also
+        # assigned earlier in the same graph (the per-forward STM seed in
+        # ``_per_word_prelude``), so every read after the loop -- the
+        # sentence reduce, the reconstruction loss -- saw the empty seed.
+        # An in-place copy is tracked correctly and keeps the gradient.
+        current = (
+            stm._buffer, stm._depth, stm._orders, stm._grammar_orders,
+            stm._concept_rows, stm._concept_activations)
+        if (torch.compiler.is_compiling()
+                and all(torch.is_tensor(old) and tuple(old.shape) == tuple(new.shape)
+                        and old.dtype == new.dtype
+                        for old, new in zip(current, final[:6]))):
+            for old, new in zip(current, final[:6]):
+                old.copy_(new)
+        else:
+            (stm._buffer, stm._depth, stm._orders, stm._grammar_orders,
+             stm._concept_rows, stm._concept_activations) = final[:6]
         if not torch.compiler.is_compiling():
             stm._max_depth_host = int(stm._depth.max().item())
         # PS/WS callbacks are side-effect free inside the HOP. Publish the
@@ -18446,11 +18680,27 @@ class BasicModel(BaseModel):
             trace._forward_losses = final[16]
             trace._forward_loss_mask = final[17]
         sentence_roots = final_cs_lang[9].clone()
+        final_wholes = final_cs_lang[10].clone()
+        final_prop_slab = final_cs_lang[11].clone()
+        final_prop_count = final_cs_lang[12].clone()
+        if not torch.compiler.is_compiling():
+            # Eager owners commit here; a compiled forward publishes the
+            # explicit ``chunk_state`` result instead (an attribute-only
+            # escape is dead state the compiler may drop, and a fresh
+            # attribute store inside the graph suppressed the STM's own
+            # buffer/depth replay on the first compiled call).
+            stm._wholes = final_wholes
+            chunk_owner._chunk_prop_slab = final_prop_slab
+            chunk_owner._chunk_prop_count = final_prop_count
         object.__setattr__(self, "_tensor_peer_trip_count", trip_count)
         object.__setattr__(
             self, "_tensor_symbolic_iterations", len(symbolic_passes))
         object.__setattr__(self, "_tensor_peer_feedback", feedback)
-        return cs.subspace, trip_count, sentence_roots
+        # The provenance/chunk slabs are explicit results too: an
+        # attribute-only escape from the compiled graph is dead state the
+        # compiler may eliminate (see ``_forward_with_compiled_sentence_state``).
+        chunk_state = (final_wholes, final_prop_slab, final_prop_count)
+        return cs.subspace, trip_count, sentence_roots, chunk_state
 
     def _run_peer_word_pipeline(self, out_slot, width):
         """Execute the legacy A/B/C schedule for a padded sentence bucket.
@@ -18747,13 +18997,15 @@ class BasicModel(BaseModel):
         _chunk_replayed = False
         tensor_trip_count = None
         tensor_sentence_roots = None
+        tensor_chunk_state = None
         _tensor_peer_pipeline = (
             _peer_pipeline and self._tensor_peer_while_ready(N_words))
         if _tensor_peer_pipeline:
             # W is a capacity. The tensor loop stops at the last live column,
             # drains the final conceptual transaction, and advances both
             # grammar-feedback latches.
-            last_cs, tensor_trip_count, tensor_sentence_roots = (
+            (last_cs, tensor_trip_count, tensor_sentence_roots,
+             tensor_chunk_state) = (
                 self._run_tensor_peer_word_pipeline(N_words))
             _n_trips = N_words
         elif _peer_pipeline:
@@ -19119,15 +19371,18 @@ class BasicModel(BaseModel):
                 raise RuntimeError(
                     "explicit compiled sentence state requires the tensor "
                     "peer while-loop")
+            chunk_state = tuple(tensor_chunk_state or ())
             if not all(torch.is_tensor(value) for value in (
                     sentence_idea, sentence_post_depth,
-                    tensor_trip_count, tensor_sentence_roots)):
+                    tensor_trip_count, tensor_sentence_roots,
+                    *chunk_state)) or len(chunk_state) != 3:
                 raise RuntimeError(
                     "serial sentence body did not produce tensor "
-                    "(S, post_depth, trip_count, roots) state")
+                    "(S, post_depth, trip_count, roots, wholes, "
+                    "proposals, proposal_count) state")
             return last_cs, (
                 sentence_idea, sentence_post_depth, tensor_trip_count,
-                tensor_sentence_roots)
+                tensor_sentence_roots, *chunk_state)
         return last_cs
 
     def _chart_compose_per_word(self):
