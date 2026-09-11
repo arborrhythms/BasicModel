@@ -140,6 +140,9 @@
            tiling places in one coarser whole. Admission of the chunked
            phrase as a concept is gated by recurrence and category utility. -->
       <rule>chunk_O1 = chunk.forward(chunk_I1, chunk_I2)</rule>
+      <!-- The null operation: the unary identity a unit contributes when it
+           carries no meaning of its own (a whitespace unit); folds it away. -->
+      <rule>null_O1 = null.forward(null_I1)</rule>
 
       <!-- Composition / projection. verb = VP spectral operator; adverb =
            VP eigenmodifier; lift remains the generic order-raising fold;
@@ -181,6 +184,7 @@
       <rule>sum_I1, sum_I2 = sum.reverse(sum_O1)</rule>
       <rule>product_I1, product_I2 = product.reverse(product_O1)</rule>
       <rule>chunk_I1, chunk_I2 = chunk.reverse(chunk_O1)</rule>
+      <rule>null_I1 = null.reverse(null_O1)</rule>
 
       <rule>lift_I1, lift_I2 = lift.reverse(lift_O1)</rule>
       <rule>verb_I1, verb_I2 = verb.reverse(verb_O1)</rule>

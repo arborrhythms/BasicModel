@@ -349,20 +349,41 @@ the Linde-Buzo-Gray split already on WholeSpace (`bin/Spaces.py`,
   variance is a property of where the bound codes lie. Training only
   shapes the code geometry over time; the division itself is automatic.
 
-**Where it stands and where it goes.** Today the split is gated off
-under the canonical property basis (`propertyBasis` true): the
-comment in the constructor calls the eight-class inventory stable and
-neither growing nor splitting, so the accumulators are not even built
-there. The fold-ladder plan (doc/plans/2026-09-10-meronomy-fold-ladder.md,
-contract 3) lifts that gate: the class rows are the coarsest wholes,
-every finer whole is a division of them, and a divided row acquires its
-analyzer predicate from the parts, the set of atoms whose codes fall on
-its side of the split, read through the callosum. From then on "row
-begins" and "row ends" are candidate boundary types under the
-difference construction. That is how a whole such as "vowels" comes to
-exist without being defined: the letter row's members separate in code,
-the row splits, the new row's predicate is the vowel set, and whether
-"vowel begins" ever bounds anything is the utility learner's decision.
+**On the property inventory (2026-09-11).** The legacy split above is
+gated off under the canonical property basis (its constructor calls the
+eight-class inventory stable). The fold-ladder plan lifted that gate
+with a dedicated pair on WholeSpace, `record_property_pull` and
+`maybe_split_property_row`: after the ladder stem, each unit's rung-0
+code (the max over its atoms) pulls on every property row its bytes
+hold, with the unit's bytes recorded beside the pull; at the sentence
+boundary a row whose pulls' max per-coordinate variance exceeds
+`lbgThreshold` after `lbgMinCount` pulls splits along its mean pull,
+the fresh row taking as its **analyzer predicate** the bytes whose pulls
+fell on its side (`_row_bytes`), so the predicate is read from the parts
+rather than declared. The new row becomes a column of the boundary
+learner at once (`begins` / `ends` / atom level start off). That is how a
+whole such as "vowels" comes to exist without being defined: the letter
+row's members separate in code, the row splits, the new row's predicate
+is the vowel set, and whether "vowel begins" ever bounds anything is the
+utility learner's decision.
+
+**The boundaries themselves (contracts 2-3, landed 2026-09-11).** The
+unit tiling is cut from a bool signature slab over the atomic wholes
+(one column per byte value, the minimal seed of the whole lexicon, as
+the byte rows are of the part lexicon) and the property rows: a
+column's beginning or ending bounds a whole when its `begins_weight` /
+`ends_weight` is on, the typed symmetric difference of adjacent
+positions, so consecutive occurrences produce no boundary; a column at
+the atom level (`atom_level`) makes every position it holds a whole by
+itself (the digit rule without a digit-specific answer). Whitespace runs
+are units like any other under `<whitespaceUnits>`, their grammatical
+operation the `null` identity. The learner (`_update_boundary_predicates`)
+scores each candidate move by the memory-load criterion, reuse minus
+the working-memory cost (wholes per presentation) minus the long-term
+cost (distinct wholes per occurrence), greedily against the current
+tiling over a window of presentations, ties toward the more general
+column; a varied text corpus turns a whitespace boundary on from the
+atomic cold start and leaves single letters' boundaries off.
 
 ### The corpus callosum links the towers (part `isa` whole)
 

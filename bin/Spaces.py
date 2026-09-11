@@ -15730,6 +15730,15 @@ class ConceptualSpace(Space):
             section, "admissionCount", default=2) or 2)
         self.utility_prior_rate = float(TheXMLConfig.space(
             section, "utilityPriorRate", default=1.0) or 0.0)
+        # The identity radius is defined from the division threshold (one
+        # geometry setting): the standard deviation along the split axis.
+        try:
+            _lbg_t = float(TheXMLConfig.space("WholeSpace", "lbgThreshold") or 0.5)
+        except (KeyError, TypeError, ValueError):
+            _lbg_t = 0.5
+        _radius = TheXMLConfig.space(section, "admissionRadius", default=None)
+        self.admission_radius = (float(_radius) if _radius not in (None, "", 0)
+                                 else float(_lbg_t) ** 0.5)
         # ``chunk_prior`` is built lazily by ``ensure_chunk_prior`` (only a
         # grammar with a ``chunk`` reduce candidate needs it), so configs
         # without one keep their state_dict keys.
@@ -16789,6 +16798,27 @@ class ConceptualSpace(Space):
             for m in members:
                 self.add_part(A, ("sym", int(m)))      # a concept over concepts
             self._populate_concept_weights(A)
+            # The phrase's own row (contract 7): allocated in the concept
+            # dictionary and initialised from the additive composition of
+            # its members' rows; the reduce step snaps a matching chunk to
+            # it and the losses train it thereafter.
+            try:
+                order = int(self._concept_source_order(A))
+                row = self._csw_concept_row(order, A)
+                if row is not None:
+                    member_rows = [self._csw_row_of(int(m)) for m in members]
+                    member_rows = [r for r in member_rows if r is not None]
+                    ly = _concept_alloc_of(self).layer(0)
+                    W = getattr(ly, "values", None)
+                    W = W if torch.is_tensor(W) else getattr(ly, "W", None)
+                    if torch.is_tensor(W) and member_rows:
+                        with torch.no_grad():
+                            comp = W[member_rows].sum(dim=0)
+                            comp = comp / comp.norm().clamp_min(1e-6)
+                            W.data[int(row)].copy_(comp)
+                    self.__dict__.setdefault("_chunk_rows", {})[members] = int(row)
+            except Exception:
+                pass
             admitted[members] = int(A)
             hits.pop(members, None)
 
@@ -22962,26 +22992,35 @@ def _spans_from_run_masks(is_run, run_start, run_end):
     return out
 
 
-def _predicate_unit_spans(sig_bits, boundary_bits, singleton_bits, discard_bits):
-    """The unit tiling from learned predicates (fold-ladder plan, contract
-    3).  ``sig_bits`` ``[B, N]`` long: per-position property signature;
-    ``boundary_bits`` / ``singleton_bits`` / ``discard_bits``: int masks of
-    the property rows whose flips end a whole, whose every occurrence
-    stands alone, and whose positions are discarded (pad, and whitespace
-    unless whitespace has been demoted to a whole type)."""
-    B, N = int(sig_bits.shape[0]), int(sig_bits.shape[1])
+def _predicate_unit_spans(slab, begins_on, ends_on, atom_on, discard_on):
+    """The unit tiling from learned predicates over a bool signature slab
+    (fold-ladder plan, contracts 2-3).  ``slab`` ``[B, N, C]`` bool: which
+    columns (atomic wholes and property rows) hold at each position;
+    ``begins_on`` / ``ends_on`` / ``atom_on`` / ``discard_on`` ``[C]`` bool:
+    a column whose beginning bounds a whole (its left boundary), whose
+    ending bounds one (its right boundary), whose runs cohere at the atom
+    rung (every position its own whole), and whose positions are
+    discarded (the pad).  Boundaries are the typed symmetric difference
+    of adjacent positions; consecutive occurrences of a column produce
+    none."""
+    B, N, C = int(slab.shape[0]), int(slab.shape[1]), int(slab.shape[2])
     first = torch.zeros(B, 1, dtype=torch.bool, device="cpu")
-    is_run = (sig_bits & int(discard_bits)) == 0
-    b_sig = sig_bits & int(boundary_bits)
-    flip = torch.cat([first, (b_sig[:, 1:] != b_sig[:, :-1])], 1)       # flip at i
-    flip_next = torch.cat([(b_sig[:, 1:] != b_sig[:, :-1]), first], 1)  # flip at i+1
-    single = ((sig_bits & int(singleton_bits)) != 0) & is_run
-    after_single = torch.cat([first, single[:, :-1]], 1)
-    before_single = torch.cat([single[:, 1:], first], 1)
+    is_run = ~((slab & discard_on.view(1, 1, C)).any(dim=-1))
+    prev = torch.cat([torch.zeros(B, 1, C, dtype=torch.bool), slab[:, :-1]], 1)
+    nxt = torch.cat([slab[:, 1:], torch.zeros(B, 1, C, dtype=torch.bool)], 1)
+    begins_here = (slab & ~prev & begins_on.view(1, 1, C)).any(dim=-1)   # left boundary at i
+    ends_next = (slab & ~nxt & ends_on.view(1, 1, C)).any(dim=-1)        # right boundary after i
+    begins_next = torch.cat([begins_here[:, 1:], first], 1)
+    ends_prev = torch.cat([first, ends_next[:, :-1]], 1)
+    # A position at the atom level is a whole by itself: it starts and ends
+    # a run, and bounds its neighbours' runs on either side.
+    atom_here = (slab & atom_on.view(1, 1, C)).any(dim=-1)
+    atom_prev = torch.cat([first, atom_here[:, :-1]], 1)
+    atom_next = torch.cat([atom_here[:, 1:], first], 1)
     prev_run = torch.cat([first, is_run[:, :-1]], 1)
     next_run = torch.cat([is_run[:, 1:], first], 1)
-    run_start = is_run & (~prev_run | flip | single | after_single)
-    run_end = is_run & (~next_run | flip_next | single | before_single)
+    run_start = is_run & (~prev_run | begins_here | ends_prev | atom_here | atom_prev)
+    run_end = is_run & (~next_run | ends_next | begins_next | atom_here | atom_next)
     return _spans_from_run_masks(is_run, run_start, run_end)
 
 
@@ -23432,6 +23471,14 @@ class WholeSpace(Space):
         except KeyError:
             _bt = None
         self.boundary_types = str(_bt or "canonical").strip().lower()
+        # <whitespaceUnits>: present space runs as units (whose grammatical
+        # operation is the null operation) instead of discarding them.
+        try:
+            _wu = TheXMLConfig.space(section, "whitespaceUnits")
+        except KeyError:
+            _wu = None
+        self.whitespace_units = (bool(_wu) if isinstance(_wu, bool)
+                                 else str(_wu or "").strip().lower() in ("true", "1", "yes", "on"))
         try:
             self.boundary_learning_rate = float(
                 TheXMLConfig.space(section, "boundaryLearningRate") or 0.0)
@@ -23442,6 +23489,16 @@ class WholeSpace(Space):
                 TheXMLConfig.space(section, "boundaryDensityWeight") or 0.05)
         except (KeyError, TypeError, ValueError):
             self.boundary_density_weight = 0.05
+        try:
+            self.boundary_update_every = int(
+                TheXMLConfig.space(section, "boundaryUpdateEvery") or 32)
+        except (KeyError, TypeError, ValueError):
+            self.boundary_update_every = 32
+        try:
+            self.boundary_type_weight = float(
+                TheXMLConfig.space(section, "boundaryTypeWeight") or 0.25)
+        except (KeyError, TypeError, ValueError):
+            self.boundary_type_weight = 0.25
         if self.boundary_types not in ("canonical", "none"):
             raise ValueError(
                 f"WholeSpace.boundaryTypes must be canonical|none; got {_bt!r}")
@@ -24067,131 +24124,321 @@ class WholeSpace(Space):
         ("type_punct", _CLS_PUNCT),
     )
 
-    def _observe_candidate_tilings(self, byte_idx, sig, n_rows, discard_bits,
-                                   current=None):
-        """Accrue, per property row, the surfaces of the wholes that the
-        tiling "cut at this row's flips" yields (host-side counters, one
-        pass over the presentation).  The boundary learner scores a row by
-        how well those wholes recur and how few there are."""
+    # -- the learned boundaries (fold-ladder plan, contracts 2-3) ------------
+    #
+    # Columns of the signature slab: 0..255 are the ATOMIC wholes (one per
+    # byte value: the run of that byte), the minimal seed of the whole
+    # lexicon, like the byte atoms of the part lexicon; 256.. are the
+    # property rows of the WholeSpace inventory (the class rows are an
+    # optional prior; rows split by LBG join as they appear, with the
+    # predicate they acquired).  Three weights per column: begins (its left
+    # boundary bounds a whole), ends (its right boundary does), atom (its
+    # runs cohere at the atom rung: every position its own whole).
+
+    _ATOMIC_COLUMNS = 256
+
+    def _predicate_column_count(self):
+        n_rows = 0
+        cb = getattr(getattr(self, "subspace", None), "what", None)
+        if getattr(self, "property_basis", False) and cb is not None:
+            n_rows = int(getattr(cb, "nVectors", 0) or 0)
+        return self._ATOMIC_COLUMNS + n_rows
+
+    def _predicate_slab(self, idx):
+        """``[B, N, C]`` bool signature slab for a ``[B, N]`` byte grid:
+        the byte's atomic column, every tagged property row holding at the
+        byte (from ``property_kind``), and every split row whose acquired
+        predicate contains the byte (``_row_bytes``)."""
+        B, N = int(idx.shape[0]), int(idx.shape[1])
+        C = self._predicate_column_count()
+        slab = torch.zeros(B, N, C, dtype=torch.bool)
+        slab.scatter_(2, idx.clamp(0, 255).unsqueeze(-1), True)
+        lut = self.__dict__.get("_predicate_byte_lut")
+        if lut is None or int(lut.shape[1]) != C - self._ATOMIC_COLUMNS:
+            lut = self._build_predicate_byte_lut(C - self._ATOMIC_COLUMNS)
+        if lut is not None and lut.numel():
+            slab[:, :, self._ATOMIC_COLUMNS:] = lut[idx.clamp(0, 255)]
+        return slab
+
+    def _build_predicate_byte_lut(self, n_rows):
+        """``[256, n_rows]`` bool: which property rows hold at which byte,
+        from the tagged classes and the acquired predicates of split rows."""
+        lut = torch.zeros(256, max(0, n_rows), dtype=torch.bool)
+        rows = getattr(self, "_predicate_rows", {}) or {}
+        for r, classes in rows.items():
+            if not (0 <= int(r) < n_rows):
+                continue
+            for cls in classes:
+                for lo, hi in _CHAR_CLASS_RANGES.get(int(cls), ()):
+                    lut[int(lo):int(hi) + 1, int(r)] = True
+        for r, bytes_ in (self.__dict__.get("_row_bytes") or {}).items():
+            if 0 <= int(r) < n_rows:
+                for bv in bytes_:
+                    lut[int(bv) & 0xFF, int(r)] = True
+        lut[0, :] = False                                   # the pad holds no property
+        self.__dict__["_predicate_byte_lut"] = lut
+        return lut
+
+    def _predicate_masks(self):
+        C = self._predicate_column_count()
+        bw = getattr(self, "begins_weight", None)
+        with torch.no_grad():
+            begins_on = torch.sigmoid(bw) > 0.5 if torch.is_tensor(bw) else torch.zeros(C, dtype=torch.bool)
+            ends_on = (torch.sigmoid(self.ends_weight) > 0.5
+                       if torch.is_tensor(getattr(self, "ends_weight", None)) else torch.zeros(C, dtype=torch.bool))
+            atom_on = (torch.sigmoid(self.atom_level) > 0.5
+                       if torch.is_tensor(getattr(self, "atom_level", None)) else torch.zeros(C, dtype=torch.bool))
+        if int(begins_on.shape[0]) != C:
+            begins_on = torch.zeros(C, dtype=torch.bool); ends_on = torch.zeros(C, dtype=torch.bool)
+            atom_on = torch.zeros(C, dtype=torch.bool)
+        discard_on = torch.zeros(C, dtype=torch.bool)
+        discard_on[0] = True                                # the pad byte
+        if not getattr(self, "whitespace_units", False):
+            # Whitespace stays a discarded boundary-only class until
+            # <whitespaceUnits> presents space runs as units.
+            for lo, hi in _CHAR_CLASS_RANGES.get(int(_CLS_WHITESPACE), ()):
+                discard_on[int(lo):int(hi) + 1] = True
+        return begins_on, ends_on, atom_on, discard_on
+
+    def _unit_tiling_from_predicates(self, idx):
+        """The unit tiling and the slab; the cold start (no column on) is
+        the atomic tiling, every byte a whole."""
+        slab = self._predicate_slab(idx)
+        begins_on, ends_on, atom_on, discard_on = self._predicate_masks()
+        if not bool(begins_on.any() or ends_on.any() or atom_on.any()):
+            atom_on = torch.ones_like(atom_on)
+        return _predicate_unit_spans(slab, begins_on, ends_on, atom_on, discard_on), slab
+
+    def _observe_candidate_tilings(self, byte_idx, slab, current):
+        """Accrue, per candidate boundary type present in the batch, the
+        surfaces of the wholes its tiling yields (host-side counters).  A
+        candidate is a column c with one of three moves: ``begins``,
+        ``ends`` or ``atom`` turned on beside the current masks; the current
+        tiling is the baseline (key ``("current",)``)."""
         if getattr(self, "_online_learning_frozen", False):
             return
         tab = self.__dict__.setdefault("_boundary_evidence", {})
         vals = byte_idx.tolist()
-        # -1: the current tiling (the baseline); -2: the discard-only tiling
-        # (cut at whitespace / pad alone), which is what a row's own flips
-        # are measured against -- a row whose flips add no cut beyond it
-        # earns nothing, while the discard rows themselves earn its score.
-        candidates = [(r, None) for r in range(n_rows)]
-        candidates.append((-2, _predicate_unit_spans(sig, discard_bits, 0, discard_bits)))
-        if current is not None:
-            candidates.append((-1, current))
-        for r, given in candidates:
-            spans = (given if given is not None else
-                     _predicate_unit_spans(sig, (1 << r) | discard_bits, 0, discard_bits))
-            rec = tab.setdefault(r, {"surfaces": {}, "units": 0, "presentations": 0})
+        begins_on, ends_on, atom_on, discard_on = self._predicate_masks()
+        present = slab.any(dim=(0, 1)).nonzero().reshape(-1).tolist()
+        candidates = [(("current",), current)]
+        for c in present:
+            if bool(discard_on[c]):
+                continue
+            for move in ("begins", "ends", "atom"):
+                b_, e_, a_ = begins_on.clone(), ends_on.clone(), atom_on.clone()
+                {"begins": b_, "ends": e_, "atom": a_}[move][c] = True
+                candidates.append(((move, c), _predicate_unit_spans(slab, b_, e_, a_, discard_on)))
+        for key, spans in candidates:
+            rec = tab.setdefault(key, {"surfaces": {}, "units": 0, "presentations": 0})
             for b in range(int(spans.shape[0])):
                 rec["presentations"] += 1
-                for a, z in spans[b].tolist():
-                    if z > a:
-                        key = bytes(vals[b][a:z])
-                        rec["surfaces"][key] = rec["surfaces"].get(key, 0) + 1
+                for a0, z0 in spans[b].tolist():
+                    if z0 > a0:
+                        sk = bytes(vals[b][a0:z0])
+                        rec["surfaces"][sk] = rec["surfaces"].get(sk, 0) + 1
                         rec["units"] += 1
 
     def _update_boundary_predicates(self):
-        """Score update of ``boundary_weight`` (contract 3, step 3): a row's
-        tiling is credited by the recurrence of its wholes (the fraction of
-        whole occurrences whose surface recurred) and debited by its
-        density (wholes per presentation, the working-memory pressure);
-        the logit moves toward on when its score beats the current
-        tiling's, clipped.  Runs at the boundary, outside autograd."""
-        tab = self.__dict__.pop("_boundary_evidence", None)
-        bw = getattr(self, "boundary_weight", None)
-        if not tab or not torch.is_tensor(bw):
+        """Score update of the boundary weights (contract 3): a candidate
+        move's tiling is credited by the recurrence of its wholes and
+        debited by its density (wholes per presentation, the
+        working-memory pressure); the weight moves toward on when its
+        score beats the current tiling's, clipped.  A move that changes
+        nothing (its tiling equals the current one) earns nothing.  Runs at
+        the boundary, outside autograd."""
+        tab = self.__dict__.get("_boundary_evidence")
+        if not tab or not torch.is_tensor(getattr(self, "begins_weight", None)):
             return
         rate = float(getattr(self, "boundary_learning_rate", 0.0) or 0.0)
         if rate <= 0.0:
             return
-        scores = {}
-        for r, rec in tab.items():
+        # Recurrence is measured over an epoch's worth of presentations
+        # (contract 4: boundary types update at epoch boundaries), not one
+        # batch: accumulate until ``boundaryUpdateEvery`` presentations.
+        base_rec = tab.get(("current",))
+        every = int(getattr(self, "boundary_update_every", 32) or 32)
+        if base_rec is None or base_rec["presentations"] < every:
+            return
+        self.__dict__.pop("_boundary_evidence", None)
+        dens_w = float(getattr(self, "boundary_density_weight", 0.05))
+        type_w = float(getattr(self, "boundary_type_weight", 0.25))
+        def score(rec):
+            # The memory-load criterion: reuse (recurrence of the wholes)
+            # minus the working-memory cost (wholes per presentation) and
+            # the long-term-memory cost (distinct wholes per occurrence: a
+            # tiling that memorises sentences pays here).
             occ = sum(rec["surfaces"].values())
             if occ <= 0 or rec["presentations"] <= 0:
-                continue
+                return None
             recurring = sum(c for c in rec["surfaces"].values() if c >= 2)
-            recurrence = recurring / float(occ)
-            density = rec["units"] / float(rec["presentations"])
-            scores[r] = recurrence - float(getattr(self, "boundary_density_weight", 0.05)) * density
-        if not scores:
+            distinct = len(rec["surfaces"])
+            return (recurring / float(occ)
+                    - dens_w * rec["units"] / float(rec["presentations"])
+                    - type_w * distinct / float(occ))
+        base = tab.get(("current",))
+        baseline = score(base) if base else None
+        if baseline is None:
             return
+        weights = {"begins": self.begins_weight, "ends": self.ends_weight, "atom": self.atom_level}
+        # Greedy: only the best-scoring move(s) beyond the current tiling
+        # are credited at each update (ties share), so boundary types are
+        # discovered one at a time against the tiling the earlier ones
+        # produced; moves that do not beat the current tiling are debited.
+        scored = []
+        for key, rec in tab.items():
+            if key == ("current",):
+                continue
+            if rec["units"] == base["units"]:
+                continue                                     # no new cut
+            sc = score(rec)
+            if sc is not None:
+                scored.append((sc, key))
+        if not scored:
+            return
+        best = max(sc for sc, _ in scored)
+        tied = [key for sc, key in scored if sc >= best - 1e-9]
+        # Ties prefer the more general boundary type: a property row over
+        # a single byte's column (a class boundary over one letter's).
+        if any(int(c) >= self._ATOMIC_COLUMNS for _mv, c in tied):
+            tied = [key for key in tied if int(key[1]) >= self._ATOMIC_COLUMNS]
         with torch.no_grad():
-            baseline = scores.pop(-1, None)
-            discard_score = scores.pop(-2, None)
-            discard_units = tab.get(-2, {}).get("units", None)
-            if baseline is None:
-                on = (torch.sigmoid(bw) > 0.5).tolist()
-                current = [scores[r] for r in scores if r < len(on) and on[r]]
-                baseline = max(current) if current else min(scores.values())
-            rows = getattr(self, "_predicate_rows", {})
-            for r, sc in scores.items():
-                if not (0 <= r < int(bw.shape[0])):
+            for sc, (move, c) in scored:
+                w = weights[move]
+                if not (0 <= int(c) < int(w.shape[0])):
                     continue
-                cls = rows.get(r, set())
-                is_discard = bool(cls & {_CLS_WHITESPACE, _CLS_PAD})
-                distinct = (discard_units is None
-                            or tab[r]["units"] != discard_units)
-                if is_discard and discard_score is not None:
-                    bw[r] += rate * (discard_score - baseline)
-                elif distinct:
-                    bw[r] += rate * (sc - baseline)
-            bw.clamp_(-8.0, 8.0)
+                if (move, c) in tied and sc > baseline:
+                    w[int(c)] += rate * (sc - baseline)
+                elif sc < baseline:
+                    w[int(c)] += rate * (sc - baseline)
+            for w in weights.values():
+                w.clamp_(-8.0, 8.0)
+
+    # -- LBG on the property inventory (contract 2: new whole rows) -----------
+
+    def record_property_pull(self, row, vec, byte_values):
+        """Accumulate the pull a unit's rung-0 code exerts on property row
+        ``row`` (the unit holds the row's predicate), with the bytes of the
+        unit, so a split can assign bytes to the new row by the side of the
+        split they fall on (predicate acquisition through the parts)."""
+        if getattr(self, "_online_learning_frozen", False) or not torch.is_tensor(vec):
+            return
+        cb = getattr(getattr(self, "subspace", None), "what", None)
+        W = cb.getW() if cb is not None and hasattr(cb, "getW") else None
+        if W is None or not (0 <= int(row) < int(W.shape[0])):
+            return
+        v = vec.detach().to(W.device, W.dtype).reshape(-1)
+        d = int(min(v.shape[0], W.shape[1]))
+        delta = (v[:d] - W[int(row), :d].detach()).clone()
+        tab = self.__dict__.setdefault("_property_lbg", {})
+        rec = tab.setdefault(int(row), {"sum": torch.zeros(d), "sq": torch.zeros(d), "n": 0, "pulls": []})
+        rec["sum"] = rec["sum"] + delta.to("cpu"); rec["sq"] = rec["sq"] + (delta * delta).to("cpu"); rec["n"] += 1
+        rec["pulls"].append((delta.to("cpu").clone(), tuple(int(x) & 0xFF for x in byte_values)))
+        if len(rec["pulls"]) > 512:
+            del rec["pulls"][:-512]
+
+    def maybe_split_property_row(self, row):
+        """LBG split of a property row (Mereology.md, "Automatic analysis:
+        dividing wholes"): when the max per-coordinate assignment variance
+        exceeds ``lbgThreshold`` after at least ``lbgMinCount`` pulls, the
+        row moves to ``old + eps*d``, a fresh row is admitted at
+        ``old - eps*d`` (``d`` the unit mean displacement) and acquires as
+        its predicate the bytes of the pulls on that side; returns the new
+        row or None."""
+        tab = self.__dict__.get("_property_lbg") or {}
+        rec = tab.get(int(row))
+        if rec is None or rec["n"] < int(getattr(self, "_lbg_min_count", 8)):
+            return None
+        n = float(rec["n"]); mean = rec["sum"] / n
+        var = rec["sq"] / n - mean * mean
+        if float(var.max()) < float(getattr(self, "_lbg_threshold", 0.5)):
+            return None
+        norm = float(mean.norm())
+        if norm < 1e-9:
+            tab.pop(int(row), None); return None
+        direction = mean / norm
+        cb = getattr(getattr(self, "subspace", None), "what", None)
+        W = cb.getW()
+        n_rows = int(W.shape[0])
+        used = self.__dict__.setdefault("_property_rows_used", set(getattr(self, "_predicate_rows", {}).keys()))
+        free = [r for r in range(n_rows) if r not in used and r not in (self.__dict__.get("_row_bytes") or {})]
+        if not free:
+            return None
+        new_row = int(free[0]); used.add(new_row)
+        d = int(mean.shape[0]); eps = float(getattr(self, "_lbg_epsilon", 0.1))
+        with torch.no_grad():
+            old = W[int(row), :d].detach().clone()
+            W.data[int(row), :d].copy_(old + eps * direction.to(W.device, W.dtype))
+            W.data[new_row, :d].copy_(old - eps * direction.to(W.device, W.dtype))
+        # Predicate acquisition: the bytes whose pulls fell on the new side.
+        side = {}
+        for delta, bytes_ in rec["pulls"]:
+            proj = float((delta * direction).sum())
+            for bv in bytes_:
+                side.setdefault(bv, [0, 0])[0 if proj >= 0 else 1] += 1
+        new_bytes = {bv for bv, (pos, neg) in side.items() if neg > pos}
+        self.__dict__.setdefault("_row_bytes", {})[new_row] = sorted(new_bytes)
+        self.__dict__["_predicate_byte_lut"] = None
+        self._grow_boundary_weights()
+        tab.pop(int(row), None)
+        return new_row
+
+    def _grow_boundary_weights(self):
+        """Keep the three weight vectors sized to the column count (rows may
+        be admitted by a split); new columns start off."""
+        C = self._predicate_column_count()
+        for name in ("begins_weight", "ends_weight", "atom_level"):
+            w = getattr(self, name, None)
+            if torch.is_tensor(w) and int(w.shape[0]) < C:
+                grown = torch.full((C,), -4.0)
+                grown[: int(w.shape[0])] = w.detach()
+                new_p = nn.Parameter(grown)
+                setattr(self, name, new_p)
+                self.params = [q for q in self.params if q is not w] + [new_p]
 
     def Reset(self, batch=None, hard=True):
         """Sentence / document boundary: commit the boundary learner's score
-        update (fold-ladder plan, contract 3, step 3) before the base reset;
-        nothing is learned while online learning is frozen."""
+        update and any pending property splits (fold-ladder plan) before
+        the base reset; nothing is learned while online learning is frozen."""
         if hard and not getattr(self, "_online_learning_frozen", False):
             self._update_boundary_predicates()
+            for row in list((self.__dict__.get("_property_lbg") or {}).keys()):
+                self.maybe_split_property_row(row)
         super().Reset(batch=batch, hard=hard)
 
     def _build_boundary_predicates(self):
-        """Learned boundary / singleton predicates over the property rows
-        (fold-ladder plan, contract 3): ``boundary_weight[p]`` (a flip of
-        ``p`` ends a whole) and ``singleton_weight[p]`` (every occurrence of
-        ``p`` stands alone), logits with a hard 0.5 threshold in the cut.
-        Initialised from the canonical priors (space / punctuation / pad as
-        boundaries; the digit singleton under ``<digitWholes>``) or, under
-        ``<boundaryTypes>none</boundaryTypes>``, all off."""
-        pk = None
-        if getattr(self, "property_basis", False):
-            cb = getattr(getattr(self, "subspace", None), "what", None)
-            pk = getattr(cb, "property_kind", None) if cb is not None else None
-            n_rows = int(getattr(cb, "nVectors", 0) or 0) if cb is not None else 0
-        else:
-            ts = getattr(self, "type_subspace", None)
-            cb = getattr(ts, "what", None) if ts is not None else None
-            pk = getattr(cb, "property_kind", None) if cb is not None else None
-            n_rows = int(getattr(cb, "nVectors", 0) or 0) if cb is not None else 0
-        if not pk or n_rows <= 0:
-            self.boundary_weight = None
-            self.singleton_weight = None
+        """The learned boundary weights over the atomic wholes and the
+        property rows (contract 3): ``begins_weight``, ``ends_weight`` and
+        ``atom_level``, logits thresholded at 0.5 in the cut.  Under
+        ``<boundaryTypes>canonical</boundaryTypes>`` the class prior turns
+        on the whitespace / punctuation / pad rows' begins and ends and, with
+        ``<digitWholes>``, the digit row's atom level; under ``none`` every
+        weight starts off (the cold start: the atomic tiling)."""
+        self.begins_weight = None; self.ends_weight = None; self.atom_level = None
+        self._predicate_rows = {}
+        if not getattr(self, "property_basis", False):
             return
-        n_rows = min(n_rows, 63)
-        b = torch.full((n_rows,), -4.0)
-        sgl = torch.full((n_rows,), -4.0)
-        if getattr(self, "boundary_types", "canonical") != "none":
-            for raw_row, classes in pk.items():
-                row = int(raw_row)
-                if not (0 <= row < n_rows):
-                    continue
-                cls = {int(c) for c in classes}
-                if cls & {_CLS_WHITESPACE, _CLS_PUNCT, _CLS_PAD}:
-                    b[row] = 4.0
-                if _CLS_DIGIT in cls and getattr(self, "digit_wholes", False):
-                    sgl[row] = 4.0
-        self.boundary_weight = nn.Parameter(b)
-        self.singleton_weight = nn.Parameter(sgl)
-        self.params.append(self.boundary_weight)
-        self.params.append(self.singleton_weight)
+        cb = getattr(getattr(self, "subspace", None), "what", None)
+        pk = getattr(cb, "property_kind", None) if cb is not None else None
+        if not pk:
+            return
         self._predicate_rows = {int(r): {int(c) for c in cl} for r, cl in pk.items()}
+        C = self._predicate_column_count()
+        begins = torch.full((C,), -4.0); ends = torch.full((C,), -4.0); atom = torch.full((C,), -4.0)
+        if getattr(self, "boundary_types", "canonical") != "none":
+            for r, cls in self._predicate_rows.items():
+                col = self._ATOMIC_COLUMNS + int(r)
+                if col >= C:
+                    continue
+                if cls & {_CLS_WHITESPACE, _CLS_PUNCT, _CLS_PAD}:
+                    begins[col] = 4.0; ends[col] = 4.0
+                if _CLS_DIGIT in cls and getattr(self, "digit_wholes", False):
+                    atom[col] = 4.0
+        self.begins_weight = nn.Parameter(begins)
+        self.ends_weight = nn.Parameter(ends)
+        self.atom_level = nn.Parameter(atom)
+        self.params += [self.begins_weight, self.ends_weight, self.atom_level]
+        self.__dict__["_predicate_byte_lut"] = None
 
     def _build_type_subspace(self, tags=None):
         """Build the frozen TYPE subspace (doc/plans/2026-07-10-wholes-are-
@@ -27610,33 +27857,13 @@ class WholeSpace(Space):
         # makes every digit its own unit.
         unit_types = torch.where(type_ids == _TYPE_DIGIT,
                                  torch.full_like(type_ids, _TYPE_LETTER), type_ids)
-        bw = getattr(self, "boundary_weight", None)
+        bw = getattr(self, "begins_weight", None)
         if torch.is_tensor(bw) and getattr(self, "property_basis", False):
-            # The learned predicates decide the unit tiling (contract 3):
-            # boundary rows by flip, singleton rows by occurrence; pad and
-            # (unless demoted) whitespace rows are discarded.
-            prop_lut, discard_mask = _analysis_property_signature(self)
-            sig = prop_lut[idx]
-            n_rows = int(bw.shape[0])
-            with torch.no_grad():
-                b_on = (torch.sigmoid(bw) > 0.5).tolist()
-                s_on = (torch.sigmoid(self.singleton_weight) > 0.5).tolist()
-            boundary_bits = sum((1 << r) for r in range(n_rows) if b_on[r])
-            singleton_bits = sum((1 << r) for r in range(n_rows) if s_on[r])
-            # Whitespace and pad stay boundary-only (discarded) classes even
-            # under the cold start; demoting whitespace to a whole type is a
-            # later step (the canonical discard mask is the bootstrap).
-            discard_bits = int(discard_mask)
-            if boundary_bits == 0 and singleton_bits == 0:
-                # Cold start (contract 4 bootstrap): byte-complete tiling.
-                singleton_bits = (1 << n_rows) - 1
-            fine = _predicate_unit_spans(sig, boundary_bits | discard_bits,
-                                         singleton_bits, discard_bits)
-            # Candidate-tiling evidence for the boundary learner (step 3):
-            # for every property row, the tiling "cut where this row flips"
-            # (space rows discarded as today), scored at the boundary
-            # against the CURRENT tiling (key -1).
-            self._observe_candidate_tilings(idx, sig, n_rows, discard_bits, fine)
+            # The learned predicates decide the unit tiling (contract 3) over
+            # the atomic wholes and the property rows; the candidate moves
+            # are observed for the boundary learner against this tiling.
+            fine, slab = self._unit_tiling_from_predicates(idx)
+            self._observe_candidate_tilings(idx, slab, fine)
         else:
             fine = _type_run_spans(unit_types, singleton=single)
         object.__setattr__(self, "_staged_unit_spans", fine.to(IS_concepts.device))

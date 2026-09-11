@@ -758,7 +758,32 @@ Decisions (Alec, 2026-09-11) on the four questions the resolutions raised:
   the square root of `lbgThreshold` (the standard deviation along the
   split axis), overridable.
 
-Implementation of these resolutions is the next slice: the difference-
+Status (2026-09-11, second slice landed): the difference-typed
+boundaries (`begins_weight`, `ends_weight`) and the per-column sameness
+level (`atom_level`) over the atomic wholes (256 columns, one per byte
+value) plus the property rows, cut from a bool signature slab
+(`_predicate_unit_spans`), with the class rows as the `canonical` prior
+and the atomic tiling as the `none` cold start; whitespace runs presented
+as units under `<whitespaceUnits>` with the grammar's `null` unary
+operation (`NullLayer`, in `ladder.grammar`); the boundary learner with
+the memory-load score (recurrence minus `boundaryDensityWeight` times
+density minus `boundaryTypeWeight` times distinct-per-occurrence),
+greedy per update window (`boundaryUpdateEvery`), ties toward class rows
+(test: a varied generated corpus turns a whitespace boundary on and
+leaves letter bytes' boundaries off); LBG on the property inventory
+(`record_property_pull` from each unit's rung-0 code,
+`maybe_split_property_row` at the boundary, the new row's predicate
+acquired from the pulls' bytes, `_grow_boundary_weights`); the phrase row
+(allocated at admission from the additive composition, snapped to by a
+matching chunk in the reduce step); persistence of the utility counts,
+phrase hits / admissions / rows / gains and the acquired predicates
+through the structural extras; `admissionRadius` defined from
+`lbgThreshold`. Not done: the compiled provenance slab (eager-only
+licensing stands), the vowel test (a corpus whose codes split the letter
+row; the mechanism is exercised only by construction), and training the
+phrase row through the answer path end to end.
+
+Implementation of these resolutions was the second slice (status above); what remains of it: the difference-
 typed boundaries and the sameness level (replacing the flip weight and
 the singleton), whitespace as a null-operation unit, the seeded class
 concepts, the LBG gate lifted on the property inventory with predicate

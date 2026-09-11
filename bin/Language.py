@@ -4474,6 +4474,34 @@ def _dispatch_method_name_for_rule(rule):
     return method
 
 
+class NullLayer(GrammarLayer):
+    """The null grammatical operation (fold-ladder plan, contract 3): the
+    unary identity a unit contributes when it carries no meaning of its
+    own, e.g. a whitespace unit presented to the loop. Composing it folds
+    the unit away; reversing it restores it. Invertible, lossless."""
+    rule_name        = "null"
+    arity            = 1
+    invertible       = True
+    lossy            = False
+    space_role       = 'CS'
+    reads_activation = False
+
+    def __init__(self):
+        super().__init__(0, 0)
+
+    def forward(self, x):
+        return x
+
+    def reverse(self, parent):
+        return parent
+
+    def compose(self, x):
+        return self.forward(x)
+
+    def generate(self, parent):
+        return self.reverse(parent)
+
+
 class ExistLayer(GrammarLayer):
     """Existential truth wrapper for absolute-truth start forms.
 
@@ -4615,6 +4643,7 @@ GRAMMAR_LAYER_CLASSES = {
     'queryEqual':   QueryEqualLayer,
     'queryPart':    QueryPartLayer,
     'exist':        ExistLayer,
+    'null':         NullLayer,
     # true/false/swap/copy/area/luminosity/isaPart parked in bin/Legacy.py
     # (2026-07-17): documented-dormant, no live grammar dispatches them.
     # Revive by moving the class back to Layers.py and re-adding it here.
@@ -4704,6 +4733,7 @@ _OPERATOR_SURFACE_SCHEMAS = {
     'query':        T1_UNARY_AFFIX,
     'queryEqual':   T1_UNARY_AFFIX,
     'exist':        T1_UNARY_AFFIX,
+    'null':         T1_UNARY_AFFIX,
     # Binary infix (T2): one INFIX/CIRCUM marker slot that may select
     # which op fires; order free.
     'conjunction':  T2_BINARY_INFIX,

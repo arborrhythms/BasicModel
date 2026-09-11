@@ -1236,6 +1236,8 @@
       <xs:element name="utilityMinCount" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="admissionCount" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="utilityPriorRate" type="nonNegativeFloat" minOccurs="0"/>
+      <!-- Identity radius for admission; defaults to sqrt(WholeSpace.lbgThreshold). -->
+      <xs:element name="admissionRadius" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="nInput" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nOutput" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nActive" type="xs:nonNegativeInteger" minOccurs="0"/>
@@ -1407,6 +1409,12 @@
            (no boundary type; the cold-start test). -->
       <xs:element name="boundaryLearningRate" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="boundaryDensityWeight" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="boundaryUpdateEvery" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="boundaryTypeWeight" type="nonNegativeFloat" minOccurs="0"/>
+      <!-- Present whitespace runs as units whose grammatical operation is
+           the null operation (fold-ladder plan, contract 3), instead of
+           discarding them as a boundary-only class. Default false. -->
+      <xs:element name="whitespaceUnits" type="xs:boolean" minOccurs="0"/>
       <xs:element name="boundaryTypes" minOccurs="0">
         <xs:simpleType>
           <xs:restriction base="xs:string">

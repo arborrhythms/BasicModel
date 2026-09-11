@@ -26,11 +26,12 @@ from Spaces import Space, PartSpace, WholeSpace
 _XOR_HEAD_NVEC = [8, 8, 8]
 _GRAMMAR_HEAD_NVEC = [4, 2, 2]
 _HEAD_SD = {  # (n_keys, sha16 of sorted state_dict key names)
-    # 2026-09-10 (meronomy fold ladder, Phase 2): every canonical WholeSpace
-    # carries the learned boundary / singleton predicates
-    # (``boundary_weight`` / ``singleton_weight``), +2 keys per WS stage.
-    "data/MM_20M_xor.xml": (560, "1246bccde3570a5a"),
-    "data/MM_20M_grammar.xml": (737, "9e895119f3782d61"),
+    # 2026-09-11 (meronomy fold ladder, contract 3): the learned boundary
+    # weights live on the property inventory (propertyBasis configs) only;
+    # these legacy-basis configs carry none, so their key sets are the
+    # original HEAD pins.
+    "data/MM_20M_xor.xml": (554, "3eb1cc3a2392044d"),
+    "data/MM_20M_grammar.xml": (731, "6eea8571d26d4e91"),
 }
 
 

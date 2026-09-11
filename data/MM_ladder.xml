@@ -242,6 +242,7 @@
   <WholeSpace>
     <propertyBasis>true</propertyBasis>
     <digitWholes>true</digitWholes>
+    <whitespaceUnits>true</whitespaceUnits>
     <analysis>meronomy</analysis>
     <!-- Per-vector invertible membership coupling. This is not the optional
          parallel CS mixing matrix and never mixes word/location slots. -->

@@ -94,6 +94,7 @@ from Layers import TernaryTruthStore
 from Layers import Ops, GRAMMAR_LAYER_CLASSES, CONTIGUITY_PRESERVING_OPS
 from Teacher import Teacher
 from Mereology import Mereology
+from Layers import _CHAR_CLASS_RANGES
 from dataclasses import dataclass, field
 from typing import List
 
@@ -4265,6 +4266,10 @@ class BaseModel(Mereology, nn.Module):
             "_object_word_concept", "_priming_bridge", "_frozen_concepts",
             "_frozen_named", "_promotion_cache_state",
             "_concept_admission_drops",
+            # Fold-ladder plan (contracts 4, 6, 7): utility counts, phrase
+            # hits / admissions / rows / gains ride the checkpoint.
+            "_cu", "_chunk_hits", "_chunk_admitted", "_chunk_rows",
+            "_chunk_utility_gain",
         )
         legacy_ws_fields = (
             "_word_whole_ss", "_mereology_raised",
@@ -4275,7 +4280,10 @@ class BaseModel(Mereology, nn.Module):
         # Schema-2 WholeSpace sidecars contain perceptual analysis state only.
         # LBG accumulators belong to the retired WS concept/META dictionary and
         # must not be serialized beside the fixed property basis.
-        property_ws_fields = ("_standalone_run_bytes",)
+        property_ws_fields = ("_standalone_run_bytes",
+                              # acquired predicates of split rows and the
+                              # rows in use (fold-ladder plan, contract 2)
+                              "_row_bytes", "_property_rows_used")
         property_basis = bool(getattr(self, "wholePropertyBasis", False))
 
         conceptual = {}
@@ -4567,9 +4575,18 @@ class BaseModel(Mereology, nn.Module):
             W = cb.getW() if cb is not None and hasattr(cb, "getW") else None
             for name, value in (entry.get("attributes") or {}).items():
                 if (property_basis
-                        and str(name) != "_standalone_run_bytes"):
+                        and str(name) not in ("_standalone_run_bytes",
+                                              "_row_bytes",
+                                              "_property_rows_used")):
                     continue
                 restored = _checkpoint_host_copy(value)
+                if str(name) == "_row_bytes" and isinstance(restored, dict):
+                    # Acquired predicates of split rows (fold-ladder plan):
+                    # row -> byte list; keys come back as strings from JSON.
+                    restored = {int(k): [int(b) for b in v] for k, v in restored.items()}
+                    object.__setattr__(ws, "_predicate_byte_lut", None)
+                elif str(name) == "_property_rows_used":
+                    restored = set(int(r) for r in restored)
                 if (not property_basis
                         and str(name).startswith("_lbg_disp_")
                         and torch.is_tensor(W)):
@@ -10496,6 +10513,7 @@ class BasicModel(BaseModel):
                     self.perceptualSpace, "_radix_growth_callback", None)
                 object.__setattr__(self.perceptualSpace, "_staged_unit_spans", None)
             self.inputSpace.finalize_stem(in_sub, self.perceptualSpace)
+            self._record_unit_pulls(_ws_list[0] if _ws_list else None)
         # Resolve sparse concept identities only after the word-major PS stem
         # has exposed its exact residual parts and WS has staged the matching
         # property analysis. This remains wholly eager; the compiled word cell
@@ -15390,6 +15408,39 @@ class BasicModel(BaseModel):
             trace_slot, routing, applied, arity=1)
         return applied
 
+    def _record_unit_pulls(self, ws):
+        """After the ladder stem: each unit's rung-0 code pulls on every
+        property row its bytes hold (the LBG accumulation of contract 2),
+        with the unit's bytes for predicate acquisition.  Eager, bounded by
+        the number of units; no-op off the canonical path."""
+        ps = getattr(self, "perceptualSpace", None)
+        if ws is None or ps is None or not getattr(ps, "_meronomy", False):
+            return
+        if not hasattr(ws, "record_property_pull") or not getattr(ws, "property_basis", False):
+            return
+        fi = getattr(ps, "_forward_input", None) or {}
+        texts = fi.get("word_texts"); codes = getattr(ps, "_embedded_input", None)
+        if not texts or not torch.is_tensor(codes) or codes.dim() != 3:
+            return
+        rows = getattr(ws, "_predicate_rows", {}) or {}
+        row_bytes = ws.__dict__.get("_row_bytes") or {}
+        n_what = int(getattr(ws, "nWhat", codes.shape[-1]) or codes.shape[-1])
+        for b, row_texts in enumerate(texts):
+            for w, text in enumerate(row_texts):
+                if w >= int(codes.shape[1]) or not text:
+                    continue
+                bv = list(text.encode("latin1", "replace"))
+                held = set()
+                for r, cls in rows.items():
+                    if any(any(lo <= x <= hi for lo, hi in _CHAR_CLASS_RANGES.get(int(c), ()))
+                           for c in cls for x in bv):
+                        held.add(int(r))
+                for r, bs in row_bytes.items():
+                    if any(x in bs for x in bv):
+                        held.add(int(r))
+                for r in held:
+                    ws.record_property_pull(r, codes[b, w, :n_what], bv)
+
     def _concept_owner(self):
         """The ConceptualSpace that owns the concept store and the utility
         counts (stage 0 of an aligned body; the only stage otherwise)."""
@@ -15458,6 +15509,22 @@ class BasicModel(BaseModel):
                         rec = stm._slot_wholes[b][0]
                         shared = rec[0] if (rec[0] >= 0 and rec[0] == stm._slot_wholes[b][1][0]) else (rec[2] if len(rec) > 2 else -1)
                         proposals.append((b, (a_left, a_right), int(shared)))
+        # A chunk on an admitted pair snaps to the phrase's row (contract 7).
+        phrase_rows = cs.__dict__.get("_chunk_rows") or {}
+        if phrase_rows and idx is not None and op is not None:
+            rows_slab, _acts = stm.ensure_reference_state()
+            for b, c in enumerate(rows_can):
+                if not (c and op[b] == idx and same[b]):
+                    continue
+                u_left, u_right = units[b]
+                if not (torch.is_tensor(ids) and u_left >= 0 and u_right >= 0
+                        and u_left < int(ids.shape[1]) and u_right < int(ids.shape[1])):
+                    continue
+                key = (int(ids[b, u_left]), int(ids[b, u_right]))
+                row = phrase_rows.get(key)
+                if row is not None:
+                    stm._pending_phrase_rows = getattr(stm, "_pending_phrase_rows", {})
+                    stm._pending_phrase_rows[b] = int(row)
         stm.note_reduce_wholes(rows_can)
 
     @staticmethod
@@ -15865,6 +15932,16 @@ class BasicModel(BaseModel):
                 parent_concept_activation.unsqueeze(1))
         stm._concept_rows = torch.where(
             can.view(B, 1), shifted_concept_rows, concept_rows)
+        pending_rows = getattr(stm, "_pending_phrase_rows", None)
+        if pending_rows and not torch.compiler.is_compiling():
+            # The folded parent at slot 0 IS the admitted phrase: reference
+            # its row so later reads and the answer path use it.
+            new_rows = stm._concept_rows.clone()
+            for b_, r_ in pending_rows.items():
+                if 0 <= int(b_) < B and bool(can[int(b_)]):
+                    new_rows[int(b_), 0] = int(r_)
+            stm._concept_rows = new_rows
+            stm._pending_phrase_rows = {}
         stm._concept_activations = torch.where(
             can.view(B, 1), shifted_concept_activations,
             concept_activations)

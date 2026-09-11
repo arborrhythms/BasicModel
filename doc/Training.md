@@ -607,3 +607,12 @@ step; a proposal that has recurred `admissionCount` times is admitted as a
 concept over its member concepts. `category_utility` (Corter & Gluck 1992,
 Laplace-smoothed, withheld below `utilityMinCount`) is the estimator of
 the basic level (doc/plans/2026-09-10-meronomy-fold-ladder.md, contract 4).
+
+An admitted phrase also gets a row of its own in the concept dictionary,
+initialised from the additive composition of its members; when the
+reduce pass chunks a pair that matches an admitted phrase, the folded
+parent's STM reference is set to that row, so later reads and the
+answer path use the phrase's row and the losses train it. The utility
+counts, the phrase hits, admissions, rows and gains, and the acquired
+predicates of split property rows ride the structural extras of the
+checkpoint (doc/plans/2026-09-10-meronomy-fold-ladder.md, contracts 6-7).

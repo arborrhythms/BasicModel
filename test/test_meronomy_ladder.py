@@ -166,11 +166,12 @@ def test_ladder_stem_units_are_the_staged_wholes_and_atoms_are_bytes(ladder):
     m = ladder
     assert m.perceptualSpace._meronomy and m.wholeSpaces[0].digit_wholes
     units, atoms, ids, mask, offsets = _stage(m, ["12 plus 1", "hi, there"])
-    assert units[0] == ["1", "2", "plus", "1"]            # digit wholes are units
-    assert units[1] == ["hi", ",", "there"]              # punctuation is a unit
-    assert atoms[0][2] == [b"p", b"l", b"u", b"s"]       # bytes in surface order
+    # Digit wholes are units; whitespace runs are units (the null operation).
+    assert units[0] == ["1", "2", " ", "plus", " ", "1"]
+    assert units[1] == ["hi", ",", " ", "there"]         # punctuation is a unit
+    assert atoms[0][3] == [b"p", b"l", b"u", b"s"]       # bytes in surface order
     assert atoms[0][0] == [b"1"] and atoms[0][1] == [b"2"]
-    assert offsets[0, :4, 0].tolist() == [0, 1, 3, 8]    # unit starts in bytes
+    assert offsets[0, :6, 0].tolist() == [0, 1, 2, 3, 7, 8]   # unit starts in bytes
     store = m.perceptualSpace.percept_store
     assert store.get_id(b"12") is None                   # never fused below the grammar
 
@@ -180,7 +181,7 @@ def test_witness_replay_is_byte_exact(ladder, surface):
     m = ladder
     units, atoms, ids, mask, offsets = _stage(m, [surface])
     replay = b"".join(b"".join(unit) for unit in atoms[0])
-    assert replay == surface.replace(" ", "").encode("ascii")
+    assert replay == surface.encode("ascii")             # whitespace units included
     # Every atom has its exact span; spans are in surface order.
     spans = m.perceptualSpace._forward_input["part_spans"][0]
     live = [tuple(sp) for sp, ok in zip(spans.tolist(), mask[0].reshape(-1).tolist()) if ok]
@@ -193,7 +194,7 @@ def test_long_unit_presents_every_atom(ladder):
     m = ladder
     long_word = "abcdefghijklmnopqrst"
     units, atoms, ids, mask, offsets = _stage(m, [long_word + " y"])
-    assert units[0] == [long_word, "y"]
+    assert units[0] == [long_word, " ", "y"]
     assert len(atoms[0][0]) == 20
     assert b"".join(atoms[0][0]) == long_word.encode("ascii")
     assert not bool(m.inputSpace._ar_word_truncated_mask.any())
@@ -351,25 +352,23 @@ def test_recurring_same_whole_pair_is_proposed_and_admitted_as_a_phrase():
 
 def test_boundary_predicates_reproduce_the_priors_tiling(ladder):
     ws = ladder.wholeSpaces[0]
-    assert torch.is_tensor(ws.boundary_weight) and torch.is_tensor(ws.singleton_weight)
-    rows = ws._predicate_rows
-    on_b = (torch.sigmoid(ws.boundary_weight) > 0.5).tolist()
-    on_s = (torch.sigmoid(ws.singleton_weight) > 0.5).tolist()
+    assert all(torch.is_tensor(getattr(ws, n)) for n in ("begins_weight", "ends_weight", "atom_level"))
+    begins_on, ends_on, atom_on, discard_on = ws._predicate_masks()
     from Layers import WHITESPACE, PUNCT, DIGIT, LETTER
-    for r, cls in rows.items():
-        if r >= len(on_b):
-            continue
+    A = ws._ATOMIC_COLUMNS
+    for r, cls in ws._predicate_rows.items():
+        col = A + r
         if cls & {WHITESPACE, PUNCT}:
-            assert on_b[r]
-        if LETTER in cls and not (cls & {WHITESPACE, PUNCT}):
-            assert not on_b[r]
+            assert bool(begins_on[col]) and bool(ends_on[col])
+        if cls == {LETTER}:
+            assert not bool(begins_on[col]) and not bool(ends_on[col])
         if DIGIT in cls:
-            assert on_s[r]                           # digit wholes on this fixture
-    # The learned-predicate cut equals the priors cut on the fixture surfaces.
+            assert bool(atom_on[col])                # digit wholes on this fixture
+    assert not bool(begins_on[:A].any())             # atomic columns start off
+    assert not bool(discard_on[1:A].any())           # whitespace units: only the pad is discarded
     units, atoms, ids, mask, offsets = _stage(ladder, ["12 plus 1", "hi, there", "w0 abc123"])
-    # Digit wholes are on for this fixture: every digit stands alone.
-    assert units == [["1", "2", "plus", "1"], ["hi", ",", "there"],
-                     ["w", "0", "abc", "1", "2", "3"]]
+    assert units == [["1", "2", " ", "plus", " ", "1"], ["hi", ",", " ", "there"],
+                     ["w", "0", " ", "abc", "1", "2", "3"]]
 
 
 def test_boundary_types_none_starts_without_boundaries(tmp_path):
@@ -390,56 +389,69 @@ def test_boundary_types_none_starts_without_boundaries(tmp_path):
     m, _ = Models.BaseModel.from_config(str(config), data=TheData)
     ws = m.wholeSpaces[0]
     assert ws.boundary_types == "none"
-    assert not bool((torch.sigmoid(ws.boundary_weight) > 0.5).any())
-    assert not bool((torch.sigmoid(ws.singleton_weight) > 0.5).any())
+    b_on, e_on, a_on, _ = ws._predicate_masks()
+    assert not bool(b_on.any() or e_on.any() or a_on.any())
     units, atoms, ids, mask, offsets = _stage(m, ["12 plus 1"])
-    # The cold start is byte-complete (every byte a unit; whitespace stays a
-    # discarded boundary-only class until it is demoted to a whole type).
-    assert units[0] == ["1", "2", "p", "l", "u", "s", "1"]
+    # The cold start is the atomic tiling: every byte a whole, spaces included.
+    assert units[0] == ["1", "2", " ", "p", "l", "u", "s", " ", "1"]
 
 
 # -- Phase 2, step 3: the cold start learns space as the basic boundary ---------
 
 def test_cold_start_learns_space_as_the_basic_boundary(tmp_path):
-    """Under <boundaryTypes>none</boundaryTypes> with the learner on, the
-    successor corpus (words bounded by spaces, digits, punctuation-free)
-    turns the whitespace row's boundary logit on within a few epochs,
-    while the letter row's stays off: cutting at space flips yields the
-    most recurring wholes at the lowest density."""
+    """Under <boundaryTypes>none</boundaryTypes> with the learner on, a
+    small varied text corpus (the idiom fixture's sentences) turns a
+    whitespace boundary on within a few epochs: cutting where space runs
+    begin or end yields the most recurring wholes at the lowest density,
+    while a letter byte's own boundaries do not recur across sentences."""
     import Language
     from util import init_config
     from data import TheData
     import Models
-    from Layers import WHITESPACE, LETTER
-    src = (_DATA / "MM_ladder.xml").read_text()
+    from Layers import WHITESPACE
+    import random, re
+    src = (_DATA / "MM_ladder_idiom.xml").read_text()
+    # A varied corpus: words recur, longer chunks rarely do.
+    rng = random.Random(7)
+    vocab = ["the", "cat", "dog", "saw", "a", "big", "red", "ball", "ran", "to", "old", "man"]
+    sents = [" ".join(rng.choice(vocab) for _ in range(rng.randint(3, 6))) for _ in range(48)]
+    labels = [str(i % 2) for i in range(len(sents))]
+    src = re.sub(r'<input use="train">[^<]*</input>', '<input use="train">' + "|".join(sents) + "</input>", src)
+    src = re.sub(r'<output use="train">[^<]*</output>', '<output use="train">' + "|".join(labels) + "</output>", src)
+    src = re.sub(r'<input use="test">[^<]*</input>', '<input use="test">' + "|".join(sents[:8]) + "</input>", src)
+    src = re.sub(r'<output use="test">[^<]*</output>', '<output use="test">' + "|".join(labels[:8]) + "</output>", src)
     config = tmp_path / "MM_ladder_learn.xml"
     config.write_text(src.replace(
-        "<digitWholes>true</digitWholes>",
-        "<digitWholes>true</digitWholes>\n    <boundaryTypes>none</boundaryTypes>\n"
-        "    <boundaryLearningRate>8.0</boundaryLearningRate>", 1))
+        "<digitWholes>false</digitWholes>",
+        "<digitWholes>false</digitWholes>\n    <boundaryTypes>none</boundaryTypes>\n"
+        "    <boundaryLearningRate>40.0</boundaryLearningRate>\n"
+        "    <boundaryUpdateEvery>16</boundaryUpdateEvery>", 1))
     init_config(path=str(config), defaults_path=str(_DATA / "model.xml"))
     Language.TheGrammar._configured = False
     cfg = Models.BaseModel.load_config(str(config))
-    TheData.load("math", dat=dict(cfg["architecture"]["data"]))
+    TheData.load("inline", dat=dict(cfg["architecture"]["data"]))
     torch.manual_seed(0)
     m, _ = Models.BaseModel.from_config(str(config), data=TheData)
     ws = m.wholeSpaces[0]
-    rows = ws._predicate_rows
-    space_rows = [r for r, cl in rows.items() if WHITESPACE in cl and r < ws.boundary_weight.shape[0]]
-    letter_rows = [r for r, cl in rows.items() if cl == {LETTER} and r < ws.boundary_weight.shape[0]]
-    assert space_rows and letter_rows
-    assert not bool((torch.sigmoid(ws.boundary_weight) > 0.5).any())
+    A = ws._ATOMIC_COLUMNS
+    space_cols = [A + r for r, cl in ws._predicate_rows.items() if WHITESPACE in cl]
+    assert space_cols
+    b0, e0, a0, _ = ws._predicate_masks()
+    assert not bool(b0.any() or e0.any() or a0.any())
     opt = m.getOptimizer(lr=1e-3)
-    for _ in range(3):
-        m.runEpoch(optimizer=opt, batchSize=8, split="train", max_batches=8)
-    on = (torch.sigmoid(ws.boundary_weight) > 0.5).tolist()
-    # Whitespace turns on (its cut beats the byte-complete start on recurrence
-    # and density); a row whose flips add no cut beyond the whitespace
-    # boundaries (letters on this corpus) earns nothing and stays off.
-    assert all(on[r] for r in space_rows), (ws.boundary_weight.tolist(), rows)
-    assert not any(on[r] for r in letter_rows)
-    units, atoms, ids, mask, offsets = _stage(m, ["12 plus 1"])
-    assert "plus" in units[0]                        # space now bounds words
+    for _ in range(6):
+        m.runEpoch(optimizer=opt, batchSize=4, split="train")
+    b_on, e_on, a_on, _ = ws._predicate_masks()
+    assert any(bool(b_on[c]) or bool(e_on[c]) or bool(a_on[c]) for c in space_cols), \
+        (ws.begins_weight[space_cols].tolist(), ws.ends_weight[space_cols].tolist())
+    letter_bytes = list(range(ord("a"), ord("z") + 1))
+    assert not any(bool(b_on[c]) or bool(e_on[c]) or bool(a_on[c]) for c in letter_bytes)
+    units, atoms, ids, mask, offsets = _stage(m, ["the cat saw a dog"])
+    # Words are units now; whether the space is its own unit or attached to
+    # the word depends on which of the two space boundaries turned on first
+    # (both are legitimate under the memory-load criterion).
+    stripped = [u.strip() for u in units[0]]
+    assert "cat" in stripped and "dog" in stripped
 
 
 # -- Phase 1 acceptance (c): digit identity, order, repetition, translation ------
@@ -501,3 +513,33 @@ def test_recurring_phrases_are_admitted_on_a_text_corpus_with_positive_gain():
     for members, A in admitted.items():
         assert set(cs.concept_parts(A)) == {("sym", int(mm)) for mm in members}
     assert len(set(admitted.values())) == len(admitted)        # distinct concepts
+
+
+# -- contracts 6-7: the counts, admissions and acquired predicates round-trip ----
+
+def test_utility_state_and_predicates_round_trip_a_checkpoint(tmp_path):
+    m = _build_ladder()
+    cs = m._concept_owner()
+    ws = m.wholeSpaces[0]
+    with torch.no_grad():
+        cs.ensure_chunk_prior().fill_(50.0)
+    opt = m.getOptimizer(lr=1e-3)
+    m.runEpoch(optimizer=opt, batchSize=8, split="train", max_batches=6)
+    ws.__dict__.setdefault("_row_bytes", {})[7] = [ord("a"), ord("e")]   # an acquired predicate
+    counts = cs.utility_counts()["n"]
+    admitted = dict(cs.__dict__.get("_chunk_admitted", {}))
+    rows = dict(cs.__dict__.get("_chunk_rows", {}))
+    assert counts > 0 and admitted
+    path = tmp_path / "ladder.ckpt"
+    m.save_weights(str(path))
+    m2 = _build_ladder()
+    m2.load_weights(str(path), require_match=False)
+    cs2 = m2._concept_owner(); ws2 = m2.wholeSpaces[0]
+    assert cs2.utility_counts()["n"] == counts
+    assert {tuple(k): v for k, v in cs2.__dict__.get("_chunk_admitted", {}).items()} == \
+        {tuple(k): v for k, v in admitted.items()}
+    assert {tuple(k): v for k, v in cs2.__dict__.get("_chunk_rows", {}).items()} == \
+        {tuple(k): v for k, v in rows.items()}
+    assert list(ws2.__dict__.get("_row_bytes", {}).get(7, [])) == [ord("a"), ord("e")]
+    # The learned boundary weights are parameters and round-trip too.
+    assert torch.equal(ws2.begins_weight.detach(), ws.begins_weight.detach())
