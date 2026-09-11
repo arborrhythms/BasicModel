@@ -516,6 +516,7 @@ symbol (line anchors drift).
 | `utilitySmoothing` (ConceptualSpace) | `Spaces.py` (CS init; `category_utility`) | `1.0` | Laplace smoothing of the category-utility counts (doc/plans/2026-09-10-meronomy-fold-ladder.md, contract 4). |
 | `utilityMinCount` (ConceptualSpace) | same | `4` | Minimum presentations of a concept before its utility is trusted. |
 | `admissionCount` (ConceptualSpace) | same | `2` | Recurrences of a chunked phrase before it is admitted as a concept of its own (contract 7). |
+| `admissionRadius` (ConceptualSpace) | planned (fold-ladder plan, contract 6) | `sqrt(lbgThreshold)` | Nearest-row identity radius for admission; defined from the LBG variance threshold (the standard deviation along the split axis) so one geometry setting governs identity and division; overridable. |
 | `utilityPriorRate` (ConceptualSpace) | same | `1.0` | Step of the score update that moves the `chunk` structural prior by the admitted phrase's utility gain (contract 7); 0 freezes the prior. |
 | `gradientMode` (WholeSpace) | `Spaces.py` (WS init) | `"ste"` | Codebook gradient coupling: `snap` \| `ste` \| `rotation` (invalid values raise). |
 | `useStackRouter` (WholeSpace) | `Spaces.py` (WS init) | `false` | Gates WS's stack-rewrite LanguageLayer dispatch; `false` keeps the legacy forward path. |

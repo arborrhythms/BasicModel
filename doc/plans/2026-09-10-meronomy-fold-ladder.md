@@ -239,14 +239,15 @@ waits for a loss:
   (`stop`), which the reduce pass applies at once, so it costs no STM
   and no discard mask exists. "Space begins" and "space ends" compete
   as boundary types like the others.
-- **Pre-seeding.** The class rows (letter, digit, whitespace,
-  punctuation, capital, control, high byte, pad) are the coarsest
-  wholes and are seeded; boundary types are derived from them, never
-  stored; and the class **concepts** are seeded too: each is the class
-  part (the max over the class's atom rows) joined to the class whole.
-  Everything narrower than a class is a division of a row or an
-  admitted part from data. The cold start begins from the class
-  concepts, not from bytes.
+- **Pre-seeding (minimal).** The whole lexicon is seeded the way the
+  part lexicon is: with atoms. Its atoms are the atomic wholes, one per
+  character value (the run of that character), the smallest set of
+  segmentations from which every tiling composes; the eight class rows
+  (letter, digit, whitespace, punctuation, capital, control, high byte,
+  pad) are an optional prior, not the seed. Boundary types are derived
+  from rows, never stored. Classes are groupings the learner finds
+  (coarser tilings that recur at lower density), and every finer whole
+  is a division. The seeded rows are splittable like any other.
 - **What the learner decides.** Not whether finer wholes exist (that is
   automatic, contract 2) but which are salient: the score update over
   `begins_p` / `ends_p` and the sameness level per class, by the
@@ -732,6 +733,30 @@ The gaps listed at the end of the first slice, resolved as decisions:
    the coverage schedule shares the thinking loop's forced-closure
    pressure knob. Q3: the cold start is re-tested under the difference
    construction with the class concepts seeded and no byte floor.
+
+Decisions (Alec, 2026-09-11) on the four questions the resolutions raised:
+
+- **The sameness level is learned by the utility score**, the same
+  learner as the boundary types (contract 3), not set by grammatical
+  demand.
+- **Whitespace units are presented** to the loop, and their null
+  operation folds them at once; the loop step is perceptually
+  important even where later conceptual analysis discards it, and the
+  compiler may optimise the null step away later.
+- **The seeded whole rows are splittable, and the seed is minimal.**
+  Just as the part lexicon is seeded with every character as an atom,
+  the whole lexicon is seeded with the smallest set of segmentations
+  from which every tiling can be composed: the atomic wholes, one per
+  character value (a run of that character), rather than the eight
+  hand-tagged classes. Letter, digit, space and punctuation are then
+  groupings the learner finds (coarser tilings that recur at lower
+  density), with the eight class rows available only as an optional
+  prior. Everything is a division or a grouping of the atomic wholes.
+- **One geometry knob.** The admission radius (identity: nearest row)
+  and the LBG variance threshold (division) keep their names, but the
+  radius is defined from the variance: `admissionRadius` defaults to
+  the square root of `lbgThreshold` (the standard deviation along the
+  split axis), overridable.
 
 Implementation of these resolutions is the next slice: the difference-
 typed boundaries and the sameness level (replacing the flip weight and
