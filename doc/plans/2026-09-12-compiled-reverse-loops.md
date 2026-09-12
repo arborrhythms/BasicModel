@@ -1,140 +1,196 @@
-# Compiled reverse loops: reconstruct inside the forward loop, output as the second loop
+# Compiled reverse loops: reconstruct the completed sentence in one bounded compiled traversal, output as the second loop
 
-Status: plan, 2026-09-12. Alec's direction: the reconstruct must be a
-compiled loop, and since it shares the loop index with the forward it should
-run *inside* the forward loop; `reverseOutput` emits a sentence of its own
-length, so it is the second compiled loop; forward, `reverseReconstruct` and
-`reverseOutput` should form one compiled segment, the latter two independent
-of each other.
+Status: plan, 2026-09-12, revised the same day after Codex's review and
+Alec's decisions (recorded in the
+[sentence-boundary thinking specification, section 6](../specs/2026-09-11-sentence-boundary-thinking.md#6-code-review-compiled-reverse-loops-2026-09-12));
+those decisions are the requirements below. Nothing here is implemented or
+benchmarked yet.
 
-## Where we are
+Alec's direction: the reconstruct must be a compiled loop, and
+`reverseOutput` emits a sentence of its own length, so it is the second
+compiled loop; forward, `reverseReconstruct` and `reverseOutput` may form one
+compiled segment, the latter two independent of each other. The first draft
+of this plan proposed reversing each fold at the forward's word index; that is
+withdrawn (decision 1 below): immediate per-word recovery cannot establish
+that later folds and seals retained the earlier input.
+
+## Where we are (verified 2026-09-12)
 
 - The forward is one `torch.while_loop` per word bucket
   (`TensorPeerWhilePipeline.run_cs_lanes_banked`, called from
   `_run_tensor_peer_word_pipeline`), traced fullgraph into one graph with the
   final seal and the head; its backward is the loop's autograd.
-- `reverseReconstruct` runs eagerly in `runBatch` after the compiled call:
-  it un-folds the published root by replaying the recorded reduction trace
-  backward, one recorded op at a time, through each op's basis-threaded
-  `reverse` (`ChunkLayer.peel`, `Ops.disjunctionReverse` /
-  `conjunctionReverse` / `lowerReverseAll` / `liftReverseAll`, identity
-  stubs for the rest), then walks the stages in reverse
-  (`_reverse_body`: `ConceptualSpace.reverse` -> `reverse_stack` ->
-  `LanguageSpace.reverse`; PartSpace and InputSpace reverses) and scores the
-  reverse event against the input (`_reverse_event_loss`). The grammar
-  reverse entries are `@torch.compiler.disable` islands. Roughly one eager
-  reverse op per reduction; host Python between them.
-- `reverseOutput` (with `answerSynthesis` and questions) is the same kind of
-  eager walk seeded by the resolved answer.
+- Training does **not** run `reverseReconstruct`. With `<detachedReverse>`
+  (on in `data/BasicModel.xml`, with `<teacherReconstruction>`), `lossIn` is
+  `_detached_reverse_construction_loss()`: the idea-only student
+  `ReverseConstructionChooser` (its own parameters: an idea projection, a
+  per-step slot embedding, a kind head and a rule head) predicts the
+  ReconstructionStack's *detached* arity / rule / leaf targets from a
+  *detached* root idea. No gradient reaches the forward through it, and the
+  training call to `reverseReconstruct` is deduplicated away
+  (`_rev_dedupe`). The trace-driven un-fold (`_reverse_reduce_unfold`, the
+  stage walk `_reverse_body`, the `@torch.compiler.disable` reverse islands)
+  is an evaluation path.
+- `reverseOutput` (with `answerSynthesis` and questions) is an eager walk
+  seeded by the resolved answer.
 - The compiled forward already carries per-word loss accumulators in the
-  loop (`capture_intra`: `FunctionalPeerSTM.predict` adds a prediction loss
-  per word, summed into the CSLang bank and consumed after the loop).
+  loop (`capture_intra`), publishes its results as explicit outputs, and
+  obeys the compile discipline learned on the fold-ladder path: fixed shapes
+  for loop constants, eager allocation on the loop's device before the first
+  compile, in-place commits of live state, bounded chart backward.
+
+## Requirements (Alec's decisions, 2026-09-12)
+
+1. **Reconstruct the completed sentence.** `reverseReconstruct` starts from
+   the completed, sealed structured representation and its permitted
+   evidence: the retained compose derivation and the ordered, role-labelled
+   constituent references of specification section 2.1. It does not replace
+   end-to-end sentence reconstruction with local per-word recovery, and the
+   seals are inside the fidelity check. Input targets are used for scoring
+   only, never as reconstruction inputs.
+2. **Not an exact inverse; tied weights.** The objective is input
+   reconstruction, not recovery of the original operands to rounding. The
+   reverse uses the compose path's shared learned transforms, with LDU-based
+   inversion of their invertible linear components (`compute_Winverse_current`
+   already exists on the inner layers), and no independently parameterised
+   decoder. LDU inversion does not make a lossy merge bijective; a balanced
+   split recomposes to the parent without recovering its children, and the
+   retained structure supplies the disambiguating evidence. Sentence fidelity
+   is measured separately from linear inverse accuracy.
+3. **Once per completed sentence, bounded.** One bounded compiled traversal
+   per sentence, after that sentence's composition and seals have completed:
+   inside the word loop at an intermediate end for packed rows, after the
+   loop for a row's final sentence, each with its own boundary and loss
+   accounting. The traversal follows the retained derivation (the recorded
+   choice per step), so it evaluates one reverse operator per step, not all
+   `R` at every word; basis searches (the PEEL's best row) are bounded to a
+   declared candidate count; the traversal has a declared step limit.
+   Recurrent thinking does not reconstruct the external input again at
+   every thought boundary.
+4. **Three segregated paths.** `forward()` composes; `reverseReconstruct()`
+   follows that input's derivation with tied inverse transforms;
+   `reverseOutput()` realises an already-resolved idea through the grammar's
+   generate rules with its own policy, traversal state and termination
+   (per-row pending constituents exhausted under the declared
+   end-of-sentence rule, else a reported bounded truncation). Output cannot
+   read input-reconstruction witnesses, and the forward chooser's
+   `score_binary` on `(parent, parent)` is not a generate policy. Boundary
+   queries resolve before output realisation. Kernels may be shared;
+   policies, seeds, state and losses are not.
+5. **Declared migration of the learning contract.** Replacing the detached
+   student with tied reconstruction changes what is learned. Before the
+   detached path retires, document the objective, parameter ownership, the
+   gradient and stop-gradient boundaries (which forward parameters the
+   reconstruction loss may move, and where the forward is detached) and
+   the checkpoint migration (the student's parameters leave the state
+   dict; loading an older checkpoint must be defined). Hard selections and
+   detached helpers get explicit credit rules with tensor implementations.
+6. **Evidence-based performance.** A reproducible baseline names the commit,
+   configuration overrides, device and backend, executed losses and
+   workload; measures warmed full training steps (forward, backward,
+   optimizer) with compile time, recompilations and peak memory; varies
+   sentence and output lengths, batch size and basis size; and reports
+   fidelity and the declared parameter gradients with the speed. The
+   `backend="eager"` graph-capture tests establish one-graph structure,
+   not throughput. The concept dictionary can change during contextual
+   updates: a traversal reads one snapshot with an active-row mask and a
+   version, distinguishes value updates from storage or shape changes, and
+   keeps the values its backward needs.
 
 ## Contracts
 
-1. **Reconstruct at the shared index.** At CSLang step `w` (the word the
-   post-deposit binary just folded), the loop reverses *that* fold: from the
-   post-fold state and the recorded choice it recovers the two operands
-   (`reverse_binary_choice`), the right operand being the reconstruction of
-   word `w`'s idea, the left the reconstruction of the running parent. The
-   word reconstruction then descends the perceptual and input reverses
-   (idea -> part codes -> atoms -> bytes, the balanced split down the rungs
-   and the byte snap) and is scored against the staged input word at index
-   `w`. The per-word costs accumulate in the CSLang bank like the intra
-   loss and leave the loop as explicit outputs. No un-fold of the root after
-   the loop: the sentence's reconstruction *is* the sum of its per-word
-   reconstructions at the index they were consumed.
-2. **Functional reverses.** Every binary op the chooser can select gets a
-   pure `reverse(parent, basis) -> (left, right)` of fixed shape on `[B, D]`
-   (the existing tensor helpers wrapped; identity stubs stay identity). The
-   loop computes all `R` reverses on the folded parent and selects by the
-   chosen op's one-hot, exactly as the forward stacks `R` candidates
-   (`_stacked_reduced`) and selects by `op_weights`. The concept dictionary
-   (the `basis` of the PEEL and set reverses) enters the loop as a constant
-   tensor; it changes only at `Reset`.
-3. **Unary reverses.** The post-binary unary rewrite is reversed the same way
-   (`reverse_unary_choice`) before the binary reverse, so the word-level
-   reverse sees the state the binary produced.
-4. **Seals.** The intermediate-end seals fold the sentence to its root inside
-   the loop; their reverses are not needed for reconstruction (every word
-   was reconstructed at its own index), so the seals stay forward-only.
-5. **Output is the second loop.** `reverseOutput` becomes a second
-   `torch.while_loop` over an output width: seeded by the resolved answer,
-   each trip reverses one choice (the chooser's *reverse* decision: which
-   op, from the recorded or a learned policy) and emits one word at the
-   loop index; it ends at the output width or when every row has emitted a
-   leaf. Its trace and losses are explicit outputs. It does not share the
-   forward's index because its length differs.
-6. **One compiled segment.** `_forward_with_compiled_sentence_state` runs the
-   forward loop and then, when questions are present, the output loop; the
-   two loops are independent (the output loop reads only the published root
-   and the answer), so the compiler may schedule them apart. Everything an
-   eager consumer needs is an explicit output (the existing contract; an
-   attribute escape is dead state under torch 2.14).
-7. **Eager paths retire to Legacy.** The trace-driven un-fold
-   (`_reverse_reduce_unfold`), the stage-walk reverse for training, and the
-   reverse islands remain reachable through Legacy for the parity gate, then
-   go.
-
-## Mechanics
-
-- `LanguageSpace.reverse_binary_choice(state, choice, basis)`: stacks the
-  `R` reverses of the folded slot-0 parent (`[B, R, 2, D]`), selects by
-  `choice.local_op` one-hot, returns `(left, right, valid)` with `valid =
-  choice.applied`. Ops' reverses used: `LiftLayer` / `LowerLayer` ->
-  `_sigma.generate` / `_pi.generate` (balanced split, the chart's bounded
-  backward applies), `ChunkLayer` -> `peel` against the basis (best row,
-  exact remainder), `UnionLayer` / `IntersectionLayer` ->
-  `Ops.disjunctionReverse` / `conjunctionReverse` with the basis, `NotLayer`
-  / `NonLayer` -> their own reverses, the rest identity `(parent, parent)`.
-- `ConceptualSpace.apply_binary_reverse(state, left, right, applied)`: the
-  functional inverse of `apply_binary_language_choice` (slot 0 becomes
-  `right`, slot 1 `left`, depth + 1) so a later step can reverse further if
-  ever needed; not required for contract 1 but keeps the algebra honest.
-- `PartSpace.reverse_word(idea)` and `InputSpace.reverse_word(parts)`: the
-  fixed-shape per-word descent (rung codes -> atoms -> byte logits over the
-  word's byte window `[B, P, 256]`), from the existing `reverse` /
-  `generate` math without the host snap; the byte loss is a cross-entropy
-  against the staged word bytes (`_ar_word_part_ids` / offsets give the
-  window). The exact byte snap stays an eval-time decode.
-- Loss plumbing: two new CSLang bank entries (`recon_loss_sum [B]`,
-  `recon_loss_weight [B]`) updated per word; `runBatch` reads them as
-  `lossIn` instead of calling `reverseReconstruct` when the loop ran them
-  (`<reconstructInLoop>` knob, default on once the gate passes).
-- Output loop: `TensorPeerWhilePipeline.run_output_loop(seed, width, ...)`
-  with the same banked shape discipline; the reverse chooser is the
-  existing forward chooser's scores read on the parent (`score_binary` on
-  `(parent, parent)`) until a learned reverse policy exists.
-- Compilation constraints already learned on this path: every loop constant
-  has a fixed shape (pad to the bucket width), every slab the loop needs is
-  allocated eagerly on the loop's device before the first compile, live
-  state commits in place under the compiler, results are explicit outputs,
-  and the charts' backward slopes are bounded.
+1. **Derivation as tensors.** The forward loop already records, per step,
+   the chosen rule, arity and validity (`_choice_rule_ids`,
+   `_choice_arities`, `_choice_mask`, three slots per word plus the seal
+   slots). Reconstruction adds, per recorded step, the operand identity it
+   needs to follow the derivation: which STM slots the fold consumed and
+   the constituent reference each slot carried (the whole/unit/clause slab
+   and the concept-row slab already ride the loop). Nothing is retained
+   that the forward did not compute.
+2. **Sentence traversal.** `LanguageSpace.reconstruct_sentence(root, trace,
+   basis_snapshot, budget)` is a bounded fixed-shape traversal of the
+   recorded derivation from the sealed root backward: at each recorded step
+   the recorded op's tied inverse (`generate` for lift and lower through the
+   LDU inverse; the PEEL with a bounded candidate set for chunk; the set
+   reverses for union and intersection; the explicit inverse for not and
+   non; identity where the op is declared non-invertible) yields the
+   operands, guided by the retained constituent references where the
+   inverse is ambiguous. The traversal writes recovered word ideas into a
+   `[B, W, D]` slab at the recorded word positions; unvisited positions stay
+   masked. Steps beyond the budget report truncation in a per-row flag.
+3. **Descent and score.** `PartSpace.reverse_words` and
+   `InputSpace.reverse_words` descend the recovered word ideas in fixed
+   shape (rung codes to atoms to byte logits over each word's byte window,
+   from the existing balanced split and byte snap without the host loop).
+   The sentence fidelity cost is a byte cross-entropy against the staged
+   input bytes; the idea-level cost against the pushed word ideas is a
+   diagnostic, reported separately (requirement 2).
+4. **Placement.** For packed rows the traversal runs inside the word loop at
+   each intermediate end on the sealed root of that sentence (the loop
+   already knows the boundary); for the final sentence it runs after the
+   loop on the published root. Both are the same function; both write into
+   the same per-row accumulators (`recon_loss_sum`, `recon_loss_weight`,
+   `recon_truncated`) that leave the compiled segment as explicit outputs.
+5. **Output loop.** `TensorPeerWhilePipeline.run_output_loop(seed, width,
+   policy, budget)` realises the resolved answer's structure: its state is
+   the answer-side pending-constituent stack, its policy is the generate
+   policy (a learned chooser over the grammar's generate rules, initialised
+   from the resolved derivation when one exists), and it terminates when
+   every row's pending constituents are exhausted or the width is reached
+   (reported). It reads nothing of the input reconstruction. Its emitted
+   words, trace and costs are explicit outputs.
+6. **One compiled segment.** `_forward_with_compiled_sentence_state` runs
+   the forward loop (with in-loop reconstructions at intermediate ends),
+   the final-sentence reconstruction, and, when questions are present, the
+   output loop, in one compiled callable. The two reverse paths depend only
+   on the published root and the answer, so the compiler may schedule them
+   apart; actual data dependencies are preserved as is.
+7. **Migration.** `<detachedReverse>` keeps selecting the student until the
+   gates pass; `<reconstructInLoop>` selects the tied traversal; both
+   cannot be on. The student's parameters are dropped from checkpoints
+   under the tied contract, and loading an older checkpoint ignores them.
+   The gradient boundary of the tied contract: the reconstruction cost
+   trains the tied transforms and the forward's fold parameters, and is
+   stopped at the recorded discrete choices (credited through the existing
+   policy credit) and at the constituent references (indices).
+8. **Legacy.** The trace-driven eager un-fold and the reverse islands remain
+   reachable for the parity gate, then go.
 
 ## Gates
 
-- Parity: on a fixed model and sentence, the in-loop per-word reverse of a
-  lift/lower fold reproduces the operands to float rounding; the in-loop
-  reconstruction loss equals the eager path's loss computed on the same
-  per-word reverses (tensor test on the ladder fixture).
-- One graph: the complete forward with in-loop reconstruction traces to one
-  unique graph across two runtime lengths (extend
-  `test_tensor_peer_complete_forward_is_one_graph_across_runtime_lengths`).
-- Throughput: `data/BasicModel.xml` bricks with reconstruction in the loop
-  are no slower than today's forward-plus-eager-reconstruct brick (13.2 s at
-  B=24, 400 documents), and the eager reverse islands are gone from the
-  profile.
-- Output loop: `reverseOutput` on `MM_ladder`'s successor corpus produces the
-  same answers as the eager path on a fixed model, in one graph.
+- Fidelity: on the ladder and idiom fixtures, sentence reconstruction
+  through the traversal scores no worse than the eager un-fold on the same
+  model, including one-word sentences, words that were never folded before
+  the seal, unary rewrites and the final seal, and a constructed case where
+  local recovery succeeds but the completed state has lost the word.
+- Tying: a test asserts the traversal's parameters are exactly the compose
+  path's (no new parameter besides the generate policy of the output loop)
+  and that the declared gradient paths and stop points hold.
+- Structure: the complete forward with in-loop reconstruction traces to one
+  unique graph across two runtime lengths (extend the existing one-graph
+  test); packed rows keep separate sentence accounting.
+- Output: mixed output lengths, several words, output longer than the input,
+  and invariance to changes in reconstruction-only state; the resolved
+  answers of the successor corpus match the eager path on a fixed model.
+- Performance: the protocol of requirement 6 on `data/BasicModel.xml` with
+  the production backend, reported in the throughput document beside the
+  pre-ladder baseline.
 
 ## Slices
 
-1. Functional reverses and the in-loop per-word reconstruction at the idea
-   level (contracts 1-3 without the perceptual descent): `reverse_binary_choice`,
-   `reverse_unary_choice`, the loss on the recovered word idea against the
-   pushed idea, the knob, the parity and one-graph tests.
-2. The perceptual and input descent inside the loop (contract 1 complete):
-   byte-level loss, `runBatch` reads the loop's reconstruction, Legacy holds
-   the eager un-fold.
-3. The output loop (contracts 5-6) and the single compiled segment.
-4. Legacy removal after the gates; benchmark table update.
+1. Derivation tensors and the tied sentence traversal at the idea level
+   (contracts 1, 2, 7 without the descent), run after the loop on the
+   published root; fidelity and tying tests against the eager un-fold.
+2. The descent and the byte cost (contract 3); placement inside the loop at
+   intermediate ends (contract 4); the one-graph gate; the migration
+   document and checkpoint handling (requirement 5).
+3. The output loop and its generate policy (contract 5); the single compiled
+   segment (contract 6); output gates.
+4. Performance protocol and report (requirement 6); Legacy removal.
+
+With implementation: reconcile this plan, update Architecture and Language
+for loop and parameter ownership, Training and Params for objectives,
+credit and migration, and the throughput report with the measured
+configuration; extend the specification's section 4 isolation and
+structural tests with the fidelity, tying, gradient, packed-row and
+production-backend gates before claiming completion.
