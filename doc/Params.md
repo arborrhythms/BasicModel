@@ -156,6 +156,7 @@ Training loop and I/O.
 | `conceptualContextLearningRate` | float | `0.0` | Enables the context-owned ConceptualSpace dictionary updater. Each completed sentence produces one deterministic, reduced tangent rotation per observed codebook row; `similarity_codebook.W` is a persistent non-grad buffer, read through an eager compiler boundary, and never enters Adam. Mutually exclusive with `conceptualSimilarityScale`. |
 | `conceptualContextNegatives` | int | `4` | Number of deterministic detached negative prototype rows in the contextual SBOW rotation. |
 | `detachedReverse` | bool | `false` | On serial grammar training, supervise the static idea-only reverse chooser from `stopgrad(S)` using detached `ReconstructionStack` rule/arity/leaf targets instead of replaying the D3 recurrence. |
+| `reconstructInLoop` | bool | `false` | Compiled reverse-loops plan, slice 1: after the sentence seal, one bounded `torch.while_loop` replays the recorded derivation backward with the tied inverses of the reduce ops and scores the recovered word ideas against the ideas the folds consumed; that cost is `lossIn`. Mutually exclusive with `detachedReverse`. |
 | `forwardGrammarWeight` | float | `0.0` | Weight of the bounded local structural contrast for committed unary/binary folds. Its candidate evidence is detached, so it updates only the chooser at that fold. |
 | `whatScale` | float | `0.7` | Loss weight on the `.what` (content) channel. |
 | `whereScale` | float | `0.2` | Loss weight on the `.where` (positional) channel. |

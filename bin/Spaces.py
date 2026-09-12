@@ -30266,7 +30266,7 @@ class OutputSpace(Space):
             # [B, nSymbols] -> [B, nOutput], wrapped with atanh/tanh for
             # the nonlinear behaviour previously provided by PiLayer.
             act = vspace.materialize(mode="activation")
-            act_pre = _bounded_atanh(act)
+            act_pre = _bounded_atanh(act, bounded=False)
             output = torch.tanh(self._linearLayer.forward(act_pre))
             self.subspace.set_activation(output)
             return self.subspace
@@ -30297,7 +30297,7 @@ class OutputSpace(Space):
             # Activation-mode reverse: tanh(linear.reverse(atanh(x)))
             # mirrors the forward path's nonlinearity.
             act = vspace.materialize(mode="activation")
-            act_pre = _bounded_atanh(act)
+            act_pre = _bounded_atanh(act, bounded=False)
             symbol_act = torch.tanh(self._linearLayer.reverse(act_pre))
             target.set_activation(symbol_act)
             return target

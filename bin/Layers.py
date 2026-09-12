@@ -76,10 +76,15 @@ class _BoundedLogMult(torch.autograd.Function):
         return grad * slope, None, None
 
 
-def bounded_atanh(x, eps=None):
+def bounded_atanh(x, eps=None, bounded=True):
     """``atanh(x.clamp(-1+eps, 1-eps))`` forward; backward with the slope
-    capped at ``ATANH_SLOPE_CAP_AT`` (see the note above)."""
+    capped at ``ATANH_SLOPE_CAP_AT`` when ``bounded`` (see the note above),
+    the exact derivative otherwise.  The grammar's fold layers (the nested
+    reduce ops) bound their backward; space-level and readout layers keep
+    the exact chart (the cap under-converged the crisp XOR fits)."""
     eps = epsilon if eps is None else eps
+    if not bounded:
+        return torch.atanh(x.clamp(-1 + eps, 1 - eps))
     return _BoundedAtanh.apply(x, float(eps), 1.0)
 
 # Device used by all layers.
@@ -1349,6 +1354,32 @@ class InvertibleLinearLayer(ErgodicLayer):
         finally:
             self._current_gate = None
 
+    def functional_Winverse(self, gate=None):
+        """``W^-1`` ``[nOutput, nInput]`` from the current clean factors,
+        without per-call module mutation (a ``while_loop`` body cannot stash
+        ``_current_gate``); non-ergodic factors, ``gate`` through the
+        diagonal like ``functional_forward``."""
+        L = self._L()
+        U = self._U()
+        d = self._d_effective_for_gate(gate)
+        I_in = torch.eye(self.nInput, device=L.device, dtype=L.dtype)
+        I_out = torch.eye(self.nOutput, device=U.device, dtype=U.dtype)
+        L_inv = torch.linalg.solve_triangular(L, I_in, upper=False, unitriangular=True)
+        U_inv = torch.linalg.solve_triangular(U, I_out, upper=True, unitriangular=True)
+        D_inv = F.pad(torch.diag(1.0 / d),
+                      (0, int(self.nInput) - int(self.rank),
+                       0, int(self.nOutput) - int(self.rank)))
+        return U_inv @ D_inv @ L_inv
+
+    def functional_reverse(self, y, gate=None):
+        """``y @ W^-1`` without module mutation (the tied inverse of
+        ``functional_forward`` up to the bias, which the callers handle as
+        their ``reverse`` does)."""
+        W_inv = self.functional_Winverse(gate)
+        out_shape = list(y.shape)
+        out_shape[-1] = int(self.nInput)
+        return (y.reshape(-1, int(self.nOutput)) @ W_inv).reshape(out_shape)
+
     def apply_Winverse_current(self, y, gate=None):
         """Return ``y @ Winverse_current`` without materialising W^-1.
 
@@ -1918,7 +1949,7 @@ class ConceptualCombine(Layer):
             # Invert the forward tanh: atanh(tanh(z)) == z. Clamp just inside
             # (-1, 1) so saturated coords don't map to +-inf (matches the
             # forward tanh().clamp() contract used elsewhere).
-            flat = bounded_atanh(flat, 1e-6)
+            flat = bounded_atanh(flat, 1e-6, bounded=False)
         x = self.layer.reverse(flat)                    # [B', M]
         body = x[..., :self.combine_dim].reshape(
             *leading, self.n_streams * self.n_vectors, self.content_dim)
@@ -2976,6 +3007,7 @@ class SigmaLayer(GrammarLayer):
         monotonic=True:  W >= 0 (NonNegativeInvertibleLinearLayer) -- ordering preserved
         monotonic=False: W unrestricted (InvertibleLinearLayer)    -- bitonic response
     """
+    _bounded_backward = False
 
     def __init__(self, nInput, nOutput, ergodic=False, naive=True,
                  invertible=False, nonlinear=True, stable=False,
@@ -3028,7 +3060,7 @@ class SigmaLayer(GrammarLayer):
         if binary:
             packed = Ops.top2_select_ste(packed)
         if self.nonlinear:
-            packed = bounded_atanh(packed)
+            packed = bounded_atanh(packed, bounded=self._bounded_backward)
         out = (self.layer.forward(packed, gate=gate) if gate is not None
                else self.layer.forward(packed))
         if self.nonlinear:
@@ -3045,7 +3077,7 @@ class SigmaLayer(GrammarLayer):
         packed pair axis).
         """
         if self.nonlinear:
-            x_pair = bounded_atanh(x_pair)
+            x_pair = bounded_atanh(x_pair, bounded=self._bounded_backward)
         out = torch.einsum('bmi,mij->bmj', x_pair, W_node)
         if self.nonlinear:
             out = torch.tanh(out)
@@ -3054,7 +3086,7 @@ class SigmaLayer(GrammarLayer):
     def _butterfly_pair_op_reverse(self, y_pair, W_inv_node):
         """Reverse of ``_butterfly_pair_op``; inverts the per-pair op."""
         if self.nonlinear:
-            y_pair = bounded_atanh(y_pair)
+            y_pair = bounded_atanh(y_pair, bounded=self._bounded_backward)
         out = torch.einsum('bmi,mij->bmj', y_pair, W_inv_node)
         if self.nonlinear:
             out = torch.tanh(out)
@@ -3064,13 +3096,13 @@ class SigmaLayer(GrammarLayer):
         """Pure ungated Sigma computation for a recurrent HOP body."""
         if self.butterfly:
             if self.nonlinear:
-                x = bounded_atanh(x)
+                x = bounded_atanh(x, bounded=self._bounded_backward)
             y = self._butterfly_forward(x)
             return torch.tanh(y) if self.nonlinear else y
         if binary:
             x = Ops.top2_select_ste(x)
         if self.nonlinear:
-            x = bounded_atanh(x)
+            x = bounded_atanh(x, bounded=self._bounded_backward)
         if hasattr(self.layer, "functional_forward"):
             y = self.layer.functional_forward(x)
         else:
@@ -3100,7 +3132,7 @@ class SigmaLayer(GrammarLayer):
         """
         if self.butterfly:
             if self.nonlinear:
-                x = bounded_atanh(x)
+                x = bounded_atanh(x, bounded=self._bounded_backward)
             y = self._butterfly_forward(x)
             if self.nonlinear:
                 y = torch.tanh(y)
@@ -3109,7 +3141,7 @@ class SigmaLayer(GrammarLayer):
         if binary:
             x = Ops.top2_select_ste(x)
         if self.nonlinear:
-            x = bounded_atanh(x)
+            x = bounded_atanh(x, bounded=self._bounded_backward)
         y = self.layer.forward(x, gate=gate) if gate is not None else self.layer.forward(x)
         if self.nonlinear:
             y = torch.tanh(y)
@@ -3128,14 +3160,14 @@ class SigmaLayer(GrammarLayer):
         """
         if self.butterfly:
             if self.nonlinear:
-                y = bounded_atanh(y)
+                y = bounded_atanh(y, bounded=self._bounded_backward)
             x = self._butterfly_reverse(y)
             if self.nonlinear:
                 x = torch.tanh(x)
             self.activation = x.detach()
             return x
         if self.nonlinear:
-            y = bounded_atanh(y)
+            y = bounded_atanh(y, bounded=self._bounded_backward)
         x = self.layer.reverse(y, gate=gate) if gate is not None else self.layer.reverse(y)
         if self.nonlinear:
             x = torch.tanh(x)
@@ -3166,8 +3198,8 @@ class SigmaLayer(GrammarLayer):
             ``[..., nOutput]`` in [-1, 1].
         """
         if self.nonlinear:
-            a_l = bounded_atanh(left)
-            a_r = bounded_atanh(right)
+            a_l = bounded_atanh(left, bounded=self._bounded_backward)
+            a_r = bounded_atanh(right, bounded=self._bounded_backward)
         else:
             a_l = left
             a_r = right
@@ -3199,7 +3231,7 @@ class SigmaLayer(GrammarLayer):
                 valid.unsqueeze(-1), part_codes,
                 torch.zeros_like(part_codes))
         if self.nonlinear:
-            a = bounded_atanh(part_codes)
+            a = bounded_atanh(part_codes, bounded=self._bounded_backward)
         else:
             a = part_codes
         a_sum = a.sum(dim=-2)
@@ -3228,7 +3260,7 @@ class SigmaLayer(GrammarLayer):
         Requires ``invertible=True`` on the inner LinearLayer.
         """
         if self.nonlinear:
-            a_y = bounded_atanh(parent)
+            a_y = bounded_atanh(parent, bounded=self._bounded_backward)
         else:
             a_y = parent
         a_sum = (self.layer.reverse(a_y, gate=gate) if gate is not None
@@ -3238,6 +3270,14 @@ class SigmaLayer(GrammarLayer):
             op = torch.tanh(half)
         else:
             op = half
+        return op, op
+
+    def generate_functional(self, parent, gate=None):
+        """``generate`` without module mutation (compiled reverse loops)."""
+        a_y = bounded_atanh(parent, bounded=self._bounded_backward) if self.nonlinear else parent
+        a_sum = self.layer.functional_reverse(a_y, gate=gate)
+        half = a_sum * 0.5
+        op = torch.tanh(half) if self.nonlinear else half
         return op, op
 
     @staticmethod
@@ -4448,6 +4488,10 @@ class PiLayer(GrammarLayer):
 
     # -- Symmetric domain transforms ----------------------------------
 
+    # Per-instance switch for the bounded backward of the charts (grammar
+    # fold layers set it; space-level layers keep the exact derivative).
+    _bounded_backward = False
+
     # Slope cap of the log-odds chart's GRADIENT (straight-through): the
     # exact chart ``2*atanh(x)`` has derivative ``2/(1-x^2)``, 2e6 at the
     # clamp; nested folds over a long packed row compounded it 100x per
@@ -4461,6 +4505,8 @@ class PiLayer(GrammarLayer):
         domain clamp), backward with a bounded slope (see the class note).
         A custom Function keeps the forward expression byte-identical and
         saves only ``x``."""
+        if not self._bounded_backward:
+            return torch.log(self._to_mult(x))
         return _BoundedLogMult.apply(x, float(self._eps), self._ODDS_SLOPE_CAP_AT)
 
     def _to_mult(self, x):
@@ -4498,7 +4544,7 @@ class PiLayer(GrammarLayer):
         flexibility).
         """
         if self.nonlinear:
-            x_pair = bounded_atanh(x_pair)
+            x_pair = bounded_atanh(x_pair, bounded=self._bounded_backward)
         out = torch.einsum('bmi,mij->bmj', x_pair, W_node)
         if self.nonlinear:
             out = torch.tanh(out)
@@ -4507,7 +4553,7 @@ class PiLayer(GrammarLayer):
     def _butterfly_pair_op_reverse(self, y_pair, W_inv_node):
         """Reverse of ``_butterfly_pair_op``; inverts the per-pair op."""
         if self.nonlinear:
-            y_pair = bounded_atanh(y_pair)
+            y_pair = bounded_atanh(y_pair, bounded=self._bounded_backward)
         out = torch.einsum('bmi,mij->bmj', y_pair, W_inv_node)
         if self.nonlinear:
             out = torch.tanh(out)
@@ -4749,6 +4795,17 @@ class PiLayer(GrammarLayer):
             return torch.exp(wl)
         finally:
             self.layer._current_gate = None
+
+    def generate_functional(self, parent, gate=None):
+        """``generate`` without module mutation (compiled reverse loops):
+        the same balanced split through the tied inverse."""
+        if not self.nonlinear:
+            raise RuntimeError("generate_functional requires nonlinear pi")
+        log_mult_y = self._log_mult(parent)
+        b = self.layer._effective_bias()
+        s = self.layer.functional_reverse(log_mult_y - b, gate=gate)
+        op = torch.tanh(s * 0.25)
+        return op, op
 
     def generate(self, parent, gate=None):
         """Inverse of compose; balanced split.

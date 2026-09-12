@@ -2826,6 +2826,7 @@ class LiftLayer(GrammarLayer):
             self._sigma = SigmaLayer(
                 nInput=int(nInput), nOutput=int(nOutput),
                 invertible=invertible, nonlinear=nonlinear)
+            self._sigma._bounded_backward = True   # nested grammar fold
             self.layers.append(self._sigma)
             # Lexical-mask projection (GrammarOpsPass §2): the word's
             # code -> the inner LDU's gate rank space. One projection
@@ -3012,7 +3013,7 @@ class LiftLayer(GrammarLayer):
           ``adverb_purchase`` is stashed for introspection (the firewall delta)."""
         if not getattr(self, '_adverb_eig_edit', False) or self._adv_edit is None:
             return vp_content
-        a = _bounded_atanh(vp_content)
+        a = _bounded_atanh(vp_content, bounded=False)
         # δ_adv from the ADV code, soft-thresholded for sparsity (few eigs).
         delta = torch.tanh(self._adv_edit(adv_what.to(self._adv_edit.weight.dtype)))
         tau = 0.1
@@ -3065,7 +3066,7 @@ class LiftLayer(GrammarLayer):
         output_dtype = value.dtype
         value_f32 = value.to(dtype=torch.float32)
         log_gain_f32 = log_gain.to(dtype=torch.float32)
-        interior = _bounded_atanh(value_f32)
+        interior = _bounded_atanh(value_f32, bounded=False)
         transformed = torch.tanh(torch.exp(log_gain_f32) * interior)
         return transformed.to(dtype=output_dtype)
 
@@ -3277,6 +3278,7 @@ class LowerLayer(GrammarLayer):
             self._pi = PiLayer(
                 nInput=int(nInput), nOutput=int(nOutput),
                 invertible=invertible, nonlinear=nonlinear)
+            self._pi._bounded_backward = True      # nested grammar fold
             self.layers.append(self._pi)
             # Lexical-mask projection (GrammarOpsPass §2); see LiftLayer.
             self._lex_gate = _make_lex_gate(
@@ -14204,6 +14206,114 @@ class LanguageSpace(nn.Module):
         return _FunctionalLanguageChooser.choose_binary(
             state, binary, post_gate, base_tau=base_tau,
             occupancy_pressure=True, op_prior=op_prior)
+
+    # -- functional reverses (compiled reverse-loops plan, contract 2) ------
+    #
+    # The tied inverses of the reduce ops as fixed-shape tensor steps, so a
+    # bounded ``torch.while_loop`` can replay a recorded derivation backward.
+    # Every op's reverse is evaluated on the parent and the recorded op
+    # selects; ``lift``/``lower`` families reverse through their own
+    # ``generate`` (the balanced split, tied to the compose weights),
+    # ``chunk``/``sum`` through the exact residual against the retained
+    # constituent reference, ``not``/``non`` through themselves, everything
+    # else through identity (declared non-invertible).
+
+    @staticmethod
+    def _reverse_content_split(op, parent, split):
+        """Apply ``split`` (``[B, Dw] -> (l, r)``) on the event's content
+        channels and copy ``.where`` / lift ``.when`` like ``reverse``."""
+        cw = int(getattr(op, "_content_width", 0) or 0)
+        if cw and int(parent.shape[-1]) > cw:
+            p_what, p_where, p_when = _split_event(parent, cw)
+            lc, rc = split(p_what)
+            back = _lift_when(p_when)
+            return (torch.cat([lc, p_where, back], dim=-1),
+                    torch.cat([rc, p_where, back], dim=-1))
+        return split(parent)
+
+    def reverse_binary_step(self, parent, op_local, valid, reference=None):
+        """``(left, right)`` ``[B, D]`` of one recorded binary fold.
+
+        ``parent`` is the folded slot; ``op_local`` ``[B]`` the recorded
+        local op index; ``valid`` ``[B]`` whether the step happened on the
+        row (an invalid row returns ``(parent, parent)``); ``reference``
+        ``[B, D]`` (optional) the retained constituent reference of the
+        newest operand (the dictionary row the word was pushed with), used
+        by the residual reverses.
+        """
+        binary = self._tree_layer(2)
+        if binary is None:
+            raise RuntimeError("LanguageSpace requires a CS binary tree layer")
+        ops = list(binary.ops)
+        B, D = int(parent.shape[0]), int(parent.shape[-1])
+        pairs = []
+        for op in ops:
+            pairs.append(self._reverse_of_binary_op(op, parent, reference))
+        left = torch.stack([pr[0] for pr in pairs], dim=1)     # [B, R, D]
+        right = torch.stack([pr[1] for pr in pairs], dim=1)
+        R = len(ops)
+        idx = op_local.reshape(B).clamp(0, R - 1).reshape(B, 1, 1).expand(B, 1, D)
+        l_sel = left.gather(1, idx).reshape(B, D)
+        r_sel = right.gather(1, idx).reshape(B, D)
+        gate = valid.reshape(B, 1).to(dtype=torch.bool)
+        return (torch.where(gate, l_sel, parent),
+                torch.where(gate, r_sel, parent))
+
+    def _reverse_of_binary_op(self, op, parent, reference):
+        op = getattr(op, "gl", op)          # the reducer wraps grammar layers
+        sigma = getattr(op, "_sigma", None)
+        pi = getattr(op, "_pi", None)
+        name = getattr(op, "rule_name", "")
+        if sigma is not None and hasattr(sigma, "generate_functional"):
+            return self._reverse_content_split(
+                op, parent, lambda w: sigma.generate_functional(w))
+        if pi is not None and hasattr(pi, "generate_functional"):
+            return self._reverse_content_split(
+                op, parent, lambda w: pi.generate_functional(w))
+        if name in ("chunk", "sum") and torch.is_tensor(reference):
+            # Exact residual against the retained reference of the newest
+            # operand: ``left + right = parent`` by construction.
+            return parent - reference, reference
+        if name in ("chunk", "sum"):
+            return parent, torch.zeros_like(parent)
+        return parent, parent
+
+    def reverse_unary_step(self, x, op_local, valid):
+        """``[B, D]`` of one recorded unary rewrite undone (identity for ops
+        without a tensor inverse)."""
+        unary = self._tree_layer(1)
+        if unary is None:
+            return x
+        ops = list(unary.ops)
+        B, D = int(x.shape[0]), int(x.shape[-1])
+        outs = []
+        for op in ops:
+            op = getattr(op, "gl", op)
+            name = getattr(op, "rule_name", "")
+            if name in ("not", "non") and hasattr(op, "reverse"):
+                outs.append(op.reverse(x))
+            else:
+                outs.append(x)
+        stacked = torch.stack(outs, dim=1)                       # [B, R1, D]
+        R1 = len(ops)
+        idx = op_local.reshape(B).clamp(0, R1 - 1).reshape(B, 1, 1).expand(B, 1, D)
+        sel = stacked.gather(1, idx).reshape(B, D)
+        gate = valid.reshape(B, 1).to(dtype=torch.bool)
+        return torch.where(gate, sel, x)
+
+    @staticmethod
+    def local_op_from_rule_ids(rule_ids, rule_map):
+        """``(local [B], known [B])``: invert the local-op -> global-rule
+        map on recorded global ids (fixed shape)."""
+        B = int(rule_ids.shape[0])
+        if rule_map is None or int(rule_map.numel()) == 0:
+            return (torch.zeros(B, dtype=torch.long, device=rule_ids.device),
+                    torch.zeros(B, dtype=torch.bool, device=rule_ids.device))
+        m = rule_map.to(device=rule_ids.device, dtype=torch.long).reshape(1, -1)
+        hit = rule_ids.reshape(B, 1) == m
+        known = hit.any(dim=1)
+        local = hit.to(torch.long).argmax(dim=1)
+        return local, known
 
     def choose_unary(self, state, row_gate):
         """Choose the post-Binary unary rewrite; CS applies the choice."""

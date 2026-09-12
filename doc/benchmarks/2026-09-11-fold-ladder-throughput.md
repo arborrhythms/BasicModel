@@ -232,10 +232,14 @@ loss graph, anomaly-mode forward tracebacks). Findings, in backward order:
 
 Fix: `Layers.bounded_atanh` (and `PiLayer._log_mult`) keep the exact
 forward value and clamp, and cap the backward slope at the tangent at
-`|x| = 0.9` (5.3 for atanh, 10.5 for the log-odds chart) as a
-straight-through estimator. Every atanh chart in Layers, Language and
-Spaces goes through it. Forward numerics are byte-identical; only the
-gradient of near-saturated coordinates is bounded. Validation: the same
+`|x| = 0.9` (5.3 for atanh, 10.5 for the log-odds chart) on the grammar's
+fold layers only (the internal sigma of `lift` and pi of `lower`, where
+the nesting compounds); space-level and readout layers keep the exact
+chart, because the cap under-converged the crisp XOR fits
+(`test_explicit_dimensions.py` and `test_sigmapi.py` both regressed under a
+global cap and pass with the per-layer one). Forward numerics are
+byte-identical; only the gradient of near-saturated coordinates in the
+grammar folds is bounded. Validation: the same
 packed configuration (`data/MM_ladder_textpacked.xml`, whitespace units
 on, CPU) trained 12 bricks with finite gradients (643 sentences; word
 units 85.7 %, letters-only 100 %), where it failed on the fourth before;

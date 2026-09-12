@@ -187,6 +187,14 @@ that later folds and seals retained the earlier input.
 
 ## Slices
 
+Status 2026-09-12: slice 1 landed (`<reconstructInLoop>`, the traversal
+as a second `torch.while_loop` after the final seal inside the one
+compiled sentence graph, idea-level cost, truncation flag, tests in
+`test/test_reverse_traversal.py`); a three-brick training smoke on the
+ladder text config with `<reconstructInLoop>` (CPU, tensor word pipeline)
+trained through the traversal's cost with gradient (0.124, 0.021, 0.014),
+the detached student off. Slices 2-4 open.
+
 1. Derivation tensors and the tied sentence traversal at the idea level
    (contracts 1, 2, 7 without the descent), run after the loop on the
    published root; fidelity and tying tests against the eager un-fold.

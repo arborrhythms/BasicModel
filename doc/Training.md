@@ -556,12 +556,24 @@ What trains today on the serial per-word path:
   the unmasked input), or the masked-event loss where neither applies.
 
 Declared migration (the
-[compiled reverse-loops plan](plans/2026-09-12-compiled-reverse-loops.md),
-not yet implemented): `<reconstructInLoop>` will select one bounded
-compiled traversal of the completed sentence's retained derivation with the
-compose path's tied inverse transforms (the existing `invertible=True`
-forward/reverse pairing), scored against the input bytes. It is a change of
-learning contract, so before `<detachedReverse>` retires:
+[compiled reverse-loops plan](plans/2026-09-12-compiled-reverse-loops.md)):
+`<reconstructInLoop>` selects one bounded compiled traversal of the
+completed sentence's retained derivation with the compose path's tied
+inverse transforms (the existing `invertible=True` forward/reverse
+pairing). Slice 1 (2026-09-12) is in: after the final seal, a
+`torch.while_loop` replays the recorded choices backward from the root
+(`_reconstruct_sentence_traversal`; the reverse steps
+`LanguageSpace.reverse_binary_step` / `reverse_unary_step` through the
+gate-free `generate_functional` inverses and the exact residual for
+`chunk`/`sum` against the word's dictionary row), recovers each word's idea
+at its position, and scores it against the idea the fold consumed; that
+cost is `lossIn`, and a per-row truncation flag reports a derivation that
+did not account for a word. The traversal is part of the tensor word
+pipeline's sentence state (the compiled path and its eager `while_loop`
+form); the legacy static scheduler produces no such state, and `lossIn`
+there falls back to the D3 objective. The byte-level descent, the in-loop placement
+at packed-row boundaries and the output loop are the following slices. It
+is a change of learning contract, so before `<detachedReverse>` retires:
 
 - objective: sentence reconstruction fidelity (byte cross-entropy over each
   word's window) plus the diagnostic idea-level cost, reported separately

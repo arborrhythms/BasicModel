@@ -36,6 +36,7 @@ def test_bounded_atanh_forward_is_exact_and_slope_is_capped():
 
 def test_log_odds_chart_forward_is_exact_and_slope_is_capped():
     pi = Layers.PiLayer(nInput=4, nOutput=4, nonlinear=True)
+    pi._bounded_backward = True
     values = [-0.95, 0.0, 0.5, 0.9, 0.999, 1.0, 2.0]
     y, g = _grad(pi._log_mult, values)
     exact = torch.log(pi._to_mult(torch.tensor(values)))
@@ -47,12 +48,20 @@ def test_log_odds_chart_forward_is_exact_and_slope_is_capped():
     assert all(float(v) <= cap + 1e-3 for v in g)
 
 
+def test_space_level_layers_keep_the_exact_chart():
+    pi = Layers.PiLayer(nInput=4, nOutput=4, nonlinear=True)
+    x = torch.tensor([0.99], requires_grad=True)
+    pi._log_mult(x).sum().backward()
+    assert float(x.grad) > 50.0                                  # 2/(1-x^2) ~ 100
+
+
 def test_nested_lift_folds_over_saturated_operands_keep_gradients_bounded():
     """Thirty nested sigma composes whose operands sit at +-1 (a max-law
     unit code) used to compound the exact chart's 5e6 slope into
     overflow; with the cap the leaf gradient stays finite and modest."""
     torch.manual_seed(0)
     sigma = Layers.SigmaLayer(nInput=8, nOutput=8, nonlinear=True)
+    sigma._bounded_backward = True          # as the grammar's lift owns it
     leaf = torch.sign(torch.randn(2, 1, 8)).requires_grad_(True)  # exactly +-1
     acc = leaf
     for _ in range(30):
