@@ -91,11 +91,13 @@ fixed:
   one device sync per unit and row (0.9 s; now one host pass);
 - the sentence packer's unit counter, running on the prefetch thread,
   read the boundary parameters on the GPU while the main thread was
-  encoding: Metal aborted the process. The tiler now reads a host copy.
-  With the prefetch thread on, the current tree still trips the same
-  Metal assertion in `prepInput`'s device copy on that thread; the
-  pre-ladder tree does not, presumably because its thread is idle sooner.
-  That is left open (run with `numWorkers` 0 on MPS meanwhile).
+  encoding: Metal aborted the process. The tiler now reads a host copy,
+  primed whenever the predicates are built or updated and refreshed by
+  every main-thread tiling; a worker thread that finds no copy fails
+  loud instead of touching the accelerator. Verified with a
+  torch-function mode on the prefetch thread (no accelerator op issued
+  over three bricks) and two production runs with the default two
+  workers (no Metal assertion; they end on the memory ceiling below).
 
 The production config at 2,000 documents does not fit this machine's
 16.85 GiB MPS limit past three bricks on either tree (the aligned prefix
@@ -185,6 +187,6 @@ test/test_bounded_charts.py pins the charts and a 30-deep saturated fold.
 
 ## Open
 
-- MPS runs of the packed configuration also died twice in the Metal
-  driver (`A command encoder is already encoding` abort; a segfault at
-  12.5 GB footprint), independent of the NaN.
+- The production config at 2,000 documents exceeds this machine's
+  16.85 GiB MPS limit after two or three bricks on either tree (the
+  aligned prefix growth); 400 documents fit.

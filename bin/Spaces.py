@@ -24373,11 +24373,20 @@ class WholeSpace(Space):
         return masks
 
     def _predicate_masks_host_cached(self):
-        """The last main-thread ``_predicate_masks`` result (CPU tensors),
-        computed now when none exists (callers prime it on the main
-        thread before handing the tiler to a packer thread)."""
+        """The last main-thread ``_predicate_masks`` result (CPU tensors).
+
+        Primed whenever the predicates are built or updated (main thread)
+        and refreshed by every main-thread tiling.  A worker thread that
+        finds no cache fails loud instead of reading the accelerator
+        parameters: two threads encoding Metal commands abort the process.
+        """
         cached = self.__dict__.get("_predicate_masks_host")
         if cached is None:
+            import threading
+            if threading.current_thread() is not threading.main_thread():
+                raise RuntimeError(
+                    "boundary predicate masks are not primed for the packer "
+                    "thread; call _predicate_masks() on the main thread first")
             cached = self._predicate_masks()
         return cached
 
@@ -24633,8 +24642,14 @@ class WholeSpace(Space):
         self.__dict__.setdefault("_row_bytes", {})[new_row] = sorted(new_bytes)
         self.__dict__["_predicate_byte_lut"] = None
         self._grow_boundary_weights()
+        self._prime_predicate_masks()
         tab.pop(int(row), None)
         return new_row
+
+    def _prime_predicate_masks(self):
+        """Refresh the host masks after the predicate weights changed."""
+        if torch.is_tensor(getattr(self, "begins_weight", None)):
+            self._predicate_masks()
 
     def _grow_boundary_weights(self):
         """Keep the three weight vectors sized to the column count (rows may
@@ -24655,6 +24670,7 @@ class WholeSpace(Space):
         the base reset; nothing is learned while online learning is frozen."""
         if hard and not getattr(self, "_online_learning_frozen", False):
             self._update_boundary_predicates()
+            self._prime_predicate_masks()
             for row in list((self.__dict__.get("_property_lbg") or {}).keys()):
                 self.maybe_split_property_row(row)
         super().Reset(batch=batch, hard=hard)
@@ -24691,6 +24707,7 @@ class WholeSpace(Space):
         self.ends_weight = nn.Parameter(ends)
         self.atom_level = nn.Parameter(atom)
         self.params += [self.begins_weight, self.ends_weight, self.atom_level]
+        self._prime_predicate_masks()
         self.__dict__["_predicate_byte_lut"] = None
 
     def _build_type_subspace(self, tags=None):

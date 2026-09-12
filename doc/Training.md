@@ -445,10 +445,11 @@ joining space belongs to the sentence it follows), the same cut the stem
 stages, so the packed layout and the staged unit mask agree by
 construction (`WholeSpace.unit_spans_of_bytes`,
 `InputSpace.sentence_unit_count`). The packer runs on the prefetch
-thread, so the unit tiler reads a host copy of the boundary predicates
-refreshed by every main-thread tiling (never the accelerator
-parameters); a boundary update between packing and staging is caught by
-the stem's alignment check. Explicit word-to-sentence IDs drive the
+thread, so the unit tiler reads a host copy of the boundary predicates,
+primed when the predicates are built or updated and refreshed by every
+main-thread tiling (never the accelerator parameters; a worker thread
+without the copy fails loud); a boundary update between packing and
+staging is caught by the stem's alignment check. Explicit word-to-sentence IDs drive the
 row-local soft resets inside CSLang; the final sentence in each row remains
 live through loss, backward, discourse, and the contextual concept update,
 then resets at the eager brick boundary. The log reports complete sentences
