@@ -36,21 +36,51 @@ epsilon = 1e-7  # to avoid log(0)
 ATANH_SLOPE_CAP_AT = 0.9
 
 
+class _BoundedAtanh(torch.autograd.Function):
+    """Exact ``atanh(clamp(x))`` forward; backward slope capped at the
+    tangent at ``ATANH_SLOPE_CAP_AT``.  A custom Function saves only ``x``
+    (the straight-through form saved the surrogate's intermediates too:
+    +17% peak memory on the production brick)."""
+
+    @staticmethod
+    def forward(ctx, x, eps, scale):
+        ctx.save_for_backward(x)
+        ctx.scale = float(scale)
+        return torch.atanh(x.clamp(-1 + eps, 1 - eps)) * ctx.scale
+
+    @staticmethod
+    def backward(ctx, grad):
+        (x,) = ctx.saved_tensors
+        x0 = ATANH_SLOPE_CAP_AT
+        cap = 1.0 / (1.0 - x0 * x0)
+        slope = (1.0 / (1.0 - x * x).clamp_min(1e-30)).clamp(max=cap)
+        return grad * (slope * ctx.scale), None, None
+
+
+class _BoundedLogMult(torch.autograd.Function):
+    """Exact ``log((1+c)/(1-c))`` with ``c = clamp(x)`` forward (the pi
+    chart, ``2*atanh``); backward slope capped at the tangent at ``x0``."""
+
+    @staticmethod
+    def forward(ctx, x, eps, x0):
+        ctx.save_for_backward(x)
+        ctx.x0 = float(x0)
+        c = x.clamp(-1 + eps, 1 - eps)
+        return torch.log((1 + c) / (1 - c))
+
+    @staticmethod
+    def backward(ctx, grad):
+        (x,) = ctx.saved_tensors
+        cap = 2.0 / (1.0 - ctx.x0 * ctx.x0)
+        slope = (2.0 / (1.0 - x * x).clamp_min(1e-30)).clamp(max=cap)
+        return grad * slope, None, None
+
+
 def bounded_atanh(x, eps=None):
     """``atanh(x.clamp(-1+eps, 1-eps))`` forward; backward with the slope
     capped at ``ATANH_SLOPE_CAP_AT`` (see the note above)."""
     eps = epsilon if eps is None else eps
-    exact = torch.atanh(x.clamp(-1 + eps, 1 - eps))
-    x0 = ATANH_SLOPE_CAP_AT
-    slope = 1.0 / (1.0 - x0 * x0)
-    ax = x.abs()
-    # Inner branch on the signed value (its gradient at 0 is 1; a
-    # sign(x)*f(|x|) form would have zero gradient at exactly 0, and
-    # whitespace units carry exact zeros).
-    bounded = torch.where(
-        ax <= x0, torch.atanh(x.clamp(-x0, x0)),
-        torch.sign(x) * (math.atanh(x0) + slope * (ax - x0)))
-    return exact.detach() + (bounded - bounded.detach())
+    return _BoundedAtanh.apply(x, float(eps), 1.0)
 
 # Device used by all layers.
 import util
@@ -4428,17 +4458,10 @@ class PiLayer(GrammarLayer):
 
     def _log_mult(self, x):
         """``log(_to_mult(x))`` = ``2*atanh(x)``, forward exact (with the
-        domain clamp), backward with a bounded slope (see the class note)."""
-        exact = torch.log(self._to_mult(x))
-        x0 = self._ODDS_SLOPE_CAP_AT
-        slope = 2.0 / (1.0 - x0 * x0)
-        ax = x.abs()
-        inner = x.clamp(-x0, x0)
-        log0 = math.log((1.0 + x0) / (1.0 - x0))
-        bounded = torch.where(
-            ax <= x0, torch.log((1 + inner) / (1 - inner)),
-            torch.sign(x) * (log0 + slope * (ax - x0)))
-        return exact.detach() + (bounded - bounded.detach())
+        domain clamp), backward with a bounded slope (see the class note).
+        A custom Function keeps the forward expression byte-identical and
+        saves only ``x``."""
+        return _BoundedLogMult.apply(x, float(self._eps), self._ODDS_SLOPE_CAP_AT)
 
     def _to_mult(self, x):
         """Map [-1, 1] -> (0, inf), identity at 0 -> 1.

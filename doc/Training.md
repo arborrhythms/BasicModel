@@ -538,6 +538,44 @@ then ends the episode (`<whatThinkingDetach>`), all reported under
 ---
 
 
+## Reconstruction objectives and the declared migration (2026-09-12)
+
+What trains today on the serial per-word path:
+
+- With `<detachedReverse>true</detachedReverse>` (the production
+  `BasicModel.xml`, with `<teacherReconstruction>`), `lossIn` is the
+  detached idea-only student `ReverseConstructionChooser`
+  (`_detached_reverse_construction_loss`): its own parameters (an idea
+  projection, a per-step slot embedding, a kind head and a rule head)
+  predict the ReconstructionStack's *detached* arity, rule and leaf targets
+  from a *detached* root idea. No gradient reaches the forward through it.
+  `reverseReconstruct` is deduplicated out of the training step and serves
+  evaluation (the trace-driven un-fold and the stage-walk reverse).
+- Without it, `lossIn` is the D3 per-word reconstruction objective
+  (`_d3_reconstruction_loss`, `reverse(S)` from the root scored against
+  the unmasked input), or the masked-event loss where neither applies.
+
+Declared migration (the
+[compiled reverse-loops plan](plans/2026-09-12-compiled-reverse-loops.md),
+not yet implemented): `<reconstructInLoop>` will select one bounded
+compiled traversal of the completed sentence's retained derivation with the
+compose path's tied inverse transforms (the existing `invertible=True`
+forward/reverse pairing), scored against the input bytes. It is a change of
+learning contract, so before `<detachedReverse>` retires:
+
+- objective: sentence reconstruction fidelity (byte cross-entropy over each
+  word's window) plus the diagnostic idea-level cost, reported separately
+  from linear-inverse accuracy;
+- parameter ownership: the traversal owns no parameters; it moves the tied
+  transforms and the forward's fold parameters; the student's parameters
+  leave the state dict;
+- gradient boundaries: the cost stops at the recorded discrete choices
+  (credited through the existing policy credit) and at constituent
+  references (indices); the two knobs are mutually exclusive;
+- checkpoint migration: loading a checkpoint that carries the student's
+  parameters under the tied contract ignores them; the reverse direction
+  (tied checkpoint under the detached contract) rebuilds the student fresh.
+
 ## Epoch report: throughput and word units
 
 `runEpoch` closes a packed epoch with one line, e.g.

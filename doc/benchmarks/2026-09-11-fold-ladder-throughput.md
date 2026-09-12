@@ -57,6 +57,11 @@ Observations.
 
 ## Where did the throughput go? (2026-09-12)
 
+> Superseded for approval purposes by the measurement protocol section
+> below (Codex review, requirement 6): the per-brick times here are single
+> or few samples of the forward-dominated brick, some taken while other
+> work ran on the machine. They remain as the record of the attribution.
+
 Alec asked whether the July record of about 40 sentences/s
 (`2026-07-27-teacher-reconstruction-b24.md`: `BasicModel.xml`, B24, W256,
 packed FineWeb, MPS, Inductor fullgraph) was lost to the radix trie's
@@ -103,6 +108,50 @@ The production config at 2,000 documents does not fit this machine's
 16.85 GiB MPS limit past three bricks on either tree (the aligned prefix
 growth), so the B=24 numbers above are three-brick samples.
 
+## Measurement protocol and results (2026-09-12, Codex review requirement 6)
+
+Protocol (`bin/bench_training_step.py`): `data/BasicModel.xml` unchanged except the
+environment overrides `BASIC_MAX_DOCS=400 BASIC_BATCH_SIZE=B
+BASIC_MAX_BATCHES=n BASIC_NUM_EPOCHS=1`; default `MODEL_COMPILE` (Inductor
+on MPS, the production backend, one fullgraph word loop per bucket), the
+config's two prefetch workers; torch 2.14.0.dev20260722, macOS ARM64,
+38.65 GB unified memory, 16.85 GiB MPS allocation limit. Each brick is one
+full training step (`runBatch`: forward, loss, backward, optimizer,
+resets), wall-clock with device synchronisation. Executed losses on this
+config: `lossIn` = the detached idea-only reverse student (with gradient),
+`lossOut` = 0 without supervision at B=8 (a 0.10 term with gradient
+appears at B=16); `d3_active` true, `detached_reverse` true on both trees.
+Recompiles from dynamo's frame counters; peak memory from
+`torch.mps.driver_allocated_memory`. Trees: pre-ladder `fc93560` (a
+worktree) and the current `main` (`874303c`).
+
+| Tree | B | Compile brick | Steady bricks (s) | Backward-compile brick | Recompiles | Peak MPS memory |
+|---|---|---|---|---|---|---|
+| pre-ladder | 8 | 22.4 s | 8.11, 8.33, then 7.94, 7.95 | 28.7 s | 0 | 13.1 GB |
+| current | 8 | 25.5 s | 8.94, 9.15, then 12.86, 12.92 | 37.9 s | 0 | 15.3 GB |
+| pre-ladder | 16 | 23.5 s | 8.97, 11.55 | 37.2 s | 0 | 16.0 GB |
+| current | 16 | 26.5 s | 9.51, 10.32 | 40.3 s | 0 | 16.0 GB |
+
+Reading: the first two steady bricks are forward-dominated (the optimizer
+brick boundary lands later at this batch size); the bricks after the
+backward-compile brick include backward and optimizer work. On those the
+current tree is 12.9 s against 7.9 s, with peak memory 2.2 GB higher and
+close to the MPS limit; the forward-dominated bricks are 10 % slower. Both
+trees show zero recompiles after the first brick. The idea-only student's
+loss values track each other (4.83 to 4.66 over six bricks on both). The
+compile bricks are 3 s longer on the current tree.
+
+Re-run of the current tree at B=8 with the charts as custom autograd
+Functions (saving only their input instead of the straight-through
+surrogate's intermediates): compile brick 25.4 s, steady 9.15, 9.28, then
+12.68, 12.69 s, backward-compile brick 35.5 s, peak 16.7 GB. The
+backward-brick gap (about 4.8 s per brick against the pre-ladder tree)
+therefore does not come from the charts' saved tensors, and the peak-memory
+reading is not a reliable discriminator at this distance from the limit.
+The gap remains open and unattributed; the next step is the same protocol
+with the backward profiled at B=8 (the forward-dominated bricks are
+within 10 %).
+
 ## Legacy radix comparison
 
 The plan's Phase 4 asks for the ladder against the legacy `radix`/`word`
@@ -137,12 +186,19 @@ acquires the whitespace boundary (test/test_meronomy_ladder.py).
 - Compiled forward lost the STM after the word loop: with a
   `torch.while_loop` in the graph, dynamo (torch 2.14 nightly) drops a
   later attribute *assignment* of an attribute assigned earlier in the
-  same graph (the per-forward STM seed), so the sentence reduce and the
-  reconstruction loss saw an empty STM under compile (loss without
-  gradient on text; the successor corpus trained only through the answer
-  loss). The STM's live state is now committed by in-place copy under the
-  compiler (`ShortTermMemory._assign_live`), and the compiled sentence
-  idea equals the eager one.
+  same graph (the per-forward STM seed), so the sentence reduce saw an
+  empty STM under compile and the published root idea was zero. On the
+  ladder text config that made `lossIn` (there the per-word D3
+  reconstruction objective driven from the root) a constant without
+  gradient; on the successor corpus training continued through the
+  answer loss. The STM's live state is now committed by in-place copy
+  under the compiler (`ShortTermMemory._assign_live`), and the compiled
+  sentence idea equals the eager one. Correction (Codex review, 2026-09-12):
+  `reverseReconstruct` itself is not a training path on any of these
+  configs; with `<detachedReverse>` (production `BasicModel.xml`) the
+  training `lossIn` is the detached idea-only student
+  (`_detached_reverse_construction_loss`), and the trace-driven un-fold is
+  evaluation only.
 - Host-side tiling tensors were created on the default device (MPS) and
   mixed with CPU indices; pinned to CPU.
 - Sentence packing counted whitespace words while the ladder stages units;
