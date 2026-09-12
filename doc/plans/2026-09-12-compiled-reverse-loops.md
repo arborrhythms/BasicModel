@@ -53,10 +53,19 @@ that later folds and seals retained the earlier input.
    reverse uses the compose path's shared learned transforms, with LDU-based
    inversion of their invertible linear components (`compute_Winverse_current`
    already exists on the inner layers), and no independently parameterised
-   decoder. LDU inversion does not make a lossy merge bijective; a balanced
-   split recomposes to the parent without recovering its children, and the
-   retained structure supplies the disambiguating evidence. Sentence fidelity
-   is measured separately from linear inverse accuracy.
+   decoder. This is the existing `invertible=True` forward/reverse pairing
+   (Alec, 2026-09-12), not new inverse math: `lift` and `lower` reverse
+   through `SigmaLayer.generate` / `PiLayer.generate` with the same `W`,
+   `chunk` through its exact residual, `not` and `non` through their own
+   inverses, while `intersection`, `union` and `product` are declared lossy
+   and reverse through the set helpers or identity. What changes on that
+   path is only that the loss always expects the reconstruction: the cost
+   is scored against the input every time the traversal runs, replacing the
+   detached student's target loss. LDU inversion does not make a lossy merge
+   bijective; a balanced split recomposes to the parent without recovering
+   its children, and the retained structure supplies the disambiguating
+   evidence. Sentence fidelity is measured separately from linear inverse
+   accuracy.
 3. **Once per completed sentence, bounded.** One bounded compiled traversal
    per sentence, after that sentence's composition and seals have completed:
    inside the word loop at an intermediate end for packed rows, after the
