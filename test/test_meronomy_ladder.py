@@ -515,6 +515,26 @@ def test_packed_rows_are_laid_out_in_units_of_the_ladder(tmp_path):
         isp.prepPackedInput([["12 plus 1", "3 plus 4", "5 plus 6"]])
 
 
+def test_stem_stages_loop_constants_with_fixed_shapes(ladder):
+    """The compiled word loop reads the staged unit maps and the chunk
+    slabs as constants; their shapes must not follow the batch's unit
+    count or the STM's construction-time seed (each variation cost one
+    recompile of the loop; benchmark doc, "Where did the throughput go?")."""
+    m = ladder
+    _stage(m, ["12 plus 1", "ab"])
+    isp = m.inputSpace
+    W = int(isp._ar_embedded_N.shape[1]); B = int(isp._ar_embedded_N.shape[0])
+    ws = m.wholeSpaces[0]
+    assert tuple(ws._staged_unit_parent.shape) == (B, W)
+    assert tuple(ws._staged_unit_clause.shape) == (B, W)
+    assert ws._staged_unit_parent[1, 2:].tolist() == [-1] * (W - 2)   # "ab" = 1 unit... padded
+    cs = m._concept_owner()
+    assert tuple(cs._chunk_prop_slab.shape) == (B, cs.CHUNK_PROPOSAL_CAPACITY, 3)
+    assert cs._chunk_prop_slab.device == isp._ar_embedded_N.device
+    stm = m.conceptualSpace.stm
+    assert tuple(stm._wholes.shape) == (B, int(stm.capacity), 3)
+
+
 def test_utility_counts_accrue_once_per_presentation():
     """Counts commit at the training path's sentence boundary, once per
     presentation (the bare per-row reset cascade is not the training path

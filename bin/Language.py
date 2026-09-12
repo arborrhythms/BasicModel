@@ -5,6 +5,7 @@ from collections import namedtuple
 from contextlib import contextmanager, nullcontext
 import numpy as np
 import torch
+from Layers import bounded_atanh as _bounded_atanh
 import torch.nn as nn
 import torch.nn.functional as F
 import random
@@ -3011,7 +3012,7 @@ class LiftLayer(GrammarLayer):
           ``adverb_purchase`` is stashed for introspection (the firewall delta)."""
         if not getattr(self, '_adverb_eig_edit', False) or self._adv_edit is None:
             return vp_content
-        a = torch.atanh(vp_content.clamp(-1 + epsilon, 1 - epsilon))
+        a = _bounded_atanh(vp_content)
         # δ_adv from the ADV code, soft-thresholded for sparsity (few eigs).
         delta = torch.tanh(self._adv_edit(adv_what.to(self._adv_edit.weight.dtype)))
         tau = 0.1
@@ -3064,7 +3065,7 @@ class LiftLayer(GrammarLayer):
         output_dtype = value.dtype
         value_f32 = value.to(dtype=torch.float32)
         log_gain_f32 = log_gain.to(dtype=torch.float32)
-        interior = torch.atanh(value_f32.clamp(-1.0 + epsilon, 1.0 - epsilon))
+        interior = _bounded_atanh(value_f32)
         transformed = torch.tanh(torch.exp(log_gain_f32) * interior)
         return transformed.to(dtype=output_dtype)
 

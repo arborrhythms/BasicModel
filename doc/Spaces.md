@@ -391,6 +391,16 @@ subclasses (Stage 4 of the substrate refactor):
 Both reverse cleanly via their internal layer's reverse. Both gain
 butterfly mode for free via `GrammarLayer` base inheritance (Stage 5).
 
+Both charts are bounded in the backward (2026-09-12): the sigma fold's
+`atanh(x)` and the pi fold's `log((1+x)/(1-x)) = 2 atanh(x)` keep their
+exact forward values and clamps, but their gradient slope is capped at
+the tangent at `|x| = 0.9` (`Layers.bounded_atanh`, `PiLayer._log_mult`;
+straight-through). Operands at +-1 are ordinary (max-law unit codes,
+`chunk` sums, saturated folds), and the exact derivative `1/(1-x^2)` (5e6
+at the clamp) compounded through the nested folds of a long packed row
+into NaN parameters
+(doc/benchmarks/2026-09-11-fold-ladder-throughput.md).
+
 The signal router dispatches them as binary reduce ops at the CS,
 weighted by `Grammar.rule_probability` (the per-position copy/reduce
 score head).

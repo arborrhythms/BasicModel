@@ -24,6 +24,34 @@ from collections import namedtuple
 
 epsilon = 1e-7  # to avoid log(0)
 
+
+# Slope cap of every atanh chart's GRADIENT (straight-through).  The exact
+# chart ``atanh(x)`` has derivative ``1/(1-x^2)``: 5e6 at the 1e-7 clamp.
+# Operands at +-1 are ordinary (a max-law unit code, a saturated fold), and a
+# nested derivation over a long packed row compounded the derivative through
+# the grammar's lift/lower folds into NaN parameters (2026-09-12, FineWeb
+# packed rows, anomaly trace at ``SigmaLayer.compose``).  Beyond ``|x| =
+# ATANH_SLOPE_CAP_AT`` the backward uses the tangent slope there (5.3 at
+# 0.9); the forward value is unchanged (the clamp stays).
+ATANH_SLOPE_CAP_AT = 0.9
+
+
+def bounded_atanh(x, eps=None):
+    """``atanh(x.clamp(-1+eps, 1-eps))`` forward; backward with the slope
+    capped at ``ATANH_SLOPE_CAP_AT`` (see the note above)."""
+    eps = epsilon if eps is None else eps
+    exact = torch.atanh(x.clamp(-1 + eps, 1 - eps))
+    x0 = ATANH_SLOPE_CAP_AT
+    slope = 1.0 / (1.0 - x0 * x0)
+    ax = x.abs()
+    # Inner branch on the signed value (its gradient at 0 is 1; a
+    # sign(x)*f(|x|) form would have zero gradient at exactly 0, and
+    # whitespace units carry exact zeros).
+    bounded = torch.where(
+        ax <= x0, torch.atanh(x.clamp(-x0, x0)),
+        torch.sign(x) * (math.atanh(x0) + slope * (ax - x0)))
+    return exact.detach() + (bounded - bounded.detach())
+
 # Device used by all layers.
 import util
 from util import TheXMLConfig, TheDevice
@@ -1860,7 +1888,7 @@ class ConceptualCombine(Layer):
             # Invert the forward tanh: atanh(tanh(z)) == z. Clamp just inside
             # (-1, 1) so saturated coords don't map to +-inf (matches the
             # forward tanh().clamp() contract used elsewhere).
-            flat = torch.atanh(flat.clamp(-1.0 + 1e-6, 1.0 - 1e-6))
+            flat = bounded_atanh(flat, 1e-6)
         x = self.layer.reverse(flat)                    # [B', M]
         body = x[..., :self.combine_dim].reshape(
             *leading, self.n_streams * self.n_vectors, self.content_dim)
@@ -2970,7 +2998,7 @@ class SigmaLayer(GrammarLayer):
         if binary:
             packed = Ops.top2_select_ste(packed)
         if self.nonlinear:
-            packed = torch.atanh(packed.clamp(-1 + epsilon, 1 - epsilon))
+            packed = bounded_atanh(packed)
         out = (self.layer.forward(packed, gate=gate) if gate is not None
                else self.layer.forward(packed))
         if self.nonlinear:
@@ -2987,7 +3015,7 @@ class SigmaLayer(GrammarLayer):
         packed pair axis).
         """
         if self.nonlinear:
-            x_pair = torch.atanh(x_pair.clamp(-1 + epsilon, 1 - epsilon))
+            x_pair = bounded_atanh(x_pair)
         out = torch.einsum('bmi,mij->bmj', x_pair, W_node)
         if self.nonlinear:
             out = torch.tanh(out)
@@ -2996,7 +3024,7 @@ class SigmaLayer(GrammarLayer):
     def _butterfly_pair_op_reverse(self, y_pair, W_inv_node):
         """Reverse of ``_butterfly_pair_op``; inverts the per-pair op."""
         if self.nonlinear:
-            y_pair = torch.atanh(y_pair.clamp(-1 + epsilon, 1 - epsilon))
+            y_pair = bounded_atanh(y_pair)
         out = torch.einsum('bmi,mij->bmj', y_pair, W_inv_node)
         if self.nonlinear:
             out = torch.tanh(out)
@@ -3006,13 +3034,13 @@ class SigmaLayer(GrammarLayer):
         """Pure ungated Sigma computation for a recurrent HOP body."""
         if self.butterfly:
             if self.nonlinear:
-                x = torch.atanh(x.clamp(-1 + epsilon, 1 - epsilon))
+                x = bounded_atanh(x)
             y = self._butterfly_forward(x)
             return torch.tanh(y) if self.nonlinear else y
         if binary:
             x = Ops.top2_select_ste(x)
         if self.nonlinear:
-            x = torch.atanh(x.clamp(-1 + epsilon, 1 - epsilon))
+            x = bounded_atanh(x)
         if hasattr(self.layer, "functional_forward"):
             y = self.layer.functional_forward(x)
         else:
@@ -3042,7 +3070,7 @@ class SigmaLayer(GrammarLayer):
         """
         if self.butterfly:
             if self.nonlinear:
-                x = torch.atanh(x.clamp(-1 + epsilon, 1 - epsilon))
+                x = bounded_atanh(x)
             y = self._butterfly_forward(x)
             if self.nonlinear:
                 y = torch.tanh(y)
@@ -3051,7 +3079,7 @@ class SigmaLayer(GrammarLayer):
         if binary:
             x = Ops.top2_select_ste(x)
         if self.nonlinear:
-            x = torch.atanh(x.clamp(-1 + epsilon, 1 - epsilon))
+            x = bounded_atanh(x)
         y = self.layer.forward(x, gate=gate) if gate is not None else self.layer.forward(x)
         if self.nonlinear:
             y = torch.tanh(y)
@@ -3070,14 +3098,14 @@ class SigmaLayer(GrammarLayer):
         """
         if self.butterfly:
             if self.nonlinear:
-                y = torch.atanh(y.clamp(-1 + epsilon, 1 - epsilon))
+                y = bounded_atanh(y)
             x = self._butterfly_reverse(y)
             if self.nonlinear:
                 x = torch.tanh(x)
             self.activation = x.detach()
             return x
         if self.nonlinear:
-            y = torch.atanh(y.clamp(-1 + epsilon, 1 - epsilon))
+            y = bounded_atanh(y)
         x = self.layer.reverse(y, gate=gate) if gate is not None else self.layer.reverse(y)
         if self.nonlinear:
             x = torch.tanh(x)
@@ -3108,8 +3136,8 @@ class SigmaLayer(GrammarLayer):
             ``[..., nOutput]`` in [-1, 1].
         """
         if self.nonlinear:
-            a_l = torch.atanh(left.clamp(-1 + epsilon, 1 - epsilon))
-            a_r = torch.atanh(right.clamp(-1 + epsilon, 1 - epsilon))
+            a_l = bounded_atanh(left)
+            a_r = bounded_atanh(right)
         else:
             a_l = left
             a_r = right
@@ -3141,7 +3169,7 @@ class SigmaLayer(GrammarLayer):
                 valid.unsqueeze(-1), part_codes,
                 torch.zeros_like(part_codes))
         if self.nonlinear:
-            a = torch.atanh(part_codes.clamp(-1 + epsilon, 1 - epsilon))
+            a = bounded_atanh(part_codes)
         else:
             a = part_codes
         a_sum = a.sum(dim=-2)
@@ -3170,7 +3198,7 @@ class SigmaLayer(GrammarLayer):
         Requires ``invertible=True`` on the inner LinearLayer.
         """
         if self.nonlinear:
-            a_y = torch.atanh(parent.clamp(-1 + epsilon, 1 - epsilon))
+            a_y = bounded_atanh(parent)
         else:
             a_y = parent
         a_sum = (self.layer.reverse(a_y, gate=gate) if gate is not None
@@ -4390,6 +4418,28 @@ class PiLayer(GrammarLayer):
 
     # -- Symmetric domain transforms ----------------------------------
 
+    # Slope cap of the log-odds chart's GRADIENT (straight-through): the
+    # exact chart ``2*atanh(x)`` has derivative ``2/(1-x^2)``, 2e6 at the
+    # clamp; nested folds over a long packed row compounded it 100x per
+    # level into NaN (2026-09-11, packed FineWeb rows). Beyond ``|x| = 0.9``
+    # the backward uses the tangent slope at 0.9 (10.5); the forward value
+    # is unchanged.
+    _ODDS_SLOPE_CAP_AT = 0.9
+
+    def _log_mult(self, x):
+        """``log(_to_mult(x))`` = ``2*atanh(x)``, forward exact (with the
+        domain clamp), backward with a bounded slope (see the class note)."""
+        exact = torch.log(self._to_mult(x))
+        x0 = self._ODDS_SLOPE_CAP_AT
+        slope = 2.0 / (1.0 - x0 * x0)
+        ax = x.abs()
+        inner = x.clamp(-x0, x0)
+        log0 = math.log((1.0 + x0) / (1.0 - x0))
+        bounded = torch.where(
+            ax <= x0, torch.log((1 + inner) / (1 - inner)),
+            torch.sign(x) * (log0 + slope * (ax - x0)))
+        return exact.detach() + (bounded - bounded.detach())
+
     def _to_mult(self, x):
         """Map [-1, 1] -> (0, inf), identity at 0 -> 1.
 
@@ -4425,7 +4475,7 @@ class PiLayer(GrammarLayer):
         flexibility).
         """
         if self.nonlinear:
-            x_pair = torch.atanh(x_pair.clamp(-1 + epsilon, 1 - epsilon))
+            x_pair = bounded_atanh(x_pair)
         out = torch.einsum('bmi,mij->bmj', x_pair, W_node)
         if self.nonlinear:
             out = torch.tanh(out)
@@ -4434,7 +4484,7 @@ class PiLayer(GrammarLayer):
     def _butterfly_pair_op_reverse(self, y_pair, W_inv_node):
         """Reverse of ``_butterfly_pair_op``; inverts the per-pair op."""
         if self.nonlinear:
-            y_pair = torch.atanh(y_pair.clamp(-1 + epsilon, 1 - epsilon))
+            y_pair = bounded_atanh(y_pair)
         out = torch.einsum('bmi,mij->bmj', y_pair, W_inv_node)
         if self.nonlinear:
             out = torch.tanh(out)
@@ -4447,14 +4497,12 @@ class PiLayer(GrammarLayer):
         if self.butterfly:
             if binary:
                 x = Ops.top2_select_ste(x)
-            m = self._to_mult(x)
-            l = torch.log(m)
+            l = self._log_mult(x)
             wl = self._butterfly_forward(l)
             return torch.tanh(wl / 2) if self.nonlinear else torch.exp(wl)
         if binary:
             x = Ops.top2_select_ste(x)
-        m = self._to_mult(x)
-        l = torch.log(m)
+        l = self._log_mult(x)
         if hasattr(self.layer, "functional_forward"):
             l = l.to(self.layer.d.device)
             wl = self.layer.functional_forward(l, gate=gate)
@@ -4487,8 +4535,7 @@ class PiLayer(GrammarLayer):
         if self.butterfly:
             if binary:
                 x = Ops.top2_select_ste(x)
-            m = self._to_mult(x)
-            l = torch.log(m)
+            l = self._log_mult(x)
             wl = self._butterfly_forward(l)
             if self.nonlinear:
                 out = torch.tanh(wl / 2)
@@ -4506,8 +4553,7 @@ class PiLayer(GrammarLayer):
             x = x.to(W.device)
             if binary:
                 x = Ops.top2_select_ste(x)
-            m = self._to_mult(x)
-            l = torch.log(m)
+            l = self._log_mult(x)
             wl = l @ W
             b = self.layer._effective_bias()
             wl = wl + b
@@ -4530,8 +4576,7 @@ class PiLayer(GrammarLayer):
         """
         if self.butterfly:
             if self.nonlinear:
-                m = self._to_mult(y)
-                l = torch.log(m)
+                l = self._log_mult(y)
             else:
                 # ``nonlinear=False`` forward emits a positive mult-domain
                 # value (``exp(wl) in (0, inf)``); the reverse ``log`` needs
@@ -4556,8 +4601,7 @@ class PiLayer(GrammarLayer):
             W_inv = self.layer.compute_Winverse_current()
             y = y.to(W_inv.device)
             if self.nonlinear:
-                m = self._to_mult(y)
-                l = torch.log(m)
+                l = self._log_mult(y)
             else:
                 # See the butterfly branch above: ``nonlinear=False`` reverse
                 # expects ``y`` in the positive mult-domain the forward emits.
@@ -4592,7 +4636,7 @@ class PiLayer(GrammarLayer):
         M = max(1, int(M))
         if self.butterfly:
             if self.nonlinear:
-                l = torch.log(self._to_mult(y))
+                l = self._log_mult(y)
             else:
                 l = torch.log(y.clamp(min=self._eps))
             lx = self._butterfly_reverse(l)
@@ -4602,7 +4646,7 @@ class PiLayer(GrammarLayer):
             W_inv = self.layer.compute_Winverse_current()
             y = y.to(W_inv.device)
             if self.nonlinear:
-                l = torch.log(self._to_mult(y))
+                l = self._log_mult(y)
             else:
                 l = torch.log(y.clamp(min=self._eps))
             b = self.layer._effective_bias()
@@ -4646,8 +4690,8 @@ class PiLayer(GrammarLayer):
             left = left.to(device)
             right = right.to(device)
             if self.nonlinear:
-                l_l = torch.log(self._to_mult(left))
-                l_r = torch.log(self._to_mult(right))
+                l_l = self._log_mult(left)
+                l_r = self._log_mult(right)
             else:
                 l_l = torch.log(left)
                 l_r = torch.log(right)
@@ -4668,8 +4712,8 @@ class PiLayer(GrammarLayer):
             left = left.to(W.device)
             right = right.to(W.device)
             if self.nonlinear:
-                l_l = torch.log(self._to_mult(left))
-                l_r = torch.log(self._to_mult(right))
+                l_l = self._log_mult(left)
+                l_r = self._log_mult(right)
             else:
                 l_l = torch.log(left)
                 l_r = torch.log(right)
@@ -4707,7 +4751,7 @@ class PiLayer(GrammarLayer):
             W_inv = self.layer.compute_Winverse_current()
             parent = parent.to(W_inv.device)
             if self.nonlinear:
-                log_mult_y = torch.log(self._to_mult(parent))
+                log_mult_y = self._log_mult(parent)
             else:
                 log_mult_y = torch.log(parent)
             b = self.layer._effective_bias()

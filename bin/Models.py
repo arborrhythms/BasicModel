@@ -10364,6 +10364,28 @@ class BasicModel(BaseModel):
     # sentence-completion and never per-batch on the IR/MM_20M path, so
     # relocating discourse there would silently stop ARMA).
 
+    def _pad_staged_unit_maps(self, ws):
+        """Pad the staged unit parent/clause maps ``[B, K]`` to the staged
+        word width ``[B, W]`` (``-1`` beyond the units).  The compiled word
+        loop reads them as constants; a width that varied with the batch's
+        unit count made dynamo recompile the loop for every new count."""
+        isp = getattr(self, "inputSpace", None)
+        slab = getattr(isp, "_ar_embedded_N", None) if isp is not None else None
+        if ws is None or not torch.is_tensor(slab):
+            return
+        width = int(slab.shape[1])
+        for name in ("_staged_unit_parent", "_staged_unit_clause"):
+            value = getattr(ws, name, None)
+            if not torch.is_tensor(value) or value.dim() != 2:
+                continue
+            B, K = int(value.shape[0]), int(value.shape[1])
+            if K == width:
+                continue
+            out = torch.full((B, width), -1, dtype=torch.long, device=value.device)
+            k = min(K, width)
+            out[:, :k] = value[:, :k].to(dtype=torch.long)
+            object.__setattr__(ws, name, out)
+
     def _install_unit_span_fn(self):
         """Hand the InputSpace the analysis ladder's unit tiler (packers and
         bucket choice count units, not whitespace words) when the canonical
@@ -10377,6 +10399,9 @@ class BasicModel(BaseModel):
         if (getattr(ws, "analysis_mode", "byte") == "meronomy"
                 and hasattr(ws, "unit_spans_of_bytes")):
             fn = ws.unit_spans_of_bytes
+            if (torch.is_tensor(getattr(ws, "begins_weight", None))
+                    and hasattr(ws, "_predicate_masks")):
+                ws._predicate_masks()     # prime the host masks (main thread)
         isp._unit_span_fn = fn
 
     def _lex_embed_stem(self, x):
@@ -10547,6 +10572,7 @@ class BasicModel(BaseModel):
                 object.__setattr__(self.perceptualSpace, "_staged_unit_spans", None)
             self.inputSpace.finalize_stem(in_sub, self.perceptualSpace)
             self._record_unit_pulls(_ws_list[0] if _ws_list else None)
+            self._pad_staged_unit_maps(_ws_list[0] if _ws_list else None)
         self._ensure_chunk_machinery()
         # Resolve sparse concept identities only after the word-major PS stem
         # has exposed its exact residual parts and WS has staged the matching
@@ -15474,21 +15500,28 @@ class BasicModel(BaseModel):
         rows = getattr(ws, "_predicate_rows", {}) or {}
         row_bytes = ws.__dict__.get("_row_bytes") or {}
         n_what = int(getattr(ws, "nWhat", codes.shape[-1]) or codes.shape[-1])
+        # Which rows a byte holds: one [256, R] host table (the same
+        # predicate LUT the tiling uses), so a unit's rows are a lookup.
+        n_rows = max([int(r) for r in rows] + [int(r) for r in row_bytes] + [-1]) + 1
+        lut = ws._build_predicate_byte_lut(n_rows) if n_rows > 0 and hasattr(
+            ws, "_build_predicate_byte_lut") else None
+        if lut is None or not lut.numel():
+            return
+        unit_rows, unit_codes, unit_bytes = [], [], []
         for b, row_texts in enumerate(texts):
             for w, text in enumerate(row_texts):
                 if w >= int(codes.shape[1]) or not text:
                     continue
                 bv = list(text.encode("latin1", "replace"))
-                held = set()
-                for r, cls in rows.items():
-                    if any(any(lo <= x <= hi for lo, hi in _CHAR_CLASS_RANGES.get(int(c), ()))
-                           for c in cls for x in bv):
-                        held.add(int(r))
-                for r, bs in row_bytes.items():
-                    if any(x in bs for x in bv):
-                        held.add(int(r))
-                for r in held:
-                    ws.record_property_pull(r, codes[b, w, :n_what], bv)
+                held = lut[torch.tensor(bv, dtype=torch.long, device="cpu") & 0xFF].any(dim=0)
+                held_rows = held.nonzero().reshape(-1).tolist()
+                if not held_rows:
+                    continue
+                unit_rows.append(held_rows)
+                unit_codes.append(codes[b, w, :n_what])
+                unit_bytes.append(bv)
+        if unit_rows and hasattr(ws, "record_property_pulls"):
+            ws.record_property_pulls(unit_rows, torch.stack(unit_codes, dim=0), unit_bytes)
 
     def _concept_owner(self):
         """The ConceptualSpace that owns the concept store and the utility
@@ -15580,19 +15613,37 @@ class BasicModel(BaseModel):
         prior parameter (registered with the live optimizer once), the STM
         provenance slab, the proposal slab and the phrase-row table.  No
         allocation or host sync then happens inside the compiled body."""
-        if self._chunk_op_index() is None:
-            return
         owner = self._concept_owner()
-        bias = owner.ensure_chunk_prior() if hasattr(owner, "ensure_chunk_prior") else None
-        if torch.is_tensor(bias) and not self.__dict__.get("_chunk_prior_registered"):
-            self.__dict__.setdefault("_fresh_synthesis_params", []).append(bias)
-            self.__dict__["_chunk_prior_registered"] = True
+        if owner is None:
+            return
+        if self._chunk_op_index() is not None:
+            bias = owner.ensure_chunk_prior() if hasattr(owner, "ensure_chunk_prior") else None
+            if torch.is_tensor(bias) and not self.__dict__.get("_chunk_prior_registered"):
+                self.__dict__.setdefault("_fresh_synthesis_params", []).append(bias)
+                self.__dict__["_chunk_prior_registered"] = True
+        # The slabs exist whether or not the grammar has a chunk op: the
+        # compiled word loop carries them regardless, and an attribute that
+        # first appears inside a compiled call fails the next call's guard
+        # (measured: one extra compile of the word loop).
         stm = getattr(self.conceptualSpace, "stm", None)
         if stm is None or not torch.is_tensor(getattr(stm, "_buffer", None)):
             return
-        wholes = stm.ensure_whole_state()
-        owner.ensure_chunk_proposal_state(int(wholes.shape[0]), wholes.device)
-        owner.chunk_row_table(wholes.device)
+        # On the device and batch the word loop runs on (the staged word
+        # slab), not the STM's current buffer (still the previous batch's,
+        # or the construction-time CPU seed): a slab reallocated inside the
+        # compiled call changed its guard and recompiled the loop.
+        slab = getattr(self.inputSpace, "_ar_embedded_N", None)
+        if not torch.is_tensor(slab):
+            return
+        device, batch = slab.device, int(slab.shape[0])
+        wholes = getattr(stm, "_wholes", None)
+        shape = (batch, int(stm.capacity), 3)
+        if (not torch.is_tensor(wholes) or tuple(wholes.shape) != shape
+                or wholes.device != device):
+            stm._wholes = torch.full(shape, -1, dtype=torch.long, device=device)
+        if hasattr(owner, "ensure_chunk_proposal_state"):
+            owner.ensure_chunk_proposal_state(batch, device)
+            owner.chunk_row_table(device)
 
     def _unit_provenance(self, p, B, device):
         """``(whole, unit, clause)`` ``[B]`` longs of loop position ``p``
@@ -18154,12 +18205,22 @@ class BasicModel(BaseModel):
                 if getattr(self, "wholeSpaces", None) else ws)
         unit_parent = getattr(_ws0, "_staged_unit_parent", None)
         unit_clause = getattr(_ws0, "_staged_unit_clause", None)
-        minus_column = torch.full(
-            (B, 1), -1, dtype=torch.long, device=words.device)
-        unit_parent = (unit_parent.to(dtype=torch.long)
-                       if torch.is_tensor(unit_parent) else minus_column)
-        unit_clause = (unit_clause.to(dtype=torch.long)
-                       if torch.is_tensor(unit_clause) else minus_column)
+        def _fixed_width(source):
+            """``[B, width]`` long: the staged map padded with ``-1`` to the
+            word capacity.  The staged maps are ``[B, K]`` with ``K`` the
+            batch's unit count, and a varying ``K`` in a loop constant made
+            dynamo recompile the word loop on every new count (measured:
+            one extra 15 s compile per distinct K)."""
+            out = torch.full(
+                (B, width), -1, dtype=torch.long, device=words.device)
+            if torch.is_tensor(source) and source.dim() == 2:
+                k = min(int(source.shape[1]), width)
+                out[:, :k] = source[:, :k].to(
+                    device=words.device, dtype=torch.long)
+            return out
+
+        unit_parent = _fixed_width(unit_parent)
+        unit_clause = _fixed_width(unit_clause)
 
         def _gather_unit_column(source, index):
             """``[B]`` column of a ``[B, K]`` map, ``-1`` past its width."""

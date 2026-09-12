@@ -355,7 +355,10 @@ eight-class inventory stable). The fold-ladder plan lifted that gate
 with a dedicated pair on WholeSpace, `record_property_pull` and
 `maybe_split_property_row`: after the ladder stem, each unit's rung-0
 code (the max over its atoms) pulls on every property row its bytes
-hold, with the unit's bytes recorded beside the pull; at the sentence
+hold, with the unit's bytes recorded beside the pull (the stem records a
+whole presentation at once through `record_property_pulls`, one
+device-to-host copy and a byte-to-row lookup table, so the cost does not
+scale with the packed row's units); at the sentence
 boundary a row whose pulls' max per-coordinate variance exceeds
 `lbgThreshold` after `lbgMinCount` pulls splits along its mean pull,
 the fresh row taking as its **analyzer predicate** the bytes whose pulls

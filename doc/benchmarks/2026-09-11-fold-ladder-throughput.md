@@ -55,6 +55,52 @@ Observations.
   the ladder fixture here is a 3.4M-parameter canonical topology with an
   8192-byte input, not that config.
 
+## Where did the throughput go? (2026-09-12)
+
+Alec asked whether the July record of about 40 sentences/s
+(`2026-07-27-teacher-reconstruction-b24.md`: `BasicModel.xml`, B24, W256,
+packed FineWeb, MPS, Inductor fullgraph) was lost to the radix trie's
+replacement. Measured on the same config against the last pre-ladder
+commit (`fc93560`, a worktree) on the same machine, without the prefetch
+thread (`numWorkers` 0; see the Metal note below), 400 documents:
+
+| Tree | Steady brick, B=8 (forward / total) | Brick, B=24 compiled | Notes |
+|---|---|---|---|
+| pre-ladder `fc93560` | 7.7 s / 8.0–8.3 s | 10.0–12.3 s | one compile at brick 0 |
+| current, before this pass | 8.2 s / 8.6 s | 27.7 s (one sample) | a second compile on brick 1, and one more on every new unit count |
+| current, after this pass | 8.2 s / 8.7–8.9 s | not re-measured (GPU memory) | one compile at brick 0 |
+
+So the ladder front end itself costs about 7 % per brick (the stem: 0.35
+s versus 0.25 s at B=8; units per whitespace word are 1.2 on this config,
+since spaces are not units here and punctuation is), and the compiled
+word loop is unchanged (10.9 s for 258 trips on both trees in the
+profiled B=24 brick). The July rate of about 40 sentences/s is
+consistent with the pre-ladder brick times measured today (about 300
+sentences per 10–12 s brick on this machine, which is under other load)
+and is not what the ladder lost. What the ladder had lost, and this pass
+fixed:
+
+- three recompile triggers of the word loop, each a full 15–23 s
+  compile: the staged unit parent/clause maps had a width equal to the
+  batch's unit count (now padded to the word capacity at the stem), and
+  the chunk proposal slab and the STM whole slab were first allocated
+  inside the compiled call, on the wrong device and batch (now
+  allocated eagerly on the word slab's device before any compile);
+- the boundary learner's candidate tilings ran with the learning rate at
+  zero (0.8 s per B=8 brick; now gated), and the LBG pull recorder did
+  one device sync per unit and row (0.9 s; now one host pass);
+- the sentence packer's unit counter, running on the prefetch thread,
+  read the boundary parameters on the GPU while the main thread was
+  encoding: Metal aborted the process. The tiler now reads a host copy.
+  With the prefetch thread on, the current tree still trips the same
+  Metal assertion in `prepInput`'s device copy on that thread; the
+  pre-ladder tree does not, presumably because its thread is idle sooner.
+  That is left open (run with `numWorkers` 0 on MPS meanwhile).
+
+The production config at 2,000 documents does not fit this machine's
+16.85 GiB MPS limit past three bricks on either tree (the aligned prefix
+growth), so the B=24 numbers above are three-brick samples.
+
 ## Legacy radix comparison
 
 The plan's Phase 4 asks for the ladder against the legacy `radix`/`word`
@@ -102,17 +148,43 @@ acquires the whitespace boundary (test/test_meronomy_ladder.py).
 - The legacy row map `_ws_row_to_pos` was read unguarded on the decode
   path under the property basis.
 
+## Packed rows with whitespace units: the NaN (diagnosed and fixed 2026-09-12)
+
+The non-finite gradient in `perceptualSpace.sigma.raw_bfly_L` on packed
+FineWeb rows was traced node by node (autograd hooks on every node of the
+loss graph, anomaly-mode forward tracebacks). Findings, in backward order:
+
+- The first node that turns a moderate gradient into a huge one is the
+  atanh chart of the grammar's `lift` fold (`SigmaLayer.compose`,
+  `atanh(x.clamp(-1+1e-7, 1-1e-7))`): a gradient of 135 became 1.9e6 on
+  operands sitting at exactly +-1. Such operands are ordinary: a unit's
+  rung-0 code is a max over atom codes (many coordinates at +-1), the
+  `chunk` op is an unnormalised sum (up to +-2), and a deep fold
+  saturates. The chart's derivative, `1/(1-x^2)`, is 5e6 at the clamp.
+- Each nested fold of a long packed row applied that chart again; the
+  gradient grew about 100x per level over 15 levels (2e34 at the leaves)
+  and overflowed in the pi chart's `log`. Whitespace units matter only
+  because they double the row's depth; with them off the same rows
+  merely grew to 1e14.
+- The same chart (`2*atanh`) sits inside the pi (`lower`) fold, and every
+  sigma butterfly pair op, the part-code synthesis and the balanced
+  inverse use the 1e-7 clamp. Each fold's own gain is otherwise about 1
+  (measured per stage: tanh 0.4, inner map 1.0, chart 2), and the reduce
+  step's chooser blend adds 1.1-1.5.
+
+Fix: `Layers.bounded_atanh` (and `PiLayer._log_mult`) keep the exact
+forward value and clamp, and cap the backward slope at the tangent at
+`|x| = 0.9` (5.3 for atanh, 10.5 for the log-odds chart) as a
+straight-through estimator. Every atanh chart in Layers, Language and
+Spaces goes through it. Forward numerics are byte-identical; only the
+gradient of near-saturated coordinates is bounded. Validation: the same
+packed configuration (`data/MM_ladder_textpacked.xml`, whitespace units
+on, CPU) trained 12 bricks with finite gradients (643 sentences; word
+units 85.7 %, letters-only 100 %), where it failed on the fourth before;
+test/test_bounded_charts.py pins the charts and a 30-deep saturated fold.
+
 ## Open
 
-- Packed FineWeb rows with `<whitespaceUnits>true</whitespaceUnits>` hit a
-  non-finite gradient in `perceptualSpace.sigma.raw_bfly_L` by the fourth
-  brick (also on CPU; not the atanh clamp, not the membership-curve
-  discriminant, both tried). With whitespace units off the same rows train
-  for 48 bricks. The anomaly trace ends at the unary chooser's
-  `action_probs * branches` blend (bin/Language.py), where an infinite
-  incoming gradient meets an exactly-zero branch probability; the source
-  of the infinite gradient is not yet located. One-sentence-per-row text
-  and the successor corpus do not show it.
 - MPS runs of the packed configuration also died twice in the Metal
   driver (`A command encoder is already encoding` abort; a segfault at
   12.5 GB footprint), independent of the NaN.

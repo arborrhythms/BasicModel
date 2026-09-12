@@ -16,6 +16,7 @@ warnings.filterwarnings(
     category=UserWarning,
 )
 import torch
+from Layers import bounded_atanh as _bounded_atanh
 import torch.nn as nn
 import torch.nn.functional as F
 import random
@@ -24363,7 +24364,22 @@ class WholeSpace(Space):
             # <whitespaceUnits> presents space runs as units.
             for lo, hi in _CHAR_CLASS_RANGES.get(int(_CLS_WHITESPACE), ()):
                 discard_on[int(lo):int(hi) + 1] = True
-        return begins_on, ends_on, atom_on, discard_on
+        masks = (begins_on, ends_on, atom_on, discard_on)
+        # Host copy for readers off the main thread (the sentence packer's
+        # unit counter runs on the prefetch thread and must not touch the
+        # accelerator parameters: two threads encoding Metal commands
+        # aborted the process).  Refreshed on every main-thread read.
+        self.__dict__["_predicate_masks_host"] = masks
+        return masks
+
+    def _predicate_masks_host_cached(self):
+        """The last main-thread ``_predicate_masks`` result (CPU tensors),
+        computed now when none exists (callers prime it on the main
+        thread before handing the tiler to a packer thread)."""
+        cached = self.__dict__.get("_predicate_masks_host")
+        if cached is None:
+            cached = self._predicate_masks()
+        return cached
 
     def unit_spans_of_bytes(self, byte_values):
         """``[(start, end), ...]`` unit spans of one raw byte string under
@@ -24376,7 +24392,13 @@ class WholeSpace(Space):
         idx = torch.tensor([list(raw)], dtype=torch.long, device="cpu").clamp(0, 255)
         bw = getattr(self, "begins_weight", None)
         if torch.is_tensor(bw) and getattr(self, "property_basis", False):
-            fine, _slab = self._unit_tiling_from_predicates(idx)
+            # Thread-safe: the cached host masks, never the parameters.
+            slab = self._predicate_slab(idx)
+            begins_on, ends_on, atom_on, discard_on = (
+                self._predicate_masks_host_cached())
+            if not bool(begins_on.any() or ends_on.any() or atom_on.any()):
+                atom_on = torch.ones_like(atom_on)
+            fine = _predicate_unit_spans(slab, begins_on, ends_on, atom_on, discard_on)
         else:
             type_ids = _analysis_type_lut(self)[idx]
             single = (_analysis_digit_mask(self, type_ids, False)
@@ -24528,6 +24550,45 @@ class WholeSpace(Space):
         rec["pulls"].append((delta.to("cpu").clone(), tuple(int(x) & 0xFF for x in byte_values)))
         if len(rec["pulls"]) > 512:
             del rec["pulls"][:-512]
+
+    def record_property_pulls(self, unit_rows, codes, unit_bytes):
+        """Batched :meth:`record_property_pull` for one presentation.
+
+        ``unit_rows[u]`` is the list of property rows unit ``u`` holds,
+        ``codes`` ``[U, D]`` (any device) the units' rung-0 codes and
+        ``unit_bytes[u]`` their bytes.  One device-to-host copy for the
+        batch, then host accumulation (sums, squares, counts and the
+        capped pull lists), so the per-unit recorder's per-pull device
+        syncs do not scale with the packed row.
+        """
+        if getattr(self, "_online_learning_frozen", False) or not torch.is_tensor(codes):
+            return
+        cb = getattr(getattr(self, "subspace", None), "what", None)
+        W = cb.getW() if cb is not None and hasattr(cb, "getW") else None
+        if W is None or int(codes.shape[0]) == 0:
+            return
+        R = int(W.shape[0])
+        d = int(min(codes.shape[-1], W.shape[1]))
+        v = codes.detach().to(W.dtype).reshape(int(codes.shape[0]), -1)[:, :d].to("cpu")
+        W_host = W.detach()[:, :d].to("cpu")
+        tab = self.__dict__.setdefault("_property_lbg", {})
+        for u, rows in enumerate(unit_rows):
+            if not rows:
+                continue
+            bv = tuple(int(x) & 0xFF for x in unit_bytes[u])
+            for r in rows:
+                r = int(r)
+                if not (0 <= r < R):
+                    continue
+                delta = v[u] - W_host[r]
+                rec = tab.setdefault(r, {"sum": torch.zeros(d, device="cpu"),
+                                         "sq": torch.zeros(d, device="cpu"), "n": 0, "pulls": []})
+                rec["sum"] = rec["sum"] + delta
+                rec["sq"] = rec["sq"] + delta * delta
+                rec["n"] += 1
+                rec["pulls"].append((delta.clone(), bv))
+                if len(rec["pulls"]) > 512:
+                    del rec["pulls"][:-512]
 
     def maybe_split_property_row(self, row):
         """LBG split of a property row (Mereology.md, "Automatic analysis:
@@ -28055,7 +28116,11 @@ class WholeSpace(Space):
             # the atomic wholes and the property rows; the candidate moves
             # are observed for the boundary learner against this tiling.
             fine, slab = self._unit_tiling_from_predicates(idx)
-            self._observe_candidate_tilings(idx, slab, fine)
+            if float(getattr(self, "boundary_learning_rate", 0.0) or 0.0) > 0.0:
+                # The learner's candidate tilings (one per present column
+                # and move) are host work proportional to the batch; only
+                # a live boundary learner needs them.
+                self._observe_candidate_tilings(idx, slab, fine)
         else:
             fine = _type_run_spans(unit_types, singleton=single)
         object.__setattr__(self, "_staged_unit_spans", fine.to(IS_concepts.device))
@@ -30184,7 +30249,7 @@ class OutputSpace(Space):
             # [B, nSymbols] -> [B, nOutput], wrapped with atanh/tanh for
             # the nonlinear behaviour previously provided by PiLayer.
             act = vspace.materialize(mode="activation")
-            act_pre = torch.atanh(act.clamp(-1 + epsilon, 1 - epsilon))
+            act_pre = _bounded_atanh(act)
             output = torch.tanh(self._linearLayer.forward(act_pre))
             self.subspace.set_activation(output)
             return self.subspace
@@ -30215,7 +30280,7 @@ class OutputSpace(Space):
             # Activation-mode reverse: tanh(linear.reverse(atanh(x)))
             # mirrors the forward path's nonlinearity.
             act = vspace.materialize(mode="activation")
-            act_pre = torch.atanh(act.clamp(-1 + epsilon, 1 - epsilon))
+            act_pre = _bounded_atanh(act)
             symbol_act = torch.tanh(self._linearLayer.reverse(act_pre))
             target.set_activation(symbol_act)
             return target

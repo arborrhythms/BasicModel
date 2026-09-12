@@ -106,7 +106,12 @@ class TestPiSigmaXOR(unittest.TestCase):
             sigma = Layers.SigmaLayer(4, 1, nonlinear=True)
             pi.set_sigma(0)
             sigma.set_sigma(0)
-            optimizer = optim.Adam(chain(pi.parameters(), sigma.parameters()), lr=0.001)
+            # lr 0.003 (was 0.001): the charts' backward slope is capped at
+            # the tangent at |x| = 0.9 (Layers.bounded_atanh, 2026-09-12), so
+            # a target at the saturated ends no longer gets the exact chart's
+            # 1/(1-x^2) boost; the same seed converges with a 3x rate (or 3x
+            # the steps).  One of nine seeds converged before the cap too.
+            optimizer = optim.Adam(chain(pi.parameters(), sigma.parameters()), lr=0.003)
             for _ in range(1000):
                 optimizer.zero_grad()
                 y = sigma(pi(X))
