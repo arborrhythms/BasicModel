@@ -244,6 +244,20 @@ among the `<generate>` binary ops per un-fold step by round-trip fit —
 `PartLayer`; `TenseLayer`/`AspectLayer` share `_WhenOpMixin`; `EqualLayer`
 lives in `bin/Layers.py`, all others in `bin/Language.py`.
 
+#### Tensor reverses for the compiled loops (2026-09-13)
+
+`LanguageSpace.reverse_binary_step(parent, op_local, valid, reference,
+inverses)` and `reverse_unary_step(x, op_local, valid)` are the fixed-shape
+forms of the inventory above for a `torch.while_loop` body: every op's
+reverse is evaluated on the parent and the recorded op selects
+(`local_op_from_rule_ids` inverts the rule map). `reverse_inverses()`
+returns each lift/lower inner layer's `W^-1` once per traversal.
+`generate_policy` (created only under `<outputInLoop>`) is a linear chooser
+over the binary rules, the unary rules and stop, read on a top slot's
+content: the output walk follows rule stamps and credits the policy by
+imitation (`generate_policy_credit`), and lets the policy decide unstamped
+tops.
+
 ## Knowledge Artifacts
 
 `embed.build_knowledge_section(grammar)` creates the parser knowledge

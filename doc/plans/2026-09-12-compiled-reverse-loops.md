@@ -236,6 +236,17 @@ carries now pass through `Models._carries_with_grad`
 (`test/test_while_loop_gradients.py`; Training, "Loop gradients"), and
 the loop's gradients equal a Python loop's on every parameter.
 
+Fidelity gate against the eager un-fold (2026-09-13): not definable on
+the ladder fixtures. The eager un-fold (`_reverse_reduce_unfold`) raises
+`NotImplementedError` on the ops it declares to have no faithful reverse
+(`part`, and the other set ops), which the recorded seals choose on
+"12 plus 1"; the traversal follows requirement 2 and reverses those ops
+through identity while scoring the result. Parity therefore holds only on
+the invertible ops (the lift/lower round-trip and chunk-residual tests),
+and the byte cost is the sentence fidelity measure. Retiring the eager
+un-fold and the reverse islands (contract 8) is Alec's call; nothing else
+depends on them once `<reconstructInLoop>` is the training default.
+
 Contract 6 reconciled (2026-09-13): the forward loop and both
 reconstruction passes are one compiled segment; the output walk is the
 second compiled call, because the answer it realises is resolved after

@@ -1114,6 +1114,27 @@ speech: complete DNF over active percepts, permitting each `conjunction` /
 
 ---
 
+### Loop and parameter ownership (compiled reverse loops, 2026-09-13)
+
+Three loops, two compiled calls. `forward()` is one `torch.while_loop`
+per word bucket (`TensorPeerWhilePipeline.run_cs_lanes_banked`) traced
+fullgraph with the final seal; `reverseReconstruct` (under
+`<reconstructInLoop>`) is two more `torch.while_loop`s in the same graph
+(`BasicModel._reconstruct_sentences`: the seal un-folds per sentence
+slot, then one trip per word, latest first, that pops and scores each
+word); `reverseOutput` (under `<outputInLoop>`) is the second compiled
+call (`_output_generate_walk`), because the answer it realises is
+resolved after the forward. The reverse loops own no transform of their
+own: `LanguageSpace.reverse_binary_step` / `reverse_unary_step` apply the
+compose ops' tied inverses (`W^-1` of each lift/lower inner layer,
+computed once per traversal by `reverse_inverses`; the exact residual for
+`chunk`/`sum`; the self-inverse `not`/`non`; identity where an op is
+declared lossy). The one parameter of the output loop is
+`LanguageSpace.generate_policy` (Language, "Grammar"). Every loop's
+carries pass through `Models._carries_with_grad` (Training, "Loop
+gradients"), and the STM's live state is detached at brick entry
+(`ShortTermMemory.detach_live`).
+
 ## Sigma and Pi Layers
 
 For weight matrix $W \in \mathbb{R}^{m \times n}$ and input $x \in
