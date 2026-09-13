@@ -222,6 +222,29 @@ def _ensure_grad_anchors(device, dtypes=(torch.float32, torch.float16, torch.bfl
                 return                          # created lazily on first use
 
 
+def _release_loop_checkpoints():
+    """Drop the per-trip checkpoints of every ``torch.while_loop`` backward
+    node whose backward has run (call at a brick boundary, after the
+    optimizer step).  The HOP's autograd node keeps its stacked per-trip
+    outputs, initial carries and additional inputs as plain attributes of
+    the node, and the node outlives the brick (its consumers hold it from
+    the C++ graph), so without this every brick's checkpoints stay resident
+    (about 1.4 GiB per brick at B = 8, W = 256)."""
+    import gc
+    released = 0
+    for obj in gc.get_objects():
+        if type(obj).__name__ != "WhileLoopAutogradOpBackward":
+            continue
+        for name in ("fw_outputs", "carries", "additional_inputs"):
+            if getattr(obj, name, None) is not None:
+                try:
+                    setattr(obj, name, None)
+                    released += 1
+                except Exception:
+                    pass
+    return released
+
+
 def _carries_with_grad(carries):
     """Loop carries with every floating tensor requiring grad.
 
@@ -11731,6 +11754,11 @@ class BasicModel(BaseModel):
         _stm = getattr(getattr(self, "conceptualSpace", None), "stm", None)
         if _stm is not None and hasattr(_stm, "detach_live"):
             _stm.detach_live()                  # no graph crosses a brick
+        _trace = getattr(self, "_reconstruction_stack", None)
+        _trace = _trace() if callable(_trace) else None
+        if _trace is not None and hasattr(_trace, "detach_live"):
+            _trace.detach_live()
+        _release_loop_checkpoints()             # previous bricks' loop payloads
         object.__setattr__(self, "_recon_cost", None)
         object.__setattr__(self, "_tensor_pushed_ideas", None)
         object.__setattr__(self, "_tensor_sentence_roots_live", None)

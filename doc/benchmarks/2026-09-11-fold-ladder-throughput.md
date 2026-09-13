@@ -262,13 +262,15 @@ tables in this document.
 | 4 | no reconstruction | 8.4 s | 20.4 s | 29.5 s | 0.10 (student off, idea cost only) | 9.9 |
 | 4 | reconstructInLoop, in graph | 9.1 s | 22.4 s | 31.8 s | 3.20 / 3.24 / 3.34 (yes) | 12.0 |
 | 4 | reconstructInLoop, eager after the forward | 8.4 + 0.9 s | 21.7 s | 31.4 s | same values | |
-| 8 | no reconstruction | | | 34.3, 38.3, 38.3 s | 0.10 (yes) | 16.9 (OOM at brick 5) |
-| 8 | reconstructInLoop, in graph | | | 54.6, 41.5 s | 3.26 / 3.30 (yes) | 16.3 (OOM at brick 4) |
+| 8 | no reconstruction | | | 34.3, 38.3, 38.3 s | 0.10 (yes) | 16.9 (OOM at brick 5, before the checkpoint release) |
+| 8 | reconstructInLoop, in graph | | | 54.6, 41.5 s | 3.26 / 3.30 (yes) | 16.3 (OOM at brick 4, before the checkpoint release) |
+| 8 | reconstructInLoop, in graph, checkpoint release | | | 56, 58, 48, 46, 50, 45 s (six bricks) | 3.28 ... 3.23 (yes) | 16.07, flat from brick 2 |
 
-Zero recompiles after the first batch at both sizes. At B = 8 both
-variants exceed the 16.85 GiB MPS ceiling by the fourth or fifth brick
-(the every-batch backward of this configuration; the production config
-with the student fits at B = 8), so B = 4 is the clean comparison: the
+Zero recompiles after the first batch at both sizes. Before the loop
+checkpoint release (Open, below) both B = 8 variants exceeded the
+16.85 GiB MPS ceiling by the fourth or fifth brick; with it six B = 8
+bricks with reconstruction run at a flat 16.07 GiB. B = 4 is the clean
+timing comparison: the
 reconstruction costs about 8 % of a training batch (0.7 s in the forward,
 2 s in the backward) and 2 GiB.
 
@@ -311,29 +313,42 @@ baseline's backward was 20.4 s with the defect), and three B = 8 bricks
 with reconstruction run at 48-57 s with a 16.6 GiB peak, still at the
 ceiling.
 
+## Where the backward goes (2026-09-13)
+
+`torch.profiler` (CPU activities; MPS kernels are launched from the CPU
+side) on the third B = 8 brick with `<reconstructInLoop>`: 31 s of CPU
+time in the backward, of which the three `WhileLoopAutogradOpBackward`
+calls (the word loop, the seal pass, the word pass) spend 7.8 s in their
+own machinery (stacking the per-trip checkpoints, selecting them per
+trip, the Python dispatch mode: 2.8 s over 47 k calls) and the rest is
+about five million small aten calls: `where` 258 k calls (5.9 s), `copy_`
+740 k, `mul` 701 k, `add` 563 k, `fill_` 546 k, `empty` 869 k,
+`as_strided` 1.4 M. The backward is launch-bound at about 6 us per call;
+its cost scales with the number of ops per trip times the trips, not with
+the batch, which is why the B = 24 brick pays the same backward as B = 8
+and why the ladder's extra per-trip masks (`where`) show up there. The
+lever is fewer ops per trip (fused masks), not a bigger batch.
+
 ## Open
 
 - The production config at 2,000 documents exceeds this machine's
   16.85 GiB MPS limit after two or three bricks on either tree (the
   aligned prefix growth); 400 documents fit.
-- Memory grows about 1.4 GiB per brick at B = 8 with the backward every
+- Memory grew about 1.4 GiB per brick at B = 8 with the backward every
   batch (`<detachedReverse>` off), on the tree before this work as well
   (census 2026-09-13, `gc` over live MPS tensors: 6.2, 11.9, 13.3,
-  14.7 GiB after bricks 1-4). Two causes are identified and one is
-  fixed: (a) the STM's live concept activations were updated in place
-  with a graph, chaining every brick's graph to the previous one; the
-  live STM state is now detached at brick entry
-  (`ShortTermMemory.detach_live`). (b) The word loop's per-trip
-  checkpoints of every earlier brick (`WhileLoopAutogradOpBackward.
-  fw_outputs`, three slabs of 0.27-0.47 GiB per brick) stay alive after
-  the fix: a few real tensors of shapes `[B, 2, D]` and `[B, 1, 1024]`
-  saved by the current brick's graph reach the earlier bricks' loop
-  nodes, so some tensor computed in one brick is still an input of the
-  next; the Python-visible owners are exhausted (not the STM live state,
-  the discourse ring, the recall history, the what-memory, the loss
-  registry, the published proposal slab, or anomaly-mode metadata, which
-  were all checked), so the carrier is held from C++ (a saved tensor).
-  (A census by tensor object also shows the LTM store `[1048576, 1032]`
-  twice from the second brick on; the two objects share one storage (the
-  owner's `W` and the VQ's external view), so that is not a second
-  allocation.)
+  14.7 GiB after bricks 1-4). Cause, found by elimination (not the STM
+  live state, the trace's loss slab, the discourse ring, the recall
+  history, the what-memory, the loss registry, the reconstruction-priority
+  backward, anomaly metadata, or dynamo's code caches): the
+  `torch.while_loop` autograd node keeps its stacked per-trip checkpoints,
+  initial carries and additional inputs as plain attributes, and the node
+  outlives the brick (its consumers hold it from the C++ graph), so every
+  brick's checkpoints stayed resident. `Models._release_loop_checkpoints`
+  drops those attributes at brick entry, after the previous optimizer
+  step; with it live tensors hold at 10.6 GiB from brick 2 on and five
+  B = 8 bricks run where four used to reach the ceiling. The STM's live
+  state and the trace's float slab are also detached at brick entry (each
+  was updated in place with a graph, chaining bricks). A census by tensor
+  object also shows the LTM store `[1048576, 1032]` twice; the two objects
+  share one storage (the owner's `W` and the VQ's external view).

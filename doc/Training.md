@@ -634,7 +634,12 @@ different one. Every loop's carries now pass through
 grad (a per-device anchor created eagerly, since a tensor factory with
 `requires_grad=True` cannot be traced inside a compiled region); with it
 the loop's gradients equal a plain Python loop's on every parameter.
-`test/test_while_loop_gradients.py` pins the defect and the fix. The traversal is part of the tensor word
+`test/test_while_loop_gradients.py` pins the defect and the fix. The
+same node also keeps its per-trip checkpoints alive after the brick
+(it outlives the brick through the C++ graph), so
+`Models._release_loop_checkpoints` drops them at brick entry, after the
+optimizer step; the STM's live state and the trace's loss slab, both
+updated in place, are detached there too (Benchmarks, "Open"). The traversal is part of the tensor word
 pipeline's sentence state (the compiled path and its eager `while_loop`
 form); the legacy static scheduler produces no such state, and `lossIn`
 there falls back to the D3 objective. A checkpoint carrying the detached

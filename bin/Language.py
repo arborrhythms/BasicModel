@@ -9237,6 +9237,16 @@ class ReconstructionStack:
             self._forward_losses[:, slot].copy_(local)
             self._forward_loss_mask[:, slot].copy_(active)
 
+    def detach_live(self):
+        """Cut the autograd history of the trace's floating slabs at a
+        brick boundary: ``record_choice`` writes each step's bounded local
+        loss in place (``copy_``), and an in-place write on a tensor with
+        a graph chains every brick's graph to the previous one."""
+        for name, value in list(self.__dict__.items()):
+            if (torch.is_tensor(value) and value.is_floating_point()
+                    and value.grad_fn is not None):
+                self.__dict__[name] = value.detach()
+
     def choices(self):
         """Return ``(rule_ids, arities, mask)`` for reverse supervision."""
         return (self._choice_rule_ids, self._choice_arities,

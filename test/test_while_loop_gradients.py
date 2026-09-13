@@ -88,3 +88,21 @@ def test_no_grad_leaves_carries_untouched():
         c = (torch.tensor(0), torch.zeros(2))
         out = _carries_with_grad(c)
     assert out[1] is c[1]
+
+
+def test_release_loop_checkpoints_drops_the_node_payload():
+    """After a loop's backward has run, ``_release_loop_checkpoints`` drops
+    the stacked per-trip checkpoints its autograd node keeps (the node
+    outlives a brick through the C++ graph); the count is at least one
+    for a node that still exists."""
+    from Models import _release_loop_checkpoints
+    w = torch.randn(4, 4, requires_grad=True)
+    out = _hop(lambda t, x: t < 3, lambda t, x: (t + 1, torch.tanh(x @ w).clone()),
+               (torch.tensor(0), torch.ones(2, 4)))[1]
+    out.sum().backward()
+    node = out.grad_fn
+    while node is not None and type(node).__name__ != "WhileLoopAutogradOpBackward":
+        node = node.next_functions[0][0] if node.next_functions else None
+    assert node is not None and getattr(node, "fw_outputs", None) is not None
+    assert _release_loop_checkpoints() >= 1
+    assert getattr(node, "fw_outputs", None) is None
