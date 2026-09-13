@@ -201,6 +201,58 @@ def _grammar_row_preview(row, limit=64):
     return row[:n_head], len(row) - limit, row[-n_tail:]
 
 
+
+_GRAD_ANCHORS = {}
+
+
+def _ensure_grad_anchors(device, dtypes=(torch.float32, torch.float16, torch.bfloat16)):
+    """Create the zero scalar leaves ``_carries_with_grad`` adds, eagerly
+    (a tensor factory with ``requires_grad=True`` cannot be traced inside
+    a compiled region; a module-level tensor is lifted as a graph input)."""
+    dev = torch.device(device)
+    if dev.type == "cuda" and not torch.cuda.is_available():
+        return                                  # policy tests fake the device
+    for dtype in dtypes:
+        key = (dev.type, dtype)                  # one anchor per device type
+        if key not in _GRAD_ANCHORS:
+            try:
+                _GRAD_ANCHORS[key] = torch.zeros(
+                    (), dtype=dtype, device=dev, requires_grad=True)
+            except (RuntimeError, AssertionError):
+                return                          # created lazily on first use
+
+
+def _carries_with_grad(carries):
+    """Loop carries with every floating tensor requiring grad.
+
+    ``torch.while_loop``'s autograd (torch 2.14/2.15 nightlies) marks the
+    per-trip checkpoints with the *initial* carry's ``requires_grad``, so a
+    carry that enters the loop as plain zeros returns a zero gradient from
+    every trip: the chain across trips is cut and parameters used in the
+    body are credited from the last trip only (closures loaded mid-loop
+    get nothing).  Adding a zero scalar leaf that requires grad (a
+    per-device anchor created eagerly by ``_ensure_grad_anchors``) to each
+    such carry restores the chain; it is a no-op under ``no_grad``.
+    Regression: ``test/test_while_loop_gradients.py``.
+    """
+    if not torch.is_grad_enabled():
+        return tuple(carries)
+    out = []
+    for c in carries:
+        if torch.is_tensor(c) and c.is_floating_point() and not c.requires_grad:
+            key = (c.device.type, c.dtype)
+            anchor = _GRAD_ANCHORS.get(key)
+            if anchor is None:
+                if torch.compiler.is_compiling():
+                    raise RuntimeError(
+                        "no grad anchor for %s %s: call _ensure_grad_anchors "
+                        "before compiling" % (c.device, c.dtype))
+                _ensure_grad_anchors(c.device, (c.dtype,))
+                anchor = _GRAD_ANCHORS[key]
+            c = c + anchor
+        out.append(c)
+    return tuple(out)
+
 class ReverseAdapter(nn.Module):
     """Wrap a module so its reverse() method is called via forward().
 
@@ -495,7 +547,7 @@ class TensorPeerWhilePipeline:
         initial = (
             zero, trip_count + 2,
             *empty_a, *empty_b, *empty_feedback, *state)
-        result = torch.while_loop(cond, body, initial)
+        result = torch.while_loop(cond, body, _carries_with_grad(initial))
         _tick, _remaining, *flat_result = result
         _a, _b, feedback, final_state = _unpack(tuple(flat_result))
         return final_state, feedback, trip_count
@@ -672,7 +724,7 @@ class TensorPeerWhilePipeline:
             zero, trip_count + 2,
             *empty_a, *empty_b, *empty_feedback,
             *stm_state, *a_state, *b_state)
-        result = torch.while_loop(cond, body, initial)
+        result = torch.while_loop(cond, body, _carries_with_grad(initial))
         _tick, _remaining, *flat_result = result
         (_a, _b, feedback,
          final_stm, final_a, final_b) = _unpack(tuple(flat_result))
@@ -855,7 +907,7 @@ class TensorPeerWhilePipeline:
             *initial_young_feedback,
             *initial_visible_feedback,
             *stm_state, *percept_state, *concept_state)
-        result = torch.while_loop(cond, body, initial)
+        result = torch.while_loop(cond, body, _carries_with_grad(initial))
         _tick, _remaining, *flat_result = result
         (_percept, _young, feedback, final_stm,
          final_percept, final_concept) = _unpack(tuple(flat_result))
@@ -1070,7 +1122,7 @@ class TensorPeerWhilePipeline:
             zero, trip_count + 3,
             *initial_cs_sub, *initial_cs_sym, *initial_feedback,
             *stm_state, *cs_sub_state, *cs_sym_state, *cs_lang_state)
-        result = torch.while_loop(cond, body, initial)
+        result = torch.while_loop(cond, body, _carries_with_grad(initial))
         _tick, _remaining, *flat_result = result
         (_cs_sub, _cs_sym, feedback, final_stm,
          final_cs_sub, final_cs_sym,
@@ -7342,6 +7394,7 @@ class BasicModel(BaseModel):
         # re-home in ``_stm_reducer`` stays host-only (a ``torch.device``
         # compare is not traceable).
         self.to(str(TheDevice.get()))
+        _ensure_grad_anchors(TheDevice.get())      # before any compiled loop
         # The strict gate holds where the forward traces end to end. A
         # FULL-ROUTER grammar (anything beyond the default-only
         # pi/sigma rules) routes through the host-side chart fires
@@ -10671,8 +10724,9 @@ class BasicModel(BaseModel):
 
         s0 = torch.tensor(0, dtype=torch.long, device=dev)
         _s, pre_stack, pre_depth = torch.while_loop(
-            cond_a, body_a, (s0, S.new_zeros(B, slots, cap, D),
-                             torch.zeros(B, slots, dtype=torch.long, device=dev)))
+            cond_a, body_a, _carries_with_grad(
+                (s0, S.new_zeros(B, slots, cap, D),
+                 torch.zeros(B, slots, dtype=torch.long, device=dev))))
         # Fresh tensors: under autograd a loop's final carry is a view into
         # its stacked per-trip outputs (an unbacked trip count), which the
         # next loop cannot lift as an input.
@@ -10725,8 +10779,9 @@ class BasicModel(BaseModel):
         t0 = torch.tensor(0, dtype=torch.long, device=dev)
         (_t, _stack, _depth, idea_sum, byte_sum, count, trunc,
          recovered) = torch.while_loop(
-            cond, body, (t0, S.new_zeros(B, cap, D), torch.zeros(B, dtype=torch.long, device=dev),
-                         zeros_bs, zeros_bs.clone(), zeros_bs.clone(), zeros_bs.clone(), recovered0))
+            cond, body, _carries_with_grad(
+                (t0, S.new_zeros(B, cap, D), torch.zeros(B, dtype=torch.long, device=dev),
+                 zeros_bs, zeros_bs.clone(), zeros_bs.clone(), zeros_bs.clone(), recovered0)))
         if not keep_ideas:
             recovered = S.new_zeros(B, W, D)
         present_all = count > 0                                             # [B, slots]
@@ -10876,7 +10931,7 @@ class BasicModel(BaseModel):
         trunc0 = torch.zeros(B, dtype=torch.bool, device=event.device)
         more0 = torch.ones(B, dtype=torch.bool, device=event.device)
         t, stack, n_live, truncated, more = torch.while_loop(
-            cond, body, (t0, event.clone(), n_live0, trunc0, more0))
+            cond, body, _carries_with_grad((t0, event.clone(), n_live0, trunc0, more0)))
         # A rule still on top after the budget is a truncation.
         top = (n_live - 1).clamp(0, N - 1)
         kind_end, _ = language.decode_where_ids(stack[ar, top, :].unsqueeze(1), cw)
@@ -11630,6 +11685,7 @@ class BasicModel(BaseModel):
             the dataset is exhausted.
         """
         self._install_unit_span_fn()
+        _ensure_grad_anchors(TheDevice.get())
         object.__setattr__(self, "_recon_cost", None)
         object.__setattr__(self, "_tensor_pushed_ideas", None)
         object.__setattr__(self, "_tensor_sentence_roots_live", None)

@@ -300,6 +300,17 @@ An eager reverse step (all 15 binary reverses evaluated and the recorded
 one selected) costs 0.68 ms at B = 8, D = 1032; the word loop's 256 trips
 are about 0.8 s eager, and the same in the graph.
 
+The tying gate then found that no gradient reached the fold weights
+through any loop: `torch.while_loop`'s autograd cuts the chain for
+carries that enter without grad (Training, "Loop gradients"). The
+forward word loop had the same defect, so the numbers above were measured
+with a backward that credited only the last word of each loop. With the
+fixed backward (every carry requiring grad), the same B = 4 batch is
+forward 9.3 s and backward + step 23.0 s (33 s; the no-reconstruction
+baseline's backward was 20.4 s with the defect), and three B = 8 bricks
+with reconstruction run at 48-57 s with a 16.6 GiB peak, still at the
+ceiling.
+
 ## Open
 
 - The production config at 2,000 documents exceeds this machine's

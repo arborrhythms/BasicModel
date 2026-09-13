@@ -221,6 +221,25 @@ training batch (Training, "Reconstruction objectives");
 `BASICMODEL_RECON_PLACEMENT` compares the in-graph placement with a
 separate compiled call and eager execution.
 
+Tying gate (2026-09-13): `test_tied_traversal_trains_the_fold_parameters_and_owns_none`
+asserts the reconstruction cost's gradient reaches the lift/lower inner
+layers and that no reverse-student parameter exists. Writing it exposed
+a `torch.while_loop` autograd defect (present in the 2.15 nightly too):
+carries entering a loop without grad cut the gradient chain across trips,
+in the forward word loop as much as in the traversal. Every loop's
+carries now pass through `Models._carries_with_grad`
+(`test/test_while_loop_gradients.py`; Training, "Loop gradients"), and
+the loop's gradients equal a Python loop's on every parameter.
+
+Contract 6 reconciled (2026-09-13): the forward loop and both
+reconstruction passes are one compiled segment; the output walk is the
+second compiled call, because the answer it realises is resolved after
+the forward (`_resolve_answer` reads the understanding and the question
+eagerly), so no data for the walk exists inside the forward's graph. This
+is the two-call structure Alec described ("Output() ... the second
+compiled call"); a single segment would require the answer resolution to
+become a tensor step of the forward, which is not in this plan.
+
 1. Derivation tensors and the tied sentence traversal at the idea level
    (contracts 1, 2, 7 without the descent), run after the loop on the
    published root; fidelity and tying tests against the eager un-fold.

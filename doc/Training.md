@@ -606,7 +606,23 @@ backend), the reconstruction adds about 0.7 s to the 8.4 s forward and
 2 s to the 20 s backward of a batch. `BASICMODEL_RECON_PLACEMENT`
 (`graph`, the default; `compiled`, its own compiled call after the
 forward; `eager`) selects where the traversal runs, for the performance
-protocol. The traversal is part of the tensor word
+protocol.
+
+Loop gradients (2026-09-13). The tying gate found that the reconstruction
+cost reached the references but not the fold weights, and the cause is in
+`torch.while_loop`'s autograd (torch 2.14 and 2.15 nightlies): the
+per-trip checkpoints inherit the initial carry's `requires_grad`, so a
+carry that enters a loop as plain zeros returns a zero gradient from every
+trip. The chain across trips is cut, parameters used in the body are
+credited from the last trip only, and closures loaded mid-loop get
+nothing. The forward word loop was affected too: on the ladder fixture 26
+of 42 parameters received no gradient through the loop and 13 more a
+different one. Every loop's carries now pass through
+`Models._carries_with_grad`, which adds a zero scalar leaf that requires
+grad (a per-device anchor created eagerly, since a tensor factory with
+`requires_grad=True` cannot be traced inside a compiled region); with it
+the loop's gradients equal a plain Python loop's on every parameter.
+`test/test_while_loop_gradients.py` pins the defect and the fix. The traversal is part of the tensor word
 pipeline's sentence state (the compiled path and its eager `while_loop`
 form); the legacy static scheduler produces no such state, and `lossIn`
 there falls back to the D3 objective. A checkpoint carrying the detached

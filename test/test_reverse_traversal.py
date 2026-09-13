@@ -223,3 +223,37 @@ def test_traversal_compiles_into_the_one_sentence_graph(tmp_path):
     finally:
         torch._dynamo.reset()
         m.End(); m.symbolSpace.soft_reset()
+
+
+def test_tied_traversal_trains_the_fold_parameters_and_owns_none(tmp_path):
+    """Tying gate: the reconstruction cost's gradient reaches the compose
+    path's fold parameters (the lift/lower inner layers, through their own
+    inverses) and the model owns no reverse-student parameter under the
+    tied contract; the recorded choices are indices (no gradient path)."""
+    m = _traversal_model(tmp_path)
+    assert not any(".reverse_chooser." in n or n.startswith("reverse_chooser.")
+                   for n, _ in m.named_parameters())
+    _stage_fullgraph_tensor_peer(m, ["12 plus 1", "3 plus 4"])
+    m.zero_grad(set_to_none=True)
+    out = m._forward_with_compiled_sentence_state(None)
+    m._publish_compiled_sentence_state(out)
+    cost = m._recon_cost
+    assert cost.requires_grad and bool(torch.isfinite(cost).all())
+    cost.mean().backward()
+    language = m.languageSpace
+    binary = language._tree_layer(2)
+    names = list(binary.op_names)
+    touched = 0
+    for name in ("lift", "lower"):
+        if name not in names:
+            continue
+        op = list(binary.ops)[names.index(name)]
+        gl = getattr(op, "gl", op)
+        inner = getattr(gl, "_sigma", None) or getattr(gl, "_pi", None)
+        grads = [p.grad for p in inner.layer.parameters() if p.grad is not None]
+        assert grads, f"{name}: no gradient reached the tied inverse's weights"
+        touched += sum(int(g.abs().sum() > 0) for g in grads)
+    assert touched > 0
+    trace = m._reconstruction_stack()
+    assert not trace._choice_rule_ids.requires_grad
+    m.End(); m.symbolSpace.soft_reset()
