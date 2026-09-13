@@ -104,5 +104,21 @@ def test_release_loop_checkpoints_drops_the_node_payload():
     while node is not None and type(node).__name__ != "WhileLoopAutogradOpBackward":
         node = node.next_functions[0][0] if node.next_functions else None
     assert node is not None and getattr(node, "fw_outputs", None) is not None
-    assert _release_loop_checkpoints() >= 1
+    assert _release_loop_checkpoints((out,)) >= 1
     assert getattr(node, "fw_outputs", None) is None
+
+
+def test_release_leaves_a_foreign_pending_graph_intact():
+    """The release walks only the given roots' graphs: a loop whose
+    backward has not run yet, held elsewhere, keeps its checkpoints."""
+    from Models import _release_loop_checkpoints
+    w = torch.randn(4, 4, requires_grad=True)
+    def loop():
+        return _hop(lambda t, x: t < 3, lambda t, x: (t + 1, torch.tanh(x @ w).clone()),
+                    (torch.tensor(0), torch.ones(2, 4)))[1]
+    done = loop(); done.sum().backward()
+    pending = loop()                                        # backward not run yet
+    released = _release_loop_checkpoints((done,))
+    assert released >= 1
+    pending.sum().backward()                                # still works
+    assert w.grad is not None

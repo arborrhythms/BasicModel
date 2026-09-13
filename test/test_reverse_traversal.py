@@ -288,3 +288,51 @@ def test_final_end_state_keeps_three_slots_for_a_relative_row(tmp_path):
     assert torch.equal(slots[0], buf[0, :3])           # row 0: three slots
     assert torch.equal(slots[1, 0], S[1]) and float(slots[1, 1:].abs().sum()) == 0.0
     m.End(); m.symbolSpace.soft_reset()
+
+
+def test_byte_cost_is_positive_for_a_wrong_or_empty_idea_even_with_one_word(tmp_path):
+    """The null candidate keeps the byte cost a function of the idea: a
+    one-word sentence cannot score zero by having nothing to choose
+    between, and a zero or wrong idea scores positive with a gradient."""
+    m = _traversal_model(tmp_path)
+    _run(m, ["ab", "12"])                                   # one unit per row
+    isp = m.inputSpace
+    active = isp._word_active_mask
+    reference = m._tensor_pushed_ideas
+    B, W = int(reference.shape[0]), int(reference.shape[1])
+    ready, bytes_bwp, valid_bwp = m._byte_tables(B, W)
+    ref_n = torch.nn.functional.normalize(reference, dim=-1)
+    scope = active
+    own = m._byte_word_cost(reference[:, 0], torch.tensor(0), ref_n, scope, ready, bytes_bwp, valid_bwp)
+    zero = m._byte_word_cost(torch.zeros_like(reference[:, 0]), torch.tensor(0), ref_n, scope, ready, bytes_bwp, valid_bwp)
+    wrong = reference[:, 0].flip(0).clone().requires_grad_(True)  # the other row's word
+    wrong_c = m._byte_word_cost(wrong, torch.tensor(0), ref_n, scope, ready, bytes_bwp, valid_bwp)
+    assert float(own.max()) < 1e-2
+    assert float(zero.min()) > 0.5 and float(wrong_c.min()) > 0.5
+    assert float(torch.autograd.grad(wrong_c.sum(), [wrong])[0].abs().sum()) > 0
+    m.End(); m.symbolSpace.soft_reset()
+
+
+def test_rows_outside_the_sentence_scope_do_not_enter_its_score(tmp_path):
+    """Candidates are the sentence's own rows: a row outside the scope,
+    however similar to the idea, leaves the word's byte cost unchanged."""
+    m = _traversal_model(tmp_path)
+    _run(m, ["12 plus 1", "3 plus 4"])
+    isp = m.inputSpace
+    active = isp._word_active_mask
+    reference = m._tensor_pushed_ideas
+    B, W = int(reference.shape[0]), int(reference.shape[1])
+    ready, bytes_bwp, valid_bwp = m._byte_tables(B, W)
+    ref_n = torch.nn.functional.normalize(reference, dim=-1)
+    idea = reference[:, 1] * 0.5 + reference[:, 3] * 0.5     # between two words
+    narrow = active.clone(); narrow[:, 3:] = False              # scope: words 0-2 only
+    cost_narrow = m._byte_word_cost(idea, torch.tensor(1), ref_n, narrow, ready, bytes_bwp, valid_bwp)
+    # the same scope, but the rows outside it changed (a packed neighbour)
+    reference2 = reference.clone(); reference2[:, 3:] = reference[:, 1:2].expand(-1, W - 3, -1)
+    ref_n2 = torch.nn.functional.normalize(reference2, dim=-1)
+    cost_again = m._byte_word_cost(idea, torch.tensor(1), ref_n2, narrow, ready, bytes_bwp, valid_bwp)
+    assert torch.allclose(cost_narrow, cost_again, atol=1e-6)
+    wide = active.clone()                                       # scope including word 3
+    cost_wide = m._byte_word_cost(idea, torch.tensor(1), ref_n, wide, ready, bytes_bwp, valid_bwp)
+    assert not torch.allclose(cost_narrow, cost_wide, atol=1e-4)
+    m.End(); m.symbolSpace.soft_reset()

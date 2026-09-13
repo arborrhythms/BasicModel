@@ -52,87 +52,99 @@ def _prefer(m, choice):
         policy.weight.zero_(); policy.bias.zero_(); policy.bias[choice] = 5.0
 
 
-def test_walk_unreduces_a_rule_stamped_top_with_the_tied_inverse():
+def _stop(m):
+    _prefer(m, int(m.languageSpace.generate_policy.out_features) - 1)
+
+
+def test_walk_unreduces_a_rule_stamped_top_and_emits_its_constituents():
+    """A rule on top is un-reduced with the tied inverse; the completed
+    constituents are then popped into the emitted sequence, left to right:
+    the plain slot below, the left child, the right child."""
     m = _model()
-    _prefer(m, int(m.languageSpace.generate_policy.out_features) - 1)   # policy: stop
+    _stop(m)
     for rule in ("lift", "lower"):
         names = list(m.languageSpace._tree_layer(2).op_names)
         if rule not in names:
             continue
         event, gl, cw, live = _stamped_event(m, rule)
-        out, n_live, truncated, _cost = m._output_generate_walk(event, budget=3)
-        assert n_live.tolist() == [live + 1]
+        out, n_emitted, truncated, _cost = m._output_generate_walk(event, budget=8)
+        assert n_emitted.tolist() == [live + 1]
         assert not bool(truncated.any())
         parent = event[0, 1]
-        left, right = out[0, 1], out[0, 2]
-        assert float(left[cw]) == 0.0 and float(right[cw]) == 0.0      # children stamped empty
+        below, left, right = out[0, 0], out[0, 1], out[0, 2]
+        assert torch.equal(below, event[0, 0])                       # the terminal below, first
+        assert float(left[cw]) == 0.0 and float(right[cw]) == 0.0    # children stamped empty
         recomposed = gl.compose(left.unsqueeze(0), right.unsqueeze(0))[0]
         assert torch.allclose(recomposed[:cw], parent[:cw], atol=1e-3), rule
-        assert torch.equal(out[0, 0], event[0, 0])                       # the terminal untouched
+        assert float(out[0, 3:].abs().sum()) == 0.0                  # nothing beyond the emitted
 
 
-def test_walk_leaves_a_terminal_top_alone_and_reports_no_truncation():
+def test_walk_emits_terminals_in_order_and_reports_no_truncation():
     m = _model()
+    _stop(m)
     event, gl, cw, live = _stamped_event(m, "lift")
     event[0, 1, cw] = 0.0                                   # no rule stamp on top
-    _prefer(m, int(m.languageSpace.generate_policy.out_features) - 1)   # policy: stop
-    out, n_live, truncated, _cost = m._output_generate_walk(event, budget=3)
-    assert torch.equal(out, event) and n_live.tolist() == [live]
-    assert not bool(truncated.any())
+    out, n_emitted, truncated, _cost = m._output_generate_walk(event, budget=8)
+    assert n_emitted.tolist() == [live] and not bool(truncated.any())
+    assert torch.equal(out[0, :live], event[0, :live])       # left to right
 
 
-def test_walk_reports_truncation_when_no_slot_is_free():
+def test_walk_reports_truncation_when_work_is_pending():
+    """No free slot for the rule's second child and the budget runs out
+    with the rule still on top: pending work, reported as truncation."""
     m = _model()
+    _stop(m)
     event, gl, cw, live = _stamped_event(m, "lift", N=2)
-    out, n_live, truncated, _cost = m._output_generate_walk(event, budget=3)
-    assert bool(truncated.all()) and n_live.tolist() == [live]
+    out, n_emitted, truncated, _cost = m._output_generate_walk(event, budget=3)
+    assert bool(truncated.all()) and n_emitted.tolist() == [0]
 
 
 def test_walk_compiles_fullgraph_and_matches_eager():
     m = _model()
+    _stop(m)
     event, gl, cw, live = _stamped_event(m, "lift")
-    eager = m._output_generate_walk(event, budget=3)
+    eager = m._output_generate_walk(event, budget=8)
     torch._dynamo.reset()
     torch._dynamo.utils.counters.clear()
     compiled = torch.compile(m._output_generate_walk, backend="eager", fullgraph=True)
     try:
-        out, n_live, truncated, cost = compiled(event, 3)
+        out, n_emitted, truncated, cost = compiled(event, 8)
         assert int(torch._dynamo.utils.counters["stats"]["unique_graphs"]) == 1
         assert torch.allclose(out, eager[0], atol=1e-6)
-        assert torch.equal(n_live, eager[1]) and torch.equal(truncated, eager[2])
+        assert torch.equal(n_emitted, eager[1]) and torch.equal(truncated, eager[2])
         assert torch.allclose(cost, eager[3], atol=1e-6)
     finally:
         torch._dynamo.reset()
 
 
 def test_walk_handles_mixed_output_lengths_per_row():
-    """Output gate: one row un-reduces (three live slots), the other keeps
-    its terminal; per-row live counts differ and neither row truncates."""
+    """Output gate: one row un-reduces (three words), the other emits its
+    two terminals; per-row lengths differ and neither row truncates."""
     m = _model()
-    _prefer(m, int(m.languageSpace.generate_policy.out_features) - 1)   # policy: stop
+    _stop(m)
     e0, gl, cw, live = _stamped_event(m, "lift")
     e1 = e0.clone()
     e1[0, 1, cw] = 0.0                                      # row 1: terminal on top
     event = torch.cat((e0, e1), dim=0)
-    out, n_live, truncated, _cost = m._output_generate_walk(event, budget=3)
-    assert n_live.tolist() == [live + 1, live]
+    out, n_emitted, truncated, _cost = m._output_generate_walk(event, budget=8)
+    assert n_emitted.tolist() == [live + 1, live]
     assert not bool(truncated.any())
-    assert torch.equal(out[1], event[1])
-    assert float(out[0, 2].abs().sum()) > 0.0               # row 0 opened a slot
+    assert torch.equal(out[1, :live], event[1, :live])
+    assert float(out[0, 2].abs().sum()) > 0.0               # row 0 emitted a third word
 
 
 def test_walk_is_invariant_to_reconstruction_only_state():
     """Output gate: the walk reads nothing of the input reconstruction
     (contract 5): changing the reconstruction results leaves it unchanged."""
     m = _model()
-    _prefer(m, int(m.languageSpace.generate_policy.out_features) - 1)
+    _stop(m)
     event, gl, cw, live = _stamped_event(m, "lift")
-    base = m._output_generate_walk(event, budget=3)
+    base = m._output_generate_walk(event, budget=8)
     D = int(m.conceptualSpace.stm.concept_dim)
     object.__setattr__(m, "_recon_ideas", torch.randn(1, 4, D))
     object.__setattr__(m, "_recon_cost", torch.tensor([7.0]))
     object.__setattr__(m, "_recon_truncated", torch.tensor([True]))
-    again = m._output_generate_walk(event, budget=3)
+    again = m._output_generate_walk(event, budget=8)
     assert torch.equal(again[0], base[0])
     assert torch.equal(again[1], base[1]) and torch.equal(again[2], base[2])
 
@@ -147,7 +159,7 @@ def test_generate_policy_is_credited_by_the_stamped_rule_and_trains():
     names = list(language._tree_layer(2).op_names)
     _prefer(m, names.index("lower"))                        # wrong preference
     m.zero_grad(set_to_none=True)
-    out, n_live, truncated, cost = m._output_generate_walk(event, budget=3)
+    out, n_emitted, truncated, cost = m._output_generate_walk(event, budget=8)
     assert cost.shape == (1,) and float(cost) > 1.0 and bool(torch.isfinite(cost))
     cost.sum().backward()
     assert language.generate_policy.weight.grad is not None
@@ -158,16 +170,18 @@ def test_generate_policy_is_credited_by_the_stamped_rule_and_trains():
 
 def test_generate_policy_decides_an_unstamped_top():
     """Contract 5: without a rule stamp the policy decides; preferring a
-    binary rule opens a slot, preferring stop leaves the event alone."""
+    binary rule un-reduces (work pending after one trip), preferring stop
+    emits the live slots as they are."""
     m = _model()
     language = m.languageSpace
     names = list(language._tree_layer(2).op_names)
     event, gl, cw, live = _stamped_event(m, "lift")
     event[0, 1, cw] = 0.0                                   # unstamped top
     _prefer(m, names.index("lift"))
-    out, n_live, truncated, cost = m._output_generate_walk(event, budget=1)
-    assert n_live.tolist() == [live + 1] and not bool(truncated.any())
+    out, n_emitted, truncated, cost = m._output_generate_walk(event, budget=1)
+    assert n_emitted.tolist() == [0] and bool(truncated.all())
     assert float(cost) == 0.0                               # nothing stamped to imitate
-    _prefer(m, int(language.generate_policy.out_features) - 1)
-    out2, n_live2, _t, _c = m._output_generate_walk(event, budget=3)
-    assert n_live2.tolist() == [live] and torch.equal(out2, event)
+    _stop(m)
+    out2, n_emitted2, truncated2, _c = m._output_generate_walk(event, budget=8)
+    assert n_emitted2.tolist() == [live] and not bool(truncated2.any())
+    assert torch.equal(out2[0, :live], event[0, :live])

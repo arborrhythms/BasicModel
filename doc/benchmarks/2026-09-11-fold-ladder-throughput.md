@@ -302,6 +302,23 @@ An eager reverse step (all 15 binary reverses evaluated and the recorded
 one selected) costs 0.68 ms at B = 8, D = 1032; the word loop's 256 trips
 are about 0.8 s eager, and the same in the graph.
 
+Re-measured after the loop-gradient correction, the checkpoint release,
+the opaque concept events and the second review's fixes (2026-09-14,
+`data/BasicModel.xml`, B = 4, 400 documents, MPS). Both rows use the same
+tree and the same backend: dynamo with the eager backend, which is the
+backend `util.auto_compile_backend` selects for MPS in production
+(inductor is not used on MPS here). Batch 3, after the compiles:
+
+| variant | forward | backward + step | batch | lossIn (grad) |
+|---|---|---|---|---|
+| no reconstruction (`<detachedReverse>` off) | 8.2 s | 20.5 s | 29.1 s | 0.10 (yes) |
+| reconstructInLoop, in graph | 8.9 s | 22.0 s | 31.2 s | 2.39 / 2.37 / 2.47 (yes) |
+
+The tied reconstruction costs 7 % of the batch on this tree. The loss is
+lower than the 3.2 measured before the null candidate and the
+per-sentence scope because the candidate set changed; it is not
+comparable with the earlier rows.
+
 The tying gate then found that no gradient reached the fold weights
 through any loop: `torch.while_loop`'s autograd cuts the chain for
 carries that enter without grad (Training, "Loop gradients"). The

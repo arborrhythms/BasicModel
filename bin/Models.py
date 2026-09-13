@@ -222,26 +222,35 @@ def _ensure_grad_anchors(device, dtypes=(torch.float32, torch.float16, torch.bfl
                 return                          # created lazily on first use
 
 
-def _release_loop_checkpoints():
-    """Drop the per-trip checkpoints of every ``torch.while_loop`` backward
-    node whose backward has run (call at a brick boundary, after the
-    optimizer step).  The HOP's autograd node keeps its stacked per-trip
-    outputs, initial carries and additional inputs as plain attributes of
-    the node, and the node outlives the brick (its consumers hold it from
-    the C++ graph), so without this every brick's checkpoints stay resident
-    (about 1.4 GiB per brick at B = 8, W = 256)."""
-    import gc
+def _release_loop_checkpoints(roots=()):
+    """Drop the per-trip checkpoints of the ``torch.while_loop`` backward
+    nodes reachable from ``roots`` (tensors of a brick whose backward and
+    optimizer step have run; call at the next brick's entry).  The HOP's
+    autograd node keeps its stacked per-trip outputs, initial carries and
+    additional inputs as plain attributes of the node, and the node
+    outlives the brick (its consumers hold it from the C++ graph), so
+    without this every brick's checkpoints stay resident (about 1.4 GiB
+    per brick at B = 8, W = 256).  Only nodes in the given graphs are
+    touched: another pending graph's loops are left intact."""
     released = 0
-    for obj in gc.get_objects():
-        if type(obj).__name__ != "WhileLoopAutogradOpBackward":
+    seen = set()
+    stack = [t.grad_fn for t in roots if torch.is_tensor(t) and t.grad_fn is not None]
+    while stack:
+        node = stack.pop()
+        if node is None or id(node) in seen:
             continue
-        for name in ("fw_outputs", "carries", "additional_inputs"):
-            if getattr(obj, name, None) is not None:
-                try:
-                    setattr(obj, name, None)
-                    released += 1
-                except Exception:
-                    pass
+        seen.add(id(node))
+        if type(node).__name__ == "WhileLoopAutogradOpBackward":
+            for name in ("fw_outputs", "carries", "additional_inputs"):
+                if getattr(node, name, None) is not None:
+                    try:
+                        setattr(node, name, None)
+                        released += 1
+                    except Exception:
+                        pass
+        for nxt, _ in getattr(node, "next_functions", ()):
+            if nxt is not None and id(nxt) not in seen:
+                stack.append(nxt)
     return released
 
 
@@ -8849,8 +8858,8 @@ class BasicModel(BaseModel):
             # Slice 3: realise the answer's own derivation through the
             # generate walk (the second compiled loop) before the spaces'
             # reverse chain; the walk owns its state and termination.
-            budget = max(1, int(answer_event.shape[1]) - 1)
-            answer_event, _n_live, output_truncated, policy_cost = (
+            budget = max(2, 2 * int(answer_event.shape[1]))
+            answer_event, _n_emitted, output_truncated, policy_cost = (
                 self._compiled_output_walk()(answer_event, budget))
             object.__setattr__(self, "_output_truncated", output_truncated)
             object.__setattr__(self, "_output_policy_cost", policy_cost)
@@ -10740,7 +10749,7 @@ class BasicModel(BaseModel):
             safe = index.clamp(0, W - 1).reshape(1, 1, 1).expand(B, 1, k)
             return slab.gather(1, safe).reshape(B, k)
 
-        def _undo_binary(stack, depth, slot_b, ok, ref):
+        def _undo_binary(stack, depth, slot_b, ok, ref, side="right"):
             top = stack[:, 0, :]
             rec_slot = _col_rows(rule_ids, slot_b)
             rec_mask = torch.logical_and(
@@ -10749,7 +10758,7 @@ class BasicModel(BaseModel):
             valid = torch.logical_and(
                 torch.logical_and(rec_mask, known_b), depth >= 1)
             left, right = language.reverse_binary_step(
-                top, local_b, valid, ref, inverses=inverses)
+                top, local_b, valid, ref, inverses=inverses, reference_side=side)
             split = torch.cat(
                 (right.unsqueeze(1), left.unsqueeze(1), stack[:, 1:cap - 1, :]), dim=1)
             new_stack = torch.where(valid.reshape(B, 1, 1), split, stack)
@@ -10796,17 +10805,19 @@ class BasicModel(BaseModel):
                 is_last, torch.full_like(hi, n_levels), torch.full_like(hi, seal_width))
             stack = torch.cat((top3, S.new_zeros(B, max(0, cap - 3), D)), dim=1)[:, :cap, :]
             depth = torch.where(present, depth0.clamp(1, cap), torch.zeros_like(depth0))
-            # Each seal folded the newest remaining word onto the stack, so
-            # the k-th seal undone (last first) returns word ``hi - k`` as
-            # its right operand: that word's retained reference guides the
-            # residual reverses (chunk / sum).
+            # The seals fold newest-first: the first seal joins the two
+            # newest words, each later seal joins the composite (right,
+            # newest) with the next older word (left).  Undone last first,
+            # the k-th undo returns word ``lo + k`` as its LEFT operand;
+            # that word's retained reference guides the residual reverses.
+            lo = torch.where(member, positions, torch.full_like(positions, W)).amin(dim=1)
             undone = torch.zeros_like(hi)
             for k in reversed(range(seal_width)):
                 ok = torch.logical_and(present, seal_count > k)
-                ref_word = (hi - undone).clamp_min(0)
+                ref_word = (lo + undone).clamp(0, W - 1)
                 ref = reference.gather(
                     1, ref_word.reshape(B, 1, 1).expand(B, 1, D)).reshape(B, D)
-                stack, depth = _undo_binary(stack, depth, seal_base + k, ok, ref)
+                stack, depth = _undo_binary(stack, depth, seal_base + k, ok, ref, "left")
                 undone = undone + ok.to(undone.dtype)
             sel = (slot_ids == s_idx)                                       # [1, slots]
             pre_stack = torch.where(sel.reshape(1, slots, 1, 1), stack.unsqueeze(1), pre_stack)
@@ -10849,8 +10860,11 @@ class BasicModel(BaseModel):
             underflow = torch.logical_and(wa, depth < 1)
             pop_w = wa.to(S.dtype)
             idea_d = (top - ref_w).square().mean(-1)
+            # candidates: the sentence's own rows only (packed neighbours do
+            # not enter another sentence's score)
+            scope_w = torch.logical_and(ids == sid.reshape(B, 1), active)   # [B, W]
             byte_d = self._byte_word_cost(
-                top, w, ref_n, active, byte_ready, bytes_bwp, valid_bwp)
+                top, w, ref_n, scope_w, byte_ready, bytes_bwp, valid_bwp)
             col = sid.reshape(B, 1)
             idea_sum = idea_sum.scatter_add(1, col, (idea_d * pop_w).reshape(B, 1))
             byte_sum = byte_sum.scatter_add(1, col, (byte_d * pop_w).reshape(B, 1))
@@ -10934,11 +10948,18 @@ class BasicModel(BaseModel):
         idea_n = torch.nn.functional.normalize(idea, dim=-1)
         sim = torch.einsum("bd,bkd->bk", idea_n, ref_n) / self._BYTE_ASSIGNMENT_TAU
         sim = torch.where(scope, sim, torch.full_like(sim, -1e4))
-        assign = torch.softmax(sim, dim=-1)                              # [B, K]
-        weights = assign.reshape(B, 1, W).expand(B, P, W) \
+        # A null candidate (similarity 0, uniform bytes) keeps the cost a
+        # function of the idea itself: a one-word sentence, a zero idea or
+        # an idea near no row cannot score zero by having nothing to
+        # choose between.
+        assign = torch.softmax(
+            torch.cat((sim, sim.new_zeros(B, 1)), dim=-1), dim=-1)     # [B, K + 1]
+        p_null = assign[:, -1:]                                          # [B, 1]
+        weights = assign[:, :W].reshape(B, 1, W).expand(B, P, W) \
             * valid_bwp.permute(0, 2, 1).to(assign.dtype)               # [B, P, K]
         pred = idea.new_zeros(B, P, 256).scatter_add(
             2, bytes_bwp.permute(0, 2, 1), weights)                     # [B, P, 256]
+        pred = pred + (p_null / 256.0).reshape(B, 1, 1)
         safe = word.clamp(0, W - 1).reshape(1, 1, 1)
         target = bytes_bwp.gather(1, safe.expand(B, 1, P)).reshape(B, P)
         pos = valid_bwp.gather(1, safe.expand(B, 1, P)).reshape(B, P).to(idea.dtype)
@@ -10980,46 +11001,43 @@ class BasicModel(BaseModel):
 
         ``event`` ``[B, N, D]`` is the resolved answer's event slab: live
         slots carry a ``.where`` stamp (0 empty, a terminal id, or a rule
-        id).  Each trip reads the top live slot per row; a rule stamp
-        applies that rule's tied reverse (binary: left replaces the top,
-        right opens the slot above it; unary: in place), stamps the
-        children empty (as the eager ``unreduce`` does), and the walk ends
-        when no row's top decodes to a rule or ``budget`` trips are spent
-        (reported as truncation).  A top without a rule stamp is decided
-        by the learned generate policy (``LanguageSpace.generate_policy``:
-        a binary rule, a unary rule, or stop); stamped tops credit the
-        policy by imitation (cross-entropy against the recorded rule) and
-        the mean credit per row is returned.  Output state only: it reads
-        nothing of the input reconstruction.  Returns ``(event, n_live,
-        truncated, policy_cost)``.
+        id) in the symbol-level layout.  Each trip reads the top live slot
+        per row.  A rule on top is un-reduced with the rule's tied reverse
+        (binary: the left child replaces the top and the right child opens
+        the slot above it; unary: in place), the children stamped empty; a
+        completed constituent on top (no rule stamp, and the generate
+        policy says stop or there is no policy) is popped into the emitted
+        sequence.  Unstamped tops are otherwise decided by the learned
+        generate policy (``LanguageSpace.generate_policy``: a binary rule, a
+        unary rule, or stop); stamped tops credit the policy by imitation.
+        The walk ends when no row has a live slot left, or when ``budget``
+        trips are spent with work pending (reported as truncation).  Output
+        state only: it reads nothing of the input reconstruction.
+
+        Returns ``(emitted [B, N, D] left-to-right, n_emitted [B],
+        truncated [B], policy_cost [B])``.
         """
         language = self.languageSpace
         B, N, D = int(event.shape[0]), int(event.shape[1]), int(event.shape[2])
-        binary = language._tree_layer(2)
-        # The rule stamp lives in the symbol-level event's first ``.where``
-        # channel (symbols keep coordinates; concept events are opaque):
-        # the symbol space's ``.what`` width indexes it.
         cw = self._stamp_channel(D)
         binary_map = getattr(language, "_cs_binary_rule_ids", None)
         unary_map = getattr(language, "_cs_unary_rule_ids", None)
         inverses = language.reverse_inverses()      # once, not per trip
         ar = torch.arange(B, device=event.device)
-        # Live slots: a where stamp or any content (the eager stack counts
-        # occupancy; a plain concept slot carries where 0).
         kinds0, _ = language.decode_where_ids(event, cw)
         content_live = event[..., :cw].abs().amax(dim=-1) > 0
         live0 = torch.logical_or(kinds0 > 0, content_live)
         n_live0 = live0.to(torch.long).sum(dim=1)
         T = int(budget)
-
         R2 = int(binary_map.numel()) if torch.is_tensor(binary_map) else 0
         R1 = int(unary_map.numel()) if torch.is_tensor(unary_map) else 0
         stop_index = R2 + R1
+        policy_on = language.generate_policy is not None
 
-        def cond(t, stack, n_live, truncated, more, credit, credit_n):
-            return torch.logical_and(t < T, more.any())
+        def cond(t, stack, n_live, emitted, n_emitted, credit, credit_n):
+            return torch.logical_and(t < T, (n_live > 0).any())
 
-        def body(t, stack, n_live, truncated, more, credit, credit_n):
+        def body(t, stack, n_live, emitted, n_emitted, credit, credit_n):
             top = (n_live - 1).clamp(0, N - 1)
             top_vec = stack[ar, top, :]                                 # [B, D]
             kind, rule_id = language.decode_where_ids(top_vec.unsqueeze(1), cw)
@@ -11028,8 +11046,6 @@ class BasicModel(BaseModel):
             is_rule = torch.logical_and(kind == 2, has_top)
             local_b, known_b = language.local_op_from_rule_ids(rule_id, binary_map)
             local_u, known_u = language.local_op_from_rule_ids(rule_id, unary_map)
-            # The generate policy: imitation credit on stamped tops, the
-            # decision on unstamped ones (a plain concept slot).
             logits = language.generate_policy_logits(top_vec)
             target = torch.where(known_b, local_b, torch.where(
                 known_u, local_u + R2, torch.full_like(local_b, stop_index)))
@@ -11038,7 +11054,7 @@ class BasicModel(BaseModel):
             credit_n = credit_n + stamped.to(credit.dtype)
             choice = logits.argmax(dim=-1)
             unstamped = torch.logical_and(has_top, torch.logical_not(is_rule))
-            if language.generate_policy is None:
+            if not policy_on:
                 unstamped = torch.zeros_like(unstamped)      # no policy: stamps only
             pol_b = torch.logical_and(unstamped, choice < R2)
             pol_u = torch.logical_and(unstamped, torch.logical_and(
@@ -11054,39 +11070,47 @@ class BasicModel(BaseModel):
             left, right = language.reverse_binary_step(
                 top_vec, local_b, do_b, inverses=inverses)
             undone = language.reverse_unary_step(top_vec, local_u, do_u)
-            # stamp the children empty in the where channel
             zero_where = torch.zeros_like(left[:, cw:cw + 1])
             left = torch.cat((left[:, :cw], zero_where, left[:, cw + 1:]), dim=-1)
             right = torch.cat((right[:, :cw], zero_where, right[:, cw + 1:]), dim=-1)
             undone = torch.cat((undone[:, :cw], zero_where, undone[:, cw + 1:]), dim=-1)
+            # a completed constituent: no rule to apply on a live top
+            acted = torch.logical_or(do_b, do_u)
+            pop = torch.logical_and(has_top, torch.logical_not(
+                torch.logical_or(acted, is_rule)))
             new_top = torch.where(do_b.reshape(B, 1), left,
                                   torch.where(do_u.reshape(B, 1), undone, top_vec))
             stack1 = stack.clone()
-            stack1[ar, top, :] = new_top
+            stack1[ar, top, :] = torch.where(pop.reshape(B, 1), torch.zeros_like(new_top), new_top)
             above = (top + 1).clamp(0, N - 1)
             current_above = stack1[ar, above, :]
             stack1[ar, above, :] = torch.where(do_b.reshape(B, 1), right, current_above)
-            new_live = n_live + do_b.to(n_live.dtype)
-            acted = torch.logical_or(do_b, do_u)
-            stuck = torch.logical_and(is_rule, torch.logical_not(acted))
-            new_trunc = torch.logical_or(truncated, stuck)
-            return (t + 1, stack1, new_live.clone(), new_trunc.clone(), acted.clone(),
+            # emit right-to-left into the tail; the tail is left-aligned after the loop
+            slot = (N - 1 - n_emitted).clamp(0, N - 1)
+            emitted1 = emitted.clone()
+            emitted1[ar, slot, :] = torch.where(
+                pop.reshape(B, 1), top_vec, emitted1[ar, slot, :])
+            new_live = n_live + do_b.to(n_live.dtype) - pop.to(n_live.dtype)
+            new_emitted = n_emitted + pop.to(n_emitted.dtype)
+            return (t + 1, stack1, new_live.clone(), emitted1, new_emitted.clone(),
                     credit.clone(), credit_n.clone())
 
         t0 = torch.tensor(0, dtype=torch.long, device=event.device)
-        trunc0 = torch.zeros(B, dtype=torch.bool, device=event.device)
-        more0 = torch.ones(B, dtype=torch.bool, device=event.device)
         zeros_b = event.new_zeros(B)
-        t, stack, n_live, truncated, more, credit, credit_n = torch.while_loop(
+        zeros_l = torch.zeros(B, dtype=torch.long, device=event.device)
+        t, stack, n_live, emitted, n_emitted, credit, credit_n = torch.while_loop(
             cond, body, _carries_with_grad(
-                (t0, event.clone(), n_live0, trunc0, more0, zeros_b, zeros_b.clone())))
-        # A rule still on top after the budget is a truncation.
-        top = (n_live - 1).clamp(0, N - 1)
-        kind_end, _ = language.decode_where_ids(stack[ar, top, :].unsqueeze(1), cw)
-        truncated = torch.logical_or(
-            truncated, torch.logical_and(kind_end.reshape(B) == 2, n_live >= 1))
+                (t0, event.clone(), n_live0, torch.zeros_like(event), zeros_l,
+                 zeros_b, zeros_b.clone())))
+        # left-align the emitted tail: out[:, i] = emitted[:, i + N - n_emitted]
+        offset = (N - n_emitted).reshape(B, 1)
+        index = (torch.arange(N, device=event.device).reshape(1, N) + offset).clamp(0, N - 1)
+        out = emitted.gather(1, index.unsqueeze(-1).expand(B, N, D))
+        keep = (torch.arange(N, device=event.device).reshape(1, N) < n_emitted.reshape(B, 1))
+        out = torch.where(keep.unsqueeze(-1), out, torch.zeros_like(out))
+        truncated = n_live > 0                      # work pending after the budget
         policy_cost = credit / credit_n.clamp_min(1.0)
-        return stack, n_live, truncated, policy_cost
+        return out, n_emitted, truncated, policy_cost
 
     def _compiled_output_walk(self):
         """The generate walk as the second compiled call (cached)."""
@@ -11842,7 +11866,11 @@ class BasicModel(BaseModel):
         _trace = _trace() if callable(_trace) else None
         if _trace is not None and hasattr(_trace, "detach_live"):
             _trace.detach_live()
-        _release_loop_checkpoints()             # previous bricks' loop payloads
+        _release_loop_checkpoints(tuple(        # the previous brick's own loops
+            getattr(self, name, None) for name in (
+                "_stm_single_S", "_recon_cost", "_recon_idea_cost",
+                "_tensor_sentence_roots_live", "_tensor_pushed_ideas",
+                "_packed_sentence_roots", "_output_policy_cost")))
         object.__setattr__(self, "_recon_cost", None)
         object.__setattr__(self, "_tensor_pushed_ideas", None)
         object.__setattr__(self, "_tensor_sentence_roots_depth", None)
@@ -12365,6 +12393,11 @@ class BasicModel(BaseModel):
                     raise RuntimeError(
                         "detachedReverse is enabled, but the idea-only reverse "
                         "chooser or its ReconstructionStack teacher is missing")
+            elif getattr(self, "reconstruct_in_loop", False) and train:
+                # Tied contract: the traversal's byte cost is the only
+                # reconstruction objective; the legacy per-word reverse
+                # (reverse(S) -> table -> input) does not run.
+                d3_loss, d3_metric = None, None
             else:
                 d3_loss, d3_metric = (self._d3_reconstruction_loss()
                                       if _per_word else (None, None))
@@ -12444,7 +12477,9 @@ class BasicModel(BaseModel):
             # step.
             lossRev = torch.zeros((), device=TheDevice.get())
             # Dedupe: on D3 lossIn IS the reverse objective; train skips the double count (doc/plans/2026-07-03-reconstruction-fidelity-execution.md); eval totals still include the reverse term.
-            _rev_dedupe = bool(self._d3_active) and train
+            _rev_dedupe = train and (
+                bool(self._d3_active)
+                or bool(getattr(self, "reconstruct_in_loop", False)))
             try:
                 if forwardInput is not None and not _rev_dedupe:
                     # Step 2 (What spec): the input-associated inverse path is

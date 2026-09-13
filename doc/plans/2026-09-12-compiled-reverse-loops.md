@@ -259,6 +259,21 @@ walk when the widths differ; which event the output loop should realise
 in production (the answer's concept-level idea, or the symbol through
 `SymbolSpace.generate`'s un-reduce) is Alec's call.
 
+Codex's second review (2026-09-14) and the fixes: (1) the byte cost was
+degenerate for one-word sentences (one candidate scores zero for any
+idea) and (5) packed neighbours entered a sentence's candidates: a null
+candidate and a per-sentence scope. (2) The tied contract still ran the
+legacy per-word reverse and the training `reverseReconstruct`: both are
+skipped. (3) The seal un-fold put the reference on the wrong operand for
+seals after the first: the older word is the left operand, `lo + k`. (4)
+The walk never popped completed constituents: it now emits them and
+continues until no slot is pending; the production width mismatch stays
+open (above). (6) The checkpoint release touched every loop node: it now
+walks only the previous brick's own graphs. (7) Timings re-measured on
+the corrected tree (Benchmarks). The reviewer's probes also confirm what
+the traversal cannot do: where a derivation used ops declared lossy or a
+balanced split, the recovered ideas are not the words.
+
 Contract 6 reconciled (2026-09-13): the forward loop and both
 reconstruction passes are one compiled segment; the output walk is the
 second compiled call, because the answer it realises is resolved after

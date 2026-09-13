@@ -577,6 +577,11 @@ constituent references, bounded by the word width), the assignment's
 expected bytes are scored by cross-entropy against the word's own bytes over
 its byte window (the percept store's byte atoms), and the gradient flows
 through the assignment into the recovered ideas and the tied inverses. The
+candidates are the sentence's own rows plus a null candidate (similarity
+0, uniform bytes), so the cost is a function of the idea itself: a
+one-word sentence, a zero idea or an idea near no row cannot score zero
+by having nothing to choose between, and a packed neighbour's rows never
+enter another sentence's score. The
 score is taken at the pop step, inside the traversal, and the loop carries
 only the running sums (idea cost, byte cost, word count) besides the
 reverse stack: the loop's autograd stacks every carried tensor once per
@@ -599,7 +604,18 @@ last sentence) through the recorded seal binaries into its pre-seal stack;
 pass B is one `torch.while_loop` over the word index, latest word first,
 that loads a sentence's pre-seal stack at the word that ends it, undoes
 the word's recorded unary, post-binary and pre-binary folds, and pops and
-scores the word. Costs accumulate per sentence slot (`[B, slots]`,
+scores the word. The seals fold newest-first: the first seal joins the
+two newest words and each later seal joins the composite (right) with the
+next older word (left), so the k-th seal undone, last first, returns word
+`lo + k` as its left operand and that word's retained reference guides
+the residual reverses; a per-word fold's known operand is the pushed
+word on the right. Where the recorded op is declared lossy (the set ops,
+`part`, `whole`) or a balanced split (`lift`, `lower`), the recovered
+ideas are not the words: the fidelity of those derivations is what the
+byte cost measures and trains, not an exactness the reverses could
+promise. Under the tied contract no legacy reconstruction runs: the
+per-word reverse-from-S objective and the training call to
+`reverseReconstruct` are skipped. Costs accumulate per sentence slot (`[B, slots]`,
 reported) and the row cost is the mean over the sentences present. The
 earlier form, one traversal per sentence over a schedule the width of the
 row, cost a sentence count times the loop steps of the forward (about
@@ -620,8 +636,12 @@ the unary rules, stop) read on the top slot's content. Where the resolved
 derivation left a rule stamp the walk follows the stamp and credits the
 policy by imitation (cross-entropy against the stamped rule, recorded as
 `output_policy` with `<outputPolicyWeight>`); where a top carries no
-stamp the policy decides: a rule applies the tied reverse, stop leaves
-the slot. The imitation credit trains the policy only (the fold
+stamp the policy decides: a rule applies the tied reverse, stop completes
+the constituent. A completed constituent on top is popped into the
+emitted sequence and the walk continues with the pending constituents
+below it, so a row completes only when no live slot remains; the budget
+running out with slots pending is reported as truncation. The emitted
+words are returned left to right. The imitation credit trains the policy only (the fold
 parameters get no gradient from it).
 
 The eager trace replay (`_reverse_reduce_unfold`) and the exact leaves
@@ -654,7 +674,8 @@ the loop's gradients equal a plain Python loop's on every parameter.
 same node also keeps its per-trip checkpoints alive after the brick
 (it outlives the brick through the C++ graph), so
 `Models._release_loop_checkpoints` drops them at brick entry, after the
-optimizer step; the STM's live state and the trace's loss slab, both
+optimizer step, walking only the previous brick's own graphs (from its
+published tensors), so a pending graph held elsewhere keeps its loops; the STM's live state and the trace's loss slab, both
 updated in place, are detached there too (Benchmarks, "Open"). The traversal is part of the tensor word
 pipeline's sentence state (the compiled path and its eager `while_loop`
 form); the legacy static scheduler produces no such state, and `lossIn`

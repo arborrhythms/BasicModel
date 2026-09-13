@@ -14269,7 +14269,7 @@ class LanguageSpace(nn.Module):
         return out
 
     def reverse_binary_step(self, parent, op_local, valid, reference=None,
-                            inverses=None):
+                            inverses=None, reference_side="right"):
         """``(left, right)`` ``[B, D]`` of one recorded binary fold.
 
         ``parent`` is the folded slot; ``op_local`` ``[B]`` the recorded
@@ -14289,7 +14289,8 @@ class LanguageSpace(nn.Module):
             inverses = self.reverse_inverses()
         pairs = []
         for op, W_inv in zip(ops, inverses):
-            pairs.append(self._reverse_of_binary_op(op, parent, reference, W_inv))
+            pairs.append(self._reverse_of_binary_op(
+                op, parent, reference, W_inv, reference_side))
         left = torch.stack([pr[0] for pr in pairs], dim=1)     # [B, R, D]
         right = torch.stack([pr[1] for pr in pairs], dim=1)
         R = len(ops)
@@ -14300,7 +14301,8 @@ class LanguageSpace(nn.Module):
         return (torch.where(gate, l_sel, parent),
                 torch.where(gate, r_sel, parent))
 
-    def _reverse_of_binary_op(self, op, parent, reference, W_inv=None):
+    def _reverse_of_binary_op(self, op, parent, reference, W_inv=None,
+                              reference_side="right"):
         op = getattr(op, "gl", op)          # the reducer wraps grammar layers
         sigma = getattr(op, "_sigma", None)
         pi = getattr(op, "_pi", None)
@@ -14310,8 +14312,13 @@ class LanguageSpace(nn.Module):
         if pi is not None and hasattr(pi, "generate_functional"):
             return pi.generate_functional(parent, W_inv=W_inv)
         if name in ("chunk", "sum") and torch.is_tensor(reference):
-            # Exact residual against the retained reference of the newest
-            # operand: ``left + right = parent`` by construction.
+            # Exact residual against the retained reference of the known
+            # operand: ``left + right = parent`` by construction.  The
+            # pushed word is the newest (right) operand of a per-word fold;
+            # a seal beyond the first folds the older word (left) onto the
+            # composite (right).
+            if reference_side == "left":
+                return reference, parent - reference
             return parent - reference, reference
         if name in ("chunk", "sum"):
             return parent, torch.zeros_like(parent)
