@@ -329,6 +329,24 @@ the batch, which is why the B = 24 brick pays the same backward as B = 8
 and why the ladder's extra per-trip masks (`where`) show up there. The
 lever is fewer ops per trip (fused masks), not a bigger batch.
 
+Where the ops per trip come from (the compiled word-loop body recorded
+through a wrapping backend, nodes counted per source line, B = 4): 7159
+graph nodes per trip, of which `getitem` 1774, `mul` 859, `where` 677,
+`sub` 481, `add` 476, `cat` 224. The largest single sources are per-op
+repeats of the same event bookkeeping inside the chooser's evaluation of
+all grammar ops: `Spaces.shift_time` (the `.when` lift) 96 times per
+trip (about 340 nodes), `Layers._membership_curve` / `_mem_cascade` 42
+times (about 500 nodes), `Language._split_event` 64 times (256 nodes),
+then `binary_tiling_viterbi`, `_masked_softmax_lastdim`, `compact_soft`
+and the pipeline's bank commits (`Models.py` line 409, 53 `where`). The
+reverse passes had the same pattern (`_reverse_content_split` split the
+event and lifted `.when` once per op: 112 times per seal trip); the
+reverse now splits once per step and shares it, and the seal pass body
+went from 978 to 516 nodes per trip, the word pass from 323 to 191, with
+identical results. The forward's equivalent (splitting and lifting once
+per slot, the membership cascade once across ops) is the next lever and
+is not done.
+
 ## Open
 
 - The production config at 2,000 documents exceeds this machine's

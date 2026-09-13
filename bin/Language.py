@@ -14275,17 +14275,39 @@ class LanguageSpace(nn.Module):
     # else through identity (declared non-invertible).
 
     @staticmethod
-    def _reverse_content_split(op, parent, split):
+    def _reverse_content_split(op, parent, split, pieces=None):
         """Apply ``split`` (``[B, Dw] -> (l, r)``) on the event's content
-        channels and copy ``.where`` / lift ``.when`` like ``reverse``."""
+        channels and copy ``.where`` / lift ``.when`` like ``reverse``.
+        ``pieces`` (``(what, where, lifted_when)`` for ``cw``) is the split
+        computed once per step and shared by every op of that width."""
         cw = int(getattr(op, "_content_width", 0) or 0)
         if cw and int(parent.shape[-1]) > cw:
-            p_what, p_where, p_when = _split_event(parent, cw)
+            if pieces is not None and pieces[0] == cw:
+                _cw, p_what, p_where, back = pieces
+            else:
+                p_what, p_where, p_when = _split_event(parent, cw)
+                back = _lift_when(p_when)
             lc, rc = split(p_what)
-            back = _lift_when(p_when)
             return (torch.cat([lc, p_where, back], dim=-1),
                     torch.cat([rc, p_where, back], dim=-1))
         return split(parent)
+
+    @staticmethod
+    def _event_pieces(ops, parent):
+        """``(cw, what, where, lifted_when)`` of ``parent`` for the ops'
+        shared content width, computed once per reverse step (the lift and
+        lower families all split the same event and lift the same
+        ``.when``; per op that was 16 splits and 16 shifts per trip)."""
+        cw = 0
+        for op in ops:
+            gl = getattr(op, "gl", op)
+            cw = int(getattr(gl, "_content_width", 0) or 0)
+            if cw:
+                break
+        if not cw or int(parent.shape[-1]) <= cw:
+            return None
+        p_what, p_where, p_when = _split_event(parent, cw)
+        return (cw, p_what, p_where, _lift_when(p_when))
 
     def reverse_inverses(self):
         """The tied inverses the binary reverses need, computed once per
@@ -14329,9 +14351,10 @@ class LanguageSpace(nn.Module):
         B, D = int(parent.shape[0]), int(parent.shape[-1])
         if inverses is None:
             inverses = self.reverse_inverses()
+        pieces = self._event_pieces(ops, parent)
         pairs = []
         for op, W_inv in zip(ops, inverses):
-            pairs.append(self._reverse_of_binary_op(op, parent, reference, W_inv))
+            pairs.append(self._reverse_of_binary_op(op, parent, reference, W_inv, pieces))
         left = torch.stack([pr[0] for pr in pairs], dim=1)     # [B, R, D]
         right = torch.stack([pr[1] for pr in pairs], dim=1)
         R = len(ops)
@@ -14342,17 +14365,17 @@ class LanguageSpace(nn.Module):
         return (torch.where(gate, l_sel, parent),
                 torch.where(gate, r_sel, parent))
 
-    def _reverse_of_binary_op(self, op, parent, reference, W_inv=None):
+    def _reverse_of_binary_op(self, op, parent, reference, W_inv=None, pieces=None):
         op = getattr(op, "gl", op)          # the reducer wraps grammar layers
         sigma = getattr(op, "_sigma", None)
         pi = getattr(op, "_pi", None)
         name = getattr(op, "rule_name", "")
         if sigma is not None and hasattr(sigma, "generate_functional"):
             return self._reverse_content_split(
-                op, parent, lambda w: sigma.generate_functional(w, W_inv=W_inv))
+                op, parent, lambda w: sigma.generate_functional(w, W_inv=W_inv), pieces)
         if pi is not None and hasattr(pi, "generate_functional"):
             return self._reverse_content_split(
-                op, parent, lambda w: pi.generate_functional(w, W_inv=W_inv))
+                op, parent, lambda w: pi.generate_functional(w, W_inv=W_inv), pieces)
         if name in ("chunk", "sum") and torch.is_tensor(reference):
             # Exact residual against the retained reference of the newest
             # operand: ``left + right = parent`` by construction.
