@@ -185,3 +185,40 @@ def test_generate_policy_decides_an_unstamped_top():
     out2, n_emitted2, truncated2, _c = m._output_generate_walk(event, budget=8)
     assert n_emitted2.tolist() == [live] and not bool(truncated2.any())
     assert torch.equal(out2[0, :live], event[0, :live])
+
+
+def test_answer_materialises_as_its_own_conceptual_idea_and_realises_through_the_walk():
+    """The answer-materialisation boundary (spec sections 1-2): after
+    resolution the answer is its own conceptual idea, [B, 3, D] at the
+    concept width (the three LTM slots), the operand of the output loop;
+    for the present relation it is the understanding's own end state with
+    the question conditioning the root slot (zero at initialisation);
+    reverseOutput un-folds it and realises the words through the reverse
+    chain, reporting the idea's sources."""
+    import tempfile
+    from pathlib import Path as _P
+    from test_meronomy_ladder import _build_ladder_variant
+    from test_compiled_word_chunk import _stage_fullgraph_tensor_peer
+    from What import What
+    m = _build_ladder_variant(_P(tempfile.mkdtemp()), "walk_e2e", [
+        ("<packSentences>false</packSentences>",
+         "<packSentences>false</packSentences>\n      <outputInLoop>true</outputInLoop>")])
+    m._tensor_peer_while_eager = True
+    m._chart_compose_per_word = lambda: None
+    _stage_fullgraph_tensor_peer(m, ["12 plus 1", "3 plus 4"])
+    with torch.no_grad():
+        out = m._forward_with_compiled_sentence_state(None)
+        m._publish_compiled_sentence_state(out)
+        u = m._capture_understanding(out[:4] if isinstance(out, tuple) else out)
+        derivation = m._resolve_answer(u, What.supervised(0))
+        idea, resolved, sources = m._materialize_answer_idea(u, derivation, What.supervised(0))
+    D = int(m.conceptualSpace.stm.concept_dim)
+    assert tuple(idea.shape) == (2, 3, D) and bool(resolved.all())
+    assert all(src.startswith("idea:") for src in sources)
+    end = m._sentence_end_state(None)
+    assert torch.allclose(idea, end)                        # zero-initialised conditioning
+    with torch.no_grad():
+        words, n_emitted, truncated, cost = m._output_generate_walk(idea, budget=8, stamped_events=False)
+    assert tuple(words.shape) == (2, 8, D)
+    assert bool((n_emitted >= 1).all())                     # each row emitted at least its root
+    m.End(); m.symbolSpace.soft_reset()

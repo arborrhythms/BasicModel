@@ -8505,11 +8505,39 @@ class BasicModel(BaseModel):
         """
         return self.__dict__.setdefault("_what_recall_history", {})
 
-    def _observe_discourse(self, disc, sentence, mask=None):
+    def _recall_idea_history(self):
+        """Per-row chronological conceptual end states (``[3, D]``: the top
+        three STM slots at the sentence's end, the three LTM slots of a
+        relative sentence) beside the pooled reps of ``_recall_history``:
+        the concept-level operand of a ``past -k`` answer."""
+        return self.__dict__.setdefault("_what_recall_idea_history", {})
+
+    def _sentence_end_state(self, t=None):
+        """``[B, 3, D]`` end state of packed sentence slot ``t`` (from the
+        end-state bank the word loop carried) or of the row's last sentence
+        (``t`` None: the final seal's buffer); ``None`` when unknown."""
+        if t is not None:
+            bank = getattr(self, "_tensor_sentence_roots_live", None)
+            if torch.is_tensor(bank) and bank.dim() == 3 and 0 <= int(t) < int(bank.shape[1]):
+                B = int(bank.shape[0]); D = int(bank.shape[-1]) // 3
+                slab = bank[:, int(t), :].reshape(B, 3, D)
+                if float(slab.abs().sum()) > 0.0:
+                    return slab
+        end = getattr(self, "_tensor_final_end_slots", None)
+        if torch.is_tensor(end) and end.dim() == 3:
+            return end
+        S = getattr(self, "_stm_single_S", None)
+        if torch.is_tensor(S) and S.dim() == 2:
+            return torch.cat((S.unsqueeze(1), S.new_zeros(int(S.shape[0]), 2, int(S.shape[-1]))), dim=1)
+        return None
+
+    def _observe_discourse(self, disc, sentence, mask=None, slot=None):
         """Route every discourse observation through one seam so the recall
-        history stays in step with the ARMA ring."""
+        history stays in step with the ARMA ring (and the concept-level
+        end state of the sentence rides beside its pooled rep)."""
         result = disc.observe(sentence, mask=mask) if mask is not None else disc.observe(sentence)
         pooled = disc._pool_sentence_rep(sentence) if hasattr(disc, "_pool_sentence_rep") else None
+        idea = self._sentence_end_state(slot)
         if torch.is_tensor(pooled):
             if pooled.dim() == 1:
                 pooled = pooled.unsqueeze(0)
@@ -8524,6 +8552,10 @@ class BasicModel(BaseModel):
                         pass
                 row = history.setdefault(b, collections.deque(maxlen=keep))
                 row.append(pooled[b].detach().clone())
+                ideas = self._recall_idea_history().setdefault(
+                    b, collections.deque(maxlen=keep))
+                ideas.append(idea[b].detach().clone() if torch.is_tensor(idea)
+                             and int(idea.shape[0]) > b else None)
         return result
 
     def _temporal_answer_rep_row(self, relation, offset, b, width):
@@ -8851,32 +8883,47 @@ class BasicModel(BaseModel):
         surface = None
         answer_event = derivation.answer_symbol
         output_truncated = None
-        _walk_width = self._generate_walk_width()
-        if getattr(self, "output_in_loop", False) and torch.is_tensor(answer_event) \
-                and answer_event.dim() == 3 \
-                and int(answer_event.shape[-1]) == _walk_width:
-            # Slice 3: realise the answer's own derivation through the
-            # generate walk (the second compiled loop) before the spaces'
-            # reverse chain; the walk owns its state and termination.
-            budget = max(2, 2 * int(answer_event.shape[1]))
-            answer_event, _n_emitted, output_truncated, policy_cost = (
-                self._compiled_output_walk()(answer_event, budget))
-            object.__setattr__(self, "_output_truncated", output_truncated)
-            object.__setattr__(self, "_output_policy_cost", policy_cost)
-            if self.training and torch.is_tensor(policy_cost):
-                self.record_loss(
-                    "output_policy", policy_cost.mean(),
-                    weight=float(getattr(self, "output_policy_weight", 0.0)),
-                    space="LanguageSpace", category="policy")
+        walked = None
+        if getattr(self, "output_in_loop", False):
+            # The answer-materialisation boundary (spec sections 1-2): the
+            # resolved answer as its own conceptual idea, the operand of the
+            # output loop; the walk un-folds it into words (the second
+            # compiled loop) and the words are realised through the
+            # reverse chain.  The symbol vector is never padded to fit.
+            idea, idea_resolved, idea_sources = self._materialize_answer_idea(
+                understanding, derivation, question)
+            if torch.is_tensor(idea):
+                budget = max(2, 2 * int(getattr(self, "serial_word_capacity", 0) or 8))
+                words, n_emitted, output_truncated, policy_cost = (
+                    self._compiled_output_walk()(idea, budget, False))
+                object.__setattr__(self, "_output_truncated", output_truncated)
+                object.__setattr__(self, "_output_policy_cost", policy_cost)
+                object.__setattr__(self, "_output_idea_sources", idea_sources)
+                object.__setattr__(self, "_output_idea_resolved", idea_resolved)
+                if self.training and torch.is_tensor(policy_cost):
+                    self.record_loss(
+                        "output_policy", policy_cost.mean(),
+                        weight=float(getattr(self, "output_policy_weight", 0.0)),
+                        space="LanguageSpace", category="policy")
+                walked = words
         with self._synthesis_guard():
-            concepts = cs.synthesize(
-                answer_event, derivation.bindings,
-                context=understanding.conceptual_state,
-                selections=derivation.synthesis_references)
-            percepts = ps.synthesize(
-                concepts, context=understanding.perceptual_context,
-                selections=derivation.synthesis_references,
-                reverse_chain=self._reverse_body)
+            if walked is not None:
+                # words (concept width) -> percepts through the tied reverse
+                # chain, the same realisation the reconstruction uses
+                cs.commit_event(walked)
+                realized = self._reverse_perceptual(self._reverse_body(cs.subspace))
+                concepts = walked
+                percepts = (realized.materialize()
+                            if hasattr(realized, "materialize") else realized)
+            else:
+                concepts = cs.synthesize(
+                    answer_event, derivation.bindings,
+                    context=understanding.conceptual_state,
+                    selections=derivation.synthesis_references)
+                percepts = ps.synthesize(
+                    concepts, context=understanding.perceptual_context,
+                    selections=derivation.synthesis_references,
+                    reverse_chain=self._reverse_body)
             actual = self.outputSpace.from_percepts(percepts)
             if temporal:
                 # A past/future answer is a datum: realize the answer
@@ -10559,6 +10606,50 @@ class BasicModel(BaseModel):
                 table[int(pid)] = value
         object.__setattr__(ps, "_pid_byte_table", table)
 
+    def _stage_snapshot_bytes(self):
+        """Bytes of every row of the brick's staged dictionary snapshot
+        (``_ar_concept_lookup_rows``: the words' concept rows, then their
+        object rows): ``_ar_bank_bytes [B, L, P]`` (0..255) and
+        ``_ar_bank_valid [B, L, P]``.  A concept row is an identity code,
+        so the tied inverse of the concept lookup is the snap to a row and
+        the row's surface is its bytes; the byte decoding of a recovered
+        idea reads this snapshot."""
+        isp = self.inputSpace
+        ps = self.perceptualSpace
+        bank = getattr(isp, "_ar_concept_lookup_rows", None)
+        part_ids = getattr(isp, "_ar_word_part_ids", None)
+        part_mask = getattr(isp, "_ar_word_part_mask", None)
+        table = getattr(ps, "_pid_byte_table", None)
+        if not (torch.is_tensor(bank) and torch.is_tensor(part_ids)
+                and torch.is_tensor(part_mask) and torch.is_tensor(table)
+                and bank.dim() == 2 and part_ids.dim() == 3
+                and int(bank.shape[0]) == int(part_ids.shape[0])
+                and tuple(part_mask.shape) == tuple(part_ids.shape)):
+            # no snapshot for this batch: the decoder falls back to the
+            # words' own rows (``_snapshot_tables``)
+            isp._ar_bank_bytes = None
+            isp._ar_bank_valid = None
+            return
+        B, L = int(bank.shape[0]), int(bank.shape[1])
+        W, P = int(part_ids.shape[1]), int(part_ids.shape[2])
+        table = table.to(device=part_ids.device)
+        word_bytes = table[part_ids.clamp(0, int(table.numel()) - 1)]      # [B, W, P]
+        word_valid = torch.logical_and(part_mask.to(torch.bool), word_bytes >= 0)
+        word_bytes = word_bytes.clamp(0, 255)
+        bank_bytes = torch.zeros(B, L, P, dtype=torch.long, device=part_ids.device)
+        bank_valid = torch.zeros(B, L, P, dtype=torch.bool, device=part_ids.device)
+        n_words = min(W, L)
+        bank_bytes[:, :n_words] = word_bytes[:, :n_words]
+        bank_valid[:, :n_words] = word_valid[:, :n_words]
+        object_start = L // 2                     # the object rows mirror the words
+        n_obj = min(W, L - object_start)
+        if n_obj > 0:
+            bank_bytes[:, object_start:object_start + n_obj] = word_bytes[:, :n_obj]
+            bank_valid[:, object_start:object_start + n_obj] = word_valid[:, :n_obj]
+        present = bank.ge(0).unsqueeze(-1)
+        isp._ar_bank_bytes = bank_bytes
+        isp._ar_bank_valid = torch.logical_and(bank_valid, present)
+
     def _reference_word_slab(self, B, W, D, like):
         """``[B, W, D]`` retained constituent references: the concept atoms
         each word was staged with (``_ar_word_concept_atoms``), padded to
@@ -10732,8 +10823,9 @@ class BasicModel(BaseModel):
         last_index = torch.where(active, positions, torch.full_like(positions, -1)).amax(dim=1)
         keep_ideas = bool(getattr(self, "_recon_keep_ideas", False))
         inverses = language.reverse_inverses()      # once, not per step
-        byte_ready, bytes_bwp, valid_bwp = self._byte_tables(B, W)
-        ref_n = torch.nn.functional.normalize(reference, dim=-1)
+        byte_ready, bytes_bwp, valid_bwp = self._byte_tables(B, W)   # the words' bytes
+        snap_ready, bank_n, bank_bytes, bank_valid = self._snapshot_tables(reference)
+        byte_ready = bool(byte_ready and snap_ready)
 
         def _col(slab, index):
             k = int(slab.shape[1])
@@ -10762,7 +10854,7 @@ class BasicModel(BaseModel):
             split = torch.cat(
                 (right.unsqueeze(1), left.unsqueeze(1), stack[:, 1:cap - 1, :]), dim=1)
             new_stack = torch.where(valid.reshape(B, 1, 1), split, stack)
-            return new_stack, depth + valid.to(depth.dtype)
+            return new_stack, depth + valid.to(depth.dtype), valid
 
         def _undo_unary(stack, depth, slot_b, ok):
             top = stack[:, 0, :]
@@ -10817,8 +10909,9 @@ class BasicModel(BaseModel):
                 ref_word = (lo + undone).clamp(0, W - 1)
                 ref = reference.gather(
                     1, ref_word.reshape(B, 1, 1).expand(B, 1, D)).reshape(B, D)
-                stack, depth = _undo_binary(stack, depth, seal_base + k, ok, ref, "left")
-                undone = undone + ok.to(undone.dtype)
+                stack, depth, applied = _undo_binary(
+                    stack, depth, seal_base + k, ok, ref, "left")
+                undone = undone + applied.to(undone.dtype)   # only a recorded, undone seal
             sel = (slot_ids == s_idx)                                       # [1, slots]
             pre_stack = torch.where(sel.reshape(1, slots, 1, 1), stack.unsqueeze(1), pre_stack)
             pre_depth = torch.where(sel, depth.reshape(B, 1), pre_depth)
@@ -10853,18 +10946,15 @@ class BasicModel(BaseModel):
             depth = torch.where(end_b, loaded_depth, depth)
             ref_w = _word_col(reference, w)
             stack, depth = _undo_unary(stack, depth, (3 * w + 2).reshape(1).expand(B), wa)
-            stack, depth = _undo_binary(stack, depth, (3 * w + 1).reshape(1).expand(B), wa, ref_w)
-            stack, depth = _undo_binary(stack, depth, (3 * w).reshape(1).expand(B), wa, ref_w)
+            stack, depth, _ap = _undo_binary(stack, depth, (3 * w + 1).reshape(1).expand(B), wa, ref_w)
+            stack, depth, _ap = _undo_binary(stack, depth, (3 * w).reshape(1).expand(B), wa, ref_w)
             # pop: the top is the recovered word, scored on the spot
             top = stack[:, 0, :]
             underflow = torch.logical_and(wa, depth < 1)
             pop_w = wa.to(S.dtype)
             idea_d = (top - ref_w).square().mean(-1)
-            # candidates: the sentence's own rows only (packed neighbours do
-            # not enter another sentence's score)
-            scope_w = torch.logical_and(ids == sid.reshape(B, 1), active)   # [B, W]
             byte_d = self._byte_word_cost(
-                top, w, ref_n, scope_w, byte_ready, bytes_bwp, valid_bwp)
+                top, w, bank_n, bank_bytes, bank_valid, bytes_bwp, valid_bwp, byte_ready)
             col = sid.reshape(B, 1)
             idea_sum = idea_sum.scatter_add(1, col, (idea_d * pop_w).reshape(B, 1))
             byte_sum = byte_sum.scatter_add(1, col, (byte_d * pop_w).reshape(B, 1))
@@ -10910,6 +11000,30 @@ class BasicModel(BaseModel):
             torch.ones(B, dtype=torch.long, device=S.device))
         return rec, idea, byte_c, trunc
 
+    def _snapshot_tables(self, reference):
+        """``(ready, bank_n [B, L, D], bank_bytes [B, L, P], bank_valid
+        [B, L, P])``: the brick's dictionary snapshot as the byte
+        decoder's candidates (normalised rows).  Falls back to the words'
+        own rows when no snapshot was staged."""
+        isp = self.inputSpace
+        atoms = getattr(isp, "_ar_concept_lookup_atoms", None)
+        bank_bytes = getattr(isp, "_ar_bank_bytes", None)
+        bank_valid = getattr(isp, "_ar_bank_valid", None)
+        B, W, D = int(reference.shape[0]), int(reference.shape[1]), int(reference.shape[2])
+        if (torch.is_tensor(atoms) and atoms.dim() == 3 and torch.is_tensor(bank_bytes)
+                and torch.is_tensor(bank_valid) and int(atoms.shape[0]) == B
+                and int(atoms.shape[1]) == int(bank_bytes.shape[1])):
+            bank = atoms.to(device=reference.device, dtype=reference.dtype)
+            if int(bank.shape[-1]) != D:
+                bank = torch.cat((bank[..., :D], bank.new_zeros(
+                    B, int(bank.shape[1]), max(0, D - int(bank.shape[-1])))), dim=-1)
+            return (True, torch.nn.functional.normalize(bank, dim=-1),
+                    bank_bytes.to(device=reference.device),
+                    bank_valid.to(device=reference.device))
+        ready, bytes_bwp, valid_bwp = self._byte_tables(B, W)
+        return (ready, torch.nn.functional.normalize(reference, dim=-1),
+                bytes_bwp, valid_bwp)
+
     def _byte_tables(self, B, W):
         """The staged words' bytes ``[B, W, P]`` (``-1`` padded) and their
         validity, from the part ids and the pid-to-byte table; ``ready`` is
@@ -10930,39 +11044,45 @@ class BasicModel(BaseModel):
         valid = torch.logical_and(part_mask.to(torch.bool), bytes_bwp >= 0)
         return True, bytes_bwp.clamp(0, 255), valid
 
-    def _byte_word_cost(self, idea, word, ref_n, scope, ready, bytes_bwp, valid_bwp):
+    def _byte_word_cost(self, idea, word, bank_n, bank_bytes, bank_valid,
+                        target_bytes, target_valid, ready):
         """``[B]`` byte cross-entropy of one recovered word idea (contract 3).
 
-        The candidate set is the sentence's own word rows (``scope``), the
-        assignment ``softmax(cos / tau)`` over them, and the expected byte
-        distribution at each position of the word's byte window (the
-        assignment-weighted one-hots of the candidates' bytes, accumulated
-        by scatter, never materialised as one-hots) is scored against the
-        word's own bytes.  Zero when the idea sits nearest its own row.
-        Gradient flows through the assignment into the idea and the tied
-        inverses; the references and the bytes are constants.
+        A concept row is an identity code (it carries no fold of the
+        word's byte atoms), so the tied inverse of the concept lookup is
+        the snap to a row and a row's surface is its bytes: the decoder's
+        candidates are the rows of the brick's staged dictionary snapshot
+        (``bank_n``, every word and object row the brick staged, with a
+        null candidate of similarity 0 and uniform bytes so a one-word
+        brick, a zero idea or an idea near no row cannot score zero by
+        having nothing to choose between).  The assignment
+        ``softmax(cos / tau)`` over the snapshot gives the expected byte at
+        each position of the word's window (the assignment-weighted
+        candidates' bytes, accumulated by scatter), scored against the
+        word's own bytes (``target_bytes [B, W, P]`` at ``word``).  Zero
+        when the idea sits on its own row.  Gradient flows through the
+        assignment into the idea and the tied inverses; the snapshot and
+        the bytes are constants.
         """
-        B, W, P = int(bytes_bwp.shape[0]), int(bytes_bwp.shape[1]), int(bytes_bwp.shape[2])
+        B, L, P = int(bank_bytes.shape[0]), int(bank_bytes.shape[1]), int(bank_bytes.shape[2])
+        W = int(target_bytes.shape[1])
         if not ready:
             return idea.new_zeros(B)
         idea_n = torch.nn.functional.normalize(idea, dim=-1)
-        sim = torch.einsum("bd,bkd->bk", idea_n, ref_n) / self._BYTE_ASSIGNMENT_TAU
-        sim = torch.where(scope, sim, torch.full_like(sim, -1e4))
-        # A null candidate (similarity 0, uniform bytes) keeps the cost a
-        # function of the idea itself: a one-word sentence, a zero idea or
-        # an idea near no row cannot score zero by having nothing to
-        # choose between.
+        sim = torch.einsum("bd,bkd->bk", idea_n, bank_n) / self._BYTE_ASSIGNMENT_TAU
+        present = bank_valid.any(dim=-1)                                 # [B, L]
+        sim = torch.where(present, sim, torch.full_like(sim, -1e4))
         assign = torch.softmax(
-            torch.cat((sim, sim.new_zeros(B, 1)), dim=-1), dim=-1)     # [B, K + 1]
-        p_null = assign[:, -1:]                                          # [B, 1]
-        weights = assign[:, :W].reshape(B, 1, W).expand(B, P, W) \
-            * valid_bwp.permute(0, 2, 1).to(assign.dtype)               # [B, P, K]
+            torch.cat((sim, sim.new_zeros(B, 1)), dim=-1), dim=-1)     # [B, L + 1]
+        p_null = assign[:, -1:]
+        weights = assign[:, :L].reshape(B, 1, L).expand(B, P, L) \
+            * bank_valid.permute(0, 2, 1).to(assign.dtype)              # [B, P, L]
         pred = idea.new_zeros(B, P, 256).scatter_add(
-            2, bytes_bwp.permute(0, 2, 1), weights)                     # [B, P, 256]
+            2, bank_bytes.permute(0, 2, 1), weights)                    # [B, P, 256]
         pred = pred + (p_null / 256.0).reshape(B, 1, 1)
         safe = word.clamp(0, W - 1).reshape(1, 1, 1)
-        target = bytes_bwp.gather(1, safe.expand(B, 1, P)).reshape(B, P)
-        pos = valid_bwp.gather(1, safe.expand(B, 1, P)).reshape(B, P).to(idea.dtype)
+        target = target_bytes.gather(1, safe.expand(B, 1, P)).reshape(B, P)
+        pos = target_valid.gather(1, safe.expand(B, 1, P)).reshape(B, P).to(idea.dtype)
         logp = torch.log(pred.gather(2, target.unsqueeze(-1)).squeeze(-1).clamp_min(1e-6))
         return (-logp * pos).sum(-1) / pos.sum(-1).clamp_min(1.0)
     _BYTE_ASSIGNMENT_TAU = 0.1
@@ -10978,6 +11098,59 @@ class BasicModel(BaseModel):
         if 0 < n_what < int(event_width):
             return n_what
         return max(0, int(event_width) - 8)
+
+    def _materialize_answer_idea(self, understanding, derivation, question):
+        """The resolved answer as its own conceptual idea: ``[B, 3, D]``
+        slots (the three LTM slots, newest at 0) at the concept width, the
+        operand of the output loop (spec sections 1-2; the
+        answer-materialisation boundary after resolution and before
+        ``<generate>``).
+
+        Per row the derivation's source decides: ``recall`` takes the
+        conceptual end state observed ``k`` sentences ago (the concept-level
+        recall history), ``identity`` / ``reasoning`` the understanding's
+        own end state (the present relation answers with the sentence's
+        idea, as the symbolic resolution does), and ``prediction`` has no
+        concept-level predictor yet (the end state stands in; the row is
+        reported unresolved).  The question conditions the root slot at the
+        concept width (``_question_conditioner``, zero-initialised).  The
+        symbol vector is never padded to fit and the input's reconstruction
+        derivation is not read.  Returns ``(idea, resolved [B] bool,
+        sources)``.
+        """
+        questions = question_batch(question)
+        base = self._sentence_end_state(None)
+        if base is None:
+            return None, None, ()
+        B, K, D = int(base.shape[0]), int(base.shape[1]), int(base.shape[-1])
+        idea = base.clone()
+        trace = getattr(derivation, "grammar_trace", ()) or ()
+        row_sources = ()
+        for entry in trace:
+            if isinstance(entry, dict) and "row_sources" in entry:
+                row_sources = tuple(entry["row_sources"]); break
+        resolved = torch.ones(B, dtype=torch.bool, device=base.device)
+        sources = []
+        per_row = [questions[b] if b < len(questions) else questions[-1]
+                   for b in range(B)] if questions else []
+        for b in range(B):
+            src = row_sources[b] if b < len(row_sources) else "identity"
+            q = per_row[b] if b < len(per_row) else None
+            if src == "recall" and q is not None:
+                k = abs(int(getattr(q, "offset", 0) or 0))
+                hist = self._recall_idea_history().get(int(b))
+                past = hist[-k] if (hist is not None and k >= 1 and len(hist) >= k) else None
+                if torch.is_tensor(past) and tuple(past.shape) == (K, D):
+                    idea[b] = past.to(device=idea.device, dtype=idea.dtype)
+                    sources.append("idea:recall")
+                else:
+                    resolved[b] = False; sources.append("idea:cold-memory")
+            elif src == "prediction":
+                resolved[b] = False; sources.append("idea:no-concept-predictor")
+            else:
+                sources.append("idea:" + str(src))
+        idea = self._condition_answer_on_question(idea, questions)
+        return idea, resolved, tuple(sources)
 
     def _generate_walk_width(self):
         """The event width the generate walk's tied inverses act on: the
@@ -10995,7 +11168,7 @@ class BasicModel(BaseModel):
                 return cw
         return -1
 
-    def _output_generate_walk(self, event, budget):
+    def _output_generate_walk(self, event, budget, stamped_events=True):
         """The answer-side generate walk as one bounded ``torch.while_loop``
         (contract 5).
 
@@ -11014,17 +11187,21 @@ class BasicModel(BaseModel):
         trips are spent with work pending (reported as truncation).  Output
         state only: it reads nothing of the input reconstruction.
 
-        Returns ``(emitted [B, N, D] left-to-right, n_emitted [B],
-        truncated [B], policy_cost [B])``.
+        Returns ``(emitted [B, budget, D] left-to-right, n_emitted [B],
+        truncated [B], policy_cost [B])``: the emitted buffer has one slot
+        per possible pop, so more words than stack slots can come out.
         """
         language = self.languageSpace
         B, N, D = int(event.shape[0]), int(event.shape[1]), int(event.shape[2])
-        cw = self._stamp_channel(D)
+        cw = self._stamp_channel(D) if stamped_events else D
         binary_map = getattr(language, "_cs_binary_rule_ids", None)
         unary_map = getattr(language, "_cs_unary_rule_ids", None)
         inverses = language.reverse_inverses()      # once, not per trip
         ar = torch.arange(B, device=event.device)
-        kinds0, _ = language.decode_where_ids(event, cw)
+        if stamped_events:
+            kinds0, _ = language.decode_where_ids(event, cw)
+        else:                        # opaque concept slots carry no stamp
+            kinds0 = torch.zeros(B, N, dtype=torch.long, device=event.device)
         content_live = event[..., :cw].abs().amax(dim=-1) > 0
         live0 = torch.logical_or(kinds0 > 0, content_live)
         n_live0 = live0.to(torch.long).sum(dim=1)
@@ -11040,8 +11217,12 @@ class BasicModel(BaseModel):
         def body(t, stack, n_live, emitted, n_emitted, credit, credit_n):
             top = (n_live - 1).clamp(0, N - 1)
             top_vec = stack[ar, top, :]                                 # [B, D]
-            kind, rule_id = language.decode_where_ids(top_vec.unsqueeze(1), cw)
-            kind, rule_id = kind.reshape(B), rule_id.reshape(B)
+            if stamped_events:
+                kind, rule_id = language.decode_where_ids(top_vec.unsqueeze(1), cw)
+                kind, rule_id = kind.reshape(B), rule_id.reshape(B)
+            else:
+                kind = torch.ones(B, dtype=torch.long, device=event.device)
+                rule_id = torch.zeros(B, dtype=torch.long, device=event.device)
             has_top = n_live >= 1
             is_rule = torch.logical_and(kind == 2, has_top)
             local_b, known_b = language.local_op_from_rule_ids(rule_id, binary_map)
@@ -11070,14 +11251,18 @@ class BasicModel(BaseModel):
             left, right = language.reverse_binary_step(
                 top_vec, local_b, do_b, inverses=inverses)
             undone = language.reverse_unary_step(top_vec, local_u, do_u)
-            zero_where = torch.zeros_like(left[:, cw:cw + 1])
-            left = torch.cat((left[:, :cw], zero_where, left[:, cw + 1:]), dim=-1)
-            right = torch.cat((right[:, :cw], zero_where, right[:, cw + 1:]), dim=-1)
-            undone = torch.cat((undone[:, :cw], zero_where, undone[:, cw + 1:]), dim=-1)
-            # a completed constituent: no rule to apply on a live top
+            if stamped_events:       # children stamped empty in the where channel
+                zero_where = torch.zeros_like(left[:, cw:cw + 1])
+                left = torch.cat((left[:, :cw], zero_where, left[:, cw + 1:]), dim=-1)
+                right = torch.cat((right[:, :cw], zero_where, right[:, cw + 1:]), dim=-1)
+                undone = torch.cat((undone[:, :cw], zero_where, undone[:, cw + 1:]), dim=-1)
+            # a completed constituent: a live top with no rule to apply and
+            # no expansion requested (an expansion the policy asked for but
+            # that found no room stays pending, never a false completion)
             acted = torch.logical_or(do_b, do_u)
+            wanted = torch.logical_or(is_rule, torch.logical_or(pol_b, pol_u))
             pop = torch.logical_and(has_top, torch.logical_not(
-                torch.logical_or(acted, is_rule)))
+                torch.logical_or(acted, wanted)))
             new_top = torch.where(do_b.reshape(B, 1), left,
                                   torch.where(do_u.reshape(B, 1), undone, top_vec))
             stack1 = stack.clone()
@@ -11085,8 +11270,9 @@ class BasicModel(BaseModel):
             above = (top + 1).clamp(0, N - 1)
             current_above = stack1[ar, above, :]
             stack1[ar, above, :] = torch.where(do_b.reshape(B, 1), right, current_above)
-            # emit right-to-left into the tail; the tail is left-aligned after the loop
-            slot = (N - 1 - n_emitted).clamp(0, N - 1)
+            # emit right-to-left into the tail of the [B, T, D] buffer (one
+            # slot per possible pop); left-aligned after the loop
+            slot = (T - 1 - n_emitted).clamp(0, T - 1)
             emitted1 = emitted.clone()
             emitted1[ar, slot, :] = torch.where(
                 pop.reshape(B, 1), top_vec, emitted1[ar, slot, :])
@@ -11100,13 +11286,13 @@ class BasicModel(BaseModel):
         zeros_l = torch.zeros(B, dtype=torch.long, device=event.device)
         t, stack, n_live, emitted, n_emitted, credit, credit_n = torch.while_loop(
             cond, body, _carries_with_grad(
-                (t0, event.clone(), n_live0, torch.zeros_like(event), zeros_l,
+                (t0, event.clone(), n_live0, event.new_zeros(B, T, D), zeros_l,
                  zeros_b, zeros_b.clone())))
-        # left-align the emitted tail: out[:, i] = emitted[:, i + N - n_emitted]
-        offset = (N - n_emitted).reshape(B, 1)
-        index = (torch.arange(N, device=event.device).reshape(1, N) + offset).clamp(0, N - 1)
-        out = emitted.gather(1, index.unsqueeze(-1).expand(B, N, D))
-        keep = (torch.arange(N, device=event.device).reshape(1, N) < n_emitted.reshape(B, 1))
+        # left-align the emitted tail: out[:, i] = emitted[:, i + T - n_emitted]
+        offset = (T - n_emitted).reshape(B, 1)
+        index = (torch.arange(T, device=event.device).reshape(1, T) + offset).clamp(0, T - 1)
+        out = emitted.gather(1, index.unsqueeze(-1).expand(B, T, D))
+        keep = (torch.arange(T, device=event.device).reshape(1, T) < n_emitted.reshape(B, 1))
         out = torch.where(keep.unsqueeze(-1), out, torch.zeros_like(out))
         truncated = n_live > 0                      # work pending after the budget
         policy_cost = credit / credit_n.clamp_min(1.0)
@@ -11122,7 +11308,7 @@ class BasicModel(BaseModel):
         fn = self._output_generate_walk
         if backend and backend != "none":
             try:
-                fn = torch.compile(fn, backend=backend, fullgraph=True)
+                fn = torch.compile(fn, backend=backend, fullgraph=True, dynamic=False)
             except Exception:
                 fn = self._output_generate_walk
         self.__dict__["_output_walk_compiled"] = fn
@@ -11316,6 +11502,7 @@ class BasicModel(BaseModel):
             self._record_unit_pulls(_ws_list[0] if _ws_list else None)
             self._pad_staged_unit_maps(_ws_list[0] if _ws_list else None)
             self._ensure_pid_byte_table()
+        self._stage_snapshot_bytes()
         self._ensure_chunk_machinery()
         # Resolve sparse concept identities only after the word-major PS stem
         # has exposed its exact residual parts and WS has staged the matching
@@ -11630,7 +11817,7 @@ class BasicModel(BaseModel):
                 primed = torch.logical_and(
                     disc._s_count.to(mask.device) > 0, mask)
                 weight = primed.sum().to(dtype=roots.dtype)
-                local = self._observe_discourse(disc, sentence, mask=mask)
+                local = self._observe_discourse(disc, sentence, mask=mask, slot=t)
                 if local is not None:
                     loss_sum = loss_sum + local * weight
                     weight_sum = weight_sum + weight

@@ -110,30 +110,29 @@ def test_cleared_trace_reports_truncation(tmp_path):
     m.End(); m.symbolSpace.soft_reset()
 
 
-def test_byte_fidelity_is_zero_for_the_references_and_positive_when_swapped(tmp_path):
-    """The per-word byte cost scores a recovered idea through the
-    sentence's own word rows: each retained reference scores (near) zero
-    at its own word; a reference at another word's position scores
-    positive."""
+def test_byte_fidelity_is_zero_on_the_row_and_positive_off_it(tmp_path):
+    """The byte decoding snaps a recovered idea to the brick's dictionary
+    snapshot: a word's own row scores (near) zero at its position; another
+    word's row at that position scores positive."""
     m = _traversal_model(tmp_path)
     _run(m, ["12 plus 1"])
     isp = m.inputSpace
     active = isp._word_active_mask
-    reference = m._tensor_pushed_ideas                    # the reference slab
+    reference = m._tensor_pushed_ideas
     B, W = int(reference.shape[0]), int(reference.shape[1])
     ready, bytes_bwp, valid_bwp = m._byte_tables(B, W)
-    assert ready
-    ref_n = torch.nn.functional.normalize(reference, dim=-1)
+    snap, bank_n, bank_bytes, bank_valid = m._snapshot_tables(reference)
+    assert ready and snap and int(bank_n.shape[1]) >= W
     n_active = int(active[0].sum())
     own, swapped = [], []
     for w in range(n_active):
         idx = torch.tensor(w)
         own.append(float(m._byte_word_cost(
-            reference[:, w], idx, ref_n, active, ready, bytes_bwp, valid_bwp)[0]))
-        other = (w + 3) % n_active                        # "1" <-> "plus" and the like
+            reference[:, w], idx, bank_n, bank_bytes, bank_valid, bytes_bwp, valid_bwp, True)[0]))
+        other = (w + 3) % n_active
         swapped.append(float(m._byte_word_cost(
-            reference[:, other], idx, ref_n, active, ready, bytes_bwp, valid_bwp)[0]))
-    assert max(own) < 1e-3
+            reference[:, other], idx, bank_n, bank_bytes, bank_valid, bytes_bwp, valid_bwp, True)[0]))
+    assert max(own) < 1e-2
     assert min(swapped) > max(own) + 0.5
     m.End(); m.symbolSpace.soft_reset()
 
@@ -292,47 +291,79 @@ def test_final_end_state_keeps_three_slots_for_a_relative_row(tmp_path):
 
 def test_byte_cost_is_positive_for_a_wrong_or_empty_idea_even_with_one_word(tmp_path):
     """The null candidate keeps the byte cost a function of the idea: a
-    one-word sentence cannot score zero by having nothing to choose
-    between, and a zero or wrong idea scores positive with a gradient."""
+    one-word brick cannot score zero by having nothing to choose between,
+    and a zero or wrong idea scores positive with a gradient."""
     m = _traversal_model(tmp_path)
     _run(m, ["ab", "12"])                                   # one unit per row
-    isp = m.inputSpace
-    active = isp._word_active_mask
     reference = m._tensor_pushed_ideas
     B, W = int(reference.shape[0]), int(reference.shape[1])
     ready, bytes_bwp, valid_bwp = m._byte_tables(B, W)
-    ref_n = torch.nn.functional.normalize(reference, dim=-1)
-    scope = active
-    own = m._byte_word_cost(reference[:, 0], torch.tensor(0), ref_n, scope, ready, bytes_bwp, valid_bwp)
-    zero = m._byte_word_cost(torch.zeros_like(reference[:, 0]), torch.tensor(0), ref_n, scope, ready, bytes_bwp, valid_bwp)
-    wrong = reference[:, 0].flip(0).clone().requires_grad_(True)  # the other row's word
-    wrong_c = m._byte_word_cost(wrong, torch.tensor(0), ref_n, scope, ready, bytes_bwp, valid_bwp)
+    snap, bank_n, bank_bytes, bank_valid = m._snapshot_tables(reference)
+    args = (bank_n, bank_bytes, bank_valid, bytes_bwp, valid_bwp, True)
+    own = m._byte_word_cost(reference[:, 0], torch.tensor(0), *args)
+    zero = m._byte_word_cost(torch.zeros_like(reference[:, 0]), torch.tensor(0), *args)
+    wrong = reference[:, 0].flip(0).clone().requires_grad_(True)   # the other row's word
+    wrong_c = m._byte_word_cost(wrong, torch.tensor(0), *args)
     assert float(own.max()) < 1e-2
     assert float(zero.min()) > 0.5 and float(wrong_c.min()) > 0.5
     assert float(torch.autograd.grad(wrong_c.sum(), [wrong])[0].abs().sum()) > 0
     m.End(); m.symbolSpace.soft_reset()
 
 
-def test_rows_outside_the_sentence_scope_do_not_enter_its_score(tmp_path):
-    """Candidates are the sentence's own rows: a row outside the scope,
-    however similar to the idea, leaves the word's byte cost unchanged."""
+def test_snapshot_rows_absent_from_the_brick_do_not_enter_the_score(tmp_path):
+    """Candidates are the staged snapshot's present rows: an absent row,
+    however similar to the idea, leaves the word's byte cost unchanged;
+    a present row that is nearer changes it."""
     m = _traversal_model(tmp_path)
     _run(m, ["12 plus 1", "3 plus 4"])
-    isp = m.inputSpace
-    active = isp._word_active_mask
     reference = m._tensor_pushed_ideas
     B, W = int(reference.shape[0]), int(reference.shape[1])
     ready, bytes_bwp, valid_bwp = m._byte_tables(B, W)
-    ref_n = torch.nn.functional.normalize(reference, dim=-1)
+    snap, bank_n, bank_bytes, bank_valid = m._snapshot_tables(reference)
     idea = reference[:, 1] * 0.5 + reference[:, 3] * 0.5     # between two words
-    narrow = active.clone(); narrow[:, 3:] = False              # scope: words 0-2 only
-    cost_narrow = m._byte_word_cost(idea, torch.tensor(1), ref_n, narrow, ready, bytes_bwp, valid_bwp)
-    # the same scope, but the rows outside it changed (a packed neighbour)
-    reference2 = reference.clone(); reference2[:, 3:] = reference[:, 1:2].expand(-1, W - 3, -1)
-    ref_n2 = torch.nn.functional.normalize(reference2, dim=-1)
-    cost_again = m._byte_word_cost(idea, torch.tensor(1), ref_n2, narrow, ready, bytes_bwp, valid_bwp)
-    assert torch.allclose(cost_narrow, cost_again, atol=1e-6)
-    wide = active.clone()                                       # scope including word 3
-    cost_wide = m._byte_word_cost(idea, torch.tensor(1), ref_n, wide, ready, bytes_bwp, valid_bwp)
-    assert not torch.allclose(cost_narrow, cost_wide, atol=1e-4)
+    base = m._byte_word_cost(idea, torch.tensor(1), bank_n, bank_bytes, bank_valid, bytes_bwp, valid_bwp, True)
+    absent = bank_valid.clone(); absent[:, 3] = False           # row 3 leaves the snapshot
+    off = m._byte_word_cost(idea, torch.tensor(1), bank_n, bank_bytes, absent, bytes_bwp, valid_bwp, True)
+    assert not torch.allclose(base, off, atol=1e-4)
+    bank2 = bank_n.clone(); bank2[:, 3] = bank_n[:, 1]          # an absent row's content is irrelevant
+    same = m._byte_word_cost(idea, torch.tensor(1), bank2, bank_bytes, absent, bytes_bwp, valid_bwp, True)
+    assert torch.allclose(off, same, atol=1e-6)
+    m.End(); m.symbolSpace.soft_reset()
+
+
+def test_seal_chain_of_chunks_unwinds_to_the_words(tmp_path):
+    """Constituent routing (Codex, 2026-09-14): three words a, b, c pushed
+    in order and folded by two chunk seals (newest-first: c+b, then
+    a+(b+c)) unwind to [a, b, c] at their positions, no truncation."""
+    m = _traversal_model(tmp_path)
+    _run(m, ["12 plus 1", "3 plus 4"])                      # staging: trace, tables, atoms
+    isp = m.inputSpace
+    language = m.languageSpace
+    names = list(language._tree_layer(2).op_names)
+    chunk_id = int(language._cs_binary_rule_ids[names.index("chunk")])
+    trace = m._reconstruction_stack()
+    active = isp._word_active_mask
+    B, W = int(active.shape[0]), int(active.shape[1])
+    D = int(m.conceptualSpace.stm.concept_dim)
+    torch.manual_seed(3)
+    words = torch.randn(B, 3, D)
+    a, b, c = words[:, 0], words[:, 1], words[:, 2]
+    reference = torch.zeros(B, W, D); reference[:, :3] = words
+    with torch.no_grad():
+        active.zero_(); active[:, :3] = True
+        trace._choice_mask.zero_(); trace._choice_rule_ids.fill_(-1); trace._choice_arities.zero_()
+        for k in range(2):                                   # the two seals, in the order recorded
+            trace._choice_rule_ids[:, 3 * W + k] = chunk_id
+            trace._choice_arities[:, 3 * W + k] = 2
+            trace._choice_mask[:, 3 * W + k] = True
+    S = a + b + c                                            # a + (b + c)
+    roots = torch.zeros(B, 1, 3 * D)
+    end = torch.cat((S.unsqueeze(1), torch.zeros(B, 2, D)), dim=1)
+    m._recon_keep_ideas = True
+    rec, idea, byte_c, trunc, _per = m._reconstruct_sentences(
+        S, reference, roots, torch.ones(B, 1, dtype=torch.long), end, torch.ones(B, dtype=torch.long))
+    assert not bool(trunc.any())
+    for w, want in enumerate((a, b, c)):
+        assert torch.allclose(rec[:, w], want, atol=1e-4), (w, float((rec[:, w] - want).abs().max()))
+    assert float(idea.max()) < 1e-6
     m.End(); m.symbolSpace.soft_reset()

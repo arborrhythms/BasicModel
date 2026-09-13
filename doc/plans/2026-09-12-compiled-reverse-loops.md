@@ -249,7 +249,15 @@ teacher are gone; the traversal now starts from the sentence's end state
 (the top three STM slots and depth, the three LTM slots of a relative
 sentence) and serves evaluation too (`_recovered_word_ideas`).
 
-Output loop operand (2026-09-13, open): the walk un-reduces with the CS
+Output loop operand, resolved (2026-09-14): the answer-materialisation
+boundary `_materialize_answer_idea` (Training, "The
+answer-materialisation boundary") builds the resolved answer as its own
+conceptual idea, the operand of the walk; the walk runs on opaque
+concept slots and the words are realised through the reverse chain.
+Open there: a concept-level predictor for `future` answers (the
+discourse predictor works on pooled reps).
+
+Output loop operand (2026-09-13, was open): the walk un-reduces with the CS
 grammar ops' tied inverses, which act on the muxed concept width (1032 in
 `data/BasicModel.xml`), while the resolved answer (`_resolve_answer`) is a
 symbol-space event (136 wide) that `ConceptualSpace.synthesize` maps to
@@ -265,7 +273,10 @@ idea) and (5) packed neighbours entered a sentence's candidates: a null
 candidate and a per-sentence scope. (2) The tied contract still ran the
 legacy per-word reverse and the training `reverseReconstruct`: both are
 skipped. (3) The seal un-fold put the reference on the wrong operand for
-seals after the first: the older word is the left operand, `lo + k`. (4)
+seals after the first: the older word is the left operand, `lo + k`;
+the third review found the cursor still advancing over unrecorded seal
+levels, fixed by advancing only on applied steps (a synthetic chunk
+chain now unwinds exactly). (4)
 The walk never popped completed constituents: it now emits them and
 continues until no slot is pending; the production width mismatch stays
 open (above). (6) The checkpoint release touched every loop node: it now

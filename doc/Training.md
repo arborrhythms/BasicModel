@@ -576,12 +576,17 @@ byte-level fidelity that is `lossIn`: each recovered idea is softly assigned
 constituent references, bounded by the word width), the assignment's
 expected bytes are scored by cross-entropy against the word's own bytes over
 its byte window (the percept store's byte atoms), and the gradient flows
-through the assignment into the recovered ideas and the tied inverses. The
-candidates are the sentence's own rows plus a null candidate (similarity
-0, uniform bytes), so the cost is a function of the idea itself: a
-one-word sentence, a zero idea or an idea near no row cannot score zero
-by having nothing to choose between, and a packed neighbour's rows never
-enter another sentence's score. The
+through the assignment into the recovered ideas and the tied inverses. A concept
+row is an identity code, not a fold of the word's byte atoms (concept
+rows are relational identities; the byte fold lives in the perceptual
+ladder), so the tied inverse of the concept lookup is the snap to a row
+and a row's surface is its bytes: the decoder's candidates are the rows
+of the brick's staged dictionary snapshot (every word and object row the
+brick staged, `_ar_concept_lookup_rows`, with their surfaces staged
+beside them as `_ar_bank_bytes`), plus a null candidate of similarity 0
+and uniform bytes, so a one-word brick, a zero idea or an idea near no
+row cannot score zero by having nothing to choose between. Rows absent
+from the snapshot do not enter the score. The
 score is taken at the pop step, inside the traversal, and the loop carries
 only the running sums (idea cost, byte cost, word count) besides the
 reverse stack: the loop's autograd stacks every carried tensor once per
@@ -628,6 +633,28 @@ backend), the reconstruction adds about 0.7 s to the 8.4 s forward and
 forward; `eager`) selects where the traversal runs, for the performance
 protocol.
 
+The answer-materialisation boundary (2026-09-14, spec sections 1-2).
+`reverseOutput` under `<outputInLoop>` no longer feeds the symbol-space
+answer to the loop: after resolution and before `<generate>`,
+`_materialize_answer_idea` builds the resolved answer as its own
+conceptual idea, `[B, 3, D]` at the concept width (the three LTM slots,
+newest at 0). Per row the derivation's source decides: `recall` takes
+the conceptual end state observed `k` sentences ago (a concept-level
+recall history kept beside the pooled reps at every sentence boundary),
+`identity` / `reasoning` the understanding's own end state (the present
+relation answers with the sentence's idea, as the symbolic resolution
+does), and `prediction` has no concept-level predictor yet (the end
+state stands in and the row is reported unresolved in
+`_output_idea_resolved`). The question conditions the root slot at the
+concept width through a zero-initialised conditioner. The symbol vector
+is never padded to fit and the input's reconstruction derivation is not
+read. The walk then runs on opaque concept slots (no stamps: the policy
+decides every top) and the emitted words are realised through the tied
+reverse chain (`_reverse_body` then `_reverse_perceptual`) into percepts
+for the output space. The existing conceptual synthesis (the WholeSpace
+inverse of the answer symbol) could not provide this boundary: on the
+production geometry it returns the whole-space width, not concept slots.
+
 The output walk's generate policy (2026-09-13, contract 5).
 `LanguageSpace.generate_policy` is the one parameter the output loop owns
 (created only under `<outputInLoop>`):
@@ -637,7 +664,8 @@ derivation left a rule stamp the walk follows the stamp and credits the
 policy by imitation (cross-entropy against the stamped rule, recorded as
 `output_policy` with `<outputPolicyWeight>`); where a top carries no
 stamp the policy decides: a rule applies the tied reverse, stop completes
-the constituent. A completed constituent on top is popped into the
+the constituent; untrained, the policy prefers stop, so the loop emits
+the idea's slots as they are until expansions are learned. A completed constituent on top is popped into the
 emitted sequence and the walk continues with the pending constituents
 below it, so a row completes only when no live slot remains; the budget
 running out with slots pending is reported as truncation. The emitted

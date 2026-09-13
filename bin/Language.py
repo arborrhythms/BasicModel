@@ -14155,6 +14155,10 @@ class LanguageSpace(nn.Module):
             with torch.no_grad():
                 self.generate_policy.weight.mul_(0.1)
                 self.generate_policy.bias.zero_()
+                # Untrained, the policy completes constituents (stop): the
+                # output loop then emits the idea's slots as they are, and
+                # expansions are learned from the imitation credit.
+                self.generate_policy.bias[-1] = 2.0
 
     def generate_policy_logits(self, top):
         """``[B, R2 + R1 + 1]`` logits of the generate policy on the top
