@@ -566,13 +566,62 @@ pairing). Slice 1 (2026-09-12) is in: after the final seal, a
 `LanguageSpace.reverse_binary_step` / `reverse_unary_step` through the
 gate-free `generate_functional` inverses and the exact residual for
 `chunk`/`sum` against the word's dictionary row), recovers each word's idea
-at its position, and scores it against the idea the fold consumed; that
-cost is `lossIn`, and a per-row truncation flag reports a derivation that
-did not account for a word. The traversal is part of the tensor word
+at its position, and scores it against the word's retained reference (the
+concept atoms it was staged with, a loop constant: the ideas the folds
+consumed are not carried, since the loop's autograd stacks every carry
+once per step); that cost is the idea-level diagnostic, and a per-row truncation flag reports a
+derivation that did not account for a word. Slice 2 (2026-09-12) adds the
+byte-level fidelity that is `lossIn`: each recovered idea is softly assigned
+(`softmax(cos / 0.1)`) to the sentence's own word rows (the retained
+constituent references, bounded by the word width), the assignment's
+expected bytes are scored by cross-entropy against the word's own bytes over
+its byte window (the percept store's byte atoms), and the gradient flows
+through the assignment into the recovered ideas and the tied inverses. The
+score is taken at the pop step, inside the traversal, and the loop carries
+only the running sums (idea cost, byte cost, word count) besides the
+reverse stack: the loop's autograd stacks every carried tensor once per
+step, so a `[B, W, D]` slab of recovered ideas in the carry did not fit the
+accelerator at the production width; the slab is kept only when
+`_recon_keep_ideas` is set (the tests' diagnostic), and the expected byte
+distribution is accumulated by scatter, never as one-hot tensors.
+The reconstruction runs in two bounded passes that share the forward's
+word index (`_reconstruct_sentences`): pass A, one `torch.while_loop` trip
+per sentence slot up to the row's highest sentence id (a tensor bound; a
+host sentence count specialised the graph once per distinct count, a
+recompile of about 45 s on every brick), un-seals each sentence from its
+sealed root (the live root the loop stored at
+the sentence's intermediate end; `S` after the final seal for the row's
+last sentence) through the recorded seal binaries into its pre-seal stack;
+pass B is one `torch.while_loop` over the word index, latest word first,
+that loads a sentence's pre-seal stack at the word that ends it, undoes
+the word's recorded unary, post-binary and pre-binary folds, and pops and
+scores the word. Costs accumulate per sentence slot (`[B, slots]`,
+reported) and the row cost is the mean over the sentences present. The
+earlier form, one traversal per sentence over a schedule the width of the
+row, cost a sentence count times the loop steps of the forward (about
+150 s per brick at the production width); the two-pass form costs one
+loop step per word. Measured on `data/BasicModel.xml` with
+`<reconstructInLoop>` (B = 4, 400 documents, MPS, the eager compile
+backend), the reconstruction adds about 0.7 s to the 8.4 s forward and
+2 s to the 20 s backward of a batch. `BASICMODEL_RECON_PLACEMENT`
+(`graph`, the default; `compiled`, its own compiled call after the
+forward; `eager`) selects where the traversal runs, for the performance
+protocol. The traversal is part of the tensor word
 pipeline's sentence state (the compiled path and its eager `while_loop`
 form); the legacy static scheduler produces no such state, and `lossIn`
-there falls back to the D3 objective. The byte-level descent, the in-loop placement
-at packed-row boundaries and the output loop are the following slices. It
+there falls back to the D3 objective. A checkpoint carrying the detached
+student's parameters loads under the tied contract with those keys dropped
+(reported), and a tied checkpoint under `<detachedReverse>` rebuilds the
+student fresh. Slice 3 (2026-09-12): with `<outputInLoop>`, `reverseOutput`
+runs the resolved answer's generate walk as a second, separately compiled
+`torch.while_loop` (`_output_generate_walk`): the top slot's `.where`
+stamp is decoded in tensor form, a rule stamp applies that rule's tied
+inverse (binary opens the slot above; unary in place), children are
+stamped empty as the eager `unreduce` does, and the walk ends when no row's
+top is a rule or the budget (`N - 1`) is spent (reported truncation). The
+walk owns its state and termination and reads nothing of the input
+reconstruction; the spaces' reverse chain and the output decode follow it
+unchanged. It
 is a change of learning contract, so before `<detachedReverse>` retires:
 
 - objective: sentence reconstruction fidelity (byte cross-entropy over each

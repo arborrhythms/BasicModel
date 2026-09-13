@@ -1371,11 +1371,14 @@ class InvertibleLinearLayer(ErgodicLayer):
                        0, int(self.nOutput) - int(self.rank)))
         return U_inv @ D_inv @ L_inv
 
-    def functional_reverse(self, y, gate=None):
+    def functional_reverse(self, y, gate=None, W_inv=None):
         """``y @ W^-1`` without module mutation (the tied inverse of
         ``functional_forward`` up to the bias, which the callers handle as
-        their ``reverse`` does)."""
-        W_inv = self.functional_Winverse(gate)
+        their ``reverse`` does).  ``W_inv`` may be passed precomputed by
+        ``functional_Winverse`` so a loop body does not rebuild (and its
+        backward does not save) the ``[n, n]`` factors at every step."""
+        if W_inv is None:
+            W_inv = self.functional_Winverse(gate)
         out_shape = list(y.shape)
         out_shape[-1] = int(self.nInput)
         return (y.reshape(-1, int(self.nOutput)) @ W_inv).reshape(out_shape)
@@ -3272,10 +3275,11 @@ class SigmaLayer(GrammarLayer):
             op = half
         return op, op
 
-    def generate_functional(self, parent, gate=None):
-        """``generate`` without module mutation (compiled reverse loops)."""
+    def generate_functional(self, parent, gate=None, W_inv=None):
+        """``generate`` without module mutation (compiled reverse loops);
+        ``W_inv`` is the inner layer's precomputed inverse (optional)."""
         a_y = bounded_atanh(parent, bounded=self._bounded_backward) if self.nonlinear else parent
-        a_sum = self.layer.functional_reverse(a_y, gate=gate)
+        a_sum = self.layer.functional_reverse(a_y, gate=gate, W_inv=W_inv)
         half = a_sum * 0.5
         op = torch.tanh(half) if self.nonlinear else half
         return op, op
@@ -4796,14 +4800,15 @@ class PiLayer(GrammarLayer):
         finally:
             self.layer._current_gate = None
 
-    def generate_functional(self, parent, gate=None):
+    def generate_functional(self, parent, gate=None, W_inv=None):
         """``generate`` without module mutation (compiled reverse loops):
-        the same balanced split through the tied inverse."""
+        the same balanced split through the tied inverse; ``W_inv`` is the
+        inner layer's precomputed inverse (optional)."""
         if not self.nonlinear:
             raise RuntimeError("generate_functional requires nonlinear pi")
         log_mult_y = self._log_mult(parent)
         b = self.layer._effective_bias()
-        s = self.layer.functional_reverse(log_mult_y - b, gate=gate)
+        s = self.layer.functional_reverse(log_mult_y - b, gate=gate, W_inv=W_inv)
         op = torch.tanh(s * 0.25)
         return op, op
 

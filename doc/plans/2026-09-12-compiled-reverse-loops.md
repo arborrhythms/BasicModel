@@ -193,7 +193,33 @@ compiled sentence graph, idea-level cost, truncation flag, tests in
 `test/test_reverse_traversal.py`); a three-brick training smoke on the
 ladder text config with `<reconstructInLoop>` (CPU, tensor word pipeline)
 trained through the traversal's cost with gradient (0.124, 0.021, 0.014),
-the detached student off. Slices 2-4 open.
+the detached student off. Slice 2 landed the same day: the byte-level
+cost through the retained references (soft assignment to the sentence's
+word rows, cross-entropy on the words' bytes), one traversal per packed
+sentence from the live sealed roots with per-sentence costs, and the
+checkpoint handling of the retired student. Slice 3 landed the same day
+as the generate walk (`<outputInLoop>`, `_output_generate_walk`, the
+second compiled call in `reverseOutput`) with the output gates of mixed
+per-row lengths, truncation, fullgraph parity and invariance to
+reconstruction-only state (`test/test_output_walk.py`); the learned
+generate policy and the single compiled segment of contract 6 remain open
+with slice 4. The first production-width run of the traversal ran out of
+accelerator memory: the loop's autograd stacks every carried tensor once
+per step, so the traversal now scores each popped word on the spot and
+carries only running sums (the recovered-idea slab is a test diagnostic),
+the tied inverses are computed once per traversal, and the pushed ideas
+are no longer a carried bank (the retained references, a loop constant,
+are the idea-level target). One traversal per sentence over a row-width
+schedule cost a sentence count times the forward's loop steps; the
+reconstruction is now two passes sharing the forward's word index: the
+seal un-folds per sentence slot (a `torch.while_loop` with a tensor
+bound; a host sentence count specialised the graph per brick), then one
+`torch.while_loop` over the words (latest first) that switches to a
+sentence's pre-seal stack at the word ending it. Measured on
+`data/BasicModel.xml` at B = 4 the reconstruction adds about 8 % to a
+training batch (Training, "Reconstruction objectives");
+`BASICMODEL_RECON_PLACEMENT` compares the in-graph placement with a
+separate compiled call and eager execution.
 
 1. Derivation tensors and the tied sentence traversal at the idea level
    (contracts 1, 2, 7 without the descent), run after the loop on the

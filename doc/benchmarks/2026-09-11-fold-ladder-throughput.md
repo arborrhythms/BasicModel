@@ -245,6 +245,61 @@ on, CPU) trained 12 bricks with finite gradients (643 sentences; word
 units 85.7 %, letters-only 100 %), where it failed on the fourth before;
 test/test_bounded_charts.py pins the charts and a 30-deep saturated fold.
 
+## Tied reconstruction in the loop (2026-09-12, compiled reverse-loops plan slice 4)
+
+Protocol of requirement 6 (`bin/bench_training_step.py` and a phase timer
+around `_what_or_think` / `_backward_training_loss`), on `data/BasicModel.xml`
+with `<detachedReverse>` off, 400 documents, MPS, the eager compile backend,
+one epoch, fullgraph. The comparison config adds `<reconstructInLoop>`
+(the tied byte-level reconstruction as `lossIn`); the baseline is the
+same config without it (no reconstruction loss at all). With the student
+off, every batch runs the backward (with the student on, only every fourth
+batch does), so the totals below are not comparable with the earlier
+tables in this document.
+
+| B | variant | forward | backward + step | batch | lossIn (grad) | peak GiB |
+|---|---|---|---|---|---|---|
+| 4 | no reconstruction | 8.4 s | 20.4 s | 29.5 s | 0.10 (student off, idea cost only) | 9.9 |
+| 4 | reconstructInLoop, in graph | 9.1 s | 22.4 s | 31.8 s | 3.20 / 3.24 / 3.34 (yes) | 12.0 |
+| 4 | reconstructInLoop, eager after the forward | 8.4 + 0.9 s | 21.7 s | 31.4 s | same values | |
+| 8 | no reconstruction | | | 34.3, 38.3, 38.3 s | 0.10 (yes) | 16.9 (OOM at brick 5) |
+| 8 | reconstructInLoop, in graph | | | 54.6, 41.5 s | 3.26 / 3.30 (yes) | 16.3 (OOM at brick 4) |
+
+Zero recompiles after the first batch at both sizes. At B = 8 both
+variants exceed the 16.85 GiB MPS ceiling by the fourth or fifth brick
+(the every-batch backward of this configuration; the production config
+with the student fits at B = 8), so B = 4 is the clean comparison: the
+reconstruction costs about 8 % of a training batch (0.7 s in the forward,
+2 s in the backward) and 2 GiB.
+
+What it took to get there (each step measured, all on the same tree):
+
+- One traversal per sentence over a row-width schedule (the first slice-2
+  form) cost 150-225 s per brick: a sentence count (16-22 on packed
+  W = 256 rows) times the forward's loop steps. The reconstruction is now
+  two passes sharing the forward's word index (Training, "Reconstruction
+  objectives").
+- A `[B, W, D]` recovered-idea slab in the loop carry, the pushed ideas as
+  a carried bank of the forward loop, and one-hot byte tensors per
+  sentence did not fit at the production width: the loop's autograd
+  (`while_loop_stack_output`) stacks every carried tensor once per trip.
+  Words are scored at the pop, only `[B, slots]` sums are carried, the
+  retained references are a loop constant, and the expected bytes are
+  scatter-accumulated.
+- The tied inverses (`W^-1` of each lift/lower op) are computed once per
+  traversal, not rebuilt (and saved for backward) at every step.
+- A host sentence count bounding the seal pass specialised the compiled
+  graph once per distinct count: a recompile of about 45 s on every brick
+  that the dynamo frame counter did not report. The seal pass is a
+  `torch.while_loop` with a tensor bound.
+- Under autograd a loop's final carry is a view into its stacked per-trip
+  outputs (an unbacked trip count); the next loop cannot lift it as an
+  input. The seal pass's outputs are cloned before the word loop.
+
+An eager reverse step (all 15 binary reverses evaluated and the recorded
+one selected) costs 0.68 ms at B = 8, D = 1032; the word loop's 256 trips
+are about 0.8 s eager, and the same in the graph.
+
 ## Open
 
 - The production config at 2,000 documents exceeds this machine's

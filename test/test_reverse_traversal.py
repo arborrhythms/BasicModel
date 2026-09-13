@@ -22,6 +22,8 @@ def _traversal_model(tmp_path):
          "<packSentences>false</packSentences>\n      <reconstructInLoop>true</reconstructInLoop>")])
     m._tensor_peer_while_eager = True
     m._chart_compose_per_word = lambda: None
+    # keep the recovered-idea slab (diagnostic; training carries only sums)
+    m._recon_keep_ideas = True
     return m
 
 
@@ -37,8 +39,10 @@ def test_traversal_recovers_every_active_word_without_underflow(tmp_path):
     m = _traversal_model(tmp_path)
     assert m.reconstruct_in_loop
     out = _run(m, ["12 plus 1", "3 plus 4"])
-    assert len(out) == 14
+    assert len(out) == 18
     ideas, cost, truncated = m._recon_ideas, m._recon_cost, m._recon_truncated
+    idea_cost = m._recon_idea_cost
+    assert bool(torch.isfinite(idea_cost).all()) and idea_cost.shape == (2,)
     active = m.inputSpace._word_active_mask
     assert tuple(ideas.shape) == (*active.shape, int(m.conceptualSpace.stm.concept_dim))
     assert bool(torch.isfinite(cost).all()) and cost.shape == (2,)
@@ -101,9 +105,104 @@ def test_cleared_trace_reports_truncation(tmp_path):
         trace._choice_mask.zero_()
     S = m._stm_single_S
     pushed = torch.zeros_like(m._recon_ideas)
-    _ideas, _cost, truncated = m._reconstruct_sentence_traversal(S, pushed)
+    _ideas, _idea_cost, _byte_cost, truncated = m._reconstruct_sentence_traversal(S, pushed)
     assert bool(truncated.all())
     m.End(); m.symbolSpace.soft_reset()
+
+
+def test_byte_fidelity_is_zero_for_the_references_and_positive_when_swapped(tmp_path):
+    """The per-word byte cost scores a recovered idea through the
+    sentence's own word rows: each retained reference scores (near) zero
+    at its own word; a reference at another word's position scores
+    positive."""
+    m = _traversal_model(tmp_path)
+    _run(m, ["12 plus 1"])
+    isp = m.inputSpace
+    active = isp._word_active_mask
+    reference = m._tensor_pushed_ideas                    # the reference slab
+    B, W = int(reference.shape[0]), int(reference.shape[1])
+    ready, bytes_bwp, valid_bwp = m._byte_tables(B, W)
+    assert ready
+    ref_n = torch.nn.functional.normalize(reference, dim=-1)
+    n_active = int(active[0].sum())
+    own, swapped = [], []
+    for w in range(n_active):
+        idx = torch.tensor(w)
+        own.append(float(m._byte_word_cost(
+            reference[:, w], idx, ref_n, active, ready, bytes_bwp, valid_bwp)[0]))
+        other = (w + 3) % n_active                        # "1" <-> "plus" and the like
+        swapped.append(float(m._byte_word_cost(
+            reference[:, other], idx, ref_n, active, ready, bytes_bwp, valid_bwp)[0]))
+    assert max(own) < 1e-3
+    assert min(swapped) > max(own) + 0.5
+    m.End(); m.symbolSpace.soft_reset()
+
+
+def _stage_packed(m, rows):
+    """Stage packed rows the way runEpoch's packed cursor does."""
+    m._start_spaces_for_forward()
+    raw = m.inputSpace.prepPackedInput(rows)
+    m._staged_in_sub = m._lex_embed_stem(raw)
+    symbol = m.symbolSpace
+    if not getattr(symbol, "_per_sentence_initialized", False):
+        symbol.soft_reset()
+        symbol._per_sentence_initialized = True
+    m._stage_reconstruction_teacher()
+    slab = m.inputSpace._ar_embedded_N
+    m._prepare_reconstruction_choices(int(slab.shape[0]), int(slab.shape[1]), slab.device)
+    m.conceptualSpace.stm.begin_forward(int(slab.shape[0]), device=slab.device, dtype=slab.dtype)
+    m._stage_fixed_residual_part_capacity()
+    m._stage_intersentence_seed()
+    return raw
+
+
+def test_packed_rows_reconstruct_each_sentence_separately(tmp_path):
+    """Requirement 3: one traversal per completed sentence; packed rows keep
+    separate per-sentence costs; every word of every sentence recovered."""
+    m = _build_ladder_variant(tmp_path, "recon16", [
+        ("<serialWordCapacity>8</serialWordCapacity>", "<serialWordCapacity>16</serialWordCapacity>"),
+        ("<serialWordBuckets>8</serialWordBuckets>", "<serialWordBuckets>16</serialWordBuckets>"),
+        ("<packSentences>false</packSentences>",
+         "<packSentences>false</packSentences>\n      <reconstructInLoop>true</reconstructInLoop>")])
+    m._tensor_peer_while_eager = True
+    m._chart_compose_per_word = lambda: None
+    m._recon_keep_ideas = True
+    m._install_unit_span_fn()
+    _stage_packed(m, [["12 plus 1", "3 plus 4"], ["ab cd"]])
+    with torch.no_grad():
+        out = m._forward_with_compiled_sentence_state(None)
+    m._publish_compiled_sentence_state(out)
+    isp = m.inputSpace
+    ids = isp._packed_sentence_ids
+    active = isp._word_active_mask
+    assert int(ids[0].max()) == 1 and int(ids[1].max()) == 0
+    costs = m._recon_sentence_costs                      # [B, slots]
+    assert bool(torch.isfinite(costs).all())
+    assert costs.shape[0] == 2 and costs.shape[1] >= 2
+    assert not bool(m._recon_truncated.any())
+    norms = m._recon_ideas.norm(dim=-1)
+    assert bool((norms[active] > 0).all()) and bool((norms[~active] == 0).all())
+    # Row 1 has one sentence: its second slot carries no cost.
+    assert float(costs[1, 1]) == 0.0
+    eager_ideas, eager_costs = m._recon_ideas.clone(), costs.clone()
+    m.End(); m.symbolSpace.soft_reset()
+    # The outer sentence loop nests inside the compiled sentence graph.
+    torch._dynamo.reset()
+    torch._dynamo.utils.counters.clear()
+    compiled = torch.compile(
+        lambda _u: m._forward_with_compiled_sentence_state(None),
+        backend="eager", fullgraph=True)
+    try:
+        _stage_packed(m, [["12 plus 1", "3 plus 4"], ["ab cd"]])
+        with torch.no_grad():
+            out = compiled(None)
+        m._publish_compiled_sentence_state(out)
+        assert int(torch._dynamo.utils.counters["stats"]["unique_graphs"]) == 1
+        assert torch.allclose(m._recon_sentence_costs, eager_costs, atol=1e-4)
+        assert torch.allclose(m._recon_ideas, eager_ideas, atol=1e-4)
+    finally:
+        torch._dynamo.reset()
+        m.End(); m.symbolSpace.soft_reset()
 
 
 def test_traversal_compiles_into_the_one_sentence_graph(tmp_path):

@@ -14231,7 +14231,31 @@ class LanguageSpace(nn.Module):
                     torch.cat([rc, p_where, back], dim=-1))
         return split(parent)
 
-    def reverse_binary_step(self, parent, op_local, valid, reference=None):
+    def reverse_inverses(self):
+        """The tied inverses the binary reverses need, computed once per
+        traversal: one ``W^-1`` per lift/lower op (``None`` for the
+        others), so a loop body applies a ready matrix instead of
+        rebuilding the LDU factors (and saving them for backward) at every
+        step."""
+        binary = self._tree_layer(2)
+        if binary is None:
+            return []
+        out = []
+        for op in list(binary.ops):
+            gl = getattr(op, "gl", op)
+            inner = getattr(gl, "_sigma", None)
+            if inner is None:
+                inner = getattr(gl, "_pi", None)
+            layer = getattr(inner, "layer", None) if inner is not None else None
+            if layer is not None and hasattr(layer, "functional_Winverse") \
+                    and hasattr(inner, "generate_functional"):
+                out.append(layer.functional_Winverse())
+            else:
+                out.append(None)
+        return out
+
+    def reverse_binary_step(self, parent, op_local, valid, reference=None,
+                            inverses=None):
         """``(left, right)`` ``[B, D]`` of one recorded binary fold.
 
         ``parent`` is the folded slot; ``op_local`` ``[B]`` the recorded
@@ -14239,16 +14263,19 @@ class LanguageSpace(nn.Module):
         row (an invalid row returns ``(parent, parent)``); ``reference``
         ``[B, D]`` (optional) the retained constituent reference of the
         newest operand (the dictionary row the word was pushed with), used
-        by the residual reverses.
+        by the residual reverses; ``inverses`` the list ``reverse_inverses``
+        returned (optional; computed here otherwise).
         """
         binary = self._tree_layer(2)
         if binary is None:
             raise RuntimeError("LanguageSpace requires a CS binary tree layer")
         ops = list(binary.ops)
         B, D = int(parent.shape[0]), int(parent.shape[-1])
+        if inverses is None:
+            inverses = self.reverse_inverses()
         pairs = []
-        for op in ops:
-            pairs.append(self._reverse_of_binary_op(op, parent, reference))
+        for op, W_inv in zip(ops, inverses):
+            pairs.append(self._reverse_of_binary_op(op, parent, reference, W_inv))
         left = torch.stack([pr[0] for pr in pairs], dim=1)     # [B, R, D]
         right = torch.stack([pr[1] for pr in pairs], dim=1)
         R = len(ops)
@@ -14259,17 +14286,17 @@ class LanguageSpace(nn.Module):
         return (torch.where(gate, l_sel, parent),
                 torch.where(gate, r_sel, parent))
 
-    def _reverse_of_binary_op(self, op, parent, reference):
+    def _reverse_of_binary_op(self, op, parent, reference, W_inv=None):
         op = getattr(op, "gl", op)          # the reducer wraps grammar layers
         sigma = getattr(op, "_sigma", None)
         pi = getattr(op, "_pi", None)
         name = getattr(op, "rule_name", "")
         if sigma is not None and hasattr(sigma, "generate_functional"):
             return self._reverse_content_split(
-                op, parent, lambda w: sigma.generate_functional(w))
+                op, parent, lambda w: sigma.generate_functional(w, W_inv=W_inv))
         if pi is not None and hasattr(pi, "generate_functional"):
             return self._reverse_content_split(
-                op, parent, lambda w: pi.generate_functional(w))
+                op, parent, lambda w: pi.generate_functional(w, W_inv=W_inv))
         if name in ("chunk", "sum") and torch.is_tensor(reference):
             # Exact residual against the retained reference of the newest
             # operand: ``left + right = parent`` by construction.
@@ -14300,6 +14327,19 @@ class LanguageSpace(nn.Module):
         sel = stacked.gather(1, idx).reshape(B, D)
         gate = valid.reshape(B, 1).to(dtype=torch.bool)
         return torch.where(gate, sel, x)
+
+    def decode_where_ids(self, event, content_width):
+        """``(kind [B, N], rule_id [B, N])`` from an event slab's ``.where``
+        stamp (tensor form of ``Grammar.decode_where``): kind 0 = empty,
+        1 = terminal, 2 = rule; ``rule_id`` is valid where kind == 2."""
+        grammar = getattr(self, "_grammar", None) or TheGrammar
+        v_sym = int(getattr(grammar, "symbol_vocab_size", 0) or 0)
+        wid = torch.round(event[..., int(content_width)]).to(torch.long)
+        kind = torch.where(wid <= 0, torch.zeros_like(wid),
+                           torch.where(wid <= v_sym, torch.ones_like(wid),
+                                       torch.full_like(wid, 2)))
+        rule_id = (wid - v_sym - 1).clamp_min(0)
+        return kind, rule_id
 
     @staticmethod
     def local_op_from_rule_ids(rule_ids, rule_map):
