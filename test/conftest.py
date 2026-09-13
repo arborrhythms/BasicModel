@@ -21,6 +21,10 @@ import sys
 # (test_util_device) pop/restore the variable themselves.
 os.environ.setdefault("_BASICMODEL_DEVICE_EXPLICIT", "1" if "BASICMODEL_DEVICE" in os.environ else "0")
 os.environ.setdefault("BASICMODEL_DEVICE", "cpu")
+# Inductor's C++ cache outside the purged macOS temp folder (see util.py).
+os.environ.setdefault(
+    "TORCHINDUCTOR_CACHE_DIR",
+    os.path.join(os.path.expanduser("~"), ".cache", "torchinductor"))
 
 _PROJECT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 _BIN = os.path.join(_PROJECT, "bin")

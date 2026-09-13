@@ -41,6 +41,15 @@ def init_runtime_env():
     os.environ.setdefault("MPLBACKEND", "Agg")
     os.environ.setdefault("MPLCONFIGDIR", mpl_dir)
     os.environ.setdefault("XDG_CACHE_HOME", cache_dir)
+    # Inductor's C++ cache defaults to the macOS temp folder, which purges
+    # files untouched for three days; the precompiled header's source is
+    # read only when the .pch is built, so it was purged while the .pch
+    # survived, and the rewritten header (new mtime) made clang reject the
+    # .pch ("has been modified since the precompiled header was built").
+    # A persistent cache directory avoids the mismatch.
+    os.environ.setdefault(
+        "TORCHINDUCTOR_CACHE_DIR",
+        os.path.join(os.path.expanduser("~"), ".cache", "torchinductor"))
     return runtime_root
 
 
