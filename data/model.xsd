@@ -942,6 +942,10 @@
       <xs:element name="detachedReverse" type="xs:boolean" minOccurs="0"/>
       <xs:element name="reconstructInLoop" type="xs:boolean" minOccurs="0"/>
       <xs:element name="outputInLoop" type="xs:boolean" minOccurs="0"/>
+      <!-- Weight of the output walk's generate-policy imitation credit
+           (cross-entropy against the resolved derivation's rule stamps).
+           The policy decides unstamped tops whenever outputInLoop runs. -->
+      <xs:element name="outputPolicyWeight" type="nonNegativeFloat" minOccurs="0"/>
       <!-- Weight on the bounded one-fold grammar-choice objective. 0 leaves
            legacy routing byte-identical. -->
       <xs:element name="forwardGrammarWeight" type="nonNegativeFloat" minOccurs="0"/>

@@ -316,3 +316,24 @@ ceiling.
 - The production config at 2,000 documents exceeds this machine's
   16.85 GiB MPS limit after two or three bricks on either tree (the
   aligned prefix growth); 400 documents fit.
+- Memory grows about 1.4 GiB per brick at B = 8 with the backward every
+  batch (`<detachedReverse>` off), on the tree before this work as well
+  (census 2026-09-13, `gc` over live MPS tensors: 6.2, 11.9, 13.3,
+  14.7 GiB after bricks 1-4). Two causes are identified and one is
+  fixed: (a) the STM's live concept activations were updated in place
+  with a graph, chaining every brick's graph to the previous one; the
+  live STM state is now detached at brick entry
+  (`ShortTermMemory.detach_live`). (b) The word loop's per-trip
+  checkpoints of every earlier brick (`WhileLoopAutogradOpBackward.
+  fw_outputs`, three slabs of 0.27-0.47 GiB per brick) stay alive after
+  the fix: a few real tensors of shapes `[B, 2, D]` and `[B, 1, 1024]`
+  saved by the current brick's graph reach the earlier bricks' loop
+  nodes, so some tensor computed in one brick is still an input of the
+  next; the Python-visible owners are exhausted (not the STM live state,
+  the discourse ring, the recall history, the what-memory, the loss
+  registry, the published proposal slab, or anomaly-mode metadata, which
+  were all checked), so the carrier is held from C++ (a saved tensor).
+  (A census by tensor object also shows the LTM store `[1048576, 1032]`
+  twice from the second brick on; the two objects share one storage (the
+  owner's `W` and the VQ's external view), so that is not a second
+  allocation.)

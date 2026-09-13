@@ -14147,6 +14147,52 @@ class LanguageSpace(nn.Module):
             "_cs_binary_rule_ids",
             torch.tensor(binary_ids, dtype=torch.long), persistent=False)
         self._n_rules = int(len(TheGrammar.rule_table))
+        # The output loop's generate policy (compiled reverse-loops plan,
+        # contract 5): a learned chooser over the grammar's generate rules
+        # (the CS binary rules, then the unary rules, then stop), read on
+        # the top slot's content.  Credited by imitation of the resolved
+        # derivation where a rule stamp exists; decides where none does.
+        cw = 0
+        from util import TheXMLConfig as _cfg
+        walk_on = bool(_cfg.training("outputInLoop", False))
+        for arity in ((2, 1) if walk_on else ()):
+            layer_a = self._tree_layer(arity)
+            for op in list(getattr(layer_a, "ops", None) or []):
+                gl = getattr(op, "gl", op)
+                cw = int(getattr(gl, "_content_width", 0) or 0)
+                if cw:
+                    break
+            if cw:
+                break
+        n_choices = len(binary_ids) + len(unary_ids) + 1
+        self._generate_policy_width = int(cw)
+        # Exists only with the output loop (<outputInLoop>): the loop's one
+        # parameter; other configurations keep their state dict unchanged.
+        self.generate_policy = (
+            nn.Linear(int(cw), n_choices) if cw and n_choices > 1 else None)
+        if self.generate_policy is not None:
+            with torch.no_grad():
+                self.generate_policy.weight.mul_(0.1)
+                self.generate_policy.bias.zero_()
+
+    def generate_policy_logits(self, top):
+        """``[B, R2 + R1 + 1]`` logits of the generate policy on the top
+        slot's content (binary rules, unary rules, stop); zeros (stop) when
+        the policy does not exist."""
+        B = int(top.shape[0])
+        if self.generate_policy is None:
+            return top.new_zeros(B, 1)
+        cw = self._generate_policy_width
+        return self.generate_policy(top[:, :cw])
+
+    def generate_policy_credit(self, logits, target, valid):
+        """``[B]`` cross-entropy of the policy against the recorded choice
+        ``target`` (an index into the policy's choices) on rows where
+        ``valid``; zero elsewhere."""
+        n = int(logits.shape[-1])
+        logp = torch.log_softmax(logits, dim=-1)
+        picked = logp.gather(1, target.clamp(0, n - 1).reshape(-1, 1)).reshape(-1)
+        return torch.where(valid, -picked, torch.zeros_like(picked))
 
     @property
     def language_layer(self):

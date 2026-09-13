@@ -13534,6 +13534,18 @@ class ShortTermMemory(Layer):
             return
         object.__setattr__(owner, name, value)
 
+    def detach_live(self):
+        """Cut the autograd history of the live STM state at a brick
+        boundary.  The state carries values across bricks; under the
+        compiler it is updated by in-place copies (``_assign_live``), and
+        an in-place copy on a tensor with a graph chains every brick's
+        graph to the previous one (the loop checkpoints of all earlier
+        bricks stayed alive: 1-1.5 GiB per brick at B = 8, W = 256)."""
+        for name, value in list(self.__dict__.items()):
+            if name.startswith("_live_") and torch.is_tensor(value) \
+                    and value.grad_fn is not None:
+                object.__setattr__(self, name, value.detach())
+
     @property
     def _buffer(self):
         return self._live_buffer

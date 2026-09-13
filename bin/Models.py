@@ -2470,6 +2470,10 @@ class BaseModel(Mereology, nn.Module):
         # compiled loop (its own state, policy and termination).
         self.output_in_loop = bool(
             TheXMLConfig.training("outputInLoop", False))
+        # Weight of the generate policy's imitation credit (contract 5);
+        # the policy decides unstamped tops whenever the walk runs.
+        self.output_policy_weight = float(
+            TheXMLConfig.training("outputPolicyWeight", 0.0) or 0.0)
         if self.reconstruct_in_loop and self.detached_reverse:
             raise ValueError(
                 "reconstructInLoop and detachedReverse are mutually "
@@ -8840,9 +8844,15 @@ class BasicModel(BaseModel):
             # generate walk (the second compiled loop) before the spaces'
             # reverse chain; the walk owns its state and termination.
             budget = max(1, int(answer_event.shape[1]) - 1)
-            answer_event, _n_live, output_truncated = (
+            answer_event, _n_live, output_truncated, policy_cost = (
                 self._compiled_output_walk()(answer_event, budget))
             object.__setattr__(self, "_output_truncated", output_truncated)
+            object.__setattr__(self, "_output_policy_cost", policy_cost)
+            if self.training and torch.is_tensor(policy_cost):
+                self.record_loss(
+                    "output_policy", policy_cost.mean(),
+                    weight=float(getattr(self, "output_policy_weight", 0.0)),
+                    space="LanguageSpace", category="policy")
         with self._synthesis_guard():
             concepts = cs.synthesize(
                 answer_event, derivation.bindings,
@@ -10865,8 +10875,13 @@ class BasicModel(BaseModel):
         right opens the slot above it; unary: in place), stamps the
         children empty (as the eager ``unreduce`` does), and the walk ends
         when no row's top decodes to a rule or ``budget`` trips are spent
-        (reported as truncation).  Output state only: it reads nothing of
-        the input reconstruction.  Returns ``(event, n_live, truncated)``.
+        (reported as truncation).  A top without a rule stamp is decided
+        by the learned generate policy (``LanguageSpace.generate_policy``:
+        a binary rule, a unary rule, or stop); stamped tops credit the
+        policy by imitation (cross-entropy against the recorded rule) and
+        the mean credit per row is returned.  Output state only: it reads
+        nothing of the input reconstruction.  Returns ``(event, n_live,
+        truncated, policy_cost)``.
         """
         language = self.languageSpace
         B, N, D = int(event.shape[0]), int(event.shape[1]), int(event.shape[2])
@@ -10890,10 +10905,14 @@ class BasicModel(BaseModel):
         n_live0 = live0.to(torch.long).sum(dim=1)
         T = int(budget)
 
-        def cond(t, stack, n_live, truncated, more):
+        R2 = int(binary_map.numel()) if torch.is_tensor(binary_map) else 0
+        R1 = int(unary_map.numel()) if torch.is_tensor(unary_map) else 0
+        stop_index = R2 + R1
+
+        def cond(t, stack, n_live, truncated, more, credit, credit_n):
             return torch.logical_and(t < T, more.any())
 
-        def body(t, stack, n_live, truncated, more):
+        def body(t, stack, n_live, truncated, more, credit, credit_n):
             top = (n_live - 1).clamp(0, N - 1)
             top_vec = stack[ar, top, :]                                 # [B, D]
             kind, rule_id = language.decode_where_ids(top_vec.unsqueeze(1), cw)
@@ -10902,10 +10921,29 @@ class BasicModel(BaseModel):
             is_rule = torch.logical_and(kind == 2, has_top)
             local_b, known_b = language.local_op_from_rule_ids(rule_id, binary_map)
             local_u, known_u = language.local_op_from_rule_ids(rule_id, unary_map)
+            # The generate policy: imitation credit on stamped tops, the
+            # decision on unstamped ones (a plain concept slot).
+            logits = language.generate_policy_logits(top_vec)
+            target = torch.where(known_b, local_b, torch.where(
+                known_u, local_u + R2, torch.full_like(local_b, stop_index)))
+            stamped = torch.logical_and(is_rule, torch.logical_or(known_b, known_u))
+            credit = credit + language.generate_policy_credit(logits, target, stamped)
+            credit_n = credit_n + stamped.to(credit.dtype)
+            choice = logits.argmax(dim=-1)
+            unstamped = torch.logical_and(has_top, torch.logical_not(is_rule))
+            if language.generate_policy is None:
+                unstamped = torch.zeros_like(unstamped)      # no policy: stamps only
+            pol_b = torch.logical_and(unstamped, choice < R2)
+            pol_u = torch.logical_and(unstamped, torch.logical_and(
+                choice >= R2, choice < stop_index))
+            local_b = torch.where(pol_b, choice, local_b)
+            local_u = torch.where(pol_u, (choice - R2).clamp_min(0), local_u)
             room = n_live < N
-            do_b = torch.logical_and(torch.logical_and(is_rule, known_b), room)
-            do_u = torch.logical_and(torch.logical_and(is_rule, known_u),
-                                     torch.logical_not(do_b))
+            do_b = torch.logical_and(torch.logical_or(
+                torch.logical_and(is_rule, known_b), pol_b), room)
+            do_u = torch.logical_and(torch.logical_or(
+                torch.logical_and(is_rule, known_u), pol_u),
+                torch.logical_not(do_b))
             left, right = language.reverse_binary_step(
                 top_vec, local_b, do_b, inverses=inverses)
             undone = language.reverse_unary_step(top_vec, local_u, do_u)
@@ -10925,19 +10963,23 @@ class BasicModel(BaseModel):
             acted = torch.logical_or(do_b, do_u)
             stuck = torch.logical_and(is_rule, torch.logical_not(acted))
             new_trunc = torch.logical_or(truncated, stuck)
-            return (t + 1, stack1, new_live.clone(), new_trunc.clone(), acted.clone())
+            return (t + 1, stack1, new_live.clone(), new_trunc.clone(), acted.clone(),
+                    credit.clone(), credit_n.clone())
 
         t0 = torch.tensor(0, dtype=torch.long, device=event.device)
         trunc0 = torch.zeros(B, dtype=torch.bool, device=event.device)
         more0 = torch.ones(B, dtype=torch.bool, device=event.device)
-        t, stack, n_live, truncated, more = torch.while_loop(
-            cond, body, _carries_with_grad((t0, event.clone(), n_live0, trunc0, more0)))
+        zeros_b = event.new_zeros(B)
+        t, stack, n_live, truncated, more, credit, credit_n = torch.while_loop(
+            cond, body, _carries_with_grad(
+                (t0, event.clone(), n_live0, trunc0, more0, zeros_b, zeros_b.clone())))
         # A rule still on top after the budget is a truncation.
         top = (n_live - 1).clamp(0, N - 1)
         kind_end, _ = language.decode_where_ids(stack[ar, top, :].unsqueeze(1), cw)
         truncated = torch.logical_or(
             truncated, torch.logical_and(kind_end.reshape(B) == 2, n_live >= 1))
-        return stack, n_live, truncated
+        policy_cost = credit / credit_n.clamp_min(1.0)
+        return stack, n_live, truncated, policy_cost
 
     def _compiled_output_walk(self):
         """The generate walk as the second compiled call (cached)."""
@@ -11686,6 +11728,9 @@ class BasicModel(BaseModel):
         """
         self._install_unit_span_fn()
         _ensure_grad_anchors(TheDevice.get())
+        _stm = getattr(getattr(self, "conceptualSpace", None), "stm", None)
+        if _stm is not None and hasattr(_stm, "detach_live"):
+            _stm.detach_live()                  # no graph crosses a brick
         object.__setattr__(self, "_recon_cost", None)
         object.__setattr__(self, "_tensor_pushed_ideas", None)
         object.__setattr__(self, "_tensor_sentence_roots_live", None)

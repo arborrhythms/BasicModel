@@ -608,6 +608,18 @@ backend), the reconstruction adds about 0.7 s to the 8.4 s forward and
 forward; `eager`) selects where the traversal runs, for the performance
 protocol.
 
+The output walk's generate policy (2026-09-13, contract 5).
+`LanguageSpace.generate_policy` is the one parameter the output loop owns
+(created only under `<outputInLoop>`):
+a linear chooser over the grammar's generate rules (the CS binary rules,
+the unary rules, stop) read on the top slot's content. Where the resolved
+derivation left a rule stamp the walk follows the stamp and credits the
+policy by imitation (cross-entropy against the stamped rule, recorded as
+`output_policy` with `<outputPolicyWeight>`); where a top carries no
+stamp the policy decides: a rule applies the tied reverse, stop leaves
+the slot. The imitation credit trains the policy only (the fold
+parameters get no gradient from it).
+
 Loop gradients (2026-09-13). The tying gate found that the reconstruction
 cost reached the references but not the fold weights, and the cause is in
 `torch.while_loop`'s autograd (torch 2.14 and 2.15 nightlies): the

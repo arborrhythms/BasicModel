@@ -221,6 +221,11 @@ training batch (Training, "Reconstruction objectives");
 `BASICMODEL_RECON_PLACEMENT` compares the in-graph placement with a
 separate compiled call and eager execution.
 
+Generate policy (2026-09-13): `LanguageSpace.generate_policy` (contract 5)
+decides unstamped tops in the walk and is credited by imitation of the
+stamped rules (`<outputPolicyWeight>`, recorded as `output_policy`); tests
+in `test/test_output_walk.py`. The learned policy is no longer open.
+
 Tying gate (2026-09-13): `test_tied_traversal_trains_the_fold_parameters_and_owns_none`
 asserts the reconstruction cost's gradient reaches the lift/lower inner
 layers and that no reverse-student parameter exists. Writing it exposed
