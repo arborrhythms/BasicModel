@@ -239,8 +239,8 @@ def test_symbolspace_and_grammar_use_conceptual_not_property_width(tmp_path):
     assert ss.what.nDim == cs.subspace.nWhat
 
     lift = ss.syntacticLayer._by_name["lift"]
-    assert lift.nInput == cs.subspace.nWhat
-    assert lift.nOutput == cs.subspace.nWhat
+    assert lift.nInput == cs.subspace.muxedSize          # opaque concept event (2026-09-13)
+    assert lift.nOutput == cs.subspace.muxedSize
     assert lift.nInput != ws.subspace.nWhat
 
     # Sparse SS activation scales only the conceptual WHAT row.  The event's

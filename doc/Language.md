@@ -244,6 +244,22 @@ among the `<generate>` binary ops per un-fold step by round-trip fit —
 `PartLayer`; `TenseLayer`/`AspectLayer` share `_WhenOpMixin`; `EqualLayer`
 lives in `bin/Layers.py`, all others in `bin/Language.py`.
 
+#### Concept events are opaque to the grammar ops (2026-09-13)
+
+Percepts have explicit `.what`, `.where` and `.when` coordinates.
+Concepts do not: a word that has been resolved to its object concept is a
+code from a codebook lookup that has generalised over the where and when
+modalities as well, so the conceptual event is a full-width thing that
+cannot be cleanly divided (Alec, 2026-09-13). The CS grammar ops
+(`LiftLayer`, `VerbLayer`, `AdverbLayer`, `LowerLayer`,
+`PrepositionLayer`) are therefore sized to the muxed concept width and
+compose and reverse the whole event; the split of a muxed event into
+content, `.where` and `.when`, the tense shift of `.when` on lift and
+lower, and the preposition's `.where` rotation that lived inside those
+ops are gone. Splitting happens only where a percept or a symbol is
+formed: the symbolic layer muxes and demuxes around `execute`, and the
+perceptual layer reads coordinates.
+
 #### Tensor reverses for the compiled loops (2026-09-13)
 
 `LanguageSpace.reverse_binary_step(parent, op_local, valid, reference,

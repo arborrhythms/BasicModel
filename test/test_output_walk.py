@@ -34,7 +34,7 @@ def _stamped_event(m, rule_name, N=4):
     idx = names.index(rule_name)
     global_id = int(language._cs_binary_rule_ids[idx])
     gl = getattr(list(binary.ops)[idx], "gl", list(binary.ops)[idx])
-    cw = int(gl._content_width)
+    cw = int(m.symbolSpace.subspace.nWhat)                 # the stamp channel
     D = int(m.conceptualSpace.stm.concept_dim)
     torch.manual_seed(0)
     event = torch.zeros(1, N, D)

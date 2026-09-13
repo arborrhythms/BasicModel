@@ -631,6 +631,11 @@ sentence's end state and unwinds the recorded derivation through the
 same traversal (`_recovered_word_ideas`), then realises the recovered
 per-word ideas through the reverse chain.
 
+The grammar ops treat the concept event as opaque (Language, "Concept
+events are opaque to the grammar ops"): the lift/lower inner layers are
+sized to the muxed concept width, so checkpoints written before
+2026-09-13 re-initialise those layers on load.
+
 Loop gradients (2026-09-13). The tying gate found that the reconstruction
 cost reached the references but not the fold weights, and the cause is in
 `torch.while_loop`'s autograd (torch 2.14 and 2.15 nightlies): the

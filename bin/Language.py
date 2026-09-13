@@ -2980,18 +2980,8 @@ class LiftLayer(GrammarLayer):
                 "information; cannot run forward. Pass nInput / "
                 "nOutput, or supply a wholeSpace whose subspace "
                 "carries a non-empty codebook.")
-        cw = self._content_width
-        if cw and left.shape[-1] > cw:
-            # Muxed event: fold the .what content via the inner sigma; pass
-            # the left (subject) operand's .where through; extend the
-            # result's .when span > 1 with the center advanced.
-            l_what, l_where, _l_when = _split_event(left, cw)
-            r_what, _r_where, r_when = _split_event(right, cw)
-            # The verb is the lift operator itself; no eig-edit is applied here
-            # (the eig-based VERB edit was removed). An ADVERB, when present,
-            # modifies this composed VP via ``apply_adverb``.
-            content = self._sigma.compose(l_what, r_what, gate=gate)
-            return torch.cat([content, l_where, _lift_when(r_when)], dim=-1)
+        # The event is opaque here: concepts are full-width codes
+        # (Alec, 2026-09-13); no split, no .when shift.
         return self._sigma.compose(left, right, gate=gate)
 
     def apply_adverb(self, vp_content, adv_what):
@@ -3129,13 +3119,8 @@ class LiftLayer(GrammarLayer):
                     left_priming=left_priming, right_priming=right_priming)
             return self._sigma.generate(p_what, gate=gate)
 
-        cw = self._content_width
-        if cw and parent.shape[-1] > cw:
-            p_what, p_where, p_when = _split_event(parent, cw)
-            lc, rc = _split_what(p_what)
-            back = _lower_when(p_when)
-            return (torch.cat([lc, p_where, back], dim=-1),
-                    torch.cat([rc, p_where, back], dim=-1))
+        # The event is opaque here: concepts are full-width codes
+        # (Alec, 2026-09-13); no split, no .when shift.
         return _split_what(parent)
 
     def compose(self, left, right, gate=None):
@@ -3175,12 +3160,8 @@ class VerbLayer(LiftLayer):
             raise RuntimeError(
                 "VerbLayer was constructed without operand-width "
                 "information; cannot run forward.")
-        cw = self._content_width
-        if cw and left.shape[-1] > cw:
-            l_what, l_where, _l_when = _split_event(left, cw)
-            r_what, _r_where, r_when = _split_event(right, cw)
-            content = self.apply_verb(l_what, r_what)
-            return torch.cat([content, l_where, _lift_when(r_when)], dim=-1)
+        # The event is opaque here: concepts are full-width codes
+        # (Alec, 2026-09-13); no split, no .when shift.
         return self.apply_verb(left, right)
 
     def reverse(self, parent, verb_what=None, basis=None, gate=None, **kwargs):
@@ -3225,12 +3206,8 @@ class AdverbLayer(LiftLayer):
             raise RuntimeError(
                 "AdverbLayer was constructed without operand-width "
                 "information; cannot run forward.")
-        cw = self._content_width
-        if cw and left.shape[-1] > cw:
-            l_what, l_where, l_when = _split_event(left, cw)
-            r_what, _r_where, _r_when = _split_event(right, cw)
-            content = self.apply_adverb(l_what, r_what)
-            return torch.cat([content, l_where, l_when], dim=-1)
+        # The event is opaque here: concepts are full-width codes
+        # (Alec, 2026-09-13); no split, no .when shift.
         return self.apply_adverb(left, right)
 
     def reverse(self, parent, basis=None, gate=None, **kwargs):
@@ -3340,15 +3317,8 @@ class LowerLayer(GrammarLayer):
                 "information; cannot run forward. Pass nInput / "
                 "nOutput, or supply a wholeSpace whose subspace "
                 "carries a non-empty codebook.")
-        cw = self._content_width
-        if cw and left.shape[-1] > cw:
-            # Muxed event: fold the .what content via the inner pi; pass the
-            # left operand's .where through; RETRACT the result's .when span
-            # back toward a unit point (the inverse of LIFT).
-            l_what, l_where, _l_when = _split_event(left, cw)
-            r_what, _r_where, r_when = _split_event(right, cw)
-            content = self._pi.compose(l_what, r_what, gate=gate)
-            return torch.cat([content, l_where, _lower_when(r_when)], dim=-1)
+        # The event is opaque here: concepts are full-width codes
+        # (Alec, 2026-09-13); no split, no .when shift.
         return self._pi.compose(left, right, gate=gate)
 
     def reverse(self, parent, gate=None, basis=None,
@@ -3384,13 +3354,8 @@ class LowerLayer(GrammarLayer):
                     left_priming=left_priming, right_priming=right_priming)
             return self._pi.generate(p_what, gate=gate)
 
-        cw = self._content_width
-        if cw and parent.shape[-1] > cw:
-            p_what, p_where, p_when = _split_event(parent, cw)
-            lc, rc = _split_what(p_what)
-            back = _lift_when(p_when)
-            return (torch.cat([lc, p_where, back], dim=-1),
-                    torch.cat([rc, p_where, back], dim=-1))
+        # The event is opaque here: concepts are full-width codes
+        # (Alec, 2026-09-13); no split, no .when shift.
         return _split_what(parent)
 
     def compose(self, left, right, gate=None):
@@ -3415,17 +3380,12 @@ class PrepositionLayer(GrammarLayer):
         # muxed CS-space_role event, PREPOSITION modifies X's .where (the spatial /
         # relational extent the marker imposes), leaving .what / .when. With
         # no content-width info it stays a pass-through (legacy contract).
-        cw = self._content_width
-        if cw and right.shape[-1] > cw:
-            x_what, x_where, x_when = _split_event(right, cw)
-            return torch.cat([x_what, _rotate_where(x_where), x_when], dim=-1)
+        # The event is opaque here: concepts are full-width codes
+        # (Alec, 2026-09-13); no split, no .when shift.
         return right                       # P is the marker (absorbed), X passes through
     def reverse(self, parent):
-        cw = self._content_width
-        if cw and parent.shape[-1] > cw:
-            p_what, p_where, p_when = _split_event(parent, cw)
-            x = torch.cat([p_what, _rotate_where(p_where, theta=-0.6), p_when], dim=-1)
-            return x, x
+        # The event is opaque here: concepts are full-width codes
+        # (Alec, 2026-09-13); no split, no .when shift.
         return parent, parent              # (marker_placeholder, phrase); emit realizes the marker
     def compose(self, left, right):
         return self.forward(left, right)
@@ -13361,8 +13321,12 @@ class SymbolSubSpace(SubSpace):
             wholeSpace = getattr(self, 'wholeSpace', None)
             perceptualSpace = getattr(self, 'perceptualSpace', None)
             conceptualSpace = getattr(self, 'conceptualSpace', None)
-            concept_width = int(getattr(
-                getattr(conceptualSpace, 'subspace', None), 'nWhat', 0) or 0)
+            # Concepts are full-width codes (a codebook lookup generalised
+            # over what/where/when): the grammar ops take the whole muxed
+            # event and never split it (Alec, 2026-09-13).
+            _cs_sub = getattr(conceptualSpace, 'subspace', None)
+            concept_width = int(getattr(_cs_sub, 'muxedSize', 0)
+                                or getattr(_cs_sub, 'nWhat', 0) or 0)
             if 'lift' in grammar_C_methods:
                 from Layers import LiftLayer
                 builtin_layers['lift'] = LiftLayer(
@@ -13435,8 +13399,12 @@ class SymbolSubSpace(SubSpace):
                 r.method_name for r in TheGrammar.rules
                 if r.space_role == 'SS' and r.method_name is not None}
             conceptualSpace = getattr(self, 'conceptualSpace', None)
-            concept_width = int(getattr(
-                getattr(conceptualSpace, 'subspace', None), 'nWhat', 0) or 0)
+            # Concepts are full-width codes (a codebook lookup generalised
+            # over what/where/when): the grammar ops take the whole muxed
+            # event and never split it (Alec, 2026-09-13).
+            _cs_sub = getattr(conceptualSpace, 'subspace', None)
+            concept_width = int(getattr(_cs_sub, 'muxedSize', 0)
+                                or getattr(_cs_sub, 'nWhat', 0) or 0)
             # Lift / Lower stay explicit: they are parametrized ops that
             # need host wiring (``wholeSpace=space``), so the generic
             # ``cls()`` below would mis-build them. They are wired first
@@ -14274,41 +14242,6 @@ class LanguageSpace(nn.Module):
     # constituent reference, ``not``/``non`` through themselves, everything
     # else through identity (declared non-invertible).
 
-    @staticmethod
-    def _reverse_content_split(op, parent, split, pieces=None):
-        """Apply ``split`` (``[B, Dw] -> (l, r)``) on the event's content
-        channels and copy ``.where`` / lift ``.when`` like ``reverse``.
-        ``pieces`` (``(what, where, lifted_when)`` for ``cw``) is the split
-        computed once per step and shared by every op of that width."""
-        cw = int(getattr(op, "_content_width", 0) or 0)
-        if cw and int(parent.shape[-1]) > cw:
-            if pieces is not None and pieces[0] == cw:
-                _cw, p_what, p_where, back = pieces
-            else:
-                p_what, p_where, p_when = _split_event(parent, cw)
-                back = _lift_when(p_when)
-            lc, rc = split(p_what)
-            return (torch.cat([lc, p_where, back], dim=-1),
-                    torch.cat([rc, p_where, back], dim=-1))
-        return split(parent)
-
-    @staticmethod
-    def _event_pieces(ops, parent):
-        """``(cw, what, where, lifted_when)`` of ``parent`` for the ops'
-        shared content width, computed once per reverse step (the lift and
-        lower families all split the same event and lift the same
-        ``.when``; per op that was 16 splits and 16 shifts per trip)."""
-        cw = 0
-        for op in ops:
-            gl = getattr(op, "gl", op)
-            cw = int(getattr(gl, "_content_width", 0) or 0)
-            if cw:
-                break
-        if not cw or int(parent.shape[-1]) <= cw:
-            return None
-        p_what, p_where, p_when = _split_event(parent, cw)
-        return (cw, p_what, p_where, _lift_when(p_when))
-
     def reverse_inverses(self):
         """The tied inverses the binary reverses need, computed once per
         traversal: one ``W^-1`` per lift/lower op (``None`` for the
@@ -14351,10 +14284,9 @@ class LanguageSpace(nn.Module):
         B, D = int(parent.shape[0]), int(parent.shape[-1])
         if inverses is None:
             inverses = self.reverse_inverses()
-        pieces = self._event_pieces(ops, parent)
         pairs = []
         for op, W_inv in zip(ops, inverses):
-            pairs.append(self._reverse_of_binary_op(op, parent, reference, W_inv, pieces))
+            pairs.append(self._reverse_of_binary_op(op, parent, reference, W_inv))
         left = torch.stack([pr[0] for pr in pairs], dim=1)     # [B, R, D]
         right = torch.stack([pr[1] for pr in pairs], dim=1)
         R = len(ops)
@@ -14365,17 +14297,15 @@ class LanguageSpace(nn.Module):
         return (torch.where(gate, l_sel, parent),
                 torch.where(gate, r_sel, parent))
 
-    def _reverse_of_binary_op(self, op, parent, reference, W_inv=None, pieces=None):
+    def _reverse_of_binary_op(self, op, parent, reference, W_inv=None):
         op = getattr(op, "gl", op)          # the reducer wraps grammar layers
         sigma = getattr(op, "_sigma", None)
         pi = getattr(op, "_pi", None)
         name = getattr(op, "rule_name", "")
         if sigma is not None and hasattr(sigma, "generate_functional"):
-            return self._reverse_content_split(
-                op, parent, lambda w: sigma.generate_functional(w, W_inv=W_inv), pieces)
+            return sigma.generate_functional(parent, W_inv=W_inv)
         if pi is not None and hasattr(pi, "generate_functional"):
-            return self._reverse_content_split(
-                op, parent, lambda w: pi.generate_functional(w, W_inv=W_inv), pieces)
+            return pi.generate_functional(parent, W_inv=W_inv)
         if name in ("chunk", "sum") and torch.is_tensor(reference):
             # Exact residual against the retained reference of the newest
             # operand: ``left + right = parent`` by construction.

@@ -8842,8 +8842,10 @@ class BasicModel(BaseModel):
         surface = None
         answer_event = derivation.answer_symbol
         output_truncated = None
+        _walk_width = self._generate_walk_width()
         if getattr(self, "output_in_loop", False) and torch.is_tensor(answer_event) \
-                and answer_event.dim() == 3:
+                and answer_event.dim() == 3 \
+                and int(answer_event.shape[-1]) == _walk_width:
             # Slice 3: realise the answer's own derivation through the
             # generate walk (the second compiled loop) before the spaces'
             # reverse chain; the walk owns its state and termination.
@@ -10937,6 +10939,32 @@ class BasicModel(BaseModel):
 
     # -- compiled reverse-loops plan, slice 3: the output generate walk ----
 
+    def _stamp_channel(self, event_width):
+        """Index of the rule stamp in a symbol-level event: the symbol
+        space's ``.what`` width (the first ``.where`` channel); the event
+        width less the canonical band when the space is unknown."""
+        ss = getattr(getattr(self, "symbolSpace", None), "subspace", None)
+        n_what = int(getattr(ss, "nWhat", 0) or 0)
+        if 0 < n_what < int(event_width):
+            return n_what
+        return max(0, int(event_width) - 8)
+
+    def _generate_walk_width(self):
+        """The event width the generate walk's tied inverses act on: the
+        muxed concept width of the CS grammar ops.  The resolved answer is
+        a symbol-space event; where the symbol and concept widths differ
+        (the production config: 136 against 1032) the walk does not apply
+        to it and ``reverseOutput`` skips the walk (open design question,
+        plan 2026-09-12, output loop)."""
+        language = getattr(self, "languageSpace", None)
+        binary = language._tree_layer(2) if language is not None else None
+        for op in (list(getattr(binary, "ops", None) or [])):
+            gl = getattr(op, "gl", op)
+            cw = int(getattr(gl, "_content_width", 0) or 0)
+            if cw:
+                return cw
+        return -1
+
     def _output_generate_walk(self, event, budget):
         """The answer-side generate walk as one bounded ``torch.while_loop``
         (contract 5).
@@ -10959,13 +10987,10 @@ class BasicModel(BaseModel):
         language = self.languageSpace
         B, N, D = int(event.shape[0]), int(event.shape[1]), int(event.shape[2])
         binary = language._tree_layer(2)
-        cw = 0
-        for op in (list(binary.ops) if binary is not None else []):
-            gl = getattr(op, "gl", op)
-            cw = int(getattr(gl, "_content_width", 0) or 0)
-            if cw:
-                break
-        cw = cw or D
+        # The rule stamp lives in the symbol-level event's first ``.where``
+        # channel (symbols keep coordinates; concept events are opaque):
+        # the symbol space's ``.what`` width indexes it.
+        cw = self._stamp_channel(D)
         binary_map = getattr(language, "_cs_binary_rule_ids", None)
         unary_map = getattr(language, "_cs_unary_rule_ids", None)
         inverses = language.reverse_inverses()      # once, not per trip

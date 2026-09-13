@@ -54,38 +54,21 @@ class TestLiftLowerWhen(unittest.TestCase):
         when = _ENC.encode(t)                            # present instant at time t
         return _event(what, where, when)
 
-    def test_lift_advances_when_toward_future(self):
-        # 2026-06-16 .when bracket redesign: tense is the interval-vs-now
-        # relation, so LIFT advances the event-time CENTER one step toward the
-        # future (+step ticks), preserving the event duration (0 for an instant).
+    def test_lift_and_lower_treat_the_event_as_opaque(self):
+        # Concepts are full-width codes with no separable .where/.when
+        # (Alec, 2026-09-13): sized to the muxed width, LIFT and LOWER fold
+        # the whole event through their inner layer; nothing is copied
+        # through or shifted around the fold.
+        width = _NWHAT + _NWHERE + _NWHEN
+        lift, lower = LiftLayer(nInput=width), LowerLayer(nInput=width)
         T = _WHEN_PERIOD // 8
-        lift = LiftLayer(nInput=_NWHAT)
-        ev = self._point_event(t=T)                     # present instant at T
-        out = lift.compose(ev, ev)
-        self.assertEqual(out.shape[-1], _NWHAT + _NWHERE + _NWHEN)
-        center, ext = _decode_when(out)
-        self.assertAlmostEqual(center, float(T) + _WHEN_TENSE_STEP, delta=0.05,
-                               msg=f"LIFT must advance time by +step; got center={center}")
-        self.assertGreater(center, float(T),
-                           f"LIFT must move the event toward future; got center={center}")
-        self.assertAlmostEqual(ext, 0.0, delta=1e-3,
-                               msg=f"LIFT must preserve the (zero) duration; got ext={ext}")
-        self.assertTrue(torch.isfinite(out).all())
-
-    def test_lower_inverts_lift_on_when(self):
-        T = _WHEN_PERIOD // 8
-        lift, lower = LiftLayer(nInput=_NWHAT), LowerLayer(nInput=_NWHAT)
         ev = self._point_event(t=T)
-        lifted = lift.compose(ev, ev)                   # center T -> T+step
-        lowered = lower.compose(lifted, lifted)         # center T+step -> T (back)
-        center, ext = _decode_when(lowered)
-        # LOWER retreats the event one step toward the past, returning to the
-        # original event time T, duration preserved.
-        self.assertAlmostEqual(center, float(T), delta=0.05,
-                               msg=f"LOWER must invert LIFT's time step; got center={center}")
-        self.assertAlmostEqual(ext, 0.0, delta=1e-3,
-                               msg=f"LOWER must preserve the (zero) duration; got ext={ext}")
-        self.assertTrue(torch.isfinite(lowered).all())
+        out = lift.compose(ev, ev)
+        self.assertEqual(out.shape[-1], width)
+        self.assertTrue(torch.allclose(out, lift._sigma.compose(ev, ev)))
+        low = lower.compose(ev, ev)
+        self.assertTrue(torch.allclose(low, lower._pi.compose(ev, ev)))
+        self.assertTrue(torch.isfinite(out).all() and torch.isfinite(low).all())
 
     def test_content_only_operand_passes_through_legacy_fold(self):
         # No where/when tail: width == nInput -> legacy binary sigma fold,
@@ -99,22 +82,18 @@ class TestLiftLowerWhen(unittest.TestCase):
 
 class TestPrepositionWhere(unittest.TestCase):
 
-    def test_preposition_modifies_where_only(self):
-        prep = PrepositionLayer(nInput=_NWHAT)
-        what = torch.randn(_NWHAT).tanh()
-        where = torch.tensor([0.5, -0.2])
-        when = _ENC.encode(0)                           # present .when instant
+    def test_preposition_passes_the_phrase_through_opaquely(self):
+        # The event is opaque to the grammar ops: PREPOSITION absorbs the
+        # marker and passes the phrase through unchanged (its .where
+        # rotation lived on a split of the event and is gone).
+        prep = PrepositionLayer(nInput=_NWHAT + _NWHERE + _NWHEN)
+        when = _ENC.encode(0)
         P = _event(torch.randn(_NWHAT).tanh(), torch.tensor([0.1, 0.1]), when)
-        X = _event(what, where, when)
+        X = _event(torch.randn(_NWHAT).tanh(), torch.tensor([0.5, -0.2]), when)
         out = prep.compose(P, X)
-        # .what and .when of X are preserved; .where is modified.
-        self.assertTrue(torch.allclose(_what(out), _what(X), atol=0.05),
-                        ".what must be preserved")
-        self.assertTrue(torch.allclose(out[..., -_NWHEN:], X[..., -_NWHEN:], atol=0.05),
-                        ".when must be preserved")
-        self.assertFalse(torch.allclose(_where(out), _where(X), atol=1e-4),
-                         ".where must be modified by PREPOSITION")
-        self.assertTrue(torch.isfinite(out).all())
+        self.assertTrue(torch.equal(out, X))
+        left, right = prep.reverse(out)
+        self.assertTrue(torch.equal(left, X) and torch.equal(right, X))
 
     def test_preposition_content_only_passthrough(self):
         # Parameter-free construction (no content width) -> safe pass-through

@@ -249,6 +249,16 @@ teacher are gone; the traversal now starts from the sentence's end state
 (the top three STM slots and depth, the three LTM slots of a relative
 sentence) and serves evaluation too (`_recovered_word_ideas`).
 
+Output loop operand (2026-09-13, open): the walk un-reduces with the CS
+grammar ops' tied inverses, which act on the muxed concept width (1032 in
+`data/BasicModel.xml`), while the resolved answer (`_resolve_answer`) is a
+symbol-space event (136 wide) that `ConceptualSpace.synthesize` maps to
+concepts by the WholeSpace inverse, never through the grammar. The ladder
+fixtures have equal widths, which hid this. `reverseOutput` now skips the
+walk when the widths differ; which event the output loop should realise
+in production (the answer's concept-level idea, or the symbol through
+`SymbolSpace.generate`'s un-reduce) is Alec's call.
+
 Contract 6 reconciled (2026-09-13): the forward loop and both
 reconstruction passes are one compiled segment; the output walk is the
 second compiled call, because the answer it realises is resolved after
