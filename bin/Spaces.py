@@ -14711,23 +14711,6 @@ class PartSpace(Space):
         is bit-identical to the old eager path. A no-op during pure
         training (no consumer ever fires -> 0 host syncs).
         """
-        # §13 increment (2026-07-14 snap design doc): a staged Method-2
-        # un-fold slab takes RENDER PRIORITY over the transported reverse
-        # thunk — the trained reverse collapses the multi-slot un-fold
-        # event back to the root's single slot, so the render reads the
-        # slab directly. Consume-once; re-stashed per eval batch by the
-        # un-fold caller, cleared by the Method-1 leaves staging.
-        if self._recovered_input is None:
-            _slab = getattr(self, '_unfold_recovered_slab', None)
-            if _slab is not None and torch.is_tensor(_slab):
-                from Layers import RadixLayer as _Radix
-                _radix = getattr(self, 'vocabulary', None)
-                if isinstance(_radix, _Radix):
-                    self._recovered_input = self._decode_radix_meta(
-                        _radix, _slab, self.subspace)
-                    object.__setattr__(self, '_unfold_recovered_slab', None)
-                    self._recovered_input_thunk = None
-                    return self._recovered_input
         if (self._recovered_input is None
                 and self._recovered_input_thunk is not None):
             thunk = self._recovered_input_thunk

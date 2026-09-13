@@ -608,32 +608,6 @@ def test_mm20m_xor_roundtrip_at_harness_budget(tmp_path):
 
 @pytest.mark.skipif(not os.environ.get("RUN_SLOW"),
                     reason="~40s (build + 3 epochs + decode) -- RUN_SLOW gates it")
-def test_mm20m_grammar_derivation_roundtrip(tmp_path):
-    """THE Method-1 bar (serial plan Task 2.1, Q2: this IS the grammar
-    round-trip slot): the serial decode consumes the Method-1 LEAVES replay
-    (``_reverse_method1_leaves``); exact_match == 1.0, exact BY CONSTRUCTION.
-
-    GREEN 2026-07-05 (S2 operand provenance): the serial derivation stashes
-    its LEAVES -- the per-word percept events -- on the forward
-    (``SymbolSpace.reconstruction_stack.leaves()``) and the eval decode
-    replays them straight
-    through the percept store (radix nearest-neighbour), so every word is
-    recovered untrained, by construction (a percept's vector position IS its
-    identity). Method-1 is the exact TEACHER; ``_reverse_from_S`` (the
-    collapsed-idea CS reverse) stays the trained STUDENT / D3 path (Method-2
-    is its free-derivation bar, Task 4). Pre-S2 this was RED: the single-S
-    CS reverse rendered ONE dominant word ('hello world'->'world'); the
-    lattice fold's inverse is not exact on an untrained model, so Method-1's
-    exactness rides the STORED leaves, not an algebraic un-fold.
-    """
-    rec = run_config("data/MM_20M_grammar.xml", epochs=3, seed=0,
-                     out_dir=str(tmp_path), blind=False)
-    assert rec.exact_match_rate == 1.0
-    assert rec.where_recovery == 1.0
-
-
-@pytest.mark.skipif(not os.environ.get("RUN_SLOW"),
-                    reason="~40s (build + 3 epochs + decode) -- RUN_SLOW gates it")
 def test_mm20m_grammar_free_derivation_ceiling(tmp_path):
     """THE Method-2 bar (serial plan Task 4): the TRAINED free-derivation,
     scored on surfaces via recon_bench's ``--free-derivation`` mode (the decode

@@ -243,9 +243,11 @@ the ladder fixtures. The eager un-fold (`_reverse_reduce_unfold`) raises
 "12 plus 1"; the traversal follows requirement 2 and reverses those ops
 through identity while scoring the result. Parity therefore holds only on
 the invertible ops (the lift/lower round-trip and chunk-residual tests),
-and the byte cost is the sentence fidelity measure. Retiring the eager
-un-fold and the reverse islands (contract 8) is Alec's call; nothing else
-depends on them once `<reconstructInLoop>` is the training default.
+and the byte cost is the sentence fidelity measure. Alec retired the eager
+un-fold (2026-09-13): `_reverse_reduce_unfold` and the exact leaves
+teacher are gone; the traversal now starts from the sentence's end state
+(the top three STM slots and depth, the three LTM slots of a relative
+sentence) and serves evaluation too (`_recovered_word_ideas`).
 
 Contract 6 reconciled (2026-09-13): the forward loop and both
 reconstruction passes are one compiled segment; the output walk is the

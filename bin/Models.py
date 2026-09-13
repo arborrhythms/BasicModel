@@ -7174,25 +7174,31 @@ class BasicModel(BaseModel):
             self._packed_sentence_roots = None
             object.__setattr__(self, "_tensor_peer_trip_count", trip_count)
             return public
-        if len(result) == 18:
+        if len(result) == 21:
             # Compiled reverse-loops plan, slices 1-2: the traversals'
             # recovered word ideas, idea cost, byte cost, truncation flag,
-            # per-sentence byte costs, and the references and live roots
-            # the traversal reads (published so a traversal placed after
-            # the forward can run from them).
+            # per-sentence byte costs, and the state the traversal reads
+            # (references, the sentences' end slots and depths, the final
+            # end state), published so a traversal placed after the
+            # forward can run from them.
             (recon_ideas, recon_idea_cost, recon_byte_cost, recon_truncated,
-             recon_sentence_costs, recon_reference, recon_roots) = result[11:]
+             recon_sentence_costs, recon_reference, recon_roots, recon_depth,
+             recon_end_slots, recon_end_depth) = result[11:]
             if not all(torch.is_tensor(value) for value in (
                     recon_ideas, recon_idea_cost, recon_byte_cost,
                     recon_truncated, recon_sentence_costs, recon_reference,
-                    recon_roots)):
+                    recon_roots, recon_depth, recon_end_slots, recon_end_depth)):
                 raise RuntimeError(
                     "compiled sentence state must contain tensor "
                     "(recon_ideas, recon_idea_cost, recon_byte_cost, "
                     "recon_truncated, recon_sentence_costs, recon_reference, "
-                    "recon_roots) values")
+                    "recon_roots, recon_depth, recon_end_slots, "
+                    "recon_end_depth) values")
             object.__setattr__(self, "_tensor_pushed_ideas", recon_reference)
             object.__setattr__(self, "_tensor_sentence_roots_live", recon_roots)
+            object.__setattr__(self, "_tensor_sentence_roots_depth", recon_depth)
+            object.__setattr__(self, "_tensor_final_end_slots", recon_end_slots)
+            object.__setattr__(self, "_tensor_final_end_depth", recon_end_depth)
             if self._recon_placement() != "graph":
                 # placeholders: the traversal runs after the forward from
                 # the published references and roots (see ``runBatch``)
@@ -7228,7 +7234,8 @@ class BasicModel(BaseModel):
                 "[, wholes, proposals, proposal_count"
                 "[, recon_ideas, recon_idea_cost, recon_byte_cost, "
                 "recon_truncated, recon_sentence_costs, recon_reference, "
-                "recon_roots]]])")
+                "recon_roots, recon_depth, recon_end_slots, "
+                "recon_end_depth]]])")
         public = tuple(result[:4])
         idea, post_depth, trip_count, sentence_roots = result[4:]
         if not all(torch.is_tensor(value)
@@ -7905,46 +7912,20 @@ class BasicModel(BaseModel):
                     stage["merge"]._merge_diff = diff
         rev_sub = None
         rev_ev = None
-        # 2026-07-05 serial plan Task 2 (Method-1 routing): at
-        # EVAL the SERIAL decode consumes the STORED-derivation
-        # LEAVES replay (_reverse_method1_leaves stages the radix
-        # render thunk on the per-word percept leaves), so
-        # reconstruct_data reads the exact derivation surface, not
-        # the single-slot tensor arm. Method-1 is the exact
-        # TEACHER -- by construction, no training needed. The
-        # tensor arm stays the explicit debug fallback
-        # (serial_tensor_reverse_debug -- the --scaffold analogue);
-        # TRAIN paths (the D3 reverse-from-S student) are untouched.
-        if (not train and bool(getattr(self, 'serial', False))
-                and not getattr(
-                    self, 'serial_tensor_reverse_debug', False)):
-            rev_ev = self._reverse_method1_leaves()
         if rev_ev is None:
             terminal_idea = understanding.conceptual_state
-            # Method-2 reverse-reduce (serial plan Task 4): on the
-            # FREE-derivation decode (reconstruct_from_idea, eval),
-            # un-fold the collapsed root back into per-word ideas by
-            # walking the recorded fold steps backward -- each step
-            # the chosen op's basis-threaded reverse, the
-            # codebook-walk recommender (a LOOKUP that reconstitutes
-            # the operand pair, not a subtraction). Falls through to
-            # the single-slot seed when no trace/basis exists.
+            # Evaluation decode from the idea (``reconstructFromIdea``): the
+            # sealed sentence is unwound through the recorded derivation
+            # with the tied inverses (``_reconstruct_sentences``: the
+            # end state's slots, the seal un-folds, one pop per word),
+            # and the recovered per-word ideas are the event the reverse
+            # chain realises.  The eager trace replay and the exact
+            # leaves teacher it replaced are retired (2026-09-13).
             if (terminal_idea is not None and not train
-                    and bool(getattr(
-                        self, 'reconstruct_from_idea', False))):
-                # Invalidate any prior batch's render-priority
-                # slab; the un-fold re-stashes it ONLY on the
-                # word-rows path (review finding: an ungated
-                # stash swapped the NON-wordstore ceiling's
-                # render source).
-                _psp = getattr(self, 'perceptualSpace', None)
-                if _psp is not None:
-                    object.__setattr__(
-                        _psp, '_unfold_recovered_slab', None)
-                unfolded = self._reverse_reduce_unfold(
-                    terminal_idea[:, 0, :])
+                    and bool(getattr(self, 'reconstruct_from_idea', False))):
+                unfolded = self._recovered_word_ideas(terminal_idea[:, 0, :])
                 if unfolded is not None:
-                    terminal_idea = unfolded   # [B, N_words, D_c]
+                    terminal_idea = unfolded   # [B, W, D_c]
             if terminal_idea is not None:
                 cs = self.conceptualSpace
                 cs.commit_event(terminal_idea)
@@ -10582,7 +10563,59 @@ class BasicModel(BaseModel):
                  like.new_zeros(B, W - k, D)), dim=1)
         return reference
 
-    def _reconstruct_sentence_if_enabled(self, S, pushed_ideas, roots_live):
+    def _recovered_word_ideas(self, S):
+        """``[B, W, D]`` per-word ideas of the last forward's sentences,
+        unwound from their end states through the recorded derivation
+        (the traversal with the recovered-idea slab kept); ``None`` when
+        no staged sentence state exists."""
+        reference = getattr(self, "_tensor_pushed_ideas", None)
+        roots = getattr(self, "_tensor_sentence_roots_live", None)
+        if not (torch.is_tensor(reference) and torch.is_tensor(roots)):
+            return None
+        recon = getattr(self, "_recon_ideas", None)
+        if (torch.is_tensor(recon) and recon.dim() == 3
+                and float(recon.abs().sum()) > 0.0):
+            return recon
+        depth = getattr(self, "_tensor_sentence_roots_depth", None)
+        end = getattr(self, "_tensor_final_end_slots", None)
+        end_d = getattr(self, "_tensor_final_end_depth", None)
+        if not (torch.is_tensor(end) and torch.is_tensor(end_d)):
+            end, end_d = self._final_end_state(S, getattr(self, "_stm_post_depth", None))
+        keep = bool(getattr(self, "_recon_keep_ideas", False))
+        object.__setattr__(self, "_recon_keep_ideas", True)
+        try:
+            recovered = self._reconstruct_sentences(
+                S, reference, roots, depth, end, end_d)[0]
+        finally:
+            object.__setattr__(self, "_recon_keep_ideas", keep)
+        return recovered
+
+    def _final_end_state(self, S, post_depth):
+        """``(end_slots [B, 3, D], end_depth [B])`` of the row's last
+        sentence after the final seal: the top three STM slots (newest at
+        0; a relative sentence keeps its depth-3 end state, an absolute
+        one its single root) and the depth."""
+        B, D = int(S.shape[0]), int(S.shape[-1])
+        stm = getattr(getattr(self, "conceptualSpace", None), "stm", None)
+        buf = getattr(stm, "_buffer", None) if stm is not None else None
+        if (torch.is_tensor(buf) and buf.dim() == 3 and int(buf.shape[0]) == B
+                and int(buf.shape[-1]) == D and torch.is_tensor(post_depth)):
+            k = min(3, int(buf.shape[1]))
+            slots = buf[:, :k, :]
+            if k < 3:
+                slots = torch.cat((slots, S.new_zeros(B, 3 - k, D)), dim=1)
+            depth = post_depth.reshape(B).to(torch.long).clamp(0, 3)
+            # the single-root case reads S itself (the buffer's root slot)
+            single = depth <= 1
+            slots = torch.where(
+                single.reshape(B, 1, 1),
+                torch.cat((S.reshape(B, 1, D), S.new_zeros(B, 2, D)), dim=1), slots)
+            return slots, torch.where(single, torch.ones_like(depth), depth)
+        return (torch.cat((S.reshape(B, 1, D), S.new_zeros(B, 2, D)), dim=1),
+                torch.ones(B, dtype=torch.long, device=S.device))
+
+    def _reconstruct_sentence_if_enabled(self, S, pushed_ideas, roots_live,
+                                         roots_depth, end_slots, end_depth):
         """Run the tied traversals when ``<reconstructInLoop>`` is on; else
         zero-shaped placeholders (explicit outputs keep a fixed arity)."""
         B = int(S.shape[0])
@@ -10592,14 +10625,15 @@ class BasicModel(BaseModel):
         placeholders = (S.new_zeros(B, W, D), S.new_zeros(B), S.new_zeros(B),
                         torch.zeros(B, dtype=torch.bool, device=S.device),
                         S.new_zeros(B, slots))
+        state = (pushed_ideas, roots_live, roots_depth, end_slots, end_depth)
         if not getattr(self, "reconstruct_in_loop", False):
-            return placeholders + (pushed_ideas, roots_live)
+            return placeholders + state
         if self._recon_placement() != "graph":
             # The traversal runs after the forward (eager, or as its own
-            # compiled call) from the published references and roots.
-            return placeholders + (pushed_ideas, roots_live)
-        return self._reconstruct_sentences(S, pushed_ideas, roots_live) + (
-            pushed_ideas, roots_live)
+            # compiled call) from the published references and end states.
+            return placeholders + state
+        return self._reconstruct_sentences(
+            S, pushed_ideas, roots_live, roots_depth, end_slots, end_depth) + state
 
     @staticmethod
     def _recon_placement():
@@ -10623,7 +10657,8 @@ class BasicModel(BaseModel):
         self.__dict__["_reconstruct_compiled"] = fn
         return fn
 
-    def _reconstruct_sentences(self, S, reference, roots_live):
+    def _reconstruct_sentences(self, S, reference, roots_live, roots_depth=None,
+                               end_slots=None, end_depth=None):
         """The row's completed sentences reconstructed in two bounded
         compiled passes that share the forward's word index (requirement 3,
         contracts 2-4).
@@ -10656,6 +10691,13 @@ class BasicModel(BaseModel):
         slots = int(roots_live.shape[1])
         cap = int(stm.capacity)
         seal_width = max(0, cap - 1)
+        if end_slots is None or end_depth is None:
+            end_slots, end_depth = self._final_end_state(S, None)
+        if roots_depth is None:
+            roots_depth = torch.ones(B, slots, dtype=torch.long, device=S.device)
+        if int(roots_live.shape[-1]) == D:            # single-root bank: pad to 3 slots
+            roots_live = torch.cat(
+                (roots_live, roots_live.new_zeros(B, slots, 2 * D)), dim=-1)
         _syn = int(getattr(self, "syntacticOrder", 0) or 0)
         n_levels = min(seal_width, _syn) if _syn > 0 else seal_width
         rule_ids, arities, mask = trace.choices()
@@ -10738,15 +10780,20 @@ class BasicModel(BaseModel):
             present = member.any(dim=1)
             hi = torch.where(member, positions, torch.full_like(positions, -1)).amax(dim=1)
             is_last = torch.logical_and(present, hi == last_index)
-            root_slot = roots_live.gather(
-                1, s_idx.clamp(0, slots - 1).reshape(1, 1, 1).expand(B, 1, D)).reshape(B, D)
-            root = torch.where(is_last.reshape(B, 1), S, root_slot)
+            col = s_idx.clamp(0, slots - 1)
+            root_slots3 = roots_live.gather(
+                1, col.reshape(1, 1, 1).expand(B, 1, 3 * D)).reshape(B, 3, D)
+            root_depth = roots_depth.gather(1, col.reshape(1, 1).expand(B, 1)).reshape(B)
+            # the sentence's end state: its top three slots and depth (the
+            # row's last sentence: the state after the final seal)
+            top3 = torch.where(is_last.reshape(B, 1, 1), end_slots, root_slots3)
+            depth0 = torch.where(is_last, end_depth.reshape(B), root_depth)
             seal_base = torch.where(
                 is_last, torch.full_like(hi, 3 * W), 3 * W + hi.clamp_min(0) * seal_width)
             seal_count = torch.where(
                 is_last, torch.full_like(hi, n_levels), torch.full_like(hi, seal_width))
-            stack = torch.cat((root.reshape(B, 1, D), S.new_zeros(B, cap - 1, D)), dim=1)
-            depth = present.to(torch.long)
+            stack = torch.cat((top3, S.new_zeros(B, max(0, cap - 3), D)), dim=1)[:, :cap, :]
+            depth = torch.where(present, depth0.clamp(1, cap), torch.zeros_like(depth0))
             for k in reversed(range(seal_width)):
                 ok = torch.logical_and(present, seal_count > k)
                 stack, depth = _undo_binary(stack, depth, seal_base + k, ok, None)
@@ -10831,8 +10878,11 @@ class BasicModel(BaseModel):
         """One row-level traversal (``_reconstruct_sentences`` with one
         sentence per row): ``(recovered, idea_cost, byte_cost, truncated)``."""
         B, D = int(S.shape[0]), int(S.shape[-1])
-        roots = S.new_zeros(B, 1, D)
-        rec, idea, byte_c, trunc, _per = self._reconstruct_sentences(S, reference, roots)
+        roots = S.new_zeros(B, 1, 3 * D)
+        rec, idea, byte_c, trunc, _per = self._reconstruct_sentences(
+            S, reference, roots, torch.ones(B, 1, dtype=torch.long, device=S.device),
+            torch.cat((S.reshape(B, 1, D), S.new_zeros(B, 2, D)), dim=1),
+            torch.ones(B, dtype=torch.long, device=S.device))
         return rec, idea, byte_c, trunc
 
     def _byte_tables(self, B, W):
@@ -11761,6 +11811,9 @@ class BasicModel(BaseModel):
         _release_loop_checkpoints()             # previous bricks' loop payloads
         object.__setattr__(self, "_recon_cost", None)
         object.__setattr__(self, "_tensor_pushed_ideas", None)
+        object.__setattr__(self, "_tensor_sentence_roots_depth", None)
+        object.__setattr__(self, "_tensor_final_end_slots", None)
+        object.__setattr__(self, "_tensor_final_end_depth", None)
         object.__setattr__(self, "_tensor_sentence_roots_live", None)
         # A caller may supply an optimizer built outside ``getOptimizer``.
         # Make that live owner visible to the eager PartSpace byte-growth
@@ -12290,10 +12343,17 @@ class BasicModel(BaseModel):
                 _S = getattr(self, "_stm_single_S", None)
                 _pushed = getattr(self, "_tensor_pushed_ideas", None)
                 _roots = getattr(self, "_tensor_sentence_roots_live", None)
+                _depth = getattr(self, "_tensor_sentence_roots_depth", None)
+                _end = getattr(self, "_tensor_final_end_slots", None)
+                _end_d = getattr(self, "_tensor_final_end_depth", None)
                 if (torch.is_tensor(_S) and torch.is_tensor(_pushed)
                         and torch.is_tensor(_roots)):
+                    if not (torch.is_tensor(_end) and torch.is_tensor(_end_d)):
+                        _end, _end_d = self._final_end_state(
+                            _S, getattr(self, "_stm_post_depth", None))
                     (_ideas, _idea_cost, _recon_cost, _trunc, _per_sentence) = (
-                        self._compiled_reconstruct()(_S, _pushed, _roots))
+                        self._compiled_reconstruct()(
+                            _S, _pushed, _roots, _depth, _end, _end_d))
                     object.__setattr__(self, "_recon_ideas", _ideas)
                     object.__setattr__(self, "_recon_idea_cost", _idea_cost)
                     object.__setattr__(self, "_recon_cost", _recon_cost)
@@ -18956,7 +19016,11 @@ class BasicModel(BaseModel):
             wholes_state,
             prop_slab,
             prop_count,
-            zero_sentence_roots.clone(),                 # live (non-detached) roots
+            # the sentence's end state at its intermediate end: the top
+            # three STM slots (a relative sentence keeps depth 3) and the
+            # depth, for the reconstruction traversal
+            words.new_zeros(B, root_slots, 3 * concept_dim),
+            torch.zeros(B, root_slots, dtype=torch.long, device=words.device),
         )
         empty_cs_sub = (
             zero_concept.clone(),
@@ -19281,14 +19345,26 @@ class BasicModel(BaseModel):
             next_sentence_roots = torch.where(
                 intermediate_end.reshape(B, 1, 1),
                 root_candidate, current_cs_lang[9])
-            # The same roots with their gradient, for the per-sentence
-            # reconstruction traversal (compiled reverse-loops plan).
+            # The sentence's end state with its gradient, for the
+            # per-sentence reconstruction traversal (compiled reverse-loops
+            # plan): the top three slots (newest at 0) and the depth.
+            _k3 = min(3, int(sealed_stm[0].shape[1]))
+            end_slots = sealed_stm[0][:, :_k3, :]
+            if _k3 < 3:
+                end_slots = torch.cat(
+                    (end_slots, sealed_stm[0].new_zeros(B, 3 - _k3, concept_dim)), dim=1)
             live_candidate = self._tensor_write_word_column(
                 current_cs_lang[13], root_slot,
-                sealed_stm[0][root_rows, root_index])
+                end_slots.reshape(B, 3 * concept_dim))
             next_live_roots = torch.where(
                 intermediate_end.reshape(B, 1, 1),
                 live_candidate, current_cs_lang[13])
+            depth_candidate = current_cs_lang[14].scatter(
+                1, root_slot.reshape(B, 1),
+                sealed_depth.to(torch.long).clamp(0, 3).reshape(B, 1))
+            next_live_depth = torch.where(
+                intermediate_end.reshape(B, 1),
+                depth_candidate, current_cs_lang[14])
             final_stm = FunctionalPeerSTM.soft_reset_rows(
                 sealed_stm, intermediate_end)
             wholes = ShortTermMemory.functional_wholes_reset(
@@ -19297,7 +19373,8 @@ class BasicModel(BaseModel):
             next_cs_lang = (
                 next_symbol_activations, next_loss_sum, next_loss_weight,
                 prediction, *trace_state, next_sentence_roots,
-                wholes, chunk_slab, chunk_count, next_live_roots)
+                wholes, chunk_slab, chunk_count, next_live_roots,
+                next_live_depth)
             language_feedback = language.feedback_from_local_choices(
                 (pre_op, post_op), (pre_valid, post_valid),
                 unary_op, unary_valid, like=word_idea)
@@ -19444,12 +19521,13 @@ class BasicModel(BaseModel):
         # bank: the loop's autograd stacks every carry once per step).
         chunk_state = (final_wholes, final_prop_slab, final_prop_count,
                        self._reference_word_slab(B, width, concept_dim, words),
-                       final_cs_lang[13].clone())
+                       final_cs_lang[13].clone(), final_cs_lang[14].clone())
         if not torch.compiler.is_compiling():
             # Eager forwards (no explicit sentence state requested) run the
             # reconstruction traversal from these at loss time.
             object.__setattr__(self, "_tensor_pushed_ideas", chunk_state[3])
             object.__setattr__(self, "_tensor_sentence_roots_live", chunk_state[4])
+            object.__setattr__(self, "_tensor_sentence_roots_depth", chunk_state[5])
         return cs.subspace, trip_count, sentence_roots, chunk_state
 
     def _run_peer_word_pipeline(self, out_slot, width):
@@ -20125,13 +20203,15 @@ class BasicModel(BaseModel):
             if not all(torch.is_tensor(value) for value in (
                     sentence_idea, sentence_post_depth,
                     tensor_trip_count, tensor_sentence_roots,
-                    *chunk_state)) or len(chunk_state) != 5:
+                    *chunk_state)) or len(chunk_state) != 6:
                 raise RuntimeError(
                     "serial sentence body did not produce tensor "
                     "(S, post_depth, trip_count, roots, wholes, "
-                    "proposals, proposal_count, pushed_ideas, live_roots) state")
+                    "proposals, proposal_count, references, end_slots, "
+                    "end_depth) state")
             recon = self._reconstruct_sentence_if_enabled(
-                sentence_idea, chunk_state[3], chunk_state[4])
+                sentence_idea, chunk_state[3], chunk_state[4], chunk_state[5],
+                *self._final_end_state(sentence_idea, sentence_post_depth))
             return last_cs, (
                 sentence_idea, sentence_post_depth, tensor_trip_count,
                 tensor_sentence_roots, *chunk_state[:3], *recon)
@@ -21338,57 +21418,6 @@ class BasicModel(BaseModel):
             return x
         return x
 
-    def _reverse_method1_leaves(self):
-        """Method-1 EXACT decode (serial plan Task 2): render the STORED
-        per-word percept LEAVES straight through the percept store.
-
-        The serial derivation records its leaves -- the per-word percept
-        events the bottom-up parse started from -- on the forward
-        (``SymbolSpace.reconstruction_stack.leaves()``, ``[B, N, D]``, word
-        order, batch-scoped like ``_stm_single_S``). ``reverse`` replays them by staging the
-        radix render thunk directly on those leaves: the percept-store
-        nearest-neighbour decode recovers each word EXACTLY, by construction
-        -- it needs no training and no per-op inverse, because a percept's
-        vector position IS its identity (doc/Spaces.md#percept-guarantees). This
-        is the design's TEACHER (the exact reference Method-2's free
-        derivation is scored against); the collapsed-idea CS reverse
-        (``_reverse_from_S``) stays the trained STUDENT path.
-
-        Why not the CS reverse: the reduce folds per-word ideas into one S
-        through lattice ops whose inverse is not exact on an untrained model
-        (the CS-reverse of the collapsed root decodes one dominant word, and
-        of the per-word ideas decodes nearest-cone junk) -- so Method-1's
-        by-construction exactness has to ride the STORED leaves, not an
-        algebraic un-fold.
-
-        Returns the ``[B, N, D]`` leaf slab (also the reverse event the
-        eval reconstruction loss reads), or ``None`` when no leaves were
-        stashed (parallel mode / a non-radix percept store) so the caller
-        falls back to the tensor arm.
-        """
-        trace = self._reconstruction_stack()
-        slab = trace.leaves() if trace is not None else None
-        if slab is None or not torch.is_tensor(slab) or slab.dim() != 3:
-            return None
-        psp = getattr(self, 'perceptualSpace', None)
-        radix = getattr(psp, 'vocabulary', None) if psp is not None else None
-        try:
-            from Layers import RadixLayer
-        except ImportError:
-            return None
-        if not isinstance(radix, RadixLayer):
-            return None
-        # Stage the render thunk on the leaves (mirrors PartSpace.reverse's
-        # radix staging); ``reconstruct_data`` reads it for the decode +
-        # where-recovery. Reset the memoised decode so the fresh leaves win
-        # (including over any stale Method-2 un-fold slab).
-        object.__setattr__(psp, '_recovered_input', None)
-        object.__setattr__(psp, '_unfold_recovered_slab', None)
-        object.__setattr__(
-            psp, '_recovered_input_thunk',
-            ("radix", radix, slab.detach(), psp.subspace))
-        return slab
-
     def _grammar_reverse_ops(self):
         """Enumerate the arity-2 REVERSE ops from the grammar's ``<generate>``
         section (Alec 2026-07-14, doc/plans/2026-07-14-signed-space-snap-
@@ -21585,281 +21614,6 @@ class BasicModel(BaseModel):
             words_per_row[b] = leaves
         return words_per_row
 
-    def _reverse_reduce_unfold(self, S):
-        """Method-2 reverse-reduce (serial plan Task 4): un-fold the collapsed
-        root ``S`` ``[B, D]`` back into per-word ideas ``[B, N, D]`` by walking
-        the forward's recorded fold steps BACKWARD.
-
-        Each backward step calls the CHOSEN op's basis-threaded ``reverse``
-        (e.g. ``UnionLayer.reverse(parent, basis)`` -> ``Ops.disjunctionReverse``,
-        the CODEBOOK-WALK recommender: it picks an operand pair ``(x1, x2)``
-        from the codebook with ``op(x1, x2) ~= parent`` -- since neither word
-        is a part of the other, the join keeps enough of each word's edge to
-        reconstitute the residual word; this is a LOOKUP, not a subtraction).
-        Per the newest-at-slot-0 fold convention (left = older), the backward
-        walk emits ``x1`` (left) as the next word and carries ``x2`` (right)
-        into the next step; the final carry is the last word.
-
-        Trace: ``SymbolSpace.reconstruction_stack.reduction_trace()`` -- per sweep step
-        ``(reduce_marginal_op [B, 1, R], can [B])`` appended by
-        ``_stm_bounded_reduce_step`` (reset per ``_stm_reduce_to_single_S``
-        sweep). Rows masked out of a step (can=False) emit nothing there.
-        Returns ``None`` (caller falls back to the single-slot CS reverse)
-        when there is no trace, no reducer, or no dimension-matched basis.
-        Eval/eager only (the free-derivation decode path).
-        """
-        if S is None or not torch.is_tensor(S) or S.dim() != 2:
-            return None
-        B, D = S.shape
-        # The STM idea is the MUXED event [what | where | when]; the codebook
-        # rows are nWhat-wide (content only). Un-fold on the .what slice; the
-        # band tail rides zeroed (scaffold placement comes from the forward
-        # record; blind placement from the percept band, not these ideas).
-        sub = self.conceptualSpace.subspace
-        nw = int(getattr(sub, "nWhere", 0) or 0)
-        nn_ = int(getattr(sub, "nWhen", 0) or 0)
-        d_what = D - nw - nn_
-        if d_what <= 0:
-            return None
-        # Basis for the recommender: gated <PartSpace><wordStore>, the PS
-        # percept store's WORD collection (type="words") — the words are
-        # rows of PS ``subspace.what`` (percept id == row), dim-matched to
-        # the idea .what by construction (content-width rows), restricted
-        # via the recommender's left_rows/right_rows masks
-        # (doc/plans/2026-07-12-word-store-typed-reverse.md). Knob off /
-        # no word rows / dim mismatch -> the first dim-matched codebook,
-        # unchanged (docstring contract: "typically WholeSpace.subspace.what").
-        basis = None
-        word_rows = None
-        ps_space = getattr(self, "perceptualSpace", None)
-        if getattr(ps_space, "word_store_reverse", False):
-            store = getattr(ps_space, "percept_store", None)
-            what = getattr(getattr(ps_space, "subspace", None), "what", None)
-            W = what.getW() if hasattr(what, "getW") else None
-            if (store is not None and hasattr(store, "word_ids")
-                    and torch.is_tensor(W) and W.dim() == 2
-                    and int(W.shape[1]) == int(d_what)):
-                # AUTHORITATIVE source (plan v3): the IN-MODEL label — words
-                # recognized 1:1 and registered under the WORDS concept.
-                rows = None
-                _cs_list = (list(getattr(self, "conceptualSpaces", []) or [])
-                            or [getattr(self, "conceptualSpace", None)])
-                for _cs in _cs_list:
-                    fn = getattr(_cs, "recognized_word_rows", None)
-                    r = fn() if callable(fn) else None
-                    if r is not None and int(r.numel()) > 0:
-                        rows = r
-                        break
-                # Fallback: the store's promoted collection (synthesis-side
-                # recurrence evidence) — e.g. configs without <mereologyRaise>
-                # never run the recognition seam.
-                if rows is None:
-                    _ws_list = getattr(self, "wholeSpaces", None)
-                    _sb = getattr(_ws_list[0] if _ws_list else None,
-                                  "_standalone_run_bytes", None)
-                    r = store.word_ids(standalone_bytes=_sb)
-                    rows = r if int(r.numel()) > 0 else None
-                if rows is not None:
-                    basis = what
-                    word_rows = rows.to(S.device)
-        if basis is None:
-            for space in (getattr(self, "wholeSpace", None),
-                          getattr(self, "conceptualSpace", None)):
-                what = getattr(getattr(space, "subspace", None), "what", None)
-                W = what.getW() if hasattr(what, "getW") else None
-                if (torch.is_tensor(W) and W.dim() == 2
-                        and int(W.shape[1]) == int(d_what)):
-                    basis = what
-                    break
-        if basis is None:
-            return None
-        # TRACE-FREE grammar-driven derivation (Alec 2026-07-14, doc/plans/
-        # 2026-07-14-signed-space-snap-design.md): when word rows exist and
-        # the grammar declares reverse ops, the reverse finds its OWN
-        # derivation — choosing the op per un-fold step by round-trip fit
-        # over the <generate> ops, with NO forward record. Legacy configs
-        # (no word rows) fall through to the recorded-trace walk below.
-        reverse_ops = (self._grammar_reverse_ops()
-                       if word_rows is not None else [])
-        if reverse_ops:
-            words_per_row = self._reverse_derive_words(
-                S, d_what, basis, word_rows, reverse_ops)
-            n = max(1, max((len(w) for w in words_per_row), default=1))
-            out = S.new_zeros(B, n, D)
-            for b, ws in enumerate(words_per_row):
-                for i, w in enumerate(ws):
-                    out[b, i, :d_what] = w
-            self._stamp_unfold_where(out, d_what, basis, word_rows)
-            psp = getattr(self, 'perceptualSpace', None)
-            if psp is not None:
-                object.__setattr__(psp, '_unfold_recovered_slab',
-                                   out.detach())
-            return out
-        # LEGACY trace-walk: replay the recorded forward fold trace backward
-        # (no word rows / no grammar reverse ops).
-        reconstruction = self._reconstruction_stack()
-        trace = (reconstruction.reduction_trace()
-                 if reconstruction is not None else ())
-        if not trace:
-            return None
-        reducer = self._stm_reducer()
-        if reducer is None or not len(getattr(reducer, "ops", [])):
-            return None
-        words_per_row = [[] for _ in range(B)]      # emitted, earliest-first
-        # Snap-path words, by which SIDE of the fold carried them (review
-        # finding, 2026-07-14): an rw step peels the LAST word of the
-        # remaining span (the serial chain folds fold(composite, NEWEST
-        # word)) — those collect latest-first and reverse at the end; an
-        # lw-only step peels the FIRST word (the seal sweep's shape —
-        # after its first fold the parent sits at slot 0 and every later
-        # fold is fold(older word, composite)) — those are already
-        # earliest-first in walk order; the pair (both words) sits
-        # between the peeled heads and tails.
-        head_per_row = [[] for _ in range(B)]       # lw-only, walk order
-        pair_per_row = [[] for _ in range(B)]       # word∧word pair
-        tail_per_row = [[] for _ in range(B)]       # rw, LATEST-first
-        carry = [S[b, :d_what] for b in range(B)]   # [d_what] per row
-        # Word-bearing filtering (open-fronts Task B): 4-tuple trace steps
-        # carry the fold's operand kinds — emit x1 only where the LEFT was a
-        # word; the final carry is a word only if the FIRST forward fold's
-        # RIGHT was (backward-order overwrite lands exactly that). Legacy
-        # 2-tuples = unfiltered.
-        carry_word = [True] * B
-        # Word-bearing folds un-fold through the RECOMMENDER family (todo
-        # §1, fold-op choice): the untrained DP chooser routes folds
-        # through relation hosts whose reverses return non-codebook
-        # vectors — those can never bind word content or placement. On
-        # the gated path, a step whose operands include a word dispatches
-        # the snap (union-preferred recommender over the word rows)
-        # instead of the chosen op's reverse; non-word steps keep the
-        # chosen op (status quo).
-        rec_gl = None
-        if word_rows is not None:
-            for _ad in reducer.ops:
-                _g = getattr(_ad, "gl", None)
-                _rv = getattr(_g, "reverse", None)
-                if _rv is not None and \
-                        "left_rows" in _rv.__code__.co_varnames:
-                    if rec_gl is None:
-                        rec_gl = _g
-                    # Prefer the MAX-fold family: its recommender keeps
-                    # word rows feasible (largest row <= parent), where the
-                    # min-fold's >= filter yields only sentinels against a
-                    # composite parent.
-                    if getattr(_g, "rule_name", "") in ("union",
-                                                        "disjunction"):
-                        rec_gl = _g
-                        break
-        for step in reversed(trace):
-            if len(step) == 4:
-                marg, can, lw, rw = step
-            else:
-                marg, can = step
-                lw = rw = None
-            op_idx = marg[:, 0, :].argmax(dim=-1)   # [B] chosen op per row
-            for b in range(B):
-                if not bool(can[b]):
-                    continue                        # row did not fold this step
-                gl = getattr(reducer.ops[int(op_idx[b])], "gl", None)
-                if gl is None or not hasattr(gl, "reverse"):
-                    return None
-                if (rec_gl is not None and lw is not None
-                        and (bool(lw[b]) or bool(rw[b]))):
-                    gl = rec_gl                     # the word-fold snap
-                parent = carry[b].unsqueeze(0)      # [1, d_what]
-                if (word_rows is not None and lw is not None
-                        and (bool(lw[b]) or bool(rw[b]))):
-                    # Signed-space snap (Alec's design call, 2026-07-14;
-                    # doc/plans/2026-07-14-signed-space-snap-design.md):
-                    # dot-metric snap over the word rows replaces the
-                    # order-filter recommender at idea grain — the radial
-                    # feasibility filter admitted no real row against
-                    # trained composites and returned the ⊤ sentinel for
-                    # every free-derivation operand (measured). Words
-                    # route to head/pair/tail by fold side (see the list
-                    # declarations above); the old emit-x1-if-left-was-
-                    # word contract dropped every right-side word —
-                    # measured empty decodes at trained budgets.
-                    if float(parent.abs().sum()) == 0.0:
-                        continue    # span exhausted by an earlier pair
-                    Wm = basis.getW()
-                    if bool(lw[b]) and bool(rw[b]):
-                        a, bb = Ops.word_pair_snap(parent, Wm, word_rows)
-                        pair_per_row[b] = [a.reshape(-1), bb.reshape(-1)]
-                        # Both operands recovered: the single-carry walk
-                        # cannot branch further into this fold's span.
-                        carry[b] = torch.zeros_like(carry[b])
-                        carry_word[b] = False
-                    else:
-                        w_star, resid = Ops.word_side_snap(
-                            parent, Wm, word_rows)
-                        if bool(rw[b]):
-                            tail_per_row[b].append(w_star.reshape(-1))
-                        else:
-                            head_per_row[b].append(w_star.reshape(-1))
-                        carry[b] = resid.reshape(-1)
-                        carry_word[b] = False
-                    continue
-                else:
-                    try:
-                        if word_rows is not None:
-                            pair = gl.reverse(parent, basis=basis,
-                                              left_rows=word_rows,
-                                              right_rows=word_rows)
-                        else:
-                            pair = gl.reverse(parent, basis=basis)
-                    except TypeError:
-                        try:
-                            pair = gl.reverse(parent, basis=basis)
-                        except TypeError:
-                            pair = gl.reverse(parent)  # unary-signature op
-                        except NotImplementedError:
-                            return None         # no faithful inverse: fall back
-                    except NotImplementedError:
-                        return None             # no faithful inverse: fall back
-                if not (isinstance(pair, tuple) and len(pair) == 2):
-                    return None
-                x1, x2 = pair
-                if lw is None or bool(lw[b]):
-                    words_per_row[b].append(x1.reshape(-1))  # left = older word
-                carry[b] = x2.reshape(-1)                    # right rides on
-                carry_word[b] = True if rw is None else bool(rw[b])
-        for b in range(B):
-            if carry_word[b]:
-                words_per_row[b].append(carry[b])   # final carry = last word
-            # Assemble the reading order the where-stamp assumes: the
-            # left-peeled heads (walk order = earliest-first), the pair,
-            # then the right-peeled tail reversed to earliest-first.
-            words_per_row[b].extend(head_per_row[b])
-            words_per_row[b].extend(pair_per_row[b])
-            words_per_row[b].extend(reversed(tail_per_row[b]))
-        n = max(1, max(len(w) for w in words_per_row))
-        out = S.new_zeros(B, n, D)                  # band tail default zero
-        for b, ws in enumerate(words_per_row):
-            for i, w in enumerate(ws):
-                out[b, i, :d_what] = w
-        # Placement (Alec 2026-07-13): the fold order IS the position —
-        # emissions are earliest-first and each operand snaps to a stored
-        # word row whose surface length the store knows, so sequential
-        # byte offsets re-derive EXACTLY and are stamped like the forward
-        # stamps them. The previously all-zero band was WHY the
-        # free-derivation where_recovery read 0.0 (never written on this
-        # path — not a lossy decode, not a training gap).
-        if word_rows is not None:
-            self._stamp_unfold_where(out, d_what, basis, word_rows)
-            # §13 increment (2026-07-14 snap design doc): stash the stamped
-            # slab as the RENDER-priority source — the trained reverse
-            # transport collapses the multi-slot event back to the root's
-            # single slot and re-stages its own thunk downstream, so the
-            # render must read the slab directly (consumed once in
-            # _materialize_recovered_input). Word-rows-gated: non-wordstore
-            # configs keep their transported render source byte-identical.
-            psp = getattr(self, 'perceptualSpace', None)
-            if psp is not None:
-                object.__setattr__(
-                    psp, '_unfold_recovered_slab', out.detach())
-        return out
-
     def _stamp_unfold_where(self, out, d_what, basis, word_rows):
         """Write sequential word offsets into the un-fold output's ``.where``
         band. Each emitted slot is matched to its word row (the recommender
@@ -21918,7 +21672,7 @@ class BasicModel(BaseModel):
         ConceptualSpace subspace, then run the existing body/percept
         reverse chain. This is the TRAINED reverse (the D3 reconstruction
         objective) -- the LEARNED student that Method-2 refines. The
-        EXACT Method-1 teacher decode lives in ``_reverse_method1_leaves``
+        exact Method-1 leaves teacher was retired 2026-09-13 (the tied traversal decodes)
         (serial plan Task 2): it renders the STORED per-word percept leaves
         directly through the percept store, exact by construction, and is
         what the serial EVAL decode consumes. The owner's not-yet-written

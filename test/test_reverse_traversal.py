@@ -39,7 +39,7 @@ def test_traversal_recovers_every_active_word_without_underflow(tmp_path):
     m = _traversal_model(tmp_path)
     assert m.reconstruct_in_loop
     out = _run(m, ["12 plus 1", "3 plus 4"])
-    assert len(out) == 18
+    assert len(out) == 21
     ideas, cost, truncated = m._recon_ideas, m._recon_cost, m._recon_truncated
     idea_cost = m._recon_idea_cost
     assert bool(torch.isfinite(idea_cost).all()) and idea_cost.shape == (2,)
@@ -256,4 +256,35 @@ def test_tied_traversal_trains_the_fold_parameters_and_owns_none(tmp_path):
     assert touched > 0
     trace = m._reconstruction_stack()
     assert not trace._choice_rule_ids.requires_grad
+    m.End(); m.symbolSpace.soft_reset()
+
+
+def test_evaluation_decode_unwinds_from_the_end_state(tmp_path):
+    """The retired trace replay's role: in evaluation, reverseReconstruct
+    takes the sentence's end state and unwinds the recorded derivation
+    into per-word ideas (``_recovered_word_ideas``)."""
+    m = _traversal_model(tmp_path)
+    _run(m, ["12 plus 1", "3 plus 4"])
+    with torch.no_grad():
+        recovered = m._recovered_word_ideas(m._stm_single_S)
+    active = m.inputSpace._word_active_mask
+    assert recovered is not None and tuple(recovered.shape[:2]) == tuple(active.shape)
+    assert bool((recovered.norm(dim=-1)[active] > 0).all())
+    m.End(); m.symbolSpace.soft_reset()
+
+
+def test_final_end_state_keeps_three_slots_for_a_relative_row(tmp_path):
+    """A relative sentence stops at depth 3: the traversal starts from
+    all three slots (newest at 0), not from the root alone."""
+    m = _traversal_model(tmp_path)
+    _run(m, ["12 plus 1", "3 plus 4"])
+    stm = m.conceptualSpace.stm
+    B, D = 2, int(stm.concept_dim)
+    buf = torch.randn(B, int(stm.capacity), D)
+    object.__setattr__(stm, "_live_buffer", buf)
+    S = buf[:, 2, :].clone()                          # the oldest of three
+    slots, depth = m._final_end_state(S, torch.tensor([3, 1]))
+    assert tuple(slots.shape) == (B, 3, D) and depth.tolist() == [3, 1]
+    assert torch.equal(slots[0], buf[0, :3])           # row 0: three slots
+    assert torch.equal(slots[1, 0], S[1]) and float(slots[1, 1:].abs().sum()) == 0.0
     m.End(); m.symbolSpace.soft_reset()

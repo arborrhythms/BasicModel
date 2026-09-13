@@ -184,39 +184,6 @@ def _basis_op_index(reducer):
     return None, None
 
 
-def _spy_unfold(m):
-    """Drive one synthetic recorded fold step through the unfold with a
-    reverse() spy; return the captured (basis, left_rows) call."""
-    reducer = m._stm_reducer()
-    assert reducer is not None, "smoke grammar lost its arity-2 reduce ops"
-    idx, gl = _basis_op_index(reducer)
-    assert idx is not None, "no basis-threaded reverse among reducer ops"
-    D = int(m.conceptualSpace.stm.concept_dim)
-    R = len(reducer.ops)
-    marg = torch.zeros(1, 1, R); marg[0, 0, idx] = 1.0
-    can = torch.tensor([True])
-    trace = m.symbolSpace.reconstruction_stack
-    trace.begin_reductions()
-    trace.record_reduction(marg, can)
-    captured = []
-
-    def spy(parent, basis=None, left_rows=None, right_rows=None, **kwargs):
-        captured.append((basis, left_rows))
-        return parent, parent               # any 2-tuple satisfies the walk
-
-    orig = gl.reverse
-    gl.reverse = spy
-    try:
-        S = torch.rand(1, D) * 0.1
-        out = m._reverse_reduce_unfold(S)
-        assert out is not None and out.shape[:2] == (1, 2)
-    finally:
-        gl.reverse = orig
-        trace.clear_reductions()
-    assert len(captured) == 1
-    return captured[0]
-
-
 def _recognized_rows(m):
     for cs in (list(getattr(m, "conceptualSpaces", []) or [])
                or [m.conceptualSpace]):
@@ -297,42 +264,6 @@ def test_one_to_one_recognition_registers_under_words(tmp_path_factory):
     rows = cs.recognized_word_rows()
     assert rows is not None and zebra_pid[0] in rows.tolist()
 
-
-def test_unfold_falls_back_when_no_words_yet(tmp_path_factory):
-    m = _build(tmp_path_factory, word_store=True)
-    _train_forward(m)
-    ps = m.perceptualSpace
-    saved = ps.percept_store
-    _cs_list = (list(getattr(m, "conceptualSpaces", []) or [])
-                or [m.conceptualSpace])
-    saved_regs = [getattr(cs, "_recognized_words", None) for cs in _cs_list]
-    from Layers import RadixLayer
-    try:
-        # Clear BOTH sources — the in-model recognition registry AND the
-        # store's promoted collection: no word rows -> the existing basis
-        # pick (first dim-matched codebook: wholeSpace, conceptualSpace).
-        for cs in _cs_list:
-            object.__setattr__(cs, "_recognized_words", None)
-        ps.subspace.percept_store = RadixLayer(
-            int(saved.dim), word_bounded=True)
-        basis, left_rows = _spy_unfold(m)
-        assert left_rows is None
-        assert basis is m.wholeSpace.subspace.what
-    finally:
-        ps.subspace.percept_store = saved
-        for cs, r in zip(_cs_list, saved_regs):
-            object.__setattr__(cs, "_recognized_words", r)
-
-
-def test_unfold_ignores_words_when_knob_off(tmp_path_factory):
-    m = _build(tmp_path_factory, word_store=False)
-    _train_forward(m)
-    basis, left_rows = _spy_unfold(m)
-    assert left_rows is None                     # no typed restriction
-    assert basis is m.wholeSpace.subspace.what   # the existing pick, unchanged
-
-
-# -- open-fronts Task A: percept store rides checkpoints ----------------------
 
 def test_percept_extras_ride_the_checkpoint_envelope(tmp_path_factory):
     m = _build(tmp_path_factory, word_store=True)
@@ -728,97 +659,6 @@ def test_word_side_snap_minimal_residual():
     want = torch.where(p.abs() > w_star.reshape(-1).abs(), p,
                        torch.zeros_like(p))
     assert torch.equal(resid.reshape(-1), want)
-
-
-def test_unfold_word_word_step_snaps_to_store_rows(tmp_path_factory):
-    """A 4-tuple word∧word trace step dispatches the joint pair snap: the
-    emitted operand and the final carry are EXACT store rows — the
-    ⊤-sentinel degeneracy is gone from the word-bearing un-fold."""
-    m = _build(tmp_path_factory, word_store=True)
-    _train_forward(m)
-    _train_forward(m)                                # promote the words
-    from Layers import Ops
-
-    store = m.perceptualSpace.percept_store
-    # Pin the un-fold's candidate source: clear the (shared cached
-    # model's) recognition registry for the duration so the store's
-    # promoted collection is the live set in BOTH isolation and
-    # full-file orderings; restored below.
-    cs_list = (list(getattr(m, "conceptualSpaces", []) or [])
-               or [m.conceptualSpace])
-    saved_reg = [getattr(c, "_recognized_words", None) for c in cs_list]
-    for c in cs_list:
-        object.__setattr__(c, "_recognized_words", None)
-    wid = store.word_ids()
-    assert int(wid.numel()) >= 2
-    W = m.perceptualSpace.subspace.what.getW().detach()
-    r1, r2 = int(wid[0]), int(wid[1])
-    reducer = m._stm_reducer()
-    R = len(reducer.ops)
-    d_what = int(W.shape[1])
-    stm = m.conceptualSpace.stm
-    D = int(stm.concept_dim)
-    S = torch.zeros(1, D)
-    S[0, :d_what] = Ops._radmax(W[r1], W[r2])
-    marg = torch.zeros(1, 1, R)
-    marg[0, 0, 0] = 1.0
-    can = torch.tensor([True])
-    lw = torch.tensor([True])
-    rw = torch.tensor([True])
-    trace = m.symbolSpace.reconstruction_stack
-    trace.begin_reductions()
-    trace.record_reduction(marg, can, lw, rw)
-    try:
-        out = m._reverse_reduce_unfold(S)
-    finally:
-        trace.clear_reductions()
-        for c, reg in zip(cs_list, saved_reg):
-            object.__setattr__(c, "_recognized_words", reg)
-    assert out is not None and int(out.shape[1]) >= 2
-    got = {tuple(out[0, i, :d_what].tolist()) for i in range(2)}
-    want = {tuple(W[r1].tolist()), tuple(W[r2].tolist())}
-    assert got == want
-
-
-def test_unfold_trace_free_recovers_two_word_root(tmp_path_factory):
-    """Trace-free scope (Alec 2026-07-14, step 2): the derivation recovers a
-    2-word root exactly from the grammar reverse ops with NO forward record
-    and NO recognition registry (the store word_ids are the candidate set),
-    emitting only store rows. DEEPER trees (>2 words) need separable composite
-    children the collapsed root cannot yet yield — bounded by the STM cap and
-    gated on root separability (step 3)."""
-    from Layers import Ops
-
-    m = _build(tmp_path_factory, word_store=True)
-    _train_forward(m)
-    _train_forward(m)
-    store = m.perceptualSpace.percept_store
-    cs_list = (list(getattr(m, "conceptualSpaces", []) or [])
-               or [m.conceptualSpace])
-    saved_reg = [getattr(c, "_recognized_words", None) for c in cs_list]
-    for c in cs_list:
-        object.__setattr__(c, "_recognized_words", None)
-    m.symbolSpace.reconstruction_stack.clear_reductions()  # NO forward record
-    try:
-        wid = store.word_ids()
-        assert int(wid.numel()) >= 2
-        W = m.perceptualSpace.subspace.what.getW().detach()
-        r1, r2 = int(wid[0]), int(wid[1])
-        d_what = int(W.shape[1])
-        D = int(m.conceptualSpace.stm.concept_dim)
-        S = torch.zeros(1, D)
-        S[0, :d_what] = Ops._radmax(W[r1], W[r2])
-        out = m._reverse_reduce_unfold(S)
-    finally:
-        for c, reg in zip(cs_list, saved_reg):
-            object.__setattr__(c, "_recognized_words", reg)
-    assert out is not None
-    emitted = {tuple(out[0, i, :d_what].tolist())
-               for i in range(int(out.shape[1]))
-               if float(out[0, i, :d_what].abs().sum()) > 0}
-    store_rows = {tuple(W[int(r)].tolist()) for r in wid.tolist()}
-    assert emitted.issubset(store_rows)
-    assert {tuple(W[r1].tolist()), tuple(W[r2].tolist())}.issubset(emitted)
 
 
 def test_grammar_reverse_ops_from_generate_section(tmp_path_factory):

@@ -589,7 +589,11 @@ word index (`_reconstruct_sentences`): pass A, one `torch.while_loop` trip
 per sentence slot up to the row's highest sentence id (a tensor bound; a
 host sentence count specialised the graph once per distinct count, a
 recompile of about 45 s on every brick), un-seals each sentence from its
-sealed root (the live root the loop stored at
+end state: the top three STM slots and the depth at the sentence's end
+(a relative sentence keeps its depth-3 end state, the three LTM slots; an
+absolute one its single root), carried per sentence by the word loop for
+intermediate ends and read from the sealed buffer for the row's last
+sentence (the live root the loop stored at
 the sentence's intermediate end; `S` after the final seal for the row's
 last sentence) through the recorded seal binaries into its pre-seal stack;
 pass B is one `torch.while_loop` over the word index, latest word first,
@@ -619,6 +623,13 @@ policy by imitation (cross-entropy against the stamped rule, recorded as
 stamp the policy decides: a rule applies the tied reverse, stop leaves
 the slot. The imitation credit trains the policy only (the fold
 parameters get no gradient from it).
+
+The eager trace replay (`_reverse_reduce_unfold`) and the exact leaves
+teacher (`_reverse_method1_leaves`) are retired (2026-09-13): in
+evaluation `reverseReconstruct` with `<reconstructFromIdea>` takes the
+sentence's end state and unwinds the recorded derivation through the
+same traversal (`_recovered_word_ideas`), then realises the recovered
+per-word ideas through the reverse chain.
 
 Loop gradients (2026-09-13). The tying gate found that the reconstruction
 cost reached the references but not the fold weights, and the cause is in
