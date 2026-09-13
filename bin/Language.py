@@ -2657,12 +2657,11 @@ class ProductLayer(GrammarLayer):
 # =====================================================================
 
 # --- Event modality helpers (modality re-architecture, Phase 3) ----------
-# CS-space_role grammar ops operate on the muxed event [what | where | when]
-# (architecture.canonical_shape("ConceptualSpace") == (2, 4), 2026-07-04
-# encoding pass: .when is the 4-dim start ladder). These split / reassemble
-# the event and shift the .when onset. Content-only operands (width == the
-# op's .what content width) bypass these and take the legacy content fold,
-# so the WS-space_role route stays content-only.
+# The symbolic layer's events are muxed [what | where | when] (symbols are
+# percepts: they keep coordinates); these helpers split / reassemble such an
+# event around ``execute`` and shift the .when onset.  Conceptual events
+# have no band (architecture.canonical_shape("ConceptualSpace") == (0, 0))
+# and are never split: the CS grammar ops take the whole code.
 _EVENT_WHEN_WIDTH = 4
 
 
@@ -3468,14 +3467,14 @@ class TenseLayer(_WhenOpMixin, GrammarLayer):
     def set_op(self, tense):
         if tense not in self._DELTA: raise ValueError(f"unknown tense {tense!r}")
         object.__setattr__(self, '_op', tense)
+    # Concept events are opaque (no .when to shift): tense at the
+    # conceptual level is carried by the concept code itself, so the op is
+    # the identity here (Alec, 2026-09-14).  The tense kind is kept for
+    # the symbolic layer's realisation, which owns the .when coordinate.
     def forward(self, x):
-        head, when = self._split_when(x); delta = self._DELTA[self._op]
-        if delta == 0.0: return x
-        return torch.cat([head, self._when_encoding().shift_time(when, delta)], dim=-1)
+        return x
     def reverse(self, y):
-        head, when = self._split_when(y); delta = self._DELTA[self._op]
-        if delta == 0.0: return y
-        return torch.cat([head, self._when_encoding().shift_time(when, -delta)], dim=-1)
+        return y
     def compose(self, x):     return self.forward(x)
     def generate(self, parent): return self.reverse(parent)
 
@@ -10460,14 +10459,16 @@ class SymbolSubSpace(SubSpace):
                 "SymbolSubSpace requires ConceptualSpace geometry (or a "
                 "legacy WholeSpace fallback).")
         sub = geometry_space.subspace
-        nWhere = int(getattr(sub, 'nWhere', 0) or 0)
-        nWhen  = int(getattr(sub, 'nWhen',  0) or 0)
-        nWhat  = int(getattr(sub, 'nWhat',  0) or 0)
-        muxed  = int(getattr(sub, 'muxedSize', nWhat + nWhere + nWhen)
-                     or (nWhat + nWhere + nWhen))
-        # ``symbol_dim`` is the codebook/grammar CONTENT width.  Derive it
-        # from the conceptual carrier rather than trusting the legacy caller
-        # argument, which historically passed WholeSpace's event width.
+        # The symbol event has the concept's width, but symbols are
+        # percepts and keep their own .where/.when coordinates (the
+        # SymbolSpace band), while the concept is one opaque code with no
+        # band (Alec, 2026-09-14).
+        from architecture import canonical_shape as _cshape
+        muxed  = int(getattr(sub, 'muxedSize', 0) or getattr(sub, 'nWhat', 0) or 0)
+        nWhere, nWhen = (int(v) for v in _cshape("SymbolSpace"))
+        if muxed <= nWhere + nWhen:
+            nWhere, nWhen = 0, 0
+        nWhat  = max(0, muxed - nWhere - nWhen)
         symbol_dim = nWhat
 
         # 2. Initialise as a real SubSpace. The slot Bases stay empty
@@ -10723,7 +10724,9 @@ class SymbolSubSpace(SubSpace):
             max_truths = int(TheXMLConfig.get("SymbolSpace.truthMaxEntries"))
         except (KeyError, TypeError, ValueError):
             max_truths = 1024
-        self.truth_layer = TruthLayer(symbol_dim, max_truths=max_truths)
+        # Truths and relative triples hold IDEAS (concept codes): the
+        # concept width, not the symbol's content width (2026-09-14).
+        self.truth_layer = TruthLayer(muxed, max_truths=max_truths)
         if self.truth_layer not in self.layers:
             self.layers.append(self.truth_layer)
         for p in self.truth_layer.parameters():
@@ -10786,7 +10789,7 @@ class SymbolSubSpace(SubSpace):
             self.register_load_state_dict_post_hook(self._revive_ltm_post_load)
         else:
             self.relative_store = RelativeTruthStore(
-                symbol_dim, max_triples=max_truths)
+                muxed, max_triples=max_truths)
 
         # 6b. Category codebook -- learned embedding per derivation label.
         # The first len(TheGrammar.categories) rows are reserved one-per-

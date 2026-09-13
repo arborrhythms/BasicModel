@@ -47,27 +47,14 @@ def test_class_contracts():
     assert AspectLayer.space_role == 'CS' and AspectLayer.arity == 1
 
 
-def test_past_moves_event_time_back():
-    # Use a non-zero time so the angle (event center) is checked to survive.
-    T = _WHEN_PERIOD // 8
-    t = TenseLayer(); t.set_op("PAST")
-    x, _head, enc = _event_with_present_when(t=T)
-    y = t.forward(x)
-    start, res = enc.decode(y[..., -4:])
-    # PAST: onset T -> T-step (toward past); the decode residue stays ~0.
-    assert math.isclose(float(start.reshape(-1)[0]), float(T) - _WHEN_TENSE_STEP,
-                        abs_tol=0.05)
-    assert math.isclose(float(res.reshape(-1)[0]), 0.0, abs_tol=1e-3)
-
-
-def test_future_moves_event_time_forward():
-    T = _WHEN_PERIOD // 8
-    t = TenseLayer(); t.set_op("FUTURE")
-    x, _head, enc = _event_with_present_when(t=T)
-    start, res = enc.decode(t.forward(x)[..., -4:])
-    assert math.isclose(float(start.reshape(-1)[0]), float(T) + _WHEN_TENSE_STEP,
-                        abs_tol=0.05)
-    assert math.isclose(float(res.reshape(-1)[0]), 0.0, abs_tol=1e-3)
+def test_past_and_future_are_the_identity_on_concept_events():
+    # Concept events are opaque (no .when coordinate): PAST and FUTURE
+    # leave the code unchanged (2026-09-14); the symbolic realisation
+    # owns event time.
+    for kind in ("PAST", "FUTURE"):
+        t = TenseLayer(); t.set_op(kind)
+        x, _head, _enc = _event_with_present_when(t=_WHEN_PERIOD // 8)
+        assert torch.equal(t.forward(x), x) and torch.equal(t.reverse(x), x)
 
 
 def test_present_is_identity():

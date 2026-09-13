@@ -1114,6 +1114,29 @@ speech: complete DNF over active percepts, permitting each `conjunction` /
 
 ---
 
+### Concepts are opaque; percepts and symbols are located (2026-09-14)
+
+Percepts are specifically characterised entities: they exist in space and
+time, so a percept event carries `.what`, `.where` and `.when` as separate
+coordinates, and the perceptual spaces read and write those coordinates
+(`architecture.canonical_shape` gives InputSpace, PartSpace, WholeSpace
+and SymbolSpace a where/when band). Symbols are a kind of percept: they
+represent concepts but occur, leaving a trace in the mind, so the
+symbolic layer keeps the band and muxes and demuxes around its `execute`.
+Concepts are generally characterised: a word resolved to its object
+concept is one code from a codebook lookup that has generalised over the
+where and when modalities as well as the content, so the conceptual event
+has no separate localising dimensions and cannot be cleanly divided.
+`canonical_shape("ConceptualSpace")` is therefore `(0, 0)`, the
+conceptual event width is the whole code, and nothing at the conceptual
+level splits, copies through or shifts a `.where` or `.when`: the CS
+grammar ops (lift, lower, verb, adverb, preposition) compose and reverse
+the whole event, the tense and aspect ops are the identity there (tense
+is part of the concept code; the symbolic realisation owns the `.when`
+coordinate), the STM holds whole codes, and the reconstruction traversal
+scores whole codes. Where and when re-enter when a concept is realised as
+a symbol or a percept.
+
 ### Loop and parameter ownership (compiled reverse loops, 2026-09-13)
 
 Three loops, two compiled calls. `forward()` is one `torch.while_loop`

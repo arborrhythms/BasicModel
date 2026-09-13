@@ -781,7 +781,8 @@ class TestFlatSlabInvariant(unittest.TestCase):
         from architecture import canonical_shape
         is_event = is_dim + sum(canonical_shape("InputSpace"))
         ps_event = ps_dim + sum(canonical_shape("PartSpace"))
-        cs_event = cs_dim + sum(canonical_shape("ConceptualSpace"))
+        # the concept code is the whole percept event: no conceptual band
+        cs_event = cs_dim + sum(canonical_shape("PartSpace"))
         ws_dim = ps_dim if aligned_serial else cs_dim
         ws_event = ws_dim + sum(canonical_shape("WholeSpace"))
         architecture = {

@@ -21342,7 +21342,10 @@ class ConceptualSpace(Space):
                 "sparse concept band shape does not match activations: "
                 f"bands={tuple(source_bands.shape)}, activations="
                 f"{tuple(source_activations.shape)}")
-        if int(source_bands.shape[-1]) != expected_band:
+        # A concept has no coordinates of its own: with no conceptual band
+        # the presented percept band is accepted but not appended (the
+        # concept row is the whole event); with a band it rides through.
+        if expected_band > 0 and int(source_bands.shape[-1]) != expected_band:
             raise ValueError(
                 f"sparse concept decode expected band width {expected_band}, "
                 f"got {int(source_bands.shape[-1])}")
@@ -21404,6 +21407,8 @@ class ConceptualSpace(Space):
         active = (source_activations
                   * valid.unsqueeze(1).to(source_activations.dtype))
         decoded_what = active.unsqueeze(-1) * atom_what.unsqueeze(1)
+        if expected_band == 0:
+            return decoded_what
         return torch.cat((decoded_what, source_bands), dim=-1)
 
     def decode_prior_stm_peer(self, stm, active_rows, staged_rows=None,
@@ -22447,8 +22452,10 @@ class ConceptualSpace(Space):
             # events. where/when ride along: the deep rows carry _stm_dim of
             # the regrouped content, the band is re-applied per deep position.
             _wide_deep = (int(self.inputShape[0]) != int(self.outputShape[0]))
-            _in_band = sum(canonical_shape("PartSpace"))
             _my_band = sum(canonical_shape("ConceptualSpace"))
+            # A concept absorbs the whole percept event: with no conceptual
+            # band the full percept event regroups into the concept code.
+            _in_band = sum(canonical_shape("PartSpace")) if _my_band > 0 else 0
             _content_in = int(primary.shape[-1]) - _in_band   # e.g. 12-4=8
             _content_out = _stm_dim - _my_band                # e.g. 1028-4=1024
             _slab = int(primary.shape[1]) * _content_in       # e.g. 1024*8=8192

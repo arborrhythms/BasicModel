@@ -10796,9 +10796,18 @@ class BasicModel(BaseModel):
                 is_last, torch.full_like(hi, n_levels), torch.full_like(hi, seal_width))
             stack = torch.cat((top3, S.new_zeros(B, max(0, cap - 3), D)), dim=1)[:, :cap, :]
             depth = torch.where(present, depth0.clamp(1, cap), torch.zeros_like(depth0))
+            # Each seal folded the newest remaining word onto the stack, so
+            # the k-th seal undone (last first) returns word ``hi - k`` as
+            # its right operand: that word's retained reference guides the
+            # residual reverses (chunk / sum).
+            undone = torch.zeros_like(hi)
             for k in reversed(range(seal_width)):
                 ok = torch.logical_and(present, seal_count > k)
-                stack, depth = _undo_binary(stack, depth, seal_base + k, ok, None)
+                ref_word = (hi - undone).clamp_min(0)
+                ref = reference.gather(
+                    1, ref_word.reshape(B, 1, 1).expand(B, 1, D)).reshape(B, D)
+                stack, depth = _undo_binary(stack, depth, seal_base + k, ok, ref)
+                undone = undone + ok.to(undone.dtype)
             sel = (slot_ids == s_idx)                                       # [1, slots]
             pre_stack = torch.where(sel.reshape(1, slots, 1, 1), stack.unsqueeze(1), pre_stack)
             pre_depth = torch.where(sel, depth.reshape(B, 1), pre_depth)
@@ -22813,11 +22822,14 @@ class ModelFactory:
         is_embedding_mode = (data_type == "embedding")
         if (is_embedding_mode
                 and not _ws_fold_bridged and not _ws_reshapes):
+            # A concept is one opaque code the width of the whole WholeSpace
+            # event (its coordinates included): the concept width equals the
+            # WholeSpace event width, not its band-stripped content.
             TheXMLConfig.require(
-                lambda cfg, _c=effective_concept_dim, _s=symbol_nwhat: _c == _s,
-                f"WholeSpace requires WS.nWhat == CS.nWhat "
-                f"(got CS.nWhat={effective_concept_dim}, "
-                f"WS.nWhat={symbol_nwhat}). Fix: set <WholeSpace><nDim> "
+                lambda cfg, _c=effective_concept_dim, _s=symbol_dim: _c == _s,
+                f"WholeSpace requires WS event width == CS width "
+                f"(got CS width={effective_concept_dim}, "
+                f"WS event width={symbol_dim}). Fix: set <WholeSpace><nDim> "
                 f"to match <ConceptualSpace><nOutputDim> if present, else "
                 f"<ConceptualSpace><nDim>."
             )
@@ -22882,7 +22894,10 @@ class ModelFactory:
         cs_dim = cs_dim_e - sum(_cs_band_shape)
 
         is_slab = is_n * is_dim
-        ps_slab = ps_n * ps_dim
+        # A concept absorbs the whole percept event (its coordinates too):
+        # with no conceptual band, the percept side of the slab invariant
+        # is the full percept event width, not its band-stripped content.
+        ps_slab = ps_n * (ps_dim if sum(_cs_band_shape) > 0 else ps_dim_e)
         cs_slab = cs_n * cs_dim
         # Handoff-consistency (dimensional-governance, 2026-06-06): IS is the
         # raw input and may be BIGGER than perception -- PS scopes it down via
@@ -22926,7 +22941,7 @@ class ModelFactory:
             _aligned_serial_word
             and ps_n == ws_n == cs_n == _cs_input_n
             and ps_dim_e == ws_dim_e
-            and _ps_band_shape == _ws_band_shape == _cs_band_shape
+            and _ps_band_shape == _ws_band_shape
             and _cs_input_dim == cs_dim_e
             and ps_dim == ws_dim
             and 0 < ps_dim < cs_dim)

@@ -450,7 +450,7 @@ mode (default butterfly). Closes the XOR convergence target
 |-------|--------------|----------|
 | InputSpace | Measured tensor features scale to presence; signed text embeddings retain sign | `[0,1]` for presence data; `[-1,1]` for text embeddings |
 | PartSpace | Modal/demuxed what/where/when encoding. Marked radix/meronomy percept stores expose one-sided presence; the orthographic Lexicon remains signed | `[0,1]^d` for percept-store rows; signed projective unit ball for Lexicon rows |
-| ConceptualSpace | Combined/muxed event encoding. Positive concept atoms are scaled by signed, tanh-bounded activations | positive atom geometry with activation in `[-1,1]` |
+| ConceptualSpace | One opaque code per concept: no where/when band (`canonical_shape` is `(0, 0)`); a concept has generalised over the where and when modalities and cannot be divided (Architecture, "Concepts are opaque; percepts and symbols are located"). Positive concept atoms are scaled by signed, tanh-bounded activations | positive atom geometry with activation in `[-1,1]` |
 | WholeSpace | Whole-percept property memberships | `[0,1]` presence |
 | SymbolSpace | 0-D references to ConceptualSpace concept ids | reference activation |
 | OutputSpace | Rescaled from activation range to original data range | Data range |

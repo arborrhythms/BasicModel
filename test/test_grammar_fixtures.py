@@ -215,12 +215,12 @@ def test_fixture_4_alice_persuaded_bob_to_run():
 def test_fixture_5_alice_ran():
     assert normalize_surface(["ran"]) == ("PAST", [], "run")
     t = TenseLayer(); t.set_op("PAST")
-    result = t.forward(present_event())
-    # present instant at _T; SIMPLE is a no-op (aspect retired); PAST -> center
-    # _T - step (toward the past), duration unchanged (0).
-    center, ext = when_of(result)
-    assert math.isclose(center, float(_T) - _WHEN_TENSE_STEP, abs_tol=0.05)
-    assert math.isclose(ext, 0.0, abs_tol=1e-3)
+    event = present_event()
+    result = t.forward(event)
+    # Concept events are opaque (2026-09-14): tense does not move a
+    # conceptual .when; PAST is carried by the concept code and realised
+    # by the symbolic layer, so the conceptual op leaves the code as it is.
+    assert torch.equal(result, event)
 
 
 # ===========================================================================
@@ -274,11 +274,10 @@ def test_fixture_8_alice_had_been_running():
     center, _ext = when_of(event)
     assert math.isclose(center, float(_T), abs_tol=0.05)
 
-    t = TenseLayer(); t.set_op("PAST")                 # moves the event-time center back
+    t = TenseLayer(); t.set_op("PAST")                 # opaque concept: unchanged
+    before = event
     event = t.forward(event)
-    center, ext = when_of(event)
-    assert math.isclose(center, float(_T) - _WHEN_TENSE_STEP, abs_tol=0.05)
-    assert math.isclose(ext, 0.0, abs_tol=1e-3)
+    assert torch.equal(event, before)
 
 
 if __name__ == "__main__":

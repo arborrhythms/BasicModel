@@ -31,7 +31,13 @@ _CANONICAL_SHAPE = {
     # it routes what/where/when through sub-PartSpaces and shares the
     # perceptual shape. No live config currently enables demuxed mode.
     "ModalSpace":      (4, 4),
-    "ConceptualSpace": (4, 4),
+    # Concepts are generally characterised: a concept is one opaque code
+    # (a codebook lookup that has generalised over where and when as well),
+    # with no separate localising dimensions.  Percepts, and symbols as a
+    # kind of percept, are specifically characterised and keep .where and
+    # .when as coordinates (Alec, 2026-09-14; doc/Architecture.md,
+    # "Concepts are opaque; percepts and symbols are located").
+    "ConceptualSpace": (0, 0),
     "WholeSpace":   (4, 4),
     # Exception: the terminal output carries no positional encoding -- the
     # answer has no .where/.when (see module docstring).

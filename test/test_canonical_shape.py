@@ -22,7 +22,7 @@ def test_canonical_shape_table():
     assert canonical_shape("InputSpace")      == (4, 4)
     assert canonical_shape("PartSpace") == (4, 4)
     assert canonical_shape("ModalSpace")      == (4, 4)
-    assert canonical_shape("ConceptualSpace") == (4, 4)
+    assert canonical_shape("ConceptualSpace") == (0, 0)   # concepts are opaque codes (2026-09-14)
     assert canonical_shape("WholeSpace")   == (4, 4)
     assert canonical_shape("OutputSpace")     == (0, 0)
     assert canonical_shape("SymbolSpace")       == (4, 4)

@@ -225,26 +225,27 @@ def test_symbolspace_and_grammar_use_conceptual_not_property_width(tmp_path):
     ws = model.wholeSpace
     ss = model.symbolSpace
 
-    assert cs.subspace.nWhat == 16
-    assert cs.subspace.muxedSize == 24
+    # Concepts are opaque codes: no conceptual band, the whole width is
+    # the code (2026-09-14).  Symbols are percepts and keep their band.
+    assert cs.subspace.nWhat == 24 and cs.subspace.muxedSize == 24
     assert ws.subspace.nWhat == 8
     assert ws.subspace.muxedSize == 16
 
-    assert ss.nWhat == cs.subspace.nWhat
     assert ss.muxedSize == cs.subspace.muxedSize
-    assert ss.languageLayer.feature_dim == cs.subspace.nWhat
-    assert ss.truth_layer.nDim == cs.subspace.nWhat
-    assert ss.relative_store.nDim == cs.subspace.nWhat
+    assert ss.nWhat == ss.muxedSize - ss.nWhere - ss.nWhen
+    assert ss.languageLayer.feature_dim == ss.nWhat
+    assert ss.truth_layer.nDim == cs.subspace.muxedSize      # ideas are concept codes
+    assert ss.relative_store.nDim == cs.subspace.muxedSize
     assert ss._stm_payload_dim == cs.subspace.muxedSize
-    assert ss.what.nDim == cs.subspace.nWhat
+    assert ss.what.nDim == ss.nWhat
 
     lift = ss.syntacticLayer._by_name["lift"]
     assert lift.nInput == cs.subspace.muxedSize          # opaque concept event (2026-09-13)
     assert lift.nOutput == cs.subspace.muxedSize
     assert lift.nInput != ws.subspace.nWhat
 
-    # Sparse SS activation scales only the conceptual WHAT row.  The event's
-    # where/when band remains metadata and must survive the activation seam.
+    # Sparse SS activation scales the concept row; the symbol event keeps
+    # its own band, which survives the activation seam untouched.
     event = torch.randn(1, 8, cs.subspace.muxedSize)
     concept_sub = SubSpace(
         inputShape=(8, cs.subspace.muxedSize),
@@ -255,8 +256,7 @@ def test_symbolspace_and_grammar_use_conceptual_not_property_width(tmp_path):
     concept_sub._concept_activations = torch.ones(8, 1)
     symbol_leg = ss.forward_concept_to_symbol(concept_sub).materialize()
     assert tuple(symbol_leg.shape) == tuple(event.shape)
-    assert torch.equal(symbol_leg[..., cs.subspace.nWhat:],
-                       event[..., cs.subspace.nWhat:])
+    assert torch.equal(symbol_leg[..., ss.nWhat:], event[..., ss.nWhat:])
 
 
 def test_property_model_category_vq_and_parser_context_are_cs_owned(tmp_path):

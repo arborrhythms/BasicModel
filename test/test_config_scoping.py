@@ -210,7 +210,7 @@ class TestValidateConfig(unittest.TestCase):
         # C1 handoff invariant (2026-06): the WS<->CS dim-match check now
         # raises on ``WS.nWhat == CS.nWhat`` (was the older ``symbol_dim``
         # message; SS->WS terminology rename 2026-06-18).
-        self.assertIn("WS.nWhat == CS.nWhat", str(ctx.exception))
+        self.assertIn("WS event width == CS width", str(ctx.exception))
 
 
 class TestInferValidation(unittest.TestCase):

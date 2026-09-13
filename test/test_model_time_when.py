@@ -172,29 +172,15 @@ def test_tense_layer_round_trips():
         assert torch.allclose(back, x, atol=1e-5), op
 
 
-def test_tense_layer_present_is_identity_and_past_future_shift_time():
-    # ADAPTED 2026-07-04 (encoding pass): TenseLayer now rewrites the 4-dim
-    # v2 start ladder (nWhen=4, <whenPeriod> default 1e6); the event and the
-    # decode use the same one-seam encoder the layer builds through.
+def test_tense_layer_is_the_identity_on_concept_events():
+    # Concepts are opaque codes with no .when to shift (2026-09-14): the
+    # conceptual tense op is the identity for every kind; tense at the
+    # conceptual level is part of the concept code.
     import Language
-    from Spaces import event_when_encoding
-    enc = event_when_encoding(4)
-    T = enc.maxVal // 8
-    enc.t = T
-    head = torch.randn(1, 1, 4)
-    when = enc.encode(T).expand(1, 1, -1)
-    x = torch.cat([head, when], dim=-1)
-    pres = Language.TenseLayer(); pres.set_op("PRESENT")
-    assert torch.allclose(pres.forward(x), x, atol=1e-6)
-    past = Language.TenseLayer(); past.set_op("PAST")
-    start, _res = enc.decode(past.forward(x)[..., -4:])
-    assert math.isclose(float(start.reshape(-1)[0]), float(T) - _WHEN_TENSE_STEP,
-                        abs_tol=0.05)
-    fut = Language.TenseLayer(); fut.set_op("FUTURE")
-    start, _res = enc.decode(fut.forward(x)[..., -4:])
-    assert math.isclose(float(start.reshape(-1)[0]), float(T) + _WHEN_TENSE_STEP,
-                        abs_tol=0.05)
-
+    x = torch.randn(1, 1, 8)
+    for kind in ("PRESENT", "PAST", "FUTURE"):
+        t = Language.TenseLayer(); t.set_op(kind)
+        assert torch.equal(t.forward(x), x) and torch.equal(t.reverse(x), x)
 
 def test_aspect_layer_is_noop():
     # AspectLayer is RETIRED to a no-op by this redesign (duration is gone).

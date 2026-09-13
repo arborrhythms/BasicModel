@@ -53,8 +53,11 @@ def _make_ws(batch=2, nSymbols=3, symbolDim=4, conceptDim=4, nPercepts=3):
     # creates a zero-width ``what`` channel.
     inputShape = [
         nPercepts, conceptDim + sum(canonical_shape("PartSpace"))]
+    # A concept is one opaque code the width of the whole percept event
+    # (no conceptual band, 2026-09-14): the concept shape is the percept
+    # event width.
     spaceShape = [
-        nSymbols, symbolDim + sum(canonical_shape("ConceptualSpace"))]
+        nSymbols, symbolDim + sum(canonical_shape("PartSpace"))]
     outputShape = [
         nSymbols, symbolDim + sum(canonical_shape("WholeSpace"))]
     percept_space   = Spaces.PartSpace(inputShape, spaceShape, outputShape)
@@ -78,7 +81,8 @@ def _make_ws(batch=2, nSymbols=3, symbolDim=4, conceptDim=4, nPercepts=3):
     # tests check.  ``ensure_batch`` alone no longer touches ``_stm_fired``
     # (that wipe was the root cause of the K-change history loss bug).
     ss.ensure_microbatch(batch, 1)
-    return ss, symbolDim
+    # SVO slots hold symbol-content vectors (the symbol's .what width).
+    return ss, int(ss.svo_dim)
 
 
 # -- last_svo --------------------------------------------------------------

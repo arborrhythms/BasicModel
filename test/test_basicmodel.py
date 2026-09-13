@@ -214,7 +214,10 @@ def _populate_test_config(*,
     from architecture import canonical_shape as _cshape
     inputDim = inputDim + sum(_cshape("InputSpace"))
     perceptDim = perceptDim + sum(_cshape("PartSpace"))
-    conceptDim = conceptDim + sum(_cshape("ConceptualSpace"))
+    # A concept is one opaque code the width of the whole percept event
+    # (no conceptual band, 2026-09-14): the concept event width is the
+    # content plus the percept band it absorbs.
+    conceptDim = conceptDim + sum(_cshape("PartSpace"))
     _objectSize = nWhere + nWhen
     _nObjects = nInput + nPercepts + nConcepts + nSymbols + nWords + nOutput
     _symbol_dim = symbolDim

@@ -331,38 +331,6 @@ def test_slot_kind_stacks_mirror_the_push_discipline():
     assert ks == [[], []]
 
 
-def test_unfold_stamps_sequential_where_offsets(tmp_path_factory):
-    """The fold order IS the position (Alec): emitted word slots get
-    sequential byte offsets stamped into the CS where band; sentinel /
-    zero slots stay unwritten."""
-    m = _build(tmp_path_factory, word_store=True)
-    _train_forward(m)
-    _train_forward(m)
-    ps = m.perceptualSpace
-    store = ps.percept_store
-    _sb = getattr(m.wholeSpaces[0], "_standalone_run_bytes", None)
-    rows = store.word_ids(standalone_bytes=_sb)
-    assert rows.numel() >= 2
-    basis = ps.subspace.what
-    W = basis.getW()
-    sub = m.conceptualSpace.subspace
-    D = int(m.conceptualSpace.stm.concept_dim)
-    d_what = (D - int(getattr(sub, "nWhere", 0) or 0)
-              - int(getattr(sub, "nWhen", 0) or 0))
-    r0, r1 = int(rows[0]), int(rows[1])
-    out = torch.zeros(1, 3, D)
-    out[0, 0, :d_what] = W[r0, :d_what]
-    out[0, 1, :d_what] = W[r1, :d_what]          # slot 2 stays a zeros tail
-    m._stamp_unfold_where(out, d_what, basis, rows)
-    w_enc = sub.whereEncoding
-    idx = [int(i) for i in w_enc.resolve(D)]
-    len0 = len(store.bytes_for(r0))
-    expect = w_enc.encode(torch.tensor([[0.0, float(len0 + 1)]]))
-    assert torch.allclose(out[0, 0, idx], expect[0, 0], atol=1e-5)
-    assert torch.allclose(out[0, 1, idx], expect[0, 1], atol=1e-5)
-    assert float(out[0, 2, idx[0]:].abs().sum()) == 0.0   # tail unwritten
-
-
 def test_words_summary_row_running_mean(tmp_path_factory):
     """Alec's §3a call: the WORDS codebook face is the order-capped
     SUMMARY ROW — the well-known 'words' atom (WS row 0) carries the
