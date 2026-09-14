@@ -305,7 +305,22 @@ def test_byte_cost_is_positive_for_a_wrong_or_empty_idea_even_with_one_word(tmp_
     wrong = reference[:, 0].flip(0).clone().requires_grad_(True)   # the other row's word
     wrong_c = m._byte_word_cost(wrong, torch.tensor(0), *args)
     assert float(own.max()) < 1e-2
-    assert float(zero.min()) > 0.5 and float(wrong_c.min()) > 0.5
+    # A zero idea is equally near every candidate: its byte distribution
+    # is the uniform mixture of the present rows' bytes and the null
+    # candidate's uniform bytes, so its cost is exactly the negative log
+    # of the target byte's share of that mixture (positive whenever the
+    # null candidate is present, even with one surface in the snapshot).
+    P = int(bank_bytes.shape[-1])                                      # the snapshot's window
+    present = bank_valid.any(-1)                                       # [B, L]
+    n_present = present.sum(-1).to(torch.float32)                      # [B]
+    target = bytes_bwp[:, 0, :P]                                       # [B, P]
+    match = (bank_bytes == target.unsqueeze(1)) & bank_valid           # [B, L, P]
+    share = (match.sum(1).to(torch.float32) + 1.0 / 256.0) / (n_present + 1.0).unsqueeze(-1)
+    pos = valid_bwp[:, 0, :P].to(torch.float32)
+    expected = (-torch.log(share) * pos).sum(-1) / pos.sum(-1).clamp_min(1.0)
+    assert torch.allclose(zero, expected, atol=1e-3), (zero.tolist(), expected.tolist())
+    assert float(zero.min()) > 0.1 and float(wrong_c.min()) > 0.1
+    assert float(wrong_c.min()) > 100.0 * float(own.max())
     assert float(torch.autograd.grad(wrong_c.sum(), [wrong])[0].abs().sum()) > 0
     m.End(); m.symbolSpace.soft_reset()
 
@@ -352,6 +367,7 @@ def test_seal_chain_of_chunks_unwinds_to_the_words(tmp_path):
     with torch.no_grad():
         active.zero_(); active[:, :3] = True
         trace._choice_mask.zero_(); trace._choice_rule_ids.fill_(-1); trace._choice_arities.zero_()
+        trace._choice_left_rows.fill_(-1); trace._choice_right_rows.fill_(-1)   # a synthetic trace: no operand rows
         for k in range(2):                                   # the two seals, in the order recorded
             trace._choice_rule_ids[:, 3 * W + k] = chunk_id
             trace._choice_arities[:, 3 * W + k] = 2
@@ -366,4 +382,47 @@ def test_seal_chain_of_chunks_unwinds_to_the_words(tmp_path):
     for w, want in enumerate((a, b, c)):
         assert torch.allclose(rec[:, w], want, atol=1e-4), (w, float((rec[:, w] - want).abs().max()))
     assert float(idea.max()) < 1e-6
+    # Compound operand (the reviewer's (a+b)+c): a per-word fold joined a
+    # and b when b was pushed, then one seal joined the composite (left)
+    # with c (right).  The recorded operand rows route the residuals: the
+    # seal's known word is on the right, the per-word fold's on the right.
+    rows = torch.arange(3).reshape(1, 3).expand(B, 3).clone() + 100     # symbol rows a, b, c
+    object.__setattr__(isp, "_ar_word_concept_rows", torch.full((B, W), -1, dtype=torch.long))
+    object.__setattr__(isp, "_ar_word_object_rows", torch.full((B, W), -1, dtype=torch.long))
+    isp._ar_word_concept_rows[:, :3] = rows
+    with torch.no_grad():
+        trace._choice_mask.zero_(); trace._choice_rule_ids.fill_(-1); trace._choice_arities.zero_()
+        trace._choice_left_rows.fill_(-1); trace._choice_right_rows.fill_(-1)
+        trace._choice_rule_ids[:, 3 * 1 + 1] = chunk_id; trace._choice_arities[:, 3 * 1 + 1] = 2
+        trace._choice_mask[:, 3 * 1 + 1] = True
+        trace._choice_left_rows[:, 3 * 1 + 1] = rows[:, 0]; trace._choice_right_rows[:, 3 * 1 + 1] = rows[:, 1]
+        trace._choice_rule_ids[:, 3 * W] = chunk_id; trace._choice_arities[:, 3 * W] = 2
+        trace._choice_mask[:, 3 * W] = True
+        trace._choice_left_rows[:, 3 * W] = -1; trace._choice_right_rows[:, 3 * W] = rows[:, 2]
+    S2 = (a + b) + c
+    end2 = torch.cat((S2.unsqueeze(1), torch.zeros(B, 2, D)), dim=1)
+    rec2, idea2, _bc, trunc2, _p = m._reconstruct_sentences(
+        S2, reference, roots, torch.ones(B, 1, dtype=torch.long), end2, torch.ones(B, dtype=torch.long))
+    assert not bool(trunc2.any())
+    for w, want in enumerate((a, b, c)):
+        assert torch.allclose(rec2[:, w], want, atol=1e-4), ("compound", w, float((rec2[:, w] - want).abs().max()))
+    m.End(); m.symbolSpace.soft_reset()
+
+
+def test_snapshot_bytes_are_staged_on_the_first_brick(tmp_path):
+    """The dictionary snapshot is staged after the brick's concept rows,
+    so the byte decoder is active from the first brick: the words' rows
+    and their object rows carry the words' bytes."""
+    m = _traversal_model(tmp_path)
+    _run(m, ["ab", "12"])
+    isp = m.inputSpace
+    bank = isp._ar_concept_lookup_rows
+    valid = isp._ar_bank_valid
+    assert torch.is_tensor(valid) and int(valid.shape[0]) == int(bank.shape[0])
+    L = int(bank.shape[1])
+    present = valid.any(-1)                                            # [B, L]
+    assert bool(present[:, :L // 2].any(1).all())                      # the words' rows
+    assert bool(present[:, L // 2:].any(1).all())                      # their object rows
+    snap, _n, _bytes, _valid = m._snapshot_tables(m._tensor_pushed_ideas)
+    assert snap
     m.End(); m.symbolSpace.soft_reset()

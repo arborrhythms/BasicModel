@@ -253,9 +253,10 @@ Output loop operand, resolved (2026-09-14): the answer-materialisation
 boundary `_materialize_answer_idea` (Training, "The
 answer-materialisation boundary") builds the resolved answer as its own
 conceptual idea, the operand of the walk; the walk runs on opaque
-concept slots and the words are realised through the reverse chain.
-Open there: a concept-level predictor for `future` answers (the
-discourse predictor works on pooled reps).
+concept slots, follows and imitates the teacher actions of the idea's
+own sentence's derivation, and the words are realised through the
+reverse chain. Open there: a concept-level predictor for `future`
+answers (the discourse predictor works on pooled reps).
 
 Output loop operand (2026-09-13, was open): the walk un-reduces with the CS
 grammar ops' tied inverses, which act on the muxed concept width (1032 in
@@ -284,6 +285,61 @@ walks only the previous brick's own graphs. (7) Timings re-measured on
 the corrected tree (Benchmarks). The reviewer's probes also confirm what
 the traversal cannot do: where a derivation used ops declared lossy or a
 balanced split, the recovered ideas are not the words.
+
+Codex's fourth review (2026-09-14, at 0ef5ff4) and the answers. (1)
+"Answer materialisation substitutes the current input state": for the
+present relation the resolved answer IS the sentence just understood,
+and its conceptual idea is that sentence's end state, keyed on the
+derivation's SOURCE (the current end state, the recalled sentence's end
+state `k` back, no concept predictor for `future`); a recalled row takes
+the recalled sentence's idea and its derivation, not the current
+input's. The reviewer's probe (editing the resolved symbol tensor
+without moving the idea) stands, and the reason is the shared index
+(Alec, 2026-09-14; Architecture, "a × the row-aligned identity row"):
+the symbol table and the concept table share row indices, one symbol
+per concept, so the symbol-to-concept inverse is the INDEX (a slot that
+is a symbol maps to the concept dictionary row at its row; an edited or
+novel symbol snaps to the nearest row of the row-aligned symbol table),
+while a composite slot (the folded root, row -1) has no row and is
+materialised by its derivation over row-aligned leaves, which is the end
+state. Materialisation is therefore index-driven (Alec, "Go", 2026-09-14): the
+leaves are the dictionary rows at the answer's symbol rows scaled by the
+symbols' activations, folded by the recorded derivation through the
+grammar's forward ops (`_replay_program`); the replay reproduces the
+forward's end state exactly and follows an exchanged row
+(`test_materialised_idea_follows_the_symbol_rows`); no symbol vector is
+ever snapped, because every symbol carries its row. Two defects surfaced
+on the way: the reconstruction's retained references had been the
+unscaled WORD atoms while the forward folds each word's OBJECT atom
+scaled by its activation (the references are now the pushed leaves,
+`_pushed_word_slab`), and the operand-row routing had matched concept
+ids instead of symbol rows (`_word_symbol_rows`); the byte snap now
+ignores the sign of a leaf (a symbol's value is its signed activation).
+Note that on the production geometry the understanding's conceptual
+state is None and the resolved symbol is the SS activation view, which
+the forward's own comments describe as the same for every sentence at
+initialisation. (2) The question conditioner is now one module per answer
+width (`question_conditioners`, kept in the state dict), so switching
+between the symbol width and the concept width discards nothing
+(`test_question_conditioners_persist_per_answer_width`). (3) The walk's
+chooser on unstamped conceptual slots is credited by the teacher actions
+of the idea's own derivation (`_derivation_targets`: the recorded seals
+last applied first, then per word its unary, post-binary, pop and
+pre-binary), followed under teacher forcing and scored by cross-entropy;
+the walk's operand is the idea with its live slots reversed (the walk's
+top is its last live slot) on a stack of the STM capacity, with a static
+budget of every word's pop and three folds plus the seals
+(`test_generate_policy_is_credited_by_the_derivation_on_conceptual_slots`).
+(4) Compound operands: the trace now records each binary fold's operand
+concept rows (left = STM slot 1, right = slot 0, before the reduce moves
+the stack; compiled bank entries 15 and 16, eager `record_choice`), and
+both reconstruction passes route the residual reverse to the operand
+that is a word of the sentence, whichever side it is on; a fold without
+rows keeps the former fallback (`(a+b)+c` unwinds to `[a, b, c]`,
+`test_seal_chain_of_chunks_unwinds_to_the_words`). (5) The snapshot's
+bytes are staged after the brick's concept rows, so the byte decoder is
+active from the first brick (`test_snapshot_bytes_are_staged_on_the_first_brick`);
+its candidates are the dictionary rows, never the input's staged bytes.
 
 Contract 6 reconciled (2026-09-13): the forward loop and both
 reconstruction passes are one compiled segment; the output walk is the

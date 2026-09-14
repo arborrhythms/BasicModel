@@ -211,14 +211,111 @@ def test_answer_materialises_as_its_own_conceptual_idea_and_realises_through_the
         m._publish_compiled_sentence_state(out)
         u = m._capture_understanding(out[:4] if isinstance(out, tuple) else out)
         derivation = m._resolve_answer(u, What.supervised(0))
-        idea, resolved, sources = m._materialize_answer_idea(u, derivation, What.supervised(0))
+        idea, resolved, sources, targets = m._materialize_answer_idea(u, derivation, What.supervised(0))
     D = int(m.conceptualSpace.stm.concept_dim)
     assert tuple(idea.shape) == (2, 3, D) and bool(resolved.all())
     assert all(src.startswith("idea:") for src in sources)
     end = m._sentence_end_state(None)
     assert torch.allclose(idea, end)                        # zero-initialised conditioning
+    T = m._walk_budget()
+    assert torch.is_tensor(targets) and tuple(targets.shape) == (2, T)
     with torch.no_grad():
-        words, n_emitted, truncated, cost = m._output_generate_walk(idea, budget=8, stamped_events=False)
-    assert tuple(words.shape) == (2, 8, D)
+        words, n_emitted, truncated, cost = m._output_generate_walk(
+            m._walk_operand(idea), T, False, targets)
+    assert tuple(words.shape) == (2, T, D)
     assert bool((n_emitted >= 1).all())                     # each row emitted at least its root
+    m.End(); m.symbolSpace.soft_reset()
+
+
+def test_generate_policy_is_credited_by_the_derivation_on_conceptual_slots():
+    """An opaque conceptual idea carries no rule stamp, so the walk's
+    chooser is credited by the teacher actions of the idea's own
+    derivation (the recorded folds of its sentence, seals first, then per
+    word its unary, post-binary, pop and pre-binary): followed under
+    teacher forcing the walk pops every word of the sentence without
+    truncation, and the policy's parameters receive the gradient of the
+    imitation cost."""
+    from test_compiled_word_chunk import _stage_fullgraph_tensor_peer
+    m = _model()
+    m._tensor_peer_while_eager = True
+    m._chart_compose_per_word = lambda: None
+    _stage_fullgraph_tensor_peer(m, ["12 plus 1", "3 plus 4"])
+    with torch.no_grad():
+        out = m._forward_with_compiled_sentence_state(None)
+        m._publish_compiled_sentence_state(out)
+    T = m._walk_budget()
+    targets = m._derivation_targets(None, T)
+    language = m.languageSpace
+    R2 = int(language._cs_binary_rule_ids.numel())
+    R1 = int(language._cs_unary_rule_ids.numel())
+    stop = R2 + R1
+    n_words = m.inputSpace._word_active_mask.to(torch.long).sum(1)
+    assert tuple(targets.shape) == (2, T)
+    assert torch.equal((targets == stop).sum(1), n_words)        # one pop per word
+    assert bool((targets >= -1).all()) and bool((targets <= stop).all())
+    assert bool((targets[:, -1] == -1).all())                     # exhausted well inside the budget
+    idea = m._sentence_end_state(None)
+    words, n_emitted, truncated, cost = m._output_generate_walk(
+        m._walk_operand(idea), T, False, targets)
+    assert torch.equal(n_emitted, n_words) and not bool(truncated.any())
+    params = list(language.generate_policy.parameters())
+    grads = torch.autograd.grad(cost.sum(), params, allow_unused=True)
+    assert any(g is not None and float(g.abs().sum()) > 0 for g in grads)
+    m.End(); m.symbolSpace.soft_reset()
+
+
+def test_question_conditioners_persist_per_answer_width():
+    """The symbol-width conditioner (the resolved symbol) and the
+    concept-width one (the materialised idea) are kept side by side:
+    switching widths returns the existing module with its weights, and
+    both are in the state dict."""
+    m = _model()
+    dev, dt = torch.device("cpu"), torch.float32
+    narrow = m._question_conditioner(136, device=dev, dtype=dt)
+    with torch.no_grad():
+        narrow.weight.fill_(0.5)
+    wide = m._question_conditioner(1032, device=dev, dtype=dt)
+    assert wide is not narrow and wide.out_features == 1032
+    again = m._question_conditioner(136, device=dev, dtype=dt)
+    assert again is narrow and float(again.weight.abs().sum()) > 0
+    assert set(m.question_conditioners.keys()) == {"136", "1032"}
+    keys = [k for k in m.state_dict() if k.startswith("question_conditioners.")]
+    assert any(k.startswith("question_conditioners.136.") for k in keys)
+    assert any(k.startswith("question_conditioners.1032.") for k in keys)
+    m.End(); m.symbolSpace.soft_reset()
+
+
+def test_materialised_idea_follows_the_symbol_rows():
+    """The symbol table and the concept table share row indices, so the
+    answer is materialised from its symbols' rows and its derivation: the
+    concept dictionary rows at the rows, folded by the recorded derivation
+    through the grammar's forward ops.  With the rows the forward pushed,
+    the replay reproduces the forward's end state exactly; a different
+    symbol at a word (its row exchanged with its neighbour's) gives a
+    different idea, without any snap of a symbol vector."""
+    from test_compiled_word_chunk import _stage_fullgraph_tensor_peer
+    from What import What
+    m = _model()
+    m._tensor_peer_while_eager = True
+    m._chart_compose_per_word = lambda: None
+    _stage_fullgraph_tensor_peer(m, ["12 plus 1", "3 plus 4"])
+    with torch.no_grad():
+        out = m._forward_with_compiled_sentence_state(None)
+        m._publish_compiled_sentence_state(out)
+        u = m._capture_understanding(out[:4] if isinstance(out, tuple) else out)
+        derivation = m._resolve_answer(u, What.supervised(0))
+        idea0, resolved, sources, targets = m._materialize_answer_idea(u, derivation, What.supervised(0))
+        end = m._sentence_end_state(None)
+        assert torch.allclose(idea0, end, atol=1e-4), float((idea0 - end).abs().max())
+        rows = m._word_symbol_rows()
+        assert bool((rows[:, :2] >= 0).all()) and bool((rows[:, 0] != rows[:, 1]).all())
+        isp = m.inputSpace
+        for name in ("_ar_word_object_rows", "_ar_word_concept_rows"):
+            table = getattr(isp, name).clone()
+            table[:, :2] = table[:, :2].flip(1)
+            setattr(isp, name, table)
+        assert torch.equal(m._word_symbol_rows()[:, :2], rows[:, :2].flip(1))
+        idea1, _r, _s, targets1 = m._materialize_answer_idea(u, derivation, What.supervised(0))
+    assert not torch.allclose(idea1, idea0, atol=1e-4)
+    assert torch.equal(targets1, targets)                       # the derivation is unchanged
     m.End(); m.symbolSpace.soft_reset()

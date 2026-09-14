@@ -9026,6 +9026,10 @@ class ReconstructionStack:
             self._choice_mask[s:e] = False
             self._choice_rule_ids[s:e] = -1
             self._choice_arities[s:e] = 0
+            for name in ("_choice_left_rows", "_choice_right_rows"):
+                slab = getattr(self, name, None)
+                if torch.is_tensor(slab) and int(slab.shape[0]) >= e:
+                    slab[s:e] = -1
         if (torch.is_tensor(self._forward_loss_mask)
                 and int(self._forward_loss_mask.shape[0]) >= e):
             self._forward_loss_mask[s:e] = False
@@ -9157,6 +9161,13 @@ class ReconstructionStack:
             batch, max_steps, dtype=torch.float32, device=device)
         self._forward_loss_mask = torch.zeros(
             batch, max_steps, dtype=torch.bool, device=device)
+        # Operand identity per recorded fold (contract 1 of the compiled
+        # reverse-loops plan): the concept rows of the left (older) and
+        # right (newest) operands at the fold, -1 for a composite.
+        self._choice_left_rows = torch.full(
+            (batch, max_steps), -1, dtype=torch.long, device=device)
+        self._choice_right_rows = torch.full(
+            (batch, max_steps), -1, dtype=torch.long, device=device)
         self._unary_rule_map = torch.as_tensor(
             tuple(int(v) for v in unary_rule_ids),
             dtype=torch.long, device=device)
@@ -9168,8 +9179,16 @@ class ReconstructionStack:
         """Return the immutable local-op -> global-rule map for ``arity``."""
         return self._unary_rule_map if int(arity) == 1 else self._binary_rule_map
 
+    def operand_rows(self):
+        """``(left_rows, right_rows)`` ``[B, max_steps]`` concept rows of
+        each recorded fold's operands (-1: composite / unknown), or
+        ``(None, None)`` before a slab exists."""
+        return (getattr(self, "_choice_left_rows", None),
+                getattr(self, "_choice_right_rows", None))
+
     def record_choice(self, slot, rule_ids, arity, mask,
-                      local_structural_loss=None):
+                      local_structural_loss=None, left_row=None,
+                      right_row=None):
         """Commit one hard choice and its optional bounded local objective."""
         if self._choice_rule_ids is None:
             return
@@ -9187,6 +9206,12 @@ class ReconstructionStack:
             torch.full_like(chosen, int(arity), dtype=torch.int8),
             torch.zeros_like(chosen, dtype=torch.int8)))
         self._choice_mask[:, slot].copy_(active)
+        for name, value in (("_choice_left_rows", left_row),
+                            ("_choice_right_rows", right_row)):
+            slab = getattr(self, name, None)
+            if torch.is_tensor(slab) and torch.is_tensor(value):
+                rows = value.reshape(-1).to(device=slab.device, dtype=torch.long)
+                slab[:, slot].copy_(torch.where(active, rows, torch.full_like(rows, -1)))
         if (torch.is_tensor(local_structural_loss)
                 and torch.is_tensor(self._forward_losses)):
             local = local_structural_loss.reshape(-1).to(
@@ -14317,15 +14342,27 @@ class LanguageSpace(nn.Module):
             return pi.generate_functional(parent, W_inv=W_inv)
         if name in ("chunk", "sum") and torch.is_tensor(reference):
             # Exact residual against the retained reference of the known
-            # operand: ``left + right = parent`` by construction.  The
-            # pushed word is the newest (right) operand of a per-word fold;
-            # a seal beyond the first folds the older word (left) onto the
-            # composite (right).
+            # operand: ``left + right = parent`` by construction.  Which
+            # side is the known word comes from the recorded operand rows
+            # (``reference_side``: "right"/"left", or a per-row bool mask
+            # ``(right_mask, valid_mask)``); with no known operand the
+            # split is balanced.
+            if isinstance(reference_side, tuple):
+                right_mask, valid = reference_side
+                right_mask = right_mask.reshape(-1, 1).to(torch.bool)
+                valid = valid.reshape(-1, 1).to(torch.bool)
+                as_right = (parent - reference, reference)
+                as_left = (reference, parent - reference)
+                left = torch.where(right_mask, as_right[0], as_left[0])
+                right = torch.where(right_mask, as_right[1], as_left[1])
+                half = parent * 0.5
+                return (torch.where(valid, left, half), torch.where(valid, right, half))
             if reference_side == "left":
                 return reference, parent - reference
             return parent - reference, reference
         if name in ("chunk", "sum"):
-            return parent, torch.zeros_like(parent)
+            half = parent * 0.5
+            return half, half
         return parent, parent
 
     def reverse_unary_step(self, x, op_local, valid):
@@ -14345,6 +14382,42 @@ class LanguageSpace(nn.Module):
             else:
                 outs.append(x)
         stacked = torch.stack(outs, dim=1)                       # [B, R1, D]
+        R1 = len(ops)
+        idx = op_local.reshape(B).clamp(0, R1 - 1).reshape(B, 1, 1).expand(B, 1, D)
+        sel = stacked.gather(1, idx).reshape(B, D)
+        gate = valid.reshape(B, 1).to(dtype=torch.bool)
+        return torch.where(gate, sel, x)
+
+    def forward_binary_step(self, left, right, op_local, valid):
+        """``[B, D]`` parent of one recorded binary fold applied forward:
+        the reducer's candidate of the recorded local op on the (older,
+        newer) pair, the value the forward's hard choice committed; an
+        invalid row keeps ``right`` (the newest operand)."""
+        binary = self._tree_layer(2)
+        if binary is None:
+            raise RuntimeError("LanguageSpace requires a CS binary tree layer")
+        B, D = int(left.shape[0]), int(left.shape[-1])
+        window = torch.stack((left, right), dim=1)                    # [B, 2, D]
+        stacked = binary._stacked_reduced(window)                     # [B, 1, R, D]
+        R = int(stacked.shape[2])
+        idx = op_local.reshape(B).clamp(0, R - 1).reshape(B, 1, 1).expand(B, 1, D)
+        sel = stacked[:, 0].gather(1, idx).reshape(B, D)
+        gate = valid.reshape(B, 1).to(dtype=torch.bool)
+        return torch.where(gate, sel, right)
+
+    def forward_unary_step(self, x, op_local, valid):
+        """``[B, D]`` of one recorded unary rewrite applied forward (the
+        unary layer's candidate of the recorded local op); an invalid row
+        keeps ``x``."""
+        unary = self._tree_layer(1)
+        if unary is None:
+            return x
+        ops = list(unary.ops)
+        if not ops:
+            return x
+        B, D = int(x.shape[0]), int(x.shape[-1])
+        outs = [unary._apply_op(op, x.unsqueeze(1)).reshape(B, D) for op in ops]
+        stacked = torch.stack(outs, dim=1)                            # [B, R1, D]
         R1 = len(ops)
         idx = op_local.reshape(B).clamp(0, R1 - 1).reshape(B, 1, 1).expand(B, 1, D)
         sel = stacked.gather(1, idx).reshape(B, D)

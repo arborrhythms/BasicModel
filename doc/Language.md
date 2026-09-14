@@ -271,8 +271,10 @@ returns each lift/lower inner layer's `W^-1` once per traversal.
 `generate_policy` (created only under `<outputInLoop>`) is a linear chooser
 over the binary rules, the unary rules and stop, read on a top slot's
 content: the output walk follows rule stamps and credits the policy by
-imitation (`generate_policy_credit`), and lets the policy decide unstamped
-tops.
+imitation (`generate_policy_credit`); on the opaque conceptual slots of a
+materialised answer (no stamps) it follows the teacher actions of the
+idea's own derivation (`Models._derivation_targets`) and credits the
+policy by them, and lets the policy decide a top with neither.
 
 ## Knowledge Artifacts
 

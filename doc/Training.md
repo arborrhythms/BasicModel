@@ -567,12 +567,17 @@ pairing). Slice 1 (2026-09-12) is in: after the final seal, a
 gate-free `generate_functional` inverses and the exact residual for
 `chunk`/`sum` against the word's dictionary row), recovers each word's idea
 at its position, and scores it against the word's retained reference (the
-concept atoms it was staged with, a loop constant: the ideas the folds
-consumed are not carried, since the loop's autograd stacks every carry
-once per step); that cost is the idea-level diagnostic, and a per-row truncation flag reports a
+leaf the forward pushed: the word's symbol row's dictionary atom, its
+object concept's where it has one, scaled by the word's signed activation;
+built after the loop from the staged atoms and the loop's activation slab,
+not carried, since the loop's autograd stacks every carry once per step;
+until 2026-09-14 the reference was the unscaled word atom while the
+forward folded the object atom, so the residual reverses were measured
+against the wrong leaf); that cost is the idea-level diagnostic, and a per-row truncation flag reports a
 derivation that did not account for a word. Slice 2 (2026-09-12) adds the
 byte-level fidelity that is `lossIn`: each recovered idea is softly assigned
-(`softmax(cos / 0.1)`) to the sentence's own word rows (the retained
+(`softmax(|cos| / 0.1)`: a symbol's value is its signed activation and its
+identity its row, so the snap ignores the sign) to the sentence's own word rows (the retained
 constituent references, bounded by the word width), the assignment's
 expected bytes are scored by cross-entropy against the word's own bytes over
 its byte window (the percept store's byte atoms), and the gradient flows
@@ -583,10 +588,13 @@ ladder), so the tied inverse of the concept lookup is the snap to a row
 and a row's surface is its bytes: the decoder's candidates are the rows
 of the brick's staged dictionary snapshot (every word and object row the
 brick staged, `_ar_concept_lookup_rows`, with their surfaces staged
-beside them as `_ar_bank_bytes`), plus a null candidate of similarity 0
-and uniform bytes, so a one-word brick, a zero idea or an idea near no
-row cannot score zero by having nothing to choose between. Rows absent
-from the snapshot do not enter the score. The
+beside them as `_ar_bank_bytes` once the brick's concept rows exist, so
+the decoder is active from the first brick), plus a null candidate of
+similarity 0 and uniform bytes, so a one-word brick, a zero idea or an
+idea near no row cannot score zero by having nothing to choose between
+(a zero idea's cost is exactly the negative log of the target byte's
+share of the uniform mixture over the present rows and the null). Rows
+absent from the snapshot do not enter the score. The
 score is taken at the pop step, inside the traversal, and the loop carries
 only the running sums (idea cost, byte cost, word count) besides the
 reverse stack: the loop's autograd stacks every carried tensor once per
@@ -609,12 +617,17 @@ last sentence) through the recorded seal binaries into its pre-seal stack;
 pass B is one `torch.while_loop` over the word index, latest word first,
 that loads a sentence's pre-seal stack at the word that ends it, undoes
 the word's recorded unary, post-binary and pre-binary folds, and pops and
-scores the word. The seals fold newest-first: the first seal joins the
-two newest words and each later seal joins the composite (right) with the
-next older word (left), so the k-th seal undone, last first, returns word
-`lo + k` as its left operand and that word's retained reference guides
-the residual reverses; a per-word fold's known operand is the pushed
-word on the right. Where the recorded op is declared lossy (the set ops,
+scores the word. Operand identity (contract 1): the trace records each
+binary fold's operand concept rows (left = STM slot 1, right = slot 0,
+read before the reduce moves the stack; `record_choice` on the eager
+path, two bank slabs on the compiled one), and an undo routes the
+residual reverse to the operand that is a word of the sentence, on
+whichever side the fold put it, with that word's retained reference; a
+compound operand (a composite folded earlier) takes the residual. A fold
+recorded without rows keeps the positional fallback: the seals fold
+newest-first, so the k-th seal undone, last first, returns word `lo + k`
+on the left, and a per-word fold's known operand is the pushed word on
+the right. Where the recorded op is declared lossy (the set ops,
 `part`, `whole`) or a balanced split (`lift`, `lower`), the recovered
 ideas are not the words: the fidelity of those derivations is what the
 byte cost measures and trains, not an exactness the reverses could
@@ -646,14 +659,37 @@ relation answers with the sentence's idea, as the symbolic resolution
 does), and `prediction` has no concept-level predictor yet (the end
 state stands in and the row is reported unresolved in
 `_output_idea_resolved`). The question conditions the root slot at the
-concept width through a zero-initialised conditioner. The symbol vector
-is never padded to fit and the input's reconstruction derivation is not
-read. The walk then runs on opaque concept slots (no stamps: the policy
-decides every top) and the emitted words are realised through the tied
-reverse chain (`_reverse_body` then `_reverse_perceptual`) into percepts
-for the output space. The existing conceptual synthesis (the WholeSpace
-inverse of the answer symbol) could not provide this boundary: on the
-production geometry it returns the whole-space width, not concept slots.
+concept width through a zero-initialised conditioner, one module per
+answer width (`question_conditioners`: the symbol-width one conditions
+the resolved symbol, the concept-width one the idea; both persist in the
+state dict). The symbol vector is never padded to fit: the symbol
+table and the concept table share row indices (one symbol per concept;
+a symbol is a signed activation times the row-aligned identity row, and
+a word crosses into SymbolSpace as its concept row plus that
+activation), so a slot that is a symbol maps to the concept dictionary
+row at its row, while a composite slot (the folded root carries row -1)
+is materialised by its derivation over row-aligned leaves: the
+materialisation gathers the dictionary rows at the answer's symbol rows,
+scaled by the symbols' activations, and folds them by the recorded
+derivation through the grammar's forward ops (`_replay_program`, the
+recorded local ops forced through `forward_binary_step` /
+`forward_unary_step`), which reproduces the forward's end state exactly
+when the rows are the forward's and follows the rows when a symbol is
+exchanged; a recalled row takes the recalled sentence's symbols and
+derivation (its program is kept beside the recall history), not the
+current input's. The
+idea goes to the walk with its live slots reversed (the walk's top is its
+last live slot) on a stack of the STM capacity, with a static budget of
+every word's pop and three folds plus the seals, together with the
+teacher actions of its own sentence's derivation (`_derivation_targets`,
+kept per observed sentence beside the recall history). The walk then
+runs on opaque concept slots (no stamps: the teacher decides a top where
+it has an action, the policy otherwise) and the emitted words are
+realised through the tied reverse chain (`_reverse_body` then
+`_reverse_perceptual`) into percepts for the output space. The existing
+conceptual synthesis (the WholeSpace inverse of the answer symbol) could
+not provide this boundary: on the production geometry it returns the
+whole-space width, not concept slots.
 
 The output walk's generate policy (2026-09-13, contract 5).
 `LanguageSpace.generate_policy` is the one parameter the output loop owns
@@ -662,10 +698,15 @@ a linear chooser over the grammar's generate rules (the CS binary rules,
 the unary rules, stop) read on the top slot's content. Where the resolved
 derivation left a rule stamp the walk follows the stamp and credits the
 policy by imitation (cross-entropy against the stamped rule, recorded as
-`output_policy` with `<outputPolicyWeight>`); where a top carries no
-stamp the policy decides: a rule applies the tied reverse, stop completes
-the constituent; untrained, the policy prefers stop, so the loop emits
-the idea's slots as they are until expansions are learned. A completed constituent on top is popped into the
+`output_policy` with `<outputPolicyWeight>`). An opaque conceptual idea
+carries no stamps, so its chooser is credited by the teacher actions of
+the idea's own derivation (the recorded seals last applied first, then
+per word its unary, post-binary, pop and pre-binary), followed under
+teacher forcing and scored by cross-entropy in the same `output_policy`
+cost; where neither a stamp nor a teacher action exists the policy
+decides: a rule applies the tied reverse, stop completes the
+constituent; untrained, the policy prefers stop, so the loop emits the
+idea's slots as they are until expansions are learned. A completed constituent on top is popped into the
 emitted sequence and the walk continues with the pending constituents
 below it, so a row completes only when no live slot remains; the budget
 running out with slots pending is reported as truncation. The emitted
