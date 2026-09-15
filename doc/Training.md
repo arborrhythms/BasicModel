@@ -698,27 +698,36 @@ conceptual synthesis (the WholeSpace inverse of the answer symbol) could
 not provide this boundary: on the production geometry it returns the
 whole-space width, not concept slots.
 
-The output walk's generate policy (2026-09-13, contract 5).
-`LanguageSpace.generate_policy` is the one parameter the output loop owns
-(created only under `<outputInLoop>`):
-a linear chooser over the grammar's generate rules (the CS binary rules,
-the unary rules, stop) read on the top slot's content. Where the resolved
-derivation left a rule stamp the walk follows the stamp and credits the
-policy by imitation (cross-entropy against the stamped rule, recorded as
-`output_policy` with `<outputPolicyWeight>`). An opaque conceptual idea
-carries no stamps, so its chooser is credited by the teacher actions of
-the idea's own derivation (the recorded seals last applied first, then
-per word its unary, post-binary, pop and pre-binary), followed under
-teacher forcing and scored by cross-entropy in the same `output_policy`
-cost; where neither a stamp nor a teacher action exists the policy
-decides: a rule applies the tied reverse, stop completes the
-constituent; untrained, the policy prefers stop, so the loop emits the
-idea's slots as they are until expansions are learned. A completed constituent on top is popped into the
-emitted sequence and the walk continues with the pending constituents
-below it, so a row completes only when no live slot remains; the budget
-running out with slots pending is reported as truncation. The emitted
-words are returned left to right. The imitation credit trains the policy only (the fold
-parameters get no gradient from it).
+The output walk's generate policy (2026-09-15, contract 5).
+`LanguageSpace.generate_policy` is a linear chooser created only under
+`<outputInLoop>`. Its parameters belong to SymbolSpace's explicit optimizer
+list. A training `reverseOutput` samples its own actions from the chooser;
+it does not follow the input's identified compose derivation. The loop
+returns the sequence negative log probability of those choices. It draws
+one fixed-shape random slab before entering the loop and detaches the
+policy's top-slot features, so policy credit trains the chooser while the
+ordinary realised-answer error trains the selected numerical transforms.
+
+`runBatch` resolves supplied desired answers after generation, then applies
+answer-error credit only to available `What.supervised` rows. For row `b`,
+let `E_b` be the realised output's error against that supplied answer and
+`C_b` the sequence negative log probability. The credit is
+`mean((-E_b - baseline) * C_b)` over eligible rows, with detached errors and
+the previous exponential moving return baseline (initially zero; updated
+with decay 0.9). `outputPolicyWeight` multiplies this term in the actual
+training total, and `output_policy` reports it. Zero weight, missing
+supervision, present/input targets and prediction-only trials supply no
+policy gradient. The previous batch's cost is cleared at entry even when
+the next batch skips output generation. This follows the answer-error
+credit pattern used by the thinking chooser; no gold parse is assumed.
+
+The evaluation/low-level compatibility walk still accepts stamps and
+teacher targets; removing that input-teacher dependency and selecting the
+rule inventory from `<generate>` is item 3 of the answer-path plan.
+A completed constituent is popped into the emitted sequence and the walk
+continues with its pending constituents. A row completes when no live slot
+remains; exhausting the budget with pending slots reports truncation.
+Emitted words are returned left to right.
 
 The eager trace replay (`_reverse_reduce_unfold`) and the exact leaves
 teacher (`_reverse_method1_leaves`) are retired (2026-09-13): in

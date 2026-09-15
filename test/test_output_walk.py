@@ -4,6 +4,7 @@ import sys
 from pathlib import Path
 
 import torch
+import pytest
 
 _ROOT = Path(__file__).resolve().parents[1]
 for _p in (str(_ROOT / "bin"), str(_ROOT / "test")):
@@ -262,6 +263,149 @@ def test_generate_policy_is_credited_by_the_derivation_on_conceptual_slots():
     grads = torch.autograd.grad(cost.sum(), params, allow_unused=True)
     assert any(g is not None and float(g.abs().sum()) > 0 for g in grads)
     m.End(); m.symbolSpace.soft_reset()
+
+
+def _policy_training_probe(m, opt, questions):
+    """Observe the real loss and backward; do not replace any loss term."""
+    params = list(m.languageSpace.generate_policy.parameters())
+    observed, recorded = {}, {}
+    backward, record = m._backward_training_loss, m.record_loss
+
+    def record_probe(name, value, **kwargs):
+        recorded[name] = value
+        return record(name, value, **kwargs)
+
+    def backward_probe(total, objectives, optimizer, amp_scaler=None):
+        cost = m._output_policy_cost
+        observed["raw_grads"] = torch.autograd.grad(
+            cost.sum(), params, retain_graph=True, allow_unused=True)
+        observed["total_grads"] = torch.autograd.grad(
+            total, params, retain_graph=True, allow_unused=True)
+        credit = recorded.get("output_policy")
+        if torch.is_tensor(credit) and credit.requires_grad:
+            observed["credit_grads"] = torch.autograd.grad(
+                credit, params, retain_graph=True, allow_unused=True)
+            observed["row_credit"] = torch.autograd.grad(
+                credit, cost, retain_graph=True, allow_unused=True)[0]
+            target = m._last_answer_target
+            pred = m._align_output_pred(m._last_answer_construction.actual, target)
+            with torch.no_grad():
+                observed["answer_errors"] = torch.stack([
+                    m.loss.compute(pred[b:b + 1], target[b:b + 1])
+                    for b in range(len(questions))])
+        return backward(total, objectives, optimizer, amp_scaler)
+
+    m.record_loss, m._backward_training_loss = record_probe, backward_probe
+    before = [p.detach().clone() for p in params]
+    try:
+        batch = (m.inputSpace.prepInput(["12 plus 1", "3 plus 4"]),
+                 torch.zeros(2, 1, 1))
+        torch.manual_seed(11)
+        m.runBatch(train=True, batchSize=2, split="train", optimizer=opt,
+                   batch_override=batch, questions=questions)
+    finally:
+        m.record_loss, m._backward_training_loss = record, backward
+    observed["changed"] = [not torch.equal(p, old)
+                           for p, old in zip(params, before)]
+    return observed
+
+
+@pytest.mark.parametrize("weight", [1.0, 0.0])
+def test_runbatch_trains_generate_policy_only_with_nonzero_weight(weight):
+    """Codex item 1: standalone credit, total-loss credit and optimizer
+    ownership must all agree on a real supervised training batch."""
+    from What import What
+    m = _model()
+    m._tensor_peer_while_eager = True
+    m._chart_compose_per_word = lambda: None
+    m.output_policy_weight = weight
+    opt = m.getOptimizer(lr=1e-3)
+    try:
+        got = _policy_training_probe(
+            m, opt, (What.supervised(0), What.supervised(1)))
+        assert any(g is not None and bool(g.abs().sum() > 0)
+                   for g in got["raw_grads"])
+        if weight:
+            assert any(g is not None and bool(g.abs().sum() > 0)
+                       for g in got["total_grads"])
+            for total, credit in zip(got["total_grads"], got["credit_grads"]):
+                torch.testing.assert_close(total, weight * credit)
+            # The first return baseline is zero: supplied answer error,
+            # not reconstruction or input-parse imitation, supplies credit.
+            torch.testing.assert_close(got["row_credit"], -got["answer_errors"] / 2)
+            assert all(got["changed"])
+        else:
+            assert all(g is None or not bool(g.abs().any())
+                       for g in got["total_grads"])
+            assert not any(got["changed"])
+        owned = [id(p) for group in opt.param_groups for p in group["params"]]
+        assert all(owned.count(id(p)) == 1
+                   for p in m.languageSpace.generate_policy.parameters())
+    finally:
+        m.End()
+        m.symbolSpace.soft_reset()
+
+
+def test_runbatch_does_not_train_generate_policy_without_supplied_answers():
+    """No supervised target means no output-policy update, including Adam
+    momentum left by a preceding supervised batch."""
+    from What import What
+    m = _model()
+    m._tensor_peer_while_eager = True
+    m._chart_compose_per_word = lambda: None
+    m.output_policy_weight = 1.0
+    opt = m.getOptimizer(lr=1e-3)
+    data = m.inputSpace.data
+    had_outputs = data.has_supervised_outputs
+    try:
+        learned = _policy_training_probe(
+            m, opt, (What.supervised(0), What.supervised(1)))
+        assert all(learned["changed"])
+        data.has_supervised_outputs = False
+        unlabelled = _policy_training_probe(
+            m, opt, (What.supervised(0), What.supervised(1)))
+        assert not any(unlabelled["changed"])
+        assert all(g is None or not bool(g.abs().any())
+                   for g in unlabelled["total_grads"])
+        present = _policy_training_probe(
+            m, opt, (What.present(0), What.present(1)))
+        assert not any(present["changed"])
+        # A batch that does not run reverseOutput must not reuse the last
+        # batch's graph or policy credit.
+        m.answer_synthesis = False
+        before = [p.detach().clone() for p in m.languageSpace.generate_policy.parameters()]
+        batch = (m.inputSpace.prepInput(["12 plus 1", "3 plus 4"]),
+                 torch.zeros(2, 1, 1))
+        m.runBatch(train=True, batchSize=2, split="train", optimizer=opt,
+                   batch_override=batch,
+                   questions=(What.supervised(0), What.supervised(1)))
+        assert m._output_policy_cost is None
+        assert all(torch.equal(p, old) for p, old in zip(
+            m.languageSpace.generate_policy.parameters(), before))
+    finally:
+        data.has_supervised_outputs = had_outputs
+        m.End()
+        m.symbolSpace.soft_reset()
+
+
+def test_runbatch_generate_policy_masks_rows_without_supplied_answers():
+    from What import What
+    m = _model()
+    m._tensor_peer_while_eager = True
+    m._chart_compose_per_word = lambda: None
+    m.output_policy_weight = 1.0
+    opt = m.getOptimizer(lr=1e-3)
+    try:
+        got = _policy_training_probe(
+            m, opt, (What.supervised(0), What.inference(1, split="train")))
+        row_credit = got["row_credit"]
+        assert row_credit is not None and bool(row_credit[0].abs() > 0)
+        assert float(row_credit[1]) == 0.0
+        torch.testing.assert_close(row_credit[0], -got["answer_errors"][0])
+        assert all(got["changed"])
+    finally:
+        m.End()
+        m.symbolSpace.soft_reset()
 
 
 def test_question_conditioners_persist_per_answer_width():

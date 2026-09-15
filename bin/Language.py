@@ -14156,8 +14156,8 @@ class LanguageSpace(nn.Module):
         # The output loop's generate policy (compiled reverse-loops plan,
         # contract 5): a learned chooser over the grammar's generate rules
         # (the CS binary rules, then the unary rules, then stop), read on
-        # the top slot's content.  Credited by imitation of the resolved
-        # derivation where a rule stamp exists; decides where none does.
+        # the top slot's content. Training credits its sampled output
+        # choices from supplied answer error, not the input parse.
         cw = 0
         from util import TheXMLConfig as _cfg
         walk_on = bool(_cfg.training("outputInLoop", False))
@@ -14182,7 +14182,7 @@ class LanguageSpace(nn.Module):
                 self.generate_policy.bias.zero_()
                 # Untrained, the policy completes constituents (stop): the
                 # output loop then emits the idea's slots as they are, and
-                # expansions are learned from the imitation credit.
+                # expansions are learned from supplied-answer credit.
                 self.generate_policy.bias[-1] = 2.0
 
     def generate_policy_logits(self, top):
@@ -14687,6 +14687,11 @@ class SymbolSpace(Space):
         # reference to this SymbolSpace, so LanguageLayer parameters and state
         # remain registered exactly once under SymbolSubSpace.
         self.languageSpace = LanguageSpace(self)
+        # LanguageSpace is held by SymbolSpace, not listed in model.spaces.
+        # Its output chooser therefore joins this Space's explicit params
+        # before getOptimizer walks the owners.
+        if self.languageSpace.generate_policy is not None:
+            self.params.extend(self.languageSpace.generate_policy.parameters())
         # SymbolSubSpace.__init__ pointed the home spaces' ``.symbolSpace``
         # back-ref at ITSELF (the coordinator); re-point them at THIS container so
         # ``perceptualSpace.symbolSpace is model.symbolSpace`` holds (the pipeline

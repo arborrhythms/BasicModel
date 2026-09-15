@@ -2502,8 +2502,8 @@ class BaseModel(Mereology, nn.Module):
         # compiled loop (its own state, policy and termination).
         self.output_in_loop = bool(
             TheXMLConfig.training("outputInLoop", False))
-        # Weight of the generate policy's imitation credit (contract 5);
-        # the policy decides unstamped tops whenever the walk runs.
+        # Weight of output-action credit from supplied desired answers.
+        # The identified input parse is never output supervision.
         self.output_policy_weight = float(
             TheXMLConfig.training("outputPolicyWeight", 0.0) or 0.0)
         if self.reconstruct_in_loop and self.detached_reverse:
@@ -8965,9 +8965,11 @@ class BasicModel(BaseModel):
                 understanding, derivation, question)
             if torch.is_tensor(idea):
                 budget = self._walk_budget()
+                sample_actions = self.training and torch.is_grad_enabled()
                 words, n_emitted, output_truncated, policy_cost = (
                     self._compiled_output_walk()(
-                        self._walk_operand(idea), budget, False, targets))
+                        self._walk_operand(idea), budget, False,
+                        None if sample_actions else targets, sample_actions))
                 kept = max(2, 2 * int(getattr(self, "serial_word_capacity", 0) or 8))
                 if int(words.shape[1]) > kept:       # the realised slab keeps 2W words
                     output_truncated = torch.logical_or(output_truncated, n_emitted > kept)
@@ -8976,11 +8978,6 @@ class BasicModel(BaseModel):
                 object.__setattr__(self, "_output_policy_cost", policy_cost)
                 object.__setattr__(self, "_output_idea_sources", idea_sources)
                 object.__setattr__(self, "_output_idea_resolved", idea_resolved)
-                if self.training and torch.is_tensor(policy_cost):
-                    self.record_loss(
-                        "output_policy", policy_cost.mean(),
-                        weight=float(getattr(self, "output_policy_weight", 0.0)),
-                        space="LanguageSpace", category="policy")
                 walked = words
         with self._synthesis_guard():
             if walked is not None:
@@ -9038,6 +9035,46 @@ class BasicModel(BaseModel):
             percepts=percepts, surface=surface, trace=trace)
         self._last_answer_construction = construction
         return construction
+
+    def _output_action_credit(self, predicted, target, mask, questions):
+        """Credit sampled output actions only from supplied answer error.
+
+        The input's identified compose derivation is not a gold answer
+        derivation. As with the thinking chooser, use a score-function
+        gradient: return = negative answer error, an EMA return baseline,
+        and loss = advantage * sequence negative log probability. Desired
+        answers are read only after generation; detached rewards cannot
+        change the answer representation through this policy objective.
+        """
+        cost = getattr(self, "_output_policy_cost", None)
+        if (not torch.is_tensor(cost) or not cost.requires_grad
+                or not torch.is_tensor(mask)
+                or not bool(getattr(self.inputSpace.data,
+                                    "has_supervised_outputs", False))):
+            return None
+        B = int(cost.shape[0])
+        questions = question_batch(questions)
+        if not questions or int(predicted.shape[0]) != B or int(mask.numel()) != B:
+            return None
+        supplied = torch.tensor([
+            questions[min(b, len(questions) - 1)].relation is WhatRelation.SUPERVISED
+            for b in range(B)], dtype=torch.bool, device=cost.device)
+        eligible = supplied & mask.reshape(B).to(device=cost.device, dtype=torch.bool)
+        rows = eligible.nonzero().reshape(-1)
+        if not int(rows.numel()):
+            return None
+        with torch.no_grad():
+            errors = torch.stack([
+                self.loss.compute(predicted[b:b + 1], target[b:b + 1])
+                for b in rows.tolist()])
+            returns = -errors.to(device=cost.device, dtype=cost.dtype)
+            baseline = self.__dict__.get("_output_policy_baseline", 0.0)
+            advantage = returns - baseline
+            mean_return = float(returns.mean())
+            self._output_policy_baseline = (
+                mean_return if "_output_policy_baseline" not in self.__dict__
+                else 0.9 * baseline + 0.1 * mean_return)
+        return (advantage * cost.index_select(0, rows)).mean()
 
     def branch_gradient_diagnostics(self, costs=None, understanding=None):
         """Gradient norms and cosine of the primary costs at the branch points.
@@ -11691,7 +11728,7 @@ class BasicModel(BaseModel):
         return -1
 
     def _output_generate_walk(self, event, budget, stamped_events=True,
-                              targets=None):
+                              targets=None, sample_actions=False):
         """The answer-side generate walk as one bounded ``torch.while_loop``
         (contract 5).
 
@@ -11719,6 +11756,13 @@ class BasicModel(BaseModel):
         conceptual slots, which carry no rule stamp); ``-1`` leaves the
         choice to the policy.
 
+        With ``sample_actions`` the training walk samples its own choices
+        and returns their sequence negative log probability, with no teacher
+        or stamp credit. ``runBatch`` supplies the answer-error reward after
+        the output is fixed. Policy features are detached on this path so
+        this score-function credit trains only the action chooser; realised
+        answer error separately trains the selected numerical transforms.
+
         Returns ``(emitted [B, budget, D] left-to-right, n_emitted [B],
         truncated [B], policy_cost [B])``: the emitted buffer has one slot
         per possible pop, so more words than stack slots can come out.
@@ -11742,7 +11786,7 @@ class BasicModel(BaseModel):
         R1 = int(unary_map.numel()) if torch.is_tensor(unary_map) else 0
         stop_index = R2 + R1
         policy_on = language.generate_policy is not None
-        if torch.is_tensor(targets):
+        if torch.is_tensor(targets) and not sample_actions:
             teacher = targets.to(device=event.device, dtype=torch.long)
             if int(teacher.shape[1]) < T:
                 teacher = torch.cat((teacher, torch.full(
@@ -11751,6 +11795,9 @@ class BasicModel(BaseModel):
             teacher = teacher[:, :T]
         else:
             teacher = torch.full((B, T), -1, dtype=torch.long, device=event.device)
+        # Draw outside the loop body so the compiled loop consumes one
+        # fixed-shape random slab, with one independent draw per row/trip.
+        draws = torch.rand(B, T, device=event.device) if sample_actions else None
 
         def cond(t, stack, n_live, emitted, n_emitted, credit, credit_n):
             return torch.logical_and(t < T, (n_live > 0).any())
@@ -11766,9 +11813,12 @@ class BasicModel(BaseModel):
                 rule_id = torch.zeros(B, dtype=torch.long, device=event.device)
             has_top = n_live >= 1
             is_rule = torch.logical_and(kind == 2, has_top)
+            if sample_actions:
+                is_rule = torch.zeros_like(is_rule)
             local_b, known_b = language.local_op_from_rule_ids(rule_id, binary_map)
             local_u, known_u = language.local_op_from_rule_ids(rule_id, unary_map)
-            logits = language.generate_policy_logits(top_vec)
+            logits = language.generate_policy_logits(
+                top_vec.detach() if sample_actions else top_vec)
             target = torch.where(known_b, local_b, torch.where(
                 known_u, local_u + R2, torch.full_like(local_b, stop_index)))
             stamped = torch.logical_and(is_rule, torch.logical_or(known_b, known_u))
@@ -11784,6 +11834,13 @@ class BasicModel(BaseModel):
                 logits, tgt.clamp(0, stop_index), forced)
             credit_n = credit_n + forced.to(credit.dtype)
             choice = torch.where(forced, tgt.clamp(0, stop_index), logits.argmax(dim=-1))
+            if sample_actions:
+                draw = draws.gather(
+                    1, t.clamp(0, T - 1).reshape(1, 1).expand(B, 1))
+                cdf = logits.detach().softmax(dim=-1).cumsum(dim=-1)
+                choice = (draw >= cdf).to(torch.long).sum(dim=-1).clamp_max(stop_index)
+                credit = credit + language.generate_policy_credit(
+                    logits, choice, unstamped)
             if not policy_on:
                 unstamped = forced          # no policy: stamps and teacher only
             pol_b = torch.logical_and(unstamped, choice < R2)
@@ -11844,7 +11901,7 @@ class BasicModel(BaseModel):
         keep = (torch.arange(T, device=event.device).reshape(1, T) < n_emitted.reshape(B, 1))
         out = torch.where(keep.unsqueeze(-1), out, torch.zeros_like(out))
         truncated = n_live > 0                      # work pending after the budget
-        policy_cost = credit / credit_n.clamp_min(1.0)
+        policy_cost = credit if sample_actions else credit / credit_n.clamp_min(1.0)
         return out, n_emitted, truncated, policy_cost
 
     def _compiled_output_walk(self):
@@ -12608,6 +12665,7 @@ class BasicModel(BaseModel):
                 "_stm_single_S", "_recon_cost", "_recon_idea_cost",
                 "_tensor_sentence_roots_live", "_tensor_pushed_ideas",
                 "_packed_sentence_roots", "_output_policy_cost")))
+        object.__setattr__(self, "_output_policy_cost", None)
         object.__setattr__(self, "_recon_cost", None)
         object.__setattr__(self, "_tensor_pushed_ideas", None)
         object.__setattr__(self, "_tensor_sentence_roots_depth", None)
@@ -13029,6 +13087,7 @@ class BasicModel(BaseModel):
             # than crashing the step).
             lossOut = torch.zeros((), device=TheDevice.get())
             output_weight = 0.0
+            output_policy_loss = None
             # ``Data.what()`` is the answer-loss authority (What spec Step 5):
             # the question's desired answer replaces the loader's incidental
             # ``outputTensor``; unavailable rows are masked out of the term.
@@ -13062,6 +13121,10 @@ class BasicModel(BaseModel):
                     _pred = self._align_output_pred(outputDataPred,
                                                     _scored_target)
                     if _pred is not None:
+                        if (train and trial_mode != "predict" and _answer_authority
+                                and float(getattr(self, "output_policy_weight", 0.0)) > 0.0):
+                            output_policy_loss = self._output_action_credit(
+                                _pred, _scored_target, _answer_mask, what_questions)
                         if (_answer_authority
                                 and not bool(_answer_mask.all())):
                             _pred = _pred[_answer_mask]
@@ -13072,6 +13135,7 @@ class BasicModel(BaseModel):
                 # Best-effort degrade to zero, but never SILENTLY (5b fail-loud).
                 lossOut = torch.zeros((), device=TheDevice.get())
                 output_weight = 0.0
+                output_policy_loss = None
                 self._warn_zeroed_channel(
                     "output_loss_exception",
                     f"supervised output loss zeroed by "
@@ -13360,6 +13424,12 @@ class BasicModel(BaseModel):
                 intra_loss = None
 
             totalLoss = self._primary_loss(lossOut, lossIn, sbow)
+            if train and trial_mode != "predict" and output_policy_loss is not None:
+                totalLoss = totalLoss + self.output_policy_weight * output_policy_loss
+                self.record_loss(
+                    "output_policy", output_policy_loss,
+                    weight=self.output_policy_weight,
+                    space="LanguageSpace", category="policy")
             # Mirror the actual weighted branches, not just their logged raw
             # losses. The legacy ModelLoss uses complementary rr / (1-rr)
             # weights; independent primary weights belong to the output-path

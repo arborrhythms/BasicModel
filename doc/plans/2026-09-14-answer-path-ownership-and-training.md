@@ -1,7 +1,7 @@
 # Answer path: ownership, training and independence (Codex round 5)
 
-Status: IN PROGRESS (2026-09-15): items 4 and 5 complete and verified. Remaining
-order: 1, 3, 6, then 2 and 7 under Alec's decisions
+Status: IN PROGRESS (2026-09-15): items 4, 5 and 1 complete and verified. Remaining
+order: 3, 6, then 2 and 7 under Alec's decisions
 in section 6. Written 2026-09-14 at basicmodel `cf0daf7` for execution in
 a fresh session. Alec's framing: are Codex's findings specification
 issues or code that does not operate as specified? Answer, item by item,
@@ -391,6 +391,28 @@ The output-walk and synthesis files pass (41 tests); the eight affected
 files pass (115 passed, 6 skipped). The background full suite passed:
 4050 passed, 53 skipped, 7 xfailed, 4 subtests passed, 170 warnings in
 1700.19 seconds. No `bin/*.py` files changed during pytest.
+
+Execution evidence, item 1:
+`test_output_walk.py::test_runbatch_trains_generate_policy_only_with_nonzero_weight`
+first reproduced positive standalone policy gradients with no total-loss
+gradients at weight 1, and missing optimizer ownership at weight 0.
+`test_runbatch_does_not_train_generate_policy_without_supplied_answers`
+first showed that the preceding supervised batch never updated the policy.
+`test_runbatch_generate_policy_masks_rows_without_supplied_answers` exposed
+the unlabelled row receiving credit 0.5. All four parametrized cases now
+pass: the policy belongs to SymbolSpace's explicit parameter list and
+`runBatch` trains it from supplied answer error, under the section 6
+correction, rather than connecting the old input-imitation objective.
+The tests observe the real `record_loss` and backward without replacing
+losses, verify the exact answer-error multiplier, and cover zero weight,
+mixed rows, missing labels after an Adam update, present/input questions,
+and clearing the cost when the next batch skips output generation.
+The full output-walk file passed (19 tests); the eight affected files passed
+(119 passed, 6 skipped, 16 warnings in 260.97 seconds). The background full
+suite passed: 4054 passed, 53 skipped, 7 xfailed, 4 subtests passed,
+174 warnings in 1772.07 seconds. No `bin/*.py` files changed during pytest.
+Training chooses independent actions now;
+the remaining evaluation teacher and compose-rule inventory are item 3.
 
 1. Policy training: weights change under `runBatch` with
    `outputPolicyWeight` 1; unchanged with 0.
