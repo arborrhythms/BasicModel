@@ -341,14 +341,14 @@ bytes are staged after the brick's concept rows, so the byte decoder is
 active from the first brick (`test_snapshot_bytes_are_staged_on_the_first_brick`);
 its candidates are the dictionary rows, never the input's staged bytes.
 
-Codex's fifth review (2026-09-14, at cf0daf7) is planned, not yet
-executed: [answer path: ownership, training and independence](2026-09-14-answer-path-ownership-and-training.md)
-(the chooser's loss and parameters never reach the optimizer; the
-materialisation reads live staging instead of the derivation; teacher
-forcing in evaluation; intermediate seal operands recorded after the
-reduction; the per-width conditioners' checkpoint; the snapshot's bytes
-taken from the input). All six are code defects against a clear
-specification; one design decision (which conditioner) is Alec's.
+Codex's fifth review (2026-09-14, at cf0daf7) was executed by Codex and
+reviewed (basicmodel 8ea1e12, 2026-09-15): [answer path: ownership,
+training and independence](2026-09-14-answer-path-ownership-and-training.md)
+(the chooser trains from supplied answer error; the materialisation reads
+the derivation's owned program; no output teacher in any mode; seal
+operands recorded before the reduction; per-width conditioners reload;
+the snapshot's bytes come from WORD-owned surfaces; the answer path runs
+at native widths). Answer modules now train only from supplied answers.
 
 Contract 6 reconciled (2026-09-13): the forward loop and both
 reconstruction passes are one compiled segment; the output walk is the

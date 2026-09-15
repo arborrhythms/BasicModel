@@ -590,3 +590,68 @@ user files still match their pre-execution hashes and remain uncommitted.
 
 Vocab extras remain the surface store's persistence boundary. The decisions
 needed for items 2 and 7 are now recorded above.
+
+
+## 7. Review (2026-09-15, of basicmodel `8ea1e12`)
+
+Verdict: approved. All six findings are fixed as code, each with a
+regression written from the reviewer's probe, and item 7 went further
+than this plan asked (native-width answer path, supervised-only answer
+training). Reviewed by reading all seven commits and by independent
+checks:
+
+* Full suite on `8ea1e12`: 4079 passed, 53 skipped, 7 xfailed, 1 failed.
+  The failure is `test_compiled_step_invoked.py::test_compiled_step_is_invoked`:
+  inductor finds no C++ compiler because the Xcode license prompt blocks
+  `clang++` (and `/usr/bin/git`, `/usr/bin/python3`) on this machine; the
+  test passes with `DEVELOPER_DIR=/Library/Developer/CommandLineTools`.
+  Environment, not code; `sudo xcodebuild -license` fixes it machine-wide.
+* The sampling walk compiles fullgraph on the eager backend (after
+  `_ensure_grad_anchors`), returns a policy gradient, gives the
+  conditioner no gradient from the policy cost (features detached), and
+  evaluation is deterministic.
+* The replay-faithfulness assertions survived the rewrites: the
+  materialised idea equals the forward's end state, an exchanged row
+  changes it, and a held derivation ignores later staging.
+* The extra publication of the compiled state inside
+  `_capture_understanding` cannot clear a reconstruction cost: `runBatch`
+  publishes again before the traversal reads `_recon_cost`.
+
+Per item: 4, the seal loop keeps `pre_seal` and the packed-brick test
+replays row identities at every binary slot. 5, the loader materialises
+every saved width and normalises the singular alias. 1, the policy is on
+SymbolSpace's explicit `params` and the credit is a score-function term
+from supplied answer error with an EMA baseline, added to the training
+total (imitation of the input parse dropped, per Alec). 3, the output
+catalog comes from the grammar's `<generate>` rules, no teacher in any
+mode, checkpoint rows migrated by rule meaning. 6, surfaces belong to
+WORD rows, OBJECT rows resolve through their META association, persisted
+in the vocab extras. 2, `AnswerProgram` records are captured on the
+Understanding and carried by the derivation; one conceptual conditioner.
+7, resolution owns full-width concepts and both output modes run at
+native widths.
+
+Notes for Alec (no change requested unless you want one):
+
+1. Production consequence. `data/BasicModel.xml` ships `answerSynthesis`
+   true without `outputInLoop` or `outputPolicyWeight`, and text corpora
+   supply no answers, so after this round the answer modules (the
+   conditioner, synthesis operators, LTM attention, generate policy)
+   receive no training in production runs; only reconstruction trains.
+   Automatic past/future targets are evaluation metrics now. Temporal
+   answer training needs supplied answers (the test fixture copies the
+   neighbouring sentence into `train_output`).
+2. The untrained sampling walk expands until the budget: with 22 actions
+   the stop prior gives stop about a quarter of the draws, so early
+   training outputs are truncated (8 to 11 emissions for 3-word inputs
+   in the probe). The credit must learn stop first; a stronger stop prior
+   or a truncation penalty would shorten that phase.
+3. The chooser's feature width is `symbol_space.subspace.muxedSize`,
+   equal to the concept width only because config validation requires
+   the SS width to equal the CS width. Reading the CS width directly
+   would not depend on that.
+4. Training.md now cites `bin/Models.py:NNNN` line numbers in several
+   places; they rot with every edit. Function names are stable.
+5. Without a staged snapshot the byte cost is a constant `log(256)` with
+   no gradient (documented). A configuration that stages no rows reports
+   a large flat `lossIn`.
