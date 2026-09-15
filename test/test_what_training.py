@@ -283,7 +283,7 @@ def test_swapping_question_positions_changes_the_answer(synth_model):
 
 
 @pytest.fixture(scope="module")
-def synth_discourse_model(tmp_path_factory):
+def synth_discourse_config_path(tmp_path_factory):
     # <answerSynthesis> + the inter-sentence discourse layer, with every XOR
     # row placed in ONE document so past/future targets are answerable.
     src = (_DATA / "MM_xor.xml").read_text()
@@ -296,6 +296,12 @@ def synth_discourse_model(tmp_path_factory):
         "      <sentencePrediction>true</sentencePrediction>\n    </training>", 1)
     path = tmp_path_factory.mktemp("cfg") / "MM_xor_synth_discourse.xml"
     path.write_text(patched)
+    return path
+
+
+@pytest.fixture(scope="module")
+def synth_discourse_model(synth_discourse_config_path):
+    path = synth_discourse_config_path
     import Language
     from util import init_config
     from data import TheData
@@ -327,9 +333,9 @@ def test_past_and_future_text_answers_are_scored_in_input_space(synth_discourse_
                    batch_override=batch)
     # Rows 0,1 presented; ask for the row after each.
     questions = (What.future(0), What.future(1))
-    result, _ = m.runBatch(train=True, batchSize=2, split="train",
-                           optimizer=opt, batch_override=batch,
-                           questions=questions)
+    with torch.no_grad():
+        result, _ = m.runBatch(train=False, batchSize=2, split="train",
+                               batch_override=batch, questions=questions)
     construction = m._last_answer_construction
     assert construction.derivation.source == "prediction"
     assert torch.is_tensor(construction.surface) and construction.surface.dim() == 3
@@ -361,11 +367,12 @@ def test_past_and_future_text_answers_are_scored_in_input_space(synth_discourse_
     assert torch.equal(m.inputSpace._ar_embedded.detach(), live_before)
     cost = m.primary_costs()["answer_construction"]
     assert torch.isfinite(cost) and float(cost) > 0.0
-    assert cost.requires_grad or cost.grad_fn is not None or True
+    assert not cost.requires_grad
     # A past question whose target row is outside the split is masked out.
     questions = (What.past(0), What.past(1))
-    m.runBatch(train=True, batchSize=2, split="train", optimizer=opt,
-               batch_override=batch, questions=questions)
+    with torch.no_grad():
+        m.runBatch(train=False, batchSize=2, split="train",
+                   batch_override=batch, questions=questions)
     assert m._last_answer_mask.tolist() == [False, True]
     assert m._last_answer_construction.derivation.source == "recall"
 
@@ -411,7 +418,7 @@ def test_joint_training_keeps_both_primary_costs_in_band(synth_config_path):
     for _ in range(30):
         m.runBatch(train=True, batchSize=2, split="train", optimizer=opt,
                    batch_override=batch, questions=questions)
-        history.append({k: float(v) for k, v in m.primary_costs().items()
+        history.append({k: float(v.detach()) for k, v in m.primary_costs().items()
                         if torch.is_tensor(v)})
     first = history[0]
     early = sum(h["answer_construction"] for h in history[:5]) / 5
@@ -424,8 +431,8 @@ def test_joint_training_keeps_both_primary_costs_in_band(synth_config_path):
     assert all(h[recon_key] <= band for h in history), (band, [h[recon_key] for h in history])
     assert all(v == v and abs(v) < 1e6 for h in history for v in h.values())
 
-def _temporal_answer_cost(m, batch, questions):
-    """The temporal answer_construction (constructed surface vs the embedded
+def _surface_answer_cost(m, batch, questions):
+    """The answer_construction (constructed surface vs the embedded
     target sentence) for one evaluation pass, without a parameter step."""
     with torch.no_grad():
         m.runBatch(train=False, batchSize=2, split="train",
@@ -439,37 +446,40 @@ def _temporal_answer_cost(m, batch, questions):
 
 
 @pytest.mark.parametrize("family", ["future", "past"])
-def test_temporal_answer_quality_improves_with_training(synth_discourse_model, family):
-    """Memory (past recall) and prediction (future) answer quality must
-    IMPROVE with training, not merely be wired: the constructed surface of
-    the recalled / predicted sentence gets closer to the embedded target."""
-    m = synth_discourse_model
-    # ``TheData`` is a process-wide singleton: fixtures built later reload
-    # the XOR set with per-row documents, so re-apply the one-document
-    # addresses this test relies on (idempotent).
-    for address in m.inputSpace.data.source_addresses["train"]:
+def test_supplied_text_answer_quality_improves_with_training(synth_discourse_config_path, family):
+    """Learn separately supplied answer surfaces through the real answer loss.
+
+    The fixture supplies neighboring sentences as labels deliberately. The
+    model is asked supervised questions; automatic temporal input targets
+    are evaluation data, not an answer-training objective.
+    """
+    m = _build_synth(synth_discourse_config_path)
+    data = m.inputSpace.data
+    for address in data.source_addresses["train"]:
         address["document"] = 0
         address["sentence"] = address["row"]
-    opt = m.getOptimizer(lr=2e-2)
-    batch = _batch(m, rows=2)                    # rows 0,1 presented
-    # Prime the discourse ring so recall/prediction resolve.
-    for _ in range(2):
-        m.runBatch(train=True, batchSize=2, split="train", optimizer=opt,
-                   batch_override=batch)
-    if family == "future":
-        questions = (What.future(0), What.future(1))     # rows 1, 2
-    else:
-        questions = (What.past(1), What.past(2))         # rows 0, 1 (row 2 shows row 1)
-        # past questions need the presented rows to be 1 and 2; present them.
-        loader = m.inputSpace.data.data_loader(split="train", num_streams=2)
-        it = iter(loader); next(it); items, outs = next(it)
-        batch = (m.inputSpace.prepInput(items), m.outputSpace.prepOutput(outs))
-    before = _temporal_answer_cost(m, batch, questions)
-    assert before > 0.0
-    for _ in range(30):
-        m.runBatch(train=True, batchSize=2, split="train", optimizer=opt,
-                   batch_override=batch, questions=questions)
-        assert m._last_answer_construction.derivation.source in (
-            "prediction", "recall"), m._last_answer_construction.derivation.row_sources
-    after = _temporal_answer_cost(m, batch, questions)
-    assert after < before * 0.9, (family, before, after)
+    anchors = ((What.future(0), What.future(1)) if family == "future"
+               else (What.past(1), What.past(2)))
+    labels = [data.what(q).what for q in anchors]
+    assert all(isinstance(label, str) for label in labels)
+    inputs = [data.presentation(q, include_desired=False).input for q in anchors]
+    batch = (m.inputSpace.prepInput(inputs), torch.zeros(2, 1, 1))
+    questions = tuple(What.supervised(q.where) for q in anchors)
+    previous = data.train_output
+    supplied = list(previous)
+    for q, label in zip(questions, labels):
+        supplied[q.where] = label
+    data.train_output = supplied
+    opt = m.getOptimizer(lr=1e-3)
+    try:
+        before = _surface_answer_cost(m, batch, questions)
+        assert before > 0.0
+        for _ in range(30):
+            m.runBatch(train=True, batchSize=2, split="train", optimizer=opt,
+                       batch_override=batch, questions=questions)
+            assert m._last_answer_mask.tolist() == [True, True]
+            assert m.primary_costs()["answer_construction"].requires_grad
+        after = _surface_answer_cost(m, batch, questions)
+        assert after < before * 0.9, (family, before, after)
+    finally:
+        data.train_output = previous

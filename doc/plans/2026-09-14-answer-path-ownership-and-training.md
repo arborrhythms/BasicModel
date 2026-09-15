@@ -1,8 +1,8 @@
 # Answer path: ownership, training and independence (Codex round 5)
 
-Status: IN PROGRESS (2026-09-15): items 4, 5, 1, 3, 6 and 2 complete and verified. Remaining
-item: 7 under Alec's decisions
-in section 6. Written 2026-09-14 at basicmodel `cf0daf7` for execution in
+Status: COMPLETE (2026-09-15): items 4, 5, 1, 3, 6, 2 and 7 implemented
+and verified in that order under Alec's section 6 decisions. Each item has
+its own commit. Written 2026-09-14 at basicmodel `cf0daf7` for execution in
 a fresh session. Alec's framing: are Codex's findings specification
 issues or code that does not operate as specified? Answer, item by item,
 below; in short: five of the six are code defects against a clear
@@ -485,6 +485,59 @@ The repeated background full suite passed: 4069 passed, 53 skipped,
 7 xfailed, 174 warnings, 4 subtests passed in 1910.95 seconds. No `bin/*.py`
 files changed while pytest was active.
 
+Execution evidence, item 7:
+The production-width probes use 1032-wide concepts, 136-wide percepts,
+and the production OutputSpace input width, with selected context bindings
+disabled. After correcting that fixture's initial OutputSpace mismatch,
+the regression run had eight failures and one pass: missing dense symbols
+blocked both output modes; the default mode had no active wide conditioner;
+automatic temporal targets trained dedicated answer parameters; an automatic
+text target displaced a supplied numeric label; supplied text was unscored;
+and thinking replaced a 1032-wide attention module with a 136-wide one.
+
+`test_native_answer_uses_owned_ideas_without_dense_symbol_state` now passes
+in both output modes. Resolution owns the full-width conceptual answer,
+and referents select the captured interpretation by WORD row
+(`bin/Models.py:8026`, `bin/Models.py:8370`).
+`test_native_realized_answer_loss_trains_the_active_conditioner` observes
+the actual runBatch loss, its gradients, and the optimizer update. Its
+additional boundary probes first found default percepts still 1032-wide
+and a one-slot What input. The fix uses the shared perceptual inverse and
+retains all three captured input idea slots (`bin/Models.py:9019`,
+`bin/Models.py:9721`). The realization gradient reaches coordinates beyond
+136; the actual answer loss has a nonzero conditioner gradient and updates
+its weight. The small identity readout initially uses only its first
+coordinates, so the test checks the full-width realization separately.
+
+`test_available_input_targets_do_not_train_answer_modules_after_adam`
+covers automatic present/past/future targets and missing labels after a
+real supervised update, in both output modes. Dedicated answer gradients,
+updates and policy-baseline changes remain absent. Mixed numeric/text
+and fixed-surface text tests check row masking and target isolation.
+`test_native_thinking_changes_the_owned_conceptual_answer` checks a nonzero
+full-width LTM delta and owned WORD-referent selection, then advances actual
+staging and memory to verify the held answer remains unchanged.
+
+`test_native_checkpoint_restores_active_answer_widths` first failed strict
+loading because the loader created an unused narrow conditioner. Construction
+now initializes the active conceptual width; a narrow-only legacy checkpoint
+preserves that historical weight and initializes the new wide weight at zero
+(`bin/Models.py:8847`). A second red assertion exposed restored answer modules
+missing from a newly constructed optimizer; getOptimizer now includes already
+materialized dedicated parameters, with lazy adoption still deduplicated
+(`bin/Models.py:2824`, `bin/Models.py:13081`). Both checkpoint variants and both
+supplied-text learning cases pass (4 tests in 14.87 seconds). Text-learning
+cases use fresh models and a 0.001 learning rate after 0.02 overshot their
+small initial losses; the 30-step, 10% improvement gate is unchanged.
+The two complete test files passed (29 tests, 9 warnings, 162.02 seconds).
+The synthesis/reconstruction/What/thinking compatibility checks passed
+(78 tests, 3 long arithmetic-learning cases reserved for the full suite,
+3 warnings, 8.16 seconds). The eight affected files passed: 145 passed,
+6 skipped, 23 warnings in 406.57 seconds. The background full suite passed:
+4080 passed, 53 skipped, 7 xfailed, 181 warnings, 4 subtests passed in
+1890.16 seconds. No bin files changed while pytest was active. Protected
+user files still match their pre-execution hashes and remain uncommitted.
+
 1. Policy training: weights change under `runBatch` with
    `outputPolicyWeight` 1; unchanged with 0.
 2. Ownership: same `Understanding` + derivation, different staging, same
@@ -496,6 +549,9 @@ files changed while pytest was active.
 5. Checkpoint: both conditioner widths reload strictly and train.
 6. Surfaces: decoding invariant to input bytes, sensitive to the row's
    stored surface.
+7. Native answer training: both output modes use owned 1032-wide concepts
+   and 136-wide percepts without dense seeds; only supplied answers train
+   the realized output or its policies, including after an Adam update.
 
 ## 6. Open questions for Alec
 

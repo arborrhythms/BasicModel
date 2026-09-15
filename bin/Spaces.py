@@ -22880,6 +22880,14 @@ class ConceptualSpace(Space):
         # dedicated answer operator learns their supervised transformation.
         if condition is not None:
             event = condition(event)
+        return self.synthesize_idea(event, context=context, selections=selections)
+
+    def synthesize_idea(self, event, *, context=None, selections=()):
+        """Transform full-width answer ideas through this Space's own operator.
+
+        The indexed answer path already owns concepts and enters here directly;
+        the dense compatibility adapter materialises concepts before this seam.
+        """
         event = self._apply_synthesis_operator(event)
         if (selections and torch.is_tensor(context)
                 and torch.is_tensor(event) and context.dim() == event.dim() == 3

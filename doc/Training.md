@@ -514,7 +514,7 @@ independently normalized primary costs recorded before `backward()`:
 | Cost (`primary_costs()`) | Compares | Trains |
 |---|---|---|
 | `input_reconstruction` (+ `input_reconstruction_reverse`, `reverseReconstruct()`'s own cost) | the reconstructed input with the presented (or clean) input | the bottom-up understanding and its input-associated inverse |
-| `answer_construction` | the response constructed by `reverseOutput()` with `Data.what(question)` (`_what_answer_target`, rows without an available answer masked out, never substituted) | the resolve step, the question conditioner, the dedicated synthesis layers, the output adapter, and the shared understanding under reconstruction priority |
+| `answer_construction` | the realized response from `reverseOutput()` against an available, separately supplied `Data.what(What.supervised(...))` answer; automatic temporal targets are evaluation metrics only (`bin/Models.py:9252`) | the resolve step, conceptual conditioner, dedicated synthesis layers, output adapter, and shared understanding under reconstruction priority |
 
 The desired answer is resolved only after the model response is fixed and
 enters loss preparation only. `reconstructionPriority` differentiates the
@@ -594,20 +594,20 @@ interpretation therefore does not copy or overwrite WORD bytes
 only its staged WORD/OBJECT rows (`_ar_concept_lookup_rows`) and resolves
 their candidate bytes from this store (`_ar_bank_bytes`); input part IDs
 provide the byte-window shape and scoring targets, never candidate bytes
-(`bin/Models.py:10791`).
+(`bin/Models.py:10849`).
 
 Per-stage WORD stores and OBJECT row indices persist in `vocab_extras`
 under `concept_word_surfaces`, including stage 0 when it owns the shared
-identities (`bin/Models.py:4244`, `bin/Models.py:5483`). The existing
+identities (`bin/Models.py:4253`, `bin/Models.py:5491`). The existing
 structural extras retain the current OBJECT-to-WORD association. Strict
 load also materialises a saved lazy chunk prior before the key audit,
-so no preparatory input pass is required (`bin/Models.py:4871`).
+so no preparatory input pass is required (`bin/Models.py:4880`).
 
 A missing WORD surface removes that candidate. A missing snapshot never
 falls back to the presented words' bytes. A null candidate of similarity
 zero and uniform bytes remains available: with scoreable targets and no
 known candidates, the byte cost is `log(256)`, not a manufactured perfect
-reconstruction (`bin/Models.py:11267`). Rows absent from the snapshot do
+reconstruction (`bin/Models.py:11375`). Rows absent from the snapshot do
 not enter the score. The
 score is taken at the pop step, inside the traversal, and the loop carries
 only the running sums (idea cost, byte cost, word count) besides the
@@ -663,47 +663,63 @@ protocol.
 
 The answer-materialisation boundary (2026-09-15).
 `Understanding.answer_program` owns each row's final sentence program:
-its symbol rows, signed activations, compact conceptual leaves, identified
-compose actions, reconstruction targets and three-slot end state. Each
-`AnswerProgram` clones its tensors while retaining the current forward's
-gradients (`bin/Understanding.py:23`). The capture publishes explicit
-compiled outputs before reading them; packed sentence slots and the final
-per-row programs share the same captured records
-(`bin/Models.py:7864`, `bin/Models.py:11637`). Repeated thinking over the
-same execution reuses that understanding (`bin/Models.py:9662`).
+its interpreted symbol rows, separate WORD rows, signed activations,
+compact conceptual leaves, identified compose actions, reconstruction
+targets and three-slot end state. Each `AnswerProgram` clones its tensors
+while retaining the current forward's gradients (`bin/Understanding.py:23`).
+The capture publishes explicit compiled outputs before reading them;
+packed sentence slots and the final per-row programs share the same records
+(`bin/Models.py:7873`, `bin/Models.py:11701`).
 
-Resolution selects the understanding's program for identity/reasoning, or
-the recalled sentence's frozen program for recall, and captures the
-question's target-free context on the derivation (`bin/Models.py:8017`,
-`bin/Output.py:68`). Discourse observation retains detached copies of those
-captured sentence products, including separate packed slots
-(`bin/Models.py:8612`). Subsequent staging and memory advances therefore
-cannot replace a held answer's operands.
+Resolution selects the current program for identity/reasoning or a frozen
+program for recall, then replays its full-width concepts once. Thinking
+transforms those concepts through LTM attention or a referent's owned leaf,
+located by its WORD row (`bin/Models.py:8026`, `bin/Models.py:8370`,
+`bin/Models.py:8408`). The derivation owns this resolved conceptual answer
+and the question's target-free context (`bin/Output.py:72`). Discourse
+observation retains detached captured sentence products, including packed
+slots (`bin/Models.py:8623`). A later staging or memory advance cannot
+replace the held answer. The What interaction's input retains all three
+captured idea slots (`bin/Models.py:9721`).
 
-`_materialize_answer_idea` replays only the derivation's owned leaves and
-compose actions through the shared forward grammar operators. It applies
-one question conditioner at the conceptual width, once, to the root slot.
-A missing program is explicitly unresolved and has no current-input
-substitute; a future prediction without a concept-level predictor has no
-program (`bin/Models.py:11377`). The replayed compose actions recover the
-identified idea; the output walk chooses its own generate derivation.
-The program's reverse targets remain reconstruction metadata.
+`_materialize_answer_idea` applies one conceptual-width conditioner to the
+resolved root, once. Missing programs are explicitly unresolved; a future
+prediction without a conceptual predictor has no program
+(`bin/Models.py:11435`). Replaying the identified compose actions recovers
+the idea; output chooses its own generate derivation. Reconstruction
+targets remain metadata and never choose output actions
+(`bin/Models.py:11859`).
 
-Historical conditioner widths remain in the checkpoint registry, with the
-singular alias retained for compatibility. Strict loading restores all
-saved widths and optimizer adoption includes each once. Answer generation
-actively calls only the conceptual-width module. On the compatibility
-synthesis path the conditioner receives the concepts produced by the shared
-inverse, before the dedicated conceptual answer operator transforms them
-(`bin/Models.py:9057`, `bin/Spaces.py:22879`). This keeps question context
-inside that operator's supervised learning path.
+Both output modes consume the full-width concepts directly. With
+`outputInLoop`, the three opaque slots enter a bounded traversal, newest
+at slot 0; the generate walk emits concepts for the shared reverse chain
+(`bin/Models.py:11557`, `bin/Models.py:9019`). Otherwise, the conditioned
+concepts enter the dedicated conceptual synthesis operator, then the shared
+reverse body and perceptual inverse, the dedicated perceptual operator,
+and the output adapter (`bin/Spaces.py:22885`, `bin/Models.py:9019`). The
+native 1032-wide concept / 136-wide percept path needs no dense symbolic
+seed; topologies without row programs retain the dense compatibility path
+(`bin/Models.py:8026`).
 
-The idea enters the output walk as three opaque concept slots, newest at
-slot 0. `_walk_operand` reverses the live slots onto the bounded traversal
-stack; `<generate>` chooses how to unfold them, and the emitted concepts
-are realised through the tied reverse body and perceptual chain
-(`bin/Models.py:11493`, `bin/Models.py:9048`). The dense symbolic-state
-dependency during resolution remains item 7 of the ownership plan.
+Historical conditioner widths remain in the checkpoint registry. Strict
+loading restores their exact weights and initializes a missing active
+conceptual width to zero when migrating a narrow-only checkpoint
+(`bin/Models.py:8847`). Already materialized answer parameters join a newly
+created optimizer; later lazy modules join the live optimizer once
+(`bin/Models.py:2824`, `bin/Models.py:8966`, `bin/Models.py:13081`).
+
+Realized-answer supervision (2026-09-15).
+Training accepts only available, separately supplied answers to supervised
+questions. It filters rows before selecting numeric or text scoring, so an
+automatic text target cannot displace a supplied numeric label. For text,
+the fixed answer percepts are realized in input-event space without desired
+content, then scored against the embedded supplied text
+(`bin/Models.py:9252`). Evaluation retains automatic present/past/future
+metrics. Missing labels and automatic input targets provide no dedicated
+answer gradient or optimizer update, including after an earlier Adam step;
+thinking policy credit also excludes these rows, including closure costs
+(`bin/Models.py:8165`, `test/test_output_path_supervised.py:284`). Shared
+understanding parameters can still learn input reconstruction.
 
 The output walk's generate policy (2026-09-15, contract 5).
 `LanguageSpace.generate_policy` is a linear chooser created only under
@@ -733,7 +749,7 @@ comes from the grammar's `<generate>` section, with the number of LHS
 outputs determining binary/unary expansion; it can differ from `<compose>`
 and can contain rules absent there (`bin/Language.py:14159`). The numerical
 inverse kernels remain shared with reconstruction, while the catalogs,
-policies and traversal state are independent (`bin/Models.py:11783`). An
+policies and traversal state are independent (`bin/Models.py:11859`). An
 explicit output-owned generate stamp can replay an output rule; an input
 compose stamp cannot. The low-level `targets` argument is retained only as
 an ignored compatibility argument. There is no `outputTeacherForcing` knob.

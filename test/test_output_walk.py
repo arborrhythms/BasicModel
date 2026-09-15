@@ -896,7 +896,7 @@ def test_packed_recall_observes_captured_sentence_programs(tmp_path):
                 assert len(history) == len(slots)
                 for saved, t in zip(history, slots):
                     owned = u.sentence_programs[t][b]
-                    for name in ("rows", "activations", "leaves", "actions", "targets", "end_state"):
+                    for name in ("rows", "word_rows", "activations", "leaves", "actions", "targets", "end_state"):
                         torch.testing.assert_close(getattr(saved, name), getattr(owned, name).cpu())
                     assert not saved.leaves.requires_grad
     finally:

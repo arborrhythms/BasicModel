@@ -1,11 +1,11 @@
 """Answer derivation and construction values for ``Model.reverseOutput()``.
 
-What spec section 5.3: an answer is not a replay of the input surface.  A
-question symbol is resolved (grammatical evaluation, lookup, binding, or
-thinking) into an ``AnswerDerivation`` carrying the answer symbol, the
-grammar trace, and the named synthesis references; only that answer symbol
-descends through conceptual and perceptual synthesis to ``OutputSpace``.
-Neither value carries a desired ``Data`` answer.
+Question resolution produces an ``AnswerDerivation`` with owned conceptual
+ideas, the selected row program, target-free question context, and named
+synthesis references. Thinking transforms these ideas before realization
+through the answer path. ``answer_symbol`` remains the dense compatibility
+seed for topologies without indexed programs. Neither value carries a
+desired ``Data`` answer.
 """
 
 from __future__ import annotations
@@ -23,7 +23,7 @@ class StepChoice:
     active: ``"root"`` (the presented question), ``"pending"`` (the
     subquestion posed at the previous iteration) or ``"open"`` (the newest
     unanswered LTM input).  ``referent`` names it (``None`` for the root);
-    ``question_rep`` is its QUERY symbol.  ``log_prob`` is the chooser's log
+    ``question_rep`` is its QUERY representation. ``log_prob`` is the chooser's log
     probability of this choice (a tensor while the graph is live) for the
     policy objective; ``candidates`` are the labels it chose among.
     """
@@ -46,8 +46,10 @@ class StepChoice:
 
 @dataclass(frozen=True)
 class AnswerDerivation:
-    """A resolved answer symbol plus the replayable derivation record.
+    """A resolved conceptual answer plus its owned derivation record.
 
+    ``conceptual_answer`` retains the full-width result of resolution and
+    thinking. ``answer_symbol`` serves only topologies without row programs.
     ``step`` carries one :class:`StepChoice` per batch row when the
     thinking resolve step ran (``None`` per row otherwise); ``exact_steps``
     is retained for trace-shape compatibility and is always empty (the
@@ -67,6 +69,7 @@ class AnswerDerivation:
     exact_steps: Tuple[Any, ...] = field(default_factory=tuple)
     program: Tuple[Any, ...] = field(default_factory=tuple, repr=False, compare=False)
     conditioning_context: Any = field(default=None, repr=False, compare=False)
+    conceptual_answer: Any = field(default=None, repr=False, compare=False)
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "grammar_trace", tuple(self.grammar_trace))
@@ -80,6 +83,8 @@ class AnswerDerivation:
         if self.conditioning_context is not None:
             object.__setattr__(self, "conditioning_context",
                                self.conditioning_context.clone())
+        if self.conceptual_answer is not None:
+            object.__setattr__(self, "conceptual_answer", self.conceptual_answer.clone())
 
 
 @dataclass(frozen=True)
@@ -90,7 +95,7 @@ class AnswerConstruction:
     derivation: AnswerDerivation
     concepts: Any = None
     percepts: Any = None
-    surface: Any = None          # input-space realization (temporal answers)
+    surface: Any = None          # input-event realization for text scoring
     trace: Tuple[Any, ...] = field(default_factory=tuple)
 
     def __post_init__(self) -> None:

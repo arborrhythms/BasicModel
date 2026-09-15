@@ -2821,6 +2821,15 @@ class BaseModel(Mereology, nn.Module):
                     if p.requires_grad and p.data_ptr() not in seen:
                         seen.add(p.data_ptr())
                         params.append(p)
+        # Include answer modules already built or restored before this
+        # optimizer is created. Later lazy modules still join in runBatch;
+        # its identity check keeps the queued parameters from joining twice.
+        synthesis_parameters = getattr(self, "synthesis_parameters", None)
+        if synthesis_parameters is not None:
+            for p in synthesis_parameters():
+                if p.requires_grad and p.data_ptr() not in seen:
+                    seen.add(p.data_ptr())
+                    params.append(p)
         # A4 (2026-06-06 parallel-conceptual-recurrence): the per-stage
         # ConceptualCombine is HELD BY its ConceptualSpace (registered in
         # ``cs.layers`` + ``cs.params`` at build time), so the ``self.spaces``
@@ -8015,122 +8024,101 @@ class BasicModel(BaseModel):
         return rev_ev, cost
 
     def _resolve_answer(self, understanding, question):
-        """Rational symbolic evaluation of ``question`` over the understanding.
+        """Resolve owned concepts for an answer, before question conditioning.
 
-        Grammatical resolution by relation (What spec section 5.3):
-
-        * ``present`` / ``supervised`` / ``inference``: the symbolic state
-          itself (identity); the output adapter realizes the response.
-        * ``past -k``: RECALL -- the sentence rep observed ``k`` sentences
-          ago from the discourse ARMA ring (``_s_history``, newest at -1).
-        * ``future +k``: PREDICTION -- the discourse predictor's next
-          sentence rep, rolled forward ``k`` steps through the ring.
-
-        A recalled/predicted rep replaces the ROOT slot (row 0, the slot the
-        start-symbol reduction wrote) of the symbolic state, so the answer
-        symbol keeps the established ``[B, N, D]`` layout.  When the memory
-        is cold the derivation falls back to identity with
-        ``resolved=False`` so ``think()`` can keep the question open; the
-        derivation records which source answered.
+        The indexed path selects the current or recalled compose program and
+        materialises its full-width ideas once. Thinking transforms those ideas;
+        no dense symbol event is needed. Future answers remain unresolved until
+        a conceptual predictor exists. Topologies without row programs retain
+        their established dense-state resolution as a compatibility path.
         """
         questions = question_batch(question)
         first = questions[0] if questions else None
+        current_program = understanding.answer_program
         symbolic = understanding.symbolic_state
         seed = getattr(understanding, "answer_seed", None)
         if torch.is_tensor(seed):
             symbolic = seed
-        if not torch.is_tensor(symbolic):
-            raise RuntimeError("cannot resolve an answer without a symbolic state")
-        B = int(symbolic.shape[0])
-        # Per-row questions: one question broadcasts; otherwise row b answers
-        # its own question (mixed relations / offsets / cold lanes are
-        # resolved independently).
-        per_row = [questions[b] if b < len(questions) else questions[-1]
-                   for b in range(B)] if questions else []
+        if current_program:
+            B = len(current_program)
+        elif torch.is_tensor(symbolic):
+            B = int(symbolic.shape[0])
+        else:
+            raise RuntimeError("cannot resolve an answer without a program or symbolic state")
+        per_row = [questions[min(b, len(questions) - 1)] for b in range(B)]
         temporal = tuple(q.context_values() for q in questions)
-        answer = symbolic.clone()
-        row_sources = []
-        resolved_all = True
         reasoning = None
         prompt = getattr(first, "prompt", None) if first is not None else None
         if (isinstance(prompt, str) and prompt.strip()
                 and int(getattr(self, "reasoning_iterations", 0) or 0) > 0
-                and first.relation in (WhatRelation.INFERENCE,
-                                       WhatRelation.SUPERVISED)):
-            # Prompted questions consult the truth-grounded reasoner; its
-            # posture/confidence become part of the replayable derivation.
+                and first.relation in (WhatRelation.INFERENCE, WhatRelation.SUPERVISED)):
             try:
                 reasoning = self.answer_query(prompt)
             except Exception:
                 reasoning = None
-        for b, q in enumerate(per_row):
-            source = "reasoning" if reasoning is not None else "identity"
-            if q.relation in (WhatRelation.PAST, WhatRelation.FUTURE):
-                rep = self._temporal_answer_rep_row(
-                    q.relation, q.offset, b, symbolic.shape[-1])
-                if rep is None:
-                    source = "identity:cold-memory"
-                    resolved_all = False
-                else:
-                    answer[b:b + 1] = self._install_root_slot(
-                        symbolic[b:b + 1], rep)
-                    source = ("recall" if q.relation is WhatRelation.PAST
-                              else "prediction")
-            row_sources.append(source)
-        distinct = set(row_sources)
-        source = (row_sources[0] if len(distinct) == 1
-                  else ("mixed" if row_sources else "identity"))
-        relation = first.relation if first is not None else WhatRelation.PRESENT
-        offset = int(first.offset) if first is not None else 0
-        steps, step_trace, exact_steps = (), (), ()
-        if self._thinking_enabled():
-            # The thinking resolve step (mathematical thinking spec 6.3):
-            # one hard choice per row between ANSWER (root conditioned on
-            # the row's LTM outputs) and OPEN a subquestion about a
-            # presented referent.
-            answer, steps, step_trace, exact_steps = self._resolve_step(
-                understanding, questions, per_row, answer)
-        # Select the owned program once. Later materialisation must not read
-        # whichever sentence or recall entry happens to be live then.
-        programs = []
-        current_program = understanding.answer_program
+        row_sources, programs = [], []
+        resolved_all = True
         if current_program:
-            for b, src in enumerate(row_sources):
-                entry = current_program[b] if b < len(current_program) else None
-                if src == "recall":
-                    k = abs(int(per_row[b].offset))
+            template = next((p.leaves for p in current_program if p is not None), None)
+            if template is None:
+                template = next(self.parameters())
+            base = template.new_zeros(B, 3, int(self.conceptualSpace.stm.concept_dim))
+            for b, q in enumerate(per_row):
+                source = "reasoning" if reasoning is not None else "identity"
+                entry = current_program[b]
+                if q.relation is WhatRelation.PAST:
+                    k = abs(int(q.offset))
                     history = self._recall_program_history().get(b)
                     entry = (history[-k] if history is not None
                              and k >= 1 and len(history) >= k else None)
-                elif src == "prediction" or src == "identity:cold-memory":
-                    entry = None
-                if entry is None:
-                    resolved_all = False
+                    source = "recall" if entry is not None else "identity:cold-memory"
+                elif q.relation is WhatRelation.FUTURE:
+                    entry, source = None, "prediction"
+                resolved_all = resolved_all and entry is not None
                 programs.append(entry)
+                row_sources.append(source)
+            answer, _ = self._materialize_entries(programs, base, self._walk_budget())
+        else:
+            answer = symbolic.clone()
+            for b, q in enumerate(per_row):
+                source = "reasoning" if reasoning is not None else "identity"
+                if q.relation in (WhatRelation.PAST, WhatRelation.FUTURE):
+                    rep = self._temporal_answer_rep_row(
+                        q.relation, q.offset, b, symbolic.shape[-1])
+                    if rep is None:
+                        source, resolved_all = "identity:cold-memory", False
+                    else:
+                        answer[b:b + 1] = self._install_root_slot(symbolic[b:b + 1], rep)
+                        source = "recall" if q.relation is WhatRelation.PAST else "prediction"
+                row_sources.append(source)
+        distinct = set(row_sources)
+        source = row_sources[0] if len(distinct) == 1 else "mixed"
+        steps, step_trace, exact_steps = (), (), ()
+        if self._thinking_enabled():
+            answer, steps, step_trace, exact_steps = self._resolve_step(
+                understanding, questions, per_row, answer,
+                programs=tuple(programs) if current_program else None)
         context, _detail = self._what_grammar_context(
             questions, device=answer.device, dtype=answer.dtype)
         references = self._select_perceptual_bindings(understanding)
         trace = ({"operation": f"resolve:{source}",
-                  "relation": relation.value,
-                  "offset": offset,
-                  "row_sources": tuple(row_sources),
-                  "temporal": temporal,
-                  "conditioned": "conceptual",
-                  "bindings": references},)
+                  "relation": first.relation.value,
+                  "offset": int(first.offset),
+                  "row_sources": tuple(row_sources), "temporal": temporal,
+                  "conditioned": "conceptual", "bindings": references},)
         if reasoning is not None:
-            trace = trace + ({"operation": "reason",
-                              "posture": reasoning.get("posture"),
-                              "confidence": reasoning.get("confidence"),
-                              "support_true": reasoning.get("support_true"),
-                              "support_false": reasoning.get("support_false")},)
-        trace = trace + tuple(step_trace)
+            trace += ({"operation": "reason", "posture": reasoning.get("posture"),
+                       "confidence": reasoning.get("confidence"),
+                       "support_true": reasoning.get("support_true"),
+                       "support_false": reasoning.get("support_false")},)
         return AnswerDerivation(
-            answer_symbol=answer, grammar_trace=trace,
+            answer_symbol=None if current_program else answer,
+            conceptual_answer=answer if current_program else None,
+            grammar_trace=trace + tuple(step_trace),
             bindings={"perceptual_slots": references},
             synthesis_references=references, sentence_location=0, prefix=None,
-            resolved=resolved_all, source=source,
-            row_sources=tuple(row_sources), step=steps,
-            exact_steps=exact_steps, program=tuple(programs),
+            resolved=resolved_all, source=source, row_sources=tuple(row_sources),
+            step=steps, exact_steps=exact_steps, program=tuple(programs),
             conditioning_context=context)
 
     # -- thinking: the resolve step (mathematical thinking spec 6) -----------
@@ -8174,13 +8162,16 @@ class BasicModel(BaseModel):
         self._what_policy_records = []
         return detached
 
-    def _what_step_policy_loss(self, answer_loss):
+    def _what_step_policy_loss(self, answer_loss, mask=None):
         """REINFORCE credit for the resolve-step choices of the last episode
         (spec 8.3): ``G = -L_answer - c_step * iterations - c_forced *
         forced``, an EMA baseline, ``L = -mean((G - b) * log pi)``.  The
-        root answer is the only reward.  ``None`` without recorded choices."""
+        root answer is the only reward. ``mask`` limits credit to supervised
+        rows; without eligible choices neither loss nor baseline changes."""
         records = [r for r in (self.__dict__.get("_what_policy_records") or ())
-                   if torch.is_tensor(r[2]) and r[2].requires_grad]
+                   if torch.is_tensor(r[2]) and r[2].requires_grad
+                   and (mask is None or (0 <= r[0] < mask.numel()
+                        and bool(mask.reshape(-1)[r[0]])))]
         if not records:
             return None
         thinking = getattr(self, "_last_what_thinking", None)
@@ -8235,7 +8226,7 @@ class BasicModel(BaseModel):
         return module
 
     def _ltm_attention(self, width, key_width, *, device, dtype):
-        """The learned conditioning of the root answer symbol on the row's
+        """The learned conditioning of the root answer idea on the row's
         LTM OUTPUT representations (spec 7.3): a single-head attention
         whose query is the root slot and whose keys / values are the
         stored responses, with a ZERO-initialised output projection so the
@@ -8377,12 +8368,31 @@ class BasicModel(BaseModel):
         return cands[: self.WHAT_STEP_MAX_CANDIDATES]
 
     def _referent_representation(self, understanding, b, referents, word,
-                                 answer_row, *, detach=True):
-        """The QUERY(w) symbol: the referent's perceptual slot (the lexicon's
-        presentation of the word, by surface position) installed in the
-        root slot of the row's symbolic state; the symbolic root itself
-        when no slot is available.  Detached when it is stored as an LTM
-        input (an opening); live when it seeds the subquestion's answer."""
+                                 answer_row, *, detach=True, programs=None):
+        """QUERY(w) uses the owned interpretation at the referent's WORD row.
+
+        Indexed programs carry full-width leaves; a missing referent retains
+        the root. The older perceptual-slot adapter applies only to topologies
+        without programs. Openings detach; subquestion answers stay live.
+        """
+        entries = understanding.answer_program if programs is None else programs
+        if entries:
+            entry = entries[b] if b < len(entries) else None
+            rep = answer_row[0, 0]
+            if entry is not None:
+                owner = self._concept_owner()
+                triple = owner._concept_allocator.word_obj_meta.get(word)
+                row = owner._csw_row_of(int(triple[0])) if triple is not None else None
+                if row is not None:
+                    found = (entry.word_rows == int(row)).nonzero().reshape(-1)
+                    if found.numel():
+                        rep = entry.leaves[int(found[0])]
+            if rep.numel() != answer_row.shape[-1]:
+                raise ValueError("referent leaf must have the full conceptual width")
+            root = answer_row.detach() if detach else answer_row
+            rep = rep.detach() if detach else rep
+            rep = rep.to(device=root.device, dtype=root.dtype)
+            return torch.cat((rep.reshape(1, 1, -1), root[:, 1:]), dim=1)
         field = understanding.perceptual_context
         rep = None
         if torch.is_tensor(field) and field.dim() == 3 and word in referents:
@@ -8395,10 +8405,10 @@ class BasicModel(BaseModel):
             return self._install_root_slot(answer_row.detach(), rep.detach())
         return self._install_root_slot(answer_row, rep)
 
-    def _resolve_step(self, understanding, questions, per_row, answer):
+    def _resolve_step(self, understanding, questions, per_row, answer, *, programs=None):
         """Run the resolve step for every unsettled row (spec 6.3).
 
-        Returns ``(answer_symbol, steps, trace_entries, ())``: the symbol
+        Returns ``(answer, steps, trace_entries, ())``: the full-width ideas
         with each row's root slot conditioned on its LTM outputs (ANSWER)
         or replaced by the deferred question's referent representation
         (OPEN), one ``StepChoice`` per row (``None`` for settled rows), and
@@ -8449,7 +8459,8 @@ class BasicModel(BaseModel):
             question_rep = None
             if active is not None:
                 question_rep = self._referent_representation(
-                    understanding, b, referents, active, answer[b:b + 1])
+                    understanding, b, referents, active, answer[b:b + 1],
+                    programs=programs)
             if cand["kind"] == "open":
                 if active is not None and question_rep is not None:
                     rows[b] = question_rep[0]
@@ -8459,7 +8470,7 @@ class BasicModel(BaseModel):
                     log_prob=log_prob, index=int(index), candidates=labels))
             else:
                 # ANSWER: a subquestion's answer starts from QUERY(w) (the
-                # active referent's presented slot in the root position,
+                # active referent's owned interpretation in the root position,
                 # live so the answer loss reaches it); the root's answer
                 # starts from the root idea.  Either root slot then attends
                 # over this row's LTM outputs (the answers to its
@@ -8468,7 +8479,7 @@ class BasicModel(BaseModel):
                 if role != "root" and active is not None:
                     rows[b] = self._referent_representation(
                         understanding, b, referents, active, answer[b:b + 1],
-                        detach=False)[0]
+                        detach=False, programs=programs)[0]
                 if memory is not None and hasattr(memory, "what_context"):
                     ltm = (detail[min(b, len(detail) - 1)] if detail else {})
                     outputs = [v for v in ltm.get("output_representations", ())
@@ -8825,8 +8836,8 @@ class BasicModel(BaseModel):
             width = int(getattr(getattr(space, "subspace", None), "muxedSize", 0) or 0)
             if space is not None and width > 0 and getattr(space, "synthesis_layer", None) is None:
                 space.synthesis_operator(width, device=device, dtype=dtype)
-        ws = getattr(self, "wholeSpace", None)
-        width = int(getattr(getattr(ws, "subspace", None), "muxedSize", 0) or 0)
+        cs = getattr(self, "conceptualSpace", None)
+        width = int(getattr(getattr(cs, "subspace", None), "muxedSize", 0) or 0)
         if width > 0 and getattr(self, "question_conditioner", None) is None:
             self._question_conditioner(width, device=device, dtype=dtype)
         if self._thinking_enabled() and getattr(self, "what_step_chooser", None) is None:
@@ -8890,6 +8901,11 @@ class BasicModel(BaseModel):
                     nn.init.zeros_(module.weight)
                     table[width] = module.to(device=device, dtype=dtype)
                     built += 1
+            # A legacy checkpoint may contain only the old symbol-width
+            # conditioner. Keep it and initialise the newly active conceptual
+            # width at zero; never fabricate a learned wide weight by padding.
+            for width, module in table.items():
+                state.setdefault(f"{prefix}{width}{suffix}", torch.zeros_like(module.weight))
             ws = getattr(self, "wholeSpace", None)
             symbol_width = str(int(getattr(
                 getattr(ws, "subspace", None), "muxedSize", 0) or 0))
@@ -8900,10 +8916,7 @@ class BasicModel(BaseModel):
             # Normalize duplicate state keys before load_state_dict visits
             # the alias. Never overwrite a width-owned weight with another
             # width's historical alias.
-            if alias_width in saved:
-                state[alias] = saved[alias_width]
-            else:
-                state.pop(alias, None)
+            state[alias] = state[f"{prefix}{alias_width}{suffix}"]
         key_q, key_k = "ltm_attention.query.weight", "ltm_attention.key.weight"
         if key_q in state and key_k in state and getattr(self, "ltm_attention", None) is None:
             width = int(state[key_q].shape[1])
@@ -8980,12 +8993,20 @@ class BasicModel(BaseModel):
                 fresh.extend(p for p in module.parameters() if p.requires_grad)
 
     def synthesis_parameters(self):
-        """Parameters that belong to the answer path only (never shared with
-        reconstruction): the Spaces' synthesis operators and the percept
-        adapter."""
+        """Dedicated answer parameters: conditioners, thinking and generate
+        choosers, LTM attention, synthesis operators, and output adapters.
+
+        Shared reconstruction operators are excluded. Retained historical
+        conditioner widths are included once for checkpoint compatibility.
+        """
         params = []
         for conditioner in self._question_conditioner_modules():
             params.extend(conditioner.parameters())
+        for module in (getattr(self, "what_step_chooser", None),
+                       getattr(self, "ltm_attention", None),
+                       getattr(getattr(self, "languageSpace", None), "generate_policy", None)):
+            if module is not None:
+                params.extend(module.parameters())
         for space in (getattr(self, "conceptualSpace", None),
                       getattr(self, "perceptualSpace", None),
                       getattr(self, "outputSpace", None)):
@@ -8993,17 +9014,17 @@ class BasicModel(BaseModel):
                 module = getattr(space, name, None) if space is not None else None
                 if module is not None:
                     params.extend(module.parameters())
-        return params
+        return list({id(p): p for p in params}.values())
 
     def reverseOutput(self, understanding, question):
-        """Construct the answer to ``question`` from ``understanding``
-        (What spec section 5.3).  Named ``reverseOutput``: the dual of
-        ``forward()`` along the answer path, sharing the inverse-direction
-        operators with ``reverseReconstruct`` but seeded by a resolved answer
-        symbol and ending in ``OutputSpace``.  Resolve the answer symbol, synthesize it
-        through conceptual and perceptual space, and adapt it to the output
-        modality.  Never reads a reconstruction carrier and never overwrites
-        state reconstruction needs."""
+        """Construct a question-dependent answer from the owned understanding.
+
+        Resolve and condition full-width concepts, then realize them through
+        the independent generate walk or dedicated synthesis operators, the
+        shared reverse chain, and OutputSpace. Dense resolution is retained
+        for topologies without row programs. Desired answers enter scoring
+        later; synthesis preserves the carriers needed by reconstruction.
+        """
         if not isinstance(understanding, Understanding):
             raise TypeError("output expects an Understanding")
         derivation = self._resolve_answer(understanding, question)
@@ -9016,7 +9037,8 @@ class BasicModel(BaseModel):
         answer_event = derivation.answer_symbol
         output_truncated = None
         walked = None
-        if getattr(self, "output_in_loop", False):
+        idea = None
+        if derivation.program:
             # The answer-materialisation boundary (spec sections 1-2): the
             # resolved answer as its own conceptual idea, the operand of the
             # output loop; the walk un-folds it into words (the second
@@ -9024,7 +9046,9 @@ class BasicModel(BaseModel):
             # reverse chain.  The symbol vector is never padded to fit.
             idea, idea_resolved, idea_sources, _ = self._materialize_answer_idea(
                 understanding, derivation, question)
-            if torch.is_tensor(idea):
+            object.__setattr__(self, "_output_idea_sources", idea_sources)
+            object.__setattr__(self, "_output_idea_resolved", idea_resolved)
+            if getattr(self, "output_in_loop", False) and torch.is_tensor(idea):
                 budget = self._walk_budget()
                 sample_actions = self.training and torch.is_grad_enabled()
                 words, n_emitted, output_truncated, policy_cost = (
@@ -9037,8 +9061,6 @@ class BasicModel(BaseModel):
                     words = words[:, :kept]
                 object.__setattr__(self, "_output_truncated", output_truncated)
                 object.__setattr__(self, "_output_policy_cost", policy_cost)
-                object.__setattr__(self, "_output_idea_sources", idea_sources)
-                object.__setattr__(self, "_output_idea_resolved", idea_resolved)
                 walked = words
         with self._synthesis_guard():
             if walked is not None:
@@ -9050,35 +9072,25 @@ class BasicModel(BaseModel):
                 percepts = (realized.materialize()
                             if hasattr(realized, "materialize") else realized)
             else:
-                concepts = cs.synthesize(
-                    answer_event, derivation.bindings,
-                    context=understanding.conceptual_state,
-                    selections=derivation.synthesis_references,
-                    condition=lambda idea: self._condition_answer_on_question(
-                        idea, derivation.conditioning_context))
+                if torch.is_tensor(idea):
+                    concepts = cs.synthesize_idea(
+                        idea, context=understanding.conceptual_state,
+                        selections=derivation.synthesis_references)
+                else:
+                    concepts = cs.synthesize(
+                        answer_event, derivation.bindings,
+                        context=understanding.conceptual_state,
+                        selections=derivation.synthesis_references,
+                        condition=lambda idea: self._condition_answer_on_question(
+                            idea, derivation.conditioning_context))
                 percepts = ps.synthesize(
                     concepts, context=understanding.perceptual_context,
                     selections=derivation.synthesis_references,
-                    reverse_chain=self._reverse_body)
+                    reverse_chain=(lambda sub: self._reverse_perceptual(self._reverse_body(sub)))
+                    if torch.is_tensor(idea) else self._reverse_body)
             actual = self.outputSpace.from_percepts(percepts)
             if temporal:
-                # A past/future answer is a datum: realize the answer
-                # percepts down to the input event so it can be scored
-                # against the embedded target sentence (Step 5).
-                try:
-                    carrier = ps.subspace.carrier_like()
-                    carrier.set_event(percepts)
-                    realized = self.inputSpace.reverse(
-                        self._reverse_perceptual(carrier))
-                    surface = (realized.materialize()
-                               if hasattr(realized, "materialize")
-                               else realized)
-                except (RuntimeError, AssertionError, ValueError,
-                        TypeError, AttributeError) as exc:
-                    self._warn_zeroed_channel(
-                        "answer_surface",
-                        f"temporal answer surface unavailable: {exc}")
-                    surface = None
+                surface = self._answer_surface_from_percepts(percepts)
         trace = derivation.grammar_trace + (
             {"operation": "synthesize:conceptual",
              "shape": tuple(concepts.shape) if torch.is_tensor(concepts) else None},
@@ -9099,7 +9111,19 @@ class BasicModel(BaseModel):
         self._last_answer_construction = construction
         return construction
 
-    def _output_action_credit(self, predicted, target, mask, questions):
+    def _answer_surface_from_percepts(self, percepts):
+        """Realise fixed answer percepts in input-event space, without a target."""
+        try:
+            with self._synthesis_guard():
+                carrier = self.perceptualSpace.subspace.carrier_like()
+                carrier.set_event(percepts)
+                realized = self.inputSpace.reverse(self._reverse_perceptual(carrier))
+                return realized.materialize() if hasattr(realized, "materialize") else realized
+        except (RuntimeError, AssertionError, ValueError, TypeError, AttributeError) as exc:
+            self._warn_zeroed_channel("answer_surface", f"answer surface unavailable: {exc}")
+            return None
+
+    def _output_action_credit(self, predicted, target, mask, questions, *, surface=False):
         """Credit sampled output actions only from supplied answer error.
 
         The input's identified compose derivation is not a gold answer
@@ -9127,8 +9151,9 @@ class BasicModel(BaseModel):
         if not int(rows.numel()):
             return None
         with torch.no_grad():
+            score = self._reverse_event_loss if surface else self.loss.compute
             errors = torch.stack([
-                self.loss.compute(predicted[b:b + 1], target[b:b + 1])
+                score(predicted[b:b + 1], target[b:b + 1])
                 for b in rows.tolist()])
             returns = -errors.to(device=cost.device, dtype=cost.dtype)
             baseline = self.__dict__.get("_output_policy_baseline", 0.0)
@@ -9224,8 +9249,8 @@ class BasicModel(BaseModel):
             self._staged_concepts_in = stash[0]
             object.__setattr__(self, "_ws_universe", stash[1])
 
-    def _what_answer_target(self, questions, output_tensor):
-        """Assemble the answer-construction target from ``Data.what()``.
+    def _what_answer_target(self, questions, output_tensor, *, supervised_only=False):
+        """Assemble the realized-answer target from ``Data.what()``.
 
         Step 5 of the What spec: the dataset's answer to each question, not
         the loader's incidental ``outputTensor``, is the answer target. Rows
@@ -9233,22 +9258,45 @@ class BasicModel(BaseModel):
         past/future, or a non-tensor answer the head cannot be scored
         against yet) are masked out of the loss rather than substituted.
         Returns ``(target, mask)``; ``target`` is ``None`` when no row is
-        scoreable, and ``mask`` is a bool ``[B]`` tensor. Resolved only after
-        the model response is fixed; never enters any model-visible context.
+        scoreable, and ``mask`` is a bool ``[B]`` tensor. Training sets
+        ``supervised_only`` to accept only available, explicitly supplied
+        answers to supervised questions. Evaluation can score automatic
+        temporal answers. Targets are resolved after the model response is
+        fixed and never enter any model-visible context.
         """
+        self._answer_surface_target = None
         desired = tuple(getattr(self, "_last_what_desired", ()) or ())
         if not desired or output_tensor is None or not torch.is_tensor(output_tensor):
-            return None, None
+            empty = (torch.zeros(output_tensor.shape[0], dtype=torch.bool,
+                                 device=output_tensor.device)
+                     if supervised_only and torch.is_tensor(output_tensor) else None)
+            return None, empty
+        questions = question_batch(questions)
+        supplied = bool(getattr(self.inputSpace.data, "has_supervised_outputs", False))
+        # Filter before choosing the scoring modality: an automatic text
+        # target must not displace a supplied numeric target in another row.
+        values = [answer.what if answer.available and (not supervised_only or (
+            supplied and questions
+            and questions[min(b, len(questions) - 1)].relation is WhatRelation.SUPERVISED))
+            else None for b, answer in enumerate(desired)]
         rows = []
         mask = []
-        self._answer_surface_target = None
         construction = getattr(self, "_last_answer_construction", None)
         surface = getattr(construction, "surface", None)
-        texts = [answer.what if (answer.available
-                                 and isinstance(answer.what, str)) else None
-                 for answer in desired]
+        texts = [value if isinstance(value, str) else None for value in values]
+        if (surface is None and any(t is not None for t in texts)
+                and isinstance(construction, AnswerConstruction)):
+            # Desired content never enters realization. Only its modality
+            # selects how to score the already fixed answer percepts.
+            surface = self._answer_surface_from_percepts(construction.percepts)
+            if torch.is_tensor(surface):
+                from dataclasses import replace
+                construction = replace(construction, surface=surface,
+                    trace=construction.trace + ({"operation": "output:surface",
+                                                "shape": tuple(surface.shape)},))
+                self._last_answer_construction = construction
         if torch.is_tensor(surface) and any(t is not None for t in texts):
-            # Text answers (past/future data) are scored in input-event
+            # Text answers are scored in input-event
             # space against the constructed surface; rows without a text
             # answer are masked.  Fill the masked rows with any available
             # text so the stem batch is well-formed.
@@ -9267,8 +9315,7 @@ class BasicModel(BaseModel):
                                       dtype=torch.bool, device=surface.device)
                 self._answer_surface_target = embedded.to(surface.device)
                 return embedded.to(surface.device), mask_t
-        for answer in desired:
-            value = answer.what if answer.available else None
+        for value in values:
             if value is not None and not torch.is_tensor(value):
                 try:
                     value = torch.as_tensor(value, dtype=output_tensor.dtype)
@@ -9297,8 +9344,10 @@ class BasicModel(BaseModel):
                 "what_answer_target_shape",
                 f"Data.what target {tuple(stacked.shape)} does not match the "
                 f"loader output {tuple(output_tensor.shape)} batch; answer "
-                "loss falls back to the loader tensor")
-            return None, None
+                "loss cannot use this target batch")
+            return None, (torch.zeros(output_tensor.shape[0], dtype=torch.bool,
+                                      device=output_tensor.device)
+                          if supervised_only else None)
         if stacked.shape != output_tensor.shape:
             # ``Data.what()`` is the authority (What spec Step 5): a loader
             # tensor of another shape is a placeholder (the byte cursor
@@ -9669,12 +9718,21 @@ class BasicModel(BaseModel):
             # from the direct symbol projection (kept as migration oracle).
             construction = self.reverseOutput(self._last_understanding, questions)
             produced_all = construction.actual
-        try:
-            conceptual_all = self._reconstruction_seed()
-        except (AttributeError, RuntimeError, TypeError):
-            conceptual_all = symbols
-        if conceptual_all is None:
-            conceptual_all = symbols
+        programs = self._last_understanding.answer_program
+        if programs:
+            # The interaction's input is the captured 1-3 idea form, including
+            # every retained slot. Neither a one-slot STM view nor a dense
+            # symbolic compatibility field owns this input.
+            empty = produced_all.new_zeros(3, int(self.conceptualSpace.stm.concept_dim))
+            conceptual_all = torch.stack([
+                entry.end_state if entry is not None else empty for entry in programs])
+        else:
+            try:
+                conceptual_all = self._reconstruction_seed()
+            except (AttributeError, RuntimeError, TypeError):
+                conceptual_all = symbols
+            if conceptual_all is None:
+                conceptual_all = symbols
 
         memory = self._what_memory()
         count = len(questions)
@@ -11375,11 +11433,13 @@ class BasicModel(BaseModel):
         return max(0, int(event_width) - 8)
 
     def _materialize_answer_idea(self, understanding, derivation, question):
-        """Replay the answer's owned program and condition its conceptual root.
+        """Condition the resolved conceptual answer's root once.
 
         Neither subsequent staging nor advancing recall memory can change a
         held derivation. Grammar parameters remain shared; rows, activations,
         leaves, actions and target-free question context belong to the value.
+        Resolution has already materialised and transformed the ideas. An
+        older manually constructed derivation can replay its owned program.
         Missing programs are explicitly unresolved, with no current-input
         substitute. Returned compose targets are reconstruction metadata only.
         """
@@ -11391,7 +11451,11 @@ class BasicModel(BaseModel):
         context = derivation.conditioning_context
         base = context.new_zeros(B, 3, D)
         T = self._walk_budget()
-        idea, targets = self._materialize_entries(entries, base, T)
+        idea = derivation.conceptual_answer
+        if torch.is_tensor(idea):
+            targets = self._program_reconstruction_targets(entries, base, T)
+        else:
+            idea, targets = self._materialize_entries(entries, base, T)
         resolved = torch.tensor([entry is not None for entry in entries],
                                 dtype=torch.bool, device=base.device)
         sources = []
@@ -11652,6 +11716,9 @@ class BasicModel(BaseModel):
         rows = self._word_symbol_rows()
         if not torch.is_tensor(rows) or tuple(rows.shape) != (B, W):
             rows = torch.full((B, W), -1, dtype=torch.long, device=reference.device)
+        word_rows = getattr(isp, "_ar_word_concept_rows", None)
+        if not torch.is_tensor(word_rows) or tuple(word_rows.shape) != (B, W):
+            word_rows = torch.full_like(rows, -1)
         activations = getattr(self.symbolSpace, "_word_reference_activations", None)
         if not torch.is_tensor(activations) or activations.numel() != B * W:
             activations = reference.new_ones(B, W)
@@ -11682,14 +11749,14 @@ class BasicModel(BaseModel):
             else:
                 end = self._sentence_end_state(None)
             captured[slot] = (
-                self._program_entries(program, leaves, rows, activations, end)
+                self._program_entries(program, leaves, rows, word_rows, activations, end)
                 if program is not None and torch.is_tensor(end)
                 else (None,) * B)
         current = tuple(captured.get(int(t), (None,) * B)[b]
                         for b, t in enumerate(last_ids))
         return current, captured
 
-    def _program_entries(self, program, leaf_slab, rows, activations, end_state):
+    def _program_entries(self, program, leaf_slab, rows, word_rows, activations, end_state):
         """Own compact row references and compose actions for each batch row."""
         positions, actions, targets = program
         entries = []
@@ -11704,16 +11771,28 @@ class BasicModel(BaseModel):
             L = int((acts[:, 0] >= 0).sum())
             entries.append(AnswerProgram(
                 rows=rows[b].index_select(0, pos.to(rows.device)),
+                word_rows=word_rows[b].index_select(0, pos.to(word_rows.device)),
                 activations=activations[b].index_select(0, pos.to(activations.device)),
                 leaves=leaf_slab[b].index_select(0, pos.to(leaf_slab.device)),
                 actions=acts[:L], targets=targets[b], end_state=end_state[b]))
         return tuple(entries)
 
+    @staticmethod
+    def _program_reconstruction_targets(entries, base, T):
+        """Batch the owned reconstruction metadata without replaying an idea."""
+        targets = torch.full((len(entries), T), -1, dtype=torch.long, device=base.device)
+        for b, entry in enumerate(entries):
+            if entry is not None:
+                tg = entry.targets.to(device=base.device, dtype=torch.long).reshape(-1)
+                n = min(int(tg.numel()), T)
+                targets[b, :n] = tg[:n]
+        return targets
+
     def _materialize_entries(self, entries, base, T):
         """Replay owned programs together; absent rows remain zero."""
         B, K, D = base.shape
         dev = base.device
-        targets = torch.full((B, T), -1, dtype=torch.long, device=dev)
+        targets = self._program_reconstruction_targets(entries, base, T)
         programs = [b for b, entry in enumerate(entries) if entry is not None]
         if not programs:
             return torch.zeros_like(base), targets
@@ -11729,9 +11808,6 @@ class BasicModel(BaseModel):
                 raise ValueError("answer program has a different conceptual width")
             leaves[b, :lv.shape[0]] = lv
             actions[b, :ac.shape[0]] = ac
-            tg = entry.targets.to(device=dev, dtype=torch.long).reshape(-1)
-            n = min(int(tg.numel()), T)
-            targets[b, :n] = tg[:n]
         replayed, _depth = self._replay_program(leaves, actions)
         return replayed[:, :K], targets
 
@@ -13114,7 +13190,8 @@ class BasicModel(BaseModel):
             # the question's desired answer replaces the loader's incidental
             # ``outputTensor``; unavailable rows are masked out of the term.
             _answer_target, _answer_mask = self._what_answer_target(
-                what_questions, outputTensor)
+                what_questions, outputTensor,
+                supervised_only=bool(train and getattr(self, "answer_synthesis", False)))
             self._last_answer_target = _answer_target
             self._last_answer_mask = _answer_mask
             _answer_authority = _answer_target is not None
@@ -13126,11 +13203,16 @@ class BasicModel(BaseModel):
             try:
                 if (_surface_target is not None and torch.is_tensor(_surface)
                         and _answer_mask is not None and bool(_answer_mask.any())):
-                    # Temporal text answer: constructed surface vs embedded
+                    # Text answer: constructed surface vs embedded
                     # target sentence, band-aware, masked to answerable rows.
                     lossOut = self._reverse_event_loss(
                         _surface[_answer_mask], _surface_target[_answer_mask])
                     output_weight = 1.0
+                    if (train and trial_mode != "predict"
+                            and float(getattr(self, "output_policy_weight", 0.0)) > 0.0):
+                        output_policy_loss = self._output_action_credit(
+                            _surface, _surface_target, _answer_mask, what_questions,
+                            surface=True)
                 elif (getattr(self.inputSpace.data,
                             "has_supervised_outputs", True)
                         and _scored_target is not None
@@ -13613,7 +13695,8 @@ class BasicModel(BaseModel):
             # chooser takes the argmax -> byte-identical.
             if train and float(
                     getattr(self, "what_thinking_policy_weight", 0.0) or 0.0) > 0.0:
-                pol_loss = self._what_step_policy_loss(lossOut)
+                pol_loss = self._what_step_policy_loss(
+                    lossOut, mask=_answer_mask if getattr(self, "answer_synthesis", False) else None)
                 if pol_loss is not None:
                     totalLoss = totalLoss + self.what_thinking_policy_weight * pol_loss
                     self.record_loss(

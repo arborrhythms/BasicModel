@@ -25,17 +25,20 @@ class AnswerProgram:
 
     Tensor copies retain the current forward's gradients while insulating
     the record from subsequent staging. ``targets`` describe reconstruction
-    only; output generation never follows them.
+    only; output generation never follows them. ``word_rows`` identify the
+    presented WORDs separately from ``rows``, which identify their interpreted
+    concepts (OBJECTs when associated).
     """
 
     rows: Any
+    word_rows: Any
     activations: Any
     leaves: Any
     actions: Any
     targets: Any
     end_state: Any
 
-    _tensor_fields = ("rows", "activations", "leaves", "actions", "targets", "end_state")
+    _tensor_fields = ("rows", "word_rows", "activations", "leaves", "actions", "targets", "end_state")
 
     def __post_init__(self) -> None:
         for name in self._tensor_fields:
@@ -57,12 +60,10 @@ class Understanding:
     reconstruction_carriers: Mapping[str, Any] = field(
         default_factory=lambda: MappingProxyType({}))
     execution: Any = field(default=None, repr=False, compare=False)
-    # The resolved INPUT symbol the answer path is seeded from (spec 5.3).
-    # On the serial grammar path this is the grammar's root idea (the
-    # STM-folded S, which varies with the sentence); the ``symbols``
-    # tensor there is the symbol-space activation over a codebook that is
-    # nearly empty at initialization and so is the same for every
-    # sentence.  ``None`` means "use ``symbolic_state``".
+    # Dense seed for topologies without indexed answer programs. The serial
+    # path resolves its owned answer_program first and needs neither this
+    # seed nor symbolic_state. None falls back to symbolic_state only in
+    # the dense compatibility path.
     answer_seed: Any = field(default=None, repr=False, compare=False)
     answer_program: tuple = field(default_factory=tuple, repr=False, compare=False)
     sentence_programs: Mapping[int, tuple] = field(
