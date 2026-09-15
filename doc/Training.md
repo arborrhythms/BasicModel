@@ -619,8 +619,9 @@ that loads a sentence's pre-seal stack at the word that ends it, undoes
 the word's recorded unary, post-binary and pre-binary folds, and pops and
 scores the word. Operand identity (contract 1): the trace records each
 binary fold's operand concept rows (left = STM slot 1, right = slot 0,
-read before the reduce moves the stack; `record_choice` on the eager
-path, two bank slabs on the compiled one), and an undo routes the
+read before the reduce moves the stack, including every intermediate
+packed sentence seal; `record_choice` on the eager path, two bank slabs
+on the compiled one), and an undo routes the
 residual reverse to the operand that is a word of the sentence, on
 whichever side the fold put it, with that word's retained reference; a
 compound operand (a composite folded earlier) takes the residual. A fold

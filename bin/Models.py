@@ -20103,15 +20103,16 @@ class BasicModel(BaseModel):
             sealed_stm = final_stm
             seal_width = max(0, capacity - 1)
             for seal_index in range(seal_width):
+                pre_seal = sealed_stm
                 seal_choice = language.choose_sentence_seal_binary(
-                    sealed_stm, intermediate_end,
+                    pre_seal, intermediate_end,
                     base_tau=self.stm_reduce_tau,
                     op_prior=self._chunk_structural_prior(
-                        wholes, B, sealed_stm[0]))
+                        wholes, B, pre_seal[0]))
                 (sealed_stm, seal_applied, seal_op,
                  seal_valid, seal_loss) = (
                     cs.apply_binary_language_choice(
-                        sealed_stm, seal_choice))
+                        pre_seal, seal_choice))
                 (wholes, seal_phrase_row, chunk_slab, chunk_count) = (
                     self._chunk_reduce_provenance(
                         wholes, seal_op, seal_applied,
@@ -20119,7 +20120,7 @@ class BasicModel(BaseModel):
                 left_rows, right_rows = self._tensor_record_operands(
                     left_rows, right_rows,
                     3 * width + index * seal_width + seal_index,
-                    sealed_stm, seal_valid)            # rows before this seal applies
+                    pre_seal, seal_valid)
                 sealed_stm = cs.apply_phrase_rows(
                     sealed_stm, seal_phrase_row, seal_applied)
                 trace_state = self._tensor_record_choice(

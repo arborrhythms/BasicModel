@@ -1,6 +1,8 @@
 # Answer path: ownership, training and independence (Codex round 5)
 
-Status: PLAN, written 2026-09-14 at basicmodel `cf0daf7` for execution in
+Status: IN PROGRESS (2026-09-15): item 4 complete and verified. Remaining
+order: 5, 1, 3, 6, then 2 and 7 after Alec's decisions
+in section 6. Written 2026-09-14 at basicmodel `cf0daf7` for execution in
 a fresh session. Alec's framing: are Codex's findings specification
 issues or code that does not operate as specified? Answer, item by item,
 below; in short: five of the six are code defects against a clear
@@ -362,6 +364,20 @@ commit. Answer Codex with the test names.
 
 ## 5. Verification gates (Codex's probes as tests)
 
+Execution evidence, item 4:
+`test_reverse_traversal.py::test_packed_trace_records_pre_fold_operand_rows_at_every_binary`
+first failed at intermediate seal slot 159: recorded `(5, -1)` against
+the replayed pre-fold rows `(-1, -1)`. The fix retains `pre_seal` for
+operand recording. The test replays all live binary and unary choices
+in two packed rows, checks every binary trace slot, and requires both
+per-word folds and final/intermediate seals, including a leaf beside a
+composite. Verification: the file passed (15 tests); the eight affected
+files passed (112 passed, 6 skipped); the full suite passed (4047 passed,
+53 skipped, 7 xfailed, 4 subtests passed, 169 warnings) in 1705.26 seconds.
+The suite ran in the background with `DEVELOPER_DIR` selecting the installed
+Command Line Tools, avoiding the unrelated Xcode license prompt. No
+`bin/*.py` files changed while pytest was running.
+
 1. Policy training: weights change under `runBatch` with
    `outputPolicyWeight` 1; unchanged with 0.
 2. Ownership: same `Understanding` + derivation, different staging, same
@@ -375,6 +391,30 @@ commit. Answer Codex with the test names.
    stored surface.
 
 ## 6. Open questions for Alec
+
+2026-09-15 decisions and clarification during execution:
+
+* Alec selected one conditioner; use the concept-width conditioner for
+  the materialised answer. The answer-loss destination in item 7 is
+  still awaiting his decision.
+* Alec clarified that WORD and OBJECT are entirely different concepts;
+  interpreting a word can replace its meaning. This supersedes item 6's
+  proposed automatic copy of a word's surface to its object row. Bytes
+  belong to the word; whether object realisation should follow the
+  stored META association to that word is awaiting clarification.
+* Alec clarified that there is no known correct parse, only the parse
+  identified by the forward. Reconstruction follows that identified
+  compose derivation. `reverseOutput` uses a different surface and its own
+  derivation through `<generate>`. This supersedes item 3's recommendation
+  to force the input derivation during output training, and item 1 must
+  not treat imitation of that input parse as justified output supervision.
+* Alec restated the roles: `forward()` builds a 1-3 idea form using
+  syntactic operations over known words; `reverseReconstruct()` tests that
+  representation by recovering the input surface; `reverseOutput()`
+  constructs a question-dependent answer with a potentially entirely
+  different surface. Output training requires supervised desired answers.
+  Input reconstruction targets or compose choices must not substitute for
+  answer supervision. Add a no-output-update gate for unsupervised batches.
 
 * 3.2: one conditioner at the concept width (recommended) or two with a
   shared recorded context.

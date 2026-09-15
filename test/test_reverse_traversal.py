@@ -155,6 +155,83 @@ def _stage_packed(m, rows):
     return raw
 
 
+def _replay_operand_rows(m):
+    """Replay the real trace's row stack, newest first, before each fold."""
+    trace = m._reconstruction_stack()
+    _rules, arities, mask = trace.choices()
+    active = m.inputSpace._word_active_mask
+    ids = m.inputSpace._packed_sentence_ids
+    rows = m._word_symbol_rows()
+    width = int(active.shape[1])
+    seal_width = int(m.conceptualSpace.stm.capacity) - 1
+    expected = {}
+    for b in range(int(active.shape[0])):
+        words = active[b].nonzero().flatten().tolist()
+        for sid in sorted(set(ids[b, words].tolist())):
+            sentence = [w for w in words if int(ids[b, w]) == sid]
+            stack = []
+
+            def fold(slot):
+                if not bool(mask[b, slot]):
+                    return
+                if int(arities[b, slot]) == 2:
+                    assert len(stack) >= 2, (b, slot, stack)
+                    expected[b, slot] = (stack[1], stack[0])
+                    stack[:2] = [-1]
+                else:
+                    assert int(arities[b, slot]) == 1 and stack
+                    stack[0] = -1
+
+            for w in sentence:
+                fold(3 * w)
+                stack.insert(0, int(rows[b, w]))
+                fold(3 * w + 1)
+                fold(3 * w + 2)
+            hi = sentence[-1]
+            base = 3 * width if hi == words[-1] else 3 * width + hi * seal_width
+            for k in range(seal_width):
+                fold(base + k)
+            assert len(stack) == 1, (b, sid, stack)
+    return expected
+
+
+def test_packed_trace_records_pre_fold_operand_rows_at_every_binary(tmp_path):
+    """Codex item 4: real packed seals retain the operands of the fold,
+    including a known leaf beside a composite, before reducing the stack."""
+    m = _build_ladder_variant(tmp_path, "operand_rows", [
+        ("<serialWordCapacity>8</serialWordCapacity>", "<serialWordCapacity>32</serialWordCapacity>"),
+        ("<serialWordBuckets>8</serialWordBuckets>", "<serialWordBuckets>32</serialWordBuckets>")])
+    m._tensor_peer_while_eager = True
+    m._chart_compose_per_word = lambda: None
+    m.stm_reduce_tau = 1.0
+    m._install_unit_span_fn()
+    try:
+        _stage_packed(m, [["aa bb cc dd ee", "ff gg hh ii jj"], ["kk ll mm", "nn oo"]])
+        with torch.no_grad():
+            out = m._forward_with_compiled_sentence_state(None)
+        m._publish_compiled_sentence_state(out)
+        expected = _replay_operand_rows(m)
+        trace = m._reconstruction_stack()
+        _rules, arities, mask = trace.choices()
+        recorded = set(map(tuple, (mask.bool() & (arities == 2)).nonzero().tolist()))
+        assert set(expected) == recorded
+        width = int(m.inputSpace._word_active_mask.shape[1])
+        seal_width = int(m.conceptualSpace.stm.capacity) - 1
+        assert any(slot < 3 * width for _, slot in expected)  # per-word folds
+        assert any(3 * width <= slot < 3 * width + seal_width for _, slot in expected)
+        intermediate = {key: value for key, value in expected.items()
+                        if key[1] >= 3 * width + seal_width}
+        assert intermediate and any(min(pair) < 0 <= max(pair)
+                                    for pair in intermediate.values())
+        for (b, slot), pair in expected.items():
+            actual = (int(trace._choice_left_rows[b, slot]),
+                      int(trace._choice_right_rows[b, slot]))
+            assert actual == pair, (b, slot, actual, pair)
+    finally:
+        m.End()
+        m.symbolSpace.soft_reset()
+
+
 def test_packed_rows_reconstruct_each_sentence_separately(tmp_path):
     """Requirement 3: one traversal per completed sentence; packed rows keep
     separate per-sentence costs; every word of every sentence recovered."""
