@@ -687,11 +687,9 @@ derivation (its program is kept beside the recall history), not the
 current input's. The
 idea goes to the walk with its live slots reversed (the walk's top is its
 last live slot) on a stack of the STM capacity, with a static budget of
-every word's pop and three folds plus the seals, together with the
-teacher actions of its own sentence's derivation (`_derivation_targets`,
-kept per observed sentence beside the recall history). The walk then
-runs on opaque concept slots (no stamps: the teacher decides a top where
-it has an action, the policy otherwise) and the emitted words are
+every word's pop and three folds plus the seals. The walk chooses its own
+generate derivation over the opaque concept slots, independently of the
+input compose trace, and the emitted words are
 realised through the tied reverse chain (`_reverse_body` then
 `_reverse_perceptual`) into percepts for the output space. The existing
 conceptual synthesis (the WholeSpace inverse of the answer symbol) could
@@ -721,9 +719,23 @@ policy gradient. The previous batch's cost is cleared at entry even when
 the next batch skips output generation. This follows the answer-error
 credit pattern used by the thinking chooser; no gold parse is assumed.
 
-The evaluation/low-level compatibility walk still accepts stamps and
-teacher targets; removing that input-teacher dependency and selecting the
-rule inventory from `<generate>` is item 3 of the answer-path plan.
+Evaluation uses the chooser's highest-scoring action. The rule inventory
+comes from the grammar's `<generate>` section, with the number of LHS
+outputs determining binary/unary expansion; it can differ from `<compose>`
+and can contain rules absent there (`bin/Language.py:14159`). The numerical
+inverse kernels remain shared with reconstruction, while the catalogs,
+policies and traversal state are independent (`bin/Models.py:11730`). An
+explicit output-owned generate stamp can replay an output rule; an input
+compose stamp cannot. The low-level `targets` argument is retained only as
+an ignored compatibility argument. There is no `outputTeacherForcing` knob.
+Reconstruction continues to follow the input's identified compose parse;
+that parse is not assumed correct and provides no output imitation credit.
+
+Checkpoints record stable generate-action keys. Loading maps chooser rows
+and Adam moments by those keys, preserving stop and giving new actions
+fresh weights and zero moments. Older checkpoints without keys map from
+the legacy compose catalog (`bin/Language.py:14214`,
+`bin/checkpoint_migrations.py:799`).
 A completed constituent is popped into the emitted sequence and the walk
 continues with its pending constituents. A row completes when no live slot
 remains; exhausting the budget with pending slots reports truncation.

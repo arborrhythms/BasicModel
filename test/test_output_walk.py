@@ -30,11 +30,10 @@ def _stamped_event(m, rule_name, N=4):
     global rule id of ``rule_name``; slots below it are terminals."""
     import Language
     language = m.languageSpace
-    binary = language._tree_layer(2)
-    names = list(binary.op_names)
+    names = list(language._generate_binary_names)
     idx = names.index(rule_name)
-    global_id = int(language._cs_binary_rule_ids[idx])
-    gl = getattr(list(binary.ops)[idx], "gl", list(binary.ops)[idx])
+    global_id = int(language._generate_binary_rule_ids[idx])
+    gl = language._generate_binary_ops[idx]
     cw = int(m.symbolSpace.subspace.nWhat)                 # the stamp channel
     D = int(m.conceptualSpace.stm.concept_dim)
     torch.manual_seed(0)
@@ -64,7 +63,7 @@ def test_walk_unreduces_a_rule_stamped_top_and_emits_its_constituents():
     m = _model()
     _stop(m)
     for rule in ("lift", "lower"):
-        names = list(m.languageSpace._tree_layer(2).op_names)
+        names = list(m.languageSpace._generate_binary_names)
         if rule not in names:
             continue
         event, gl, cw, live = _stamped_event(m, rule)
@@ -150,23 +149,30 @@ def test_walk_is_invariant_to_reconstruction_only_state():
     assert torch.equal(again[1], base[1]) and torch.equal(again[2], base[2])
 
 
-def test_generate_policy_is_credited_by_the_stamped_rule_and_trains():
-    """Contract 5: a stamped top credits the policy by imitation (positive,
-    finite cross-entropy whose gradient reaches the policy's weights); the
-    policy is the only parameter the walk owns."""
+def test_generate_policy_returns_sampled_action_credit_without_imitation():
+    """An output stamp is not a gold parse: sampling credits its own
+    actions, and deterministic replay produces no imitation objective."""
     m = _model()
-    language = m.languageSpace
-    event, gl, cw, live = _stamped_event(m, "lift")
-    names = list(language._tree_layer(2).op_names)
-    _prefer(m, names.index("lower"))                        # wrong preference
-    m.zero_grad(set_to_none=True)
-    out, n_emitted, truncated, cost = m._output_generate_walk(event, budget=8)
-    assert cost.shape == (1,) and float(cost) > 1.0 and bool(torch.isfinite(cost))
-    cost.sum().backward()
-    assert language.generate_policy.weight.grad is not None
-    assert float(language.generate_policy.weight.grad.abs().sum()) > 0
-    fold = [p.grad for p in gl.parameters() if p.grad is not None and float(p.grad.abs().sum()) > 0]
-    assert not fold                                          # imitation credit trains the policy only
+    try:
+        language = m.languageSpace
+        event, gl, cw, live = _stamped_event(m, "lift")
+        _stop(m)
+        m.zero_grad(set_to_none=True)
+        deterministic = m._output_generate_walk(event, budget=8)
+        assert not bool(deterministic[3].any())
+        torch.manual_seed(7)
+        out, n_emitted, truncated, cost = m._output_generate_walk(
+            event, budget=8, sample_actions=True)
+        assert cost.shape == (1,) and float(cost.detach()) > 0
+        assert bool(torch.isfinite(cost))
+        cost.sum().backward()
+        assert language.generate_policy.weight.grad is not None
+        assert float(language.generate_policy.weight.grad.abs().sum()) > 0
+        assert all(p.grad is None or not bool(p.grad.abs().any())
+                   for p in gl.parameters())
+    finally:
+        m.End()
+        m.symbolSpace.soft_reset()
 
 
 def test_generate_policy_decides_an_unstamped_top():
@@ -175,13 +181,13 @@ def test_generate_policy_decides_an_unstamped_top():
     emits the live slots as they are."""
     m = _model()
     language = m.languageSpace
-    names = list(language._tree_layer(2).op_names)
+    names = list(language._generate_binary_names)
     event, gl, cw, live = _stamped_event(m, "lift")
     event[0, 1, cw] = 0.0                                   # unstamped top
     _prefer(m, names.index("lift"))
     out, n_emitted, truncated, cost = m._output_generate_walk(event, budget=1)
     assert n_emitted.tolist() == [0] and bool(truncated.all())
-    assert float(cost) == 0.0                               # nothing stamped to imitate
+    assert float(cost) == 0.0                               # deterministic choices have no imitation loss
     _stop(m)
     out2, n_emitted2, truncated2, _c = m._output_generate_walk(event, budget=8)
     assert n_emitted2.tolist() == [live] and not bool(truncated2.any())
@@ -228,41 +234,36 @@ def test_answer_materialises_as_its_own_conceptual_idea_and_realises_through_the
     m.End(); m.symbolSpace.soft_reset()
 
 
-def test_generate_policy_is_credited_by_the_derivation_on_conceptual_slots():
-    """An opaque conceptual idea carries no rule stamp, so the walk's
-    chooser is credited by the teacher actions of the idea's own
-    derivation (the recorded folds of its sentence, seals first, then per
-    word its unary, post-binary, pop and pre-binary): followed under
-    teacher forcing the walk pops every word of the sentence without
-    truncation, and the policy's parameters receive the gradient of the
-    imitation cost."""
+def test_output_ignores_input_derivation_on_conceptual_slots():
+    """The input compose trace belongs to reconstruction, even when passed
+    to the output walk's compatibility argument in training or evaluation."""
     from test_compiled_word_chunk import _stage_fullgraph_tensor_peer
     m = _model()
     m._tensor_peer_while_eager = True
     m._chart_compose_per_word = lambda: None
-    _stage_fullgraph_tensor_peer(m, ["12 plus 1", "3 plus 4"])
-    with torch.no_grad():
-        out = m._forward_with_compiled_sentence_state(None)
-        m._publish_compiled_sentence_state(out)
-    T = m._walk_budget()
-    targets = m._derivation_targets(None, T)
-    language = m.languageSpace
-    R2 = int(language._cs_binary_rule_ids.numel())
-    R1 = int(language._cs_unary_rule_ids.numel())
-    stop = R2 + R1
-    n_words = m.inputSpace._word_active_mask.to(torch.long).sum(1)
-    assert tuple(targets.shape) == (2, T)
-    assert torch.equal((targets == stop).sum(1), n_words)        # one pop per word
-    assert bool((targets >= -1).all()) and bool((targets <= stop).all())
-    assert bool((targets[:, -1] == -1).all())                     # exhausted well inside the budget
-    idea = m._sentence_end_state(None)
-    words, n_emitted, truncated, cost = m._output_generate_walk(
-        m._walk_operand(idea), T, False, targets)
-    assert torch.equal(n_emitted, n_words) and not bool(truncated.any())
-    params = list(language.generate_policy.parameters())
-    grads = torch.autograd.grad(cost.sum(), params, allow_unused=True)
-    assert any(g is not None and float(g.abs().sum()) > 0 for g in grads)
-    m.End(); m.symbolSpace.soft_reset()
+    try:
+        _stage_fullgraph_tensor_peer(m, ["12 plus 1", "3 plus 4"])
+        with torch.no_grad():
+            out = m._forward_with_compiled_sentence_state(None)
+            m._publish_compiled_sentence_state(out)
+        T = m._walk_budget()
+        targets = m._derivation_targets(None, T)
+        assert bool((targets >= 0).any())
+        idea = m._walk_operand(m._sentence_end_state(None))
+        _stop(m)
+        for sample in (False, True):
+            torch.manual_seed(13)
+            with_targets = m._output_generate_walk(idea, T, False, targets, sample)
+            torch.manual_seed(13)
+            without = m._output_generate_walk(idea, T, False, None, sample)
+            for a, b in zip(with_targets, without):
+                torch.testing.assert_close(a, b, rtol=0, atol=0)
+            if not sample:
+                assert not bool(with_targets[2].any())
+                assert not bool(with_targets[3].any())
+    finally:
+        m.End()
+        m.symbolSpace.soft_reset()
 
 
 def _policy_training_probe(m, opt, questions):
@@ -557,3 +558,162 @@ def test_materialised_idea_follows_the_symbol_rows():
     assert not torch.allclose(idea1, idea0, atol=1e-4)
     assert torch.equal(targets1, targets)                       # the derivation is unchanged
     m.End(); m.symbolSpace.soft_reset()
+
+
+def test_reverseoutput_evaluation_uses_its_policy_with_input_trace_present():
+    from test_compiled_word_chunk import _stage_fullgraph_tensor_peer
+    from What import What
+    m = _model()
+    m.eval()
+    m._tensor_peer_while_eager = True
+    m._chart_compose_per_word = lambda: None
+    try:
+        _stage_fullgraph_tensor_peer(m, ["12 plus 1", "3 plus 4"])
+        with torch.no_grad():
+            out = m._forward_with_compiled_sentence_state(None)
+            m._publish_compiled_sentence_state(out)
+            u = m._capture_understanding(out[:4])
+            targets = m._derivation_targets(None, m._walk_budget())
+            assert bool((targets >= 0).any())
+            choices = [t.clone() for t in m._reconstruction_stack().choices()]
+            _stop(m)
+            stopped = m.reverseOutput(u, What.supervised(0))
+            words = stopped.concepts.clone()
+            stop_truncated = m._output_truncated.clone()
+            _prefer(m, list(m.languageSpace._generate_binary_names).index("lift"))
+            expanded = m.reverseOutput(u, What.supervised(0))
+        assert not torch.equal(words, expanded.concepts)
+        assert not bool(stop_truncated.any())
+        assert bool(m._output_truncated.all())
+        for before, after in zip(choices, m._reconstruction_stack().choices()):
+            assert torch.equal(before, after)
+    finally:
+        m.End()
+        m.symbolSpace.soft_reset()
+
+
+def _generate_variant(tmp_path, names, remove_compose=()):
+    import xml.etree.ElementTree as ET
+    from test_meronomy_ladder import _build_ladder_variant
+    grammar = ET.parse(_ROOT / "data" / "ladder.grammar")
+    generate = grammar.find(".//Symbolic/generate")
+    compose = grammar.find(".//Symbolic/compose")
+    assert generate is not None and compose is not None
+    for rule in list(generate):
+        if not any(name + ".reverse(" in (rule.text or "") for name in names):
+            generate.remove(rule)
+    for rule in list(compose):
+        if any(name + ".forward(" in (rule.text or "") for name in remove_compose):
+            compose.remove(rule)
+    path = tmp_path / "independent.grammar"
+    grammar.write(path, encoding="unicode")
+    return _build_ladder_variant(tmp_path, "independent_generate", [
+        ("<packSentences>false</packSentences>",
+         "<packSentences>false</packSentences>\n      <outputInLoop>true</outputInLoop>"),
+        ("<grammar>ladder.grammar</grammar>", f"<grammar>{path}</grammar>")])
+
+
+def test_output_rule_inventory_comes_from_generate_even_without_compose_rule(tmp_path):
+    m = _generate_variant(tmp_path, ("sum",), remove_compose=("sum",))
+    try:
+        language = m.languageSpace
+        assert "sum" not in language._tree_layer(2).op_names
+        assert language.generate_policy.out_features == 2  # declared sum + stop
+        _stop(m)
+        event, _, cw, live = _stamped_event(m, "sum")
+        out, count, truncated, cost = m._output_generate_walk(event, 8)
+        assert count.tolist() == [live + 1]
+        assert not bool(truncated.any()) and not bool(cost.any())
+        parent = event[0, 1].clone()
+        parent[cw] = 0
+        torch.testing.assert_close(out[0, 1], parent * 0.5)
+        torch.testing.assert_close(out[0, 2], parent * 0.5)
+        # No unary catalog, and no compose sum, must also compile.
+        compiled = torch.compile(m._output_generate_walk, backend="eager", fullgraph=True)
+        result = compiled(event, 8)
+        for actual, expected in zip(result, (out, count, truncated, cost)):
+            torch.testing.assert_close(actual, expected)
+    finally:
+        m.End()
+        m.symbolSpace.soft_reset()
+
+
+@pytest.mark.parametrize("legacy, new_action", [(True, False), (False, False), (True, True)])
+def test_generate_checkpoint_migrates_action_weights_and_adam_moments(tmp_path, legacy, new_action):
+    """A shorter or reordered generate catalog retains each action's learned
+    weights and moments, including a marker-free legacy compose head."""
+    removed = ("sum",) if new_action else ()
+    m = _generate_variant(tmp_path, ("sum",), remove_compose=removed)
+    language = m.languageSpace
+    desired = language._generate_rule_keys.tolist()
+    saved_keys = list(language._legacy_generate_rule_keys)
+    if not legacy:
+        saved_keys.reverse()
+    old_params = list(language.generate_policy.parameters())
+    policy = torch.nn.Linear(language._generate_policy_width, len(saved_keys))
+    language.generate_policy = policy
+    replacements = {id(old): new for old, new in zip(old_params, policy.parameters())}
+    m.symbolSpace.params[:] = [replacements.get(id(p), p) for p in m.symbolSpace.params]
+    if legacy:
+        del language._buffers["_generate_rule_keys"]
+    else:
+        language._generate_rule_keys = torch.tensor(saved_keys, dtype=torch.long)
+    with torch.no_grad():
+        for i in range(len(saved_keys)):
+            policy.weight[i].fill_(0.01 * (i + 1))
+            policy.bias[i] = 0.02 * (i + 1)
+    m._materialize_answer_path()
+    opt = m.getOptimizer(lr=1e-3)
+    m._optimizer = opt
+    policy(torch.ones(1, policy.in_features)).square().mean().backward()
+    opt.step()
+    selected = torch.tensor([saved_keys.index(key) if key in saved_keys else -1
+                             for key in desired])
+    known = selected >= 0
+    expected = {name: p.detach().index_select(0, selected.clamp_min(0)).clone()
+                for name, p in policy.named_parameters()}
+    moments = {name: {key: value.detach().index_select(0, selected.clamp_min(0)).clone()
+                      if value.ndim else value.detach().clone()
+                      for key, value in opt.state[p].items()}
+               for name, p in policy.named_parameters()}
+    path = tmp_path / "generate.ckpt"
+    m.save_weights(str(path))
+    fresh = _generate_variant(tmp_path, ("sum",), remove_compose=removed)
+    for name, p in fresh.languageSpace.generate_policy.named_parameters():
+        expected[name][~known] = p.detach()[~known]
+        for value in moments[name].values():
+            if value.ndim:
+                value[~known] = 0
+    try:
+        assert fresh.load_weights(str(path), strict=True, require_match=True)
+        restored_opt = fresh.getOptimizer(lr=1e-3)
+        for name, p in fresh.languageSpace.generate_policy.named_parameters():
+            torch.testing.assert_close(p, expected[name], rtol=0, atol=0)
+            for key, value in moments[name].items():
+                torch.testing.assert_close(restored_opt.state[p][key], value, rtol=0, atol=0)
+        restored_opt.zero_grad(set_to_none=True)
+        fresh.languageSpace.generate_policy(torch.ones(1, policy.in_features)).square().mean().backward()
+        restored_opt.step()  # shape drift must not escape until the next step
+    finally:
+        for model in (m, fresh):
+            model.End()
+            model.symbolSpace.soft_reset()
+
+
+def test_generate_walk_with_no_declared_rules_only_emits(tmp_path):
+    m = _generate_variant(tmp_path, ())
+    try:
+        language = m.languageSpace
+        assert language.generate_policy.out_features == 1
+        assert not language._generate_binary_ops and not language._generate_unary_ops
+        D = int(m.conceptualSpace.stm.concept_dim)
+        idea = torch.zeros(1, 4, D)
+        idea[:, :2] = 0.5
+        compiled = torch.compile(m._output_generate_walk, backend="eager", fullgraph=True)
+        out, count, truncated, cost = compiled(idea, 4, False)
+        assert count.tolist() == [2] and not bool(truncated.any())
+        torch.testing.assert_close(out[:, :2], idea[:, :2])
+        assert not bool(cost.any())
+    finally:
+        m.End()
+        m.symbolSpace.soft_reset()

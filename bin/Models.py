@@ -2961,7 +2961,9 @@ class BaseModel(Mereology, nn.Module):
                 remapped = remap_optimizer_state_by_name(
                     pending, saved_manifest, optimizer.state_dict(),
                     live_manifest,
-                    reset_wholespace=reset_wholespace)
+                    reset_wholespace=reset_wholespace,
+                    parameter_row_maps=getattr(
+                        self, "_pending_generate_policy_rows", None))
                 optimizer.load_state_dict(remapped.state)
                 self._normalize_optimizer_state_shapes(optimizer)
                 TheMessage(
@@ -2979,6 +2981,7 @@ class BaseModel(Mereology, nn.Module):
                 self._pending_legacy_state_shapes = None
                 self._pending_optimizer_reset_wholespace = False
                 self._pending_optimizer_require_match = False
+                self._pending_generate_policy_rows = None
         # PartSpace may have to install a previously unseen byte before the
         # first codebook gather of a batch. Keep the current optimizer as a
         # non-module boundary context so that eager growth can migrate Adam
@@ -4847,6 +4850,14 @@ class BaseModel(Mereology, nn.Module):
         if _materialize is not None:
             _materialize()
             self._materialize_answer_path_from_checkpoint(state)
+        # Output rules are identified by meaning, not their old compose
+        # position. Apply the same row migration to weights and Adam moments.
+        generate_rows = {}
+        for name, module in self.named_modules(remove_duplicate=False):
+            migrate = getattr(type(module), "migrate_generate_checkpoint", None)
+            if migrate is not None:
+                generate_rows.update(migrate(module, state, name + "."))
+        self._pending_generate_policy_rows = generate_rows
         # Declared migration (compiled reverse-loops plan, requirement 5):
         # under the tied reconstruction contract the detached reverse
         # student has no module, so a checkpoint that carries its
@@ -8961,7 +8972,7 @@ class BasicModel(BaseModel):
             # output loop; the walk un-folds it into words (the second
             # compiled loop) and the words are realised through the
             # reverse chain.  The symbol vector is never padded to fit.
-            idea, idea_resolved, idea_sources, targets = self._materialize_answer_idea(
+            idea, idea_resolved, idea_sources, _ = self._materialize_answer_idea(
                 understanding, derivation, question)
             if torch.is_tensor(idea):
                 budget = self._walk_budget()
@@ -8969,7 +8980,7 @@ class BasicModel(BaseModel):
                 words, n_emitted, output_truncated, policy_cost = (
                     self._compiled_output_walk()(
                         self._walk_operand(idea), budget, False,
-                        None if sample_actions else targets, sample_actions))
+                        None, sample_actions))
                 kept = max(2, 2 * int(getattr(self, "serial_word_capacity", 0) or 8))
                 if int(words.shape[1]) > kept:       # the realised slab keeps 2W words
                     output_truncated = torch.logical_or(output_truncated, n_emitted > kept)
@@ -11712,49 +11723,23 @@ class BasicModel(BaseModel):
         return self.__dict__.setdefault("_what_recall_program_history", {})
 
     def _generate_walk_width(self):
-        """The event width the generate walk's tied inverses act on: the
-        muxed concept width of the CS grammar ops.  The resolved answer is
-        a symbol-space event; where the symbol and concept widths differ
-        (the production config: 136 against 1032) the walk does not apply
-        to it and ``reverseOutput`` skips the walk (open design question,
-        plan 2026-09-12, output loop)."""
+        """Concept width consumed by the answer's generate chooser."""
         language = getattr(self, "languageSpace", None)
-        binary = language._tree_layer(2) if language is not None else None
-        for op in (list(getattr(binary, "ops", None) or [])):
-            gl = getattr(op, "gl", op)
-            cw = int(getattr(gl, "_content_width", 0) or 0)
-            if cw:
-                return cw
-        return -1
+        return int(getattr(language, "_generate_policy_width", 0) or -1)
 
     def _output_generate_walk(self, event, budget, stamped_events=True,
                               targets=None, sample_actions=False):
         """The answer-side generate walk as one bounded ``torch.while_loop``
         (contract 5).
 
-        ``event`` ``[B, N, D]`` is the resolved answer's event slab: live
-        slots carry a ``.where`` stamp (0 empty, a terminal id, or a rule
-        id) in the symbol-level layout.  Each trip reads the top live slot
-        per row.  A rule on top is un-reduced with the rule's tied reverse
-        (binary: the left child replaces the top and the right child opens
-        the slot above it; unary: in place), the children stamped empty; a
-        completed constituent on top (no rule stamp, and the generate
-        policy says stop or there is no policy) is popped into the emitted
-        sequence.  Unstamped tops are otherwise decided by the learned
-        generate policy (``LanguageSpace.generate_policy``: a binary rule, a
-        unary rule, or stop); stamped tops credit the policy by imitation.
-        The walk ends when no row has a live slot left, or when ``budget``
-        trips are spent with work pending (reported as truncation).  Output
-        state only: it reads nothing of the input reconstruction.
-
-        ``targets`` (``[B, budget]`` long, optional) are the teacher actions
-        of the answer's own derivation (``_derivation_targets``: a binary
-        rule's local id, ``R2 +`` a unary rule's local id, ``R2 + R1`` =
-        pop) for the unstamped tops of an opaque conceptual idea: where a
-        target exists the walk follows it and the policy is credited by
-        cross-entropy against it (the learning signal of the chooser on
-        conceptual slots, which carry no rule stamp); ``-1`` leaves the
-        choice to the policy.
+        ``event`` ``[B, N, D]`` holds the answer's own live idea slots.
+        Each trip chooses a declared generate rule or stop. A binary rule
+        replaces its parent with two children; a unary rule rewrites it;
+        stop emits it. Output-owned generate stamps may fix a rule during
+        deterministic replay. Compose stamps and input teacher actions have
+        no authority here: ``targets`` is an ignored compatibility argument.
+        The walk ends when all slots finish or its bounded budget expires.
+        Its traversal state and chooser are separate from reconstruction.
 
         With ``sample_actions`` the training walk samples its own choices
         and returns their sequence negative log probability, with no teacher
@@ -11770,9 +11755,12 @@ class BasicModel(BaseModel):
         language = self.languageSpace
         B, N, D = int(event.shape[0]), int(event.shape[1]), int(event.shape[2])
         cw = self._stamp_channel(D) if stamped_events else D
-        binary_map = getattr(language, "_cs_binary_rule_ids", None)
-        unary_map = getattr(language, "_cs_unary_rule_ids", None)
-        inverses = language.reverse_inverses()      # once, not per trip
+        del targets
+        binary_map = language._generate_binary_rule_ids
+        unary_map = language._generate_unary_rule_ids
+        binary_ops = language._generate_binary_ops
+        unary_ops = language._generate_unary_ops
+        inverses = language.reverse_inverses(binary_ops)  # once, not per trip
         ar = torch.arange(B, device=event.device)
         if stamped_events:
             kinds0, _ = language.decode_where_ids(event, cw)
@@ -11786,23 +11774,14 @@ class BasicModel(BaseModel):
         R1 = int(unary_map.numel()) if torch.is_tensor(unary_map) else 0
         stop_index = R2 + R1
         policy_on = language.generate_policy is not None
-        if torch.is_tensor(targets) and not sample_actions:
-            teacher = targets.to(device=event.device, dtype=torch.long)
-            if int(teacher.shape[1]) < T:
-                teacher = torch.cat((teacher, torch.full(
-                    (B, T - int(teacher.shape[1])), -1, dtype=torch.long,
-                    device=event.device)), dim=1)
-            teacher = teacher[:, :T]
-        else:
-            teacher = torch.full((B, T), -1, dtype=torch.long, device=event.device)
         # Draw outside the loop body so the compiled loop consumes one
         # fixed-shape random slab, with one independent draw per row/trip.
         draws = torch.rand(B, T, device=event.device) if sample_actions else None
 
-        def cond(t, stack, n_live, emitted, n_emitted, credit, credit_n):
+        def cond(t, stack, n_live, emitted, n_emitted, credit):
             return torch.logical_and(t < T, (n_live > 0).any())
 
-        def body(t, stack, n_live, emitted, n_emitted, credit, credit_n):
+        def body(t, stack, n_live, emitted, n_emitted, credit):
             top = (n_live - 1).clamp(0, N - 1)
             top_vec = stack[ar, top, :]                                 # [B, D]
             if stamped_events:
@@ -11812,28 +11791,15 @@ class BasicModel(BaseModel):
                 kind = torch.ones(B, dtype=torch.long, device=event.device)
                 rule_id = torch.zeros(B, dtype=torch.long, device=event.device)
             has_top = n_live >= 1
-            is_rule = torch.logical_and(kind == 2, has_top)
-            if sample_actions:
-                is_rule = torch.zeros_like(is_rule)
             local_b, known_b = language.local_op_from_rule_ids(rule_id, binary_map)
             local_u, known_u = language.local_op_from_rule_ids(rule_id, unary_map)
+            is_rule = has_top & (kind == 2) & (known_b | known_u)
+            if sample_actions:
+                is_rule = torch.zeros_like(is_rule)
             logits = language.generate_policy_logits(
                 top_vec.detach() if sample_actions else top_vec)
-            target = torch.where(known_b, local_b, torch.where(
-                known_u, local_u + R2, torch.full_like(local_b, stop_index)))
-            stamped = torch.logical_and(is_rule, torch.logical_or(known_b, known_u))
-            credit = credit + language.generate_policy_credit(logits, target, stamped)
-            credit_n = credit_n + stamped.to(credit.dtype)
-            # an unstamped top with a teacher action (the derivation of the
-            # idea's own sentence) follows it and credits the policy by it
-            tgt = teacher.gather(
-                1, t.clamp(0, T - 1).reshape(1, 1).expand(B, 1)).reshape(B)
-            unstamped = torch.logical_and(has_top, torch.logical_not(is_rule))
-            forced = torch.logical_and(unstamped, tgt >= 0)
-            credit = credit + language.generate_policy_credit(
-                logits, tgt.clamp(0, stop_index), forced)
-            credit_n = credit_n + forced.to(credit.dtype)
-            choice = torch.where(forced, tgt.clamp(0, stop_index), logits.argmax(dim=-1))
+            unstamped = has_top & ~is_rule
+            choice = logits.argmax(dim=-1)
             if sample_actions:
                 draw = draws.gather(
                     1, t.clamp(0, T - 1).reshape(1, 1).expand(B, 1))
@@ -11842,7 +11808,7 @@ class BasicModel(BaseModel):
                 credit = credit + language.generate_policy_credit(
                     logits, choice, unstamped)
             if not policy_on:
-                unstamped = forced          # no policy: stamps and teacher only
+                unstamped = torch.zeros_like(unstamped)
             pol_b = torch.logical_and(unstamped, choice < R2)
             pol_u = torch.logical_and(unstamped, torch.logical_and(
                 choice >= R2, choice < stop_index))
@@ -11855,8 +11821,8 @@ class BasicModel(BaseModel):
                 torch.logical_and(is_rule, known_u), pol_u),
                 torch.logical_not(do_b))
             left, right = language.reverse_binary_step(
-                top_vec, local_b, do_b, inverses=inverses)
-            undone = language.reverse_unary_step(top_vec, local_u, do_u)
+                top_vec, local_b, do_b, inverses=inverses, ops=binary_ops)
+            undone = language.reverse_unary_step(top_vec, local_u, do_u, ops=unary_ops)
             if stamped_events:       # children stamped empty in the where channel
                 zero_where = torch.zeros_like(left[:, cw:cw + 1])
                 left = torch.cat((left[:, :cw], zero_where, left[:, cw + 1:]), dim=-1)
@@ -11885,15 +11851,15 @@ class BasicModel(BaseModel):
             new_live = n_live + do_b.to(n_live.dtype) - pop.to(n_live.dtype)
             new_emitted = n_emitted + pop.to(n_emitted.dtype)
             return (t + 1, stack1, new_live.clone(), emitted1, new_emitted.clone(),
-                    credit.clone(), credit_n.clone())
+                    credit.clone())
 
         t0 = torch.tensor(0, dtype=torch.long, device=event.device)
         zeros_b = event.new_zeros(B)
         zeros_l = torch.zeros(B, dtype=torch.long, device=event.device)
-        t, stack, n_live, emitted, n_emitted, credit, credit_n = torch.while_loop(
+        t, stack, n_live, emitted, n_emitted, credit = torch.while_loop(
             cond, body, _carries_with_grad(
                 (t0, event.clone(), n_live0, event.new_zeros(B, T, D), zeros_l,
-                 zeros_b, zeros_b.clone())))
+                 zeros_b)))
         # left-align the emitted tail: out[:, i] = emitted[:, i + T - n_emitted]
         offset = (T - n_emitted).reshape(B, 1)
         index = (torch.arange(T, device=event.device).reshape(1, T) + offset).clamp(0, T - 1)
@@ -11901,8 +11867,7 @@ class BasicModel(BaseModel):
         keep = (torch.arange(T, device=event.device).reshape(1, T) < n_emitted.reshape(B, 1))
         out = torch.where(keep.unsqueeze(-1), out, torch.zeros_like(out))
         truncated = n_live > 0                      # work pending after the budget
-        policy_cost = credit if sample_actions else credit / credit_n.clamp_min(1.0)
-        return out, n_emitted, truncated, policy_cost
+        return out, n_emitted, truncated, credit
 
     def _compiled_output_walk(self):
         """The generate walk as the second compiled call (cached)."""

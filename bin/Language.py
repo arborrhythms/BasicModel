@@ -14153,30 +14153,48 @@ class LanguageSpace(nn.Module):
             "_cs_binary_rule_ids",
             torch.tensor(binary_ids, dtype=torch.long), persistent=False)
         self._n_rules = int(len(TheGrammar.rule_table))
-        # The output loop's generate policy (compiled reverse-loops plan,
-        # contract 5): a learned chooser over the grammar's generate rules
-        # (the CS binary rules, then the unary rules, then stop), read on
-        # the top slot's content. Training credits its sampled output
-        # choices from supplied answer error, not the input parse.
-        cw = 0
+        # Output has its own rule inventory. The LHS counts generated
+        # children; the RHS arity of a binary reverse is only one parent.
         from util import TheXMLConfig as _cfg
         walk_on = bool(_cfg.training("outputInLoop", False))
-        for arity in ((2, 1) if walk_on else ()):
-            layer_a = self._tree_layer(arity)
-            for op in list(getattr(layer_a, "ops", None) or []):
-                gl = getattr(op, "gl", op)
-                cw = int(getattr(gl, "_content_width", 0) or 0)
-                if cw:
-                    break
-            if cw:
-                break
-        n_choices = len(binary_ids) + len(unary_ids) + 1
+        catalog = {1: [], 2: []}
+        for offset, rule in enumerate(TheGrammar.rules_downward if walk_on else ()):
+            arity = len(str(rule.lhs).split(','))
+            if arity not in catalog or not rule.method_name:
+                continue
+            op = symbol_space.subspace._resolve_rule_layer(
+                rule.space_role, _dispatch_method_name_for_rule(rule))
+            if op is None:
+                raise ValueError(f"unresolved generate rule: {rule.canonical}")
+            catalog[arity].append((rule.space_role, offset, rule, op))
+        for arity in (2, 1):
+            catalog[arity].sort(key=lambda entry: entry[:2])
+            entries = catalog[arity]
+            label = "binary" if arity == 2 else "unary"
+            self.register_buffer(
+                f"_generate_{label}_rule_ids", torch.tensor([
+                    len(TheGrammar.rules_upward) + entry[1] for entry in entries
+                ], dtype=torch.long), persistent=False)
+            # Learned numerical operators remain owned by their host spaces.
+            object.__setattr__(self, f"_generate_{label}_ops",
+                               tuple(entry[3] for entry in entries))
+            setattr(self, f"_generate_{label}_names",
+                    tuple(entry[2].method_name for entry in entries))
+        keys = [self._generate_rule_key(entry[2], arity)
+                for arity in (2, 1) for entry in catalog[arity]] + [0]
+        legacy_keys = [self._generate_rule_key(TheGrammar.rules_upward[rid], arity)
+                       for arity, ids in ((2, binary_ids), (1, unary_ids))
+                       for rid in ids] + [0]
+        self._legacy_generate_rule_keys = tuple(legacy_keys)
+        cw = int(symbol_space.subspace.muxedSize) if walk_on else 0
+        n_choices = len(keys)
         self._generate_policy_width = int(cw)
         # Exists only with the output loop (<outputInLoop>): the loop's one
         # parameter; other configurations keep their state dict unchanged.
         self.generate_policy = (
-            nn.Linear(int(cw), n_choices) if cw and n_choices > 1 else None)
+            nn.Linear(int(cw), n_choices) if cw else None)
         if self.generate_policy is not None:
+            self.register_buffer("_generate_rule_keys", torch.tensor(keys, dtype=torch.long))
             with torch.no_grad():
                 self.generate_policy.weight.mul_(0.1)
                 self.generate_policy.bias.zero_()
@@ -14184,6 +14202,47 @@ class LanguageSpace(nn.Module):
                 # output loop then emits the idea's slots as they are, and
                 # expansions are learned from supplied-answer credit.
                 self.generate_policy.bias[-1] = 2.0
+
+    @staticmethod
+    def _generate_rule_key(rule, arity):
+        """Stable action meaning, shared with a legacy compose counterpart."""
+        import hashlib
+        key = repr((rule.space_role, _dispatch_method_name_for_rule(rule),
+                    arity, rule.width_min, rule.width_max))
+        return int.from_bytes(hashlib.sha256(key.encode()).digest()[:8], 'big') >> 1
+
+    def migrate_generate_checkpoint(self, state, prefix):
+        """Align saved chooser rows by rule meaning, including legacy heads.
+
+        The returned row map also migrates optimizer moments. New generate
+        actions retain fresh weights and receive zero moments; stop survives.
+        """
+        weight_key = prefix + "generate_policy.weight"
+        marker = prefix + "_generate_rule_keys"
+        if self.generate_policy is None or weight_key not in state:
+            return {}
+        saved_keys = state.get(marker)
+        old = (saved_keys.tolist() if torch.is_tensor(saved_keys)
+               else list(self._legacy_generate_rule_keys))
+        new = self._generate_rule_keys.tolist()
+        if len(old) != int(state[weight_key].shape[0]) or len(set(old)) != len(old):
+            raise ValueError("generate-policy checkpoint has an invalid rule catalog")
+        rows = tuple(old.index(key) if key in old else -1 for key in new)
+        migrations = {}
+        for name, live in self.generate_policy.state_dict().items():
+            key = prefix + "generate_policy." + name
+            saved = state[key]
+            if tuple(saved.shape[1:]) != tuple(live.shape[1:]):
+                raise ValueError(f"generate-policy content width changed: {key}")
+            if old != new:
+                value = live.detach().to(saved).clone()
+                for dst, src in enumerate(rows):
+                    if src >= 0:
+                        value[dst].copy_(saved[src])
+                state[key] = value
+                migrations[key] = rows
+        state[marker] = self._generate_rule_keys.detach().clone()
+        return migrations
 
     def generate_policy_logits(self, top):
         """``[B, R2 + R1 + 1]`` logits of the generate policy on the top
@@ -14274,17 +14333,17 @@ class LanguageSpace(nn.Module):
     # constituent reference, ``not``/``non`` through themselves, everything
     # else through identity (declared non-invertible).
 
-    def reverse_inverses(self):
+    def reverse_inverses(self, ops=None):
         """The tied inverses the binary reverses need, computed once per
         traversal: one ``W^-1`` per lift/lower op (``None`` for the
         others), so a loop body applies a ready matrix instead of
         rebuilding the LDU factors (and saving them for backward) at every
         step."""
-        binary = self._tree_layer(2)
-        if binary is None:
-            return []
+        if ops is None:
+            binary = self._tree_layer(2)
+            ops = list(binary.ops) if binary is not None else ()
         out = []
-        for op in list(binary.ops):
+        for op in ops:
             gl = getattr(op, "gl", op)
             inner = getattr(gl, "_sigma", None)
             if inner is None:
@@ -14298,7 +14357,7 @@ class LanguageSpace(nn.Module):
         return out
 
     def reverse_binary_step(self, parent, op_local, valid, reference=None,
-                            inverses=None, reference_side="right"):
+                            inverses=None, reference_side="right", ops=None):
         """``(left, right)`` ``[B, D]`` of one recorded binary fold.
 
         ``parent`` is the folded slot; ``op_local`` ``[B]`` the recorded
@@ -14309,13 +14368,16 @@ class LanguageSpace(nn.Module):
         by the residual reverses; ``inverses`` the list ``reverse_inverses``
         returned (optional; computed here otherwise).
         """
-        binary = self._tree_layer(2)
-        if binary is None:
-            raise RuntimeError("LanguageSpace requires a CS binary tree layer")
-        ops = list(binary.ops)
+        if ops is None:
+            binary = self._tree_layer(2)
+            if binary is None:
+                raise RuntimeError("LanguageSpace requires a CS binary tree layer")
+            ops = list(binary.ops)
+        if not ops:
+            return parent, parent
         B, D = int(parent.shape[0]), int(parent.shape[-1])
         if inverses is None:
-            inverses = self.reverse_inverses()
+            inverses = self.reverse_inverses(ops)
         pairs = []
         for op, W_inv in zip(ops, inverses):
             pairs.append(self._reverse_of_binary_op(
@@ -14365,13 +14427,14 @@ class LanguageSpace(nn.Module):
             return half, half
         return parent, parent
 
-    def reverse_unary_step(self, x, op_local, valid):
+    def reverse_unary_step(self, x, op_local, valid, ops=None):
         """``[B, D]`` of one recorded unary rewrite undone (identity for ops
         without a tensor inverse)."""
-        unary = self._tree_layer(1)
-        if unary is None:
+        if ops is None:
+            unary = self._tree_layer(1)
+            ops = list(unary.ops) if unary is not None else ()
+        if not ops:
             return x
-        ops = list(unary.ops)
         B, D = int(x.shape[0]), int(x.shape[-1])
         outs = []
         for op in ops:

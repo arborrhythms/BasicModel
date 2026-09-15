@@ -1,7 +1,7 @@
 # Answer path: ownership, training and independence (Codex round 5)
 
-Status: IN PROGRESS (2026-09-15): items 4, 5 and 1 complete and verified. Remaining
-order: 3, 6, then 2 and 7 under Alec's decisions
+Status: IN PROGRESS (2026-09-15): items 4, 5, 1 and 3 complete and verified. Remaining
+order: 6, then 2 and 7 under Alec's decisions
 in section 6. Written 2026-09-14 at basicmodel `cf0daf7` for execution in
 a fresh session. Alec's framing: are Codex's findings specification
 issues or code that does not operate as specified? Answer, item by item,
@@ -244,7 +244,11 @@ present (Codex's probe). The specification wants the teacher as the
 learning signal, not as the generator: "the output loop should realize
 the resolved answer's own structure" through its chooser.
 
-Fix. A model knob `<outputTeacherForcing>` (`data/model.xsd`,
+**Superseded by Alec's section 6 clarification:** the following original
+recommendation assumed input-parse imitation. Item 3 now removes output
+teacher forcing in both training and evaluation and uses `<generate>`.
+
+Original recommendation. A model knob `<outputTeacherForcing>` (`data/model.xsd`,
 `doc/Params.md`): `train` (default; force only when `self.training`),
 `always`, `never`. In evaluation the chooser decides every unstamped
 top; the credit is still computed against the teacher where one exists
@@ -413,6 +417,22 @@ suite passed: 4054 passed, 53 skipped, 7 xfailed, 4 subtests passed,
 174 warnings in 1772.07 seconds. No `bin/*.py` files changed during pytest.
 Training chooses independent actions now;
 the remaining evaluation teacher and compose-rule inventory are item 3.
+
+Execution evidence, item 3:
+`test_reverseoutput_evaluation_uses_its_policy_with_input_trace_present`
+first reproduced identical output under opposing evaluation policy biases.
+`test_output_rule_inventory_comes_from_generate_even_without_compose_rule`
+first found 22 choices for a grammar declaring only sum.reverse plus stop.
+Both regressions now pass. The walk ignores the input teacher in both
+modes, chooses from its own generate catalog, and retains reconstruction's
+identified compose trace. Tests also execute a generate-only sum, compile
+an empty unary/binary catalog, compare sampling with/without input targets,
+and exercise saved chooser/Adam rows across catalog changes.
+The output-walk file passed (24 tests), then the additional new-action
+moment case passed with the eight affected files: 125 passed, 6 skipped,
+16 warnings in 265.71 seconds. The background full suite passed:
+4060 passed, 53 skipped, 7 xfailed, 4 subtests passed, 174 warnings in
+1765.20 seconds. No `bin/*.py` files changed during pytest.
 
 1. Policy training: weights change under `runBatch` with
    `outputPolicyWeight` 1; unchanged with 0.

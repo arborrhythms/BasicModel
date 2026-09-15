@@ -655,6 +655,7 @@ def remap_optimizer_state_by_name(
     live_manifest: Mapping[str, Any],
     *,
     reset_wholespace: bool = False,
+    parameter_row_maps: Mapping[str, tuple[int, ...]] | None = None,
 ) -> OptimizerRemapResult:
     """Return optimizer state aligned to the live named parameter layout.
 
@@ -794,6 +795,28 @@ def remap_optimizer_state_by_name(
                     continue
                 saved_shape = saved[2]
                 live_shape = _entry_shape(entry)
+                row_map = (parameter_row_maps or {}).get(name)
+                saved_value = saved[1]
+                if row_map is not None:
+                    # Generate-policy choices changed from compose to the
+                    # declared generate catalog. Preserve moments by action
+                    # meaning, including permutations and removed actions.
+                    import torch
+                    migrated = {}
+                    for key, value in saved_value.items():
+                        if not torch.is_tensor(value) or value.ndim == 0 or key == "step":
+                            migrated[key] = value
+                            continue
+                        if (len(row_map) != live_shape[0]
+                                or tuple(value.shape[1:]) != live_shape[1:]):
+                            raise ValueError(f"invalid action moment shape for {name!r}")
+                        remapped_value = value.new_zeros(live_shape)
+                        for dst, src in enumerate(row_map):
+                            if src >= 0:
+                                remapped_value[dst].copy_(value[src])
+                        migrated[key] = remapped_value
+                    saved_value = migrated
+                    saved_shape = live_shape
                 if saved_shape is not None and live_shape is not None:
                     same = saved_shape == live_shape
                     first_axis_growth = (
@@ -807,7 +830,7 @@ def remap_optimizer_state_by_name(
                             f"optimizer parameter {name!r} cannot migrate "
                             f"from shape {saved_shape} to {live_shape}"
                         )
-                new_state[live_id] = saved[1]
+                new_state[live_id] = saved_value
                 restored += 1
 
         for name, (_pid, param_state, _shape_hint) in saved_by_name.items():
