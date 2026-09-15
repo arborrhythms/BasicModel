@@ -887,3 +887,148 @@ def test_two_epoch_training_severs_cross_batch_graph():
     assert graph_free(getattr(router, "_last_root_state", None))
     rs = getattr(m.symbolSpace.subspace, "routing_state", None)
     assert rs is None or graph_free(getattr(rs, "rule_probs", None))
+
+
+def _surface_snapshot_model():
+    from test_output_walk import _model
+    from test_compiled_word_chunk import _stage_fullgraph_tensor_peer
+    m = _model()
+    m._tensor_peer_while_eager = True
+    m._chart_compose_per_word = lambda: None
+    _stage_fullgraph_tensor_peer(m, ["12 plus 1", "3 plus 4"])
+    # The helper pads P after lexical staging; compare snapshots at that
+    # same fixed shape so changed byte values are the only perturbation.
+    m._stage_snapshot_bytes()
+    return m
+
+
+def _surface_byte_cost(m, reference, target):
+    ready, atoms, values, valid = m._snapshot_tables(reference)
+    target_ready, target_bytes, target_valid = target
+    return m._byte_word_cost(
+        reference[:, 0], torch.tensor(0, device=reference.device),
+        atoms, values, valid, target_bytes, target_valid, ready and target_ready)
+
+
+def test_dictionary_surface_snapshot_is_independent_of_staged_input_bytes():
+    m = _surface_snapshot_model()
+    try:
+        isp = m.inputSpace
+        before, valid = isp._ar_bank_bytes.clone(), isp._ar_bank_valid.clone()
+        reference = isp._ar_word_object_atoms
+        target = m._byte_tables(*reference.shape[:2])
+        cost = _surface_byte_cost(m, reference, target)
+        table = m.perceptualSpace._pid_byte_table
+        replacement = (table == ord("4")).nonzero().flatten()
+        assert replacement.numel()
+        isp._ar_word_part_ids = torch.full_like(isp._ar_word_part_ids,
+                                              int(replacement[0]))
+        m._stage_snapshot_bytes()
+        assert torch.equal(isp._ar_bank_bytes, before)
+        assert torch.equal(isp._ar_bank_valid, valid)
+        torch.testing.assert_close(_surface_byte_cost(m, reference, target), cost,
+                                   rtol=0, atol=0)
+    finally:
+        m.End()
+        m.symbolSpace.soft_reset()
+
+
+def test_surface_bytes_belong_to_words_and_objects_follow_their_association():
+    m = _surface_snapshot_model()
+    try:
+        isp, owner = m.inputSpace, m._concept_owner()
+        row = int(isp._ar_word_concept_rows[0, 0])
+        obj_row = int(isp._ar_word_object_rows[0, 0])
+        obj = int(isp._ar_word_object_ids[0, 0])
+        other_word = int(isp._ar_word_concept_ids[0, 1])
+        other_row = int(isp._ar_word_concept_rows[0, 1])
+        assert row != other_row
+        assert row in owner._row_surfaces and obj_row not in owner._row_surfaces
+        reference = isp._ar_word_object_atoms
+        target = m._byte_tables(*reference.shape[:2])
+        before = _surface_byte_cost(m, reference, target)
+        owner._row_surfaces[row] = b"ZZ"
+        owner._object_word_concept[obj] = other_word
+        m._stage_snapshot_bytes()
+        bank = isp._ar_concept_lookup_rows[0]
+        word_col = int((bank == row).nonzero()[0])
+        object_col = int((bank == obj_row).nonzero()[0])
+        assert bytes(isp._ar_bank_bytes[0, word_col, :2].tolist()) == b"ZZ"
+        expected = owner._row_surfaces[other_row]
+        assert bytes(isp._ar_bank_bytes[0, object_col, :len(expected)].tolist()) == expected
+        assert _surface_byte_cost(m, reference, target)[0] > before[0] + 1.0
+        del owner._row_surfaces[other_row]
+        m._stage_snapshot_bytes()
+        assert not bool(isp._ar_bank_valid[0, object_col].any())
+    finally:
+        m.End()
+        m.symbolSpace.soft_reset()
+
+
+def test_word_surface_and_reassociated_object_survive_strict_checkpoint(tmp_path):
+    from test_output_walk import _model
+    m = _surface_snapshot_model()
+    fresh = None
+    try:
+        isp, owner = m.inputSpace, m._concept_owner()
+        word_row = int(isp._ar_word_concept_rows[0, 0])
+        obj = int(isp._ar_word_object_ids[0, 0])
+        other_word = int(isp._ar_word_concept_ids[0, 1])
+        owner._row_surfaces[word_row] = b"ZZ"
+        owner._object_word_concept[obj] = other_word
+        m._stage_snapshot_bytes()
+        expected_bytes = isp._ar_bank_bytes.clone()
+        expected_valid = isp._ar_bank_valid.clone()
+        bank = isp._ar_concept_lookup_rows.clone()
+        m._materialize_answer_path()
+        with torch.no_grad():
+            owner.chunk_prior.fill_(0.375)
+        checkpoint = tmp_path / "word_surfaces.ckpt"
+        m.save_weights(str(checkpoint))
+        fresh = _model()
+        assert not hasattr(fresh._concept_owner(), "_row_surfaces")
+        assert not hasattr(fresh._concept_owner(), "chunk_prior")
+        assert fresh.load_weights(str(checkpoint), strict=True, require_match=True)
+        restored = fresh._concept_owner()
+        assert float(restored.chunk_prior.detach()) == 0.375
+        assert restored._row_surfaces == owner._row_surfaces
+        assert restored.word_concept_of_object(obj) == other_word
+        # Decode immediately after loading, with deliberately unrelated input
+        # byte values. Only the bank row IDs and bounded P shape are supplied.
+        fresh.inputSpace._ar_concept_lookup_rows = bank
+        fresh.inputSpace._ar_word_part_ids = torch.zeros_like(isp._ar_word_part_ids)
+        fresh._stage_snapshot_bytes()
+        torch.testing.assert_close(fresh.inputSpace._ar_bank_bytes, expected_bytes)
+        torch.testing.assert_close(fresh.inputSpace._ar_bank_valid, expected_valid)
+    finally:
+        for model in (m, fresh):
+            if model is not None:
+                model.End()
+                model.symbolSpace.soft_reset()
+
+
+def test_missing_surface_candidates_keep_uniform_null_cost_without_input_fallback():
+    import math
+    m = _surface_snapshot_model()
+    try:
+        isp, owner = m.inputSpace, m._concept_owner()
+        reference = isp._ar_word_object_atoms
+        B, W = reference.shape[:2]
+        target_ready, target_bytes, target_valid = m._byte_tables(B, W)
+        assert target_ready and bool(target_valid[:, 0].any())
+        owner._row_surfaces.clear()
+        m._stage_snapshot_bytes()
+        for missing_snapshot in (False, True):
+            if missing_snapshot:
+                isp._ar_bank_bytes = None
+                isp._ar_bank_valid = None
+                isp._ar_concept_lookup_atoms = None
+            ready, bank, values, valid = m._snapshot_tables(reference)
+            assert ready and not bool(valid.any())
+            cost = m._byte_word_cost(reference[:, 0], torch.tensor(0),
+                                     bank, values, valid,
+                                     target_bytes, target_valid, ready)
+            torch.testing.assert_close(cost, torch.full_like(cost, math.log(256)))
+    finally:
+        m.End()
+        m.symbolSpace.soft_reset()

@@ -4241,6 +4241,13 @@ class BaseModel(Mereology, nn.Module):
             concept_space.vocab_extras()
             if property_basis and concept_space is not None
             and hasattr(concept_space, "vocab_extras") else None)
+        surface_extras = {}
+        for i, owner in enumerate(getattr(self, "conceptualSpaces", None)
+                                  or [concept_space]):
+            collect = getattr(owner, "word_surface_extras", None)
+            payload = collect() if callable(collect) else None
+            if payload is not None:
+                surface_extras[str(i)] = payload
         if property_basis and whole_space is not None:
             if hasattr(whole_space, "property_extras"):
                 whole_extras = whole_space.property_extras()
@@ -4281,7 +4288,7 @@ class BaseModel(Mereology, nn.Module):
                      and len(ps_store) > 0 else None)
         if emb is None or getattr(emb, 'wv', None) is None:
             if (conceptual_extras is None and whole_extras is None
-                    and ps_rams is None and ps_pstore is None):
+                    and ps_rams is None and ps_pstore is None and not surface_extras):
                 return None
             # Lexicon-less radix mode: only structural/PS state needs to
             # travel; we still wrap it in the standard envelope so
@@ -4304,6 +4311,8 @@ class BaseModel(Mereology, nn.Module):
                 blob["ps_ramsification"] = ps_rams
             if ps_pstore is not None:
                 blob["ps_percept_extras"] = ps_pstore
+            if surface_extras:
+                blob["concept_word_surfaces"] = surface_extras
             return blob
         wv = emb.wv
         counts = getattr(wv, 'counts', None)
@@ -4327,6 +4336,8 @@ class BaseModel(Mereology, nn.Module):
             blob["ps_ramsification"] = ps_rams
         if ps_pstore is not None:
             blob["ps_percept_extras"] = ps_pstore
+        if surface_extras:
+            blob["concept_word_surfaces"] = surface_extras
         return blob
 
     def _collect_bpe_extras(self):
@@ -4854,6 +4865,13 @@ class BaseModel(Mereology, nn.Module):
         # position. Apply the same row migration to weights and Adam moments.
         generate_rows = {}
         for name, module in self.named_modules(remove_duplicate=False):
+            # Word admission enables this existing lazy structural prior.
+            # A surface-bearing checkpoint must load into an unstaged model,
+            # including its learned prior, without a preparatory input pass.
+            if name + ".chunk_prior" in state:
+                ensure_prior = getattr(type(module), "ensure_chunk_prior", None)
+                if ensure_prior is not None:
+                    ensure_prior(module)
             migrate = getattr(type(module), "migrate_generate_checkpoint", None)
             if migrate is not None:
                 generate_rows.update(migrate(module, state, name + "."))
@@ -5461,6 +5479,12 @@ class BaseModel(Mereology, nn.Module):
         whole_space = getattr(self, 'wholeSpace', None)
         concept_space = getattr(self, 'conceptualSpace', None)
         property_basis = bool(getattr(self, "wholePropertyBasis", False))
+        surface_owners = getattr(self, "conceptualSpaces", None) or [concept_space]
+        for stage, payload in (extras.get("concept_word_surfaces") or {}).items():
+            index = int(stage)
+            if not 0 <= index < len(surface_owners):
+                raise ValueError(f"word-surface checkpoint has unknown CS stage {stage}")
+            surface_owners[index].load_word_surface_extras(payload)
         if property_basis:
             conceptual_blob = extras.get("conceptual_structure")
             if (concept_space is not None
@@ -10588,6 +10612,9 @@ class BasicModel(BaseModel):
                 object_row_host[b][p] = int(object_row)
                 object_cid_host[b][p] = object_id
                 object_order_host[b][p] = object_order
+                owner.remember_word_surface(
+                    row, key.encode('utf-8'), object_row=object_row,
+                    object_id=object_id)
 
         rows = torch.tensor(row_host, dtype=torch.long, device=part_ids.device)
         object_rows = torch.tensor(
@@ -10731,48 +10758,37 @@ class BasicModel(BaseModel):
         object.__setattr__(ps, "_pid_byte_table", table)
 
     def _stage_snapshot_bytes(self):
-        """Bytes of every row of the brick's staged dictionary snapshot
-        (``_ar_concept_lookup_rows``: the words' concept rows, then their
-        object rows): ``_ar_bank_bytes [B, L, P]`` (0..255) and
-        ``_ar_bank_valid [B, L, P]``.  A concept row is an identity code,
-        so the tied inverse of the concept lookup is the snap to a row and
-        the row's surface is its bytes; the byte decoding of a recovered
-        idea reads this snapshot."""
+        """Snapshot WORD-owned surfaces for the brick's bounded row bank.
+
+        OBJECT rows translate through their current word association. Input
+        part IDs determine only the fixed byte-window shape, never candidate
+        bytes; missing surfaces produce invalid candidates.
+        """
         isp = self.inputSpace
-        ps = self.perceptualSpace
         bank = getattr(isp, "_ar_concept_lookup_rows", None)
-        part_ids = getattr(isp, "_ar_word_part_ids", None)
-        part_mask = getattr(isp, "_ar_word_part_mask", None)
-        table = getattr(ps, "_pid_byte_table", None)
-        if not (torch.is_tensor(bank) and torch.is_tensor(part_ids)
-                and torch.is_tensor(part_mask) and torch.is_tensor(table)
-                and bank.dim() == 2 and part_ids.dim() == 3
-                and int(bank.shape[0]) == int(part_ids.shape[0])
-                and tuple(part_mask.shape) == tuple(part_ids.shape)):
-            # no snapshot for this batch: the decoder falls back to the
-            # words' own rows (``_snapshot_tables``)
+        if not torch.is_tensor(bank) or bank.dim() != 2:
             isp._ar_bank_bytes = None
             isp._ar_bank_valid = None
             return
-        B, L = int(bank.shape[0]), int(bank.shape[1])
-        W, P = int(part_ids.shape[1]), int(part_ids.shape[2])
-        table = table.to(device=part_ids.device)
-        word_bytes = table[part_ids.clamp(0, int(table.numel()) - 1)]      # [B, W, P]
-        word_valid = torch.logical_and(part_mask.to(torch.bool), word_bytes >= 0)
-        word_bytes = word_bytes.clamp(0, 255)
-        bank_bytes = torch.zeros(B, L, P, dtype=torch.long, device=part_ids.device)
-        bank_valid = torch.zeros(B, L, P, dtype=torch.bool, device=part_ids.device)
-        n_words = min(W, L)
-        bank_bytes[:, :n_words] = word_bytes[:, :n_words]
-        bank_valid[:, :n_words] = word_valid[:, :n_words]
-        object_start = L // 2                     # the object rows mirror the words
-        n_obj = min(W, L - object_start)
-        if n_obj > 0:
-            bank_bytes[:, object_start:object_start + n_obj] = word_bytes[:, :n_obj]
-            bank_valid[:, object_start:object_start + n_obj] = word_valid[:, :n_obj]
-        present = bank.ge(0).unsqueeze(-1)
-        isp._ar_bank_bytes = bank_bytes
-        isp._ar_bank_valid = torch.logical_and(bank_valid, present)
+        part_ids = getattr(isp, "_ar_word_part_ids", None)
+        P = (int(part_ids.shape[-1]) if torch.is_tensor(part_ids) and part_ids.dim() == 3
+             else int(getattr(self, "serial_residual_part_capacity", 1)))
+        B, L = (int(v) for v in bank.shape)
+        P = max(1, P)
+        bank_bytes = torch.zeros(B, L, P, dtype=torch.long)
+        bank_valid = torch.zeros(B, L, P, dtype=torch.bool)
+        owner = self._concept_owner()
+        # Only the brick's row IDs cross to the host. No vocabulary scan and
+        # no OBJECT-owned copy of a word's surface is needed.
+        for b, rows in enumerate(bank.detach().to('cpu').tolist()):
+            for col, row in enumerate(rows):
+                raw = owner.word_surface_for_row(row) if row >= 0 else None
+                if raw:
+                    n = min(P, len(raw))
+                    bank_bytes[b, col, :n] = torch.tensor(list(raw[:n]), dtype=torch.long)
+                    bank_valid[b, col, :n] = True
+        isp._ar_bank_bytes = bank_bytes.to(device=bank.device)
+        isp._ar_bank_valid = bank_valid.to(device=bank.device)
 
     def _word_symbol_rows(self):
         """``[B, W]`` the symbol row of each staged word: its object
@@ -11220,8 +11236,8 @@ class BasicModel(BaseModel):
     def _snapshot_tables(self, reference):
         """``(ready, bank_n [B, L, D], bank_bytes [B, L, P], bank_valid
         [B, L, P])``: the brick's dictionary snapshot as the byte
-        decoder's candidates (normalised rows).  Falls back to the words'
-        own rows when no snapshot was staged."""
+        decoder's candidates (normalised rows). Missing snapshots keep only
+        the uniform null candidate; input bytes are scoring targets only."""
         isp = self.inputSpace
         atoms = getattr(isp, "_ar_concept_lookup_atoms", None)
         bank_bytes = getattr(isp, "_ar_bank_bytes", None)
@@ -11237,9 +11253,15 @@ class BasicModel(BaseModel):
             return (True, torch.nn.functional.normalize(bank, dim=-1),
                     bank_bytes.to(device=reference.device),
                     bank_valid.to(device=reference.device))
-        ready, bytes_bwp, valid_bwp = self._byte_tables(B, W)
-        return (ready, torch.nn.functional.normalize(reference, dim=-1),
-                bytes_bwp, valid_bwp)
+        part_ids = getattr(isp, "_ar_word_part_ids", None)
+        P = (int(part_ids.shape[-1]) if torch.is_tensor(part_ids) and part_ids.dim() == 3
+             else 1)
+        # With scoreable input bytes but no known candidate, retain the
+        # honest uniform-null cost. Neither copying the target into a
+        # candidate nor turning the loss off can establish reconstruction.
+        return (True, reference.new_zeros(B, 1, D),
+                torch.zeros(B, 1, P, dtype=torch.long, device=reference.device),
+                torch.zeros(B, 1, P, dtype=torch.bool, device=reference.device))
 
     def _byte_tables(self, B, W):
         """The staged words' bytes ``[B, W, P]`` (``-1`` padded) and their

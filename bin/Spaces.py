@@ -19946,6 +19946,52 @@ class ConceptualSpace(Space):
         o2w = getattr(self, '_object_word_concept', None)
         return None if not o2w else o2w.get(int(cid))
 
+    def remember_word_surface(self, row, surface, *, object_row, object_id):
+        """Retain WORD bytes and an OBJECT row-to-identity index.
+
+        Admission supplies an exact orthographic row. Interpreting the word
+        can change its associated object; no bytes are owned by that object.
+        """
+        surfaces = self.__dict__.setdefault('_row_surfaces', {})
+        surfaces.setdefault(int(row), bytes(surface))
+        objects = self.__dict__.setdefault('_surface_object_rows', {})
+        objects[int(object_row)] = int(object_id)
+
+    def word_surface_for_row(self, row):
+        """Resolve one bounded decoder candidate to WORD-owned bytes.
+
+        An OBJECT follows its current META association, then the word's
+        row. Missing identities, associations or surfaces remain unknown.
+        """
+        row = int(row)
+        surfaces = self.__dict__.get('_row_surfaces', {})
+        if row in surfaces:
+            return surfaces[row]
+        obj = self.__dict__.get('_surface_object_rows', {}).get(row)
+        word = self.word_concept_of_object(obj) if obj is not None else None
+        word_row = self._csw_row_of(word) if word is not None else None
+        return surfaces.get(word_row) if word_row is not None else None
+
+    def word_surface_extras(self):
+        """Optional vocab-extras payload; absent before surface admission."""
+        surfaces = self.__dict__.get('_row_surfaces')
+        if surfaces is None:
+            return None
+        return {
+            'version': 1,
+            'word_rows': dict(surfaces),
+            'object_rows': dict(self.__dict__.get('_surface_object_rows', {})),
+        }
+
+    def load_word_surface_extras(self, extras):
+        """Restore WORD bytes and the OBJECT index without copying surfaces."""
+        if int(extras.get('version', 0)) != 1:
+            raise ValueError('unsupported concept word-surface version')
+        self._row_surfaces = {int(row): bytes(value)
+                              for row, value in extras.get('word_rows', {}).items()}
+        self._surface_object_rows = {int(row): int(cid)
+                                     for row, cid in extras.get('object_rows', {}).items()}
+
     def concept_codebook_row_of_percept(self, pid):
         """The order-0 ``similarity_codebook`` row of percept ``pid``'s
         OBJECT-concept ``B`` (its random signed-hypersphere vector), or

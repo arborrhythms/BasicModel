@@ -585,16 +585,30 @@ through the assignment into the recovered ideas and the tied inverses. A concept
 row is an identity code, not a fold of the word's byte atoms (concept
 rows are relational identities; the byte fold lives in the perceptual
 ladder), so the tied inverse of the concept lookup is the snap to a row
-and a row's surface is its bytes: the decoder's candidates are the rows
-of the brick's staged dictionary snapshot (every word and object row the
-brick staged, `_ar_concept_lookup_rows`, with their surfaces staged
-beside them as `_ar_bank_bytes` once the brick's concept rows exist, so
-the decoder is active from the first brick), plus a null candidate of
-similarity 0 and uniform bytes, so a one-word brick, a zero idea or an
-idea near no row cannot score zero by having nothing to choose between
-(a zero idea's cost is exactly the negative log of the target byte's
-share of the uniform mixture over the present rows and the null). Rows
-absent from the snapshot do not enter the score. The
+and candidate surfaces belong to WORD rows. Admission retains each WORD's
+UTF-8 bytes in its ConceptualSpace owner's `_row_surfaces`; an OBJECT owns
+only an index back to its concept identity, then translates through the
+current `word_concept_of_object()` association to the WORD row. Changing an
+interpretation therefore does not copy or overwrite WORD bytes
+(`bin/Spaces.py:19949`). The brick's bounded dictionary snapshot contains
+only its staged WORD/OBJECT rows (`_ar_concept_lookup_rows`) and resolves
+their candidate bytes from this store (`_ar_bank_bytes`); input part IDs
+provide the byte-window shape and scoring targets, never candidate bytes
+(`bin/Models.py:10760`).
+
+Per-stage WORD stores and OBJECT row indices persist in `vocab_extras`
+under `concept_word_surfaces`, including stage 0 when it owns the shared
+identities (`bin/Models.py:4244`, `bin/Models.py:5483`). The existing
+structural extras retain the current OBJECT-to-WORD association. Strict
+load also materialises a saved lazy chunk prior before the key audit,
+so no preparatory input pass is required (`bin/Models.py:4871`).
+
+A missing WORD surface removes that candidate. A missing snapshot never
+falls back to the presented words' bytes. A null candidate of similarity
+zero and uniform bytes remains available: with scoreable targets and no
+known candidates, the byte cost is `log(256)`, not a manufactured perfect
+reconstruction (`bin/Models.py:11236`). Rows absent from the snapshot do
+not enter the score. The
 score is taken at the pop step, inside the traversal, and the loop carries
 only the running sums (idea cost, byte cost, word count) besides the
 reverse stack: the loop's autograd stacks every carried tensor once per

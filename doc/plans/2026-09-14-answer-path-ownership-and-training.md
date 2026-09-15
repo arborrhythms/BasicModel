@@ -1,7 +1,7 @@
 # Answer path: ownership, training and independence (Codex round 5)
 
-Status: IN PROGRESS (2026-09-15): items 4, 5, 1 and 3 complete and verified. Remaining
-order: 6, then 2 and 7 under Alec's decisions
+Status: IN PROGRESS (2026-09-15): items 4, 5, 1, 3 and 6 complete and verified. Remaining
+order: 2, then 7 under Alec's decisions
 in section 6. Written 2026-09-14 at basicmodel `cf0daf7` for execution in
 a fresh session. Alec's framing: are Codex's findings specification
 issues or code that does not operate as specified? Answer, item by item,
@@ -353,7 +353,7 @@ materialised idea's realisation.
 
 One item per commit, suite green before each, push and bump after each
 (invariant 12). Order: 4 (small, isolated), 5 (small), 1 (small, unlocks
-training of everything after), 3 (knob), 6 (store + staging), 2 (the
+training of everything after), 3 (independent generate), 6 (store + staging), 2 (the
 ownership refactor; after Alec's decision on the conditioner), then 7
 if Alec decides.
 
@@ -433,6 +433,24 @@ moment case passed with the eight affected files: 125 passed, 6 skipped,
 16 warnings in 265.71 seconds. The background full suite passed:
 4060 passed, 53 skipped, 7 xfailed, 4 subtests passed, 174 warnings in
 1765.20 seconds. No `bin/*.py` files changed during pytest.
+
+Execution evidence, item 6:
+`test_dictionary_surface_snapshot_is_independent_of_staged_input_bytes`
+first reproduced changed candidate bytes after replacing only staged input
+byte IDs (both snapshots use the same fixed P shape). The other three
+probes first failed because no `_row_surfaces` store existed. WORD rows
+now own UTF-8 bytes; OBJECT rows resolve their current WORD association,
+without owning copied surfaces. Tests check the actual byte loss as well
+as the snapshot, changed associations, strict checkpoint persistence, and
+uniform-null cost for missing surfaces or snapshots. The checkpoint probe
+also exposed an existing lazy `chunk_prior` missing on a fresh model; the
+loader now materialises a saved prior before its strict key audit, and the
+regression restores a nonzero prior without staging any input first.
+The word-store file passed (33 tests in 22.11 seconds), followed by the
+eight affected files (129 passed, 6 skipped, 16 warnings in 269.46 seconds).
+The background full suite passed: 4064 passed, 53 skipped, 7 xfailed,
+4 subtests passed, 174 warnings in 1753.83 seconds. No `bin/*.py` files
+changed during pytest.
 
 1. Policy training: weights change under `runBatch` with
    `outputPolicyWeight` 1; unchanged with 0.
