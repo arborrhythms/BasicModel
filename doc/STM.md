@@ -776,11 +776,10 @@ window via `store.recent(n)` (descending timestamp, reversed to
 oldest-first) and reconstructs each row into the SAME tuple shape the
 deque path returns — `(1, np1[None, :], trust)` for an absolute row,
 `(3, stack([np1, vp, np2]), trust)` for a relation — so downstream
-readers (`_reduce_end_state_to_root`, `predict_next_end_state`) are
-mode-agnostic. Because the store is global rather than per-row, the `b`
-argument to `get_stm_chain` is **ignored** in this mode (correct for
-`B=1` / a single conversation; batched `B>1` training shares the one
-recency window across rows).
+readers can interpret the same tuple shape. The `b` argument to this
+legacy store view is ignored in consolidated mode. Inter-sentence prediction
+now uses a bounded per-row observation view instead, so another stream or a
+provisioned fact cannot become its external predecessor.
 
 `observe_stm_end_state(depths, payloads, tetralemmas=None)`
 ([Layers.py](../bin/Layers.py)) records **every** sentence's
@@ -806,8 +805,15 @@ keeps what was believed.
 
 A **lifted `IntraSentenceLayer` instance** (`_inter_predictor`,
 [Layers.py](../bin/Layers.py)) predicts the next end-state over the
-LTM chain — the same predictor class as the in-STM one, instantiated at
-the inter-sentence level. Its chain window is
+external observation sequence — the same predictor class as the in-STM one,
+instantiated at the inter-sentence level. Its transient `_inter_context`
+view is bounded and per-row; durable LTM retains detached observations.
+Current-step source context keeps its encoder graph. Consuming the prediction
+loss and entering the next brick detach that view without deleting history.
+Document resets clear the selected view and pending estimate, preserving
+other rows and durable LTM ([Layers.py:9798](../bin/Layers.py#L9798),
+[Layers.py:10141](../bin/Layers.py#L10141),
+[Layers.py:10212](../bin/Layers.py#L10212)). Its chain window is
 $K = \min(\text{ltmCapacity}, 8)$ (`_inter_chain_window`): the AR signal
 that predicts the next end-state lives in the last handful of sentences,
 so a small bounded window is used rather than the full `ltmCapacity`.
@@ -840,9 +846,11 @@ produces the next end-state **shape** $(\hat{d}, \hat{p}[\hat{d}, D])$:
   roots, accumulated by `_accumulate_inter_loss`
   ([Layers.py](../bin/Layers.py)) and drained by
   `consume_inter_loss`, weight `<interLossWeight>` (default `0.1`). The
-  actual root is detached so the loss trains `_inter_predictor`, not the
-  perception path. `observe_stm_end_state` scores the prediction made for
-  a row against the end-state that actually arrived.
+  actual root is detached for this comparison, while live preceding context
+  can train the encoder as well as `_inter_predictor`. Teacher reconstruction
+  does not disable this term. `observe_stm_end_state` scores each arriving
+  observation once. Evaluation does not accumulate training losses. Joint
+  gradients use the [Training.md balance rule](Training.md).
 - **InfoNCE next-idea contrastive term (optional, additive).** When
   `<interContrastiveWeight>` is positive (default `0.0`, off),
   `observe_stm_end_state` also ranks the actual next root above the

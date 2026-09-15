@@ -544,8 +544,10 @@ class TestObserveSkipsDequeWhenConsolidated(unittest.TestCase):
         self.assertGreater(len(store), 0)
         deque_before = [len(dq) for dq in disc._stm_end_states]
         D = store.nDim
-        # Stage a prediction from the (provisioned) store-backed chain, then
-        # observe a fresh end-state.
+        # Provisioned facts are not an external predecessor. Prime the
+        # row-scoped prediction view with an actual observation first.
+        m.train()
+        disc.observe_stm_end_state([1], [torch.zeros(1, D)])
         disc.predict_next_end_state(0)
         self.assertIsNotNone(disc._inter_last_pred_root[0])
         payload = torch.ones(1, D)

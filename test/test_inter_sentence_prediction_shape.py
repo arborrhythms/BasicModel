@@ -48,6 +48,78 @@ matplotlib.use("Agg")
 import Layers
 
 
+def test_prediction_trains_live_context_encoder_but_not_observed_target():
+    torch.manual_seed(321)
+    layer = _make_layer(D=4)
+    encoder = torch.nn.Linear(4, 4, bias=False)
+    source = encoder(torch.tensor([[1., 2., 3., 4.]]))
+    target = torch.nn.Parameter(torch.tensor([[4., 3., 2., 1.]]))
+    layer.predict_and_observe_stm_end_state([1], [source])
+    layer.predict_and_observe_stm_end_state([1], [target])
+    loss = layer.consume_inter_loss()
+    assert loss is not None
+    loss.backward()
+    assert encoder.weight.grad is not None and encoder.weight.grad.norm() > 0
+    assert target.grad is None, "the observation must not move to meet its prediction"
+    assert any(p.grad is not None and p.grad.norm() > 0
+               for p in layer._inter_predictor.parameters())
+    assert all(not payload.requires_grad for _, payload, _ in layer.get_stm_chain())
+
+
+def test_consuming_prediction_loss_ends_encoder_graph_lifetime():
+    torch.manual_seed(321)
+    layer = _make_layer(D=4)
+    encoder = torch.nn.Linear(4, 4, bias=False)
+    optimizer = torch.optim.Adam([*encoder.parameters(), *layer.parameters()], lr=0.001)
+    for _ in range(2):
+        optimizer.zero_grad(set_to_none=True)
+        for sample in (torch.ones(1, 4), torch.arange(4.).reshape(1, 4)):
+            layer.predict_and_observe_stm_end_state([1], [encoder(sample)])
+        loss = layer.consume_inter_loss()
+        assert loss is not None
+        loss.backward()
+        assert encoder.weight.grad is not None and encoder.weight.grad.norm() > 0
+        optimizer.step()
+
+
+def test_prediction_context_is_row_local_and_reset_keeps_other_rows():
+    torch.manual_seed(321)
+    layer = _make_layer(D=4, batch=2)
+    a, b = torch.ones(1, 4), torch.full((1, 4), 2.)
+    layer.predict_and_observe_stm_end_state([1, 1], [a, b])
+    before = layer.predict_next_end_state(1)[1].detach().clone()
+    layer.observe_stm_end_state([1, 0], [a * 99, None], mask=[True, False])
+    after = layer.predict_next_end_state(1)[1].detach()
+    torch.testing.assert_close(after, before)
+    layer.Reset(batch=0)
+    assert not layer._inter_context[0] and layer._inter_context[1]
+    assert layer.predict_next_end_state(0)[1].count_nonzero() == 0
+
+
+def test_consolidated_prediction_uses_observed_context_without_target_leak():
+    layer = _make_layer(D=4)
+    # A provisioned/global LTM row is not an external predecessor in this
+    # document. The predictor view is populated only by observe, per row.
+    layer._ltm_store = object()
+    layer.predict_and_observe_stm_end_state([1], [torch.ones(1, 4)])
+    assert layer._inter_loss_count == 0
+    assert not layer._stm_end_states[0], "durable LTM remains the only store"
+    layer.predict_and_observe_stm_end_state([1], [torch.full((1, 4), 3.)])
+    assert layer._inter_loss_count == 1
+    layer.Reset()
+    assert layer.predict_next_end_state()[1].count_nonzero() == 0
+
+
+def test_evaluation_does_not_accumulate_training_losses_with_autograd_enabled():
+    layer = _make_layer(D=4)
+    layer.set_inter_contrastive(0.5)
+    layer.eval()
+    for value in (1., 2., 3.):
+        layer.predict_and_observe_stm_end_state([1], [torch.full((1, 4), value)])
+    assert layer.consume_inter_loss() is None
+    assert layer.consume_inter_contrastive_loss() is None
+
+
 def _release_allocator_cache():
     gc.collect()
     if torch.backends.mps.is_available() and hasattr(torch.mps, "empty_cache"):

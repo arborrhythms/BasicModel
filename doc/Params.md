@@ -153,6 +153,9 @@ Training loop and I/O.
 | `numWorkers` | int | `0` | DataLoader prefetch workers. `0` = synchronous in-process batch assembly. |
 | `learningRate` | float | `0.001` | Adam learning rate. |
 | `reconstructionScale` | float | `0.5` | Weight of reconstruction loss vs prediction loss in $[0, 1]$: $\mathcal{L}_{\text{total}} = (1-r)\,\mathcal{L}_{\text{output}} + r\,\mathcal{L}_{\text{recon}}$.  Legacy name `reverseScale` is still parsed with a one-shot deprecation warning. |
+| `reconstructionPriority` | bool | `false` | Joint gradient balance on representation and shared grammar weights. BasicModel enables it. All non-reconstruction losses share one budget; independent heads keep ordinary credit. |
+| `outputGradientRatio` | float | `0.5` | Downstream cap as a fraction of the combined reference and compatible downstream gradient norms, per protected tensor; `0 <= ratio < 1`. Zero reconstruction does not freeze predictive learning. |
+| `reconstructionLossTolerance` | float | `1e-8` | Finite/nonnegative tolerance on absolute unscaled weighted reconstruction loss. Below it, allow bounded downstream refinement without the opposing-component projection; reconstruction still receives its own gradient. |
 | `conceptualContextLearningRate` | float | `0.0` | Enables the context-owned ConceptualSpace dictionary updater. Each completed sentence produces one deterministic, reduced tangent rotation per observed codebook row; `similarity_codebook.W` is a persistent non-grad buffer, read through an eager compiler boundary, and never enters Adam. Mutually exclusive with `conceptualSimilarityScale`. |
 | `conceptualContextNegatives` | int | `4` | Number of deterministic detached negative prototype rows in the contextual SBOW rotation. |
 | `detachedReverse` | bool | `false` | On serial grammar training, supervise the static idea-only reverse chooser from `stopgrad(S)` using detached `ReconstructionStack` rule/arity/leaf targets instead of replaying the D3 recurrence. |
@@ -177,7 +180,12 @@ Training loop and I/O.
 | `armaScale` | float | `0.1` | Loss weight for the ARMA sentence-prediction MSE. |
 | `sentencePrimingScale` | float | `0.05` | AR prediction cast into `concept_dim` and added as a bias to `concept_input` before the sigma-pi loop. Scaled by `confidence * sentencePrimingScale`. |
 | `intraLossWeight` | float | `0.1` | Loss weight on the in-STM next-idea term $\mathcal{L}_\text{intra} = \mathrm{MSE}(\hat{c}_t, c_t)$ from `IntraSentenceLayer` (owned by ConceptualSpace), added to the IR-loss path. `0` disables. See [STM.md Section 6](STM.md#6-intrasentencelayer). |
-| `interLossWeight` | float | `0.1` | Loss weight on the inter-sentence next-end-state term $\mathcal{L}_\text{inter} = \mathrm{MSE}(\hat{p}, p)$ from `InterSentenceLayer`'s inter-level predictor (roots over the LTM chain). Mirrors `intraLossWeight`. `0` disables. See [STM.md Section 11](STM.md#11-inter-sentence-prediction). |
+| `interLossWeight` | float | `0.1` | Loss weight on the inter-sentence next-end-state term $\mathcal{L}_\text{inter} = \mathrm{MSE}(\hat{p}, p)$ from `InterSentenceLayer`'s inter-level predictor. Uses a bounded per-row observation view: current-step source context can train its encoder, targets/durable history are detached. Consumed alongside Teacher reconstruction; `0` disables. See [STM.md Section 11](STM.md#11-inter-sentence-prediction). |
+
+Gradient-balance defaults and validation are implemented in
+[Models.py:2516](../bin/Models.py#L2516), with the numerical contract in
+[Optimizer.py:113](../bin/Optimizer.py#L113). The inter-sentence training gate
+is in [Models.py:13636](../bin/Models.py#L13636).
 
 #### `<trainEmbedding>` --- Embedding Update Modes
 

@@ -13,24 +13,221 @@ from Optimizer import (backward_reconstruction_priority,
                        reconstruction_priority_gradient)
 
 
+@pytest.mark.parametrize("strength", [None, 0., 1.e-12])
+def test_prediction_can_refine_a_reconstructable_representation(strength):
+    r = None if strength is None else torch.tensor([strength, 0.])
+    o = torch.tensor([0., 2.])
+    q = reconstruction_priority_gradient(r, o, max_ratio=0.5)
+    assert q is not None and q[1] >= 1., "good reconstruction must not freeze prediction"
+    if r is not None:
+        assert torch.dot(r, q) >= 0
+
+
+def test_joint_learning_selects_a_predictive_encoding_with_exact_reconstruction():
+    # Every rotation permits exact reconstruction using its tied transpose.
+    # Prediction must still be able to select the useful rotation.
+    angle = torch.nn.Parameter(torch.tensor(0., dtype=torch.float64))
+    inputs = torch.eye(2, dtype=torch.float64)
+    target = torch.tensor([2. ** -0.5, -(2. ** -0.5)], dtype=torch.float64)
+    optimizer = torch.optim.SGD([angle], lr=0.15)
+    losses = []
+    for _ in range(60):
+        optimizer.zero_grad(set_to_none=True)
+        c, s = angle.cos(), angle.sin()
+        encode = torch.stack((torch.stack((c, -s)), torch.stack((s, c))))
+        representation = inputs @ encode.T
+        recovered = representation @ encode
+        reconstruction = (recovered - inputs).square().mean()
+        prediction = (representation[:, 0] - target).square().mean()
+        losses.append(float(prediction.detach()))
+        backward_reconstruction_priority(
+            reconstruction + prediction, reconstruction, prediction, [angle])
+        optimizer.step()
+        assert float(reconstruction.detach()) < 1.e-25
+    assert abs(float(angle.detach())) > 0.3
+    assert losses[-1] < losses[0] * 0.02
+
+
+def test_model_balances_prediction_and_thinking_without_answer_labels():
+    from Models import BaseModel
+
+    p = torch.nn.Parameter(torch.tensor([1., 0.]))
+    head = torch.nn.Parameter(torch.tensor(1.))
+    owner = SimpleNamespace(output_gradient_ratio=0.5)
+    owner._reconstruction_priority_parameters = lambda optimizer: [p]
+    reconstruction = 0.5 * p[0].square()
+    prediction = -3. * p[0] + 2. * p[1] + head.square()
+    thinking = -4. * p[0]
+    optimizer = torch.optim.SGD([p, head], lr=0.01)
+    BaseModel._backward_training_loss(
+        owner, reconstruction + prediction + thinking,
+        {"reconstruction": reconstruction, "output": p.new_zeros(())}, optimizer)
+    assert p.grad[0] > 0, "auxiliary prediction/thinking must not cancel reconstruction"
+    assert p.grad[1] > 0, "compatible prediction credit must survive"
+    torch.testing.assert_close(head.grad, torch.tensor(2.))
+    optimizer.step()
+    assert 0.5 * p[0].square() < reconstruction.detach()
+
+
+def test_shared_grammar_operators_belong_to_the_protected_set():
+    from Models import BaseModel
+
+    op = torch.nn.Linear(2, 2, bias=False)
+    head = torch.nn.Linear(2, 2, bias=False)
+    owner = SimpleNamespace(
+        spaces=[], symbolSpace=SimpleNamespace(_host_layer_registry={('CS', 'sum'): op}))
+    optimizer = torch.optim.SGD([*op.parameters(), *head.parameters()], lr=0.1)
+    protected = BaseModel._reconstruction_priority_parameters(owner, optimizer)
+    assert {id(p) for p in protected} == {id(p) for p in op.parameters()}
+
+
+def test_packed_prediction_teardown_records_each_observation_once():
+    from Models import BasicModel
+
+    calls = []
+    owner = SimpleNamespace(
+        inputSpace=SimpleNamespace(_sentence_pack_enabled=True),
+        _packed_sentence_roots=torch.ones(1, 2, 3),
+        _drain_packed_stm_end_states=lambda: calls.append('observe'),
+        symbolSpace=None, wholeSpaces=[], spaces=[])
+    BasicModel._end_step(owner)
+    BasicModel._end_step(owner)
+    assert calls == ['observe'], "teardown must not invent a second observation"
+    BasicModel._start_spaces_for_forward(owner)
+    BasicModel._end_step(owner)
+    assert calls == ['observe', 'observe'], "a new presentation must be observable"
+
+
+@pytest.mark.parametrize("scale", [1., 1024.])
+def test_fidelity_tolerance_uses_unscaled_loss_under_amp(scale):
+    from Models import BaseModel
+
+    p = torch.nn.Parameter(torch.tensor(1.))
+    owner = SimpleNamespace(output_gradient_ratio=0.5, reconstruction_loss_tolerance=1e-8)
+    owner._reconstruction_priority_parameters = lambda optimizer: [p]
+    reconstruction, prediction = 1e-10 * p.square(), -p
+    scaler = SimpleNamespace(scale=lambda loss: scale * loss)
+    optimizer = torch.optim.SGD([p], lr=0.1)
+    BaseModel._backward_training_loss(
+        owner, reconstruction + prediction,
+        {"reconstruction": reconstruction, "output": prediction}, optimizer, scaler)
+    assert float(p.grad / scale) < -0.49
+
+
+@pytest.mark.parametrize("tolerance", [-1., float('nan'), float('inf')])
+def test_invalid_reconstruction_tolerance_fails(tolerance):
+    p = torch.nn.Parameter(torch.tensor(1.))
+    with pytest.raises(ValueError, match='tolerance'):
+        backward_reconstruction_priority(
+            p.square() + p, p.square(), p, [p], reconstruction_tolerance=tolerance)
+
+
+@pytest.mark.parametrize("tied_reconstruction", [False, True])
+def test_real_packed_runbatch_trains_prediction_and_representation_with_teacher(tmp_path, monkeypatch, tied_reconstruction):
+    from test_meronomy_ladder import _build_ladder_variant
+
+    monkeypatch.setenv("MODEL_COMPILE", "none")
+    m = _build_ladder_variant(tmp_path, "joint_prediction", [
+        ("<serialWordCapacity>8</serialWordCapacity>", "<serialWordCapacity>16</serialWordCapacity>"),
+        ("<serialWordBuckets>8</serialWordBuckets>", "<serialWordBuckets>16</serialWordBuckets>"),
+        ("<sentencePrediction>false</sentencePrediction>", "<sentencePrediction>true</sentencePrediction>"),
+        ("<interLossWeight>0.0</interLossWeight>", "<interLossWeight>0.1</interLossWeight>"),
+        ("<training>", "<training><teacherReconstruction>true</teacherReconstruction>"),
+    ])
+    m._tensor_peer_while_eager = True
+    m._chart_compose_per_word = lambda: None
+    m.reconstruction_priority = True
+    m.loss.reconstruction_scale = 1.0
+    m.reconstruct_in_loop = tied_reconstruction
+    if tied_reconstruction:
+        # The explicit state handoff used by compiled training, executing its
+        # kernels eagerly here. Other tests compile the actual word/reverse loops.
+        m._compiled_step = m._forward_with_compiled_sentence_state
+    m.train()
+    m._install_unit_span_fn()
+    had_outputs = m.inputSpace.data.has_supervised_outputs
+    m.inputSpace.data.has_supervised_outputs = False
+    optimizer = m.getOptimizer(lr=1e-5)
+    disc = m.symbolSpace.discourse
+    assert disc is not None and not m.legacy_prediction_enabled
+    predictor = list(disc._inter_predictor.parameters())
+    records = {}
+    record, backward = m.record_loss, m._backward_training_loss
+
+    def record_probe(name, value, **kwargs):
+        records[name] = value
+        return record(name, value, **kwargs)
+
+    def backward_probe(total, objectives, optimizer, amp_scaler=None):
+        loss = records.get("inter")
+        if m.inter_loss_weight == 0:
+            gradients = torch.autograd.grad(total, predictor, retain_graph=True, allow_unused=True)
+            assert all(g is None for g in gradients), "disabled prediction must not retain Adam credit"
+            return backward(total, objectives, optimizer, amp_scaler)
+        assert loss is not None and loss.requires_grad, {
+            "context": [len(c) for c in disc._inter_context],
+            "roots": getattr(m, "_packed_sentence_roots", None),
+            "packed": m.inputSpace._sentence_pack_enabled,
+            "counts": m.inputSpace._packed_sentence_counts_host,
+            "weight": disc._inter_loss_weight,
+        }
+        assert objectives is not None
+        protected = m._reconstruction_priority_parameters(optimizer)
+        gradients = torch.autograd.grad(loss, protected, retain_graph=True, allow_unused=True)
+        assert any(g is not None and g.norm() > 0 for g in gradients), "inter must reach the real encoder"
+        if tied_reconstruction:
+            gradients = torch.autograd.grad(
+                objectives["reconstruction"], protected, retain_graph=True, allow_unused=True)
+            assert any(g is not None and g.norm() > 0 for g in gradients), "tied reconstruction must reach its operators"
+        gradients = torch.autograd.grad(loss, predictor, retain_graph=True, allow_unused=True)
+        assert any(g is not None and g.norm() > 0 for g in gradients)
+        return backward(total, objectives, optimizer, amp_scaler)
+
+    monkeypatch.setattr(m, "record_loss", record_probe)
+    monkeypatch.setattr(m, "_backward_training_loss", backward_probe)
+    try:
+        for weight in (0.1, 0.1, 0.):
+            m.inter_loss_weight = weight
+            # The effective model loss weight must stop Adam credit even if
+            # the layer still has an enabled accumulation gate.
+            disc.set_inter_loss_weight(0.1)
+            records.clear()
+            before = [p.detach().clone() for p in predictor]
+            batch = (m.inputSpace.prepPackedInput([
+                ["1 plus 2", "3 plus 4"], ["5 plus 6"]]), torch.zeros(2, 1, 0))
+            result, _ = m.runBatch(
+                train=True, batchSize=2, split="train", optimizer=optimizer, batch_override=batch)
+            assert result is not None
+            changed = [not torch.equal(p, old) for p, old in zip(predictor, before)]
+            assert any(changed) if weight else not any(changed)
+            assert all(not p.requires_grad for chain in disc._inter_context for _, p, _ in chain)
+    finally:
+        m.inputSpace.data.has_supervised_outputs = had_outputs
+        m.End()
+        m.symbolSpace.soft_reset()
+        torch._dynamo.reset()
+
+
 @pytest.mark.parametrize("output", [[-3., 4.], [3., 4.], [0., 4.], [-3., 0.]])
-def test_projection_and_strict_norm_budget(output):
+def test_projection_and_combined_norm_budget(output):
     r = torch.tensor([2., 0.])
     o = torch.tensor(output)
     q = reconstruction_priority_gradient(r, o, max_ratio=0.5)
     assert torch.dot(r, q) >= -1e-6
-    assert q.norm() <= 0.5 * r.norm() + 1e-6
+    projected = o - torch.minimum(torch.dot(r, o), r.new_zeros(())) / r.square().sum() * r
+    budget = 0.5 * (r.norm() + projected.norm())
+    assert q.norm() <= budget + 1e-6
     if torch.dot(r, o) >= 0:
-        torch.testing.assert_close(q, o * min(1., float(r.norm() * 0.5 / o.norm())))
+        torch.testing.assert_close(q, o * min(1., float(budget / o.norm())))
     else:
         assert q[0] == 0
 
 
-def test_zero_and_missing_reconstruction_give_no_output_budget():
+def test_zero_and_missing_reconstruction_keep_bounded_output_credit():
     o = torch.tensor([-3., 4.])
-    assert reconstruction_priority_gradient(None, o) is None
+    torch.testing.assert_close(reconstruction_priority_gradient(None, o), 0.5 * o)
     torch.testing.assert_close(
-        reconstruction_priority_gradient(torch.zeros_like(o), o), torch.zeros_like(o))
+        reconstruction_priority_gradient(torch.zeros_like(o), o), 0.5 * o)
     assert reconstruction_priority_gradient(o, None) is None
 
 
@@ -44,7 +241,7 @@ def test_large_finite_gradients_do_not_overflow_projection():
     r, o = torch.tensor([2.e20, 0.]), torch.tensor([-3.e20, 4.e20])
     q = reconstruction_priority_gradient(r, o)
     assert torch.isfinite(q).all()
-    torch.testing.assert_close(q, torch.tensor([0., 1.e20]))
+    torch.testing.assert_close(q, torch.tensor([0., 3.e20]))
 
 
 @pytest.mark.skipif(not torch.backends.mps.is_available(), reason="MPS unavailable")
@@ -52,7 +249,7 @@ def test_dense_priority_on_mps():
     p = torch.nn.Parameter(torch.tensor([1., 1.], device="mps"))
     r, o = 2. * p[0], -3. * p[0] + 4. * p[1]
     backward_reconstruction_priority(r + o, r, o, [p])
-    torch.testing.assert_close(p.grad.cpu(), torch.tensor([2., 1.], device="cpu"))
+    torch.testing.assert_close(p.grad.cpu(), torch.tensor([2., 3.], device="cpu"))
 
 
 def test_sparse_projection_matches_dense_without_capacity_allocation():
@@ -105,7 +302,7 @@ def test_common_amp_scale_preserves_policy(scale):
     p = torch.nn.Parameter(torch.tensor([1., 1.]))
     r, o = 2. * p[0], -3. * p[0] + 4. * p[1]
     backward_reconstruction_priority(scale * (r + o), scale * r, scale * o, [p])
-    torch.testing.assert_close(p.grad / scale, torch.tensor([2., 1.]))
+    torch.testing.assert_close(p.grad / scale, torch.tensor([2., 3.]))
 
 
 def test_backward_with_sparse_embedding_and_unshared_head():
@@ -129,7 +326,7 @@ def test_detached_reconstruction_leaves_output_head_trainable():
     r = p.detach().square()
     o = (p * head).square()
     backward_reconstruction_priority(r + o, r, o, [p])
-    assert p.grad is None or p.grad == 0
+    torch.testing.assert_close(p.grad, torch.tensor(18.))
     torch.testing.assert_close(head.grad, torch.tensor(24.))
 
 
@@ -159,7 +356,7 @@ def test_model_parameter_ownership_and_backward_dispatch():
     BaseModel._backward_training_loss(
         owner, r + o, {"reconstruction": r, "output": o}, optimizer)
     for param in (p, w, c):
-        torch.testing.assert_close(param.grad, torch.tensor([2., 1.]))
+        torch.testing.assert_close(param.grad, torch.tensor([2., 3.]))
     torch.testing.assert_close(head.grad, torch.ones(2))
     assert excluded.grad is None
 

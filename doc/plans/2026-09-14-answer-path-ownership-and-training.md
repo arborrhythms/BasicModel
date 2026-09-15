@@ -96,9 +96,13 @@ code is re-read. Cite the line when you rely on one.
    `_stm_bounded_reduce_step`). The recorded operand rows follow this.
 8. **Compiled tuple.** The published compiled result has 21 values; the
    CSLang bank indices are 0 symbol activations, 1–2 loss sums, 3
-   prediction, 4–8 trace state, 9 detached roots, 10 wholes, 11–12 chunk
+   prediction, 4–8 trace state, 9 chronological roots, 10 wholes, 11–12 chunk
    proposals, 13 end-state slots `[B, slots, 3D]`, 14 end depth, 15–16
-   left/right operand rows (`_publish_compiled_sentence_state`).
+   left/right operand rows (`_publish_compiled_sentence_state`). The
+   September 15 joint-learning revision retains gradients on the current
+   step's index-9 roots for prediction; targets and durable LTM are detached.
+   See [Models.py:20378](../../bin/Models.py#L20378) and
+   [Layers.py:9798](../../bin/Layers.py#L9798).
 9. **`torch.while_loop` autograd defects and workarounds.** Carries
    entering without grad cut the chain (`_carries_with_grad`,
    `_ensure_grad_anchors`); the backward node keeps `fw_outputs`

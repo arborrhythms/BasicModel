@@ -217,8 +217,9 @@ retired 2026-05-14; sentence-level AR moved to
 |------|--------|
 | `maskRate` | Bernoulli mask probability at the subsymbolic (PS) (BERT default 0.15) |
 | `reconstructionScale` | Blend weight between output and reconstruction loss; `total = (1 - r)*output + r*recon`.  Legacy `<reverseScale>` parsed with deprecation warning. |
-| `reconstructionPriority` | Remove opposing output-gradient components on optimizer-owned PartSpace, WholeSpace, and ConceptualSpace parameters, then cap their norms relative to reconstruction. BasicModel enables this; legacy configs default off. Uses separate autograd traversals and one optimizer step. |
-| `outputGradientRatio` | Maximum protected output/reconstruction gradient-norm ratio, per parameter tensor; default `0.5`, required `0 <= ratio < 1`. A missing/zero reconstruction gradient gives output no budget there. Independent SymbolSpace/OutputSpace heads retain ordinary credit. |
+| `reconstructionPriority` | Balance all non-reconstruction objectives together on optimizer-owned representation parameters and host-registry grammar transforms. Independent synthesis/output heads keep ordinary gradients. BasicModel enables it; legacy configs default off. One optimizer step. |
+| `outputGradientRatio` | Fraction of the combined reconstruction-reference and compatible downstream gradient scale, per protected tensor; default `0.5`, required `0 <= ratio < 1`. Missing/zero reconstruction retains this fraction of downstream credit. |
+| `reconstructionLossTolerance` | Default `1e-8`, finite/nonnegative, in absolute unscaled weighted reconstruction-loss units. Below tolerance, omit the opposing-gradient projection while retaining reconstruction's own gradient and the downstream strength bound. |
 | `detachedReverse` | On the serial grammar training path, replace D3 trace replay with the static idea-only reverse chooser. Its input is `stopgrad(S)` and its targets live in `SymbolSubSpace.reconstruction_stack`. |
 | `leafDistillWeight` | With `detachedReverse`, weight the chooser's bounded exact-leaf surface term. Without it, retain the legacy standalone root-to-leaf distillation head. |
 | `forwardGrammarWeight` | Weight the bounded, one-fold structural contrast recorded for committed unary/binary grammar choices. `0` disables this branch. |
@@ -371,14 +372,39 @@ $$\mathcal{L}_{\text{total}} = \mathcal{L}_{\text{model}} + \lambda \cdot \mathc
 
 where $\lambda$ is `<embeddingScale>` (default 0.1).
 
-When `reconstructionPriority` is enabled and a supervised output loss is
-active, the optimizer seam separates the primary branch gradients before the
-single update. It removes output's opposing component on P/W/concept
-parameters and caps the remainder by `outputGradientRatio`; SBOW remains an
-auxiliary contribution. This is a first-order gradient constraint, not a
-monotonic-loss guarantee under Adam or momentum. Unlabeled batches keep the
-ordinary single backward. A detached reconstruction supplies no protected
-output budget; the policy does not reconnect its graph.
+When `reconstructionPriority` is enabled, separate the weighted reconstruction
+reference from **all other trained losses**, including output, prediction,
+thinking and SBOW. Apply one combined downstream budget even without supplied
+answer labels. Protect optimizer-owned P/W/concept parameters and shared
+grammar transforms, independently of which computation reached them.
+
+Above `reconstructionLossTolerance`, remove the downstream component opposing
+reconstruction. Cap the remaining contribution at `outputGradientRatio` times
+the sum of its norm and the reconstruction-reference norm. Below tolerance,
+use a zero projection reference; a reconstructable code can keep improving for
+prediction. Keep the actual reconstruction gradient and take one optimizer
+step. Independent heads retain their ordinary gradients. This is a local
+gradient rule, not a monotonic-loss guarantee under Adam or momentum. Verify
+actual fidelity and predictive utility; the objective is a representation
+that satisfies both tasks. The detached reverse student still does not train
+its encoder through reconstruction.
+The loss partition and parameter selection are in
+[Models.py:2692](../bin/Models.py#L2692); projection, the combined norm cap and
+the tolerance rule are in [Optimizer.py:113](../bin/Optimizer.py#L113).
+
+Inter-sentence MSE/contrastive losses are consumed independently of Teacher's
+legacy ARMA/intra gate. Prediction sees a bounded per-row view of external
+predecessors, with live encoder context inside the current training step and
+detached observed targets. Consumption and brick entry detach that context;
+compiled and eager packed boundaries score each observed pair once. Durable
+LTM remains detached. Default-on production rollout and the full structured
+prediction target remain tracked in the
+[integrated spec](plans/2026-09-15-next-sentence-as-the-production-objective.md#84-joint-representation-learning-and-gradient-balance).
+The observation and cleanup code is in
+[Layers.py:9798](../bin/Layers.py#L9798) and
+[Layers.py:10141](../bin/Layers.py#L10141); the training gates are in
+[Models.py:13529](../bin/Models.py#L13529) and
+[Models.py:13636](../bin/Models.py#L13636).
 
 SBOW loss uses the same negative-sampling objective, with $s(a, b)$ the
 wrapped-MSE torus similarity (`_wrapped_mse_score`) rather than a dot
@@ -517,11 +543,9 @@ independently normalized primary costs recorded before `backward()`:
 | `answer_construction` | the realized response from `reverseOutput()` against an available, separately supplied `Data.what(What.supervised(...))` answer; automatic temporal targets are evaluation metrics only (`bin/Models.py:9252`) | the resolve step, conceptual conditioner, dedicated synthesis layers, output adapter, and shared understanding under reconstruction priority |
 
 The desired answer is resolved only after the model response is fixed and
-enters loss preparation only. `reconstructionPriority` differentiates the
-two branches separately at one parameter version, removes the opposing
-output component on protected perceptual / conceptual parameters, caps the
-remainder at `outputGradientRatio` times the reconstruction norm, and takes
-one optimizer step. `what_report()` gives per-family means of both costs,
+enters loss preparation only. `reconstructionPriority` balances the weighted
+reconstruction reference against all downstream objectives under the joint
+rule above, and takes one optimizer step. `what_report()` gives per-family means of both costs,
 thinking statistics (episodes, mean iterations, forced-closure rate), the
 hard-choice policy credit (`forwardGrammarWeight`) separately from the
 continuous answer credit, and sentences/s. Full contract: the

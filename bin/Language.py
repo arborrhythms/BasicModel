@@ -11032,14 +11032,10 @@ class SymbolSubSpace(SubSpace):
                 for p in self.discourse.parameters():
                     if all(p is not q for q in self.params):
                         self.params.append(p)
-                # LTM consolidation FU3 (Change 2, 2026-06-18): when the
-                # gate is on AND the unified ``ltm_store`` was built, WIRE the
-                # discourse AR predictor to read its recency window from the
-                # GLOBAL store instead of its per-row deque (and stop the
-                # deque append at observe -- the Models observe site's
-                # store-append is the single source). Gate OFF (or no
-                # ltm_store) leaves ``_ltm_store=None`` -> the legacy deque
-                # path, byte-identical.
+                # Connect the consolidated durable-history adapter and
+                # suppress duplicate durable deque writes. Prediction keeps
+                # a separate bounded per-row observation view; it does not
+                # treat global recency or provisioned facts as predecessors.
                 if _ltm_on and self.ltm_store is not None:
                     self.discourse._ltm_store = self.ltm_store
                     self.discourse._ltm_consolidation = True

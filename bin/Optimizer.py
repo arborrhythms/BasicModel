@@ -111,13 +111,15 @@ def _optimizer_parameters(optimizer):
 
 
 def reconstruction_priority_gradient(reconstruction, output, *, max_ratio=0.5):
-    """Project conflicting output credit away from reconstruction, then cap it.
+    """Project conflicting downstream credit, retaining joint learning.
 
     Applied independently to each protected parameter tensor: if r.o < 0,
     q = o - (r.o / r.r) r; otherwise q = o. Return q scaled so its norm is
-    at most max_ratio * ||r||, with 0 <= max_ratio < 1. A missing/zero r
-    permits no output contribution on that parameter. Output-only parameters
-    should not be passed here. This is a first-order *gradient* contract;
+    at most max_ratio * (||r|| + ||q||), with 0 <= max_ratio < 1.
+    A missing/zero r therefore retains max_ratio of the downstream gradient:
+    reconstruction may admit many equally faithful representations, and must
+    not freeze their usefulness for prediction. Output-only parameters should
+    not be passed here. This is a first-order *gradient* contract;
     momentum, adaptive preconditioning and finite step sizes do not imply a
     monotonic reconstruction-loss guarantee.
 
@@ -127,8 +129,10 @@ def reconstruction_priority_gradient(reconstruction, output, *, max_ratio=0.5):
     """
     if not math.isfinite(max_ratio) or not 0.0 <= max_ratio < 1.0:
         raise ValueError("output gradient max_ratio must satisfy 0 <= ratio < 1")
-    if output is None or reconstruction is None:
+    if output is None:
         return None
+    if reconstruction is None:
+        return output.detach() * max_ratio
     r, o = reconstruction.detach(), output.detach()
     if r.shape != o.shape or r.device != o.device:
         raise ValueError("reconstruction/output gradients must match shape and device")
@@ -168,7 +172,7 @@ def reconstruction_priority_gradient(reconstruction, output, *, max_ratio=0.5):
     q_norm = torch.linalg.vector_norm(q)
     scale = torch.minimum(
         o_max,
-        (max_ratio * r_max) * (
+        max_ratio * o_max + (max_ratio * r_max) * (
             r_norm / torch.where(q_norm > 0, q_norm, 1.0)))
     result = (q * scale).to(o_values.dtype)
     if sparse:
@@ -180,7 +184,8 @@ def reconstruction_priority_gradient(reconstruction, output, *, max_ratio=0.5):
 
 def backward_reconstruction_priority(total_loss, reconstruction_loss,
                                      output_loss, protected_parameters, *,
-                                     max_ratio=0.5):
+                                     max_ratio=0.5, reconstruction_tolerance=1e-8,
+                                     reference_active=None):
     """Populate .grad once per objective at one unchanged parameter version.
 
     The caller zeroes gradients first and performs ONE optimizer step later.
@@ -189,7 +194,10 @@ def backward_reconstruction_priority(total_loss, reconstruction_loss,
     when using AMP. Reconstruction is inspected with autograd.grad, output
     is differentiated, and the remaining objective is differentiated before
     adding the protected output contribution. Output-only heads keep their
-    ordinary gradients, and auxiliary losses are unchanged.
+    ordinary gradients. The model passes all non-reconstruction objectives
+    (including prediction/thinking auxiliaries) as output_loss so they share
+    one allowance. Reconstruction remains live below the fidelity tolerance;
+    only its use as the projection reference is disabled there.
 
     Do not subtract an enormous output gradient from an already-accumulated
     total .grad: cancellation can erase the smaller reconstruction gradient.
@@ -198,6 +206,14 @@ def backward_reconstruction_priority(total_loss, reconstruction_loss,
     """
     if not math.isfinite(max_ratio) or not 0.0 <= max_ratio < 1.0:
         raise ValueError("output gradient max_ratio must satisfy 0 <= ratio < 1")
+    if (not math.isfinite(reconstruction_tolerance)
+            or reconstruction_tolerance < 0):
+        raise ValueError("reconstruction tolerance must be finite and nonnegative")
+    # At adequate fidelity, permit movement within the family of useful
+    # representations. Roundoff-sized inverse errors must not pin a code.
+    # The caller supplies this comparison before AMP scales either branch.
+    if reference_active is None:
+        reference_active = reconstruction_loss.detach().abs() > reconstruction_tolerance
     protected = list(dict.fromkeys(
         p for p in protected_parameters if p.requires_grad))
     if not protected or not output_loss.requires_grad:
@@ -211,7 +227,10 @@ def backward_reconstruction_priority(total_loss, reconstruction_loss,
         if reconstruction_loss.requires_grad else (None,) * len(protected))
     output_loss.backward(retain_graph=True)
     projected = [
-        reconstruction_priority_gradient(r, p.grad, max_ratio=max_ratio)
+        reconstruction_priority_gradient(
+            r * reference_active.to(device=r.device, dtype=r.dtype)
+            if r is not None else None,
+            p.grad, max_ratio=max_ratio)
         for p, r in zip(protected, reference)]
     for p in protected:
         p.grad = None

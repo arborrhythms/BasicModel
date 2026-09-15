@@ -9372,6 +9372,13 @@ class InterSentenceLayer(Layer):
         # feeds its serial-``reverse`` fan-out default (unused on our
         # forward-only path), so ``K`` is the meaningful quantity.
         self._inter_chain_window = max(1, min(int(self.ltm_capacity), 8))
+        # Bounded, row-local prediction view of external observations. This
+        # is transient context, not an additional durable/evidence store.
+        # Current-step values retain their encoder graph; consumption/step
+        # boundaries detach the view, while LTM remains a stable snapshot.
+        self._inter_context = [
+            collections.deque(maxlen=self._inter_chain_window)
+            for _ in range(self._batch)]
         self._inter_predictor = None
         if self.concept_dim is not None and self.concept_dim > 0:
             self._inter_predictor = IntraSentenceLayer(
@@ -9405,18 +9412,12 @@ class InterSentenceLayer(Layer):
         self._inter_contrastive_weight = 0.0
         self._inter_contrastive_temp = 0.1
 
-        # LTM consolidation FU3 (Change 2, 2026-06-18): when wired to the
-        # unified ``TernaryTruthStore`` (``_ltm_store`` set by the host at
-        # construction, ``_ltm_consolidation`` True), the AR predictor reads
-        # the GLOBAL store's recency window (:meth:`get_stm_chain` ->
-        # ``ltm_store.recent``) instead of this layer's per-row deque
-        # ``_stm_end_states``, and ``observe_stm_end_state`` STOPS appending
-        # to that deque (the store-append at the Models observe site is the
-        # single source). ``None`` / ``False`` (the default) -> the legacy
-        # per-row deque path, byte-identical. NOTE: the unified store is
-        # GLOBAL (one recency window, not per row), so the store-backed read
-        # is the correct semantics for B=1 / a single conversation; B>1
-        # batched training shares one global recency window across rows.
+        # Consolidated durable history is stored once in TernaryTruthStore.
+        # get_stm_chain retains its legacy global-recency adapter for other
+        # readers; the predictor uses the bounded per-row _inter_context
+        # observation view so unrelated batch rows and provisioned facts
+        # cannot become a sentence's predecessor. The host appends durable
+        # observations to the store; this layer skips its duplicate deque.
         self._ltm_store = None
         self._ltm_consolidation = False
 
@@ -9456,6 +9457,9 @@ class InterSentenceLayer(Layer):
         # (the prior document's pending prediction does not survive, same
         # as the LTM chain / ARMA rings above).
         self._inter_last_pred_root = [None] * batch
+        self._inter_context = [
+            collections.deque(maxlen=self._inter_chain_window)
+            for _ in range(batch)]
 
     # -- sentence-rep pooling -----------------------------------------
     def _pool_sentence_rep(self, s_tensor):
@@ -9747,8 +9751,8 @@ class InterSentenceLayer(Layer):
                 # width) — this is robust to a depth mismatch between
                 # prediction and reality (the plan's "when depths differ,
                 # compare roots"). The actual root is DETACHED
-                # so the loss trains ``_inter_predictor``, not the perception
-                # path. Score BEFORE the detach/clone below so the live
+                # so this comparison cannot move its observed target. Live
+                # preceding context may train its encoder. Score before the
                 # payload's slot-0 is available; the target is detached
                 # regardless.
                 if (self._inter_predictor is not None
@@ -9761,8 +9765,8 @@ class InterSentenceLayer(Layer):
                         # [idea2, idea1, predicate] (newest-at-slot-0); the AR
                         # root is idea1 (slot depth-2). Wrap as [1, D] so
                         # _reduce (consolidated -> slot 0) returns it, matching
-                        # the infix slot-0 root get_stm_chain feeds the
-                        # predictor (so context and actual roots agree).
+                        # the infix slot-0 root in _inter_context (so source
+                        # and actual roots agree).
                         actual_root = self._reduce_end_state_to_root(
                             pd[pd.shape[0] - 2].unsqueeze(0))
                     else:
@@ -9781,8 +9785,7 @@ class InterSentenceLayer(Layer):
                                          0.0)) > 0.0:
                             negs = []
                             try:
-                                for (_d, _pl, _t) in self.get_stm_chain(
-                                        n=8, b=b):
+                                for (_d, _pl, _t) in self._inter_context[b]:
                                     _rt = self._reduce_end_state_to_root(_pl)
                                     if _rt is not None and torch.is_tensor(_rt):
                                         negs.append(_rt.detach().to(
@@ -9792,6 +9795,15 @@ class InterSentenceLayer(Layer):
                                 negs = []
                             self._accumulate_inter_contrastive(
                                 pred_root, actual_root.detach(), negs)
+                context = payload.clone()
+                if self._ltm_store is not None and context.dim() == 2 and depth >= 3:
+                    context = torch.stack(
+                        (context[depth - 2], context[depth - 1], context[0]))
+                if (not self.training or not torch.is_grad_enabled()
+                        or (self._inter_loss_weight <= 0
+                            and self._inter_contrastive_weight <= 0)):
+                    context = context.detach()
+                self._inter_context[b].append((int(depth), context, None))
                 # Detach + clone so the stored end-state is a stable
                 # snapshot decoupled from the live STM buffer (which the
                 # next sentence overwrites in place) and carries no
@@ -9805,15 +9817,9 @@ class InterSentenceLayer(Layer):
             tet = None
             if tetralemmas is not None and b < len(tetralemmas):
                 tet = tetralemmas[b]
-            # LTM consolidation FU3 (Change 2): when wired to the unified
-            # store the per-row deque is NOT the source of truth -- the
-            # Models observe site appends each end-state to the global
-            # ``ltm_store`` (sink (a)). Skip the deque append here so the AR
-            # chain is read SOLELY from the store (via ``get_stm_chain``);
-            # the L_inter predict/score cycle ABOVE still runs (it reads
-            # context through ``get_stm_chain`` -> store, and scores the
-            # ``payload`` arg against the staged prediction). Legacy /
-            # non-consolidated path is unchanged (deque append as today).
+            # The host appends consolidated durable observations once to
+            # ltm_store. Skip the duplicate durable deque; the prediction
+            # cycle above uses its scoped, transient observation view.
             if self._ltm_store is None:
                 self._stm_end_states[b].append((int(depth), payload, tet))
 
@@ -9855,6 +9861,7 @@ class InterSentenceLayer(Layer):
         """
         if depths is None or payloads is None:
             return
+        self.ensure_batch(len(payloads))
         # Stage the next-end-state prediction for EVERY row from the chain
         # state BEFORE the new end-states are appended (``observe`` below does
         # the appends). ``predict_next_end_state`` records the live predicted
@@ -10040,7 +10047,7 @@ class InterSentenceLayer(Layer):
         device = next(self._inter_predictor.parameters()).device
         dtype = next(self._inter_predictor.parameters()).dtype
         K = int(self._inter_chain_window)
-        chain = self.get_stm_chain(n=K, b=bi)
+        chain = list(self._inter_context[bi])[-K:]
         if not chain:
             # Cold start: no AR signal yet. Degenerate (1, zeros[1, D]).
             self._inter_last_pred_root[bi] = None
@@ -10093,7 +10100,7 @@ class InterSentenceLayer(Layer):
 
         Fail-loud: a non-finite step loss RAISES.
         """
-        if not torch.is_grad_enabled():
+        if not self.training or not torch.is_grad_enabled():
             return
         if float(self._inter_loss_weight) <= 0.0:
             return
@@ -10115,12 +10122,14 @@ class InterSentenceLayer(Layer):
         prediction loss and RESET the accumulator.
 
         Returns a live scalar tensor (mean over the scored sentences)
-        carrying grad to ``_inter_predictor``'s params, or ``None`` when
-        nothing was accumulated this batch (eval-time, weight off, or no
+        carrying grad to ``_inter_predictor`` and live source encodings,
+        or ``None`` when nothing was accumulated this batch (eval-time,
+        weight off, or no
         sentence was both predicted-for and observed). Mirrors
         ``ConceptualSpace.consume_intra_loss`` — ``runBatch`` consumes it
         once, post-body / pre-backward, next to the ARMA + intra terms.
         """
+        self.detach_prediction_context()
         if self._inter_loss_accum is None:
             self._inter_loss_count = 0
             return None
@@ -10128,6 +10137,19 @@ class InterSentenceLayer(Layer):
         self._inter_loss_accum = None
         self._inter_loss_count = 0
         return mean_loss
+
+    def detach_prediction_context(self):
+        """End the current encoder graph without erasing observed context.
+
+        Loss tensors already returned/accumulated own their backward graph.
+        Future predictions read snapshots after the single optimizer step.
+        Pending predictions cannot carry credit across parameter versions.
+        """
+        for b, chain in enumerate(self._inter_context):
+            self._inter_context[b] = collections.deque(
+                ((d, p.detach(), t) for d, p, t in chain),
+                maxlen=self._inter_chain_window)
+        self._inter_last_pred_root = [None] * self._batch
 
     def set_inter_loss_weight(self, weight):
         """Set the inter-loss accumulation gate (read from the
@@ -10148,7 +10170,7 @@ class InterSentenceLayer(Layer):
         are DETACHED, so the gradient trains the predictor, never the targets.
         No-op under no-grad / weight<=0 / no negatives (the caller's MSE term
         still runs). Fail-loud on NaN."""
-        if not torch.is_grad_enabled():
+        if not self.training or not torch.is_grad_enabled():
             return
         if float(self._inter_contrastive_weight) <= 0.0:
             return
@@ -10207,6 +10229,8 @@ class InterSentenceLayer(Layer):
             # way ``_s_history`` zeros — the next document starts cold.
             for dq in self._stm_end_states:
                 dq.clear()
+            for dq in self._inter_context:
+                dq.clear()
             self.what_memory.reset()
             # Drop any pending inter-sentence prediction + the live loss
             # accumulator (Task 8): the next document predicts cold, and a
@@ -10225,6 +10249,7 @@ class InterSentenceLayer(Layer):
             self._e_count[bi] = 0
             if 0 <= bi < len(self._stm_end_states):
                 self._stm_end_states[bi].clear()
+                self._inter_context[bi].clear()
             self.what_memory.reset(bi)
             if 0 <= bi < len(self._inter_last_pred_root):
                 self._inter_last_pred_root[bi] = None

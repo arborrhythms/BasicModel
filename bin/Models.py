@@ -2517,6 +2517,11 @@ class BaseModel(Mereology, nn.Module):
             TheXMLConfig.training("reconstructionPriority", False))
         self.output_gradient_ratio = float(
             TheXMLConfig.training("outputGradientRatio", 0.5))
+        self.reconstruction_loss_tolerance = float(
+            TheXMLConfig.training("reconstructionLossTolerance", 1e-8))
+        if (not math.isfinite(self.reconstruction_loss_tolerance)
+                or self.reconstruction_loss_tolerance < 0):
+            raise ValueError("reconstructionLossTolerance must be finite and nonnegative")
         if (not math.isfinite(self.output_gradient_ratio)
                 or not 0.0 <= self.output_gradient_ratio < 1.0):
             raise ValueError("outputGradientRatio must satisfy 0 <= ratio < 1")
@@ -2685,23 +2690,21 @@ class BaseModel(Mereology, nn.Module):
         pass
 
     def _reconstruction_priority_parameters(self, optimizer):
-        """Live optimizer-owned perceptual/conceptual parameters, once each.
+        """Optimizer-owned representation parameters and grammar, once each.
 
         Walk all orders, including WholeSpace (W = whole), rather than only
         the final concept carrier. Non-grad context-rotation dictionaries
         and parameters excluded by trainEmbedding retain their own ownership.
-        SymbolSpace and OutputSpace's independent heads are not protected.
+        Independent synthesis/output heads keep their ordinary gradients.
         """
         owned = {
             p.data_ptr(): p for group in optimizer.param_groups
             for p in group["params"] if p.requires_grad}
         # The answer path's own operators (the Spaces' synthesis layers, the
         # percept adapter, the question conditioner) are never reached by
-        # reconstruction; protecting them would give the answer loss no
-        # budget there at all (a zero reconstruction gradient caps the
-        # output gradient at zero), so the answer path could never train
-        # under reconstruction priority.  They keep their ordinary
-        # gradients, like the independent heads.
+        # reconstruction. They keep their ordinary gradients, like other
+        # independent heads; the shared-representation allowance is not a
+        # reason to slow learning in a module that has no competing owner.
         synthesis = getattr(self, "synthesis_parameters", None)
         answer_only = ({p.data_ptr() for p in synthesis()}
                        if callable(synthesis) else set())
@@ -2712,6 +2715,16 @@ class BaseModel(Mereology, nn.Module):
                     ptr = p.data_ptr()
                     if ptr in owned and ptr not in answer_only:
                         selected[ptr] = owned[ptr]
+        # Grammar transforms register with SymbolSpace, even when their
+        # operands and named-parameter paths belong to ConceptualSpace.
+        # Include by actual registry/optimizer identity, not the Space class.
+        registry = getattr(getattr(self, "symbolSpace", None),
+                           "_host_layer_registry", {})
+        for layer in registry.values():
+            for p in layer.parameters():
+                ptr = p.data_ptr()
+                if ptr in owned and ptr not in answer_only:
+                    selected[ptr] = owned[ptr]
         return list(selected.values())
 
     def _backward_training_loss(self, total_loss, objectives, optimizer,
@@ -2722,8 +2735,13 @@ class BaseModel(Mereology, nn.Module):
                     if amp_scaler is not None else total_loss)
             loss.backward()
             return
-        reconstruction, output = (
-            objectives["reconstruction"], objectives["output"])
+        reconstruction = objectives["reconstruction"]
+        # One allowance for ALL other losses, including prediction/thinking
+        # on batches without supplied answers. No auxiliary route may bypass
+        # the representation's reconstruction reference.
+        output = total_loss - reconstruction
+        tolerance = float(getattr(self, "reconstruction_loss_tolerance", 1e-8))
+        reference_active = reconstruction.detach().abs() > tolerance
         if amp_scaler is not None:
             total_loss = amp_scaler.scale(total_loss)
             reconstruction = amp_scaler.scale(reconstruction)
@@ -2731,7 +2749,8 @@ class BaseModel(Mereology, nn.Module):
         backward_reconstruction_priority(
             total_loss, reconstruction, output,
             self._reconstruction_priority_parameters(optimizer),
-            max_ratio=self.output_gradient_ratio)
+            max_ratio=self.output_gradient_ratio,
+            reconstruction_tolerance=tolerance, reference_active=reference_active)
 
     def _configure_concept_readout_l1(self, optimizer):
         """Stage one weak-L1 update and return its detached reporting cost.
@@ -7793,6 +7812,7 @@ class BasicModel(BaseModel):
             _cuda_graph_mode if self._brick_compiled else None)
 
     def _start_spaces_for_forward(self):
+        self._packed_prediction_drained = False
         for space in self.spaces:
             if hasattr(space, 'Start'):
                 space.Start()
@@ -12276,7 +12296,9 @@ class BasicModel(BaseModel):
                 and bool(getattr(isp, "_sentence_pack_enabled", False))
                 and torch.is_tensor(getattr(
                     self, "_packed_sentence_roots", None))):
-            self._drain_packed_stm_end_states()
+            if not getattr(self, "_packed_prediction_drained", False):
+                self._drain_packed_stm_end_states()
+                self._packed_prediction_drained = True
             # The ordinary compiled boundary parked the final sentence too;
             # packed draining already consumed it in chronological slot order.
             object.__setattr__(self, "_pending_stm_end_state", None)
@@ -12750,7 +12772,11 @@ class BasicModel(BaseModel):
             the dataset is exhausted.
         """
         self._install_unit_span_fn()
+        self._packed_prediction_drained = False
         _ensure_grad_anchors(TheDevice.get())
+        _disc = getattr(getattr(self, "symbolSpace", None), "discourse", None)
+        if _disc is not None:
+            _disc.detach_prediction_context()
         _stm = getattr(getattr(self, "conceptualSpace", None), "stm", None)
         if _stm is not None and hasattr(_stm, "detach_live"):
             _stm.detach_live()                  # no graph crosses a brick
@@ -13502,12 +13528,12 @@ class BasicModel(BaseModel):
             # scored sentence this batch.
             inter_loss = (
                 self._discourse_inter_loss()
-                if train and legacy_prediction else None
+                if train and not exploration_trial else None
             )
             # InfoNCE next-idea contrastive term (the discourse layer's second
             # accumulator; populated during the forward boundary observe).
             inter_contrastive = None
-            if train and legacy_prediction and self.symbolSpace is not None:
+            if train and not exploration_trial and self.symbolSpace is not None:
                 _disc = getattr(self.symbolSpace, "discourse", None)
                 if _disc is not None and hasattr(
                         _disc, "consume_inter_contrastive_loss"):
@@ -13536,13 +13562,11 @@ class BasicModel(BaseModel):
                     space="LanguageSpace", category="policy")
             # Mirror the actual weighted branches, not just their logged raw
             # losses. The legacy ModelLoss uses complementary rr / (1-rr)
-            # weights; independent primary weights belong to the output-path
-            # migration. Unlabeled/rr=1 runs pay no extra autograd traversals.
+            # weights; prediction/thinking can also train shared parameters
+            # when no supervised output term is present.
             gradient_objectives = None
             _rr = float(self.loss.reconstruction_scale)
-            if (train and trial_mode != "predict"
-                    and getattr(self, "reconstruction_priority", False)
-                    and lossOut.requires_grad and (1.0 - _rr) > 0.0):
+            if (train and getattr(self, "reconstruction_priority", False)):
                 gradient_objectives = {
                     "reconstruction": _rr * lossIn,
                     "output": (1.0 - _rr) * lossOut,
@@ -13609,7 +13633,7 @@ class BasicModel(BaseModel):
                     weight=self.conceptualSpace.intra_loss_weight,
                     space="ConceptualSpace", category="intra",
                 )
-            if inter_loss is not None:
+            if inter_loss is not None and self.inter_loss_weight > 0.0:
                 totalLoss = (totalLoss
                              + self.inter_loss_weight * inter_loss)
                 self.record_loss(
@@ -13617,7 +13641,7 @@ class BasicModel(BaseModel):
                     weight=self.inter_loss_weight,
                     space="DiscourseSpace", category="inter",
                 )
-            if inter_contrastive is not None:
+            if inter_contrastive is not None and self.inter_contrastive_weight > 0.0:
                 totalLoss = (totalLoss
                              + self.inter_contrastive_weight * inter_contrastive)
                 self.record_loss(
@@ -20354,7 +20378,7 @@ class BasicModel(BaseModel):
             root_index = (sealed_depth - 1).clamp(
                 min=0, max=max(0, capacity - 1))
             root_rows = torch.arange(B, device=words.device)
-            sealed_root = sealed_stm[0][root_rows, root_index].detach()
+            sealed_root = sealed_stm[0][root_rows, root_index].clone()
             root_slot = _gather_word(
                 sentence_ids, index).reshape(B).clamp(
                     0, root_slots - 1)
@@ -21054,7 +21078,7 @@ class BasicModel(BaseModel):
                     .clamp(
                         0, int(tensor_sentence_roots.shape[1]) - 1))
                 root_candidate = self._tensor_write_word_column(
-                    tensor_sentence_roots, final_slot, S.detach())
+                    tensor_sentence_roots, final_slot, S.clone())
                 tensor_sentence_roots = torch.where(
                     final_valid.reshape(
                         int(S.shape[0]), 1, 1),
@@ -21112,13 +21136,26 @@ class BasicModel(BaseModel):
                 and ltm_store is not None)
             discourse_live = (discourse is not None and hasattr(
                 discourse, 'observe_stm_end_state'))
+            if (discourse_live and not torch.compiler.is_compiling()
+                    and bool(getattr(self.inputSpace, "_sentence_pack_enabled", False))
+                    and torch.is_tensor(tensor_sentence_roots)):
+                # The ordinary eager forward returns four public values;
+                # unlike the compiled boundary it cannot defer observation
+                # via an explicit root slab. Drain the same live slab here,
+                # once, including every intermediate sentence in each row.
+                self._packed_sentence_roots = tensor_sentence_roots
+                if not getattr(self, "_exploration_trial", False):
+                    self._drain_packed_stm_end_states()
+                    self._packed_prediction_drained = True
+                discourse_live = False
+                ltm_consolidation_on = False
             if ((discourse_live or ltm_consolidation_on)
                     and torch.compiler.is_compiling()):
                 # A compiled graph may only park fixed tensors. The eager step
                 # teardown reconstructs ragged rows and performs both sinks.
                 object.__setattr__(
                     self, "_pending_stm_end_state",
-                    (cs_buf.detach(), rel_mask.detach()))
+                    (cs_buf.clone(), rel_mask.detach()))
                 discourse_live = False
                 ltm_consolidation_on = False
             if discourse_live or ltm_consolidation_on:
@@ -21163,12 +21200,10 @@ class BasicModel(BaseModel):
                     # observe_stm_end_state`` degenerates to a bare observe
                     # when there is no inter-predictor (absolute-only no-op)
                     # or on the cold first sentence (nothing to predict from
-                    # yet). When consolidated (Change 2 / FU3) ``observe``
-                    # reads the unified store via ``get_stm_chain`` for AR
-                    # context and does NOT append to the deque -- the store-
-                    # append (a) below is the single source, so it MUST run
-                    # after this predict staging (else the predictor would
-                    # see this end-state as part of its own history).
+                    # yet). Prediction reads the row's scoped observation
+                    # view before adding this boundary. Consolidated mode
+                    # skips the duplicate durable deque; the store append
+                    # (a) below remains the single durable conversation write.
                     if discourse_live:
                         discourse.predict_and_observe_stm_end_state(
                             depths, payloads, tetralemmas=tetralemmas)

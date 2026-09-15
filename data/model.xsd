@@ -914,9 +914,10 @@
            Legacy name reverseScale still parsed (with deprecation
            warning) by util.TheXMLConfig. -->
       <xs:element name="reconstructionScale" type="unitInterval" minOccurs="0"/>
-      <!-- Asymmetric gradient policy on optimizer-owned P/W/concept
-           parameters. No reconstruction gradient means no output budget. -->
+      <!-- Joint gradient policy on representation and shared grammar
+           parameters. Preserve reconstruction while learning useful codes. -->
       <xs:element name="reconstructionPriority" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="reconstructionLossTolerance" type="nonNegativeFloat" minOccurs="0"/>
       <!-- What spec Step 6: every N training batches, sample gradient
            norms/cosine of input_reconstruction vs answer_construction at
            the conceptual and symbolic branch points (a read before

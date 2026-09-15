@@ -166,12 +166,12 @@
            no reverse gradient traverses the recurrent sentence construction.
            The output head is structural and receives no fabricated labels. -->
       <reconstructionScale>1.0</reconstructionScale>
-      <!-- On supervised batches remove opposing output credit on P/W/concept
-           parameters and cap the remainder below reconstruction's norm.
-           A detached/zero reconstruction gradient gives output no budget on
-           those parameters; independent decoder heads can still learn.
-           FineWeb has no output loss, so this adds no backward work here. -->
+      <!-- Balance all prediction/output/thinking credit on representation
+           and shared grammar weights. Cap against the combined gradient
+           scale; a faithful representation can still improve for prediction.
+           Independent heads keep their ordinary gradients. -->
       <reconstructionPriority>true</reconstructionPriority>
+      <reconstructionLossTolerance>1e-8</reconstructionLossTolerance>
       <outputGradientRatio>0.5</outputGradientRatio>
       <teacherReconstruction>true</teacherReconstruction>
       <detachedReverse>true</detachedReverse>

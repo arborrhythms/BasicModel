@@ -755,21 +755,26 @@ were **RETIRED** in A1, 2026-06-09; reconstruction is now seeded from concepts
 
 ### Single Optimizer with Overlapping Weight Spaces
 
-The forward and reverse passes share a **single Adam optimizer** that
-minimizes the combined loss. Forward and reverse weight spaces **partially
-overlap** --- neither disjoint (allowing independent optimizers) nor identical
-(creating destructive interference). Some layers share weights between
-directions (shared embeddings, the symbolic bottleneck); others are
-direction-specific (`pi1`/`pi2`, `sigma1`/`sigma2`, `linear1`/`linear2`).
+Representation learning and response learning use one optimizer step over
+explicitly owned parameters. Shared weights can learn a representation useful
+for reconstruction, prediction and answering. Direction-specific weights
+specialize in their own computations; module identity and gradient reach are
+separate questions because a live input can propagate credit to its producer.
 
-- **Shared weights** receive gradient from both losses, learning
-  representations useful in both directions.
-- **Direction-specific weights** specialize without interference.
-- **No ping-pong**: separate optimizers on overlapping parameters would pull
-  weights in alternating, conflicting directions each step.
+With `reconstructionPriority` enabled, the optimizer seam collects all
+non-reconstruction objectives into one downstream contribution. It removes
+opposition to reconstruction above `reconstructionLossTolerance` and limits
+the compatible contribution using `outputGradientRatio` and the combined
+gradient scale. Below tolerance, bounded predictive refinement remains
+possible. Shared grammar transforms participate even when registered on
+SymbolSpace. Independent heads keep their ordinary gradients. The loss
+partition and ownership are in [Models.py:2692](../bin/Models.py#L2692), and
+the numerical rule is in [Optimizer.py:113](../bin/Optimizer.py#L113). See
+[Training](Training.md) and the [joint-learning contract](plans/2026-09-15-next-sentence-as-the-production-objective.md#84-joint-representation-learning-and-gradient-balance).
 
-When `invertible=true`, overlap is total: one invertible layer serves both
-directions and receives the full combined gradient.
+An invertible transform uses its same learned mapping in the forward and
+inverse directions ([Layers.py:1060](../bin/Layers.py#L1060)); its gradient
+follows the configured joint-learning policy.
 
 Reference: A.M. Rogers, T.T. Shannon, and G.G. Lendaris, "A comparison of DHP
 based antecedent parameter tuning strategies for fuzzy control,"

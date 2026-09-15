@@ -155,8 +155,9 @@ def test_shared_model_readout_gets_one_policy_and_no_duplicate_autograd_l1():
     backward_reconstruction_priority(
         reconstruction + output + cost, reconstruction, output, [layer.coefficients])
     torch.testing.assert_close(layer.coefficients.grad.coalesce().values(),
-                               torch.tensor([[2., 1., 0.]]))
-    # Reconstruction/output projection is unchanged; L1 is applied only later.
+                               torch.tensor([[2., 3., 0.]]))
+    # r=(2,0,0), compatible q=(0,4,0): the combined cap is .5*(2+4)=3.
+    # L1 contributes no autograd credit and is applied only in the later step.
     opt.step()
     assert not inner.inner._l1_proximal
 
