@@ -65,6 +65,8 @@ class AnswerDerivation:
     row_sources: Tuple[str, ...] = field(default_factory=tuple)
     step: Tuple[Optional[StepChoice], ...] = field(default_factory=tuple)
     exact_steps: Tuple[Any, ...] = field(default_factory=tuple)
+    program: Tuple[Any, ...] = field(default_factory=tuple, repr=False, compare=False)
+    conditioning_context: Any = field(default=None, repr=False, compare=False)
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "grammar_trace", tuple(self.grammar_trace))
@@ -74,6 +76,10 @@ class AnswerDerivation:
         object.__setattr__(self, "row_sources", tuple(self.row_sources))
         object.__setattr__(self, "step", tuple(self.step))
         object.__setattr__(self, "exact_steps", tuple(self.exact_steps))
+        object.__setattr__(self, "program", tuple(self.program))
+        if self.conditioning_context is not None:
+            object.__setattr__(self, "conditioning_context",
+                               self.conditioning_context.clone())
 
 
 @dataclass(frozen=True)

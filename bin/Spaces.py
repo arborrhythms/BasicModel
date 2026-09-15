@@ -22832,7 +22832,7 @@ class ConceptualSpace(Space):
             legacy.update(incoming_legacy)
 
     def synthesize(self, answer_symbol, bindings=None, *, context=None,
-                   selections=(), reverse_chain=None):
+                   selections=(), reverse_chain=None, condition=None):
         """Concepts for a resolved answer symbol (What spec section 5.3).
 
         The symbol->concept direction is the WholeSpace inverse (``Pi^-1``)
@@ -22876,6 +22876,10 @@ class ConceptualSpace(Space):
                     ss_sub._generate_generation = saved_rules[1]
         event = (realized.materialize()
                  if hasattr(realized, "materialize") else realized)
+        # Apply question context to the materialised concepts before the
+        # dedicated answer operator learns their supervised transformation.
+        if condition is not None:
+            event = condition(event)
         event = self._apply_synthesis_operator(event)
         if (selections and torch.is_tensor(context)
                 and torch.is_tensor(event) and context.dim() == event.dim() == 3

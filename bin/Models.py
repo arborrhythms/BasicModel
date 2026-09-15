@@ -79,7 +79,7 @@ from checkpoint_migrations import (
     stamp_checkpoint_schema,
 )
 from data import Data, TheData
-from Understanding import Understanding
+from Understanding import AnswerProgram, Understanding
 from Output import AnswerConstruction, AnswerDerivation
 from contextlib import contextmanager as _contextmanager
 from What import (LTMSlot, What, WhatAnswer, WhatQuestion, WhatRelation,
@@ -6503,7 +6503,9 @@ class BasicModel(BaseModel):
         with torch.no_grad(), self._runtime_batch([text]):
             inputTensor = self.inputSpace.prepInput(
                 list(self.data.train_input))
-            forwardInput, _symbols, _predictions, _ = self.forward(inputTensor)
+            execution = self.forward(inputTensor)
+            self._last_understanding = self._capture_understanding(execution)
+            forwardInput, _symbols, _predictions, _ = execution
             if forwardInput is None:
                 return []
             pred_full = None
@@ -6596,7 +6598,9 @@ class BasicModel(BaseModel):
         out = self._infer_ir(seed_text)
         # Commit the produced sentence to the ARMA ring.
         if discourse is not None and self._current_discourse_s is not None:
-            self._observe_discourse(discourse, self._current_discourse_s)
+            self._observe_discourse(
+                discourse, self._current_discourse_s,
+                understanding=self._last_understanding)
         return out
 
     def _warn_zeroed_channel(self, site, detail):
@@ -7868,6 +7872,10 @@ class BasicModel(BaseModel):
         the caller keeps, never carriers.  The established forward tuple is
         attached as the compatibility adapter.
         """
+        # what() consumes the compiled result before runBatch's compatibility
+        # publication. Attribute-only escapes may have been dropped by Dynamo.
+        if isinstance(execution, (tuple, list)) and len(execution) > 4:
+            self._publish_compiled_sentence_state(execution)
         _forward_input, symbols, _produced = self._what_execution_parts(
             execution)
         percept_sub = getattr(getattr(self, "perceptualSpace", None),
@@ -7909,6 +7917,7 @@ class BasicModel(BaseModel):
                 and torch.is_tensor(symbols) and conceptual.dim() == 3
                 and symbols.dim() == 3 and conceptual.shape[-1] == symbols.shape[-1]):
             answer_seed = conceptual
+        answer_program, sentence_programs = self._capture_answer_programs()
         return Understanding(
             perceptual_context=perceptual,
             conceptual_state=conceptual,
@@ -7917,6 +7926,8 @@ class BasicModel(BaseModel):
             execution=(tuple(execution)
                        if isinstance(execution, (tuple, list)) else execution),
             answer_seed=answer_seed,
+            answer_program=answer_program,
+            sentence_programs=sentence_programs,
         )
 
     def understand(self, input_data, *, executor=None):
@@ -8079,14 +8090,32 @@ class BasicModel(BaseModel):
             # presented referent.
             answer, steps, step_trace, exact_steps = self._resolve_step(
                 understanding, questions, per_row, answer)
-        answer = self._condition_answer_on_question(answer, questions)
+        # Select the owned program once. Later materialisation must not read
+        # whichever sentence or recall entry happens to be live then.
+        programs = []
+        current_program = understanding.answer_program
+        if current_program:
+            for b, src in enumerate(row_sources):
+                entry = current_program[b] if b < len(current_program) else None
+                if src == "recall":
+                    k = abs(int(per_row[b].offset))
+                    history = self._recall_program_history().get(b)
+                    entry = (history[-k] if history is not None
+                             and k >= 1 and len(history) >= k else None)
+                elif src == "prediction" or src == "identity:cold-memory":
+                    entry = None
+                if entry is None:
+                    resolved_all = False
+                programs.append(entry)
+        context, _detail = self._what_grammar_context(
+            questions, device=answer.device, dtype=answer.dtype)
         references = self._select_perceptual_bindings(understanding)
         trace = ({"operation": f"resolve:{source}",
                   "relation": relation.value,
                   "offset": offset,
                   "row_sources": tuple(row_sources),
                   "temporal": temporal,
-                  "conditioned": True,
+                  "conditioned": "conceptual",
                   "bindings": references},)
         if reasoning is not None:
             trace = trace + ({"operation": "reason",
@@ -8101,7 +8130,8 @@ class BasicModel(BaseModel):
             synthesis_references=references, sentence_location=0, prefix=None,
             resolved=resolved_all, source=source,
             row_sources=tuple(row_sources), step=steps,
-            exact_steps=exact_steps)
+            exact_steps=exact_steps, program=tuple(programs),
+            conditioning_context=context)
 
     # -- thinking: the resolve step (mathematical thinking spec 6) -----------
     #
@@ -8485,11 +8515,11 @@ class BasicModel(BaseModel):
         return tuple(sorted(int(i) for i in chosen))
 
     def _question_conditioner(self, width, *, device, dtype):
-        """The learned question -> answer-symbol operator (What spec Step 7).
+        """The learned question -> conceptual-answer operator.
 
         Maps the target-free question context (relation bits, offset, the
         absolute ``.where`` ladder, LTM scalars -- the same vector the grammar
-        chooser sees) onto the answer symbol's root slot.  Zero-initialised,
+        chooser sees) onto the conceptual answer's root slot. Zero-initialised,
         so the answer path starts independent of the question; built on
         first use (state-dict keys unchanged for configurations that never
         synthesize) and handed to the live optimizer by ``runBatch``.  It is
@@ -8497,9 +8527,8 @@ class BasicModel(BaseModel):
         trains it, which is what makes temporal question content CAUSALLY
         used rather than merely present in context.
         """
-        # One conditioner per answer width, kept: the symbol-width one
-        # conditions the resolved symbol, the concept-width one the
-        # materialised idea; switching widths must not discard weights.
+        # Retain historical widths for checkpoint compatibility. An answer
+        # actively uses only its conceptual width, once after materialisation.
         table = getattr(self, "question_conditioners", None)
         if table is None:
             table = nn.ModuleDict()
@@ -8523,12 +8552,13 @@ class BasicModel(BaseModel):
             self.question_conditioner = module
         return module
 
-    def _condition_answer_on_question(self, answer, questions):
-        """Add the question conditioner's output to the root slot."""
+    def _condition_answer_on_question(self, answer, context):
+        """Condition the conceptual root from the derivation's frozen context."""
         if not torch.is_tensor(answer) or answer.dim() != 3:
             return answer
-        context, _detail = self._what_grammar_context(
-            questions, device=answer.device, dtype=answer.dtype)
+        if not torch.is_tensor(context):
+            return answer
+        context = context.to(device=answer.device, dtype=answer.dtype)
         module = self._question_conditioner(
             answer.shape[-1], device=answer.device, dtype=answer.dtype)
         if context.shape[-1] != module.in_features:
@@ -8579,18 +8609,16 @@ class BasicModel(BaseModel):
             return torch.cat((S.unsqueeze(1), S.new_zeros(int(S.shape[0]), 2, int(S.shape[-1]))), dim=1)
         return None
 
-    def _observe_discourse(self, disc, sentence, mask=None, slot=None):
+    def _observe_discourse(self, disc, sentence, mask=None, slot=None,
+                           *, understanding=None):
         """Route every discourse observation through one seam so the recall
         history stays in step with the ARMA ring (and the concept-level
         end state of the sentence rides beside its pooled rep)."""
         result = disc.observe(sentence, mask=mask) if mask is not None else disc.observe(sentence)
         pooled = disc._pool_sentence_rep(sentence) if hasattr(disc, "_pool_sentence_rep") else None
-        idea = self._sentence_end_state(slot)
-        program = self._derivation_program(slot) if torch.is_tensor(idea) else None
-        leaf_slab = (self._answer_leaf_slab(self._answer_symbol_rows(slot))
-                     if program is not None else None)
-        entries = (self._program_entries(program, leaf_slab)
-                   if (program is not None and torch.is_tensor(leaf_slab)) else None)
+        entries = (() if understanding is None else
+                   understanding.answer_program if slot is None else
+                   understanding.sentence_programs.get(int(slot), ()))
         if torch.is_tensor(pooled):
             if pooled.dim() == 1:
                 pooled = pooled.unsqueeze(0)
@@ -8607,14 +8635,12 @@ class BasicModel(BaseModel):
                 row.append(pooled[b].detach().clone())
                 ideas = self._recall_idea_history().setdefault(
                     b, collections.deque(maxlen=keep))
-                ideas.append(idea[b].detach().clone() if torch.is_tensor(idea)
-                             and int(idea.shape[0]) > b else None)
+                entry = entries[b] if b < len(entries) else None
+                ideas.append(entry.end_state.detach().clone()
+                             if entry is not None else None)
                 programs = self._recall_program_history().setdefault(
                     b, collections.deque(maxlen=keep))
-                entry = entries[b] if (entries is not None and b < len(entries)) else None
-                programs.append(
-                    {k: v.detach().to("cpu").clone() for k, v in entry.items()}
-                    if isinstance(entry, dict) else None)
+                programs.append(entry.detached() if entry is not None else None)
         return result
 
     def _temporal_answer_rep_row(self, relation, offset, b, width):
@@ -9027,7 +9053,9 @@ class BasicModel(BaseModel):
                 concepts = cs.synthesize(
                     answer_event, derivation.bindings,
                     context=understanding.conceptual_state,
-                    selections=derivation.synthesis_references)
+                    selections=derivation.synthesis_references,
+                    condition=lambda idea: self._condition_answer_on_question(
+                        idea, derivation.conditioning_context))
                 percepts = ps.synthesize(
                     concepts, context=understanding.perceptual_context,
                     selections=derivation.synthesis_references,
@@ -9631,7 +9659,10 @@ class BasicModel(BaseModel):
             execution)
         if produced_all is None:
             raise RuntimeError("Model.what received no produced response")
-        self._last_understanding = self._capture_understanding(execution)
+        previous = getattr(self, "_last_understanding", None)
+        self._last_understanding = (
+            previous if previous is not None and previous.execution is execution
+            else self._capture_understanding(execution))
         self._last_answer_construction = None
         if getattr(self, "answer_synthesis", False):
             # Step 4: the answer is constructed through reverseOutput(), not read
@@ -11344,78 +11375,36 @@ class BasicModel(BaseModel):
         return max(0, int(event_width) - 8)
 
     def _materialize_answer_idea(self, understanding, derivation, question):
-        """The resolved answer as its own conceptual idea: ``[B, 3, D]``
-        slots (the three LTM slots, newest at 0) at the concept width, the
-        operand of the output loop (spec sections 1-2; the
-        answer-materialisation boundary after resolution and before
-        ``<generate>``).
+        """Replay the answer's owned program and condition its conceptual root.
 
-        The symbol table and the concept table share row indices (one
-        symbol per concept; Architecture, "a x the row-aligned identity
-        row"), so an answer is materialised from its SYMBOLS' rows and its
-        derivation, never from a symbol vector: the leaves are the concept
-        dictionary rows at the answer's symbol rows (a word without a
-        durable identity keeps its retained reference), and the recorded
-        derivation folds them through the grammar's forward ops
-        (``_replay_program``) into the end state whose top three slots are
-        the idea.  Per row the derivation's source decides whose symbols
-        and derivation: ``identity`` / ``reasoning`` the sentence just
-        understood, ``recall`` the sentence observed ``k`` sentences ago
-        (its program kept beside the recall history), ``prediction`` has
-        no concept-level predictor yet (the current sentence stands in and
-        the row is reported unresolved).  The question conditions the root
-        slot at the concept width (``_question_conditioner``,
-        zero-initialised).  Returns ``(idea, resolved [B] bool, sources,
-        targets)``: ``targets [B, T]`` are the walk's teacher actions of
-        the same derivation.
+        Neither subsequent staging nor advancing recall memory can change a
+        held derivation. Grammar parameters remain shared; rows, activations,
+        leaves, actions and target-free question context belong to the value.
+        Missing programs are explicitly unresolved, with no current-input
+        substitute. Returned compose targets are reconstruction metadata only.
         """
-        questions = question_batch(question)
-        base = self._sentence_end_state(None)
-        if not torch.is_tensor(base):
+        entries = derivation.program
+        if not entries:
             return None, None, (), None
-        B, K, D = int(base.shape[0]), int(base.shape[1]), int(base.shape[-1])
+        B = len(entries)
+        D = int(self.conceptualSpace.stm.concept_dim)
+        context = derivation.conditioning_context
+        base = context.new_zeros(B, 3, D)
         T = self._walk_budget()
-        program = self._derivation_program(None, T)
-        leaf_slab = (self._answer_leaf_slab(self._answer_symbol_rows(None))
-                     if program is not None else None)
-        current = (self._program_entries(program, leaf_slab)
-                   if (program is not None and torch.is_tensor(leaf_slab))
-                   else [None] * B)
-        trace = getattr(derivation, "grammar_trace", ()) or ()
-        row_sources = ()
-        for entry in trace:
-            if isinstance(entry, dict) and "row_sources" in entry:
-                row_sources = tuple(entry["row_sources"]); break
-        resolved = torch.ones(B, dtype=torch.bool, device=base.device)
-        sources = []
-        entries = [None] * B
-        per_row = [questions[b] if b < len(questions) else questions[-1]
-                   for b in range(B)] if questions else []
-        for b in range(B):
-            src = row_sources[b] if b < len(row_sources) else "identity"
-            q = per_row[b] if b < len(per_row) else None
-            if src == "recall" and q is not None:
-                k = abs(int(getattr(q, "offset", 0) or 0))
-                hist = self._recall_program_history().get(int(b))
-                past = hist[-k] if (hist is not None and k >= 1 and len(hist) >= k) else None
-                if past is None:
-                    ideas = self._recall_idea_history().get(int(b))
-                    past_idea = ideas[-k] if (ideas is not None and k >= 1
-                                              and len(ideas) >= k) else None
-                    if torch.is_tensor(past_idea) and tuple(past_idea.shape) == (K, D):
-                        past = {"idea": past_idea}
-                if past is not None:
-                    entries[b] = past; sources.append("idea:recall")
-                else:
-                    resolved[b] = False; sources.append("idea:cold-memory")
-            elif src == "prediction":
-                resolved[b] = False; sources.append("idea:no-concept-predictor")
-                entries[b] = current[b]
-            else:
-                sources.append("idea:" + str(src))
-                entries[b] = current[b]
         idea, targets = self._materialize_entries(entries, base, T)
-        idea = self._condition_answer_on_question(idea, questions)
+        resolved = torch.tensor([entry is not None for entry in entries],
+                                dtype=torch.bool, device=base.device)
+        sources = []
+        for b, entry in enumerate(entries):
+            src = (derivation.row_sources[b]
+                   if b < len(derivation.row_sources) else "identity")
+            if entry is None:
+                src = ("no-concept-predictor" if src == "prediction" else
+                       "cold-memory" if "cold-memory" in src or src == "recall"
+                       else "unresolved")
+            sources.append("idea:" + src)
+        idea = self._condition_answer_on_question(idea, context)
+        idea = torch.where(resolved[:, None, None], idea, torch.zeros_like(idea))
         return idea, resolved, tuple(sources), targets
 
     def _sentence_scope(self, t=None):
@@ -11519,13 +11508,13 @@ class BasicModel(BaseModel):
 
     def _derivation_program(self, t=None, budget=None):
         """The recorded derivation of sentence slot ``t`` (``None``: the
-        row's last sentence) as the tensors the answer path replays and
-        the walk imitates: ``positions [B, n]`` (the sentence's words as
+        row's last sentence) as owned compose tensors:
+        ``positions [B, n]`` (the sentence's words as
         absolute word indices, -1 padded), ``actions [B, L, 3]`` (forward
         order, ``(kind, local op, local word)``: kind 0 pushes the word,
         1 folds the two tops by the binary op, 2 rewrites the top by the
-        unary op; -1 padded) and ``targets [B, T]`` (the reverse order the
-        walk follows: the seals last applied first, then per word latest
+        unary op; -1 padded) and ``targets [B, T]`` (reconstruction's reverse
+        order: the seals last applied first, then per word latest
         first its unary, post-binary, pop and pre-binary, in the walk's
         action ids: a binary local id, ``R2 +`` a unary local id,
         ``R2 + R1`` = pop; -1 once exhausted).  Assembled on the host at
@@ -11645,63 +11634,106 @@ class BasicModel(BaseModel):
         program = self._derivation_program(t, budget)
         return None if program is None else program[2]
 
-    def _program_entries(self, program, leaf_slab):
-        """Per-row program entries ``{"leaves" [n_b, D], "actions" [L_b, 3],
-        "targets" [T]}`` (``None`` for a row without a sentence) of a
-        derivation program over the word-aligned ``leaf_slab [B, W, D]``."""
+    def _capture_answer_programs(self):
+        """Capture one program per sentence, sharing final rows with their slot.
+
+        This is the eager boundary after forward publication. The whole brick's
+        indexed leaves are gathered once, then copied into compact per-row
+        records. A packed row with no sentence in a slot contributes None.
+        """
+        reference = getattr(self, "_tensor_pushed_ideas", None)
+        isp = getattr(self, "inputSpace", None)
+        active = getattr(isp, "_word_active_mask", None)
+        if (not torch.is_tensor(reference) or reference.dim() != 3
+                or not torch.is_tensor(active)
+                or tuple(active.shape) != tuple(reference.shape[:2])):
+            return (), {}
+        B, W, D = reference.shape
+        rows = self._word_symbol_rows()
+        if not torch.is_tensor(rows) or tuple(rows.shape) != (B, W):
+            rows = torch.full((B, W), -1, dtype=torch.long, device=reference.device)
+        activations = getattr(self.symbolSpace, "_word_reference_activations", None)
+        if not torch.is_tensor(activations) or activations.numel() != B * W:
+            activations = reference.new_ones(B, W)
+        else:
+            activations = activations.reshape(B, W)
+        leaves = self._answer_leaf_slab(rows)
+        ids = getattr(isp, "_packed_sentence_ids", None)
+        packed = (bool(getattr(isp, "_sentence_pack_enabled", False))
+                  and torch.is_tensor(ids) and tuple(ids.shape) == (B, W))
+        if packed:
+            active = active.to(torch.bool)
+            slots = sorted(int(t) for t in ids[active].unique().tolist() if int(t) >= 0)
+            positions = torch.arange(W, device=active.device).expand(B, W)
+            last = torch.where(active, positions, -1).amax(dim=1)
+            last_ids = ids.gather(1, last.clamp_min(0)[:, None]).squeeze(1)
+            last_ids = torch.where(last >= 0, last_ids, -1).tolist()
+        else:
+            slots, last_ids = [0], [0] * B
+        captured = {}
+        bank = getattr(self, "_tensor_sentence_roots_live", None)
+        for slot in slots:
+            program = self._derivation_program(slot if packed else None)
+            if packed:
+                end = (bank[:, slot].reshape(B, 3, D)
+                       if torch.is_tensor(bank) and bank.dim() == 3
+                       and slot < bank.shape[1] and bank.shape[-1] == 3 * D
+                       else None)
+            else:
+                end = self._sentence_end_state(None)
+            captured[slot] = (
+                self._program_entries(program, leaves, rows, activations, end)
+                if program is not None and torch.is_tensor(end)
+                else (None,) * B)
+        current = tuple(captured.get(int(t), (None,) * B)[b]
+                        for b, t in enumerate(last_ids))
+        return current, captured
+
+    def _program_entries(self, program, leaf_slab, rows, activations, end_state):
+        """Own compact row references and compose actions for each batch row."""
         positions, actions, targets = program
-        B = int(positions.shape[0])
         entries = []
-        for b in range(B):
+        for b in range(int(positions.shape[0])):
             pos = positions[b]
             n = int((pos >= 0).sum())
             if n == 0:
                 entries.append(None)
                 continue
+            pos = pos[:n]
             acts = actions[b]
             L = int((acts[:, 0] >= 0).sum())
-            entries.append({
-                "leaves": leaf_slab[b].index_select(0, pos[:n].to(leaf_slab.device)),
-                "actions": acts[:L],
-                "targets": targets[b],
-            })
-        return entries
+            entries.append(AnswerProgram(
+                rows=rows[b].index_select(0, pos.to(rows.device)),
+                activations=activations[b].index_select(0, pos.to(activations.device)),
+                leaves=leaf_slab[b].index_select(0, pos.to(leaf_slab.device)),
+                actions=acts[:L], targets=targets[b], end_state=end_state[b]))
+        return tuple(entries)
 
     def _materialize_entries(self, entries, base, T):
-        """``(idea [B, 3, D], targets [B, T])`` of per-row program entries:
-        rows with a program are replayed together (padded to the longest
-        program), a row with only a stored idea keeps it, a row without
-        either keeps ``base`` (the current end state)."""
-        B, K, D = int(base.shape[0]), int(base.shape[1]), int(base.shape[-1])
+        """Replay owned programs together; absent rows remain zero."""
+        B, K, D = base.shape
         dev = base.device
-        idea = base.clone()
         targets = torch.full((B, T), -1, dtype=torch.long, device=dev)
-        programs = [b for b in range(B) if isinstance(entries[b], dict)
-                    and torch.is_tensor(entries[b].get("leaves"))]
-        for b in range(B):
-            e = entries[b]
-            if isinstance(e, dict) and torch.is_tensor(e.get("targets")):
-                tg = e["targets"].to(device=dev, dtype=torch.long).reshape(-1)
-                n = min(int(tg.numel()), T)
-                targets[b, :n] = tg[:n]
-            if (isinstance(e, dict) and torch.is_tensor(e.get("idea"))
-                    and not torch.is_tensor(e.get("leaves"))):
-                idea[b] = e["idea"].to(device=dev, dtype=base.dtype)
+        programs = [b for b, entry in enumerate(entries) if entry is not None]
         if not programs:
-            return idea, targets
-        n_max = max(int(entries[b]["leaves"].shape[0]) for b in programs)
-        L_max = max(int(entries[b]["actions"].shape[0]) for b in programs)
+            return torch.zeros_like(base), targets
+        n_max = max(int(entries[b].leaves.shape[0]) for b in programs)
+        L_max = max(int(entries[b].actions.shape[0]) for b in programs)
         leaves = base.new_zeros(B, max(1, n_max), D)
         actions = torch.full((B, max(1, L_max), 3), -1, dtype=torch.long, device=dev)
         for b in programs:
-            lv = entries[b]["leaves"].to(device=dev, dtype=base.dtype)
-            ac = entries[b]["actions"].to(device=dev, dtype=torch.long)
-            leaves[b, :int(lv.shape[0]), :min(D, int(lv.shape[-1]))] = lv[:, :D]
-            actions[b, :int(ac.shape[0])] = ac
+            entry = entries[b]
+            lv = entry.leaves.to(device=dev, dtype=base.dtype)
+            ac = entry.actions.to(device=dev, dtype=torch.long)
+            if lv.shape[-1] != D:
+                raise ValueError("answer program has a different conceptual width")
+            leaves[b, :lv.shape[0]] = lv
+            actions[b, :ac.shape[0]] = ac
+            tg = entry.targets.to(device=dev, dtype=torch.long).reshape(-1)
+            n = min(int(tg.numel()), T)
+            targets[b, :n] = tg[:n]
         replayed, _depth = self._replay_program(leaves, actions)
-        has = torch.zeros(B, dtype=torch.bool, device=dev)
-        has[programs] = True
-        return torch.where(has.reshape(B, 1, 1), replayed[:, :K], idea), targets
+        return replayed[:, :K], targets
 
     def _replay_program(self, leaves, actions):
         """``(slots [B, 3, D], depth [B])``: the fold of ``leaves
@@ -11738,8 +11770,7 @@ class BasicModel(BaseModel):
         return stack[:, :3], depth
 
     def _recall_program_history(self):
-        """Per-row chronological derivation programs (``leaves``,
-        ``actions``, ``targets``; see ``_program_entries``) of each observed
+        """Per-row chronological frozen programs (see ``AnswerProgram``) of each observed
         sentence, beside ``_recall_idea_history``: the symbols and
         derivation a ``past -k`` answer is materialised from."""
         return self.__dict__.setdefault("_what_recall_program_history", {})
@@ -12411,12 +12442,16 @@ class BasicModel(BaseModel):
                 primed = torch.logical_and(
                     disc._s_count.to(mask.device) > 0, mask)
                 weight = primed.sum().to(dtype=roots.dtype)
-                local = self._observe_discourse(disc, sentence, mask=mask, slot=t)
+                local = self._observe_discourse(
+                    disc, sentence, mask=mask, slot=t,
+                    understanding=getattr(self, "_last_understanding", None))
                 if local is not None:
                     loss_sum = loss_sum + local * weight
                     weight_sum = weight_sum + weight
             return loss_sum / weight_sum.clamp_min(1.0)
-        return self._observe_discourse(disc, self._current_discourse_s)
+        return self._observe_discourse(
+            disc, self._current_discourse_s,
+            understanding=getattr(self, "_last_understanding", None))
 
     def _discourse_inter_loss(self):
         """Inter-sentence end-state prediction loss term (Task 8, plan §9),

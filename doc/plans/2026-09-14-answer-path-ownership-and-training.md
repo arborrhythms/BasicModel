@@ -1,7 +1,7 @@
 # Answer path: ownership, training and independence (Codex round 5)
 
-Status: IN PROGRESS (2026-09-15): items 4, 5, 1, 3 and 6 complete and verified. Remaining
-order: 2, then 7 under Alec's decisions
+Status: IN PROGRESS (2026-09-15): items 4, 5, 1, 3, 6 and 2 complete and verified. Remaining
+item: 7 under Alec's decisions
 in section 6. Written 2026-09-14 at basicmodel `cf0daf7` for execution in
 a fresh session. Alec's framing: are Codex's findings specification
 issues or code that does not operate as specified? Answer, item by item,
@@ -451,6 +451,39 @@ eight affected files (129 passed, 6 skipped, 16 warnings in 269.46 seconds).
 The background full suite passed: 4064 passed, 53 skipped, 7 xfailed,
 4 subtests passed, 174 warnings in 1753.83 seconds. No `bin/*.py` files
 changed during pytest.
+
+Execution evidence, item 2:
+`test_held_answer_idea_ignores_later_staging_and_memory_context` reproduced
+272 changed elements in a held idea, with nonzero conditioner weights so
+live memory reads could not hide behind zero initialization.
+`test_materialised_answer_uses_one_conditioning_application` counted two
+calls instead of one. `test_compiled_understanding_captures_explicit_sentence_products`
+found no materialised idea before the caller published compiled outputs.
+After correcting the new recall fixture's duplicate setting and disabling
+unrelated forward priming, `test_resolved_recall_keeps_its_program_after_memory_advances`
+reproduced 216 changed elements after advancing actual discourse memory.
+A packed-slot regression covers separate sentence records, absent lanes,
+and observation from a held understanding after different staging.
+The fix captures immutable programs and target-free conditioning context,
+selects recall once, and applies one conceptual conditioner. The six focused
+checks passed (31.84 seconds), then the complete output-walk file passed
+(30 tests, 6 warnings in 85.68 seconds). The dense production-symbol
+dependency remains item 7. The first eight-file
+run found a serial memorization regression (7/8 labels). Moving the single
+conceptual conditioner before the dedicated conceptual answer operator
+restored the unchanged 8/8 learning gate (39.19 seconds). The eight affected
+files then passed (134 passed, 6 skipped, 16 warnings in 287.94 seconds),
+and the synthesis/understanding/thinking compatibility checks passed
+(41 tests, 2 warnings in 7.60 seconds). The compatibility observation spy
+also forwards the new understanding argument. The first background full
+suite found four failures in lightweight What adapters without InputSpace
+(4065 passed, 53 skipped, 7 xfailed, 174 warnings, 4 subtests passed in
+1899.71 seconds). Capture now treats the absent input owner as no row
+program; all 22 spacetime tests pass (2.62 seconds). The eight affected
+files passed again (134 passed, 6 skipped, 16 warnings in 286.18 seconds).
+The repeated background full suite passed: 4069 passed, 53 skipped,
+7 xfailed, 174 warnings, 4 subtests passed in 1910.95 seconds. No `bin/*.py`
+files changed while pytest was active.
 
 1. Policy training: weights change under `runBatch` with
    `outputPolicyWeight` 1; unchanged with 0.

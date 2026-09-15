@@ -410,10 +410,8 @@ def test_runbatch_generate_policy_masks_rows_without_supplied_answers():
 
 
 def test_question_conditioners_persist_per_answer_width():
-    """The symbol-width conditioner (the resolved symbol) and the
-    concept-width one (the materialised idea) are kept side by side:
-    switching widths returns the existing module with its weights, and
-    both are in the state dict."""
+    """Historical widths remain loadable and retain their weights; each
+    answer actively uses its conceptual width once."""
     m = _model()
     dev, dt = torch.device("cpu"), torch.float32
     narrow = m._question_conditioner(136, device=dev, dtype=dt)
@@ -554,7 +552,12 @@ def test_materialised_idea_follows_the_symbol_rows():
             table[:, :2] = table[:, :2].flip(1)
             setattr(isp, name, table)
         assert torch.equal(m._word_symbol_rows()[:, :2], rows[:, :2].flip(1))
-        idea1, _r, _s, targets1 = m._materialize_answer_idea(u, derivation, What.supervised(0))
+        held, _r, _s, _t = m._materialize_answer_idea(u, derivation, What.supervised(0))
+        torch.testing.assert_close(held, idea0, rtol=0, atol=0)
+        exchanged = m._capture_understanding(out[:4])
+        new_derivation = m._resolve_answer(exchanged, What.supervised(0))
+        idea1, _r, _s, targets1 = m._materialize_answer_idea(
+            exchanged, new_derivation, What.supervised(0))
     assert not torch.allclose(idea1, idea0, atol=1e-4)
     assert torch.equal(targets1, targets)                       # the derivation is unchanged
     m.End(); m.symbolSpace.soft_reset()
@@ -714,6 +717,188 @@ def test_generate_walk_with_no_declared_rules_only_emits(tmp_path):
         assert count.tolist() == [2] and not bool(truncated.any())
         torch.testing.assert_close(out[:, :2], idea[:, :2])
         assert not bool(cost.any())
+    finally:
+        m.End()
+        m.symbolSpace.soft_reset()
+
+
+def _capture_program_probe(m, texts):
+    from test_compiled_word_chunk import _stage_fullgraph_tensor_peer
+    _stage_fullgraph_tensor_peer(m, texts)
+    out = m._forward_with_compiled_sentence_state(None)
+    m._publish_compiled_sentence_state(out)
+    u = m._capture_understanding(out[:4])
+    m._last_understanding = u
+    return u
+
+
+def test_held_answer_idea_ignores_later_staging_and_memory_context():
+    from What import What, LTMSlot
+    from Layers import WhatInteractionMemory
+    m = _model()
+    m._tensor_peer_while_eager = True
+    m._chart_compose_per_word = lambda: None
+    # A real interaction memory, including configurations without discourse.
+    memory = m._what_memory()
+    if memory is None:
+        memory = WhatInteractionMemory(batch=2, capacity=8)
+        object.__setattr__(m.symbolSpace, "what_memory", memory)
+    questions = (What.supervised(0), What.supervised(1))
+    try:
+        with torch.no_grad():
+            u = _capture_program_probe(m, ["12 plus 1", "3 plus 4"])
+            D = int(m.conceptualSpace.stm.concept_dim)
+            module = m._question_conditioner(D, device=torch.device("cpu"), dtype=torch.float32)
+            torch.manual_seed(19)
+            module.weight.normal_(0, 0.04)  # zero init must not hide live context reads
+            d = m._resolve_answer(u, questions)
+            before = m._materialize_answer_idea(u, d, questions)[0].clone()
+            _capture_program_probe(m, ["8 plus 2", "5 plus 9"])
+            for b in range(2):
+                memory.append_what_slot(LTMSlot(input=torch.full((D,), 7.0),
+                                               output=torch.full((D,), -3.0)), b=b)
+            after = m._materialize_answer_idea(u, d, questions)[0]
+        torch.testing.assert_close(after, before, rtol=0, atol=0)
+    finally:
+        m.End()
+        m.symbolSpace.soft_reset()
+
+
+def test_materialised_answer_uses_one_conditioning_application():
+    from What import What
+    m = _model()
+    m._tensor_peer_while_eager = True
+    m._chart_compose_per_word = lambda: None
+    calls = []
+    hook = None
+    try:
+        with torch.no_grad():
+            u = _capture_program_probe(m, ["12 plus 1", "3 plus 4"])
+            D = int(m.conceptualSpace.stm.concept_dim)
+            module = m._question_conditioner(D, device=torch.device("cpu"), dtype=torch.float32)
+            hook = module.register_forward_hook(lambda *_args: calls.append(1))
+            d = m._resolve_answer(u, What.supervised(0))
+            m._materialize_answer_idea(u, d, What.supervised(0))
+        assert len(calls) == 1
+    finally:
+        if hook is not None:
+            hook.remove()
+        m.End()
+        m.symbolSpace.soft_reset()
+
+
+def test_resolved_recall_keeps_its_program_after_memory_advances(tmp_path):
+    from What import What
+    from test_meronomy_ladder import _build_ladder_variant
+    m = _build_ladder_variant(tmp_path, "owned_recall", [
+        ("<training>", "<training>\n      <outputInLoop>true</outputInLoop>"),
+        ("<sentencePrediction>false</sentencePrediction>", "<sentencePrediction>true</sentencePrediction>")])
+    m._tensor_peer_while_eager = True
+    m._chart_compose_per_word = lambda: None
+    try:
+        with torch.no_grad():
+            first = _capture_program_probe(m, ["12 plus 1", "3 plus 4"])
+            disc = m.symbolSpace.discourse
+            assert disc is not None
+            rep = first.answer_seed if torch.is_tensor(first.answer_seed) else first.symbolic_state
+            m._observe_discourse(disc, rep, understanding=first)
+            current = _capture_program_probe(m, ["8 plus 2", "5 plus 9"])
+            questions = (What.past(1), What.past(1))
+            d = m._resolve_answer(current, questions)
+            assert d.row_sources == ("recall", "recall")
+            before = m._materialize_answer_idea(current, d, questions)[0].clone()
+            rep = current.answer_seed if torch.is_tensor(current.answer_seed) else current.symbolic_state
+            m._observe_discourse(disc, rep, understanding=current)
+            after = m._materialize_answer_idea(current, d, questions)[0]
+            # A pooled AR prediction is not a conceptual answer program.
+            future = m._resolve_answer(current, (What.future(0), What.future(1)))
+            assert future.program == (None, None) and not future.resolved
+            idea, resolved, sources, _ = m._materialize_answer_idea(
+                current, future, (What.future(0), What.future(1)))
+            assert not bool(resolved.any()) and not bool(idea.any())
+            assert sources == ("idea:no-concept-predictor",) * 2
+        torch.testing.assert_close(after, before, rtol=0, atol=0)
+    finally:
+        m.End()
+        m.symbolSpace.soft_reset()
+
+
+
+def test_compiled_understanding_captures_explicit_sentence_products():
+    from What import What
+    from test_compiled_word_chunk import _stage_fullgraph_tensor_peer
+    m = _model()
+    m._chart_compose_per_word = lambda: None
+    torch._dynamo.reset()
+    compiled = torch.compile(m._forward_with_compiled_sentence_state,
+                             backend="eager", fullgraph=True)
+    try:
+        _stage_fullgraph_tensor_peer(m, ["12 plus 1", "3 plus 4"])
+        with torch.no_grad():
+            explicit = compiled(None)
+            assert len(explicit) == 21
+            # No caller-side publication: what() captures before runBatch's
+            # compatibility publication, and must own the same products.
+            u = m._capture_understanding(explicit)
+            d = m._resolve_answer(u, What.supervised(0))
+            idea, resolved, _, _ = m._materialize_answer_idea(u, d, What.supervised(0))
+            assert torch.is_tensor(idea) and bool(idea.abs().sum() > 0)
+            assert bool(resolved.all())
+            assert u.execution is explicit
+            m._last_understanding = u
+            _stop(m)
+            m.what(What.supervised(0), execution=explicit, record=False, iteration=1)
+            assert m._last_understanding is u
+            for b, record in enumerate(u.answer_program):
+                assert record is not None
+                torch.testing.assert_close(record.end_state, explicit[19][b])
+                assert record.leaves.shape[0] == record.rows.numel()
+                assert record.activations.numel() == record.rows.numel()
+                assert record.actions.shape[-1] == 3
+    finally:
+        torch._dynamo.reset()
+        m.End()
+        m.symbolSpace.soft_reset()
+
+
+def test_packed_recall_observes_captured_sentence_programs(tmp_path):
+    from What import What
+    from test_reverse_traversal import _stage_packed
+    from test_meronomy_ladder import _build_ladder_variant
+    m = _build_ladder_variant(tmp_path, "owned_packed", [
+        ("<serialWordCapacity>8</serialWordCapacity>", "<serialWordCapacity>16</serialWordCapacity>"),
+        ("<serialWordBuckets>8</serialWordBuckets>", "<serialWordBuckets>16</serialWordBuckets>"),
+        ("<training>", "<training>\n      <outputInLoop>true</outputInLoop>"),
+        ("<sentencePrediction>false</sentencePrediction>", "<sentencePrediction>true</sentencePrediction>")])
+    m._tensor_peer_while_eager = True
+    m._chart_compose_per_word = lambda: None
+    m._install_unit_span_fn()
+    try:
+        with torch.no_grad():
+            _stage_packed(m, [["12 plus 1", "3 plus 4"], ["8 plus 2"]])
+            out = m._forward_with_compiled_sentence_state(None)
+            u = m._capture_understanding(out)
+            assert u.sentence_programs[0][0] is not None
+            assert u.sentence_programs[1][0] is not None
+            assert u.sentence_programs[1][1] is None
+            assert u.answer_program[0] is u.sentence_programs[1][0]
+            assert u.answer_program[1] is u.sentence_programs[0][1]
+            roots = out[7].clone()
+            valid = m.inputSpace._packed_sentence_slot_mask.clone()
+            # The observation consumes u even after a different brick owns
+            # the live rows and ReconstructionStack.
+            _capture_program_probe(m, ["5 plus 9", "4 plus 1"])
+            for t in (0, 1):
+                m._observe_discourse(m.symbolSpace.discourse, roots[:, t],
+                                     mask=valid[:, t], slot=t, understanding=u)
+            for b, slots in ((0, (0, 1)), (1, (0,))):
+                history = m._recall_program_history()[b]
+                assert len(history) == len(slots)
+                for saved, t in zip(history, slots):
+                    owned = u.sentence_programs[t][b]
+                    for name in ("rows", "activations", "leaves", "actions", "targets", "end_state"):
+                        torch.testing.assert_close(getattr(saved, name), getattr(owned, name).cpu())
+                    assert not saved.leaves.requires_grad
     finally:
         m.End()
         m.symbolSpace.soft_reset()

@@ -20,6 +20,34 @@ from typing import Any, Mapping
 
 
 @dataclass(frozen=True)
+class AnswerProgram:
+    """One sentence's owned row references and identified compose program.
+
+    Tensor copies retain the current forward's gradients while insulating
+    the record from subsequent staging. ``targets`` describe reconstruction
+    only; output generation never follows them.
+    """
+
+    rows: Any
+    activations: Any
+    leaves: Any
+    actions: Any
+    targets: Any
+    end_state: Any
+
+    _tensor_fields = ("rows", "activations", "leaves", "actions", "targets", "end_state")
+
+    def __post_init__(self) -> None:
+        for name in self._tensor_fields:
+            object.__setattr__(self, name, getattr(self, name).clone())
+
+    def detached(self):
+        """A durable recall record, without a previous brick's graph."""
+        return type(self)(**{name: getattr(self, name).detach().to("cpu")
+                             for name in self._tensor_fields})
+
+
+@dataclass(frozen=True)
 class Understanding:
     """Immutable logical products of one ``forward()`` call."""
 
@@ -36,8 +64,14 @@ class Understanding:
     # nearly empty at initialization and so is the same for every
     # sentence.  ``None`` means "use ``symbolic_state``".
     answer_seed: Any = field(default=None, repr=False, compare=False)
+    answer_program: tuple = field(default_factory=tuple, repr=False, compare=False)
+    sentence_programs: Mapping[int, tuple] = field(
+        default_factory=lambda: MappingProxyType({}), repr=False, compare=False)
 
     def __post_init__(self) -> None:
+        object.__setattr__(self, "answer_program", tuple(self.answer_program))
+        object.__setattr__(self, "sentence_programs", MappingProxyType({
+            int(slot): tuple(rows) for slot, rows in self.sentence_programs.items()}))
         carriers = self.reconstruction_carriers
         if not isinstance(carriers, MappingProxyType):
             object.__setattr__(

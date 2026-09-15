@@ -594,7 +594,7 @@ interpretation therefore does not copy or overwrite WORD bytes
 only its staged WORD/OBJECT rows (`_ar_concept_lookup_rows`) and resolves
 their candidate bytes from this store (`_ar_bank_bytes`); input part IDs
 provide the byte-window shape and scoring targets, never candidate bytes
-(`bin/Models.py:10760`).
+(`bin/Models.py:10791`).
 
 Per-stage WORD stores and OBJECT row indices persist in `vocab_extras`
 under `concept_word_surfaces`, including stage 0 when it owns the shared
@@ -607,7 +607,7 @@ A missing WORD surface removes that candidate. A missing snapshot never
 falls back to the presented words' bytes. A null candidate of similarity
 zero and uniform bytes remains available: with scoreable targets and no
 known candidates, the byte cost is `log(256)`, not a manufactured perfect
-reconstruction (`bin/Models.py:11236`). Rows absent from the snapshot do
+reconstruction (`bin/Models.py:11267`). Rows absent from the snapshot do
 not enter the score. The
 score is taken at the pop step, inside the traversal, and the loop carries
 only the running sums (idea cost, byte cost, word count) besides the
@@ -661,54 +661,49 @@ backend), the reconstruction adds about 0.7 s to the 8.4 s forward and
 forward; `eager`) selects where the traversal runs, for the performance
 protocol.
 
-The answer-materialisation boundary (2026-09-14, spec sections 1-2).
-`reverseOutput` under `<outputInLoop>` no longer feeds the symbol-space
-answer to the loop: after resolution and before `<generate>`,
-`_materialize_answer_idea` builds the resolved answer as its own
-conceptual idea, `[B, 3, D]` at the concept width (the three LTM slots,
-newest at 0). Per row the derivation's source decides: `recall` takes
-the conceptual end state observed `k` sentences ago (a concept-level
-recall history kept beside the pooled reps at every sentence boundary),
-`identity` / `reasoning` the understanding's own end state (the present
-relation answers with the sentence's idea, as the symbolic resolution
-does), and `prediction` has no concept-level predictor yet (the end
-state stands in and the row is reported unresolved in
-`_output_idea_resolved`). The question conditions the root slot at the
-concept width through a zero-initialised conditioner, one module per
-answer width (`question_conditioners`: the symbol-width one conditions
-the resolved symbol, the concept-width one the idea; both persist in the
-state dict). Checkpoint loading restores every saved width before the
-strict key audit and points the singular compatibility alias at the
-symbol-width module. A legacy singular-only weight migrates into the
-width-keyed store; an old alias pointing at the concept width cannot
-overwrite the symbol-width weight. Optimizer adoption and synthesis
-parameter collection include every retained width once, deduplicating
-the alias. The symbol vector is never padded to fit: the symbol
-table and the concept table share row indices (one symbol per concept;
-a symbol is a signed activation times the row-aligned identity row, and
-a word crosses into SymbolSpace as its concept row plus that
-activation), so a slot that is a symbol maps to the concept dictionary
-row at its row, while a composite slot (the folded root carries row -1)
-is materialised by its derivation over row-aligned leaves: the
-materialisation gathers the dictionary rows at the answer's symbol rows,
-scaled by the symbols' activations, and folds them by the recorded
-derivation through the grammar's forward ops (`_replay_program`, the
-recorded local ops forced through `forward_binary_step` /
-`forward_unary_step`), which reproduces the forward's end state exactly
-when the rows are the forward's and follows the rows when a symbol is
-exchanged; a recalled row takes the recalled sentence's symbols and
-derivation (its program is kept beside the recall history), not the
-current input's. The
-idea goes to the walk with its live slots reversed (the walk's top is its
-last live slot) on a stack of the STM capacity, with a static budget of
-every word's pop and three folds plus the seals. The walk chooses its own
-generate derivation over the opaque concept slots, independently of the
-input compose trace, and the emitted words are
-realised through the tied reverse chain (`_reverse_body` then
-`_reverse_perceptual`) into percepts for the output space. The existing
-conceptual synthesis (the WholeSpace inverse of the answer symbol) could
-not provide this boundary: on the production geometry it returns the
-whole-space width, not concept slots.
+The answer-materialisation boundary (2026-09-15).
+`Understanding.answer_program` owns each row's final sentence program:
+its symbol rows, signed activations, compact conceptual leaves, identified
+compose actions, reconstruction targets and three-slot end state. Each
+`AnswerProgram` clones its tensors while retaining the current forward's
+gradients (`bin/Understanding.py:23`). The capture publishes explicit
+compiled outputs before reading them; packed sentence slots and the final
+per-row programs share the same captured records
+(`bin/Models.py:7864`, `bin/Models.py:11637`). Repeated thinking over the
+same execution reuses that understanding (`bin/Models.py:9662`).
+
+Resolution selects the understanding's program for identity/reasoning, or
+the recalled sentence's frozen program for recall, and captures the
+question's target-free context on the derivation (`bin/Models.py:8017`,
+`bin/Output.py:68`). Discourse observation retains detached copies of those
+captured sentence products, including separate packed slots
+(`bin/Models.py:8612`). Subsequent staging and memory advances therefore
+cannot replace a held answer's operands.
+
+`_materialize_answer_idea` replays only the derivation's owned leaves and
+compose actions through the shared forward grammar operators. It applies
+one question conditioner at the conceptual width, once, to the root slot.
+A missing program is explicitly unresolved and has no current-input
+substitute; a future prediction without a concept-level predictor has no
+program (`bin/Models.py:11377`). The replayed compose actions recover the
+identified idea; the output walk chooses its own generate derivation.
+The program's reverse targets remain reconstruction metadata.
+
+Historical conditioner widths remain in the checkpoint registry, with the
+singular alias retained for compatibility. Strict loading restores all
+saved widths and optimizer adoption includes each once. Answer generation
+actively calls only the conceptual-width module. On the compatibility
+synthesis path the conditioner receives the concepts produced by the shared
+inverse, before the dedicated conceptual answer operator transforms them
+(`bin/Models.py:9057`, `bin/Spaces.py:22879`). This keeps question context
+inside that operator's supervised learning path.
+
+The idea enters the output walk as three opaque concept slots, newest at
+slot 0. `_walk_operand` reverses the live slots onto the bounded traversal
+stack; `<generate>` chooses how to unfold them, and the emitted concepts
+are realised through the tied reverse body and perceptual chain
+(`bin/Models.py:11493`, `bin/Models.py:9048`). The dense symbolic-state
+dependency during resolution remains item 7 of the ownership plan.
 
 The output walk's generate policy (2026-09-15, contract 5).
 `LanguageSpace.generate_policy` is a linear chooser created only under
@@ -738,7 +733,7 @@ comes from the grammar's `<generate>` section, with the number of LHS
 outputs determining binary/unary expansion; it can differ from `<compose>`
 and can contain rules absent there (`bin/Language.py:14159`). The numerical
 inverse kernels remain shared with reconstruction, while the catalogs,
-policies and traversal state are independent (`bin/Models.py:11730`). An
+policies and traversal state are independent (`bin/Models.py:11783`). An
 explicit output-owned generate stamp can replay an output rule; an input
 compose stamp cannot. The low-level `targets` argument is retained only as
 an ignored compatibility argument. There is no `outputTeacherForcing` knob.

@@ -576,9 +576,9 @@ def test_recall_returns_the_most_recent_sentence_during_ring_fill(synth_discours
     seen = []
     orig = m._observe_discourse
 
-    def spy(disc, sentence, mask=None):
+    def spy(disc, sentence, mask=None, **kwargs):
         seen.append(disc._pool_sentence_rep(sentence).detach().clone())
-        return orig(disc, sentence, mask=mask)
+        return orig(disc, sentence, mask=mask, **kwargs)
 
     m._observe_discourse = spy
     try:
