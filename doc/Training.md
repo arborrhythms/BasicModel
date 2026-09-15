@@ -663,7 +663,13 @@ state stands in and the row is reported unresolved in
 concept width through a zero-initialised conditioner, one module per
 answer width (`question_conditioners`: the symbol-width one conditions
 the resolved symbol, the concept-width one the idea; both persist in the
-state dict). The symbol vector is never padded to fit: the symbol
+state dict). Checkpoint loading restores every saved width before the
+strict key audit and points the singular compatibility alias at the
+symbol-width module. A legacy singular-only weight migrates into the
+width-keyed store; an old alias pointing at the concept width cannot
+overwrite the symbol-width weight. Optimizer adoption and synthesis
+parameter collection include every retained width once, deduplicating
+the alias. The symbol vector is never padded to fit: the symbol
 table and the concept table share row indices (one symbol per concept;
 a symbol is a signed activation times the row-aligned identity row, and
 a word crosses into SymbolSpace as its concept row plus that

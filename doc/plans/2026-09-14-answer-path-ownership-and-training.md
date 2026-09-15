@@ -1,7 +1,7 @@
 # Answer path: ownership, training and independence (Codex round 5)
 
-Status: IN PROGRESS (2026-09-15): item 4 complete and verified. Remaining
-order: 5, 1, 3, 6, then 2 and 7 after Alec's decisions
+Status: IN PROGRESS (2026-09-15): items 4 and 5 complete and verified. Remaining
+order: 1, 3, 6, then 2 and 7 under Alec's decisions
 in section 6. Written 2026-09-14 at basicmodel `cf0daf7` for execution in
 a fresh session. Alec's framing: are Codex's findings specification
 issues or code that does not operate as specified? Answer, item by item,
@@ -378,6 +378,20 @@ The suite ran in the background with `DEVELOPER_DIR` selecting the installed
 Command Line Tools, avoiding the unrelated Xcode license prompt. No
 `bin/*.py` files changed while pytest was running.
 
+Execution evidence, item 5:
+`test_output_walk.py::test_question_conditioner_checkpoint_reloads_both_widths_strictly`
+first failed with a `[1032, 29]` singular alias against the fresh
+`[136, 29]` module and an unexpected `question_conditioners.1032.weight`.
+`test_question_conditioner_optimizer_steps_both_widths` first failed
+because the live `runBatch` optimizer omitted the 136-wide module. The
+loader now materialises all saved widths and normalises the singular
+alias; parameter collection visits all widths once. Both probes pass,
+along with a strict-load regression for singular-only legacy checkpoints.
+The output-walk and synthesis files pass (41 tests); the eight affected
+files pass (115 passed, 6 skipped). The background full suite passed:
+4050 passed, 53 skipped, 7 xfailed, 4 subtests passed, 170 warnings in
+1700.19 seconds. No `bin/*.py` files changed during pytest.
+
 1. Policy training: weights change under `runBatch` with
    `outputPolicyWeight` 1; unchanged with 0.
 2. Ownership: same `Understanding` + derivation, different staging, same
@@ -395,13 +409,16 @@ Command Line Tools, avoiding the unrelated Xcode license prompt. No
 2026-09-15 decisions and clarification during execution:
 
 * Alec selected one conditioner; use the concept-width conditioner for
-  the materialised answer. The answer-loss destination in item 7 is
-  still awaiting his decision.
+  the materialised answer. His subsequent role clarification places the
+  answer loss on the realised output against a separately supplied desired
+  answer (item 7), not on input reconstruction or a dense symbol proxy.
 * Alec clarified that WORD and OBJECT are entirely different concepts;
   interpreting a word can replace its meaning. This supersedes item 6's
   proposed automatic copy of a word's surface to its object row. Bytes
-  belong to the word; whether object realisation should follow the
-  stored META association to that word is awaiting clarification.
+  belong to the word. The existing `word_concept_of_object()` boundary
+  (`bin/Spaces.py:19944`) already translates an object through its META
+  association to a word. Preserve that boundary for decoding; never store
+  a copied word surface as an object's own surface.
 * Alec clarified that there is no known correct parse, only the parse
   identified by the forward. Reconstruction follows that identified
   compose derivation. `reverseOutput` uses a different surface and its own
@@ -415,11 +432,12 @@ Command Line Tools, avoiding the unrelated Xcode license prompt. No
   different surface. Output training requires supervised desired answers.
   Input reconstruction targets or compose choices must not substitute for
   answer supervision. Add a no-output-update gate for unsupervised batches.
+  Item 1 must therefore credit independently chosen output actions from
+  supplied answer error rather than connect the old input-imitation term.
+  Item 3 removes the remaining output teacher dependency and ensures the
+  output rule inventory comes from `<generate>`. The proposed
+  `<outputTeacherForcing>` knob is superseded; reconstruction retains the
+  identified compose derivation.
 
-* 3.2: one conditioner at the concept width (recommended) or two with a
-  shared recorded context.
-* 3.3: the default of `<outputTeacherForcing>` (`train` recommended).
-* 3.6: the surface store's persistence (vocab extras recommended) and
-  whether an object row's surface is its word's.
-* 3.7: where the What-spec answer losses live once the answer is rows
-  plus derivation.
+Vocab extras remain the surface store's persistence boundary. The decisions
+needed for items 2 and 7 are now recorded above.

@@ -8798,13 +8798,51 @@ class BasicModel(BaseModel):
                     setattr(space, module_name, InvertibleLinearLayer(
                         n_in, n_out, hasBias=True).to(device=device, dtype=dtype))
                     built += 1
-        key = "question_conditioner.weight"
-        if key in state and getattr(self, "question_conditioner", None) is None:
-            out_dim, in_dim = (int(v) for v in state[key].shape)
-            module = nn.Linear(in_dim, out_dim, bias=False)
-            nn.init.zeros_(module.weight)
-            self.question_conditioner = module.to(device=device, dtype=dtype)
-            built += 1
+        # The singular key is a compatibility alias, historically pointing
+        # at the last-created width. Preserve all width-owned weights before
+        # rebinding that alias to the symbol width; otherwise a saved concept
+        # conditioner is loaded into the freshly built symbol conditioner.
+        alias = "question_conditioner.weight"
+        prefix, suffix = "question_conditioners.", ".weight"
+        legacy = state.get(alias)
+        if legacy is not None:
+            state.setdefault(f"{prefix}{int(legacy.shape[0])}{suffix}", legacy)
+        saved = {}
+        for key in state:
+            if key.startswith(prefix) and key.endswith(suffix):
+                width = key[len(prefix):-len(suffix)]
+                weight = state[key]
+                if (not width.isdigit() or weight.dim() != 2
+                        or int(width) != int(weight.shape[0])):
+                    raise ValueError(f"invalid question conditioner checkpoint: {key}")
+                saved[width] = weight
+        if saved:
+            table = getattr(self, "question_conditioners", None)
+            if table is None:
+                table = nn.ModuleDict()
+                self.question_conditioners = table
+            for width, weight in saved.items():
+                out_dim, in_dim = (int(v) for v in weight.shape)
+                if (width not in table
+                        or tuple(table[width].weight.shape) != tuple(weight.shape)):
+                    module = nn.Linear(in_dim, out_dim, bias=False)
+                    nn.init.zeros_(module.weight)
+                    table[width] = module.to(device=device, dtype=dtype)
+                    built += 1
+            ws = getattr(self, "wholeSpace", None)
+            symbol_width = str(int(getattr(
+                getattr(ws, "subspace", None), "muxedSize", 0) or 0))
+            alias_width = (symbol_width if symbol_width in table else
+                           str(int(legacy.shape[0])) if legacy is not None else
+                           next(iter(saved)))
+            self.question_conditioner = table[alias_width]
+            # Normalize duplicate state keys before load_state_dict visits
+            # the alias. Never overwrite a width-owned weight with another
+            # width's historical alias.
+            if alias_width in saved:
+                state[alias] = saved[alias_width]
+            else:
+                state.pop(alias, None)
         key_q, key_k = "ltm_attention.query.weight", "ltm_attention.key.weight"
         if key_q in state and key_k in state and getattr(self, "ltm_attention", None) is None:
             width = int(state[key_q].shape[1])
@@ -8838,9 +8876,18 @@ class BasicModel(BaseModel):
                 hidden=hidden, depth=len(indices) - 1)
             self.what_step_chooser = module.to(device=device, dtype=dtype)
             built += 1
-        if built:
+        if built or saved:
             self._collect_fresh_synthesis_modules()
         return built
+
+    def _question_conditioner_modules(self):
+        """All retained widths, with the compatibility alias deduplicated."""
+        table = getattr(self, "question_conditioners", None)
+        modules = list(table.values()) if table is not None else []
+        legacy = getattr(self, "question_conditioner", None)
+        if legacy is not None and all(legacy is not module for module in modules):
+            modules.append(legacy)
+        return modules
 
     def _collect_fresh_synthesis_modules(self):
         """Queue lazily built answer-path modules for the live optimizer.
@@ -8852,9 +8899,10 @@ class BasicModel(BaseModel):
         """
         registered = self.__dict__.setdefault("_registered_synthesis_modules", set())
         fresh = self.__dict__.setdefault("_fresh_synthesis_params", [])
-        for module in (getattr(self, "question_conditioner", None),
-                       getattr(self, "what_step_chooser", None),
-                       getattr(self, "ltm_attention", None)):
+        modules = self._question_conditioner_modules() + [
+            getattr(self, "what_step_chooser", None),
+            getattr(self, "ltm_attention", None)]
+        for module in modules:
             if module is not None and id(module) not in registered:
                 registered.add(id(module))
                 fresh.extend(p for p in module.parameters() if p.requires_grad)
@@ -8875,8 +8923,7 @@ class BasicModel(BaseModel):
         reconstruction): the Spaces' synthesis operators and the percept
         adapter."""
         params = []
-        conditioner = getattr(self, "question_conditioner", None)
-        if conditioner is not None:
+        for conditioner in self._question_conditioner_modules():
             params.extend(conditioner.parameters())
         for space in (getattr(self, "conceptualSpace", None),
                       getattr(self, "perceptualSpace", None),

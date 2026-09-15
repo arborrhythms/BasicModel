@@ -285,6 +285,100 @@ def test_question_conditioners_persist_per_answer_width():
     m.End(); m.symbolSpace.soft_reset()
 
 
+def _conditioner_pair(m):
+    modules = [m._question_conditioner(width, device=torch.device("cpu"),
+                                       dtype=torch.float32)
+               for width in (136, 1032)]
+    with torch.no_grad():
+        for i, module in enumerate(modules):
+            module.weight.fill_(0.125 * (i + 1))
+    return modules
+
+
+def test_question_conditioner_checkpoint_reloads_both_widths_strictly(tmp_path):
+    """Codex item 5: reload both saved widths, including a checkpoint whose
+    singular compatibility alias points to the last-created, wider module."""
+    m = _model()
+    modules = _conditioner_pair(m)
+    m._materialize_answer_path()
+    assert m.question_conditioner is modules[1]
+    checkpoint = tmp_path / "conditioners.ckpt"
+    m.save_weights(str(checkpoint))
+    fresh = _model()
+    try:
+        assert fresh.load_weights(str(checkpoint), strict=True, require_match=True)
+        assert set(fresh.question_conditioners) == {"136", "1032"}
+        for module in modules:
+            restored = fresh.question_conditioners[str(module.out_features)]
+            torch.testing.assert_close(restored.weight, module.weight, rtol=0, atol=0)
+        assert fresh.question_conditioner is fresh.question_conditioners["136"]
+        assert set(fresh.state_dict()) == set(m.state_dict())
+    finally:
+        for model in (m, fresh):
+            model.End()
+            model.symbolSpace.soft_reset()
+
+
+def test_question_conditioner_optimizer_steps_both_widths():
+    """Both widths join the real runBatch optimizer once and can be stepped,
+    even when only one width is used by that batch's answer path."""
+    from What import What
+    m = _model()
+    m._tensor_peer_while_eager = True
+    m._chart_compose_per_word = lambda: None
+    modules = _conditioner_pair(m)
+    opt = m.getOptimizer(lr=1e-3)
+    try:
+        batch = (m.inputSpace.prepInput(["12 plus 1", "3 plus 4"]),
+                 torch.zeros(2, 1, 1))
+        m.runBatch(train=True, batchSize=2, split="train", optimizer=opt,
+                   batch_override=batch,
+                   questions=(What.supervised(0), What.supervised(1)))
+        owned = [id(p) for group in opt.param_groups for p in group["params"]]
+        answer_only = [id(p) for p in m.synthesis_parameters()]
+        for module in modules:
+            assert owned.count(id(module.weight)) == 1
+            assert answer_only.count(id(module.weight)) == 1
+        before = [module.weight.detach().clone() for module in modules]
+        opt.zero_grad()
+        probe = sum(module(torch.ones(2, module.in_features)).square().mean()
+                    for module in modules)
+        probe.backward()
+        opt.step()
+        for module, previous in zip(modules, before):
+            assert not torch.equal(module.weight, previous)
+        m._collect_fresh_synthesis_modules()
+        assert not m._fresh_synthesis_params
+    finally:
+        m.End()
+        m.symbolSpace.soft_reset()
+
+
+def test_question_conditioner_legacy_singular_checkpoint_reloads_strictly(tmp_path):
+    m = _model()
+    m._materialize_answer_path()
+    with torch.no_grad():
+        m.question_conditioner.weight.fill_(0.25)
+    checkpoint = tmp_path / "legacy-conditioner.ckpt"
+    m.save_weights(str(checkpoint))
+    saved = torch.load(checkpoint, weights_only=False)
+    state = saved["state_dict"]
+    for key in list(state):
+        if key.startswith("question_conditioners."):
+            del state[key]
+    torch.save(saved, checkpoint)
+    fresh = _model()
+    try:
+        assert fresh.load_weights(str(checkpoint), strict=True, require_match=True)
+        torch.testing.assert_close(fresh.question_conditioner.weight,
+                                   m.question_conditioner.weight, rtol=0, atol=0)
+        assert fresh.question_conditioner is fresh.question_conditioners["136"]
+    finally:
+        for model in (m, fresh):
+            model.End()
+            model.symbolSpace.soft_reset()
+
+
 def test_materialised_idea_follows_the_symbol_rows():
     """The symbol table and the concept table share row indices, so the
     answer is materialised from its symbols' rows and its derivation: the
