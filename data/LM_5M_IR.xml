@@ -44,7 +44,7 @@
       <learningRate>0.0005</learningRate>
       <reconstructionScale>1.0</reconstructionScale>
       <autosave>true</autosave>
-      <sentencePrediction>true</sentencePrediction>
+      <sentenceExpectation>true</sentenceExpectation>
     </training>
 
     <server>

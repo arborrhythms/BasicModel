@@ -50,7 +50,7 @@ _ON_CONFIG = os.path.join(_DATA_DIR, "MM_ltm_consolidation_fixture.xml")
 # SERIAL fixture for the FOLLOW-UPS: real-parse
 # provisioning (Change 3) needs the per-word serial forward to fire the
 # observe-site store-append, and FU3 (Change 2) needs a discourse. Turns ON
-# BOTH <ltmConsolidation> AND <training><sentencePrediction>.
+# BOTH <ltmConsolidation> AND <training><sentenceExpectation>.
 _SERIAL_CONFIG = os.path.join(
     _DATA_DIR, "MM_ltm_consolidation_serial_fixture.xml")
 # Consolidated but STATEFUL (<stateless>false</stateless>): a checkpoint's
@@ -208,7 +208,7 @@ class TestObserveWrites(unittest.TestCase):
     def _drive_observe(self, m, depths, payloads, tetralemmas):
         """Replay the exact observe-site append logic (the host-side block in
         ``_forward_body_per_word``) against the model's ltm_store. The live
-        forward needs sentencePrediction + relative end-states; this isolates
+        forward needs sentenceExpectation + relative end-states; this isolates
         the write contract under test."""
         from Layers import TernaryTruthStore as T
         store = m.symbolSpace.ltm_store
@@ -435,16 +435,16 @@ class TestSurviveResetAndPersistence(unittest.TestCase):
 
 # -- Change 1 + Change 2 (FU3): discourse + consolidation, store-backed AR --
 #
-# These use the SERIAL fixture (sentencePrediction on, ltmConsolidation on) so
+# These use the SERIAL fixture (sentenceExpectation on, ltmConsolidation on) so
 # a discourse IS built and the per-word serial forward fires the observe-site
 # store-append.
 
 class TestDiscourseConsolidationWiring(unittest.TestCase):
     def test_discourse_is_built(self):
-        # sentencePrediction builds symbolSpace.discourse.
+        # sentenceExpectation builds symbolSpace.discourse.
         m = _make_model(_SERIAL_CONFIG)
         self.assertIsNotNone(m.symbolSpace.discourse,
-                             "sentencePrediction must build the discourse")
+                             "sentenceExpectation must build the discourse")
 
     def test_discourse_wired_to_store_when_consolidated(self):
         # FU3 (Change 2): the discourse AR predictor is wired to read the
@@ -457,7 +457,7 @@ class TestDiscourseConsolidationWiring(unittest.TestCase):
     def test_off_path_discourse_uses_deque(self):
         # A discourse WITHOUT consolidation keeps _ltm_store None (legacy
         # deque path, byte-identical). MM_grammar has a serial grammar but no
-        # consolidation/sentencePrediction here -> just assert the wiring
+        # consolidation/sentenceExpectation here -> just assert the wiring
         # default on a non-consolidated build (the OFF fixture has no
         # discourse, so check the attribute default on a fresh layer).
         from Layers import InterSentenceLayer
@@ -549,7 +549,7 @@ class TestObserveSkipsDequeWhenConsolidated(unittest.TestCase):
         m.train()
         disc.observe_stm_end_state([1], [torch.zeros(1, D)])
         disc.predict_next_end_state(0)
-        self.assertIsNotNone(disc._inter_last_pred_root[0])
+        self.assertIsNotNone(disc._inter_last_meaning[0])
         payload = torch.ones(1, D)
         disc.observe_stm_end_state([1], [payload], None)
         # Deque UNCHANGED (still 0 in the consolidated path).

@@ -293,7 +293,7 @@ def synth_discourse_config_path(tmp_path_factory):
         "\n    <prediction>interSentence</prediction>", 1)
     patched = patched.replace(
         "</training>",
-        "      <sentencePrediction>true</sentencePrediction>\n    </training>", 1)
+        "      <sentenceExpectation>true</sentenceExpectation>\n    </training>", 1)
     path = tmp_path_factory.mktemp("cfg") / "MM_xor_synth_discourse.xml"
     path.write_text(patched)
     return path

@@ -193,8 +193,9 @@ def test_wordspace_stm_residual_fires_once_per_sentence(model):
     """stm_residual fires once, then no-ops until Reset re-arms."""
     ss = model.symbolSpace
 
-    class _FakeDiscourse:
+    class _FakeDiscourse(torch.nn.Module):
         def __init__(self):
+            super().__init__()
             self.calls = 0
 
         def predict(self):
@@ -204,7 +205,10 @@ def test_wordspace_stm_residual_fires_once_per_sentence(model):
         def prime(self, pred, conf, scale):
             return torch.ones(4) * float(scale)
 
-    ss.discourse = _FakeDiscourse()
+    # Replace the registered child on its actual owner. Assigning a Module
+    # to the Space facade would register a second child and leave arm_stm's
+    # coordinator reading the original predictor.
+    ss.subspace.discourse = _FakeDiscourse()
     ss.arm_stm()
     ss.stm_residual_scale = 0.1
 

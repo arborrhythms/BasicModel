@@ -9,7 +9,7 @@
        cursor resets the chain every tick, so the contrastive term would never
        see two or more chain entries; load-bearing: lexer MUST be byte).
        symbolicOrder=1 gives the serial per-word forward + the boundary observe.
-       sentencePrediction builds the discourse layer; interLossWeight (MSE) +
+       sentenceExpectation builds the discourse layer; interLossWeight (MSE) +
        interContrastiveWeight (InfoNCE) train the next-idea predictor; a
        predictionTrialRatio of 0.5 runs half the batches as pure prediction
        trials (reconstruction terms zeroed). All three new knobs default 0 so a
@@ -32,7 +32,7 @@
       <batchSize>4</batchSize>
       <learningRate>0.01</learningRate>
       <reconstructionScale>0.1</reconstructionScale>
-      <sentencePrediction>true</sentencePrediction>
+      <sentenceExpectation>true</sentenceExpectation>
       <interLossWeight>0.1</interLossWeight>
       <!-- the InfoNCE next-idea contrastive term -->
       <interContrastiveWeight>0.5</interContrastiveWeight>

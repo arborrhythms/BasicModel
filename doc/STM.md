@@ -803,6 +803,33 @@ keeps what was believed.
 
 ## 11. Inter-sentence prediction
 
+### Structured production path
+
+`sentenceExpectationScope=structured` is the model default when sentence
+prediction is enabled. `SentenceExpectation` reads the bounded
+chronological observation view as `[K, 3, D]` values plus `[K, 3]` occupancy.
+The three positions are NP1, VP and NP2. Padding is masked before the network;
+role and chronological positions remain distinct. It predicts three separate
+vectors and three presence logits. The loss is MSE over actual occupied
+roles plus mean binary cross entropy for presence. Targets are detached;
+current-step source representations remain live under the reconstruction
+gradient budget. See [Layers.py:9189](../bin/Layers.py#L9189).
+
+The packed observer uses the existing sealed end-slot/depth outputs for each
+sentence, with an explicit STM-to-infix permutation. Corpus source addresses
+identify each sentence's document, including changes within a packed row.
+`begin_document` clears only the selected prediction stream; already-scored
+losses, other rows and durable history survive. Soft packed-brick resets keep
+the same document stream; only hard resets or document changes make it cold.
+Weight restore starts the
+observation view cold. These are sequence and local-role contracts; retained
+compound references remain part of the separate nesting migration in the
+[integrated spec](plans/2026-09-15-next-sentence-as-the-production-objective.md).
+See [Layers.py:9717](../bin/Layers.py#L9717) and
+[Models.py:12471](../bin/Models.py#L12471).
+
+### Historical root baseline (`sentenceExpectationScope=root`)
+
 A **lifted `IntraSentenceLayer` instance** (`_inter_predictor`,
 [Layers.py](../bin/Layers.py)) predicts the next end-state over the
 external observation sequence — the same predictor class as the in-STM one,
@@ -811,9 +838,9 @@ view is bounded and per-row; durable LTM retains detached observations.
 Current-step source context keeps its encoder graph. Consuming the prediction
 loss and entering the next brick detach that view without deleting history.
 Document resets clear the selected view and pending estimate, preserving
-other rows and durable LTM ([Layers.py:9798](../bin/Layers.py#L9798),
-[Layers.py:10141](../bin/Layers.py#L10141),
-[Layers.py:10212](../bin/Layers.py#L10212)). Its chain window is
+other rows and durable LTM ([Layers.py:10037](../bin/Layers.py#L10037),
+[Layers.py:10395](../bin/Layers.py#L10395),
+[Layers.py:10515](../bin/Layers.py#L10515)). Its chain window is
 $K = \min(\text{ltmCapacity}, 8)$ (`_inter_chain_window`): the AR signal
 that predicts the next end-state lives in the last handful of sentences,
 so a small bounded window is used rather than the full `ltmCapacity`.
@@ -892,7 +919,7 @@ across the first `depth` STM slots as a sentence-level conditioning bias
 The trainable target is `MentalModel.xml`:
 `<symbolicOrder>1</symbolicOrder>`,
 `<data><dataType>embedding</dataType>`,
-`<sentencePrediction>true</sentencePrediction>`,
+`<sentenceExpectation>true</sentenceExpectation>`,
 FineWeb data (`<shardDir>data/fineweb</shardDir>`). This is the
 configuration that exercises the full STM stack — serial sequencing, the
 CS$\to$PS windowing and CS$\to$SS taxonymic mask
@@ -974,13 +1001,12 @@ opening slot; a later output-only slot closes it. The API on the layer
 The output half always records the response the model actually produced,
 never the desired `Data` answer.
 
-The slots are owned by `Layers.WhatInteractionMemory`; `InterSentenceLayer`
-composes one (`discourse.what_memory`) and keeps the delegating API above,
-and `<architecture><whatThinkingMemory>true` builds one standalone on
-`SymbolSubSpace.what_memory` when `<sentencePrediction>` is off, so
-`Model.think()` no longer requires the ARMA predictor
-(`Model._what_memory()` returns whichever exists). The **episode credit
-boundary** (mathematical thinking spec 8.2) is explicit:
+SymbolSpace always owns exactly one `Layers.WhatInteractionMemory`, available
+as `SymbolSubSpace.what_memory`. `Model._what_memory()` returns this owner.
+Expectation has no interaction-memory copy or delegate API, and the
+`whatThinkingMemory` configuration switch is retired. Provisioning resets the
+What episode at its hard interaction boundary; suspending external expectation
+does not preserve that episode. The **episode credit boundary** remains explicit:
 `begin_what_episode(b)` / `end_what_episode(b, detach=True)`; under
 `<whatThinkingDetach>episode` the values appended inside an episode stay
 live on the autograd graph until `end` (called after the optimizer step),

@@ -161,7 +161,7 @@
       <!-- Teacher reconstruction replaces the independent predictor losses.
            Future/past What queries will vary objective input availability
            rather than paying for a second predictive faculty. -->
-      <sentencePrediction>false</sentencePrediction>
+      <sentenceExpectation>false</sentenceExpectation>
       <armaScale>0.0</armaScale>
       <intraLossWeight>0.0</intraLossWeight>
       <interLossWeight>0.0</interLossWeight>

@@ -185,7 +185,8 @@ class SentenceStreamDataset(IterableDataset):
     ``DataLoader`` directly (existing tests).
     """
 
-    def __init__(self, inputs, num_streams, outputs=None, slab_bytes=None):
+    def __init__(self, inputs, num_streams, outputs=None, slab_bytes=None,
+                 document_ids=None):
         """Split ``inputs`` into ``num_streams`` contiguous slabs.
 
         ``slab_bytes`` selects byte-cursor mode (UTF-8 walk over text
@@ -205,6 +206,9 @@ class SentenceStreamDataset(IterableDataset):
             )
         self.inputs = inputs
         self.outputs = outputs
+        if document_ids is not None and len(document_ids) != n:
+            raise ValueError("one document ID is required per source item")
+        self.document_ids = None if document_ids is None else tuple(document_ids)
         self.num_streams = num_streams
         self.stream_length = n // num_streams
         # Cursor state. Two regimes share ``next_tick``:
@@ -522,9 +526,9 @@ class SentenceStreamDataset(IterableDataset):
     def _trial_next_tick(self):
         """Read one trial-cursor tick (one trial per row).
 
-        Returns ``(input, output, hard_eos=[True]*B)`` -- every trial is
-        atomic so hard_eos fires every tick. Past-end ticks emit empty
-        batches with all-True hard_eos so callers can drain cleanly.
+        Returns ``(input, output, hard_eos)``. Addressed sentence trials
+        reset hard only when the row ends or its document changes; independent
+        trials and past-end ticks use all-True hard_eos for a clean boundary.
         Advances ``self._trial_step``.
         """
         if self._trial_step >= self.stream_length:
@@ -543,8 +547,15 @@ class SentenceStreamDataset(IterableDataset):
                if self.outputs is not None else None)
         self.last_source_indices = list(indices)
         self._trial_step += 1
-        # Each trial is its own atomic unit -> hard_eos True every row.
-        return inp, out, [True] * self.num_streams
+        # A split sentence is an atomic input, but several inputs can belong
+        # to the same document. The model's sentence reset still runs each
+        # tick; hard reset follows corpus identity (or the legacy independent
+        # trial contract when no document metadata was supplied).
+        hard_eos = [
+            self.document_ids is None or self._trial_step >= L
+            or self.document_ids[index] != self.document_ids[index + 1]
+            for index in indices]
+        return inp, out, hard_eos
 
     def reset_cursor(self):
         """Rewind the cursor for a fresh epoch.
@@ -1812,9 +1823,13 @@ class Data():
                 "load() before building a loader"
             )
         streams = max(1, min(num_streams, n))
+        addresses = self.source_addresses.get(str(split), ())
+        document_ids = ([address["document"] for address in addresses]
+                        if len(addresses) == n else None)
         ds = SentenceStreamDataset(inputs, num_streams=streams,
                                    outputs=outputs,
-                                   slab_bytes=slab_bytes)
+                                   slab_bytes=slab_bytes,
+                                   document_ids=document_ids)
 
         kwargs = {"batch_size": None, "num_workers": num_workers,
                   "pin_memory": pin_memory}

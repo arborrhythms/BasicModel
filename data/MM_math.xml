@@ -14,7 +14,6 @@
     <subsymbolicOrder>3</subsymbolicOrder>
     <symbolicOrder>0</symbolicOrder>
     <answerSynthesis>true</answerSynthesis>
-    <whatThinkingMemory>true</whatThinkingMemory>
     <whatThinkingDetach>episode</whatThinkingDetach>
     <whatThinkingIterations>8</whatThinkingIterations>
     <whatThinkingPressure>linear</whatThinkingPressure>

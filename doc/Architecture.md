@@ -594,7 +594,9 @@ become impermeable.
 claim; brains approximate and predict, they do not compute exact inverses. The
 extensional/intensional semantics this grounding implies for a **single**
 conceptual space is developed in
-[BasicModel.md](BasicModel.md) "Conceptual Space."
+[BasicModel.md](BasicModel.md) "Conceptual Space." The memory, two-truths,
+expectation, testimony and feeling side of the grounding, with its discrepancy
+list, is in [Philosophy.md](Philosophy.md#psychological-grounding-2026-09-16).
 
 **References.** McClelland, McNaughton & O'Reilly (1995), *Why there are
 complementary learning systems in the hippocampus and neocortex*, Psychological
@@ -768,12 +770,12 @@ the compatible contribution using `outputGradientRatio` and the combined
 gradient scale. Below tolerance, bounded predictive refinement remains
 possible. Shared grammar transforms participate even when registered on
 SymbolSpace. Independent heads keep their ordinary gradients. The loss
-partition and ownership are in [Models.py:2692](../bin/Models.py#L2692), and
+partition and ownership are in [Models.py:2689](../bin/Models.py#L2689), and
 the numerical rule is in [Optimizer.py:113](../bin/Optimizer.py#L113). See
 [Training](Training.md) and the [joint-learning contract](plans/2026-09-15-next-sentence-as-the-production-objective.md#84-joint-representation-learning-and-gradient-balance).
 
 An invertible transform uses its same learned mapping in the forward and
-inverse directions ([Layers.py:1060](../bin/Layers.py#L1060)); its gradient
+inverse directions ([`InvertibleLinearLayer`](../bin/Layers.py#L1062)); its gradient
 follows the configured joint-learning policy.
 
 Reference: A.M. Rogers, T.T. Shannon, and G.G. Lendaris, "A comparison of DHP
@@ -1246,6 +1248,27 @@ job of `InterSentenceLayer` (alias `wordSpace.discourse`).
 
 ### Sentence representation
 
+The production inter objective uses each sealed sentence's occupied local
+NP1/VP/NP2 roles, with an explicit mask. `SentenceExpectation` preserves
+role and chronological position and predicts independent role vectors plus
+occupancy logits. The packed observer reads the existing live end-slot/depth
+outputs, including the final seal, and adapts newest-first STM layout into
+canonical infix order. The structured inter objective is distinct from the
+legacy ARMA objective described below. Compound-reference retention and
+prediction are tracked separately in the integrated spec's nesting migration.
+
+Source addresses from the corpus cursor select the document for every packed
+sentence. A change clears only that row's transient prediction context and
+pending estimate, retaining already-scored losses and durable memory. Soft resets
+after a packed brick preserve that stream, its document key and ARMA rings;
+hard EOS resets start it cold. Restoring
+weights starts prediction context cold. Neither global LTM recency nor internal
+thoughts initialize an external-observation sequence. See
+[`begin_document`](../bin/Layers.py#L9717) and the
+[packed observer](../bin/Models.py#L12471).
+
+### Historical root / ARMA representation
+
 `s_t` is the **root SS slot** of the body's final stage: the
 single vector the start-symbol reduction wrote into. The chart's
 parse trace already commits to this slot at sentence end; the layer
@@ -1283,8 +1306,10 @@ Buffers (per row, non-persistent):
 
 `ensure_batch(B)` resizes these on cascade from
 `SymbolSpace.ensure_batch`; `Reset()` clears them on hard / discourse
-boundary. Default behaviour is to **not** auto-reset across document
-boundaries --- the AR lags carry information through discourse
+boundary. The addressed sentence observer resets the selected row's AR lags
+at a document change. Unaddressed direct callers must supply an explicit
+boundary rather than relying on an inferred corpus identity. Historically,
+the AR lags carried information through discourse
 continuity unless the caller explicitly calls `Reset`.
 
 ### Wiring into the training loop
@@ -1330,8 +1355,8 @@ codebook.
 | `<armaP>` | `<SymbolSpace>` | 5 | AR lag count |
 | `<armaQ>` | `<SymbolSpace>` | 2 | MA lag count |
 | `<armaHiddenDim>` | `<SymbolSpace>` | `2*sentence_dim` (cap 1024) | predictor hidden width |
-| `<armaScale>` | `<architecture><training>` | 0.1 | ARMA loss weight added to `TheError` |
-| `<sentencePrediction>` | `<architecture><training>` | false | Gates `InterSentenceLayer` construction |
+| `<armaScale>` | `<architecture><training>` | 0.0 | ARMA loss weight added to `TheError` |
+| `<sentenceExpectation>` | `<architecture><training>` | true | Enables the structured expectation cycle; replaces `sentencePrediction` |
 
 The retired pre-2026-05-14 knobs (`<sentenceContextWindow>`,
 `<sentenceCentroidHistory>`, `<sentenceLambda>`,

@@ -34,9 +34,10 @@ def _build_gate_model():
 
 @pytest.mark.parametrize("mode,dtype", [
     ("bf16", torch.bfloat16),
-    ("off",  None),
+    ("off",  torch.float32),
 ])
-def test_staged_prediction_cast_to_amp_dtype(mode, dtype):
+@pytest.mark.parametrize("train", [True, False])
+def test_staged_prediction_cast_to_amp_dtype(mode, dtype, train):
     """Compiled ``runBatch`` re-casts the parked ``(pred, conf)`` tuple to the
     active autocast dtype. When MODEL_AMP=off, no cast is applied."""
     import util as _util
@@ -47,31 +48,36 @@ def test_staged_prediction_cast_to_amp_dtype(mode, dtype):
         if m.symbolSpace is None or m.symbolSpace.discourse is None:
             pytest.skip("model has no discourse layer")
         disc = m.symbolSpace.discourse
-        disc._staged_prediction = (
-            torch.randn(1, 4, dtype=torch.float32),
-            torch.ones(1, dtype=torch.float32))
+        m.symbolSpace.ensure_microbatch(1, 1)
+        with torch.no_grad():
+            disc.observe(torch.randn(1, 1, disc.sentence_dim))
+        assert disc._s_count[0] > 0
         class _StagingComplete(Exception):
             pass
 
-        def _stop_after_staging(*args, **kwargs):
+        def _stop_after_staging(compiled, *args, **kwargs):
+            assert compiled == train
+            assert torch.is_grad_enabled() == train
             raise _StagingComplete
 
         m._compiled_word_loop_fullgraph = False
-        m._compiled_step = _stop_after_staging
+        m._compiled_word_steps = {}
+        m._compiled_step = lambda *a, **kw: _stop_after_staging(True, *a, **kw)
+        # Evaluation deliberately uses the eager body under no_grad so it
+        # does not retrace the training graph with a different grad-mode guard.
+        m.forward = lambda *a, **kw: _stop_after_staging(False, *a, **kw)
+        optimizer = torch.optim.SGD(m.parameters(), lr=0.001) if train else None
         inp = m.inputSpace.prepInput(list(m.inputSpace.getTrainData()[0][:1]))
         with pytest.raises(_StagingComplete):
-            m.runBatch(train=False, split="runtime", batchSize=1,
+            m.runBatch(train=train, split="runtime", batchSize=1, optimizer=optimizer,
                        batch_override=(inp, None))
         staged = disc._staged_prediction
-        if staged is None:
-            pytest.skip("discourse cleared staged tuple")
+        assert staged is not None
         pred, conf = staged
-        if dtype is None:
-            assert pred is None or pred.dtype == torch.float32
-        else:
-            assert pred is None or pred.dtype == dtype, (
-                f"pred.dtype={pred.dtype if pred is not None else None}, "
-                f"expected {dtype}")
+        assert pred is not None and pred.dtype == dtype
+        assert conf is not None and conf.dtype == dtype
+        assert pred.shape == (disc.sentence_dim,)
+        assert torch.isfinite(pred).all()
         m._end_step()
     finally:
         _util.MODEL_AMP = saved_mode

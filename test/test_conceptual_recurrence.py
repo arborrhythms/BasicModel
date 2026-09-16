@@ -433,7 +433,7 @@ def test_bind_contained_in_conceptual_space():
 def _build_mm5m_with(prediction=None, sentence_prediction=True):
     """Build MM_20M from a /tmp copy, optionally injecting
     ``<prediction>...</prediction>`` under ``<architecture>`` and
-    ``<sentencePrediction>...</sentencePrediction>`` under ``<training>``.
+    ``<sentenceExpectation>...</sentenceExpectation>`` under ``<training>``.
 
     MM_20M_legacy.xml ships with neither knob (so the discourse layer is absent and
     ``prediction_mode`` defaults to "none"). We inject under the SAME
@@ -447,8 +447,8 @@ def _build_mm5m_with(prediction=None, sentence_prediction=True):
     src = os.path.join(data_dir, "MM_20M_legacy.xml")
     with open(src) as fh:
         xml = fh.read()
-    assert "<prediction>" not in xml and "<sentencePrediction>" not in xml, (
-        "MM_20M_legacy.xml unexpectedly already sets prediction/sentencePrediction")
+    assert "<prediction>" not in xml and "<sentenceExpectation>" not in xml, (
+        "MM_20M_legacy.xml unexpectedly already sets prediction/sentenceExpectation")
     if prediction is not None:
         xml = xml.replace(
             "<architecture>",
@@ -459,9 +459,9 @@ def _build_mm5m_with(prediction=None, sentence_prediction=True):
         # Inject inside <training> (anywhere before </training>).
         xml = xml.replace(
             "</training>",
-            "      <sentencePrediction>true</sentencePrediction>\n    </training>",
+            "      <sentenceExpectation>true</sentenceExpectation>\n    </training>",
             1)
-        assert "<sentencePrediction>true</sentencePrediction>" in xml
+        assert "<sentenceExpectation>true</sentenceExpectation>" in xml
     tmp = tempfile.NamedTemporaryFile(
         mode="w", suffix=".xml", delete=False, dir="/tmp")
     tmp.write(xml); tmp.close()
@@ -488,7 +488,7 @@ def test_intersentence_seed_used():
     assert m.prediction_mode == "interSentence"
     disc = m.symbolSpace.discourse
     assert disc is not None and disc._inter_predictor is not None, (
-        "sentencePrediction=true must build the discourse inter-predictor")
+        "sentenceExpectation=true must build the discourse inter-predictor")
     Models.TheData.load("xor")
     loader = m.inputSpace.data.data_loader(split="train", num_streams=4)
     items, _ = next(iter(loader)); x = m.inputSpace.prepInput(items)

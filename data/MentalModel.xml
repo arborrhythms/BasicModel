@@ -26,7 +26,7 @@
 
       <!-- Inter-sentence (discourse) prediction: ring buffer of
            [S|W] snapshots + per-row linear predictor. -->
-      <sentencePrediction>true</sentencePrediction>
+      <sentenceExpectation>true</sentenceExpectation>
     </training>
 
     <server>

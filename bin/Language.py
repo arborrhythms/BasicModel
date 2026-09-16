@@ -10953,92 +10953,42 @@ class SymbolSubSpace(SubSpace):
                 if p.requires_grad and all(p is not q for q in self.params):
                     self.params.append(p)
 
-        # 7. InterSentenceLayer -- optional ARMA(p, q) next-sentence
-        # predictor.  Gated on <architecture><training><sentencePrediction>;
-        # tasks without inter-sentence structure (XOR, MNIST) leave
-        # it off.  Shape knobs live under <SymbolSpace> (armaP, armaQ,
-        # armaHiddenDim); the loss weight lives under
-        # <architecture><training><armaScale> and is read by runBatch.
-        # Contrastive cosine machinery retired 2026-05-14 alongside
-        # <maskedPrediction>.
+        # 7. Sentence expectation defaults on; structured roles and presence
+        # use interLossWeight. Explicit sentenceExpectation=false bypasses
+        # that cycle while the single interaction-memory owner remains live.
+        # The separately weighted ARMA baseline uses SymbolSpace armaP,
+        # armaQ and armaHiddenDim, with training.armaScale (default zero).
+        # Capture construction options even while off so a runtime enable
+        # creates the same configured head and adopts its optimizer weights.
+        # Interaction state never belongs to the expectation layer.
         self.discourse = None
-        # Standalone What interaction memory (mathematical thinking spec
-        # 7.1): the discourse layer owns the interaction slots when the
-        # ARMA predictor is on; <architecture><whatThinkingMemory>true
-        # builds the same WhatInteractionMemory without it, so thinking no
-        # longer requires <sentencePrediction>. Default false: no object.
-        self.what_memory = None
-        if (not bool(TheXMLConfig.training("sentencePrediction", False))
-                and bool(TheXMLConfig.get("architecture.whatThinkingMemory",
-                                          default=False))):
-            self.what_memory = WhatInteractionMemory(
-                batch=1,
-                capacity=int(TheXMLConfig.space(
-                    "SymbolSpace", "ltmCapacity", default=1024) or 1024))
-        if bool(TheXMLConfig.training("sentencePrediction", False)):
-            try:
-                n_sym_rows = int(wholeSpace.outputShape[0])
-            except (AttributeError, IndexError, TypeError):
-                n_sym_rows = int(getattr(wholeSpace, 'nVectors', 0) or 0)
-            if n_sym_rows > 0 and muxed > 0:
-                arma_p = int(TheXMLConfig.space(
-                    "SymbolSpace", "armaP", default=5) or 5)
-                arma_q = int(TheXMLConfig.space(
-                    "SymbolSpace", "armaQ", default=2) or 2)
-                arma_hidden = TheXMLConfig.space(
-                    "SymbolSpace", "armaHiddenDim", default=None)
-                # LTM chain capacity (Task 7, plan §8) — same read
-                # pattern as armaP/armaQ; bounds the per-row STM
-                # end-state chain on the InterSentenceLayer.
-                ltm_capacity = int(TheXMLConfig.space(
-                    "SymbolSpace", "ltmCapacity", default=1024) or 1024)
-                # Pre-existing minor: SymbolSubSpace IS a SubSpace (no
-                # nested ``self.subspace``); use object.__getattribute__
-                # to avoid nn.Module.__getattr__ raising on the missing
-                # attribute, then fall through to the documented 256
-                # default that ``getattr`` would have hit.
-                _ss_sub = self.__dict__.get('subspace', None)
-                self.discourse = InterSentenceLayer(
-                    n_symbols=n_sym_rows,
-                    max_depth=int(getattr(_ss_sub, 'max_depth', 256) or 256),
-                    n_dim=muxed,
-                    p=arma_p,
-                    q=arma_q,
-                    hidden_dim=(int(arma_hidden)
-                                if arma_hidden is not None else None),
-                    concept_dim=int(concept_dim),
-                    ltm_capacity=ltm_capacity,
-                )
-                # L_inter weight (Task 8, plan §9): read the new
-                # <architecture><training><interLossWeight> knob (default
-                # 0.1, mirroring <intraLossWeight>) and gate the inter-level
-                # predictor's loss accumulation with it. The model also reads
-                # this weight (see BasicModel) to scale the consumed term.
-                _inter_w = float(
-                    TheXMLConfig.training("interLossWeight", 0.1))
-                self.discourse.set_inter_loss_weight(_inter_w)
-                # InfoNCE next-idea contrastive term (<interContrastiveWeight> /
-                # <interContrastiveTemp>). 0.0 weight -> MSE-only (byte-identical).
-                self.discourse.set_inter_contrastive(
-                    float(TheXMLConfig.training(
-                        "interContrastiveWeight", 0.0)),
-                    float(TheXMLConfig.training(
-                        "interContrastiveTemp", 0.1)))
-                self.layers.append(self.discourse)
-                # ``self.discourse.parameters()`` now also enumerates the
-                # inter-level ``_inter_predictor`` (registered as a submodule
-                # via attribute assignment) and ``cast``, so this single loop
-                # exposes every InterSentenceLayer param to the optimizer.
-                for p in self.discourse.parameters():
-                    if all(p is not q for q in self.params):
-                        self.params.append(p)
-                # Connect the consolidated durable-history adapter and
-                # suppress duplicate durable deque writes. Prediction keeps
-                # a separate bounded per-row observation view; it does not
-                # treat global recency or provisioned facts as predecessors.
-                if _ltm_on and self.ltm_store is not None:
-                    self.discourse._ltm_store = self.ltm_store
-                    self.discourse._ltm_consolidation = True
+        # Interaction state has one owner, independent of expectation.
+        self.what_memory = WhatInteractionMemory(
+            batch=1,
+            capacity=int(TheXMLConfig.space(
+                "SymbolSpace", "ltmCapacity", default=1024) or 1024))
+        try:
+            n_sym_rows = int(wholeSpace.outputShape[0])
+        except (AttributeError, IndexError, TypeError):
+            n_sym_rows = int(getattr(wholeSpace, 'nVectors', 0) or 0)
+        arma_hidden = TheXMLConfig.space("SymbolSpace", "armaHiddenDim", default=None)
+        self._expectation_options = (dict(
+            n_symbols=n_sym_rows,
+            max_depth=int(getattr(self.__dict__.get('subspace'), 'max_depth', 256) or 256),
+            n_dim=muxed,
+            p=int(TheXMLConfig.space("SymbolSpace", "armaP", default=5) or 5),
+            q=int(TheXMLConfig.space("SymbolSpace", "armaQ", default=2) or 2),
+            hidden_dim=int(arma_hidden) if arma_hidden is not None else None,
+            concept_dim=int(concept_dim),
+            ltm_capacity=int(TheXMLConfig.space("SymbolSpace", "ltmCapacity", default=1024) or 1024),
+            expectation_scope=str(TheXMLConfig.training("sentenceExpectationScope", "structured")),
+        ) if n_sym_rows > 0 and muxed > 0 else None)
+        self._expectation_weights = (
+            float(TheXMLConfig.training("interLossWeight", 0.1)),
+            float(TheXMLConfig.training("interContrastiveWeight", 0.0)),
+            float(TheXMLConfig.training("interContrastiveTemp", 0.1)))
+        if bool(TheXMLConfig.training("sentenceExpectation", True)) and self._expectation_options:
+            self.ensure_sentence_expectation()
 
         # -- pipeline-carried per-batch state -----------------------------
         # batch / svo_dim track the per-row state allocations below.
@@ -13637,6 +13587,36 @@ class SymbolSubSpace(SubSpace):
         for layer in self.layers:
             if hasattr(layer, 'paramUpdate'):
                 layer.paramUpdate()
+
+    def ensure_sentence_expectation(self):
+        """Create the configured head once, with normal SymbolSpace ownership."""
+        if self.discourse is not None:
+            return self.discourse
+        if not self._expectation_options:
+            raise RuntimeError("sentence expectation requires a nonempty symbol/concept space")
+        # An optional head must not change the random initialization of
+        # later comprehension modules or the caller's sampling stream.
+        device_type = torch.device(str(TheDevice.get())).type
+        devices = [] if device_type == "cpu" else [TheDevice.get().index or 0]
+        with torch.random.fork_rng(devices=devices, device_type=device_type):
+            discourse = InterSentenceLayer(**self._expectation_options)
+        parameter = next(self.parameters(), None)
+        if parameter is not None:
+            discourse.to(device=parameter.device, dtype=parameter.dtype)
+        discourse.train(self.training)
+        weight, contrastive, temperature = self._expectation_weights
+        discourse.set_inter_loss_weight(weight)
+        discourse.set_inter_contrastive(contrastive, temperature)
+        store = getattr(self, "ltm_store", None)
+        if store is not None:
+            discourse._ltm_store = store
+            discourse._ltm_consolidation = True
+        self.discourse = discourse
+        self.layers.append(discourse)
+        for parameter in discourse.parameters():
+            if all(parameter is not existing for existing in self.params):
+                self.params.append(parameter)
+        return discourse
 
     def getParameters(self):
         """Return optimizable parameters owned by this module."""

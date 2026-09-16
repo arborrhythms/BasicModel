@@ -70,10 +70,21 @@ def test_off_path_stores_unchanged():
         assert got == want, (cfg, got)
 
 
-def test_off_path_state_dict_keys_unchanged():
-    """The canonical, single-owner checkpoint key set stays pinned."""
+def test_default_expectation_adds_only_its_owned_checkpoint_keys():
+    """Default-on expectation adds its keys; unrelated structural pins hold."""
     for cfg, (n, sha) in _HEAD_SD.items():
-        keys = sorted(_build(cfg).state_dict().keys())
+        model = _build(cfg)
+        discourse = model.symbolSpace.discourse
+        assert discourse is not None
+        paths = [name for name, module in
+                 model.named_modules(remove_duplicate=False)
+                 if module is discourse]
+        assert paths
+        added = {f"{path}.{key}" for path in paths
+                 for key in discourse.state_dict()}
+        current = set(model.state_dict())
+        assert added <= current
+        keys = sorted(current - added)
         h = hashlib.sha256("\n".join(keys).encode()).hexdigest()[:16]
         assert (len(keys), h) == (n, sha), (cfg, len(keys), h)
 

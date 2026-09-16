@@ -62,7 +62,7 @@
       <learningRate>0.0005</learningRate>
 
       <reconstructionScale>1.0</reconstructionScale>
-      <sentencePrediction>true</sentencePrediction>
+      <sentenceExpectation>true</sentenceExpectation>
       <armaScale>0.1</armaScale>
       <intraLossWeight>0.1</intraLossWeight>
       <interLossWeight>0.1</interLossWeight>

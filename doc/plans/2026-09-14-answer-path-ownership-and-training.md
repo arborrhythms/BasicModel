@@ -101,8 +101,13 @@ code is re-read. Cite the line when you rely on one.
    left/right operand rows (`_publish_compiled_sentence_state`). The
    September 15 joint-learning revision retains gradients on the current
    step's index-9 roots for prediction; targets and durable LTM are detached.
-   See [Models.py:20378](../../bin/Models.py#L20378) and
-   [Layers.py:9798](../../bin/Layers.py#L9798).
+   See [Models.py:20493](../../bin/Models.py#L20493) and
+   [Layers.py:10037](../../bin/Layers.py#L10037).
+   The September 16 local-role predictor reads the existing index-13/14
+   sealed slots/depths and the published final seal state, retaining each
+   occupied NP1/VP/NP2 role rather than copying one root into every slot
+   ([Models.py:12471](../../bin/Models.py#L12471),
+   [Layers.py:9800](../../bin/Layers.py#L9800)). The tuple arity is unchanged.
 9. **`torch.while_loop` autograd defects and workarounds.** Carries
    entering without grad cut the chain (`_carries_with_grad`,
    `_ensure_grad_anchors`); the backward node keeps `fw_outputs`

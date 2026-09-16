@@ -11,7 +11,7 @@
        conceptual pump + FF pyramid, MM_sparse_concept's live path).
        Shape family = MM_sparse_concept (the proven parallel-pump family);
        training block = masked-IR (MM_5M_IR's contract: nonzero maskRate,
-       reconstruction-dominant loss, sentencePrediction on). Smoke test:
+       reconstruction-dominant loss, sentenceExpectation on). Smoke test:
        test/test_masked_semantic.py. -->
   <architecture>
     <subsymbolicOrder>3</subsymbolicOrder>
@@ -45,7 +45,7 @@
       <!-- reconstruction-heavy: dominates the auxiliary terms (SBOW at
            0.1, l1 at 0.01). -->
       <reconstructionScale>1.0</reconstructionScale>
-      <sentencePrediction>true</sentencePrediction>
+      <sentenceExpectation>true</sentenceExpectation>
       <!-- the substitutability SITUATING signal on the concept codes. -->
       <conceptualSimilarityScale>0.1</conceptualSimilarityScale>
     </training>

@@ -23,7 +23,7 @@
       <reconstructionScale>0.1</reconstructionScale>
       <trainEmbedding>BACKPROP</trainEmbedding>
       <autoload>false</autoload>
-      <sentencePrediction>true</sentencePrediction>
+      <sentenceExpectation>true</sentenceExpectation>
     </training>
   </architecture>
 

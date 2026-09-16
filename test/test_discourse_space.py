@@ -13,7 +13,7 @@ Covers:
   3. Back-compat shims: ``predict``/``snapshot``/``contrastive_loss``
      keep their pre-ARMA signatures so existing call sites in
      ``runBatch`` still work during the transition.
-  4. Integration: building a BasicModel under ``<sentencePrediction>``
+  4. Integration: building a BasicModel under ``<sentenceExpectation>``
      wires an ``InterSentenceLayer`` on ``symbolSpace.discourse`` and
      forward() populates ``_current_discourse_s`` for the runBatch
      observe call.
@@ -24,6 +24,8 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'bin'))
 
 import gc
+from pathlib import Path
+import tempfile
 import unittest
 import torch
 import matplotlib
@@ -252,9 +254,9 @@ class TestModelIntegration(_DiscourseTestBase):
     the sentence rep, observe() runs from runBatch (or directly).
     """
 
-    def test_discourse_layer_wired_when_sentencePrediction_true(self):
+    def test_discourse_layer_wired_when_sentenceExpectation_true(self):
         _reload_config()
-        TheXMLConfig.set("architecture.training.sentencePrediction", True)
+        TheXMLConfig.set("architecture.training.sentenceExpectation", True)
         try:
             model, _ = Models.BasicModel.from_config(
                 os.path.join(_DATA_DIR, 'MentalModel.xml'))
@@ -266,18 +268,19 @@ class TestModelIntegration(_DiscourseTestBase):
             self.model = model
         finally:
             TheXMLConfig.set(
-                "architecture.training.sentencePrediction", False)
+                "architecture.training.sentenceExpectation", False)
 
-    def test_discourse_layer_absent_when_sentencePrediction_false(self):
-        # MM_xor.xml does not set <sentencePrediction>; with the
-        # default (False), the layer should not be wired.
-        init_config(
-            path=os.path.join(_DATA_DIR, 'MM_xor.xml'),
-            defaults_path=os.path.join(_DATA_DIR, 'model.xml'),
-        )
-        Language.TheGrammar._configured = False
-        TheXMLConfig.set("architecture.training.sentencePrediction", False)
-        model, _ = Models.BasicModel.from_config(
-            os.path.join(_DATA_DIR, 'MM_xor.xml'))
+    def test_discourse_layer_absent_when_sentenceExpectation_false(self):
+        # from_config reloads XML: put the explicit off value in the file,
+        # rather than relying on a transient override of the former default.
+        source = (Path(_DATA_DIR) / 'MM_xor.xml').read_text()
+        source = source.replace('<training>',
+                                '<training><sentenceExpectation>false</sentenceExpectation>', 1)
+        with tempfile.TemporaryDirectory() as directory:
+            config = Path(directory) / 'expectation_off.xml'
+            config.write_text(source)
+            Language.TheGrammar._configured = False
+            model, _ = Models.BasicModel.from_config(str(config))
         self.assertIsNone(model.symbolSpace.discourse)
+        self.assertIsNotNone(model._what_memory())
         self.model = model

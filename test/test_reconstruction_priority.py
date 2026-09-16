@@ -130,7 +130,7 @@ def test_real_packed_runbatch_trains_prediction_and_representation_with_teacher(
     m = _build_ladder_variant(tmp_path, "joint_prediction", [
         ("<serialWordCapacity>8</serialWordCapacity>", "<serialWordCapacity>16</serialWordCapacity>"),
         ("<serialWordBuckets>8</serialWordBuckets>", "<serialWordBuckets>16</serialWordBuckets>"),
-        ("<sentencePrediction>false</sentencePrediction>", "<sentencePrediction>true</sentencePrediction>"),
+        ("<sentenceExpectation>false</sentenceExpectation>", "<sentenceExpectation>true</sentenceExpectation>"),
         ("<interLossWeight>0.0</interLossWeight>", "<interLossWeight>0.1</interLossWeight>"),
         ("<training>", "<training><teacherReconstruction>true</teacherReconstruction>"),
     ])
@@ -471,3 +471,38 @@ def test_answer_path_operators_are_not_protected_and_keep_learning(monkeypatch, 
     owned = {p.data_ptr() for g in optimizer.param_groups for p in g["params"]}
     assert {p.data_ptr() for p in answer_only} <= owned          # handed to the optimizer
     assert any(not torch.equal(a, b) for a, b in zip(before, answer_only))
+
+
+def test_real_intermediate_and_final_seals_have_same_canonical_roles(tmp_path):
+    from test_meronomy_ladder import _build_ladder_variant
+    from test_reverse_traversal import _stage_packed
+    meanings = []
+    for i, rows in enumerate(([["1 plus 2", "3 plus 4"]], [["1 plus 2 "]])):
+        model = _build_ladder_variant(tmp_path, f"seal_layout_{i}", [
+            ("<serialWordCapacity>8</serialWordCapacity>", "<serialWordCapacity>16</serialWordCapacity>"),
+            ("<serialWordBuckets>8</serialWordBuckets>", "<serialWordBuckets>16</serialWordBuckets>"),
+            ("<sentenceExpectation>false</sentenceExpectation>", "<sentenceExpectation>true</sentenceExpectation>"),
+        ])
+        model._tensor_peer_while_eager = True
+        model._chart_compose_per_word = lambda: None
+        model._install_unit_span_fn()
+        try:
+            _stage_packed(model, rows)
+            with torch.no_grad():
+                result = model._forward_with_compiled_sentence_state(None)
+            model._publish_compiled_sentence_state(result)
+            discourse = model.symbolSpace.discourse
+            if i == 0:
+                payload = model._tensor_sentence_roots_live[0, 0].reshape(3, -1)
+                depth = model._tensor_sentence_roots_depth[0, 0]
+            else:
+                payload = model._tensor_final_end_slots[0]
+                depth = model._tensor_final_end_depth[0]
+            value, mask = discourse._canonical_meaning(payload, depth, "stm")
+            meanings.append((value.detach().clone(), mask.clone()))
+        finally:
+            model.End()
+            model.symbolSpace.soft_reset()
+            torch._dynamo.reset()
+    torch.testing.assert_close(meanings[0][0], meanings[1][0])
+    torch.testing.assert_close(meanings[0][1], meanings[1][1])

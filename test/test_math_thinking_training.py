@@ -353,7 +353,6 @@ def stage_zero_config(tmp_path_factory):
               .replace("<mathProblems>4096</mathProblems>", "<mathProblems>256</mathProblems>")
               .replace("<answerSynthesis>true</answerSynthesis>",
                        "<answerSynthesis>true</answerSynthesis>\n"
-                       "    <whatThinkingMemory>true</whatThinkingMemory>\n"
                        "    <whatThinkingDetach>episode</whatThinkingDetach>\n"
                        "    <whatThinkingIterations>2</whatThinkingIterations>")
               .replace("</training>",

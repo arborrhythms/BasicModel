@@ -74,7 +74,7 @@ def test_single_real_part_is_identity_padded_to_three(serial_model):
 
 def test_runbatch_staging_declares_p3_and_flattened_3w_minima(
         serial_model, monkeypatch):
-    """Compiled ``runBatch`` staging marks P=3 and flattened 3*W minima."""
+    """Compiled staging marks P=3 and 3*W even before eager evaluation."""
     calls = []
 
     class _StagingComplete(Exception):
@@ -87,8 +87,12 @@ def test_runbatch_staging_declares_p3_and_flattened_3w_minima(
     def _stop_after_staging(*args, **kwargs):
         raise _StagingComplete
 
-    serial_model._compiled_word_loop_fullgraph = False
-    serial_model._compiled_step = _stop_after_staging
+    monkeypatch.setattr(serial_model, "_compiled_word_loop_fullgraph", False,
+                        raising=False)
+    monkeypatch.setattr(serial_model, "_compiled_step", _stop_after_staging)
+    # Evaluation intentionally uses the eager body under no_grad; staging
+    # still prepares and marks the same dynamic views before dispatch.
+    monkeypatch.setattr(serial_model, "forward", _stop_after_staging)
     batch = serial_model.inputSpace.prepInput(["a"])
     with pytest.raises(_StagingComplete):
         serial_model.runBatch(

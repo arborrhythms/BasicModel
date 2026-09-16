@@ -182,13 +182,13 @@
            assigning a nonzero weight here. Detached reverse is the NaN gate. -->
       <forwardGrammarWeight>0.0</forwardGrammarWeight>
 
-      <!-- Teacher reconstruction replaces the independent predictor losses.
-           Future/past What queries will vary objective input availability
-           rather than paying for a second predictive faculty. -->
-      <sentencePrediction>false</sentencePrediction>
+      <!-- Joint input reconstruction and structured sentence expectation.
+           Each external observation supplies its own detached concept target;
+           the older ARMA, intra and contrastive objectives stay disabled. -->
+      <sentenceExpectation>true</sentenceExpectation>
       <armaScale>0.0</armaScale>
       <intraLossWeight>0.0</intraLossWeight>
-      <interLossWeight>0.0</interLossWeight>
+      <interLossWeight>0.1</interLossWeight>
       <interContrastiveWeight>0.0</interContrastiveWeight>
       <interContrastiveTemp>0.1</interContrastiveTemp>
 

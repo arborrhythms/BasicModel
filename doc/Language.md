@@ -105,6 +105,23 @@ it once selected is now unconditional. The retired
 `<SymbolSpace>` config still sets them
 (`Language._assert_retired_chart_knobs_absent`); see `data/model.xsd`.
 
+## Sentence expectation and interaction memory
+
+`SymbolSubSpace` always owns one `WhatInteractionMemory`; expectation uses
+its own `InterSentenceLayer`. Construction is in
+[`SymbolSubSpace.__init__`](../bin/Language.py#L10966), and model thinking
+reads the owner through [`_what_memory`](../bin/Models.py#L7851).
+The retired `whatThinkingMemory` switch and discourse delegates are removed.
+
+`sentenceExpectation` defaults to true, with structured NP1/VP/NP2 expectation.
+[`set_sentence_expectation`](../bin/Models.py#L12341) can switch it at runtime;
+[`ensure_sentence_expectation`](../bin/Language.py#L13591) creates its parameters
+once and registers them for optimization when first enabled. Re-enabling starts
+a fresh observation stream. Soft packed-brick resets preserve an enabled
+stream; hard resets and document changes make the affected row cold.
+See [`InterSentenceLayer.Reset`](../bin/Layers.py#L10515) and
+[the integrated specification](plans/2026-09-15-next-sentence-as-the-production-objective.md#11-code-review-2026-09-16-local-role-expectation-implementation).
+
 ## Retired XML Knobs
 
 `SymbolSpace.chartCompose`, `SymbolSpace.softChartCompose`, and

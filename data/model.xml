@@ -250,13 +250,13 @@
       <!-- Per-neuron certainty tracking in ergodic layers. -->
       <certainty>false</certainty>
 
-      <!-- Inter-sentence ARMA(p, q) next-sentence prediction
-           (InterSentenceLayer).  The layer's AR/MA orders + hidden
-           dim live under <SymbolSpace> (armaP/armaQ/armaHiddenDim);
-           this scale is the loss weight applied on top of the
-           per-batch ARMA MSE.  Off by default. -->
-      <sentencePrediction>false</sentencePrediction>
-      <armaScale>0.1</armaScale>
+      <!-- Expect the next external sentence from preceding meaning in the
+           same stream. Enabled by default. The older ARMA loss is a
+           separate objective whose weight remains zero. -->
+      <sentenceExpectation>true</sentenceExpectation>
+      <!-- Complete occupied local roles; root selects the old benchmark. -->
+      <sentenceExpectationScope>structured</sentenceExpectationScope>
+      <armaScale>0.0</armaScale>
       <!-- Priming: ARMA prediction cast into concept_dim and added as
            a bias to concept_input before the sigma-pi loop.  Scaled
            by confidence * sentencePrimingScale.  Default small. -->
@@ -270,14 +270,14 @@
            loss. -->
       <intraLossWeight>0.1</intraLossWeight>
 
-      <!-- Inter-sentence end-state prediction (InterSentenceLayer's
-           inter-level IntraSentenceLayer instance, STM serial/parallel
-           modes plan §9).  Loss weight on the per-sentence L_inter =
-           MSE(predicted next-end-state root, observed root) summed over
-           the discourse window and added to the loss path.  Mirrors
-           <intraLossWeight>; the predictor reads the LTM end-state chain
-           on the InterSentenceLayer. -->
+      <!-- Inter-sentence prediction: occupied-role MSE plus presence
+           loss in structured scope, root MSE in the historical baseline.
+           The predictor reads a bounded row/document observation view;
+           targets and durable history are detached, current-step source
+           representations may learn under the reconstruction budget. -->
       <interLossWeight>0.1</interLossWeight>
+      <interContrastiveWeight>0.0</interContrastiveWeight>
+      <interContrastiveTemp>0.1</interContrastiveTemp>
     </training>
 
     <server>

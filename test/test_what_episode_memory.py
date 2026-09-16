@@ -85,22 +85,21 @@ def test_batch_resize_and_resets_are_per_row():
     assert memory.batch == 3 and all(memory.what_at_parity(b=b) for b in range(3))
 
 
-def test_discourse_layer_composes_the_same_memory():
-    layer = InterSentenceLayer(n_symbols=2, max_depth=3, n_dim=4, p=1, q=0,
-                               concept_dim=None, batch=1, ltm_capacity=4)
-    assert isinstance(layer.what_memory, WhatInteractionMemory)
-    layer.detach_mode = "episode"
-    layer.begin_what_episode(0)
+def test_symbol_space_owns_memory_lifecycle(memory_config):
+    model = _build(memory_config)
+    memory = model._what_memory()
+    assert memory is model.symbolSpace.what_memory
+    memory.begin_what_episode(0)
     x = torch.ones(2, requires_grad=True)
-    stored = layer.append_what_slot(LTMSlot(input=x, output=x))
+    stored = memory.append_what_slot(LTMSlot(input=x, output=x))
     assert stored.input.requires_grad
-    assert layer.end_what_episode(0) == 1
-    assert not layer.get_what_slots()[0].input.requires_grad
-    layer.ensure_batch(3)
-    assert layer.what_memory.batch == 3 and layer.get_what_slots(b=2) == []
-    layer.append_what_slot(LTMSlot(input="q"), b=2)
-    layer.Reset(batch=2, hard=True)
-    assert layer.what_at_parity(b=2)
+    assert memory.end_what_episode(0) == 1
+    assert not memory.get_what_slots()[0].input.requires_grad
+    model.symbolSpace.ensure_microbatch(3, 1)
+    assert memory.batch == 3 and memory.get_what_slots(b=2) == []
+    memory.append_what_slot(LTMSlot(input="q"), b=2)
+    model.symbolSpace.Reset(batch=2, hard=True)
+    assert memory.what_at_parity(b=2)
 
 
 # -- through the model ---------------------------------------------------------
@@ -130,6 +129,8 @@ def _config(tmp_path_factory, name, extra_arch):
     src = (_DATA / "MM_xor.xml").read_text()
     assert src.count("<architecture>") == 1
     patched = src.replace("<architecture>", "<architecture>\n" + extra_arch, 1)
+    if "what_memory" in name:
+        patched = patched.replace("<training>", "<training><sentenceExpectation>false</sentenceExpectation>", 1)
     path = tmp_path_factory.mktemp("cfg") / name
     path.write_text(patched)
     return path
@@ -139,7 +140,6 @@ def _config(tmp_path_factory, name, extra_arch):
 def memory_config(tmp_path_factory):
     return _config(tmp_path_factory, "MM_xor_what_memory.xml",
                    "    <answerSynthesis>true</answerSynthesis>\n"
-                   "    <whatThinkingMemory>true</whatThinkingMemory>\n"
                    "    <whatThinkingDetach>episode</whatThinkingDetach>")
 
 
@@ -149,11 +149,11 @@ def plain_config(tmp_path_factory):
                    "    <answerSynthesis>true</answerSynthesis>")
 
 
-def test_default_has_no_memory_and_think_is_single_step(plain_config):
+def test_default_has_one_memory_and_think_is_single_step(plain_config):
     m = _build(plain_config)
-    assert m.symbolSpace.discourse is None
-    assert getattr(m.symbolSpace, "what_memory", None) is None
-    assert m._what_memory() is None
+    assert m.symbolSpace.discourse is not None
+    assert isinstance(m.symbolSpace.what_memory, WhatInteractionMemory)
+    assert m._what_memory() is m.symbolSpace.what_memory
     assert m.what_thinking_detach == "slot"
     x, _ = _batch(m, rows=1)
     with torch.no_grad():

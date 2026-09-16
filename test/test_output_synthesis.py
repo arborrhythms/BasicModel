@@ -67,14 +67,14 @@ def synth_discourse_config(tmp_path_factory):
     # Same, plus the inter-sentence discourse layer (ARMA ring + predictor)
     # that past recall and future prediction resolve through.
     src = (_DATA / "MM_xor.xml").read_text()
-    assert "<prediction>" not in src and "<sentencePrediction>" not in src
+    assert "<prediction>" not in src and "<sentenceExpectation>" not in src
     patched = src.replace(
         "<architecture>",
         "<architecture>\n    <answerSynthesis>true</answerSynthesis>"
         "\n    <prediction>interSentence</prediction>", 1)
     patched = patched.replace(
         "</training>",
-        "      <sentencePrediction>true</sentencePrediction>\n    </training>", 1)
+        "      <sentenceExpectation>true</sentenceExpectation>\n    </training>", 1)
     path = tmp_path_factory.mktemp("cfg") / "MM_xor_synth_discourse.xml"
     path.write_text(patched)
     return path
@@ -258,7 +258,7 @@ def test_present_and_supervised_resolve_by_identity(synth_config):
 def test_past_resolves_by_recall_from_discourse_memory(synth_discourse_config):
     m = _build(synth_discourse_config)
     batch = _batch(m)
-    memory = m._what_memory()
+    memory = m.symbolSpace.discourse
     assert memory is not None and getattr(memory, "_s_history", None) is not None
     _prime_discourse(m, batch, sentences=2)
     with torch.no_grad():
@@ -287,7 +287,7 @@ def test_past_resolves_by_recall_from_discourse_memory(synth_discourse_config):
 def test_future_resolves_by_prediction_without_committing_memory(synth_discourse_config):
     m = _build(synth_discourse_config)
     batch = _batch(m)
-    memory = m._what_memory()
+    memory = m.symbolSpace.discourse
     assert memory is not None and getattr(memory, "predictor", None) is not None
     _prime_discourse(m, batch, sentences=2)
     before = memory._s_history.clone()
@@ -571,7 +571,7 @@ def test_recall_returns_the_most_recent_sentence_during_ring_fill(synth_discours
     # LOW end), so indexing the ring tail is wrong; recall uses its own
     # chronological history instead.
     m = _build(synth_discourse_config)
-    memory = m._what_memory()
+    memory = m.symbolSpace.discourse
     batch = _batch(m)
     seen = []
     orig = m._observe_discourse

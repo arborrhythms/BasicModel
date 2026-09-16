@@ -311,11 +311,6 @@
       </xs:element>
       <xs:element name="whatCurriculumDistance" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="whatCurriculumRatio" type="unitInterval" minOccurs="0"/>
-      <!-- whatThinkingMemory (mathematical thinking spec 7.1): build the
-           standalone WhatInteractionMemory (the What interaction slots)
-           when the discourse predictor (<sentencePrediction>) is off.
-           Default false = no object, byte-identical. -->
-      <xs:element name="whatThinkingMemory" type="xs:boolean" minOccurs="0"/>
       <!-- whatThinkingDetach (spec 8.2): the episode credit boundary.
            slot = detach every interaction value at append (established);
            episode = values appended inside begin/end_what_episode stay live
@@ -1015,12 +1010,17 @@
       <xs:element name="checkpointEveryBatches" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="profile" type="xs:boolean" minOccurs="0"/>
       <xs:element name="certainty" type="xs:boolean" minOccurs="0"/>
-      <!-- Inter-sentence ARMA(p, q) next-sentence prediction
-           (InterSentenceLayer). The layer's AR/MA orders and hidden
-           dim live under <SymbolSpace> (armaP/armaQ/armaHiddenDim);
-           this scale is the loss weight applied on top of the
-           per-batch ARMA MSE. -->
-      <xs:element name="sentencePrediction" type="xs:boolean" minOccurs="0"/>
+      <!-- Automatic sentence expectation; ARMA remains separately weighted.
+           sentenceExpectation replaces the retired sentencePrediction name. -->
+      <xs:element name="sentenceExpectation" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="sentenceExpectationScope" minOccurs="0">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:enumeration value="structured"/>
+            <xs:enumeration value="root"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:element>
       <xs:element name="armaScale" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="sentencePrimingScale" type="nonNegativeFloat" minOccurs="0"/>
       <!-- In-STM autoregressive prediction (IntraSentenceLayer). Loss
@@ -1028,11 +1028,10 @@
            idea), added to the IR-loss path. The PI-then-Sigma predictor
            is owned by ConceptualSpace. -->
       <xs:element name="intraLossWeight" type="nonNegativeFloat" minOccurs="0"/>
-      <!-- Inter-sentence end-state prediction (InterSentenceLayer's
-           inter-level IntraSentenceLayer instance). Loss weight on the
-           per-sentence L_inter = MSE(predicted next-end-state root,
-           observed root), summed over the discourse window. Mirrors
-           intraLossWeight. -->
+      <!-- Inter-sentence end-state prediction. Structured scope scores
+           distinct occupied NP1/VP/NP2 vectors plus presence logits;
+           root scope retains the historical single-vector MSE baseline.
+           This scales the mean over eligible observed sentences. -->
       <xs:element name="interLossWeight" type="nonNegativeFloat" minOccurs="0"/>
       <!-- InfoNCE next-idea contrastive term: weight + softmax temperature.
            Reuses the InterSentenceLayer end-state chain (positive next root

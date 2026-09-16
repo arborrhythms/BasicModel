@@ -792,7 +792,7 @@ def test_resolved_recall_keeps_its_program_after_memory_advances(tmp_path):
     from test_meronomy_ladder import _build_ladder_variant
     m = _build_ladder_variant(tmp_path, "owned_recall", [
         ("<training>", "<training>\n      <outputInLoop>true</outputInLoop>"),
-        ("<sentencePrediction>false</sentencePrediction>", "<sentencePrediction>true</sentencePrediction>")])
+        ("<sentenceExpectation>false</sentenceExpectation>", "<sentenceExpectation>true</sentenceExpectation>")])
     m._tensor_peer_while_eager = True
     m._chart_compose_per_word = lambda: None
     try:
@@ -869,7 +869,7 @@ def test_packed_recall_observes_captured_sentence_programs(tmp_path):
         ("<serialWordCapacity>8</serialWordCapacity>", "<serialWordCapacity>16</serialWordCapacity>"),
         ("<serialWordBuckets>8</serialWordBuckets>", "<serialWordBuckets>16</serialWordBuckets>"),
         ("<training>", "<training>\n      <outputInLoop>true</outputInLoop>"),
-        ("<sentencePrediction>false</sentencePrediction>", "<sentencePrediction>true</sentencePrediction>")])
+        ("<sentenceExpectation>false</sentenceExpectation>", "<sentenceExpectation>true</sentenceExpectation>")])
     m._tensor_peer_while_eager = True
     m._chart_compose_per_word = lambda: None
     m._install_unit_span_fn()
