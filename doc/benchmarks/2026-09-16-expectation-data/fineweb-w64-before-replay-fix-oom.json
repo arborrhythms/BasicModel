@@ -1,0 +1,640 @@
+{
+  "workload": "FineWeb-Edu",
+  "dataset": "text",
+  "device": "mps",
+  "backend": "eager",
+  "torch": "2.14.0.dev20260722",
+  "threads": 1,
+  "allocator_environment": {
+    "PYTORCH_MPS_HIGH_WATERMARK_RATIO": "0.60",
+    "PYTORCH_MPS_LOW_WATERMARK_RATIO": "0.50"
+  },
+  "amp_requested": "off",
+  "autocast_compute_dtype": "torch.float32",
+  "revision": "70eaa2d384552192fb021d2154852af66381c86a",
+  "command": [
+    "bin/bench_sentence_expectation.py",
+    "fineweb",
+    "--config",
+    "data/BasicModel_expectation_benchmark.xml",
+    "--device",
+    "mps",
+    "--backend",
+    "eager",
+    "--batch-size",
+    "1",
+    "--docs",
+    "24",
+    "--train-steps",
+    "7",
+    "--eval-steps",
+    "8",
+    "--threads",
+    "1",
+    "--out",
+    "/tmp/full-spec-expectation-fineweb-w64-b1.json"
+  ],
+  "config": "/Users/arogers/github/WikiOracle/basicmodel/data/BasicModel_expectation_benchmark.xml",
+  "config_sha256": "167de9f80806a2ec3acacf32a14d3b0e753b3d98d0aaf94b932a29194b41b7f8",
+  "defaults_sha256": "33d719060a8011f93f5c85bbbce8a3f8a346bebb926d2d4bc802f3968522ca32",
+  "effective_architecture": {
+    "subsymbolicOrder": 4,
+    "routerWireSerial": "both",
+    "transformChooserHidden": 0,
+    "transformChooserDepth": 1,
+    "whatThinkingHidden": 16,
+    "whatThinkingDepth": 1,
+    "reconstructFromIdea": false,
+    "answerSynthesis": true,
+    "synthesisBindings": 4,
+    "whatCurriculum": "full",
+    "whatCurriculumDistance": 1,
+    "whatCurriculumRatio": 0.25,
+    "processSymbols": false,
+    "meronomy": {
+      "_": "on",
+      "dMaxStable": "4.0"
+    },
+    "monotonic": false,
+    "ergodic": false,
+    "naive": false,
+    "embeddingPath": "",
+    "weightsPath": "BasicModel_expectation_benchmark.ckpt",
+    "maxResponseLength": 4096,
+    "amp": "off",
+    "truthBiasScale": 0.1,
+    "LuminosityWeight": 0.1,
+    "UniversalityWeight": 0.1,
+    "allowExcludedMiddle": 1,
+    "allowContradiction": 0,
+    "gateL1Lambda": 0.0,
+    "loadBalanceWeight": 0.0,
+    "l1Lambda": 0.01,
+    "discontinuityLambda": 0.0,
+    "conceptualWidth": "uniform",
+    "maxActivePerLayer": 8,
+    "categoryCodebook": true,
+    "overlapWhereTiling": false,
+    "codebookRetire": false,
+    "truthCriterion": 1.0,
+    "trust": 1.0,
+    "symbolLearning": {
+      "enabled": false
+    },
+    "data": {
+      "dataType": "embedding",
+      "dataset": "text",
+      "numShards": 1,
+      "maxDocs": 2000,
+      "shardDir": "data/fineweb",
+      "minFrequency": 0.0,
+      "classificationMin": "",
+      "classificationMax": "",
+      "contextWhole": "FineWeb-Edu 100B shuffle",
+      "maxSentenceWords": 64
+    },
+    "training": {
+      "numTrials": 1,
+      "numEpochs": 1,
+      "batchSize": 28,
+      "numWorkers": 2,
+      "learningRate": 0.0005,
+      "teacherReconstruction": true,
+      "reconstructionScale": 1.0,
+      "whatScale": 0.7,
+      "whereScale": 0.2,
+      "whenScale": 0.1,
+      "negSamples": 64,
+      "TruthLoss": 0.0,
+      "maskRate": 0.15,
+      "trainEmbedding": "NONE",
+      "embeddingScale": 0.25,
+      "autoload": false,
+      "autosave": false,
+      "checkpointEveryBatches": 0,
+      "profile": false,
+      "certainty": false,
+      "sentenceExpectation": true,
+      "sentenceExpectationScope": "structured",
+      "armaScale": 0.0,
+      "sentencePrimingScale": 0.05,
+      "intraLossWeight": 0.0,
+      "interLossWeight": 0.1,
+      "interContrastiveWeight": 0.0,
+      "interContrastiveTemp": 0.1,
+      "seed": 42,
+      "packSentences": true,
+      "conceptualContextLearningRate": 0.01,
+      "conceptualContextNegatives": 4,
+      "reconstructionPriority": true,
+      "reconstructionLossTolerance": 1e-08,
+      "outputGradientRatio": 0.5,
+      "detachedReverse": true,
+      "leafDistillWeight": 1.0,
+      "forwardGrammarWeight": 0.0
+    },
+    "server": {
+      "host": "127.0.0.1",
+      "port": 8001,
+      "timeout": 120
+    },
+    "serial": true,
+    "conceptBinding": "aligned",
+    "symbolicOrder": 4,
+    "syntacticOrder": 0,
+    "mereologyRaise": true,
+    "serialObjectMeta": true,
+    "sentenceProtocol": false,
+    "serialWordCapacity": 64,
+    "serialWordBuckets": 64,
+    "serialResidualPartCapacity": 64,
+    "sigmaPi": "butterfly",
+    "transformChooser": "mlp",
+    "stmReduceTau": 0.75,
+    "learning": false
+  },
+  "runtime_sha256": {
+    "Models.py": "d9659c5a029784c2de8a3e97f31b72b7232606d452f06bea8494d171f6d9dea6",
+    "Language.py": "b8f260367397a84ffffeb4a9ceec0b17913fd967c824d44084b94992412ebc8c",
+    "Layers.py": "eb268720eac27377df87f1fad1a443ff02b5fe39372b1b5c37b3900d3cba8ead",
+    "data.py": "73f06278c6f37fffc2bcfd811abe42f60208a9b2f995dc1e71a558d0879129d4",
+    "Optimizer.py": "768d36190259f0cb16127b8c64fa2740f4afae659100ab1fe9ba2e214e412c12",
+    "mps_memory.py": "91f1b995c1294c80611939dfc00f3bdb5a0cd6b898554020851c93529ef8e400",
+    "bench_sentence_expectation.py": "6be90bf71c728cefc3b193cfa18a38a45582a0e93dcdeff45a189a5d0c36bfb5"
+  },
+  "source_manifest": {
+    "dataset": "text",
+    "corpus": "karpathy/fineweb-edu-100b-shuffle",
+    "source": "https://huggingface.co/datasets/karpathy/fineweb-edu-100b-shuffle/resolve/main",
+    "shards": [
+      {
+        "name": "shard_00000.parquet",
+        "bytes": 94511680,
+        "sha256": "6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22"
+      }
+    ],
+    "max_docs": 24,
+    "max_tokens": null,
+    "max_sentence_words": 64,
+    "random_shards": false,
+    "split": "document_mod10_8_1_1"
+  },
+  "setup_seconds": 9.68481924990192,
+  "max_docs": 24,
+  "batch_size": 1,
+  "detached_reverse": true,
+  "sigma": 0,
+  "answer_synthesis": true,
+  "output_in_loop": false,
+  "fullgraph_word_loop": true,
+  "model_parameter_count": 90139647,
+  "inter_weight": 0.1,
+  "arma_weight": 0.0,
+  "reconstruction_weight": 1.0,
+  "answer_weight": 0.0,
+  "document_counts": {
+    "train": 20,
+    "validation": 2,
+    "test": 2
+  },
+  "phases": [
+    {
+      "name": "validation_before",
+      "split": "validation",
+      "steps": [
+        {
+          "observations": 1,
+          "predicted_targets": 0,
+          "cold_starts": 1,
+          "reconstruction": 0.10362934321165085,
+          "answer": 0.12365888059139252,
+          "supplied_answer_rows": 0,
+          "training": false,
+          "optimizer_steps": 0,
+          "trained_inter": null,
+          "word_counts": [
+            14
+          ],
+          "sources": [
+            0
+          ],
+          "forward_backward_optimizer_seconds": 3.0743921250104904,
+          "context_detached": true,
+          "seconds": 3.0792551250196993,
+          "batch_plus_tail_seconds": 3.077303540892899,
+          "memory": {
+            "process_peak_rss_bytes": 13721649152,
+            "sampled_mps_driver_bytes": 5540560896,
+            "sampled_mps_tensor_bytes": 4848251136
+          },
+          "compiler_counters": {
+            "frames": {},
+            "stats": {},
+            "aot_autograd": {},
+            "graph_break": {}
+          }
+        },
+        {
+          "observations": 1,
+          "predicted_targets": 1,
+          "cold_starts": 0,
+          "reconstruction": 0.10669703036546707,
+          "answer": 0.11436749249696732,
+          "supplied_answer_rows": 0,
+          "training": false,
+          "optimizer_steps": 0,
+          "trained_inter": null,
+          "word_counts": [
+            28
+          ],
+          "sources": [
+            1
+          ],
+          "forward_backward_optimizer_seconds": 2.7033665829803795,
+          "context_detached": true,
+          "seconds": 2.7071026670746505,
+          "batch_plus_tail_seconds": 2.7062554580625147,
+          "memory": {
+            "process_peak_rss_bytes": 13721649152,
+            "sampled_mps_driver_bytes": 5540593664,
+            "sampled_mps_tensor_bytes": 4848138752
+          },
+          "compiler_counters": {
+            "frames": {},
+            "stats": {},
+            "aot_autograd": {},
+            "graph_break": {}
+          }
+        },
+        {
+          "observations": 1,
+          "predicted_targets": 1,
+          "cold_starts": 0,
+          "reconstruction": 0.106642946600914,
+          "answer": 0.12156899273395538,
+          "supplied_answer_rows": 0,
+          "training": false,
+          "optimizer_steps": 0,
+          "trained_inter": null,
+          "word_counts": [
+            30
+          ],
+          "sources": [
+            2
+          ],
+          "forward_backward_optimizer_seconds": 2.6481483329553157,
+          "context_detached": true,
+          "seconds": 2.651759000029415,
+          "batch_plus_tail_seconds": 2.6510232500731945,
+          "memory": {
+            "process_peak_rss_bytes": 13721649152,
+            "sampled_mps_driver_bytes": 5540610048,
+            "sampled_mps_tensor_bytes": 4847430400
+          },
+          "compiler_counters": {
+            "frames": {},
+            "stats": {},
+            "aot_autograd": {},
+            "graph_break": {}
+          }
+        },
+        {
+          "observations": 1,
+          "predicted_targets": 1,
+          "cold_starts": 0,
+          "reconstruction": 0.1064169853925705,
+          "answer": 0.11169521510601044,
+          "supplied_answer_rows": 0,
+          "training": false,
+          "optimizer_steps": 0,
+          "trained_inter": null,
+          "word_counts": [
+            35
+          ],
+          "sources": [
+            3
+          ],
+          "forward_backward_optimizer_seconds": 2.6565202919300646,
+          "context_detached": true,
+          "seconds": 2.660058999899775,
+          "batch_plus_tail_seconds": 2.65937229199335,
+          "memory": {
+            "process_peak_rss_bytes": 13721649152,
+            "sampled_mps_driver_bytes": 5540659200,
+            "sampled_mps_tensor_bytes": 4847510016
+          },
+          "compiler_counters": {
+            "frames": {},
+            "stats": {},
+            "aot_autograd": {},
+            "graph_break": {}
+          }
+        },
+        {
+          "observations": 1,
+          "predicted_targets": 1,
+          "cold_starts": 0,
+          "reconstruction": 0.10668948292732239,
+          "answer": 0.11151867359876633,
+          "supplied_answer_rows": 0,
+          "training": false,
+          "optimizer_steps": 0,
+          "trained_inter": null,
+          "word_counts": [
+            22
+          ],
+          "sources": [
+            4
+          ],
+          "forward_backward_optimizer_seconds": 2.6689491670113057,
+          "context_detached": true,
+          "seconds": 2.67258591693826,
+          "batch_plus_tail_seconds": 2.6718635419383645,
+          "memory": {
+            "process_peak_rss_bytes": 13721649152,
+            "sampled_mps_driver_bytes": 5540675584,
+            "sampled_mps_tensor_bytes": 4847556864
+          },
+          "compiler_counters": {
+            "frames": {},
+            "stats": {},
+            "aot_autograd": {},
+            "graph_break": {}
+          }
+        },
+        {
+          "observations": 1,
+          "predicted_targets": 1,
+          "cold_starts": 0,
+          "reconstruction": 0.10698603838682175,
+          "answer": 0.10482729971408844,
+          "supplied_answer_rows": 0,
+          "training": false,
+          "optimizer_steps": 0,
+          "trained_inter": null,
+          "word_counts": [
+            21
+          ],
+          "sources": [
+            5
+          ],
+          "forward_backward_optimizer_seconds": 2.621619749814272,
+          "context_detached": true,
+          "seconds": 2.625231291167438,
+          "batch_plus_tail_seconds": 2.624502249993384,
+          "memory": {
+            "process_peak_rss_bytes": 13721649152,
+            "sampled_mps_driver_bytes": 5540691968,
+            "sampled_mps_tensor_bytes": 4847305472
+          },
+          "compiler_counters": {
+            "frames": {},
+            "stats": {},
+            "aot_autograd": {},
+            "graph_break": {}
+          }
+        },
+        {
+          "observations": 1,
+          "predicted_targets": 1,
+          "cold_starts": 0,
+          "reconstruction": 0.10816052556037903,
+          "answer": 0.10929000377655029,
+          "supplied_answer_rows": 0,
+          "training": false,
+          "optimizer_steps": 0,
+          "trained_inter": null,
+          "word_counts": [
+            14
+          ],
+          "sources": [
+            6
+          ],
+          "forward_backward_optimizer_seconds": 2.6305125830695033,
+          "context_detached": true,
+          "seconds": 2.634218916995451,
+          "batch_plus_tail_seconds": 2.63339037518017,
+          "memory": {
+            "process_peak_rss_bytes": 13721649152,
+            "sampled_mps_driver_bytes": 5540691968,
+            "sampled_mps_tensor_bytes": 4847194624
+          },
+          "compiler_counters": {
+            "frames": {},
+            "stats": {},
+            "aot_autograd": {},
+            "graph_break": {}
+          }
+        },
+        {
+          "observations": 1,
+          "predicted_targets": 1,
+          "cold_starts": 0,
+          "reconstruction": 0.10478207468986511,
+          "answer": 0.1213805228471756,
+          "supplied_answer_rows": 0,
+          "training": false,
+          "optimizer_steps": 0,
+          "trained_inter": null,
+          "word_counts": [
+            19
+          ],
+          "sources": [
+            7
+          ],
+          "forward_backward_optimizer_seconds": 2.5852260410320014,
+          "context_detached": true,
+          "seconds": 2.5888735419139266,
+          "batch_plus_tail_seconds": 2.5880888749379665,
+          "memory": {
+            "process_peak_rss_bytes": 13721649152,
+            "sampled_mps_driver_bytes": 5540708352,
+            "sampled_mps_tensor_bytes": 4848156416
+          },
+          "compiler_counters": {
+            "frames": {},
+            "stats": {},
+            "aot_autograd": {},
+            "graph_break": {}
+          }
+        }
+      ],
+      "epoch_seconds": 21.619788374984637,
+      "peak_memory": {
+        "process_peak_rss_bytes": 13721649152,
+        "sampled_mps_driver_bytes": 5540724736,
+        "sampled_mps_tensor_bytes": 4936398080
+      },
+      "memory_sampling_interval_seconds": 0.02,
+      "expectation": {
+        "observations": 8,
+        "cold_starts": 1,
+        "predicted_targets": 7,
+        "document_starts": 1,
+        "enabled": true,
+        "scope": "structured",
+        "feature_mse": 0.00879699703572052,
+        "presence_bce": 0.6966998406818935,
+        "document_boundary_fraction": 0.125
+      },
+      "encoded_meaning_controls": {
+        "ordered": {
+          "feature_mse": 0.00879699643701315,
+          "role_mse": [
+            0.008796997368335724,
+            0.0,
+            0.0
+          ],
+          "root_objective_mse": 0.008796997368335724,
+          "presence_bce": 0.6966997981071472,
+          "predicted_targets": 7,
+          "target_role_variance": [
+            0.006763200741261244,
+            0.0,
+            0.0
+          ],
+          "estimate_role_variance": [
+            0.00011543270375113934,
+            0.00011301074118819088,
+            0.00011551351053640246
+          ]
+        },
+        "shuffled": {
+          "feature_mse": 0.008810254745185375,
+          "role_mse": [
+            0.0088102538138628,
+            0.0,
+            0.0
+          ],
+          "root_objective_mse": 0.0088102538138628,
+          "presence_bce": 0.6966997981071472,
+          "predicted_targets": 7,
+          "target_role_variance": [
+            0.006763200741261244,
+            0.0,
+            0.0
+          ],
+          "estimate_role_variance": [
+            0.00011543270375113934,
+            0.00011301074118819088,
+            0.00011551351053640246
+          ]
+        },
+        "context_free": {
+          "feature_mse": 0.008698510937392712,
+          "role_mse": [
+            0.008698511868715286,
+            0.0,
+            0.0
+          ],
+          "root_objective_mse": 0.008698511868715286,
+          "presence_bce": 0.6978909373283386,
+          "predicted_targets": 7,
+          "target_role_variance": [
+            0.006763200741261244,
+            0.0,
+            0.0
+          ],
+          "estimate_role_variance": [
+            5.024973688705359e-06,
+            5.058545411884552e-06,
+            5.132154001330491e-06
+          ]
+        }
+      }
+    },
+    {
+      "name": "training",
+      "split": "train",
+      "steps": [
+        {
+          "observations": 2,
+          "predicted_targets": 1,
+          "cold_starts": 1,
+          "reconstruction": 5.0133161544799805,
+          "answer": 0.0,
+          "supplied_answer_rows": 0,
+          "training": true,
+          "optimizer_steps": 1,
+          "trained_inter": {
+            "mean": 0.7068242430686951,
+            "requires_grad": true
+          },
+          "word_counts": [
+            27
+          ],
+          "sources": [
+            [
+              0,
+              1
+            ]
+          ],
+          "forward_backward_optimizer_seconds": 26.460646707797423,
+          "context_detached": true,
+          "seconds": 26.4706777499523,
+          "batch_plus_tail_seconds": 26.46529124979861,
+          "memory": {
+            "process_peak_rss_bytes": 13721649152,
+            "sampled_mps_driver_bytes": 9466789888,
+            "sampled_mps_tensor_bytes": 7805869056
+          },
+          "compiler_counters": {
+            "frames": {},
+            "stats": {
+              "calls_captured": 5941,
+              "unique_graphs": 1
+            },
+            "aot_autograd": {},
+            "graph_break": {}
+          }
+        },
+        {
+          "observations": 1,
+          "predicted_targets": 1,
+          "cold_starts": 0,
+          "reconstruction": 4.8440752029418945,
+          "answer": 0.0,
+          "supplied_answer_rows": 0,
+          "training": true,
+          "optimizer_steps": 1,
+          "trained_inter": {
+            "mean": 0.76472008228302,
+            "requires_grad": true
+          },
+          "word_counts": [
+            38
+          ],
+          "sources": [
+            [
+              2
+            ]
+          ],
+          "forward_backward_optimizer_seconds": 1.684067500056699,
+          "context_detached": true,
+          "seconds": 1.6911212501581758,
+          "batch_plus_tail_seconds": 1.6879580421373248,
+          "memory": {
+            "process_peak_rss_bytes": 13721649152,
+            "sampled_mps_driver_bytes": 14760034304,
+            "sampled_mps_tensor_bytes": 11283617024
+          },
+          "compiler_counters": {
+            "frames": {},
+            "stats": {
+              "calls_captured": 5941,
+              "unique_graphs": 1
+            },
+            "aot_autograd": {},
+            "graph_break": {}
+          }
+        }
+      ]
+    }
+  ],
+  "timing_scope": "consecutive native step completions including next input staging, runBatch, reset/compaction and measurement overhead; epoch wall time also reported",
+  "shard_sha256": "6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22",
+  "error": {
+    "type": "RuntimeError",
+    "message": "MPS backend out of memory (MPS allocated: 16.87 GiB, other allocations: 4.28 MiB, max allowed: 16.85 GiB). Tried to allocate 4.12 MiB on shared pool. Use PYTORCH_MPS_HIGH_WATERMARK_RATIO=0.0 to disable upper limit for memory allocations (may cause system failure)."
+  }
+}

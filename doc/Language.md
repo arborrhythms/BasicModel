@@ -110,17 +110,30 @@ it once selected is now unconditional. The retired
 `SymbolSubSpace` always owns one `WhatInteractionMemory`; expectation uses
 its own `InterSentenceLayer`. Construction is in
 [`SymbolSubSpace.__init__`](../bin/Language.py#L10966), and model thinking
-reads the owner through [`_what_memory`](../bin/Models.py#L7851).
+reads the owner through [`_what_memory`](../bin/Models.py#L7865).
 The retired `whatThinkingMemory` switch and discourse delegates are removed.
 
 `sentenceExpectation` defaults to true, with structured NP1/VP/NP2 expectation.
-[`set_sentence_expectation`](../bin/Models.py#L12341) can switch it at runtime;
+[`set_sentence_expectation`](../bin/Models.py#L12355) can switch it at runtime;
 [`ensure_sentence_expectation`](../bin/Language.py#L13591) creates its parameters
 once and registers them for optimization when first enabled. Re-enabling starts
 a fresh observation stream. Soft packed-brick resets preserve an enabled
 stream; hard resets and document changes make the affected row cold.
 See [`InterSentenceLayer.Reset`](../bin/Layers.py#L10515) and
 [the integrated specification](plans/2026-09-15-next-sentence-as-the-production-objective.md#11-code-review-2026-09-16-local-role-expectation-implementation).
+
+## Recorded compose execution
+
+Answer materialization replays its captured compose program through
+[`_replay_program`](../bin/Models.py#L11855).
+[`forward_binary_step`](../bin/Language.py#L14430) executes the recorded
+operator for each live row, preserving the newest operand on inactive rows.
+Eager calls dispatch the selected operator set; compiled calls use conditional
+branches. Both retain the existing operator parameters and input gradients,
+verified by [mixed-row value and gradient tests](../test/test_recorded_compose_dispatch.py#L44).
+This avoids allocating every binary operator's intermediate transforms at
+every replayed word. The input inverse traversal remains the separate
+migration described in [the integrated spec §6](plans/2026-09-15-next-sentence-as-the-production-objective.md#6-code-review-compiled-reverse-loops-2026-09-12).
 
 ## Retired XML Knobs
 

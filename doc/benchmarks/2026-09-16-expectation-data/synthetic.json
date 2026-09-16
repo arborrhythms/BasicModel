@@ -1,0 +1,769 @@
+{
+  "workload": "fixed synthetic meanings",
+  "device": "cpu",
+  "encoder_training": false,
+  "context_window": 4,
+  "positive_gate": "20% lower held-out feature MSE than both trained controls for every seed",
+  "runs": [
+    {
+      "seed": 0,
+      "controls": {
+        "ordered": {
+          "before": {
+            "feature_mse": 0.08526970446109772,
+            "role_mse": [
+              0.07521122694015503,
+              0.14163801074028015,
+              0.03895987942814827
+            ],
+            "root_objective_mse": 0.07521122694015503,
+            "presence_bce": 0.7339353561401367,
+            "predicted_targets": 368,
+            "target_role_variance": [
+              0.0,
+              0.12746970355510712,
+              0.026851395145058632
+            ],
+            "estimate_role_variance": [
+              0.00607641413807869,
+              0.004960766993463039,
+              0.005002913996577263
+            ]
+          },
+          "after": {
+            "feature_mse": 0.0012422383297234774,
+            "role_mse": [
+              0.0003723944828379899,
+              0.0016933332663029432,
+              0.0016609872691333294
+            ],
+            "root_objective_mse": 0.0003723944828379899,
+            "presence_bce": 0.0009951103711500764,
+            "predicted_targets": 368,
+            "target_role_variance": [
+              0.0,
+              0.12746970355510712,
+              0.026851395145058632
+            ],
+            "estimate_role_variance": [
+              0.0003596119349822402,
+              0.12286723405122757,
+              0.02431858517229557
+            ]
+          },
+          "updates": 300,
+          "training_examples_processed": 38400,
+          "parameter_count": 7371,
+          "training_seconds": 0.07758725015446544,
+          "train_pairs": 1472,
+          "heldout_pairs": 368,
+          "checkpoint_shuffled": {
+            "feature_mse": 0.102106012403965,
+            "role_mse": [
+              0.0003723945119418204,
+              0.2531483471393585,
+              0.05279731750488281
+            ],
+            "root_objective_mse": 0.0003723945119418204,
+            "presence_bce": 0.0009951103711500764,
+            "predicted_targets": 368,
+            "target_role_variance": [
+              0.0,
+              0.12746970355510712,
+              0.026851395145058632
+            ],
+            "estimate_role_variance": [
+              0.0003596119349822402,
+              0.12286723405122757,
+              0.02431858517229557
+            ]
+          },
+          "checkpoint_context_free": {
+            "feature_mse": 0.05327996611595154,
+            "role_mse": [
+              0.00025353432283736765,
+              0.13192860782146454,
+              0.02765776589512825
+            ],
+            "root_objective_mse": 0.00025353432283736765,
+            "presence_bce": 0.0021927431225776672,
+            "predicted_targets": 368,
+            "target_role_variance": [
+              0.0,
+              0.12746970355510712,
+              0.026851395145058632
+            ],
+            "estimate_role_variance": [
+              8.764928497839719e-05,
+              0.00029994884971529245,
+              7.200056279543787e-05
+            ]
+          }
+        },
+        "shuffled": {
+          "before": {
+            "feature_mse": 0.08728677034378052,
+            "role_mse": [
+              0.07521122694015503,
+              0.14855417609214783,
+              0.038094934076070786
+            ],
+            "root_objective_mse": 0.07521122694015503,
+            "presence_bce": 0.7339353561401367,
+            "predicted_targets": 368,
+            "target_role_variance": [
+              0.0,
+              0.12746970355510712,
+              0.026851395145058632
+            ],
+            "estimate_role_variance": [
+              0.00607641413807869,
+              0.004960766993463039,
+              0.005002913996577263
+            ]
+          },
+          "after": {
+            "feature_mse": 0.053292568773031235,
+            "role_mse": [
+              0.00013541491352953017,
+              0.13198250532150269,
+              0.027759801596403122
+            ],
+            "root_objective_mse": 0.00013541491352953017,
+            "presence_bce": 0.000843390473164618,
+            "predicted_targets": 368,
+            "target_role_variance": [
+              0.0,
+              0.12746970355510712,
+              0.026851395145058632
+            ],
+            "estimate_role_variance": [
+              0.0001302049495279789,
+              0.0013721060240641236,
+              0.0004138094955123961
+            ]
+          },
+          "updates": 300,
+          "training_examples_processed": 38400,
+          "parameter_count": 7371,
+          "training_seconds": 0.07712154206819832,
+          "train_pairs": 1472,
+          "heldout_pairs": 368
+        },
+        "context_free": {
+          "before": {
+            "feature_mse": 0.07951440662145615,
+            "role_mse": [
+              0.059713706374168396,
+              0.14542777836322784,
+              0.03340175002813339
+            ],
+            "root_objective_mse": 0.059713706374168396,
+            "presence_bce": 0.712489902973175,
+            "predicted_targets": 368,
+            "target_role_variance": [
+              0.0,
+              0.12746970355510712,
+              0.026851395145058632
+            ],
+            "estimate_role_variance": [
+              0.0009836251847445965,
+              0.000756461638957262,
+              0.0005351193831302226
+            ]
+          },
+          "after": {
+            "feature_mse": 0.05295852944254875,
+            "role_mse": [
+              2.7927118935622275e-05,
+              0.1311825066804886,
+              0.0276651531457901
+            ],
+            "root_objective_mse": 2.7927118935622275e-05,
+            "presence_bce": 0.000811043253634125,
+            "predicted_targets": 368,
+            "target_role_variance": [
+              0.0,
+              0.12746970355510712,
+              0.026851395145058632
+            ],
+            "estimate_role_variance": [
+              2.3933793272590265e-05,
+              6.997769378358498e-05,
+              3.043922333745286e-05
+            ]
+          },
+          "updates": 300,
+          "training_examples_processed": 38400,
+          "parameter_count": 7371,
+          "training_seconds": 0.07674754201434553,
+          "train_pairs": 1472,
+          "heldout_pairs": 368
+        },
+        "root": {
+          "before": {
+            "feature_mse": 0.5282019376754761,
+            "role_mse": [
+              0.3102484345436096,
+              0.6874172687530518,
+              0.5869401097297668
+            ],
+            "root_objective_mse": 0.3102484345436096,
+            "presence_bce": null,
+            "predicted_targets": 368,
+            "target_role_variance": [
+              0.0,
+              0.12746970355510712,
+              0.026851395145058632
+            ],
+            "estimate_role_variance": [
+              0.02085336297750473,
+              0.02085336297750473,
+              0.02085336297750473
+            ]
+          },
+          "after": {
+            "feature_mse": 0.07836949825286865,
+            "role_mse": [
+              0.0021388453897088766,
+              0.1669631153345108,
+              0.06600655615329742
+            ],
+            "root_objective_mse": 0.0021388453897088766,
+            "presence_bce": null,
+            "predicted_targets": 368,
+            "target_role_variance": [
+              0.0,
+              0.12746970355510712,
+              0.026851395145058632
+            ],
+            "estimate_role_variance": [
+              0.0021088002249598503,
+              0.0021088002249598503,
+              0.0021088002249598503
+            ]
+          },
+          "updates": 300,
+          "training_examples_processed": 38400,
+          "parameter_count": 360,
+          "training_seconds": 0.12131054210476577,
+          "train_pairs": 1472,
+          "heldout_pairs": 368
+        }
+      },
+      "gate_passed": true
+    },
+    {
+      "seed": 1,
+      "controls": {
+        "ordered": {
+          "before": {
+            "feature_mse": 0.09751850366592407,
+            "role_mse": [
+              0.08840219676494598,
+              0.1421777904033661,
+              0.06197550892829895
+            ],
+            "root_objective_mse": 0.08840219676494598,
+            "presence_bce": 0.7127994298934937,
+            "predicted_targets": 368,
+            "target_role_variance": [
+              0.0,
+              0.11045657098293304,
+              0.025732114911079407
+            ],
+            "estimate_role_variance": [
+              0.0072270045056939125,
+              0.005881181918084621,
+              0.0065994421020150185
+            ]
+          },
+          "after": {
+            "feature_mse": 0.001126834424212575,
+            "role_mse": [
+              0.000312413671053946,
+              0.0014177866978570819,
+              0.0016503027873113751
+            ],
+            "root_objective_mse": 0.000312413671053946,
+            "presence_bce": 0.0009510098025202751,
+            "predicted_targets": 368,
+            "target_role_variance": [
+              0.0,
+              0.11045657098293304,
+              0.025732114911079407
+            ],
+            "estimate_role_variance": [
+              0.00030853296630084515,
+              0.1046893373131752,
+              0.022536233067512512
+            ]
+          },
+          "updates": 300,
+          "training_examples_processed": 38400,
+          "parameter_count": 7371,
+          "training_seconds": 0.07779179187491536,
+          "train_pairs": 1472,
+          "heldout_pairs": 368,
+          "checkpoint_shuffled": {
+            "feature_mse": 0.0900629311800003,
+            "role_mse": [
+              0.000312413671053946,
+              0.22097225487232208,
+              0.04890412837266922
+            ],
+            "root_objective_mse": 0.000312413671053946,
+            "presence_bce": 0.0009510098025202751,
+            "predicted_targets": 368,
+            "target_role_variance": [
+              0.0,
+              0.11045657098293304,
+              0.025732114911079407
+            ],
+            "estimate_role_variance": [
+              0.00030853296630084515,
+              0.1046893373131752,
+              0.022536233067512512
+            ]
+          },
+          "checkpoint_context_free": {
+            "feature_mse": 0.049158815294504166,
+            "role_mse": [
+              0.0008916427032090724,
+              0.11842150241136551,
+              0.028163302689790726
+            ],
+            "root_objective_mse": 0.0008916427032090724,
+            "presence_bce": 0.002237859880551696,
+            "predicted_targets": 368,
+            "target_role_variance": [
+              0.0,
+              0.11045657098293304,
+              0.025732114911079407
+            ],
+            "estimate_role_variance": [
+              0.00021560830646194518,
+              0.00047934119356796145,
+              0.00010133536125067621
+            ]
+          }
+        },
+        "shuffled": {
+          "before": {
+            "feature_mse": 0.09461543709039688,
+            "role_mse": [
+              0.08840221166610718,
+              0.1410433053970337,
+              0.054400812834501266
+            ],
+            "root_objective_mse": 0.08840221166610718,
+            "presence_bce": 0.7127994298934937,
+            "predicted_targets": 368,
+            "target_role_variance": [
+              0.0,
+              0.11045657098293304,
+              0.025732114911079407
+            ],
+            "estimate_role_variance": [
+              0.0072270045056939125,
+              0.005881181918084621,
+              0.0065994421020150185
+            ]
+          },
+          "after": {
+            "feature_mse": 0.04707402363419533,
+            "role_mse": [
+              0.00014070063480176032,
+              0.11365378648042679,
+              0.02742758020758629
+            ],
+            "root_objective_mse": 0.00014070063480176032,
+            "presence_bce": 0.0007940139621496201,
+            "predicted_targets": 368,
+            "target_role_variance": [
+              0.0,
+              0.11045657098293304,
+              0.025732114911079407
+            ],
+            "estimate_role_variance": [
+              0.00012408090697135776,
+              0.0012523401528596878,
+              0.00042588129872456193
+            ]
+          },
+          "updates": 300,
+          "training_examples_processed": 38400,
+          "parameter_count": 7371,
+          "training_seconds": 0.07762033306062222,
+          "train_pairs": 1472,
+          "heldout_pairs": 368
+        },
+        "context_free": {
+          "before": {
+            "feature_mse": 0.09517382830381393,
+            "role_mse": [
+              0.08781333267688751,
+              0.14706693589687347,
+              0.05064120516180992
+            ],
+            "root_objective_mse": 0.08781333267688751,
+            "presence_bce": 0.7135075926780701,
+            "predicted_targets": 368,
+            "target_role_variance": [
+              0.0,
+              0.11045657098293304,
+              0.025732114911079407
+            ],
+            "estimate_role_variance": [
+              0.0012305817799642682,
+              0.002017826773226261,
+              0.001454134937375784
+            ]
+          },
+          "after": {
+            "feature_mse": 0.04663035273551941,
+            "role_mse": [
+              4.200834155199118e-05,
+              0.1131330132484436,
+              0.026716046035289764
+            ],
+            "root_objective_mse": 4.200834155199118e-05,
+            "presence_bce": 0.0008455802453681827,
+            "predicted_targets": 368,
+            "target_role_variance": [
+              0.0,
+              0.11045657098293304,
+              0.025732114911079407
+            ],
+            "estimate_role_variance": [
+              3.981387635576539e-05,
+              0.00013527891132980585,
+              3.590844426071271e-05
+            ]
+          },
+          "updates": 300,
+          "training_examples_processed": 38400,
+          "parameter_count": 7371,
+          "training_seconds": 0.07718412508256733,
+          "train_pairs": 1472,
+          "heldout_pairs": 368
+        },
+        "root": {
+          "before": {
+            "feature_mse": 0.5230551958084106,
+            "role_mse": [
+              0.3102484345436096,
+              0.6710666418075562,
+              0.5878505110740662
+            ],
+            "root_objective_mse": 0.3102484345436096,
+            "presence_bce": null,
+            "predicted_targets": 368,
+            "target_role_variance": [
+              0.0,
+              0.11045657098293304,
+              0.025732114911079407
+            ],
+            "estimate_role_variance": [
+              0.02085336297750473,
+              0.02085336297750473,
+              0.02085336297750473
+            ]
+          },
+          "after": {
+            "feature_mse": 0.07239975780248642,
+            "role_mse": [
+              0.002227366901934147,
+              0.14985015988349915,
+              0.06512174010276794
+            ],
+            "root_objective_mse": 0.002227366901934147,
+            "presence_bce": null,
+            "predicted_targets": 368,
+            "target_role_variance": [
+              0.0,
+              0.11045657098293304,
+              0.025732114911079407
+            ],
+            "estimate_role_variance": [
+              0.002195483073592186,
+              0.002195483073592186,
+              0.002195483073592186
+            ]
+          },
+          "updates": 300,
+          "training_examples_processed": 38400,
+          "parameter_count": 360,
+          "training_seconds": 0.12222350016236305,
+          "train_pairs": 1472,
+          "heldout_pairs": 368
+        }
+      },
+      "gate_passed": true
+    },
+    {
+      "seed": 2,
+      "controls": {
+        "ordered": {
+          "before": {
+            "feature_mse": 0.10590306669473648,
+            "role_mse": [
+              0.07734701782464981,
+              0.1574116200208664,
+              0.08295054733753204
+            ],
+            "root_objective_mse": 0.07734701782464981,
+            "presence_bce": 0.6974034905433655,
+            "predicted_targets": 368,
+            "target_role_variance": [
+              0.0,
+              0.11748360842466354,
+              0.026451826095581055
+            ],
+            "estimate_role_variance": [
+              0.0037760755512863398,
+              0.0044891564175486565,
+              0.006216997280716896
+            ]
+          },
+          "after": {
+            "feature_mse": 0.0011861395323649049,
+            "role_mse": [
+              0.00043379823910072446,
+              0.0016037881141528487,
+              0.0015208324184641242
+            ],
+            "root_objective_mse": 0.00043379823910072446,
+            "presence_bce": 0.0010315702529624104,
+            "predicted_targets": 368,
+            "target_role_variance": [
+              0.0,
+              0.11748360842466354,
+              0.026451826095581055
+            ],
+            "estimate_role_variance": [
+              0.0004154853231739253,
+              0.11262104660272598,
+              0.023666299879550934
+            ]
+          },
+          "updates": 300,
+          "training_examples_processed": 38400,
+          "parameter_count": 7371,
+          "training_seconds": 0.07832037494517863,
+          "train_pairs": 1472,
+          "heldout_pairs": 368,
+          "checkpoint_shuffled": {
+            "feature_mse": 0.09475941210985184,
+            "role_mse": [
+              0.00043379818089306355,
+              0.23322449624538422,
+              0.050619982182979584
+            ],
+            "root_objective_mse": 0.00043379818089306355,
+            "presence_bce": 0.0010315701365470886,
+            "predicted_targets": 368,
+            "target_role_variance": [
+              0.0,
+              0.11748360842466354,
+              0.026451826095581055
+            ],
+            "estimate_role_variance": [
+              0.0004154853231739253,
+              0.11262104660272598,
+              0.023666299879550934
+            ]
+          },
+          "checkpoint_context_free": {
+            "feature_mse": 0.0497250072658062,
+            "role_mse": [
+              0.0007002220954746008,
+              0.12061627209186554,
+              0.027858516201376915
+            ],
+            "root_objective_mse": 0.0007002220954746008,
+            "presence_bce": 0.0024251050781458616,
+            "predicted_targets": 368,
+            "target_role_variance": [
+              0.0,
+              0.11748360842466354,
+              0.026451826095581055
+            ],
+            "estimate_role_variance": [
+              0.00014366503455676138,
+              0.0002737579634413123,
+              0.00014179327990859747
+            ]
+          }
+        },
+        "shuffled": {
+          "before": {
+            "feature_mse": 0.1034480482339859,
+            "role_mse": [
+              0.07734701037406921,
+              0.14926472306251526,
+              0.08373238891363144
+            ],
+            "root_objective_mse": 0.07734701037406921,
+            "presence_bce": 0.6974034905433655,
+            "predicted_targets": 368,
+            "target_role_variance": [
+              0.0,
+              0.11748360842466354,
+              0.026451826095581055
+            ],
+            "estimate_role_variance": [
+              0.0037760755512863398,
+              0.0044891564175486565,
+              0.006216997280716896
+            ]
+          },
+          "after": {
+            "feature_mse": 0.049837443977594376,
+            "role_mse": [
+              0.00015614734729751945,
+              0.12201642245054245,
+              0.027339767664670944
+            ],
+            "root_objective_mse": 0.00015614734729751945,
+            "presence_bce": 0.0008498799288645387,
+            "predicted_targets": 368,
+            "target_role_variance": [
+              0.0,
+              0.11748360842466354,
+              0.026451826095581055
+            ],
+            "estimate_role_variance": [
+              0.0001403434289386496,
+              0.0013735087122768164,
+              0.0005178302526473999
+            ]
+          },
+          "updates": 300,
+          "training_examples_processed": 38400,
+          "parameter_count": 7371,
+          "training_seconds": 0.07817487511783838,
+          "train_pairs": 1472,
+          "heldout_pairs": 368
+        },
+        "context_free": {
+          "before": {
+            "feature_mse": 0.09779950976371765,
+            "role_mse": [
+              0.07535672932863235,
+              0.14428354799747467,
+              0.07375825941562653
+            ],
+            "root_objective_mse": 0.07535672932863235,
+            "presence_bce": 0.6957809925079346,
+            "predicted_targets": 368,
+            "target_role_variance": [
+              0.0,
+              0.11748360842466354,
+              0.026451826095581055
+            ],
+            "estimate_role_variance": [
+              0.00054915965301916,
+              0.0008839970105327666,
+              0.0018155359430238605
+            ]
+          },
+          "after": {
+            "feature_mse": 0.048985451459884644,
+            "role_mse": [
+              2.155301444872748e-05,
+              0.12007898092269897,
+              0.02685580588877201
+            ],
+            "root_objective_mse": 2.155301444872748e-05,
+            "presence_bce": 0.0008485388243570924,
+            "predicted_targets": 368,
+            "target_role_variance": [
+              0.0,
+              0.11748360842466354,
+              0.026451826095581055
+            ],
+            "estimate_role_variance": [
+              1.721339504001662e-05,
+              0.0002359842328587547,
+              6.470335210906342e-05
+            ]
+          },
+          "updates": 300,
+          "training_examples_processed": 38400,
+          "parameter_count": 7371,
+          "training_seconds": 0.07742174994200468,
+          "train_pairs": 1472,
+          "heldout_pairs": 368
+        },
+        "root": {
+          "before": {
+            "feature_mse": 0.5247886776924133,
+            "role_mse": [
+              0.3102484345436096,
+              0.6767828464508057,
+              0.5873348116874695
+            ],
+            "root_objective_mse": 0.3102484345436096,
+            "presence_bce": null,
+            "predicted_targets": 368,
+            "target_role_variance": [
+              0.0,
+              0.11748360842466354,
+              0.026451826095581055
+            ],
+            "estimate_role_variance": [
+              0.02085336297750473,
+              0.02085336297750473,
+              0.02085336297750473
+            ]
+          },
+          "after": {
+            "feature_mse": 0.07481466233730316,
+            "role_mse": [
+              0.0022223556879907846,
+              0.15651161968708038,
+              0.06571003049612045
+            ],
+            "root_objective_mse": 0.0022223556879907846,
+            "presence_bce": null,
+            "predicted_targets": 368,
+            "target_role_variance": [
+              0.0,
+              0.11748360842466354,
+              0.026451826095581055
+            ],
+            "estimate_role_variance": [
+              0.0022038170136511326,
+              0.0022038170136511326,
+              0.0022038170136511326
+            ]
+          },
+          "updates": 300,
+          "training_examples_processed": 38400,
+          "parameter_count": 360,
+          "training_seconds": 0.1210492909885943,
+          "train_pairs": 1472,
+          "heldout_pairs": 368
+        }
+      },
+      "gate_passed": true
+    }
+  ],
+  "gate_passed": true,
+  "revision": "70eaa2d384552192fb021d2154852af66381c86a",
+  "command": [
+    "bin/bench_sentence_expectation.py",
+    "synthetic",
+    "--threads",
+    "1",
+    "--out",
+    "/tmp/full-spec-expectation-synthetic-final.json"
+  ],
+  "torch": "2.14.0.dev20260722",
+  "threads": 1,
+  "runtime_sha256": {
+    "Layers.py": "eb268720eac27377df87f1fad1a443ff02b5fe39372b1b5c37b3900d3cba8ead",
+    "bench_sentence_expectation.py": "1a46c550498b3fec14f66f129f129d9e630e00745a5dfb4f3294c0fb90cd8382"
+  }
+}

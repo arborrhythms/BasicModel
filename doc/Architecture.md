@@ -1265,7 +1265,7 @@ hard EOS resets start it cold. Restoring
 weights starts prediction context cold. Neither global LTM recency nor internal
 thoughts initialize an external-observation sequence. See
 [`begin_document`](../bin/Layers.py#L9717) and the
-[packed observer](../bin/Models.py#L12471).
+[packed observer](../bin/Models.py#L12497).
 
 ### Historical root / ARMA representation
 

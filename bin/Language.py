@@ -14431,18 +14431,45 @@ class LanguageSpace(nn.Module):
         """``[B, D]`` parent of one recorded binary fold applied forward:
         the reducer's candidate of the recorded local op on the (older,
         newer) pair, the value the forward's hard choice committed; an
-        invalid row keeps ``right`` (the newest operand)."""
+        invalid row keeps ``right`` (the newest operand).
+
+        The trace has already selected its rule. Evaluating every candidate
+        here would retain every operator's transforms for backward at every
+        replayed word. Execute only operators selected by at least one live
+        row; compilation uses conditional branches with the same row masks.
+        """
         binary = self._tree_layer(2)
         if binary is None:
             raise RuntimeError("LanguageSpace requires a CS binary tree layer")
         B, D = int(left.shape[0]), int(left.shape[-1])
-        window = torch.stack((left, right), dim=1)                    # [B, 2, D]
-        stacked = binary._stacked_reduced(window)                     # [B, 1, R, D]
-        R = int(stacked.shape[2])
-        idx = op_local.reshape(B).clamp(0, R - 1).reshape(B, 1, 1).expand(B, 1, D)
-        sel = stacked[:, 0].gather(1, idx).reshape(B, D)
-        gate = valid.reshape(B, 1).to(dtype=torch.bool)
-        return torch.where(gate, sel, right)
+        ops = list(binary.ops)
+        local = op_local.reshape(B).clamp(0, len(ops) - 1)
+        live = valid.reshape(B).to(dtype=torch.bool)
+        window = torch.stack((left, right), dim=1)  # independent cond operand storage
+        result = right.clone()
+        compiling = torch.compiler.is_compiling()
+        indices = (range(len(ops)) if compiling else
+                   sorted(set(local[live].detach().cpu().tolist())))
+        for index in indices:
+            op = ops[index]
+            selected = torch.logical_and(live, local == index)
+
+            def apply(w, previous, row_mask):
+                older, newer = w[:, :-1, :], w[:, 1:, :]
+                parent = (op.forward_with_context(older, newer, w)
+                          if hasattr(op, "forward_with_context")
+                          else op(older, newer))
+                return torch.where(
+                    row_mask.reshape(B, 1), parent.reshape(B, D), previous).clone()
+
+            if compiling:
+                result = torch.cond(
+                    selected.any(), apply,
+                    lambda w, previous, row_mask: previous.clone(),
+                    (window, result, selected))
+            else:
+                result = apply(window, result, selected)
+        return result
 
     def forward_unary_step(self, x, op_local, valid):
         """``[B, D]`` of one recorded unary rewrite applied forward (the

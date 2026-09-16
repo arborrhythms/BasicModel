@@ -826,7 +826,7 @@ observation view cold. These are sequence and local-role contracts; retained
 compound references remain part of the separate nesting migration in the
 [integrated spec](plans/2026-09-15-next-sentence-as-the-production-objective.md).
 See [Layers.py:9717](../bin/Layers.py#L9717) and
-[Models.py:12471](../bin/Models.py#L12471).
+[Models.py:12497](../bin/Models.py#L12497).
 
 ### Historical root baseline (`sentenceExpectationScope=root`)
 

@@ -1,0 +1,599 @@
+{
+  "workload": "FineWeb-Edu",
+  "dataset": "text",
+  "device": "mps",
+  "backend": "eager",
+  "torch": "2.14.0.dev20260722",
+  "threads": 1,
+  "amp_requested": "off",
+  "autocast_compute_dtype": "torch.float32",
+  "revision": "70eaa2d384552192fb021d2154852af66381c86a",
+  "command": [
+    "bin/bench_sentence_expectation.py",
+    "fineweb",
+    "--device",
+    "mps",
+    "--backend",
+    "eager",
+    "--batch-size",
+    "1",
+    "--docs",
+    "24",
+    "--train-steps",
+    "7",
+    "--eval-steps",
+    "8",
+    "--threads",
+    "1",
+    "--out",
+    "/tmp/full-spec-expectation-fineweb-b1.json"
+  ],
+  "config": "/Users/arogers/github/WikiOracle/basicmodel/data/BasicModel.xml",
+  "config_sha256": "3f908eb92f1374ab7df1d9eb6085e613154676ee5b8b43a268403310120ba1bf",
+  "defaults_sha256": "33d719060a8011f93f5c85bbbce8a3f8a346bebb926d2d4bc802f3968522ca32",
+  "effective_architecture": {
+    "subsymbolicOrder": 4,
+    "routerWireSerial": "both",
+    "transformChooserHidden": 0,
+    "transformChooserDepth": 1,
+    "whatThinkingHidden": 16,
+    "whatThinkingDepth": 1,
+    "reconstructFromIdea": false,
+    "answerSynthesis": true,
+    "synthesisBindings": 4,
+    "whatCurriculum": "full",
+    "whatCurriculumDistance": 1,
+    "whatCurriculumRatio": 0.25,
+    "processSymbols": false,
+    "meronomy": {
+      "_": "on",
+      "dMaxStable": "4.0"
+    },
+    "monotonic": false,
+    "ergodic": false,
+    "naive": false,
+    "embeddingPath": "",
+    "weightsPath": "BasicModel.ckpt",
+    "maxResponseLength": 4096,
+    "amp": "off",
+    "truthBiasScale": 0.1,
+    "LuminosityWeight": 0.1,
+    "UniversalityWeight": 0.1,
+    "allowExcludedMiddle": 1,
+    "allowContradiction": 0,
+    "gateL1Lambda": 0.0,
+    "loadBalanceWeight": 0.0,
+    "l1Lambda": 0.01,
+    "discontinuityLambda": 0.0,
+    "conceptualWidth": "uniform",
+    "maxActivePerLayer": 8,
+    "categoryCodebook": true,
+    "overlapWhereTiling": false,
+    "codebookRetire": false,
+    "truthCriterion": 1.0,
+    "trust": 1.0,
+    "symbolLearning": {
+      "enabled": false
+    },
+    "data": {
+      "dataType": "embedding",
+      "dataset": "text",
+      "numShards": 1,
+      "maxDocs": 2000,
+      "shardDir": "data/fineweb",
+      "minFrequency": 0.0,
+      "classificationMin": "",
+      "classificationMax": "",
+      "contextWhole": "FineWeb-Edu 100B shuffle",
+      "maxSentenceWords": 256
+    },
+    "training": {
+      "numTrials": 1,
+      "numEpochs": 1,
+      "batchSize": 28,
+      "numWorkers": 2,
+      "learningRate": 0.0005,
+      "teacherReconstruction": true,
+      "reconstructionScale": 1.0,
+      "whatScale": 0.7,
+      "whereScale": 0.2,
+      "whenScale": 0.1,
+      "negSamples": 64,
+      "TruthLoss": 0.0,
+      "maskRate": 0.15,
+      "trainEmbedding": "NONE",
+      "embeddingScale": 0.25,
+      "autoload": false,
+      "autosave": true,
+      "checkpointEveryBatches": 100,
+      "profile": false,
+      "certainty": false,
+      "sentenceExpectation": true,
+      "sentenceExpectationScope": "structured",
+      "armaScale": 0.0,
+      "sentencePrimingScale": 0.05,
+      "intraLossWeight": 0.0,
+      "interLossWeight": 0.1,
+      "interContrastiveWeight": 0.0,
+      "interContrastiveTemp": 0.1,
+      "seed": 42,
+      "packSentences": true,
+      "conceptualContextLearningRate": 0.01,
+      "conceptualContextNegatives": 4,
+      "reconstructionPriority": true,
+      "reconstructionLossTolerance": 1e-08,
+      "outputGradientRatio": 0.5,
+      "detachedReverse": true,
+      "leafDistillWeight": 1.0,
+      "forwardGrammarWeight": 0.0
+    },
+    "server": {
+      "host": "127.0.0.1",
+      "port": 8001,
+      "timeout": 120
+    },
+    "serial": true,
+    "conceptBinding": "aligned",
+    "symbolicOrder": 4,
+    "syntacticOrder": 0,
+    "mereologyRaise": true,
+    "serialObjectMeta": true,
+    "sentenceProtocol": false,
+    "serialWordCapacity": 256,
+    "serialWordBuckets": 256,
+    "serialResidualPartCapacity": 64,
+    "sigmaPi": "butterfly",
+    "transformChooser": "mlp",
+    "stmReduceTau": 0.75,
+    "learning": false
+  },
+  "runtime_sha256": {
+    "Models.py": "d9659c5a029784c2de8a3e97f31b72b7232606d452f06bea8494d171f6d9dea6",
+    "Language.py": "b8f260367397a84ffffeb4a9ceec0b17913fd967c824d44084b94992412ebc8c",
+    "Layers.py": "eb268720eac27377df87f1fad1a443ff02b5fe39372b1b5c37b3900d3cba8ead",
+    "data.py": "73f06278c6f37fffc2bcfd811abe42f60208a9b2f995dc1e71a558d0879129d4",
+    "Optimizer.py": "768d36190259f0cb16127b8c64fa2740f4afae659100ab1fe9ba2e214e412c12",
+    "bench_sentence_expectation.py": "922db663760858f6f8df69d58e1025a9227f82a61695fea3f5df15420b917fa4"
+  },
+  "source_manifest": {
+    "dataset": "text",
+    "corpus": "karpathy/fineweb-edu-100b-shuffle",
+    "source": "https://huggingface.co/datasets/karpathy/fineweb-edu-100b-shuffle/resolve/main",
+    "shards": [
+      {
+        "name": "shard_00000.parquet",
+        "bytes": 94511680,
+        "sha256": "6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22"
+      }
+    ],
+    "max_docs": 24,
+    "max_tokens": null,
+    "max_sentence_words": 256,
+    "random_shards": false,
+    "split": "document_mod10_8_1_1"
+  },
+  "setup_seconds": 9.662614000029862,
+  "max_docs": 24,
+  "batch_size": 1,
+  "detached_reverse": true,
+  "sigma": 0,
+  "answer_synthesis": true,
+  "output_in_loop": false,
+  "fullgraph_word_loop": true,
+  "model_parameter_count": 90336255,
+  "inter_weight": 0.1,
+  "arma_weight": 0.0,
+  "reconstruction_weight": 1.0,
+  "answer_weight": 0.0,
+  "document_counts": {
+    "train": 20,
+    "validation": 2,
+    "test": 2
+  },
+  "phases": [
+    {
+      "name": "validation_before",
+      "split": "validation",
+      "steps": [
+        {
+          "observations": 1,
+          "predicted_targets": 0,
+          "cold_starts": 1,
+          "reconstruction": 0.10362934321165085,
+          "answer": 0.12365888059139252,
+          "supplied_answer_rows": 0,
+          "training": false,
+          "optimizer_steps": 0,
+          "trained_inter": null,
+          "word_counts": [
+            14
+          ],
+          "sources": [
+            0
+          ],
+          "forward_backward_optimizer_seconds": 10.555905499961227,
+          "context_detached": true,
+          "seconds": 10.560954541899264,
+          "batch_plus_tail_seconds": 10.55893712490797,
+          "memory": {
+            "process_peak_rss_bytes": 13722927104,
+            "sampled_mps_driver_bytes": 5582503936,
+            "sampled_mps_tensor_bytes": 4867912960
+          },
+          "compiler_counters": {
+            "frames": {},
+            "stats": {},
+            "aot_autograd": {},
+            "graph_break": {}
+          }
+        },
+        {
+          "observations": 1,
+          "predicted_targets": 1,
+          "cold_starts": 0,
+          "reconstruction": 0.10669703036546707,
+          "answer": 0.11436749249696732,
+          "supplied_answer_rows": 0,
+          "training": false,
+          "optimizer_steps": 0,
+          "trained_inter": null,
+          "word_counts": [
+            28
+          ],
+          "sources": [
+            1
+          ],
+          "forward_backward_optimizer_seconds": 10.175425582798198,
+          "context_detached": true,
+          "seconds": 10.179070542100817,
+          "batch_plus_tail_seconds": 10.178368624998257,
+          "memory": {
+            "process_peak_rss_bytes": 13722927104,
+            "sampled_mps_driver_bytes": 5582536704,
+            "sampled_mps_tensor_bytes": 4892732160
+          },
+          "compiler_counters": {
+            "frames": {},
+            "stats": {},
+            "aot_autograd": {},
+            "graph_break": {}
+          }
+        },
+        {
+          "observations": 1,
+          "predicted_targets": 1,
+          "cold_starts": 0,
+          "reconstruction": 0.106642946600914,
+          "answer": 0.12156899273395538,
+          "supplied_answer_rows": 0,
+          "training": false,
+          "optimizer_steps": 0,
+          "trained_inter": null,
+          "word_counts": [
+            30
+          ],
+          "sources": [
+            2
+          ],
+          "forward_backward_optimizer_seconds": 10.158799708122388,
+          "context_detached": true,
+          "seconds": 10.162465665955096,
+          "batch_plus_tail_seconds": 10.161741166142747,
+          "memory": {
+            "process_peak_rss_bytes": 13722927104,
+            "sampled_mps_driver_bytes": 5582553088,
+            "sampled_mps_tensor_bytes": 4892050688
+          },
+          "compiler_counters": {
+            "frames": {},
+            "stats": {},
+            "aot_autograd": {},
+            "graph_break": {}
+          }
+        },
+        {
+          "observations": 1,
+          "predicted_targets": 1,
+          "cold_starts": 0,
+          "reconstruction": 0.1064169853925705,
+          "answer": 0.11169521510601044,
+          "supplied_answer_rows": 0,
+          "training": false,
+          "optimizer_steps": 0,
+          "trained_inter": null,
+          "word_counts": [
+            35
+          ],
+          "sources": [
+            3
+          ],
+          "forward_backward_optimizer_seconds": 10.223739041015506,
+          "context_detached": true,
+          "seconds": 10.22753066685982,
+          "batch_plus_tail_seconds": 10.226747457869351,
+          "memory": {
+            "process_peak_rss_bytes": 13722927104,
+            "sampled_mps_driver_bytes": 5582585856,
+            "sampled_mps_tensor_bytes": 4892599296
+          },
+          "compiler_counters": {
+            "frames": {},
+            "stats": {},
+            "aot_autograd": {},
+            "graph_break": {}
+          }
+        },
+        {
+          "observations": 1,
+          "predicted_targets": 1,
+          "cold_starts": 0,
+          "reconstruction": 0.10668948292732239,
+          "answer": 0.11151867359876633,
+          "supplied_answer_rows": 0,
+          "training": false,
+          "optimizer_steps": 0,
+          "trained_inter": null,
+          "word_counts": [
+            22
+          ],
+          "sources": [
+            4
+          ],
+          "forward_backward_optimizer_seconds": 10.121913417009637,
+          "context_detached": true,
+          "seconds": 10.125649250112474,
+          "batch_plus_tail_seconds": 10.124902500072494,
+          "memory": {
+            "process_peak_rss_bytes": 13722927104,
+            "sampled_mps_driver_bytes": 5582602240,
+            "sampled_mps_tensor_bytes": 4892547584
+          },
+          "compiler_counters": {
+            "frames": {},
+            "stats": {},
+            "aot_autograd": {},
+            "graph_break": {}
+          }
+        },
+        {
+          "observations": 1,
+          "predicted_targets": 1,
+          "cold_starts": 0,
+          "reconstruction": 0.10698603838682175,
+          "answer": 0.10482729971408844,
+          "supplied_answer_rows": 0,
+          "training": false,
+          "optimizer_steps": 0,
+          "trained_inter": null,
+          "word_counts": [
+            21
+          ],
+          "sources": [
+            5
+          ],
+          "forward_backward_optimizer_seconds": 10.121166625060141,
+          "context_detached": true,
+          "seconds": 10.124886292032897,
+          "batch_plus_tail_seconds": 10.124111625133082,
+          "memory": {
+            "process_peak_rss_bytes": 13722927104,
+            "sampled_mps_driver_bytes": 5582618624,
+            "sampled_mps_tensor_bytes": 4892228096
+          },
+          "compiler_counters": {
+            "frames": {},
+            "stats": {},
+            "aot_autograd": {},
+            "graph_break": {}
+          }
+        },
+        {
+          "observations": 1,
+          "predicted_targets": 1,
+          "cold_starts": 0,
+          "reconstruction": 0.10816052556037903,
+          "answer": 0.10929000377655029,
+          "supplied_answer_rows": 0,
+          "training": false,
+          "optimizer_steps": 0,
+          "trained_inter": null,
+          "word_counts": [
+            14
+          ],
+          "sources": [
+            6
+          ],
+          "forward_backward_optimizer_seconds": 10.125805250136182,
+          "context_detached": true,
+          "seconds": 10.130268499953672,
+          "batch_plus_tail_seconds": 10.128779625054449,
+          "memory": {
+            "process_peak_rss_bytes": 13722927104,
+            "sampled_mps_driver_bytes": 5582618624,
+            "sampled_mps_tensor_bytes": 4891699200
+          },
+          "compiler_counters": {
+            "frames": {},
+            "stats": {},
+            "aot_autograd": {},
+            "graph_break": {}
+          }
+        },
+        {
+          "observations": 1,
+          "predicted_targets": 1,
+          "cold_starts": 0,
+          "reconstruction": 0.10478207468986511,
+          "answer": 0.1213805228471756,
+          "supplied_answer_rows": 0,
+          "training": false,
+          "optimizer_steps": 0,
+          "trained_inter": null,
+          "word_counts": [
+            19
+          ],
+          "sources": [
+            7
+          ],
+          "forward_backward_optimizer_seconds": 10.171144708059728,
+          "context_detached": true,
+          "seconds": 10.174976832931861,
+          "batch_plus_tail_seconds": 10.174188083037734,
+          "memory": {
+            "process_peak_rss_bytes": 13722927104,
+            "sampled_mps_driver_bytes": 5582635008,
+            "sampled_mps_tensor_bytes": 4892827904
+          },
+          "compiler_counters": {
+            "frames": {},
+            "stats": {},
+            "aot_autograd": {},
+            "graph_break": {}
+          }
+        }
+      ],
+      "epoch_seconds": 81.68650962482207,
+      "peak_memory": {
+        "process_peak_rss_bytes": 13722927104,
+        "sampled_mps_driver_bytes": 5582651392,
+        "sampled_mps_tensor_bytes": 5020081664
+      },
+      "memory_sampling_interval_seconds": 0.02,
+      "expectation": {
+        "observations": 8,
+        "cold_starts": 1,
+        "predicted_targets": 7,
+        "document_starts": 1,
+        "enabled": true,
+        "scope": "structured",
+        "feature_mse": 0.008798351112220968,
+        "presence_bce": 0.690466046333313,
+        "document_boundary_fraction": 0.125
+      },
+      "encoded_meaning_controls": {
+        "ordered": {
+          "feature_mse": 0.008798351511359215,
+          "role_mse": [
+            0.008798351511359215,
+            0.0,
+            0.0
+          ],
+          "root_objective_mse": 0.008798351511359215,
+          "presence_bce": 0.690466046333313,
+          "predicted_targets": 7,
+          "target_role_variance": [
+            0.006763200741261244,
+            0.0,
+            0.0
+          ],
+          "estimate_role_variance": [
+            0.00011617274867603555,
+            0.0001163723281933926,
+            0.0001145059650298208
+          ]
+        },
+        "shuffled": {
+          "feature_mse": 0.008826387114822865,
+          "role_mse": [
+            0.00882638804614544,
+            0.0,
+            0.0
+          ],
+          "root_objective_mse": 0.00882638804614544,
+          "presence_bce": 0.690466046333313,
+          "predicted_targets": 7,
+          "target_role_variance": [
+            0.006763200741261244,
+            0.0,
+            0.0
+          ],
+          "estimate_role_variance": [
+            0.00011617274867603555,
+            0.00011637232091743499,
+            0.0001145059650298208
+          ]
+        },
+        "context_free": {
+          "feature_mse": 0.00864634569734335,
+          "role_mse": [
+            0.008646344766020775,
+            0.0,
+            0.0
+          ],
+          "root_objective_mse": 0.008646344766020775,
+          "presence_bce": 0.6939681768417358,
+          "predicted_targets": 7,
+          "target_role_variance": [
+            0.006763200741261244,
+            0.0,
+            0.0
+          ],
+          "estimate_role_variance": [
+            4.940293365507387e-06,
+            5.266137122816872e-06,
+            4.972426722815726e-06
+          ]
+        }
+      }
+    },
+    {
+      "name": "training",
+      "split": "train",
+      "steps": [
+        {
+          "observations": 8,
+          "predicted_targets": 7,
+          "cold_starts": 1,
+          "reconstruction": 4.843586444854736,
+          "answer": 0.0,
+          "supplied_answer_rows": 0,
+          "training": true,
+          "optimizer_steps": 1,
+          "trained_inter": {
+            "mean": 0.7150673866271973,
+            "requires_grad": true
+          },
+          "word_counts": [
+            228
+          ],
+          "sources": [
+            [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7
+            ]
+          ],
+          "forward_backward_optimizer_seconds": 61.028255874989554,
+          "context_detached": true,
+          "seconds": 61.04328237497248,
+          "batch_plus_tail_seconds": 61.03236020891927,
+          "memory": {
+            "process_peak_rss_bytes": 13722927104,
+            "sampled_mps_driver_bytes": 14164410368,
+            "sampled_mps_tensor_bytes": 11650641664
+          },
+          "compiler_counters": {
+            "frames": {},
+            "stats": {
+              "calls_captured": 5941,
+              "unique_graphs": 1
+            },
+            "aot_autograd": {},
+            "graph_break": {}
+          }
+        }
+      ]
+    }
+  ],
+  "timing_scope": "consecutive native step completions including next input staging, runBatch, reset/compaction and measurement overhead; epoch wall time also reported",
+  "shard_sha256": "6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22",
+  "error": {
+    "type": "RuntimeError",
+    "message": "MPS backend out of memory (MPS allocated: 16.79 GiB, other allocations: 4.27 MiB, max allowed: 16.85 GiB). Tried to allocate 96.00 MiB on shared pool. Use PYTORCH_MPS_HIGH_WATERMARK_RATIO=0.0 to disable upper limit for memory allocations (may cause system failure)."
+  }
+}

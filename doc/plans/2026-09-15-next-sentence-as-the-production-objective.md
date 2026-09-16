@@ -851,8 +851,8 @@ continuation within the same addressed document. Provisioning runs under a
 suspended external-observation scope: its parsed truths still enter durable
 LTM, while external rows, pending predictions and scored losses survive even a
 temporary batch reshape
-([Models.py:12367](../../bin/Models.py#L12367),
-[Models.py:12471](../../bin/Models.py#L12471),
+([Models.py:12381](../../bin/Models.py#L12381),
+[Models.py:12497](../../bin/Models.py#L12497),
 [data.py:526](../../bin/data.py#L526),
 [Layers.py:9689](../../bin/Layers.py#L9689)).
 
@@ -1006,8 +1006,8 @@ substitutes. Full nested-structure prediction remains a separate milestone; loca
 prediction is described in §8.3.
 Context cleanup is implemented in
 [`detach_prediction_context`](../../bin/Layers.py#L10395); packed chronology is in
-[`_drain_packed_stm_end_states`](../../bin/Models.py#L12471), with the
-[single-drain guard in `_end_step`](../../bin/Models.py#L12306).
+[`_drain_packed_stm_end_states`](../../bin/Models.py#L12497), with the
+[single-drain guard in `_end_step`](../../bin/Models.py#L12320).
 
 §3 still requires live continuous query operands and intermediate results
 inside the bounded reasoning episode, and explicit credit for hard choices.
@@ -1089,8 +1089,8 @@ query/subgoal behavior remain separate acceptance gates in §10.
 Keep supplied-answer training for the answer conditioner, generate chooser
 and dedicated synthesis modules. The current answer-target gate and its
 call site enforce this separation
-([Models.py:9302](../../bin/Models.py#L9302),
-[Models.py:13334](../../bin/Models.py#L13334)). The concepts-to-concepts
+([Models.py:9316](../../bin/Models.py#L9316),
+[Models.py:13360](../../bin/Models.py#L13360)). The concepts-to-concepts
 objective adds no next-text answer target and no reconstruction-parse teacher
 for output. Past/future realized-answer metrics remain evaluation metrics.
 
@@ -1104,7 +1104,7 @@ for output. Past/future realized-answer metrics remain evaluation metrics.
   and supplied-label behavior, and never train an output identity on PRESENT.
 - **Prediction-to-output integration:** remains unfinished even for inference.
   The indexed FUTURE branch still selects no answer program
-  ([Models.py:8102](../../bin/Models.py#L8102)). Shared inverse transforms do
+  ([Models.py:8116](../../bin/Models.py#L8116)). Shared inverse transforms do
   not establish a working FUTURE realization or answer quality. When this
   integration is taken up, capture a target-free conceptual value and
   provenance; do not fabricate input derivation witnesses or move query
@@ -1195,8 +1195,8 @@ sentence boundaries instead of exposing the entire pack as prior context.
 The existing helper already predicts before observing the arriving end state
 ([Layers.py:10066](../../bin/Layers.py#L10066)); the pending and packed drains call
 it before their consolidated-store append
-([Models.py:12418](../../bin/Models.py#L12418),
-[Models.py:12471](../../bin/Models.py#L12471)). This supplies a starting point,
+([Models.py:12432](../../bin/Models.py#L12432),
+[Models.py:12497](../../bin/Models.py#L12497)). This supplies a starting point,
 not proof of isolation throughout `forward()` or of the complete cycle above.
 The ordinary input path must perform this cycle without a `Data.what(FUTURE)`
 request or an available FUTURE realization program (§8.5).
@@ -1686,7 +1686,7 @@ the current implementation.
   on soft resets. Hard reset and [`begin_document`](../../bin/Layers.py#L9717)
   start the affected row cold. The real two-brick regression scores three
   pairs from four observations in one document.
-- [`_stage_expectation_documents`](../../bin/Models.py#L12367) treats invalid
+- [`_stage_expectation_documents`](../../bin/Models.py#L12381) treats invalid
   source-row positions as unaddressed streams, while malformed addresses
   missing their document key fail explicitly. Existing cursor addresses still
   enforce document boundaries inside packed rows.
@@ -1695,7 +1695,7 @@ the current implementation.
   renamed to `sentenceExpectation` throughout runtime reads, schema and XML.
   Both `model.xml` and `BasicModel.xml` enable expectation with `inter=0.1`,
   ARMA zero and contrastive zero. Named experiment files retain their explicit
-  overrides. [`set_sentence_expectation`](../../bin/Models.py#L12341) supports
+  overrides. [`set_sentence_expectation`](../../bin/Models.py#L12355) supports
   off/on at runtime, including first construction after an off start; its
   parameters join the optimizer once and disabled Adam steps leave them fixed.
   Head construction preserves the caller's random stream, allowing matched
@@ -1705,13 +1705,13 @@ the current implementation.
   delegates are removed. Provisioning resets the interaction episode while
   [`suspend_external_observations`](../../bin/Layers.py#L9689) protects only the
   external expectation stream. Temporal prediction reads the discourse owner
-  directly ([`_temporal_answer_rep_row`](../../bin/Models.py#L8684)).
+  directly ([`_temporal_answer_rep_row`](../../bin/Models.py#L8698)).
 - [`expectation_metrics`](../../bin/Layers.py#L10420) reports observation/pair
   counts, cold starts, document transitions, feature MSE and presence BCE.
   [`last_expectation_comparison`](../../bin/Layers.py#L10433) returns owned,
   detached prior/observation/residual values. These inspection values do not
   yet establish the durable occurrence-link contract in §8.7.
-- [`runBatch`](../../bin/Models.py#L12886) applies its declared train/evaluation
+- [`runBatch`](../../bin/Models.py#L12912) applies its declared train/evaluation
   mode and grad gate. Real runtime calls report comparisons without training
   accumulation or updates. A controlled future-sentence/other-row perturbation
   leaves the earlier estimate unchanged. Fully masked observations are skipped.
@@ -1739,3 +1739,48 @@ reviewed. `doc/Reasoning.md` contains no numeric code links and remains unchange
 under Alec's explicit protection of his uncommitted documents. The throughput,
 tied reconstruction, complete nested meaning, levelled thinking and learned
 query-utility gates in §10 remain open.
+
+## 12. Learning and throughput measurement (September 16)
+
+The [item 4 report](../benchmarks/2026-09-16-sentence-expectation.md) records
+the preregistered protocol, exact configuration/runtime hashes, raw results,
+failed memory runs and reviewer probes. Measurements and full-suite verification
+are complete for this item.
+The first full run terminated under host memory pressure at 81%; the report
+retains that diagnostic and records the test-cache cleanup before the rerun.
+The complete rerun passed **4,157 tests, with 51 skips, 7 expected failures and
+4 subtests passed, in 2,466.59 seconds (41m 6s)**. Runtime and test files stayed
+fixed throughout; the protected user documents remained unchanged.
+
+- The actual local-role expectation head passes the fixed-meaning context
+  gate in seeds 0, 1 and 2: held-out MSE is about 97.6% below both matched
+  shuffled and context-free controls. This is predictor learning, not joint
+  corpus encoder evidence.
+- Native FineWeb W256/B1 training processes **0.260 input sentences/s** and
+  **0.256 eligible prediction targets/s** after two warmup steps. Seven actual
+  optimizer calls observe 85 inputs and score 83 targets. The short held-out
+  corpus result is negative for vector prediction: MSE rises from 0.008798 to
+  0.023064, despite improved role presence. Discrimination/collapse protection
+  and learned querying are not established by this run.
+- Separately supplied three-word numeric answer training processes **0.145
+  sentences/s at B1** and **0.286 at B2**. Answer parameters update in both
+  runs; all observations are cold starts, so no continuation target is invented.
+- The native runs use MPS/eager capture with FP32 and the current detached
+  reconstruction student. They are not Inductor throughput measurements or
+  evidence completing §6's tied-reconstruction migration.
+
+The memory probe exposed evaluation of every binary operator while replaying
+one recorded compose choice. [`forward_binary_step`](../../bin/Language.py#L14430)
+now executes only selected operators. The supplied-answer probe also exposed
+dropped compiled/unpacked observations. The existing 21-value return now
+feeds the host boundary explicitly through
+[`_publish_compiled_sentence_state`](../../bin/Models.py#L7291) and
+[`_drain_pending_stm_end_state`](../../bin/Models.py#L12432), preserving depth and
+padding masks. The report identifies the pre-fix failures separately from the
+final measurements.
+
+The next ordered work is §10.5. Alec explicitly reserved
+`doc/specs/2026-09-16-two-truths-ideas-and-relations.md` for work after this
+session; this implementation does not adopt that separate fusion/collapse
+contract. The broader thinking, reconstruction and learned-utility gates in
+this integrated specification remain unfinished.

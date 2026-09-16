@@ -7288,6 +7288,20 @@ class BasicModel(BaseModel):
             object.__setattr__(self, "_tensor_sentence_roots_depth", recon_depth)
             object.__setattr__(self, "_tensor_final_end_slots", recon_end_slots)
             object.__setattr__(self, "_tensor_final_end_depth", recon_end_depth)
+            if (getattr(self, "_compiled_word_loop_fullgraph", False)
+                    and getattr(self, "_active_compiled_step", None) is not None
+                    and not getattr(self, "_exploration_trial", False)
+                    and not getattr(self.inputSpace, "_sentence_pack_enabled", False)):
+                # Attribute-only graph escapes may be eliminated. Publish
+                # the unpacked observation from the same explicit sealed
+                # state used by reconstruction; packed rows have their own
+                # chronological drain. Both publication sites precede the
+                # consume-once teardown, so they cannot double-observe.
+                word_mask = getattr(self.inputSpace, "_word_active_mask", None)
+                active = (word_mask.any(dim=1) if torch.is_tensor(word_mask)
+                          else recon_end_depth > 0)
+                object.__setattr__(self, "_pending_stm_end_state", (
+                    recon_end_slots, recon_end_depth, active))
             if self._recon_placement() != "graph":
                 # placeholders: the traversal runs after the forward from
                 # the published references and roots (see ``runBatch``)
@@ -12428,7 +12442,15 @@ class BasicModel(BaseModel):
         object.__setattr__(self, "_pending_stm_end_state", None)
         if pending is None:
             return
-        cs_buf, rel_mask = pending
+        if len(pending) == 3:
+            cs_buf, end_depth, active = pending
+            rel_mask = (end_depth >= 3) & active
+        else:
+            # Compatibility with the older word-cell boundary, which parks
+            # only a buffer and the one-versus-three relative-row mask.
+            cs_buf, rel_mask = pending
+            end_depth = torch.where(rel_mask, 3, 1).clamp(max=cs_buf.shape[1])
+            active = torch.ones_like(end_depth, dtype=torch.bool)
         discourse = (self.symbolSpace.discourse
                      if getattr(self, "symbolSpace", None) is not None
                      else None)
@@ -12442,15 +12464,19 @@ class BasicModel(BaseModel):
         if not (discourse_live or ltm_on):
             return
         B, cap = int(cs_buf.shape[0]), int(cs_buf.shape[1])
-        rel_rows = rel_mask.reshape(-1).to("cpu").tolist()
-        depths = [min(3 if bool(rel_rows[b]) else 1, cap)
-                  for b in range(B)]
-        payloads = [cs_buf[b, :depths[b], :] for b in range(B)]
+        depth_rows = end_depth.reshape(-1).to("cpu").tolist()
+        active_rows = active.reshape(-1).to("cpu").tolist()
+        if any(live and not 1 <= int(depth) <= min(3, cap)
+               for live, depth in zip(active_rows, depth_rows)):
+            raise RuntimeError("completed sentence has no valid occupied roles")
+        depths = [int(depth_rows[b]) if active_rows[b] else 0 for b in range(B)]
+        payloads = [cs_buf[b, :depths[b], :] if active_rows[b] else None
+                    for b in range(B)]
         tetralemmas = self.conceptualSpace.stm_end_state_trust(
             cs_buf, rel_mask)
         if discourse_live:
             discourse.predict_and_observe_stm_end_state(
-                depths, payloads, tetralemmas=tetralemmas,
+                depths, payloads, tetralemmas=tetralemmas, mask=active,
                 documents=self._expectation_documents_for_slot(0, B))
         if ltm_on:
             for b, payload in enumerate(payloads):

@@ -45,6 +45,28 @@ if _ETC not in sys.path:
 import pytest
 
 
+@pytest.fixture(autouse=True, scope="module")
+def _release_test_compilation_cache():
+    """Release completed modules' graphs before constructing another model.
+
+    The full suite builds many independent compiled models. Their graph
+    caches and Python reference cycles can retain native tensor allocations
+    long after a module's fixtures have finished. In the September 16 full
+    run this accumulated until macOS terminated pytest for memory pressure.
+    Keep every test and within-module cache intact; release only at the
+    module boundary, after its explicit model fixtures have torn down.
+    """
+    yield
+    import gc
+    import torch
+    torch._dynamo.reset()
+    gc.collect()
+    if torch.backends.mps.is_available():
+        torch.mps.empty_cache()
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+
+
 @pytest.fixture(autouse=True)
 def _reset_global_singletons():
     """Reset cross-test global singletons before every test.
