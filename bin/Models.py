@@ -79,7 +79,7 @@ from checkpoint_migrations import (
     stamp_checkpoint_schema,
 )
 from data import Data, TheData
-from Understanding import AnswerProgram, Understanding
+from Understanding import AnswerProgram, InputReconstruction, Understanding
 from Output import AnswerConstruction, AnswerDerivation
 from contextlib import contextmanager as _contextmanager
 from What import (LTMSlot, What, WhatAnswer, WhatQuestion, WhatRelation,
@@ -2495,6 +2495,17 @@ class BaseModel(Mereology, nn.Module):
         # exclusive with the detached idea-only student.
         self.reconstruct_in_loop = bool(
             TheXMLConfig.training("reconstructInLoop", False))
+        self._recon_keep_ideas = self.reconstruct_in_loop
+        self._recon_completed = False
+        self._reconstruction_product = None
+        self.reconstruction_placement = str(
+            TheXMLConfig.training("reconstructionPlacement", "graph")).strip().lower()
+        if self.reconstruction_placement not in ("graph", "compiled", "eager"):
+            raise ValueError("reconstructionPlacement must be graph, compiled or eager")
+        self.reconstruction_basis_limit = int(
+            TheXMLConfig.training("reconstructionBasisLimit", 16))
+        if self.reconstruction_basis_limit < 1:
+            raise ValueError("reconstructionBasisLimit must be positive")
         # Slice 3: the answer realisation's generate walk as the second
         # compiled loop (its own state, policy and termination).
         self.output_in_loop = bool(
@@ -7306,12 +7317,16 @@ class BasicModel(BaseModel):
                 # placeholders: the traversal runs after the forward from
                 # the published references and roots (see ``runBatch``)
                 object.__setattr__(self, "_recon_cost", None)
+                object.__setattr__(self, "_recon_completed", False)
             else:
+                if getattr(self, "_recon_ideas", None) is not recon_ideas:
+                    object.__setattr__(self, "_reconstruction_product", None)
                 object.__setattr__(self, "_recon_ideas", recon_ideas)
                 object.__setattr__(self, "_recon_idea_cost", recon_idea_cost)
                 object.__setattr__(self, "_recon_cost", recon_byte_cost)
                 object.__setattr__(self, "_recon_truncated", recon_truncated)
                 object.__setattr__(self, "_recon_sentence_costs", recon_sentence_costs)
+                object.__setattr__(self, "_recon_completed", bool(self.reconstruct_in_loop))
             result = tuple(result[:11])
         if len(result) == 11:
             # Fold-ladder provenance (Phase 2b): the STM whole slab and the
@@ -7968,6 +7983,7 @@ class BasicModel(BaseModel):
                 and symbols.dim() == 3 and conceptual.shape[-1] == symbols.shape[-1]):
             answer_seed = conceptual
         answer_program, sentence_programs = self._capture_answer_programs()
+        input_reconstruction = self._complete_input_reconstruction()
         return Understanding(
             perceptual_context=perceptual,
             conceptual_state=conceptual,
@@ -7978,7 +7994,59 @@ class BasicModel(BaseModel):
             answer_seed=answer_seed,
             answer_program=answer_program,
             sentence_programs=sentence_programs,
+            input_reconstruction=input_reconstruction,
         )
+
+    def _complete_input_reconstruction(self):
+        """Own the tied input result before another path can change staging."""
+        if not getattr(self, "reconstruct_in_loop", False):
+            return None
+        cached = getattr(self, "_reconstruction_product", None)
+        if cached is not None:
+            return cached
+        if not getattr(self, "_recon_completed", False):
+            S = getattr(self, "_stm_single_S", None)
+            reference = getattr(self, "_tensor_pushed_ideas", None)
+            roots = getattr(self, "_tensor_sentence_roots_live", None)
+            if not all(torch.is_tensor(value) for value in (S, reference, roots)):
+                raise RuntimeError("tied reconstruction requires completed sentence state")
+            depth = getattr(self, "_tensor_sentence_roots_depth", None)
+            end = getattr(self, "_tensor_final_end_slots", None)
+            end_depth = getattr(self, "_tensor_final_end_depth", None)
+            if not (torch.is_tensor(end) and torch.is_tensor(end_depth)):
+                end, end_depth = self._final_end_state(S, getattr(self, "_stm_post_depth", None))
+            values = self._compiled_reconstruct()(S, reference, roots, depth, end, end_depth)
+            for name, value in zip(("_recon_ideas", "_recon_idea_cost", "_recon_cost",
+                                    "_recon_truncated", "_recon_sentence_costs"), values):
+                object.__setattr__(self, name, value)
+            object.__setattr__(self, "_recon_completed", True)
+        ideas = self._recon_ideas
+        with self._synthesis_guard():
+            carrier = self.conceptualSpace.subspace.carrier_like()
+            carrier.set_event(ideas)
+            surface = self._reverse_input_surface(carrier)
+            event = surface.materialize() if hasattr(surface, "materialize") else surface
+            if not torch.is_tensor(event):
+                raise RuntimeError("tied reconstruction produced no input surface")
+            event = event.clone()
+        result = InputReconstruction(
+            ideas, event, self._recon_idea_cost, self._recon_cost,
+            self._recon_truncated, self._recon_sentence_costs)
+        object.__setattr__(self, "_reconstruction_product", result)
+        return result
+
+    def _reverse_input_surface(self, carrier):
+        """Realize recovered input ideas through the shared numerical inverse.
+
+        The input's grammar traversal is already complete. No generate policy
+        or free chart expansion belongs in this path.
+        """
+        carrier = self._reverse_body(carrier)
+        concepts = getattr(carrier, "_concepts_recon", None)
+        carrier = self._reverse_perceptual(carrier)
+        if concepts is not None and carrier is not None:
+            object.__setattr__(carrier, "_concepts_recon", concepts)
+        return self.inputSpace.reverse(carrier)
 
     def understand(self, input_data, *, executor=None):
         """One bottom-up analysis pass returning its ``Understanding``."""
@@ -8000,12 +8068,23 @@ class BasicModel(BaseModel):
         ``(reconstructed_event, input_reconstruction)``; the cost is ``None``
         unless ``target`` (the forward input carrier or event) is supplied,
         and the target is used only for scoring, never as a carrier.
-        Migration note: the reverse chain still commits the seed onto the
-        live ``ConceptualSpace.subspace`` before walking it; a carrier-pure
-        reverse is the remaining Step 1 work.
+        Tied mode consumes the completed Understanding-owned surface. Its
+        optional event score is a diagnostic; runBatch trains the owned byte
+        objective and does not add this event score a second time. Explicit
+        legacy modes retain their historical live-carrier reverse below.
         """
         if not isinstance(understanding, Understanding):
             raise TypeError("reconstruct expects an Understanding")
+        owned = understanding.input_reconstruction
+        if owned is not None:
+            # Readiness is explicit: a zero-valued result is still complete.
+            event = owned.event.clone()
+            target_event = target.materialize() if hasattr(target, "materialize") else target
+            score = (self._reverse_event_loss(event, target_event)
+                     if torch.is_tensor(target_event) else None)
+            return event, score
+        if self.reconstruct_in_loop:
+            raise RuntimeError("tied reconstruction requires an owned completed result")
         train = bool(train)
         # Install this understanding's forward-local carriers so the walk is
         # a function of the understanding, not of whichever path ran last.
@@ -8034,7 +8113,7 @@ class BasicModel(BaseModel):
             if terminal_idea is not None:
                 cs = self.conceptualSpace
                 cs.commit_event(terminal_idea)
-                rev_sub = self.reverse(
+                rev_sub = self._reverse_input_surface(
                     cs.subspace)
             rev_ev = (rev_sub.materialize()
                       if rev_sub is not None
@@ -8889,7 +8968,7 @@ class BasicModel(BaseModel):
         """Instantiate answer-path modules named in a checkpoint (shapes from
         the saved tensors) before the key audit, so their learned weights
         load instead of being reported unexpected or silently dropped."""
-        from Layers import InvertibleLinearLayer
+        from Layers import InvertibleLinearLayer, LDUReadout
         try:
             device = next(self.parameters()).device
             dtype = next(self.parameters()).dtype
@@ -8907,8 +8986,11 @@ class BasicModel(BaseModel):
                 key_U = f"{space_name}.{module_name}.raw_U"
                 if key_L in state and key_U in state:
                     n_in = int(state[key_L].shape[0])
-                    n_out = int(state[key_U].shape[0])
-                    setattr(space, module_name, InvertibleLinearLayer(
+                    n_out = int(state[key_U].shape[1])
+                    compact = (module_name == "percept_adapter"
+                               and f"{space_name}.{module_name}._readout_format" in state)
+                    adapter_type = LDUReadout if compact else InvertibleLinearLayer
+                    setattr(space, module_name, adapter_type(
                         n_in, n_out, hasBias=True).to(device=device, dtype=dtype))
                     built += 1
         # The singular key is a compatibility alias, historically pointing
@@ -10888,23 +10970,67 @@ class BasicModel(BaseModel):
         object.__setattr__(ps, "_pid_byte_table", table)
 
     def _stage_snapshot_bytes(self):
-        """Snapshot WORD-owned surfaces for the brick's bounded row bank.
+        """Stage full byte targets and the separate WORD-owned row snapshot.
 
-        OBJECT rows translate through their current word association. Input
-        part IDs determine only the fixed byte-window shape, never candidate
-        bytes; missing surfaces produce invalid candidates.
+        Input percept IDs expand to their complete spellings for scoring only;
+        promotion must not remove target bytes. OBJECT candidates translate
+        through their current WORD association. Retain one extra candidate
+        byte so a longer spelling cannot acquire a fabricated word end at the
+        target window. Missing WORD surfaces produce invalid candidates.
         """
         isp = self.inputSpace
+        part_ids = getattr(isp, "_ar_word_part_ids", None)
+        part_mask = getattr(isp, "_ar_word_part_mask", None)
+        active = getattr(isp, "_word_active_mask", None)
+        store = getattr(getattr(self, "perceptualSpace", None), "percept_store", None)
+        isp._ar_target_word_bytes = None
+        isp._ar_target_word_mask = None
+        if (torch.is_tensor(part_ids) and part_ids.dim() == 3
+                and torch.is_tensor(part_mask) and part_mask.shape == part_ids.shape
+                and torch.is_tensor(active) and active.shape == part_ids.shape[:2]
+                and callable(getattr(store, "bytes_for", None))):
+            B, W = (int(v) for v in active.shape)
+            ids = part_ids.detach().to("cpu").tolist()
+            masks = part_mask.detach().to("cpu").tolist()
+            live = active.detach().to("cpu").tolist()
+            spellings = [[b""] * W for _ in range(B)]
+            pieces = {}
+            # Match the dynamic target-axis lower bound; the padding is masked.
+            width = 3
+            for b in range(B):
+                for w in range(W):
+                    if not live[b][w]:
+                        continue
+                    chunks = []
+                    for pid, valid in zip(ids[b][w], masks[b][w]):
+                        if valid:
+                            if pid not in pieces:
+                                pieces[pid] = store.bytes_for(pid)
+                            chunks.append(pieces[pid])
+                    raw = b"".join(chunks)
+                    spellings[b][w] = raw
+                    width = max(width, len(raw))
+            targets = torch.zeros(B, W, width, dtype=torch.long, device="cpu")
+            valid = torch.zeros(B, W, width, dtype=torch.bool, device="cpu")
+            for b, row in enumerate(spellings):
+                for w, raw in enumerate(row):
+                    if raw:
+                        targets[b, w, :len(raw)] = torch.tensor(list(raw), device="cpu")
+                        valid[b, w, :len(raw)] = True
+            isp._ar_target_word_bytes = targets.to(part_ids.device)
+            isp._ar_target_word_mask = valid.to(part_ids.device)
         bank = getattr(isp, "_ar_concept_lookup_rows", None)
         if not torch.is_tensor(bank) or bank.dim() != 2:
             isp._ar_bank_bytes = None
             isp._ar_bank_valid = None
             return
-        part_ids = getattr(isp, "_ar_word_part_ids", None)
+        targets = isp._ar_target_word_bytes
         P = (int(part_ids.shape[-1]) if torch.is_tensor(part_ids) and part_ids.dim() == 3
              else int(getattr(self, "serial_residual_part_capacity", 1)))
+        if torch.is_tensor(targets):
+            P = max(P, int(targets.shape[-1]))
         B, L = (int(v) for v in bank.shape)
-        P = max(1, P)
+        P = max(1, P) + 1
         bank_bytes = torch.zeros(B, L, P, dtype=torch.long)
         bank_valid = torch.zeros(B, L, P, dtype=torch.bool)
         owner = self._concept_owner()
@@ -10982,8 +11108,7 @@ class BasicModel(BaseModel):
         if not (torch.is_tensor(reference) and torch.is_tensor(roots)):
             return None
         recon = getattr(self, "_recon_ideas", None)
-        if (torch.is_tensor(recon) and recon.dim() == 3
-                and float(recon.abs().sum()) > 0.0):
+        if getattr(self, "_recon_completed", False) and torch.is_tensor(recon):
             return recon
         depth = getattr(self, "_tensor_sentence_roots_depth", None)
         end = getattr(self, "_tensor_final_end_slots", None)
@@ -10993,11 +11118,15 @@ class BasicModel(BaseModel):
         keep = bool(getattr(self, "_recon_keep_ideas", False))
         object.__setattr__(self, "_recon_keep_ideas", True)
         try:
-            recovered = self._reconstruct_sentences(
-                S, reference, roots, depth, end, end_d)[0]
+            values = self._reconstruct_sentences(
+                S, reference, roots, depth, end, end_d)
+            for name, value in zip(("_recon_ideas", "_recon_idea_cost", "_recon_cost",
+                                    "_recon_truncated", "_recon_sentence_costs"), values):
+                object.__setattr__(self, name, value)
+            object.__setattr__(self, "_recon_completed", True)
         finally:
             object.__setattr__(self, "_recon_keep_ideas", keep)
-        return recovered
+        return values[0]
 
     def _final_end_state(self, S, post_depth):
         """``(end_slots [B, 3, D], end_depth [B])`` of the row's last
@@ -11044,13 +11173,14 @@ class BasicModel(BaseModel):
         return self._reconstruct_sentences(
             S, pushed_ideas, roots_live, roots_depth, end_slots, end_depth) + state
 
-    @staticmethod
-    def _recon_placement():
-        """Where the reconstruction traversal runs: ``graph`` (inside the
-        compiled sentence graph, the default), ``compiled`` (its own
-        compiled call after the forward) or ``eager``; the performance
-        protocol compares them (``BASICMODEL_RECON_PLACEMENT``)."""
-        value = str(os.environ.get("BASICMODEL_RECON_PLACEMENT", "graph") or "graph").strip().lower()
+    def _recon_placement(self):
+        """Configured graph/separate/eager placement, with a diagnostic override.
+
+        BasicModel selects a separate compiled reconstruction so its backward
+        can be captured independently. Legacy configurations default to graph.
+        """
+        configured = getattr(self, "reconstruction_placement", "graph")
+        value = str(os.environ.get("BASICMODEL_RECON_PLACEMENT", configured) or configured).strip().lower()
         return value if value in ("graph", "compiled", "eager") else "graph"
 
     def _compiled_reconstruct(self):
@@ -11062,15 +11192,46 @@ class BasicModel(BaseModel):
         backend = getattr(_util, "TheCompileBackend", "none")
         fn = self._reconstruct_sentences
         if backend and backend != "none" and self._recon_placement() == "compiled":
-            fn = torch.compile(fn, backend=backend, fullgraph=True)
+            # "auto" is our backend policy, not a torch backend name. Match
+            # util.compile's first choice before resolving the torch compiler.
+            backend = _util._COMPILE_BACKENDS[0] if backend == "auto" else backend
+            # Eager forward capture alone rebuilds the nested loop/conditional
+            # backward programs on every differentiation. AOT eager captures
+            # that backward once while retaining ordinary ATen execution.
+            backend = "aot_eager" if backend == "eager" else backend
+            from torch._dynamo.backends.registry import lookup_backend
+            from torch._functorch import config as aot_config
+            compiler = lookup_backend(backend)
+
+            def compile_reconstruction(graph, inputs):
+                # Joint gradient balance reads this graph more than once.
+                # A cached single-use backward must never donate its saved
+                # buffers, even if the first call did not retain the graph.
+                # Scope the setting to this compiler; other models keep theirs.
+                with aot_config.patch(donated_buffer=False):
+                    compiled = compiler(graph, inputs)
+                    # This torch build leaves disabled donation as None, but
+                    # its retained-backward check requires the explicit empty
+                    # list once the caller's global setting is restored.
+                    # Normalize only the disabled sentinel: no compiled buffer
+                    # donation is being hidden or retroactively disabled here.
+                    from torch._guards import TracingContext
+                    context = TracingContext.try_get()
+                    metadata = getattr(context, "fw_metadata", None)
+                    if metadata is not None and metadata.bw_donated_idxs is None:
+                        metadata.bw_donated_idxs = []
+                    return compiled
+
+            fn = torch.compile(fn, backend=compile_reconstruction, fullgraph=True)
         self.__dict__["_reconstruct_compiled"] = fn
         return fn
 
     def _reconstruct_sentences(self, S, reference, roots_live, roots_depth=None,
                                end_slots=None, end_depth=None):
-        """The row's completed sentences reconstructed in two bounded
-        compiled passes that share the forward's word index (requirement 3,
-        contracts 2-4).
+        """Reconstruct completed sentences with bounded compiled traversals.
+
+        An integer-only prepass replays operand occurrence positions. The two
+        numerical passes below follow the completed sentence's recorded trace.
 
         Pass A (one ``torch.while_loop`` trip per sentence slot, bounded by
         the row's highest sentence id): the sentence's sealed root (the live root the loop stored
@@ -11079,8 +11240,9 @@ class BasicModel(BaseModel):
         the pre-seal STM stack.  Pass B (one ``torch.while_loop`` over the
         word index, latest word first): at a word that ends a sentence the
         stack becomes that sentence's pre-seal stack; then the word's
-        recorded unary, post-binary and pre-binary folds are undone with the
-        tied inverses and the word is popped and scored on the spot (idea
+        recorded unary and post-binary folds are undone with the tied
+        inverses, the word is popped and scored, then its pre-binary fold
+        is undone (idea
         distance to its retained reference; byte cross-entropy through the
         soft assignment to the row's word rows).  Costs are accumulated per
         sentence slot (``[B, slots]``); the row cost is the mean over the
@@ -11114,19 +11276,6 @@ class BasicModel(BaseModel):
         unary_map = trace.rule_map(1)
         active = isp._word_active_mask.to(dtype=torch.bool)
         dev = S.device
-        # Operand identity (contract 1): the recorded concept rows of each
-        # fold's left (older) and right (newest) operands, and the words'
-        # rows by position, route the residual reverses to the right
-        # operand and word.
-        rows_l, rows_r = trace.operand_rows()
-        word_ids = self._word_symbol_rows()
-        have_rows = (torch.is_tensor(rows_l) and torch.is_tensor(rows_r)
-                     and torch.is_tensor(word_ids) and word_ids.dim() == 2
-                     and tuple(word_ids.shape) == tuple(active.shape)
-                     and tuple(rows_l.shape) == tuple(rule_ids.shape))
-        if have_rows:
-            word_ids = word_ids.to(device=dev, dtype=torch.long)
-            rows_l = rows_l.to(device=dev); rows_r = rows_r.to(device=dev)
         packed = bool(getattr(isp, "_sentence_pack_enabled", False))
         ids = getattr(isp, "_packed_sentence_ids", None)
         if packed and torch.is_tensor(ids):
@@ -11141,11 +11290,20 @@ class BasicModel(BaseModel):
         cont = torch.cat((cont, torch.zeros(B, 1, dtype=torch.bool, device=dev)), dim=1)
         is_end = torch.logical_and(active, torch.logical_not(cont))       # [B, W]
         last_index = torch.where(active, positions, torch.full_like(positions, -1)).amax(dim=1)
-        keep_ideas = bool(getattr(self, "_recon_keep_ideas", False))
-        inverses = language.reverse_inverses()      # once, not per step
+        keep_ideas = bool(self.reconstruct_in_loop or getattr(self, "_recon_keep_ideas", False))
+        required = ((rule_ids.unsqueeze(-1) == binary_map.reshape(1, 1, -1))
+                    & (mask & (arities == 2)).unsqueeze(-1)).any(dim=(0, 1))
+        inverses = language.reverse_inverses(required=required)  # once per selected op
         byte_ready, bytes_bwp, valid_bwp = self._byte_tables(B, W)   # the words' bytes
         snap_ready, bank_n, bank_bytes, bank_valid = self._snapshot_tables(reference)
+        basis, basis_valid = self._reconstruction_basis_snapshot(reference)
+        basis_limit = int(self.reconstruction_basis_limit)
         byte_ready = bool(byte_ready and snap_ready)
+        binary_ops = list(language._tree_layer(2).ops)
+        prefer_left = torch.tensor([
+            getattr(getattr(op, "gl", op), "rule_name", "")
+            in ("part", "assertPart", "isPart", "preposition")
+            for op in binary_ops], dtype=torch.bool, device=dev)
 
         def _col(slab, index):
             k = int(slab.shape[1])
@@ -11161,40 +11319,89 @@ class BasicModel(BaseModel):
             safe = index.clamp(0, W - 1).reshape(1, 1, 1).expand(B, 1, k)
             return slab.gather(1, safe).reshape(B, k)
 
-        def _word_of_row(row_b, scope):
-            """Position of concept row ``row_b`` among the scoped words
-            (first match) and whether one exists."""
-            match = torch.logical_and(word_ids == row_b.reshape(B, 1), scope)
-            match = torch.logical_and(match, row_b.reshape(B, 1) >= 0)
-            found = match.any(dim=1)
-            pos = match.to(torch.long).argmax(dim=1)
-            return pos, found
+        # Replay only integer occurrence positions. A concept row can occur
+        # more than once with different signed activations. The recorded
+        # stack operations, unlike a first matching row, identify which
+        # occurrence supplied each leaf operand. Composite/unary positions
+        # remain -1; they cannot borrow the current word as a witness.
+        steps = int(rule_ids.shape[1])
+        bound = (last_index.max() + 1).clamp_min(0)
 
-        def _operand_reference(slot_b, scope, fallback_ref, fallback_side):
-            """``(ref [B, D], side)`` for the fold recorded at ``slot_b``:
-            from the recorded operand rows when known (the word operand's
-            retained reference, right or left per row), else the caller's
-            fallback (the pushed word on the right for a per-word fold)."""
-            if not have_rows:
-                return fallback_ref, fallback_side
-            lr = rows_l.gather(1, slot_b.clamp(0, int(rows_l.shape[1]) - 1).reshape(B, 1)).reshape(B)
-            rr = rows_r.gather(1, slot_b.clamp(0, int(rows_r.shape[1]) - 1).reshape(B, 1)).reshape(B)
-            pos_r, found_r = _word_of_row(rr, scope)
-            pos_l, found_l = _word_of_row(lr, scope)
-            use_right = found_r
-            pos = torch.where(use_right, pos_r, pos_l)
-            valid = torch.logical_or(found_r, found_l)
-            ref = reference.gather(1, pos.reshape(B, 1, 1).expand(B, 1, D)).reshape(B, D)
-            # A fold without recorded rows (a trace from before the rows
-            # were kept, or an operand that is not a word of this
-            # sentence) keeps the caller's fallback on its side.
-            fb = torch.logical_not(valid)
-            ref = torch.where(fb.reshape(B, 1), fallback_ref, ref)
-            if fallback_side == "right":
-                use_right = torch.logical_or(use_right, fb)
+        def metadata_fold(stack, depth, lefts, rights, bad, slot, ready, arity):
+            recorded = ready & _col_rows(mask, slot)
+            rule = _col_rows(rule_ids, slot)
+            _, known = language.local_op_from_rule_ids(
+                rule, binary_map if arity == 2 else unary_map)
+            valid = recorded & known & (_col_rows(arities, slot) == arity) & (depth >= arity)
+            bad = bad | (recorded & ~valid)
+            if arity == 2:
+                col = slot.clamp(0, steps - 1).reshape(B, 1)
+                lefts = lefts.scatter(1, col, torch.where(
+                    valid, stack[:, 1], _col_rows(lefts, slot)).reshape(B, 1))
+                rights = rights.scatter(1, col, torch.where(
+                    valid, stack[:, 0], _col_rows(rights, slot)).reshape(B, 1))
+                reduced = torch.cat((torch.full_like(stack[:, :1], -1),
+                                     stack[:, 2:], torch.full_like(stack[:, :1], -1)), dim=1)
+                depth = depth - valid.to(depth.dtype)
             else:
-                use_right = torch.logical_and(use_right, torch.logical_not(fb))
-            return ref, (use_right, torch.ones_like(valid))
+                reduced = torch.cat((torch.full_like(stack[:, :1], -1), stack[:, 1:]), dim=1)
+            return torch.where(valid[:, None], reduced, stack), depth, lefts, rights, bad
+
+        def metadata_cond(w, stack, depth, lefts, rights, bad):
+            return w < bound
+
+        def metadata_body(w, stack, depth, lefts, rights, bad):
+            wa = _col(active, w)
+            slot = (3 * w).reshape(1).expand(B)
+            stack, depth, lefts, rights, bad = metadata_fold(
+                stack, depth, lefts, rights, bad, slot, wa, 2)
+            push = wa & (depth < cap)
+            bad = bad | (wa & ~push)
+            pushed = torch.cat((w.reshape(1, 1).expand(B, 1), stack[:, :cap - 1]), dim=1)
+            stack = torch.where(push[:, None], pushed, stack)
+            depth = depth + push.to(depth.dtype)
+            stack, depth, lefts, rights, bad = metadata_fold(
+                stack, depth, lefts, rights, bad, slot + 1, wa, 2)
+            stack, depth, lefts, rights, bad = metadata_fold(
+                stack, depth, lefts, rights, bad, slot + 2, wa, 1)
+            ending = _col(is_end, w) & wa
+            final = w == last_index
+            base = torch.where(final, 3 * W, 3 * W + w * seal_width)
+            for k in range(seal_width):
+                ready = ending & (~final | (k < n_levels))
+                stack, depth, lefts, rights, bad = metadata_fold(
+                    stack, depth, lefts, rights, bad, base + k, ready, 2)
+            sid = _col(ids, w)
+            expected = roots_depth.gather(1, sid.clamp(0, slots - 1)[:, None]).reshape(B)
+            expected = torch.where(final, end_depth.reshape(B), expected)
+            bad = bad | (ending & (depth != expected)) | (wa & ((sid < 0) | (sid >= slots)))
+            stack = torch.where(ending[:, None], torch.full_like(stack, -1), stack)
+            depth = torch.where(ending, torch.zeros_like(depth), depth)
+            return (w + 1, stack.clone(), depth.clone(), lefts.clone(), rights.clone(), bad.clone())
+
+        empty_positions = torch.full((B, steps), -1, dtype=torch.long, device=dev)
+        _, _, _, occurrence_left, occurrence_right, malformed = torch.while_loop(
+            metadata_cond, metadata_body,
+            (torch.zeros((), dtype=torch.long, device=dev),
+             torch.full((B, cap), -1, dtype=torch.long, device=dev),
+             torch.zeros(B, dtype=torch.long, device=dev),
+             empty_positions, empty_positions.clone(),
+             torch.zeros(B, dtype=torch.bool, device=dev)))
+        occurrence_left, occurrence_right = occurrence_left.clone(), occurrence_right.clone()
+        malformed = malformed.clone()
+
+        def _operand_reference(slot_b):
+            """The retained leaf at the actual operand occurrence, if any."""
+            pos_l = _col_rows(occurrence_left, slot_b)
+            pos_r = _col_rows(occurrence_right, slot_b)
+            found_l, found_r = pos_l >= 0, pos_r >= 0
+            local, _ = language.local_op_from_rule_ids(_col_rows(rule_ids, slot_b), binary_map)
+            needs_left = prefer_left.gather(0, local)
+            use_right = found_r & ~(needs_left & found_l)
+            pos = torch.where(use_right, pos_r, pos_l).clamp(0, W - 1)
+            valid = torch.logical_or(found_r, found_l)
+            ref = reference.gather(1, pos.reshape(B, 1, 1).expand(B, 1, D)).reshape(B, D).detach()
+            return torch.where(valid[:, None], ref, torch.zeros_like(ref)), (use_right, valid)
 
         def _undo_binary(stack, depth, slot_b, ok, ref, side="right"):
             top = stack[:, 0, :]
@@ -11204,12 +11411,15 @@ class BasicModel(BaseModel):
             local_b, known_b = language.local_op_from_rule_ids(rec_slot, binary_map)
             valid = torch.logical_and(
                 torch.logical_and(rec_mask, known_b), depth >= 1)
-            left, right = language.reverse_binary_step(
-                top, local_b, valid, ref, inverses=inverses, reference_side=side)
+            valid = valid & (depth < cap) & (_col_rows(arities, slot_b) == 2)
+            left, right, unavailable = language.reverse_binary_step(
+                top, local_b, valid, ref, inverses=inverses, reference_side=side,
+                basis=basis, basis_valid=basis_valid, candidate_limit=basis_limit,
+                return_status=True)
             split = torch.cat(
                 (right.unsqueeze(1), left.unsqueeze(1), stack[:, 1:cap - 1, :]), dim=1)
             new_stack = torch.where(valid.reshape(B, 1, 1), split, stack)
-            return new_stack, depth + valid.to(depth.dtype), valid
+            return new_stack, depth + valid.to(depth.dtype), unavailable
 
         def _undo_unary(stack, depth, slot_b, ok):
             top = stack[:, 0, :]
@@ -11219,9 +11429,10 @@ class BasicModel(BaseModel):
             local_u, known_u = language.local_op_from_rule_ids(rec_slot, unary_map)
             valid = torch.logical_and(
                 torch.logical_and(rec_mask, known_u), depth >= 1)
-            undone = language.reverse_unary_step(top, local_u, valid)
+            valid = valid & (_col_rows(arities, slot_b) == 1)
+            undone, unavailable = language.reverse_unary_step(top, local_u, valid, return_status=True)
             new_stack = torch.cat((undone.unsqueeze(1), stack[:, 1:, :]), dim=1)
-            return torch.where(valid.reshape(B, 1, 1), new_stack, stack), depth
+            return torch.where(valid.reshape(B, 1, 1), new_stack, stack), depth, unavailable
 
         # Pass A: the pre-seal stack of every sentence present, one
         # ``torch.while_loop`` trip per sentence slot up to the row's
@@ -11230,10 +11441,10 @@ class BasicModel(BaseModel):
         slot_ids = torch.arange(slots, device=dev).reshape(1, slots)
         n_sent_t = (torch.where(active, ids, torch.full_like(ids, -1)).amax() + 1).clamp(1, slots)
 
-        def cond_a(s_idx, pre_stack, pre_depth):
+        def cond_a(s_idx, pre_stack, pre_depth, pre_bad):
             return s_idx < n_sent_t
 
-        def body_a(s_idx, pre_stack, pre_depth):
+        def body_a(s_idx, pre_stack, pre_depth, pre_bad):
             member = torch.logical_and(ids == s_idx, active)               # [B, W]
             present = member.any(dim=1)
             hi = torch.where(member, positions, torch.full_like(positions, -1)).amax(dim=1)
@@ -11252,48 +11463,40 @@ class BasicModel(BaseModel):
                 is_last, torch.full_like(hi, n_levels), torch.full_like(hi, seal_width))
             stack = torch.cat((top3, S.new_zeros(B, max(0, cap - 3), D)), dim=1)[:, :cap, :]
             depth = torch.where(present, depth0.clamp(1, cap), torch.zeros_like(depth0))
-            # The seals fold newest-first: the first seal joins the two
-            # newest words, each later seal joins the composite (right,
-            # newest) with the next older word (left).  Undone last first,
-            # the k-th undo returns word ``lo + k`` as its LEFT operand;
-            # that word's retained reference guides the residual reverses.
-            lo = torch.where(member, positions, torch.full_like(positions, W)).amin(dim=1)
-            undone = torch.zeros_like(hi)
+            bad = present & ((depth0 < 1) | (depth0 > cap))
             for k in reversed(range(seal_width)):
                 ok = torch.logical_and(present, seal_count > k)
-                # fallback without recorded rows: newest-first single-word
-                # seals return word lo + k on the left
-                ref_word = (lo + undone).clamp(0, W - 1)
-                fb = reference.gather(
-                    1, ref_word.reshape(B, 1, 1).expand(B, 1, D)).reshape(B, D)
-                ref, side = _operand_reference(seal_base + k, member, fb, "left")
-                stack, depth, applied = _undo_binary(
+                ref, side = _operand_reference(seal_base + k)
+                stack, depth, unavailable = _undo_binary(
                     stack, depth, seal_base + k, ok, ref, side)
-                undone = undone + applied.to(undone.dtype)   # only a recorded, undone seal
+                bad = bad | unavailable
             sel = (slot_ids == s_idx)                                       # [1, slots]
             pre_stack = torch.where(sel.reshape(1, slots, 1, 1), stack.unsqueeze(1), pre_stack)
             pre_depth = torch.where(sel, depth.reshape(B, 1), pre_depth)
-            return s_idx + 1, pre_stack.clone(), pre_depth.clone()
+            pre_bad = torch.where(sel, bad.reshape(B, 1), pre_bad)
+            return s_idx + 1, pre_stack.clone(), pre_depth.clone(), pre_bad.clone()
 
         s0 = torch.tensor(0, dtype=torch.long, device=dev)
-        _s, pre_stack, pre_depth = torch.while_loop(
+        _s, pre_stack, pre_depth, pre_bad = torch.while_loop(
             cond_a, body_a, _carries_with_grad(
                 (s0, S.new_zeros(B, slots, cap, D),
-                 torch.zeros(B, slots, dtype=torch.long, device=dev))))
+                 torch.zeros(B, slots, dtype=torch.long, device=dev),
+                 torch.zeros(B, slots, dtype=torch.bool, device=dev))))
         # Fresh tensors: under autograd a loop's final carry is a view into
         # its stacked per-trip outputs (an unbacked trip count), which the
         # next loop cannot lift as an input.
         pre_stack = pre_stack.clone()
         pre_depth = pre_depth.clone()
+        pre_bad = pre_bad.clone()
 
         # Pass B: the words, latest first, one loop step per word index.
-        T = W
+        T = (last_index.max() + 1).clamp_min(0)
 
         def cond(t, stack, depth, idea_sum, byte_sum, count, trunc, recovered):
             return t < T
 
         def body(t, stack, depth, idea_sum, byte_sum, count, trunc, recovered):
-            w = (W - 1) - t
+            w = (T - 1) - t
             wa = _col(active, w)
             end_b = torch.logical_and(_col(is_end, w), wa)
             sid = _col(ids, w).clamp(0, slots - 1)
@@ -11302,15 +11505,13 @@ class BasicModel(BaseModel):
             loaded_depth = pre_depth.gather(1, sid.reshape(B, 1)).reshape(B)
             stack = torch.where(end_b.reshape(B, 1, 1), loaded, stack)
             depth = torch.where(end_b, loaded_depth, depth)
-            ref_w = _word_col(reference, w)
-            scope_w = torch.logical_and(ids == sid.reshape(B, 1), active)   # the sentence's words
-            stack, depth = _undo_unary(stack, depth, (3 * w + 2).reshape(1).expand(B), wa)
+            ref_w = _word_col(reference, w).detach()
+            ref_w = torch.where(wa[:, None], ref_w, torch.zeros_like(ref_w))
+            stack, depth, unavailable_unary = _undo_unary(
+                stack, depth, (3 * w + 2).reshape(1).expand(B), wa)
             slot_post = (3 * w + 1).reshape(1).expand(B)
-            ref_post, side_post = _operand_reference(slot_post, scope_w, ref_w, "right")
-            stack, depth, _ap = _undo_binary(stack, depth, slot_post, wa, ref_post, side_post)
-            slot_pre = (3 * w).reshape(1).expand(B)
-            ref_pre, side_pre = _operand_reference(slot_pre, scope_w, ref_w, "right")
-            stack, depth, _ap = _undo_binary(stack, depth, slot_pre, wa, ref_pre, side_pre)
+            ref_post, side_post = _operand_reference(slot_post)
+            stack, depth, unavailable_post = _undo_binary(stack, depth, slot_post, wa, ref_post, side_post)
             # pop: the top is the recovered word, scored on the spot
             top = stack[:, 0, :]
             underflow = torch.logical_and(wa, depth < 1)
@@ -11322,10 +11523,14 @@ class BasicModel(BaseModel):
             idea_sum = idea_sum.scatter_add(1, col, (idea_d * pop_w).reshape(B, 1))
             byte_sum = byte_sum.scatter_add(1, col, (byte_d * pop_w).reshape(B, 1))
             count = count.scatter_add(1, col, pop_w.reshape(B, 1))
-            trunc = trunc.scatter_add(1, col, underflow.to(S.dtype).reshape(B, 1))
             popped = torch.cat((stack[:, 1:, :], torch.zeros_like(stack[:, :1, :])), dim=1)
             stack = torch.where(wa.reshape(B, 1, 1), popped, stack)
             depth = depth - torch.logical_and(wa, depth >= 1).to(depth.dtype)
+            slot_pre = (3 * w).reshape(1).expand(B)
+            ref_pre, side_pre = _operand_reference(slot_pre)
+            stack, depth, unavailable_pre = _undo_binary(stack, depth, slot_pre, wa, ref_pre, side_pre)
+            bad = underflow | unavailable_post | unavailable_pre | unavailable_unary
+            trunc = trunc.scatter_add(1, col, bad.to(S.dtype).reshape(B, 1))
             if keep_ideas:
                 recovered = self._tensor_write_word_column(
                     recovered, w, torch.where(wa.reshape(B, 1), top, _word_col(recovered, w)))
@@ -11349,7 +11554,7 @@ class BasicModel(BaseModel):
         n_present = present_all.to(S.dtype).sum(dim=1).clamp_min(1.0)
         idea_cost = idea_all.sum(dim=1) / n_present
         byte_cost = byte_all.sum(dim=1) / n_present
-        truncated = (trunc > 0).any(dim=1)
+        truncated = (trunc > 0).any(dim=1) | pre_bad.any(dim=1) | malformed
         return recovered, idea_cost, byte_cost, truncated, byte_all
 
     def _reconstruct_sentence_traversal(self, S, reference, **_unused):
@@ -11362,6 +11567,18 @@ class BasicModel(BaseModel):
             torch.cat((S.reshape(B, 1, D), S.new_zeros(B, 2, D)), dim=1),
             torch.ones(B, dtype=torch.long, device=S.device))
         return rec, idea, byte_c, trunc
+
+    def _reconstruction_basis_snapshot(self, reference):
+        """Own the invocation's active concept rows, independent of surface targets."""
+        atoms = getattr(self.inputSpace, "_ar_concept_lookup_atoms", None)
+        rows = getattr(self.inputSpace, "_ar_concept_lookup_rows", None)
+        B, _, D = reference.shape
+        if not (torch.is_tensor(atoms) and torch.is_tensor(rows)):
+            return reference.new_zeros(B, 1, D), torch.zeros(
+                B, 1, dtype=torch.bool, device=reference.device)
+        bank = atoms.detach().to(reference).clone()
+        bank = F.pad(bank[..., :D], (0, max(0, D - bank.shape[-1])))
+        return bank, rows.detach().to(reference.device).ge(0).clone()
 
     def _snapshot_tables(self, reference):
         """``(ready, bank_n [B, L, D], bank_bytes [B, L, P], bank_valid
@@ -11376,13 +11593,20 @@ class BasicModel(BaseModel):
         if (torch.is_tensor(atoms) and atoms.dim() == 3 and torch.is_tensor(bank_bytes)
                 and torch.is_tensor(bank_valid) and int(atoms.shape[0]) == B
                 and int(atoms.shape[1]) == int(bank_bytes.shape[1])):
-            bank = atoms.to(device=reference.device, dtype=reference.dtype)
+            bank = atoms.detach().to(device=reference.device, dtype=reference.dtype).clone()
+            valid = bank_valid.detach().to(device=reference.device).clone()
+            rows = getattr(isp, "_ar_concept_lookup_rows", None)
+            if torch.is_tensor(rows) and rows.shape == bank.shape[:2]:
+                valid = valid & rows.detach().to(reference.device).ge(0)[:, :, None]
+            # An inactive dictionary row must not enter a dot product, even
+            # with a later zero weight: zero * NaN would poison backward.
+            bank = torch.where(valid.any(-1)[:, :, None], bank, torch.zeros_like(bank))
             if int(bank.shape[-1]) != D:
                 bank = torch.cat((bank[..., :D], bank.new_zeros(
                     B, int(bank.shape[1]), max(0, D - int(bank.shape[-1])))), dim=-1)
             return (True, torch.nn.functional.normalize(bank, dim=-1),
-                    bank_bytes.to(device=reference.device),
-                    bank_valid.to(device=reference.device))
+                    bank_bytes.detach().to(device=reference.device).clone(),
+                    valid)
         part_ids = getattr(isp, "_ar_word_part_ids", None)
         P = (int(part_ids.shape[-1]) if torch.is_tensor(part_ids) and part_ids.dim() == 3
              else 1)
@@ -11394,10 +11618,18 @@ class BasicModel(BaseModel):
                 torch.zeros(B, 1, P, dtype=torch.bool, device=reference.device))
 
     def _byte_tables(self, B, W):
-        """The staged words' bytes ``[B, W, P]`` (``-1`` padded) and their
-        validity, from the part ids and the pid-to-byte table; ``ready`` is
-        False when the input has no byte staging (the byte cost is then 0)."""
+        """Full staged target bytes and validity ``[B, W, P]``, for scoring.
+
+        The eager boundary expands multi-byte percepts. The one-byte table is
+        a compatibility fallback for callers without that lexical staging.
+        """
         isp = self.inputSpace
+        targets = getattr(isp, "_ar_target_word_bytes", None)
+        mask = getattr(isp, "_ar_target_word_mask", None)
+        if (torch.is_tensor(targets) and targets.dim() == 3
+                and targets.shape[:2] == (B, W) and torch.is_tensor(mask)
+                and mask.shape == targets.shape):
+            return True, targets, mask
         ps = self.perceptualSpace
         part_ids = getattr(isp, "_ar_word_part_ids", None)
         part_mask = getattr(isp, "_ar_word_part_mask", None)
@@ -11415,48 +11647,75 @@ class BasicModel(BaseModel):
 
     def _byte_word_cost(self, idea, word, bank_n, bank_bytes, bank_valid,
                         target_bytes, target_valid, ready):
-        """``[B]`` byte cross-entropy of one recovered word idea (contract 3).
+        """``[B]`` byte/end-of-word cross entropy of a recovered word idea.
 
         A concept row is an identity code (it carries no fold of the
         word's byte atoms), so the tied inverse of the concept lookup is
         the snap to a row and a row's surface is its bytes: the decoder's
         candidates are the rows of the brick's staged dictionary snapshot
         (``bank_n``, every word and object row the brick staged, with a
-        null candidate of similarity 0 and uniform bytes so a one-word
+        null candidate of similarity 0 and uniform scoring symbols so a one-word
         brick, a zero idea or an idea near no row cannot score zero by
-        having nothing to choose between).  The assignment
+        having nothing to choose between). Score byte values 0..255, including
+        the token's first NUL terminator (0), to distinguish a word from a
+        longer word with the same prefix. No extra scoring category is added.
+        The assignment
         ``softmax(cos / tau)`` over the snapshot gives the expected byte at
         each position of the word's window (the assignment-weighted
         candidates' bytes, accumulated by scatter), scored against the
         word's own bytes (``target_bytes [B, W, P]`` at ``word``).  The
         similarity is the absolute cosine: a symbol's value is its signed
         activation and its identity its row, so a leaf pushed with a
-        negative activation still snaps to its row.  Zero when the idea
-        sits on its own row.  Gradient flows through the
+        negative activation still snaps to its row. The null candidate gives
+        a finite error floor even for an isolated matching row. Gradient flows through the
         assignment into the idea and the tied inverses; the snapshot and
         the bytes are constants.
         """
-        B, L, P = int(bank_bytes.shape[0]), int(bank_bytes.shape[1]), int(bank_bytes.shape[2])
-        W = int(target_bytes.shape[1])
-        if not ready:
+        B, L, C = (int(size) for size in bank_bytes.shape)
+        W, P = int(target_bytes.shape[1]), int(target_bytes.shape[2])
+        if not ready or P == 0:
             return idea.new_zeros(B)
         idea_n = torch.nn.functional.normalize(idea, dim=-1)
         # a symbol's value is its signed activation and its identity its
         # row: the snap reads the row regardless of the sign
         sim = torch.einsum("bd,bkd->bk", idea_n, bank_n).abs() / self._BYTE_ASSIGNMENT_TAU
         present = bank_valid.any(dim=-1)                                 # [B, L]
+        # Token buffers terminate at their first NUL, even if a caller's
+        # span includes padding or stale bytes after it.
+        bank_valid = bank_valid & (bank_bytes != 0).to(torch.long).cumprod(-1).bool()
         sim = torch.where(present, sim, torch.full_like(sim, -1e4))
         assign = torch.softmax(
             torch.cat((sim, sim.new_zeros(B, 1)), dim=-1), dim=-1)     # [B, L + 1]
         p_null = assign[:, -1:]
-        weights = assign[:, :L].reshape(B, 1, L).expand(B, P, L) \
-            * bank_valid.permute(0, 2, 1).to(assign.dtype)              # [B, P, L]
-        pred = idea.new_zeros(B, P, 256).scatter_add(
-            2, bank_bytes.permute(0, 2, 1), weights)                    # [B, P, 256]
+        positions = torch.arange(P + 1, device=idea.device)
+        bank_end = (torch.where(bank_valid, torch.arange(C, device=idea.device) + 1, 0).amax(-1)
+                    if C else torch.zeros_like(present, dtype=torch.long))
+        bank_eow = positions == bank_end[:, :, None]
+        # Candidate and target windows differ by the retained lookahead byte.
+        # Score only the target's P bytes and its possible word end at P.
+        # Gather through one masked sentinel column. Padding by max(P+1-C, 0)
+        # followed by slicing imposes incompatible shape guards on dynamic P.
+        candidate_positions = positions.clamp(max=C)
+        bank_tokens = F.pad(bank_bytes, (0, 1)).index_select(-1, candidate_positions)
+        bank_tokens = torch.where(bank_eow, torch.zeros_like(bank_tokens), bank_tokens)
+        bank_emits = (F.pad(bank_valid, (0, 1)).index_select(-1, candidate_positions)
+                      | bank_eow) & present[:, :, None]
+        weights = assign[:, :L].reshape(B, 1, L).expand(B, P + 1, L) \
+            * bank_emits.permute(0, 2, 1).to(assign.dtype)
+        pred = idea.new_zeros(B, P + 1, 256).scatter_add(
+            2, bank_tokens.permute(0, 2, 1), weights)
         pred = pred + (p_null / 256.0).reshape(B, 1, 1)
         safe = word.clamp(0, W - 1).reshape(1, 1, 1)
         target = target_bytes.gather(1, safe.expand(B, 1, P)).reshape(B, P)
-        pos = target_valid.gather(1, safe.expand(B, 1, P)).reshape(B, P).to(idea.dtype)
+        valid = target_valid.gather(1, safe.expand(B, 1, P)).reshape(B, P).bool()
+        target_present = valid.any(-1, keepdim=True)
+        valid = valid & (target != 0).to(torch.long).cumprod(-1).bool()
+        target_end = torch.where(valid, positions[:P] + 1, 0).amax(-1, keepdim=True)
+        # Without a scoreable word, do not manufacture an empty-word target.
+        target_eow = (positions == target_end) & target_present
+        target = F.pad(target, (0, 1))
+        target = torch.where(target_eow, torch.zeros_like(target), target)
+        pos = (F.pad(valid, (0, 1)) | target_eow).to(idea.dtype)
         logp = torch.log(pred.gather(2, target.unsqueeze(-1)).squeeze(-1).clamp_min(1e-6))
         return (-logp * pos).sum(-1) / pos.sum(-1).clamp_min(1.0)
     _BYTE_ASSIGNMENT_TAU = 0.1
@@ -11898,7 +12157,8 @@ class BasicModel(BaseModel):
         return int(getattr(language, "_generate_policy_width", 0) or -1)
 
     def _output_generate_walk(self, event, budget, stamped_events=True,
-                              targets=None, sample_actions=False):
+                              targets=None, sample_actions=False,
+                              basis=None, basis_valid=None, candidate_limit=16):
         """The answer-side generate walk as one bounded ``torch.while_loop``
         (contract 5).
 
@@ -11990,9 +12250,16 @@ class BasicModel(BaseModel):
             do_u = torch.logical_and(torch.logical_or(
                 torch.logical_and(is_rule, known_u), pol_u),
                 torch.logical_not(do_b))
-            left, right = language.reverse_binary_step(
-                top_vec, local_b, do_b, inverses=inverses, ops=binary_ops)
-            undone = language.reverse_unary_step(top_vec, local_u, do_u, ops=unary_ops)
+            left, right, unavailable = language.reverse_binary_step(
+                top_vec, local_b, do_b, inverses=inverses, ops=binary_ops,
+                basis=basis, basis_valid=basis_valid, candidate_limit=candidate_limit,
+                return_status=True)
+            # An unavailable requested split stays pending until the budget;
+            # it cannot turn into a fabricated completed leaf.
+            do_b = do_b & ~unavailable
+            undone, unavailable_unary = language.reverse_unary_step(
+                top_vec, local_u, do_u, ops=unary_ops, return_status=True)
+            do_u = do_u & ~unavailable_unary
             if stamped_events:       # children stamped empty in the where channel
                 zero_where = torch.zeros_like(left[:, cw:cw + 1])
                 left = torch.cat((left[:, :cw], zero_where, left[:, cw + 1:]), dim=-1)
@@ -12928,6 +13195,9 @@ class BasicModel(BaseModel):
                 "_packed_sentence_roots", "_output_policy_cost")))
         object.__setattr__(self, "_output_policy_cost", None)
         object.__setattr__(self, "_recon_cost", None)
+        object.__setattr__(self, "_recon_completed", False)
+        object.__setattr__(self, "_reconstruction_product", None)
+        object.__setattr__(self, "_recon_ideas", None)
         object.__setattr__(self, "_tensor_pushed_ideas", None)
         object.__setattr__(self, "_tensor_sentence_roots_depth", None)
         object.__setattr__(self, "_tensor_final_end_slots", None)
@@ -13167,7 +13437,9 @@ class BasicModel(BaseModel):
                     for _part_tensor in (
                             getattr(self.inputSpace, "_ar_word_part_ids", None),
                             getattr(self.inputSpace, "_ar_word_part_mask", None),
-                            getattr(self.inputSpace, "_ar_word_part_offsets", None)):
+                            getattr(self.inputSpace, "_ar_word_part_offsets", None),
+                            getattr(self.inputSpace, "_ar_target_word_bytes", None),
+                            getattr(self.inputSpace, "_ar_target_word_mask", None)):
                         if torch.is_tensor(_part_tensor) and _part_tensor.dim() == 3:
                             torch._dynamo.mark_dynamic(
                                 _part_tensor, 2, min=_part_min, max=_part_max)
@@ -13464,7 +13736,7 @@ class BasicModel(BaseModel):
                     raise RuntimeError(
                         "detachedReverse is enabled, but the idea-only reverse "
                         "chooser or its ReconstructionStack teacher is missing")
-            elif getattr(self, "reconstruct_in_loop", False) and train:
+            elif getattr(self, "reconstruct_in_loop", False):
                 # Tied contract: the traversal's byte cost is the only
                 # reconstruction objective; the legacy per-word reverse
                 # (reverse(S) -> table -> input) does not run.
@@ -13472,36 +13744,16 @@ class BasicModel(BaseModel):
             else:
                 d3_loss, d3_metric = (self._d3_reconstruction_loss()
                                       if _per_word else (None, None))
-            _recon_cost = getattr(self, "_recon_cost", None)
-            if (getattr(self, "reconstruct_in_loop", False) and train
-                    and not torch.is_tensor(_recon_cost)):
-                # An eager forward published no explicit sentence state:
-                # run the traversal here from the root and the ideas the
-                # tensor word pipeline stashed.
-                _S = getattr(self, "_stm_single_S", None)
-                _pushed = getattr(self, "_tensor_pushed_ideas", None)
-                _roots = getattr(self, "_tensor_sentence_roots_live", None)
-                _depth = getattr(self, "_tensor_sentence_roots_depth", None)
-                _end = getattr(self, "_tensor_final_end_slots", None)
-                _end_d = getattr(self, "_tensor_final_end_depth", None)
-                if (torch.is_tensor(_S) and torch.is_tensor(_pushed)
-                        and torch.is_tensor(_roots)):
-                    if not (torch.is_tensor(_end) and torch.is_tensor(_end_d)):
-                        _end, _end_d = self._final_end_state(
-                            _S, getattr(self, "_stm_post_depth", None))
-                    (_ideas, _idea_cost, _recon_cost, _trunc, _per_sentence) = (
-                        self._compiled_reconstruct()(
-                            _S, _pushed, _roots, _depth, _end, _end_d))
-                    object.__setattr__(self, "_recon_ideas", _ideas)
-                    object.__setattr__(self, "_recon_idea_cost", _idea_cost)
-                    object.__setattr__(self, "_recon_cost", _recon_cost)
-                    object.__setattr__(self, "_recon_truncated", _trunc)
-                    object.__setattr__(self, "_recon_sentence_costs", _per_sentence)
-            if (getattr(self, "reconstruct_in_loop", False)
-                    and torch.is_tensor(_recon_cost) and train):
-                # The tied traversal's reconstruction cost (compiled
-                # reverse-loops plan, slice 1: idea level).
-                lossIn = _recon_cost.mean()
+            if self.reconstruct_in_loop:
+                # Completion belongs to understanding, before reasoning and
+                # output can change staging. Training and evaluation consume
+                # precisely the same owned byte objective, once.
+                owned = self._last_understanding.input_reconstruction
+                if owned is None or not torch.is_tensor(owned.byte_cost):
+                    raise RuntimeError("tied reconstruction completed without its byte objective")
+                lossIn = owned.byte_cost.mean()
+                if not train:
+                    inputDataPred = owned.event.detach()
                 self._d3_active = False
             elif d3_loss is not None:
                 # On detachedReverse this is rule/arity/exact-leaf supervision
@@ -13548,9 +13800,7 @@ class BasicModel(BaseModel):
             # step.
             lossRev = torch.zeros((), device=TheDevice.get())
             # Dedupe: on D3 lossIn IS the reverse objective; train skips the double count (doc/plans/2026-07-03-reconstruction-fidelity-execution.md); eval totals still include the reverse term.
-            _rev_dedupe = train and (
-                bool(self._d3_active)
-                or bool(getattr(self, "reconstruct_in_loop", False)))
+            _rev_dedupe = self.reconstruct_in_loop or (train and bool(self._d3_active))
             try:
                 if forwardInput is not None and not _rev_dedupe:
                     # Step 2 (What spec): the input-associated inverse path is
@@ -13887,7 +14137,8 @@ class BasicModel(BaseModel):
             # weight 0.0 -> skipped -> byte-identical.
             if train and float(
                     getattr(self, "leaf_distill_weight", 0.0) or 0.0) > 0.0 \
-                    and not getattr(self, "detached_reverse", False):
+                    and not getattr(self, "detached_reverse", False) \
+                    and not self.reconstruct_in_loop:
                 try:
                     ld_loss = self._leaf_distill_loss()
                 except Exception:
@@ -17147,6 +17398,8 @@ class BasicModel(BaseModel):
 
     def _prepare_reconstruction_choices(self, batch, word_width, device):
         """Prepare the fixed rule-choice teacher outside a captured W loop."""
+        object.__setattr__(self, "_recon_completed", False)
+        object.__setattr__(self, "_reconstruction_product", None)
         trace = self._reconstruction_stack()
         language = getattr(getattr(self, "symbolSpace", None),
                            "languageLayer", None)
@@ -19838,7 +20091,8 @@ class BasicModel(BaseModel):
         """
         if (not self._tensor_peer_while_enabled
                 or not (torch.compiler.is_compiling()
-                        or self._tensor_peer_while_eager)
+                        or self._tensor_peer_while_eager
+                        or self.reconstruct_in_loop)
                 or not getattr(self, "serial_object_meta", False)
                 or getattr(self, "concept_binding", "mixing") != "aligned"
                 or getattr(self, "sentence_protocol", False)

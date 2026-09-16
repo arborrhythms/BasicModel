@@ -1,0 +1,43 @@
+Canonical fullgraph compile: lazy fused tensor word-loop lowering on mps with fixed capacity and residual-part axes
+[AMP] off (fp32, MODEL_AMP unset or =off)
+Canonical fullgraph lowering: compiling complete W=256 recurrent word loop (one-time cost for this bucket)
+Debug checks: OFF
+MPS: inductor device asserts disabled (check_bounds + device_assert_async) -- Metal 31-buffer limit vs error_buf
+MPS: inductor DTYPE_TO_METAL patched with uint16->ushort
+MPS: inductor any-reduction dtype metadata patched (Metal 'bool' -> torch.bool)
+MPS: zero-size while-loop dependencies excluded from Inductor read-realization ratio
+MPS: inductor subgraph Metal kernel names allocated from the shared wrapper (torch.while_loop)
+MPS: unbacked while-loop tape views excluded from post-grad addmm fuse/unfuse rewrites
+MPS: stride-only reverse while-loop metadata differences delegated to Inductor exact-stride lowering
+MPS: oversized scalar-gradient sums lowered via stack/sum/copy wrapper fallback
+MPS: inductor max_fusion_unique_io_buffers=8, max_fusion_size=16 (Metal 31-buffer kernel-arg limit)
+Model compiled (eager, mode=default, fullgraph=True)
+Traceback (most recent call last):
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/bench_sentence_expectation.py", line 698, in <module>
+    main()
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/bench_sentence_expectation.py", line 680, in main
+    result = native_benchmark(args.config, device=args.device, backend=args.backend,
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/bench_sentence_expectation.py", line 588, in native_benchmark
+    model.runEpoch(optimizer=opt, batchSize=batch_size, split=split, max_batches=count)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 15127, in runEpoch
+    result, _ = self.runBatch(
+                ^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/bench_sentence_expectation.py", line 474, in measured_batch
+    result = original_batch(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 13383, in runBatch
+    _what_answers = self._what_or_think(
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8265, in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 9830, in what
+    else self._capture_understanding(execution))
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 7982, in _capture_understanding
+    input_reconstruction = self._complete_input_reconstruction()
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8008, in _complete_input_reconstruction
+    raise RuntimeError("tied reconstruction requires completed sentence state")
+RuntimeError: tied reconstruction requires completed sentence state

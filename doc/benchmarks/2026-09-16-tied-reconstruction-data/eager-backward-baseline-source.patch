@@ -1,0 +1,1376 @@
+--- a/bin/Models.py
++++ b/bin/Models.py
+@@ -79,7 +79,7 @@
+     stamp_checkpoint_schema,
+ )
+ from data import Data, TheData
+-from Understanding import AnswerProgram, Understanding
++from Understanding import AnswerProgram, InputReconstruction, Understanding
+ from Output import AnswerConstruction, AnswerDerivation
+ from contextlib import contextmanager as _contextmanager
+ from What import (LTMSlot, What, WhatAnswer, WhatQuestion, WhatRelation,
+@@ -2495,6 +2495,13 @@
+         # exclusive with the detached idea-only student.
+         self.reconstruct_in_loop = bool(
+             TheXMLConfig.training("reconstructInLoop", False))
++        self._recon_keep_ideas = self.reconstruct_in_loop
++        self._recon_completed = False
++        self._reconstruction_product = None
++        self.reconstruction_basis_limit = int(
++            TheXMLConfig.training("reconstructionBasisLimit", 16))
++        if self.reconstruction_basis_limit < 1:
++            raise ValueError("reconstructionBasisLimit must be positive")
+         # Slice 3: the answer realisation's generate walk as the second
+         # compiled loop (its own state, policy and termination).
+         self.output_in_loop = bool(
+@@ -7306,12 +7313,16 @@
+                 # placeholders: the traversal runs after the forward from
+                 # the published references and roots (see ``runBatch``)
+                 object.__setattr__(self, "_recon_cost", None)
++                object.__setattr__(self, "_recon_completed", False)
+             else:
++                if getattr(self, "_recon_ideas", None) is not recon_ideas:
++                    object.__setattr__(self, "_reconstruction_product", None)
+                 object.__setattr__(self, "_recon_ideas", recon_ideas)
+                 object.__setattr__(self, "_recon_idea_cost", recon_idea_cost)
+                 object.__setattr__(self, "_recon_cost", recon_byte_cost)
+                 object.__setattr__(self, "_recon_truncated", recon_truncated)
+                 object.__setattr__(self, "_recon_sentence_costs", recon_sentence_costs)
++                object.__setattr__(self, "_recon_completed", bool(self.reconstruct_in_loop))
+             result = tuple(result[:11])
+         if len(result) == 11:
+             # Fold-ladder provenance (Phase 2b): the STM whole slab and the
+@@ -7968,6 +7979,7 @@
+                 and symbols.dim() == 3 and conceptual.shape[-1] == symbols.shape[-1]):
+             answer_seed = conceptual
+         answer_program, sentence_programs = self._capture_answer_programs()
++        input_reconstruction = self._complete_input_reconstruction()
+         return Understanding(
+             perceptual_context=perceptual,
+             conceptual_state=conceptual,
+@@ -7978,7 +7990,59 @@
+             answer_seed=answer_seed,
+             answer_program=answer_program,
+             sentence_programs=sentence_programs,
++            input_reconstruction=input_reconstruction,
+         )
++
++    def _complete_input_reconstruction(self):
++        """Own the tied input result before another path can change staging."""
++        if not getattr(self, "reconstruct_in_loop", False):
++            return None
++        cached = getattr(self, "_reconstruction_product", None)
++        if cached is not None:
++            return cached
++        if not getattr(self, "_recon_completed", False):
++            S = getattr(self, "_stm_single_S", None)
++            reference = getattr(self, "_tensor_pushed_ideas", None)
++            roots = getattr(self, "_tensor_sentence_roots_live", None)
++            if not all(torch.is_tensor(value) for value in (S, reference, roots)):
++                raise RuntimeError("tied reconstruction requires completed sentence state")
++            depth = getattr(self, "_tensor_sentence_roots_depth", None)
++            end = getattr(self, "_tensor_final_end_slots", None)
++            end_depth = getattr(self, "_tensor_final_end_depth", None)
++            if not (torch.is_tensor(end) and torch.is_tensor(end_depth)):
++                end, end_depth = self._final_end_state(S, getattr(self, "_stm_post_depth", None))
++            values = self._compiled_reconstruct()(S, reference, roots, depth, end, end_depth)
++            for name, value in zip(("_recon_ideas", "_recon_idea_cost", "_recon_cost",
++                                    "_recon_truncated", "_recon_sentence_costs"), values):
++                object.__setattr__(self, name, value)
++            object.__setattr__(self, "_recon_completed", True)
++        ideas = self._recon_ideas
++        with self._synthesis_guard():
++            carrier = self.conceptualSpace.subspace.carrier_like()
++            carrier.set_event(ideas)
++            surface = self._reverse_input_surface(carrier)
++            event = surface.materialize() if hasattr(surface, "materialize") else surface
++            if not torch.is_tensor(event):
++                raise RuntimeError("tied reconstruction produced no input surface")
++            event = event.clone()
++        result = InputReconstruction(
++            ideas, event, self._recon_idea_cost, self._recon_cost,
++            self._recon_truncated, self._recon_sentence_costs)
++        object.__setattr__(self, "_reconstruction_product", result)
++        return result
++
++    def _reverse_input_surface(self, carrier):
++        """Realize recovered input ideas through the shared numerical inverse.
++
++        The input's grammar traversal is already complete. No generate policy
++        or free chart expansion belongs in this path.
++        """
++        carrier = self._reverse_body(carrier)
++        concepts = getattr(carrier, "_concepts_recon", None)
++        carrier = self._reverse_perceptual(carrier)
++        if concepts is not None and carrier is not None:
++            object.__setattr__(carrier, "_concepts_recon", concepts)
++        return self.inputSpace.reverse(carrier)
+ 
+     def understand(self, input_data, *, executor=None):
+         """One bottom-up analysis pass returning its ``Understanding``."""
+@@ -8000,12 +8064,23 @@
+         ``(reconstructed_event, input_reconstruction)``; the cost is ``None``
+         unless ``target`` (the forward input carrier or event) is supplied,
+         and the target is used only for scoring, never as a carrier.
+-        Migration note: the reverse chain still commits the seed onto the
+-        live ``ConceptualSpace.subspace`` before walking it; a carrier-pure
+-        reverse is the remaining Step 1 work.
++        Tied mode consumes the completed Understanding-owned surface. Its
++        optional event score is a diagnostic; runBatch trains the owned byte
++        objective and does not add this event score a second time. Explicit
++        legacy modes retain their historical live-carrier reverse below.
+         """
+         if not isinstance(understanding, Understanding):
+             raise TypeError("reconstruct expects an Understanding")
++        owned = understanding.input_reconstruction
++        if owned is not None:
++            # Readiness is explicit: a zero-valued result is still complete.
++            event = owned.event.clone()
++            target_event = target.materialize() if hasattr(target, "materialize") else target
++            score = (self._reverse_event_loss(event, target_event)
++                     if torch.is_tensor(target_event) else None)
++            return event, score
++        if self.reconstruct_in_loop:
++            raise RuntimeError("tied reconstruction requires an owned completed result")
+         train = bool(train)
+         # Install this understanding's forward-local carriers so the walk is
+         # a function of the understanding, not of whichever path ran last.
+@@ -8034,7 +8109,7 @@
+             if terminal_idea is not None:
+                 cs = self.conceptualSpace
+                 cs.commit_event(terminal_idea)
+-                rev_sub = self.reverse(
++                rev_sub = self._reverse_input_surface(
+                     cs.subspace)
+             rev_ev = (rev_sub.materialize()
+                       if rev_sub is not None
+@@ -10982,8 +11057,7 @@
+         if not (torch.is_tensor(reference) and torch.is_tensor(roots)):
+             return None
+         recon = getattr(self, "_recon_ideas", None)
+-        if (torch.is_tensor(recon) and recon.dim() == 3
+-                and float(recon.abs().sum()) > 0.0):
++        if getattr(self, "_recon_completed", False) and torch.is_tensor(recon):
+             return recon
+         depth = getattr(self, "_tensor_sentence_roots_depth", None)
+         end = getattr(self, "_tensor_final_end_slots", None)
+@@ -10993,11 +11067,15 @@
+         keep = bool(getattr(self, "_recon_keep_ideas", False))
+         object.__setattr__(self, "_recon_keep_ideas", True)
+         try:
+-            recovered = self._reconstruct_sentences(
+-                S, reference, roots, depth, end, end_d)[0]
++            values = self._reconstruct_sentences(
++                S, reference, roots, depth, end, end_d)
++            for name, value in zip(("_recon_ideas", "_recon_idea_cost", "_recon_cost",
++                                    "_recon_truncated", "_recon_sentence_costs"), values):
++                object.__setattr__(self, name, value)
++            object.__setattr__(self, "_recon_completed", True)
+         finally:
+             object.__setattr__(self, "_recon_keep_ideas", keep)
+-        return recovered
++        return values[0]
+ 
+     def _final_end_state(self, S, post_depth):
+         """``(end_slots [B, 3, D], end_depth [B])`` of the row's last
+@@ -11068,9 +11146,10 @@
+ 
+     def _reconstruct_sentences(self, S, reference, roots_live, roots_depth=None,
+                                end_slots=None, end_depth=None):
+-        """The row's completed sentences reconstructed in two bounded
+-        compiled passes that share the forward's word index (requirement 3,
+-        contracts 2-4).
++        """Reconstruct completed sentences with bounded compiled traversals.
++
++        An integer-only prepass replays operand occurrence positions. The two
++        numerical passes below follow the completed sentence's recorded trace.
+ 
+         Pass A (one ``torch.while_loop`` trip per sentence slot, bounded by
+         the row's highest sentence id): the sentence's sealed root (the live root the loop stored
+@@ -11079,8 +11158,9 @@
+         the pre-seal STM stack.  Pass B (one ``torch.while_loop`` over the
+         word index, latest word first): at a word that ends a sentence the
+         stack becomes that sentence's pre-seal stack; then the word's
+-        recorded unary, post-binary and pre-binary folds are undone with the
+-        tied inverses and the word is popped and scored on the spot (idea
++        recorded unary and post-binary folds are undone with the tied
++        inverses, the word is popped and scored, then its pre-binary fold
++        is undone (idea
+         distance to its retained reference; byte cross-entropy through the
+         soft assignment to the row's word rows).  Costs are accumulated per
+         sentence slot (``[B, slots]``); the row cost is the mean over the
+@@ -11114,19 +11194,6 @@
+         unary_map = trace.rule_map(1)
+         active = isp._word_active_mask.to(dtype=torch.bool)
+         dev = S.device
+-        # Operand identity (contract 1): the recorded concept rows of each
+-        # fold's left (older) and right (newest) operands, and the words'
+-        # rows by position, route the residual reverses to the right
+-        # operand and word.
+-        rows_l, rows_r = trace.operand_rows()
+-        word_ids = self._word_symbol_rows()
+-        have_rows = (torch.is_tensor(rows_l) and torch.is_tensor(rows_r)
+-                     and torch.is_tensor(word_ids) and word_ids.dim() == 2
+-                     and tuple(word_ids.shape) == tuple(active.shape)
+-                     and tuple(rows_l.shape) == tuple(rule_ids.shape))
+-        if have_rows:
+-            word_ids = word_ids.to(device=dev, dtype=torch.long)
+-            rows_l = rows_l.to(device=dev); rows_r = rows_r.to(device=dev)
+         packed = bool(getattr(isp, "_sentence_pack_enabled", False))
+         ids = getattr(isp, "_packed_sentence_ids", None)
+         if packed and torch.is_tensor(ids):
+@@ -11141,11 +11208,20 @@
+         cont = torch.cat((cont, torch.zeros(B, 1, dtype=torch.bool, device=dev)), dim=1)
+         is_end = torch.logical_and(active, torch.logical_not(cont))       # [B, W]
+         last_index = torch.where(active, positions, torch.full_like(positions, -1)).amax(dim=1)
+-        keep_ideas = bool(getattr(self, "_recon_keep_ideas", False))
+-        inverses = language.reverse_inverses()      # once, not per step
++        keep_ideas = bool(self.reconstruct_in_loop or getattr(self, "_recon_keep_ideas", False))
++        required = ((rule_ids.unsqueeze(-1) == binary_map.reshape(1, 1, -1))
++                    & (mask & (arities == 2)).unsqueeze(-1)).any(dim=(0, 1))
++        inverses = language.reverse_inverses(required=required)  # once per selected op
+         byte_ready, bytes_bwp, valid_bwp = self._byte_tables(B, W)   # the words' bytes
+         snap_ready, bank_n, bank_bytes, bank_valid = self._snapshot_tables(reference)
++        basis, basis_valid = self._reconstruction_basis_snapshot(reference)
++        basis_limit = int(self.reconstruction_basis_limit)
+         byte_ready = bool(byte_ready and snap_ready)
++        binary_ops = list(language._tree_layer(2).ops)
++        prefer_left = torch.tensor([
++            getattr(getattr(op, "gl", op), "rule_name", "")
++            in ("part", "assertPart", "isPart", "preposition")
++            for op in binary_ops], dtype=torch.bool, device=dev)
+ 
+         def _col(slab, index):
+             k = int(slab.shape[1])
+@@ -11161,40 +11237,89 @@
+             safe = index.clamp(0, W - 1).reshape(1, 1, 1).expand(B, 1, k)
+             return slab.gather(1, safe).reshape(B, k)
+ 
+-        def _word_of_row(row_b, scope):
+-            """Position of concept row ``row_b`` among the scoped words
+-            (first match) and whether one exists."""
+-            match = torch.logical_and(word_ids == row_b.reshape(B, 1), scope)
+-            match = torch.logical_and(match, row_b.reshape(B, 1) >= 0)
+-            found = match.any(dim=1)
+-            pos = match.to(torch.long).argmax(dim=1)
+-            return pos, found
+-
+-        def _operand_reference(slot_b, scope, fallback_ref, fallback_side):
+-            """``(ref [B, D], side)`` for the fold recorded at ``slot_b``:
+-            from the recorded operand rows when known (the word operand's
+-            retained reference, right or left per row), else the caller's
+-            fallback (the pushed word on the right for a per-word fold)."""
+-            if not have_rows:
+-                return fallback_ref, fallback_side
+-            lr = rows_l.gather(1, slot_b.clamp(0, int(rows_l.shape[1]) - 1).reshape(B, 1)).reshape(B)
+-            rr = rows_r.gather(1, slot_b.clamp(0, int(rows_r.shape[1]) - 1).reshape(B, 1)).reshape(B)
+-            pos_r, found_r = _word_of_row(rr, scope)
+-            pos_l, found_l = _word_of_row(lr, scope)
+-            use_right = found_r
+-            pos = torch.where(use_right, pos_r, pos_l)
++        # Replay only integer occurrence positions. A concept row can occur
++        # more than once with different signed activations. The recorded
++        # stack operations, unlike a first matching row, identify which
++        # occurrence supplied each leaf operand. Composite/unary positions
++        # remain -1; they cannot borrow the current word as a witness.
++        steps = int(rule_ids.shape[1])
++        bound = (last_index.max() + 1).clamp_min(0)
++
++        def metadata_fold(stack, depth, lefts, rights, bad, slot, ready, arity):
++            recorded = ready & _col_rows(mask, slot)
++            rule = _col_rows(rule_ids, slot)
++            _, known = language.local_op_from_rule_ids(
++                rule, binary_map if arity == 2 else unary_map)
++            valid = recorded & known & (_col_rows(arities, slot) == arity) & (depth >= arity)
++            bad = bad | (recorded & ~valid)
++            if arity == 2:
++                col = slot.clamp(0, steps - 1).reshape(B, 1)
++                lefts = lefts.scatter(1, col, torch.where(
++                    valid, stack[:, 1], _col_rows(lefts, slot)).reshape(B, 1))
++                rights = rights.scatter(1, col, torch.where(
++                    valid, stack[:, 0], _col_rows(rights, slot)).reshape(B, 1))
++                reduced = torch.cat((torch.full_like(stack[:, :1], -1),
++                                     stack[:, 2:], torch.full_like(stack[:, :1], -1)), dim=1)
++                depth = depth - valid.to(depth.dtype)
++            else:
++                reduced = torch.cat((torch.full_like(stack[:, :1], -1), stack[:, 1:]), dim=1)
++            return torch.where(valid[:, None], reduced, stack), depth, lefts, rights, bad
++
++        def metadata_cond(w, stack, depth, lefts, rights, bad):
++            return w < bound
++
++        def metadata_body(w, stack, depth, lefts, rights, bad):
++            wa = _col(active, w)
++            slot = (3 * w).reshape(1).expand(B)
++            stack, depth, lefts, rights, bad = metadata_fold(
++                stack, depth, lefts, rights, bad, slot, wa, 2)
++            push = wa & (depth < cap)
++            bad = bad | (wa & ~push)
++            pushed = torch.cat((w.reshape(1, 1).expand(B, 1), stack[:, :cap - 1]), dim=1)
++            stack = torch.where(push[:, None], pushed, stack)
++            depth = depth + push.to(depth.dtype)
++            stack, depth, lefts, rights, bad = metadata_fold(
++                stack, depth, lefts, rights, bad, slot + 1, wa, 2)
++            stack, depth, lefts, rights, bad = metadata_fold(
++                stack, depth, lefts, rights, bad, slot + 2, wa, 1)
++            ending = _col(is_end, w) & wa
++            final = w == last_index
++            base = torch.where(final, 3 * W, 3 * W + w * seal_width)
++            for k in range(seal_width):
++                ready = ending & (~final | (k < n_levels))
++                stack, depth, lefts, rights, bad = metadata_fold(
++                    stack, depth, lefts, rights, bad, base + k, ready, 2)
++            sid = _col(ids, w)
++            expected = roots_depth.gather(1, sid.clamp(0, slots - 1)[:, None]).reshape(B)
++            expected = torch.where(final, end_depth.reshape(B), expected)
++            bad = bad | (ending & (depth != expected)) | (wa & ((sid < 0) | (sid >= slots)))
++            stack = torch.where(ending[:, None], torch.full_like(stack, -1), stack)
++            depth = torch.where(ending, torch.zeros_like(depth), depth)
++            return (w + 1, stack.clone(), depth.clone(), lefts.clone(), rights.clone(), bad.clone())
++
++        empty_positions = torch.full((B, steps), -1, dtype=torch.long, device=dev)
++        _, _, _, occurrence_left, occurrence_right, malformed = torch.while_loop(
++            metadata_cond, metadata_body,
++            (torch.zeros((), dtype=torch.long, device=dev),
++             torch.full((B, cap), -1, dtype=torch.long, device=dev),
++             torch.zeros(B, dtype=torch.long, device=dev),
++             empty_positions, empty_positions.clone(),
++             torch.zeros(B, dtype=torch.bool, device=dev)))
++        occurrence_left, occurrence_right = occurrence_left.clone(), occurrence_right.clone()
++        malformed = malformed.clone()
++
++        def _operand_reference(slot_b):
++            """The retained leaf at the actual operand occurrence, if any."""
++            pos_l = _col_rows(occurrence_left, slot_b)
++            pos_r = _col_rows(occurrence_right, slot_b)
++            found_l, found_r = pos_l >= 0, pos_r >= 0
++            local, _ = language.local_op_from_rule_ids(_col_rows(rule_ids, slot_b), binary_map)
++            needs_left = prefer_left.gather(0, local)
++            use_right = found_r & ~(needs_left & found_l)
++            pos = torch.where(use_right, pos_r, pos_l).clamp(0, W - 1)
+             valid = torch.logical_or(found_r, found_l)
+-            ref = reference.gather(1, pos.reshape(B, 1, 1).expand(B, 1, D)).reshape(B, D)
+-            # A fold without recorded rows (a trace from before the rows
+-            # were kept, or an operand that is not a word of this
+-            # sentence) keeps the caller's fallback on its side.
+-            fb = torch.logical_not(valid)
+-            ref = torch.where(fb.reshape(B, 1), fallback_ref, ref)
+-            if fallback_side == "right":
+-                use_right = torch.logical_or(use_right, fb)
+-            else:
+-                use_right = torch.logical_and(use_right, torch.logical_not(fb))
+-            return ref, (use_right, torch.ones_like(valid))
++            ref = reference.gather(1, pos.reshape(B, 1, 1).expand(B, 1, D)).reshape(B, D).detach()
++            return torch.where(valid[:, None], ref, torch.zeros_like(ref)), (use_right, valid)
+ 
+         def _undo_binary(stack, depth, slot_b, ok, ref, side="right"):
+             top = stack[:, 0, :]
+@@ -11204,12 +11329,15 @@
+             local_b, known_b = language.local_op_from_rule_ids(rec_slot, binary_map)
+             valid = torch.logical_and(
+                 torch.logical_and(rec_mask, known_b), depth >= 1)
+-            left, right = language.reverse_binary_step(
+-                top, local_b, valid, ref, inverses=inverses, reference_side=side)
++            valid = valid & (depth < cap) & (_col_rows(arities, slot_b) == 2)
++            left, right, unavailable = language.reverse_binary_step(
++                top, local_b, valid, ref, inverses=inverses, reference_side=side,
++                basis=basis, basis_valid=basis_valid, candidate_limit=basis_limit,
++                return_status=True)
+             split = torch.cat(
+                 (right.unsqueeze(1), left.unsqueeze(1), stack[:, 1:cap - 1, :]), dim=1)
+             new_stack = torch.where(valid.reshape(B, 1, 1), split, stack)
+-            return new_stack, depth + valid.to(depth.dtype), valid
++            return new_stack, depth + valid.to(depth.dtype), unavailable
+ 
+         def _undo_unary(stack, depth, slot_b, ok):
+             top = stack[:, 0, :]
+@@ -11219,9 +11347,10 @@
+             local_u, known_u = language.local_op_from_rule_ids(rec_slot, unary_map)
+             valid = torch.logical_and(
+                 torch.logical_and(rec_mask, known_u), depth >= 1)
+-            undone = language.reverse_unary_step(top, local_u, valid)
++            valid = valid & (_col_rows(arities, slot_b) == 1)
++            undone, unavailable = language.reverse_unary_step(top, local_u, valid, return_status=True)
+             new_stack = torch.cat((undone.unsqueeze(1), stack[:, 1:, :]), dim=1)
+-            return torch.where(valid.reshape(B, 1, 1), new_stack, stack), depth
++            return torch.where(valid.reshape(B, 1, 1), new_stack, stack), depth, unavailable
+ 
+         # Pass A: the pre-seal stack of every sentence present, one
+         # ``torch.while_loop`` trip per sentence slot up to the row's
+@@ -11230,10 +11359,10 @@
+         slot_ids = torch.arange(slots, device=dev).reshape(1, slots)
+         n_sent_t = (torch.where(active, ids, torch.full_like(ids, -1)).amax() + 1).clamp(1, slots)
+ 
+-        def cond_a(s_idx, pre_stack, pre_depth):
++        def cond_a(s_idx, pre_stack, pre_depth, pre_bad):
+             return s_idx < n_sent_t
+ 
+-        def body_a(s_idx, pre_stack, pre_depth):
++        def body_a(s_idx, pre_stack, pre_depth, pre_bad):
+             member = torch.logical_and(ids == s_idx, active)               # [B, W]
+             present = member.any(dim=1)
+             hi = torch.where(member, positions, torch.full_like(positions, -1)).amax(dim=1)
+@@ -11252,48 +11381,40 @@
+                 is_last, torch.full_like(hi, n_levels), torch.full_like(hi, seal_width))
+             stack = torch.cat((top3, S.new_zeros(B, max(0, cap - 3), D)), dim=1)[:, :cap, :]
+             depth = torch.where(present, depth0.clamp(1, cap), torch.zeros_like(depth0))
+-            # The seals fold newest-first: the first seal joins the two
+-            # newest words, each later seal joins the composite (right,
+-            # newest) with the next older word (left).  Undone last first,
+-            # the k-th undo returns word ``lo + k`` as its LEFT operand;
+-            # that word's retained reference guides the residual reverses.
+-            lo = torch.where(member, positions, torch.full_like(positions, W)).amin(dim=1)
+-            undone = torch.zeros_like(hi)
++            bad = present & ((depth0 < 1) | (depth0 > cap))
+             for k in reversed(range(seal_width)):
+                 ok = torch.logical_and(present, seal_count > k)
+-                # fallback without recorded rows: newest-first single-word
+-                # seals return word lo + k on the left
+-                ref_word = (lo + undone).clamp(0, W - 1)
+-                fb = reference.gather(
+-                    1, ref_word.reshape(B, 1, 1).expand(B, 1, D)).reshape(B, D)
+-                ref, side = _operand_reference(seal_base + k, member, fb, "left")
+-                stack, depth, applied = _undo_binary(
++                ref, side = _operand_reference(seal_base + k)
++                stack, depth, unavailable = _undo_binary(
+                     stack, depth, seal_base + k, ok, ref, side)
+-                undone = undone + applied.to(undone.dtype)   # only a recorded, undone seal
++                bad = bad | unavailable
+             sel = (slot_ids == s_idx)                                       # [1, slots]
+             pre_stack = torch.where(sel.reshape(1, slots, 1, 1), stack.unsqueeze(1), pre_stack)
+             pre_depth = torch.where(sel, depth.reshape(B, 1), pre_depth)
+-            return s_idx + 1, pre_stack.clone(), pre_depth.clone()
++            pre_bad = torch.where(sel, bad.reshape(B, 1), pre_bad)
++            return s_idx + 1, pre_stack.clone(), pre_depth.clone(), pre_bad.clone()
+ 
+         s0 = torch.tensor(0, dtype=torch.long, device=dev)
+-        _s, pre_stack, pre_depth = torch.while_loop(
++        _s, pre_stack, pre_depth, pre_bad = torch.while_loop(
+             cond_a, body_a, _carries_with_grad(
+                 (s0, S.new_zeros(B, slots, cap, D),
+-                 torch.zeros(B, slots, dtype=torch.long, device=dev))))
++                 torch.zeros(B, slots, dtype=torch.long, device=dev),
++                 torch.zeros(B, slots, dtype=torch.bool, device=dev))))
+         # Fresh tensors: under autograd a loop's final carry is a view into
+         # its stacked per-trip outputs (an unbacked trip count), which the
+         # next loop cannot lift as an input.
+         pre_stack = pre_stack.clone()
+         pre_depth = pre_depth.clone()
++        pre_bad = pre_bad.clone()
+ 
+         # Pass B: the words, latest first, one loop step per word index.
+-        T = W
++        T = (last_index.max() + 1).clamp_min(0)
+ 
+         def cond(t, stack, depth, idea_sum, byte_sum, count, trunc, recovered):
+             return t < T
+ 
+         def body(t, stack, depth, idea_sum, byte_sum, count, trunc, recovered):
+-            w = (W - 1) - t
++            w = (T - 1) - t
+             wa = _col(active, w)
+             end_b = torch.logical_and(_col(is_end, w), wa)
+             sid = _col(ids, w).clamp(0, slots - 1)
+@@ -11302,15 +11423,12 @@
+             loaded_depth = pre_depth.gather(1, sid.reshape(B, 1)).reshape(B)
+             stack = torch.where(end_b.reshape(B, 1, 1), loaded, stack)
+             depth = torch.where(end_b, loaded_depth, depth)
+-            ref_w = _word_col(reference, w)
+-            scope_w = torch.logical_and(ids == sid.reshape(B, 1), active)   # the sentence's words
+-            stack, depth = _undo_unary(stack, depth, (3 * w + 2).reshape(1).expand(B), wa)
++            ref_w = _word_col(reference, w).detach()
++            stack, depth, unavailable_unary = _undo_unary(
++                stack, depth, (3 * w + 2).reshape(1).expand(B), wa)
+             slot_post = (3 * w + 1).reshape(1).expand(B)
+-            ref_post, side_post = _operand_reference(slot_post, scope_w, ref_w, "right")
+-            stack, depth, _ap = _undo_binary(stack, depth, slot_post, wa, ref_post, side_post)
+-            slot_pre = (3 * w).reshape(1).expand(B)
+-            ref_pre, side_pre = _operand_reference(slot_pre, scope_w, ref_w, "right")
+-            stack, depth, _ap = _undo_binary(stack, depth, slot_pre, wa, ref_pre, side_pre)
++            ref_post, side_post = _operand_reference(slot_post)
++            stack, depth, unavailable_post = _undo_binary(stack, depth, slot_post, wa, ref_post, side_post)
+             # pop: the top is the recovered word, scored on the spot
+             top = stack[:, 0, :]
+             underflow = torch.logical_and(wa, depth < 1)
+@@ -11322,10 +11440,14 @@
+             idea_sum = idea_sum.scatter_add(1, col, (idea_d * pop_w).reshape(B, 1))
+             byte_sum = byte_sum.scatter_add(1, col, (byte_d * pop_w).reshape(B, 1))
+             count = count.scatter_add(1, col, pop_w.reshape(B, 1))
+-            trunc = trunc.scatter_add(1, col, underflow.to(S.dtype).reshape(B, 1))
+             popped = torch.cat((stack[:, 1:, :], torch.zeros_like(stack[:, :1, :])), dim=1)
+             stack = torch.where(wa.reshape(B, 1, 1), popped, stack)
+             depth = depth - torch.logical_and(wa, depth >= 1).to(depth.dtype)
++            slot_pre = (3 * w).reshape(1).expand(B)
++            ref_pre, side_pre = _operand_reference(slot_pre)
++            stack, depth, unavailable_pre = _undo_binary(stack, depth, slot_pre, wa, ref_pre, side_pre)
++            bad = underflow | unavailable_post | unavailable_pre | unavailable_unary
++            trunc = trunc.scatter_add(1, col, bad.to(S.dtype).reshape(B, 1))
+             if keep_ideas:
+                 recovered = self._tensor_write_word_column(
+                     recovered, w, torch.where(wa.reshape(B, 1), top, _word_col(recovered, w)))
+@@ -11349,7 +11471,7 @@
+         n_present = present_all.to(S.dtype).sum(dim=1).clamp_min(1.0)
+         idea_cost = idea_all.sum(dim=1) / n_present
+         byte_cost = byte_all.sum(dim=1) / n_present
+-        truncated = (trunc > 0).any(dim=1)
++        truncated = (trunc > 0).any(dim=1) | pre_bad.any(dim=1) | malformed
+         return recovered, idea_cost, byte_cost, truncated, byte_all
+ 
+     def _reconstruct_sentence_traversal(self, S, reference, **_unused):
+@@ -11362,6 +11484,18 @@
+             torch.cat((S.reshape(B, 1, D), S.new_zeros(B, 2, D)), dim=1),
+             torch.ones(B, dtype=torch.long, device=S.device))
+         return rec, idea, byte_c, trunc
++
++    def _reconstruction_basis_snapshot(self, reference):
++        """Own the invocation's active concept rows, independent of surface targets."""
++        atoms = getattr(self.inputSpace, "_ar_concept_lookup_atoms", None)
++        rows = getattr(self.inputSpace, "_ar_concept_lookup_rows", None)
++        B, _, D = reference.shape
++        if not (torch.is_tensor(atoms) and torch.is_tensor(rows)):
++            return reference.new_zeros(B, 1, D), torch.zeros(
++                B, 1, dtype=torch.bool, device=reference.device)
++        bank = atoms.detach().to(reference).clone()
++        bank = F.pad(bank[..., :D], (0, max(0, D - bank.shape[-1])))
++        return bank, rows.detach().to(reference.device).ge(0).clone()
+ 
+     def _snapshot_tables(self, reference):
+         """``(ready, bank_n [B, L, D], bank_bytes [B, L, P], bank_valid
+@@ -11376,13 +11510,13 @@
+         if (torch.is_tensor(atoms) and atoms.dim() == 3 and torch.is_tensor(bank_bytes)
+                 and torch.is_tensor(bank_valid) and int(atoms.shape[0]) == B
+                 and int(atoms.shape[1]) == int(bank_bytes.shape[1])):
+-            bank = atoms.to(device=reference.device, dtype=reference.dtype)
++            bank = atoms.detach().to(device=reference.device, dtype=reference.dtype).clone()
+             if int(bank.shape[-1]) != D:
+                 bank = torch.cat((bank[..., :D], bank.new_zeros(
+                     B, int(bank.shape[1]), max(0, D - int(bank.shape[-1])))), dim=-1)
+             return (True, torch.nn.functional.normalize(bank, dim=-1),
+-                    bank_bytes.to(device=reference.device),
+-                    bank_valid.to(device=reference.device))
++                    bank_bytes.detach().to(device=reference.device).clone(),
++                    bank_valid.detach().to(device=reference.device).clone())
+         part_ids = getattr(isp, "_ar_word_part_ids", None)
+         P = (int(part_ids.shape[-1]) if torch.is_tensor(part_ids) and part_ids.dim() == 3
+              else 1)
+@@ -11898,7 +12032,8 @@
+         return int(getattr(language, "_generate_policy_width", 0) or -1)
+ 
+     def _output_generate_walk(self, event, budget, stamped_events=True,
+-                              targets=None, sample_actions=False):
++                              targets=None, sample_actions=False,
++                              basis=None, basis_valid=None, candidate_limit=16):
+         """The answer-side generate walk as one bounded ``torch.while_loop``
+         (contract 5).
+ 
+@@ -11990,9 +12125,16 @@
+             do_u = torch.logical_and(torch.logical_or(
+                 torch.logical_and(is_rule, known_u), pol_u),
+                 torch.logical_not(do_b))
+-            left, right = language.reverse_binary_step(
+-                top_vec, local_b, do_b, inverses=inverses, ops=binary_ops)
+-            undone = language.reverse_unary_step(top_vec, local_u, do_u, ops=unary_ops)
++            left, right, unavailable = language.reverse_binary_step(
++                top_vec, local_b, do_b, inverses=inverses, ops=binary_ops,
++                basis=basis, basis_valid=basis_valid, candidate_limit=candidate_limit,
++                return_status=True)
++            # An unavailable requested split stays pending until the budget;
++            # it cannot turn into a fabricated completed leaf.
++            do_b = do_b & ~unavailable
++            undone, unavailable_unary = language.reverse_unary_step(
++                top_vec, local_u, do_u, ops=unary_ops, return_status=True)
++            do_u = do_u & ~unavailable_unary
+             if stamped_events:       # children stamped empty in the where channel
+                 zero_where = torch.zeros_like(left[:, cw:cw + 1])
+                 left = torch.cat((left[:, :cw], zero_where, left[:, cw + 1:]), dim=-1)
+@@ -12928,6 +13070,9 @@
+                 "_packed_sentence_roots", "_output_policy_cost")))
+         object.__setattr__(self, "_output_policy_cost", None)
+         object.__setattr__(self, "_recon_cost", None)
++        object.__setattr__(self, "_recon_completed", False)
++        object.__setattr__(self, "_reconstruction_product", None)
++        object.__setattr__(self, "_recon_ideas", None)
+         object.__setattr__(self, "_tensor_pushed_ideas", None)
+         object.__setattr__(self, "_tensor_sentence_roots_depth", None)
+         object.__setattr__(self, "_tensor_final_end_slots", None)
+@@ -13464,7 +13609,7 @@
+                     raise RuntimeError(
+                         "detachedReverse is enabled, but the idea-only reverse "
+                         "chooser or its ReconstructionStack teacher is missing")
+-            elif getattr(self, "reconstruct_in_loop", False) and train:
++            elif getattr(self, "reconstruct_in_loop", False):
+                 # Tied contract: the traversal's byte cost is the only
+                 # reconstruction objective; the legacy per-word reverse
+                 # (reverse(S) -> table -> input) does not run.
+@@ -13472,36 +13617,16 @@
+             else:
+                 d3_loss, d3_metric = (self._d3_reconstruction_loss()
+                                       if _per_word else (None, None))
+-            _recon_cost = getattr(self, "_recon_cost", None)
+-            if (getattr(self, "reconstruct_in_loop", False) and train
+-                    and not torch.is_tensor(_recon_cost)):
+-                # An eager forward published no explicit sentence state:
+-                # run the traversal here from the root and the ideas the
+-                # tensor word pipeline stashed.
+-                _S = getattr(self, "_stm_single_S", None)
+-                _pushed = getattr(self, "_tensor_pushed_ideas", None)
+-                _roots = getattr(self, "_tensor_sentence_roots_live", None)
+-                _depth = getattr(self, "_tensor_sentence_roots_depth", None)
+-                _end = getattr(self, "_tensor_final_end_slots", None)
+-                _end_d = getattr(self, "_tensor_final_end_depth", None)
+-                if (torch.is_tensor(_S) and torch.is_tensor(_pushed)
+-                        and torch.is_tensor(_roots)):
+-                    if not (torch.is_tensor(_end) and torch.is_tensor(_end_d)):
+-                        _end, _end_d = self._final_end_state(
+-                            _S, getattr(self, "_stm_post_depth", None))
+-                    (_ideas, _idea_cost, _recon_cost, _trunc, _per_sentence) = (
+-                        self._compiled_reconstruct()(
+-                            _S, _pushed, _roots, _depth, _end, _end_d))
+-                    object.__setattr__(self, "_recon_ideas", _ideas)
+-                    object.__setattr__(self, "_recon_idea_cost", _idea_cost)
+-                    object.__setattr__(self, "_recon_cost", _recon_cost)
+-                    object.__setattr__(self, "_recon_truncated", _trunc)
+-                    object.__setattr__(self, "_recon_sentence_costs", _per_sentence)
+-            if (getattr(self, "reconstruct_in_loop", False)
+-                    and torch.is_tensor(_recon_cost) and train):
+-                # The tied traversal's reconstruction cost (compiled
+-                # reverse-loops plan, slice 1: idea level).
+-                lossIn = _recon_cost.mean()
++            if self.reconstruct_in_loop:
++                # Completion belongs to understanding, before reasoning and
++                # output can change staging. Training and evaluation consume
++                # precisely the same owned byte objective, once.
++                owned = self._last_understanding.input_reconstruction
++                if owned is None or not torch.is_tensor(owned.byte_cost):
++                    raise RuntimeError("tied reconstruction completed without its byte objective")
++                lossIn = owned.byte_cost.mean()
++                if not train:
++                    inputDataPred = owned.event.detach()
+                 self._d3_active = False
+             elif d3_loss is not None:
+                 # On detachedReverse this is rule/arity/exact-leaf supervision
+@@ -13548,9 +13673,7 @@
+             # step.
+             lossRev = torch.zeros((), device=TheDevice.get())
+             # Dedupe: on D3 lossIn IS the reverse objective; train skips the double count (doc/plans/2026-07-03-reconstruction-fidelity-execution.md); eval totals still include the reverse term.
+-            _rev_dedupe = train and (
+-                bool(self._d3_active)
+-                or bool(getattr(self, "reconstruct_in_loop", False)))
++            _rev_dedupe = self.reconstruct_in_loop or (train and bool(self._d3_active))
+             try:
+                 if forwardInput is not None and not _rev_dedupe:
+                     # Step 2 (What spec): the input-associated inverse path is
+@@ -13887,7 +14010,8 @@
+             # weight 0.0 -> skipped -> byte-identical.
+             if train and float(
+                     getattr(self, "leaf_distill_weight", 0.0) or 0.0) > 0.0 \
+-                    and not getattr(self, "detached_reverse", False):
++                    and not getattr(self, "detached_reverse", False) \
++                    and not self.reconstruct_in_loop:
+                 try:
+                     ld_loss = self._leaf_distill_loss()
+                 except Exception:
+@@ -17147,6 +17271,8 @@
+ 
+     def _prepare_reconstruction_choices(self, batch, word_width, device):
+         """Prepare the fixed rule-choice teacher outside a captured W loop."""
++        object.__setattr__(self, "_recon_completed", False)
++        object.__setattr__(self, "_reconstruction_product", None)
+         trace = self._reconstruction_stack()
+         language = getattr(getattr(self, "symbolSpace", None),
+                            "languageLayer", None)
+@@ -19838,7 +19964,8 @@
+         """
+         if (not self._tensor_peer_while_enabled
+                 or not (torch.compiler.is_compiling()
+-                        or self._tensor_peer_while_eager)
++                        or self._tensor_peer_while_eager
++                        or self.reconstruct_in_loop)
+                 or not getattr(self, "serial_object_meta", False)
+                 or getattr(self, "concept_binding", "mixing") != "aligned"
+                 or getattr(self, "sentence_protocol", False)
+--- a/bin/Language.py
++++ b/bin/Language.py
+@@ -14302,14 +14302,13 @@
+     #
+     # The tied inverses of the reduce ops as fixed-shape tensor steps, so a
+     # bounded ``torch.while_loop`` can replay a recorded derivation backward.
+-    # Every op's reverse is evaluated on the parent and the recorded op
+-    # selects; ``lift``/``lower`` families reverse through their own
++    # Only selected recorded operators execute. ``lift``/``lower`` reverse through their own
+     # ``generate`` (the balanced split, tied to the compose weights),
+-    # ``chunk``/``sum`` through the exact residual against the retained
+-    # constituent reference, ``not``/``non`` through themselves, everything
+-    # else through identity (declared non-invertible).
+-
+-    def reverse_inverses(self, ops=None):
++    # ``chunk``/``sum`` through the residual against a retained constituent,
++    # ``not``/``non`` through themselves. Lossy folds use a bounded, masked
++    # compose-candidate search; a missing inverse reports unavailability.
++
++    def reverse_inverses(self, ops=None, required=None):
+         """The tied inverses the binary reverses need, computed once per
+         traversal: one ``W^-1`` per lift/lower op (``None`` for the
+         others), so a loop body applies a ready matrix instead of
+@@ -14319,21 +14318,40 @@
+             binary = self._tree_layer(2)
+             ops = list(binary.ops) if binary is not None else ()
+         out = []
+-        for op in ops:
++        for index, op in enumerate(ops):
+             gl = getattr(op, "gl", op)
++            # Verb and adverb inherit Lift's Sigma, but do not use it in
++            # their actual compose operation.
++            if getattr(gl, "rule_name", "") in ("verb", "adverb"):
++                out.append(None)
++                continue
+             inner = getattr(gl, "_sigma", None)
+             if inner is None:
+                 inner = getattr(gl, "_pi", None)
+             layer = getattr(inner, "layer", None) if inner is not None else None
+             if layer is not None and hasattr(layer, "functional_Winverse") \
+                     and hasattr(inner, "generate_functional"):
+-                out.append(layer.functional_Winverse())
++                if required is None:
++                    out.append(layer.functional_Winverse())
++                elif torch.compiler.is_compiling():
++                    out.append(torch.cond(
++                        required[index],
++                        lambda: layer.functional_Winverse(),
++                        lambda: torch.eye(
++                            layer.nOutput, layer.nInput,
++                            device=layer.raw_L.device, dtype=layer.raw_L.dtype),
++                        ()))
++                else:
++                    out.append(layer.functional_Winverse()
++                               if bool(required[index]) else None)
+             else:
+                 out.append(None)
+         return out
+ 
+     def reverse_binary_step(self, parent, op_local, valid, reference=None,
+-                            inverses=None, reference_side="right", ops=None):
++                            inverses=None, reference_side="right", ops=None,
++                            basis=None, basis_valid=None, candidate_limit=16,
++                            return_status=False):
+         """``(left, right)`` ``[B, D]`` of one recorded binary fold.
+ 
+         ``parent`` is the folded slot; ``op_local`` ``[B]`` the recorded
+@@ -14350,82 +14368,250 @@
+                 raise RuntimeError("LanguageSpace requires a CS binary tree layer")
+             ops = list(binary.ops)
+         if not ops:
+-            return parent, parent
++            return (parent, parent, valid.to(torch.bool)) if return_status else (parent, parent)
++        if torch.compiler.is_compiling():
++            # Concept width is a model setting, unlike the sentence length.
++            # A symbolic width gives cond a Max(1, 2*D) stride for batch 1,
++            # which its branch metadata merger cannot represent.
++            torch._dynamo.mark_static(parent, -1)
+         B, D = int(parent.shape[0]), int(parent.shape[-1])
+-        if inverses is None:
+-            inverses = self.reverse_inverses(ops)
+-        pairs = []
+-        for op, W_inv in zip(ops, inverses):
+-            pairs.append(self._reverse_of_binary_op(
+-                op, parent, reference, W_inv, reference_side))
+-        left = torch.stack([pr[0] for pr in pairs], dim=1)     # [B, R, D]
+-        right = torch.stack([pr[1] for pr in pairs], dim=1)
+-        R = len(ops)
+-        idx = op_local.reshape(B).clamp(0, R - 1).reshape(B, 1, 1).expand(B, 1, D)
+-        l_sel = left.gather(1, idx).reshape(B, D)
+-        r_sel = right.gather(1, idx).reshape(B, D)
+-        gate = valid.reshape(B, 1).to(dtype=torch.bool)
+-        return (torch.where(gate, l_sel, parent),
+-                torch.where(gate, r_sel, parent))
++        has_reference = torch.is_tensor(reference)
++        ref = reference.detach() if has_reference else torch.zeros_like(parent)
++        basis = basis.detach() if torch.is_tensor(basis) else None
++        if isinstance(reference_side, tuple):
++            right_side, known = reference_side
++        else:
++            right_side = torch.full_like(valid, reference_side == "right", dtype=torch.bool)
++            known = torch.full_like(valid, has_reference, dtype=torch.bool)
++        sides = torch.stack((right_side.reshape(B), known.reshape(B)), dim=1)
++        operands = torch.stack((parent, ref), dim=1)
++        raw_local = op_local.reshape(B)
++        local = raw_local.clamp(0, len(ops) - 1)
++        live = valid.reshape(B).to(torch.bool) & (raw_local >= 0) & (raw_local < len(ops))
++        # A third plane carries availability through cond with the same
++        # independent contiguous storage as the two children.
++        result = torch.stack((parent, parent, torch.ones_like(parent)), dim=1)
++        compiling = torch.compiler.is_compiling()
++        indices = (range(len(ops)) if compiling else
++                   sorted(set(local[live].detach().cpu().tolist())))
++        for index in indices:
++            op = ops[index]
++            W_inv = inverses[index] if inverses is not None else None
++            selected = live & (local == index)
++
++            def apply(values, side, row_mask):
++                # Mask before nonlinear/inverse work: a zero downstream
++                # gradient does not rescue 0*NaN from an inactive row.
++                values = torch.where(row_mask[:, None, None], values, torch.zeros_like(values))
++                side = side & row_mask[:, None]
++                candidate_valid = (basis_valid & row_mask[:, None]
++                                   if basis_valid is not None else None)
++                a, b, available = self._reverse_of_binary_op(
++                    op, values[:, 0], values[:, 1] if has_reference else None,
++                    W_inv, (side[:, 0], side[:, 1]), basis, candidate_valid,
++                    candidate_limit)
++                return torch.stack((a, b, available[:, None].expand_as(a).to(a.dtype)), dim=1)
++
++            if compiling:
++                pair = torch.cond(
++                    selected.any(), apply,
++                    lambda values, side, row_mask: torch.stack(
++                        (values[:, 0], values[:, 0], torch.ones_like(values[:, 0])), dim=1),
++                    (operands, sides, selected))
++            else:
++                pair = apply(operands, sides, selected)
++            result = torch.where(selected[:, None, None], pair, result)
++        if return_status:
++            unavailable = valid.reshape(B).bool() & (~live | (result[:, 2, 0] < .5))
++            return result[:, 0], result[:, 1], unavailable
++        return result[:, 0], result[:, 1]
+ 
+     def _reverse_of_binary_op(self, op, parent, reference, W_inv=None,
+-                              reference_side="right"):
++                              reference_side="right", basis=None, basis_valid=None,
++                              candidate_limit=16):
+         op = getattr(op, "gl", op)          # the reducer wraps grammar layers
+         sigma = getattr(op, "_sigma", None)
+         pi = getattr(op, "_pi", None)
+         name = getattr(op, "rule_name", "")
+-        if sigma is not None and hasattr(sigma, "generate_functional"):
+-            return sigma.generate_functional(parent, W_inv=W_inv)
+-        if pi is not None and hasattr(pi, "generate_functional"):
+-            return pi.generate_functional(parent, W_inv=W_inv)
+-        if name in ("chunk", "sum") and torch.is_tensor(reference):
+-            # Exact residual against the retained reference of the known
+-            # operand: ``left + right = parent`` by construction.  Which
+-            # side is the known word comes from the recorded operand rows
+-            # (``reference_side``: "right"/"left", or a per-row bool mask
+-            # ``(right_mask, valid_mask)``); with no known operand the
+-            # split is balanced.
+-            if isinstance(reference_side, tuple):
+-                right_mask, valid = reference_side
+-                right_mask = right_mask.reshape(-1, 1).to(torch.bool)
+-                valid = valid.reshape(-1, 1).to(torch.bool)
+-                as_right = (parent - reference, reference)
+-                as_left = (reference, parent - reference)
+-                left = torch.where(right_mask, as_right[0], as_left[0])
+-                right = torch.where(right_mask, as_right[1], as_left[1])
+-                half = parent * 0.5
+-                return (torch.where(valid, left, half), torch.where(valid, right, half))
+-            if reference_side == "left":
+-                return reference, parent - reference
+-            return parent - reference, reference
+-        if name in ("chunk", "sum"):
+-            half = parent * 0.5
+-            return half, half
+-        return parent, parent
+-
+-    def reverse_unary_step(self, x, op_local, valid, ops=None):
+-        """``[B, D]`` of one recorded unary rewrite undone (identity for ops
+-        without a tensor inverse)."""
++        B = parent.shape[0]
++        yes = torch.ones(B, dtype=torch.bool, device=parent.device)
++        on_right, known = reference_side
++        ref = reference if reference is not None else torch.zeros_like(parent)
++
++        def oriented(remainder):
++            return (torch.where(on_right[:, None], remainder, ref),
++                    torch.where(on_right[:, None], ref, remainder))
++
++        def finish(left, right, available):
++            return self._finish_binary_inverse(
++                op, parent, ref, on_right, known, left, right, available,
++                basis, basis_valid, candidate_limit)
++
++        # These subclasses own inherited Sigma modules which are not their
++        # compose operator. Only lift/lower use the affine inverse below.
++        if name not in ("verb", "adverb"):
++            inner = sigma if sigma is not None else pi
++            if inner is not None and hasattr(inner, "generate_functional"):
++                left, right = inner.generate_functional(
++                    parent, W_inv=W_inv, reference=reference,
++                    reference_side=(on_right, known))
++                return left, right, yes
++        if name in ("sum", "chunk"):
++            left, right = oriented(parent - ref)
++            half = parent * .5
++            return (torch.where(known[:, None], left, half),
++                    torch.where(known[:, None], right, half), yes)
++        if name in ("part", "assertPart", "isPart", "preposition"):
++            # The marker is the discarded LEFT operand.
++            usable = known & ~on_right
++            return finish(torch.where(usable[:, None], ref, torch.zeros_like(ref)), parent, usable)
++        if name in ("whole", "bind"):
++            # A two-slot contextual bind passes its left operand. No live
++            # binding context from a later sentence may enter this inverse.
++            usable = known & on_right
++            return finish(parent, torch.where(usable[:, None], ref, torch.zeros_like(ref)), usable)
++        if name == "product":
++            nonzero = ref.abs() > 1e-8
++            remainder = parent / torch.where(nonzero, ref, torch.ones_like(ref))
++            remainder = torch.where(nonzero, remainder, torch.zeros_like(remainder))
++            left, right = oriented(remainder)
++            return finish(left, right, known & nonzero.all(dim=-1))
++        if name in ("verb", "adverb"):
++            usable = known & on_right
++            if name == "verb":
++                left = op.unapply_verb(parent, ref)
++            else:
++                # Bounded fixed-point inversion in the ACTUAL adverb chart.
++                # Eight corrections are an approximation, not a bijection.
++                chart = _bounded_atanh(parent, bounded=False)
++                delta = torch.tanh(op._adv_edit(ref.to(op._adv_edit.weight.dtype)))
++                delta = torch.sign(delta) * (delta.abs() - .1).clamp_min(0)
++                recovered = chart
++                for _ in range(8):
++                    purchase = recovered.abs() / (recovered.abs().amax(-1, keepdim=True) + epsilon)
++                    recovered = chart - purchase * delta
++                left = torch.tanh(recovered)
++            # The spectral inverse requires the right operand. A missing
++            # one is explicit; it is never the parent's inherited Sigma.
++            return finish(torch.where(usable[:, None], left, torch.zeros_like(left)),
++                          torch.where(usable[:, None], ref, torch.zeros_like(ref)), usable)
++        if name in ("intersection", "union", "equal", "conjunction", "disjunction"):
++            return self._bounded_binary_reconstruction(
++                op, parent, ref, on_right, known, basis, basis_valid, candidate_limit)
++        return torch.zeros_like(parent), torch.zeros_like(parent), ~yes
++
++    def _finish_binary_inverse(self, op, parent, reference, on_right, known,
++                               left, right, available, basis, basis_valid, limit):
++        """Only rows missing sufficient witnesses need candidate search."""
++        if basis is None or basis_valid is None:
++            return left, right, available
++        base = torch.stack((left, right, available[:, None].expand_as(left).to(left.dtype)), dim=1)
++        operands = torch.stack((parent, reference), dim=1)
++        sides = torch.stack((on_right, known), dim=1)
++
++        def search(values, side):
++            a, b, ready = self._bounded_binary_reconstruction(
++                op, values[:, 0], values[:, 1], side[:, 0], side[:, 1],
++                basis, basis_valid, limit)
++            return torch.stack((a, b, ready[:, None].expand_as(a).to(a.dtype)), dim=1)
++
++        if torch.compiler.is_compiling():
++            fallback = torch.cond((~available).any(), search,
++                                  lambda values, side: base.clone(), (operands, sides))
++        elif bool((~available).any()):
++            fallback = search(operands, sides)
++        else:
++            return left, right, available
++        result = torch.where(available[:, None, None], base, fallback)
++        return result[:, 0], result[:, 1], result[:, 2, 0] > .5
++
++    @staticmethod
++    def _bounded_binary_reconstruction(op, parent, reference, on_right, known,
++                                       basis, basis_valid, candidate_limit):
++        """Soft candidate reconstruction using the selected compose kernel.
++
++        At most K prototypes per side and K squared pairs, K=candidate_limit.
++        Retrieval indices, dictionary values and operand witnesses are detached.
++        The residual softmax retains gradients to the parent and compose kernel.
++        This is an approximate reconstruction; recomposition and child fidelity
++        must be measured separately. No candidate means unavailable, never an
++        identity pseudo-inverse. Callers own the snapshot and its row masks.
++        """
++        B, D = parent.shape
++        absent = torch.zeros(B, dtype=torch.bool, device=parent.device)
++        if basis is None or basis_valid is None or int(basis.shape[1]) == 0:
++            return torch.zeros_like(parent), torch.zeros_like(parent), absent
++        K = min(max(1, int(candidate_limit)), int(basis.shape[1]))
++        similarity = F.cosine_similarity(parent.detach()[:, None], basis, dim=-1).abs()
++        scores = similarity.masked_fill(~basis_valid, -torch.inf)
++        indices = scores.topk(K, dim=-1).indices
++        candidates = basis.gather(1, indices[:, :, None].expand(B, K, D))
++        active = basis_valid.gather(1, indices)
++        candidates = torch.where(active[:, :, None], candidates, torch.zeros_like(candidates))
++        older = candidates[:, :, None, :].expand(B, K, K, D)
++        newer = candidates[:, None, :, :].expand(B, K, K, D)
++        older = torch.where((known & ~on_right)[:, None, None, None],
++                            reference[:, None, None, :], older)
++        newer = torch.where((known & on_right)[:, None, None, None],
++                            reference[:, None, None, :], newer)
++        name = getattr(op, "rule_name", "")
++        if name in ("part", "assertPart", "isPart", "preposition"):
++            newer = parent[:, None, None, :].expand(B, K, K, D)
++        if name in ("whole", "bind"):
++            older = parent[:, None, None, :].expand(B, K, K, D)
++        allowed = active[:, :, None] & active[:, None, :]
++        folded = older if name == "bind" else op.compose(older, newer)
++        residual = (folded - parent[:, None, None, :]).square().mean(-1)
++        logits = (-residual / .01).masked_fill(~allowed, -1e9)
++        weights = logits.reshape(B, K * K).softmax(-1).reshape(B, K, K) * allowed
++        weights = weights / weights.sum((1, 2), keepdim=True).clamp_min(1e-8)
++        left = (older * weights[..., None]).sum((1, 2))
++        right = (newer * weights[..., None]).sum((1, 2))
++        return left, right, active.any(-1)
++
++    def reverse_unary_step(self, x, op_local, valid, ops=None, return_status=False):
++        """Undo the selected unary, reporting unsupported operations explicitly.
++
++        Declared CS identities preserve their value. An unknown operation also
++        preserves the value, but is unavailable when ``return_status`` is true.
++        """
+         if ops is None:
+             unary = self._tree_layer(1)
+             ops = list(unary.ops) if unary is not None else ()
+         if not ops:
+-            return x
++            return (x, valid.bool()) if return_status else x
++        if torch.compiler.is_compiling():
++            torch._dynamo.mark_static(x, -1)
++        # A stack slice can carry an unrelated symbolic capacity stride,
++        # including at batch 1. Cond requires matching branch metadata.
++        x = x.clone(memory_format=torch.contiguous_format)
+         B, D = int(x.shape[0]), int(x.shape[-1])
+-        outs = []
+-        for op in ops:
+-            op = getattr(op, "gl", op)
++        local = op_local.reshape(B)
++        live = valid.reshape(B).bool() & (local >= 0) & (local < len(ops))
++        available = torch.zeros_like(live)
++        result = x.clone()
++        compiling = torch.compiler.is_compiling()
++        indices = (range(len(ops)) if compiling else
++                   sorted(set(local[live].detach().cpu().tolist())))
++        for index in indices:
++            op = getattr(ops[index], "gl", ops[index])
++            selected = live & (local == index)
+             name = getattr(op, "rule_name", "")
+-            if name in ("not", "non") and hasattr(op, "reverse"):
+-                outs.append(op.reverse(x))
+-            else:
+-                outs.append(x)
+-        stacked = torch.stack(outs, dim=1)                       # [B, R1, D]
+-        R1 = len(ops)
+-        idx = op_local.reshape(B).clamp(0, R1 - 1).reshape(B, 1, 1).expand(B, 1, D)
+-        sel = stacked.gather(1, idx).reshape(B, D)
+-        gate = valid.reshape(B, 1).to(dtype=torch.bool)
+-        return torch.where(gate, sel, x)
++            if name in ("null", "exist", "tense", "morphology", "aspect"):
++                # These declared operators are tensor identities on opaque
++                # concepts. Morphology's surface-token analysis cannot change
++                # this CS value and must not read a later token during replay.
++                available = available | selected
++                continue
++            if name not in ("not", "non"):
++                continue
++            available = available | selected
++            def apply(value):
++                return op.reverse(value).clone()
++            undone = (torch.cond(selected.any(), apply, lambda value: value.clone(), (x,))
++                      if compiling else apply(x))
++            result = torch.where(selected[:, None], undone, result)
++        return (result, valid.reshape(B).bool() & ~available) if return_status else result
+ 
+     def forward_binary_step(self, left, right, op_local, valid):
+         """``[B, D]`` parent of one recorded binary fold applied forward:
+--- a/bin/Layers.py
++++ b/bin/Layers.py
+@@ -3277,14 +3277,25 @@
+             op = half
+         return op, op
+ 
+-    def generate_functional(self, parent, gate=None, W_inv=None):
++    def generate_functional(self, parent, gate=None, W_inv=None, reference=None,
++                            reference_side=None):
+         """``generate`` without module mutation (compiled reverse loops);
+         ``W_inv`` is the inner layer's precomputed inverse (optional)."""
+         a_y = bounded_atanh(parent, bounded=self._bounded_backward) if self.nonlinear else parent
+-        a_sum = self.layer.functional_reverse(a_y, gate=gate, W_inv=W_inv)
++        a_sum = self.layer.functional_reverse(
++            a_y - self.layer._effective_bias(), gate=gate, W_inv=W_inv)
+         half = a_sum * 0.5
+         op = torch.tanh(half) if self.nonlinear else half
+-        return op, op
++        if reference is None:
++            return op, op
++        right, known = reference_side
++        ref_chart = (bounded_atanh(reference, bounded=self._bounded_backward)
++                     if self.nonlinear else reference)
++        remainder = a_sum - ref_chart
++        remainder = torch.tanh(remainder) if self.nonlinear else remainder
++        left = torch.where(right[:, None], remainder, reference)
++        right_value = torch.where(right[:, None], reference, remainder)
++        return torch.where(known[:, None], left, op), torch.where(known[:, None], right_value, op)
+ 
+     @staticmethod
+     def test():
+@@ -4802,7 +4813,8 @@
+         finally:
+             self.layer._current_gate = None
+ 
+-    def generate_functional(self, parent, gate=None, W_inv=None):
++    def generate_functional(self, parent, gate=None, W_inv=None, reference=None,
++                            reference_side=None):
+         """``generate`` without module mutation (compiled reverse loops):
+         the same balanced split through the tied inverse; ``W_inv`` is the
+         inner layer's precomputed inverse (optional)."""
+@@ -4812,7 +4824,13 @@
+         b = self.layer._effective_bias()
+         s = self.layer.functional_reverse(log_mult_y - b, gate=gate, W_inv=W_inv)
+         op = torch.tanh(s * 0.25)
+-        return op, op
++        if reference is None:
++            return op, op
++        right, known = reference_side
++        remainder = torch.tanh((s - self._log_mult(reference)) * .5)
++        left = torch.where(right[:, None], remainder, reference)
++        right_value = torch.where(right[:, None], reference, remainder)
++        return torch.where(known[:, None], left, op), torch.where(known[:, None], right_value, op)
+ 
+     def generate(self, parent, gate=None):
+         """Inverse of compose; balanced split.
+--- a/bin/Understanding.py
++++ b/bin/Understanding.py
+@@ -51,6 +51,27 @@
+ 
+ 
+ @dataclass(frozen=True)
++class InputReconstruction:
++    """Owned products of the completed input's single tied traversal.
++
++    These are reconstructed values and scores, never input/answer targets.
++    Clones preserve the current step's gradients and survive later staging.
++    """
++
++    ideas: Any
++    event: Any
++    idea_cost: Any
++    byte_cost: Any
++    truncated: Any
++    sentence_costs: Any
++
++    def __post_init__(self) -> None:
++        for name in ("ideas", "event", "idea_cost", "byte_cost", "truncated", "sentence_costs"):
++            value = getattr(self, name)
++            object.__setattr__(self, name, value.clone() if value is not None else None)
++
++
++@dataclass(frozen=True)
+ class Understanding:
+     """Immutable logical products of one ``forward()`` call."""
+ 
+@@ -68,6 +89,8 @@
+     answer_program: tuple = field(default_factory=tuple, repr=False, compare=False)
+     sentence_programs: Mapping[int, tuple] = field(
+         default_factory=lambda: MappingProxyType({}), repr=False, compare=False)
++    input_reconstruction: InputReconstruction | None = field(
++        default=None, repr=False, compare=False)
+ 
+     def __post_init__(self) -> None:
+         object.__setattr__(self, "answer_program", tuple(self.answer_program))
+--- a/bin/bench_sentence_expectation.py
++++ b/bin/bench_sentence_expectation.py
+@@ -278,9 +278,39 @@
+     return digest.hexdigest()
+ 
+ 
++def reconstruction_observations(model, batch_result):
++    """Observe the completed result; never run another reconstruction.
++
++    Event error is common to legacy evaluation and tied reconstruction. Byte
++    and idea costs are reported only when the executed path published them.
++    Output tensor dimensions are not an emitted-word count.
++    """
++    understanding = getattr(model, "_last_understanding", None)
++    owned = getattr(understanding, "input_reconstruction", None)
++    predicted = owned.event if owned is not None else batch_result.inputPred
++    target = batch_result.forwardInput
++    report = {"owned": owned is not None, "event_mse": None, "event_score": None,
++              "byte_cost": None, "idea_mse": None, "truncated_rows": None}
++    with torch.no_grad():
++        if torch.is_tensor(predicted) and torch.is_tensor(target):
++            width, count = min(predicted.shape[-1], target.shape[-1]), min(
++                predicted.shape[1], target.shape[1])
++            report["event_mse"] = float(F.mse_loss(
++                predicted[:, :count, :width], target[:, :count, :width]))
++            report["event_score"] = float(model._reverse_event_loss(predicted, target))
++        if owned is not None:
++            report.update(byte_cost=float(owned.byte_cost.mean()),
++                          idea_mse=float(owned.idea_cost.mean()),
++                          truncated_rows=int(owned.truncated.sum()))
++        rows = getattr(model.inputSpace, "_ar_concept_lookup_rows", None)
++        report["active_basis_rows"] = ((rows >= 0).sum(-1).cpu().tolist()
++                                        if torch.is_tensor(rows) else None)
++    return report
++
++
+ def native_benchmark(config, *, device="cpu", backend="eager", docs=24,
+                      batch_size=1, train_steps=7, eval_steps=8, answers=False,
+-                     destination=None):
++                     destination=None, basis_limit=None):
+     """The native loader and epoch own all scheduling, training and resets."""
+     from Models import BaseModel
+     from data import TheData
+@@ -320,6 +350,10 @@
+         init_device(target_device)
+     model.to(target_device)
+     model.set_sigma(0)
++    if basis_limit is not None:
++        if basis_limit < 1:
++            raise ValueError("basis_limit must be positive")
++        model.reconstruction_basis_limit = basis_limit
+     # A benchmark must not replace the user's training checkpoint.
+     model.checkpoint_every_batches = 0
+     model.enable_compiled_step()
+@@ -357,12 +391,15 @@
+         "config": str(config), "config_sha256": _fingerprint(config),
+         "defaults_sha256": _fingerprint(defaults), "effective_architecture": arch,
+         "runtime_sha256": {f: _fingerprint(root / "bin" / f) for f in (
+-            "Models.py", "Language.py", "Layers.py", "data.py", "Optimizer.py",
++            "Models.py", "Language.py", "Layers.py", "Understanding.py", "data.py", "Optimizer.py",
+             "mps_memory.py", "bench_sentence_expectation.py")},
+         "source_manifest": copy.deepcopy(TheData.source_manifest),
+         "setup_seconds": time.perf_counter() - setup_started,
+         "max_docs": docs, "batch_size": batch_size,
+         "detached_reverse": bool(model.detached_reverse),
++        "reconstruct_in_loop": bool(model.reconstruct_in_loop),
++        "reconstruction_basis_limit": int(model.reconstruction_basis_limit),
++        "overrides": {"reconstruction_basis_limit": basis_limit} if basis_limit is not None else {},
+         "sigma": 0, "answer_synthesis": bool(model.answer_synthesis),
+         "output_in_loop": bool(model.output_in_loop),
+         "fullgraph_word_loop": bool(getattr(model, "_compiled_word_loop_fullgraph", False)),
+@@ -380,6 +417,7 @@
+         report["shard_sha256"] = _fingerprint(shard)
+     original_batch, original_compact = model.runBatch, model.post_tick_compact
+     original_inter = model._discourse_inter_loss
++    original_output_walk = model._compiled_output_walk
+     active = None
+     start_time = None
+     previous_completed = None
+@@ -387,6 +425,9 @@
+     target_detached = True
+     trained_inter = None
+     optimizer_steps = 0
++    output_lengths = None
++    output_truncated = None
++    shared_gradients = {}
+     original_observe = discourse._observe_meanings
+ 
+     def capture_meanings(self, depths, payloads, tetralemmas, mask, layout, role_masks):
+@@ -422,10 +463,12 @@
+         optimizer_steps += 1
+ 
+     def measured_batch(self, *args, **kwargs):
+-        nonlocal start_time, active, trained_inter
++        nonlocal start_time, active, trained_inter, output_lengths, output_truncated
+         before = discourse.expectation_metrics()
+         steps_before = optimizer_steps
+         trained_inter = None
++        output_lengths = output_truncated = None
++        shared_gradients.clear()
+         _sync(target_device)
+         start_time = time.perf_counter()
+         result = original_batch(*args, **kwargs)
+@@ -454,6 +497,14 @@
+             "word_counts": word_mask.sum(-1).detach().cpu().tolist()
+                            if torch.is_tensor(word_mask) else None,
+             "sources": copy.deepcopy(kwargs.get("source_rows")),
++            "reconstruction_fidelity": reconstruction_observations(self, batch_result),
++            "output_word_counts": output_lengths,
++            "output_truncated_rows": output_truncated,
++            "output_tensor_shape": (list(batch_result.outputPred.shape)
++                                    if torch.is_tensor(batch_result.outputPred) else None),
++            "shared_compose_gradient_norms": {
++                name: float(torch.stack(values).sum().sqrt())
++                for name, values in shared_gradients.items()},
+             "forward_backward_optimizer_seconds": time.perf_counter() - start_time,
+             "context_detached": all(not p.requires_grad for chain in discourse._inter_context
+                                      for _, p, _ in chain),
+@@ -463,6 +514,18 @@
+         if trained_inter is not None and not math.isfinite(trained_inter["mean"]):
+             raise FloatingPointError("native benchmark produced a nonfinite expectation loss")
+         return result
++
++    def measured_output_walk(self):
++        walk = original_output_walk()
++
++        def observe(*args, **kwargs):
++            nonlocal output_lengths, output_truncated
++            result = walk(*args, **kwargs)
++            output_lengths = result[1].detach().cpu().tolist()
++            output_truncated = int(result[2].detach().sum())
++            return result
++
++        return observe
+ 
+     def measured_compact(self, *args, **kwargs):
+         nonlocal active, start_time, previous_completed
+@@ -483,9 +546,31 @@
+     model.runBatch = types.MethodType(measured_batch, model)
+     model.post_tick_compact = types.MethodType(measured_compact, model)
+     model._discourse_inter_loss = types.MethodType(measured_inter, model)
++    model._compiled_output_walk = types.MethodType(measured_output_walk, model)
+     discourse._observe_meanings = types.MethodType(capture_meanings, discourse)
+     optimizer = model.getOptimizer(lr=float(train_options.get("learningRate", 0.0005)))
+     step_hook = observe_optimizer_steps(optimizer, stepped)
++    # Only compose transforms, with true optimizer ownership. Hooks observe
++    # every backward contribution, before the model's joint-gradient balance;
++    # the final parameter delta separately proves an optimizer update.
++    compose_parameters = {}
++    seen = set()
++    binary = model.languageSpace._tree_layer(2)
++    for index, op in enumerate(binary.ops):
++        for name, parameter in op.named_parameters():
++            if parameter.requires_grad and id(parameter) not in seen:
++                seen.add(id(parameter))
++                compose_parameters[f"{binary.op_names[index]}.{name}"] = parameter
++    optimizer_ids = {id(p) for group in optimizer.param_groups for p in group["params"]}
++    report["compose_optimizer_ownership"] = {
++        name: id(p) in optimizer_ids for name, p in compose_parameters.items()}
++    compose_before = {name: p.detach().cpu().clone() for name, p in compose_parameters.items()}
++    gradient_hooks = []
++    for name, parameter in compose_parameters.items():
++        def observe_gradient(gradient, key=name):
++            values = gradient.coalesce().values() if gradient.is_sparse else gradient
++            shared_gradients.setdefault(key, []).append(values.detach().float().square().sum())
++        gradient_hooks.append(parameter.register_hook(observe_gradient))
+     head_before = {n: p.detach().cpu().clone() for n, p in discourse._inter_predictor.named_parameters()}
+     fixed_heldout = None
+     answer_before = []
+@@ -543,6 +628,9 @@
+             for n, p in discourse._inter_predictor.named_parameters()) ** 0.5
+         report["answer_parameter_delta_norm"] = sum(
+             float((p.detach().cpu() - before).square().sum()) for p, before in answer_before) ** 0.5
++        report["compose_parameter_delta_norms"] = {
++            name: float((p.detach().cpu() - compose_before[name]).norm())
++            for name, p in compose_parameters.items()}
+         report["target_detached"] = target_detached
+         report["context_detached"] = all(step["context_detached"] for phase in report["phases"]
+                                          for step in phase["steps"])
+@@ -560,8 +648,11 @@
+         raise
+     finally:
+         step_hook.remove()
++        for hook in gradient_hooks:
++            hook.remove()
+         model.runBatch, model.post_tick_compact = original_batch, original_compact
+         model._discourse_inter_loss = original_inter
++        model._compiled_output_walk = original_output_walk
+         discourse._observe_meanings = original_observe
+         write_report()
+         model.End()
+@@ -577,6 +668,7 @@
+     parser.add_argument("--batch-size", type=int, default=1)
+     parser.add_argument("--train-steps", type=int, default=7)
+     parser.add_argument("--eval-steps", type=int, default=8)
++    parser.add_argument("--basis-limit", type=int)
+     parser.add_argument("--updates", type=int, default=300)
+     parser.add_argument("--threads", type=int, default=1)
+     parser.add_argument("--out", required=True)
+@@ -588,7 +680,8 @@
+         result = native_benchmark(args.config, device=args.device, backend=args.backend,
+                                   docs=args.docs, batch_size=args.batch_size,
+                                   train_steps=args.train_steps, eval_steps=args.eval_steps,
+-                                  answers=args.workload == "answers", destination=args.out)
++                                  answers=args.workload == "answers", destination=args.out,
++                                  basis_limit=args.basis_limit)
+     root = Path(__file__).resolve().parents[1]
+     result.setdefault("revision", subprocess.check_output(
+         ["git", "rev-parse", "HEAD"], cwd=root, text=True).strip())

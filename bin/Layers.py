@@ -1629,6 +1629,40 @@ class InvertibleLinearLayer(ErgodicLayer):
         print("All InvertibleLinearLayer tests passed!")
 
 
+class LDUReadout(ErgodicLayer):
+    """The forward LDU projection with only output-relevant factor entries.
+
+    For rank r=min(nInput,nOutput), x @ L @ D_embed @ U is exactly
+    (x @ L[:, :r] * d) @ U[:r, :]. The remaining factor entries cannot
+    influence an output or its gradient. Keep these rectangular factors so
+    a long generated surface does not allocate an input-width square matrix.
+    This answer readout preserves every input coordinate; it is not an input
+    reconstruction inverse. Existing inverse-capable layers keep their layout.
+    """
+
+    def __init__(self, nInput, nOutput, hasBias=True):
+        super().__init__(nInput, nOutput, ergodic=False)
+        self.rank = min(nInput, nOutput)
+        self.hasBias = hasBias
+        self.raw_L = nn.Parameter(torch.zeros(nInput, self.rank))
+        self.d = nn.Parameter(torch.ones(self.rank))
+        self.raw_U = nn.Parameter(torch.zeros(self.rank, nOutput))
+        if hasBias:
+            self.biasWeight = nn.Parameter(torch.zeros(1, nOutput))
+        self.register_buffer("_readout_format", torch.tensor(1, dtype=torch.int64))
+
+    def forward(self, x):
+        lower = torch.tril(self.raw_L, diagonal=-1) + torch.eye(
+            self.nInput, self.rank, device=x.device, dtype=x.dtype)
+        upper = torch.triu(self.raw_U, diagonal=1) + torch.eye(
+            self.rank, self.nOutput, device=x.device, dtype=x.dtype)
+        result = ((x @ lower) * self.d) @ upper
+        return result + self.biasWeight if self.hasBias else result
+
+    def reverse(self, y):
+        raise NotImplementedError("LDUReadout is an output projection, not a reconstruction inverse")
+
+
 class ConceptualCombine(Layer):
     r"""Square, exactly-invertible 2-STREAM conceptual bind (C-10).
 
@@ -3277,14 +3311,25 @@ class SigmaLayer(GrammarLayer):
             op = half
         return op, op
 
-    def generate_functional(self, parent, gate=None, W_inv=None):
+    def generate_functional(self, parent, gate=None, W_inv=None, reference=None,
+                            reference_side=None):
         """``generate`` without module mutation (compiled reverse loops);
         ``W_inv`` is the inner layer's precomputed inverse (optional)."""
         a_y = bounded_atanh(parent, bounded=self._bounded_backward) if self.nonlinear else parent
-        a_sum = self.layer.functional_reverse(a_y, gate=gate, W_inv=W_inv)
+        a_sum = self.layer.functional_reverse(
+            a_y - self.layer._effective_bias(), gate=gate, W_inv=W_inv)
         half = a_sum * 0.5
         op = torch.tanh(half) if self.nonlinear else half
-        return op, op
+        if reference is None:
+            return op, op
+        right, known = reference_side
+        ref_chart = (bounded_atanh(reference, bounded=self._bounded_backward)
+                     if self.nonlinear else reference)
+        remainder = a_sum - ref_chart
+        remainder = torch.tanh(remainder) if self.nonlinear else remainder
+        left = torch.where(right[:, None], remainder, reference)
+        right_value = torch.where(right[:, None], reference, remainder)
+        return torch.where(known[:, None], left, op), torch.where(known[:, None], right_value, op)
 
     @staticmethod
     def test():
@@ -4802,7 +4847,8 @@ class PiLayer(GrammarLayer):
         finally:
             self.layer._current_gate = None
 
-    def generate_functional(self, parent, gate=None, W_inv=None):
+    def generate_functional(self, parent, gate=None, W_inv=None, reference=None,
+                            reference_side=None):
         """``generate`` without module mutation (compiled reverse loops):
         the same balanced split through the tied inverse; ``W_inv`` is the
         inner layer's precomputed inverse (optional)."""
@@ -4812,7 +4858,13 @@ class PiLayer(GrammarLayer):
         b = self.layer._effective_bias()
         s = self.layer.functional_reverse(log_mult_y - b, gate=gate, W_inv=W_inv)
         op = torch.tanh(s * 0.25)
-        return op, op
+        if reference is None:
+            return op, op
+        right, known = reference_side
+        remainder = torch.tanh((s - self._log_mult(reference)) * .5)
+        left = torch.where(right[:, None], remainder, reference)
+        right_value = torch.where(right[:, None], reference, remainder)
+        return torch.where(known[:, None], left, op), torch.where(known[:, None], right_value, op)
 
     def generate(self, parent, gate=None):
         """Inverse of compose; balanced split.

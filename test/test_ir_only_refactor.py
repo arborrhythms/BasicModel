@@ -9,10 +9,9 @@ Covers the new-test items from
   * ``<reconstructionScale>`` parses; legacy ``<reverseScale>`` triggers
     a deprecation warning and maps to the same field.
   * IR forward produces ``[B, N, predDim]`` predictions (no K axis).
-  * C3 (spec sec 7): reconstruction is unconditionally concepts-seeded
-    -- ``runBatch`` adds a ``reconstruction_reverse`` term (concepts
-    path) when ``reconstruction_scale > 0``, with no ``<reconstruct>``
-    enum (retired in A1).
+  * C3 (spec sec 7): the legacy input reverse is concepts-seeded, with no
+    ``<reconstruct>`` enum (retired in A1). Its ``reconstruction_reverse``
+    diagnostic remains separate from the tied completed-input objective.
   * ``InterSentenceLayer.predict_next()`` returns the right shape
     after ``armaP`` observations.
   * ``InterSentenceLayer.observe(s_t)`` accumulates a non-zero ARMA
@@ -228,14 +227,12 @@ class TestReconstructConceptsLoss(unittest.TestCase):
 
     The ``<reconstruct>`` enum (``none``/``symbols``/``concepts``/
     ``both``) was retired in A1, so no config can request a mode and there
-    is no ``self.reconstruct`` attribute. ``runBatch`` now always seeds
-    the reverse pass from the terminal ConceptualSpace STM snapshot via
-    ``reverse`` and reports the concepts
-    reconstruction in the ``reconstruction_reverse`` ``TheError`` term
-    (weighted by ``reconstruction_scale``). This test asserts that term
-    fires -- WITHOUT touching any enum -- and that the concepts reverse
-    path (``reverse``) is the one taken (the head-seeded
-    ``_run_pipeline_rev`` was removed 2026-06-07).
+    is no ``self.reconstruct`` attribute. On this legacy non-word fixture,
+    ``reverseReconstruct`` seeds the input-specific numerical reverse from
+    the owned terminal conceptual state and reports ``reconstruction_reverse``
+    (weighted by ``reconstruction_scale``). Check the actual seed, not the
+    former orchestration helper's name. The head-seeded ``_run_pipeline_rev``
+    remains retired; tied-mode loss accounting has its own regression tests.
     """
 
     def test_reconstruction_is_unconditionally_from_concepts(self):
@@ -264,20 +261,20 @@ class TestReconstructConceptsLoss(unittest.TestCase):
             "reconstruction_reverse term fires")
         # The head-seeded reverse primitive (``_run_pipeline_rev``) was
         # REMOVED 2026-06-07, so the concepts-seeded ``reverse`` is the ONLY
-        # reverse path. Assert it's gone, then spy ``reverse`` to prove it
-        # fires.
+        # reverse path. Assert it's gone, then inspect the conceptual carrier
+        # at the input-specific numerical reverse boundary.
         self.assertFalse(
             hasattr(m, "_run_pipeline_rev"),
             "the head-seeded _run_pipeline_rev primitive was removed; "
             "reconstruction is unconditionally concepts-seeded")
-        calls = {"concepts": 0}
-        _orig_concepts = m.reverse
+        seeds = []
+        _orig_concepts = m._reverse_input_surface
 
         def _spy_concepts(x):
-            calls["concepts"] += 1
+            seeds.append(x.materialize().detach().clone())
             return _orig_concepts(x)
 
-        m.reverse = _spy_concepts
+        m._reverse_input_surface = _spy_concepts
         m.eval()
         loader = m.inputSpace.data.data_loader(
             split="train", num_streams=2)
@@ -288,10 +285,10 @@ class TestReconstructConceptsLoss(unittest.TestCase):
                    batch_override=(inputTensor, outputTensor))
         # Concepts-seeded reverse fired; head-seeded reverse did NOT --
         # reconstruction no longer dispatches on the (gone) enum.
-        self.assertGreater(
-            calls["concepts"], 0,
-            "reconstruction must seed the reverse pass from concepts "
-            "(reverse), unconditionally")
+        self.assertTrue(seeds, "input reconstruction must realize the conceptual seed")
+        for seed in seeds:
+            torch.testing.assert_close(
+                seed, m._last_understanding.conceptual_state, rtol=0, atol=0)
         # The concepts reconstruction term is present and finite.
         terms = {t[0]: t[1] for t in Layers.TheError.terms()}
         self.assertIn(

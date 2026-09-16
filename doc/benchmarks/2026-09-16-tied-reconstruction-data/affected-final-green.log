@@ -1,0 +1,65 @@
+........................................................................ [ 33%]
+........................................................................ [ 66%]
+........................................................ssss.......ss... [ 99%]
+.                                                                        [100%]
+=============================== warnings summary ===============================
+test/test_tied_reconstruction_migration.py::test_reverse_replays_pre_fold_after_popping_the_new_word
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_understanding_reconstruct.py::test_runbatch_reverse_cost_equals_reconstruct_of_its_understanding
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:6671: RuntimeWarning: reconstruction_zeroed [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_xor.xml]: reconstruction loss zeroed: no D3 (per_word=False) and masked-LM inputs missing (mask, target); percept .what=Codebook, pred_full shape=(2, 8, 14)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_reconstruction_priority.py::test_real_packed_runbatch_trains_prediction_and_representation_with_teacher[False]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_output_walk.py::test_runbatch_trains_generate_policy_only_with_nonzero_weight[1.0]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:6671: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp0_0l93ua/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_walk.py::test_runbatch_trains_generate_policy_only_with_nonzero_weight[0.0]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:6671: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpg3op_s7c/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_walk.py::test_runbatch_does_not_train_generate_policy_without_supplied_answers
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:6671: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpe6jo2txr/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_walk.py::test_runbatch_generate_policy_masks_rows_without_supplied_answers
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:6671: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpabnibcqc/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_walk.py::test_question_conditioner_optimizer_steps_both_widths
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:6671: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpea5hrsjm/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_compiled_word_chunk.py::test_tiny_canonical_detached_reverse_train_step_is_finite
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:6671: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-497/test_tiny_canonical_detached_r1/tiny_chunk_model.xml]: Data.what target (2, 16) replaces the loader output (2, 0) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_compiled_word_chunk.py::test_tiny_canonical_detached_reverse_train_step_is_finite
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:6671: RuntimeWarning: output_shape_gate [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-497/test_tiny_canonical_detached_r1/tiny_chunk_model.xml]: head pred (2, 1, 1) vs labels (2, 16) irreconcilable after reduction; supervised output loss zeroed
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:6671: RuntimeWarning: reconstruction_zeroed [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_20M_xor.xml]: reconstruction loss zeroed: no D3 (per_word=False) and masked-LM inputs missing (mask, target); percept .what=Codebook, pred_full shape=(4, 8, 1024)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[legacy]
+test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor_noraise]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1731: RuntimeWarning: EventEncoding[WholeSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor_noraise]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:6671: RuntimeWarning: reconstruction_zeroed [config /Users/arogers/github/WikiOracle/basicmodel/data/matrix/MM_20M_xor_noraise.xml]: reconstruction loss zeroed: no D3 (per_word=False) and masked-LM inputs missing (mask, target); percept .what=Codebook, pred_full shape=(4, 8, 1024)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[sparse_concept]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:6671: RuntimeWarning: reconstruction_zeroed [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_sparse_concept.xml]: reconstruction loss zeroed: no D3 (per_word=False) and masked-LM inputs missing (mask, target); percept .what=Codebook, pred_full shape=(4, 8, 1024)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+211 passed, 6 skipped, 15 warnings in 1510.59s (0:25:10)

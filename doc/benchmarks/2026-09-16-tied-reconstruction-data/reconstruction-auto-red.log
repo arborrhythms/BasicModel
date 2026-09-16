@@ -1,0 +1,48 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+____________ test_separate_reconstruction_resolves_the_auto_backend ____________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x129ae7140>
+
+    def test_separate_reconstruction_resolves_the_auto_backend(monkeypatch):
+        from types import SimpleNamespace
+        from Models import BasicModel
+        import util
+    
+        monkeypatch.setattr(util, "TheCompileBackend", "auto")
+        objective = lambda x: (x.sin() + x.cos()).square().sum()
+        owner = SimpleNamespace(_reconstruct_sentences=objective,
+                                _recon_placement=lambda: "compiled")
+        x = torch.linspace(-.5, .6, 16, device="cpu", requires_grad=True)
+        try:
+            expected, = torch.autograd.grad(objective(x), (x,))
+>           value = BasicModel._compiled_reconstruct(owner)(x)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_tied_reconstruction_compile.py:22: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:11198: in _compiled_reconstruct
+    compiler = lookup_backend(backend)
+               ^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+compiler_fn = 'auto'
+
+    def lookup_backend(compiler_fn: str | CompilerFn) -> CompilerFn:
+        """Expand backend strings to functions"""
+        if isinstance(compiler_fn, str):
+            if compiler_fn not in _BACKENDS:
+                _lazy_import()
+            if compiler_fn not in _BACKENDS:
+                import difflib
+    
+                from ..exc import InvalidBackend
+    
+                suggestions = difflib.get_close_matches(compiler_fn, list_backends(), n=2)
+>               raise InvalidBackend(name=compiler_fn, suggestions=suggestions)
+E               torch._dynamo.exc.InvalidBackend: Invalid backend: 'auto'. See `torch._dynamo.list_backends()` for available backends.
+
+.venv/lib/python3.12/site-packages/torch/_dynamo/backends/registry.py:135: InvalidBackend
+=========================== short test summary info ============================
+FAILED test/test_tied_reconstruction_compile.py::test_separate_reconstruction_resolves_the_auto_backend
+1 failed in 2.28s

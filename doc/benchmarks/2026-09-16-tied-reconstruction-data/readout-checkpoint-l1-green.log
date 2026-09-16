@@ -1,0 +1,24 @@
+...........................                                              [100%]
+=============================== warnings summary ===============================
+test/test_concept_readout_l1.py::test_adaptive_prox_matches_diagonal_metric_oracle_and_preserves_bias[moment_dtype0]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_concept_readout_l1.py::test_real_runbatch_stages_l1_once_and_reports_it_separately[False]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:6671: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-500/test_real_runbatch_stages_l1_o0/tiny_chunk_model.xml]: Data.what target (2, 16) replaces the loader output (2, 0) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_concept_readout_l1.py::test_real_runbatch_stages_l1_once_and_reports_it_separately[False]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:6671: RuntimeWarning: output_shape_gate [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-500/test_real_runbatch_stages_l1_o0/tiny_chunk_model.xml]: head pred (2, 1, 1) vs labels (2, 16) irreconcilable after reduction; supervised output loss zeroed
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_concept_readout_l1.py::test_real_runbatch_stages_l1_once_and_reports_it_separately[True]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:6671: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-500/test_real_runbatch_stages_l1_o1/tiny_chunk_model.xml]: Data.what target (2, 16) replaces the loader output (2, 0) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_concept_readout_l1.py::test_real_runbatch_stages_l1_once_and_reports_it_separately[True]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:6671: RuntimeWarning: output_shape_gate [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-500/test_real_runbatch_stages_l1_o1/tiny_chunk_model.xml]: head pred (2, 1, 1) vs labels (2, 16) irreconcilable after reduction; supervised output loss zeroed
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+27 passed, 5 warnings in 272.78s (0:04:32)

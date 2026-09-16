@@ -270,13 +270,13 @@ def test_mini_basicmodel_ps128_ws128_cs1024_runs_forward_backward(
         if torch.is_tensor(value) and value.requires_grad]
     assert differentiable, "mini BasicModel forward exposed no gradient path"
 
-    # The last serial word cached a one-location native descriptor. Reversing
-    # the complete sentence root must ignore that stale shape and preserve the
-    # eight-location PS field recovered from the conceptual seed. Keep this in
-    # the live graph: runBatch's D3 objective backpropagates through the same
-    # reverse path.
+    # Reversing a complete root must ignore a stale one-word reshape descriptor
+    # and preserve the eight-location PS field recovered from its seed. Install
+    # that descriptor explicitly: the shipped completed-reconstruction path
+    # need not leave a word reader's temporary cache behind. Keep the reverse in
+    # the live graph and retain the gradient/optimizer checks below.
     ps = model.perceptualSpace
-    assert ps._pre_reshape_input == (1, 136)
+    ps._pre_reshape_input = (1, 136)
     recon = model._reverse_from_S(model._stm_single_S)
     assert recon.shape == (1, 8, 136)
     differentiable.append(recon)

@@ -9,6 +9,37 @@ functionality folded into `bin/Layers.py` and `bin/Language.py`.)
 
 ## Relation to LLMs, Formal Concept Analysis, and DisCoCat
 
+### Completed input reconstruction (September 16 migration)
+
+The input's identified `<compose>` derivation owns its reverse choices.
+Reconstruction runs after sealing and executes only operators selected by live
+rows. Sigma/Pi undo their learned affine map, including bias, and use an
+occurrence-specific operand in the corresponding chart when available. Their
+balanced split without a witness establishes recomposition, not original-child
+fidelity. Verb reversal uses the actual spectral transform; adverb reversal
+uses eight bounded corrections with its own shared edit weights
+([Language.py:14351](../bin/Language.py#L14351)).
+
+Lossy folds use the actual selected compose kernel over a masked, detached
+per-invocation snapshot. `reconstructionBasisLimit` bounds candidates per side
+(default 16; at most 256 pairs), independently of word and STM capacities.
+Insufficient candidates or an unsupported inverse report incompleteness.
+Inactive rows and candidates are masked before nonlinear work so their unused
+values cannot contaminate active gradients
+([Language.py:14533](../bin/Language.py#L14533)).
+
+Input realization uses the recovered ideas and shared numerical inverse chain;
+it does not enter the free `<generate>` chart. `Understanding` owns the result,
+so later staging and scoring targets cannot change it
+([Models.py:8000](../bin/Models.py#L8000),
+[Understanding.py:54](../bin/Understanding.py#L54)). Output keeps its own
+generate choices, state and budget; it receives no reconstruction-only operand
+witnesses or basis. The further parameter-catalog and query-controller changes
+remain ordered separately in the
+[integrated specification](plans/2026-09-15-next-sentence-as-the-production-objective.md#10-consolidated-implementation-and-verification-order).
+
+### Concept composition
+
 The language layer is the architecture's DisCoCat-facing surface. Like
 Categorical Compositional Distributional semantics, it treats grammar as a typed
 composition discipline over vector meanings: reductions such as lift, lower,
@@ -110,23 +141,23 @@ it once selected is now unconditional. The retired
 `SymbolSubSpace` always owns one `WhatInteractionMemory`; expectation uses
 its own `InterSentenceLayer`. Construction is in
 [`SymbolSubSpace.__init__`](../bin/Language.py#L10966), and model thinking
-reads the owner through [`_what_memory`](../bin/Models.py#L7865).
+reads the owner through [`_what_memory`](../bin/Models.py#L7880).
 The retired `whatThinkingMemory` switch and discourse delegates are removed.
 
 `sentenceExpectation` defaults to true, with structured NP1/VP/NP2 expectation.
-[`set_sentence_expectation`](../bin/Models.py#L12355) can switch it at runtime;
+[`set_sentence_expectation`](../bin/Models.py#L12622) can switch it at runtime;
 [`ensure_sentence_expectation`](../bin/Language.py#L13591) creates its parameters
 once and registers them for optimization when first enabled. Re-enabling starts
 a fresh observation stream. Soft packed-brick resets preserve an enabled
 stream; hard resets and document changes make the affected row cold.
-See [`InterSentenceLayer.Reset`](../bin/Layers.py#L10515) and
+See [`InterSentenceLayer.Reset`](../bin/Layers.py#L10567) and
 [the integrated specification](plans/2026-09-15-next-sentence-as-the-production-objective.md#11-code-review-2026-09-16-local-role-expectation-implementation).
 
 ## Recorded compose execution
 
 Answer materialization replays its captured compose program through
-[`_replay_program`](../bin/Models.py#L11855).
-[`forward_binary_step`](../bin/Language.py#L14430) executes the recorded
+[`_replay_program`](../bin/Models.py#L12114).
+[`forward_binary_step`](../bin/Language.py#L14620) executes the recorded
 operator for each live row, preserving the newest operand on inactive rows.
 Eager calls dispatch the selected operator set; compiled calls use conditional
 branches. Both retain the existing operator parameters and input gradients,

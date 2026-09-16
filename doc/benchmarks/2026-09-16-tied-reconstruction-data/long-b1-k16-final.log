@@ -1,0 +1,45 @@
+Canonical fullgraph compile: lazy fused tensor word-loop lowering on mps with fixed capacity and residual-part axes
+[AMP] off (fp32, MODEL_AMP unset or =off)
+Canonical fullgraph lowering: compiling complete W=256 recurrent word loop (one-time cost for this bucket)
+Debug checks: OFF
+MPS: inductor device asserts disabled (check_bounds + device_assert_async) -- Metal 31-buffer limit vs error_buf
+MPS: inductor DTYPE_TO_METAL patched with uint16->ushort
+MPS: inductor any-reduction dtype metadata patched (Metal 'bool' -> torch.bool)
+MPS: zero-size while-loop dependencies excluded from Inductor read-realization ratio
+MPS: inductor subgraph Metal kernel names allocated from the shared wrapper (torch.while_loop)
+MPS: unbacked while-loop tape views excluded from post-grad addmm fuse/unfuse rewrites
+MPS: stride-only reverse while-loop metadata differences delegated to Inductor exact-stride lowering
+MPS: oversized scalar-gradient sums lowered via stack/sum/copy wrapper fallback
+MPS: inductor max_fusion_unique_io_buffers=8, max_fusion_size=16 (Metal 31-buffer kernel-arg limit)
+Model compiled (eager, mode=default, fullgraph=True)
+batch = 0 (warm-up, 12.50%)
+batch = 1 (Δ=0.906s, 25.00%)
+batch = 2 (Δ=0.872s, 37.50%)
+batch = 3 (Δ=0.899s, 50.00%)
+batch = 4 (Δ=0.895s, 62.50%)
+batch = 5 (Δ=0.872s, 75.00%)
+batch = 6 (Δ=0.896s, 87.50%)
+batch = 7 (Δ=0.899s, 100.00%)
+runEpoch(validation): hit max_batches=8 cap; cursor exiting early (8 batches processed, ds.all_done=True).
+Training throughput: 8 batches in 57.825s; word units 100.0% of 128 words (letters-only 100.0% of 128).
+batch = 0 (Δ=186.526s, 14.29%)
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+  return func(*args, **kwargs)
+batch = 1 (Δ=17.216s, 28.57%)
+batch = 2 (Δ=15.635s, 42.86%)
+batch = 3 (Δ=15.599s, 57.14%)
+batch = 4 (Δ=13.951s, 71.43%)
+batch = 5 (Δ=15.726s, 85.71%)
+batch = 6 (Δ=15.698s, 100.00%)
+runEpoch(train): hit max_batches=7 cap; cursor exiting early (7 batches processed, ds.all_done=False).
+Training throughput: 7 batches in 295.248s; word units 100.0% of 112 words (letters-only 100.0% of 112).
+batch = 0 (Δ=15.775s, 12.50%)
+batch = 1 (Δ=0.913s, 25.00%)
+batch = 2 (Δ=0.912s, 37.50%)
+batch = 3 (Δ=0.913s, 50.00%)
+batch = 4 (Δ=0.916s, 62.50%)
+batch = 5 (Δ=0.909s, 75.00%)
+batch = 6 (Δ=0.914s, 87.50%)
+batch = 7 (Δ=0.924s, 100.00%)
+runEpoch(validation): hit max_batches=8 cap; cursor exiting early (8 batches processed, ds.all_done=True).
+Training throughput: 8 batches in 7.273s; word units 100.0% of 128 words (letters-only 100.0% of 128).

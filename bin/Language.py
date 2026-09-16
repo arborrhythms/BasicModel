@@ -14302,14 +14302,13 @@ class LanguageSpace(nn.Module):
     #
     # The tied inverses of the reduce ops as fixed-shape tensor steps, so a
     # bounded ``torch.while_loop`` can replay a recorded derivation backward.
-    # Every op's reverse is evaluated on the parent and the recorded op
-    # selects; ``lift``/``lower`` families reverse through their own
+    # Only selected recorded operators execute. ``lift``/``lower`` reverse through their own
     # ``generate`` (the balanced split, tied to the compose weights),
-    # ``chunk``/``sum`` through the exact residual against the retained
-    # constituent reference, ``not``/``non`` through themselves, everything
-    # else through identity (declared non-invertible).
+    # ``chunk``/``sum`` through the residual against a retained constituent,
+    # ``not``/``non`` through themselves. Lossy folds use a bounded, masked
+    # compose-candidate search; a missing inverse reports unavailability.
 
-    def reverse_inverses(self, ops=None):
+    def reverse_inverses(self, ops=None, required=None):
         """The tied inverses the binary reverses need, computed once per
         traversal: one ``W^-1`` per lift/lower op (``None`` for the
         others), so a loop body applies a ready matrix instead of
@@ -14319,21 +14318,40 @@ class LanguageSpace(nn.Module):
             binary = self._tree_layer(2)
             ops = list(binary.ops) if binary is not None else ()
         out = []
-        for op in ops:
+        for index, op in enumerate(ops):
             gl = getattr(op, "gl", op)
+            # Verb and adverb inherit Lift's Sigma, but do not use it in
+            # their actual compose operation.
+            if getattr(gl, "rule_name", "") in ("verb", "adverb"):
+                out.append(None)
+                continue
             inner = getattr(gl, "_sigma", None)
             if inner is None:
                 inner = getattr(gl, "_pi", None)
             layer = getattr(inner, "layer", None) if inner is not None else None
             if layer is not None and hasattr(layer, "functional_Winverse") \
                     and hasattr(inner, "generate_functional"):
-                out.append(layer.functional_Winverse())
+                if required is None:
+                    out.append(layer.functional_Winverse())
+                elif torch.compiler.is_compiling():
+                    out.append(torch.cond(
+                        required[index],
+                        lambda: layer.functional_Winverse(),
+                        lambda: torch.eye(
+                            layer.nOutput, layer.nInput,
+                            device=layer.raw_L.device, dtype=layer.raw_L.dtype),
+                        ()))
+                else:
+                    out.append(layer.functional_Winverse()
+                               if bool(required[index]) else None)
             else:
                 out.append(None)
         return out
 
     def reverse_binary_step(self, parent, op_local, valid, reference=None,
-                            inverses=None, reference_side="right", ops=None):
+                            inverses=None, reference_side="right", ops=None,
+                            basis=None, basis_valid=None, candidate_limit=16,
+                            return_status=False):
         """``(left, right)`` ``[B, D]`` of one recorded binary fold.
 
         ``parent`` is the folded slot; ``op_local`` ``[B]`` the recorded
@@ -14350,82 +14368,254 @@ class LanguageSpace(nn.Module):
                 raise RuntimeError("LanguageSpace requires a CS binary tree layer")
             ops = list(binary.ops)
         if not ops:
-            return parent, parent
+            return (parent, parent, valid.to(torch.bool)) if return_status else (parent, parent)
+        if torch.compiler.is_compiling():
+            # Concept width is a model setting, unlike the sentence length.
+            # A symbolic width gives cond a Max(1, 2*D) stride for batch 1,
+            # which its branch metadata merger cannot represent.
+            torch._dynamo.mark_static(parent, -1)
         B, D = int(parent.shape[0]), int(parent.shape[-1])
-        if inverses is None:
-            inverses = self.reverse_inverses(ops)
-        pairs = []
-        for op, W_inv in zip(ops, inverses):
-            pairs.append(self._reverse_of_binary_op(
-                op, parent, reference, W_inv, reference_side))
-        left = torch.stack([pr[0] for pr in pairs], dim=1)     # [B, R, D]
-        right = torch.stack([pr[1] for pr in pairs], dim=1)
-        R = len(ops)
-        idx = op_local.reshape(B).clamp(0, R - 1).reshape(B, 1, 1).expand(B, 1, D)
-        l_sel = left.gather(1, idx).reshape(B, D)
-        r_sel = right.gather(1, idx).reshape(B, D)
-        gate = valid.reshape(B, 1).to(dtype=torch.bool)
-        return (torch.where(gate, l_sel, parent),
-                torch.where(gate, r_sel, parent))
+        has_reference = torch.is_tensor(reference)
+        ref = reference.detach() if has_reference else torch.zeros_like(parent)
+        basis = basis.detach() if torch.is_tensor(basis) else None
+        if isinstance(reference_side, tuple):
+            right_side, known = reference_side
+        else:
+            right_side = torch.full_like(valid, reference_side == "right", dtype=torch.bool)
+            known = torch.full_like(valid, has_reference, dtype=torch.bool)
+        sides = torch.stack((right_side.reshape(B), known.reshape(B)), dim=1)
+        operands = torch.stack((parent, ref), dim=1)
+        raw_local = op_local.reshape(B)
+        local = raw_local.clamp(0, len(ops) - 1)
+        live = valid.reshape(B).to(torch.bool) & (raw_local >= 0) & (raw_local < len(ops))
+        # A third plane carries availability through cond with the same
+        # independent contiguous storage as the two children.
+        result = torch.stack((parent, parent, torch.ones_like(parent)), dim=1)
+        compiling = torch.compiler.is_compiling()
+        indices = (range(len(ops)) if compiling else
+                   sorted(set(local[live].detach().cpu().tolist())))
+        for index in indices:
+            op = ops[index]
+            W_inv = inverses[index] if inverses is not None else None
+            selected = live & (local == index)
+
+            def apply(values, side, row_mask):
+                # Mask before nonlinear/inverse work: a zero downstream
+                # gradient does not rescue 0*NaN from an inactive row.
+                values = torch.where(row_mask[:, None, None], values, torch.zeros_like(values))
+                side = side & row_mask[:, None]
+                candidate_valid = (basis_valid & row_mask[:, None]
+                                   if basis_valid is not None else None)
+                a, b, available = self._reverse_of_binary_op(
+                    op, values[:, 0], values[:, 1] if has_reference else None,
+                    W_inv, (side[:, 0], side[:, 1]), basis, candidate_valid,
+                    candidate_limit)
+                return torch.stack((a, b, available[:, None].expand_as(a).to(a.dtype)), dim=1)
+
+            if compiling:
+                pair = torch.cond(
+                    selected.any(), apply,
+                    lambda values, side, row_mask: torch.stack(
+                        (values[:, 0], values[:, 0], torch.ones_like(values[:, 0])), dim=1),
+                    (operands, sides, selected))
+            else:
+                pair = apply(operands, sides, selected)
+            result = torch.where(selected[:, None, None], pair, result)
+        if return_status:
+            unavailable = valid.reshape(B).bool() & (~live | (result[:, 2, 0] < .5))
+            return result[:, 0], result[:, 1], unavailable
+        return result[:, 0], result[:, 1]
 
     def _reverse_of_binary_op(self, op, parent, reference, W_inv=None,
-                              reference_side="right"):
+                              reference_side="right", basis=None, basis_valid=None,
+                              candidate_limit=16):
         op = getattr(op, "gl", op)          # the reducer wraps grammar layers
         sigma = getattr(op, "_sigma", None)
         pi = getattr(op, "_pi", None)
         name = getattr(op, "rule_name", "")
-        if sigma is not None and hasattr(sigma, "generate_functional"):
-            return sigma.generate_functional(parent, W_inv=W_inv)
-        if pi is not None and hasattr(pi, "generate_functional"):
-            return pi.generate_functional(parent, W_inv=W_inv)
-        if name in ("chunk", "sum") and torch.is_tensor(reference):
-            # Exact residual against the retained reference of the known
-            # operand: ``left + right = parent`` by construction.  Which
-            # side is the known word comes from the recorded operand rows
-            # (``reference_side``: "right"/"left", or a per-row bool mask
-            # ``(right_mask, valid_mask)``); with no known operand the
-            # split is balanced.
-            if isinstance(reference_side, tuple):
-                right_mask, valid = reference_side
-                right_mask = right_mask.reshape(-1, 1).to(torch.bool)
-                valid = valid.reshape(-1, 1).to(torch.bool)
-                as_right = (parent - reference, reference)
-                as_left = (reference, parent - reference)
-                left = torch.where(right_mask, as_right[0], as_left[0])
-                right = torch.where(right_mask, as_right[1], as_left[1])
-                half = parent * 0.5
-                return (torch.where(valid, left, half), torch.where(valid, right, half))
-            if reference_side == "left":
-                return reference, parent - reference
-            return parent - reference, reference
-        if name in ("chunk", "sum"):
-            half = parent * 0.5
-            return half, half
-        return parent, parent
+        B = parent.shape[0]
+        yes = torch.ones(B, dtype=torch.bool, device=parent.device)
+        on_right, known = reference_side
+        ref = reference if reference is not None else torch.zeros_like(parent)
 
-    def reverse_unary_step(self, x, op_local, valid, ops=None):
-        """``[B, D]`` of one recorded unary rewrite undone (identity for ops
-        without a tensor inverse)."""
+        def oriented(remainder):
+            return (torch.where(on_right[:, None], remainder, ref),
+                    torch.where(on_right[:, None], ref, remainder))
+
+        def finish(left, right, available):
+            return self._finish_binary_inverse(
+                op, parent, ref, on_right, known, left, right, available,
+                basis, basis_valid, candidate_limit)
+
+        # These subclasses own inherited Sigma modules which are not their
+        # compose operator. Only lift/lower use the affine inverse below.
+        if name not in ("verb", "adverb"):
+            inner = sigma if sigma is not None else pi
+            if inner is not None and hasattr(inner, "generate_functional"):
+                if not hasattr(inner.layer, "functional_reverse"):
+                    return self._bounded_binary_reconstruction(
+                        op, parent, ref, on_right, known, basis, basis_valid,
+                        candidate_limit)
+                left, right = inner.generate_functional(
+                    parent, W_inv=W_inv, reference=reference,
+                    reference_side=(on_right, known))
+                return left, right, yes
+        if name in ("sum", "chunk"):
+            left, right = oriented(parent - ref)
+            half = parent * .5
+            return (torch.where(known[:, None], left, half),
+                    torch.where(known[:, None], right, half), yes)
+        if name in ("part", "assertPart", "isPart", "preposition"):
+            # The marker is the discarded LEFT operand.
+            usable = known & ~on_right
+            return finish(torch.where(usable[:, None], ref, torch.zeros_like(ref)), parent, usable)
+        if name in ("whole", "bind"):
+            # A two-slot contextual bind passes its left operand. No live
+            # binding context from a later sentence may enter this inverse.
+            usable = known & on_right
+            return finish(parent, torch.where(usable[:, None], ref, torch.zeros_like(ref)), usable)
+        if name == "product":
+            nonzero = ref.abs() > 1e-8
+            remainder = parent / torch.where(nonzero, ref, torch.ones_like(ref))
+            remainder = torch.where(nonzero, remainder, torch.zeros_like(remainder))
+            left, right = oriented(remainder)
+            return finish(left, right, known & nonzero.all(dim=-1))
+        if name in ("verb", "adverb"):
+            usable = known & on_right
+            if name == "verb":
+                left = op.unapply_verb(parent, ref)
+            else:
+                # Bounded fixed-point inversion in the ACTUAL adverb chart.
+                # Eight corrections are an approximation, not a bijection.
+                chart = _bounded_atanh(parent, bounded=False)
+                delta = torch.tanh(op._adv_edit(ref.to(op._adv_edit.weight.dtype)))
+                delta = torch.sign(delta) * (delta.abs() - .1).clamp_min(0)
+                recovered = chart
+                for _ in range(8):
+                    purchase = recovered.abs() / (recovered.abs().amax(-1, keepdim=True) + epsilon)
+                    recovered = chart - purchase * delta
+                left = torch.tanh(recovered)
+            # The spectral inverse requires the right operand. A missing
+            # one is explicit; it is never the parent's inherited Sigma.
+            return finish(torch.where(usable[:, None], left, torch.zeros_like(left)),
+                          torch.where(usable[:, None], ref, torch.zeros_like(ref)), usable)
+        if name in ("intersection", "union", "equal", "conjunction", "disjunction"):
+            return self._bounded_binary_reconstruction(
+                op, parent, ref, on_right, known, basis, basis_valid, candidate_limit)
+        return torch.zeros_like(parent), torch.zeros_like(parent), ~yes
+
+    def _finish_binary_inverse(self, op, parent, reference, on_right, known,
+                               left, right, available, basis, basis_valid, limit):
+        """Only rows missing sufficient witnesses need candidate search."""
+        if basis is None or basis_valid is None:
+            return left, right, available
+        base = torch.stack((left, right, available[:, None].expand_as(left).to(left.dtype)), dim=1)
+        operands = torch.stack((parent, reference), dim=1)
+        sides = torch.stack((on_right, known), dim=1)
+
+        def search(values, side):
+            a, b, ready = self._bounded_binary_reconstruction(
+                op, values[:, 0], values[:, 1], side[:, 0], side[:, 1],
+                basis, basis_valid, limit)
+            return torch.stack((a, b, ready[:, None].expand_as(a).to(a.dtype)), dim=1)
+
+        if torch.compiler.is_compiling():
+            fallback = torch.cond((~available).any(), search,
+                                  lambda values, side: base.clone(), (operands, sides))
+        elif bool((~available).any()):
+            fallback = search(operands, sides)
+        else:
+            return left, right, available
+        result = torch.where(available[:, None, None], base, fallback)
+        return result[:, 0], result[:, 1], result[:, 2, 0] > .5
+
+    @staticmethod
+    def _bounded_binary_reconstruction(op, parent, reference, on_right, known,
+                                       basis, basis_valid, candidate_limit):
+        """Soft candidate reconstruction using the selected compose kernel.
+
+        At most K prototypes per side and K squared pairs, K=candidate_limit.
+        Retrieval indices, dictionary values and operand witnesses are detached.
+        The residual softmax retains gradients to the parent and compose kernel.
+        This is an approximate reconstruction; recomposition and child fidelity
+        must be measured separately. No candidate means unavailable, never an
+        identity pseudo-inverse. Callers own the snapshot and its row masks.
+        """
+        B, D = parent.shape
+        absent = torch.zeros(B, dtype=torch.bool, device=parent.device)
+        if basis is None or basis_valid is None or int(basis.shape[1]) == 0:
+            return torch.zeros_like(parent), torch.zeros_like(parent), absent
+        K = min(max(1, int(candidate_limit)), int(basis.shape[1]))
+        similarity = F.cosine_similarity(parent.detach()[:, None], basis, dim=-1).abs()
+        scores = similarity.masked_fill(~basis_valid, -torch.inf)
+        indices = scores.topk(K, dim=-1).indices
+        candidates = basis.gather(1, indices[:, :, None].expand(B, K, D))
+        active = basis_valid.gather(1, indices)
+        candidates = torch.where(active[:, :, None], candidates, torch.zeros_like(candidates))
+        older = candidates[:, :, None, :].expand(B, K, K, D)
+        newer = candidates[:, None, :, :].expand(B, K, K, D)
+        older = torch.where((known & ~on_right)[:, None, None, None],
+                            reference[:, None, None, :], older)
+        newer = torch.where((known & on_right)[:, None, None, None],
+                            reference[:, None, None, :], newer)
+        name = getattr(op, "rule_name", "")
+        if name in ("part", "assertPart", "isPart", "preposition"):
+            newer = parent[:, None, None, :].expand(B, K, K, D)
+        if name in ("whole", "bind"):
+            older = parent[:, None, None, :].expand(B, K, K, D)
+        allowed = active[:, :, None] & active[:, None, :]
+        folded = older if name == "bind" else op.compose(older, newer)
+        residual = (folded - parent[:, None, None, :]).square().mean(-1)
+        logits = (-residual / .01).masked_fill(~allowed, -1e9)
+        weights = logits.reshape(B, K * K).softmax(-1).reshape(B, K, K) * allowed
+        weights = weights / weights.sum((1, 2), keepdim=True).clamp_min(1e-8)
+        left = (older * weights[..., None]).sum((1, 2))
+        right = (newer * weights[..., None]).sum((1, 2))
+        return left, right, active.any(-1)
+
+    def reverse_unary_step(self, x, op_local, valid, ops=None, return_status=False):
+        """Undo the selected unary, reporting unsupported operations explicitly.
+
+        Declared CS identities preserve their value. An unknown operation also
+        preserves the value, but is unavailable when ``return_status`` is true.
+        """
         if ops is None:
             unary = self._tree_layer(1)
             ops = list(unary.ops) if unary is not None else ()
         if not ops:
-            return x
+            return (x, valid.bool()) if return_status else x
+        if torch.compiler.is_compiling():
+            torch._dynamo.mark_static(x, -1)
+        # A stack slice can carry an unrelated symbolic capacity stride,
+        # including at batch 1. Cond requires matching branch metadata.
+        x = x.clone(memory_format=torch.contiguous_format)
         B, D = int(x.shape[0]), int(x.shape[-1])
-        outs = []
-        for op in ops:
-            op = getattr(op, "gl", op)
+        local = op_local.reshape(B)
+        live = valid.reshape(B).bool() & (local >= 0) & (local < len(ops))
+        available = torch.zeros_like(live)
+        result = x.clone()
+        compiling = torch.compiler.is_compiling()
+        indices = (range(len(ops)) if compiling else
+                   sorted(set(local[live].detach().cpu().tolist())))
+        for index in indices:
+            op = getattr(ops[index], "gl", ops[index])
+            selected = live & (local == index)
             name = getattr(op, "rule_name", "")
-            if name in ("not", "non") and hasattr(op, "reverse"):
-                outs.append(op.reverse(x))
-            else:
-                outs.append(x)
-        stacked = torch.stack(outs, dim=1)                       # [B, R1, D]
-        R1 = len(ops)
-        idx = op_local.reshape(B).clamp(0, R1 - 1).reshape(B, 1, 1).expand(B, 1, D)
-        sel = stacked.gather(1, idx).reshape(B, D)
-        gate = valid.reshape(B, 1).to(dtype=torch.bool)
-        return torch.where(gate, sel, x)
+            if name in ("null", "exist", "tense", "morphology", "aspect"):
+                # These declared operators are tensor identities on opaque
+                # concepts. Morphology's surface-token analysis cannot change
+                # this CS value and must not read a later token during replay.
+                available = available | selected
+                continue
+            if name not in ("not", "non"):
+                continue
+            available = available | selected
+            def apply(value):
+                return op.reverse(value).clone()
+            undone = (torch.cond(selected.any(), apply, lambda value: value.clone(), (x,))
+                      if compiling else apply(x))
+            result = torch.where(selected[:, None], undone, result)
+        return (result, valid.reshape(B).bool() & ~available) if return_status else result
 
     def forward_binary_step(self, left, right, op_local, valid):
         """``[B, D]`` parent of one recorded binary fold applied forward:

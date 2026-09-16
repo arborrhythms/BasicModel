@@ -1,0 +1,13 @@
+ss..........                                                             [100%]
+=============================== warnings summary ===============================
+test/test_ir_only_refactor.py::TestReconstructConceptsLoss::test_reconstruction_is_unconditionally_from_concepts
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:6671: RuntimeWarning: reconstruction_zeroed [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_xor.xml]: reconstruction loss zeroed: no D3 (per_word=False) and masked-LM inputs missing (mask, target); percept .what=Codebook, pred_full shape=(2, 8, 14)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_ir_only_refactor.py::TestArmaPredictAndObserve::test_observe_accumulates_nonzero_loss
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+10 passed, 2 skipped, 2 warnings in 2.43s

@@ -1,0 +1,43 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+______________ test_word_scoring_honors_existing_nul_termination _______________
+
+    def test_word_scoring_honors_existing_nul_termination():
+        """A token's first NUL terminates scoring, including within stored spans."""
+        from types import SimpleNamespace
+        from Models import BasicModel
+    
+        owner = SimpleNamespace(_BYTE_ASSIGNMENT_TAU=.1)
+        bank_n = torch.eye(2).unsqueeze(0)
+        word = torch.tensor(0)
+        expected = expected_gradient = None
+        for target_junk, candidate_junk in ((False, False), (True, False),
+                                             (False, True), (True, True)):
+            idea = torch.tensor([[1., .25]], requires_grad=True)
+            target = torch.tensor([[[97, 0, 99 if target_junk else 0]]])
+            target_valid = torch.tensor([[[True, True, target_junk]]])
+            bank_bytes = torch.tensor([[[97, 0, 120 if candidate_junk else 0], [97, 98, 0]]])
+            bank_valid = torch.tensor([[[True, True, candidate_junk], [True, True, True]]])
+            cost = BasicModel._byte_word_cost(
+                owner, idea, word, bank_n, bank_bytes, bank_valid,
+                target, target_valid, True)
+            gradient, = torch.autograd.grad(cost.sum(), (idea,))
+            if expected is None:
+                expected, expected_gradient = cost.detach(), gradient
+            else:
+                torch.testing.assert_close(cost, expected)
+                torch.testing.assert_close(gradient, expected_gradient)
+            unknown = BasicModel._byte_word_cost(
+                owner, idea, word, bank_n, bank_bytes, torch.zeros_like(bank_valid),
+                target, target_valid, True)
+>           torch.testing.assert_close(unknown, torch.tensor([256.]).log())
+E           AssertionError: Tensor-likes are not close!
+E           
+E           Mismatched elements: 1 / 1 (100.0%)
+E           Greatest absolute difference: 0.00389862060546875 at index (0,) (up to 1e-05 allowed)
+E           Greatest relative difference: 0.0007030650740489364 at index (0,) (up to 1.3e-06 allowed)
+
+test/test_tied_operator_reconstruction.py:37: AssertionError
+=========================== short test summary info ============================
+FAILED test/test_tied_operator_reconstruction.py::test_word_scoring_honors_existing_nul_termination
+1 failed in 2.07s

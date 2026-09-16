@@ -1,0 +1,97 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_____ test_byte_targets_survive_whole_word_and_prefix_promotion[alphabet] ______
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-492/test_byte_targets_survive_whol0')
+promoted = b'alphabet'
+
+    @pytest.mark.parametrize("promoted", [b"alphabet", b"alph"])
+    def test_byte_targets_survive_whole_word_and_prefix_promotion(tmp_path, promoted):
+        """Radix compression changes the constituent count, never the target bytes."""
+        from test_tied_reconstruction_migration import _model
+        from test_compiled_word_chunk import _stage_fullgraph_tensor_peer
+    
+        model = _model(tmp_path)
+        raw = b"alphabet"
+        try:
+            model.perceptualSpace._online_learning_frozen = True
+            store = model.perceptualSpace.percept_store
+            counts = []
+            for promote in (False, True):
+                if promote:
+                    store.insert(promoted)
+                _stage_fullgraph_tensor_peer(model, [raw.decode("ascii")])
+                active = model.inputSpace._word_active_mask
+                # Exercise the radix stem's legitimate longest-known-prefix
+                # tiling directly. The ladder fixture's alternative analysis
+                # tiling can retain its previously selected one-byte units.
+                pids = store.spell_out(raw)
+                width = max(3, len(pids))
+                ids = torch.zeros(*active.shape, width, dtype=torch.long)
+                mask = torch.zeros_like(ids, dtype=torch.bool)
+                ids[0, 0, :len(pids)] = torch.tensor(pids)
+                mask[0, 0, :len(pids)] = True
+                model.inputSpace._ar_word_part_ids = ids
+                model.inputSpace._ar_word_part_mask = mask
+                model._stage_snapshot_bytes()
+                counts.append(int(model.inputSpace._ar_word_part_mask[0, 0].sum()))
+                ready, target, valid = model._byte_tables(*active.shape)
+                observed = target[0, 0][valid[0, 0]].tolist()
+>               assert ready and observed == list(raw), (promote, counts, observed)
+E               AssertionError: (True, [8, 1], [])
+E               assert (True and [] == [97, 108, 112..., 97, 98, ...]
+E                 
+E                 Right contains 8 more items, first extra item: 97
+E                 Use -v to get more diff)
+
+test/test_tied_operator_reconstruction.py:402: AssertionError
+_______ test_byte_targets_survive_whole_word_and_prefix_promotion[alph] ________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-492/test_byte_targets_survive_whol1')
+promoted = b'alph'
+
+    @pytest.mark.parametrize("promoted", [b"alphabet", b"alph"])
+    def test_byte_targets_survive_whole_word_and_prefix_promotion(tmp_path, promoted):
+        """Radix compression changes the constituent count, never the target bytes."""
+        from test_tied_reconstruction_migration import _model
+        from test_compiled_word_chunk import _stage_fullgraph_tensor_peer
+    
+        model = _model(tmp_path)
+        raw = b"alphabet"
+        try:
+            model.perceptualSpace._online_learning_frozen = True
+            store = model.perceptualSpace.percept_store
+            counts = []
+            for promote in (False, True):
+                if promote:
+                    store.insert(promoted)
+                _stage_fullgraph_tensor_peer(model, [raw.decode("ascii")])
+                active = model.inputSpace._word_active_mask
+                # Exercise the radix stem's legitimate longest-known-prefix
+                # tiling directly. The ladder fixture's alternative analysis
+                # tiling can retain its previously selected one-byte units.
+                pids = store.spell_out(raw)
+                width = max(3, len(pids))
+                ids = torch.zeros(*active.shape, width, dtype=torch.long)
+                mask = torch.zeros_like(ids, dtype=torch.bool)
+                ids[0, 0, :len(pids)] = torch.tensor(pids)
+                mask[0, 0, :len(pids)] = True
+                model.inputSpace._ar_word_part_ids = ids
+                model.inputSpace._ar_word_part_mask = mask
+                model._stage_snapshot_bytes()
+                counts.append(int(model.inputSpace._ar_word_part_mask[0, 0].sum()))
+                ready, target, valid = model._byte_tables(*active.shape)
+                observed = target[0, 0][valid[0, 0]].tolist()
+>               assert ready and observed == list(raw), (promote, counts, observed)
+E               AssertionError: (True, [8, 5], [97, 98, 101, 116])
+E               assert (True and [97, 98, 101, 116] == [97, 108, 112..., 97, 98, ...]
+E                 
+E                 At index 1 diff: 98 != 108
+E                 Right contains 4 more items, first extra item: 97
+E                 Use -v to get more diff)
+
+test/test_tied_operator_reconstruction.py:402: AssertionError
+=========================== short test summary info ============================
+FAILED test/test_tied_operator_reconstruction.py::test_byte_targets_survive_whole_word_and_prefix_promotion[alphabet]
+FAILED test/test_tied_operator_reconstruction.py::test_byte_targets_survive_whole_word_and_prefix_promotion[alph]
+2 failed in 2.86s

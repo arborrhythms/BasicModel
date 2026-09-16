@@ -51,6 +51,27 @@ class AnswerProgram:
 
 
 @dataclass(frozen=True)
+class InputReconstruction:
+    """Owned products of the completed input's single tied traversal.
+
+    These are reconstructed values and scores, never input/answer targets.
+    Clones preserve the current step's gradients and survive later staging.
+    """
+
+    ideas: Any
+    event: Any
+    idea_cost: Any
+    byte_cost: Any
+    truncated: Any
+    sentence_costs: Any
+
+    def __post_init__(self) -> None:
+        for name in ("ideas", "event", "idea_cost", "byte_cost", "truncated", "sentence_costs"):
+            value = getattr(self, name)
+            object.__setattr__(self, name, value.clone() if value is not None else None)
+
+
+@dataclass(frozen=True)
 class Understanding:
     """Immutable logical products of one ``forward()`` call."""
 
@@ -68,6 +89,8 @@ class Understanding:
     answer_program: tuple = field(default_factory=tuple, repr=False, compare=False)
     sentence_programs: Mapping[int, tuple] = field(
         default_factory=lambda: MappingProxyType({}), repr=False, compare=False)
+    input_reconstruction: InputReconstruction | None = field(
+        default=None, repr=False, compare=False)
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "answer_program", tuple(self.answer_program))

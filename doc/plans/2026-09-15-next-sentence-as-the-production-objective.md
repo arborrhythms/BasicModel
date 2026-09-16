@@ -56,7 +56,7 @@ semantic payloads; their arbitrary numeric values are not semantic features.
 For a relational idea, preserve `[NP1, VP, NP2]` and role-presence masks, mode,
 bindings and scope. A root representation may accompany it, but cannot replace
 it: the historical consolidated root reduction yields NP1 alone
-([consolidated root reduction](../../bin/Layers.py#L10230)). Essential idea,
+([consolidated root reduction](../../bin/Layers.py#L10282)). Essential idea,
 active/root-question and candidate-argument roles must not compete with
 incidental context for top-k inclusion.
 
@@ -174,6 +174,44 @@ containment, taxonomic subsumption and asserted world relations. A word's
 presence in a sentence, a fold-tree edge or geometric similarity does not prove
 a world assertion. The registry must expose supported domains and reject
 unsupported combinations, not silently treat every inclusion as `isPart`.
+
+**Query evidence sources (Alec, September 16).** `PartOf` consults the
+**conceptual taxonomy** for the described conceptual relationship. Its
+boundary aliases, including `isPart`, must declare this domain explicitly.
+A perceptual-mereonomy traversal is a separately typed request; neither the
+input parse tree nor concept-vector overlap can substitute for taxonomic
+evidence. Asserted world relations remain facts to check in LTM, rather than
+being certified by either structural hierarchy.
+
+**Truth and reference (Alec's clarification, September 16): a concept is true
+if its referent exists; this is moderated by degree of truth.** `Exist` uses
+LTM facts to assess the existence of the **full conceptual description's
+referent**, returning degree of truth and its supporting evidence rather than
+reducing the result to a binary hit/miss. Preserve its occupied NP/VP roles,
+bindings and scope when matching;
+finding the subject's word, a concept row, or an NP1 match alone is insufficient.
+Return the matching fact's provenance and evidential status. Partial, negative
+and conflicting support must retain their degrees. A missing match is
+unknown, not proof of falsity; contradictory or explicitly negative evidence
+must retain its status. Questions and predicted estimates cannot certify their
+own existence as facts about the described world. The legacy `exist -> isTrue`
+alias must not bypass this lookup through a generic truth/activation shortcut.
+
+Tense queries and tense-based reasoning are **deferred**. No new tense executor
+or automatic temporal claim is required by this implementation. Retaining
+tense-bearing words and the identified grammar derivation for input fidelity
+does not assert that grammatical tense establishes time in the world. A
+future temporal design must distinguish linguistic description from observed
+event time and specify any connection before enabling such queries.
+
+These are implementation requirements for §10.5's query migration. The current
+legacy kernel routes both `meronomy` and `taxonomy` through the same relation
+rows ([thinking.py:270](../../bin/thinking.py#L270)); current `exist` matches an
+absolute row's NP1 and can fall back to `isTrue`
+([reasoning.py:137](../../bin/reasoning.py#L137)). Those behaviors do not yet meet
+this contract. Probe their evidence sources and full-description sensitivity
+before replacing them; the tied reconstruction migration remains a separate
+commit.
 
 ### 2.1 Nested clauses and phrases
 
@@ -420,6 +458,12 @@ alone does not invalidate useful question selection or reasoning work.
 5. **Evidence separation:** structural containment alone cannot certify an
    asserted relation; prediction is not observation; false, unsupported and
    conflicting evidence remain distinguishable.
+   `PartOf` must change when the relevant conceptual-taxonomy edge changes,
+   but not when only a parse-tree/perceptual edge changes. `Exist` must respond
+   to matching LTM facts and distinguish descriptions with identical NP1 but
+   different VP, NP2, bindings or scope. Missing, negative and conflicting
+   matches remain distinct; query/estimate records cannot satisfy the fact
+   lookup. Deferred tense queries must not return fabricated temporal evidence.
 6. **Causal multistep reasoning:** learn general conditional chains through
    syntax/LTM, then test renamed concepts and unseen chains. Removing a needed
    premise or corrupting a relevant intermediate result must affect the emitted
@@ -525,6 +569,13 @@ requirements, not a claim that the loops have been implemented or benchmarked.
    Test one-word sentences, deferred/no-fold words, unary changes and final
    seals, including cases where local recovery succeeds but completed-state
    information has been lost.
+
+   Surface fidelity includes word termination: a candidate matching the
+   input word's prefix but adding suffix bytes must not receive a perfect
+   reconstruction score. Padding after the word end is not additional input.
+   The target covers the complete spelling even when a word or multi-byte
+   prefix has been promoted to one percept; percept compression cannot remove
+   bytes from the objective.
 
 2. **Reconstruction need not be an exact inverse; share its weights.**
    The objective is input reconstruction, not recovery of arbitrary original
@@ -650,7 +701,7 @@ use one conditioner leaves the two-controller requirement intact.
    context ([Output.py:70](../../bin/Output.py#L70)).
    `_materialize_answer_idea` applies `_condition_answer_on_question` once;
    that conditioner operates at the answer's conceptual width and updates its
-   root ([Models.py:11435](../../bin/Models.py#L11435),
+   root ([Models.py:11483](../../bin/Models.py#L11483),
    [Models.py:8566](../../bin/Models.py#L8566)). WORD surface bytes remain
    separate from changeable OBJECT interpretation
    ([Spaces.py:19949](../../bin/Spaces.py#L19949)). Preserve these contracts
@@ -658,12 +709,12 @@ use one conditioner leaves the two-controller requirement intact.
 
 2. **Reasoning still occurs inside the output path.** With answer synthesis
    enabled, `what()` calls `reverseOutput()`
-   ([Models.py:9716](../../bin/Models.py#L9716)); `reverseOutput()` calls
-   `_resolve_answer()` ([Models.py:9030](../../bin/Models.py#L9030)), which can
+   ([Models.py:9719](../../bin/Models.py#L9719)); `reverseOutput()` calls
+   `_resolve_answer()` ([Models.py:9033](../../bin/Models.py#L9033)), which can
    call `_resolve_step()` ([Models.py:8097](../../bin/Models.py#L8097)).
    `think()` repeats `what()` while retaining the first execution
-   ([Models.py:9881](../../bin/Models.py#L9881),
-   [Models.py:9910](../../bin/Models.py#L9910)). Reusing the original forward
+   ([Models.py:9884](../../bin/Models.py#L9884),
+   [Models.py:9913](../../bin/Models.py#L9913)). Reusing the original forward
    result is useful, but this call chain still interleaves thought selection
    and realization. Move resolution/control before the output invocation and
    make the concluded conceptual result an explicit input to realization.
@@ -672,10 +723,10 @@ use one conditioner leaves the two-controller requirement intact.
    `_enumerate_step_candidates()` offers ANSWER and OPEN for presented words
    ([Models.py:8352](../../bin/Models.py#L8352)). The interaction input now
    retains all captured idea slots, but its output half records the produced
-   head response ([Models.py:9721](../../bin/Models.py#L9721),
-   [Models.py:9754](../../bin/Models.py#L9754)). Completion and forced closure
-   still use Q/A parity ([Models.py:9900](../../bin/Models.py#L9900),
-   [Models.py:9922](../../bin/Models.py#L9922)). This does not satisfy general
+   head response ([Models.py:9724](../../bin/Models.py#L9724),
+   [Models.py:9757](../../bin/Models.py#L9757)). Completion and forced closure
+   still use Q/A parity ([Models.py:9903](../../bin/Models.py#L9903),
+   [Models.py:9925](../../bin/Models.py#L9925)). This does not satisfy general
    structured `what(Q)` selection or §3's ordinary conceptual thoughts with
    explicit descent, return and finish. The migration must retain conceptual
    intermediate answers, scope and evidence without requiring a surface/head
@@ -695,8 +746,8 @@ use one conditioner leaves the two-controller requirement intact.
    `BasicModel.xml` enables `teacherReconstruction` and `detachedReverse`
    ([BasicModel.xml:176](../../data/BasicModel.xml#L176)); `runBatch()` invokes
    the detached reconstruction objective and deduplicates the additional
-   reverse call ([Models.py:13293](../../bin/Models.py#L13293),
-   [Models.py:13385](../../bin/Models.py#L13385)). The independent generate
+   reverse call ([Models.py:13357](../../bin/Models.py#L13357),
+   [Models.py:13451](../../bin/Models.py#L13451)). The independent generate
    catalog exists ([Language.py:14155](../../bin/Language.py#L14155)), while
    `outputInLoop` defaults to false
    ([Models.py:2503](../../bin/Models.py#L2503)). Keep §6's target and its
@@ -774,14 +825,14 @@ The September 16 local-role/sequence implementation is described in §8.3.
 
 | Mechanism | September 15 implementation and evidence |
 |---|---|
-| Predictor owner | `InterSentenceLayer`, not `WhatInteractionMemory`; the latter is the live What interaction memory, whose dual ownership is retired by §11.3 ([Layers.py:9168](https://github.com/arborrhythms/BasicModel/blob/d161a7af6e74f689f700be547c33576253b7b45b/bin/Layers.py#L9168), [Layers.py:9326](https://github.com/arborrhythms/BasicModel/blob/d161a7af6e74f689f700be547c33576253b7b45b/bin/Layers.py#L9326)) |
-| Context window | `_inter_chain_window = max(1, min(ltm_capacity, 8))`; `interChainWindow` is not a separately wired configuration setting ([Layers.py:9374](https://github.com/arborrhythms/BasicModel/blob/d161a7af6e74f689f700be547c33576253b7b45b/bin/Layers.py#L9374)) |
-| Prediction | `predict_next_end_state()` reduces history to roots, predicts one root, copies the latest depth and broadcasts that root across its slots ([Layers.py:10003](https://github.com/arborrhythms/BasicModel/blob/d161a7af6e74f689f700be547c33576253b7b45b/bin/Layers.py#L10003), [Layers.py:10076](https://github.com/arborrhythms/BasicModel/blob/d161a7af6e74f689f700be547c33576253b7b45b/bin/Layers.py#L10076)) |
-| Target and stored context | Observation detaches the actual target and durable payloads; a bounded per-row prediction view now retains current-step source encoder gradients ([Layers.py:9761](https://github.com/arborrhythms/BasicModel/blob/d161a7af6e74f689f700be547c33576253b7b45b/bin/Layers.py#L9761), [Layers.py:9798](https://github.com/arborrhythms/BasicModel/blob/d161a7af6e74f689f700be547c33576253b7b45b/bin/Layers.py#L9798), [Layers.py:8698](https://github.com/arborrhythms/BasicModel/blob/d161a7af6e74f689f700be547c33576253b7b45b/bin/Layers.py#L8698)) |
-| Predict/observe order | `predict_and_observe_stm_end_state()` predicts from the old chain before scoring and appending the arriving sentence ([Layers.py:9827](https://github.com/arborrhythms/BasicModel/blob/d161a7af6e74f689f700be547c33576253b7b45b/bin/Layers.py#L9827)) |
-| Loss | MSE accumulates only in training with gradients enabled and positive weight; `consume_inter_loss()` returns the mean over scored sentences. Optional InfoNCE uses previous roots as negatives ([Layers.py:10091](https://github.com/arborrhythms/BasicModel/blob/d161a7af6e74f689f700be547c33576253b7b45b/bin/Layers.py#L10091), [Layers.py:10120](https://github.com/arborrhythms/BasicModel/blob/d161a7af6e74f689f700be547c33576253b7b45b/bin/Layers.py#L10120), [Layers.py:9784](https://github.com/arborrhythms/BasicModel/blob/d161a7af6e74f689f700be547c33576253b7b45b/bin/Layers.py#L9784)) |
+| Predictor owner | `InterSentenceLayer`, not `WhatInteractionMemory`; the latter is the live What interaction memory, whose dual ownership is retired by §11.3 ([Layers.py:9202](https://github.com/arborrhythms/BasicModel/blob/d161a7af6e74f689f700be547c33576253b7b45b/bin/Layers.py#L9202), [Layers.py:9360](https://github.com/arborrhythms/BasicModel/blob/d161a7af6e74f689f700be547c33576253b7b45b/bin/Layers.py#L9360)) |
+| Context window | `_inter_chain_window = max(1, min(ltm_capacity, 8))`; `interChainWindow` is not a separately wired configuration setting ([Layers.py:9408](https://github.com/arborrhythms/BasicModel/blob/d161a7af6e74f689f700be547c33576253b7b45b/bin/Layers.py#L9408)) |
+| Prediction | `predict_next_end_state()` reduces history to roots, predicts one root, copies the latest depth and broadcasts that root across its slots ([Layers.py:10037](https://github.com/arborrhythms/BasicModel/blob/d161a7af6e74f689f700be547c33576253b7b45b/bin/Layers.py#L10037), [Layers.py:10110](https://github.com/arborrhythms/BasicModel/blob/d161a7af6e74f689f700be547c33576253b7b45b/bin/Layers.py#L10110)) |
+| Target and stored context | Observation detaches the actual target and durable payloads; a bounded per-row prediction view now retains current-step source encoder gradients ([Layers.py:9795](https://github.com/arborrhythms/BasicModel/blob/d161a7af6e74f689f700be547c33576253b7b45b/bin/Layers.py#L9795), [Layers.py:9832](https://github.com/arborrhythms/BasicModel/blob/d161a7af6e74f689f700be547c33576253b7b45b/bin/Layers.py#L9832), [Layers.py:8732](https://github.com/arborrhythms/BasicModel/blob/d161a7af6e74f689f700be547c33576253b7b45b/bin/Layers.py#L8732)) |
+| Predict/observe order | `predict_and_observe_stm_end_state()` predicts from the old chain before scoring and appending the arriving sentence ([Layers.py:9861](https://github.com/arborrhythms/BasicModel/blob/d161a7af6e74f689f700be547c33576253b7b45b/bin/Layers.py#L9861)) |
+| Loss | MSE accumulates only in training with gradients enabled and positive weight; `consume_inter_loss()` returns the mean over scored sentences. Optional InfoNCE uses previous roots as negatives ([Layers.py:10125](https://github.com/arborrhythms/BasicModel/blob/d161a7af6e74f689f700be547c33576253b7b45b/bin/Layers.py#L10125), [Layers.py:10154](https://github.com/arborrhythms/BasicModel/blob/d161a7af6e74f689f700be547c33576253b7b45b/bin/Layers.py#L10154), [Layers.py:9818](https://github.com/arborrhythms/BasicModel/blob/d161a7af6e74f689f700be547c33576253b7b45b/bin/Layers.py#L9818)) |
 | Optimizer ownership | `<sentencePrediction>` constructs the discourse layer; its parameters are appended to SymbolSpace's explicit `params` ([Language.py:10978](https://github.com/arborrhythms/BasicModel/blob/d161a7af6e74f689f700be547c33576253b7b45b/bin/Language.py#L10978), [Language.py:11032](https://github.com/arborrhythms/BasicModel/blob/d161a7af6e74f689f700be547c33576253b7b45b/bin/Language.py#L11032)) |
-| Training total | A consumed `inter_loss` is added with `inter_loss_weight` independently of Teacher's legacy gate and is included in the shared downstream gradient budget ([Models.py:13529](https://github.com/arborrhythms/BasicModel/blob/d161a7af6e74f689f700be547c33576253b7b45b/bin/Models.py#L13529), [Models.py:13636](https://github.com/arborrhythms/BasicModel/blob/d161a7af6e74f689f700be547c33576253b7b45b/bin/Models.py#L13636)) |
+| Training total | A consumed `inter_loss` is added with `inter_loss_weight` independently of Teacher's legacy gate and is included in the shared downstream gradient budget ([Models.py:13535](https://github.com/arborrhythms/BasicModel/blob/d161a7af6e74f689f700be547c33576253b7b45b/bin/Models.py#L13535), [Models.py:13642](https://github.com/arborrhythms/BasicModel/blob/d161a7af6e74f689f700be547c33576253b7b45b/bin/Models.py#L13642)) |
 
 The September 15 canonical configuration explicitly sets `sentencePrediction=false`,
 `interLossWeight=0.0`, `armaScale=0.0` and `interContrastiveWeight=0.0`
@@ -807,7 +858,7 @@ changed by this gradient-contract revision; the default-on rollout still
 requires the complete §10 sequence/quality gates.
 
 The older pooled-sentence ARMA loss remains a separate term
-([Models.py:13492](https://github.com/arborrhythms/BasicModel/blob/d161a7af6e74f689f700be547c33576253b7b45b/bin/Models.py#L13492)). Keep `armaScale=0` and
+([Models.py:13498](https://github.com/arborrhythms/BasicModel/blob/d161a7af6e74f689f700be547c33576253b7b45b/bin/Models.py#L13498)). Keep `armaScale=0` and
 `interContrastiveWeight=0` for the first concept-prediction measurement.
 Retain the measured reconstruction baseline until §6's tied-reconstruction
 migration is implemented and verified; the prediction change must name which
@@ -838,8 +889,8 @@ occupied local NP1/VP/NP2 vectors and masks in chronological order, and predicts
 independent role vectors and occupancy logits. Its objective is occupied-role
 MSE plus mean presence binary cross entropy. Current-step source encodings
 remain live, while targets and durable observations are detached
-([Layers.py:9189](../../bin/Layers.py#L9189),
-[Layers.py:9800](../../bin/Layers.py#L9800)). This does not yet implement the
+([Layers.py:9241](../../bin/Layers.py#L9241),
+[Layers.py:9852](../../bin/Layers.py#L9852)). This does not yet implement the
 retained compound-reference prediction required by §§2.1 and 10.5.
 
 Packed draining uses the existing sealed three-slot/depth outputs and final
@@ -851,16 +902,16 @@ continuation within the same addressed document. Provisioning runs under a
 suspended external-observation scope: its parsed truths still enter durable
 LTM, while external rows, pending predictions and scored losses survive even a
 temporary batch reshape
-([Models.py:12381](../../bin/Models.py#L12381),
-[Models.py:12497](../../bin/Models.py#L12497),
+([Models.py:12648](../../bin/Models.py#L12648),
+[Models.py:12764](../../bin/Models.py#L12764),
 [data.py:526](../../bin/data.py#L526),
-[Layers.py:9689](../../bin/Layers.py#L9689)).
+[Layers.py:9741](../../bin/Layers.py#L9741)).
 
 Restoring weights starts transient prediction context cold. A root-predictor
 checkpoint migrates explicitly to a freshly initialized structured head;
 unrelated weights remain intact and optimizer moments follow the existing
 name-based mapping. The root architecture remains selectable for baseline
-comparisons ([Layers.py:9865](../../bin/Layers.py#L9865)). Regression evidence
+comparisons ([Layers.py:9917](../../bin/Layers.py#L9917)). Regression evidence
 lives in [test_sentence_expectation.py](../../test/test_sentence_expectation.py)
 and the real packed training tests in
 [test_reconstruction_priority.py:126](../../test/test_reconstruction_priority.py#L126).
@@ -876,14 +927,14 @@ not the remaining default-on, nested-meaning or reasoning requirements.
 The predictor's full encoded-sentence target and the historical root baseline
 must be distinguished. Here **root-only means one slot, not all three**.
 In consolidated `[NP1, VP, NP2]` order it is the first slot, NP1, at Python
-index `0` ([consolidated reduction](../../bin/Layers.py#L10230)). The legacy
+index `0` ([consolidated reduction](../../bin/Layers.py#L10282)). The legacy
 newest-first adapter instead selects its last occupied slot
-([newest-first reduction](../../bin/Layers.py#L10232)); "root" does not name one
+([newest-first reduction](../../bin/Layers.py#L10284)); "root" does not name one
 universal physical index. The root benchmark copies its one predicted
-vector into every returned slot ([Layers.py:10342](../../bin/Layers.py#L10342)).
+vector into every returned slot ([Layers.py:10394](../../bin/Layers.py#L10394)).
 Before the September 16 change, packed prediction
 draining supplied a single root with depth one
-([Models.py:12414 at d161a7a](https://github.com/arborrhythms/BasicModel/blob/d161a7af6e74f689f700be547c33576253b7b45b/bin/Models.py#L12414)). Repeating a root does not
+([Models.py:12420 at d161a7a](https://github.com/arborrhythms/BasicModel/blob/d161a7af6e74f689f700be547c33576253b7b45b/bin/Models.py#L12420)). Repeating a root does not
 recover distinct VP/NP2 content, role masks or nested references. Preserve
 the complete structured-idea contract in §§1–2.1. A first root-only benchmark
 is a limited measurement, not completion of full sentence prediction or
@@ -894,7 +945,7 @@ exclude padding, unseen future slots and cross-document continuations.
 Keep valid accumulated losses when one stream resets, and consume each
 eligible prediction/observation pair once at the declared optimizer step.
 Global and row resets differ today
-([Layers.py:10515](../../bin/Layers.py#L10515)); their effect on already
+([Layers.py:10567](../../bin/Layers.py#L10567)); their effect on already
 scored losses needs explicit tests, not an assumption that every reset
 clears the same state.
 
@@ -976,8 +1027,8 @@ prove that an answer gradient never reaches comprehension.
 The numerical rule lives in `reconstruction_priority_gradient` and
 `backward_reconstruction_priority` ([Optimizer.py:113](../../bin/Optimizer.py#L113));
 loss partition and ownership live in `_backward_training_loss` and
-`_reconstruction_priority_parameters` ([Models.py:2689](../../bin/Models.py#L2689),
-[Models.py:2727](../../bin/Models.py#L2727)).
+`_reconstruction_priority_parameters` ([Models.py:2700](../../bin/Models.py#L2700),
+[Models.py:2738](../../bin/Models.py#L2738)).
 This is a local gradient rule, not a guarantee of monotonic loss under Adam,
 momentum or finite steps. Both tasks may adapt during learning; measure the
 resulting reconstruction, prediction and answer quality. A permanent priority
@@ -993,7 +1044,7 @@ remains a detached snapshot and is not replaced by this transient view.
 Prediction uses this scoped chronological view, rather than global store
 recency that can contain another row or an unrelated provisioned fact.
 The live clone and detached durable write are adjacent in
-[Layers.py:9853](../../bin/Layers.py#L9853).
+[Layers.py:9905](../../bin/Layers.py#L9905).
 
 Consume the prediction losses once, then detach the context view and clear
 pending predictions before a subsequent optimizer version is used. Also
@@ -1005,9 +1056,9 @@ detached targets and durable records must not be used as live-context
 substitutes. Full nested-structure prediction remains a separate milestone; local-role
 prediction is described in §8.3.
 Context cleanup is implemented in
-[`detach_prediction_context`](../../bin/Layers.py#L10395); packed chronology is in
-[`_drain_packed_stm_end_states`](../../bin/Models.py#L12497), with the
-[single-drain guard in `_end_step`](../../bin/Models.py#L12320).
+[`detach_prediction_context`](../../bin/Layers.py#L10447); packed chronology is in
+[`_drain_packed_stm_end_states`](../../bin/Models.py#L12764), with the
+[single-drain guard in `_end_step`](../../bin/Models.py#L12587).
 
 §3 still requires live continuous query operands and intermediate results
 inside the bounded reasoning episode, and explicit credit for hard choices.
@@ -1089,8 +1140,8 @@ query/subgoal behavior remain separate acceptance gates in §10.
 Keep supplied-answer training for the answer conditioner, generate chooser
 and dedicated synthesis modules. The current answer-target gate and its
 call site enforce this separation
-([Models.py:9316](../../bin/Models.py#L9316),
-[Models.py:13360](../../bin/Models.py#L13360)). The concepts-to-concepts
+([Models.py:9375](../../bin/Models.py#L9375),
+[Models.py:13630](../../bin/Models.py#L13630)). The concepts-to-concepts
 objective adds no next-text answer target and no reconstruction-parse teacher
 for output. Past/future realized-answer metrics remain evaluation metrics.
 
@@ -1104,7 +1155,7 @@ for output. Past/future realized-answer metrics remain evaluation metrics.
   and supplied-label behavior, and never train an output identity on PRESENT.
 - **Prediction-to-output integration:** remains unfinished even for inference.
   The indexed FUTURE branch still selects no answer program
-  ([Models.py:8116](../../bin/Models.py#L8116)). Shared inverse transforms do
+  ([Models.py:8196](../../bin/Models.py#L8196)). Shared inverse transforms do
   not establish a working FUTURE realization or answer quality. When this
   integration is taken up, capture a target-free conceptual value and
   provenance; do not fabricate input derivation witnesses or move query
@@ -1139,7 +1190,7 @@ prediction through a live path or explicit hard-choice credit. Current indexed
 FUTURE answers still lack an owned output program; do not claim that connection
 exists merely because the gradient balancer admits it. The local-role sentence
 predictor owns a separate `SentenceExpectation`
-([Layers.py:9189](../../bin/Layers.py#L9189)); its parameters are independent
+([Layers.py:9241](../../bin/Layers.py#L9241)); its parameters are independent
 of the comprehension path. Concept-target prediction works without generating text, and corpus
 surface prediction remains deferred (§8.5).
 
@@ -1193,10 +1244,10 @@ writes, dictionary changes or another row. For packed input, honor chronological
 sentence boundaries instead of exposing the entire pack as prior context.
 
 The existing helper already predicts before observing the arriving end state
-([Layers.py:10066](../../bin/Layers.py#L10066)); the pending and packed drains call
+([Layers.py:10118](../../bin/Layers.py#L10118)); the pending and packed drains call
 it before their consolidated-store append
-([Models.py:12432](../../bin/Models.py#L12432),
-[Models.py:12497](../../bin/Models.py#L12497)). This supplies a starting point,
+([Models.py:12699](../../bin/Models.py#L12699),
+[Models.py:12764](../../bin/Models.py#L12764)). This supplies a starting point,
 not proof of isolation throughout `forward()` or of the complete cycle above.
 The ordinary input path must perform this cycle without a `Data.what(FUTURE)`
 request or an available FUTURE realization program (§8.5).
@@ -1276,6 +1327,14 @@ In addition to §§4 and 10, require evidence that:
   neither improved reasoning nor a processing-speed gain.
 
 ### 8.8 Gradient interaction among the four pieces
+
+The maintained implementation reference is
+[Gradient flow across the architecture](../GradientFlow.md). It maps each
+objective to its live inputs, stop-gradient boundaries and optimizer owners,
+and distinguishes implemented credit paths from the remaining migrations.
+The shared rule prevents aggregate downstream opposition to reconstruction;
+it does not independently resolve conflicts among prediction, thinking and
+output before those downstream gradients are aggregated.
 
 **Latest decisions (2026-09-15), superseding the earlier disjoint-gradient
 interpretation in this document:**
@@ -1682,11 +1741,11 @@ switch/default/inference behavior together. The historical citations in
 §§11.1–11.5 describe the reviewed uncommitted tree; the following links name
 the current implementation.
 
-- [`InterSentenceLayer.Reset`](../../bin/Layers.py#L10515) preserves the stream
-  on soft resets. Hard reset and [`begin_document`](../../bin/Layers.py#L9717)
+- [`InterSentenceLayer.Reset`](../../bin/Layers.py#L10567) preserves the stream
+  on soft resets. Hard reset and [`begin_document`](../../bin/Layers.py#L9769)
   start the affected row cold. The real two-brick regression scores three
   pairs from four observations in one document.
-- [`_stage_expectation_documents`](../../bin/Models.py#L12381) treats invalid
+- [`_stage_expectation_documents`](../../bin/Models.py#L12648) treats invalid
   source-row positions as unaddressed streams, while malformed addresses
   missing their document key fail explicitly. Existing cursor addresses still
   enforce document boundaries inside packed rows.
@@ -1695,7 +1754,7 @@ the current implementation.
   renamed to `sentenceExpectation` throughout runtime reads, schema and XML.
   Both `model.xml` and `BasicModel.xml` enable expectation with `inter=0.1`,
   ARMA zero and contrastive zero. Named experiment files retain their explicit
-  overrides. [`set_sentence_expectation`](../../bin/Models.py#L12355) supports
+  overrides. [`set_sentence_expectation`](../../bin/Models.py#L12622) supports
   off/on at runtime, including first construction after an off start; its
   parameters join the optimizer once and disabled Adam steps leave them fixed.
   Head construction preserves the caller's random stream, allowing matched
@@ -1703,15 +1762,15 @@ the current implementation.
 - [`SymbolSubSpace`](../../bin/Language.py#L10966) owns one always-present
   `WhatInteractionMemory`. The `whatThinkingMemory` switch, discourse copy and
   delegates are removed. Provisioning resets the interaction episode while
-  [`suspend_external_observations`](../../bin/Layers.py#L9689) protects only the
+  [`suspend_external_observations`](../../bin/Layers.py#L9741) protects only the
   external expectation stream. Temporal prediction reads the discourse owner
-  directly ([`_temporal_answer_rep_row`](../../bin/Models.py#L8698)).
-- [`expectation_metrics`](../../bin/Layers.py#L10420) reports observation/pair
+  directly ([`_temporal_answer_rep_row`](../../bin/Models.py#L8777)).
+- [`expectation_metrics`](../../bin/Layers.py#L10472) reports observation/pair
   counts, cold starts, document transitions, feature MSE and presence BCE.
-  [`last_expectation_comparison`](../../bin/Layers.py#L10433) returns owned,
+  [`last_expectation_comparison`](../../bin/Layers.py#L10485) returns owned,
   detached prior/observation/residual values. These inspection values do not
   yet establish the durable occurrence-link contract in §8.7.
-- [`runBatch`](../../bin/Models.py#L12912) applies its declared train/evaluation
+- [`runBatch`](../../bin/Models.py#L13125) applies its declared train/evaluation
   mode and grad gate. Real runtime calls report comparisons without training
   accumulation or updates. A controlled future-sentence/other-row perturbation
   leaves the earlier estimate unchanged. Fully masked observations are skipped.
@@ -1770,12 +1829,12 @@ fixed throughout; the protected user documents remained unchanged.
   evidence completing §6's tied-reconstruction migration.
 
 The memory probe exposed evaluation of every binary operator while replaying
-one recorded compose choice. [`forward_binary_step`](../../bin/Language.py#L14430)
+one recorded compose choice. [`forward_binary_step`](../../bin/Language.py#L14620)
 now executes only selected operators. The supplied-answer probe also exposed
 dropped compiled/unpacked observations. The existing 21-value return now
 feeds the host boundary explicitly through
-[`_publish_compiled_sentence_state`](../../bin/Models.py#L7291) and
-[`_drain_pending_stm_end_state`](../../bin/Models.py#L12432), preserving depth and
+[`_publish_compiled_sentence_state`](../../bin/Models.py#L7253) and
+[`_drain_pending_stm_end_state`](../../bin/Models.py#L12699), preserving depth and
 padding masks. The report identifies the pre-fix failures separately from the
 final measurements.
 
@@ -1784,3 +1843,121 @@ The next ordered work is §10.5. Alec explicitly reserved
 session; this implementation does not adopt that separate fusion/collapse
 contract. The broader thinking, reconstruction and learned-utility gates in
 this integrated specification remain unfinished.
+
+## 13. Tied input-reconstruction migration (verified)
+
+The native measurement matrix and background full-suite verification are
+complete. The final run passes **4,220 tests, with 51 skipped, 7 expected
+failures and 4 subtests passed, in 4066.68 s**. All 554 frozen runtime/test/config
+files and the 12 native measurement fingerprints are unchanged. Two earlier
+full runs exposed stale test setup/hooks; their entire affected files pass
+without runtime changes. The broader thinking and learned-utility migrations
+remain open. An earlier
+packed FineWeb AOT run completed validation but failed before its first optimizer update when a cached backward
+could not support retained reads for gradient balance. The compiler fix disables
+buffer donation within reconstruction compilation and normalizes the disabled
+metadata; a probe now passes ordinary-first and subsequent retained reads with
+the global setting preserved. A separate reviewer probe exposed the byte-only
+scorer's inability to distinguish a word from a longer candidate sharing its
+prefix. The fixed objective scores the existing NUL byte (`0`) as the word
+terminator, including it once and ignoring later padding. It uses the existing
+256-byte alphabet and adds no new symbol. Retain the completed
+byte-only timing runs as the cache comparison, and remeasure the final objective.
+See [retained failure and measurements](../benchmarks/2026-09-16-tied-input-reconstruction.md).
+
+BasicModel selects a separate fullgraph reconstruction using
+`reconstructionPlacement=compiled`. The `eager` forward backend promotes this
+call to `aot_eager` so its backward program is cached. The original in-graph
+baseline rebuilt 422 higher-order backward fragments per probe call; its
+completed native run measured 0.00820 supervised input sentences/s. The new
+cache probe passes. The final native B=1/B=2 supplied-answer runs measure
+0.08720/0.17229 input sentences/s, versus 0.14370 for the matched B=1 detached
+student. Packed FineWeb completes seven optimizer steps at 0.14236 input
+sentences/s and 0.14010 prediction targets/s after warmup.
+Its held-out byte cost improves, but prediction feature error worsens; this short
+run does not demonstrate predictive benefit. The final 16-word workload completes
+at 0.06519/0.06508 sentences/s for basis limits 8/16, with improved validation
+byte, idea and event errors. All five candidate measurements include the
+output-readout correction below;
+these single runs do not establish a robust ranking or worst-case search cost.
+The corrected B=2 output run completes fifteen optimizer steps, measuring
+0.16762 supervised input sentences/s after warmup. Its generated lengths are
+1, 2, 3 and 6 words from three-word inputs, with no truncation. This restricted
+sum/stop workload establishes execution and cost, not learned language quality.
+Full-suite verification passes. See the
+[measurement report](../benchmarks/2026-09-16-tied-input-reconstruction.md)
+and [implementation](../../bin/Models.py#L11186).
+
+These learning and checkpoint declarations accompany the verified BasicModel
+default change required by §6. The measurements expose its cost and fidelity
+limits; they do not establish learned predictive utility. The measured
+detached-student baseline is preserved in §12 and its
+raw reports at commit `aa5e018b67bf3be946c0b75c5baf33c9cc84ab4b`.
+
+The intended production settings are `teacherReconstruction=true`,
+`detachedReverse=false`, `reconstructInLoop=true`. Explicit legacy experiments
+may retain the detached student; the two reconstruction modes remain mutually
+exclusive. Training and evaluation consume the same completed, owned input
+reconstruction and the same byte objective once. They must not add a second
+D3 or event-reconstruction loss. The optional event score returned when a caller
+supplies a target to `reverseReconstruct` remains a diagnostic of that target;
+changing the target cannot change the already reconstructed surface.
+
+The objective is cross entropy over each word's bytes through its first NUL
+terminator, averaged per active word, then per completed sentence, then per batch
+row. Eager staging expands each input percept ID to its full bytes for scoring;
+whole-word and prefix promotions retain the same target spelling. Padding after
+termination is not scored. Candidate spellings are stored WORD surfaces,
+with OBJECT rows following their current WORD associations. The null candidate
+retains a uniform `log(256)` cost when there is no known spelling but a scoreable
+target. NUL follows the existing [token-buffer contract](../../bin/Spaces.py#L1617).
+Idea MSE,
+continuous input-event error, truncation and actual reconstructed lengths are
+reported separately. Cosine-based byte assignment does not constrain the
+amplitude of an otherwise identical concept direction; this objective must
+not be described as exact continuous-state reconstruction.
+
+Gradients pass from the byte objective through the recovered ideas, selected
+compose inverses and live sealed input representation. The compose path owns
+the learned transforms; reconstruction adds no decoder parameters. Targets,
+dictionary snapshots and occurrence-specific constituent witnesses are
+detached. Reverse trace indices are constants. The forward chooser retains its
+existing straight-through soft approximation, reachable through the completed
+representation ([Language.py:7879](../../bin/Language.py#L7879),
+[Language.py:14034](../../bin/Language.py#L14034)); the separately weighted local
+grammar-choice objective remains explicit. Reverse replay adds no new selection
+estimator or gradient through the recorded integer indices.
+The joint-gradient rule in §8.4 remains in force for all downstream losses.
+
+Sigma and Pi invert their learned affine map and subtract a known operand in
+the corresponding chart; an unknown split is balanced. Verb reversal uses its
+actual spectral transform with a known verb. Adverb reversal uses eight bounded
+fixed-point corrections with its shared edit transform. Lossy/missing-operand
+reconstruction uses the selected compose kernel over a masked invocation-owned
+basis snapshot: at most `reconstructionBasisLimit` candidates per side (default
+16), hence at most its square in pairs. This budget is independent of word,
+STM and field capacities. Candidate reconstruction is approximate and must
+have separate child/sentence fidelity measurements. Unavailable inverses or
+exhausted traversal bounds report incompleteness; a duplicated parent is not
+evidence of a faithful inverse. Output receives no input-reconstruction basis
+or constituent witness; its unavailable requested operations stay pending and
+report truncation under its own budget.
+
+Checkpoint migration retains the compose parameters and their optimizer state
+by name, drops detached reverse-student parameters and their optimizer entries,
+and initializes no replacement reconstruction decoder. Restoring a tied model
+into an explicitly selected legacy student mode creates a fresh student.
+Before the output-readout correction, the affected group passed 211 tests (6 skipped),
+including strict real checkpoint/optimizer migration and packed joint-gradient
+training. The output-length native run then exposed a 1,156 GiB square-factor
+allocation in the final answer readout. New adapters now store only the active
+rectangular LDU factors, preserving the same forward function and gradients;
+legacy checkpoints retain their layout. A further 27-test group passes, including
+compact/legacy checkpoint and Adam continuation, the real `auto` compiler probe,
+and explicit tied/legacy L1 modes. All three output synthesis/supervision/walk
+files also pass, with 70 tests. This readout is not a reconstruction decoder
+([Layers.py:1633](../../bin/Layers.py#L1633),
+[Spaces.py:30277](../../bin/Spaces.py#L30277)). Matched native
+measurements (including failed runs), documentation reconciliation and the
+green background full suite complete this reconstruction migration's validation.
+[Full-suite result](../benchmarks/2026-09-16-tied-reconstruction-data/full-suite-green.log).

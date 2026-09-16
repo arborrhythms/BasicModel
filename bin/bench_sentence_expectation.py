@@ -278,9 +278,39 @@ def _fingerprint(path):
     return digest.hexdigest()
 
 
+def reconstruction_observations(model, batch_result):
+    """Observe the completed result; never run another reconstruction.
+
+    Event error is common to legacy evaluation and tied reconstruction. Byte
+    and idea costs are reported only when the executed path published them.
+    Output tensor dimensions are not an emitted-word count.
+    """
+    understanding = getattr(model, "_last_understanding", None)
+    owned = getattr(understanding, "input_reconstruction", None)
+    predicted = owned.event if owned is not None else batch_result.inputPred
+    target = batch_result.forwardInput
+    report = {"owned": owned is not None, "event_mse": None, "event_score": None,
+              "byte_cost": None, "idea_mse": None, "truncated_rows": None}
+    with torch.no_grad():
+        if torch.is_tensor(predicted) and torch.is_tensor(target):
+            width, count = min(predicted.shape[-1], target.shape[-1]), min(
+                predicted.shape[1], target.shape[1])
+            report["event_mse"] = float(F.mse_loss(
+                predicted[:, :count, :width], target[:, :count, :width]))
+            report["event_score"] = float(model._reverse_event_loss(predicted, target))
+        if owned is not None:
+            report.update(byte_cost=float(owned.byte_cost.mean()),
+                          idea_mse=float(owned.idea_cost.mean()),
+                          truncated_rows=int(owned.truncated.sum()))
+        rows = getattr(model.inputSpace, "_ar_concept_lookup_rows", None)
+        report["active_basis_rows"] = ((rows >= 0).sum(-1).cpu().tolist()
+                                        if torch.is_tensor(rows) else None)
+    return report
+
+
 def native_benchmark(config, *, device="cpu", backend="eager", docs=24,
                      batch_size=1, train_steps=7, eval_steps=8, answers=False,
-                     destination=None):
+                     destination=None, basis_limit=None):
     """The native loader and epoch own all scheduling, training and resets."""
     from Models import BaseModel
     from data import TheData
@@ -320,6 +350,10 @@ def native_benchmark(config, *, device="cpu", backend="eager", docs=24,
         init_device(target_device)
     model.to(target_device)
     model.set_sigma(0)
+    if basis_limit is not None:
+        if basis_limit < 1:
+            raise ValueError("basis_limit must be positive")
+        model.reconstruction_basis_limit = basis_limit
     # A benchmark must not replace the user's training checkpoint.
     model.checkpoint_every_batches = 0
     model.enable_compiled_step()
@@ -357,12 +391,21 @@ def native_benchmark(config, *, device="cpu", backend="eager", docs=24,
         "config": str(config), "config_sha256": _fingerprint(config),
         "defaults_sha256": _fingerprint(defaults), "effective_architecture": arch,
         "runtime_sha256": {f: _fingerprint(root / "bin" / f) for f in (
-            "Models.py", "Language.py", "Layers.py", "data.py", "Optimizer.py",
+            "Models.py", "Language.py", "Layers.py", "Understanding.py", "Spaces.py", "data.py", "Optimizer.py",
             "mps_memory.py", "bench_sentence_expectation.py")},
         "source_manifest": copy.deepcopy(TheData.source_manifest),
         "setup_seconds": time.perf_counter() - setup_started,
         "max_docs": docs, "batch_size": batch_size,
         "detached_reverse": bool(model.detached_reverse),
+        "reconstruct_in_loop": bool(model.reconstruct_in_loop),
+        "reconstruction_basis_limit": int(getattr(model, "reconstruction_basis_limit", 16)),
+        "reconstruction_placement": model._recon_placement(),
+        "reconstruction_backend": (
+            None if not model.reconstruct_in_loop else
+            "none" if model._recon_placement() == "eager" else
+            "aot_eager" if model._recon_placement() == "compiled" and util.TheCompileBackend == "eager"
+            else str(util.TheCompileBackend)),
+        "overrides": {"reconstruction_basis_limit": basis_limit} if basis_limit is not None else {},
         "sigma": 0, "answer_synthesis": bool(model.answer_synthesis),
         "output_in_loop": bool(model.output_in_loop),
         "fullgraph_word_loop": bool(getattr(model, "_compiled_word_loop_fullgraph", False)),
@@ -380,6 +423,7 @@ def native_benchmark(config, *, device="cpu", backend="eager", docs=24,
         report["shard_sha256"] = _fingerprint(shard)
     original_batch, original_compact = model.runBatch, model.post_tick_compact
     original_inter = model._discourse_inter_loss
+    original_output_walk = model._compiled_output_walk
     active = None
     start_time = None
     previous_completed = None
@@ -387,6 +431,9 @@ def native_benchmark(config, *, device="cpu", backend="eager", docs=24,
     target_detached = True
     trained_inter = None
     optimizer_steps = 0
+    output_lengths = None
+    output_truncated = None
+    shared_gradients = {}
     original_observe = discourse._observe_meanings
 
     def capture_meanings(self, depths, payloads, tetralemmas, mask, layout, role_masks):
@@ -422,10 +469,12 @@ def native_benchmark(config, *, device="cpu", backend="eager", docs=24,
         optimizer_steps += 1
 
     def measured_batch(self, *args, **kwargs):
-        nonlocal start_time, active, trained_inter
+        nonlocal start_time, active, trained_inter, output_lengths, output_truncated
         before = discourse.expectation_metrics()
         steps_before = optimizer_steps
         trained_inter = None
+        output_lengths = output_truncated = None
+        shared_gradients.clear()
         _sync(target_device)
         start_time = time.perf_counter()
         result = original_batch(*args, **kwargs)
@@ -454,6 +503,14 @@ def native_benchmark(config, *, device="cpu", backend="eager", docs=24,
             "word_counts": word_mask.sum(-1).detach().cpu().tolist()
                            if torch.is_tensor(word_mask) else None,
             "sources": copy.deepcopy(kwargs.get("source_rows")),
+            "reconstruction_fidelity": reconstruction_observations(self, batch_result),
+            "output_word_counts": output_lengths,
+            "output_truncated_rows": output_truncated,
+            "output_tensor_shape": (list(batch_result.outputPred.shape)
+                                    if torch.is_tensor(batch_result.outputPred) else None),
+            "shared_compose_gradient_norms": {
+                name: float(torch.stack(values).sum().sqrt())
+                for name, values in shared_gradients.items()},
             "forward_backward_optimizer_seconds": time.perf_counter() - start_time,
             "context_detached": all(not p.requires_grad for chain in discourse._inter_context
                                      for _, p, _ in chain),
@@ -463,6 +520,18 @@ def native_benchmark(config, *, device="cpu", backend="eager", docs=24,
         if trained_inter is not None and not math.isfinite(trained_inter["mean"]):
             raise FloatingPointError("native benchmark produced a nonfinite expectation loss")
         return result
+
+    def measured_output_walk(self):
+        walk = original_output_walk()
+
+        def observe(*args, **kwargs):
+            nonlocal output_lengths, output_truncated
+            result = walk(*args, **kwargs)
+            output_lengths = result[1].detach().cpu().tolist()
+            output_truncated = int(result[2].detach().sum())
+            return result
+
+        return observe
 
     def measured_compact(self, *args, **kwargs):
         nonlocal active, start_time, previous_completed
@@ -483,9 +552,31 @@ def native_benchmark(config, *, device="cpu", backend="eager", docs=24,
     model.runBatch = types.MethodType(measured_batch, model)
     model.post_tick_compact = types.MethodType(measured_compact, model)
     model._discourse_inter_loss = types.MethodType(measured_inter, model)
+    model._compiled_output_walk = types.MethodType(measured_output_walk, model)
     discourse._observe_meanings = types.MethodType(capture_meanings, discourse)
     optimizer = model.getOptimizer(lr=float(train_options.get("learningRate", 0.0005)))
     step_hook = observe_optimizer_steps(optimizer, stepped)
+    # Only compose transforms, with true optimizer ownership. Hooks observe
+    # every backward contribution, before the model's joint-gradient balance;
+    # the final parameter delta separately proves an optimizer update.
+    compose_parameters = {}
+    seen = set()
+    binary = model.languageSpace._tree_layer(2)
+    for index, op in enumerate(binary.ops):
+        for name, parameter in op.named_parameters():
+            if parameter.requires_grad and id(parameter) not in seen:
+                seen.add(id(parameter))
+                compose_parameters[f"{binary.op_names[index]}.{name}"] = parameter
+    optimizer_ids = {id(p) for group in optimizer.param_groups for p in group["params"]}
+    report["compose_optimizer_ownership"] = {
+        name: id(p) in optimizer_ids for name, p in compose_parameters.items()}
+    compose_before = {name: p.detach().cpu().clone() for name, p in compose_parameters.items()}
+    gradient_hooks = []
+    for name, parameter in compose_parameters.items():
+        def observe_gradient(gradient, key=name):
+            values = gradient.coalesce().values() if gradient.is_sparse else gradient
+            shared_gradients.setdefault(key, []).append(values.detach().float().square().sum())
+        gradient_hooks.append(parameter.register_hook(observe_gradient))
     head_before = {n: p.detach().cpu().clone() for n, p in discourse._inter_predictor.named_parameters()}
     fixed_heldout = None
     answer_before = []
@@ -543,6 +634,9 @@ def native_benchmark(config, *, device="cpu", backend="eager", docs=24,
             for n, p in discourse._inter_predictor.named_parameters()) ** 0.5
         report["answer_parameter_delta_norm"] = sum(
             float((p.detach().cpu() - before).square().sum()) for p, before in answer_before) ** 0.5
+        report["compose_parameter_delta_norms"] = {
+            name: float((p.detach().cpu() - compose_before[name]).norm())
+            for name, p in compose_parameters.items()}
         report["target_detached"] = target_detached
         report["context_detached"] = all(step["context_detached"] for phase in report["phases"]
                                          for step in phase["steps"])
@@ -560,8 +654,11 @@ def native_benchmark(config, *, device="cpu", backend="eager", docs=24,
         raise
     finally:
         step_hook.remove()
+        for hook in gradient_hooks:
+            hook.remove()
         model.runBatch, model.post_tick_compact = original_batch, original_compact
         model._discourse_inter_loss = original_inter
+        model._compiled_output_walk = original_output_walk
         discourse._observe_meanings = original_observe
         write_report()
         model.End()
@@ -577,6 +674,7 @@ def main():
     parser.add_argument("--batch-size", type=int, default=1)
     parser.add_argument("--train-steps", type=int, default=7)
     parser.add_argument("--eval-steps", type=int, default=8)
+    parser.add_argument("--basis-limit", type=int)
     parser.add_argument("--updates", type=int, default=300)
     parser.add_argument("--threads", type=int, default=1)
     parser.add_argument("--out", required=True)
@@ -588,7 +686,8 @@ def main():
         result = native_benchmark(args.config, device=args.device, backend=args.backend,
                                   docs=args.docs, batch_size=args.batch_size,
                                   train_steps=args.train_steps, eval_steps=args.eval_steps,
-                                  answers=args.workload == "answers", destination=args.out)
+                                  answers=args.workload == "answers", destination=args.out,
+                                  basis_limit=args.basis_limit)
     root = Path(__file__).resolve().parents[1]
     result.setdefault("revision", subprocess.check_output(
         ["git", "rev-parse", "HEAD"], cwd=root, text=True).strip())

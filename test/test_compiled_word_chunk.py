@@ -317,7 +317,8 @@ def test_chunk_views_keep_one_graph_across_part_and_bucket_widths():
 
 def _tiny_canonical_model(
         tmp_path, monkeypatch, *, input_width=128, batch_size=2,
-        word_buckets="16,32,64,128,256", forward_grammar_weight=0.0):
+        word_buckets="16,32,64,128,256", forward_grammar_weight=0.0,
+        detached_reverse=False):
     """Build the real aligned serial model with 16-coordinate events."""
     tree = ET.parse(_ROOT / "data" / "BasicModel.xml")
     root = tree.getroot()
@@ -348,6 +349,11 @@ def _tiny_canonical_model(
     _set("./architecture/training/numWorkers", 0)
     _set("./architecture/training/autoload", False)
     _set("./architecture/training/autosave", False)
+    if detached_reverse:
+        # Legacy student compatibility is explicit now that production uses
+        # completed-sentence tied reconstruction.
+        _set("./architecture/training/detachedReverse", True)
+        _set("./architecture/training/reconstructInLoop", False)
     # BasicModel's production Teacher configuration deliberately disables the
     # independent intra-sentence predictor. This fixture tests predictor/HOP
     # parity, so opt that auxiliary back in explicitly.
@@ -893,10 +899,10 @@ def test_tensor_peer_mps_inductor_w16_w64_fullgraph_smoke(
 
 
 def test_tiny_canonical_detached_reverse_stops_at_root(tmp_path, monkeypatch):
-    """The integrated canonical reverse student must not differentiate S."""
+    """The explicitly selected legacy reverse student must not differentiate S."""
     torch.manual_seed(109)
     model = _tiny_canonical_model(
-        tmp_path, monkeypatch, forward_grammar_weight=0.25)
+        tmp_path, monkeypatch, forward_grammar_weight=0.25, detached_reverse=True)
     assert model.detached_reverse
     chooser = model.symbolSpace.reverse_chooser
     assert chooser is not None
@@ -924,7 +930,7 @@ def test_tiny_canonical_detached_reverse_train_step_is_finite(
         tmp_path, monkeypatch):
     """One real optimizer step uses the split objectives without bad grads."""
     torch.manual_seed(127)
-    model = _tiny_canonical_model(tmp_path, monkeypatch)
+    model = _tiny_canonical_model(tmp_path, monkeypatch, detached_reverse=True)
     chooser = model.symbolSpace.reverse_chooser
     before = [p.detach().clone() for p in chooser.parameters()]
     optimizer = model.getOptimizer(lr=1e-3)

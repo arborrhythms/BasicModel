@@ -1,0 +1,31 @@
+F.                                                                       [100%]
+=================================== FAILURES ===================================
+_______ test_byte_fidelity_penalizes_a_candidate_with_extra_suffix_bytes _______
+
+    def test_byte_fidelity_penalizes_a_candidate_with_extra_suffix_bytes():
+        """Matching the input prefix must not make a longer word a perfect match."""
+        from types import SimpleNamespace
+        from Models import BasicModel
+    
+        owner = SimpleNamespace(_BYTE_ASSIGNMENT_TAU=.1)
+        atoms = torch.eye(2).unsqueeze(0)
+        spellings = torch.tensor([[[97, 0], [97, 98]]])  # WORDs "a" and "ab"
+        lengths = torch.tensor([[[True, False], [True, True]]])
+        target = torch.tensor([[[97, 0]]])
+        target_valid = torch.tensor([[[True, False]]])
+        def cost(idea):
+            return BasicModel._byte_word_cost(
+                owner, idea, torch.tensor(0), atoms, spellings, lengths,
+                target, target_valid, True)
+        short = cost(torch.tensor([[1., .01]]))
+        longer_idea = torch.tensor([[.01, 1.]], requires_grad=True)
+        longer = cost(longer_idea)
+        assert short < .01
+>       assert longer > short + 1., "the target's word end must be scored"
+E       AssertionError: the target's word end must be scored
+E       assert tensor([4.5241e-05], grad_fn=<DivBackward0>) > (tensor([4.5241e-05]) + 1.0)
+
+test/test_tied_operator_reconstruction.py:28: AssertionError
+=========================== short test summary info ============================
+FAILED test/test_tied_operator_reconstruction.py::test_byte_fidelity_penalizes_a_candidate_with_extra_suffix_bytes
+1 failed, 1 passed in 2.44s

@@ -1,5 +1,12 @@
 # Fold-ladder throughput and word-unit assurance (2026-09-11)
 
+For current production training measurements, see the
+[September 16 expectation and supplied-answer baseline](2026-09-16-sentence-expectation.md)
+and [tied input-reconstruction migration report](2026-09-16-tied-input-reconstruction.md).
+The latter records the changed objective, per-step fidelity and shared-gradient
+evidence; its status remains in progress until its verification gates finish.
+The measurements below remain historical.
+
 Status: **measured on the canonical ladder topology; the legacy radix
 comparison could not be run on equal footing.** Alec asked for two
 measures on the [meronomy fold-ladder](../plans/2026-09-10-meronomy-fold-ladder.md)

@@ -160,11 +160,11 @@
       <conceptualContextLearningRate>0.01</conceptualContextLearningRate>
       <conceptualContextNegatives>4</conceptualContextNegatives>
 
-      <!-- FineWeb is unlabeled.  On the serial grammar path the D3
-           reconstruction term is replaced by the idea-only reverse student:
-           exact leaves and grammar choices are detached teacher targets, and
-           no reverse gradient traverses the recurrent sentence construction.
-           The output head is structural and receives no fabricated labels. -->
+      <!-- FineWeb is unlabeled. Completed input sentences reconstruct once
+           through the identified compose derivation and shared transforms.
+           The byte objective trains the live representation and tied inverse;
+           targets, dictionary snapshots and constituent witnesses are detached.
+           The output head receives no fabricated answer labels. -->
       <reconstructionScale>1.0</reconstructionScale>
       <!-- Balance all prediction/output/thinking credit on representation
            and shared grammar weights. Cap against the combined gradient
@@ -174,12 +174,16 @@
       <reconstructionLossTolerance>1e-8</reconstructionLossTolerance>
       <outputGradientRatio>0.5</outputGradientRatio>
       <teacherReconstruction>true</teacherReconstruction>
-      <detachedReverse>true</detachedReverse>
-      <leafDistillWeight>1.0</leafDistillWeight>
+      <detachedReverse>false</detachedReverse>
+      <reconstructInLoop>true</reconstructInLoop>
+      <reconstructionPlacement>compiled</reconstructionPlacement>
+      <reconstructionBasisLimit>16</reconstructionBasisLimit>
+      <leafDistillWeight>0.0</leafDistillWeight>
       <!-- Keep the bounded local chooser objective available but outside this
            production run for now. Its extra candidate re-score is paid on
            every live fold; benchmark that pressure separately before
-           assigning a nonzero weight here. Detached reverse is the NaN gate. -->
+           assigning a nonzero weight here. Reverse indices are constants;
+           the forward chooser retains its existing straight-through credit. -->
       <forwardGrammarWeight>0.0</forwardGrammarWeight>
 
       <!-- Joint input reconstruction and structured sentence expectation.

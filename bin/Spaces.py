@@ -64,7 +64,7 @@ from Layers import GrammarLayer
 # QKVAttentionLayer import removed: its enlistment in PS/CS was retired
 # (plan 2026-06-06-symbolic-heat-retrieval.md §Handoff addendum); the
 # class still lives in Layers.py.
-from Layers import LinearLayer, InvertibleLinearLayer, AssociationLayer, MapppingLayer, LiftingLayer, LoweringLayer, ChunkLayer
+from Layers import LinearLayer, InvertibleLinearLayer, LDUReadout, AssociationLayer, MapppingLayer, LiftingLayer, LoweringLayer, ChunkLayer
 from Layers import LiftingLayer, CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon, Ops
 from Layers import meronomy_enabled  # MeronomySpec §3 mode knob (Stage 4)
 from space_carrier import SpaceCarrierMixin
@@ -30278,9 +30278,12 @@ class OutputSpace(Space):
         """Modality adapter over CONSTRUCTED answer percepts (spec 5.3).
 
         ``percepts`` is ``[B, N_p, D_p]`` from ``PerceptualSpace.synthesize``.
-        A percept-width invertible linear adapter (built on first use, so a
+        A rectangular LDU readout (built on first use, so a
         configuration that never synthesizes answers keeps its state-dict
-        keys) maps the flattened percepts to this Space's ``outputShape``.
+        keys) maps all flattened percepts to this Space's ``outputShape``.
+        It stores only factors that contribute to this forward projection;
+        its parameter storage scales with input width times output width.
+        Restored legacy adapters retain their original weights and layout.
         The legacy symbol projection (``forward``) stays as the migration
         oracle; it does not receive the unresolved input symbol here.
         """
@@ -30290,7 +30293,7 @@ class OutputSpace(Space):
         n_out = int(self.outputShape[0]) * int(self.outputShape[1])
         adapter = getattr(self, "percept_adapter", None)
         if adapter is None or int(getattr(adapter, "nInput", N * D)) != N * D:
-            adapter = InvertibleLinearLayer(N * D, n_out, hasBias=True).to(
+            adapter = LDUReadout(N * D, n_out, hasBias=True).to(
                 device=percepts.device, dtype=percepts.dtype)
             self.percept_adapter = adapter
         flat = percepts.reshape(B, N * D)

@@ -1,0 +1,77 @@
+Loading text: 1 shard(s), max 24 docs from /Users/arogers/github/WikiOracle/basicmodel/data/fineweb
+Loaded 24 docs -> 995 sentences (826 train, 66 val, 103 test), dropped 0 whole sentences over 256 words
+Canonical fullgraph compile: lazy fused tensor word-loop lowering on mps with fixed capacity and residual-part axes
+[AMP] off (fp32, MODEL_AMP unset or =off)
+Canonical fullgraph lowering: compiling complete W=256 recurrent word loop (one-time cost for this bucket)
+Debug checks: OFF
+MPS: inductor device asserts disabled (check_bounds + device_assert_async) -- Metal 31-buffer limit vs error_buf
+MPS: inductor DTYPE_TO_METAL patched with uint16->ushort
+MPS: inductor any-reduction dtype metadata patched (Metal 'bool' -> torch.bool)
+MPS: zero-size while-loop dependencies excluded from Inductor read-realization ratio
+MPS: inductor subgraph Metal kernel names allocated from the shared wrapper (torch.while_loop)
+MPS: unbacked while-loop tape views excluded from post-grad addmm fuse/unfuse rewrites
+MPS: stride-only reverse while-loop metadata differences delegated to Inductor exact-stride lowering
+MPS: oversized scalar-gradient sums lowered via stack/sum/copy wrapper fallback
+MPS: inductor max_fusion_unique_io_buffers=8, max_fusion_size=16 (Metal 31-buffer kernel-arg limit)
+Model compiled (eager, mode=default, fullgraph=True)
+batch = 0 (warm-up, 12.50%)
+batch = 1 (Δ=48.505s, 25.00%)
+batch = 2 (Δ=1.566s, 37.50%)
+batch = 3 (Δ=1.788s, 50.00%)
+batch = 4 (Δ=1.149s, 62.50%)
+batch = 5 (Δ=1.152s, 75.00%)
+batch = 6 (Δ=0.840s, 87.50%)
+batch = 7 (Δ=1.092s, 100.00%)
+runEpoch(validation): hit max_batches=8 cap; cursor exiting early (8 batches processed, ds.all_done=False).
+Training throughput: 8 batches in 107.889s; word units 92.3% of 338 words (letters-only 100.0% of 310).
+batch = 0 (Δ=201.917s, 14.29%)
+Traceback (most recent call last):
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/bench_sentence_expectation.py", line 704, in <module>
+    main()
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/bench_sentence_expectation.py", line 686, in main
+    result = native_benchmark(args.config, device=args.device, backend=args.backend,
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/bench_sentence_expectation.py", line 594, in native_benchmark
+    model.runEpoch(optimizer=opt, batchSize=batch_size, split=split, max_batches=count)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 15144, in runEpoch
+    result, _ = self.runBatch(
+                ^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/bench_sentence_expectation.py", line 480, in measured_batch
+    result = original_batch(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 14222, in runBatch
+    self._backward_training_loss(
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 2757, in _backward_training_loss
+    backward_reconstruction_priority(
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Optimizer.py", line 225, in backward_reconstruction_priority
+    torch.autograd.grad(
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/autograd/__init__.py", line 540, in grad
+    result_tuple = handle_torch_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/overrides.py", line 1773, in handle_torch_function
+    result = mode.__torch_function__(public_api, types, args, kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py", line 122, in __torch_function__
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/autograd/__init__.py", line 594, in grad
+    result = _engine_run_backward(
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/autograd/graph.py", line 979, in _engine_run_backward
+    return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/autograd/function.py", line 333, in apply_boxed
+    return self._get_user_fn()(self, *args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_functorch/_aot_autograd/runtime_wrappers.py", line 3531, in backward
+    return CompiledFunction._bwd_fn(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_functorch/_aot_autograd/codegen.py:codegen(compiled_function_backward)", line 16, in _compiled_backward
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_functorch/_aot_autograd/codegen.py:codegen(compiled_function_backward)", line 10, in impl_fn
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_functorch/_aot_autograd/runtime_wrappers.py", line 3597, in _backward_impl
+    torch._check(
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/__init__.py", line 2229, in _check
+    _check_with(RuntimeError, cond, message)
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/__init__.py", line 2207, in _check_with
+    raise error_type(message_evaluated)
+RuntimeError: This backward function was compiled with non-empty donated buffers which requires create_graph=False and retain_graph=False. Please keep backward(create_graph=False, retain_graph=False) across all backward() function calls, or set torch._functorch.config.donated_buffer=False to disable donated buffer.

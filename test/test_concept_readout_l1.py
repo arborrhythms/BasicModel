@@ -247,10 +247,13 @@ def test_weak_l1_fits_two_reference_concepts_with_exact_sparse_support():
 def test_real_runbatch_stages_l1_once_and_reports_it_separately(
         tmp_path, monkeypatch, detached_reverse):
     from test_compiled_word_chunk import _tiny_canonical_model
-    model = _tiny_canonical_model(tmp_path, monkeypatch, forward_grammar_weight=.25)
-    # Test both live encoder credit and the shipped detached boundary. Weak
+    import util
+    monkeypatch.setattr(util, "TheCompileBackend", "eager")
+    model = _tiny_canonical_model(
+        tmp_path, monkeypatch, forward_grammar_weight=.25,
+        detached_reverse=detached_reverse)
+    # Test both live encoder credit and the explicit legacy detached boundary. Weak
     # L1 must not silently reconnect that boundary or train by shrinkage alone.
-    model.detached_reverse = detached_reverse
     # Leaf distillation is a separate, lazily materialized auxiliary head;
     # this test needs only the coupled reconstruction/readout objective.
     model.leaf_distill_weight = 0.0

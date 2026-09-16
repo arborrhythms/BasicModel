@@ -1,0 +1,74 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_ test_surface_snapshot_does_not_turn_a_longer_word_into_a_full_window_match[1] _
+
+window = 1
+
+    @pytest.mark.parametrize("window", [1, 2])
+    def test_surface_snapshot_does_not_turn_a_longer_word_into_a_full_window_match(window):
+        """Candidate truncation cannot manufacture a word end at the target limit."""
+        from types import SimpleNamespace
+        from Models import BasicModel
+    
+        surfaces = {4: b"a" * window, 5: b"a" * window + b"b"}
+        lexicon = SimpleNamespace(word_surface_for_row=surfaces.get)
+        staged = SimpleNamespace(
+            _ar_concept_lookup_rows=torch.tensor([[4, 5]]),
+            _ar_concept_lookup_atoms=torch.eye(2).unsqueeze(0),
+            _ar_word_part_ids=torch.zeros(1, 1, window, dtype=torch.long))
+        owner = SimpleNamespace(inputSpace=staged, _concept_owner=lambda: lexicon,
+                                _BYTE_ASSIGNMENT_TAU=.1)
+        BasicModel._stage_snapshot_bytes(owner)
+        ready, atoms, values, valid = BasicModel._snapshot_tables(owner, torch.zeros(1, 1, 2))
+        target = torch.full((1, 1, window), ord("a"), dtype=torch.long)
+        def cost(idea):
+            return BasicModel._byte_word_cost(
+                owner, idea, torch.tensor(0), atoms, values, valid,
+                target, torch.ones_like(target, dtype=torch.bool), ready)
+        correct = cost(torch.tensor([[1., .01]]))
+        longer_idea = torch.tensor([[.01, 1.]], requires_grad=True)
+        longer = cost(longer_idea)
+        assert correct < .01
+>       assert longer > correct + 1., "clipping a stored word must not invent termination"
+E       AssertionError: clipping a stored word must not invent termination
+E       assert tensor([4.5241e-05], grad_fn=<DivBackward0>) > (tensor([4.5241e-05]) + 1.0)
+
+test/test_tied_operator_reconstruction.py:34: AssertionError
+_ test_surface_snapshot_does_not_turn_a_longer_word_into_a_full_window_match[2] _
+
+window = 2
+
+    @pytest.mark.parametrize("window", [1, 2])
+    def test_surface_snapshot_does_not_turn_a_longer_word_into_a_full_window_match(window):
+        """Candidate truncation cannot manufacture a word end at the target limit."""
+        from types import SimpleNamespace
+        from Models import BasicModel
+    
+        surfaces = {4: b"a" * window, 5: b"a" * window + b"b"}
+        lexicon = SimpleNamespace(word_surface_for_row=surfaces.get)
+        staged = SimpleNamespace(
+            _ar_concept_lookup_rows=torch.tensor([[4, 5]]),
+            _ar_concept_lookup_atoms=torch.eye(2).unsqueeze(0),
+            _ar_word_part_ids=torch.zeros(1, 1, window, dtype=torch.long))
+        owner = SimpleNamespace(inputSpace=staged, _concept_owner=lambda: lexicon,
+                                _BYTE_ASSIGNMENT_TAU=.1)
+        BasicModel._stage_snapshot_bytes(owner)
+        ready, atoms, values, valid = BasicModel._snapshot_tables(owner, torch.zeros(1, 1, 2))
+        target = torch.full((1, 1, window), ord("a"), dtype=torch.long)
+        def cost(idea):
+            return BasicModel._byte_word_cost(
+                owner, idea, torch.tensor(0), atoms, values, valid,
+                target, torch.ones_like(target, dtype=torch.bool), ready)
+        correct = cost(torch.tensor([[1., .01]]))
+        longer_idea = torch.tensor([[.01, 1.]], requires_grad=True)
+        longer = cost(longer_idea)
+        assert correct < .01
+>       assert longer > correct + 1., "clipping a stored word must not invent termination"
+E       AssertionError: clipping a stored word must not invent termination
+E       assert tensor([4.5241e-05], grad_fn=<DivBackward0>) > (tensor([4.5241e-05]) + 1.0)
+
+test/test_tied_operator_reconstruction.py:34: AssertionError
+=========================== short test summary info ============================
+FAILED test/test_tied_operator_reconstruction.py::test_surface_snapshot_does_not_turn_a_longer_word_into_a_full_window_match[1]
+FAILED test/test_tied_operator_reconstruction.py::test_surface_snapshot_does_not_turn_a_longer_word_into_a_full_window_match[2]
+2 failed in 2.00s

@@ -1,0 +1,2219 @@
+{
+  "workload": "supplied answers",
+  "dataset": "math",
+  "device": "mps",
+  "backend": "eager",
+  "torch": "2.14.0.dev20260722",
+  "threads": 1,
+  "allocator_environment": {
+    "PYTORCH_MPS_HIGH_WATERMARK_RATIO": "0.60",
+    "PYTORCH_MPS_LOW_WATERMARK_RATIO": "0.50"
+  },
+  "amp_requested": "off",
+  "autocast_compute_dtype": "torch.float32",
+  "revision": "aa5e018b67bf3be946c0b75c5baf33c9cc84ab4b",
+  "command": [
+    "bin/bench_sentence_expectation.py",
+    "answers",
+    "--config",
+    "data/BasicModel_answers_benchmark.xml",
+    "--device",
+    "mps",
+    "--backend",
+    "eager",
+    "--batch-size",
+    "1",
+    "--train-steps",
+    "7",
+    "--eval-steps",
+    "8",
+    "--threads",
+    "1",
+    "--out",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-16-tied-reconstruction-data/answers-b1-legacy-observer.json"
+  ],
+  "config": "/private/tmp/basicmodel-aa5e018-reconstruction-baseline/data/BasicModel_answers_benchmark.xml",
+  "config_sha256": "5e071361139673f65c8a1975f23c5ec0b14a16bff90f348ceb5e1ef2ef8ab41a",
+  "defaults_sha256": "33d719060a8011f93f5c85bbbce8a3f8a346bebb926d2d4bc802f3968522ca32",
+  "effective_architecture": {
+    "subsymbolicOrder": 4,
+    "routerWireSerial": "both",
+    "transformChooserHidden": 0,
+    "transformChooserDepth": 1,
+    "whatThinkingHidden": 16,
+    "whatThinkingDepth": 1,
+    "reconstructFromIdea": false,
+    "answerSynthesis": true,
+    "synthesisBindings": 4,
+    "whatCurriculum": "none",
+    "whatCurriculumDistance": 1,
+    "whatCurriculumRatio": 0.25,
+    "processSymbols": false,
+    "meronomy": {
+      "_": "on",
+      "dMaxStable": "4.0"
+    },
+    "monotonic": false,
+    "ergodic": false,
+    "naive": false,
+    "embeddingPath": "",
+    "weightsPath": "BasicModel_answers_benchmark.ckpt",
+    "maxResponseLength": 4096,
+    "amp": "off",
+    "truthBiasScale": 0.1,
+    "LuminosityWeight": 0.1,
+    "UniversalityWeight": 0.1,
+    "allowExcludedMiddle": 1,
+    "allowContradiction": 0,
+    "gateL1Lambda": 0.0,
+    "loadBalanceWeight": 0.0,
+    "l1Lambda": 0.01,
+    "discontinuityLambda": 0.0,
+    "conceptualWidth": "uniform",
+    "maxActivePerLayer": 8,
+    "categoryCodebook": true,
+    "overlapWhereTiling": false,
+    "codebookRetire": false,
+    "truthCriterion": 1.0,
+    "trust": 1.0,
+    "symbolLearning": {
+      "enabled": false
+    },
+    "data": {
+      "dataType": "embedding",
+      "dataset": "math",
+      "numShards": 1,
+      "maxDocs": 10000,
+      "shardDir": "",
+      "minFrequency": 0.0,
+      "classificationMin": "",
+      "classificationMax": "",
+      "contextWhole": "Stage-0 addition throughput",
+      "mathRange": 16,
+      "mathStage": 0,
+      "mathSeed": 42,
+      "mathProblems": 64,
+      "mathOperators": "add"
+    },
+    "training": {
+      "numTrials": 1,
+      "numEpochs": 1,
+      "batchSize": 28,
+      "numWorkers": 2,
+      "learningRate": 0.0005,
+      "teacherReconstruction": true,
+      "reconstructionScale": 0.5,
+      "whatScale": 0.7,
+      "whereScale": 0.2,
+      "whenScale": 0.1,
+      "negSamples": 64,
+      "TruthLoss": 0.0,
+      "maskRate": 0.15,
+      "trainEmbedding": "NONE",
+      "embeddingScale": 0.25,
+      "autoload": false,
+      "autosave": false,
+      "checkpointEveryBatches": 0,
+      "profile": false,
+      "certainty": false,
+      "sentenceExpectation": true,
+      "sentenceExpectationScope": "structured",
+      "armaScale": 0.0,
+      "sentencePrimingScale": 0.05,
+      "intraLossWeight": 0.0,
+      "interLossWeight": 0.1,
+      "interContrastiveWeight": 0.0,
+      "interContrastiveTemp": 0.1,
+      "seed": 42,
+      "packSentences": false,
+      "conceptualContextLearningRate": 0.01,
+      "conceptualContextNegatives": 4,
+      "reconstructionPriority": true,
+      "reconstructionLossTolerance": 1e-08,
+      "outputGradientRatio": 0.5,
+      "detachedReverse": true,
+      "leafDistillWeight": 1.0,
+      "forwardGrammarWeight": 0.0
+    },
+    "server": {
+      "host": "127.0.0.1",
+      "port": 8001,
+      "timeout": 120
+    },
+    "serial": true,
+    "conceptBinding": "aligned",
+    "symbolicOrder": 4,
+    "syntacticOrder": 0,
+    "mereologyRaise": true,
+    "serialObjectMeta": true,
+    "sentenceProtocol": false,
+    "serialWordCapacity": 256,
+    "serialWordBuckets": 256,
+    "serialResidualPartCapacity": 64,
+    "sigmaPi": "butterfly",
+    "transformChooser": "mlp",
+    "stmReduceTau": 0.75,
+    "learning": false
+  },
+  "runtime_sha256": {
+    "Models.py": "69f457e8f29932ae618cf73f8819f8281e708ccbfdb18d5a30bc539d6e76544e",
+    "Language.py": "3c865321d23d1cbdd13ee4023fac36ee080d9fa9cbc25041541663692f0b2675",
+    "Layers.py": "eb268720eac27377df87f1fad1a443ff02b5fe39372b1b5c37b3900d3cba8ead",
+    "Understanding.py": "6ed4de2e406a4e607192b8a87f9146eb80b7fe7fca009dedde3a50c4ebec37a4",
+    "Spaces.py": "5e649a7fb68503d6292c395a636a88771cd858d818888c5ab95c70aea563ac07",
+    "data.py": "73f06278c6f37fffc2bcfd811abe42f60208a9b2f995dc1e71a558d0879129d4",
+    "Optimizer.py": "768d36190259f0cb16127b8c64fa2740f4afae659100ab1fe9ba2e214e412c12",
+    "mps_memory.py": "91f1b995c1294c80611939dfc00f3bdb5a0cd6b898554020851c93529ef8e400",
+    "bench_sentence_expectation.py": "1a19c34c1ccbb8361896e964f4280af349af771f7bfb3ba2e1a01ab5be1f8928"
+  },
+  "source_manifest": {
+    "dataset": "math",
+    "content_sha256": "341b683fc3ffa64a35777c8c9d41df49e7bafbd2205381cac765309a8bf1e053"
+  },
+  "setup_seconds": 9.371716874884441,
+  "max_docs": 24,
+  "batch_size": 1,
+  "detached_reverse": true,
+  "reconstruct_in_loop": false,
+  "reconstruction_basis_limit": 16,
+  "reconstruction_placement": "graph",
+  "reconstruction_backend": null,
+  "overrides": {},
+  "sigma": 0,
+  "answer_synthesis": true,
+  "output_in_loop": false,
+  "fullgraph_word_loop": true,
+  "model_parameter_count": 90583950,
+  "inter_weight": 0.1,
+  "arma_weight": 0.0,
+  "reconstruction_weight": 0.5,
+  "answer_weight": 0.5,
+  "document_counts": {
+    "train": 48,
+    "validation": 12,
+    "test": 16
+  },
+  "phases": [
+    {
+      "name": "validation_before",
+      "split": "validation",
+      "steps": [
+        {
+          "input_sentences": 1,
+          "observations": 1,
+          "predicted_targets": 0,
+          "cold_starts": 1,
+          "reconstruction": 0.03835785761475563,
+          "answer": 0.16069912910461426,
+          "supplied_answer_rows": 1,
+          "training": false,
+          "optimizer_steps": 0,
+          "trained_inter": null,
+          "word_counts": [
+            3
+          ],
+          "sources": [
+            0
+          ],
+          "reconstruction_fidelity": {
+            "owned": false,
+            "event_mse": 0.00666813226416707,
+            "event_score": 0.03835785761475563,
+            "byte_cost": null,
+            "idea_mse": null,
+            "truncated_rows": null,
+            "active_basis_rows": [
+              6
+            ]
+          },
+          "output_word_counts": null,
+          "output_truncated_rows": null,
+          "output_tensor_shape": [
+            1,
+            16,
+            1
+          ],
+          "shared_compose_gradient_norms": {},
+          "forward_backward_optimizer_seconds": 8.9316135419067,
+          "context_detached": true,
+          "seconds": 8.94073895807378,
+          "batch_plus_tail_seconds": 8.938890625024214,
+          "memory": {
+            "process_peak_rss_bytes": 13601030144,
+            "sampled_mps_driver_bytes": 5557354496,
+            "sampled_mps_tensor_bytes": 4858114560
+          },
+          "compiler_counters": {
+            "frames": {},
+            "stats": {},
+            "aot_autograd": {},
+            "graph_break": {},
+            "compiler_timing_seconds": {}
+          }
+        },
+        {
+          "input_sentences": 1,
+          "observations": 1,
+          "predicted_targets": 0,
+          "cold_starts": 1,
+          "reconstruction": 0.044040314853191376,
+          "answer": 0.1590583622455597,
+          "supplied_answer_rows": 1,
+          "training": false,
+          "optimizer_steps": 0,
+          "trained_inter": null,
+          "word_counts": [
+            3
+          ],
+          "sources": [
+            1
+          ],
+          "reconstruction_fidelity": {
+            "owned": false,
+            "event_mse": 0.014308412559330463,
+            "event_score": 0.044040314853191376,
+            "byte_cost": null,
+            "idea_mse": null,
+            "truncated_rows": null,
+            "active_basis_rows": [
+              6
+            ]
+          },
+          "output_word_counts": null,
+          "output_truncated_rows": null,
+          "output_tensor_shape": [
+            1,
+            16,
+            1
+          ],
+          "shared_compose_gradient_norms": {},
+          "forward_backward_optimizer_seconds": 8.8461466669105,
+          "context_detached": true,
+          "seconds": 8.85404650005512,
+          "batch_plus_tail_seconds": 8.853301417082548,
+          "memory": {
+            "process_peak_rss_bytes": 13601030144,
+            "sampled_mps_driver_bytes": 5557354496,
+            "sampled_mps_tensor_bytes": 4854272512
+          },
+          "compiler_counters": {
+            "frames": {},
+            "stats": {},
+            "aot_autograd": {},
+            "graph_break": {},
+            "compiler_timing_seconds": {}
+          }
+        },
+        {
+          "input_sentences": 1,
+          "observations": 1,
+          "predicted_targets": 0,
+          "cold_starts": 1,
+          "reconstruction": 0.03835785761475563,
+          "answer": 0.16069912910461426,
+          "supplied_answer_rows": 1,
+          "training": false,
+          "optimizer_steps": 0,
+          "trained_inter": null,
+          "word_counts": [
+            3
+          ],
+          "sources": [
+            2
+          ],
+          "reconstruction_fidelity": {
+            "owned": false,
+            "event_mse": 0.00666813226416707,
+            "event_score": 0.03835785761475563,
+            "byte_cost": null,
+            "idea_mse": null,
+            "truncated_rows": null,
+            "active_basis_rows": [
+              6
+            ]
+          },
+          "output_word_counts": null,
+          "output_truncated_rows": null,
+          "output_tensor_shape": [
+            1,
+            16,
+            1
+          ],
+          "shared_compose_gradient_norms": {},
+          "forward_backward_optimizer_seconds": 8.848146999953315,
+          "context_detached": true,
+          "seconds": 8.856196499895304,
+          "batch_plus_tail_seconds": 8.855417957995087,
+          "memory": {
+            "process_peak_rss_bytes": 13601030144,
+            "sampled_mps_driver_bytes": 5557354496,
+            "sampled_mps_tensor_bytes": 4854544384
+          },
+          "compiler_counters": {
+            "frames": {},
+            "stats": {},
+            "aot_autograd": {},
+            "graph_break": {},
+            "compiler_timing_seconds": {}
+          }
+        },
+        {
+          "input_sentences": 1,
+          "observations": 1,
+          "predicted_targets": 0,
+          "cold_starts": 1,
+          "reconstruction": 0.038851454854011536,
+          "answer": 0.0843566283583641,
+          "supplied_answer_rows": 1,
+          "training": false,
+          "optimizer_steps": 0,
+          "trained_inter": null,
+          "word_counts": [
+            3
+          ],
+          "sources": [
+            3
+          ],
+          "reconstruction_fidelity": {
+            "owned": false,
+            "event_mse": 0.007331789471209049,
+            "event_score": 0.038851454854011536,
+            "byte_cost": null,
+            "idea_mse": null,
+            "truncated_rows": null,
+            "active_basis_rows": [
+              6
+            ]
+          },
+          "output_word_counts": null,
+          "output_truncated_rows": null,
+          "output_tensor_shape": [
+            1,
+            16,
+            1
+          ],
+          "shared_compose_gradient_norms": {},
+          "forward_backward_optimizer_seconds": 8.700733458157629,
+          "context_detached": true,
+          "seconds": 8.70834720809944,
+          "batch_plus_tail_seconds": 8.707551708212122,
+          "memory": {
+            "process_peak_rss_bytes": 13601030144,
+            "sampled_mps_driver_bytes": 5557354496,
+            "sampled_mps_tensor_bytes": 4854635008
+          },
+          "compiler_counters": {
+            "frames": {},
+            "stats": {},
+            "aot_autograd": {},
+            "graph_break": {},
+            "compiler_timing_seconds": {}
+          }
+        },
+        {
+          "input_sentences": 1,
+          "observations": 1,
+          "predicted_targets": 0,
+          "cold_starts": 1,
+          "reconstruction": 0.038375940173864365,
+          "answer": 0.11666285246610641,
+          "supplied_answer_rows": 1,
+          "training": false,
+          "optimizer_steps": 0,
+          "trained_inter": null,
+          "word_counts": [
+            3
+          ],
+          "sources": [
+            4
+          ],
+          "reconstruction_fidelity": {
+            "owned": false,
+            "event_mse": 0.006692444905638695,
+            "event_score": 0.038375940173864365,
+            "byte_cost": null,
+            "idea_mse": null,
+            "truncated_rows": null,
+            "active_basis_rows": [
+              6
+            ]
+          },
+          "output_word_counts": null,
+          "output_truncated_rows": null,
+          "output_tensor_shape": [
+            1,
+            16,
+            1
+          ],
+          "shared_compose_gradient_norms": {},
+          "forward_backward_optimizer_seconds": 8.942994042066857,
+          "context_detached": true,
+          "seconds": 8.950893916888162,
+          "batch_plus_tail_seconds": 8.950076292036101,
+          "memory": {
+            "process_peak_rss_bytes": 13601030144,
+            "sampled_mps_driver_bytes": 5557354496,
+            "sampled_mps_tensor_bytes": 4854639616
+          },
+          "compiler_counters": {
+            "frames": {},
+            "stats": {},
+            "aot_autograd": {},
+            "graph_break": {},
+            "compiler_timing_seconds": {}
+          }
+        },
+        {
+          "input_sentences": 1,
+          "observations": 1,
+          "predicted_targets": 0,
+          "cold_starts": 1,
+          "reconstruction": 0.03961579129099846,
+          "answer": 0.11595089733600616,
+          "supplied_answer_rows": 1,
+          "training": false,
+          "optimizer_steps": 0,
+          "trained_inter": null,
+          "word_counts": [
+            3
+          ],
+          "sources": [
+            5
+          ],
+          "reconstruction_fidelity": {
+            "owned": false,
+            "event_mse": 0.008359470404684544,
+            "event_score": 0.03961579129099846,
+            "byte_cost": null,
+            "idea_mse": null,
+            "truncated_rows": null,
+            "active_basis_rows": [
+              6
+            ]
+          },
+          "output_word_counts": null,
+          "output_truncated_rows": null,
+          "output_tensor_shape": [
+            1,
+            16,
+            1
+          ],
+          "shared_compose_gradient_norms": {},
+          "forward_backward_optimizer_seconds": 8.668205457972363,
+          "context_detached": true,
+          "seconds": 8.67633879208006,
+          "batch_plus_tail_seconds": 8.675475249998271,
+          "memory": {
+            "process_peak_rss_bytes": 13601030144,
+            "sampled_mps_driver_bytes": 5557354496,
+            "sampled_mps_tensor_bytes": 4854644224
+          },
+          "compiler_counters": {
+            "frames": {},
+            "stats": {},
+            "aot_autograd": {},
+            "graph_break": {},
+            "compiler_timing_seconds": {}
+          }
+        },
+        {
+          "input_sentences": 1,
+          "observations": 1,
+          "predicted_targets": 0,
+          "cold_starts": 1,
+          "reconstruction": 0.038375940173864365,
+          "answer": 0.11666285246610641,
+          "supplied_answer_rows": 1,
+          "training": false,
+          "optimizer_steps": 0,
+          "trained_inter": null,
+          "word_counts": [
+            3
+          ],
+          "sources": [
+            6
+          ],
+          "reconstruction_fidelity": {
+            "owned": false,
+            "event_mse": 0.006692444905638695,
+            "event_score": 0.038375940173864365,
+            "byte_cost": null,
+            "idea_mse": null,
+            "truncated_rows": null,
+            "active_basis_rows": [
+              6
+            ]
+          },
+          "output_word_counts": null,
+          "output_truncated_rows": null,
+          "output_tensor_shape": [
+            1,
+            16,
+            1
+          ],
+          "shared_compose_gradient_norms": {},
+          "forward_backward_optimizer_seconds": 8.912491834023967,
+          "context_detached": true,
+          "seconds": 8.920406165998429,
+          "batch_plus_tail_seconds": 8.91950475005433,
+          "memory": {
+            "process_peak_rss_bytes": 13601030144,
+            "sampled_mps_driver_bytes": 5557354496,
+            "sampled_mps_tensor_bytes": 4854648832
+          },
+          "compiler_counters": {
+            "frames": {},
+            "stats": {},
+            "aot_autograd": {},
+            "graph_break": {},
+            "compiler_timing_seconds": {}
+          }
+        },
+        {
+          "input_sentences": 1,
+          "observations": 1,
+          "predicted_targets": 0,
+          "cold_starts": 1,
+          "reconstruction": 0.03846980631351471,
+          "answer": 0.15954111516475677,
+          "supplied_answer_rows": 1,
+          "training": false,
+          "optimizer_steps": 0,
+          "trained_inter": null,
+          "word_counts": [
+            3
+          ],
+          "sources": [
+            7
+          ],
+          "reconstruction_fidelity": {
+            "owned": false,
+            "event_mse": 0.006818647962063551,
+            "event_score": 0.03846980631351471,
+            "byte_cost": null,
+            "idea_mse": null,
+            "truncated_rows": null,
+            "active_basis_rows": [
+              6
+            ]
+          },
+          "output_word_counts": null,
+          "output_truncated_rows": null,
+          "output_tensor_shape": [
+            1,
+            16,
+            1
+          ],
+          "shared_compose_gradient_norms": {},
+          "forward_backward_optimizer_seconds": 8.68001512507908,
+          "context_detached": true,
+          "seconds": 8.68794683390297,
+          "batch_plus_tail_seconds": 8.687057917006314,
+          "memory": {
+            "process_peak_rss_bytes": 13601030144,
+            "sampled_mps_driver_bytes": 5557354496,
+            "sampled_mps_tensor_bytes": 4854653440
+          },
+          "compiler_counters": {
+            "frames": {},
+            "stats": {},
+            "aot_autograd": {},
+            "graph_break": {},
+            "compiler_timing_seconds": {}
+          }
+        }
+      ],
+      "epoch_seconds": 70.5957162079867,
+      "peak_memory": {
+        "process_peak_rss_bytes": 13601030144,
+        "sampled_mps_driver_bytes": 5557387264,
+        "sampled_mps_tensor_bytes": 4937256704
+      },
+      "memory_sampling_interval_seconds": 0.02,
+      "expectation": {
+        "observations": 8,
+        "cold_starts": 8,
+        "predicted_targets": 0,
+        "document_starts": 8,
+        "enabled": true,
+        "scope": "structured",
+        "feature_mse": null,
+        "presence_bce": null,
+        "document_boundary_fraction": 1.0
+      }
+    },
+    {
+      "name": "training",
+      "split": "train",
+      "steps": [
+        {
+          "input_sentences": 1,
+          "observations": 1,
+          "predicted_targets": 0,
+          "cold_starts": 1,
+          "reconstruction": 4.5620436668396,
+          "answer": 0.03910437226295471,
+          "supplied_answer_rows": 1,
+          "training": true,
+          "optimizer_steps": 1,
+          "trained_inter": null,
+          "word_counts": [
+            3
+          ],
+          "sources": [
+            0
+          ],
+          "reconstruction_fidelity": {
+            "owned": false,
+            "event_mse": null,
+            "event_score": null,
+            "byte_cost": null,
+            "idea_mse": null,
+            "truncated_rows": null,
+            "active_basis_rows": [
+              6
+            ]
+          },
+          "output_word_counts": null,
+          "output_truncated_rows": null,
+          "output_tensor_shape": [
+            1,
+            16,
+            1
+          ],
+          "shared_compose_gradient_norms": {
+            "verb.gl._verb_spec.weight": 0.0,
+            "lift.gl._sigma.layer.d": 0.0,
+            "lower.gl._pi.layer.biasWeight": 0.0,
+            "lower.gl._pi.layer.d": 0.0,
+            "lower.gl._pi.layer.raw_L": 0.0,
+            "lower.gl._pi.layer.raw_U": 0.0,
+            "lift.gl._sigma.layer.biasWeight": 0.0,
+            "lift.gl._sigma.layer.raw_L": 0.0,
+            "lift.gl._sigma.layer.raw_U": 0.0,
+            "verb.gl._verb_spec.bias": 0.0,
+            "adverb.gl._adv_edit.bias": 0.0,
+            "adverb.gl._adv_edit.weight": 0.0
+          },
+          "forward_backward_optimizer_seconds": 22.173910999903455,
+          "context_detached": true,
+          "seconds": 22.18431229190901,
+          "batch_plus_tail_seconds": 22.18292620894499,
+          "memory": {
+            "process_peak_rss_bytes": 13601030144,
+            "sampled_mps_driver_bytes": 6706741248,
+            "sampled_mps_tensor_bytes": 5638394112
+          },
+          "compiler_counters": {
+            "frames": {},
+            "stats": {
+              "calls_captured": 5945,
+              "unique_graphs": 1
+            },
+            "aot_autograd": {},
+            "graph_break": {},
+            "compiler_timing_seconds": {
+              "_compile.compile_inner": [
+                14.804861
+              ],
+              "compile_attempt_0": [
+                14.720438
+              ],
+              "bytecode_tracing": [
+                13.997456
+              ],
+              "get_fake_value": [
+                2.409414
+              ],
+              "create_proxy": [
+                1.783625
+              ],
+              "wrap_to_fake_tensor_and_record": [
+                0.019409
+              ],
+              "variable_builder_call": [
+                0.44574
+              ],
+              "insert_deferred_runtime_asserts": [
+                0.398287
+              ],
+              "OutputGraph.call_user_compiler": [
+                0.000814
+              ],
+              "build_guards": [
+                0.068248
+              ],
+              "gc": [
+                0.000141
+              ]
+            }
+          }
+        },
+        {
+          "input_sentences": 1,
+          "observations": 1,
+          "predicted_targets": 0,
+          "cold_starts": 1,
+          "reconstruction": 4.615045547485352,
+          "answer": 0.039850976318120956,
+          "supplied_answer_rows": 1,
+          "training": true,
+          "optimizer_steps": 1,
+          "trained_inter": null,
+          "word_counts": [
+            3
+          ],
+          "sources": [
+            1
+          ],
+          "reconstruction_fidelity": {
+            "owned": false,
+            "event_mse": null,
+            "event_score": null,
+            "byte_cost": null,
+            "idea_mse": null,
+            "truncated_rows": null,
+            "active_basis_rows": [
+              6
+            ]
+          },
+          "output_word_counts": null,
+          "output_truncated_rows": null,
+          "output_tensor_shape": [
+            1,
+            16,
+            1
+          ],
+          "shared_compose_gradient_norms": {
+            "verb.gl._verb_spec.weight": 0.0003874159883707762,
+            "lift.gl._sigma.layer.d": 0.0,
+            "lower.gl._pi.layer.biasWeight": 0.0,
+            "lower.gl._pi.layer.d": 0.0,
+            "lower.gl._pi.layer.raw_L": 0.0,
+            "lower.gl._pi.layer.raw_U": 0.0,
+            "lift.gl._sigma.layer.biasWeight": 0.0,
+            "lift.gl._sigma.layer.raw_L": 0.0,
+            "lift.gl._sigma.layer.raw_U": 0.0,
+            "verb.gl._verb_spec.bias": 0.0003874159883707762,
+            "adverb.gl._adv_edit.bias": 0.0,
+            "adverb.gl._adv_edit.weight": 0.0
+          },
+          "forward_backward_optimizer_seconds": 6.80941425007768,
+          "context_detached": true,
+          "seconds": 6.818290957948193,
+          "batch_plus_tail_seconds": 6.817229582928121,
+          "memory": {
+            "process_peak_rss_bytes": 13601030144,
+            "sampled_mps_driver_bytes": 6715146240,
+            "sampled_mps_tensor_bytes": 5800704768
+          },
+          "compiler_counters": {
+            "frames": {},
+            "stats": {
+              "calls_captured": 5945,
+              "unique_graphs": 1
+            },
+            "aot_autograd": {},
+            "graph_break": {},
+            "compiler_timing_seconds": {
+              "_compile.compile_inner": [
+                14.804861
+              ],
+              "compile_attempt_0": [
+                14.720438
+              ],
+              "bytecode_tracing": [
+                13.997456
+              ],
+              "get_fake_value": [
+                2.409414
+              ],
+              "create_proxy": [
+                1.783625
+              ],
+              "wrap_to_fake_tensor_and_record": [
+                0.019409
+              ],
+              "variable_builder_call": [
+                0.44574
+              ],
+              "insert_deferred_runtime_asserts": [
+                0.398287
+              ],
+              "OutputGraph.call_user_compiler": [
+                0.000814
+              ],
+              "build_guards": [
+                0.068248
+              ],
+              "gc": [
+                0.000141
+              ]
+            }
+          }
+        },
+        {
+          "input_sentences": 1,
+          "observations": 1,
+          "predicted_targets": 0,
+          "cold_starts": 1,
+          "reconstruction": 5.0664381980896,
+          "answer": 0.050342194736003876,
+          "supplied_answer_rows": 1,
+          "training": true,
+          "optimizer_steps": 1,
+          "trained_inter": null,
+          "word_counts": [
+            3
+          ],
+          "sources": [
+            2
+          ],
+          "reconstruction_fidelity": {
+            "owned": false,
+            "event_mse": null,
+            "event_score": null,
+            "byte_cost": null,
+            "idea_mse": null,
+            "truncated_rows": null,
+            "active_basis_rows": [
+              6
+            ]
+          },
+          "output_word_counts": null,
+          "output_truncated_rows": null,
+          "output_tensor_shape": [
+            1,
+            16,
+            1
+          ],
+          "shared_compose_gradient_norms": {
+            "verb.gl._verb_spec.weight": 0.0,
+            "lift.gl._sigma.layer.d": 0.0,
+            "lower.gl._pi.layer.biasWeight": 0.0,
+            "lower.gl._pi.layer.d": 0.0,
+            "lower.gl._pi.layer.raw_L": 0.0,
+            "lower.gl._pi.layer.raw_U": 0.0,
+            "lift.gl._sigma.layer.biasWeight": 0.0,
+            "lift.gl._sigma.layer.raw_L": 0.0,
+            "lift.gl._sigma.layer.raw_U": 0.0,
+            "verb.gl._verb_spec.bias": 0.0,
+            "adverb.gl._adv_edit.bias": 0.0,
+            "adverb.gl._adv_edit.weight": 0.0
+          },
+          "forward_backward_optimizer_seconds": 7.047864542109892,
+          "context_detached": true,
+          "seconds": 7.056515916949138,
+          "batch_plus_tail_seconds": 7.0554471670184284,
+          "memory": {
+            "process_peak_rss_bytes": 13601030144,
+            "sampled_mps_driver_bytes": 6715146240,
+            "sampled_mps_tensor_bytes": 5800281344
+          },
+          "compiler_counters": {
+            "frames": {},
+            "stats": {
+              "calls_captured": 5945,
+              "unique_graphs": 1
+            },
+            "aot_autograd": {},
+            "graph_break": {},
+            "compiler_timing_seconds": {
+              "_compile.compile_inner": [
+                14.804861
+              ],
+              "compile_attempt_0": [
+                14.720438
+              ],
+              "bytecode_tracing": [
+                13.997456
+              ],
+              "get_fake_value": [
+                2.409414
+              ],
+              "create_proxy": [
+                1.783625
+              ],
+              "wrap_to_fake_tensor_and_record": [
+                0.019409
+              ],
+              "variable_builder_call": [
+                0.44574
+              ],
+              "insert_deferred_runtime_asserts": [
+                0.398287
+              ],
+              "OutputGraph.call_user_compiler": [
+                0.000814
+              ],
+              "build_guards": [
+                0.068248
+              ],
+              "gc": [
+                0.000141
+              ]
+            }
+          }
+        },
+        {
+          "input_sentences": 1,
+          "observations": 1,
+          "predicted_targets": 0,
+          "cold_starts": 1,
+          "reconstruction": 4.984455108642578,
+          "answer": 0.04342307895421982,
+          "supplied_answer_rows": 1,
+          "training": true,
+          "optimizer_steps": 1,
+          "trained_inter": null,
+          "word_counts": [
+            3
+          ],
+          "sources": [
+            3
+          ],
+          "reconstruction_fidelity": {
+            "owned": false,
+            "event_mse": null,
+            "event_score": null,
+            "byte_cost": null,
+            "idea_mse": null,
+            "truncated_rows": null,
+            "active_basis_rows": [
+              6
+            ]
+          },
+          "output_word_counts": null,
+          "output_truncated_rows": null,
+          "output_tensor_shape": [
+            1,
+            16,
+            1
+          ],
+          "shared_compose_gradient_norms": {
+            "verb.gl._verb_spec.weight": 0.0,
+            "lift.gl._sigma.layer.d": 0.0,
+            "lower.gl._pi.layer.biasWeight": 0.0,
+            "lower.gl._pi.layer.d": 0.0,
+            "lower.gl._pi.layer.raw_L": 0.0,
+            "lower.gl._pi.layer.raw_U": 0.0,
+            "lift.gl._sigma.layer.biasWeight": 0.0,
+            "lift.gl._sigma.layer.raw_L": 0.0,
+            "lift.gl._sigma.layer.raw_U": 0.0,
+            "verb.gl._verb_spec.bias": 0.0,
+            "adverb.gl._adv_edit.bias": 0.0,
+            "adverb.gl._adv_edit.weight": 0.0
+          },
+          "forward_backward_optimizer_seconds": 6.935529000125825,
+          "context_detached": true,
+          "seconds": 6.944257250055671,
+          "batch_plus_tail_seconds": 6.943116209004074,
+          "memory": {
+            "process_peak_rss_bytes": 13601030144,
+            "sampled_mps_driver_bytes": 6715146240,
+            "sampled_mps_tensor_bytes": 5809617408
+          },
+          "compiler_counters": {
+            "frames": {},
+            "stats": {
+              "calls_captured": 5945,
+              "unique_graphs": 1
+            },
+            "aot_autograd": {},
+            "graph_break": {},
+            "compiler_timing_seconds": {
+              "_compile.compile_inner": [
+                14.804861
+              ],
+              "compile_attempt_0": [
+                14.720438
+              ],
+              "bytecode_tracing": [
+                13.997456
+              ],
+              "get_fake_value": [
+                2.409414
+              ],
+              "create_proxy": [
+                1.783625
+              ],
+              "wrap_to_fake_tensor_and_record": [
+                0.019409
+              ],
+              "variable_builder_call": [
+                0.44574
+              ],
+              "insert_deferred_runtime_asserts": [
+                0.398287
+              ],
+              "OutputGraph.call_user_compiler": [
+                0.000814
+              ],
+              "build_guards": [
+                0.068248
+              ],
+              "gc": [
+                0.000141
+              ]
+            }
+          }
+        },
+        {
+          "input_sentences": 1,
+          "observations": 1,
+          "predicted_targets": 0,
+          "cold_starts": 1,
+          "reconstruction": 4.808328151702881,
+          "answer": 0.03662176802754402,
+          "supplied_answer_rows": 1,
+          "training": true,
+          "optimizer_steps": 1,
+          "trained_inter": null,
+          "word_counts": [
+            3
+          ],
+          "sources": [
+            4
+          ],
+          "reconstruction_fidelity": {
+            "owned": false,
+            "event_mse": null,
+            "event_score": null,
+            "byte_cost": null,
+            "idea_mse": null,
+            "truncated_rows": null,
+            "active_basis_rows": [
+              6
+            ]
+          },
+          "output_word_counts": null,
+          "output_truncated_rows": null,
+          "output_tensor_shape": [
+            1,
+            16,
+            1
+          ],
+          "shared_compose_gradient_norms": {
+            "verb.gl._verb_spec.weight": 0.0,
+            "lift.gl._sigma.layer.d": 0.0,
+            "lower.gl._pi.layer.biasWeight": 0.0,
+            "lower.gl._pi.layer.d": 0.0,
+            "lower.gl._pi.layer.raw_L": 0.0,
+            "lower.gl._pi.layer.raw_U": 0.0,
+            "lift.gl._sigma.layer.biasWeight": 0.0,
+            "lift.gl._sigma.layer.raw_L": 0.0,
+            "lift.gl._sigma.layer.raw_U": 0.0,
+            "verb.gl._verb_spec.bias": 0.0,
+            "adverb.gl._adv_edit.bias": 0.0,
+            "adverb.gl._adv_edit.weight": 0.0
+          },
+          "forward_backward_optimizer_seconds": 6.988975165877491,
+          "context_detached": true,
+          "seconds": 6.997811750043184,
+          "batch_plus_tail_seconds": 6.996612374903634,
+          "memory": {
+            "process_peak_rss_bytes": 13601030144,
+            "sampled_mps_driver_bytes": 7797276672,
+            "sampled_mps_tensor_bytes": 5853376256
+          },
+          "compiler_counters": {
+            "frames": {},
+            "stats": {
+              "calls_captured": 5945,
+              "unique_graphs": 1
+            },
+            "aot_autograd": {},
+            "graph_break": {},
+            "compiler_timing_seconds": {
+              "_compile.compile_inner": [
+                14.804861
+              ],
+              "compile_attempt_0": [
+                14.720438
+              ],
+              "bytecode_tracing": [
+                13.997456
+              ],
+              "get_fake_value": [
+                2.409414
+              ],
+              "create_proxy": [
+                1.783625
+              ],
+              "wrap_to_fake_tensor_and_record": [
+                0.019409
+              ],
+              "variable_builder_call": [
+                0.44574
+              ],
+              "insert_deferred_runtime_asserts": [
+                0.398287
+              ],
+              "OutputGraph.call_user_compiler": [
+                0.000814
+              ],
+              "build_guards": [
+                0.068248
+              ],
+              "gc": [
+                0.000141
+              ]
+            }
+          }
+        },
+        {
+          "input_sentences": 1,
+          "observations": 1,
+          "predicted_targets": 0,
+          "cold_starts": 1,
+          "reconstruction": 4.83858060836792,
+          "answer": 0.03744544833898544,
+          "supplied_answer_rows": 1,
+          "training": true,
+          "optimizer_steps": 1,
+          "trained_inter": null,
+          "word_counts": [
+            3
+          ],
+          "sources": [
+            5
+          ],
+          "reconstruction_fidelity": {
+            "owned": false,
+            "event_mse": null,
+            "event_score": null,
+            "byte_cost": null,
+            "idea_mse": null,
+            "truncated_rows": null,
+            "active_basis_rows": [
+              6
+            ]
+          },
+          "output_word_counts": null,
+          "output_truncated_rows": null,
+          "output_tensor_shape": [
+            1,
+            16,
+            1
+          ],
+          "shared_compose_gradient_norms": {
+            "verb.gl._verb_spec.weight": 0.0,
+            "lift.gl._sigma.layer.d": 0.0,
+            "lower.gl._pi.layer.biasWeight": 0.0,
+            "lower.gl._pi.layer.d": 0.0,
+            "lower.gl._pi.layer.raw_L": 0.0,
+            "lower.gl._pi.layer.raw_U": 0.0,
+            "lift.gl._sigma.layer.biasWeight": 0.0,
+            "lift.gl._sigma.layer.raw_L": 0.0,
+            "lift.gl._sigma.layer.raw_U": 0.0,
+            "verb.gl._verb_spec.bias": 0.0,
+            "adverb.gl._adv_edit.bias": 0.0,
+            "adverb.gl._adv_edit.weight": 0.0
+          },
+          "forward_backward_optimizer_seconds": 6.7644127500243485,
+          "context_detached": true,
+          "seconds": 6.773221415933222,
+          "batch_plus_tail_seconds": 6.771941666025668,
+          "memory": {
+            "process_peak_rss_bytes": 13601030144,
+            "sampled_mps_driver_bytes": 7797276672,
+            "sampled_mps_tensor_bytes": 5984634368
+          },
+          "compiler_counters": {
+            "frames": {},
+            "stats": {
+              "calls_captured": 5945,
+              "unique_graphs": 1
+            },
+            "aot_autograd": {},
+            "graph_break": {},
+            "compiler_timing_seconds": {
+              "_compile.compile_inner": [
+                14.804861
+              ],
+              "compile_attempt_0": [
+                14.720438
+              ],
+              "bytecode_tracing": [
+                13.997456
+              ],
+              "get_fake_value": [
+                2.409414
+              ],
+              "create_proxy": [
+                1.783625
+              ],
+              "wrap_to_fake_tensor_and_record": [
+                0.019409
+              ],
+              "variable_builder_call": [
+                0.44574
+              ],
+              "insert_deferred_runtime_asserts": [
+                0.398287
+              ],
+              "OutputGraph.call_user_compiler": [
+                0.000814
+              ],
+              "build_guards": [
+                0.068248
+              ],
+              "gc": [
+                0.000141
+              ]
+            }
+          }
+        },
+        {
+          "input_sentences": 1,
+          "observations": 1,
+          "predicted_targets": 0,
+          "cold_starts": 1,
+          "reconstruction": 4.760762691497803,
+          "answer": 0.03250810131430626,
+          "supplied_answer_rows": 1,
+          "training": true,
+          "optimizer_steps": 1,
+          "trained_inter": null,
+          "word_counts": [
+            3
+          ],
+          "sources": [
+            6
+          ],
+          "reconstruction_fidelity": {
+            "owned": false,
+            "event_mse": null,
+            "event_score": null,
+            "byte_cost": null,
+            "idea_mse": null,
+            "truncated_rows": null,
+            "active_basis_rows": [
+              6
+            ]
+          },
+          "output_word_counts": null,
+          "output_truncated_rows": null,
+          "output_tensor_shape": [
+            1,
+            16,
+            1
+          ],
+          "shared_compose_gradient_norms": {
+            "verb.gl._verb_spec.weight": 0.0,
+            "lift.gl._sigma.layer.d": 0.0,
+            "lower.gl._pi.layer.biasWeight": 0.0,
+            "lower.gl._pi.layer.d": 0.0,
+            "lower.gl._pi.layer.raw_L": 0.0,
+            "lower.gl._pi.layer.raw_U": 0.0,
+            "lift.gl._sigma.layer.biasWeight": 0.0,
+            "lift.gl._sigma.layer.raw_L": 0.0,
+            "lift.gl._sigma.layer.raw_U": 0.0,
+            "verb.gl._verb_spec.bias": 0.0,
+            "adverb.gl._adv_edit.bias": 0.0,
+            "adverb.gl._adv_edit.weight": 0.0
+          },
+          "forward_backward_optimizer_seconds": 7.014306708006188,
+          "context_detached": true,
+          "seconds": 7.023150209104642,
+          "batch_plus_tail_seconds": 7.021828124998137,
+          "memory": {
+            "process_peak_rss_bytes": 13601030144,
+            "sampled_mps_driver_bytes": 7797276672,
+            "sampled_mps_tensor_bytes": 5940885248
+          },
+          "compiler_counters": {
+            "frames": {},
+            "stats": {
+              "calls_captured": 5945,
+              "unique_graphs": 1
+            },
+            "aot_autograd": {},
+            "graph_break": {},
+            "compiler_timing_seconds": {
+              "_compile.compile_inner": [
+                14.804861
+              ],
+              "compile_attempt_0": [
+                14.720438
+              ],
+              "bytecode_tracing": [
+                13.997456
+              ],
+              "get_fake_value": [
+                2.409414
+              ],
+              "create_proxy": [
+                1.783625
+              ],
+              "wrap_to_fake_tensor_and_record": [
+                0.019409
+              ],
+              "variable_builder_call": [
+                0.44574
+              ],
+              "insert_deferred_runtime_asserts": [
+                0.398287
+              ],
+              "OutputGraph.call_user_compiler": [
+                0.000814
+              ],
+              "build_guards": [
+                0.068248
+              ],
+              "gc": [
+                0.000141
+              ]
+            }
+          }
+        }
+      ],
+      "epoch_seconds": 63.798549707978964,
+      "peak_memory": {
+        "process_peak_rss_bytes": 13601030144,
+        "sampled_mps_driver_bytes": 7797293056,
+        "sampled_mps_tensor_bytes": 6754460416
+      },
+      "memory_sampling_interval_seconds": 0.02,
+      "expectation": {
+        "observations": 7,
+        "cold_starts": 7,
+        "predicted_targets": 0,
+        "document_starts": 7,
+        "enabled": true,
+        "scope": "structured",
+        "feature_mse": null,
+        "presence_bce": null,
+        "document_boundary_fraction": 1.0
+      },
+      "steady": {
+        "steps": 5,
+        "seconds": 34.794956542085856,
+        "warmup_seconds": 29.002603249857202,
+        "median_step_seconds": 6.997811750043184,
+        "input_sentences": 5,
+        "observations": 5,
+        "predicted_targets": 0,
+        "input_sentences_per_second": 0.14369898677563528,
+        "predicted_targets_per_second": 0.0,
+        "supplied_answer_rows": 5,
+        "supplied_answer_rows_per_second": 0.14369898677563528,
+        "document_boundary_fraction": 1.0,
+        "reconstruction_mean": 4.891712951660156,
+        "supplied_answer_mean": 0.04006811827421188
+      }
+    },
+    {
+      "name": "validation_after",
+      "split": "validation",
+      "steps": [
+        {
+          "input_sentences": 1,
+          "observations": 1,
+          "predicted_targets": 0,
+          "cold_starts": 1,
+          "reconstruction": 0.0375806987285614,
+          "answer": 0.15857259929180145,
+          "supplied_answer_rows": 1,
+          "training": false,
+          "optimizer_steps": 0,
+          "trained_inter": null,
+          "word_counts": [
+            3
+          ],
+          "sources": [
+            0
+          ],
+          "reconstruction_fidelity": {
+            "owned": false,
+            "event_mse": 0.005623210687190294,
+            "event_score": 0.0375806987285614,
+            "byte_cost": null,
+            "idea_mse": null,
+            "truncated_rows": null,
+            "active_basis_rows": [
+              6
+            ]
+          },
+          "output_word_counts": null,
+          "output_truncated_rows": null,
+          "output_tensor_shape": [
+            1,
+            16,
+            1
+          ],
+          "shared_compose_gradient_norms": {},
+          "forward_backward_optimizer_seconds": 9.180714957881719,
+          "context_detached": true,
+          "seconds": 9.189368249848485,
+          "batch_plus_tail_seconds": 9.18794154189527,
+          "memory": {
+            "process_peak_rss_bytes": 13601030144,
+            "sampled_mps_driver_bytes": 7797276672,
+            "sampled_mps_tensor_bytes": 5758679040
+          },
+          "compiler_counters": {
+            "frames": {},
+            "stats": {
+              "calls_captured": 5945,
+              "unique_graphs": 1
+            },
+            "aot_autograd": {},
+            "graph_break": {},
+            "compiler_timing_seconds": {
+              "_compile.compile_inner": [
+                14.804861
+              ],
+              "compile_attempt_0": [
+                14.720438
+              ],
+              "bytecode_tracing": [
+                13.997456
+              ],
+              "get_fake_value": [
+                2.409414
+              ],
+              "create_proxy": [
+                1.783625
+              ],
+              "wrap_to_fake_tensor_and_record": [
+                0.019409
+              ],
+              "variable_builder_call": [
+                0.44574
+              ],
+              "insert_deferred_runtime_asserts": [
+                0.398287
+              ],
+              "OutputGraph.call_user_compiler": [
+                0.000814
+              ],
+              "build_guards": [
+                0.068248
+              ],
+              "gc": [
+                0.000141
+              ]
+            }
+          }
+        },
+        {
+          "input_sentences": 1,
+          "observations": 1,
+          "predicted_targets": 0,
+          "cold_starts": 1,
+          "reconstruction": 0.03758806735277176,
+          "answer": 0.1569095253944397,
+          "supplied_answer_rows": 1,
+          "training": false,
+          "optimizer_steps": 0,
+          "trained_inter": null,
+          "word_counts": [
+            3
+          ],
+          "sources": [
+            1
+          ],
+          "reconstruction_fidelity": {
+            "owned": false,
+            "event_mse": 0.005633119959384203,
+            "event_score": 0.03758806735277176,
+            "byte_cost": null,
+            "idea_mse": null,
+            "truncated_rows": null,
+            "active_basis_rows": [
+              6
+            ]
+          },
+          "output_word_counts": null,
+          "output_truncated_rows": null,
+          "output_tensor_shape": [
+            1,
+            16,
+            1
+          ],
+          "shared_compose_gradient_norms": {},
+          "forward_backward_optimizer_seconds": 8.811794167151675,
+          "context_detached": true,
+          "seconds": 8.820060375146568,
+          "batch_plus_tail_seconds": 8.818754084175453,
+          "memory": {
+            "process_peak_rss_bytes": 13601030144,
+            "sampled_mps_driver_bytes": 7797276672,
+            "sampled_mps_tensor_bytes": 5755645696
+          },
+          "compiler_counters": {
+            "frames": {},
+            "stats": {
+              "calls_captured": 5945,
+              "unique_graphs": 1
+            },
+            "aot_autograd": {},
+            "graph_break": {},
+            "compiler_timing_seconds": {
+              "_compile.compile_inner": [
+                14.804861
+              ],
+              "compile_attempt_0": [
+                14.720438
+              ],
+              "bytecode_tracing": [
+                13.997456
+              ],
+              "get_fake_value": [
+                2.409414
+              ],
+              "create_proxy": [
+                1.783625
+              ],
+              "wrap_to_fake_tensor_and_record": [
+                0.019409
+              ],
+              "variable_builder_call": [
+                0.44574
+              ],
+              "insert_deferred_runtime_asserts": [
+                0.398287
+              ],
+              "OutputGraph.call_user_compiler": [
+                0.000814
+              ],
+              "build_guards": [
+                0.068248
+              ],
+              "gc": [
+                0.000141
+              ]
+            }
+          }
+        },
+        {
+          "input_sentences": 1,
+          "observations": 1,
+          "predicted_targets": 0,
+          "cold_starts": 1,
+          "reconstruction": 0.0375806987285614,
+          "answer": 0.15857259929180145,
+          "supplied_answer_rows": 1,
+          "training": false,
+          "optimizer_steps": 0,
+          "trained_inter": null,
+          "word_counts": [
+            3
+          ],
+          "sources": [
+            2
+          ],
+          "reconstruction_fidelity": {
+            "owned": false,
+            "event_mse": 0.005623210687190294,
+            "event_score": 0.0375806987285614,
+            "byte_cost": null,
+            "idea_mse": null,
+            "truncated_rows": null,
+            "active_basis_rows": [
+              6
+            ]
+          },
+          "output_word_counts": null,
+          "output_truncated_rows": null,
+          "output_tensor_shape": [
+            1,
+            16,
+            1
+          ],
+          "shared_compose_gradient_norms": {},
+          "forward_backward_optimizer_seconds": 8.9094399579335,
+          "context_detached": true,
+          "seconds": 8.917674790835008,
+          "batch_plus_tail_seconds": 8.916364040924236,
+          "memory": {
+            "process_peak_rss_bytes": 13601030144,
+            "sampled_mps_driver_bytes": 7797276672,
+            "sampled_mps_tensor_bytes": 5755756288
+          },
+          "compiler_counters": {
+            "frames": {},
+            "stats": {
+              "calls_captured": 5945,
+              "unique_graphs": 1
+            },
+            "aot_autograd": {},
+            "graph_break": {},
+            "compiler_timing_seconds": {
+              "_compile.compile_inner": [
+                14.804861
+              ],
+              "compile_attempt_0": [
+                14.720438
+              ],
+              "bytecode_tracing": [
+                13.997456
+              ],
+              "get_fake_value": [
+                2.409414
+              ],
+              "create_proxy": [
+                1.783625
+              ],
+              "wrap_to_fake_tensor_and_record": [
+                0.019409
+              ],
+              "variable_builder_call": [
+                0.44574
+              ],
+              "insert_deferred_runtime_asserts": [
+                0.398287
+              ],
+              "OutputGraph.call_user_compiler": [
+                0.000814
+              ],
+              "build_guards": [
+                0.068248
+              ],
+              "gc": [
+                0.000141
+              ]
+            }
+          }
+        },
+        {
+          "input_sentences": 1,
+          "observations": 1,
+          "predicted_targets": 0,
+          "cold_starts": 1,
+          "reconstruction": 0.037579648196697235,
+          "answer": 0.08239623159170151,
+          "supplied_answer_rows": 1,
+          "training": false,
+          "optimizer_steps": 0,
+          "trained_inter": null,
+          "word_counts": [
+            3
+          ],
+          "sources": [
+            3
+          ],
+          "reconstruction_fidelity": {
+            "owned": false,
+            "event_mse": 0.005621796939522028,
+            "event_score": 0.037579648196697235,
+            "byte_cost": null,
+            "idea_mse": null,
+            "truncated_rows": null,
+            "active_basis_rows": [
+              6
+            ]
+          },
+          "output_word_counts": null,
+          "output_truncated_rows": null,
+          "output_tensor_shape": [
+            1,
+            16,
+            1
+          ],
+          "shared_compose_gradient_norms": {},
+          "forward_backward_optimizer_seconds": 9.006275250110775,
+          "context_detached": true,
+          "seconds": 9.01491366699338,
+          "batch_plus_tail_seconds": 9.01355304196477,
+          "memory": {
+            "process_peak_rss_bytes": 13601030144,
+            "sampled_mps_driver_bytes": 7797276672,
+            "sampled_mps_tensor_bytes": 5755851776
+          },
+          "compiler_counters": {
+            "frames": {},
+            "stats": {
+              "calls_captured": 5945,
+              "unique_graphs": 1
+            },
+            "aot_autograd": {},
+            "graph_break": {},
+            "compiler_timing_seconds": {
+              "_compile.compile_inner": [
+                14.804861
+              ],
+              "compile_attempt_0": [
+                14.720438
+              ],
+              "bytecode_tracing": [
+                13.997456
+              ],
+              "get_fake_value": [
+                2.409414
+              ],
+              "create_proxy": [
+                1.783625
+              ],
+              "wrap_to_fake_tensor_and_record": [
+                0.019409
+              ],
+              "variable_builder_call": [
+                0.44574
+              ],
+              "insert_deferred_runtime_asserts": [
+                0.398287
+              ],
+              "OutputGraph.call_user_compiler": [
+                0.000814
+              ],
+              "build_guards": [
+                0.068248
+              ],
+              "gc": [
+                0.000141
+              ]
+            }
+          }
+        },
+        {
+          "input_sentences": 1,
+          "observations": 1,
+          "predicted_targets": 0,
+          "cold_starts": 1,
+          "reconstruction": 0.03758758306503296,
+          "answer": 0.11489222943782806,
+          "supplied_answer_rows": 1,
+          "training": false,
+          "optimizer_steps": 0,
+          "trained_inter": null,
+          "word_counts": [
+            3
+          ],
+          "sources": [
+            4
+          ],
+          "reconstruction_fidelity": {
+            "owned": false,
+            "event_mse": 0.005632466170936823,
+            "event_score": 0.03758758306503296,
+            "byte_cost": null,
+            "idea_mse": null,
+            "truncated_rows": null,
+            "active_basis_rows": [
+              6
+            ]
+          },
+          "output_word_counts": null,
+          "output_truncated_rows": null,
+          "output_tensor_shape": [
+            1,
+            16,
+            1
+          ],
+          "shared_compose_gradient_norms": {},
+          "forward_backward_optimizer_seconds": 8.971841916907579,
+          "context_detached": true,
+          "seconds": 8.98061279207468,
+          "batch_plus_tail_seconds": 8.979162958916277,
+          "memory": {
+            "process_peak_rss_bytes": 13601030144,
+            "sampled_mps_driver_bytes": 7797276672,
+            "sampled_mps_tensor_bytes": 5755882240
+          },
+          "compiler_counters": {
+            "frames": {},
+            "stats": {
+              "calls_captured": 5945,
+              "unique_graphs": 1
+            },
+            "aot_autograd": {},
+            "graph_break": {},
+            "compiler_timing_seconds": {
+              "_compile.compile_inner": [
+                14.804861
+              ],
+              "compile_attempt_0": [
+                14.720438
+              ],
+              "bytecode_tracing": [
+                13.997456
+              ],
+              "get_fake_value": [
+                2.409414
+              ],
+              "create_proxy": [
+                1.783625
+              ],
+              "wrap_to_fake_tensor_and_record": [
+                0.019409
+              ],
+              "variable_builder_call": [
+                0.44574
+              ],
+              "insert_deferred_runtime_asserts": [
+                0.398287
+              ],
+              "OutputGraph.call_user_compiler": [
+                0.000814
+              ],
+              "build_guards": [
+                0.068248
+              ],
+              "gc": [
+                0.000141
+              ]
+            }
+          }
+        },
+        {
+          "input_sentences": 1,
+          "observations": 1,
+          "predicted_targets": 0,
+          "cold_starts": 1,
+          "reconstruction": 0.03758758306503296,
+          "answer": 0.11420466005802155,
+          "supplied_answer_rows": 1,
+          "training": false,
+          "optimizer_steps": 0,
+          "trained_inter": null,
+          "word_counts": [
+            3
+          ],
+          "sources": [
+            5
+          ],
+          "reconstruction_fidelity": {
+            "owned": false,
+            "event_mse": 0.005632466170936823,
+            "event_score": 0.03758758306503296,
+            "byte_cost": null,
+            "idea_mse": null,
+            "truncated_rows": null,
+            "active_basis_rows": [
+              6
+            ]
+          },
+          "output_word_counts": null,
+          "output_truncated_rows": null,
+          "output_tensor_shape": [
+            1,
+            16,
+            1
+          ],
+          "shared_compose_gradient_norms": {},
+          "forward_backward_optimizer_seconds": 8.91009454196319,
+          "context_detached": true,
+          "seconds": 8.918787541100755,
+          "batch_plus_tail_seconds": 8.917331458069384,
+          "memory": {
+            "process_peak_rss_bytes": 13601030144,
+            "sampled_mps_driver_bytes": 7797276672,
+            "sampled_mps_tensor_bytes": 5755997440
+          },
+          "compiler_counters": {
+            "frames": {},
+            "stats": {
+              "calls_captured": 5945,
+              "unique_graphs": 1
+            },
+            "aot_autograd": {},
+            "graph_break": {},
+            "compiler_timing_seconds": {
+              "_compile.compile_inner": [
+                14.804861
+              ],
+              "compile_attempt_0": [
+                14.720438
+              ],
+              "bytecode_tracing": [
+                13.997456
+              ],
+              "get_fake_value": [
+                2.409414
+              ],
+              "create_proxy": [
+                1.783625
+              ],
+              "wrap_to_fake_tensor_and_record": [
+                0.019409
+              ],
+              "variable_builder_call": [
+                0.44574
+              ],
+              "insert_deferred_runtime_asserts": [
+                0.398287
+              ],
+              "OutputGraph.call_user_compiler": [
+                0.000814
+              ],
+              "build_guards": [
+                0.068248
+              ],
+              "gc": [
+                0.000141
+              ]
+            }
+          }
+        },
+        {
+          "input_sentences": 1,
+          "observations": 1,
+          "predicted_targets": 0,
+          "cold_starts": 1,
+          "reconstruction": 0.03758758306503296,
+          "answer": 0.11489222943782806,
+          "supplied_answer_rows": 1,
+          "training": false,
+          "optimizer_steps": 0,
+          "trained_inter": null,
+          "word_counts": [
+            3
+          ],
+          "sources": [
+            6
+          ],
+          "reconstruction_fidelity": {
+            "owned": false,
+            "event_mse": 0.005632466170936823,
+            "event_score": 0.03758758306503296,
+            "byte_cost": null,
+            "idea_mse": null,
+            "truncated_rows": null,
+            "active_basis_rows": [
+              6
+            ]
+          },
+          "output_word_counts": null,
+          "output_truncated_rows": null,
+          "output_tensor_shape": [
+            1,
+            16,
+            1
+          ],
+          "shared_compose_gradient_norms": {},
+          "forward_backward_optimizer_seconds": 8.913789500016719,
+          "context_detached": true,
+          "seconds": 8.922646833816543,
+          "batch_plus_tail_seconds": 8.921120249899104,
+          "memory": {
+            "process_peak_rss_bytes": 13601030144,
+            "sampled_mps_driver_bytes": 7797276672,
+            "sampled_mps_tensor_bytes": 5756070656
+          },
+          "compiler_counters": {
+            "frames": {},
+            "stats": {
+              "calls_captured": 5945,
+              "unique_graphs": 1
+            },
+            "aot_autograd": {},
+            "graph_break": {},
+            "compiler_timing_seconds": {
+              "_compile.compile_inner": [
+                14.804861
+              ],
+              "compile_attempt_0": [
+                14.720438
+              ],
+              "bytecode_tracing": [
+                13.997456
+              ],
+              "get_fake_value": [
+                2.409414
+              ],
+              "create_proxy": [
+                1.783625
+              ],
+              "wrap_to_fake_tensor_and_record": [
+                0.019409
+              ],
+              "variable_builder_call": [
+                0.44574
+              ],
+              "insert_deferred_runtime_asserts": [
+                0.398287
+              ],
+              "OutputGraph.call_user_compiler": [
+                0.000814
+              ],
+              "build_guards": [
+                0.068248
+              ],
+              "gc": [
+                0.000141
+              ]
+            }
+          }
+        },
+        {
+          "input_sentences": 1,
+          "observations": 1,
+          "predicted_targets": 0,
+          "cold_starts": 1,
+          "reconstruction": 0.037586528807878494,
+          "answer": 0.1573861986398697,
+          "supplied_answer_rows": 1,
+          "training": false,
+          "optimizer_steps": 0,
+          "trained_inter": null,
+          "word_counts": [
+            3
+          ],
+          "sources": [
+            7
+          ],
+          "reconstruction_fidelity": {
+            "owned": false,
+            "event_mse": 0.005631052423268557,
+            "event_score": 0.037586528807878494,
+            "byte_cost": null,
+            "idea_mse": null,
+            "truncated_rows": null,
+            "active_basis_rows": [
+              6
+            ]
+          },
+          "output_word_counts": null,
+          "output_truncated_rows": null,
+          "output_tensor_shape": [
+            1,
+            16,
+            1
+          ],
+          "shared_compose_gradient_norms": {},
+          "forward_backward_optimizer_seconds": 9.054726207861677,
+          "context_detached": true,
+          "seconds": 9.063570333179086,
+          "batch_plus_tail_seconds": 9.062042583012953,
+          "memory": {
+            "process_peak_rss_bytes": 13601030144,
+            "sampled_mps_driver_bytes": 7797276672,
+            "sampled_mps_tensor_bytes": 5756127232
+          },
+          "compiler_counters": {
+            "frames": {},
+            "stats": {
+              "calls_captured": 5945,
+              "unique_graphs": 1
+            },
+            "aot_autograd": {},
+            "graph_break": {},
+            "compiler_timing_seconds": {
+              "_compile.compile_inner": [
+                14.804861
+              ],
+              "compile_attempt_0": [
+                14.720438
+              ],
+              "bytecode_tracing": [
+                13.997456
+              ],
+              "get_fake_value": [
+                2.409414
+              ],
+              "create_proxy": [
+                1.783625
+              ],
+              "wrap_to_fake_tensor_and_record": [
+                0.019409
+              ],
+              "variable_builder_call": [
+                0.44574
+              ],
+              "insert_deferred_runtime_asserts": [
+                0.398287
+              ],
+              "OutputGraph.call_user_compiler": [
+                0.000814
+              ],
+              "build_guards": [
+                0.068248
+              ],
+              "gc": [
+                0.000141
+              ]
+            }
+          }
+        }
+      ],
+      "epoch_seconds": 71.82906012493186,
+      "peak_memory": {
+        "process_peak_rss_bytes": 13601030144,
+        "sampled_mps_driver_bytes": 7797293056,
+        "sampled_mps_tensor_bytes": 6000550912
+      },
+      "memory_sampling_interval_seconds": 0.02,
+      "expectation": {
+        "observations": 8,
+        "cold_starts": 8,
+        "predicted_targets": 0,
+        "document_starts": 8,
+        "enabled": true,
+        "scope": "structured",
+        "feature_mse": null,
+        "presence_bce": null,
+        "document_boundary_fraction": 1.0
+      }
+    }
+  ],
+  "timing_scope": "consecutive native step completions including next input staging, runBatch, reset/compaction and measurement overhead; epoch wall time also reported",
+  "compiler_timing_scope": "PyTorch named compiler intervals in seconds; nested intervals overlap and must not be summed together",
+  "compose_optimizer_ownership": {
+    "lift.gl._sigma.layer.raw_L": true,
+    "lift.gl._sigma.layer.d": true,
+    "lift.gl._sigma.layer.raw_U": true,
+    "lift.gl._sigma.layer.biasWeight": true,
+    "lift.gl._lex_gate.weight": true,
+    "lift.gl._lex_gate.bias": true,
+    "verb.gl._sigma.layer.raw_L": true,
+    "verb.gl._sigma.layer.d": true,
+    "verb.gl._sigma.layer.raw_U": true,
+    "verb.gl._sigma.layer.biasWeight": true,
+    "verb.gl._lex_gate.weight": true,
+    "verb.gl._lex_gate.bias": true,
+    "verb.gl._verb_spec.weight": true,
+    "verb.gl._verb_spec.bias": true,
+    "adverb.gl._sigma.layer.raw_L": true,
+    "adverb.gl._sigma.layer.d": true,
+    "adverb.gl._sigma.layer.raw_U": true,
+    "adverb.gl._sigma.layer.biasWeight": true,
+    "adverb.gl._lex_gate.weight": true,
+    "adverb.gl._lex_gate.bias": true,
+    "adverb.gl._adv_edit.weight": true,
+    "adverb.gl._adv_edit.bias": true,
+    "lower.gl._pi.layer.raw_L": true,
+    "lower.gl._pi.layer.d": true,
+    "lower.gl._pi.layer.raw_U": true,
+    "lower.gl._pi.layer.biasWeight": true,
+    "lower.gl._lex_gate.weight": true,
+    "lower.gl._lex_gate.bias": true
+  },
+  "head_parameter_delta_norm": 0.0,
+  "answer_parameter_delta_norm": 0.15223662203453528,
+  "compose_parameter_delta_norms": {
+    "lift.gl._sigma.layer.raw_L": 0.0,
+    "lift.gl._sigma.layer.d": 0.0,
+    "lift.gl._sigma.layer.raw_U": 0.0,
+    "lift.gl._sigma.layer.biasWeight": 0.0,
+    "lift.gl._lex_gate.weight": 0.0,
+    "lift.gl._lex_gate.bias": 0.0,
+    "verb.gl._sigma.layer.raw_L": 0.0,
+    "verb.gl._sigma.layer.d": 0.0,
+    "verb.gl._sigma.layer.raw_U": 0.0,
+    "verb.gl._sigma.layer.biasWeight": 0.0,
+    "verb.gl._lex_gate.weight": 0.0,
+    "verb.gl._lex_gate.bias": 0.0,
+    "verb.gl._verb_spec.weight": 0.2840787172317505,
+    "verb.gl._verb_spec.bias": 0.028015922755002975,
+    "adverb.gl._sigma.layer.raw_L": 0.0,
+    "adverb.gl._sigma.layer.d": 0.0,
+    "adverb.gl._sigma.layer.raw_U": 0.0,
+    "adverb.gl._sigma.layer.biasWeight": 0.0,
+    "adverb.gl._lex_gate.weight": 0.0,
+    "adverb.gl._lex_gate.bias": 0.0,
+    "adverb.gl._adv_edit.weight": 0.0,
+    "adverb.gl._adv_edit.bias": 0.0,
+    "lower.gl._pi.layer.raw_L": 0.0,
+    "lower.gl._pi.layer.d": 0.0,
+    "lower.gl._pi.layer.raw_U": 0.0,
+    "lower.gl._pi.layer.biasWeight": 0.0,
+    "lower.gl._lex_gate.weight": 0.0,
+    "lower.gl._lex_gate.bias": 0.0
+  },
+  "target_detached": true,
+  "context_detached": true,
+  "predictor_update_verified": false,
+  "supplied_answer_update_verified": true
+}

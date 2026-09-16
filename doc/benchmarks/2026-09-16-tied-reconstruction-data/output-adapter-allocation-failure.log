@@ -1,0 +1,50 @@
+Canonical fullgraph compile: lazy fused tensor word-loop lowering on mps with fixed capacity and residual-part axes
+[AMP] off (fp32, MODEL_AMP unset or =off)
+Canonical fullgraph lowering: compiling complete W=256 recurrent word loop (one-time cost for this bucket)
+Debug checks: OFF
+MPS: inductor device asserts disabled (check_bounds + device_assert_async) -- Metal 31-buffer limit vs error_buf
+MPS: inductor DTYPE_TO_METAL patched with uint16->ushort
+MPS: inductor any-reduction dtype metadata patched (Metal 'bool' -> torch.bool)
+MPS: zero-size while-loop dependencies excluded from Inductor read-realization ratio
+MPS: inductor subgraph Metal kernel names allocated from the shared wrapper (torch.while_loop)
+MPS: unbacked while-loop tape views excluded from post-grad addmm fuse/unfuse rewrites
+MPS: stride-only reverse while-loop metadata differences delegated to Inductor exact-stride lowering
+MPS: oversized scalar-gradient sums lowered via stack/sum/copy wrapper fallback
+MPS: inductor max_fusion_unique_io_buffers=8, max_fusion_size=16 (Metal 31-buffer kernel-arg limit)
+Model compiled (eager, mode=default, fullgraph=True)
+Traceback (most recent call last):
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/bench_sentence_expectation.py", line 704, in <module>
+    main()
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/bench_sentence_expectation.py", line 686, in main
+    result = native_benchmark(args.config, device=args.device, backend=args.backend,
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/bench_sentence_expectation.py", line 594, in native_benchmark
+    model.runEpoch(optimizer=opt, batchSize=batch_size, split=split, max_batches=count)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 15248, in runEpoch
+    result, _ = self.runBatch(
+                ^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/bench_sentence_expectation.py", line 480, in measured_batch
+    result = original_batch(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 13504, in runBatch
+    _what_answers = self._what_or_think(
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8269, in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 9839, in what
+    construction = self.reverseOutput(self._last_understanding, questions)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 9211, in reverseOutput
+    actual = self.outputSpace.from_percepts(percepts)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py", line 30293, in from_percepts
+    adapter = InvertibleLinearLayer(N * D, n_out, hasBias=True).to(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py", line 1099, in __init__
+    self.raw_L = nn.Parameter(torch.zeros(nInput, nInput))
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py", line 122, in __torch_function__
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: Invalid buffer size: 1156.00 GiB

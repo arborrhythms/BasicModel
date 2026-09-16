@@ -1,0 +1,13 @@
+{
+  "bin/Models.py": "6f55137fc9aff02700862afb7de0eb6649c28708d1a727f0c7881529a8554f02",
+  "bin/Language.py": "fe1b6c6c589c4219a7989797a2b107c9cbc89b072506e03fc80d6be0812be957",
+  "bin/Layers.py": "30948c715755b21c8c379a5434c5e9617bfad32bb7d3d0f58ded1b1ca469e0f0",
+  "bin/Understanding.py": "be7631dae773f998cb55005e3b8ae110c217299a998d3df0ecfe3eb48a3b77b9",
+  "bin/bench_sentence_expectation.py": "5f6683785f21f3192430eb3d0a55b49d381a80ef8ee9f5523952cc4a8b71ed40",
+  "data/BasicModel.xml": "7009291d30da5e7b7580fe6730a23396546b4a8f883471780745f9a6b26e1922",
+  "data/model.xsd": "70dda2d674f204add027f8e81e0e70b05aec226cd57557cbfc1940bf945e6211",
+  "data/BasicModel_answers_tied_benchmark.xml": "68ff0990f69c6a127945824a0b0a4b0931d00c335f08d008c6cad92bad718e78",
+  "data/BasicModel_long_tied_benchmark.xml": "da34a1f525d3ea04568c28181a1689ac48d4538834048b1e2be36d3d5be4e302",
+  "data/BasicModel_output_tied_benchmark.xml": "60c8a94904390e5f44ab700cb102e74cfd6230c535577249793bbdaed31230aa",
+  "data/tied_reconstruction_output_benchmark.grammar": "4dc63724e5db8ad73f088671a3512b421bdd58d36f4dd24c88761b4dd004c9c7"
+}

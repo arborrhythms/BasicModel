@@ -3,20 +3,20 @@
 Status: measurements and full-suite verification complete, September 16, 2026.
 This is item 4 of the
 [integrated plan](../plans/2026-09-15-next-sentence-as-the-production-objective.md#10-consolidated-implementation-and-verification-order).
-The runtime baseline is basicmodel `70eaa2d384552192fb021d2154852af66381c86a`,
-plus the measured runtime fixes included with this report. Each raw record
+The final measured runtime is basicmodel `aa5e018b67bf3be946c0b75c5baf33c9cc84ab4b`.
+The raw runs name its parent revision plus the measured working-tree fixes. Each raw record
 contains runtime/configuration SHA-256 hashes; the base revision alone does
 not identify the measured working tree.
 
-The benchmark uses the actual [local-role expectation head](../../bin/Layers.py#L9189)
-and [native training scheduler](../../bin/Models.py#L14603). The native workload
-retains the current [detached reverse student](../../data/BasicModel.xml#L177);
-tied sentence reconstruction is the next migration. The supplied-answer
+The benchmark uses the actual [local-role expectation head](https://github.com/arborrhythms/BasicModel/blob/aa5e018b67bf3be946c0b75c5baf33c9cc84ab4b/bin/Layers.py#L9189)
+and [native training scheduler](https://github.com/arborrhythms/BasicModel/blob/aa5e018b67bf3be946c0b75c5baf33c9cc84ab4b/bin/Models.py#L14603). The native workload
+retains the historical [detached reverse student](https://github.com/arborrhythms/BasicModel/blob/aa5e018b67bf3be946c0b75c5baf33c9cc84ab4b/data/BasicModel.xml#L177);
+these are the measurements before the tied sentence-reconstruction migration. The supplied-answer
 fixture retains BasicModel's space widths and dictionary capacities, with the
-explicit [workload](../../data/BasicModel_answers_benchmark.xml#L37) and
-[loss-weight](../../data/BasicModel_answers_benchmark.xml#L51) changes below.
+explicit [workload](https://github.com/arborrhythms/BasicModel/blob/aa5e018b67bf3be946c0b75c5baf33c9cc84ab4b/data/BasicModel_answers_benchmark.xml#L37) and
+[loss-weight](https://github.com/arborrhythms/BasicModel/blob/aa5e018b67bf3be946c0b75c5baf33c9cc84ab4b/data/BasicModel_answers_benchmark.xml#L51) changes below.
 
-The executable is [bench_sentence_expectation.py](../../bin/bench_sentence_expectation.py).
+The executable is [bench_sentence_expectation.py](https://github.com/arborrhythms/BasicModel/blob/aa5e018b67bf3be946c0b75c5baf33c9cc84ab4b/bin/bench_sentence_expectation.py).
 The measurements below separate supplied-answer training, corpus continuation
 and controlled predictor learning.
 
@@ -148,8 +148,8 @@ experiment above tests that separate capability.
 Training reconstruction is the detached student's rule/arity/leaf objective;
 evaluation uses the current D3 reconstruction diagnostic. These scalars are
 different objectives and cannot be directly compared. See
-[`runBatch`'s reconstruction branch](../../bin/Models.py#L13464) and
-[`_detached_reverse_construction_loss`](../../bin/Models.py#L22730).
+[`runBatch`'s reconstruction branch](https://github.com/arborrhythms/BasicModel/blob/aa5e018b67bf3be946c0b75c5baf33c9cc84ab4b/bin/Models.py#L13464) and
+[`_detached_reverse_construction_loss`](https://github.com/arborrhythms/BasicModel/blob/aa5e018b67bf3be946c0b75c5baf33c9cc84ab4b/bin/Models.py#L22730).
 The tied reconstruction migration must repeat the relevant measurements and
 add its sentence fidelity/gradient evidence. Query utility and complete nested
 meaning remain later gates in the integrated plan.
@@ -160,10 +160,10 @@ The first canonical W256/B1 packed run completed eight held-out evaluations
 and one training update, then failed during the next backward pass at the
 default MPS allocation limit (16.85 GiB). It cannot supply the required five
 steady training steps. The allocator defaults remain
-[high 0.60 / low 0.50](../../bin/mps_memory.py#L6).
+[high 0.60 / low 0.50](https://github.com/arborrhythms/BasicModel/blob/aa5e018b67bf3be946c0b75c5baf33c9cc84ab4b/bin/mps_memory.py#L6).
 
 The next FineWeb operating point uses
-[BasicModel_expectation_benchmark.xml](../../data/BasicModel_expectation_benchmark.xml):
+[BasicModel_expectation_benchmark.xml](https://github.com/arborrhythms/BasicModel/blob/aa5e018b67bf3be946c0b75c5baf33c9cc84ab4b/data/BasicModel_expectation_benchmark.xml):
 W64 storage and packing, with whole splitter records longer than 64 words
 excluded by the loader. It retains the native space widths, dictionaries,
 expectation weight and reconstruction path. This is a separate memory-bounded
@@ -174,7 +174,7 @@ fixture continues to use W256 with unpacked, short arithmetic inputs.
 The W64/B1 retry also exhausted memory, after two training steps. Its failure
 trace reached answer materialization's replay of a recorded compose program.
 The reviewer probe then showed that a recorded `sum` executed all 16 binary
-operators. [`forward_binary_step`](../../bin/Language.py#L14430) now executes
+operators. [`forward_binary_step`](https://github.com/arborrhythms/BasicModel/blob/aa5e018b67bf3be946c0b75c5baf33c9cc84ab4b/bin/Language.py#L14430) now executes
 only operators selected by live rows, using conditional branches in compiled
 calls. The new tests preserve values and gradients for mixed rows and shared
 operand storage. This removes unnecessary recorded-program evaluation; §6's
@@ -186,9 +186,9 @@ The first supplied-answer run exposed a second defect: the compiled unpacked
 path took optimizer steps but recorded no external observations. Its eager
 evaluation counterpart recorded the inputs. The graph's attribute-only
 boundary handoff was not sufficient; the repaired
-[`_publish_compiled_sentence_state`](../../bin/Models.py#L7291) uses the existing
+[`_publish_compiled_sentence_state`](https://github.com/arborrhythms/BasicModel/blob/aa5e018b67bf3be946c0b75c5baf33c9cc84ab4b/bin/Models.py#L7291) uses the existing
 explicit sealed slots/depth, and the
-[`pending boundary drain`](../../bin/Models.py#L12432) retains occupied roles and
+[`pending boundary drain`](https://github.com/arborrhythms/BasicModel/blob/aa5e018b67bf3be946c0b75c5baf33c9cc84ab4b/bin/Models.py#L12432) retains occupied roles and
 skips masked rows. The 21-value graph return is unchanged. The
 [regression](../../test/test_compiled_expectation_boundary.py#L6) runs real compiled
 and eager forwards, verifies once-only observations and predictor gradients,

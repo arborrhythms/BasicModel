@@ -937,6 +937,18 @@
            reverse-through-forward recurrent gradient. -->
       <xs:element name="detachedReverse" type="xs:boolean" minOccurs="0"/>
       <xs:element name="reconstructInLoop" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="reconstructionPlacement" minOccurs="0">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:enumeration value="graph"/>
+            <xs:enumeration value="compiled"/>
+            <xs:enumeration value="eager"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:element>
+      <!-- Bound candidates per side of a lossy reconstruction search.
+           Independent of word and STM capacity; pair work is at most K*K. -->
+      <xs:element name="reconstructionBasisLimit" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="outputInLoop" type="xs:boolean" minOccurs="0"/>
       <!-- Weight of sampled output-action credit from supplied supervised
            answer error. Input compose choices are not answer supervision;

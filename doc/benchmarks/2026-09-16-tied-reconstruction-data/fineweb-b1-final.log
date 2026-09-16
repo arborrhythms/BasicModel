@@ -1,0 +1,47 @@
+Loading text: 1 shard(s), max 24 docs from /Users/arogers/github/WikiOracle/basicmodel/data/fineweb
+Loaded 24 docs -> 995 sentences (826 train, 66 val, 103 test), dropped 0 whole sentences over 256 words
+Canonical fullgraph compile: lazy fused tensor word-loop lowering on mps with fixed capacity and residual-part axes
+[AMP] off (fp32, MODEL_AMP unset or =off)
+Canonical fullgraph lowering: compiling complete W=256 recurrent word loop (one-time cost for this bucket)
+Debug checks: OFF
+MPS: inductor device asserts disabled (check_bounds + device_assert_async) -- Metal 31-buffer limit vs error_buf
+MPS: inductor DTYPE_TO_METAL patched with uint16->ushort
+MPS: inductor any-reduction dtype metadata patched (Metal 'bool' -> torch.bool)
+MPS: zero-size while-loop dependencies excluded from Inductor read-realization ratio
+MPS: inductor subgraph Metal kernel names allocated from the shared wrapper (torch.while_loop)
+MPS: unbacked while-loop tape views excluded from post-grad addmm fuse/unfuse rewrites
+MPS: stride-only reverse while-loop metadata differences delegated to Inductor exact-stride lowering
+MPS: oversized scalar-gradient sums lowered via stack/sum/copy wrapper fallback
+MPS: inductor max_fusion_unique_io_buffers=8, max_fusion_size=16 (Metal 31-buffer kernel-arg limit)
+Model compiled (eager, mode=default, fullgraph=True)
+batch = 0 (warm-up, 12.50%)
+batch = 1 (Δ=49.194s, 25.00%)
+batch = 2 (Δ=1.584s, 37.50%)
+batch = 3 (Δ=1.899s, 50.00%)
+batch = 4 (Δ=1.212s, 62.50%)
+batch = 5 (Δ=1.188s, 75.00%)
+batch = 6 (Δ=0.851s, 87.50%)
+batch = 7 (Δ=1.017s, 100.00%)
+runEpoch(validation): hit max_batches=8 cap; cursor exiting early (8 batches processed, ds.all_done=False).
+Training throughput: 8 batches in 108.128s; word units 92.3% of 338 words (letters-only 100.0% of 310).
+batch = 0 (Δ=202.109s, 14.29%)
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+  return func(*args, **kwargs)
+batch = 1 (Δ=82.481s, 28.57%)
+batch = 2 (Δ=88.344s, 42.86%)
+batch = 3 (Δ=87.119s, 57.14%)
+batch = 4 (Δ=88.216s, 71.43%)
+batch = 5 (Δ=89.918s, 85.71%)
+batch = 6 (Δ=88.336s, 100.00%)
+runEpoch(train): hit max_batches=7 cap; cursor exiting early (7 batches processed, ds.all_done=False).
+Packed training throughput: 85 complete sentences in 803.119s = 0.106 sentences/s (7 optimizer bricks, B=1, W=256; word units 87.1% of 1494 words (letters-only 100.0% of 1256)).
+batch = 0 (Δ=77.542s, 12.50%)
+batch = 1 (Δ=1.489s, 25.00%)
+batch = 2 (Δ=1.687s, 37.50%)
+batch = 3 (Δ=1.925s, 50.00%)
+batch = 4 (Δ=1.227s, 62.50%)
+batch = 5 (Δ=1.202s, 75.00%)
+batch = 6 (Δ=0.863s, 87.50%)
+batch = 7 (Δ=1.120s, 100.00%)
+runEpoch(validation): hit max_batches=8 cap; cursor exiting early (8 batches processed, ds.all_done=False).
+Training throughput: 8 batches in 10.443s; word units 92.3% of 338 words (letters-only 100.0% of 310).

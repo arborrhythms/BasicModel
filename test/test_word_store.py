@@ -1028,6 +1028,7 @@ def test_missing_surface_candidates_keep_uniform_null_cost_without_input_fallbac
             cost = m._byte_word_cost(reference[:, 0], torch.tensor(0),
                                      bank, values, valid,
                                      target_bytes, target_valid, ready)
+            # The ordinary 256-byte alphabet includes the NUL terminator.
             torch.testing.assert_close(cost, torch.full_like(cost, math.log(256)))
     finally:
         m.End()

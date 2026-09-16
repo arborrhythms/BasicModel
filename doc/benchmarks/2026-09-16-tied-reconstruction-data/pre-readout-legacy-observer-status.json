@@ -1,0 +1,32 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "bin/bench_sentence_expectation.py",
+    "answers",
+    "--config",
+    "data/BasicModel_answers_benchmark.xml",
+    "--device",
+    "mps",
+    "--backend",
+    "eager",
+    "--batch-size",
+    "1",
+    "--train-steps",
+    "7",
+    "--eval-steps",
+    "8",
+    "--threads",
+    "1",
+    "--out",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-16-tied-reconstruction-data/answers-b1-legacy-observer.json"
+  ],
+  "started_at": 1789586082.026113,
+  "status": "completed",
+  "observer_sha256": "5f6683785f21f3192430eb3d0a55b49d381a80ef8ee9f5523952cc4a8b71ed40",
+  "cwd": "/tmp/basicmodel-aa5e018-reconstruction-baseline",
+  "allocator_high": "0.60",
+  "allocator_low": "0.50",
+  "amp": "off",
+  "returncode": 0,
+  "ended_at": 1789586302.971034
+}

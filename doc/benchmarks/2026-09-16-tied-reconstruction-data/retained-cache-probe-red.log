@@ -1,0 +1,161 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____ test_cached_backward_supports_retained_reads_after_an_ordinary_step ______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x127b758e0>
+
+    def test_cached_backward_supports_retained_reads_after_an_ordinary_step(monkeypatch):
+        """A cached backward must not assume every future call is single-use."""
+        from types import SimpleNamespace
+        from Models import BasicModel
+        from torch._functorch import config
+        import util
+    
+        monkeypatch.setattr(util, "TheCompileBackend", "eager")
+        def objective(x):
+            return (x.sin() + x.cos()).tanh().square().sum()
+        owner = SimpleNamespace(_reconstruct_sentences=objective,
+                                _recon_placement=lambda: "compiled")
+        x = torch.linspace(-.5, .6, 32, device="cpu", requires_grad=True)
+        try:
+            with config.patch(donated_buffer=True):
+                compiled = BasicModel._compiled_reconstruct(owner)
+                torch.autograd.grad(compiled(x), (x,))  # populate the backward cache
+                value = compiled(x)
+                assert config.donated_buffer is True
+                expected, = torch.autograd.grad(objective(x), (x,))
+                for retain in (True, True, False):
+>                   gradient, = torch.autograd.grad(value, (x,), retain_graph=retain)
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_tied_reconstruction_compile.py:31: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/torch/autograd/__init__.py:540: in grad
+    result_tuple = handle_torch_function(
+.venv/lib/python3.12/site-packages/torch/overrides.py:1773: in handle_torch_function
+    result = mode.__torch_function__(public_api, types, args, kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/autograd/__init__.py:594: in grad
+    result = _engine_run_backward(
+.venv/lib/python3.12/site-packages/torch/autograd/graph.py:979: in _engine_run_backward
+    return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+.venv/lib/python3.12/site-packages/torch/autograd/function.py:333: in apply_boxed
+    return self._get_user_fn()(self, *args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_functorch/_aot_autograd/runtime_wrappers.py:3531: in backward
+    return CompiledFunction._bwd_fn(
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_functorch/_aot_autograd/codegen.py:codegen(compiled_function_backward):16: in _compiled_backward
+    ???
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_functorch/_aot_autograd/codegen.py:codegen(compiled_function_backward):10: in impl_fn
+    ???
+.venv/lib/python3.12/site-packages/torch/_functorch/_aot_autograd/runtime_wrappers.py:3597: in _backward_impl
+    torch._check(
+.venv/lib/python3.12/site-packages/torch/__init__.py:2229: in _check
+    _check_with(RuntimeError, cond, message)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+error_type = <class 'RuntimeError'>, cond = False
+message = <function _AOTDispatchAutogradFunctionFactory.build.<locals>.CompiledFunction._backward_impl.<locals>.<lambda> at 0x12b4e5b20>
+
+    def _check_with(
+        error_type: type[BaseException],
+        cond: builtins.bool | SymBool,
+        message: _LiteralString | _Callable[[], object] | None,
+    ) -> None:
+        if not isinstance(cond, (builtins.bool, SymBool)):
+            if isinstance(cond, torch.Tensor):
+                raise TypeError(
+                    "cond must be a bool, but got a Tensor. "
+                    "For tensor conditions, use torch._check_tensor_all() "
+                    "to assert that all elements are true."
+                )
+            raise TypeError(f"cond must be a bool, but got {type(cond)}")
+    
+        from torch.fx.experimental.symbolic_shapes import expect_true
+    
+        if expect_true(cond):
+            return
+    
+        # error_type must be a subclass of Exception and not subclass of Warning
+        if not issubclass(error_type, Exception) or issubclass(error_type, Warning):
+            raise AssertionError(
+                f"error_type must be a subclass of Exception but not Warning, got {error_type}"
+            )
+    
+        if message is None:
+            message_evaluated = (
+                "Expected cond to be True, but got False. (Could this error "
+                "message be improved? If so, please report an enhancement request "
+                "to PyTorch.)"
+            )
+    
+        else:
+            # message may be a callable (deferred construction) or a plain
+            # str/object; both are accepted.
+            message_evaluated = str(message() if callable(message) else message)
+    
+>       raise error_type(message_evaluated)
+E       RuntimeError: This backward function was compiled with non-empty donated buffers which requires create_graph=False and retain_graph=False. Please keep backward(create_graph=False, retain_graph=False) across all backward() function calls, or set torch._functorch.config.donated_buffer=False to disable donated buffer.
+
+.venv/lib/python3.12/site-packages/torch/__init__.py:2207: RuntimeError
+------------------------------ Captured log call -------------------------------
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:convert_frame.py:304 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:output_graph.py:3000 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:graph_compile.py:1798 
+DEBUG    torch.__trace:graph_compile.py:1819 
+DEBUG    torch.__trace:graph_compile.py:1869 
+DEBUG    torch.__trace:graph_compile.py:1887 
+DEBUG    torch.__trace:graph_compile.py:1891 
+DEBUG    torch.__trace:codegen.py:200 
+DEBUG    torch.__trace:codegen.py:200 
+DEBUG    torch.__trace:codegen.py:200 
+DEBUG    torch.__trace:codegen.py:200 
+DEBUG    torch.__trace:codegen.py:200 
+DEBUG    torch.__trace:codegen.py:200 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:guards.py:4706 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2022 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2022
+=========================== short test summary info ============================
+FAILED test/test_tied_reconstruction_compile.py::test_cached_backward_supports_retained_reads_after_an_ordinary_step
+1 failed in 2.49s

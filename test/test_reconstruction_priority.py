@@ -140,8 +140,14 @@ def test_real_packed_runbatch_trains_prediction_and_representation_with_teacher(
     m.loss.reconstruction_scale = 1.0
     m.reconstruct_in_loop = tied_reconstruction
     if tied_reconstruction:
-        # The explicit state handoff used by compiled training, executing its
-        # kernels eagerly here. Other tests compile the actual word/reverse loops.
+        # Keep the forward state handoff explicit while using production's
+        # cached reconstruction backward. This probe reads each graph several
+        # times to check both objectives; uncached HOP backward would rebuild
+        # all nested programs for every read. All gradient/update checks below
+        # apply to the actual completed reconstruction, including the zero step.
+        import util
+        monkeypatch.setattr(util, "TheCompileBackend", "eager")
+        monkeypatch.setenv("BASICMODEL_RECON_PLACEMENT", "compiled")
         m._compiled_step = m._forward_with_compiled_sentence_state
     m.train()
     m._install_unit_span_fn()

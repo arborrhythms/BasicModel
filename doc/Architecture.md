@@ -1,5 +1,9 @@
 # Architecture
 
+For the current loss paths, stop-gradient boundaries, parameter ownership and
+joint learning rule across representation, prediction, thinking and output, see
+[Gradient flow across the architecture](GradientFlow.md).
+
 > This document describes the cognitive and mathematical architecture. For the
 > live software ownership map—including configuration, training, STM, losses,
 > checkpoints, reconstruction, and proposed consolidation boundaries—see
@@ -770,7 +774,7 @@ the compatible contribution using `outputGradientRatio` and the combined
 gradient scale. Below tolerance, bounded predictive refinement remains
 possible. Shared grammar transforms participate even when registered on
 SymbolSpace. Independent heads keep their ordinary gradients. The loss
-partition and ownership are in [Models.py:2689](../bin/Models.py#L2689), and
+partition and ownership are in [Models.py:2700](../bin/Models.py#L2700), and
 the numerical rule is in [Optimizer.py:113](../bin/Optimizer.py#L113). See
 [Training](Training.md) and the [joint-learning contract](plans/2026-09-15-next-sentence-as-the-production-objective.md#84-joint-representation-learning-and-gradient-balance).
 
@@ -1144,26 +1148,54 @@ coordinate), the STM holds whole codes, and the reconstruction traversal
 scores whole codes. Where and when re-enter when a concept is realised as
 a symbol or a percept.
 
-### Loop and parameter ownership (compiled reverse loops, 2026-09-13)
+### Loop and parameter ownership (tied reconstruction, 2026-09-16)
 
-Three loops, two compiled calls. `forward()` is one `torch.while_loop`
-per word bucket (`TensorPeerWhilePipeline.run_cs_lanes_banked`) traced
-fullgraph with the final seal; `reverseReconstruct` (under
-`<reconstructInLoop>`) is two more `torch.while_loop`s in the same graph
-(`BasicModel._reconstruct_sentences`: the seal un-folds per sentence
-slot, then one trip per word, latest first, that pops and scores each
-word); `reverseOutput` (under `<outputInLoop>`) is the second compiled
-call (`_output_generate_walk`), because the answer it realises is
-resolved after the forward. The reverse loops own no transform of their
-own: `LanguageSpace.reverse_binary_step` / `reverse_unary_step` apply the
-compose ops' tied inverses (`W^-1` of each lift/lower inner layer,
-computed once per traversal by `reverse_inverses`; the exact residual for
-`chunk`/`sum`; the self-inverse `not`/`non`; identity where an op is
-declared lossy). The one parameter of the output loop is
-`LanguageSpace.generate_policy` (Language, "Grammar"). Every loop's
-carries pass through `Models._carries_with_grad` (Training, "Loop
-gradients"), and the STM's live state is detached at brick entry
-(`ShortTermMemory.detach_live`).
+`forward()` composes and seals the input, publishing the existing 21-value
+sentence state. BasicModel selects `reconstructionPlacement=compiled`, a
+separate fullgraph reconstruction call. With the MPS `eager` capture backend,
+that call uses `aot_eager` to capture backward as well. Its compiler retains
+saved buffers for repeated gradient reads by the joint balance rule; the caller's
+global donation setting is preserved ([Models.py:11186](../bin/Models.py#L11186)). Configurations without
+the placement setting retain the historical in-graph default; the
+`BASICMODEL_RECON_PLACEMENT` diagnostic can override either for comparison.
+Completion owns the result once during understanding, including
+valid zero-valued results ([Models.py:7253](../bin/Models.py#L7253),
+[Models.py:8000](../bin/Models.py#L8000),
+[Models.py:11155](../bin/Models.py#L11155)).
+
+The reconstruction traversal has three bounded passes: an integer-only replay
+identifies operand occurrences; seal reversal recovers each completed sentence's
+stack; then a reverse word walk undoes unary/post folds, pops and scores the
+word, and undoes its pre-fold. Repeated concept rows retain their own signed
+occurrence activations. Packed sentences have separate boundaries and costs.
+The two floating passes use gradient-bearing carries; the metadata pass needs
+no backward tape ([Models.py:11229](../bin/Models.py#L11229)).
+
+Reconstruction owns no learned decoder. Selected compose transforms supply
+affine inverses, known-operand residuals or explicitly bounded approximate
+reconstruction. A missing inverse reports incompleteness. Dictionary snapshots
+and witnesses are detached and retained for backward; targets only score the
+result ([Language.py:14351](../bin/Language.py#L14351),
+[Models.py:11571](../bin/Models.py#L11571)). Recovered word ideas pass through
+the shared numerical input reverse chain using a fresh carrier; they never
+enter the free generate chart ([Models.py:8038](../bin/Models.py#L8038)).
+
+Output keeps its generate policy, answer-side state and termination budget.
+It receives no input reconstruction witnesses or basis. Selected numerical
+kernels remain shared pending the separate comprehension/generation catalog
+migration in [integrated §10.6](plans/2026-09-15-next-sentence-as-the-production-objective.md#10-consolidated-implementation-and-verification-order).
+Its final modality readout uses the output-relevant rectangular LDU factors,
+with all generated percept coordinates available to the learned projection.
+This preserves the former forward function and gradients while avoiding an
+input-width square allocation. Existing checkpoint adapters retain their full
+factor layout; new checkpoints carry a compact-layout marker
+([Layers.py:1633](../bin/Layers.py#L1633),
+[Spaces.py:30277](../bin/Spaces.py#L30277),
+[Models.py:8967](../bin/Models.py#L8967)). This head is independent of the
+input reconstruction inverse and belongs to the answer optimizer parameters
+([Models.py:9089](../bin/Models.py#L9089)).
+The remaining controller migration will move query resolution out of
+`reverseOutput`; tied reconstruction does not claim that later item complete.
 
 ## Sigma and Pi Layers
 
@@ -1264,8 +1296,8 @@ after a packed brick preserve that stream, its document key and ARMA rings;
 hard EOS resets start it cold. Restoring
 weights starts prediction context cold. Neither global LTM recency nor internal
 thoughts initialize an external-observation sequence. See
-[`begin_document`](../bin/Layers.py#L9717) and the
-[packed observer](../bin/Models.py#L12497).
+[`begin_document`](../bin/Layers.py#L9769) and the
+[packed observer](../bin/Models.py#L12764).
 
 ### Historical root / ARMA representation
 

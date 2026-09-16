@@ -1,0 +1,43 @@
+Canonical fullgraph compile: lazy fused tensor word-loop lowering on mps with fixed capacity and residual-part axes
+[AMP] off (fp32, MODEL_AMP unset or =off)
+Canonical fullgraph lowering: compiling complete W=256 recurrent word loop (one-time cost for this bucket)
+Debug checks: OFF
+MPS: inductor device asserts disabled (check_bounds + device_assert_async) -- Metal 31-buffer limit vs error_buf
+MPS: inductor DTYPE_TO_METAL patched with uint16->ushort
+MPS: inductor any-reduction dtype metadata patched (Metal 'bool' -> torch.bool)
+MPS: zero-size while-loop dependencies excluded from Inductor read-realization ratio
+MPS: inductor subgraph Metal kernel names allocated from the shared wrapper (torch.while_loop)
+MPS: unbacked while-loop tape views excluded from post-grad addmm fuse/unfuse rewrites
+MPS: stride-only reverse while-loop metadata differences delegated to Inductor exact-stride lowering
+MPS: oversized scalar-gradient sums lowered via stack/sum/copy wrapper fallback
+MPS: inductor max_fusion_unique_io_buffers=8, max_fusion_size=16 (Metal 31-buffer kernel-arg limit)
+Model compiled (eager, mode=default, fullgraph=True)
+batch = 0 (warm-up, 12.50%)
+batch = 1 (Δ=8.854s, 25.00%)
+batch = 2 (Δ=8.856s, 37.50%)
+batch = 3 (Δ=8.709s, 50.00%)
+batch = 4 (Δ=8.950s, 62.50%)
+batch = 5 (Δ=8.676s, 75.00%)
+batch = 6 (Δ=8.921s, 87.50%)
+batch = 7 (Δ=8.688s, 100.00%)
+runEpoch(validation): hit max_batches=8 cap; cursor exiting early (8 batches processed, ds.all_done=False).
+Training throughput: 8 batches in 70.594s; word units 100.0% of 24 words (letters-only 100.0% of 8).
+batch = 0 (Δ=15.278s, 14.29%)
+batch = 1 (Δ=7.185s, 28.57%)
+batch = 2 (Δ=6.815s, 42.86%)
+batch = 3 (Δ=7.057s, 57.14%)
+batch = 4 (Δ=6.942s, 71.43%)
+batch = 5 (Δ=6.999s, 85.71%)
+batch = 6 (Δ=6.776s, 100.00%)
+runEpoch(train): hit max_batches=7 cap; cursor exiting early (7 batches processed, ds.all_done=False).
+Training throughput: 7 batches in 63.797s; word units 100.0% of 21 words (letters-only 100.0% of 7).
+batch = 0 (Δ=15.940s, 12.50%)
+batch = 1 (Δ=8.821s, 25.00%)
+batch = 2 (Δ=8.918s, 37.50%)
+batch = 3 (Δ=9.014s, 50.00%)
+batch = 4 (Δ=8.980s, 62.50%)
+batch = 5 (Δ=8.919s, 75.00%)
+batch = 6 (Δ=8.923s, 87.50%)
+batch = 7 (Δ=9.064s, 100.00%)
+runEpoch(validation): hit max_batches=8 cap; cursor exiting early (8 batches processed, ds.all_done=False).
+Training throughput: 8 batches in 71.828s; word units 100.0% of 24 words (letters-only 100.0% of 8).

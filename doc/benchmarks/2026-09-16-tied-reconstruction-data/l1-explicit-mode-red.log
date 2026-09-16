@@ -1,0 +1,906 @@
+.F                                                                       [100%]
+=================================== FAILURES ===================================
+______ test_real_runbatch_stages_l1_once_and_reports_it_separately[True] _______
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-499/test_real_runbatch_stages_l1_o1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x14a329910>
+detached_reverse = True
+
+    @pytest.mark.parametrize("detached_reverse", [False, True])
+    def test_real_runbatch_stages_l1_once_and_reports_it_separately(
+            tmp_path, monkeypatch, detached_reverse):
+        from test_compiled_word_chunk import _tiny_canonical_model
+        import util
+        monkeypatch.setattr(util, "TheCompileBackend", "eager")
+        model = _tiny_canonical_model(tmp_path, monkeypatch, forward_grammar_weight=.25)
+        # Test both live encoder credit and the shipped detached boundary. Weak
+        # L1 must not silently reconnect that boundary or train by shrinkage alone.
+        model.detached_reverse = detached_reverse
+        # Leaf distillation is a separate, lazily materialized auxiliary head;
+        # this test needs only the coupled reconstruction/readout objective.
+        model.leaf_distill_weight = 0.0
+        layer = model.conceptualSpaces[0].concepts_from_percepts
+        assert layer.l1_lambda == .01
+        optimizer = model.getOptimizer(lr=.001)
+        leaf = next(leaf.inner for leaf in getattr(optimizer, "optimizers", [optimizer])
+                    if any(p is layer.coefficients for group in leaf.param_groups for p in group["params"]))
+        calls, steps = [], []
+        original_stage, original_step = leaf.set_l1_proximal, optimizer.step
+    
+        def stage(*args, **kwargs):
+            calls.append(True)
+            return original_stage(*args, **kwargs)
+    
+        def step(*args, **kwargs):
+            expected = layer.l1_batch(model.inputSpace._ar_word_concept_rows,
+                                      model.inputSpace._ar_percept_reference_roles)
+            # Trie promotion can make a previously seen spelling an honest
+            # unknown until its new support is committed at the boundary.
+            assert (layer.coefficients in leaf._l1_proximal) == (expected is not None)
+            steps.append(expected is not None)
+            return original_step(*args, **kwargs)
+    
+        monkeypatch.setattr(leaf, "set_l1_proximal", stage)
+        monkeypatch.setattr(optimizer, "step", step)
+        for train in (True, False, True):
+            before = layer.coefficients.detach().clone()
+>           result, _ = model.runBatch(
+                train=train, batchNum=0, batchSize=2, split="train" if train else "test",
+                optimizer=optimizer,
+                batch_override=(model.inputSpace.prepInput(["alpha beta gamma", "delta epsilon"]),
+                                torch.empty(2, 0)))
+
+test/test_concept_readout_l1.py:284: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BasicModel(
+  (loss): ModelLoss(
+    (output_criterion): MSELoss()
+  )
+  (inputSpace): InputSpace(
+    (subspace): Sub...es=29, out_features=16, bias=False)
+  )
+  (question_conditioner): Linear(in_features=29, out_features=16, bias=False)
+)
+train = True, batchNum = 0, batchSize = 2, split = 'train'
+optimizer = <Optimizer.MultiOptimizer object at 0x1520d6690>
+batch_override = (tensor([[[ 97, 108, 112,  ...,   0,   0,   0]],
+
+        [[100, 101, 108,  ...,   0,   0,   0]]], dtype=torch.int8), tensor([], size=(2, 0)))
+progress = None, superposition_temperature = None, exploration_trial = False
+trial_mode = 'reconstruct', questions = None, source_rows = None
+attach_outputs = False
+
+    def runBatch(self, train=True, batchNum=0, batchSize=10, split="train",
+                 optimizer=None, batch_override=None, progress=None,
+                 superposition_temperature=None, exploration_trial=False,
+                 trial_mode="reconstruct", questions=None,
+                 source_rows=None, attach_outputs=False):
+        """Run a single batch: forward pass, loss, and (if training) backward + step.
+    
+        ``superposition_temperature`` (two-pass learning): when not None, the
+        structured grammar layers use the pure soft-superposition route at
+        this temperature for this trial (0 = sharp/deterministic, 1 = flat);
+        None (default) keeps the legacy hard-Viterbi + straight-through
+        forward, so an ordinary single-pass step is byte-identical.
+    
+        ``exploration_trial`` (two-pass learning, pass B): when True this is
+        the non-recorded explore trial over a sentence already processed by
+        pass A. It still trains the chooser (forward / loss / backward /
+        step), but the per-sentence side effects are SKIPPED so B does not
+        double-commit the same sentence: the model clock is not advanced
+        (``_advance_when_time``), the discourse ARMA observe and the LTM
+        end-state append are not re-run, and ``_training_step_count`` (the
+        periodic-checkpoint cadence) is not incremented. Default False is the
+        ordinary recorded pass.
+    
+        Args:
+            train: whether to compute gradients and update parameters.
+            batchNum: opaque cursor for the next batch position.
+            batchSize: number of examples per batch.
+            split: "train", "test", or "validation".
+            optimizer: pre-built optimizer (required when train=True).
+            batch_override: optional ``(inputTensor, outputTensor)`` pair;
+                the primary dispatch path used by the DataLoader streaming
+                path in ``runEpoch``.
+            progress: optional fraction in ``[0.0, 1.0]`` indicating how
+                far through the current split's data the cursor has
+                advanced. When set, the per-batch timing line includes
+                a percentage so long runs report visible progress.
+                ``runEpoch`` populates this from
+                ``SentenceStreamDataset.progress()``; callers that drive
+                ``runBatch`` directly leave it ``None``.
+            questions: optional one-per-row ``WhatQuestion`` batch. When
+                omitted, cursor coordinates select present reconstruction,
+                supervised output, runtime inference, or future prediction.
+            source_rows: stable zero-based presentation rows emitted by the
+                data cursor (nested for packed sentence batches).
+            attach_outputs: on runtime inference, retain each generated
+                response on the presentation's output side with model
+                provenance. Supplied labels remain unchanged.
+    
+        Returns:
+            (BatchResult, nextBatchNum) on success, or (None, batchNum) when
+            the dataset is exhausted.
+        """
+        self._install_unit_span_fn()
+        self._packed_prediction_drained = False
+        self.train(bool(train))
+        _ensure_grad_anchors(TheDevice.get())
+        _disc = getattr(getattr(self, "symbolSpace", None), "discourse", None)
+        if _disc is not None:
+            _disc.detach_prediction_context()
+        _stm = getattr(getattr(self, "conceptualSpace", None), "stm", None)
+        if _stm is not None and hasattr(_stm, "detach_live"):
+            _stm.detach_live()                  # no graph crosses a brick
+        _trace = getattr(self, "_reconstruction_stack", None)
+        _trace = _trace() if callable(_trace) else None
+        if _trace is not None and hasattr(_trace, "detach_live"):
+            _trace.detach_live()
+        _release_loop_checkpoints(tuple(        # the previous brick's own loops
+            getattr(self, name, None) for name in (
+                "_stm_single_S", "_recon_cost", "_recon_idea_cost",
+                "_tensor_sentence_roots_live", "_tensor_pushed_ideas",
+                "_packed_sentence_roots", "_output_policy_cost")))
+        object.__setattr__(self, "_output_policy_cost", None)
+        object.__setattr__(self, "_recon_cost", None)
+        object.__setattr__(self, "_recon_completed", False)
+        object.__setattr__(self, "_reconstruction_product", None)
+        object.__setattr__(self, "_recon_ideas", None)
+        object.__setattr__(self, "_tensor_pushed_ideas", None)
+        object.__setattr__(self, "_tensor_sentence_roots_depth", None)
+        object.__setattr__(self, "_tensor_final_end_slots", None)
+        object.__setattr__(self, "_tensor_final_end_depth", None)
+        object.__setattr__(self, "_tensor_sentence_roots_live", None)
+        # A caller may supply an optimizer built outside ``getOptimizer``.
+        # Make that live owner visible to the eager PartSpace byte-growth
+        # boundary before lexing this batch.
+        if optimizer is not None and getattr(
+                self, "perceptualSpace", None) is not None:
+            object.__setattr__(
+                self.perceptualSpace, "_radix_optimizer", optimizer)
+        # A radix growth boundary drops every callable that captured the old
+        # PartSpace W Parameter. Rebuild before staging the next batch so the
+        # new physical row count receives one safe specialization.
+        if getattr(self, "_compiled_step_needs_rebuild", False):
+            self.enable_compiled_step()
+            self._compiled_step_needs_rebuild = False
+    
+        # First-call hook: try to enable §7 torch.compile reduce-overhead
+        # mode on CUDA targets. Idempotent; safe on non-CUDA hosts.
+        self._maybe_compile_brick()
+        sentenceIdx = batchNum  # sentence index before batchNum increments
+        if batch_override is None:
+            raise RuntimeError(
+                "runBatch: no batch_override supplied. Callers must pass "
+                "batch_override=(inputTensor, outputTensor) — training "
+                "path via the DataLoader in runEpoch, inference path via "
+                "InputSpace.prepInput (or, for sentence-level generation, "
+                "BasicModel.generate_sentence)."
+            )
+        batch = batch_override
+        inputTensor, outputTensor = batch
+        self._stage_expectation_documents(
+            split, source_rows, int(inputTensor.shape[0])
+            if isinstance(inputTensor, torch.Tensor) else len(inputTensor))
+        inference_only = not train and split == "runtime"
+        what_questions = self._questions_for_batch(
+            split=split,
+            batch_size=(int(inputTensor.shape[0])
+                        if isinstance(inputTensor, torch.Tensor)
+                        else int(len(inputTensor))),
+            sentence_index=sentenceIdx,
+            source_rows=source_rows,
+            questions=questions,
+            trial_mode=trial_mode,
+        )
+    
+        # Advance the serialized model clock once per PROCESSED batch (this
+        # point is past the no-batch early raise, so it ticks exactly once on
+        # BOTH the train and inference paths regardless of which return fires
+        # below). Done here, in eager Python before the forward, so the live
+        # WhenRangeEncoding(s) the forward stamps already carry the advanced
+        # absolute time (``.t == present()``). See ``_advance_when_time``.
+        # Skipped on the explore trial (pass B): it re-processes a sentence
+        # pass A already clocked, so a second tick would double-advance time.
+        if not exploration_trial:
+            self._advance_when_time()
+    
+        # Pre-allocate per-batch state OUTSIDE the compiled forward.
+        # ``SymbolSpace.ensure_microbatch`` allocates ``_stm_fired`` /
+        # ``_last_svo`` / ``_svo_valid`` / ``_recent_count`` etc. on
+        # first call (and on shape changes); when those allocations
+        # happen INSIDE a torch.compile region, CUDAGraph capture
+        # takes ownership of the underlying memory, so the next
+        # replay's allocation overwrites the previous step's state
+        # and the next attribute read raises ``RuntimeError: Error:
+        # accessing tensor output of CUDAGraphs that has been
+        # overwritten by a subsequent run.`` Hoisting the call up
+        # here keeps the resulting tensors Python-owned.
+        if self.symbolSpace is not None and not inference_only:
+            ss = self.symbolSpace
+            try:
+                if isinstance(inputTensor, torch.Tensor):
+                    B_pre = int(inputTensor.shape[0])
+                else:
+                    B_pre = int(len(inputTensor))
+            except Exception:
+                B_pre = None
+            if B_pre is not None:
+                ss.ensure_microbatch(B_pre, 1)
+    
+        if train:
+            optimizer.zero_grad()
+    
+        # Teacher owns the lesson, clean complete-input target, and error-term
+        # registration window. Objective corpus addresses staged by runEpoch
+        # are resolved here; the model's subjective .where/.when state is not
+        # an input to Teacher and remains untouched.
+        self._open_batch(
+            split=split,
+            batch_size=(
+                int(inputTensor.shape[0])
+                if isinstance(inputTensor, torch.Tensor)
+                else int(len(inputTensor))
+            ),
+            training=train,
+            clean_input=inputTensor,
+        )
+    
+        # Per-batch Space.Start cascade (moved out of forward() so sliding
+        # buffers can persist across forward() calls within a stream).
+        self._start_spaces_for_forward()
+    
+        # AMP: torch.autocast wrapper from util.amp_context() honors
+        # MODEL_AMP env var (hydrated from XML <architecture><amp> in
+        # ModelFactory.run). bf16 returns scaler=None; fp16+CUDA returns
+        # the process-wide GradScaler used in the backward path below.
+        amp_cm, amp_scaler = amp_context()
+        with torch.set_grad_enabled(bool(train)), amp_cm:
+            # Forward pass returns a 4-tuple.  IR-only contract:
+            # ``predictions`` is ``[B, N, predDim]`` (one head emission
+            # per P-slot) and ``forwardInput`` is the inputSpace event
+            # ``[B, N, D]``.  ``reconstruction`` is always None after
+            # the reverse pipeline retirement (2026-05-14); the slot
+            # is kept in the tuple for downstream code that pattern-
+            # matches on the legacy shape.
+            #
+            # ``cudagraph_mark_step_begin`` (only meaningful under modes
+            # that capture CUDAGraphs -- "reduce-overhead", "max-
+            # autotune") tells the runtime to release the previous
+            # step's CUDAGraph outputs so the memory pool can be reused
+            # for this step.  No-op under "default" mode; idempotent on
+            # non-CUDA hosts.
+            try:
+                torch.compiler.cudagraph_mark_step_begin()
+            except (AttributeError, RuntimeError):
+                pass
+            # O1: route the per-batch compute through the compiled
+            # callable when enabled (else eager). runEpoch/runBatch stay
+            # eager Python; only this forward+loss+backward unit is
+            # torch.compiled. See doc/plans/2026-05-16-compiled-step-
+            # boundary-design.md.
+            # Keep eager staging immediately beside the compiled invocation:
+            # the traced forward only reads these parked tensors.  The eager
+            # path intentionally remains unchanged and lexes inline.
+            if self._compiled_step is not None:
+                if isinstance(inputTensor, torch.Tensor):
+                    inputTensor = inputTensor.to(TheDevice.get())
+                self._staged_in_sub = self._lex_embed_stem(inputTensor)
+                # Sentence traces are staged after the cold-start reset and
+                # before every compiled callable.  This keeps dense detached
+                # surface copies and all Python lifecycle mutation outside the
+                # graph while preserving the trace through its reverse/loss
+                # consumer until the outer sentence-boundary reset.
+                _ss_trace = getattr(self, "symbolSpace", None)
+                if (getattr(self, "serial", False)
+                        and _ss_trace is not None
+                        and not getattr(
+                            _ss_trace, "_per_sentence_initialized", False)):
+                    _ss_trace.soft_reset()
+                    _ss_trace._per_sentence_initialized = True
+                self._stage_reconstruction_teacher()
+                _trace_slab = getattr(
+                    self.inputSpace, "_ar_embedded_N", None)
+                if (getattr(self, "serial", False)
+                        and torch.is_tensor(_trace_slab)):
+                    self._prepare_reconstruction_choices(
+                        int(_trace_slab.shape[0]),
+                        int(_trace_slab.shape[1]),
+                        _trace_slab.device)
+                _requires_sparse_bank = self._aligned_serial_sparse_bank_mode()
+                if _requires_sparse_bank:
+                    _bank_rows = getattr(
+                        self.inputSpace, "_ar_concept_lookup_rows", None)
+                    _bank_atoms = getattr(
+                        self.inputSpace, "_ar_concept_lookup_atoms", None)
+                    if (not torch.is_tensor(_bank_rows) or _bank_rows.dim() != 2
+                            or not torch.is_tensor(_bank_atoms)
+                            or _bank_atoms.dim() != 3
+                            or tuple(_bank_rows.shape)
+                            != tuple(_bank_atoms.shape[:2])):
+                        raise RuntimeError(
+                            "compiled aligned serial forward requires the eager "
+                            "sparse concept row bank; lexical staging did not "
+                            "produce a shape-aligned rows/atoms pair")
+                # A full W-loop owns one fixed, identity-masked residual-part
+                # layout.  Do not give MPS a symbolic P range or compile a
+                # separate full loop for every radix spelling.  The older
+                # word-cell path retains its broad dynamic contract below.
+                _fullgraph_word_loop = bool(getattr(
+                    self, "_compiled_word_loop_fullgraph", False))
+                if _fullgraph_word_loop:
+                    # Cold-start sentence state must be materialized before
+                    # Dynamo observes the word-loop module.  Creating this
+                    # attribute inside the captured prelude changes an
+                    # ``hasattr`` guard after the first forward and forces a
+                    # duplicate W specialization.
+                    _ss = getattr(self, "symbolSpace", None)
+                    if (_ss is not None
+                            and not getattr(_ss, "_per_sentence_initialized", False)):
+                        _ss.soft_reset()
+                        _ss._per_sentence_initialized = True
+                    if _ss is not None:
+                        # Establish every scalar/carrier attribute the
+                        # captured recurrence writes before its first guard
+                        # census.
+                        object.__setattr__(
+                            _ss, "_target_cursor_length", int(getattr(
+                                self.inputSpace, "_active_word_bucket", 0) or 0))
+                    _cs_owner = getattr(self, "conceptualSpace", None)
+                    if _cs_owner is not None:
+                        object.__setattr__(
+                            _cs_owner, "_peer_prev_sub", getattr(
+                                _cs_owner, "_peer_empty_sub", None))
+                        object.__setattr__(
+                            _cs_owner, "_peer_prev_sym", getattr(
+                                _cs_owner, "_peer_empty_sym", None))
+                    # ``_per_word_prelude`` creates a fresh STM working slab
+                    # inside the graph.  Establish the same MPS-backed state
+                    # before the first guard census; otherwise the
+                    # constructor's CPU placeholder is observed on call one
+                    # and the MPS replacement forces call two to compile
+                    # again.
+                    _staged_event = self._staged_in_sub.materialize()
+                    _stm = getattr(
+                        getattr(self, "conceptualSpace", None), "stm", None)
+                    if torch.is_tensor(_staged_event) and _stm is not None:
+                        _stm.begin_forward(
+                            int(_staged_event.shape[0]),
+                            device=_staged_event.device,
+                            dtype=(_staged_event.dtype
+                                   if _staged_event.is_floating_point() else None))
+                    self._stage_fixed_residual_part_capacity()
+                else:
+                    # W is deliberately static (one of 16/32/64/128); the
+                    # number of residual radix constituents inside one
+                    # complete word is not.  Mark only that P axis dynamic so
+                    # promotion (e.g. five pieces -> one stored percept) does
+                    # not compile another W graph. P>=3 excludes the
+                    # contradictory Inductor guard ``P - 1 != 1`` while
+                    # masked identity padding preserves words with one or two
+                    # real constituents.
+                    _part_min = 3
+                    _part_max = max(_part_min, int(getattr(
+                        self.inputSpace, "outputShape", (8192,))[0]))
+                    for _part_tensor in (
+                            getattr(self.inputSpace, "_ar_word_part_ids", None),
+                            getattr(self.inputSpace, "_ar_word_part_mask", None),
+                            getattr(self.inputSpace, "_ar_word_part_offsets", None),
+                            getattr(self.inputSpace, "_ar_target_word_bytes", None),
+                            getattr(self.inputSpace, "_ar_target_word_mask", None)):
+                        if torch.is_tensor(_part_tensor) and _part_tensor.dim() == 3:
+                            torch._dynamo.mark_dynamic(
+                                _part_tensor, 2, min=_part_min, max=_part_max)
+                    _word_width = max(1, int(getattr(
+                        self.inputSpace, "_active_word_bucket", 1) or 1))
+                    _flat_min = _part_min * _word_width
+                    _flat_max = _part_max * _word_width
+                    _ps_forward = getattr(
+                        self.perceptualSpace, "_forward_input", None)
+                    if isinstance(_ps_forward, dict):
+                        for _name in ("indices", "seed_event", "word_groups",
+                                      "part_spans", "percept_where"):
+                            _value = _ps_forward.get(_name)
+                            if torch.is_tensor(_value) and _value.dim() >= 2:
+                                torch._dynamo.mark_dynamic(
+                                    _value, 1, min=_flat_min, max=_flat_max)
+                        for _name in ("word_part_indices", "word_part_mask"):
+                            _value = _ps_forward.get(_name)
+                            if torch.is_tensor(_value) and _value.dim() == 3:
+                                torch._dynamo.mark_dynamic(
+                                    _value, 2, min=_part_min, max=_part_max)
+                for _cs in (getattr(self, "conceptualSpaces", None) or ()):
+                    _validate_routing = getattr(_cs, "validate_intra_routing", None)
+                    if callable(_validate_routing):
+                        _validate_routing()
+                _active_bucket = int(getattr(
+                    self.inputSpace, "_active_word_bucket", 0) or 0)
+                if _fullgraph_word_loop:
+                    self._active_compiled_step = (
+                        self._ensure_lazy_fullgraph_word_loop(_active_bucket))
+                else:
+                    self._active_compiled_step = self._compiled_word_steps.get(
+                        _active_bucket, self._compiled_step)
+                disc = (self.symbolSpace.discourse
+                        if self.symbolSpace is not None else None)
+                self._stage_legacy_discourse_prediction(
+                    disc, fullgraph_word_loop=_fullgraph_word_loop)
+                # Park the stage-0 CS_{-1} interSentence seed outside the
+                # fullgraph capture; the body consumes the parked tuple.
+                self._stage_intersentence_seed()
+            # Two-pass learning: switch the structured layers to the pure
+            # soft-superposition route at this trial's temperature (eager
+            # forward, since the compiled step does not trace the branch).
+            if superposition_temperature is not None:
+                self._set_superposition_temperature(
+                    float(superposition_temperature))
+                _fwd = self.forward
+            else:
+                # Diagnostic passes run under ``torch.no_grad()`` -- training
+                # is ALWAYS grad-on (verified 2026-07-07: the only grad-off
+                # forward in a training run is runTrial's
+                # ``_reconstructionReport``). Entering the compiled step with
+                # a different ambient grad mode fails its GLOBAL_STATE guard
+                # and forces a full retrace (~100-380s each on MPS), so
+                # non-grad passes take the eager forward -- the same
+                # precedent as the superposition_temperature override above.
+                _fwd = ((self._active_compiled_step
+                         or self._compiled_step or self.forward)
+                        if torch.is_grad_enabled() else self.forward)
+            # Explore trial (pass B): gate the forward-internal per-sentence
+            # commit (the LTM end-state append) so it does not fire a second
+            # time on the same sentence. Reset in the finally below.
+            self._exploration_trial = bool(exploration_trial)
+            try:
+                # ``what()`` is a thin delegation over this exact executor.
+                # It installs only target-free question/LTM chooser context;
+                # the returned execution is the ordinary forward tuple.
+                _what_answers = self._what_or_think(
+                    what_questions, inputTensor, executor=_fwd,
+                    record=not exploration_trial)
+                _forward_result = _what_answers[0].execution
+                (forwardInput, symbols, predictions,
+                 _) = self._publish_compiled_sentence_state(_forward_result)
+                self._last_what_actual = tuple(_what_answers)
+                # Answer-path modules built during this what() join the live
+                # optimizer now (they post-date getOptimizer).
+                _fresh_synth = getattr(self, "_fresh_synthesis_params", None)
+                if (train and optimizer is not None and _fresh_synth
+                        and hasattr(optimizer, "add_param_group")):
+                    _present = {id(p) for g in optimizer.param_groups
+                                for p in g.get("params", ())}
+                    _new = [p for p in _fresh_synth if id(p) not in _present]
+                    if _new:
+                        optimizer.add_param_group({"params": _new})
+                    _fresh_synth.clear()
+                # This value is already a public graph output.  Publish its
+                # detached discourse view eagerly as well, avoiding the same
+                # attribute-only escape that PyTorch 2.14 eliminates for S.
+                self._current_discourse_s = (
+                    symbols.detach() if torch.is_tensor(symbols) else None)
+            finally:
+                if superposition_temperature is not None:
+                    self._set_superposition_temperature(None)
+                self._exploration_trial = False
+            self._end_step()
+            # Unconditional SEEN priming: the rows this forward fired bump
+            # their surfaces (no-grad bookkeeping; consumers read next batch).
+            self._prime_seen_step()
+            outputDataPred = predictions
+            _construction = getattr(self, "_last_answer_construction", None)
+            if (getattr(self, "answer_synthesis", False)
+                    and _construction is not None
+                    and torch.is_tensor(_construction.actual)):
+                outputDataPred = _construction.actual
+    
+            # Resolve desired answers only AFTER the model response is fixed.
+            # The resulting values are loss-side metadata and never enter the
+            # forward call, grammar context, STM, LTM, or runtime cache.
+            _what_data = getattr(self.inputSpace, "data", None)
+            if _what_data is not None and hasattr(_what_data, "what"):
+                self._last_what_desired = tuple(
+                    _what_data.what(question) for question in what_questions)
+            else:
+                self._last_what_desired = tuple()
+            if (inference_only and attach_outputs
+                    and _what_data is not None
+                    and hasattr(_what_data, "attach_output")):
+                for question, answer in zip(
+                        what_questions, self._last_what_actual):
+                    _what_data.attach_output(question, answer)
+    
+            # ε-growing codebook hook (Phase 4 follow-up): when any
+            # codebook-bearing space carries ``codebookGrowthEpsilon > 0``
+            # in its XSD, invoke ``VectorQuantize.grow_on_novelty`` on
+            # the encoder output to insert novel inputs into empty
+            # slots before the EMA path locks in assignments.  No-op
+            # when ``growth_epsilon`` is 0 (default) or every slot is
+            # already populated.
+            if train:
+                for _sp_attr in ("perceptualSpace", "conceptualSpace",
+                                 "wholeSpace"):
+                    _sp = getattr(self, _sp_attr, None)
+                    _cb = getattr(getattr(_sp, "subspace", None),
+                                  "what", None)
+                    _vq = getattr(_cb, "vq", None)
+                    if _vq is None:
+                        continue
+                    _eps = float(getattr(_vq, "growth_epsilon", 0.0)
+                                 or 0.0)
+                    if _eps <= 0.0:
+                        continue
+                    _ev = (_sp.subspace.materialize()
+                           if _sp.subspace is not None else None)
+                    if _ev is None:
+                        continue
+                    try:
+                        _vq.grow_on_novelty(_ev, _eps)
+                    except Exception:
+                        # Growth is best-effort -- never let an
+                        # insertion glitch stop the training step.
+                        pass
+    
+            if inference_only:
+                # Inference path: forward only, no loss.
+                result = self.BatchResult(
+                    outputPred=outputDataPred, symbols=symbols,
+                    lossOut=None, lossIn=None,
+                    inputPred=None, forwardInput=forwardInput,
+                )
+                self.End()
+                return result, batchNum
+    
+            if outputTensor is None:
+                raise RuntimeError(
+                    f"runBatch: missing output targets for split='{split}'. "
+                    "For inference use split='runtime'."
+                )
+    
+            # 2026-05-28: restore supervised output-head loss for
+            # tasks that need it (e.g. XOR_exact with binary labels).
+            # The prior IR-only regime hardcoded output_weight=0 and
+            # routed all gradient through the masked-LM ``lossIn``;
+            # that path is preserved (when ``outputTensor`` is absent
+            # or the labels are zero-width, the supervised branch
+            # degenerates to the original "side channel" semantics).
+            # When ``outputTensor`` IS supplied, compare the head
+            # prediction against the labels and apply a non-zero
+            # weight so the head receives gradient. Mirrors the
+            # ``reconstruction_reverse`` pattern (try-guarded so a
+            # shape edge case degrades to zero contribution rather
+            # than crashing the step).
+            lossOut = torch.zeros((), device=TheDevice.get())
+            output_weight = 0.0
+            output_policy_loss = None
+            # ``Data.what()`` is the answer-loss authority (What spec Step 5):
+            # the question's desired answer replaces the loader's incidental
+            # ``outputTensor``; unavailable rows are masked out of the term.
+            _answer_target, _answer_mask = self._what_answer_target(
+                what_questions, outputTensor,
+                supervised_only=bool(train and getattr(self, "answer_synthesis", False)))
+            self._last_answer_target = _answer_target
+            self._last_answer_mask = _answer_mask
+            _answer_authority = _answer_target is not None
+            _scored_target = _answer_target if _answer_authority else (
+                None if _answer_mask is not None else outputTensor)
+            _surface_target = getattr(self, "_answer_surface_target", None)
+            _surface = getattr(getattr(self, "_last_answer_construction", None),
+                               "surface", None)
+            try:
+                if (_surface_target is not None and torch.is_tensor(_surface)
+                        and _answer_mask is not None and bool(_answer_mask.any())):
+                    # Text answer: constructed surface vs embedded
+                    # target sentence, band-aware, masked to answerable rows.
+                    lossOut = self._reverse_event_loss(
+                        _surface[_answer_mask], _surface_target[_answer_mask])
+                    output_weight = 1.0
+                    if (train and trial_mode != "predict"
+                            and float(getattr(self, "output_policy_weight", 0.0)) > 0.0):
+                        output_policy_loss = self._output_action_credit(
+                            _surface, _surface_target, _answer_mask, what_questions,
+                            surface=True)
+                elif (getattr(self.inputSpace.data,
+                            "has_supervised_outputs", True)
+                        and _scored_target is not None
+                        and torch.is_tensor(_scored_target)
+                        and _scored_target.numel() > 0
+                        and outputDataPred is not None
+                        and torch.is_tensor(outputDataPred)
+                        and outputDataPred.numel() > 0):
+                    # shape reconciliation lives in _align_output_pred; irreconcilable warns once and zeroes the term.
+                    _pred = self._align_output_pred(outputDataPred,
+                                                    _scored_target)
+                    if _pred is not None:
+                        if (train and trial_mode != "predict" and _answer_authority
+                                and float(getattr(self, "output_policy_weight", 0.0)) > 0.0):
+                            output_policy_loss = self._output_action_credit(
+                                _pred, _scored_target, _answer_mask, what_questions)
+                        if (_answer_authority
+                                and not bool(_answer_mask.all())):
+                            _pred = _pred[_answer_mask]
+                            _scored_target = _scored_target[_answer_mask]
+                        lossOut = self.loss.compute(_pred, _scored_target)
+                        output_weight = 1.0
+            except Exception as _out_exc:
+                # Best-effort degrade to zero, but never SILENTLY (5b fail-loud).
+                lossOut = torch.zeros((), device=TheDevice.get())
+                output_weight = 0.0
+                output_policy_loss = None
+                self._warn_zeroed_channel(
+                    "output_loss_exception",
+                    f"supervised output loss zeroed by "
+                    f"{type(_out_exc).__name__}: {_out_exc}")
+            self.record_loss(
+                "output", lossOut,
+                weight=output_weight,
+                space="OutputSpace", category="prediction",
+            )
+    
+            # IR masked-LM loss: compare the post-body perceptual event
+            # at masked positions against the pre-mask embedding the
+            # forward snapshotted in ``_ir_pre_mask_input``.  No reverse
+            # pipeline involved -- the body / head ran masked, the
+            # masked positions carry the prediction target, the head
+            # plays no role in the loss.  This is the BERT-style
+            # masked-LM contract.
+            inputDataPred = None
+            inputPred = None
+            mask_pos = getattr(self, "_ir_mask_positions", None)
+            pre_mask = getattr(self, "_ir_pre_mask_input", None)
+            pred_full = None
+            if hasattr(self.perceptualSpace.subspace, 'materialize'):
+                pred_full = self.perceptualSpace.subspace.materialize()
+            # None checks stay Python (no sync). The masked reconstruction
+            # loss is computed densely via `compute_masked` instead of a
+            # boolean-mask gather `pred[mask]` -- the gather is
+            # data-dependent (its row count is read to host: an implicit
+            # cudaMemcpyDtoH that breaks CUDA-graph capture).
+            # `compute_masked` is the sync-free, value-equivalent form
+            # (masked-sum / masked-count) and returns 0.0 on an empty
+            # mask with no NaN (replacing the old nan_to_num gate). See
+            # doc/BrickHostSyncStatus.md residual D.
+            # Rework B (3): on the PER-WORD grammar path the
+            # ``reconstruction`` slot is the D3 reverse(S)->table->
+            # vs-complete-unmasked-input continuous reconstruction
+            # (differentiable; the trainable per-word IR objective),
+            # REPLACING the interim P-space_role ``compute_masked`` masked-LM.
+            # The whole-slab / non-grammar (``_per_word_enabled=False``)
+            # path keeps ``compute_masked``, band-aware via the
+            # ``_masked_event_loss`` seam (silent-band wiring fix,
+            # 2026-07-04). ``_d3_active`` / ``_d3_word_metric`` are
+            # instrumentation read by the end-to-end objective probe
+            # (which loss term is active + the reported 0/1 metric);
+            # never on the training-critical path.
+            self._d3_active = False
+            self._d3_word_metric = None
+            _isp = self.inputSpace
+            _per_word = (_isp is not None
+                         and getattr(_isp, "_per_word_enabled", False))
+            if _per_word and train and getattr(
+                    self, "detached_reverse", False):
+                d3_loss, d3_metric = (
+                    self._detached_reverse_construction_loss())
+                if d3_loss is None:
+>                   raise RuntimeError(
+                        "detachedReverse is enabled, but the idea-only reverse "
+E                       RuntimeError: detachedReverse is enabled, but the idea-only reverse chooser or its ReconstructionStack teacher is missing
+
+bin/Models.py:13736: RuntimeError
+------------------------------ Captured log call -------------------------------
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:guards.py:5552 
+DEBUG    torch.__trace:convert_frame.py:304 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5466 
+DEBUG    torch.__trace:symbolic_shapes.py:8410 
+DEBUG    torch.__trace:symbolic_shapes.py:8410 
+DEBUG    torch.__trace:symbolic_shapes.py:5466 
+DEBUG    torch.__trace:symbolic_shapes.py:8410 
+DEBUG    torch.__trace:symbolic_shapes.py:8410 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:output_graph.py:3000 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:symbolic_shapes.py:5466 
+DEBUG    torch.__trace:symbolic_shapes.py:8410 
+DEBUG    torch.__trace:symbolic_shapes.py:8410 
+DEBUG    torch.__trace:symbolic_shapes.py:5466 
+DEBUG    torch.__trace:symbolic_shapes.py:8410 
+DEBUG    torch.__trace:symbolic_shapes.py:8410 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:symbolic_shapes.py:5466 
+DEBUG    torch.__trace:symbolic_shapes.py:8410 
+DEBUG    torch.__trace:symbolic_shapes.py:8410 
+DEBUG    torch.__trace:symbolic_shapes.py:5466 
+DEBUG    torch.__trace:symbolic_shapes.py:8410 
+DEBUG    torch.__trace:symbolic_shapes.py:8410 
+DEBUG    torch.__trace:symbolic_shapes.py:5466 
+DEBUG    torch.__trace:symbolic_shapes.py:5466 
+DEBUG    torch.__trace:symbolic_shapes.py:5466 
+DEBUG    torch.__trace:symbolic_shapes.py:5466 
+DEBUG    torch.__trace:symbolic_shapes.py:5466 
+DEBUG    torch.__trace:symbolic_shapes.py:5466 
+DEBUG    torch.__trace:symbolic_shapes.py:5466 
+DEBUG    torch.__trace:symbolic_shapes.py:5466 
+DEBUG    torch.__trace:symbolic_shapes.py:5466 
+DEBUG    torch.__trace:symbolic_shapes.py:5466 
+DEBUG    torch.__trace:symbolic_shapes.py:5466 
+DEBUG    torch.__trace:symbolic_shapes.py:5466 
+DEBUG    torch.__trace:symbolic_shapes.py:5466 
+DEBUG    torch.__trace:symbolic_shapes.py:5466 
+DEBUG    torch.__trace:symbolic_shapes.py:5466 
+DEBUG    torch.__trace:symbolic_shapes.py:5466 
+DEBUG    torch.__trace:symbolic_shapes.py:5466 
+DEBUG    torch.__trace:symbolic_shapes.py:5466 
+DEBUG    torch.__trace:symbolic_shapes.py:5466 
+DEBUG    torch.__trace:symbolic_shapes.py:5466 
+DEBUG    torch.__trace:symbolic_shapes.py:5466 
+DEBUG    torch.__trace:symbolic_shapes.py:5466 
+DEBUG    torch.__trace:symbolic_shapes.py:5466 
+DEBUG    torch.__trace:symbolic_shapes.py:5466 
+DEBUG    torch.__trace:symbolic_shapes.py:5466 
+DEBUG    torch.__trace:symbolic_shapes.py:5466 
+DEBUG    torch.__trace:symbolic_shapes.py:5466 
+DEBUG    torch.__trace:symbolic_shapes.py:5466 
+DEBUG    torch.__trace:symbolic_shapes.py:5466 
+DEBUG    torch.__trace:symbolic_shapes.py:5466 
+DEBUG    torch.__trace:symbolic_shapes.py:5466 
+DEBUG    torch.__trace:symbolic_shapes.py:5466 
+DEBUG    torch.__trace:symbolic_shapes.py:5466 
+DEBUG    torch.__trace:symbolic_shapes.py:5466 
+DEBUG    torch.__trace:symbolic_shapes.py:5466 
+DEBUG    torch.__trace:symbolic_shapes.py:5466 
+DEBUG    torch.__trace:symbolic_shapes.py:5466 
+DEBUG    torch.__trace:symbolic_shapes.py:5466 
+DEBUG    torch.__trace:symbolic_shapes.py:5466 
+DEBUG    torch.__trace:symbolic_shapes.py:5466 
+DEBUG    torch.__trace:symbolic_shapes.py:5466 
+DEBUG    torch.__trace:symbolic_shapes.py:5466 
+DEBUG    torch.__trace:symbolic_shapes.py:5466 
+DEBUG    torch.__trace:symbolic_shapes.py:5466 
+DEBUG    torch.__trace:symbolic_shapes.py:5466 
+DEBUG    torch.__trace:symbolic_shapes.py:5466 
+DEBUG    torch.__trace:symbolic_shapes.py:5466 
+DEBUG    torch.__trace:symbolic_shapes.py:5466 
+DEBUG    torch.__trace:symbolic_shapes.py:5466 
+DEBUG    torch.__trace:symbolic_shapes.py:5466 
+DEBUG    torch.__trace:symbolic_shapes.py:5466 
+DEBUG    torch.__trace:symbolic_shapes.py:5466 
+DEBUG    torch.__trace:symbolic_shapes.py:5466 
+DEBUG    torch.__trace:symbolic_shapes.py:5466 
+DEBUG    torch.__trace:symbolic_shapes.py:5466 
+DEBUG    torch.__trace:symbolic_shapes.py:5466 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:graph_compile.py:1798 
+DEBUG    torch.__trace:graph_compile.py:1819 
+DEBUG    torch.__trace:graph_compile.py:1869 
+DEBUG    torch.__trace:graph_compile.py:1887 
+DEBUG    torch.__trace:graph_compile.py:1891 
+DEBUG    torch.__trace:codegen.py:200 
+DEBUG    torch.__trace:codegen.py:200 
+DEBUG    torch.__trace:codegen.py:200 
+DEBUG    torch.__trace:codegen.py:200 
+DEBUG    torch.__trace:codegen.py:200 
+DEBUG    torch.__trace:codegen.py:200 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:guards.py:4706 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2022 
+DEBUG    torch.__trace:utils.py:2363
+=============================== warnings summary ===============================
+test/test_concept_readout_l1.py::test_real_runbatch_stages_l1_once_and_reports_it_separately[False]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_concept_readout_l1.py::test_real_runbatch_stages_l1_once_and_reports_it_separately[True]
+1 failed, 1 passed, 1 warning in 433.03s (0:07:13)

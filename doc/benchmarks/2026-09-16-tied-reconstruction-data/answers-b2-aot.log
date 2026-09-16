@@ -1,0 +1,39 @@
+Canonical fullgraph compile: lazy fused tensor word-loop lowering on mps with fixed capacity and residual-part axes
+[AMP] off (fp32, MODEL_AMP unset or =off)
+Canonical fullgraph lowering: compiling complete W=256 recurrent word loop (one-time cost for this bucket)
+Debug checks: OFF
+MPS: inductor device asserts disabled (check_bounds + device_assert_async) -- Metal 31-buffer limit vs error_buf
+MPS: inductor DTYPE_TO_METAL patched with uint16->ushort
+MPS: inductor any-reduction dtype metadata patched (Metal 'bool' -> torch.bool)
+MPS: zero-size while-loop dependencies excluded from Inductor read-realization ratio
+MPS: inductor subgraph Metal kernel names allocated from the shared wrapper (torch.while_loop)
+MPS: unbacked while-loop tape views excluded from post-grad addmm fuse/unfuse rewrites
+MPS: stride-only reverse while-loop metadata differences delegated to Inductor exact-stride lowering
+MPS: oversized scalar-gradient sums lowered via stack/sum/copy wrapper fallback
+MPS: inductor max_fusion_unique_io_buffers=8, max_fusion_size=16 (Metal 31-buffer kernel-arg limit)
+Model compiled (eager, mode=default, fullgraph=True)
+batch = 0 (warm-up, 12.50%)
+batch = 2 (Δ=48.478s, 25.00%)
+batch = 4 (Δ=0.391s, 37.50%)
+batch = 6 (Δ=0.330s, 50.00%)
+batch = 8 (Δ=0.331s, 62.50%)
+batch = 10 (Δ=0.333s, 75.00%)
+Training throughput: 6 batches in 101.425s; word units 100.0% of 36 words (letters-only 100.0% of 12).
+batch = 0 (Δ=190.508s, 14.29%)
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+  return func(*args, **kwargs)
+batch = 2 (Δ=11.135s, 28.57%)
+batch = 4 (Δ=13.005s, 42.86%)
+batch = 6 (Δ=12.234s, 57.14%)
+batch = 8 (Δ=12.163s, 71.43%)
+batch = 10 (Δ=10.327s, 85.71%)
+batch = 12 (Δ=12.400s, 100.00%)
+runEpoch(train): hit max_batches=7 cap; cursor exiting early (7 batches processed, ds.all_done=False).
+Training throughput: 7 batches in 273.667s; word units 100.0% of 42 words (letters-only 100.0% of 14).
+batch = 0 (Δ=12.262s, 12.50%)
+batch = 2 (Δ=0.357s, 25.00%)
+batch = 4 (Δ=0.355s, 37.50%)
+batch = 6 (Δ=0.361s, 50.00%)
+batch = 8 (Δ=0.367s, 62.50%)
+batch = 10 (Δ=0.359s, 75.00%)
+Training throughput: 6 batches in 2.157s; word units 100.0% of 36 words (letters-only 100.0% of 12).

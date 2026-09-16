@@ -1,10 +1,12 @@
 # Compiled reverse loops: reconstruct the completed sentence in one bounded compiled traversal, output as the second loop
 
-Status: plan, 2026-09-12, revised the same day after Codex's review and
-Alec's decisions (recorded in the
-[sentence-boundary thinking specification, section 6](../specs/2026-09-11-sentence-boundary-thinking.md#6-code-review-compiled-reverse-loops-2026-09-12));
-those decisions are the requirements below. Nothing here is implemented or
-benchmarked yet.
+Status: historical plan with subsequent implementation/review records.
+The current requirements are consolidated in
+[integrated specification §6](2026-09-15-next-sentence-as-the-production-objective.md#6-code-review-compiled-reverse-loops-2026-09-12).
+The September 16 tied-input migration is under verification; its learning and
+checkpoint declaration is in
+[§13](2026-09-15-next-sentence-as-the-production-objective.md#13-tied-input-reconstruction-migration-verified).
+The dated baseline below describes September 12, not the current default.
 
 Alec's direction: the reconstruct must be a compiled loop, and
 `reverseOutput` emits a sentence of its own length, so it is the second
@@ -56,21 +58,22 @@ that later folds and seals retained the earlier input.
    decoder. This is the existing `invertible=True` forward/reverse pairing
    (Alec, 2026-09-12), not new inverse math: `lift` and `lower` reverse
    through `SigmaLayer.generate` / `PiLayer.generate` with the same `W`,
-   `chunk` through its exact residual, `not` and `non` through their own
-   inverses, while `intersection`, `union` and `product` are declared lossy
-   and reverse through the set helpers or identity. What changes on that
-   path is only that the loss always expects the reconstruction: the cost
-   is scored against the input every time the traversal runs, replacing the
-   detached student's target loss. LDU inversion does not make a lossy merge
+   `chunk` through its known-operand residual, `not` and `non` through their
+   own inverses. Lossy operators use an explicitly bounded approximation
+   through their actual compose kernel, or report unavailability. An arbitrary
+   identity/parent-copy fallback is not a faithful inverse. The cost is scored
+   against the input each completed traversal, replacing the detached student's
+   target loss. LDU inversion does not make a lossy merge
    bijective; a balanced split recomposes to the parent without recovering
    its children, and the retained structure supplies the disambiguating
    evidence. Sentence fidelity is measured separately from linear inverse
    accuracy.
 3. **Once per completed sentence, bounded.** One bounded compiled traversal
-   per sentence, after that sentence's composition and seals have completed:
-   inside the word loop at an intermediate end for packed rows, after the
-   loop for a row's final sentence, each with its own boundary and loss
-   accounting. The traversal follows the retained derivation (the recorded
+   per sentence, after that sentence's composition and seals have completed.
+   Completed packed sentences may share a batched traversal over retained end
+   states, with separate boundaries and loss accounting; the input result is
+   owned before reasoning or output can overwrite staging. The traversal
+   follows the retained derivation (the recorded
    choice per step), so it evaluates one reverse operator per step, not all
    `R` at every word; basis searches (the PEEL's best row) are bounded to a
    declared candidate count; the traversal has a declared step limit.
@@ -111,59 +114,85 @@ that later folds and seals retained the earlier input.
 1. **Derivation as tensors.** The forward loop already records, per step,
    the chosen rule, arity and validity (`_choice_rule_ids`,
    `_choice_arities`, `_choice_mask`, three slots per word plus the seal
-   slots). Reconstruction adds, per recorded step, the operand identity it
-   needs to follow the derivation: which STM slots the fold consumed and
-   the constituent reference each slot carried (the whole/unit/clause slab
-   and the concept-row slab already ride the loop). Nothing is retained
-   that the forward did not compute.
-2. **Sentence traversal.** `LanguageSpace.reconstruct_sentence(root, trace,
-   basis_snapshot, budget)` is a bounded fixed-shape traversal of the
+   slots), with left/right operand rows. An integer-only prepass derives
+   operand occurrence positions from those actions; the numerical traversal
+   uses the forward's retained constituent witnesses where needed. Input
+   targets supply scoring only. The published compiled tuple keeps its
+   existing 21-value layout.
+   [Trace and publication invariants](2026-09-14-answer-path-ownership-and-training.md#2-standing-invariants-re-read-after-every-compaction),
+   [occurrence prepass](../../bin/Models.py#L11229).
+2. **Sentence traversal.** `BaseModel._reconstruct_sentences` is the bounded
+   fixed-shape traversal of the
    recorded derivation from the sealed root backward: at each recorded step
    the recorded op's tied inverse (`generate` for lift and lower through the
    LDU inverse; the PEEL with a bounded candidate set for chunk; the set
    reverses for union and intersection; the explicit inverse for not and
-   non; identity where the op is declared non-invertible) yields the
+   non; bounded compose-candidate search for lossy operators) yields the
    operands, guided by the retained constituent references where the
    inverse is ambiguous. The traversal writes recovered word ideas into a
    `[B, W, D]` slab at the recorded word positions; unvisited positions stay
    masked. Steps beyond the budget report truncation in a per-row flag.
-3. **Descent and score.** `PartSpace.reverse_words` and
-   `InputSpace.reverse_words` descend the recovered word ideas in fixed
-   shape (rung codes to atoms to byte logits over each word's byte window,
-   from the existing balanced split and byte snap without the host loop).
-   The sentence fidelity cost is a byte cross-entropy against the staged
-   input bytes; the idea-level cost against the pushed word ideas is a
-   diagnostic, reported separately (requirement 2).
-4. **Placement.** For packed rows the traversal runs inside the word loop at
-   each intermediate end on the sealed root of that sentence (the loop
-   already knows the boundary); for the final sentence it runs after the
-   loop on the published root. Both are the same function; both write into
-   the same per-row accumulators (`recon_loss_sum`, `recon_loss_weight`,
-   `recon_truncated`) that leave the compiled segment as explicit outputs.
-5. **Output loop.** `TensorPeerWhilePipeline.run_output_loop(seed, width,
-   policy, budget)` realises the resolved answer's structure: its state is
+   See [the traversal](../../bin/Models.py#L11229) and
+   [selected inverse dispatch](../../bin/Language.py#L14351).
+3. **Word score and realized input.** `_byte_word_cost` maps each recovered
+   idea to a soft assignment over an invocation-owned dictionary snapshot
+   and scores the candidates' WORD spellings against the full input bytes,
+   through the existing NUL terminator. OBJECT rows follow their WORD
+   associations; the uniform fallback uses the same 256-byte alphabet.
+   Separately, `_complete_input_reconstruction` realizes the recovered ideas
+   through the shared numerical reverse chain and retains that event for
+   `reverseReconstruct`. Idea and event error are diagnostics; the trained
+   objective is the byte cost, counted once. This replaces the proposed
+   `reverse_words` helper interfaces.
+   [Word objective](../../bin/Models.py#L11648),
+   [owned realization](../../bin/Models.py#L8000).
+4. **Placement.** Packed sentences may be reconstructed together after all
+   their sealed states have been published. Each retains its own boundaries,
+   constituent evidence and cost. BasicModel selects separate compiled
+   reconstruction with a cached backward; explicit graph and eager placements
+   remain available. The setting's fallback is `graph`, distinct from
+   BasicModel's selected `compiled` value. Recovered ideas, costs and
+   incompleteness leave the compiled segment as explicit outputs.
+   [Setting](../../bin/Models.py#L2502),
+   [BasicModel](../../data/BasicModel.xml#L179),
+   [compiler](../../bin/Models.py#L11186).
+5. **Output loop.** `BaseModel._output_generate_walk` realises the resolved
+   answer's structure: its state is
    the answer-side pending-constituent stack, its policy is the generate
-   policy (a learned chooser over the grammar's generate rules, initialised
-   from the resolved derivation when one exists), and it terminates when
+   policy (a learned chooser over the grammar's generate rules and stop),
+   and it terminates when
    every row's pending constituents are exhausted or the width is reached
    (reported). It reads nothing of the input reconstruction. Its emitted
-   words, trace and costs are explicit outputs.
-6. **One compiled segment.** `_forward_with_compiled_sentence_state` runs
-   the forward loop (with in-loop reconstructions at intermediate ends),
-   the final-sentence reconstruction, and, when questions are present, the
-   output loop, in one compiled callable. The two reverse paths depend only
-   on the published root and the answer, so the compiler may schedule them
-   apart; actual data dependencies are preserved as is.
-7. **Migration.** `<detachedReverse>` keeps selecting the student until the
-   gates pass; `<reconstructInLoop>` selects the tied traversal; both
-   cannot be on. The student's parameters are dropped from checkpoints
-   under the tied contract, and loading an older checkpoint ignores them.
+   words, counts, truncation and policy costs are explicit outputs.
+   Output-owned stamps can specify deterministic replay; input compose stamps
+   and targets cannot supply output actions.
+   [Generate walk](../../bin/Models.py#L12159).
+6. **Compiled boundaries.** `_forward_with_compiled_sentence_state` publishes
+   completed forward state. Reconstruction consumes it at the selected placement;
+   BasicModel uses a separate compiled call before the owned understanding is
+   handed to answer resolution. The output walk also has a separate compiled
+   call. Neither compilation nor a shared wrapper may reorder the
+   intended phases: understanding/reconstruction, reasoning, output realization.
+   Moving query resolution out of `reverseOutput` remains a separate integrated
+   specification item; this reconstruction migration does not complete it.
+   [Understanding ownership](../../bin/Models.py#L7987),
+   [output compilation](../../bin/Models.py#L12309).
+7. **Migration.** BasicModel selects `<reconstructInLoop>` and disables
+   `<detachedReverse>` under the declared tied learning contract. Explicit
+   legacy configurations retain the student; both modes cannot be on.
+   The student's parameters and optimizer entries are dropped when loading
+   a student checkpoint into tied mode; shared parameters and moments remain.
    The gradient boundary of the tied contract: the reconstruction cost
    trains the tied transforms and the forward's fold parameters, and is
-   stopped at the recorded discrete choices (credited through the existing
-   policy credit) and at the constituent references (indices).
-8. **Legacy.** The trace-driven eager un-fold and the reverse islands remain
-   reachable for the parity gate, then go.
+   stopped at the recorded reverse indices and detached constituent witnesses.
+   Forward selection retains its existing straight-through approximation;
+   reverse replay adds no new choice estimator.
+   [Learning and migration declaration](2026-09-15-next-sentence-as-the-production-objective.md#13-tied-input-reconstruction-migration-verified),
+   [gradient map](../GradientFlow.md).
+8. **Legacy.** Explicit legacy reconstruction modes remain separately
+   selectable and tested. The tied default never silently falls back to the
+   free generate chart or detached student.
+   [Owned reconstruction dispatch](../../bin/Models.py#L8038).
 
 ## Gates
 

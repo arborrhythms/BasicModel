@@ -387,14 +387,18 @@ def test_byte_cost_is_positive_for_a_wrong_or_empty_idea_even_with_one_word(tmp_
     # candidate's uniform bytes, so its cost is exactly the negative log
     # of the target byte's share of that mixture (positive whenever the
     # null candidate is present, even with one surface in the snapshot).
-    P = int(bank_bytes.shape[-1])                                      # the snapshot's window
-    present = bank_valid.any(-1)                                       # [B, L]
-    n_present = present.sum(-1).to(torch.float32)                      # [B]
-    target = bytes_bwp[:, 0, :P]                                       # [B, P]
-    match = (bank_bytes == target.unsqueeze(1)) & bank_valid           # [B, L, P]
-    share = (match.sum(1).to(torch.float32) + 1.0 / 256.0) / (n_present + 1.0).unsqueeze(-1)
-    pos = valid_bwp[:, 0, :P].to(torch.float32)
-    expected = (-torch.log(share) * pos).sum(-1) / pos.sum(-1).clamp_min(1.0)
+    import math
+    expected_rows = []
+    for b in range(bank_bytes.shape[0]):
+        words = [bank_bytes[b, row][bank_valid[b, row]].tolist() + [0]
+                 for row in range(bank_bytes.shape[1]) if bank_valid[b, row].any()]
+        target_word = bytes_bwp[b, 0][valid_bwp[b, 0]].tolist() + [0]
+        probabilities = [
+            (sum(position < len(word) and word[position] == symbol for word in words)
+             + 1. / 256) / (len(words) + 1)
+            for position, symbol in enumerate(target_word)]
+        expected_rows.append(sum(-math.log(p) for p in probabilities) / len(target_word))
+    expected = torch.tensor(expected_rows, device=zero.device, dtype=zero.dtype)
     assert torch.allclose(zero, expected, atol=1e-3), (zero.tolist(), expected.tolist())
     assert float(zero.min()) > 0.1 and float(wrong_c.min()) > 0.1
     assert float(wrong_c.min()) > 100.0 * float(own.max())
