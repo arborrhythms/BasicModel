@@ -11107,6 +11107,33 @@ class BasicModel(BaseModel):
             return torch.where(obj >= 0, obj, concept)
         return concept
 
+    def _word_symbol_concept_ids(self):
+        """Native concept handles aligned to the actually selected symbol rows.
+
+        Missing OBJECT identity stays unknown even when its WORD identity is
+        known: the WORD would denote a different referent. A row is never
+        interpreted as an allocator ID. Reads allocate no concepts or rows.
+        """
+        isp = getattr(self, "inputSpace", None)
+        rows = getattr(isp, "_ar_word_concept_rows", None)
+        if not torch.is_tensor(rows) or rows.ndim != 2:
+            return None
+        unknown = torch.full_like(rows, -1, dtype=torch.long)
+        def addresses(name):
+            values = getattr(isp, name, None)
+            if not torch.is_tensor(values) or values.shape != rows.shape:
+                return unknown
+            if values.dtype != torch.long:
+                raise TypeError("native concept IDs must use integer address tensors")
+            values = values.to(device=rows.device)
+            return torch.where(values > 0, values, unknown)
+        ids = torch.where(rows >= 0, addresses("_ar_word_concept_ids"), unknown)
+        objects = getattr(isp, "_ar_word_object_rows", None)
+        if torch.is_tensor(objects) and objects.shape == rows.shape:
+            ids = torch.where(objects.to(rows.device) >= 0,
+                              addresses("_ar_word_object_ids"), ids)
+        return ids
+
     def _pushed_word_slab(self, B, W, D, like, activations):
         """``[B, W, D]`` retained constituent references: the leaves the
         forward pushed, each word's symbol row's dictionary atom (its
@@ -12063,6 +12090,9 @@ class BasicModel(BaseModel):
         word_rows = getattr(isp, "_ar_word_concept_rows", None)
         if not torch.is_tensor(word_rows) or tuple(word_rows.shape) != (B, W):
             word_rows = torch.full_like(rows, -1)
+        concept_ids = self._word_symbol_concept_ids()
+        if not torch.is_tensor(concept_ids) or concept_ids.shape != rows.shape:
+            concept_ids = torch.full_like(rows, -1)
         activations = getattr(self.symbolSpace, "_word_reference_activations", None)
         if not torch.is_tensor(activations) or activations.numel() != B * W:
             activations = reference.new_ones(B, W)
@@ -12093,14 +12123,16 @@ class BasicModel(BaseModel):
             else:
                 end = self._sentence_end_state(None)
             captured[slot] = (
-                self._program_entries(program, leaves, rows, word_rows, activations, end)
+                self._program_entries(program, leaves, rows, word_rows, activations, end,
+                                      concept_ids=concept_ids)
                 if program is not None and torch.is_tensor(end)
                 else (None,) * B)
         current = tuple(captured.get(int(t), (None,) * B)[b]
                         for b, t in enumerate(last_ids))
         return current, captured
 
-    def _program_entries(self, program, leaf_slab, rows, word_rows, activations, end_state):
+    def _program_entries(self, program, leaf_slab, rows, word_rows, activations, end_state,
+                         *, concept_ids=None):
         """Own compact row references and compose actions for each batch row."""
         positions, actions, targets = program
         entries = []
@@ -12118,7 +12150,9 @@ class BasicModel(BaseModel):
                 word_rows=word_rows[b].index_select(0, pos.to(word_rows.device)),
                 activations=activations[b].index_select(0, pos.to(activations.device)),
                 leaves=leaf_slab[b].index_select(0, pos.to(leaf_slab.device)),
-                actions=acts[:L], targets=targets[b], end_state=end_state[b]))
+                actions=acts[:L], targets=targets[b], end_state=end_state[b],
+                concept_ids=(concept_ids[b].index_select(0, pos.to(concept_ids.device))
+                             if torch.is_tensor(concept_ids) else None)))
         return tuple(entries)
 
     @staticmethod

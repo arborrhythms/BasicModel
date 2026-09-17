@@ -27,7 +27,7 @@ confidence. Missing paths remain unknown. A supported path refutes the
 negated inclusion question; a missing path does not prove that negation.
 LTM existence degrees and conflicting world facts remain the separate
 [Exist evidence domain](ExistenceEvidence.md).
-[PartOf evaluation](../bin/reasoning.py#L578).
+[PartOf evaluation](../bin/reasoning.py#L586).
 
 The public legacy `QuerySpec` aliases `PartOf`, `part`, `queryPart` and
 `isPart` select conceptual-taxonomy evidence. `whole` / `isWhole` reverse
@@ -36,13 +36,13 @@ domains fail explicitly. A legacy vector-only operand has no grounded
 concept reference and returns unknown with an `unbound_concept_reference`
 diagnostic; it is not silently snapped to a codebook row.
 [Interface](../bin/reasoning.py#L59),
-[evidence adapter](../bin/reasoning.py#L368).
+[evidence adapter](../bin/reasoning.py#L376).
 
 `parts` and `wholes` return typed neighboring references and their native
 record sources. The legacy kernel's `part(..., mode="taxonomy")` uses this
 reader. Its former `meronomy` mode is rejected as unsupported: a perceptual
 mereonomy adapter must declare its own domain and source before it can run.
-[Neighbors](../bin/reasoning.py#L389),
+[Neighbors](../bin/reasoning.py#L397),
 [kernel adapter](../bin/thinking.py#L305).
 
 ## Public routes and provenance
@@ -52,10 +52,10 @@ and the PartOf path through `BasicModel.think_about` use this evidence source.
 The model entries do not initialize or read the old global vector-proposal
 route. The returned reasoning result preserves the complete evidence dict,
 including unknown/incomplete diagnostics, rather than only its posture.
-[Reasoner](../bin/reasoning.py#L578),
-[tool entry](../bin/reasoning.py#L754),
-[model entry](../bin/Models.py#L22225),
-[kernel entry](../bin/Models.py#L22243).
+[Reasoner](../bin/reasoning.py#L586),
+[tool entry](../bin/reasoning.py#L762),
+[model entry](../bin/Models.py#L22259),
+[kernel entry](../bin/Models.py#L22277).
 
 The existing frame kernel may still follow a taxonomy neighbor into a child
 question. A child contributes to its parent only through a checked native
@@ -71,7 +71,7 @@ Taxonomy queries are read-only. Neither a successful proof nor the legacy
 `materialize` flag grants permission to append a world-fact lemma. Legacy
 incomplete relation testimony remains unverified and cannot satisfy the
 taxonomy reader or full-description Exist.
-[Public PartOf helper](../bin/reasoning.py#L421),
+[Public PartOf helper](../bin/reasoning.py#L429),
 [write boundary](../bin/thinking.py#L484),
 [testimony](../bin/thinking.py#L355).
 
@@ -86,7 +86,7 @@ Node scans, record reads and edge expansions are distinct counters. These
 local limits do not complete the specification's shared episode budget.
 [Capture limits](../bin/Taxonomy.py#L117),
 [traversal limits](../bin/Taxonomy.py#L69),
-[query limits](../bin/reasoning.py#L578).
+[query limits](../bin/reasoning.py#L586).
 
 Concept identities and ordered reference records already belong to the
 existing structural checkpoint sidecar. The view itself is not serialized;
@@ -113,12 +113,12 @@ experiment. Its tests are labelled as legacy. Those helpers are not used by
 public PartOf dispatch. The older optional prediction/answer policy objectives
 still use their explicitly named legacy evidence machinery and are not the
 default sentence-expectation controller.
-[Legacy proposal entry](../bin/reasoning.py#L764),
-[legacy prediction experiment](../bin/reasoning.py#L856),
-[legacy answer objective](../bin/reasoning.py#L964).
+[Legacy proposal entry](../bin/reasoning.py#L772),
+[legacy prediction experiment](../bin/reasoning.py#L864),
+[legacy answer objective](../bin/reasoning.py#L972).
 
-The query interface still predates the checked grammatical-VP registry. This
-change does not implement linguistic relation/sense composition, the causal
+[Query contracts](QueryContracts.md) supplies the explicit shared-VP adapter
+above this evidence reader. This change does not implement linguistic relation/sense composition, the causal
 answer adapter, ordinary levelled thought history, nested semantic traversal,
 anticipation isolation, residual policy credit or learned utility. The frame
 kernel remains a legacy controller. The full integrated specification remains

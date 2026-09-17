@@ -1,0 +1,150 @@
+CANDIDATE Meaning: /private/tmp/full-spec-taxonomy-candidate/Meaning.py
+CANDIDATE Layers: /private/tmp/full-spec-taxonomy-candidate/Layers.py
+CANDIDATE Models: /private/tmp/full-spec-taxonomy-candidate/Models.py
+CANDIDATE reasoning: /private/tmp/full-spec-taxonomy-candidate/reasoning.py
+CANDIDATE thinking: /private/tmp/full-spec-taxonomy-candidate/thinking.py
+CANDIDATE Taxonomy: /private/tmp/full-spec-taxonomy-candidate/Taxonomy.py
+FFFFFFFFF                                                                [100%]
+=================================== FAILURES ===================================
+_ test_grammar_rejects_missing_or_malformed_query_executors[unimplementedTool(X)] _
+
+declaration = 'unimplementedTool(X)'
+
+    @pytest.mark.parametrize("declaration", [
+        "unimplementedTool(X)", "isPart(X)", "isPart(X, Y, Z)",
+        "isTrue()", "query(X)", "tense(X)", "isPart(X, Y) trailing",
+    ])
+    def test_grammar_rejects_missing_or_malformed_query_executors(declaration):
+        grammar = Grammar()
+>       with pytest.raises(ValueError, match="query|signature|executor|deferred"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+/tmp/full-spec-query-registry-declaration-probes.py:13: Failed
+_____ test_grammar_rejects_missing_or_malformed_query_executors[isPart(X)] _____
+
+declaration = 'isPart(X)'
+
+    @pytest.mark.parametrize("declaration", [
+        "unimplementedTool(X)", "isPart(X)", "isPart(X, Y, Z)",
+        "isTrue()", "query(X)", "tense(X)", "isPart(X, Y) trailing",
+    ])
+    def test_grammar_rejects_missing_or_malformed_query_executors(declaration):
+        grammar = Grammar()
+>       with pytest.raises(ValueError, match="query|signature|executor|deferred"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+/tmp/full-spec-query-registry-declaration-probes.py:13: Failed
+__ test_grammar_rejects_missing_or_malformed_query_executors[isPart(X, Y, Z)] __
+
+declaration = 'isPart(X, Y, Z)'
+
+    @pytest.mark.parametrize("declaration", [
+        "unimplementedTool(X)", "isPart(X)", "isPart(X, Y, Z)",
+        "isTrue()", "query(X)", "tense(X)", "isPart(X, Y) trailing",
+    ])
+    def test_grammar_rejects_missing_or_malformed_query_executors(declaration):
+        grammar = Grammar()
+>       with pytest.raises(ValueError, match="query|signature|executor|deferred"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+/tmp/full-spec-query-registry-declaration-probes.py:13: Failed
+_____ test_grammar_rejects_missing_or_malformed_query_executors[isTrue()] ______
+
+declaration = 'isTrue()'
+
+    @pytest.mark.parametrize("declaration", [
+        "unimplementedTool(X)", "isPart(X)", "isPart(X, Y, Z)",
+        "isTrue()", "query(X)", "tense(X)", "isPart(X, Y) trailing",
+    ])
+    def test_grammar_rejects_missing_or_malformed_query_executors(declaration):
+        grammar = Grammar()
+>       with pytest.raises(ValueError, match="query|signature|executor|deferred"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+/tmp/full-spec-query-registry-declaration-probes.py:13: Failed
+_____ test_grammar_rejects_missing_or_malformed_query_executors[query(X)] ______
+
+declaration = 'query(X)'
+
+    @pytest.mark.parametrize("declaration", [
+        "unimplementedTool(X)", "isPart(X)", "isPart(X, Y, Z)",
+        "isTrue()", "query(X)", "tense(X)", "isPart(X, Y) trailing",
+    ])
+    def test_grammar_rejects_missing_or_malformed_query_executors(declaration):
+        grammar = Grammar()
+>       with pytest.raises(ValueError, match="query|signature|executor|deferred"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+/tmp/full-spec-query-registry-declaration-probes.py:13: Failed
+_____ test_grammar_rejects_missing_or_malformed_query_executors[tense(X)] ______
+
+declaration = 'tense(X)'
+
+    @pytest.mark.parametrize("declaration", [
+        "unimplementedTool(X)", "isPart(X)", "isPart(X, Y, Z)",
+        "isTrue()", "query(X)", "tense(X)", "isPart(X, Y) trailing",
+    ])
+    def test_grammar_rejects_missing_or_malformed_query_executors(declaration):
+        grammar = Grammar()
+>       with pytest.raises(ValueError, match="query|signature|executor|deferred"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+/tmp/full-spec-query-registry-declaration-probes.py:13: Failed
+_ test_grammar_rejects_missing_or_malformed_query_executors[isPart(X, Y) trailing] _
+
+declaration = 'isPart(X, Y) trailing'
+
+    @pytest.mark.parametrize("declaration", [
+        "unimplementedTool(X)", "isPart(X)", "isPart(X, Y, Z)",
+        "isTrue()", "query(X)", "tense(X)", "isPart(X, Y) trailing",
+    ])
+    def test_grammar_rejects_missing_or_malformed_query_executors(declaration):
+        grammar = Grammar()
+>       with pytest.raises(ValueError, match="query|signature|executor|deferred"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+/tmp/full-spec-query-registry-declaration-probes.py:13: Failed
+___________ test_complete_grammar_declares_the_general_what_subgoal ____________
+
+    def test_complete_grammar_declares_the_general_what_subgoal():
+        grammar = Grammar()
+        grammar.configure(load_grammar("complete.grammar"))
+>       assert "what(Q)" in grammar.query_ops
+E       AssertionError: assert 'what(Q)' in ['isTrue(X)', 'isEqual(X, Y)', 'isPart(X, Y)', 'isWhole(X, Y)', 'parts(X)', 'wholes(X)', ...]
+E        +  where ['isTrue(X)', 'isEqual(X, Y)', 'isPart(X, Y)', 'isWhole(X, Y)', 'parts(X)', 'wholes(X)', ...] = <Language.Grammar object at 0x11f32b350>.query_ops
+
+/tmp/full-spec-query-registry-declaration-probes.py:20: AssertionError
+______ test_checked_interfaces_share_semantic_relation_and_explicit_roles ______
+
+    def test_checked_interfaces_share_semantic_relation_and_explicit_roles():
+        grammar = Grammar()
+        grammar.configure(load_grammar("complete.grammar"))
+>       signatures = grammar.query_signatures
+                     ^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'Grammar' object has no attribute 'query_signatures'
+
+/tmp/full-spec-query-registry-declaration-probes.py:27: AttributeError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:1345
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:1345: PytestAssertRewriteWarning: Module already imported so cannot be rewritten; anyio
+    self._mark_plugins_for_rewrite(hook, disable_autoload)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED ../../../../../tmp/full-spec-query-registry-declaration-probes.py::test_grammar_rejects_missing_or_malformed_query_executors[unimplementedTool(X)]
+FAILED ../../../../../tmp/full-spec-query-registry-declaration-probes.py::test_grammar_rejects_missing_or_malformed_query_executors[isPart(X)]
+FAILED ../../../../../tmp/full-spec-query-registry-declaration-probes.py::test_grammar_rejects_missing_or_malformed_query_executors[isPart(X, Y, Z)]
+FAILED ../../../../../tmp/full-spec-query-registry-declaration-probes.py::test_grammar_rejects_missing_or_malformed_query_executors[isTrue()]
+FAILED ../../../../../tmp/full-spec-query-registry-declaration-probes.py::test_grammar_rejects_missing_or_malformed_query_executors[query(X)]
+FAILED ../../../../../tmp/full-spec-query-registry-declaration-probes.py::test_grammar_rejects_missing_or_malformed_query_executors[tense(X)]
+FAILED ../../../../../tmp/full-spec-query-registry-declaration-probes.py::test_grammar_rejects_missing_or_malformed_query_executors[isPart(X, Y) trailing]
+FAILED ../../../../../tmp/full-spec-query-registry-declaration-probes.py::test_complete_grammar_declares_the_general_what_subgoal
+FAILED ../../../../../tmp/full-spec-query-registry-declaration-probes.py::test_checked_interfaces_share_semantic_relation_and_explicit_roles
+9 failed, 1 warning in 0.14s

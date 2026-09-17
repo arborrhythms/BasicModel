@@ -14,7 +14,7 @@ as required by the [token-buffer contract](../bin/Spaces.py#L1617). Targets and 
 spellings remain detached. Input percept IDs expand to full byte targets at
 eager staging so a promoted whole word or prefix cannot disappear from the
 objective ([target staging](../bin/Models.py#L11016),
-[byte objective](../bin/Models.py#L11692)).
+[byte objective](../bin/Models.py#L11719)).
 The scorer also has a uniform fallback for an unknown spelling. That fallback
 distributes probability over these same 256 bytes; it is not another byte value.
 
@@ -37,9 +37,9 @@ and [§8.10](plans/2026-09-15-next-sentence-as-the-production-objective.md#810-q
 
 | Piece / objective | Directly trained computation | Reach into representation | Stops and current limits |
 |---|---|---|---|
-| **Representation and reconstruction:** weighted input surface error | Recovered word ideas, the selected compose operators' tied reverse calculations, and the live forward encodings they consume | This is the reconstruction reference `R` on shared weights. It retains its gradient unchanged. | The identified input derivation is fixed during reverse traversal; retained constituent references, dictionary snapshots and byte targets are detached. No gradient through an integer rule or dictionary index. [Reconstruction](../bin/Models.py#L11273), [snapshot](../bin/Models.py#L11627), [owned byte objective](../bin/Models.py#L13786). |
-| **Prediction:** occupied-role MSE plus role-presence BCE | The sentence predictor and its live preceding NP1/VP/NP2 context | May train the encoder of a preceding sentence still in the **same optimizer step**. It shares the downstream budget below. | The arriving sentence's encoding is a detached target. Durable context and previous-step encodings are detached. A cold start has no predicted target. [Prediction and observation](../bin/Layers.py#L10064), [graph lifetime](../bin/Layers.py#L10682). |
-| **Thinking:** enabled query/subgoal policy objectives | Currently, a sampled What choice receives score-function credit from supplied-answer error minus work costs; optional legacy reasoning and teacher-trace losses have separate gates | Only through live inputs actually consumed by the trained policy or soft reasoning computation. Its shared-parameter contribution belongs to the same downstream budget. | Hard choices and deductions have no ordinary derivative. The current What context includes detached scalar summaries, so policy training does not prove semantic encoder feedback. Residual-based credit on ordinary corpus inputs is a required migration. [Policy](../bin/Models.py#L8325), [summary](../bin/Models.py#L7940), [loss gates](../bin/Models.py#L14092), [required residual credit](plans/2026-09-15-next-sentence-as-the-production-objective.md#810-queries-as-tools-at-inter-sentence-prediction-decided). |
+| **Representation and reconstruction:** weighted input surface error | Recovered word ideas, the selected compose operators' tied reverse calculations, and the live forward encodings they consume | This is the reconstruction reference `R` on shared weights. It retains its gradient unchanged. | The identified input derivation is fixed during reverse traversal; retained constituent references, dictionary snapshots and byte targets are detached. No gradient through an integer rule or dictionary index. [Reconstruction](../bin/Models.py#L11300), [snapshot](../bin/Models.py#L11654), [owned byte objective](../bin/Models.py#L13820). |
+| **Prediction:** occupied-role MSE plus role-presence BCE | The sentence predictor and its live preceding NP1/VP/NP2 context | May train the encoder of a preceding sentence still in the **same optimizer step**. It shares the downstream budget below. | The arriving sentence's encoding is a detached target. Durable context and previous-step encodings are detached. A cold start has no predicted target. [Prediction and observation](../bin/Layers.py#L10064), [graph lifetime](../bin/Layers.py#L10689). |
+| **Thinking:** enabled query/subgoal policy objectives | Currently, a sampled What choice receives score-function credit from supplied-answer error minus work costs; optional legacy reasoning and teacher-trace losses have separate gates | Only through live inputs actually consumed by the trained policy or soft reasoning computation. Its shared-parameter contribution belongs to the same downstream budget. | Hard choices and deductions have no ordinary derivative. The current What context includes detached scalar summaries, so policy training does not prove semantic encoder feedback. Residual-based credit on ordinary corpus inputs is a required migration. [Policy](../bin/Models.py#L8325), [summary](../bin/Models.py#L7940), [loss gates](../bin/Models.py#L14126), [required residual credit](plans/2026-09-15-next-sentence-as-the-production-objective.md#810-queries-as-tools-at-inter-sentence-prediction-decided). |
 | **Output:** supplied-answer error and, when enabled, output-action policy loss | The answer path, conditioner and synthesis heads; sampled generation choices receive policy credit | Differentiable use of a live question/answer representation can train its upstream producer, under the same shared budget. Independent output heads retain their ordinary gradients. | Desired answers are supervision, not generation inputs. Output policy reward is detached: credit flows through action log probabilities, not through the reward calculation. The input parse is not a gold answer parse. [Answer resolution](../bin/Models.py#L8186), [head ownership](../bin/Models.py#L9158), [action credit](../bin/Models.py#L9293). |
 
 An answer loss trains the sentence predictor only if the answer computation
@@ -59,15 +59,15 @@ uses a soft surrogate. Replaying the recorded integer derivation during tied
 reconstruction does **not** introduce another estimator. A bounded lossy inverse
 can differentiate its candidate scores and selected operator parameters while
 keeping candidate retrieval and reference values detached.
-[Forward selection](../bin/Language.py#L14034),
-[unary selection](../bin/Language.py#L14088),
-[tied binary reverse](../bin/Language.py#L14351).
+[Forward selection](../bin/Language.py#L14029),
+[unary selection](../bin/Language.py#L14083),
+[tied binary reverse](../bin/Language.py#L14346).
 
 During sampled generation, the policy also reads a **detached top idea**.
 Thus the current output-action policy loss trains the choice head, while the
 separate differentiable answer-value path can send balanced credit upstream.
 Detaching the reward and detaching the policy's input are distinct boundaries.
-[Sampled policy input](../bin/Models.py#L12274),
+[Sampled policy input](../bin/Models.py#L12308),
 [detached action reward](../bin/Models.py#L9293).
 
 The final answer readout is an independent output head. New instances use the
@@ -89,7 +89,7 @@ reconstructionScale * inputLoss`. BasicModel's FineWeb configuration uses
 separately. The supplied-answer benchmark uses `reconstructionScale=0.5`.
 Adding labels to a configuration whose primary answer weight is zero would
 not by itself train that answer objective.
-[Blend](../bin/Layers.py#L16793), [FineWeb weights](../data/BasicModel.xml#L168),
+[Blend](../bin/Layers.py#L16800), [FineWeb weights](../data/BasicModel.xml#L168),
 [prediction weight](../data/BasicModel.xml#L195),
 [supervised weights](../data/BasicModel_answers_tied_benchmark.xml#L51).
 
@@ -98,7 +98,7 @@ The legacy `answerLossWeight`, `thinkingLossWeight` and
 to zero. A permitted credit path is therefore not evidence that a particular
 configuration trains it. The residual-based query policy remains an open
 migration, rather than an implicit consequence of enabling expectation.
-[Legacy policy defaults](../bin/Models.py#L15573),
+[Legacy policy defaults](../bin/Models.py#L15607),
 [output policy default](../bin/Models.py#L2523),
 [required query credit](plans/2026-09-15-next-sentence-as-the-production-objective.md#810-queries-as-tools-at-inter-sentence-prediction-decided).
 
@@ -109,9 +109,9 @@ total into weighted reconstruction `R` and **all remaining objectives together**
 `D = total - R`: prediction, supplied-answer error, thinking, output policy and
 other active auxiliaries. Pipeline reconstruction terms and truth modulation
 must also be reflected in `R`. Merely calling `record_loss` trains nothing.
-[Primary partition](../bin/Models.py#L13971),
-[auxiliary partition](../bin/Models.py#L14075),
-[truth modulation](../bin/Models.py#L14201),
+[Primary partition](../bin/Models.py#L14005),
+[auxiliary partition](../bin/Models.py#L14109),
+[truth modulation](../bin/Models.py#L14235),
 [backward entry](../bin/Models.py#L2746),
 [reporting registry](../bin/Models.py#L9539).
 
@@ -161,13 +161,13 @@ the numerical cancellation that subtracting a very large downstream gradient
 from a total gradient could cause. There is one later optimizer step.
 [Loss scaling and tolerance](../bin/Models.py#L2746),
 [separate accumulation](../bin/Optimizer.py#L193),
-[optimizer step](../bin/Models.py#L14346).
+[optimizer step](../bin/Models.py#L14380).
 
 The separate reconstruction compiler preserves saved buffers across these
 gradient reads. It disables donation during compilation and normalizes the
 disabled metadata used by this PyTorch build, so an ordinary first backward
 cannot make later retained reads unsafe. The global compiler setting remains
-unchanged ([compiled reconstruction](../bin/Models.py#L11230)).
+unchanged ([compiled reconstruction](../bin/Models.py#L11257)).
 
 ### What the rule guarantees, and what it does not
 
@@ -210,7 +210,7 @@ update has its own objective and is outside this main-loss projection rule.
 [Mode selection](../bin/Models.py#L2578),
 [optimizer filter](../bin/Models.py#L2892),
 [separate update](../bin/Models.py#L10382),
-[joint loss](../bin/Models.py#L13890).
+[joint loss](../bin/Models.py#L13924).
 
 ## Evidence to keep with each migration
 
@@ -246,6 +246,24 @@ behavior cloning now uses native taxonomy paths; it does not establish
 learned question utility or residual policy credit. Continuous semantic
 payloads and discrete policy decisions retain the architecture-wide credit
 contract above. [Taxonomy queries](TaxonomyQueries.md) documents the limits.
-[Evidence](../bin/reasoning.py#L368),
+[Evidence](../bin/reasoning.py#L376),
 [curriculum](../bin/thinking.py#L621),
 [operation loss](../bin/thinking.py#L610).
+
+## Checked query and grammatical payload boundaries
+
+The checked registry adds no learned parameter or trained loss. Pure VP/operand
+formation clones the existing conceptual payloads without detaching live
+continuous inputs; concept and occurrence IDs remain addresses, never numeric
+semantic features. Hard taxonomy/fact matching and discrete interface choice
+have no ordinary derivative. `arma` preserves the full predictor output graph
+without changing the pending external prediction. Durable occurrence reads
+return detached descriptions; the later episode controller must provide a live
+read from its existing owner to retain within-episode credit.
+[Formation](../bin/Queries.py#L431),
+[durable read](../bin/Queries.py#L348),
+[prediction](../bin/Queries.py#L284).
+
+Future policy credit and continuous feedback into representation remain subject
+to the aggregate downstream rule above. These API checks do not establish
+trained query usefulness. See [Query contracts](QueryContracts.md).

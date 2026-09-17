@@ -10061,8 +10061,13 @@ class InterSentenceLayer(Layer):
                                       concept_dim=self.concept_dim)
 
     @torch.compiler.disable
-    def expect_next_meaning(self, b=0):
-        """Return the complete prior estimate, or None at a cold boundary."""
+    def expect_next_meaning(self, b=0, *, record=True):
+        """Return the complete prior estimate, or None at a cold boundary.
+
+        Observation staging records its prior by default. A selected boundary
+        tool uses ``record=False`` so reading an estimate cannot replace the
+        pending comparison for an arriving external observation.
+        """
         if self._external_observations_suspended or not self.expectation_enabled:
             return None
         if self.expectation_scope != "structured":
@@ -10070,7 +10075,8 @@ class InterSentenceLayer(Layer):
         b = int(b)
         chain = list(self._inter_context[b])
         if not chain or self._inter_predictor is None:
-            self._inter_last_meaning[b] = None
+            if record:
+                self._inter_last_meaning[b] = None
             return None
         parameter = next(self._inter_predictor.parameters())
         zero = parameter.new_zeros(3, self.concept_dim)
@@ -10083,7 +10089,8 @@ class InterSentenceLayer(Layer):
         if not bool(torch.isfinite(values).all() and torch.isfinite(logits).all()):
             raise FloatingPointError("non-finite structured sentence prediction")
         prediction = MeaningExpectation(values[0], logits[0])
-        self._inter_last_meaning[b] = prediction
+        if record:
+            self._inter_last_meaning[b] = prediction
         return prediction
 
     def _observe_meanings(self, depths, payloads, tetralemmas, mask,

@@ -1,0 +1,155 @@
+FFFFFFF                                                                  [100%]
+=================================== FAILURES ===================================
+_______ test_exist_executor_keeps_all_roles_and_conflicting_fact_sources _______
+
+    def test_exist_executor_keeps_all_roles_and_conflicting_fact_sources():
+        store = TernaryTruthStore(8)
+        idea = _meaning()
+        first = store.append_meaning(idea, kind="fact", trust=0.6)
+        second = store.append_meaning(idea, kind="fact", trust=-0.4)
+        store.set_origin(first, store.ORIGIN_PROVISIONED, text="teacher")
+        store.set_origin(second, store.ORIGIN_USER, text="witness")
+>       result = _invoke("isTrue", (idea,), reasoner=TruthGroundedReasoner(store=store))
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+/tmp/full-spec-query-executor-probes.py:31: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+name = 'isTrue'
+args = (ConceptualMeaning(mode='assertive', polarity=True, role_refs=(None, None, None), bindings=(), scope=(('place', 'workshop'),)),)
+reasoner = <reasoning.TruthGroundedReasoner object at 0x11f488590>, kwargs = {}
+
+    def _invoke(name, args, *, reasoner=None, **kwargs):
+>       from Queries import BUILTIN_QUERIES, QueryContext
+E       ModuleNotFoundError: No module named 'Queries'
+
+/tmp/full-spec-query-executor-probes.py:14: ModuleNotFoundError
+_____ test_part_and_converse_executor_read_native_taxonomy_without_writes ______
+
+    def test_part_and_converse_executor_read_native_taxonomy_without_writes():
+        cs = _cs()
+        a, b = cs.new_concept(), cs.new_concept()
+        cs.add_whole(a, ("sym", b))
+        reasoner = TruthGroundedReasoner(model=SimpleNamespace(conceptualSpace=cs))
+        for name, args in [("isPart", (("sym", a), ("sym", b))),
+                           ("isWhole", (("sym", b), ("sym", a)))]:
+>           result = _invoke(name, args, reasoner=reasoner)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+/tmp/full-spec-query-executor-probes.py:46: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+name = 'isPart', args = (('sym', 1), ('sym', 2))
+reasoner = <reasoning.TruthGroundedReasoner object at 0x11f82c380>, kwargs = {}
+
+    def _invoke(name, args, *, reasoner=None, **kwargs):
+>       from Queries import BUILTIN_QUERIES, QueryContext
+E       ModuleNotFoundError: No module named 'Queries'
+
+/tmp/full-spec-query-executor-probes.py:14: ModuleNotFoundError
+____ test_quantize_reads_allocated_conceptual_atoms_without_symbol_snapping ____
+
+    def test_quantize_reads_allocated_conceptual_atoms_without_symbol_snapping():
+        cs = _cs()
+        a = cs.mint_frozen_concept("test-quantize-existing-concept")
+        row = cs._csw_row_of(a)
+        atom = cs.similarity_codebook.getW()[row].clone()
+        reasoner = TruthGroundedReasoner(model=SimpleNamespace(conceptualSpace=cs))
+        before = dict(cs._concept_allocator.placement)
+>       result = _invoke("quantize", (atom,), reasoner=reasoner)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+/tmp/full-spec-query-executor-probes.py:60: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+name = 'quantize'
+args = (tensor([ 0.3957,  0.3519, -0.0039, -0.0395,  0.3952, -0.3056, -0.0161, -0.6842],
+       grad_fn=<CloneBackward0>),)
+reasoner = <reasoning.TruthGroundedReasoner object at 0x11f82af60>, kwargs = {}
+
+    def _invoke(name, args, *, reasoner=None, **kwargs):
+>       from Queries import BUILTIN_QUERIES, QueryContext
+E       ModuleNotFoundError: No module named 'Queries'
+
+/tmp/full-spec-query-executor-probes.py:14: ModuleNotFoundError
+___ test_what_preserves_the_complete_question_and_schedules_same_controller ____
+
+    def test_what_preserves_the_complete_question_and_schedules_same_controller():
+        question = _meaning()
+        calls = []
+>       result = _invoke("what", (question,), schedule_subgoal=lambda value: calls.append(value) or value)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+/tmp/full-spec-query-executor-probes.py:69: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+name = 'what'
+args = (ConceptualMeaning(mode='assertive', polarity=True, role_refs=(None, None, None), bindings=(), scope=(('place', 'workshop'),)),)
+reasoner = None
+kwargs = {'schedule_subgoal': <function test_what_preserves_the_complete_question_and_schedules_same_controller.<locals>.<lambda> at 0x11f7fa660>}
+
+    def _invoke(name, args, *, reasoner=None, **kwargs):
+>       from Queries import BUILTIN_QUERIES, QueryContext
+E       ModuleNotFoundError: No module named 'Queries'
+
+/tmp/full-spec-query-executor-probes.py:14: ModuleNotFoundError
+______________ test_wrong_domain_and_types_fail_before_execution _______________
+
+    def test_wrong_domain_and_types_fail_before_execution():
+>       from Queries import BUILTIN_QUERIES, QueryContext
+E       ModuleNotFoundError: No module named 'Queries'
+
+/tmp/full-spec-query-executor-probes.py:78: ModuleNotFoundError
+_____ test_equality_executor_rejects_width_truncation_and_nonfinite_values _____
+
+    def test_equality_executor_rejects_width_truncation_and_nonfinite_values():
+>       result = _invoke("isEqual", (torch.ones(8), torch.ones(8)))
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+/tmp/full-spec-query-executor-probes.py:90: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+name = 'isEqual'
+args = (tensor([1., 1., 1., 1., 1., 1., 1., 1.]), tensor([1., 1., 1., 1., 1., 1., 1., 1.]))
+reasoner = None, kwargs = {}
+
+    def _invoke(name, args, *, reasoner=None, **kwargs):
+>       from Queries import BUILTIN_QUERIES, QueryContext
+E       ModuleNotFoundError: No module named 'Queries'
+
+/tmp/full-spec-query-executor-probes.py:14: ModuleNotFoundError
+_ test_arma_returns_all_roles_as_an_estimate_without_overwriting_pending_prediction _
+
+    def test_arma_returns_all_roles_as_an_estimate_without_overwriting_pending_prediction():
+        # Native fixture helper constructs the current production predictor.
+        from test_sentence_expectation import layer as make_layer
+        layer = make_layer()
+        roles = torch.arange(3 * layer.concept_dim, dtype=torch.float32).reshape(3, -1) / 100
+        layer.predict_and_observe_stm_end_state([3], [roles], layout="infix")
+        marker = object()
+        layer._inter_last_meaning[0] = marker
+        model = SimpleNamespace(symbolSpace=SimpleNamespace(discourse=layer))
+>       result = _invoke("arma", (ConceptualMeaning.from_description(roles),),
+                         reasoner=TruthGroundedReasoner(model=model))
+
+/tmp/full-spec-query-executor-probes.py:107: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+name = 'arma'
+args = (ConceptualMeaning(mode='assertive', polarity=True, role_refs=(None, None, None), bindings=(), scope=()),)
+reasoner = <reasoning.TruthGroundedReasoner object at 0x11f423fe0>, kwargs = {}
+
+    def _invoke(name, args, *, reasoner=None, **kwargs):
+>       from Queries import BUILTIN_QUERIES, QueryContext
+E       ModuleNotFoundError: No module named 'Queries'
+
+/tmp/full-spec-query-executor-probes.py:14: ModuleNotFoundError
+=========================== short test summary info ============================
+FAILED ../../../../../tmp/full-spec-query-executor-probes.py::test_exist_executor_keeps_all_roles_and_conflicting_fact_sources
+FAILED ../../../../../tmp/full-spec-query-executor-probes.py::test_part_and_converse_executor_read_native_taxonomy_without_writes
+FAILED ../../../../../tmp/full-spec-query-executor-probes.py::test_quantize_reads_allocated_conceptual_atoms_without_symbol_snapping
+FAILED ../../../../../tmp/full-spec-query-executor-probes.py::test_what_preserves_the_complete_question_and_schedules_same_controller
+FAILED ../../../../../tmp/full-spec-query-executor-probes.py::test_wrong_domain_and_types_fail_before_execution
+FAILED ../../../../../tmp/full-spec-query-executor-probes.py::test_equality_executor_rejects_width_truncation_and_nonfinite_values
+FAILED ../../../../../tmp/full-spec-query-executor-probes.py::test_arma_returns_all_roles_as_an_estimate_without_overwriting_pending_prediction
+7 failed in 1.94s

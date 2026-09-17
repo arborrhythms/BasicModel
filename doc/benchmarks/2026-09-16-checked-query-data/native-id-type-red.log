@@ -1,0 +1,32 @@
+CANDIDATE Layers /tmp/full-spec-registry-worktree/bin/Layers.py
+CANDIDATE Queries /tmp/full-spec-registry-worktree/bin/Queries.py
+CANDIDATE Language /tmp/full-spec-registry-worktree/bin/Language.py
+CANDIDATE reasoning /tmp/full-spec-registry-worktree/bin/reasoning.py
+CANDIDATE Understanding /tmp/full-spec-registry-worktree/bin/Understanding.py
+CANDIDATE Models /tmp/full-spec-registry-worktree/bin/Models.py
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__ test_fractional_staged_identity_is_not_silently_truncated_into_a_referent ___
+
+    def test_fractional_staged_identity_is_not_silently_truncated_into_a_referent():
+        from types import SimpleNamespace
+        from Models import BasicModel
+        source = SimpleNamespace(
+            _ar_word_concept_rows=torch.tensor([[3]]),
+            _ar_word_object_rows=torch.tensor([[11]]),
+            _ar_word_concept_ids=torch.tensor([[101]]),
+            _ar_word_object_ids=torch.tensor([[201.9]]))
+>       with pytest.raises(TypeError, match='integer|identity|IDs'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE TypeError
+
+/tmp/full-spec-query-native-id-probes.py:71: Failed
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:1345
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:1345: PytestAssertRewriteWarning: Module already imported so cannot be rewritten; anyio
+    self._mark_plugins_for_rewrite(hook, disable_autoload)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED ../../../../../tmp/full-spec-query-native-id-probes.py::test_fractional_staged_identity_is_not_silently_truncated_into_a_referent
+1 failed, 3 deselected, 1 warning in 0.11s

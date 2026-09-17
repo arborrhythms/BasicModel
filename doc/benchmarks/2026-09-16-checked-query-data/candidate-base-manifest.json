@@ -1,0 +1,10 @@
+{
+  "bin/Layers.py": "30e401207968c3460a633af0d50d9b168c516f0a131709a19e93961edbac22af",
+  "bin/Language.py": "fe1b6c6c589c4219a7989797a2b107c9cbc89b072506e03fc80d6be0812be957",
+  "data/complete.grammar": "8bf95c60f1f572b197825ce73afcaa7525c6b33f5bd62e8434d347ebde641a42",
+  "bin/reasoning.py": "11d21e8793aac8321f52e8d84b5cd7acbcd75e4f7207dfdd0f8cc92eb208faa9",
+  "test/test_grammar_sections.py": "301a0cbfd527db122ef5caf4539effb4d42584866ee57f7bfcba0b7541d4c1d1",
+  "data/ladder.grammar": "1f34fea5aaf4433cd70255046c392132e4bd2ecafedbeb64f788bc4b4357ba15",
+  "bin/Understanding.py": "be7631dae773f998cb55005e3b8ae110c217299a998d3df0ecfe3eb48a3b77b9",
+  "bin/Models.py": "b7be4dd8f16772e41460afee37a6c41ca5eccdea6703924ae41138f96f1d943b"
+}

@@ -1,0 +1,65 @@
+........................................................................ [ 20%]
+..................................s..................................... [ 40%]
+........................................................................ [ 60%]
+........................................................................ [ 80%]
+...............................................................ssss...   [100%]
+=============================== warnings summary ===============================
+test/test_query_executors.py::test_quantize_reads_allocated_conceptual_atoms_without_symbol_snapping
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_frozen_concepts.py::test_reading_wiring_desires_staged_wholes
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18705: RuntimeWarning: CS snap block exhausted (8 rows): concept 12 gets records only, no weighted reading (overflow #1)
+    warnings.warn(
+
+test/test_output_walk.py::test_runbatch_trains_generate_policy_only_with_nonzero_weight[1.0]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:6696: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpijz812dc/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_walk.py::test_runbatch_trains_generate_policy_only_with_nonzero_weight[0.0]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:6696: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpav7ce9ey/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_walk.py::test_runbatch_does_not_train_generate_policy_without_supplied_answers
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:6696: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp9p_qe__o/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_walk.py::test_runbatch_generate_policy_masks_rows_without_supplied_answers
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:6696: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp5pty36hv/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_walk.py::test_question_conditioner_optimizer_steps_both_widths
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:6696: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpru1m3vmk/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_path_supervised.py::test_native_realized_answer_loss_trains_the_active_conditioner[False]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:6696: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-559/test_native_realized_answer_lo0/MM_ladder_native_answer.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_path_supervised.py::test_native_realized_answer_loss_trains_the_active_conditioner[True]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:6696: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-559/test_native_realized_answer_lo1/MM_ladder_native_answer.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_path_supervised.py::test_available_input_targets_do_not_train_answer_modules_after_adam[False]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:6696: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp9vkcmsk3/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_path_supervised.py::test_available_input_targets_do_not_train_answer_modules_after_adam[True]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:6696: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpskw0dys5/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_path_supervised.py::test_mixed_supplied_numeric_and_automatic_text_trains_only_supplied_row
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:6696: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpdckyijc8/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_understanding_reconstruct.py::test_runbatch_reverse_cost_equals_reconstruct_of_its_understanding
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:6696: RuntimeWarning: reconstruction_zeroed [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_xor.xml]: reconstruction loss zeroed: no D3 (per_word=False) and masked-LM inputs missing (mask, target); percept .what=Codebook, pred_full shape=(2, 8, 14)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_compiled_word_chunk.py::test_tiny_canonical_detached_reverse_train_step_is_finite
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:6696: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-559/test_tiny_canonical_detached_r1/tiny_chunk_model.xml]: Data.what target (2, 1) replaces the loader output (2, 0) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+353 passed, 5 skipped, 14 warnings in 366.32s (0:06:06)

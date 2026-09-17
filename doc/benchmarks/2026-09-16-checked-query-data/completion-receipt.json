@@ -1,0 +1,7 @@
+{
+  "validation": "recovered complete pytest passing summary",
+  "managed_exit_status": null,
+  "reason": "Managed tool session expired before exit status could be reread; no exit code is inferred.",
+  "summary": "4371 passed, 51 skipped, 7 xfailed, 184 warnings, 4 subtests passed in 7222.95s (2:00:22)",
+  "source_files_verified": 579
+}

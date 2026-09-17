@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!--
-  complete.grammar: the complete live operator inventory (2026-06-20, refined).
+  ladder.grammar: the complete live operator inventory (2026-06-20, refined).
 
   Declares every PARSE-contributing grammar operation (compose/generate) plus the
   INTROSPECTION ("thinking") operations (queries). See doc/old/2026-06-20-idea-
@@ -15,18 +15,17 @@
     - symbolize: NOT a parse op. It is EXPLICIT LEARNING - reading a trusted
       sentence that expresses a relation adds an entry to the CS Symbol table.
       (Mentioned here, never a rule.)
-    - exist: redefined as "the NP is found in LTM and is trusted" - an LTM QUERY
-      (introspection). It remains the absolute-truth predicate / start state.
-      DECIDED 2026-07-12 (with the Thinking Kernel landing): exist STAYS in
-      <compose>. It carries a STRUCTURAL role its Queries cousins never had -
-      the absolute-truth START rooting the 1-concept sentence form - and its
-      introspective half is already served by isTrue(X) in <Queries> (the
-      kernel's lookup()). Relocating it would leave the grammar with no
-      absolute start. bin/thinking.py / doc/plans/thinking_kernel_spec.md.
-    - INTROSPECTION ("thinking") ops - query, part, equal, exist - read the
-      codebook / relations / LTM and are NOP for a parse (they build no
-      structure). Listed under <queries>, NOT <compose>. queryPart / queryEqual
-      fold into part / equal + the query mechanism (decision 6).
+    - exist: its compose/inverse face represents the unary grammatical
+      relation. Only a selected completed question executes the boundary LTM
+      evidence lookup, preserving the entire conceptual description.
+    - Query-capable VPs have one relation/domain identity, with pure grammatical
+      faces and checked boundary executors. Queries are inactive during parse,
+      reconstruction and generation; this does not erase their representation.
+      part/isPart share conceptual-taxonomy meaning; whole/isWhole declare the
+      converse argument order. World facts and perceptual mereonomy are distinct.
+      Tense queries are deferred; tense-bearing compose rules retain surface
+      fidelity without establishing an event time.
+
 
   Naming: op_I[n] = input role n, op_O1 = output. forward: inputs->output;
   reverse: output->inputs. POS membership is LEARNED from participation.
@@ -40,8 +39,8 @@
     DET  = LOWER: count-noun REGION -> individual POINT (4->3).
     ADJ  = INTERSECTION (order-1 mask / Boolean meet on NP).
     ADV  = EIGENMODIFIER on the VP (1-D edit of the verb's eigenvalues).
-    copula ("is" of definition) = equal(X, Y) in <Queries> (was the isEqual
-    compose rule; relocated 2026-07-05: queries are not parse structure).
+    copula ("is" of definition) = the equality relation. equal composes its
+    grammatical structure; isEqual is its boundary evidence interface.
     and / or / not / non = conjunction / disjunction / negation / non-affirming.
     MODALITY (possibly / necessarily) = a SECOND lift adding a 5th modal
            dimension - PLANNED, NOT YET BUILT.
@@ -57,8 +56,8 @@
     2026-07-05: exact residual), + intersection/union/conjunction/disjunction
     WITH a codebook basis (recommender); content-exact / marker-lossy ->
     preposition; NO faithful inverse (fail-loud, Gate-S1 inventory) -> the
-    no-basis lattice tails; carrier-dep -> morphology. isEqual AND isPart live
-    in Queries now (the relation family are queries, not parse structure).
+    no-basis lattice tails; carrier-dep -> morphology. isEqual and isPart are
+    checked boundary interfaces to the pure grammatical relation faces.
 -->
 <grammar name="ladder">
 
@@ -99,18 +98,19 @@
     <compose>
       <!-- Relations R (the relation family): part / whole / equal are
            COMPOSITIONAL operators, i.e. Relation(RI_1, RI_2) over two ideas,
-           that head the relative-truth start. Their is-prefixed cousins
-           (isPart / isWhole / isEqual) are the boolean-predicate QUERIES in
-         <Queries>; whole is the converse of part (WholeLayer). queryPart /
-           assertPart remain folded away (decision 6). -->
+           that head the relative-truth start. isPart/isWhole/isEqual are
+           boundary interfaces to these same relation identities; they execute
+           only after a completed interrogative meaning is selected. whole
+           declares the converse operand permutation of part. query="false"
+           forbids execution here; it does not assert the proposition as true. -->
       <rule query="false">part_O1 = part.forward(part_I1, part_I2)</rule>
       <rule query="false">whole_O1 = whole.forward(whole_I1, whole_I2)</rule>
       <rule query="false">equal_O1 = equal.forward(equal_I1, equal_I2)</rule>
 
-      <!-- Absolute truth. exist = "NP found in LTM and trusted" (an LTM query);
-           EXISTS is the no-op verb (EO_1 = EXISTS(EI_1)): applied to a thing it
-           roots the minimal event, so no S = thing + EXISTS composition rule is
-           needed; the operator does it. -->
+      <!-- Pure existence composition. The numerical wrapper roots the
+           grammatical unary relation without an LTM read. Its selected query
+           face checks the full description's referent against accepted facts;
+           merely composing it cannot establish truth. -->
       <rule>exist_O1 = exist.forward(exist_I1)</rule>
 
       <!-- Negation: not = pole swap; non = non-affirming complement. -->
@@ -236,5 +236,6 @@
     <query>quantize(X)</query>
     <query>arma(X)</query>
     <query>query(X, Y)</query>
+    <query>what(Q)</query>
   </Queries>
 </grammar>

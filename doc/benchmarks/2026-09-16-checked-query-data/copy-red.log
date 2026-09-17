@@ -1,0 +1,81 @@
+CANDIDATE Layers /tmp/full-spec-registry-worktree/bin/Layers.py
+CANDIDATE Queries /tmp/full-spec-registry-worktree/bin/Queries.py
+CANDIDATE Language /tmp/full-spec-registry-worktree/bin/Language.py
+CANDIDATE reasoning /tmp/full-spec-registry-worktree/bin/reasoning.py
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____ test_copied_grammar_keeps_owned_query_catalog_and_checked_contracts ______
+
+    def test_copied_grammar_keeps_owned_query_catalog_and_checked_contracts():
+        source = Grammar()
+        source.load_from_grammar_file('complete.grammar')
+>       cloned = copy.deepcopy(source)
+                 ^^^^^^^^^^^^^^^^^^^^^
+
+/tmp/full-spec-query-copy-probe.py:9: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/copy.py:162: in deepcopy
+    y = _reconstruct(x, memo, *rv)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/copy.py:259: in _reconstruct
+    state = deepcopy(state, memo)
+            ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/copy.py:136: in deepcopy
+    y = copier(x, memo)
+        ^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/copy.py:221: in _deepcopy_dict
+    y[deepcopy(key, memo)] = deepcopy(value, memo)
+                             ^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+x = mappingproxy({'isTrue': QuerySignature(name='isTrue', semantic_id='exist', domain='ltm-facts', argument_roles=(0,), ar...ite_scope=('episode.schedule',), evidence_kind='subgoal', compose_faces=(), executor=<function _what at 0x10edf8400>)})
+memo = {4817491520: <Language.Grammar object at 0x11f2524e0>, 4818851840: {'rules': [RuleDef(space_role='SS', canonical='exis...O1', arity=1, method_name=None, lhs='exist_O1', rhs_symbols=('exist_O1',), width_min=0, width_max=0, query=False), ...}
+_nil = []
+
+    def deepcopy(x, memo=None, _nil=[]):
+        """Deep copy operation on arbitrary Python objects.
+    
+        See the module's __doc__ string for more info.
+        """
+    
+        if memo is None:
+            memo = {}
+    
+        d = id(x)
+        y = memo.get(d, _nil)
+        if y is not _nil:
+            return y
+    
+        cls = type(x)
+    
+        copier = _deepcopy_dispatch.get(cls)
+        if copier is not None:
+            y = copier(x, memo)
+        else:
+            if issubclass(cls, type):
+                y = _deepcopy_atomic(x, memo)
+            else:
+                copier = getattr(x, "__deepcopy__", None)
+                if copier is not None:
+                    y = copier(memo)
+                else:
+                    reductor = dispatch_table.get(cls)
+                    if reductor:
+                        rv = reductor(x)
+                    else:
+                        reductor = getattr(x, "__reduce_ex__", None)
+                        if reductor is not None:
+>                           rv = reductor(4)
+                                 ^^^^^^^^^^^
+E                           TypeError: cannot pickle 'mappingproxy' object
+
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/copy.py:151: TypeError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:1345
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:1345: PytestAssertRewriteWarning: Module already imported so cannot be rewritten; anyio
+    self._mark_plugins_for_rewrite(hook, disable_autoload)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED ../../../../../tmp/full-spec-query-copy-probe.py::test_copied_grammar_keeps_owned_query_catalog_and_checked_contracts
+1 failed, 1 warning in 0.13s

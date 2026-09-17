@@ -1155,13 +1155,13 @@ sentence state. BasicModel selects `reconstructionPlacement=compiled`, a
 separate fullgraph reconstruction call. With the MPS `eager` capture backend,
 that call uses `aot_eager` to capture backward as well. Its compiler retains
 saved buffers for repeated gradient reads by the joint balance rule; the caller's
-global donation setting is preserved ([Models.py:11230](../bin/Models.py#L11230)). Configurations without
+global donation setting is preserved ([Models.py:11257](../bin/Models.py#L11257)). Configurations without
 the placement setting retain the historical in-graph default; the
 `BASICMODEL_RECON_PLACEMENT` diagnostic can override either for comparison.
 Completion owns the result once during understanding, including
 valid zero-valued results ([Models.py:7278](../bin/Models.py#L7278),
 [Models.py:8025](../bin/Models.py#L8025),
-[Models.py:11199](../bin/Models.py#L11199)).
+[Models.py:11226](../bin/Models.py#L11226)).
 
 The reconstruction traversal has three bounded passes: an integer-only replay
 identifies operand occurrences; seal reversal recovers each completed sentence's
@@ -1169,14 +1169,14 @@ stack; then a reverse word walk undoes unary/post folds, pops and scores the
 word, and undoes its pre-fold. Repeated concept rows retain their own signed
 occurrence activations. Packed sentences have separate boundaries and costs.
 The two floating passes use gradient-bearing carries; the metadata pass needs
-no backward tape ([Models.py:11273](../bin/Models.py#L11273)).
+no backward tape ([Models.py:11300](../bin/Models.py#L11300)).
 
 Reconstruction owns no learned decoder. Selected compose transforms supply
 affine inverses, known-operand residuals or explicitly bounded approximate
 reconstruction. A missing inverse reports incompleteness. Dictionary snapshots
 and witnesses are detached and retained for backward; targets only score the
-result ([Language.py:14351](../bin/Language.py#L14351),
-[Models.py:11615](../bin/Models.py#L11615)). Recovered word ideas pass through
+result ([Language.py:14346](../bin/Language.py#L14346),
+[Models.py:11642](../bin/Models.py#L11642)). Recovered word ideas pass through
 the shared numerical input reverse chain using a fresh carrier; they never
 enter the free generate chart ([Models.py:8063](../bin/Models.py#L8063)).
 
@@ -1232,11 +1232,30 @@ Public `PartOf` queries read bounded conceptual reference records, preserving
 native proof sources. Perceptual edges, vector overlap and world-relation rows
 cannot certify this domain. Converse aliases share the canonical direction;
 unsupported domains fail explicitly. The derived read view adds no memory or
-learned parameters. The checked grammatical VP registry and ordinary levelled
-controller remain separate work. See [Taxonomy queries](TaxonomyQueries.md).
+learned parameters. The ordinary levelled controller and normal linguistic
+query integration remain separate work; the shared-VP contract is below. See [Taxonomy queries](TaxonomyQueries.md).
 [Reader](../bin/Taxonomy.py#L117),
-[query dispatch](../bin/reasoning.py#L578),
-[model entry](../bin/Models.py#L22225).
+[query dispatch](../bin/reasoning.py#L586),
+[model entry](../bin/Models.py#L22259).
+
+### Checked query contracts and shared grammatical VPs
+
+Grammar loading checks boundary signatures before accepting a declaration.
+Every declared interface has explicit roles, domain, evidence semantics and an
+executor. At explicit setup, the grammatical adapter binds one native named
+ConceptualSpace concept per relation/domain; compose and query aliases share
+it. Pure candidate formation preserves canonical roles, grammatical mode and
+scope. Selected execution derives its operation from the middle VP and role
+occupancy, retaining the evaluated proposition with its evidence.
+[Contracts](../bin/Queries.py#L58),
+[shared binding](../bin/Queries.py#L398),
+[dispatch](../bin/Queries.py#L496).
+
+These are explicit APIs. The normal forward derivation still needs to publish
+this meaning through every observation writer, and the ordinary boundary
+controller must enforce phases and causal answer construction. No new learned
+parameters or parallel semantic memory were added. See
+[Query contracts](QueryContracts.md) for current behavior and remaining gates.
 
 ## Sigma and Pi Layers
 
@@ -1338,7 +1357,7 @@ hard EOS resets start it cold. Restoring
 weights starts prediction context cold. Neither global LTM recency nor internal
 thoughts initialize an external-observation sequence. See
 [`begin_document`](../bin/Layers.py#L10027) and the
-[packed observer](../bin/Models.py#L12803).
+[packed observer](../bin/Models.py#L12837).
 
 ### Historical root / ARMA representation
 

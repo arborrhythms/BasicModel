@@ -159,10 +159,10 @@ Training loop and I/O.
 | `conceptualContextLearningRate` | float | `0.0` | Enables the context-owned ConceptualSpace dictionary updater. Each completed sentence produces one deterministic, reduced tangent rotation per observed codebook row; `similarity_codebook.W` is a persistent non-grad buffer, read through an eager compiler boundary, and never enters Adam. Mutually exclusive with `conceptualSimilarityScale`. |
 | `conceptualContextNegatives` | int | `4` | Number of deterministic detached negative prototype rows in the contextual SBOW rotation. |
 | `detachedReverse` | bool | `false` | On serial grammar training, supervise the static idea-only reverse chooser from `stopgrad(S)` using detached `ReconstructionStack` rule/arity/leaf targets instead of replaying the D3 recurrence. |
-| `reconstructInLoop` | bool | `false`; BasicModel `true` | One owned completed-input reconstruction. A bounded occurrence prepass, seal reversal and reverse word walk follow the identified compose derivation using shared transforms. Train/eval consume the same byte objective once; idea/event fidelity is diagnostic. Mutually exclusive with `detachedReverse`; suppresses standalone leaf distillation. Student checkpoint keys and optimizer entries are dropped while shared weights/moments survive. WORD-owned spelling candidates and a uniform null candidate score the recovered ideas ([Models.py:8025](../bin/Models.py#L8025), [Models.py:11273](../bin/Models.py#L11273)). |
-| `reconstructionBasisLimit` | positive int | `16` | Maximum candidate prototypes per side for approximate reconstruction through the selected compose operator: at most `K*K` pairs. Independent of word, STM and field capacity. The invocation owns detached values/masks; missing candidates or inverses report incompleteness ([Language.py:14533](../bin/Language.py#L14533)). |
-| `reconstructionPlacement` | `graph` / `compiled` / `eager` | `graph`; BasicModel `compiled` | Run the traversal inside the forward graph, as a separate fullgraph call, or eagerly. The separate call promotes the `eager` backend to `aot_eager` to cache backward too. The `auto` policy resolves to its first configured backend before PyTorch lookup. `BASICMODEL_RECON_PLACEMENT` remains a diagnostic override. Placement changes execution, not the tied objective or 21-value forward state ([Models.py:11230](../bin/Models.py#L11230)). |
-| `outputInLoop` | bool | `false` | `reverseOutput` unfolds owned answer concepts with its bounded generate walk. The chooser uses declared `<generate>` rules and stop: training samples actions; evaluation selects the highest-scoring action. It ignores input compose traces, teacher targets and reconstruction witnesses. Policy and traversal state are independent; numerical operator instances still share comprehension parameters pending the integrated specification's catalog migration. Unavailable requested operations remain pending and report bounded truncation ([Models.py:9214](../bin/Models.py#L9214), [Models.py:12203](../bin/Models.py#L12203)). Resolution still occurs inside `reverseOutput` pending the separate phase-controller migration. |
+| `reconstructInLoop` | bool | `false`; BasicModel `true` | One owned completed-input reconstruction. A bounded occurrence prepass, seal reversal and reverse word walk follow the identified compose derivation using shared transforms. Train/eval consume the same byte objective once; idea/event fidelity is diagnostic. Mutually exclusive with `detachedReverse`; suppresses standalone leaf distillation. Student checkpoint keys and optimizer entries are dropped while shared weights/moments survive. WORD-owned spelling candidates and a uniform null candidate score the recovered ideas ([Models.py:8025](../bin/Models.py#L8025), [Models.py:11300](../bin/Models.py#L11300)). |
+| `reconstructionBasisLimit` | positive int | `16` | Maximum candidate prototypes per side for approximate reconstruction through the selected compose operator: at most `K*K` pairs. Independent of word, STM and field capacity. The invocation owns detached values/masks; missing candidates or inverses report incompleteness ([Language.py:14528](../bin/Language.py#L14528)). |
+| `reconstructionPlacement` | `graph` / `compiled` / `eager` | `graph`; BasicModel `compiled` | Run the traversal inside the forward graph, as a separate fullgraph call, or eagerly. The separate call promotes the `eager` backend to `aot_eager` to cache backward too. The `auto` policy resolves to its first configured backend before PyTorch lookup. `BASICMODEL_RECON_PLACEMENT` remains a diagnostic override. Placement changes execution, not the tied objective or 21-value forward state ([Models.py:11257](../bin/Models.py#L11257)). |
+| `outputInLoop` | bool | `false` | `reverseOutput` unfolds owned answer concepts with its bounded generate walk. The chooser uses declared `<generate>` rules and stop: training samples actions; evaluation selects the highest-scoring action. It ignores input compose traces, teacher targets and reconstruction witnesses. Policy and traversal state are independent; numerical operator instances still share comprehension parameters pending the integrated specification's catalog migration. Unavailable requested operations remain pending and report bounded truncation ([Models.py:9214](../bin/Models.py#L9214), [Models.py:12237](../bin/Models.py#L12237)). Resolution still occurs inside `reverseOutput` pending the separate phase-controller migration. |
 | `outputPolicyWeight` | float | `0.0` | Weight of the output chooser's supervised action credit. Training samples its own output actions and credits their sequence log probability using detached realised-answer error and an EMA return baseline. Only separately supplied, available `What.supervised` numeric or text targets contribute ([Models.py:9293](../bin/Models.py#L9293)); zero weight or missing supervision gives no policy update. The term is added to the `runBatch` total and reported as `output_policy`. `LanguageSpace.generate_policy` belongs to SymbolSpace's optimizer parameters and exists only with `outputInLoop`. Input compose choices are not output supervision. |
 | `forwardGrammarWeight` | float | `0.0` | Weight of the bounded local structural contrast for committed unary/binary folds. Its candidate evidence is detached, so it updates only the chooser at that fold. |
 | `whatScale` | float | `0.7` | Loss weight on the `.what` (content) channel. |
@@ -188,7 +188,7 @@ Training loop and I/O.
 Gradient-balance defaults and validation are implemented in
 [Models.py:2532](../bin/Models.py#L2532), with the numerical contract in
 [Optimizer.py:113](../bin/Optimizer.py#L113). The inter-sentence training gate
-is in [Models.py:13944](../bin/Models.py#L13944).
+is in [Models.py:13978](../bin/Models.py#L13978).
 
 #### `<trainEmbedding>` --- Embedding Update Modes
 
@@ -706,4 +706,17 @@ budget. Limits/unavailable references report incomplete evidence. No new
 configuration switch, checkpoint schema or learned parameters were added.
 [Capture](../bin/Taxonomy.py#L117),
 [traversal](../bin/Taxonomy.py#L69),
-[public evaluation](../bin/reasoning.py#L578).
+[public evaluation](../bin/reasoning.py#L586).
+
+### Checked query call bounds and native VP setup
+
+`QueryContext` validates a row address and local limits: 256 concepts, 1024
+records, 8 path steps and 1024 edge examinations by default. These are call
+limits, not a new episode allowance; shared-budget integration remains open.
+At explicit setup, each declared relation/domain uses one existing aligned
+concept row and named handle. No new parameter tensor or configuration switch
+is introduced. A missing native binding cannot be lazily recreated by
+candidate formation or execution.
+[Context](../bin/Queries.py#L19),
+[setup](../bin/Queries.py#L398),
+[contract](QueryContracts.md).

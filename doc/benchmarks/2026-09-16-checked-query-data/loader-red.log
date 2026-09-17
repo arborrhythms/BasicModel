@@ -1,0 +1,183 @@
+CANDIDATE Layers /tmp/full-spec-registry-worktree/bin/Layers.py
+CANDIDATE Queries /tmp/full-spec-registry-worktree/bin/Queries.py
+CANDIDATE Language /tmp/full-spec-registry-worktree/bin/Language.py
+CANDIDATE reasoning /tmp/full-spec-registry-worktree/bin/reasoning.py
+FFFFF                                                                    [100%]
+=================================== FAILURES ===================================
+__ test_order_expansion_preserves_non_rule_lists_and_expands_only_rule_bodies __
+
+    def test_order_expansion_preserves_non_rule_lists_and_expands_only_rule_bodies():
+        query = ['isTrue(X)', 'isPart(X, Y)', 'what(Q)']
+        anchors = ['partOf', 'part-of']
+        cfg = {'Queries': {'query': query}, 'Anchors': {'part': anchors},
+               'compose': {'rule': ['S45 = not.forward(S45)']}}
+        result = _expand_compact_order_sets(cfg)
+>       assert result['Queries']['query'] == query
+E       AssertionError: assert ['i', 's', 'T...'u', 'e', ...] == ['isTrue(X)',...)', 'what(Q)']
+E         
+E         At index 0 diff: 'i' != 'isTrue(X)'
+E         Left contains 25 more items, first extra item: 'r'
+E         Use -v to get more diff
+
+/tmp/full-spec-query-loader-probes.py:13: AssertionError
+_ test_full_file_loading_preserves_checked_predicate_signatures[complete.grammar] _
+
+filename = 'complete.grammar'
+
+    @pytest.mark.parametrize('filename', ['complete.grammar', 'ladder.grammar', 'default.grammar', 'shamatha.grammar'])
+    def test_full_file_loading_preserves_checked_predicate_signatures(filename):
+        grammar = Grammar()
+>       grammar.load_from_grammar_file(filename)
+
+/tmp/full-spec-query-loader-probes.py:22: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/tmp/full-spec-registry-worktree/bin/Language.py:1616: in load_from_grammar_file
+    self.configure(cfg)
+/tmp/full-spec-registry-worktree/bin/Language.py:1051: in configure
+    query_ops, query_signatures = checked_query_declarations(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+declarations = ['i', 's', 'T', 'r', 'u', 'e', ...]
+
+    def checked_query_declarations(declarations):
+        """Validate static grammar declarations; this never parses input sentences."""
+        if declarations is None:
+            declarations = []
+        if isinstance(declarations, str):
+            declarations = [declarations]
+        if not isinstance(declarations, list):
+            raise ValueError('query declarations must be a signature or list of signatures')
+        signatures, names = {}, []
+        for text in declarations:
+            if not isinstance(text, str):
+                raise ValueError('query declaration must be a signature string')
+            match = re.fullmatch(r'\s*([A-Za-z_]\w*)\s*\(\s*([A-Za-z_\w,\s]*)\)\s*', text, re.ASCII)
+            if match is None:
+>               raise ValueError(f'malformed query signature {text!r}')
+E               ValueError: malformed query signature 'i'
+
+/tmp/full-spec-registry-worktree/bin/Queries.py:353: ValueError
+_ test_full_file_loading_preserves_checked_predicate_signatures[ladder.grammar] _
+
+filename = 'ladder.grammar'
+
+    @pytest.mark.parametrize('filename', ['complete.grammar', 'ladder.grammar', 'default.grammar', 'shamatha.grammar'])
+    def test_full_file_loading_preserves_checked_predicate_signatures(filename):
+        grammar = Grammar()
+>       grammar.load_from_grammar_file(filename)
+
+/tmp/full-spec-query-loader-probes.py:22: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/tmp/full-spec-registry-worktree/bin/Language.py:1616: in load_from_grammar_file
+    self.configure(cfg)
+/tmp/full-spec-registry-worktree/bin/Language.py:1051: in configure
+    query_ops, query_signatures = checked_query_declarations(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+declarations = ['i', 's', 'T', 'r', 'u', 'e', ...]
+
+    def checked_query_declarations(declarations):
+        """Validate static grammar declarations; this never parses input sentences."""
+        if declarations is None:
+            declarations = []
+        if isinstance(declarations, str):
+            declarations = [declarations]
+        if not isinstance(declarations, list):
+            raise ValueError('query declarations must be a signature or list of signatures')
+        signatures, names = {}, []
+        for text in declarations:
+            if not isinstance(text, str):
+                raise ValueError('query declaration must be a signature string')
+            match = re.fullmatch(r'\s*([A-Za-z_]\w*)\s*\(\s*([A-Za-z_\w,\s]*)\)\s*', text, re.ASCII)
+            if match is None:
+>               raise ValueError(f'malformed query signature {text!r}')
+E               ValueError: malformed query signature 'i'
+
+/tmp/full-spec-registry-worktree/bin/Queries.py:353: ValueError
+_ test_full_file_loading_preserves_checked_predicate_signatures[default.grammar] _
+
+filename = 'default.grammar'
+
+    @pytest.mark.parametrize('filename', ['complete.grammar', 'ladder.grammar', 'default.grammar', 'shamatha.grammar'])
+    def test_full_file_loading_preserves_checked_predicate_signatures(filename):
+        grammar = Grammar()
+>       grammar.load_from_grammar_file(filename)
+
+/tmp/full-spec-query-loader-probes.py:22: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/tmp/full-spec-registry-worktree/bin/Language.py:1616: in load_from_grammar_file
+    self.configure(cfg)
+/tmp/full-spec-registry-worktree/bin/Language.py:1051: in configure
+    query_ops, query_signatures = checked_query_declarations(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+declarations = ['i', 's', 'T', 'r', 'u', 'e', ...]
+
+    def checked_query_declarations(declarations):
+        """Validate static grammar declarations; this never parses input sentences."""
+        if declarations is None:
+            declarations = []
+        if isinstance(declarations, str):
+            declarations = [declarations]
+        if not isinstance(declarations, list):
+            raise ValueError('query declarations must be a signature or list of signatures')
+        signatures, names = {}, []
+        for text in declarations:
+            if not isinstance(text, str):
+                raise ValueError('query declaration must be a signature string')
+            match = re.fullmatch(r'\s*([A-Za-z_]\w*)\s*\(\s*([A-Za-z_\w,\s]*)\)\s*', text, re.ASCII)
+            if match is None:
+>               raise ValueError(f'malformed query signature {text!r}')
+E               ValueError: malformed query signature 'i'
+
+/tmp/full-spec-registry-worktree/bin/Queries.py:353: ValueError
+_ test_full_file_loading_preserves_checked_predicate_signatures[shamatha.grammar] _
+
+filename = 'shamatha.grammar'
+
+    @pytest.mark.parametrize('filename', ['complete.grammar', 'ladder.grammar', 'default.grammar', 'shamatha.grammar'])
+    def test_full_file_loading_preserves_checked_predicate_signatures(filename):
+        grammar = Grammar()
+>       grammar.load_from_grammar_file(filename)
+
+/tmp/full-spec-query-loader-probes.py:22: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/tmp/full-spec-registry-worktree/bin/Language.py:1616: in load_from_grammar_file
+    self.configure(cfg)
+/tmp/full-spec-registry-worktree/bin/Language.py:1051: in configure
+    query_ops, query_signatures = checked_query_declarations(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+declarations = ['i', 's', 'T', 'r', 'u', 'e', ...]
+
+    def checked_query_declarations(declarations):
+        """Validate static grammar declarations; this never parses input sentences."""
+        if declarations is None:
+            declarations = []
+        if isinstance(declarations, str):
+            declarations = [declarations]
+        if not isinstance(declarations, list):
+            raise ValueError('query declarations must be a signature or list of signatures')
+        signatures, names = {}, []
+        for text in declarations:
+            if not isinstance(text, str):
+                raise ValueError('query declaration must be a signature string')
+            match = re.fullmatch(r'\s*([A-Za-z_]\w*)\s*\(\s*([A-Za-z_\w,\s]*)\)\s*', text, re.ASCII)
+            if match is None:
+>               raise ValueError(f'malformed query signature {text!r}')
+E               ValueError: malformed query signature 'i'
+
+/tmp/full-spec-registry-worktree/bin/Queries.py:353: ValueError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:1345
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:1345: PytestAssertRewriteWarning: Module already imported so cannot be rewritten; anyio
+    self._mark_plugins_for_rewrite(hook, disable_autoload)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED ../../../../../tmp/full-spec-query-loader-probes.py::test_order_expansion_preserves_non_rule_lists_and_expands_only_rule_bodies
+FAILED ../../../../../tmp/full-spec-query-loader-probes.py::test_full_file_loading_preserves_checked_predicate_signatures[complete.grammar]
+FAILED ../../../../../tmp/full-spec-query-loader-probes.py::test_full_file_loading_preserves_checked_predicate_signatures[ladder.grammar]
+FAILED ../../../../../tmp/full-spec-query-loader-probes.py::test_full_file_loading_preserves_checked_predicate_signatures[default.grammar]
+FAILED ../../../../../tmp/full-spec-query-loader-probes.py::test_full_file_loading_preserves_checked_predicate_signatures[shamatha.grammar]
+5 failed, 1 warning in 0.55s

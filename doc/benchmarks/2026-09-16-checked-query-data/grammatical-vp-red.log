@@ -1,0 +1,123 @@
+CANDIDATE Layers /tmp/full-spec-registry-worktree/bin/Layers.py
+CANDIDATE Queries /tmp/full-spec-registry-worktree/bin/Queries.py
+CANDIDATE Language /tmp/full-spec-registry-worktree/bin/Language.py
+CANDIDATE reasoning /tmp/full-spec-registry-worktree/bin/reasoning.py
+CANDIDATE Understanding /tmp/full-spec-registry-worktree/bin/Understanding.py
+CANDIDATE Models /tmp/full-spec-registry-worktree/bin/Models.py
+FFFFFFF                                                                  [100%]
+=================================== FAILURES ===================================
+______ test_compose_query_and_converse_faces_share_the_same_canonical_vp _______
+
+    def test_compose_query_and_converse_faces_share_the_same_canonical_vp():
+>       cs, registry, a, b, context = _world()
+                                      ^^^^^^^^
+
+/tmp/full-spec-grammatical-vp-probes.py:32: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def _world():
+>       from Queries import GrammaticalQueryRegistry
+E       ImportError: cannot import name 'GrammaticalQueryRegistry' from 'Queries' (/tmp/full-spec-registry-worktree/bin/Queries.py)
+
+/tmp/full-spec-grammatical-vp-probes.py:17: ImportError
+_____ test_execution_is_derived_from_middle_vp_and_retains_the_proposition _____
+
+    def test_execution_is_derived_from_middle_vp_and_retains_the_proposition():
+>       cs, registry, a, b, context = _world()
+                                      ^^^^^^^^
+
+/tmp/full-spec-grammatical-vp-probes.py:49: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def _world():
+>       from Queries import GrammaticalQueryRegistry
+E       ImportError: cannot import name 'GrammaticalQueryRegistry' from 'Queries' (/tmp/full-spec-registry-worktree/bin/Queries.py)
+
+/tmp/full-spec-grammatical-vp-probes.py:17: ImportError
+__________ test_assertive_or_unrecognized_vp_does_not_execute_a_query __________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x11ed986b0>
+
+    def test_assertive_or_unrecognized_vp_does_not_execute_a_query(monkeypatch):
+>       cs, registry, a, b, context = _world()
+                                      ^^^^^^^^
+
+/tmp/full-spec-grammatical-vp-probes.py:61: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def _world():
+>       from Queries import GrammaticalQueryRegistry
+E       ImportError: cannot import name 'GrammaticalQueryRegistry' from 'Queries' (/tmp/full-spec-registry-worktree/bin/Queries.py)
+
+/tmp/full-spec-grammatical-vp-probes.py:17: ImportError
+___ test_open_taxonomy_roles_use_the_same_vp_without_fabricating_an_operand ____
+
+    def test_open_taxonomy_roles_use_the_same_vp_without_fabricating_an_operand():
+>       cs, registry, a, b, context = _world()
+                                      ^^^^^^^^
+
+/tmp/full-spec-grammatical-vp-probes.py:71: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def _world():
+>       from Queries import GrammaticalQueryRegistry
+E       ImportError: cannot import name 'GrammaticalQueryRegistry' from 'Queries' (/tmp/full-spec-registry-worktree/bin/Queries.py)
+
+/tmp/full-spec-grammatical-vp-probes.py:17: ImportError
+______ test_forming_candidates_does_not_mint_or_write_memory_after_setup _______
+
+    def test_forming_candidates_does_not_mint_or_write_memory_after_setup():
+>       cs, registry, a, b, context = _world()
+                                      ^^^^^^^^
+
+/tmp/full-spec-grammatical-vp-probes.py:84: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def _world():
+>       from Queries import GrammaticalQueryRegistry
+E       ImportError: cannot import name 'GrammaticalQueryRegistry' from 'Queries' (/tmp/full-spec-registry-worktree/bin/Queries.py)
+
+/tmp/full-spec-grammatical-vp-probes.py:17: ImportError
+__ test_unary_existence_keeps_full_description_through_an_existing_occurrence __
+
+    def test_unary_existence_keeps_full_description_through_an_existing_occurrence():
+>       cs, registry, a, b, _ = _world()
+                                ^^^^^^^^
+
+/tmp/full-spec-grammatical-vp-probes.py:96: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def _world():
+>       from Queries import GrammaticalQueryRegistry
+E       ImportError: cannot import name 'GrammaticalQueryRegistry' from 'Queries' (/tmp/full-spec-registry-worktree/bin/Queries.py)
+
+/tmp/full-spec-grammatical-vp-probes.py:17: ImportError
+_____ test_missing_or_retired_vp_binding_fails_without_lazy_reinstallation _____
+
+    def test_missing_or_retired_vp_binding_fails_without_lazy_reinstallation():
+>       cs, registry, a, b, context = _world()
+                                      ^^^^^^^^
+
+/tmp/full-spec-grammatical-vp-probes.py:118: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def _world():
+>       from Queries import GrammaticalQueryRegistry
+E       ImportError: cannot import name 'GrammaticalQueryRegistry' from 'Queries' (/tmp/full-spec-registry-worktree/bin/Queries.py)
+
+/tmp/full-spec-grammatical-vp-probes.py:17: ImportError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:1345
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:1345: PytestAssertRewriteWarning: Module already imported so cannot be rewritten; anyio
+    self._mark_plugins_for_rewrite(hook, disable_autoload)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED ../../../../../tmp/full-spec-grammatical-vp-probes.py::test_compose_query_and_converse_faces_share_the_same_canonical_vp
+FAILED ../../../../../tmp/full-spec-grammatical-vp-probes.py::test_execution_is_derived_from_middle_vp_and_retains_the_proposition
+FAILED ../../../../../tmp/full-spec-grammatical-vp-probes.py::test_assertive_or_unrecognized_vp_does_not_execute_a_query
+FAILED ../../../../../tmp/full-spec-grammatical-vp-probes.py::test_open_taxonomy_roles_use_the_same_vp_without_fabricating_an_operand
+FAILED ../../../../../tmp/full-spec-grammatical-vp-probes.py::test_forming_candidates_does_not_mint_or_write_memory_after_setup
+FAILED ../../../../../tmp/full-spec-grammatical-vp-probes.py::test_unary_existence_keeps_full_description_through_an_existing_occurrence
+FAILED ../../../../../tmp/full-spec-grammatical-vp-probes.py::test_missing_or_retired_vp_binding_fails_without_lazy_reinstallation
+7 failed, 1 warning in 0.14s

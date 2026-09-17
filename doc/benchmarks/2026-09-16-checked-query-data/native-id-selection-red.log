@@ -1,0 +1,31 @@
+CANDIDATE Layers /tmp/full-spec-registry-worktree/bin/Layers.py
+CANDIDATE Queries /tmp/full-spec-registry-worktree/bin/Queries.py
+CANDIDATE Language /tmp/full-spec-registry-worktree/bin/Language.py
+CANDIDATE reasoning /tmp/full-spec-registry-worktree/bin/reasoning.py
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__ test_missing_object_identity_cannot_fall_back_to_a_different_word_referent __
+
+    def test_missing_object_identity_cannot_fall_back_to_a_different_word_referent():
+        from types import SimpleNamespace
+        from Models import BasicModel
+        source = SimpleNamespace(
+            _ar_word_concept_rows=torch.tensor([[3, 4, 5]]),
+            _ar_word_object_rows=torch.tensor([[11, -1, 13]]),
+            _ar_word_concept_ids=torch.tensor([[101, 102, 103]]),
+            _ar_word_object_ids=torch.tensor([[201, -1, -1]]))
+        model = SimpleNamespace(inputSpace=source)
+>       ids = BasicModel._word_symbol_concept_ids(model)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: type object 'BasicModel' has no attribute '_word_symbol_concept_ids'
+
+/tmp/full-spec-query-native-id-probes.py:59: AttributeError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:1345
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:1345: PytestAssertRewriteWarning: Module already imported so cannot be rewritten; anyio
+    self._mark_plugins_for_rewrite(hook, disable_autoload)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED ../../../../../tmp/full-spec-query-native-id-probes.py::test_missing_object_identity_cannot_fall_back_to_a_different_word_referent
+1 failed, 2 deselected, 1 warning in 0.14s

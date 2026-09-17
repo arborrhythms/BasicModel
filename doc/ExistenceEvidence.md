@@ -1,8 +1,9 @@
 # Existence evidence and grammatical descriptions
 
 Implementation reference, September 16. Focused probes pass; affected-file
-and full-suite validation are recorded in integrated specification §15. The typed VP registry, grammatical query route and ordinary thought
-controller remain separate work. [Conceptual-taxonomy PartOf](TaxonomyQueries.md)
+and full-suite validation are recorded in integrated specification §15. The normal grammatical query route and ordinary thought controller remain
+separate work. [Query contracts](QueryContracts.md) supplies the explicit
+checked shared-VP adapter. [Conceptual-taxonomy PartOf](TaxonomyQueries.md)
 now has its own evidence reader.
 
 ## What the lookup establishes
@@ -29,7 +30,7 @@ Low support remains visible even below the posture threshold; strong positive
 and negative support yields `BOTH`. Missing required metadata is reported as
 incomplete evidence. The legacy kernel retains these sources through its final
 result, including missing-context diagnostics.
-[Posture](../bin/reasoning.py#L578),
+[Posture](../bin/reasoning.py#L586),
 [kernel lookup](../bin/thinking.py#L268),
 [kernel aggregation](../bin/thinking.py#L398).
 
@@ -37,7 +38,7 @@ result, including missing-context diagnostics.
 negative support. That scalar loses conflict information. Checked evaluation
 and the kernel use the rich evidence result. Neither path consults model
 activation as a substitute for a fact.
-[Compatibility view](../bin/reasoning.py#L205).
+[Compatibility view](../bin/reasoning.py#L213).
 
 ## Meaning ownership and storage
 
@@ -115,7 +116,7 @@ those rows remain `unverified` for Exist until the structured-query migration.
 [Evidence kind](../bin/thinking.py#L85),
 [registration](../bin/thinking.py#L325),
 [admission](../bin/thinking.py#L355).
-[Legacy materialization](../bin/reasoning.py#L499).
+[Legacy materialization](../bin/reasoning.py#L507).
 
 ## Gradients
 

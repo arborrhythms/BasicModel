@@ -18,6 +18,8 @@ from dataclasses import dataclass, field
 from types import MappingProxyType
 from typing import Any, Mapping
 
+import torch
+
 
 @dataclass(frozen=True)
 class AnswerProgram:
@@ -37,10 +39,21 @@ class AnswerProgram:
     actions: Any
     targets: Any
     end_state: Any
+    # Native allocator identities are addresses, never dictionary rows or
+    # numerical semantic features. Older programs have unknown identities.
+    concept_ids: Any = None
 
-    _tensor_fields = ("rows", "word_rows", "activations", "leaves", "actions", "targets", "end_state")
+    _tensor_fields = ("rows", "word_rows", "activations", "leaves", "actions", "targets", "end_state", "concept_ids")
 
     def __post_init__(self) -> None:
+        ids = self.concept_ids
+        if ids is None:
+            ids = self.rows.new_full(self.rows.shape, -1)
+        if (not torch.is_tensor(ids) or ids.dtype != torch.long
+                or ids.shape != self.rows.shape
+                or bool(((ids <= 0) & (ids != -1)).any())):
+            raise ValueError("program concept IDs must be positive native addresses or -1, aligned to leaves")
+        object.__setattr__(self, "concept_ids", ids)
         for name in self._tensor_fields:
             object.__setattr__(self, name, getattr(self, name).clone())
 

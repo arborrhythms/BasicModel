@@ -18,7 +18,7 @@ occurrence-specific operand in the corresponding chart when available. Their
 balanced split without a witness establishes recomposition, not original-child
 fidelity. Verb reversal uses the actual spectral transform; adverb reversal
 uses eight bounded corrections with its own shared edit weights
-([Language.py:14351](../bin/Language.py#L14351)).
+([Language.py:14346](../bin/Language.py#L14346)).
 
 Lossy folds use the actual selected compose kernel over a masked, detached
 per-invocation snapshot. `reconstructionBasisLimit` bounds candidates per side
@@ -26,13 +26,13 @@ per-invocation snapshot. `reconstructionBasisLimit` bounds candidates per side
 Insufficient candidates or an unsupported inverse report incompleteness.
 Inactive rows and candidates are masked before nonlinear work so their unused
 values cannot contaminate active gradients
-([Language.py:14533](../bin/Language.py#L14533)).
+([Language.py:14528](../bin/Language.py#L14528)).
 
 Input realization uses the recovered ideas and shared numerical inverse chain;
 it does not enter the free `<generate>` chart. `Understanding` owns the result,
 so later staging and scoring targets cannot change it
 ([Models.py:8025](../bin/Models.py#L8025),
-[Understanding.py:54](../bin/Understanding.py#L54)). Output keeps its own
+[Understanding.py:67](../bin/Understanding.py#L67)). Output keeps its own
 generate choices, state and budget; it receives no reconstruction-only operand
 witnesses or basis. The further parameter-catalog and query-controller changes
 remain ordered separately in the
@@ -140,24 +140,24 @@ it once selected is now unconditional. The retired
 
 `SymbolSubSpace` always owns one `WhatInteractionMemory`; expectation uses
 its own `InterSentenceLayer`. Construction is in
-[`SymbolSubSpace.__init__`](../bin/Language.py#L10966), and model thinking
+[`SymbolSubSpace.__init__`](../bin/Language.py#L10961), and model thinking
 reads the owner through [`_what_memory`](../bin/Models.py#L7905).
 The retired `whatThinkingMemory` switch and discourse delegates are removed.
 
 `sentenceExpectation` defaults to true, with structured NP1/VP/NP2 expectation.
-[`set_sentence_expectation`](../bin/Models.py#L12666) can switch it at runtime;
-[`ensure_sentence_expectation`](../bin/Language.py#L13591) creates its parameters
+[`set_sentence_expectation`](../bin/Models.py#L12700) can switch it at runtime;
+[`ensure_sentence_expectation`](../bin/Language.py#L13586) creates its parameters
 once and registers them for optimization when first enabled. Re-enabling starts
 a fresh observation stream. Soft packed-brick resets preserve an enabled
 stream; hard resets and document changes make the affected row cold.
-See [`InterSentenceLayer.Reset`](../bin/Layers.py#L10802) and
+See [`InterSentenceLayer.Reset`](../bin/Layers.py#L10809) and
 [the integrated specification](plans/2026-09-15-next-sentence-as-the-production-objective.md#11-code-review-2026-09-16-local-role-expectation-implementation).
 
 ## Recorded compose execution
 
 Answer materialization replays its captured compose program through
-[`_replay_program`](../bin/Models.py#L12158).
-[`forward_binary_step`](../bin/Language.py#L14620) executes the recorded
+[`_replay_program`](../bin/Models.py#L12192).
+[`forward_binary_step`](../bin/Language.py#L14615) executes the recorded
 operator for each live row, preserving the newest operand on inactive rows.
 Eager calls dispatch the selected operator set; compiled calls use conditional
 branches. Both retain the existing operator parameters and input gradients,
@@ -526,7 +526,7 @@ declares the compositional op `part` and its converse `whole`, with separate
 `query="false"`; the dispatch helper's legacy `query="true"` rewrite does not
 connect these declarations to a shared grammatical VP.
 [Relation declarations](../data/complete.grammar#L99),
-[legacy dispatch helper](../bin/Language.py#L4425).
+[legacy dispatch helper](../bin/Language.py#L4420).
 
 The current `_SURFACE_TO_KIND` interface maps `part`, `isPart` and
 `queryPart` to the same `KIND_IS_PART` reduction kind, and similarly maps
@@ -768,16 +768,36 @@ the `<Anchors>` closed-class relation surfaces sit relative to this axis.
 ## Exist at the reasoning boundary (September 16)
 
 The pure `exist` compose wrapper retains its grammatical role; its forward
-operation is an identity ([ExistLayer](../bin/Language.py#L4467)). The reasoner's
+operation is an identity ([ExistLayer](../bin/Language.py#L4462)). The reasoner's
 `Exist`/`isTrue` evaluation now uses accepted LTM facts for the complete
 description, preserving occupied roles, scope, bindings, references and both
 support polarities. This does not execute a query during composition.
 [Boundary lookup](../bin/reasoning.py#L156).
 
-The typed VP registry and canonical linguistic/internal query agreement
-remain open. Public `PartOf` now reads native conceptual-taxonomy references
+The checked shared-VP adapter is implemented as an explicit API below.
+Canonical linguistic/internal agreement in normal forward execution remains open. Public `PartOf` now reads native conceptual-taxonomy references
 ([Taxonomy queries](TaxonomyQueries.md)); this evidence reader does not
 complete the grammatical migration. See
 [Existence evidence](ExistenceEvidence.md) for the implemented evidence layer
 and [the integrated specification](plans/2026-09-15-next-sentence-as-the-production-objective.md#2-one-grammatical-deep-structure-multiple-surface-forms)
 for the complete grammatical target.
+
+## Checked boundary signatures and shared VP identities (September 16)
+
+`Grammar.configure` validates query declarations before changing existing
+rules. Static query/anchor strings remain whole when the loader expands
+order alternatives. Complete and production ladder grammars include the
+distinct `what(Q)` subgoal interface, which requires an interrogative question.
+[Declarations](../bin/Language.py#L1027),
+[file normalization](../bin/Language.py#L514).
+
+The explicit shared-VP adapter forms `[NP1, VP, NP2]` with native references,
+mode, polarity, scope and bindings. `whole`/`isWhole` reverse surface operands
+into the same canonical relation as `part`/`isPart`; `parts`/`wholes` retain
+open roles. Formation does not execute. A selected question dispatches from its
+middle VP and occupancy, requiring a checked declaration. No keyword matching
+is used in this API. The normal linguistic derivation adapter, sense selection,
+paraphrase realization and per-row phase guard remain to be integrated.
+[Formation](../bin/Queries.py#L431),
+[dispatch](../bin/Queries.py#L496),
+[full contract](QueryContracts.md).

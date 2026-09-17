@@ -1,0 +1,102 @@
+CANDIDATE Layers /tmp/full-spec-registry-worktree/bin/Layers.py
+CANDIDATE Queries /tmp/full-spec-registry-worktree/bin/Queries.py
+CANDIDATE Language /tmp/full-spec-registry-worktree/bin/Language.py
+FFF.....F                                                                [100%]
+=================================== FAILURES ===================================
+___ test_exist_executor_limits_native_fact_reads_and_reports_incompleteness ____
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x127b18a40>
+
+    def test_exist_executor_limits_native_fact_reads_and_reports_incompleteness(monkeypatch):
+        store = TernaryTruthStore(4)
+        meaning = ConceptualMeaning.from_description(torch.ones(4))
+        for strength in (0.2, 0.8):
+            store.append_meaning(meaning, trust=strength)
+        rows = []
+        original = store.row
+        def read(index):
+            rows.append(index)
+            return original(index)
+        monkeypatch.setattr(store, 'row', read)
+        result = BUILTIN_QUERIES['isTrue'].invoke(
+            QueryContext(TruthGroundedReasoner(store=store), max_records=1), meaning)
+>       assert rows == [0]
+E       assert [0, 1] == [0]
+E         
+E         Left contains one more item: 1
+E         Use -v to get more diff
+
+/tmp/full-spec-query-contract-boundary-probes.py:29: AssertionError
+_______ test_zero_quantize_budget_does_not_fetch_a_named_concept_payload _______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x127b19220>
+
+    def test_zero_quantize_budget_does_not_fetch_a_named_concept_payload(monkeypatch):
+        cs = _cs()
+        concept = cs.mint_frozen_concept('zero-budget-native-read')
+        monkeypatch.setattr(cs.similarity_codebook, 'active_prototypes',
+                            lambda: pytest.fail('zero query budget read the dictionary'))
+        context = QueryContext(TruthGroundedReasoner(model=SimpleNamespace(conceptualSpace=cs)), max_nodes=0)
+>       result = BUILTIN_QUERIES['quantize'].invoke(context, ('sym', concept))
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+/tmp/full-spec-query-contract-boundary-probes.py:41: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/tmp/full-spec-registry-worktree/bin/Queries.py:92: in invoke
+    result = self.executor(context, by_role)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/tmp/full-spec-registry-worktree/bin/Queries.py:214: in _quantize
+    value = _vector(context, arguments[0])
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/tmp/full-spec-registry-worktree/bin/Queries.py:141: in _vector
+    values = _basis(space)
+             ^^^^^^^^^^^^^
+/tmp/full-spec-registry-worktree/bin/Queries.py:130: in _basis
+    values = read() if callable(read) else book.getW()
+             ^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+>   lambda: pytest.fail('zero query budget read the dictionary'))
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: zero query budget read the dictionary
+
+/tmp/full-spec-query-contract-boundary-probes.py:39: Failed
+_ test_nonfinite_native_concept_atom_fails_instead_of_becoming_identity_evidence _
+
+    def test_nonfinite_native_concept_atom_fails_instead_of_becoming_identity_evidence():
+        cs = _cs()
+        concept = cs.mint_frozen_concept('invalid-payload-native-read')
+        with torch.no_grad():
+            cs.similarity_codebook.getW()[cs._csw_row_of(concept)].fill_(float('nan'))
+        context = QueryContext(TruthGroundedReasoner(model=SimpleNamespace(conceptualSpace=cs)))
+>       with pytest.raises(FloatingPointError, match='finite'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE FloatingPointError
+
+/tmp/full-spec-query-contract-boundary-probes.py:53: Failed
+_ test_query_contracts_cannot_advertise_nonexistent_executors_or_ambiguous_roles _
+
+    def test_query_contracts_cannot_advertise_nonexistent_executors_or_ambiguous_roles():
+        part = BUILTIN_QUERIES['isPart']
+>       with pytest.raises(ValueError, match='executor'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+/tmp/full-spec-query-contract-boundary-probes.py:87: Failed
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:1345
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:1345: PytestAssertRewriteWarning: Module already imported so cannot be rewritten; anyio
+    self._mark_plugins_for_rewrite(hook, disable_autoload)
+
+full-spec-query-contract-boundary-probes.py::test_nonfinite_native_concept_atom_fails_instead_of_becoming_identity_evidence
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED ../../../../../tmp/full-spec-query-contract-boundary-probes.py::test_exist_executor_limits_native_fact_reads_and_reports_incompleteness
+FAILED ../../../../../tmp/full-spec-query-contract-boundary-probes.py::test_zero_quantize_budget_does_not_fetch_a_named_concept_payload
+FAILED ../../../../../tmp/full-spec-query-contract-boundary-probes.py::test_nonfinite_native_concept_atom_fails_instead_of_becoming_identity_evidence
+FAILED ../../../../../tmp/full-spec-query-contract-boundary-probes.py::test_query_contracts_cannot_advertise_nonexistent_executors_or_ambiguous_roles
+4 failed, 5 passed, 2 warnings in 0.18s

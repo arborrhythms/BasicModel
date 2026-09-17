@@ -1,0 +1,60 @@
+CANDIDATE Layers /tmp/full-spec-registry-worktree/bin/Layers.py
+CANDIDATE Queries /tmp/full-spec-registry-worktree/bin/Queries.py
+CANDIDATE Language /tmp/full-spec-registry-worktree/bin/Language.py
+CANDIDATE reasoning /tmp/full-spec-registry-worktree/bin/reasoning.py
+CANDIDATE Understanding /tmp/full-spec-registry-worktree/bin/Understanding.py
+CANDIDATE Models /tmp/full-spec-registry-worktree/bin/Models.py
+FF......                                                                 [100%]
+=================================== FAILURES ===================================
+_________ test_foreign_width_query_fails_before_the_taxonomy_executor __________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x120e72510>
+
+    def test_foreign_width_query_fails_before_the_taxonomy_executor(monkeypatch):
+        _, _, registry, a, b, context = _world()
+        question = registry.form('isPart', a, b)
+        monkeypatch.setattr(context.reasoner, 'taxonomy_evidence', lambda *a, **k: pytest.fail('executed'))
+        with pytest.raises(ValueError, match='width'):
+>           registry.execute(replace(question, roles=question.roles[:, :4]), context)
+
+/tmp/full-spec-query-vp-boundary-probes.py:34: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/tmp/full-spec-registry-worktree/bin/Queries.py:508: in execute
+    evidence = signature.invoke(context, *arguments)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/tmp/full-spec-registry-worktree/bin/Queries.py:111: in invoke
+    result = self.executor(context, by_role)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/tmp/full-spec-registry-worktree/bin/Queries.py:174: in _part
+    return context.reasoner.taxonomy_evidence(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+a = (('sym', 8), ('sym', 9))
+k = {'max_nodes': 256, 'max_records': 1024, 'max_steps': 8, 'max_expansions': 1024}
+
+>   monkeypatch.setattr(context.reasoner, 'taxonomy_evidence', lambda *a, **k: pytest.fail('executed'))
+                                                                               ^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: executed
+
+/tmp/full-spec-query-vp-boundary-probes.py:32: Failed
+_______ test_what_cannot_turn_assertive_content_into_an_executed_subgoal _______
+
+    def test_what_cannot_turn_assertive_content_into_an_executed_subgoal():
+        calls = []
+        content = ConceptualMeaning.from_description(torch.ones(8))
+        context = QueryContext(TruthGroundedReasoner(), schedule_subgoal=lambda value: calls.append(value) or value)
+>       with pytest.raises(ValueError, match='interrogative|question'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+/tmp/full-spec-query-vp-boundary-probes.py:41: Failed
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:1345
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:1345: PytestAssertRewriteWarning: Module already imported so cannot be rewritten; anyio
+    self._mark_plugins_for_rewrite(hook, disable_autoload)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED ../../../../../tmp/full-spec-query-vp-boundary-probes.py::test_foreign_width_query_fails_before_the_taxonomy_executor
+FAILED ../../../../../tmp/full-spec-query-vp-boundary-probes.py::test_what_cannot_turn_assertive_content_into_an_executed_subgoal
+2 failed, 6 passed, 1 warning in 0.17s

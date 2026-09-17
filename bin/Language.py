@@ -31,6 +31,7 @@ from Layers import (CertaintyWeightedCrossEntropy, LeafDecoderHead, Loss,
                     ModelLoss, epsilon, Ops)
 from Layers import SortingLayer, TruthLayer, RelativeTruthStore, TernaryTruthStore, LiftingLayer, InterSentenceLayer, SparsityRegLayer, SmoothingRegLayer, ImpenetrableLayer
 from Layers import WhatInteractionMemory
+from Queries import checked_query_declarations
 from util import parse
 from collections import namedtuple as _namedtuple
 
@@ -513,10 +514,9 @@ def _expand_compact_order_sets_in_rule(rule):
 def _expand_compact_order_sets(cfg):
     """Expand compact order-set sugar under every ``rule`` list."""
     if isinstance(cfg, list):
-        out = []
-        for item in cfg:
-            out.extend(_expand_compact_order_sets(item))
-        return out
+        # Only the rule-key branch expands alternatives. Other lists contain
+        # complete query signatures/anchors, not iterables of characters.
+        return [_expand_compact_order_sets(item) for item in cfg]
     if not isinstance(cfg, dict):
         return cfg
     out = {}
@@ -1042,16 +1042,19 @@ class Grammar:
               -- runtime gating is independent of space_role tagging; the
               tags are an inductive-bias hint, not a hard restriction.
         """
+        # Validate boundary contracts before mutating the grammar. Query-capable
+        # relations have pure grammatical faces; declaration never executes one.
+        q_block = grammar_dict.get('Queries')
+        if q_block is not None and not isinstance(q_block, dict):
+            raise ValueError('Queries must contain checked query signatures')
+        query_ops, query_signatures = checked_query_declarations(
+            None if q_block is None else q_block.get('query'))
         self.rules_upward = []
         self.rules_downward = []
         self.ps_rules_upward = []
         self.ps_rules_downward = []
-        # Introspection query ops declared in the grammar's <Queries>/<queries>
-        # section (parse-NOPs: they build no structure). Registered here so the
-        # model can reason over what it knows; the truth-grounded reasoner
-        # (bin/reasoning.py) implements them as exist / equal / part / query /
-        # quantize / wholes / parts.
-        self.query_ops = []
+        self.query_ops = query_ops
+        self.query_signatures = query_signatures
         self._configured = True
 
         # PS / Symbolic-sectioned form (Phase 8b,
@@ -1082,14 +1085,6 @@ class Grammar:
                                    ws_block.get('compose') or {})
                 self._fill_section(self.rules_downward,
                                    ws_block.get('generate') or {})
-        # Parse the top-level <Queries> section into op signatures.
-        q_block = grammar_dict.get('Queries')
-        if isinstance(q_block, dict):
-            q = q_block.get('query')
-            if isinstance(q, str):
-                q = [q]
-            if isinstance(q, list):
-                self.query_ops = [str(x).strip() for x in q if str(x).strip()]
         # Parse the top-level <Anchors> section (Alec 2026-07-13): the
         # CLOSED-CLASS surfaces of the relation operators — NP-R-NP is a
         # grammatical form (the "is of definition", not reducible to the

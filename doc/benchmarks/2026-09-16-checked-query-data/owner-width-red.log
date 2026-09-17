@@ -1,0 +1,70 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+_____ test_checked_call_rejects_foreign_width_before_any_executor[isEqual] _____
+
+name = 'isEqual'
+
+    @pytest.mark.parametrize('name', ['isEqual', 'what', 'exist'])
+    def test_checked_call_rejects_foreign_width_before_any_executor(name):
+        cs = _cs()
+        width = int(cs.outputShape[-1])
+        calls = []
+        signature = replace(BUILTIN_QUERIES[name],
+                            executor=lambda *args: calls.append(args) or {})
+        context = QueryContext(TruthGroundedReasoner(
+            model=SimpleNamespace(conceptualSpace=cs)))
+        value = torch.ones(width + 1)
+        arguments = ((value, value) if name == 'isEqual' else
+                     (ConceptualMeaning.from_description(value),))
+>       with pytest.raises(ValueError, match='conceptual width'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+/tmp/full-spec-query-owner-width-probes.py:27: Failed
+______ test_checked_call_rejects_foreign_width_before_any_executor[what] _______
+
+name = 'what'
+
+    @pytest.mark.parametrize('name', ['isEqual', 'what', 'exist'])
+    def test_checked_call_rejects_foreign_width_before_any_executor(name):
+        cs = _cs()
+        width = int(cs.outputShape[-1])
+        calls = []
+        signature = replace(BUILTIN_QUERIES[name],
+                            executor=lambda *args: calls.append(args) or {})
+        context = QueryContext(TruthGroundedReasoner(
+            model=SimpleNamespace(conceptualSpace=cs)))
+        value = torch.ones(width + 1)
+        arguments = ((value, value) if name == 'isEqual' else
+                     (ConceptualMeaning.from_description(value),))
+>       with pytest.raises(ValueError, match='conceptual width'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+/tmp/full-spec-query-owner-width-probes.py:27: Failed
+______ test_checked_call_rejects_foreign_width_before_any_executor[exist] ______
+
+name = 'exist'
+
+    @pytest.mark.parametrize('name', ['isEqual', 'what', 'exist'])
+    def test_checked_call_rejects_foreign_width_before_any_executor(name):
+        cs = _cs()
+        width = int(cs.outputShape[-1])
+        calls = []
+        signature = replace(BUILTIN_QUERIES[name],
+                            executor=lambda *args: calls.append(args) or {})
+        context = QueryContext(TruthGroundedReasoner(
+            model=SimpleNamespace(conceptualSpace=cs)))
+        value = torch.ones(width + 1)
+        arguments = ((value, value) if name == 'isEqual' else
+                     (ConceptualMeaning.from_description(value),))
+>       with pytest.raises(ValueError, match='conceptual width'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+/tmp/full-spec-query-owner-width-probes.py:27: Failed
+=========================== short test summary info ============================
+FAILED ../../../../../tmp/full-spec-query-owner-width-probes.py::test_checked_call_rejects_foreign_width_before_any_executor[isEqual]
+FAILED ../../../../../tmp/full-spec-query-owner-width-probes.py::test_checked_call_rejects_foreign_width_before_any_executor[what]
+FAILED ../../../../../tmp/full-spec-query-owner-width-probes.py::test_checked_call_rejects_foreign_width_before_any_executor[exist]
+3 failed in 2.09s
