@@ -1,5 +1,14 @@
 # Mathematical thinking: bounded specification for iterative `what()` evaluation
 
+> **Target update, 2026-09-12:**
+> [Sentence-boundary thinking](2026-09-11-sentence-boundary-thinking.md)
+> supersedes the lexical ANSWER/OPEN policy and its execution/context limits
+> below, including sections 6.2–6.3. Those describe the earlier runtime, not the
+> new target. It also replaces Q/A pairing and parity with depth-labelled
+> thought contexts and implicit serial LIFO return. Preserve append-only
+> history and compatible budget, target-isolation and credit contracts;
+> arithmetic remains a data/evaluation domain only.
+
 > **Status:** specification, 2026-09-09, formalized from the Codex execution
 > draft (archived verbatim as
 > [2026-09-09-mathematical-thinking-codex-draft](../plans/2026-09-09-mathematical-thinking-codex-draft.md)).

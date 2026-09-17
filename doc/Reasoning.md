@@ -210,6 +210,13 @@ byte-identical; positive N = the op budget of a top-level `think()` frame):
 
 ## Two thinking loops
 
+> The following describes the current implementation. The replacement target
+> is [Sentence-boundary thinking](specs/2026-09-11-sentence-boundary-thinking.md):
+> typed query dispatch and linguistic subgoals under a boundary controller,
+> with results on the actual answer path. Its 2026-09-12 revision uses ordinary
+> thoughts with context levels, replacing Q/A pairing and parity as the
+> internal control contract. Its acceptance gates are not yet claimed here.
+
 BasicModel has two distinct iterative loops, and they must not be confused:
 
 | | Thinking Kernel (`bin/thinking.py`) | What thinking (`Model.think()`, `bin/Models.py`) |

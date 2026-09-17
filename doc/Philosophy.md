@@ -459,6 +459,255 @@ Differs from serial speech. Serial follows a cursor through time. Shamatha
 Speech sees the whole current percept field but only permits logical
 composition that preserves a single object of attention.
 
+## Psychological grounding (2026-09-16)
+
+The architecture is meant to be human in its mechanism, not only in its
+output: a mind we can read, and a model of our own. Each claim above has a
+counterpart in the psychology of memory, language and belief. This section
+records the counterparts that support the design, and then the places where
+the design departs from what is known about people, so that each departure
+is a stated choice or a stated gap rather than an accident.
+[Architecture.md](Architecture.md#cognitive-grounding-dense-perceptual-vs-sparse-symbolic-2026-07-02)
+grounds the perceptual/symbolic split (complementary learning systems,
+dual process, systematicity, grounded cognition, basic level); this section
+covers memory, the two truths, expectation, testimony and feeling.
+
+### Support
+
+- **The two truths are two memory systems.** An *idea* (absolute truth, one
+  fused point with its derivation) is what text comprehension builds as the
+  **situation model**, the integrated representation of one state of
+  affairs that survives when the text's wording is gone (Zwaan & Radvansky
+  1998); it is episodic in Tulving's sense, a particular. A *relation*
+  (relative truth, `row R row`) is **semantic memory**: general, structured,
+  read by inference rather than by matching (Tulving 1972). Semantic memory
+  is organised as a hierarchy over which properties are inherited
+  (Collins & Quillian 1969), which is what the part rows between concept
+  rows and the taxonomy index derived from them provide. The
+  [two-truths spec](specs/2026-09-16-two-truths-ideas-and-relations.md)
+  makes the split explicit in LTM.
+
+- **Gist survives, form fades; meaning is stored fused.** Recognition
+  memory for a sentence's wording is lost within a few seconds of hearing
+  it while memory for its meaning persists (Sachs 1967); fuzzy-trace theory
+  separates a durable gist trace from a fragile verbatim trace (Reyna &
+  Brainerd 1995). Fusing an absolute sentence to one point and keeping its
+  factoring only as a replayable derivation is the same asymmetry:
+  understanding rests on the gist, the form is reconstructed.
+
+- **Propositions embed by reference.** Text memory is a network of
+  propositions in which an embedded proposition is an argument of the
+  higher one, `SAY[he, P]`, and recall follows the propositional hierarchy
+  (Kintsch & van Dijk 1978). This is the relative case of the spec: a
+  clause that cannot fuse is referenced by row. Long-term working memory
+  explains how experts hold far more than a span's worth of material by
+  keeping **retrieval structures** in working memory that point into LTM
+  (Ericsson & Kintsch 1995); a pushed row reference on the STM is a
+  retrieval structure.
+
+- **Attribution and content are separate traces.** People keep what was
+  said while losing who said it (source monitoring: Johnson, Hashtroudi &
+  Lindsay 1993), and a message from a discredited source gains force over
+  time as the source memory decays faster than the content (the sleeper
+  effect: Hovland & Weiss 1951; Kumkale & Albarracín 2004). Storing "he
+  said P" as an operator relation over P's own row, rather than fusing the
+  two, is the representation these effects require. Testimony reducing to
+  inference from source reliability (Dharmakirti's *apta*, above) has its
+  modern form in **epistemic vigilance** (Sperber et al. 2010): hearers
+  calibrate belief to the source, not to the confidence the speaker
+  expresses, which is the spec's rule that a sentence never sets its own
+  trust.
+
+- **The parallel prelude and the serial pump are preattentive and
+  attentive processing.** Feature-integration theory separates a parallel
+  preattentive stage that registers features across the whole field from a
+  serial attentive stage that binds them into objects one at a time
+  (Treisman & Gelade 1980; Neisser 1967). The Gelug "first moment" that
+  crosses the corpus callosum nameless, followed by the serial STM process
+  that names, recognises and composes, is the same two-stage structure, and
+  it says what the parallel stage may and may not do: carve, not name.
+
+- **Working memory is small and serial composition is chunked.** The focus
+  of attention holds about four items (Cowan 2001; Miller 1956 for the
+  older seven), and skilled memory works by **chunking** into learned units
+  (Gobet et al. 2001), against a slave-store and central-executive
+  organisation (Baddeley & Hitch 1974). The STM's few live slots, the
+  shift/reduce fold that keeps them few, and admitted phrases that snap to
+  their own concept row are the model's chunking.
+
+- **Priming is spreading activation.** Semantic priming (Meyer &
+  Schvaneveldt 1971) and its spreading-activation account (Collins &
+  Loftus 1975) describe activation flowing along associative edges and
+  decaying with distance; the energy-dissipating diffusion over concept
+  store edges that primes the next read is that mechanism.
+
+- **Expectation is the objective, and comprehension predicts.** Predictive
+  processing holds that perception and cognition proceed by predicting
+  input and learning from the discrepancy (Rao & Ballard 1999; Friston
+  2010; Clark 2013). In language, comprehenders predict upcoming content at
+  every level and prediction is graded (Kuperberg & Jaeger 2016), and
+  prediction during comprehension runs the production system in reverse
+  (Pickering & Garrod 2013). The concept-to-concept expectation of the next
+  sentence, scored by discrepancy, and generation as the dual of
+  comprehension, are both of a piece with this.
+
+- **Reasoning by simulation and by rule are both real.** Relative truths
+  are evaluated "relationally or by simulation": simulation is the
+  **mental models** account (Johnson-Laird 1983), in which people reason by
+  constructing and inspecting models of situations; relational evaluation
+  with modus ponens as a primitive is the **mental logic** account (Braine
+  & O'Brien 1998). Keeping both readers is the empirically safe position;
+  which one people use varies with content.
+
+- **Feeling precedes and is outside propositional truth.** Affective
+  reactions arise before and independently of the cognitive appraisal that
+  would justify them ("preferences need no inferences": Zajonc 1980), and
+  bodily hedonic markers guide judgement without being judgements (Damasio
+  1994). *Vedana* in the *neither* position, and the hedonic reading of the
+  trust sign, are consistent with both.
+
+- **Symbols, signs and the word/object generalisation.** The doc's *sign*
+  (a quantised version of the referent) and *symbol* (an arbitrary stand-in
+  related only through the binding table) are Peirce's icon and symbol.
+  Symbolic reference proper is not the word-to-object link but a
+  **generalisation over many such links** (Deacon 1997), which is what the
+  META node as a generalisation over both the word-concept and the
+  object-concept encodes; grounding the symbol side in the perceptual
+  towers is the answer to the symbol grounding problem (Harnad 1990).
+
+- **Mindfulness is metacognitive monitoring.** Pointing attention at one's
+  own stores (STM, LTM trust sign, the symbol codebook) and reading them
+  is the monitoring half of the monitoring/control architecture of
+  metacognition (Flavell 1979; Nelson & Narens 1990). The four foundations
+  as addressable stores are that architecture with the stores named.
+
+### Discrepancies
+
+Where the model and the human evidence differ. Alec's direction
+(2026-09-16): **parameterise optimal versus human operation** so both can
+be explored in one model, rather than fixing either. An `<operation>`
+profile in `model.xml` (`optimal` | `human`) selects the human-like
+behaviour for every item marked **profile** below; items marked **future**
+are collected in [FutureWork.md](FutureWork.md); items marked **closed**
+are not discrepancies on inspection.
+
+1. **Default belief (profile).** People believe what they comprehend and
+   must spend effort to unbelieve it (the Spinozan account: Gilbert 1991).
+   Under `optimal` the model is Cartesian: comprehension registers a row
+   with trust `0`, and only provenance asserts it, because the human
+   default is what liars exploit and a model that can be read must not
+   acquire beliefs it was never given. Under `human` comprehension asserts
+   at the source's provenance trust, and unbelieving is a later,
+   effortful revision.
+
+2. **Verbatim retention (profile, future).** People lose wording within
+   seconds (Sachs 1967). Under `optimal` every idea's derivation is kept
+   losslessly for reconstruction. Under `human` derivations decay while
+   fused points persist, the gist/verbatim asymmetry made dynamic. This
+   is one face of the forgetting model in FutureWork.md.
+
+3. **Forgetting and consolidation (profile, future, urgent).** LTM is
+   append-only to capacity, with recency as the only decay; people
+   consolidate selectively and forget (McClelland, McNaughton & O'Reilly
+   1995; Ebbinghaus 1885). The store's capacity is a wall, so a forgetting
+   model is needed soon regardless of profile. Direction: forget what is
+   not fully understood (low luminosity) and what does not integrate with
+   other ideas (few references to or from it). Specified in FutureWork.md.
+
+4. **Document boundaries (future).** The hard reset at a document boundary
+   clears transient context; people carry context across texts and
+   conversations. A training convenience, not a cognitive claim; carrying
+   context across documents is in FutureWork.md.
+
+5. **Level of prediction (closed).** Human comprehension predicts at the
+   word level too, with reading times tracking surprisal (Hale 2001; Levy
+   2008). The model expects the next sentence's concepts, and the grammar
+   unfolds an expected idea into words through the reverse chain, so
+   word-level expectation is derived from concept-level expectation rather
+   than computed separately. Not a discrepancy; surprisal is a readout of
+   the unfolding.
+
+6. **One word, one object (decided, future).** People have polysemy and
+   synonymy as the norm, resolved by context. Decision: META concepts
+   generalise over **more than two** concepts, several words and several
+   objects, and the discrimination among them happens at interpretation
+   time, from context, not at binding time. The two-truths spec §3.4 records
+   this; the binding table's one-row-per-word law is replaced by the
+   n-ary META, and the interpretation-time selection is in FutureWork.md.
+
+7. **Strict inheritance (closed).** Hierarchical semantic memory predicts
+   inheritance, but people show typicality effects and exceptions (Rips,
+   Shoben & Smith 1973): a penguin is a bird that does not fly. Part rows
+   carry their own trust, so inheritance is graded and an exception is a
+   lower-trust or negative row, not a contradiction.
+
+8. **Explicit existence (withdrawn).** An earlier draft set psychological
+   essentialism (Gelman 2003) against the grammar's forced `exist`. The
+   two are not about the same thing: essentialism concerns hidden category
+   essences, the `exist` start concerns whether an NP is found and trusted
+   in LTM. No discrepancy is claimed.
+
+9. **Inversion is not exact (future).** The reconstruction trace will be
+   partially dropped over time (item 2), so inversion becomes a learned
+   approximation from a lossy trace rather than an exact replay. That is
+   what gives inversion a role in learning: with a complete trace,
+   reconstruction teaches nothing. The trace-dropping schedule is in
+   FutureWork.md; Architecture.md's note that brains approximate rather
+   than invert then applies to the model too.
+
+**References.** Baddeley & Hitch (1974), *Working memory*, in Bower (ed.),
+The Psychology of Learning and Motivation 8. Braine & O'Brien (1998),
+*Mental Logic*, Erlbaum. Clark (2013), *Whatever next? Predictive brains,
+situated agents, and the future of cognitive science*, Behavioral and Brain
+Sciences 36(3). Collins & Loftus (1975), *A spreading-activation theory of
+semantic processing*, Psychological Review 82(6). Collins & Quillian (1969),
+*Retrieval time from semantic memory*, Journal of Verbal Learning and Verbal
+Behavior 8. Cowan (2001), *The magical number 4 in short-term memory*,
+Behavioral and Brain Sciences 24(1). Damasio (1994), *Descartes' Error*,
+Putnam. Deacon (1997), *The Symbolic Species*, Norton. Ebbinghaus (1885),
+*Über das Gedächtnis*. Ericsson & Kintsch (1995), *Long-term working
+memory*, Psychological Review 102(2). Flavell (1979), *Metacognition and
+cognitive monitoring*, American Psychologist 34(10). Friston (2010), *The
+free-energy principle: a unified brain theory?*, Nature Reviews Neuroscience
+11. Gelman (2003), *The Essential Child*, Oxford. Gilbert (1991), *How
+mental systems believe*, American Psychologist 46(2). Gobet, Lane, Croker,
+Cheng, Jones, Oliver & Pine (2001), *Chunking mechanisms in human
+learning*, Trends in Cognitive Sciences 5(6). Hale (2001), *A probabilistic
+Earley parser as a psycholinguistic model*, NAACL. Harnad (1990), *The
+symbol grounding problem*, Physica D 42. Hovland & Weiss (1951), *The
+influence of source credibility on communication effectiveness*, Public
+Opinion Quarterly 15. Johnson, Hashtroudi & Lindsay (1993), *Source
+monitoring*, Psychological Bulletin 114(1). Johnson-Laird (1983), *Mental
+Models*, Harvard. Kintsch & van Dijk (1978), *Toward a model of text
+comprehension and production*, Psychological Review 85(5). Kumkale &
+Albarracín (2004), *The sleeper effect in persuasion: a meta-analytic
+review*, Psychological Bulletin 130(1). Kuperberg & Jaeger (2016), *What do
+we mean by prediction in language comprehension?*, Language, Cognition and
+Neuroscience 31(1). Levy (2008), *Expectation-based syntactic
+comprehension*, Cognition 106. McClelland, McNaughton & O'Reilly (1995), as
+cited in Architecture.md. Meyer & Schvaneveldt (1971), *Facilitation in
+recognizing pairs of words*, Journal of Experimental Psychology 90. Miller
+(1956), as cited in Architecture.md. Neisser (1967), *Cognitive
+Psychology*, Appleton-Century-Crofts. Nelson & Narens (1990), *Metamemory:
+a theoretical framework and new findings*, The Psychology of Learning and
+Motivation 26. Pickering & Garrod (2013), *An integrated theory of language
+production and comprehension*, Behavioral and Brain Sciences 36(4). Rao &
+Ballard (1999), *Predictive coding in the visual cortex*, Nature
+Neuroscience 2. Reyna & Brainerd (1995), *Fuzzy-trace theory: an interim
+synthesis*, Learning and Individual Differences 7. Rips, Shoben & Smith
+(1973), *Semantic distance and the verification of semantic relations*,
+Journal of Verbal Learning and Verbal Behavior 12. Sachs (1967),
+*Recognition memory for syntactic and semantic aspects of connected
+discourse*, Perception & Psychophysics 2. Simons (1987), *Parts: A Study in
+Ontology*, Oxford. Sperber, Clément, Heintz, Mascaro, Mercier, Origgi &
+Wilson (2010), *Epistemic vigilance*, Mind & Language 25(4). Treisman &
+Gelade (1980), *A feature-integration theory of attention*, Cognitive
+Psychology 12. Tulving (1972), *Episodic and semantic memory*, in Tulving &
+Donaldson (eds.), Organization of Memory. Zajonc (1980), *Feeling and
+thinking: preferences need no inferences*, American Psychologist 35(2).
+Zwaan & Radvansky (1998), *Situation models in language comprehension and
+memory*, Psychological Bulletin 123(2).
+
 ## Summary
 
 | WikiOracle | Category | Buddhist Epistemology | Sanskrit |

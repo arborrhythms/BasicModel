@@ -828,6 +828,15 @@ internal dialogue.
 
 ## 8. Grammar and the mind boundary
 
+> **Target update, 2026-09-12:**
+> [Sentence-boundary thinking](2026-09-11-sentence-boundary-thinking.md)
+> supersedes this section's requirement to share one chooser between sentence
+> construction and thought selection. It specifies separate grammar and query
+> controllers, with typed queries only at completed-thought boundaries. It
+> also replaces Q/A pairing and parity with depth-labelled thought contexts
+> and implicit serial LIFO return. Preserve symbolic-mind, append-only history
+> and target-isolation contracts; the older Q/A layout is not the new target.
+
 The existing grammar chooser remains the control mechanism. Its established
 context already includes symbolic activation, STM, LTM, percepts, and
 grammatical operations. Do not replace it with a new address-specific chooser

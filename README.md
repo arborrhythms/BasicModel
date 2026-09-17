@@ -16,8 +16,10 @@
 | [Training](doc/Training.md) | Two-phase training, SBOW embeddings, masked prediction modes |
 | [What specification](doc/specs/2026-07-27-teaching-modes-and-next-iteration.md) | `Data.what()` / `Model.what()`, the two downward paths, LTM parity thinking, joint losses, and the deferred concept/verb roadmap |
 | [What and spacetime design](doc/WhatSpacetimeDesign.md) | One understanding, reconstruction vs output synthesis, queryable spacetime, thinking stack, and grammar-chooser context |
-| [Mathematical thinking specification](doc/specs/2026-09-09-mathematical-thinking.md) | Bounded iterative `what()` thinking with exact arithmetic primitives, episode credit, verifier, and pilot gates |
+| [Sentence-boundary thinking specification](doc/specs/2026-09-11-sentence-boundary-thinking.md) | Target: separate sentence/thought controllers, typed queries, nested semantic references, depth-labelled thought contexts without Q/A pairing, and acceptance tests |
+| [Mathematical thinking specification](doc/specs/2026-09-09-mathematical-thinking.md) | Earlier thinking milestone, episode credit and pilot gates; exact arithmetic is evaluation-only, and the lexical thought policy is superseded by the sentence-boundary target |
 | [Meronomy as the fold ladder (plan)](doc/plans/2026-09-10-meronomy-fold-ladder.md) | Synthesis and analysis as two mereological towers, joining upward from nothing and dividing downward from everything, meeting at the basic level; the radix trie and the other front ends move to Legacy. |
+| [Compiled reverse loops (plan)](doc/plans/2026-09-12-compiled-reverse-loops.md) | One bounded compiled traversal of the completed sentence with tied inverse transforms; `reverseOutput` as the second compiled loop with its own generate policy; one compiled segment for forward, reconstruct and output; migration off the detached reverse student. |
 | [Mathematical thinking plan](doc/plans/2026-09-09-mathematical-thinking.md) | Phase-ordered execution plan for the thinking specification |
 | [Mathematical thinking pilot](doc/benchmarks/2026-09-09-math-thinking-pilot.md) | Mechanism evidence and the (unmet) learning gates on the `MM_math` fixture |
 | [Params](doc/Params.md) | XML configuration reference and migration notes |

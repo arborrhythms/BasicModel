@@ -597,6 +597,16 @@ remains a specification decision.
 
 ## 8. Context for the grammar chooser
 
+> **Target update, 2026-09-12:**
+> [Sentence-boundary thinking](specs/2026-09-11-sentence-boundary-thinking.md)
+> supersedes the shared-chooser decision below with separate sentence and
+> thought/query controllers. It defines their phase boundary and common
+> semantic interface for linguistic subgoals and typed tools. It also replaces
+> Q/A pairing and parity with depth-labelled thought contexts and implicit
+> serial LIFO return. Preserve append-only history, target isolation and
+> reconstruction/output separation; the Q/A layout here describes the earlier
+> runtime, not the replacement target.
+
 The grammar chooser already operates over a richer context than a new
 address-specific list would describe. Its context includes symbolic
 activation, STM, LTM, percepts, and grammatical operations, among the other
