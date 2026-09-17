@@ -90,10 +90,10 @@ class TestIsTrue(unittest.TestCase):
         r = TruthGroundedReasoner(store=_store(rows_ideas=[(IDEA_A, 0.9)]))
         self.assertEqual(r.is_true(IDEA_C), 0.0)
 
-    def test_ultimate_truth_via_model(self):
-        # No store match -> falls through to the model's absolute TruthLayer.
+    def test_activation_without_fact_evidence_remains_unknown(self):
+        # Concept activation does not establish that its referent exists.
         r = TruthGroundedReasoner(model=_ModelStub(dot=0.6))
-        self.assertAlmostEqual(r.is_true(IDEA_A), 0.6, places=5)
+        self.assertEqual(r.is_true(IDEA_A), 0.0)
 
 
 class TestIsPartDirect(unittest.TestCase):

@@ -1,0 +1,710 @@
+FFFFFFFFFFFFFFFFFFFFFFF                                                  [100%]
+=================================== FAILURES ===================================
+_ test_actual_observation_writers_keep_roles_without_asserting_world_facts[pending-1] _
+
+depth = 1, path = 'pending'
+
+    @pytest.mark.parametrize("depth", [1, 2, 3])
+    @pytest.mark.parametrize("path", ["pending", "packed"])
+    def test_actual_observation_writers_keep_roles_without_asserting_world_facts(depth, path):
+        from Models import BasicModel
+        slots = torch.eye(6)[:3][None]
+        store = TernaryTruthStore(6, capacity=8)
+        model = SimpleNamespace(
+            symbolSpace=SimpleNamespace(ltm_store=store, discourse=None),
+            conceptualSpace=SimpleNamespace(
+                _ltm_consolidation=True,
+                stm_end_state_trust=lambda *_args: torch.tensor([.95])),
+        )
+        if path == "pending":
+            model._pending_stm_end_state = (slots, torch.tensor([depth]), torch.tensor([True]))
+            BasicModel._drain_pending_stm_end_state(model)
+        else:
+            model._packed_sentence_roots = slots[:, :1]
+            model._tensor_sentence_roots_live = slots.reshape(1, 1, -1)
+            model._tensor_sentence_roots_depth = torch.tensor([[depth]])
+            model._tensor_final_end_slots = slots
+            model._tensor_final_end_depth = torch.tensor([depth])
+            model.inputSpace = SimpleNamespace(
+                _packed_sentence_slot_end_positions=torch.tensor([[0]]),
+                _packed_sentence_slot_mask=torch.tensor([[True]]),
+                _packed_sentence_counts_host=(1,),
+            )
+            BasicModel._drain_packed_stm_end_states(model)
+        expected = slots[0, :depth]
+        expected = expected[[1, 2, 0]] if depth == 3 else expected.flip(0)
+        torch.testing.assert_close(store.slots[0, :depth], expected)
+>       assert store.row(0).get("kind") == "observation"
+E       AssertionError: assert None == 'observation'
+E        +  where None = <built-in method get of dict object at 0x129dc68c0>('kind')
+E        +    where <built-in method get of dict object at 0x129dc68c0> = {'np1': tensor([1., 0., 0., 0., 0., 0.]), 'vp': tensor([0., 0., 0., 0., 0., 0.]), 'np2': tensor([0., 0., 0., 0., 0., 0.]), 'rel_type': 0, ...}.get
+E        +      where {'np1': tensor([1., 0., 0., 0., 0., 0.]), 'vp': tensor([0., 0., 0., 0., 0., 0.]), 'np2': tensor([0., 0., 0., 0., 0., 0.]), 'rel_type': 0, ...} = row(0)
+E        +        where row = TernaryTruthStore().row
+
+/tmp/full-spec-existence-metadata-probes.py:52: AssertionError
+_ test_actual_observation_writers_keep_roles_without_asserting_world_facts[pending-2] _
+
+depth = 2, path = 'pending'
+
+    @pytest.mark.parametrize("depth", [1, 2, 3])
+    @pytest.mark.parametrize("path", ["pending", "packed"])
+    def test_actual_observation_writers_keep_roles_without_asserting_world_facts(depth, path):
+        from Models import BasicModel
+        slots = torch.eye(6)[:3][None]
+        store = TernaryTruthStore(6, capacity=8)
+        model = SimpleNamespace(
+            symbolSpace=SimpleNamespace(ltm_store=store, discourse=None),
+            conceptualSpace=SimpleNamespace(
+                _ltm_consolidation=True,
+                stm_end_state_trust=lambda *_args: torch.tensor([.95])),
+        )
+        if path == "pending":
+            model._pending_stm_end_state = (slots, torch.tensor([depth]), torch.tensor([True]))
+            BasicModel._drain_pending_stm_end_state(model)
+        else:
+            model._packed_sentence_roots = slots[:, :1]
+            model._tensor_sentence_roots_live = slots.reshape(1, 1, -1)
+            model._tensor_sentence_roots_depth = torch.tensor([[depth]])
+            model._tensor_final_end_slots = slots
+            model._tensor_final_end_depth = torch.tensor([depth])
+            model.inputSpace = SimpleNamespace(
+                _packed_sentence_slot_end_positions=torch.tensor([[0]]),
+                _packed_sentence_slot_mask=torch.tensor([[True]]),
+                _packed_sentence_counts_host=(1,),
+            )
+            BasicModel._drain_packed_stm_end_states(model)
+        expected = slots[0, :depth]
+        expected = expected[[1, 2, 0]] if depth == 3 else expected.flip(0)
+>       torch.testing.assert_close(store.slots[0, :depth], expected)
+E       AssertionError: Tensor-likes are not close!
+E       
+E       Mismatched elements: 3 / 12 (25.0%)
+E       Greatest absolute difference: 1.0 at index (0, 0) (up to 1e-05 allowed)
+E       Greatest relative difference: inf at index (0, 0) (up to 1.3e-06 allowed)
+
+/tmp/full-spec-existence-metadata-probes.py:51: AssertionError
+_ test_actual_observation_writers_keep_roles_without_asserting_world_facts[pending-3] _
+
+depth = 3, path = 'pending'
+
+    @pytest.mark.parametrize("depth", [1, 2, 3])
+    @pytest.mark.parametrize("path", ["pending", "packed"])
+    def test_actual_observation_writers_keep_roles_without_asserting_world_facts(depth, path):
+        from Models import BasicModel
+        slots = torch.eye(6)[:3][None]
+        store = TernaryTruthStore(6, capacity=8)
+        model = SimpleNamespace(
+            symbolSpace=SimpleNamespace(ltm_store=store, discourse=None),
+            conceptualSpace=SimpleNamespace(
+                _ltm_consolidation=True,
+                stm_end_state_trust=lambda *_args: torch.tensor([.95])),
+        )
+        if path == "pending":
+            model._pending_stm_end_state = (slots, torch.tensor([depth]), torch.tensor([True]))
+            BasicModel._drain_pending_stm_end_state(model)
+        else:
+            model._packed_sentence_roots = slots[:, :1]
+            model._tensor_sentence_roots_live = slots.reshape(1, 1, -1)
+            model._tensor_sentence_roots_depth = torch.tensor([[depth]])
+            model._tensor_final_end_slots = slots
+            model._tensor_final_end_depth = torch.tensor([depth])
+            model.inputSpace = SimpleNamespace(
+                _packed_sentence_slot_end_positions=torch.tensor([[0]]),
+                _packed_sentence_slot_mask=torch.tensor([[True]]),
+                _packed_sentence_counts_host=(1,),
+            )
+            BasicModel._drain_packed_stm_end_states(model)
+        expected = slots[0, :depth]
+        expected = expected[[1, 2, 0]] if depth == 3 else expected.flip(0)
+        torch.testing.assert_close(store.slots[0, :depth], expected)
+>       assert store.row(0).get("kind") == "observation"
+E       AssertionError: assert None == 'observation'
+E        +  where None = <built-in method get of dict object at 0x129e6e200>('kind')
+E        +    where <built-in method get of dict object at 0x129e6e200> = {'np1': tensor([0., 1., 0., 0., 0., 0.]), 'vp': tensor([0., 0., 1., 0., 0., 0.]), 'np2': tensor([1., 0., 0., 0., 0., 0.]), 'rel_type': 3, ...}.get
+E        +      where {'np1': tensor([0., 1., 0., 0., 0., 0.]), 'vp': tensor([0., 0., 1., 0., 0., 0.]), 'np2': tensor([1., 0., 0., 0., 0., 0.]), 'rel_type': 3, ...} = row(0)
+E        +        where row = TernaryTruthStore().row
+
+/tmp/full-spec-existence-metadata-probes.py:52: AssertionError
+_ test_actual_observation_writers_keep_roles_without_asserting_world_facts[packed-1] _
+
+depth = 1, path = 'packed'
+
+    @pytest.mark.parametrize("depth", [1, 2, 3])
+    @pytest.mark.parametrize("path", ["pending", "packed"])
+    def test_actual_observation_writers_keep_roles_without_asserting_world_facts(depth, path):
+        from Models import BasicModel
+        slots = torch.eye(6)[:3][None]
+        store = TernaryTruthStore(6, capacity=8)
+        model = SimpleNamespace(
+            symbolSpace=SimpleNamespace(ltm_store=store, discourse=None),
+            conceptualSpace=SimpleNamespace(
+                _ltm_consolidation=True,
+                stm_end_state_trust=lambda *_args: torch.tensor([.95])),
+        )
+        if path == "pending":
+            model._pending_stm_end_state = (slots, torch.tensor([depth]), torch.tensor([True]))
+            BasicModel._drain_pending_stm_end_state(model)
+        else:
+            model._packed_sentence_roots = slots[:, :1]
+            model._tensor_sentence_roots_live = slots.reshape(1, 1, -1)
+            model._tensor_sentence_roots_depth = torch.tensor([[depth]])
+            model._tensor_final_end_slots = slots
+            model._tensor_final_end_depth = torch.tensor([depth])
+            model.inputSpace = SimpleNamespace(
+                _packed_sentence_slot_end_positions=torch.tensor([[0]]),
+                _packed_sentence_slot_mask=torch.tensor([[True]]),
+                _packed_sentence_counts_host=(1,),
+            )
+            BasicModel._drain_packed_stm_end_states(model)
+        expected = slots[0, :depth]
+        expected = expected[[1, 2, 0]] if depth == 3 else expected.flip(0)
+        torch.testing.assert_close(store.slots[0, :depth], expected)
+>       assert store.row(0).get("kind") == "observation"
+E       AssertionError: assert None == 'observation'
+E        +  where None = <built-in method get of dict object at 0x129e6be80>('kind')
+E        +    where <built-in method get of dict object at 0x129e6be80> = {'np1': tensor([1., 0., 0., 0., 0., 0.]), 'vp': tensor([0., 0., 0., 0., 0., 0.]), 'np2': tensor([0., 0., 0., 0., 0., 0.]), 'rel_type': 0, ...}.get
+E        +      where {'np1': tensor([1., 0., 0., 0., 0., 0.]), 'vp': tensor([0., 0., 0., 0., 0., 0.]), 'np2': tensor([0., 0., 0., 0., 0., 0.]), 'rel_type': 0, ...} = row(0)
+E        +        where row = TernaryTruthStore().row
+
+/tmp/full-spec-existence-metadata-probes.py:52: AssertionError
+_ test_actual_observation_writers_keep_roles_without_asserting_world_facts[packed-2] _
+
+depth = 2, path = 'packed'
+
+    @pytest.mark.parametrize("depth", [1, 2, 3])
+    @pytest.mark.parametrize("path", ["pending", "packed"])
+    def test_actual_observation_writers_keep_roles_without_asserting_world_facts(depth, path):
+        from Models import BasicModel
+        slots = torch.eye(6)[:3][None]
+        store = TernaryTruthStore(6, capacity=8)
+        model = SimpleNamespace(
+            symbolSpace=SimpleNamespace(ltm_store=store, discourse=None),
+            conceptualSpace=SimpleNamespace(
+                _ltm_consolidation=True,
+                stm_end_state_trust=lambda *_args: torch.tensor([.95])),
+        )
+        if path == "pending":
+            model._pending_stm_end_state = (slots, torch.tensor([depth]), torch.tensor([True]))
+            BasicModel._drain_pending_stm_end_state(model)
+        else:
+            model._packed_sentence_roots = slots[:, :1]
+            model._tensor_sentence_roots_live = slots.reshape(1, 1, -1)
+            model._tensor_sentence_roots_depth = torch.tensor([[depth]])
+            model._tensor_final_end_slots = slots
+            model._tensor_final_end_depth = torch.tensor([depth])
+            model.inputSpace = SimpleNamespace(
+                _packed_sentence_slot_end_positions=torch.tensor([[0]]),
+                _packed_sentence_slot_mask=torch.tensor([[True]]),
+                _packed_sentence_counts_host=(1,),
+            )
+            BasicModel._drain_packed_stm_end_states(model)
+        expected = slots[0, :depth]
+        expected = expected[[1, 2, 0]] if depth == 3 else expected.flip(0)
+>       torch.testing.assert_close(store.slots[0, :depth], expected)
+E       AssertionError: Tensor-likes are not close!
+E       
+E       Mismatched elements: 3 / 12 (25.0%)
+E       Greatest absolute difference: 1.0 at index (0, 0) (up to 1e-05 allowed)
+E       Greatest relative difference: inf at index (0, 0) (up to 1.3e-06 allowed)
+
+/tmp/full-spec-existence-metadata-probes.py:51: AssertionError
+_ test_actual_observation_writers_keep_roles_without_asserting_world_facts[packed-3] _
+
+depth = 3, path = 'packed'
+
+    @pytest.mark.parametrize("depth", [1, 2, 3])
+    @pytest.mark.parametrize("path", ["pending", "packed"])
+    def test_actual_observation_writers_keep_roles_without_asserting_world_facts(depth, path):
+        from Models import BasicModel
+        slots = torch.eye(6)[:3][None]
+        store = TernaryTruthStore(6, capacity=8)
+        model = SimpleNamespace(
+            symbolSpace=SimpleNamespace(ltm_store=store, discourse=None),
+            conceptualSpace=SimpleNamespace(
+                _ltm_consolidation=True,
+                stm_end_state_trust=lambda *_args: torch.tensor([.95])),
+        )
+        if path == "pending":
+            model._pending_stm_end_state = (slots, torch.tensor([depth]), torch.tensor([True]))
+            BasicModel._drain_pending_stm_end_state(model)
+        else:
+            model._packed_sentence_roots = slots[:, :1]
+            model._tensor_sentence_roots_live = slots.reshape(1, 1, -1)
+            model._tensor_sentence_roots_depth = torch.tensor([[depth]])
+            model._tensor_final_end_slots = slots
+            model._tensor_final_end_depth = torch.tensor([depth])
+            model.inputSpace = SimpleNamespace(
+                _packed_sentence_slot_end_positions=torch.tensor([[0]]),
+                _packed_sentence_slot_mask=torch.tensor([[True]]),
+                _packed_sentence_counts_host=(1,),
+            )
+            BasicModel._drain_packed_stm_end_states(model)
+        expected = slots[0, :depth]
+        expected = expected[[1, 2, 0]] if depth == 3 else expected.flip(0)
+        torch.testing.assert_close(store.slots[0, :depth], expected)
+>       assert store.row(0).get("kind") == "observation"
+E       AssertionError: assert None == 'observation'
+E        +  where None = <built-in method get of dict object at 0x129e265c0>('kind')
+E        +    where <built-in method get of dict object at 0x129e265c0> = {'np1': tensor([0., 1., 0., 0., 0., 0.]), 'vp': tensor([0., 0., 1., 0., 0., 0.]), 'np2': tensor([1., 0., 0., 0., 0., 0.]), 'rel_type': 3, ...}.get
+E        +      where {'np1': tensor([0., 1., 0., 0., 0., 0.]), 'vp': tensor([0., 0., 1., 0., 0., 0.]), 'np2': tensor([1., 0., 0., 0., 0., 0.]), 'rel_type': 3, ...} = row(0)
+E        +        where row = TernaryTruthStore().row
+
+/tmp/full-spec-existence-metadata-probes.py:52: AssertionError
+___ test_legacy_checkpoint_does_not_invent_fact_status_for_conversation_rows ___
+
+    def test_legacy_checkpoint_does_not_invent_fact_status_for_conversation_rows():
+        source = TernaryTruthStore(6, capacity=8)
+        idea = torch.eye(6)[0]
+        source.append_idea(idea, trust=.95)
+        provisioned = source.append_idea(idea, trust=.6)
+        source.set_origin(provisioned, source.ORIGIN_PROVISIONED)
+        old_keys = {"slots", "rel_type", "timestamp", "trust", "count", "origin", "_next_ts"}
+        old_state = {k: v.clone() for k, v in source.state_dict().items() if k in old_keys}
+        restored = TernaryTruthStore(6, capacity=8)
+        restored.load_state_dict(old_state, strict=True)
+        result = _evaluate(restored, idea)
+>       assert result["support_true"] == pytest.approx(.6)
+E       assert 0.949999988079071 == 0.6 ± 6.0e-07
+E         
+E         comparison failed
+E         Obtained: 0.949999988079071
+E         Expected: 0.6 ± 6.0e-07
+
+/tmp/full-spec-existence-metadata-probes.py:69: AssertionError
+_ test_full_description_metadata_changes_which_referent_is_requested[bindings] _
+
+field = 'bindings'
+
+    @pytest.mark.parametrize("field", ["bindings", "scope", "role_refs"])
+    def test_full_description_metadata_changes_which_referent_is_requested(field):
+        initial = {
+            "bindings": {"subject": ("sym", 7)},
+            "scope": {"where": ("sym", 11)},
+            "role_refs": (("sym", 1), ("sym", 2), ("sym", 3)),
+        }
+        changed = {
+            "bindings": {"subject": ("sym", 8)},
+            "scope": {"where": ("sym", 12)},
+            "role_refs": (("sym", 1), ("sym", 2), ("sym", 4)),
+        }
+>       description = _meaning(**initial)
+                      ^^^^^^^^^^^^^^^^^^^
+
+/tmp/full-spec-existence-metadata-probes.py:86: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+width = 6
+metadata = {'bindings': {'subject': ('sym', 7)}, 'scope': {'where': ('sym', 11)}, 'role_refs': (('sym', 1), ('sym', 2), ('sym', 3))}
+
+    def _meaning(width=6, **metadata):
+>       from Meaning import ConceptualMeaning
+E       ModuleNotFoundError: No module named 'Meaning'
+
+/tmp/full-spec-existence-metadata-probes.py:12: ModuleNotFoundError
+__ test_full_description_metadata_changes_which_referent_is_requested[scope] ___
+
+field = 'scope'
+
+    @pytest.mark.parametrize("field", ["bindings", "scope", "role_refs"])
+    def test_full_description_metadata_changes_which_referent_is_requested(field):
+        initial = {
+            "bindings": {"subject": ("sym", 7)},
+            "scope": {"where": ("sym", 11)},
+            "role_refs": (("sym", 1), ("sym", 2), ("sym", 3)),
+        }
+        changed = {
+            "bindings": {"subject": ("sym", 8)},
+            "scope": {"where": ("sym", 12)},
+            "role_refs": (("sym", 1), ("sym", 2), ("sym", 4)),
+        }
+>       description = _meaning(**initial)
+                      ^^^^^^^^^^^^^^^^^^^
+
+/tmp/full-spec-existence-metadata-probes.py:86: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+width = 6
+metadata = {'bindings': {'subject': ('sym', 7)}, 'scope': {'where': ('sym', 11)}, 'role_refs': (('sym', 1), ('sym', 2), ('sym', 3))}
+
+    def _meaning(width=6, **metadata):
+>       from Meaning import ConceptualMeaning
+E       ModuleNotFoundError: No module named 'Meaning'
+
+/tmp/full-spec-existence-metadata-probes.py:12: ModuleNotFoundError
+_ test_full_description_metadata_changes_which_referent_is_requested[role_refs] _
+
+field = 'role_refs'
+
+    @pytest.mark.parametrize("field", ["bindings", "scope", "role_refs"])
+    def test_full_description_metadata_changes_which_referent_is_requested(field):
+        initial = {
+            "bindings": {"subject": ("sym", 7)},
+            "scope": {"where": ("sym", 11)},
+            "role_refs": (("sym", 1), ("sym", 2), ("sym", 3)),
+        }
+        changed = {
+            "bindings": {"subject": ("sym", 8)},
+            "scope": {"where": ("sym", 12)},
+            "role_refs": (("sym", 1), ("sym", 2), ("sym", 4)),
+        }
+>       description = _meaning(**initial)
+                      ^^^^^^^^^^^^^^^^^^^
+
+/tmp/full-spec-existence-metadata-probes.py:86: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+width = 6
+metadata = {'bindings': {'subject': ('sym', 7)}, 'scope': {'where': ('sym', 11)}, 'role_refs': (('sym', 1), ('sym', 2), ('sym', 3))}
+
+    def _meaning(width=6, **metadata):
+>       from Meaning import ConceptualMeaning
+E       ModuleNotFoundError: No module named 'Meaning'
+
+/tmp/full-spec-existence-metadata-probes.py:12: ModuleNotFoundError
+_ test_unaccepted_records_cannot_certify_their_own_referents[question-interrogative] _
+
+kind = 'question', mode = 'interrogative'
+
+    @pytest.mark.parametrize("kind,mode", [
+        ("question", "interrogative"),
+        ("estimate", "assertive"),
+        ("observation", "unspecified"),
+    ])
+    def test_unaccepted_records_cannot_certify_their_own_referents(kind, mode):
+        store = TernaryTruthStore(6, capacity=8)
+>       store.append_meaning(_meaning(mode=mode), kind=kind, trust=1.0)
+        ^^^^^^^^^^^^^^^^^^^^
+
+/tmp/full-spec-existence-metadata-probes.py:101: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = TernaryTruthStore(), name = 'append_meaning'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'TernaryTruthStore' object has no attribute 'append_meaning'. Did you mean: 'append_relation'?
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1969: AttributeError
+_ test_unaccepted_records_cannot_certify_their_own_referents[estimate-assertive] _
+
+kind = 'estimate', mode = 'assertive'
+
+    @pytest.mark.parametrize("kind,mode", [
+        ("question", "interrogative"),
+        ("estimate", "assertive"),
+        ("observation", "unspecified"),
+    ])
+    def test_unaccepted_records_cannot_certify_their_own_referents(kind, mode):
+        store = TernaryTruthStore(6, capacity=8)
+>       store.append_meaning(_meaning(mode=mode), kind=kind, trust=1.0)
+        ^^^^^^^^^^^^^^^^^^^^
+
+/tmp/full-spec-existence-metadata-probes.py:101: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = TernaryTruthStore(), name = 'append_meaning'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'TernaryTruthStore' object has no attribute 'append_meaning'. Did you mean: 'append_relation'?
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1969: AttributeError
+_ test_unaccepted_records_cannot_certify_their_own_referents[observation-unspecified] _
+
+kind = 'observation', mode = 'unspecified'
+
+    @pytest.mark.parametrize("kind,mode", [
+        ("question", "interrogative"),
+        ("estimate", "assertive"),
+        ("observation", "unspecified"),
+    ])
+    def test_unaccepted_records_cannot_certify_their_own_referents(kind, mode):
+        store = TernaryTruthStore(6, capacity=8)
+>       store.append_meaning(_meaning(mode=mode), kind=kind, trust=1.0)
+        ^^^^^^^^^^^^^^^^^^^^
+
+/tmp/full-spec-existence-metadata-probes.py:101: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = TernaryTruthStore(), name = 'append_meaning'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'TernaryTruthStore' object has no attribute 'append_meaning'. Did you mean: 'append_relation'?
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1969: AttributeError
+_______________ test_question_cannot_be_written_as_accepted_fact _______________
+
+    def test_question_cannot_be_written_as_accepted_fact():
+        store = TernaryTruthStore(6, capacity=8)
+        with pytest.raises(ValueError, match="interrogative|question"):
+>           store.append_meaning(_meaning(mode="interrogative"), kind="fact", trust=1)
+            ^^^^^^^^^^^^^^^^^^^^
+
+/tmp/full-spec-existence-metadata-probes.py:110: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = TernaryTruthStore(), name = 'append_meaning'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'TernaryTruthStore' object has no attribute 'append_meaning'. Did you mean: 'append_relation'?
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1969: AttributeError
+___ test_conflict_degrees_and_stable_provenance_survive_compaction_and_reset ___
+
+    def test_conflict_degrees_and_stable_provenance_survive_compaction_and_reset():
+        store = TernaryTruthStore(6, capacity=8)
+>       first = store.append_meaning(_meaning(), kind="fact", trust=.8)
+                ^^^^^^^^^^^^^^^^^^^^
+
+/tmp/full-spec-existence-metadata-probes.py:116: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = TernaryTruthStore(), name = 'append_meaning'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'TernaryTruthStore' object has no attribute 'append_meaning'. Did you mean: 'append_relation'?
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1969: AttributeError
+___________ test_repeated_evidence_does_not_inflate_partial_support ____________
+
+    def test_repeated_evidence_does_not_inflate_partial_support():
+        store = TernaryTruthStore(6, capacity=8)
+        for _ in range(4):
+>           store.append_meaning(_meaning(), kind="fact", trust=.4)
+            ^^^^^^^^^^^^^^^^^^^^
+
+/tmp/full-spec-existence-metadata-probes.py:134: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = TernaryTruthStore(), name = 'append_meaning'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'TernaryTruthStore' object has no attribute 'append_meaning'. Did you mean: 'append_relation'?
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1969: AttributeError
+_________ test_live_description_owns_values_but_fact_storage_detaches __________
+
+    def test_live_description_owns_values_but_fact_storage_detaches():
+>       from Meaning import ConceptualMeaning
+E       ModuleNotFoundError: No module named 'Meaning'
+
+/tmp/full-spec-existence-metadata-probes.py:142: ModuleNotFoundError
+_ test_explicit_stm_layout_matches_predictor_adapter_and_retains_all_roles[1] __
+
+depth = 1
+
+    @pytest.mark.parametrize("depth", [1, 2, 3])
+    def test_explicit_stm_layout_matches_predictor_adapter_and_retains_all_roles(depth):
+>       from Meaning import ConceptualMeaning
+E       ModuleNotFoundError: No module named 'Meaning'
+
+/tmp/full-spec-existence-metadata-probes.py:159: ModuleNotFoundError
+_ test_explicit_stm_layout_matches_predictor_adapter_and_retains_all_roles[2] __
+
+depth = 2
+
+    @pytest.mark.parametrize("depth", [1, 2, 3])
+    def test_explicit_stm_layout_matches_predictor_adapter_and_retains_all_roles(depth):
+>       from Meaning import ConceptualMeaning
+E       ModuleNotFoundError: No module named 'Meaning'
+
+/tmp/full-spec-existence-metadata-probes.py:159: ModuleNotFoundError
+_ test_explicit_stm_layout_matches_predictor_adapter_and_retains_all_roles[3] __
+
+depth = 3
+
+    @pytest.mark.parametrize("depth", [1, 2, 3])
+    def test_explicit_stm_layout_matches_predictor_adapter_and_retains_all_roles(depth):
+>       from Meaning import ConceptualMeaning
+E       ModuleNotFoundError: No module named 'Meaning'
+
+/tmp/full-spec-existence-metadata-probes.py:159: ModuleNotFoundError
+___ test_store_checkpoint_keeps_scoped_evidence_and_rejects_missing_sidecar ____
+
+    def test_store_checkpoint_keeps_scoped_evidence_and_rejects_missing_sidecar():
+        source = TernaryTruthStore(6, capacity=8)
+>       description = _meaning(scope={"where": ("sym", 11)}, bindings={"x": ("sym", 7)})
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+/tmp/full-spec-existence-metadata-probes.py:171: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+width = 6
+metadata = {'scope': {'where': ('sym', 11)}, 'bindings': {'x': ('sym', 7)}}
+
+    def _meaning(width=6, **metadata):
+>       from Meaning import ConceptualMeaning
+E       ModuleNotFoundError: No module named 'Meaning'
+
+/tmp/full-spec-existence-metadata-probes.py:12: ModuleNotFoundError
+_________ test_actual_model_checkpoint_preserves_scoped_fact_identity __________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-511/test_actual_model_checkpoint_p0')
+
+    def test_actual_model_checkpoint_preserves_scoped_fact_identity(tmp_path):
+        from test_ltm_consolidation import _make_model, _STATEFUL_CONFIG
+        source = _make_model(_STATEFUL_CONFIG)
+        restored = None
+        try:
+            store = source.symbolSpace.ltm_store
+            store.reset()
+>           description = _meaning(width=store.nDim,
+                                   bindings={"x": ("sym", 7)},
+                                   scope={"where": ("sym", 11)})
+
+/tmp/full-spec-existence-metadata-probes.py:198: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+width = 14
+metadata = {'bindings': {'x': ('sym', 7)}, 'scope': {'where': ('sym', 11)}}
+
+    def _meaning(width=6, **metadata):
+>       from Meaning import ConceptualMeaning
+E       ModuleNotFoundError: No module named 'Meaning'
+
+/tmp/full-spec-existence-metadata-probes.py:12: ModuleNotFoundError
+____________ test_legacy_kernel_keeps_both_sides_of_exist_evidence _____________
+
+    def test_legacy_kernel_keeps_both_sides_of_exist_evidence():
+        from thinking import ThinkingKernel, CONFLICTING
+        store = TernaryTruthStore(6, capacity=8)
+>       store.append_meaning(_meaning(), kind="fact", trust=.8)
+        ^^^^^^^^^^^^^^^^^^^^
+
+/tmp/full-spec-existence-metadata-probes.py:223: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = TernaryTruthStore(), name = 'append_meaning'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'TernaryTruthStore' object has no attribute 'append_meaning'. Did you mean: 'append_relation'?
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1969: AttributeError
+=========================== short test summary info ============================
+FAILED ../../../../../tmp/full-spec-existence-metadata-probes.py::test_actual_observation_writers_keep_roles_without_asserting_world_facts[pending-1]
+FAILED ../../../../../tmp/full-spec-existence-metadata-probes.py::test_actual_observation_writers_keep_roles_without_asserting_world_facts[pending-2]
+FAILED ../../../../../tmp/full-spec-existence-metadata-probes.py::test_actual_observation_writers_keep_roles_without_asserting_world_facts[pending-3]
+FAILED ../../../../../tmp/full-spec-existence-metadata-probes.py::test_actual_observation_writers_keep_roles_without_asserting_world_facts[packed-1]
+FAILED ../../../../../tmp/full-spec-existence-metadata-probes.py::test_actual_observation_writers_keep_roles_without_asserting_world_facts[packed-2]
+FAILED ../../../../../tmp/full-spec-existence-metadata-probes.py::test_actual_observation_writers_keep_roles_without_asserting_world_facts[packed-3]
+FAILED ../../../../../tmp/full-spec-existence-metadata-probes.py::test_legacy_checkpoint_does_not_invent_fact_status_for_conversation_rows
+FAILED ../../../../../tmp/full-spec-existence-metadata-probes.py::test_full_description_metadata_changes_which_referent_is_requested[bindings]
+FAILED ../../../../../tmp/full-spec-existence-metadata-probes.py::test_full_description_metadata_changes_which_referent_is_requested[scope]
+FAILED ../../../../../tmp/full-spec-existence-metadata-probes.py::test_full_description_metadata_changes_which_referent_is_requested[role_refs]
+FAILED ../../../../../tmp/full-spec-existence-metadata-probes.py::test_unaccepted_records_cannot_certify_their_own_referents[question-interrogative]
+FAILED ../../../../../tmp/full-spec-existence-metadata-probes.py::test_unaccepted_records_cannot_certify_their_own_referents[estimate-assertive]
+FAILED ../../../../../tmp/full-spec-existence-metadata-probes.py::test_unaccepted_records_cannot_certify_their_own_referents[observation-unspecified]
+FAILED ../../../../../tmp/full-spec-existence-metadata-probes.py::test_question_cannot_be_written_as_accepted_fact
+FAILED ../../../../../tmp/full-spec-existence-metadata-probes.py::test_conflict_degrees_and_stable_provenance_survive_compaction_and_reset
+FAILED ../../../../../tmp/full-spec-existence-metadata-probes.py::test_repeated_evidence_does_not_inflate_partial_support
+FAILED ../../../../../tmp/full-spec-existence-metadata-probes.py::test_live_description_owns_values_but_fact_storage_detaches
+FAILED ../../../../../tmp/full-spec-existence-metadata-probes.py::test_explicit_stm_layout_matches_predictor_adapter_and_retains_all_roles[1]
+FAILED ../../../../../tmp/full-spec-existence-metadata-probes.py::test_explicit_stm_layout_matches_predictor_adapter_and_retains_all_roles[2]
+FAILED ../../../../../tmp/full-spec-existence-metadata-probes.py::test_explicit_stm_layout_matches_predictor_adapter_and_retains_all_roles[3]
+FAILED ../../../../../tmp/full-spec-existence-metadata-probes.py::test_store_checkpoint_keeps_scoped_evidence_and_rejects_missing_sidecar
+FAILED ../../../../../tmp/full-spec-existence-metadata-probes.py::test_actual_model_checkpoint_preserves_scoped_fact_identity
+FAILED ../../../../../tmp/full-spec-existence-metadata-probes.py::test_legacy_kernel_keeps_both_sides_of_exist_evidence
+23 failed in 2.25s

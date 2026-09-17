@@ -12,6 +12,7 @@ import torch.nn as nn
 
 from Spaces import ConceptualSpace, GlobalAttention
 from Layers import TernaryTruthStore
+from Meaning import ConceptualMeaning
 
 
 # -- Query framing (Phase 0) -------------------------------------------------
@@ -39,7 +40,11 @@ BOTH = "BOTH"
 
 @dataclass
 class QuerySpec:
-    """Normalized query operands plus predicate kind."""
+    """Legacy query interface; Exist accepts one complete ConceptualMeaning.
+
+    The checked grammatical-VP registry is a separate migration. This wrapper
+    never flattens a structured description into an apparent unary operand.
+    """
 
     predicate: str                       # KIND_IS_TRUE | KIND_IS_PART | KIND_IS_EQUAL
     left: Any = None
@@ -134,35 +139,63 @@ class TruthGroundedReasoner:
         n = min(a.numel(), b.numel())
         return float(torch.linalg.vector_norm(a[:n] - b[:n]))
 
-    def exist(self, X) -> float:
-        """``exist(X)``: the isTrue leaf -- signed Degree-of-Truth in [-1,1]
-        (>0 true, <0 false, 0 unknown). X is true if it is a single idea with
-        positive trust (a REL_NONE row of the unified store whose identity to X
-        clears ``tau_id``, trust > 0), OR an ultimate truth (the model's
-        absolute TruthLayer grounds it with positive DoT). No chaining."""
-        X = _as_vec(X)
-        best = 0.0
+    def existence_evidence(self, description):
+        """Ground the full description in accepted LTM facts, without chaining.
+
+        Match each occupied role at the same width and preserve bindings,
+        semantic scope and referenced constituents. Signed identity attenuates
+        the stored degree; the least-matching role bounds that degree. Keep
+        positive and negative evidence independently and never sum repeated
+        evidence. Concept activation is not evidence that a referent exists.
+        This is a hard lookup, with no derivative through its matching choices.
+        """
+        requested = ConceptualMeaning.from_description(description)
+        candidates, incomplete = [], []
+        support_true = support_false = 0.0
         store = self.reasoning_store()
-        if store is not None and hasattr(store, "ideas") and hasattr(store, "row"):
-            idxs = store.ideas()
-            idxs = idxs.tolist() if hasattr(idxs, "tolist") else list(idxs)
-            for i in idxs:
-                row = store.row(int(i))
-                if self.equal(X, row["np1"]) >= self.tau_id:
-                    t = float(row["trust"])
-                    if abs(t) > abs(best):
-                        best = t
-        if best > self.trust_threshold:
-            return float(best)
-        m = self.model
-        if m is not None and hasattr(m, "isTrue"):
-            try:
-                dot = float(m.isTrue(X))
-            except Exception:
-                dot = 0.0
-            if dot != 0.0:
-                return dot
-        return float(best) if best < 0 else 0.0
+        if isinstance(store, TernaryTruthStore):
+            indexes = (store.record_kind[:len(store)] == store.KINDS.index("fact")).nonzero(as_tuple=True)[0]
+            for i in indexes.tolist():
+                row = store.row(i)
+                fact = row["meaning"]
+                if fact is None or not row["metadata_complete"]:
+                    incomplete.append(row["occurrence"])
+                    continue
+                if fact.mode != "assertive" or fact.roles.shape != requested.roles.shape:
+                    continue
+                if not torch.equal(fact.role_mask.cpu(), requested.role_mask.cpu()):
+                    continue
+                if (fact.bindings != requested.bindings or fact.scope != requested.scope
+                        or fact.role_refs != requested.role_refs):
+                    continue
+                strengths = [self.equal(requested.roles[role].to(fact.roles), fact.roles[role])
+                             for role in requested.role_mask.nonzero(as_tuple=True)[0].tolist()]
+                match = min(strengths)
+                if match < self.tau_id:
+                    continue
+                signed = float(row["trust"]) * match
+                if fact.polarity != requested.polarity:
+                    signed = -signed
+                support_true = max(support_true, signed)
+                support_false = max(support_false, -signed)
+                candidates.append({"row": i, "occurrence": row["occurrence"],
+                                   "origin": row["origin"], "text": row["text"],
+                                   "kind": "fact", "match": match,
+                                   "signed_support": signed, "trust": float(row["trust"]),
+                                   "bindings": fact.bindings, "scope": fact.scope,
+                                   "role_refs": fact.role_refs})
+        return {"support_true": support_true, "support_false": support_false,
+                "candidates": candidates, "incomplete_evidence": incomplete,
+                "meaning": requested}
+
+    def exist(self, X) -> float:
+        """Lossy legacy scalar view: positive minus negative fact support.
+
+        Checked evaluation and the thinking kernel consume existence_evidence
+        instead, since a scalar cannot preserve contradictory support.
+        """
+        evidence = self.existence_evidence(X)
+        return evidence["support_true"] - evidence["support_false"]
 
     def wholes(self, X) -> list:
         """``wholes(X)``: the proximal containing wholes of X -- the canonical
@@ -393,9 +426,11 @@ class TruthGroundedReasoner:
         A = _as_vec(A)
         B = _as_vec(B)
         if isinstance(store, TernaryTruthStore):
+            # This legacy adapter has no grammatical VP. Its relation tag may
+            # serve legacy Part readers, but cannot certify a full Exist fact.
             return int(store.append_relation(
                 A, torch.zeros_like(A), B,
-                rel_type=store.REL_PARTOF, trust=float(score)))
+                rel_type=store.REL_PARTOF, trust=float(score), kind="unverified"))
         if hasattr(store, "record_triple"):
             return int(store.record_triple(
                 A, torch.zeros_like(A), B, degree=float(score)))
@@ -458,18 +493,19 @@ class TruthGroundedReasoner:
                  max_steps: int = 8, beam: int = 8) -> dict:
         """Evaluate a QuerySpec to a posture + confidence + candidate chains.
 
-        isTrue uses the signed DoT from ``exist`` (sign splits support); isPart
+        isTrue preserves independent positive/negative LTM fact support; isPart
         uses the best candidate-chain score as positive support and a refuting
         direct edge as negative support; isEqual uses ``equal(isomorphic=True)``
         (the fraction of shared parts & wholes).
         """
         tau = self.theta if tau is None else float(tau)
         if q.predicate == KIND_IS_TRUE:
-            dot = self.exist(q.left)
-            res = self._posture(max(0.0, dot), max(0.0, -dot), tau)
+            evidence = self.existence_evidence(q.left)
+            res = self._posture(evidence["support_true"], evidence["support_false"], tau)
+            res.update(evidence)
             res["kind"] = KIND_IS_TRUE
-            res["candidates"] = []
-            res["trace"] = None
+            res["trace"] = (f"Exist: {len(evidence['candidates'])} matching facts; "
+                            f"support +{res['support_true']:.3f}/-{res['support_false']:.3f}")
             return res
         if q.predicate == KIND_IS_EQUAL:
             score = self.equal(q.left, q.right, isomorphic=True)

@@ -734,73 +734,73 @@ switches are **retired**. See [Params.md](Params.md) and
 
 ## 10. LTM as the chain of STM end-states
 
-Long-term memory (LTM) is the **full chain of STM end-states**. There are
-two backing modes, selected by `<ltmConsolidation>` (default off).
+LTM retains external sentence observations. `<ltmConsolidation>` selects the
+legacy per-row deque or the consolidated ternary store; storage alone does
+not certify that a described referent exists.
+[Observation path](../bin/Layers.py#L10184),
+[consolidated observation writer](../bin/Models.py#L133).
 
-**Legacy mode (`<ltmConsolidation>` off).** The chain lives on
-`InterSentenceLayer` ([Layers.py](../bin/Layers.py)) as a per-row
-bounded `collections.deque` `_stm_end_states` of size `<ltmCapacity>`
-(default `1024`). Each entry is a time-ordered tuple
+**Legacy backing mode.** `InterSentenceLayer._stm_end_states` is a bounded
+per-row deque of `(depth, payload, trust)` values. The root-only compatibility
+path retains physical newest-first STM payloads. The structured production
+path instead stores canonical `[3, D]` payloads here and retains explicit
+occupancy in its separate bounded prediction view. This deque is transient
+host state; its legacy tuple API does not preserve all grammatical metadata.
+An explicit adapter converts physical STM to NP1/VP/NP2: three slots use
+`[1, 2, 0]`, two use `[1, 0]`. Occupancy is metadata; a zero-valued occupied
+role is not padding.
+[Observation storage](../bin/Layers.py#L10184),
+[canonical adapter](../bin/Meaning.py#L15).
 
-```
-(depth: int, payload: [depth, D] tensor, trust: float | None)
-```
+**Consolidated mode.** `symbolSpace.ltm_store` is the existing
+`TernaryTruthStore`, with `[capacity, 3, D]` infix NP1/VP/NP2 values. Its
+tensor columns retain role presence, relation tag, grammatical mode,
+polarity, signed trust, timestamp, evidence kind, writer origin and stable
+occurrence identity. A two-role observation retains NP1 and VP. Forward
+writers record `observation` with unspecified grammatical mode; explicit
+TruthSet admission may accept the observation as a fact. An origin tag alone
+does not do so, and questions/estimates cannot certify their own referents.
+[Store schema](../bin/Layers.py#L8662),
+[observation write](../bin/Models.py#L133),
+[fact admission](../bin/Layers.py#L8900).
 
-where `depth` is $1$ for an absolute end-state and $3$ for a relative
-`[predicate, idea1, idea2]` end-state (so the payloads are ragged — a
-fixed register-buffer tensor does not fit, hence the per-row deque). The
-third element is a **per-row scalar trust**, not the tetralemma 4-tuple —
-the 4-tuple lives only on the WS-META insertion path
-([Section 9](#9-relative-vs-absolute-end-states)); the chain (and the
-consolidated store below) both collapse it to one float before storing.
-The chain is transient host-side state (`persistent=False` semantics, not
-in `state_dict`).
+The consolidated legacy `get_stm_chain` view returns infix payloads up to the
+highest occupied role, including depth two. It reads global timestamp order
+and ignores `b`; it is not the production expectation view. Sentence
+expectation uses its own bounded row/document-scoped observation view, so a
+different stream, an internal thought or a provisioned fact cannot become
+an external predecessor merely through this legacy recency reader.
+[Legacy read](../bin/Layers.py#L10408),
+[structured observation](../bin/Layers.py#L10077).
 
-**Consolidated mode (`<ltmConsolidation>` on).** The discourse LTM chain
-and the `RelativeTruthStore` relation corpus are combined into ONE
-persistent `TernaryTruthStore` on `SymbolSubSpace`
-(`symbolSpace.ltm_store`, [Layers.py](../bin/Layers.py)): a single
-`[capacity, 3, nDim]` tensor of `(NP1, VP, NP2)` idea-vector rows plus a
-per-row `timestamp`, scalar `trust` $\in[-1, 1]$, and provenance
-`origin` (`ORIGIN_CONVERSATION` / `ORIGIN_PROVISIONED` / `ORIGIN_USER`).
-Unlike the deque, this store is a set of registered buffers — it **rides
-the `state_dict`** and survives `Reset`. The boundary observe site
-appends each sentence's end-state as an **INFIX** triple `NP1=idea1,
-VP=predicate, NP2=idea2` (an absolute row leaves `VP`/`NP2` as the zero
-vector and carries `rel_type=REL_NONE`; a relative row carries
-`rel_type=REL_OTHER`) — INFIX, not the `[predicate, idea1, idea2]` prefix
-order the legacy deque's payload uses. `get_stm_chain`
-([Layers.py](../bin/Layers.py)) detects the wired `ltm_store` and reads
-from it instead of the per-row deque: it pulls the **global** recency
-window via `store.recent(n)` (descending timestamp, reversed to
-oldest-first) and reconstructs each row into the SAME tuple shape the
-deque path returns — `(1, np1[None, :], trust)` for an absolute row,
-`(3, stack([np1, vp, np2]), trust)` for a relation — so downstream
-readers can interpret the same tuple shape. The `b` argument to this
-legacy store view is ignored in consolidated mode. Inter-sentence prediction
-now uses a bounded per-row observation view instead, so another stream or a
-provisioned fact cannot become its external predecessor.
+Role tensors and scalar columns ride `state_dict`; bindings, semantic scope,
+constituent references and source text ride the versioned `truth_semantics`
+entry in the existing structural sidecar. Restore checks occurrence identity
+and its content fingerprint. Required metadata missing from a tensor-only
+restore makes that evidence unavailable until restored. Missing or swapped
+scope cannot silently become a different fact. Stable occurrence IDs survive
+row compaction and are not reused after reset.
+[Sidecar](../bin/Models.py#L4409),
+[validated restore](../bin/Layers.py#L8811),
+[guarded read](../bin/Layers.py#L8777).
 
-`observe_stm_end_state(depths, payloads, tetralemmas=None)`
-([Layers.py](../bin/Layers.py)) records **every** sentence's
-end-state — it is **not** gated by `truthCriterion`. The distinction is
-load-bearing: `truthCriterion` gates only the separate Concept-codebook
-insertion of *learned relations* (Section 9), whereas LTM is the AR sequence the
-inter-sentence predictor consumes and must see the full history. A
-non-finite payload **raises** (fail-loud on numerical divergence); in
-legacy mode the deque `maxlen` evicts the oldest entry once full (in
-consolidated mode `TernaryTruthStore.append` instead returns `-1` once
-`capacity` is reached — see `Models.py`'s `ltm_store.append_relation` /
-`append_idea` call site). `get_stm_chain(n=None, b=0)` returns the last
-$n$ (or all) end-states for a row, oldest-first, regardless of mode.
+External observation is independent of `truthCriterion`. The legacy deque
+evicts its oldest entry at capacity; the consolidated append returns `-1`
+when full. This is the observation/evidence store contract, not the future
+levelled thought-history retention contract.
+[Capacity and evidence writes](../bin/Layers.py#L8913),
+[observation storage](../bin/Layers.py#L10184).
 
-LTM is the **full chain**; the **TruthSet** is the accepted-belief subset
-(the relations that cleared the learn-score gate and were inserted into
-the Concept codebook). LTM keeps everything that happened; the TruthSet
-keeps what was believed.
+`Exist` compares the full occupied description, bindings, scope and references
+against assertive fact records, retaining positive/negative degrees and
+provenance separately. Conversation observations, questions, estimates and
+unverified legacy rows are ineligible. The degree belongs to evidence about
+the referent; model activation alone cannot establish it.
+See [Existence evidence](ExistenceEvidence.md) for legacy migration, testimony,
+matching and gradient boundaries, and
+[the implemented lookup](../bin/reasoning.py#L142).
 
 ---
-
 ## 11. Inter-sentence prediction
 
 ### Structured production path
@@ -813,7 +813,7 @@ role and chronological positions remain distinct. It predicts three separate
 vectors and three presence logits. The loss is MSE over actual occupied
 roles plus mean binary cross entropy for presence. Targets are detached;
 current-step source representations remain live under the reconstruction
-gradient budget. See [Layers.py:9189](../bin/Layers.py#L9189).
+gradient budget. See [Layers.py:9435](../bin/Layers.py#L9435).
 
 The packed observer uses the existing sealed end-slot/depth outputs for each
 sentence, with an explicit STM-to-infix permutation. Corpus source addresses
@@ -825,8 +825,8 @@ Weight restore starts the
 observation view cold. These are sequence and local-role contracts; retained
 compound references remain part of the separate nesting migration in the
 [integrated spec](plans/2026-09-15-next-sentence-as-the-production-objective.md).
-See [Layers.py:9717](../bin/Layers.py#L9717) and
-[Models.py:12497](../bin/Models.py#L12497).
+See [Layers.py:9963](../bin/Layers.py#L9963) and
+[Models.py:12522](../bin/Models.py#L12522).
 
 ### Historical root baseline (`sentenceExpectationScope=root`)
 
@@ -838,9 +838,9 @@ view is bounded and per-row; durable LTM retains detached observations.
 Current-step source context keeps its encoder graph. Consuming the prediction
 loss and entering the next brick detach that view without deleting history.
 Document resets clear the selected view and pending estimate, preserving
-other rows and durable LTM ([Layers.py:10037](../bin/Layers.py#L10037),
-[Layers.py:10395](../bin/Layers.py#L10395),
-[Layers.py:10515](../bin/Layers.py#L10515)). Its chain window is
+other rows and durable LTM ([Layers.py:10262](../bin/Layers.py#L10262),
+[Layers.py:10618](../bin/Layers.py#L10618),
+[Layers.py:10738](../bin/Layers.py#L10738)). Its chain window is
 $K = \min(\text{ltmCapacity}, 8)$ (`_inter_chain_window`): the AR signal
 that predicts the next end-state lives in the last handful of sentences,
 so a small bounded window is used rather than the full `ltmCapacity`.

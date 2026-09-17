@@ -91,6 +91,7 @@ from Layers import LinearLayer
 from Layers import LiftingLayer, CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon
 from Layers import Error, TheError
 from Layers import TernaryTruthStore
+from Meaning import ConceptualMeaning
 from Layers import Ops, GRAMMAR_LAYER_CLASSES, CONTIGUITY_PRESERVING_OPS
 from Teacher import Teacher
 from Mereology import Mereology
@@ -127,6 +128,13 @@ _DEDUPE_FLUSH_EVERY = 1000
 # remaining breaks while migrating host-side symbol creation onto
 # pre-allocated codebooks (insert-not-grow). Defaults to the strict gate.
 ENUM_FULLGRAPH = os.environ.get("BASIC_FULLGRAPH", "1") != "0"
+
+
+def _append_observed_meaning(store, payload, depth, *, trust=0.0):
+    """Record the complete understood input without certifying a world fact."""
+    meaning = ConceptualMeaning.from_payload(
+        payload, depth=depth, layout="stm", mode="unspecified")
+    return store.append_meaning(meaning, kind="observation", trust=trust)
 
 
 def _checkpoint_host_copy(value):
@@ -4399,7 +4407,7 @@ class BaseModel(Mereology, nn.Module):
         }
 
     def _collect_structural_extras(self):
-        """Snapshot durable host-side concept and mereology state.
+        """Snapshot durable host-side concept, mereology and fact metadata.
 
         ``ConceptAllocator`` deliberately is not an ``nn.Module``: its ids,
         ordered constituent records, row maps and idempotency dictionaries are
@@ -4407,6 +4415,8 @@ class BaseModel(Mereology, nn.Module):
         the word-keyed WholeSpace registries.  They nevertheless form part of
         the learned model; dropping them on reload makes the next observation
         mint duplicate identities.  Keep them in one versioned sidecar.
+        Truth-store scope, bindings, references and source text are versioned
+        beside that structure; their vectors remain in registered buffers.
         """
         alloc_fields = (
             "placement", "raised", "singletons", "retired", "identity",
@@ -4521,13 +4531,19 @@ class BaseModel(Mereology, nn.Module):
             if entry:
                 wholes[int(i)] = entry
 
-        if not conceptual and not wholes:
+        truth_semantics = {
+            name: module.semantic_extras()
+            for name, module in self.named_modules()
+            if isinstance(module, TernaryTruthStore)
+        }
+        if not conceptual and not wholes and not truth_semantics:
             return None
         return {
             "version": 2 if property_basis else 1,
             "conceptual_spaces": conceptual,
             ("whole_properties" if property_basis else "whole_spaces"):
                 wholes,
+            "truth_semantics": truth_semantics,
         }
 
     def _restore_allocator_extras(self, cs, saved):
@@ -4764,6 +4780,13 @@ class BaseModel(Mereology, nn.Module):
                 terminal_cs.load_vocab_extras({
                     "legacy_whole_spaces": legacy_stages,
                 })
+
+        modules = dict(self.named_modules())
+        for name, saved in (extras.get("truth_semantics") or {}).items():
+            store = modules.get(name)
+            if not isinstance(store, TernaryTruthStore):
+                raise ValueError(f"checkpoint truth store {name!r} is not present")
+            store.load_semantic_extras(saved)
 
     @staticmethod
     def _widen_what_projection_checkpoint_state(state, model_state):
@@ -6369,6 +6392,7 @@ class BasicModel(BaseModel):
             for row in range(start, end):
                 store.set_trust(row, trust)
                 store.set_origin(row, store.ORIGIN_USER, text=text)
+                store.accept_fact(row)
         truth_layer.sync_from_ltm()
 
     # -- LTM consolidation: XML TruthSet provisioning ------------------
@@ -6464,6 +6488,7 @@ class BasicModel(BaseModel):
                 store.set_trust(row, trust)
                 store.set_origin(
                     row, TernaryTruthStore.ORIGIN_PROVISIONED, text=text)
+                store.accept_fact(row)
                 if kind in kind_map:
                     store.rel_type[row] = kind_map[kind]
         return max(0, len(store) - n_before)
@@ -12773,12 +12798,7 @@ class BasicModel(BaseModel):
                        if tetralemmas is not None and b < len(tetralemmas)
                        else None)
                 trust = float(tet) if tet is not None else 0.0
-                if d >= 3:
-                    ltm_store.append_relation(
-                        payload[d - 2], payload[d - 1], payload[0],
-                        rel_type=TernaryTruthStore.REL_OTHER, trust=trust)
-                else:
-                    ltm_store.append_idea(payload[0], trust=trust)
+                _append_observed_meaning(ltm_store, payload, d, trust=trust)
 
     def _drain_packed_stm_end_states(self):
         """Observe each sealed meaning once, in row/document/time order."""
@@ -12844,12 +12864,7 @@ class BasicModel(BaseModel):
             if ltm_on:
                 for depth, payload in zip(depths, payloads):
                     if payload is not None:
-                        if depth == 3:
-                            ltm_store.append_relation(
-                                payload[1], payload[2], payload[0],
-                                rel_type=TernaryTruthStore.REL_OTHER, trust=0.0)
-                        else:
-                            ltm_store.append_idea(payload[0], trust=0.0)
+                        _append_observed_meaning(ltm_store, payload, depth)
 
     def _intersentence_seed(self):
         """The predicted next-end-state SHAPE for the stage-0 CS_{-1} seed,
@@ -21641,13 +21656,7 @@ class BasicModel(BaseModel):
                                        and b < len(tetralemmas))
                                    else None)
                             trust = float(tet) if tet is not None else 0.0
-                            if d >= 3:
-                                ltm_store.append_relation(
-                                    payload[d - 2], payload[d - 1], payload[0],
-                                    rel_type=TernaryTruthStore.REL_OTHER,
-                                    trust=trust)
-                            else:
-                                ltm_store.append_idea(payload[0], trust=trust)
+                            _append_observed_meaning(ltm_store, payload, d, trust=trust)
 
         # Existing loss_head plumbing (dormant: ``loss_head`` is always
         # None today) -- kept identical to the whole-slab tail so the

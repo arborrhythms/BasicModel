@@ -1,0 +1,145 @@
+CANDIDATE Meaning: /private/tmp/full-spec-query-candidate/Meaning.py
+CANDIDATE Layers: /private/tmp/full-spec-query-candidate/Layers.py
+CANDIDATE Models: /private/tmp/full-spec-query-candidate/Models.py
+CANDIDATE reasoning: /private/tmp/full-spec-query-candidate/reasoning.py
+CANDIDATE thinking: /private/tmp/full-spec-query-candidate/thinking.py
+FFFFFF                                                                   [100%]
+=================================== FAILURES ===================================
+___ test_restored_sidecar_cannot_erase_or_replace_recorded_scope[erase-None] ___
+
+text = None, mutation = 'erase'
+
+    @pytest.mark.parametrize("text", [None, "a scoped assertion"])
+    @pytest.mark.parametrize("mutation", ["erase", "replace"])
+    def test_restored_sidecar_cannot_erase_or_replace_recorded_scope(text, mutation):
+        source = TernaryTruthStore(6, capacity=8)
+        meaning = ConceptualMeaning.from_payload(
+            torch.eye(6)[:3], depth=3, layout="infix", scope={"where": ("sym", 11)})
+        row = source.append_meaning(meaning, trust=.8)
+        if text is not None:
+            source.set_origin(row, source.ORIGIN_USER, text=text)
+        extras = deepcopy(source.semantic_extras())
+        extras["records"][0]["context"]["scope"] = (() if mutation == "erase"
+                                                     else (("where", ("sym", 12)),))
+        restored = TernaryTruthStore(6, capacity=8)
+        restored.load_state_dict(source.state_dict(), strict=True)
+>       with pytest.raises(ValueError, match="semantic.*(fingerprint|content|scope)"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+/tmp/full-spec-existence-sidecar-probes.py:25: Failed
+_ test_restored_sidecar_cannot_erase_or_replace_recorded_scope[erase-a scoped assertion] _
+
+text = 'a scoped assertion', mutation = 'erase'
+
+    @pytest.mark.parametrize("text", [None, "a scoped assertion"])
+    @pytest.mark.parametrize("mutation", ["erase", "replace"])
+    def test_restored_sidecar_cannot_erase_or_replace_recorded_scope(text, mutation):
+        source = TernaryTruthStore(6, capacity=8)
+        meaning = ConceptualMeaning.from_payload(
+            torch.eye(6)[:3], depth=3, layout="infix", scope={"where": ("sym", 11)})
+        row = source.append_meaning(meaning, trust=.8)
+        if text is not None:
+            source.set_origin(row, source.ORIGIN_USER, text=text)
+        extras = deepcopy(source.semantic_extras())
+        extras["records"][0]["context"]["scope"] = (() if mutation == "erase"
+                                                     else (("where", ("sym", 12)),))
+        restored = TernaryTruthStore(6, capacity=8)
+        restored.load_state_dict(source.state_dict(), strict=True)
+>       with pytest.raises(ValueError, match="semantic.*(fingerprint|content|scope)"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+/tmp/full-spec-existence-sidecar-probes.py:25: Failed
+__ test_restored_sidecar_cannot_erase_or_replace_recorded_scope[replace-None] __
+
+text = None, mutation = 'replace'
+
+    @pytest.mark.parametrize("text", [None, "a scoped assertion"])
+    @pytest.mark.parametrize("mutation", ["erase", "replace"])
+    def test_restored_sidecar_cannot_erase_or_replace_recorded_scope(text, mutation):
+        source = TernaryTruthStore(6, capacity=8)
+        meaning = ConceptualMeaning.from_payload(
+            torch.eye(6)[:3], depth=3, layout="infix", scope={"where": ("sym", 11)})
+        row = source.append_meaning(meaning, trust=.8)
+        if text is not None:
+            source.set_origin(row, source.ORIGIN_USER, text=text)
+        extras = deepcopy(source.semantic_extras())
+        extras["records"][0]["context"]["scope"] = (() if mutation == "erase"
+                                                     else (("where", ("sym", 12)),))
+        restored = TernaryTruthStore(6, capacity=8)
+        restored.load_state_dict(source.state_dict(), strict=True)
+>       with pytest.raises(ValueError, match="semantic.*(fingerprint|content|scope)"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+/tmp/full-spec-existence-sidecar-probes.py:25: Failed
+_ test_restored_sidecar_cannot_erase_or_replace_recorded_scope[replace-a scoped assertion] _
+
+text = 'a scoped assertion', mutation = 'replace'
+
+    @pytest.mark.parametrize("text", [None, "a scoped assertion"])
+    @pytest.mark.parametrize("mutation", ["erase", "replace"])
+    def test_restored_sidecar_cannot_erase_or_replace_recorded_scope(text, mutation):
+        source = TernaryTruthStore(6, capacity=8)
+        meaning = ConceptualMeaning.from_payload(
+            torch.eye(6)[:3], depth=3, layout="infix", scope={"where": ("sym", 11)})
+        row = source.append_meaning(meaning, trust=.8)
+        if text is not None:
+            source.set_origin(row, source.ORIGIN_USER, text=text)
+        extras = deepcopy(source.semantic_extras())
+        extras["records"][0]["context"]["scope"] = (() if mutation == "erase"
+                                                     else (("where", ("sym", 12)),))
+        restored = TernaryTruthStore(6, capacity=8)
+        restored.load_state_dict(source.state_dict(), strict=True)
+>       with pytest.raises(ValueError, match="semantic.*(fingerprint|content|scope)"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+/tmp/full-spec-existence-sidecar-probes.py:25: Failed
+___ test_restored_sidecar_cannot_swap_contexts_between_existing_occurrences ____
+
+    def test_restored_sidecar_cannot_swap_contexts_between_existing_occurrences():
+        source = TernaryTruthStore(6, capacity=8)
+        for concept in (11, 12):
+            meaning = ConceptualMeaning.from_payload(
+                torch.eye(6)[:3], depth=3, layout="infix", scope={"where": ("sym", concept)})
+            source.append_meaning(meaning, trust=.8)
+        extras = deepcopy(source.semantic_extras())
+        records = extras["records"]
+        records[0]["context"], records[1]["context"] = records[1]["context"], records[0]["context"]
+        restored = TernaryTruthStore(6, capacity=8)
+        restored.load_state_dict(source.state_dict(), strict=True)
+>       with pytest.raises(ValueError, match="semantic.*(fingerprint|content|scope)"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+/tmp/full-spec-existence-sidecar-probes.py:41: Failed
+__________ test_source_update_cannot_certify_missing_semantic_context __________
+
+    def test_source_update_cannot_certify_missing_semantic_context():
+        source = TernaryTruthStore(6, capacity=8)
+        meaning = ConceptualMeaning.from_payload(
+            torch.eye(6)[:3], depth=3, layout="infix", scope={"where": ("sym", 11)})
+        source.append_meaning(meaning, trust=.8)
+        restored = TernaryTruthStore(6, capacity=8)
+        restored.load_state_dict(source.state_dict(), strict=True)
+>       with pytest.raises(ValueError, match="missing semantic"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+/tmp/full-spec-existence-sidecar-probes.py:52: Failed
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:1345
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:1345: PytestAssertRewriteWarning: Module already imported so cannot be rewritten; anyio
+    self._mark_plugins_for_rewrite(hook, disable_autoload)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED ../../../../../tmp/full-spec-existence-sidecar-probes.py::test_restored_sidecar_cannot_erase_or_replace_recorded_scope[erase-None]
+FAILED ../../../../../tmp/full-spec-existence-sidecar-probes.py::test_restored_sidecar_cannot_erase_or_replace_recorded_scope[erase-a scoped assertion]
+FAILED ../../../../../tmp/full-spec-existence-sidecar-probes.py::test_restored_sidecar_cannot_erase_or_replace_recorded_scope[replace-None]
+FAILED ../../../../../tmp/full-spec-existence-sidecar-probes.py::test_restored_sidecar_cannot_erase_or_replace_recorded_scope[replace-a scoped assertion]
+FAILED ../../../../../tmp/full-spec-existence-sidecar-probes.py::test_restored_sidecar_cannot_swap_contexts_between_existing_occurrences
+FAILED ../../../../../tmp/full-spec-existence-sidecar-probes.py::test_source_update_cannot_certify_missing_semantic_context
+6 failed, 1 warning in 0.12s

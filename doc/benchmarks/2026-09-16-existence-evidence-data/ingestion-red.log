@@ -1,0 +1,75 @@
+FFFFF                                                                    [100%]
+=================================== FAILURES ===================================
+__________ test_nontruth_testimony_cannot_certify_a_referent[value0] ___________
+
+value = tensor([1., 1., 1., 1., 1., 1.])
+
+    @pytest.mark.parametrize("value", [torch.ones(6), "an unparsed answer", float("nan")])
+    def test_nontruth_testimony_cannot_certify_a_referent(value):
+        store = TernaryTruthStore(6, capacity=8)
+        kernel = ThinkingKernel(TruthGroundedReasoner(store=store))
+        testimony = Testimony(proposition=torch.eye(6)[0], value=value,
+                              source="forecast", source_trust=.9)
+>       assert kernel.incorporate(testimony) == -1
+E       AssertionError: assert 0 == -1
+E        +  where 0 = incorporate(Testimony(proposition=tensor([1., 0., 0., 0., 0., 0.]), value=tensor([1., 1., 1., 1., 1., 1.]), source='forecast', source_trust=0.9, channel_trust=1.0, provenance=[]))
+E        +    where incorporate = <thinking.ThinkingKernel object at 0x12778a570>.incorporate
+
+/tmp/full-spec-existence-ingestion-probes.py:16: AssertionError
+____ test_nontruth_testimony_cannot_certify_a_referent[an unparsed answer] _____
+
+value = 'an unparsed answer'
+
+    @pytest.mark.parametrize("value", [torch.ones(6), "an unparsed answer", float("nan")])
+    def test_nontruth_testimony_cannot_certify_a_referent(value):
+        store = TernaryTruthStore(6, capacity=8)
+        kernel = ThinkingKernel(TruthGroundedReasoner(store=store))
+        testimony = Testimony(proposition=torch.eye(6)[0], value=value,
+                              source="forecast", source_trust=.9)
+>       assert kernel.incorporate(testimony) == -1
+E       AssertionError: assert 0 == -1
+E        +  where 0 = incorporate(Testimony(proposition=tensor([1., 0., 0., 0., 0., 0.]), value='an unparsed answer', source='forecast', source_trust=0.9, channel_trust=1.0, provenance=[]))
+E        +    where incorporate = <thinking.ThinkingKernel object at 0x1277d41a0>.incorporate
+
+/tmp/full-spec-existence-ingestion-probes.py:16: AssertionError
+____________ test_nontruth_testimony_cannot_certify_a_referent[nan] ____________
+
+value = nan
+
+    @pytest.mark.parametrize("value", [torch.ones(6), "an unparsed answer", float("nan")])
+    def test_nontruth_testimony_cannot_certify_a_referent(value):
+        store = TernaryTruthStore(6, capacity=8)
+        kernel = ThinkingKernel(TruthGroundedReasoner(store=store))
+        testimony = Testimony(proposition=torch.eye(6)[0], value=value,
+                              source="forecast", source_trust=.9)
+>       assert kernel.incorporate(testimony) == -1
+E       AssertionError: assert 0 == -1
+E        +  where 0 = incorporate(Testimony(proposition=tensor([1., 0., 0., 0., 0., 0.]), value=nan, source='forecast', source_trust=0.9, channel_trust=1.0, provenance=[]))
+E        +    where incorporate = <thinking.ThinkingKernel object at 0x1277d65d0>.incorporate
+
+/tmp/full-spec-existence-ingestion-probes.py:16: AssertionError
+____ test_scalar_prediction_is_identified_and_cannot_become_testimony_truth ____
+
+    def test_scalar_prediction_is_identified_and_cannot_become_testimony_truth():
+        from thinking import Frame
+        store = TernaryTruthStore(6, capacity=8)
+        kernel = ThinkingKernel(TruthGroundedReasoner(store=store))
+>       kernel.register_addressee("forecast", lambda _target: .95,
+                                  source_trust=1, evidence_kind="estimate")
+E       TypeError: ThinkingKernel.register_addressee() got an unexpected keyword argument 'evidence_kind'
+
+/tmp/full-spec-existence-ingestion-probes.py:24: TypeError
+______ test_accepted_testimony_preserves_the_full_description_and_source _______
+
+    def test_accepted_testimony_preserves_the_full_description_and_source():
+>       from Meaning import ConceptualMeaning
+E       ModuleNotFoundError: No module named 'Meaning'
+
+/tmp/full-spec-existence-ingestion-probes.py:37: ModuleNotFoundError
+=========================== short test summary info ============================
+FAILED ../../../../../tmp/full-spec-existence-ingestion-probes.py::test_nontruth_testimony_cannot_certify_a_referent[value0]
+FAILED ../../../../../tmp/full-spec-existence-ingestion-probes.py::test_nontruth_testimony_cannot_certify_a_referent[an unparsed answer]
+FAILED ../../../../../tmp/full-spec-existence-ingestion-probes.py::test_nontruth_testimony_cannot_certify_a_referent[nan]
+FAILED ../../../../../tmp/full-spec-existence-ingestion-probes.py::test_scalar_prediction_is_identified_and_cannot_become_testimony_truth
+FAILED ../../../../../tmp/full-spec-existence-ingestion-probes.py::test_accepted_testimony_preserves_the_full_description_and_source
+5 failed in 2.28s

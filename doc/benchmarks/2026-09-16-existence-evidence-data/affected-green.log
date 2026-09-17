@@ -1,0 +1,17 @@
+........................................................................ [ 25%]
+........................................................................ [ 51%]
+........................................................................ [ 76%]
+......................................s...........................       [100%]
+=============================== warnings summary ===============================
+test/test_truth_grounded_reasoning.py::TestReasonPredictNext::test_blend_differentiable_masks_absent_arma
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_thinking_kernel.py::TestModelIntegration::test_answer_query_kernel_attachment_gates
+test/test_thinking_kernel.py::TestDepth3RelativeEndState::test_first_trained_read_reaches_depth3_end_state
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Spaces.py:1731: RuntimeWarning: EventEncoding[WholeSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+281 passed, 1 skipped, 3 warnings in 89.56s (0:01:29)

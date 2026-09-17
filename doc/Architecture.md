@@ -774,12 +774,12 @@ the compatible contribution using `outputGradientRatio` and the combined
 gradient scale. Below tolerance, bounded predictive refinement remains
 possible. Shared grammar transforms participate even when registered on
 SymbolSpace. Independent heads keep their ordinary gradients. The loss
-partition and ownership are in [Models.py:2700](../bin/Models.py#L2700), and
+partition and ownership are in [Models.py:2708](../bin/Models.py#L2708), and
 the numerical rule is in [Optimizer.py:113](../bin/Optimizer.py#L113). See
 [Training](Training.md) and the [joint-learning contract](plans/2026-09-15-next-sentence-as-the-production-objective.md#84-joint-representation-learning-and-gradient-balance).
 
 An invertible transform uses its same learned mapping in the forward and
-inverse directions ([`InvertibleLinearLayer`](../bin/Layers.py#L1062)); its gradient
+inverse directions ([`InvertibleLinearLayer`](../bin/Layers.py#L1066)); its gradient
 follows the configured joint-learning policy.
 
 Reference: A.M. Rogers, T.T. Shannon, and G.G. Lendaris, "A comparison of DHP
@@ -1155,13 +1155,13 @@ sentence state. BasicModel selects `reconstructionPlacement=compiled`, a
 separate fullgraph reconstruction call. With the MPS `eager` capture backend,
 that call uses `aot_eager` to capture backward as well. Its compiler retains
 saved buffers for repeated gradient reads by the joint balance rule; the caller's
-global donation setting is preserved ([Models.py:11205](../bin/Models.py#L11205)). Configurations without
+global donation setting is preserved ([Models.py:11230](../bin/Models.py#L11230)). Configurations without
 the placement setting retain the historical in-graph default; the
 `BASICMODEL_RECON_PLACEMENT` diagnostic can override either for comparison.
 Completion owns the result once during understanding, including
-valid zero-valued results ([Models.py:7253](../bin/Models.py#L7253),
-[Models.py:8000](../bin/Models.py#L8000),
-[Models.py:11174](../bin/Models.py#L11174)).
+valid zero-valued results ([Models.py:7278](../bin/Models.py#L7278),
+[Models.py:8025](../bin/Models.py#L8025),
+[Models.py:11199](../bin/Models.py#L11199)).
 
 The reconstruction traversal has three bounded passes: an integer-only replay
 identifies operand occurrences; seal reversal recovers each completed sentence's
@@ -1169,16 +1169,16 @@ stack; then a reverse word walk undoes unary/post folds, pops and scores the
 word, and undoes its pre-fold. Repeated concept rows retain their own signed
 occurrence activations. Packed sentences have separate boundaries and costs.
 The two floating passes use gradient-bearing carries; the metadata pass needs
-no backward tape ([Models.py:11248](../bin/Models.py#L11248)).
+no backward tape ([Models.py:11273](../bin/Models.py#L11273)).
 
 Reconstruction owns no learned decoder. Selected compose transforms supply
 affine inverses, known-operand residuals or explicitly bounded approximate
 reconstruction. A missing inverse reports incompleteness. Dictionary snapshots
 and witnesses are detached and retained for backward; targets only score the
 result ([Language.py:14351](../bin/Language.py#L14351),
-[Models.py:11590](../bin/Models.py#L11590)). Recovered word ideas pass through
+[Models.py:11615](../bin/Models.py#L11615)). Recovered word ideas pass through
 the shared numerical input reverse chain using a fresh carrier; they never
-enter the free generate chart ([Models.py:8038](../bin/Models.py#L8038)).
+enter the free generate chart ([Models.py:8063](../bin/Models.py#L8063)).
 
 Output keeps its generate policy, answer-side state and termination budget.
 It receives no input reconstruction witnesses or basis. Selected numerical
@@ -1189,11 +1189,11 @@ with all generated percept coordinates available to the learned projection.
 This preserves the former forward function and gradients while avoiding an
 input-width square allocation. Existing checkpoint adapters retain their full
 factor layout; new checkpoints carry a compact-layout marker
-([Layers.py:1633](../bin/Layers.py#L1633),
+([Layers.py:1637](../bin/Layers.py#L1637),
 [Spaces.py:30277](../bin/Spaces.py#L30277),
-[Models.py:8982](../bin/Models.py#L8982)). This head is independent of the
+[Models.py:9007](../bin/Models.py#L9007)). This head is independent of the
 input reconstruction inverse and belongs to the answer optimizer parameters
-([Models.py:9104](../bin/Models.py#L9104)).
+([Models.py:9129](../bin/Models.py#L9129)).
 `resolveAnswer(understanding, questions)` prepares an owned `AnswerDerivation`
 before `reverseOutput(understanding, derivation)` realizes it. Output requires
 that value and never invokes the resolver; repeated realization retains the
@@ -1201,9 +1201,30 @@ same derivation and target-free presentation metadata. Its conceptual clone
 retains the current step's gradient. The remaining levelled-controller
 migration must finish all internal thoughts before the final surface call;
 the explicit API boundary alone does not complete that work
-([Models.py:8146](../bin/Models.py#L8146),
-[Models.py:9157](../bin/Models.py#L9157),
+([Models.py:8171](../bin/Models.py#L8171),
+[Models.py:9182](../bin/Models.py#L9182),
 [Output.py:48](../bin/Output.py#L48)).
+
+
+### Full-description existence evidence
+
+Boundary `Exist` evaluation checks accepted LTM facts against all occupied
+NP1/VP/NP2 roles, bindings, scope and constituent references. It retains
+positive and negative support plus occurrence provenance independently;
+missing evidence is unknown. Observations, questions, estimates and unverified
+legacy records cannot certify their own referents. `ConceptualMeaning` is an
+owned value; `TernaryTruthStore` remains the durable evidence owner.
+[Lookup](../bin/reasoning.py#L142),
+[value](../bin/Meaning.py#L67),
+[store](../bin/Layers.py#L8662).
+
+The existing checkpoint sidecar now retains semantic context and source text,
+bound to stable occurrence IDs and tensor fingerprints. Required metadata
+missing on restore makes the corresponding evidence unavailable. This
+foundation does not complete grammatical VP dispatch, conceptual-taxonomy
+queries or levelled thought history. See [Existence evidence](ExistenceEvidence.md)
+for the exact migration and gradient boundaries.
+[Restore checks](../bin/Layers.py#L8811).
 
 ## Sigma and Pi Layers
 
@@ -1304,8 +1325,8 @@ after a packed brick preserve that stream, its document key and ARMA rings;
 hard EOS resets start it cold. Restoring
 weights starts prediction context cold. Neither global LTM recency nor internal
 thoughts initialize an external-observation sequence. See
-[`begin_document`](../bin/Layers.py#L9769) and the
-[packed observer](../bin/Models.py#L12783).
+[`begin_document`](../bin/Layers.py#L10015) and the
+[packed observer](../bin/Models.py#L12803).
 
 ### Historical root / ARMA representation
 

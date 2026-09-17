@@ -1,0 +1,13 @@
+CANDIDATE Meaning: /private/tmp/full-spec-query-candidate/Meaning.py
+CANDIDATE Layers: /private/tmp/full-spec-query-candidate/Layers.py
+CANDIDATE Models: /private/tmp/full-spec-query-candidate/Models.py
+CANDIDATE reasoning: /private/tmp/full-spec-query-candidate/reasoning.py
+CANDIDATE thinking: /private/tmp/full-spec-query-candidate/thinking.py
+...........................                                              [100%]
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:1345
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:1345: PytestAssertRewriteWarning: Module already imported so cannot be rewritten; anyio
+    self._mark_plugins_for_rewrite(hook, disable_autoload)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+27 passed, 1 warning in 81.83s (0:01:21)

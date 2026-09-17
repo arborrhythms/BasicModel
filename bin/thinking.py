@@ -8,7 +8,8 @@ validates them, and only the runtime's two grounded paths (materialize /
 incorporate) may write LTM.
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
+import math
 from typing import Any, Callable, Optional
 
 import torch
@@ -17,6 +18,7 @@ import torch.nn as nn
 from reasoning import (QuerySpec, TruthGroundedReasoner, _as_vec,
                        KIND_IS_TRUE, KIND_IS_PART, KIND_IS_EQUAL)
 from Layers import TernaryTruthStore
+from Meaning import ConceptualMeaning
 
 # Frame / answer values (spec §9.1). ``true``/``false``/``unknown``/``mixed``/
 # ``conflicting`` mirror the interval statuses; ``bounded_unknown`` is the
@@ -88,6 +90,7 @@ class Testimony:
     source_trust: float = 0.0
     channel_trust: float = 1.0
     provenance: list = field(default_factory=list)
+    evidence_kind: str = "testimony"
 
     @property
     def effective_trust(self) -> float:
@@ -128,11 +131,14 @@ class Frame:
 
 
 def as_spec(target) -> QuerySpec:
-    """Normalize a location to a QuerySpec: a bare idea vector denotes its own
-    existence question (isTrue); a QuerySpec passes through."""
+    """Normalize a complete description to its existence question.
+
+    Bare vectors denote NP1; explicit role matrices and ConceptualMeaning
+    values retain their full grammatical description. A QuerySpec passes through.
+    """
     if isinstance(target, QuerySpec):
         return target
-    return QuerySpec(KIND_IS_TRUE, _as_vec(target))
+    return QuerySpec(KIND_IS_TRUE, ConceptualMeaning.from_description(target))
 
 
 # -- The kernel ----------------------------------------------------------------
@@ -165,12 +171,13 @@ class ThinkingKernel:
         self.ga = ga
         self.spaces = spaces or []
         self.materialize = bool(materialize)
-        self.addressees: dict[str, tuple] = {}      # name -> (fn, reliability)
+        self.addressees: dict[str, tuple] = {}      # name -> (fn, reliability, evidence kind)
         if getattr(reasoner, "model", None) is not None:
             # The discourse predictor lives outside the kernel's memory --
             # reachable only through query(), like any other external tool.
             self.register_addressee(
-                "arma", lambda target: reasoner.arma(as_spec(target).left))
+                "arma", lambda target: reasoner.arma(as_spec(target).left),
+                evidence_kind="estimate")
         self._pool = 0
         self.stack: list[Frame] = []
 
@@ -248,9 +255,11 @@ class ThinkingKernel:
         if spec.predicate != KIND_IS_TRUE and spec.right is None:
             return TruthInterval()         # an open binary query has no direct row
         if spec.predicate == KIND_IS_TRUE:
-            dot = r.exist(spec.left)
-            if dot != 0.0:
-                ev.append((dot, dot, {"how": "exist"}))
+            evidence = r.existence_evidence(spec.left)
+            for candidate in evidence["candidates"]:
+                signed = candidate["signed_support"]
+                if signed != 0.0:
+                    ev.append((signed, abs(signed), {"how": "exist", **candidate}))
         elif spec.predicate == KIND_IS_EQUAL:
             s = r.equal(spec.left, spec.right, isomorphic=True)
             if s > 0.0:
@@ -262,7 +271,11 @@ class ThinkingKernel:
             refute = r._refuting_direct(spec.left, spec.right)
             if refute > 0.0:
                 ev.append((-refute, refute, {"how": "refuting"}))
-        return TruthInterval.from_evidence(ev)
+        interval = TruthInterval.from_evidence(ev)
+        if spec.predicate == KIND_IS_TRUE and evidence["incomplete_evidence"]:
+            interval.provenance.append({"how": "exist",
+                                        "incomplete_evidence": evidence["incomplete_evidence"]})
+        return interval
 
     # == part (spec §6): structural traversal ================================
 
@@ -286,12 +299,16 @@ class ThinkingKernel:
     # == query (spec §8): outward, testimony only ============================
 
     def register_addressee(self, name: str, fn: Callable, *,
-                           source_trust: float = None):
+                           source_trust: float = None, evidence_kind="testimony"):
         """Register an external addressee with its reliability (§1.4 source
         trust; default :attr:`default_source_trust`)."""
         t = (self.default_source_trust if source_trust is None
              else float(source_trust))
-        self.addressees[str(name)] = (fn, t)
+        if evidence_kind not in ("testimony", "estimate", "question", "observation"):
+            raise ValueError(f"unknown addressee evidence kind {evidence_kind!r}")
+        if not math.isfinite(t):
+            raise ValueError("source trust must be finite")
+        self.addressees[str(name)] = (fn, t, evidence_kind)
 
     def query(self, addressee: str, target) -> Testimony:
         entry = self.addressees.get(str(addressee))
@@ -299,7 +316,7 @@ class ThinkingKernel:
             return Testimony(proposition=target, value=None,
                              source=str(addressee), source_trust=0.0,
                              provenance=[{"error": "unknown addressee"}])
-        fn, source_trust = entry
+        fn, source_trust, evidence_kind = entry
         try:
             value = fn(target)
         except Exception as e:
@@ -308,6 +325,7 @@ class ThinkingKernel:
                              provenance=[{"error": repr(e)}])
         return Testimony(proposition=target, value=value,
                          source=str(addressee), source_trust=source_trust,
+                         evidence_kind=evidence_kind,
                          provenance=[{"how": "query"}])
 
     def incorporate(self, testimony: Testimony) -> int:
@@ -317,24 +335,37 @@ class ThinkingKernel:
         reliability = float(testimony.effective_trust)
         store = self.reasoner.reasoning_store()
         if (store is None or testimony.value is None
+                or testimony.evidence_kind != "testimony"
+                or torch.is_tensor(testimony.value)
+                or not math.isfinite(reliability)
                 or reliability < self.incorporate_floor):
             return -1
         # A scalar testimony value is the asserted signed truth; a reliable
         # source asserting false writes a NEGATIVE-trust row.
         try:
-            signed = max(-1.0, min(1.0, float(testimony.value)))
+            signed = float(testimony.value)
         except (TypeError, ValueError):
-            signed = 1.0
-        t = reliability * signed
+            return -1
+        if not math.isfinite(signed):
+            return -1
+        t = reliability * max(-1.0, min(1.0, signed))
         spec = as_spec(testimony.proposition)
         if not isinstance(store, TernaryTruthStore):
             return -1
         if spec.predicate == KIND_IS_PART and spec.right is not None:
             A = _as_vec(spec.left)
-            return int(store.append_relation(
+            # Preserve the legacy row without inventing its missing VP.
+            row = int(store.append_relation(
                 A, torch.zeros_like(A), _as_vec(spec.right),
-                rel_type=store.REL_PARTOF, trust=t))
-        return int(store.append_idea(_as_vec(spec.left), trust=t))
+                rel_type=store.REL_PARTOF, trust=t, kind="unverified"))
+        elif spec.predicate == KIND_IS_TRUE:
+            meaning = replace(ConceptualMeaning.from_description(spec.left), mode="assertive")
+            row = store.append_meaning(meaning, kind="fact", trust=t)
+        else:
+            return -1          # no declared fact-writing adapter for this predicate
+        if row >= 0:
+            store.set_origin(row, store.ORIGIN_CONVERSATION, text=str(testimony.source))
+        return int(row)
 
     # == answer (spec §9): closure rules ======================================
 
@@ -346,8 +377,9 @@ class ThinkingKernel:
         asserted signed value SCALED by the source's reliability, so flimsy
         testimony cannot manufacture luminosity)."""
         iv = frame.bindings.get("interval") or TruthInterval()
-        ev = [(iv.lower, iv.trust, {"how": "lookup"}),
-              (iv.upper, iv.trust, {"how": "lookup"})] if iv.provenance else []
+        provenance = {"how": "lookup", "evidence": list(iv.provenance)}
+        ev = [(iv.lower, iv.trust, provenance),
+              (iv.upper, iv.trust, provenance)] if iv.provenance else []
         for ch in frame.bindings.get("children", []):
             res = ch["result"]
             if res is not None and res.value in (TRUE, FALSE):
@@ -356,12 +388,16 @@ class ThinkingKernel:
                            {"how": "child", "target": res.target}))
         for t in frame.bindings.get("testimony", []):
             rel = float(t.effective_trust)
-            if t.value is None or rel <= 0.0 or torch.is_tensor(t.value):
+            if (t.value is None or t.evidence_kind != "testimony"
+                    or not math.isfinite(rel) or rel <= 0.0 or torch.is_tensor(t.value)):
                 continue                   # content, not a truth assertion
             try:
-                signed = max(-1.0, min(1.0, float(t.value)))
+                signed = float(t.value)
             except (TypeError, ValueError):
                 continue
+            if not math.isfinite(signed):
+                continue
+            signed = max(-1.0, min(1.0, signed))
             ev.append((signed * rel, rel,
                        {"how": "testimony", "source": t.source}))
         return TruthInterval.from_evidence(ev) if ev else iv

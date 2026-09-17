@@ -1,0 +1,121 @@
+CANDIDATE Meaning: /private/tmp/full-spec-query-candidate/Meaning.py
+CANDIDATE Layers: /private/tmp/full-spec-query-candidate/Layers.py
+CANDIDATE Models: /private/tmp/full-spec-query-candidate/Models.py
+CANDIDATE reasoning: /private/tmp/full-spec-query-candidate/reasoning.py
+CANDIDATE thinking: /private/tmp/full-spec-query-candidate/thinking.py
+FFFFF                                                                    [100%]
+=================================== FAILURES ===================================
+_ test_public_kernel_accepts_complete_description_without_collapsing_roles[True] _
+
+structured = True
+
+    @pytest.mark.parametrize("structured", [True, False])
+    def test_public_kernel_accepts_complete_description_without_collapsing_roles(structured):
+        roles = torch.eye(6)[:3]
+        fact = ConceptualMeaning.from_description(roles)
+        store = TernaryTruthStore(6, capacity=8)
+        store.append_meaning(fact, trust=.8)
+        kernel = ThinkingKernel(TruthGroundedReasoner(store=store))
+        query = fact if structured else roles
+>       assert kernel.lookup(query).upper == pytest.approx(.8)
+               ^^^^^^^^^^^^^^^^^^^^
+
+/tmp/full-spec-existence-public-input-probes.py:19: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/tmp/full-spec-query-candidate/thinking.py:249: in lookup
+    spec = as_spec(target)
+           ^^^^^^^^^^^^^^^
+/tmp/full-spec-query-candidate/thinking.py:138: in as_spec
+    return QuerySpec(KIND_IS_TRUE, _as_vec(target))
+                                   ^^^^^^^^^^^^^^^
+/tmp/full-spec-query-candidate/reasoning.py:79: in _as_vec
+    x = torch.as_tensor(x, dtype=torch.float32)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <torch.utils._device.DeviceContext object at 0x10f122030>
+func = <built-in method as_tensor of type object at 0x10ccd8fa8>, types = ()
+args = (ConceptualMeaning(mode='assertive', polarity=True, role_refs=(None, None, None), bindings=(), scope=()),)
+kwargs = {'dtype': torch.float32, 'device': device(type='cpu')}
+
+    def __torch_function__(self, func, types, args=(), kwargs=None):
+        kwargs = kwargs or {}
+        if func in _device_constructors() and kwargs.get("device") is None:
+            kwargs["device"] = self.device
+>       return func(*args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: must be real number, not ConceptualMeaning
+
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: TypeError
+_ test_public_kernel_accepts_complete_description_without_collapsing_roles[False] _
+
+structured = False
+
+    @pytest.mark.parametrize("structured", [True, False])
+    def test_public_kernel_accepts_complete_description_without_collapsing_roles(structured):
+        roles = torch.eye(6)[:3]
+        fact = ConceptualMeaning.from_description(roles)
+        store = TernaryTruthStore(6, capacity=8)
+        store.append_meaning(fact, trust=.8)
+        kernel = ThinkingKernel(TruthGroundedReasoner(store=store))
+        query = fact if structured else roles
+>       assert kernel.lookup(query).upper == pytest.approx(.8)
+E       assert 0.0 == 0.8 ± 8.0e-07
+E         
+E         comparison failed
+E         Obtained: 0.0
+E         Expected: 0.8 ± 8.0e-07
+
+/tmp/full-spec-existence-public-input-probes.py:19: AssertionError
+__ test_trust_update_rejects_nonfinite_degrees_without_mutating_evidence[nan] __
+
+trust = nan
+
+    @pytest.mark.parametrize("trust", [float("nan"), float("inf"), -float("inf")])
+    def test_trust_update_rejects_nonfinite_degrees_without_mutating_evidence(trust):
+        store = TernaryTruthStore(6, capacity=8)
+        row = store.append_idea(torch.eye(6)[0], trust=.4)
+>       with pytest.raises(ValueError, match="finite"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+/tmp/full-spec-existence-public-input-probes.py:30: Failed
+__ test_trust_update_rejects_nonfinite_degrees_without_mutating_evidence[inf] __
+
+trust = inf
+
+    @pytest.mark.parametrize("trust", [float("nan"), float("inf"), -float("inf")])
+    def test_trust_update_rejects_nonfinite_degrees_without_mutating_evidence(trust):
+        store = TernaryTruthStore(6, capacity=8)
+        row = store.append_idea(torch.eye(6)[0], trust=.4)
+>       with pytest.raises(ValueError, match="finite"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+/tmp/full-spec-existence-public-input-probes.py:30: Failed
+_ test_trust_update_rejects_nonfinite_degrees_without_mutating_evidence[-inf] __
+
+trust = -inf
+
+    @pytest.mark.parametrize("trust", [float("nan"), float("inf"), -float("inf")])
+    def test_trust_update_rejects_nonfinite_degrees_without_mutating_evidence(trust):
+        store = TernaryTruthStore(6, capacity=8)
+        row = store.append_idea(torch.eye(6)[0], trust=.4)
+>       with pytest.raises(ValueError, match="finite"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+/tmp/full-spec-existence-public-input-probes.py:30: Failed
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:1345
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:1345: PytestAssertRewriteWarning: Module already imported so cannot be rewritten; anyio
+    self._mark_plugins_for_rewrite(hook, disable_autoload)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED ../../../../../tmp/full-spec-existence-public-input-probes.py::test_public_kernel_accepts_complete_description_without_collapsing_roles[True]
+FAILED ../../../../../tmp/full-spec-existence-public-input-probes.py::test_public_kernel_accepts_complete_description_without_collapsing_roles[False]
+FAILED ../../../../../tmp/full-spec-existence-public-input-probes.py::test_trust_update_rejects_nonfinite_degrees_without_mutating_evidence[nan]
+FAILED ../../../../../tmp/full-spec-existence-public-input-probes.py::test_trust_update_rejects_nonfinite_degrees_without_mutating_evidence[inf]
+FAILED ../../../../../tmp/full-spec-existence-public-input-probes.py::test_trust_update_rejects_nonfinite_degrees_without_mutating_evidence[-inf]
+5 failed, 1 warning in 0.13s

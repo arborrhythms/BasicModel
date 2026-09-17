@@ -1,0 +1,109 @@
+CANDIDATE Meaning: /private/tmp/full-spec-query-candidate/Meaning.py
+CANDIDATE Layers: /private/tmp/full-spec-query-candidate/Layers.py
+CANDIDATE Models: /private/tmp/full-spec-query-candidate/Models.py
+CANDIDATE reasoning: /private/tmp/full-spec-query-candidate/reasoning.py
+CANDIDATE thinking: /private/tmp/full-spec-query-candidate/thinking.py
+FFFFF                                                                    [100%]
+=================================== FAILURES ===================================
+____ test_kernel_result_retains_matching_fact_occurrences_and_both_degrees _____
+
+    def test_kernel_result_retains_matching_fact_occurrences_and_both_degrees():
+        meaning = ConceptualMeaning.from_payload(torch.eye(6)[:3], depth=3, layout="infix")
+        store = TernaryTruthStore(6, capacity=8)
+        rows = [store.append_meaning(meaning, trust=degree) for degree in (.8, -.9)]
+        expected = {store.row(i)["occurrence"] for i in rows}
+        result = ThinkingKernel(TruthGroundedReasoner(store=store)).run(
+            QuerySpec.from_surface("exist", meaning))
+        assert result.value == CONFLICTING
+        assert result.interval.lower == pytest.approx(-.9)
+        assert result.interval.upper == pytest.approx(.8)
+>       assert _occurrences(result.provenance) == expected
+E       AssertionError: assert set() == {('ltm', '370...cc024876', 1)}
+E         
+E         Extra items in the right set:
+E         ('ltm', '370ab06159874bb0903fb17ccc024876', 1)
+E         ('ltm', '370ab06159874bb0903fb17ccc024876', 0)
+E         Use -v to get more diff
+
+/tmp/full-spec-existence-provenance-path-probes.py:36: AssertionError
+______ test_missing_semantic_context_remains_visible_in_the_kernel_result ______
+
+    def test_missing_semantic_context_remains_visible_in_the_kernel_result():
+        meaning = ConceptualMeaning.from_payload(torch.eye(6)[:3], depth=3, layout="infix",
+                                                 scope={"where": ("sym", 11)})
+        store = TernaryTruthStore(6, capacity=8)
+        store.append_meaning(meaning, trust=.8)
+        restored = TernaryTruthStore(6, capacity=8)
+        restored.load_state_dict(store.state_dict(), strict=True)
+        result = ThinkingKernel(TruthGroundedReasoner(store=restored)).run(
+            QuerySpec.from_surface("exist", meaning))
+        assert result.value == UNKNOWN
+>       assert "incomplete_evidence" in repr(result.provenance)
+E       AssertionError: assert 'incomplete_evidence' in '[]'
+E        +  where '[]' = repr([])
+E        +    where [] = ChildResult(target=QuerySpec(predicate='isTrue', left=ConceptualMeaning(mode='assertive', polarity=True, role_refs=(No...after': 0.0}, {'op': 'answer', 'value': 'unknown', 'how': 'search_exhausted'}], provenance=[], relevance_to_parent=1.0).provenance
+
+/tmp/full-spec-existence-provenance-path-probes.py:49: AssertionError
+______ test_consolidated_legacy_chain_reads_the_actual_two_role_presence _______
+
+    def test_consolidated_legacy_chain_reads_the_actual_two_role_presence():
+        from types import SimpleNamespace
+        from Layers import InterSentenceLayer
+        store = TernaryTruthStore(6, capacity=8)
+        roles = torch.eye(6)[:2]
+        store.append_relation(roles[0], roles[1], None, trust=.8)
+        chain = InterSentenceLayer.get_stm_chain(SimpleNamespace(_ltm_store=store))
+        depth, payload, trust = chain[0]
+>       assert depth == 2
+E       assert 3 == 2
+
+/tmp/full-spec-existence-provenance-path-probes.py:60: AssertionError
+____ test_partial_new_checkpoint_cannot_forget_required_scope[record_kind] _____
+
+missing = 'record_kind'
+
+    @pytest.mark.parametrize("missing", ["record_kind", "metadata_required"])
+    def test_partial_new_checkpoint_cannot_forget_required_scope(missing):
+        meaning = ConceptualMeaning.from_payload(torch.eye(6)[:3], depth=3, layout="infix",
+                                                 scope={"where": ("sym", 11)})
+        source = TernaryTruthStore(6, capacity=8)
+        source.append_meaning(meaning, trust=.8)
+        state = dict(source.state_dict())
+        del state[missing]
+        restored = TernaryTruthStore(6, capacity=8)
+>       with pytest.raises(RuntimeError, match="semantic checkpoint"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE RuntimeError
+
+/tmp/full-spec-existence-provenance-path-probes.py:74: Failed
+_ test_partial_new_checkpoint_cannot_forget_required_scope[metadata_required] __
+
+missing = 'metadata_required'
+
+    @pytest.mark.parametrize("missing", ["record_kind", "metadata_required"])
+    def test_partial_new_checkpoint_cannot_forget_required_scope(missing):
+        meaning = ConceptualMeaning.from_payload(torch.eye(6)[:3], depth=3, layout="infix",
+                                                 scope={"where": ("sym", 11)})
+        source = TernaryTruthStore(6, capacity=8)
+        source.append_meaning(meaning, trust=.8)
+        state = dict(source.state_dict())
+        del state[missing]
+        restored = TernaryTruthStore(6, capacity=8)
+>       with pytest.raises(RuntimeError, match="semantic checkpoint"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE RuntimeError
+
+/tmp/full-spec-existence-provenance-path-probes.py:74: Failed
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:1345
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:1345: PytestAssertRewriteWarning: Module already imported so cannot be rewritten; anyio
+    self._mark_plugins_for_rewrite(hook, disable_autoload)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED ../../../../../tmp/full-spec-existence-provenance-path-probes.py::test_kernel_result_retains_matching_fact_occurrences_and_both_degrees
+FAILED ../../../../../tmp/full-spec-existence-provenance-path-probes.py::test_missing_semantic_context_remains_visible_in_the_kernel_result
+FAILED ../../../../../tmp/full-spec-existence-provenance-path-probes.py::test_consolidated_legacy_chain_reads_the_actual_two_role_presence
+FAILED ../../../../../tmp/full-spec-existence-provenance-path-probes.py::test_partial_new_checkpoint_cannot_forget_required_scope[record_kind]
+FAILED ../../../../../tmp/full-spec-existence-provenance-path-probes.py::test_partial_new_checkpoint_cannot_forget_required_scope[metadata_required]
+5 failed, 1 warning in 0.14s

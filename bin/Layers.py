@@ -14,6 +14,9 @@ import numpy as np
 import torch
 import math
 import random
+import uuid
+import hashlib
+import json
 import torch.nn as nn
 import torch.nn.functional as F
 from itertools import chain
@@ -23,6 +26,7 @@ from typing import Dict, List, Optional, Tuple
 from collections import namedtuple
 from dataclasses import dataclass
 from contextlib import contextmanager
+from Meaning import ConceptualMeaning, canonical_role_payload
 
 epsilon = 1e-7  # to avoid log(0)
 
@@ -8661,24 +8665,27 @@ class TernaryTruthStore(Layer):
     LTM end-state chain and the ``RelativeTruthStore`` relation corpus.
 
     Each row is ``(NP1, VP, NP2)`` -- three FULL idea vectors (event width
-    ``nDim``; ``Null`` = the zero vector) -- plus a per-row ``timestamp`` and
-    a per-row scalar ``trust`` in ``[-1, 1]``:
+    ``nDim``) with explicit role-presence, mode and evidence-kind columns,
+    plus a ``timestamp`` and signed ``trust`` in ``[-1, 1]``:
 
-      * ``NP  .   .``  -> an IDEA (absolute truth)
+      * ``NP  .   .``  -> a one-role IDEA
       * ``NP  VP  .``  -> a unary predication
       * ``NP  VP  NP`` -> an IDEA-RELATION-IDEA (relative truth)
 
     The relation kind is tagged in ``rel_type`` (``REL_NONE`` for an absolute
-    idea; ``REL_PARTOF`` / ``REL_IMPLIES`` are the two canonical relations;
+    idea; ``REL_PARTOF`` / ``REL_IMPLIES`` are the legacy relation tags;
     ``REL_OTHER`` for any learned predicate carried in the VP slot).
     ``partOf`` rows feed the meronomy / parthood; ``implies`` rows feed
     modus-ponens reasoning.
 
     UNLIKE ``RelativeTruthStore`` the idea vectors are stored UNSCALED (trust
     is a SEPARATE column, not baked into the magnitude), so a reader needs no
-    un-baking. All state is registered buffers, so the corpus rides the
-    state_dict -- it is PERSISTENT (provisioned from an XML TruthSet at load
-    time, grown by conversation at runtime). The monotonic ``timestamp`` gives
+    un-baking. Tensor state rides state_dict; scope, bindings, constituent
+    references and source text ride semantic_extras in the model's structural
+    sidecar. Required context missing from a tensor-only restore makes evidence
+    unavailable, never unscoped. Only explicit fact records support Exist;
+    storing a question, observation or estimate does not certify its referent.
+    The monotonic ``timestamp`` gives
     the single ordering both readers need: the AR predictor takes the recent
     slice (:meth:`recent`); reasoning scans the whole corpus
     (:meth:`relations`).
@@ -8687,10 +8694,10 @@ class TernaryTruthStore(Layer):
     that share the store -- ``ORIGIN_CONVERSATION`` (the observe-site STM
     push, the default), ``ORIGIN_PROVISIONED`` (XML ``<truthSet>`` rows,
     ``provision_ltm``) and ``ORIGIN_USER`` (runtime request-body TruthSet
-    rows, ``store_truths``). Origin rides the state_dict; the optional
-    source text attached alongside (``set_origin(..., text=)``) is host-side
-    transient metadata for clarification surfacing, like
-    ``TruthLayer._sources``. ``clear_origin`` compacts one origin's rows out
+    rows, ``store_truths``). Origin alone does not admit a fact. Source text
+    attached by ``set_origin(..., text=)`` persists with semantic metadata.
+    Occurrence identities survive compaction and are never reused on reset.
+    ``clear_origin`` compacts one origin's rows out
     in place so ``store_truths`` can give runtime user rows replace-on-
     resubmit semantics without touching conversation / provisioned rows.
     """
@@ -8703,6 +8710,9 @@ class TernaryTruthStore(Layer):
     ORIGIN_CONVERSATION = 0
     ORIGIN_PROVISIONED = 1
     ORIGIN_USER = 2
+
+    KINDS = ("unverified", "fact", "question", "estimate", "observation")
+    MODES = ("unspecified", "assertive", "interrogative")
 
     def __init__(self, nDim: int, capacity: int = 1024, content_width=None):
         super().__init__(nDim, nDim)
@@ -8727,11 +8737,227 @@ class TernaryTruthStore(Layer):
         # takes the next tick. XML provisioning appends first (earliest
         # ticks); conversation appends continue from there.
         self.register_buffer('_next_ts', torch.tensor(0, dtype=torch.long))
-        # Host-side per-row source text (set via ``set_origin``); transient
-        # metadata (NOT checkpoint material), indexed alongside rows and
-        # None-padded lazily -- a state_dict load changes ``count`` without
-        # appends, so readers must tolerate a short list.
+        # Source text is checkpointed in semantic_extras. A bare state_dict
+        # restore has no text until that sidecar is supplied.
         self._texts = []
+
+        # Semantic provenance is separate from origin and signed evidence.
+        # Scope/reference metadata rides the model's versioned sidecar; the
+        # flag prevents a tensor-only restore from forgetting required scope.
+        self.register_buffer('role_mask', torch.zeros(capacity, 3, dtype=torch.bool))
+        self.register_buffer('record_kind', torch.zeros(capacity, dtype=torch.long))
+        self.register_buffer('grammatical_mode', torch.zeros(capacity, dtype=torch.long))
+        self.register_buffer('polarity', torch.ones(capacity, dtype=torch.bool))
+        self.register_buffer('occurrence_id', torch.full((capacity,), -1, dtype=torch.long))
+        self.register_buffer('_next_occurrence', torch.tensor(0, dtype=torch.long))
+        self.register_buffer('_occurrence_namespace', torch.tensor(list(uuid.uuid4().bytes), dtype=torch.uint8))
+        self.register_buffer('metadata_required', torch.zeros(capacity, dtype=torch.bool))
+        self.register_buffer('semantic_fingerprint', torch.zeros(capacity, 32, dtype=torch.uint8))
+        self._semantic_rows = {}
+
+    @staticmethod
+    def _context_fingerprint(context, text):
+        """Bind sidecar content to its tensor-owned occurrence without duplicating it."""
+        context = context or {}
+        content = {"role_refs": context.get("role_refs", (None, None, None)),
+                   "bindings": context.get("bindings", ()),
+                   "scope": context.get("scope", ()), "text": text}
+        encoded = json.dumps(content, sort_keys=True, separators=(",", ":"),
+                             ensure_ascii=True, allow_nan=False).encode("utf-8")
+        return list(hashlib.sha256(encoded).digest())
+
+    def occurrence_of(self, idx):
+        """Stable identity; compaction changes a row index, not its occurrence."""
+        i = int(idx)
+        if not 0 <= i < len(self):
+            raise IndexError(f"row {i} of {len(self)}")
+        namespace = bytes(self._occurrence_namespace.tolist()).hex()
+        return ("ltm", namespace, int(self.occurrence_id[i]))
+
+    def meaning_of(self, idx):
+        """An owned detached value, or None when required context is missing."""
+        i = int(idx)
+        if not 0 <= i < len(self):
+            raise IndexError(f"row {i} of {len(self)}")
+        identifier = int(self.occurrence_id[i])
+        context = self._semantic_rows.get(identifier)
+        if bool(self.metadata_required[i]) and context is None:
+            return None
+        if not bool(self.role_mask[i].any()):
+            return None
+        return ConceptualMeaning(
+            self.slots[i].detach(), self.role_mask[i],
+            mode=self.MODES[int(self.grammatical_mode[i])],
+            polarity=bool(self.polarity[i]), **(context or {}))
+
+    def semantic_extras(self):
+        """Versioned context/provenance beside the existing tensor state.
+
+        Role vectors and scalar evidence have one owner: registered buffers.
+        This sidecar never duplicates them or supplies a second semantic store.
+        """
+        records = []
+        for i in range(len(self)):
+            identifier = int(self.occurrence_id[i])
+            context = self._semantic_rows.get(identifier)
+            if bool(self.metadata_required[i]) and context is None:
+                raise ValueError("cannot checkpoint evidence with missing semantic metadata")
+            records.append({"id": identifier, "context": dict(context or {}),
+                            "text": self.text_of(i)})
+        return {"version": 1,
+                "namespace": bytes(self._occurrence_namespace.tolist()).hex(),
+                "records": records}
+
+    def load_semantic_extras(self, extras):
+        """Restore metadata only onto the matching durable occurrences."""
+        if not isinstance(extras, dict) or extras.get("version") != 1:
+            raise ValueError("unsupported truth semantic checkpoint version")
+        namespace = bytes(self._occurrence_namespace.tolist()).hex()
+        if extras.get("namespace") != namespace:
+            raise ValueError("truth semantic checkpoint occurrence namespace differs")
+        rows = {int(self.occurrence_id[i]): i for i in range(len(self))}
+        if len(rows) != len(self):
+            raise ValueError("duplicate truth occurrence identity")
+        incoming, texts = {}, [None] * len(self)
+        for record in extras.get("records", ()):
+            identifier = int(record["id"])
+            if identifier not in rows or identifier in incoming:
+                raise ValueError("truth semantic checkpoint has an unavailable or duplicate occurrence")
+            i = rows[identifier]
+            context = record.get("context") or {}
+            if not isinstance(context, dict) or set(context) - {"role_refs", "bindings", "scope"}:
+                raise ValueError("invalid truth semantic context")
+            meaning = ConceptualMeaning(
+                self.slots[i].detach(), self.role_mask[i],
+                mode=self.MODES[int(self.grammatical_mode[i])],
+                polarity=bool(self.polarity[i]), **context)
+            incoming[identifier] = {key: meaning.metadata()[key]
+                                    for key in ("role_refs", "bindings", "scope")}
+            text = record.get("text")
+            if text is not None and not isinstance(text, str):
+                raise ValueError("truth source text must be a string")
+            texts[i] = text
+            if (meaning.has_context or text is not None) and not bool(self.metadata_required[i]):
+                raise ValueError("truth context disagrees with its required-metadata flag")
+            fingerprint = self.semantic_fingerprint.new_tensor(
+                self._context_fingerprint(incoming[identifier], text))
+            if not torch.equal(fingerprint, self.semantic_fingerprint[i]):
+                raise ValueError("truth semantic content differs from its checkpoint fingerprint")
+        if set(incoming) != set(rows):
+            raise ValueError("truth semantic checkpoint omits stored occurrences")
+        self._semantic_rows = incoming
+        self._texts = texts
+
+    def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
+                              missing_keys, unexpected_keys, error_msgs):
+        semantic_keys = (
+            'record_kind', 'grammatical_mode', 'role_mask', 'polarity',
+            'occurrence_id', '_next_occurrence', '_occurrence_namespace',
+            'metadata_required', 'semantic_fingerprint')
+        present = [prefix + name in state_dict for name in semantic_keys]
+        if any(present) and not all(present):
+            error_msgs.append(f"{prefix}incomplete semantic checkpoint; cannot recover evidence scope")
+            return
+        # Legacy conversation records had no grammatical mode or evidence kind.
+        # Only the explicitly accepted TruthSet origins establish fact status.
+        if prefix + "record_kind" not in state_dict:
+            slots = state_dict.get(prefix + "slots", self.slots)
+            count = int(state_dict.get(prefix + "count", self.count))
+            origins = state_dict.get(prefix + "origin", self.origin).to(slots.device)
+            kinds = torch.full(self.record_kind.shape, self.KINDS.index("unverified"), dtype=torch.long, device=slots.device)
+            modes = torch.full(self.grammatical_mode.shape, self.MODES.index("unspecified"), dtype=torch.long, device=slots.device)
+            accepted = ((origins == self.ORIGIN_PROVISIONED) | (origins == self.ORIGIN_USER))
+            kinds[:count] = torch.where(accepted[:count], self.KINDS.index("fact"), self.KINDS.index("unverified"))
+            modes[:count] = torch.where(accepted[:count], self.MODES.index("assertive"), self.MODES.index("unspecified"))
+            mask = torch.zeros(self.role_mask.shape, dtype=torch.bool, device=slots.device)
+            mask[:count] = slots[:count].ne(0).any(-1)
+            mask[:count, 0] = True
+            rel = state_dict.get(prefix + "rel_type", self.rel_type).to(slots.device)
+            # A legacy relation without a VP has no recoverable full description.
+            incomplete = (rel[:count] != self.REL_NONE) & ~mask[:count, 1]
+            kinds[:count] = torch.where(incomplete, self.KINDS.index("unverified"), kinds[:count])
+            identifiers = torch.full(self.occurrence_id.shape, -1, dtype=torch.long, device=slots.device)
+            identifiers[:count] = torch.arange(count, device=identifiers.device)
+            migrations = {
+                "record_kind": kinds, "grammatical_mode": modes, "role_mask": mask,
+                "polarity": torch.ones_like(self.polarity),
+                "occurrence_id": identifiers,
+                "_next_occurrence": self._next_occurrence.new_tensor(count),
+                "_occurrence_namespace": self._occurrence_namespace.clone(),
+                "metadata_required": torch.zeros_like(self.metadata_required),
+                "semantic_fingerprint": torch.zeros_like(self.semantic_fingerprint),
+            }
+            migrations["semantic_fingerprint"][:count] = self.semantic_fingerprint.new_tensor(
+                self._context_fingerprint({}, None))
+            for name, value in migrations.items():
+                state_dict[prefix + name] = value
+        self._semantic_rows = {}
+        self._texts = []
+        super()._load_from_state_dict(state_dict, prefix, local_metadata, strict,
+                                      missing_keys, unexpected_keys, error_msgs)
+
+    @torch.no_grad()
+    def accept_fact(self, idx):
+        """Explicit TruthSet admission; writer origin alone never admits a fact."""
+        i = int(idx)
+        if not 0 <= i < len(self):
+            raise IndexError(f"row {i} of {len(self)}")
+        if self.MODES[int(self.grammatical_mode[i])] == "interrogative":
+            raise ValueError("an interrogative question cannot be accepted as a fact")
+        if self.KINDS[int(self.record_kind[i])] in ("question", "estimate"):
+            raise ValueError("a question or estimate cannot certify its own referent")
+        self.record_kind[i] = self.KINDS.index("fact")
+        self.grammatical_mode[i] = self.MODES.index("assertive")
+
+    @torch.no_grad()
+    def append_meaning(self, meaning, *, kind="fact", rel_type=None,
+                       trust=0.0, timestamp=None):
+        """Commit a complete description with explicit evidential provenance."""
+        if not isinstance(meaning, ConceptualMeaning):
+            raise TypeError("append_meaning requires a ConceptualMeaning")
+        if meaning.roles.shape[-1] != self.nDim:
+            raise ValueError("meaning width differs from the truth store")
+        if kind not in self.KINDS:
+            raise ValueError(f"unknown evidence kind {kind!r}")
+        if kind == "fact" and meaning.mode != "assertive":
+            raise ValueError("a fact requires assertive meaning, not an interrogative question")
+        n = len(self)
+        if n >= self.capacity:
+            return -1
+        if not math.isfinite(float(trust)):
+            raise ValueError("fact trust must be finite")
+        if timestamp is not None and not math.isfinite(float(timestamp)):
+            raise ValueError("fact timestamp must be finite")
+        self.slots[n].copy_(meaning.roles)
+        self.role_mask[n].copy_(meaning.role_mask)
+        if rel_type is None:
+            rel_type = self.REL_OTHER if bool(meaning.role_mask[1:].any()) else self.REL_NONE
+        self.rel_type[n] = int(rel_type)
+        self.trust[n] = max(-1.0, min(1.0, float(trust)))
+        self.origin[n] = self.ORIGIN_CONVERSATION
+        self.record_kind[n] = self.KINDS.index(kind)
+        self.grammatical_mode[n] = self.MODES.index(meaning.mode)
+        self.polarity[n] = meaning.polarity
+        identifier = int(self._next_occurrence)
+        self.occurrence_id[n] = identifier
+        self._next_occurrence.add_(1)
+        self._semantic_rows[identifier] = {key: meaning.metadata()[key]
+                                          for key in ("role_refs", "bindings", "scope")}
+        self.metadata_required[n] = meaning.has_context
+        self._ensure_texts(n + 1)
+        self._texts[n] = None
+        self.semantic_fingerprint[n] = self.semantic_fingerprint.new_tensor(
+            self._context_fingerprint(self._semantic_rows[identifier], None))
+        if timestamp is None:
+            self.timestamp[n] = float(self._next_ts)
+            self._next_ts.add_(1)
+        else:
+            ts = float(timestamp)
+            self.timestamp[n] = ts
+            if ts >= float(self._next_ts):
+                self._next_ts.fill_(int(ts) + 1)
+        self.count.fill_(n + 1)
+        return n
 
     def __len__(self):
         return int(self.count.item())
@@ -8751,50 +8977,37 @@ class TernaryTruthStore(Layer):
 
     @torch.no_grad()
     def append(self, np1, vp=None, np2=None, *, rel_type=REL_NONE,
-               trust=0.0, timestamp=None) -> int:
+               trust=0.0, timestamp=None, kind="fact") -> int:
         """Append one ternary row. ``Null`` slots (``None``) store the zero
         vector. ``trust`` is clamped to ``[-1, 1]``. ``timestamp`` defaults to
         the next monotonic tick. Returns the row index, or ``-1`` when the
         store is full."""
-        n = int(self.count.item())
-        if n >= self.capacity:
-            return -1
-        self.slots[n, 0] = self._fit(np1)
-        self.slots[n, 1] = self._fit(vp)
-        self.slots[n, 2] = self._fit(np2)
-        self.rel_type[n] = int(rel_type)
-        self.trust[n] = max(-1.0, min(1.0, float(trust)))
-        self.origin[n] = self.ORIGIN_CONVERSATION
-        self._ensure_texts(n + 1)
-        self._texts[n] = None
-        if timestamp is None:
-            self.timestamp[n] = float(self._next_ts.item())
-            self._next_ts.fill_(int(self._next_ts.item()) + 1)
-        else:
-            ts = float(timestamp)
-            self.timestamp[n] = ts
-            # keep the clock monotonic past any explicit (e.g. provisioned) ts
-            if ts >= float(self._next_ts.item()):
-                self._next_ts.fill_(int(ts) + 1)
-        self.count.fill_(n + 1)
-        return n
+        meaning = ConceptualMeaning(
+            torch.stack([self._fit(value) for value in (np1, vp, np2)]),
+            torch.tensor([value is not None for value in (np1, vp, np2)],
+                         dtype=torch.bool, device=self.slots.device),
+            mode="interrogative" if kind == "question" else "assertive")
+        return self.append_meaning(meaning, kind=kind, rel_type=rel_type,
+                                   trust=trust, timestamp=timestamp)
 
-    def append_idea(self, np1, *, trust=0.0, timestamp=None) -> int:
-        """Append an ABSOLUTE truth (``NP . .``)."""
+    def append_idea(self, np1, *, trust=0.0, timestamp=None, kind="fact") -> int:
+        """Append a one-role description; legacy callers explicitly write facts."""
         return self.append(np1, None, None, rel_type=self.REL_NONE,
-                           trust=trust, timestamp=timestamp)
+                           trust=trust, timestamp=timestamp, kind=kind)
 
     def append_relation(self, np1, vp, np2, *, rel_type=REL_OTHER,
-                        trust=0.0, timestamp=None) -> int:
+                        trust=0.0, timestamp=None, kind="fact") -> int:
         """Append an IDEA-RELATION-IDEA (``NP VP NP``); ``np2=None`` ->
         ``NP VP .``."""
         return self.append(np1, vp, np2, rel_type=rel_type,
-                           trust=trust, timestamp=timestamp)
+                           trust=trust, timestamp=timestamp, kind=kind)
 
     def row(self, idx: int) -> dict:
-        """The stored row as ``{np1, vp, np2, rel_type, timestamp, trust,
-        origin, text}`` (vectors are views; ``rel_type`` / ``origin`` ints,
-        ``text`` the host-side source string or None)."""
+        """Read slots, evidence, stable provenance and an owned meaning.
+
+        Legacy np1/vp/np2 tensors remain views; ``meaning`` is an owned detached
+        value, or None when required semantic metadata is unavailable.
+        """
         n = int(self.count.item())
         if not (0 <= int(idx) < n):
             raise IndexError(f"row {idx} of {n}")
@@ -8806,6 +9019,11 @@ class TernaryTruthStore(Layer):
             'trust': float(self.trust[i].item()),
             'origin': int(self.origin[i].item()),
             'text': self.text_of(i),
+            'kind': self.KINDS[int(self.record_kind[i])],
+            'occurrence': self.occurrence_of(i),
+            'meaning': self.meaning_of(i),
+            'metadata_complete': (not bool(self.metadata_required[i])
+                                  or int(self.occurrence_id[i]) in self._semantic_rows),
         }
 
     def recent(self, n: int):
@@ -8840,6 +9058,8 @@ class TernaryTruthStore(Layer):
         i = int(idx)
         if not (0 <= i < int(self.count.item())):
             raise IndexError(f"row {i} of {int(self.count.item())}")
+        if not math.isfinite(float(trust)):
+            raise ValueError("fact trust must be finite")
         self.trust[i] = max(-1.0, min(1.0, float(trust)))
 
     # -- Provenance ------------------------------------------------------
@@ -8864,10 +9084,18 @@ class TernaryTruthStore(Layer):
         n = int(self.count.item())
         if not (0 <= i < n):
             raise IndexError(f"row {i} of {n}")
+        if (text is not None and bool(self.metadata_required[i])
+                and int(self.occurrence_id[i]) not in self._semantic_rows):
+            raise ValueError("cannot update source text with missing semantic context")
         self.origin[i] = int(origin)
         self._ensure_texts(n)
         if text is not None:
             self._texts[i] = str(text)
+            if not bool(self.metadata_required[i]):
+                self._semantic_rows.setdefault(int(self.occurrence_id[i]), {})
+            self.metadata_required[i] = True
+            self.semantic_fingerprint[i] = self.semantic_fingerprint.new_tensor(
+                self._context_fingerprint(self._semantic_rows[int(self.occurrence_id[i])], self._texts[i]))
 
     def rows_of_origin(self, *origins):
         """Row indices whose ``origin`` is any of ``origins``, in row
@@ -8902,6 +9130,14 @@ class TernaryTruthStore(Layer):
         self.timestamp[:n_keep] = self.timestamp[keep]
         self.trust[:n_keep] = self.trust[keep]
         self.origin[:n_keep] = self.origin[keep]
+        for name in ('role_mask', 'record_kind', 'grammatical_mode', 'polarity',
+                     'occurrence_id', 'metadata_required', 'semantic_fingerprint'):
+            values = getattr(self, name)
+            values[:n_keep] = values[keep]
+            values[n_keep:c].fill_(-1 if name == 'occurrence_id' else name == 'polarity')
+        alive = set(int(value) for value in self.occurrence_id[:n_keep].tolist())
+        self._semantic_rows = {key: value for key, value in self._semantic_rows.items()
+                               if key in alive}
         self.slots[n_keep:c].zero_()
         self.rel_type[n_keep:c].zero_()
         self.timestamp[n_keep:c].zero_()
@@ -8922,6 +9158,16 @@ class TernaryTruthStore(Layer):
         self.origin.zero_()
         self._next_ts.zero_()
         self._texts = []
+        self.role_mask.zero_()
+        self.record_kind.zero_()
+        self.grammatical_mode.zero_()
+        self.polarity.fill_(True)
+        self.occurrence_id.fill_(-1)
+        self.metadata_required.zero_()
+        self.semantic_fingerprint.zero_()
+        self._semantic_rows = {}
+        # Occurrence IDs are never reused, even after reset. A held reference
+        # cannot silently bind to a later fact at the same physical row.
 
 
 class WhatInteractionMemory:
@@ -9799,29 +10045,8 @@ class InterSentenceLayer(Layer):
 
     def _canonical_meaning(self, payload, depth, layout, role_mask=None):
         """Adapt an explicit STM or infix layout; no inferred role permutation."""
-        if layout not in ("stm", "infix"):
-            raise ValueError("meaning layout must be stm or infix")
-        if payload.ndim != 2 or payload.shape[-1] != self.concept_dim:
-            raise ValueError("meaning payload must have shape [slots, concept_dim]")
-        depth = int(depth)
-        if not 1 <= depth <= 3 or depth > payload.shape[0]:
-            raise ValueError("local meaning depth must be 1, 2 or 3")
-        value = payload[:depth]
-        if layout == "stm":
-            value = value[[1, 2, 0]] if depth == 3 else value.flip(0)
-        value = F.pad(value, (0, 0, 0, 3 - depth))
-        if role_mask is None:
-            occupied = torch.arange(3, device=value.device) < depth
-        else:
-            occupied = torch.as_tensor(role_mask, device=value.device, dtype=torch.bool)
-            if occupied.shape != (3,):
-                raise ValueError("canonical role mask must have shape [3]")
-            if bool(occupied[depth:].any()):
-                raise ValueError("occupied role has no supplied payload")
-        value = torch.where(occupied[:, None], value, torch.zeros_like(value))
-        if not bool(torch.isfinite(value).all()):
-            raise FloatingPointError("non-finite occupied meaning role")
-        return value, occupied
+        return canonical_role_payload(payload, depth, layout, role_mask,
+                                      concept_dim=self.concept_dim)
 
     @torch.compiler.disable
     def expect_next_meaning(self, b=0):
@@ -10202,9 +10427,9 @@ class InterSentenceLayer(Layer):
         ``store.recent(n)`` returns DESCENDING-timestamp indices, so we
         reverse to OLDEST-FIRST time order and reconstruct each row as a
         ``(depth, payload, tet)`` tuple matching the deque convention:
-          * an ABSOLUTE row (``rel_type == REL_NONE``) ->
-            ``(1, np1[None, :], trust)``;
-          * a RELATION row -> ``(3, stack([np1, vp, np2]), trust)`` -- INFIX
+          * occupied NP1 only -> ``(1, np1[None, :], trust)``;
+          * occupied NP1/VP -> ``(2, stack([np1, vp]), trust)``;
+          * an occupied NP2 -> ``(3, stack([np1, vp, np2]), trust)`` -- INFIX
             ``[idea1, predicate, idea2]`` (the store's native ``[NP1, VP, NP2]``
             order; idea1 may be present without a predicate, so it anchors the
             triple). The consolidated ``_reduce_end_state_to_root`` reads slot
@@ -10223,14 +10448,12 @@ class InterSentenceLayer(Layer):
             idx_list = list(reversed([int(i) for i in idxs.tolist()]))
             out = []
             for i in idx_list:
-                r = store.row(i)
-                tet = r["trust"]
-                if r["rel_type"] == store.REL_NONE:
-                    out.append((1, r["np1"].reshape(1, -1).clone(), tet))
-                else:
-                    payload = torch.stack(
-                        [r["np1"], r["vp"], r["np2"]], dim=0).clone()
-                    out.append((3, payload, tet))
+                occupied = store.role_mask[i].nonzero(as_tuple=True)[0]
+                if not occupied.numel():
+                    continue
+                depth = int(occupied[-1]) + 1
+                payload = store.slots[i, :depth].clone()
+                out.append((depth, payload, float(store.trust[i])))
             return out
         bi = int(b)
         if bi < 0 or bi >= len(self._stm_end_states):

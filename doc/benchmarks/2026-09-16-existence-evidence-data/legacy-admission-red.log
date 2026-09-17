@@ -1,0 +1,48 @@
+CANDIDATE Meaning: /private/tmp/full-spec-query-candidate/Meaning.py
+CANDIDATE Layers: /private/tmp/full-spec-query-candidate/Layers.py
+CANDIDATE Models: /private/tmp/full-spec-query-candidate/Models.py
+CANDIDATE reasoning: /private/tmp/full-spec-query-candidate/reasoning.py
+CANDIDATE thinking: /private/tmp/full-spec-query-candidate/thinking.py
+...FF..                                                                  [100%]
+=================================== FAILURES ===================================
+___________ test_legacy_part_testimony_without_a_vp_stays_unverified ___________
+
+    def test_legacy_part_testimony_without_a_vp_stays_unverified():
+        left, right = torch.eye(6)[:2]
+        store = TernaryTruthStore(6, capacity=8)
+        kernel = ThinkingKernel(TruthGroundedReasoner(store=store))
+        row = kernel.incorporate(Testimony(
+            proposition=QuerySpec.from_surface("isPart", left, right),
+            value=1, source="legacy part witness", source_trust=.8))
+        assert row >= 0
+>       assert store.row(row)["kind"] == "unverified"
+E       AssertionError: assert 'fact' == 'unverified'
+E         
+E         - unverified
+E         + fact
+
+/tmp/full-spec-existence-ingestion-probes.py:28: AssertionError
+_______ test_legacy_materialized_relation_without_a_vp_stays_unverified ________
+
+    def test_legacy_materialized_relation_without_a_vp_stays_unverified():
+        left, right = torch.eye(6)[:2]
+        store = TernaryTruthStore(6, capacity=8)
+        row = TruthGroundedReasoner(store=store).materialize(left, right, .8)
+        assert row >= 0
+>       assert store.row(row)["kind"] == "unverified"
+E       AssertionError: assert 'fact' == 'unverified'
+E         
+E         - unverified
+E         + fact
+
+/tmp/full-spec-existence-ingestion-probes.py:36: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:1345
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:1345: PytestAssertRewriteWarning: Module already imported so cannot be rewritten; anyio
+    self._mark_plugins_for_rewrite(hook, disable_autoload)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED ../../../../../tmp/full-spec-existence-ingestion-probes.py::test_legacy_part_testimony_without_a_vp_stays_unverified
+FAILED ../../../../../tmp/full-spec-existence-ingestion-probes.py::test_legacy_materialized_relation_without_a_vp_stays_unverified
+2 failed, 5 passed, 1 warning in 0.11s

@@ -31,7 +31,7 @@ values cannot contaminate active gradients
 Input realization uses the recovered ideas and shared numerical inverse chain;
 it does not enter the free `<generate>` chart. `Understanding` owns the result,
 so later staging and scoring targets cannot change it
-([Models.py:8000](../bin/Models.py#L8000),
+([Models.py:8025](../bin/Models.py#L8025),
 [Understanding.py:54](../bin/Understanding.py#L54)). Output keeps its own
 generate choices, state and budget; it receives no reconstruction-only operand
 witnesses or basis. The further parameter-catalog and query-controller changes
@@ -141,22 +141,22 @@ it once selected is now unconditional. The retired
 `SymbolSubSpace` always owns one `WhatInteractionMemory`; expectation uses
 its own `InterSentenceLayer`. Construction is in
 [`SymbolSubSpace.__init__`](../bin/Language.py#L10966), and model thinking
-reads the owner through [`_what_memory`](../bin/Models.py#L7880).
+reads the owner through [`_what_memory`](../bin/Models.py#L7905).
 The retired `whatThinkingMemory` switch and discourse delegates are removed.
 
 `sentenceExpectation` defaults to true, with structured NP1/VP/NP2 expectation.
-[`set_sentence_expectation`](../bin/Models.py#L12641) can switch it at runtime;
+[`set_sentence_expectation`](../bin/Models.py#L12666) can switch it at runtime;
 [`ensure_sentence_expectation`](../bin/Language.py#L13591) creates its parameters
 once and registers them for optimization when first enabled. Re-enabling starts
 a fresh observation stream. Soft packed-brick resets preserve an enabled
 stream; hard resets and document changes make the affected row cold.
-See [`InterSentenceLayer.Reset`](../bin/Layers.py#L10567) and
+See [`InterSentenceLayer.Reset`](../bin/Layers.py#L10790) and
 [the integrated specification](plans/2026-09-15-next-sentence-as-the-production-objective.md#11-code-review-2026-09-16-local-role-expectation-implementation).
 
 ## Recorded compose execution
 
 Answer materialization replays its captured compose program through
-[`_replay_program`](../bin/Models.py#L12133).
+[`_replay_program`](../bin/Models.py#L12158).
 [`forward_binary_step`](../bin/Language.py#L14620) executes the recorded
 operator for each live row, preserving the newest operand on inactive rows.
 Eager calls dispatch the selected operator set; compiled calls use conditional
@@ -521,16 +521,19 @@ decisions survive the collapse, not exact rule regeneration. With the gate
 met, the former standalone role-collapse file has been absorbed into
 `complete.grammar`, which is the broad live role-only grammar used by
 `MentalModel.xml`. The part relation is unified there: the grammar
-declares the single compositional op `part` (plus its converse `whole`);
-`isPart` / `queryPart` survive only as `<Queries>` predicates, outside
-`<compose>`. The query/assert split is *not* recovered by
-`_dispatch_method_name_for_rule` (`bin/Language.py:4187`) — that helper
-only fires for `query="true"` rules, and `complete.grammar` declares
-none. The live unification is `reasoning.py`'s `_SURFACE_TO_KIND` table
-(`bin/reasoning.py:27`), which maps every surface form — `part`,
-`isPart`, and `queryPart` alike — to the same `KIND_IS_PART` reduction
-kind (and symmetrically `equal` / `isEqual` / `queryEqual` $\to$
-`KIND_IS_EQUAL`). The operator codebook, soft
+declares the compositional op `part` and its converse `whole`, with separate
+`isPart` / `isWhole` boundary declarations. The compose rules explicitly use
+`query="false"`; the dispatch helper's legacy `query="true"` rewrite does not
+connect these declarations to a shared grammatical VP.
+[Relation declarations](../data/complete.grammar#L99),
+[legacy dispatch helper](../bin/Language.py#L4425).
+
+The current `_SURFACE_TO_KIND` interface maps `part`, `isPart` and
+`queryPart` to the same `KIND_IS_PART` reduction kind, and similarly maps
+`equal` / `isEqual` / `queryEqual` to `KIND_IS_EQUAL`. These aliases do not
+complete the checked VP registry or linguistic/internal meaning agreement.
+[`QuerySpec` aliases](../bin/reasoning.py#L28).
+The operator codebook, soft
 superposition, and participation clustering are live and tested.
 
 ### Participation Categories as the Chooser's Syntactic-Category Context
@@ -761,3 +764,18 @@ tuning choice. Open questions: how order-raising (`maybe_raise_order`)
 interacts with a PS/WS part-of-speech split; whether abstract nouns want
 the WholeSpace (property-like) or PartSpace (object-like) origin; and how
 the `<Anchors>` closed-class relation surfaces sit relative to this axis.
+
+## Exist at the reasoning boundary (September 16)
+
+The pure `exist` compose wrapper retains its grammatical role; its forward
+operation is an identity ([ExistLayer](../bin/Language.py#L4467)). The reasoner's
+`Exist`/`isTrue` evaluation now uses accepted LTM facts for the complete
+description, preserving occupied roles, scope, bindings, references and both
+support polarities. This does not execute a query during composition.
+[Boundary lookup](../bin/reasoning.py#L142).
+
+The typed VP registry, canonical linguistic/internal query agreement and
+conceptual-taxonomy `PartOf` migration remain open. See
+[Existence evidence](ExistenceEvidence.md) for the implemented evidence layer
+and [the integrated specification](plans/2026-09-15-next-sentence-as-the-production-objective.md#2-one-grammatical-deep-structure-multiple-surface-forms)
+for the complete grammatical target.

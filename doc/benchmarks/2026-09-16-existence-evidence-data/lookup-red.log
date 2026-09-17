@@ -1,0 +1,64 @@
+F..FF                                                                    [100%]
+=================================== FAILURES ===================================
+_________ test_exist_matches_the_complete_relational_description[None] _________
+
+changed_role = None
+
+    @pytest.mark.parametrize("changed_role", [None, 1, 2])
+    def test_exist_matches_the_complete_relational_description(changed_role):
+        roles = _description()
+        store = TernaryTruthStore(6, capacity=8)
+        store.append_relation(*roles, trust=.85)
+        probe = roles.clone()
+        if changed_role is not None:
+            probe[changed_role] = torch.eye(6)[4]
+        result = TruthGroundedReasoner(store=store).evaluate(
+            QuerySpec.from_surface("exist", probe))
+        if changed_role is None:
+>           assert result["posture"] == TRUE
+E           AssertionError: assert 'UNKNOWN' == 'TRUE'
+E             
+E             - TRUE
+E             + UNKNOWN
+
+/tmp/full-spec-existence-probes.py:26: AssertionError
+________________ test_exist_preserves_conflicting_fact_support _________________
+
+    def test_exist_preserves_conflicting_fact_support():
+        subject = _description()[0]
+        store = TernaryTruthStore(6, capacity=8)
+        store.append_idea(subject, trust=.8)
+        store.append_idea(subject, trust=-.9)
+        result = TruthGroundedReasoner(store=store).evaluate(
+            QuerySpec.from_surface("exist", subject))
+>       assert result["posture"] == BOTH
+E       AssertionError: assert 'FALSE' == 'BOTH'
+E         
+E         - BOTH
+E         + FALSE
+
+/tmp/full-spec-existence-probes.py:41: AssertionError
+________ test_exist_requires_fact_evidence_instead_of_activation_truth _________
+
+    def test_exist_requires_fact_evidence_instead_of_activation_truth():
+        calls = []
+    
+        def activation_truth(value):
+            calls.append(value)
+            return .97
+    
+        model = SimpleNamespace(conceptualSpace=None, isTrue=activation_truth)
+        result = TruthGroundedReasoner(model=model).evaluate(
+            QuerySpec.from_surface("exist", _description()[0]))
+>       assert result["posture"] == UNKNOWN
+E       AssertionError: assert 'TRUE' == 'UNKNOWN'
+E         
+E         - UNKNOWN
+E         + TRUE
+
+/tmp/full-spec-existence-probes.py:56: AssertionError
+=========================== short test summary info ============================
+FAILED ../../../../../tmp/full-spec-existence-probes.py::test_exist_matches_the_complete_relational_description[None]
+FAILED ../../../../../tmp/full-spec-existence-probes.py::test_exist_preserves_conflicting_fact_support
+FAILED ../../../../../tmp/full-spec-existence-probes.py::test_exist_requires_fact_evidence_instead_of_activation_truth
+3 failed, 2 passed in 2.55s

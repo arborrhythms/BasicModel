@@ -1,0 +1,284 @@
+........................................................................ [  1%]
+........................................................................ [  3%]
+................................................................s....... [  4%]
+....................s................................................... [  6%]
+..............................................................s......... [  8%]
+.....sss................................................................ [  9%]
+................................................................ssss.... [ 11%]
+........................................................................ [ 13%]
+....s.................................ss................................ [ 14%]
+........................................................................ [ 16%]
+.........................................s.............................. [ 18%]
+.......s................................................................ [ 19%]
+........................................................................ [ 21%]
+........................................................................ [ 23%]
+..........x..ss.ss.......s.............................................. [ 24%]
+........................................................................ [ 26%]
+........................................................................ [ 28%]
+..............................s.s....................................... [ 29%]
+........................................................................ [ 31%]
+........................................................................ [ 33%]
+......................s...........ss.................................... [ 34%]
+........................................................................ [ 36%]
+........................................................................ [ 38%]
+........................................................................ [ 39%]
+.............................................................xxs........ [ 41%]
+........................................................................ [ 43%]
+........................................................................ [ 44%]
+..........................xxss.........s................................ [ 46%]
+........................................................................ [ 48%]
+........................................................................ [ 49%]
+................................s....................................... [ 51%]
+........................................................................ [ 53%]
+...................sss.................................................. [ 54%]
+........................................................................ [ 56%]
+........................................................................ [ 58%]
+........................................................................ [ 59%]
+........................................................................ [ 61%]
+........................................................................ [ 63%]
+...............ss....................................................... [ 64%]
+........................................................................ [ 66%]
+......s.........................................s....................... [ 68%]
+........................................................................ [ 69%]
+........................................................................ [ 71%]
+........................................................................ [ 73%]
+................x....................................................... [ 74%]
+................s.s..................................................... [ 76%]
+...................................................s.................... [ 78%]
+......................................................................x. [ 79%]
+........................................................................ [ 81%]
+..........................s..sssssssss.................................. [ 83%]
+........................................................................ [ 84%]
+........................................................................ [ 86%]
+........................................................................ [ 87%]
+........................................................................ [ 89%]
+........................................................................ [ 91%]
+.................................................................... [ 92%]
+........................................................................ [ 94%]
+........................................................................ [ 96%]
+..........................................................s............. [ 97%]
+........................................................................ [ 99%]
+.....................                                                    [100%]
+=============================== warnings summary ===============================
+test/test_abstraction_order_canonical.py: 3 warnings
+test/test_aligned_fold_binding.py: 1 warning
+test/test_category_codebook.py: 10 warnings
+test/test_category_collapse.py: 2 warnings
+test/test_config_matrix.py: 2 warnings
+test/test_discourse_cache_dtype.py: 4 warnings
+test/test_mereology_raise.py: 9 warnings
+test/test_mereology_word_binding.py: 10 warnings
+test/test_partition_resolve.py: 1 warning
+test/test_property_tiling.py: 8 warnings
+test/test_reasoning_cde_model.py: 1 warning
+test/test_recon_bench.py: 1 warning
+test/test_reconstruction_roundtrip.py: 1 warning
+test/test_subsymbolic_stack.py: 5 warnings
+test/test_thinking_kernel.py: 2 warnings
+test/test_type_run_spans.py: 8 warnings
+test/test_within_whole_division.py: 6 warnings
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1731: RuntimeWarning: EventEncoding[WholeSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_adverb_eig_edit.py::test_untrained_adverb_is_noop
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_basicmodel.py::TestUniversalTrainingContract::test_space_has_training_contract
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1731: RuntimeWarning: EventEncoding[InputSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_basicmodel.py::TestSpaceBasisConstruction::test_codebook_creates_codebook
+test/test_basicmodel.py::TestSpaceBasisConstruction::test_no_codebook_creates_tensor_basis
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1731: RuntimeWarning: EventEncoding[InputSpace]: nDim=3 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_basicmodel.py::TestInputSpaceTextRoundTrip::test_reverse_numeric_unchanged
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1731: RuntimeWarning: EventEncoding[InputSpace]: nDim=1 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_basicmodel.py::TestSymbolObjective::test_symbol_objective_residual_primary_l1_secondary
+test/test_basicmodel.py::TestSymbolObjective::test_symbol_objective_uses_nearest_codebook_target
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1731: RuntimeWarning: EventEncoding[WholeSpace]: nDim=3 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_basicmodel.py::TestBasicModelDemuxed::test_create_from_config
+test/test_subsymbolic_stack.py::test_order_one_is_single_base_layer
+test/test_subsymbolic_stack.py::test_stack_builds_distinct_per_pass_layers
+test/test_subsymbolic_stack.py::test_noop_slots_are_identity_and_occupy_their_pass
+test/test_subsymbolic_stack.py::test_stack_construction_is_rng_neutral
+test/test_subsymbolic_stack.py::test_synthesize_feedback_identity_when_noop
+test/test_subsymbolic_stack.py::test_synthesize_feedback_applies_pass_layer
+test/test_subsymbolic_stack.py::test_stack_layers_are_registered_submodules
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1731: RuntimeWarning: EventEncoding[PartSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_basicmodel.py: 1 warning
+test/test_bivector_retirement_state.py: 3 warnings
+test/test_category_codebook_retirement.py: 6 warnings
+test/test_partition_pos_codebook.py: 5 warnings
+test/test_partition_reconstruction_stack.py: 2 warnings
+test/test_partition_rule_predictor.py: 6 warnings
+test/test_stm_substrate.py: 1 warning
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1731: RuntimeWarning: EventEncoding[PartSpace]: nDim=4 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_bivector_retirement_state.py: 3 warnings
+test/test_category_codebook_retirement.py: 6 warnings
+test/test_partition_pos_codebook.py: 5 warnings
+test/test_partition_reconstruction_stack.py: 2 warnings
+test/test_partition_rule_predictor.py: 6 warnings
+test/test_stm_substrate.py: 1 warning
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1731: RuntimeWarning: EventEncoding[WholeSpace]: nDim=4 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_blind_decode.py: 5 warnings
+test/test_config_matrix.py: 1 warning
+test/test_reconstruction_roundtrip.py: 4 warnings
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:6696: RuntimeWarning: reconstruction_zeroed [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_20M_xor.xml]: reconstruction loss zeroed: no D3 (per_word=False) and masked-LM inputs missing (mask, target); percept .what=Codebook, pred_full shape=(4, 8, 1024)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_compiled_word_chunk.py::test_tiny_canonical_detached_reverse_train_step_is_finite
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:6696: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-525/test_tiny_canonical_detached_r1/tiny_chunk_model.xml]: Data.what target (2, 1) replaces the loader output (2, 0) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_concept_readout_l1.py::test_adaptive_prox_matches_diagonal_metric_oracle_and_preserves_bias[moment_dtype0]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor_noraise]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:6696: RuntimeWarning: reconstruction_zeroed [config /Users/arogers/github/WikiOracle/basicmodel/data/matrix/MM_20M_xor_noraise.xml]: reconstruction loss zeroed: no D3 (per_word=False) and masked-LM inputs missing (mask, target); percept .what=Codebook, pred_full shape=(4, 8, 1024)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[sparse_concept]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:6696: RuntimeWarning: reconstruction_zeroed [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_sparse_concept.xml]: reconstruction loss zeroed: no D3 (per_word=False) and masked-LM inputs missing (mask, target); percept .what=Codebook, pred_full shape=(4, 8, 1024)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_frozen_concepts.py::test_reading_wiring_desires_staged_wholes
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18705: RuntimeWarning: CS snap block exhausted (8 rows): concept 12 gets records only, no weighted reading (overflow #1)
+    warnings.warn(
+
+test/test_ir_only_refactor.py::TestReconstructConceptsLoss::test_reconstruction_is_unconditionally_from_concepts
+test/test_model_time_when.py::test_clock_increments_once_per_inference_batch
+test/test_understanding_reconstruct.py::test_runbatch_reverse_cost_equals_reconstruct_of_its_understanding
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:6696: RuntimeWarning: reconstruction_zeroed [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_xor.xml]: reconstruction loss zeroed: no D3 (per_word=False) and masked-LM inputs missing (mask, target); percept .what=Codebook, pred_full shape=(2, 8, 14)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_math_thinking_training.py::test_stage_zero_direct_arithmetic_learns_as_syntax
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:6696: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-525/cfg5/MM_add_syntax.xml]: Data.what target (32, 1, 16) replaces the loader output (32, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_math_thinking_training.py::test_stage_one_dependency_chains_learn_as_syntax
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:6696: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-525/cfg6/MM_math_syntax.xml]: Data.what target (32, 1, 16) replaces the loader output (32, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_path_supervised.py::test_native_realized_answer_loss_trains_the_active_conditioner[False]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:6696: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-525/test_native_realized_answer_lo0/MM_ladder_native_answer.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_path_supervised.py::test_native_realized_answer_loss_trains_the_active_conditioner[True]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:6696: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-525/test_native_realized_answer_lo1/MM_ladder_native_answer.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_path_supervised.py::test_available_input_targets_do_not_train_answer_modules_after_adam[False]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:6696: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmprc35yeou/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_path_supervised.py::test_available_input_targets_do_not_train_answer_modules_after_adam[True]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:6696: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpc2fxx36v/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_path_supervised.py::test_mixed_supplied_numeric_and_automatic_text_trains_only_supplied_row
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:6696: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpr6zngxxc/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_synthesis.py::test_exact_identity_reconstruction_is_flagged_not_counted
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:6696: RuntimeWarning: reconstruction_identity [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-525/cfg9/MM_xor_synth.xml]: input reconstruction is an exact unmasked identity: zero cost carries no learning signal (mask or degrade the input to create one)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_walk.py::test_runbatch_trains_generate_policy_only_with_nonzero_weight[1.0]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:6696: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp45drqzqy/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_walk.py::test_runbatch_trains_generate_policy_only_with_nonzero_weight[0.0]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:6696: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpufhfg9zh/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_walk.py::test_runbatch_does_not_train_generate_policy_without_supplied_answers
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:6696: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp9rgt20uu/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_walk.py::test_runbatch_generate_policy_masks_rows_without_supplied_answers
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:6696: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpduwt_8y1/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_walk.py::test_question_conditioner_optimizer_steps_both_widths
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:6696: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpu2wnigfx/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_recon_bench.py::test_run_record_schema_smoke
+test/test_where_encoding_period.py::test_reconstruct_buffer_period_assert_holds
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:6696: RuntimeWarning: reconstruction_zeroed [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_xor_fixture.xml]: reconstruction loss zeroed: no D3 (per_word=False) and masked-LM inputs missing (mask, target); percept .what=Codebook, pred_full shape=(4, 8, 16)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_recon_bench.py::test_decode_rows_align_with_last_eval_batch
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:6696: RuntimeWarning: reconstruction_zeroed [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_xor_fixture.xml]: reconstruction loss zeroed: no D3 (per_word=False) and masked-LM inputs missing (mask, target); percept .what=Codebook, pred_full shape=(2, 8, 16)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_reconstruction_roundtrip.py::test_idempotent_config_trains_one_epoch_clean
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:13922: UserWarning: PartSpace._embed: input produced 11 tokens but nOutput=10; truncating 1 tokens.
+    return self._embed(upstream_vspace)
+
+test/test_space_carrier_bridge.py::test_legacy_duplicate_checkpoint_keys_migrate_to_single_owners
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_space_carrier_bridge.py:335: UserWarning: Space ownership migration: removed 227 duplicate alias checkpoint keys.
+    assert restored.load_weights(checkpoint, strict=True)
+
+test/test_space_carrier_bridge.py::test_legacy_duplicate_checkpoint_keys_migrate_to_single_owners
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_space_carrier_bridge.py:335: UserWarning: Space ownership migration: rewrote 1 legacy Space.subspace Basis/Encoding checkpoint keys.
+    assert restored.load_weights(checkpoint, strict=True)
+
+test/test_space_carrier_bridge.py::test_legacy_duplicate_checkpoint_keys_migrate_to_single_owners
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_space_carrier_bridge.py:335: UserWarning: Codebook ownership migration: removed 9 duplicate VQ Parameter checkpoint keys.
+    assert restored.load_weights(checkpoint, strict=True)
+
+test/test_sparse_concept_e2e.py::test_order_block_overflow_is_safe
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18705: RuntimeWarning: CS snap block exhausted (4 rows): concept 4 gets records only, no weighted reading (overflow #1)
+    warnings.warn(
+
+test/test_sparse_concept_e2e.py::test_order_block_overflow_is_safe
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18705: RuntimeWarning: CS snap block exhausted (4 rows): concept 5 gets records only, no weighted reading (overflow #2)
+    warnings.warn(
+
+test/test_sparse_layer.py::test_spmm_kernel_parity
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse CSR tensor support is in beta state. If you miss a functionality in the sparse tensor support, please submit a feature request to https://github.com/pytorch/pytorch/issues. (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/SparseCsrTensorImpl.cpp:51.)
+    return func(*args, **kwargs)
+
+test/test_truth_layer_record_many.py::test_record_batch_matches_record_loop_high_trust
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: UserWarning: TruthLayer: new truth [4] contradicts existing truth [0] (cosine similarity -0.719)
+    return func(*args, **kwargs)
+
+test/test_two_truth_stores.py::test_conflict_mass_per_dimension_max_not_mean
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: UserWarning: TruthLayer: new truth [2] contradicts existing truth [1] (cosine similarity -1.000)
+    return func(*args, **kwargs)
+
+test/test_two_truth_stores.py::test_conflict_mass_per_dimension_max_not_mean
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: UserWarning: TruthLayer: new truth [3] contradicts existing truth [0] (cosine similarity -1.000)
+    return func(*args, **kwargs)
+
+test/test_two_truth_stores.py::test_preemption_signal_latches_with_hysteresis
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: UserWarning: TruthLayer: new truth [1] contradicts existing truth [0] (cosine similarity -1.000)
+    return func(*args, **kwargs)
+
+test/test_what_training.py::test_swapping_question_positions_changes_the_answer
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:6696: RuntimeWarning: reconstruction_zeroed [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-525/cfg15/MM_xor_synth.xml]: reconstruction loss zeroed: no D3 (per_word=False) and masked-LM inputs missing (mask, target); percept .what=Codebook, pred_full shape=(2, 8, 14)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_what_training.py::test_past_and_future_text_answers_are_scored_in_input_space
+test/test_what_training.py::test_supplied_text_answer_quality_improves_with_training[future]
+test/test_what_training.py::test_supplied_text_answer_quality_improves_with_training[past]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:6696: RuntimeWarning: reconstruction_zeroed [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-525/cfg16/MM_xor_synth_discourse.xml]: reconstruction loss zeroed: no D3 (per_word=False) and masked-LM inputs missing (mask, target); percept .what=Codebook, pred_full shape=(2, 8, 14)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+4279 passed, 51 skipped, 7 xfailed, 185 warnings, 4 subtests passed in 4175.57s (1:09:35)
