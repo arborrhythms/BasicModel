@@ -1,0 +1,104 @@
+--- a/bin/Language.py
++++ b/bin/Language.py
+@@ -4339,23 +4339,19 @@
+ 
+ 
+ class QueryLayer(GrammarLayer):
+-    """``S -> query(S, S)`` -- mereological-truth query "is A part
+-    of B?" answered geometrically against the bivector codebook.
+-
+-    Post-MereologicalTree retirement: the answer is the clipped
+-    cosine parthood between the per-batch dominant bivector
+-    activations of ``left`` and ``right`` (see
+-    ``_parthood_geometric``). Returns a continuous truth value
+-    in ``[0, 1]`` rather than the prior tree-lookup boolean --
+-    the codebook geometry IS the meronymic structure, so
+-    parthood is *always* defined for any two symbols (no
+-    "unknown" state). Returns a ``[B, V, 2]`` truth bivector
+-    broadcast across the V dimension:
+-
+-        part(A, B) ≈ 1  -> [pos=1, neg=0] (full affirmation)
+-        part(A, B) ≈ 0  -> [pos=0, neg=0] (disjoint / no overlap)
+-
+-    Lossy with ``(parent, parent)`` pseudo-inverse on reverse.
++    """Legacy geometric probe retained for explicit experiment callers.
++
++    This class scores clipped cosine similarity between concept tensors and
++    places the score in a bivector-shaped carrier. It neither looks up an LTM
++    fact nor traverses the conceptual taxonomy. Its score therefore cannot
++    establish world truth or satisfy the checked ``PartOf`` contract. The
++    checked ``query(X, Y)`` registry entry is a distinct LTM lookup.
++
++    Tensor geometry never interprets a symbol's native ID or numeral surface
++    as a numerical operand. No arithmetic formula evaluator is involved.
++    The legacy score has no unknown-evidence state and no faithful inverse;
++    ``reverse`` raises explicitly. Ordinary interrogative composition keeps
++    the relation's pure compose face instead of selecting this class.
+     """
+     rule_name        = "query"
+     arity            = 2
+@@ -4375,8 +4371,8 @@
+         super().__init__(0, 0)
+ 
+     def forward(self, left, right):
+-        """Geometric parthood query: returns a per-batch ``[B, V, K]``
+-        truth bivector broadcast across V, with the bivector head
++        """Legacy similarity score in a per-batch ``[B, V, K]`` carrier
++        broadcast across V, with the bivector head
+         carrying ``[pos=parthood, neg=0]``.
+         """
+         parthood = _parthood_geometric(left, right)    # [B] in [0, 1]
+@@ -4402,12 +4398,12 @@
+ 
+ 
+ class QueryPartLayer(QueryLayer):
+-    """Interrogative parthood relation; grammar-level alias for ``query``."""
++    """Explicit legacy geometric alias; not the checked taxonomy reader."""
+     rule_name = "queryPart"
+ 
+ 
+ class QueryEqualLayer(QueryLayer):
+-    """Interrogative equality relation answered as mutual parthood."""
++    """Explicit legacy mutual-similarity probe over concept tensors."""
+     rule_name = "queryEqual"
+ 
+     def forward(self, left, right):
+@@ -4418,17 +4414,14 @@
+ 
+ 
+ def _dispatch_method_name_for_rule(rule):
+-    """Return the runtime GrammarLayer op for a parsed rule.
+-
+-    The grammar can keep one relation name while using ``query="true"``
+-    to request answer-producing semantics.
++    """Select the structure-building face of a grammatical relation.
++
++    Interrogative mode is retained in the selected rule and completed meaning.
++    It grants no execution permission during composition or either reverse
++    path; the checked boundary registry owns the relation's query face.
++    Explicit legacy query layers remain available under their own names.
+     """
+-    method = getattr(rule, 'method_name', None)
+-    if getattr(rule, 'query', False) and method == 'isEqual':
+-        return 'queryEqual'
+-    if getattr(rule, 'query', False) and method == 'isPart':
+-        return 'queryPart'
+-    return method
++    return getattr(rule, 'method_name', None)
+ 
+ 
+ class NullLayer(GrammarLayer):
+@@ -14144,6 +14137,13 @@
+         self.register_buffer(
+             "_cs_binary_rule_ids",
+             torch.tensor(binary_ids, dtype=torch.long), persistent=False)
++        # Local action IDs belong to this model's configured grammar. Keep
++        # immutable rule values beside the operator bank: another model may
++        # reconfigure the process-global grammar before these actions are read.
++        object.__setattr__(self, "_compose_binary_rules", tuple(
++            TheGrammar.rules_upward[rid] for rid in binary_ids))
++        object.__setattr__(self, "_compose_unary_rules", tuple(
++            TheGrammar.rules_upward[rid] for rid in unary_ids))
+         self._n_rules = int(len(TheGrammar.rule_table))
+         # Output has its own rule inventory. The LHS counts generated
+         # children; the RHS arity of a binary reverse is only one parent.

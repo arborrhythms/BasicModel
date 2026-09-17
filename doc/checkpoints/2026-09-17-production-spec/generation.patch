@@ -1,0 +1,248 @@
+--- a/bin/Language.py
++++ b/bin/Language.py
+@@ -1,8 +1,9 @@
+ 
+ 
+-import itertools, math, os, re, warnings
++import copy, itertools, math, os, re, warnings
+ from collections import namedtuple
+ from contextlib import contextmanager, nullcontext
++from contextvars import ContextVar
+ import numpy as np
+ import torch
+ from Layers import bounded_atanh as _bounded_atanh
+@@ -32,6 +33,22 @@
+ from Layers import SortingLayer, TruthLayer, RelativeTruthStore, TernaryTruthStore, LiftingLayer, InterSentenceLayer, SparsityRegLayer, SmoothingRegLayer, ImpenetrableLayer
+ from Layers import WhatInteractionMemory
+ from Queries import checked_query_declarations
++
++_ACTIVE_GENERATION_CATALOG = ContextVar("active_generation_catalog", default=None)
++
++
++def use_generation_catalog(function):
++    """Host output boundary: ordinary inverse dispatch uses its output owner."""
++    from functools import wraps
++
++    @wraps(function)
++    def wrapped(model, *args, **kwargs):
++        token = _ACTIVE_GENERATION_CATALOG.set(getattr(model, "languageSpace", None))
++        try:
++            return function(model, *args, **kwargs)
++        finally:
++            _ACTIVE_GENERATION_CATALOG.reset(token)
++    return wrapped
+ from util import parse
+ from collections import namedtuple as _namedtuple
+ 
+@@ -5862,7 +5879,11 @@
+ 
+         rule_id = int(decoded_id)
+         method_name = grammar.method_name(rule_id)
+-        layer = syntactic_layer._by_name.get(method_name)
++        owner = getattr(syntactic_layer, "_word_space", None)
++        generation = getattr(owner, "_generation_space", None)
++        layer = (generation.resolve_generation_op(syntactic_layer.space_role, method_name)
++                 if generation is not None and _ACTIVE_GENERATION_CATALOG.get() is generation
++                 else syntactic_layer._by_name.get(method_name))
+         if layer is None:
+             # Post-2026-05-29 grammar-file-refactor (\xa75): rule's class
+             # space_role may differ from this syntactic_layer's space_role (e.g.
+@@ -8619,7 +8640,11 @@
+         rule_name = self._next_rule_name(direction='generate')
+         if rule_name is None:
+             return subspace
+-        layer = self._by_name.get(rule_name)
++        generation = getattr(ss, "_generation_space", None)
++        output_dispatch = (generation is not None
++                           and _ACTIVE_GENERATION_CATALOG.get() is generation)
++        layer = (generation.resolve_generation_op(self.space_role, rule_name)
++                 if output_dispatch else self._by_name.get(rule_name))
+         if layer is None:
+             return subspace                 # cross-space_role routing skip
+         if not getattr(layer, 'invertible', False):
+@@ -8645,7 +8670,7 @@
+         # ``_sigma_reverse`` (which routes through pi2/sigma2 in
+         # two-pass ergodic mode), delegate there. Other unary rules
+         # (not, etc.) keep going through ``layer.reverse``.
+-        host = getattr(self, '_host_space', None)
++        host = None if output_dispatch else getattr(self, '_host_space', None)
+         if host is not None and rule_name == 'pi' and hasattr(host, '_pi_reverse'):
+             x = host._pi_reverse(y)
+         elif host is not None and rule_name == 'sigma' and hasattr(host, '_sigma_reverse'):
+@@ -14129,15 +14154,66 @@
+         from util import TheXMLConfig as _cfg
+         walk_on = bool(_cfg.training("outputInLoop", False))
+         catalog = {1: [], 2: []}
+-        for offset, rule in enumerate(TheGrammar.rules_downward if walk_on else ()):
++        self.generation_ops = nn.ModuleDict()
++        sources, resolved, copies = {}, {}, {}
++        # Share only non-owning space references. Numerical parameters and
++        # buffers are copied together so internal aliases remain internal.
++        memo = {id(value): value for value in (
++            symbol_space, symbol_space.subspace,
++            getattr(symbol_space, "conceptualSpace", None),
++            getattr(symbol_space, "perceptualSpace", None),
++            getattr(symbol_space, "wholeSpace", None)) if value is not None}
++        def own_operator(space_role, method):
++            identity = (str(space_role), str(method))
++            if identity in resolved:
++                return resolved[identity]
++            source = symbol_space.subspace._resolve_rule_layer(*identity)
++            if source is None:
++                raise ValueError(f"unresolved generate operator: {identity}")
++            if id(source) not in copies:
++                import hashlib
++                # A declared alias may resolve to a host registered under
++                # another space. Name the copy by that stable owner, not by
++                # whichever alias happens to occur first in <generate>.
++                aliases = sorted((str(role), str(name)) for (role, name), value in
++                                 symbol_space.subspace._host_layer_registry.items()
++                                 if value is source)
++                owner_identity = aliases[0] if aliases else identity
++                key = "op_" + hashlib.sha256(repr(owner_identity).encode()).hexdigest()[:20]
++                self.generation_ops[key] = copy.deepcopy(source, memo)
++                sources[key] = source
++                copies[id(source)] = self.generation_ops[key]
++            op = copies[id(source)]
++            resolved[identity] = op
++            return op
++
++        for offset, rule in enumerate(TheGrammar.rules_downward):
+             arity = len(str(rule.lhs).split(','))
+             if arity not in catalog or not rule.method_name:
+                 continue
+-            op = symbol_space.subspace._resolve_rule_layer(
+-                rule.space_role, _dispatch_method_name_for_rule(rule))
+-            if op is None:
+-                raise ValueError(f"unresolved generate rule: {rule.canonical}")
++            op = own_operator(rule.space_role, _dispatch_method_name_for_rule(rule))
+             catalog[arity].append((rule.space_role, offset, rule, op))
++        # Legacy flat natural-fold grammars declare their inverse dispatch by
++        # the per-space default generation mapping. Give those existing
++        # interfaces independent owners too, without inventing walk choices
++        # for grammars that deliberately declare an empty <generate> section.
++        if getattr(symbol_space.subspace, "_grammar_is_default_only", False):
++            for role, rows in symbol_space.subspace._default_generate_rules().items():
++                for row in rows:
++                    for rule_id in row:
++                        rule = TheGrammar.rules[rule_id]
++                        method = _dispatch_method_name_for_rule(rule)
++                        # The removed subsymbolic dispatcher may leave a flat
++                        # declaration with no executable host. Default dispatch
++                        # itself reads an exact per-space binding, never another
++                        # space's differently shaped natural fold.
++                        if (role, method) in symbol_space.subspace._host_layer_registry:
++                            own_operator(role, method)
++        object.__setattr__(self, "_generation_sources", sources)
++        object.__setattr__(self, "_generation_resolved", resolved)
++        # Legacy stack dispatch reaches the same owned registry without
++        # registering LanguageSpace twice or taking ownership of its state.
++        object.__setattr__(symbol_space.subspace, "_generation_space", self)
+         for arity in (2, 1):
+             catalog[arity].sort(key=lambda entry: entry[:2])
+             entries = catalog[arity]
+@@ -14146,7 +14222,7 @@
+                 f"_generate_{label}_rule_ids", torch.tensor([
+                     len(TheGrammar.rules_upward) + entry[1] for entry in entries
+                 ], dtype=torch.long), persistent=False)
+-            # Learned numerical operators remain owned by their host spaces.
++            # Non-registering catalog views; generation_ops owns state once.
+             object.__setattr__(self, f"_generate_{label}_ops",
+                                tuple(entry[3] for entry in entries))
+             setattr(self, f"_generate_{label}_names",
+@@ -14173,6 +14249,46 @@
+                 # output loop then emits the idea's slots as they are, and
+                 # expansions are learned from supplied-answer credit.
+                 self.generate_policy.bias[-1] = 2.0
++
++    def resolve_generation_op(self, space_role, method):
++        """Resolve declared output operators without returning a compose owner."""
++        exact = self._generation_resolved.get((str(space_role), str(method)))
++        if exact is not None:
++            return exact
++        matches = {id(op): op for (role, name), op in self._generation_resolved.items()
++                   if name == method}
++        if len(matches) == 1:
++            return next(iter(matches.values()))
++        raise KeyError(f"undeclared or ambiguous generate operator: {space_role}:{method}")
++
++    def migrate_generation_operators(self, state, prefix, model):
++        """Copy saved comprehension values only for pre-split checkpoints.
++
++        Existing generation weights keep their own values. Newly introduced
++        optimizer parameters retain fresh moments under name-based migration.
++        Missing members of a present catalog remain load errors.
++        """
++        base = prefix + "generation_ops."
++        if any(key.startswith(base) for key in state):
++            return
++        source_names = {}
++        for name, value in itertools.chain(
++                model.named_parameters(remove_duplicate=False),
++                model.named_buffers(remove_duplicate=False)):
++            if name in state:
++                source_names.setdefault(id(value), []).append(name)
++        for key, source in self._generation_sources.items():
++            live = self.generation_ops[key].state_dict()
++            members = dict(itertools.chain(source.named_parameters(remove_duplicate=False),
++                                          source.named_buffers(remove_duplicate=False)))
++            for name, value in live.items():
++                names = source_names.get(id(members[name]), ())
++                if not names:
++                    raise ValueError(f"legacy checkpoint has no source for generate {key}.{name}")
++                saved = state[names[0]]
++                if saved.shape != value.shape:
++                    raise ValueError(f"legacy generate source shape differs: {names[0]}")
++                state[base + key + "." + name] = saved.detach().clone()
+ 
+     @staticmethod
+     def _generate_rule_key(rule, arity):
+@@ -14941,8 +15057,7 @@
+         # LanguageSpace is held by SymbolSpace, not listed in model.spaces.
+         # Its output chooser therefore joins this Space's explicit params
+         # before getOptimizer walks the owners.
+-        if self.languageSpace.generate_policy is not None:
+-            self.params.extend(self.languageSpace.generate_policy.parameters())
++        self.params.extend(self.languageSpace.parameters())
+         # SymbolSubSpace.__init__ pointed the home spaces' ``.symbolSpace``
+         # back-ref at ITSELF (the coordinator); re-point them at THIS container so
+         # ``perceptualSpace.symbolSpace is model.symbolSpace`` holds (the pipeline
+--- a/bin/Models.py
++++ b/bin/Models.py
+@@ -109,7 +109,7 @@
+ # ``normalize_codebook_mode`` moved onto ``Space`` as a staticmethod
+ # (2026-05-21) so the parsing logic stays namespaced; callers below
+ # read it as ``Space.normalize_codebook_mode(...)``.
+-from Language import SymbolSubSpace, SymbolSpace
++from Language import SymbolSubSpace, SymbolSpace, use_generation_catalog
+ from util import parse
+ # -- Inlined from Pipeline.py (2026-05-11 module consolidation) -------
+ # Previously in basicmodel/bin/Pipeline.py; inlined here when the body
+@@ -4931,6 +4931,9 @@
+                 ensure_prior = getattr(type(module), "ensure_chunk_prior", None)
+                 if ensure_prior is not None:
+                     ensure_prior(module)
++            migrate_ops = getattr(type(module), "migrate_generation_operators", None)
++            if migrate_ops is not None:
++                migrate_ops(module, state, name + ".", self)
+             migrate = getattr(type(module), "migrate_generate_checkpoint", None)
+             if migrate is not None:
+                 generate_rows.update(migrate(module, state, name + "."))
+@@ -9167,7 +9170,8 @@
+             params.extend(conditioner.parameters())
+         for module in (getattr(self, "what_step_chooser", None),
+                        getattr(self, "ltm_attention", None),
+-                       getattr(getattr(self, "languageSpace", None), "generate_policy", None)):
++                       getattr(getattr(self, "languageSpace", None), "generate_policy", None),
++                       getattr(getattr(self, "languageSpace", None), "generation_ops", None)):
+             if module is not None:
+                 params.extend(module.parameters())
+         for space in (getattr(self, "conceptualSpace", None),
+@@ -9179,6 +9183,7 @@
+                     params.extend(module.parameters())
+         return list({id(p): p for p in params}.values())
+ 
++    @use_generation_catalog
+     def reverseOutput(self, understanding, derivation):
+         """Realize a prepared AnswerDerivation without running resolution.
+ 
