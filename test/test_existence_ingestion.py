@@ -31,7 +31,7 @@ def test_legacy_part_testimony_without_a_vp_stays_unverified():
 def test_legacy_materialized_relation_without_a_vp_stays_unverified():
     left, right = torch.eye(6)[:2]
     store = TernaryTruthStore(6, capacity=8)
-    row = TruthGroundedReasoner(store=store).materialize(left, right, .8)
+    row = TruthGroundedReasoner(store=store).legacy_materialize(left, right, .8)
     assert row >= 0
     assert store.row(row)["kind"] == "unverified"
 

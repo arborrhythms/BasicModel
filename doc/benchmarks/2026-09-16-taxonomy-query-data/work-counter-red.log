@@ -1,0 +1,40 @@
+CANDIDATE Meaning: /private/tmp/full-spec-taxonomy-candidate/Meaning.py
+CANDIDATE Layers: /private/tmp/full-spec-taxonomy-candidate/Layers.py
+CANDIDATE Models: /private/tmp/full-spec-taxonomy-candidate/Models.py
+CANDIDATE reasoning: /private/tmp/full-spec-taxonomy-candidate/reasoning.py
+CANDIDATE thinking: /private/tmp/full-spec-taxonomy-candidate/thinking.py
+CANDIDATE Taxonomy: /private/tmp/full-spec-taxonomy-candidate/Taxonomy.py
+............F                                                            [100%]
+=================================== FAILURES ===================================
+_______ test_capture_charges_every_record_read_including_raw_domain_refs _______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1236f7fb0>
+
+    def test_capture_charges_every_record_read_including_raw_domain_refs(monkeypatch):
+        cs, (a, b, c) = _world()
+        for ref in (42, _ref(b), _ref(c)):
+            cs.add_part(a, ref)
+        layer = cs._concept_allocator.store_of(a)
+        original = layer.iter_constituents
+        read = []
+        def observe(cid):
+            for item in original(cid):
+                read.append((cid, item))
+                yield item
+        monkeypatch.setattr(layer, "iter_constituents", observe)
+        view = _view(cs, max_nodes=8, max_records=1)
+>       assert len(read) == view.records_scanned == 1
+E       AssertionError: assert 2 == 1
+E        +  where 2 = len([(1, ('part', 42)), (1, ('part', ('sym', 2)))])
+E        +  and   1 = ConceptualTaxonomyView(concepts=frozenset({('sym', 1)}), edges=(), nodes_scanned=1, records_scanned=1, incomplete=('capture_limit',)).records_scanned
+
+/tmp/full-spec-taxonomy-view-probes.py:131: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:1345
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:1345: PytestAssertRewriteWarning: Module already imported so cannot be rewritten; anyio
+    self._mark_plugins_for_rewrite(hook, disable_autoload)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED ../../../../../tmp/full-spec-taxonomy-view-probes.py::test_capture_charges_every_record_read_including_raw_domain_refs
+1 failed, 12 passed, 1 warning in 0.19s

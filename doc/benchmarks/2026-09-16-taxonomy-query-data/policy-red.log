@@ -1,0 +1,75 @@
+CANDIDATE Meaning: /private/tmp/full-spec-taxonomy-candidate/Meaning.py
+CANDIDATE Layers: /private/tmp/full-spec-taxonomy-candidate/Layers.py
+CANDIDATE Models: /private/tmp/full-spec-taxonomy-candidate/Models.py
+CANDIDATE reasoning: /private/tmp/full-spec-taxonomy-candidate/reasoning.py
+CANDIDATE thinking: /private/tmp/full-spec-taxonomy-candidate/thinking.py
+CANDIDATE Taxonomy: /private/tmp/full-spec-taxonomy-candidate/Taxonomy.py
+FFFF                                                                     [100%]
+=================================== FAILURES ===================================
+_________ test_numeric_testimony_cannot_establish_taxonomic_inclusion __________
+
+    def test_numeric_testimony_cannot_establish_taxonomic_inclusion():
+        _cs, (a, b, _), store, kernel = _setup()
+        spec = QuerySpec.from_surface("isPart", a, b)
+        frame = Frame(spec)
+        frame.bindings["testimony"] = [Testimony(spec, 1., "expert", source_trust=1.)]
+>       assert kernel._frame_interval(frame).upper == 0
+E       AssertionError: assert 1.0 == 0
+E        +  where 1.0 = TruthInterval(lower=1.0, upper=1.0, trust=1.0, provenance=[{'how': 'testimony', 'source': 'expert'}]).upper
+E        +    where TruthInterval(lower=1.0, upper=1.0, trust=1.0, provenance=[{'how': 'testimony', 'source': 'expert'}]) = _frame_interval(Frame(target=QuerySpec(predicate='isPart', left=('sym', 1), right=('sym', 2), variables=(), desired_polarity=True, dom...channel_trust=1.0, provenance=[], evidence_kind='testimony')]}, trace=[], budget_at_push=0, status='open', result=None))
+E        +      where _frame_interval = <thinking.ThinkingKernel object at 0x129ebc7d0>._frame_interval
+
+/tmp/full-spec-taxonomy-policy-probes.py:25: AssertionError
+__________ test_unrelated_true_child_cannot_establish_parent_relation __________
+
+    def test_unrelated_true_child_cannot_establish_parent_relation():
+        _cs, (a, b, _), store, kernel = _setup()
+        fact = torch.eye(8)[0]
+        store.append_idea(fact, trust=1.)
+        frame = Frame(QuerySpec.from_surface("isPart", a, b))
+        kernel._pool = 12
+        kernel.execute(frame, {"op": "think", "target": QuerySpec.from_surface("exist", fact)})
+>       assert kernel._frame_interval(frame).upper == 0
+E       AssertionError: assert 1.0 == 0
+E        +  where 1.0 = TruthInterval(lower=1.0, upper=1.0, trust=1.0, provenance=[{'how': 'child', 'target': QuerySpec(predicate='isTrue', left=tensor([1., 0., 0., 0., 0., 0., 0., 0.]), right=None, variables=(), desired_polarity=True, domain=None)}]).upper
+E        +    where TruthInterval(lower=1.0, upper=1.0, trust=1.0, provenance=[{'how': 'child', 'target': QuerySpec(predicate='isTrue', left=tensor([1., 0., 0., 0., 0., 0., 0., 0.]), right=None, variables=(), desired_polarity=True, domain=None)}]) = _frame_interval(Frame(target=QuerySpec(predicate='isPart', left=('sym', 1), right=('sym', 2), variables=(), desired_polarity=True, dom...'depth': 0, 'lum_before': 0.0, 'child_value': 'true', 'lum_after': 1.0}], budget_at_push=0, status='open', result=None))
+E        +      where _frame_interval = <thinking.ThinkingKernel object at 0x129ebfe30>._frame_interval
+
+/tmp/full-spec-taxonomy-policy-probes.py:37: AssertionError
+_____________ test_nested_taxonomy_result_keeps_each_record_source _____________
+
+    def test_nested_taxonomy_result_keeps_each_record_source():
+        cs, (a, b, c), _store, kernel = _setup()
+        cs.add_whole(a[1], b)
+        cs.add_whole(b[1], c)
+        result = kernel.run(QuerySpec.from_surface("isPart", a, c))
+>       assert result.value == "true"
+E       AssertionError: assert 'mixed' == 'true'
+E         
+E         - true
+E         + mixed
+
+/tmp/full-spec-taxonomy-policy-probes.py:45: AssertionError
+________ test_legacy_trace_training_derives_targets_from_taxonomy_only _________
+
+    def test_legacy_trace_training_derives_targets_from_taxonomy_only():
+        cs, (a, b, c), store, kernel = _setup()
+        cs.add_whole(a[1], b)
+        cs.add_whole(b[1], c)
+        examples = traces_from_store(kernel)
+>       assert examples and any(op == "think" for _state, op in examples)
+E       assert ([])
+
+/tmp/full-spec-taxonomy-policy-probes.py:65: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:1345
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:1345: PytestAssertRewriteWarning: Module already imported so cannot be rewritten; anyio
+    self._mark_plugins_for_rewrite(hook, disable_autoload)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED ../../../../../tmp/full-spec-taxonomy-policy-probes.py::test_numeric_testimony_cannot_establish_taxonomic_inclusion
+FAILED ../../../../../tmp/full-spec-taxonomy-policy-probes.py::test_unrelated_true_child_cannot_establish_parent_relation
+FAILED ../../../../../tmp/full-spec-taxonomy-policy-probes.py::test_nested_taxonomy_result_keeps_each_record_source
+FAILED ../../../../../tmp/full-spec-taxonomy-policy-probes.py::test_legacy_trace_training_derives_targets_from_taxonomy_only
+4 failed, 1 warning in 0.15s

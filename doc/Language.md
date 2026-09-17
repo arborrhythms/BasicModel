@@ -150,7 +150,7 @@ The retired `whatThinkingMemory` switch and discourse delegates are removed.
 once and registers them for optimization when first enabled. Re-enabling starts
 a fresh observation stream. Soft packed-brick resets preserve an enabled
 stream; hard resets and document changes make the affected row cold.
-See [`InterSentenceLayer.Reset`](../bin/Layers.py#L10790) and
+See [`InterSentenceLayer.Reset`](../bin/Layers.py#L10802) and
 [the integrated specification](plans/2026-09-15-next-sentence-as-the-production-objective.md#11-code-review-2026-09-16-local-role-expectation-implementation).
 
 ## Recorded compose execution
@@ -532,7 +532,7 @@ The current `_SURFACE_TO_KIND` interface maps `part`, `isPart` and
 `queryPart` to the same `KIND_IS_PART` reduction kind, and similarly maps
 `equal` / `isEqual` / `queryEqual` to `KIND_IS_EQUAL`. These aliases do not
 complete the checked VP registry or linguistic/internal meaning agreement.
-[`QuerySpec` aliases](../bin/reasoning.py#L28).
+[`QuerySpec` aliases](../bin/reasoning.py#L29).
 The operator codebook, soft
 superposition, and participation clustering are live and tested.
 
@@ -772,10 +772,12 @@ operation is an identity ([ExistLayer](../bin/Language.py#L4467)). The reasoner'
 `Exist`/`isTrue` evaluation now uses accepted LTM facts for the complete
 description, preserving occupied roles, scope, bindings, references and both
 support polarities. This does not execute a query during composition.
-[Boundary lookup](../bin/reasoning.py#L142).
+[Boundary lookup](../bin/reasoning.py#L156).
 
-The typed VP registry, canonical linguistic/internal query agreement and
-conceptual-taxonomy `PartOf` migration remain open. See
+The typed VP registry and canonical linguistic/internal query agreement
+remain open. Public `PartOf` now reads native conceptual-taxonomy references
+([Taxonomy queries](TaxonomyQueries.md)); this evidence reader does not
+complete the grammatical migration. See
 [Existence evidence](ExistenceEvidence.md) for the implemented evidence layer
 and [the integrated specification](plans/2026-09-15-next-sentence-as-the-production-objective.md#2-one-grammatical-deep-structure-multiple-surface-forms)
 for the complete grammatical target.

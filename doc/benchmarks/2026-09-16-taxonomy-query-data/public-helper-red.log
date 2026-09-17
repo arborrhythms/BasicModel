@@ -1,0 +1,69 @@
+CANDIDATE Meaning: /private/tmp/full-spec-taxonomy-candidate/Meaning.py
+CANDIDATE Layers: /private/tmp/full-spec-taxonomy-candidate/Layers.py
+CANDIDATE Models: /private/tmp/full-spec-taxonomy-candidate/Models.py
+CANDIDATE reasoning: /private/tmp/full-spec-taxonomy-candidate/reasoning.py
+CANDIDATE thinking: /private/tmp/full-spec-taxonomy-candidate/thinking.py
+CANDIDATE Taxonomy: /private/tmp/full-spec-taxonomy-candidate/Taxonomy.py
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+____ test_public_part_helpers_cannot_accept_geometric_or_world_row_evidence ____
+
+    def test_public_part_helpers_cannot_accept_geometric_or_world_row_evidence():
+        a, b = torch.eye(8)[:2]
+        store = TernaryTruthStore(8)
+        store.append_relation(a, torch.ones(8), b, rel_type=store.REL_PARTOF, trust=1)
+        reasoner = TruthGroundedReasoner(store=store)
+>       assert reasoner.is_part_direct(a, torch.ones(8)) is None
+E       AssertionError: assert (1.0, 'geometric') is None
+E        +  where (1.0, 'geometric') = is_part_direct(tensor([1., 0., 0., 0., 0., 0., 0., 0.]), tensor([1., 1., 1., 1., 1., 1., 1., 1.]))
+E        +    where is_part_direct = <reasoning.TruthGroundedReasoner object at 0x121056ba0>.is_part_direct
+E        +    and   tensor([1., 1., 1., 1., 1., 1., 1., 1.]) = <built-in method ones of type object at 0x10b8d4fa8>(8)
+E        +      where <built-in method ones of type object at 0x10b8d4fa8> = torch.ones
+
+/tmp/full-spec-taxonomy-public-helper-probes.py:16: AssertionError
+__ test_public_part_helpers_follow_typed_links_without_world_materialization ___
+
+    def test_public_part_helpers_follow_typed_links_without_world_materialization():
+        cs = _cs()
+        a, b, c = (("sym", cs.new_concept()) for _ in range(3))
+        cs.add_whole(a[1], b)
+        cs.add_whole(b[1], c)
+        store = TernaryTruthStore(8)
+        reasoner = TruthGroundedReasoner(SimpleNamespace(conceptualSpace=cs), store=store)
+>       assert reasoner.is_part_direct(a, b) == (1., "taxonomy")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+/tmp/full-spec-taxonomy-public-helper-probes.py:28: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/tmp/full-spec-taxonomy-candidate/reasoning.py:417: in is_part_direct
+    A = _as_vec(A)
+        ^^^^^^^^^^
+/tmp/full-spec-taxonomy-candidate/reasoning.py:88: in _as_vec
+    x = torch.as_tensor(x, dtype=torch.float32)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <torch.utils._device.DeviceContext object at 0x10dd9b290>
+func = <built-in method as_tensor of type object at 0x10b8d4fa8>, types = ()
+args = (('sym', 1),)
+kwargs = {'dtype': torch.float32, 'device': device(type='cpu')}
+
+    def __torch_function__(self, func, types, args=(), kwargs=None):
+        kwargs = kwargs or {}
+        if func in _device_constructors() and kwargs.get("device") is None:
+            kwargs["device"] = self.device
+>       return func(*args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^
+E       ValueError: too many dimensions 'str'
+
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: ValueError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:1345
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:1345: PytestAssertRewriteWarning: Module already imported so cannot be rewritten; anyio
+    self._mark_plugins_for_rewrite(hook, disable_autoload)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED ../../../../../tmp/full-spec-taxonomy-public-helper-probes.py::test_public_part_helpers_cannot_accept_geometric_or_world_row_evidence
+FAILED ../../../../../tmp/full-spec-taxonomy-public-helper-probes.py::test_public_part_helpers_follow_typed_links_without_world_materialization
+2 failed, 1 warning in 0.15s

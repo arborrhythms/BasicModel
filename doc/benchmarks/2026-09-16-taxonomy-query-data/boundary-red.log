@@ -1,0 +1,80 @@
+CANDIDATE Meaning: /private/tmp/full-spec-taxonomy-candidate/Meaning.py
+CANDIDATE Layers: /private/tmp/full-spec-taxonomy-candidate/Layers.py
+CANDIDATE Models: /private/tmp/full-spec-taxonomy-candidate/Models.py
+CANDIDATE reasoning: /private/tmp/full-spec-taxonomy-candidate/reasoning.py
+CANDIDATE thinking: /private/tmp/full-spec-taxonomy-candidate/thinking.py
+CANDIDATE Taxonomy: /private/tmp/full-spec-taxonomy-candidate/Taxonomy.py
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+_______ test_negated_partof_keeps_the_supported_proposition_and_evidence _______
+
+    def test_negated_partof_keeps_the_supported_proposition_and_evidence():
+        (a, _b, c), reasoner = _chain()
+        q = QuerySpec.from_surface("isPart", a, c, polarity=False)
+        result = reasoner.evaluate(q)
+>       assert result["posture"] == "FALSE"
+E       AssertionError: assert 'TRUE' == 'FALSE'
+E         
+E         - FALSE
+E         + TRUE
+
+/tmp/full-spec-taxonomy-boundary-probes.py:23: AssertionError
+___________ test_neural_result_retains_missing_reference_diagnostics ___________
+
+    def test_neural_result_retains_missing_reference_diagnostics():
+        (a, _b, _c), reasoner = _chain()
+        result = NeuralToolUser(reasoner).run(QuerySpec.from_surface("isPart", a, ("sym", 999999)))
+        assert result.posture == "UNKNOWN"
+>       assert "unavailable_reference" in result.evidence["incomplete"]
+                                          ^^^^^^^^^^^^^^^
+E       AttributeError: 'ReasoningResult' object has no attribute 'evidence'
+
+/tmp/full-spec-taxonomy-boundary-probes.py:34: AttributeError
+________ test_model_taxonomy_entries_skip_global_vector_proposal_setup _________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x11ea21700>
+
+    def test_model_taxonomy_entries_skip_global_vector_proposal_setup(monkeypatch):
+        from test_ltm_consolidation import _make_model, _STATEFUL_CONFIG
+        model = _make_model(_STATEFUL_CONFIG)
+        try:
+            model.reasoning_iterations = model.thinking_budget = 8
+            cs = model.conceptualSpace
+            a, b = (("sym", cs.new_concept()) for _ in range(2))
+            cs.add_whole(a[1], b)
+            def forbidden(*args, **kwargs):
+                raise AssertionError("taxonomy query must not build/read the vector proposal route")
+            monkeypatch.setattr(model, "_reasoning_spaces", forbidden)
+            monkeypatch.setattr(model, "_reasoning_tooluser", forbidden)
+            q = QuerySpec.from_surface("isPart", a, b)
+>           assert model.reason_about(q).posture == "TRUE"
+                   ^^^^^^^^^^^^^^^^^^^^^
+
+/tmp/full-spec-taxonomy-boundary-probes.py:50: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+/tmp/full-spec-taxonomy-candidate/Models.py:22239: in reason_about
+    spaces = self._reasoning_spaces()
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+args = (), kwargs = {}
+
+    def forbidden(*args, **kwargs):
+>       raise AssertionError("taxonomy query must not build/read the vector proposal route")
+E       AssertionError: taxonomy query must not build/read the vector proposal route
+
+/tmp/full-spec-taxonomy-boundary-probes.py:46: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:1345
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:1345: PytestAssertRewriteWarning: Module already imported so cannot be rewritten; anyio
+    self._mark_plugins_for_rewrite(hook, disable_autoload)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED ../../../../../tmp/full-spec-taxonomy-boundary-probes.py::test_negated_partof_keeps_the_supported_proposition_and_evidence
+FAILED ../../../../../tmp/full-spec-taxonomy-boundary-probes.py::test_neural_result_retains_missing_reference_diagnostics
+FAILED ../../../../../tmp/full-spec-taxonomy-boundary-probes.py::test_model_taxonomy_entries_skip_global_vector_proposal_setup
+3 failed, 1 warning in 0.36s

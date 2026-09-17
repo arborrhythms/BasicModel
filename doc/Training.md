@@ -58,7 +58,7 @@ BasicModel now selects tied completed-input reconstruction. Its migration
 declaration, completed native measurements and green full-suite result are in
 [integrated specification §13](plans/2026-09-15-next-sentence-as-the-production-objective.md#13-tied-input-reconstruction-migration-verified).
 Full nested meaning and reasoning remain separate acceptance gates.
-See [Layers.py:10077](../bin/Layers.py#L10077),
+See [Layers.py:10089](../bin/Layers.py#L10089),
 [Models.py:12692](../bin/Models.py#L12692), and
 [the implementation order](plans/2026-09-15-next-sentence-as-the-production-objective.md#10-consolidated-implementation-and-verification-order).
 
@@ -462,8 +462,8 @@ LTM remains detached. Expectation is now on by default and predicts local roles.
 meaning and the reasoning migrations remain tracked in the
 [integrated spec](plans/2026-09-15-next-sentence-as-the-production-objective.md#84-joint-representation-learning-and-gradient-balance).
 The observation and cleanup code is in
-[Layers.py:10130](../bin/Layers.py#L10130) and
-[Layers.py:10670](../bin/Layers.py#L10670); the training gates are in
+[Layers.py:10142](../bin/Layers.py#L10142) and
+[Layers.py:10682](../bin/Layers.py#L10682); the training gates are in
 [Models.py:13944](../bin/Models.py#L13944) and
 [Models.py:14053](../bin/Models.py#L14053).
 
@@ -1046,9 +1046,22 @@ cannot. Internal questions, predictions and unverified legacy relations remain
 ineligible for `Exist` fact support. The lookup preserves both signed degrees
 and provenance, and adds no gradient objective or trainable parameters.
 [Observation adapter](../bin/Models.py#L133),
-[admission](../bin/Layers.py#L8900),
-[lookup](../bin/reasoning.py#L142).
+[admission](../bin/Layers.py#L8912),
+[lookup](../bin/reasoning.py#L156).
 
 See [Existence evidence](ExistenceEvidence.md) for complete-description matching,
 testimony, checkpoint migration and the hard lookup boundary, and
 [GradientFlow](GradientFlow.md) for the architecture-wide gradient budget.
+
+## Conceptual-taxonomy queries (September 16)
+
+The legacy operation-head curriculum uses bounded native two-link taxonomy
+paths. Successful queries preserve their native proof sources and cannot
+materialize world facts. Old geometric/world-row experiments remain under
+explicit `legacy_...` helpers and `run_legacy_world`; their optional policy
+objectives are not the default sentence-expectation controller. No new loss
+or learned parameters were added. These mechanics do not establish learned
+question utility. See [Taxonomy queries](TaxonomyQueries.md).
+[Curriculum](../bin/thinking.py#L621),
+[legacy experiment](../bin/reasoning.py#L764),
+[read-only close](../bin/thinking.py#L484).

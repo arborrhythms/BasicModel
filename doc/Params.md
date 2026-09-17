@@ -692,6 +692,18 @@ existing truth store. Its structural sidecar retains bindings, scope,
 constituent references and source text. This adds no configuration switch,
 learned parameter or loss. Legacy conversation rows migrate as unverified;
 missing required metadata cannot silently become empty scope.
-[Store and migration](../bin/Layers.py#L8662),
+[Store and migration](../bin/Layers.py#L8674),
 [checkpoint sidecar](../bin/Models.py#L4409),
 [details](ExistenceEvidence.md).
+
+### Conceptual-taxonomy query bounds
+
+The invocation reader defaults to 256 scanned concepts and 1024 native
+reference records. Traversal defaults to 8 links and 1024 edge examinations;
+public predicate evaluation uses `beam * max_steps` as its edge limit. These
+are explicit call bounds, distinct from STM capacity or a shared episode
+budget. Limits/unavailable references report incomplete evidence. No new
+configuration switch, checkpoint schema or learned parameters were added.
+[Capture](../bin/Taxonomy.py#L117),
+[traversal](../bin/Taxonomy.py#L69),
+[public evaluation](../bin/reasoning.py#L578).

@@ -1,0 +1,282 @@
+CANDIDATE Meaning: /private/tmp/full-spec-taxonomy-candidate/Meaning.py
+CANDIDATE Layers: /private/tmp/full-spec-taxonomy-candidate/Layers.py
+CANDIDATE Models: /private/tmp/full-spec-taxonomy-candidate/Models.py
+CANDIDATE reasoning: /private/tmp/full-spec-taxonomy-candidate/reasoning.py
+CANDIDATE thinking: /private/tmp/full-spec-taxonomy-candidate/thinking.py
+CANDIDATE Taxonomy: /private/tmp/full-spec-taxonomy-candidate/Taxonomy.py
+FFFFFFFF                                                                 [100%]
+=================================== FAILURES ===================================
+_____ test_public_evaluate_follows_taxonomy_and_retains_record_provenance ______
+
+    def test_public_evaluate_follows_taxonomy_and_retains_record_provenance():
+        cs, (a, b, c), reasoner = _world()
+        relation = cs.reify_concept(a[1], b[1])
+        cs.add_whole(b[1], c)
+>       result = reasoner.evaluate(QuerySpec.from_surface("isPart", a, c))
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+/tmp/full-spec-taxonomy-entry-probes.py:25: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/tmp/full-spec-taxonomy-candidate/reasoning.py:518: in evaluate
+    cands = self.is_part(q.left, q.right, max_steps=max_steps, beam=beam)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/tmp/full-spec-taxonomy-candidate/reasoning.py:390: in is_part
+    A = _as_vec(A)
+        ^^^^^^^^^^
+/tmp/full-spec-taxonomy-candidate/reasoning.py:79: in _as_vec
+    x = torch.as_tensor(x, dtype=torch.float32)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <torch.utils._device.DeviceContext object at 0x10cf6e840>
+func = <built-in method as_tensor of type object at 0x10b100fa8>, types = ()
+args = (('sym', 1),)
+kwargs = {'dtype': torch.float32, 'device': device(type='cpu')}
+
+    def __torch_function__(self, func, types, args=(), kwargs=None):
+        kwargs = kwargs or {}
+        if func in _device_constructors() and kwargs.get("device") is None:
+            kwargs["device"] = self.device
+>       return func(*args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^
+E       ValueError: too many dimensions 'str'
+
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: ValueError
+____________ test_whole_interface_reverses_to_the_same_partof_query ____________
+
+    def test_whole_interface_reverses_to_the_same_partof_query():
+        cs, (a, b, _), reasoner = _world()
+        cs.add_whole(a[1], b)
+>       forward = reasoner.evaluate(QuerySpec.from_surface("part", a, b))
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+/tmp/full-spec-taxonomy-entry-probes.py:39: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/tmp/full-spec-taxonomy-candidate/reasoning.py:518: in evaluate
+    cands = self.is_part(q.left, q.right, max_steps=max_steps, beam=beam)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/tmp/full-spec-taxonomy-candidate/reasoning.py:390: in is_part
+    A = _as_vec(A)
+        ^^^^^^^^^^
+/tmp/full-spec-taxonomy-candidate/reasoning.py:79: in _as_vec
+    x = torch.as_tensor(x, dtype=torch.float32)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <torch.utils._device.DeviceContext object at 0x10cf6e840>
+func = <built-in method as_tensor of type object at 0x10b100fa8>, types = ()
+args = (('sym', 1),)
+kwargs = {'dtype': torch.float32, 'device': device(type='cpu')}
+
+    def __torch_function__(self, func, types, args=(), kwargs=None):
+        kwargs = kwargs or {}
+        if func in _device_constructors() and kwargs.get("device") is None:
+            kwargs["device"] = self.device
+>       return func(*args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^
+E       ValueError: too many dimensions 'str'
+
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: ValueError
+__________ test_public_queries_reject_an_unsupported_relation_domain ___________
+
+    def test_public_queries_reject_an_unsupported_relation_domain():
+        _cs, (a, b, _), reasoner = _world()
+        with pytest.raises(ValueError, match="domain"):
+>           reasoner.evaluate(QuerySpec.from_surface("isPart", a, b, domain="world-facts"))
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           TypeError: QuerySpec.from_surface() got an unexpected keyword argument 'domain'
+
+/tmp/full-spec-taxonomy-entry-probes.py:49: TypeError
+_______ test_neural_entry_does_not_verify_generated_vectors_as_taxonomy ________
+
+    def test_neural_entry_does_not_verify_generated_vectors_as_taxonomy():
+        cs, (a, b, _), reasoner = _world()
+        cs.add_whole(a[1], b)
+        class BadGenerator:
+            def propose(self, *args, **kwargs):
+                raise AssertionError("unnamed vector candidates cannot prove taxonomy")
+        tool = NeuralToolUser(reasoner, generator=BadGenerator(), ga=object(),
+                              spaces=[object()], materialize=True)
+>       result = tool.run(QuerySpec.from_surface("isPart", a, b))
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+/tmp/full-spec-taxonomy-entry-probes.py:60: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/tmp/full-spec-taxonomy-candidate/reasoning.py:669: in run
+    A = _as_vec(q.left)
+        ^^^^^^^^^^^^^^^
+/tmp/full-spec-taxonomy-candidate/reasoning.py:79: in _as_vec
+    x = torch.as_tensor(x, dtype=torch.float32)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <torch.utils._device.DeviceContext object at 0x10cf6e840>
+func = <built-in method as_tensor of type object at 0x10b100fa8>, types = ()
+args = (('sym', 1),)
+kwargs = {'dtype': torch.float32, 'device': device(type='cpu')}
+
+    def __torch_function__(self, func, types, args=(), kwargs=None):
+        kwargs = kwargs or {}
+        if func in _device_constructors() and kwargs.get("device") is None:
+            kwargs["device"] = self.device
+>       return func(*args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^
+E       ValueError: too many dimensions 'str'
+
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: ValueError
+____ test_legacy_kernel_lookup_and_traversal_use_the_same_taxonomy_sources _____
+
+    def test_legacy_kernel_lookup_and_traversal_use_the_same_taxonomy_sources():
+        cs, (a, b, _), reasoner = _world()
+        cs.add_whole(a[1], b)
+        kernel = ThinkingKernel(reasoner)
+>       result = kernel.run(QuerySpec.from_surface("isPart", a, b))
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+/tmp/full-spec-taxonomy-entry-probes.py:72: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/tmp/full-spec-taxonomy-candidate/thinking.py:191: in run
+    return self._think(as_spec(target), purpose=purpose)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/tmp/full-spec-taxonomy-candidate/thinking.py:211: in _think
+    self.execute(frame, op)
+/tmp/full-spec-taxonomy-candidate/thinking.py:225: in execute
+    iv = self.lookup(op.get("target", frame.target))
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/tmp/full-spec-taxonomy-candidate/thinking.py:268: in lookup
+    d = r.is_part_direct(spec.left, spec.right)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/tmp/full-spec-taxonomy-candidate/reasoning.py:359: in is_part_direct
+    A = _as_vec(A)
+        ^^^^^^^^^^
+/tmp/full-spec-taxonomy-candidate/reasoning.py:79: in _as_vec
+    x = torch.as_tensor(x, dtype=torch.float32)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <torch.utils._device.DeviceContext object at 0x10cf6e840>
+func = <built-in method as_tensor of type object at 0x10b100fa8>, types = ()
+args = (('sym', 1),)
+kwargs = {'dtype': torch.float32, 'device': device(type='cpu')}
+
+    def __torch_function__(self, func, types, args=(), kwargs=None):
+        kwargs = kwargs or {}
+        if func in _device_constructors() and kwargs.get("device") is None:
+            kwargs["device"] = self.device
+>       return func(*args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^
+E       ValueError: too many dimensions 'str'
+
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: ValueError
+_____________ test_kernel_does_not_certify_a_world_row_as_taxonomy _____________
+
+    def test_kernel_does_not_certify_a_world_row_as_taxonomy():
+        cs, _refs, reasoner = _world()
+        a, b = torch.eye(8)[:2]
+        cs._ltm_store.append_relation(a, torch.eye(8)[2], b,
+                                     rel_type=cs._ltm_store.REL_PARTOF, trust=1)
+        result = ThinkingKernel(reasoner).run(QuerySpec.from_surface("isPart", a, b))
+>       assert result.value in ("unknown", "bounded_unknown")
+E       AssertionError: assert 'true' in ('unknown', 'bounded_unknown')
+E        +  where 'true' = ChildResult(target=QuerySpec(predicate='isPart', left=tensor([1., 0., 0., 0., 0., 0., 0., 0.]), right=tensor([0., 1., ...ookup', 'evidence': [{'how': 'stored'}]}, {'how': 'lookup', 'evidence': [{'how': 'stored'}]}], relevance_to_parent=1.0).value
+
+/tmp/full-spec-taxonomy-entry-probes.py:89: AssertionError
+_____ test_budget_cutoff_and_missing_identity_are_unknown_with_diagnostics _____
+
+    def test_budget_cutoff_and_missing_identity_are_unknown_with_diagnostics():
+        cs, (a, b, c), reasoner = _world()
+        cs.add_whole(a[1], b)
+        cs.add_whole(b[1], c)
+>       result = reasoner.evaluate(QuerySpec.from_surface("isPart", a, c), max_steps=1)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+/tmp/full-spec-taxonomy-entry-probes.py:97: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/tmp/full-spec-taxonomy-candidate/reasoning.py:518: in evaluate
+    cands = self.is_part(q.left, q.right, max_steps=max_steps, beam=beam)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/tmp/full-spec-taxonomy-candidate/reasoning.py:390: in is_part
+    A = _as_vec(A)
+        ^^^^^^^^^^
+/tmp/full-spec-taxonomy-candidate/reasoning.py:79: in _as_vec
+    x = torch.as_tensor(x, dtype=torch.float32)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <torch.utils._device.DeviceContext object at 0x10cf6e840>
+func = <built-in method as_tensor of type object at 0x10b100fa8>, types = ()
+args = (('sym', 1),)
+kwargs = {'dtype': torch.float32, 'device': device(type='cpu')}
+
+    def __torch_function__(self, func, types, args=(), kwargs=None):
+        kwargs = kwargs or {}
+        if func in _device_constructors() and kwargs.get("device") is None:
+            kwargs["device"] = self.device
+>       return func(*args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^
+E       ValueError: too many dimensions 'str'
+
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: ValueError
+________ test_actual_model_entry_and_checkpoint_keep_taxonomy_identity _________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-527/test_actual_model_entry_and_ch0')
+
+    def test_actual_model_entry_and_checkpoint_keep_taxonomy_identity(tmp_path):
+        from test_ltm_consolidation import _make_model, _STATEFUL_CONFIG
+        source = _make_model(_STATEFUL_CONFIG)
+        restored = None
+        try:
+            source.reasoning_iterations = 8
+            cs = source.conceptualSpace
+            a, b = (("sym", cs.new_concept()) for _ in range(2))
+            relation = cs.reify_concept(a[1], b[1])
+            spec = QuerySpec.from_surface("isPart", a, b)
+>           before = source.reason_about(spec, spaces=[])
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+/tmp/full-spec-taxonomy-entry-probes.py:115: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+/tmp/full-spec-taxonomy-candidate/Models.py:22247: in reason_about
+    return tool.run(query_spec)
+           ^^^^^^^^^^^^^^^^^^^^
+/tmp/full-spec-taxonomy-candidate/reasoning.py:669: in run
+    A = _as_vec(q.left)
+        ^^^^^^^^^^^^^^^
+/tmp/full-spec-taxonomy-candidate/reasoning.py:79: in _as_vec
+    x = torch.as_tensor(x, dtype=torch.float32)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <torch.utils._device.DeviceContext object at 0x10cf6e840>
+func = <built-in method as_tensor of type object at 0x10b100fa8>, types = ()
+args = (('sym', 1),)
+kwargs = {'dtype': torch.float32, 'device': device(type='cpu')}
+
+    def __torch_function__(self, func, types, args=(), kwargs=None):
+        kwargs = kwargs or {}
+        if func in _device_constructors() and kwargs.get("device") is None:
+            kwargs["device"] = self.device
+>       return func(*args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^
+E       ValueError: too many dimensions 'str'
+
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: ValueError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:1345
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:1345: PytestAssertRewriteWarning: Module already imported so cannot be rewritten; anyio
+    self._mark_plugins_for_rewrite(hook, disable_autoload)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED ../../../../../tmp/full-spec-taxonomy-entry-probes.py::test_public_evaluate_follows_taxonomy_and_retains_record_provenance
+FAILED ../../../../../tmp/full-spec-taxonomy-entry-probes.py::test_whole_interface_reverses_to_the_same_partof_query
+FAILED ../../../../../tmp/full-spec-taxonomy-entry-probes.py::test_public_queries_reject_an_unsupported_relation_domain
+FAILED ../../../../../tmp/full-spec-taxonomy-entry-probes.py::test_neural_entry_does_not_verify_generated_vectors_as_taxonomy
+FAILED ../../../../../tmp/full-spec-taxonomy-entry-probes.py::test_legacy_kernel_lookup_and_traversal_use_the_same_taxonomy_sources
+FAILED ../../../../../tmp/full-spec-taxonomy-entry-probes.py::test_kernel_does_not_certify_a_world_row_as_taxonomy
+FAILED ../../../../../tmp/full-spec-taxonomy-entry-probes.py::test_budget_cutoff_and_missing_identity_are_unknown_with_diagnostics
+FAILED ../../../../../tmp/full-spec-taxonomy-entry-probes.py::test_actual_model_entry_and_checkpoint_keep_taxonomy_identity
+8 failed, 1 warning in 0.67s

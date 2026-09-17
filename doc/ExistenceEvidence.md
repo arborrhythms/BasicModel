@@ -1,9 +1,9 @@
 # Existence evidence and grammatical descriptions
 
 Implementation reference, September 16. Focused probes pass; affected-file
-and full-suite validation are recorded in integrated specification §15. The typed VP registry, conceptual-taxonomy
-PartOf, grammatical query route and ordinary thought controller remain separate
-work in the integrated specification.
+and full-suite validation are recorded in integrated specification §15. The typed VP registry, grammatical query route and ordinary thought
+controller remain separate work. [Conceptual-taxonomy PartOf](TaxonomyQueries.md)
+now has its own evidence reader.
 
 ## What the lookup establishes
 
@@ -13,7 +13,7 @@ roles, explicit presence, bindings, semantic scope and constituent references.
 Matching NP1 alone cannot establish a relation. A different VP, NP2, binding,
 scope or explicit constituent reference changes the requested description.
 The lookup rejects unequal widths; it does not flatten or truncate roles.
-[Full lookup](../bin/reasoning.py#L142).
+[Full lookup](../bin/reasoning.py#L156).
 
 Every occupied role must clear `tau_id` under the existing signed-magnitude
 identity score. The minimum role score multiplies the fact's signed trust.
@@ -21,7 +21,7 @@ For an exact match, the original degree is preserved. Matching facts contribute
 to separate positive and negative support values by maximum, never addition:
 repeating a source cannot increase its supported degree. Proposition polarity
 determines whether a stored degree supports or refutes the request.
-[Matching and support](../bin/reasoning.py#L142).
+[Matching and support](../bin/reasoning.py#L156).
 
 The result includes both degrees and each matching fact's stable occurrence,
 origin, source text, bindings, scope and references. No match means unknown.
@@ -29,15 +29,15 @@ Low support remains visible even below the posture threshold; strong positive
 and negative support yields `BOTH`. Missing required metadata is reported as
 incomplete evidence. The legacy kernel retains these sources through its final
 result, including missing-context diagnostics.
-[Posture](../bin/reasoning.py#L492),
-[kernel lookup](../bin/thinking.py#L251),
-[kernel aggregation](../bin/thinking.py#L372).
+[Posture](../bin/reasoning.py#L578),
+[kernel lookup](../bin/thinking.py#L268),
+[kernel aggregation](../bin/thinking.py#L398).
 
 `exist()` and `is_true()` retain a scalar compatibility view, positive minus
 negative support. That scalar loses conflict information. Checked evaluation
 and the kernel use the rich evidence result. Neither path consults model
 activation as a substitute for a fact.
-[Compatibility view](../bin/reasoning.py#L191).
+[Compatibility view](../bin/reasoning.py#L205).
 
 ## Meaning ownership and storage
 
@@ -50,7 +50,7 @@ The predictor and observation writers share that adapter. A two-role input
 retains its VP in the store and the legacy chain reader.
 [Value](../bin/Meaning.py#L67),
 [adapter](../bin/Meaning.py#L15),
-[prediction adapter](../bin/Layers.py#L10046),
+[prediction adapter](../bin/Layers.py#L10058),
 [observation writer](../bin/Models.py#L133).
 
 `TernaryTruthStore` remains the owner of role vectors and fact evidence. Fixed
@@ -60,18 +60,18 @@ identity and the required-metadata flag. Supported kinds are `fact`, `question`,
 Exist. Recording an external input records an observation; explicit TruthSet
 admission can accept it as a fact. Setting writer origin alone does not accept
 a fact. A question or estimate cannot certify its own referent.
-[Store](../bin/Layers.py#L8662),
-[admission](../bin/Layers.py#L8900),
-[write boundary](../bin/Layers.py#L8913).
+[Store](../bin/Layers.py#L8674),
+[admission](../bin/Layers.py#L8912),
+[write boundary](../bin/Layers.py#L8925).
 
 Durable occurrence references contain a store namespace and a monotonically
 allocated ID. Row positions may change during compaction; those references do
 not. Reset clears records without reusing their occurrence IDs. This migration
 compares retained constituent-reference identities; it does not yet implement
 arbitrary nested-meaning traversal or claim its separate acceptance gate.
-[Occurrence identity](../bin/Layers.py#L8769),
-[compaction](../bin/Layers.py#L9113),
-[reset](../bin/Layers.py#L9151).
+[Occurrence identity](../bin/Layers.py#L8781),
+[compaction](../bin/Layers.py#L9125),
+[reset](../bin/Layers.py#L9163).
 
 ## Checkpoints
 
@@ -86,21 +86,21 @@ replace missing required metadata.
 There is no dictionary-valued PyTorch `_extra_state` entry.
 [Save](../bin/Models.py#L4409),
 [restore](../bin/Models.py#L4693),
-[metadata validation](../bin/Layers.py#L8811).
+[metadata validation](../bin/Layers.py#L8823).
 
 A bare tensor-state restore can lack the sidecar. Its required-metadata flag
 makes scoped/source-bearing evidence unavailable until the matching metadata
 is restored. Missing metadata cannot silently mean empty scope. A partially
 saved set of the new semantic columns is rejected even by a non-strict load.
-[Guarded read](../bin/Layers.py#L8777),
-[checkpoint migration](../bin/Layers.py#L8851).
+[Guarded read](../bin/Layers.py#L8789),
+[checkpoint migration](../bin/Layers.py#L8863).
 
 Older checkpoints lack all these columns. Explicit provisioned/user TruthSet
 origins may retain fact status; unclassified conversation rows become
 unverified. Old nonzero slots provide a best-effort presence mask. A legacy
 relation with no recoverable VP is unverified, rather than certified from NP1.
 Old missing scope/source text is not reconstructed from model activation.
-[Legacy migration](../bin/Layers.py#L8851).
+[Legacy migration](../bin/Layers.py#L8863).
 
 ## Testimony and predictions
 
@@ -112,10 +112,10 @@ assertion by conversion failure. Accepted numeric testimony about an Exist
 description retains the complete description, scope and named source.
 The legacy Part testimony/materialization adapter has no grammatical VP;
 those rows remain `unverified` for Exist until the structured-query migration.
-[Evidence kind](../bin/thinking.py#L82),
-[registration](../bin/thinking.py#L301),
-[admission](../bin/thinking.py#L331).
-[Legacy materialization](../bin/reasoning.py#L415).
+[Evidence kind](../bin/thinking.py#L85),
+[registration](../bin/thinking.py#L325),
+[admission](../bin/thinking.py#L355).
+[Legacy materialization](../bin/reasoning.py#L499).
 
 ## Gradients
 
@@ -127,8 +127,8 @@ its declared policy credit. This migration adds no learned parameters or new
 loss, and does not itself train useful questioning. The architecture-wide
 gradient budget remains documented in [GradientFlow](GradientFlow.md).
 [Owned value](../bin/Meaning.py#L67),
-[detached write](../bin/Layers.py#L8913),
-[hard lookup](../bin/reasoning.py#L142).
+[detached write](../bin/Layers.py#L8925),
+[hard lookup](../bin/reasoning.py#L156).
 
 ## Validation
 
@@ -154,6 +154,6 @@ fact admission; each failed before its corresponding fix.
 [legacy admission red](benchmarks/2026-09-16-existence-evidence-data/legacy-admission-red.log).
 
 The isolated candidate checks are preparation evidence. Repository checks
-above use the installed runtime and test files. Grammatical routing, taxonomy
-queries, ordinary thought history, nested retention and residual policy credit
-remain open.
+above use the installed runtime and test files. Grammatical routing, ordinary thought history, nested retention and
+residual policy credit remain open. Taxonomy evidence is documented separately
+in [Taxonomy queries](TaxonomyQueries.md).

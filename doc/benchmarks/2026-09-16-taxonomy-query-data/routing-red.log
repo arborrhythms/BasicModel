@@ -1,0 +1,47 @@
+CANDIDATE Meaning: /private/tmp/full-spec-query-candidate/Meaning.py
+CANDIDATE Layers: /private/tmp/full-spec-query-candidate/Layers.py
+CANDIDATE Models: /private/tmp/full-spec-query-candidate/Models.py
+CANDIDATE reasoning: /private/tmp/full-spec-query-candidate/reasoning.py
+CANDIDATE thinking: /private/tmp/full-spec-query-candidate/thinking.py
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_____________ test_partof_is_not_established_by_vector_containment _____________
+
+    def test_partof_is_not_established_by_vector_containment():
+        part = torch.tensor([1., 0., 0., 0.])
+        whole = torch.ones(4)
+        result = TruthGroundedReasoner(store=TernaryTruthStore(4)).evaluate(
+            QuerySpec.from_surface("isPart", part, whole))
+>       assert result["posture"] == UNKNOWN
+E       AssertionError: assert 'TRUE' == 'UNKNOWN'
+E         
+E         - UNKNOWN
+E         + TRUE
+
+/tmp/full-spec-taxonomy-routing-probes.py:13: AssertionError
+____________ test_partof_is_not_established_by_a_world_relation_row ____________
+
+    def test_partof_is_not_established_by_a_world_relation_row():
+        part, whole = torch.eye(4)[:2]
+        store = TernaryTruthStore(4)
+        store.append_relation(part, torch.eye(4)[2], whole,
+                              rel_type=store.REL_PARTOF, trust=.9)
+        result = TruthGroundedReasoner(store=store).evaluate(
+            QuerySpec.from_surface("isPart", part, whole))
+>       assert result["posture"] == UNKNOWN
+E       AssertionError: assert 'TRUE' == 'UNKNOWN'
+E         
+E         - UNKNOWN
+E         + TRUE
+
+/tmp/full-spec-taxonomy-routing-probes.py:24: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:1345
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:1345: PytestAssertRewriteWarning: Module already imported so cannot be rewritten; anyio
+    self._mark_plugins_for_rewrite(hook, disable_autoload)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED ../../../../../tmp/full-spec-taxonomy-routing-probes.py::test_partof_is_not_established_by_vector_containment
+FAILED ../../../../../tmp/full-spec-taxonomy-routing-probes.py::test_partof_is_not_established_by_a_world_relation_row
+2 failed, 1 warning in 0.13s

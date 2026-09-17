@@ -38,7 +38,7 @@ and [§8.10](plans/2026-09-15-next-sentence-as-the-production-objective.md#810-q
 | Piece / objective | Directly trained computation | Reach into representation | Stops and current limits |
 |---|---|---|---|
 | **Representation and reconstruction:** weighted input surface error | Recovered word ideas, the selected compose operators' tied reverse calculations, and the live forward encodings they consume | This is the reconstruction reference `R` on shared weights. It retains its gradient unchanged. | The identified input derivation is fixed during reverse traversal; retained constituent references, dictionary snapshots and byte targets are detached. No gradient through an integer rule or dictionary index. [Reconstruction](../bin/Models.py#L11273), [snapshot](../bin/Models.py#L11627), [owned byte objective](../bin/Models.py#L13786). |
-| **Prediction:** occupied-role MSE plus role-presence BCE | The sentence predictor and its live preceding NP1/VP/NP2 context | May train the encoder of a preceding sentence still in the **same optimizer step**. It shares the downstream budget below. | The arriving sentence's encoding is a detached target. Durable context and previous-step encodings are detached. A cold start has no predicted target. [Prediction and observation](../bin/Layers.py#L10052), [graph lifetime](../bin/Layers.py#L10670). |
+| **Prediction:** occupied-role MSE plus role-presence BCE | The sentence predictor and its live preceding NP1/VP/NP2 context | May train the encoder of a preceding sentence still in the **same optimizer step**. It shares the downstream budget below. | The arriving sentence's encoding is a detached target. Durable context and previous-step encodings are detached. A cold start has no predicted target. [Prediction and observation](../bin/Layers.py#L10064), [graph lifetime](../bin/Layers.py#L10682). |
 | **Thinking:** enabled query/subgoal policy objectives | Currently, a sampled What choice receives score-function credit from supplied-answer error minus work costs; optional legacy reasoning and teacher-trace losses have separate gates | Only through live inputs actually consumed by the trained policy or soft reasoning computation. Its shared-parameter contribution belongs to the same downstream budget. | Hard choices and deductions have no ordinary derivative. The current What context includes detached scalar summaries, so policy training does not prove semantic encoder feedback. Residual-based credit on ordinary corpus inputs is a required migration. [Policy](../bin/Models.py#L8325), [summary](../bin/Models.py#L7940), [loss gates](../bin/Models.py#L14092), [required residual credit](plans/2026-09-15-next-sentence-as-the-production-objective.md#810-queries-as-tools-at-inter-sentence-prediction-decided). |
 | **Output:** supplied-answer error and, when enabled, output-action policy loss | The answer path, conditioner and synthesis heads; sampled generation choices receive policy credit | Differentiable use of a live question/answer representation can train its upstream producer, under the same shared budget. Independent output heads retain their ordinary gradients. | Desired answers are supervision, not generation inputs. Output policy reward is detached: credit flows through action log probabilities, not through the reward calculation. The input parse is not a gold answer parse. [Answer resolution](../bin/Models.py#L8186), [head ownership](../bin/Models.py#L9158), [action credit](../bin/Models.py#L9293). |
 
@@ -89,7 +89,7 @@ reconstructionScale * inputLoss`. BasicModel's FineWeb configuration uses
 separately. The supplied-answer benchmark uses `reconstructionScale=0.5`.
 Adding labels to a configuration whose primary answer weight is zero would
 not by itself train that answer objective.
-[Blend](../bin/Layers.py#L16781), [FineWeb weights](../data/BasicModel.xml#L168),
+[Blend](../bin/Layers.py#L16793), [FineWeb weights](../data/BasicModel.xml#L168),
 [prediction weight](../data/BasicModel.xml#L195),
 [supervised weights](../data/BasicModel_answers_tied_benchmark.xml#L51).
 
@@ -234,5 +234,18 @@ no learned parameter or loss. Query selection still requires its separately
 declared policy credit; storing an estimate does not supply an observation or
 a new training target. See [Existence evidence](ExistenceEvidence.md).
 [Live value](../bin/Meaning.py#L67),
-[detached write](../bin/Layers.py#L8913),
-[hard lookup](../bin/reasoning.py#L142).
+[detached write](../bin/Layers.py#L8925),
+[hard lookup](../bin/reasoning.py#L156).
+
+## Conceptual-taxonomy reads
+
+`PartOf` traverses native concept references and returns hard structural
+evidence with provenance. There is no derivative through reference or path
+selection, and no added trainable parameter. Existing legacy operation-head
+behavior cloning now uses native taxonomy paths; it does not establish
+learned question utility or residual policy credit. Continuous semantic
+payloads and discrete policy decisions retain the architecture-wide credit
+contract above. [Taxonomy queries](TaxonomyQueries.md) documents the limits.
+[Evidence](../bin/reasoning.py#L368),
+[curriculum](../bin/thinking.py#L621),
+[operation loss](../bin/thinking.py#L610).

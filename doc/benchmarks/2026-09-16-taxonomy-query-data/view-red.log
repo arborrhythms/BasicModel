@@ -1,0 +1,384 @@
+CANDIDATE Meaning: /private/tmp/full-spec-taxonomy-candidate/Meaning.py
+CANDIDATE Layers: /private/tmp/full-spec-taxonomy-candidate/Layers.py
+CANDIDATE Models: /private/tmp/full-spec-taxonomy-candidate/Models.py
+CANDIDATE reasoning: /private/tmp/full-spec-taxonomy-candidate/reasoning.py
+CANDIDATE thinking: /private/tmp/full-spec-taxonomy-candidate/thinking.py
+FFFFFFFFFFFF                                                             [100%]
+=================================== FAILURES ===================================
+______ test_direct_taxonomic_links_change_partof_with_canonical_direction ______
+
+    def test_direct_taxonomic_links_change_partof_with_canonical_direction():
+        cs, (a, b, _c) = _world()
+>       assert _view(cs).part_of(_ref(a), _ref(b))["support_true"] == 0
+               ^^^^^^^^^
+
+/tmp/full-spec-taxonomy-view-probes.py:26: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+cs = ConceptualSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Tensor()
+   ... (concept_source_readout): SigmaConceptsFromPercepts(
+    (sigma): SigmaLayer(
+      (layer): LinearLayer()
+    )
+  )
+)
+limits = {}
+
+    def _view(cs, **limits):
+>       from Taxonomy import capture_taxonomy
+E       ModuleNotFoundError: No module named 'Taxonomy'
+
+/tmp/full-spec-taxonomy-view-probes.py:16: ModuleNotFoundError
+__________ test_reified_relation_is_visible_without_endpoint_mutation __________
+
+    def test_reified_relation_is_visible_without_endpoint_mutation():
+        cs, (a, b, _c) = _world()
+        edge = cs.reify_concept(a, b)
+        assert cs.concept_wholes(a) == cs.concept_parts(b) == []
+>       result = _view(cs).part_of(_ref(a), _ref(b))
+                 ^^^^^^^^^
+
+/tmp/full-spec-taxonomy-view-probes.py:40: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+cs = ConceptualSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Tensor()
+   ... (concept_source_readout): SigmaConceptsFromPercepts(
+    (sigma): SigmaLayer(
+      (layer): LinearLayer()
+    )
+  )
+)
+limits = {}
+
+    def _view(cs, **limits):
+>       from Taxonomy import capture_taxonomy
+E       ModuleNotFoundError: No module named 'Taxonomy'
+
+/tmp/full-spec-taxonomy-view-probes.py:16: ModuleNotFoundError
+___ test_percept_codes_vector_overlap_and_world_rows_are_not_taxonomy_edges ____
+
+    def test_percept_codes_vector_overlap_and_world_rows_are_not_taxonomy_edges():
+        from Layers import TernaryTruthStore
+        cs, (a, b, _c) = _world()
+        cs.add_part(b, a)  # raw percept code, not a sym reference
+        cs.add_whole(a, b)  # raw whole-space code, not a sym reference
+        cs._ltm_store = TernaryTruthStore(4)
+        cs._ltm_store.append_relation(torch.eye(4)[0], torch.eye(4)[2], torch.ones(4),
+                                     rel_type=cs._ltm_store.REL_PARTOF, trust=1)
+        cs.wholeSpace_ref = SimpleNamespace(taxonomy_parent=lambda _ref: b)
+>       result = _view(cs).part_of(_ref(a), _ref(b))
+                 ^^^^^^^^^
+
+/tmp/full-spec-taxonomy-view-probes.py:56: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+cs = ConceptualSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Tensor()
+   ...eptsFromPercepts(
+    (sigma): SigmaLayer(
+      (layer): LinearLayer()
+    )
+  )
+  (_ltm_store): TernaryTruthStore()
+)
+limits = {}
+
+    def _view(cs, **limits):
+>       from Taxonomy import capture_taxonomy
+E       ModuleNotFoundError: No module named 'Taxonomy'
+
+/tmp/full-spec-taxonomy-view-probes.py:16: ModuleNotFoundError
+_____________ test_snapshot_does_not_read_later_taxonomy_mutations _____________
+
+    def test_snapshot_does_not_read_later_taxonomy_mutations():
+        cs, (a, b, _c) = _world()
+>       prior = _view(cs)
+                ^^^^^^^^^
+
+/tmp/full-spec-taxonomy-view-probes.py:62: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+cs = ConceptualSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Tensor()
+   ... (concept_source_readout): SigmaConceptsFromPercepts(
+    (sigma): SigmaLayer(
+      (layer): LinearLayer()
+    )
+  )
+)
+limits = {}
+
+    def _view(cs, **limits):
+>       from Taxonomy import capture_taxonomy
+E       ModuleNotFoundError: No module named 'Taxonomy'
+
+/tmp/full-spec-taxonomy-view-probes.py:16: ModuleNotFoundError
+___ test_taxonomy_cycles_do_not_loop_and_retired_references_are_unavailable ____
+
+    def test_taxonomy_cycles_do_not_loop_and_retired_references_are_unavailable():
+        cs, (a, b, c) = _world()
+        cs.add_whole(a, _ref(b))
+        cs.add_whole(b, _ref(a))
+        cs.add_whole(b, _ref(c))
+>       result = _view(cs).part_of(_ref(a), _ref(c), max_steps=8)
+                 ^^^^^^^^^
+
+/tmp/full-spec-taxonomy-view-probes.py:73: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+cs = ConceptualSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Tensor()
+   ... (concept_source_readout): SigmaConceptsFromPercepts(
+    (sigma): SigmaLayer(
+      (layer): LinearLayer()
+    )
+  )
+)
+limits = {}
+
+    def _view(cs, **limits):
+>       from Taxonomy import capture_taxonomy
+E       ModuleNotFoundError: No module named 'Taxonomy'
+
+/tmp/full-spec-taxonomy-view-probes.py:16: ModuleNotFoundError
+____ test_taxonomy_budgets_report_incomplete_without_fabricating_falsehood _____
+
+    def test_taxonomy_budgets_report_incomplete_without_fabricating_falsehood():
+        cs, (a, b, _c) = _world()
+        cs.reify_concept(a, b)
+>       view = _view(cs, max_nodes=1, max_records=1)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+/tmp/full-spec-taxonomy-view-probes.py:85: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+cs = ConceptualSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Tensor()
+   ... (concept_source_readout): SigmaConceptsFromPercepts(
+    (sigma): SigmaLayer(
+      (layer): LinearLayer()
+    )
+  )
+)
+limits = {'max_nodes': 1, 'max_records': 1}
+
+    def _view(cs, **limits):
+>       from Taxonomy import capture_taxonomy
+E       ModuleNotFoundError: No module named 'Taxonomy'
+
+/tmp/full-spec-taxonomy-view-probes.py:16: ModuleNotFoundError
+____ test_queries_require_typed_concept_handles_not_numeric_row_features[1] ____
+
+bad = 1
+
+    @pytest.mark.parametrize("bad", [1, ("ws", 1), ("sym", True), ("sym", 1.5)])
+    def test_queries_require_typed_concept_handles_not_numeric_row_features(bad):
+        cs, (a, _b, _c) = _world()
+        with pytest.raises((TypeError, ValueError)):
+>           _view(cs).part_of(bad, _ref(a))
+            ^^^^^^^^^
+
+/tmp/full-spec-taxonomy-view-probes.py:99: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+cs = ConceptualSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Tensor()
+   ... (concept_source_readout): SigmaConceptsFromPercepts(
+    (sigma): SigmaLayer(
+      (layer): LinearLayer()
+    )
+  )
+)
+limits = {}
+
+    def _view(cs, **limits):
+>       from Taxonomy import capture_taxonomy
+E       ModuleNotFoundError: No module named 'Taxonomy'
+
+/tmp/full-spec-taxonomy-view-probes.py:16: ModuleNotFoundError
+__ test_queries_require_typed_concept_handles_not_numeric_row_features[bad1] ___
+
+bad = ('ws', 1)
+
+    @pytest.mark.parametrize("bad", [1, ("ws", 1), ("sym", True), ("sym", 1.5)])
+    def test_queries_require_typed_concept_handles_not_numeric_row_features(bad):
+        cs, (a, _b, _c) = _world()
+        with pytest.raises((TypeError, ValueError)):
+>           _view(cs).part_of(bad, _ref(a))
+            ^^^^^^^^^
+
+/tmp/full-spec-taxonomy-view-probes.py:99: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+cs = ConceptualSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Tensor()
+   ... (concept_source_readout): SigmaConceptsFromPercepts(
+    (sigma): SigmaLayer(
+      (layer): LinearLayer()
+    )
+  )
+)
+limits = {}
+
+    def _view(cs, **limits):
+>       from Taxonomy import capture_taxonomy
+E       ModuleNotFoundError: No module named 'Taxonomy'
+
+/tmp/full-spec-taxonomy-view-probes.py:16: ModuleNotFoundError
+__ test_queries_require_typed_concept_handles_not_numeric_row_features[bad2] ___
+
+bad = ('sym', True)
+
+    @pytest.mark.parametrize("bad", [1, ("ws", 1), ("sym", True), ("sym", 1.5)])
+    def test_queries_require_typed_concept_handles_not_numeric_row_features(bad):
+        cs, (a, _b, _c) = _world()
+        with pytest.raises((TypeError, ValueError)):
+>           _view(cs).part_of(bad, _ref(a))
+            ^^^^^^^^^
+
+/tmp/full-spec-taxonomy-view-probes.py:99: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+cs = ConceptualSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Tensor()
+   ... (concept_source_readout): SigmaConceptsFromPercepts(
+    (sigma): SigmaLayer(
+      (layer): LinearLayer()
+    )
+  )
+)
+limits = {}
+
+    def _view(cs, **limits):
+>       from Taxonomy import capture_taxonomy
+E       ModuleNotFoundError: No module named 'Taxonomy'
+
+/tmp/full-spec-taxonomy-view-probes.py:16: ModuleNotFoundError
+__ test_queries_require_typed_concept_handles_not_numeric_row_features[bad3] ___
+
+bad = ('sym', 1.5)
+
+    @pytest.mark.parametrize("bad", [1, ("ws", 1), ("sym", True), ("sym", 1.5)])
+    def test_queries_require_typed_concept_handles_not_numeric_row_features(bad):
+        cs, (a, _b, _c) = _world()
+        with pytest.raises((TypeError, ValueError)):
+>           _view(cs).part_of(bad, _ref(a))
+            ^^^^^^^^^
+
+/tmp/full-spec-taxonomy-view-probes.py:99: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+cs = ConceptualSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Tensor()
+   ... (concept_source_readout): SigmaConceptsFromPercepts(
+    (sigma): SigmaLayer(
+      (layer): LinearLayer()
+    )
+  )
+)
+limits = {}
+
+    def _view(cs, **limits):
+>       from Taxonomy import capture_taxonomy
+E       ModuleNotFoundError: No module named 'Taxonomy'
+
+/tmp/full-spec-taxonomy-view-probes.py:16: ModuleNotFoundError
+_______ test_capture_is_a_pure_read_even_before_allocator_initialization _______
+
+    def test_capture_is_a_pure_read_even_before_allocator_initialization():
+        cs = SimpleNamespace()
+>       view = _view(cs)
+               ^^^^^^^^^
+
+/tmp/full-spec-taxonomy-view-probes.py:104: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+cs = namespace(), limits = {}
+
+    def _view(cs, **limits):
+>       from Taxonomy import capture_taxonomy
+E       ModuleNotFoundError: No module named 'Taxonomy'
+
+/tmp/full-spec-taxonomy-view-probes.py:16: ModuleNotFoundError
+____________ test_duplicate_sources_cannot_inflate_taxonomy_support ____________
+
+    def test_duplicate_sources_cannot_inflate_taxonomy_support():
+        cs, (a, b, _c) = _world()
+        cs.add_whole(a, _ref(b))
+        cs.add_part(b, _ref(a))
+>       result = _view(cs).part_of(_ref(a), _ref(b))
+                 ^^^^^^^^^
+
+/tmp/full-spec-taxonomy-view-probes.py:113: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+cs = ConceptualSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Tensor()
+   ... (concept_source_readout): SigmaConceptsFromPercepts(
+    (sigma): SigmaLayer(
+      (layer): LinearLayer()
+    )
+  )
+)
+limits = {}
+
+    def _view(cs, **limits):
+>       from Taxonomy import capture_taxonomy
+E       ModuleNotFoundError: No module named 'Taxonomy'
+
+/tmp/full-spec-taxonomy-view-probes.py:16: ModuleNotFoundError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:1345
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:1345: PytestAssertRewriteWarning: Module already imported so cannot be rewritten; anyio
+    self._mark_plugins_for_rewrite(hook, disable_autoload)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED ../../../../../tmp/full-spec-taxonomy-view-probes.py::test_direct_taxonomic_links_change_partof_with_canonical_direction
+FAILED ../../../../../tmp/full-spec-taxonomy-view-probes.py::test_reified_relation_is_visible_without_endpoint_mutation
+FAILED ../../../../../tmp/full-spec-taxonomy-view-probes.py::test_percept_codes_vector_overlap_and_world_rows_are_not_taxonomy_edges
+FAILED ../../../../../tmp/full-spec-taxonomy-view-probes.py::test_snapshot_does_not_read_later_taxonomy_mutations
+FAILED ../../../../../tmp/full-spec-taxonomy-view-probes.py::test_taxonomy_cycles_do_not_loop_and_retired_references_are_unavailable
+FAILED ../../../../../tmp/full-spec-taxonomy-view-probes.py::test_taxonomy_budgets_report_incomplete_without_fabricating_falsehood
+FAILED ../../../../../tmp/full-spec-taxonomy-view-probes.py::test_queries_require_typed_concept_handles_not_numeric_row_features[1]
+FAILED ../../../../../tmp/full-spec-taxonomy-view-probes.py::test_queries_require_typed_concept_handles_not_numeric_row_features[bad1]
+FAILED ../../../../../tmp/full-spec-taxonomy-view-probes.py::test_queries_require_typed_concept_handles_not_numeric_row_features[bad2]
+FAILED ../../../../../tmp/full-spec-taxonomy-view-probes.py::test_queries_require_typed_concept_handles_not_numeric_row_features[bad3]
+FAILED ../../../../../tmp/full-spec-taxonomy-view-probes.py::test_capture_is_a_pure_read_even_before_allocator_initialization
+FAILED ../../../../../tmp/full-spec-taxonomy-view-probes.py::test_duplicate_sources_cannot_inflate_taxonomy_support
+12 failed, 1 warning in 0.19s

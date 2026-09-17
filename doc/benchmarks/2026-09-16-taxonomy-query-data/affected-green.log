@@ -1,0 +1,30 @@
+........................................................................ [ 25%]
+........................................................................ [ 51%]
+........................................................................ [ 77%]
+...................................................xxs..........         [100%]
+=============================== warnings summary ===============================
+test/test_truth_grounded_reasoning.py::TestReasonPredictNext::test_blend_differentiable_masks_absent_arma
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_thinking_kernel.py::TestModelIntegration::test_answer_query_kernel_attachment_gates
+test/test_thinking_kernel.py::TestDepth3RelativeEndState::test_first_trained_read_reaches_depth3_end_state
+test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_answer_loss_actually_trains_the_head
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Spaces.py:1731: RuntimeWarning: EventEncoding[WholeSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_frozen_concepts.py::test_reading_wiring_desires_staged_wholes
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Spaces.py:18705: RuntimeWarning: CS snap block exhausted (8 rows): concept 12 gets records only, no weighted reading (overflow #1)
+    warnings.warn(
+
+test/test_math_thinking_training.py::test_stage_zero_direct_arithmetic_learns_as_syntax
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Models.py:6696: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-537/cfg5/MM_add_syntax.xml]: Data.what target (32, 1, 16) replaces the loader output (32, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_math_thinking_training.py::test_stage_one_dependency_chains_learn_as_syntax
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Models.py:6696: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-537/cfg6/MM_math_syntax.xml]: Data.what target (32, 1, 16) replaces the loader output (32, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+277 passed, 1 skipped, 2 xfailed, 7 warnings in 173.39s (0:02:53)

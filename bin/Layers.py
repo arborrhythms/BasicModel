@@ -5429,6 +5429,18 @@ class ConceptualAttentionLayer(SparseLayer):
         """The ordered ``[(role, ref), ...]`` records of ``key`` (copy)."""
         return list(self._constituents.get(int(key), ()))
 
+    def iter_constituents(self, key):
+        """Read records without copying an unbounded list at a query boundary.
+
+        Consumers must bound their iteration and own any retained snapshot.
+        This iterator supplies no new record or tensor row.
+        """
+        return iter(self._constituents.get(int(key), ()))
+
+    def constituent_count(self, key):
+        """Constant-time record count for bounded readers; no list materialization."""
+        return len(self._constituents.get(int(key), ()))
+
     def add_constituent(self, key, role, ref):
         """Append a role-tagged constituent record; idempotent per record."""
         recs = self._constituents.setdefault(int(key), [])

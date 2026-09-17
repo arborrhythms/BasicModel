@@ -13,6 +13,7 @@ import torch.nn as nn
 from Spaces import ConceptualSpace, GlobalAttention
 from Layers import TernaryTruthStore
 from Meaning import ConceptualMeaning
+from Taxonomy import capture_taxonomy, concept_reference
 
 
 # -- Query framing (Phase 0) -------------------------------------------------
@@ -28,6 +29,7 @@ KIND_IS_EQUAL = "isEqual"   # sugar: equal(A, B)
 _SURFACE_TO_KIND = {
     "exist": KIND_IS_TRUE, "isTrue": KIND_IS_TRUE, "true": KIND_IS_TRUE,
     "isPart": KIND_IS_PART, "queryPart": KIND_IS_PART, "part": KIND_IS_PART,
+    "isWhole": KIND_IS_PART, "whole": KIND_IS_PART, "PartOf": KIND_IS_PART,
     "isEqual": KIND_IS_EQUAL, "queryEqual": KIND_IS_EQUAL, "equal": KIND_IS_EQUAL,
 }
 
@@ -51,10 +53,11 @@ class QuerySpec:
     right: Any = None
     variables: tuple = ()
     desired_polarity: bool = True
+    domain: Optional[str] = None
 
     @classmethod
     def from_surface(cls, name, left=None, right=None, *,
-                     variables=(), polarity=True):
+                     variables=(), polarity=True, domain=None):
         """Build a QuerySpec from a grammar/query surface name, normalizing
         ``exist``→isTrue, ``queryPart``/``part``→isPart, ``queryEqual``/
         ``equal``→isEqual. Raises ValueError on an unknown name."""
@@ -63,7 +66,13 @@ class QuerySpec:
             raise ValueError(
                 f"QuerySpec.from_surface: unknown query surface '{name}' "
                 f"(known: {sorted(set(_SURFACE_TO_KIND))})")
-        return cls(kind, left, right, tuple(variables), bool(polarity))
+        if name in ("isWhole", "whole"):
+            left, right = right, left
+        if kind == KIND_IS_PART:
+            domain = "conceptual-taxonomy" if domain is None else domain
+            if domain != "conceptual-taxonomy":
+                raise ValueError(f"PartOf does not support relation domain {domain!r}")
+        return cls(kind, left, right, tuple(variables), bool(polarity), domain)
 
     @property
     def is_open(self) -> bool:
@@ -91,7 +100,12 @@ _REL_PARTOF = TernaryTruthStore.REL_PARTOF
 # -- the reasoner ------------------------------------------------------------
 
 class TruthGroundedReasoner:
-    """Exact truth/parthood/equality tools used by query reasoning."""
+    """Fact existence and conceptual-taxonomy query evidence.
+
+    The older geometric/world-row helpers below remain explicit compatibility
+    utilities. Public query evaluation does not use those helpers as PartOf
+    evidence; typed concept references address the conceptual taxonomy.
+    """
 
     def __init__(self, model=None, *, store=None,
                  theta: float = 0.7, tau_id: float = 0.7,
@@ -121,7 +135,7 @@ class TruthGroundedReasoner:
     # == grammar query ops (the hard tools) ==============================
 
     @staticmethod
-    def part(x, y) -> float:
+    def legacy_part(x, y) -> float:
         """``part(X, Y)``: graded parthood ``X ⊆ Y`` in [0,1] (the fraction of
         X's signed energy Y also carries; ConceptualSpace._idea_parthood)."""
         return float(ConceptualSpace._idea_parthood(_as_vec(x), _as_vec(y)))
@@ -197,7 +211,7 @@ class TruthGroundedReasoner:
         evidence = self.existence_evidence(X)
         return evidence["support_true"] - evidence["support_false"]
 
-    def wholes(self, X) -> list:
+    def legacy_wholes(self, X) -> list:
         """``wholes(X)``: the proximal containing wholes of X -- the canonical
         ConceptualSpace.wholes over the REL_PARTOF rows. Returns
         ``[{idea, trust, row}, ...]``."""
@@ -205,7 +219,7 @@ class TruthGroundedReasoner:
             _as_vec(X), self.reasoning_store(), theta=self.theta,
             trust_threshold=self.trust_threshold, rel_type=_REL_PARTOF)
 
-    def parts(self, X) -> list:
+    def legacy_parts(self, X) -> list:
         """``parts(X)``: the proximal contained parts of X -- the canonical
         ConceptualSpace.parts (inverse of ``wholes``). Returns
         ``[{idea, trust, row}, ...]``."""
@@ -351,14 +365,84 @@ class TruthGroundedReasoner:
         """``isTrue(A)`` -- alias of the ``exist`` leaf tool."""
         return self.exist(A)
 
-    def is_part_direct(self, A, B) -> Optional[tuple]:
+    def taxonomy_evidence(self, part, whole, *, max_steps=8,
+                          max_nodes=256, max_records=1024, max_expansions=1024):
+        """Read bounded structural inclusion, with native record provenance.
+
+        Legacy vector-only operands have no concept handle and remain unknown.
+        Their geometry is never used to guess a referent. Checked grammatical
+        callers supply typed references; the VP registry is a later adapter.
+        """
+        try:
+            part, whole = concept_reference(part), concept_reference(whole)
+        except TypeError:
+            return {"domain": "conceptual-taxonomy", "support_true": 0.0,
+                    "support_false": 0.0, "path": (),
+                    "incomplete": ("unbound_concept_reference",),
+                    "nodes_scanned": 0, "records_scanned": 0, "edges_expanded": 0}
+        cs = getattr(self.model, "conceptualSpace", None)
+        view = capture_taxonomy(cs, max_nodes=max_nodes, max_records=max_records,
+                                focus=(part, whole))
+        return view.part_of(part, whole, max_steps=max_steps,
+                            max_expansions=max_expansions)
+
+    def taxonomy_neighbors(self, reference, *, direction="up",
+                           max_nodes=256, max_records=1024):
+        """Return grounded reference neighbors, never numeric concept-id features."""
+        if direction not in ("up", "down"):
+            raise ValueError("taxonomy direction must be up or down")
+        try:
+            reference = concept_reference(reference)
+        except TypeError:
+            return []
+        view = capture_taxonomy(getattr(self.model, "conceptualSpace", None),
+                                max_nodes=max_nodes, max_records=max_records,
+                                focus=(reference,))
+        result = []
+        for edge in view.neighbors(reference, direction=direction):
+            target = edge.whole if direction == "up" else edge.part
+            result.append({"reference": target, "idea": target, "trust": 1.0,
+                           "domain": "conceptual-taxonomy", "source": edge,
+                           "source_key": (edge.owner, edge.role, edge.part, edge.whole),
+                           "incomplete": view.incomplete,
+                           "nodes_scanned": view.nodes_scanned,
+                           "records_scanned": view.records_scanned})
+        return result
+
+    def part(self, part, whole):
+        """Compatibility scalar view of direct conceptual inclusion."""
+        return self.taxonomy_evidence(part, whole, max_steps=1)["support_true"]
+
+    def is_part_direct(self, part, whole):
+        """One native taxonomy link; no vector/world-row fallback."""
+        evidence = self.taxonomy_evidence(part, whole, max_steps=1)
+        return (evidence["support_true"], "taxonomy") if evidence["support_true"] else None
+
+    def is_part(self, part, whole, *, max_steps=8, beam=8, materialize=False):
+        """Bounded taxonomy candidates. The legacy write flag grants no world fact."""
+        return self.evaluate(QuerySpec.from_surface("isPart", part, whole),
+                             max_steps=max_steps, beam=beam)["candidates"]
+
+    def wholes(self, reference):
+        """Proximal conceptual wholes as typed references and record sources."""
+        return self.taxonomy_neighbors(reference, direction="up")
+
+    def parts(self, reference):
+        """Proximal conceptual parts as typed references and record sources."""
+        return self.taxonomy_neighbors(reference, direction="down")
+
+    def materialize(self, *args, **kwargs):
+        """Query evidence cannot edit conceptual definitions or assert world facts."""
+        raise ValueError("PartOf is read-only; materialization is not a supported query effect")
+
+    def legacy_is_part_direct(self, A, B) -> Optional[tuple]:
         """Direct parthood ``A ⊑ B`` without a chain: ``(score, how)`` in [0,1]
         or None. ``how`` is "geometric" (``part(A,B) ≥ theta``) or "stored" (a
         positive-trust REL_PARTOF row whose endpoints match A, B by ``equal``).
         """
         A = _as_vec(A)
         B = _as_vec(B)
-        p = self.part(A, B)
+        p = self.legacy_part(A, B)
         if p >= self.theta:
             return (float(p), "geometric")
         best = None
@@ -373,7 +457,7 @@ class TruthGroundedReasoner:
             return (float(best), "stored")
         return None
 
-    def is_part(self, A, B, *, max_steps: int = 8, beam: int = 8,
+    def legacy_is_part(self, A, B, *, max_steps: int = 8, beam: int = 8,
                 materialize: bool = False) -> list:
         """Candidate chains supporting ``A ⊑ B``, ranked by score, never a bare
         boolean.
@@ -390,7 +474,7 @@ class TruthGroundedReasoner:
         A = _as_vec(A)
         B = _as_vec(B)
         results = []
-        d = self.is_part_direct(A, B)
+        d = self.legacy_is_part_direct(A, B)
         if d is not None:
             score, how = d
             results.append({"score": float(score), "how": how, "chain": [],
@@ -407,12 +491,12 @@ class TruthGroundedReasoner:
         results.sort(key=lambda r: -r["score"])
         results = results[:int(beam)]
         if materialize and results and results[0]["how"] == "chain":
-            row = self.materialize(A, B, results[0]["score"])
+            row = self.legacy_materialize(A, B, results[0]["score"])
             if row >= 0:
                 results[0]["materialized"] = row
         return results
 
-    def materialize(self, A, B, score, *, store=None) -> int:
+    def legacy_materialize(self, A, B, score, *, store=None) -> int:
         """Write a verified ``isPart(A, B)`` conclusion back as a REL_PARTOF
         lemma carrying the chain's MIN-composed ``score`` as trust, so a later
         identical query is a DIRECT hit and future ``wholes()`` reach it (§4.4).
@@ -421,7 +505,7 @@ class TruthGroundedReasoner:
         store = store if store is not None else self.reasoning_store()
         if store is None or float(score) < self.materialize_floor:
             return -1
-        if self._creates_cycle(A, B):
+        if self._legacy_creates_cycle(A, B):
             return -1
         A = _as_vec(A)
         B = _as_vec(B)
@@ -436,16 +520,16 @@ class TruthGroundedReasoner:
                 A, torch.zeros_like(A), B, degree=float(score)))
         return -1
 
-    def _creates_cycle(self, A, B) -> bool:
+    def _legacy_creates_cycle(self, A, B) -> bool:
         """True iff writing ``A ⊑ B`` would violate the parthood partial order
         (antisymmetry): A and B are already the same idea, or B already reaches
         A by parthood (``B ⊑* A``). Enforced at edge insertion so the climb
         cannot loop (Phase 6); read-only."""
         if self.equal(A, B) >= self.tau_id:
             return True
-        return bool(self.is_part(B, A))      # any direct/chain B -> A
+        return bool(self.legacy_is_part(B, A))      # any direct/chain B -> A
 
-    def _refuting_direct(self, A, B) -> float:
+    def _legacy_refuting_direct(self, A, B) -> float:
         """Best refuting evidence for ``isPart(A, B)`` in [0,1]: a stored
         REL_PARTOF (A→B) row asserted with NEGATIVE trust (¬isPart). 0 when
         none. (Chain-based refutation is Phase 5.)"""
@@ -478,11 +562,13 @@ class TruthGroundedReasoner:
                  tau: float) -> dict:
         st = float(support_true)
         sf = float(support_false)
-        if st >= tau and sf >= tau:
+        positive = st > 0.0 and st >= tau
+        negative = sf > 0.0 and sf >= tau
+        if positive and negative:
             posture = BOTH
-        elif st >= tau:
+        elif positive:
             posture = TRUE
-        elif sf >= tau:
+        elif negative:
             posture = FALSE
         else:
             posture = UNKNOWN
@@ -493,10 +579,11 @@ class TruthGroundedReasoner:
                  max_steps: int = 8, beam: int = 8) -> dict:
         """Evaluate a QuerySpec to a posture + confidence + candidate chains.
 
-        isTrue preserves independent positive/negative LTM fact support; isPart
-        uses the best candidate-chain score as positive support and a refuting
-        direct edge as negative support; isEqual uses ``equal(isomorphic=True)``
-        (the fraction of shared parts & wholes).
+        isTrue preserves independent positive/negative LTM fact support.
+        PartOf reads only typed conceptual-taxonomy references; a known path
+        supports the positive proposition or refutes its negation. A missing path is
+        unknown. isEqual retains the legacy geometric identity adapter until
+        its checked grammatical registry entry is wired.
         """
         tau = self.theta if tau is None else float(tau)
         if q.predicate == KIND_IS_TRUE:
@@ -514,14 +601,26 @@ class TruthGroundedReasoner:
             res["candidates"] = []
             res["trace"] = f"equal (shared parts & wholes) = {score:.2f}"
             return res
-        # KIND_IS_PART
-        cands = self.is_part(q.left, q.right, max_steps=max_steps, beam=beam)
-        score = cands[0]["score"] if cands else 0.0
-        refute = self._refuting_direct(q.left, q.right)
-        res = self._posture(score, refute, tau)
+        if q.predicate != KIND_IS_PART:
+            raise ValueError(f"unknown query predicate {q.predicate!r}")
+        if q.domain not in (None, "conceptual-taxonomy"):
+            raise ValueError(f"PartOf does not support relation domain {q.domain!r}")
+        evidence = self.taxonomy_evidence(q.left, q.right, max_steps=max_steps,
+                                          max_expansions=max(0, int(beam)) * max(0, int(max_steps)))
+        if not q.desired_polarity:
+            evidence = dict(evidence, support_true=evidence["support_false"],
+                             support_false=evidence["support_true"])
+        res = self._posture(evidence["support_true"], evidence["support_false"], tau)
+        res.update(evidence)
         res["kind"] = KIND_IS_PART
-        res["candidates"] = cands
-        res["trace"] = self.render_chain(cands[0]) if cands else None
+        strength = max(evidence["support_true"], evidence["support_false"])
+        res["candidates"] = ([dict(evidence, score=strength,
+                                   trust=strength, how="taxonomy",
+                                   steps=len(evidence["path"]))]
+                              if strength else [])
+        res["trace"] = (f"PartOf conceptual taxonomy: {len(evidence['path'])} links; "
+                        f"{evidence['edges_expanded']} expansions; "
+                        f"support +{evidence['support_true']:.3f}/-{evidence['support_false']:.3f}")
         return res
 
 
@@ -634,6 +733,7 @@ class ReasoningResult:
     chain: list
     trace: Optional[str] = None
     iterations: int = 0
+    evidence: Optional[dict] = None
 
 
 class NeuralToolUser:
@@ -652,7 +752,21 @@ class NeuralToolUser:
         self.materialize = bool(materialize)
 
     def run(self, q: QuerySpec, *, spaces=None) -> ReasoningResult:
-        """Evaluate ``q`` to a posture + the N ideas + the chain."""
+        """Public query route; generated vectors cannot certify taxonomy links."""
+        result = self.reasoner.evaluate(q, max_steps=max(0, self.iterations),
+                                         beam=self.beam)
+        return ReasoningResult(
+            posture=result["posture"], confidence=result["confidence"],
+            support_true=result["support_true"], support_false=result["support_false"],
+            ideas=[], chain=result.get("candidates", []), trace=result.get("trace"),
+            iterations=int(result.get("edges_expanded", 0)), evidence=result)
+
+    def run_legacy_world(self, q: QuerySpec, *, spaces=None) -> ReasoningResult:
+        """Explicit legacy vector/world-row experiment, outside public dispatch.
+
+        Its geometric conclusions are not conceptual-taxonomy evidence. Kept
+        for the older proposal/loss experiments; model query entry uses run().
+        """
         spaces = self.spaces if spaces is None else spaces
         r = self.reasoner
         N = max(0, self.iterations)
@@ -668,7 +782,7 @@ class NeuralToolUser:
         # isPart: the stored hard chain, AUGMENTED by the soft generator climb.
         A = _as_vec(q.left)
         B = _as_vec(q.right)
-        chains = list(r.is_part(A, B, max_steps=max(1, N), beam=self.beam,
+        chains = list(r.legacy_is_part(A, B, max_steps=max(1, N), beam=self.beam,
                                 materialize=self.materialize))
         ideas, steps = self._generate_chain(A, B, spaces, N)
         for it in ideas:
@@ -679,7 +793,7 @@ class NeuralToolUser:
         chains.sort(key=lambda c: -c["score"])
         chains = chains[:self.beam]
         score = chains[0]["score"] if chains else 0.0
-        refute = r._refuting_direct(A, B)
+        refute = r._legacy_refuting_direct(A, B)
         post = r._posture(score, refute, r.theta)
         # The N ideas, ranked by subsymbolic relevance (the N-sentence material).
         ideas.sort(key=lambda i: -i["relevance"])
@@ -717,8 +831,8 @@ class NeuralToolUser:
             for cand in out.get("candidates", []):
                 M = cand["idea"]
                 rel = float(cand.get("alpha", 0.0))
-                in_ok = r.is_part_direct(cur, M)       # cur ⊑ M ?
-                out_ok = r.is_part_direct(M, B)        # M ⊑ B ?
+                in_ok = r.legacy_is_part_direct(cur, M)       # cur ⊑ M ?
+                out_ok = r.legacy_is_part_direct(M, B)        # M ⊑ B ?
                 verified = in_ok is not None and out_ok is not None
                 trust = (min(in_ok[0], out_ok[0]) if verified else 0.0)
                 ideas.append({
@@ -729,7 +843,7 @@ class NeuralToolUser:
                     "verified": verified, "trust": float(trust), "step": t})
                 if verified:
                     if self.materialize:
-                        r.materialize(A, B, trust)
+                        r.legacy_materialize(A, B, trust)
                     reached = True
                 elif in_ok is not None and rel > best_adv_rel:
                     best_adv, best_adv_rel = M, rel
@@ -779,7 +893,7 @@ class NeuralToolUser:
             cands.append(zeros)
             present.append(False)
         # (3) deduction -- the top containing whole (a stored, detached idea).
-        ws = r.wholes(s)
+        ws = r.legacy_wholes(s)
         dv = ws[0]["idea"] if ws else None
         if dv is not None and torch.isfinite(_as_vec(dv)).all():
             cands.append(_fit_dim(dv, D).detach())
@@ -877,8 +991,8 @@ def policy_answer_loss(generator, spaces, reasoner, examples, *,
         mask = torch.zeros(int(K.shape[0]))
         for m in range(int(K.shape[0])):
             key = K[m]
-            if (reasoner.is_part_direct(Av, key) is not None
-                    and reasoner.is_part_direct(key, Bv) is not None):
+            if (reasoner.legacy_is_part_direct(Av, key) is not None
+                    and reasoner.legacy_is_part_direct(key, Bv) is not None):
                 mask[m] = 1.0
         support = (alpha * mask.detach()).sum()        # bridge-attention mass (grad)
         predicted_signed = torch.tanh(support)         # (-1,1) via α; mask detached

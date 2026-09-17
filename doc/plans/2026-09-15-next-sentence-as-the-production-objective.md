@@ -56,7 +56,7 @@ semantic payloads; their arbitrary numeric values are not semantic features.
 For a relational idea, preserve `[NP1, VP, NP2]` and role-presence masks, mode,
 bindings and scope. A root representation may accompany it, but cannot replace
 it: the historical consolidated root reduction yields NP1 alone
-([consolidated root reduction](../../bin/Layers.py#L10505)). Essential idea,
+([consolidated root reduction](../../bin/Layers.py#L10517)). Essential idea,
 active/root-question and candidate-argument roles must not compete with
 incidental context for top-k inclusion.
 
@@ -204,13 +204,14 @@ does not assert that grammatical tense establishes time in the world. A
 future temporal design must distinguish linguistic description from observed
 event time and specify any connection before enabling such queries.
 
-The full-description `Exist` evidence foundation now checks accepted facts
-with graded support, conflict and occurrence provenance (§15). Grammatical
-VP dispatch and conceptual-taxonomy `PartOf` remain open: the legacy kernel's
-`part` still routes `meronomy` and `taxonomy` through the same relation rows.
-The existence lookup does not claim to complete those migrations.
-[Exist lookup](../../bin/reasoning.py#L142),
-[legacy Part routing](../../bin/thinking.py#L282).
+The full-description `Exist` evidence foundation checks accepted facts with
+graded support, conflict and occurrence provenance (§15). Public `PartOf`
+now reads conceptual-taxonomy references, preserving native proof sources and
+rejecting unsupported perceptual domains (§16). Grammatical VP dispatch,
+linguistic/internal meaning agreement and the ordinary levelled controller
+remain open. The evidence readers do not complete those migrations.
+[Exist lookup](../../bin/reasoning.py#L156),
+[taxonomy query](../../bin/reasoning.py#L368).
 
 ### 2.1 Nested clauses and phrases
 
@@ -888,8 +889,8 @@ occupied local NP1/VP/NP2 vectors and masks in chronological order, and predicts
 independent role vectors and occupancy logits. Its objective is occupied-role
 MSE plus mean presence binary cross entropy. Current-step source encodings
 remain live, while targets and durable observations are detached
-([Layers.py:9487](../../bin/Layers.py#L9487),
-[Layers.py:10077](../../bin/Layers.py#L10077)). This does not yet implement the
+([Layers.py:9499](../../bin/Layers.py#L9499),
+[Layers.py:10089](../../bin/Layers.py#L10089)). This does not yet implement the
 retained compound-reference prediction required by §§2.1 and 10.5.
 
 Packed draining uses the existing sealed three-slot/depth outputs and final
@@ -904,13 +905,13 @@ temporary batch reshape
 ([Models.py:12692](../../bin/Models.py#L12692),
 [Models.py:12803](../../bin/Models.py#L12803),
 [data.py:526](../../bin/data.py#L526),
-[Layers.py:9987](../../bin/Layers.py#L9987)).
+[Layers.py:9999](../../bin/Layers.py#L9999)).
 
 Restoring weights starts transient prediction context cold. A root-predictor
 checkpoint migrates explicitly to a freshly initialized structured head;
 unrelated weights remain intact and optimizer moments follow the existing
 name-based mapping. The root architecture remains selectable for baseline
-comparisons ([Layers.py:10142](../../bin/Layers.py#L10142)). Regression evidence
+comparisons ([Layers.py:10154](../../bin/Layers.py#L10154)). Regression evidence
 lives in [test_sentence_expectation.py](../../test/test_sentence_expectation.py)
 and the real packed training tests in
 [test_reconstruction_priority.py:126](../../test/test_reconstruction_priority.py#L126).
@@ -926,11 +927,11 @@ not the remaining default-on, nested-meaning or reasoning requirements.
 The predictor's full encoded-sentence target and the historical root baseline
 must be distinguished. Here **root-only means one slot, not all three**.
 In consolidated `[NP1, VP, NP2]` order it is the first slot, NP1, at Python
-index `0` ([consolidated reduction](../../bin/Layers.py#L10505)). The legacy
+index `0` ([consolidated reduction](../../bin/Layers.py#L10517)). The legacy
 newest-first adapter instead selects its last occupied slot
-([newest-first reduction](../../bin/Layers.py#L10507)); "root" does not name one
+([newest-first reduction](../../bin/Layers.py#L10519)); "root" does not name one
 universal physical index. The root benchmark copies its one predicted
-vector into every returned slot ([Layers.py:10617](../../bin/Layers.py#L10617)).
+vector into every returned slot ([Layers.py:10629](../../bin/Layers.py#L10629)).
 Before the September 16 change, packed prediction
 draining supplied a single root with depth one
 ([Models.py:12420 at d161a7a](https://github.com/arborrhythms/BasicModel/blob/d161a7af6e74f689f700be547c33576253b7b45b/bin/Models.py#L12420)). Repeating a root does not
@@ -944,7 +945,7 @@ exclude padding, unseen future slots and cross-document continuations.
 Keep valid accumulated losses when one stream resets, and consume each
 eligible prediction/observation pair once at the declared optimizer step.
 Global and row resets differ today
-([Layers.py:10790](../../bin/Layers.py#L10790)); their effect on already
+([Layers.py:10802](../../bin/Layers.py#L10802)); their effect on already
 scored losses needs explicit tests, not an assumption that every reset
 clears the same state.
 
@@ -1043,7 +1044,7 @@ remains a detached snapshot and is not replaced by this transient view.
 Prediction uses this scoped chronological view, rather than global store
 recency that can contain another row or an unrelated provisioned fact.
 The live clone and detached durable write are adjacent in
-[Layers.py:10130](../../bin/Layers.py#L10130).
+[Layers.py:10142](../../bin/Layers.py#L10142).
 
 Consume the prediction losses once, then detach the context view and clear
 pending predictions before a subsequent optimizer version is used. Also
@@ -1055,7 +1056,7 @@ detached targets and durable records must not be used as live-context
 substitutes. Full nested-structure prediction remains a separate milestone; local-role
 prediction is described in §8.3.
 Context cleanup is implemented in
-[`detach_prediction_context`](../../bin/Layers.py#L10670); packed chronology is in
+[`detach_prediction_context`](../../bin/Layers.py#L10682); packed chronology is in
 [`_drain_packed_stm_end_states`](../../bin/Models.py#L12803), with the
 [single-drain guard in `_end_step`](../../bin/Models.py#L12631).
 
@@ -1189,7 +1190,7 @@ prediction through a live path or explicit hard-choice credit. Current indexed
 FUTURE answers still lack an owned output program; do not claim that connection
 exists merely because the gradient balancer admits it. The local-role sentence
 predictor owns a separate `SentenceExpectation`
-([Layers.py:9487](../../bin/Layers.py#L9487)); its parameters are independent
+([Layers.py:9499](../../bin/Layers.py#L9499)); its parameters are independent
 of the comprehension path. Concept-target prediction works without generating text, and corpus
 surface prediction remains deferred (§8.5).
 
@@ -1243,7 +1244,7 @@ writes, dictionary changes or another row. For packed input, honor chronological
 sentence boundaries instead of exposing the entire pack as prior context.
 
 The existing helper already predicts before observing the arriving end state
-([Layers.py:10343](../../bin/Layers.py#L10343)); the pending and packed drains call
+([Layers.py:10355](../../bin/Layers.py#L10355)); the pending and packed drains call
 it before their consolidated-store append
 ([Models.py:12743](../../bin/Models.py#L12743),
 [Models.py:12803](../../bin/Models.py#L12803)). This supplies a starting point,
@@ -1740,8 +1741,8 @@ switch/default/inference behavior together. The historical citations in
 §§11.1–11.5 describe the reviewed uncommitted tree; the following links name
 the current implementation.
 
-- [`InterSentenceLayer.Reset`](../../bin/Layers.py#L10790) preserves the stream
-  on soft resets. Hard reset and [`begin_document`](../../bin/Layers.py#L10015)
+- [`InterSentenceLayer.Reset`](../../bin/Layers.py#L10802) preserves the stream
+  on soft resets. Hard reset and [`begin_document`](../../bin/Layers.py#L10027)
   start the affected row cold. The real two-brick regression scores three
   pairs from four observations in one document.
 - [`_stage_expectation_documents`](../../bin/Models.py#L12692) treats invalid
@@ -1761,12 +1762,12 @@ the current implementation.
 - [`SymbolSubSpace`](../../bin/Language.py#L10966) owns one always-present
   `WhatInteractionMemory`. The `whatThinkingMemory` switch, discourse copy and
   delegates are removed. Provisioning resets the interaction episode while
-  [`suspend_external_observations`](../../bin/Layers.py#L9987) protects only the
+  [`suspend_external_observations`](../../bin/Layers.py#L9999) protects only the
   external expectation stream. Temporal prediction reads the discourse owner
   directly ([`_temporal_answer_rep_row`](../../bin/Models.py#L8817)).
-- [`expectation_metrics`](../../bin/Layers.py#L10695) reports observation/pair
+- [`expectation_metrics`](../../bin/Layers.py#L10707) reports observation/pair
   counts, cold starts, document transitions, feature MSE and presence BCE.
-  [`last_expectation_comparison`](../../bin/Layers.py#L10708) returns owned,
+  [`last_expectation_comparison`](../../bin/Layers.py#L10720) returns owned,
   detached prior/observation/residual values. These inspection values do not
   yet establish the durable occurrence-link contract in §8.7.
 - [`runBatch`](../../bin/Models.py#L13159) applies its declared train/evaluation
@@ -2015,9 +2016,9 @@ positive/negative degrees separately, reports provenance and incomplete
 metadata, and never substitutes concept activation for referent evidence.
 The public legacy kernel preserves that evidence through its final result.
 [Meaning](../../bin/Meaning.py#L67),
-[store](../../bin/Layers.py#L8662),
-[lookup](../../bin/reasoning.py#L142),
-[kernel aggregation](../../bin/thinking.py#L372).
+[store](../../bin/Layers.py#L8674),
+[lookup](../../bin/reasoning.py#L156),
+[kernel aggregation](../../bin/thinking.py#L398).
 
 All three observation writers share the explicit physical-to-canonical
 adapter, retaining depth-two VPs. Explicit TruthSet admission accepts facts;
@@ -2026,8 +2027,8 @@ cannot satisfy Exist. Legacy relation writers without a grammatical VP
 remain unverified for that lookup. Numeric testimony retains complete
 descriptions and source identity; prediction content is not truth testimony.
 [Observation write](../../bin/Models.py#L133),
-[admission](../../bin/Layers.py#L8900),
-[testimony](../../bin/thinking.py#L331).
+[admission](../../bin/Layers.py#L8912),
+[testimony](../../bin/thinking.py#L355).
 
 The existing structural sidecar stores context and source text, bound to the
 tensor occurrence by a content fingerprint. Partial semantic checkpoints and
@@ -2036,8 +2037,8 @@ quarantines evidence whose required metadata is absent. Legacy checkpoints
 have an explicit migration. No learned parameters or loss were added; live
 meaning clones preserve gradients and durable writes detach them.
 [Sidecar](../../bin/Models.py#L4409),
-[restore](../../bin/Layers.py#L8811),
-[legacy migration](../../bin/Layers.py#L8851).
+[restore](../../bin/Layers.py#L8823),
+[legacy migration](../../bin/Layers.py#L8863).
 
 The repository's **51 new probes pass in 3.11 s**. The ten affected existing
 files pass **281 tests, with one skip and three warnings, in 89.56 s**.
@@ -2052,8 +2053,8 @@ fixes. The isolated candidate was checked separately and does not substitute
 for the repository gate. See [Existence evidence](../ExistenceEvidence.md)
 for contracts, limits and validation artifacts.
 
-This is the evidence foundation. The typed grammatical VP registry,
-conceptual-taxonomy PartOf, ordinary levelled controller, nested traversal,
+This is the existence evidence foundation; taxonomy evidence follows in §16.
+The typed grammatical VP registry, ordinary levelled controller, nested traversal,
 anticipation read isolation, residual policy credit and learned-utility gates
 remain open. The September 16 two-truths spec remains reserved for the next
 session, as requested.
@@ -2063,3 +2064,57 @@ Full-suite command from `basicmodel/` (`OMP_NUM_THREADS` and `MKL_NUM_THREADS` u
 ```bash
 DEVELOPER_DIR=/Library/Developer/CommandLineTools .venv/bin/python -m pytest test -q -x -p no:cacheprovider
 ```
+
+## 16. Conceptual-taxonomy PartOf evidence (verified September 16)
+
+`PartOf` now reads native conceptual reference records, including reified
+relations without endpoint mutation. Typed concept handles remain addresses;
+perceptual edges, vector overlap, sparse weights and LTM world rows do not
+establish taxonomic inclusion. Proofs preserve their source owners and roles.
+Known paths support inclusion; missing paths are unknown, including at a zero
+posture threshold. Negated requests retain the opposite support channel.
+[Capture](../../bin/Taxonomy.py#L117),
+[query](../../bin/reasoning.py#L578).
+
+The public model/reasoner entries use this source without initializing the
+old vector-proposal route. The legacy kernel admits child evidence only via
+a real native hop toward the same goal/polarity; unrelated true children or
+numeric testimony cannot certify inclusion. Results preserve unknown and
+incomplete-read diagnostics. Successful proofs do not write world facts.
+[Model entry](../../bin/Models.py#L22225),
+[kernel step](../../bin/thinking.py#L219),
+[write boundary](../../bin/thinking.py#L484).
+
+Capture and traversal have explicit node/record/edge limits. The derived
+view adds no authoritative memory, checkpoint schema, trainable parameter or
+gradient objective. Existing structural checkpoint ownership preserves source
+records; hard path selection has no ordinary derivative. Legacy operation-head
+training now draws its two-link examples from native taxonomy paths. The old
+geometric/world-row experiments remain explicitly named compatibility paths.
+[Curriculum](../../bin/thinking.py#L621),
+[legacy proposal](../../bin/reasoning.py#L764).
+
+The repository's **37 new probes pass in 3.33 s**. The sixteen affected
+files pass **277 tests, with one skip, two expected failures and seven
+warnings, in 173.39 s**. The full suite passes with exit status zero: **4317 passed, 51 skipped, 7 xfailed, 184 warnings, 4 subtests passed in 5604.66s (1:33:24)**. All 569
+runtime/test/configuration files remained frozen.
+[Focused green](../benchmarks/2026-09-16-taxonomy-query-data/focused-green.log),
+[affected green](../benchmarks/2026-09-16-taxonomy-query-data/affected-green.log),
+[full green](../benchmarks/2026-09-16-taxonomy-query-data/full-green.log),
+[frozen source manifest](../benchmarks/2026-09-16-taxonomy-query-data/full-validation-manifest.json).
+
+Full-suite command:
+
+```sh
+OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 DEVELOPER_DIR=/Library/Developer/CommandLineTools \
+  .venv/bin/python -m pytest test -q -x -p no:cacheprovider
+```
+Original public-routing probes failed before implementation, as did the
+additional bound/provenance/entry/policy/testimony/helper/unknown probes before
+their respective fixes.
+See [Taxonomy queries](../TaxonomyQueries.md) for contracts and evidence.
+
+The checked grammatical VP registry, surface/sense agreement, causal answer
+adapter, ordinary levelled controller, nested retention, anticipation isolation,
+residual policy credit and learned-utility gates remain open. The separate
+two-truths spec remains reserved for the next session.

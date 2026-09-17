@@ -1,8 +1,8 @@
 """The Thinking Kernel (doc/plans/thinking_kernel_spec.md): truth intervals,
 STM frames, the runtime-enforced lookup/part/think/query/answer loop, closure
 rules, anti-hallucination invariants, testimony incorporation, and the reward/
-trace compilers. Unit tests over a hand-built TernaryTruthStore (same fixture
-conventions as test_truth_grounded_reasoning.py) + Models/config integration.
+trace compilers. The frame controller remains legacy. Fact tests use
+TernaryTruthStore; PartOf tests use native conceptual reference records.
 """
 
 import sys
@@ -47,6 +47,19 @@ def _store(rows_ideas=(), rows_partof=()):
 def _kernel(store=None, *, budget=16, materialize=False, **kw):
     r = TruthGroundedReasoner(store=store if store is not None else _store())
     return ThinkingKernel(r, budget=budget, materialize=materialize, **kw)
+
+
+
+def _taxonomy_kernel(*links, **options):
+    """Use native reference records for positive taxonomic evidence."""
+    from types import SimpleNamespace
+    from test_cs_symbol_table import _cs
+    cs = _cs()
+    refs = tuple(("sym", cs.new_concept()) for _ in range(4))
+    for left, right in links:
+        cs.add_whole(refs[left][1], refs[right])
+    reasoner = TruthGroundedReasoner(SimpleNamespace(conceptualSpace=cs), store=_store())
+    return ThinkingKernel(reasoner, **options), refs
 
 
 # -- Truth intervals ----------------------------------------------------------
@@ -102,21 +115,21 @@ class TestLookup(unittest.TestCase):
         iv = k.lookup(QuerySpec(KIND_IS_PART, SOCRATES, MORTAL))
         self.assertEqual(iv.status(k.tau), UNKNOWN)
 
-    def test_direct_stored_edge(self):
-        k = _kernel(_store(rows_partof=[(MAN, MORTAL, 0.8)]))
-        iv = k.lookup(QuerySpec(KIND_IS_PART, MAN, MORTAL))
+    def test_direct_taxonomic_edge(self):
+        k, (a, b, _c, _d) = _taxonomy_kernel((0, 1))
+        iv = k.lookup(QuerySpec(KIND_IS_PART, a, b))
         self.assertEqual(iv.status(k.tau), TRUE)
+        self.assertEqual(iv.trust, 1)
 
-    def test_refuting_edge_is_false(self):
+    def test_negative_world_relation_is_not_taxonomic_evidence(self):
         k = _kernel(_store(rows_partof=[(MAN, MORTAL, -0.8)]))
         iv = k.lookup(QuerySpec(KIND_IS_PART, MAN, MORTAL))
-        self.assertEqual(iv.status(k.tau), FALSE)
+        self.assertEqual(iv.status(k.tau), UNKNOWN)
 
-    def test_conflicting_evidence(self):
-        k = _kernel(_store(rows_partof=[(MAN, MORTAL, 0.8),
-                                        (MAN, MORTAL, -0.7)]))
+    def test_conflicting_world_relations_are_not_taxonomic_evidence(self):
+        k = _kernel(_store(rows_partof=[(MAN, MORTAL, 0.8), (MAN, MORTAL, -0.7)]))
         iv = k.lookup(QuerySpec(KIND_IS_PART, MAN, MORTAL))
-        self.assertEqual(iv.status(k.tau), CONFLICTING)
+        self.assertEqual(iv.status(k.tau), UNKNOWN)
 
     def test_open_binary_query_is_unknown(self):
         iv = _kernel().lookup(QuerySpec(KIND_IS_PART, SOCRATES, None))
@@ -127,18 +140,19 @@ class TestLookup(unittest.TestCase):
 
 class TestPart(unittest.TestCase):
     def test_up_and_down(self):
-        k = _kernel(_store(rows_partof=[(SOCRATES, MAN, 0.9)]))
-        ups = k.part(SOCRATES, direction="up")
-        self.assertEqual(len(ups), 1)
-        self.assertTrue(torch.allclose(ups[0]["idea"], MAN))
-        downs = k.part(MAN, direction="down")
-        self.assertEqual(len(downs), 1)
-        self.assertTrue(torch.allclose(downs[0]["idea"], SOCRATES))
+        k, (a, b, _c, _d) = _taxonomy_kernel((0, 1))
+        ups = k.part(a, direction="up")
+        self.assertEqual([item["reference"] for item in ups], [b])
+        downs = k.part(b, direction="down")
+        self.assertEqual([item["reference"] for item in downs], [a])
 
-    def test_mode_rides_provenance(self):
-        k = _kernel(_store(rows_partof=[(SOCRATES, MAN, 0.9)]))
-        self.assertEqual(k.part(SOCRATES, mode="taxonomy")[0]["mode"],
-                         "taxonomy")
+    def test_mode_and_domain_match_the_actual_source(self):
+        k, (a, _b, _c, _d) = _taxonomy_kernel((0, 1))
+        result = k.part(a, mode="taxonomy")[0]
+        self.assertEqual(result["mode"], "taxonomy")
+        self.assertEqual(result["domain"], "conceptual-taxonomy")
+        with self.assertRaises(ValueError):
+            k.part(a, mode="meronomy")
 
     def test_bad_mode_or_direction_raises(self):
         k = _kernel()
@@ -161,38 +175,33 @@ class TestCurriculum(unittest.TestCase):
         self.assertEqual(ops, ["lookup", "answer"])
 
     def test_depth0_direct_edge(self):
-        k = _kernel(_store(rows_partof=[(MAN, MORTAL, 0.8)]))
-        res = k.run(QuerySpec(KIND_IS_PART, MAN, MORTAL))
+        k, (a, b, _c, _d) = _taxonomy_kernel((0, 1))
+        res = k.run(QuerySpec(KIND_IS_PART, a, b))
         self.assertEqual(res.value, TRUE)
 
     def test_depth1_syllogism_nested_think(self):
-        # Depth 2 shape (§7.4): part -> think(subgoal) -> answer; trust = MIN.
-        store = _store(rows_partof=[(SOCRATES, MAN, 0.9), (MAN, MORTAL, 0.8)])
-        k = _kernel(store)
-        res = k.run(QuerySpec(KIND_IS_PART, SOCRATES, MORTAL))
+        k, (a, _b, c, _d) = _taxonomy_kernel((0, 1), (1, 2))
+        res = k.run(QuerySpec(KIND_IS_PART, a, c))
         self.assertEqual(res.value, TRUE)
-        self.assertAlmostEqual(res.trust, 0.8, places=5)   # min(0.9, 0.8)
+        self.assertEqual(res.trust, 1)
         ops = [e["op"] for e in res.trace]
         self.assertIn("part", ops)
         self.assertIn("think", ops)
 
     def test_depth2_two_hops(self):
-        store = _store(rows_partof=[(SOCRATES, MAN, 0.9), (MAN, MORTAL, 0.7),
-                                    (MORTAL, ANIMAL, 0.95)])
-        k = _kernel(store)
-        res = k.run(QuerySpec(KIND_IS_PART, SOCRATES, ANIMAL))
+        k, (a, _b, _c, d) = _taxonomy_kernel((0, 1), (1, 2), (2, 3))
+        res = k.run(QuerySpec(KIND_IS_PART, a, d))
         self.assertEqual(res.value, TRUE)
-        self.assertAlmostEqual(res.trust, 0.7, places=5)
+        self.assertEqual(res.trust, 1)
 
-    def test_false_close_on_refutation(self):
+    def test_world_refutation_does_not_close_taxonomy_false(self):
         k = _kernel(_store(rows_partof=[(MAN, MORTAL, -0.8)]))
         res = k.run(QuerySpec(KIND_IS_PART, MAN, MORTAL))
-        self.assertEqual(res.value, FALSE)
+        self.assertEqual(res.value, UNKNOWN)
 
     def test_dead_end_is_unknown(self):
-        # Bounded search failed (§9.2 rule 3): unknown is the valid close.
-        k = _kernel(_store(rows_partof=[(SOCRATES, MAN, 0.9)]))
-        res = k.run(QuerySpec(KIND_IS_PART, SOCRATES, MORTAL))
+        k, (a, _b, c, _d) = _taxonomy_kernel((0, 1))
+        res = k.run(QuerySpec(KIND_IS_PART, a, c))
         self.assertEqual(res.value, UNKNOWN)
 
     def test_isolated_leaf_unknown(self):
@@ -204,30 +213,26 @@ class TestCurriculum(unittest.TestCase):
 
 class TestFramesAndBudget(unittest.TestCase):
     def test_budget_exhaustion_bounded_unknown(self):
-        store = _store(rows_partof=[(SOCRATES, MAN, 0.9), (MAN, MORTAL, 0.8)])
-        k = _kernel(store, budget=2)         # lookup + part, then dry
-        res = k.run(QuerySpec(KIND_IS_PART, SOCRATES, MORTAL))
+        k, (a, _b, c, _d) = _taxonomy_kernel((0, 1), (1, 2), budget=2)
+        res = k.run(QuerySpec(KIND_IS_PART, a, c))
         self.assertEqual(res.value, BOUNDED_UNKNOWN)
 
     def test_stack_pops_clean(self):
-        store = _store(rows_partof=[(SOCRATES, MAN, 0.9), (MAN, MORTAL, 0.8)])
-        k = _kernel(store)
-        k.run(QuerySpec(KIND_IS_PART, SOCRATES, MORTAL))
-        self.assertEqual(k.stack, [])        # every frame pushed was popped
+        k, (a, _b, c, _d) = _taxonomy_kernel((0, 1), (1, 2))
+        res = k.run(QuerySpec(KIND_IS_PART, a, c))
+        self.assertEqual(res.value, TRUE)
+        self.assertEqual(k.stack, [])
 
     def test_child_returns_result_not_scratch(self):
-        # §2.3: only the certified ChildResult crosses the frame boundary.
-        store = _store(rows_partof=[(SOCRATES, MAN, 0.9), (MAN, MORTAL, 0.8)])
-        k = _kernel(store)
-        res = k.run(QuerySpec(KIND_IS_PART, SOCRATES, MORTAL))
+        k, (a, _b, c, _d) = _taxonomy_kernel((0, 1), (1, 2))
+        res = k.run(QuerySpec(KIND_IS_PART, a, c))
+        self.assertEqual(res.value, TRUE)
         self.assertIsInstance(res, ChildResult)
         self.assertFalse(hasattr(res, "bindings"))
 
     def test_cycle_terminates(self):
-        # a ⊑ b, b ⊑ a: the climb must terminate (depth cap + budget).
-        store = _store(rows_partof=[(SOCRATES, MAN, 0.9), (MAN, SOCRATES, 0.9)])
-        k = _kernel(store, budget=64)
-        res = k.run(QuerySpec(KIND_IS_PART, SOCRATES, MORTAL))
+        k, (a, _b, c, _d) = _taxonomy_kernel((0, 1), (1, 0), budget=64)
+        res = k.run(QuerySpec(KIND_IS_PART, a, c))
         self.assertIn(res.value, (UNKNOWN, BOUNDED_UNKNOWN))
 
     def test_unknown_op_raises(self):
@@ -258,32 +263,30 @@ class TestInvariants(unittest.TestCase):
         self.assertEqual(int(store.count.item()), before)
 
     def test_success_without_materialize_flag_does_not_write(self):
-        store = _store(rows_partof=[(SOCRATES, MAN, 0.9), (MAN, MORTAL, 0.8)])
-        before = int(store.count.item())
-        res = _kernel(store, materialize=False).run(
-            QuerySpec(KIND_IS_PART, SOCRATES, MORTAL))
+        k, (a, _b, c, _d) = _taxonomy_kernel((0, 1), (1, 2), materialize=False)
+        store = k.reasoner.reasoning_store()
+        before = len(store)
+        res = k.run(QuerySpec(KIND_IS_PART, a, c))
         self.assertEqual(res.value, TRUE)
-        self.assertEqual(int(store.count.item()), before)
+        self.assertEqual(len(store), before)
 
-    def test_grounded_derivation_materializes_lemma(self):
-        # §14.2 trusted derivation: the SECOND run is a depth-0 direct hit.
-        store = _store(rows_partof=[(SOCRATES, MAN, 0.9), (MAN, MORTAL, 0.8)])
-        k = _kernel(store, materialize=True)
-        res = k.run(QuerySpec(KIND_IS_PART, SOCRATES, MORTAL))
-        self.assertEqual(res.value, TRUE)
-        self.assertTrue(any("materialized_row" in p for p in res.provenance))
-        res2 = _kernel(store).run(QuerySpec(KIND_IS_PART, SOCRATES, MORTAL))
-        ops2 = [e["op"] for e in res2.trace]
-        self.assertEqual(ops2, ["lookup", "answer"])   # direct hit, no climb
-        self.assertEqual(res2.value, TRUE)
+    def test_taxonomy_derivation_does_not_materialize_a_world_lemma(self):
+        k, (a, _b, c, _d) = _taxonomy_kernel((0, 1), (1, 2), materialize=True)
+        store = k.reasoner.reasoning_store()
+        before = len(store)
+        for _ in range(2):
+            res = k.run(QuerySpec(KIND_IS_PART, a, c))
+            self.assertEqual(res.value, TRUE)
+            self.assertFalse(any("materialized_row" in p for p in res.provenance))
+            self.assertEqual(len(store), before)
 
     def test_direct_hit_does_not_rewrite(self):
-        # A depth-0 close derives nothing -> no lemma even with the flag on.
-        store = _store(rows_partof=[(MAN, MORTAL, 0.8)])
-        before = int(store.count.item())
-        _kernel(store, materialize=True).run(
-            QuerySpec(KIND_IS_PART, MAN, MORTAL))
-        self.assertEqual(int(store.count.item()), before)
+        k, (a, b, _c, _d) = _taxonomy_kernel((0, 1), materialize=True)
+        store = k.reasoner.reasoning_store()
+        before = len(store)
+        res = k.run(QuerySpec(KIND_IS_PART, a, b))
+        self.assertEqual(res.value, TRUE)
+        self.assertEqual(len(store), before)
 
 
 # -- query / testimony -----------------------------------------------------------
@@ -337,14 +340,15 @@ class TestQueryTestimony(unittest.TestCase):
         self.assertGreaterEqual(k.incorporate(t), 0)
         self.assertEqual(k.lookup(IDEA_A).status(k.tau), FALSE)
 
-    def test_incorporate_relation(self):
+    def test_legacy_incomplete_relation_cannot_certify_taxonomy(self):
         store = _store()
         k = _kernel(store)
         t = Testimony(proposition=QuerySpec(KIND_IS_PART, MAN, MORTAL),
                       value=1.0, source="expert", source_trust=0.8)
-        self.assertGreaterEqual(k.incorporate(t), 0)
-        iv = k.lookup(QuerySpec(KIND_IS_PART, MAN, MORTAL))
-        self.assertEqual(iv.status(k.tau), TRUE)
+        row = k.incorporate(t)
+        self.assertGreaterEqual(row, 0)
+        self.assertEqual(store.row(row)["kind"], "unverified")
+        self.assertEqual(k.lookup(t.proposition).status(k.tau), UNKNOWN)
 
     def test_arma_addressee_registered_with_model(self):
         class _Stub:
@@ -428,9 +432,8 @@ class TestTestimonyInLoop(unittest.TestCase):
 
 class TestRewardsAndTraces(unittest.TestCase):
     def _success(self):
-        store = _store(rows_partof=[(SOCRATES, MAN, 0.9), (MAN, MORTAL, 0.8)])
-        k = _kernel(store)
-        return k, k.run(QuerySpec(KIND_IS_PART, SOCRATES, MORTAL))
+        k, (a, _b, c, _d) = _taxonomy_kernel((0, 1), (1, 2))
+        return k, k.run(QuerySpec(KIND_IS_PART, a, c))
 
     def test_success_earns_terminal(self):
         k, res = self._success()
@@ -479,8 +482,7 @@ class TestRewardsAndTraces(unittest.TestCase):
 
 class TestNextOpPolicy(unittest.TestCase):
     def _syllogism_kernel(self):
-        return _kernel(_store(rows_partof=[(SOCRATES, MAN, 0.9),
-                                           (MAN, MORTAL, 0.8)]))
+        return _taxonomy_kernel((0, 1), (1, 2))[0]
 
     def test_featurize_and_logits_shapes(self):
         head = NextOpPolicy()
@@ -508,7 +510,7 @@ class TestNextOpPolicy(unittest.TestCase):
         self.assertTrue(all(op in ("lookup", "part", "think", "query",
                                    "answer") for (_s, op) in ex))
         # Trace generation is read-only on the store (materialize off).
-        self.assertEqual(int(k.reasoner.reasoning_store().count.item()), 2)
+        self.assertEqual(int(k.reasoner.reasoning_store().count.item()), 0)
 
     def test_next_op_loss_trains_the_head(self):
         k = self._syllogism_kernel()
@@ -529,29 +531,22 @@ class TestNextOpPolicy(unittest.TestCase):
         self.assertEqual(traces_from_store(_kernel()), [])
 
     def test_head_prefers_stop_short_circuits(self):
-        # A head that always prefers "answer" stops the climb before any
-        # think() subgoal -- legal-menu only, so the close is still an honest
-        # unknown (the runtime refuses unsupported assertions).
-        class _StopHead:
+        class StopHead:
             def choose(self, state, options):
                 return "answer"
-        store = _store(rows_partof=[(SOCRATES, MAN, 0.9), (MAN, MORTAL, 0.8)])
-        r = TruthGroundedReasoner(store=store)
-        k = ThinkingKernel(r, policy=KernelPolicy(next_op=_StopHead()))
-        res = k.run(QuerySpec(KIND_IS_PART, SOCRATES, MORTAL))
+        k, (a, _b, c, _d) = _taxonomy_kernel((0, 1), (1, 2),
+                                           policy=KernelPolicy(next_op=StopHead()))
+        res = k.run(QuerySpec(KIND_IS_PART, a, c))
         self.assertEqual(res.value, UNKNOWN)
-        ops = [e["op"] for e in res.trace]
-        self.assertNotIn("think", ops)
+        self.assertNotIn("think", [e["op"] for e in res.trace])
 
     def test_head_preferring_explore_keeps_baseline(self):
-        class _GoHead:
+        class GoHead:
             def choose(self, state, options):
                 return next(o for o in options if o != "answer")
-        store = _store(rows_partof=[(SOCRATES, MAN, 0.9), (MAN, MORTAL, 0.8)])
-        r = TruthGroundedReasoner(store=store)
-        k = ThinkingKernel(r, policy=KernelPolicy(next_op=_GoHead()))
-        res = k.run(QuerySpec(KIND_IS_PART, SOCRATES, MORTAL))
-        self.assertEqual(res.value, TRUE)
+        k, (a, _b, c, _d) = _taxonomy_kernel((0, 1), (1, 2),
+                                           policy=KernelPolicy(next_op=GoHead()))
+        self.assertEqual(k.run(QuerySpec(KIND_IS_PART, a, c)).value, TRUE)
 
 
 # -- Models/config integration (gated; off ⇒ byte-identical) ---------------------
@@ -610,27 +605,19 @@ class TestModelIntegration(unittest.TestCase):
         self.assertIn(res.value, (TRUE, FALSE, UNKNOWN, MIXED, CONFLICTING,
                                   BOUNDED_UNKNOWN))
 
-    def test_syllogism_over_live_ltm(self):
-        # A socrates ⊑ human ⊑ mortal chain in the model's OWN ltm_store
-        # resolves TRUE through the frame stack (trust = min-hop). The parse
-        # path can't land the truthSet rows on this byte-grain config (the
-        # documented Track-1 wall, test_reasoning_cde_model.py), so the rows
-        # are appended directly -- the kernel wiring is what's under test.
-        store = self.m.conceptualSpace._reasoning_store()
-        D = int(store.slots.shape[-1])
-        soc, man, mor = torch.zeros(D), torch.zeros(D), torch.zeros(D)
-        soc[0], man[1], mor[2] = 1.0, 1.0, 1.0
-        n0 = int(store.count.item())
+    def test_syllogism_over_live_taxonomy(self):
+        cs = self.m.conceptualSpace
+        refs = tuple(("sym", cs.new_concept()) for _ in range(3))
+        a, b, c = refs
         try:
-            store.append_relation(soc, torch.zeros(D), man,
-                                  rel_type=store.REL_PARTOF, trust=0.9)
-            store.append_relation(man, torch.zeros(D), mor,
-                                  rel_type=store.REL_PARTOF, trust=0.8)
-            res = self.m.think_about(QuerySpec(KIND_IS_PART, soc, mor))
+            cs.add_whole(a[1], b)
+            cs.add_whole(b[1], c)
+            res = self.m.think_about(QuerySpec(KIND_IS_PART, a, c))
             self.assertEqual(res.value, TRUE)
-            self.assertAlmostEqual(res.trust, 0.8, places=5)   # min-hop
+            self.assertEqual(res.trust, 1)
         finally:
-            store.count.fill_(n0)          # leave the shared store clean
+            for ref in refs:
+                cs.retire_concept(ref[1])
 
     def test_thinking_loss_head_built_and_in_optimizer(self):
         # thinkingLossWeight > 0 => the NextOpPolicy head is built eagerly and

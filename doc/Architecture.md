@@ -1214,17 +1214,29 @@ positive and negative support plus occurrence provenance independently;
 missing evidence is unknown. Observations, questions, estimates and unverified
 legacy records cannot certify their own referents. `ConceptualMeaning` is an
 owned value; `TernaryTruthStore` remains the durable evidence owner.
-[Lookup](../bin/reasoning.py#L142),
+[Lookup](../bin/reasoning.py#L156),
 [value](../bin/Meaning.py#L67),
-[store](../bin/Layers.py#L8662).
+[store](../bin/Layers.py#L8674).
 
 The existing checkpoint sidecar now retains semantic context and source text,
 bound to stable occurrence IDs and tensor fingerprints. Required metadata
 missing on restore makes the corresponding evidence unavailable. This
-foundation does not complete grammatical VP dispatch, conceptual-taxonomy
-queries or levelled thought history. See [Existence evidence](ExistenceEvidence.md)
+foundation does not complete grammatical VP dispatch or levelled thought
+history. Conceptual-taxonomy evidence is implemented separately below. See [Existence evidence](ExistenceEvidence.md)
 for the exact migration and gradient boundaries.
-[Restore checks](../bin/Layers.py#L8811).
+[Restore checks](../bin/Layers.py#L8823).
+
+### Conceptual-taxonomy query evidence
+
+Public `PartOf` queries read bounded conceptual reference records, preserving
+native proof sources. Perceptual edges, vector overlap and world-relation rows
+cannot certify this domain. Converse aliases share the canonical direction;
+unsupported domains fail explicitly. The derived read view adds no memory or
+learned parameters. The checked grammatical VP registry and ordinary levelled
+controller remain separate work. See [Taxonomy queries](TaxonomyQueries.md).
+[Reader](../bin/Taxonomy.py#L117),
+[query dispatch](../bin/reasoning.py#L578),
+[model entry](../bin/Models.py#L22225).
 
 ## Sigma and Pi Layers
 
@@ -1325,7 +1337,7 @@ after a packed brick preserve that stream, its document key and ARMA rings;
 hard EOS resets start it cold. Restoring
 weights starts prediction context cold. Neither global LTM recency nor internal
 thoughts initialize an external-observation sequence. See
-[`begin_document`](../bin/Layers.py#L10015) and the
+[`begin_document`](../bin/Layers.py#L10027) and the
 [packed observer](../bin/Models.py#L12803).
 
 ### Historical root / ARMA representation

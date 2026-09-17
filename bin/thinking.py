@@ -19,6 +19,7 @@ from reasoning import (QuerySpec, TruthGroundedReasoner, _as_vec,
                        KIND_IS_TRUE, KIND_IS_PART, KIND_IS_EQUAL)
 from Layers import TernaryTruthStore
 from Meaning import ConceptualMeaning
+from Taxonomy import capture_taxonomy, concept_reference
 
 # Frame / answer values (spec §9.1). ``true``/``false``/``unknown``/``mixed``/
 # ``conflicting`` mirror the interval statuses; ``bounded_unknown`` is the
@@ -53,7 +54,9 @@ class TruthInterval:
         """Classify against a determination bar ``tau``: one-sided luminous ⇒
         true/false; two-sided-strong ⇒ conflicting; a luminous straddle ⇒
         mixed; else unknown."""
-        if self.lower <= -tau and self.upper >= tau:
+        if self.luminosity == 0:
+            return UNKNOWN
+        if self.lower < 0 < self.upper and self.lower <= -tau and self.upper >= tau:
             return CONFLICTING
         if self.luminosity < tau:
             return UNKNOWN
@@ -226,16 +229,30 @@ class ThinkingKernel:
             frame.bindings["interval"] = iv
             entry["interval"] = iv
         elif name == "part":
-            rels = self.part(op["location"], mode=op.get("mode", "meronomy"),
+            rels = self.part(op["location"], mode=op.get("mode", "taxonomy"),
                              direction=op.get("direction", "up"))
             frame.bindings.setdefault("candidates", []).extend(rels)
             entry["n"] = len(rels)
         elif name == "think":
-            child = self._think(as_spec(op["target"]),
+            child_spec = as_spec(op["target"])
+            hop = None
+            if (frame.target.predicate == child_spec.predicate == KIND_IS_PART
+                    and frame.target.domain in (None, "conceptual-taxonomy")
+                    and child_spec.domain in (None, "conceptual-taxonomy")
+                    and frame.target.desired_polarity == child_spec.desired_polarity):
+                try:
+                    same_goal = (concept_reference(frame.target.right)
+                                 == concept_reference(child_spec.right))
+                except TypeError:
+                    same_goal = False
+                if same_goal:
+                    hop = self.reasoner.taxonomy_evidence(
+                        frame.target.left, child_spec.left, max_steps=1)
+            child = self._think(child_spec,
                                 purpose=op.get("purpose", "subgoal"))
             frame.bindings.setdefault("children", []).append(
                 {"result": child, "hop_trust": float(op.get("hop_trust", 1.0)),
-                 "hop_row": op.get("hop_row")})
+                 "hop_row": op.get("hop_row"), "hop_evidence": hop})
             entry["child_value"] = child.value
         elif name == "query":
             t = self.query(op["addressee"], op.get("target", frame.target))
@@ -265,31 +282,38 @@ class ThinkingKernel:
             if s > 0.0:
                 ev.append((s, s, {"how": "equal"}))
         else:                                          # KIND_IS_PART
-            d = r.is_part_direct(spec.left, spec.right)
-            if d is not None:
-                ev.append((d[0], d[0], {"how": d[1]}))
-            refute = r._refuting_direct(spec.left, spec.right)
-            if refute > 0.0:
-                ev.append((-refute, refute, {"how": "refuting"}))
+            if spec.predicate != KIND_IS_PART:
+                raise ValueError(f"unknown query predicate {spec.predicate!r}")
+            if spec.domain not in (None, "conceptual-taxonomy"):
+                raise ValueError(f"PartOf does not support relation domain {spec.domain!r}")
+            evidence = r.taxonomy_evidence(spec.left, spec.right, max_steps=1)
+            support = evidence["support_true"]
+            if support:
+                signed = support if spec.desired_polarity else -support
+                ev.append((signed, support, {"how": "taxonomy", **evidence,
+                                             "requested_polarity": spec.desired_polarity}))
         interval = TruthInterval.from_evidence(ev)
         if spec.predicate == KIND_IS_TRUE and evidence["incomplete_evidence"]:
             interval.provenance.append({"how": "exist",
                                         "incomplete_evidence": evidence["incomplete_evidence"]})
+        if spec.predicate == KIND_IS_PART and evidence["incomplete"]:
+            interval.provenance.append({"how": "taxonomy", **evidence})
         return interval
 
     # == part (spec §6): structural traversal ================================
 
-    def part(self, location, *, mode="meronomy", direction="up") -> list:
-        """Proximal structure of ``location``. Both modes read the REL_PARTOF
-        rows today (subsumption is stored as parthood; the mode rides the
-        provenance for when the stores split — see the execution notes §0)."""
-        if mode not in ("meronomy", "taxonomy"):
-            raise ValueError(f"part: unknown mode {mode!r}")
+    def part(self, location, *, mode="taxonomy", direction="up") -> list:
+        """Conceptual neighbors with their record sources.
+
+        Perceptual mereonomy has no adapter here. Reject that domain instead
+        of substituting world facts or relabelling conceptual links.
+        """
+        if mode != "taxonomy":
+            raise ValueError(f"part: unsupported relation domain {mode!r}")
         if direction not in ("up", "down"):
             raise ValueError(f"part: unknown direction {direction!r}")
-        fn = self.reasoner.wholes if direction == "up" else self.reasoner.parts
         out = []
-        for rel in fn(_as_vec(location)):
+        for rel in self.reasoner.taxonomy_neighbors(location, direction=direction):
             rel = dict(rel)
             rel["mode"] = mode
             rel["direction"] = direction
@@ -353,6 +377,8 @@ class ThinkingKernel:
         if not isinstance(store, TernaryTruthStore):
             return -1
         if spec.predicate == KIND_IS_PART and spec.right is not None:
+            if isinstance(spec.left, tuple) or isinstance(spec.right, tuple):
+                return -1  # testimony cannot modify conceptual definitions
             A = _as_vec(spec.left)
             # Preserve the legacy row without inventing its missing VP.
             row = int(store.append_relation(
@@ -379,14 +405,27 @@ class ThinkingKernel:
         iv = frame.bindings.get("interval") or TruthInterval()
         provenance = {"how": "lookup", "evidence": list(iv.provenance)}
         ev = [(iv.lower, iv.trust, provenance),
-              (iv.upper, iv.trust, provenance)] if iv.provenance else []
+              (iv.upper, iv.trust, provenance)] if iv.trust > 0 else []
         for ch in frame.bindings.get("children", []):
             res = ch["result"]
+            if frame.target.predicate == KIND_IS_PART:
+                hop = ch.get("hop_evidence")
+                expected = TRUE if frame.target.desired_polarity else FALSE
+                if (res is None or res.value != expected or not hop
+                        or hop["support_true"] <= 0):
+                    continue
+                t = min(float(res.trust), float(hop["support_true"]))
+                signed = t if frame.target.desired_polarity else -t
+                ev.append((signed, t, {"how": "taxonomy_child", "target": res.target,
+                                  "hop": hop, "evidence": list(res.provenance)}))
+                continue
             if res is not None and res.value in (TRUE, FALSE):
                 t = min(float(res.trust), float(ch.get("hop_trust", 1.0)))
                 ev.append((t if res.value == TRUE else -t, t,
                            {"how": "child", "target": res.target}))
         for t in frame.bindings.get("testimony", []):
+            if frame.target.predicate == KIND_IS_PART:
+                continue  # taxonomy inclusion comes from recorded definitions
             rel = float(t.effective_trust)
             if (t.value is None or t.evidence_kind != "testimony"
                     or not math.isfinite(rel) or rel <= 0.0 or torch.is_tensor(t.value)):
@@ -400,7 +439,13 @@ class ThinkingKernel:
             signed = max(-1.0, min(1.0, signed))
             ev.append((signed * rel, rel,
                        {"how": "testimony", "source": t.source}))
-        return TruthInterval.from_evidence(ev) if ev else iv
+        result = TruthInterval.from_evidence(ev) if ev else iv
+        if result is not iv and iv.trust == 0 and iv.provenance:
+            # An incomplete read is diagnostic, not evidence against a
+            # subsequently established path. Preserve it without adding 0
+            # to the evidential interval and changing TRUE into MIXED.
+            result.provenance.append(provenance)
+        return result
 
     def _answer(self, frame: Frame, op: dict):
         """Close ``frame`` under the §9.2 rules. An asserted true/false that
@@ -437,17 +482,8 @@ class ThinkingKernel:
             self._materialize_close(frame)
 
     def _materialize_close(self, frame: Frame):
-        """Trusted-derivation LTM write (§14.2): a frame that closed TRUE via
-        child subgoals writes the derived isPart edge back as a lemma, exactly
-        the reasoner's materialize path (cycle-guarded, floor-gated)."""
-        spec = frame.target
-        if (not self.materialize or spec.predicate != KIND_IS_PART
-                or not frame.bindings.get("children")):
-            return
-        row = self.reasoner.materialize(spec.left, spec.right,
-                                        frame.result.trust)
-        if row >= 0:
-            frame.result.provenance.append({"materialized_row": int(row)})
+        """Compatibility hook: a taxonomy proof never writes a world-fact lemma."""
+        return
 
     # == soft candidate ordering (execution notes §2.4) =======================
 
@@ -456,6 +492,10 @@ class ThinkingKernel:
         generator half is present (soft-propose / hard-verify — the α only
         ORDERS, it never asserts), else by stored hop trust."""
         spec = frame.target
+        if spec.predicate == KIND_IS_PART:
+            # Reference ids are addresses, never inputs to the legacy vector
+            # proposal head. The grammatical chooser will use their payloads.
+            return sorted(cands, key=lambda c: -float(c.get("trust", 0.0)))
         if (self.generator is not None and self.ga is not None and self.spaces
                 and spec.right is not None):
             try:
@@ -579,17 +619,35 @@ def next_op_loss(head, examples):
 
 
 def traces_from_store(kernel, *, max_targets: int = 4) -> list:
-    """Self-supervised trace generation (§12.6): derive 2-hop transitive
-    isPart targets from the reasoning store (the ``policy_examples_from_
-    store`` positives), run the kernel on each, and keep the ``(state, op)``
-    pairs of the GROUNDED traces. Run the teacher with ``materialize=False``
-    so trace generation never writes LTM."""
-    from reasoning import policy_examples_from_store
-    targets = [(a, c) for (a, c, gold) in policy_examples_from_store(
-        kernel.reasoner, max_examples=2 * int(max_targets)) if gold >= 0.5]
+    """Legacy behavior-cloning targets from bounded conceptual-taxonomy paths.
+
+    The old world-row curriculum no longer certifies PartOf. This retains
+    the legacy operation-head training mechanism, not the forthcoming
+    levelled controller or evidence of learned question utility.
+    """
+    limit = max(0, int(max_targets))
+    if not limit:
+        return []
+    cs = getattr(getattr(kernel.reasoner, "model", None), "conceptualSpace", None)
+    view = capture_taxonomy(cs, max_nodes=256, max_records=1024)
+    targets, seen = [], set()
+    examined = 0
+    for edge in view.edges:
+        for following in view.neighbors(edge.whole):
+            if examined >= 1024:
+                break
+            examined += 1
+            pair = (edge.part, following.whole)
+            if pair[0] != pair[1] and pair not in seen:
+                seen.add(pair)
+                targets.append(pair)
+            if len(targets) >= limit:
+                break
+        if examined >= 1024 or len(targets) >= limit:
+            break
     examples = []
-    for (a, c) in targets[:int(max_targets)]:
-        res = kernel.run(QuerySpec(KIND_IS_PART, a, c))
+    for (a, c) in targets:
+        res = kernel.run(QuerySpec.from_surface("isPart", a, c))
         examples.extend(ThinkingKernel.trace_examples(res))
     return examples
 
@@ -655,14 +713,16 @@ class KernelPolicy:
         # 4. ...then open one subgoal per unvisited whole, best-ranked first.
         visited = b.setdefault("visited", set())
         fresh = [c for c in b.get("candidates", [])
-                 if int(c.get("row", -1)) not in visited]
+                 if c.get("source_key", c.get("row", -1)) not in visited]
         for cand in kernel.order_candidates(frame, fresh):
             if self._prefer_stop(frame, kernel, "think"):
                 break
-            visited.add(int(cand.get("row", -1)))
-            sub = QuerySpec(KIND_IS_PART, cand["idea"], spec.right)
+            visited.add(cand.get("source_key", cand.get("row", -1)))
+            sub = QuerySpec(KIND_IS_PART, cand.get("reference", cand["idea"]),
+                            spec.right, desired_polarity=spec.desired_polarity,
+                            domain="conceptual-taxonomy")
             return {"op": "think", "target": sub, "purpose": "climb",
                     "hop_trust": float(cand.get("trust", 0.0)),
-                    "hop_row": cand.get("row")}
+                    "hop_row": cand.get("source_key", cand.get("row"))}
         # 5. Bounded search failed (§9.2 rule 3).
         return {"op": "answer", "value": UNKNOWN}

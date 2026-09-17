@@ -22223,27 +22223,20 @@ class BasicModel(BaseModel):
 
     @torch.no_grad()
     def reason_about(self, query_spec, *, spaces=None, beam=8):
-        """Run the N-step truth-grounded reasoning policy on a ``QuerySpec``
-        (doc/plans/2026-06-23-reasoning-live-wiring.md). N = reasoning_iterations
-        -- the chain depth = the number of intervening ideas. Returns a
-        ``ReasoningResult`` (posture + N relevance-ranked ideas + chain), or
-        ``None`` when reasoning is off (N == 0), so the caller falls back to the
-        ordinary generative path (byte-identical). Inference-only; the Phase-C
-        answer-loss training drives the soft route through its own hook."""
+        """Evaluate hard query evidence, bounded by reasoning_iterations.
+
+        PartOf reads conceptual reference records only. The older global
+        vector-proposal route is an explicit legacy experiment; this entry
+        neither initializes it nor reads its cross-space candidate field.
+        Returns None when reasoning is disabled. ``spaces`` is retained only
+        for caller compatibility. Grammatical-VP dispatch is a later migration.
+        """
         N = int(getattr(self, "reasoning_iterations", 0) or 0)
         if N <= 0:
             return None
         from reasoning import TruthGroundedReasoner, NeuralToolUser
         reasoner = TruthGroundedReasoner(self)
-        if spaces is None:
-            spaces = self._reasoning_spaces()
-        gen, ga = self._reasoning_tooluser(spaces)
-        tool = NeuralToolUser(
-            reasoner, generator=gen, ga=ga, spaces=spaces, iterations=N,
-            beam=beam,
-            # Model-level flag is ltm_consolidation (:912); the underscored
-            # name lives on ConceptualSpace only (fixed 2026-07-16).
-            materialize=bool(getattr(self, "ltm_consolidation", False)))
+        tool = NeuralToolUser(reasoner, iterations=N, beam=beam)
         return tool.run(query_spec)
 
     @torch.no_grad()
@@ -22253,29 +22246,26 @@ class BasicModel(BaseModel):
         answer loop over a budgeted STM frame stack. Returns the kernel's
         ``ChildResult`` (value + truth interval + trust + trace), or ``None``
         when the kernel is off (``thinking_budget == 0``) — byte-identical.
-        Shares the reasoner + the soft ordering half (generator/GA/spaces) with
-        ``reason_about``; LTM lemma write-back is gated by
-        ``<ltmConsolidation>`` exactly as there."""
+        PartOf uses conceptual reference records. Taxonomy proofs do not write
+        world-fact lemmas. ``spaces`` remains a compatibility argument; this
+        path does not initialize the legacy global vector-proposal route.
+        This frame controller predates the ordinary levelled-thought design.
+        """
         budget = int(getattr(self, "thinking_budget", 0) or 0)
         if budget <= 0:
             return None
         from reasoning import TruthGroundedReasoner
         from thinking import ThinkingKernel, KernelPolicy
         reasoner = TruthGroundedReasoner(self)
-        if spaces is None:
-            spaces = self._reasoning_spaces()
-        gen, ga = self._reasoning_tooluser(spaces)
         kernel = ThinkingKernel(
-            reasoner, budget=budget, generator=gen, ga=ga, spaces=spaces,
+            reasoner, budget=budget,
             policy=KernelPolicy(
-                next_op=getattr(self, "_next_op_policy", None)),
-            # Same ltm_consolidation naming fix as reason_about above.
-            materialize=bool(getattr(self, "ltm_consolidation", False)))
+                next_op=getattr(self, "_next_op_policy", None)))
         return kernel.run(query_spec)
 
     def _thinking_policy_loss(self):
         """§12.6: the next-op behavior-cloning loss. Generates grounded kernel
-        traces from store-derived 2-hop isPart targets (the deterministic
+        traces from conceptual-taxonomy 2-hop PartOf targets (the deterministic
         teacher, materialize=False -- no LTM writes in the hot loop) and
         cross-entropy-trains the NextOpPolicy head on their (state, op) pairs.
         ``None`` when the head is not built / no store / no chains -- so the

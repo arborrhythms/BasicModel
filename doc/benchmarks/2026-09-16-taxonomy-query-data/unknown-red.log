@@ -1,0 +1,96 @@
+CANDIDATE Meaning: /private/tmp/full-spec-taxonomy-candidate/Meaning.py
+CANDIDATE Layers: /private/tmp/full-spec-taxonomy-candidate/Layers.py
+CANDIDATE Models: /private/tmp/full-spec-taxonomy-candidate/Models.py
+CANDIDATE reasoning: /private/tmp/full-spec-taxonomy-candidate/reasoning.py
+CANDIDATE thinking: /private/tmp/full-spec-taxonomy-candidate/thinking.py
+CANDIDATE Taxonomy: /private/tmp/full-spec-taxonomy-candidate/Taxonomy.py
+FFFFF                                                                    [100%]
+=================================== FAILURES ===================================
+________ test_no_support_remains_unknown_even_at_zero_threshold[exist] _________
+
+predicate = 'exist'
+
+    @pytest.mark.parametrize("predicate", ["exist", "isPart"])
+    def test_no_support_remains_unknown_even_at_zero_threshold(predicate):
+        reasoner = TruthGroundedReasoner(store=TernaryTruthStore(8))
+        first, second = torch.eye(8)[:2]
+        query = QuerySpec.from_surface(predicate, first, second)
+        result = reasoner.evaluate(query, tau=0.)
+        assert result["support_true"] == result["support_false"] == 0
+>       assert result["posture"] == "UNKNOWN"
+E       AssertionError: assert 'BOTH' == 'UNKNOWN'
+E         
+E         - UNKNOWN
+E         + BOTH
+
+/tmp/full-spec-taxonomy-unknown-probe.py:16: AssertionError
+________ test_no_support_remains_unknown_even_at_zero_threshold[isPart] ________
+
+predicate = 'isPart'
+
+    @pytest.mark.parametrize("predicate", ["exist", "isPart"])
+    def test_no_support_remains_unknown_even_at_zero_threshold(predicate):
+        reasoner = TruthGroundedReasoner(store=TernaryTruthStore(8))
+        first, second = torch.eye(8)[:2]
+        query = QuerySpec.from_surface(predicate, first, second)
+        result = reasoner.evaluate(query, tau=0.)
+        assert result["support_true"] == result["support_false"] == 0
+>       assert result["posture"] == "UNKNOWN"
+E       AssertionError: assert 'BOTH' == 'UNKNOWN'
+E         
+E         - UNKNOWN
+E         + BOTH
+
+/tmp/full-spec-taxonomy-unknown-probe.py:16: AssertionError
+_ test_zero_threshold_cannot_fabricate_the_other_evidence_polarity[support0-TRUE] _
+
+support = (1.0, 0.0), expected = 'TRUE'
+
+    @pytest.mark.parametrize("support, expected", [((1., 0.), "TRUE"), ((0., 1.), "FALSE")])
+    def test_zero_threshold_cannot_fabricate_the_other_evidence_polarity(support, expected):
+        result = TruthGroundedReasoner()._posture(*support, tau=0.)
+>       assert result["posture"] == expected
+E       AssertionError: assert 'BOTH' == 'TRUE'
+E         
+E         - TRUE
+E         + BOTH
+
+/tmp/full-spec-taxonomy-unknown-probe.py:22: AssertionError
+_ test_zero_threshold_cannot_fabricate_the_other_evidence_polarity[support1-FALSE] _
+
+support = (0.0, 1.0), expected = 'FALSE'
+
+    @pytest.mark.parametrize("support, expected", [((1., 0.), "TRUE"), ((0., 1.), "FALSE")])
+    def test_zero_threshold_cannot_fabricate_the_other_evidence_polarity(support, expected):
+        result = TruthGroundedReasoner()._posture(*support, tau=0.)
+>       assert result["posture"] == expected
+E       AssertionError: assert 'BOTH' == 'FALSE'
+E         
+E         - FALSE
+E         + BOTH
+
+/tmp/full-spec-taxonomy-unknown-probe.py:22: AssertionError
+___________ test_empty_legacy_interval_is_unknown_at_zero_threshold ____________
+
+    def test_empty_legacy_interval_is_unknown_at_zero_threshold():
+        from thinking import TruthInterval
+>       assert TruthInterval().status(tau=0.) == "unknown"
+E       AssertionError: assert 'conflicting' == 'unknown'
+E         
+E         - unknown
+E         + conflicting
+
+/tmp/full-spec-taxonomy-unknown-probe.py:27: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:1345
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:1345: PytestAssertRewriteWarning: Module already imported so cannot be rewritten; anyio
+    self._mark_plugins_for_rewrite(hook, disable_autoload)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED ../../../../../tmp/full-spec-taxonomy-unknown-probe.py::test_no_support_remains_unknown_even_at_zero_threshold[exist]
+FAILED ../../../../../tmp/full-spec-taxonomy-unknown-probe.py::test_no_support_remains_unknown_even_at_zero_threshold[isPart]
+FAILED ../../../../../tmp/full-spec-taxonomy-unknown-probe.py::test_zero_threshold_cannot_fabricate_the_other_evidence_polarity[support0-TRUE]
+FAILED ../../../../../tmp/full-spec-taxonomy-unknown-probe.py::test_zero_threshold_cannot_fabricate_the_other_evidence_polarity[support1-FALSE]
+FAILED ../../../../../tmp/full-spec-taxonomy-unknown-probe.py::test_empty_legacy_interval_is_unknown_at_zero_threshold
+5 failed, 1 warning in 0.11s

@@ -96,10 +96,10 @@ class TestIsTrue(unittest.TestCase):
         self.assertEqual(r.is_true(IDEA_A), 0.0)
 
 
-class TestIsPartDirect(unittest.TestCase):
+class TestLegacyIsPartDirect(unittest.TestCase):
     def test_geometric_containment(self):
         r = TruthGroundedReasoner(store=_store())
-        res = r.is_part_direct(PART, WHOLE)
+        res = r.legacy_is_part_direct(PART, WHOLE)
         self.assertIsNotNone(res)
         score, how = res
         self.assertEqual(how, "geometric")
@@ -110,8 +110,8 @@ class TestIsPartDirect(unittest.TestCase):
         r = TruthGroundedReasoner(
             store=_store(rows_partof=[(LEFT, RIGHT, 0.85)]))
         self.assertIsNone(  # sanity: not geometric
-            r.is_part_direct(LEFT, RIGHT) if False else None)
-        res = r.is_part_direct(LEFT, RIGHT)
+            r.legacy_is_part_direct(LEFT, RIGHT) if False else None)
+        res = r.legacy_is_part_direct(LEFT, RIGHT)
         self.assertIsNotNone(res)
         score, how = res
         self.assertEqual(how, "stored")
@@ -119,12 +119,12 @@ class TestIsPartDirect(unittest.TestCase):
 
     def test_disjoint_is_none(self):
         r = TruthGroundedReasoner(store=_store())
-        self.assertIsNone(r.is_part_direct(LEFT, RIGHT))
+        self.assertIsNone(r.legacy_is_part_direct(LEFT, RIGHT))
 
     def test_negative_trust_row_not_accepted(self):
         r = TruthGroundedReasoner(
             store=_store(rows_partof=[(LEFT, RIGHT, -0.9)]))
-        self.assertIsNone(r.is_part_direct(LEFT, RIGHT))
+        self.assertIsNone(r.legacy_is_part_direct(LEFT, RIGHT))
 
 
 # Discrete, pairwise-disjoint ideas: no geometric parthood holds between any
@@ -135,14 +135,14 @@ MORTAL = _v(0, 0, 1, 0, 0, 0, 0, 0)
 ANIMAL = _v(0, 0, 0, 1, 0, 0, 0, 0)
 
 
-class TestChain(unittest.TestCase):
+class TestLegacyChain(unittest.TestCase):
     def test_socrates_syllogism(self):
         # Socrates ⊑ man, man ⊑ mortal  ⇒  isPart(Socrates, mortal) via 1 hop.
         r = TruthGroundedReasoner(store=_store(rows_partof=[
             (SOCRATES, MAN, 0.9), (MAN, MORTAL, 0.8)]))
         # No direct geometric/stored edge Socrates→mortal.
-        self.assertIsNone(r.is_part_direct(SOCRATES, MORTAL))
-        cands = r.is_part(SOCRATES, MORTAL)
+        self.assertIsNone(r.legacy_is_part_direct(SOCRATES, MORTAL))
+        cands = r.legacy_is_part(SOCRATES, MORTAL)
         self.assertTrue(cands)
         best = cands[0]
         self.assertEqual(best["how"], "chain")
@@ -152,13 +152,13 @@ class TestChain(unittest.TestCase):
     def test_no_chain_returns_empty(self):
         r = TruthGroundedReasoner(store=_store(rows_partof=[
             (SOCRATES, MAN, 0.9)]))                              # dead-ends at man
-        self.assertEqual(r.is_part(SOCRATES, MORTAL), [])
+        self.assertEqual(r.legacy_is_part(SOCRATES, MORTAL), [])
 
     def test_min_trust_is_weakest_hop(self):
         # man ⊑ mortal ⊑ animal: chain trust = min(0.6, 0.95) = 0.6
         r = TruthGroundedReasoner(store=_store(rows_partof=[
             (MAN, MORTAL, 0.6), (MORTAL, ANIMAL, 0.95)]))
-        cands = r.is_part(MAN, ANIMAL)
+        cands = r.legacy_is_part(MAN, ANIMAL)
         self.assertTrue(cands)
         self.assertAlmostEqual(cands[0]["score"], 0.6, places=5)
 
@@ -168,7 +168,7 @@ class TestChain(unittest.TestCase):
                  0.5) for k in range(4)]
         rows.append((MAN, MORTAL, 0.8))
         r = TruthGroundedReasoner(store=_store(rows_partof=rows))
-        cands = r.is_part(MAN, MORTAL, beam=2)
+        cands = r.legacy_is_part(MAN, MORTAL, beam=2)
         self.assertLessEqual(len(cands), 2)
         self.assertTrue(any(c["how"] == "chain" for c in cands))
 
@@ -176,22 +176,22 @@ class TestChain(unittest.TestCase):
         # PART ⊑ WHOLE is direct (geometric); also add a weaker stored chain.
         r = TruthGroundedReasoner(store=_store(rows_partof=[
             (PART, MAN, 0.5), (MAN, WHOLE, 0.4)]))
-        cands = r.is_part(PART, WHOLE)
+        cands = r.legacy_is_part(PART, WHOLE)
         self.assertTrue(cands)
         self.assertEqual(cands[0]["how"], "geometric")
 
 
-class TestMaterialize(unittest.TestCase):
+class TestLegacyMaterialize(unittest.TestCase):
     def test_verified_chain_becomes_direct_hit(self):
         store = _store(rows_partof=[(SOCRATES, MAN, 0.9), (MAN, MORTAL, 0.8)])
         r = TruthGroundedReasoner(store=store)
         # Before: only the chain answers; no direct edge.
-        self.assertIsNone(r.is_part_direct(SOCRATES, MORTAL))
-        cands = r.is_part(SOCRATES, MORTAL, materialize=True)
+        self.assertIsNone(r.legacy_is_part_direct(SOCRATES, MORTAL))
+        cands = r.legacy_is_part(SOCRATES, MORTAL, materialize=True)
         self.assertEqual(cands[0]["how"], "chain")
         self.assertIn("materialized", cands[0])
         # After: the conclusion is a stored direct edge with the chain trust.
-        direct = r.is_part_direct(SOCRATES, MORTAL)
+        direct = r.legacy_is_part_direct(SOCRATES, MORTAL)
         self.assertIsNotNone(direct)
         score, how = direct
         self.assertEqual(how, "stored")
@@ -200,15 +200,27 @@ class TestMaterialize(unittest.TestCase):
     def test_below_floor_not_written(self):
         store = _store(rows_partof=[(SOCRATES, MAN, 0.4), (MAN, MORTAL, 0.3)])
         r = TruthGroundedReasoner(store=store, materialize_floor=0.5)
-        cands = r.is_part(SOCRATES, MORTAL, materialize=True)
+        cands = r.legacy_is_part(SOCRATES, MORTAL, materialize=True)
         # chain score = min(0.4,0.3)=0.3 < floor -> not materialized
         if cands:
             self.assertNotIn("materialized", cands[0])
-        self.assertIsNone(r.is_part_direct(SOCRATES, MORTAL))
+        self.assertIsNone(r.legacy_is_part_direct(SOCRATES, MORTAL))
 
     def test_materialize_noop_without_store(self):
         r = TruthGroundedReasoner(model=_ModelStub())
-        self.assertEqual(r.materialize(SOCRATES, MORTAL, 0.9), -1)
+        self.assertEqual(r.legacy_materialize(SOCRATES, MORTAL, 0.9), -1)
+
+
+
+def _taxonomy(*links):
+    """Explicit conceptual links; vector row fixtures do not define taxonomy."""
+    from types import SimpleNamespace
+    from test_cs_symbol_table import _cs
+    cs = _cs()
+    refs = tuple(("sym", cs.new_concept()) for _ in range(4))
+    for left, right in links:
+        cs.add_whole(refs[left][1], refs[right])
+    return TruthGroundedReasoner(SimpleNamespace(conceptualSpace=cs), store=_store()), refs
 
 
 class TestEvaluate(unittest.TestCase):
@@ -228,11 +240,12 @@ class TestEvaluate(unittest.TestCase):
         self.assertEqual(res["posture"], UNKNOWN)
 
     def test_is_part_direct_true(self):
-        r = TruthGroundedReasoner(store=_store())
-        res = r.evaluate(QuerySpec.from_surface("isPart", PART, WHOLE))
+        r, (a, b, _c, _d) = _taxonomy((0, 1))
+        res = r.evaluate(QuerySpec.from_surface("isPart", a, b))
         self.assertEqual(res["posture"], TRUE)
         self.assertEqual(res["kind"], KIND_IS_PART)
-        self.assertEqual(len(res["candidates"]), 1)
+        self.assertEqual(len(res["path"]), 1)
+        self.assertEqual(res["domain"], "conceptual-taxonomy")
 
     def test_is_part_unknown(self):
         r = TruthGroundedReasoner(store=_store())
@@ -252,7 +265,7 @@ class TestEvaluate(unittest.TestCase):
 
 
 class TestGrammarOps(unittest.TestCase):
-    """The reasoner's tool surface = the grammar <queries> ops."""
+    """Legacy vector helpers and the current full-description Exist adapter."""
 
     def test_exist_is_isTrue(self):
         r = TruthGroundedReasoner(store=_store(rows_ideas=[(IDEA_A, 0.9)]))
@@ -272,13 +285,13 @@ class TestGrammarOps(unittest.TestCase):
 
     def test_part(self):
         r = TruthGroundedReasoner()
-        self.assertGreaterEqual(r.part(PART, WHOLE), 0.7)
-        self.assertAlmostEqual(r.part(LEFT, RIGHT), 0.0, places=5)
+        self.assertGreaterEqual(r.legacy_part(PART, WHOLE), 0.7)
+        self.assertAlmostEqual(r.legacy_part(LEFT, RIGHT), 0.0, places=5)
 
     def test_wholes_proximal_frontier(self):
         r = TruthGroundedReasoner(store=_store(rows_partof=[
             (SOCRATES, MAN, 0.9), (MAN, MORTAL, 0.8)]))
-        ws = r.wholes(SOCRATES)
+        ws = r.legacy_wholes(SOCRATES)
         self.assertEqual(len(ws), 1)                 # proximal: man, not mortal
         self.assertGreaterEqual(r.equal(ws[0]["idea"], MAN), 0.99)
         self.assertAlmostEqual(ws[0]["trust"], 0.9, places=5)
@@ -286,7 +299,7 @@ class TestGrammarOps(unittest.TestCase):
     def test_parts_is_inverse_of_wholes(self):
         r = TruthGroundedReasoner(store=_store(rows_partof=[
             (SOCRATES, MAN, 0.9), (MAN, MORTAL, 0.8)]))
-        ps = r.parts(MORTAL)
+        ps = r.legacy_parts(MORTAL)
         self.assertEqual(len(ps), 1)                 # proximal: man
         self.assertGreaterEqual(r.equal(ps[0]["idea"], MAN), 0.99)
 
@@ -315,35 +328,33 @@ class TestGrammarOps(unittest.TestCase):
 
 
 class TestPostureAndTrace(unittest.TestCase):
-    def test_is_part_false_from_refuting_edge(self):
-        # ¬isPart asserted (negative-trust REL_PARTOF), no supporting evidence.
-        r = TruthGroundedReasoner(
-            store=_store(rows_partof=[(LEFT, RIGHT, -0.9)]))
+    def test_world_refutation_does_not_establish_taxonomic_falsehood(self):
+        r = TruthGroundedReasoner(store=_store(rows_partof=[(LEFT, RIGHT, -0.9)]))
         res = r.evaluate(QuerySpec.from_surface("isPart", LEFT, RIGHT))
-        self.assertEqual(res["posture"], FALSE)
+        self.assertEqual(res["posture"], UNKNOWN)
+        self.assertEqual(res["support_false"], 0)
 
-    def test_is_part_both_when_supported_and_refuted(self):
-        # PART⊑WHOLE holds geometrically AND a refuting edge is asserted.
-        r = TruthGroundedReasoner(
-            store=_store(rows_partof=[(PART, WHOLE, -0.9)]))
+    def test_geometry_and_world_refutation_do_not_establish_taxonomic_conflict(self):
+        r = TruthGroundedReasoner(store=_store(rows_partof=[(PART, WHOLE, -0.9)]))
         res = r.evaluate(QuerySpec.from_surface("isPart", PART, WHOLE))
-        self.assertEqual(res["posture"], BOTH)
+        self.assertEqual(res["posture"], UNKNOWN)
+        self.assertEqual((res["support_true"], res["support_false"]), (0, 0))
 
     def test_chain_trace_rendered(self):
-        r = TruthGroundedReasoner(store=_store(rows_partof=[
-            (SOCRATES, MAN, 0.9), (MAN, MORTAL, 0.8)]))
-        res = r.evaluate(QuerySpec.from_surface("isPart", SOCRATES, MORTAL))
+        r, (a, _b, c, _d) = _taxonomy((0, 1), (1, 2))
+        res = r.evaluate(QuerySpec.from_surface("isPart", a, c))
         self.assertEqual(res["posture"], TRUE)
-        self.assertIsNotNone(res["trace"])
-        self.assertIn("min hop", res["trace"])
+        self.assertEqual(len(res["path"]), 2)
+        self.assertIn("2 links", res["trace"])
 
     def test_direct_trace_rendered(self):
-        r = TruthGroundedReasoner(store=_store())
-        res = r.evaluate(QuerySpec.from_surface("isPart", PART, WHOLE))
-        self.assertIn("direct", res["trace"])
+        r, (a, b, _c, _d) = _taxonomy((0, 1))
+        res = r.evaluate(QuerySpec.from_surface("isPart", a, b))
+        self.assertIn("1 links", res["trace"])
+        self.assertEqual(res["path"][0].owner, a)
 
 
-class TestConsolidation(unittest.TestCase):
+class TestLegacyConsolidation(unittest.TestCase):
     """The chain climb is ONE canonical primitive on ConceptualSpace, shared by
     the reasoner's is_part and ConceptualSpace.reason."""
 
@@ -356,7 +367,7 @@ class TestConsolidation(unittest.TestCase):
         self.assertTrue(chains)
         self.assertAlmostEqual(chains[0]["score"], 0.8, places=5)
         # is_part delegates to the SAME loop -> same best score + chain.
-        cands = TruthGroundedReasoner(store=store).is_part(SOCRATES, MORTAL)
+        cands = TruthGroundedReasoner(store=store).legacy_is_part(SOCRATES, MORTAL)
         self.assertAlmostEqual(cands[0]["score"], chains[0]["score"], places=5)
         self.assertEqual(cands[0]["chain"], chains[0]["chain"])
 
@@ -368,7 +379,7 @@ class TestConsolidation(unittest.TestCase):
             rel_type=TernaryTruthStore.REL_PARTOF)
         self.assertEqual(len(ws), 1)
         # The reasoner's wholes() returns the same.
-        rw = TruthGroundedReasoner(store=store).wholes(SOCRATES)
+        rw = TruthGroundedReasoner(store=store).legacy_wholes(SOCRATES)
         self.assertEqual(len(rw), 1)
         self.assertEqual(rw[0]["row"], ws[0]["row"])
 
@@ -381,21 +392,21 @@ class TestConsolidation(unittest.TestCase):
         self.assertEqual(len(list(rows)), 1)
 
 
-class TestPartialOrder(unittest.TestCase):
+class TestLegacyPartialOrder(unittest.TestCase):
     """Phase 6: antisymmetry / cycle guard at edge insertion."""
 
     def test_materialize_rejects_cycle(self):
         # MORTAL ⊑ MAN already stored; writing MAN ⊑ MORTAL would cycle.
         r = TruthGroundedReasoner(store=_store(rows_partof=[(MORTAL, MAN, 0.9)]))
-        self.assertEqual(r.materialize(MAN, MORTAL, 0.9), -1)
+        self.assertEqual(r.legacy_materialize(MAN, MORTAL, 0.9), -1)
 
     def test_materialize_rejects_self_loop(self):
         r = TruthGroundedReasoner(store=_store())
-        self.assertEqual(r.materialize(MAN, MAN, 0.9), -1)
+        self.assertEqual(r.legacy_materialize(MAN, MAN, 0.9), -1)
 
     def test_materialize_accepts_acyclic(self):
         r = TruthGroundedReasoner(store=_store(rows_partof=[(SOCRATES, MAN, 0.9)]))
-        self.assertGreaterEqual(r.materialize(MAN, MORTAL, 0.9), 0)
+        self.assertGreaterEqual(r.legacy_materialize(MAN, MORTAL, 0.9), 0)
 
 
 class TestSoftGenerator(unittest.TestCase):
@@ -447,8 +458,8 @@ class TestSoftGenerator(unittest.TestCase):
         self.assertTrue(grads)
 
 
-class TestNeuralToolUser(unittest.TestCase):
-    """Phase B: the recurrent tool-use driver (soft propose / hard verify)."""
+class TestLegacyVectorProposalTools(unittest.TestCase):
+    """Explicit legacy vector proposals; public PartOf uses taxonomy evidence."""
 
     def _spaces(self, *ideas):
         from Spaces import GlobalAttention as GA
@@ -468,7 +479,7 @@ class TestNeuralToolUser(unittest.TestCase):
         # A leaf judgment needs no chain loop -> evaluate(), iterations 0.
         store = _store(rows_ideas=[(IDEA_A, 0.9)])
         tool = self._tooluser(store, self._spaces(IDEA_A, IDEA_C))
-        res = tool.run(QuerySpec(KIND_IS_TRUE, left=IDEA_A))
+        res = tool.run_legacy_world(QuerySpec(KIND_IS_TRUE, left=IDEA_A))
         self.assertEqual(res.posture, TRUE)
         self.assertEqual(res.iterations, 0)
         self.assertEqual(res.ideas, [])
@@ -478,7 +489,7 @@ class TestNeuralToolUser(unittest.TestCase):
         store = _store(rows_partof=[(SOCRATES, MAN, 0.9), (MAN, MORTAL, 0.8)])
         tool = reasoning.NeuralToolUser(
             TruthGroundedReasoner(store=store), iterations=10)
-        res = tool.run(QuerySpec(KIND_IS_PART, left=SOCRATES, right=MORTAL))
+        res = tool.run_legacy_world(QuerySpec(KIND_IS_PART, left=SOCRATES, right=MORTAL))
         self.assertEqual(res.posture, TRUE)
         self.assertTrue(res.chain)
         self.assertEqual(res.ideas, [])
@@ -489,7 +500,7 @@ class TestNeuralToolUser(unittest.TestCase):
         # it above the distractors.
         store = _store(rows_partof=[(SOCRATES, MAN, 0.9), (MAN, MORTAL, 0.8)])
         tool = self._tooluser(store, self._spaces(MAN, ANIMAL, IDEA_C))
-        res = tool.run(QuerySpec(KIND_IS_PART, left=SOCRATES, right=MORTAL))
+        res = tool.run_legacy_world(QuerySpec(KIND_IS_PART, left=SOCRATES, right=MORTAL))
         self.assertEqual(res.posture, TRUE)
         verified = [it for it in res.ideas if it["verified"]]
         self.assertTrue(verified)
@@ -501,7 +512,7 @@ class TestNeuralToolUser(unittest.TestCase):
     def test_ideas_ranked_by_relevance(self):
         store = _store(rows_partof=[(SOCRATES, MAN, 0.9), (MAN, MORTAL, 0.8)])
         tool = self._tooluser(store, self._spaces(MAN, ANIMAL, IDEA_C))
-        res = tool.run(QuerySpec(KIND_IS_PART, left=SOCRATES, right=MORTAL))
+        res = tool.run_legacy_world(QuerySpec(KIND_IS_PART, left=SOCRATES, right=MORTAL))
         rels = [it["relevance"] for it in res.ideas]
         self.assertEqual(rels, sorted(rels, reverse=True))
 
@@ -509,7 +520,7 @@ class TestNeuralToolUser(unittest.TestCase):
         store = _store(rows_partof=[(SOCRATES, MAN, 0.9), (MAN, MORTAL, 0.8)])
         tool = self._tooluser(store, self._spaces(MAN, ANIMAL, IDEA_C),
                               iterations=3)
-        res = tool.run(QuerySpec(KIND_IS_PART, left=SOCRATES, right=MORTAL))
+        res = tool.run_legacy_world(QuerySpec(KIND_IS_PART, left=SOCRATES, right=MORTAL))
         self.assertGreaterEqual(res.iterations, 1)
         self.assertLessEqual(res.iterations, 3)        # bounded by N
         self.assertLessEqual(len(res.ideas), 3)        # N-capped output
@@ -521,7 +532,7 @@ class TestNeuralToolUser(unittest.TestCase):
             TruthGroundedReasoner(store=store),
             generator=InterveningIdeaGenerator(dim=8),
             ga=GlobalAttention(), spaces=None, iterations=10)
-        res = tool.run(QuerySpec(KIND_IS_PART, left=SOCRATES, right=MORTAL))
+        res = tool.run_legacy_world(QuerySpec(KIND_IS_PART, left=SOCRATES, right=MORTAL))
         self.assertEqual(res.posture, TRUE)            # stored chain still works
         self.assertEqual(res.ideas, [])                # soft half inert
 
