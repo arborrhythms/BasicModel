@@ -98,7 +98,7 @@ def test_output_traverses_symbol_concepts_percepts_output(synth_config):
     x, _ = _batch(m)
     with torch.no_grad():
         u = m.understand(x)
-        construction = m.reverseOutput(u, What.supervised(0))
+        construction = m.reverseOutput(u, m.resolveAnswer(u, What.supervised(0)))
     assert isinstance(construction, AnswerConstruction)
     assert isinstance(construction.derivation, AnswerDerivation)
     assert torch.equal(construction.derivation.answer_symbol, u.symbolic_state)
@@ -132,13 +132,13 @@ def test_reconstruction_and_output_are_order_independent(synth_config):
     with torch.no_grad():
         u = m.understand(x)
         rev_first, _ = m.reverseReconstruct(u)
-        out_after = m.reverseOutput(u, q).actual
+        out_after = m.reverseOutput(u, m.resolveAnswer(u, q)).actual
         rev_again, _ = m.reverseReconstruct(u)
     with torch.no_grad():
         u2 = m.understand(x)
-        out_first = m.reverseOutput(u2, q).actual
+        out_first = m.reverseOutput(u2, m.resolveAnswer(u2, q)).actual
         rev_after, _ = m.reverseReconstruct(u2)
-        out_again = m.reverseOutput(u2, q).actual
+        out_again = m.reverseOutput(u2, m.resolveAnswer(u2, q)).actual
     assert torch.equal(rev_first, rev_again)        # output did not disturb reconstruction
     assert torch.equal(out_first, out_again)        # reconstruction did not disturb output
     assert torch.allclose(rev_first, rev_after)     # same understanding, either order
@@ -151,7 +151,7 @@ def test_output_does_not_consume_reconstruction_carriers(synth_config):
     q = What.supervised(0)
     with torch.no_grad():
         u = m.understand(x)
-        baseline = m.reverseOutput(u, q).actual
+        baseline = m.reverseOutput(u, m.resolveAnswer(u, q)).actual
         # Strip every reconstruction-only carrier from the understanding and
         # the live stages; the answer must not change.
         stripped = Understanding(
@@ -167,7 +167,7 @@ def test_output_does_not_consume_reconstruction_carriers(synth_config):
             if "merge" in stage:
                 stage["merge"]._merge_diff = None
         object.__setattr__(m, "_combine_carriers", None)
-        again = m.reverseOutput(stripped, q).actual
+        again = m.reverseOutput(stripped, m.resolveAnswer(stripped, q)).actual
     assert torch.equal(baseline, again)
 
 
@@ -299,7 +299,7 @@ def test_future_resolves_by_prediction_without_committing_memory(synth_discourse
     assert torch.equal(memory._s_history, before)          # ring untouched
     assert not torch.equal(d1.answer_symbol[:, 0], d2.answer_symbol[:, 0])
     with torch.no_grad():
-        construction = m.reverseOutput(u, What.future(1, 1))
+        construction = m.reverseOutput(u, m.resolveAnswer(u, What.future(1, 1)))
     assert construction.trace[0]["operation"] == "resolve:prediction"
 
 
@@ -321,7 +321,7 @@ def test_dedicated_synthesis_operators_start_at_identity_and_are_answer_only(syn
     q = What.supervised(0)
     with torch.no_grad():
         u = m.understand(x)
-        first = m.reverseOutput(u, q)
+        first = m.reverseOutput(u, m.resolveAnswer(u, q))
     cs_layer = m.conceptualSpace.synthesis_layer
     ps_layer = m.perceptualSpace.synthesis_layer
     for layer in (cs_layer, ps_layer):
@@ -334,7 +334,7 @@ def test_dedicated_synthesis_operators_start_at_identity_and_are_answer_only(syn
         for layer in (cs_layer, ps_layer):
             layer.raw_L.add_(0.3)
             layer.d.mul_(1.7)
-        out_after = m.reverseOutput(u, q).actual
+        out_after = m.reverseOutput(u, m.resolveAnswer(u, q)).actual
         rev_after, _ = m.reverseReconstruct(u)
     assert not torch.allclose(first.actual, out_after)        # answer path moved
     assert torch.equal(rev_before, rev_after)                  # reconstruction untouched
@@ -383,7 +383,7 @@ def test_perceptual_context_reaches_output_only_through_named_bindings(synth_bin
     q = What.supervised(0)
     with torch.no_grad():
         u = m.understand(x)
-        construction = m.reverseOutput(u, q)
+        construction = m.reverseOutput(u, m.resolveAnswer(u, q))
     refs = construction.derivation.synthesis_references
     assert len(refs) == 2 and refs == tuple(sorted(refs))
     assert construction.trace[0]["bindings"] == refs
@@ -399,7 +399,7 @@ def test_perceptual_context_reaches_output_only_through_named_bindings(synth_bin
             reconstruction_carriers=dict(u.reconstruction_carriers),
             execution=u.execution)
         with torch.no_grad():
-            return m.reverseOutput(alt, q).percepts
+            return m.reverseOutput(alt, m.resolveAnswer(alt, q)).percepts
 
     base = construction.percepts
     # Perturb WITHOUT changing which slots are the most salient (the named
@@ -500,7 +500,7 @@ def test_synthesized_answer_checkpoint_reloads_into_a_fresh_model(synth_config, 
     assert m.synthesis_parameters()
     with torch.no_grad():
         u = m.understand(batch[0])
-        before = m.reverseOutput(u, What.supervised(0)).actual.clone()
+        before = m.reverseOutput(u, m.resolveAnswer(u, What.supervised(0))).actual.clone()
     path = tmp_path / "synth.ckpt"
     m.save_weights(str(path))
     fresh = _build(synth_config)
@@ -520,9 +520,9 @@ def test_synthesized_answer_checkpoint_reloads_into_a_fresh_model(synth_config, 
     assert twin.load_weights(str(path), require_match=True)
     with torch.no_grad():
         u2 = fresh.understand(batch[0])
-        a = fresh.reverseOutput(u2, What.supervised(0)).actual
+        a = fresh.reverseOutput(u2, fresh.resolveAnswer(u2, What.supervised(0))).actual
         u3 = twin.understand(batch[0])
-        b = twin.reverseOutput(u3, What.supervised(0)).actual
+        b = twin.reverseOutput(u3, twin.resolveAnswer(u3, What.supervised(0))).actual
     assert torch.equal(a, b)
     assert not torch.equal(a, torch.zeros_like(a))
     # A fresh model with the gate on already carries the width-known modules,
@@ -654,12 +654,12 @@ def test_reverse_output_is_carrier_pure_without_the_guard(synth_config, monkeypa
     x, _ = _batch(m)
     with torch.no_grad():
         u = m.understand(x)
-        m.reverseOutput(u, What.supervised(0))       # builds answer-path modules
+        m.reverseOutput(u, m.resolveAnswer(u, What.supervised(0)))       # builds answer-path modules
     monkeypatch.setattr(m, "_synthesis_guard", lambda: nullcontext(), raising=True)
     before = _live_state_fingerprint(m)
     with torch.no_grad():
-        m.reverseOutput(u, What.supervised(0))
-        m.reverseOutput(u, What.past(1, -1))
+        m.reverseOutput(u, m.resolveAnswer(u, What.supervised(0)))
+        m.reverseOutput(u, m.resolveAnswer(u, What.past(1, -1)))
     after = _live_state_fingerprint(m)
     changed = {k: (before.get(k), after.get(k)) for k in set(before) | set(after)
                if before.get(k) != after.get(k)}

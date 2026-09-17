@@ -69,7 +69,7 @@ def test_model_checkpoint_preserves_readout_and_adam(tmp_path, legacy_adapter):
     try:
         with torch.no_grad():
             understanding = _capture_program_probe(model, ["1 plus 2", "3 plus 4"])
-            model.reverseOutput(understanding, (What.supervised(0), What.supervised(1)))
+            model.reverseOutput(understanding, model.resolveAnswer(understanding, (What.supervised(0), What.supervised(1))))
         adapter = model.outputSpace.percept_adapter
         if legacy_adapter:
             # Preserve the legacy checkpoint layout, including parameters whose

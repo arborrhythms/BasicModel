@@ -8143,6 +8143,21 @@ class BasicModel(BaseModel):
                         "degrade the input to create one)")
         return rev_ev, cost
 
+    def resolveAnswer(self, understanding, question):
+        """Prepare an owned answer before any surface realization.
+
+        Question resolution and conceptual thinking belong at this boundary.
+        The returned derivation retains the current step's gradients and can
+        be realized again without executing another query. Desired answers
+        are accepted only by the later scoring path.
+        """
+        if not isinstance(understanding, Understanding):
+            raise TypeError("answer resolution expects an Understanding")
+        questions = question_batch(question)
+        if not questions:
+            raise ValueError("answer resolution requires at least one question")
+        return self._resolve_answer(understanding, questions)
+
     def _resolve_answer(self, understanding, question):
         """Resolve owned concepts for an answer, before question conditioning.
 
@@ -8239,7 +8254,7 @@ class BasicModel(BaseModel):
             synthesis_references=references, sentence_location=0, prefix=None,
             resolved=resolved_all, source=source, row_sources=tuple(row_sources),
             step=steps, exact_steps=exact_steps, program=tuple(programs),
-            conditioning_context=context)
+            conditioning_context=context, questions=questions)
 
     # -- thinking: the resolve step (mathematical thinking spec 6) -----------
     #
@@ -9139,21 +9154,22 @@ class BasicModel(BaseModel):
                     params.extend(module.parameters())
         return list({id(p): p for p in params}.values())
 
-    def reverseOutput(self, understanding, question):
-        """Construct a question-dependent answer from the owned understanding.
+    def reverseOutput(self, understanding, derivation):
+        """Realize a prepared AnswerDerivation without running resolution.
 
-        Resolve and condition full-width concepts, then realize them through
-        the independent generate walk or dedicated synthesis operators, the
-        shared reverse chain, and OutputSpace. Dense resolution is retained
-        for topologies without row programs. Desired answers enter scoring
-        later; synthesis preserves the carriers needed by reconstruction.
+        Condition its owned concepts once, then use the independent generate
+        walk or dedicated synthesis operators, the shared reverse chain and
+        OutputSpace. Dense prepared seeds remain supported for topologies
+        without row programs. Desired answers enter scoring later; synthesis
+        preserves the carriers needed by reconstruction.
         """
         if not isinstance(understanding, Understanding):
             raise TypeError("output expects an Understanding")
-        derivation = self._resolve_answer(understanding, question)
+        if not isinstance(derivation, AnswerDerivation):
+            raise TypeError("output expects a prepared AnswerDerivation; call resolveAnswer first")
         cs = self.conceptualSpace
         ps = self.perceptualSpace
-        questions = question_batch(question)
+        questions = derivation.questions
         temporal = bool(questions) and questions[0].relation in (
             WhatRelation.PAST, WhatRelation.FUTURE)
         surface = None
@@ -9168,10 +9184,13 @@ class BasicModel(BaseModel):
             # compiled loop) and the words are realised through the
             # reverse chain.  The symbol vector is never padded to fit.
             idea, idea_resolved, idea_sources, _ = self._materialize_answer_idea(
-                understanding, derivation, question)
+                understanding, derivation, questions)
             object.__setattr__(self, "_output_idea_sources", idea_sources)
             object.__setattr__(self, "_output_idea_resolved", idea_resolved)
             if getattr(self, "output_in_loop", False) and torch.is_tensor(idea):
+                # A prepared answer may be trained after a no-grad capture,
+                # without entering forward/runBatch's anchor setup first.
+                _ensure_grad_anchors(idea.device, (idea.dtype,))
                 budget = self._walk_budget()
                 sample_actions = self.training and torch.is_grad_enabled()
                 words, n_emitted, output_truncated, policy_cost = (
@@ -9837,9 +9856,9 @@ class BasicModel(BaseModel):
             else self._capture_understanding(execution))
         self._last_answer_construction = None
         if getattr(self, "answer_synthesis", False):
-            # Step 4: the answer is constructed through reverseOutput(), not read
-            # from the direct symbol projection (kept as migration oracle).
-            construction = self.reverseOutput(self._last_understanding, questions)
+            # Complete conceptual resolution before entering surface generation.
+            derivation = self.resolveAnswer(self._last_understanding, questions)
+            construction = self.reverseOutput(self._last_understanding, derivation)
             produced_all = construction.actual
         programs = self._last_understanding.answer_program
         if programs:
@@ -13788,25 +13807,16 @@ class BasicModel(BaseModel):
                 space="InputSpace", category="reconstruction",
             )
 
-            # Reverse-pass input reconstruction (OS→CS→PS→IS): run the
-            # restored reverse pipeline on the head output and compare
-            # the reconstructed input against the forward InputSpace
-            # event. Blended via ``reconstruction_scale`` (the design's
-            # reconRatio model, doc/Architecture.md). Single-input
-            # per-space reverse: the round-trip is the local inverse, so
-            # this is an approximate reconstruction through the averaged
-            # loops -- guarded so a shape edge case in any config
-            # degrades to a zero contribution rather than breaking the
-            # step.
+            # Legacy event reconstruction starts from the owned conceptual
+            # understanding. Tied completion already supplied lossIn, so both
+            # train and evaluation skip a duplicate reconstruction objective.
+            # Explicit legacy D3 configurations deduplicate during training.
             lossRev = torch.zeros((), device=TheDevice.get())
-            # Dedupe: on D3 lossIn IS the reverse objective; train skips the double count (doc/plans/2026-07-03-reconstruction-fidelity-execution.md); eval totals still include the reverse term.
             _rev_dedupe = self.reconstruct_in_loop or (train and bool(self._d3_active))
             try:
                 if forwardInput is not None and not _rev_dedupe:
-                    # Step 2 (What spec): the input-associated inverse path is
-                    # ``Model.reverseReconstruct(understanding)``; the seed, the
-                    # method-1 leaves, the reduce-unfold, and ``reverse()`` all
-                    # live there.  ``runBatch`` only scores and reports.
+                    # reverseReconstruct owns the input inverse and its seed;
+                    # runBatch consumes its result and diagnostic score.
                     # One understanding for both downward paths (Step 6):
                     # reuse the one ``what()`` captured for this execution.
                     understanding = getattr(self, "_last_understanding", None)

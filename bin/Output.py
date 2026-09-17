@@ -70,6 +70,9 @@ class AnswerDerivation:
     program: Tuple[Any, ...] = field(default_factory=tuple, repr=False, compare=False)
     conditioning_context: Any = field(default=None, repr=False, compare=False)
     conceptual_answer: Any = field(default=None, repr=False, compare=False)
+    # Presentation metadata is owned before realization. It carries no target
+    # and does not cause another query or another conditioning pass.
+    questions: Tuple[Any, ...] = field(default_factory=tuple, repr=False, compare=False)
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "grammar_trace", tuple(self.grammar_trace))
@@ -80,6 +83,7 @@ class AnswerDerivation:
         object.__setattr__(self, "step", tuple(self.step))
         object.__setattr__(self, "exact_steps", tuple(self.exact_steps))
         object.__setattr__(self, "program", tuple(self.program))
+        object.__setattr__(self, "questions", tuple(self.questions))
         if self.conditioning_context is not None:
             object.__setattr__(self, "conditioning_context",
                                self.conditioning_context.clone())

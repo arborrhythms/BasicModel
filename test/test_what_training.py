@@ -237,7 +237,7 @@ def test_temporal_question_content_is_causally_used(synth_model):
         with torch.no_grad():
             if u is None:
                 u = m.understand(batch[0])
-            actual = m.reverseOutput(u, questions).actual
+            actual = m.reverseOutput(u, m.resolveAnswer(u, questions)).actual
         target = torch.stack([
             torch.as_tensor(m.inputSpace.data.what(q).what, dtype=actual.dtype)
             for q in (desired_for or questions)]).unsqueeze(1).to(actual.device)

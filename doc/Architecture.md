@@ -1155,13 +1155,13 @@ sentence state. BasicModel selects `reconstructionPlacement=compiled`, a
 separate fullgraph reconstruction call. With the MPS `eager` capture backend,
 that call uses `aot_eager` to capture backward as well. Its compiler retains
 saved buffers for repeated gradient reads by the joint balance rule; the caller's
-global donation setting is preserved ([Models.py:11186](../bin/Models.py#L11186)). Configurations without
+global donation setting is preserved ([Models.py:11205](../bin/Models.py#L11205)). Configurations without
 the placement setting retain the historical in-graph default; the
 `BASICMODEL_RECON_PLACEMENT` diagnostic can override either for comparison.
 Completion owns the result once during understanding, including
 valid zero-valued results ([Models.py:7253](../bin/Models.py#L7253),
 [Models.py:8000](../bin/Models.py#L8000),
-[Models.py:11155](../bin/Models.py#L11155)).
+[Models.py:11174](../bin/Models.py#L11174)).
 
 The reconstruction traversal has three bounded passes: an integer-only replay
 identifies operand occurrences; seal reversal recovers each completed sentence's
@@ -1169,14 +1169,14 @@ stack; then a reverse word walk undoes unary/post folds, pops and scores the
 word, and undoes its pre-fold. Repeated concept rows retain their own signed
 occurrence activations. Packed sentences have separate boundaries and costs.
 The two floating passes use gradient-bearing carries; the metadata pass needs
-no backward tape ([Models.py:11229](../bin/Models.py#L11229)).
+no backward tape ([Models.py:11248](../bin/Models.py#L11248)).
 
 Reconstruction owns no learned decoder. Selected compose transforms supply
 affine inverses, known-operand residuals or explicitly bounded approximate
 reconstruction. A missing inverse reports incompleteness. Dictionary snapshots
 and witnesses are detached and retained for backward; targets only score the
 result ([Language.py:14351](../bin/Language.py#L14351),
-[Models.py:11571](../bin/Models.py#L11571)). Recovered word ideas pass through
+[Models.py:11590](../bin/Models.py#L11590)). Recovered word ideas pass through
 the shared numerical input reverse chain using a fresh carrier; they never
 enter the free generate chart ([Models.py:8038](../bin/Models.py#L8038)).
 
@@ -1191,11 +1191,19 @@ input-width square allocation. Existing checkpoint adapters retain their full
 factor layout; new checkpoints carry a compact-layout marker
 ([Layers.py:1633](../bin/Layers.py#L1633),
 [Spaces.py:30277](../bin/Spaces.py#L30277),
-[Models.py:8967](../bin/Models.py#L8967)). This head is independent of the
+[Models.py:8982](../bin/Models.py#L8982)). This head is independent of the
 input reconstruction inverse and belongs to the answer optimizer parameters
-([Models.py:9089](../bin/Models.py#L9089)).
-The remaining controller migration will move query resolution out of
-`reverseOutput`; tied reconstruction does not claim that later item complete.
+([Models.py:9104](../bin/Models.py#L9104)).
+`resolveAnswer(understanding, questions)` prepares an owned `AnswerDerivation`
+before `reverseOutput(understanding, derivation)` realizes it. Output requires
+that value and never invokes the resolver; repeated realization retains the
+same derivation and target-free presentation metadata. Its conceptual clone
+retains the current step's gradient. The remaining levelled-controller
+migration must finish all internal thoughts before the final surface call;
+the explicit API boundary alone does not complete that work
+([Models.py:8146](../bin/Models.py#L8146),
+[Models.py:9157](../bin/Models.py#L9157),
+[Output.py:48](../bin/Output.py#L48)).
 
 ## Sigma and Pi Layers
 
@@ -1297,7 +1305,7 @@ hard EOS resets start it cold. Restoring
 weights starts prediction context cold. Neither global LTM recency nor internal
 thoughts initialize an external-observation sequence. See
 [`begin_document`](../bin/Layers.py#L9769) and the
-[packed observer](../bin/Models.py#L12764).
+[packed observer](../bin/Models.py#L12783).
 
 ### Historical root / ARMA representation
 

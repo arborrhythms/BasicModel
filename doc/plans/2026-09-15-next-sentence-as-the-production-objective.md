@@ -902,8 +902,8 @@ continuation within the same addressed document. Provisioning runs under a
 suspended external-observation scope: its parsed truths still enter durable
 LTM, while external rows, pending predictions and scored losses survive even a
 temporary batch reshape
-([Models.py:12648](../../bin/Models.py#L12648),
-[Models.py:12764](../../bin/Models.py#L12764),
+([Models.py:12667](../../bin/Models.py#L12667),
+[Models.py:12783](../../bin/Models.py#L12783),
 [data.py:526](../../bin/data.py#L526),
 [Layers.py:9741](../../bin/Layers.py#L9741)).
 
@@ -1057,8 +1057,8 @@ substitutes. Full nested-structure prediction remains a separate milestone; loca
 prediction is described in §8.3.
 Context cleanup is implemented in
 [`detach_prediction_context`](../../bin/Layers.py#L10447); packed chronology is in
-[`_drain_packed_stm_end_states`](../../bin/Models.py#L12764), with the
-[single-drain guard in `_end_step`](../../bin/Models.py#L12587).
+[`_drain_packed_stm_end_states`](../../bin/Models.py#L12783), with the
+[single-drain guard in `_end_step`](../../bin/Models.py#L12606).
 
 §3 still requires live continuous query operands and intermediate results
 inside the bounded reasoning episode, and explicit credit for hard choices.
@@ -1140,8 +1140,8 @@ query/subgoal behavior remain separate acceptance gates in §10.
 Keep supplied-answer training for the answer conditioner, generate chooser
 and dedicated synthesis modules. The current answer-target gate and its
 call site enforce this separation
-([Models.py:9375](../../bin/Models.py#L9375),
-[Models.py:13630](../../bin/Models.py#L13630)). The concepts-to-concepts
+([Models.py:9394](../../bin/Models.py#L9394),
+[Models.py:13649](../../bin/Models.py#L13649)). The concepts-to-concepts
 objective adds no next-text answer target and no reconstruction-parse teacher
 for output. Past/future realized-answer metrics remain evaluation metrics.
 
@@ -1155,7 +1155,7 @@ for output. Past/future realized-answer metrics remain evaluation metrics.
   and supplied-label behavior, and never train an output identity on PRESENT.
 - **Prediction-to-output integration:** remains unfinished even for inference.
   The indexed FUTURE branch still selects no answer program
-  ([Models.py:8196](../../bin/Models.py#L8196)). Shared inverse transforms do
+  ([Models.py:8211](../../bin/Models.py#L8211)). Shared inverse transforms do
   not establish a working FUTURE realization or answer quality. When this
   integration is taken up, capture a target-free conceptual value and
   provenance; do not fabricate input derivation witnesses or move query
@@ -1246,8 +1246,8 @@ sentence boundaries instead of exposing the entire pack as prior context.
 The existing helper already predicts before observing the arriving end state
 ([Layers.py:10118](../../bin/Layers.py#L10118)); the pending and packed drains call
 it before their consolidated-store append
-([Models.py:12699](../../bin/Models.py#L12699),
-[Models.py:12764](../../bin/Models.py#L12764)). This supplies a starting point,
+([Models.py:12718](../../bin/Models.py#L12718),
+[Models.py:12783](../../bin/Models.py#L12783)). This supplies a starting point,
 not proof of isolation throughout `forward()` or of the complete cycle above.
 The ordinary input path must perform this cycle without a `Data.what(FUTURE)`
 request or an available FUTURE realization program (§8.5).
@@ -1593,7 +1593,7 @@ intended behaviour changes are recorded as accurate: single-sentence FineWeb
 training hard-resets only at real document boundaries
 ([data.py:555](../../bin/data.py#L555)), and the packed drain writes depth-3
 sentences to durable LTM as relations, matching the non-packed sink
-([Models.py:12508](../../bin/Models.py#L12508)).
+([Models.py:12527](../../bin/Models.py#L12527)).
 
 Codex is to address the following items in one change. Items are ordered by
 importance. Tests are named so the other agent's suite can gate them.
@@ -1745,7 +1745,7 @@ the current implementation.
   on soft resets. Hard reset and [`begin_document`](../../bin/Layers.py#L9769)
   start the affected row cold. The real two-brick regression scores three
   pairs from four observations in one document.
-- [`_stage_expectation_documents`](../../bin/Models.py#L12648) treats invalid
+- [`_stage_expectation_documents`](../../bin/Models.py#L12667) treats invalid
   source-row positions as unaddressed streams, while malformed addresses
   missing their document key fail explicitly. Existing cursor addresses still
   enforce document boundaries inside packed rows.
@@ -1754,7 +1754,7 @@ the current implementation.
   renamed to `sentenceExpectation` throughout runtime reads, schema and XML.
   Both `model.xml` and `BasicModel.xml` enable expectation with `inter=0.1`,
   ARMA zero and contrastive zero. Named experiment files retain their explicit
-  overrides. [`set_sentence_expectation`](../../bin/Models.py#L12622) supports
+  overrides. [`set_sentence_expectation`](../../bin/Models.py#L12641) supports
   off/on at runtime, including first construction after an off start; its
   parameters join the optimizer once and disabled Adam steps leave them fixed.
   Head construction preserves the caller's random stream, allowing matched
@@ -1764,13 +1764,13 @@ the current implementation.
   delegates are removed. Provisioning resets the interaction episode while
   [`suspend_external_observations`](../../bin/Layers.py#L9741) protects only the
   external expectation stream. Temporal prediction reads the discourse owner
-  directly ([`_temporal_answer_rep_row`](../../bin/Models.py#L8777)).
+  directly ([`_temporal_answer_rep_row`](../../bin/Models.py#L8792)).
 - [`expectation_metrics`](../../bin/Layers.py#L10472) reports observation/pair
   counts, cold starts, document transitions, feature MSE and presence BCE.
   [`last_expectation_comparison`](../../bin/Layers.py#L10485) returns owned,
   detached prior/observation/residual values. These inspection values do not
   yet establish the durable occurrence-link contract in §8.7.
-- [`runBatch`](../../bin/Models.py#L13125) applies its declared train/evaluation
+- [`runBatch`](../../bin/Models.py#L13144) applies its declared train/evaluation
   mode and grad gate. Real runtime calls report comparisons without training
   accumulation or updates. A controlled future-sentence/other-row perturbation
   leaves the earlier estimate unchanged. Fully masked observations are skipped.
@@ -1834,7 +1834,7 @@ now executes only selected operators. The supplied-answer probe also exposed
 dropped compiled/unpacked observations. The existing 21-value return now
 feeds the host boundary explicitly through
 [`_publish_compiled_sentence_state`](../../bin/Models.py#L7253) and
-[`_drain_pending_stm_end_state`](../../bin/Models.py#L12699), preserving depth and
+[`_drain_pending_stm_end_state`](../../bin/Models.py#L12718), preserving depth and
 padding masks. The report identifies the pre-fix failures separately from the
 final measurements.
 
@@ -1886,7 +1886,7 @@ The corrected B=2 output run completes fifteen optimizer steps, measuring
 sum/stop workload establishes execution and cost, not learned language quality.
 Full-suite verification passes. See the
 [measurement report](../benchmarks/2026-09-16-tied-input-reconstruction.md)
-and [implementation](../../bin/Models.py#L11186).
+and [implementation](../../bin/Models.py#L11205).
 
 These learning and checkpoint declarations accompany the verified BasicModel
 default change required by §6. The measurements expose its cost and fidelity
@@ -1961,3 +1961,47 @@ files also pass, with 70 tests. This readout is not a reconstruction decoder
 measurements (including failed runs), documentation reconciliation and the
 green background full suite complete this reconstruction migration's validation.
 [Full-suite result](../benchmarks/2026-09-16-tied-reconstruction-data/full-suite-green.log).
+
+
+## 14. Prepared-answer boundary (verified)
+
+`resolveAnswer(understanding, questions)` now prepares the owned conceptual
+answer before `reverseOutput(understanding, derivation)` expresses it. The
+output API requires an `AnswerDerivation`; passing unresolved questions is an
+error. Target-free presentation metadata belongs to that value, and repeated
+realization consumes the same value without running resolution or queries.
+`what` explicitly performs the handoff. The owned conceptual clone retains
+current-step gradients, and standalone compiled realization initializes its
+own gradient anchors even when understanding was captured under `no_grad`.
+[Preparation](../../bin/Models.py#L8146),
+[realization](../../bin/Models.py#L9157),
+[owned value](../../bin/Output.py#L48).
+
+The initial reviewer probes fail in all seven cases on `b5518a1`: the held
+answer calls re-enter the forbidden resolver, and the public preparation API
+is absent. The first implementation also exposes a missing gradient anchor in
+standalone compiled realization; that path must work without an earlier
+training forward. All seven boundary probes pass (85.78 s), and all seven affected files pass
+**109 tests, with 16 warnings, in 381.84 s**. The full suite also passes: **4227 passed, 51 skipped, 7 xfailed, 185 warnings, 4 subtests passed in 5568.01s (1:32:48)**, with exit status zero.
+[Full-suite green](../benchmarks/2026-09-16-prepared-answer-data/full-suite-green.log),
+[frozen source manifest](../benchmarks/2026-09-16-prepared-answer-data/full-suite-source-manifest.json).
+Tests use `OMP_NUM_THREADS=1 MKL_NUM_THREADS=1` to avoid CPU oversubscription.
+[Affected green](../benchmarks/2026-09-16-prepared-answer-data/affected-green.log).
+[Original red](../benchmarks/2026-09-16-prepared-answer-data/boundary-red.log),
+[standalone-gradient red](../benchmarks/2026-09-16-prepared-answer-data/standalone-gradient-red.log),
+[boundary green](../benchmarks/2026-09-16-prepared-answer-data/boundary-green.log).
+The output-length probe uses real
+captured one-unit inputs and a controlled sum/stop policy; it tests independent
+execution and termination, not learned linguistic quality.
+
+This change establishes the preparation/realization API. The legacy `think`
+loop still invokes `what` on each iteration, so the complete levelled episode,
+structured-query, nested-meaning and residual-credit migrations remain open.
+[Legacy loop](../../bin/Models.py#L9997). Explicitly unresolved temporal
+answers remain unresolved; output does not substitute the current input.
+
+Full-suite command, from `basicmodel/` (runtime, tests and configuration frozen throughout):
+
+```bash
+DEVELOPER_DIR=/Library/Developer/CommandLineTools OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 .venv/bin/python -m pytest test -q -x -p no:cacheprovider
+```

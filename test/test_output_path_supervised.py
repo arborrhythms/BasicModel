@@ -118,7 +118,7 @@ def test_serial_answer_path_varies_with_the_input(serial_synth_config):
     with torch.no_grad():
         x = m.inputSpace.prepInput(list(data.train_input))
         u = m.understand(x)
-        c = m.reverseOutput(u, tuple(What.supervised(i) for i in range(len(data.train_input))))
+        c = m.reverseOutput(u, m.resolveAnswer(u, tuple(What.supervised(i) for i in range(len(data.train_input)))))
     conceptual = _spread(u.conceptual_state)
     seed = _spread(u.answer_seed if torch.is_tensor(u.answer_seed) else u.symbolic_state)
     actual = _spread(c.actual)
@@ -178,7 +178,7 @@ def test_native_answer_uses_owned_ideas_without_dense_symbol_state(tmp_path, out
             assert len(u.answer_program) == 2 and all(p is not None for p in u.answer_program)
             # These dense compatibility carriers cannot own a production answer.
             owned = replace(u, symbolic_state=None, conceptual_state=None, answer_seed=None)
-            c = m.reverseOutput(owned, (What.supervised(0), What.supervised(1)))
+            c = m.reverseOutput(owned, m.resolveAnswer(owned, (What.supervised(0), What.supervised(1))))
         assert c.derivation.resolved
         assert c.concepts.shape[0] == 2 and c.concepts.shape[-1] == 1032
         assert not torch.equal(c.concepts[0], c.concepts[1])
@@ -472,7 +472,7 @@ def test_native_checkpoint_restores_active_answer_widths(tmp_path, legacy_only):
     try:
         with torch.no_grad():
             u = _capture_program_probe(m, ["1 plus 2", "3 plus 4"])
-            m.reverseOutput(u, (What.supervised(0), What.supervised(1)))
+            m.reverseOutput(u, m.resolveAnswer(u, (What.supervised(0), What.supervised(1))))
             m.question_conditioners["1032"].weight.fill_(0.02)
             m.conceptualSpace.synthesis_layer.raw_L[1, 0] = 0.17
             m.outputSpace.percept_adapter.raw_L[32, 3] = -0.11

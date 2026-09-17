@@ -145,7 +145,7 @@ reads the owner through [`_what_memory`](../bin/Models.py#L7880).
 The retired `whatThinkingMemory` switch and discourse delegates are removed.
 
 `sentenceExpectation` defaults to true, with structured NP1/VP/NP2 expectation.
-[`set_sentence_expectation`](../bin/Models.py#L12622) can switch it at runtime;
+[`set_sentence_expectation`](../bin/Models.py#L12641) can switch it at runtime;
 [`ensure_sentence_expectation`](../bin/Language.py#L13591) creates its parameters
 once and registers them for optimization when first enabled. Re-enabling starts
 a fresh observation stream. Soft packed-brick resets preserve an enabled
@@ -156,7 +156,7 @@ See [`InterSentenceLayer.Reset`](../bin/Layers.py#L10567) and
 ## Recorded compose execution
 
 Answer materialization replays its captured compose program through
-[`_replay_program`](../bin/Models.py#L12114).
+[`_replay_program`](../bin/Models.py#L12133).
 [`forward_binary_step`](../bin/Language.py#L14620) executes the recorded
 operator for each live row, preserving the newest operand on inactive rows.
 Eager calls dispatch the selected operator set; compiled calls use conditional

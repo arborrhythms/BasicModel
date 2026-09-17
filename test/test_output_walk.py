@@ -580,11 +580,11 @@ def test_reverseoutput_evaluation_uses_its_policy_with_input_trace_present():
             assert bool((targets >= 0).any())
             choices = [t.clone() for t in m._reconstruction_stack().choices()]
             _stop(m)
-            stopped = m.reverseOutput(u, What.supervised(0))
+            stopped = m.reverseOutput(u, m.resolveAnswer(u, What.supervised(0)))
             words = stopped.concepts.clone()
             stop_truncated = m._output_truncated.clone()
             _prefer(m, list(m.languageSpace._generate_binary_names).index("lift"))
-            expanded = m.reverseOutput(u, What.supervised(0))
+            expanded = m.reverseOutput(u, m.resolveAnswer(u, What.supervised(0)))
         assert not torch.equal(words, expanded.concepts)
         assert not bool(stop_truncated.any())
         assert bool(m._output_truncated.all())
