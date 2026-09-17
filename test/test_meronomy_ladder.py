@@ -555,6 +555,7 @@ def test_utility_counts_accrue_once_per_presentation():
     assert any(v is not None for v in defined)       # units with features
 
 
+@pytest.mark.slow
 def test_recurring_same_whole_pair_is_proposed_and_admitted_as_a_phrase():
     """Under digit wholes a two-digit numeral is a coarse whole over two
     digit units; a chunk chosen on that pair recurring ``admissionCount``
@@ -635,6 +636,7 @@ def test_boundary_types_none_starts_without_boundaries(tmp_path):
 
 # -- Phase 2, step 3: the cold start learns space as the basic boundary ---------
 
+@pytest.mark.slow
 def test_cold_start_learns_space_as_the_basic_boundary(tmp_path):
     """Under <boundaryTypes>none</boundaryTypes> with the learner on, a
     small varied text corpus (the idiom fixture's sentences) turns a
@@ -718,6 +720,7 @@ def test_digit_identity_order_and_repetition_are_distinct_occurrences(ladder):
 
 # -- Phase 2b acceptance (mechanism): phrases on a text corpus ------------------
 
+@pytest.mark.slow
 def test_recurring_phrases_are_admitted_on_a_text_corpus_with_positive_gain():
     """On the inline idiom / literal corpus (``kick the bucket`` vs ``kick
     the ball``, frequency-matched) adjacent words share a clause, so
@@ -754,6 +757,7 @@ def test_recurring_phrases_are_admitted_on_a_text_corpus_with_positive_gain():
 
 # -- contracts 6-7: the counts, admissions and acquired predicates round-trip ----
 
+@pytest.mark.slow
 def test_utility_state_and_predicates_round_trip_a_checkpoint(tmp_path):
     m = _build_ladder()
     cs = m._concept_owner()

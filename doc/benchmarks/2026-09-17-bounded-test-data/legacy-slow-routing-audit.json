@@ -1,0 +1,159 @@
+[
+  {
+    "file": "test/test_basicmodel.py",
+    "function": "test_load_enwiki",
+    "line": 1911,
+    "decorators": [
+      "unittest.skipIf(not _RUN_SLOW, 'slow -- set RUN_SLOW=1')"
+    ]
+  },
+  {
+    "file": "test/test_blind_decode.py",
+    "function": "test_mm20m_xor_blind_roundtrip",
+    "line": 207,
+    "decorators": [
+      "pytest.mark.skipif(os.environ.get('RUN_SLOW') != '1', reason='~24s (build + pinned epochs) -- RUN_SLOW gates the bar')"
+    ]
+  },
+  {
+    "file": "test/test_compiled_word_chunk.py",
+    "function": "test_tensor_peer_complete_forward_is_one_graph_across_runtime_lengths",
+    "line": 735,
+    "decorators": [
+      "pytest.mark.skipif(os.getenv('RUN_SLOW') != '1', reason='strict real-model fullgraph trace is ~15s; set RUN_SLOW=1')"
+    ]
+  },
+  {
+    "file": "test/test_conceptual_recurrence.py",
+    "function": "test_no_recompile_fullgraph",
+    "line": 298,
+    "decorators": [
+      "pytest.mark.skipif(not _RUN_SLOW, reason='slow (~33s no-recompile fullgraph gate) -- set RUN_SLOW=1')"
+    ]
+  },
+  {
+    "file": "test/test_dimensional_governance.py",
+    "function": "test_deep_cs_reverse_round_trips_to_ps_width",
+    "line": 291,
+    "decorators": [
+      "pytest.mark.skipif(not _RUN_SLOW, reason='slow (~55s serial deep-CS reverse round-trip) -- set RUN_SLOW=1')"
+    ]
+  },
+  {
+    "file": "test/test_explicit_dimensions.py",
+    "function": "test_xor_solved_with_pinned_seed",
+    "line": 306,
+    "decorators": [
+      "unittest.skipIf(not _RUN_SLOW, 'slow (~60s end-to-end XOR_grammar train) -- set RUN_SLOW=1')",
+      "pytest.mark.xfail(reason='XOR_GRAMMAR_SEED was pinned for the legacy butterfly + Codebook bivector path; after 2026-05-12 butterfly removal + 2026-05-13 ProjectionBasis refactor the convergence basin moved.  Pick a new seed deliberately as a follow-up.')"
+    ]
+  },
+  {
+    "file": "test/test_explicit_dimensions.py",
+    "function": "test_piecewise_overall_at_least_50_pct_with_pinned_seed",
+    "line": 347,
+    "decorators": [
+      "unittest.skipIf(not _RUN_SLOW, 'slow (~65s end-to-end XOR_grammar train) -- set RUN_SLOW=1')",
+      "pytest.mark.xfail(reason='The lossy grammar root cannot yet reconstruct leaves without walking the recorded parse tree.')"
+    ]
+  },
+  {
+    "file": "test/test_input_word_cursor.py",
+    "function": "test_per_word_enabled_predicate_tracks_use_grammar",
+    "line": 390,
+    "decorators": [
+      "pytest.mark.skipif(os.getenv('RUN_SLOW') != '1', reason='slow: builds MM_20M over the full text corpus in a subprocess (can exceed the 180s subprocess timeout); set RUN_SLOW=1')"
+    ]
+  },
+  {
+    "file": "test/test_ir_fullgraph_compile.py",
+    "function": "test_serial_per_word_forward_compiles_fullgraph_eager",
+    "line": 57,
+    "decorators": [
+      "pytest.mark.skipif(not _RUN_SLOW, reason='slow (~60s CLI fullgraph trace) -- set RUN_SLOW=1')"
+    ]
+  },
+  {
+    "file": "test/test_math_thinking_training.py",
+    "function": "test_successor_is_learned_as_a_verb",
+    "line": 442,
+    "decorators": [
+      "pytest.mark.skipif(os.environ.get('RUN_SLOW') != '1', reason='RUN_SLOW: ~20 min on CPU')"
+    ]
+  },
+  {
+    "file": "test/test_mm_boolean.py",
+    "function": "test_explicit_test_sentences",
+    "line": 69,
+    "decorators": [
+      "unittest.skipIf(not _RUN_SLOW, 'slow -- set RUN_SLOW=1')",
+      "pytest.mark.xfail(reason='Convergence under the bare PiLayer concept path is not yet stable; retain as the held-out MM_boolean learning gate.')"
+    ]
+  },
+  {
+    "file": "test/test_mm_boolean.py",
+    "function": "test_encode_decode_by_best_fit",
+    "line": 168,
+    "decorators": [
+      "pytest.mark.xfail(reason=\"Encode-decode round-trip strength dropped after the 2026-05-13 ProjectionBasis refactor: the mean-over-V bivector accumulator reduces gradient signal magnitude relative to the legacy V-sum, so the codebook geometry doesn't tighten as much within the configured training budget.  Needs LR / epoch retune as a follow-up.\")",
+      "unittest.skipIf(not _RUN_SLOW, 'slow (~37s end-to-end MM_boolean train) -- set RUN_SLOW=1')"
+    ]
+  },
+  {
+    "file": "test/test_modality_configs.py",
+    "function": "test_all_live_configs_build_with_canonical_shapes",
+    "line": 126,
+    "decorators": [
+      "unittest.skipIf(not _RUN_SLOW, 'slow (~48s build-all every live config) -- set RUN_SLOW=1')"
+    ]
+  },
+  {
+    "file": "test/test_reconstruction_roundtrip.py",
+    "function": "test_mm20m_grammar_free_derivation_ceiling",
+    "line": 621,
+    "decorators": [
+      "pytest.mark.skipif(os.environ.get('RUN_SLOW') != '1', reason='~40s (build + 3 epochs + decode) -- RUN_SLOW gates it')"
+    ]
+  },
+  {
+    "file": "test/test_reconstruction_roundtrip.py",
+    "function": "test_mm20m_xor_exact_roundtrip",
+    "line": 655,
+    "decorators": [
+      "pytest.mark.skipif(os.environ.get('RUN_SLOW') != '1', reason='160-epoch reconstruction acceptance -- set RUN_SLOW=1')",
+      "pytest.mark.xfail(reason='MM_20M_xor scaffold reconstruction currently tops out below exact identity at the pinned budget; retain as the active reverse-path gap.')"
+    ]
+  },
+  {
+    "file": "test/test_stream_smoke.py",
+    "function": "test_stream_smoke_runs_one_epoch",
+    "line": 38,
+    "decorators": [
+      "pytest.mark.skipif(not _RUN_SLOW, reason='slow -- set RUN_SLOW=1')"
+    ]
+  },
+  {
+    "file": "test/test_testpoint.py",
+    "function": "test_demo_queries",
+    "line": 209,
+    "decorators": [
+      "unittest.skipIf(not _RUN_SLOW, 'slow -- set RUN_SLOW=1')"
+    ]
+  },
+  {
+    "file": "test/test_testpoint.py",
+    "function": "test_response_format",
+    "line": 225,
+    "decorators": [
+      "unittest.skipIf(not _RUN_SLOW, 'slow -- set RUN_SLOW=1')"
+    ]
+  },
+  {
+    "file": "test/test_testpoint.py",
+    "function": "test_response_length_bounded",
+    "line": 246,
+    "decorators": [
+      "unittest.skipIf(not _RUN_SLOW, 'slow -- set RUN_SLOW=1')"
+    ]
+  }
+]

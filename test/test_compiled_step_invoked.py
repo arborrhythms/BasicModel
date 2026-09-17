@@ -31,6 +31,7 @@ from Models import BaseModel
 from util import init_config, init_device
 
 
+@pytest.mark.slow
 def test_compiled_step_is_invoked():
     # Force the *global* TheDevice to CPU at runtime (not just via the
     # import-time env): in a shared pytest process a prior test can

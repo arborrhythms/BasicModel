@@ -1,5 +1,7 @@
 """Overlapping PS/WS `.where` candidates in the subsymbolic pump."""
 
+import pytest
+
 import os
 import sys
 import warnings
@@ -118,6 +120,7 @@ def _build_experiment():
     return model
 
 
+@pytest.mark.slow
 def test_model_callosum_carries_tiling_to_final_cs():
     import Models
     model = _build_experiment()

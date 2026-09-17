@@ -102,12 +102,14 @@ def serial_synth_config(tmp_path_factory):
     return path
 
 
+@pytest.mark.slow
 def test_output_path_memorizes_supervised_labels_on_the_parallel_topology(xor_synth_config):
     m = _build(xor_synth_config, "xor")
     assert m.answer_synthesis
     assert _memorize(m, epochs=60) >= 1.0
 
 
+@pytest.mark.slow
 def test_serial_answer_path_varies_with_the_input(serial_synth_config):
     """The answer path can only be trained on what varies with the input:
     the symbolic root that seeds synthesis must differ across different
@@ -127,6 +129,7 @@ def test_serial_answer_path_varies_with_the_input(serial_synth_config):
     assert actual > 0.1, actual                            # and the emitted answer
 
 
+@pytest.mark.slow
 def test_output_path_memorizes_supervised_labels_on_the_serial_topology(serial_synth_config):
     m = _build(serial_synth_config, "phrases")
     assert torch.is_tensor(m.understand(m.inputSpace.prepInput(
@@ -135,9 +138,17 @@ def test_output_path_memorizes_supervised_labels_on_the_serial_topology(serial_s
 
 
 
-def _native_answer_model(tmp_path, output_loop):
-    """Real aligned 136-wide peers and 1032-wide concepts, bounded storage."""
+_NATIVE_CONCEPT_WIDTHS = [
+    pytest.param(264, id="development"),
+    pytest.param(1032, id="production", marks=pytest.mark.slow),
+]
+
+
+def _native_answer_model(tmp_path, output_loop, *, concept_width=264):
+    """Distinct concept/percept widths; production width is an explicit slow case."""
     from test_meronomy_ladder import _build_ladder_variant
+    if concept_width <= 136:
+        raise ValueError("native fixture requires concepts wider than percepts")
     src = (_DATA / "MM_ladder.xml").read_text()
     def block(name):
         start = src.index("<" + name + ">")
@@ -146,11 +157,11 @@ def _native_answer_model(tmp_path, output_loop):
     cs, ws, output = block("ConceptualSpace"), block("WholeSpace"), block("OutputSpace")
     native_cs = cs
     for tag in ("nInputDim", "nDim", "nOutputDim"):
-        native_cs = native_cs.replace(f"<{tag}>136</{tag}>", f"<{tag}>1032</{tag}>")
+        native_cs = native_cs.replace(f"<{tag}>136</{tag}>", f"<{tag}>{concept_width}</{tag}>")
     native_cs = (native_cs.replace("<nVectors>4096</nVectors>", "<nVectors>256</nVectors>")
                  .replace("<activeVectors>4096</activeVectors>", "<activeVectors>256</activeVectors>"))
-    native_ws = ws.replace("<nInputDim>136</nInputDim>", "<nInputDim>1032</nInputDim>")
-    native_output = output.replace("<nInputDim>136</nInputDim>", "<nInputDim>1032</nInputDim>")
+    native_ws = ws.replace("<nInputDim>136</nInputDim>", f"<nInputDim>{concept_width}</nInputDim>")
+    native_output = output.replace("<nInputDim>136</nInputDim>", f"<nInputDim>{concept_width}</nInputDim>")
     replacements = [(cs, native_cs), (ws, native_ws), (output, native_output)]
     if output_loop:
         replacements.append(("<training>", "<training>\n      <outputInLoop>true</outputInLoop>"))
@@ -160,15 +171,16 @@ def _native_answer_model(tmp_path, output_loop):
     m.synthesis_bindings = 0  # named percepts must not hide a dead answer operand
     assert m.answer_synthesis and m.output_in_loop is output_loop
     assert m.wholeSpace.subspace.muxedSize == 136
-    assert m.conceptualSpace.stm.concept_dim == 1032
+    assert m.conceptualSpace.stm.concept_dim == concept_width
     return m
 
 
+@pytest.mark.parametrize("concept_width", _NATIVE_CONCEPT_WIDTHS)
 @pytest.mark.parametrize("output_loop", [False, True])
-def test_native_answer_uses_owned_ideas_without_dense_symbol_state(tmp_path, output_loop):
+def test_native_answer_uses_owned_ideas_without_dense_symbol_state(tmp_path, output_loop, concept_width):
     from dataclasses import replace
     from test_output_walk import _capture_program_probe, _stop
-    m = _native_answer_model(tmp_path, output_loop)
+    m = _native_answer_model(tmp_path, output_loop, concept_width=concept_width)
     m.eval()
     if output_loop:
         _stop(m)
@@ -180,7 +192,7 @@ def test_native_answer_uses_owned_ideas_without_dense_symbol_state(tmp_path, out
             owned = replace(u, symbolic_state=None, conceptual_state=None, answer_seed=None)
             c = m.reverseOutput(owned, m.resolveAnswer(owned, (What.supervised(0), What.supervised(1))))
         assert c.derivation.resolved
-        assert c.concepts.shape[0] == 2 and c.concepts.shape[-1] == 1032
+        assert c.concepts.shape[0] == 2 and c.concepts.shape[-1] == concept_width
         assert not torch.equal(c.concepts[0], c.concepts[1])
         assert bool(torch.isfinite(c.actual).all())
         assert not torch.equal(c.actual[0], c.actual[1])
@@ -251,9 +263,11 @@ def _answer_training_probe(m, opt, questions):
     return observed
 
 
+@pytest.mark.slow
+@pytest.mark.parametrize("concept_width", _NATIVE_CONCEPT_WIDTHS)
 @pytest.mark.parametrize("output_loop", [False, True])
-def test_native_realized_answer_loss_trains_the_active_conditioner(tmp_path, output_loop):
-    m = _native_answer_model(tmp_path, output_loop)
+def test_native_realized_answer_loss_trains_the_active_conditioner(tmp_path, output_loop, concept_width):
+    m = _native_answer_model(tmp_path, output_loop, concept_width=concept_width)
     opt = m.getOptimizer(lr=1e-3)
     try:
         got = _answer_training_probe(m, opt, (What.supervised(0), What.supervised(1)))
@@ -271,7 +285,7 @@ def test_native_realized_answer_loss_trains_the_active_conditioner(tmp_path, out
         assert owned.count(id(got["params"][i])) == 1
         for b, answer in enumerate(m._last_what_answers):
             root_input = answer.ltm_slot.input
-            assert root_input.shape[-1] == 1032
+            assert root_input.shape[-1] == concept_width
             expected = m._last_understanding.answer_program[b].end_state
             torch.testing.assert_close(root_input.reshape_as(expected), expected)
     finally:
@@ -280,6 +294,7 @@ def test_native_realized_answer_loss_trains_the_active_conditioner(tmp_path, out
         torch._dynamo.reset()
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("output_loop", [False, True])
 def test_available_input_targets_do_not_train_answer_modules_after_adam(output_loop):
     from copy import deepcopy
@@ -411,11 +426,12 @@ def test_supplied_text_scores_fixed_surface_and_masks_automatic_text():
         torch._dynamo.reset()
 
 
-def test_native_thinking_changes_the_owned_conceptual_answer(tmp_path):
+@pytest.mark.parametrize("concept_width", _NATIVE_CONCEPT_WIDTHS)
+def test_native_thinking_changes_the_owned_conceptual_answer(tmp_path, concept_width):
     from What import LTMSlot
     from Layers import WhatInteractionMemory
     from test_output_walk import _capture_program_probe
-    m = _native_answer_model(tmp_path, False)
+    m = _native_answer_model(tmp_path, False, concept_width=concept_width)
     m.eval()
     m.what_thinking_iterations = 2
     memory = WhatInteractionMemory(batch=2, capacity=8)
@@ -425,10 +441,10 @@ def test_native_thinking_changes_the_owned_conceptual_answer(tmp_path):
         with torch.no_grad():
             u = _capture_program_probe(m, ["1 plus 2", "3 plus 4"])
             base, _ = m._materialize_entries(
-                u.answer_program, torch.zeros(2, 3, 1032), m._walk_budget())
-            module = m._ltm_attention(1032, 136, device=base.device, dtype=base.dtype)
+                u.answer_program, torch.zeros(2, 3, concept_width), m._walk_budget())
+            module = m._ltm_attention(concept_width, 136, device=base.device, dtype=base.dtype)
             module["value"].weight.fill_(0.003)
-            module["out"].weight.copy_(torch.eye(1032) * 0.1)
+            module["out"].weight.copy_(torch.eye(concept_width) * 0.1)
             response = torch.linspace(0.1, 0.3, 136)
             for b in range(2):
                 memory.append_what_slot(LTMSlot(input=torch.zeros(136), output=response), b=b)
@@ -436,13 +452,13 @@ def test_native_thinking_changes_the_owned_conceptual_answer(tmp_path):
             assert bool(deltas.abs().sum() > 0)
             d = m._resolve_answer(u, questions)
             assert m.ltm_attention is module
-            assert d.conceptual_answer.shape == (2, 3, 1032)
+            assert d.conceptual_answer.shape == (2, 3, concept_width)
             torch.testing.assert_close(d.conceptual_answer[:, 0], base[:, 0] + deltas)
             torch.testing.assert_close(d.conceptual_answer[:, 1:], base[:, 1:])
             idea = m._materialize_answer_idea(u, d, questions)[0]
             torch.testing.assert_close(idea, d.conceptual_answer)
             # The referent is an owned full-width leaf identified by its
-            # WORD row, not a perceptual position padded up to 1032.
+            # WORD row, not a perceptual position padded up to concept_width.
             entry = u.answer_program[0]
             owner = m._concept_owner()
             word_id = owner._concept_allocator.word_obj_meta["plus"][0]
@@ -464,27 +480,28 @@ def test_native_thinking_changes_the_owned_conceptual_answer(tmp_path):
         torch._dynamo.reset()
 
 
+@pytest.mark.parametrize("concept_width", _NATIVE_CONCEPT_WIDTHS)
 @pytest.mark.parametrize("legacy_only", [False, True])
-def test_native_checkpoint_restores_active_answer_widths(tmp_path, legacy_only):
+def test_native_checkpoint_restores_active_answer_widths(tmp_path, legacy_only, concept_width):
     from test_output_walk import _capture_program_probe
-    m = _native_answer_model(tmp_path, False)
+    m = _native_answer_model(tmp_path, False, concept_width=concept_width)
     fresh = None
     try:
         with torch.no_grad():
             u = _capture_program_probe(m, ["1 plus 2", "3 plus 4"])
             m.reverseOutput(u, m.resolveAnswer(u, (What.supervised(0), What.supervised(1))))
-            m.question_conditioners["1032"].weight.fill_(0.02)
+            m.question_conditioners[str(concept_width)].weight.fill_(0.02)
             m.conceptualSpace.synthesis_layer.raw_L[1, 0] = 0.17
             m.outputSpace.percept_adapter.raw_L[32, 3] = -0.11
             if legacy_only:
                 narrow = m._question_conditioner(136, device=torch.device("cpu"), dtype=torch.float32)
                 narrow.weight.fill_(0.03)
-                del m.question_conditioners["1032"]
+                del m.question_conditioners[str(concept_width)]
         path = tmp_path / "native.ckpt"
         m.save_weights(str(path))
         folder = tmp_path / "fresh"
         folder.mkdir()
-        fresh = _native_answer_model(folder, False)
+        fresh = _native_answer_model(folder, False, concept_width=concept_width)
         assert fresh.load_weights(str(path), strict=True)
         for before, after in (
                 (m.conceptualSpace.synthesis_layer, fresh.conceptualSpace.synthesis_layer),
@@ -494,12 +511,12 @@ def test_native_checkpoint_restores_active_answer_widths(tmp_path, legacy_only):
             for key, value in before.state_dict().items():
                 torch.testing.assert_close(after.state_dict()[key], value, rtol=0, atol=0)
         if legacy_only:
-            assert torch.count_nonzero(fresh.question_conditioners["1032"].weight) == 0
+            assert torch.count_nonzero(fresh.question_conditioners[str(concept_width)].weight) == 0
             torch.testing.assert_close(fresh.question_conditioners["136"].weight,
                                        m.question_conditioners["136"].weight, rtol=0, atol=0)
         else:
-            torch.testing.assert_close(fresh.question_conditioners["1032"].weight,
-                                       m.question_conditioners["1032"].weight, rtol=0, atol=0)
+            torch.testing.assert_close(fresh.question_conditioners[str(concept_width)].weight,
+                                       m.question_conditioners[str(concept_width)].weight, rtol=0, atol=0)
         opt = fresh.getOptimizer(lr=1e-3)
         ids = [id(p) for group in opt.param_groups for p in group["params"]]
         assert all(ids.count(id(p)) == 1 for p in fresh.synthesis_parameters())

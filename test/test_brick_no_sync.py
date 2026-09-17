@@ -52,6 +52,7 @@ _CONFIGS = [
 ]
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize(
     "cfg_name,dataset,load_kw", _CONFIGS,
     ids=[c[0].replace(".xml", "") for c in _CONFIGS],

@@ -4,6 +4,8 @@ PS and WS are symmetric duals — atoms vs universe views of the same input —
 with the thin ``PerceptualSpace`` intermediate class removed. cpu/eager,
 seed-free structural pins (no training in this file).
 """
+
+import pytest
 import os
 os.environ.setdefault("BASICMODEL_DEVICE", "cpu")
 os.environ.setdefault("MODEL_COMPILE", "eager")
@@ -55,6 +57,7 @@ def test_null_percept_key_survives_on_partspace():
     assert PartSpace.NULL_PERCEPT_KEY == "__NULL_PERCEPT__"
 
 
+@pytest.mark.slow
 def test_ws_matches_ps_view_shape():
     """The two towers present identical [8, 1024] views for the callosum."""
     m = _build("data/MM_sparse_concept.xml")
@@ -62,6 +65,7 @@ def test_ws_matches_ps_view_shape():
     assert int(ps.nOutputDim) == int(ws.nOutputDim) == 1024
 
 
+@pytest.mark.slow
 def test_off_path_stores_unchanged():
     """Serial + sO=0 CS store sizes keep their HEAD shapes."""
     for cfg, want in (("data/MM_20M_xor.xml", _XOR_HEAD_NVEC),
@@ -70,6 +74,7 @@ def test_off_path_stores_unchanged():
         assert got == want, (cfg, got)
 
 
+@pytest.mark.slow
 def test_default_expectation_adds_only_its_owned_checkpoint_keys():
     """Default-on expectation adds its keys; unrelated structural pins hold."""
     for cfg, (n, sha) in _HEAD_SD.items():
@@ -89,6 +94,7 @@ def test_default_expectation_adds_only_its_owned_checkpoint_keys():
         assert (len(keys), h) == (n, sha), (cfg, len(keys), h)
 
 
+@pytest.mark.slow
 def test_space_is_the_single_structural_owner_of_slot_modules():
     """SubSpaces retain compatibility references, never registrations."""
     m = _build("data/MM_20M_xor.xml")
@@ -139,6 +145,7 @@ def _run_one_epoch(cfg):
     return m
 
 
+@pytest.mark.slow
 def test_ws_routes_universe_on_parallel_path():
     """sO>=1 parallel: WS consumes the universe view at EVERY stage."""
     m = _run_one_epoch("data/MM_sparse_concept.xml")
@@ -146,6 +153,7 @@ def test_ws_routes_universe_on_parallel_path():
     assert stamps == ["universe"] * len(stamps), stamps
 
 
+@pytest.mark.slow
 def test_ws_routing_after_serial_migration():
     """UNCONDITIONAL routing + the VALIDITY law (2026-07-12): a staged
     unity routes universe, period; an ALL-ZERO unity is staged as None at
@@ -173,6 +181,7 @@ def test_ws_routing_after_serial_migration():
 
 # ---- Tasks B/C: signed snap + feedforward pyramid (rev 2 design §§2-5) ----
 
+@pytest.mark.slow
 def test_signed_snap_no_annihilation():
     """B: the order-0 readout is SIGNED — the epoch-1 all-negative ->
     clamp -> a_0=0 death (probe 2026-07-10) is structurally impossible."""
@@ -185,6 +194,7 @@ def test_signed_snap_no_annihilation():
     assert bool((a0 < 0).any()) or bool((a0 > 0).any())
 
 
+@pytest.mark.slow
 def test_pyramid_replaces_wave():
     """C: feedforward per-order folds replace the settling wave."""
     import torch
@@ -196,6 +206,7 @@ def test_pyramid_replaces_wave():
     assert float(lv[0]) > 0.0, "rung 0 (order-0 tiles) must be lit"
 
 
+@pytest.mark.slow
 def test_pyramid_taper_topk_selection():
     """C: per-order top-K taper 8/4/2/1 lands in cs.subspace.index and a
     generic materialize() pulls exactly the selected codes.
@@ -224,6 +235,7 @@ def test_pyramid_taper_topk_selection():
     assert int(codes.shape[0]) == 2, "codes are per-batch [B, n_sel, D]"
 
 
+@pytest.mark.slow
 def test_pyramid_grads_reach_every_rung():
     """C: gradients flow to the sparse edge values through the FF folds."""
     import torch

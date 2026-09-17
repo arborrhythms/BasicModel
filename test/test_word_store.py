@@ -8,6 +8,8 @@ recommender candidates through it (basis = PS ``subspace.what``, restricted
 to the word rows via ``left_rows``/``right_rows``; percept id == row).
 """
 
+import pytest
+
 import os
 import sys
 import warnings
@@ -156,11 +158,13 @@ def _train_forward(m):
 
 # -- gating + the live collection ---------------------------------------------
 
+@pytest.mark.slow
 def test_knob_default_off(tmp_path_factory):
     m = _build(tmp_path_factory, word_store=False)
     assert getattr(m.perceptualSpace, "word_store_reverse", None) is False
 
 
+@pytest.mark.slow
 def test_reading_promotes_the_batch_words(tmp_path_factory):
     m = _build(tmp_path_factory, word_store=True)
     assert m.perceptualSpace.word_store_reverse is True
@@ -194,6 +198,7 @@ def _recognized_rows(m):
     return None, None
 
 
+@pytest.mark.slow
 def test_one_to_one_recognition_registers_under_words(tmp_path_factory):
     """Refined 1:1 (Alec): the part-aggregation (ONE promoted percept — the
     trie's created word) must be EQUAL IN SPAN to the WS word-property
@@ -265,6 +270,7 @@ def test_one_to_one_recognition_registers_under_words(tmp_path_factory):
     assert rows is not None and zebra_pid[0] in rows.tolist()
 
 
+@pytest.mark.slow
 def test_percept_extras_ride_the_checkpoint_envelope(tmp_path_factory):
     m = _build(tmp_path_factory, word_store=True)
     _train_forward(m)
@@ -295,6 +301,7 @@ def test_percept_extras_ride_the_checkpoint_envelope(tmp_path_factory):
         ps.subspace.percept_store = saved
 
 
+@pytest.mark.slow
 def test_storeless_configs_emit_no_percept_key(tmp_path_factory):
     m = _build(tmp_path_factory, word_store=False)
     # The OFF smoke still has a radix/meronomy store; emptiness is what
@@ -331,6 +338,7 @@ def test_slot_kind_stacks_mirror_the_push_discipline():
     assert ks == [[], []]
 
 
+@pytest.mark.slow
 def test_words_summary_row_running_mean(tmp_path_factory):
     """Alec's §3a call: the WORDS codebook face is the order-capped
     SUMMARY ROW — the well-known 'words' atom (WS row 0) carries the
@@ -380,6 +388,7 @@ def test_words_summary_row_running_mean(tmp_path_factory):
 
 # -- open-fronts Task C: the WS word-whole rows resolve for the SS driver ----
 
+@pytest.mark.slow
 def test_ws_word_whole_registry_resolves_to_rows(tmp_path_factory):
     m = _build(tmp_path_factory, word_store=True)
     # The word auto-bind is committed at the SENTENCE BOUNDARY
@@ -399,6 +408,7 @@ def test_ws_word_whole_registry_resolves_to_rows(tmp_path_factory):
     assert all(0 <= r < int(W.shape[0]) for r in rows)
 
 
+@pytest.mark.slow
 def test_forward_records_kind_tagged_trace(tmp_path_factory):
     m = _build(tmp_path_factory, word_store=True)
     loader = m.inputSpace.data.data_loader(split="train", num_streams=4)
@@ -629,6 +639,7 @@ def test_word_side_snap_minimal_residual():
     assert torch.equal(resid.reshape(-1), want)
 
 
+@pytest.mark.slow
 def test_grammar_reverse_ops_from_generate_section(tmp_path_factory):
     """Trace-free reverse (Alec 2026-07-14): the reverse operation set is
     determined from the grammar's <generate> section, symmetric to how the
@@ -645,6 +656,7 @@ def test_grammar_reverse_ops_from_generate_section(tmp_path_factory):
         assert "left_rows" in host.reverse.__code__.co_varnames
 
 
+@pytest.mark.slow
 def test_reverse_chooser_picks_fold_op_by_roundtrip(tmp_path_factory):
     """The reverse derivation finds its OWN op — no forward record: it scores
     each grammar reverse op by ROUND-TRIP fit (op.compose(op.reverse(parent))
@@ -677,6 +689,7 @@ def test_reverse_chooser_picks_fold_op_by_roundtrip(tmp_path_factory):
 
 # -- step 3: Method-1 -> Method-2 distillation (root separability) -----------
 
+@pytest.mark.slow
 def test_leaf_distill_default_off(tmp_path_factory):
     """<training><leafDistillWeight> defaults 0.0 -> no term, no head —
     byte-identical (the house default-off contract)."""
@@ -701,6 +714,7 @@ def test_leaf_distill_default_off(tmp_path_factory):
     assert getattr(m, "_leaf_distill_head_module", None) is None
 
 
+@pytest.mark.slow
 def test_leaf_distill_trains_root_toward_leaves(tmp_path_factory):
     """Step 3 (Alec: 'the training of method-1 will give information to
     method-2'): with the knob on, a train batch adds the leaf_distill term —
@@ -737,6 +751,7 @@ def test_leaf_distill_trains_root_toward_leaves(tmp_path_factory):
         "the lazily-built head must be handed to the live optimizer"
 
 
+@pytest.mark.slow
 def test_percept_concept_reverse_index_and_row(tmp_path_factory):
     """Step (b) substrate (snap design doc §ontology): wholes and parts
     co-occurring at one `.where`/`.when` form a concept's SUPPORT; the
@@ -766,6 +781,7 @@ def test_percept_concept_reverse_index_and_row(tmp_path_factory):
     assert cs.word_concept_of_object(A) is None       # not an object concept
 
 
+@pytest.mark.slow
 def test_concept_row_content_lights_up_the_resolved_row(tmp_path_factory):
     """The serial read's resolve+gather (step (b)): a percept tied to a
     word/object pair lights up the OBJECT concept's ``similarity_codebook``
@@ -792,6 +808,7 @@ def test_concept_row_content_lights_up_the_resolved_row(tmp_path_factory):
                           atol=1e-6)
 
 
+@pytest.mark.slow
 def test_concept_index_read_sizes_inventory_by_explicit_nvectors(
         tmp_path_factory):
     """The serial arm sizes per-stage CS inventories by the tower's TILE
@@ -837,6 +854,7 @@ def test_concept_index_read_sizes_inventory_by_explicit_nvectors(
         Language.TheGrammar._configured = False
 
 
+@pytest.mark.slow
 def test_two_epoch_training_severs_cross_batch_graph():
     """Cross-epoch training pin (the ladder5 relaunch crash, 2026-07-13):
     epoch 1 on the wordstore config broke the pending backward

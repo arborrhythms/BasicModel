@@ -1,0 +1,21 @@
+[
+  {
+    "event": "constructed",
+    "seconds": 1.241676958044991,
+    "parameter_devices": {
+      "mps:0": 137
+    },
+    "predictor_devices": [
+      "mps:0"
+    ],
+    "compile_backend": "eager",
+    "torch_version": "2.14.0.dev20260722"
+  },
+  {
+    "event": "epoch",
+    "seconds": 877.8129990000743,
+    "device": "mps",
+    "max_batches": 2,
+    "batch_size": 4
+  }
+]

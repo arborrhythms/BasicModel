@@ -1,0 +1,36 @@
+FFFF.                                                                    [100%]
+=================================== FAILURES ===================================
+_______________ test_explicit_training_device_is_preserved[gpu] ________________
+/tmp/full-spec-training-device-probe.py:10: in test_explicit_training_device_is_preserved
+    assert runner.worker_environment(tmp_path)['BASICMODEL_DEVICE'] == device
+E   AssertionError: assert 'cpu' == 'gpu'
+E     
+E     - gpu
+E     + cpu
+_______________ test_explicit_training_device_is_preserved[mps] ________________
+/tmp/full-spec-training-device-probe.py:10: in test_explicit_training_device_is_preserved
+    assert runner.worker_environment(tmp_path)['BASICMODEL_DEVICE'] == device
+E   AssertionError: assert 'cpu' == 'mps'
+E     
+E     - mps
+E     + cpu
+______________ test_explicit_training_device_is_preserved[cuda:0] ______________
+/tmp/full-spec-training-device-probe.py:10: in test_explicit_training_device_is_preserved
+    assert runner.worker_environment(tmp_path)['BASICMODEL_DEVICE'] == device
+E   AssertionError: assert 'cpu' == 'cuda:0'
+E     
+E     - cuda:0
+E     + cpu
+____________ test_slow_training_defaults_to_a_required_accelerator _____________
+/tmp/full-spec-training-device-probe.py:16: in test_slow_training_defaults_to_a_required_accelerator
+    assert runner.worker_environment(tmp_path)['BASICMODEL_DEVICE'] == 'gpu'
+E   AssertionError: assert 'cpu' == 'gpu'
+E     
+E     - gpu
+E     + cpu
+=========================== short test summary info ============================
+FAILED ../../../../../tmp/full-spec-training-device-probe.py::test_explicit_training_device_is_preserved[gpu]
+FAILED ../../../../../tmp/full-spec-training-device-probe.py::test_explicit_training_device_is_preserved[mps]
+FAILED ../../../../../tmp/full-spec-training-device-probe.py::test_explicit_training_device_is_preserved[cuda:0]
+FAILED ../../../../../tmp/full-spec-training-device-probe.py::test_slow_training_defaults_to_a_required_accelerator
+4 failed, 1 passed in 0.34s

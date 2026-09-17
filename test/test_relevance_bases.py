@@ -7,6 +7,8 @@ surface. Priming is UNCONDITIONAL (Alec 2026-07-12): the SEEN writes and
 the pyramid's priority read fire on every batch; ``<relevance>`` gates
 only the hard-coded reading-scope consumer. cpu/eager.
 """
+
+import pytest
 import os
 os.environ.setdefault("BASICMODEL_DEVICE", "cpu")
 os.environ.setdefault("MODEL_COMPILE", "eager")
@@ -25,6 +27,7 @@ def _build(cfg):
     return model
 
 
+@pytest.mark.slow
 def test_surface_contract_cold_at_build():
     """All three towers expose the surface APIs; None until a batch has
     primed them (writes are unconditional but perception-driven), and
@@ -41,6 +44,7 @@ def test_surface_contract_cold_at_build():
     assert getattr(m, "relevance_on", None) is False, "default must be off"
 
 
+@pytest.mark.slow
 def test_seen_bump_and_decay():
     """SEEN: bump the fired rows; the surface decays toward neutral."""
     m = _build("data/MM_sparse_concept.xml")
@@ -54,6 +58,7 @@ def test_seen_bump_and_decay():
     object.__setattr__(cs0, "_priming_boosts", None)
 
 
+@pytest.mark.slow
 def test_desire_signed_floor():
     """DESIRED (+) boosts; HATED (-) suppresses with floor 0 (no veto)."""
     m = _build("data/MM_sparse_concept.xml")
@@ -67,6 +72,7 @@ def test_desire_signed_floor():
     object.__setattr__(cs0, "_priming_boosts", None)
 
 
+@pytest.mark.slow
 def test_unconditional_integration_end_to_end():
     """No <relevance> needed: awareness primes (pyramid winners write the
     CS surface) on every batch, and the pyramid consumes the surface as
@@ -92,6 +98,7 @@ def test_unconditional_integration_end_to_end():
             object.__setattr__(_ws, "_priming_boosts", None)
 
 
+@pytest.mark.slow
 def test_primed_reading_scope():
     """Hard-coded readingAttention: scope = the span of the hottest-primed
     word-whole. Spans are staged on ws0 (the stem's surface); the slot

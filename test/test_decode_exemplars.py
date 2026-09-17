@@ -5,6 +5,8 @@ decode path (a tall WholeSpace so symbol_dim == concept_dim and the seed-swap
 drives). See doc/old/2026-06-20-idea-decoder.md.
 """
 
+import pytest
+
 import os
 import sys
 import warnings
@@ -36,16 +38,19 @@ def _build(name):
     return m
 
 
+@pytest.mark.slow
 def test_mm_decode_builds_and_wires_idea_decode():
     m = _build("MM_decode.xml")
     assert getattr(m, "idea_decode", False) is True
 
 
+@pytest.mark.slow
 def test_mm_phrase_decode_builds_and_wires_idea_decode():
     m = _build("MM_phrase_decode.xml")
     assert getattr(m, "idea_decode", False) is True
 
 
+@pytest.mark.slow
 def test_mm_decode_forward_smoke():
     import Models
     from util import TheXMLConfig

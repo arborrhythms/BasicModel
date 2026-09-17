@@ -6,6 +6,8 @@ the concept), NOT by the retired ``ConceptualSpace._build_symbol_leg`` reach
 into the WholeSpace meta codebook + the stashed ``_model_symbolSpace`` pointer.
 A symbol-tower config in PARALLEL mode runs the 3-stream bind through it.
 """
+
+import pytest
 import inspect
 import os
 import sys
@@ -59,6 +61,7 @@ def test_forward_concept_to_symbol_no_cross_space_reach():
     assert "wholeSpace" not in code and "WholeSpace" not in code
 
 
+@pytest.mark.slow
 def test_symbol_tower_parallel_forward_smoke():
     """MM_symbol_tower.xml is symbolicOrder=0 (serial=False -> PARALLEL) with
     symbolTower on, so the 3-stream bind runs through the new SS leg. The
@@ -76,6 +79,7 @@ def test_symbol_tower_parallel_forward_smoke():
         m.forward(x)        # exercises forward_concept_to_symbol in the bind
 
 
+@pytest.mark.slow
 def test_forward_concept_to_symbol_returns_row_aligned_leg():
     """The leg is the row-aligned view of the concept: same [B, N, D] event as
     the concept it was handed (detached)."""
@@ -99,6 +103,7 @@ def test_forward_concept_to_symbol_returns_row_aligned_leg():
     assert not out.requires_grad
 
 
+@pytest.mark.slow
 def test_forward_concept_to_symbol_empty_is_none():
     m = _build("MM_symbol_tower.xml")
     ss = m.symbolSpace
@@ -108,6 +113,7 @@ def test_forward_concept_to_symbol_empty_is_none():
     assert ss.forward_concept_to_symbol(None) is None
 
 
+@pytest.mark.slow
 def test_symbol_leg_from_activations_is_0d_times_row_and_carries_grad():
     """Sparse-active contract: with ``_concept_activations`` stamped (the 0-D
     symbols from the sparse forward), the leg is activation x identity-row and
@@ -136,6 +142,7 @@ def test_symbol_leg_from_activations_is_0d_times_row_and_carries_grad():
     assert W.grad is None or torch.all(W.grad == 0)  # identity stays EMA-only
 
 
+@pytest.mark.slow
 def test_symbol_leg_survives_repeated_sync_backward():
     """Regression (anomaly crash, 2026-07-02): each stage's leg build syncs
     the SS codebook IN-PLACE before the next stage's product; backward
@@ -166,6 +173,7 @@ def test_symbol_leg_survives_repeated_sync_backward():
     assert acts0.grad is not None and torch.any(acts0.grad != 0)
 
 
+@pytest.mark.slow
 def test_symbol_leg_fallback_without_activations_stays_detached():
     """No stamp (sparse-inactive) -> the legacy detached-copy leg."""
     m = _build("MM_symbol_tower.xml")

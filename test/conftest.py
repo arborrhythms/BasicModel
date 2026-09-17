@@ -121,3 +121,7 @@ def _restore_process_device():
     else:
         os.environ["BASICMODEL_DEVICE"] = prev_env
     init_device(prev_dev)
+
+
+# Skip expensive checks before fixture/model construction, using the existing switch.
+pytest_plugins = ["slow_tests"]

@@ -35,6 +35,7 @@ def _run(m, samples, fn=None):
     return out
 
 
+@pytest.mark.slow
 def test_traversal_recovers_every_active_word_without_underflow(tmp_path):
     m = _traversal_model(tmp_path)
     assert m.reconstruct_in_loop
@@ -96,6 +97,7 @@ def test_chunk_reverse_is_the_exact_residual_against_the_reference(tmp_path):
     assert torch.allclose(right, b) and torch.allclose(left, a, atol=1e-6)
 
 
+@pytest.mark.slow
 def test_cleared_trace_reports_truncation(tmp_path):
     m = _traversal_model(tmp_path)
     _run(m, ["12 plus 1"])
@@ -110,6 +112,7 @@ def test_cleared_trace_reports_truncation(tmp_path):
     m.End(); m.symbolSpace.soft_reset()
 
 
+@pytest.mark.slow
 def test_byte_fidelity_is_zero_on_the_row_and_positive_off_it(tmp_path):
     """The byte decoding snaps a recovered idea to the brick's dictionary
     snapshot: a word's own row scores (near) zero at its position; another
@@ -195,6 +198,7 @@ def _replay_operand_rows(m):
     return expected
 
 
+@pytest.mark.slow
 def test_packed_trace_records_pre_fold_operand_rows_at_every_binary(tmp_path):
     """Codex item 4: real packed seals retain the operands of the fold,
     including a known leaf beside a composite, before reducing the stack."""
@@ -232,6 +236,7 @@ def test_packed_trace_records_pre_fold_operand_rows_at_every_binary(tmp_path):
         m.symbolSpace.soft_reset()
 
 
+@pytest.mark.slow
 def test_packed_rows_reconstruct_each_sentence_separately(tmp_path):
     """Requirement 3: one traversal per completed sentence; packed rows keep
     separate per-sentence costs; every word of every sentence recovered."""
@@ -281,6 +286,7 @@ def test_packed_rows_reconstruct_each_sentence_separately(tmp_path):
         m.End(); m.symbolSpace.soft_reset()
 
 
+@pytest.mark.slow
 def test_traversal_compiles_into_the_one_sentence_graph(tmp_path):
     m = _traversal_model(tmp_path)
     eager = _run(m, ["12 plus 1", "3 plus 4"])
@@ -301,6 +307,7 @@ def test_traversal_compiles_into_the_one_sentence_graph(tmp_path):
         m.End(); m.symbolSpace.soft_reset()
 
 
+@pytest.mark.slow
 def test_tied_traversal_trains_the_fold_parameters_and_owns_none(tmp_path):
     """Tying gate: the reconstruction cost's gradient reaches the compose
     path's fold parameters (the lift/lower inner layers, through their own
@@ -335,6 +342,7 @@ def test_tied_traversal_trains_the_fold_parameters_and_owns_none(tmp_path):
     m.End(); m.symbolSpace.soft_reset()
 
 
+@pytest.mark.slow
 def test_evaluation_decode_unwinds_from_the_end_state(tmp_path):
     """The retired trace replay's role: in evaluation, reverseReconstruct
     takes the sentence's end state and unwinds the recorded derivation
@@ -349,6 +357,7 @@ def test_evaluation_decode_unwinds_from_the_end_state(tmp_path):
     m.End(); m.symbolSpace.soft_reset()
 
 
+@pytest.mark.slow
 def test_final_end_state_keeps_three_slots_for_a_relative_row(tmp_path):
     """A relative sentence stops at depth 3: the traversal starts from
     all three slots (newest at 0), not from the root alone."""
@@ -366,6 +375,7 @@ def test_final_end_state_keeps_three_slots_for_a_relative_row(tmp_path):
     m.End(); m.symbolSpace.soft_reset()
 
 
+@pytest.mark.slow
 def test_byte_cost_is_positive_for_a_wrong_or_empty_idea_even_with_one_word(tmp_path):
     """The null candidate keeps the byte cost a function of the idea: a
     one-word brick cannot score zero by having nothing to choose between,
@@ -406,6 +416,7 @@ def test_byte_cost_is_positive_for_a_wrong_or_empty_idea_even_with_one_word(tmp_
     m.End(); m.symbolSpace.soft_reset()
 
 
+@pytest.mark.slow
 def test_snapshot_rows_absent_from_the_brick_do_not_enter_the_score(tmp_path):
     """Candidates are the staged snapshot's present rows: an absent row,
     however similar to the idea, leaves the word's byte cost unchanged;
@@ -427,6 +438,7 @@ def test_snapshot_rows_absent_from_the_brick_do_not_enter_the_score(tmp_path):
     m.End(); m.symbolSpace.soft_reset()
 
 
+@pytest.mark.slow
 def test_seal_chain_of_chunks_unwinds_to_the_words(tmp_path):
     """Constituent routing (Codex, 2026-09-14): three words a, b, c pushed
     in order and folded by two chunk seals (newest-first: c+b, then
@@ -490,6 +502,7 @@ def test_seal_chain_of_chunks_unwinds_to_the_words(tmp_path):
     m.End(); m.symbolSpace.soft_reset()
 
 
+@pytest.mark.slow
 def test_snapshot_bytes_are_staged_on_the_first_brick(tmp_path):
     """The dictionary snapshot is staged after the brick's concept rows,
     so the byte decoder is active from the first brick: the words' rows

@@ -121,6 +121,7 @@ def _craft_event(view, W, slot_codes):
     return ev
 
 
+@pytest.mark.slow
 def test_csleg_pi_bypassed_under_quantize():
     # THE CODEBOOK REPLACES PI: under quantize the CS-leg forward must
     # not apply the pi transform -- the snap IS this iteration's
@@ -147,6 +148,7 @@ def test_csleg_pi_bypassed_under_quantize():
     assert ev is not None and torch.isfinite(ev).all()
 
 
+@pytest.mark.slow
 def test_csleg_one_symbol_apoha_emission():
     # ONE SYMBOL AT A TIME with APOHA ZEROS: with adopted (planted) rows
     # and a CS event whose slot 5 carries row 20's code, the emission is
@@ -184,6 +186,7 @@ def test_csleg_one_symbol_apoha_emission():
             "(value substitution is correct on symbolic iterations)")
 
 
+@pytest.mark.slow
 def test_csleg_virgin_fallback_stays_continuous():
     # Honest STE (the #13 lesson): with EVERY row virgin the iteration
     # must stay CONTINUOUS -- no codebook value substitution, no apoha
@@ -213,6 +216,7 @@ def test_csleg_virgin_fallback_stays_continuous():
         f"dense), got live-slot counts {live.tolist()}")
 
 
+@pytest.mark.slow
 def test_csleg_adoption_writes_tags_and_is_idempotent():
     # Adopt-on-first-sight, re-homed to the CS leg: a VIRGIN row adopts
     # the evidence vector that selects it, is tagged MEANING_GENERAL
@@ -255,6 +259,7 @@ def test_csleg_adoption_writes_tags_and_is_idempotent():
         "rows are no longer virgin)")
 
 
+@pytest.mark.slow
 def test_csleg_recon_gather_lands_on_winner_rows():
     # The recon gather retargets to THIS leg: gradient support is exactly
     # the winner rows -- the argmax blocks the encoder leg, the evidence
@@ -290,6 +295,7 @@ def test_csleg_recon_gather_lands_on_winner_rows():
         "recon gradient must touch ONLY the winner rows")
 
 
+@pytest.mark.slow
 def test_csleg_naming_indices_thread_full_frame():
     # The snap still NAMES every slot (indices thread for the narrow
     # output / downstream consumers) even though only one symbol emits.
@@ -305,6 +311,7 @@ def test_csleg_naming_indices_thread_full_frame():
     assert int(idx.shape[1]) == int(ws.inputShape[0])
 
 
+@pytest.mark.slow
 @pytest.mark.xfail(
     reason="Step 4 of the 2026-06-10 symbolic-iteration plan: the narrow "
            "second-order emission ([nOutput, nOutputDim] = e.g. MM_20M "
@@ -361,6 +368,7 @@ def test_mm20m_second_order_reverse_keys_codebook():
             "winner slot by keying the codebook with the emitted id")
 
 
+@pytest.mark.slow
 def test_forward_body_lifts_csleg_recon():
     # Full-model wiring (subsymbolicOrder=2, parallel, SS quantize -- the
     # MM_symbolic_iter fixture; MM_20M ships order 1, whose t>0 leg

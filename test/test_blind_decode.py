@@ -61,6 +61,7 @@ def _trained_model(epochs=3, config="data/MM_20M_xor.xml"):
     return model
 
 
+@pytest.mark.slow
 def test_blind_rate_default_is_scaffold():
     """rate None (default) keeps the scaffold path: meta is identical to
     an explicit rate 0.0 decode (the 5c/5d content-identity regression)."""
@@ -107,6 +108,7 @@ def _synthetic_event(psp, radix, sub, texts=("world", " ", "world")):
     return ev, fwd, [t for t in texts]
 
 
+@pytest.mark.slow
 def test_blind_decode_ignores_scaffold_spans():
     """rate 1.0 re-derives the tiling from the BAND alone: the scaffold
     record may be poisoned and the decode must not read it; offsets are
@@ -129,6 +131,7 @@ def test_blind_decode_ignores_scaffold_spans():
     assert blind["offsets"][0] == [0, 5, 6], blind["offsets"][0]
 
 
+@pytest.mark.slow
 def test_blind_size_hypotheses_from_claim_diffs():
     """Consecutive `.where` claim differences hypothesize the tile sizes
     (all but the last tile), so arm (a) size-restricted association still
@@ -159,6 +162,7 @@ def test_blind_size_hypotheses_from_claim_diffs():
     assert calls[:3] == [5, 1, None], calls
 
 
+@pytest.mark.slow
 def test_curriculum_fraction_masks_some_tiles():
     """0 < rate < 1 decodes the masked fraction blind (claim-diff sizes)
     and keeps the rest scaffold-fed: with exact claims the mixed decode
@@ -181,6 +185,7 @@ def test_curriculum_fraction_masks_some_tiles():
     assert mixed["offsets"][0] == scaffold["offsets"][0]
 
 
+@pytest.mark.slow
 def test_recon_bench_blind_flag(tmp_path):
     """recon_bench --blind computes the decode + where_recovery blind
     (default); --scaffold keeps the debug/fallback path."""
@@ -197,7 +202,7 @@ def test_recon_bench_blind_flag(tmp_path):
     assert rec_scaf.where_recovery == 1.0
 
 
-@pytest.mark.skipif(not os.environ.get("RUN_SLOW"),
+@pytest.mark.skipif(os.environ.get("RUN_SLOW") != "1",
                     reason="~24s (build + pinned epochs) -- RUN_SLOW gates the bar")
 def test_mm20m_xor_blind_roundtrip(tmp_path):
     """THE Gate-2b bar: scaffold OFF, tiling re-derived from the band,

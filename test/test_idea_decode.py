@@ -64,6 +64,7 @@ def _count_generate_fires(m):
     return box
 
 
+@pytest.mark.slow
 def test_idea_decode_defaults_off():
     # MM_mereology does not set <ideaDecode> -> the gate is inert; the
     # rule-driven reverse path is untouched (byte-identical).
@@ -71,6 +72,7 @@ def test_idea_decode_defaults_off():
     assert getattr(m, "idea_decode", None) is False
 
 
+@pytest.mark.slow
 def test_gate_skips_generate_rebuild_when_on():
     m = _build("MM_mereology.xml")
     x = _batch(m)

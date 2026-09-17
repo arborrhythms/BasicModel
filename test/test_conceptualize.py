@@ -3,6 +3,8 @@
 sections 2b/4b/4c). A concept is a flexible combination of two percepts;
 conceptualize() dispatches the three orders to the ConceptualSpace symbol
 tables (the duality: the SS subspace owns the method, CS owns the tables)."""
+
+import pytest
 import os, sys, warnings
 os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
 os.environ.setdefault("BASICMODEL_DEVICE", "cpu")
@@ -26,6 +28,7 @@ def _build(name):
     return m
 
 
+@pytest.mark.slow
 def test_conceptualize_dispatch():
     m = _build("MM_symbol_tower.xml")
     ss = m.symbolSpace.subspace
@@ -52,6 +55,7 @@ def test_conceptualize_dispatch():
     assert ss.conceptualize(2) is None
 
 
+@pytest.mark.slow
 def test_conceptualize_chain():
     """order-3 = Gallistel sequence chain: a tail-recursive [whole, part] list
     over concept pairs (head whole = first concept, part = the rest-chain)."""

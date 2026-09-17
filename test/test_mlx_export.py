@@ -92,6 +92,7 @@ def _staged_input():
     return m, staged
 
 
+@pytest.mark.slow
 def test_stage_for_core_returns_tensor():
     """stage_for_core does the HOST lex+embed and returns a plain
     tensor slab (the [B, N, D] embedded event), NOT a SubSpace."""
@@ -103,6 +104,7 @@ def test_stage_for_core_returns_tensor():
     assert torch.isfinite(staged).all()
 
 
+@pytest.mark.slow
 def test_forward_core_matches_normal_forward():
     """forward_core(staged) reads its ARGUMENT (not ``self._staged_in_sub``)
     and reproduces the NORMAL forward's head prediction -- bit-exact.
@@ -137,6 +139,7 @@ def test_forward_core_matches_normal_forward():
         f"max abs diff {max_diff:.2e}")
 
 
+@pytest.mark.slow
 def test_forward_core_exports():
     """The TENSOR core must be ``torch.export.export``-able: tracing
     ``forward_core`` with the host-staged tensor returns an
@@ -156,6 +159,7 @@ def test_forward_core_exports():
 # D2 — .pte lowering (requires executorch + MLX/Apple delegate)
 # ---------------------------------------------------------------------------
 
+@pytest.mark.slow
 @_MLX_ONLY
 @_SO3_MULTI_DELEGATE
 def test_mlx_lower_writes_pte(tmp_path):
@@ -202,6 +206,7 @@ def test_mlx_lower_writes_pte(tmp_path):
 # D3 — runtime parity (requires executorch runtime + .pte from D2)
 # ---------------------------------------------------------------------------
 
+@pytest.mark.slow
 @_MLX_ONLY
 @_SO3_MULTI_DELEGATE
 def test_pte_runtime_parity(tmp_path):

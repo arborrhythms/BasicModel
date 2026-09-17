@@ -37,6 +37,7 @@ def _build_gate_model():
     return m.to("cpu")
 
 
+@pytest.mark.slow
 def test_false_gate_contribution_is_zero():
     """At an inactive batch row / padding column, the per-iteration
     contribution must be zero. The list-based accumulator records
@@ -61,6 +62,7 @@ def test_false_gate_contribution_is_zero():
         f"max abs {contribution.abs().max().item()}")
 
 
+@pytest.mark.slow
 def test_false_gate_preserves_stm_buffer():
     m = _build_gate_model()
     isp = m.inputSpace

@@ -108,6 +108,7 @@ def test_word_span_window_clamps_center_and_guards_shape():
 
 # -- integration (2b captured-loop wiring) -----------------------------------
 
+@pytest.mark.slow
 def test_serial_object_meta_stamps_and_word_index_device_tensors():
     """serialObjectMeta on: the flag reaches model + InputSpace + CS, and a
     forward populates the capturable per-slot word-index + per-word commit
@@ -125,6 +126,7 @@ def test_serial_object_meta_stamps_and_word_index_device_tensors():
     assert ie._word_last_slot_mask.dtype == torch.bool
 
 
+@pytest.mark.slow
 def test_serial_radix_has_distinct_word_and_local_part_axes():
     """The sentence loop is [B,W]; raw constituent staging is [B,W,P_raw].
 
@@ -148,6 +150,7 @@ def test_serial_radix_has_distinct_word_and_local_part_axes():
     assert bool((ie._word_index_N[:, 2:] == -1).all())
 
 
+@pytest.mark.slow
 def test_serial_ws_analysis_view_is_fixed_width_and_compact():
     """Full eager cut metadata must not specialize the compiled WS carrier.
 
@@ -174,6 +177,7 @@ def test_serial_ws_analysis_view_is_fixed_width_and_compact():
     assert torch.equal(live[:, :prefix], full[:, :prefix])
 
 
+@pytest.mark.slow
 def test_partspace_runs_once_per_word_per_pass_not_per_constituent():
     """Each pass makes one batch-wide PS call per word, never per part."""
     m, x = _serial_model_and_batch()
@@ -199,6 +203,7 @@ def test_partspace_runs_once_per_word_per_pass_not_per_constituent():
         (4, 1, 1024)] * (2 * (int(m.subsymbolicOrder) + 1))
 
 
+@pytest.mark.slow
 def test_outer_word_cap_rejects_instead_of_truncating():
     """A ninth word fails loudly instead of silently truncating the row."""
     m, _ = _serial_model_and_batch()
@@ -209,6 +214,7 @@ def test_outer_word_cap_rejects_instead_of_truncating():
             m.forward(x)
 
 
+@pytest.mark.slow
 def test_serial_commit_gate_fires_once_per_active_word():
     """The per-word commit boundary is True exactly ONCE per word (at the word's
     last active slot) -- so the STM push fires once per word, not once per slot
@@ -233,6 +239,7 @@ def test_serial_commit_gate_fires_once_per_active_word():
                 assert bool(active[b, n])
 
 
+@pytest.mark.slow
 def test_word_prediction_and_physical_push_share_one_commit_boundary():
     """Word mode must neither predict from nor push partial radix spellings.
 
@@ -268,6 +275,7 @@ def test_word_prediction_and_physical_push_share_one_commit_boundary():
     assert torch.equal(captured, (commits - 1).clamp_min(0))
 
 
+@pytest.mark.slow
 def test_serial_object_meta_off_does_not_build_word_index():
     """Flag OFF (forced): the per-word index/commit tensors are NOT built, the
     gaussian path stays in force -- byte-identical plumbing."""
@@ -302,6 +310,7 @@ def _count_unity_calls(m, x):
     return calls["real"], calls["none"]
 
 
+@pytest.mark.slow
 def test_ss_unity_validity_at_stem():
     """Unity VALIDITY law + LIVE delivery (2026-07-12): IS is not the
     lexer -- it delivers the raw surface, so the unity now carries the

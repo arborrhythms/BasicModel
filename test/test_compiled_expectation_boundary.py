@@ -3,6 +3,7 @@ import pytest
 import torch
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("compiled", [True, False])
 def test_unpacked_forward_observes_each_published_sentence_once(
         tmp_path, monkeypatch, compiled):

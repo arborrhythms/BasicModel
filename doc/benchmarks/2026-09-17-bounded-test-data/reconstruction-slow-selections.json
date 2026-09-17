@@ -1,0 +1,20 @@
+{
+  "test/test_reverse_traversal.py": [
+    "test_packed_rows_reconstruct_each_sentence_separately",
+    "test_traversal_compiles_into_the_one_sentence_graph",
+    "test_tied_traversal_trains_the_fold_parameters_and_owns_none",
+    "test_traversal_recovers_every_active_word_without_underflow",
+    "test_cleared_trace_reports_truncation",
+    "test_byte_fidelity_is_zero_on_the_row_and_positive_off_it",
+    "test_packed_trace_records_pre_fold_operand_rows_at_every_binary",
+    "test_evaluation_decode_unwinds_from_the_end_state",
+    "test_final_end_state_keeps_three_slots_for_a_relative_row",
+    "test_byte_cost_is_positive_for_a_wrong_or_empty_idea_even_with_one_word",
+    "test_snapshot_rows_absent_from_the_brick_do_not_enter_the_score",
+    "test_seal_chain_of_chunks_unwinds_to_the_words",
+    "test_snapshot_bytes_are_staged_on_the_first_brick"
+  ],
+  "test/test_inter_contrastive_predict.py": [
+    "test_predictor_trains_end_to_end"
+  ]
+}

@@ -447,6 +447,7 @@ class TestSPNN(unittest.TestCase):
         self.assertTrue(hasattr(net, 'W1'))
         self.assertTrue(hasattr(net, 'W2'))
 
+    @pytest.mark.slow
     def test_xor_training(self):
         from SPNN import SPNN
         net = SPNN("tanh", False)

@@ -1,0 +1,20 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_______ test_development_native_fixture_preserves_wide_concept_gradient ________
+/tmp/full-spec-fast-native-fixture-probes.py:9: in test_development_native_fixture_preserves_wide_concept_gradient
+    model=_native_answer_model(tmp_path,False,concept_width=264)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   TypeError: _native_answer_model() got an unexpected keyword argument 'concept_width'
+=============================== warnings summary ===============================
+test/test_output_path_supervised.py:105
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_output_path_supervised.py:105: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+test/test_output_path_supervised.py:131
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_output_path_supervised.py:131: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED ../../../../../tmp/full-spec-fast-native-fixture-probes.py::test_development_native_fixture_preserves_wide_concept_gradient
+1 failed, 2 warnings in 14.52s

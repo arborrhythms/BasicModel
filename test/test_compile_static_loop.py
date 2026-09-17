@@ -34,6 +34,7 @@ def _build_gate_model():
     return m
 
 
+@pytest.mark.slow
 def test_per_word_body_callable_with_static_signature():
     """The new ``_per_word_body_step(w, p, gate_b_1, out_slot)``
     signature must be callable. Smoke test for the refactor — the
@@ -58,6 +59,7 @@ def test_per_word_body_callable_with_static_signature():
     # subspaces); the assertion is structural: no exception was raised.
 
 
+@pytest.mark.slow
 def test_word_at_returns_padded_shape_past_valid_len():
     """``word_at(p)`` for p past _valid_len_host must still return a
     well-shaped [B, 1, D] slice (zeros) — the gate masks the commits."""
@@ -173,6 +175,7 @@ def test_per_word_accumulator_is_fixed_length_not_word_count():
                 f"gate-masked zero contribution; got nonzero")
 
 
+@pytest.mark.slow
 def test_per_word_body_does_not_recompile_on_accumulator_length():
     """PIN (best-effort, dynamo): compiling ``_per_word_body_step`` and
     driving it with a GROWING accumulator (as the old ``append`` path did)

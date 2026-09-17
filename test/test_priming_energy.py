@@ -14,6 +14,8 @@ Three laws on the SEEN surface:
 
 cpu/eager, seeded.
 """
+
+import pytest
 import os
 os.environ.setdefault("BASICMODEL_DEVICE", "cpu")
 os.environ.setdefault("MODEL_COMPILE", "eager")
@@ -94,6 +96,7 @@ def test_zero_spread_is_pure_decay_bump():
     assert abs(float(b[5]) - 2.5) < 1e-6
 
 
+@pytest.mark.slow
 def test_priming_spread_knob_stamped():
     """<primingSpread> reaches the towers (default 0.25, live)."""
     model, *_ = _build_model(_resolve_config("data/MM_masked_semantic.xml"))
@@ -114,6 +117,7 @@ def _projected_model(epochs=3):
     return m
 
 
+@pytest.mark.slow
 def test_cs_to_ps_projection_live():
     """The PS surface warms through the projection ALONE (nothing else
     writes PS priming), on the word triples' pid rows."""
@@ -133,6 +137,7 @@ def test_cs_to_ps_projection_live():
     assert hot and hot <= mapped, (sorted(hot)[:8], sorted(mapped)[:8])
 
 
+@pytest.mark.slow
 def test_cs_to_ws_projection_live():
     """The terminal WS surface (the reading scope's heat source on sO=0
     reading configs) carries projected word-whole heat."""
@@ -153,6 +158,7 @@ def test_cs_to_ws_projection_live():
         "projected word-whole heat must reach the WS surface")
 
 
+@pytest.mark.slow
 def test_projection_bounded_across_epochs():
     """The destination decay event bounds the projected accumulation
     (steady state ~ gain * e / (1 - decay), not unbounded growth)."""
@@ -164,6 +170,7 @@ def test_projection_bounded_across_epochs():
 # ---- canonical order-indexed priming surface (Alec 2026-07-12) ------------
 
 
+@pytest.mark.slow
 def test_one_canonical_surface_per_tower():
     """Per-stage WS/CS delegate to the ONE canonical surface (terminal WS,
     stage-0 CS): a write through any stage is visible through every other,
@@ -185,6 +192,7 @@ def test_one_canonical_surface_per_tower():
         "no per-stage surface may exist on a delegating tower")
 
 
+@pytest.mark.slow
 def test_reading_heat_from_canonical_on_multistage():
     """The acceptance pin for the ws0-vs-terminal split: on a MULTI-STAGE
     config the reading scope follows heat on the CANONICAL surface (where
@@ -212,6 +220,7 @@ def test_reading_heat_from_canonical_on_multistage():
             object.__setattr__(ws_c, attr, None)
 
 
+@pytest.mark.slow
 def test_priming_rows_carry_abstraction_order():
     """The canonical surface is order-indexed: priming_row_orders reads
     the codebook's ramsification table, one order per row."""

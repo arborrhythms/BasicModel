@@ -1,0 +1,15 @@
+F.                                                                       [100%]
+=================================== FAILURES ===================================
+____________ test_recycle_on_memory_pressure_keeps_every_case_once _____________
+test/test_bounded_test_recycling.py:18: in test_recycle_on_memory_pressure_keeps_every_case_once
+    assert result["exit_code"] == 0, result["reason"]
+E   AssertionError: memory
+E   assert 137 == 0
+----------------------------- Captured stdout call -----------------------------
+[collect] 1 selectors; limit 20s, 0.1 GiB
+[collect] exit 0; 2.8s; peak 0.04 GiB
+[worker-000] 5 selectors; limit 20s, 0.1 GiB
+[worker-000] memory 137; 3.6s; peak 0.13 GiB
+=========================== short test summary info ============================
+FAILED test/test_bounded_test_recycling.py::test_recycle_on_memory_pressure_keeps_every_case_once
+1 failed, 1 passed in 28.20s

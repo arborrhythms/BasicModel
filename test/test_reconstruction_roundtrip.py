@@ -61,6 +61,7 @@ def _build(config, seed=0):
 EPOCHS_PINNED = 160
 
 
+@pytest.mark.slow
 def test_xor_recon_loss_is_live(tmp_path):
     """5b: meronomy configs get a real reconstruction objective.
 
@@ -73,6 +74,7 @@ def test_xor_recon_loss_is_live(tmp_path):
     assert rec.recon_loss > 0.0
 
 
+@pytest.mark.slow
 def test_xor_recon_grads_flow():
     """5b: the live reverse loss backpropagates into reconstruction params.
 
@@ -124,6 +126,7 @@ def test_xor_recon_grads_flow():
                for n in nz), nz
 
 
+@pytest.mark.slow
 def test_recon_channel_within_decade_of_output():
     """5a rebalance pin: the SCALED reconstruction channel sits within a
     decade of the SCALED output term at init on xor.
@@ -175,6 +178,7 @@ def test_recon_channel_within_decade_of_output():
     assert 0.1 <= ratio <= 10.0, (ratio, rr, raw)
 
 
+@pytest.mark.slow
 def test_where_scale_applies_to_lossrev():
     """nWhere=0 loss-wiring fix (Alec 2026-07-04, intentional re-baseline):
     lossRev compares INPUT events (muxed ``[what|where(2)|when(2)]``,
@@ -224,6 +228,7 @@ def test_where_scale_applies_to_lossrev():
     assert banded, (calls, "no 3-dim event compare carried the input band")
 
 
+@pytest.mark.slow
 def test_where_scale_applies_to_d3_reconstruction():
     """Silent-band fix, remaining site 1 of 2 (the D3 twin; Alec-approved
     re-baseline 2026-07-04): grammar's D3 reverse objective compares
@@ -285,6 +290,7 @@ def test_where_scale_applies_to_d3_reconstruction():
     assert banded, (calls, "the D3 event compare did not carry the input band")
 
 
+@pytest.mark.slow
 def test_where_scale_applies_to_masked_lossin():
     """Silent-band fix, remaining site 2 of 2 (the compute_masked lossIn;
     Alec-approved re-baseline 2026-07-04): the whole-slab masked-LM lossIn
@@ -360,6 +366,7 @@ def test_model_loss_honors_explicit_zero_scales():
             md.when_scale, md.embedding_scale) == (0.5, 0.7, 0.2, 0.1, 0.1)
 
 
+@pytest.mark.slow
 def test_grammar_output_loss_not_silent_zero(tmp_path):
     """5b: shape-reconcilable head loss computes, never a silent 0.0/weight-0.
 
@@ -438,6 +445,7 @@ def test_silent_zero_sites_warn_once():
     assert ".what=" in recon_msgs[0]
 
 
+@pytest.mark.slow
 def test_xor_percepts_tile_words():
     """5e (Alec 2026-07-03): the learned xor percept tiling IS the word
     tiling -- 'hello world' -> [b'hello', b' ', b'world'] (the
@@ -534,6 +542,7 @@ def test_word_tiling_survives_promotion():
     assert legacy.observe_chunk(b"hello world") is not None
 
 
+@pytest.mark.slow
 def test_reconstruction_not_double_counted():
     """Dedupe pin (Alec 2026-07-03): on the serial/D3 path the two
     reconstruction terms were bit-identical (probe: 0.2683708... under
@@ -568,6 +577,7 @@ def test_reconstruction_not_double_counted():
     assert "reconstruction_reverse" not in terms, terms.keys()
 
 
+@pytest.mark.slow
 def test_mm20m_xor_roundtrip_at_harness_budget(tmp_path):
     """Harness-default-budget trajectory pin (epochs=3, seed 0).
 
@@ -606,7 +616,7 @@ def test_mm20m_xor_roundtrip_at_harness_budget(tmp_path):
     assert rec.where_recovery == 1.0
 
 
-@pytest.mark.skipif(not os.environ.get("RUN_SLOW"),
+@pytest.mark.skipif(os.environ.get("RUN_SLOW") != "1",
                     reason="~40s (build + 3 epochs + decode) -- RUN_SLOW gates it")
 def test_mm20m_grammar_free_derivation_ceiling(tmp_path):
     """THE Method-2 bar (serial plan Task 4): the TRAINED free-derivation,
@@ -637,7 +647,7 @@ def test_mm20m_grammar_free_derivation_ceiling(tmp_path):
 
 
 @pytest.mark.skipif(
-    not os.environ.get("RUN_SLOW"),
+    os.environ.get("RUN_SLOW") != "1",
     reason="160-epoch reconstruction acceptance -- set RUN_SLOW=1")
 @pytest.mark.xfail(reason=(
     "MM_20M_xor scaffold reconstruction currently tops out below exact "
@@ -675,6 +685,7 @@ def test_associate_span_two_arms():
         store.associate_span(torch.full_like(v, float("nan")), size=5)
 
 
+@pytest.mark.slow
 def test_radix_decode_gates_pad_slots():
     """5d: the reverse render emits ONLY forward-active slots -- a
     4-content-slots-padded-to-8 row renders its real content only (pads
@@ -717,6 +728,7 @@ def test_idempotent_config_trains_one_epoch_clean(tmp_path):
     assert np.isfinite(rec.output_loss) and np.isfinite(rec.recon_loss)
 
 
+@pytest.mark.slow
 def test_codebook_mask_path_inert_under_no_grad():
     """Determinism pin (Alec 2026-07-03): the 5b Codebook-``.what`` IR mask
     is a TRAIN-STEP objective -- a no_grad forward must stage nothing and

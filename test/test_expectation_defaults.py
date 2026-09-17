@@ -172,6 +172,7 @@ def test_native_future_and_other_row_changes_do_not_change_first_estimate(tmp_pa
     torch.testing.assert_close(estimates[0], estimates[1])
 
 
+@pytest.mark.slow
 def test_enable_after_disabled_construction_joins_optimizer_and_off_keeps_input_learning(tmp_path, monkeypatch):
     from test_meronomy_ladder import _build_ladder_variant
     monkeypatch.setenv("MODEL_COMPILE", "none")

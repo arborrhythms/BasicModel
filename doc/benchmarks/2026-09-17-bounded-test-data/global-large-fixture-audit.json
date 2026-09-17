@@ -1,0 +1,101 @@
+[
+  {
+    "file": "test/test_masked_semantic.py",
+    "function": "test_config_is_masked_parallel_semantic",
+    "line": 110,
+    "configs": [
+      "MM_masked_semantic.xml"
+    ],
+    "builders": [
+      "_build_model"
+    ]
+  },
+  {
+    "file": "test/test_masked_semantic.py",
+    "function": "test_masked_ir_training_engages",
+    "line": 125,
+    "configs": [
+      "MM_masked_semantic.xml"
+    ],
+    "builders": [
+      "_build_model"
+    ]
+  },
+  {
+    "file": "test/test_masked_semantic.py",
+    "function": "test_concept_attention_live_not_dark",
+    "line": 145,
+    "configs": [
+      "MM_masked_semantic.xml"
+    ],
+    "builders": [
+      "_build_model"
+    ]
+  },
+  {
+    "file": "test/test_masked_semantic.py",
+    "function": "test_masked_prediction_uses_concept_attention",
+    "line": 156,
+    "configs": [
+      "MM_masked_semantic.xml"
+    ],
+    "builders": [
+      "_build_model"
+    ]
+  },
+  {
+    "file": "test/test_masked_semantic.py",
+    "function": "test_reconstruction_uses_category_evidence",
+    "line": 165,
+    "configs": [
+      "MM_masked_semantic.xml"
+    ],
+    "builders": [
+      "_build_model"
+    ]
+  },
+  {
+    "file": "test/test_masked_semantic.py",
+    "function": "test_seeded_rerun_is_deterministic",
+    "line": 173,
+    "configs": [
+      "MM_masked_semantic.xml"
+    ],
+    "builders": [
+      "_build_model"
+    ]
+  },
+  {
+    "file": "test/test_dynamic_part_padding.py",
+    "function": "test_single_real_part_is_identity_padded_to_three",
+    "line": 51,
+    "configs": [
+      "MM_mereology_serial.xml"
+    ],
+    "builders": [
+      "from_config"
+    ]
+  },
+  {
+    "file": "test/test_dynamic_part_padding.py",
+    "function": "test_runbatch_staging_declares_p3_and_flattened_3w_minima",
+    "line": 75,
+    "configs": [
+      "MM_mereology_serial.xml"
+    ],
+    "builders": [
+      "from_config"
+    ]
+  },
+  {
+    "file": "test/test_brick_no_sync.py",
+    "function": "test_brick_runBatch_zero_dtoh_events",
+    "line": 59,
+    "configs": [
+      "MM_20M_legacy.xml"
+    ],
+    "builders": [
+      "from_config"
+    ]
+  }
+]

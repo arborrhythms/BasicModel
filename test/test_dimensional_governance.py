@@ -1,4 +1,6 @@
 """Dimensional-governance gates (doc/specs/2026-06-05-dimensional-governance.md)."""
+
+import pytest
 import os, sys, warnings
 os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
 os.environ.setdefault("BASICMODEL_DEVICE", "cpu")
@@ -44,6 +46,7 @@ def _build(cfg_name):
     return m
 
 
+@pytest.mark.slow
 def test_mm_5m_builds_and_forwards():
     import torch, Models
     m = _build("MM_20M_legacy.xml"); Models.TheData.load("xor")
@@ -54,6 +57,7 @@ def test_mm_5m_builds_and_forwards():
     assert torch.isfinite(out).all()
 
 
+@pytest.mark.slow
 def test_mm_5m_reconstructs():
     # Parallel ``_forward_per_stage`` returns last_reconstruction=None
     # (reconstruction is a runBatch-time loss term; the config carries
@@ -76,6 +80,7 @@ def test_mm_5m_reconstructs():
     assert (x - x_rec).abs().max().item() < 1e-2
 
 
+@pytest.mark.slow
 def test_serial_relaxes_symbol_dim_passthrough():
     # Phase-3 relax (pulled forward, doc/specs/2026-06-05 sec.4/sec.6): in
     # SERIAL mode the bounded-STM grammar fold bridges CS<->SS, so SS content
@@ -115,7 +120,6 @@ def test_converted_grammars_load_role_collapsed():
 # silently absorbed by a reshape/pad.
 # ---------------------------------------------------------------------------
 import re
-import pytest
 
 _RUN_SLOW = os.getenv("RUN_SLOW") == "1"
 
@@ -180,6 +184,7 @@ def test_cs_os_direct_handoff_mismatch_raises():
     assert "8x1024" in msg and "7x1024" in msg, msg
 
 
+@pytest.mark.slow
 def test_reference_configs_still_build_no_false_positive():
     # The recurrent WS input and direct CS->OS checks must not reject either
     # reference config. MM_20M carries a deep conceptual event; XOR_exact is

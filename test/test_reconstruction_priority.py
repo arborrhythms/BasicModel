@@ -122,6 +122,7 @@ def test_invalid_reconstruction_tolerance_fails(tolerance):
             p.square() + p, p.square(), p, [p], reconstruction_tolerance=tolerance)
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("tied_reconstruction", [False, True])
 def test_real_packed_runbatch_trains_prediction_and_representation_with_teacher(tmp_path, monkeypatch, tied_reconstruction):
     from test_meronomy_ladder import _build_ladder_variant

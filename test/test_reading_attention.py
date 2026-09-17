@@ -277,6 +277,7 @@ def _stage_synthetic_spans(m, ps, K=3):
     return spans, N
 
 
+@pytest.mark.slow
 def test_reading_attention_on_builds_producer():
     m = _build("MM_reading.xml")
     from Spaces import ReadingAttention
@@ -286,6 +287,7 @@ def test_reading_attention_on_builds_producer():
     assert m.mereology_raise
 
 
+@pytest.mark.slow
 def test_reading_attention_off_has_no_module():
     # MM_mereology does not set <readingAttention> -> the off path is untouched
     # (no module, the producer wiring is inert -> byte-identical).
@@ -294,6 +296,7 @@ def test_reading_attention_off_has_no_module():
     assert getattr(m, "reading_attention", None) is None
 
 
+@pytest.mark.slow
 def test_forward_is_finite_and_deterministic():
     m = _build("MM_reading.xml")
     x = _batch(m)
@@ -305,6 +308,7 @@ def test_forward_is_finite_and_deterministic():
     assert torch.equal(out1, out2), "the eval forward must be deterministic"
 
 
+@pytest.mark.slow
 def test_train_forward_then_backward_is_finite():
     m = _build("MM_reading.xml")
     x = _batch(m)
@@ -313,6 +317,7 @@ def test_train_forward_then_backward_is_finite():
     assert torch.isfinite(out[2]).all()
 
 
+@pytest.mark.slow
 def test_producer_writes_teacher_scope_and_registers_loss():
     m = _build("MM_reading.xml")
     x = _batch(m)
@@ -338,6 +343,7 @@ def test_producer_writes_teacher_scope_and_registers_loss():
     assert torch.isfinite(val).all() and bool(val.requires_grad)
 
 
+@pytest.mark.slow
 def test_registered_loss_backprops_to_producer():
     # The loss registered on the (copy_context-shared) conceptual error
     # container backprops to the producer readout -- closing the loop from
@@ -362,6 +368,7 @@ def test_registered_loss_backprops_to_producer():
     assert got, "the registered reading loss must backprop to the producer"
 
 
+@pytest.mark.slow
 def test_producer_scope_clears_past_last_word():
     m = _build("MM_reading.xml")
     x = _batch(m)
@@ -378,6 +385,7 @@ def test_producer_scope_clears_past_last_word():
     assert getattr(m.conceptualSpace, "_passback_scope_where", None) is None
 
 
+@pytest.mark.slow
 def test_producer_params_reach_the_optimizer():
     m = _build("MM_reading.xml")
     opt = m.getOptimizer(lr=0.01)

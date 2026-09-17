@@ -7,6 +7,8 @@ radix/meronomy configs raised "reconstruct_to_buffer() called before
 reverse()". These tests pin the wiring: the numeric reverse stages a radix
 render thunk, and rendering decodes known chunks back to their bytes.
 """
+
+import pytest
 import os
 import sys
 import warnings
@@ -40,6 +42,7 @@ def _build(name):
     return m
 
 
+@pytest.mark.slow
 def test_radix_render_decodes_known_chunks_consecutively():
     """Unit: a staged radix thunk renders known chunk rows to their bytes
     (offsets absent -> consecutive placement, same as the Embedding path)."""
@@ -65,6 +68,7 @@ def test_radix_render_decodes_known_chunks_consecutively():
     assert words[0] == ["hello", " world"]
 
 
+@pytest.mark.slow
 def test_reconstruction_seed_is_live_in_parallel_train():
     """The recon loss was a CONSTANT (grad-dead): the reverse was seeded from
     the detached STM snapshot and the chain is only input-differentiable.
@@ -89,6 +93,7 @@ def test_reconstruction_seed_is_live_in_parallel_train():
     assert ev is not None and ev.requires_grad
 
 
+@pytest.mark.slow
 def test_radix_full_reverse_stages_the_render():
     """Integration: forward + model reverse on the radix config STAGES the
     render -- reconstruct_to_buffer returns strings instead of raising

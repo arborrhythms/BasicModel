@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+    "/private/tmp/full-spec-bounded-fast-full-v4/worker-025.request.json",
+    "/private/tmp/full-spec-bounded-fast-full-v4/worker-025.json"
+  ],
+  "pid": 2585,
+  "exit_code": 124,
+  "reason": "timeout",
+  "peak_memory_bytes": 2283457776,
+  "elapsed_seconds": 1801.0182368750684,
+  "log": "/private/tmp/full-spec-bounded-fast-full-v4/worker-025.log"
+}

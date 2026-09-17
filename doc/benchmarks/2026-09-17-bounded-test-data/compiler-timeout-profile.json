@@ -1,0 +1,10 @@
+{
+  "status": "timeout, not a passing full gate",
+  "worker_limit_seconds": 1800,
+  "completed_worker_outcomes_visible": 46,
+  "next_case_in_order": "test/test_concept_readout_l1.py::test_real_runbatch_stages_l1_once_and_reports_it_separately[False]",
+  "attribution": "Inferred from worker request order and progress markers; worker termination did not produce a final per-case receipt.",
+  "inspection": "Native sample shows Dynamo callback and autograd backward execution; this case runs three real train/eval/train batches with the coupled tied path.",
+  "runtime_revision": "639034c",
+  "reasoning_methods_removed": false
+}

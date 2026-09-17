@@ -1,0 +1,237 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_bounded_test_recycling.py::test_recycle_on_memory_pressure_keeps_every_case_once",
+    "test/test_bounded_test_recycling.py::test_explicit_zero_exit_does_not_erase_an_earlier_failed_test",
+    "test/test_blind_decode.py::test_blind_rate_default_is_scaffold",
+    "test/test_blind_decode.py::test_blind_decode_ignores_scaffold_spans",
+    "test/test_blind_decode.py::test_blind_size_hypotheses_from_claim_diffs",
+    "test/test_blind_decode.py::test_curriculum_fraction_masks_some_tiles",
+    "test/test_blind_decode.py::test_recon_bench_blind_flag",
+    "test/test_blind_decode.py::test_mm20m_xor_blind_roundtrip"
+  ],
+  "completed": [
+    "test/test_bounded_test_recycling.py::test_recycle_on_memory_pressure_keeps_every_case_once",
+    "test/test_bounded_test_recycling.py::test_explicit_zero_exit_does_not_erase_an_earlier_failed_test",
+    "test/test_blind_decode.py::test_blind_rate_default_is_scaffold",
+    "test/test_blind_decode.py::test_blind_decode_ignores_scaffold_spans",
+    "test/test_blind_decode.py::test_blind_size_hypotheses_from_claim_diffs",
+    "test/test_blind_decode.py::test_curriculum_fraction_masks_some_tiles",
+    "test/test_blind_decode.py::test_recon_bench_blind_flag",
+    "test/test_blind_decode.py::test_mm20m_xor_blind_roundtrip"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/private/tmp/full-spec-bounded-recycle-green-v1/worker-000.request.json",
+        "/private/tmp/full-spec-bounded-recycle-green-v1/worker-000.json"
+      ],
+      "pid": 83683,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 5795894240,
+      "elapsed_seconds": 94.28111895802431,
+      "log": "/private/tmp/full-spec-bounded-recycle-green-v1/worker-000.log",
+      "selected": [
+        "test/test_bounded_test_recycling.py::test_recycle_on_memory_pressure_keeps_every_case_once",
+        "test/test_bounded_test_recycling.py::test_explicit_zero_exit_does_not_erase_an_earlier_failed_test",
+        "test/test_blind_decode.py::test_blind_rate_default_is_scaffold",
+        "test/test_blind_decode.py::test_blind_decode_ignores_scaffold_spans",
+        "test/test_blind_decode.py::test_blind_size_hypotheses_from_claim_diffs",
+        "test/test_blind_decode.py::test_curriculum_fraction_masks_some_tiles",
+        "test/test_blind_decode.py::test_recon_bench_blind_flag",
+        "test/test_blind_decode.py::test_mm20m_xor_blind_roundtrip"
+      ],
+      "completed": [
+        "test/test_bounded_test_recycling.py::test_recycle_on_memory_pressure_keeps_every_case_once",
+        "test/test_bounded_test_recycling.py::test_explicit_zero_exit_does_not_erase_an_earlier_failed_test",
+        "test/test_blind_decode.py::test_blind_rate_default_is_scaffold",
+        "test/test_blind_decode.py::test_blind_decode_ignores_scaffold_spans"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_bounded_test_recycling.py::test_recycle_on_memory_pressure_keeps_every_case_once",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 22.509109374834225,
+          "message": "",
+          "stdout": "[collect] 1 selectors; limit 20s, 0.1 GiB\n[collect] exit 0; 3.1s; peak 0.04 GiB\n[worker-000] 5 selectors; limit 20s, 0.1 GiB\n[worker-000] exit 0; 3.8s; peak 0.08 GiB\n[worker-001] 4 selectors; limit 20s, 0.1 GiB\n[worker-001] exit 0; 3.9s; peak 0.08 GiB\n[worker-002] 3 selectors; limit 20s, 0.1 GiB\n[worker-002] exit 0; 4.2s; peak 0.08 GiB\n[worker-003] 2 selectors; limit 20s, 0.1 GiB\n[worker-003] exit 0; 3.8s; peak 0.08 GiB\n[worker-004] 1 selectors; limit 20s, 0.1 GiB\n[worker-004] exit 0; 3.5s; peak 0.07 GiB\n"
+        },
+        {
+          "nodeid": "test/test_bounded_test_recycling.py::test_explicit_zero_exit_does_not_erase_an_earlier_failed_test",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 6.762305791955441,
+          "message": "",
+          "stdout": "[collect] 1 selectors; limit 20s, 0.5 GiB\n[collect] exit 0; 3.1s; peak 0.04 GiB\n[worker-000] 2 selectors; limit 20s, 0.5 GiB\n[worker-000] exit 0; 3.6s; peak 0.06 GiB\n"
+        },
+        {
+          "nodeid": "test/test_blind_decode.py::test_blind_rate_default_is_scaffold",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 23.56964312493801,
+          "message": "",
+          "stdout": "[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/output/MM_20M_xor.ckpt, starting fresh\r\n[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 100.00%)\r\nTraining throughput: 1 batches in 3.501s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=1.342s, 100.00%)\r\nTraining throughput: 1 batches in 1.325s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=1.187s, 100.00%)\r\nTraining throughput: 1 batches in 1.173s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=1.158s, 100.00%)\r\nTraining throughput: 1 batches in 0.867s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+        },
+        {
+          "nodeid": "test/test_blind_decode.py::test_blind_decode_ignores_scaffold_spans",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 20.852116208989173,
+          "message": "",
+          "stdout": "[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/output/MM_20M_xor.ckpt, starting fresh\r\nbatch = 0 (warm-up, 100.00%)\r\nTraining throughput: 1 batches in 1.414s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=1.339s, 100.00%)\r\nTraining throughput: 1 batches in 1.313s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=1.205s, 100.00%)\r\nTraining throughput: 1 batches in 1.180s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=1.158s, 100.00%)\r\nTraining throughput: 1 batches in 0.862s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+        }
+      ],
+      "recycled": true
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/private/tmp/full-spec-bounded-recycle-green-v1/worker-001.request.json",
+        "/private/tmp/full-spec-bounded-recycle-green-v1/worker-001.json"
+      ],
+      "pid": 83812,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 5796352968,
+      "elapsed_seconds": 64.86416708305478,
+      "log": "/private/tmp/full-spec-bounded-recycle-green-v1/worker-001.log",
+      "selected": [
+        "test/test_blind_decode.py::test_blind_size_hypotheses_from_claim_diffs",
+        "test/test_blind_decode.py::test_curriculum_fraction_masks_some_tiles",
+        "test/test_blind_decode.py::test_recon_bench_blind_flag",
+        "test/test_blind_decode.py::test_mm20m_xor_blind_roundtrip"
+      ],
+      "completed": [
+        "test/test_blind_decode.py::test_blind_size_hypotheses_from_claim_diffs",
+        "test/test_blind_decode.py::test_curriculum_fraction_masks_some_tiles"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_blind_decode.py::test_blind_size_hypotheses_from_claim_diffs",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 23.669418042059988,
+          "message": "",
+          "stdout": "[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/output/MM_20M_xor.ckpt, starting fresh\r\n[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 100.00%)\r\nTraining throughput: 1 batches in 3.823s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=1.401s, 100.00%)\r\nTraining throughput: 1 batches in 1.333s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=1.199s, 100.00%)\r\nTraining throughput: 1 batches in 1.173s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=1.161s, 100.00%)\r\nTraining throughput: 1 batches in 0.866s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+        },
+        {
+          "nodeid": "test/test_blind_decode.py::test_curriculum_fraction_masks_some_tiles",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 21.06318441685289,
+          "message": "",
+          "stdout": "[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/output/MM_20M_xor.ckpt, starting fresh\r\nbatch = 0 (warm-up, 100.00%)\r\nTraining throughput: 1 batches in 1.331s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=1.318s, 100.00%)\r\nTraining throughput: 1 batches in 1.292s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=1.179s, 100.00%)\r\nTraining throughput: 1 batches in 1.175s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=1.146s, 100.00%)\r\nTraining throughput: 1 batches in 0.853s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+        }
+      ],
+      "recycled": true
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/private/tmp/full-spec-bounded-recycle-green-v1/worker-002.request.json",
+        "/private/tmp/full-spec-bounded-recycle-green-v1/worker-002.json"
+      ],
+      "pid": 83933,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 5796860872,
+      "elapsed_seconds": 65.371612790972,
+      "log": "/private/tmp/full-spec-bounded-recycle-green-v1/worker-002.log",
+      "selected": [
+        "test/test_blind_decode.py::test_recon_bench_blind_flag",
+        "test/test_blind_decode.py::test_mm20m_xor_blind_roundtrip"
+      ],
+      "completed": [
+        "test/test_blind_decode.py::test_recon_bench_blind_flag"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_blind_decode.py::test_recon_bench_blind_flag",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 45.12611429207027,
+          "message": "",
+          "stdout": "[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/output/MM_20M_xor.ckpt, starting fresh\r\n[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 100.00%)\r\nTraining throughput: 1 batches in 3.870s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=1.394s, 100.00%)\r\nTraining throughput: 1 batches in 1.326s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=1.194s, 100.00%)\r\nTraining throughput: 1 batches in 1.165s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=1.146s, 100.00%)\r\nTraining throughput: 1 batches in 0.851s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/output/MM_20M_xor.ckpt, starting fresh\r\nbatch = 0 (warm-up, 100.00%)\r\nTraining throughput: 1 batches in 1.376s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=1.371s, 100.00%)\r\nTraining throughput: 1 batches in 1.310s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=1.149s, 100.00%)\r\nTraining throughput: 1 batches in 1.149s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=1.172s, 100.00%)\r\nTraining throughput: 1 batches in 0.878s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+        }
+      ],
+      "recycled": true
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/private/tmp/full-spec-bounded-recycle-green-v1/worker-003.request.json",
+        "/private/tmp/full-spec-bounded-recycle-green-v1/worker-003.json"
+      ],
+      "pid": 84031,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 178832104,
+      "elapsed_seconds": 6.4290174171328545,
+      "log": "/private/tmp/full-spec-bounded-recycle-green-v1/worker-003.log",
+      "selected": [
+        "test/test_blind_decode.py::test_mm20m_xor_blind_roundtrip"
+      ],
+      "completed": [
+        "test/test_blind_decode.py::test_mm20m_xor_blind_roundtrip"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_blind_decode.py::test_mm20m_xor_blind_roundtrip",
+          "phase": "setup",
+          "outcome": "skipped",
+          "duration": 0.0005301670171320438,
+          "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_blind_decode.py', 200, 'Skipped: ~24s (build + pinned epochs) -- RUN_SLOW gates the bar')",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "worker_seconds": 300.0,
+    "suite_seconds": 900.0,
+    "batch_size": 64,
+    "max_files": 4
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/private/tmp/full-spec-bounded-recycle-green-v1",
+  "elapsed_seconds": 237.7029621670954,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/private/tmp/full-spec-bounded-recycle-green-v1/collect.request.json",
+      "/private/tmp/full-spec-bounded-recycle-green-v1/collect.json"
+    ],
+    "pid": 83646,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 179143424,
+    "elapsed_seconds": 6.4405312910676,
+    "log": "/private/tmp/full-spec-bounded-recycle-green-v1/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_bounded_test_recycling.py::test_recycle_on_memory_pressure_keeps_every_case_once",
+        "test/test_bounded_test_recycling.py::test_explicit_zero_exit_does_not_erase_an_earlier_failed_test",
+        "test/test_blind_decode.py::test_blind_rate_default_is_scaffold",
+        "test/test_blind_decode.py::test_blind_decode_ignores_scaffold_spans",
+        "test/test_blind_decode.py::test_blind_size_hypotheses_from_claim_diffs",
+        "test/test_blind_decode.py::test_curriculum_fraction_masks_some_tiles",
+        "test/test_blind_decode.py::test_recon_bench_blind_flag",
+        "test/test_blind_decode.py::test_mm20m_xor_blind_roundtrip"
+      ],
+      "completed": [],
+      "reports": [],
+      "recycled": false
+    }
+  }
+}

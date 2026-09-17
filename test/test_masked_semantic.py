@@ -17,6 +17,8 @@ META/type row of the word/object/meta triple ("wholes are types").
 
 cpu/eager, seeded.
 """
+
+import pytest
 import os
 os.environ.setdefault("BASICMODEL_DEVICE", "cpu")
 os.environ.setdefault("MODEL_COMPILE", "eager")
@@ -107,6 +109,7 @@ def _events_differ(a, b, threshold=1e-3):
     return float((a - b).abs().max()) > float(threshold)
 
 
+@pytest.mark.slow
 def test_config_is_masked_parallel_semantic():
     """Structural pins: masked-IR training on the parallel sparse path."""
     m = _cached("base")["model"]
@@ -122,6 +125,7 @@ def test_config_is_masked_parallel_semantic():
     assert cs0._order_caps() == (8, 4, 2, 1), cs0._order_caps()
 
 
+@pytest.mark.slow
 def test_masked_ir_training_engages():
     """Masked positions exist every epoch and contribute a live loss."""
     rec = _cached("base")
@@ -142,6 +146,7 @@ def test_masked_ir_training_engages():
     assert not torch.allclose(pm, tm)
 
 
+@pytest.mark.slow
 def test_concept_attention_live_not_dark():
     """The FF pyramid populates per-rung stats; the category VQ allocates."""
     m = _cached("base")["model"]
@@ -153,6 +158,7 @@ def test_concept_attention_live_not_dark():
     assert int(getattr(ws, "_category_n_roles", 0)) > 0
 
 
+@pytest.mark.slow
 def test_masked_prediction_uses_concept_attention():
     """Disabling the sparse pump moves the masked predictions AND the
     reverse reconstruction (same mask draws -> the diff is evidence)."""
@@ -162,6 +168,7 @@ def test_masked_prediction_uses_concept_attention():
     assert _events_differ(base["rev"], con["rev"])
 
 
+@pytest.mark.slow
 def test_reconstruction_uses_category_evidence():
     """Disabling the word/object/META mint moves the reverse
     reconstruction (the masked word's decode path)."""
@@ -170,6 +177,7 @@ def test_reconstruction_uses_category_evidence():
     assert _events_differ(base["rev"], mint["rev"])
 
 
+@pytest.mark.slow
 def test_seeded_rerun_is_deterministic():
     """The ablation thresholds sit far above the rerun noise floor."""
     a, b = _cached("base"), _cached("base2")

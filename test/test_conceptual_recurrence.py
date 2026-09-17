@@ -19,6 +19,7 @@ def _build(name):
         m, _ = Models.BasicModel.from_config(p)
     return m
 
+@pytest.mark.slow
 def test_reconstruct_enum_retired():
     # A1 (2026-06-09): the ``<reconstruct>`` enum was retired (schema element +
     # reconstructEnum removed). The combine now UNCONDITIONALLY mixes all three
@@ -167,6 +168,7 @@ def test_combine_square_roundtrip_exact_dense_large_leading():
     assert err < 1e-3, f"dense large [B,T,N,D] round-trip err={err:.2e}"
 
 
+@pytest.mark.slow
 def test_mm5m_forward_finite_after_combine():
     # Step-2 regression (A4): the parallel conceptual-recurrence forward,
     # now driven by the per-stage ConceptualCombine, must still produce a
@@ -187,6 +189,7 @@ def test_mm5m_forward_finite_after_combine():
     assert torch.isfinite(m._combine_carriers[-1]).all()
 
 
+@pytest.mark.slow
 def test_mm5m_combine_carrier_roundtrip():
     # 2-stream bind round-trip (C-10, rev. 2026-06-09): each stage's
     # threaded carrier is the WHOLE bind ILL([PS_t || WS_t]); reverse is an
@@ -371,6 +374,7 @@ def test_callosum_glue_init_average():
         "at init the callosum must AVERAGE the two hemispheres")
 
 
+@pytest.mark.slow
 def test_bind_contained_in_conceptual_space():
     # Processing contract (2026-06-10): the bind calculation lives ON
     # ConceptualSpace (bind_streams / unbind), and the carrier rides ON
@@ -474,6 +478,7 @@ def _build_mm5m_with(prediction=None, sentence_prediction=True):
     return m
 
 
+@pytest.mark.slow
 def test_intersentence_seed_used():
     # A6 Step 1: with <prediction>interSentence and a NON-EMPTY discourse AR
     # chain, the stage-0 conceptual carrier seed (CS_{-1}, the combine's
@@ -571,6 +576,7 @@ def test_intersentence_seed_used():
         "the forward seed path")
 
 
+@pytest.mark.slow
 def test_parallel_ps_called_once():
     # A6 Step 4 (PS-not-IS invariant): a single MM_20M forward calls
     # PartSpace.forward EXACTLY ONCE for stage-0 ingestion, and the
@@ -621,6 +627,7 @@ def test_parallel_ps_called_once():
         % (N_in, nInput))
 
 
+@pytest.mark.slow
 def test_widening_ps_pi_sized_at_embedded_percept_width():
     # A widening PartSpace (nInputDim != nOutputDim: MM_20M's 5-wide
     # raw byte event -> 1024-wide embedded percept) must size ``pi`` -- and
@@ -642,6 +649,7 @@ def test_widening_ps_pi_sized_at_embedded_percept_width():
     assert int(ps.butterflyN) == int(ps.nDim) == 1016
 
 
+@pytest.mark.slow
 def test_mm5m_grammar_builds_and_forwards():
     # Phase B (B1): the SERIAL sibling (legacy serial derivation,
     # role-collapsed grammar) must build + forward FINITE under the new dims

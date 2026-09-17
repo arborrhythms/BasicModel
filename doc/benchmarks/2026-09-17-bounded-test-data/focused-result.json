@@ -1,0 +1,269 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_bounded_test_runner.py::test_worker_exit_and_diagnostics_are_preserved",
+    "test/test_bounded_test_runner.py::test_timeout_kills_term_resistant_descendants",
+    "test/test_bounded_test_runner.py::test_aggregate_memory_includes_child_allocations",
+    "test/test_bounded_test_runner.py::test_monitor_failure_terminates_instead_of_running_unbounded",
+    "test/test_bounded_test_runner.py::test_completed_worker_cannot_leave_live_children",
+    "test/test_bounded_test_runner.py::test_suite_lock_excludes_another_process_and_releases",
+    "test/test_bounded_test_runner.py::test_batches_keep_every_selected_case_once",
+    "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[0]",
+    "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[-1]",
+    "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[nan]",
+    "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[inf]",
+    "test/test_bounded_test_runner.py::test_real_pytest_coverage_fresh_workers_and_failure_receipt",
+    "test/test_bounded_test_runner.py::test_empty_selection_is_not_a_green_suite",
+    "test/test_bounded_test_runner.py::test_source_change_cannot_receive_a_passing_receipt",
+    "test/test_bounded_test_runner.py::test_macos_uses_compressed_footprint_instead_of_resident_size",
+    "test/test_bounded_test_runner.py::test_termination_persists_failure_and_cleans_child"
+  ],
+  "completed": [
+    "test/test_bounded_test_runner.py::test_worker_exit_and_diagnostics_are_preserved",
+    "test/test_bounded_test_runner.py::test_timeout_kills_term_resistant_descendants",
+    "test/test_bounded_test_runner.py::test_aggregate_memory_includes_child_allocations",
+    "test/test_bounded_test_runner.py::test_monitor_failure_terminates_instead_of_running_unbounded",
+    "test/test_bounded_test_runner.py::test_completed_worker_cannot_leave_live_children",
+    "test/test_bounded_test_runner.py::test_suite_lock_excludes_another_process_and_releases",
+    "test/test_bounded_test_runner.py::test_batches_keep_every_selected_case_once",
+    "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[0]",
+    "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[-1]",
+    "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[nan]",
+    "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[inf]",
+    "test/test_bounded_test_runner.py::test_real_pytest_coverage_fresh_workers_and_failure_receipt",
+    "test/test_bounded_test_runner.py::test_empty_selection_is_not_a_green_suite",
+    "test/test_bounded_test_runner.py::test_source_change_cannot_receive_a_passing_receipt",
+    "test/test_bounded_test_runner.py::test_macos_uses_compressed_footprint_instead_of_resident_size",
+    "test/test_bounded_test_runner.py::test_termination_persists_failure_and_cleans_child"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/private/tmp/full-spec-bounded-focused-v5/worker-000.request.json",
+        "/private/tmp/full-spec-bounded-focused-v5/worker-000.json"
+      ],
+      "pid": 82118,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 517507352,
+      "elapsed_seconds": 55.48039799998514,
+      "log": "/private/tmp/full-spec-bounded-focused-v5/worker-000.log",
+      "selected": [
+        "test/test_bounded_test_runner.py::test_worker_exit_and_diagnostics_are_preserved",
+        "test/test_bounded_test_runner.py::test_timeout_kills_term_resistant_descendants",
+        "test/test_bounded_test_runner.py::test_aggregate_memory_includes_child_allocations",
+        "test/test_bounded_test_runner.py::test_monitor_failure_terminates_instead_of_running_unbounded",
+        "test/test_bounded_test_runner.py::test_completed_worker_cannot_leave_live_children",
+        "test/test_bounded_test_runner.py::test_suite_lock_excludes_another_process_and_releases",
+        "test/test_bounded_test_runner.py::test_batches_keep_every_selected_case_once",
+        "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[0]",
+        "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[-1]",
+        "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[nan]",
+        "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[inf]",
+        "test/test_bounded_test_runner.py::test_real_pytest_coverage_fresh_workers_and_failure_receipt",
+        "test/test_bounded_test_runner.py::test_empty_selection_is_not_a_green_suite",
+        "test/test_bounded_test_runner.py::test_source_change_cannot_receive_a_passing_receipt",
+        "test/test_bounded_test_runner.py::test_macos_uses_compressed_footprint_instead_of_resident_size",
+        "test/test_bounded_test_runner.py::test_termination_persists_failure_and_cleans_child"
+      ],
+      "completed": [
+        "test/test_bounded_test_runner.py::test_worker_exit_and_diagnostics_are_preserved",
+        "test/test_bounded_test_runner.py::test_timeout_kills_term_resistant_descendants",
+        "test/test_bounded_test_runner.py::test_aggregate_memory_includes_child_allocations",
+        "test/test_bounded_test_runner.py::test_monitor_failure_terminates_instead_of_running_unbounded",
+        "test/test_bounded_test_runner.py::test_completed_worker_cannot_leave_live_children",
+        "test/test_bounded_test_runner.py::test_suite_lock_excludes_another_process_and_releases",
+        "test/test_bounded_test_runner.py::test_batches_keep_every_selected_case_once",
+        "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[0]",
+        "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[-1]",
+        "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[nan]",
+        "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[inf]",
+        "test/test_bounded_test_runner.py::test_real_pytest_coverage_fresh_workers_and_failure_receipt",
+        "test/test_bounded_test_runner.py::test_empty_selection_is_not_a_green_suite",
+        "test/test_bounded_test_runner.py::test_source_change_cannot_receive_a_passing_receipt",
+        "test/test_bounded_test_runner.py::test_macos_uses_compressed_footprint_instead_of_resident_size",
+        "test/test_bounded_test_runner.py::test_termination_persists_failure_and_cleans_child"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_bounded_test_runner.py::test_worker_exit_and_diagnostics_are_preserved",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.5701304161921144,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_bounded_test_runner.py::test_timeout_kills_term_resistant_descendants",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 1.0839461251161993,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_bounded_test_runner.py::test_aggregate_memory_includes_child_allocations",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.7254287921823561,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_bounded_test_runner.py::test_monitor_failure_terminates_instead_of_running_unbounded",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.32843570900149643,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_bounded_test_runner.py::test_completed_worker_cannot_leave_live_children",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.6193211660720408,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_bounded_test_runner.py::test_suite_lock_excludes_another_process_and_releases",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.2134632500819862,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_bounded_test_runner.py::test_batches_keep_every_selected_case_once",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0012580419424921274,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[0]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0012370001059025526,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[-1]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0009909998625516891,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[nan]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.000986000057309866,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[inf]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.000961042009294033,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_bounded_test_runner.py::test_real_pytest_coverage_fresh_workers_and_failure_receipt",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 17.847870542202145,
+          "message": "",
+          "stdout": "[collect] 1 selectors; limit 15s, 0.5 GiB\n[collect] exit 0; 3.0s; peak 0.04 GiB\n[worker-000] 1 selectors; limit 15s, 0.5 GiB\n[worker-000] exit 0; 3.1s; peak 0.04 GiB\n[worker-001] 1 selectors; limit 15s, 0.5 GiB\n[worker-001] exit 0; 3.1s; peak 0.04 GiB\n[worker-002] 1 selectors; limit 15s, 0.5 GiB\n[worker-002] exit 0; 2.7s; peak 0.04 GiB\n[worker-003] 1 selectors; limit 15s, 0.5 GiB\n[worker-003] exit 0; 3.1s; peak 0.04 GiB\n[worker-004] 1 selectors; limit 15s, 0.5 GiB\n[worker-004] exit 1; 2.7s; peak 0.04 GiB\n"
+        },
+        {
+          "nodeid": "test/test_bounded_test_runner.py::test_empty_selection_is_not_a_green_suite",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 3.1548597081564367,
+          "message": "",
+          "stdout": "[collect] 1 selectors; limit 15s, 0.5 GiB\n[collect] exit 5; 3.1s; peak 0.04 GiB\n"
+        },
+        {
+          "nodeid": "test/test_bounded_test_runner.py::test_source_change_cannot_receive_a_passing_receipt",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 6.2081003750208765,
+          "message": "",
+          "stdout": "[collect] 1 selectors; limit 15s, 0.5 GiB\n[collect] exit 0; 3.0s; peak 0.04 GiB\n[worker-000] 1 selectors; limit 15s, 0.5 GiB\n[worker-000] exit 0; 3.2s; peak 0.04 GiB\n"
+        },
+        {
+          "nodeid": "test/test_bounded_test_runner.py::test_macos_uses_compressed_footprint_instead_of_resident_size",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0011779998894780874,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_bounded_test_runner.py::test_termination_persists_failure_and_cleans_child",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 5.588939875131473,
+          "message": "",
+          "stdout": ""
+        }
+      ]
+    }
+  ],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "worker_seconds": 120.0,
+    "suite_seconds": 240.0,
+    "batch_size": 64,
+    "max_files": 4
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/private/tmp/full-spec-bounded-focused-v5",
+  "elapsed_seconds": 58.45006416691467,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/private/tmp/full-spec-bounded-focused-v5/collect.request.json",
+      "/private/tmp/full-spec-bounded-focused-v5/collect.json"
+    ],
+    "pid": 82083,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 46989792,
+    "elapsed_seconds": 2.8156872908584774,
+    "log": "/private/tmp/full-spec-bounded-focused-v5/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_bounded_test_runner.py::test_worker_exit_and_diagnostics_are_preserved",
+        "test/test_bounded_test_runner.py::test_timeout_kills_term_resistant_descendants",
+        "test/test_bounded_test_runner.py::test_aggregate_memory_includes_child_allocations",
+        "test/test_bounded_test_runner.py::test_monitor_failure_terminates_instead_of_running_unbounded",
+        "test/test_bounded_test_runner.py::test_completed_worker_cannot_leave_live_children",
+        "test/test_bounded_test_runner.py::test_suite_lock_excludes_another_process_and_releases",
+        "test/test_bounded_test_runner.py::test_batches_keep_every_selected_case_once",
+        "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[0]",
+        "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[-1]",
+        "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[nan]",
+        "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[inf]",
+        "test/test_bounded_test_runner.py::test_real_pytest_coverage_fresh_workers_and_failure_receipt",
+        "test/test_bounded_test_runner.py::test_empty_selection_is_not_a_green_suite",
+        "test/test_bounded_test_runner.py::test_source_change_cannot_receive_a_passing_receipt",
+        "test/test_bounded_test_runner.py::test_macos_uses_compressed_footprint_instead_of_resident_size",
+        "test/test_bounded_test_runner.py::test_termination_persists_failure_and_cleans_child"
+      ],
+      "completed": [],
+      "reports": []
+    }
+  }
+}

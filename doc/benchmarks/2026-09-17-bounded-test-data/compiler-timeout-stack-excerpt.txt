@@ -1,0 +1,11 @@
+Selected native-stack frames from a one-second sample of worker 004.
+No Python-level function attribution is asserted by this excerpt.
+
+155 dynamo__custom_eval_frame  (in libtorch_python.dylib) + 1364  [0x109a95178]
+155 dynamo_call_callback(pybind11::handle, _PyInterpreterFrame*, FrameLocalsMapping*, CacheEntry*, _object*)  (in libtorch_python.dylib) + 256  [0x109a95fd0]
+155 THPEngine_run_backward(_object*, _object*, _object*)  (in libtorch_python.dylib) + 2392  [0x109a1d0ac]
+155 torch::autograd::python::PythonEngine::execute(std::vector<torch::autograd::Edge> const&, std::vector<at::Tensor> const&, bool, bool, bool, std::vector<torch::autograd::Edge> const&)  (in libtorch_python.dylib) + 100  [0x109a1c658]
+155 torch::autograd::Engine::execute(std::vector<torch::autograd::Edge> const&, std::vector<at::Tensor> const&, bool, bool, bool, std::vector<torch::autograd::Edge> const&)  (in libtorch_cpu.dylib) + 2056  [0x134b81b94]
+155 torch::autograd::python::PythonEngine::execute_with_graph_task(std::shared_ptr<torch::autograd::GraphTask> const&, c10::intrusive_ptr<torch::autograd::Node, c10::detail::intrusive_target_default_null_type<torch::autograd::Node>>, torch::autograd::InputBuffer&&)  (in libtorch_python.dylib) + 36  [0x109a1c6cc]
+155 torch::autograd::Engine::execute_with_graph_task(std::shared_ptr<torch::autograd::GraphTask> const&, c10::intrusive_ptr<torch::autograd::Node, c10::detail::intrusive_target_default_null_type<torch::autograd::Node>>, torch::autograd::InputBuffer&&)  (in libtorch_cpu.dylib) + 1208  [0x134b82664]
+155 torch::autograd::PyNode::apply(std::vector<at::Tensor>&&)  (in libtorch_python.dylib) + 312  [0x109a1f77c]

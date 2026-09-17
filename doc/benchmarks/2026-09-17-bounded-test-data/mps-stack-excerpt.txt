@@ -1,0 +1,43 @@
+Analysis of sampling Python (pid 6511) every 1 millisecond
+Process:         Python [6511]
+Path:            /opt/homebrew/*/Python.framework/Versions/3.12/Resources/Python.app/Contents/MacOS/Python
+Load Address:    0x102a20000
+Identifier:      org.python.python
+Version:         3.12.13 (3.12.13)
+Code Type:       ARM64
+Platform:        macOS
+Parent Process:  Python [6484]
+Target Type:     live task
+
+Date/Time:       2026-09-17 08:09:54.455 -0700
+Launch Time:     2026-09-17 08:01:14.867 -0700
+OS Version:      macOS 26.6.2 (25G83)
+Report Version:  7
+Analysis Tool:   /usr/bin/sample
+
+Physical footprint:         2.3G
+Physical footprint (peak):  2.4G
+Idle exit:                  untracked
+----
+
+Call graph:
+
+Selected inclusive frames from this one-second sample only:
+160 torch::autograd::THPVariable_where(_object*, _object*, _object*)  (in libtorch_python.dylib) + 352  [0x10a9bc8a0]
+149 torch::autograd::THPVariable_where(_object*, _object*, _object*)  (in libtorch_python.dylib) + 3204  [0x10a9bd3c4]
+115 at::mps::MPSStream::executeMPSGraph(MPSGraph*, NSDictionary*, NSDictionary*, at::mps::SyncType)  (in libtorch_cpu.dylib) + 160  [0x126e2cda4]
+111 invocation function for block in at::mps::MPSStream::executeMPSGraph(MPSGraph*, NSDictionary*, NSDictionary*, at::mps::SyncType)  (in libtorch_cpu.dylib) + 132  [0x126e2ce40]
+110 -[MPSGraph encodeToCommandBuffer:feeds:targetOperations:resultsDictionary:executionDescriptor:]  (in MetalPerformanceShadersGraph) + 172  [0x23050fa6c]
+52 MPSRuntime::evaluateOps(mlir::func::FuncOp, RuntimeSpecialization*, NSArray<MPSGraphTensorData*>*, NSArray<MPSGraphTensorData*>*, MPSGraphExecutableExecutionDescriptor*, MPSCommandBuffer*, bool, bool, bool, bool*)  (in MetalPerformanceShadersGraph) + 636  [0x2303414b8]
+37 GPURegionRuntime::evaluateOps(GPU::EncodeDescriptor*, NSArray<MPSGraphTensorData*>*, NSArray<MPSGraphTensorData*>*)  (in MetalPerformanceShadersGraph) + 3288  [0x2303433e8]
+31 llvm::function_ref<void (mlir::Operation*)>::callback_fn<GPURegionRuntime::evaluateOps(GPU::EncodeDescriptor*, NSArray<MPSGraphTensorData*>*, NSArray<MPSGraphTensorData*>*)::$_1::operator()(mlir::FunctionOpInterface) const::'lambda'(mlir::Operation*)>(long, mlir::Operation*)  (in MetalPerformanceShadersGraph) + 260  [0x230358a88]
+5 -[AGXG16XFamilyComputeContext dispatchThreadgroups:threadsPerThreadgroup:]  (in AGXMetalG16X) + 596  [0x119ec8528]
+3 llvm::function_ref<void (mlir::Operation*)>::callback_fn<GPURegionRuntime::evaluateOps(GPU::EncodeDescriptor*, NSArray<MPSGraphTensorData*>*, NSArray<MPSGraphTensorData*>*)::$_1::operator()(mlir::FunctionOpInterface) const::'lambda'(mlir::Operation*)>(long, mlir::Operation*)  (in MetalPerformanceShadersGraph) + 512  [0x230358b84]
+1 llvm::function_ref<void (mlir::Operation*)>::callback_fn<GPURegionRuntime::evaluateOps(GPU::EncodeDescriptor*, NSArray<MPSGraphTensorData*>*, NSArray<MPSGraphTensorData*>*)::$_1::operator()(mlir::FunctionOpInterface) const::'lambda'(mlir::Operation*)>(long, mlir::Operation*)  (in MetalPerformanceShadersGraph) + 76  [0x2303589d0]
+1 llvm::function_ref<void (mlir::Operation*)>::callback_fn<GPURegionRuntime::evaluateOps(GPU::EncodeDescriptor*, NSArray<MPSGraphTensorData*>*, NSArray<MPSGraphTensorData*>*)::$_1::operator()(mlir::FunctionOpInterface) const::'lambda'(mlir::Operation*)>(long, mlir::Operation*)  (in MetalPerformanceShadersGraph) + 460  [0x230358b50]
+1 llvm::function_ref<void (mlir::Operation*)>::callback_fn<GPURegionRuntime::evaluateOps(GPU::EncodeDescriptor*, NSArray<MPSGraphTensorData*>*, NSArray<MPSGraphTensorData*>*)::$_1::operator()(mlir::FunctionOpInterface) const::'lambda'(mlir::Operation*)>(long, mlir::Operation*)  (in MetalPerformanceShadersGraph) + 0  [0x230358984]
+5 GPURegionRuntime::evaluateOps(GPU::EncodeDescriptor*, NSArray<MPSGraphTensorData*>*, NSArray<MPSGraphTensorData*>*)  (in MetalPerformanceShadersGraph) + 4300  [0x2303437dc]
+3 GPURegionRuntime::evaluateOps(GPU::EncodeDescriptor*, NSArray<MPSGraphTensorData*>*, NSArray<MPSGraphTensorData*>*)  (in MetalPerformanceShadersGraph) + 1004  [0x230342afc]
+2 GPURegionRuntime::evaluateOps(GPU::EncodeDescriptor*, NSArray<MPSGraphTensorData*>*, NSArray<MPSGraphTensorData*>*)  (in MetalPerformanceShadersGraph) + 4164  [0x230343754]
+1 GPURegionRuntime::evaluateOps(GPU::EncodeDescriptor*, NSArray<MPSGraphTensorData*>*, NSArray<MPSGraphTensorData*>*)  (in MetalPerformanceShadersGraph) + 1216  [0x230342bd0]
+1 llvm::function_ref<void (mlir::Operation*)>::callback_fn<GPURegionRuntime::evaluateOps(GPU::EncodeDescriptor*, NSArray<MPSGraphTensorData*>*, NSArray<MPSGraphTensorData*>*)::$_0>(long, mlir::Operation*)  (in MetalPerformanceShadersGraph) + 152  [0x2303762b0]

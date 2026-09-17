@@ -1,0 +1,15 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__ test_time_pressure_recycles_after_complete_cases_without_dropping_coverage __
+/tmp/full-spec-time-boundary-probe.py:18: in test_time_pressure_recycles_after_complete_cases_without_dropping_coverage
+    assert result["exit_code"] == 0, result["reason"]
+E   AssertionError: timeout
+E   assert 124 == 0
+----------------------------- Captured stdout call -----------------------------
+[collect] 1 selectors; limit 4s, 0.5 GiB
+[collect] exit 0; 2.0s; peak 0.02 GiB
+[worker-000] 6 selectors; limit 4s, 0.5 GiB
+[worker-000] timeout 124; 5.1s; peak 0.02 GiB
+=========================== short test summary info ============================
+FAILED ../../../../../tmp/full-spec-time-boundary-probe.py::test_time_pressure_recycles_after_complete_cases_without_dropping_coverage
+1 failed in 7.52s

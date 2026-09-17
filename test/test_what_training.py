@@ -217,6 +217,7 @@ def synth_model(synth_config_path):
     return _build_synth(synth_config_path)
 
 
+@pytest.mark.slow
 def test_temporal_question_content_is_causally_used(synth_model):
     """What spec Step 7 / section 11 'Coordinates and targets': train with
     the question as the ONLY distinguishing signal, then shuffle the question
@@ -407,6 +408,7 @@ def test_curriculum_drives_question_families_through_run(synth_model):
     assert {"past", "future", "inference"} <= set(report["families"])
 
 
+@pytest.mark.slow
 def test_joint_training_keeps_both_primary_costs_in_band(synth_config_path):
     """Section 12.14: under joint training neither primary cost blows up and
     the answer cost improves while reconstruction stays within its band."""
@@ -445,6 +447,7 @@ def _surface_answer_cost(m, batch, questions):
         return float(m._reverse_event_loss(surface, target))
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("family", ["future", "past"])
 def test_supplied_text_answer_quality_improves_with_training(synth_discourse_config_path, family):
     """Learn separately supplied answer surfaces through the real answer loss.

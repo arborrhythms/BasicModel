@@ -1,0 +1,419 @@
+{
+  "scope": "Partial timed-out run: completed passing call phases only. Not a full-suite result; does not isolate imports, allocation or compilation.",
+  "elapsed_seconds": 5136.275291542057,
+  "completed_cases": 2907,
+  "selected_cases": 4458,
+  "exit_code": 124,
+  "longest_calls": [
+    {
+      "nodeid": "test/test_inter_contrastive_predict.py::TestInterContrastivePredict::test_predictor_trains_end_to_end",
+      "seconds": 280.27655570791103
+    },
+    {
+      "nodeid": "test/test_output_walk.py::test_runbatch_does_not_train_generate_policy_without_supplied_answers",
+      "seconds": 142.08927550003864
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_provenance_and_chunk_proposals_ride_the_fullgraph_word_loop",
+      "seconds": 132.21616762503982
+    },
+    {
+      "nodeid": "test/test_output_walk.py::test_compiled_understanding_captures_explicit_sentence_products",
+      "seconds": 111.03690170799382
+    },
+    {
+      "nodeid": "test/test_output_walk.py::test_runbatch_trains_generate_policy_only_with_nonzero_weight[1.0]",
+      "seconds": 95.5522282498423
+    },
+    {
+      "nodeid": "test/test_output_path_supervised.py::test_mixed_supplied_numeric_and_automatic_text_trains_only_supplied_row",
+      "seconds": 84.27377683389932
+    },
+    {
+      "nodeid": "test/test_output_path_supervised.py::test_supplied_text_scores_fixed_surface_and_masks_automatic_text",
+      "seconds": 81.0622913329862
+    },
+    {
+      "nodeid": "test/test_reconstruction_priority.py::test_real_intermediate_and_final_seals_have_same_canonical_roles",
+      "seconds": 67.67968158400618
+    },
+    {
+      "nodeid": "test/test_expectation_defaults.py::test_native_future_and_other_row_changes_do_not_change_first_estimate",
+      "seconds": 63.10726320790127
+    },
+    {
+      "nodeid": "test/test_output_walk.py::test_runbatch_generate_policy_masks_rows_without_supplied_answers",
+      "seconds": 56.74375925003551
+    },
+    {
+      "nodeid": "test/test_output_walk.py::test_runbatch_trains_generate_policy_only_with_nonzero_weight[0.0]",
+      "seconds": 46.4820215839427
+    },
+    {
+      "nodeid": "test/test_prepared_answer_boundary.py::test_prepared_concept_handoff_preserves_answer_gradient[True]",
+      "seconds": 43.48602250008844
+    },
+    {
+      "nodeid": "test/test_output_percept_readout.py::test_model_checkpoint_preserves_readout_and_adam[False]",
+      "seconds": 38.94705733307637
+    },
+    {
+      "nodeid": "test/test_output_walk.py::test_answer_materialises_as_its_own_conceptual_idea_and_realises_through_the_walk",
+      "seconds": 38.6067214589566
+    },
+    {
+      "nodeid": "test/test_expectation_defaults.py::test_native_runtime_reports_pairs_without_accumulating_or_updating",
+      "seconds": 38.283888790989295
+    },
+    {
+      "nodeid": "test/test_prepared_answer_boundary.py::test_realization_uses_a_held_derivation_without_running_resolution[False]",
+      "seconds": 37.55373033299111
+    },
+    {
+      "nodeid": "test/test_query_native_ids.py::test_real_sentence_capture_owns_native_object_ids_across_later_staging",
+      "seconds": 37.278032541973516
+    },
+    {
+      "nodeid": "test/test_prepared_answer_boundary.py::test_realization_uses_a_held_derivation_without_running_resolution[True]",
+      "seconds": 36.1836389999371
+    },
+    {
+      "nodeid": "test/test_output_walk.py::test_packed_recall_observes_captured_sentence_programs",
+      "seconds": 35.67587233311497
+    },
+    {
+      "nodeid": "test/test_output_path_supervised.py::test_native_checkpoint_restores_active_answer_widths[False-development]",
+      "seconds": 35.4581746251788
+    },
+    {
+      "nodeid": "test/test_prepared_answer_boundary.py::test_prepared_answer_generates_more_words_than_the_captured_input",
+      "seconds": 34.99569750018418
+    },
+    {
+      "nodeid": "test/test_output_walk.py::test_question_conditioner_optimizer_steps_both_widths",
+      "seconds": 34.8434152090922
+    },
+    {
+      "nodeid": "test/test_compiled_word_chunk.py::test_peer_leg_profiler_executes_real_ps_ws_and_conceptual_bodies",
+      "seconds": 34.835291916970164
+    },
+    {
+      "nodeid": "test/test_output_path_supervised.py::test_native_checkpoint_restores_active_answer_widths[True-development]",
+      "seconds": 34.40715491701849
+    },
+    {
+      "nodeid": "test/test_output_path_supervised.py::test_native_answer_uses_owned_ideas_without_dense_symbol_state[False-development]",
+      "seconds": 34.116406416054815
+    },
+    {
+      "nodeid": "test/test_output_walk.py::test_held_answer_idea_ignores_later_staging_and_memory_context",
+      "seconds": 33.87629054184072
+    },
+    {
+      "nodeid": "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_training_step_runs_the_hook_without_crashing",
+      "seconds": 33.61302270786837
+    },
+    {
+      "nodeid": "test/test_output_percept_readout.py::test_model_checkpoint_preserves_readout_and_adam[True]",
+      "seconds": 33.28454979113303
+    },
+    {
+      "nodeid": "test/test_output_path_supervised.py::test_native_thinking_changes_the_owned_conceptual_answer[development]",
+      "seconds": 32.84170824987814
+    },
+    {
+      "nodeid": "test/test_output_path_supervised.py::test_native_answer_uses_owned_ideas_without_dense_symbol_state[True-development]",
+      "seconds": 31.31222758302465
+    },
+    {
+      "nodeid": "test/test_prepared_answer_boundary.py::test_public_boundary_prepares_target_free_metadata_before_realization",
+      "seconds": 31.202873667003587
+    },
+    {
+      "nodeid": "test/test_expectation_defaults.py::test_expectation_off_keeps_every_packed_observation_in_ltm",
+      "seconds": 30.78806204092689
+    },
+    {
+      "nodeid": "test/test_prepared_answer_boundary.py::test_prepared_concept_handoff_preserves_answer_gradient[False]",
+      "seconds": 30.427761083003134
+    },
+    {
+      "nodeid": "test/test_compiled_word_chunk.py::test_real_aligned_loop_matches_prior_compiled_semantics_across_chunks",
+      "seconds": 30.225732041988522
+    },
+    {
+      "nodeid": "test/test_compiled_word_chunk.py::test_no_grad_fallback_retains_eager_stm_depth_semantics",
+      "seconds": 25.653331666952
+    },
+    {
+      "nodeid": "test/test_output_walk.py::test_output_ignores_input_derivation_on_conceptual_slots",
+      "seconds": 24.576071874937043
+    },
+    {
+      "nodeid": "test/test_bounded_test_recycling.py::test_recycle_on_memory_pressure_keeps_every_case_once",
+      "seconds": 22.589957874966785
+    },
+    {
+      "nodeid": "test/test_aligned_fold_binding.py::test_concept_fold_support_roundtrips_with_conceptual_extras",
+      "seconds": 20.903356333030388
+    },
+    {
+      "nodeid": "test/test_bounded_test_runner.py::test_real_pytest_coverage_fresh_workers_and_failure_receipt",
+      "seconds": 18.413266458082944
+    },
+    {
+      "nodeid": "test/test_ir_fullgraph_compile.py::test_idempotent_forward_compiles_fullgraph_eager",
+      "seconds": 18.347121624974534
+    }
+  ],
+  "call_seconds_by_file": {
+    "test/test_output_walk.py": 729.982694043545,
+    "test/test_output_path_supervised.py": 333.4717399580404,
+    "test/test_inter_contrastive_predict.py": 280.27655570791103,
+    "test/test_prepared_answer_boundary.py": 213.84972408320755,
+    "test/test_meronomy_ladder.py": 170.73944174754433,
+    "test/test_expectation_defaults.py": 140.60144378920086,
+    "test/test_compiled_word_chunk.py": 115.38457658444531,
+    "test/test_output_percept_readout.py": 72.32563220732845,
+    "test/test_reconstruction_priority.py": 68.88773304014467,
+    "test/test_aligned_fold_binding.py": 58.195542708970606,
+    "test/test_query_native_ids.py": 37.2813440838363,
+    "test/test_bounded_test_runner.py": 37.02156757959165,
+    "test/test_ltm_consolidation.py": 33.861033043824136,
+    "test/test_reasoning_cde_model.py": 33.69900220842101,
+    "test/test_bounded_test_recycling.py": 29.045326167019084,
+    "test/test_reasoning.py": 27.361881996970624,
+    "test/test_hierarchical.py": 19.531964249443263,
+    "test/test_ir_fullgraph_compile.py": 18.347121624974534,
+    "test/test_inter_sentence_prediction_shape.py": 16.580439997836947,
+    "test/test_recorded_compose_dispatch.py": 12.152360124979168,
+    "test/test_invertibility.py": 11.964742294279858,
+    "test/test_output_synthesis.py": 10.830087540205568,
+    "test/test_bounded_stm_fold.py": 9.930902874097228,
+    "test/test_discourse_space.py": 9.798124582273886,
+    "test/test_peer_pipeline.py": 9.49534595781006,
+    "test/test_nanochat_grammar_eval.py": 7.888593540992588,
+    "test/test_ltm_chain_grows.py": 7.807113957358524,
+    "test/test_basicmodel.py": 7.253389493562281,
+    "test/test_category_em_smoke.py": 6.152775542112067,
+    "test/test_intra_routing_grad_to_router.py": 5.148851666832343,
+    "test/test_input_word_cursor.py": 5.048963789828122,
+    "test/test_phase1_normalizer.py": 4.691933208145201,
+    "test/test_phase2_pipeline_primitives.py": 4.510818583890796,
+    "test/test_invertibility_contract.py": 4.202411835780367,
+    "test/test_expectation_review.py": 4.0767855395097286,
+    "test/test_mps_inductor_any_dtype.py": 4.0488975420594215,
+    "test/test_reset_at_batch_boundary.py": 3.314568792935461,
+    "test/test_intra_sentence_layer.py": 3.270035877590999,
+    "test/test_model_time_when.py": 2.920953043270856,
+    "test/test_per_row_hard_reset.py": 2.884092040825635,
+    "test/test_relative_sentence_codebook_insertion.py": 2.7255664584226906,
+    "test/test_lexicon_ownership.py": 2.6909436674322933,
+    "test/test_cursor_universal.py": 2.5389676238410175,
+    "test/test_perceptual_loopback.py": 2.377079082885757,
+    "test/test_perceptualspace_bpe_forward.py": 2.208434124942869,
+    "test/test_mental_model.py": 2.1983054999727756,
+    "test/test_reconstruction_roundtrip.py": 2.1627238753717393,
+    "test/test_ir_only_refactor.py": 2.080813750391826,
+    "test/test_connective_supervision.py": 2.01843775017187,
+    "test/test_math_thinking_training.py": 1.9334864581469446,
+    "test/test_operator_codebook_shaping.py": 1.7677075832616538,
+    "test/test_compile_static_loop.py": 1.755280249984935,
+    "test/test_concept_readout_l1.py": 1.6618419161532074,
+    "test/test_eval_math_thinking.py": 1.2663180420640856,
+    "test/test_partspace_dynamic_capacity.py": 1.2604902512393892,
+    "test/test_live_concepts_from_percepts.py": 1.2498360839672387,
+    "test/test_bench_concepts_from_percepts.py": 1.0965358335524797,
+    "test/test_math_dataset.py": 1.0806482515763491,
+    "test/test_modality_codebook.py": 1.0555779167916626,
+    "test/test_pi_sigma_ownership.py": 1.0524247491266578,
+    "test/test_cs_reentrancy.py": 1.006738917902112,
+    "test/test_cs_stm_bookkeeping.py": 0.9964209182653576,
+    "test/test_positive_int_taxonomy.py": 0.9784993340726942,
+    "test/test_fineweb_preflight.py": 0.9523485836107284,
+    "test/test_learn_score_components.py": 0.8097032504156232,
+    "test/test_chooser_architecture.py": 0.8007508718874305,
+    "test/test_recon_bench.py": 0.7923321251291782,
+    "test/test_lbg_positive_int.py": 0.7813527500256896,
+    "test/test_lift_lower_binary_grammar_ops.py": 0.7592460429295897,
+    "test/test_registration_drift.py": 0.7470335408579558,
+    "test/test_concepts_from_percepts.py": 0.734636455308646,
+    "test/test_category_collapse.py": 0.7056636661291122,
+    "test/test_no_eos_sync.py": 0.6679174159653485,
+    "test/test_existence_metadata.py": 0.647068501682952,
+    "test/test_mlp_transform_chooser.py": 0.5680310826282948,
+    "test/test_ps_single_arg_refactor.py": 0.5651110403705388,
+    "test/test_analyse_chunking_forward.py": 0.5378788341768086,
+    "test/test_autobind_from_cs.py": 0.5214227081742138,
+    "test/test_meronymic_butterfly.py": 0.4834399977698922,
+    "test/test_lies_can_be_learned.py": 0.4438878339715302,
+    "test/test_cs_symbol_table.py": 0.4425805862993002,
+    "test/test_contextual_concept_codebook.py": 0.4374282492790371,
+    "test/test_c_prior_slotwise.py": 0.42975966609083116,
+    "test/test_lexical_gate_lift_lower.py": 0.4268453340046108,
+    "test/test_parthood_orders.py": 0.41635746019892395,
+    "test/test_ps_ss_binding.py": 0.40638845786452293,
+    "test/test_category_codebook.py": 0.39499120926484466,
+    "test/test_ensure_microbatch_cascade.py": 0.3915544170886278,
+    "test/test_phase2_sequential_integration.py": 0.38232683204114437,
+    "test/test_abstraction_order_canonical.py": 0.3568053322378546,
+    "test/test_per_batch_stack_isolation.py": 0.31546983355656266,
+    "test/test_interface_factoring.py": 0.3123697496484965,
+    "test/test_gather_first_percept_reads.py": 0.291212291456759,
+    "test/test_attention_promotion.py": 0.27334637474268675,
+    "test/test_contractive_linear.py": 0.27256250055506825,
+    "test/test_grammar_start_rule.py": 0.2577398349530995,
+    "test/test_per_batch_state_isolation.py": 0.2529445819091052,
+    "test/test_init_scale.py": 0.2395527909975499,
+    "test/test_cs_sparse_weights.py": 0.2387722092680633,
+    "test/test_pi2_sigma2_folds.py": 0.23460208368487656,
+    "test/test_doc_links.py": 0.21592967119067907,
+    "test/test_partition_rule_predictor.py": 0.2000911240465939,
+    "test/test_operator_superposition.py": 0.19626474869437516,
+    "test/test_ps_meronymic_router.py": 0.18288420815952122,
+    "test/test_knowledge_artifact_writer.py": 0.18165058619342744,
+    "test/test_mereology_word_binding.py": 0.18071891623549163,
+    "test/test_mm_xor.py": 0.1772821678314358,
+    "test/test_category_codebook_retirement.py": 0.17569604120217264,
+    "test/test_query_vp_boundaries.py": 0.1680188337340951,
+    "test/test_partition_pos_codebook.py": 0.16619724966585636,
+    "test/test_property_tiling.py": 0.15490866312757134,
+    "test/test_radix_layer_reverse.py": 0.14560058596543968,
+    "test/test_relevance_bases.py": 0.1396190831437707,
+    "test/test_mereology_raise.py": 0.13866945635527372,
+    "test/test_dimensional_governance.py": 0.13143291603773832,
+    "test/test_padded_rows_no_op.py": 0.129367999965325,
+    "test/test_bivector_retirement_state.py": 0.12440200103446841,
+    "test/test_grammatical_query_vps.py": 0.122616957873106,
+    "test/test_reading_attention.py": 0.12193549983203411,
+    "test/test_config_scoping.py": 0.11833462724462152,
+    "test/test_grammar_layer_butterfly.py": 0.11173933069221675,
+    "test/test_ir_mode.py": 0.10764741688035429,
+    "test/test_ps_byte_fallback_utf8.py": 0.10437733517028391,
+    "test/test_embed.py": 0.10096254060044885,
+    "test/test_intra_sentence_layer_reverse.py": 0.0984927942045033,
+    "test/test_global_attention.py": 0.09845316503196955,
+    "test/test_frozen_concepts.py": 0.09400787623599172,
+    "test/test_concept_capacity_policy.py": 0.09157904167659581,
+    "test/test_chunk_layer_bpe.py": 0.08236641436815262,
+    "test/test_d1_pos_recovery_gate.py": 0.07713695871643722,
+    "test/test_conceptual_recurrence.py": 0.07354941708035767,
+    "test/test_aligned_capacity_checkpoint_growth.py": 0.07139629079028964,
+    "test/test_exact_primitives.py": 0.06996646197512746,
+    "test/test_codebook_update_law.py": 0.06989766890183091,
+    "test/test_percept_store.py": 0.06928899954073131,
+    "test/test_priming_energy.py": 0.06928866659291089,
+    "test/test_idempotent_loop.py": 0.06730753998272121,
+    "test/test_phase2_end_to_end.py": 0.0672269999049604,
+    "test/test_iterated_symbolic_wave.py": 0.06657816586084664,
+    "test/test_grammar_identity_rule.py": 0.06636954308487475,
+    "test/test_meronomy_laws.py": 0.0654385406523943,
+    "test/test_partition_reconstruction_stack.py": 0.055335584096610546,
+    "test/test_knowledge_view.py": 0.05482695996761322,
+    "test/test_meronomy.py": 0.05460312752984464,
+    "test/test_lexicon_unit_ball.py": 0.0525943785905838,
+    "test/test_mereological.py": 0.05127016664482653,
+    "test/test_ps_analyze_routed.py": 0.05060204118490219,
+    "test/test_query_executors.py": 0.048556165071204305,
+    "test/test_lift_lower_factorization.py": 0.0481456674169749,
+    "test/test_ops_lift_lower.py": 0.04527199873700738,
+    "test/test_prior_stm_symbol_peer.py": 0.044068500166758895,
+    "test/test_restricted_candidate_inverse.py": 0.042300207540392876,
+    "test/test_reference_lookup_gauge.py": 0.04214575025252998,
+    "test/test_query_contract_boundaries.py": 0.04159783385694027,
+    "test/test_detached_reverse_objective.py": 0.040359958074986935,
+    "test/test_heat_reverse_wiring.py": 0.039854083908721805,
+    "test/test_query_owner_width.py": 0.03777670906856656,
+    "test/test_active_payload_audit.py": 0.036594209261238575,
+    "test/test_intent_priming.py": 0.0348717481829226,
+    "test/test_compact_concept_codebook_state.py": 0.034715832909569144,
+    "test/test_mereology.py": 0.033527671126648784,
+    "test/test_finite_gradient_guard.py": 0.03284529340453446,
+    "test/test_ops_layer_wiring.py": 0.03176808333955705,
+    "test/test_conceptual_stm.py": 0.031196876196190715,
+    "test/test_grammar_binary_ops.py": 0.029572125058621168,
+    "test/test_ps_analyzer.py": 0.028812041971832514,
+    "test/test_adverb_eig_edit.py": 0.028786372859030962,
+    "test/test_order_k_unfold.py": 0.028109125094488263,
+    "test/test_primed_reverse_combined.py": 0.027735332725569606,
+    "test/test_primed_reverse_hard_mask.py": 0.026168041862547398,
+    "test/test_modality_widths.py": 0.0256592920050025,
+    "test/test_impenetrable.py": 0.02534633269533515,
+    "test/test_existence_sidecar.py": 0.025009165750816464,
+    "test/test_inverse_recommend.py": 0.0242362511344254,
+    "test/test_reference_table.py": 0.024216040736064315,
+    "test/test_active_codebook_reads.py": 0.023197414819151163,
+    "test/test_conceptual_introspection.py": 0.023133249720558524,
+    "test/test_participation_pos_recovery.py": 0.022827500943094492,
+    "test/test_expectation_benchmark.py": 0.022591959219425917,
+    "test/test_existence_evidence.py": 0.02164787403307855,
+    "test/test_data_no_byte_loss.py": 0.021156416973099113,
+    "test/test_existence_public_inputs.py": 0.020993375219404697,
+    "test/test_primed_reverse_integration.py": 0.020867125131189823,
+    "test/test_contextual_bind.py": 0.020609039813280106,
+    "test/test_bounded_charts.py": 0.019977084128186107,
+    "test/test_multi_optimizer_surface.py": 0.019353457959368825,
+    "test/test_ramsification_table.py": 0.01922866771928966,
+    "test/test_existence_ingestion.py": 0.017930875066667795,
+    "test/test_grammar_order_typing.py": 0.017634249292314053,
+    "test/test_ps_reverse_e2e.py": 0.016778582241386175,
+    "test/test_marker_replay_canonical.py": 0.01623983308672905,
+    "test/test_existence_provenance.py": 0.01609954214654863,
+    "test/test_quaternary_corners.py": 0.01584241702221334,
+    "test/test_activation_priming_multiply.py": 0.015721502481028438,
+    "test/test_partition_resolve.py": 0.015710042091086507,
+    "test/test_event_compose.py": 0.015619459329172969,
+    "test/test_merge_structural_not_operator.py": 0.015246414812281728,
+    "test/test_lift_lower_recommender.py": 0.01489941612817347,
+    "test/test_idea_subspace.py": 0.014858749229460955,
+    "test/test_grammar_rewrite.py": 0.014150999952107668,
+    "test/test_pilayer_log_domain_finite.py": 0.013783917995169759,
+    "test/test_radix_spell_out.py": 0.013291126117110252,
+    "test/test_definition_sparsity.py": 0.013017292600125074,
+    "test/test_compiled_expectation_boundary.py": 0.012832083972170949,
+    "test/test_perceptual_chunking.py": 0.012577583082020283,
+    "test/test_grammar_fixtures.py": 0.01251958217471838,
+    "test/test_clarifications.py": 0.012485872954130173,
+    "test/test_partition_grammar_rewrite.py": 0.01246866607107222,
+    "test/test_pole_aligned_score.py": 0.012092500925064087,
+    "test/test_analysis_attention_gate.py": 0.011572749819606543,
+    "test/test_morphology_layer.py": 0.011554708937183022,
+    "test/test_boolean_reverse_recommender.py": 0.01136079104617238,
+    "test/test_parse_buffer.py": 0.011295791249722242,
+    "test/test_grammar_sections.py": 0.011249291244894266,
+    "test/test_active_decode_candidates.py": 0.010828123893588781,
+    "test/test_query_registry.py": 0.010642792098224163,
+    "test/test_query_grammar_loader.py": 0.010553793981671333,
+    "test/test_grammar_space_scoped_starts.py": 0.010320249246433377,
+    "test/test_pi_sigma_inherit_grammarlayer.py": 0.010301584145054221,
+    "test/test_no_rebuild_optimizer.py": 0.009933874942362309,
+    "test/test_relative_rule_detection_collapsed.py": 0.009865875821560621,
+    "test/test_negation_layer.py": 0.009791208896785975,
+    "test/test_ps_where.py": 0.009428666671738029,
+    "test/test_global_consume.py": 0.009089458733797073,
+    "test/test_lazy_passthrough_event.py": 0.007570458110421896,
+    "test/test_ispart_query_dispatch.py": 0.007488957140594721,
+    "test/test_csbp.py": 0.006812250008806586,
+    "test/test_phase2_subspace_empty.py": 0.006517167203128338,
+    "test/test_attention_mode_config.py": 0.006485497113317251,
+    "test/test_grammar_preposition.py": 0.006383957806974649,
+    "test/test_conceptual_stm_typed.py": 0.0063281257171183825,
+    "test/test_oov_reserve_no_resize.py": 0.005782833090052009,
+    "test/test_query_grammar_copy.py": 0.005489832954481244,
+    "test/test_grammar_ps_ss_sections.py": 0.00513033289462328,
+    "test/test_chunk_static_analyse.py": 0.004140250384807587,
+    "test/test_kleene_binding.py": 0.004124875878915191,
+    "test/test_explicit_ordered_stm.py": 0.004019959131255746,
+    "test/test_oov_reserve_full_fallback.py": 0.003926750272512436,
+    "test/test_analyse_word_learning.py": 0.0032594159711152315,
+    "test/test_cs_to_ss_forward.py": 0.002939000027254224,
+    "test/test_category_role_vocabulary.py": 0.002692334121093154,
+    "test/test_null_word_pathway.py": 0.0025508746039122343,
+    "test/test_model_reporting.py": 0.0025094999000430107,
+    "test/test_dual_towers.py": 0.002212083199992776,
+    "test/test_canonical_shape.py": 0.002018206985667348,
+    "test/test_merged_loop.py": 0.0014223330654203892,
+    "test/test_partition_symbolicspace_state.py": 0.0010532920714467764,
+    "test/test_discourse_cache_dtype.py": 0.001001249998807907
+  }
+}

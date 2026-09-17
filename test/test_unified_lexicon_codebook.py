@@ -659,6 +659,8 @@ END PROPOSAL  --  AWAITING CONTROLLER GO-AHEAD FOR PHASE 2
 --------------------------------------------------------------------------
 """
 
+import pytest
+
 # ==========================================================================
 # PHASE 2 TDD GATE  --  Stages 1.D + 1.B (combined, narrower)
 # ==========================================================================
@@ -915,6 +917,7 @@ class TestExistingConfigsSatisfyFlatSlab(unittest.TestCase):
     def test_mm_xor_loopback_satisfies_flat_slab(self):
         self._load_and_validate(os.path.join(_DATA_DIR, "MM_xor_loopback.xml"))
 
+    @pytest.mark.slow
     def test_mm_5m_satisfies_flat_slab(self):
         self._load_and_validate(os.path.join(_DATA_DIR, "MM_20M_legacy.xml"))
 

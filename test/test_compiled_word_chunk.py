@@ -459,6 +459,7 @@ def test_real_aligned_loop_matches_prior_compiled_semantics_across_chunks(
     assert bool((lookup_rows[:, capacity + words:] == -1).all())
 
 
+@pytest.mark.slow
 def test_tensor_peer_while_runs_symbolic_reference_transaction_and_releases_owner_state(
         tmp_path, monkeypatch):
     """The production HOP promotes words, resolves objects, and is reusable."""

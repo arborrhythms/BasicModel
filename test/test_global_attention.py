@@ -166,6 +166,7 @@ def _batch(m):
     return m.inputSpace.prepInput(items)
 
 
+@pytest.mark.slow
 def test_global_on_builds_module():
     from Spaces import GlobalAttention
     m = _build("MM_global.xml")
@@ -173,12 +174,14 @@ def test_global_on_builds_module():
     assert isinstance(m.global_attention, GlobalAttention)
 
 
+@pytest.mark.slow
 def test_global_off_has_no_module():
     m = _build("MM_reading.xml")            # readingAttention only
     assert not getattr(m, "global_attention_enabled", False)
     assert getattr(m, "global_attention", None) is None
 
 
+@pytest.mark.slow
 def test_forward_parks_typed_obs_over_spaces():
     from Spaces import GlobalAttention as GA
     m = _build("MM_global.xml")
@@ -200,6 +203,7 @@ def test_forward_parks_typed_obs_over_spaces():
     assert torch.isfinite(obs["content"]).all()
 
 
+@pytest.mark.slow
 def test_addressable_spaces_gathers_input_stm_codebook():
     from Spaces import GlobalAttention as GA
     m = _build("MM_global.xml")
@@ -218,6 +222,7 @@ def test_addressable_spaces_gathers_input_stm_codebook():
     assert GA.SPACE_PART in ids
 
 
+@pytest.mark.slow
 def test_ltm_space_appears_when_store_present():
     # The LTM address space is gathered from symbolSpace.ltm_store; stage a
     # synthetic TernaryTruthStore so the path is exercised without
@@ -245,6 +250,7 @@ def test_ltm_space_appears_when_store_present():
     assert ltm[0]["keys"].shape[0] == 3 and ltm[0]["keys"].dim() == 2
 
 
+@pytest.mark.slow
 def test_global_params_reach_optimizer():
     m = _build("MM_global.xml")
     opt = m.getOptimizer(lr=0.01)
@@ -259,6 +265,7 @@ def test_global_params_reach_optimizer():
     assert gp and gp.issubset(op)
 
 
+@pytest.mark.slow
 def test_superposition_temperature_threads_to_global():
     # The model-level superposition temperature must REACH global attention's
     # selection. (At init the full-model distribution is dominated by the ~65k

@@ -1,4 +1,6 @@
 """Tests for bin/recon_bench.py (2026-07-03 reconstruction-fidelity Task 1)."""
+
+import pytest
 import json
 from types import SimpleNamespace
 
@@ -60,6 +62,7 @@ def test_decode_rows_align_with_last_eval_batch(tmp_path, monkeypatch):
     assert 0.0 <= d["exact_match_rate"] <= 1.0
 
 
+@pytest.mark.slow
 def test_byte_lexer_config_decodes(tmp_path):
     """MM_20M_legacy (byte cursor) decodes via the _last_host_slab stash."""
     rec = run_config("data/MM_20M_legacy.xml", epochs=1, seed=0,

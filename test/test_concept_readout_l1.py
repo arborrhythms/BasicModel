@@ -243,6 +243,7 @@ def test_weak_l1_fits_two_reference_concepts_with_exact_sparse_support():
         torch.set_num_threads(previous_threads)
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("detached_reverse", [False, True])
 def test_real_runbatch_stages_l1_once_and_reports_it_separately(
         tmp_path, monkeypatch, detached_reverse):

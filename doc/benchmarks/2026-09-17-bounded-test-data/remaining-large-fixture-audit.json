@@ -1,0 +1,1297 @@
+{
+  "note": "Read-only static candidates, NOT automatic slow marks. XML-only checks and compact overrides need review.",
+  "large_configs": {
+    "MM_20M_grammar.xml": {
+      "max_rows": 65536,
+      "max_dim": 1024
+    },
+    "MM_5M_IR.xml": {
+      "max_rows": 2000000,
+      "max_dim": 1030
+    },
+    "MM_mereology_serial.xml": {
+      "max_rows": 65536,
+      "max_dim": 1024
+    },
+    "MM_reading.xml": {
+      "max_rows": 65536,
+      "max_dim": 1024
+    },
+    "MM_20M_xor.xml": {
+      "max_rows": 65536,
+      "max_dim": 1024
+    },
+    "MM_phrase_decode.xml": {
+      "max_rows": 65536,
+      "max_dim": 1024
+    },
+    "MM_mereology.xml": {
+      "max_rows": 65536,
+      "max_dim": 1024
+    },
+    "MM_nanochat_grammar_pilot.xml": {
+      "max_rows": 32768,
+      "max_dim": 512
+    },
+    "MM_symbol_tower.xml": {
+      "max_rows": 65536,
+      "max_dim": 1024
+    },
+    "MM_qa.xml": {
+      "max_rows": 65536,
+      "max_dim": 1024
+    },
+    "MM_sparse_concept.xml": {
+      "max_rows": 65536,
+      "max_dim": 1024
+    },
+    "MM_global.xml": {
+      "max_rows": 65536,
+      "max_dim": 1024
+    },
+    "MM_masked_semantic.xml": {
+      "max_rows": 65536,
+      "max_dim": 1024
+    },
+    "MM_20M_legacy.xml": {
+      "max_rows": 65536,
+      "max_dim": 1024
+    },
+    "MM_20M_fineweb.xml": {
+      "max_rows": 65536,
+      "max_dim": 1024
+    },
+    "MM_5M_AR.xml": {
+      "max_rows": 2000000,
+      "max_dim": 1030
+    },
+    "MM_decode.xml": {
+      "max_rows": 65536,
+      "max_dim": 1024
+    },
+    "MM_overlap_tiling.xml": {
+      "max_rows": 65536,
+      "max_dim": 1024
+    },
+    "MM_meronomy_smoke.xml": {
+      "max_rows": 65536,
+      "max_dim": 1024
+    },
+    "MM_400M.xml": {
+      "max_rows": 65536,
+      "max_dim": 1024
+    },
+    "MM_add_verb.xml": {
+      "max_rows": 65536,
+      "max_dim": 1024
+    }
+  },
+  "candidates": [
+    {
+      "file": "test/test_sparse_concept_e2e.py",
+      "function": "test_sparse_concept_config_builds_and_stamps",
+      "line": 154,
+      "configurations": [
+        "MM_sparse_concept.xml"
+      ],
+      "builder_calls": [
+        "_build",
+        "from_config",
+        "init_config"
+      ]
+    },
+    {
+      "file": "test/test_sparse_concept_e2e.py",
+      "function": "test_sparse_concept_forward_smoke",
+      "line": 168,
+      "configurations": [
+        "MM_sparse_concept.xml"
+      ],
+      "builder_calls": [
+        "_build",
+        "from_config",
+        "init_config"
+      ]
+    },
+    {
+      "file": "test/test_sparse_concept_e2e.py",
+      "function": "test_model_optimizer_picks_up_csw_weights",
+      "line": 207,
+      "configurations": [
+        "MM_sparse_concept.xml"
+      ],
+      "builder_calls": [
+        "_build",
+        "from_config",
+        "init_config"
+      ]
+    },
+    {
+      "file": "test/test_sparse_concept_e2e.py",
+      "function": "test_conceptual_sbow_situates_live_sparse_codes",
+      "line": 222,
+      "configurations": [
+        "MM_sparse_concept.xml"
+      ],
+      "builder_calls": [
+        "_build",
+        "from_config",
+        "init_config"
+      ]
+    },
+    {
+      "file": "test/test_sparse_concept_e2e.py",
+      "function": "test_demux_feedback_is_views_of_the_mixed_carrier",
+      "line": 282,
+      "configurations": [
+        "MM_sparse_concept.xml"
+      ],
+      "builder_calls": [
+        "_build",
+        "from_config",
+        "init_config"
+      ]
+    },
+    {
+      "file": "test/test_sparse_concept_e2e.py",
+      "function": "test_two_phase_forward_cutover_stamps_terminal_activations",
+      "line": 313,
+      "configurations": [
+        "MM_sparse_concept.xml"
+      ],
+      "builder_calls": [
+        "_build",
+        "from_config",
+        "init_config"
+      ]
+    },
+    {
+      "file": "test/test_where_tiling.py",
+      "function": "test_model_callosum_carries_tiling_to_final_cs",
+      "line": 121,
+      "configurations": [
+        "MM_overlap_tiling.xml"
+      ],
+      "builder_calls": [
+        "_build_experiment",
+        "from_config",
+        "init_config"
+      ]
+    },
+    {
+      "file": "test/test_frozen_concepts.py",
+      "function": "test_set_reading_primes_the_concept",
+      "line": 95,
+      "configurations": [
+        "MM_sparse_concept.xml"
+      ],
+      "builder_calls": [
+        "_build",
+        "_build_model"
+      ]
+    },
+    {
+      "file": "test/test_frozen_concepts.py",
+      "function": "test_reading_wiring_desires_staged_wholes",
+      "line": 116,
+      "configurations": [
+        "MM_sparse_concept.xml"
+      ],
+      "builder_calls": [
+        "_build",
+        "_build_model"
+      ]
+    },
+    {
+      "file": "test/test_where_attention_handoff.py",
+      "function": "test_mereology_raise_stamps_stage0_ws_and_is_byte_identical",
+      "line": 47,
+      "configurations": [
+        "MM_mereology.xml"
+      ],
+      "builder_calls": [
+        "_build",
+        "from_config",
+        "init_config"
+      ]
+    },
+    {
+      "file": "test/test_where_attention_handoff.py",
+      "function": "test_first_pass_is_wide_open",
+      "line": 63,
+      "configurations": [
+        "MM_mereology.xml"
+      ],
+      "builder_calls": [
+        "_build",
+        "from_config",
+        "init_config"
+      ]
+    },
+    {
+      "file": "test/test_where_attention_handoff.py",
+      "function": "test_passback_noop_without_attention",
+      "line": 73,
+      "configurations": [
+        "MM_mereology.xml"
+      ],
+      "builder_calls": [
+        "_build",
+        "from_config",
+        "init_config"
+      ]
+    },
+    {
+      "file": "test/test_where_attention_handoff.py",
+      "function": "test_passback_route_hint_dispatch",
+      "line": 84,
+      "configurations": [
+        "MM_mereology.xml"
+      ],
+      "builder_calls": [
+        "_build",
+        "from_config",
+        "init_config"
+      ]
+    },
+    {
+      "file": "test/test_where_attention_handoff.py",
+      "function": "test_passback_scoped_word_where",
+      "line": 98,
+      "configurations": [
+        "MM_mereology.xml"
+      ],
+      "builder_calls": [
+        "_build",
+        "from_config",
+        "init_config"
+      ]
+    },
+    {
+      "file": "test/test_where_attention_handoff.py",
+      "function": "test_passback_scope_ps_selects_refed_input_when_engaged",
+      "line": 111,
+      "configurations": [
+        "MM_mereology.xml"
+      ],
+      "builder_calls": [
+        "_build",
+        "from_config",
+        "init_config"
+      ]
+    },
+    {
+      "file": "test/test_where_attention_handoff.py",
+      "function": "test_passback_scoped_focus_zeros_out_of_span",
+      "line": 140,
+      "configurations": [
+        "MM_mereology.xml"
+      ],
+      "builder_calls": [
+        "_build",
+        "from_config",
+        "init_config"
+      ]
+    },
+    {
+      "file": "test/test_reconstruction_roundtrip.py",
+      "function": "test_codebook_mask_path_inert_under_no_grad",
+      "line": 731,
+      "configurations": [
+        "MM_mereology.xml"
+      ],
+      "builder_calls": [
+        "_build",
+        "_build_model"
+      ]
+    },
+    {
+      "file": "test/test_fineweb_preflight.py",
+      "function": "test_make_train_defaults_to_production_config",
+      "line": 29,
+      "configurations": [
+        "MM_20M_fineweb.xml"
+      ],
+      "builder_calls": []
+    },
+    {
+      "file": "test/test_fineweb_preflight.py",
+      "function": "test_train_cli_defaults_to_production_config",
+      "line": 34,
+      "configurations": [
+        "MM_20M_fineweb.xml"
+      ],
+      "builder_calls": []
+    },
+    {
+      "file": "test/test_fineweb_preflight.py",
+      "function": "test_local_cli_forwards_every_phase_two_bound",
+      "line": 40,
+      "configurations": [
+        "MM_20M_fineweb.xml"
+      ],
+      "builder_calls": []
+    },
+    {
+      "file": "test/test_fineweb_preflight.py",
+      "function": "test_remote_cli_preserves_safety_and_embedding_flags",
+      "line": 65,
+      "configurations": [
+        "MM_20M_fineweb.xml"
+      ],
+      "builder_calls": []
+    },
+    {
+      "file": "test/test_reconstruct_from_idea.py",
+      "function": "test_reconstruct_from_idea_defaults_off",
+      "line": 55,
+      "configurations": [
+        "MM_mereology.xml",
+        "MM_mereology_serial.xml"
+      ],
+      "builder_calls": [
+        "_build",
+        "from_config",
+        "init_config"
+      ]
+    },
+    {
+      "file": "test/test_reconstruct_from_idea.py",
+      "function": "test_clear_grammar_cache_erases_router_route",
+      "line": 60,
+      "configurations": [
+        "MM_mereology_serial.xml"
+      ],
+      "builder_calls": [
+        "_build",
+        "from_config",
+        "init_config"
+      ]
+    },
+    {
+      "file": "test/test_reconstruct_from_idea.py",
+      "function": "test_reconstruct_from_idea_rebuilds_after_clearing",
+      "line": 84,
+      "configurations": [
+        "MM_mereology_serial.xml"
+      ],
+      "builder_calls": [
+        "_build",
+        "from_config",
+        "init_config"
+      ]
+    },
+    {
+      "file": "test/test_reconstruct_from_idea.py",
+      "function": "test_reconstruct_from_idea_can_use_reverse_seed_snapshot",
+      "line": 116,
+      "configurations": [
+        "MM_mereology_serial.xml"
+      ],
+      "builder_calls": [
+        "_build",
+        "from_config",
+        "init_config"
+      ]
+    },
+    {
+      "file": "test/test_dual_towers.py",
+      "function": "test_signed_snap_no_annihilation",
+      "line": 184,
+      "configurations": [
+        "MM_sparse_concept.xml"
+      ],
+      "builder_calls": [
+        "_build",
+        "_build_model"
+      ]
+    },
+    {
+      "file": "test/test_dual_towers.py",
+      "function": "test_pyramid_replaces_wave",
+      "line": 196,
+      "configurations": [
+        "MM_sparse_concept.xml"
+      ],
+      "builder_calls": [
+        "_build",
+        "_build_model"
+      ]
+    },
+    {
+      "file": "test/test_dual_towers.py",
+      "function": "test_pyramid_taper_topk_selection",
+      "line": 207,
+      "configurations": [
+        "MM_sparse_concept.xml"
+      ],
+      "builder_calls": [
+        "_build",
+        "_build_model"
+      ]
+    },
+    {
+      "file": "test/test_dual_towers.py",
+      "function": "test_pyramid_grads_reach_every_rung",
+      "line": 235,
+      "configurations": [
+        "MM_sparse_concept.xml"
+      ],
+      "builder_calls": [
+        "_build",
+        "_build_model"
+      ]
+    },
+    {
+      "file": "test/test_idea_decode_d3.py",
+      "function": "test_idea_decode_defaults_off",
+      "line": 47,
+      "configurations": [
+        "MM_mereology.xml"
+      ],
+      "builder_calls": [
+        "_build",
+        "from_config",
+        "init_config"
+      ]
+    },
+    {
+      "file": "test/test_idea_decode_d3.py",
+      "function": "test_grammar_decode_runs_on_syntactic_ws",
+      "line": 52,
+      "configurations": [
+        "MM_mereology_serial.xml"
+      ],
+      "builder_calls": [
+        "_build",
+        "from_config",
+        "init_config"
+      ]
+    },
+    {
+      "file": "test/test_idea_decode_d3.py",
+      "function": "test_consumer_drives_seed_on_shape_match",
+      "line": 68,
+      "configurations": [
+        "MM_mereology_serial.xml"
+      ],
+      "builder_calls": [
+        "_build",
+        "from_config",
+        "init_config"
+      ]
+    },
+    {
+      "file": "test/test_idea_decode_d3.py",
+      "function": "test_consumer_falls_back_on_width_mismatch",
+      "line": 82,
+      "configurations": [
+        "MM_mereology_serial.xml"
+      ],
+      "builder_calls": [
+        "_build",
+        "from_config",
+        "init_config"
+      ]
+    },
+    {
+      "file": "test/test_idea_decode_d3.py",
+      "function": "test_reverse_off_path_unchanged",
+      "line": 98,
+      "configurations": [
+        "MM_mereology.xml"
+      ],
+      "builder_calls": [
+        "_build",
+        "from_config",
+        "init_config"
+      ]
+    },
+    {
+      "file": "test/test_idea_decode.py",
+      "function": "test_idea_decode_defaults_off",
+      "line": 67,
+      "configurations": [
+        "MM_mereology.xml"
+      ],
+      "builder_calls": [
+        "_build",
+        "from_config",
+        "init_config"
+      ]
+    },
+    {
+      "file": "test/test_idea_decode.py",
+      "function": "test_gate_skips_generate_rebuild_when_on",
+      "line": 74,
+      "configurations": [
+        "MM_mereology.xml"
+      ],
+      "builder_calls": [
+        "_build",
+        "from_config",
+        "init_config"
+      ]
+    },
+    {
+      "file": "test/test_nanochat_grammar_eval.py",
+      "function": "test_new_model_configs_enable_word_grain_boundary",
+      "line": 124,
+      "configurations": [
+        "MM_nanochat_grammar_pilot.xml"
+      ],
+      "builder_calls": []
+    },
+    {
+      "file": "test/test_global_consume.py",
+      "function": "test_consume_flag_off_by_default_on_global_config",
+      "line": 104,
+      "configurations": [
+        "MM_global.xml"
+      ],
+      "builder_calls": [
+        "_build",
+        "from_config",
+        "init_config"
+      ]
+    },
+    {
+      "file": "test/test_global_consume.py",
+      "function": "test_qa_config_builds_with_consumer_and_ltm",
+      "line": 111,
+      "configurations": [
+        "MM_qa.xml"
+      ],
+      "builder_calls": [
+        "_build",
+        "from_config",
+        "init_config"
+      ]
+    },
+    {
+      "file": "test/test_global_consume.py",
+      "function": "test_zero_gate_matches_consume_off",
+      "line": 124,
+      "configurations": [
+        "MM_qa.xml"
+      ],
+      "builder_calls": [
+        "_build",
+        "from_config",
+        "init_config"
+      ]
+    },
+    {
+      "file": "test/test_global_consume.py",
+      "function": "test_gate_feeds_the_read_into_the_answer",
+      "line": 140,
+      "configurations": [
+        "MM_qa.xml"
+      ],
+      "builder_calls": [
+        "_build",
+        "from_config",
+        "init_config"
+      ]
+    },
+    {
+      "file": "test/test_global_consume.py",
+      "function": "test_nonzero_gate_does_not_corrupt_the_reverse",
+      "line": 153,
+      "configurations": [
+        "MM_global.xml"
+      ],
+      "builder_calls": [
+        "_build",
+        "from_config",
+        "init_config"
+      ]
+    },
+    {
+      "file": "test/test_global_consume.py",
+      "function": "test_answer_loss_trains_retrieval",
+      "line": 176,
+      "configurations": [
+        "MM_qa.xml"
+      ],
+      "builder_calls": [
+        "_build",
+        "from_config",
+        "init_config"
+      ]
+    },
+    {
+      "file": "test/test_global_consume.py",
+      "function": "test_ltm_truthset_read_is_fed_to_the_answer",
+      "line": 192,
+      "configurations": [
+        "MM_qa.xml"
+      ],
+      "builder_calls": [
+        "_build",
+        "from_config",
+        "init_config"
+      ]
+    },
+    {
+      "file": "test/test_conceptualize.py",
+      "function": "test_conceptualize_dispatch",
+      "line": 29,
+      "configurations": [
+        "MM_symbol_tower.xml"
+      ],
+      "builder_calls": [
+        "_build",
+        "from_config",
+        "init_config"
+      ]
+    },
+    {
+      "file": "test/test_conceptualize.py",
+      "function": "test_conceptualize_chain",
+      "line": 55,
+      "configurations": [
+        "MM_symbol_tower.xml"
+      ],
+      "builder_calls": [
+        "_build",
+        "from_config",
+        "init_config"
+      ]
+    },
+    {
+      "file": "test/test_dimensional_governance.py",
+      "function": "test_cs_ws_recurrent_input_mismatch_raises",
+      "line": 154,
+      "configurations": [
+        "MM_20M_legacy.xml"
+      ],
+      "builder_calls": [
+        "_build_from_text",
+        "from_config",
+        "init_config"
+      ]
+    },
+    {
+      "file": "test/test_dimensional_governance.py",
+      "function": "test_cs_os_direct_handoff_mismatch_raises",
+      "line": 172,
+      "configurations": [
+        "MM_20M_legacy.xml"
+      ],
+      "builder_calls": [
+        "_build_from_text",
+        "from_config",
+        "init_config"
+      ]
+    },
+    {
+      "file": "test/test_train_compile_target.py",
+      "function": "test_parse_compile_target_mlx",
+      "line": 21,
+      "configurations": [
+        "MM_20M_legacy.xml"
+      ],
+      "builder_calls": []
+    },
+    {
+      "file": "test/test_train_compile_target.py",
+      "function": "test_default_mlx_output_path_uses_model_stem",
+      "line": 72,
+      "configurations": [
+        "MM_20M_legacy.xml"
+      ],
+      "builder_calls": []
+    },
+    {
+      "file": "test/test_train_compile_target.py",
+      "function": "test_fineweb_uses_raw_lexer_for_embedding_skip",
+      "line": 83,
+      "configurations": [
+        "MM_20M_fineweb.xml"
+      ],
+      "builder_calls": []
+    },
+    {
+      "file": "test/test_per_word_capture_gate_cuda.py",
+      "function": "test_per_word_step_compiles_and_replays_under_cudagraphs",
+      "line": 88,
+      "configurations": [
+        "MM_20M_legacy.xml"
+      ],
+      "builder_calls": [
+        "_build_gate_model_cuda",
+        "from_config",
+        "init_config"
+      ]
+    },
+    {
+      "file": "test/test_per_word_capture_gate_cuda.py",
+      "function": "test_per_word_step_actually_uses_cudagraphs",
+      "line": 140,
+      "configurations": [
+        "MM_20M_legacy.xml"
+      ],
+      "builder_calls": [
+        "_build_gate_model_cuda",
+        "from_config",
+        "init_config"
+      ]
+    },
+    {
+      "file": "test/test_per_word_capture_gate_cuda.py",
+      "function": "test_per_word_step_emits_no_dtoh_under_profiler",
+      "line": 193,
+      "configurations": [
+        "MM_20M_legacy.xml"
+      ],
+      "builder_calls": [
+        "_build_gate_model_cuda",
+        "from_config",
+        "init_config"
+      ]
+    },
+    {
+      "file": "test/test_relevance_bases.py",
+      "function": "test_surface_contract_cold_at_build",
+      "line": 28,
+      "configurations": [
+        "MM_sparse_concept.xml"
+      ],
+      "builder_calls": [
+        "_build",
+        "_build_model"
+      ]
+    },
+    {
+      "file": "test/test_relevance_bases.py",
+      "function": "test_seen_bump_and_decay",
+      "line": 44,
+      "configurations": [
+        "MM_sparse_concept.xml"
+      ],
+      "builder_calls": [
+        "_build",
+        "_build_model"
+      ]
+    },
+    {
+      "file": "test/test_relevance_bases.py",
+      "function": "test_desire_signed_floor",
+      "line": 57,
+      "configurations": [
+        "MM_sparse_concept.xml"
+      ],
+      "builder_calls": [
+        "_build",
+        "_build_model"
+      ]
+    },
+    {
+      "file": "test/test_relevance_bases.py",
+      "function": "test_unconditional_integration_end_to_end",
+      "line": 70,
+      "configurations": [
+        "MM_sparse_concept.xml"
+      ],
+      "builder_calls": [
+        "_build",
+        "_build_model"
+      ]
+    },
+    {
+      "file": "test/test_relevance_bases.py",
+      "function": "test_primed_reading_scope",
+      "line": 95,
+      "configurations": [
+        "MM_sparse_concept.xml"
+      ],
+      "builder_calls": [
+        "_build",
+        "_build_model"
+      ]
+    },
+    {
+      "file": "test/test_global_attention.py",
+      "function": "test_global_on_builds_module",
+      "line": 169,
+      "configurations": [
+        "MM_global.xml"
+      ],
+      "builder_calls": [
+        "_build",
+        "from_config",
+        "init_config"
+      ]
+    },
+    {
+      "file": "test/test_global_attention.py",
+      "function": "test_global_off_has_no_module",
+      "line": 176,
+      "configurations": [
+        "MM_reading.xml"
+      ],
+      "builder_calls": [
+        "_build",
+        "from_config",
+        "init_config"
+      ]
+    },
+    {
+      "file": "test/test_global_attention.py",
+      "function": "test_forward_parks_typed_obs_over_spaces",
+      "line": 182,
+      "configurations": [
+        "MM_global.xml"
+      ],
+      "builder_calls": [
+        "_build",
+        "from_config",
+        "init_config"
+      ]
+    },
+    {
+      "file": "test/test_global_attention.py",
+      "function": "test_addressable_spaces_gathers_input_stm_codebook",
+      "line": 203,
+      "configurations": [
+        "MM_global.xml"
+      ],
+      "builder_calls": [
+        "_build",
+        "from_config",
+        "init_config"
+      ]
+    },
+    {
+      "file": "test/test_global_attention.py",
+      "function": "test_ltm_space_appears_when_store_present",
+      "line": 221,
+      "configurations": [
+        "MM_global.xml"
+      ],
+      "builder_calls": [
+        "_build",
+        "from_config",
+        "init_config"
+      ]
+    },
+    {
+      "file": "test/test_global_attention.py",
+      "function": "test_global_params_reach_optimizer",
+      "line": 248,
+      "configurations": [
+        "MM_global.xml"
+      ],
+      "builder_calls": [
+        "_build",
+        "from_config",
+        "init_config"
+      ]
+    },
+    {
+      "file": "test/test_global_attention.py",
+      "function": "test_superposition_temperature_threads_to_global",
+      "line": 262,
+      "configurations": [
+        "MM_global.xml"
+      ],
+      "builder_calls": [
+        "_build",
+        "from_config",
+        "init_config"
+      ]
+    },
+    {
+      "file": "test/test_stm_opportunistic_reduce.py",
+      "function": "test_no_reducer_is_noop",
+      "line": 72,
+      "configurations": [
+        "MM_masked_semantic.xml"
+      ],
+      "builder_calls": [
+        "_build",
+        "_build_model"
+      ]
+    },
+    {
+      "file": "test/test_stm_opportunistic_reduce.py",
+      "function": "test_capacity_demand_without_grammar_fails_loudly",
+      "line": 135,
+      "configurations": [
+        "MM_masked_semantic.xml"
+      ],
+      "builder_calls": [
+        "_build",
+        "_build_model"
+      ]
+    },
+    {
+      "file": "test/test_reading_attention.py",
+      "function": "test_reading_attention_on_builds_producer",
+      "line": 280,
+      "configurations": [
+        "MM_reading.xml"
+      ],
+      "builder_calls": [
+        "_build",
+        "from_config",
+        "init_config"
+      ]
+    },
+    {
+      "file": "test/test_reading_attention.py",
+      "function": "test_reading_attention_off_has_no_module",
+      "line": 289,
+      "configurations": [
+        "MM_mereology.xml"
+      ],
+      "builder_calls": [
+        "_build",
+        "from_config",
+        "init_config"
+      ]
+    },
+    {
+      "file": "test/test_reading_attention.py",
+      "function": "test_forward_is_finite_and_deterministic",
+      "line": 297,
+      "configurations": [
+        "MM_reading.xml"
+      ],
+      "builder_calls": [
+        "_build",
+        "from_config",
+        "init_config"
+      ]
+    },
+    {
+      "file": "test/test_reading_attention.py",
+      "function": "test_train_forward_then_backward_is_finite",
+      "line": 308,
+      "configurations": [
+        "MM_reading.xml"
+      ],
+      "builder_calls": [
+        "_build",
+        "from_config",
+        "init_config"
+      ]
+    },
+    {
+      "file": "test/test_reading_attention.py",
+      "function": "test_producer_writes_teacher_scope_and_registers_loss",
+      "line": 316,
+      "configurations": [
+        "MM_reading.xml"
+      ],
+      "builder_calls": [
+        "_build",
+        "from_config",
+        "init_config"
+      ]
+    },
+    {
+      "file": "test/test_reading_attention.py",
+      "function": "test_registered_loss_backprops_to_producer",
+      "line": 341,
+      "configurations": [
+        "MM_reading.xml"
+      ],
+      "builder_calls": [
+        "_build",
+        "from_config",
+        "init_config"
+      ]
+    },
+    {
+      "file": "test/test_reading_attention.py",
+      "function": "test_producer_scope_clears_past_last_word",
+      "line": 365,
+      "configurations": [
+        "MM_reading.xml"
+      ],
+      "builder_calls": [
+        "_build",
+        "from_config",
+        "init_config"
+      ]
+    },
+    {
+      "file": "test/test_reading_attention.py",
+      "function": "test_producer_params_reach_the_optimizer",
+      "line": 381,
+      "configurations": [
+        "MM_reading.xml"
+      ],
+      "builder_calls": [
+        "_build",
+        "from_config",
+        "init_config"
+      ]
+    },
+    {
+      "file": "test/test_priming_energy.py",
+      "function": "test_priming_spread_knob_stamped",
+      "line": 97,
+      "configurations": [
+        "MM_masked_semantic.xml"
+      ],
+      "builder_calls": [
+        "_build_model"
+      ]
+    },
+    {
+      "file": "test/test_priming_energy.py",
+      "function": "test_cs_to_ps_projection_live",
+      "line": 117,
+      "configurations": [
+        "MM_masked_semantic.xml"
+      ],
+      "builder_calls": [
+        "_build_model"
+      ]
+    },
+    {
+      "file": "test/test_priming_energy.py",
+      "function": "test_cs_to_ws_projection_live",
+      "line": 136,
+      "configurations": [
+        "MM_masked_semantic.xml"
+      ],
+      "builder_calls": [
+        "_build_model"
+      ]
+    },
+    {
+      "file": "test/test_priming_energy.py",
+      "function": "test_projection_bounded_across_epochs",
+      "line": 156,
+      "configurations": [
+        "MM_masked_semantic.xml"
+      ],
+      "builder_calls": [
+        "_build_model"
+      ]
+    },
+    {
+      "file": "test/test_priming_energy.py",
+      "function": "test_one_canonical_surface_per_tower",
+      "line": 167,
+      "configurations": [
+        "MM_masked_semantic.xml"
+      ],
+      "builder_calls": [
+        "_build_model"
+      ]
+    },
+    {
+      "file": "test/test_priming_energy.py",
+      "function": "test_reading_heat_from_canonical_on_multistage",
+      "line": 188,
+      "configurations": [
+        "MM_masked_semantic.xml"
+      ],
+      "builder_calls": [
+        "_build_model"
+      ]
+    },
+    {
+      "file": "test/test_priming_energy.py",
+      "function": "test_priming_rows_carry_abstraction_order",
+      "line": 215,
+      "configurations": [
+        "MM_masked_semantic.xml"
+      ],
+      "builder_calls": [
+        "_build_model"
+      ]
+    },
+    {
+      "file": "test/test_cs_to_ss_forward.py",
+      "function": "test_symbol_tower_parallel_forward_smoke",
+      "line": 62,
+      "configurations": [
+        "MM_symbol_tower.xml"
+      ],
+      "builder_calls": [
+        "_build",
+        "from_config",
+        "init_config"
+      ]
+    },
+    {
+      "file": "test/test_cs_to_ss_forward.py",
+      "function": "test_forward_concept_to_symbol_returns_row_aligned_leg",
+      "line": 79,
+      "configurations": [
+        "MM_symbol_tower.xml"
+      ],
+      "builder_calls": [
+        "_build",
+        "from_config",
+        "init_config"
+      ]
+    },
+    {
+      "file": "test/test_cs_to_ss_forward.py",
+      "function": "test_forward_concept_to_symbol_empty_is_none",
+      "line": 102,
+      "configurations": [
+        "MM_symbol_tower.xml"
+      ],
+      "builder_calls": [
+        "_build",
+        "from_config",
+        "init_config"
+      ]
+    },
+    {
+      "file": "test/test_cs_to_ss_forward.py",
+      "function": "test_symbol_leg_from_activations_is_0d_times_row_and_carries_grad",
+      "line": 111,
+      "configurations": [
+        "MM_symbol_tower.xml"
+      ],
+      "builder_calls": [
+        "_build",
+        "from_config",
+        "init_config"
+      ]
+    },
+    {
+      "file": "test/test_cs_to_ss_forward.py",
+      "function": "test_symbol_leg_survives_repeated_sync_backward",
+      "line": 139,
+      "configurations": [
+        "MM_symbol_tower.xml"
+      ],
+      "builder_calls": [
+        "_build",
+        "from_config",
+        "init_config"
+      ]
+    },
+    {
+      "file": "test/test_cs_to_ss_forward.py",
+      "function": "test_symbol_leg_fallback_without_activations_stays_detached",
+      "line": 169,
+      "configurations": [
+        "MM_symbol_tower.xml"
+      ],
+      "builder_calls": [
+        "_build",
+        "from_config",
+        "init_config"
+      ]
+    },
+    {
+      "file": "test/test_serial_object_meta.py",
+      "function": "test_serial_object_meta_stamps_and_word_index_device_tensors",
+      "line": 111,
+      "configurations": [
+        "MM_mereology_serial.xml"
+      ],
+      "builder_calls": [
+        "from_config",
+        "init_config"
+      ]
+    },
+    {
+      "file": "test/test_serial_object_meta.py",
+      "function": "test_serial_radix_has_distinct_word_and_local_part_axes",
+      "line": 128,
+      "configurations": [
+        "MM_mereology_serial.xml"
+      ],
+      "builder_calls": [
+        "from_config",
+        "init_config"
+      ]
+    },
+    {
+      "file": "test/test_serial_object_meta.py",
+      "function": "test_serial_ws_analysis_view_is_fixed_width_and_compact",
+      "line": 151,
+      "configurations": [
+        "MM_mereology_serial.xml"
+      ],
+      "builder_calls": [
+        "from_config",
+        "init_config"
+      ]
+    },
+    {
+      "file": "test/test_serial_object_meta.py",
+      "function": "test_partspace_runs_once_per_word_per_pass_not_per_constituent",
+      "line": 177,
+      "configurations": [
+        "MM_mereology_serial.xml"
+      ],
+      "builder_calls": [
+        "from_config",
+        "init_config"
+      ]
+    },
+    {
+      "file": "test/test_serial_object_meta.py",
+      "function": "test_outer_word_cap_rejects_instead_of_truncating",
+      "line": 202,
+      "configurations": [
+        "MM_mereology_serial.xml"
+      ],
+      "builder_calls": [
+        "from_config",
+        "init_config"
+      ]
+    },
+    {
+      "file": "test/test_serial_object_meta.py",
+      "function": "test_serial_commit_gate_fires_once_per_active_word",
+      "line": 212,
+      "configurations": [
+        "MM_mereology_serial.xml"
+      ],
+      "builder_calls": [
+        "from_config",
+        "init_config"
+      ]
+    },
+    {
+      "file": "test/test_serial_object_meta.py",
+      "function": "test_word_prediction_and_physical_push_share_one_commit_boundary",
+      "line": 236,
+      "configurations": [
+        "MM_mereology_serial.xml"
+      ],
+      "builder_calls": [
+        "from_config",
+        "init_config"
+      ]
+    },
+    {
+      "file": "test/test_serial_object_meta.py",
+      "function": "test_serial_object_meta_off_does_not_build_word_index",
+      "line": 271,
+      "configurations": [
+        "MM_mereology_serial.xml"
+      ],
+      "builder_calls": [
+        "from_config",
+        "init_config"
+      ]
+    },
+    {
+      "file": "test/test_serial_object_meta.py",
+      "function": "test_ss_unity_validity_at_stem",
+      "line": 305,
+      "configurations": [
+        "MM_mereology_serial.xml"
+      ],
+      "builder_calls": [
+        "from_config",
+        "init_config"
+      ]
+    }
+  ]
+}

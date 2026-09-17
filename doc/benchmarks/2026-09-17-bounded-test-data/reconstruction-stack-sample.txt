@@ -1,0 +1,47 @@
+One-second macOS stack sample of the running reconstruction worker; this is not a full-runtime profile.
+
+1: Analysis of sampling Python (pid 2585) every 1 millisecond
+2: Process:         Python [2585]
+3: Path:            /opt/homebrew/*/Python.framework/Versions/3.12/Resources/Python.app/Contents/MacOS/Python
+4: Load Address:    0x102a40000
+5: Identifier:      org.python.python
+6: Version:         3.12.13 (3.12.13)
+7: Code Type:       ARM64
+8: Platform:        macOS
+9: Parent Process:  Python [98627]
+10: Target Type:     live task
+11:
+12: Date/Time:       2026-09-17 07:15:52.157 -0700
+13: Launch Time:     2026-09-17 07:11:21.212 -0700
+14: OS Version:      macOS 26.6.2 (25G83)
+15: Report Version:  7
+16: Analysis Tool:   /usr/bin/sample
+17:
+18: Physical footprint:         988.3M
+19: Physical footprint (peak):  1.0G
+20: Idle exit:                  untracked
+21: ----
+22:
+23: Call graph:
+24: 521 Thread_13363135   DispatchQueue_1: com.apple.main-thread  (serial)
+63: 471 dynamo__custom_eval_frame  (in libtorch_python.dylib) + 1364  [0x10bead178]
+64: 471 dynamo_call_callback(pybind11::handle, _PyInterpreterFrame*, FrameLocalsMapping*, CacheEntry*, _object*)  (in libtorch_python.dylib) + 256  [0x10beadfd0]
+504: 6 c10::impl::make_boxed_from_unboxed_functor<c10::impl::detail::WrapFunctionIntoFunctor_<c10::CompileTimeFunctionPointer<at::Tensor& (at::Tensor&, c10::Storage, c10::SymInt, c10::ArrayRef<c10::SymInt>, c10::ArrayRef<c10::SymInt>), &at::(anonymous namespace)::(anonymous namespace)::wrapper_Meta_source_Storage_storage_offset_set_(at::Tensor&, c10::Storage, c10::SymInt, c10::ArrayRef<c10::SymInt>, c10::ArrayRef<c10::SymInt>)>, at::Tensor&, c10::guts::typelist::typelist<at::Tensor&, c10::Storage, c10::SymInt, c10::ArrayRef<c10::SymInt>, c10::ArrayRef<c10::SymInt>>>, false>::call(c10::OperatorKernel*, c10::OperatorHandle const&, c10::DispatchKeySet, std::vector<c10::IValue>*)  (in libtorch_cpu.dylib) + 164  [0x12536a038]
+505: 6 at::(anonymous namespace)::(anonymous namespace)::wrapper_Meta_source_Storage_storage_offset_set_(at::Tensor&, c10::Storage, c10::SymInt, c10::ArrayRef<c10::SymInt>, c10::ArrayRef<c10::SymInt>)  (in libtorch_cpu.dylib) + 164  [0x12536a374]
+506: 3 at::native::set_storage_meta__symint(at::Tensor&, c10::Storage, c10::SymInt, c10::ArrayRef<c10::SymInt>, c10::ArrayRef<c10::SymInt>)  (in libtorch_cpu.dylib) + 2112  [0x123d8557c]
+544: 2 at::native::set_storage_meta__symint(at::Tensor&, c10::Storage, c10::SymInt, c10::ArrayRef<c10::SymInt>, c10::ArrayRef<c10::SymInt>)  (in libtorch_cpu.dylib) + 1116  [0x123d85198]
+572: 1 at::native::set_storage_meta__symint(at::Tensor&, c10::Storage, c10::SymInt, c10::ArrayRef<c10::SymInt>, c10::ArrayRef<c10::SymInt>)  (in libtorch_cpu.dylib) + 1952  [0x123d854dc]
+769: 1 c10::impl::make_boxed_from_unboxed_functor<c10::impl::detail::WrapFunctionIntoFunctor_<c10::CompileTimeFunctionPointer<at::Tensor& (at::Tensor&, c10::Storage, c10::SymInt, c10::ArrayRef<c10::SymInt>, c10::ArrayRef<c10::SymInt>), &at::(anonymous namespace)::(anonymous namespace)::wrapper_Meta_source_Storage_storage_offset_set_(at::Tensor&, c10::Storage, c10::SymInt, c10::ArrayRef<c10::SymInt>, c10::ArrayRef<c10::SymInt>)>, at::Tensor&, c10::guts::typelist::typelist<at::Tensor&, c10::Storage, c10::SymInt, c10::ArrayRef<c10::SymInt>, c10::ArrayRef<c10::SymInt>>>, false>::call(c10::OperatorKernel*, c10::OperatorHandle const&, c10::DispatchKeySet, std::vector<c10::IValue>*)  (in libtorch_cpu.dylib) + 164  [0x12536a038]
+770: 1 at::(anonymous namespace)::(anonymous namespace)::wrapper_Meta_source_Storage_storage_offset_set_(at::Tensor&, c10::Storage, c10::SymInt, c10::ArrayRef<c10::SymInt>, c10::ArrayRef<c10::SymInt>)  (in libtorch_cpu.dylib) + 164  [0x12536a374]
+771: 1 at::native::set_storage_meta__symint(at::Tensor&, c10::Storage, c10::SymInt, c10::ArrayRef<c10::SymInt>, c10::ArrayRef<c10::SymInt>)  (in libtorch_cpu.dylib) + 1000  [0x123d85124]
+969: 1 dynamo_custom_eval_frame_shim  (in libtorch_python.dylib) + 40  [0x10beac578]
+1296: 1 dynamo_custom_eval_frame_shim  (in libtorch_python.dylib) + 40  [0x10beac578]
+1406: 1 dynamo_custom_eval_frame_shim  (in libtorch_python.dylib) + 40  [0x10beac578]
+1926: 8 c10::impl::make_boxed_from_unboxed_functor<c10::impl::detail::WrapFunctionIntoFunctor_<c10::CompileTimeFunctionPointer<at::Tensor& (at::Tensor&, c10::Storage, c10::SymInt, c10::ArrayRef<c10::SymInt>, c10::ArrayRef<c10::SymInt>), &at::(anonymous namespace)::(anonymous namespace)::wrapper_Meta_source_Storage_storage_offset_set_(at::Tensor&, c10::Storage, c10::SymInt, c10::ArrayRef<c10::SymInt>, c10::ArrayRef<c10::SymInt>)>, at::Tensor&, c10::guts::typelist::typelist<at::Tensor&, c10::Storage, c10::SymInt, c10::ArrayRef<c10::SymInt>, c10::ArrayRef<c10::SymInt>>>, false>::call(c10::OperatorKernel*, c10::OperatorHandle const&, c10::DispatchKeySet, std::vector<c10::IValue>*)  (in libtorch_cpu.dylib) + 164  [0x12536a038]
+1927: 8 at::(anonymous namespace)::(anonymous namespace)::wrapper_Meta_source_Storage_storage_offset_set_(at::Tensor&, c10::Storage, c10::SymInt, c10::ArrayRef<c10::SymInt>, c10::ArrayRef<c10::SymInt>)  (in libtorch_cpu.dylib) + 164  [0x12536a374]
+1928: 3 at::native::set_storage_meta__symint(at::Tensor&, c10::Storage, c10::SymInt, c10::ArrayRef<c10::SymInt>, c10::ArrayRef<c10::SymInt>)  (in libtorch_cpu.dylib) + 1000  [0x123d85124]
+1968: 3 at::native::set_storage_meta__symint(at::Tensor&, c10::Storage, c10::SymInt, c10::ArrayRef<c10::SymInt>, c10::ArrayRef<c10::SymInt>)  (in libtorch_cpu.dylib) + 2112  [0x123d8557c]
+2009: 2 at::native::set_storage_meta__symint(at::Tensor&, c10::Storage, c10::SymInt, c10::ArrayRef<c10::SymInt>, c10::ArrayRef<c10::SymInt>)  (in libtorch_cpu.dylib) + 1952  [0x123d854dc]
+5302: 1 dynamo_custom_eval_frame_shim  (in libtorch_python.dylib) + 68  [0x10beac594]
+6439: 4 c10::impl::make_boxed_from_unboxed_functor<c10::impl::detail::WrapFunctionIntoFunctor_<c10::CompileTimeFunctionPointer<at::Tensor& (at::Tensor&, c10::Storage, c10::SymInt, c10::ArrayRef<c10::SymInt>, c10::ArrayRef<c10::SymInt>), &at::(anonymous namespace)::(anonymous namespace)::wrapper_Meta_source_Storage_storage_offset_set_(at::Tensor&, c10::Storage, c10::SymInt, c10::ArrayRef<c10::SymInt>, c10::ArrayRef<c10::SymInt>)>, at::Tensor&, c10::guts::typelist::typelist<at::Tensor&, c10::Storage, c10::SymInt, c10::ArrayRef<c10::SymInt>, c10::ArrayRef<c10::SymInt>>>, false>::call(c10::OperatorKernel*, c10::OperatorHandle const&, c10::DispatchKeySet, std::vector<c10::IValue>*)  (in libtorch_cpu.dylib) + 164  [0x12536a038]
+6440: 4 at::(anonymous namespace)::(anonymous namespace)::wrapper_Meta_source_Storage_storage_offset_set_(at::Tensor&, c10::Storage, c10::SymInt, c10::ArrayRef<c10::SymInt>, c10::ArrayRef<c10::SymInt>)  (in libtorch_cpu.dylib) + 164  [0x12536a374]

@@ -146,6 +146,7 @@ class TestIdempotentCliRuns(unittest.TestCase):
     ``None`` guard, which crashes with ``AttributeError``.
     """
 
+    @pytest.mark.slow
     def test_cli_does_not_crash(self):
         rc, stdout, stderr = _run_cli("data/idempotent.xml", timeout=60)
         self.assertEqual(
@@ -164,6 +165,7 @@ class TestXorReconCliReconstruction(unittest.TestCase):
     OK/MISMATCH on the per-input reconstruction lines (word-level match).
     """
 
+    @pytest.mark.slow
     @pytest.mark.xfail(reason=(
         "Convergence regression: the 2026-05-13 ProjectionBasis "
         "refactor moved bivector accumulation from V-sum to V-mean "
@@ -211,6 +213,7 @@ class TestXorExactCliReconstruction(unittest.TestCase):
     now catches future regressions.
     """
 
+    @pytest.mark.slow
     def test_at_least_50_pct_inputs_reconstruct(self):
         # The invertible-butterfly XOR converges to exact reconstruction
         # (4/4).  Use the same documented crisp seed as the output-MSE test
@@ -231,6 +234,7 @@ class TestXorExactCliReconstruction(unittest.TestCase):
             f"(expected >=25%).",
         )
 
+    @pytest.mark.slow
     def test_output_mse_is_crisp(self):
         # XOR accuracy + reconstruction can both pass while the predictions
         # sit near 0.5 (mushy). Assert the OUTPUT MSE so a mushy-but-accurate

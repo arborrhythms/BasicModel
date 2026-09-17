@@ -7,6 +7,8 @@ symbol_dim==concept_dim invariant); compact-symbol configs fall back unchanged
 (they need a learned symbol->concept expander). Default off -> byte-identical
 (the reverse-roundtrip suite is the off-path witness).
 """
+
+import pytest
 import os, sys, warnings
 os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
 os.environ.setdefault("BASICMODEL_DEVICE", "cpu")
@@ -44,11 +46,13 @@ def _forward(m):
     return m
 
 
+@pytest.mark.slow
 def test_idea_decode_defaults_off():
     m = _build("MM_mereology.xml")
     assert getattr(m, "idea_decode", None) is False
 
 
+@pytest.mark.slow
 def test_grammar_decode_runs_on_syntactic_ws():
     """WS-reference fix: the grammar <generate> reverse uses the SYNTACTIC WS
     (symbolSpace.wholeSpace), which has a live SyntacticLayer + populated
@@ -65,6 +69,7 @@ def test_grammar_decode_runs_on_syntactic_ws():
     assert gev is not None and gev.dim() == 3
 
 
+@pytest.mark.slow
 def test_consumer_drives_seed_on_shape_match():
     """The consumer SETS the reverse seed to the grammar decode when shapes
     match exactly (the symbol_dim==concept_dim invariant)."""
@@ -79,6 +84,7 @@ def test_consumer_drives_seed_on_shape_match():
         assert m._idea_decode_parked is not None                   # parked too
 
 
+@pytest.mark.slow
 def test_consumer_falls_back_on_width_mismatch():
     """Compact-symbol configs (symbol_dim << concept_dim) need a learned
     expander; until then the consumer leaves the seed UNCHANGED (no corruption
@@ -95,6 +101,7 @@ def test_consumer_falls_back_on_width_mismatch():
         assert torch.equal(before, out.materialize())             # unchanged
 
 
+@pytest.mark.slow
 def test_reverse_off_path_unchanged():
     """idea_decode off -> reverse takes the existing path (drive skipped)."""
     m = _forward(_build("MM_mereology.xml"))

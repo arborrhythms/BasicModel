@@ -1,0 +1,36 @@
+{
+  "test/test_aligned_fold_binding.py": [
+    "test_mini_basicmodel_ps128_ws128_cs1024_runs_forward_backward"
+  ],
+  "test/test_basicmodel.py": [
+    "TestSPNN.test_xor_training"
+  ],
+  "test/test_blind_decode.py": [
+    "test_blind_rate_default_is_scaffold",
+    "test_blind_decode_ignores_scaffold_spans",
+    "test_blind_size_hypotheses_from_claim_diffs",
+    "test_curriculum_fraction_masks_some_tiles",
+    "test_recon_bench_blind_flag"
+  ],
+  "test/test_compile_static_loop.py": [
+    "test_per_word_body_does_not_recompile_on_accumulator_length"
+  ],
+  "test/test_math_thinking_training.py": [
+    "test_stage_zero_direct_arithmetic_learns_as_syntax",
+    "test_stage_one_dependency_chains_learn_as_syntax"
+  ],
+  "test/test_mm_xor.py": [
+    "TestMMXorConvergence.test_learns_xor_signal",
+    "TestMMXorConvergence.test_mm_grammar_learns_xor_signal",
+    "TestMMXorConvergence.test_convergence"
+  ],
+  "test/test_output_path_supervised.py": [
+    "test_output_path_memorizes_supervised_labels_on_the_parallel_topology",
+    "test_output_path_memorizes_supervised_labels_on_the_serial_topology"
+  ],
+  "test/test_what_training.py": [
+    "test_temporal_question_content_is_causally_used",
+    "test_joint_training_keeps_both_primary_costs_in_band",
+    "test_supplied_text_answer_quality_improves_with_training"
+  ]
+}

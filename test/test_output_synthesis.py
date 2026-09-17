@@ -705,6 +705,7 @@ def synth_policy_config(tmp_path_factory):
     return path
 
 
+@pytest.mark.slow
 def test_chooser_question_bias_trains_through_the_policy_objective(synth_policy_config):
     """The chooser's hard choice is credited by its bounded local (policy)
     objective, reported distinctly from the continuous answer credit (spec

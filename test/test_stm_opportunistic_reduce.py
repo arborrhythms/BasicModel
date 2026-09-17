@@ -10,6 +10,8 @@ opportunistic step is a structural no-op there.
 
 cpu/eager, seeded.
 """
+
+import pytest
 import os
 os.environ.setdefault("BASICMODEL_DEVICE", "cpu")
 os.environ.setdefault("MODEL_COMPILE", "eager")
@@ -69,6 +71,7 @@ def test_gate_is_reduce_marginal():
     assert torch.equal(folded, g > 0.5), (g.tolist(), folded.tolist())
 
 
+@pytest.mark.slow
 def test_no_reducer_is_noop():
     """Substrate-only grammar: no arity-2 op -> the scored step returns
     without touching STM (a mean-fold would be an unlicensed parse)."""
@@ -132,6 +135,7 @@ def test_full_stm_demands_grammar_even_when_tau_disallows_soft_reduce():
     assert bool(routing["stm_demand_mask"].all())
 
 
+@pytest.mark.slow
 def test_capacity_demand_without_grammar_fails_loudly():
     m = _build("data/MM_masked_semantic.xml")
     assert m._stm_reducer() is None

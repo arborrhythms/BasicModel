@@ -44,6 +44,7 @@ def _batch(m):
     return m.inputSpace.prepInput(items)
 
 
+@pytest.mark.slow
 def test_mereology_raise_stamps_stage0_ws_and_is_byte_identical():
     # <mereologyRaise> stamps the stage-0 WholeSpace (so it can compute the
     # read-only run-structure obs) and the default forward stays deterministic
@@ -60,6 +61,7 @@ def test_mereology_raise_stamps_stage0_ws_and_is_byte_identical():
     assert torch.equal(out1, out2), "the dark pass-back must be deterministic"
 
 
+@pytest.mark.slow
 def test_first_pass_is_wide_open():
     # Pass 0 ignores any scope/attention (wide-open); always "noop".
     m = _build("MM_mereology.xml")
@@ -70,6 +72,7 @@ def test_first_pass_is_wide_open():
     assert ws0.passback_action(0) == ("noop", None)
 
 
+@pytest.mark.slow
 def test_passback_noop_without_attention():
     # No words-category attention engaged -> "noop" (byte-identical), even with
     # a parked observation.
@@ -81,6 +84,7 @@ def test_passback_noop_without_attention():
     assert ws0.passback_action(1) == ("noop", None)
 
 
+@pytest.mark.slow
 def test_passback_route_hint_dispatch():
     # With attention engaged, route_hint routes the 4 cases:
     #   0 = NULL -> noop ; 1 = single run -> chunk ; 2 = many runs -> refine.
@@ -95,6 +99,7 @@ def test_passback_route_hint_dispatch():
         assert where is None
 
 
+@pytest.mark.slow
 def test_passback_scoped_word_where():
     # An explicit scope `.where` (the serial / deterministic-reading override)
     # returns ("scoped", where) regardless of route_hint -- the
@@ -108,6 +113,7 @@ def test_passback_scoped_word_where():
     assert torch.equal(got, where)
 
 
+@pytest.mark.slow
 def test_passback_scope_ps_selects_refed_input_when_engaged():
     # The model-loop helper returns the stage-0 percept (ps_default) when the
     # action is noop, and a re-fed PS analysis when refine/chunk fires.
@@ -137,6 +143,7 @@ def test_passback_scope_ps_selects_refed_input_when_engaged():
     assert out_refine is not None
 
 
+@pytest.mark.slow
 def test_passback_scoped_focus_zeros_out_of_span():
     # The "scoped" case focuses the percept to the word's [start, end] span:
     # slots whose normalized position falls OUTSIDE the span are zeroed.

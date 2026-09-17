@@ -1,0 +1,12 @@
+{
+  "development": 264,
+  "production": 1032,
+  "percepts": 136,
+  "parameterized_functions": [
+    "test_native_answer_uses_owned_ideas_without_dense_symbol_state",
+    "test_native_realized_answer_loss_trains_the_active_conditioner",
+    "test_native_thinking_changes_the_owned_conceptual_answer",
+    "test_native_checkpoint_restores_active_answer_widths"
+  ],
+  "slow_cases": 7
+}

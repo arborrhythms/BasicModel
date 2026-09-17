@@ -134,6 +134,7 @@ def test_prepared_concept_handoff_preserves_answer_gradient(tmp_path, monkeypatc
         torch._dynamo.reset()
 
 
+@pytest.mark.slow
 def test_what_reconstructs_then_resolves_then_realizes(tmp_path, monkeypatch):
     from test_meronomy_ladder import _build_ladder_variant
     import util

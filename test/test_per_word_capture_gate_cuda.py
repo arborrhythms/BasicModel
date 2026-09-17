@@ -85,6 +85,7 @@ def _stage_for_per_word(m):
     return isp
 
 
+@pytest.mark.slow
 def test_per_word_step_compiles_and_replays_under_cudagraphs():
     """D8 strict-gate SUFFICIENT leg #1: compile the per-word body with
     CUDAGraphs-bearing mode (``reduce-overhead``) and run ``N_ITERATIONS``
@@ -137,6 +138,7 @@ def test_per_word_step_compiles_and_replays_under_cudagraphs():
         f"compiled per-word body. Detail: {dict(breaks)}")
 
 
+@pytest.mark.slow
 def test_per_word_step_actually_uses_cudagraphs():
     """D8 strict-gate confirmation: ``mode='reduce-overhead'`` only
     delivers DtoH==0 guarantees IF CUDAGraphs were actually used (no
@@ -190,6 +192,7 @@ def test_per_word_step_actually_uses_cudagraphs():
         f"got {dict(inductor_counters)}")
 
 
+@pytest.mark.slow
 def test_per_word_step_emits_no_dtoh_under_profiler():
     """D8 strict-gate SUFFICIENT leg #2: ``torch.profiler`` over a
     warmed-up compiled replay reports zero ``Memcpy DtoH`` events.

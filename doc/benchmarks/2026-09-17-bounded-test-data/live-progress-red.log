@@ -1,0 +1,15 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__ test_live_worker_receipt_keeps_completed_cases_when_a_later_case_times_out __
+/tmp/full-spec-time-boundary-probe.py:43: in test_live_worker_receipt_keeps_completed_cases_when_a_later_case_times_out
+    assert result["exit_code"] == 124, result["reason"]
+E   AssertionError: exit
+E   assert 1 == 124
+----------------------------- Captured stdout call -----------------------------
+[collect] 1 selectors; limit 4s, 0.5 GiB
+[collect] exit 0; 2.0s; peak 0.02 GiB
+[worker-000] 2 selectors; limit 4s, 0.5 GiB
+[worker-000] exit 1; 2.0s; peak 0.02 GiB
+=========================== short test summary info ============================
+FAILED ../../../../../tmp/full-spec-time-boundary-probe.py::test_live_worker_receipt_keeps_completed_cases_when_a_later_case_times_out
+1 failed in 4.41s

@@ -52,6 +52,7 @@ def _staged_batch(m):
     return m.inputSpace.prepInput(items)
 
 
+@pytest.mark.slow
 def test_inputspace_forward_returns_dual_view():
     # Phase 1 contract: InputSpace.forward emits BOTH views of one source.
     m = _build("MM_20M_legacy.xml")
@@ -82,6 +83,7 @@ def test_inputspace_forward_returns_dual_view():
         f"(raw {tuple(raw.shape)}, unity {tuple(concepts_in.shape)})")
 
 
+@pytest.mark.slow
 def test_dual_views_share_values():
     # The two views are views of ONE presentation: same values, different
     # shape. (Analysis is non-altering; the unity view is the byte content
@@ -100,6 +102,7 @@ def test_dual_views_share_values():
         "(one presentation, two views)")
 
 
+@pytest.mark.slow
 def test_ws_stage0_consumes_unity():
     # Phase 2 contract: with an EMPTY recurrent CS (stage 0), a provided
     # unity drives the symbolic pass -- coarse region-mean evidence in the
@@ -130,6 +133,7 @@ def test_ws_stage0_consumes_unity():
         "stage-0 symbolic output must CHANGE when the unity changes")
 
 
+@pytest.mark.slow
 def test_ws_routing_law_typed():
     # Serial migration (2026-07-11): ONE typed law -- a raw unity tensor
     # routes universe-primary even alongside a live carrier; passing the
@@ -145,6 +149,7 @@ def test_ws_routing_law_typed():
     assert getattr(ws, "_ws_routed_source", None) == "carrier"
 
 
+@pytest.mark.slow
 def test_model_forward_passes_unity_at_stage0():
     # Phase 2 wiring: the body hands the PARKED unity to the STAGE-0
     # WholeSpace only; later stages read the recurrent CS (input once).
@@ -186,6 +191,7 @@ def test_model_forward_passes_unity_at_stage0():
         "t>0 non-parallel stages are carrier-driven")
 
 
+@pytest.mark.slow
 def test_full_forward_green_with_dual_view():
     # The orchestration shim threads the tuple; the model forward is intact
     # and the unity view is parked for Phase 2 (staged, unused).
@@ -200,6 +206,7 @@ def test_full_forward_green_with_dual_view():
         "(Phase 1: staged, unused; Phase 2 consumes it at SS stage 0)")
 
 
+@pytest.mark.slow
 def test_word_analysis_boundaries_shape_evidence():
     # Phase 4b contract: BOUNDARIES SHAPE THE EVIDENCE. With
     # <analysis>word, the whitespace-cut parts define the PARTS whose
@@ -251,6 +258,7 @@ def test_word_analysis_boundaries_shape_evidence():
     assert float(z_pre[0, 2:, :].abs().max()) == 0.0
 
 
+@pytest.mark.slow
 def test_parallel_ws_quantize_fires():
     # Plan-1 Task 1 acceptance (asymmetric-vq sec.7 task 8, DECISION
     # 2026-06-09): the SS codebook is LIVE in the parallel path --
@@ -287,6 +295,7 @@ def test_parallel_ws_quantize_fires():
         "(the future recon-gather leg reads them)")
 
 
+@pytest.mark.slow
 def test_ws_vq_asymmetric_flags():
     # Plan-1 Task 2 (C-11/C-12): the SS VQ drops the standard crutches --
     # commitment weight 0 (STE carries the output->encoder leg) and the
@@ -341,6 +350,7 @@ def test_ws_vq_asymmetric_flags():
         "land on it after stage-0/CS-leg warm-up)")
 
 
+@pytest.mark.slow
 def test_ws_codebook_recon_gradient():
     # The asymmetric RECON leg (input -> codebook, asymmetric-vq sec.4):
     # the stage-0 snap emits an exact-gather reconstruction term whose
@@ -377,6 +387,7 @@ def test_ws_codebook_recon_gradient():
         "argmin blocks every other path)")
 
 
+@pytest.mark.slow
 def test_ws_recon_term_reaches_pipeline_errors():
     # The stage-0 recon term is threaded as an SS forward-local and lifted
     # onto the pipeline-chained error container by _forward_body, so the
@@ -394,6 +405,7 @@ def test_ws_recon_term_reaches_pipeline_errors():
         f"got terms={list(terms)}")
 
 
+@pytest.mark.slow
 def test_descriptor_roles_lf_coarse_tagging():
     # Phase 6 contract (plan sec.7): the SS generality codebook carries
     # per-row DESCRIPTOR ROLES (meaning-/term-general, LF-coarse) as
@@ -421,6 +433,7 @@ def test_descriptor_roles_lf_coarse_tagging():
                 == Codebook.ROLE_MEANING_GENERAL)
 
 
+@pytest.mark.slow
 def test_semantic_arrangement_mechanism():
     # Task 5 (C-13) contract: OFF by default (no term); with a weight set,
     # the post-sentence arrangement produces a loss whose gradient lands
@@ -459,6 +472,7 @@ def test_semantic_arrangement_mechanism():
         "(pode and antipode are detached)")
 
 
+@pytest.mark.slow
 def test_painting_reverse_blend():
     # Phase 7 contract (plan sec.6, rev. 2026-06-10): the reconstruction
     # recombination is PAINTING -- the Universal view paints the
@@ -502,6 +516,7 @@ def test_painting_reverse_blend():
         "leave the background alone elsewhere")
 
 
+@pytest.mark.slow
 def test_model_reverse_threads_concepts_branch():
     # Phase 7 wiring: the stage-0 SS stream of the bind's exact inverse is
     # the conceptual reconstruction branch; _reverse_body stamps it onto

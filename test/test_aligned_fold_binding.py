@@ -188,6 +188,7 @@ def test_aligned_provenance_preserves_prior_bearing_forward_event():
     assert out._fold_support["source_count"] == 2
 
 
+@pytest.mark.slow
 def test_mini_basicmodel_ps128_ws128_cs1024_runs_forward_backward(
         tmp_path, monkeypatch):
     """Exercise the real construction/stem with production boundary widths."""

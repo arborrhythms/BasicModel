@@ -1,6 +1,7 @@
 """The separate reconstruction graph must cache its backward program."""
 import importlib
 
+import pytest
 import torch
 
 from test_tied_reconstruction_migration import _model
@@ -90,6 +91,7 @@ def test_cached_backward_supports_retained_reads_after_an_ordinary_step(monkeypa
         torch._dynamo.reset()
 
 
+@pytest.mark.slow
 def test_reconstruction_compile_retains_buffers_for_joint_gradient_reads(tmp_path, monkeypatch):
     """Reconstruction is differentiated more than once by the joint rule."""
     from Models import _ensure_grad_anchors
@@ -137,6 +139,7 @@ def test_reconstruction_compile_retains_buffers_for_joint_gradient_reads(tmp_pat
         torch._dynamo.reset()
 
 
+@pytest.mark.slow
 def test_separate_reconstruction_does_not_retrace_backward_every_step(tmp_path, monkeypatch):
     import util
 

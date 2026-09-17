@@ -35,6 +35,7 @@ MODEL ?= data/MM_20M_fineweb.xml
 PYTHON := PYTHONPATH=bin $(VENV_PYTHON)
 TRAIN_ARGS ?=
 TRAIN_MEMORY_PERCENT ?= 60
+TEST_ARGS ?=
 PYTORCH_MPS_HIGH_WATERMARK_RATIO ?= 0.60
 PYTORCH_MPS_LOW_WATERMARK_RATIO ?= 0.50
 
@@ -127,26 +128,25 @@ compare : $(VENV_STAMP)
 	cd bin && PYTHONPATH=. $(VENV_PYTHON_FROM_BIN) Models.py --report --compare $(XML1) $(XML2)
 
 # `make test` runs the default (fast) suite; tests tagged slow (>30s wall) are
-# skipped via the RUN_SLOW gate (see test/*.py `_RUN_SLOW`). `make test_all`
+# skipped via RUN_SLOW (central slow marker and existing per-test gates). `make test_all`
 # sets RUN_SLOW=1 to also run them.
 test : $(VENV_STAMP)
-	BASICMODEL_DEVICE=cpu PYTHONPATH=bin $(VENV_PYTHON) test/test_report.py
+	BASICMODEL_DEVICE=cpu PYTHONPATH=bin $(VENV_PYTHON) test/test_report.py $(TEST_ARGS)
 
-# Parallel dev suite (pytest-xdist, one file per worker). Faster iteration;
-# the serial `make test` stays the canonical/deterministic gate.
-testp : $(VENV_STAMP)
-	TEST_JOBS=auto BASICMODEL_DEVICE=cpu PYTHONPATH=bin $(VENV_PYTHON) test/test_report.py
+# Compatibility alias: fresh, sequential, bounded workers.
+# Select affected files with TEST_ARGS rather than launching all CPU cores.
+testp : test
 
 test_all : $(VENV_STAMP)
-	RUN_SLOW=1 BASICMODEL_DEVICE=cpu PYTHONPATH=bin $(VENV_PYTHON) test/test_report.py
+	RUN_SLOW=1 PYTHONPATH=bin $(VENV_PYTHON) test/test_report.py $(TEST_ARGS)
 
 preflight : $(VENV_STAMP)
 	BASICMODEL_DEVICE=cpu MODEL_COMPILE=eager PYTHONPATH=bin:test \
-		$(VENV_PYTHON) -m pytest -q test/test_fineweb_preflight.py
+		$(VENV_PYTHON) test/test_report.py test/test_fineweb_preflight.py $(TEST_ARGS)
 
 preflight_full : $(VENV_STAMP)
 	RUN_FINEWEB_STEP=1 BASICMODEL_DEVICE=cpu MODEL_COMPILE=eager PYTHONPATH=bin:test \
-		$(VENV_PYTHON) -m pytest -q test/test_fineweb_preflight.py
+		$(VENV_PYTHON) test/test_report.py test/test_fineweb_preflight.py $(TEST_ARGS)
 
 bench : $(VENV_STAMP)
 	@echo "=== Baseline (no env tweaks) ==="

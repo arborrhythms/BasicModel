@@ -363,6 +363,7 @@ def stage_zero_config(tmp_path_factory):
     return path
 
 
+@pytest.mark.slow
 @pytest.mark.xfail(strict=True, reason=(
     "learning gate (Alec 2026-09-09: no mathematical machinery in the runtime; "
     "plus is a transitive verb the grammar learns): the small syntactic "
@@ -399,6 +400,7 @@ def stage_one_config(tmp_path_factory):
     return path
 
 
+@pytest.mark.slow
 @pytest.mark.xfail(strict=True, reason=(
     "learning gate (Alec 2026-09-09: no mathematical machinery in the runtime): "
     "dependency chains must be resolved by subquestions whose answers live in "
@@ -436,7 +438,7 @@ def successor_config(tmp_path_factory):
     return path
 
 
-@pytest.mark.skipif(not os.environ.get("RUN_SLOW"), reason="RUN_SLOW: ~20 min on CPU")
+@pytest.mark.skipif(os.environ.get("RUN_SLOW") != "1", reason="RUN_SLOW: ~20 min on CPU")
 def test_successor_is_learned_as_a_verb(successor_config):
     """Alec 2026-09-09: addition is iterated succession, and the successor
     must be learnable by the existing VP.  On the verb grammar with the

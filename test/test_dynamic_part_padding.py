@@ -48,6 +48,7 @@ def _stage_one_part_word(model):
     return batch
 
 
+@pytest.mark.slow
 def test_single_real_part_is_identity_padded_to_three(serial_model):
     """P=1 becomes P=3 without changing the mask or synthesized word."""
     _stage_one_part_word(serial_model)
@@ -72,6 +73,7 @@ def test_single_real_part_is_identity_padded_to_three(serial_model):
         padded, input_space._ar_embedded_N[:, :1], rtol=0, atol=0)
 
 
+@pytest.mark.slow
 def test_runbatch_staging_declares_p3_and_flattened_3w_minima(
         serial_model, monkeypatch):
     """Compiled staging marks P=3 and 3*W even before eager evaluation."""

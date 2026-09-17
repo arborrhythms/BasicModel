@@ -1491,6 +1491,15 @@ claims that the code gaps have been fixed by consolidation.
 
 ## 10. Consolidated implementation and verification order
 
+**September 17 OS checkpoint:** implementation of this spec is unfinished.
+Alec requested a pushed checkpoint, deferring the full-suite-green gate for this
+checkpoint only. Completing this session and this spec is the next task in
+[todo.md](../../todo.md), before the separately reserved September 16 work.
+The latest full run timed out; [Testing](../Testing.md#validation) records the
+passing focused evidence and incomplete full validation. Resume the item order
+below and its ordinary test/commit/push gates; do not treat this checkpoint as
+completion or a general relaxation of those gates.
+
 This is implementation dependency order for the remaining work. The requested
 joint-gradient revision (item 7) is implemented against the current shared
 catalogs, with supporting loss-gate/context fixes from items 1–2; it does not
@@ -1507,6 +1516,17 @@ in full before code changes and re-read its
 [standing invariants](2026-09-14-answer-path-ownership-and-training.md#2-standing-invariants-re-read-after-every-compaction)
 after each context compaction. They include the exact co-author trailer,
 protected paths and prohibition on editing `bin/*.py` while pytest runs.
+The September 17 [bounded test workflow](../Testing.md) supplies the full-suite
+commit gate: one suite per user, fresh sequential workers, memory limits,
+worker/overall deadlines and persistent coverage/exit receipts. Use affected
+file or node selections during development; use the full selected default suite
+before each implementation commit. An incomplete or resource-terminated run
+cannot satisfy the gate. Long convergence, memorization and performance checks
+run under `RUN_SLOW=1`; default regression completion and optional learning-gate
+results must be reported separately. The September 17 user instruction also
+requires removing superseded legacy code together with its obsolete tests. Unused reasoning methods
+require review and explicit user approval before removal: the planned grammar
+queries may introduce their use. Preserve those methods until that decision.
 
 1. **Establish the actual baseline and loss gate.** Reproduce the production
    settings in §8.2. Add a model-level failing probe showing that a positive

@@ -1,5 +1,7 @@
 """<reconstructFromIdea>: erase parse traces, rebuild reverse rules from idea."""
 
+import pytest
+
 import os
 import sys
 import warnings
@@ -52,11 +54,13 @@ def _concept_dim(model):
     return int(event.shape[-1])
 
 
+@pytest.mark.slow
 def test_reconstruct_from_idea_defaults_off():
     model = _build("MM_mereology.xml")
     assert getattr(model, "reconstruct_from_idea", None) is False
 
 
+@pytest.mark.slow
 def test_clear_grammar_cache_erases_router_route():
     model = _forward(_build())
     ss = model.symbolSpace
@@ -81,6 +85,7 @@ def test_clear_grammar_cache_erases_router_route():
     assert ll._last_root_state is None
 
 
+@pytest.mark.slow
 def test_reconstruct_from_idea_rebuilds_after_clearing():
     model = _forward(_build())
     ss = model.symbolSpace
@@ -113,6 +118,7 @@ def test_reconstruct_from_idea_rebuilds_after_clearing():
     assert len(ss.generate_rules) > 0
 
 
+@pytest.mark.slow
 def test_reconstruct_from_idea_can_use_reverse_seed_snapshot():
     model = _forward(_build())
     ss = model.symbolSpace

@@ -141,6 +141,7 @@ class TestMMXorConvergence(unittest.TestCase):
 
     # test_runbatch_losses_stay_finite retired 2026-05-14 (reverse pipeline / <maskedPrediction> retired in IR-only refactor).
 
+    @pytest.mark.slow
     def test_learns_xor_signal(self):
         """The affine head reaches the THEORY FLOOR (Alec 2026-07-13:
         bars are derived, not empirically re-pinned).
@@ -284,6 +285,7 @@ class TestMMXorConvergence(unittest.TestCase):
         self.assertGreater(len(data.train_input), 0)
         self.assertLess(best_ever, threshold)
 
+    @pytest.mark.slow
     def test_mm_grammar_learns_xor_signal(self):
         """MM_grammar.xml learns XOR via the grammar-directed composition path.
 
@@ -303,6 +305,7 @@ class TestMMXorConvergence(unittest.TestCase):
     # is no longer a meaningful "without VQVAE" variant to test.
     # test_vqvae_ste_registers_commitment_and_moves_encoder retired 2026-05-14 (reverse pipeline / <maskedPrediction> retired in IR-only refactor).
 
+    @pytest.mark.slow
     def test_convergence(self):
         """Train for up to 200 epochs; output loss should drop below 0.20.
 

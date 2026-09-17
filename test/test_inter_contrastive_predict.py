@@ -6,6 +6,8 @@ slab width (InputSpace nIdeas ~1024) so it is walked over multiple ticks (one
 end-state per tick). A short document collapses to one tick / one end-state and
 the next-idea loss never fires.
 """
+
+import pytest
 import os
 import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'bin'))
@@ -20,6 +22,7 @@ _CONFIG = os.path.join(os.path.dirname(__file__), '..', 'data',
 
 
 class TestInterContrastivePredict(unittest.TestCase):
+    @pytest.mark.slow
     def test_predictor_trains_end_to_end(self):
         Models.TheData.load('sequences')
         m, _ = BaseModel.from_config(_CONFIG)

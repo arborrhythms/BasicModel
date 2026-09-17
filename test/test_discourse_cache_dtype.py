@@ -32,6 +32,7 @@ def _build_gate_model():
     return m.to("cpu")
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("mode,dtype", [
     ("bf16", torch.bfloat16),
     ("off",  torch.float32),

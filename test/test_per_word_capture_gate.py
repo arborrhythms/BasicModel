@@ -121,6 +121,7 @@ def _gate_for(isp, w, p=0):
     return torch.ones(w.shape[0], 1, dtype=torch.bool, device=w.device)
 
 
+@pytest.mark.slow
 def test_per_word_step_runs_eagerly_end_to_end():
     """SANITY gate (eager mode): the extracted per-word step must run
     end-to-end without raising. This catches regressions in the
@@ -146,6 +147,7 @@ def test_per_word_step_runs_eagerly_end_to_end():
     assert CS_sub2 is not None
 
 
+@pytest.mark.slow
 def test_per_word_step_is_extractable_as_a_standalone_callable():
     """RED gate #1: a standalone ``_per_word_body_step(self, w)`` MUST
     exist on ``BasicModel``. The current implementation inlines the body
@@ -161,6 +163,7 @@ def test_per_word_step_is_extractable_as_a_standalone_callable():
     assert callable(m._per_word_body_step)
 
 
+@pytest.mark.slow
 def test_per_word_step_compiles_fullgraph_clean():
     """RED gate #2: the extracted per-word step must compile under
     ``torch.compile(fullgraph=True)`` with zero graph breaks. Dynamo
@@ -205,6 +208,7 @@ def test_per_word_step_compiles_fullgraph_clean():
     assert torch.is_tensor(choice_mask)
 
 
+@pytest.mark.slow
 def test_per_word_loop_completes_two_steps_under_fullgraph():
     """RED gate #3: two consecutive compiled steps must succeed without
     a recompile (cache hit, same shape)."""

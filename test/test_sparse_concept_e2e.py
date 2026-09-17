@@ -4,6 +4,8 @@ Population (at mint) writes untyped edges onto ONE shared ConceptualAttentionLay
 the forward (gated on symbolicOrder>0 + parallel) runs the iterated wave
 encoder + dictionary decoder. Byte-identical when off.
 """
+
+import pytest
 import os
 import sys
 import warnings
@@ -151,6 +153,7 @@ def test_symbolic_phase_inactive_is_noop():
 
 # -- driver config ------------------------------------------------------------
 
+@pytest.mark.slow
 def test_sparse_concept_config_builds_and_stamps():
     m = _build("MM_sparse_concept.xml")
     # symbolicOrder=3: the wave iteration budget K (task 8.3, K=1 leaves deep links dark)
@@ -165,6 +168,7 @@ def test_sparse_concept_config_builds_and_stamps():
     assert not hasattr(cs, "_sparse_replace")
 
 
+@pytest.mark.slow
 def test_sparse_concept_forward_smoke():
     import Models
     from util import TheXMLConfig
@@ -204,6 +208,7 @@ def test_getparameters_byte_identical_when_inactive():
     assert [id(p) for p in cs.getParameters()] == [id(p) for p in cs.params]
 
 
+@pytest.mark.slow
 def test_model_optimizer_picks_up_csw_weights():
     m = _build("MM_sparse_concept.xml")
     cs = [c for c in m.conceptualSpaces if c._sparse_active()][-1]
@@ -219,6 +224,7 @@ def test_model_optimizer_picks_up_csw_weights():
     assert csw_ptrs <= opt_ptrs                            # all weights optimized
 
 
+@pytest.mark.slow
 def test_conceptual_sbow_situates_live_sparse_codes():
     """Phase-3 completion (plan C1): under a sparse-active config the parked
     t=0 slab is GRAD-BEARING and conceptual_sbow_loss situates the composed
@@ -279,6 +285,7 @@ def test_csw_weights_update_under_optimizer_step():
     assert not torch.allclose(vals.detach(), before)              # trained
 
 
+@pytest.mark.slow
 def test_demux_feedback_is_views_of_the_mixed_carrier():
     """P3 decision 7 (EXECUTION NOTES 4): the pump's C->P / C->S handoffs
     carry the per-tower WINDOWS of the MIXED carrier (combine.views), NEVER
@@ -310,6 +317,7 @@ def test_demux_feedback_is_views_of_the_mixed_carrier():
     assert not torch.allclose(views[0], legs[0], atol=1e-4)
 
 
+@pytest.mark.slow
 def test_two_phase_forward_cutover_stamps_terminal_activations():
     """P3 e2e: under the sparse driver config the pump runs 2-stream and the
     POST-PUMP cutover stamps the terminal CS with the settled activations

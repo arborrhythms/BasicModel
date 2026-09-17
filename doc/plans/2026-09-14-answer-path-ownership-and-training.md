@@ -128,9 +128,12 @@ code is re-read. Cite the line when you rely on one.
     never stepped. `languageSpace` is an attribute of `symbolSpace`, not a
     member of `self.spaces`.
 12. **Conventions.** Run the suite from `basicmodel/`
-    (`.venv/bin/python -m pytest test -q -p no:cacheprovider`, about 30
-    minutes; run it in the background and poll the log); never edit
-    `bin/*.py` while pytest is in flight (inspect-based tests); commit in
+    (`.venv/bin/python test/test_report.py`; run it in the background and
+    poll its log and durable `result.json`). The September 17 resource revision
+    uses one bounded worker at a time, finite memory/deadline limits and fresh
+    processes between batches; see [Testing](../Testing.md). Never edit the
+    tested source snapshot while pytest is in flight (including `bin/*.py`,
+    which inspect-based tests read); use an isolated checkout for other work. Commit in
     basicmodel, push, then bump the WikiOracle submodule pointer
     ("Bump basicmodel to <sha> (...)"), push; trailer
     `Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>`; never

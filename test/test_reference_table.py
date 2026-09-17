@@ -107,6 +107,7 @@ def test_search_is_object_side_scan_by_dominance():
 # Symbol codes: atomic, zero-banded, approximately the index.
 # ---------------------------------------------------------------------------
 
+@pytest.mark.slow
 def test_symbol_code_shape_and_zero_bands():
     c = symbol_code(0, n_what=4, n_where=2, n_when=2)
     assert c.shape == (8,), "MM_20M idiom: 4+2+2 = 8"

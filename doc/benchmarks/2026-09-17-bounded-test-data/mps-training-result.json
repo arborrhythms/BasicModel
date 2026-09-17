@@ -1,0 +1,81 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_inter_contrastive_predict.py::TestInterContrastivePredict::test_predictor_trains_end_to_end"
+  ],
+  "completed": [
+    "test/test_inter_contrastive_predict.py::TestInterContrastivePredict::test_predictor_trains_end_to_end"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/private/tmp/full-spec-sequence-gpu-v2/worker-000.request.json",
+        "/private/tmp/full-spec-sequence-gpu-v2/worker-000.json"
+      ],
+      "pid": 6511,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 2722957448,
+      "elapsed_seconds": 900.9858550000936,
+      "log": "/private/tmp/full-spec-sequence-gpu-v2/worker-000.log",
+      "device": "mps",
+      "selected": [
+        "test/test_inter_contrastive_predict.py::TestInterContrastivePredict::test_predictor_trains_end_to_end"
+      ],
+      "completed": [
+        "test/test_inter_contrastive_predict.py::TestInterContrastivePredict::test_predictor_trains_end_to_end"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_inter_contrastive_predict.py::TestInterContrastivePredict::test_predictor_trains_end_to_end",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 879.2183632908855,
+          "message": "",
+          "stdout": "Starting with dynamic 2-dim embedding (words added at runtime)\n[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/output/MM_sequence_predict.ckpt, starting fresh\r\n[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 50.00%)\r\nbatch = 4 (\u0394=437.507s, 100.00%)\r\nrunEpoch(train): hit max_batches=2 cap; cursor exiting early (2 batches processed, ds.all_done=True).\r\n"
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "worker_seconds": 900.0,
+    "suite_seconds": 1200.0,
+    "batch_size": 256,
+    "max_files": 16
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/private/tmp/full-spec-sequence-gpu-v2",
+  "elapsed_seconds": 920.2485307080206,
+  "requested_device": "mps",
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/private/tmp/full-spec-sequence-gpu-v2/collect.request.json",
+      "/private/tmp/full-spec-sequence-gpu-v2/collect.json"
+    ],
+    "pid": 6497,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 434128096,
+    "elapsed_seconds": 19.10300762508996,
+    "log": "/private/tmp/full-spec-sequence-gpu-v2/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_inter_contrastive_predict.py::TestInterContrastivePredict::test_predictor_trains_end_to_end"
+      ],
+      "completed": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "mps"
+    },
+    "device": "mps"
+  }
+}

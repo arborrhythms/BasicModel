@@ -1,0 +1,198 @@
+{
+  "test/test_aligned_fold_binding.py": [
+    "test_mini_basicmodel_ps128_ws128_cs1024_runs_forward_backward"
+  ],
+  "test/test_basicmodel.py": [
+    "TestSPNN.test_xor_training"
+  ],
+  "test/test_blind_decode.py": [
+    "test_blind_rate_default_is_scaffold",
+    "test_blind_decode_ignores_scaffold_spans",
+    "test_blind_size_hypotheses_from_claim_diffs",
+    "test_curriculum_fraction_masks_some_tiles",
+    "test_recon_bench_blind_flag"
+  ],
+  "test/test_compile_static_loop.py": [
+    "test_per_word_body_does_not_recompile_on_accumulator_length",
+    "test_per_word_body_callable_with_static_signature",
+    "test_word_at_returns_padded_shape_past_valid_len"
+  ],
+  "test/test_math_thinking_training.py": [
+    "test_stage_zero_direct_arithmetic_learns_as_syntax",
+    "test_stage_one_dependency_chains_learn_as_syntax"
+  ],
+  "test/test_mm_xor.py": [
+    "TestMMXorConvergence.test_learns_xor_signal",
+    "TestMMXorConvergence.test_mm_grammar_learns_xor_signal",
+    "TestMMXorConvergence.test_convergence"
+  ],
+  "test/test_output_path_supervised.py": [
+    "test_output_path_memorizes_supervised_labels_on_the_parallel_topology",
+    "test_output_path_memorizes_supervised_labels_on_the_serial_topology",
+    "test_available_input_targets_do_not_train_answer_modules_after_adam",
+    "test_serial_answer_path_varies_with_the_input",
+    "test_native_realized_answer_loss_trains_the_active_conditioner"
+  ],
+  "test/test_what_training.py": [
+    "test_temporal_question_content_is_causally_used",
+    "test_joint_training_keeps_both_primary_costs_in_band",
+    "test_supplied_text_answer_quality_improves_with_training"
+  ],
+  "test/test_meronomy_ladder.py": [
+    "test_cold_start_learns_space_as_the_basic_boundary",
+    "test_recurring_phrases_are_admitted_on_a_text_corpus_with_positive_gain",
+    "test_recurring_same_whole_pair_is_proposed_and_admitted_as_a_phrase",
+    "test_utility_state_and_predicates_round_trip_a_checkpoint"
+  ],
+  "test/test_reconstruction_roundtrip.py": [
+    "test_mm20m_xor_roundtrip_at_harness_budget",
+    "test_xor_recon_loss_is_live",
+    "test_xor_recon_grads_flow",
+    "test_recon_channel_within_decade_of_output",
+    "test_where_scale_applies_to_lossrev",
+    "test_where_scale_applies_to_d3_reconstruction",
+    "test_where_scale_applies_to_masked_lossin",
+    "test_grammar_output_loss_not_silent_zero",
+    "test_xor_percepts_tile_words",
+    "test_reconstruction_not_double_counted",
+    "test_radix_decode_gates_pad_slots"
+  ],
+  "test/test_config_matrix.py": [
+    "test_config_builds_runs_and_reconstructs"
+  ],
+  "test/test_prepared_answer_boundary.py": [
+    "test_what_reconstructs_then_resolves_then_realizes"
+  ],
+  "test/test_compiled_word_chunk.py": [
+    "test_tensor_peer_while_runs_symbolic_reference_transaction_and_releases_owner_state"
+  ],
+  "test/test_concept_readout_l1.py": [
+    "test_real_runbatch_stages_l1_once_and_reports_it_separately"
+  ],
+  "test/test_tied_reconstruction_compile.py": [
+    "test_reconstruction_compile_retains_buffers_for_joint_gradient_reads",
+    "test_separate_reconstruction_does_not_retrace_backward_every_step"
+  ],
+  "test/test_reconstruction_priority.py": [
+    "test_real_packed_runbatch_trains_prediction_and_representation_with_teacher"
+  ],
+  "test/test_expectation_defaults.py": [
+    "test_enable_after_disabled_construction_joins_optimizer_and_off_keeps_input_learning"
+  ],
+  "test/test_expectation_review.py": [
+    "test_real_packed_bricks_share_one_document_stream"
+  ],
+  "test/test_compiled_expectation_boundary.py": [
+    "test_unpacked_forward_observes_each_published_sentence_once"
+  ],
+  "test/test_compiled_step_invoked.py": [
+    "test_compiled_step_is_invoked"
+  ],
+  "test/test_conceptual_recurrence.py": [
+    "test_reconstruct_enum_retired",
+    "test_mm5m_forward_finite_after_combine",
+    "test_mm5m_combine_carrier_roundtrip",
+    "test_bind_contained_in_conceptual_space",
+    "test_intersentence_seed_used",
+    "test_parallel_ps_called_once",
+    "test_widening_ps_pi_sized_at_embedded_percept_width",
+    "test_mm5m_grammar_builds_and_forwards"
+  ],
+  "test/test_decode_exemplars.py": [
+    "test_mm_decode_builds_and_wires_idea_decode",
+    "test_mm_phrase_decode_builds_and_wires_idea_decode",
+    "test_mm_decode_forward_smoke"
+  ],
+  "test/test_dimensional_governance.py": [
+    "test_mm_5m_builds_and_forwards",
+    "test_mm_5m_reconstructs",
+    "test_serial_relaxes_symbol_dim_passthrough",
+    "test_reference_configs_still_build_no_false_positive"
+  ],
+  "test/test_discourse_cache_dtype.py": [
+    "test_staged_prediction_cast_to_amp_dtype"
+  ],
+  "test/test_dual_input_contract.py": [
+    "test_inputspace_forward_returns_dual_view",
+    "test_dual_views_share_values",
+    "test_ws_stage0_consumes_unity",
+    "test_ws_routing_law_typed",
+    "test_model_forward_passes_unity_at_stage0",
+    "test_full_forward_green_with_dual_view",
+    "test_word_analysis_boundaries_shape_evidence",
+    "test_parallel_ws_quantize_fires",
+    "test_ws_vq_asymmetric_flags",
+    "test_ws_codebook_recon_gradient",
+    "test_ws_recon_term_reaches_pipeline_errors",
+    "test_descriptor_roles_lf_coarse_tagging",
+    "test_semantic_arrangement_mechanism",
+    "test_painting_reverse_blend",
+    "test_model_reverse_threads_concepts_branch"
+  ],
+  "test/test_dual_towers.py": [
+    "test_ws_matches_ps_view_shape",
+    "test_off_path_stores_unchanged",
+    "test_default_expectation_adds_only_its_owned_checkpoint_keys",
+    "test_space_is_the_single_structural_owner_of_slot_modules",
+    "test_ws_routes_universe_on_parallel_path",
+    "test_ws_routing_after_serial_migration"
+  ],
+  "test/test_mlx_export.py": [
+    "test_stage_for_core_returns_tensor",
+    "test_forward_core_matches_normal_forward",
+    "test_forward_core_exports",
+    "test_mlx_lower_writes_pte",
+    "test_pte_runtime_parity"
+  ],
+  "test/test_output_synthesis.py": [
+    "test_chooser_question_bias_trains_through_the_policy_objective"
+  ],
+  "test/test_per_word_capture_gate.py": [
+    "test_per_word_step_runs_eagerly_end_to_end",
+    "test_per_word_step_is_extractable_as_a_standalone_callable",
+    "test_per_word_step_compiles_fullgraph_clean",
+    "test_per_word_loop_completes_two_steps_under_fullgraph"
+  ],
+  "test/test_per_word_ss_padding_noop.py": [
+    "test_stm_depth_tracks_valid_len_not_N",
+    "test_concept_buf_zero_past_active_prefix"
+  ],
+  "test/test_radix_recon_render.py": [
+    "test_radix_render_decodes_known_chunks_consecutively",
+    "test_reconstruction_seed_is_live_in_parallel_train",
+    "test_radix_full_reverse_stages_the_render"
+  ],
+  "test/test_rule_gate_isolates_side_effects.py": [
+    "test_false_gate_contribution_is_zero",
+    "test_false_gate_preserves_stm_buffer"
+  ],
+  "test/test_symbolic_iteration.py": [
+    "test_csleg_pi_bypassed_under_quantize",
+    "test_csleg_one_symbol_apoha_emission",
+    "test_csleg_virgin_fallback_stays_continuous",
+    "test_csleg_adoption_writes_tags_and_is_idempotent",
+    "test_csleg_recon_gather_lands_on_winner_rows",
+    "test_csleg_naming_indices_thread_full_frame",
+    "test_mm20m_second_order_reverse_keys_codebook",
+    "test_forward_body_lifts_csleg_recon"
+  ],
+  "test/test_word_store.py": [
+    "test_concept_index_read_sizes_inventory_by_explicit_nvectors",
+    "test_two_epoch_training_severs_cross_batch_graph"
+  ],
+  "test/test_reference_table.py": [
+    "test_symbol_code_shape_and_zero_bands"
+  ],
+  "test/test_unified_lexicon_codebook.py": [
+    "TestExistingConfigsSatisfyFlatSlab.test_mm_5m_satisfies_flat_slab"
+  ],
+  "test/test_recon_bench.py": [
+    "test_byte_lexer_config_decodes"
+  ],
+  "test/test_explicit_dimensions.py": [
+    "TestIdempotentCliRuns.test_cli_does_not_crash",
+    "TestXorReconCliReconstruction.test_at_least_50_pct_inputs_reconstruct",
+    "TestXorExactCliReconstruction.test_at_least_50_pct_inputs_reconstruct",
+    "TestXorExactCliReconstruction.test_output_mse_is_crisp"
+  ]
+}

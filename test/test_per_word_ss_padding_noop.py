@@ -34,6 +34,7 @@ def _build_gate_model():
     return m.to("cpu")
 
 
+@pytest.mark.slow
 def test_stm_depth_tracks_valid_len_not_N():
     """After one forward pass, STM depth (via host mirror) equals the
     real-positions count, not N."""
@@ -59,6 +60,7 @@ def test_stm_depth_tracks_valid_len_not_N():
         f"expected {L} (real-positions count)")
 
 
+@pytest.mark.slow
 def test_concept_buf_zero_past_active_prefix():
     """Per-iteration contributions are zero past the active prefix
     (the gate-masked ``torch.where`` writes zeros for inactive rows).

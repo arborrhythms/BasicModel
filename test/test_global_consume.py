@@ -101,6 +101,7 @@ def _batch(m):
     return m.inputSpace.prepInput(items)
 
 
+@pytest.mark.slow
 def test_consume_flag_off_by_default_on_global_config():
     # MM_global has <globalAttention> but NOT the consumer -> parked (dark).
     m = _build("MM_global.xml")
@@ -108,6 +109,7 @@ def test_consume_flag_off_by_default_on_global_config():
     assert not getattr(m, "global_attention_consume", False)
 
 
+@pytest.mark.slow
 def test_qa_config_builds_with_consumer_and_ltm():
     m = _build("MM_qa.xml")
     assert m.global_attention_consume and m.global_attention is not None
@@ -121,6 +123,7 @@ def test_qa_config_builds_with_consumer_and_ltm():
     assert torch.isfinite(out).all()
 
 
+@pytest.mark.slow
 def test_zero_gate_matches_consume_off():
     # With the consumer on but the gate at its zero init, the head output equals
     # the consume-off forward (the residual is a no-op) -> the flag is dark until
@@ -137,6 +140,7 @@ def test_zero_gate_matches_consume_off():
         "consume on with zero gate must equal consume off")
 
 
+@pytest.mark.slow
 def test_gate_feeds_the_read_into_the_answer():
     m = _build("MM_qa.xml")
     x = _batch(m)
@@ -150,6 +154,7 @@ def test_gate_feeds_the_read_into_the_answer():
     assert not torch.equal(base, fed), "a non-zero gate must feed the read back"
 
 
+@pytest.mark.slow
 def test_nonzero_gate_does_not_corrupt_the_reverse():
     # The consume swaps body_sub's event for the head ONLY: body_sub is also
     # ``_combine_last_cs_sub`` (what the reverse / reconstruction reads), so it
@@ -173,6 +178,7 @@ def test_nonzero_gate_does_not_corrupt_the_reverse():
         "the reverse carrier must be restored (reconstruction unaffected)")
 
 
+@pytest.mark.slow
 def test_answer_loss_trains_retrieval():
     # The output loss backprops through the read into the scorer + the consume
     # gate -- retrieval that helps the answer is rewarded.
@@ -189,6 +195,7 @@ def test_answer_loss_trains_retrieval():
                for p in ga.scorer.parameters()), "the answer loss must train the scorer"
 
 
+@pytest.mark.slow
 def test_ltm_truthset_read_is_fed_to_the_answer():
     # Stage a synthetic LTM store (the parsed TruthSet) and confirm the LTM read
     # reaches the consumer: the soft-read content (which ranges over SPACE_LTM)

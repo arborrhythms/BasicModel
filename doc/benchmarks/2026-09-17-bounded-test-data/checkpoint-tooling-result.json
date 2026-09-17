@@ -1,0 +1,449 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_bounded_test_runner.py::test_worker_exit_and_diagnostics_are_preserved",
+    "test/test_bounded_test_runner.py::test_timeout_kills_term_resistant_descendants",
+    "test/test_bounded_test_runner.py::test_aggregate_memory_includes_child_allocations",
+    "test/test_bounded_test_runner.py::test_monitor_failure_terminates_instead_of_running_unbounded",
+    "test/test_bounded_test_runner.py::test_completed_worker_cannot_leave_live_children",
+    "test/test_bounded_test_runner.py::test_suite_lock_excludes_another_process_and_releases",
+    "test/test_bounded_test_runner.py::test_batches_keep_every_selected_case_once",
+    "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[0]",
+    "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[-1]",
+    "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[nan]",
+    "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[inf]",
+    "test/test_bounded_test_runner.py::test_real_pytest_coverage_fresh_workers_and_failure_receipt",
+    "test/test_bounded_test_runner.py::test_empty_selection_is_not_a_green_suite",
+    "test/test_bounded_test_runner.py::test_source_change_cannot_receive_a_passing_receipt",
+    "test/test_bounded_test_runner.py::test_macos_uses_compressed_footprint_instead_of_resident_size",
+    "test/test_bounded_test_runner.py::test_termination_persists_failure_and_cleans_child",
+    "test/test_bounded_test_recycling.py::test_recycle_on_memory_pressure_keeps_every_case_once",
+    "test/test_bounded_test_recycling.py::test_explicit_zero_exit_does_not_erase_an_earlier_failed_test",
+    "test/test_bounded_test_recycling.py::test_time_pressure_recycles_after_complete_cases_without_dropping_coverage",
+    "test/test_bounded_test_recycling.py::test_live_worker_receipt_keeps_completed_cases_when_a_later_case_times_out",
+    "test/test_training_device.py::test_explicit_training_device_is_preserved[gpu]",
+    "test/test_training_device.py::test_explicit_training_device_is_preserved[mps]",
+    "test/test_training_device.py::test_explicit_training_device_is_preserved[cuda:0]",
+    "test/test_training_device.py::test_slow_training_defaults_to_a_required_accelerator",
+    "test/test_training_device.py::test_quick_suite_retains_its_cpu_default",
+    "test/test_training_device.py::test_all_dispatches_slow_training_to_gpu_and_ordinary_checks_to_cpu",
+    "test/test_test_modes.py::test_slow_mode_controls_collection_before_expensive_fixture_setup[None-1 passed, 1 skipped]",
+    "test/test_test_modes.py::test_slow_mode_controls_collection_before_expensive_fixture_setup[0-1 passed, 1 skipped]",
+    "test/test_test_modes.py::test_slow_mode_controls_collection_before_expensive_fixture_setup[1-2 passed]"
+  ],
+  "completed": [
+    "test/test_bounded_test_runner.py::test_worker_exit_and_diagnostics_are_preserved",
+    "test/test_bounded_test_runner.py::test_timeout_kills_term_resistant_descendants",
+    "test/test_bounded_test_runner.py::test_aggregate_memory_includes_child_allocations",
+    "test/test_bounded_test_runner.py::test_monitor_failure_terminates_instead_of_running_unbounded",
+    "test/test_bounded_test_runner.py::test_completed_worker_cannot_leave_live_children",
+    "test/test_bounded_test_runner.py::test_suite_lock_excludes_another_process_and_releases",
+    "test/test_bounded_test_runner.py::test_batches_keep_every_selected_case_once",
+    "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[0]",
+    "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[-1]",
+    "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[nan]",
+    "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[inf]",
+    "test/test_bounded_test_runner.py::test_real_pytest_coverage_fresh_workers_and_failure_receipt",
+    "test/test_bounded_test_runner.py::test_empty_selection_is_not_a_green_suite",
+    "test/test_bounded_test_runner.py::test_source_change_cannot_receive_a_passing_receipt",
+    "test/test_bounded_test_runner.py::test_macos_uses_compressed_footprint_instead_of_resident_size",
+    "test/test_bounded_test_runner.py::test_termination_persists_failure_and_cleans_child",
+    "test/test_bounded_test_recycling.py::test_recycle_on_memory_pressure_keeps_every_case_once",
+    "test/test_bounded_test_recycling.py::test_explicit_zero_exit_does_not_erase_an_earlier_failed_test",
+    "test/test_bounded_test_recycling.py::test_time_pressure_recycles_after_complete_cases_without_dropping_coverage",
+    "test/test_bounded_test_recycling.py::test_live_worker_receipt_keeps_completed_cases_when_a_later_case_times_out",
+    "test/test_training_device.py::test_explicit_training_device_is_preserved[gpu]",
+    "test/test_training_device.py::test_explicit_training_device_is_preserved[mps]",
+    "test/test_training_device.py::test_explicit_training_device_is_preserved[cuda:0]",
+    "test/test_training_device.py::test_slow_training_defaults_to_a_required_accelerator",
+    "test/test_training_device.py::test_quick_suite_retains_its_cpu_default",
+    "test/test_training_device.py::test_all_dispatches_slow_training_to_gpu_and_ordinary_checks_to_cpu",
+    "test/test_test_modes.py::test_slow_mode_controls_collection_before_expensive_fixture_setup[None-1 passed, 1 skipped]",
+    "test/test_test_modes.py::test_slow_mode_controls_collection_before_expensive_fixture_setup[0-1 passed, 1 skipped]",
+    "test/test_test_modes.py::test_slow_mode_controls_collection_before_expensive_fixture_setup[1-2 passed]"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/private/tmp/full-spec-checkpoint-tooling-v1/worker-000.request.json",
+        "/private/tmp/full-spec-checkpoint-tooling-v1/worker-000.json"
+      ],
+      "pid": 7892,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 600819896,
+      "elapsed_seconds": 134.78656308399513,
+      "log": "/private/tmp/full-spec-checkpoint-tooling-v1/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_bounded_test_runner.py::test_worker_exit_and_diagnostics_are_preserved",
+        "test/test_bounded_test_runner.py::test_timeout_kills_term_resistant_descendants",
+        "test/test_bounded_test_runner.py::test_aggregate_memory_includes_child_allocations",
+        "test/test_bounded_test_runner.py::test_monitor_failure_terminates_instead_of_running_unbounded",
+        "test/test_bounded_test_runner.py::test_completed_worker_cannot_leave_live_children",
+        "test/test_bounded_test_runner.py::test_suite_lock_excludes_another_process_and_releases",
+        "test/test_bounded_test_runner.py::test_batches_keep_every_selected_case_once",
+        "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[0]",
+        "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[-1]",
+        "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[nan]",
+        "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[inf]",
+        "test/test_bounded_test_runner.py::test_real_pytest_coverage_fresh_workers_and_failure_receipt",
+        "test/test_bounded_test_runner.py::test_empty_selection_is_not_a_green_suite",
+        "test/test_bounded_test_runner.py::test_source_change_cannot_receive_a_passing_receipt",
+        "test/test_bounded_test_runner.py::test_macos_uses_compressed_footprint_instead_of_resident_size",
+        "test/test_bounded_test_runner.py::test_termination_persists_failure_and_cleans_child",
+        "test/test_bounded_test_recycling.py::test_recycle_on_memory_pressure_keeps_every_case_once",
+        "test/test_bounded_test_recycling.py::test_explicit_zero_exit_does_not_erase_an_earlier_failed_test",
+        "test/test_bounded_test_recycling.py::test_time_pressure_recycles_after_complete_cases_without_dropping_coverage",
+        "test/test_bounded_test_recycling.py::test_live_worker_receipt_keeps_completed_cases_when_a_later_case_times_out",
+        "test/test_training_device.py::test_explicit_training_device_is_preserved[gpu]",
+        "test/test_training_device.py::test_explicit_training_device_is_preserved[mps]",
+        "test/test_training_device.py::test_explicit_training_device_is_preserved[cuda:0]",
+        "test/test_training_device.py::test_slow_training_defaults_to_a_required_accelerator",
+        "test/test_training_device.py::test_quick_suite_retains_its_cpu_default",
+        "test/test_training_device.py::test_all_dispatches_slow_training_to_gpu_and_ordinary_checks_to_cpu",
+        "test/test_test_modes.py::test_slow_mode_controls_collection_before_expensive_fixture_setup[None-1 passed, 1 skipped]",
+        "test/test_test_modes.py::test_slow_mode_controls_collection_before_expensive_fixture_setup[0-1 passed, 1 skipped]",
+        "test/test_test_modes.py::test_slow_mode_controls_collection_before_expensive_fixture_setup[1-2 passed]"
+      ],
+      "completed": [
+        "test/test_bounded_test_runner.py::test_worker_exit_and_diagnostics_are_preserved",
+        "test/test_bounded_test_runner.py::test_timeout_kills_term_resistant_descendants",
+        "test/test_bounded_test_runner.py::test_aggregate_memory_includes_child_allocations",
+        "test/test_bounded_test_runner.py::test_monitor_failure_terminates_instead_of_running_unbounded",
+        "test/test_bounded_test_runner.py::test_completed_worker_cannot_leave_live_children",
+        "test/test_bounded_test_runner.py::test_suite_lock_excludes_another_process_and_releases",
+        "test/test_bounded_test_runner.py::test_batches_keep_every_selected_case_once",
+        "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[0]",
+        "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[-1]",
+        "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[nan]",
+        "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[inf]",
+        "test/test_bounded_test_runner.py::test_real_pytest_coverage_fresh_workers_and_failure_receipt",
+        "test/test_bounded_test_runner.py::test_empty_selection_is_not_a_green_suite",
+        "test/test_bounded_test_runner.py::test_source_change_cannot_receive_a_passing_receipt",
+        "test/test_bounded_test_runner.py::test_macos_uses_compressed_footprint_instead_of_resident_size",
+        "test/test_bounded_test_runner.py::test_termination_persists_failure_and_cleans_child",
+        "test/test_bounded_test_recycling.py::test_recycle_on_memory_pressure_keeps_every_case_once",
+        "test/test_bounded_test_recycling.py::test_explicit_zero_exit_does_not_erase_an_earlier_failed_test",
+        "test/test_bounded_test_recycling.py::test_time_pressure_recycles_after_complete_cases_without_dropping_coverage",
+        "test/test_bounded_test_recycling.py::test_live_worker_receipt_keeps_completed_cases_when_a_later_case_times_out",
+        "test/test_training_device.py::test_explicit_training_device_is_preserved[gpu]",
+        "test/test_training_device.py::test_explicit_training_device_is_preserved[mps]",
+        "test/test_training_device.py::test_explicit_training_device_is_preserved[cuda:0]",
+        "test/test_training_device.py::test_slow_training_defaults_to_a_required_accelerator",
+        "test/test_training_device.py::test_quick_suite_retains_its_cpu_default",
+        "test/test_training_device.py::test_all_dispatches_slow_training_to_gpu_and_ordinary_checks_to_cpu",
+        "test/test_test_modes.py::test_slow_mode_controls_collection_before_expensive_fixture_setup[None-1 passed, 1 skipped]",
+        "test/test_test_modes.py::test_slow_mode_controls_collection_before_expensive_fixture_setup[0-1 passed, 1 skipped]",
+        "test/test_test_modes.py::test_slow_mode_controls_collection_before_expensive_fixture_setup[1-2 passed]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_bounded_test_runner.py::test_worker_exit_and_diagnostics_are_preserved",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.5410577091388404,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_bounded_test_runner.py::test_timeout_kills_term_resistant_descendants",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 1.0593258747830987,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_bounded_test_runner.py::test_aggregate_memory_includes_child_allocations",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.6206815841142088,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_bounded_test_runner.py::test_monitor_failure_terminates_instead_of_running_unbounded",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.37836508406326175,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_bounded_test_runner.py::test_completed_worker_cannot_leave_live_children",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.5042231669649482,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_bounded_test_runner.py::test_suite_lock_excludes_another_process_and_releases",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.2142590000294149,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_bounded_test_runner.py::test_batches_keep_every_selected_case_once",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.000687166815623641,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[0]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.001004665857180953,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[-1]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0009324580896645784,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[nan]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0007691248320043087,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[inf]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0008868330623954535,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_bounded_test_runner.py::test_real_pytest_coverage_fresh_workers_and_failure_receipt",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 18.567959875101224,
+          "message": "",
+          "stdout": "[collect] 1 selectors; limit 15s, 0.5 GiB\n[collect] exit 0; 3.1s; peak 0.04 GiB\n[worker-000] 1 selectors; limit 15s, 0.5 GiB\n[worker-000] exit 0; 2.9s; peak 0.04 GiB\n[worker-001] 1 selectors; limit 15s, 0.5 GiB\n[worker-001] exit 0; 2.7s; peak 0.04 GiB\n[worker-002] 1 selectors; limit 15s, 0.5 GiB\n[worker-002] exit 0; 3.3s; peak 0.04 GiB\n[worker-003] 1 selectors; limit 15s, 0.5 GiB\n[worker-003] exit 0; 3.1s; peak 0.04 GiB\n[worker-004] 1 selectors; limit 15s, 0.5 GiB\n[worker-004] exit 1; 3.3s; peak 0.04 GiB\n"
+        },
+        {
+          "nodeid": "test/test_bounded_test_runner.py::test_empty_selection_is_not_a_green_suite",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 3.3183514168486,
+          "message": "",
+          "stdout": "[collect] 1 selectors; limit 15s, 0.5 GiB\n[collect] exit 5; 3.3s; peak 0.04 GiB\n"
+        },
+        {
+          "nodeid": "test/test_bounded_test_runner.py::test_source_change_cannot_receive_a_passing_receipt",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 5.731028332840651,
+          "message": "",
+          "stdout": "[collect] 1 selectors; limit 15s, 0.5 GiB\n[collect] exit 0; 3.0s; peak 0.04 GiB\n[worker-000] 1 selectors; limit 15s, 0.5 GiB\n[worker-000] exit 0; 2.7s; peak 0.04 GiB\n"
+        },
+        {
+          "nodeid": "test/test_bounded_test_runner.py::test_macos_uses_compressed_footprint_instead_of_resident_size",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0009790828917175531,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_bounded_test_runner.py::test_termination_persists_failure_and_cleans_child",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 5.5199611249845475,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_bounded_test_recycling.py::test_recycle_on_memory_pressure_keeps_every_case_once",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 22.035980792017654,
+          "message": "",
+          "stdout": "[collect] 1 selectors; limit 20s, 0.1 GiB\n[collect] exit 0; 3.0s; peak 0.04 GiB\n[worker-000] 5 selectors; limit 20s, 0.1 GiB\n[worker-000] exit 0; 4.0s; peak 0.08 GiB\n[worker-001] 4 selectors; limit 20s, 0.1 GiB\n[worker-001] exit 0; 3.7s; peak 0.08 GiB\n[worker-002] 3 selectors; limit 20s, 0.1 GiB\n[worker-002] exit 0; 3.9s; peak 0.08 GiB\n[worker-003] 2 selectors; limit 20s, 0.1 GiB\n[worker-003] exit 0; 3.9s; peak 0.08 GiB\n[worker-004] 1 selectors; limit 20s, 0.1 GiB\n[worker-004] exit 0; 3.5s; peak 0.07 GiB\n"
+        },
+        {
+          "nodeid": "test/test_bounded_test_recycling.py::test_explicit_zero_exit_does_not_erase_an_earlier_failed_test",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 6.285187165951356,
+          "message": "",
+          "stdout": "[collect] 1 selectors; limit 20s, 0.5 GiB\n[collect] exit 0; 2.6s; peak 0.04 GiB\n[worker-000] 2 selectors; limit 20s, 0.5 GiB\n[worker-000] exit 0; 3.6s; peak 0.06 GiB\n"
+        },
+        {
+          "nodeid": "test/test_bounded_test_recycling.py::test_time_pressure_recycles_after_complete_cases_without_dropping_coverage",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 21.330526625039056,
+          "message": "",
+          "stdout": "[collect] 1 selectors; limit 6s, 0.5 GiB\n[collect] exit 0; 2.9s; peak 0.04 GiB\n[worker-000] 6 selectors; limit 6s, 0.5 GiB\n[worker-000] exit 0; 6.1s; peak 0.05 GiB\n[worker-001] 4 selectors; limit 6s, 0.5 GiB\n[worker-001] exit 0; 6.2s; peak 0.05 GiB\n[worker-002] 2 selectors; limit 6s, 0.5 GiB\n[worker-002] exit 0; 6.0s; peak 0.04 GiB\n"
+        },
+        {
+          "nodeid": "test/test_bounded_test_recycling.py::test_live_worker_receipt_keeps_completed_cases_when_a_later_case_times_out",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 8.10360487503931,
+          "message": "",
+          "stdout": "[collect] 1 selectors; limit 4s, 0.5 GiB\n[collect] exit 0; 2.9s; peak 0.04 GiB\n[worker-000] 2 selectors; limit 4s, 0.5 GiB\n[worker-000] timeout 124; 5.2s; peak 0.04 GiB\n"
+        },
+        {
+          "nodeid": "test/test_training_device.py::test_explicit_training_device_is_preserved[gpu]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0009642501827329397,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_training_device.py::test_explicit_training_device_is_preserved[mps]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0008614999242126942,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_training_device.py::test_explicit_training_device_is_preserved[cuda:0]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0007505840621888638,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_training_device.py::test_slow_training_defaults_to_a_required_accelerator",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0009824170265346766,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_training_device.py::test_quick_suite_retains_its_cpu_default",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0010490419808775187,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_training_device.py::test_all_dispatches_slow_training_to_gpu_and_ordinary_checks_to_cpu",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 15.209624500013888,
+          "message": "",
+          "stdout": "[collect] 3 selectors; limit 15s, 1.0 GiB\n[collect] exit 0; 3.0s; peak 0.04 GiB\n[worker-000] 1 selectors; limit 15s, 1.0 GiB\n[worker-000] exit 0; 2.7s; peak 0.04 GiB\n[worker-001] 1 selectors; limit 15s, 1.0 GiB\n[worker-001] exit 0; 6.7s; peak 0.32 GiB\n[worker-002] 1 selectors; limit 15s, 1.0 GiB\n[worker-002] exit 0; 2.7s; peak 0.04 GiB\n"
+        },
+        {
+          "nodeid": "test/test_test_modes.py::test_slow_mode_controls_collection_before_expensive_fixture_setup[None-1 passed, 1 skipped]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 1.604937958996743,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_test_modes.py::test_slow_mode_controls_collection_before_expensive_fixture_setup[0-1 passed, 1 skipped]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 1.5612223749049008,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_test_modes.py::test_slow_mode_controls_collection_before_expensive_fixture_setup[1-2 passed]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 1.6442714589647949,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "limits": {
+    "memory_bytes": 2147483648,
+    "worker_seconds": 300.0,
+    "suite_seconds": 420.0,
+    "batch_size": 256,
+    "max_files": 16
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/private/tmp/full-spec-checkpoint-tooling-v1",
+  "elapsed_seconds": 138.26588504202664,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/private/tmp/full-spec-checkpoint-tooling-v1/collect.request.json",
+      "/private/tmp/full-spec-checkpoint-tooling-v1/collect.json"
+    ],
+    "pid": 7841,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 49398240,
+    "elapsed_seconds": 3.3217162501532584,
+    "log": "/private/tmp/full-spec-checkpoint-tooling-v1/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_bounded_test_runner.py::test_worker_exit_and_diagnostics_are_preserved",
+        "test/test_bounded_test_runner.py::test_timeout_kills_term_resistant_descendants",
+        "test/test_bounded_test_runner.py::test_aggregate_memory_includes_child_allocations",
+        "test/test_bounded_test_runner.py::test_monitor_failure_terminates_instead_of_running_unbounded",
+        "test/test_bounded_test_runner.py::test_completed_worker_cannot_leave_live_children",
+        "test/test_bounded_test_runner.py::test_suite_lock_excludes_another_process_and_releases",
+        "test/test_bounded_test_runner.py::test_batches_keep_every_selected_case_once",
+        "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[0]",
+        "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[-1]",
+        "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[nan]",
+        "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[inf]",
+        "test/test_bounded_test_runner.py::test_real_pytest_coverage_fresh_workers_and_failure_receipt",
+        "test/test_bounded_test_runner.py::test_empty_selection_is_not_a_green_suite",
+        "test/test_bounded_test_runner.py::test_source_change_cannot_receive_a_passing_receipt",
+        "test/test_bounded_test_runner.py::test_macos_uses_compressed_footprint_instead_of_resident_size",
+        "test/test_bounded_test_runner.py::test_termination_persists_failure_and_cleans_child",
+        "test/test_bounded_test_recycling.py::test_recycle_on_memory_pressure_keeps_every_case_once",
+        "test/test_bounded_test_recycling.py::test_explicit_zero_exit_does_not_erase_an_earlier_failed_test",
+        "test/test_bounded_test_recycling.py::test_time_pressure_recycles_after_complete_cases_without_dropping_coverage",
+        "test/test_bounded_test_recycling.py::test_live_worker_receipt_keeps_completed_cases_when_a_later_case_times_out",
+        "test/test_training_device.py::test_explicit_training_device_is_preserved[gpu]",
+        "test/test_training_device.py::test_explicit_training_device_is_preserved[mps]",
+        "test/test_training_device.py::test_explicit_training_device_is_preserved[cuda:0]",
+        "test/test_training_device.py::test_slow_training_defaults_to_a_required_accelerator",
+        "test/test_training_device.py::test_quick_suite_retains_its_cpu_default",
+        "test/test_training_device.py::test_all_dispatches_slow_training_to_gpu_and_ordinary_checks_to_cpu",
+        "test/test_test_modes.py::test_slow_mode_controls_collection_before_expensive_fixture_setup[None-1 passed, 1 skipped]",
+        "test/test_test_modes.py::test_slow_mode_controls_collection_before_expensive_fixture_setup[0-1 passed, 1 skipped]",
+        "test/test_test_modes.py::test_slow_mode_controls_collection_before_expensive_fixture_setup[1-2 passed]"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

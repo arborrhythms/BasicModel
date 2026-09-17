@@ -5,6 +5,8 @@ hard-coded 'reading' concept is the first frozen concept: desired, it
 primes the word-isolating wholes (the staged span->slot->row chain).
 cpu/eager.
 """
+
+import pytest
 import os
 os.environ.setdefault("BASICMODEL_DEVICE", "cpu")
 os.environ.setdefault("MODEL_COMPILE", "eager")
@@ -92,6 +94,7 @@ def test_mint_frozen_idempotent():
     assert cs._csw_row_of(c1) is not None, "snap row reserved"
 
 
+@pytest.mark.slow
 def test_set_reading_primes_the_concept():
     """set_reading desires the frozen 'reading' concept on the CS surface;
     set_reading(False) clears the sustained desire (decay fades the rest)."""
@@ -113,6 +116,7 @@ def test_set_reading_primes_the_concept():
         object.__setattr__(m, "_reading_desire", None)
 
 
+@pytest.mark.slow
 def test_reading_wiring_desires_staged_wholes():
     """While reading is desired, the assembler desires each batch's staged
     word-whole rows (the hard-coded concept->whole projection)."""

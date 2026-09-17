@@ -1,0 +1,5 @@
+{
+  "pid": 96105,
+  "command": "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/Resources/Python.app/Contents/MacOS/Python test/test_report.py --run-dir /tmp/full-spec-bounded-fast-full-v3",
+  "reason": "Read-only audit found additional large legacy-fixture families causing repeated 4\u20136 GiB worker recycling. Stop explicitly to extend the authorized RUN_SLOW separation, retaining assertions and reasoning methods."
+}

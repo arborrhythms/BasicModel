@@ -1,0 +1,15 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____ test_all_dispatches_slow_training_to_gpu_and_ordinary_checks_to_cpu ______
+/tmp/full-spec-mixed-device-probe.py:40: in test_all_dispatches_slow_training_to_gpu_and_ordinary_checks_to_cpu
+    assert result['exit_code'] == 0, result['reason']
+E   AssertionError: exit
+E   assert 1 == 0
+----------------------------- Captured stdout call -----------------------------
+[collect] 3 selectors; limit 15s, 1.0 GiB
+[collect] exit 0; 5.2s; peak 0.15 GiB
+[worker-000] 3 selectors; limit 15s, 1.0 GiB
+[worker-000] exit 1; 5.5s; peak 0.28 GiB
+=========================== short test summary info ============================
+FAILED ../../../../../tmp/full-spec-mixed-device-probe.py::test_all_dispatches_slow_training_to_gpu_and_ordinary_checks_to_cpu
+1 failed in 13.83s

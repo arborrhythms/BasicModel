@@ -6,13 +6,13 @@ base paths (grammar meronomy/meronomy, xor parallel-mereology sO=0, legacy
 bpe/byte) plus three data/matrix/ variants that each flip ONE architecture
 flag off its parent (mereologyRaise off, readingAttention on, two-pass
 learning+exploreTemperature on), plus the sO=3 sparse-concept wave (smoke
-ONLY -- the wave is dark on prod xor). Each row is a fast SMOKE:
+ONLY -- the wave is dark on prod xor). Each row is a production-size integration smoke check:
 build the config, run one capped epoch, decode the reconstruction, and assert
 finite losses + a clean decode path (no decode_note degradation, the Task-1
 review caveat).
 
 The exact-round-trip BAR lives in test_reconstruction_roundtrip.py and is
-RUN_SLOW-gated there -- this file does not duplicate it (see the RUN_SLOW tier
+RUN_SLOW-gated there -- this file is also slow and does not duplicate it (see the RUN_SLOW tier
 note at the bottom). Grammar has NO round-trip pin at all: the grammatical
 derivation round-trip is a DEFERRED design fork (plan Task 6 EXECUTION NOTES --
 the serial single-S reduce caps the reverse at one slot; Alec's next design
@@ -34,17 +34,12 @@ from recon_bench import DECODE_NOTE, run_config
 # is build-bound (see the _SLOW note below for the per-tier timing).
 SMOKE_BATCHES = 1
 
-# Each config is a fresh build; the whole config matrix is dominated by
-# build time (max_batches=1 makes the epoch itself ~one xor batch). Measured
-# cpu/eager seed 0 on ArborBook: build-bound (grammar variants ~11-12s each
-# under load); the FAST tier (5 rows below) stays under make test's budget.
-# The two heaviest grammar variants (readingAttention, two-pass learning --
-# the double-forward) gate behind RUN_SLOW: their serial-grammar variant
-# BUILD is already smoked by the base grammar row, and make test_all runs
-# the full matrix. See plan Task 7 EXECUTION NOTES for the per-config timing
-# table.
+# These are production-size integration checks. The September 17 bounded
+# profile measured 18-42 seconds per case before process/import overhead and
+# 4-5 GiB footprints. Run the complete matrix explicitly with RUN_SLOW=1.
+# Existing per-parameter gates remain compatible with the strict on switch.
 _SLOW = pytest.mark.skipif(
-    not os.environ.get("RUN_SLOW"),
+    os.environ.get("RUN_SLOW") != "1",
     reason="heaviest grammar variant; make test_all (RUN_SLOW) runs it")
 
 MATRIX = [
@@ -58,6 +53,7 @@ MATRIX = [
 ]
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("cfg", MATRIX)
 def test_config_builds_runs_and_reconstructs(cfg, tmp_path):
     """One capped epoch: builds, runs, finite losses, recon decodes cleanly."""

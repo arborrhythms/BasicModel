@@ -1,0 +1,50 @@
+{
+  "status": "checkpoint; full validation incomplete",
+  "authorization": "On September 17 Alec requested a pushed checkpoint for an OS update, deferring the full-suite-green requirement and making completion of this session/spec the next task.",
+  "latest_tooling": "29 passed in 138.27s; peak aggregate footprint 0.56 GiB",
+  "latest_full_attempt": {
+    "exit_code": 124,
+    "completed": 2907,
+    "selected": 4458,
+    "elapsed_seconds": 5136.275291542057
+  },
+  "evidence": [
+    {
+      "prefix": "checkpoint-tooling",
+      "summary": "29 passed in 138.27s; peak aggregate footprint 0.56 GiB"
+    },
+    {
+      "prefix": "tooling-affected",
+      "summary": "80 passed, 1 skipped in 102.62s; peak aggregate footprint 0.47 GiB"
+    },
+    {
+      "prefix": "slow-affected",
+      "summary": "253 passed, 23 skipped in 1221.20s; peak aggregate footprint 4.78 GiB"
+    },
+    {
+      "prefix": "switch-affected",
+      "summary": "76 passed, 33 skipped in 1871.91s; peak aggregate footprint 4.42 GiB"
+    },
+    {
+      "prefix": "compiler-affected",
+      "summary": "92 passed, 27 skipped in 504.71s; peak aggregate footprint 1.28 GiB"
+    },
+    {
+      "prefix": "production-affected",
+      "summary": "107 passed, 84 skipped in 504.45s; peak aggregate footprint 6.92 GiB"
+    },
+    {
+      "prefix": "additional-large-affected",
+      "summary": "96 passed, 134 skipped in 92.68s; peak aggregate footprint 0.80 GiB"
+    },
+    {
+      "prefix": "time-device-affected",
+      "summary": "30 passed, 14 skipped in 143.32s; peak aggregate footprint 0.47 GiB"
+    },
+    {
+      "prefix": "mps-training",
+      "summary": "1 passed in 920.25s; peak aggregate footprint 2.54 GiB"
+    }
+  ],
+  "next": "Finish the session and canonical spec; validate each remaining item, then full default suite before normal implementation commits."
+}

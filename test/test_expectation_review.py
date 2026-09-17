@@ -86,6 +86,7 @@ def test_provisioning_keeps_its_existing_hard_reset_of_what_episode():
     assert memory.get_what_slots(b=0) == []
 
 
+@pytest.mark.slow
 def test_real_packed_bricks_share_one_document_stream(tmp_path, monkeypatch):
     from test_meronomy_ladder import _build_ladder_variant
     monkeypatch.setenv("MODEL_COMPILE", "none")
