@@ -14153,11 +14153,15 @@ class LanguageSpace(nn.Module):
                     tuple(entry[2].method_name for entry in entries))
         keys = [self._generate_rule_key(entry[2], arity)
                 for arity in (2, 1) for entry in catalog[arity]] + [0]
-        legacy_keys = [self._generate_rule_key(TheGrammar.rules_upward[rid], arity)
-                       for arity, ids in ((2, binary_ids), (1, unary_ids))
-                       for rid in ids] + [0]
-        self._legacy_generate_rule_keys = tuple(legacy_keys)
         cw = int(symbol_space.subspace.muxedSize) if walk_on else 0
+        # Legacy action keys exist only to migrate the output-owned chooser.
+        # A non-output LanguageSpace may legitimately be assembled from a
+        # local chooser harness whose rule ids have no configured grammar
+        # rows; it neither owns nor consumes that checkpoint metadata.
+        legacy_keys = ([self._generate_rule_key(TheGrammar.rules_upward[rid], arity)
+                        for arity, ids in ((2, binary_ids), (1, unary_ids))
+                        for rid in ids] + [0]) if cw else ()
+        self._legacy_generate_rule_keys = tuple(legacy_keys)
         n_choices = len(keys)
         self._generate_policy_width = int(cw)
         # Exists only with the output loop (<outputInLoop>): the loop's one
