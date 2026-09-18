@@ -2275,3 +2275,30 @@ does not complete typed linguistic observation, the normal controller, actual
 shared executor accounting, expectations/residual credit, generation ownership
 or learned utility. The separate two-truths and forgetting work remains
 reserved.
+
+## 21. Shared selected-query work accounting (September 18)
+
+QueryWorkBudget now carries one transient allowance through selected VP and
+operand preparation, validated executor invocation, occurrence/fact reads,
+taxonomy capture and proof traversal, codebook candidates, prediction-context
+reads, and nested selected callbacks. Each action charges before its native
+read. Local node, record, depth, and expansion limits can tighten the meter but
+cannot renew it; taxonomy capture reserves bounded proof work. Exhaustion is
+explicit work_budget incompleteness and preserves any partial signed evidence.
+
+The meter adds no semantic owner, checkpoint state, parameter, loss, or
+ordinary derivative. It preserves existing live payload and thought-read
+gradients while durable LTM reads remain detached. Hard reference/path choices
+remain nondifferentiable and still require policy credit.
+
+The reviewer run first failed before the module existed; the focused 13-case
+selection and a non-overlapping 372-case affected selection are green in
+bounded workers. See [shared query work](../QueryWork.md) for receipts and
+limits.
+
+This is accounting only. The normal controller must still create one meter from
+its episode allowance, propagate it through every selected callback, and
+record actual cost once alongside causal result use and policy credit. Selected
+linguistic meaning, expectations/residual learning, generation ownership, and
+learned utility remain open. The separately queued two-truths and forgetting
+work remains out of scope.

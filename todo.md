@@ -45,31 +45,36 @@ to MPS. See [Testing](doc/Testing.md#validation) for durable receipts and limits
   reviewer probes were red first; the focused 68/68 and broader 309/309
   bounded affected gates are green. See [Nested retention](doc/NestedRetention.md).
 
-1. **Integrate shared query work.** Rebase the shared query-work candidate on
-   the landed history, phase and nested-retention owners without treating its
-   meter as the normal controller.
-2. **Finish selected linguistic meaning and the normal thought controller.**
+- **Shared selected-query work accounting.** One transient meter now covers
+  selected VP/operand preparation, execution, native reads, taxonomy
+  capture/traversal, prediction context, and nested callbacks without creating
+  a second semantic owner or controller. The rebased probes were red first;
+  13/13 focused and a non-overlapping 372/372 affected bounded selection are
+  green. The normal controller still must create and record its episode meter.
+  See [Query work](doc/QueryWork.md).
+
+1. **Finish selected linguistic meaning and the normal thought controller.**
    Preserve selected signed operands and native middle VP across all three
    writers; cover mode, polarity, paraphrase/converse and nested references.
    Integrate full-width mandatory roles, actual shared work costs, causal child
    evidence, bounded return, replay/checkpoint isolation and policy credit.
    Obtain the prepared selected-meaning probes' red before implementing them.
-3. **Finish expectation and residual learning.** Complete owned estimates and
+2. **Finish expectation and residual learning.** Complete owned estimates and
    observation links, prior-view isolation from arriving/unseen input and other
    rows, residual query credit, the separate baseline and parameter-version-safe
    trajectories. Mechanism probes alone do not satisfy the learning gates.
-4. **Finish generation ownership and end-to-end output.** Rebase the preserved
+3. **Finish generation ownership and end-to-end output.** Rebase the preserved
    generation-catalog candidate after the earlier integrations; validate actual
    checkpoint/optimizer migration and normal supervised output. Maintain the
    combined downstream/reconstruction gradient contract from §8.4 and keep
    [the architecture-wide gradient map](doc/GradientFlow.md) current.
-5. **Close the evidence gates and documentation.** Measure held-out causal
+4. **Close the evidence gates and documentation.** Measure held-out causal
    utility, reconstruction/discrimination controls and current warmed training
    throughput. Run the preserved arbitrary-symbol runtime poison probes and
    renamed-vocabulary learning controls. Numerical values or symbol IDs must
    not supply learner arithmetic or answer seeds. Record incomplete or null
    results honestly. Update the canonical spec and this list as items land.
-6. **Publish each completed item:** failing probe → fix → affected files → full
+5. **Publish each completed item:** failing probe → fix → affected files → full
    default suite green in the background → BasicModel commit/push → WikiOracle
    submodule bump/push, with the required co-author trailer. Preserve user-owned
    files. Do not remove unused reasoning methods without Alec's review.

@@ -82,11 +82,15 @@ records; direct `part_of` traversal allows at most 8 links and 1024 examined
 edges. `evaluate` further bounds edge examinations by `beam × max_steps`.
 Every fetched record, including an ignored raw-domain reference, is counted.
 Limits and unavailable references yield explicit incomplete diagnostics.
-Node scans, record reads and edge expansions are distinct counters. These
-local limits do not complete the specification's shared episode budget.
+Node scans, record reads and edge expansions are distinct counters. When a
+selected QueryWorkBudget is supplied, each of those actions debits the same
+meter before its read; capture reserves a bounded share for proof traversal.
+Local limits still only tighten that allowance. Standalone taxonomy audits can
+omit the meter and retain their explicit bounds.
 [Capture limits](../bin/Taxonomy.py#L117),
 [traversal limits](../bin/Taxonomy.py#L69),
-[query limits](../bin/reasoning.py#L586).
+[query limits](../bin/reasoning.py#L586). See
+[shared query work](QueryWork.md).
 
 Concept identities and ordered reference records already belong to the
 existing structural checkpoint sidecar. The view itself is not serialized;

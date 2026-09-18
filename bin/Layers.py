@@ -10366,7 +10366,7 @@ class InterSentenceLayer(Layer):
                                       concept_dim=self.concept_dim)
 
     @torch.compiler.disable
-    def expect_next_meaning(self, b=0, *, record=True):
+    def expect_next_meaning(self, b=0, *, record=True, work=None):
         """Return the complete prior estimate, or None at a cold boundary.
 
         Observation staging records its prior by default. A selected boundary
@@ -10378,6 +10378,8 @@ class InterSentenceLayer(Layer):
         if self.expectation_scope != "structured":
             raise RuntimeError("complete meanings require structured prediction")
         b = int(b)
+        if work is not None:
+            work.require("record", len(self._inter_context[b]))
         chain = list(self._inter_context[b])
         if not chain or self._inter_predictor is None:
             if record:

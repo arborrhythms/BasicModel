@@ -340,7 +340,7 @@ class LevelledThoughtHistory:
             )
         return ("thought", self._thought_namespace, record.id)
 
-    def resolve_thought(self, reference, *, b=0, max_records=1024):
+    def resolve_thought(self, reference, *, b=0, max_records=1024, work=None):
         if (
             not isinstance(reference, tuple)
             or len(reference) != 3
@@ -351,9 +351,12 @@ class LevelledThoughtHistory:
             raise ValueError("thought occurrence reference is unavailable")
         if type(max_records) is not int or max_records < 0:
             raise ValueError("thought read limit must be a non-negative integer")
-        for index, record in enumerate(self._what_slots[self._thought_row(b)]):
-            if index >= max_records:
-                break
+        records = self._what_slots[self._thought_row(b)]
+        iterator = iter(records)
+        for index in range(min(len(records), max_records)):
+            if work is not None:
+                work.require("record")
+            record = next(iterator)
             if isinstance(record, ThoughtRecord) and record.id == reference[2]:
                 if record.meaning is None:
                     raise ValueError("transition occurrence has no grammatical content")

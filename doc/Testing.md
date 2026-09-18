@@ -232,6 +232,18 @@ seconds; 0.50 GiB peak). These are affected-file evidence after the historical
 no-rerun composite, not a newly rerun global snapshot. See
 [nested retention](NestedRetention.md).
 
+### Shared query-work evidence (September 18)
+
+The rebased reviewer run was red in
+`output/tests/20260918-021028-e3efa7` because the QueryWork module did not
+exist. The focused reviewer selection then passed 13/13 in 20.1 seconds at a
+0.40 GiB peak in `output/tests/20260918-021708-e98757`. The broader,
+non-overlapping query/phase/taxonomy/expectation/history/retention selection
+passed 372/372 in `output/tests/20260918-021926-07eb2a`, with fresh workers
+at 1.05 GiB, 0.50 GiB, and 0.40 GiB peaks. This is affected-file evidence
+after the historical no-rerun composite, not a new single-snapshot global
+receipt. See [shared query work](QueryWork.md).
+
 The actual MPS sequence-training check passed: 877.81 seconds in `runEpoch`
 for two batches, 1.24 seconds for construction and a 2.54 GiB peak aggregate
 footprint. All 137 parameter tensors, including the predictor, were on MPS.

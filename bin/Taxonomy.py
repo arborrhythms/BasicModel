@@ -66,7 +66,8 @@ class ConceptualTaxonomyView:
         source = self._outgoing if direction == "up" else self._incoming
         return source.get(ref, ())
 
-    def part_of(self, part, whole, *, max_steps=8, max_expansions=1024):
+    def part_of(self, part, whole, *, max_steps=8, max_expansions=1024,
+                work=None):
         """Return a bounded inclusion proof and its actual native record sources.
 
         Reification records A -> relation-concept -> B count as two links.
@@ -95,11 +96,16 @@ class ConceptualTaxonomyView:
                     if outgoing:
                         incomplete.append("traversal_limit")
                     continue
-                for edge in outgoing:
+                for index in range(len(outgoing)):
                     if result["edges_expanded"] >= max_expansions:
                         incomplete.append("traversal_limit")
                         stopped = True
                         break
+                    if work is not None and not work.consume("expansion"):
+                        incomplete.append("work_budget")
+                        stopped = True
+                        break
+                    edge = outgoing[index]
                     result["edges_expanded"] += 1
                     if edge.whole in visited:
                         continue
@@ -114,7 +120,8 @@ class ConceptualTaxonomyView:
         return result
 
 
-def capture_taxonomy(conceptual_space, *, max_nodes=256, max_records=1024, focus=()):
+def capture_taxonomy(conceptual_space, *, max_nodes=256, max_records=1024,
+                     focus=(), work=None):
     """Copy bounded conceptual reference records without creating any state.
 
     Endpoint definitions and reified relations share the existing allocator's
@@ -150,6 +157,9 @@ def capture_taxonomy(conceptual_space, *, max_nodes=256, max_records=1024, focus
         if nodes >= max_nodes:
             incomplete.append("capture_limit")
             break
+        if work is not None and not work.consume("node"):
+            incomplete.append("work_budget")
+            break
         visited.add(cid)
         nodes += 1
         if not available(cid):
@@ -159,8 +169,13 @@ def capture_taxonomy(conceptual_space, *, max_nodes=256, max_records=1024, focus
         concepts.add(owner)
         count = layer.constituent_count(cid)
         take = min(count, max_records - records)
-        source = layer.iter_constituents(cid)
+        source = None
         for _index in range(take):
+            if work is not None and not work.consume("record"):
+                incomplete.append("work_budget")
+                break
+            if source is None:
+                source = layer.iter_constituents(cid)
             role, reference = next(source)
             records += 1
             if role not in ("part", "whole"):
@@ -175,6 +190,8 @@ def capture_taxonomy(conceptual_space, *, max_nodes=256, max_records=1024, focus
             concepts.add(ref)
             part, whole = (ref, owner) if role == "part" else (owner, ref)
             edges.append(TaxonomyEdge(part, whole, owner, role))
+        if "work_budget" in incomplete:
+            break
         if take < count:
             incomplete.append("capture_limit")
             break

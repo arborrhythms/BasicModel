@@ -153,7 +153,7 @@ class TruthGroundedReasoner:
         n = min(a.numel(), b.numel())
         return float(torch.linalg.vector_norm(a[:n] - b[:n]))
 
-    def existence_evidence(self, description, *, max_records=None):
+    def existence_evidence(self, description, *, max_records=None, work=None):
         """Ground the full description in accepted LTM facts, without chaining.
 
         Match each occupied role at the same width and preserve bindings,
@@ -171,10 +171,14 @@ class TruthGroundedReasoner:
         support_true = support_false = 0.0
         store = self.reasoning_store()
         if isinstance(store, TernaryTruthStore):
-            scanned = len(store) if max_records is None else min(len(store), max_records)
-            if scanned < len(store):
+            count = len(store) if max_records is None else min(len(store), max_records)
+            if count < len(store):
                 diagnostics.append("capture_limit")
-            for i in range(scanned):
+            for i in range(count):
+                if work is not None and not work.consume("record"):
+                    diagnostics.append("work_budget")
+                    break
+                scanned += 1
                 if int(store.record_kind[i]) != store.KINDS.index("fact"):
                     continue
                 row = store.row(i)
@@ -374,7 +378,8 @@ class TruthGroundedReasoner:
         return self.exist(A)
 
     def taxonomy_evidence(self, part, whole, *, max_steps=8,
-                          max_nodes=256, max_records=1024, max_expansions=1024):
+                          max_nodes=256, max_records=1024, max_expansions=1024,
+                          work=None):
         """Read bounded structural inclusion, with native record provenance.
 
         Legacy vector-only operands have no concept handle and remain unknown.
@@ -389,10 +394,12 @@ class TruthGroundedReasoner:
                     "incomplete": ("unbound_concept_reference",),
                     "nodes_scanned": 0, "records_scanned": 0, "edges_expanded": 0}
         cs = getattr(self.model, "conceptualSpace", None)
+        from QueryWork import capture_limits
+        max_nodes, max_records = capture_limits(work, max_nodes, max_records)
         view = capture_taxonomy(cs, max_nodes=max_nodes, max_records=max_records,
-                                focus=(part, whole))
+                                focus=(part, whole), work=work)
         return view.part_of(part, whole, max_steps=max_steps,
-                            max_expansions=max_expansions)
+                            max_expansions=max_expansions, work=work)
 
     def taxonomy_neighbors(self, reference, *, direction="up",
                            max_nodes=256, max_records=1024):

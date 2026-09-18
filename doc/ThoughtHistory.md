@@ -43,6 +43,16 @@ The completed-row query guard now constrains when a selected query may execute;
 it does not select an ordinary thought, change its level, replenish its work
 budget, or alter history replay/credit lifetime. See [Query phases](QueryPhases.md).
 
+## Selected-query meter
+
+A selected caller may pass one transient QueryWorkBudget through QueryContext.
+Live thought-occurrence resolution then charges each inspected record before it
+reads that live meaning, without detaching it. The meter is not automatically
+created from the older ordinary-history budget and does not alter replay,
+capacity, cutoff, or credit lifetime. The unfinished normal controller must
+link those two scopes, forward one meter to nested callbacks, and record actual
+cost once. See [shared query work](QueryWork.md).
+
 ## LTM roots retained by ordinary history
 
 The existing owner derives LTM roots from every retained ordinary record's role

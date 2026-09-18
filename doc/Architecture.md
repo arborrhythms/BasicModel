@@ -1467,6 +1467,18 @@ registry validates the guard before operand reads. The permission is transient
 host state, so it adds no architectural tensor, parameter, memory owner or
 forward-result slot. See [Query phases](QueryPhases.md).
 
+### Shared selected-query work
+
+An optional QueryWorkBudget on QueryContext carries one transient allowance
+across selected VP/operand preparation, executor invocation, occurrence and
+fact reads, taxonomy capture/traversal, codebook candidates, and predictor
+context. Local read limits only tighten that meter; a nested selected call must
+reuse it. The meter is host bookkeeping, not a semantic feature, memory owner,
+checkpoint field, parameter, loss, or additional compiled-result slot.
+Standalone audited readers may use their existing local bounds without one.
+The normal controller still must instantiate the meter from its episode budget
+and record its final cost once. See [shared query work](QueryWork.md).
+
 ### Retained grammatical occurrences
 
 The durable LTM owner retains the transitive closure of records addressed by

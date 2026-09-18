@@ -288,6 +288,19 @@ controller choice remains nondifferentiable and needs explicit policy credit.
 Compiled numerical execution keeps host phase bookkeeping outside the graph,
 while query tracing fails explicitly. See [Query phases](QueryPhases.md).
 
+## Shared selected-query work
+
+QueryWorkBudget is host integer accounting only: it adds no tensor, parameter,
+loss, optimizer group, checkpoint field, or derivative. Charging before a
+native payload, live thought occurrence, fact row, taxonomy edge, or predictor
+read does not detach that reader's existing value. Durable LTM descriptions
+remain detached through their established owner boundary, while live
+thought-occurrence meanings retain their episode route until the explicit
+credit boundary. Discrete reference matching and structural traversal remain
+hard choices, so the meter supplies neither policy credit nor learned utility.
+The later normal controller must own final cost recording and causal reward.
+See [shared query work](QueryWork.md).
+
 ## Retained grammatical occurrences
 
 Durable `read_structure()` views are detached copies. Discovering

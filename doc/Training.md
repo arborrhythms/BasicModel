@@ -1100,6 +1100,17 @@ output realization cannot start a query. Permission restores on error and does
 not change optimizer ownership or gradient balancing. See
 [Query phases](QueryPhases.md).
 
+## Shared selected-query work
+
+Selected query accounting is a transient host meter, not a trainable feature or
+loss. It charges the same allowance before selected preparation, executor
+calls, native reads, and nested callbacks, while preserving existing live
+operand gradients and durable-record detachment. It neither creates policy
+credit nor reconciles itself with ordinary history automatically. The normal
+controller must create it from the episode allowance, propagate it, and record
+its actual final cost once before learned utility can be evaluated. See
+[shared query work](QueryWork.md) and [gradient flow](GradientFlow.md).
+
 ## Restoring dependent occurrences
 
 Stateless tensor restore withdraws request authority immediately. Physical

@@ -228,6 +228,21 @@ resolution or executor work. Sentence processing and compiled tracing reject
 query execution. Explicit standalone evidence readers retain their existing
 API. See [Query phases](QueryPhases.md).
 
+## Shared selected-query work
+
+QueryContext can carry one transient QueryWorkBudget from a selected caller.
+Validation of declared arguments, domain, and full width occurs before an
+operation debit; selected VP validation, native payload preparation,
+occurrence/fact scans, taxonomy capture/traversal, and nested callbacks reuse
+the same object. Exhaustion reports work_budget incompleteness without
+converting unknown evidence into falsity, and already-read signed evidence is
+preserved. Local caps can narrow the allowance but cannot renew it.
+
+The registry does not create a meter or a second semantic owner. Standalone
+audited readers can omit it; the unfinished normal controller must forward the
+episode meter through every selected callback and commit actual cost once.
+See [shared query work](QueryWork.md).
+
 ## Durable constituent retention
 
 Occurrence traversal has separate node, depth and record-scan bounds with
