@@ -61,6 +61,17 @@ a fresh single-snapshot all-green receipt. The exact receipts are in
   green. The normal controller still must create and record its episode meter.
   See [Query work](doc/QueryWork.md).
 
+- **Selected truth-result handoff.** A normal boundary now uses a checked
+  truth operation's final full-width selected `[NP1, VP, NP2]` meaning as that
+  row's answer seed, rather than leaving the selected operation trace-only
+  beside the lossy physical parse carrier. The handoff is row-local: selected
+  rows exclude only their own legacy resolver pass, while other batch rows
+  retain it. Set, code, subgoal and prediction results remain blocked pending
+  their explicit typed adapters. Reviewer probes were red first; the affected
+  controller/meaning/phase/output selection passed 123/123. This advances
+  item 1; it does not complete its remaining semantic, lifecycle and learning
+  gates.
+
 0. **Complete — thought operations as compose rules** — before the remaining
    controller and before the two-truths and forgetting specs below, so that
    none of them is built on the `<Queries>` catalogue and then redone

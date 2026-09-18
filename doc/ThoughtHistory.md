@@ -64,6 +64,13 @@ observations; they cannot execute a checked VP. The boundary guard is checked
 before registry, native or occurrence reads. A standalone/evaluation
 resolution ends its finished ordinary episode immediately; training retains it
 through its one optimizer step and closes it with the existing episode teardown.
+For a checked truth result, the final selected full-width `[NP1, VP, NP2]`
+meaning replaces the lossy physical parse carrier as that row's answer seed;
+the selected operation therefore changes normal realization rather than merely
+adding trace metadata. This is row-local: selected rows do not enter the legacy
+resolver, while unselected rows in the same batch still may. Set, code,
+subgoal and prediction results are not silently coerced into an answer concept;
+each needs its own typed adapter.
 See [Query phases](QueryPhases.md).
 
 ## Selected-query meter

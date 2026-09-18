@@ -76,6 +76,8 @@ def test_normal_controller_selects_a_catalog_operation_not_used_by_the_parse(
     assert "equal" in choices[0]
     assert [record.operation for record in result.records if record.kind == "thought"] == [
         "equal", "conclude"]
+    assert registry.signature_for(result.meaning).operation.semantic_id == "equal"
+    assert result.result is not None and result.result.semantic_id == "equal"
     assert 0.0 <= result.evidence["support_true"] <= 1.0
     memory.end_what_episode()
 
@@ -307,6 +309,96 @@ def test_selected_program_resolution_releases_completed_eval_episode(monkeypatch
     assert len(episodes) == 2 and episodes[0] != episodes[1]
 
 
+def test_normal_boundary_uses_selected_semantic_meaning_as_its_answer_seed(monkeypatch):
+    """A completed thought's full grammar, not its trace, feeds output."""
+    from test_selected_relation_meaning import _program_owner
+
+    cs, grammar, _legacy_registry, language, _leaves, program, _part, _whole = (
+        _program_owner(monkeypatch, interrogative=True))
+    registry = GrammaticalThoughtRegistry.install(cs, grammar)
+    model = BasicModel()
+    model.spaces = []
+    memory = WhatInteractionMemory(batch=1, capacity=64, detach_mode="episode")
+    object.__setattr__(model, "conceptualSpace", cs)
+    object.__setattr__(model, "languageSpace", language)
+    object.__setattr__(model, "symbolSpace", SimpleNamespace(
+        languageSpace=language, what_memory=memory,
+        grammatical_thoughts=registry))
+    object.__setattr__(model, "grammatical_thoughts", registry)
+    model.what_thinking_detach = "episode"
+    model.reconstruct_in_loop = False
+    model.eval()
+    monkeypatch.setattr(model, "_walk_budget", lambda: 8)
+    monkeypatch.setattr(
+        model, "_materialize_entries",
+        lambda entries, base, budget: (base, torch.empty(
+            base.shape[0], 0, device=base.device, dtype=torch.long)),
+    )
+    monkeypatch.setattr(
+        model, "_what_grammar_context",
+        lambda questions, **kwargs: (torch.zeros(
+            len(questions), 1, device=kwargs["device"], dtype=kwargs["dtype"]), ()),
+    )
+    monkeypatch.setattr(model, "_select_perceptual_bindings", lambda _: ())
+
+    derivation = model.resolveAnswer(
+        Understanding(answer_program=(program(),)), WhatQuestion.present(0))
+
+    selected = derivation.selected_thoughts[0][1]
+    torch.testing.assert_close(derivation.conceptual_answer[0], selected.meaning.roles)
+    assert derivation.source == "thought"
+
+
+def test_normal_boundary_realizes_the_controller_selected_operation(monkeypatch):
+    """A later catalog choice changes the answer meaning, not only its trace."""
+    from test_selected_relation_meaning import _program_owner
+
+    cs, grammar, _legacy_registry, language, _leaves, program, _part, _whole = (
+        _program_owner(monkeypatch, interrogative=True))
+    registry = GrammaticalThoughtRegistry.install(cs, grammar)
+    model = BasicModel()
+    model.spaces = []
+    memory = WhatInteractionMemory(batch=1, capacity=64, detach_mode="episode")
+    object.__setattr__(model, "conceptualSpace", cs)
+    object.__setattr__(model, "languageSpace", language)
+    object.__setattr__(model, "symbolSpace", SimpleNamespace(
+        languageSpace=language, what_memory=memory,
+        grammatical_thoughts=registry))
+    object.__setattr__(model, "grammatical_thoughts", registry)
+    model.what_thinking_detach = "episode"
+    model.reconstruct_in_loop = False
+    model.eval()
+    monkeypatch.setattr(model, "_walk_budget", lambda: 8)
+    monkeypatch.setattr(
+        model, "_materialize_entries",
+        lambda entries, base, budget: (base, torch.empty(
+            base.shape[0], 0, device=base.device, dtype=torch.long)),
+    )
+    monkeypatch.setattr(
+        model, "_what_grammar_context",
+        lambda questions, **kwargs: (torch.zeros(
+            len(questions), 1, device=kwargs["device"], dtype=kwargs["dtype"]), ()),
+    )
+    monkeypatch.setattr(model, "_select_perceptual_bindings", lambda _: ())
+    choices = []
+
+    def choose(_root, _active, actions, **_kwargs):
+        choices.append(actions)
+        if len(choices) == 1:
+            return next(action for action in actions
+                        if action is not None and action.semantic_id == "equal")
+        return None
+
+    monkeypatch.setattr(model, "_choose_selected_thought_action", choose)
+    derivation = model.resolveAnswer(
+        Understanding(answer_program=(program(),)), WhatQuestion.present(0))
+
+    selected = derivation.selected_thoughts[0][1]
+    assert registry.signature_for(selected.meaning).operation.semantic_id == "equal"
+    torch.testing.assert_close(derivation.conceptual_answer[0], selected.meaning.roles)
+    assert derivation.grammar_trace[1]["semantic_id"] == "equal"
+
+
 def test_selected_program_precedes_the_legacy_surface_reasoner(monkeypatch):
     """A grammar-owned completed question never opens the legacy tool path."""
     from test_selected_relation_meaning import _program_owner
@@ -354,7 +446,7 @@ def test_selected_program_precedes_the_legacy_surface_reasoner(monkeypatch):
     result = model.resolveAnswer(understanding, question)
 
     assert len(result.selected_thoughts) == 1
-    assert result.source == "identity"
+    assert result.source == "thought"
     assert not legacy_calls
     assert memory.thought_state().finished and not memory.in_episode(0)
 
@@ -406,3 +498,67 @@ def test_normal_what_uses_the_selected_thought_without_a_legacy_slot(monkeypatch
     assert len(memory.get_what_slots()) == 0
     assert [record.kind for record in memory.thought_history()] == [
         "begin", "thought", "thought", "finish"]
+
+
+def test_selected_row_does_not_suppress_another_rows_legacy_resolver(monkeypatch):
+    """A selected boundary is row-local, including its legacy handoff."""
+    from test_selected_relation_meaning import _program_owner
+
+    cs, grammar, _legacy_registry, language, _leaves, program, _part, _whole = (
+        _program_owner(monkeypatch, interrogative=True))
+    registry = GrammaticalThoughtRegistry.install(cs, grammar)
+    model = BasicModel()
+    model.spaces = []
+    memory = WhatInteractionMemory(batch=2, capacity=64, detach_mode="episode")
+    object.__setattr__(model, "conceptualSpace", cs)
+    object.__setattr__(model, "languageSpace", language)
+    object.__setattr__(model, "symbolSpace", SimpleNamespace(
+        languageSpace=language, what_memory=memory,
+        grammatical_thoughts=registry))
+    object.__setattr__(model, "grammatical_thoughts", registry)
+    model.what_thinking_detach = "episode"
+    model.what_thinking_iterations = 2
+    model.reconstruct_in_loop = False
+    model.eval()
+    monkeypatch.setattr(model, "_walk_budget", lambda: 8)
+    monkeypatch.setattr(
+        model, "_materialize_entries",
+        lambda entries, base, budget: (base, torch.empty(
+            base.shape[0], 0, device=base.device, dtype=torch.long)),
+    )
+    monkeypatch.setattr(
+        model, "_what_grammar_context",
+        lambda questions, **kwargs: (torch.zeros(
+            len(questions), 1, device=kwargs["device"], dtype=kwargs["dtype"]), ()),
+    )
+    monkeypatch.setattr(model, "_select_perceptual_bindings", lambda _: ())
+
+    selected = SimpleNamespace(
+        evidence={"query_signature": "part", "support_true": 1.0,
+                  "support_false": 0.0, "incomplete": ()},
+        work=SimpleNamespace(spent=3))
+    monkeypatch.setattr(
+        model, "_run_selected_program_thoughts",
+        lambda programs, *, work_budget: ((0, selected),),
+    )
+    calls = []
+
+    def legacy_resolve(_understanding, _questions, _per_row, answer, *,
+                       programs=None, excluded_rows=()):
+        calls.append((tuple(programs), tuple(excluded_rows)))
+        adjusted = answer.clone()
+        adjusted[1, 0].fill_(0.75)
+        return adjusted, (None, "legacy-row"), (
+            {"operation": "legacy-row", "row": 1},), ()
+
+    monkeypatch.setattr(model, "_resolve_step", legacy_resolve)
+    first_program = program()
+    derivation = model.resolveAnswer(
+        Understanding(answer_program=(first_program, None)), WhatQuestion.present(0))
+
+    assert len(calls) == 1
+    assert calls[0][0][0] is first_program and calls[0][0][1] is None
+    assert calls[0][1] == (0,)
+    assert derivation.step == (None, "legacy-row")
+    assert derivation.grammar_trace[-1] == {"operation": "legacy-row", "row": 1}
+    assert derivation.conceptual_answer[1, 0].eq(0.75).all()

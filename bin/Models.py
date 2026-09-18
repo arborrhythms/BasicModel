@@ -235,16 +235,18 @@ def _boundary_registry(owner):
 class SelectedThoughtResult:
     """One completed ordinary episode for a selected grammatical question.
 
-    The result exposes the checked evidence and the same transient meter that
-    paid for it.  The chronological ``ThoughtRecord`` values remain owned by
-    ``WhatInteractionMemory``; this is only a boundary return value, never a
-    second memory or semantic representation.
+    ``meaning`` is the final selected grammatical thought, rather than an
+    earlier parse carrier.  ``result`` preserves the typed checked boundary
+    result that produced its evidence.  The chronological ``ThoughtRecord``
+    values remain owned by ``WhatInteractionMemory``; this is only a boundary
+    return value, never a second memory or semantic representation.
     """
 
     meaning: ConceptualMeaning
     evidence: dict
     work: QueryWorkBudget
     records: tuple
+    result: ThoughtResult | None = None
 
 
 def _checkpoint_host_copy(value):
@@ -6443,8 +6445,9 @@ class BasicModel(BaseModel):
 
         def normalized(result, *, fallback_kind="unverified"):
             """Keep executor evidence explicit without treating it as a fact."""
-            if isinstance(result, ThoughtResult):
-                result = dict(result.evidence)
+            checked = result if isinstance(result, ThoughtResult) else None
+            if checked is not None:
+                result = dict(checked.evidence)
             result = dict(result or {})
             evidence = result.get("evidence")
             if isinstance(evidence, dict):
@@ -6456,9 +6459,13 @@ class BasicModel(BaseModel):
                 "support_false": support(source.get("support_false", 0.0)),
                 "evidence_kind": str(result.get(
                     "evidence_kind", source.get("evidence_kind", fallback_kind))),
+                "semantic_id": result.get(
+                    "semantic_id", None if checked is None else checked.semantic_id),
+                "result_kind": result.get(
+                    "result_kind", None if checked is None else checked.result_kind),
                 "query_signature": result.get("query_signature"),
                 "incomplete": tuple(result.get("incomplete", ()) or ()),
-            }
+            }, checked
 
         def refs(current, *extra):
             """Record typed provenance; numeric concept IDs are never features."""
@@ -6512,6 +6519,7 @@ class BasicModel(BaseModel):
                     "query_signature": None,
                     "incomplete": ("work_budget",),
                 },
+                "result": None,
                 "record": None,
             }
 
@@ -6555,7 +6563,8 @@ class BasicModel(BaseModel):
                 }
                 record = event("thought", current, evidence, operation="conclude",
                                sources=refs(current))
-                return {"meaning": current, "evidence": evidence, "record": record}
+                return {"meaning": current, "evidence": evidence,
+                        "result": None, "record": record}
             selected = action
             current = selected.request
             # Choosing a checked operation is ordinary controller work in
@@ -6620,7 +6629,7 @@ class BasicModel(BaseModel):
                 if state is not None and not state.finished:
                     memory.finish_thought(current, b=row)
                 raise
-            evidence = normalized(raw)
+            evidence, checked = normalized(raw)
             if child_result is not None:
                 # A ``what`` result is the child result, not a new proposition
                 # established by the outer question.  The parent return and
@@ -6630,11 +6639,12 @@ class BasicModel(BaseModel):
                 if parent_record is None:  # pragma: no cover - callback invariant
                     raise RuntimeError("selected what query omitted its parent record")
                 return {"meaning": current, "evidence": evidence,
-                        "record": parent_record}
+                        "result": checked, "record": parent_record}
             record = event("thought", current, evidence,
                            operation=selected.semantic_id,
                            sources=refs(current))
-            return {"meaning": current, "evidence": evidence, "record": record}
+            return {"meaning": current, "evidence": evidence,
+                    "result": checked, "record": record}
 
         try:
             outcome = execute(meaning)
@@ -6695,7 +6705,9 @@ class BasicModel(BaseModel):
             raise RuntimeError("selected thought did not finish its owned episode")
         if meter.spent != memory.thought_state(b=row).work_spent:
             raise RuntimeError("selected thought meter and history disagree")
-        return SelectedThoughtResult(meaning, dict(outcome["evidence"]), meter, records)
+        return SelectedThoughtResult(
+            outcome["meaning"], dict(outcome["evidence"]), meter, records,
+            outcome.get("result"))
 
     def _run_selected_program_thoughts(self, programs, *, work_budget=32):
         """Execute the interrogative meanings owned by completed programs.
@@ -9084,13 +9096,42 @@ class BasicModel(BaseModel):
                 row_sources = [
                     "reasoning" if row_source == "identity" else row_source
                     for row_source in row_sources]
+        selected_rows = tuple(row for row, _result in selected_thoughts)
+        # A truth-valued selected operation carries a complete grammatical
+        # answer meaning.  The physical compose root may have discarded an
+        # operand during folding, so letting it remain the output seed would
+        # make the actual thought trace-only.  Set/code/subgoal/prediction
+        # results require their own typed answer adapters and are deliberately
+        # not coerced into a concept here.
+        selected_answer_rows = list(answer.unbind(0))
+        selected_answer_applied = False
+        for row, selected in selected_thoughts:
+            checked = getattr(selected, "result", None)
+            if not isinstance(checked, ThoughtResult) or checked.result_kind != "truth":
+                continue
+            resolved_meaning = selected.meaning
+            if resolved_meaning.roles.shape != selected_answer_rows[row].shape:
+                raise RuntimeError(
+                    "selected truth meaning differs from the answer conceptual shape")
+            selected_answer_rows[row] = resolved_meaning.roles.to(
+                device=answer.device, dtype=answer.dtype)
+            row_sources[row] = "thought"
+            selected_answer_applied = True
+        if selected_answer_applied:
+            answer = torch.stack(selected_answer_rows)
         distinct = set(row_sources)
         source = row_sources[0] if len(distinct) == 1 else "mixed"
         steps, step_trace, exact_steps = (), (), ()
-        if self._thinking_enabled() and not selected_thoughts:
+        # A grammar-owned boundary owns only its completed row.  Other rows
+        # in the same batch may still need the retained compatibility resolver;
+        # suppressing that whole pass whenever *any* row selected a thought
+        # silently leaked one row's controller decision into another.
+        if (self._thinking_enabled()
+                and any(row not in selected_rows for row in range(B))):
             answer, steps, step_trace, exact_steps = self._resolve_step(
                 understanding, questions, per_row, answer,
-                programs=tuple(programs) if current_program else None)
+                programs=tuple(programs) if current_program else None,
+                excluded_rows=selected_rows)
         context, _detail = self._what_grammar_context(
             questions, device=answer.device, dtype=answer.dtype)
         references = self._select_perceptual_bindings(understanding)
@@ -9108,6 +9149,8 @@ class BasicModel(BaseModel):
             trace += tuple({
                 "operation": "selected_query",
                 "row": row,
+                "semantic_id": result.evidence.get("semantic_id"),
+                "result_kind": result.evidence.get("result_kind"),
                 "signature": result.evidence.get("query_signature"),
                 "support_true": result.evidence["support_true"],
                 "support_false": result.evidence["support_false"],
@@ -9410,7 +9453,8 @@ class BasicModel(BaseModel):
             return self._install_root_slot(answer_row.detach(), rep.detach())
         return self._install_root_slot(answer_row, rep)
 
-    def _resolve_step(self, understanding, questions, per_row, answer, *, programs=None):
+    def _resolve_step(self, understanding, questions, per_row, answer, *,
+                      programs=None, excluded_rows=()):
         """Run the resolve step for every unsettled row (spec 6.3).
 
         Returns ``(answer, steps, trace_entries, ())``: the full-width ideas
@@ -9421,6 +9465,12 @@ class BasicModel(BaseModel):
         """
         from Output import StepChoice
         B, _N, D = answer.shape
+        excluded_rows = tuple(excluded_rows)
+        if (any(type(row) is not int or not 0 <= row < B
+                for row in excluded_rows)
+                or len(set(excluded_rows)) != len(excluded_rows)):
+            raise ValueError("excluded resolve rows must be unique batch rows")
+        excluded = frozenset(excluded_rows)
         iteration = int(getattr(self, "_what_current_iteration", 0) or 0)
         pressure = float(getattr(self, "_what_current_closure_pressure", 0.0) or 0.0)
         referents_all = self.__dict__.get("_what_referents") or {}
@@ -9438,6 +9488,12 @@ class BasicModel(BaseModel):
         rows = [answer[b] for b in range(B)]
         steps, trace_entries = [], []
         for b in range(B):
+            if b in excluded:
+                # This row's selected grammatical episode has already been
+                # completed under the boundary owner.  Do not let the legacy
+                # resolver open, condition, or credit a second controller.
+                steps.append(None)
+                continue
             settled = (iteration > 0 and memory is not None
                        and memory.what_at_parity(b=b) and pending.get(b) is None)
             if settled:
