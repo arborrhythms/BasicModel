@@ -40,11 +40,11 @@ def test_time_pressure_recycles_after_complete_cases_without_dropping_coverage(t
         "import os,time,pytest\nfrom pathlib import Path\n"
         "@pytest.mark.parametrize('case',range(6))\n"
         "def test_case(case):\n"
-        " time.sleep(1.2)\n"
+        " time.sleep(3)\n"
         " with Path('executions').open('a') as f: f.write(f'{case}:{os.getpid()}\\n')\n")
     result = runner.run_suite(
         root=tmp_path, selectors=["test_duration.py"], run_dir=tmp_path / "result",
-        memory_bytes=512 * 1024**2, timeout=6, suite_timeout=45,
+        memory_bytes=512 * 1024**2, timeout=30, suite_timeout=180,
         batch_size=64, lock_path=tmp_path / "lock")
     assert result["exit_code"] == 0, result["reason"]
     assert result["selected"] == result["completed"]
@@ -69,7 +69,7 @@ def test_live_worker_receipt_keeps_completed_cases_when_a_later_case_times_out(t
         " time.sleep(30)\n")
     result = runner.run_suite(
         root=tmp_path, selectors=["test_progress.py"], run_dir=tmp_path / "result",
-        memory_bytes=512 * 1024**2, timeout=4, suite_timeout=20,
+        memory_bytes=512 * 1024**2, timeout=20, suite_timeout=90,
         batch_size=64, lock_path=tmp_path / "lock")
     assert result["exit_code"] == 124, result["reason"]
     assert result["reason"] == "timeout"

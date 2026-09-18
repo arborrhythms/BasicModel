@@ -17644,13 +17644,12 @@ class VectorQuantize(nn.Module):
         scale = (norm_q / norm_e).detach()
         return (out * scale).reshape(orig_shape)
 
-    # Default byte budget for one VQ distance/similarity tile.  4 GiB
-    # leaves ample headroom on 64 GB unified-memory accelerators (the
-    # AMD Strix Halo target) while keeping the per-tile allocation well
-    # below per-buffer caps on current GPU stacks.  Small VQs (V < 64K)
-    # never trigger chunking on first call.  Override per-instance via
-    # ``vq._vq_chunk_rows``.
-    _VQ_CHUNK_TARGET_BYTES = 4 * (1 << 30)  # 4 GiB
+    # Default byte budget for one VQ distance/similarity tile.  Keep this
+    # substantially below the bounded worker cap: allocator caching can hold
+    # the preceding matmul tile while the next one is prepared.  Small VQs
+    # (V < 64K) never trigger chunking on first call.  Override per-instance
+    # via ``vq._vq_chunk_rows``.
+    _VQ_CHUNK_TARGET_BYTES = 512 * (1 << 20)  # 512 MiB
 
     def forward(self, x, return_all_codes=False, freeze_codebook=False, **kwargs):
         """Forward pass.

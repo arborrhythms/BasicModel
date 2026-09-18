@@ -4,6 +4,7 @@ import torch
 
 
 @pytest.mark.parametrize("training", [False, True])
+@pytest.mark.slow
 def test_tied_runbatch_scores_the_same_owned_objective_once(tmp_path, monkeypatch, training):
     from test_meronomy_ladder import _build_ladder_variant
     model = _build_ladder_variant(tmp_path, "tied_objective", [

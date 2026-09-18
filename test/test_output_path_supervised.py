@@ -377,9 +377,12 @@ def test_mixed_supplied_numeric_and_automatic_text_trains_only_supplied_row():
         torch._dynamo.reset()
 
 
+@pytest.mark.slow
 def test_supplied_text_scores_fixed_surface_and_masks_automatic_text():
     from test_output_walk import _model
     m = _model()
+    assert next(m.parameters()).device.type == torch.device(
+        os.environ["BASICMODEL_DEVICE"]).type
     m._tensor_peer_while_eager = True
     m._chart_compose_per_word = lambda: None
     m.output_policy_weight = 1.0

@@ -17,6 +17,8 @@ import unittest
 import urllib.request
 import urllib.error
 
+import pytest
+
 _BIN = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "bin")
 if _BIN not in sys.path:
     sys.path.insert(0, _BIN)
@@ -183,6 +185,7 @@ def _chat(text):
 
 
 @unittest.skipIf(not os.path.exists(_ARTIFACT), "sentence.pt not built")
+@pytest.mark.slow
 class TestServerQueries(unittest.TestCase):
     """Query the BasicModel server and print responses."""
 

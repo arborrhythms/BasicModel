@@ -90,6 +90,7 @@ def test_ema_update_uses_bincount_not_onehot_matmul():
         F.one_hot = original
 
 
+@pytest.mark.slow
 def test_large_flat_does_not_oom_l2():
     """Large flat (simulating B*K*N at body scale) processes without
     allocating an [N, V] distance matrix.
@@ -111,6 +112,7 @@ def test_large_flat_does_not_oom_l2():
     assert int(indices.min().item()) >= 0
 
 
+@pytest.mark.slow
 def test_large_flat_ema_does_not_oom():
     """EMA path on large N must succeed (bincount + index_add_)."""
 

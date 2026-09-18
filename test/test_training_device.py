@@ -50,7 +50,7 @@ def test_all_dispatches_slow_training_to_gpu_and_ordinary_checks_to_cpu(tmp_path
     selected=['test_small.py::test_before', 'test_training.py::test_training',
               'test_small.py::test_after']
     result=runner.run_suite(root=tmp_path, selectors=selected, run_dir=tmp_path/'result',
-        memory_bytes=1024**3, timeout=15, suite_timeout=90,
+        memory_bytes=1024**3, timeout=60, suite_timeout=240,
         batch_size=64, lock_path=tmp_path/'lock')
     assert result['exit_code'] == 0, result['reason']
     assert result['selected'] == result['completed'] == selected

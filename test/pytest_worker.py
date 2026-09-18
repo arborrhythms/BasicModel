@@ -102,6 +102,10 @@ def main():
         code = int(pytest.main(args, plugins=[collector]))
     finally:
         collector.publish(code)
+    # A recycled worker has published its final receipt.  Exit directly so
+    # interpreter shutdown handlers cannot keep the process boundary alive.
+    if collector.recycled:
+        os._exit(code)
     return code
 
 

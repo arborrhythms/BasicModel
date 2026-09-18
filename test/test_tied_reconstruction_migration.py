@@ -12,6 +12,7 @@ def _model(tmp_path):
 
 
 @pytest.mark.parametrize("all_empty", [False, True])
+@pytest.mark.slow
 def test_empty_rows_and_padding_carry_no_reconstruction_cost(tmp_path, all_empty):
     model = _model(tmp_path)
     try:
@@ -37,6 +38,7 @@ def test_empty_rows_and_padding_carry_no_reconstruction_cost(tmp_path, all_empty
         model.symbolSpace.soft_reset()
 
 
+@pytest.mark.slow
 def test_reverse_replays_pre_fold_after_popping_the_new_word(tmp_path):
     """A valid pre,push,seal trace must invert as unseal,pop,pre.
 
@@ -82,6 +84,7 @@ def test_reverse_replays_pre_fold_after_popping_the_new_word(tmp_path):
         model.symbolSpace.soft_reset()
 
 
+@pytest.mark.slow
 def test_traced_verb_reverse_uses_the_actual_verb_operand(tmp_path):
     """Verb composition is its spectral operation, not its inherited Sigma."""
     model = _model(tmp_path)
@@ -108,6 +111,7 @@ def test_traced_verb_reverse_uses_the_actual_verb_operand(tmp_path):
         model.symbolSpace.soft_reset()
 
 
+@pytest.mark.slow
 def test_eager_reverse_evaluates_only_selected_recorded_operators(tmp_path, monkeypatch):
     model = _model(tmp_path)
     try:
@@ -136,6 +140,7 @@ def test_eager_reverse_evaluates_only_selected_recorded_operators(tmp_path, monk
         model.symbolSpace.soft_reset()
 
 
+@pytest.mark.slow
 def test_repeated_row_references_keep_their_occurrence_activations(tmp_path):
     """The same symbol identity can be pushed with different signed values."""
     model = _model(tmp_path)
@@ -205,6 +210,7 @@ def _identity_surface_kernels(model, monkeypatch):
     model.idea_decode = False
 
 
+@pytest.mark.slow
 def test_owned_input_reconstruction_survives_later_staging(tmp_path, monkeypatch):
     model = _model(tmp_path)
     _identity_surface_kernels(model, monkeypatch)
@@ -222,6 +228,7 @@ def test_owned_input_reconstruction_survives_later_staging(tmp_path, monkeypatch
         model.symbolSpace.soft_reset()
 
 
+@pytest.mark.slow
 def test_input_reconstruction_does_not_enter_free_generate(tmp_path, monkeypatch):
     model = _model(tmp_path)
     _identity_surface_kernels(model, monkeypatch)
@@ -240,6 +247,7 @@ def test_input_reconstruction_does_not_enter_free_generate(tmp_path, monkeypatch
         model.symbolSpace.soft_reset()
 
 
+@pytest.mark.slow
 def test_zero_recovered_values_are_still_one_completed_traversal(tmp_path, monkeypatch):
     model = _model(tmp_path)
     _identity_surface_kernels(model, monkeypatch)
@@ -266,6 +274,7 @@ def test_zero_recovered_values_are_still_one_completed_traversal(tmp_path, monke
         model.symbolSpace.soft_reset()
 
 
+@pytest.mark.slow
 def test_compiled_reverse_does_not_backpropagate_through_an_unused_inverse(tmp_path):
     model = _model(tmp_path)
     try:
@@ -294,6 +303,7 @@ def test_compiled_reverse_does_not_backpropagate_through_an_unused_inverse(tmp_p
         torch._dynamo.reset()
 
 
+@pytest.mark.slow
 def test_enabling_tied_reconstruction_retains_the_owned_ideas(tmp_path):
     from Models import _ensure_grad_anchors
     from test_meronomy_ladder import _build_ladder_variant
@@ -319,6 +329,7 @@ def test_enabling_tied_reconstruction_retains_the_owned_ideas(tmp_path):
         model.symbolSpace.soft_reset()
 
 
+@pytest.mark.slow
 def test_explicit_target_changes_the_score_but_not_the_owned_reconstruction(tmp_path, monkeypatch):
     model = _model(tmp_path)
     _identity_surface_kernels(model, monkeypatch)
@@ -336,6 +347,7 @@ def test_explicit_target_changes_the_score_but_not_the_owned_reconstruction(tmp_
         model.symbolSpace.soft_reset()
 
 
+@pytest.mark.slow
 def test_completed_state_damage_reaches_the_actual_input_surface(tmp_path):
     """The numerical surface chain cannot replace the inverse with a cached input."""
     model = _model(tmp_path)

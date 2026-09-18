@@ -704,6 +704,11 @@ def test_generate_checkpoint_migrates_action_weights_and_adam_moments(tmp_path, 
 
 
 def test_generate_walk_with_no_declared_rules_only_emits(tmp_path):
+    # The private loop is compiled directly here rather than through
+    # ``reverseOutput`` / ``_compiled_output_walk``.  Prepare its eager
+    # carry anchors just as those production entries do before capture.
+    from Models import _ensure_grad_anchors
+
     m = _generate_variant(tmp_path, ())
     try:
         language = m.languageSpace
@@ -712,6 +717,7 @@ def test_generate_walk_with_no_declared_rules_only_emits(tmp_path):
         D = int(m.conceptualSpace.stm.concept_dim)
         idea = torch.zeros(1, 4, D)
         idea[:, :2] = 0.5
+        _ensure_grad_anchors(idea.device, (idea.dtype,))
         compiled = torch.compile(m._output_generate_walk, backend="eager", fullgraph=True)
         out, count, truncated, cost = compiled(idea, 4, False)
         assert count.tolist() == [2] and not bool(truncated.any())

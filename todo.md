@@ -8,17 +8,27 @@ and complete the work started in this round against
 following its §10 order and completion gates. The September 14 ownership fixes
 are already recorded as complete; the integrated spec is **not** complete.
 
-Alec requested an OS-update checkpoint on September 17. Full-suite green is
-**deferred for this checkpoint only**: the last full attempt timed out with
-2,907/4,458 cases completed. The current runner/device selection passed 29/29.
+Alec requested an OS-update checkpoint on September 17. That checkpoint's
+single full receipt timed out with 2,907/4,458 cases completed. On September
+18, under Alec's no-rerun instruction, a composite bounded coverage record
+completed all 4,502 current default node IDs; the two failures found during
+that record were fixed and re-run green. This is not a replacement for a fresh
+single-snapshot full receipt after later source changes. The current
+runner/device selection passed 29/29 and explicit significant training routed
+to MPS. See [Testing](doc/Testing.md#validation) for durable receipts and limits.
 [Handoff, preserved candidates and recovery instructions](doc/checkpoints/2026-09-17-production-spec/README.md).
 
-1. **Finish validation and test-speed work left in this session.** Review the
-   remaining slow-marker/GPU-routing audit, run substantial training on MPS,
-   retain finite memory/deadline limits and obtain a complete default-suite
-   result. Measure construction, reset, compilation and training separately.
-   [Fixed-capacity fixture reuse assessment](doc/plans/2026-09-17-bounded-fixture-reuse.md)
-   remains future work; the measured MPS training check did not show a speedup.
+### Completed in this session
+
+- **Bounded-test performance and MPS routing.** The runner keeps finite
+  memory/deadline limits and fresh-process recycling; heavy integration tests
+  are slow-gated rather than removed; the VQ distance tile has a 512 MiB bound;
+  and supervised training has an explicit successful MPS-routing receipt.
+
+1. **Publish the bounded-test/MPS item.** Commit and push its source, test and
+   evidence updates, then bump and push the WikiOracle submodule. The
+   [fixed-capacity fixture reuse assessment](doc/plans/2026-09-17-bounded-fixture-reuse.md)
+   remains future work; MPS routing evidence is not a speedup claim.
 2. **Integrate and validate the prepared foundations in dependency order:**
    ordinary thought history → sentence/query phase permission → nested
    occurrence retention → shared query work accounting. The handoff preserves

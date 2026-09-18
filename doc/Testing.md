@@ -169,11 +169,44 @@ selection and interruption with persistent evidence. The checkpoint tooling sele
 Earlier affected-file runs and their tested source hashes are archived separately;
 those earlier runs do not validate later runner revisions.
 
-**Full validation is incomplete.** The last full default attempt exited 124
-after 5,136 seconds, with 2,907 of 4,458 selected cases completed. It is not green.
-On September 17 Alec requested this checkpoint for an OS update and explicitly
-deferred the full-suite-green requirement. No replacement full run was started.
-Finish this session and the integrated spec next, including the full gate.
+**September 18 default-suite coverage record.** The September 17 checkpoint
+attempt remains an incomplete historical receipt: it exited 124 after 5,136
+seconds with 2,907 of 4,458 selected cases completed. After the OS update,
+Alec directed the runner to finish every case without re-running cases that had
+already passed. The resulting composite receipt record covers all **4,502**
+node IDs in the then-current default selection exactly once after deduplication:
+the last remaining selection, `output/tests/20260918-004212-cf8aae`, passed
+273/273 in 386.55 seconds. Earlier portions of the record are preserved in
+`output/tests/20260917-131759-a07e8f` through
+`output/tests/20260918-003129-a73d62`.
+
+Two real failures found while completing that record were fixed and their
+specific nodes were re-run green: the output-only walk in
+`20260917-231508-6f272c` (30/30), and the peer language pipeline in
+`20260917-234649-21de8b` (23/23). The latter revealed that a local
+`LanguageSpace` without an output loop must not construct legacy output-rule
+keys. The full default record therefore does not describe either failure as a
+pass.
+
+This is deliberately a **no-rerun composite coverage gate**, not one fresh
+single-snapshot success receipt: source marker changes and the VQ tile-bound
+fix occurred while the historical coverage was being completed. It is the
+validation form explicitly requested for this session; future source changes
+require their ordinary affected tests and a fresh bounded full receipt.
+
+The audit retained every assertion. Full server construction, full traversal
+and compiled `runBatch` integration checks are marked `slow`, while their
+compact contract checks remain default. A real VQ failure showed that the
+former 4 GiB default distance-tile budget could exceed the 8 GiB bounded-worker
+cap through allocator retention. The default is now 512 MiB. Its two
+large-flat OOM probes passed under the explicit slow CPU gate in
+`20260918-004019-7f77ee` (2/2; about 29.4 seconds and 1.41 GiB peak per case).
+
+The explicit current supervised MPS training check also passed in
+`20260917-131359-7cb733`: requested and resolved device were MPS, the worker
+took 170.806 seconds, and peak aggregate footprint was 2.36 GiB. This proves
+routing and bounded execution, not a controlled MPS speedup or a held-out
+utility result.
 
 The actual MPS sequence-training check passed: 877.81 seconds in `runEpoch`
 for two batches, 1.24 seconds for construction and a 2.54 GiB peak aggregate

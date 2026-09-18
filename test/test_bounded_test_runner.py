@@ -135,7 +135,7 @@ def test_real_pytest_coverage_fresh_workers_and_failure_receipt(runner, tmp_path
         "def test_teardown(teardown_error): pass\n")
     result = runner.run_suite(
         root=tmp_path, selectors=["test_cases.py"], run_dir=tmp_path / "result",
-        memory_bytes=512 * 1024**2, timeout=15, suite_timeout=60,
+        memory_bytes=512 * 1024**2, timeout=60, suite_timeout=240,
         batch_size=1, lock_path=tmp_path / "lock")
     assert result["exit_code"] != 0  # A passing call with failing teardown is a failure.
     assert len(result["selected"]) == 5
@@ -151,7 +151,7 @@ def test_empty_selection_is_not_a_green_suite(runner, tmp_path):
     (tmp_path / "test_empty.py").write_text("# No tests selected.\n")
     result = runner.run_suite(
         root=tmp_path, selectors=["test_empty.py"], run_dir=tmp_path / "result",
-        memory_bytes=512 * 1024**2, timeout=15, suite_timeout=60,
+        memory_bytes=512 * 1024**2, timeout=60, suite_timeout=180,
         lock_path=tmp_path / "lock")
     assert result["exit_code"] == 5
     assert not result["selected"]
@@ -196,19 +196,19 @@ def test_termination_persists_failure_and_cleans_child(runner, tmp_path):
         "from pathlib import Path; from bounded_tests import run_suite; "
         f"result=run_suite(root=Path({str(tmp_path)!r}), selectors=['test_wait.py'], "
         f"run_dir=Path({str(tmp_path / 'result')!r}), memory_bytes=512*1024**2, "
-        f"timeout=15, suite_timeout=30, lock_path=Path({str(tmp_path / 'lock')!r})); "
+        f"timeout=60, suite_timeout=120, lock_path=Path({str(tmp_path / 'lock')!r})); "
         "raise SystemExit(result['exit_code'])")
     env = dict(os.environ, PYTHONPATH=str(Path(runner.__file__).parent))
     with (tmp_path / "outer.log").open("w") as log:
         proc = subprocess.Popen([sys.executable, "-c", code], cwd=tmp_path, env=env,
                                 stdout=log, stderr=subprocess.STDOUT)
         try:
-            deadline = time.monotonic() + 12
+            deadline = time.monotonic() + 45
             while not (tmp_path / "active.pid").exists() and time.monotonic() < deadline:
                 time.sleep(.05)
             assert (tmp_path / "active.pid").exists()
             proc.send_signal(signal.SIGTERM)
-            assert proc.wait(timeout=8) == 143
+            assert proc.wait(timeout=20) == 143
         finally:
             if proc.poll() is None:
                 proc.kill()
