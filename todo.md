@@ -66,11 +66,20 @@ a fresh single-snapshot all-green receipt. The exact receipts are in
   row's answer seed, rather than leaving the selected operation trace-only
   beside the lossy physical parse carrier. The handoff is row-local: selected
   rows exclude only their own legacy resolver pass, while other batch rows
-  retain it. Set, code, subgoal and prediction results remain blocked pending
-  their explicit typed adapters. Reviewer probes were red first; the affected
+  retain it. Set, code and subgoal results remain blocked pending their
+  explicit typed adapters. Reviewer probes were red first; the affected
   controller/meaning/phase/output selection passed 123/123. This advances
   item 1; it does not complete its remaining semantic, lifecycle and learning
   gates.
+
+- **Selected `arma` prediction handoff.** A non-cold checked prediction now
+  crosses only the explicit expectation adapter: its finite typed `[NP1, VP,
+  NP2]` estimate becomes the answer seed while its three presence logits
+  remain metadata, its reader path stays detached, and it never becomes a
+  fact. The seed probe was red first, then passed 1/1; the affected
+  controller/catalogue/executor/phase/output selection passed 95/95. Set/code/
+  subgoal result adapters, pre-observation isolation, recurrent lifecycle and
+  learned-utility gates remain open under item 1.
 
 0. **Complete — thought operations as compose rules** — before the remaining
    controller and before the two-truths and forgetting specs below, so that

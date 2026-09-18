@@ -6,14 +6,15 @@ existing interaction-memory owner, and its shared work/cutoff accounting.
 """
 
 from dataclasses import replace
-from types import SimpleNamespace
+from types import MappingProxyType, SimpleNamespace
 
 import torch
 
 from Language import Grammar
-from Layers import WhatInteractionMemory
+from Layers import MeaningExpectation, WhatInteractionMemory
+from Meaning import ConceptualMeaning
 from Models import BasicModel
-from Queries import GrammaticalThoughtRegistry
+from Queries import GrammaticalThoughtRegistry, ThoughtResult
 from test_cs_symbol_table import _cs
 from Understanding import Understanding
 from What import WhatQuestion
@@ -347,6 +348,76 @@ def test_normal_boundary_uses_selected_semantic_meaning_as_its_answer_seed(monke
     selected = derivation.selected_thoughts[0][1]
     torch.testing.assert_close(derivation.conceptual_answer[0], selected.meaning.roles)
     assert derivation.source == "thought"
+
+
+def test_normal_boundary_adapts_selected_prediction_result_as_its_answer_seed(
+        monkeypatch):
+    """A selected ``arma`` estimate is a typed answer seed, never a fact."""
+    from test_selected_relation_meaning import _program_owner
+
+    cs, grammar, _legacy_registry, language, _leaves, program, _part, _whole = (
+        _program_owner(monkeypatch, interrogative=True))
+    registry = GrammaticalThoughtRegistry.install(cs, grammar)
+    model = BasicModel()
+    model.spaces = []
+    memory = WhatInteractionMemory(batch=1, capacity=64, detach_mode="episode")
+    object.__setattr__(model, "conceptualSpace", cs)
+    object.__setattr__(model, "languageSpace", language)
+    object.__setattr__(model, "symbolSpace", SimpleNamespace(
+        languageSpace=language, what_memory=memory,
+        grammatical_thoughts=registry))
+    object.__setattr__(model, "grammatical_thoughts", registry)
+    model.what_thinking_detach = "episode"
+    model.reconstruct_in_loop = False
+    model.eval()
+    monkeypatch.setattr(model, "_walk_budget", lambda: 8)
+    monkeypatch.setattr(
+        model, "_materialize_entries",
+        lambda entries, base, budget: (base, torch.empty(
+            base.shape[0], 0, device=base.device, dtype=torch.long)),
+    )
+    monkeypatch.setattr(
+        model, "_what_grammar_context",
+        lambda questions, **kwargs: (torch.zeros(
+            len(questions), 1, device=kwargs["device"], dtype=kwargs["dtype"]), ()),
+    )
+    monkeypatch.setattr(model, "_select_perceptual_bindings", lambda _: ())
+
+    width = int(cs.outputShape[-1])
+    estimate_roles = torch.arange(
+        3 * width, dtype=program().leaves.dtype).reshape(3, width)
+    estimate_roles.requires_grad_()
+    request = ConceptualMeaning(
+        torch.zeros_like(estimate_roles), torch.tensor([True, True, True]),
+        mode="interrogative")
+    checked = ThoughtResult(
+        semantic_id="arma", domain="discourse-prediction",
+        result_kind="prediction", evidence_kind="estimate",
+        request=request.detached(), evidence=MappingProxyType({
+            "value": MeaningExpectation(
+                estimate_roles, torch.tensor([1.0, -1.0, 1.0])),
+            "incomplete": (),
+        }))
+    selected = SimpleNamespace(
+        meaning=request,
+        result=checked,
+        evidence={"query_signature": "arma", "support_true": 0.0,
+                  "support_false": 0.0, "incomplete": (),
+                  "semantic_id": "arma", "result_kind": "prediction"},
+        work=SimpleNamespace(spent=4))
+    monkeypatch.setattr(
+        model, "_run_selected_program_thoughts",
+        lambda programs, *, work_budget: ((0, selected),),
+    )
+
+    derivation = model.resolveAnswer(
+        Understanding(answer_program=(program(),)), WhatQuestion.present(0))
+
+    torch.testing.assert_close(
+        derivation.conceptual_answer[0], estimate_roles.detach())
+    assert not derivation.conceptual_answer.requires_grad
+    assert derivation.source == "thought-prediction"
+    assert derivation.grammar_trace[1]["result_kind"] == "prediction"
 
 
 def test_normal_boundary_realizes_the_controller_selected_operation(monkeypatch):

@@ -90,7 +90,7 @@ from Layers import ConceptualCombine
 from Layers import LinearLayer
 from Layers import LiftingLayer, CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon
 from Layers import Error, TheError
-from Layers import TernaryTruthStore
+from Layers import MeaningExpectation, TernaryTruthStore
 from Meaning import ConceptualMeaning
 from Layers import Ops, GRAMMAR_LAYER_CLASSES, CONTIGUITY_PRESERVING_OPS
 from Teacher import Teacher
@@ -9100,22 +9100,57 @@ class BasicModel(BaseModel):
         # A truth-valued selected operation carries a complete grammatical
         # answer meaning.  The physical compose root may have discarded an
         # operand during folding, so letting it remain the output seed would
-        # make the actual thought trace-only.  Set/code/subgoal/prediction
-        # results require their own typed answer adapters and are deliberately
-        # not coerced into a concept here.
+        # make the actual thought trace-only.  A typed prediction has its own
+        # explicit detached expectation adapter below; set/code/subgoal
+        # results remain deliberately non-coercible until their own adapters.
         selected_answer_rows = list(answer.unbind(0))
         selected_answer_applied = False
         for row, selected in selected_thoughts:
             checked = getattr(selected, "result", None)
-            if not isinstance(checked, ThoughtResult) or checked.result_kind != "truth":
+            if not isinstance(checked, ThoughtResult):
                 continue
-            resolved_meaning = selected.meaning
-            if resolved_meaning.roles.shape != selected_answer_rows[row].shape:
-                raise RuntimeError(
-                    "selected truth meaning differs from the answer conceptual shape")
-            selected_answer_rows[row] = resolved_meaning.roles.to(
-                device=answer.device, dtype=answer.dtype)
-            row_sources[row] = "thought"
+            if checked.result_kind == "truth":
+                resolved_meaning = selected.meaning
+                if resolved_meaning.roles.shape != selected_answer_rows[row].shape:
+                    raise RuntimeError(
+                        "selected truth meaning differs from the answer conceptual shape")
+                selected_answer_rows[row] = resolved_meaning.roles.to(
+                    device=answer.device, dtype=answer.dtype)
+                row_sources[row] = "thought"
+            elif checked.result_kind == "prediction":
+                prediction = checked.value
+                if prediction is None:
+                    # A cold ARMA read is explicitly incomplete, not an
+                    # all-zero answer or a fabricated fact.
+                    continue
+                if not isinstance(prediction, MeaningExpectation):
+                    raise TypeError(
+                        "selected prediction result must carry a MeaningExpectation")
+                roles = prediction.roles
+                presence = prediction.presence_logits
+                expected_shape = selected_answer_rows[row].shape
+                if not torch.is_tensor(roles) or roles.shape != expected_shape:
+                    raise RuntimeError(
+                        "selected prediction roles differ from the answer conceptual shape")
+                if (not torch.is_tensor(presence)
+                        or tuple(presence.shape) != (expected_shape[0],)):
+                    raise RuntimeError(
+                        "selected prediction presence logits do not match answer roles")
+                if not bool(torch.isfinite(roles).all()
+                            and torch.isfinite(presence).all()):
+                    raise FloatingPointError("selected prediction result must be finite")
+                # ``arma``'s typed estimate is an existing hard-boundary
+                # result, not a fact or a live reader path.  Its fixed
+                # [NP1, VP, NP2] role payload is the explicit answer seed;
+                # presence logits remain validated result metadata because
+                # AnswerDerivation carries a fixed three-slot concept tensor.
+                selected_answer_rows[row] = roles.detach().to(
+                    device=answer.device, dtype=answer.dtype)
+                row_sources[row] = "thought-prediction"
+            else:
+                # Set/code/subgoal results require their own typed answer
+                # adapters and are deliberately not coerced into a concept.
+                continue
             selected_answer_applied = True
         if selected_answer_applied:
             answer = torch.stack(selected_answer_rows)

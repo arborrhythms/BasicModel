@@ -79,6 +79,13 @@ hard-boundary data. They are detached and immutable at the boundary; policy and
 residual learning must receive explicit credit rather than a hidden reader
 gradient.
 
+The sole answer adapter for a non-truth result is `arma`'s typed prediction:
+at normal answer resolution a non-cold `MeaningExpectation` with finite
+`[NP1, VP, NP2]` roles and three presence logits supplies a detached fixed-slot
+prediction seed. Its logits remain validated result metadata; the estimate is
+not accepted as a fact and its reader/predictor receives no output-loss
+gradient. Set, code and subgoal results have no answer adapter.
+
 ## Formation and dispatch
 
 `GrammaticalThoughtRegistry.install` binds one existing frozen native VP concept
