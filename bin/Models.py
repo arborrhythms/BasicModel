@@ -9007,13 +9007,6 @@ class BasicModel(BaseModel):
         temporal = tuple(q.context_values() for q in questions)
         reasoning = None
         prompt = getattr(first, "prompt", None) if first is not None else None
-        if (isinstance(prompt, str) and prompt.strip()
-                and int(getattr(self, "reasoning_iterations", 0) or 0) > 0
-                and first.relation in (WhatRelation.INFERENCE, WhatRelation.SUPERVISED)):
-            try:
-                reasoning = self.answer_query(prompt)
-            except Exception:
-                reasoning = None
         row_sources, programs = [], []
         resolved_all = True
         if current_program:
@@ -9049,8 +9042,6 @@ class BasicModel(BaseModel):
                         answer[b:b + 1] = self._install_root_slot(symbolic[b:b + 1], rep)
                         source = "recall" if q.relation is WhatRelation.PAST else "prediction"
                 row_sources.append(source)
-        distinct = set(row_sources)
-        source = row_sources[0] if len(distinct) == 1 else "mixed"
         # A selected interrogative compose program now has a normal boundary
         # path of its own.  The old What/LTMSlot controller remains available
         # for its legacy presentation questions, but it must not add a second
@@ -9074,6 +9065,27 @@ class BasicModel(BaseModel):
                     for row in range(len(programs))):
                 selected_thoughts = self._run_selected_program_thoughts(
                     tuple(programs), work_budget=selected_budget)
+        # A completed grammar-owned question has already selected and recorded
+        # its ordinary thought episode.  Do not open the historical surface
+        # reasoner beside it: that would form a second controller/trace whose
+        # result is not the selected grammatical evidence.  The legacy route
+        # remains a compatibility fallback for a non-grammatical program or a
+        # topology with no selected thought capability; this changes only its
+        # production call priority, not the retained implementation.
+        if (not selected_thoughts
+                and isinstance(prompt, str) and prompt.strip()
+                and int(getattr(self, "reasoning_iterations", 0) or 0) > 0
+                and first.relation in (WhatRelation.INFERENCE, WhatRelation.SUPERVISED)):
+            try:
+                reasoning = self.answer_query(prompt)
+            except Exception:
+                reasoning = None
+            if reasoning is not None:
+                row_sources = [
+                    "reasoning" if row_source == "identity" else row_source
+                    for row_source in row_sources]
+        distinct = set(row_sources)
+        source = row_sources[0] if len(distinct) == 1 else "mixed"
         steps, step_trace, exact_steps = (), (), ()
         if self._thinking_enabled() and not selected_thoughts:
             answer, steps, step_trace, exact_steps = self._resolve_step(
@@ -10789,9 +10801,14 @@ class BasicModel(BaseModel):
             previous if previous is not None and previous.execution is execution
             else self._capture_understanding(execution))
         self._last_answer_construction = None
+        selected_thought_rows = {}
         if getattr(self, "answer_synthesis", False):
             # Complete conceptual resolution before entering surface generation.
             derivation = self.resolveAnswer(self._last_understanding, questions)
+            selected_thought_rows = {
+                int(row): result
+                for row, result in getattr(derivation, "selected_thoughts", ())
+            }
             construction = self.reverseOutput(self._last_understanding, derivation)
             produced_all = construction.actual
         programs = self._last_understanding.answer_program
@@ -10816,6 +10833,28 @@ class BasicModel(BaseModel):
         for b, current in enumerate(questions):
             produced = self._what_row(produced_all, b, count)
             conceptual_input = self._what_row(conceptual_all, b, count)
+            selected = selected_thought_rows.get(b)
+            if selected is not None:
+                # ``resolveAnswer`` has already executed this completed
+                # grammatical question through the ordinary thought owner.
+                # A legacy LTMSlot would be a second controller/trace on the
+                # same row (and the owner correctly rejects that mixture).
+                # Keep the answer/output handoff explicit in the public
+                # result, but leave the selected episode as the one record of
+                # the question and its actual work/evidence.
+                answers.append(WhatAnswer(
+                    question=current, what=produced, available=True,
+                    provenance="model", source_where=current.where,
+                    grammar_trace=({
+                        "operation": "selected_thought",
+                        "signature": selected.evidence.get("query_signature"),
+                        "support_true": selected.evidence["support_true"],
+                        "support_false": selected.evidence["support_false"],
+                        "work": selected.work.spent,
+                        "incomplete": selected.evidence.get("incomplete", ()),
+                    },),
+                    ltm_slot=None, execution=execution))
+                continue
             # Rows already at parity with nothing pending are SETTLED at
             # iteration >= 1 (spec 6.2): their answer stands and no further
             # slot is appended for them.

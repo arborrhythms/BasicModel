@@ -305,3 +305,104 @@ def test_selected_program_resolution_releases_completed_eval_episode(monkeypatch
     episodes = [record.episode for record in memory.thought_history()
                 if record.kind == "begin"]
     assert len(episodes) == 2 and episodes[0] != episodes[1]
+
+
+def test_selected_program_precedes_the_legacy_surface_reasoner(monkeypatch):
+    """A grammar-owned completed question never opens the legacy tool path."""
+    from test_selected_relation_meaning import _program_owner
+
+    cs, grammar, _legacy_registry, language, _leaves, program, _part, _whole = (
+        _program_owner(monkeypatch, interrogative=True))
+    registry = GrammaticalThoughtRegistry.install(cs, grammar)
+    model = BasicModel()
+    model.spaces = []
+    memory = WhatInteractionMemory(batch=1, capacity=64, detach_mode="episode")
+    object.__setattr__(model, "conceptualSpace", cs)
+    object.__setattr__(model, "languageSpace", language)
+    object.__setattr__(model, "symbolSpace", SimpleNamespace(
+        languageSpace=language, what_memory=memory,
+        grammatical_thoughts=registry))
+    object.__setattr__(model, "grammatical_thoughts", registry)
+    model.what_thinking_detach = "episode"
+    model.reconstruct_in_loop = False
+    model.reasoning_iterations = 1
+    model.eval()
+    monkeypatch.setattr(model, "_walk_budget", lambda: 8)
+    monkeypatch.setattr(
+        model, "_materialize_entries",
+        lambda entries, base, budget: (base, torch.empty(
+            base.shape[0], 0, device=base.device, dtype=torch.long)),
+    )
+    monkeypatch.setattr(
+        model, "_what_grammar_context",
+        lambda questions, **kwargs: (torch.zeros(
+            len(questions), 1, device=kwargs["device"], dtype=kwargs["dtype"]), ()),
+    )
+    monkeypatch.setattr(model, "_select_perceptual_bindings", lambda _: ())
+
+    legacy_calls = []
+
+    def legacy_reasoner(*args, **kwargs):
+        legacy_calls.append((args, kwargs))
+        return {"posture": "legacy", "confidence": 1.0,
+                "support_true": 1.0, "support_false": 0.0}
+
+    monkeypatch.setattr(model, "answer_query", legacy_reasoner)
+    understanding = Understanding(answer_program=(program(),))
+    question = WhatQuestion.inference(0, prompt="is the part in the whole?")
+
+    result = model.resolveAnswer(understanding, question)
+
+    assert len(result.selected_thoughts) == 1
+    assert result.source == "identity"
+    assert not legacy_calls
+    assert memory.thought_state().finished and not memory.in_episode(0)
+
+
+def test_normal_what_uses_the_selected_thought_without_a_legacy_slot(monkeypatch):
+    """One grammatical boundary must not append a second legacy interaction."""
+    from test_selected_relation_meaning import _program_owner
+
+    cs, grammar, _legacy_registry, language, _leaves, program, _part, _whole = (
+        _program_owner(monkeypatch, interrogative=True))
+    registry = GrammaticalThoughtRegistry.install(cs, grammar)
+    model = BasicModel()
+    model.spaces = []
+    memory = WhatInteractionMemory(batch=1, capacity=64, detach_mode="episode")
+    object.__setattr__(model, "conceptualSpace", cs)
+    object.__setattr__(model, "languageSpace", language)
+    object.__setattr__(model, "symbolSpace", SimpleNamespace(
+        languageSpace=language, what_memory=memory,
+        grammatical_thoughts=registry))
+    object.__setattr__(model, "grammatical_thoughts", registry)
+    model.what_thinking_detach = "episode"
+    model.reconstruct_in_loop = False
+    model.answer_synthesis = True
+    model.eval()
+    monkeypatch.setattr(model, "_walk_budget", lambda: 8)
+    monkeypatch.setattr(
+        model, "_materialize_entries",
+        lambda entries, base, budget: (base, torch.empty(
+            base.shape[0], 0, device=base.device, dtype=torch.long)),
+    )
+    monkeypatch.setattr(
+        model, "_what_grammar_context",
+        lambda questions, **kwargs: (torch.zeros(
+            len(questions), 1, device=kwargs["device"], dtype=kwargs["dtype"]),
+            ({},) * len(questions)),
+    )
+    monkeypatch.setattr(model, "_select_perceptual_bindings", lambda _: ())
+    understanding = Understanding(answer_program=(program(),))
+    produced = torch.zeros(1, 1, 3, dtype=program().leaves.dtype)
+    execution = (None, produced, produced)
+    monkeypatch.setattr(model, "_capture_understanding", lambda _: understanding)
+    monkeypatch.setattr(
+        model, "reverseOutput", lambda _understanding, _derivation:
+        SimpleNamespace(actual=produced))
+
+    answer = model.what(WhatQuestion.inference(0), execution=execution)
+
+    assert answer.available and answer.ltm_slot is None
+    assert len(memory.get_what_slots()) == 0
+    assert [record.kind for record in memory.thought_history()] == [
+        "begin", "thought", "thought", "finish"]
