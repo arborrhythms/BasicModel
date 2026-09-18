@@ -811,7 +811,7 @@ class TestStatelessRevive(unittest.TestCase):
         self.assertFalse(m.stateless)
         self.assertFalse(m.symbolSpace._stateless)
 
-    def test_stateless_load_drops_user_rows(self):
+    def test_stateless_load_prunes_only_after_structural_owners_are_restored(self):
         from Layers import TernaryTruthStore as T
         m = _make_model(_ON_CONFIG)
         self._seed(m)
@@ -819,7 +819,15 @@ class TestStatelessRevive(unittest.TestCase):
         m2 = _make_model(_ON_CONFIG)              # stateless (default)
         m2.load_state_dict(sd, strict=False)
         store = m2.symbolSpace.ltm_store
-        # user rows dropped; provisioned + conversation survive.
+        # Tensor-only restore cannot prove that another owner does not retain
+        # this request-scoped occurrence.  It withdraws fact authority now,
+        # then prunes after the semantic sidecar / thought owners are restored.
+        self.assertEqual(len(store), 3)
+        self.assertEqual(store.row(1)["kind"], "unverified")
+        self.assertEqual(store.row(1)["trust"], 0)
+        self.assertEqual(int(m2.symbolSpace.truth_layer.count.item()), 1)
+        m2._restore_structural_extras(m._collect_structural_extras())
+        # The unreferenced user row is now gone; other writers survive.
         self.assertEqual(store.rows_of_origin(T.ORIGIN_USER).tolist(), [])
         self.assertEqual(
             store.rows_of_origin(T.ORIGIN_PROVISIONED).tolist(), [0])

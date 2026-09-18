@@ -4820,6 +4820,14 @@ class BaseModel(Mereology, nn.Module):
                 raise ValueError("checkpoint thought history has no interaction memory owner")
             memory.load_thought_extras(what_history)
 
+        # The state_dict post-hook can only withdraw request authority: this is
+        # the first point at which both semantic rows and ordinary thought
+        # roots have been restored, so physical stateless pruning is safe.
+        finish = getattr(
+            getattr(self, "symbolSpace", None), "_finish_ltm_restore", None)
+        if callable(finish):
+            finish()
+
     @staticmethod
     def _widen_what_projection_checkpoint_state(state, model_state):
         """Zero-pad a narrower saved ``what_projection.weight`` to the live
@@ -5471,11 +5479,18 @@ class BaseModel(Mereology, nn.Module):
                 return False
             TheMessage("\n".join(lines))
 
+        symbol_owner = getattr(self, "symbolSpace", None)
+        previous_defer = getattr(symbol_owner, "_defer_ltm_pruning", False)
+        if symbol_owner is not None and structural_extras is not None:
+            symbol_owner._defer_ltm_pruning = True
         try:
             self.load_state_dict(state, strict=strict)
         except RuntimeError as e:
             TheMessage(f"[{self.name}] Warning: cannot load {path}: {e}")
             return False
+        finally:
+            if symbol_owner is not None:
+                symbol_owner._defer_ltm_pruning = previous_defer
 
         if unexpected:
             TheMessage(
@@ -6460,7 +6475,11 @@ class BasicModel(BaseModel):
                     self.provision_ltm()
                 except Exception:
                     pass
-        store.clear_origin(store.ORIGIN_USER)
+        memory = getattr(getattr(self, 'symbolSpace', None), 'what_memory', None)
+        namespace = bytes(store._occurrence_namespace.tolist()).hex()
+        roots = (memory.retained_ltm_occurrences(namespace)
+                 if memory is not None else ())
+        store.clear_origin(store.ORIGIN_USER, retained_occurrences=roots)
         per_text_rows = self._ltm_ingest_truth_texts(store, texts)
         for (start, end), text, trust in zip(per_text_rows, texts, trusts):
             for row in range(start, end):

@@ -42,3 +42,11 @@ selection, learned utility, or end-to-end answer quality.
 The completed-row query guard now constrains when a selected query may execute;
 it does not select an ordinary thought, change its level, replenish its work
 budget, or alter history replay/credit lifetime. See [Query phases](QueryPhases.md).
+
+## LTM roots retained by ordinary history
+
+The existing owner derives LTM roots from every retained ordinary record's role
+references, bindings, scope and recorded sources. It reads that data on demand,
+without a second reference index. Those roots protect required content during
+request-origin replacement even after the content's evidential authority is
+withdrawn. See [nested retention](NestedRetention.md).

@@ -1127,3 +1127,12 @@ programs, not mutable STM staging. Missing/padded rows cannot enable checked
 queries, and nested resolution can narrow but not widen row permission. A
 sentence path masks even a parent boundary until it returns. This is separate
 from ordinary controller work; see [Query phases](QueryPhases.md).
+
+## Retained LTM content after origin withdrawal
+
+Origin clearing retains records reached through surviving occurrences or the
+ordinary thought history. A retained row keeps its stable ID, content and
+source text, but a withdrawn accepted fact becomes unverified with zero trust;
+questions and estimates retain their own provenance. The truth view therefore
+does not surface a retained request row as accepted evidence. See
+[nested retention](NestedRetention.md).

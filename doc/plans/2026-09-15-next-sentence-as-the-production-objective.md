@@ -2253,3 +2253,25 @@ This is execution permission only. Normal selected linguistic meaning, the
 ordinary controller, nested retention, shared executor work, anticipation
 isolation, residual policy credit and learned utility remain open. The
 separately queued two-truths and forgetting work remains out of scope.
+
+## 20. Bounded nested-occurrence retention (September 18)
+
+The existing durable truth owner now derives bounded structural views with
+ordered role edges, repeated references and independent node/depth/record
+limits. Missing, cyclic and unavailable structure is explicit. Each occurrence
+retains its own scope and evidence; support for a reporting clause does not
+transfer to an embedded question or claim.
+
+Origin clearing retains the closure of surviving records and thought-owned
+roots while withdrawing request evidential authority. Full checkpoint restore
+restores semantic and thought owners before pruning; tensor-only restore keeps
+zero-trust content when ownership metadata is absent. Durable views detach;
+live episode gradients retain their existing boundary. See
+[nested retention](../NestedRetention.md).
+
+The preserved reviewer probes were red first; the focused 68-case and broader
+309-case bounded affected gates are green. Shared query work remains next. This
+does not complete typed linguistic observation, the normal controller, actual
+shared executor accounting, expectations/residual credit, generation ownership
+or learned utility. The separate two-truths and forgetting work remains
+reserved.

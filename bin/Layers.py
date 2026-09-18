@@ -7242,7 +7242,13 @@ class TruthLayer(Layer):
             return -1
         idxs = store.rows_of_origin(store.ORIGIN_PROVISIONED,
                                     store.ORIGIN_USER)
-        idx_list = idxs.tolist()[:self.max_truths]
+        # Origin identifies the writer, not evidential authority.  A retained
+        # request-scoped occurrence may still be needed as grammatical content
+        # after its fact status and trust have been withdrawn; it must not then
+        # re-enter this flat accepted-truth view.
+        fact_kind = store.KINDS.index('fact')
+        idx_list = [i for i in idxs.tolist()
+                    if int(store.record_kind[i]) == fact_kind][:self.max_truths]
         n = len(idx_list)
         self.truths.zero_()
         sources, trusts = [], []
@@ -8787,6 +8793,192 @@ class TernaryTruthStore(Layer):
         namespace = bytes(self._occurrence_namespace.tolist()).hex()
         return ("ltm", namespace, int(self.occurrence_id[i]))
 
+    @staticmethod
+    def _role_occurrence_references(role_refs):
+        """Return ordered grammatical occurrence edges from canonical roles.
+
+        Integer-valued symbols remain ordinary opaque symbols.  Only the
+        explicit, typed ``("ltm" | "thought", namespace, id)`` convention
+        names an occurrence; role order (and repeated edges) is retained.
+        """
+        edges = []
+        for role, reference in enumerate(role_refs):
+            if not (isinstance(reference, tuple) and reference
+                    and reference[0] in ('ltm', 'thought')):
+                continue
+            if (len(reference) != 3 or not isinstance(reference[1], str)
+                    or type(reference[2]) is not int or reference[2] < 0):
+                raise ValueError("invalid semantic occurrence reference")
+            edges.append((role, reference))
+        return tuple(edges)
+
+    @staticmethod
+    def _occurrence_references(meaning):
+        """The ordered compound-role edges of one complete meaning."""
+        return TernaryTruthStore._role_occurrence_references(meaning.role_refs)
+
+    @staticmethod
+    def _context_occurrence_references(context):
+        """Find explicit occurrence addresses anywhere in semantic context.
+
+        Bindings and scopes retain their addressed records but are not
+        grammatical child edges, so they do not alter structure-read depth.
+        Iteration avoids treating an arbitrary integer as an address and does
+        not add a second reference index to the durable owner.
+        """
+        references, pending = [], [context]
+        while pending:
+            value = pending.pop()
+            if isinstance(value, dict):
+                pending.extend(value.values())
+                continue
+            if not isinstance(value, (tuple, list)):
+                continue
+            if value and value[0] in ('ltm', 'thought'):
+                if (len(value) != 3 or not isinstance(value[1], str)
+                        or type(value[2]) is not int or value[2] < 0):
+                    raise ValueError("invalid semantic context occurrence reference")
+                references.append(tuple(value))
+                continue
+            pending.extend(value)
+        return tuple(dict.fromkeys(references))
+
+    @staticmethod
+    def _validate_constituent_graph(contexts, namespace):
+        """Validate local semantic links before replacing owner metadata.
+
+        All local references must resolve among the proposed records.  Only
+        role references create structural edges; bindings and scopes are roots
+        for retention but do not turn into hidden syntax.  The iterative DFS
+        rejects cycles before the caller mutates durable state.
+        """
+        edges = {}
+        for identifier, context in contexts.items():
+            references = TernaryTruthStore._context_occurrence_references(context)
+            if any(ref[2] not in contexts
+                   for ref in references
+                   if ref[:2] == ('ltm', namespace)):
+                raise ValueError("semantic context occurrence is unavailable")
+            children = []
+            for _, reference in TernaryTruthStore._role_occurrence_references(
+                    context.get("role_refs", (None, None, None))):
+                if reference[:2] == ('ltm', namespace):
+                    if reference[2] not in contexts:
+                        raise ValueError(
+                            "semantic constituent occurrence is unavailable")
+                    children.append(reference[2])
+            edges[identifier] = tuple(children)
+
+        state = {}
+        for root in edges:
+            pending = [(root, False)]
+            while pending:
+                identifier, exiting = pending.pop()
+                if exiting:
+                    state[identifier] = 2
+                    continue
+                if state.get(identifier) == 1:
+                    raise ValueError("semantic constituent cycle")
+                if state.get(identifier) == 2:
+                    continue
+                state[identifier] = 1
+                pending.append((identifier, True))
+                pending.extend((child, False)
+                               for child in reversed(edges[identifier]))
+
+    def _validate_local_references(self, meaning):
+        """Reject dangling local references before append mutates any buffer."""
+        namespace = bytes(self._occurrence_namespace.tolist()).hex()
+        references = [
+            reference
+            for reference in self._context_occurrence_references(meaning.metadata())
+            if reference[:2] == ('ltm', namespace)
+        ]
+        if not references:
+            return
+        identifiers = set(int(identifier) for identifier
+                          in self.occurrence_id[:len(self)].tolist())
+        if any(reference[2] not in identifiers for reference in references):
+            raise ValueError("semantic constituent occurrence is unavailable")
+
+    def read_structure(self, reference, *, max_nodes=128, max_depth=16,
+                       max_records=1024):
+        """Derive a bounded, detached view of an occurrence's structure.
+
+        The tensors and semantic sidecar above remain authoritative.  Node,
+        grammatical-depth, and physical-record scan bounds are independent;
+        incomplete structure is named rather than flattened or inferred.
+        """
+        for name, value in (("max_nodes", max_nodes),
+                            ("max_depth", max_depth),
+                            ("max_records", max_records)):
+            if type(value) is not int or value < 0:
+                raise ValueError(f"{name} must be a non-negative integer")
+        if (not isinstance(reference, tuple) or len(reference) != 3
+                or reference[0] not in ('ltm', 'thought')
+                or not isinstance(reference[1], str)
+                or type(reference[2]) is not int or reference[2] < 0):
+            raise ValueError("structure requires an occurrence reference")
+
+        namespace = bytes(self._occurrence_namespace.tolist()).hex()
+        records_scanned = min(len(self), max_records)
+        indices = {
+            int(self.occurrence_id[index]): index
+            for index in range(records_scanned)
+        }
+        incomplete, occurrences, rows, edges = [], [], [], []
+        visited, active = set(), set()
+        pending = [(reference, 0, False)]
+        while pending:
+            current, depth, exiting = pending.pop()
+            if exiting:
+                active.remove(current)
+                continue
+            if current in active:
+                incomplete.append("cycle")
+                continue
+            if depth > max_depth:
+                incomplete.append("depth_limit")
+                continue
+            if current in visited:
+                continue
+            if len(visited) >= max_nodes:
+                incomplete.append("node_limit")
+                continue
+            if current[:2] != ('ltm', namespace):
+                incomplete.append("unavailable_owner")
+                continue
+            index = indices.get(current[2])
+            if index is None:
+                incomplete.append(
+                    "record_limit" if records_scanned < len(self)
+                    else "unavailable_reference")
+                continue
+            value = {
+                key: item.detach().clone() if torch.is_tensor(item) else item
+                for key, item in self.row(index).items()
+            }
+            meaning = value["meaning"]
+            if meaning is None:
+                incomplete.append("unavailable_metadata")
+                continue
+            visited.add(current)
+            active.add(current)
+            occurrences.append(current)
+            rows.append(value)
+            children = self._occurrence_references(meaning)
+            edges.extend((current, role, child) for role, child in children)
+            pending.append((current, depth, True))
+            pending.extend((child, depth + 1, False)
+                           for _, child in reversed(children))
+        return {
+            "occurrences": tuple(occurrences),
+            "rows": tuple(rows),
+            "edges": tuple(edges),
+            "records_scanned": records_scanned,
+            "incomplete": tuple(dict.fromkeys(incomplete)),
+        }
+
     def meaning_of(self, idx):
         """An owned detached value, or None when required context is missing."""
         i = int(idx)
@@ -8858,6 +9050,9 @@ class TernaryTruthStore(Layer):
                 raise ValueError("truth semantic content differs from its checkpoint fingerprint")
         if set(incoming) != set(rows):
             raise ValueError("truth semantic checkpoint omits stored occurrences")
+        # Validate the complete replacement before publishing any context/text
+        # to the owner.  A corrupt sidecar cannot leave a partly-restored graph.
+        self._validate_constituent_graph(incoming, namespace)
         self._semantic_rows = incoming
         self._texts = texts
 
@@ -8941,6 +9136,7 @@ class TernaryTruthStore(Layer):
             raise ValueError("fact trust must be finite")
         if timestamp is not None and not math.isfinite(float(timestamp)):
             raise ValueError("fact timestamp must be finite")
+        self._validate_local_references(meaning)
         self.slots[n].copy_(meaning.roles)
         self.role_mask[n].copy_(meaning.role_mask)
         if rel_type is None:
@@ -9123,17 +9319,87 @@ class TernaryTruthStore(Layer):
         return mask.nonzero(as_tuple=True)[0]
 
     @torch.no_grad()
-    def clear_origin(self, origin: int) -> int:
-        """Remove every row of ``origin``, compacting the survivors in
-        place (order, timestamps and texts preserved). Returns the number
-        of rows removed. The logical clock is NOT rewound: re-appended
-        rows keep landing after everything ever seen."""
+    def withdraw_origin(self, origin: int) -> None:
+        """Withdraw one writer's authority without deleting its content.
+
+        Tensor-only checkpoint restore uses this intermediate state while
+        semantic sidecars and thought-owned roots are unavailable.  Accepted
+        facts become unverified; questions/estimates retain their provenance;
+        all selected rows lose trust.
+        """
+        count = len(self)
+        selected = self.origin[:count] == int(origin)
+        facts = selected & (self.record_kind[:count] == self.KINDS.index("fact"))
+        self.record_kind[:count].masked_fill_(
+            facts, self.KINDS.index("unverified"))
+        self.trust[:count].masked_fill_(selected, 0)
+
+    @torch.no_grad()
+    def clear_origin(self, origin: int, *, retained_occurrences=()) -> int:
+        """Withdraw an origin and compact only its unreachable records.
+
+        The survivor closure starts from rows of other origins and explicit
+        roots supplied by another live owner (ordinary thought history).  A
+        retained withdrawn row stays at its stable occurrence ID with its
+        slots, context and source text, but no longer certifies a fact.  The
+        full closure is resolved and validated before any evidence or buffer is
+        changed.  IDs and logical clocks are never rewound.
+        """
         c = int(self.count.item())
         if c == 0:
             return 0
-        keep = (self.origin[:c] != int(origin)).nonzero(as_tuple=True)[0]
+        selected = self.origin[:c] == int(origin)
+        if not bool(selected.any()):
+            return 0
+        namespace = bytes(self._occurrence_namespace.tolist()).hex()
+        indices = {int(self.occurrence_id[i]): i for i in range(c)}
+        if len(indices) != c:
+            raise ValueError("duplicate truth occurrence identity")
+
+        keep_rows = set((~selected).nonzero(as_tuple=True)[0].tolist())
+        pending = list(keep_rows)
+        for reference in retained_occurrences:
+            if (not isinstance(reference, tuple) or len(reference) != 3
+                    or reference[:2] != ('ltm', namespace)
+                    or type(reference[2]) is not int
+                    or reference[2] not in indices):
+                raise ValueError("retained occurrence reference is unavailable")
+            pending.append(indices[reference[2]])
+
+        seen = set()
+        while pending:
+            index = pending.pop()
+            if index in seen:
+                continue
+            seen.add(index)
+            keep_rows.add(index)
+            meaning = self.meaning_of(index)
+            if meaning is None:
+                raise ValueError(
+                    "cannot retain constituents with unavailable semantic metadata")
+            for reference in self._context_occurrence_references(meaning.metadata()):
+                if reference[:2] != ('ltm', namespace):
+                    continue
+                child = indices.get(reference[2])
+                if child is None:
+                    raise ValueError("retained constituent occurrence is unavailable")
+                pending.append(child)
+
+        # This includes all closure members (including context-only roots), so
+        # validation cannot accidentally erase an invalid survivor's evidence.
+        self._validate_constituent_graph(
+            {
+                int(self.occurrence_id[index]): self._semantic_rows.get(
+                    int(self.occurrence_id[index]), {})
+                for index in keep_rows
+            },
+            namespace,
+        )
+        keep = self.count.new_tensor(sorted(keep_rows))
         n_keep = int(keep.numel())
         removed = c - n_keep
+        # Only after every resolution/validation succeeds may evidence change.
+        self.withdraw_origin(origin)
         if removed == 0:
             return 0
         self._ensure_texts(c)
@@ -9147,7 +9413,6 @@ class TernaryTruthStore(Layer):
                      'occurrence_id', 'metadata_required', 'semantic_fingerprint'):
             values = getattr(self, name)
             values[:n_keep] = values[keep]
-            values[n_keep:c].fill_(-1 if name == 'occurrence_id' else name == 'polarity')
         alive = set(int(value) for value in self.occurrence_id[:n_keep].tolist())
         self._semantic_rows = {key: value for key, value in self._semantic_rows.items()
                                if key in alive}
@@ -9156,6 +9421,13 @@ class TernaryTruthStore(Layer):
         self.timestamp[n_keep:c].zero_()
         self.trust[n_keep:c].zero_()
         self.origin[n_keep:c].zero_()
+        self.role_mask[n_keep:c].zero_()
+        self.record_kind[n_keep:c].zero_()
+        self.grammatical_mode[n_keep:c].zero_()
+        self.polarity[n_keep:c].fill_(True)
+        self.occurrence_id[n_keep:c].fill_(-1)
+        self.metadata_required[n_keep:c].zero_()
+        self.semantic_fingerprint[n_keep:c].zero_()
         self._texts = kept_texts + [None] * (len(self._texts) - n_keep)
         self.count.fill_(n_keep)
         return removed

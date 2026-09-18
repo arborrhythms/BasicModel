@@ -287,3 +287,16 @@ live prepared meanings retain their current-step gradient routes. A hard
 controller choice remains nondifferentiable and needs explicit policy credit.
 Compiled numerical execution keeps host phase bookkeeping outside the graph,
 while query tracing fails explicitly. See [Query phases](QueryPhases.md).
+
+## Retained grammatical occurrences
+
+Durable `read_structure()` views are detached copies. Discovering
+thought-owned LTM roots reads only typed addresses and metadata, so it does not
+detach a live episode meaning. Normal TruthSet replacement passes those roots
+before compaction; existing live episode credit remains available until its
+explicit optimizer boundary. Retention introduces neither a learned loss nor
+an optimizer-owned parameter.
+[Roots](../bin/Thoughts.py#L302),
+[replacement](../bin/Models.py#L6453), and
+[durable reads](../bin/Layers.py#L8904).
+See [nested retention](NestedRetention.md).

@@ -13701,8 +13701,10 @@ class SymbolSubSpace(SubSpace):
         """``load_state_dict`` post-hook: rematerialize the TruthLayer view
         from the freshly-loaded consolidated LTM (see the registration site
         for the stateless gate). Registered only on consolidated configs, so
-        ``ltm_store`` / ``truth_layer`` are present. Best-effort: a load must
-        never be aborted by revive bookkeeping.
+        ``ltm_store`` / ``truth_layer`` are present. A tensor-only restore
+        withdraws request authority immediately but defers physical pruning
+        while the semantic sidecar and other occurrence owners are absent.
+        Invalid complete structure is not silently treated as unreferenced.
 
         ``incompatible_keys`` is the standard post-hook payload (unused;
         accepted for the hook signature)."""
@@ -13711,14 +13713,36 @@ class SymbolSubSpace(SubSpace):
         tl = getattr(self, 'truth_layer', None)
         if store is None or tl is None or tl.ltm_backed is not store:
             return
-        try:
-            if getattr(self, '_stateless', True):
-                # Request-scoped: drop the checkpoint's user rows so the
-                # server starts each request from a clean TruthSet.
-                store.clear_origin(store.ORIGIN_USER)
-            tl.sync_from_ltm()
-        except Exception:
-            pass
+        if getattr(self, '_stateless', True):
+            incomplete = any(
+                bool(store.metadata_required[index])
+                and int(store.occurrence_id[index]) not in store._semantic_rows
+                for index in range(len(store))
+            )
+            if getattr(self, '_defer_ltm_pruning', False) or incomplete:
+                # Missing ownership metadata cannot prove an occurrence has no
+                # reader.  It loses fact authority now, then structural restore
+                # either safely prunes it or reports invalid structure.
+                store.withdraw_origin(store.ORIGIN_USER)
+                self._ltm_pruning_pending = True
+            else:
+                self._finish_ltm_restore()
+        tl.sync_from_ltm()
+
+    def _finish_ltm_restore(self):
+        """Prune stateless request content after all occurrence owners exist."""
+        store = getattr(self, 'ltm_store', None)
+        tl = getattr(self, 'truth_layer', None)
+        if store is None or tl is None or tl.ltm_backed is not store:
+            return
+        if getattr(self, '_stateless', True):
+            memory = getattr(self, 'what_memory', None)
+            namespace = bytes(store._occurrence_namespace.tolist()).hex()
+            roots = (memory.retained_ltm_occurrences(namespace)
+                     if memory is not None else ())
+            store.clear_origin(store.ORIGIN_USER, retained_occurrences=roots)
+        self._ltm_pruning_pending = False
+        tl.sync_from_ltm()
 
     def soft_reset(self, batch=None):
         """Re-arm sentence-internal state for row ``batch`` (or all rows).

@@ -1099,3 +1099,12 @@ executors in `understand()` and `what()` run under the same sentence mask, and
 output realization cannot start a query. Permission restores on error and does
 not change optimizer ownership or gradient balancing. See
 [Query phases](QueryPhases.md).
+
+## Restoring dependent occurrences
+
+Stateless tensor restore withdraws request authority immediately. Physical
+pruning waits for the semantic sidecar and ordinary thought owners, then keeps
+their reachable constituents and discards only orphans. Tensor-only restore
+therefore retains zero-trust content while ownership metadata is unavailable.
+Checkpoint content is detached; a normal live episode retains its existing
+gradient route. See [nested retention](NestedRetention.md).

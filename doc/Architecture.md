@@ -1466,3 +1466,12 @@ reconstruction and output realization mask that permission; the checked
 registry validates the guard before operand reads. The permission is transient
 host state, so it adds no architectural tensor, parameter, memory owner or
 forward-result slot. See [Query phases](QueryPhases.md).
+
+### Retained grammatical occurrences
+
+The durable LTM owner retains the transitive closure of records addressed by
+surviving rows and ordinary-thought roots. A bounded derived view preserves
+ordered role edges, repeated references, scope and each occurrence's own
+evidence; it does not add a parallel semantic store. Withdrawing a request
+origin removes its fact authority without turning retained content into a
+truth. See [nested retention](NestedRetention.md).

@@ -38,10 +38,16 @@ to MPS. See [Testing](doc/Testing.md#validation) for durable receipts and limits
   tracing are masked. The rebased reviewer probes were red first, then 23/23
   and 280/280 affected cases passed; see [Query phases](doc/QueryPhases.md).
 
-1. **Integrate nested occurrence retention, then shared query work.** Rebase
-   nested retention on the landed history and phase owners; run its preserved
-   reviewer probes red first. Then integrate the shared query-work candidate
-   without treating its meter as the normal controller.
+- **Bounded nested occurrence retention.** The existing LTM and ordinary
+  history owners now retain reachable request content without retaining its
+  fact authority, validate local semantic structure atomically, and defer
+  stateless compaction until checkpoint owners are restored. The preserved
+  reviewer probes were red first; the focused 68/68 and broader 309/309
+  bounded affected gates are green. See [Nested retention](doc/NestedRetention.md).
+
+1. **Integrate shared query work.** Rebase the shared query-work candidate on
+   the landed history, phase and nested-retention owners without treating its
+   meter as the normal controller.
 2. **Finish selected linguistic meaning and the normal thought controller.**
    Preserve selected signed operands and native middle VP across all three
    writers; cover mode, polarity, paraphrase/converse and nested references.
@@ -124,14 +130,14 @@ this file current as items land (move them to "Done" with the commit).
 
 ### Alec
 
-4. **Accept the Xcode licence** (`sudo xcodebuild -license`). Until then
-   clang, `/usr/bin/git` and `/usr/bin/python3` are blocked on this
-   machine, so inductor cannot compile and the compiler work and a compiled
-   long run cannot start. Nothing else on this list needs it earlier.
+4. **Xcode licence accepted (September 18).** Clang, `/usr/bin/git` and
+   `/usr/bin/python3` are no longer blocked by this prerequisite. Compiler and
+   long-run validation still require their separate measured gates.
 
-5. **Decide the trust term's sign** in the forgetting spec §3: `|trust|`
-   (a confidently false row is knowledge) or `max(0, trust)` (positive only).
-   One line and one test either way; the spec assumes `|trust|`.
+5. **Trust term sign decided (September 18).** The forgetting specification
+   uses `|trust|`: a strongly distrusted row is knowledge and must remain
+   protected alongside a strongly trusted row. Preserve this when the deferred
+   forgetting implementation begins.
 
 ### Claude, before Codex merges item 1
 

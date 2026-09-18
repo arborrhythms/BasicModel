@@ -227,3 +227,12 @@ grammatical-VP dispatch require an open completed-row boundary before operand
 resolution or executor work. Sentence processing and compiled tracing reject
 query execution. Explicit standalone evidence readers retain their existing
 API. See [Query phases](QueryPhases.md).
+
+## Durable constituent retention
+
+Occurrence traversal has separate node, depth and record-scan bounds with
+explicit incomplete results. It preserves role-labelled edges and each row's
+scope/evidence; retaining a withdrawn occurrence cannot promote it back into
+accepted fact evidence. The normal linguistic adapter still must record full
+typed structure through the existing occurrence owners. See
+[nested retention](NestedRetention.md).

@@ -299,6 +299,38 @@ class LevelledThoughtHistory:
     def thought_state(self, b=0):
         return replay_thoughts(self.thought_history(b=b))
 
+    def retained_ltm_occurrences(self, namespace):
+        """Derive LTM roots from retained ordinary thought records.
+
+        This walks the existing chronological owner at the moment retention is
+        requested; it does not allocate a reference-count table or inspect
+        content tensors.  Roles, bindings, scopes and recorded sources may all
+        name durable LTM occurrences.  Finished records remain roots while
+        their history remains retained.
+        """
+        if not isinstance(namespace, str):
+            raise TypeError("LTM occurrence namespace must be a string")
+        found, pending = set(), []
+        for row in range(self.batch):
+            for record in self.thought_history(b=row):
+                pending.append(record.sources)
+                if record.meaning is not None:
+                    pending.append(record.meaning.metadata())
+        while pending:
+            value = pending.pop()
+            if isinstance(value, dict):
+                pending.extend(value.values())
+                continue
+            if not isinstance(value, (tuple, list)):
+                continue
+            if (len(value) == 3 and value[0] == "ltm"
+                    and value[1] == namespace
+                    and type(value[2]) is int and value[2] >= 0):
+                found.add(tuple(value))
+                continue
+            pending.extend(value)
+        return tuple(sorted(found))
+
     def thought_reference(self, record, b=0):
         if not isinstance(record, ThoughtRecord) or not any(
             record is item for item in self.thought_history(b=b)

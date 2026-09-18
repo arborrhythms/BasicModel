@@ -220,6 +220,18 @@ trace/eager-island negatives. The broader phase-affected selection passed
 a claim of a new single-snapshot global receipt under the no-rerun policy.
 See [Query phases](QueryPhases.md).
 
+### Nested-retention evidence (September 18)
+
+The rebased nested-retention reviewer probes first failed in
+`output/tests/20260918-014842-f679b1` (22/22 expected failures). The focused
+selection passed 68/68 in 76.1 seconds at a 0.50 GiB peak in
+`output/tests/20260918-015808-1dce43`. The broader LTM, sidecar,
+thought-history, query-occurrence and checkpoint selection passed 309/309 in
+`output/tests/20260918-020312-c526c2`, using two fresh workers (73.5 and 28.9
+seconds; 0.50 GiB peak). These are affected-file evidence after the historical
+no-rerun composite, not a newly rerun global snapshot. See
+[nested retention](NestedRetention.md).
+
 The actual MPS sequence-training check passed: 877.81 seconds in `runEpoch`
 for two batches, 1.24 seconds for construction and a 2.54 GiB peak aggregate
 footprint. All 137 parameter tensors, including the predictor, were on MPS.
