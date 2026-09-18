@@ -2206,3 +2206,26 @@ ordinary levelled history and shared budget, nested retention, live episode
 occurrence reads, anticipation isolation, residual policy credit, separate
 compose/generate catalogs and learned utility remain open. The two-truths spec
 remains reserved for the next session.
+
+## 18. Ordinary thought-history and live occurrence APIs (September 17)
+
+`WhatInteractionMemory` now owns ordinary structured thought records and
+explicit begin/descend/return/cutoff/finish transitions in its existing
+row-local deque. Replay recovers active and suspended contexts without a
+second authoritative stack; same-level continuation and root finish are
+distinct, and sibling re-entry starts a fresh context. One root budget spans
+all ordinary work. Cutoff freezes the active depth and permits only a bounded
+LIFO drain plus one root finish. Capacity cannot evict active or referenced
+records.
+
+Thought occurrence references are stable, row-local references to complete
+meanings. They may be read live through the existing owner during an episode,
+but do not create facts, execute queries, or change execution level. Checkpoint
+sidecars contain detached copies; restore validates every row and preserves the
+remaining budget and pressure. Explicit finish precedes credit release.
+
+This is a storage/lifecycle foundation, not normal-controller integration or
+learned utility. The reviewer set covers replay, row/sibling isolation, bounded
+drains, retention, checkpoint restore, live query reads, and legacy credit
+boundaries. See [ordinary thought history](../ThoughtHistory.md) and
+[gradient flow](../GradientFlow.md).

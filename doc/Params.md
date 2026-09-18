@@ -720,3 +720,13 @@ candidate formation or execution.
 [Context](../bin/Queries.py#L19),
 [setup](../bin/Queries.py#L398),
 [contract](QueryContracts.md).
+
+### Ordinary thought-history bounds
+
+`begin_thought_episode` takes an explicit `work_budget` (API default 32).
+Every ordinary event charges positive work; pressure is cumulative and no child
+gets a refreshed allowance. A cutoff permits only its bounded return drain and
+one root finish. Capacity reserves those transitions and rejects eviction of
+active or referenced records. This is an API contract, not a configuration
+switch or learned objective; normal-controller executor accounting remains
+open. See [ordinary thought history](ThoughtHistory.md).

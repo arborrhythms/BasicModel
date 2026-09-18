@@ -24,9 +24,10 @@ import torch.optim as optim
 import time
 from typing import Dict, List, Optional, Tuple
 from collections import namedtuple
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from contextlib import contextmanager
 from Meaning import ConceptualMeaning, canonical_role_payload
+from Thoughts import LevelledThoughtHistory, ThoughtRecord
 
 epsilon = 1e-7  # to avoid log(0)
 
@@ -97,7 +98,7 @@ def bounded_atanh(x, eps=None, bounded=True):
 import util
 from util import TheXMLConfig, TheDevice
 from util import TheMessage
-from What import LTMSlot, WhatSlotOperation
+from What import LTMSlot, WhatQuestion, WhatSlotOperation
 
 
 def _active_codebook_prototypes(codebook):
@@ -9182,10 +9183,14 @@ class TernaryTruthStore(Layer):
         # cannot silently bind to a later fact at the same physical row.
 
 
-class WhatInteractionMemory:
-    """Per-row chronological LTM interaction slots for the What loop.
+class WhatInteractionMemory(LevelledThoughtHistory):
+    """One per-row owner of chronological ordinary and legacy thought history.
 
-    What spec section 6 / STM.md section 13: each ``LTMSlot`` has
+    Ordinary ``ThoughtRecord`` content and level transitions share this owner's
+    existing deque. Suspended contexts are derived by replay, never owned by a
+    second stack. Only a closed legacy prefix may precede ordinary history.
+
+    The compatibility API retains the earlier What contract: each ``LTMSlot`` has
     independently optional input / output halves; an input-only slot pushes
     an unanswered question, an output-only slot pops the newest one (LIFO),
     a complete slot has no stack effect.  The stack is the imbalance of the
@@ -9195,8 +9200,8 @@ class WhatInteractionMemory:
 
     Credit boundary (spec 8.2): ``detach_mode == "slot"`` detaches every
     value at append (the established behaviour).  ``detach_mode ==
-    "episode"`` keeps values appended between ``begin_what_episode(b)`` and
-    ``end_what_episode(b)`` LIVE on the autograd graph so the root answer
+    "episode"`` keeps values appended after ``begin_thought_episode`` (or the
+    legacy ``begin_what_episode``) LIVE on the autograd graph so the root answer
     loss can reach states created at earlier iterations; ``end`` detaches
     them (call it after the optimizer step).
     """
@@ -9209,7 +9214,9 @@ class WhatInteractionMemory:
         self.detach_mode = str(detach_mode)
         self._what_slots = [collections.deque() for _ in range(self.batch)]
         self._what_closure_pressure = [0.0 for _ in range(self.batch)]
-        self._episode_live = {}          # row -> [live LTMSlot, ...]
+        self._episode_live = {}          # row -> live legacy/ordinary records
+        self._thought_namespace = uuid.uuid4().hex
+        self._thought_next_id = 0
 
     # -- sizing / resets ----------------------------------------------------
 
@@ -9255,6 +9262,10 @@ class WhatInteractionMemory:
         """Detach an interaction snapshot from the live autograd graph."""
         if value is None:
             return None
+        if isinstance(value, ConceptualMeaning):
+            return value.detached()
+        if isinstance(value, WhatQuestion):
+            return replace(value, prompt=WhatInteractionMemory._detach_what_value(value.prompt))
         if torch.is_tensor(value):
             if not bool(torch.isfinite(value).all()):
                 raise FloatingPointError(
@@ -9280,6 +9291,10 @@ class WhatInteractionMemory:
         """Materialize a snapshot WITHOUT detaching (episode mode)."""
         if value is None:
             return None
+        if isinstance(value, ConceptualMeaning):
+            return ConceptualMeaning(value.roles, value.role_mask, **value.metadata())
+        if isinstance(value, WhatQuestion):
+            return replace(value, prompt=WhatInteractionMemory._live_what_value(value.prompt))
         if torch.is_tensor(value):
             if not bool(torch.isfinite(value).all()):
                 raise FloatingPointError(
@@ -9339,7 +9354,13 @@ class WhatInteractionMemory:
     def begin_what_episode(self, b=0):
         """Mark row ``b``: slots appended until ``end_what_episode`` stay
         live when ``detach_mode == "episode"``."""
-        self._episode_live[int(b)] = []
+        bi = int(b)
+        # Legacy callers reserve credit before forward establishes the batch.
+        # Check already-owned rows; ordinary APIs require an existing row.
+        if (0 <= bi < len(self._what_slots)
+                and any(isinstance(record, ThoughtRecord) for record in self._what_slots[bi])):
+            raise RuntimeError("ordinary thought history requires its explicit episode API")
+        self._episode_live[bi] = []
 
     def in_episode(self, b=0):
         return int(b) in self._episode_live
@@ -9348,22 +9369,32 @@ class WhatInteractionMemory:
         """Close row ``b``'s episode; with ``detach`` (the default) every
         slot appended during it is replaced by its detached copy.  Returns
         the number of slots detached."""
+        bi = int(b)
+        # A legacy credit reservation may end before forward establishes its
+        # batch row (for example after an early failure). Ordinary history can
+        # exist only in an already-owned row.
+        state = self.thought_state(b=bi) if 0 <= bi < self.batch else None
+        if state is not None and not state.finished:
+            raise RuntimeError("cannot detach an unfinished active thought episode")
         live = self._episode_live.pop(int(b), [])
         if not detach or not live:
             return 0
-        bi = int(b)
         ids = {id(s) for s in live}
         replaced = 0
         if 0 <= bi < len(self._what_slots):
             out = []
             for slot in self._what_slots[bi]:
                 if id(slot) in ids:
-                    slot = LTMSlot(
-                        input=self._detach_what_value(slot.input),
-                        output=self._detach_what_value(slot.output),
-                        question=slot.question, iteration=slot.iteration,
-                        closure_pressure=slot.closure_pressure,
-                        forced=slot.forced, grammar_trace=slot.grammar_trace)
+                    if isinstance(slot, ThoughtRecord):
+                        slot = slot.snapshot(detach=True)
+                    else:
+                        slot = LTMSlot(
+                            input=self._detach_what_value(slot.input),
+                            output=self._detach_what_value(slot.output),
+                            question=self._detach_what_value(slot.question), iteration=slot.iteration,
+                            closure_pressure=slot.closure_pressure,
+                            forced=slot.forced,
+                            grammar_trace=self._detach_what_value(slot.grammar_trace))
                     replaced += 1
                 out.append(slot)
             self._what_slots[bi] = collections.deque(out)
@@ -9386,6 +9417,8 @@ class WhatInteractionMemory:
         if bi < 0 or bi >= len(self._what_slots):
             raise IndexError(f"LTM row {bi} is outside batch size {self.batch}")
         current = list(self._what_slots[bi])
+        if any(isinstance(record, ThoughtRecord) for record in current):
+            raise RuntimeError("ordinary thought history requires its explicit transition API")
         open_before = self._what_open_indices(current)
         if slot.operation is WhatSlotOperation.CLOSE and not open_before:
             raise ValueError("an output-only LTM slot requires an open input")
@@ -9407,11 +9440,11 @@ class WhatInteractionMemory:
         stored = LTMSlot(
             input=snapshot(slot.input),
             output=snapshot(slot.output),
-            question=slot.question,
+            question=snapshot(slot.question),
             iteration=slot.iteration,
             closure_pressure=slot.closure_pressure,
             forced=slot.forced,
-            grammar_trace=trace,
+            grammar_trace=snapshot(trace),
         )
         candidate = self._trim_balanced_what_prefix(
             current + [stored], self.capacity)
@@ -9428,7 +9461,7 @@ class WhatInteractionMemory:
         bi = int(b)
         if bi < 0 or bi >= len(self._what_slots):
             return []
-        slots = list(self._what_slots[bi])
+        slots = [slot for slot in self._what_slots[bi] if isinstance(slot, LTMSlot)]
         if n is None:
             return slots
         n = int(n)

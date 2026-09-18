@@ -1079,3 +1079,14 @@ credit and live episode integration remain subsequent gates.
 [owned programs](../bin/Understanding.py#L25),
 [formation](../bin/Queries.py#L431),
 [details](QueryContracts.md).
+
+## Ordinary history and live query credit (September 17)
+
+Ordinary history supports same-level continuation, strictly nested descent and
+return, explicit finish, and one shared work budget. Episode-mode meanings and
+selected thought-occurrence reads stay live through the single optimizer step;
+after a finished episode, the existing owner detaches them. Restored history
+is detached and cannot refresh prior budget or pressure. No loss or optimizer
+parameter is added by this storage contract. Controller selection, residual
+reward, and learned utility still require their own evidence. See
+[ordinary thought history](ThoughtHistory.md) and [gradient flow](GradientFlow.md).

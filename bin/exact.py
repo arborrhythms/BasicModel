@@ -1,25 +1,23 @@
-"""Exact arithmetic for the mathematical-thinking testbed.
+"""Oracle utilities for generating and evaluating arithmetic test corpora.
 
-Specification: ``doc/specs/2026-09-09-mathematical-thinking.md`` (sections
-3-5, 9). This module supplies, parameter-free and total:
+Arithmetic is a formal-grammar learning task over arbitrary symbols. These
+parameter-free helpers compute corpus labels and evaluation results; the learner
+must not call them to answer a question, choose a subgoal or construct an answer
+representation. Solver bindings and oracle traces are not learner inputs.
 
-* ``ExactLexer`` -- the deterministic clause lexer that presents a problem
-  surface (``a = 3 ; b = a + 4 ; what is b ?``) as typed equations and a
-  query (spec 5.1);
-* ``ExactState`` -- the model-owned scratchpad ``(E, beta)`` with the five
-  primitives ``lookup / evaluate / bind / substitute / constrain`` (spec 5.2),
-  each recorded as a replayable trace step (spec 5.3);
-* ``numeral_code`` -- the fixed binary-digit fallback code for an integer
-  answer symbol (spec 6.3);
-* ``MathProblemGenerator`` -- stage 1 (dependency arithmetic) and stage 2
-  (simultaneous linear constraints) problems with unique solutions, depth,
-  structure hash and the solver's binding order (spec 4.2);
-* ``ExactVerifier`` -- the evaluation-side replay that accepts or rejects
-  each emitted step and validates the final answer (spec 9);
-* ``illumination`` -- the oracle-side candidate measure ``I_t`` (spec 3).
+* ``ExactLexer`` and ``ExactState`` implement the oracle's equation parsing,
+  scratch state and recorded primitives for generation/evaluation utilities.
+* ``MathProblemGenerator`` creates problems with labels, structural splits and
+  oracle metadata. Only the permitted input surface and scoring targets cross
+  the dataset boundary.
+* ``ExactVerifier`` and ``illumination`` are evaluation-side helpers.
+* ``numeral_code`` is a legacy encoding utility for isolated tests/oracles.
+  Its binary-digit/one-hot encoding is not an authorized learner fallback.
 
-The complete solver (``MathProblemGenerator.solve``) is available only to
-generation, scoring and tests; the model never receives it.
+The model's numeral concepts have arbitrary native addresses. Its grammar,
+prediction, reasoning and output must use learned symbol-attached meanings,
+without interpreting an address or a numeral surface as a numeric operand.
+See ``doc/ArbitrarySymbols.md`` and ``doc/SymbolFirewall.md``.
 """
 
 from __future__ import annotations
@@ -284,8 +282,8 @@ class ExactState:
     range: int = 64
     executions: int = 0
     trace: List[dict] = field(default_factory=list)
-    # Premise indices the model has APPLIED (evaluate / substitute /
-    # constrain); the oracle-side candidate measure counts only these.
+    # Premise indices the oracle trace has applied (evaluate / substitute /
+    # constrain); the evaluation-side candidate measure counts only these.
     applied: set = field(default_factory=set)
 
     @classmethod
@@ -402,8 +400,8 @@ def numeral_code(n: int, width: int, bits: Optional[int] = None,
     coordinates): a linear output adapter can then realize the one-hot
     answer directly.  Otherwise the binary digits of ``n`` as +-1 over the
     first ``bits`` coordinates (LSB first), zero elsewhere.  Distinct
-    integers give distinct codes; the model's answer symbol root slot
-    receives it when no lexicon row exists for the numeral surface."""
+    integers give distinct codes. This is an isolated legacy oracle/test
+    utility; it must not seed a learner's answer or bypass its symbol lexicon."""
     import torch
 
     width = int(width)

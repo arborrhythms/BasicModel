@@ -24,38 +24,43 @@ to MPS. See [Testing](doc/Testing.md#validation) for durable receipts and limits
   memory/deadline limits and fresh-process recycling; heavy integration tests
   are slow-gated rather than removed; the VQ distance tile has a 512 MiB bound;
   and supervised training has an explicit successful MPS-routing receipt.
+  Published in BasicModel `3ffb465` and WikiOracle `905fec7`.
 
-1. **Publish the bounded-test/MPS item.** Commit and push its source, test and
-   evidence updates, then bump and push the WikiOracle submodule. The
-   [fixed-capacity fixture reuse assessment](doc/plans/2026-09-17-bounded-fixture-reuse.md)
-   remains future work; MPS routing evidence is not a speedup claim.
-2. **Integrate and validate the prepared foundations in dependency order:**
-   ordinary thought history → sentence/query phase permission → nested
-   occurrence retention → shared query work accounting. The handoff preserves
-   all four isolated candidates, reviewer probes and versioned evidence.
-   They are not installed or fully validated on primary.
-3. **Finish selected linguistic meaning and the normal thought controller.**
+- **Ordinary thought history and live occurrence reads.** One existing
+  `WhatInteractionMemory` owner now stores replayable ordinary transitions,
+  preserves the shared budget/forced drain and checkpoint/gradient boundaries,
+  and serves row-local live thought occurrences. Its reviewer evidence is
+  recorded in [Thought history](doc/ThoughtHistory.md). This is a foundation,
+  not normal-controller or learned-utility completion.
+
+1. **Integrate query phases, then nested retention, then shared query work.**
+   The next candidate is sentence/query phase permission. Rebase it on the
+   landed ordinary-history owner; run its preserved reviewer probes red first.
+   After it lands, proceed in order to nested occurrence retention and shared
+   query-work accounting. The handoff preserves all three candidates and their
+   evidence.
+2. **Finish selected linguistic meaning and the normal thought controller.**
    Preserve selected signed operands and native middle VP across all three
    writers; cover mode, polarity, paraphrase/converse and nested references.
    Integrate full-width mandatory roles, actual shared work costs, causal child
    evidence, bounded return, replay/checkpoint isolation and policy credit.
    Obtain the prepared selected-meaning probes' red before implementing them.
-4. **Finish expectation and residual learning.** Complete owned estimates and
+3. **Finish expectation and residual learning.** Complete owned estimates and
    observation links, prior-view isolation from arriving/unseen input and other
    rows, residual query credit, the separate baseline and parameter-version-safe
    trajectories. Mechanism probes alone do not satisfy the learning gates.
-5. **Finish generation ownership and end-to-end output.** Rebase the preserved
+4. **Finish generation ownership and end-to-end output.** Rebase the preserved
    generation-catalog candidate after the earlier integrations; validate actual
    checkpoint/optimizer migration and normal supervised output. Maintain the
    combined downstream/reconstruction gradient contract from §8.4 and keep
    [the architecture-wide gradient map](doc/GradientFlow.md) current.
-6. **Close the evidence gates and documentation.** Measure held-out causal
+5. **Close the evidence gates and documentation.** Measure held-out causal
    utility, reconstruction/discrimination controls and current warmed training
    throughput. Run the preserved arbitrary-symbol runtime poison probes and
    renamed-vocabulary learning controls. Numerical values or symbol IDs must
    not supply learner arithmetic or answer seeds. Record incomplete or null
    results honestly. Update the canonical spec and this list as items land.
-7. **Publish each completed item:** failing probe → fix → affected files → full
+6. **Publish each completed item:** failing probe → fix → affected files → full
    default suite green in the background → BasicModel commit/push → WikiOracle
    submodule bump/push, with the required co-author trailer. Preserve user-owned
    files. Do not remove unused reasoning methods without Alec's review.

@@ -210,3 +210,12 @@ meaning through all three observation writers, causal answer resolution,
 ordinary levelled history and budget, nested retention, prior-view isolation,
 residual policy credit, catalog separation and measured learned utility.
 The separate two-truths specification remains deferred to the next session.
+
+## Live thought occurrences
+
+An occurrence argument may designate a durable `ltm` occurrence or a live
+row-local `thought` occurrence. The latter resolves only through the existing
+`WhatInteractionMemory` owner and retains its episode gradient until the
+explicit credit boundary. Resolving it does not execute a query, alter a level,
+or promote a question or estimate into evidence. See [ordinary thought
+history](ThoughtHistory.md).

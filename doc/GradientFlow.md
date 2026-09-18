@@ -267,3 +267,14 @@ read from its existing owner to retain within-episode credit.
 Future policy credit and continuous feedback into representation remain subject
 to the aggregate downstream rule above. These API checks do not establish
 trained query usefulness. See [Query contracts](QueryContracts.md).
+
+## Live ordinary episode history
+
+An ordinary thought record clones its complete `ConceptualMeaning` without a
+detach while its episode is live. A selected `thought` occurrence query reads
+that same live value; durable LTM reads remain detached. At the optimizer
+boundary, an explicit finished episode detaches retained values, including
+legacy prompt and grammar-trace tensors. Structural checkpoint sidecars save
+detached copies, so restoring history cannot reconnect an old graph. These
+mechanics introduce neither a parameter nor a loss; controller policy credit
+and residual attribution remain open. See [ordinary thought history](ThoughtHistory.md).

@@ -352,12 +352,20 @@ def _occurrence_description(context, reference):
     candidate, reinterpret an unknown namespace, or fall back to its NP1.
     """
     from Layers import TernaryTruthStore
+    if not isinstance(context, QueryContext):
+        raise TypeError('occurrence reference requires its query context')
+    if isinstance(reference, tuple) and reference and reference[0] == 'thought':
+        memory = getattr(getattr(context.reasoner.model, 'symbolSpace', None), 'what_memory', None)
+        if memory is None:
+            raise ValueError('thought occurrence owner is unavailable')
+        # The existing interaction owner keeps current episode values live and
+        # detaches them at the optimizer boundary. This does not copy a memory
+        # store, create a new episode, or change the execution context level.
+        return memory.resolve_thought(reference, b=context.row, max_records=context.max_records)
     if (not isinstance(reference, tuple) or len(reference) != 3
             or reference[0] != 'ltm' or not isinstance(reference[1], str)
             or type(reference[2]) is not int or reference[2] < 0):
         raise TypeError('description argument requires an existing occurrence reference')
-    if not isinstance(context, QueryContext):
-        raise TypeError('occurrence reference requires its query context')
     store = context.reasoner.reasoning_store()
     if (not isinstance(store, TernaryTruthStore)
             or bytes(store._occurrence_namespace.tolist()).hex() != reference[1]):

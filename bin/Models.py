@@ -4536,7 +4536,10 @@ class BaseModel(Mereology, nn.Module):
             for name, module in self.named_modules()
             if isinstance(module, TernaryTruthStore)
         }
-        if not conceptual and not wholes and not truth_semantics:
+        memory = getattr(getattr(self, "symbolSpace", None), "what_memory", None)
+        what_history = (memory.thought_extras() if memory is not None
+                        and any(memory._what_slots) else None)
+        if not conceptual and not wholes and not truth_semantics and what_history is None:
             return None
         return {
             "version": 2 if property_basis else 1,
@@ -4544,6 +4547,7 @@ class BaseModel(Mereology, nn.Module):
             ("whole_properties" if property_basis else "whole_spaces"):
                 wholes,
             "truth_semantics": truth_semantics,
+            "what_history": what_history,
         }
 
     def _restore_allocator_extras(self, cs, saved):
@@ -4787,6 +4791,13 @@ class BaseModel(Mereology, nn.Module):
             if not isinstance(store, TernaryTruthStore):
                 raise ValueError(f"checkpoint truth store {name!r} is not present")
             store.load_semantic_extras(saved)
+
+        what_history = extras.get("what_history")
+        if what_history is not None:
+            memory = getattr(getattr(self, "symbolSpace", None), "what_memory", None)
+            if memory is None:
+                raise ValueError("checkpoint thought history has no interaction memory owner")
+            memory.load_thought_extras(what_history)
 
     @staticmethod
     def _widen_what_projection_checkpoint_state(state, model_state):

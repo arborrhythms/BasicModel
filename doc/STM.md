@@ -1107,3 +1107,15 @@ The current occurrence reader is a bounded durable read and does not provide
 live episode memory. Ordinary levelled history, nested retention, shared work
 accounting and the normal linguistic observation adapter remain open.
 [Query contracts](QueryContracts.md) distinguishes these integration gates.
+
+## Ordinary levelled thoughts (September 17)
+
+The existing interaction deque now admits ordinary `ThoughtRecord` values with
+explicit level and termination transitions. Replay recovers current and
+suspended contexts, including scope, bindings and returned results; root level
+is not completion. Only a closed legacy prefix may precede ordinary records.
+Stable row-local `thought` references resolve complete live episode meanings;
+capacity retains active contexts and referenced occurrences. The structural
+sidecar persists detached copies and validates replay on restore. The normal
+linguistic controller and actual executor accounting remain open. See
+[ordinary thought history](ThoughtHistory.md).
