@@ -217,10 +217,11 @@ class TestXORGrammarLanguageLayerIntegration(unittest.TestCase):
             len(router._binary_layers) > 0,
             "Expected at least one binary space_role attached")
 
-        # Binary ops are wrapped in _BinaryGrammarOpAdapter; unwrap via
-        # `.gl` (the codebase's own unwrap idiom) to reach the real
-        # grammar layer. Unary ops are attached directly.
-        unary_ops = [op
+        # The common structural-face contract wraps both unary and binary
+        # kernels.  Unwrap via `.gl` to assert the configured grammar layers,
+        # rather than coupling this integration check to the dispatcher
+        # representation.
+        unary_ops = [getattr(op, "gl", op)
                      for layer in router._unary_layers.values()
                      for op in layer.ops]
         binary_ops = [getattr(op, "gl", op)

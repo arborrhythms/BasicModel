@@ -18,8 +18,9 @@ objective ([target staging](../bin/Models.py#L11016),
 The scorer also has a uniform fallback for an unknown spelling. That fallback
 distributes probability over these same 256 bytes; it is not another byte value.
 
-The tied reconstruction implementation passes full-suite verification; the controller,
-nested meaning, query-credit and compose/generate catalog migrations are still
+The tied reconstruction implementation passes its recorded verification; the
+thought-operator catalogue is now the production grammar interface, while
+residual credit, learned utility, and the remaining end-to-end gates are still
 open. The table below distinguishes executable paths from those remaining
 requirements. See the [implementation order](plans/2026-09-15-next-sentence-as-the-production-objective.md#10-consolidated-implementation-and-verification-order)
 and [reconstruction measurements](benchmarks/2026-09-16-tied-input-reconstruction.md).
@@ -39,7 +40,7 @@ and [§8.10](plans/2026-09-15-next-sentence-as-the-production-objective.md#810-q
 |---|---|---|---|
 | **Representation and reconstruction:** weighted input surface error | Recovered word ideas, the selected compose operators' tied reverse calculations, and the live forward encodings they consume | This is the reconstruction reference `R` on shared weights. It retains its gradient unchanged. | The identified input derivation is fixed during reverse traversal; retained constituent references, dictionary snapshots and byte targets are detached. No gradient through an integer rule or dictionary index. [Reconstruction](../bin/Models.py#L11300), [snapshot](../bin/Models.py#L11654), [owned byte objective](../bin/Models.py#L13820). |
 | **Prediction:** occupied-role MSE plus role-presence BCE | The sentence predictor and its live preceding NP1/VP/NP2 context | May train the encoder of a preceding sentence still in the **same optimizer step**. It shares the downstream budget below. | The arriving sentence's encoding is a detached target. Durable context and previous-step encodings are detached. A cold start has no predicted target. [Prediction and observation](../bin/Layers.py#L10064), [graph lifetime](../bin/Layers.py#L10689). |
-| **Thinking:** enabled query/subgoal policy objectives | Currently, a sampled What choice receives score-function credit from supplied-answer error minus work costs; optional legacy reasoning and teacher-trace losses have separate gates | Only through live inputs actually consumed by the trained policy or soft reasoning computation. Its shared-parameter contribution belongs to the same downstream budget. | Hard choices and deductions have no ordinary derivative. The current What context includes detached scalar summaries, so policy training does not prove semantic encoder feedback. Residual-based credit on ordinary corpus inputs is a required migration. [Policy](../bin/Models.py#L8325), [summary](../bin/Models.py#L7940), [loss gates](../bin/Models.py#L14126), [required residual credit](plans/2026-09-15-next-sentence-as-the-production-objective.md#810-queries-as-tools-at-inter-sentence-prediction-decided). |
+| **Thinking:** enabled thought/subgoal policy objectives | The legacy What chooser and the separate selected grammatical controller receive score-function credit from later supplied-answer loss less their declared work costs; optional legacy reasoning and teacher-trace losses have separate gates | The normal controller's live root/active/candidate role payloads and masks feed its width-owned chooser; its log probability reaches that chooser and those consumed live payloads. Its shared-parameter contribution belongs to the same downstream budget. | Hard choices, typed references, thought results, and meter state have no ordinary derivative. The reward is detached and the current selected controller is answer-credit only; residual-based credit on ordinary corpus inputs remains a required migration. [Selected policy](../bin/Models.py#L6241), [loss gates](../bin/Models.py#L15024), [required residual credit](plans/2026-09-15-next-sentence-as-the-production-objective.md#810-queries-as-tools-at-inter-sentence-prediction-decided). |
 | **Output:** supplied-answer error and, when enabled, output-action policy loss | The answer path, conditioner and synthesis heads; sampled generation choices receive policy credit | Differentiable use of a live question/answer representation can train its upstream producer, under the same shared budget. Independent output heads retain their ordinary gradients. | Desired answers are supervision, not generation inputs. Output policy reward is detached: credit flows through action log probabilities, not through the reward calculation. The input parse is not a gold answer parse. [Answer resolution](../bin/Models.py#L8186), [head ownership](../bin/Models.py#L9158), [action credit](../bin/Models.py#L9293). |
 
 An answer loss trains the sentence predictor only if the answer computation
@@ -94,10 +95,11 @@ not by itself train that answer objective.
 [supervised weights](../data/BasicModel_answers_tied_benchmark.xml#L51).
 
 The legacy `answerLossWeight`, `thinkingLossWeight` and
-`whatThinkingPolicyWeight` default to zero; `outputPolicyWeight` also defaults
-to zero. A permitted credit path is therefore not evidence that a particular
-configuration trains it. The residual-based query policy remains an open
-migration, rather than an implicit consequence of enabling expectation.
+`whatThinkingPolicyWeight` default to zero; so do the selected controller's
+`selectedThoughtPolicyWeight` and `outputPolicyWeight`. A permitted credit path
+is therefore not evidence that a particular configuration trains it. The
+residual-based query policy remains an open migration, rather than an implicit
+consequence of enabling expectation.
 [Legacy policy defaults](../bin/Models.py#L15607),
 [output policy default](../bin/Models.py#L2523),
 [required query credit](plans/2026-09-15-next-sentence-as-the-production-objective.md#810-queries-as-tools-at-inter-sentence-prediction-decided).
@@ -224,13 +226,13 @@ gradient settings. Existing mathematical checks are in
 the full migration's required learning evidence is in
 [§8.4](plans/2026-09-15-next-sentence-as-the-production-objective.md#84-joint-representation-learning-and-gradient-balance).
 
-## Fact evidence and query values
+## Fact evidence and thought values
 
 `ConceptualMeaning` clones retain the current computation's gradient. Durable
 fact/observation writes detach it. `Exist` matching, eligibility checks,
 thresholds and support aggregation use hard reads and scalar evidence; they
 provide no ordinary derivative through selected facts. This migration adds
-no learned parameter or loss. Query selection still requires its separately
+no learned parameter or loss. Thought selection still requires its separately
 declared policy credit; storing an estimate does not supply an observation or
 a new training target. See [Existence evidence](ExistenceEvidence.md).
 [Live value](../bin/Meaning.py#L67),
@@ -239,7 +241,7 @@ a new training target. See [Existence evidence](ExistenceEvidence.md).
 
 ## Conceptual-taxonomy reads
 
-`PartOf` traverses native concept references and returns hard structural
+The canonical `part` thought operator traverses native concept references and returns hard structural
 evidence with provenance. There is no derivative through reference or path
 selection, and no added trainable parameter. Existing legacy operation-head
 behavior cloning now uses native taxonomy paths; it does not establish
@@ -250,45 +252,49 @@ contract above. [Taxonomy queries](TaxonomyQueries.md) documents the limits.
 [curriculum](../bin/thinking.py#L621),
 [operation loss](../bin/thinking.py#L610).
 
-## Checked query and grammatical payload boundaries
+## Thought and grammatical payload boundaries
 
-The checked registry adds no learned parameter or trained loss. Pure VP/operand
-formation clones the existing conceptual payloads without detaching live
-continuous inputs; concept and occurrence IDs remain addresses, never numeric
-semantic features. Hard taxonomy/fact matching and discrete interface choice
-have no ordinary derivative. `arma` preserves the full predictor output graph
-without changing the pending external prediction. Durable occurrence reads
-return detached descriptions; the later episode controller must provide a live
-read from its existing owner to retain within-episode credit.
-[Formation](../bin/Queries.py#L431),
-[durable read](../bin/Queries.py#L348),
-[prediction](../bin/Queries.py#L284).
+The checked thought registry adds no learned parameter or trained loss. Pure VP/operand
+formation keeps live structural operands on their configured compose/generate
+gradient paths; concept and occurrence IDs remain addresses, never numeric
+semantic features. Thought contexts, primed snapshots, native/taxonomy/LTM
+reader data, and `ThoughtResult` are detached hard-boundary data. Hard
+taxonomy/fact matching and discrete interface choice have no ordinary
+derivative. `arma` returns a detached typed prediction result without changing
+the pending external prediction. Durable occurrence reads return detached
+descriptions; the later episode controller must provide a live read from its
+existing owner to retain within-episode credit.
+[Formation](../bin/Queries.py#L1556),
+[durable read](../bin/Queries.py#L1224),
+[prediction](../bin/Queries.py#L909).
 
 Future policy credit and continuous feedback into representation remain subject
 to the aggregate downstream rule above. These API checks do not establish
-trained query usefulness. See [Query contracts](QueryContracts.md).
+trained thought usefulness. See [Thought-operator contracts](QueryContracts.md).
 
 ## Live ordinary episode history
 
 An ordinary thought record clones its complete `ConceptualMeaning` without a
-detach while its episode is live. A selected `thought` occurrence query reads
+detach while its episode is live. A selected `thought` occurrence operator reads
 that same live value; durable LTM reads remain detached. At the optimizer
 boundary, an explicit finished episode detaches retained values, including
 legacy prompt and grammar-trace tensors. Structural checkpoint sidecars save
-detached copies, so restoring history cannot reconnect an old graph. These
-mechanics introduce neither a parameter nor a loss; controller policy credit
-and residual attribution remain open. See [ordinary thought history](ThoughtHistory.md).
+detached copies, so restoring history cannot reconnect an old graph. The normal
+controller's explicit policy term consumes only its live root/active/candidate
+role payloads; its hard evidence and work accounting remain nondifferentiable.
+Residual attribution and learned utility remain open. See [ordinary thought
+history](ThoughtHistory.md).
 
-## Query phase permission
+## Thought phase permission
 
-Sentence masking and completed-row query permission add no parameter, loss, or
-tensor detachment. They constrain when a checked query may read or execute;
+Sentence masking and completed-row thought permission add no parameter, loss, or
+tensor detachment. They constrain when a checked thought may read or execute;
 live prepared meanings retain their current-step gradient routes. A hard
 controller choice remains nondifferentiable and needs explicit policy credit.
 Compiled numerical execution keeps host phase bookkeeping outside the graph,
-while query tracing fails explicitly. See [Query phases](QueryPhases.md).
+while thought tracing fails explicitly. See [Query phases](QueryPhases.md).
 
-## Shared selected-query work
+## Shared selected-thought work
 
 QueryWorkBudget is host integer accounting only: it adds no tensor, parameter,
 loss, optimizer group, checkpoint field, or derivative. Charging before a
@@ -298,8 +304,9 @@ remain detached through their established owner boundary, while live
 thought-occurrence meanings retain their episode route until the explicit
 credit boundary. Discrete reference matching and structural traversal remain
 hard choices, so the meter supplies neither policy credit nor learned utility.
-The later normal controller must own final cost recording and causal reward.
-See [shared query work](QueryWork.md).
+The normal controller now owns final cost recording and its supplied-answer
+policy reward. The host meter itself still supplies no derivative, residual
+attribution or learned utility. See [shared query work](QueryWork.md).
 
 ## Retained grammatical occurrences
 

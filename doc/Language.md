@@ -109,7 +109,8 @@ participation, and part/whole support in the codebooks.
 >   recommender recovers the operand pair exactly on a discrete
 >   vocabulary (the serial XOR reconstruction path); without a basis they
 >   keep the lossy `(parent, parent)` fallback. The genuinely
->   non-invertible predicate folds (`isEqual` / `isPart` / `exist`)
+>   non-invertible legacy predicate folds (`isEqual` / `isPart`) and
+>   structural thought faces with no faithful inverse
 >   declare `invertible = False` and are not invertible by design (a
 >   truth/predicate value does not retain its operands). Layers that
 >   don't accept the `basis` kwarg yet are handled by a `TypeError`
@@ -209,8 +210,14 @@ CFG. A `RuleDef` stores:
 
 ```text
 (space_role, canonical, arity, method_name, lhs, rhs_symbols,
- width_min, width_max, query)
+ width_min, width_max, query, thought_family, thought_permutation)
 ```
+
+`query` is a retained false compatibility slot in the in-memory tuple; XML
+`query` attributes are rejected. `thought_family` and
+`thought_permutation` are grammar metadata for a canonical structural family
+(for example, `whole` as the `(I2, I1)` converse spelling of `part`), never a
+second executable catalogue.
 
 The grammar file carries BOTH directions: the `<compose>` section holds
 the forward rules (`op_O1 = op.forward(op_I1, op_I2)`) and the
@@ -285,12 +292,12 @@ fabricating a split would corrupt the reconstruction.
 | `conjunction` | 2 | SS | `Ops.intersection` monotonic (scalar activation min; RadMin under `<radialStmReduce>`) | recommender (`monotonic=True`, radial-aware); `snap=True` $\to$ MEET-aware snap; no basis $\to$ raise |
 | `disjunction` | 2 | SS | `Ops.union` monotonic (scalar activation max; RadMax under `<radialStmReduce>`) | recommender; `snap=True` $\to$ JOIN snap; no basis $\to$ raise |
 | `exist` | 1 | SS | identity (EXISTS roots the minimal event) | identity |
-| `isEqual` | 2 | SS | identity-assertion truth bivector | **raise** (max-fold not bijective) |
-| `isPart` | 2 | SS | parthood-assertion truth bivector | **raise** (A's identity not preserved) |
+| `isEqual` | 2 | SS | legacy identity-assertion truth bivector | **raise** (max-fold not bijective) |
+| `isPart` | 2 | SS | legacy parthood-assertion truth bivector | **raise** (A's identity not preserved) |
 | `part` | 2 | CS | returns the encompassing parent (parthood learned by codebook geometry) | **raise** (A's identity not preserved) |
 | `whole` | 2 | CS | converse of `part` (PartLayer subclass) | **raise** (same) |
 | `equal` | 2 | CS | geometric mutual-parthood on concept bivectors (Layers.EqualLayer) | lossy `(parent, parent)` pseudo-inverse |
-| `query` | 2 | CS | geometric parthood query $\to$ truth bivector | **raise** (two operands collapse to a truth value) |
+| `query` | 2 | CS | legacy geometric parthood predicate | **raise** (two operands collapse to a truth value) |
 
 Notes. (1) The binary lattice reverses (union/intersection,
 conjunction/disjunction) accept `left_rows` / `right_rows` (typed
@@ -475,6 +482,19 @@ semantic query or candidate representations, expand the action vocabulary, or
 enable episodes. Its final layer remains zero-initialized, so an untrained
 evaluation policy ties and chooses ANSWER.
 
+`SelectedThoughtChooser` is distinct from that legacy What step chooser. It
+scores the ordinary boundary controller's legal `query` / `finish` actions.
+For semantic width `D`, it receives root, active and candidate
+`[NP1, VP, NP2]` payloads with a mask per schema (`9D + 9` values), then level,
+closure pressure, true/false support and two evidence flags (`+6`), for a
+`9D + 15` context. Its two action-kind indicators make the first MLP layer
+`9D + 17` wide. Addresses, native IDs, token strings and row numbers remain
+outside that numerical input. The chooser shares the positive
+`whatThinkingHidden` / `whatThinkingDepth` capacity knobs, is lazily rebuilt
+from its saved shape, and has a zero final layer. Its default sequence is the
+safe checked-query baseline followed by `finish`; sampling and REINFORCE credit
+require the separate default-zero `selectedThoughtPolicyWeight`.
+
 Omitting these settings preserves the previous parameter keys, initialization
 and default topology. Changing them is an architecture change: use a matching
 checkpoint/configuration, not an implicit weight migration. A lazily absent
@@ -520,19 +540,17 @@ context-unique), so "recovers the grammar" means the parser's rule
 decisions survive the collapse, not exact rule regeneration. With the gate
 met, the former standalone role-collapse file has been absorbed into
 `complete.grammar`, which is the broad live role-only grammar used by
-`MentalModel.xml`. The part relation is unified there: the grammar
-declares the compositional op `part` and its converse `whole`, with separate
-`isPart` / `isWhole` boundary declarations. The compose rules explicitly use
-`query="false"`; the dispatch helper's legacy `query="true"` rewrite does not
-connect these declarations to a shared grammatical VP.
+`MentalModel.xml`. The part relation is unified there: role-labelled structural
+faces declare `part` and its converse `whole`, and the loader derives their one
+canonical thought-operation family. There are no separate boundary declarations
+and no `query` rule attribute. A `what` structural wrapper marks a completed
+idea interrogative; only the completed-row boundary dispatcher can execute it.
 [Relation declarations](../data/complete.grammar#L99),
-[legacy dispatch helper](../bin/Language.py#L4420).
+[thought contract](QueryContracts.md).
 
-The current `_SURFACE_TO_KIND` interface maps `part`, `isPart` and
-`queryPart` to the same `KIND_IS_PART` reduction kind, and similarly maps
-`equal` / `isEqual` / `queryEqual` to `KIND_IS_EQUAL`. These aliases do not
-complete the checked VP registry or linguistic/internal meaning agreement.
-[`QuerySpec` aliases](../bin/reasoning.py#L29).
+The historical `_SURFACE_TO_KIND` aliases remain an isolated compatibility
+adapter for the older reasoner. They do not define a production grammar
+operator, native VP, selected thought action, or learned feature.
 The operator codebook, soft
 superposition, and participation clustering are live and tested.
 
@@ -765,42 +783,50 @@ interacts with a PS/WS part-of-speech split; whether abstract nouns want
 the WholeSpace (property-like) or PartSpace (object-like) origin; and how
 the `<Anchors>` closed-class relation surfaces sit relative to this axis.
 
-## Exist at the reasoning boundary (September 16)
+## Exist and thought operations at the completed boundary
 
-The pure `exist` compose wrapper retains its grammatical role; its forward
-operation is an identity ([ExistLayer](../bin/Language.py#L4462)). The reasoner's
-`Exist`/`isTrue` evaluation now uses accepted LTM facts for the complete
-description, preserving occupied roles, scope, bindings, references and both
-support polarities. This does not execute a query during composition.
-[Boundary lookup](../bin/reasoning.py#L156).
+The pure `exist` compose wrapper retains its grammatical role; its structural
+forward is an identity. At a completed boundary, the grammar-owned `exist`
+thought operator reads accepted LTM evidence for the complete description,
+preserving occupied roles, scope, bindings, references, and both support
+polarities. It cannot execute during composition.
 
-The checked shared-VP adapter is implemented as an explicit API below.
-Canonical linguistic/internal agreement in normal forward execution remains open. Public `PartOf` now reads native conceptual-taxonomy references
-([Taxonomy queries](TaxonomyQueries.md)); this evidence reader does not
-complete the grammatical migration. See
-[Existence evidence](ExistenceEvidence.md) for the implemented evidence layer
-and [the integrated specification](plans/2026-09-15-next-sentence-as-the-production-objective.md#2-one-grammatical-deep-structure-multiple-surface-forms)
-for the complete grammatical target.
+`part` reads native conceptual-taxonomy references; `equal` receives full-width
+concepts; `lookup`, `quantize`, `arma`, and `what` receive only their declared
+capability views. See [the common contract](QueryContracts.md) and [the
+integrated specification](plans/2026-09-15-next-sentence-as-the-production-objective.md#2-one-grammatical-deep-structure-multiple-surface-forms).
 
-## Checked boundary signatures and shared VP identities (September 16)
+## Common grammar-face signatures and shared VP identities
 
-`Grammar.configure` validates query declarations before changing existing
-rules. Static query/anchor strings remain whole when the loader expands
-order alternatives. Complete and production ladder grammars include the
-distinct `what(Q)` subgoal interface, which requires an interrogative question.
-[Declarations](../bin/Language.py#L1027),
-[file normalization](../bin/Language.py#L514).
+`Grammar.configure` rejects `<Queries>` and `query` attributes before changing
+existing rules. It derives one immutable catalogue from role-labelled
+`<compose>`/`<generate>` faces. Static anchor strings remain whole when the
+loader expands order alternatives. Complete and production ladder grammars
+include structural `what`, which marks a completed question interrogative.
+[Declarations](../bin/Language.py#L1137).
 
 The explicit shared-VP adapter forms `[NP1, VP, NP2]` with native references,
-mode, polarity, scope and bindings. `whole`/`isWhole` reverse surface operands
-into the same canonical relation as `part`/`isPart`; `parts`/`wholes` retain
-open roles. Formation does not execute. A selected question dispatches from its
-middle VP and occupancy, requiring a checked declaration. No keyword matching
-is used in this API. The normal linguistic derivation adapter, sense selection,
-and paraphrase realization remain to be integrated.
-[Formation](../bin/Queries.py#L431),
-[dispatch](../bin/Queries.py#L496),
-[full contract](QueryContracts.md). Per-row query permission is now enforced
+mode, polarity, scope and bindings. `whole` reverses surface operands into the
+same canonical relation as `part`; open `I1` returns parts and open `I2` returns
+wholes. Formation does not execute. A selected question dispatches from its
+middle VP and occupancy through the grammar-derived descriptor. No keyword
+matching is used in this API.
+
+`LanguageSpace.program_meaning()` is the current direct linguistic derivation
+adapter. It recovers a completed binary relation from its immutable local
+compose-action snapshot and preserves the actual signed leaves that a lossy
+fold may have discarded. A structural `what` wrapper marks the resulting
+completed meaning interrogative; it does not replace the compose face with a
+geometric answering operator. A declared outer `not` or `non` changes canonical
+polarity without changing the retained operands. The adapter intentionally declines a
+nested physical fold until it has a stable existing occurrence reference;
+declining it is safer than flattening, rebinding, or inventing a semantic role.
+So the direct relation route is live, while broad sense selection, paraphrase
+realization and general syntactic nested-clause adaptation remain separate
+work.
+[Formation](../bin/Queries.py#L1556),
+[dispatch](../bin/Queries.py#L1855),
+[full contract](QueryContracts.md). Per-row thought permission is now enforced
 at the completed answer boundary; the normal linguistic derivation adapter,
 sense selection and paraphrase realization remain separate work. See
 [Query phases](QueryPhases.md).

@@ -22,10 +22,28 @@ Checkpoints contain detached copies and replay/validate every row atomically on
 restore; new computations after restore can be live, but restoration never
 replenishes budget or pressure.
 
-The implementation adds no learned parameter, objective, or policy reward.
-Normal controller integration, selected linguistic meaning, actual executor
-costs, residual policy credit, and learned utility remain separate gates in
-[the integrated production specification](plans/2026-09-15-next-sentence-as-the-production-objective.md).
+The ordinary controller now owns the selected direct-relation boundary path.
+It is deliberately separate from the legacy `LTMSlot` parity loop: a completed
+interrogative compose program is adapted into canonical `[NP1, VP, NP2]`, then
+`run_selected_thought()` opens one ordinary episode for that row. Composition
+itself remains pure. The adapter retains the signed live leaves, native
+references, mode and `not`/`non` polarity from the owned action program; a
+physical nested fold is not flattened into an invented operand.
+
+The controller's hard `query` / `finish` choice sees three separately masked
+role schemas — root request, active context and candidate — plus level,
+pressure and bounded actual-evidence flags. For width `D`, that controller
+context is `9D + 15`; the two action-kind features make the MLP input `9D +
+17`. Native IDs, row numbers, addresses and surface tokens remain metadata,
+not numerical features. The chooser is width-owned, lazy/checkpointed and uses
+the existing `whatThinkingHidden` / `whatThinkingDepth` capacity settings.
+
+`selectedThoughtPolicyWeight` is a separate, default-off REINFORCE objective:
+later answer loss less actual controller-choice cost, with its own EMA
+baseline. Its log-probability path can reach the chooser and its live role
+payloads; executor results, references, meter state and reward are hard or
+detached. This is supplied-answer controller credit, **not** residual credit,
+and it does not establish learned utility.
 
 ## Evidence
 
@@ -39,19 +57,34 @@ selection, learned utility, or end-to-end answer quality.
 
 ## Sentence-runtime integration
 
-The completed-row query guard now constrains when a selected query may execute;
-it does not select an ordinary thought, change its level, replenish its work
-budget, or alter history replay/credit lifetime. See [Query phases](QueryPhases.md).
+`resolveAnswer()` opens only its completed rows, then runs an interrogative
+owned program through the ordinary controller before legacy thinking or
+`reverseOutput()`. Assertions and unsupported/nested physical programs remain
+observations; they cannot execute a checked VP. The boundary guard is checked
+before registry, native or occurrence reads. A standalone/evaluation
+resolution ends its finished ordinary episode immediately; training retains it
+through its one optimizer step and closes it with the existing episode teardown.
+See [Query phases](QueryPhases.md).
 
 ## Selected-query meter
 
-A selected caller may pass one transient QueryWorkBudget through QueryContext.
-Live thought-occurrence resolution then charges each inspected record before it
-reads that live meaning, without detaching it. The meter is not automatically
-created from the older ordinary-history budget and does not alter replay,
-capacity, cutoff, or credit lifetime. The unfinished normal controller must
-link those two scopes, forward one meter to nested callbacks, and record actual
-cost once. See [shared query work](QueryWork.md).
+Each controller episode creates one `QueryWorkBudget` from
+`selectedThoughtBudget` (default 32). It charges a controller unit before each
+chosen query, same-level conclusion, descent, return and root finish, and
+passes that exact meter to registry preparation, execution and `what(Q)`
+callbacks. Each ordinary transition records the actual delta; nested work does
+not start another allowance or optimizer episode. At cutoff only the existing
+query-free drain is legal. Live thought-occurrence reads preserve their live
+meaning; durable reads retain their detached boundary. See [shared query
+work](QueryWork.md).
+
+The controller probes first failed on the absent context/lifecycle path, then
+passed 25/25 focused semantics/controller cases in
+`output/tests/20260918-033710-5f144b`; the non-overlapping normal/chooser
+regression passed 39/39 in `output/tests/20260918-032344-fee2c1`. The two
+polarity cases passed in `output/tests/20260918-034810-cd9c1c`. These are
+mechanism and lifecycle evidence, not a learned-utility or residual-policy
+result.
 
 ## LTM roots retained by ordinary history
 

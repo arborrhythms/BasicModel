@@ -58,6 +58,9 @@
     <transformChooserDepth>1</transformChooserDepth>
     <whatThinkingHidden>16</whatThinkingHidden>
     <whatThinkingDepth>1</whatThinkingDepth>
+    <!-- One completed selected grammatical question owns this many shared
+         controller/query-work units. Policy sampling remains separately off. -->
+    <selectedThoughtBudget>32</selectedThoughtBudget>
 
     <!-- Reverse from the idea rather than replaying the forward grammar trace.
          When true, reverse() clears current_rules/generate_rules and the
@@ -278,6 +281,9 @@
       <interLossWeight>0.1</interLossWeight>
       <interContrastiveWeight>0.0</interContrastiveWeight>
       <interContrastiveTemp>0.1</interContrastiveTemp>
+      <!-- Hard normal grammatical-thought choices use their own explicit
+           REINFORCE credit; zero preserves the deterministic safe baseline. -->
+      <selectedThoughtPolicyWeight>0.0</selectedThoughtPolicyWeight>
     </training>
 
     <server>

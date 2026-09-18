@@ -32,12 +32,12 @@
   <Symbolic>
     <compose>
       <!-- Relative Truth. -->
-      <rule query="true">REL_T = isEqual.forward(QLEFT_NP3, QRIGHT_AP)</rule>
-      <rule query="true">REL_T = isEqual.forward(QLEFT_NP3, QRIGHT_NP3)</rule>
-      <rule>REL_T = queryPart.forward(QLEFT_PART34, QRIGHT_S34)</rule>
-      <rule>REL_T = isEqual.forward(NP_EQ345, NP345)</rule>
-      <rule>REL_T = isEqual.forward(NP_EQ4, AP4)</rule>
-      <rule>REL_T = assertPart.forward(S_PART34, S34)</rule>
+      <rule>REL_T = equal.forward(QLEFT_NP3, QRIGHT_AP)</rule>
+      <rule>REL_T = equal.forward(QLEFT_NP3, QRIGHT_NP3)</rule>
+      <rule>REL_T = part.forward(QLEFT_PART34, QRIGHT_S34)</rule>
+      <rule>REL_T = equal.forward(NP_EQ345, NP345)</rule>
+      <rule>REL_T = equal.forward(NP_EQ4, AP4)</rule>
+      <rule>REL_T = part.forward(S_PART34, S34)</rule>
 
       <!-- Absolute Truth. -->
       <rule>ABS_T = exist.forward(S345)</rule>
@@ -117,12 +117,12 @@
 
     <generate>
       <!-- Relative Truth. -->
-      <rule query="true">QLEFT_NP3, QRIGHT_AP = isEqual.reverse(REL_T)</rule>
-      <rule query="true">QLEFT_NP3, QRIGHT_NP3 = isEqual.reverse(REL_T)</rule>
-      <rule>QLEFT_PART34, QRIGHT_S34 = queryPart.reverse(REL_T)</rule>
-      <rule>NP_EQ345, NP345 = isEqual.reverse(REL_T)</rule>
-      <rule>NP_EQ4, AP4 = isEqual.reverse(REL_T)</rule>
-      <rule>S_PART34, S34 = assertPart.reverse(REL_T)</rule>
+      <rule>QLEFT_NP3, QRIGHT_AP = equal.reverse(REL_T)</rule>
+      <rule>QLEFT_NP3, QRIGHT_NP3 = equal.reverse(REL_T)</rule>
+      <rule>QLEFT_PART34, QRIGHT_S34 = part.reverse(REL_T)</rule>
+      <rule>NP_EQ345, NP345 = equal.reverse(REL_T)</rule>
+      <rule>NP_EQ4, AP4 = equal.reverse(REL_T)</rule>
+      <rule>S_PART34, S34 = part.reverse(REL_T)</rule>
 
       <!-- Absolute Truth. -->
       <rule>S345 = exist.reverse(ABS_T)</rule>
@@ -185,12 +185,4 @@
       <rule>S45, S45 = union.reverse(S45)</rule>
     </generate>
   </Symbolic>
-
-  <Queries>
-    <query>exist(X)</query>
-    <query>quantize(X)</query>
-    <query>wholes(X)</query>
-    <query>parts(X)</query>
-    <query>arma(X)</query>
-  </Queries>
 </grammar>

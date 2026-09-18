@@ -2,9 +2,10 @@
 <!--
   complete.grammar: the complete live operator inventory (2026-06-20, refined).
 
-  Declares every PARSE-contributing grammar operation (compose/generate) plus the
-  INTROSPECTION ("thinking") operations (queries). See doc/old/2026-06-20-idea-
-  decoder.md. Refined per owner notes:
+  Declares every structural grammar operation (compose/generate). A role-labelled
+  structural family with a registered descriptor also supplies one checked
+  thought operator at a completed boundary; it is never executed while parsing
+  or generating. Refined per owner notes:
     - aspect -> rewrite() (PLANNED): the dead aspect no-op becomes a
       surface-inflection MLP that adapts a root lemma ("run") to its surface form
       (ran / will run / running) from tense/aspect features. Needs a RewriteLayer
@@ -18,12 +19,12 @@
     - exist: its compose/inverse face represents the unary grammatical
       relation. Only a selected completed question executes the boundary LTM
       evidence lookup, preserving the entire conceptual description.
-    - Query-capable VPs have one relation/domain identity, with pure grammatical
-      faces and checked boundary executors. Queries are inactive during parse,
-      reconstruction and generation; this does not erase their representation.
-      part/isPart share conceptual-taxonomy meaning; whole/isWhole declare the
-      converse argument order. World facts and perceptual mereonomy are distinct.
-      Tense queries are deferred; tense-bearing compose rules retain surface
+    - Thought-capable VPs have one grammar-derived relation/domain identity,
+      pure structural faces, and checked boundary executors. Thought is inactive
+      during parse, reconstruction and generation; this does not erase its
+      representation. `part` is canonical and `whole` declares its converse
+      argument order. World facts and perceptual mereonomy are distinct.
+      Tense thought is deferred; tense-bearing compose rules retain surface
       fidelity without establishing an event time.
 
 
@@ -39,8 +40,9 @@
     DET  = LOWER: count-noun REGION -> individual POINT (4->3).
     ADJ  = INTERSECTION (order-1 mask / Boolean meet on NP).
     ADV  = EIGENMODIFIER on the VP (1-D edit of the verb's eigenvalues).
-    copula ("is" of definition) = the equality relation. equal composes its
-    grammatical structure; isEqual is its boundary evidence interface.
+    copula ("is" of definition) = the equality relation. `equal` composes its
+    grammatical structure and, when selected at a boundary, reads its checked
+    identity evidence through the same canonical family.
     and / or / not / non = conjunction / disjunction / negation / non-affirming.
     MODALITY (possibly / necessarily) = a SECOND lift adding a 5th modal
            dimension - PLANNED, NOT YET BUILT.
@@ -56,8 +58,8 @@
     2026-07-05: exact residual), + intersection/union/conjunction/disjunction
     WITH a codebook basis (recommender); content-exact / marker-lossy ->
     preposition; NO faithful inverse (fail-loud, Gate-S1 inventory) -> the
-    no-basis lattice tails; carrier-dep -> morphology. isEqual and isPart are
-    checked boundary interfaces to the pure grammatical relation faces.
+    no-basis lattice tails; carrier-dep -> morphology. `equal` and `part` are
+    pure grammatical relation faces with separately checked thought execution.
 -->
 <grammar name="complete">
 
@@ -98,20 +100,30 @@
     <compose>
       <!-- Relations R (the relation family): part / whole / equal are
            COMPOSITIONAL operators, i.e. Relation(RI_1, RI_2) over two ideas,
-           that head the relative-truth start. isPart/isWhole/isEqual are
-           boundary interfaces to these same relation identities; they execute
-           only after a completed interrogative meaning is selected. whole
-           declares the converse operand permutation of part. query="false"
-           forbids execution here; it does not assert the proposition as true. -->
-      <rule query="false">part_O1 = part.forward(part_I1, part_I2)</rule>
-      <rule query="false">whole_O1 = whole.forward(whole_I1, whole_I2)</rule>
-      <rule query="false">equal_O1 = equal.forward(equal_I1, equal_I2)</rule>
+           that head the relative-truth start. Their checked thought faces are
+           derived from these same structural declarations and execute only at
+           a completed boundary. whole is the converse structural form of
+           part; composition itself never establishes a fact. -->
+      <rule>part_O1 = part.forward(part_I1, part_I2)</rule>
+      <rule family="part" permutation="I2,I1">whole_O1 = whole.forward(whole_I1, whole_I2)</rule>
+      <rule>equal_O1 = equal.forward(equal_I1, equal_I2)</rule>
 
       <!-- Pure existence composition. The numerical wrapper roots the
-           grammatical unary relation without an LTM read. Its selected query
+           grammatical unary relation without an LTM read. Its selected thought
            face checks the full description's referent against accepted facts;
            merely composing it cannot establish truth. -->
       <rule>exist_O1 = exist.forward(exist_I1)</rule>
+
+      <!-- Boundary-capable thought operations still have ordinary structural
+           faces.  These carriers are pure: they preserve the completed
+           full-width idea and record the grammar operation, while their
+           selected thought executors receive the bounded LTM/taxonomy views
+           only after a completed-row boundary.  lookup has no faithful
+           inverse, so it is compose-only. -->
+      <rule>lookup_O1 = lookup.forward(lookup_I1, lookup_I2)</rule>
+      <rule>quantize_O1 = quantize.forward(quantize_I1)</rule>
+      <rule>arma_O1 = arma.forward(arma_I1)</rule>
+      <rule>what_O1 = what.forward(what_I1)</rule>
 
       <!-- Negation: not = pole swap; non = non-affirming complement. -->
       <rule>not_O1 = not.forward(not_I1)</rule>
@@ -157,11 +169,15 @@
 
     <generate>
       <!-- Reverse rules: output -> inputs. -->
-      <rule query="false">part_I1, part_I2 = part.reverse(part_O1)</rule>
-      <rule query="false">whole_I1, whole_I2 = whole.reverse(whole_O1)</rule>
-      <rule query="false">equal_I1, equal_I2 = equal.reverse(equal_O1)</rule>
+      <rule>part_I1, part_I2 = part.reverse(part_O1)</rule>
+      <rule family="part" permutation="I2,I1">whole_I1, whole_I2 = whole.reverse(whole_O1)</rule>
+      <rule>equal_I1, equal_I2 = equal.reverse(equal_O1)</rule>
 
       <rule>exist_I1 = exist.reverse(exist_O1)</rule>
+
+      <rule>quantize_I1 = quantize.reverse(quantize_O1)</rule>
+      <rule>arma_I1 = arma.reverse(arma_O1)</rule>
+      <rule>what_I1 = what.reverse(what_O1)</rule>
 
       <rule>not_I1 = not.reverse(not_O1)</rule>
       <rule>non_I1 = non.reverse(non_O1)</rule>
@@ -200,26 +216,4 @@
     <equal>isEqual, equals, is-equal</equal>
   </Anchors>
 
-  <Queries>
-    <!-- Checked boundary signatures: result kinds, canonical argument roles,
-         domains, read/write effects and executors live in bin/Queries.py.
-         Grammatical representations exist independently of execution. Missing
-         executors and invalid signatures fail when the grammar is configured.
-         isTrue checks full-description LTM facts; isPart/isWhole use conceptual
-         taxonomy; equality uses conceptual payloads. parts/wholes return native
-         references; quantize reads conceptual atoms; arma returns an estimate.
-         query(X,Y) remains the distinct two-operand LTM lookup. what(Q) hands
-         the complete conceptual question to the same boundary controller.
-         Neither predictions nor internal questions establish observed facts. -->
-    <query>isTrue(X)</query>
-    <query>isEqual(X, Y)</query>
-    <query>isPart(X, Y)</query>
-    <query>isWhole(X, Y)</query>
-    <query>parts(X)</query>
-    <query>wholes(X)</query>
-    <query>quantize(X)</query>
-    <query>arma(X)</query>
-    <query>query(X, Y)</query>
-    <query>what(Q)</query>
-  </Queries>
 </grammar>

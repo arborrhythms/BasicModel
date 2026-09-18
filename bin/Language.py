@@ -31,7 +31,8 @@ from Layers import (CertaintyWeightedCrossEntropy, LeafDecoderHead, Loss,
                     ModelLoss, epsilon, Ops)
 from Layers import SortingLayer, TruthLayer, RelativeTruthStore, TernaryTruthStore, LiftingLayer, InterSentenceLayer, SparsityRegLayer, SmoothingRegLayer, ImpenetrableLayer
 from Layers import WhatInteractionMemory
-from Queries import checked_query_declarations
+from Meaning import ConceptualMeaning
+from Queries import ConceptualSpaceCapability, StructuralGrammarContext
 from util import parse
 from collections import namedtuple as _namedtuple
 
@@ -741,8 +742,8 @@ class Grammar:
       - ``SS`` (symbolic)   -- WholeSpace's SyntacticLayer.
         Post-codebook activation: a scalar ``[B, V]`` per
         prototype. SS-space_role ops (``conjunction``, ``disjunction``,
-        ``not``, ``lift``, ``lower``, ``part``, ``equals``,
-        ``query``, ``true``, ``false``, ``swap``, ``non``) are
+        ``not``, ``lift``, ``lower``, ``part``, ``equal``, ``lookup``,
+        ``quantize``, ``arma``, ``what``, ``swap``, ``non``) are
         monotonic functions on that scalar.
 
     Owns the rule definitions parsed from XML config. All learnable
@@ -763,9 +764,99 @@ class Grammar:
     RuleDef = _namedtuple(
         'RuleDef',
         ['space_role', 'canonical', 'arity', 'method_name', 'lhs', 'rhs_symbols',
-         'width_min', 'width_max', 'query'],
+         'width_min', 'width_max', 'query', 'thought_family',
+         'thought_permutation'],
     )
-    RuleDef.__new__.__defaults__ = (0, 0, False)
+    RuleDef.__new__.__defaults__ = (0, 0, False, None, None)
+
+    @dataclass(frozen=True)
+    class ThoughtOperationForm:
+        """One grammar-spelled structural form of a canonical operation.
+
+        ``structural_id`` is the method actually called by compose/generate.
+        ``permutation`` maps canonical operand order to this form's role
+        labels: ``('I2', 'I1')`` makes ``whole(A, B)`` mean ``part(B, A)``.
+        It is grammar metadata, never a second executor alias or learned
+        numeric feature.
+        """
+        structural_id: str
+        operand_roles: tuple
+        result_role: str
+        permutation: tuple
+        forward_rule_ids: tuple
+        reverse_rule_ids: tuple
+
+        def __post_init__(self):
+            if (not isinstance(self.structural_id, str)
+                    or re.fullmatch(r'[A-Za-z_]\w*', self.structural_id,
+                                    re.ASCII) is None):
+                raise ValueError('thought operation form requires a valid structural id')
+            roles = tuple(self.operand_roles)
+            if (not roles or len(set(roles)) != len(roles)
+                    or any(re.fullmatch(r'I[1-9]\d*', role, re.ASCII) is None
+                           for role in roles)):
+                raise ValueError('thought operation form has invalid operand roles')
+            if (not isinstance(self.permutation, tuple)
+                    or len(self.permutation) != len(roles)
+                    or set(self.permutation) != set(roles)):
+                raise ValueError('thought operation form has an invalid role permutation')
+            if re.fullmatch(r'O[1-9]\d*', self.result_role, re.ASCII) is None:
+                raise ValueError('thought operation form has an invalid result role')
+            for ids in (self.forward_rule_ids, self.reverse_rule_ids):
+                if (not isinstance(ids, tuple)
+                        or any(type(rule_id) is not int or rule_id < 0
+                               for rule_id in ids)):
+                    raise ValueError('thought operation form has invalid structural rule ids')
+
+    @dataclass(frozen=True)
+    class ThoughtOperationSpec:
+        """One immutable role-labelled structural operation family.
+
+        This is configuration metadata only.  It deliberately carries no
+        executor, native concept, learned parameter, memory owner, or mutable
+        registry.  The boundary registry joins a checked thought descriptor by
+        ``semantic_id`` after grammar configuration.
+        """
+        semantic_id: str
+        operand_roles: tuple
+        result_role: str
+        forward_rule_ids: tuple
+        reverse_rule_ids: tuple
+        forms: tuple = ()
+
+        def __post_init__(self):
+            if (not isinstance(self.semantic_id, str)
+                    or re.fullmatch(r'[A-Za-z_]\w*', self.semantic_id,
+                                    re.ASCII) is None):
+                raise ValueError('thought operation requires a valid semantic id')
+            roles = tuple(self.operand_roles)
+            if (not roles or len(set(roles)) != len(roles)
+                    or tuple(sorted(roles, key=lambda role: int(role[1:]))) != roles
+                    or any(re.fullmatch(r'I[1-9]\d*', role, re.ASCII) is None
+                           for role in roles)):
+                raise ValueError('thought operation has invalid operand roles')
+            if re.fullmatch(r'O[1-9]\d*', self.result_role, re.ASCII) is None:
+                raise ValueError('thought operation has an invalid result role')
+            for ids in (self.forward_rule_ids, self.reverse_rule_ids):
+                if (not isinstance(ids, tuple)
+                        or any(type(rule_id) is not int or rule_id < 0
+                               for rule_id in ids)):
+                    raise ValueError('thought operation has invalid structural rule ids')
+            if not isinstance(self.forms, tuple):
+                raise TypeError('thought operation forms must be immutable')
+            forms = self.forms
+            if not forms:
+                raise ValueError('thought operation requires at least one structural form')
+            seen = set()
+            for form in forms:
+                if not isinstance(form, Grammar.ThoughtOperationForm):
+                    raise TypeError('thought operation form has an invalid type')
+                if form.structural_id in seen:
+                    raise ValueError('thought operation has duplicate structural forms')
+                seen.add(form.structural_id)
+                if (form.operand_roles != roles
+                        or form.result_role != self.result_role):
+                    raise ValueError('thought operation form disagrees with canonical contract')
 
     # Order-typing primitives (plan:
     # doc/plans/2026-05-20-knowledge-artifact-order-typed-stm.md
@@ -798,6 +889,10 @@ class Grammar:
         self.rules = []
         self.rules_upward = []
         self.rules_downward = []
+        # The single structural source of thought-action identity.  A tuple
+        # keeps grammar copies independent without introducing a mutable query
+        # catalogue; registry lookup maps are derived from it on demand.
+        self.thought_operations = ()
         # PartSpace meronymic rule tables. Populated only when a
         # grammar file carries a ``<PartSpace>`` section (Phase 8b,
         # doc/plans/2026-05-30-subsymbolic-analyzer-terminal-emitter.md).
@@ -848,14 +943,14 @@ class Grammar:
         self.ps_start_symbol = None
         self.ps_start_patterns = ()
         # WS starts partitioned by ``<start name=...>``: a relative truth
-        # is a binary-predicate end-state (the isEqual / isPart family),
+        # is a binary-predicate end-state (the equal / part / whole family),
         # an absolute truth collapses to a single idea. Consumed by
         # ``_relative_start_categories`` (R1.3).
         self.ws_relative_starts = frozenset()
         self.ws_absolute_starts = frozenset()
         # Task 6a (doc/plans/2026-05-29-stm-serial-parallel-modes.md §7):
         # cache of rule_ids that produce a RELATIVE truth (the
-        # ``part`` / ``isEqual`` predicate family). Lazily computed by
+        # ``part`` / ``equal`` predicate family). Lazily computed by
         # ``_relative_rule_id_set`` and invalidated on every rule-table
         # bump. ``None`` == not yet computed.
         self._relative_rule_ids_cache = None
@@ -1042,19 +1137,19 @@ class Grammar:
               -- runtime gating is independent of space_role tagging; the
               tags are an inductive-bias hint, not a hard restriction.
         """
-        # Validate boundary contracts before mutating the grammar. Query-capable
-        # relations have pure grammatical faces; declaration never executes one.
-        q_block = grammar_dict.get('Queries')
-        if q_block is not None and not isinstance(q_block, dict):
-            raise ValueError('Queries must contain checked query signatures')
-        query_ops, query_signatures = checked_query_declarations(
-            None if q_block is None else q_block.get('query'))
+        # Thought actions are derived from structural compose/generate faces.
+        # A second <Queries> catalogue can disagree about roles, aliases, and
+        # availability, so reject it before changing any grammar state.  XML
+        # permits the same grammar under <Symbolic>, so a top-level check is
+        # not enough: the retired catalogue must fail at every nesting level.
+        if self._contains_retired_queries_block(grammar_dict):
+            raise ValueError(
+                'Queries is retired; declare thought operators in compose or generate')
         self.rules_upward = []
         self.rules_downward = []
         self.ps_rules_upward = []
         self.ps_rules_downward = []
-        self.query_ops = query_ops
-        self.query_signatures = query_signatures
+        self.thought_operations = ()
         self._configured = True
 
         # PS / Symbolic-sectioned form (Phase 8b,
@@ -1068,8 +1163,8 @@ class Grammar:
         #
         # Section vocabulary: <PartSpace> nests <Synthesize> (parts -> whole)
         # and <Analyze> (whole -> parts) -- the mereological framing; <Symbolic>
-        # nests <compose> / <generate> (the symbolic rules); a top-level
-        # <Queries> declares the introspection ops.
+        # nests <compose> / <generate> (the symbolic rules); role-labelled
+        # faces in those sections derive the one thought-operation catalogue.
         ps_block = grammar_dict.get('PartSpace')
         ws_block = grammar_dict.get('Symbolic')
         if ps_block is not None or ws_block is not None:
@@ -1119,6 +1214,7 @@ class Grammar:
         # then downward. Upward rule IDs stay stable for existing code.
         self.rules = list(self.rules_upward) + list(self.rules_downward)
         self.ps_rules = list(self.ps_rules_upward) + list(self.ps_rules_downward)
+        self.thought_operations = self._derive_thought_operations()
         self.rule_table = {idx: rule.canonical
                            for idx, rule in enumerate(self.rules)}
         # Step 6 parity: derive Layer-2.5 reverse rules from upward
@@ -1127,6 +1223,187 @@ class Grammar:
         self.reverse_rules = self._derive_reverse_rules(self.rules_upward)
         self.id_SS = self._find_identity_rule_id(self.start_symbol)
         self._bump_rule_table_version()
+
+    @staticmethod
+    def _contains_retired_queries_block(value):
+        """Whether a grammar mapping contains a retired ``<Queries>`` block.
+
+        This deliberately walks only container structure; grammar text is not
+        interpreted here.  It keeps rejection atomic for both top-level and
+        ``<Symbolic>``-sectioned XML without making a second parser or a
+        compatibility path for the retired catalogue.
+        """
+        if isinstance(value, dict):
+            return ('Queries' in value or any(
+                Grammar._contains_retired_queries_block(item)
+                for item in value.values()))
+        if isinstance(value, (list, tuple)):
+            return any(Grammar._contains_retired_queries_block(item)
+                       for item in value)
+        return False
+
+    @staticmethod
+    def _thought_role_tokens(method, tokens, kind):
+        """Return canonical role labels from one structural face side.
+
+        A normal category rule is not a thought operation merely because it
+        has a method name.  Role-labelled operation faces use exactly
+        ``<method>_I1 … <method>_In`` and ``<method>_O1``.  Seeing any
+        same-method suffix therefore makes a malformed role spelling a load
+        error rather than silently omitting a boundary action.
+        """
+        prefix = str(method) + '_'
+        values = tuple(str(token).strip() for token in tokens if str(token).strip())
+        role_like = tuple(token for token in values if token.startswith(prefix))
+        if not role_like:
+            return None
+        pattern = re.compile(re.escape(str(method)) + r'_' + kind + r'([1-9]\d*)$')
+        labels = []
+        for token in values:
+            match = pattern.fullmatch(token)
+            if match is None:
+                raise ValueError(
+                    f'thought operation {method!r} has malformed {kind}-role {token!r}')
+            labels.append(kind + match.group(1))
+        if not labels or len(set(labels)) != len(labels):
+            raise ValueError(f'thought operation {method!r} has ambiguous {kind}-roles')
+        ordered = tuple(sorted(labels, key=lambda role: int(role[1:])))
+        if tuple(labels) != ordered:
+            raise ValueError(
+                f'thought operation {method!r} must declare {kind}-roles in canonical order')
+        return ordered
+
+    def _thought_contract_from_rule(self, rule, direction):
+        """Derive a role contract from one compose or generate declaration."""
+        method = getattr(rule, 'method_name', None)
+        if not isinstance(method, str) or not method:
+            return None
+        lhs = tuple(part.strip() for part in str(rule.lhs).split(',') if part.strip())
+        rhs = tuple(rule.rhs_symbols or ())
+        if direction == 'forward':
+            inputs = self._thought_role_tokens(method, rhs, 'I')
+            outputs = self._thought_role_tokens(method, lhs, 'O')
+        elif direction == 'reverse':
+            inputs = self._thought_role_tokens(method, lhs, 'I')
+            outputs = self._thought_role_tokens(method, rhs, 'O')
+        else:
+            raise ValueError(f'unknown structural direction {direction!r}')
+        if inputs is None and outputs is None:
+            return None
+        if inputs is None or outputs is None:
+            raise ValueError(
+                f'thought operation {method!r} has an incomplete {direction} role contract')
+        if len(outputs) != 1:
+            raise ValueError(
+                f'thought operation {method!r} requires exactly one result role')
+        expected = tuple('I' + str(index) for index in range(1, len(inputs) + 1))
+        if inputs != expected:
+            raise ValueError(
+                f'thought operation {method!r} has non-contiguous operand roles')
+        if outputs != ('O1',):
+            raise ValueError(
+                f'thought operation {method!r} requires canonical result role O1')
+        return method, inputs, outputs[0]
+
+    def _derive_thought_operations(self):
+        """Merge role-labelled compose/generate declarations into one catalog.
+
+        The tuple is deterministic by first structural declaration and is the
+        only metadata that the boundary registry may join to an executor.
+        Ordinary grammar rules without the ``op_I*``/``op_O1`` family syntax
+        remain structural-only rules and never become thought candidates.
+        A rule may instead declare ``family="part" permutation="I2,I1"``:
+        it remains the structural ``whole`` face while joining the one
+        canonical ``part`` boundary identity.
+        """
+        families = {}
+        order = []
+        faces = (
+            ('forward', self.rules_upward, 0),
+            ('reverse', self.rules_downward, len(self.rules_upward)),
+        )
+        for direction, rules, offset in faces:
+            for local_id, rule in enumerate(rules):
+                contract = self._thought_contract_from_rule(rule, direction)
+                if contract is None:
+                    if (getattr(rule, 'thought_family', None) is not None
+                            or getattr(rule, 'thought_permutation', None) is not None):
+                        raise ValueError(
+                            'thought family metadata requires a role-labelled structural face')
+                    continue
+                structural_id, operand_roles, result_role = contract
+                declared_family = getattr(rule, 'thought_family', None)
+                declared_permutation = getattr(rule, 'thought_permutation', None)
+                if declared_family is None:
+                    if declared_permutation is not None:
+                        raise ValueError(
+                            f'thought operation {structural_id!r} declares a permutation '
+                            'without a canonical family')
+                    semantic_id = structural_id
+                    permutation = operand_roles
+                else:
+                    semantic_id = declared_family
+                    permutation = tuple(declared_permutation or ())
+                    if (len(permutation) != len(operand_roles)
+                            or set(permutation) != set(operand_roles)):
+                        raise ValueError(
+                            f'thought operation {structural_id!r} has an invalid '
+                            'canonical role permutation')
+                family = families.get(semantic_id)
+                if family is None:
+                    family = {
+                        'operand_roles': operand_roles,
+                        'result_role': result_role,
+                        'forward_rule_ids': [],
+                        'reverse_rule_ids': [],
+                        'forms': {},
+                        'form_order': [],
+                    }
+                    families[semantic_id] = family
+                    order.append(semantic_id)
+                elif (family['operand_roles'] != operand_roles
+                      or family['result_role'] != result_role):
+                    raise ValueError(
+                        f'thought operation {semantic_id!r} has conflicting role contracts')
+                family[direction + '_rule_ids'].append(offset + local_id)
+                form = family['forms'].get(structural_id)
+                if form is None:
+                    form = {
+                        'operand_roles': operand_roles,
+                        'result_role': result_role,
+                        'permutation': permutation,
+                        'forward_rule_ids': [],
+                        'reverse_rule_ids': [],
+                    }
+                    family['forms'][structural_id] = form
+                    family['form_order'].append(structural_id)
+                elif (form['operand_roles'] != operand_roles
+                      or form['result_role'] != result_role
+                      or form['permutation'] != permutation):
+                    raise ValueError(
+                        f'thought operation form {structural_id!r} has conflicting '
+                        'family or role-permutation declarations')
+                form[direction + '_rule_ids'].append(offset + local_id)
+        return tuple(self.ThoughtOperationSpec(
+            semantic_id=semantic_id,
+            operand_roles=families[semantic_id]['operand_roles'],
+            result_role=families[semantic_id]['result_role'],
+            forward_rule_ids=tuple(families[semantic_id]['forward_rule_ids']),
+            reverse_rule_ids=tuple(families[semantic_id]['reverse_rule_ids']),
+            forms=tuple(self.ThoughtOperationForm(
+                structural_id=structural_id,
+                operand_roles=families[semantic_id]['forms'][structural_id][
+                    'operand_roles'],
+                result_role=families[semantic_id]['forms'][structural_id][
+                    'result_role'],
+                permutation=families[semantic_id]['forms'][structural_id][
+                    'permutation'],
+                forward_rule_ids=tuple(families[semantic_id]['forms'][
+                    structural_id]['forward_rule_ids']),
+                reverse_rule_ids=tuple(families[semantic_id]['forms'][
+                    structural_id]['reverse_rule_ids']))
+                for structural_id in families[semantic_id]['form_order']))
+            for semantic_id in order)
 
     def _find_identity_rule_id(self, symbol):
         # Identity rule: LHS == RHS, arity 1, method_name None.
@@ -1199,10 +1476,14 @@ class Grammar:
                     text = str(entry.get('_', '')).strip()
                     width_raw = entry.get('width', None)
                     query_raw = entry.get('query', None)
+                    family_raw = entry.get('family', None)
+                    permutation_raw = entry.get('permutation', None)
                 else:
                     text = str(entry)
                     width_raw = None
                     query_raw = None
+                    family_raw = None
+                    permutation_raw = None
                 if '=' not in text:
                     raise ValueError(
                         f"<rule> requires 'head = body' syntax, got: {text!r}")
@@ -1215,8 +1496,13 @@ class Grammar:
                     rule = rule._replace(
                         width_min=int(w_min), width_max=int(w_max))
                 if query_raw is not None:
+                    raise ValueError(
+                        'rule query attribute is retired; mode belongs to the completed idea')
+                if family_raw is not None or permutation_raw is not None:
+                    family, permutation = self._parse_thought_form_attrs(
+                        family_raw, permutation_raw)
                     rule = rule._replace(
-                        query=self._parse_bool_attr(query_raw))
+                        thought_family=family, thought_permutation=permutation)
                 target.append(rule)
 
         # Legacy syntax: <S>body</S> with nonterminal as tag. Kept for
@@ -1282,6 +1568,35 @@ class Grammar:
             return value
         text = str(value).strip().lower()
         return text in ('1', 'true', 'yes', 'y', 'on')
+
+    @staticmethod
+    def _parse_thought_form_attrs(family_raw, permutation_raw):
+        """Parse the grammar-owned canonical-family/permutation declaration.
+
+        A converse remains an ordinary structural operator in compose and
+        generate.  Its ``family`` names the one canonical boundary identity;
+        ``permutation`` lists the source role for canonical ``I1 … In``.
+        Requiring both attributes avoids a silent alias convention hidden in
+        Python or an executor table.
+        """
+        if family_raw is None or permutation_raw is None:
+            raise ValueError(
+                'thought family and permutation attributes must be declared together')
+        family = str(family_raw).strip()
+        if re.fullmatch(r'[A-Za-z_]\w*', family, re.ASCII) is None:
+            raise ValueError('thought family attribute requires a valid canonical id')
+        if isinstance(permutation_raw, (list, tuple)):
+            values = tuple(str(value).strip() for value in permutation_raw)
+        else:
+            values = tuple(
+                value.strip() for value in str(permutation_raw).split(',')
+                if value.strip())
+        if not values or any(
+                re.fullmatch(r'I[1-9]\d*', value, re.ASCII) is None
+                for value in values):
+            raise ValueError(
+                'thought permutation attribute requires comma-separated I roles')
+        return family, values
 
     @staticmethod
     def _parse_category(token):
@@ -1889,19 +2204,17 @@ class Grammar:
     # Op-name signal (Phase R1.3,
     # doc/plans/2026-06-02-unified-subsymbolic-analyzer-and-role-collapsed-grammar.md
     # §6). The role-collapsed grammar names the relative-truth family
-    # ``isEqual`` / ``isPart`` (each query-dispatched). The retired
-    # ``queryPart`` / ``assertPart`` / ``part`` op names are folded into
-    # ``isPart`` and no longer appear here; the transitional grammar's
-    # ``queryPart`` / ``assertPart`` forward rules stay relative via the
-    # ``lhs == REL_T`` start signal below.
-    _RELATIVE_OP_NAMES = frozenset({'isEqual', 'isPart'})
+    # ``equal`` / ``part`` / ``whole``.  They are structural forms whose
+    # checked thought faces are joined later at a boundary; no is-prefixed
+    # tool spelling participates in relative-rule detection.
+    _RELATIVE_OP_NAMES = frozenset({'equal', 'part', 'whole'})
 
     def _relative_start_categories(self):
         """Return the set of category symbols that head a RELATIVE start.
 
         Grammar-driven primary signal for ``is_relative_rule``: the
         WholeSpace starts tagged ``<start name="relative_truth">`` (the
-        role-collapsed ``isEqual_O1`` / ``isPart_O1`` outputs), retained
+        role-collapsed ``equal_O1`` / ``part_O1`` outputs), retained
         through parse on ``ws_relative_starts``. For grammars that do not
         name their starts (the inline-XML path, or a bare
         ``<start>REL_T</start>``), a single-symbol ``"REL_T"`` start
@@ -4183,9 +4496,10 @@ class IsPartLayer(GrammarLayer):
     *assertive* relation that states "A is part of B" as a single parent
     symbol, a higher-epistemic-level assertion than the CS-space_role geometric
     ``part`` test. Per decision 6 of the role-collapsed grammar spec,
-    ``isPart`` is one relation dispatched by ``query``: assertive here,
-    answer-producing (``queryPart``) when ``query="true"`` -- folding in
-    the retired ``assertPart`` / ``queryPart`` operator names.
+    ``isPart`` remains only for explicit historical grammars and checkpoint
+    migration.  Production grammars use the structural ``part`` / ``whole``
+    family; a selected thought action is checked separately at a completed
+    boundary and is never selected by a rule attribute.
 
     Forward returns ``right`` -- the encompassing parent -- so the CKY
     consumer sees a single parent vector; the parthood relationship
@@ -4339,23 +4653,13 @@ def _truth_bivector_like(score, template):
 
 
 class QueryLayer(GrammarLayer):
-    """``S -> query(S, S)`` -- mereological-truth query "is A part
-    of B?" answered geometrically against the bivector codebook.
+    """Legacy explicit geometric parthood experiment.
 
-    Post-MereologicalTree retirement: the answer is the clipped
-    cosine parthood between the per-batch dominant bivector
-    activations of ``left`` and ``right`` (see
-    ``_parthood_geometric``). Returns a continuous truth value
-    in ``[0, 1]`` rather than the prior tree-lookup boolean --
-    the codebook geometry IS the meronymic structure, so
-    parthood is *always* defined for any two symbols (no
-    "unknown" state). Returns a ``[B, V, 2]`` truth bivector
-    broadcast across the V dimension:
-
-        part(A, B) ≈ 1  -> [pos=1, neg=0] (full affirmation)
-        part(A, B) ≈ 0  -> [pos=0, neg=0] (disjoint / no overlap)
-
-    Lossy with ``(parent, parent)`` pseudo-inverse on reverse.
+    This class remains available to explicit legacy grammars and experiments.
+    Production grammar rejects the retired ``query`` rule attribute; a
+    role-labelled structural family and its checked thought descriptor now
+    own the boundary interface. Its geometric bivector behavior is therefore
+    legacy-only, rather than the normal linguistic or boundary-thought path.
     """
     rule_name        = "query"
     arity            = 2
@@ -4402,12 +4706,12 @@ class QueryLayer(GrammarLayer):
 
 
 class QueryPartLayer(QueryLayer):
-    """Interrogative parthood relation; grammar-level alias for ``query``."""
+    """Legacy explicit alias for :class:`QueryLayer`."""
     rule_name = "queryPart"
 
 
 class QueryEqualLayer(QueryLayer):
-    """Interrogative equality relation answered as mutual parthood."""
+    """Legacy explicit equality experiment answered as mutual parthood."""
     rule_name = "queryEqual"
 
     def forward(self, left, right):
@@ -4420,9 +4724,15 @@ class QueryEqualLayer(QueryLayer):
 def _dispatch_method_name_for_rule(rule):
     """Return the runtime GrammarLayer op for a parsed rule.
 
-    The grammar can keep one relation name while using ``query="true"``
-    to request answer-producing semantics.
+    The parser rejects retired ``query`` attributes.  Interrogative mode is
+    represented by a structural ``what`` wrapper around the completed idea;
+    a selected thought action runs later at the checked boundary.
     """
+    return getattr(rule, 'method_name', None)
+
+
+def _legacy_dispatch_method_name_for_rule(rule):
+    """Pre-selected-meaning action name, used only for checkpoint migration."""
     method = getattr(rule, 'method_name', None)
     if getattr(rule, 'query', False) and method == 'isEqual':
         return 'queryEqual'
@@ -4484,6 +4794,57 @@ class ExistLayer(GrammarLayer):
 
     def compose(self, x):
         return self.forward(x)
+
+    def generate(self, parent):
+        return self.reverse(parent)
+
+
+class _ThoughtUnaryNoopLayer(ExistLayer):
+    """A structural carrier for a boundary-only unary thought operation.
+
+    The operation's semantic request is retained by the grammar trace and
+    later canonical meaning, while the tensor face deliberately preserves the
+    full-width concept.  Its checked executor is reachable only through the
+    thought boundary registry.
+    """
+    space_role = 'CS'
+
+
+class QuantizeLayer(_ThoughtUnaryNoopLayer):
+    rule_name = 'quantize'
+
+
+class ArmaLayer(_ThoughtUnaryNoopLayer):
+    rule_name = 'arma'
+
+
+class WhatLayer(_ThoughtUnaryNoopLayer):
+    rule_name = 'what'
+
+
+class LookupLayer(GrammarLayer):
+    """Binary structural carrier for the boundary-only LTM lookup operation."""
+    rule_name = 'lookup'
+    arity = 2
+    invertible = False
+    lossy = True
+    space_role = 'CS'
+    reads_activation = False
+
+    def __init__(self):
+        super().__init__(0, 0)
+
+    def forward(self, left, right):
+        # The request's two operands remain in the structural trace; the
+        # carrier preserves its primary (I1) conceptual value.
+        return left
+
+    def reverse(self, parent):
+        self.raise_no_inverse(
+            'lookup is a boundary-only structural carrier with no faithful inverse')
+
+    def compose(self, left, right):
+        return self.forward(left, right)
 
     def generate(self, parent):
         return self.reverse(parent)
@@ -4600,6 +4961,10 @@ GRAMMAR_LAYER_CLASSES = {
     'queryEqual':   QueryEqualLayer,
     'queryPart':    QueryPartLayer,
     'exist':        ExistLayer,
+    'lookup':       LookupLayer,
+    'quantize':     QuantizeLayer,
+    'arma':         ArmaLayer,
+    'what':         WhatLayer,
     'null':         NullLayer,
     # true/false/swap/copy/area/luminosity/isaPart parked in bin/Legacy.py
     # (2026-07-17): documented-dormant, no live grammar dispatches them.
@@ -4852,6 +5217,114 @@ class RuleCodebook(nn.Module):
 # CKY chart and its ``_ensure_signal_router`` lazy bridge retired
 # alongside the chart class.
 # =====================================================================
+def _freeze_structural_snapshot(value):
+    """Copy owner metadata without retaining an autograd or mutable-state path."""
+    if torch.is_tensor(value):
+        return value.detach().clone()
+    if isinstance(value, tuple):
+        return tuple(_freeze_structural_snapshot(item) for item in value)
+    if isinstance(value, list):
+        return tuple(_freeze_structural_snapshot(item) for item in value)
+    return value
+
+
+def _conceptual_space_capability(owner):
+    """Return the grammar's narrow full-width conceptual capability.
+
+    Do not put the actual space owner on a context: from it an operator could
+    walk to SymbolSpace, taxonomy, LTM, or the model.  Its parameters are
+    already owned by the dispatched layer; the only shared fact a structural
+    face needs is the width of a legal full conceptual value.
+    """
+    space = getattr(owner, 'conceptualSpace', None)
+    geometry = getattr(space, 'subspace', None) if space is not None else None
+    candidates = (
+        getattr(geometry, 'muxedSize', 0) if geometry is not None else 0,
+        getattr(space, 'muxedSize', 0) if space is not None else 0,
+        getattr(geometry, 'nDim', 0) if geometry is not None else 0,
+        getattr(space, 'nDim', 0) if space is not None else 0,
+    )
+    width = next((int(value) for value in candidates
+                  if isinstance(value, (int, np.integer)) and int(value) > 0), 0)
+    if width <= 0:
+        raise ValueError('structural grammar context requires conceptual-space width')
+    return ConceptualSpaceCapability(width)
+
+
+def _structural_face_phase(layer, operands, *, context, phase=None):
+    """Validate the public structural-face boundary and return its phase.
+
+    The contextual BIND compatibility path still receives an internal live
+    slab so its configured gradient path remains intact.  It shares this
+    validation helper rather than bypassing the public context contract.
+    """
+    if not isinstance(context, StructuralGrammarContext):
+        raise TypeError('structural grammar execution requires StructuralGrammarContext')
+    resolved_phase = context.phase if phase is None else str(phase)
+    if resolved_phase not in ('compose', 'generate'):
+        raise ValueError('structural grammar phase must be compose or generate')
+    if context.phase != resolved_phase:
+        raise ValueError(
+            f'structural grammar context phase {context.phase!r} does not match '
+            f'{resolved_phase!r}')
+    operands = tuple(operands)
+    expected = getattr(layer, 'arity', None)
+    if resolved_phase == 'compose':
+        if type(expected) is int and len(operands) != expected:
+            raise ValueError(
+                f'structural compose expects {expected} operands, got {len(operands)}')
+    elif len(operands) != 1:
+        raise ValueError('structural generate takes exactly one result concept')
+    return resolved_phase, operands
+
+
+def invoke_structural_face(layer, operands, *, context, phase=None):
+    """Run one pure grammar face through its common capability contract.
+
+    Legacy grammar layers retain their tensor-shaped kernels behind
+    ``GrammarLayer.compose_from_grammar_context`` and
+    ``.generate_from_grammar_context``.  Every new structural call reaches
+    this single adapter with the owner-selected context; it has no route to
+    LTM, taxonomy, a controller, or an executor.
+    """
+    resolved_phase, operands = _structural_face_phase(
+        layer, operands, context=context, phase=phase)
+    if resolved_phase == 'compose':
+        call = getattr(layer, 'compose_from_grammar_context', None)
+        if callable(call):
+            return call(operands, context=context)
+        compose = getattr(layer, 'compose', None)
+        if callable(compose):
+            return compose(*operands)
+        # Some established unary grammar hosts (notably the membership
+        # pi/sigma fold) predate ``GrammarLayer`` and expose only the normal
+        # PyTorch forward/reverse pair.  Adapt that kernel *behind* this
+        # owner-validated public call; do not let the caller bypass the
+        # StructuralGrammarContext merely because the layer is older.
+        forward = getattr(layer, 'forward', None)
+        if len(operands) == 1 and callable(forward):
+            return forward(operands[0])
+        raise TypeError(
+            'structural compose layer must provide compose_from_grammar_context, '
+            'compose, or a unary forward kernel')
+    call = getattr(layer, 'generate_from_grammar_context', None)
+    if callable(call):
+        value = call(operands[0], context=context)
+    else:
+        generate = getattr(layer, 'generate', None)
+        if callable(generate):
+            value = generate(operands[0])
+        else:
+            reverse = getattr(layer, 'reverse', None)
+            if not callable(reverse):
+                raise TypeError(
+                    'structural generate layer must provide '
+                    'generate_from_grammar_context, generate, or a '
+                    'reverse kernel')
+            value = reverse(operands[0])
+    return value if isinstance(value, tuple) else (value,)
+
+
 class _BinaryGrammarOpAdapter(nn.Module):
     """Adapt a GrammarLayer with a `.compose(left, right)` method into a
     plain binary callable for the LanguageLayer's `BinaryStructuredReductionLayer`.
@@ -4883,6 +5356,61 @@ class _BinaryGrammarOpAdapter(nn.Module):
         if callable(compose):
             return compose(left, right, slab)
         return self.gl.compose(left, right)
+
+    def forward_with_grammar_context(self, left, right, slab, *, context):
+        """Run a routed compose face with its formal grammar context.
+
+        ``ContextualBindLayer`` is the one legacy exception whose numerical
+        kernel needs the current live slab to select the older participant.
+        That slab is an adapter-private differentiable input, not a field on
+        the public context.  Every other layer reaches the common dispatcher.
+        """
+        _structural_face_phase(
+            self.gl, (left, right), context=context, phase='compose')
+        compose = getattr(self.gl, 'compose_with_context', None)
+        if callable(compose):
+            return compose(left, right, slab)
+        # The base GrammarLayer adapter only delegates back to ``compose``.
+        # Keep that established tensor kernel (and its selected-op gradient
+        # path) intact; a layer that actually consumes a grammar context
+        # overrides the base method and is routed through the public call.
+        if (getattr(type(self.gl), 'compose_from_grammar_context', None)
+                is getattr(GrammarLayer, 'compose_from_grammar_context', None)):
+            return self.forward_with_context(left, right, slab)
+        return invoke_structural_face(
+            self.gl, (left, right), context=context, phase='compose')
+
+
+class _UnaryGrammarOpAdapter(nn.Module):
+    """Give unary router candidates the same structural-face boundary."""
+
+    def __init__(self, gl):
+        super().__init__()
+        self.gl = gl
+
+    @property
+    def nInput(self):
+        return int(getattr(self.gl, 'nInput', 0) or 0)
+
+    @property
+    def nOutput(self):
+        return int(getattr(self.gl, 'nOutput', 0) or 0)
+
+    @property
+    def arity(self):
+        return int(getattr(self.gl, 'arity', 1) or 1)
+
+    def forward(self, value):
+        return self.gl.compose(value)
+
+    def forward_with_grammar_context(self, value, *, context):
+        _structural_face_phase(
+            self.gl, (value,), context=context, phase='compose')
+        if (getattr(type(self.gl), 'compose_from_grammar_context', None)
+                is getattr(GrammarLayer, 'compose_from_grammar_context', None)):
+            return self.forward(value)
+        return invoke_structural_face(
+            self.gl, (value,), context=context, phase='compose')
 
 
 def sentence_relative_mask(word_subspace, B, device=None):
@@ -5139,7 +5667,7 @@ class LanguageLayer(Layer):
                 f"len(ops)={len(ops)} for space_role {space_role!r}")
         self._binary_rule_ids[space_role] = rule_ids
 
-    def compose(self, data, word_space, subspace=None):
+    def compose(self, data, word_space, subspace=None, grammar_context=None):
         """Run space_roleed unary then recursive binary reductions; return rule list.
 
         ``data`` is ``[B, N, D]``. For each space_role in sorted order, unary
@@ -5182,7 +5710,8 @@ class LanguageLayer(Layer):
                     x,
                     cat_ctx=(cat_e if space_role == terminal_space_role else None),
                     what_ctx=(getattr(self, "_what_context", None)
-                              if space_role == terminal_space_role else None))
+                              if space_role == terminal_space_role else None),
+                    grammar_context=grammar_context)
                 space_role_routing["unary"] = u_routing
                 rid_table = self._unary_rule_ids[space_role]
                 kind = u_routing["action_kind"]
@@ -5228,7 +5757,8 @@ class LanguageLayer(Layer):
                                            and _round_i == 0) else None),
                         what_ctx=(getattr(self, "_what_context", None)
                                   if (space_role == terminal_space_role
-                                      and _round_i == 0) else None))
+                                      and _round_i == 0) else None),
+                        grammar_context=grammar_context)
                     round_routings.append(b_routing)
                     kind = b_routing["action_kind"]
                     op = b_routing["action_op"]
@@ -5413,7 +5943,7 @@ class LanguageLayer(Layer):
             return obs          # first binary space_role only (positions == percepts)
         return []
 
-    def generate(self, target, word_space, subspace=None):
+    def generate(self, target, word_space, subspace=None, grammar_context=None):
         """Reverse-pass mirror: emit the compose-order rule list reversed.
 
         If compose has not yet been called for ``target``, run it now.
@@ -5424,7 +5954,13 @@ class LanguageLayer(Layer):
             raise RuntimeError(
                 "LanguageLayer.generate called before attach_layer_ops() / "
                 "attach_unary_ops().")
+        if grammar_context is not None and grammar_context.phase != 'generate':
+            raise ValueError('LanguageLayer.generate requires a generate context')
         if not self._last_space_role_routings:
+            # This legacy route recovery selects a structural program; it is
+            # not output realization and must never expose ``target`` as the
+            # generate face's word stream.  The owner will later execute the
+            # selected inverse with its output-owned generate context.
             self.compose(target, word_space, subspace=subspace)
         # Generate emits the compose-order list reversed per row, so that
         # the inverse pass pops the last-applied rule first. Space-role order is
@@ -7222,6 +7758,79 @@ class WhatStepChooser(nn.Module):
         return index, log_probs[index]
 
 
+class SelectedThoughtChooser(nn.Module):
+    """Hard selector for an ordinary grammatical thought at a boundary.
+
+    Its context is supplied by ``BasicModel`` as the complete, masked
+    ``[NP1, VP, NP2]`` payload plus execution level and pressure.  References
+    and native IDs deliberately stay out of the numerical features: they are
+    addresses owned by the registry/history, not operand values.  Each
+    operation is represented by its complete candidate meaning; the only
+    categorical feature distinguishes an ordinary operation from the
+    controller's non-semantic conclude transition.  It never encodes a
+    semantic id, alias, or catalog position.  The two-wide feature shape is
+    retained so existing saved policy tensors map ``query`` -> operation and
+    ``finish`` -> conclude without a shape migration.
+    """
+
+    ACTION_KINDS = ("operation", "conclude")
+    CANDIDATE_FEATURES = len(ACTION_KINDS)
+
+    def __init__(self, *, context_dim, hidden=16, depth=1):
+        super().__init__()
+        self.context_dim = int(context_dim)
+        if self.context_dim < 1:
+            raise ValueError("selected thought context must be nonempty")
+        self.hidden = _chooser_size(hidden, "selectedThoughtHidden")
+        self.depth = _chooser_size(depth, "selectedThoughtDepth")
+        with torch.random.fork_rng(devices=[]):
+            self.mlp = _chooser_mlp(
+                self.context_dim + self.CANDIDATE_FEATURES,
+                self.hidden, self.depth)
+        nn.init.zeros_(self.mlp[-1].weight)
+        nn.init.zeros_(self.mlp[-1].bias)
+
+    def logits(self, contexts, concludes):
+        """Score candidate-meaning contexts plus their conclude flag.
+
+        ``contexts`` has one full semantic context per action.  ``concludes``
+        is structural control metadata only; it is deliberately not an
+        operator/index encoding.
+        """
+        contexts = torch.as_tensor(contexts)
+        if contexts.dim() == 1:
+            contexts = contexts.unsqueeze(0)
+        if (contexts.dim() != 2
+                or int(contexts.shape[-1]) != self.context_dim):
+            raise ValueError(
+                f"selected thought contexts have width {tuple(contexts.shape)} "
+                f"!= [K, {self.context_dim}]")
+        concludes = torch.as_tensor(concludes, device=contexts.device,
+                                    dtype=torch.bool).reshape(-1)
+        if int(concludes.numel()) != int(contexts.shape[0]):
+            raise ValueError("selected thought needs one conclude flag per context")
+        if not int(contexts.shape[0]):
+            return contexts.new_zeros(0)
+        features = contexts.new_zeros(
+            int(contexts.shape[0]), self.CANDIDATE_FEATURES)
+        features[:, 0] = (~concludes).to(features)
+        features[:, 1] = concludes.to(features)
+        return self.mlp(torch.cat((contexts, features), dim=-1)).squeeze(-1)
+
+    def choose(self, contexts, concludes, *, sample=False, temperature=1.0):
+        """Return a hard action index and its live policy log probability."""
+        logits = self.logits(contexts, concludes)
+        if logits.numel() == 0:
+            raise ValueError("SelectedThoughtChooser.choose needs one action")
+        log_probs = torch.log_softmax(
+            logits / max(1e-6, float(temperature)), dim=-1)
+        if sample and logits.numel() > 1:
+            index = int(torch.multinomial(log_probs.detach().exp(), 1).item())
+        else:
+            index = int(torch.argmax(logits.detach()).item())
+        return index, log_probs[index]
+
+
 class MLPTransformChooser(TransformChooser):
     """Contextual MLP placement scorer -- the expressive cutover chooser.
 
@@ -7680,14 +8289,17 @@ class BinaryStructuredReductionLayer(nn.Module):
             return None
         return torch.stack(priors, dim=-1)
 
-    def _stacked_reduced(self, x):
+    def _stacked_reduced(self, x, grammar_context=None):
         """[B, N-1, R_reduce, D] candidate ops applied to each adjacent pair."""
         if x.shape[1] < 2:
             return x.new_zeros(x.shape[0], 0, self.r_reduce, x.shape[-1])
         left = x[:, :-1, :]
         right = x[:, 1:, :]
         per_op = [
-            op.forward_with_context(left, right, x)
+            op.forward_with_grammar_context(
+                left, right, x, context=grammar_context)
+            if grammar_context is not None and hasattr(op, "forward_with_grammar_context")
+            else op.forward_with_context(left, right, x)
             if hasattr(op, "forward_with_context")
             else op(left, right)
             for op in self.ops
@@ -7728,7 +8340,7 @@ class BinaryStructuredReductionLayer(nn.Module):
     # _stacked_reduced), the counterpart to SymbolSubSpace.compose's
     # WS-side analysis. See SymbolSubSpace.compose docstring for the split.
     def forward(self, x, *, span_start=None, span_end=None, cat_ctx=None,
-                what_ctx=None, op_prior=None):
+                what_ctx=None, op_prior=None, grammar_context=None):
         if what_ctx is None:
             # The question context is installed per batch by ``Model.what()``
             # (LanguageLayer AND each grammar layer); callers that do not
@@ -7771,7 +8383,8 @@ class BinaryStructuredReductionLayer(nn.Module):
                 grammar_op = getattr(op, "gl", op)
                 if hasattr(grammar_op, "set_bind_context"):
                     grammar_op.set_bind_context(slab=x)
-        stacked_reduced = self._stacked_reduced(x)             # [B, N-1, R, D]
+        stacked_reduced = self._stacked_reduced(
+            x, grammar_context=grammar_context)                # [B, N-1, R, D]
 
         # Anchor-based scoring (replaces the old scorer MLP):
         #   copy_score[b, n, c]   = <x[b, n, :],            copy_anchor[c, :]>
@@ -8023,26 +8636,32 @@ class UnaryStructuredLayer(nn.Module):
             return None
         return torch.stack(priors, dim=-1)
 
-    def _stacked_applied(self, x):
+    def _stacked_applied(self, x, grammar_context=None):
         """[B, N, R_apply, D] each unary op applied to every position."""
         if self.r_apply == 0:
             B, N, D = x.shape
             return x.new_zeros(B, N, 0, D)
-        per_op = [self._apply_op(op, x) for op in self.ops]
+        per_op = [self._apply_op(op, x, grammar_context=grammar_context)
+                  for op in self.ops]
         return torch.stack(per_op, dim=2)
 
-    def _apply_op(self, op, x):
+    def _apply_op(self, op, x, grammar_context=None):
         """Apply one unary op; a content-sized meronymic fold (nInput < D)
         folds the leading .what columns and rides the where/when band
         [nInput:] through unchanged -- ConceptualSpace's content-fold + band-
         passthrough π contract (Spaces._pi_for_pass dispatch), so the stack
         stays width D without resizing the layer."""
+        def apply(value):
+            if grammar_context is not None and hasattr(op, "forward_with_grammar_context"):
+                return op.forward_with_grammar_context(value, context=grammar_context)
+            return op(value)
+
         w = int(getattr(op, "nInput", 0) or 0)
         if 0 < w < x.shape[-1]:
-            return torch.cat([op(x[..., :w]), x[..., w:]], dim=-1)
-        return op(x)
+            return torch.cat([apply(x[..., :w]), x[..., w:]], dim=-1)
+        return apply(x)
 
-    def forward(self, x, cat_ctx=None, what_ctx=None):
+    def forward(self, x, cat_ctx=None, what_ctx=None, grammar_context=None):
         if what_ctx is None:
             # The question context is installed per batch by ``Model.what()``
             # (LanguageLayer AND each grammar layer); callers that do not
@@ -8062,7 +8681,8 @@ class UnaryStructuredLayer(nn.Module):
         """
         B, N, D = x.shape
         h = self.context_net(x)
-        applied = self._stacked_applied(x)                 # [B, N, R_apply, D]
+        applied = self._stacked_applied(
+            x, grammar_context=grammar_context)            # [B, N, R_apply, D]
 
         # Anchor-based scoring (replaces the old scorer MLP):
         #   copy_score[b, n, c]  = <x[b, n, :],            copy_anchor[c, :]>
@@ -8441,6 +9061,26 @@ class SyntacticLayer(Layer):
         # Flat list of ints (legacy).
         return per_space_role
 
+    def _structural_context(self, *, phase, input_stream=None):
+        """Return the owner-built context for a direct structural dispatch.
+
+        The normal SymbolSubSpace has already captured its compose/generate
+        context before cursor dispatch begins.  Small legacy test harnesses
+        do not own that capability and retain their direct tensor fallback;
+        production dispatch never manufactures a model or taxonomy reference.
+        """
+        ss = self._word_space
+        cache_name = ('_last_structural_compose_context'
+                      if phase == 'compose'
+                      else '_last_structural_generate_context')
+        cached = getattr(ss, cache_name, None) if ss is not None else None
+        if isinstance(cached, StructuralGrammarContext) and cached.phase == phase:
+            return cached
+        builder = getattr(ss, '_structural_grammar_context', None)
+        if callable(builder):
+            return builder(phase=phase, input_stream=input_stream)
+        return None
+
     # -- Phase 2 executor API (cursor-free) -----------------------------
     #
     # See doc/plans/2026-05-20-subspace-what-stm-signalrouter-refactor.md
@@ -8448,7 +9088,7 @@ class SyntacticLayer(Layer):
     # these directly with a rule_id it has already selected; no
     # SymbolSpace.current_rules indirection.
 
-    def execute(self, rule_id, left, right=None):
+    def execute(self, rule_id, left, right=None, *, context=None):
         """Run the grammar op for ``rule_id`` on ``(left[, right])``.
 
         Resolves ``rule_id`` to a host layer via ``TheGrammar`` and
@@ -8488,18 +9128,26 @@ class SyntacticLayer(Layer):
                 f"layer for rule_id={rule_id} (method_name={method_name!r}). "
                 f"Registered rules: {sorted(self._by_name.keys())}"
             )
+        context = (context if context is not None else self._structural_context(
+            phase='compose', input_stream=left))
         arity = int(getattr(layer, 'arity', 1))
         if arity == 1:
+            if context is not None:
+                return invoke_structural_face(
+                    layer, (left,), context=context, phase='compose')
             return layer.compose(left)
         if right is None:
             raise ValueError(
                 f"SyntacticLayer.execute: arity-2 rule {method_name!r} "
                 f"requires `right`; got None"
             )
+        if context is not None:
+            return invoke_structural_face(
+                layer, (left, right), context=context, phase='compose')
         return layer.compose(left, right)
 
     def execute_superposed(self, rule_weights, left, right=None,
-                           rule_ids=None):
+                           rule_ids=None, *, context=None):
         """Weighted combination of independent per-rule executions.
 
         Each candidate op computes on its own copy of ``(left, right)``
@@ -8536,7 +9184,7 @@ class SyntacticLayer(Layer):
             )
         outs = []
         for rid in rule_ids:
-            outs.append(self.execute(int(rid), left, right))
+            outs.append(self.execute(int(rid), left, right, context=context))
         stacked = torch.stack(outs, dim=-2)              # [..., R, D]
         return (stacked * rule_weights.unsqueeze(-1)).sum(dim=-2)
 
@@ -8592,7 +9240,13 @@ class SyntacticLayer(Layer):
             return subspace
         # Unified fold-width law: content-sized folds (0 < nInput < D) fold
         # the leading content columns; the where/when band rides through.
-        y = fold_content_apply(layer.forward, getattr(layer, 'nInput', 0), x)
+        context = self._structural_context(phase='compose', input_stream=x)
+        if context is None:
+            apply = layer.forward
+        else:
+            apply = lambda value: invoke_structural_face(
+                layer, (value,), context=context, phase='compose')
+        y = fold_content_apply(apply, getattr(layer, 'nInput', 0), x)
         self._write_subspace(subspace, y, layer=layer)
         return subspace
 
@@ -8640,6 +9294,7 @@ class SyntacticLayer(Layer):
         y = self._read_subspace(subspace, layer=layer)
         if y is None:
             return subspace
+        context = self._structural_context(phase='generate')
         # Two-pass ergodic adapter: when ``pi`` / ``sigma`` fires and
         # the host space exposes a space_role-specific ``_pi_reverse`` /
         # ``_sigma_reverse`` (which routes through pi2/sigma2 in
@@ -8647,13 +9302,28 @@ class SyntacticLayer(Layer):
         # (not, etc.) keep going through ``layer.reverse``.
         host = getattr(self, '_host_space', None)
         if host is not None and rule_name == 'pi' and hasattr(host, '_pi_reverse'):
+            if context is not None:
+                _structural_face_phase(
+                    layer, (y,), context=context, phase='generate')
             x = host._pi_reverse(y)
         elif host is not None and rule_name == 'sigma' and hasattr(host, '_sigma_reverse'):
+            if context is not None:
+                _structural_face_phase(
+                    layer, (y,), context=context, phase='generate')
             x = host._sigma_reverse(y)
         else:
             # Unified fold-width law (same trim as forward's dispatch).
+            def generate(value):
+                if context is None:
+                    return layer.reverse(value)
+                operands = invoke_structural_face(
+                    layer, (value,), context=context, phase='generate')
+                if len(operands) != 1:
+                    raise ValueError(
+                        'unary structural generate must return one operand')
+                return operands[0]
             x = fold_content_apply(
-                layer.reverse, getattr(layer, 'nInput', 0), y)
+                generate, getattr(layer, 'nInput', 0), y)
         self._write_subspace(subspace, x, layer=layer)
         return subspace
 
@@ -10647,6 +11317,12 @@ class SymbolSubSpace(SubSpace):
         # callers behave unchanged. The reverse cursor is NOT padded
         # — see §2R for the asymmetric left-shift on reconstruction.
         self._target_cursor_length = 0
+        # Output realization is the sole owner of this stream. It begins
+        # empty; a generate context never substitutes a target teacher or
+        # reconstruction seed for it.
+        self._generated_word_stream = ()
+        self._last_structural_compose_context = None
+        self._last_structural_generate_context = None
 
         # Stage 3 (doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md):
         # the signal router (``LanguageLayer``) is the canonical parser.
@@ -12215,6 +12891,42 @@ class SymbolSubSpace(SubSpace):
         """
         self.reconstruction_stack.push(b, rule_id, word_id)
 
+    def set_generated_word_stream(self, stream):
+        """Install an output-owned emitted prefix for structural generation.
+
+        Input teachers and reconstruction seeds are intentionally not accepted
+        as substitutes. The stored snapshot cannot be mutated by a later
+        output step or by an operator receiving a context.
+        """
+        self._generated_word_stream = _freeze_structural_snapshot(stream)
+
+    def _structural_grammar_context(self, *, phase, input_stream=None):
+        """Build the one capability-limited context for a structural face.
+
+        Compose owns its current input stream. Generate owns only its emitted
+        output prefix, so ``input_stream`` is purposefully ignored in that
+        branch even where a legacy caller passes a reconstruction target.
+        """
+        phase = str(phase)
+        if phase == 'compose':
+            stream = input_stream if input_stream is not None else ()
+        elif phase == 'generate':
+            stream = getattr(self, '_generated_word_stream', ())
+        else:
+            raise ValueError('structural grammar context phase must be compose or generate')
+        taxonomy = getattr(self, 'taxonomy', None)
+        primed = None
+        priming_enabled = getattr(taxonomy, 'priming_enabled', None)
+        if taxonomy is not None and (priming_enabled is None or bool(priming_enabled)):
+            snapshot = getattr(taxonomy, 'priming_mask', None)
+            if callable(snapshot):
+                primed = snapshot()
+        return StructuralGrammarContext(
+            word_stream=_freeze_structural_snapshot(stream),
+            conceptual_space=_conceptual_space_capability(self),
+            primed_symbols=_freeze_structural_snapshot(primed),
+            phase=phase)
+
     # -- chart compose / generate (2026-05-01 refactor) ---------------
     def compose(self, input_vectors, subspace=None):
         """Run the signal router's compose pass; populate
@@ -12267,6 +12979,9 @@ class SymbolSubSpace(SubSpace):
         ``LanguageLayer.compose`` rather than separated across the
         modules named above. See plan task 5 follow-up.
         """
+        grammar_context = self._structural_grammar_context(
+            phase='compose', input_stream=input_vectors)
+        self._last_structural_compose_context = grammar_context
         # Per-compose cursor reset. The OLD semantics zeroed each
         # per-space_role SyntacticLayer cursor lazily on every compose() call
         # (via the ``gen != _cursor_compose_gen`` branch keyed off this
@@ -12321,7 +13036,8 @@ class SymbolSubSpace(SubSpace):
                 self.current_rules, batch_size=b_hint, device=dev_hint)
             return self.current_rules
         self.current_rules = self.languageLayer.compose(
-            input_vectors, self, subspace=subspace) or {}
+            input_vectors, self, subspace=subspace,
+            grammar_context=grammar_context) or {}
         self._pad_S_cursor_to_target(self.current_rules)
         # ADDITIVE: same RoutingState build on the full-router path.
         self.routing_state = self._build_routing_state(
@@ -12376,12 +13092,16 @@ class SymbolSubSpace(SubSpace):
         tensorially and ``SyntacticLayer.reverse`` is a cursor-advance
         no-op (same co-location caveat as ``compose``).
         """
+        grammar_context = self._structural_grammar_context(
+            phase='generate', input_stream=target_vectors)
+        self._last_structural_generate_context = grammar_context
         self._generate_generation += 1
         if self._grammar_is_default_only:
             self.generate_rules = self._default_generate_rules()
             return self.generate_rules
         self.generate_rules = self.languageLayer.generate(
-            target_vectors, self, subspace=subspace) or {}
+            target_vectors, self, subspace=subspace,
+            grammar_context=grammar_context) or {}
         return self.generate_rules
 
     # Method names that count as the per-space_role "natural fold". The
@@ -13036,7 +13756,7 @@ class SymbolSubSpace(SubSpace):
                 if arity == 2:
                     op = _BinaryGrammarOpAdapter(layer)
                 else:
-                    op = layer
+                    op = _UnaryGrammarOpAdapter(layer)
                 by_arity.setdefault(arity, {
                     "ops": [], "rule_ids": [], "op_names": [],
                     "op_space_roles": [],
@@ -14015,7 +14735,8 @@ class _FunctionalLanguageChooser:
 
     @staticmethod
     def choose_binary(state, reducer, row_gate, *, base_tau,
-                      occupancy_pressure=False, demand=False, op_prior=None):
+                      occupancy_pressure=False, demand=False, op_prior=None,
+                      grammar_context=None):
         """Choose one bounded binary grammar operation without applying it.
 
         ``op_prior`` (``[B, 1, R]`` additive logits over the reduce ops, or
@@ -14047,9 +14768,17 @@ class _FunctionalLanguageChooser:
         left = buffer[:, 1, :]
         right = buffer[:, 0, :]
         window = torch.stack((left, right), dim=1)
-        hard, soft, routing = (
-            reducer(window, op_prior=op_prior)
-            if torch.is_tensor(op_prior) else reducer(window))
+        # Grammar-aware reducers receive the owner-built context when one is
+        # available.  A small legacy/evidence reducer may intentionally have
+        # only the established ``forward(window)`` shape; passing a literal
+        # ``grammar_context=None`` would turn the new optional capability into
+        # a breaking required keyword for that structural adapter.
+        reducer_kwargs = {}
+        if torch.is_tensor(op_prior):
+            reducer_kwargs['op_prior'] = op_prior
+        if grammar_context is not None:
+            reducer_kwargs['grammar_context'] = grammar_context
+        hard, soft, routing = reducer(window, **reducer_kwargs)
         parent = (soft + (hard - soft).detach())[:, 0, :]
         if occupancy_pressure or demand:
             parent = routing["chosen_reduced"][:, 0, :]
@@ -14093,7 +14822,7 @@ class _FunctionalLanguageChooser:
         )
 
     @staticmethod
-    def choose_unary(state, layer, row_gate):
+    def choose_unary(state, layer, row_gate, *, grammar_context=None):
         """Choose one bounded unary grammar operation without applying it."""
         (buffer, depth, orders, grammar_orders,
          concept_rows, concept_activations) = state
@@ -14103,7 +14832,13 @@ class _FunctionalLanguageChooser:
             depth >= 1,
             row_gate.reshape(B).to(
                 device=buffer.device, dtype=torch.bool))
-        hard, soft, routing = layer(buffer[:, :1, :])
+        # Keep the context optional for the same reason as the binary path:
+        # a legacy deterministic chooser may only accept its established
+        # positional slab argument.  The production grammar-aware layer gets
+        # the context whenever an owning SymbolSubSpace supplied one.
+        unary_kwargs = ({'grammar_context': grammar_context}
+                        if grammar_context is not None else {})
+        hard, soft, routing = layer(buffer[:, :1, :], **unary_kwargs)
         candidate = (soft + (hard - soft).detach())[:, 0, :]
         applied = torch.logical_and(
             routing["apply_mask"][:, 0, :].bool().any(dim=-1), can)
@@ -14147,6 +14882,27 @@ class LanguageSpace(nn.Module):
         self.register_buffer(
             "_cs_binary_rule_ids",
             torch.tensor(binary_ids, dtype=torch.long), persistent=False)
+        # A program records *local* compose-op indices.  Keep the immutable
+        # grammar definitions that those indices meant at construction time so
+        # a later global grammar reconfiguration cannot relabel an already
+        # completed sentence.  This is metadata only: the SymbolSubSpace
+        # language layer remains the sole owner of compose parameters.
+        def snapshot_compose_rules(rule_ids):
+            rules = tuple(TheGrammar.rules_upward)
+            # A non-output LanguageSpace can legitimately be assembled from a
+            # small chooser harness with synthetic local rule IDs.  It has no
+            # completed grammar program to recover, so retain no misleading
+            # structural metadata.  Production construction has already
+            # configured every referenced rule and still fails later if its
+            # actual dispatcher cannot resolve one.
+            if any(rule_id < 0 or rule_id >= len(rules) for rule_id in rule_ids):
+                return ()
+            return tuple(rules[rule_id] for rule_id in rule_ids)
+
+        object.__setattr__(
+            self, "_compose_unary_rules", snapshot_compose_rules(unary_ids))
+        object.__setattr__(
+            self, "_compose_binary_rules", snapshot_compose_rules(binary_ids))
         self._n_rules = int(len(TheGrammar.rule_table))
         # Output has its own rule inventory. The LHS counts generated
         # children; the RHS arity of a binary reverse is only one parent.
@@ -14182,7 +14938,7 @@ class LanguageSpace(nn.Module):
         # A non-output LanguageSpace may legitimately be assembled from a
         # local chooser harness whose rule ids have no configured grammar
         # rows; it neither owns nor consumes that checkpoint metadata.
-        legacy_keys = ([self._generate_rule_key(TheGrammar.rules_upward[rid], arity)
+        legacy_keys = ([self._legacy_generate_rule_key(TheGrammar.rules_upward[rid], arity)
                         for arity, ids in ((2, binary_ids), (1, unary_ids))
                         for rid in ids] + [0]) if cw else ()
         self._legacy_generate_rule_keys = tuple(legacy_keys)
@@ -14207,6 +14963,14 @@ class LanguageSpace(nn.Module):
         """Stable action meaning, shared with a legacy compose counterpart."""
         import hashlib
         key = repr((rule.space_role, _dispatch_method_name_for_rule(rule),
+                    arity, rule.width_min, rule.width_max))
+        return int.from_bytes(hashlib.sha256(key.encode()).digest()[:8], 'big') >> 1
+
+    @staticmethod
+    def _legacy_generate_rule_key(rule, arity):
+        """Action key used by checkpoints saved before pure query composition."""
+        import hashlib
+        key = repr((rule.space_role, _legacy_dispatch_method_name_for_rule(rule),
                     arity, rule.width_min, rule.width_max))
         return int.from_bytes(hashlib.sha256(key.encode()).digest()[:8], 'big') >> 1
 
@@ -14266,12 +15030,172 @@ class LanguageSpace(nn.Module):
     def language_layer(self):
         return self._language_layer_ref
 
+    def _structural_context(self, *, phase, input_stream=None):
+        """Get the owning SymbolSubSpace's structural context when present.
+
+        This is used by the forced/replay path as well as the ordinary router:
+        a recorded structural action remains a structural face, not a hidden
+        legacy call that loses its owner-selected stream and capability view.
+        Detached local harnesses deliberately return ``None`` and retain their
+        tensor-only compatibility path.
+        """
+        owner = getattr(self._symbol_space, 'subspace', self._symbol_space)
+        cache_name = ('_last_structural_compose_context'
+                      if phase == 'compose'
+                      else '_last_structural_generate_context')
+        cached = getattr(owner, cache_name, None) if owner is not None else None
+        if isinstance(cached, StructuralGrammarContext) and cached.phase == phase:
+            return cached
+        builder = getattr(owner, '_structural_grammar_context', None)
+        if callable(builder):
+            return builder(phase=phase, input_stream=input_stream)
+        return None
+
     def _tree_layer(self, arity):
         layers = (
             getattr(self.language_layer, "_binary_layers", None)
             if int(arity) == 2
             else getattr(self.language_layer, "_unary_layers", None))
         return layers["CS"] if layers is not None and "CS" in layers else None
+
+    @torch.compiler.disable
+    def program_meaning(self, entry, registry):
+        """Recover one selected binary relation from its owned compose program.
+
+        A folded root is deliberately insufficient here: lossy compose faces
+        such as ``part`` and ``whole`` erase one operand.  The answer program
+        retains the actual signed leaf tensors and native *addresses* beside
+        that root, so this host-boundary adapter rebuilds the canonical
+        ``[NP1, VP, NP2]`` meaning without treating a row, concept ID, or word
+        surface as semantic payload.  It only forms structure; it never calls
+        ``registry.execute`` or writes memory.
+
+        The current adapter is intentionally conservative.  It accepts a
+        completed root relation whose two operands are direct leaves, plus
+        declared ``not``/``non`` wrappers that carry polarity.  A nested or
+        otherwise unsupported constituent remains represented by its physical
+        end state until a stable occurrence reference is available; it is not
+        silently flattened into an invented operand.
+        """
+        if not (hasattr(registry, "form") and entry is not None):
+            return None
+        actions = getattr(entry, "actions", None)
+        leaves = getattr(entry, "leaves", None)
+        concept_ids = getattr(entry, "concept_ids", None)
+        if not (torch.is_tensor(actions) and torch.is_tensor(leaves)
+                and torch.is_tensor(concept_ids)
+                and actions.ndim == 2 and actions.shape[1] >= 3
+                and leaves.ndim == 2 and concept_ids.ndim == 1
+                and int(concept_ids.numel()) == int(leaves.shape[0])):
+            return None
+
+        # Action and address metadata are structural, so the boundary may
+        # read their bounded host values.  Leaf payloads remain live tensors.
+        action_rows = actions.detach().to("cpu").tolist()
+        native_ids = concept_ids.detach().to("cpu").tolist()
+        stack = []
+        for row in action_rows:
+            kind, local, word = (int(row[0]), int(row[1]), int(row[2]))
+            if kind < 0:                       # terminal action padding
+                break
+            if kind == 0:
+                if not 0 <= word < int(leaves.shape[0]):
+                    return None
+                stack.append(("leaf", word))
+                continue
+            if kind == 1:
+                if not 0 <= local < len(self._compose_binary_rules) or len(stack) < 2:
+                    return None
+                # STM/derivation order is older-left, newer-right.
+                right, left = stack.pop(), stack.pop()
+                stack.append(("binary", self._compose_binary_rules[local], left, right))
+                continue
+            if kind == 2:
+                if not 0 <= local < len(self._compose_unary_rules) or not stack:
+                    return None
+                stack.append(("unary", self._compose_unary_rules[local], stack.pop()))
+                continue
+            return None
+        if len(stack) != 1:
+            return None
+
+        root = stack[0]
+        polarity = True
+        mode = "assertive"
+        while root[0] == "unary":
+            name = getattr(root[1], "method_name", None)
+            if name in ("not", "non"):
+                polarity = not polarity
+            elif name == "what":
+                # Grammar owns interrogative mode: a structural what wrapper
+                # preserves its completed clause rather than dispatching a
+                # boundary executor while the program is being recovered.
+                if mode == "interrogative":
+                    return None
+                mode = "interrogative"
+            else:
+                return None
+            root = root[2]
+        if root[0] != "binary":
+            return None
+        rule, left, right = root[1:]
+        if left[0] != "leaf" or right[0] != "leaf":
+            return None
+        face = getattr(rule, "method_name", None)
+        left_index, right_index = int(left[1]), int(right[1])
+        if not (0 <= left_index < len(native_ids) and 0 <= right_index < len(native_ids)):
+            return None
+        left_id, right_id = int(native_ids[left_index]), int(native_ids[right_index])
+        if left_id <= 0 or right_id <= 0:
+            return None
+        left_ref, right_ref = ("sym", left_id), ("sym", right_id)
+        operation_form = getattr(registry, "operation_form", None)
+        if not callable(operation_form):
+            # Program recovery is a thought-grammar operation: it may not
+            # reconstruct a question through the retired query alias table.
+            return None
+        try:
+            operation, form = operation_form(face)
+        except ValueError:
+            return None
+        if len(operation.operand_roles) != 2:
+            return None
+        try:
+            canonical = registry.form(
+                face, left_ref, right_ref, mode=mode, polarity=polarity)
+        except RuntimeError:
+            # A deliberately small ConceptualSpace may retain the structural
+            # family while lacking room to reserve every native thought VP.
+            # That face is structural-only for this model; it must not turn a
+            # normal answer boundary into a lazy allocation or a crash.
+            if operation.semantic_id in getattr(
+                    registry, 'unavailable_operation_ids', ()):
+                return None
+            raise
+        if not isinstance(canonical, ConceptualMeaning):
+            raise TypeError("grammatical thought registry returned no conceptual meaning")
+        surface_values = {"I1": leaves[left_index], "I2": leaves[right_index]}
+        source_by_canonical_role = dict(zip(
+            operation.operand_roles, form.permutation))
+        live_by_role = {
+            role: surface_values[source_by_canonical_role[role]]
+            for role in operation.operand_roles}
+        canonical_roles = tuple(operation.operand_roles)
+        live_operands = tuple(live_by_role[role] for role in canonical_roles)
+        if any(value.shape != canonical.roles[0].shape for value in live_operands):
+            return None
+        roles = list(canonical.roles.unbind(0))
+        for role, value in live_by_role.items():
+            if role == "I1":
+                roles[0] = value
+            elif role == "I2":
+                roles[2] = value
+            else:
+                return None
+        return ConceptualMeaning(
+            torch.stack(roles), canonical.role_mask, mode=canonical.mode,
+            polarity=canonical.polarity, role_refs=canonical.role_refs,
+            bindings=canonical.bindings, scope=canonical.scope)
 
     def choose_capacity_binary(self, state, row_gate, *, base_tau):
         """Choose a legacy pre-deposit capacity Binary.
@@ -14286,7 +15210,9 @@ class LanguageSpace(nn.Module):
             raise RuntimeError(
                 "LanguageSpace has no CS binary layer for STM capacity")
         return _FunctionalLanguageChooser.choose_binary(
-            state, layer, row_gate, base_tau=base_tau, demand=True)
+            state, layer, row_gate, base_tau=base_tau, demand=True,
+            grammar_context=self._structural_context(
+                phase='compose', input_stream=state[0]))
 
     def choose_sentence_seal_binary(self, state, row_gate, *, base_tau,
                                     op_prior=None):
@@ -14302,7 +15228,8 @@ class LanguageSpace(nn.Module):
                 "LanguageSpace has no CS binary layer for sentence sealing")
         return _FunctionalLanguageChooser.choose_binary(
             state, layer, row_gate, base_tau=base_tau, demand=True,
-            op_prior=op_prior)
+            op_prior=op_prior, grammar_context=self._structural_context(
+                phase='compose', input_stream=state[0]))
 
     def choose_post_binary(
             self, state, row_gate, pre_applied, *, base_tau, op_prior=None):
@@ -14319,7 +15246,9 @@ class LanguageSpace(nn.Module):
             torch.logical_not(pre_applied.reshape(-1)))
         return _FunctionalLanguageChooser.choose_binary(
             state, binary, post_gate, base_tau=base_tau,
-            occupancy_pressure=True, op_prior=op_prior)
+            occupancy_pressure=True, op_prior=op_prior,
+            grammar_context=self._structural_context(
+                phase='compose', input_stream=state[0]))
 
     # -- functional reverses (compiled reverse-loops plan, contract 2) ------
     #
@@ -14659,6 +15588,8 @@ class LanguageSpace(nn.Module):
         local = op_local.reshape(B).clamp(0, len(ops) - 1)
         live = valid.reshape(B).to(dtype=torch.bool)
         window = torch.stack((left, right), dim=1)  # independent cond operand storage
+        grammar_context = self._structural_context(
+            phase='compose', input_stream=window)
         result = right.clone()
         compiling = torch.compiler.is_compiling()
         indices = (range(len(ops)) if compiling else
@@ -14669,7 +15600,11 @@ class LanguageSpace(nn.Module):
 
             def apply(w, previous, row_mask):
                 older, newer = w[:, :-1, :], w[:, 1:, :]
-                parent = (op.forward_with_context(older, newer, w)
+                parent = (op.forward_with_grammar_context(
+                    older, newer, w, context=grammar_context)
+                          if grammar_context is not None
+                          and hasattr(op, "forward_with_grammar_context")
+                          else op.forward_with_context(older, newer, w)
                           if hasattr(op, "forward_with_context")
                           else op(older, newer))
                 return torch.where(
@@ -14695,7 +15630,11 @@ class LanguageSpace(nn.Module):
         if not ops:
             return x
         B, D = int(x.shape[0]), int(x.shape[-1])
-        outs = [unary._apply_op(op, x.unsqueeze(1)).reshape(B, D) for op in ops]
+        grammar_context = self._structural_context(
+            phase='compose', input_stream=x.unsqueeze(1))
+        outs = [unary._apply_op(
+            op, x.unsqueeze(1), grammar_context=grammar_context).reshape(B, D)
+                for op in ops]
         stacked = torch.stack(outs, dim=1)                            # [B, R1, D]
         R1 = len(ops)
         idx = op_local.reshape(B).clamp(0, R1 - 1).reshape(B, 1, 1).expand(B, 1, D)
@@ -14736,7 +15675,9 @@ class LanguageSpace(nn.Module):
         if unary is None:
             raise RuntimeError("LanguageSpace requires a CS unary tree layer")
         return _FunctionalLanguageChooser.choose_unary(
-            state, unary, row_gate)
+            state, unary, row_gate,
+            grammar_context=self._structural_context(
+                phase='compose', input_stream=state[0]))
 
     @staticmethod
     def _scatter_rule_counts(base, rule_ids, counts):
@@ -14776,12 +15717,14 @@ class LanguageSpace(nn.Module):
         # Language scores exactly the two newest constituents. Rows that have
         # not accumulated two constituents are masked from the returned plan.
         x = symbolic_snapshot[:, :2, :]
+        grammar_context = self._structural_context(
+            phase='compose', input_stream=symbolic_snapshot)
         plan = symbolic_snapshot.new_zeros(B, n_rules)
         layer = self.language_layer
         unary = (layer._unary_layers["CS"]
                  if "CS" in layer._unary_layers else None)
         if unary is not None:
-            _hard, x, routing = unary(x)
+            _hard, x, routing = unary(x, grammar_context=grammar_context)
             action = routing.get("action_probs")
             if torch.is_tensor(action):
                 counts = action[..., int(unary.r_copy):].sum(dim=1)
@@ -14791,7 +15734,7 @@ class LanguageSpace(nn.Module):
         binary = (layer._binary_layers["CS"]
                   if "CS" in layer._binary_layers else None)
         if binary is not None:
-            _hard, _soft, routing = binary(x)
+            _hard, _soft, routing = binary(x, grammar_context=grammar_context)
             marginal = routing.get("reduce_marginal_op")
             if torch.is_tensor(marginal):
                 counts = marginal.sum(dim=1)

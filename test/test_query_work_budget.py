@@ -1,4 +1,4 @@
-"""All selected-query work consumes one shared allowance before its read."""
+"""All selected thought work consumes one shared allowance before its read."""
 
 from dataclasses import replace
 from types import SimpleNamespace
@@ -8,10 +8,11 @@ import torch
 
 from Layers import TernaryTruthStore
 from Meaning import ConceptualMeaning
-from Queries import BUILTIN_QUERIES, QueryContext
+from Queries import THOUGHT_EXECUTORS, ThoughtSignature
 from Taxonomy import capture_taxonomy
-from reasoning import TruthGroundedReasoner
 from test_taxonomy_view import _ref, _world
+from test_cs_symbol_table import _cs
+from test_query_vp_boundaries import _context
 
 
 def budget(limit):
@@ -48,12 +49,15 @@ def test_taxonomy_capture_and_expansion_share_one_meter(monkeypatch):
 
 def test_selected_operation_is_charged_before_its_executor():
     calls = []
-    signature = replace(
-        BUILTIN_QUERIES["what"],
+    descriptor = replace(
+        THOUGHT_EXECUTORS["what"],
         executor=lambda context, arguments: calls.append(arguments) or {"value": None},
     )
-    question = ConceptualMeaning.from_description(torch.ones(4))
-    context = QueryContext(TruthGroundedReasoner(), work=budget(0))
+    signature = ThoughtSignature(
+        SimpleNamespace(semantic_id='what', operand_roles=('I1',)),
+        descriptor, ('I1',))
+    question = ConceptualMeaning.from_description(torch.ones(8))
+    context = _context(_cs(), work=budget(0))
     result = signature.invoke(context, question)
     assert calls == [] and "work_budget" in result["incomplete"]
     assert context.work.spent == 0
@@ -61,20 +65,23 @@ def test_selected_operation_is_charged_before_its_executor():
 
 def test_invalid_call_spends_no_work_and_never_executes():
     calls = []
-    signature = replace(
-        BUILTIN_QUERIES["isPart"],
+    descriptor = replace(
+        THOUGHT_EXECUTORS["part"],
         executor=lambda context, arguments: calls.append(arguments) or {},
     )
+    signature = ThoughtSignature(
+        SimpleNamespace(semantic_id='part', operand_roles=('I1', 'I2')),
+        descriptor, ('I1', 'I2'))
     meter = budget(5)
-    context = QueryContext(TruthGroundedReasoner(), work=meter)
+    context = _context(_cs(), work=meter)
     with pytest.raises(TypeError):
         signature.invoke(context, 1, 2)
     assert calls == [] and meter.spent == 0
 
 
 def test_fact_reads_stop_at_shared_budget_and_preserve_partial_evidence(monkeypatch):
-    meaning = ConceptualMeaning.from_description(torch.ones(4))
-    store = TernaryTruthStore(4)
+    meaning = ConceptualMeaning.from_description(torch.ones(8))
+    store = TernaryTruthStore(8)
     store.append_meaning(meaning, kind="fact", trust=.6)
     store.append_meaning(meaning, kind="fact", trust=-.4)
     read, original = [], store.row
@@ -85,8 +92,9 @@ def test_fact_reads_stop_at_shared_budget_and_preserve_partial_evidence(monkeypa
 
     monkeypatch.setattr(store, "row", row)
     meter = budget(2)
-    result = BUILTIN_QUERIES["exist"].invoke(
-        QueryContext(TruthGroundedReasoner(store=store), work=meter), meaning)
+    from test_query_vp_boundaries import _signature
+    result = _signature('exist', 'I1').invoke(
+        _context(_cs(), store=store, work=meter), meaning)
     assert read == [0] and result["records_scanned"] == 1
     assert result["support_true"] == pytest.approx(.6)
     assert result["support_false"] == 0 and "work_budget" in result["incomplete"]
@@ -98,14 +106,15 @@ def test_taxonomy_executor_cannot_renew_node_record_and_expansion_allowances():
     del c
     cs.add_whole(a, _ref(b))
     meter = budget(3)
-    context = QueryContext(
-        TruthGroundedReasoner(model=SimpleNamespace(conceptualSpace=cs)),
+    context = _context(
+        cs,
         max_nodes=99,
         max_records=99,
         max_expansions=99,
         work=meter,
     )
-    result = BUILTIN_QUERIES["isPart"].invoke(context, _ref(a), _ref(b))
+    from test_query_vp_boundaries import _signature
+    result = _signature('part', 'I1', 'I2').invoke(context, _ref(a), _ref(b))
     assert (result["nodes_scanned"] + result["records_scanned"]
             + result["edges_expanded"] == 2)
     assert result["support_true"] == 0 and meter.spent == 3

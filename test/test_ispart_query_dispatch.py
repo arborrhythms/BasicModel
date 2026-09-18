@@ -1,14 +1,4 @@
-"""isPart relation + query-based dispatch (Phase R1.2).
-
-doc/plans/2026-06-02-unified-subsymbolic-analyzer-and-role-collapsed-grammar.md
-decision 6 + §6: ``isEqual`` and ``isPart`` are each a *single* grammar
-relation; ``query="true"`` selects answer-producing semantics,
-``query="false"`` selects assertive semantics. This folds in (replaces)
-the separate ``queryPart`` / ``assertPart`` operators. ``isPart`` is the
-SS-space_role assertive parthood relation -- the mereological analogue of the
-SS-space_role assertive ``isEqual`` -- and dispatches to the existing
-parthood-truth ``queryPart`` layer when interrogative.
-"""
+"""``part`` is one pure structural face; thought runs only at a boundary."""
 
 import os
 import sys
@@ -25,21 +15,22 @@ if _BIN not in sys.path:
 import torch
 
 
-def _ispart_grammar(query_attr):
+def _part_grammar(query_attr=None):
+    attr = '' if query_attr is None else f' query="{query_attr}"'
     return textwrap.dedent("""\
         <?xml version="1.0"?>
-        <grammar name="ispart_probe">
+        <grammar name="part_probe">
           <Symbolic>
-            <start name="relative_truth">isPart_O1</start>
+            <start name="relative_truth">part_O1</start>
             <compose>
-              <rule query="%s">isPart_O1 = isPart.forward(isPart_I1, isPart_I2)</rule>
+              <rule%s>part_O1 = part.forward(part_I1, part_I2)</rule>
             </compose>
             <generate>
-              <rule query="%s">isPart_I1, isPart_I2 = isPart.reverse(isPart_O1)</rule>
+              <rule%s>part_I1, part_I2 = part.reverse(part_O1)</rule>
             </generate>
           </Symbolic>
         </grammar>
-    """ % (query_attr, query_attr))
+    """ % (attr, attr))
 
 
 def _load(text, monkeypatch, tmp_path):
@@ -52,45 +43,38 @@ def _load(text, monkeypatch, tmp_path):
     return g
 
 
-def test_ispart_layer_registered():
-    """``isPart`` is in the layer registry as an arity-2, SS-space_role relation."""
+def test_part_layer_registered():
+    """``part`` is the arity-2 conceptual structural relation."""
     from Language import GRAMMAR_LAYER_CLASSES
-    assert "isPart" in GRAMMAR_LAYER_CLASSES
-    cls = GRAMMAR_LAYER_CLASSES["isPart"]
-    assert cls.rule_name == "isPart"
+    assert "part" in GRAMMAR_LAYER_CLASSES
+    cls = GRAMMAR_LAYER_CLASSES["part"]
+    assert cls.rule_name == "part"
     assert cls.arity == 2
-    assert cls.space_role == "SS", "isPart is the SS-space_role assertive relative-truth relation"
+    assert cls.space_role == "CS"
 
 
-def test_ispart_assertive_forward_passes_parent():
-    """Assertive ``isPart(A, B)`` yields the encompassing parent ``B`` (like
-    the CS-space_role ``part``). ADAPTED (2026-07-04 serial plan Task 1):
-    the lossy ``(parent, parent)`` pseudo-inverse is revoked -- reverse
-    fails loud with the Gate-S1 inventory row."""
+def test_part_structural_forward_passes_parent():
+    """Structural ``part(A, B)`` yields its whole without answering it."""
     import pytest
     from Language import GRAMMAR_LAYER_CLASSES
-    layer = GRAMMAR_LAYER_CLASSES["isPart"]()
+    layer = GRAMMAR_LAYER_CLASSES["part"]()
     left = torch.randn(2, 4)
     right = torch.randn(2, 4)
     out = layer.forward(left, right)
     assert torch.equal(out, right)
-    with pytest.raises(NotImplementedError, match="isPart"):
+    with pytest.raises(NotImplementedError, match="part"):
         layer.reverse(out)
 
 
-def test_ispart_query_false_dispatches_assertive(monkeypatch, tmp_path):
-    """``query="false"`` keeps the assertive ``isPart`` layer."""
+def test_part_dispatches_its_declared_pure_structural_face(monkeypatch, tmp_path):
+    """The structural spelling determines dispatch; mode is not a rule attribute."""
     from Language import _dispatch_method_name_for_rule
-    g = _load(_ispart_grammar("false"), monkeypatch, tmp_path)
-    rule = next(r for r in g.rules_upward if r.method_name == "isPart")
-    assert rule.query is False
-    assert _dispatch_method_name_for_rule(rule) == "isPart"
+    g = _load(_part_grammar(), monkeypatch, tmp_path)
+    rule = next(r for r in g.rules_upward if r.method_name == "part")
+    assert _dispatch_method_name_for_rule(rule) == "part"
 
 
-def test_ispart_query_true_dispatches_to_query_part(monkeypatch, tmp_path):
-    """``query="true"`` selects the answer-producing ``queryPart`` layer."""
-    from Language import _dispatch_method_name_for_rule
-    g = _load(_ispart_grammar("true"), monkeypatch, tmp_path)
-    rule = next(r for r in g.rules_upward if r.method_name == "isPart")
-    assert rule.query is True
-    assert _dispatch_method_name_for_rule(rule) == "queryPart"
+def test_retired_rule_query_attribute_fails_loudly(monkeypatch, tmp_path):
+    import pytest
+    with pytest.raises(ValueError, match="query attribute|retired"):
+        _load(_part_grammar("true"), monkeypatch, tmp_path)

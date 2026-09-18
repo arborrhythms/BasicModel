@@ -1104,9 +1104,11 @@ unknown namespaces or missing metadata fail without row substitution.
 [occurrence resolution](../bin/Queries.py#L348).
 
 The current occurrence reader is a bounded durable read and does not provide
-live episode memory. Ordinary levelled history, nested retention, shared work
-accounting and the normal linguistic observation adapter remain open.
-[Query contracts](QueryContracts.md) distinguishes these integration gates.
+live episode memory. The direct completed-relation adapter now runs through
+ordinary levelled history, nested retention and one shared work meter; it does
+not flatten unsupported physical nested folds. General nested syntactic
+adaptation and residual policy learning remain open. [Query contracts](QueryContracts.md)
+distinguishes these integration gates.
 
 ## Ordinary levelled thoughts (September 17)
 
@@ -1117,8 +1119,10 @@ is not completion. Only a closed legacy prefix may precede ordinary records.
 Stable row-local `thought` references resolve complete live episode meanings;
 capacity retains active contexts and referenced occurrences. The structural
 sidecar persists detached copies and validates replay on restore. The normal
-linguistic controller and actual executor accounting remain open. See
-[ordinary thought history](ThoughtHistory.md).
+selected linguistic controller now creates its shared meter, records exact
+executor/controller work, and runs `what(Q)` children through the same episode.
+Residual credit and learned utility remain open. See [ordinary thought
+history](ThoughtHistory.md).
 
 ## Completed-row query permission
 

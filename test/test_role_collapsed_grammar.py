@@ -36,12 +36,12 @@ _FORBIDDEN_STATE_TOKENS = {
     "QLEFT_PART34",
 }
 
-# ADAPTED 2026-07-05: the relation family (isEqual, isPart, related ops)
-# RELOCATED to <Queries> (Alec: they are query TOOLS with no defined
-# syntactic operation; integration design pending); the lattice max renamed
-# union -> join (the additive union/difference pair owns 'union' now).
+# The relation family is structural: ``part`` / ``whole`` / ``equal`` own
+# compose/generate faces and join their checked thought descriptors only at a
+# completed boundary.
 _REQUIRED_OPS = {
-    "exist", "not", "non",
+    "part", "whole", "equal", "exist", "lookup", "quantize", "arma", "what",
+    "not", "non",
     "conjunction", "disjunction", "intersection", "union",
     "lift", "verb", "adverb", "lower",
     "preposition", "bind", "tense", "morphology",
@@ -84,11 +84,8 @@ def test_symbolicspace_owns_its_starts():
     """WholeSpace owns the operator-output starts, split by name."""
     g = _load()
     ws_syms = {sym for pat in g.ws_start_patterns for sym in pat}
-    # ADAPTED 2026-07-05: the relation family (part / whole / equal) is back as
-    # COMPOSITIONAL operators heading the relative-truth start -- Relation(RI_1,
-    # RI_2) over two ideas -- while only their is-prefixed cousins (isPart /
-    # isWhole / isEqual) are queries. exist_O1 keeps the absolute-truth start
-    # (the EXISTS no-op).
+    # part / whole / equal are compositional relation forms heading the
+    # relative-truth start; exist_O1 remains the absolute-truth start.
     assert "exist_O1" in ws_syms, ws_syms
     assert g.ws_relative_starts == frozenset({"part_O1", "whole_O1", "equal_O1"})
     assert "exist_O1" in g.ws_absolute_starts
@@ -102,19 +99,13 @@ def test_no_top_level_start():
         "role-only grammars must not declare a top-level <start>")
 
 
-def test_no_query_part_or_assert_part():
-    """``queryPart`` / ``assertPart`` are folded into ``isPart`` + query.
-
-    ADAPTED 2026-07-05: ``part`` (and its converse ``whole`` / geometric
-    ``equal``) are now live COMPOSITIONAL relations heading the relative-truth
-    start, so ``part`` IS an expected method; only the retired dispatch aliases
-    ``queryPart`` / ``assertPart`` stay folded away.
-    """
+def test_no_retired_relation_or_query_aliases():
+    """One structural family replaces all legacy relation/query spellings."""
     g = _load()
     methods = {r.method_name for r in g.rules if r.method_name}
-    assert "queryPart" not in methods
-    assert "assertPart" not in methods
-    assert "part" in methods
+    assert not (methods & {"queryPart", "assertPart", "isPart", "isEqual",
+                           "queryEqual", "query"})
+    assert {"part", "whole", "equal"} <= methods
 
 
 def test_no_pos_or_category_state_names():
@@ -136,24 +127,23 @@ def test_no_category_rename_projection_rules():
                 f"non-identity projection rule survives: {r.canonical!r}")
 
 
-def test_isequal_and_ispart_use_role_names():
-    """ADAPTED 2026-07-05: the relation family (isEqual, isPart) is fully
-    relocated to <Queries> -- complete.grammar must carry NO parse rule
-    for either (the relocation pin)."""
+def test_canonical_relation_forms_use_role_names():
+    """The grammar uses canonical role-labelled relation forms."""
     g = _load()
-    for op in ("isEqual", "isPart"):
-        assert not [r for r in g.rules if r.method_name == op], (
-            f"{op} must not be a parse rule (relocated to <Queries>)")
+    for op in ("part", "whole", "equal"):
+        rules = [r for r in g.rules if r.method_name == op]
+        assert rules, f"{op} must be a structural grammar form"
+        assert all(op + "_" in r.canonical for r in rules)
 
 
-def test_every_relation_rule_carries_explicit_query():
-    """Every ``isEqual`` / ``isPart`` ``<rule>`` declares ``query`` (decision 6)."""
+def test_every_relation_rule_has_no_query_attribute():
+    """Interrogative mode is on the completed meaning, never the rule."""
     root = ET.parse(_GRAMMAR_FILE).getroot()
     for rule in root.iter("rule"):
         body = (rule.text or "")
-        if "isEqual." in body or "isPart." in body:
-            assert rule.get("query") is not None, (
-                f"relation rule missing explicit query: {body.strip()!r}")
+        if any(name + "." in body for name in ("part", "whole", "equal")):
+            assert rule.get("query") is None, (
+                f"relation rule retains retired query attribute: {body.strip()!r}")
 
 
 def test_operator_coverage():
@@ -165,20 +155,18 @@ def test_operator_coverage():
 
 
 def test_forward_reverse_pairing():
-    """Every compose operator has a matching generate (reverse) operator."""
+    """Every reversible compose form has its matching generate face."""
     g = _load()
     up = {r.method_name for r in g.rules_upward if r.method_name}
     dn = {r.method_name for r in g.rules_downward if r.method_name}
     assert _REQUIRED_OPS <= up
-    assert _REQUIRED_OPS <= dn
+    # ``lookup`` is intentionally compose-only: retrieval has no faithful
+    # structural inverse.
+    assert (_REQUIRED_OPS - {"lookup"}) <= dn
 
 
-def test_transitional_baseline_archived_as_fixture():
-    """GrammarOpsPass §1: ``complete.grammar`` is migrated to the
-    role-collapsed format; the transitional POS-categoried content (the
-    compatibility baseline the D1 collapse is measured on) is archived
-    verbatim at ``test/fixtures/transitional_pos.grammar`` and still
-    spells assertPart/queryPart."""
+def test_transitional_baseline_uses_the_same_structural_relation_contract():
+    """The POS baseline remains useful without reviving a query catalogue."""
     from Language import Grammar
     fixture = os.path.join(
         os.path.dirname(os.path.abspath(__file__)), "fixtures",
@@ -186,9 +174,8 @@ def test_transitional_baseline_archived_as_fixture():
     g = Grammar()
     g.load_from_grammar_file(fixture)
     methods = {r.method_name for r in g.rules if r.method_name}
-    assert "assertPart" in methods and "queryPart" in methods, (
-        "the transitional baseline must stay archived (POS-categoried, "
-        "assertPart/queryPart spelled) for the D1 measurement")
+    assert {"part", "equal"} <= methods
+    assert not (methods & {"assertPart", "queryPart", "isPart", "isEqual"})
 
 
 # -- Per-grammar-file format conformance (GrammarOpsPass §1) --------------
@@ -204,11 +191,11 @@ import pytest
 _ALL_GRAMMAR_FILES = sorted(
     os.path.basename(p) for p in glob.glob(os.path.join(_DATA, "*.grammar")))
 
-# queryPart / assertPart folded into isPart + query (decision 6). ``part``
-# stays a live spelling of the parthood family in default/shamatha.
-_RETIRED_METHOD_NAMES = {"queryPart", "assertPart"}
+# Canonical structural forms only; query aliases are not a grammar API.
+_RETIRED_METHOD_NAMES = {"queryPart", "assertPart", "isPart", "isEqual",
+                         "queryEqual", "query"}
 
-# Relation families whose rules must carry an explicit query attribute.
+# Relation families whose rules must carry no retired query attribute.
 _RELATION_DOTTED = ("isEqual.", "isPart.", "part.", "whole.", "equal.")
 
 
@@ -223,7 +210,7 @@ def test_sweep_covers_data_grammars():
 def test_grammar_file_conforms_to_role_collapsed_format(fname):
     """GrammarOpsPass §1 conformance, per grammar file: space-scoped
     starts only (no top-level <start>), PS analyzer root ``U``, explicit
-    ``query`` on relation rules, no retired queryPart/assertPart method
+    no ``query`` on relation rules, no retired relation/query method
     spellings, no POS / category / transitional-role state names, and no
     category-rename projection rules (method-less rules are identities)."""
     from Language import Grammar
@@ -241,12 +228,12 @@ def test_grammar_file_conforms_to_role_collapsed_format(fname):
                   for s in ps.findall("start")]
         assert ("everything", "U") in starts, (fname, starts)
 
-    # Relation rules dispatch by explicit query (decision 6).
+    # Relation rules are structural; their completed ideas own mode.
     for rule in root.iter("rule"):
         body = (rule.text or "")
         if any(tag in body for tag in _RELATION_DOTTED):
-            assert rule.get("query") is not None, (
-                f"{fname}: relation rule missing explicit query: "
+            assert rule.get("query") is None, (
+                f"{fname}: relation rule retains retired query attribute: "
                 f"{body.strip()!r}")
 
     g = Grammar()

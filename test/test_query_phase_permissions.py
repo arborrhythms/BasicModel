@@ -1,4 +1,4 @@
-"""Reviewer probes for sentence/query phase ownership and row permissions.
+"""Reviewer probes for sentence/thought phase ownership and row permissions.
 
 These tests were rebased from the preserved September 17 phase candidate.
 They deliberately inject checked query execution into compose, reconstruction,
@@ -14,11 +14,14 @@ import torch
 
 from Models import BasicModel
 from Output import AnswerDerivation
-from Queries import BUILTIN_QUERIES, GrammaticalQueryRegistry, QueryContext
+from Queries import (
+    GrammaticalThoughtRegistry, THOUGHT_EXECUTORS, ThoughtSignature,
+)
 from Understanding import AnswerProgram, InputReconstruction, Understanding
 from What import What
 from reasoning import TruthGroundedReasoner
 from test_cs_symbol_table import _cs
+from test_query_vp_boundaries import _context
 
 
 def _model():
@@ -48,17 +51,22 @@ def _understanding(*completed):
 def _fixture():
     model = _model()
     calls = []
-    signature = replace(
-        BUILTIN_QUERIES["isEqual"],
+    descriptor = replace(
+        THOUGHT_EXECUTORS["equal"],
         executor=lambda *args: calls.append(args) or {
             "support_true": 1.0, "support_false": 0.0,
         },
     )
-    reasoner = TruthGroundedReasoner(model=model)
+    signature = ThoughtSignature(
+        SimpleNamespace(semantic_id='equal', operand_roles=('I1', 'I2')),
+        descriptor, ('I1', 'I2'))
+    context = _context(
+        model.conceptualSpace, model=model,
+        boundary=model._assert_query_boundary)
 
     def invoke(row=0):
         return signature.invoke(
-            QueryContext(reasoner, row=row), torch.ones(8), torch.ones(8)
+            replace(context, row=row), torch.ones(8), torch.ones(8)
         )
 
     return model, invoke, calls
@@ -182,10 +190,15 @@ def test_every_input_execution_entry_masks_checked_queries(monkeypatch, entry):
     # child must mask that parent's permission until it completes.
     model._query_ready_rows = (0,)
     calls = []
-    signature = replace(
-        BUILTIN_QUERIES["isEqual"], executor=lambda *args: calls.append(args) or {}
+    descriptor = replace(
+        THOUGHT_EXECUTORS["equal"], executor=lambda *args: calls.append(args) or {}
     )
-    context = QueryContext(TruthGroundedReasoner(model))
+    signature = ThoughtSignature(
+        SimpleNamespace(semantic_id='equal', operand_roles=('I1', 'I2')),
+        descriptor, ('I1', 'I2'))
+    context = _context(
+        model.conceptualSpace, model=model,
+        boundary=model._assert_query_boundary)
 
     def query(*args, **kwargs):
         signature.invoke(context, torch.ones(8), torch.ones(8))
@@ -214,13 +227,10 @@ def test_operand_occurrence_reads_require_permission_before_preparation(monkeypa
     from Meaning import ConceptualMeaning
 
     model = _model()
-    registry = GrammaticalQueryRegistry.install(
-        model.conceptualSpace,
-        SimpleNamespace(
-            query_signatures={"exist": Queries.BUILTIN_QUERIES["exist"]},
-            rules_upward=(),
-        ),
-    )
+    grammar = __import__('Language').Grammar()
+    grammar.configure({'compose': {'rule': [
+        'exist_O1 = exist.forward(exist_I1)']}})
+    registry = GrammaticalThoughtRegistry.install(model.conceptualSpace, grammar)
     vp = registry._reference(("ltm-facts", "exist"))
     meaning = ConceptualMeaning(
         torch.ones(3, 8), torch.tensor([True, True, False]),
@@ -234,7 +244,9 @@ def test_operand_occurrence_reads_require_permission_before_preparation(monkeypa
             AssertionError("occurrence read before boundary permission")
         ),
     )
-    context = QueryContext(TruthGroundedReasoner(model))
+    context = _context(
+        model.conceptualSpace, model=model,
+        boundary=model._assert_query_boundary)
     with pytest.raises(RuntimeError, match="boundary"):
         registry.execute(meaning, context)
     assert reads == []
@@ -258,11 +270,16 @@ def test_reconstruction_completion_keeps_query_executors_masked(monkeypatch):
     )
     monkeypatch.setattr(model, "_synthesis_guard", nullcontext)
     calls = []
-    signature = replace(
-        Queries.BUILTIN_QUERIES["isEqual"],
+    descriptor = replace(
+        THOUGHT_EXECUTORS["equal"],
         executor=lambda *args: calls.append(args) or {},
     )
-    context = QueryContext(TruthGroundedReasoner(model))
+    signature = ThoughtSignature(
+        SimpleNamespace(semantic_id='equal', operand_roles=('I1', 'I2')),
+        descriptor, ('I1', 'I2'))
+    context = _context(
+        model.conceptualSpace, model=model,
+        boundary=model._assert_query_boundary)
     monkeypatch.setattr(
         model,
         "_reverse_input_surface",
@@ -348,14 +365,18 @@ def test_compiled_input_cannot_execute_queries_during_trace_or_eager_island(
     model._spaces_started_for_forward = False
     model._query_ready_rows = (0,)
     calls = []
-    signature = replace(
-        BUILTIN_QUERIES["isEqual"], argument_roles=(), argument_kinds=(),
-        occupied_roles=(1,), executor=lambda *args: calls.append(args) or {},
+    descriptor = replace(
+        THOUGHT_EXECUTORS["equal"], executor=lambda *args: calls.append(args) or {},
     )
-    context = QueryContext(TruthGroundedReasoner(model))
+    signature = ThoughtSignature(
+        SimpleNamespace(semantic_id='equal', operand_roles=('I1', 'I2')),
+        descriptor, ('I1', 'I2'))
+    context = _context(
+        model.conceptualSpace, model=model,
+        boundary=model._assert_query_boundary)
 
     def body(value):
-        signature.invoke(context)
+        signature.invoke(context, torch.ones(8), torch.ones(8))
         return value.sin()
 
     if eager_island:

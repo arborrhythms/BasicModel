@@ -1,13 +1,13 @@
-# Shared selected-query work accounting
+# Shared selected-thought work accounting
 
 Implementation reference, September 18.
 
-QueryWorkBudget is one transient integer allowance for a selected query tree.
+QueryWorkBudget is one transient integer allowance for a selected thought tree.
 Its read-only spent, remaining, and per-kind counts report actual debits. It
 owns no meaning, checkpoint state, child allowance, reset, learned parameter,
 or objective. A debit is atomic: an overlarge request fails without partly
-consuming the allowance. QueryContext.work carries the same object through
-preparation, execution, and nested calls.
+consuming the allowance. ThoughtGrammarContext.work carries the same object
+through preparation, execution, and nested calls.
 [Meter](../bin/QueryWork.py#L15),
 [context](../bin/Queries.py#L19).
 
@@ -33,7 +33,7 @@ debit that one object.
 
 Phase permission plus declared argument, domain, and width validation occur
 before an operation debit. Invalid calls therefore cannot spend work or invoke
-an executor. The grammatical registry also charges selected VP validation and
+an executor. The grammatical thought registry also charges selected VP validation and
 native operand preparation. Description-valued operands resolve through their
 existing occurrence owner, so preparation cannot read a full description before
 it shares the allowance.
@@ -58,7 +58,7 @@ allowance remains available. A partial failed occurrence resolution is still
 recorded in the meter even where an older result field cannot expose its
 intermediate scan count.
 
-## Gradients, ownership, and remaining controller work
+## Gradients, ownership, and controller integration
 
 The meter uses host integers and creates no parameter, loss, or ordinary
 derivative. Charging does not detach a live input payload or a live
@@ -68,11 +68,13 @@ nondifferentiable, so accounting does not supply policy credit or make query
 utility learned. See [Gradient flow](GradientFlow.md).
 
 Standalone audited readers can omit work and retain their explicit local
-limits. The normal learned controller must instead create one meter from its
-episode allowance, forward it through every selected reader and callback, and
-record its final cost exactly once in ordinary history. This module does not
-add that controller, reconcile the older history budget automatically, or
-change the existing cutoff-drain bound.
+limits. The normal selected-meaning controller creates one meter from
+`selectedThoughtBudget`, debits its own hard choices as `controller`, forwards
+the meter through every selected reader and `what(Q)` callback, and commits
+each actual meter delta to the ordinary record. A child neither gets a new
+allowance nor begins another optimizer episode. The existing thought owner
+still enforces the cutoff-drain bound; neither the meter nor that accounting
+creates residual policy credit or learned utility.
 
 ## Evidence and limits
 
@@ -90,9 +92,10 @@ seconds at 1.05 GiB, 89.6 seconds at 0.50 GiB, and 19.1 seconds at 0.40 GiB).
 It includes checked query/phase, taxonomy, expectation, thought-history,
 retention, LTM, existence, and truth-store regressions.
 
-Per the user-directed no-rerun policy, this is focused and affected-file
-evidence rather than a fresh single-snapshot global-suite receipt. The
-historical default composite remains in [Testing](Testing.md). Normal
-selected-meaning/controller integration, residual policy credit, expectations,
-generation ownership, and learned utility remain separate gates; the
+The normal-controller probe first failed before the controller path existed;
+the focused semantic/controller selection then passed 25/25 in
+`output/tests/20260918-033710-5f144b`, and its non-overlapping chooser
+regression passed 39/39 in `output/tests/20260918-032344-fee2c1`. This closes
+the meter-to-ordinary-history integration only. Expectations, residual policy
+credit, generation ownership and learned utility remain separate gates; the
 separately queued two-truths and forgetting work remains out of scope.

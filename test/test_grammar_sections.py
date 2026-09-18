@@ -2,8 +2,7 @@
 aliases / no namespace pollution):
 
   <PartSpace> { <Synthesize>, <Analyze> }  -- mereological parts<->whole
-  <Symbolic>  { <compose>, <generate> }    -- the symbolic rules
-  <Queries>                                -- top-level introspection ops
+  <Symbolic>  { <compose>, <generate> }    -- structural and thought rules
 
 Every .grammar file uses these names; the parser reads ONLY these (the old
 <WholeSpace> / PartSpace-<compose> section aliases and the normalization layer
@@ -29,7 +28,7 @@ def test_complete_grammar_canonical_sections():
     assert 'Symbolic' in d and 'WholeSpace' not in d
     assert {'Synthesize', 'Analyze'} <= set(d['PartSpace'].keys())
     assert {'compose', 'generate'} <= set(d['Symbolic'].keys())
-    assert 'Queries' in d
+    assert 'Queries' not in d
 
 
 def test_all_shipped_grammars_load_with_rules():
@@ -45,15 +44,14 @@ def test_all_shipped_grammars_load_with_rules():
         assert len(G.ps_rules_downward) == expected, g
 
 
-def test_query_ops_from_top_level_queries():
+def test_thought_ops_derive_from_structural_families():
     G = _fresh('complete.grammar')
-    # Predicate interfaces and pure compose faces share relation identities.
-    # Value queries preserve typed results; what(Q) schedules the full question
-    # through the same controller and remains distinct from query(X,Y).
-    assert {'isTrue(X)', 'isEqual(X, Y)', 'isPart(X, Y)', 'isWhole(X, Y)',
-            'query(X, Y)', 'quantize(X)', 'wholes(X)', 'parts(X)',
-            'arma(X)', 'what(Q)'} == set(G.query_ops)
-    assert not any('isomorph' in q for q in G.query_ops)
+    ids = {operation.semantic_id for operation in G.thought_operations}
+    assert {'part', 'equal', 'exist', 'lookup', 'quantize', 'arma', 'what'} <= ids
+    part = next(operation for operation in G.thought_operations
+                if operation.semantic_id == 'part')
+    whole = next(form for form in part.forms if form.structural_id == 'whole')
+    assert whole.permutation == ('I2', 'I1')
 
 
 def test_symbolic_is_the_canonical_section_name():

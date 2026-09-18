@@ -326,6 +326,9 @@
       <!-- whatThinkingIterations (spec 6.2): iteration limit L of a
            Model.think() episode; 1 (default) = the single what(). -->
       <xs:element name="whatThinkingIterations" type="xs:positiveInteger" minOccurs="0"/>
+      <!-- Bounded work for one normal selected grammatical-thought episode.
+           Zero permits only the defined cutoff/finish drain. -->
+      <xs:element name="selectedThoughtBudget" type="xs:nonNegativeInteger" minOccurs="0"/>
       <!-- Thought-step MLP capacity: defaults hidden=16, depth=1. These
            do not enable episodes, memory, or policy training. -->
       <xs:element name="whatThinkingHidden" type="xs:positiveInteger" minOccurs="0"/>
@@ -988,6 +991,10 @@
            of the WhatStepChooser policy objective (REINFORCE on the
            resolve-step choices, root answer loss as reward). 0 = off. -->
       <xs:element name="whatThinkingPolicyWeight" type="nonNegativeFloat" minOccurs="0"/>
+      <!-- Weight of the separate normal grammatical-thought controller's
+           REINFORCE objective. 0 keeps its deterministic query-then-finish
+           baseline and contributes no policy term. -->
+      <xs:element name="selectedThoughtPolicyWeight" type="nonNegativeFloat" minOccurs="0"/>
       <!-- Method-1 -> Method-2 leaf distillation weight (doc/plans/
            2026-07-14-signed-space-snap-design.md, step 3): trains the
            LeafDecoderHead to regenerate the EXACT per-word leaves (the

@@ -12,8 +12,9 @@
          * answerLossWeight>0       : trains the soft route (the generator query
            head + the GlobalAttention scorer) under the answer-policy loss,
            self-supervised from the truthSet store (Phase C).
-         * complete.grammar         : declares the query="true" isPart/isEqual
-           rules _detect_query keys on.
+         * complete.grammar         : declares canonical structural thought
+           operators. The serving compatibility detector gates only on the
+           derived `exist` / `part` / `equal` catalogue entries.
          * a parthood syllogism in the TruthSet (socrates <= human <= mortal) the
            reasoner can chain, plus the `queries` QA set for serve validation.
 
@@ -77,8 +78,9 @@
 
   <SymbolSpace>
     <language>
-      <!-- complete.grammar declares the query="true" isPart/isEqual rules the
-           serve detector keys on (data/complete.grammar:87,89). -->
+      <!-- complete.grammar derives the canonical thought-operation catalogue;
+           the serving compatibility detector reads its `exist` / `part` /
+           `equal` entries rather than a <Queries> block or rule attribute. -->
       <grammar>complete.grammar</grammar>
     </language>
   </SymbolSpace>

@@ -1027,8 +1027,9 @@ unary (copy-side) or binary (reduce-side):
   `true`, `false`.
 - **Binary symbolic operators**: `intersection(S, S)`, `union(S, S)`,
   `conjunction`, `disjunction`.
-- **Mereological operators**: `part(S, S)`, `isEqual(S, S)`, `query(S, S)`.
-  Pure-geometric — the `MereologicalTree` sidecar that formerly stored
+- **Mereological operators**: canonical `part(S, S)`, converse `whole(S, S)`,
+  and `equal(S, S)`. Their structural faces are pure-geometric; their checked
+  thought faces run only at a completed boundary. The `MereologicalTree` sidecar that formerly stored
   explicit parent / equality links retired in favor of clipped-cosine
   parthood on codebook activations. See [Mereology.md](Mereology.md).
 - **`lift` and `lower`**: now binary `GrammarLayer` subclasses (Stage 4 of
@@ -1048,8 +1049,9 @@ unary (copy-side) or binary (reduce-side):
 Parthood (`part`) is the **fundamental** mereological operation, realized
 as clipped cosine projection on symbolic activations. The full suite
 (`whole`, `equal`, `overlap`, `underlap`, `boundary`) composes through
-`part` on `Basis`. `isEqual(S, S)` is propositional identity on S; delegates
-to `Basis.equal`.
+`part` on `Basis`. `equal(S, S)` is propositional identity on S; it delegates
+to `Basis.equal` when selected as a thought operator. The historical
+`isEqual`/`query` layers remain compatibility-only.
 
 ### Short-Term Memory on ConceptualSpace
 
@@ -1226,36 +1228,38 @@ history. Conceptual-taxonomy evidence is implemented separately below. See [Exis
 for the exact migration and gradient boundaries.
 [Restore checks](../bin/Layers.py#L8823).
 
-### Conceptual-taxonomy query evidence
+### Conceptual-taxonomy thought evidence
 
-Public `PartOf` queries read bounded conceptual reference records, preserving
-native proof sources. Perceptual edges, vector overlap and world-relation rows
-cannot certify this domain. Converse aliases share the canonical direction;
-unsupported domains fail explicitly. The derived read view adds no memory or
-learned parameters. The ordinary levelled controller and normal linguistic
-query integration remain separate work; the shared-VP contract is below. See [Taxonomy queries](TaxonomyQueries.md).
+The canonical `part` thought operator reads bounded conceptual reference
+records, preserving native proof sources. Perceptual edges, vector overlap and
+world-relation rows cannot certify this domain. The grammar-spelled `whole`
+form carries the converse permutation; unsupported domains fail explicitly.
+The derived read view adds no memory or learned parameters. The normal
+controller and linguistic integration consume the shared-VP contract below.
+The historical `PartOf` reader is compatibility-only. See [Taxonomy
+queries](TaxonomyQueries.md).
 [Reader](../bin/Taxonomy.py#L117),
 [query dispatch](../bin/reasoning.py#L586),
 [model entry](../bin/Models.py#L22259).
 
-### Checked query contracts and shared grammatical VPs
+### Thought-operator contracts and shared grammatical VPs
 
-Grammar loading checks boundary signatures before accepting a declaration.
-Every declared interface has explicit roles, domain, evidence semantics and an
-executor. At explicit setup, the grammatical adapter binds one native named
-ConceptualSpace concept per relation/domain; compose and query aliases share
-it. Pure candidate formation preserves canonical roles, grammatical mode and
-scope. Selected execution derives its operation from the middle VP and role
-occupancy, retaining the evaluated proposition with its evidence.
-[Contracts](../bin/Queries.py#L58),
-[shared binding](../bin/Queries.py#L398),
-[dispatch](../bin/Queries.py#L496).
+Grammar loading derives immutable operator contracts from role-labelled
+compose/generate faces and rejects `<Queries>` plus rule attributes. Every
+declared executable face has grammar-owned roles and executor-owned domain,
+evidence semantics, and capability scope. At setup, the grammatical thought
+registry binds one native named ConceptualSpace concept per
+`(domain, semantic_id)`. Pure candidate formation preserves canonical roles,
+grammatical mode, polarity, and scope. Selected execution derives its operation
+from the middle VP and role occupancy, retaining the evaluated proposition with
+its detached evidence.
 
-These are explicit APIs. The normal forward derivation still needs to publish
-this meaning through every observation writer, and the ordinary boundary
-controller must enforce phases and causal answer construction. No new learned
-parameters or parallel semantic memory were added. See
-[Query contracts](QueryContracts.md) for current behavior and remaining gates.
+Structural faces receive only stream, conceptual-space, and priming
+capabilities. Boundary thought faces receive those same frozen values plus
+descriptor-scoped LTM/taxonomy views and one meter; neither receives the model
+or reasoner. No new learned parameters or parallel semantic memory are added.
+See [Thought-operator contracts](QueryContracts.md) for current behavior and
+remaining gates.
 
 ## Sigma and Pi Layers
 
@@ -1458,26 +1462,30 @@ machinery (recent-centroid attraction + older-centroid repulsion).
 They are not parsed; configs that still set them are tolerated
 silently.
 
-### Checked query execution phases
+### Checked thought execution phases
 
-`resolveAnswer()` temporarily permits checked query execution only for the
+`resolveAnswer()` temporarily permits checked thought execution only for the
 completed program rows owned by its `Understanding`. Input execution,
 reconstruction and output realization mask that permission; the checked
 registry validates the guard before operand reads. The permission is transient
 host state, so it adds no architectural tensor, parameter, memory owner or
 forward-result slot. See [Query phases](QueryPhases.md).
 
-### Shared selected-query work
+### Shared selected-thought work
 
-An optional QueryWorkBudget on QueryContext carries one transient allowance
+One QueryWorkBudget on ThoughtGrammarContext carries one transient allowance
 across selected VP/operand preparation, executor invocation, occurrence and
 fact reads, taxonomy capture/traversal, codebook candidates, and predictor
 context. Local read limits only tighten that meter; a nested selected call must
 reuse it. The meter is host bookkeeping, not a semantic feature, memory owner,
 checkpoint field, parameter, loss, or additional compiled-result slot.
 Standalone audited readers may use their existing local bounds without one.
-The normal controller still must instantiate the meter from its episode budget
-and record its final cost once. See [shared query work](QueryWork.md).
+The normal selected-meaning controller now instantiates the meter from
+`selectedThoughtBudget`, charges its own query/finish/descent/return choices,
+and records each exact delta once in the row-local ordinary history. `what(Q)`
+reuses that object rather than starting a child allowance. The meter remains
+host accounting: it creates no semantic feature, learned parameter, residual
+reward or learned-utility claim. See [shared query work](QueryWork.md).
 
 ### Retained grammatical occurrences
 

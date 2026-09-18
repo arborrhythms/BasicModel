@@ -1,12 +1,12 @@
 <?xml version="1.0"?>
 <!--
   shamatha grammar, role-only format. Same C / S operator set as
-  default.grammar plus the unary ``query`` operator. Declares ONLY
-  operator roles (op_I[n] inputs, op_O1 output).
+  default.grammar. Declares ONLY operator roles (op_I[n] inputs,
+  op_O1 output).
 
   RELOCATED 2026-07-12 to complete.grammar's operator form, exactly as in
-  default.grammar: relations (part / equal) are assertive COMPOSITIONAL
-  operators; the is-prefixed boolean-predicate queries live in <Queries>.
+  default.grammar: relations (part / equal) are structural operators whose
+  checked thought faces derive from the same grammar declarations.
   See default.grammar's header for the measurement history.
 -->
 <grammar name="shamatha">
@@ -40,10 +40,8 @@
       <rule>not_O1 = not.forward(not_I1)</rule>
       <rule>conjunction_O1 = conjunction.forward(conjunction_I1, conjunction_I2)</rule>
       <rule>disjunction_O1 = disjunction.forward(disjunction_I1, disjunction_I2)</rule>
-      <rule query="false">part_O1 = part.forward(part_I1, part_I2)</rule>
-      <rule query="false">equal_O1 = equal.forward(equal_I1, equal_I2)</rule>
-      <!-- Unary query operator (shamatha-specific). -->
-      <rule>query_O1 = query.forward(query_I1)</rule>
+      <rule>part_O1 = part.forward(part_I1, part_I2)</rule>
+      <rule>equal_O1 = equal.forward(equal_I1, equal_I2)</rule>
     </compose>
 
     <generate>
@@ -54,21 +52,9 @@
       <rule>not_I1 = not.reverse(not_O1)</rule>
       <rule>conjunction_I1, conjunction_I2 = conjunction.reverse(conjunction_O1)</rule>
       <rule>disjunction_I1, disjunction_I2 = disjunction.reverse(disjunction_O1)</rule>
-      <rule query="false">equal_I1, equal_I2 = equal.reverse(equal_O1)</rule>
-      <rule query="false">part_I1, part_I2 = part.reverse(part_O1)</rule>
-      <rule>query_I1 = query.reverse(query_O1)</rule>
+      <rule>equal_I1, equal_I2 = equal.reverse(equal_O1)</rule>
+      <rule>part_I1, part_I2 = part.reverse(part_O1)</rule>
     </generate>
   </Symbolic>
-
-  <Queries>
-    <!-- INTROSPECTION ops (parse-NOPs; see complete.grammar). -->
-    <query>isTrue(X)</query>
-    <query>isEqual(X, Y)</query>
-    <query>isPart(X, Y)</query>
-    <query>parts(X)</query>
-    <query>wholes(X)</query>
-    <query>quantize(X)</query>
-    <query>query(X, Y)</query>
-  </Queries>
 
 </grammar>

@@ -59,7 +59,7 @@ def test_semantic_operators_still_inserted():
     """Real semantic operators (those with a GrammarLayer) ARE registered."""
     ws, g = _ws_and_grammar()
     ws.insert_operations(g)
-    for op in ("conjunction", "disjunction", "isEqual", "lift", "exist"):
+    for op in ("conjunction", "disjunction", "equal", "lift", "exist"):
         assert ws.operation_position(op) is not None, op
 
 

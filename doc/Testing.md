@@ -194,6 +194,28 @@ fix occurred while the historical coverage was being completed. It is the
 validation form explicitly requested for this session; future source changes
 require their ordinary affected tests and a fresh bounded full receipt.
 
+### Thought-operator catalogue record (September 18)
+
+The catalog-unification snapshot was run through the bounded default selection
+at `output/tests/20260918-101358-b952cf`: all **4,623** selected node IDs
+completed once in 38 serial fresh workers. Exactly one node failed:
+`test_signal_router_has_grammar_ops_attached` still assumed that unary grammar
+kernels were unwrapped, while the common structural-face contract now wraps
+both unary and binary kernels. The production code was not changed for that
+failure; the reviewer assertion was corrected to inspect the wrapped layer and
+its exact bounded re-run passed **1/1** in
+`output/tests/20260918-112216-01823c` (19.8 seconds, 0.41 GiB peak).
+The explicit guard that keeps deferred `true` out of the production catalogue
+also passed **1/1** in `output/tests/20260918-112724-2a007a`.
+
+The earlier item-0 catalog/contract regression selection passed **137/137** in
+`output/tests/20260918-091955-3962bf`; direct context/catalog probes passed
+**38/38** in `output/tests/20260918-091419-96aacc`. Per Alec's explicit
+no-rerun instruction, the 4,622 nonfailing default nodes were not rerun after
+the assertion-only repair. This is current composite coverage evidence, not a
+fresh single-snapshot all-green receipt; no source behavior changed after the
+full selection.
+
 The audit retained every assertion. Full server construction, full traversal
 and compiled `runBatch` integration checks are marked `slow`, while their
 compact contract checks remain default. A real VQ failure showed that the

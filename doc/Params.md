@@ -82,6 +82,7 @@ sub-elements `<training>` and `<data>` (see below).
 | `transformChooserDepth` | int | `1` | Number of hidden Linear/GELU blocks in each grammar MLP, followed by one scalar Linear head; must be positive. Not the number of grammatical reductions or thought iterations. |
 | `whatThinkingHidden` | int | `16` | Positive hidden width of the ANSWER/OPEN thought-step MLP. Its default input is 29 What-context features plus six candidate features. Does not enable thinking or add semantic inputs. |
 | `whatThinkingDepth` | int | `1` | Positive number of hidden Linear/GELU blocks in the thought-step MLP, followed by its zero-initialized scalar head. Independent of `whatThinkingIterations`, memory configuration and policy-loss weight. |
+| `selectedThoughtBudget` | non-negative int | `32` | Shared work allowance for one completed interrogative grammatical-thought episode. It covers controller choices plus the forwarded `QueryWorkBudget`; `0` permits only the defined cutoff/root-finish drain. It is independent of legacy `whatThinkingIterations`. |
 | `reconstructFromIdea` | bool | `false` | Legacy evaluation selection of recovered word ideas instead of the single-slot seed. Tied mode always returns its owned completed reconstruction, independently of this flag, and never enters the free generate chart ([Models.py:8063](../bin/Models.py#L8063)). |
 | `categoryCodebook` | bool | `true` | MetaSymbol participation-category codebook for the role-collapsed grammar: a small role-space `VectorQuantize` initialized with one prototype per labelled grammar role (`op_I1`, `op_I2`, `op_O1`, ...). Unsettled MetaSymbols accumulate bounded temporary role evidence; once mass/confidence/margin/stability thresholds are met, the MetaSymbol commits to one category id and its pending row is discarded. Structured grammar layers use the role context for all `transformChooser` modes: as an input feature for `mlp`, and as a labelled-role score prior for anchordot/default routing. See [Language.md $\to$ Participation Categories](Language.md). |
 | `adverbEigEdit` | bool | `false` | Legacy/direct `LiftLayer` helper flag for the adverb sparse eigenvalue edit. The live `adverb` grammar operator force-builds the same zero-init projection and calls `LiftLayer.apply_adverb`, so ordinary grammar use does not depend on this flag. When enabled for plain `LiftLayer`, an adverb modifies a composed VP by `a2 = atanh(vp) + p_vp * delta_adv`, masked by the VP's own eigen-signature. Default off keeps plain `LiftLayer` byte-identical. |
@@ -487,6 +488,7 @@ symbol (line anchors drift).
 | `predictNextLossWeight` | `Models.py` (BaseModel init) | `0.0` | Next-idea blend loss weight (`reason_predict_next` / `NextIdeaScorer`). |
 | `thinkingLossWeight` | `Models.py` (BaseModel init) | `0.0` | Thinking-kernel next-op behaviour-cloning loss weight (`_thinking_policy_loss`). |
 | `whatThinkingPolicyWeight` | `Models.py` (`_what_step_policy_loss`, runBatch hook) | `0.0` | Weight of the `WhatStepChooser` policy objective: REINFORCE on the episode's resolve-step choices with `G = -L_answer - 0.01 * iterations - 0.1 * forced_closures` and an EMA baseline; positive values also make the chooser sample during training. Under `answerSynthesis`, only rows with available supplied answers receive credit; no eligible rows means no closure-cost update or baseline change ([Models.py:8325](../bin/Models.py#L8325)). Reported under `what_report()["policy"]["thinking"]`. `0` disables the objective and uses argmax choices. |
+| `selectedThoughtPolicyWeight` | `Models.py` (`_selected_thought_policy_loss`, runBatch hook) | `0.0` | Weight of the normal selected-grammatical-controller REINFORCE term. It credits logged `query` / `finish` choices by later answer loss less actual controller-choice cost, with a separate EMA baseline. Positive values sample the selector during training; zero uses its deterministic safe baseline. Reported as `what_report()["policy"]["selected_thought"]`. This is supplied-answer credit, not residual policy credit. |
 | `branchDiagnosticsEvery` | `Models.py` (BaseModel init; `branch_gradient_diagnostics`) | `0` | Every N training batches, read (never update) the reconstruction / answer gradient norms and cosine at the conceptual and symbolic branch points (What spec 9.4). `0` = off. |
 | `leafDistillWeight` | `Models.py` (BaseModel init) | `0.0` | With `detachedReverse`, weight the reverse chooser's bounded exact-leaf surface term. Explicit legacy D3 mode uses the standalone root-to-leaf distillation head. Tied reconstruction suppresses that independent head regardless of this weight. |
 | `interContrastiveWeight` | `Models.py` (ModelLoss), `Language.py` (discourse layer) | `0.0` | InfoNCE next-idea contrastive term weight; `0` = MSE-only. |
@@ -708,17 +710,18 @@ configuration switch, checkpoint schema or learned parameters were added.
 [traversal](../bin/Taxonomy.py#L69),
 [public evaluation](../bin/reasoning.py#L586).
 
-### Checked query call bounds and native VP setup
+### Checked thought call bounds and native VP setup
 
-`QueryContext` validates a row address and local limits: 256 concepts, 1024
+`ThoughtGrammarContext` validates a row address and local limits: 256 concepts, 1024
 records, 8 path steps and 1024 edge examinations by default. These are call
-limits, not a new episode allowance; shared-budget integration remains open.
-At explicit setup, each declared relation/domain uses one existing aligned
-concept row and named handle. No new parameter tensor or configuration switch
+limits, not a new episode allowance; the selected normal controller supplies
+its one episode meter when it invokes a completed grammatical question.
+At explicit setup, each grammar-declared executable operation/domain uses one
+existing aligned concept row and named handle. No new parameter tensor or configuration switch
 is introduced. A missing native binding cannot be lazily recreated by
 candidate formation or execution.
-[Context](../bin/Queries.py#L19),
-[setup](../bin/Queries.py#L398),
+[Context](../bin/Queries.py#L88),
+[setup](../bin/Queries.py#L1474),
 [contract](QueryContracts.md).
 
 ### Ordinary thought-history bounds
@@ -727,9 +730,11 @@ candidate formation or execution.
 Every ordinary event charges positive work; pressure is cumulative and no child
 gets a refreshed allowance. A cutoff permits only its bounded return drain and
 one root finish. Capacity reserves those transitions and rejects eviction of
-active or referenced records. This is an API contract, not a configuration
-switch or learned objective; normal-controller executor accounting remains
-open. See [ordinary thought history](ThoughtHistory.md).
+active or referenced records. `selectedThoughtBudget` wires this API into the
+normal completed-grammatical-question controller; it forwards one meter and
+records exact deltas. The separate policy weight remains default-off and is not
+residual credit or learned-utility evidence. See [ordinary thought
+history](ThoughtHistory.md).
 
 ### Query phase state
 

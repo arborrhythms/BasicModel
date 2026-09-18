@@ -1,0 +1,303 @@
+# Thought-operator unification plan
+
+Status: implemented catalog-unification plan for todo item 0. It records the
+direction in
+[thought operations are compose rules](../specs/2026-09-18-thought-operations-in-compose.md)
+without treating the draft as already landed.
+
+## Outcome
+
+One operator family declared in the model's structural grammar is the source
+of both legal uses of that operator:
+
+1. Its structural forward and/or reverse face may run while the sentence
+   grammar is composing, reconstructing, or realizing a generated sentence.
+2. If the same declared operator has a checked executor, the completed
+   sentence's boundary controller may choose it **after** composition.
+
+The second use is not inferred from a rule that happened to fire in the input
+parse. At model configuration time, every executable operator declared in
+`<compose>`, `<generate>`, or both enters the boundary action catalog. Matching
+forward/reverse declarations merge into one spec and must agree on semantic id,
+arity and canonical role order. A completed idea, its retained occurrences and
+the attended context supply the operands when the controller later selects one
+of those actions. Thus a configured `part`, `exist`, `lookup`, `quantize`,
+`arma`, or `what` operation is available for thought even if that operator was
+not used by the immediately preceding sentence.
+
+Inline `<SymbolSpace><language><grammar>…<compose>…` configurations and an
+external `*.grammar` named by the same model-file element produce the same
+catalog. There is no separate thought grammar and no effectful parser path.
+
+## Uniform grammar-face signature
+
+The unified catalog does not mean every operator receives the whole model.
+Every face receives the same immutable, owner-selected base context:
+
+```text
+GrammarContext(word_stream, conceptual_space, primed_symbols)
+```
+
+`word_stream` is row-owned: compose sees the current input stream, generate
+sees only its output-owned emitted prefix, and thought sees the held completed
+program. `conceptual_space` is a full-width read/operation capability rather
+than an allocator or model reference. `primed_symbols` is a captured
+row-local view and grants no route to taxonomy. References may be typed
+metadata, but no row, ID, address, or surface may enter a learned feature.
+
+The only public grammar-face calls are:
+
+```text
+compose(operands: tuple[Concept, ...], *, context: StructuralGrammarContext)
+    -> Concept
+generate(result: Concept, *, context: StructuralGrammarContext)
+    -> tuple[Concept, ...]
+execute(request: ConceptualMeaning, *, context: ThoughtGrammarContext)
+    -> ThoughtResult
+```
+
+The rule defines the tuple arity and canonical `I1 … In` order; ordinary
+binary composition remains older-left/newer-right. `StructuralGrammarContext`
+contains precisely the base context and a structural phase. It never contains
+LTM, taxonomy, a generic model/reasoner, a controller, or a writable priming
+buffer, so compose/generate stay pure and cannot execute a thought operation.
+`Grammar.thought_operations` is an immutable, first-declaration-ordered tuple
+of `ThoughtOperationSpec` values; a spec exposes its semantic ID, canonical
+operand/result roles, and forward/reverse structural rule IDs. It is the sole
+configuration-level catalog from which lookup maps are derived.
+
+`ThoughtGrammarContext` is a distinct context type, not a structural context
+with optional readers. It extends the base context only under the checked
+completed-row boundary with read-only, descriptor-scoped `ltm` and `taxonomy`
+views, the single `QueryWorkBudget`, and a narrow subgoal continuation for
+`what`, plus the one-row phase-gate `boundary` permit. The descriptor's
+`read_scope` fails closed for unavailable methods;
+the controller remains the only writer and result recorder. Structural
+full-width tensors and registered structural parameters retain their configured
+gradient paths. Memory/taxonomy reads, priming snapshots, work accounting and
+typed thought results are detached hard-boundary data; thought-policy and
+residual learning receive explicit credit instead.
+
+## Non-negotiable boundaries
+
+- A structural `forward` or `reverse` never invokes an executor. The existing
+  sentence/query phase mask remains the sole permission to call a hard face.
+- The compose/generate declaration family, not an alias list or an integer
+  concept ID, is the source of semantic identity, arity, canonical role order,
+  open-role forms, converse permutation and structural operator identity.
+- The executor declaration supplies only non-grammatical information: domain,
+  argument kinds, result kind, read/write scope, evidence kind and callable.
+  A table entry without a matching structural declaration is unavailable.
+- Concepts remain opaque and symbol/concept rows remain aligned. A boundary
+  candidate carries full-width meaning values and typed references; it never
+  uses a row, concept ID, native handle or surface token as a learned feature.
+- The action trace remains structural metadata. It must preserve the actual
+  signed leaves and older-left/newer-right orientation; it cannot be repurposed
+  as a second semantic or query store.
+- `arma` is a typed boundary result, not a fake concept root: its executable
+  result is the owned `[3, D]` expectation end state and is handed explicitly
+  to answer resolution. It does not change the 21-value compiled tuple.
+
+## Semantic decisions to lock before coding
+
+### Interrogative mode
+
+Retiring `query="true"` requires a positive representation for question mode.
+The proposed canonical form is a unary structural `what` wrapper around an
+already formed clause/operation frame:
+
+```text
+part(A, B)             # assertive grammatical meaning
+what(part(A, B))       # the same meaning in interrogative mode
+```
+
+`what` is not a two-NP relation and does not make the inner relation true. Its
+structural face preserves the inner canonical roles, bindings, scope and
+polarity while setting interrogative mode. Its checked face schedules a
+complete internal question through the existing boundary controller. The first
+reviewer probe must establish this exact distinction; no code may retain a
+hidden interpretation of a removed `query` attribute.
+
+`true` remains a unary operation over a sealed clause reference. Its executor
+is typed to that clause and returns evidence, not a new relation row. The
+two-truths representation is still deferred; item 0 supplies the catalog and
+rejection behavior until a sealed clause is available.
+
+### Families, open roles and converse forms
+
+Each compose/generate declaration family produces a `ThoughtOperationSpec` with a stable
+semantic id, operand roles, result role and structural rule key. A grammar-owned
+family/permutation declaration makes `whole` the converse surface/operator
+form of canonical `part`; it is not an executor alias. The exact XML spelling
+for that grammar-owned family declaration is decided by a red loader probe
+before changing production grammars. It must be available in both inline and
+external grammar syntax, survive grammar copying, and participate in
+reconstruction/generation meaning keys.
+
+Open-role variants are derived from the spec and an explicit operand-occupancy
+mask at formation time. They do not mint `parts`/`wholes` methods, native VP
+rows or learned operation heads. Canonical `part(I1=part, I2=whole)` with
+`I1` open returns parts of its bound whole; with `I2` open it returns wholes
+containing its bound part. Both use one canonical `part` identity with
+different result/role masks.
+
+### Boundary results
+
+`ThoughtSignature.invoke` returns a typed result record containing the source
+spec, complete request meaning, support/incompleteness, evidence provenance and
+one of: truth, native reference set, code, subgoal, or prediction end state.
+Only the prediction variant may carry `[3, D]`; answer resolution consumes it
+through an explicit expectation adapter. Other result kinds cannot silently
+become facts, grammar roots or answer targets.
+
+## Implementation order
+
+### 1. Establish red catalog probes
+
+Add a focused `test_thought_operation_catalog.py` before changing runtime
+code. It covers the twelve cases in the item-0 draft plus these integration
+guards:
+
+- inline model grammar and external `.grammar` expose the same specs;
+- compose-only, generate-only and paired declarations expose one consistent
+  boundary spec, while conflicting paired arities/roles fail at configuration;
+- a configured executable operation is available post-composition even if the
+  current answer program did not use it;
+- `part(A,B)` remains assertive while `what(part(A,B))` is interrogative;
+- signed live operands, masks, scope and bindings survive formation; IDs and
+  addresses do not become values or chooser features;
+- `arma` cannot enter the compiled sentence result as a fabricated root;
+- unrecognized old aliases and a `<Queries>` block fail loudly.
+- compose/generate are handed only their owner-selected base context, while a
+  thought executor receives that same base plus only descriptor-authorized,
+  bounded LTM/taxonomy capabilities and the one shared meter.
+
+Capture the red bounded-run receipt before implementation. Do not alter source
+while its worker is running.
+
+### 2. Install the uniform face dispatcher and derive one immutable catalog
+
+Extend `RuleDef`/`Grammar.configure` so the model's `<compose>` and
+`<generate>` sections yield immutable merged `ThoughtOperationSpec` values
+after all inline/external grammar normalization but before grammar runtime
+layers are wired. A spec may have a forward face, a reverse face, or both;
+paired faces must agree. The catalog must:
+
+- construct an immutable `StructuralGrammarContext` at each compose/generate
+  call from the owning stream, conceptual-space capability and primed-symbol
+  snapshot, adapting legacy layer internals behind that one dispatcher;
+- reject `<Queries>` and `query` attributes;
+- retain only operator facts derivable from grammar, including family and
+  permutation metadata;
+- preserve the existing structural rule ids and local compose snapshots used
+  by reconstruction;
+- expose a deterministic ordered list for the controller and a stable semantic
+  key for output/checkpoint migration; and
+- leave a rule with no executor as structural-only.
+
+This is configuration metadata, not a new parameter, memory owner or compiled
+output. Assert the existing grammar copies never share mutable catalog state.
+
+### 3. Join checked thought executors to that catalog
+
+Replace checked-query declarations with executor descriptors keyed by canonical
+semantic id. `GrammaticalThoughtRegistry.install` receives the immutable operation
+catalog and rejects arity/type/family mismatches. It creates one native VP
+concept per `(domain, semantic_id)`, not one per alias or open form.
+
+Rebuild `form`, validation and dispatch from `ThoughtOperationSpec` plus
+occupancy. The registry must reject a structure-only operation, an executor
+missing from the grammar, malformed open forms, a foreign width/reference, or
+an attempt to call inside a sentence phase before reading any native payload.
+It builds `ThoughtGrammarContext` from the held owner stream, base capability
+views, descriptor-scoped LTM/taxonomy views, continuation, boundary permit and the existing
+single work meter; it never passes a generic reasoner/model. Keep that meter
+flowing through preparation and execution.
+
+### 4. Migrate grammar files and structural faces
+
+Update `complete.grammar`, `default.grammar`, `ladder.grammar`, model-inline
+grammar, and intentionally checked fixtures together. A two-faced operator may
+be declared in `<compose>`, `<generate>`, or both; paired declarations merge
+to one identity and a generate-only declaration is still available to the
+post-composition controller. Remove the `<Queries>` blocks and retired
+attributes. Verify every old alias has a single canonical structural
+replacement and that production grammar comments no longer describe parser
+effects.
+
+Pure composition, tied reconstruction and output generation must remain
+effect-free. The existing phase-permission/fullgraph suite is a regression gate
+here, not an optional later test.
+
+### 5. Rebase the normal controller onto catalog actions
+
+Only after the catalog is green, replace the in-progress fixed
+`query`/`finish` controller with candidates of the form:
+
+```text
+(ThoughtOperationSpec, canonical operand assignment, open-role mask, conclude)
+```
+
+The chooser scores complete root/active/candidate meanings plus bounded
+attended context and actual evidence; it never scores raw IDs or arbitrary
+catalog positions as semantic values. Candidate formation is side-effect-free.
+The selected action alone debits the one shared episode meter, forms the
+canonical request, executes under boundary permission, records its actual
+result and makes that result available to the next choice. Nested `what` keeps
+the same episode, meter, level discipline and causal record sources.
+
+The controller must be able to select an executable configured operation that
+did not occur in the previous parse. The completed parse supplies an initial
+root/context, not a restricted tool menu.
+
+### 6. Add typed prediction handoff and lifecycle coverage
+
+Wire `arma` results to the existing expectation/answer path through an explicit
+result adapter. Prove that changing another row, arriving content or a future
+target cannot influence pre-observation action formation. Exercise eval
+teardown, training-through-one-optimizer-step teardown, checkpoint restore,
+mixed rows, cutoff drain, nested return and recurrent controller choices.
+
+### 7. Retire replaced paths only after their replacements prove coverage
+
+After all callers and tests use the catalog, remove `<Queries>`, declaration
+parsing, aliases, addressee/Testimony routing and stale controller dispatch.
+Before removing an unused reasoning method such as `NeuralToolUser.run_legacy_world`,
+inventory callers and obtain the required user review. Removal is a separate,
+reviewed cleanup within item 0; no compatibility fallback may silently preserve
+the old catalog.
+
+### 8. Documentation, validation and delivery
+
+Update `QueryContracts.md`, `Language.md`, `Params.md`, grammar comments,
+`GradientFlow.md`, `ThoughtHistory.md`, `Testing.md` and `todo.md` to describe
+the actual catalog and hard/continuous gradient boundaries. Leave protected
+user documents unchanged unless separately reviewed.
+
+For each implementation slice: failing reviewer probe, fix, affected bounded
+tests, then one full default suite using the bounded runner while the tested
+snapshot is frozen. Commit and push BasicModel with the required trailer, then
+commit/push the WikiOracle submodule bump. Rebuild either venv via its Makefile
+only after the successful suite and both pushes, as directed.
+
+## Completion criteria
+
+Item 0 is complete only when the draft's twelve tests, the new cross-source
+and mode/typed-result probes, the unchanged phase/fullgraph tests, affected
+grammar/reconstruction/output tests, and the full bounded default suite are
+green. The result must show:
+
+- one compose/generate operator family serving structural and
+  post-composition use;
+- no parser-time executor effects;
+- no independently authoritative aliases/tool grammar;
+- exact canonical family/open-role/converse behavior;
+- safe `arma` result ownership; and
+- no regression of arbitrary-symbol, signed-leaf, checkpoint, optimizer or
+  compiled-tuple contracts.
+
+This closes catalog unification only. `true` remains deliberately absent until
+the deferred two-truths sealed-clause representation supplies its structural
+meaning. Learned controller utility, residual credit, generation-catalog
+ownership, expectation gates, two-truths and forgetting remain their separately
+ordered work.

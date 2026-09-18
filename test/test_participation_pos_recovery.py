@@ -99,7 +99,7 @@ def test_order_variants_collapse_to_one_class():
 def test_single_role_categories_recover_the_collapsed_op_role():
     """A transitional category that participates in exactly one operator
     role recovers that role-collapsed role name (op_I<n>). Distinct declared
-    categories that fill the SAME role (NP_EQ* and QLEFT_NP3 both isEqual
+    categories that fill the SAME role (NP_EQ* and QLEFT_NP3 both equal
     input 0) correctly unify -- the role-collapse insight."""
     from participation import single_role_symbols
     sr = single_role_symbols(_complete())
@@ -107,8 +107,8 @@ def test_single_role_categories_recover_the_collapsed_op_role():
     assert sr["CONJ_R3"] == "conjunction_I2"
     assert sr["DISJ_L3"] == "disjunction_I1"
     assert sr["DISJ_R3"] == "disjunction_I2"
-    assert sr["NP_EQ3"] == "isEqual_I1"
-    assert sr["QLEFT_NP3"] == "isEqual_I1"   # same role as NP_EQ -> unified
+    assert sr["NP_EQ3"] == "equal_I1"
+    assert sr["QLEFT_NP3"] == "equal_I1"   # same role as NP_EQ -> unified
 
 
 def test_recovers_operand_order_from_participation():

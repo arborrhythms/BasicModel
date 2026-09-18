@@ -18,6 +18,14 @@ runner/device selection passed 29/29 and explicit significant training routed
 to MPS. See [Testing](doc/Testing.md#validation) for durable receipts and limits.
 [Handoff, preserved candidates and recovery instructions](doc/checkpoints/2026-09-17-production-spec/README.md).
 
+The subsequent thought-operator snapshot completed all 4,623 current default
+node IDs in bounded fresh workers. One assertion still expected an unwrapped
+unary router kernel after both unary and binary faces adopted the common
+structural adapter; the assertion was corrected and that exact node passed
+1/1. Per Alec's no-rerun instruction, this is composite current coverage, not
+a fresh single-snapshot all-green receipt. The exact receipts are in
+[Testing](doc/Testing.md#thought-operator-catalogue-record-september-18).
+
 ### Completed in this session
 
 - **Bounded-test performance and MPS routing.** The runner keeps finite
@@ -53,12 +61,35 @@ to MPS. See [Testing](doc/Testing.md#validation) for durable receipts and limits
   green. The normal controller still must create and record its episode meter.
   See [Query work](doc/QueryWork.md).
 
-1. **Finish selected linguistic meaning and the normal thought controller.**
+0. **Complete — thought operations as compose rules** — before the remaining
+   controller and before the two-truths and forgetting specs below, so that
+   none of them is built on the `<Queries>` catalogue and then redone
+   ([doc/specs/2026-09-18-thought-operations-in-compose.md](doc/specs/2026-09-18-thought-operations-in-compose.md),
+   Alec 2026-09-18). One grammar: a compose or generate rule has a structural face and,
+   when an executor of the same name is registered, an executable face the
+   thought controller runs at a boundary. `<Queries>` and `query="false"` are
+   rejected in production; historical `is` aliases are quarantined rather than
+   authoritative. Arity, roles, open-role variants and the converse permutation
+   derive from the rule; the executor table keeps only
+   domain, kinds, scopes, evidence kind and the executor. The controller's
+   action set is the compose operators with executors plus conclude; `arma`
+   is its synthesis face and emits the `[3, D]` end state. Any controller
+   work already in progress under item 1 aligns to this catalogue rather
+   than to `<Queries>`. `true` remains reserved for the separately deferred
+   two-truths sealed-clause representation. Exit evidence: the adjusted
+   spec §9 catalogue/context/phase tests and the no-rerun default coverage
+   record above; documentation is in spec §10.
+1. **Finish selected linguistic meaning and the normal thought controller**
+   over the item 0 catalogue.
    Preserve selected signed operands and native middle VP across all three
    writers; cover mode, polarity, paraphrase/converse and nested references.
    Integrate full-width mandatory roles, actual shared work costs, causal child
    evidence, bounded return, replay/checkpoint isolation and policy credit.
    Obtain the prepared selected-meaning probes' red before implementing them.
+   The kernel, `NeuralToolUser` and the thought/query MLP are three drafts of
+   one grammar of thought in conceptual space; merge them, do not add a
+   fourth selector (`run_legacy_world` and the addressee/`Testimony` route
+   are retired with item 0).
 2. **Finish expectation and residual learning.** Complete owned estimates and
    observation links, prior-view isolation from arriving/unseen input and other
    rows, residual query credit, the separate baseline and parameter-version-safe
@@ -93,6 +124,11 @@ exit test. Written 2026-09-16 from the review session with Alec; keep
 this file current as items land (move them to "Done" with the commit).
 
 ### Codex
+
+0. **Thought operations as compose rules** (NEXT item 0 above) precedes
+   items 1–3 here: the two-truths seal (`NP → REF(S)`) and the `true`
+   operator, and the expectation review's query paths, are specified against
+   the compose-listed catalogue.
 
 1. **Implement the two-truths spec**
    ([doc/specs/2026-09-16-two-truths-ideas-and-relations.md](doc/specs/2026-09-16-two-truths-ideas-and-relations.md)),

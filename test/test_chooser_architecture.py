@@ -191,22 +191,28 @@ def test_canonical_xml_defaults_pin_existing_architectures():
     for name, expected in {
         "transformChooserHidden": 0, "transformChooserDepth": 1,
         "whatThinkingHidden": 16, "whatThinkingDepth": 1,
+        "selectedThoughtBudget": 32,
     }.items():
         assert config.get(f"architecture.{name}") == expected
+    assert config.training("selectedThoughtPolicyWeight") == 0.0
 
 
-@pytest.mark.parametrize("name,bad_value", [
-    ("transformChooserHidden", -1), ("transformChooserDepth", 0),
-    ("whatThinkingHidden", 0), ("whatThinkingDepth", 0),
+@pytest.mark.parametrize("path,bad_value", [
+    ("architecture/transformChooserHidden", -1),
+    ("architecture/transformChooserDepth", 0),
+    ("architecture/whatThinkingHidden", 0),
+    ("architecture/whatThinkingDepth", 0),
+    ("architecture/selectedThoughtBudget", -1),
+    ("architecture/training/selectedThoughtPolicyWeight", -0.1),
 ])
-def test_xml_schema_rejects_invalid_capacity(tmp_path, name, bad_value):
+def test_xml_schema_rejects_invalid_capacity(tmp_path, path, bad_value):
     xsd_path = str(_ROOT / "data/model.xsd")
     good_result = XMLConfig._run_schema_validation(xsd_path, str(_ROOT / "data/model.xml"))
     if good_result is None:
         pytest.skip("No XML schema validation backend is available")
     assert good_result == ""
     document = ET.parse(_ROOT / "data/model.xml")
-    element = document.find(f"architecture/{name}")
+    element = document.find(path)
     assert element is not None
     element.text = str(bad_value)
     path = tmp_path / "invalid_capacity.xml"

@@ -244,11 +244,11 @@ def test_modal_sentence_lift():
 
 
 def test_complete_grammar_relation_ops_registered_and_mirrored():
-    """The relation-truth rewrite uses productive op names, including
-    queryPart as the interrogative counterpart to assertPart. (Pinned on
-    the archived transitional baseline; GrammarOpsPass §1 migrated
-    data/complete.grammar itself to the role-collapsed format, where the
-    family is spelled isPart + query.)"""
+    """The transitional POS baseline uses canonical structural relation names.
+
+    Question mode is a completed meaning, so the fixture has no query
+    attribute or interrogative-only method spelling.
+    """
     from Language import Grammar, GRAMMAR_LAYER_CLASSES
 
     def cats(text):
@@ -260,20 +260,10 @@ def test_complete_grammar_relation_ops_registered_and_mirrored():
         Path(__file__).resolve().parent / "fixtures"
         / "transitional_pos.grammar"))
     methods = {r.method_name for r in g.rules_upward if r.method_name}
-    assert "queryPart" in methods
-    assert "assertPart" in methods
-    assert "isEqual" in methods
-    assert "queryEqual" not in methods
-    assert "assertEqual" not in methods
-    assert any(
-        rule.method_name == "isEqual" and rule.query
-        for rule in g.rules_upward)
-    assert any(
-        rule.method_name == "isEqual" and not rule.query
-        for rule in g.rules_upward)
-    assert any(
-        rule.method_name == "isEqual" and rule.query
-        for rule in g.rules_downward)
+    assert {"part", "equal"} <= methods
+    assert not (methods & {"queryPart", "assertPart", "isPart", "isEqual",
+                           "queryEqual", "assertEqual"})
+    assert all(not rule.query for rule in g.rules_upward + g.rules_downward)
 
     unknown = {
         method for method in methods

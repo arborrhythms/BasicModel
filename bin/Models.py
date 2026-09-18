@@ -109,7 +109,13 @@ from Spaces import ReadingAttention, GlobalAttention
 # ``normalize_codebook_mode`` moved onto ``Space`` as a staticmethod
 # (2026-05-21) so the parsing logic stays namespaced; callers below
 # read it as ``Space.normalize_codebook_mode(...)``.
-from Language import SymbolSubSpace, SymbolSpace
+from Language import SymbolSubSpace, SymbolSpace, TheGrammar
+from Queries import (
+    GrammaticalThoughtRegistry, ThoughtConceptualCapability,
+    ThoughtGrammarContext, ThoughtLTMCapability, ThoughtResult,
+    ThoughtTaxonomyCapability,
+)
+from QueryWork import QueryWorkBudget
 from util import parse
 # -- Inlined from Pipeline.py (2026-05-11 module consolidation) -------
 # Previously in basicmodel/bin/Pipeline.py; inlined here when the body
@@ -151,11 +157,94 @@ def _sentence_query_mask(method):
     return masked
 
 
-def _append_observed_meaning(store, payload, depth, *, trust=0.0):
-    """Record the complete understood input without certifying a world fact."""
-    meaning = ConceptualMeaning.from_payload(
-        payload, depth=depth, layout="stm", mode="unspecified")
-    return store.append_meaning(meaning, kind="observation", trust=trust)
+def _append_observed_meaning(store, payload, depth, *, trust=0.0, meaning=None):
+    """Record one understood input without certifying a world fact.
+
+    ``meaning`` is an already formed grammatical description when the owned
+    compose program selected one.  The store performs its normal detached
+    durable write; the caller can still hand the corresponding live roles to
+    the predictor first.
+    """
+    if meaning is None:
+        meaning = ConceptualMeaning.from_payload(
+            payload, depth=depth, layout="stm", mode="unspecified")
+    if not isinstance(meaning, ConceptualMeaning):
+        raise TypeError("observed meaning must be a ConceptualMeaning")
+    kind = "question" if meaning.mode == "interrogative" else "observation"
+    return store.append_meaning(meaning, kind=kind, trust=trust)
+
+
+def _boundary_observation_view(language, registry, entries, payloads, depths,
+                               *, structured):
+    """Return owned meanings plus the appropriate live predictor view.
+
+    Physical STM is newest-first, while a selected grammatical relation owns
+    canonical infix roles.  A batch with at least one selected relation is
+    normalized to explicit infix roles for structured prediction, including
+    its unselected rows; that preserves their old adapter result while keeping
+    one batch call and its chronological boundary.  Root-only prediction keeps
+    its established physical payload contract.
+    """
+    meanings, selected = [], []
+    entries = tuple(entries or ())
+    form = getattr(language, "program_meaning", None)
+    for b, payload in enumerate(payloads):
+        depth = int(depths[b]) if b < len(depths) else 0
+        if payload is None or depth < 1:
+            meanings.append(None)
+            selected.append(False)
+            continue
+        entry = entries[b] if b < len(entries) else None
+        meaning = form(entry, registry) if callable(form) and registry is not None else None
+        is_selected = meaning is not None
+        if meaning is None:
+            meaning = ConceptualMeaning.from_payload(
+                payload, depth=depth, layout="stm", mode="unspecified")
+        meanings.append(meaning)
+        selected.append(is_selected)
+    if structured and any(selected):
+        return (
+            meanings,
+            [None if meaning is None else meaning.roles for meaning in meanings],
+            [0 if meaning is None else 3 for meaning in meanings],
+            "infix",
+            [None if meaning is None else meaning.role_mask for meaning in meanings],
+        )
+    return meanings, payloads, depths, "stm", None
+
+
+def _boundary_programs(owner):
+    """Read the owned answer programs once at an eager sentence boundary."""
+    capture = getattr(owner, "_capture_answer_programs", None)
+    if not callable(capture):
+        return (), {}
+    current, by_sentence = capture()
+    return tuple(current or ()), by_sentence or {}
+
+
+def _boundary_registry(owner):
+    """Locate the one setup-time thought-grammar registry without minting."""
+    registry = getattr(owner, "grammatical_thoughts", None)
+    if registry is None:
+        registry = getattr(getattr(owner, "symbolSpace", None),
+                           "grammatical_thoughts", None)
+    return registry
+
+
+@dataclass(frozen=True)
+class SelectedThoughtResult:
+    """One completed ordinary episode for a selected grammatical question.
+
+    The result exposes the checked evidence and the same transient meter that
+    paid for it.  The chronological ``ThoughtRecord`` values remain owned by
+    ``WhatInteractionMemory``; this is only a boundary return value, never a
+    second memory or semantic representation.
+    """
+
+    meaning: ConceptualMeaning
+    evidence: dict
+    work: QueryWorkBudget
+    records: tuple
 
 
 def _checkpoint_host_copy(value):
@@ -6064,6 +6153,73 @@ class BasicModel(BaseModel):
         finally:
             self._query_ready_rows = previous
 
+    def _thought_grammar_context(self, meaning, *, row, work, continuation):
+        """Build the one capability-scoped context for a selected thought.
+
+        This is intentionally the only model-to-thought bridge.  It freezes
+        the completed row's owned leaves (or the completed meaning when no
+        retained program is available), snapshots priming, and supplies narrow
+        readers rather than a model or ``TruthGroundedReasoner`` object.  The
+        descriptor-specific facade in :mod:`Queries` narrows those readers
+        again immediately before each executor call.
+        """
+        if not isinstance(meaning, ConceptualMeaning):
+            raise TypeError('thought grammar context requires a complete meaning')
+        if type(row) is not int or row < 0:
+            raise ValueError('thought grammar context requires a non-negative row')
+        if not isinstance(work, QueryWorkBudget):
+            raise TypeError('thought grammar context requires one QueryWorkBudget')
+        self._assert_query_boundary(row)
+
+        def freeze(value):
+            if torch.is_tensor(value):
+                return value.detach().clone()
+            if isinstance(value, tuple):
+                return tuple(freeze(item) for item in value)
+            if isinstance(value, list):
+                return tuple(freeze(item) for item in value)
+            if isinstance(value, dict):
+                return tuple((key, freeze(item)) for key, item in sorted(value.items()))
+            return value
+
+        stream = meaning.roles
+        understanding = getattr(self, '_last_understanding', None)
+        programs = tuple(getattr(understanding, 'answer_program', ()) or ())
+        if 0 <= row < len(programs):
+            candidate = programs[row]
+            leaves = getattr(candidate, 'leaves', None)
+            if torch.is_tensor(leaves):
+                stream = leaves
+
+        symbol_space = getattr(self, 'symbolSpace', None)
+        primed = None
+        priming_owner = getattr(symbol_space, 'taxonomy', None)
+        if (priming_owner is not None
+                and getattr(priming_owner, 'priming_enabled', True)):
+            snapshot = getattr(priming_owner, 'priming_mask', None)
+            if callable(snapshot):
+                try:
+                    primed = snapshot(batch=row)
+                except TypeError:
+                    primed = snapshot()
+
+        from reasoning import TruthGroundedReasoner
+        reasoner = TruthGroundedReasoner(model=self)
+        discourse = getattr(symbol_space, 'discourse', None)
+        return ThoughtGrammarContext(
+            word_stream=freeze(stream),
+            conceptual_space=ThoughtConceptualCapability(
+                self.conceptualSpace, TruthGroundedReasoner.equal),
+            primed_symbols=freeze(primed),
+            ltm=ThoughtLTMCapability(
+                existence_evidence=reasoner.existence_evidence,
+                store=reasoner.reasoning_store,
+                equal=TruthGroundedReasoner.equal, tau_id=reasoner.tau_id,
+                memory=self._what_memory(), discourse=discourse),
+            taxonomy=ThoughtTaxonomyCapability(self.conceptualSpace),
+            work=work, continuation=continuation,
+            boundary=self._assert_query_boundary, row=row)
+
     @staticmethod
     def _completed_query_rows(understanding):
         """Read committed program ownership, not mutable sentence staging."""
@@ -6071,6 +6227,535 @@ class BasicModel(BaseModel):
             row for row, program in enumerate(understanding.answer_program)
             if program is not None and program.leaves.shape[0] > 0
         )
+
+    @staticmethod
+    def _selected_thought_context(root, active=None, candidate=None, *, level,
+                                  pressure, evidence=None):
+        """Numerical controller input for one selected grammatical action.
+
+        The root request, active context and action candidate each retain
+        separate full-width ``[NP1, VP, NP2]`` blocks and masks.  ``active``
+        defaults to ``root`` and ``candidate`` to ``active`` only for callers
+        migrating from the first boundary adapter.  Native IDs, row numbers,
+        occurrence addresses and surface tokens never enter the learned
+        vector.  Actual prior evidence is four bounded scalar values, not a
+        fabricated concept or an answer target.
+        """
+        if active is None:
+            active = root
+        if candidate is None:
+            candidate = active
+        meanings = (root, active, candidate)
+        if not all(isinstance(meaning, ConceptualMeaning) for meaning in meanings):
+            raise TypeError("selected thought context requires ConceptualMeaning values")
+        width = int(root.roles.shape[-1])
+        if any(int(meaning.roles.shape[-1]) != width for meaning in meanings):
+            raise ValueError("selected thought meanings must share one conceptual width")
+        if type(level) is not int or level < 0:
+            raise ValueError("selected thought level must be a non-negative integer")
+        if not math.isfinite(float(pressure)) or pressure < 0:
+            raise ValueError("selected thought pressure must be finite and non-negative")
+
+        def payload(meaning):
+            roles = (meaning.roles
+                     * meaning.role_mask.to(meaning.roles).unsqueeze(-1))
+            return torch.cat((roles.reshape(-1), meaning.role_mask.to(
+                device=roles.device, dtype=roles.dtype)))
+
+        roles = tuple(payload(meaning) for meaning in meanings)
+        source = dict(evidence or {})
+        supports = []
+        for name in ("support_true", "support_false"):
+            value = source.get(name, 0.0)
+            if torch.is_tensor(value):
+                value = value.detach().item()
+            value = float(value)
+            if not math.isfinite(value) or not 0.0 <= value <= 1.0:
+                raise ValueError("selected thought evidence support must be in [0, 1]")
+            supports.append(value)
+        metadata = torch.tensor(
+            (float(level), float(pressure), *supports,
+             float(evidence is not None),
+             float(bool(source.get("incomplete", ())))),
+            device=root.roles.device, dtype=root.roles.dtype)
+        return torch.cat((*roles, metadata))
+
+    def _selected_thought_chooser(self, meaning, *, device=None, dtype=None):
+        """Return the width-owned learned chooser for complete meanings."""
+        if not isinstance(meaning, ConceptualMeaning):
+            raise TypeError("selected thought chooser requires a ConceptualMeaning")
+        width = int(meaning.roles.shape[-1])
+        key = str(width)
+        table = getattr(self, "selected_thought_choosers", None)
+        if table is None:
+            table = nn.ModuleDict()
+            self.selected_thought_choosers = table
+        module = table[key] if key in table else None
+        if module is None:
+            from Language import SelectedThoughtChooser
+            if device is None:
+                device = meaning.roles.device
+            if dtype is None:
+                dtype = meaning.roles.dtype
+            module = SelectedThoughtChooser(
+                # Three [NP1, VP, NP2]+mask schemas plus level, pressure
+                # and actual previous-evidence flags.  Addresses remain
+                # non-numerical metadata beside the history owner.
+                context_dim=9 * width + 15,
+                hidden=getattr(self, "what_thinking_hidden", 16),
+                depth=getattr(self, "what_thinking_depth", 1),
+            ).to(device=device, dtype=dtype)
+            table[key] = module
+            self._collect_fresh_synthesis_modules()
+        return module
+
+    def _selected_thought_policy_loss(self, answer_loss, mask=None):
+        """REINFORCE credit for hard normal-controller query/finish choices.
+
+        The only scalar reward is the later answer loss, less a small charge
+        for actual controller decisions.  No desired answer or oracle subgoal
+        enters the chooser context; hard query results remain nondifferentiable.
+        """
+        records = []
+        for record in self.__dict__.get("_selected_thought_policy_records") or ():
+            if not (torch.is_tensor(record[1]) and record[1].requires_grad):
+                continue
+            eligible = (mask is None or (
+                0 <= record[0] < mask.numel()
+                and bool(mask.reshape(-1)[record[0]])
+            ))
+            if eligible:
+                records.append(record)
+        if not records:
+            return None
+        answer = (float(answer_loss.detach()) if torch.is_tensor(answer_loss)
+                  else float(answer_loss or 0.0))
+        reward = -answer - self.WHAT_STEP_COST * len(records)
+        baseline = self.__dict__.get("_selected_thought_policy_baseline")
+        advantage = reward - (baseline if baseline is not None else 0.0)
+        self._selected_thought_policy_baseline = (
+            reward if baseline is None else 0.9 * baseline + 0.1 * reward)
+        loss = -(float(advantage) * torch.stack(
+            [record[1] for record in records])).mean()
+        report = self._what_report_state()
+        report["policy_selected_thought_credit_sum"] = (
+            report.get("policy_selected_thought_credit_sum", 0.0)
+            + float(loss.detach()))
+        report["policy_selected_thought_return_sum"] = (
+            report.get("policy_selected_thought_return_sum", 0.0) + reward)
+        report["policy_selected_thought_batches"] = (
+            report.get("policy_selected_thought_batches", 0) + 1)
+        report["policy_selected_thought_choices"] = (
+            report.get("policy_selected_thought_choices", 0) + len(records))
+        return loss
+
+    def _choose_selected_thought_action(self, root, active, actions, *, row,
+                                        level, pressure, evidence=None):
+        """Choose a catalog operation or the non-semantic conclude transition.
+
+        ``actions`` is a tuple of grammar-derived ``ThoughtOperationCandidate``
+        instances, plus ``None`` only for conclude.  The operation's complete
+        request is the learned candidate representation; its name and catalog
+        position remain dispatch metadata outside the policy tensor.
+        """
+        from Queries import ThoughtOperationCandidate
+
+        actions = tuple(actions)
+        if not actions:
+            raise ValueError("selected thought action requires a legal candidate")
+        if any(action is not None and not isinstance(
+                action, ThoughtOperationCandidate) for action in actions):
+            raise TypeError("selected thought action must be a grammar candidate or conclude")
+        current = active
+        contexts = tuple(self._selected_thought_context(
+            root, active,
+            (current if action is None else action.request),
+            level=level, pressure=pressure, evidence=evidence)
+            for action in actions)
+        context = torch.stack(contexts)
+        chooser = self._selected_thought_chooser(
+            current, device=context.device, dtype=context.dtype)
+        sample = (bool(self.training)
+                  and float(getattr(self, "selected_thought_policy_weight", 0.0)
+                            or 0.0) > 0.0)
+        index, log_prob = chooser.choose(
+            context, tuple(action is None for action in actions), sample=sample)
+        if float(getattr(self, "selected_thought_policy_weight", 0.0) or 0.0) > 0.0:
+            self.__dict__.setdefault("_selected_thought_policy_records", []).append(
+                (int(row), log_prob))
+        return actions[index]
+
+    def run_selected_thought(self, meaning, *, row=0, work_budget=32,
+                             registry=None):
+        """Execute one completed grammatical question as an ordinary episode.
+
+        Composition only supplies ``meaning``.  This method is deliberately
+        boundary-only: it creates the *one* transient query meter for the
+        episode, records each selected operation in the existing interaction
+        history, and delegates checked reads/effects to the registered VP.
+        A ``what(Q)`` executor receives the same meter and may enter a nested
+        ordinary context; it never starts a child budget, a new owner, or a
+        second optimizer episode.
+
+        The hard operation sequence is a small safe baseline: execute the
+        selected VP and conclude, with ``what(Q)`` supplying its explicit
+        subordinate meaning.  Its return value preserves actual support and
+        occurrence provenance for the later learned controller/output path;
+        it does not turn a question into an accepted fact.
+        """
+        if not isinstance(meaning, ConceptualMeaning):
+            raise TypeError("selected thought requires a complete ConceptualMeaning")
+        if meaning.mode != "interrogative":
+            raise ValueError("selected thought requires an interrogative meaning")
+        if type(row) is not int or row < 0:
+            raise ValueError("selected thought row must be a non-negative integer")
+        if type(work_budget) is not int or work_budget < 0:
+            raise ValueError("selected thought work_budget must be a non-negative integer")
+        # This is intentionally before any registry/native/occurrence read.
+        self._assert_query_boundary(row)
+        registry = registry or _boundary_registry(self)
+        if not isinstance(registry, GrammaticalThoughtRegistry):
+            raise RuntimeError("selected thought has no installed grammatical thought registry")
+        # Reject a non-executable VP before opening an episode that could not
+        # truthfully be completed.  ``signature_for`` only validates the
+        # frozen setup binding; all selected reads below share ``meter``.
+        registry.signature_for(meaning)
+        memory = self._what_memory()
+        if memory is None or not all(hasattr(memory, name) for name in (
+                "begin_thought_episode", "commit_thought", "descend_thought",
+                "return_thought", "finish_thought", "thought_state",
+                "thought_history", "thought_reference")):
+            raise RuntimeError("selected thought requires the interaction memory owner")
+
+        meter = QueryWorkBudget(work_budget)
+        root = memory.begin_thought_episode(meaning, b=row, work_budget=work_budget)
+        episode = root.episode
+        recorded_spend = 0
+
+        def support(value):
+            value = 0.0 if value is None else value
+            if torch.is_tensor(value):
+                value = value.detach().item()
+            value = float(value)
+            if not math.isfinite(value) or not 0.0 <= value <= 1.0:
+                raise ValueError("selected evidence support must be in [0, 1]")
+            return value
+
+        def normalized(result, *, fallback_kind="unverified"):
+            """Keep executor evidence explicit without treating it as a fact."""
+            if isinstance(result, ThoughtResult):
+                result = dict(result.evidence)
+            result = dict(result or {})
+            evidence = result.get("evidence")
+            if isinstance(evidence, dict):
+                source = evidence
+            else:
+                source = result
+            return {
+                "support_true": support(source.get("support_true", 0.0)),
+                "support_false": support(source.get("support_false", 0.0)),
+                "evidence_kind": str(result.get(
+                    "evidence_kind", source.get("evidence_kind", fallback_kind))),
+                "query_signature": result.get("query_signature"),
+                "incomplete": tuple(result.get("incomplete", ()) or ()),
+            }
+
+        def refs(current, *extra):
+            """Record typed provenance; numeric concept IDs are never features."""
+            return tuple(reference for reference in current.role_refs
+                         if reference is not None) + tuple(
+                             reference for reference in extra if reference is not None)
+
+        def event(kind, current, evidence, *, operation, sources=()):
+            """Commit exactly the meter delta since the preceding record."""
+            nonlocal recorded_spend
+            state = memory.thought_state(b=row)
+            if state is None or state.finished:
+                raise RuntimeError("selected thought lost its active episode")
+            delta = meter.spent - recorded_spend
+            if state.forced:
+                # A prior event consumed the final unit and atomically added
+                # the cutoff.  Drain events are intentionally query-free and
+                # cost zero in the history and meter.
+                delta = 0
+            elif delta < 1:
+                raise RuntimeError("ordinary selected thought event has no charged work")
+            keyword = dict(
+                b=row,
+                work=delta if delta else 1,
+                support_true=evidence["support_true"],
+                support_false=evidence["support_false"],
+                evidence_kind=evidence["evidence_kind"],
+                sources=tuple(sources),
+            )
+            if kind == "thought":
+                record = memory.commit_thought(
+                    current, operation=operation, **keyword)
+            elif kind == "descend":
+                record = memory.descend_thought(current, **keyword)
+            elif kind == "return":
+                record = memory.return_thought(current, **keyword)
+            elif kind == "finish":
+                record = memory.finish_thought(current, **keyword)
+            else:  # pragma: no cover - private controller invariant
+                raise AssertionError(f"unknown selected thought event {kind!r}")
+            recorded_spend = meter.spent
+            return record
+
+        def exhausted(current):
+            return {
+                "meaning": current,
+                "evidence": {
+                    "support_true": 0.0,
+                    "support_false": 0.0,
+                    "evidence_kind": "subgoal",
+                    "query_signature": None,
+                    "incomplete": ("work_budget",),
+                },
+                "record": None,
+            }
+
+        unselected = object()
+
+        def execute(current, *, actions=None, evidence_context=None,
+                    action=unselected):
+            """Run one selected VP; nested ``what`` uses this same closure.
+
+            The controller chooses an action from the actual root/active/
+            candidate schema.  A post-result choice may pass a previously
+            formed catalog action after scoring it against actual evidence, so
+            a repeated operation is a real, bounded second decision rather
+            than an untracked loop.
+            """
+            nonlocal recorded_spend
+            state = memory.thought_state(b=row)
+            if state is None or state.forced:
+                return exhausted(current)
+            if actions is None:
+                actions = tuple(registry.controller_candidates(
+                    meaning, state.contexts[-1].meaning, current)) + (None,)
+            else:
+                actions = tuple(actions)
+            if action is unselected:
+                action = self._choose_selected_thought_action(
+                    meaning, state.contexts[-1].meaning, actions, row=row,
+                    level=state.level, pressure=state.pressure,
+                    evidence=evidence_context)
+            elif action not in actions:
+                raise ValueError("selected thought chose an unavailable action")
+            if action is None:
+                if not meter.consume("controller"):
+                    return exhausted(current)
+                evidence = {
+                    "support_true": 0.0,
+                    "support_false": 0.0,
+                    "evidence_kind": "unverified",
+                    "query_signature": None,
+                    "incomplete": ("controller_finish",),
+                }
+                record = event("thought", current, evidence, operation="conclude",
+                               sources=refs(current))
+                return {"meaning": current, "evidence": evidence, "record": record}
+            selected = action
+            current = selected.request
+            # Choosing a checked operation is ordinary controller work in
+            # addition to the registered VP/read work below.  This is paid
+            # before the executor can inspect a native reference or evidence.
+            if not meter.consume("controller"):
+                return exhausted(current)
+            child_result = None
+            parent_record = None
+
+            def schedule_subgoal(child):
+                """The checked ``what(Q)`` callback: descend/return in order."""
+                nonlocal child_result, parent_record
+                if not isinstance(child, ConceptualMeaning):
+                    raise TypeError("what(Q) supplied no complete grammatical subgoal")
+                # ``what`` has already paid for its own VP/read/operation.
+                parent_record = event(
+                    "thought", current,
+                    {"support_true": 0.0, "support_false": 0.0,
+                     "evidence_kind": "subgoal", "query_signature": "what",
+                     "incomplete": ()},
+                    operation=selected.semantic_id, sources=refs(current))
+                if memory.thought_state(b=row).forced:
+                    return exhausted(child)["evidence"]
+                if not meter.consume("controller"):
+                    return exhausted(child)["evidence"]
+                descent = event(
+                    "descend", child,
+                    {"support_true": 0.0, "support_false": 0.0,
+                     "evidence_kind": "subgoal", "query_signature": "what",
+                     "incomplete": ()},
+                    operation="descend",
+                    sources=refs(child, memory.thought_reference(parent_record)))
+                child_result = execute(child)
+                child_record = child_result.get("record")
+                state_after_child = memory.thought_state(b=row)
+                if state_after_child is None:
+                    raise RuntimeError("selected child lost its thought history")
+                if not state_after_child.forced:
+                    if not meter.consume("controller"):
+                        return child_result["evidence"]
+                event(
+                    "return", child_result["meaning"], child_result["evidence"],
+                    operation="return",
+                    sources=refs(current, memory.thought_reference(descent),
+                                 (memory.thought_reference(child_record)
+                                  if child_record is not None else None)))
+                return child_result["evidence"]
+
+            context = self._thought_grammar_context(
+                current, row=row, work=meter, continuation=schedule_subgoal)
+            try:
+                raw = registry.execute(current, context)
+            except Exception:
+                # Do not leave an active live episode behind if a checked
+                # executor rejects malformed runtime evidence.  The original
+                # error still propagates; this only preserves owner invariants.
+                state = memory.thought_state(b=row)
+                if state is not None and not state.forced:
+                    memory.cutoff_thought(b=row, reason="query_error")
+                state = memory.thought_state(b=row)
+                if state is not None and not state.finished:
+                    memory.finish_thought(current, b=row)
+                raise
+            evidence = normalized(raw)
+            if child_result is not None:
+                # A ``what`` result is the child result, not a new proposition
+                # established by the outer question.  The parent return and
+                # root finish retain this causal evidence explicitly.
+                evidence = dict(child_result["evidence"])
+                evidence["query_signature"] = "what"
+                if parent_record is None:  # pragma: no cover - callback invariant
+                    raise RuntimeError("selected what query omitted its parent record")
+                return {"meaning": current, "evidence": evidence,
+                        "record": parent_record}
+            record = event("thought", current, evidence,
+                           operation=selected.semantic_id,
+                           sources=refs(current))
+            return {"meaning": current, "evidence": evidence, "record": record}
+
+        try:
+            outcome = execute(meaning)
+            # A completed result is available to a second hard choice at the
+            # same root level.  The safe zero-initialised ordering puts the
+            # non-semantic conclusion first after actual evidence exists;
+            # exploratory policy sampling may select any newly compatible
+            # grammar operation, each charged and recorded on this one owner.
+            while outcome["record"] is not None:
+                state = memory.thought_state(b=row)
+                if state is None or state.forced:
+                    break
+                actions = (None,) + tuple(registry.controller_candidates(
+                    meaning, state.contexts[-1].meaning, outcome["meaning"]))
+                action = self._choose_selected_thought_action(
+                    meaning, state.contexts[-1].meaning, actions,
+                    row=row, level=state.level, pressure=state.pressure,
+                    evidence=outcome["evidence"])
+                if action is None:
+                    # This is the required concluding ordinary thought before
+                    # the separate root-finish transition.  At cutoff only
+                    # the bounded finish drain is legal, so do not invent a
+                    # same-level event when the charge cannot be reserved.
+                    if meter.consume("controller"):
+                        conclusion = event(
+                            "thought", outcome["meaning"], outcome["evidence"],
+                            operation="conclude",
+                            sources=refs(
+                                outcome["meaning"],
+                                memory.thought_reference(outcome["record"])))
+                        outcome = dict(outcome, record=conclusion)
+                    break
+                outcome = execute(outcome["meaning"], actions=(action,),
+                                  evidence_context=outcome["evidence"],
+                                  action=action)
+            state = memory.thought_state(b=row)
+            if state is None:
+                raise RuntimeError("selected thought has no replayable state")
+            if not state.forced:
+                if not meter.consume("controller"):
+                    raise RuntimeError("selected controller could not reserve finish work")
+            finish = event("finish", outcome["meaning"], outcome["evidence"],
+                           operation="finish",
+                           sources=refs(meaning, memory.thought_reference(outcome["record"])
+                                        if outcome["record"] is not None else None))
+        except Exception:
+            # ``execute`` already drains checked-executor failures.  For an
+            # unexpected controller failure, retain no unfinished episode.
+            state = memory.thought_state(b=row)
+            if state is not None and not state.finished:
+                if not state.forced:
+                    memory.cutoff_thought(b=row, reason="controller_error")
+                memory.finish_thought(meaning, b=row)
+            raise
+        records = tuple(record for record in memory.thought_history(b=row)
+                        if record.episode == episode)
+        if not records or records[-1] is not finish:
+            raise RuntimeError("selected thought did not finish its owned episode")
+        if meter.spent != memory.thought_state(b=row).work_spent:
+            raise RuntimeError("selected thought meter and history disagree")
+        return SelectedThoughtResult(meaning, dict(outcome["evidence"]), meter, records)
+
+    def _run_selected_program_thoughts(self, programs, *, work_budget=32):
+        """Execute the interrogative meanings owned by completed programs.
+
+        This is the only bridge from pure compose into normal thought
+        execution.  It reads the immutable per-model rule snapshot through
+        ``LanguageSpace.program_meaning`` and runs only completed, selected
+        relations while ``resolveAnswer`` holds the row boundary permission.
+        Assertions and unrecognized/nested physical folds remain ordinary
+        observed meanings; they do not manufacture a checked query.
+        """
+        if type(work_budget) is not int or work_budget < 0:
+            raise ValueError("selected program work_budget must be a non-negative integer")
+        registry = _boundary_registry(self)
+        language = getattr(self, "languageSpace", None)
+        if language is None:
+            language = getattr(getattr(self, "symbolSpace", None),
+                               "languageSpace", None)
+        form = getattr(language, "program_meaning", None)
+        if registry is None or not callable(form):
+            return ()
+        results = []
+        for row, program in enumerate(tuple(programs or ())):
+            if program is None:
+                continue
+            meaning = form(program, registry)
+            if meaning is None or meaning.mode != "interrogative":
+                continue
+            results.append((row, self.run_selected_thought(
+                meaning, row=row, work_budget=work_budget, registry=registry)))
+        return tuple(results)
+
+    def _end_finished_selected_thought_episodes(self):
+        """Close detached eval credit for ordinary completed episodes only.
+
+        Training retains the live episode through its one optimizer step and
+        uses :meth:`_end_what_episodes` afterward.  A standalone/evaluation
+        ``resolveAnswer`` has no such step; leaving its finished owner live
+        would block the next completed sentence and retain a stale graph.
+        Legacy parity episodes have no :class:`ThoughtState` and are left to
+        their existing caller-owned lifecycle.
+        """
+        memory = self._what_memory()
+        if memory is None or not all(hasattr(memory, name) for name in (
+                "in_episode", "thought_state", "end_what_episode")):
+            return ()
+        rows = []
+        for row in range(int(getattr(memory, "batch", 0) or 0)):
+            if not memory.in_episode(row):
+                continue
+            state = memory.thought_state(b=row)
+            if state is not None and state.finished:
+                memory.end_what_episode(row)
+                rows.append(row)
+        if rows:
+            completed = set(rows)
+            records = self.__dict__.get("_selected_thought_policy_records") or ()
+            self._selected_thought_policy_records = [
+                record for record in records if record[0] not in completed]
+        return tuple(rows)
 
     def create_from_config(self, config_path=None, model_type=None, data=None):
         """Delegate XML-driven construction to BaseModel.
@@ -8286,7 +8971,15 @@ class BasicModel(BaseModel):
         if self.reconstruct_in_loop and understanding.input_reconstruction is None:
             raise RuntimeError("query boundary requires completed input reconstruction")
         with self._query_boundary_scope(self._completed_query_rows(understanding)):
-            return self._resolve_answer(understanding, questions)
+            try:
+                return self._resolve_answer(understanding, questions)
+            finally:
+                # A train batch keeps live ordinary records until its sole
+                # optimizer step.  Evaluation has no subsequent step, so it
+                # closes only completed ordinary episodes before another
+                # answer can begin; unfinished failures remain fail-loud.
+                if not self.training:
+                    self._end_finished_selected_thought_episodes()
 
     def _resolve_answer(self, understanding, question):
         """Resolve owned concepts for an answer, before question conditioning.
@@ -8358,8 +9051,31 @@ class BasicModel(BaseModel):
                 row_sources.append(source)
         distinct = set(row_sources)
         source = row_sources[0] if len(distinct) == 1 else "mixed"
+        # A selected interrogative compose program now has a normal boundary
+        # path of its own.  The old What/LTMSlot controller remains available
+        # for its legacy presentation questions, but it must not add a second
+        # parity episode around a completed grammatical query.
+        selected_thoughts = ()
+        if current_program:
+            try:
+                selected_budget = int(getattr(
+                    self, "selected_thought_budget", 32) or 0)
+            except (TypeError, ValueError):
+                selected_budget = 32
+            selected_budget = max(0, selected_budget)
+            memory = self._what_memory()
+            # ``think()`` may already have opened a retained legacy episode
+            # before its initial forward establishes that a program is
+            # grammatical. Do not interleave the two controllers in one
+            # chronological owner; the legacy path remains explicit until it
+            # is migrated separately.
+            if memory is None or not any(
+                    getattr(memory, "in_episode", lambda _row: False)(row)
+                    for row in range(len(programs))):
+                selected_thoughts = self._run_selected_program_thoughts(
+                    tuple(programs), work_budget=selected_budget)
         steps, step_trace, exact_steps = (), (), ()
-        if self._thinking_enabled():
+        if self._thinking_enabled() and not selected_thoughts:
             answer, steps, step_trace, exact_steps = self._resolve_step(
                 understanding, questions, per_row, answer,
                 programs=tuple(programs) if current_program else None)
@@ -8376,6 +9092,16 @@ class BasicModel(BaseModel):
                        "confidence": reasoning.get("confidence"),
                        "support_true": reasoning.get("support_true"),
                        "support_false": reasoning.get("support_false")},)
+        if selected_thoughts:
+            trace += tuple({
+                "operation": "selected_query",
+                "row": row,
+                "signature": result.evidence.get("query_signature"),
+                "support_true": result.evidence["support_true"],
+                "support_false": result.evidence["support_false"],
+                "work": result.work.spent,
+                "incomplete": result.evidence.get("incomplete", ()),
+            } for row, result in selected_thoughts)
         return AnswerDerivation(
             answer_symbol=None if current_program else answer,
             conceptual_answer=answer if current_program else None,
@@ -8384,7 +9110,8 @@ class BasicModel(BaseModel):
             synthesis_references=references, sentence_location=0, prefix=None,
             resolved=resolved_all, source=source, row_sources=tuple(row_sources),
             step=steps, exact_steps=exact_steps, program=tuple(programs),
-            conditioning_context=context, questions=questions)
+            conditioning_context=context, questions=questions,
+            selected_thoughts=selected_thoughts)
 
     # -- thinking: the resolve step (mathematical thinking spec 6) -----------
     #
@@ -8425,6 +9152,7 @@ class BasicModel(BaseModel):
             if not hasattr(memory, "in_episode") or memory.in_episode(b):
                 detached += int(memory.end_what_episode(b) or 0)
         self._what_policy_records = []
+        self._selected_thought_policy_records = []
         return detached
 
     def _what_step_policy_loss(self, answer_loss, mask=None):
@@ -9218,6 +9946,63 @@ class BasicModel(BaseModel):
                 hidden=hidden, depth=len(indices) - 1)
             self.what_step_chooser = module.to(device=device, dtype=dtype)
             built += 1
+        # Width-owned normal selected-thought choosers are lazy like the
+        # answer conditioner. Rebuild exactly the saved MLP shape before the
+        # strict state-dict audit; never infer a semantic width from a native
+        # concept ID or pad a learned controller weight.
+        selected_prefix = "selected_thought_choosers."
+        selected = {}
+        for key, weight in state.items():
+            if not (key.startswith(selected_prefix)
+                    and key.endswith(".mlp.0.weight")):
+                continue
+            suffix = key[len(selected_prefix):]
+            width = suffix.split(".", 1)[0]
+            if not width.isdigit() or weight.dim() != 2:
+                raise ValueError(f"invalid selected thought chooser checkpoint: {key}")
+            selected[width] = weight
+        if selected:
+            from Language import SelectedThoughtChooser
+            table = getattr(self, "selected_thought_choosers", None)
+            if table is None:
+                table = nn.ModuleDict()
+                self.selected_thought_choosers = table
+            for width, first_weight in selected.items():
+                hidden, in_dim = (int(value) for value in first_weight.shape)
+                # Three complete role/mask schemas (root, active, candidate)
+                # and six scalar controller/evidence fields.  This must stay
+                # in lockstep with ``_selected_thought_context``; a saved
+                # policy is never padded or reinterpreted from native IDs.
+                context_dim = 9 * int(width) + 15
+                expected_in = context_dim + SelectedThoughtChooser.CANDIDATE_FEATURES
+                if in_dim != expected_in:
+                    raise ValueError(
+                        f"selected thought chooser width {width} has input "
+                        f"{in_dim}, expected {expected_in}")
+                prefix = f"{selected_prefix}{width}.mlp."
+                indices = sorted(int(name[len(prefix):].split(".")[0])
+                                 for name in state
+                                 if name.startswith(prefix)
+                                 and name.endswith(".weight")
+                                 and name[len(prefix):].split(".")[0].isdigit())
+                if (len(indices) < 2
+                        or indices != list(range(0, 2 * len(indices), 2))):
+                    raise ValueError(
+                        "invalid SelectedThoughtChooser checkpoint layer layout")
+                for layer, index in enumerate(indices):
+                    expected = ((1, hidden) if layer == len(indices) - 1 else
+                                (hidden, in_dim if layer == 0 else hidden))
+                    weight_key = f"{prefix}{index}.weight"
+                    if tuple(state[weight_key].shape) != expected:
+                        raise ValueError(
+                            f"invalid SelectedThoughtChooser checkpoint shape for "
+                            f"{weight_key}: expected {expected}, got "
+                            f"{tuple(state[weight_key].shape)}")
+                module = SelectedThoughtChooser(
+                    context_dim=context_dim, hidden=hidden,
+                    depth=len(indices) - 1).to(device=device, dtype=dtype)
+                table[width] = module
+                built += 1
         if built or saved:
             self._collect_fresh_synthesis_modules()
         return built
@@ -9231,6 +10016,11 @@ class BasicModel(BaseModel):
             modules.append(legacy)
         return modules
 
+    def _selected_thought_chooser_modules(self):
+        """One normal-controller chooser per semantic payload width."""
+        table = getattr(self, "selected_thought_choosers", None)
+        return list(table.values()) if table is not None else []
+
     def _collect_fresh_synthesis_modules(self):
         """Queue lazily built answer-path modules for the live optimizer.
 
@@ -9241,9 +10031,10 @@ class BasicModel(BaseModel):
         """
         registered = self.__dict__.setdefault("_registered_synthesis_modules", set())
         fresh = self.__dict__.setdefault("_fresh_synthesis_params", [])
-        modules = self._question_conditioner_modules() + [
+        modules = (self._question_conditioner_modules()
+                   + self._selected_thought_chooser_modules() + [
             getattr(self, "what_step_chooser", None),
-            getattr(self, "ltm_attention", None)]
+            getattr(self, "ltm_attention", None)])
         for module in modules:
             if module is not None and id(module) not in registered:
                 registered.add(id(module))
@@ -9270,6 +10061,8 @@ class BasicModel(BaseModel):
         params = []
         for conditioner in self._question_conditioner_modules():
             params.extend(conditioner.parameters())
+        for chooser in self._selected_thought_chooser_modules():
+            params.extend(chooser.parameters())
         for module in (getattr(self, "what_step_chooser", None),
                        getattr(self, "ltm_attention", None),
                        getattr(getattr(self, "languageSpace", None), "generate_policy", None)):
@@ -9746,6 +10539,16 @@ class BasicModel(BaseModel):
                                / max(1, report.get("policy_thinking_batches", 0)),
                 "batches": report.get("policy_thinking_batches", 0),
                 "choices": report.get("policy_thinking_choices", 0),
+            },
+            "selected_thought": {
+                "weight": float(getattr(
+                    self, "selected_thought_policy_weight", 0.0) or 0.0),
+                "credit": report.get("policy_selected_thought_credit_sum", 0.0)
+                          / max(1, report.get("policy_selected_thought_batches", 0)),
+                "mean_return": report.get("policy_selected_thought_return_sum", 0.0)
+                               / max(1, report.get("policy_selected_thought_batches", 0)),
+                "batches": report.get("policy_selected_thought_batches", 0),
+                "choices": report.get("policy_selected_thought_choices", 0),
             },
         }
         out["throughput"] = {
@@ -12925,10 +13728,21 @@ class BasicModel(BaseModel):
                     for b in range(B)]
         tetralemmas = self.conceptualSpace.stm_end_state_trust(
             cs_buf, rel_mask)
+        entries, _by_sentence = _boundary_programs(self)
+        meanings, observed_payloads, observed_depths, layout, role_masks = (
+            _boundary_observation_view(
+                getattr(self, "languageSpace", None), _boundary_registry(self),
+                entries, payloads, depths,
+                structured=(getattr(discourse, "expectation_scope", None)
+                            == "structured")))
         if discourse_live:
+            keyword = {}
+            if layout != "stm":
+                keyword.update(layout=layout, role_masks=role_masks)
             discourse.predict_and_observe_stm_end_state(
-                depths, payloads, tetralemmas=tetralemmas, mask=active,
-                documents=self._expectation_documents_for_slot(0, B))
+                observed_depths, observed_payloads, tetralemmas=tetralemmas,
+                mask=active, documents=self._expectation_documents_for_slot(0, B),
+                **keyword)
         if ltm_on:
             for b, payload in enumerate(payloads):
                 if payload is None or int(payload.shape[0]) < 1:
@@ -12938,7 +13752,9 @@ class BasicModel(BaseModel):
                        if tetralemmas is not None and b < len(tetralemmas)
                        else None)
                 trust = float(tet) if tet is not None else 0.0
-                _append_observed_meaning(ltm_store, payload, d, trust=trust)
+                _append_observed_meaning(
+                    ltm_store, payload, d, trust=trust,
+                    meaning=meanings[b] if b < len(meanings) else None)
 
     def _drain_packed_stm_end_states(self):
         """Observe each sealed meaning once, in row/document/time order."""
@@ -12977,6 +13793,7 @@ class BasicModel(BaseModel):
             full, full_depth, final_slots, final_depth))
         if not has_full and getattr(discourse, "expectation_scope", "root") == "structured":
             raise RuntimeError("structured prediction requires sealed sentence slots and depths")
+        _current, by_sentence = _boundary_programs(self)
         for t in range(int(positions.shape[1])):
             sentence = roots[:, t, :]
             mask = valid[:, t].to(
@@ -12997,14 +13814,28 @@ class BasicModel(BaseModel):
                 else:
                     payloads.append(sentence[b:b + 1])
                     depths.append(1)
+            entries = (by_sentence.get(t, ())
+                       if hasattr(by_sentence, "get") else ())
+            meanings, observed_payloads, observed_depths, layout, role_masks = (
+                _boundary_observation_view(
+                    getattr(self, "languageSpace", None), _boundary_registry(self),
+                    entries, payloads, depths,
+                    structured=(getattr(discourse, "expectation_scope", None)
+                                == "structured")))
             if discourse is not None:
+                keyword = {}
+                if layout != "stm":
+                    keyword.update(layout=layout, role_masks=role_masks)
                 discourse.predict_and_observe_stm_end_state(
-                    depths, payloads, mask=mask,
-                    documents=self._expectation_documents_for_slot(t, B))
+                    observed_depths, observed_payloads, mask=mask,
+                    documents=self._expectation_documents_for_slot(t, B),
+                    **keyword)
             if ltm_on:
-                for depth, payload in zip(depths, payloads):
+                for b, (depth, payload) in enumerate(zip(depths, payloads)):
                     if payload is not None:
-                        _append_observed_meaning(ltm_store, payload, depth)
+                        _append_observed_meaning(
+                            ltm_store, payload, depth,
+                            meaning=meanings[b] if b < len(meanings) else None)
 
     def _intersentence_seed(self):
         """The predicted next-end-state SHAPE for the stage-0 CS_{-1} seed,
@@ -14281,6 +15112,22 @@ class BasicModel(BaseModel):
                     self.record_loss(
                         "what_step_policy", pol_loss,
                         weight=self.what_thinking_policy_weight,
+                        space="SymbolSpace", category="policy")
+
+            # Ordinary selected grammatical questions use their own hard
+            # query/finish controller. Its reward is likewise the later root
+            # answer error (never a query target or an oracle subgoal), with a
+            # separate baseline and report channel from legacy What parity.
+            if train and float(
+                    getattr(self, "selected_thought_policy_weight", 0.0) or 0.0) > 0.0:
+                selected_pol_loss = self._selected_thought_policy_loss(
+                    lossOut, mask=_answer_mask if getattr(self, "answer_synthesis", False) else None)
+                if selected_pol_loss is not None:
+                    totalLoss = (totalLoss + self.selected_thought_policy_weight
+                                 * selected_pol_loss)
+                    self.record_loss(
+                        "selected_thought_policy", selected_pol_loss,
+                        weight=self.selected_thought_policy_weight,
                         space="SymbolSpace", category="policy")
 
             if train and float(
@@ -15727,6 +16574,18 @@ class BasicModel(BaseModel):
         # byte-identical.
         self.what_thinking_policy_weight = float(
             TheXMLConfig.training("whatThinkingPolicyWeight", default=0.0) or 0.0)
+        # Ordinary selected grammatical questions use a distinct boundary
+        # chooser.  Its default is off for policy sampling/credit, while the
+        # zero-initialised chooser still preserves deterministic query-first
+        # execution when a completed interrogative program is present.
+        self.selected_thought_policy_weight = float(
+            TheXMLConfig.training("selectedThoughtPolicyWeight", default=0.0)
+            or 0.0)
+        try:
+            self.selected_thought_budget = max(0, int(TheXMLConfig.get(
+                "architecture.selectedThoughtBudget", default=32) or 0))
+        except (TypeError, ValueError):
+            raise ValueError("<selectedThoughtBudget> must be a non-negative integer")
         # Method-1 -> Method-2 leaf distillation weight (root separability;
         # snap design doc step 3). 0.0 -> no term -> byte-identical.
         self.leaf_distill_weight = float(
@@ -16485,6 +17344,16 @@ class BasicModel(BaseModel):
         # ownership. Keep a non-registering model reference so state_dict does
         # not acquire a second LanguageLayer path.
         object.__setattr__(self, 'languageSpace', self.symbolSpace.languageSpace)
+        # Bind the grammar's native VP identities once during construction.
+        # Forming a selected linguistic meaning later is pure: it reuses these
+        # addresses and must never allocate a concept or write memory at a
+        # sentence boundary.  This is the one production grammar-to-thought
+        # bridge; the preserved legacy reasoner owns no grammar registry.
+        object.__setattr__(
+            self, 'grammatical_thoughts',
+            GrammaticalThoughtRegistry.install(self.conceptualSpace, TheGrammar))
+        object.__setattr__(
+            self.symbolSpace, 'grammatical_thoughts', self.grammatical_thoughts)
 
         # MetaSymbol Category codebook (doc/Language.md
         # "Participation Categories"). Enabled by default via
@@ -21747,6 +22616,13 @@ class BasicModel(BaseModel):
                 # carry that trust applied to the relation's t - f scalar.
                 tetralemmas = self.conceptualSpace.stm_end_state_trust(
                     cs_buf, rel_mask)
+                entries, _by_sentence = _boundary_programs(self)
+                meanings, observed_payloads, observed_depths, layout, role_masks = (
+                    _boundary_observation_view(
+                        getattr(self, "languageSpace", None),
+                        _boundary_registry(self), entries, payloads, depths,
+                        structured=(getattr(discourse, "expectation_scope", None)
+                                    == "structured")))
                 # Skip on the explore trial (pass B): both sinks append the
                 # sentence's end-state. Pass A already committed this
                 # sentence; a second append would duplicate it (in the AR
@@ -21768,9 +22644,14 @@ class BasicModel(BaseModel):
                     # skips the duplicate durable deque; the store append
                     # (a) below remains the single durable conversation write.
                     if discourse_live:
+                        keyword = {}
+                        if layout != "stm":
+                            keyword.update(layout=layout, role_masks=role_masks)
                         discourse.predict_and_observe_stm_end_state(
-                            depths, payloads, tetralemmas=tetralemmas,
-                            documents=self._expectation_documents_for_slot(0, B))
+                            observed_depths, observed_payloads,
+                            tetralemmas=tetralemmas,
+                            documents=self._expectation_documents_for_slot(0, B),
+                            **keyword)
                     # SINK (a) -- the SINGLE conversation push into the
                     # persistent unified ``ltm_store`` (LTM consolidation,
                     # gated ``ltmConsolidation``). Independent of any
@@ -21796,7 +22677,9 @@ class BasicModel(BaseModel):
                                        and b < len(tetralemmas))
                                    else None)
                             trust = float(tet) if tet is not None else 0.0
-                            _append_observed_meaning(ltm_store, payload, d, trust=trust)
+                            _append_observed_meaning(
+                                ltm_store, payload, d, trust=trust,
+                                meaning=meanings[b] if b < len(meanings) else None)
 
         # Existing loss_head plumbing (dormant: ``loss_head`` is always
         # None today) -- kept identical to the whole-slab tail so the
@@ -22542,21 +23425,23 @@ class BasicModel(BaseModel):
         return out
 
     def _detect_query(self, user_msg):
-        """Phase E: detect that ``user_msg`` is a query and extract its operands.
-        Two-part signal (no live is_query flag exists): (1) the grammar declares
-        a query rule; (2) the surface is interrogative. Operands are resolved to
-        VECTORS via the perceptual codebook (QuerySpec wants tensors). Returns
-        ``(surface_name, A_vec, B_vec)`` or ``(None, None, None)``."""
+        """Legacy surface adapter, gated by the structural thought catalogue.
+
+        This public serving fallback still hands a parsed surface to the
+        historical ``QuerySpec`` reasoner, but it never revives a ``<Queries>``
+        block or an is-/query-alias as its authority.  It is available only
+        when the grammar structurally declares one of the canonical operations
+        that adapter can represent (``exist``, ``part``, or ``equal``).
+        """
         try:
             from Language import TheGrammar
             if hasattr(TheGrammar, "_ensure_configured"):
                 TheGrammar._ensure_configured()
-            # The query capability signal: a <Queries> declaration (the
-            # post-relocation home -- complete.grammar carries NO query="true"
-            # rules since 2026-07-05) OR a legacy query="true" rule.
-            has_query = (bool(getattr(TheGrammar, "query_ops", []))
-                         or any(getattr(r, "query", False)
-                                for r in getattr(TheGrammar, "rules", [])))
+            operation_ids = {
+                operation.semantic_id
+                for operation in getattr(TheGrammar, "thought_operations", ())}
+            has_query = bool(operation_ids.intersection(
+                {"exist", "part", "equal"}))
         except Exception:
             has_query = False
         if not has_query:
@@ -22577,7 +23462,7 @@ class BasicModel(BaseModel):
                 return None
 
         toks = [t.strip("?.,") for t in text.split() if t.strip("?.,")]
-        surface, A, B = "queryPart", None, None
+        surface, A, B = "part", None, None
         if "part" in toks:
             i = toks.index("part")
             left = [t for t in toks[:i] if t not in ("is", "are")]
@@ -22590,7 +23475,7 @@ class BasicModel(BaseModel):
             content = [t for t in toks if t not in
                        ("is", "are", "does", "do", "a", "the", "of")]
             if content and content[-1] in ("exist", "exists"):
-                content = content[:-1]               # "does X exist?" -> isTrue(X)
+                content = content[:-1]               # "does X exist?" -> exist(X)
                 if content:
                     surface, A = "exist", lookup(content[0])
             elif len(content) >= 2:

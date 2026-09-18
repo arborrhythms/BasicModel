@@ -73,6 +73,12 @@ class AnswerDerivation:
     # Presentation metadata is owned before realization. It carries no target
     # and does not cause another query or another conditioning pass.
     questions: Tuple[Any, ...] = field(default_factory=tuple, repr=False, compare=False)
+    # Completed selected grammatical questions are ordinary-thought episodes,
+    # not a second answer representation.  The live records remain owned by
+    # WhatInteractionMemory; this tuple links a realized response to the
+    # actual boundary execution that supplied its evidence.
+    selected_thoughts: Tuple[Any, ...] = field(
+        default_factory=tuple, repr=False, compare=False)
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "grammar_trace", tuple(self.grammar_trace))
@@ -84,6 +90,7 @@ class AnswerDerivation:
         object.__setattr__(self, "exact_steps", tuple(self.exact_steps))
         object.__setattr__(self, "program", tuple(self.program))
         object.__setattr__(self, "questions", tuple(self.questions))
+        object.__setattr__(self, "selected_thoughts", tuple(self.selected_thoughts))
         if self.conditioning_context is not None:
             object.__setattr__(self, "conditioning_context",
                                self.conditioning_context.clone())

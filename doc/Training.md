@@ -621,6 +621,15 @@ term (`<whatThinkingPolicyWeight>`), takes the one optimizer step, and
 then ends the episode (`<whatThinkingDetach>`), all reported under
 `what_report()["thinking"]` and `["policy"]["thinking"]`.
 
+Completed interrogative grammatical programs take a separate normal boundary
+path before legacy thinking and `reverseOutput()`. Its `SelectedThoughtChooser`
+logs hard `query` / `finish` actions against live root/active/candidate role
+payloads, and `runBatch` adds the separately default-zero
+`<selectedThoughtPolicyWeight>` REINFORCE term after answer loss is known.
+The episode stays live through that one optimizer step, then shares the normal
+episode teardown. This is supplied-answer policy credit with a separate EMA
+baseline, not residual-driven corpus credit or learned-utility evidence.
+
 ---
 
 
@@ -1086,9 +1095,10 @@ Ordinary history supports same-level continuation, strictly nested descent and
 return, explicit finish, and one shared work budget. Episode-mode meanings and
 selected thought-occurrence reads stay live through the single optimizer step;
 after a finished episode, the existing owner detaches them. Restored history
-is detached and cannot refresh prior budget or pressure. No loss or optimizer
-parameter is added by this storage contract. Controller selection, residual
-reward, and learned utility still require their own evidence. See
+is detached and cannot refresh prior budget or pressure. Storage itself adds no
+loss or optimizer parameter; the normal selected controller adds its separate,
+default-off policy term on top of these retained records. Residual reward and
+learned utility still require their own evidence. See
 [ordinary thought history](ThoughtHistory.md) and [gradient flow](GradientFlow.md).
 
 ## Sentence and reasoning permission
@@ -1105,10 +1115,10 @@ not change optimizer ownership or gradient balancing. See
 Selected query accounting is a transient host meter, not a trainable feature or
 loss. It charges the same allowance before selected preparation, executor
 calls, native reads, and nested callbacks, while preserving existing live
-operand gradients and durable-record detachment. It neither creates policy
-credit nor reconciles itself with ordinary history automatically. The normal
-controller must create it from the episode allowance, propagate it, and record
-its actual final cost once before learned utility can be evaluated. See
+operand gradients and durable-record detachment. It neither creates residual
+policy credit nor learned utility. The normal controller creates it from the
+episode allowance, propagates it and commits its actual final cost once; its
+separate supplied-answer policy term still leaves residual credit open. See
 [shared query work](QueryWork.md) and [gradient flow](GradientFlow.md).
 
 ## Restoring dependent occurrences

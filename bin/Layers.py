@@ -2424,6 +2424,26 @@ class GrammarLayer(Layer):
     space_role             = 'SS'
     reads_activation = False
 
+    def compose_from_grammar_context(self, operands, *, context):
+        """Adapt this legacy tensor layer to the public structural-face call.
+
+        The grammar dispatcher validates the immutable context and arity before
+        reaching this compatibility adapter.  Existing tensor kernels keep
+        their narrow ``compose(left, right)`` / ``compose(value)`` signatures;
+        new grammar layers may override this method when they genuinely need
+        the owner-selected word stream or priming snapshot.
+        """
+        operands = tuple(operands)
+        if len(operands) != int(self.arity):
+            raise ValueError(
+                f"{type(self).__name__} expects {self.arity} structural operands, "
+                f"got {len(operands)}")
+        return self.compose(*operands)
+
+    def generate_from_grammar_context(self, result, *, context):
+        """Adapt legacy ``generate`` kernels to the public reverse-face call."""
+        return self.generate(result)
+
     def raise_no_inverse(self, why=""):
         """Serial-derivation fail-loud contract (2026-07-04 plan, Task 1):
         a rule with no faithful reverse RAISES instead of fabricating an
