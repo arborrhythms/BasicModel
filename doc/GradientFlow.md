@@ -278,3 +278,12 @@ legacy prompt and grammar-trace tensors. Structural checkpoint sidecars save
 detached copies, so restoring history cannot reconnect an old graph. These
 mechanics introduce neither a parameter nor a loss; controller policy credit
 and residual attribution remain open. See [ordinary thought history](ThoughtHistory.md).
+
+## Query phase permission
+
+Sentence masking and completed-row query permission add no parameter, loss, or
+tensor detachment. They constrain when a checked query may read or execute;
+live prepared meanings retain their current-step gradient routes. A hard
+controller choice remains nondifferentiable and needs explicit policy credit.
+Compiled numerical execution keeps host phase bookkeeping outside the graph,
+while query tracing fails explicitly. See [Query phases](QueryPhases.md).

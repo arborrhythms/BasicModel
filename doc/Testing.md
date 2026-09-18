@@ -208,6 +208,18 @@ took 170.806 seconds, and peak aggregate footprint was 2.36 GiB. This proves
 routing and bounded execution, not a controlled MPS speedup or a held-out
 utility result.
 
+### Query-phase evidence (September 18)
+
+The rebased phase reviewer probes first failed in
+`output/tests/20260918-010057-1c5b25` before the mask existed. The expanded
+reviewer set then passed 23/23 in 166.9 seconds in
+`20260918-011031-938ed0`; it includes real fullgraph forward/backward and
+trace/eager-island negatives. The broader phase-affected selection passed
+280/280 in `20260918-011401-fd5b1c`, using three bounded fresh workers with a
+1.56 GiB peak. This is affected-file evidence for the changed phase code, not
+a claim of a new single-snapshot global receipt under the no-rerun policy.
+See [Query phases](QueryPhases.md).
+
 The actual MPS sequence-training check passed: 877.81 seconds in `runEpoch`
 for two batches, 1.24 seconds for construction and a 2.54 GiB peak aggregate
 footprint. All 137 parameter tensors, including the predictor, were on MPS.

@@ -1090,3 +1090,12 @@ is detached and cannot refresh prior budget or pressure. No loss or optimizer
 parameter is added by this storage contract. Controller selection, residual
 reward, and learned utility still require their own evidence. See
 [ordinary thought history](ThoughtHistory.md) and [gradient flow](GradientFlow.md).
+
+## Sentence and reasoning permission
+
+When tied reconstruction is enabled, it must be owned by the `Understanding`
+before `resolveAnswer()` opens completed rows for checked reasoning. Supplied
+executors in `understand()` and `what()` run under the same sentence mask, and
+output realization cannot start a query. Permission restores on error and does
+not change optimizer ownership or gradient balancing. See
+[Query phases](QueryPhases.md).

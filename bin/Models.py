@@ -54,7 +54,7 @@ except ImportError:
 from sklearn.decomposition import PCA
 import torch.optim as optim
 from torch.profiler import profile as torch_profile, ProfilerActivity, schedule as profiler_schedule
-from functools import partial
+from functools import partial, wraps
 from datetime import datetime
 
 import util
@@ -128,6 +128,27 @@ _DEDUPE_FLUSH_EVERY = 1000
 # remaining breaks while migrating host-side symbol creation onto
 # pre-allocated codebooks (insert-not-grow). Defaults to the strict gate.
 ENUM_FULLGRAPH = os.environ.get("BASIC_FULLGRAPH", "1") != "0"
+
+
+def _sentence_query_mask(method):
+    """Forbid checked query execution while a sentence path is active.
+
+    Permission is model-local and transient. Captured computation must not
+    mutate the host flag: the query guard rejects tracing directly, while this
+    host wrapper protects compiled calls and eager islands alike. A nested
+    boundary therefore cannot widen permission from inside a sentence path.
+    """
+    @wraps(method)
+    def masked(self, *args, **kwargs):
+        if torch.compiler.is_compiling():
+            return method(self, *args, **kwargs)
+        depth = self._query_sentence_depth
+        self._query_sentence_depth = depth + 1
+        try:
+            return method(self, *args, **kwargs)
+        finally:
+            self._query_sentence_depth = depth
+    return masked
 
 
 def _append_observed_meaning(store, payload, depth, *, trust=0.0):
@@ -5993,6 +6014,48 @@ class BasicModel(BaseModel):
     then delegates to ``create()``.
     """
     name = "BasicModel"
+    # Transient execution permissions; never learned or checkpointed.
+    _query_sentence_depth = 0
+    _query_ready_rows = None
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Materialize before tracing so the first graph replay cannot add an
+        # attribute and invalidate the guard state.
+        self._query_sentence_depth = 0
+        self._query_ready_rows = None
+
+    def _assert_queries_outside_sentence(self):
+        if torch.compiler.is_compiling() or self._query_sentence_depth:
+            raise RuntimeError("queries cannot execute inside a sentence path")
+
+    def _assert_query_boundary(self, row):
+        self._assert_queries_outside_sentence()
+        if self._query_ready_rows is None or row not in self._query_ready_rows:
+            raise RuntimeError("query row has no completed boundary permission")
+
+    @contextmanager
+    def _query_boundary_scope(self, ready_rows):
+        """Open only completed answer rows for one conceptual resolution."""
+        self._assert_queries_outside_sentence()
+        previous = self._query_ready_rows
+        # A nested resolution can narrow existing permission, never widen it.
+        allowed = tuple(
+            row for row in ready_rows if previous is None or row in previous
+        )
+        self._query_ready_rows = allowed
+        try:
+            yield
+        finally:
+            self._query_ready_rows = previous
+
+    @staticmethod
+    def _completed_query_rows(understanding):
+        """Read committed program ownership, not mutable sentence staging."""
+        return tuple(
+            row for row, program in enumerate(understanding.answer_program)
+            if program is not None and program.leaves.shape[0] > 0
+        )
 
     def create_from_config(self, config_path=None, model_type=None, data=None):
         """Delegate XML-driven construction to BaseModel.
@@ -7259,6 +7322,7 @@ class BasicModel(BaseModel):
         self._compiled_word_loop_compile = compile_fn
         self._compiled_word_loop_fullgraph = True
 
+    @_sentence_query_mask
     def _forward_with_compiled_sentence_state(self, input_data):
         """Return forward outputs plus tensor state consumed outside the graph.
 
@@ -7896,6 +7960,7 @@ class BasicModel(BaseModel):
                 space.Start()
         self._spaces_started_for_forward = True
 
+    @_sentence_query_mask
     def forward(self, inputData):
         """IR-only forward: stem -> body -> head.
 
@@ -8033,6 +8098,7 @@ class BasicModel(BaseModel):
             input_reconstruction=input_reconstruction,
         )
 
+    @_sentence_query_mask
     def _complete_input_reconstruction(self):
         """Own the tied input result before another path can change staging."""
         if not getattr(self, "reconstruct_in_loop", False):
@@ -8084,13 +8150,19 @@ class BasicModel(BaseModel):
             object.__setattr__(carrier, "_concepts_recon", concepts)
         return self.inputSpace.reverse(carrier)
 
+    @_sentence_query_mask
+    def _execute_input_sentence(self, input_data, executor=None):
+        """Run caller-supplied sentence execution under the same phase mask."""
+        return (executor or self.forward)(input_data)
+
     def understand(self, input_data, *, executor=None):
         """One bottom-up analysis pass returning its ``Understanding``."""
-        execution = (executor or self.forward)(input_data)
+        execution = self._execute_input_sentence(input_data, executor)
         understanding = self._capture_understanding(execution)
         self._last_understanding = understanding
         return understanding
 
+    @_sentence_query_mask
     def reverseReconstruct(self, understanding, *, target=None, train=False):
         """Reconstruct the presented input from ``understanding`` (Step 2).
 
@@ -8192,7 +8264,10 @@ class BasicModel(BaseModel):
         questions = question_batch(question)
         if not questions:
             raise ValueError("answer resolution requires at least one question")
-        return self._resolve_answer(understanding, questions)
+        if self.reconstruct_in_loop and understanding.input_reconstruction is None:
+            raise RuntimeError("query boundary requires completed input reconstruction")
+        with self._query_boundary_scope(self._completed_query_rows(understanding)):
+            return self._resolve_answer(understanding, questions)
 
     def _resolve_answer(self, understanding, question):
         """Resolve owned concepts for an answer, before question conditioning.
@@ -9190,6 +9265,7 @@ class BasicModel(BaseModel):
                     params.extend(module.parameters())
         return list({id(p): p for p in params}.values())
 
+    @_sentence_query_mask
     def reverseOutput(self, understanding, derivation):
         """Realize a prepared AnswerDerivation without running resolution.
 
@@ -9876,7 +9952,7 @@ class BasicModel(BaseModel):
                 if input_data is None:
                     raise ValueError(
                         "Model.what needs input_data or an existing execution")
-                execution = (executor or self.forward)(input_data)
+                execution = self._execute_input_sentence(input_data, executor)
         finally:
             for h, ctx, detail in saved:
                 h._what_context = ctx
@@ -22276,6 +22352,7 @@ class BasicModel(BaseModel):
         Returns None when reasoning is disabled. ``spaces`` is retained only
         for caller compatibility. Grammatical-VP dispatch is a later migration.
         """
+        self._assert_queries_outside_sentence()
         N = int(getattr(self, "reasoning_iterations", 0) or 0)
         if N <= 0:
             return None
@@ -22296,6 +22373,7 @@ class BasicModel(BaseModel):
         path does not initialize the legacy global vector-proposal route.
         This frame controller predates the ordinary levelled-thought design.
         """
+        self._assert_queries_outside_sentence()
         budget = int(getattr(self, "thinking_budget", 0) or 0)
         if budget <= 0:
             return None
@@ -22513,6 +22591,7 @@ class BasicModel(BaseModel):
         relevance-ranked sentences + trace); else ``None`` so the caller falls
         back to the generative ``infer()``. Byte-identical off: returns ``None``
         immediately when ``reasoning_iterations == 0``, before any detection."""
+        self._assert_queries_outside_sentence()
         if int(getattr(self, "reasoning_iterations", 0) or 0) <= 0:
             return None
         surface, A, B = self._detect_query(user_msg)

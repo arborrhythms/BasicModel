@@ -54,6 +54,18 @@ def _validate_argument(value, kind):
         raise ValueError(f'unknown query argument type {kind!r}')
 
 
+def _require_query_boundary(context):
+    """Check model phase and row permission before query reads/execution.
+
+    Standalone evidence readers have no BasicModel runtime. When a model
+    supplies the guard, only its explicit completed-answer boundary may open a
+    query row.
+    """
+    guard = getattr(context.reasoner.model, '_assert_query_boundary', None)
+    if callable(guard):
+        guard(context.row)
+
+
 @dataclass(frozen=True)
 class QuerySignature:
     """One checked interface to a shared grammatical relation identity."""
@@ -100,6 +112,7 @@ class QuerySignature:
         """Validate a selected call completely before invoking its executor."""
         if not isinstance(context, QueryContext):
             raise TypeError('query execution requires a QueryContext')
+        _require_query_boundary(context)
         if domain is not None and domain != self.domain:
             raise ValueError(f'query {self.name} does not support domain {domain!r}')
         if len(arguments) != len(self.argument_kinds):
@@ -505,6 +518,7 @@ class GrammaticalQueryRegistry:
         """Execute a selected completed question, retaining its entire proposition."""
         if not isinstance(context, QueryContext):
             raise TypeError('query execution requires a QueryContext')
+        _require_query_boundary(context)
         if _concept_space(context) is not self.space:
             raise ValueError('query context belongs to a different conceptual space')
         signature = self.signature_for(meaning)

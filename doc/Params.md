@@ -730,3 +730,11 @@ one root finish. Capacity reserves those transitions and rejects eviction of
 active or referenced records. This is an API contract, not a configuration
 switch or learned objective; normal-controller executor accounting remains
 open. See [ordinary thought history](ThoughtHistory.md).
+
+### Query phase state
+
+Query permission introduces no configured, learned, or checkpointed parameter.
+The model initializes transient host flags before compilation; a resolution
+temporarily identifies completed rows while sentence work disables execution.
+No semantic feature contains these administrative flags. See
+[Query phases](QueryPhases.md).

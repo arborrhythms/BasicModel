@@ -33,12 +33,15 @@ to MPS. See [Testing](doc/Testing.md#validation) for durable receipts and limits
   recorded in [Thought history](doc/ThoughtHistory.md). This is a foundation,
   not normal-controller or learned-utility completion.
 
-1. **Integrate query phases, then nested retention, then shared query work.**
-   The next candidate is sentence/query phase permission. Rebase it on the
-   landed ordinary-history owner; run its preserved reviewer probes red first.
-   After it lands, proceed in order to nested occurrence retention and shared
-   query-work accounting. The handoff preserves all three candidates and their
-   evidence.
+- **Sentence/query phase permission.** Checked execution now opens only for
+  completed owned rows at answer resolution, while sentence work and compiled
+  tracing are masked. The rebased reviewer probes were red first, then 23/23
+  and 280/280 affected cases passed; see [Query phases](doc/QueryPhases.md).
+
+1. **Integrate nested occurrence retention, then shared query work.** Rebase
+   nested retention on the landed history and phase owners; run its preserved
+   reviewer probes red first. Then integrate the shared query-work candidate
+   without treating its meter as the normal controller.
 2. **Finish selected linguistic meaning and the normal thought controller.**
    Preserve selected signed operands and native middle VP across all three
    writers; cover mode, polarity, paraphrase/converse and nested references.

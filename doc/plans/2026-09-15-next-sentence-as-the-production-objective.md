@@ -2201,7 +2201,7 @@ See [Query contracts](../QueryContracts.md) for source links and limitations.
 
 These APIs do not yet replace the normal raw-text legacy resolution path.
 Selected linguistic derivation capture through all observation writers,
-surface/sense agreement, per-row phase guards, causal answer construction,
+surface/sense agreement, causal answer construction,
 ordinary levelled history and shared budget, nested retention, live episode
 occurrence reads, anticipation isolation, residual policy credit, separate
 compose/generate catalogs and learned utility remain open. The two-truths spec
@@ -2229,3 +2229,27 @@ learned utility. The reviewer set covers replay, row/sibling isolation, bounded
 drains, retention, checkpoint restore, live query reads, and legacy credit
 boundaries. See [ordinary thought history](../ThoughtHistory.md) and
 [gradient flow](../GradientFlow.md).
+
+## 19. Sentence masks and completed-row query permission (September 18)
+
+`resolveAnswer()` now requires its owned tied reconstruction when that mode is
+enabled and opens checked query execution only for nonempty captured-program
+rows. Missing/padded rows cannot execute a query; held understandings keep
+their own readiness after later staging. Permission restores after success or
+failure, and nested resolution can narrow but not widen an outer set of rows.
+
+Input forward paths, supplied executors, input reconstruction and output
+realization mask checked query execution. Signature and shared-VP dispatch
+guard before occurrence reads or effects; legacy query entry points reject
+sentence-time use. Compiled tracing rejects a query directly while the host
+wrapper covers compiled numerical calls and eager islands. The 21-value forward
+contract, parameter set, loss set and gradient ownership are unchanged.
+
+The September 18 reviewer set passed 23/23, including real fullgraph forward
+and backward, and the broader affected selection passed 280/280 in bounded
+workers. See [Query phases](../QueryPhases.md) for receipts and limits.
+
+This is execution permission only. Normal selected linguistic meaning, the
+ordinary controller, nested retention, shared executor work, anticipation
+isolation, residual policy credit and learned utility remain open. The
+separately queued two-truths and forgetting work remains out of scope.

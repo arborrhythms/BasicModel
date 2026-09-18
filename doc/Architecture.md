@@ -1457,3 +1457,12 @@ The retired pre-2026-05-14 knobs (`<sentenceContextWindow>`,
 machinery (recent-centroid attraction + older-centroid repulsion).
 They are not parsed; configs that still set them are tolerated
 silently.
+
+### Checked query execution phases
+
+`resolveAnswer()` temporarily permits checked query execution only for the
+completed program rows owned by its `Understanding`. Input execution,
+reconstruction and output realization mask that permission; the checked
+registry validates the guard before operand reads. The permission is transient
+host state, so it adds no architectural tensor, parameter, memory owner or
+forward-result slot. See [Query phases](QueryPhases.md).

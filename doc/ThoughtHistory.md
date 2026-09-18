@@ -36,3 +36,9 @@ The reviewer probes first failed against the pre-installation state in
 passed 69/69 in `20260917-110047-33f23a`. These prove the storage, replay,
 credit and occurrence-read foundation only; they do not prove normal thought
 selection, learned utility, or end-to-end answer quality.
+
+## Sentence-runtime integration
+
+The completed-row query guard now constrains when a selected query may execute;
+it does not select an ordinary thought, change its level, replenish its work
+budget, or alter history replay/credit lifetime. See [Query phases](QueryPhases.md).

@@ -797,7 +797,10 @@ into the same canonical relation as `part`/`isPart`; `parts`/`wholes` retain
 open roles. Formation does not execute. A selected question dispatches from its
 middle VP and occupancy, requiring a checked declaration. No keyword matching
 is used in this API. The normal linguistic derivation adapter, sense selection,
-paraphrase realization and per-row phase guard remain to be integrated.
+and paraphrase realization remain to be integrated.
 [Formation](../bin/Queries.py#L431),
 [dispatch](../bin/Queries.py#L496),
-[full contract](QueryContracts.md).
+[full contract](QueryContracts.md). Per-row query permission is now enforced
+at the completed answer boundary; the normal linguistic derivation adapter,
+sense selection and paraphrase realization remain separate work. See
+[Query phases](QueryPhases.md).

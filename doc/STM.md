@@ -1119,3 +1119,11 @@ capacity retains active contexts and referenced occurrences. The structural
 sidecar persists detached copies and validates replay on restore. The normal
 linguistic controller and actual executor accounting remain open. See
 [ordinary thought history](ThoughtHistory.md).
+
+## Completed-row query permission
+
+Boundary readiness derives from the requested `Understanding`'s owned sentence
+programs, not mutable STM staging. Missing/padded rows cannot enable checked
+queries, and nested resolution can narrow but not widen row permission. A
+sentence path masks even a parent boundary until it returns. This is separate
+from ordinary controller work; see [Query phases](QueryPhases.md).

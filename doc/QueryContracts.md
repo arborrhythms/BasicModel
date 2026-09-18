@@ -219,3 +219,11 @@ row-local `thought` occurrence. The latter resolves only through the existing
 explicit credit boundary. Resolving it does not execute a query, alter a level,
 or promote a question or estimate into evidence. See [ordinary thought
 history](ThoughtHistory.md).
+
+## Model execution permission
+
+When a `BasicModel` supplies the phase guard, direct signature invocation and
+grammatical-VP dispatch require an open completed-row boundary before operand
+resolution or executor work. Sentence processing and compiled tracing reject
+query execution. Explicit standalone evidence readers retain their existing
+API. See [Query phases](QueryPhases.md).
