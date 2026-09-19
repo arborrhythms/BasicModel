@@ -634,7 +634,7 @@ class LevelledThoughtHistory:
                 values.append(value)
             rows.append(values)
         return {
-            "version": 2,
+            "version": 3,
             "namespace": self._thought_namespace,
             "next_id": self._thought_next_id,
             "batch": self.batch,
@@ -643,7 +643,7 @@ class LevelledThoughtHistory:
 
     def load_thought_extras(self, extras):
         """Validate every row before restoring history; rebuild context by replay."""
-        if not isinstance(extras, dict) or extras.get("version") not in (1, 2):
+        if not isinstance(extras, dict) or extras.get("version") not in (1, 2, 3):
             raise ValueError("unsupported thought history checkpoint")
         version = extras["version"]
         rows = extras.get("rows")

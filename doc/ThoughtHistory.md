@@ -25,9 +25,11 @@ example a set, code, subgoal, or `MeaningExpectation`) without treating its
 scalar summary as an equivalent result store. It is not a reader cache and
 does not retain a reader graph. Checkpoints contain detached copies and
 replay/validate every row atomically on restore; the history sidecar is version
-2 and accepts version-1 rows, which have no `result` field. New computations
-after restore can be live, but restoration never replenishes budget or
-pressure.
+3 and accepts version-1 rows, which have no `result` field, and version-2
+typed results. Version 3 tags nested `ConceptualMeaning` evidence explicitly,
+so a retained lookup record restores as a complete detached meaning rather
+than an untyped mapping. New computations after restore can be live, but
+restoration never replenishes budget or pressure.
 
 The ordinary controller now owns the selected direct-relation boundary path.
 It is deliberately separate from the legacy `LTMSlot` parity loop: a completed
@@ -75,6 +77,14 @@ checkpoint, and v1-compatibility cases passed 1/1 in
 controller/history/query selection passed 134/134 in
 `20260918-180026-3af0eb`. This is a typed-boundary and replay result only, not
 evidence of learned controller utility.
+
+The nested-result reviewer probe then failed because v2 serialized a complete
+meaning as an ordinary mapping (`20260918-191638-1dc00d`). The v3 tag restores
+the typed detached meaning while accepting v1/v2 sidecars; the focused repair
+passed 1/1 in `20260918-191815-72d0c3` and the full history-boundary file
+passed 14/14 in `20260918-191957-9fefa6`. The affected
+controller/history/query selection then passed 136/136 in
+`20260918-192121-5f6dc4`.
 
 ## Sentence-runtime integration
 

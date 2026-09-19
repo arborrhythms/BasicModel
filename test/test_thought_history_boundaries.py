@@ -89,6 +89,49 @@ def test_integrated_checkpoint_restores_a_typed_checked_result(tmp_path):
     assert not replayed.result.request.roles.requires_grad
 
 
+def test_typed_result_checkpoint_rehydrates_nested_meaning_evidence(tmp_path):
+    """A retained set result keeps complete typed record meaning on restore."""
+    memory = WhatInteractionMemory(batch=1, capacity=32, detach_mode="episode")
+    request = _meaning()
+    nested_roles = torch.randn(3, 8, requires_grad=True)
+    nested = ConceptualMeaning(
+        nested_roles, torch.tensor([True, True, False]),
+        mode="assertive", polarity=False,
+        bindings={"source": "catalogue"}, scope={"document": "d1"})
+    result = ThoughtResult(
+        semantic_id="lookup", domain="ltm-lookup", result_kind="set",
+        evidence_kind="retrieval", request=request.detached(),
+        evidence=MappingProxyType({
+            "value": ({"meaning": nested, "reference": ("ltm", "occ-1")},),
+            "incomplete": (),
+        }))
+    memory.begin_thought_episode(request, work_budget=4)
+    memory.commit_thought(
+        request, operation="lookup", result=result,
+        evidence_kind="retrieval")
+    memory.finish_thought(
+        request, result=result, evidence_kind="retrieval")
+    memory.end_what_episode()
+    assert memory.thought_extras()["version"] == 3
+
+    source = _model(memory)
+    path = tmp_path / "nested-result.ckpt"
+    source.save_weights(path)
+    restored_memory = WhatInteractionMemory(
+        batch=1, capacity=32, detach_mode="episode")
+    target = _model(restored_memory)
+    assert target.load_weights(path)
+    replayed = next(
+        record for record in restored_memory.thought_history()
+        if record.kind == "thought" and record.operation == "lookup")
+    restored = replayed.result.value[0]["meaning"]
+    assert isinstance(restored, ConceptualMeaning)
+    assert restored.mode == "assertive" and restored.polarity is False
+    assert restored.bindings == nested.bindings and restored.scope == nested.scope
+    assert not restored.roles.requires_grad
+    torch.testing.assert_close(restored.roles, nested.roles.detach())
+
+
 def test_v1_thought_history_checkpoint_remains_loadable_without_a_result_field():
     """Older history has no typed result and restores as the same history."""
     source = _memory()
@@ -102,6 +145,40 @@ def test_v1_thought_history_checkpoint_remains_loadable_without_a_result_field()
     target.load_thought_extras(legacy)
     assert target.thought_state().level == source.thought_state().level
     assert all(record.result is None for record in target.thought_history())
+
+
+def test_v2_thought_history_checkpoint_remains_loadable_with_a_typed_result():
+    """The v3 nested-evidence tag does not invalidate ordinary v2 results."""
+    memory = WhatInteractionMemory(batch=1, capacity=16, detach_mode="episode")
+    request = _meaning()
+    result = ThoughtResult(
+        semantic_id="part", domain="conceptual-taxonomy",
+        result_kind="truth", evidence_kind="taxonomy",
+        request=request.detached(), evidence=MappingProxyType({
+            "support_true": 1.0,
+            "support_false": 0.0,
+            "incomplete": (),
+        }))
+    memory.begin_thought_episode(request, work_budget=4)
+    memory.commit_thought(
+        request, operation="part", result=result,
+        support_true=1.0, evidence_kind="taxonomy")
+    memory.finish_thought(
+        request, result=result, support_true=1.0,
+        evidence_kind="taxonomy")
+    memory.end_what_episode()
+    legacy = memory.thought_extras()
+    assert legacy["version"] == 3
+    legacy["version"] = 2
+
+    restored = WhatInteractionMemory(batch=1, capacity=16, detach_mode="episode")
+    restored.load_thought_extras(legacy)
+    replayed = next(
+        record for record in restored.thought_history()
+        if record.kind == "thought" and record.operation == "part")
+    assert replayed.result is not None
+    assert replayed.result.semantic_id == "part"
+    assert replayed.result.evidence["support_true"] == 1.0
 
 
 def test_restored_active_episode_keeps_new_computations_live_until_optimizer_boundary():

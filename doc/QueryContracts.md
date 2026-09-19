@@ -128,8 +128,10 @@ controller forms candidates without reader calls, selects one catalog action or
 snapshot in the existing thought-history owner. Only executed `thought`,
 causal `return`, and final `finish` transitions can carry that snapshot;
 summary support remains controller evidence, not a substitute for a typed
-result. Nested `what` reuses the same episode, level discipline, continuation,
-and meter.
+result. The v3 history sidecar tags a nested `ConceptualMeaning` result value
+so replay preserves its type, metadata, and hard boundary; v1/v2 sidecars
+remain readable. Nested `what` reuses the same episode, level discipline,
+continuation, and meter.
 
 The one `QueryWorkBudget` covers VP/reference/payload preparation, description
 resolution, fact and taxonomy reads, codebook scans, prediction context, and

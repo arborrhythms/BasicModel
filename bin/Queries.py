@@ -257,6 +257,10 @@ class ThoughtResult:
         evidence = value['evidence']
         if not isinstance(evidence, (dict, MappingProxyType)):
             raise ValueError('invalid thought result checkpoint evidence')
+        try:
+            evidence = _restore_checkpoint_boundary_value(evidence)
+        except (TypeError, ValueError) as error:
+            raise ValueError('invalid thought result checkpoint evidence') from error
         return cls(
             semantic_id=value['semantic_id'], domain=value['domain'],
             result_kind=value['result_kind'], evidence_kind=value['evidence_kind'],
@@ -536,6 +540,9 @@ def _freeze_boundary_value(value):
     return value
 
 
+_CHECKPOINT_CONCEPTUAL_MEANING = '__basicmodel_checkpoint_conceptual_meaning__'
+
+
 def _checkpoint_boundary_value(value):
     """Detach boundary evidence into portable ordinary containers.
 
@@ -549,9 +556,10 @@ def _checkpoint_boundary_value(value):
     if isinstance(value, ConceptualMeaning):
         meaning = value.detached()
         return {
+            _CHECKPOINT_CONCEPTUAL_MEANING: 1,
             'roles': meaning.roles.detach().to('cpu').clone(),
             'role_mask': meaning.role_mask.detach().to('cpu').clone(),
-            **_checkpoint_boundary_value(meaning.metadata()),
+            'metadata': _checkpoint_boundary_value(meaning.metadata()),
         }
     if isinstance(value, (dict, MappingProxyType)):
         return {
@@ -565,6 +573,48 @@ def _checkpoint_boundary_value(value):
     if is_dataclass(value) and not isinstance(value, type):
         return replace(value, **{
             field.name: _checkpoint_boundary_value(getattr(value, field.name))
+            for field in fields(value) if field.init
+        })
+    return value
+
+
+def _restore_checkpoint_boundary_value(value):
+    """Restore typed values emitted by :func:`_checkpoint_boundary_value`.
+
+    A nested complete meaning is semantic evidence, not an ordinary mapping
+    whose field names happen to resemble a meaning.  The explicit tag avoids
+    reinterpreting arbitrary executor metadata while preserving the existing
+    detached, immutable result boundary for every other container.
+    """
+    if isinstance(value, (dict, MappingProxyType)):
+        tagged = value.get(_CHECKPOINT_CONCEPTUAL_MEANING)
+        if tagged is not None:
+            expected = {
+                _CHECKPOINT_CONCEPTUAL_MEANING,
+                'roles', 'role_mask', 'metadata',
+            }
+            if tagged != 1 or set(value) != expected:
+                raise ValueError('invalid nested conceptual meaning checkpoint')
+            metadata = _restore_checkpoint_boundary_value(value['metadata'])
+            if not isinstance(metadata, dict):
+                raise ValueError('invalid nested conceptual meaning metadata')
+            try:
+                return ConceptualMeaning(
+                    value['roles'], value['role_mask'], **metadata).detached()
+            except (TypeError, ValueError) as error:
+                raise ValueError(
+                    'invalid nested conceptual meaning checkpoint') from error
+        return {
+            key: _restore_checkpoint_boundary_value(item)
+            for key, item in value.items()
+        }
+    if isinstance(value, list):
+        return [_restore_checkpoint_boundary_value(item) for item in value]
+    if isinstance(value, tuple):
+        return tuple(_restore_checkpoint_boundary_value(item) for item in value)
+    if is_dataclass(value) and not isinstance(value, type):
+        return replace(value, **{
+            field.name: _restore_checkpoint_boundary_value(getattr(value, field.name))
             for field in fields(value) if field.init
         })
     return value

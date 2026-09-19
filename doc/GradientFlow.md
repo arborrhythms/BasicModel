@@ -286,7 +286,9 @@ In contrast, an actual checked `ThoughtResult` saved on an executed, returned,
 or finished record is detached immediately, including nested dataclass evidence
 such as `MeaningExpectation`: its request, tensors and evidence cannot send a
 reader, predictor, or output gradient through ordinary history or its
-checkpoint sidecar. Residual attribution and learned utility remain open. See
+checkpoint sidecar. A nested `ConceptualMeaning` result payload restores as
+that same detached typed meaning, never as a live reader value or an untyped
+role mapping. Residual attribution and learned utility remain open. See
 [ordinary thought history](ThoughtHistory.md).
 
 ## Thought phase permission
