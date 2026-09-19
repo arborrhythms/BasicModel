@@ -294,6 +294,51 @@ took 170.806 seconds, and peak aggregate footprint was 2.36 GiB. This proves
 routing and bounded execution, not a controlled MPS speedup or a held-out
 utility result.
 
+### Explicit `<thought>` catalogue (September 19)
+
+The corrected catalogue began with red bounded reviewer probes in
+`20260919-024405-84a3aa`: a `<thought>` selection was ignored, structural-only
+forms leaked into the registry, and a conflicting role declaration was
+accepted. A selected thought-only form then correctly exposed the missing
+structural-family assumption in `20260919-025908-3f603a`, and an exact
+`isPart` declaration exposed its missing checked descriptor in
+`20260919-030338-bc3909`. The repaired loader retains thought declarations
+separately, allows selected thought-only forms, joins matching structural
+faces only after role validation, and fails closed when no executor exists.
+
+The final affected selections passed **114/114** in
+`output/tests/20260919-030521-44dd7c` and the broader grammar/controller
+selection passed **311/311** in
+`output/tests/20260919-030535-01e73f`. They cover explicit membership,
+structural omission, thought-only forms, exact `isPart`, descriptor failure,
+legacy `<Queries>` rejection, phase gates, query VP boundaries and lifecycle
+contracts.
+
+The first current default receipt,
+`output/tests/20260919-030555-026513`, collected 4,655 nodes and completed
+1,727 before one warm 194-case worker jumped to 12.96 GiB and was killed. Its
+aggregate peak was only 13.97 GiB, below the 28 GiB suite reservation; this was
+worker accumulation, not an aggregate-cap breach or a test assertion failure.
+Per the explicit no-rerun instruction, the remaining node IDs were recovered
+only once in fresh 16/32-case batches. Green receipts covered 1/1
+(`20260919-030947-4e7358`), 700/700 (`20260919-031100-5f6a87`), 225/225
+(`20260919-031141-b9d4f0`), 1,000/1,000
+(`20260919-031304-62fdab`), 2/2 (`20260919-031727-2bd475`), and 46/46
+(`20260919-032312-ae21f2`). A transient source-snapshot invalidation in
+`20260919-031556-440285` occurred after 751 otherwise passing nodes; its
+current 608-file source manifest again equals the frozen manifest, but it is
+not presented as a green receipt. The stateful
+`test_what_thinking_episode.py` module was consequently checked once in its
+native collection order (**10/10**, `20260919-032221-078c5e`) after an
+alphabetically reconstructed shard demonstrated that its module fixture cannot
+be meaningfully split by node ID.
+
+Together these receipts exercise every one of the 4,655 collected default
+nodes on the unchanged source, with the corrected thought catalogue tests
+green. This is deliberately composite coverage, not a single fresh green
+default receipt: future source changes require their own affected tests and a
+new frozen full receipt.
+
 ### Query-phase evidence (September 18)
 
 The rebased phase reviewer probes first failed in

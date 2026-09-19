@@ -156,26 +156,51 @@ a fresh single-snapshot all-green receipt. The exact receipts are in
   estimates; the red reviewer and affected receipts are recorded in
   [Testing](doc/Testing.md#expectation-retention-evidence-september-18).
 
-0. **Complete — thought operations as compose rules** — before the remaining
-   controller and before the two-truths and forgetting specs below, so that
-   none of them is built on the `<Queries>` catalogue and then redone
-   ([doc/specs/2026-09-18-thought-operations-in-compose.md](doc/specs/2026-09-18-thought-operations-in-compose.md),
-   Alec 2026-09-18). One grammar: a compose or generate rule has a structural face and,
-   when an executor of the same name is registered, an executable face the
-   thought controller runs at a boundary. `<Queries>` and `query="false"` are
-   rejected in production; historical `is` aliases are quarantined rather than
-   authoritative. Arity, roles, open-role variants and the converse permutation
-   derive from the rule; the executor table keeps only
-   domain, kinds, scopes, evidence kind and the executor. The controller's
-   action set is the compose operators with executors plus conclude; `arma`
-   is its synthesis face and emits the `[3, D]` end state. Any controller
-   work already in progress under item 1 aligns to this catalogue rather
-   than to `<Queries>`. `true` remains reserved for the separately deferred
-   two-truths sealed-clause representation. Exit evidence: the adjusted
-   spec §9 catalogue/context/phase tests and the no-rerun default coverage
-   record above; documentation is in spec §10.
+0. **In progress — model-owned `<thought>` operator catalogue** — the
+   grammar-loader/registry/production-grammar foundation is complete; the
+   remaining controller work stays before the two-truths and forgetting specs
+   below
+   ([the corrected contract](doc/specs/2026-09-18-thought-operations-in-compose.md),
+   [implementation plan](doc/plans/2026-09-18-thought-operator-unification.md),
+   Alec 2026-09-19). The grammar has three peer sections in model-file order:
+   `<compose>`, `<thought>`, `<generate>`. They share canonical operator
+   identities and role contracts, but each face has its own call signature and
+   capability context. An operator such as `isPart`/the model's canonical
+   parthood spelling may appear in both compose and thought and must agree
+   there; compose/generate receive the owned stream, conceptual-space view and
+   primed-symbol snapshot, while thought also receives descriptor-scoped LTM
+   and taxonomy readers plus the shared work meter.
+
+   `<thought>` is the per-model allow-list for post-composition execution. A
+   structural operator omitted there (for example negation in a model that may
+   speak or understand it but must not reason with it) is unavailable to the
+   thought controller. A `<thought>` declaration may stand alone; whenever
+   the same operator also has a compose/generate face, their role contracts
+   must agree. No structural declaration implicitly grants thought permission.
+   The old capitalized `<Queries>` spelling remains a
+   configuration error, while `query="false"` remains retired. The current
+   compose-derived catalogue is therefore an incomplete predecessor, not item
+   0 completion. `true` remains reserved for the separately deferred
+   two-truths sealed-clause representation.
+
+   The loader now retains `.thought` declarations separately, derives
+   `Grammar.thought_operations` only from their declaration order, supports
+   both matching structural faces and thought-only forms, and rejects a
+   selected form with no checked executor at registry installation. Production
+   grammars place their explicit allow-lists between `<compose>` and
+   `<generate>`; `part` and exact-spelling `isPart` remain distinct model
+   identities even though their current taxonomy executor is shared. Red
+   selection/role/thought-only/`isPart` probes preceded the green affected
+   receipts and the completed default-node coverage recorded in
+   [Testing](doc/Testing.md#explicit-thought-catalogue-september-19).
+
+   The normal controller still has to consume this catalogue with its typed
+   candidate context, shared work meter, lifecycle and policy credit; that is
+   item 1, not implicit completion of item 0. `arma` remains a typed synthesis
+   result emitting `[3, D]`. Do not begin the separately queued two-truths or
+   forgetting implementations first.
 1. **Finish selected linguistic meaning and the normal thought controller**
-   over the item 0 catalogue.
+   over item 0's explicit `<thought>` catalogue.
    Preserve selected signed operands and native middle VP across all three
    writers; cover mode, polarity, paraphrase/converse and nested references.
    Integrate full-width mandatory roles, actual shared work costs, causal child

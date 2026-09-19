@@ -152,18 +152,21 @@ def test_structure_only_compose_face_cannot_execute():
     grammar.configure({'Symbolic': {'compose': {
         'rule': ['union_O1 = union.forward(union_I1, union_I2)']}}})
     registry = GrammaticalThoughtRegistry.install(cs, grammar)
-    with pytest.raises(ValueError, match='no executor|structural'):
+    with pytest.raises(ValueError, match='not registered|structural|thought'):
         registry.form('union', a, b)
 
 
 def test_converse_only_interface_still_dispatches_canonical_roles():
     cs, _, _, a, b, context = _world()
     grammar = Grammar()
-    # A structural spelling supplies the grammar-owned converse metadata;
-    # there is no separately declared query interface.
+    # The structural spelling supplies the converse metadata; the explicit
+    # thought declaration selects that one form for boundary use.
     grammar.configure({'Symbolic': {'compose': {'rule': [
         {'_': 'whole_O1 = whole.forward(whole_I1, whole_I2)',
-         'family': 'part', 'permutation': 'I2,I1'}]}}})
+         'family': 'part', 'permutation': 'I2,I1'}]},
+        'thought': {'rule': [
+            {'_': 'whole_O1 = whole.thought(whole_I1, whole_I2)',
+             'family': 'part', 'permutation': 'I2,I1'}]}}})
     registry = GrammaticalThoughtRegistry.install(cs, grammar)
     question = registry.form('whole', b, a)
     assert question.role_refs[0] == a and question.role_refs[2] == b

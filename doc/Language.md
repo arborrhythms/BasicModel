@@ -798,18 +798,20 @@ integrated specification](plans/2026-09-15-next-sentence-as-the-production-objec
 
 ## Common grammar-face signatures and shared VP identities
 
-`Grammar.configure` rejects `<Queries>` and `query` attributes before changing
-existing rules. It derives one immutable catalogue from role-labelled
-`<compose>`/`<generate>` faces. Static anchor strings remain whole when the
-loader expands order alternatives. Complete and production ladder grammars
-include structural `what`, which marks a completed question interrogative.
+`Grammar.configure` rejects the legacy `<Queries>` spelling and `query`
+attributes before changing existing rules. It derives structural contracts from
+role-labelled `<compose>`/`<generate>` faces, then builds its immutable
+catalogue only from the model's explicit `<thought>` declarations. Static
+anchor strings remain whole when the loader expands order alternatives.
+Complete and production ladder grammars include structural `what`, which marks
+a completed question interrogative.
 [Declarations](../bin/Language.py#L1137).
 
 The explicit shared-VP adapter forms `[NP1, VP, NP2]` with native references,
 mode, polarity, scope and bindings. `whole` reverses surface operands into the
 same canonical relation as `part`; open `I1` returns parts and open `I2` returns
 wholes. Formation does not execute. A selected question dispatches from its
-middle VP and occupancy through the grammar-derived descriptor. No keyword
+middle VP and occupancy through the grammar-selected descriptor. No keyword
 matching is used in this API.
 
 `LanguageSpace.program_meaning()` is the current direct linguistic derivation

@@ -1,6 +1,8 @@
 # Thought-operator contracts
 
-Status: production grammar contract, September 18.
+Status: explicit `<thought>` grammar contract; loader/registry catalogue
+foundation implemented September 19. The normal controller's remaining
+lifecycle and learned-policy integration is still unfinished.
 
 Thought operators are the checked, boundary-executed faces of the one sentence
 grammar. They were formerly called checked queries. This document describes the
@@ -9,28 +11,40 @@ their removal receives review.
 
 ## One source of operator identity
 
-`Grammar.configure` rejects a `<Queries>` block at every grammar nesting level
-and every rule-level `query` attribute. It derives the immutable, declaration-ordered
-`Grammar.thought_operations` tuple from role-labelled `<compose>` and
-`<generate>` faces. Each `ThoughtOperationSpec` supplies the canonical semantic
-ID, `I1 … In` operand roles, `O1` result role, structural forms, role
-permutation, and forward/reverse rule IDs. The executor table supplies only
+`Grammar.configure` rejects the legacy capitalized `<Queries>` spelling at
+every grammar nesting level and every rule-level `query` attribute. It parses
+the model's lower-case `<thought>` declarations and builds the immutable,
+declaration-ordered `Grammar.thought_operations` tuple from **only those
+selected forms**, joining any role-labelled `<compose>`/`<generate>` faces
+that share their identity.
+Each `ThoughtOperationSpec` supplies canonical semantic ID, `I1 … In` operand
+roles, `O1` result role, selected structural forms, role permutation, and
+any matching forward/reverse rule IDs (empty for a thought-only face). The
+executor table supplies only
 non-grammatical capability facts: domain, argument kinds, result kind,
 read/write scopes, evidence kind, and the callable.
 
-An executor with no structural family is unavailable. A structural family with
-no executor stays pure grammar. The catalogue owns no embedding table, learned
-parameter, semantic store, or checkpoint schema.
+A structural family omitted from `<thought>` stays pure grammar even if an
+executor exists. An executor with no selected thought form is unavailable. A
+selected form without a checked executor fails registry installation. The
+catalogue owns no embedding table, learned parameter, semantic store, or
+checkpoint schema.
 
 | Canonical thought operator | Bound input kind | Checked result |
 | --- | --- | --- |
 | `exist` | complete description | LTM fact evidence |
 | `part` | typed conceptual references | taxonomy evidence, or an open-role set |
+| `isPart` | typed conceptual references | taxonomy evidence under that exact model spelling |
 | `equal` | full-width concepts | identity evidence |
 | `lookup` | full-width concepts | retained LTM records |
 | `quantize` | full-width concept | existing conceptual-code result |
 | `arma` | complete description | `[3, D]` expectation end state |
 | `what` | complete interrogative description | controller-scheduled subgoal |
+
+`part` and `isPart` are exact model-level identities with the same current
+taxonomy executor implementation; neither is a hidden alias for the other.
+A model ordinarily declares one spelling in whichever of compose, thought,
+and generate it needs.
 
 `true` is reserved for the deferred two-truths sealed-clause representation;
 it has no production executor until that representation exists.

@@ -259,8 +259,10 @@ contract above. [Taxonomy queries](TaxonomyQueries.md) documents the limits.
 
 ## Thought and grammatical payload boundaries
 
-The checked thought registry adds no learned parameter or trained loss. Pure VP/operand
-formation keeps live structural operands on their configured compose/generate
+The checked thought registry adds no learned parameter or trained loss. The
+model's `<thought>` allow-list is detached configuration metadata: choosing
+membership there neither supplies a gradient nor lets an unselected structural
+face execute. Pure VP/operand formation keeps live structural operands on their configured compose/generate
 gradient paths; concept and occurrence IDs remain addresses, never numeric
 semantic features. Thought contexts, primed snapshots, native/taxonomy/LTM
 reader data, and `ThoughtResult` are detached hard-boundary data. Hard

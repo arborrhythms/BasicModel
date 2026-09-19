@@ -153,6 +153,15 @@
       <rule>morphology_O1 = morphology.forward(morphology_I1)</rule>
     </compose>
 
+    <!-- Explicit boundary allow-list for the relation/description faces;
+         negation and ordinary folds remain structural-only. -->
+    <thought>
+      <rule>part_O1 = part.thought(part_I1, part_I2)</rule>
+      <rule family="part" permutation="I2,I1">whole_O1 = whole.thought(whole_I1, whole_I2)</rule>
+      <rule>equal_O1 = equal.thought(equal_I1, equal_I2)</rule>
+      <rule>exist_O1 = exist.thought(exist_I1)</rule>
+    </thought>
+
     <generate>
       <!-- Controlled cost fixture: the existing sum expansion and implicit
            stop let the sampled policy emit varying lengths. No input trace

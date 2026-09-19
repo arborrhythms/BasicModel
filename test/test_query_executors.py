@@ -44,6 +44,10 @@ def test_part_and_converse_executor_read_native_taxonomy_without_writes():
         'part_O1 = part.forward(part_I1, part_I2)',
         {'_': 'whole_O1 = whole.forward(whole_I1, whole_I2)',
          'family': 'part', 'permutation': 'I2,I1'},
+    ]}, 'thought': {'rule': [
+        'part_O1 = part.thought(part_I1, part_I2)',
+        {'_': 'whole_O1 = whole.thought(whole_I1, whole_I2)',
+         'family': 'part', 'permutation': 'I2,I1'},
     ]}})
     registry = GrammaticalThoughtRegistry.install(cs, grammar)
     result = registry.execute(registry.form('part', ('sym', a), ('sym', b)), context)

@@ -9,12 +9,16 @@ from Language import Grammar
 from test_cs_symbol_table import _cs
 
 
-def _family(*, compose=True, generate=True, reverse_inputs=("I1", "I2")):
-    """Return one minimal role-labelled structural family without <Queries>."""
+def _family(*, compose=True, generate=True, thought=True,
+            reverse_inputs=("I1", "I2")):
+    """Return one minimal structural family, optionally selected for thought."""
     config = {}
     if compose:
         config["compose"] = {
             "rule": ["part_O1 = part.forward(part_I1, part_I2)"]}
+    if thought:
+        config["thought"] = {
+            "rule": ["part_O1 = part.thought(part_I1, part_I2)"]}
     if generate:
         lhs = ", ".join("part_" + role for role in reverse_inputs)
         config["generate"] = {
@@ -64,6 +68,106 @@ def test_paired_structural_faces_with_inconsistent_roles_fail_at_configuration()
         grammar.configure(_family(reverse_inputs=("I1",)))
 
 
+def test_thought_section_selects_the_boundary_catalogue_not_all_structural_rules():
+    """A model may compose two operators while authorizing only one to think."""
+    grammar = Grammar()
+    grammar.configure({
+        "compose": {"rule": [
+            "part_O1 = part.forward(part_I1, part_I2)",
+            "equal_O1 = equal.forward(equal_I1, equal_I2)",
+        ]},
+        "thought": {"rule": [
+            "equal_O1 = equal.thought(equal_I1, equal_I2)",
+        ]},
+        "generate": {"rule": [
+            "part_I1, part_I2 = part.reverse(part_O1)",
+            "equal_I1, equal_I2 = equal.reverse(equal_O1)",
+        ]},
+    })
+
+    assert tuple(operation.semantic_id for operation in grammar.thought_operations) == (
+        "equal",)
+
+
+def test_structural_operator_without_thought_declaration_is_not_a_boundary_action():
+    """Speech/understanding availability must not imply thought permission."""
+    grammar = Grammar()
+    grammar.configure(_family(thought=False))
+
+    assert grammar.thought_operations == ()
+
+
+def test_thought_role_contract_must_match_its_structural_operator():
+    grammar = Grammar()
+    with pytest.raises(ValueError, match="part|role|contract"):
+        grammar.configure({
+            "compose": {"rule": [
+                "part_O1 = part.forward(part_I1, part_I2)",
+            ]},
+            "thought": {"rule": [
+                "part_O1 = part.thought(part_I2, part_I1)",
+            ]},
+        })
+
+
+def test_thought_only_operator_is_available_without_speech_or_understanding_faces():
+    """Each grammar section has its own allowed operators and context."""
+    from Queries import GrammaticalThoughtRegistry
+
+    grammar = Grammar()
+    grammar.configure({
+        "thought": {"rule": [
+            "part_O1 = part.thought(part_I1, part_I2)",
+        ]},
+    })
+
+    assert tuple(item.semantic_id for item in grammar.thought_operations) == (
+        "part",)
+    operation = grammar.thought_operations[0]
+    assert operation.forward_rule_ids == operation.reverse_rule_ids == ()
+    assert operation.forms[0].forward_rule_ids == operation.forms[0].reverse_rule_ids == ()
+    registry = GrammaticalThoughtRegistry.install(_cs(), grammar)
+    assert registry.executable_operation_ids == ("part",)
+
+
+def test_ispart_can_have_structural_and_thought_faces_under_one_exact_name():
+    """The model may use `isPart` in compose and thought without aliases."""
+    from Queries import GrammaticalThoughtRegistry
+
+    grammar = Grammar()
+    grammar.configure({
+        "compose": {"rule": [
+            "isPart_O1 = isPart.forward(isPart_I1, isPart_I2)",
+        ]},
+        "thought": {"rule": [
+            "isPart_O1 = isPart.thought(isPart_I1, isPart_I2)",
+        ]},
+    })
+
+    assert tuple(item.semantic_id for item in grammar.thought_operations) == (
+        "isPart",)
+    registry = GrammaticalThoughtRegistry.install(_cs(), grammar)
+    assert registry.executable_operation_ids == ("isPart",)
+
+
+def test_thought_selection_requires_a_checked_executor_at_registry_install():
+    """A model cannot turn a structural-only fold into a thought action."""
+    from Queries import GrammaticalThoughtRegistry
+
+    grammar = Grammar()
+    grammar.configure({
+        "compose": {"rule": [
+            "union_O1 = union.forward(union_I1, union_I2)",
+        ]},
+        "thought": {"rule": [
+            "union_O1 = union.thought(union_I1, union_I2)",
+        ]},
+    })
+
+    with pytest.raises(ValueError, match="union|executor|thought"):
+        GrammaticalThoughtRegistry.install(_cs(), grammar)
+
+
 @pytest.mark.parametrize(
     "config",
     [
@@ -78,8 +182,8 @@ def test_queries_block_is_not_a_second_thought_catalogue(config):
         grammar.configure(config)
 
 
-def test_canonical_thought_executor_joins_only_a_declared_structural_family():
-    """Aliases and table-only tools cannot enter the boundary action set."""
+def test_canonical_thought_executor_joins_only_a_declared_thought_form():
+    """Table entries still require an exact model thought declaration."""
     from Queries import GrammaticalThoughtRegistry, THOUGHT_EXECUTORS
 
     grammar = Grammar()
@@ -89,7 +193,7 @@ def test_canonical_thought_executor_joins_only_a_declared_structural_family():
     assert registry.executable_operation_ids == ("part",)
     assert registry.operation_spec("part").semantic_id == "part"
     assert "part" in THOUGHT_EXECUTORS
-    assert "isPart" not in THOUGHT_EXECUTORS
+    assert THOUGHT_EXECUTORS["isPart"].semantic_id == "isPart"
     with pytest.raises(ValueError, match="not registered|structural"):
         registry.operation_spec("equal")
 
@@ -107,6 +211,9 @@ def test_tiny_concept_inventory_keeps_thought_families_structural_not_partial():
     grammar.configure({"compose": {"rule": [
         "part_O1 = part.forward(part_I1, part_I2)",
         "equal_O1 = equal.forward(equal_I1, equal_I2)",
+    ]}, "thought": {"rule": [
+        "part_O1 = part.thought(part_I1, part_I2)",
+        "equal_O1 = equal.thought(equal_I1, equal_I2)",
     ]}})
 
     registry = GrammaticalThoughtRegistry.install(space, grammar)
@@ -184,6 +291,9 @@ def test_catalog_forms_unparsed_executable_candidates_without_a_reader_call():
     grammar.configure({"compose": {"rule": [
         "part_O1 = part.forward(part_I1, part_I2)",
         "equal_O1 = equal.forward(equal_I1, equal_I2)",
+    ]}, "thought": {"rule": [
+        "part_O1 = part.thought(part_I1, part_I2)",
+        "equal_O1 = equal.thought(equal_I1, equal_I2)",
     ]}})
     registry = GrammaticalThoughtRegistry.install(space, grammar)
     part, whole = ("sym", space.new_concept()), ("sym", space.new_concept())
@@ -288,8 +398,12 @@ def test_thought_boundary_detaches_executor_operands_and_recorded_request():
 
     space = _cs()
     grammar = Grammar()
-    grammar.configure({"compose": {"rule": [
-        "equal_O1 = equal.forward(equal_I1, equal_I2)"]}})
+    grammar.configure({
+        "compose": {"rule": [
+            "equal_O1 = equal.forward(equal_I1, equal_I2)"]},
+        "thought": {"rule": [
+            "equal_O1 = equal.thought(equal_I1, equal_I2)"]},
+    })
     registry = GrammaticalThoughtRegistry.install(space, grammar)
     request = registry.form("equal", value, value)
     result = registry.execute(request, ThoughtGrammarContext(
@@ -780,7 +894,9 @@ def test_description_thought_preparation_uses_only_its_declared_ltm_view():
 
     grammar = Grammar()
     grammar.configure({
-        "compose": {"rule": ["exist_O1 = exist.forward(exist_I1)"]}})
+        "compose": {"rule": ["exist_O1 = exist.forward(exist_I1)"]},
+        "thought": {"rule": ["exist_O1 = exist.thought(exist_I1)"]},
+    })
     space = _cs()
     registry = GrammaticalThoughtRegistry.install(space, grammar)
     description = ConceptualMeaning(
@@ -829,6 +945,11 @@ def test_grammar_declares_whole_as_one_part_family_with_a_role_permutation():
         "compose": {"rule": [
             "part_O1 = part.forward(part_I1, part_I2)",
             {"_": "whole_O1 = whole.forward(whole_I1, whole_I2)",
+             "family": "part", "permutation": "I2,I1"},
+        ]},
+        "thought": {"rule": [
+            "part_O1 = part.thought(part_I1, part_I2)",
+            {"_": "whole_O1 = whole.thought(whole_I1, whole_I2)",
              "family": "part", "permutation": "I2,I1"},
         ]},
         "generate": {"rule": [
@@ -897,7 +1018,9 @@ def test_normal_boundary_execution_uses_the_thought_registry_and_common_context(
 
     grammar = Grammar()
     grammar.configure({
-        "compose": {"rule": ["part_O1 = part.forward(part_I1, part_I2)"]}})
+        "compose": {"rule": ["part_O1 = part.forward(part_I1, part_I2)"]},
+        "thought": {"rule": ["part_O1 = part.thought(part_I1, part_I2)"]},
+    })
     space = _cs()
     registry = GrammaticalThoughtRegistry.install(space, grammar)
     part, whole = (("sym", space.new_concept()), ("sym", space.new_concept()))
@@ -938,6 +1061,12 @@ def test_completed_structural_whole_and_what_program_forms_one_canonical_request
             {"_": "whole_O1 = whole.forward(whole_I1, whole_I2)",
              "family": "part", "permutation": "I2,I1"},
             "what_O1 = what.forward(what_I1)",
+        ]},
+        "thought": {"rule": [
+            "part_O1 = part.thought(part_I1, part_I2)",
+            {"_": "whole_O1 = whole.thought(whole_I1, whole_I2)",
+             "family": "part", "permutation": "I2,I1"},
+            "what_O1 = what.thought(what_I1)",
         ]},
     })
     space = _cs()

@@ -44,6 +44,11 @@
       <rule>equal_O1 = equal.forward(equal_I1, equal_I2)</rule>
     </compose>
 
+    <thought>
+      <rule>part_O1 = part.thought(part_I1, part_I2)</rule>
+      <rule>equal_O1 = equal.thought(equal_I1, equal_I2)</rule>
+    </thought>
+
     <generate>
       <rule>union_I1, union_I2 = union.reverse(union_O1)</rule>
       <rule>intersection_I1, intersection_I2 = intersection.reverse(intersection_O1)</rule>

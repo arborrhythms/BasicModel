@@ -810,12 +810,14 @@ class Grammar:
 
     @dataclass(frozen=True)
     class ThoughtOperationSpec:
-        """One immutable role-labelled structural operation family.
+        """One immutable role-labelled operation selected by `<thought>`.
 
         This is configuration metadata only.  It deliberately carries no
         executor, native concept, learned parameter, memory owner, or mutable
         registry.  The boundary registry joins a checked thought descriptor by
-        ``semantic_id`` after grammar configuration.
+        ``semantic_id`` after grammar configuration. Matching structural
+        faces constrain the contract, while the explicit model `<thought>`
+        list supplies boundary membership and may stand alone.
         """
         semantic_id: str
         operand_roles: tuple
@@ -889,9 +891,10 @@ class Grammar:
         self.rules = []
         self.rules_upward = []
         self.rules_downward = []
-        # The single structural source of thought-action identity.  A tuple
-        # keeps grammar copies independent without introducing a mutable query
-        # catalogue; registry lookup maps are derived from it on demand.
+        # The model-selected source of thought-action identity.  Structural
+        # compose/generate families supply the shared contracts, but only the
+        # explicit <thought> declarations authorize a boundary action.
+        self.thought_rules = []
         self.thought_operations = ()
         # PartSpace meronymic rule tables. Populated only when a
         # grammar file carries a ``<PartSpace>`` section (Phase 8b,
@@ -1124,8 +1127,9 @@ class Grammar:
 
         Accepts these shapes:
           (a) flat: {'S': ['not(S)'], ...}  — legacy compose-only.
-          (b) named sections: {'compose': {...}, 'generate': {...}}
-              with `op.forward(args)` / `op.reverse(arg)` rule bodies.
+          (b) named sections: {'compose': {...}, 'thought': {...},
+              'generate': {...}} with `op.forward(args)`,
+              `op.thought(args)`, and `op.reverse(arg)` rule bodies.
           (c) space_role-scoped sections: {'compose': {'symbols': {...},
                                                  'concepts': {...},
                                                  'percepts': {...}},
@@ -1137,18 +1141,18 @@ class Grammar:
               -- runtime gating is independent of space_role tagging; the
               tags are an inductive-bias hint, not a hard restriction.
         """
-        # Thought actions are derived from structural compose/generate faces.
-        # A second <Queries> catalogue can disagree about roles, aliases, and
-        # availability, so reject it before changing any grammar state.  XML
-        # permits the same grammar under <Symbolic>, so a top-level check is
-        # not enough: the retired catalogue must fail at every nesting level.
+        # The legacy <Queries> spelling remains a second, retired catalogue.
+        # The lower-case <thought> section is the explicit model-owned
+        # allow-list; XML may nest it under <Symbolic>, so rejection must walk
+        # the entire mapping before changing grammar state.
         if self._contains_retired_queries_block(grammar_dict):
             raise ValueError(
-                'Queries is retired; declare thought operators in compose or generate')
+                'Queries is retired; declare boundary operators in <thought>')
         self.rules_upward = []
         self.rules_downward = []
         self.ps_rules_upward = []
         self.ps_rules_downward = []
+        self.thought_rules = []
         self.thought_operations = ()
         self._configured = True
 
@@ -1178,6 +1182,7 @@ class Grammar:
             if isinstance(ws_block, dict):
                 self._fill_section(self.rules_upward,
                                    ws_block.get('compose') or {})
+                self._fill_thought_section(ws_block.get('thought') or {})
                 self._fill_section(self.rules_downward,
                                    ws_block.get('generate') or {})
         # Parse the top-level <Anchors> section (Alec 2026-07-13): the
@@ -1200,11 +1205,13 @@ class Grammar:
                                 str(_op).strip()
         if ps_block is None and ws_block is None:
             has_named = any(k in grammar_dict
-                            for k in ('compose', 'generate'))
+                            for k in ('compose', 'thought', 'generate'))
             if has_named:
                 up = grammar_dict.get('compose') or {}
+                thought = grammar_dict.get('thought') or {}
                 dn = grammar_dict.get('generate') or {}
                 self._fill_section(self.rules_upward, up)
+                self._fill_thought_section(thought)
                 self._fill_section(self.rules_downward, dn)
             else:
                 # Legacy flat form — treat as parse.
@@ -1280,7 +1287,7 @@ class Grammar:
             return None
         lhs = tuple(part.strip() for part in str(rule.lhs).split(',') if part.strip())
         rhs = tuple(rule.rhs_symbols or ())
-        if direction == 'forward':
+        if direction in ('forward', 'thought'):
             inputs = self._thought_role_tokens(method, rhs, 'I')
             outputs = self._thought_role_tokens(method, lhs, 'O')
         elif direction == 'reverse':
@@ -1306,18 +1313,32 @@ class Grammar:
         return method, inputs, outputs[0]
 
     def _derive_thought_operations(self):
-        """Merge role-labelled compose/generate declarations into one catalog.
+        """Join explicit thought declarations to role-labelled structural faces.
 
-        The tuple is deterministic by first structural declaration and is the
-        only metadata that the boundary registry may join to an executor.
-        Ordinary grammar rules without the ``op_I*``/``op_O1`` family syntax
-        remain structural-only rules and never become thought candidates.
-        A rule may instead declare ``family="part" permutation="I2,I1"``:
-        it remains the structural ``whole`` face while joining the one
-        canonical ``part`` boundary identity.
+        Compose/generate declarations and explicit thought declarations share
+        exact contracts where a face appears in more than one section. The
+        model's <thought> list orders the forms a boundary controller may use;
+        it may also contain a thought-only face. A structural family is never
+        an implicit thought action.
         """
+        def identity(rule, structural_id, operand_roles):
+            declared_family = getattr(rule, 'thought_family', None)
+            declared_permutation = getattr(rule, 'thought_permutation', None)
+            if declared_family is None:
+                if declared_permutation is not None:
+                    raise ValueError(
+                        f'thought operation {structural_id!r} declares a permutation '
+                        'without a canonical family')
+                return structural_id, operand_roles
+            permutation = tuple(declared_permutation or ())
+            if (len(permutation) != len(operand_roles)
+                    or set(permutation) != set(operand_roles)):
+                raise ValueError(
+                    f'thought operation {structural_id!r} has an invalid '
+                    'canonical role permutation')
+            return declared_family, permutation
+
         families = {}
-        order = []
         faces = (
             ('forward', self.rules_upward, 0),
             ('reverse', self.rules_downward, len(self.rules_upward)),
@@ -1332,40 +1353,20 @@ class Grammar:
                             'thought family metadata requires a role-labelled structural face')
                     continue
                 structural_id, operand_roles, result_role = contract
-                declared_family = getattr(rule, 'thought_family', None)
-                declared_permutation = getattr(rule, 'thought_permutation', None)
-                if declared_family is None:
-                    if declared_permutation is not None:
-                        raise ValueError(
-                            f'thought operation {structural_id!r} declares a permutation '
-                            'without a canonical family')
-                    semantic_id = structural_id
-                    permutation = operand_roles
-                else:
-                    semantic_id = declared_family
-                    permutation = tuple(declared_permutation or ())
-                    if (len(permutation) != len(operand_roles)
-                            or set(permutation) != set(operand_roles)):
-                        raise ValueError(
-                            f'thought operation {structural_id!r} has an invalid '
-                            'canonical role permutation')
+                semantic_id, permutation = identity(
+                    rule, structural_id, operand_roles)
                 family = families.get(semantic_id)
                 if family is None:
                     family = {
                         'operand_roles': operand_roles,
                         'result_role': result_role,
-                        'forward_rule_ids': [],
-                        'reverse_rule_ids': [],
                         'forms': {},
-                        'form_order': [],
                     }
                     families[semantic_id] = family
-                    order.append(semantic_id)
                 elif (family['operand_roles'] != operand_roles
                       or family['result_role'] != result_role):
                     raise ValueError(
                         f'thought operation {semantic_id!r} has conflicting role contracts')
-                family[direction + '_rule_ids'].append(offset + local_id)
                 form = family['forms'].get(structural_id)
                 if form is None:
                     form = {
@@ -1376,7 +1377,6 @@ class Grammar:
                         'reverse_rule_ids': [],
                     }
                     family['forms'][structural_id] = form
-                    family['form_order'].append(structural_id)
                 elif (form['operand_roles'] != operand_roles
                       or form['result_role'] != result_role
                       or form['permutation'] != permutation):
@@ -1384,26 +1384,78 @@ class Grammar:
                         f'thought operation form {structural_id!r} has conflicting '
                         'family or role-permutation declarations')
                 form[direction + '_rule_ids'].append(offset + local_id)
-        return tuple(self.ThoughtOperationSpec(
-            semantic_id=semantic_id,
-            operand_roles=families[semantic_id]['operand_roles'],
-            result_role=families[semantic_id]['result_role'],
-            forward_rule_ids=tuple(families[semantic_id]['forward_rule_ids']),
-            reverse_rule_ids=tuple(families[semantic_id]['reverse_rule_ids']),
-            forms=tuple(self.ThoughtOperationForm(
-                structural_id=structural_id,
-                operand_roles=families[semantic_id]['forms'][structural_id][
-                    'operand_roles'],
-                result_role=families[semantic_id]['forms'][structural_id][
-                    'result_role'],
-                permutation=families[semantic_id]['forms'][structural_id][
-                    'permutation'],
-                forward_rule_ids=tuple(families[semantic_id]['forms'][
-                    structural_id]['forward_rule_ids']),
-                reverse_rule_ids=tuple(families[semantic_id]['forms'][
-                    structural_id]['reverse_rule_ids']))
-                for structural_id in families[semantic_id]['form_order']))
-            for semantic_id in order)
+
+        selected, selected_order = {}, []
+        for thought_rule in self.thought_rules:
+            contract = self._thought_contract_from_rule(thought_rule, 'thought')
+            if contract is None:
+                raise ValueError(
+                    '<thought> requires a role-labelled op.thought declaration')
+            structural_id, operand_roles, result_role = contract
+            semantic_id, permutation = identity(
+                thought_rule, structural_id, operand_roles)
+            family = families.get(semantic_id)
+            if family is None:
+                family = {
+                    'operand_roles': operand_roles,
+                    'result_role': result_role,
+                    'forms': {},
+                }
+                families[semantic_id] = family
+            elif (family['operand_roles'] != operand_roles
+                    or family['result_role'] != result_role):
+                raise ValueError(
+                    f'thought operation {semantic_id!r} disagrees with its '
+                    'structural role contract')
+            form = family['forms'].get(structural_id)
+            if form is None:
+                form = {
+                    'operand_roles': operand_roles,
+                    'result_role': result_role,
+                    'permutation': permutation,
+                    'forward_rule_ids': [],
+                    'reverse_rule_ids': [],
+                }
+                family['forms'][structural_id] = form
+            elif (form['operand_roles'] != operand_roles
+                    or form['result_role'] != result_role
+                    or form['permutation'] != permutation):
+                raise ValueError(
+                    f'thought operation form {structural_id!r} disagrees with '
+                    'its structural role contract')
+            selection = selected.get(semantic_id)
+            if selection is None:
+                selection = {'forms': [], 'seen': set()}
+                selected[semantic_id] = selection
+                selected_order.append(semantic_id)
+            if structural_id in selection['seen']:
+                raise ValueError(
+                    f'thought operation form {structural_id!r} is declared twice')
+            selection['seen'].add(structural_id)
+            selection['forms'].append((structural_id, form))
+
+        operations = []
+        for semantic_id in selected_order:
+            family = families[semantic_id]
+            forms = tuple(
+                self.ThoughtOperationForm(
+                    structural_id=structural_id,
+                    operand_roles=form['operand_roles'],
+                    result_role=form['result_role'],
+                    permutation=form['permutation'],
+                    forward_rule_ids=tuple(form['forward_rule_ids']),
+                    reverse_rule_ids=tuple(form['reverse_rule_ids']))
+                for structural_id, form in selected[semantic_id]['forms'])
+            operations.append(self.ThoughtOperationSpec(
+                semantic_id=semantic_id,
+                operand_roles=family['operand_roles'],
+                result_role=family['result_role'],
+                forward_rule_ids=tuple(
+                    rule_id for form in forms for rule_id in form.forward_rule_ids),
+                reverse_rule_ids=tuple(
+                    rule_id for form in forms for rule_id in form.reverse_rule_ids),
+                forms=forms))
+        return tuple(operations)
 
     def _find_identity_rule_id(self, symbol):
         # Identity rule: LHS == RHS, arity 1, method_name None.
@@ -1447,7 +1499,24 @@ class Grammar:
             direct = {k: section_dict[k] for k in direct_keys}
             self._fill_rule_list(target, direct, space_role=default_space_role)
 
-    def _fill_rule_list(self, target, rules_dict, space_role='SS'):
+    def _fill_thought_section(self, section_dict):
+        """Read the declarative `<thought>` allow-list without runtime rules.
+
+        Thought declarations use the ordinary role-labelled `<rule>` syntax
+        but are not inserted into either structural rule table. They have no
+        chart rule IDs and cannot fire during compose/generate; their source
+        order is the model-owned boundary action order after contract joins.
+        """
+        if not isinstance(section_dict, dict):
+            return
+        unexpected = set(section_dict).difference({'rule'})
+        if unexpected:
+            names = ', '.join(sorted(str(name) for name in unexpected))
+            raise ValueError(
+                f'<thought> accepts only role-labelled <rule> declarations, got {names}')
+        self._fill_rule_list(self.thought_rules, section_dict, face='thought')
+
+    def _fill_rule_list(self, target, rules_dict, space_role='SS', face=None):
         """Parse ``<rule>`` entries from ``rules_dict`` and append to ``target``.
 
         Handles both the canonical ``<rule>head = body</rule>`` form
@@ -1488,6 +1557,14 @@ class Grammar:
                     raise ValueError(
                         f"<rule> requires 'head = body' syntax, got: {text!r}")
                 lhs_raw, body = text.split('=', 1)
+                is_thought_face = bool(re.match(
+                    r'^\s*[A-Za-z_]\w*\.thought\s*\(', body, re.ASCII))
+                if face == 'thought' and not is_thought_face:
+                    raise ValueError(
+                        '<thought> rules require op.thought(op_I1, ...) syntax')
+                if face != 'thought' and is_thought_face:
+                    raise ValueError(
+                        'op.thought(...) is valid only inside <thought>')
                 lhs = ','.join(p.strip() for p in lhs_raw.split(',') if p.strip())
                 rule = self._parse_rule(lhs, body.strip(), space_role=space_role)
                 # Apply width gate if specified.
@@ -1743,6 +1820,8 @@ class Grammar:
             # (it's per-rule), so we silently accept either suffix.
             if func_name.endswith('.forward'):
                 func_name = func_name[:-len('.forward')]
+            elif func_name.endswith('.thought'):
+                func_name = func_name[:-len('.thought')]
             elif func_name.endswith('.reverse'):
                 func_name = func_name[:-len('.reverse')]
             # Note: `pi` / `sigma` and other layer-name forms remain

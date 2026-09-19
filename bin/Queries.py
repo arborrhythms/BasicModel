@@ -1,6 +1,6 @@
 """Checked boundary-query contracts; no semantic memory or learned parameters.
 
-Relation identities link grammatical compose/inverse faces and query interfaces.
+Relation identities link grammatical compose/inverse faces and thought interfaces.
 These immutable definitions do not create a second VP embedding or a tool-only
 semantic store. Native references are addresses; numerical payloads stay in CS.
 """
@@ -1155,15 +1155,19 @@ class ThoughtExecutorDescriptor:
             raise ValueError('thought executor has an incomplete capability contract')
 
 
-# The canonical names are deliberately the structural grammar names.  The
-# old is-/query-/plural spellings remain only in the pre-item-0 code below
-# until every caller is migrated; they are not an authority for this table.
+# A model uses its exact grammar spelling as the canonical identity. `part`
+# and `isPart` are separate declarations that currently share the taxonomy
+# implementation; neither is an implicit alias of the other. Old query/plural
+# spellings below remain compatibility-only and do not authorize this table.
 _thought_executors = (
     ThoughtExecutorDescriptor(
         'exist', 'ltm-facts', ('description',), 'truth',
         ('ltm.descriptions', 'ltm.facts'), (), 'fact', _exist),
     ThoughtExecutorDescriptor(
         'part', 'conceptual-taxonomy', ('reference', 'reference'), 'truth',
+        ('conceptual.references',), (), 'taxonomy', _part),
+    ThoughtExecutorDescriptor(
+        'isPart', 'conceptual-taxonomy', ('reference', 'reference'), 'truth',
         ('conceptual.references',), (), 'taxonomy', _part),
     ThoughtExecutorDescriptor(
         'equal', 'conceptual-identity', ('concept', 'concept'), 'truth',
@@ -1613,11 +1617,11 @@ class GrammaticalQueryRegistry:
 
 
 class GrammaticalThoughtRegistry:
-    """Join canonical executors to the grammar-owned thought-operation tuple.
+    """Join canonical executors to the grammar-selected thought-operation tuple.
 
     This registry owns neither an alias menu nor a second structural catalogue.
-    A descriptor without a declared structural family is absent; a structural
-    family without a descriptor remains pure grammar.  Native VP identities
+    A descriptor without a selected thought form is absent; a structural
+    family omitted from `<thought>` remains pure grammar. Native VP identities
     stay checkpointed named concepts on the existing conceptual-space owner.
     """
 
@@ -1658,7 +1662,8 @@ class GrammaticalThoughtRegistry:
         for operation in operations:
             descriptor = THOUGHT_EXECUTORS.get(operation.semantic_id)
             if descriptor is None:
-                continue
+                raise ValueError(
+                    f'thought operation {operation.semantic_id!r} has no checked executor')
             if len(descriptor.argument_kinds) != len(operation.operand_roles):
                 raise ValueError(
                     f'thought executor {operation.semantic_id!r} has an arity mismatch '

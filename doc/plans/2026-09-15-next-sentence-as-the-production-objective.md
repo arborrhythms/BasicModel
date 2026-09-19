@@ -19,6 +19,14 @@
 > separation, append-only history, bounded episodes and declared credit.
 > Existing parity-based runtime behavior remains legacy until migration is
 > verified. The [Symbol Firewall](../SymbolFirewall.md) remains governing.
+>
+> **September 19 correction:** the per-model boundary action list is the
+> explicit lower-case `<thought>` grammar section, physically between
+> `<compose>` and `<generate>`. Matching faces share one canonical operator
+> identity but retain their own signatures and capability contexts. Earlier
+> references to a `<Queries>` catalogue are historical unless this plan has
+> been updated in place; the legacy spelling is rejected rather than retained
+> as a parallel source of authority.
 
 Read §§1–5 for the thinking contract, §6 for reconstruction requirements,
 §7 for the earlier source review, §8 for the consolidated production objective,
@@ -39,7 +47,7 @@ names to locate code after later edits.
 | Within-sentence `forward()` | Construct conceptual meaning from input | `<compose>` |
 | Within-sentence `reverseReconstruct()` | Reconstruct the input by reversing its compose derivation | `<compose>` and its inverse operations, not a free `<generate>` route |
 | Within-sentence `reverseOutput()` | Express a resolved idea as output, including a linguistic subgoal | `<generate>` |
-| Between-sentence thinking | Select the next query, refinement, nested context or concluding thought | `<Queries>` plus level/termination control |
+| Between-sentence thinking | Select the next thought action, refinement, nested context or conclusion | explicit `<thought>` plus level/termination control |
 
 The **grammar MLP** controls sentence composition/realization. A separate
 **thought/query MLP** selects boundary actions; it is a chooser, not an
@@ -143,25 +151,25 @@ does not require a verbalize/reparse round trip.
 **Representation is not execution:** a query-capable VP can be composed,
 reconstructed or generated within a sentence without invoking its executor.
 Only a completed, selected question at a boundary activates the corresponding
-`<Queries>` entry. Its grammatical VP identity and its boundary execution
+explicit `<thought>` declaration. Its grammatical VP identity and its boundary execution
 signature must be linked explicitly. Assertions using that VP remain
 assertions, not implicit query calls. The current grammar's "build no
 structure" description must not mean queries lack grammatical meaning: the
 executor is inactive during parsing, but its associated VP is representable.
 
-There is **one semantic VP per relation/domain, with two faces**: its
-structure-building compose/inverse rules and its checked boundary query
-entry. There is no second, independently meaningful VP that merely names a
-tool. Thus `part` and `isPart` share a relation identity and operand contract;
-`whole` / `isWhole` are converse interfaces with a declared argument
-permutation, and `equal` / `isEqual` share the equality identity. Concrete
-rule/executor names and implementations may differ. `query="false"` keeps a
-compose rule free of query-execution effects; it neither prevents that VP from
-being queried later nor establishes the composed proposition's truth.
+There is **one semantic VP per relation/domain, with grammar faces as
+declared**: structural compose/generate faces and an optional checked
+`<thought>` face. There is no second, independently meaningful VP that merely
+names a tool. A model uses one canonical spelling consistently across its
+faces; a declared `whole` converse carries its explicit argument permutation.
+Concrete rule/executor implementations may differ, but role identity must
+agree. Omitting an operator from `<thought>` keeps it out of boundary
+execution while leaving any declared structural face pure; `query="false"`
+is retired and cannot express that policy.
 Interrogative versus assertive mode belongs to the completed idea, not a
 duplicate relation VP.
 
-Not every question reduces to one primitive. Add **`what(Q)`** to `<Queries>`
+Not every question reduces to one primitive. Add **`what(Q)`** to `<thought>`
 as the general conceptual-subgoal request. It preserves and evaluates
 the full deep structure of question `Q` through this same boundary loop; later
 choices may select more subgoals or explicit tools. It is not a hidden solver
@@ -274,7 +282,7 @@ input witness. These references and traversals remain subject to the
 
 ## 3. Execution, memory and credit
 
-Each `<Queries>` entry MUST have a checked signature, executor, result type,
+Each `<thought>` declaration MUST have a checked signature, executor, result type,
 read/write scope and evidence semantics. Predicate queries retain truth,
 support and conflict; retrieval returns grounded references/sets; `arma`
 returns a prediction, not an observed truth. Merely listing signatures is not

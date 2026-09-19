@@ -1244,11 +1244,13 @@ queries](TaxonomyQueries.md).
 
 ### Thought-operator contracts and shared grammatical VPs
 
-Grammar loading derives immutable operator contracts from role-labelled
-compose/generate faces and rejects `<Queries>` plus rule attributes. Every
-declared executable face has grammar-owned roles and executor-owned domain,
-evidence semantics, and capability scope. At setup, the grammatical thought
-registry binds one native named ConceptualSpace concept per
+Grammar loading derives structural contracts from role-labelled compose/generate
+faces, then selects its immutable thought catalogue from the model's explicit
+`<thought>` section. The legacy `<Queries>` spelling and rule attributes are
+rejected. Every selected executable face has grammar-owned roles and
+executor-owned domain, evidence semantics, and capability scope; a structural
+face omitted from `<thought>` is not a controller action. At setup, the
+grammatical thought registry binds one native named ConceptualSpace concept per
 `(domain, semantic_id)`. Pure candidate formation preserves canonical roles,
 grammatical mode, polarity, and scope. Selected execution derives its operation
 from the middle VP and role occupancy, retaining the evaluated proposition with

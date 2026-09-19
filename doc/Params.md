@@ -716,7 +716,7 @@ configuration switch, checkpoint schema or learned parameters were added.
 records, 8 path steps and 1024 edge examinations by default. These are call
 limits, not a new episode allowance; the selected normal controller supplies
 its one episode meter when it invokes a completed grammatical question.
-At explicit setup, each grammar-declared executable operation/domain uses one
+At explicit setup, each `<thought>`-selected executable operation/domain uses one
 existing aligned concept row and named handle. No new parameter tensor or configuration switch
 is introduced. A missing native binding cannot be lazily recreated by
 candidate formation or execution.

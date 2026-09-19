@@ -1,11 +1,97 @@
 # Thought-operator unification plan
 
-Status: implemented catalog-unification plan for todo item 0. It records the
-direction in
-[thought operations are compose rules](../specs/2026-09-18-thought-operations-in-compose.md)
-without treating the draft as already landed.
+Status: corrected 2026-09-19; the grammar-loader/registry catalogue foundation
+is implemented, while the normal-controller and end-to-end item-0 work remain
+pending. The September 18 compose-derived catalogue is archival below, not an
+implemented or desired result. The authoritative contract is
+[thought operators across compose, thought, and generate](../specs/2026-09-18-thought-operations-in-compose.md).
 
-## Outcome
+## 2026-09-19 authoritative correction
+
+The model grammar has three peer sections in this physical order:
+
+```xml
+<compose>...</compose>
+<thought>...</thought>
+<generate>...</generate>
+```
+
+They share canonical operator identities and exact role contracts, but not an
+implicit availability list. Compose and generate own structural use.
+`<thought>` is the explicit per-model allow-list for post-composition
+execution. Thus one parthood operator can occur in both compose and thought
+with one identity but different legal signatures and contexts; an operator
+such as `not` can occur structurally while being intentionally unavailable to
+thought. A structural declaration never silently grants thought permission.
+
+The thought declaration uses the same role-labelled rule form:
+
+```xml
+<compose>
+  <rule>part_O1 = part.forward(part_I1, part_I2)</rule>
+</compose>
+<thought>
+  <rule>part_O1 = part.thought(part_I1, part_I2)</rule>
+</thought>
+<generate>
+  <rule>part_I1, part_I2 = part.reverse(part_O1)</rule>
+</generate>
+```
+
+`.thought(...)` declares the role schema; runtime dispatch remains
+`execute(request: ConceptualMeaning, *, context: ThoughtGrammarContext)`.
+Compose/generate receive the owned word stream, conceptual-space capability
+and primed-symbol snapshot through `StructuralGrammarContext`. Thought gets
+the same frozen base context plus descriptor-scoped LTM/taxonomy readers, the
+shared work meter, boundary permit and narrow continuation. The structural
+faces remain pure; all readers/results and work accounting remain detached
+from structural gradients.
+
+A thought declaration may stand alone. Whenever the same operator also has
+a compose/generate face, they must agree on semantic identity, ordered I
+roles and O1. Existing family/permutation metadata can describe a converse
+form, but only an explicitly declared thought form is controller-legal. A
+Python executor descriptor never creates membership. The capitalized legacy
+`<Queries>` spelling and `query`
+attributes remain rejected; they must not become a second catalogue.
+
+### Corrected implementation order
+
+1. Add red loader/registry probes: structural membership alone is not enough;
+   `<thought>` selects a subset; omission yields no action; matching/mismatched
+   role contracts succeed/fail before readers; inline/external grammar agree;
+   and a converse is legal only when explicitly listed.
+2. Parse `.thought` rules separately from structural runtime rules, preserving
+   declaration order and structural rule IDs.
+3. Build `Grammar.thought_operations` by joining only the selected thought
+   forms to structural families. Do not derive it from every compose/generate
+   rule or expose unselected forms.
+4. Rebase registry installation, signature lookup and controller candidates on
+   that explicit catalogue while preserving signed operands, opaque concepts,
+   native VP identity, phase gating, work accounting and typed results.
+5. Add `<thought>` to production/external/inline grammar sources between
+   compose and generate, selecting only operators each model authorizes.
+6. Complete the normal controller and typed `arma` handoff only after this
+   catalog is green; do not begin two-truths or forgetting first.
+7. Update the named architecture/gradient docs, run affected bounded tests,
+   then one frozen-snapshot full default suite before both repository pushes.
+
+### Corrected completion criteria
+
+Item 0 is complete only with a fresh full receipt proving that membership
+comes from `<thought>`, matching faces agree, structural-only/table-only
+operators stay unavailable, context authority stays separated, selected
+forms/open roles/converses are exact, and the existing ownership, gradient,
+checkpoint, optimizer and compiled-tuple invariants remain intact.
+
+## Superseded September 18 draft (archival)
+
+The remainder preserves the earlier draft's useful background and testing
+ideas, but every statement that derives thought membership from compose or
+generate, rejects a distinct thought section, or calls item 0 implemented is
+superseded by the correction above.
+
+### Original proposed outcome
 
 One operator family declared in the model's structural grammar is the source
 of both legal uses of that operator:
@@ -87,7 +173,7 @@ residual learning receive explicit credit instead.
   open-role forms, converse permutation and structural operator identity.
 - The executor declaration supplies only non-grammatical information: domain,
   argument kinds, result kind, read/write scope, evidence kind and callable.
-  A table entry without a matching structural declaration is unavailable.
+  A table entry without a matching `<thought>` declaration is unavailable.
 - Concepts remain opaque and symbol/concept rows remain aligned. A boundary
   candidate carries full-width meaning values and typed references; it never
   uses a row, concept ID, native handle or surface token as a learned feature.

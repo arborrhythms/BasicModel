@@ -55,6 +55,13 @@
       <rule>equal_O1 = equal.forward(equal_I1, equal_I2)</rule>
     </compose>
 
+    <!-- This model may execute only these explicitly selected relation
+         operators after composition; its other structural rules stay pure. -->
+    <thought>
+      <rule>part_O1 = part.thought(part_I1, part_I2)</rule>
+      <rule>equal_O1 = equal.thought(equal_I1, equal_I2)</rule>
+    </thought>
+
     <generate>
       <!-- Mirror of compose: output role back to input roles. -->
       <rule>union_I1, union_I2 = union.reverse(union_O1)</rule>
