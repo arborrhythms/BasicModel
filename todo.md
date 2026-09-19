@@ -22,6 +22,11 @@ of its six candidates only the generation catalogue (item 3) remains uninstalled
 
 ### Done (newest first)
 
+- `a70c77d` Direct `concept`-unary selected meaning (`what(quantize(x))`)
+  preserves its live leaf into the normal controller; description operands
+  still require owned occurrences. Ordinary pytest failures now complete their
+  selected receipt while resource/protocol failures remain bounded/fail-fast
+  ([Testing](doc/Testing.md#complete-diagnostic-receipts-september-19)).
 - `943a64f` Lexical converse forms: `whole` vs `part` provenance frozen at
   program capture (item 1 increment; see review note under item 1).
 - `fb5611c` Normal thought resolution grammar-owned; `resolveAnswer()` no
@@ -159,8 +164,6 @@ the pre-FineWeb list below.
 Small, real, and not on the critical path. Fold each into the nearest Codex
 change; delete the line with the commit.
 
-- **Harness lock:** `suite_lock` still serialises every invocation machine-wide;
-  scope it to full-suite receipts so selected-file runs can proceed alongside.
 - **Fold ladder:** delete the radix-backed non-word-major meronomy path (no
   legacy paths); confirm the `dispatch_per_row_reset` note in
   [the plan](doc/plans/2026-09-10-meronomy-fold-ladder.md#open-defects-found-on-the-way)
