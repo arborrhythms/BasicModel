@@ -133,9 +133,11 @@ compare : $(VENV_STAMP)
 test : $(VENV_STAMP)
 	BASICMODEL_DEVICE=cpu PYTHONPATH=bin $(VENV_PYTHON) test/test_report.py $(TEST_ARGS)
 
-# Compatibility alias: fresh, sequential, bounded workers.
-# Select affected files with TEST_ARGS rather than launching all CPU cores.
-testp : test
+# Fast local iteration is intentionally not a bounded receipt. The complete
+# `make test` path retains process limits and durable source-matched evidence.
+TEST_JOBS ?= auto
+testp : $(VENV_STAMP)
+	BASICMODEL_DEVICE=cpu PYTHONPATH=bin $(VENV_PYTHON) -m pytest -n "$(TEST_JOBS)" $(TEST_ARGS)
 
 test_all : $(VENV_STAMP)
 	RUN_SLOW=1 PYTHONPATH=bin $(VENV_PYTHON) test/test_report.py $(TEST_ARGS)

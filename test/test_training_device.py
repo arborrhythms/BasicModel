@@ -60,3 +60,43 @@ def test_all_dispatches_slow_training_to_gpu_and_ordinary_checks_to_cpu(tmp_path
     assert result['collection']['device']=='cpu'
     assert [worker['device'] for worker in result['workers']] == [
         'cpu', devices[1].split(':',1)[1], 'cpu']
+
+
+def test_parallel_pool_keeps_one_accelerator_training_lane(tmp_path, monkeypatch):
+    """Concurrent CPU capacity must not make MPS/CUDA training contend with itself."""
+    import torch
+    if not (torch.cuda.is_available() or torch.backends.mps.is_available()):
+        pytest.skip('real accelerator required for the mixed-device integration')
+    monkeypatch.delenv('BASICMODEL_DEVICE', raising=False)
+    monkeypatch.setenv('RUN_SLOW', '1')
+    monkeypatch.delenv('PYTEST_PLUGINS', raising=False)
+    (tmp_path / 'pytest.ini').write_text('[pytest]\nmarkers =\n    slow: substantial training\n')
+    (tmp_path / 'test_training.py').write_text(
+        "import os,time,pytest\nfrom pathlib import Path\n"
+        "@pytest.mark.slow\n@pytest.mark.parametrize('case',range(2))\n"
+        "def test_training(case):\n"
+        " import torch\n"
+        " device=os.environ['BASICMODEL_DEVICE']\n"
+        " assert device == 'mps' or device.startswith('cuda')\n"
+        " x=torch.ones(4,device=device,requires_grad=True)\n"
+        " x.square().sum().backward()\n"
+        " started=time.time_ns()\n"
+        " with Path('timeline').open('a') as f: f.write(f'start:{case}:{started}:{device}\\n')\n"
+        " time.sleep(.15)\n"
+        " ended=time.time_ns()\n"
+        " with Path('timeline').open('a') as f: f.write(f'end:{case}:{ended}:{device}\\n')\n")
+    result = runner.run_suite(
+        root=tmp_path, selectors=['test_training.py'], run_dir=tmp_path / 'result',
+        memory_bytes=1024**3, timeout=60, suite_timeout=240,
+        batch_size=1, workers=2, lock_path=tmp_path / 'lock')
+    assert result['exit_code'] == 0, result['reason']
+    intervals = {}
+    devices = set()
+    for line in (tmp_path / 'timeline').read_text().splitlines():
+        edge, case, when, device = line.split(':', 3)
+        intervals.setdefault(int(case), {})[edge] = int(when)
+        devices.add(device)
+    assert len(intervals) == 2 and all(set(value) == {'start', 'end'} for value in intervals.values())
+    first, second = sorted(intervals.values(), key=lambda value: value['start'])
+    assert first['end'] <= second['start'], 'two accelerator workers overlapped'
+    assert all(device == 'mps' or device.startswith('cuda') for device in devices)

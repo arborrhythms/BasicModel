@@ -38,18 +38,18 @@ def test_explicit_zero_exit_does_not_erase_an_earlier_failed_test(tmp_path):
 def test_time_pressure_recycles_after_complete_cases_without_dropping_coverage(tmp_path):
     (tmp_path / "test_duration.py").write_text(
         "import os,time,pytest\nfrom pathlib import Path\n"
-        "@pytest.mark.parametrize('case',range(6))\n"
+        "@pytest.mark.parametrize('case',range(8))\n"
         "def test_case(case):\n"
         " time.sleep(3)\n"
         " with Path('executions').open('a') as f: f.write(f'{case}:{os.getpid()}\\n')\n")
     result = runner.run_suite(
         root=tmp_path, selectors=["test_duration.py"], run_dir=tmp_path / "result",
-        memory_bytes=512 * 1024**2, timeout=30, suite_timeout=180,
+        memory_bytes=512 * 1024**2, timeout=20, suite_timeout=180,
         batch_size=64, lock_path=tmp_path / "lock")
     assert result["exit_code"] == 0, result["reason"]
     assert result["selected"] == result["completed"]
     executions = [line.split(":") for line in (tmp_path / "executions").read_text().splitlines()]
-    assert [int(case) for case, _ in executions] == list(range(6))
+    assert [int(case) for case, _ in executions] == list(range(8))
     assert len({pid for _, pid in executions}) > 1
     assert any(worker.get("recycled") for worker in result["workers"])
     boundaries = [json.loads(p.read_text()) for p in

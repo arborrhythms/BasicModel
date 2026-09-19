@@ -115,6 +115,102 @@ def test_batches_keep_every_selected_case_once(runner):
     assert all(len({n.split('::')[0] for n in batch}) <= 2 for batch in batches)
 
 
+def test_default_test_budget_reserves_eight_gib_for_the_machine(runner, monkeypatch):
+    """A 36 GiB Mac gets 28 GiB for tests, not the old serial 8 GiB cap."""
+    monkeypatch.setattr(runner, "physical_memory", lambda: 36 * runner.GIB)
+    assert runner.default_test_memory_bytes() == 28 * runner.GIB
+
+
+def test_fast_pool_uses_cpu_minus_four_workers(runner, monkeypatch):
+    monkeypatch.setattr(runner.os, "cpu_count", lambda: 14)
+    assert runner.default_worker_count() == 10
+
+
+def test_macos_worker_keeps_memory_cap_without_background_throttling(runner, monkeypatch):
+    monkeypatch.setattr(runner.sys, "platform", "darwin")
+    monkeypatch.setattr(runner.shutil, "which", lambda name: "/usr/bin/taskpolicy")
+    command = runner.bounded_command(["python", "-V"], 512 * runner.MIB)
+    assert command == ["/usr/bin/taskpolicy", "-m", "512", "-P", "kill",
+                       "nice", "-n", "10", "python", "-V"]
+
+
+def test_selected_runs_skip_the_full_receipt_lock(runner):
+    assert runner.requires_suite_lock([], None, None)
+    assert not runner.requires_suite_lock(["test/test_small.py"], None, None)
+    assert not runner.requires_suite_lock([], "small", None)
+    assert not runner.requires_suite_lock([], None, "slow")
+
+
+def test_documentation_is_recorded_without_invalidating_code_snapshot(runner, tmp_path):
+    (tmp_path / "bin").mkdir()
+    (tmp_path / "doc").mkdir()
+    (tmp_path / "bin" / "module.py").write_text("value = 1\n")
+    (tmp_path / "doc" / "notes.md").write_text("first\n")
+    (tmp_path / "todo.md").write_text("first\n")
+    code = runner.source_snapshot(tmp_path)
+    recorded = runner.documentation_snapshot(tmp_path)
+    (tmp_path / "doc" / "notes.md").write_text("second\n")
+    (tmp_path / "todo.md").write_text("second\n")
+    assert runner.source_snapshot(tmp_path) == code
+    assert runner.documentation_snapshot(tmp_path) != recorded
+    (tmp_path / "bin" / "module.py").write_text("value = 2\n")
+    assert runner.source_snapshot(tmp_path) != code
+
+
+def test_bounded_workers_ignore_iteration_xdist_request(runner, tmp_path, monkeypatch):
+    monkeypatch.setenv("TEST_JOBS", "auto")
+    environment = runner.worker_environment(tmp_path)
+    assert "TEST_JOBS" not in environment
+
+
+def test_parallel_workers_share_the_aggregate_budget_and_overlap(runner, tmp_path):
+    """The fast default can overlap isolated workers without exceeding its cap."""
+    (tmp_path / "pytest.ini").write_text("[pytest]\n")
+    (tmp_path / "test_parallel.py").write_text(
+        "import os,time,pytest\nfrom pathlib import Path\n"
+        "@pytest.mark.parametrize('case',range(4))\n"
+        "def test_case(case):\n"
+        " with Path('starts').open('a') as f: f.write(f'{case}:{os.getpid()}\\n')\n"
+        " deadline=time.monotonic()+5\n"
+        " while len(Path('starts').read_text().splitlines()) < 2 and time.monotonic() < deadline:\n"
+        "  time.sleep(.02)\n"
+        " assert len(Path('starts').read_text().splitlines()) >= 2\n"
+        " time.sleep(.05)\n")
+    aggregate = 512 * 1024**2
+    result = runner.run_suite(
+        root=tmp_path, selectors=["test_parallel.py"], run_dir=tmp_path / "result",
+        memory_bytes=aggregate, timeout=30, suite_timeout=120,
+        batch_size=1, workers=2, lock_path=tmp_path / "lock")
+    assert result["exit_code"] == 0, result["reason"]
+    assert result["limits"]["aggregate_memory_bytes"] == aggregate
+    assert result["limits"]["per_worker_memory_bytes"] == aggregate
+    assert result["limits"]["workers"] == 2
+    assert len({line.split(":", 1)[1] for line in (tmp_path / "starts").read_text().splitlines()}) == 4
+
+
+def test_aggregate_cap_terminates_parallel_workers_before_host_pressure(runner, tmp_path):
+    """Independent worker caps cannot let the pool exceed its shared budget."""
+    (tmp_path / "pytest.ini").write_text("[pytest]\n")
+    (tmp_path / "test_aggregate.py").write_text(
+        "import time,pytest\nfrom pathlib import Path\n"
+        "@pytest.mark.parametrize('case',range(2))\n"
+        "def test_case(case):\n"
+        " data=bytearray(140*1024**2)\n"
+        " with Path('ready').open('a') as f: f.write(str(case)+'\\n')\n"
+        " deadline=time.monotonic()+10\n"
+        " while len(Path('ready').read_text().splitlines()) < 2 and time.monotonic() < deadline:\n"
+        "  time.sleep(.02)\n"
+        " time.sleep(5)\n")
+    result = runner.run_suite(
+        root=tmp_path, selectors=["test_aggregate.py"], run_dir=tmp_path / "result",
+        memory_bytes=256 * 1024**2, timeout=30, suite_timeout=90,
+        batch_size=1, workers=2, worker_memory_bytes=256 * 1024**2,
+        lock_path=tmp_path / "lock")
+    assert result["exit_code"] == 137
+    assert result["reason"] == "aggregate_memory"
+    assert result["peak_aggregate_memory_bytes"] > 256 * 1024**2
+
+
 @pytest.mark.parametrize("value", [0, -1, float("nan"), float("inf")])
 def test_invalid_limits_are_rejected_before_launch(runner, tmp_path, value):
     with pytest.raises(ValueError):

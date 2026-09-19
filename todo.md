@@ -18,6 +18,12 @@ runner/device selection passed 29/29 and explicit significant training routed
 to MPS. See [Testing](doc/Testing.md#validation) for durable receipts and limits.
 [Handoff, preserved candidates and recovery instructions](doc/checkpoints/2026-09-17-production-spec/README.md).
 
+The subsequent estimate/observation ownership snapshot completed a fresh default
+receipt: **4,640/4,640** selected cases in 38 bounded workers at
+`output/tests/20260918-224716-79be16`. The current fast-runner source is newer
+than that receipt and requires its own full, source-matched validation before it
+can close the throughput gate.
+
 The subsequent thought-operator snapshot completed all 4,623 current default
 node IDs in bounded fresh workers. One assertion still expected an unwrapped
 unary router kernel after both unary and binary faces adopted the common
@@ -28,11 +34,33 @@ a fresh single-snapshot all-green receipt. The exact receipts are in
 
 ### Completed in this session
 
-- **Bounded-test performance and MPS routing.** The runner keeps finite
-  memory/deadline limits and fresh-process recycling; heavy integration tests
-  are slow-gated rather than removed; the VQ distance tile has a 512 MiB bound;
-  and supervised training has an explicit successful MPS-routing receipt.
-  Published in BasicModel `3ffb465` and WikiOracle `905fec7`.
+- **Fast bounded-test throughput and MPS routing.** The old serial 8 GiB
+  default is replaced by a `cpu−4` (**10** here), one-thread execution
+  pool with a **28 GiB** aggregate reservation on this 36 GiB machine, leaving
+  8 GiB and four CPU slots available for interactive work. Each worker has an
+  8 GiB kernel cap and the supervisor stops the largest worker when active
+  physical footprints cross the aggregate reservation; MPS/CUDA remains one
+  accelerator lane. The original reviewer probes were red first
+  (`20260919-000218-47b7c4`), then the aggregate-overlap probe passed
+  (`20260919-000715-e5f66d`), resource/recycling/device selection passed 28/28
+  (`20260919-001157-622faf`), and the MPS-lane file passed 7/7
+  (`20260919-001547-f7d2d6`). Claude's five follow-up probes were red in
+  `20260919-002323-cd7319`, then passed 5/5 (`20260919-002553-8b53ae`); the
+  aggregate-kill probe passed (`20260919-002627-a87223`) and the complete
+  runner/recycling/device selection passed 35/35 (`20260919-002831-c030ea`).
+  The current default receipt then passed **4,649/4,649** in 196.80 seconds at
+  a 20.20 GiB aggregate peak (`20260919-003054-07304d`), versus 4,164.65
+  seconds in the preceding serial receipt. This closes the bounded-test
+  throughput/MPS-routing item; publication follows this commit.
+
+### Earlier foundations in this session
+
+- **Earlier bounded-test foundations.** The runner already had finite
+  memory/deadline limits, fresh-process recycling, a 512 MiB VQ distance-tile
+  bound, slow gating for heavy integration, and an explicit MPS-routing receipt
+  (BasicModel `3ffb465`, WikiOracle `905fec7`). The in-progress pool above is
+  the throughput revision, not a claim that those foundations alone closed its
+  gate.
 
 - **Ordinary thought history and live occurrence reads.** One existing
   `WhatInteractionMemory` owner now stores replayable ordinary transitions,

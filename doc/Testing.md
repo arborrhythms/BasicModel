@@ -14,10 +14,11 @@ DEVELOPER_DIR=/Library/Developer/CommandLineTools .venv/bin/python test/test_rep
 ```
 
 `make test` uses the same runner. `make test_all` additionally enables the existing
-`RUN_SLOW=1` tests, assigning marked slow cases to an available GPU and ordinary cases to CPU. `make testp` is a compatibility alias for the bounded runner.
-`make preflight` and `make preflight_full` also use it. `TEST_JOBS` must be one.
-Select affected tests for short development cycles; the complete default suite
-remains the commit gate. Compilation remains enabled for tests that exercise it.
+`RUN_SLOW=1` tests, assigning marked slow cases to an available GPU and ordinary cases to CPU.
+`make testp` is deliberately a direct `pytest-xdist` iteration command (`TEST_JOBS=auto`
+by default), not a bounded receipt. `make preflight` and `make preflight_full` use the
+receipt runner. Select affected tests for short development cycles; the complete default
+suite remains the commit gate. Compilation remains enabled for tests that exercise it.
 
 ## Fast regression and slow experiments
 
@@ -77,24 +78,38 @@ smaller operator, reconstruction-objective, byte-fidelity and role/gradient
 regressions remain available in the default suite. This timed-out attempt is not a passing validation result.
 
 Memory- and time-triggered recycling permits larger case batches (256 cases / 16 files)
-without retaining a worker past its resource boundary. This reduces repeated
-Python/PyTorch imports while retaining the same hard cap and one-worker policy.
-Per-case timings in the durable receipt identify further expensive checks;
-a timeout is a failure that needs investigation, never an automatic slow mark.
+without retaining a worker past its resource boundary. The fast runner uses a
+small concurrent pool under one aggregate reservation rather than one serial
+worker; it retains process isolation and hard caps while avoiding needless
+Python/PyTorch import waits. Per-case timings in the durable receipt identify
+further expensive checks; a timeout is a failure that needs investigation,
+never an automatic slow mark.
 
 ## Limits and isolation
 
-- One suite per user across worktrees, enforced by a nonblocking file lock.
-- One worker at a time. Each receives at most 256 selected cases from 16 files;
-  a new process releases its model and compiler allocations before the next batch.
-- At half the memory limit or half the worker deadline, the worker finishes its current test and exits.
-  A fresh worker runs the remaining cases. Coverage records prove that each
-  selected case completed once; tests are not repeated or discarded. The hard
-  memory limit still applies within a test, and a killed worker is a failure.
+- One full receipt per user across worktrees, enforced by a nonblocking file
+  lock. Selected-file, `-k`, and marker runs may proceed concurrently.
+- Up to `cpu−4` concurrent, one-thread fresh workers by default: **10** on
+  this 14-core machine, leaving four cores for SSH and interactive work. Each
+  receives at most 256 selected cases from 16 files; a new process releases
+  its model and compiler allocations at a boundary. `--workers` can lower the
+  pool for diagnosis.
+- The aggregate default is physical RAM minus **8 GiB**: **28 GiB** on this
+  36 GiB machine. Each worker retains an **8 GiB** `taskpolicy -m ... -P kill`
+  ceiling; the supervisor samples every active worker tree and stops the
+  largest worker if their aggregate physical footprint crosses 28 GiB. This
+  supports legitimate 4.8 GiB cases without allowing the pool to consume the
+  8 GiB reserved for the machine. `--memory-gib` may lower the aggregate
+  budget, but cannot leave less than 8 GiB for the machine.
+- At 80% of a worker deadline, or at the earlier of 80% of its 8 GiB cap and
+  that cap minus 64 MiB (never later than half its cap for a small cap), a
+  worker finishes its current test and exits. A fresh worker runs remaining
+  cases. Coverage records prove that each selected case completed once; tests
+  are not repeated or discarded. The hard memory limit still applies within a
+  test, and a killed worker is a failure.
 - CPU, BLAS and compiler pools use one thread. The existing on-disk Inductor cache
-  remains reusable between workers. macOS workers run at background priority.
-- Default aggregate memory limit: the smaller of 8 GiB or one third of physical
-  RAM. `--memory-gib` can change it, up to half of physical RAM.
+  remains reusable between workers. macOS workers run at `nice -n 10`, not the
+  throughput-throttling `taskpolicy -b` background class.
 - Default deadline: 1,800 seconds per worker, including collection; 10,800 seconds
   for the whole suite. Configure finite limits with `--timeout` and
   `--suite-timeout`. Tests exceeding a limit fail the run; they are not skipped.
@@ -105,8 +120,10 @@ a timeout is a failure that needs investigation, never an automatic slow mark.
 
 Significant training belongs in the explicit slow run and uses the available
 accelerator. With `RUN_SLOW=1` and no explicit device, marked `slow` cases run
-on the available GPU and ordinary cases run on CPU in separate sequential
-workers. On this machine the GPU resolves to the Apple M4 Max's MPS device.
+on the available GPU and ordinary cases run on CPU. The pool permits ordinary
+CPU workers alongside it but admits only one accelerator worker at a time, so
+MPS/CUDA training never contends with a second shared-device test. On this
+machine the GPU resolves to the Apple M4 Max's MPS device.
 A GPU request fails explicitly when no accelerator is available. The quick
 regression gate defaults to CPU. Older manual slow gates without a `slow`
 marker still need the marker audit listed in the checkpoint; request MPS
@@ -125,9 +142,11 @@ device selection. The same aggregate memory, thread and deadline limits apply.
 
 macOS accounting uses `proc_pid_rusage` physical footprint, including compressed
 memory. RSS alone can become misleading during compression. Each macOS worker
-also has a kernel limit through `taskpolicy -m ... -P kill`. Linux accounting
-uses RSS plus swap. The aggregate monitor samples the process group and known
-children, including compiler subprocesses; sampling can allow brief overshoot.
+has an 8 GiB kernel limit through `taskpolicy -m ... -P kill`, while the
+supervisor samples all active process groups and enforces the 28 GiB aggregate
+reservation. Linux accounting uses RSS plus swap. The monitor samples each
+process group and known children, including compiler subprocesses; sampling can
+allow brief overshoot.
 Timeout, memory exhaustion, unavailable accounting or interrupted execution
 terminates the worker and its children and returns failure. Linux enforcement
 is sampled, without the additional macOS kernel cap. Unsupported platforms
@@ -138,13 +157,16 @@ fail before running tests.
 Each invocation creates a new `output/tests/<timestamp>-<id>/` directory, or the
 new directory named by `--run-dir`. It contains:
 
-- `source-manifest.json`: hashes of tested source, tests, configuration and docs.
+- `source-manifest.json`: validated hashes of code, tests, data/grammar and
+  configuration, plus separately recorded documentation and `todo.md` hashes.
+  Documentation changes do not void a code receipt; code/data/grammar changes
+  still do.
 - Collection output and the complete list of selected pytest node IDs.
 - Per-worker logs, process exit status, elapsed time and peak measured memory.
 - Per-worker JSON progress after collection and each test transition, including
-  the active case and confirmed completed cases. `result.json` points to the
-  active worker's progress file; the aggregate completion list updates when
-  that worker exits. A later timeout retains earlier confirmed completions.
+  the active case and confirmed completed cases. `result.json` lists all active
+  worker progress files; the aggregate completion list updates when each worker
+  exits. A later timeout retains earlier confirmed completions.
 - `result.json`: durable overall status, limits and exact selected/completed cases.
 - `report.html`: escaped test diagnostics, including setup and teardown failures.
 
@@ -157,7 +179,8 @@ workers completed so far have passed. Logs and receipts survive disconnection.
 
 Do not edit files in the tested snapshot while a suite runs. Use an isolated
 checkout for independent implementation work. Direct `python -m pytest` calls
-bypass these limits; use the bounded entry point for development and full gates.
+(including `make testp`) are the fast iteration path and do not create a bounded
+receipt. Use the bounded entry point for full commit gates.
 
 ## Validation
 
@@ -168,6 +191,47 @@ selection and interruption with persistent evidence. The checkpoint tooling sele
 (20 resource/coverage cases, six device cases and three slow-switch cases).
 Earlier affected-file runs and their tested source hashes are archived separately;
 those earlier runs do not validate later runner revisions.
+
+### Fast aggregate-runner evidence (September 19)
+
+The reviewer probes were intentionally red in
+`output/tests/20260919-000218-47b7c4`: the old runner had neither an
+eight-GiB-reserved default budget nor a parallel-worker API. After the pool
+implementation, the aggregate-budget/real-overlap probe passed in
+`20260919-000715-e5f66d`. It proves two isolated workers overlap while their
+independent caps remain subject to one aggregate reservation.
+
+The complete resource, recycling and device selection then passed **28/28** in
+`20260919-001157-622faf`. A first 80%-recycling attempt correctly failed its
+128 MiB allocator fixture before the hard cap; the fixed 64 MiB headroom made
+that same fixture recycle safely, while the time probe verified the new 80%
+deadline boundary. The MPS-routing file passed **7/7** in
+`20260919-001547-f7d2d6`, including the two-worker probe that confirms two
+accelerator training workers do not overlap.
+
+Claude's throughput review then supplied five concrete follow-ups. Their new
+reviewer probes were red in `20260919-002323-cd7319`; the repaired policy passed
+5/5 in `20260919-002553-8b53ae`: no `-b` throttle, `nice -n 10`, `cpu−4`
+execution capacity, full-receipt-only lock, recorded-but-noninvalidating prose,
+and direct xdist iteration. The aggregate-memory kill probe passed in
+`20260919-002627-a87223`: two workers below their individual caps were stopped
+when their combined footprint crossed 256 MiB. These focused receipts establish
+the resource and routing mechanism only; the current source still requires a
+full default receipt and measured end-to-end throughput before the gate closes.
+
+After those policy changes, the full runner/recycling/device selection passed
+**35/35** in `20260919-002831-c030ea`. It includes the restored direct-xdist
+iteration target, lock/snapshot behavior, real child cleanup and recycling,
+aggregate cap, ordinary CPU dispatch, explicit MPS routing, and the one-lane
+accelerator concurrency probe.
+
+The current fast **default** receipt passed **4,649/4,649** selected cases once
+in `output/tests/20260919-003054-07304d`: 31 fresh workers, 10 execution slots,
+8 GiB per-worker caps, a 20.20 GiB observed aggregate peak, and 196.80 seconds
+end-to-end. The prior serial receipt took 4,164.65 seconds for 4,640 cases, so
+this is a measured current throughput result, not an extrapolation from a
+microbenchmark. Its source manifest validates 608 code/test/data/configuration
+files and separately records 61 prose/todo hashes.
 
 **September 18 default-suite coverage record.** The September 17 checkpoint
 attempt remains an incomplete historical receipt: it exited 124 after 5,136
