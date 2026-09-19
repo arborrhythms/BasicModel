@@ -430,25 +430,25 @@ def test_no_bindings_by_default_keeps_context_out_of_the_answer(synth_config):
     assert d.synthesis_references == ()
 
 
-# -- reasoning hook, identity guard, reporting --------------------------------
+# -- normal-boundary quarantine, identity guard, reporting ---------------------
 
-def test_prompted_question_records_reasoner_posture(synth_config, monkeypatch):
+def test_prompted_question_cannot_route_normal_resolution_to_legacy_reasoner(
+        synth_config, monkeypatch):
+    """Surface text is not a production selector for the legacy controller."""
     m = _build(synth_config)
     monkeypatch.setattr(m, "reasoning_iterations", 3, raising=False)
     monkeypatch.setattr(
         m, "answer_query",
-        lambda prompt, **kw: {"posture": "true", "confidence": 0.9,
-                              "support_true": 0.9, "support_false": 0.1,
-                              "sentences": [], "trace": ()},
+        lambda *_args, **_kwargs: pytest.fail(
+            "normal answer resolution invoked answer_query"),
         raising=False)
     x, _ = _batch(m)
     with torch.no_grad():
         u = m.understand(x)
         d = m._resolve_answer(u, What.inference(0, split="train",
                                                 prompt="is the cat black?"))
-    assert d.source == "reasoning"
-    assert d.grammar_trace[-1]["operation"] == "reason"
-    assert d.grammar_trace[-1]["posture"] == "true"
+    assert d.source == "identity"
+    assert all(item["operation"] != "reason" for item in d.grammar_trace)
 
 
 def test_exact_identity_reconstruction_is_flagged_not_counted(synth_config):

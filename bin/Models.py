@@ -9066,8 +9066,10 @@ class BasicModel(BaseModel):
             raise RuntimeError("cannot resolve an answer without a program or symbolic state")
         per_row = [questions[min(b, len(questions) - 1)] for b in range(B)]
         temporal = tuple(q.context_values() for q in questions)
-        reasoning = None
-        prompt = getattr(first, "prompt", None) if first is not None else None
+        # Direct ``answer_query`` remains an explicit compatibility API, but a
+        # normal answer boundary is grammar-owned.  An unselected program is
+        # therefore unresolved here; raw surface text may not choose the
+        # legacy controller behind the grammatical trace.
         row_sources, programs = [], []
         resolved_all = True
         if current_program:
@@ -9076,7 +9078,7 @@ class BasicModel(BaseModel):
                 template = next(self.parameters())
             base = template.new_zeros(B, 3, int(self.conceptualSpace.stm.concept_dim))
             for b, q in enumerate(per_row):
-                source = "reasoning" if reasoning is not None else "identity"
+                source = "identity"
                 entry = current_program[b]
                 if q.relation is WhatRelation.PAST:
                     k = abs(int(q.offset))
@@ -9093,7 +9095,7 @@ class BasicModel(BaseModel):
         else:
             answer = symbolic.clone()
             for b, q in enumerate(per_row):
-                source = "reasoning" if reasoning is not None else "identity"
+                source = "identity"
                 if q.relation in (WhatRelation.PAST, WhatRelation.FUTURE):
                     rep = self._temporal_answer_rep_row(
                         q.relation, q.offset, b, symbolic.shape[-1])
@@ -9126,25 +9128,6 @@ class BasicModel(BaseModel):
                     for row in range(len(programs))):
                 selected_thoughts = self._run_selected_program_thoughts(
                     tuple(programs), work_budget=selected_budget)
-        # A completed grammar-owned question has already selected and recorded
-        # its ordinary thought episode.  Do not open the historical surface
-        # reasoner beside it: that would form a second controller/trace whose
-        # result is not the selected grammatical evidence.  The legacy route
-        # remains a compatibility fallback for a non-grammatical program or a
-        # topology with no selected thought capability; this changes only its
-        # production call priority, not the retained implementation.
-        if (not selected_thoughts
-                and isinstance(prompt, str) and prompt.strip()
-                and int(getattr(self, "reasoning_iterations", 0) or 0) > 0
-                and first.relation in (WhatRelation.INFERENCE, WhatRelation.SUPERVISED)):
-            try:
-                reasoning = self.answer_query(prompt)
-            except Exception:
-                reasoning = None
-            if reasoning is not None:
-                row_sources = [
-                    "reasoning" if row_source == "identity" else row_source
-                    for row_source in row_sources]
         selected_rows = tuple(row for row, _result in selected_thoughts)
         # A truth-valued selected operation carries a complete grammatical
         # answer meaning.  The physical compose root may have discarded an
@@ -9224,11 +9207,6 @@ class BasicModel(BaseModel):
                   "offset": int(first.offset),
                   "row_sources": tuple(row_sources), "temporal": temporal,
                   "conditioned": "conceptual", "bindings": references},)
-        if reasoning is not None:
-            trace += ({"operation": "reason", "posture": reasoning.get("posture"),
-                       "confidence": reasoning.get("confidence"),
-                       "support_true": reasoning.get("support_true"),
-                       "support_false": reasoning.get("support_false")},)
         if selected_thoughts:
             trace += tuple({
                 "operation": "selected_query",

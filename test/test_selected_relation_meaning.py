@@ -104,6 +104,51 @@ def test_changed_part_operand_remains_distinguishable_when_folded_root_is_identi
     torch.testing.assert_close(left.roles[1:], right.roles[1:])
 
 
+@pytest.mark.parametrize("face", ["part", "equal"])
+def test_unreduced_lexical_relation_keeps_signed_operands_and_native_vp(
+        monkeypatch, face):
+    """A three-slot lexical relation is still one selected meaning.
+
+    The parser may retain a complete relative sentence in STM rather than
+    folding it through a binary structural face.  Its middle leaf is already
+    the registry-owned native VP, while the two noun leaves remain live,
+    signed semantic operands.  Recovering it must not fall back to its
+    physical end-state or reinterpret a native address as a value.
+    """
+    _cs, _grammar, registry, owner, leaves, _program, a, b = _program_owner(
+        monkeypatch, face=face)
+    canonical = registry.form(face, a, b, mode="assertive")
+    vp = canonical.role_refs[1]
+    lexical = torch.stack((
+        leaves[0], torch.randn_like(leaves[0]), leaves[1],
+    )).detach().requires_grad_()
+    entry = AnswerProgram(
+        rows=torch.tensor([3, 4, 5]),
+        word_rows=torch.tensor([7, 8, 9]),
+        activations=torch.tensor([-.25, 1.0, .75]),
+        leaves=lexical,
+        actions=torch.tensor(
+            [[0, -1, 0], [0, -1, 1], [0, -1, 2]], dtype=torch.long),
+        targets=torch.tensor([-1]),
+        end_state=torch.zeros(3, lexical.shape[-1]),
+        concept_ids=torch.tensor([a[1], vp[1], b[1]]),
+    )
+
+    meaning = owner.program_meaning(entry, registry)
+
+    assert meaning is not None
+    assert meaning.mode == "assertive" and meaning.polarity
+    assert meaning.role_refs == canonical.role_refs
+    torch.testing.assert_close(meaning.roles[0], lexical[0])
+    torch.testing.assert_close(meaning.roles[1], canonical.roles[1])
+    torch.testing.assert_close(meaning.roles[2], lexical[2])
+    (meaning.roles[0].sum() + 2 * meaning.roles[2].sum()).backward()
+    expected = torch.zeros_like(lexical)
+    expected[0] = 1
+    expected[2] = 2
+    torch.testing.assert_close(lexical.grad, expected)
+
+
 def test_native_addresses_do_not_become_semantic_operand_values(monkeypatch):
     cs, _grammar, _registry, owner, _leaves, program, a, b = _program_owner(
         monkeypatch)

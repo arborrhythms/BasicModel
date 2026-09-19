@@ -774,10 +774,14 @@ The capture publishes explicit compiled outputs before reading them;
 packed sentence slots and the final per-row programs share the same records
 ([Models.py:7954](../bin/Models.py#L7954), [Models.py:12072](../bin/Models.py#L12072)).
 
-Resolution selects the current program for identity/reasoning or a frozen
-program for recall, then replays its full-width concepts once. Thinking
-transforms those concepts through LTM attention or a referent's owned leaf,
-located by its WORD row ([Models.py:8186](../bin/Models.py#L8186), [Models.py:8530](../bin/Models.py#L8530),
+Resolution selects the current program for identity or a grammar-selected
+thought, or a frozen program for recall, then replays its full-width concepts
+once. A normal boundary never promotes its raw surface prompt into
+`answer_query()`; the grammar-selected route is the production thought
+interface, while older configured controller steps remain quarantined during
+their migration. Thinking transforms owned concepts through LTM attention or a
+referent's owned leaf, located by its WORD row
+([Models.py:8186](../bin/Models.py#L8186), [Models.py:8530](../bin/Models.py#L8530),
 [Models.py:8568](../bin/Models.py#L8568)). The derivation owns this resolved conceptual answer
 and the question's target-free context ([Output.py:72](../bin/Output.py#L72)). Discourse
 observation retains detached captured sentence products, including packed

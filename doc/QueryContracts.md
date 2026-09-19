@@ -163,6 +163,13 @@ code until Alec reviews their deletion. A production `BasicModel` installs only
 registry. Compatibility aliases cannot define grammar identity, become policy
 features, or grant a thought executor authority.
 
+`resolveAnswer()` also never calls the legacy `answer_query()` from a
+`WhatQuestion.prompt`, even when `reasoningIterations` is positive. An
+unselected program retains its owned identity/temporal seed rather than letting
+raw surface text select a hidden legacy tool or append a second reasoner trace.
+`answer_query()` remains callable only as an explicit compatibility API while
+the older controller is being migrated.
+
 ## Validation
 
 Focused catalogue, VP, program-recovery, and normal-controller probes cover the

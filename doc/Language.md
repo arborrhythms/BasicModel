@@ -817,15 +817,20 @@ matching is used in this API.
 `LanguageSpace.program_meaning()` is the current direct linguistic derivation
 adapter. It recovers a completed binary relation from its immutable local
 compose-action snapshot and preserves the actual signed leaves that a lossy
-fold may have discarded. A structural `what` wrapper marks the resulting
-completed meaning interrogative; it does not replace the compose face with a
-geometric answering operator. A declared outer `not` or `non` changes canonical
-polarity without changing the retained operands. The adapter intentionally declines a
-nested physical fold until it has a stable existing occurrence reference;
-declining it is safer than flattening, rebinding, or inventing a semantic role.
-So the direct relation route is live, while broad sense selection, paraphrase
-realization and general syntactic nested-clause adaptation remain separate
-work.
+fold may have discarded. It also accepts an unreduced lexical
+`[NP1, VP, NP2]` program when—and only when—the middle reference names an
+installed native thought VP. That reference selects grammar identity and
+provenance; the arbitrary surface VP tensor is not reinterpreted as a semantic
+value. The registered canonical VP supplies the middle role while the two live,
+signed noun leaves supply the operands. A structural `what` wrapper marks the
+resulting completed meaning interrogative; it does not replace the compose face
+with a geometric answering operator. A declared outer `not` or `non` changes
+canonical polarity without changing the retained operands. The adapter
+intentionally declines a nested physical fold until it has a stable existing
+occurrence reference; declining it is safer than flattening, rebinding, or
+inventing a semantic role. So the direct relation route is live, while broad
+sense selection, paraphrase realization and general syntactic nested-clause
+adaptation remain separate work.
 [Formation](../bin/Queries.py#L1556),
 [dispatch](../bin/Queries.py#L1855),
 [full contract](QueryContracts.md). Per-row thought permission is now enforced

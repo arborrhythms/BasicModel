@@ -339,6 +339,44 @@ green. This is deliberately composite coverage, not a single fresh green
 default receipt: future source changes require their own affected tests and a
 new frozen full receipt.
 
+### Direct lexical meaning and normal-route quarantine (September 19)
+
+The reviewer probe for an unreduced lexical `[NP1, VP, NP2]` relation was red
+in `output/tests/20260919-033451-e57145` (**2/2 expected failures**): the
+adapter returned no meaning when the middle word was an installed native VP.
+The repaired direct adapter passed **2/2** in
+`output/tests/20260919-033626-3a7262`, preserving the live signed noun leaves,
+the canonical native VP, and the intended operand-only gradient route.
+
+The normal-route reviewer probe was red in
+`output/tests/20260919-033828-bd076e` (**1/1 expected failure**) because an
+unselected surface prompt still called `answer_query()`. After the production
+handoff was removed, its exact rerun passed **1/1** in
+`output/tests/20260919-034105-e1c0e0`; the dense compatibility topology was
+also protected by **2/2** in `output/tests/20260919-034349-fe62f1`.
+The combined meaning/catalogue/controller/phase/work selection passed
+**116/116** in `output/tests/20260919-034137-49803c`. This verifies the
+narrow adapter and normal-path quarantine; it does not claim completion of
+paraphrase, nested-reference, residual-credit, learned-utility, or full-suite
+gates.
+
+The affected dense output-synthesis module also passed **26/26** in
+`output/tests/20260919-034617-30b357`. The first current default receipt then
+collected 4,658 nodes and passed 2,812 before the old
+`TestWriteMask.test_partition_isolation` smoke test exceeded its worker cap
+after twelve earlier legacy-model constructions in that same process
+(`20260919-034713-fef3fa`, 11.23 GiB). The still-uncompleted node passed alone
+**1/1** in `20260919-035338-24e7c8` at 1.76 GiB, proving cumulative worker
+state rather than an intrinsically oversized test. The exact remaining 1,845
+node IDs then passed in fresh 8-case workers in
+`20260919-035428-56e69c` (302.13 seconds; 12.24 GiB aggregate peak).
+
+The three receipts have identical 608-file source manifests and together cover
+each current default node exactly once: **2,812 + 1 + 1,845 = 4,658** passing
+cases. This is current-source composite default coverage under the explicit
+no-rerun policy, not a single green receipt; the first receipt's cap breach is
+retained rather than hidden.
+
 ### Query-phase evidence (September 18)
 
 The rebased phase reviewer probes first failed in

@@ -15150,11 +15150,13 @@ class LanguageSpace(nn.Module):
         ``registry.execute`` or writes memory.
 
         The current adapter is intentionally conservative.  It accepts a
-        completed root relation whose two operands are direct leaves, plus
-        declared ``not``/``non`` wrappers that carry polarity.  A nested or
-        otherwise unsupported constituent remains represented by its physical
-        end state until a stable occurrence reference is available; it is not
-        silently flattened into an invented operand.
+        completed root relation whose two operands are direct leaves, or an
+        unreduced lexical ``[NP1, VP, NP2]`` whose middle leaf is an already
+        registered native VP.  Declared ``not``/``non`` wrappers carry
+        polarity.  A nested or otherwise unsupported constituent remains
+        represented by its physical end state until a stable occurrence
+        reference is available; it is not silently flattened into an invented
+        operand.
         """
         if not (hasattr(registry, "form") and entry is not None):
             return None
@@ -15195,6 +15197,110 @@ class LanguageSpace(nn.Module):
                 stack.append(("unary", self._compose_unary_rules[local], stack.pop()))
                 continue
             return None
+        def relation(face, left_index, right_index, *, mode, polarity,
+                     expected_vp=None):
+            """Recover one direct-leaf relation through its grammar form.
+
+            ``face`` remains grammar metadata.  Native addresses select the
+            registered VP and retain provenance, while only the two selected
+            leaf tensors supply live semantic operand values.  The optional
+            VP check is what makes an unreduced lexical middle word a native
+            grammar identity rather than a token-name or numeric shortcut.
+            """
+            if not (0 <= left_index < len(native_ids)
+                    and 0 <= right_index < len(native_ids)):
+                return None
+            left_id, right_id = (
+                int(native_ids[left_index]), int(native_ids[right_index]))
+            if left_id <= 0 or right_id <= 0:
+                return None
+            left_ref, right_ref = ("sym", left_id), ("sym", right_id)
+            operation_form = getattr(registry, "operation_form", None)
+            if not callable(operation_form):
+                # Program recovery is a thought-grammar operation: it may
+                # not reconstruct a question through the retired query alias
+                # table.
+                return None
+            try:
+                operation, form = operation_form(face)
+            except ValueError:
+                return None
+            if len(operation.operand_roles) != 2:
+                return None
+            try:
+                canonical = registry.form(
+                    face, left_ref, right_ref, mode=mode, polarity=polarity)
+            except RuntimeError:
+                # A deliberately small ConceptualSpace may retain the
+                # structural family while lacking room to reserve every native
+                # thought VP.  That face is structural-only for this model; it
+                # must not turn a normal answer boundary into a lazy allocation
+                # or a crash.
+                if operation.semantic_id in getattr(
+                        registry, 'unavailable_operation_ids', ()):
+                    return None
+                raise
+            if not isinstance(canonical, ConceptualMeaning):
+                raise TypeError(
+                    "grammatical thought registry returned no conceptual meaning")
+            if expected_vp is not None and canonical.role_refs[1] != expected_vp:
+                return None
+            surface_values = {"I1": leaves[left_index], "I2": leaves[right_index]}
+            source_by_canonical_role = dict(zip(
+                operation.operand_roles, form.permutation))
+            live_by_role = {
+                role: surface_values[source_by_canonical_role[role]]
+                for role in operation.operand_roles}
+            canonical_roles = tuple(operation.operand_roles)
+            live_operands = tuple(live_by_role[role] for role in canonical_roles)
+            if any(value.shape != canonical.roles[0].shape for value in live_operands):
+                return None
+            roles = list(canonical.roles.unbind(0))
+            for role, value in live_by_role.items():
+                if role == "I1":
+                    roles[0] = value
+                elif role == "I2":
+                    roles[2] = value
+                else:
+                    return None
+            return ConceptualMeaning(
+                torch.stack(roles), canonical.role_mask, mode=canonical.mode,
+                polarity=canonical.polarity, role_refs=canonical.role_refs,
+                bindings=canonical.bindings, scope=canonical.scope)
+
+        if len(stack) == 3 and all(node[0] == "leaf" for node in stack):
+            # A relative sentence can arrive as its native lexical infix
+            # roles without a lossy binary fold.  The middle leaf must name a
+            # registry-owned VP; arbitrary symbol IDs are not grammar aliases.
+            left, middle, right = (int(node[1]) for node in stack)
+            if not 0 <= middle < len(native_ids):
+                return None
+            vp_id = int(native_ids[middle])
+            if vp_id <= 0:
+                return None
+            vp_ref = ("sym", vp_id)
+            signature_for = getattr(registry, "signature_for", None)
+            if not callable(signature_for):
+                return None
+            if not (0 <= left < len(native_ids) and 0 <= right < len(native_ids)):
+                return None
+            try:
+                probe = ConceptualMeaning(
+                    torch.stack((leaves[left], leaves[middle], leaves[right])),
+                    torch.ones(3, dtype=torch.bool, device=leaves.device),
+                    mode="interrogative",
+                    role_refs=(("sym", int(native_ids[left])), vp_ref,
+                               ("sym", int(native_ids[right]))))
+                operation = signature_for(probe).operation
+            except (RuntimeError, ValueError):
+                return None
+            forms = tuple(getattr(operation, "forms", ()) or ())
+            if not forms:
+                return None
+            return relation(
+                forms[0].structural_id, left, right, mode="assertive",
+                polarity=True, expected_vp=vp_ref)
+
         if len(stack) != 1:
             return None
 
@@ -15221,60 +15327,8 @@ class LanguageSpace(nn.Module):
         if left[0] != "leaf" or right[0] != "leaf":
             return None
         face = getattr(rule, "method_name", None)
-        left_index, right_index = int(left[1]), int(right[1])
-        if not (0 <= left_index < len(native_ids) and 0 <= right_index < len(native_ids)):
-            return None
-        left_id, right_id = int(native_ids[left_index]), int(native_ids[right_index])
-        if left_id <= 0 or right_id <= 0:
-            return None
-        left_ref, right_ref = ("sym", left_id), ("sym", right_id)
-        operation_form = getattr(registry, "operation_form", None)
-        if not callable(operation_form):
-            # Program recovery is a thought-grammar operation: it may not
-            # reconstruct a question through the retired query alias table.
-            return None
-        try:
-            operation, form = operation_form(face)
-        except ValueError:
-            return None
-        if len(operation.operand_roles) != 2:
-            return None
-        try:
-            canonical = registry.form(
-                face, left_ref, right_ref, mode=mode, polarity=polarity)
-        except RuntimeError:
-            # A deliberately small ConceptualSpace may retain the structural
-            # family while lacking room to reserve every native thought VP.
-            # That face is structural-only for this model; it must not turn a
-            # normal answer boundary into a lazy allocation or a crash.
-            if operation.semantic_id in getattr(
-                    registry, 'unavailable_operation_ids', ()):
-                return None
-            raise
-        if not isinstance(canonical, ConceptualMeaning):
-            raise TypeError("grammatical thought registry returned no conceptual meaning")
-        surface_values = {"I1": leaves[left_index], "I2": leaves[right_index]}
-        source_by_canonical_role = dict(zip(
-            operation.operand_roles, form.permutation))
-        live_by_role = {
-            role: surface_values[source_by_canonical_role[role]]
-            for role in operation.operand_roles}
-        canonical_roles = tuple(operation.operand_roles)
-        live_operands = tuple(live_by_role[role] for role in canonical_roles)
-        if any(value.shape != canonical.roles[0].shape for value in live_operands):
-            return None
-        roles = list(canonical.roles.unbind(0))
-        for role, value in live_by_role.items():
-            if role == "I1":
-                roles[0] = value
-            elif role == "I2":
-                roles[2] = value
-            else:
-                return None
-        return ConceptualMeaning(
-            torch.stack(roles), canonical.role_mask, mode=canonical.mode,
-            polarity=canonical.polarity, role_refs=canonical.role_refs,
-            bindings=canonical.bindings, scope=canonical.scope)
+        return relation(
+            face, int(left[1]), int(right[1]), mode=mode, polarity=polarity)
 
     def choose_capacity_binary(self, state, row_gate, *, base_tau):
         """Choose a legacy pre-deposit capacity Binary.

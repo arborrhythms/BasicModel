@@ -8,6 +8,7 @@ existing interaction-memory owner, and its shared work/cutoff accounting.
 from dataclasses import replace
 from types import MappingProxyType, SimpleNamespace
 
+import pytest
 import torch
 
 from Language import Grammar
@@ -625,6 +626,55 @@ def test_selected_program_precedes_the_legacy_surface_reasoner(monkeypatch):
     assert result.source == "thought"
     assert not legacy_calls
     assert memory.thought_state().finished and not memory.in_episode(0)
+
+
+def test_normal_boundary_never_falls_back_to_the_legacy_surface_reasoner(
+        monkeypatch):
+    """An unselected parse remains unresolved; raw text cannot choose a tool."""
+    from test_selected_relation_meaning import _program_owner
+
+    cs, grammar, _legacy_registry, language, _leaves, program, _part, _whole = (
+        _program_owner(monkeypatch, interrogative=False))
+    registry = GrammaticalThoughtRegistry.install(cs, grammar)
+    model = BasicModel()
+    model.spaces = []
+    memory = WhatInteractionMemory(batch=1, capacity=64, detach_mode="episode")
+    object.__setattr__(model, "conceptualSpace", cs)
+    object.__setattr__(model, "languageSpace", language)
+    object.__setattr__(model, "symbolSpace", SimpleNamespace(
+        languageSpace=language, what_memory=memory,
+        grammatical_thoughts=registry))
+    object.__setattr__(model, "grammatical_thoughts", registry)
+    model.what_thinking_detach = "episode"
+    model.reconstruct_in_loop = False
+    model.reasoning_iterations = 1
+    model.eval()
+    monkeypatch.setattr(model, "_walk_budget", lambda: 8)
+    monkeypatch.setattr(
+        model, "_materialize_entries",
+        lambda entries, base, budget: (base, torch.empty(
+            base.shape[0], 0, device=base.device, dtype=torch.long)),
+    )
+    monkeypatch.setattr(
+        model, "_what_grammar_context",
+        lambda questions, **kwargs: (torch.zeros(
+            len(questions), 1, device=kwargs["device"], dtype=kwargs["dtype"]), ()),
+    )
+    monkeypatch.setattr(model, "_select_perceptual_bindings", lambda _: ())
+    monkeypatch.setattr(
+        model, "answer_query",
+        lambda *_args, **_kwargs: pytest.fail(
+            "normal resolution invoked the legacy surface reasoner"),
+    )
+
+    result = model.resolveAnswer(
+        Understanding(answer_program=(program(),)),
+        WhatQuestion.inference(0, prompt="is the part in the whole?"),
+    )
+
+    assert result.selected_thoughts == ()
+    assert result.source == "identity"
+    assert memory.thought_history() == []
 
 
 def test_normal_what_uses_the_selected_thought_without_a_legacy_slot(monkeypatch):

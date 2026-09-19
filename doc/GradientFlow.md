@@ -275,6 +275,15 @@ existing owner to retain within-episode credit.
 [durable read](../bin/Queries.py#L1224),
 [prediction](../bin/Queries.py#L909).
 
+`LanguageSpace.program_meaning()` preserves the same split for a recovered
+direct relation, including an unreduced lexical `[NP1, VP, NP2]`: the native
+VP reference is a discrete grammar/provenance address, and its arbitrary
+surface leaf is not an operand value. The two signed noun leaves are installed
+as the live `I1`/`I2` role tensors, so a selected truth answer can still send
+ordinary output credit to them. Any gradient through the canonical native VP
+follows its declared registry/structural path, never a numeric ID or the
+unreduced middle surface tensor. The direct-leaf probe checks this separation.
+
 Future policy credit and continuous feedback into representation remain subject
 to the aggregate downstream rule above. These API checks do not establish
 trained thought usefulness. See [Thought-operator contracts](QueryContracts.md).

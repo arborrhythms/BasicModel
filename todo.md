@@ -210,6 +210,16 @@ a fresh single-snapshot all-green receipt. The exact receipts are in
    one grammar of thought in conceptual space; merge them, do not add a
    fourth selector (`run_legacy_world` and the addressee/`Testimony` route
    are retired with item 0).
+
+   The direct adapter now also recovers an unreduced native lexical
+   `[NP1, VP, NP2]` relation without treating the VP's address or surface
+   tensor as an operand; its live signed noun leaves remain the selected
+   values. Normal `resolveAnswer()` no longer invokes `answer_query()` from a
+   raw prompt, so an unselected program retains its owned identity/temporal
+   seed rather than selecting the historical reasoner. These are narrow
+   item-1 increments, not completion of converse/paraphrase/nested-reference
+   semantics, all writer-level coverage, residual credit, or the unified
+   controller migration.
 2. **Finish expectation and residual learning.** Extend retained estimates
    from role/mask/confidence plus source/stream/target provenance to checked
    bindings/scope metadata without copying the arriving target; close
