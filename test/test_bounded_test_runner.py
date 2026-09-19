@@ -243,6 +243,25 @@ def test_real_pytest_coverage_fresh_workers_and_failure_receipt(runner, tmp_path
     assert "skipped" in report and "xfailed" in report
 
 
+def test_test_failure_does_not_cancel_remaining_worker_coverage(runner, tmp_path):
+    """A diagnostic receipt records every selected test, not just the first red one."""
+    (tmp_path / "pytest.ini").write_text("[pytest]\n")
+    (tmp_path / "test_cases.py").write_text(
+        "from pathlib import Path\n"
+        "def test_first():\n assert False, 'intentional first failure'\n"
+        "def test_second():\n Path('second-ran').write_text('yes')\n"
+        "def test_third():\n Path('third-ran').write_text('yes')\n")
+    result = runner.run_suite(
+        root=tmp_path, selectors=["test_cases.py"], run_dir=tmp_path / "result",
+        memory_bytes=512 * 1024**2, timeout=60, suite_timeout=240,
+        batch_size=1, workers=1, lock_path=tmp_path / "lock")
+    assert result["exit_code"] == 1
+    assert result["reason"] == "test_failure"
+    assert result["completed"] == result["selected"]
+    assert (tmp_path / "second-ran").read_text() == "yes"
+    assert (tmp_path / "third-ran").read_text() == "yes"
+
+
 def test_empty_selection_is_not_a_green_suite(runner, tmp_path):
     (tmp_path / "test_empty.py").write_text("# No tests selected.\n")
     result = runner.run_suite(

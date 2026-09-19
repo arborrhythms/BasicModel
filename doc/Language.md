@@ -842,9 +842,15 @@ signed noun leaves supply the operands. A structural `what` wrapper marks the
 resulting completed meaning interrogative; it does not replace the compose face
 with a geometric answering operator. A declared outer `not` or `non` changes
 canonical polarity without changing the retained operands. The adapter
-intentionally declines a nested physical fold until it has a stable existing
-occurrence reference; declining it is safer than flattening, rebinding, or
-inventing a semantic role. So the direct relation route is live, while broad
+also recovers a direct-leaf unary thought whose descriptor takes exactly one
+full-width `concept` (currently, for example, `quantize`): its registered
+native VP supplies the grammar role and the selected signed leaf remains the
+live operand. A unary `description`/reference operation (`exist`, `arma`, or
+`what`) still requires an actual owned LTM or live-thought occurrence; a word
+concept ID is never converted into one. The adapter intentionally declines a
+nested physical fold until it has a stable existing occurrence reference;
+declining it is safer than flattening, rebinding, or inventing a semantic role.
+So the direct relation and direct concept-unary routes are live, while broad
 sense selection, paraphrase realization and general syntactic nested-clause
 adaptation remain separate work.
 [Formation](../bin/Queries.py#L1556),

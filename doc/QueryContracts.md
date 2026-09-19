@@ -145,6 +145,11 @@ for the full role-labelled record. Resolution preserves the complete meaning,
 including VP, NP2, scope, bindings, and provenance; it never substitutes NP1,
 rebinding, a row number, or a surface token.
 
+At owned compose-program recovery, one direct signed leaf can form only a
+descriptor-declared `concept` operand. A direct leaf or its arbitrary concept
+ID cannot manufacture an `ltm`/`thought` occurrence for a `description` or
+reference operand; recovery declines until that owner exists.
+
 ## Phase, work, and lifecycle
 
 Structural composition, reconstruction, and generation cannot execute a thought

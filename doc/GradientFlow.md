@@ -288,6 +288,15 @@ segmented surface to one frozen, non-numeric grammar-form string (for example
 but has no gradient and the raw spelling is discarded. The direct-leaf probe
 checks this separation.
 
+The same rule holds for a recovered direct unary `concept` operation such as
+`quantize`: its registered VP is grammar metadata while the one signed selected
+leaf is installed as the live occupied operand role, so ordinary selected
+controller credit can reach that leaf. A `description` or reference unary form
+does not receive a fabricated occurrence from a leaf or concept ID, and thus
+has no invented reader or gradient route. The direct-unary boundary is only
+formation; execution, LTM reads, code results, and retained `ThoughtResult`
+evidence remain detached at their existing boundaries.
+
 Future policy credit and continuous feedback into representation remain subject
 to the aggregate downstream rule above. These API checks do not establish
 trained thought usefulness. See [Thought-operator contracts](QueryContracts.md).

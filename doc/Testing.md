@@ -107,6 +107,13 @@ never an automatic slow mark.
   cases. Coverage records prove that each selected case completed once; tests
   are not repeated or discarded. The hard memory limit still applies within a
   test, and a killed worker is a failure.
+- An ordinary pytest assertion, setup or teardown failure does **not** cancel
+  the remaining workers. The receipt keeps its `test_failure` outcome and
+  runs every selected case so a diagnostic full run reports all failures.
+  Process-boundary failures (timeout, memory kill, unavailable accounting,
+  collection/protocol failure, interrupted execution or invalid coverage)
+  still stop the pool immediately to protect the machine and preserve an
+  honest receipt.
 - CPU, BLAS and compiler pools use one thread. The existing on-disk Inductor cache
   remains reusable between workers. macOS workers run at `nice -n 10`, not the
   throughput-throttling `taskpolicy -b` background class.
@@ -208,6 +215,30 @@ that same fixture recycle safely, while the time probe verified the new 80%
 deadline boundary. The MPS-routing file passed **7/7** in
 `20260919-001547-f7d2d6`, including the two-worker probe that confirms two
 accelerator training workers do not overlap.
+
+### Complete diagnostic receipts (September 19)
+
+The reviewer probe `test_test_failure_does_not_cancel_remaining_worker_coverage`
+was red under the old policy in `20260919-091149-3f647d`: a deliberate first
+assertion failure left the inner receipt at its first selected case. The repaired
+policy passed the focused probe in `20260919-091247-f6225b`: it retains exit
+status `1` and `test_failure` for the deliberate red case while completing the
+second and third selected cases. Resource, deadline, protocol and coverage
+failures remain fail-fast; only ordinary pytest failures receive complete
+diagnostic coverage. The complete bounded-runner file then passed **25/25** in
+`20260919-091322-343583`.
+
+### Selected direct-unary meaning (September 19)
+
+The reviewer probe for a completed `what(quantize(x))` action program was red
+in `20260919-044105-39096d`: the former binary-only adapter returned no
+meaning. The direct concept-unary adapter passed its recovery/gradient probe in
+`20260919-044334-1c1008`; its normal-controller `code` result probe passed
+alongside it in `20260919-044414-7a428b`. The companion arbitrary-ID guard,
+which proves that a direct leaf cannot manufacture the description occurrence
+needed by `arma`, passed in `20260919-091719-52637f`. The source-matched full
+default receipt then passed **4,664/4,664** in **195.2 s**, peaking at
+**18.7 GiB** aggregate, in `20260919-091747-2d70c9`.
 
 Claude's throughput review then supplied five concrete follow-ups. Their new
 reviewer probes were red in `20260919-002323-cd7319`; the repaired policy passed

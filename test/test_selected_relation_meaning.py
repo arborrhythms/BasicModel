@@ -200,6 +200,73 @@ def test_unreduced_lexical_converse_uses_its_anchored_grammar_form(
     assert owner.program_meaning(legacy, registry) is None
 
 
+def test_selected_unary_concept_operation_keeps_its_live_leaf_and_question_mode(
+        monkeypatch):
+    """A selected unary thought form is not limited to binary relations.
+
+    ``quantize`` is explicitly declared in ``<thought>`` and accepts one
+    conceptual operand.  Its completed program has no physical middle VP
+    leaf: recovery must obtain the grammar-owned native VP while retaining
+    the actual signed operand leaf, then let the structural ``what`` wrapper
+    supply interrogative mode.  It must not decline the program merely because
+    its selected structural root is unary.
+    """
+    _cs, _grammar, registry, owner, leaves, _program, _a, _b = _program_owner(
+        monkeypatch)
+    quantize = next(
+        index for index, rule in enumerate(owner._compose_unary_rules)
+        if rule.method_name == "quantize")
+    what = next(
+        index for index, rule in enumerate(owner._compose_unary_rules)
+        if rule.method_name == "what")
+    leaf = leaves[:1].detach().clone().requires_grad_()
+    entry = AnswerProgram(
+        rows=torch.tensor([3]), word_rows=torch.tensor([7]),
+        activations=torch.tensor([-.25]), leaves=leaf,
+        actions=torch.tensor(
+            [[0, -1, 0], [2, quantize, -1], [2, what, -1]],
+            dtype=torch.long),
+        targets=torch.tensor([quantize, what, -1]),
+        end_state=torch.zeros(3, leaf.shape[-1]),
+        concept_ids=torch.tensor([-1]), lexical_forms=(None,))
+
+    meaning = owner.program_meaning(entry, registry)
+
+    canonical = registry.form("quantize", leaf[0], mode="interrogative")
+    assert meaning is not None
+    assert meaning.mode == "interrogative" and meaning.polarity
+    assert meaning.role_refs == canonical.role_refs
+    assert meaning.role_mask.tolist() == [True, True, False]
+    torch.testing.assert_close(meaning.roles[0], leaf[0])
+    torch.testing.assert_close(meaning.roles[1], canonical.roles[1])
+    (meaning.roles[0].sum()).backward()
+    torch.testing.assert_close(leaf.grad, torch.ones_like(leaf))
+
+
+def test_selected_unary_description_operation_does_not_invent_an_occurrence(
+        monkeypatch):
+    """A direct word leaf is never reinterpreted as an LTM/thought reference."""
+    _cs, _grammar, registry, owner, leaves, _program, _a, _b = _program_owner(
+        monkeypatch)
+    arma = next(
+        index for index, rule in enumerate(owner._compose_unary_rules)
+        if rule.method_name == "arma")
+    what = next(
+        index for index, rule in enumerate(owner._compose_unary_rules)
+        if rule.method_name == "what")
+    entry = AnswerProgram(
+        rows=torch.tensor([3]), word_rows=torch.tensor([7]),
+        activations=torch.tensor([-.25]), leaves=leaves[:1],
+        actions=torch.tensor(
+            [[0, -1, 0], [2, arma, -1], [2, what, -1]], dtype=torch.long),
+        targets=torch.tensor([arma, what, -1]),
+        end_state=torch.zeros(3, leaves.shape[-1]),
+        # This deliberately arbitrary ID must not become a durable occurrence.
+        concept_ids=torch.tensor([917]), lexical_forms=(None,))
+
+    assert owner.program_meaning(entry, registry) is None
+
+
 def test_capture_freezes_anchored_form_from_perceptual_words():
     """Capture classifies the transient perceptual surface, then discards it.
 

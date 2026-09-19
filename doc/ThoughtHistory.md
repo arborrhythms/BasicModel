@@ -31,13 +31,16 @@ so a retained lookup record restores as a complete detached meaning rather
 than an untyped mapping. New computations after restore can be live, but
 restoration never replenishes budget or pressure.
 
-The ordinary controller now owns the selected direct-relation boundary path.
+The ordinary controller now owns the selected direct-relation and direct
+concept-unary boundary paths.
 It is deliberately separate from the legacy `LTMSlot` parity loop: a completed
-interrogative compose program is adapted into canonical `[NP1, VP, NP2]`, then
-`run_selected_thought()` opens one ordinary episode for that row. Composition
-itself remains pure. The adapter retains the signed live leaves, native
-references, mode and `not`/`non` polarity from the owned action program; a
-physical nested fold is not flattened into an invented operand.
+interrogative compose program is adapted into its canonical grammar meaning,
+then `run_selected_thought()` opens one ordinary episode for that row.
+Composition itself remains pure. A binary relation retains its two signed live
+leaves and native VP; a direct `concept` unary retains its one signed live leaf
+and grammar-native VP. Mode and `not`/`non` polarity stay with the owned action
+program. A physical nested fold or a unary description/reference form is not
+flattened into an invented occurrence.
 When a later catalogue operation refines that request, it replaces only the
 grammar-owned VP and legal operand assignment, preserving the selected source's
 mode, polarity, bindings, and scope through execution and the next choice.

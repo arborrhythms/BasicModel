@@ -15154,7 +15154,7 @@ class LanguageSpace(nn.Module):
 
     @torch.compiler.disable
     def program_meaning(self, entry, registry):
-        """Recover one selected binary relation from its owned compose program.
+        """Recover one selected meaning from its owned compose program.
 
         A folded root is deliberately insufficient here: lossy compose faces
         such as ``part`` and ``whole`` erase one operand.  The answer program
@@ -15165,14 +15165,15 @@ class LanguageSpace(nn.Module):
         ``registry.execute`` or writes memory.
 
         The current adapter is intentionally conservative.  It accepts a
-        completed root relation whose two operands are direct leaves, or an
+        completed root relation whose two operands are direct leaves, an
         unreduced lexical ``[NP1, VP, NP2]`` whose middle leaf is an already
         registered native VP and whose frozen grammar-form provenance resolves
-        any shared-VP converse.  Declared ``not``/``non`` wrappers carry
-        polarity.  A nested or otherwise unsupported constituent remains
-        represented by its physical end state until a stable occurrence
-        reference is available; it is not silently flattened into an invented
-        operand.
+        any shared-VP converse, or a direct-leaf unary form whose declared
+        operand is one full-width concept. Declared ``not``/``non`` wrappers
+        carry polarity. A description/reference unary form, nested, or
+        otherwise unsupported constituent remains represented by its physical
+        end state until a stable occurrence reference is available; it is not
+        silently flattened into an invented operand.
         """
         if not (hasattr(registry, "form") and entry is not None):
             return None
@@ -15294,6 +15295,74 @@ class LanguageSpace(nn.Module):
                 polarity=canonical.polarity, role_refs=canonical.role_refs,
                 bindings=canonical.bindings, scope=canonical.scope)
 
+        def unary_concept_operation(face, operand_index, *, mode, polarity):
+            """Recover a direct-leaf unary operation with a concept operand.
+
+            A selected unary form such as ``quantize`` has no physical middle
+            VP word: its VP is the registry's one native grammar binding.
+            The completed program nevertheless owns the actual signed operand
+            leaf, which must remain the value supplied to the selected meaning
+            and its policy path.  Description/reference unary forms stay
+            deliberately unavailable here: their argument must be an existing
+            owned occurrence, and an action tree alone cannot manufacture one.
+            """
+            if not 0 <= operand_index < int(leaves.shape[0]):
+                return None
+            operation_form = getattr(registry, "operation_form", None)
+            if not callable(operation_form):
+                return None
+            try:
+                operation, form = operation_form(face)
+            except ValueError:
+                return None
+            if (len(operation.operand_roles) != 1
+                    or len(getattr(form, "operand_roles", ())) != 1
+                    or tuple(getattr(form, "permutation", ()))
+                    != tuple(operation.operand_roles)):
+                return None
+            descriptor = getattr(registry, "descriptors", {}).get(
+                operation.semantic_id)
+            # Only a direct full-width concept can be recovered from one
+            # leaf. A description/reference operation must wait for its real
+            # occurrence owner instead of treating a concept ID as one.
+            if (descriptor is None
+                    or tuple(getattr(descriptor, "argument_kinds", ()))
+                    != ("concept",)):
+                return None
+            try:
+                canonical = registry.form(
+                    face, leaves[operand_index], mode=mode, polarity=polarity)
+            except RuntimeError:
+                if operation.semantic_id in getattr(
+                        registry, "unavailable_operation_ids", ()):
+                    return None
+                raise
+            if not isinstance(canonical, ConceptualMeaning):
+                raise TypeError(
+                    "grammatical thought registry returned no conceptual meaning")
+            # Validate the fully formed result too, in particular rejecting
+            # a non-truth unary operation under an outer negation before the
+            # controller could open an unexecutable episode.
+            signature_for = getattr(registry, "signature_for", None)
+            if not callable(signature_for):
+                return None
+            try:
+                signature = signature_for(canonical)
+            except (RuntimeError, ValueError):
+                return None
+            if tuple(getattr(signature, "argument_kinds", ())) != ("concept",):
+                return None
+            role = operation.operand_roles[0]
+            slot = {"I1": 0, "I2": 2}.get(role)
+            if slot is None or not bool(canonical.role_mask[slot]):
+                return None
+            roles = list(canonical.roles.unbind(0))
+            roles[slot] = leaves[operand_index]
+            return ConceptualMeaning(
+                torch.stack(roles), canonical.role_mask, mode=canonical.mode,
+                polarity=canonical.polarity, role_refs=canonical.role_refs,
+                bindings=canonical.bindings, scope=canonical.scope)
+
         if len(stack) == 3 and all(node[0] == "leaf" for node in stack):
             # A relative sentence can arrive as its native lexical infix
             # roles without a lossy binary fold.  The middle leaf must name a
@@ -15364,8 +15433,18 @@ class LanguageSpace(nn.Module):
                     return None
                 mode = "interrogative"
             else:
-                return None
+                # This is the selected unary operation itself, rather than a
+                # metadata wrapper around it.  Leave it for the direct-leaf
+                # adapter below; unknown unary forms will still decline there.
+                break
             root = root[2]
+        if root[0] == "unary":
+            rule, operand = root[1:]
+            if operand[0] != "leaf":
+                return None
+            return unary_concept_operation(
+                getattr(rule, "method_name", None), int(operand[1]),
+                mode=mode, polarity=polarity)
         if root[0] != "binary":
             return None
         rule, left, right = root[1:]

@@ -287,6 +287,62 @@ def test_completed_compose_program_enters_normal_controller_before_legacy_thinki
     memory.end_what_episode()
 
 
+def test_completed_unary_concept_program_enters_the_normal_controller(
+        monkeypatch):
+    """A grammar-selected unary concept tool reaches its typed executor.
+
+    The normal bridge must not assume every selected program is a binary
+    truth relation.  A completed ``what(quantize(x))`` owns its live signed
+    leaf and grammar-native VP, enters the same ordinary episode, and retains
+    the checked ``code`` result without coercing that result into a truth or
+    answer seed.
+    """
+    from Understanding import AnswerProgram
+    from test_selected_relation_meaning import _program_owner
+
+    cs, grammar, _legacy_registry, language, leaves, _program, _part, _whole = (
+        _program_owner(monkeypatch))
+    registry = GrammaticalThoughtRegistry.install(cs, grammar)
+    model = BasicModel()
+    model.spaces = []
+    memory = WhatInteractionMemory(batch=1, capacity=32, detach_mode="episode")
+    object.__setattr__(model, "conceptualSpace", cs)
+    object.__setattr__(model, "languageSpace", language)
+    object.__setattr__(model, "symbolSpace", SimpleNamespace(
+        languageSpace=language, what_memory=memory,
+        grammatical_thoughts=registry))
+    object.__setattr__(model, "grammatical_thoughts", registry)
+    model.what_thinking_detach = "episode"
+    quantize = next(
+        index for index, rule in enumerate(language._compose_unary_rules)
+        if rule.method_name == "quantize")
+    what = next(
+        index for index, rule in enumerate(language._compose_unary_rules)
+        if rule.method_name == "what")
+    entry = AnswerProgram(
+        rows=torch.tensor([3]), word_rows=torch.tensor([7]),
+        activations=torch.tensor([-.25]), leaves=leaves[:1],
+        actions=torch.tensor(
+            [[0, -1, 0], [2, quantize, -1], [2, what, -1]],
+            dtype=torch.long),
+        targets=torch.tensor([quantize, what, -1]),
+        end_state=torch.zeros(3, leaves.shape[-1]),
+        concept_ids=torch.tensor([-1]), lexical_forms=(None,))
+
+    with model._query_boundary_scope((0,)):
+        selected = model._run_selected_program_thoughts((entry,), work_budget=16)
+
+    assert len(selected) == 1
+    row, result = selected[0]
+    assert row == 0 and result.meaning.mode == "interrogative"
+    assert result.result is not None
+    assert result.result.semantic_id == "quantize"
+    assert result.result.result_kind == "code"
+    assert [record.operation for record in result.records if record.kind == "thought"] == [
+        "quantize", "conclude"]
+    memory.end_what_episode()
+
+
 def test_normal_controller_policy_sees_all_mandatory_roles_and_gets_credit():
     model, registry, memory, part, whole = _world()
     model.selected_thought_policy_weight = 1.0

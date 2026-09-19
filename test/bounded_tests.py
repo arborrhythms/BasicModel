@@ -580,12 +580,18 @@ def run_suite(*, root, selectors, run_dir, memory_bytes, timeout=1800, suite_tim
                        reports=data.get("reports", []), recycled=data.get("recycled", False))
         result["workers"].append(receipt)
         result["completed"].extend(receipt["completed"])
-        if receipt["exit_code"] != 0:
+        test_failure = any(report["outcome"] in ("failed", "xpassed")
+                           for report in receipt["reports"])
+        # pytest uses status 1 for an ordinary assertion/setup/teardown failure.
+        # It is diagnostic information, not a failed process boundary: keep
+        # dispatching the selected cases so one receipt reports every failure.
+        # Timeouts, memory kills, monitor failures, collection/protocol errors
+        # and other non-pytest exits still stop the pool immediately.
+        if receipt["exit_code"] != 0 and not (receipt["exit_code"] == 1 and test_failure):
             result.update(exit_code=receipt["exit_code"], reason=receipt["reason"])
             return False
-        if any(report["outcome"] in ("failed", "xpassed") for report in receipt["reports"]):
+        if test_failure:
             result.update(exit_code=1, reason="test_failure")
-            return False
         completed = receipt["completed"]
         if receipt["recycled"]:
             if not completed or completed != nodes[:len(completed)]:
@@ -681,18 +687,21 @@ def run_suite(*, root, selectors, run_dir, memory_bytes, timeout=1800, suite_tim
                     if not finished:
                         time.sleep(.05)
                         continue
+                    stop_dispatch = False
                     for name, handle in finished:
                         active.pop(name, None)
                         receipt = settle(handle)
                         if not account(handle["request"]["selectors"], receipt):
                             abort_active("aborted")
+                            stop_dispatch = True
                             break
                         publish_active()
-                    if result["reason"] != "running":
+                    if stop_dispatch:
                         break
-                if result["reason"] == "running":
+                if result["reason"] in ("running", "test_failure"):
                     if Counter(result["completed"]) == Counter(result["selected"]):
-                        result.update(exit_code=0, reason="passed")
+                        if result["reason"] == "running":
+                            result.update(exit_code=0, reason="passed")
                     else:
                         result.update(exit_code=125, reason="incomplete_coverage")
             if source_snapshot(root) != frozen:
