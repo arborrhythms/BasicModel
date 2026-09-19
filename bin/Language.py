@@ -14985,11 +14985,12 @@ class LanguageSpace(nn.Module):
         # An unreduced lexical relative sentence can retain the native VP of a
         # canonical family while losing which grammar-spelled converse form
         # anchored its middle word.  Copy only the grammar's closed-class
-        # surface-to-form classification with this program owner.  The capture
-        # later stores the resulting form string, never a raw word, row, or
-        # numeric ID; a future global grammar reconfiguration cannot relabel a
-        # completed sentence.  A normal private dict (rather than a mapping
-        # proxy) keeps cloned training models deepcopy-safe.
+        # surface-to-form classification with this program owner.  The eager
+        # forward resolves it once per retained WORD row; capture gathers that
+        # result without consulting text or anchors again.  A future global
+        # grammar reconfiguration cannot relabel a completed sentence.
+        # A normal private dict (rather than a mapping proxy) keeps cloned
+        # training models deepcopy-safe.
         anchors = getattr(TheGrammar, "surface_anchors", {}) or {}
         object.__setattr__(
             self, "_surface_anchors", {

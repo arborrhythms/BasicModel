@@ -12,10 +12,11 @@
 
 Work follows
 [2026-09-15-next-sentence-as-the-production-objective.md](doc/plans/2026-09-15-next-sentence-as-the-production-objective.md)
-§10 and its completion gates. Validation: the fresh default receipt at
-`573fe0c` passed 4,649/4,649 in 197 s (`output/tests/20260919-003054-07304d`);
-later commits carry affected-file receipts only and need one source-matched
-full receipt before item 5 publishes. The September 17 handoff and preserved
+§10 and its completion gates. Validation: the fresh, source-matched default
+selection completed 4,668/4,668 with a green receipt in 1,040 s
+(`output/tests/20260919-125200-894ef3`), using eight-case/one-file batches
+under the unchanged resource caps. Default batch memory stability remains
+under Residues below. The September 17 handoff and preserved
 candidates are in
 [doc/checkpoints/2026-09-17-production-spec/README.md](doc/checkpoints/2026-09-17-production-spec/README.md);
 of its six candidates only the generation catalogue (item 3) remains uninstalled.
@@ -28,7 +29,8 @@ of its six candidates only the generation catalogue (item 3) remains uninstalled
   selected receipt while resource/protocol failures remain bounded/fail-fast
   ([Testing](doc/Testing.md#complete-diagnostic-receipts-september-19)).
 - `943a64f` Lexical converse forms: `whole` vs `part` provenance frozen at
-  program capture (item 1 increment; see review note under item 1).
+  program capture ([Testing](doc/Testing.md#forward-owned-lexical-forms-september-19)
+  records the later forward-ownership correction).
 - `fb5611c` Normal thought resolution grammar-owned; `resolveAnswer()` no
   longer calls `answer_query()` from a raw prompt (item 1 increment).
 - `ea92851` **Item 0 complete:** model-declared `<thought>` allow-list between
@@ -66,7 +68,8 @@ of its six candidates only the generation catalogue (item 3) remains uninstalled
    - typed adapters for set, code and subgoal results (truth and prediction
      landed); `what(Q)`'s `continuation` is the controller's child push;
    - converse/paraphrase and nested-reference meaning across all three writers
-     (only the anchored `whole` converse is done; non-anchor and nested cases open);
+     (only the anchored `whole` converse is done; non-anchor and nested cases
+     open);
    - full-width mandatory roles, actual shared work costs recorded in the
      controller's own episode meter, causal child evidence, bounded return;
    - replay/checkpoint isolation and policy credit (candidates detached,
@@ -164,6 +167,11 @@ the pre-FineWeb list below.
 Small, real, and not on the critical path. Fold each into the nearest Codex
 change; delete the line with the commit.
 
+- **Bounded test batches:** default 256-case/16-file and 32-case/4-file
+  workers exceeded the 8 GiB cap; eight-case/one-file batches pass the same
+  default selection. Restore safe, faster batching without raising caps or
+  omitting cases; reconsider [fixture reuse](doc/plans/2026-09-17-bounded-fixture-reuse.md)
+  if useful ([evidence](doc/Testing.md#forward-owned-lexical-forms-september-19)).
 - **Fold ladder:** delete the radix-backed non-word-major meronomy path (no
   legacy paths); confirm the `dispatch_per_row_reset` note in
   [the plan](doc/plans/2026-09-10-meronomy-fold-ladder.md#open-defects-found-on-the-way)
@@ -183,8 +191,6 @@ change; delete the line with the commit.
   of thought (NEXT item 1). Q3/Q4 (numeral representation, clause lexing) and
   "multi-digit wholes, then counting" remain an evaluation target for the
   unified controller — in [FutureWork](doc/FutureWork.md), not here.
-- Bounded fixture reuse ([plan](doc/plans/2026-09-17-bounded-fixture-reuse.md)):
-  moot after the 21× harness speedup; revisit only if the suite hurts again.
 - Fold-ladder Q1–Q3 (admission knobs, coverage schedule, category-utility
   floor): tuning questions with no evidence until the long run produces some.
 - The answer path and owned output programs, queries-as-prediction with

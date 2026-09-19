@@ -153,7 +153,7 @@ def _build_model(kind):
         inject = f"<transformChooser>{kind}</transformChooser>"
         text = text.replace("<architecture>", f"<architecture>\n    {inject}", 1)
     tmp = tempfile.NamedTemporaryFile(
-        mode="w", suffix=".xml", delete=False, dir=_DATA)
+        mode="w", suffix=".xml", delete=False)
     tmp.write(text)
     tmp.close()
     try:

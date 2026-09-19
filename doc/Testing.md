@@ -438,6 +438,73 @@ The new frozen full default receipt is
 seconds, at a 18.74 GiB aggregate peak under the 28 GiB cap. The failed first
 attempt remains recorded above; it is not counted as a green receipt.
 
+### Forward-owned lexical forms (September 19)
+
+The review of `943a64f` identified a second text lookup at program capture:
+`_word_lexical_forms` reclassified PartSpace's transient `word_texts` through
+the anchor table instead of retaining the forward's decision. The row-dispatch,
+missing-provenance, and ordinary-forward probes were red in
+`output/tests/20260919-121232-1f0289`. That run also caught a packed-fixture
+bucket mismatch; after using a fixed 16-word fixture, both ordinary and packed
+forward probes failed for the intended missing-form reason in
+`20260919-121308-c9f0aa`.
+
+The eager word-row staging now resolves each WORD's form once and retains it
+by WORD row. Capture neither reads text nor repeats the anchor lookup, and
+unresolved words remain unclassified. The selected-meaning file passed
+**22/22** selected cases in `20260919-121433-f7074c`. The final affected
+selection, including additional soft/hard-reset and restaging assertions,
+completed **172/172** selected cases with a green receipt in
+`20260919-121554-8d81e1`. It covers packed and ordinary capture, distinct WORDs
+sharing an OBJECT, unknown provenance, detached recall, native IDs, the normal
+controller, structural checkpoints, compiled word loops, output ownership,
+reconstruction, word storage, and batch isolation.
+
+Two fresh full attempts stopped at the unchanged per-worker memory cap:
+`20260919-121914-ef91a4` completed **2,521/4,667** cases with the default
+256-case/16-file batches, and `20260919-122113-2130d6` completed
+**2,725/4,667** with 32-case/4-file batches. Neither recorded a pytest failure;
+neither is a passing full receipt. The second run's active reasoning case
+passed alone in `20260919-122420-d322df` at **1.76 GiB**. Both affected worker
+groups then completed **155/155** cases in `20260919-122509-f550d4` using
+eight-case, one-file batches; the largest worker peaked at **5.78 GiB**.
+This changes process lifetimes only, with no omitted tests, assertion changes,
+or higher resource limits.
+
+A subsequent eight-case full run, `20260919-122610-9cc2f0`, stopped at
+**389/4,667** because an existing category fixture temporarily wrote an XML
+file inside `data/`. The source hashes matched again after fixture cleanup,
+but the run correctly rejected the transient mutation. The new fixture
+isolation probe was red in `20260919-122953-8d39a1`. Eight temporary XML
+creation sites across six test files now use the system temporary directory.
+Their affected selection passed **44/44** cases in `20260919-123031-39a665`,
+including the existing guard that rejects actual source mutations. Model
+assertions and the runner's source validation are unchanged.
+
+The next full run, `20260919-123135-1a2b27`, completed **4,668/4,668**
+cases with two failures and no resource or source-validation error. Isolated
+workers exposed a peer-pipeline probe that inherited its eager gradient-anchor
+setup from an earlier test, and a routing-credit probe whose linear-sum loss
+is invariant under its addition operator. The peer fixture now initializes
+the required anchors itself; the routing probe uses squared values to give
+different pairings different costs, with a fixed seed and the same nonzero
+gradient assertions. Both files passed **27/27** cases, each in its own fresh
+worker, in `20260919-124907-090f08`.
+
+The final frozen default selection passed with **4,668/4,668** cases completed
+in `output/tests/20260919-125200-894ef3` (1,039.56 seconds). It used
+`DEVELOPER_DIR=/Library/Developer/CommandLineTools .venv/bin/python
+test/test_report.py --batch-size 8 --max-files 1`, with the unchanged ten-worker
+pool, 8 GiB worker cap, and 28 GiB aggregate cap. Peak worker footprint was
+**7.19 GiB**, and aggregate peak was **11.33 GiB**. The receipt's source
+manifest was compared with the final implementation and matched exactly.
+The default 256-case/16-file grouping's memory instability remains a runner
+residue in `todo.md`; smaller batches validate the same default selection.
+
+This closes the item-1 anchoring review note only. General non-anchor and
+nested-reference meaning, typed answer adapters, and controller unification
+remain in `todo.md`.
+
 ### Query-phase evidence (September 18)
 
 The rebased phase reviewer probes first failed in

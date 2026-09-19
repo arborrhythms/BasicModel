@@ -11767,6 +11767,7 @@ class BasicModel(BaseModel):
         isp._ar_word_concept_rows = None
         isp._ar_word_concept_ids = None
         isp._ar_word_concept_orders = None
+        isp._ar_word_lexical_forms = {}
         isp._ar_word_object_rows = None
         isp._ar_word_object_ids = None
         isp._ar_word_object_orders = None
@@ -11843,6 +11844,12 @@ class BasicModel(BaseModel):
         fold_support = owner._ordered_fold_support(
             fold_passes, fold_passes)
         wom = getattr(alloc, "word_obj_meta", {}) if alloc is not None else {}
+        language = getattr(self, "languageSpace", None)
+        if language is None:
+            language = getattr(getattr(self, "symbolSpace", None),
+                               "languageSpace", None)
+        anchors = getattr(language, "_surface_anchors", {})
+        lexical_forms = isp._ar_word_lexical_forms
 
         def _raw_int_refs(refs):
             out = set()
@@ -11917,6 +11924,15 @@ class BasicModel(BaseModel):
                     pending.append((b, p, key))
                     continue
                 row_host[b][p] = int(row)
+                # Resolve lexical anchoring while the forward owns the word's
+                # segmented surface and exact WORD row.  A canonical OBJECT
+                # may be shared by converse forms, so it is not this key.
+                # Capture later reads only this per-staging provenance; it
+                # must not reclassify a completed word from transient text.
+                if int(row) not in lexical_forms:
+                    form = (anchors.get(value.casefold())
+                            if isinstance(value, str) else None)
+                    lexical_forms[int(row)] = form if isinstance(form, str) else None
                 slots = owner.concepts_from_percepts.admit_references(
                     row, stored_parts, stored_wholes)
                 for slot, (role, code) in enumerate(slots):
@@ -12201,41 +12217,30 @@ class BasicModel(BaseModel):
         return ids
 
     def _word_lexical_forms(self, batch, width):
-        """Freeze anchored grammar-form provenance alongside word leaves.
+        """Gather forward-resolved grammar forms by retained WORD row.
 
-        A closed-class relation surface can denote a particular structural
-        form such as ``whole`` even though that form intentionally shares its
-        canonical native VP with ``part``.  Convert the transient input text
-        through the *already frozen* ``LanguageSpace`` anchor table here at the
-        owned boundary, then retain only the grammar form.  Neither raw text,
-        word rows, nor native IDs reaches an answer meaning or policy feature.
+        Rows are dispatch keys, never semantic values or policy features.
+        Unknown words and older staging without provenance stay unclassified;
+        capture never consults input text or the current anchor table.
         """
         batch, width = int(batch), int(width)
         empty = tuple(tuple(None for _ in range(width)) for _ in range(batch))
-        # PartSpace owns word segmentation.  InputSpace's raw lexer record is
-        # intentionally not a source here: its token layout need not match
-        # the word leaves the serial pipeline actually pushed.
-        perceptual = getattr(self, "perceptualSpace", None)
-        forward = getattr(perceptual, "_forward_input", None)
-        texts = forward.get("word_texts") if isinstance(forward, dict) else None
-        language = getattr(self, "languageSpace", None)
-        if language is None:
-            language = getattr(getattr(self, "symbolSpace", None),
-                               "languageSpace", None)
-        anchors = getattr(language, "_surface_anchors", None)
-        if texts is None or not hasattr(anchors, "get"):
+        isp = getattr(self, "inputSpace", None)
+        rows = getattr(isp, "_ar_word_concept_rows", None)
+        resolved = getattr(isp, "_ar_word_lexical_forms", None)
+        if (not torch.is_tensor(rows) or rows.ndim != 2
+                or not hasattr(resolved, "get")):
             return empty
+        retained = rows[:batch, :width].detach().to("cpu").tolist()
         forms = []
         for b in range(batch):
-            text_row = texts[b] if b < len(texts) else ()
-            row = []
+            word_rows = retained[b] if b < len(retained) else ()
+            row_forms = []
             for word in range(width):
-                text = (text_row[word]
-                        if text_row is not None and word < len(text_row)
-                        else None)
-                form = anchors.get(text.casefold()) if isinstance(text, str) else None
-                row.append(form if isinstance(form, str) else None)
-            forms.append(tuple(row))
+                row = word_rows[word] if word < len(word_rows) else -1
+                form = resolved.get(row) if row >= 0 else None
+                row_forms.append(form if isinstance(form, str) else None)
+            forms.append(tuple(row_forms))
         return tuple(forms)
 
     def _pushed_word_slab(self, B, W, D, like, activations):

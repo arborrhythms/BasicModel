@@ -138,7 +138,7 @@ def _write_serial_config():
             lambda m: m.group(0) + f"\n  <architecture>{inject}</architecture>",
             text, count=1)
     tmp = tempfile.NamedTemporaryFile(
-        mode="w", suffix=".xml", delete=False, dir=_DATA_DIR)
+        mode="w", suffix=".xml", delete=False)
     tmp.write(text)
     tmp.close()
     return tmp.name

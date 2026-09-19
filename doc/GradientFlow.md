@@ -282,11 +282,12 @@ surface leaf is not an operand value. The two signed noun leaves are installed
 as the live `I1`/`I2` role tensors, so a selected truth answer can still send
 ordinary output credit to them. Any gradient through the canonical native VP
 follows its declared registry/structural path, never a numeric ID or the
-unreduced middle surface tensor. Capture first maps the PartSpace-owned
-segmented surface to one frozen, non-numeric grammar-form string (for example
-`whole`); that detached classification selects a declared converse permutation
-but has no gradient and the raw spelling is discarded. The direct-leaf probe
-checks this separation.
+unreduced middle surface tensor. The eager forward maps the PartSpace-owned
+segmented surface to a grammar-form string (for example `whole`) keyed by the
+retained WORD row. Capture gathers that resolved classification without another
+text lookup; the row is only a dispatch key. The detached form selects a
+declared converse permutation but has no gradient, and the program retains no
+raw spelling. The direct-leaf probe checks this separation.
 
 The same rule holds for a recovered direct unary `concept` operation such as
 `quantize`: its registered VP is grammar metadata while the one signed selected

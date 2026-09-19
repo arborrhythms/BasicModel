@@ -91,8 +91,7 @@ _MODEL_XML_FOOTER = """
 def _write_tmp_xml(training_extra=""):
     body = _MODEL_XML_HEADER.format(training_extra=training_extra) + _MODEL_XML_FOOTER
     tmp = tempfile.NamedTemporaryFile(
-        mode="w", suffix=".xml", delete=False,
-        dir=_DATA)
+        mode="w", suffix=".xml", delete=False)
     tmp.write(body)
     tmp.close()
     return tmp.name
@@ -118,7 +117,7 @@ class TestXsdRejectsRetiredElements(unittest.TestCase):
                 "    " + arch_extra + "\n    <data>", 1)
         xml = xml + _MODEL_XML_FOOTER
         tmp = tempfile.NamedTemporaryFile(
-            mode="w", suffix=".xml", delete=False, dir=_DATA)
+            mode="w", suffix=".xml", delete=False)
         tmp.write(xml)
         tmp.close()
         try:

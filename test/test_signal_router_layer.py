@@ -38,13 +38,18 @@ def test_layer_gradient_into_op_and_anchors():
     hard route's masks (straight-through) and the soft op-mixture both
     flow back into copy_anchor and reduce_anchor.
     """
+    torch.manual_seed(0)
     B, N, D = 1, 4, 3
     op = _AddOp()
     layer = BinaryStructuredReductionLayer(
         d_model=D, ops=[op], r_copy=1)
     x = torch.randn(B, N, D, requires_grad=True)
     hard, soft, routing = layer(x)
-    loss = hard.sum() + soft.sum() + routing["marginal_slab"].sum()
+    # Addition preserves the linear sum for every route; that objective's
+    # anchor gradient is zero apart from roundoff. Squared values distinguish
+    # different pairings and therefore exercise actual routing credit.
+    loss = (hard.square().sum() + soft.square().sum()
+            + routing["marginal_slab"].square().sum())
     loss.backward()
     assert x.grad is not None and x.grad.abs().sum() > 0
     assert layer.copy_anchor.grad is not None and layer.copy_anchor.grad.abs().sum() > 0

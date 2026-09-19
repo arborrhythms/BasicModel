@@ -10241,6 +10241,7 @@ class InputSpace(Space):
         self._ar_word_concept_rows = None
         self._ar_word_concept_ids = None
         self._ar_word_concept_orders = None
+        self._ar_word_lexical_forms = {}
         # The word concept is what the CS->SS symbolic loop constructs.  Its
         # paired object concept is the referent that replaces the word
         # reference at the CS STM owner boundary before Language sees it.
@@ -10299,6 +10300,7 @@ class InputSpace(Space):
         self._ar_word_concept_rows = None
         self._ar_word_concept_ids = None
         self._ar_word_concept_orders = None
+        self._ar_word_lexical_forms = {}
         self._ar_word_object_rows = None
         self._ar_word_object_ids = None
         self._ar_word_object_orders = None

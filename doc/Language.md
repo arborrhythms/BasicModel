@@ -241,9 +241,13 @@ string. Enumerating "the binary reverse ops" therefore filters on
 (`BasicModel._grammar_reverse_ops`), not on `RuleDef.arity`.
 
 Closed-class `<Anchors>` map each case-folded surface spelling to a grammar
-form. At the completed-answer capture boundary, only the PartSpace-segmented
-middle word's matching form is retained as private copied metadata; raw spelling,
-dictionary row, and native address are not semantic features. That lets a
+form. The eager forward resolves that form while staging the PartSpace word
+and records it by its retained WORD row. Completed-answer capture reads this
+decision by row, without consulting text or the anchor table again; raw
+spelling, dictionary row, and native address are not semantic features. The
+row map belongs to the current staging and clears with the word rows on Start,
+hard reset, or the next forward. Each captured program keeps its own form
+strings across later staging and detached recall copies. That lets a
 lexical `whole` (including a declared anchor paraphrase) recover the shared
 canonical `part` VP with `whole`'s declared `(I2, I1)` permutation. A legacy
 record lacking this metadata declines a shared-VP ambiguity rather than

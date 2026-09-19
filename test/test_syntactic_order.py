@@ -60,7 +60,7 @@ def test_syntactic_order_defaults_zero_and_reads_config():
     src2 = src.replace("<symbolicOrder>",
                        "<syntacticOrder>2</syntacticOrder>\n    <symbolicOrder>", 1)
     tmp = tempfile.NamedTemporaryFile(
-        mode="w", suffix=".xml", delete=False, dir=_DATA)
+        mode="w", suffix=".xml", delete=False)
     tmp.write(src2); tmp.close()
     try:
         import Models, Language
@@ -111,7 +111,7 @@ def test_syntactic_order_negative_rejected():
         "<symbolicOrder>",
         "<syntacticOrder>-1</syntacticOrder>\n    <symbolicOrder>", 1)
     tmp = tempfile.NamedTemporaryFile(
-        mode="w", suffix=".xml", delete=False, dir=_DATA)
+        mode="w", suffix=".xml", delete=False)
     tmp.write(src); tmp.close()
     try:
         with pytest.raises(ValueError):

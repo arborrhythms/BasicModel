@@ -267,28 +267,88 @@ def test_selected_unary_description_operation_does_not_invent_an_occurrence(
     assert owner.program_meaning(entry, registry) is None
 
 
-def test_capture_freezes_anchored_form_from_perceptual_words():
-    """Capture classifies the transient perceptual surface, then discards it.
-
-    The raw lexer does not own word segmentation.  The actual word text lives
-    on the perceptual staging record, while the completed answer program may
-    retain only its closed grammar-form classification.
-    """
+def test_capture_reads_anchored_form_from_retained_word_rows():
+    """WORD rows dispatch the forward's decision, even for a shared OBJECT."""
     owner = SimpleNamespace(
-        inputSpace=SimpleNamespace(_forward_input={"tokens": [["wholeOf"]]}),
-        perceptualSpace=SimpleNamespace(_forward_input={
-            "word_texts": [["wholeOf", "whole-of"], ["partOf"]],
-        }),
-        languageSpace=SimpleNamespace(_surface_anchors={
-            "wholeof": "whole", "whole-of": "whole", "partof": "part",
-        }),
+        inputSpace=SimpleNamespace(
+            _ar_word_concept_rows=torch.tensor([[7, 11, -1], [11, 7, -1]]),
+            _ar_word_object_rows=torch.tensor([[19, 19, -1], [19, 19, -1]]),
+            _ar_word_lexical_forms={7: "whole", 11: "part"}),
     )
 
     forms = BasicModel._word_lexical_forms(owner, 2, 3)
 
-    assert forms == (("whole", "whole", None), ("part", None, None))
-    assert "wholeOf" not in forms[0]
-    assert "whole-of" not in forms[0]
+    assert forms == (("whole", "part", None), ("part", "whole", None))
+    owner.inputSpace._ar_word_lexical_forms[7] = "equal"
+    assert forms[0][0] == "whole"
+
+
+def test_capture_does_not_invent_anchoring_for_an_unresolved_word():
+    owner = SimpleNamespace(
+        inputSpace=SimpleNamespace(
+            _ar_word_concept_rows=torch.tensor([[-1, 7]])),
+        perceptualSpace=SimpleNamespace(
+            _forward_input={"word_texts": [["wholeOf", "wholeOf"]]}),
+        languageSpace=SimpleNamespace(_surface_anchors={"wholeof": "whole"}),
+    )
+
+    assert BasicModel._word_lexical_forms(owner, 1, 2) == ((None, None),)
+
+
+@pytest.mark.parametrize("packed", [False, True])
+def test_forward_anchor_capture_survives_text_and_grammar_changes(
+        tmp_path, monkeypatch, packed):
+    """Real staging freezes the form before any observation writer captures it."""
+    from test_compiled_word_chunk import (
+        _stage_fullgraph_tensor_peer, _tiny_canonical_model,
+    )
+    from test_reverse_traversal import _stage_packed
+
+    model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets="16")
+    model.eval()
+    model._tensor_peer_while_eager = True
+    model._chart_compose_per_word = lambda: None
+    try:
+        with torch.no_grad():
+            if packed:
+                _stage_packed(model, [["wholeOf", "partOf"], ["partOf"]])
+            else:
+                _stage_fullgraph_tensor_peer(model, ["wholeOf", "partOf"])
+            output = model._forward_with_compiled_sentence_state(None)
+            model._publish_compiled_sentence_state(output)
+            # Neither the transient spelling nor a changed anchor table may
+            # reinterpret the leaves the completed forward actually retained.
+            model.perceptualSpace._forward_input.pop("word_texts", None)
+            monkeypatch.setattr(model.languageSpace, "_surface_anchors", {})
+            monkeypatch.setattr(Language.TheGrammar, "surface_anchors", {})
+            current, sentences = model._capture_answer_programs()
+
+        assert sentences[0][0].lexical_forms == ("whole",)
+        assert sentences[0][1].lexical_forms == ("part",)
+        if packed:
+            assert sentences[1][0].lexical_forms == ("part",)
+            assert sentences[1][1] is None
+            assert current[0] is sentences[1][0]
+        else:
+            assert current[0] is sentences[0][0]
+        assert current[1] is sentences[0][1]
+        held = sentences[0][0].detached()
+        with torch.no_grad():
+            _stage_fullgraph_tensor_peer(model, ["other", "words"])
+        assert all(form is None for row in model._word_lexical_forms(
+            2, model.inputSpace._word_active_mask.shape[1]) for form in row)
+        assert not set(held.word_rows.tolist()).intersection(
+            model.inputSpace._ar_word_lexical_forms)
+        staged = model.inputSpace._ar_word_lexical_forms
+        assert staged
+        model.inputSpace.Reset(hard=False)
+        assert model.inputSpace._ar_word_lexical_forms is staged
+        model.inputSpace.Reset(hard=True)
+        assert model.inputSpace._ar_word_lexical_forms == {}
+        assert held.lexical_forms == ("whole",)
+    finally:
+        model.End()
+        model.symbolSpace.soft_reset()
 
 
 def test_native_addresses_do_not_become_semantic_operand_values(monkeypatch):

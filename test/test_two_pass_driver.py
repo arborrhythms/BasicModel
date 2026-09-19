@@ -42,7 +42,7 @@ def _build(extra=""):
     if extra:
         text = text.replace("<architecture>", f"<architecture>\n    {extra}", 1)
     tmp = tempfile.NamedTemporaryFile(
-        mode="w", suffix=".xml", delete=False, dir=_DATA)
+        mode="w", suffix=".xml", delete=False)
     tmp.write(text)
     tmp.close()
     try:

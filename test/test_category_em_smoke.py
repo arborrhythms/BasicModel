@@ -48,9 +48,8 @@ def _write_category_config(*, mlp=False):
     the architecture block. Forces PARALLEL mode
     (serial=false, symbolicOrder=0): the round-0 role observation that drives
     the E/M is parallel-mode-correct (serial per-word attribution is
-    approximate -- the handoff §3.3 caveat). Written into data/ at runtime
-    (invisible to the import-time data/*.xml sweeps) and unlinked by the
-    caller."""
+    approximate -- the handoff §3.3 caveat). Written outside the validated
+    source tree and unlinked by the caller."""
     with open(_BASE_CONFIG) as fh:
         text = fh.read()
     flags = "    <categoryCodebook>true</categoryCodebook>\n"
@@ -65,7 +64,7 @@ def _write_category_config(*, mlp=False):
         "    <symbolicOrder>0</symbolicOrder>\n" + flags,
         1)
     tmp = tempfile.NamedTemporaryFile(
-        mode="w", suffix=".xml", delete=False, dir=_DATA)
+        mode="w", suffix=".xml", delete=False)
     tmp.write(text)
     tmp.close()
     return tmp.name
@@ -78,6 +77,18 @@ def _build(path):
     Models.TheData.load("inline", dat=dat)
     model, _ = Models.BasicModel.from_config(path)
     return model
+
+
+def test_temporary_category_config_preserves_validated_source():
+    from pathlib import Path
+    from bounded_tests import source_snapshot
+
+    before = source_snapshot(Path(_ROOT))
+    path = _write_category_config()
+    try:
+        assert source_snapshot(Path(_ROOT)) == before
+    finally:
+        os.unlink(path)
 
 
 def _run_forwards(model, n=15):

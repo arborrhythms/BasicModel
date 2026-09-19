@@ -24,6 +24,13 @@ from Language import LanguageSpace, RoutingState
 from Layers import ShortTermMemory
 
 
+@pytest.fixture(autouse=True)
+def _pipeline_grad_anchors():
+    """Compiled probes must not inherit anchor setup from an earlier test."""
+    from Models import _ensure_grad_anchors
+    _ensure_grad_anchors(torch.device("cpu"))
+
+
 class _DeterministicBinaryChooser(torch.nn.Module):
     def forward(self, window):
         parent = window.sum(dim=1, keepdim=True)
