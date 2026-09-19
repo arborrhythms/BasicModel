@@ -12,8 +12,8 @@
 
 Work follows
 [2026-09-15-next-sentence-as-the-production-objective.md](doc/plans/2026-09-15-next-sentence-as-the-production-objective.md)
-§10 and its completion gates. Validation: the fresh, source-matched default
-selection completed 4,668/4,668 with a green receipt in 1,040 s
+§10 and its completion gates. Validation: the source-matched default selection
+at `60b1497` completed 4,668/4,668 with a green receipt in 1,040 s
 (`output/tests/20260919-125200-894ef3`), using eight-case/one-file batches
 under the unchanged resource caps. Default batch memory stability remains
 under Residues below. The September 17 handoff and preserved
@@ -23,6 +23,7 @@ of its six candidates only the generation catalogue (item 3) remains uninstalled
 
 ### Done (newest first)
 
+- `60b1497` Forward owns anchored lexical forms by WORD row; capture reads retained provenance ([Testing](doc/Testing.md#forward-owned-lexical-forms-september-19); item 1 increment).
 - `a70c77d` Direct `concept`-unary selected meaning (`what(quantize(x))`)
   preserves its live leaf into the normal controller; description operands
   still require owned occurrences. Ordinary pytest failures now complete their
