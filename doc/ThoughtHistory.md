@@ -29,6 +29,9 @@ interrogative compose program is adapted into canonical `[NP1, VP, NP2]`, then
 itself remains pure. The adapter retains the signed live leaves, native
 references, mode and `not`/`non` polarity from the owned action program; a
 physical nested fold is not flattened into an invented operand.
+When a later catalogue operation refines that request, it replaces only the
+grammar-owned VP and legal operand assignment, preserving the selected source's
+mode, polarity, bindings, and scope through execution and the next choice.
 
 The controller's hard `query` / `finish` choice sees three separately masked
 role schemas — root request, active context and candidate — plus level,

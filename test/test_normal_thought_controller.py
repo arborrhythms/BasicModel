@@ -83,6 +83,35 @@ def test_normal_controller_selects_a_catalog_operation_not_used_by_the_parse(
     memory.end_what_episode()
 
 
+def test_catalog_refinement_preserves_selected_polarity_and_semantic_metadata(
+        monkeypatch):
+    """A later grammar action keeps the selected question's negation/context."""
+    model, registry, memory, part, whole = _catalog_world()
+    question = registry.form(
+        "part", part, whole, polarity=False,
+        bindings={"variable": "whole"}, scope={"place": "workshop"})
+
+    choices = []
+
+    def choose(_root, _active, actions, **_kwargs):
+        choices.append(actions)
+        if len(choices) == 1:
+            return next(action for action in actions
+                        if action is not None and action.semantic_id == "equal")
+        return None
+
+    monkeypatch.setattr(model, "_choose_selected_thought_action", choose)
+    with model._query_boundary_scope((0,)):
+        result = model.run_selected_thought(question, row=0, work_budget=16)
+
+    assert result.meaning.polarity is False
+    assert result.meaning.bindings == question.bindings
+    assert result.meaning.scope == question.scope
+    assert result.result is not None and result.result.semantic_id == "equal"
+    assert result.result.request.polarity is False
+    memory.end_what_episode()
+
+
 def test_selected_boundary_query_records_one_episode_and_its_actual_work():
     model, registry, memory, part, whole = _world()
     question = registry.form("part", part, whole)

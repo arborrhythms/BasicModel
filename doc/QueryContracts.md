@@ -94,6 +94,12 @@ maintains a second VP table. `form` builds canonical `[NP1, VP, NP2]` meanings
 with role masks, polarity, bindings, scope, and typed provenance. It is pure:
 it does not execute, write memory, or mint a concept.
 
+When the controller selects a later catalogue action, its new VP and legal role
+assignment come from that action's grammar contract; mode, polarity, bindings,
+and scope are copied from the selected source meaning. A refinement therefore
+cannot silently turn `not`/`non` into a positive question or discard its
+semantic context.
+
 Setup preflights all missing VPs as one group against both the allocator and
 the order-zero snap capacity. If a deliberately small model cannot reserve the
 whole group, it retains its structural grammar and only already checkpointed

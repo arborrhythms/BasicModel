@@ -81,6 +81,14 @@ a fresh single-snapshot all-green receipt. The exact receipts are in
   subgoal result adapters, pre-observation isolation, recurrent lifecycle and
   learned-utility gates remain open under item 1.
 
+- **Catalogue-refinement semantic preservation.** A later selected grammar
+  action now carries the selected source's mode, `not`/`non` polarity,
+  bindings, and scope while changing only the grammar-owned VP and legal role
+  assignment. The reviewer probe first failed on lost negation, then passed
+  1/1; the affected controller/catalogue/executor/phase/meaning selection
+  passed 89/89. This closes one selected-meaning seam, not the remaining
+  pre-observation, lifecycle, residual-credit, or learned-utility gates.
+
 0. **Complete — thought operations as compose rules** — before the remaining
    controller and before the two-truths and forgetting specs below, so that
    none of them is built on the `<Queries>` catalogue and then redone

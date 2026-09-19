@@ -1853,7 +1853,8 @@ class GrammaticalThoughtRegistry:
              bool('I2' in operation.operand_roles and 'I2' not in open_roles)],
             dtype=torch.bool, device=vp_payload.device)
         return ConceptualMeaning(
-            torch.stack(payloads), mask, mode='interrogative', polarity=True,
+            torch.stack(payloads), mask, mode=source.mode,
+            polarity=source.polarity,
             role_refs=tuple(references), bindings=source.bindings,
             scope=source.scope)
 
@@ -1865,7 +1866,9 @@ class GrammaticalThoughtRegistry:
         be bound from the held root/active/current frame appears here, followed
         by each executable grammar-open form.  The current request is retained
         verbatim first so its exact outer polarity/bindings are not
-        reconstructed from a folded root.
+        reconstructed from a folded root.  A later grammar-derived candidate
+        preserves the selected source's mode, polarity, bindings and scope
+        while replacing only its grammar-owned VP and bound role assignment.
         """
         sources = (candidate, active, root)
         if not all(isinstance(item, ConceptualMeaning) for item in sources):
