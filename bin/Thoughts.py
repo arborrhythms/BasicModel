@@ -10,6 +10,7 @@ import collections
 import math
 
 from Meaning import ConceptualMeaning, _freeze_metadata
+from Queries import ThoughtResult
 from What import LTMSlot, WhatSlotOperation
 
 
@@ -31,6 +32,7 @@ class ThoughtRecord:
     sources: tuple = ()
     reason: str = ""
     semantic_delta: float = 0.0
+    result: ThoughtResult | None = None
 
     def __post_init__(self):
         for name in ("id", "episode", "level", "cost", "budget"):
@@ -80,13 +82,25 @@ class ThoughtRecord:
             "subgoal",
         ):
             raise ValueError("unknown thought evidence kind")
+        if self.result is not None:
+            if not isinstance(self.result, ThoughtResult):
+                raise TypeError("thought result requires a checked ThoughtResult")
+            if self.kind not in ("thought", "return", "finish"):
+                raise ValueError("only executed/returned/finished thoughts carry a result")
+            if self.meaning is None:
+                raise ValueError("thought result requires its complete grammatical meaning")
+            if self.result.request.roles.shape != self.meaning.roles.shape:
+                raise ValueError("thought result changed the episode conceptual width")
         object.__setattr__(self, "sources", _freeze_metadata(self.sources))
 
     def snapshot(self, *, detach):
         meaning = self.meaning
         if meaning is not None:
             meaning = meaning.detached() if detach else replace(meaning)
-        return replace(self, meaning=meaning)
+        result = self.result
+        if result is not None and detach:
+            result = result.detached()
+        return replace(self, meaning=meaning, result=result)
 
 
 @dataclass(frozen=True)
@@ -479,6 +493,7 @@ class LevelledThoughtHistory:
         evidence_kind="unverified",
         sources=(),
         reason="",
+        result=None,
     ):
         b = self._thought_row(b)
         state = self.thought_state(b=b)
@@ -517,6 +532,14 @@ class LevelledThoughtHistory:
                 .mean()
                 .sqrt()
             )
+        # A checked result is hard-boundary evidence even while the ordinary
+        # episode keeps its selected grammatical meanings live for one
+        # optimizer step.  Preserve an owned snapshot here rather than letting
+        # a history record alias the controller's transient return object.
+        if result is not None:
+            if not isinstance(result, ThoughtResult):
+                raise TypeError("thought result requires a checked ThoughtResult")
+            result = result.detached()
         record = ThoughtRecord(
             self._thought_next_id,
             state.episode,
@@ -533,6 +556,7 @@ class LevelledThoughtHistory:
             sources=sources,
             reason=reason,
             semantic_delta=delta,
+            result=result,
         )
         events = [record]
         forced = state.forced or kind == "cutoff"
@@ -594,6 +618,7 @@ class LevelledThoughtHistory:
                     continue
                 value = dict(record.__dict__)
                 meaning = value.pop("meaning")
+                result = value.pop("result")
                 value["meaning"] = (
                     None
                     if meaning is None
@@ -603,10 +628,13 @@ class LevelledThoughtHistory:
                         **meaning.metadata(),
                     }
                 )
+                value["result"] = (
+                    None if result is None else result.checkpoint()
+                )
                 values.append(value)
             rows.append(values)
         return {
-            "version": 1,
+            "version": 2,
             "namespace": self._thought_namespace,
             "next_id": self._thought_next_id,
             "batch": self.batch,
@@ -615,8 +643,9 @@ class LevelledThoughtHistory:
 
     def load_thought_extras(self, extras):
         """Validate every row before restoring history; rebuild context by replay."""
-        if not isinstance(extras, dict) or extras.get("version") != 1:
+        if not isinstance(extras, dict) or extras.get("version") not in (1, 2):
             raise ValueError("unsupported thought history checkpoint")
+        version = extras["version"]
         rows = extras.get("rows")
         batch = extras.get("batch")
         if (
@@ -661,7 +690,14 @@ class LevelledThoughtHistory:
                 meaning = value.pop("meaning")
                 if meaning is not None:
                     meaning = ConceptualMeaning(**meaning).detached()
-                record = ThoughtRecord(meaning=meaning, **value)
+                raw_result = value.pop("result", None)
+                if raw_result is not None:
+                    if version < 2:
+                        raise ValueError("legacy thought checkpoint has a typed result")
+                    result = ThoughtResult.from_checkpoint(raw_result)
+                else:
+                    result = None
+                record = ThoughtRecord(meaning=meaning, result=result, **value)
                 if record.id in identifiers or record.id >= counter:
                     raise ValueError("invalid or reused thought occurrence identity")
                 identifiers.add(record.id)

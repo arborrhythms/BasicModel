@@ -282,8 +282,12 @@ legacy prompt and grammar-trace tensors. Structural checkpoint sidecars save
 detached copies, so restoring history cannot reconnect an old graph. The normal
 controller's explicit policy term consumes only its live root/active/candidate
 role payloads; its hard evidence and work accounting remain nondifferentiable.
-Residual attribution and learned utility remain open. See [ordinary thought
-history](ThoughtHistory.md).
+In contrast, an actual checked `ThoughtResult` saved on an executed, returned,
+or finished record is detached immediately, including nested dataclass evidence
+such as `MeaningExpectation`: its request, tensors and evidence cannot send a
+reader, predictor, or output gradient through ordinary history or its
+checkpoint sidecar. Residual attribution and learned utility remain open. See
+[ordinary thought history](ThoughtHistory.md).
 
 ## Thought phase permission
 

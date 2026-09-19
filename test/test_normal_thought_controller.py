@@ -134,6 +134,82 @@ def test_selected_boundary_query_records_one_episode_and_its_actual_work():
     memory.end_what_episode()
 
 
+def test_selected_history_retains_the_typed_checked_result_through_restore():
+    """The one history owner keeps the actual checked result, not a summary."""
+    model, registry, memory, part, whole = _world()
+    question = registry.form("part", part, whole)
+
+    with model._query_boundary_scope((0,)):
+        selected = model.run_selected_thought(question, row=0, work_budget=16)
+
+    executed = next(
+        record for record in selected.records
+        if record.kind == "thought" and record.operation == "part")
+    stored = executed.result
+    assert stored is not None
+    assert stored.semantic_id == selected.result.semantic_id == "part"
+    assert stored.result_kind == selected.result.result_kind == "truth"
+    assert stored.request is not selected.result.request
+    assert not stored.request.roles.requires_grad
+    assert stored.evidence["support_true"] == selected.evidence["support_true"]
+
+    # Teardown and checkpoint/replay must retain the typed boundary record
+    # without restoring a live reader or a second result store.
+    memory.end_what_episode()
+    restored = WhatInteractionMemory(batch=1, capacity=64, detach_mode="episode")
+    restored.load_thought_extras(memory.thought_extras())
+    replayed = next(
+        record for record in restored.thought_history()
+        if record.kind == "thought" and record.operation == "part")
+    assert replayed.result is not None
+    assert replayed.result.semantic_id == "part"
+    assert replayed.result.result_kind == "truth"
+    assert not replayed.result.request.roles.requires_grad
+
+
+def test_typed_prediction_result_is_detached_before_history_or_checkpoint():
+    """Prediction evidence stays a hard boundary inside ordinary history."""
+    memory = WhatInteractionMemory(batch=1, capacity=16, detach_mode="episode")
+    request = ConceptualMeaning(
+        torch.ones(3, 8), torch.ones(3, dtype=torch.bool),
+        mode="interrogative")
+    roles = torch.randn(3, 8, requires_grad=True)
+    logits = torch.randn(3, requires_grad=True)
+    checked = ThoughtResult(
+        semantic_id="arma", domain="discourse-prediction",
+        result_kind="prediction", evidence_kind="estimate",
+        request=request, evidence=MappingProxyType({
+            "value": MeaningExpectation(roles, logits),
+            "incomplete": (),
+        }))
+
+    memory.begin_thought_episode(request, work_budget=4)
+    record = memory.commit_thought(
+        request, operation="arma", result=checked,
+        evidence_kind="estimate")
+    memory.finish_thought(
+        request, result=checked, evidence_kind="estimate")
+    stored = record.result.value
+    assert isinstance(stored, MeaningExpectation)
+    assert not stored.roles.requires_grad
+    assert not stored.presence_logits.requires_grad
+    with torch.no_grad():
+        roles.add_(100.0)
+        logits.add_(100.0)
+    assert not torch.equal(stored.roles, roles)
+    assert not torch.equal(stored.presence_logits, logits)
+
+    memory.end_what_episode()
+    restored = WhatInteractionMemory(batch=1, capacity=16, detach_mode="episode")
+    restored.load_thought_extras(memory.thought_extras())
+    replayed = next(
+        item for item in restored.thought_history()
+        if item.kind == "thought" and item.operation == "arma")
+    assert isinstance(replayed.result.value, MeaningExpectation)
+    assert not replayed.result.value.roles.requires_grad
+    assert not replayed.result.value.presence_logits.requires_grad
+
+
 def test_what_subgoal_descends_executes_returns_and_causally_carries_evidence():
     model, registry, memory, part, whole = _world()
     from QueryWork import QueryWorkBudget

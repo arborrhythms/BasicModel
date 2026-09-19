@@ -18,9 +18,16 @@ meanings through the same owner; they are not facts, answer labels, or evidence.
 
 In episode mode, ordinary meanings stay live through the caller's one optimizer
 step. The episode must finish before `end_what_episode` releases that credit.
-Checkpoints contain detached copies and replay/validate every row atomically on
-restore; new computations after restore can be live, but restoration never
-replenishes budget or pressure.
+A checked `ThoughtResult` is different: the owner records a detached typed
+snapshot only on an executed `thought`, a `return`, or the final `finish` that
+actually has one. It preserves result kind, request and typed evidence (for
+example a set, code, subgoal, or `MeaningExpectation`) without treating its
+scalar summary as an equivalent result store. It is not a reader cache and
+does not retain a reader graph. Checkpoints contain detached copies and
+replay/validate every row atomically on restore; the history sidecar is version
+2 and accepts version-1 rows, which have no `result` field. New computations
+after restore can be live, but restoration never replenishes budget or
+pressure.
 
 The ordinary controller now owns the selected direct-relation boundary path.
 It is deliberately separate from the legacy `LTMSlot` parity loop: a completed
@@ -57,6 +64,17 @@ The reviewer probes first failed against the pre-installation state in
 passed 69/69 in `20260917-110047-33f23a`. These prove the storage, replay,
 credit and occurrence-read foundation only; they do not prove normal thought
 selection, learned utility, or end-to-end answer quality.
+
+The later typed-result retention probe first failed because a `ThoughtRecord`
+had no result field (`20260918-174718-55accf`), and its prediction-shaped
+boundary probe then caught live `MeaningExpectation` tensors
+(`20260918-175218-2ea26b`). The detached restore, prediction, integrated
+checkpoint, and v1-compatibility cases passed 1/1 in
+`20260918-175049-035967`, `20260918-175317-45450d`,
+`20260918-175425-d9c1c`, and `20260918-175647-d350e6`; the final bounded
+controller/history/query selection passed 134/134 in
+`20260918-180026-3af0eb`. This is a typed-boundary and replay result only, not
+evidence of learned controller utility.
 
 ## Sentence-runtime integration
 

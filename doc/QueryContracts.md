@@ -124,9 +124,12 @@ rebinding, a row number, or a surface token.
 Structural composition, reconstruction, and generation cannot execute a thought
 operator. Only the completed-row phase gate may call the registry. The normal
 controller forms candidates without reader calls, selects one catalog action or
-`conclude`, and records the actual result in the existing thought-history owner.
-Nested `what` reuses the same episode, level discipline, continuation, and
-meter.
+`conclude`, and records the actual checked `ThoughtResult` as a detached typed
+snapshot in the existing thought-history owner. Only executed `thought`,
+causal `return`, and final `finish` transitions can carry that snapshot;
+summary support remains controller evidence, not a substitute for a typed
+result. Nested `what` reuses the same episode, level discipline, continuation,
+and meter.
 
 The one `QueryWorkBudget` covers VP/reference/payload preparation, description
 resolution, fact and taxonomy reads, codebook scans, prediction context, and

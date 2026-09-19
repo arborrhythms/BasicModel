@@ -1,6 +1,7 @@
 """Persistence, credit and invalid-history boundaries for the existing owner."""
 
 from dataclasses import replace
+from types import MappingProxyType
 
 import pytest
 import torch
@@ -8,6 +9,7 @@ import torch
 from Layers import WhatInteractionMemory
 from Meaning import ConceptualMeaning
 from Models import BaseModel
+from Queries import ThoughtResult
 
 
 def _meaning(value=1, *, width=8):
@@ -48,6 +50,58 @@ def test_integrated_checkpoint_retains_the_one_memory_owner_and_active_history(t
     assert state is not None and state.level == 1 and state.work_spent == 1
     assert memory.thought_history()[0].meaning.mode == "interrogative"
     assert memory.thought_state(b=1) is None
+
+
+def test_integrated_checkpoint_restores_a_typed_checked_result(tmp_path):
+    """Thought-result evidence is portable without restoring a reader graph."""
+    memory = WhatInteractionMemory(batch=1, capacity=32, detach_mode="episode")
+    request = _meaning()
+    result = ThoughtResult(
+        semantic_id="part", domain="conceptual-taxonomy",
+        result_kind="truth", evidence_kind="taxonomy",
+        request=request.detached(), evidence=MappingProxyType({
+            "support_true": 1.0,
+            "support_false": 0.0,
+            "incomplete": (),
+        }))
+    memory.begin_thought_episode(request, work_budget=4)
+    memory.commit_thought(
+        request, operation="part", result=result,
+        support_true=1.0, evidence_kind="taxonomy")
+    memory.finish_thought(
+        request, result=result, support_true=1.0,
+        evidence_kind="taxonomy")
+    memory.end_what_episode()
+
+    source = _model(memory)
+    path = tmp_path / "typed-thought.ckpt"
+    source.save_weights(path)
+    restored_memory = WhatInteractionMemory(
+        batch=1, capacity=32, detach_mode="episode")
+    target = _model(restored_memory)
+    assert target.load_weights(path)
+    replayed = next(
+        record for record in restored_memory.thought_history()
+        if record.kind == "thought" and record.operation == "part")
+    assert replayed.result is not None
+    assert replayed.result.semantic_id == "part"
+    assert replayed.result.evidence["support_true"] == 1.0
+    assert not replayed.result.request.roles.requires_grad
+
+
+def test_v1_thought_history_checkpoint_remains_loadable_without_a_result_field():
+    """Older history has no typed result and restores as the same history."""
+    source = _memory()
+    legacy = source.thought_extras()
+    legacy["version"] = 1
+    for row in legacy["rows"]:
+        for record in row:
+            if "legacy" not in record:
+                record.pop("result")
+    target = WhatInteractionMemory(batch=2, capacity=32, detach_mode="episode")
+    target.load_thought_extras(legacy)
+    assert target.thought_state().level == source.thought_state().level
+    assert all(record.result is None for record in target.thought_history())
 
 
 def test_restored_active_episode_keeps_new_computations_live_until_optimizer_boundary():

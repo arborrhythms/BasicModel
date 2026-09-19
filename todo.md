@@ -89,6 +89,21 @@ a fresh single-snapshot all-green receipt. The exact receipts are in
   passed 89/89. This closes one selected-meaning seam, not the remaining
   pre-observation, lifecycle, residual-credit, or learned-utility gates.
 
+- **Typed checked-result retention in ordinary history.** The one existing
+  history owner now preserves a detached checked `ThoughtResult` on actual
+  executed, return, and finish transitions, so replay/checkpoint retains typed
+  set/code/subgoal/prediction provenance rather than reconstructing it from
+  scalar support. The sidecar is v2 and still loads v1 histories without a
+  result field; typed result evidence, including `MeaningExpectation`, is a
+  hard no-reader-gradient boundary. Reviewer probes first failed on the absent
+  record result and on a live prediction tensor; the focused restore,
+  prediction-boundary, model-checkpoint, and v1-compatibility cases then passed
+  1/1 each (`20260918-175049-035967`, `20260918-175317-45450d`,
+  `20260918-175425-d9c1c`, `20260918-175647-d350e6`); the final affected
+  bounded selection passed 134/134 (`20260918-180026-3af0eb`). This advances
+  the controller lifecycle boundary only; it does not complete item 1's
+  selected-meaning, residual-credit, learned-utility, or end-to-end gates.
+
 0. **Complete — thought operations as compose rules** — before the remaining
    controller and before the two-truths and forgetting specs below, so that
    none of them is built on the `<Queries>` catalogue and then redone

@@ -4,7 +4,7 @@ Relation identities link grammatical compose/inverse faces and query interfaces.
 These immutable definitions do not create a second VP embedding or a tool-only
 semantic store. Native references are addresses; numerical payloads stay in CS.
 """
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, fields, is_dataclass, replace
 from types import MappingProxyType
 from typing import Callable
 import re
@@ -193,6 +193,75 @@ class ThoughtResult:
     @property
     def incomplete(self):
         return self.evidence.get('incomplete', ())
+
+    def detached(self):
+        """Copy this checked boundary result for durable thought history.
+
+        A controller may keep the typed result on its existing chronological
+        ``ThoughtRecord`` so later choices and checkpoint replay can identify
+        a set/code/prediction/subgoal result without rebuilding it from scalar
+        support.  That record is not a reader cache: both the request and all
+        evidence cross the same detached, immutable boundary as the public
+        result.
+        """
+        return replace(
+            self,
+            request=self.request.detached(),
+            evidence=_freeze_boundary_value(self.evidence),
+        )
+
+    def checkpoint(self):
+        """Return a plain, detached checkpoint representation.
+
+        ``MappingProxyType`` deliberately guards live public evidence but is
+        not a portable checkpoint container.  Serialize only the immutable
+        boundary payload; reconstruction re-applies that guard in
+        :meth:`from_checkpoint`.
+        """
+        request = self.request.detached()
+        return {
+            'semantic_id': self.semantic_id,
+            'domain': self.domain,
+            'result_kind': self.result_kind,
+            'evidence_kind': self.evidence_kind,
+            'request': {
+                'roles': request.roles.detach().to('cpu').clone(),
+                'role_mask': request.role_mask.detach().to('cpu').clone(),
+                **_checkpoint_boundary_value(request.metadata()),
+            },
+            'evidence': _checkpoint_boundary_value(self.evidence),
+        }
+
+    @classmethod
+    def from_checkpoint(cls, value):
+        """Restore one detached typed result from :meth:`checkpoint`."""
+        if not isinstance(value, dict):
+            raise ValueError('invalid thought result checkpoint')
+        required = {
+            'semantic_id', 'domain', 'result_kind', 'evidence_kind',
+            'request', 'evidence',
+        }
+        if set(value) != required:
+            raise ValueError('invalid thought result checkpoint fields')
+        names = ('semantic_id', 'domain', 'result_kind', 'evidence_kind')
+        if any(not isinstance(value[name], str) or not value[name]
+               for name in names):
+            raise ValueError('invalid thought result checkpoint identity')
+        request = value['request']
+        if not isinstance(request, dict):
+            raise ValueError('invalid thought result checkpoint request')
+        try:
+            request = ConceptualMeaning(**request).detached()
+        except (TypeError, ValueError) as error:
+            raise ValueError('invalid thought result checkpoint request') from error
+        evidence = value['evidence']
+        if not isinstance(evidence, (dict, MappingProxyType)):
+            raise ValueError('invalid thought result checkpoint evidence')
+        return cls(
+            semantic_id=value['semantic_id'], domain=value['domain'],
+            result_kind=value['result_kind'], evidence_kind=value['evidence_kind'],
+            request=request, evidence=_freeze_boundary_value(evidence),
+        )
 
 
 @dataclass(frozen=True)
@@ -459,6 +528,45 @@ def _freeze_boundary_value(value):
         return tuple(_freeze_boundary_value(item) for item in value)
     if isinstance(value, tuple):
         return tuple(_freeze_boundary_value(item) for item in value)
+    if is_dataclass(value) and not isinstance(value, type):
+        return replace(value, **{
+            field.name: _freeze_boundary_value(getattr(value, field.name))
+            for field in fields(value) if field.init
+        })
+    return value
+
+
+def _checkpoint_boundary_value(value):
+    """Detach boundary evidence into portable ordinary containers.
+
+    Thought results are already hard-boundary data.  This helper changes only
+    container ownership for serialization: mappings become ordinary dicts so
+    the checkpoint does not depend on ``MappingProxyType`` pickling, while
+    restore funnels the data back through :func:`_freeze_boundary_value`.
+    """
+    if torch.is_tensor(value):
+        return value.detach().to('cpu').clone()
+    if isinstance(value, ConceptualMeaning):
+        meaning = value.detached()
+        return {
+            'roles': meaning.roles.detach().to('cpu').clone(),
+            'role_mask': meaning.role_mask.detach().to('cpu').clone(),
+            **_checkpoint_boundary_value(meaning.metadata()),
+        }
+    if isinstance(value, (dict, MappingProxyType)):
+        return {
+            key: _checkpoint_boundary_value(item)
+            for key, item in value.items()
+        }
+    if isinstance(value, list):
+        return [_checkpoint_boundary_value(item) for item in value]
+    if isinstance(value, tuple):
+        return tuple(_checkpoint_boundary_value(item) for item in value)
+    if is_dataclass(value) and not isinstance(value, type):
+        return replace(value, **{
+            field.name: _checkpoint_boundary_value(getattr(value, field.name))
+            for field in fields(value) if field.init
+        })
     return value
 
 

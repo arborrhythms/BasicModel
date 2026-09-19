@@ -6473,8 +6473,14 @@ class BasicModel(BaseModel):
                          if reference is not None) + tuple(
                              reference for reference in extra if reference is not None)
 
-        def event(kind, current, evidence, *, operation, sources=()):
-            """Commit exactly the meter delta since the preceding record."""
+        def event(kind, current, evidence, *, operation, sources=(), result=None):
+            """Commit exactly the meter delta since the preceding record.
+
+            The existing history owner receives the detached typed result from
+            an actual checked execution.  Summary evidence remains useful to
+            the chooser, but it cannot stand in for a prediction, set, code,
+            or subgoal result during replay.
+            """
             nonlocal recorded_spend
             state = memory.thought_state(b=row)
             if state is None or state.finished:
@@ -6497,13 +6503,13 @@ class BasicModel(BaseModel):
             )
             if kind == "thought":
                 record = memory.commit_thought(
-                    current, operation=operation, **keyword)
+                    current, operation=operation, result=result, **keyword)
             elif kind == "descend":
                 record = memory.descend_thought(current, **keyword)
             elif kind == "return":
-                record = memory.return_thought(current, **keyword)
+                record = memory.return_thought(current, result=result, **keyword)
             elif kind == "finish":
-                record = memory.finish_thought(current, **keyword)
+                record = memory.finish_thought(current, result=result, **keyword)
             else:  # pragma: no cover - private controller invariant
                 raise AssertionError(f"unknown selected thought event {kind!r}")
             recorded_spend = meter.spent
@@ -6611,7 +6617,8 @@ class BasicModel(BaseModel):
                     operation="return",
                     sources=refs(current, memory.thought_reference(descent),
                                  (memory.thought_reference(child_record)
-                                  if child_record is not None else None)))
+                                  if child_record is not None else None)),
+                    result=child_result.get("result"))
                 return child_result["evidence"]
 
             context = self._thought_grammar_context(
@@ -6642,7 +6649,7 @@ class BasicModel(BaseModel):
                         "result": checked, "record": parent_record}
             record = event("thought", current, evidence,
                            operation=selected.semantic_id,
-                           sources=refs(current))
+                           sources=refs(current), result=checked)
             return {"meaning": current, "evidence": evidence,
                     "result": checked, "record": record}
 
@@ -6689,7 +6696,8 @@ class BasicModel(BaseModel):
             finish = event("finish", outcome["meaning"], outcome["evidence"],
                            operation="finish",
                            sources=refs(meaning, memory.thought_reference(outcome["record"])
-                                        if outcome["record"] is not None else None))
+                                        if outcome["record"] is not None else None),
+                           result=outcome.get("result"))
         except Exception:
             # ``execute`` already drains checked-executor failures.  For an
             # unexpected controller failure, retain no unfinished episode.
