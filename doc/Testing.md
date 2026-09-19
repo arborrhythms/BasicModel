@@ -274,6 +274,41 @@ CPU test call under different run conditions. It is not a controlled speedup
 comparison, a held-out utility result or a current supervised-answer throughput
 measurement. GPU performance tuning remains open.
 
+### Expectation-retention evidence (September 18)
+
+The retained-estimate reviewer probe first failed as intended in
+`output/tests/20260918-204026-f5887b`: no observation occurrence could yet be
+bound to the row-local expectation view. The implementation probe then passed
+1/1 in `20260918-204810-91888a`. Its capacity and actual pending/packed writer
+selection passed 10/10 in `20260918-205730-f7e900`; this includes the rule
+that the last free LTM slot belongs to the understood external observation,
+not its forecast. The first broad pass correctly exposed an old two-observation
+count assertion after a new estimate row made the durable history three rows;
+the assertion now checks the explicit pair and observation-only predictor
+view instead.
+
+The final affected selection passed **236 passed, 5 slow-skipped** in
+`output/tests/20260918-205842-148281` (278.55 seconds, 1.06 GiB peak). It
+covers structured prediction/lifecycle, all three observation writers,
+consolidated LTM and checkpoint sidecars, origin compaction/nested retention,
+typed prediction query consumers, and ordinary thought-history boundaries.
+It validates retained occurrence ownership and detached checkpoint fidelity;
+it does not establish metadata prediction, residual-policy credit, learned
+utility, or throughput gates.
+
+A subsequent full run reached 4,010/4,639 cases before the seeded depth-3
+relative-end-state probe exposed a lifecycle regression
+(`20260918-210435-23f39f`). The new writer had attempted to bind provisioning
+rows while external observations were suspended; the provisioning wrapper
+recovered the exception per text, leaving that parse lifecycle incomplete.
+The reviewer probe was red in `20260918-223655-2ea861`; after gating retention
+to actual external boundaries, the direct chain, slow global-LTM and depth-3
+probes passed 4/4 in `20260918-223806-83083d`, and the affected LTM,
+expectation, chain and thinking selection passed 192/192 in
+`20260918-224214-d9227c`. Generic LTM recurrence and attention now exclude
+estimate rows; this is still ownership containment, not residual-policy or
+learned-utility evidence.
+
 [Checkpoint summary](benchmarks/2026-09-17-bounded-test-data/checkpoint-summary.json),
 [latest tooling receipt](benchmarks/2026-09-17-bounded-test-data/checkpoint-tooling-result.json),
 [timed-out full receipt](benchmarks/2026-09-17-bounded-test-data/reconstruction-profile-result.json),

@@ -223,7 +223,7 @@ def test_addressable_spaces_gathers_input_stm_codebook():
 
 
 @pytest.mark.slow
-def test_ltm_space_appears_when_store_present():
+def test_ltm_space_appears_when_store_present_but_excludes_estimates():
     # The LTM address space is gathered from symbolSpace.ltm_store; stage a
     # synthetic TernaryTruthStore so the path is exercised without
     # <ltmConsolidation>.
@@ -242,12 +242,13 @@ def test_ltm_space_appears_when_store_present():
     store = TernaryTruthStore(D, capacity=8)
     store.slots[:3] = torch.randn(3, 3, D)
     store.count = torch.tensor(3)
+    store.record_kind[2] = store.KINDS.index("estimate")
     object.__setattr__(m.symbolSpace, "ltm_store", store)
     prev = m.conceptualSpaces[0]._subspaceForWS
     spaces, _ = m._addressable_spaces(prev, ps)
     ltm = [s for s in spaces if s["id"] == GA.SPACE_LTM]
     assert ltm, "LTM space must be gathered when ltm_store has rows"
-    assert ltm[0]["keys"].shape[0] == 3 and ltm[0]["keys"].dim() == 2
+    assert ltm[0]["keys"].shape[0] == 2 and ltm[0]["keys"].dim() == 2
 
 
 @pytest.mark.slow

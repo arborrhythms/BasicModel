@@ -157,13 +157,16 @@ def _sentence_query_mask(method):
     return masked
 
 
-def _append_observed_meaning(store, payload, depth, *, trust=0.0, meaning=None):
+def _append_observed_meaning(store, payload, depth, *, trust=0.0, meaning=None,
+                             expectation=None):
     """Record one understood input without certifying a world fact.
 
     ``meaning`` is an already formed grammatical description when the owned
     compose program selected one.  The store performs its normal detached
     durable write; the caller can still hand the corresponding live roles to
-    the predictor first.
+    the predictor first.  When the preceding external context yielded an
+    estimate with fully bound source occurrences, retain that estimate before
+    this observation and link the two append-only records.
     """
     if meaning is None:
         meaning = ConceptualMeaning.from_payload(
@@ -171,7 +174,45 @@ def _append_observed_meaning(store, payload, depth, *, trust=0.0, meaning=None):
     if not isinstance(meaning, ConceptualMeaning):
         raise TypeError("observed meaning must be a ConceptualMeaning")
     kind = "question" if meaning.mode == "interrogative" else "observation"
+    if expectation is not None:
+        prediction = getattr(expectation, "estimate", None)
+        sources = tuple(getattr(expectation, "source_occurrences", ()) or ())
+        if prediction is not None and sources:
+            logits = prediction.presence_logits.detach()
+            if logits.shape != (3,) or not bool(torch.isfinite(logits).all()):
+                raise ValueError("retained expectation requires three finite presence logits")
+            mask = logits >= 0
+            # A structured meaning always has an anchor.  Preserve the full
+            # learned occupancy vector separately; if every logit is negative,
+            # the least-absent role is the minimal syntactic anchor rather than
+            # leaking the arriving target's mask into the estimate.
+            if not bool(mask.any()):
+                mask = mask.clone()
+                mask[int(torch.argmax(logits))] = True
+            estimate = ConceptualMeaning(
+                prediction.roles.detach(), mask.detach(), mode="unspecified")
+            _estimate, observed = store.append_expectation_pair(
+                estimate, meaning, presence_logits=logits,
+                source_occurrences=sources,
+                stream=getattr(expectation, "stream", None),
+                document=getattr(expectation, "document", None),
+                observation_kind=kind, trust=trust)
+            return observed
     return store.append_meaning(meaning, kind=kind, trust=trust)
+
+
+def _is_external_expectation_observation(discourse):
+    """Whether this boundary may create or bind prediction provenance.
+
+    LTM provisioning runs the ordinary parse/write path while deliberately
+    suspending the external discourse stream.  Its rows are source material,
+    not new observations, so they must neither retain an estimate nor bind an
+    occurrence into a caller's prediction context.
+    """
+    return bool(
+        discourse is not None
+        and getattr(discourse, "expectation_enabled", False)
+        and not getattr(discourse, "_external_observations_suspended", False))
 
 
 def _boundary_observation_view(language, registry, entries, payloads, depths,
@@ -13882,6 +13923,8 @@ class BasicModel(BaseModel):
                 mask=active, documents=self._expectation_documents_for_slot(0, B),
                 **keyword)
         if ltm_on:
+            retain_expectation = (
+                discourse_live and _is_external_expectation_observation(discourse))
             for b, payload in enumerate(payloads):
                 if payload is None or int(payload.shape[0]) < 1:
                     continue
@@ -13890,9 +13933,18 @@ class BasicModel(BaseModel):
                        if tetralemmas is not None and b < len(tetralemmas)
                        else None)
                 trust = float(tet) if tet is not None else 0.0
-                _append_observed_meaning(
+                comparison = (discourse.last_expectation_comparison(b)
+                              if retain_expectation
+                              and hasattr(discourse, "last_expectation_comparison")
+                              else None)
+                row = _append_observed_meaning(
                     ltm_store, payload, d, trust=trust,
-                    meaning=meanings[b] if b < len(meanings) else None)
+                    meaning=meanings[b] if b < len(meanings) else None,
+                    expectation=comparison)
+                if (row >= 0 and retain_expectation
+                        and hasattr(discourse, "bind_observation_occurrence")):
+                    discourse.bind_observation_occurrence(
+                        b, ltm_store.row(row)["occurrence"])
 
     def _drain_packed_stm_end_states(self):
         """Observe each sealed meaning once, in row/document/time order."""
@@ -13969,11 +14021,21 @@ class BasicModel(BaseModel):
                     documents=self._expectation_documents_for_slot(t, B),
                     **keyword)
             if ltm_on:
+                retain_expectation = _is_external_expectation_observation(discourse)
                 for b, (depth, payload) in enumerate(zip(depths, payloads)):
                     if payload is not None:
-                        _append_observed_meaning(
+                        comparison = (discourse.last_expectation_comparison(b)
+                                      if retain_expectation
+                                      and hasattr(discourse, "last_expectation_comparison")
+                                      else None)
+                        row = _append_observed_meaning(
                             ltm_store, payload, depth,
-                            meaning=meanings[b] if b < len(meanings) else None)
+                            meaning=meanings[b] if b < len(meanings) else None,
+                            expectation=comparison)
+                        if (row >= 0 and retain_expectation
+                                and hasattr(discourse, "bind_observation_occurrence")):
+                            discourse.bind_observation_occurrence(
+                                b, ltm_store.row(row)["occurrence"])
 
     def _intersentence_seed(self):
         """The predicted next-end-state SHAPE for the stage-0 CS_{-1} seed,
@@ -22803,6 +22865,9 @@ class BasicModel(BaseModel):
                     # @torch.compiler.disable'd) and fully guarded so the
                     # off-path stays byte-identical.
                     if ltm_consolidation_on:
+                        retain_expectation = (
+                            discourse_live
+                            and _is_external_expectation_observation(discourse))
                         for b in range(B):
                             payload = payloads[b]
                             if payload is None or payload.shape[0] < 1:
@@ -22815,9 +22880,18 @@ class BasicModel(BaseModel):
                                        and b < len(tetralemmas))
                                    else None)
                             trust = float(tet) if tet is not None else 0.0
-                            _append_observed_meaning(
+                            comparison = (discourse.last_expectation_comparison(b)
+                                          if retain_expectation
+                                          and hasattr(discourse, "last_expectation_comparison")
+                                          else None)
+                            row = _append_observed_meaning(
                                 ltm_store, payload, d, trust=trust,
-                                meaning=meanings[b] if b < len(meanings) else None)
+                                meaning=meanings[b] if b < len(meanings) else None,
+                                expectation=comparison)
+                            if (row >= 0 and retain_expectation
+                                    and hasattr(discourse, "bind_observation_occurrence")):
+                                discourse.bind_observation_occurrence(
+                                    b, ltm_store.row(row)["occurrence"])
 
         # Existing loss_head plumbing (dormant: ``loss_head`` is always
         # None today) -- kept identical to the whole-slab tail so the
@@ -23252,8 +23326,18 @@ class BasicModel(BaseModel):
             cnt = int(getattr(ltm, "count", torch.tensor(0)).item()) \
                 if torch.is_tensor(getattr(ltm, "count", None)) else 0
             if cnt > 0:
-                rows = ltm.slots[:cnt].detach().mean(dim=1)            # [M, D]
-                spaces.append({"id": GA.SPACE_LTM, "keys": rows})
+                # A retained next-sentence estimate is durable so its
+                # residual can be learned later, but it is not observed LTM
+                # evidence.  Generic retrieval has no provenance channel to
+                # distinguish a forecast from a fact, so letting it enter the
+                # shared attention pool would feed a prediction back into the
+                # parser/reasoner as if it were a new source.  The dedicated
+                # expectation-pair API is its only generic reader here.
+                estimate_kind = ltm.KINDS.index("estimate")
+                eligible = ltm.record_kind[:cnt] != estimate_kind
+                if bool(eligible.any()):
+                    rows = ltm.slots[:cnt][eligible].detach().mean(dim=1)  # [M, D]
+                    spaces.append({"id": GA.SPACE_LTM, "keys": rows})
         # The three tower codebooks, emitted as distinct address spaces (PART,
         # WHOLE, SYMBOL). Was previously one lumped SPACE_CODEBOOK (ws0-or-PS).
         concept_q = ReadingAttention._pool(prevCS_forSS)

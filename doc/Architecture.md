@@ -1363,6 +1363,20 @@ thoughts initialize an external-observation sequence. See
 [`begin_document`](../bin/Layers.py#L10027) and the
 [packed observer](../bin/Models.py#L12837).
 
+When the unified LTM is enabled and a warm stream has durable source
+occurrences, the owner retains a separate `estimate` row before the matching
+external `observation`/`question` row. The pair has explicit source,
+stream/document and bidirectional occurrence provenance. Only the actual input
+joins the transient predictor view; estimates never become extra observations,
+facts, self-supervision, or untyped global-LTM keys. Provisioning and
+request-ingestion run with external observations suspended, so their ordinary
+source rows never bind a caller's prediction stream. Their role vectors, mask,
+confidence and derived residual are detached checkpoint evidence. The current
+predictor does not yet generate bindings or scope for a novel estimate, so it
+records that limitation rather than copying target metadata. [Expectation
+retention](ExpectationRetention.md)
+describes the sidecar, capacity, checkpoint and gradient boundaries.
+
 ### Historical root / ARMA representation
 
 `s_t` is the **root SS slot** of the body's final stage: the

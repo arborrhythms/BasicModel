@@ -39,7 +39,7 @@ and [§8.10](plans/2026-09-15-next-sentence-as-the-production-objective.md#810-q
 | Piece / objective | Directly trained computation | Reach into representation | Stops and current limits |
 |---|---|---|---|
 | **Representation and reconstruction:** weighted input surface error | Recovered word ideas, the selected compose operators' tied reverse calculations, and the live forward encodings they consume | This is the reconstruction reference `R` on shared weights. It retains its gradient unchanged. | The identified input derivation is fixed during reverse traversal; retained constituent references, dictionary snapshots and byte targets are detached. No gradient through an integer rule or dictionary index. [Reconstruction](../bin/Models.py#L11300), [snapshot](../bin/Models.py#L11654), [owned byte objective](../bin/Models.py#L13820). |
-| **Prediction:** occupied-role MSE plus role-presence BCE | The sentence predictor and its live preceding NP1/VP/NP2 context | May train the encoder of a preceding sentence still in the **same optimizer step**. It shares the downstream budget below. | The arriving sentence's encoding is a detached target. Durable context and previous-step encodings are detached. A cold start has no predicted target. [Prediction and observation](../bin/Layers.py#L10064), [graph lifetime](../bin/Layers.py#L10689). |
+| **Prediction:** occupied-role MSE plus role-presence BCE | The sentence predictor and its live preceding NP1/VP/NP2 context | May train the encoder of a preceding sentence still in the **same optimizer step**. It shares the downstream budget below. | The arriving sentence's encoding is a detached target. Durable context and previous-step encodings are detached. A retained estimate/observation pair is also fully detached: its roles, confidence, provenance and reconstructed residual are evidence, never a delayed autograd route. A cold start has no predicted target. [Prediction and observation](../bin/Layers.py#L10733), [retention](ExpectationRetention.md), [graph lifetime](../bin/Layers.py#L11402). |
 | **Thinking:** enabled thought/subgoal policy objectives | The legacy What chooser and the separate selected grammatical controller receive score-function credit from later supplied-answer loss less their declared work costs; optional legacy reasoning and teacher-trace losses have separate gates | The normal controller's live root/active/candidate role payloads and masks feed its width-owned chooser; its log probability reaches that chooser and those consumed live payloads. A checked truth result passes its final selected live `[NP1, VP, NP2]` roles into the answer seed, so output loss reaches those structural operands. A checked `arma` estimate supplies a separately validated but detached `[NP1, VP, NP2]` prediction seed. | Hard choices, typed references, hard reader results, `arma` prediction data, and meter state have no ordinary derivative. The reward is detached and the current selected controller is answer-credit only; residual-based credit on ordinary corpus inputs remains a required migration. [Selected policy](../bin/Models.py#L6241), [loss gates](../bin/Models.py#L15024), [required residual credit](plans/2026-09-15-next-sentence-as-the-production-objective.md#810-queries-as-tools-at-inter-sentence-prediction-decided). |
 | **Output:** supplied-answer error and, when enabled, output-action policy loss | The answer path, conditioner and synthesis heads; sampled generation choices receive policy credit | Differentiable use of a live question/answer representation can train its upstream producer, under the same shared budget. Independent output heads retain their ordinary gradients. | Desired answers are supervision, not generation inputs. Output policy reward is detached: credit flows through action log probabilities, not through the reward calculation. The input parse is not a gold answer parse. [Answer resolution](../bin/Models.py#L8186), [head ownership](../bin/Models.py#L9158), [action credit](../bin/Models.py#L9293). |
 
@@ -229,12 +229,17 @@ the full migration's required learning evidence is in
 ## Fact evidence and thought values
 
 `ConceptualMeaning` clones retain the current computation's gradient. Durable
-fact/observation writes detach it. `Exist` matching, eligibility checks,
+fact/observation/estimate writes detach it. A retained expectation pair derives
+its residual from those two detached rows and detached confidence, so neither a
+later lookup nor residual-guided work can reopen the prediction graph. Generic
+LTM recurrence and attention exclude forecast rows; the explicit pair reader is
+also detached. `Exist` matching, eligibility checks,
 thresholds and support aggregation use hard reads and scalar evidence; they
 provide no ordinary derivative through selected facts. This migration adds
 no learned parameter or loss. Thought selection still requires its separately
 declared policy credit; storing an estimate does not supply an observation or
-a new training target. See [Existence evidence](ExistenceEvidence.md).
+a new training target. See [Expectation retention](ExpectationRetention.md)
+and [Existence evidence](ExistenceEvidence.md).
 [Live value](../bin/Meaning.py#L67),
 [detached write](../bin/Layers.py#L8925),
 [hard lookup](../bin/reasoning.py#L156).

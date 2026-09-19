@@ -132,7 +132,15 @@ def test_streaming_and_packed_boundary_use_same_full_roles(consolidated):
     torch.testing.assert_close(packed.expect_next_meaning().roles,
                                streaming.expect_next_meaning().roles)
     if consolidated:
-        assert len(packed._ltm_store) == 2
+        # The second external input now keeps its antecedent estimate beside
+        # (not inside) the observed sequence. The predictor remains aligned
+        # with the streaming path because its context contains observations
+        # only; the durable owner retains the auditable pair separately.
+        assert len(packed._ltm_store) == 3
+        assert [packed._ltm_store.row(i)["kind"] for i in range(3)] == [
+            "observation", "estimate", "observation"]
+        assert (packed._ltm_store.expectation_pair(1)["source_occurrences"]
+                == (packed._ltm_store.row(0)["occurrence"],))
         torch.testing.assert_close(packed._ltm_store.row(0)["vp"], meanings[0, 0, 2])
 
 
@@ -232,12 +240,23 @@ def test_unknown_expectation_scope_is_rejected_at_construction():
                            concept_dim=4, expectation_scope="flattened")
 
 
-def test_real_provisioning_is_not_an_external_prediction_stream():
-    from test_ltm_consolidation import _make_model_provisioned, _SERIAL_CONFIG
+def test_real_provisioning_is_not_an_external_prediction_stream(monkeypatch):
+    from test_ltm_consolidation import _make_model, _SERIAL_CONFIG
 
-    model = _make_model_provisioned(_SERIAL_CONFIG)
+    model = _make_model(_SERIAL_CONFIG)
+    discourse = model.symbolSpace.discourse
+    bound = []
+
+    def forbid_external_binding(*args, **kwargs):
+        bound.append((args, kwargs))
+        raise AssertionError("provisioning is not an external observation")
+
+    monkeypatch.setattr(discourse, "bind_observation_occurrence",
+                        forbid_external_binding)
+    model.provision_ltm()
+    assert not bound
     assert len(model.symbolSpace.ltm_store) == 3
-    assert not any(model.symbolSpace.discourse._inter_context)
+    assert not any(discourse._inter_context)
     assert model._intersentence_seed() is None
 
 

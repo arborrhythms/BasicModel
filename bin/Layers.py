@@ -8793,17 +8793,134 @@ class TernaryTruthStore(Layer):
         self.register_buffer('metadata_required', torch.zeros(capacity, dtype=torch.bool))
         self.register_buffer('semantic_fingerprint', torch.zeros(capacity, 32, dtype=torch.uint8))
         self._semantic_rows = {}
+        # Estimate/observation provenance has the same durable owner as the
+        # rows themselves. It is sidecar data, not a second LTM: occurrence
+        # IDs, role vectors and evidence kind remain in the buffers above.
+        self._expectation_rows = {}
 
     @staticmethod
-    def _context_fingerprint(context, text):
+    def _context_fingerprint(context, text, expectation=None):
         """Bind sidecar content to its tensor-owned occurrence without duplicating it."""
         context = context or {}
         content = {"role_refs": context.get("role_refs", (None, None, None)),
                    "bindings": context.get("bindings", ()),
                    "scope": context.get("scope", ()), "text": text}
+        # Legacy records keep their old fingerprint exactly. Only rows that
+        # actually carry expectation provenance add this key.
+        if expectation is not None:
+            content["expectation"] = expectation
         encoded = json.dumps(content, sort_keys=True, separators=(",", ":"),
                              ensure_ascii=True, allow_nan=False).encode("utf-8")
         return list(hashlib.sha256(encoded).digest())
+
+    @staticmethod
+    def _freeze_expectation_value(value):
+        """Make stream/document provenance immutable and checkpoint-safe."""
+        if isinstance(value, dict):
+            if any(not isinstance(key, str) for key in value):
+                raise TypeError("expectation provenance mapping keys must be strings")
+            return tuple((key, TernaryTruthStore._freeze_expectation_value(item))
+                         for key, item in sorted(value.items()))
+        if isinstance(value, (tuple, list)):
+            return tuple(TernaryTruthStore._freeze_expectation_value(item)
+                         for item in value)
+        if value is None or isinstance(value, (str, bool, int)):
+            return value
+        if isinstance(value, float) and math.isfinite(value):
+            return value
+        raise TypeError("expectation provenance must contain finite scalar values or typed references")
+
+    @staticmethod
+    def _validated_expectation_reference(value, namespace, *, optional=False):
+        if value is None and optional:
+            return None
+        if (not isinstance(value, tuple) or len(value) != 3
+                or value[0] != "ltm" or value[1] != namespace
+                or type(value[2]) is not int or value[2] < 0):
+            raise ValueError("expectation provenance requires a local LTM occurrence reference")
+        return value
+
+    @classmethod
+    def _normalise_expectation_provenance(cls, value, namespace):
+        """Validate one explicit estimate/observation relationship record."""
+        if value is None:
+            return None
+        if not isinstance(value, dict) or not isinstance(value.get("kind"), str):
+            raise ValueError("invalid expectation provenance")
+        kind = value["kind"]
+        if kind == "estimate":
+            expected = {"kind", "source_occurrences", "stream", "document",
+                        "intended_occurrence", "presence_logits"}
+            if set(value) != expected or not isinstance(value["source_occurrences"], tuple):
+                raise ValueError("invalid estimate provenance")
+            sources = tuple(cls._validated_expectation_reference(source, namespace)
+                            for source in value["source_occurrences"])
+            intended = cls._validated_expectation_reference(
+                value["intended_occurrence"], namespace, optional=True)
+            logits = value["presence_logits"]
+            if (not isinstance(logits, tuple) or len(logits) != 3
+                    or any(not isinstance(item, (int, float))
+                           or not math.isfinite(float(item)) for item in logits)):
+                raise ValueError("estimate provenance requires three finite presence logits")
+            return {
+                "kind": "estimate",
+                "source_occurrences": sources,
+                "stream": cls._freeze_expectation_value(value["stream"]),
+                "document": cls._freeze_expectation_value(value["document"]),
+                "intended_occurrence": intended,
+                "presence_logits": tuple(float(item) for item in logits),
+            }
+        if kind == "observation":
+            if set(value) != {"kind", "estimate_occurrence"}:
+                raise ValueError("invalid observation expectation provenance")
+            return {
+                "kind": "observation",
+                "estimate_occurrence": cls._validated_expectation_reference(
+                    value["estimate_occurrence"], namespace),
+            }
+        raise ValueError("unknown expectation provenance kind")
+
+    @staticmethod
+    def _expectation_references(provenance):
+        """All durable occurrence edges carried by one expectation record."""
+        if provenance is None:
+            return ()
+        if provenance["kind"] == "estimate":
+            return tuple(provenance["source_occurrences"]) + tuple(
+                reference for reference in (provenance["intended_occurrence"],)
+                if reference is not None)
+        return (provenance["estimate_occurrence"],)
+
+    def _validate_expectation_links(self, records=None):
+        """Verify reference availability and bidirectional pair integrity."""
+        records = self._expectation_rows if records is None else records
+        namespace = bytes(self._occurrence_namespace.tolist()).hex()
+        identifiers = set(int(identifier) for identifier in self.occurrence_id[:len(self)].tolist())
+        for identifier, provenance in records.items():
+            if identifier not in identifiers:
+                raise ValueError("expectation provenance names an unavailable occurrence")
+            for reference in self._expectation_references(provenance):
+                self._validated_expectation_reference(reference, namespace)
+                if reference[2] not in identifiers:
+                    raise ValueError("expectation provenance occurrence is unavailable")
+            if provenance["kind"] != "estimate":
+                continue
+            target = provenance["intended_occurrence"]
+            if target is None:
+                continue
+            inverse = records.get(target[2])
+            if (inverse is None or inverse["kind"] != "observation"
+                    or inverse["estimate_occurrence"][2] != identifier):
+                raise ValueError("expectation provenance pair is not bidirectionally linked")
+
+    def _update_semantic_fingerprint(self, idx):
+        """Refresh the one integrity binding for context, text and prediction links."""
+        i = int(idx)
+        identifier = int(self.occurrence_id[i])
+        self.semantic_fingerprint[i] = self.semantic_fingerprint.new_tensor(
+            self._context_fingerprint(
+                self._semantic_rows.get(identifier, {}), self.text_of(i),
+                self._expectation_rows.get(identifier)))
 
     def occurrence_of(self, idx):
         """Stable identity; compaction changes a row index, not its occurrence."""
@@ -9028,22 +9145,24 @@ class TernaryTruthStore(Layer):
             if bool(self.metadata_required[i]) and context is None:
                 raise ValueError("cannot checkpoint evidence with missing semantic metadata")
             records.append({"id": identifier, "context": dict(context or {}),
-                            "text": self.text_of(i)})
-        return {"version": 1,
+                            "text": self.text_of(i),
+                            "expectation": self.expectation_of(i)})
+        return {"version": 2,
                 "namespace": bytes(self._occurrence_namespace.tolist()).hex(),
                 "records": records}
 
     def load_semantic_extras(self, extras):
         """Restore metadata only onto the matching durable occurrences."""
-        if not isinstance(extras, dict) or extras.get("version") != 1:
+        if not isinstance(extras, dict) or extras.get("version") not in (1, 2):
             raise ValueError("unsupported truth semantic checkpoint version")
+        version = extras["version"]
         namespace = bytes(self._occurrence_namespace.tolist()).hex()
         if extras.get("namespace") != namespace:
             raise ValueError("truth semantic checkpoint occurrence namespace differs")
         rows = {int(self.occurrence_id[i]): i for i in range(len(self))}
         if len(rows) != len(self):
             raise ValueError("duplicate truth occurrence identity")
-        incoming, texts = {}, [None] * len(self)
+        incoming, texts, expectation_rows = {}, [None] * len(self), {}
         for record in extras.get("records", ()):
             identifier = int(record["id"])
             if identifier not in rows or identifier in incoming:
@@ -9062,10 +9181,21 @@ class TernaryTruthStore(Layer):
             if text is not None and not isinstance(text, str):
                 raise ValueError("truth source text must be a string")
             texts[i] = text
-            if (meaning.has_context or text is not None) and not bool(self.metadata_required[i]):
+            if version == 1:
+                if "expectation" in record:
+                    raise ValueError("legacy truth semantic checkpoint has expectation provenance")
+                expectation = None
+            else:
+                if "expectation" not in record:
+                    raise ValueError("truth semantic checkpoint omits expectation provenance")
+                expectation = self._normalise_expectation_provenance(
+                    record["expectation"], namespace)
+            if expectation is not None:
+                expectation_rows[identifier] = expectation
+            if (meaning.has_context or text is not None or expectation is not None) and not bool(self.metadata_required[i]):
                 raise ValueError("truth context disagrees with its required-metadata flag")
             fingerprint = self.semantic_fingerprint.new_tensor(
-                self._context_fingerprint(incoming[identifier], text))
+                self._context_fingerprint(incoming[identifier], text, expectation))
             if not torch.equal(fingerprint, self.semantic_fingerprint[i]):
                 raise ValueError("truth semantic content differs from its checkpoint fingerprint")
         if set(incoming) != set(rows):
@@ -9073,8 +9203,10 @@ class TernaryTruthStore(Layer):
         # Validate the complete replacement before publishing any context/text
         # to the owner.  A corrupt sidecar cannot leave a partly-restored graph.
         self._validate_constituent_graph(incoming, namespace)
+        self._validate_expectation_links(expectation_rows)
         self._semantic_rows = incoming
         self._texts = texts
+        self._expectation_rows = expectation_rows
 
     def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
                               missing_keys, unexpected_keys, error_msgs):
@@ -9121,6 +9253,7 @@ class TernaryTruthStore(Layer):
                 state_dict[prefix + name] = value
         self._semantic_rows = {}
         self._texts = []
+        self._expectation_rows = {}
         super()._load_from_state_dict(state_dict, prefix, local_metadata, strict,
                                       missing_keys, unexpected_keys, error_msgs)
 
@@ -9175,8 +9308,7 @@ class TernaryTruthStore(Layer):
         self.metadata_required[n] = meaning.has_context
         self._ensure_texts(n + 1)
         self._texts[n] = None
-        self.semantic_fingerprint[n] = self.semantic_fingerprint.new_tensor(
-            self._context_fingerprint(self._semantic_rows[identifier], None))
+        self._update_semantic_fingerprint(n)
         if timestamp is None:
             self.timestamp[n] = float(self._next_ts)
             self._next_ts.add_(1)
@@ -9187,6 +9319,184 @@ class TernaryTruthStore(Layer):
                 self._next_ts.fill_(int(ts) + 1)
         self.count.fill_(n + 1)
         return n
+
+    @torch.no_grad()
+    def append_estimate(self, meaning, *, presence_logits, source_occurrences=(),
+                        stream=None, document=None, trust=0.0, timestamp=None):
+        """Append one explicit prediction without granting fact authority.
+
+        The estimate's complete role vectors and predicted occupancy live in
+        the ordinary ternary row.  Its confidence, source occurrences and
+        intended observation are sidecar provenance bound to that same row.
+        No arriving observation is accepted here, so this method cannot make
+        a prediction self-confirming.
+        """
+        if not isinstance(meaning, ConceptualMeaning):
+            raise TypeError("append_estimate requires a ConceptualMeaning")
+        logits = torch.as_tensor(presence_logits).detach().reshape(-1)
+        if logits.numel() != 3 or not bool(torch.isfinite(logits).all()):
+            raise ValueError("estimate requires three finite presence logits")
+        namespace = bytes(self._occurrence_namespace.tolist()).hex()
+        provenance = self._normalise_expectation_provenance({
+            "kind": "estimate",
+            "source_occurrences": tuple(source_occurrences),
+            "stream": stream,
+            "document": document,
+            "intended_occurrence": None,
+            "presence_logits": tuple(float(value) for value in logits.to("cpu").tolist()),
+        }, namespace)
+        identifiers = set(int(identifier)
+                          for identifier in self.occurrence_id[:len(self)].tolist())
+        if any(reference[2] not in identifiers
+               for reference in self._expectation_references(provenance)):
+            raise ValueError("estimate source occurrence is unavailable")
+        index = self.append_meaning(
+            meaning, kind="estimate", trust=trust, timestamp=timestamp)
+        if index < 0:
+            return -1
+        identifier = int(self.occurrence_id[index])
+        self._expectation_rows[identifier] = provenance
+        self.metadata_required[index] = True
+        self._update_semantic_fingerprint(index)
+        return index
+
+    @torch.no_grad()
+    def link_estimate_observation(self, estimate, observation):
+        """Link an existing estimate to its later external observation.
+
+        Only the relationship changes here; neither row's predicted nor
+        observed meaning is rewritten after the target arrives.
+        """
+        estimate, observation = int(estimate), int(observation)
+        if not 0 <= estimate < len(self) or not 0 <= observation < len(self):
+            raise IndexError("expectation link row is unavailable")
+        if self.KINDS[int(self.record_kind[estimate])] != "estimate":
+            raise ValueError("expectation link must start at an estimate")
+        if self.KINDS[int(self.record_kind[observation])] not in ("observation", "question"):
+            raise ValueError("expectation link must end at an external observation")
+        estimate_id = int(self.occurrence_id[estimate])
+        observation_id = int(self.occurrence_id[observation])
+        previous = self._expectation_rows.get(estimate_id)
+        if previous is None or previous["kind"] != "estimate":
+            raise ValueError("estimate lacks retained provenance")
+        if previous["intended_occurrence"] is not None:
+            raise ValueError("estimate is already linked to an observation")
+        namespace = bytes(self._occurrence_namespace.tolist()).hex()
+        observation_ref = ("ltm", namespace, observation_id)
+        estimate_ref = ("ltm", namespace, estimate_id)
+        linked_estimate = dict(previous)
+        linked_estimate["intended_occurrence"] = observation_ref
+        linked_estimate = self._normalise_expectation_provenance(
+            linked_estimate, namespace)
+        linked_observation = self._normalise_expectation_provenance({
+            "kind": "observation", "estimate_occurrence": estimate_ref,
+        }, namespace)
+        self._expectation_rows[estimate_id] = linked_estimate
+        self._expectation_rows[observation_id] = linked_observation
+        self.metadata_required[estimate] = True
+        self.metadata_required[observation] = True
+        self._semantic_rows.setdefault(estimate_id, {})
+        self._semantic_rows.setdefault(observation_id, {})
+        self._ensure_texts(len(self))
+        self._update_semantic_fingerprint(estimate)
+        self._update_semantic_fingerprint(observation)
+        self._validate_expectation_links()
+
+    @torch.no_grad()
+    def append_expectation_pair(self, estimate, observation, *, presence_logits,
+                                source_occurrences=(), stream=None, document=None,
+                                observation_kind="observation", trust=0.0):
+        """Atomically prefer one external observation over an optional estimate.
+
+        A nearly full store must never discard an understood input merely to
+        preserve its forecast.  With room for both, append estimate first so
+        timestamp order reflects anticipation before observation; with room
+        for one, preserve only the observation and report ``-1`` for the
+        unavailable retained estimate.
+        """
+        if observation_kind not in ("observation", "question"):
+            raise ValueError("expectation pair requires an observed input kind")
+        if self.capacity - len(self) < 2:
+            return -1, self.append_meaning(
+                observation, kind=observation_kind, trust=trust)
+        estimate_index = self.append_estimate(
+            estimate, presence_logits=presence_logits,
+            source_occurrences=source_occurrences, stream=stream,
+            document=document)
+        if estimate_index < 0:
+            # Capacity was checked above; keep the ordinary write fail-loud
+            # if a future store implementation violates that invariant.
+            raise RuntimeError("estimate append unexpectedly exhausted durable capacity")
+        observation_index = self.append_meaning(
+            observation, kind=observation_kind, trust=trust)
+        if observation_index < 0:
+            raise RuntimeError("observation append unexpectedly exhausted durable capacity")
+        self.link_estimate_observation(estimate_index, observation_index)
+        return estimate_index, observation_index
+
+    def expectation_of(self, idx):
+        """Return an owned immutable-value copy of a row's expectation link."""
+        i = int(idx)
+        if not 0 <= i < len(self):
+            raise IndexError(f"row {i} of {len(self)}")
+        value = self._expectation_rows.get(int(self.occurrence_id[i]))
+        return None if value is None else dict(value)
+
+    def expectation_pair(self, idx):
+        """Read one linked estimate/observation pair and derive its residual.
+
+        The residual is intentionally reconstructed from the two retained
+        meanings and stored confidence rather than held as a second mutable
+        delta.  This keeps the estimate and actual observation authoritative
+        and makes any mismatch auditable after replay.
+        """
+        i = int(idx)
+        provenance = self.expectation_of(i)
+        if provenance is None:
+            raise ValueError("row has no retained expectation provenance")
+        namespace = bytes(self._occurrence_namespace.tolist()).hex()
+        if provenance["kind"] == "estimate":
+            estimate_index = i
+            observation_ref = provenance["intended_occurrence"]
+            if observation_ref is None:
+                raise ValueError("estimate has no observed counterpart")
+        else:
+            observation_ref = self.occurrence_of(i)
+            estimate_ref = provenance["estimate_occurrence"]
+            estimate_index = next((row for row in range(len(self))
+                                   if self.occurrence_of(row) == estimate_ref), -1)
+            if estimate_index < 0:
+                raise ValueError("observation estimate counterpart is unavailable")
+        observation_index = next((row for row in range(len(self))
+                                  if self.occurrence_of(row) == observation_ref), -1)
+        if observation_index < 0:
+            raise ValueError("estimate observation counterpart is unavailable")
+        estimate = self.meaning_of(estimate_index)
+        observation = self.meaning_of(observation_index)
+        if estimate is None or observation is None:
+            raise ValueError("expectation pair has unavailable semantic metadata")
+        estimate_provenance = self.expectation_of(estimate_index)
+        if estimate_provenance is None or estimate_provenance["kind"] != "estimate":
+            raise ValueError("expectation pair lacks estimate provenance")
+        logits = estimate.roles.new_tensor(estimate_provenance["presence_logits"])
+        observed_mask = observation.role_mask.to(device=estimate.roles.device)
+        observed_roles = observation.roles.to(estimate.roles)
+        residual = torch.where(
+            observed_mask[:, None], observed_roles - estimate.roles,
+            torch.zeros_like(estimate.roles))
+        return {
+            "estimate": estimate,
+            "observation": observation,
+            "estimate_occurrence": self.occurrence_of(estimate_index),
+            "observation_occurrence": self.occurrence_of(observation_index),
+            "source_occurrences": estimate_provenance["source_occurrences"],
+            "stream": estimate_provenance["stream"],
+            "document": estimate_provenance["document"],
+            "intended_occurrence": estimate_provenance["intended_occurrence"],
+            "presence_logits": logits,
+            "residual": residual,
+            "presence_residual": observed_mask.to(logits.dtype) - logits.sigmoid(),
+        }
 
     def __len__(self):
         return int(self.count.item())
@@ -9251,6 +9561,7 @@ class TernaryTruthStore(Layer):
             'kind': self.KINDS[int(self.record_kind[i])],
             'occurrence': self.occurrence_of(i),
             'meaning': self.meaning_of(i),
+            'expectation': self.expectation_of(i),
             'metadata_complete': (not bool(self.metadata_required[i])
                                   or int(self.occurrence_id[i]) in self._semantic_rows),
         }
@@ -9323,8 +9634,7 @@ class TernaryTruthStore(Layer):
             if not bool(self.metadata_required[i]):
                 self._semantic_rows.setdefault(int(self.occurrence_id[i]), {})
             self.metadata_required[i] = True
-            self.semantic_fingerprint[i] = self.semantic_fingerprint.new_tensor(
-                self._context_fingerprint(self._semantic_rows[int(self.occurrence_id[i])], self._texts[i]))
+            self._update_semantic_fingerprint(i)
 
     def rows_of_origin(self, *origins):
         """Row indices whose ``origin`` is any of ``origins``, in row
@@ -9404,6 +9714,13 @@ class TernaryTruthStore(Layer):
                 if child is None:
                     raise ValueError("retained constituent occurrence is unavailable")
                 pending.append(child)
+            provenance = self._expectation_rows.get(
+                int(self.occurrence_id[index]))
+            for reference in self._expectation_references(provenance):
+                child = indices.get(reference[2])
+                if child is None:
+                    raise ValueError("retained expectation occurrence is unavailable")
+                pending.append(child)
 
         # This includes all closure members (including context-only roots), so
         # validation cannot accidentally erase an invalid survivor's evidence.
@@ -9436,6 +9753,9 @@ class TernaryTruthStore(Layer):
         alive = set(int(value) for value in self.occurrence_id[:n_keep].tolist())
         self._semantic_rows = {key: value for key, value in self._semantic_rows.items()
                                if key in alive}
+        self._expectation_rows = {
+            key: value for key, value in self._expectation_rows.items()
+            if key in alive}
         self.slots[n_keep:c].zero_()
         self.rel_type[n_keep:c].zero_()
         self.timestamp[n_keep:c].zero_()
@@ -9450,6 +9770,7 @@ class TernaryTruthStore(Layer):
         self.semantic_fingerprint[n_keep:c].zero_()
         self._texts = kept_texts + [None] * (len(self._texts) - n_keep)
         self.count.fill_(n_keep)
+        self._validate_expectation_links()
         return removed
 
     @torch.no_grad()
@@ -9471,6 +9792,7 @@ class TernaryTruthStore(Layer):
         self.metadata_required.zero_()
         self.semantic_fingerprint.zero_()
         self._semantic_rows = {}
+        self._expectation_rows = {}
         # Occurrence IDs are never reused, even after reset. A held reference
         # cannot silently bind to a later fact at the same physical row.
 
@@ -9819,6 +10141,18 @@ class ExpectationComparison:
     residual: torch.Tensor
     presence_residual: torch.Tensor
     document: object
+    source_occurrences: tuple = ()
+    stream: object = None
+
+
+@dataclass(frozen=True)
+class _PendingMeaningExpectation:
+    """One pre-observation estimate plus only its permitted context identity."""
+
+    prediction: MeaningExpectation
+    source_occurrences: tuple
+    stream: object
+    document: object
 
 
 class SentenceExpectation(Layer):
@@ -10074,6 +10408,12 @@ class InterSentenceLayer(Layer):
         self._inter_context = [
             collections.deque(maxlen=self._inter_chain_window)
             for _ in range(self._batch)]
+        # Stable LTM occurrences align one-for-one with the bounded predictor
+        # view.  The row is bound only after the host appends the external
+        # observation, so anticipation cannot learn its target's identity.
+        self._inter_context_occurrences = [
+            collections.deque(maxlen=self._inter_chain_window)
+            for _ in range(self._batch)]
         self._inter_predictor = None
         if self.concept_dim is not None and self.concept_dim > 0:
             if self.expectation_scope == "structured":
@@ -10159,6 +10499,9 @@ class InterSentenceLayer(Layer):
         self._expectation_documents = [None] * batch
         self._last_expectation_comparisons = [None] * batch
         self._inter_context = [
+            collections.deque(maxlen=self._inter_chain_window)
+            for _ in range(batch)]
+        self._inter_context_occurrences = [
             collections.deque(maxlen=self._inter_chain_window)
             for _ in range(batch)]
 
@@ -10331,6 +10674,7 @@ class InterSentenceLayer(Layer):
         names = (
             "_batch", "_s_history", "_s_count", "_e_history", "_e_count",
             "_staged_prediction", "_stm_end_states", "_inter_context",
+            "_inter_context_occurrences",
             "_inter_last_pred_root", "_inter_last_meaning",
             "_last_expectation_comparisons",
             "_expectation_documents", "_inter_loss_accum", "_inter_loss_count",
@@ -10363,6 +10707,7 @@ class InterSentenceLayer(Layer):
             self._expectation_stats["document_starts"] += 1
         self._last_expectation_comparisons[b] = None
         self._inter_context[b].clear()
+        self._inter_context_occurrences[b].clear()
         self._inter_last_pred_root[b] = None
         self._inter_last_meaning[b] = None
         self._s_history[b].zero_()
@@ -10401,6 +10746,9 @@ class InterSentenceLayer(Layer):
         if work is not None:
             work.require("record", len(self._inter_context[b]))
         chain = list(self._inter_context[b])
+        occurrences = list(self._inter_context_occurrences[b])
+        if len(occurrences) != len(chain):
+            raise RuntimeError("expectation context occurrence view is out of sync")
         if not chain or self._inter_predictor is None:
             if record:
                 self._inter_last_meaning[b] = None
@@ -10417,7 +10765,12 @@ class InterSentenceLayer(Layer):
             raise FloatingPointError("non-finite structured sentence prediction")
         prediction = MeaningExpectation(values[0], logits[0])
         if record:
-            self._inter_last_meaning[b] = prediction
+            document = self._expectation_documents[b]
+            self._inter_last_meaning[b] = _PendingMeaningExpectation(
+                prediction,
+                tuple(reference for reference in occurrences
+                      if reference is not None),
+                ("external", document), document)
         return prediction
 
     def _observe_meanings(self, depths, payloads, tetralemmas, mask,
@@ -10438,7 +10791,10 @@ class InterSentenceLayer(Layer):
                     self._stm_end_states[b].append(
                         (int(occupied.sum()), roles.detach().clone(), trust))
                 continue
-            prediction = self._inter_last_meaning[b]
+            pending = self._inter_last_meaning[b]
+            prediction = (pending.prediction
+                          if isinstance(pending, _PendingMeaningExpectation)
+                          else pending)
             self._expectation_stats["observations"] += 1
             if prediction is None:
                 self._expectation_stats["cold_starts"] += 1
@@ -10463,7 +10819,11 @@ class InterSentenceLayer(Layer):
                     torch.where(target_mask[:, None], actual - estimate.roles,
                                 torch.zeros_like(actual)),
                     target_mask.to(actual.dtype) - estimate.presence_logits.sigmoid(),
-                    self._expectation_documents[b])
+                    self._expectation_documents[b],
+                    (pending.source_occurrences
+                     if isinstance(pending, _PendingMeaningExpectation) else ()),
+                    (pending.stream
+                     if isinstance(pending, _PendingMeaningExpectation) else None))
                 if self.training and torch.is_grad_enabled() and self._inter_loss_weight > 0:
                     step = mse + presence
                     self._inter_loss_accum = (step if self._inter_loss_accum is None
@@ -10479,11 +10839,38 @@ class InterSentenceLayer(Layer):
                 context = context.detach()
             depth = int(occupied.sum())
             self._inter_context[b].append((depth, context, occupied.detach().clone()))
+            self._inter_context_occurrences[b].append(None)
             self._inter_last_meaning[b] = None
             self._inter_last_pred_root[b] = None
             if self._ltm_store is None:
                 trust = None if tetralemmas is None else tetralemmas[b]
                 self._stm_end_states[b].append((depth, roles.detach().clone(), trust))
+
+    @torch.compiler.disable
+    def bind_observation_occurrence(self, b, occurrence):
+        """Attach the just-written external LTM row to this stream's view.
+
+        This is deliberately a post-observation host boundary.  The predictor
+        saw only the prior view; the newly assigned occurrence can become
+        provenance for a *later* estimate, never an input to the estimate it
+        just supervised.
+        """
+        b = int(b)
+        if not 0 <= b < len(self._inter_context):
+            raise IndexError("expectation stream row is unavailable")
+        if (not isinstance(occurrence, tuple) or len(occurrence) != 3
+                or occurrence[0] != "ltm" or not isinstance(occurrence[1], str)
+                or type(occurrence[2]) is not int or occurrence[2] < 0):
+            raise ValueError("observation occurrence must be a typed LTM reference")
+        context = self._inter_context[b]
+        occurrences = self._inter_context_occurrences[b]
+        if len(context) != len(occurrences):
+            raise RuntimeError("expectation context occurrence view is out of sync")
+        if not occurrences:
+            raise ValueError("no external observation is awaiting an occurrence")
+        if occurrences[-1] is not None:
+            raise ValueError("external observation occurrence is already bound")
+        occurrences[-1] = occurrence
 
     def migrate_expectation_checkpoint(self, state_dict, prefix=""):
         """Declare root-to-structured migration without guessing shared weights.
@@ -10510,6 +10897,8 @@ class InterSentenceLayer(Layer):
         # records are owned separately; neither those nor provisioned facts
         # are eligible predecessors for this transient prediction context.
         for chain in self._inter_context:
+            chain.clear()
+        for chain in self._inter_context_occurrences:
             chain.clear()
         self._expectation_documents = [None] * self._batch
         self._last_expectation_comparisons = [None] * self._batch
@@ -10666,6 +11055,7 @@ class InterSentenceLayer(Layer):
                             and self._inter_contrastive_weight <= 0)):
                     context = context.detach()
                 self._inter_context[b].append((int(depth), context, None))
+                self._inter_context_occurrences[b].append(None)
                 # Detach + clone so the stored end-state is a stable
                 # snapshot decoupled from the live STM buffer (which the
                 # next sentence overwrites in place) and carries no
@@ -10770,8 +11160,12 @@ class InterSentenceLayer(Layer):
         The store is global (one recency window), so ``b`` is IGNORED -- this
         is the correct semantics for B=1 / a single conversation; B>1 batched
         training shares the one global recency window across rows.
-        ``store.recent(n)`` returns DESCENDING-timestamp indices, so we
-        reverse to OLDEST-FIRST time order and reconstruct each row as a
+        Estimates are retained training targets, not external sequence
+        observations.  Exclude their tagged rows before taking the recency
+        window, so an estimate cannot become a future predictor input merely
+        because it shares the durable store with its observed counterpart.
+        The remaining rows are ordered by descending timestamp and then
+        reversed to OLDEST-FIRST time order before reconstructing each row as a
         ``(depth, payload, tet)`` tuple matching the deque convention:
           * occupied NP1 only -> ``(1, np1[None, :], trust)``;
           * occupied NP1/VP -> ``(2, stack([np1, vp]), trust)``;
@@ -10788,9 +11182,19 @@ class InterSentenceLayer(Layer):
                 return []
             if n is not None and int(n) <= 0:
                 return []                            # match the deque path
-            k = total if n is None else min(int(n), total)
-            # recent() -> descending timestamp; reverse for oldest-first.
-            idxs = store.recent(k)
+            estimate_kind = store.KINDS.index("estimate")
+            eligible = (store.record_kind[:total] != estimate_kind)
+            idxs = torch.arange(
+                total, device=store.timestamp.device, dtype=torch.long)[eligible]
+            if not idxs.numel():
+                return []
+            # Select from the full non-estimate history: asking for the last
+            # two external states must not return fewer merely because a newer
+            # retained forecast lies between them.
+            order = torch.argsort(store.timestamp[idxs], descending=True)
+            idxs = idxs[order]
+            if n is not None:
+                idxs = idxs[:int(n)]
             idx_list = list(reversed([int(i) for i in idxs.tolist()]))
             out = []
             for i in idx_list:
@@ -11059,7 +11463,8 @@ class InterSentenceLayer(Layer):
         return ExpectationComparison(
             MeaningExpectation(value.estimate.roles.clone(), value.estimate.presence_logits.clone()),
             value.observed.clone(), value.occupied.clone(), value.residual.clone(),
-            value.presence_residual.clone(), value.document)
+            value.presence_residual.clone(), value.document,
+            tuple(value.source_occurrences), value.stream)
 
     def set_expectation_enabled(self, enabled):
         """Toggle expectation; retain durable observations and start fresh on enable."""
@@ -11069,6 +11474,8 @@ class InterSentenceLayer(Layer):
         self.expectation_enabled = enabled
         self.detach_prediction_context()
         for chain in self._inter_context:
+            chain.clear()
+        for chain in self._inter_context_occurrences:
             chain.clear()
         self._expectation_documents = [None] * self._batch
         self._last_expectation_comparisons = [None] * self._batch
@@ -11160,6 +11567,8 @@ class InterSentenceLayer(Layer):
                 dq.clear()
             for dq in self._inter_context:
                 dq.clear()
+            for dq in self._inter_context_occurrences:
+                dq.clear()
             # Drop any pending inter-sentence prediction + the live loss
             # accumulator (Task 8): the next document predicts cold, and a
             # boundary must not leak a half-formed grad term across the
@@ -11180,6 +11589,7 @@ class InterSentenceLayer(Layer):
             if 0 <= bi < len(self._stm_end_states):
                 self._stm_end_states[bi].clear()
                 self._inter_context[bi].clear()
+                self._inter_context_occurrences[bi].clear()
             if 0 <= bi < len(self._inter_last_pred_root):
                 self._inter_last_pred_root[bi] = None
                 self._inter_last_meaning[bi] = None

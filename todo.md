@@ -109,6 +109,25 @@ a fresh single-snapshot all-green receipt. The exact receipts are in
   lifecycle boundary only; it does not complete item 1's selected-meaning,
   residual-credit, learned-utility, or end-to-end gates.
 
+- **Retained estimate/observation ownership.** The unified truth store now
+  retains a warm external forecast as a detached `estimate` occurrence before
+  its distinct observed row, with ordered source occurrences, stream/document,
+  bidirectional target links, confidence, checkpoint-sidecar integrity and
+  compaction reachability. Only actual observations enter the predictor view;
+  estimates remain non-factual and a residual is derived from the two retained
+  records. The reviewer probe was red first (`20260918-204026-f5887b`) and
+  then passed (`20260918-204810-91888a`); the packed parity update passed
+  (`20260918-205413-20c830`). This is an ownership foundation for item 2,
+  not the missing metadata prediction, residual policy credit/baseline,
+  parameter-version lifecycle, learned-utility or throughput evidence. See
+  [Expectation retention](doc/ExpectationRetention.md).
+
+  A follow-up full run exposed provisioning attempting an external occurrence
+  bind while its prediction stream was suspended. Provisioning now remains an
+  ordinary source write, while generic LTM recurrence and attention exclude
+  estimates; the red reviewer and affected receipts are recorded in
+  [Testing](doc/Testing.md#expectation-retention-evidence-september-18).
+
 0. **Complete — thought operations as compose rules** — before the remaining
    controller and before the two-truths and forgetting specs below, so that
    none of them is built on the `<Queries>` catalogue and then redone
@@ -138,9 +157,11 @@ a fresh single-snapshot all-green receipt. The exact receipts are in
    one grammar of thought in conceptual space; merge them, do not add a
    fourth selector (`run_legacy_world` and the addressee/`Testimony` route
    are retired with item 0).
-2. **Finish expectation and residual learning.** Complete owned estimates and
-   observation links, prior-view isolation from arriving/unseen input and other
-   rows, residual query credit, the separate baseline and parameter-version-safe
+2. **Finish expectation and residual learning.** Extend retained estimates
+   from role/mask/confidence plus source/stream/target provenance to checked
+   bindings/scope metadata without copying the arriving target; close
+   prior-view isolation from arriving/unseen input and other rows; then add
+   residual query credit, its separate baseline and parameter-version-safe
    trajectories. Mechanism probes alone do not satisfy the learning gates.
 3. **Finish generation ownership and end-to-end output.** Rebase the preserved
    generation-catalog candidate after the earlier integrations; validate actual
