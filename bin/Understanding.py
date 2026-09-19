@@ -42,6 +42,12 @@ class AnswerProgram:
     # Native allocator identities are addresses, never dictionary rows or
     # numerical semantic features. Older programs have unknown identities.
     concept_ids: Any = None
+    # A lexical infix may name one grammar-spelled structural form even when
+    # that form shares a canonical native VP with a converse.  This is frozen
+    # grammar provenance (for example ``whole``), never a raw surface, row,
+    # address, or numerical feature.  Older programs remain explicitly
+    # unprovenanced rather than guessing a first form.
+    lexical_forms: Any = None
 
     _tensor_fields = ("rows", "word_rows", "activations", "leaves", "actions", "targets", "end_state", "concept_ids")
 
@@ -54,13 +60,32 @@ class AnswerProgram:
                 or bool(((ids <= 0) & (ids != -1)).any())):
             raise ValueError("program concept IDs must be positive native addresses or -1, aligned to leaves")
         object.__setattr__(self, "concept_ids", ids)
+        forms = self.lexical_forms
+        if forms is None:
+            forms = (None,) * int(self.rows.numel())
+        else:
+            try:
+                forms = tuple(forms)
+            except TypeError as error:
+                raise TypeError(
+                    "program lexical forms must be an aligned iterable") from error
+            if len(forms) != int(self.rows.numel()):
+                raise ValueError(
+                    "program lexical forms must align to its retained leaves")
+            if any(value is not None and not isinstance(value, str)
+                   for value in forms):
+                raise TypeError(
+                    "program lexical forms must be grammar-form strings or None")
+        object.__setattr__(self, "lexical_forms", forms)
         for name in self._tensor_fields:
             object.__setattr__(self, name, getattr(self, name).clone())
 
     def detached(self):
         """A durable recall record, without a previous brick's graph."""
-        return type(self)(**{name: getattr(self, name).detach().to("cpu")
-                             for name in self._tensor_fields})
+        values = {name: getattr(self, name).detach().to("cpu")
+                  for name in self._tensor_fields}
+        values["lexical_forms"] = self.lexical_forms
+        return type(self)(**values)
 
 
 @dataclass(frozen=True)

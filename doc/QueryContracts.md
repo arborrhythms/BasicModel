@@ -108,6 +108,18 @@ maintains a second VP table. `form` builds canonical `[NP1, VP, NP2]` meanings
 with role masks, polarity, bindings, scope, and typed provenance. It is pure:
 it does not execute, write memory, or mint a concept.
 
+For an unreduced lexical `[NP1, VP, NP2]` program, capture classifies the
+segmented middle word through the `LanguageSpace` instance's copied grammar
+anchor table and retains only the selected grammar-form string aligned to that
+leaf. This distinguishes a converse such as `whole` from `part` even though
+both intentionally share one canonical native VP and checked executor; it
+also makes every grammar-declared anchor spelling for that form equivalent.
+Recovery validates that form against the model's selected `<thought>`
+catalogue and applies its declared role permutation. It stores neither the raw
+surface, a row, nor a native address as a semantic feature. A legacy capture
+without form provenance may recover a single-form family, but declines an
+ambiguous shared-VP family rather than guessing declaration order.
+
 When the controller selects a later catalogue action, its new VP and legal role
 assignment come from that action's grammar contract; mode, polarity, bindings,
 and scope are copied from the selected source meaning. A refinement therefore

@@ -14982,6 +14982,21 @@ class LanguageSpace(nn.Module):
             self, "_compose_unary_rules", snapshot_compose_rules(unary_ids))
         object.__setattr__(
             self, "_compose_binary_rules", snapshot_compose_rules(binary_ids))
+        # An unreduced lexical relative sentence can retain the native VP of a
+        # canonical family while losing which grammar-spelled converse form
+        # anchored its middle word.  Copy only the grammar's closed-class
+        # surface-to-form classification with this program owner.  The capture
+        # later stores the resulting form string, never a raw word, row, or
+        # numeric ID; a future global grammar reconfiguration cannot relabel a
+        # completed sentence.  A normal private dict (rather than a mapping
+        # proxy) keeps cloned training models deepcopy-safe.
+        anchors = getattr(TheGrammar, "surface_anchors", {}) or {}
+        object.__setattr__(
+            self, "_surface_anchors", {
+                str(surface).casefold(): str(form)
+                for surface, form in anchors.items()
+                if isinstance(surface, str) and isinstance(form, str)
+            })
         self._n_rules = int(len(TheGrammar.rule_table))
         # Output has its own rule inventory. The LHS counts generated
         # children; the RHS arity of a binary reverse is only one parent.
@@ -15152,7 +15167,8 @@ class LanguageSpace(nn.Module):
         The current adapter is intentionally conservative.  It accepts a
         completed root relation whose two operands are direct leaves, or an
         unreduced lexical ``[NP1, VP, NP2]`` whose middle leaf is an already
-        registered native VP.  Declared ``not``/``non`` wrappers carry
+        registered native VP and whose frozen grammar-form provenance resolves
+        any shared-VP converse.  Declared ``not``/``non`` wrappers carry
         polarity.  A nested or otherwise unsupported constituent remains
         represented by its physical end state until a stable occurrence
         reference is available; it is not silently flattened into an invented
@@ -15174,6 +15190,16 @@ class LanguageSpace(nn.Module):
         # read their bounded host values.  Leaf payloads remain live tensors.
         action_rows = actions.detach().to("cpu").tolist()
         native_ids = concept_ids.detach().to("cpu").tolist()
+        lexical_forms = getattr(entry, "lexical_forms", None)
+        if lexical_forms is None:
+            lexical_forms = (None,) * len(native_ids)
+        else:
+            try:
+                lexical_forms = tuple(lexical_forms)
+            except TypeError:
+                return None
+            if len(lexical_forms) != len(native_ids):
+                return None
         stack = []
         for row in action_rows:
             kind, local, word = (int(row[0]), int(row[1]), int(row[2]))
@@ -15294,11 +15320,30 @@ class LanguageSpace(nn.Module):
                 operation = signature_for(probe).operation
             except (RuntimeError, ValueError):
                 return None
-            forms = tuple(getattr(operation, "forms", ()) or ())
-            if not forms:
+            form_id = lexical_forms[middle]
+            if form_id is None:
+                # A canonical VP may serve multiple grammar-spelled forms
+                # (``part`` and its converse ``whole``).  Older captures have
+                # no form provenance, so only an unambiguous family remains
+                # safe; choosing declaration order would silently reverse
+                # operands for a lexical converse.
+                forms = tuple(getattr(operation, "forms", ()) or ())
+                if len(forms) != 1:
+                    return None
+                form_id = forms[0].structural_id
+            if not isinstance(form_id, str):
+                return None
+            form_lookup = getattr(registry, "operation_form", None)
+            if not callable(form_lookup):
+                return None
+            try:
+                form_operation, _form = form_lookup(form_id)
+            except ValueError:
+                return None
+            if form_operation.semantic_id != operation.semantic_id:
                 return None
             return relation(
-                forms[0].structural_id, left, right, mode="assertive",
+                form_id, left, right, mode="assertive",
                 polarity=True, expected_vp=vp_ref)
 
         if len(stack) != 1:

@@ -12200,6 +12200,44 @@ class BasicModel(BaseModel):
                               addresses("_ar_word_object_ids"), ids)
         return ids
 
+    def _word_lexical_forms(self, batch, width):
+        """Freeze anchored grammar-form provenance alongside word leaves.
+
+        A closed-class relation surface can denote a particular structural
+        form such as ``whole`` even though that form intentionally shares its
+        canonical native VP with ``part``.  Convert the transient input text
+        through the *already frozen* ``LanguageSpace`` anchor table here at the
+        owned boundary, then retain only the grammar form.  Neither raw text,
+        word rows, nor native IDs reaches an answer meaning or policy feature.
+        """
+        batch, width = int(batch), int(width)
+        empty = tuple(tuple(None for _ in range(width)) for _ in range(batch))
+        # PartSpace owns word segmentation.  InputSpace's raw lexer record is
+        # intentionally not a source here: its token layout need not match
+        # the word leaves the serial pipeline actually pushed.
+        perceptual = getattr(self, "perceptualSpace", None)
+        forward = getattr(perceptual, "_forward_input", None)
+        texts = forward.get("word_texts") if isinstance(forward, dict) else None
+        language = getattr(self, "languageSpace", None)
+        if language is None:
+            language = getattr(getattr(self, "symbolSpace", None),
+                               "languageSpace", None)
+        anchors = getattr(language, "_surface_anchors", None)
+        if texts is None or not hasattr(anchors, "get"):
+            return empty
+        forms = []
+        for b in range(batch):
+            text_row = texts[b] if b < len(texts) else ()
+            row = []
+            for word in range(width):
+                text = (text_row[word]
+                        if text_row is not None and word < len(text_row)
+                        else None)
+                form = anchors.get(text.casefold()) if isinstance(text, str) else None
+                row.append(form if isinstance(form, str) else None)
+            forms.append(tuple(row))
+        return tuple(forms)
+
     def _pushed_word_slab(self, B, W, D, like, activations):
         """``[B, W, D]`` retained constituent references: the leaves the
         forward pushed, each word's symbol row's dictionary atom (its
@@ -13165,6 +13203,7 @@ class BasicModel(BaseModel):
         else:
             activations = activations.reshape(B, W)
         leaves = self._answer_leaf_slab(rows)
+        lexical_forms = self._word_lexical_forms(B, W)
         ids = getattr(isp, "_packed_sentence_ids", None)
         packed = (bool(getattr(isp, "_sentence_pack_enabled", False))
                   and torch.is_tensor(ids) and tuple(ids.shape) == (B, W))
@@ -13190,7 +13229,8 @@ class BasicModel(BaseModel):
                 end = self._sentence_end_state(None)
             captured[slot] = (
                 self._program_entries(program, leaves, rows, word_rows, activations, end,
-                                      concept_ids=concept_ids)
+                                      concept_ids=concept_ids,
+                                      lexical_forms=lexical_forms)
                 if program is not None and torch.is_tensor(end)
                 else (None,) * B)
         current = tuple(captured.get(int(t), (None,) * B)[b]
@@ -13198,8 +13238,13 @@ class BasicModel(BaseModel):
         return current, captured
 
     def _program_entries(self, program, leaf_slab, rows, word_rows, activations, end_state,
-                         *, concept_ids=None):
-        """Own compact row references and compose actions for each batch row."""
+                         *, concept_ids=None, lexical_forms=None):
+        """Own compact row references and compose actions for each batch row.
+
+        ``lexical_forms`` is frozen grammar provenance aligned to the original
+        word slab.  It is selected by the same retained positions as leaves;
+        the answer record never stores the source text that supplied it.
+        """
         positions, actions, targets = program
         entries = []
         for b in range(int(positions.shape[0])):
@@ -13211,6 +13256,12 @@ class BasicModel(BaseModel):
             pos = pos[:n]
             acts = actions[b]
             L = int((acts[:, 0] >= 0).sum())
+            source_forms = (
+                lexical_forms[b]
+                if lexical_forms is not None and b < len(lexical_forms) else ())
+            selected_forms = tuple(
+                source_forms[index] if 0 <= index < len(source_forms) else None
+                for index in pos.detach().to("cpu").tolist())
             entries.append(AnswerProgram(
                 rows=rows[b].index_select(0, pos.to(rows.device)),
                 word_rows=word_rows[b].index_select(0, pos.to(word_rows.device)),
@@ -13218,7 +13269,8 @@ class BasicModel(BaseModel):
                 leaves=leaf_slab[b].index_select(0, pos.to(leaf_slab.device)),
                 actions=acts[:L], targets=targets[b], end_state=end_state[b],
                 concept_ids=(concept_ids[b].index_select(0, pos.to(concept_ids.device))
-                             if torch.is_tensor(concept_ids) else None)))
+                             if torch.is_tensor(concept_ids) else None),
+                lexical_forms=selected_forms))
         return tuple(entries)
 
     @staticmethod

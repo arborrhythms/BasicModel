@@ -282,7 +282,11 @@ surface leaf is not an operand value. The two signed noun leaves are installed
 as the live `I1`/`I2` role tensors, so a selected truth answer can still send
 ordinary output credit to them. Any gradient through the canonical native VP
 follows its declared registry/structural path, never a numeric ID or the
-unreduced middle surface tensor. The direct-leaf probe checks this separation.
+unreduced middle surface tensor. Capture first maps the PartSpace-owned
+segmented surface to one frozen, non-numeric grammar-form string (for example
+`whole`); that detached classification selects a declared converse permutation
+but has no gradient and the raw spelling is discarded. The direct-leaf probe
+checks this separation.
 
 Future policy credit and continuous feedback into representation remain subject
 to the aggregate downstream rule above. These API checks do not establish

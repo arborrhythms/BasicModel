@@ -6,6 +6,7 @@ import pytest
 import torch
 
 import Language
+from Models import BasicModel
 from Queries import GrammaticalThoughtRegistry
 from Understanding import AnswerProgram
 from test_query_vp_boundaries import _world
@@ -132,6 +133,7 @@ def test_unreduced_lexical_relation_keeps_signed_operands_and_native_vp(
         targets=torch.tensor([-1]),
         end_state=torch.zeros(3, lexical.shape[-1]),
         concept_ids=torch.tensor([a[1], vp[1], b[1]]),
+        lexical_forms=(None, face, None),
     )
 
     meaning = owner.program_meaning(entry, registry)
@@ -147,6 +149,79 @@ def test_unreduced_lexical_relation_keeps_signed_operands_and_native_vp(
     expected[0] = 1
     expected[2] = 2
     torch.testing.assert_close(lexical.grad, expected)
+
+
+def test_unreduced_lexical_converse_uses_its_anchored_grammar_form(
+        monkeypatch):
+    """A shared canonical VP must not erase a lexical converse's role order.
+
+    ``part`` and ``whole`` deliberately share the canonical ``part`` VP and
+    checked executor.  The retained middle anchor is grammar provenance, not
+    a learned surface/row/ID feature: it tells recovery which declared form
+    supplied the lexical infix so the form's canonical permutation can place
+    the two signed leaves correctly.
+    """
+    _cs, _grammar, registry, owner, leaves, _program, whole, part = _program_owner(
+        monkeypatch, face="whole")
+    canonical = registry.form("whole", whole, part, mode="assertive")
+    vp = canonical.role_refs[1]
+    lexical = torch.stack((
+        leaves[0], torch.randn_like(leaves[0]), leaves[1],
+    )).detach().requires_grad_()
+    entry = AnswerProgram(
+        rows=torch.tensor([3, 4, 5]),
+        word_rows=torch.tensor([7, 8, 9]),
+        activations=torch.tensor([-.25, 1.0, .75]),
+        leaves=lexical,
+        actions=torch.tensor(
+            [[0, -1, 0], [0, -1, 1], [0, -1, 2]], dtype=torch.long),
+        targets=torch.tensor([-1]),
+        end_state=torch.zeros(3, lexical.shape[-1]),
+        concept_ids=torch.tensor([whole[1], vp[1], part[1]]),
+        lexical_forms=(None, "whole", None),
+    )
+
+    meaning = owner.program_meaning(entry, registry)
+
+    assert meaning is not None
+    assert meaning.role_refs == canonical.role_refs
+    torch.testing.assert_close(meaning.roles[0], lexical[2])
+    torch.testing.assert_close(meaning.roles[2], lexical[0])
+    (meaning.roles[0].sum() + 2 * meaning.roles[2].sum()).backward()
+    expected = torch.zeros_like(lexical)
+    expected[2] = 1
+    expected[0] = 2
+    torch.testing.assert_close(lexical.grad, expected)
+
+    # A checkpoint made before form provenance existed must decline this
+    # ambiguous shared-VP lexical relation rather than inventing the first
+    # declaration's orientation.
+    legacy = replace(entry, lexical_forms=None)
+    assert owner.program_meaning(legacy, registry) is None
+
+
+def test_capture_freezes_anchored_form_from_perceptual_words():
+    """Capture classifies the transient perceptual surface, then discards it.
+
+    The raw lexer does not own word segmentation.  The actual word text lives
+    on the perceptual staging record, while the completed answer program may
+    retain only its closed grammar-form classification.
+    """
+    owner = SimpleNamespace(
+        inputSpace=SimpleNamespace(_forward_input={"tokens": [["wholeOf"]]}),
+        perceptualSpace=SimpleNamespace(_forward_input={
+            "word_texts": [["wholeOf", "whole-of"], ["partOf"]],
+        }),
+        languageSpace=SimpleNamespace(_surface_anchors={
+            "wholeof": "whole", "whole-of": "whole", "partof": "part",
+        }),
+    )
+
+    forms = BasicModel._word_lexical_forms(owner, 2, 3)
+
+    assert forms == (("whole", "whole", None), ("part", None, None))
+    assert "wholeOf" not in forms[0]
+    assert "whole-of" not in forms[0]
 
 
 def test_native_addresses_do_not_become_semantic_operand_values(monkeypatch):

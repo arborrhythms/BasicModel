@@ -377,6 +377,36 @@ cases. This is current-source composite default coverage under the explicit
 no-rerun policy, not a single green receipt; the first receipt's cap breach is
 retained rather than hidden.
 
+### Anchored lexical converse provenance (September 19)
+
+The reviewer probe for an unreduced lexical `whole` converse was red in
+`output/tests/20260919-041551-7522bb` (**1/1 expected failure**): recovery
+selected the first shared-VP form (`part`) and reversed the canonical roles.
+The repair passed **8/8** focused selected-meaning/native-ID cases in
+`output/tests/20260919-041836-2d0155`. It retains a detached grammar-form
+classification rather than a raw surface, row, or native-ID feature.
+
+A second owner probe was red in `output/tests/20260919-042140-06b248`
+(**1/1 expected failure**): it proved that form classification had incorrectly
+read the raw InputSpace record rather than the PartSpace word segmentation.
+That exact probe and the anchor-spelling/converse check passed **2/2** in
+`output/tests/20260919-042345-c87b31`; the complete affected thought,
+registry, phase, and selected-meaning set then passed **135/135** in
+`output/tests/20260919-042411-0f7ebf`.
+
+The first fresh default attempt exposed a clone-safety regression from using a
+non-pickleable `MappingProxyType` for the private grammar snapshot:
+`output/tests/20260919-042441-af77b2` stopped at **1,654/4,660**, with the two
+deep-copy tests in `test_compiled_word_chunk.py` failing. The two failures
+were reproduced red in `output/tests/20260919-042542-ba6855`, then the
+clone-safe copied snapshot plus lexical probes passed **4/4** in
+`output/tests/20260919-042614-e53e23`.
+
+The new frozen full default receipt is
+`output/tests/20260919-042649-57d821`: **4,660/4,660** cases passed in 195.49
+seconds, at a 18.74 GiB aggregate peak under the 28 GiB cap. The failed first
+attempt remains recorded above; it is not counted as a green receipt.
+
 ### Query-phase evidence (September 18)
 
 The rebased phase reviewer probes first failed in

@@ -219,19 +219,35 @@ CFG. A `RuleDef` stores:
 (for example, `whole` as the `(I2, I1)` converse spelling of `part`), never a
 second executable catalogue.
 
-The grammar file carries BOTH directions: the `<compose>` section holds
-the forward rules (`op_O1 = op.forward(op_I1, op_I2)`) and the
-`<generate>` section the reverse rules (`op_I1, op_I2 = op.reverse(op_O1)`)
-— parsed into `rules_upward` / `rules_downward` and concatenated into the
-one flat `TheGrammar.rules` table. Both directions carry the BARE
-`method_name` (the `.forward`/`.reverse` suffix is stripped and survives
-only in `canonical`), so a generate rule resolves the SAME host layer the
-compose rule uses. Note the arity asymmetry: a generate rule's
+The grammar file has three peer sections in this order: `<compose>`,
+`<thought>`, `<generate>`. Compose holds forward rules
+(`op_O1 = op.forward(op_I1, op_I2)`), thought holds the per-model boundary
+allow-list (`op_O1 = op.thought(op_I1, op_I2)`), and generate holds reverse
+rules (`op_I1, op_I2 = op.reverse(op_O1)`). Only `<thought>` creates
+`Grammar.thought_operations`; compose/generate membership does not imply
+thought permission. Matching faces share one identity and role contract but
+receive their phase-specific context. The capitalized `<Queries>` section is
+rejected, not treated as a parallel catalogue.
+
+Compose/generate rules are parsed into `rules_upward` / `rules_downward` and
+concatenated into the one flat `TheGrammar.rules` table. Both structural
+directions carry the BARE `method_name` (the `.forward`/`.reverse` suffix is
+stripped and survives only in `canonical`), so a generate rule resolves the
+SAME host layer compose uses. Note the arity asymmetry: a generate rule's
 `RuleDef.arity` counts its RHS *call* arguments (1 for
 `op.reverse(op_O1)`); its two-output nature is implicit in the LHS
 string. Enumerating "the binary reverse ops" therefore filters on
 `.reverse in canonical` and the HOST's `arity == 2`
 (`BasicModel._grammar_reverse_ops`), not on `RuleDef.arity`.
+
+Closed-class `<Anchors>` map each case-folded surface spelling to a grammar
+form. At the completed-answer capture boundary, only the PartSpace-segmented
+middle word's matching form is retained as private copied metadata; raw spelling,
+dictionary row, and native address are not semantic features. That lets a
+lexical `whole` (including a declared anchor paraphrase) recover the shared
+canonical `part` VP with `whole`'s declared `(I2, I1)` permutation. A legacy
+record lacking this metadata declines a shared-VP ambiguity rather than
+choosing a declaration-order form.
 
 The live grammar style is **operator-role categories**, not a declared
 part-of-speech taxonomy: every operator contributes its own

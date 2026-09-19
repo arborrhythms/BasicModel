@@ -219,7 +219,12 @@ a fresh single-snapshot all-green receipt. The exact receipts are in
    seed rather than selecting the historical reasoner. These are narrow
    item-1 increments, not completion of converse/paraphrase/nested-reference
    semantics, all writer-level coverage, residual credit, or the unified
-   controller migration.
+   controller migration. The direct lexical path now also keeps only frozen
+   grammar-form provenance from the PartSpace word stream: a selected
+   `whole` anchor (including its declared anchor spellings) chooses the
+   shared-VP family's `(I2, I1)` grammar permutation without retaining a raw
+   surface, row, or ID. Legacy unprovenanced shared-VP records decline safely;
+   nested and non-anchor converse/paraphrase cases remain open.
 2. **Finish expectation and residual learning.** Extend retained estimates
    from role/mask/confidence plus source/stream/target provenance to checked
    bindings/scope metadata without copying the arriving target; close
