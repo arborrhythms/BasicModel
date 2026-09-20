@@ -101,12 +101,10 @@
     <transformChooserDepth>1</transformChooserDepth>
     <whatThinkingHidden>16</whatThinkingHidden>
     <whatThinkingDepth>1</whatThinkingDepth>
-    <!-- What spec Step 9 cutover (2026-09-09): the canonical model answers
-         through the separate reverseOutput() path (resolve -> conceptual /
-         perceptual synthesis with dedicated weights -> OutputSpace adapter),
-         names up to 4 perceptual bindings per derivation, and trains a
-         present -> temporal -> full question curriculum. Fixture configs
-         keep the defaults (off), so their pinned behaviour is unchanged. -->
+    <!-- Resolve an owned answer before producing its words through the
+         declared generate grammar (outputInLoop below), the tied perceptual
+         inverse and OutputSpace. The curriculum selects questions; it never
+         supplies a surface interpreter or a word-to-operator dictionary. -->
     <answerSynthesis>true</answerSynthesis>
     <synthesisBindings>4</synthesisBindings>
     <whatCurriculum>full</whatCurriculum>
@@ -178,6 +176,11 @@
       <reconstructInLoop>true</reconstructInLoop>
       <reconstructionPlacement>compiled</reconstructionPlacement>
       <reconstructionBasisLimit>16</reconstructionBasisLimit>
+      <!-- Production wording belongs to <generate>. Its ordinary policy
+           learns only when a separately supplied desired answer is present;
+           unlabeled FineWeb supplies reconstruction, not fabricated answers. -->
+      <outputInLoop>true</outputInLoop>
+      <outputPolicyWeight>1.0</outputPolicyWeight>
       <leafDistillWeight>0.0</leafDistillWeight>
       <!-- Keep the bounded local chooser objective available but outside this
            production run for now. Its extra candidate re-score is paid on

@@ -736,3 +736,66 @@ landing source. The SHA-256 over its sorted compact JSON map is
 This receipt note was added after the run; it does not change the validated
 source map. The user-owned thought-operator specification edit remains
 untouched and excluded from the correction commit.
+
+
+## Grammar-owned wording architecture (September 20)
+
+This landing closes item 1's architecture/wiring work. The concrete language-
+quality, structural-preference and routing-share checks remain explicit goals,
+not claimed passing empirical gates. See [SelectedMeaning](SelectedMeaning.md).
+No additional LM, interpreter, realiser or auxiliary language loss is added.
+
+The existing compose MLP now retains ordered operand and role context. A zero
+input projection into its existing first hidden layer preserves old predictions
+and initialization order; ordinary reconstruction/answer credit trains it.
+BasicModel enables the declared generate walk and its existing supplied-answer
+policy objective. The natural word `equals` is removed from the shipped
+technical anchor tables. The ordinary forward program and output trace own the
+actual choices; no hand-annotated `AnswerProgram` supplies the new text probe.
+
+Development receipts under `output/tests/`:
+
+| Receipt | Result and disposition |
+|---|---|
+| `20260920-065559-6d8750` | 2/2 completed, both failed: the mean-only chooser could not distinguish reversed pairs, and normal text training had no operand-order parameter. |
+| `20260920-070111-86005c` | 4/4 passed: learned sensitivity to concept/role order, old/current checkpoint behavior, optimizer moments and full-graph execution. |
+| `20260920-070203-0196da` | 1/1 completed, failed: BasicModel had not enabled its generate walk or output-policy objective. |
+| `20260920-070250-9f3989` | 85/85 completed, exit 0: grammar chooser, output walk, checkpoint and reconstruction checks, including an ordinary text reconstruction batch using production generation configuration. |
+| `20260920-070644-0bd526` | 3/3 completed, all failed: the three shipped grammars still assigned `equals` to the equality operator before learning. |
+| `20260920-071333-6860c6` | Focused selection completed 110/110 with exit 0, covering the corrected anchors, order projection, selected-meaning recovery, chooser parity, grammar fixtures and documentation links. The previously passed 202-second text integration runs again in the full default selection. |
+| `20260920-071513-b13772` | Interrupted explicitly after 692/4,607 completed, exit 130, to correct a GPU RNG compatibility issue found during review. This incomplete receipt is not a landing gate. No source was edited until its workers had exited. |
+| `20260920-071829-c758ce` | 1/1 completed, failed on MPS: a CPU-only RNG fork did not prevent the new zero-initialized Linear from advancing the GPU stream. |
+| `20260920-071913-1d8538` | 54/54 completed, exit 0: the projection now allocates its weight directly as zeros without a random draw; CPU and MPS RNG checks, chooser architecture, optimizer/checkpoint restoration and full-graph execution pass. |
+
+The text probe presents “a bicycle has a wheel” and “a wheel belongs to a
+bicycle” through the real input/forward/reconstruction path and `runBatch`.
+It checks live compose-MLP updates and generate-path invocation, while missing
+answer labels leave generate-policy weights unchanged. It does **not** assert
+that those sentences have learned canonical meanings or fluent outputs. The
+existing supplied-answer output tests separately check actual policy updates.
+All prior tests are retained; the new probes add coverage rather than replacing
+language-quality evidence or retiring any further tests.
+
+
+The final **source-matched full default receipt** is
+[`20260920-071956-ad78e0/result.json`](../output/tests/20260920-071956-ad78e0/result.json):
+**4,608/4,608 selected cases completed, exit 0**, in **1,036.3 seconds**.
+Unique outcomes are **4,277 passed, 330 skipped and one expected failure**.
+Selected and completed case sets are identical. The full default selection
+has no added selector or exclusion; its documented slow-test skips do not
+establish the remaining language-quality, utility or throughput goals.
+
+Command from `basicmodel/`:
+
+```sh
+DEVELOPER_DIR=/Library/Developer/CommandLineTools .venv/bin/python test/test_report.py --batch-size 8 --max-files 1
+```
+
+Ten workers used the unchanged 8 GiB worker / 28 GiB aggregate limits and
+1,800-second worker / 10,800-second suite deadlines. Peak footprints were
+7.19 GiB per worker and 10.80 GiB aggregate. All **615** entries in
+`validated_source` match a fresh `bounded_tests.source_snapshot()` of the
+landing source. The SHA-256 over its sorted compact JSON map is
+`3338902b6483d4217b064f52b36abe083c64adb4fd58bddd27c7ce393f88581b`.
+This receipt note was added after the run and leaves that source map unchanged.
+The user-owned thought-operator specification edit is excluded from this commit.

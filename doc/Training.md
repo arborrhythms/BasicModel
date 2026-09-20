@@ -830,7 +830,9 @@ understanding parameters can still learn input reconstruction.
 The output walk's generate policy (2026-09-15, contract 5).
 `LanguageSpace.generate_policy` is a linear chooser created only under
 `<outputInLoop>`. Its parameters belong to SymbolSpace's explicit optimizer
-list. A training `reverseOutput` samples its own actions from the chooser;
+list. BasicModel enables it with `outputPolicyWeight=1.0`; unlabeled FineWeb
+still gives it no answer credit. A training `reverseOutput` samples its own
+actions from the chooser;
 it does not follow the input's identified compose derivation. The loop
 returns the sequence negative log probability of those choices. It draws
 one fixed-shape random slab before entering the loop and detaches the

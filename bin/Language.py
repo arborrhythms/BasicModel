@@ -7850,6 +7850,9 @@ class MLPTransformChooser(TransformChooser):
 
     Sizing (one chooser per layer): ``n_copy`` copy ops then ``n_op``
     apply/reduce ops, one tool-embedding row each (copy rows first).
+    Binary layers pass ``ordered_binary=True`` so operand/role means and
+    signed differences enter the same first hidden layer. Unary heads retain
+    their existing input and checkpoint layout.
     """
 
     # relation one-hot (5), signed/magnitude offset (2), the question's
@@ -7861,7 +7864,7 @@ class MLPTransformChooser(TransformChooser):
     WHAT_CONTEXT_DIM = 29
 
     def __init__(self, *, d_model, n_copy, n_op, embed_dim=8, pos_dim=8,
-                 hidden=None, n_role_cats=0, depth=1):
+                 hidden=None, n_role_cats=0, depth=1, ordered_binary=False):
         super().__init__()
         self.d_model = int(d_model)
         self.n_copy = int(n_copy)
@@ -7883,6 +7886,23 @@ class MLPTransformChooser(TransformChooser):
         in_dim = (2 * self.d_model + self.embed_dim
                   + self.n_role_cats + self.pos_dim)
         self.mlp = _chooser_mlp(in_dim, self.hidden, self.depth)
+        # The mean alone identifies (left, right) with (right, left).
+        # Feed their signed difference into THIS MLP's first hidden layer;
+        # together mean and difference retain both full-width operands and
+        # both role vectors. No lexical classifier or additional policy owns
+        # this association. Zero initialization preserves old predictions and
+        # the RNG stream while ordinary reconstruction/answer credit learns
+        # how order affects a grammar choice.
+        self.operand_order = None
+        if ordered_binary:
+            # Allocate without a random draw on ANY default device. A CPU
+            # fork_rng alone would still advance the production MPS stream.
+            self.operand_order = nn.Linear(
+                self.d_model + self.n_role_cats, self.hidden, bias=False,
+                device="meta")
+            self.operand_order.weight = nn.Parameter(self.mlp[0].weight.new_zeros(
+                self.hidden, self.d_model + self.n_role_cats))
+            self.register_buffer("_operand_order_version", torch.tensor(1))
         # Question intent is a chooser input, not an output shortcut.  This
         # zero-initialized head preserves the established clean route exactly
         # until a temporal/supervised curriculum trains it.  One logit bias is
@@ -7897,6 +7917,23 @@ class MLPTransformChooser(TransformChooser):
                 self.WHAT_CONTEXT_DIM, max(1, self.n_copy + self.n_op),
                 bias=False)
         nn.init.zeros_(self.what_projection.weight)
+
+    def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
+                              missing_keys, unexpected_keys, error_msgs):
+        if self.operand_order is not None:
+            marker = prefix + "_operand_order_version"
+            weight = prefix + "operand_order.weight"
+            if marker not in state_dict and weight not in state_dict:
+                # Only a pre-order checkpoint gets the zero extension. A
+                # marked current checkpoint missing its learned projection
+                # must still fail strict restoration.
+                state_dict[marker] = self._operand_order_version.detach().clone()
+                state_dict[weight] = torch.zeros_like(self.operand_order.weight)
+            elif marker in state_dict and int(state_dict[marker]) != 1:
+                error_msgs.append(prefix + "unsupported grammar operand-order schema")
+        super()._load_from_state_dict(
+            state_dict, prefix, local_metadata, strict,
+            missing_keys, unexpected_keys, error_msgs)
 
     def _pos_emb(self, n, device, dtype):
         """Sinusoidal positional encoding ``[n, pos_dim]``."""
@@ -7913,7 +7950,7 @@ class MLPTransformChooser(TransformChooser):
                 [pe, pe.new_zeros(n, self.pos_dim - pe.shape[-1])], dim=-1)
         return pe[:, :self.pos_dim]
 
-    def _score(self, slot, cand, tool_rows, pos, cat_ctx=None):
+    def _score(self, slot, cand, tool_rows, pos, cat_ctx=None, order_ctx=None):
         """Score ``R`` candidates at each of ``Npos`` locations.
 
         ``slot`` / ``cand``: ``[B, Npos, D]`` (broadcast over R) or ``cand``
@@ -7950,6 +7987,13 @@ class MLPTransformChooser(TransformChooser):
         # Cast to the slot dtype so the computed path and the degenerate
         # zero fallbacks agree even under autocast (the MLP may emit
         # bf16/fp16; the fallbacks keep the input dtype).
+        if self.operand_order is not None and order_ctx is not None:
+            hidden = self.mlp[0](feat)
+            hidden = hidden + self.operand_order(order_ctx).unsqueeze(2).to(hidden.dtype)
+            for index, block in enumerate(self.mlp):
+                if index:
+                    hidden = block(hidden)
+            return hidden.squeeze(-1).to(slot.dtype)
         return self.mlp(feat).squeeze(-1).to(slot.dtype)              # [B,Npos,R]
 
     def _what_bias(self, what_ctx, *, batch, device, dtype):
@@ -8002,11 +8046,19 @@ class MLPTransformChooser(TransformChooser):
         if (N >= 2 and reduced_score.dim() == 4
                 and reduced_score.shape[1] > 0 and reduced_score.shape[2] > 0):
             pair_slot = 0.5 * (x_score[:, :-1] + x_score[:, 1:])       # [B,N-1,D]
-            # Pair the operands' category rows the same way the slot is paired
-            # (the spec's left/right operand reduction; avg here). None keeps
-            # the feature block neutral.
+            # Means keep the old feature layout. The signed differences are
+            # additional inputs to the same first hidden layer, so symmetric
+            # candidate results cannot erase converse/role order.
             pair_cat = (0.5 * (cat_ctx[:, :-1] + cat_ctx[:, 1:])
                         if cat_ctx is not None else None)
+            order_ctx = None
+            if self.operand_order is not None:
+                order_ctx = 0.5 * (x_score[:, :-1] - x_score[:, 1:])
+                if self.n_role_cats:
+                    cat_order = (0.5 * (cat_ctx[:, :-1] - cat_ctx[:, 1:])
+                                 if cat_ctx is not None else
+                                 x_score.new_zeros(B, N - 1, self.n_role_cats))
+                    order_ctx = torch.cat((order_ctx, cat_order.to(x_score.dtype)), dim=-1)
             pos_pair = self._pos_emb(N - 1, x_score.device, x_score.dtype)
             r_reduce = int(reduced_score.shape[2])
             # The reduce op-axis must equal n_op (the construction-time
@@ -8019,7 +8071,7 @@ class MLPTransformChooser(TransformChooser):
                 self.n_copy:self.n_copy + r_reduce]
             reduce_score = self._score(
                 pair_slot, reduced_score, reduce_rows, pos_pair,
-                cat_ctx=pair_cat)
+                cat_ctx=pair_cat, order_ctx=order_ctx)
         else:
             reduce_score = x_score.new_zeros(B, max(N - 1, 0), self.n_op)
         what_bias = self._what_bias(
@@ -8032,7 +8084,8 @@ class MLPTransformChooser(TransformChooser):
         return copy_score, reduce_score
 
 
-def make_transform_chooser(kind, *, d_model, n_copy, n_op, n_role_cats=0):
+def make_transform_chooser(kind, *, d_model, n_copy, n_op, n_role_cats=0,
+                           ordered_binary=False):
     """Factory: build the placement chooser for a structured layer.
 
     ``kind`` ``"anchordot"`` (default) -> the stateless behavior-preserving
@@ -8043,6 +8096,7 @@ def make_transform_chooser(kind, *, d_model, n_copy, n_op, n_role_cats=0):
     ``n_role_cats``: the MetaSymbol category-context width fed to the MLP
     chooser; 0 leaves the MLP feature set unchanged. Anchor-dot uses category
     context via the structured layer's labelled-role prior.
+    ``ordered_binary`` retains left/right differences in a binary MLP head.
     """
     k = str(kind or "anchordot").strip().lower()
     if k == "mlp":
@@ -8054,7 +8108,7 @@ def make_transform_chooser(kind, *, d_model, n_copy, n_op, n_role_cats=0):
             "transformChooserDepth")
         return MLPTransformChooser(
             d_model=d_model, n_copy=n_copy, n_op=n_op, n_role_cats=n_role_cats,
-            hidden=hidden or None, depth=depth)
+            hidden=hidden or None, depth=depth, ordered_binary=ordered_binary)
     # Accept exactly the values the <transformChooser> XSD enum allows, so
     # the factory and schema validation agree on the legal set.
     if k != "anchordot":
@@ -8245,7 +8299,8 @@ class BinaryStructuredReductionLayer(nn.Module):
         # layer's r_copy copy ops + r_reduce reduce ops.
         self.chooser = make_transform_chooser(
             chooser, d_model=self.d_model,
-            n_copy=self.r_copy, n_op=self.r_reduce, n_role_cats=n_role_cats)
+            n_copy=self.r_copy, n_op=self.r_reduce, n_role_cats=n_role_cats,
+            ordered_binary=True)
         # Enabled explicitly by <forwardGrammarWeight>.  The local objective
         # is otherwise absent, preserving legacy routing and capture cost.
         self.local_objective_enabled = False

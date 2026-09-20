@@ -10169,7 +10169,7 @@ class BasicModel(BaseModel):
             if temporal:
                 surface = self._answer_surface_from_percepts(percepts)
         trace = derivation.grammar_trace + (
-            {"operation": "synthesize:conceptual",
+            {"operation": "generate:grammar" if walked is not None else "synthesize:conceptual",
              "shape": tuple(concepts.shape) if torch.is_tensor(concepts) else None},
             {"operation": "synthesize:perceptual",
              "shape": tuple(percepts.shape) if torch.is_tensor(percepts) else None,

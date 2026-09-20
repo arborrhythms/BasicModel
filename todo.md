@@ -12,10 +12,12 @@
 
 Work follows
 [2026-09-15-next-sentence-as-the-production-objective.md](doc/plans/2026-09-15-next-sentence-as-the-production-objective.md)
-§10 and its completion gates. **Item 1 remains open after review.** The
-standalone language codec is rejected; natural word → operator associations
-must be learned through compose/generate. Current contracts, review corrections
-and receipts are in [SelectedMeaning](doc/SelectedMeaning.md),
+§10 and its completion gates. **Item 1 architecture and production wiring are
+complete.** Natural word → operator associations use compose/generate; the
+standalone codec remains rejected. Concrete language-quality and structural
+preference checks remain explicit design/evidence goals under item 4, following
+the September 20 clarification. Current contracts, limits and receipts are in
+[SelectedMeaning](doc/SelectedMeaning.md),
 [KernelRetirement](doc/KernelRetirement.md) and [Testing](doc/Testing.md).
 The September 17 handoff and preserved candidates are in
 [the checkpoint](doc/checkpoints/2026-09-17-production-spec/README.md);
@@ -23,6 +25,7 @@ only the generation catalogue (item 3) remains uninstalled.
 
 ### Done (newest first)
 
+- `02db7ef` Review corrections: removed the standalone codec and legacy policy; completed chooser context, bounded memory and nested-controller mechanisms ([SelectedMeaning](doc/SelectedMeaning.md), [Testing](doc/Testing.md)).
 - `288b56b` Initial controller replacement; review reopened item 1's wording gate ([current design and limits](doc/SelectedMeaning.md), [original receipt and review corrections](doc/Testing.md#selected-meaning-and-one-controller-september-20), [test dispositions](doc/KernelRetirement.md)).
 - `60b1497` Forward owns anchored lexical forms by WORD row; capture reads retained provenance ([Testing](doc/Testing.md#forward-owned-lexical-forms-september-19); item 1 increment).
 - `a70c77d` Direct `concept`-unary selected meaning (`what(quantize(x))`)
@@ -59,16 +62,6 @@ only the generation catalogue (item 3) remains uninstalled.
 
 ### Open
 
-1. **Grammar-owned natural wording (item 1).** Train word → operator
-   associations through the compose/generate grammar and its existing MLP
-   selection, with subsymbolic computation inside grammatical operators.
-   An optional LM must itself be an explicit selectable grammar operator with
-   normal production configuration and training; no fallback interpreter or
-   pre-generate realiser. Exit: real forward-parsed text, held-out complete
-   relation wording as well as nouns, converse/alternate-sense controls,
-   generation from a normal vocabulary, and recomposition preserving meaning.
-   The deleted codec's synthetic pairs and restricted-vocabulary result do not
-   satisfy this gate. Learned questioning utility remains unproven under item 4.
 2. **Expectation and residual learning.** Extend retained estimates to checked
    bindings/scope metadata without copying the arriving target; prior-view
    isolation from arriving/unseen input and other rows; residual query credit
@@ -78,8 +71,19 @@ only the generation catalogue (item 3) remains uninstalled.
    generation-catalogue candidate (it no longer applies to primary); validate
    checkpoint/optimizer migration and normal supervised output; keep the §8.4
    downstream/reconstruction gradient contract and GradientFlow.md current.
-4. **Evidence gates and documentation.** Held-out causal utility against
-   direct-answer and equal-compute baselines across seeds,
+4. **Evidence/design goals and documentation.** Grammar-owned natural wording:
+   real forward-parsed text, complete relation-wording and noun holdouts,
+   converse/alternate-sense controls, generation from the normal vocabulary,
+   and recomposition preserving meaning. Prefer understandable structural
+   operators when
+   they carry the meaning; any opaque operator must be an ordinary grammar-MLP
+   choice, with the structural face preferred at equal fit. Measure the opaque
+   routing share and its decrease as structural coverage grows on the same
+   corpus. These remain goals, not claimed passing language-quality tests.
+   An optional LM must be a declared grammar operator with normal configuration
+   and training, never a fallback interpreter or pre-generate realiser.
+   Held-out causal utility against direct-answer and equal-compute baselines
+   across seeds,
    reconstruction/discrimination controls, warmed training throughput; the
    preserved arbitrary-symbol poison probes and renamed-vocabulary controls.
    Numerical values or symbol IDs never supply learner arithmetic or answer

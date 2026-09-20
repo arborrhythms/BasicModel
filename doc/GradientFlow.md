@@ -360,8 +360,22 @@ See [nested retention](NestedRetention.md).
 
 Natural word → operator associations must train compose/generate. The separate
 codec, its supervision API and loss are removed. The old codec test is not
-accepted language-learning evidence; item 1's wording gate remains open.
-There is no replacement auxiliary interpreter or decoder loss.
+accepted language-learning evidence. Item 1 completes architecture/wiring;
+natural-wording quality remains an empirical goal. There is no replacement
+auxiliary interpreter or decoder loss.
+
+The compose MLP's binary `operand_order` projection adds signed left/right
+concept and role differences to its existing first hidden layer. Ordinary
+reconstruction and answer derivatives train it with the other chooser weights;
+the detached local `forwardGrammarWeight` objective, when enabled, also uses
+that same scorer. There is no additional objective. It joins SymbolSpace's
+explicit optimizer owner once. Old checkpoints initialize it to zero with
+fresh optimizer state, while keeping existing weights and named moments.
+
+BasicModel now enables the declared generate walk and supplied-answer action
+credit (`outputInLoop=true`, `outputPolicyWeight=1.0`). The existing gradient
+contract is unchanged: desired answers are consulted after generation, policy
+rewards/features detach, and missing supervision gives no policy update.
 
 The thought MLP's metadata encoding has no learned parameters. Its bounded
 attention uses a live active query and detached visible memory, so policy

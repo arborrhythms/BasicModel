@@ -356,13 +356,12 @@ forms of the inventory above for a `torch.while_loop` body: every op's
 reverse is evaluated on the parent and the recorded op selects
 (`local_op_from_rule_ids` inverts the rule map). `reverse_inverses()`
 returns each lift/lower inner layer's `W^-1` once per traversal.
-`generate_policy` (created only under `<outputInLoop>`) is a linear chooser
-over the binary rules, the unary rules and stop, read on a top slot's
-content: the output walk follows rule stamps and credits the policy by
-imitation (`generate_policy_credit`); on the opaque conceptual slots of a
-materialised answer (no stamps) it follows the teacher actions of the
-idea's own derivation (`Models._derivation_targets`) and credits the
-policy by them, and lets the policy decide a top with neither.
+`generate_policy` (created under `<outputInLoop>`, enabled in BasicModel) is
+a linear chooser over declared binary rules, unary rules and stop, read on
+the top slot's content. Training samples its own actions and receives credit
+only from separately supplied answer error. Evaluation uses its highest-scoring
+choice. Output-owned rule stamps can describe deterministic replay; input
+compose traces and teacher targets never select or supervise output actions.
 
 ## Knowledge Artifacts
 
@@ -493,6 +492,22 @@ hidden width (`0` means `max(8, d_model)`) and `transformChooserDepth` selects
 the number of hidden Linear/GELU blocks (default `1`). Every block has the same
 width; a scalar Linear head follows. The 29-dimensional What context still
 enters through a separate linear operation bias, not through this MLP.
+
+Binary heads retain operand and role **order**: means enter the established
+feature layout, while signed left/right differences enter the same first hidden
+layer through `operand_order`. This is an input projection of the existing MLP,
+not another language policy. The projection starts at zero without changing
+the RNG stream. Old checkpoints extend with zeros, preserving predictions and
+existing optimizer moments; current checkpoints save its learned parameters.
+Unary heads retain their existing layout. Raw WORD rows and native IDs never
+enter these numeric features.
+
+This grammar path owns natural word → operator learning. Numerical learning
+inside a declared operator is allowed; a fallback interpreter or pre-generate
+language decoder is not. Technical anchor spellings such as `partOf` and
+`isEqual` are explicit syntax. Ordinary words, including `equals`, are not
+bootstrap aliases. Structural preference and language-quality studies remain
+the design goals in [SelectedMeaning](SelectedMeaning.md).
 
 `SelectedThoughtChooser` is the sole thought policy. It selects catalogue
 operations or `conclude` on the ordinary boundary controller, including a
@@ -789,7 +804,7 @@ the modifier's attenuation) becomes the natural recovery law rather than a
 tuning choice. Open questions: how order-raising (`maybe_raise_order`)
 interacts with a PS/WS part-of-speech split; whether abstract nouns want
 the WholeSpace (property-like) or PartSpace (object-like) origin; and how
-the `<Anchors>` closed-class relation surfaces sit relative to this axis.
+the `<Anchors>` technical operator spellings sit relative to this axis.
 
 ## Exist and thought operations at the completed boundary
 

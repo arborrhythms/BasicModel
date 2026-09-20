@@ -218,17 +218,13 @@
     </generate>
   </Symbolic>
 
-  <!-- Syntactic ANCHORS (Alec 2026-07-13): the CLOSED-CLASS surfaces of
-       the relation operators. NP-R-NP is a grammatical form in its own
-       right (the "is of definition", which does not reduce to the "is of
-       predication", NP-VP), so its R-words resolve their slot to the
-       operator's role SYNTACTICALLY (surface to operator, no learned
-       centroid needed). Extend per relation surface as the vocabulary
-       grows. -->
+  <!-- Explicit technical operator spellings only. Natural relation words
+       (including "equals") acquire their use through the grammar learner;
+       adding vocabulary must not extend this table into an interpreter. -->
   <Anchors>
     <part>partOf, partof, part-of</part>
     <whole>wholeOf, wholeof, whole-of</whole>
-    <equal>isEqual, equals, is-equal</equal>
+    <equal>isEqual, is-equal</equal>
   </Anchors>
 
 </grammar>

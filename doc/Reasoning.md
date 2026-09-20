@@ -170,8 +170,11 @@ payloads remain unavailable rather than becoming an invented answer.
 Natural word → operator association belongs to the compose/generate grammar.
 The standalone `LinguisticMeaningCodec` introduced in `288b56b` was a separate
 interpreter/realiser and has been removed. Its synthetic, noun-only holdout did
-not satisfy item 1. The natural-wording gate remains open; no natural word is
-added to the technical anchor table. See [SelectedMeaning](SelectedMeaning.md).
+not satisfy item 1. The architecture now uses the existing grammar chooser,
+including ordered operand/role inputs, and BasicModel's declared generate walk.
+The predefined natural-word anchor `equals` is removed. Language-quality and
+structural-preference evidence remain design goals; no learned utility is
+claimed. See [SelectedMeaning](SelectedMeaning.md).
 
 `SelectedThoughtChooser` receives full masked root/active/candidate roles,
 mode, polarity, bounded bindings/scope and attended visible STM/LTM values.
