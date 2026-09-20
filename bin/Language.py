@@ -13997,7 +13997,7 @@ class SymbolSubSpace(SubSpace):
            unkind propositions by scaling ``total_loss`` by
            ``(1 + lum_w * (1 - lum_norm) + u_w * (1 - u_norm))``,
            where ``lum_norm = luminosity(symbolic_space.sigma).clamp(0, 1)``
-           and ``u_norm = universality_score.clamp(-1, 1)`` (or 0
+           and ``u_norm = universality_score.detach().clamp(-1, 1)`` (or 0
            when the caller has no universality score cached yet).
 
         2. **Additive falsity penalty** -- when
@@ -14023,10 +14023,10 @@ class SymbolSubSpace(SubSpace):
         reference to the model.
 
         When supplied, ``gradient_objectives`` contains weighted primary
-        losses used for reconstruction-priority differentiation. Apply the
-        SAME live multiplier to those branches, including its derivative;
-        detaching it would misattribute credit to shared parameters. Additive
-        truth/balance penalties remain independent auxiliary objectives.
+        losses used for per-operator diagnostics. Apply the same detached
+        contextual multiplier to each branch. A context-dependent scale must
+        not reopen the concluded-state boundary. Additive truth/balance
+        penalties remain independent auxiliary objectives.
         """
         if self.truth_layer is None or self.truth_layer.is_empty():
             return total_loss
@@ -14046,7 +14046,7 @@ class SymbolSubSpace(SubSpace):
                            dtype=total_loss.dtype)
         lum_norm = lum.clamp(0, 1)
         if universality_score is not None:
-            u_norm = universality_score.clamp(-1, 1)
+            u_norm = universality_score.detach().clamp(-1, 1)
         else:
             u_norm = torch.tensor(0.0, device=total_loss.device)
 

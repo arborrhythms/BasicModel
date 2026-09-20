@@ -108,7 +108,7 @@ def test_public_boundary_prepares_target_free_metadata_before_realization(tmp_pa
 
 
 @pytest.mark.parametrize("output_loop", [False, True])
-def test_prepared_concept_handoff_preserves_answer_gradient(tmp_path, monkeypatch, output_loop):
+def test_prepared_concept_handoff_cuts_answer_state_gradient(tmp_path, monkeypatch, output_loop):
     from dataclasses import replace
     import Models
 
@@ -125,9 +125,61 @@ def test_prepared_concept_handoff_preserves_answer_gradient(tmp_path, monkeypatc
         source = resolved.conceptual_answer.detach().clone().requires_grad_()
         held = replace(resolved, conceptual_answer=source)
         construction = model.reverseOutput(understanding, held)
-        gradient = torch.autograd.grad(construction.percepts.square().mean(), source)[0]
-        assert bool(torch.isfinite(gradient).all())
-        assert bool((gradient.flatten(1).abs().sum(-1) > 0).all())
+        loss = construction.percepts.square().mean()
+        gradient = torch.autograd.grad(loss, source, allow_unused=True, retain_graph=True)[0]
+        assert gradient is None or not bool(gradient.abs().any()), (
+            "output matching must treat the concluded idea as given")
+        parameters = tuple(p for p in model.parameters() if p.requires_grad)
+        gradients = torch.autograd.grad(loss, parameters, allow_unused=True)
+        assert any(g is not None and bool(g.abs().any()) for g in gradients), (
+            "given state must still train generation's parameters")
+    finally:
+        model.End()
+        model.symbolSpace.soft_reset()
+        torch._dynamo.reset()
+
+
+def test_answer_loss_trains_an_executed_shared_inverse_without_state_credit(tmp_path, monkeypatch):
+    from dataclasses import replace
+
+    model = _native_answer_model(tmp_path, True)
+    model.eval()
+    try:
+        with torch.no_grad():
+            understanding = _capture_program_probe(model, ["1 plus 2", "3 plus 4"])
+            held = model.resolveAnswer(understanding, (What.supervised(0), What.supervised(1)))
+            language = model.languageSpace
+            index = list(language._generate_binary_names).index("lower")
+            operator = language._generate_binary_ops[index]
+            leaf = torch.full((2, held.conceptual_answer.shape[-1]), .08)
+            parent = operator.compose(leaf, leaf)
+            children = operator.generate(parent)
+            threshold = (parent.norm(dim=-1).min()
+                         + torch.stack([child.norm(dim=-1).max() for child in children]).max()) / 2
+            assert all(bool((child.norm(dim=-1) < threshold).all()) for child in children)
+            assert bool((parent.norm(dim=-1) > threshold).all())
+            state = torch.zeros_like(held.conceptual_answer)
+            state[:, 0] = parent
+        state.requires_grad_()
+
+        def one_split(top):
+            # A tensor-only fixed policy exercises the real shared inverse.
+            # Root expands once; its smaller children are emitted.
+            scores = top.new_full((top.shape[0], language.generate_policy.out_features), -1000.)
+            scores[:, -1] = 0.
+            scores[:, index] = top.norm(dim=-1) - threshold
+            return scores
+
+        monkeypatch.setattr(language, "generate_policy_logits", one_split)
+        construction = model.reverseOutput(understanding, replace(held, conceptual_answer=state))
+        assert (construction.concepts.abs().amax(-1) > 0).sum(-1).tolist() == [2, 2]
+        loss = construction.percepts.sum()
+        parameters = tuple(operator.parameters())
+        owned = {id(p) for p in model._shared_representation_parameters(model.getOptimizer(lr=.001))}
+        assert parameters and all(id(p) in owned for p in parameters)
+        gradients = torch.autograd.grad(loss, (state, *parameters), allow_unused=True)
+        assert gradients[0] is None
+        assert any(g is not None and bool(g.abs().any()) for g in gradients[1:])
     finally:
         model.End()
         model.symbolSpace.soft_reset()

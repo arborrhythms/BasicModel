@@ -762,21 +762,18 @@ were **RETIRED** in A1, 2026-06-09; reconstruction is now seeded from concepts
 ### Single Optimizer with Overlapping Weight Spaces
 
 Representation learning and response learning use one optimizer step over
-explicitly owned parameters. Shared weights can learn a representation useful
-for reconstruction, prediction and answering. Direction-specific weights
-specialize in their own computations; module identity and gradient reach are
-separate questions because a live input can propagate credit to its producer.
+explicitly owned parameters. Reconstruction, expectation and generation have
+separate state paths. Output treats the concluded idea and its contextual
+operands as given; expectation can train live preceding ideas while its target
+stays detached. Shared operators receive ordinary summed gradients from their
+uses in each computation. Independent heads specialize in their own paths.
 
-With `reconstructionPriority` enabled, the optimizer seam collects all
-non-reconstruction objectives into one downstream contribution. It removes
-opposition to reconstruction above `reconstructionLossTolerance` and limits
-the compatible contribution using `outputGradientRatio` and the combined
-gradient scale. Below tolerance, bounded predictive refinement remains
-possible. Shared grammar transforms participate even when registered on
-SymbolSpace. Independent heads keep their ordinary gradients. The loss
-partition and ownership are in [Models.py:2708](../bin/Models.py#L2708), and
-the numerical rule is in [Optimizer.py:113](../bin/Optimizer.py#L113). See
-[Training](Training.md) and the [joint-learning contract](plans/2026-09-15-next-sentence-as-the-production-objective.md#84-joint-representation-learning-and-gradient-balance).
+The global reconstruction-priority projection is retired. The run harness
+logs reconstruction versus output/expectation cosine per shared operator at
+`branchDiagnosticsEvery` intervals. Persistent opposition names a specific
+operator for investigation; the diagnostic never changes its gradient. See
+[GradientFlow](GradientFlow.md) and the
+[superseding contract](plans/2026-09-15-next-sentence-as-the-production-objective.md#84-gradient-boundaries-and-learning-evidence).
 
 An invertible transform uses its same learned mapping in the forward and
 inverse directions ([`InvertibleLinearLayer`](../bin/Layers.py#L1066)); its gradient

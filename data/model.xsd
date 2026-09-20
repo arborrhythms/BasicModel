@@ -903,23 +903,9 @@
            Legacy name reverseScale still parsed (with deprecation
            warning) by util.TheXMLConfig. -->
       <xs:element name="reconstructionScale" type="unitInterval" minOccurs="0"/>
-      <!-- Joint gradient policy on representation and shared grammar
-           parameters. Preserve reconstruction while learning useful codes. -->
-      <xs:element name="reconstructionPriority" type="xs:boolean" minOccurs="0"/>
-      <xs:element name="reconstructionLossTolerance" type="nonNegativeFloat" minOccurs="0"/>
-      <!-- What spec Step 6: every N training batches, sample gradient
-           norms/cosine of input_reconstruction vs answer_construction at
-           the conceptual and symbolic branch points (a read before
-           backward; never an update). 0 disables. -->
+      <!-- Every N batches, log weighted reconstruction/output/expectation
+           norms and cosine per shared operator/codebook. Read-only; 0 disables. -->
       <xs:element name="branchDiagnosticsEvery" type="xs:nonNegativeInteger" minOccurs="0"/>
-      <xs:element name="outputGradientRatio" minOccurs="0">
-        <xs:simpleType>
-          <xs:restriction base="xs:double">
-            <xs:minInclusive value="0"/>
-            <xs:maxExclusive value="1"/>
-          </xs:restriction>
-        </xs:simpleType>
-      </xs:element>
       <!-- Centralize complete-present-input reconstruction, clean targets,
            objective corpus addresses, and loss reporting in Teacher. The
            objective address is separate supervision/conditioning metadata;

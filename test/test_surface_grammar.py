@@ -210,11 +210,11 @@ def test_normal_batch_trains_supplied_grammar_lessons(tmp_path, monkeypatch):
             assert any(not torch.equal(old, new) for old, new in zip(original, owner.parameters()))
         understanding = model._last_understanding
         assert understanding.input_reconstruction is not None
-        assert model._grammar_lesson_loss(understanding, split="test", source_rows=[0, 1]) is None
+        assert model._grammar_lesson_objectives(understanding, split="test", source_rows=[0, 1]) is None
         with pytest.raises(ValueError, match="does not match"):
-            model._grammar_lesson_loss(understanding, split="train", source_rows=[1, 0])
+            model._grammar_lesson_objectives(understanding, split="train", source_rows=[1, 0])
         data.grammar_lessons = {}
-        assert model._grammar_lesson_loss(understanding, split="train", source_rows=[0, 1]) is None
+        assert model._grammar_lesson_objectives(understanding, split="train", source_rows=[0, 1]) is None
     finally:
         data.grammar_lessons = {}
         model.End()

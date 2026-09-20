@@ -8,8 +8,7 @@ from torch import nn
 
 from Layers import IndexedSigmaConceptsFromPercepts, SigmaConceptsFromPercepts
 from Models import BaseModel
-from Optimizer import (Adam, MultiOptimizer, RowLocalAdam, configure_l1_proximal,
-                       backward_reconstruction_priority)
+from Optimizer import (Adam, MultiOptimizer, RowLocalAdam, configure_l1_proximal)
 
 
 @pytest.mark.parametrize("strength", [-.01, float("nan"), float("inf")])
@@ -152,11 +151,9 @@ def test_shared_model_readout_gets_one_policy_and_no_duplicate_autograd_l1():
     coefficient = layer.lookup_coefficients(torch.tensor([3]))[0]
     reconstruction = 2 * coefficient[0]
     output = -3 * coefficient[0] + 4 * coefficient[1] + head
-    backward_reconstruction_priority(
-        reconstruction + output + cost, reconstruction, output, [layer.coefficients])
+    (reconstruction + output + cost).backward()
     torch.testing.assert_close(layer.coefficients.grad.coalesce().values(),
-                               torch.tensor([[2., 3., 0.]]))
-    # r=(2,0,0), compatible q=(0,4,0): the combined cap is .5*(2+4)=3.
+                               torch.tensor([[-1., 4., 0.]]))
     # L1 contributes no autograd credit and is applied only in the later step.
     opt.step()
     assert not inner.inner._l1_proximal

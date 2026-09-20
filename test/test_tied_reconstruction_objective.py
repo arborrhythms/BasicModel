@@ -15,7 +15,6 @@ def test_tied_runbatch_scores_the_same_owned_objective_once(tmp_path, monkeypatc
     model._tensor_peer_while_eager = False
     model._chart_compose_per_word = lambda: None
     model.loss.reconstruction_scale = 1.0
-    model.reconstruction_priority = False
     model.leaf_distill_weight = 1.0
     previous_supervision = model.inputSpace.data.has_supervised_outputs
     model.inputSpace.data.has_supervised_outputs = False

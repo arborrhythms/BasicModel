@@ -56,7 +56,7 @@ The same meter pays for context reads and execution. See
 `selectedThoughtPolicyWeight` is the one default-off thought REINFORCE objective:
 each eligible row's later answer error and its actual shared work cost,
 including all reads and children, with one EMA baseline. Its log-probability
-path reaches the chooser and live root/active payloads; candidate payloads,
+path reaches the chooser; its root, active and candidate observations,
 executor results, references, meter state and reward are hard or detached. This is supplied-answer controller credit, **not** residual credit,
 and it does not establish learned utility.
 

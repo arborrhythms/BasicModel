@@ -65,7 +65,7 @@ words must already belong to the ordinary input vocabulary. The shipped
 [MM_grammar_wording.xml](../data/MM_grammar_wording.xml) selects this curriculum;
 `grammarLessonWeight` adds its loss to the actual `runBatch` total. Unlabelled
 corpora and evaluation splits supply no grammar lessons. Shared weights remain
-subject to the reconstruction-priority gradient budget in normal training.
+trained through their own uses under the [separate-state contract](GradientFlow.md).
 
 Declarative relation answers retain all three canonical roles rather than a
 lossy numerical root. The normal generate walk chooses its own actions over
@@ -82,7 +82,7 @@ references. `TernaryTruthStore.bind_constituents` validates references, depth,
 cycles and capacity before writing children in postorder. Children become
 questions or unverified occurrences, never facts by containment. Eager,
 pending and packed observation share this owner. Durable records detach;
-current selected values preserve their ordinary gradient.
+composed requests may remain live in the episode; checked thought effects detach.
 
 `BasicModel.run_selected_thought` is the only thought controller. Its menu
 comes from `<thought>`. All public reasoning entry points and normal answer
@@ -116,12 +116,12 @@ and four recent LTM records. Small budgets reserve work for execution. STM and
 ordinary history use the active batch row. LTM admits shared accepted facts
 and the row's held occurrence references; other rows' private observations and
 estimates cannot supply content. The read reports a bounded/incomplete view.
-Attention uses the live active meaning and detached memory values. It has no
+Attention reads the active meaning and detached memory values; its final chooser features detach. It has no
 answer target or additional learned head. `ThoughtFeatures.context_width`
 owns the input dimension (`15D + 3509`, plus two action flags).
 
 Zero final weights preserve the deterministic execute/conclude baseline.
-Candidate values and checked results detach; root and active values stay live.
+Candidate values, checked results and root/active chooser observations detach. Output also cuts state at the concluded idea; shared generation operators remain trainable.
 Each eligible supplied-answer row earns `-answer_error - 0.01 * actual_work`
 with one EMA baseline, added to the real `runBatch` total. Old thinking-weight
 aliases select this same objective once. FineWeb has no answer labels, so

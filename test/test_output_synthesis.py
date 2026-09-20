@@ -215,7 +215,7 @@ def test_branch_gradient_diagnostics_read_without_update(synth_config):
     assert set(report) == {"conceptual", "symbolic"}
     for entry in report.values():
         assert set(entry) == {"reconstruction_norm", "answer_norm", "cosine"}
-    assert any(entry["answer_norm"] is not None for entry in report.values())
+    assert all(entry["answer_norm"] in (None, 0.0) for entry in report.values())
     # Diagnostics are a read: a second model without sampling takes the same
     # step from the same state.
     m2 = _build(synth_config)
@@ -726,14 +726,14 @@ def test_chooser_question_bias_trains_through_the_policy_objective(synth_policy_
     seen = {}
     orig = m._backward_training_loss
 
-    def spy(total_loss, objectives, optimizer, *a, **k):
+    def spy(total_loss, *a, **k):
         wp = {name: mod.what_projection.weight for name, mod in m.named_modules()
               if type(mod).__name__ == "MLPTransformChooser"}
         grads = torch.autograd.grad(total_loss, list(wp.values()),
                                     retain_graph=True, allow_unused=True)
         seen["grads"] = {name: (None if g is None else float(g.abs().sum()))
                          for name, g in zip(wp, grads)}
-        return orig(total_loss, objectives, optimizer, *a, **k)
+        return orig(total_loss, *a, **k)
 
     m._backward_training_loss = spy
     try:

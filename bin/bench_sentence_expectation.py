@@ -557,7 +557,7 @@ def native_benchmark(config, *, device="cpu", backend="eager", docs=24,
     optimizer = model.getOptimizer(lr=float(train_options.get("learningRate", 0.0005)))
     step_hook = observe_optimizer_steps(optimizer, stepped)
     # Only compose transforms, with true optimizer ownership. Hooks observe
-    # every backward contribution, before the model's joint-gradient balance;
+    # every backward contribution before the ordinary optimizer update;
     # the final parameter delta separately proves an optimizer update.
     compose_parameters = {}
     seen = set()

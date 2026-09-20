@@ -67,8 +67,7 @@ from architecture import canonical_shape
 import util as _util
 from embed import WordVectors, PretrainModel, _random_unit_ball
 from Optimizer import (Adam, SparseAdam, RowLocalAdam, MultiOptimizer,
-                       preflight_finite_gradients,
-                       backward_reconstruction_priority, configure_l1_proximal)
+                       preflight_finite_gradients, configure_l1_proximal)
 from checkpoint_migrations import (
     LEGACY_WHOLE_STRUCTURE_KEY,
     OPTIMIZER_PARAM_NAMES_KEY,
@@ -2685,21 +2684,12 @@ class BaseModel(Mereology, nn.Module):
             raise ValueError(
                 "reconstructInLoop and detachedReverse are mutually "
                 "exclusive: the tied traversal replaces the detached student")
-        # Opt-in for legacy experiments; BasicModel enables this policy.
-        # It protects P/W/concept parameters, including tied inverse uses,
-        # without suppressing the independent symbolic/output decoder heads.
-        self.reconstruction_priority = bool(
-            TheXMLConfig.training("reconstructionPriority", False))
-        self.output_gradient_ratio = float(
-            TheXMLConfig.training("outputGradientRatio", 0.5))
-        self.reconstruction_loss_tolerance = float(
-            TheXMLConfig.training("reconstructionLossTolerance", 1e-8))
-        if (not math.isfinite(self.reconstruction_loss_tolerance)
-                or self.reconstruction_loss_tolerance < 0):
-            raise ValueError("reconstructionLossTolerance must be finite and nonnegative")
-        if (not math.isfinite(self.output_gradient_ratio)
-                or not 0.0 <= self.output_gradient_ratio < 1.0):
-            raise ValueError("outputGradientRatio must satisfy 0 <= ratio < 1")
+        # The global projection is retired. Reject stale configuration rather
+        # than silently promising a training policy that no longer exists.
+        for retired in ("reconstructionPriority", "outputGradientRatio",
+                        "reconstructionLossTolerance"):
+            if TheXMLConfig.training(retired, None) is not None:
+                raise ValueError(f"{retired} is retired; objectives use separate state paths")
         self.forward_grammar_weight = float(
             TheXMLConfig.training("forwardGrammarWeight", 0.0) or 0.0)
         self.grammar_lesson_weight = float(
@@ -2848,7 +2838,7 @@ class BaseModel(Mereology, nn.Module):
         """
         pass
 
-    def _reconstruction_priority_parameters(self, optimizer):
+    def _shared_representation_parameters(self, optimizer):
         """Optimizer-owned representation parameters and grammar, once each.
 
         Walk all orders, including WholeSpace (W = whole), rather than only
@@ -2862,8 +2852,7 @@ class BaseModel(Mereology, nn.Module):
         # The answer path's own operators (the Spaces' synthesis layers, the
         # percept adapter, the question conditioner) are never reached by
         # reconstruction. They keep their ordinary gradients, like other
-        # independent heads; the shared-representation allowance is not a
-        # reason to slow learning in a module that has no competing owner.
+        # independent heads; the diagnostics cover shared owners, not independent heads.
         synthesis = getattr(self, "synthesis_parameters", None)
         answer_only = ({p.data_ptr() for p in synthesis()}
                        if callable(synthesis) else set())
@@ -2886,30 +2875,72 @@ class BaseModel(Mereology, nn.Module):
                     selected[ptr] = owned[ptr]
         return list(selected.values())
 
-    def _backward_training_loss(self, total_loss, objectives, optimizer,
-                                amp_scaler=None):
-        """One parameter version and one later optimizer step for both costs."""
-        if objectives is None:
-            loss = (amp_scaler.scale(total_loss)
-                    if amp_scaler is not None else total_loss)
-            loss.backward()
-            return
-        reconstruction = objectives["reconstruction"]
-        # One allowance for ALL other losses, including prediction/thinking
-        # on batches without supplied answers. No auxiliary route may bypass
-        # the representation's reconstruction reference.
-        output = total_loss - reconstruction
-        tolerance = float(getattr(self, "reconstruction_loss_tolerance", 1e-8))
-        reference_active = reconstruction.detach().abs() > tolerance
-        if amp_scaler is not None:
-            total_loss = amp_scaler.scale(total_loss)
-            reconstruction = amp_scaler.scale(reconstruction)
-            output = amp_scaler.scale(output)
-        backward_reconstruction_priority(
-            total_loss, reconstruction, output,
-            self._reconstruction_priority_parameters(optimizer),
-            max_ratio=self.output_gradient_ratio,
-            reconstruction_tolerance=tolerance, reference_active=reference_active)
+    def _shared_operator_parameter_groups(self, optimizer):
+        """Name shared grammar operators/codebooks by their actual ownership."""
+        available = {id(p): p for p in self._shared_representation_parameters(optimizer)}
+        groups, used = {}, set()
+
+        def add(name, parameters):
+            owned = [p for p in parameters if id(p) in available and id(p) not in used]
+            if owned:
+                groups[name] = tuple(owned)
+                used.update(id(p) for p in owned)
+
+        registry = getattr(getattr(self, "symbolSpace", None), "_host_layer_registry", {})
+        for key, layer in sorted(registry.items(), key=lambda item: repr(item[0])):
+            label = ".".join(map(str, key)) if isinstance(key, tuple) else str(key)
+            add("operator." + label, layer.parameters())
+        for index, space in enumerate(self.spaces):
+            if not isinstance(space, (PartSpace, WholeSpace, ConceptualSpace)):
+                continue
+            label = f"{type(space).__name__}[{index}]"
+            sub = getattr(space, "subspace", None)
+            for name, module in (
+                    ("concepts", getattr(space, "similarity_codebook", None)),
+                    ("what", getattr(sub, "what", None)),
+                    ("basis", getattr(sub, "basis", None))):
+                if isinstance(module, nn.Module):
+                    add(f"codebook.{label}.{name}", module.parameters())
+        # Remaining tied transforms keep their concrete module names. This
+        # includes perceptual inverses; no anonymous tensor-address labels.
+        for name, module in self.named_modules():
+            add("shared." + (name or type(self).__name__), module.parameters(recurse=False))
+        if used != set(available):
+            raise RuntimeError("shared gradient parameter has no registered operator owner")
+        return groups
+
+    def operator_gradient_diagnostics(self, objectives, optimizer):
+        from GradientDiagnostics import objective_agreement, record_opposition
+        report = objective_agreement(objectives, self._shared_operator_parameter_groups(optimizer))
+        # A context-rotated dictionary has a separate, non-autograd owner.
+        # Name that absence rather than silently omit the central codebook
+        # or report zero cosine as evidence that objectives agree.
+        rotated = {id(cb) for cb in getattr(self, "_contextual_concept_codebooks", ())}
+        seen = set()
+        for index, space in enumerate(self.spaces):
+            cb = getattr(space, "similarity_codebook", None)
+            if cb is None or id(cb) in seen or id(cb) not in rotated:
+                continue
+            seen.add(id(cb))
+            report[f"codebook.{type(space).__name__}[{index}].concepts"] = {
+                "reconstruction_norm": 0.0, "output_norm": 0.0,
+                "expectation_norm": 0.0, "reconstruction_output_cosine": None,
+                "reconstruction_expectation_cosine": None,
+                "gradient_owner": "none: contextual rotation buffer",
+            }
+        history = self.__dict__.setdefault("_operator_gradient_opposition", {})
+        report = record_opposition(report, history)
+        self._last_operator_gradients = report
+        return report
+
+    def _backward_training_loss(self, total_loss, amp_scaler=None):
+        """Ordinary summed-objective backward; one later optimizer step.
+
+        Boundaries belong to the computation, not a global gradient surgery.
+        Operator diagnostics only read the graph before this call.
+        """
+        loss = amp_scaler.scale(total_loss) if amp_scaler is not None else total_loss
+        loss.backward()
 
     def _configure_concept_readout_l1(self, optimizer):
         """Stage one weak-L1 update and return its detached reporting cost.
@@ -2917,7 +2948,7 @@ class BaseModel(Mereology, nn.Module):
         Match the first-stage owner used by _stage_sparse_concept_support;
         shared stage aliases must not multiply either the cost or the update.
         L1 is an intentional sparse-basis tradeoff, not reconstruction or
-        output error, and does not enter their gradient projection twice.
+        output error, and does not enter autograd a second time.
         """
         spaces = list(getattr(self, "conceptualSpaces", None) or ())
         owner = spaces[0] if spaces else getattr(self, "conceptualSpace", None)
@@ -6314,7 +6345,9 @@ class BasicModel(BaseModel):
         semantics = semantic_metadata(meanings)
         if memory_context is None:
             memory_context = (attend_meanings(active, ()),) * 2
-        return torch.cat((*roles, metadata, *semantics, *memory_context))
+        # Policy credit belongs to this chooser. The world it observes is
+        # given, including live episode meanings and attended query features.
+        return torch.cat((*roles, metadata, *semantics, *memory_context)).detach()
 
     def _selected_thought_chooser(self, meaning, *, device=None, dtype=None):
         """Return the width-owned learned chooser for complete meanings."""
@@ -10131,7 +10164,18 @@ class BasicModel(BaseModel):
             WhatRelation.PAST, WhatRelation.FUTURE)
         surface = None
         texts = ()
-        answer_event = derivation.answer_symbol
+        # Generation owns its state path. The concluded idea and any named
+        # contextual operands are given values; shared inverse/operator
+        # parameters below this boundary remain live and learn from output.
+        answer_event = (derivation.answer_symbol.detach()
+                        if torch.is_tensor(derivation.answer_symbol)
+                        else derivation.answer_symbol)
+        conceptual_context = understanding.conceptual_state
+        if torch.is_tensor(conceptual_context):
+            conceptual_context = conceptual_context.detach()
+        perceptual_context = understanding.perceptual_context
+        if torch.is_tensor(perceptual_context):
+            perceptual_context = perceptual_context.detach()
         output_truncated = None
         walked = None
         idea = None
@@ -10177,17 +10221,19 @@ class BasicModel(BaseModel):
             else:
                 if torch.is_tensor(idea):
                     concepts = cs.synthesize_idea(
-                        idea, context=understanding.conceptual_state,
+                        idea, context=conceptual_context,
                         selections=derivation.synthesis_references)
                 else:
                     concepts = cs.synthesize(
                         answer_event, derivation.bindings,
-                        context=understanding.conceptual_state,
+                        context=conceptual_context,
                         selections=derivation.synthesis_references,
                         condition=lambda idea: self._condition_answer_on_question(
-                            idea, derivation.conditioning_context))
+                            idea, derivation.conditioning_context.detach()
+                            if torch.is_tensor(derivation.conditioning_context)
+                            else derivation.conditioning_context))
                 percepts = ps.synthesize(
-                    concepts, context=understanding.perceptual_context,
+                    concepts, context=perceptual_context,
                     selections=derivation.synthesis_references,
                     reverse_chain=(lambda sub: self._reverse_perceptual(self._reverse_body(sub)))
                     if torch.is_tensor(idea) else self._reverse_body)
@@ -12208,7 +12254,7 @@ class BasicModel(BaseModel):
             compiler = lookup_backend(backend)
 
             def compile_reconstruction(graph, inputs):
-                # Joint gradient balance reads this graph more than once.
+                # Read-only operator diagnostics read this graph more than once.
                 # A cached single-use backward must never donate its saved
                 # buffers, even if the first call did not retain the graph.
                 # Scope the setting to this compiler; other models keep theirs.
@@ -12771,7 +12817,9 @@ class BasicModel(BaseModel):
                        "cold-memory" if "cold-memory" in src or src == "recall"
                        else "unresolved")
             sources.append("idea:" + src)
-        idea = self._condition_answer_on_question(idea, context)
+        # Cut the state before generation's conditioner, so output can train
+        # that conditioner and shared operators without revising the answer.
+        idea = self._condition_answer_on_question(idea.detach(), context.detach())
         idea = torch.where(resolved[:, None, None], idea, torch.zeros_like(idea))
         return idea, resolved, tuple(sources), targets
 
@@ -14244,7 +14292,7 @@ class BasicModel(BaseModel):
         reference = owner.similarity_codebook.W
         return owner.similarity_codebook.lookup_rows(torch.tensor(row, device=reference.device)).detach()
 
-    def _grammar_lesson_loss(self, understanding, *, split, source_rows):
+    def _grammar_lesson_objectives(self, understanding, *, split, source_rows):
         """Score supplied annotations after the student has fixed its parse.
 
         No labels enter forward, resolution or generation. Ordinary unlabelled
@@ -14275,13 +14323,12 @@ class BasicModel(BaseModel):
                 raise ValueError("grammar lesson text does not match its captured forward words")
             lessons.append(lesson)
         from GrammarLessons import compose_loss, generate_loss
-        costs = [compose_loss(self.languageSpace, understanding.answer_program, lessons,
+        costs = {"compose": compose_loss(self.languageSpace, understanding.answer_program, lessons,
                               base_tau=self.stm_reduce_tau,
                               capacity=int(self.conceptualSpace.stm.capacity)),
-                 generate_loss(self.languageSpace, understanding.answer_program, lessons,
-                               self.grammatical_thoughts, self._grammar_target_word)]
-        costs = [cost for cost in costs if cost is not None]
-        return torch.stack(costs).sum() if costs else None
+                 "generate": generate_loss(self.languageSpace, understanding.answer_program, lessons,
+                               self.grammatical_thoughts, self._grammar_target_word)}
+        return {name: cost for name, cost in costs.items() if cost is not None} or None
 
     def runBatch(self, train=True, batchNum=0, batchSize=10, split="train",
                  optimizer=None, batch_override=None, progress=None,
@@ -15105,31 +15152,37 @@ class BasicModel(BaseModel):
                 intra_loss = None
 
             totalLoss = self._primary_loss(lossOut, lossIn, sbow)
+            # Keep the actual weighted objectives distinct for diagnostics.
+            # A missing answer is not substituted with reconstruction credit.
+            gradient_objectives = None
+            _rr = float(self.loss.reconstruction_scale)
+            if train:
+                gradient_objectives = {
+                    "reconstruction": _rr * lossIn,
+                    "output": (1.0 - _rr) * lossOut,
+                    "expectation": lossIn.new_zeros(()),
+                }
             if train and trial_mode != "predict":
-                grammar_lesson = self._grammar_lesson_loss(
+                grammar_objectives = self._grammar_lesson_objectives(
                     self._last_understanding, split=split, source_rows=source_rows)
-                if grammar_lesson is not None:
+                if grammar_objectives is not None:
+                    grammar_lesson = torch.stack(tuple(grammar_objectives.values())).sum()
                     totalLoss = totalLoss + self.grammar_lesson_weight * grammar_lesson
+                    if gradient_objectives is not None and "generate" in grammar_objectives:
+                        gradient_objectives["output"] = (gradient_objectives["output"]
+                            + self.grammar_lesson_weight * grammar_objectives["generate"])
                     self.record_loss("grammar_lesson", grammar_lesson,
                                      weight=self.grammar_lesson_weight,
                                      space="LanguageSpace", category="grammar")
             if train and trial_mode != "predict" and output_policy_loss is not None:
                 totalLoss = totalLoss + self.output_policy_weight * output_policy_loss
+                if gradient_objectives is not None:
+                    gradient_objectives["output"] = (gradient_objectives["output"]
+                        + self.output_policy_weight * output_policy_loss)
                 self.record_loss(
                     "output_policy", output_policy_loss,
                     weight=self.output_policy_weight,
                     space="LanguageSpace", category="policy")
-            # Mirror the actual weighted branches, not just their logged raw
-            # losses. The legacy ModelLoss uses complementary rr / (1-rr)
-            # weights; prediction/thinking can also train shared parameters
-            # when no supervised output term is present.
-            gradient_objectives = None
-            _rr = float(self.loss.reconstruction_scale)
-            if (train and getattr(self, "reconstruction_priority", False)):
-                gradient_objectives = {
-                    "reconstruction": _rr * lossIn,
-                    "output": (1.0 - _rr) * lossOut,
-                }
             grammar_local = None
             _fgw = float(getattr(
                 self, "forward_grammar_weight", 0.0) or 0.0)
@@ -15178,6 +15231,8 @@ class BasicModel(BaseModel):
                         gradient_objectives["reconstruction"] + _rr * lossRev)
             if arma_loss is not None:
                 totalLoss = totalLoss + self.arma_scale * arma_loss
+                if gradient_objectives is not None:
+                    gradient_objectives["expectation"] += self.arma_scale * arma_loss
                 self.record_loss(
                     "arma", arma_loss,
                     weight=self.arma_scale,
@@ -15195,6 +15250,8 @@ class BasicModel(BaseModel):
             if inter_loss is not None and self.inter_loss_weight > 0.0:
                 totalLoss = (totalLoss
                              + self.inter_loss_weight * inter_loss)
+                if gradient_objectives is not None:
+                    gradient_objectives["expectation"] += self.inter_loss_weight * inter_loss
                 self.record_loss(
                     "inter", inter_loss,
                     weight=self.inter_loss_weight,
@@ -15203,6 +15260,8 @@ class BasicModel(BaseModel):
             if inter_contrastive is not None and self.inter_contrastive_weight > 0.0:
                 totalLoss = (totalLoss
                              + self.inter_contrastive_weight * inter_contrastive)
+                if gradient_objectives is not None:
+                    gradient_objectives["expectation"] += self.inter_contrastive_weight * inter_contrastive
                 self.record_loss(
                     "inter_contrastive", inter_contrastive,
                     weight=self.inter_contrastive_weight,
@@ -15428,11 +15487,15 @@ class BasicModel(BaseModel):
                     self._warn_zeroed_channel(
                         "branch_diagnostics",
                         f"branch diagnostics skipped: {_diag_exc}")
+                if gradient_objectives is not None:
+                    report = self.operator_gradient_diagnostics(gradient_objectives, optimizer)
+                    import json
+                    TheMessage("  [operator-gradients] " + json.dumps(report, sort_keys=True))
             if amp_scaler is not None:
                 # fp16 on CUDA: scale grads to avoid underflow, then unscale
                 # inside scaler.step() before the actual optimizer update.
                 self._backward_training_loss(
-                    totalLoss, gradient_objectives, optimizer, amp_scaler)
+                    totalLoss, amp_scaler)
                 self._assert_finite_train_state("after backward")
                 if self.ergodic:
                     self.paramUpdate()
@@ -15443,7 +15506,7 @@ class BasicModel(BaseModel):
                 amp_scaler.update()
             else:
                 self._backward_training_loss(
-                    totalLoss, gradient_objectives, optimizer)
+                    totalLoss)
                 self._assert_finite_train_state("after backward")
                 preflight_finite_gradients(
                     optimizer, self.named_parameters(),

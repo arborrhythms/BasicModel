@@ -355,6 +355,7 @@ def _tiny_canonical_model(
     _set("./architecture/training/batchSize", batch_size)
     if chooser_depth is not None:
         _set("./architecture/transformChooserDepth", chooser_depth)
+    _set("./architecture/training/branchDiagnosticsEvery", 0)
     _set("./architecture/training/numWorkers", 0)
     _set("./architecture/training/autoload", False)
     _set("./architecture/training/autosave", False)

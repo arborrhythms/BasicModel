@@ -22,9 +22,8 @@ def thought_answer_meanings(selected):
     """Adapt owned checked results without a reader or another execution.
 
     A set remains an ordered tuple of complete members. Codes are unary
-    concepts; subgoals carry the child's typed result. Only the live selected
-    truth meaning retains a structural gradient. Checked reader payloads and
-    restored results are detached, including all members of a set.
+    concepts; subgoals carry the child's typed result. All effects are detached, including a selected truth meaning and
+    every member of a set. Generation receives a given concluded idea.
     """
     from Queries import ThoughtResult
     from Layers import MeaningExpectation
@@ -44,7 +43,7 @@ def thought_answer_meanings(selected):
     if checked.result_kind == "truth":
         if not isinstance(meaning, ConceptualMeaning):
             raise TypeError("truth answer requires its complete selected meaning")
-        return (meaning,)
+        return (meaning.detached(),)
     if checked.result_kind == "prediction":
         value = checked.value
         if value is None:

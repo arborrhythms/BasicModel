@@ -139,7 +139,7 @@
            leave-one-out contextual SBOW reducer snapshots the completed
            sentence, contrasts four detached negative rows, then commits one
            unit-sphere rotation per observed concept row. -->
-      <conceptualContextLearningRate>0.01</conceptualContextLearningRate>
+      <conceptualContextLearningRate>0.0</conceptualContextLearningRate>
       <conceptualContextNegatives>4</conceptualContextNegatives>
 
       <!-- FineWeb is unlabeled.  On the serial grammar path the D3

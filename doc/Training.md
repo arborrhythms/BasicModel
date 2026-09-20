@@ -271,9 +271,6 @@ does not manufacture answer labels.
 |------|--------|
 | `maskRate` | Bernoulli mask probability at the subsymbolic (PS) (BERT default 0.15) |
 | `reconstructionScale` | Blend weight between output and reconstruction loss; `total = (1 - r)*output + r*recon`.  Legacy `<reverseScale>` parsed with deprecation warning. |
-| `reconstructionPriority` | Balance all non-reconstruction objectives together on optimizer-owned representation parameters and host-registry grammar transforms. Independent synthesis/output heads keep ordinary gradients. BasicModel enables it; legacy configs default off. One optimizer step. |
-| `outputGradientRatio` | Fraction of the combined reconstruction-reference and compatible downstream gradient scale, per protected tensor; default `0.5`, required `0 <= ratio < 1`. Missing/zero reconstruction retains this fraction of downstream credit. |
-| `reconstructionLossTolerance` | Default `1e-8`, finite/nonnegative, in absolute unscaled weighted reconstruction-loss units. Below tolerance, omit the opposing-gradient projection while retaining reconstruction's own gradient and the downstream strength bound. |
 | `detachedReverse` | On the serial grammar training path, replace D3 trace replay with the static idea-only reverse chooser. Its input is `stopgrad(S)` and its targets live in `SymbolSubSpace.reconstruction_stack`. |
 | `reconstructInLoop` | Tied completed-input reconstruction, enabled by BasicModel. Training/evaluation use the owned byte objective once. Mutually exclusive with `detachedReverse`; suppresses the independent leaf-distillation head. |
 | `reconstructionBasisLimit` | Positive candidate count per side, default 16, for bounded approximate reconstruction using the selected compose kernel; at most its square in pairs. Independent of word, STM and field capacity. Missing candidates/inverses report incompleteness. |
@@ -433,21 +430,16 @@ $$\mathcal{L}_{\text{total}} = \mathcal{L}_{\text{model}} + \lambda \cdot \mathc
 
 where $\lambda$ is `<embeddingScale>` (default 0.1).
 
-When `reconstructionPriority` is enabled, separate the weighted reconstruction
-reference from **all other trained losses**, including output, prediction,
-thinking and SBOW. Apply one combined downstream budget even without supplied
-answer labels. Protect optimizer-owned P/W/concept parameters and shared
-grammar transforms, independently of which computation reached them.
+Reconstruction, expectation and output differentiate separate computations.
+Output treats the concluded idea and its contextual operands as given;
+expectation may still train live preceding encodings, with its target detached.
+Shared operators receive the sum of their own uses' gradients. There is no
+global projection or norm allowance. `branchDiagnosticsEvery` logs agreement
+per shared operator before the ordinary backward and single optimizer step;
+persistent opposition is a diagnostic, not an automatic intervention. See
+[GradientFlow](GradientFlow.md).
 
-Above `reconstructionLossTolerance`, remove the downstream component opposing
-reconstruction. Cap the remaining contribution at `outputGradientRatio` times
-the sum of its norm and the reconstruction-reference norm. Below tolerance,
-use a zero projection reference; a reconstructable code can keep improving for
-prediction. Keep the actual reconstruction gradient and take one optimizer
-step. Independent heads retain their ordinary gradients. This is a local
-gradient rule, not a monotonic-loss guarantee under Adam or momentum. Verify
-actual fidelity and predictive utility; the objective is a representation
-that satisfies both tasks. The detached reverse student still does not train
+The detached reverse student still does not train
 its encoder through reconstruction.
 The loss partition and parameter selection are in
 [Models.py](../bin/Models.py); projection, the combined norm cap and
@@ -495,7 +487,7 @@ with `ConceptualSpace/conceptReadoutL1=0.01` (absent/zero disables it). Each
 concept's weights/bias are gathered from `IndexedSigmaConceptsFromPercepts`
 at sentence staging, then consumed by
 the eager or compiled word loop. Sparse gradients use the compact row-local
-optimizer and participate in the same reconstruction-priority parameter set.
+optimizer and participate in the shared-operator diagnostic set.
 Within the single optimizer step, a diagonal-metric L1 prox soft-thresholds
 only admitted input connections. Its threshold is
 `lr * (lambda / distinct_observed_concepts) / (sqrt(v_hat) + eps)`;
@@ -582,9 +574,8 @@ For each B-wide batch:
      `conceptual_sbow`, `definition_sparsity`, `answer`, `thinking`,
      `predict_next`, `leaf_distill`, `gate_l1` --- plus any auxiliary
      terms the pipeline Spaces wrote to their shared `Error` instance.
-7. One `optimizer.step()` per DataLoader yield. Normally one `backward()`;
-   active `reconstructionPriority` uses separate branch traversals before
-   projection and the same single update.
+7. One ordinary `backward()` and one `optimizer.step()` per DataLoader yield.
+   Optional operator diagnostics read retained gradients before that backward.
 8. Embedding training (`CBOW`/`SBOW`/`BOTH`) runs once per batch.
 
 ---
@@ -602,12 +593,11 @@ independently normalized primary costs recorded before `backward()`:
 | Cost (`primary_costs()`) | Compares | Trains |
 |---|---|---|
 | `input_reconstruction` (+ `input_reconstruction_reverse`, `reverseReconstruct()`'s own cost) | the reconstructed input with the presented (or clean) input | the bottom-up understanding and its input-associated inverse |
-| `answer_construction` | the realized response from `reverseOutput()` against an available, separately supplied `Data.what(What.supervised(...))` answer; automatic temporal targets are evaluation metrics only ([Models.py](../bin/Models.py)) | the resolve step, conceptual conditioner, dedicated synthesis layers, output adapter, and shared understanding under reconstruction priority |
+| `answer_construction` | the realized response from `reverseOutput()` against an available, separately supplied `Data.what(What.supervised(...))` answer; automatic temporal targets are evaluation metrics only ([Models.py](../bin/Models.py)) | generate from a detached concluded idea, conceptual conditioner, synthesis layers, output adapter and the shared operators used there |
 
 The desired answer is resolved only after the model response is fixed and
-enters loss preparation only. `reconstructionPriority` balances the weighted
-reconstruction reference against all downstream objectives under the joint
-rule above, and takes one optimizer step. `what_report()` gives per-family means of both costs,
+enters loss preparation only. Output state is cut at the concluded idea;
+shared weights receive ordinary summed gradients in one optimizer step. `what_report()` gives per-family means of both costs,
 thinking statistics (episodes, mean iterations, forced-closure rate), the
 hard-choice policy credit (`forwardGrammarWeight`) separately from the
 continuous answer credit, and sentences/s. Full contract: the
@@ -1140,6 +1130,6 @@ prediction-only trials receive no such term. It fabricates no ordinary answer
 labels. Both choosers are the existing grammar MLPs, and numerical generation
 learning belongs to declared operators. This loss is supervised structural
 credit, not a second thought-policy objective. Shared parameters still obey
-the reconstruction-priority budget. See [SelectedMeaning](SelectedMeaning.md)
+the separate-state/shared-operator contract in [GradientFlow](GradientFlow.md). See [SelectedMeaning](SelectedMeaning.md)
 for the bounded wording result and its limits, and [GradientFlow](GradientFlow.md)
 for the detach/ownership boundaries.

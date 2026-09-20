@@ -150,12 +150,10 @@
       <numWorkers>2</numWorkers>
       <learningRate>0.0005</learningRate>
 
-      <!-- The shared ConceptualSpace dictionary is a persistent non-grad
-           buffer, not an optimizer/Adam parameter. A deterministic
-           leave-one-out contextual SBOW reducer snapshots the completed
-           sentence, contrasts four detached negative rows, then commits one
-           unit-sphere rotation per observed concept row. -->
-      <conceptualContextLearningRate>0.01</conceptualContextLearningRate>
+      <!-- Shared concept atoms are optimizer-owned, with sparse row gradients
+           from their uses in the separate objective paths. The older detached
+           contextual-rotation updater is disabled, so each row has one owner. -->
+      <conceptualContextLearningRate>0.0</conceptualContextLearningRate>
       <conceptualContextNegatives>4</conceptualContextNegatives>
 
       <!-- FineWeb is unlabeled. Completed input sentences reconstruct once
@@ -164,13 +162,10 @@
            targets, dictionary snapshots and constituent witnesses are detached.
            The output head receives no fabricated answer labels. -->
       <reconstructionScale>1.0</reconstructionScale>
-      <!-- Balance all prediction/output/thinking credit on representation
-           and shared grammar weights. Cap against the combined gradient
-           scale; a faithful representation can still improve for prediction.
-           Independent heads keep their ordinary gradients. -->
-      <reconstructionPriority>true</reconstructionPriority>
-      <reconstructionLossTolerance>1e-8</reconstructionLossTolerance>
-      <outputGradientRatio>0.5</outputGradientRatio>
+      <!-- Read-only agreement of weighted objectives per shared operator.
+           Output begins at a detached conclusion; tied weights still learn.
+           Three consecutive negative samples are named, never projected. -->
+      <branchDiagnosticsEvery>100</branchDiagnosticsEvery>
       <teacherReconstruction>true</teacherReconstruction>
       <detachedReverse>false</detachedReverse>
       <reconstructInLoop>true</reconstructInLoop>

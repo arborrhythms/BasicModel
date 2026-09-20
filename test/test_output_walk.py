@@ -276,7 +276,7 @@ def _policy_training_probe(m, opt, questions):
         recorded[name] = value
         return record(name, value, **kwargs)
 
-    def backward_probe(total, objectives, optimizer, amp_scaler=None):
+    def backward_probe(total, amp_scaler=None):
         cost = m._output_policy_cost
         observed["raw_grads"] = torch.autograd.grad(
             cost.sum(), params, retain_graph=True, allow_unused=True)
@@ -294,7 +294,7 @@ def _policy_training_probe(m, opt, questions):
                 observed["answer_errors"] = torch.stack([
                     m.loss.compute(pred[b:b + 1], target[b:b + 1])
                     for b in range(len(questions))])
-        return backward(total, objectives, optimizer, amp_scaler)
+        return backward(total, amp_scaler)
 
     m.record_loss, m._backward_training_loss = record_probe, backward_probe
     before = [p.detach().clone() for p in params]

@@ -923,7 +923,7 @@ name-based mapping. The root architecture remains selectable for baseline
 comparisons ([Layers.py:10161](../../bin/Layers.py#L10161)). Regression evidence
 lives in [test_sentence_expectation.py](../../test/test_sentence_expectation.py)
 and the real packed training tests in
-[test_reconstruction_priority.py:126](../../test/test_reconstruction_priority.py#L126).
+[test_joint_objectives.py](../../test/test_joint_objectives.py).
 
 Pre-review validation on September 16: the failing structured-role, document-boundary,
 checkpoint and real provisioning probes pass. Affected runs included 133
@@ -962,9 +962,51 @@ clears the same state.
 
 <a id="84-gradient-boundaries-and-learning-evidence"></a>
 
-### 8.4 Joint representation learning and gradient balance
+### 8.4 Gradient boundaries and learning evidence
 
-**Latest decision (2026-09-15).** Alec clarified that reconstruction and
+**Superseding decision (2026-09-20, Alec): separate gradients, shared
+operators, dissonance measured.** The goal of the September 15 decision
+stands — one central representation that serves reconstruction, expectation
+and output — but the mechanism changes. Operators have no return values,
+only effects on the accessible mind, so the gradient factorizes:
+
+1. **Separate paths.** Each objective flows only through its own
+   computation: reconstruction through compose and its tied inverse;
+   expectation through the predictor and its live source ideas (target
+   detached); output matching through `<generate>` from a **given**
+   concluded idea. The state is cut at the concluded idea: output error
+   never reshapes the idea that compose or thought produced, and
+   reconstruction error never enters the output path. Thought's effects and
+   LTM writes are detached; thought faces are parameter-free; the chooser
+   learns from explicit policy credit alone.
+2. **Shared operators are the intended coupling.** Grammar operators and the
+   codebook are shared by compose, its tied inverse and generate, and every
+   objective updates them. That is how the central representation becomes
+   suitable for all of them — through named, interpretable parameters, not
+   through one loss reaching into another's computation. Tied weights are
+   retained; generate's operators are not untied.
+3. **On-manifold hand-off.** What thought hands to generate is a
+   composed-space idea over existing concepts, which can be off-codebook,
+   or an explicitly quantized idea — never a free answer vector. Otherwise
+   the output loss trains the inverse on ideas compose never produces and
+   manufactures conflict.
+4. **Dissonance is a warning, not a mechanism.** Per shared operator (and
+   the codebook), log the cosine between the reconstruction gradient and the
+   output and expectation gradients. Non-negative: the goals agree and
+   nothing intervenes. Persistent negative cosine on a named operator is the
+   signal that it is being asked to serve incompatible goals — information
+   about the grammar. Only then is a guard justified, and only on that
+   operator.
+
+Consequences: the global `reconstructionPriority` / `outputGradientRatio`
+projection below is **no longer the rule**. The per-operator diagnostic has
+run and the global projection has been deleted from code and configuration.
+The prior contract below remains historical evidence only. The sentence "separate
+module ownership does not imply a stop-gradient boundary at their inputs" is
+withdrawn for the concluded idea. [GradientFlow](../GradientFlow.md) is to
+be restated on this contract.
+
+**Prior decision (2026-09-15).** Alec clarified that reconstruction and
 answering each permit a variety of representations: learn a representation
 that does both well. Prediction error must be allowed to improve the internal
 representation's usefulness. This supersedes the earlier interpretation that
@@ -1110,11 +1152,11 @@ evaluation accumulation, omitted eager packed boundaries, duplicate teardown
 observations and residual Adam updates when the effective prediction weight
 was zero. Each defect received a regression check.
 
-- The [invertible-family learning test](../../test/test_reconstruction_priority.py#L26)
+- The [invertible-family learning test](../../test/test_joint_objectives.py)
   keeps reconstruction below `1e-25` while reducing prediction error to less
   than 2% of its initial value over 60 SGD steps. This establishes the intended
   behavior on a controlled family, not corpus learning or semantic quality.
-- The [real packed training test](../../test/test_reconstruction_priority.py#L126)
+- The [real packed training test](../../test/test_joint_objectives.py)
   exercises both detached-student and tied reconstruction, two Adam updates,
   and an effective zero-weight step with the layer gate still enabled. It
   checks live encoder/predictor gradients, unchanged predictor weights when
@@ -1740,7 +1782,7 @@ and adapts it with the same newest-at-0 STM permutation as the final seal
 from `_final_end_state` ([Models.py:12497](../../bin/Models.py#L12497)).
 The parity test builds both banks from one tensor, so it cannot detect a
 layout mismatch between the intermediate bank and the seal. Add one
-real-brick assertion in `test_reconstruction_priority.py`: when a brick ends
+real-brick assertion in `test_joint_objectives.py`: when a brick ends
 exactly on sentence `t`, the intermediate slot `t` and the final seal yield
 the same canonical `[NP1, VP, NP2]` and occupancy for that row.
 

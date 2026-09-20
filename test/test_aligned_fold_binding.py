@@ -310,7 +310,7 @@ def test_mini_basicmodel_ps128_ws128_cs1024_runs_forward_backward(
     assert _finite_nonzero_grad(coefficients)
     assert coefficients.grad.is_sparse
     optimizer = model.getOptimizer()
-    assert any(p is coefficients for p in model._reconstruction_priority_parameters(optimizer))
+    assert any(p is coefficients for p in model._shared_representation_parameters(optimizer))
     leaves = getattr(optimizer, "optimizers", [optimizer])
     assert any(type(leaf.inner).__name__ == "_RowLocalAdam" and any(
         p is coefficients for group in leaf.param_groups for p in group["params"])

@@ -13,7 +13,7 @@
 Work follows
 [2026-09-15-next-sentence-as-the-production-objective.md](doc/plans/2026-09-15-next-sentence-as-the-production-objective.md)
 §10 and its completion gates. **Item 1's bounded supervised wording gate is
-complete; item 2 is next.** Natural word → operator associations use the existing
+complete; gradient factorization (1b) is complete. Next: 1c, then 2.** Natural word → operator associations use the existing
 compose/generate grammars. Structural-preference and routing-share measurements
 remain design goals; learned questioning utility remains unproven under item 4.
 Current contracts,
@@ -26,8 +26,8 @@ only the generation catalogue (item 3) remains uninstalled.
 
 ### Done (newest first)
 
-- This completion commit: item 1, grammar-owned wording on real parsed text, held-out complete wordings/nouns, converse/sense controls and full-vocabulary generation/recomposition ([evidence and receipt](doc/Testing.md#working-grammar-wording-gate-september-20)).
-
+- This completion commit: item 1b, objective-local state gradients and measured shared operator/codebook credit ([GradientFlow](doc/GradientFlow.md), [receipt](doc/Testing.md#gradient-factorization-september-20)).
+- `6a6bb21` Item 1 complete: grammar-owned wording on real parsed text, held-out complete wordings/nouns, converse/sense controls and full-vocabulary generation/recomposition ([evidence and receipt](doc/Testing.md#working-grammar-wording-gate-september-20)).
 - `d1d8b5b` Ordered compose-MLP inputs and production generate wiring (item 1 increment; the wording gate remains open, [SelectedMeaning](doc/SelectedMeaning.md), [Testing](doc/Testing.md#grammar-owned-wording-architecture-september-20)).
 - `02db7ef` Review corrections: removed the standalone codec and legacy policy; completed chooser context, bounded memory and nested-controller mechanisms ([SelectedMeaning](doc/SelectedMeaning.md), [Testing](doc/Testing.md)).
 - `288b56b` Initial controller replacement; review reopened item 1's wording gate ([current design and limits](doc/SelectedMeaning.md), [original receipt and review corrections](doc/Testing.md#selected-meaning-and-one-controller-september-20), [test dispositions](doc/KernelRetirement.md)).
@@ -66,6 +66,10 @@ only the generation catalogue (item 3) remains uninstalled.
 
 ### Open
 
+1c. **Operators as effects on the accessible mind.** Checked subsystem permissions,
+   residual meronymy and symbolic taxonomy, indexed cued LTM retrieval and
+   `what`-owned frames in recency; measure derivation recovery by depth and
+   training and chained recovery by length ([QueryContracts](doc/QueryContracts.md)).
 2. **Expectation and residual learning.** Extend retained estimates to checked
    bindings/scope metadata without copying the arriving target; prior-view
    isolation from arriving/unseen input and other rows; residual query credit

@@ -225,7 +225,7 @@ def _answer_training_probe(m, opt, questions):
         recorded[name] = value
         return record(name, value, **kwargs)
 
-    def backward_probe(total, objectives, optimizer, amp_scaler=None):
+    def backward_probe(total, amp_scaler=None):
         params = _dedicated_answer_parameters(m)
         observed["params"] = params
         observed["before"] = [p.detach().clone() for p in params]
@@ -245,7 +245,7 @@ def _answer_training_probe(m, opt, questions):
             if torch.is_tensor(c.surface) and c.surface.requires_grad:
                 observed["surface_grad"] = torch.autograd.grad(
                     answer_loss, c.surface, retain_graph=True, allow_unused=True)[0]
-        return backward(total, objectives, optimizer, amp_scaler)
+        return backward(total, amp_scaler)
 
     m.record_loss, m._backward_training_loss = record_probe, backward_probe
     try:

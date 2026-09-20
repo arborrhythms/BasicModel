@@ -927,3 +927,63 @@ of target gradients on fixed cancellation cases. All 11 affected checks passed
 on CPU (`20260920-095823-3d7c1a`) and MPS (`20260920-095823-23fb9e`). All full-run
 workers had exited before either source or test was changed. Both the full
 default suite and the fresh slow language study are rerun after this correction.
+
+
+## Gradient factorization (September 20)
+
+Item 1b replaces the global reconstruction-priority projection with ordinary
+shared gradients and a measured boundary: output receives a detached concluded
+idea and detached contextual inputs, while the generation operator's own
+parameters train. Expectation still reaches current-step preceding encodings;
+its target and previous-step context detach. The thought chooser's credit
+trains its policy only. [Contract](GradientFlow.md).
+
+The production dictionary uses the shared optimizer (`conceptualContextLearningRate=0`).
+The normal-batch diagnostic verifies nonzero codebook reconstruction credit
+and actual operator reconstruction/output overlap, in addition to standalone
+cosine arithmetic. Sparse measurements never densify the inventory. The run
+harness logs weighted R/O/E norms, R/O and R/E cosines and names persistent
+opposition. No per-operator guard was justified by these short observations.
+
+The first boundary probe, `20260920-151056-40365e`, failed both output paths
+on leaked conclusion-state credit. The pre-removal diagnostic receipt
+`20260920-152014-c24ed9` passed 9/9 cases with the old projection still
+present. Only then was the projection deleted. Recheck
+`20260920-153716-11fde3` covered corrected boundaries, the executed tied
+inverse and diagnostics. `20260920-154540-010d7e` covered the final shared
+codebook configuration.
+
+The final explicit slow receipt, `20260920-160301-0d078f`, passed both
+real packed reconstruction/expectation studies with `RUN_SLOW=1` in 362.8 s.
+The final **source-matched full default receipt** is
+`20260920-161333-09e757`: exit 0, all 4,609 selected cases completed
+(4,277 passed, 331 skipped, one expected failure), 1,055.7 s and 14.93 GiB
+peak aggregate memory. Command:
+
+```sh
+DEVELOPER_DIR=/Library/Developer/CommandLineTools .venv/bin/python test/test_report.py --batch-size 8 --max-files 1
+```
+
+Both receipts match the final 622-file validated source map. Its SHA-256
+over sorted compact JSON is
+`ffc0bd8308926ab88a6370d131ceb1fce6a60368bec70a2bc0e8de35f55a9faa`.
+The preceding full receipt, `20260920-155402-3e98c2`, completed the same
+4,609 cases with one failure: the plan still linked to the renamed test file.
+Those links were corrected before the final full run. Receipt notes and the
+todo reconciliation were added after validation; neither changes tested source.
+
+`test_reconstruction_priority.py` becomes `test_joint_objectives.py`. Its
+real packed prediction, exact reconstruction-family learning, shared ownership,
+independent heads, sparse updates, AMP, one-backward/one-step, truth scaling and
+seal-layout checks remain. The retired tests' dispositions are:
+
+| Old check | Disposition |
+|---|---|
+| prediction_can_refine_a_reconstructable_representation; model_balances_prediction_and_thinking_without_answer_labels | Projection-specific synthetic checks replaced by the actual joint sum and retained real packed training checks. |
+| fidelity_tolerance_uses_unscaled_loss_under_amp; invalid_reconstruction_tolerance_fails; invalid_ratio_fails | Deleted knobs reject configuration; ordinary AMP scaling remains tested. |
+| projection_and_combined_norm_budget; zero_and_missing_reconstruction_keep_bounded_output_credit; enormous_opposing_output_does_not_erase_reconstruction | Projection/budget behavior is retired; ordinary sums and observational opposition reporting replace it. |
+| large_finite_gradients_do_not_overflow_projection; sparse_projection_matches_dense_without_capacity_allocation | Large finite and sparse/missing/dense cosine checks moved to `test_gradient_factorization.py`; no gradient modification remains. |
+
+The immediate-stop generation fixture proves the state cut and generator
+credit. A separate real `lower` inverse fixture executes the shared operator
+and proves its nonzero gradient; an unused operator is never counted as evidence.

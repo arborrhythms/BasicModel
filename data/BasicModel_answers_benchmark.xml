@@ -46,12 +46,9 @@
       <packSentences>false</packSentences>
       <numWorkers>2</numWorkers>
       <learningRate>0.0005</learningRate>
-      <conceptualContextLearningRate>0.01</conceptualContextLearningRate>
+      <conceptualContextLearningRate>0.0</conceptualContextLearningRate>
       <conceptualContextNegatives>4</conceptualContextNegatives>
       <reconstructionScale>0.5</reconstructionScale>
-      <reconstructionPriority>true</reconstructionPriority>
-      <reconstructionLossTolerance>1e-8</reconstructionLossTolerance>
-      <outputGradientRatio>0.5</outputGradientRatio>
       <teacherReconstruction>true</teacherReconstruction>
       <detachedReverse>true</detachedReverse>
       <leafDistillWeight>1.0</leafDistillWeight>
