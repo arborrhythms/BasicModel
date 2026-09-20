@@ -1,6 +1,6 @@
 # Shared selected-thought work accounting
 
-Implementation reference, September 18.
+Implementation reference, September 20.
 
 QueryWorkBudget is one transient integer allowance for a selected thought tree.
 Its read-only spent, remaining, and per-kind counts report actual debits. It
@@ -13,6 +13,7 @@ through preparation, execution, and nested calls.
 
 | Cost kind | Charged before |
 | --- | --- |
+| controller | Choosing an operation/conclusion or entering/returning a child context |
 | operation | Calling a fully validated selected executor |
 | reference | Reading a selected native VP or operand address |
 | payload | Reading an addressed conceptual payload |
@@ -74,7 +75,9 @@ the meter through every selected reader and `what(Q)` callback, and commits
 each actual meter delta to the ordinary record. A child neither gets a new
 allowance nor begins another optimizer episode. The existing thought owner
 still enforces the cutoff-drain bound; neither the meter nor that accounting
-creates residual policy credit or learned utility.
+creates residual policy credit or learned utility. The normal controller's
+one supplied-answer policy uses the completed episode's total actual spend,
+not a count of choices. See [SelectedMeaning](SelectedMeaning.md).
 
 ## Evidence and limits
 

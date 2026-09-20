@@ -24,7 +24,7 @@ def test_realization_uses_a_held_derivation_without_running_resolution(
                 raise AssertionError("output realization must not run query or answer resolution")
 
             monkeypatch.setattr(model, "_resolve_answer", forbidden)
-            monkeypatch.setattr(model, "_resolve_step", forbidden)
+            monkeypatch.setattr(model, "_resolve_step", forbidden, raising=False)
             monkeypatch.setattr(model, "answer_query", forbidden)
             first = model.reverseOutput(understanding, held)
             _capture_program_probe(model, ["5 plus 6", "7 plus 8"])

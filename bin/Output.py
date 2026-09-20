@@ -13,6 +13,87 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Mapping, Optional, Tuple
 
+import torch
+
+from Meaning import ConceptualMeaning
+
+
+def thought_answer_meanings(selected):
+    """Adapt owned checked results without a reader or another execution.
+
+    A set remains an ordered tuple of complete members. Codes are unary
+    concepts; subgoals carry the child's typed result. Only the live selected
+    truth meaning retains a structural gradient. Checked reader payloads and
+    restored results are detached, including all members of a set.
+    """
+    from Queries import ThoughtResult
+    from Layers import MeaningExpectation
+    checked = getattr(selected, "result", None)
+    meaning = getattr(selected, "meaning", None)
+    seen = set()
+    while isinstance(checked, ThoughtResult) and checked.result_kind == "subgoal":
+        if id(checked) in seen or len(seen) >= 64:
+            raise ValueError("cyclic or over-deep thought result")
+        seen.add(id(checked))
+        checked = checked.value
+        meaning = checked.request if isinstance(checked, ThoughtResult) else None
+    if not isinstance(checked, ThoughtResult):
+        return ()
+    request = checked.request
+    width = int(request.roles.shape[-1])
+    if checked.result_kind == "truth":
+        if not isinstance(meaning, ConceptualMeaning):
+            raise TypeError("truth answer requires its complete selected meaning")
+        return (meaning,)
+    if checked.result_kind == "prediction":
+        value = checked.value
+        if value is None:
+            return ()
+        if not isinstance(value, MeaningExpectation):
+            raise TypeError("prediction answer requires a MeaningExpectation")
+        if (value.roles.shape != request.roles.shape
+                or value.presence_logits.shape != (3,)
+                or not bool(torch.isfinite(value.presence_logits).all())):
+            raise ValueError("prediction answer differs from the full role shape")
+        return (ConceptualMeaning(value.roles.detach(),
+                torch.ones(3, dtype=torch.bool, device=value.roles.device),
+                mode="unspecified"),)
+    if checked.result_kind in ("code", "concept"):
+        value = checked.value
+        if value is None:
+            return ()
+        if not torch.is_tensor(value) or value.shape != (width,):
+            raise ValueError("code answer requires one full-width conceptual value")
+        roles = torch.stack((value.detach(), torch.zeros_like(value),
+                             torch.zeros_like(value)))
+        return (ConceptualMeaning(
+            roles, torch.tensor([True, False, False], device=value.device),
+            mode="assertive", role_refs=(checked.evidence.get("reference"), None, None),
+            bindings=request.bindings, scope=request.scope),)
+    if checked.result_kind != "set":
+        raise ValueError(f"unsupported thought answer kind {checked.result_kind!r}")
+    answers = []
+    for member in checked.value or ():
+        stored = member.get("meaning")
+        if isinstance(stored, ConceptualMeaning):
+            if stored.roles.shape != request.roles.shape:
+                raise ValueError("set member differs from the conceptual width")
+            answers.append(stored.detached())
+            continue
+        value, reference = member.get("value"), member.get("reference")
+        if not torch.is_tensor(value) or value.shape != (width,) or reference is None:
+            raise ValueError("set answer member requires its owned payload and reference")
+        opened = [slot for slot in (0, 2) if not bool(request.role_mask[slot])]
+        if len(opened) != 1:
+            raise ValueError("reference set answer requires one open operand role")
+        slot = opened[0]
+        roles, mask, refs = request.roles.clone(), request.role_mask.clone(), list(request.role_refs)
+        roles[slot], mask[slot], refs[slot] = value.detach(), True, reference
+        answers.append(ConceptualMeaning(roles, mask, mode="assertive",
+            polarity=request.polarity, role_refs=tuple(refs),
+            bindings=request.bindings, scope=request.scope).detached())
+    return tuple(answers)
+
 
 @dataclass(frozen=True)
 class StepChoice:
@@ -79,6 +160,10 @@ class AnswerDerivation:
     # actual boundary execution that supplied its evidence.
     selected_thoughts: Tuple[Any, ...] = field(
         default_factory=tuple, repr=False, compare=False)
+    # Per-row typed answer members, including every member of a checked set.
+    # These are views of the prepared answer, not another memory owner.
+    answer_meanings: Tuple[Tuple[ConceptualMeaning, ...], ...] = field(
+        default_factory=tuple, repr=False, compare=False)
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "grammar_trace", tuple(self.grammar_trace))
@@ -91,6 +176,8 @@ class AnswerDerivation:
         object.__setattr__(self, "program", tuple(self.program))
         object.__setattr__(self, "questions", tuple(self.questions))
         object.__setattr__(self, "selected_thoughts", tuple(self.selected_thoughts))
+        object.__setattr__(self, "answer_meanings", tuple(
+            tuple(row) for row in self.answer_meanings))
         if self.conditioning_context is not None:
             object.__setattr__(self, "conditioning_context",
                                self.conditioning_context.clone())

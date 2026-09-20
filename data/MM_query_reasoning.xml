@@ -1,26 +1,18 @@
 <?xml version="1.0" ?>
 <model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:noNamespaceSchemaLocation="model.xsd">
-  <!-- MM_query_reasoning: the reasoning live-wiring validation config
-       (doc/plans/2026-06-23-reasoning-live-wiring.md, Phases C/D/E). Derived
-       from MM_qa (the retrieval-QA sibling: globalAttention + globalAttention-
-       Consume + ltmConsolidation + a TruthSet in LTM) and adds:
+  <!-- MM_query_reasoning: explicit grammatical query and numerical-loss fixture.
+       The completed linguistic meaning selects a native VP from complete.grammar's
+       <thought> catalogue. reason_about and answer_query use ten shared work units;
+       think_about uses sixteen. Reads and children spend the same allowance, so
+       these small budgets may return incomplete evidence. No raw-word detector
+       selects an executor and no second kernel result is attached.
 
-         * reasoningIterations=10 : turns reasoning ON. A query is routed to the
-           NeuralToolUser, which runs a 10-step soft-propose / hard-verify chain
-           and realizes the N intervening ideas to N sentences (Phase E/D).
-         * answerLossWeight>0       : trains the soft route (the generator query
-           head + the GlobalAttention scorer) under the answer-policy loss,
-           self-supervised from the truthSet store (Phase C).
-         * complete.grammar         : declares canonical structural thought
-           operators. The serving compatibility detector gates only on the
-           derived `exist` / `part` / `equal` catalogue entries.
-         * a parthood syllogism in the TruthSet (socrates <= human <= mortal) the
-           reasoner can chain, plus the `queries` QA set for serve validation.
-
-       Codebooks are shrunk (512 rows) so the typed truth-space the reasoner
-       ranges over stays idea-scale and tractable. With reasoningIterations
-       absent and answerLossWeight 0 this file behaves like MM_qa. -->
+       answerLossWeight preserves the independent soft bridge-loss experiment.
+       selectedThoughtPolicyWeight trains the normal controller from supplied
+       answer error and actual work. This config alone does not train natural
+       operator wording: partOf is a technical corpus token, not a predefined
+       natural-language meaning. See doc/SelectedMeaning.md. -->
   <architecture>
     <symbolicOrder>0</symbolicOrder>
     <!-- SERIAL per-word body: the observe-site conversation push (the LTM
@@ -34,6 +26,7 @@
     <mereologyRaise>true</mereologyRaise>
     <radialStmReduce>true</radialStmReduce>
     <readingAttention>true</readingAttention>
+    <conceptIndexRead>true</conceptIndexRead>
     <!-- (B) free attention over the typed truth-space; parks the soft read. -->
     <globalAttention>true</globalAttention>
     <!-- close the loop: the answer/policy loss trains the retrieval via the
@@ -42,13 +35,10 @@
     <!-- the LTM "book": the TruthSet (the syllogism) parsed into ltm_store. -->
     <ltmConsolidation>true</ltmConsolidation>
 
-    <!-- Reasoning ON: N=10 intervening ideas / a 10-step chain to the answer. -->
+    <!-- Shared work allowance for the explicit reason_about / answer_query APIs. -->
     <reasoningIterations>10</reasoningIterations>
 
-    <!-- The Thinking Kernel ON (doc/plans/thinking_kernel_spec.md): a query
-         answer additionally carries the kernel's certified result (value +
-         truth interval + trust + op trace) under the payload's "kernel" key.
-         16 = the op budget of a top-level think() frame. -->
+    <!-- Same controller; the explicit think_about API has this work allowance. -->
     <thinkingBudget>16</thinkingBudget>
 
     <!-- A parthood syllogism the reasoner can chain extensionally:
@@ -69,18 +59,15 @@
       <reconstructionScale>0.1</reconstructionScale>
       <!-- Phase C: train the soft reasoning route under the answer-policy loss. -->
       <answerLossWeight>0.1</answerLossWeight>
-      <!-- Thinking Kernel: behavior-clone the next-op head on grounded kernel
-           traces from the store's 2-hop chains (a no-op until the parse
-           yields real relation endpoints; harmless meanwhile). -->
-      <thinkingLossWeight>0.1</thinkingLossWeight>
+      <!-- One normal thought policy; credit follows supplied answers and work. -->
+      <selectedThoughtPolicyWeight>0.1</selectedThoughtPolicyWeight>
     </training>
   </architecture>
 
   <SymbolSpace>
     <language>
-      <!-- complete.grammar derives the canonical thought-operation catalogue;
-           the serving compatibility detector reads its `exist` / `part` /
-           `equal` entries rather than a <Queries> block or rule attribute. -->
+      <!-- Compose, thought and generation share canonical operator identity.
+           Only <thought> entries grant checked execution authority. -->
       <grammar>complete.grammar</grammar>
     </language>
   </SymbolSpace>
@@ -111,7 +98,7 @@
   <ConceptualSpace>
     <nInput>8</nInput>
     <nInputDim>1024</nInputDim>
-    <nVectors>8</nVectors>
+    <nVectors>64</nVectors>
     <stmCapacity>8</stmCapacity>
     <nDim>1024</nDim>
     <nOutput>8</nOutput>

@@ -1,6 +1,6 @@
 # Ordinary thought history
 
-Implementation reference, September 17.
+Implementation reference, September 20.
 
 `SymbolSpace.what_memory` remains the only owner of interaction history. It
 stores legacy `LTMSlot` values and ordinary `ThoughtRecord` values in the same
@@ -28,12 +28,13 @@ replay/validate every row atomically on restore; the history sidecar is version
 3 and accepts version-1 rows, which have no `result` field, and version-2
 typed results. Version 3 tags nested `ConceptualMeaning` evidence explicitly,
 so a retained lookup record restores as a complete detached meaning rather
-than an untyped mapping. New computations after restore can be live, but
+than an untyped mapping. Nested `ThoughtResult` children are explicitly tagged
+and restore their type, request and evidence recursively. New computations after restore can be live, but
 restoration never replenishes budget or pressure.
 
 The ordinary controller now owns the selected direct-relation and direct
 concept-unary boundary paths.
-It is deliberately separate from the legacy `LTMSlot` parity loop: a completed
+The legacy `LTMSlot` parity controller is deleted. A completed
 interrogative compose program is adapted into its canonical grammar meaning,
 then `run_selected_thought()` opens one ordinary episode for that row.
 Composition itself remains pure. A binary relation retains its two signed live
@@ -53,11 +54,11 @@ context is `9D + 15`; the two action-kind features make the MLP input `9D +
 not numerical features. The chooser is width-owned, lazy/checkpointed and uses
 the existing `whatThinkingHidden` / `whatThinkingDepth` capacity settings.
 
-`selectedThoughtPolicyWeight` is a separate, default-off REINFORCE objective:
-later answer loss less actual controller-choice cost, with its own EMA
-baseline. Its log-probability path can reach the chooser and its live role
-payloads; executor results, references, meter state and reward are hard or
-detached. This is supplied-answer controller credit, **not** residual credit,
+`selectedThoughtPolicyWeight` is the one default-off thought REINFORCE objective:
+each eligible row's later answer error and its actual shared work cost,
+including all reads and children, with one EMA baseline. Its log-probability
+path reaches the chooser and live root/active payloads; candidate payloads,
+executor results, references, meter state and reward are hard or detached. This is supplied-answer controller credit, **not** residual credit,
 and it does not establish learned utility.
 
 ## Evidence
@@ -137,3 +138,6 @@ references, bindings, scope and recorded sources. It reads that data on demand,
 without a second reference index. Those roots protect required content during
 request-origin replacement even after the content's evidential authority is
 withdrawn. See [nested retention](NestedRetention.md).
+
+The completed item 1 integration and its learning/adapter evidence are recorded
+in [SelectedMeaning](SelectedMeaning.md) and [Testing](Testing.md#selected-meaning-and-one-controller-september-20).

@@ -7,7 +7,7 @@ import torch
 from Meaning import ConceptualMeaning
 from Layers import TernaryTruthStore
 from reasoning import QuerySpec, TruthGroundedReasoner
-from thinking import ThinkingKernel, CONFLICTING, UNKNOWN
+from reasoning import BOTH as CONFLICTING, UNKNOWN
 
 
 def _occurrences(value):
@@ -23,30 +23,30 @@ def _occurrences(value):
     return found
 
 
-def test_kernel_result_retains_matching_fact_occurrences_and_both_degrees():
+def test_checked_result_retains_matching_fact_occurrences_and_both_degrees():
     meaning = ConceptualMeaning.from_payload(torch.eye(6)[:3], depth=3, layout="infix")
     store = TernaryTruthStore(6, capacity=8)
     rows = [store.append_meaning(meaning, trust=degree) for degree in (.8, -.9)]
     expected = {store.row(i)["occurrence"] for i in rows}
-    result = ThinkingKernel(TruthGroundedReasoner(store=store)).run(
+    result = TruthGroundedReasoner(store=store).evaluate(
         QuerySpec.from_surface("exist", meaning))
-    assert result.value == CONFLICTING
-    assert result.interval.lower == pytest.approx(-.9)
-    assert result.interval.upper == pytest.approx(.8)
-    assert _occurrences(result.provenance) == expected
+    assert result['posture'] == CONFLICTING
+    assert -result['support_false'] == pytest.approx(-.9)
+    assert result['support_true'] == pytest.approx(.8)
+    assert _occurrences(result['candidates']) == expected
 
 
-def test_missing_semantic_context_remains_visible_in_the_kernel_result():
+def test_missing_semantic_context_remains_visible_in_the_checked_result():
     meaning = ConceptualMeaning.from_payload(torch.eye(6)[:3], depth=3, layout="infix",
                                              scope={"where": ("sym", 11)})
     store = TernaryTruthStore(6, capacity=8)
     store.append_meaning(meaning, trust=.8)
     restored = TernaryTruthStore(6, capacity=8)
     restored.load_state_dict(store.state_dict(), strict=True)
-    result = ThinkingKernel(TruthGroundedReasoner(store=restored)).run(
+    result = TruthGroundedReasoner(store=restored).evaluate(
         QuerySpec.from_surface("exist", meaning))
-    assert result.value == UNKNOWN
-    assert "incomplete_evidence" in repr(result.provenance)
+    assert result['posture'] == UNKNOWN
+    assert result["incomplete_evidence"]
 
 
 def test_consolidated_legacy_chain_reads_the_actual_two_role_presence():

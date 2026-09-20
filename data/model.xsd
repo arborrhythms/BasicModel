@@ -323,8 +323,8 @@
           </xs:restriction>
         </xs:simpleType>
       </xs:element>
-      <!-- whatThinkingIterations (spec 6.2): iteration limit L of a
-           Model.think() episode; 1 (default) = the single what(). -->
+      <!-- Retained compatibility metadata. think() has one presentation;
+           selectedThoughtBudget bounds its grammatical controller. -->
       <xs:element name="whatThinkingIterations" type="xs:positiveInteger" minOccurs="0"/>
       <!-- Bounded work for one normal selected grammatical-thought episode.
            Zero permits only the defined cutoff/finish drain. -->
@@ -350,27 +350,16 @@
            idea snapshot to infer which reverse operations should run. Default
            false preserves the ordinary cached-derivation reverse path. -->
       <xs:element name="reconstructFromIdea" type="xs:boolean" minOccurs="0"/>
-      <!-- Truth-grounded reasoning, N-step (doc/plans/2026-06-23-reasoning-
-           live-wiring.md). N = the number of intervening-idea iterations = the
-           reasoning steps = the max chain depth leading to the answer. The
-           recurrent tool-use loop proposes N ideas (the soft policy over the
-           hard isTrue/isPart tools), verifies each hop, and realizes the chain
-           to N sentences ranked by subsymbolic (attention) relevancy. This knob
-           is the on/off SWITCH: absent ⇒ reasoning off (byte-identical); a
-           positive value (10 recommended) turns it on with that chain depth;
-           0 is explicitly off. -->
+      <!-- Shared normal-controller work allowance for reason_about and
+           answer_query: choices, reads, traversal and all children. Default 1;
+           zero disables these explicit APIs. Natural text must first own a
+           selected completed meaning. -->
       <xs:element name="reasoningIterations" type="xs:nonNegativeInteger" minOccurs="0"/>
-      <!-- The Thinking Kernel (doc/plans/thinking_kernel_spec.md): the
-           runtime-enforced lookup/part/think/query/answer loop over truth
-           intervals + trust and an STM frame stack. N = the op budget of a
-           top-level think() frame (every executed operation costs 1; child
-           frames draw from the parent's remaining budget; exhaustion closes
-           the frame bounded_unknown). This knob is the on/off SWITCH: absent
-           or 0 ⇒ kernel off (byte-identical); positive ⇒ a query answer
-           additionally carries the kernel's certified result. -->
+      <!-- Shared work allowance for think_about on the same controller.
+           Absent or zero disables this API. No second kernel result exists. -->
       <xs:element name="thinkingBudget" type="xs:nonNegativeInteger" minOccurs="0"/>
       <!-- DEPRECATED alias for reasoningIterations (the prior boolean gate).
-           When true it enables reasoning at the default depth (10); prefer
+           When true it enables reasoning at the shared work allowance (10); prefer
            <reasoningIterations>. Default false. -->
       <xs:element name="queryReasoning" type="xs:boolean" minOccurs="0"/>
       <!-- Serial word-at-a-time object/meta (doc/specs/mereological-order-
@@ -976,23 +965,16 @@
            the attention alpha) only, never the hard deduction. Default 0.0 =
            off (no answer loss term). Requires <queryReasoning>. -->
       <xs:element name="answerLossWeight" type="nonNegativeFloat" minOccurs="0"/>
-      <!-- Step 2: the next-idea POLICY loss weight. Trains the reasoner's
-           {arma, retrieval, deduction} blend to predict the observed next
-           end-state root (gradient through the blend weights + scorer only,
-           not the detached candidates). 0.0 = off (byte-identical). -->
+      <!-- Retired separate next-idea blend. Zero remains loadable for old
+           configurations; nonzero values are rejected by model setup. -->
       <xs:element name="predictNextLossWeight" type="nonNegativeFloat" minOccurs="0"/>
-      <!-- Thinking Kernel next-op policy loss weight (thinking_kernel_spec.md
-           section 12.6). Behavior-clones the NextOpPolicy head on grounded
-           kernel traces generated from the reasoning store's 2-hop chains
-           (the teacher runs materialize=false, so trace generation never
-           writes LTM). 0.0 = off (byte-identical; the head is not built). -->
+      <!-- Migration alias: max(thinkingLossWeight, whatThinkingPolicyWeight,
+           selectedThoughtPolicyWeight) enables the one normal policy once. -->
       <xs:element name="thinkingLossWeight" type="nonNegativeFloat" minOccurs="0"/>
-      <!-- whatThinkingPolicyWeight (mathematical thinking spec 8.3): weight
-           of the WhatStepChooser policy objective (REINFORCE on the
-           resolve-step choices, root answer loss as reward). 0 = off. -->
+      <!-- Migration alias for selectedThoughtPolicyWeight; no parity head. -->
       <xs:element name="whatThinkingPolicyWeight" type="nonNegativeFloat" minOccurs="0"/>
-      <!-- Weight of the separate normal grammatical-thought controller's
-           REINFORCE objective. 0 keeps its deterministic query-then-finish
+      <!-- Weight of the one normal controller's REINFORCE objective:
+           per-row supplied-answer error plus actual shared work cost. 0 keeps its deterministic query-then-finish
            baseline and contributes no policy term. -->
       <xs:element name="selectedThoughtPolicyWeight" type="nonNegativeFloat" minOccurs="0"/>
       <!-- Method-1 -> Method-2 leaf distillation weight (doc/plans/

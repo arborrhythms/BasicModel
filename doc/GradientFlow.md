@@ -1,6 +1,6 @@
 # Gradient flow across the architecture
 
-Current reference, September 16. The objective is one internal NP/VP
+Current reference, September 20. The objective is one internal NP/VP
 representation that preserves the input **and** is informative for prediction
 and answers. Reconstruction constrains fidelity; prediction and answer error
 help choose among representations that reconstruct well. Separate modules do
@@ -40,7 +40,7 @@ and [§8.10](plans/2026-09-15-next-sentence-as-the-production-objective.md#810-q
 |---|---|---|---|
 | **Representation and reconstruction:** weighted input surface error | Recovered word ideas, the selected compose operators' tied reverse calculations, and the live forward encodings they consume | This is the reconstruction reference `R` on shared weights. It retains its gradient unchanged. | The identified input derivation is fixed during reverse traversal; retained constituent references, dictionary snapshots and byte targets are detached. No gradient through an integer rule or dictionary index. [Reconstruction](../bin/Models.py#L11300), [snapshot](../bin/Models.py#L11654), [owned byte objective](../bin/Models.py#L13820). |
 | **Prediction:** occupied-role MSE plus role-presence BCE | The sentence predictor and its live preceding NP1/VP/NP2 context | May train the encoder of a preceding sentence still in the **same optimizer step**. It shares the downstream budget below. | The arriving sentence's encoding is a detached target. Durable context and previous-step encodings are detached. A retained estimate/observation pair is also fully detached: its roles, confidence, provenance and reconstructed residual are evidence, never a delayed autograd route. A cold start has no predicted target. [Prediction and observation](../bin/Layers.py#L10733), [retention](ExpectationRetention.md), [graph lifetime](../bin/Layers.py#L11402). |
-| **Thinking:** enabled thought/subgoal policy objectives | The legacy What chooser and the separate selected grammatical controller receive score-function credit from later supplied-answer loss less their declared work costs; optional legacy reasoning and teacher-trace losses have separate gates | The normal controller's live root/active/candidate role payloads and masks feed its width-owned chooser; its log probability reaches that chooser and those consumed live payloads. A checked truth result passes its final selected live `[NP1, VP, NP2]` roles into the answer seed, so output loss reaches those structural operands. A checked `arma` estimate supplies a separately validated but detached `[NP1, VP, NP2]` prediction seed. | Hard choices, typed references, hard reader results, `arma` prediction data, and meter state have no ordinary derivative. The reward is detached and the current selected controller is answer-credit only; residual-based credit on ordinary corpus inputs remains a required migration. [Selected policy](../bin/Models.py#L6241), [loss gates](../bin/Models.py#L15024), [required residual credit](plans/2026-09-15-next-sentence-as-the-production-objective.md#810-queries-as-tools-at-inter-sentence-prediction-decided). |
+| **Thinking:** one selected-controller policy objective | `SelectedThoughtChooser` receives REINFORCE credit from each eligible row's later supplied-answer loss plus `0.01 * actual_shared_work`, including child execution and reader costs, with one EMA baseline | Full-width root and active role payloads remain live into the chooser; candidate roles are detached. Log probability trains the chooser and the live payloads it consumes. A selected truth meaning supplies its live role triples to the answer; prediction, set and code payloads are checked detached values. | Choices, native references, hard evidence and rewards have no ordinary derivative. `thinkingLossWeight` and `whatThinkingPolicyWeight` migrate to this same term once; the old heads are deleted. Residual query credit remains item 2. [Controller and credit](SelectedMeaning.md), [required residual credit](plans/2026-09-15-next-sentence-as-the-production-objective.md#810-queries-as-tools-at-inter-sentence-prediction-decided). |
 | **Output:** supplied-answer error and, when enabled, output-action policy loss | The answer path, conditioner and synthesis heads; sampled generation choices receive policy credit | Differentiable use of a live question/answer representation can train its upstream producer, under the same shared budget. Independent output heads retain their ordinary gradients. | Desired answers are supervision, not generation inputs. Output policy reward is detached: credit flows through action log probabilities, not through the reward calculation. The input parse is not a gold answer parse. [Answer resolution](../bin/Models.py#L8186), [head ownership](../bin/Models.py#L9158), [action credit](../bin/Models.py#L9293). |
 
 An answer loss trains the sentence predictor only if the answer computation
@@ -48,8 +48,8 @@ actually consumes a live prediction. The gradient balancer permits that path;
 it does not create it. The current resolver selects current/recalled
 representations before generation. `resolveAnswer` prepares the owned
 derivation; `reverseOutput` consumes it without repeating reasoning. The owned
-conceptual clone preserves its input gradient. Completing the levelled thought
-controller and connecting complete predicted meaning remain separate work.
+conceptual clone preserves its input gradient. The levelled controller and typed answer adapters are implemented; learning
+residual query utility remains separate work.
 [Prepared boundary](../bin/Models.py#L8171),
 [realization](../bin/Models.py#L9182), [owned clone](../bin/Output.py#L90),
 [required handoffs](plans/2026-09-15-next-sentence-as-the-production-objective.md#86-understanding-prediction-and-response-production).
@@ -94,9 +94,10 @@ not by itself train that answer objective.
 [prediction weight](../data/BasicModel.xml#L195),
 [supervised weights](../data/BasicModel_answers_tied_benchmark.xml#L51).
 
-The legacy `answerLossWeight`, `thinkingLossWeight` and
-`whatThinkingPolicyWeight` default to zero; so do the selected controller's
-`selectedThoughtPolicyWeight` and `outputPolicyWeight`. A permitted credit path
+The numerical experiment's `answerLossWeight` defaults to zero, as do
+`selectedThoughtPolicyWeight` and `outputPolicyWeight`. Old `thinkingLossWeight`
+and `whatThinkingPolicyWeight` values migrate by maximum into the selected
+weight; they do not enable separate objectives or controllers. A permitted credit path
 is therefore not evidence that a particular configuration trains it. The
 residual-based query policy remains an open migration, rather than an implicit
 consequence of enabling expectation.
@@ -248,14 +249,11 @@ and [Existence evidence](ExistenceEvidence.md).
 
 The canonical `part` thought operator traverses native concept references and returns hard structural
 evidence with provenance. There is no derivative through reference or path
-selection, and no added trainable parameter. Existing legacy operation-head
-behavior cloning now uses native taxonomy paths; it does not establish
-learned question utility or residual policy credit. Continuous semantic
+selection, and no added trainable parameter. The legacy operation head and its trace-cloning loss are deleted. Native
+paths supply checked evidence, not training labels for another selector. Continuous semantic
 payloads and discrete policy decisions retain the architecture-wide credit
 contract above. [Taxonomy queries](TaxonomyQueries.md) documents the limits.
-[Evidence](../bin/reasoning.py#L376),
-[curriculum](../bin/thinking.py#L621),
-[operation loss](../bin/thinking.py#L610).
+[Evidence](../bin/reasoning.py), [normal controller](SelectedMeaning.md).
 
 ## Thought and grammatical payload boundaries
 
@@ -310,8 +308,9 @@ that same live value; durable LTM reads remain detached. At the optimizer
 boundary, an explicit finished episode detaches retained values, including
 legacy prompt and grammar-trace tensors. Structural checkpoint sidecars save
 detached copies, so restoring history cannot reconnect an old graph. The normal
-controller's explicit policy term consumes only its live root/active/candidate
-role payloads; its hard evidence and work accounting remain nondifferentiable.
+controller's explicit policy term consumes live root/active role payloads
+and detached candidate payloads; hard evidence and work accounting remain
+nondifferentiable.
 In contrast, an actual checked `ThoughtResult` saved on an executed, returned,
 or finished record is detached immediately, including nested dataclass evidence
 such as `MeaningExpectation`: its request, tensors and evidence cannot send a
@@ -356,3 +355,18 @@ an optimizer-owned parameter.
 [replacement](../bin/Models.py#L6453), and
 [durable reads](../bin/Layers.py#L8904).
 See [nested retention](NestedRetention.md).
+
+## Learned linguistic alignment
+
+`LanguageSpace.meaning_codec` is language computation: supervised operation and
+mode classification, canonical operand pointers and conditional word/copy
+generation. `runBatch(meaning_supervision=...)` reads its per-row annotations
+after output and adds the actual `linguistic_meaning` loss to the trained total.
+It belongs to the aggregate downstream objective under the rule above. Owned
+word payloads can receive its encoding gradient; labels, native addresses and
+realization targets are detached. Hard compose/generation choices have no
+derivative, while a copied live role keeps its ordinary output-value path.
+The explicit language parameters join the real optimizer once, including when
+configured after optimizer construction. Saved topology restores before strict
+key validation. Capture freezes the selected meaning, so a later optimizer step
+cannot reinterpret an earlier program. See [SelectedMeaning](SelectedMeaning.md).

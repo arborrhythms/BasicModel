@@ -72,8 +72,11 @@ peak) in `output/tests/20260918-020312-c526c2`. These cover retention closure,
 independent limits, cycles, atomic rejection, live thought credit, checkpoint
 ordering, semantic-sidecar, query-occurrence and consolidation behavior.
 
-This is a retention and lifecycle foundation only. Typed linguistic observation
-writes, the normal selected-meaning/controller path, actual shared executor
-cost, expectation/residual learning, generation ownership and learned utility
-remain open. The separately queued two-truths and forgetting implementations
+Item 1 now connects typed linguistic observation writes, nested/converse
+meaning, the normal controller and actual shared executor cost. Local child
+references are validated and capacity-preflighted before a postorder append;
+embedded claims are unverified at zero trust. Eager, pending and packed writers
+use the same owner. [SelectedMeaning](SelectedMeaning.md) records the integration
+and learned paraphrase evidence. Expectation/residual learning, the separate
+generation-catalogue migration and held-out utility remain open. The separately queued two-truths and forgetting implementations
 remain out of scope.

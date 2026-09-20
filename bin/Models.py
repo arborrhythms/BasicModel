@@ -80,7 +80,7 @@ from checkpoint_migrations import (
 )
 from data import Data, TheData
 from Understanding import AnswerProgram, InputReconstruction, Understanding
-from Output import AnswerConstruction, AnswerDerivation
+from Output import AnswerConstruction, AnswerDerivation, thought_answer_meanings
 from contextlib import contextmanager as _contextmanager
 from What import (LTMSlot, What, WhatAnswer, WhatQuestion, WhatRelation,
                   WhatSlotOperation, WhatThinkingResult, question_batch)
@@ -288,6 +288,24 @@ class SelectedThoughtResult:
     work: QueryWorkBudget
     records: tuple
     result: ThoughtResult | None = None
+
+    @property
+    def support_true(self):
+        return float(self.evidence.get("support_true", 0.0))
+
+    @property
+    def support_false(self):
+        return float(self.evidence.get("support_false", 0.0))
+
+    @property
+    def confidence(self):
+        return max(self.support_true, self.support_false)
+
+    @property
+    def posture(self):
+        return ("BOTH" if min(self.support_true, self.support_false) >= .5 else
+                "TRUE" if self.support_true >= .5 else
+                "FALSE" if self.support_false >= .5 else "UNKNOWN")
 
 
 def _checkpoint_host_copy(value):
@@ -2345,17 +2363,9 @@ class BaseModel(Mereology, nn.Module):
         self.concept_index_read = bool(TheXMLConfig.get(
             "architecture.conceptIndexRead", default=False))
 
-        # Truth-grounded reasoning, N-step (doc/plans/2026-06-23-reasoning-
-        # live-wiring.md). reasoning_iterations N is the chain depth: N>0 routes
-        # a query to the recurrent tool-use loop (the soft policy over the hard
-        # isTrue/isPart tools) instead of the generative infer(). Step 3: the
-        # default is now 1 (reasoning ON, depth-1, by default) -- a query routes
-        # to the reasoner at depth 1 on every config; set
-        # <reasoningIterations>0</reasoningIterations> for the old (off) behavior.
-        # This is LOSS-identical for training (the answer/predict-next loss
-        # weights default 0.0), not behavior-identical (it changes inference/
-        # serve-time query routing). The deprecated <queryReasoning> alias: true
-        # ⇒ depth 10.
+        # Explicit reason_about / answer_query work allowance. The default
+        # one-unit allowance is bounded; zero disables these public APIs.
+        # The deprecated Boolean alias selects ten shared work units.
         _ri = TheXMLConfig.get("architecture.reasoningIterations", default=None)
         if _ri is None:
             self.reasoning_iterations = (
@@ -2366,11 +2376,8 @@ class BaseModel(Mereology, nn.Module):
         # Back-compat: code/tests that gate on the boolean still work.
         self.query_reasoning = self.reasoning_iterations > 0
 
-        # The Thinking Kernel (doc/plans/thinking_kernel_spec.md; execution
-        # notes doc/plans/2026-07-12-thinking-kernel-execution.md). N = the op
-        # budget of a top-level think() frame. Absent/0 ⇒ off (byte-identical);
-        # positive ⇒ answer_query additionally attaches the kernel's certified
-        # result under the payload's "kernel" key.
+        # Explicit think_about calls share the normal controller work meter.
+        # Zero disables this API; it never attaches a second result to an answer.
         self.thinking_budget = max(0, int(TheXMLConfig.get(
             "architecture.thinkingBudget", default=0) or 0))
 
@@ -2830,23 +2837,13 @@ class BaseModel(Mereology, nn.Module):
 
         # Phase C / Step 2: when reasoning trains under the answer-policy loss OR
         # the next-idea-prediction loss, build the InterveningIdeaGenerator +
-        # GlobalAttention + NextIdeaScorer NOW -- before getOptimizer runs at
-        # train start -- so their params join the optimizer and learn. Guarded:
-        # both weights 0 builds nothing (no new params, byte-identical).
-        if (float(getattr(self, "answer_loss_weight", 0.0) or 0.0) > 0.0
-                or float(getattr(self, "predict_next_loss_weight", 0.0)
-                         or 0.0) > 0.0):
+        # Build the retained numerical bridge-loss experiment before its
+        # optimizer. It does not select or execute grammatical thoughts.
+        if float(getattr(self, "answer_loss_weight", 0.0) or 0.0) > 0.0:
             try:
-                self._reasoning_tooluser(self._reasoning_spaces())
+                self._legacy_bridge_components(self._reasoning_spaces())
             except Exception:
                 pass
-
-        # Thinking Kernel next-op head (§12.6): built eagerly when its loss
-        # weight is positive, for the same reason -- getOptimizer must see the
-        # params at train start. Weight 0 builds nothing (byte-identical).
-        if float(getattr(self, "thinking_loss_weight", 0.0) or 0.0) > 0.0:
-            from thinking import NextOpPolicy
-            self._next_op_policy = NextOpPolicy()
 
         return cfg
 
@@ -3001,8 +2998,7 @@ class BaseModel(Mereology, nn.Module):
         # dedup handles ``_reasoning_ga`` aliasing ``global_attention``; gate-off
         # => the attrs are unset => no extra params (byte-identical).
         for _att_name in ("reading_attention", "global_attention",
-                          "_intervening_generator", "_reasoning_ga",
-                          "_predict_next_scorer", "_next_op_policy"):
+                          "_intervening_generator", "_reasoning_ga"):
             _att = getattr(self, _att_name, None)
             if _att is not None:
                 for p in _att.parameters():
@@ -5088,10 +5084,11 @@ class BaseModel(Mereology, nn.Module):
         # checkpoint that carries them must find them on the fresh model
         # before the audit below classifies their keys as unexpected.
         # (``BaseModel`` stubs without the answer path skip this.)
-        _materialize = getattr(self, "_materialize_answer_path", None)
+        _materialize = getattr(self, "_materialize_answer_path_from_checkpoint", None)
         if _materialize is not None:
-            _materialize()
-            self._materialize_answer_path_from_checkpoint(state)
+            # A trained word-walk model may never need the optional synthesis
+            # layers. Restore only saved modules, preserving that lazy topology.
+            _materialize(state)
         # Output rules are identified by meaning, not their old compose
         # position. Apply the same row migration to weights and Adam moments.
         generate_rows = {}
@@ -6247,7 +6244,8 @@ class BasicModel(BaseModel):
                     primed = snapshot()
 
         from reasoning import TruthGroundedReasoner
-        reasoner = TruthGroundedReasoner(model=self)
+        reasoner = TruthGroundedReasoner(
+            model=self, store=getattr(symbol_space, 'ltm_store', None))
         discourse = getattr(symbol_space, 'discourse', None)
         return ThoughtGrammarContext(
             word_stream=freeze(stream),
@@ -6305,7 +6303,7 @@ class BasicModel(BaseModel):
             return torch.cat((roles.reshape(-1), meaning.role_mask.to(
                 device=roles.device, dtype=roles.dtype)))
 
-        roles = tuple(payload(meaning) for meaning in meanings)
+        roles = (payload(root), payload(active), payload(candidate.detached()))
         source = dict(evidence or {})
         supports = []
         for name in ("support_true", "support_false"):
@@ -6356,41 +6354,66 @@ class BasicModel(BaseModel):
         """REINFORCE credit for hard normal-controller query/finish choices.
 
         The only scalar reward is the later answer loss, less a small charge
-        for actual controller decisions.  No desired answer or oracle subgoal
+        for actual metered work, including child execution and reads.
+        No desired answer or oracle subgoal
         enters the chooser context; hard query results remain nondifferentiable.
         """
-        records = []
+        episodes = {}
         for record in self.__dict__.get("_selected_thought_policy_records") or ():
-            if not (torch.is_tensor(record[1]) and record[1].requires_grad):
+            if len(record) != 4:
+                continue  # no credit without a completed episode's actual meter
+            row, log_prob, episode, spent = record
+            if not (torch.is_tensor(log_prob) and log_prob.requires_grad):
                 continue
-            eligible = (mask is None or (
-                0 <= record[0] < mask.numel()
-                and bool(mask.reshape(-1)[record[0]])
-            ))
-            if eligible:
-                records.append(record)
-        if not records:
+            if mask is not None and not (
+                    0 <= row < mask.numel() and bool(mask.reshape(-1)[row])):
+                continue
+            episodes.setdefault((row, episode, spent), []).append(log_prob)
+        if not episodes:
             return None
-        answer = (float(answer_loss.detach()) if torch.is_tensor(answer_loss)
-                  else float(answer_loss or 0.0))
-        reward = -answer - self.WHAT_STEP_COST * len(records)
+        losses, rewards, choices = [], [], 0
         baseline = self.__dict__.get("_selected_thought_policy_baseline")
-        advantage = reward - (baseline if baseline is not None else 0.0)
+        for (row, _episode, spent), log_probs in episodes.items():
+            if torch.is_tensor(answer_loss):
+                values = answer_loss.detach().reshape(-1)
+                answer = float(values[0] if values.numel() == 1 else values[row])
+            else:
+                answer = float(answer_loss or 0.0)
+            reward = -answer - self.WHAT_STEP_COST * spent
+            advantage = reward - (baseline if baseline is not None else 0.0)
+            losses.append(-(advantage * torch.stack(log_probs)).mean())
+            rewards.append(reward)
+            choices += len(log_probs)
+        reward = sum(rewards) / len(rewards)
         self._selected_thought_policy_baseline = (
             reward if baseline is None else 0.9 * baseline + 0.1 * reward)
-        loss = -(float(advantage) * torch.stack(
-            [record[1] for record in records])).mean()
+        loss = torch.stack(losses).mean()
         report = self._what_report_state()
-        report["policy_selected_thought_credit_sum"] = (
-            report.get("policy_selected_thought_credit_sum", 0.0)
-            + float(loss.detach()))
-        report["policy_selected_thought_return_sum"] = (
-            report.get("policy_selected_thought_return_sum", 0.0) + reward)
-        report["policy_selected_thought_batches"] = (
-            report.get("policy_selected_thought_batches", 0) + 1)
-        report["policy_selected_thought_choices"] = (
-            report.get("policy_selected_thought_choices", 0) + len(records))
+        for key, value in (("credit_sum", float(loss.detach())),
+                           ("return_sum", reward), ("batches", 1),
+                           ("choices", choices)):
+            name = "policy_selected_thought_" + key
+            report[name] = report.get(name, 0) + value
         return loss
+
+    def _selected_thought_answer_errors(self, prediction, target, mask, questions, *, surface=False):
+        """Row-local, detached answer rewards after the answer has been fixed."""
+        if not (self.__dict__.get("_selected_thought_policy_records")
+                and bool(getattr(self.inputSpace.data, "has_supervised_outputs", False))):
+            return None
+        questions = question_batch(questions)
+        eligible = torch.tensor([
+            question.relation is WhatRelation.SUPERVISED for question in questions],
+            device=prediction.device, dtype=torch.bool)
+        if mask is not None:
+            eligible = eligible & mask.to(eligible).reshape(-1)
+        errors = prediction.new_zeros(len(questions))
+        with torch.no_grad():
+            for row in eligible.nonzero().reshape(-1).tolist():
+                pred, gold = prediction[row:row + 1].detach(), target[row:row + 1].detach()
+                errors[row] = (self._reverse_event_loss(pred, gold) if surface
+                               else self.loss.compute(pred, gold))
+        return errors, eligible
 
     def _choose_selected_thought_action(self, root, active, actions, *, row,
                                         level, pressure, evidence=None):
@@ -6459,6 +6482,13 @@ class BasicModel(BaseModel):
         registry = registry or _boundary_registry(self)
         if not isinstance(registry, GrammaticalThoughtRegistry):
             raise RuntimeError("selected thought has no installed grammatical thought registry")
+        if meaning.constituents:
+            store = getattr(getattr(self, "symbolSpace", None), "ltm_store", None)
+            if store is None:
+                raise RuntimeError("selected nested thought requires its occurrence owner")
+            meaning = store.bind_constituents(meaning)
+            if meaning is None:
+                raise RuntimeError("selected nested thought exhausted occurrence capacity")
         # Reject a non-executable VP before opening an episode that could not
         # truthfully be completed.  ``signature_for`` only validates the
         # frozen setup binding; all selected reads below share ``meter``.
@@ -6470,10 +6500,14 @@ class BasicModel(BaseModel):
                 "thought_history", "thought_reference")):
             raise RuntimeError("selected thought requires the interaction memory owner")
 
+        policy_start = len(self.__dict__.get("_selected_thought_policy_records") or ())
         meter = QueryWorkBudget(work_budget)
         root = memory.begin_thought_episode(meaning, b=row, work_budget=work_budget)
         episode = root.episode
         recorded_spend = 0
+
+        def reference(record):
+            return memory.thought_reference(record, b=row)
 
         def support(value):
             value = 0.0 if value is None else value
@@ -6621,10 +6655,11 @@ class BasicModel(BaseModel):
                 return exhausted(current)
             child_result = None
             parent_record = None
+            child_return = None
 
             def schedule_subgoal(child):
                 """The checked ``what(Q)`` callback: descend/return in order."""
-                nonlocal child_result, parent_record
+                nonlocal child_result, parent_record, child_return
                 if not isinstance(child, ConceptualMeaning):
                     raise TypeError("what(Q) supplied no complete grammatical subgoal")
                 # ``what`` has already paid for its own VP/read/operation.
@@ -6635,37 +6670,40 @@ class BasicModel(BaseModel):
                      "incomplete": ()},
                     operation=selected.semantic_id, sources=refs(current))
                 if memory.thought_state(b=row).forced:
-                    return exhausted(child)["evidence"]
+                    return None
                 if not meter.consume("controller"):
-                    return exhausted(child)["evidence"]
+                    return None
                 descent = event(
                     "descend", child,
                     {"support_true": 0.0, "support_false": 0.0,
                      "evidence_kind": "subgoal", "query_signature": "what",
                      "incomplete": ()},
                     operation="descend",
-                    sources=refs(child, memory.thought_reference(parent_record)))
-                child_result = execute(child)
+                    sources=refs(child, reference(parent_record)))
+                child_result = run_context(child)
                 child_record = child_result.get("record")
                 state_after_child = memory.thought_state(b=row)
                 if state_after_child is None:
                     raise RuntimeError("selected child lost its thought history")
                 if not state_after_child.forced:
                     if not meter.consume("controller"):
-                        return child_result["evidence"]
-                event(
+                        return child_result.get("result")
+                child_return = event(
                     "return", child_result["meaning"], child_result["evidence"],
                     operation="return",
-                    sources=refs(current, memory.thought_reference(descent),
-                                 (memory.thought_reference(child_record)
+                    sources=refs(current, reference(descent),
+                                 (reference(child_record)
                                   if child_record is not None else None)),
                     result=child_result.get("result"))
-                return child_result["evidence"]
+                return child_result.get("result")
 
-            context = self._thought_grammar_context(
-                current, row=row, work=meter, continuation=schedule_subgoal)
             try:
-                raw = registry.execute(current, context)
+                # Each selected request is a completed thought boundary;
+                # nested permission remains a narrowing of the parent's row.
+                with self._query_boundary_scope((row,)):
+                    context = self._thought_grammar_context(
+                        current, row=row, work=meter, continuation=schedule_subgoal)
+                    raw = registry.execute(current, context)
             except Exception:
                 # Do not leave an active live episode behind if a checked
                 # executor rejects malformed runtime evidence.  The original
@@ -6675,6 +6713,8 @@ class BasicModel(BaseModel):
                     memory.cutoff_thought(b=row, reason="query_error")
                 state = memory.thought_state(b=row)
                 if state is not None and not state.finished:
+                    while memory.thought_state(b=row).level:
+                        memory.return_thought(current, b=row)
                     memory.finish_thought(current, b=row)
                 raise
             evidence, checked = normalized(raw)
@@ -6687,15 +6727,16 @@ class BasicModel(BaseModel):
                 if parent_record is None:  # pragma: no cover - callback invariant
                     raise RuntimeError("selected what query omitted its parent record")
                 return {"meaning": current, "evidence": evidence,
-                        "result": checked, "record": parent_record}
+                        "result": checked, "record": child_return or parent_record}
             record = event("thought", current, evidence,
                            operation=selected.semantic_id,
                            sources=refs(current), result=checked)
             return {"meaning": current, "evidence": evidence,
                     "result": checked, "record": record}
 
-        try:
-            outcome = execute(meaning)
+        def run_context(current):
+            """Use the same recurrent choice loop at every execution level."""
+            outcome = execute(current)
             # A completed result is available to a second hard choice at the
             # same root level.  The safe zero-initialised ordering puts the
             # non-semantic conclusion first after actual evidence exists;
@@ -6722,12 +6763,16 @@ class BasicModel(BaseModel):
                             operation="conclude",
                             sources=refs(
                                 outcome["meaning"],
-                                memory.thought_reference(outcome["record"])))
+                                reference(outcome["record"])))
                         outcome = dict(outcome, record=conclusion)
                     break
                 outcome = execute(outcome["meaning"], actions=(action,),
                                   evidence_context=outcome["evidence"],
                                   action=action)
+            return outcome
+
+        try:
+            outcome = run_context(meaning)
             state = memory.thought_state(b=row)
             if state is None:
                 raise RuntimeError("selected thought has no replayable state")
@@ -6736,7 +6781,7 @@ class BasicModel(BaseModel):
                     raise RuntimeError("selected controller could not reserve finish work")
             finish = event("finish", outcome["meaning"], outcome["evidence"],
                            operation="finish",
-                           sources=refs(meaning, memory.thought_reference(outcome["record"])
+                           sources=refs(meaning, reference(outcome["record"])
                                         if outcome["record"] is not None else None),
                            result=outcome.get("result"))
         except Exception:
@@ -6746,7 +6791,12 @@ class BasicModel(BaseModel):
             if state is not None and not state.finished:
                 if not state.forced:
                     memory.cutoff_thought(b=row, reason="controller_error")
+                while memory.thought_state(b=row).level:
+                    memory.return_thought(meaning, b=row)
                 memory.finish_thought(meaning, b=row)
+            policy = self.__dict__.get("_selected_thought_policy_records")
+            if policy is not None:
+                del policy[policy_start:]
             raise
         records = tuple(record for record in memory.thought_history(b=row)
                         if record.episode == episode)
@@ -6754,6 +6804,11 @@ class BasicModel(BaseModel):
             raise RuntimeError("selected thought did not finish its owned episode")
         if meter.spent != memory.thought_state(b=row).work_spent:
             raise RuntimeError("selected thought meter and history disagree")
+        policy = self.__dict__.get("_selected_thought_policy_records")
+        if policy is not None:
+            policy[policy_start:] = [
+                (item[0], item[1], episode, meter.spent)
+                for item in policy[policy_start:]]
         return SelectedThoughtResult(
             outcome["meaning"], dict(outcome["evidence"]), meter, records,
             outcome.get("result"))
@@ -9105,10 +9160,7 @@ class BasicModel(BaseModel):
                         answer[b:b + 1] = self._install_root_slot(symbolic[b:b + 1], rep)
                         source = "recall" if q.relation is WhatRelation.PAST else "prediction"
                 row_sources.append(source)
-        # A selected interrogative compose program now has a normal boundary
-        # path of its own.  The old What/LTMSlot controller remains available
-        # for its legacy presentation questions, but it must not add a second
-        # parity episode around a completed grammatical query.
+        # Only a completed interrogative opens the normal controller episode.
         selected_thoughts = ()
         if current_program:
             try:
@@ -9118,87 +9170,45 @@ class BasicModel(BaseModel):
                 selected_budget = 32
             selected_budget = max(0, selected_budget)
             memory = self._what_memory()
-            # ``think()`` may already have opened a retained legacy episode
-            # before its initial forward establishes that a program is
-            # grammatical. Do not interleave the two controllers in one
-            # chronological owner; the legacy path remains explicit until it
-            # is migrated separately.
+            # Never replace another live episode on the chronological owner.
             if memory is None or not any(
                     getattr(memory, "in_episode", lambda _row: False)(row)
                     for row in range(len(programs))):
                 selected_thoughts = self._run_selected_program_thoughts(
                     tuple(programs), work_budget=selected_budget)
         selected_rows = tuple(row for row, _result in selected_thoughts)
-        # A truth-valued selected operation carries a complete grammatical
-        # answer meaning.  The physical compose root may have discarded an
-        # operand during folding, so letting it remain the output seed would
-        # make the actual thought trace-only.  A typed prediction has its own
-        # explicit detached expectation adapter below; set/code/subgoal
-        # results remain deliberately non-coercible until their own adapters.
+        # All checked result kinds have an explicit target-free adapter.
+        # Sets preserve every member as separate role triples; no averaging,
+        # first-member shortcut or post-execution codebook read is allowed.
         selected_answer_rows = list(answer.unbind(0))
+        answer_meanings = [() for _ in range(B)]
         selected_answer_applied = False
         for row, selected in selected_thoughts:
             checked = getattr(selected, "result", None)
             if not isinstance(checked, ThoughtResult):
                 continue
-            if checked.result_kind == "truth":
-                resolved_meaning = selected.meaning
-                if resolved_meaning.roles.shape != selected_answer_rows[row].shape:
-                    raise RuntimeError(
-                        "selected truth meaning differs from the answer conceptual shape")
-                selected_answer_rows[row] = resolved_meaning.roles.to(
-                    device=answer.device, dtype=answer.dtype)
-                row_sources[row] = "thought"
-            elif checked.result_kind == "prediction":
-                prediction = checked.value
-                if prediction is None:
-                    # A cold ARMA read is explicitly incomplete, not an
-                    # all-zero answer or a fabricated fact.
-                    continue
-                if not isinstance(prediction, MeaningExpectation):
-                    raise TypeError(
-                        "selected prediction result must carry a MeaningExpectation")
-                roles = prediction.roles
-                presence = prediction.presence_logits
-                expected_shape = selected_answer_rows[row].shape
-                if not torch.is_tensor(roles) or roles.shape != expected_shape:
-                    raise RuntimeError(
-                        "selected prediction roles differ from the answer conceptual shape")
-                if (not torch.is_tensor(presence)
-                        or tuple(presence.shape) != (expected_shape[0],)):
-                    raise RuntimeError(
-                        "selected prediction presence logits do not match answer roles")
-                if not bool(torch.isfinite(roles).all()
-                            and torch.isfinite(presence).all()):
-                    raise FloatingPointError("selected prediction result must be finite")
-                # ``arma``'s typed estimate is an existing hard-boundary
-                # result, not a fact or a live reader path.  Its fixed
-                # [NP1, VP, NP2] role payload is the explicit answer seed;
-                # presence logits remain validated result metadata because
-                # AnswerDerivation carries a fixed three-slot concept tensor.
-                selected_answer_rows[row] = roles.detach().to(
-                    device=answer.device, dtype=answer.dtype)
-                row_sources[row] = "thought-prediction"
+            items = thought_answer_meanings(selected)
+            answer_meanings[row] = items
+            if items:
+                selected_answer_rows[row] = torch.cat(tuple(
+                    item.roles.to(device=answer.device, dtype=answer.dtype)
+                    for item in items), dim=0)
             else:
-                # Set/code/subgoal results require their own typed answer
-                # adapters and are deliberately not coerced into a concept.
-                continue
+                selected_answer_rows[row] = torch.zeros_like(selected_answer_rows[row])
+                if checked.incomplete or checked.result_kind != "set":
+                    resolved_all = False
+            row_sources[row] = ("thought" if checked.result_kind == "truth"
+                                else "thought-" + checked.result_kind)
             selected_answer_applied = True
         if selected_answer_applied:
-            answer = torch.stack(selected_answer_rows)
+            slots = max(int(item.shape[0]) for item in selected_answer_rows)
+            answer = torch.stack(tuple(F.pad(item, (0, 0, 0, slots - item.shape[0]))
+                                       for item in selected_answer_rows))
         distinct = set(row_sources)
         source = row_sources[0] if len(distinct) == 1 else "mixed"
         steps, step_trace, exact_steps = (), (), ()
-        # A grammar-owned boundary owns only its completed row.  Other rows
-        # in the same batch may still need the retained compatibility resolver;
-        # suppressing that whole pass whenever *any* row selected a thought
-        # silently leaked one row's controller decision into another.
-        if (self._thinking_enabled()
-                and any(row not in selected_rows for row in range(B))):
-            answer, steps, step_trace, exact_steps = self._resolve_step(
-                understanding, questions, per_row, answer,
-                programs=tuple(programs) if current_program else None,
-                excluded_rows=selected_rows)
+        # Completed interrogatives alone open controller episodes. Other
+        # rows retain their prepared seed without a second lexical selector.
         context, _detail = self._what_grammar_context(
             questions, device=answer.device, dtype=answer.dtype)
         references = self._select_perceptual_bindings(understanding)
@@ -9228,33 +9238,16 @@ class BasicModel(BaseModel):
             resolved=resolved_all, source=source, row_sources=tuple(row_sources),
             step=steps, exact_steps=exact_steps, program=tuple(programs),
             conditioning_context=context, questions=questions,
-            selected_thoughts=selected_thoughts)
+            selected_thoughts=selected_thoughts,
+            answer_meanings=tuple(answer_meanings))
 
-    # -- thinking: the resolve step (mathematical thinking spec 6) -----------
-    #
-    # Alec 2026-09-09: NO mathematical machinery in the runtime.  Math is a
-    # simple syntax that exercises the general grammar and the LTM thinking
-    # loop; ``plus`` is a transitive verb the grammar learns.  The resolve
-    # step therefore chooses only between ANSWERING the active question and
-    # OPENING a subquestion about one of the REFERENTS the lexicon presents
-    # (the words of the presented input); intermediate results live in LTM
-    # slots as the model's own representations, and the root answer is
-    # conditioned on them through a learned attention.  The exact
-    # arithmetic in ``bin/exact.py`` is data generation and evaluation only.
+    # -- retained memory utilities and normal thought accounting ------------
     WHAT_STEP_MAX_CANDIDATES = 32
-    WHAT_STEP_COST = 0.01          # per-iteration cost in the policy reward
+    WHAT_STEP_COST = 0.01          # per actual shared work unit
     WHAT_FORCED_COST = 0.1         # per forced closure
 
     def _what_or_think(self, questions, input_data, *, executor, record):
-        """``runBatch``'s evaluation of the batch's questions: a thinking
-        EPISODE (``think()``; the root answers are scored after parity, spec
-        8.1) when the iteration limit exceeds one, else the single ``what()``.
-        Exploration trials (``record=False``) never think."""
-        if (record and int(getattr(self, "what_thinking_iterations", 1) or 1) > 1
-                and getattr(self, "answer_synthesis", False)
-                and self._what_memory() is not None):
-            result = self.think(questions, input_data, executor=executor)
-            return tuple(result.answers)
+        """One understanding and answer boundary per batch presentation."""
         return self.what(questions, input_data, executor=executor, record=record)
 
     def _end_what_episodes(self):
@@ -9272,68 +9265,9 @@ class BasicModel(BaseModel):
         self._selected_thought_policy_records = []
         return detached
 
-    def _what_step_policy_loss(self, answer_loss, mask=None):
-        """REINFORCE credit for the resolve-step choices of the last episode
-        (spec 8.3): ``G = -L_answer - c_step * iterations - c_forced *
-        forced``, an EMA baseline, ``L = -mean((G - b) * log pi)``.  The
-        root answer is the only reward. ``mask`` limits credit to supervised
-        rows; without eligible choices neither loss nor baseline changes."""
-        records = [r for r in (self.__dict__.get("_what_policy_records") or ())
-                   if torch.is_tensor(r[2]) and r[2].requires_grad
-                   and (mask is None or (0 <= r[0] < mask.numel()
-                        and bool(mask.reshape(-1)[r[0]])))]
-        if not records:
-            return None
-        thinking = getattr(self, "_last_what_thinking", None)
-        iterations = int(getattr(thinking, "iterations", 1) or 1)
-        forced = int(getattr(thinking, "forced_closures", 0) or 0)
-        answer = (float(answer_loss.detach()) if torch.is_tensor(answer_loss)
-                  else float(answer_loss or 0.0))
-        G = -answer - self.WHAT_STEP_COST * iterations - self.WHAT_FORCED_COST * forced
-        baseline = self.__dict__.get("_what_policy_baseline")
-        advantage = G - (baseline if baseline is not None else 0.0)
-        self._what_policy_baseline = (G if baseline is None
-                                      else 0.9 * baseline + 0.1 * G)
-        log_probs = torch.stack([r[2] for r in records])
-        loss = -(float(advantage) * log_probs).mean()
-        report = self._what_report_state()
-        report["policy_thinking_credit_sum"] = (
-            report.get("policy_thinking_credit_sum", 0.0) + float(loss.detach()))
-        report["policy_thinking_batches"] = report.get("policy_thinking_batches", 0) + 1
-        report["policy_thinking_choices"] = (
-            report.get("policy_thinking_choices", 0) + len(records))
-        report["policy_thinking_return_sum"] = (
-            report.get("policy_thinking_return_sum", 0.0) + G)
-        return loss
-
     def _thinking_enabled(self):
         """True when an episode may take more than one iteration."""
         return int(getattr(self, "what_thinking_iterations", 1) or 1) > 1
-
-    def _what_step_chooser(self, *, device=None, dtype=None):
-        """The learned hard-choice head of the resolve step, built on first
-        use (state-dict keys unchanged for configurations that never think)
-        and handed to the live optimizer by ``runBatch``."""
-        module = getattr(self, "what_step_chooser", None)
-        if module is None:
-            from Language import WhatStepChooser, MLPTransformChooser
-            language = getattr(getattr(self, "symbolSpace", None),
-                               "languageLayer", None)
-            ctx_dim = (int(getattr(language, "WHAT_CONTEXT_DIM", 0) or 0)
-                       or MLPTransformChooser.WHAT_CONTEXT_DIM)
-            module = WhatStepChooser(
-                context_dim=ctx_dim,
-                hidden=getattr(self, "what_thinking_hidden", 16),
-                depth=getattr(self, "what_thinking_depth", 1))
-            if device is None or dtype is None:
-                try:
-                    parameter = next(self.parameters())
-                    device, dtype = parameter.device, parameter.dtype
-                except StopIteration:
-                    device, dtype = TheDevice.get(), torch.float32
-            module = module.to(device=device, dtype=dtype)
-            self.what_step_chooser = module
-        return module
 
     def _ltm_attention(self, width, key_width, *, device, dtype):
         """The learned conditioning of the root answer idea on the row's
@@ -9514,113 +9448,6 @@ class BasicModel(BaseModel):
         if detach:
             return self._install_root_slot(answer_row.detach(), rep.detach())
         return self._install_root_slot(answer_row, rep)
-
-    def _resolve_step(self, understanding, questions, per_row, answer, *,
-                      programs=None, excluded_rows=()):
-        """Run the resolve step for every unsettled row (spec 6.3).
-
-        Returns ``(answer, steps, trace_entries, ())``: the full-width ideas
-        with each row's root slot conditioned on its LTM outputs (ANSWER)
-        or replaced by the deferred question's referent representation
-        (OPEN), one ``StepChoice`` per row (``None`` for settled rows), and
-        the replayable trace of every choice.
-        """
-        from Output import StepChoice
-        B, _N, D = answer.shape
-        excluded_rows = tuple(excluded_rows)
-        if (any(type(row) is not int or not 0 <= row < B
-                for row in excluded_rows)
-                or len(set(excluded_rows)) != len(excluded_rows)):
-            raise ValueError("excluded resolve rows must be unique batch rows")
-        excluded = frozenset(excluded_rows)
-        iteration = int(getattr(self, "_what_current_iteration", 0) or 0)
-        pressure = float(getattr(self, "_what_current_closure_pressure", 0.0) or 0.0)
-        referents_all = self.__dict__.get("_what_referents") or {}
-        pending = self.__dict__.setdefault("_what_pending", {})
-        records = self.__dict__.setdefault("_what_policy_records", [])
-        memory = self._what_memory()
-        sample = (bool(self.training)
-                  and float(getattr(self, "what_thinking_policy_weight", 0.0) or 0.0) > 0.0)
-        chooser = self._what_step_chooser(device=answer.device, dtype=answer.dtype)
-        context, detail = self._what_grammar_context(
-            questions, device=answer.device, dtype=answer.dtype)
-        roots = self.__dict__.setdefault("_what_root_symbols", {})
-        # Rows are rebuilt functionally (no in-place writes: the attention
-        # and the stored roots keep views of these tensors on the graph).
-        rows = [answer[b] for b in range(B)]
-        steps, trace_entries = [], []
-        for b in range(B):
-            if b in excluded:
-                # This row's selected grammatical episode has already been
-                # completed under the boundary owner.  Do not let the legacy
-                # resolver open, condition, or credit a second controller.
-                steps.append(None)
-                continue
-            settled = (iteration > 0 and memory is not None
-                       and memory.what_at_parity(b=b) and pending.get(b) is None)
-            if settled:
-                stored = roots.get(b)
-                if torch.is_tensor(stored) and stored.shape == rows[b].shape:
-                    rows[b] = stored
-                steps.append(None)
-                continue
-            referents = tuple(referents_all.get(b, ()))
-            active, role = self._active_referent(b)
-            ctx_row = context[min(b, int(context.shape[0]) - 1)]
-            cands = self._enumerate_step_candidates(
-                referents, active, self._open_referents(b), self._answered_referents(b))
-            index, log_prob = chooser.choose(ctx_row, cands, pressure=pressure, sample=sample)
-            cand = cands[index]
-            labels = tuple(c["label"] for c in cands)
-            trace_entries.append({
-                "operation": f"step:{cand['kind']}", "row": b,
-                "choice": cand["label"], "candidates": labels,
-                "index": int(index), "iteration": iteration,
-                "closure_pressure": pressure, "role": role, "referent": active})
-            if log_prob is not None:
-                records.append((b, iteration, log_prob))
-            question_rep = None
-            if active is not None:
-                question_rep = self._referent_representation(
-                    understanding, b, referents, active, answer[b:b + 1],
-                    programs=programs)
-            if cand["kind"] == "open":
-                if active is not None and question_rep is not None:
-                    rows[b] = question_rep[0]
-                steps.append(StepChoice(
-                    kind="open", row=b, role=role, referent=active,
-                    operand=cand["operand"], question_rep=question_rep,
-                    log_prob=log_prob, index=int(index), candidates=labels))
-            else:
-                # ANSWER: a subquestion's answer starts from QUERY(w) (the
-                # active referent's owned interpretation in the root position,
-                # live so the answer loss reaches it); the root's answer
-                # starts from the root idea.  Either root slot then attends
-                # over this row's LTM outputs (the answers to its
-                # subquestions), so completed subquestions transform the
-                # parent's answer (spec 7.3).
-                if role != "root" and active is not None:
-                    rows[b] = self._referent_representation(
-                        understanding, b, referents, active, answer[b:b + 1],
-                        detach=False, programs=programs)[0]
-                if memory is not None and hasattr(memory, "what_context"):
-                    ltm = (detail[min(b, len(detail) - 1)] if detail else {})
-                    outputs = [v for v in ltm.get("output_representations", ())
-                               if v is not None]
-                    root = rows[b][0]
-                    delta = self._attend_ltm(root, outputs)
-                    if delta is not None:
-                        rows[b] = torch.cat(
-                            [(root + delta).unsqueeze(0), rows[b][1:]], dim=0)
-                if role == "root":
-                    roots[b] = rows[b]
-                steps.append(StepChoice(
-                    kind="answer", row=b, role=role, referent=active,
-                    question_rep=question_rep, log_prob=log_prob,
-                    index=int(index), candidates=labels))
-        self.__dict__.setdefault("_what_episode_steps", []).extend(trace_entries)
-        out = torch.stack(rows, dim=0)
-        return out, tuple(steps), tuple(trace_entries), ()
 
     def _step_choice_for_row(self, row):
         construction = getattr(self, "_last_answer_construction", None)
@@ -9963,8 +9790,6 @@ class BasicModel(BaseModel):
         width = int(getattr(getattr(cs, "subspace", None), "muxedSize", 0) or 0)
         if width > 0 and getattr(self, "question_conditioner", None) is None:
             self._question_conditioner(width, device=device, dtype=dtype)
-        if self._thinking_enabled() and getattr(self, "what_step_chooser", None) is None:
-            self._what_step_chooser(device=device, dtype=dtype)
         self._collect_fresh_synthesis_modules()
 
     def _materialize_answer_path_from_checkpoint(self, state):
@@ -9978,10 +9803,12 @@ class BasicModel(BaseModel):
         except StopIteration:
             device, dtype = TheDevice.get(), torch.float32
         built = 0
-        for space_name in ("conceptualSpace", "perceptualSpace", "outputSpace"):
-            space = getattr(self, space_name, None)
-            if space is None:
-                continue
+        answer_spaces = tuple(getattr(self, name, None) for name in (
+            "conceptualSpace", "perceptualSpace", "outputSpace"))
+        owners = tuple((name, module) for name, module in
+                       self.named_modules(remove_duplicate=False)
+                       if any(module is owner for owner in answer_spaces))
+        for space_name, space in owners:
             for module_name in ("synthesis_layer", "percept_adapter"):
                 if getattr(space, module_name, None) is not None:
                     continue
@@ -10030,6 +9857,13 @@ class BasicModel(BaseModel):
             # A legacy checkpoint may contain only the old symbol-width
             # conditioner. Keep it and initialise the newly active conceptual
             # width at zero; never fabricate a learned wide weight by padding.
+            if getattr(self, "answer_synthesis", False):
+                conceptual = getattr(self, "conceptualSpace", None)
+                active_width = int(getattr(
+                    getattr(conceptual, "subspace", None), "muxedSize", 0) or 0)
+                if active_width > 0 and str(active_width) not in table:
+                    self._question_conditioner(active_width, device=device, dtype=dtype)
+                    built += 1
             for width, module in table.items():
                 state.setdefault(f"{prefix}{width}{suffix}", torch.zeros_like(module.weight))
             ws = getattr(self, "wholeSpace", None)
@@ -10049,33 +9883,18 @@ class BasicModel(BaseModel):
             key_width = int(state[key_k].shape[1])
             self._ltm_attention(width, key_width, device=device, dtype=dtype)
             built += 1
-        key = "what_step_chooser.mlp.0.weight"
-        if key in state and getattr(self, "what_step_chooser", None) is None:
-            from Language import WhatStepChooser
-            hidden, in_dim = (int(v) for v in state[key].shape)
-            # Hidden blocks occupy indices 0, 2, ...; the last Linear is
-            # the scalar head. Infer topology when loading a lazily absent
-            # chooser, including checkpoints made with nondefault depth.
-            prefix = "what_step_chooser.mlp."
-            indices = sorted(int(k[len(prefix):].split(".")[0])
-                             for k in state
-                             if k.startswith(prefix) and k.endswith(".weight")
-                             and k[len(prefix):].split(".")[0].isdigit())
-            if len(indices) < 2 or indices != list(range(0, 2 * len(indices), 2)):
-                raise ValueError("invalid WhatStepChooser checkpoint layer layout")
-            for layer, index in enumerate(indices):
-                expected = ((1, hidden) if layer == len(indices) - 1 else
-                            (hidden, in_dim if layer == 0 else hidden))
-                weight_key = f"{prefix}{index}.weight"
-                if tuple(state[weight_key].shape) != expected:
-                    raise ValueError(
-                        f"invalid WhatStepChooser checkpoint shape for {weight_key}: "
-                        f"expected {expected}, got {tuple(state[weight_key].shape)}")
-            module = WhatStepChooser(
-                context_dim=in_dim - WhatStepChooser.CANDIDATE_FEATURES,
-                hidden=hidden, depth=len(indices) - 1)
-            self.what_step_chooser = module.to(device=device, dtype=dtype)
-            built += 1
+        language = getattr(self, "languageSpace", None)
+        if language is not None:
+            for key in tuple(state):
+                suffix = "meaning_codec.schema"
+                if key.endswith(suffix):
+                    language.restore_meaning_learning(state, key[:-len(suffix)], _boundary_registry(self))
+            self._collect_fresh_synthesis_modules()
+        # Retired controllers had incompatible action/context schemas.
+        # Discard their parameters explicitly; never reinterpret their logits.
+        for key in tuple(state):
+            if key.startswith(("what_step_chooser.", "_next_op_policy.", "_predict_next_scorer.")):
+                del state[key]
         # Width-owned normal selected-thought choosers are lazy like the
         # answer conditioner. Rebuild exactly the saved MLP shape before the
         # strict state-dict audit; never infer a semantic width from a native
@@ -10146,6 +9965,68 @@ class BasicModel(BaseModel):
             modules.append(legacy)
         return modules
 
+    def configure_meaning_learning(self, word_rows, word_values, *, hidden=48):
+        """Install the language parameters and register them with the optimizer."""
+        module = self.languageSpace.configure_meaning_learning(
+            _boundary_registry(self), word_rows, word_values, hidden=hidden)
+        self._collect_fresh_synthesis_modules()
+        return module
+
+    def _generate_thought_words(self, derivation):
+        """Realize typed answer members through the trained language decoder."""
+        language = getattr(self, "languageSpace", None)
+        if getattr(language, "meaning_codec", None) is None or not derivation.answer_meanings:
+            return None
+        rows, truncated = [], []
+        for meanings in derivation.answer_meanings:
+            remaining = min(128, self._walk_budget())
+            outputs, incomplete = [], False
+            for meaning in meanings:
+                if remaining <= 0:
+                    incomplete = True
+                    break
+                output = language.generate_meaning(
+                    meaning, _boundary_registry(self), max_words=remaining)
+                if output is None:
+                    return None
+                outputs.append(output)
+                remaining -= len(output.words)
+                incomplete = incomplete or output.truncated
+            if not outputs:
+                return None
+            rows.append(torch.cat(tuple(output.words for output in outputs)))
+            truncated.append(incomplete)
+        width = max(len(row) for row in rows)
+        return (torch.stack(tuple(F.pad(row, (0, 0, 0, width - len(row))) for row in rows)),
+                torch.tensor(truncated, device=rows[0].device))
+
+    def _realize_thought_sentences(self, selected):
+        """Decode only the selected result, using WORD-owned orthography."""
+        language = getattr(self, "languageSpace", None)
+        if getattr(language, "meaning_codec", None) is None:
+            return ()
+        owner = self.conceptualSpace
+        sentences = []
+        for meaning in thought_answer_meanings(selected):
+            output = language.generate_meaning(meaning, _boundary_registry(self), max_words=128)
+            if output is None or output.truncated:
+                continue
+            words = []
+            for source, index in output.selections:
+                if source == "role":
+                    reference = meaning.role_refs[index]
+                    if not (isinstance(reference, tuple) and reference[0] == "sym"):
+                        break
+                    index = owner._csw_row_of(reference[1])
+                raw = owner.word_surface_for_row(index) if index is not None else None
+                if raw is None:
+                    break
+                words.append(raw.decode("utf-8"))
+            else:
+                if words:
+                    sentences.append(" ".join(words))
+        return tuple(sentences)
+
     def _selected_thought_chooser_modules(self):
         """One normal-controller chooser per semantic payload width."""
         table = getattr(self, "selected_thought_choosers", None)
@@ -10163,7 +10044,7 @@ class BasicModel(BaseModel):
         fresh = self.__dict__.setdefault("_fresh_synthesis_params", [])
         modules = (self._question_conditioner_modules()
                    + self._selected_thought_chooser_modules() + [
-            getattr(self, "what_step_chooser", None),
+            getattr(getattr(self, "languageSpace", None), "meaning_codec", None),
             getattr(self, "ltm_attention", None)])
         for module in modules:
             if module is not None and id(module) not in registered:
@@ -10193,7 +10074,7 @@ class BasicModel(BaseModel):
             params.extend(conditioner.parameters())
         for chooser in self._selected_thought_chooser_modules():
             params.extend(chooser.parameters())
-        for module in (getattr(self, "what_step_chooser", None),
+        for module in (getattr(getattr(self, "languageSpace", None), "meaning_codec", None),
                        getattr(self, "ltm_attention", None),
                        getattr(getattr(self, "languageSpace", None), "generate_policy", None)):
             if module is not None:
@@ -10231,7 +10112,11 @@ class BasicModel(BaseModel):
         output_truncated = None
         walked = None
         idea = None
-        if derivation.program:
+        linguistic = self._generate_thought_words(derivation)
+        if linguistic is not None:
+            walked, output_truncated = linguistic
+            object.__setattr__(self, "_output_truncated", output_truncated)
+        if derivation.program and walked is None:
             # The answer-materialisation boundary (spec sections 1-2): the
             # resolved answer as its own conceptual idea, the operand of the
             # output loop; the walk un-folds it into words (the second
@@ -10658,18 +10543,6 @@ class BasicModel(BaseModel):
             "credit": report.get("policy_credit_sum", 0.0)
                       / max(1, report.get("policy_batches", 0)),
             "batches": report.get("policy_batches", 0),
-            # The resolve-step chooser's credit (mathematical thinking spec
-            # 8.3), distinct from the grammar chooser's and from the
-            # continuous answer credit.
-            "thinking": {
-                "weight": float(getattr(self, "what_thinking_policy_weight", 0.0) or 0.0),
-                "credit": report.get("policy_thinking_credit_sum", 0.0)
-                          / max(1, report.get("policy_thinking_batches", 0)),
-                "mean_return": report.get("policy_thinking_return_sum", 0.0)
-                               / max(1, report.get("policy_thinking_batches", 0)),
-                "batches": report.get("policy_thinking_batches", 0),
-                "choices": report.get("policy_thinking_choices", 0),
-            },
             "selected_thought": {
                 "weight": float(getattr(
                     self, "selected_thought_policy_weight", 0.0) or 0.0),
@@ -11087,106 +10960,26 @@ class BasicModel(BaseModel):
 
     def think(self, question, input_data, *, max_iterations=None,
               pressure_schedule=None, executor=None):
-        """Evaluate ``what()`` iteratively until every row's LTM slot parity
-        is restored (What spec 7.2; mathematical thinking spec 6.2).
+        """Understand once and resolve through the ordinary thought controller.
 
-        One ``forward()`` per episode: iteration 0 is the ordinary
-        ``what()``; later iterations reuse its execution through the
-        ``execution`` seam and re-run the resolve step over the enlarged LTM
-        context.  ``max_iterations`` defaults to ``<whatThinkingIterations>``;
-        ``pressure_schedule`` defaults to ``<whatThinkingPressure>``.  Rows
-        still open at the limit are closed LIFO with best-effort answers.
-        Accepts one question or a batch; the result carries one answer per
-        row (``answers``) and, for compatibility, the first (``answer``).
+        WhatQuestion retains its serving/temporal interface. Any completed
+        interrogative program is handled by run_selected_thought with the one
+        shared work budget; this adapter owns no iterative frame loop.
         """
         questions = question_batch(question)
         if not questions:
             raise TypeError("Model.think expects one WhatQuestion or a batch")
-        limit = int(max_iterations if max_iterations is not None
-                    else getattr(self, "what_thinking_iterations", 1) or 1)
-        if limit < 1:
+        if max_iterations is not None and int(max_iterations) < 1:
             raise ValueError("max_iterations must be positive")
-        memory = self._what_memory()
-        rows = list(range(len(questions)))
-        if memory is not None and hasattr(memory, "begin_what_episode"):
-            for b in rows:
-                memory.begin_what_episode(b)
-        first = self.what(
-            question, input_data, executor=executor, record=True,
-            iteration=0, closure_pressure=0.0)
-        answers = list(first) if isinstance(first, tuple) else [first]
-        execution = answers[0].execution
-        slots = [a.ltm_slot for a in answers if a.ltm_slot is not None]
-        pressures = [0.0]
-        iterations = 1
-        if memory is None:
-            if not all(a.available for a in answers):
-                raise RuntimeError(
-                    "iterative thinking requires the configured interaction LTM")
-            result = WhatThinkingResult(
-                answer=answers[0], slots=slots, iterations=iterations,
-                closure_pressures=pressures, answers=tuple(answers))
-            self._record_thinking(result)
-            return result
-
-        def open_rows():
-            return [b for b in rows if not memory.what_at_parity(b=b)]
-
-        forced = 0
-        self._thinking_active = True
-        try:
-            while open_rows() and iterations < limit:
-                pressure = (float(pressure_schedule(iterations, limit))
-                            if pressure_schedule is not None
-                            else self._thinking_pressure(iterations, limit))
-                pressure = max(pressures[-1], pressure)
-                result = self.what(
-                    question, input_data, executor=executor,
-                    execution=execution, record=True, iteration=iterations,
-                    closure_pressure=pressure)
-                latest = list(result) if isinstance(result, tuple) else [result]
-                for b, a in enumerate(latest):
-                    if a.ltm_slot is not None:
-                        slots.append(a.ltm_slot)
-                        answers[b] = a
-                pressures.append(pressure)
-                iterations += 1
-
-            for b in open_rows():
-                external, conceptual = self._best_effort_what(
-                    answers[b], input_data, b=b)
-                final_answer = None
-                while not memory.what_at_parity(b=b):
-                    pressure = max(1.0, pressures[-1])
-                    closing = LTMSlot(
-                        output=conceptual, question=questions[b],
-                        iteration=iterations + forced,
-                        closure_pressure=pressure, forced=True,
-                        grammar_trace=("grammar:what_forced_close",))
-                    stored = memory.append_what_slot(closing, b=b)
-                    slots.append(stored)
-                    forced += 1
-                    final_answer = WhatAnswer(
-                        question=questions[b], what=external, available=True,
-                        provenance="model", source_where=questions[b].where,
-                        grammar_trace=stored.grammar_trace,
-                        ltm_slot=stored, execution=answers[b].execution)
-                answers[b] = final_answer
-            if forced:
-                pressures.extend([max(1.0, pressures[-1])] * forced)
-            self._what_pending = {}
-        finally:
-            self._thinking_active = False
-            if not self.training and hasattr(memory, "end_what_episode"):
-                for b in rows:
-                    memory.end_what_episode(b)
-
-        if not all(a.available for a in answers):
-            raise RuntimeError("thinking reached parity without a root response")
+        first = self.what(question, input_data, executor=executor, record=True,
+                          iteration=0, closure_pressure=0.0)
+        answers = first if isinstance(first, tuple) else (first,)
+        if not all(answer.available for answer in answers):
+            raise RuntimeError("no completed grammatical answer is available")
         result = WhatThinkingResult(
-            answer=answers[0], slots=slots, iterations=iterations,
-            forced_closures=forced, closure_pressures=pressures,
-            answers=tuple(answers))
+            answer=answers[0], answers=answers,
+            slots=[answer.ltm_slot for answer in answers if answer.ltm_slot is not None],
+            iterations=1, closure_pressures=[0.0])
         self._last_what_thinking = result
         self._record_thinking(result)
         return result
@@ -13267,7 +13060,7 @@ class BasicModel(BaseModel):
             selected_forms = tuple(
                 source_forms[index] if 0 <= index < len(source_forms) else None
                 for index in pos.detach().to("cpu").tolist())
-            entries.append(AnswerProgram(
+            entry = AnswerProgram(
                 rows=rows[b].index_select(0, pos.to(rows.device)),
                 word_rows=word_rows[b].index_select(0, pos.to(word_rows.device)),
                 activations=activations[b].index_select(0, pos.to(activations.device)),
@@ -13275,7 +13068,13 @@ class BasicModel(BaseModel):
                 actions=acts[:L], targets=targets[b], end_state=end_state[b],
                 concept_ids=(concept_ids[b].index_select(0, pos.to(concept_ids.device))
                              if torch.is_tensor(concept_ids) else None),
-                lexical_forms=selected_forms))
+                lexical_forms=selected_forms)
+            language = getattr(self, "languageSpace", None)
+            if getattr(language, "meaning_codec", None) is not None:
+                from dataclasses import replace
+                entry = replace(entry, meaning_captured=True,
+                    selected_meaning=language.program_meaning(entry, _boundary_registry(self)))
+            entries.append(entry)
         return tuple(entries)
 
     @staticmethod
@@ -14366,7 +14165,7 @@ class BasicModel(BaseModel):
                  optimizer=None, batch_override=None, progress=None,
                  superposition_temperature=None, exploration_trial=False,
                  trial_mode="reconstruct", questions=None,
-                 source_rows=None, attach_outputs=False):
+                 source_rows=None, attach_outputs=False, meaning_supervision=None):
         """Run a single batch: forward pass, loss, and (if training) backward + step.
 
         ``superposition_temperature`` (two-pass learning): when not None, the
@@ -14409,6 +14208,10 @@ class BasicModel(BaseModel):
             attach_outputs: on runtime inference, retain each generated
                 response on the presentation's output side with model
                 provenance. Supplied labels remain unchanged.
+            meaning_supervision: optional per-row ``(meaning, realization)``
+                annotations for the completed sentence. A None meaning labels
+                an unknown operation. Only the loss after output reads these
+                targets; configure_meaning_learning installs the parameters.
 
         Returns:
             (BatchResult, nextBatchNum) on success, or (None, batchNum) when
@@ -14864,6 +14667,7 @@ class BasicModel(BaseModel):
             lossOut = torch.zeros((), device=TheDevice.get())
             output_weight = 0.0
             output_policy_loss = None
+            selected_answer_credit = None
             # ``Data.what()`` is the answer-loss authority (What spec Step 5):
             # the question's desired answer replaces the loader's incidental
             # ``outputTensor``; unavailable rows are masked out of the term.
@@ -14886,6 +14690,9 @@ class BasicModel(BaseModel):
                     lossOut = self._reverse_event_loss(
                         _surface[_answer_mask], _surface_target[_answer_mask])
                     output_weight = 1.0
+                    if train and float(getattr(self, "selected_thought_policy_weight", 0.0)) > 0:
+                        selected_answer_credit = self._selected_thought_answer_errors(
+                            _surface, _surface_target, _answer_mask, what_questions, surface=True)
                     if (train and trial_mode != "predict"
                             and float(getattr(self, "output_policy_weight", 0.0)) > 0.0):
                         output_policy_loss = self._output_action_credit(
@@ -14903,6 +14710,9 @@ class BasicModel(BaseModel):
                     _pred = self._align_output_pred(outputDataPred,
                                                     _scored_target)
                     if _pred is not None:
+                        if train and float(getattr(self, "selected_thought_policy_weight", 0.0)) > 0:
+                            selected_answer_credit = self._selected_thought_answer_errors(
+                                _pred, _scored_target, _answer_mask, what_questions)
                         if (train and trial_mode != "predict" and _answer_authority
                                 and float(getattr(self, "output_policy_weight", 0.0)) > 0.0):
                             output_policy_loss = self._output_action_credit(
@@ -14918,6 +14728,7 @@ class BasicModel(BaseModel):
                 lossOut = torch.zeros((), device=TheDevice.get())
                 output_weight = 0.0
                 output_policy_loss = None
+                selected_answer_credit = None
                 self._warn_zeroed_channel(
                     "output_loss_exception",
                     f"supervised output loss zeroed by "
@@ -15175,6 +14986,18 @@ class BasicModel(BaseModel):
                 intra_loss = None
 
             totalLoss = self._primary_loss(lossOut, lossIn, sbow)
+            if train and trial_mode != "predict" and meaning_supervision is not None:
+                programs = self._last_understanding.answer_program
+                annotations = tuple(meaning_supervision)
+                if len(annotations) != len(programs) or any(p is None for p in programs):
+                    raise ValueError("meaning supervision requires one completed program per row")
+                examples = tuple((program, *annotation)
+                                 for program, annotation in zip(programs, annotations))
+                meaning_loss = self.languageSpace.meaning_learning_loss(
+                    examples, _boundary_registry(self))
+                totalLoss = totalLoss + meaning_loss
+                self.record_loss("linguistic_meaning", meaning_loss,
+                    space="LanguageSpace", category="supervision")
             if train and trial_mode != "predict" and output_policy_loss is not None:
                 totalLoss = totalLoss + self.output_policy_weight * output_policy_loss
                 self.record_loss(
@@ -15310,53 +15133,12 @@ class BasicModel(BaseModel):
                         weight=self.answer_loss_weight,
                         space="SymbolSpace", category="policy")
 
-            # Step 2: the next-idea POLICY loss -- trains the {arma, retrieval,
-            # deduction} blend to predict the observed next end-state root.
-            # Default weight 0.0 -> skipped -> byte-identical; no-op without a
-            # >=2-entry discourse chain.
-            # Thinking Kernel next-op policy loss (§12.6): behavior-clones the
-            # NextOpPolicy head on grounded kernel traces generated from the
-            # reasoning store (the teacher runs with materialize=False, so
-            # trace generation never writes LTM). Default weight 0.0 ->
-            # skipped -> byte-identical; also a no-op without a head / store /
-            # 2-hop chains.
-            if train and float(
-                    getattr(self, "thinking_loss_weight", 0.0) or 0.0) > 0.0:
-                try:
-                    tk_loss = self._thinking_policy_loss()
-                except Exception:
-                    tk_loss = None         # a kernel hiccup must not abort training
-                if tk_loss is not None:
-                    totalLoss = totalLoss + self.thinking_loss_weight * tk_loss
-                    self.record_loss(
-                        "thinking", tk_loss,
-                        weight=self.thinking_loss_weight,
-                        space="SymbolSpace", category="policy")
-
-            # Mathematical thinking spec 8.3: the WhatStepChooser's hard
-            # open / answer / execute choices are credited by their policy
-            # objective (root answer loss as reward), never by autograd
-            # through an argmax. Default weight 0.0 -> skipped, and the
-            # chooser takes the argmax -> byte-identical.
-            if train and float(
-                    getattr(self, "what_thinking_policy_weight", 0.0) or 0.0) > 0.0:
-                pol_loss = self._what_step_policy_loss(
-                    lossOut, mask=_answer_mask if getattr(self, "answer_synthesis", False) else None)
-                if pol_loss is not None:
-                    totalLoss = totalLoss + self.what_thinking_policy_weight * pol_loss
-                    self.record_loss(
-                        "what_step_policy", pol_loss,
-                        weight=self.what_thinking_policy_weight,
-                        space="SymbolSpace", category="policy")
-
-            # Ordinary selected grammatical questions use their own hard
-            # query/finish controller. Its reward is likewise the later root
-            # answer error (never a query target or an oracle subgoal), with a
-            # separate baseline and report channel from legacy What parity.
-            if train and float(
+            # One hard-choice credit contract for completed grammatical
+            # episodes, using the shared meter and the later answer error.
+            if train and selected_answer_credit is not None and float(
                     getattr(self, "selected_thought_policy_weight", 0.0) or 0.0) > 0.0:
                 selected_pol_loss = self._selected_thought_policy_loss(
-                    lossOut, mask=_answer_mask if getattr(self, "answer_synthesis", False) else None)
+                    selected_answer_credit[0], mask=selected_answer_credit[1])
                 if selected_pol_loss is not None:
                     totalLoss = (totalLoss + self.selected_thought_policy_weight
                                  * selected_pol_loss)
@@ -15365,18 +15147,6 @@ class BasicModel(BaseModel):
                         weight=self.selected_thought_policy_weight,
                         space="SymbolSpace", category="policy")
 
-            if train and float(
-                    getattr(self, "predict_next_loss_weight", 0.0) or 0.0) > 0.0:
-                try:
-                    pn_loss = self._predict_next_loss()
-                except Exception:
-                    pn_loss = None
-                if pn_loss is not None:
-                    totalLoss = totalLoss + self.predict_next_loss_weight * pn_loss
-                    self.record_loss(
-                        "predict_next", pn_loss,
-                        weight=self.predict_next_loss_weight,
-                        space="SymbolSpace", category="policy")
 
             # Method-1 -> Method-2 leaf distillation (snap design doc step
             # 3): the exact-leaf teacher supervises a from-root decoder so
@@ -16794,28 +16564,14 @@ class BasicModel(BaseModel):
         # 0.0 -> no answer-loss term (byte-identical).
         self.answer_loss_weight = float(
             TheXMLConfig.training("answerLossWeight", default=0.0) or 0.0)
-        # Step 2: the next-idea POLICY loss weight (trains the {arma, retrieval,
-        # deduction} blend). 0.0 -> no term -> byte-identical.
-        self.predict_next_loss_weight = float(
-            TheXMLConfig.training("predictNextLossWeight", default=0.0) or 0.0)
-        # Thinking Kernel next-op policy loss weight (spec §12.6): behavior-
-        # clones the NextOpPolicy head on successful kernel traces generated
-        # from the reasoning store. 0.0 -> no term -> byte-identical.
-        self.thinking_loss_weight = float(
-            TheXMLConfig.training("thinkingLossWeight", default=0.0) or 0.0)
-        # Mathematical thinking spec 8.3: the WhatStepChooser policy weight
-        # (REINFORCE on the resolve-step choices with the root answer loss
-        # as reward and an EMA baseline). 0.0 -> no term, argmax choices ->
-        # byte-identical.
-        self.what_thinking_policy_weight = float(
-            TheXMLConfig.training("whatThinkingPolicyWeight", default=0.0) or 0.0)
-        # Ordinary selected grammatical questions use a distinct boundary
-        # chooser.  Its default is off for policy sampling/credit, while the
-        # zero-initialised chooser still preserves deterministic query-first
-        # execution when a completed interrogative program is present.
-        self.selected_thought_policy_weight = float(
-            TheXMLConfig.training("selectedThoughtPolicyWeight", default=0.0)
-            or 0.0)
+        if float(TheXMLConfig.training("predictNextLossWeight", default=0.0) or 0.0):
+            raise ValueError("predictNextLossWeight is retired; use the normal thought policy")
+        # Legacy loss knobs migrate into the one hard-choice contract.
+        self.thinking_loss_weight = float(TheXMLConfig.training("thinkingLossWeight", default=0.0) or 0.0)
+        self.what_thinking_policy_weight = float(TheXMLConfig.training("whatThinkingPolicyWeight", default=0.0) or 0.0)
+        self.selected_thought_policy_weight = max(
+            float(TheXMLConfig.training("selectedThoughtPolicyWeight", default=0.0) or 0.0),
+            self.thinking_loss_weight, self.what_thinking_policy_weight)
         try:
             self.selected_thought_budget = max(0, int(TheXMLConfig.get(
                 "architecture.selectedThoughtBudget", default=32) or 0))
@@ -23461,7 +23217,7 @@ class BasicModel(BaseModel):
             spaces = []
         return spaces or []
 
-    def _reasoning_tooluser(self, spaces):
+    def _legacy_bridge_components(self, spaces):
         """Lazily build + cache the reasoning policy's soft components: the
         InterveningIdeaGenerator (an MLP query head) + a GlobalAttention, sized
         to the truth-space content width. Registered as submodules so they ride
@@ -23486,7 +23242,7 @@ class BasicModel(BaseModel):
             if k is not None and torch.is_tensor(k):
                 dev = k.device
                 break
-        from reasoning import InterveningIdeaGenerator, NextIdeaScorer
+        from reasoning import InterveningIdeaGenerator
         gen = InterveningIdeaGenerator(dim=int(Dc))
         self._intervening_generator = gen if dev is None else gen.to(dev)
         if self.global_attention is not None:
@@ -23494,124 +23250,70 @@ class BasicModel(BaseModel):
         else:
             ga = GlobalAttention()
             self._reasoning_ga = ga if dev is None else ga.to(dev)
-        # Step 2: the next-idea blend scorer (the learned per-tool prior over
-        # {arma, retrieval, deduction}); built alongside the generator so it
-        # joins the optimizer + state_dict.
-        sc = NextIdeaScorer(dim=int(Dc))
-        self._predict_next_scorer = sc if dev is None else sc.to(dev)
         return self._intervening_generator, self._reasoning_ga
 
-    @torch.no_grad()
-    def reason_about(self, query_spec, *, spaces=None, beam=8):
-        """Evaluate hard query evidence, bounded by reasoning_iterations.
+    def _run_public_thought(self, meaning, *, row=0, work_budget=32):
+        """Admit a completed meaning to the one normal controller.
 
-        PartOf reads conceptual reference records only. The older global
-        vector-proposal route is an explicit legacy experiment; this entry
-        neither initializes it nor reads its cross-space candidate field.
-        Returns None when reasoning is disabled. ``spaces`` is retained only
-        for caller compatibility. Grammatical-VP dispatch is a later migration.
+        Public calls have no later optimizer step. Their ordinary episode is
+        detached on return, and permission is restored even on rejection.
+        Natural text must first pass through ``understand``; it never selects
+        an executor by matching words.
         """
         self._assert_queries_outside_sentence()
-        N = int(getattr(self, "reasoning_iterations", 0) or 0)
-        if N <= 0:
+        if work_budget <= 0:
             return None
-        from reasoning import TruthGroundedReasoner, NeuralToolUser
-        reasoner = TruthGroundedReasoner(self)
-        tool = NeuralToolUser(reasoner, iterations=N, beam=beam)
-        return tool.run(query_spec)
+        if not isinstance(meaning, ConceptualMeaning):
+            meaning = self._public_query_meaning(meaning, row=row)
+        if meaning is None or meaning.mode != "interrogative":
+            return None
+        with self._query_boundary_scope((row,)):
+            try:
+                result = self.run_selected_thought(
+                    meaning, row=row, work_budget=int(work_budget))
+                self._last_selected_thought = result
+                return result
+            finally:
+                self._end_finished_selected_thought_episodes()
+
+    def _public_query_meaning(self, query, *, row=0):
+        """Convert an explicit legacy typed request, never natural language."""
+        from reasoning import QuerySpec, KIND_IS_PART, KIND_IS_EQUAL, KIND_IS_TRUE
+        if not isinstance(query, QuerySpec):
+            raise TypeError("public reasoning requires a completed ConceptualMeaning")
+        registry = _boundary_registry(self)
+        if registry is None:
+            return None
+        if query.predicate == KIND_IS_PART:
+            if query.domain not in (None, "conceptual-taxonomy"):
+                raise ValueError("part requires the conceptual taxonomy domain")
+            opened = tuple(role for role, value in (
+                ("I1", query.left), ("I2", query.right)) if value is None)
+            arguments = tuple(value for value in (query.left, query.right)
+                              if value is not None)
+            return registry.form("part", *arguments, open_roles=opened,
+                                 polarity=query.desired_polarity)
+        if query.predicate == KIND_IS_EQUAL:
+            return registry.form("equal", query.left, query.right,
+                                 polarity=query.desired_polarity)
+        if query.predicate == KIND_IS_TRUE:
+            return registry.form("exist", ConceptualMeaning.from_description(query.left),
+                                 polarity=query.desired_polarity)
+        raise ValueError("unsupported typed grammatical query")
 
     @torch.no_grad()
-    def think_about(self, query_spec, *, spaces=None):
-        """Run the Thinking Kernel on a ``QuerySpec`` (doc/plans/
-        thinking_kernel_spec.md): the runtime-enforced lookup/part/think/query/
-        answer loop over a budgeted STM frame stack. Returns the kernel's
-        ``ChildResult`` (value + truth interval + trust + trace), or ``None``
-        when the kernel is off (``thinking_budget == 0``) — byte-identical.
-        PartOf uses conceptual reference records. Taxonomy proofs do not write
-        world-fact lemmas. ``spaces`` remains a compatibility argument; this
-        path does not initialize the legacy global vector-proposal route.
-        This frame controller predates the ordinary levelled-thought design.
-        """
-        self._assert_queries_outside_sentence()
-        budget = int(getattr(self, "thinking_budget", 0) or 0)
-        if budget <= 0:
-            return None
-        from reasoning import TruthGroundedReasoner
-        from thinking import ThinkingKernel, KernelPolicy
-        reasoner = TruthGroundedReasoner(self)
-        kernel = ThinkingKernel(
-            reasoner, budget=budget,
-            policy=KernelPolicy(
-                next_op=getattr(self, "_next_op_policy", None)))
-        return kernel.run(query_spec)
+    def reason_about(self, query_spec, *, spaces=None, beam=8, row=0):
+        """Run a completed request through the grammatical thought controller."""
+        return self._run_public_thought(
+            query_spec, row=row,
+            work_budget=int(getattr(self, "reasoning_iterations", 0) or 0))
 
-    def _thinking_policy_loss(self):
-        """§12.6: the next-op behavior-cloning loss. Generates grounded kernel
-        traces from conceptual-taxonomy 2-hop PartOf targets (the deterministic
-        teacher, materialize=False -- no LTM writes in the hot loop) and
-        cross-entropy-trains the NextOpPolicy head on their (state, op) pairs.
-        ``None`` when the head is not built / no store / no chains -- so the
-        caller adds nothing (byte-identical). Gated by
-        ``thinking_loss_weight > 0`` at the call site."""
-        head = getattr(self, "_next_op_policy", None)
-        if head is None:
-            return None
-        from reasoning import TruthGroundedReasoner
-        from thinking import ThinkingKernel, traces_from_store, next_op_loss
-        reasoner = TruthGroundedReasoner(self)
-        budget = int(getattr(self, "thinking_budget", 0) or 0) or 16
-        kernel = ThinkingKernel(reasoner, budget=budget, materialize=False)
-        examples = traces_from_store(kernel)
-        if not examples:
-            return None
-        return next_op_loss(head, examples)
-
-    def reason_predict_next(self, state_idea, *, spaces=None):
-        """Step 2: the differentiable next-idea blend over {arma, retrieval,
-        deduction}. Returns ``(e_hat, weights)`` or ``None`` when reasoning is
-        off (reasoning_iterations == 0). Grad-enabled (NOT @no_grad): the
-        training hook calls this so the generator query head + the blend scorer
-        learn which tool predicts the next idea."""
-        N = int(getattr(self, "reasoning_iterations", 0) or 0)
-        if N <= 0:
-            return None
-        from reasoning import TruthGroundedReasoner, NeuralToolUser
-        reasoner = TruthGroundedReasoner(self)
-        if spaces is None:
-            spaces = self._reasoning_spaces()
-        gen, ga = self._reasoning_tooluser(spaces)
-        if gen is None:
-            return None
-        tool = NeuralToolUser(reasoner, generator=gen, ga=ga, spaces=spaces,
-                              iterations=N, beam=8)
-        return tool.reason_predict_next(
-            state_idea, spaces=spaces,
-            scorer=getattr(self, "_predict_next_scorer", None))
-
-    def _predict_next_loss(self):
-        """Step 2: train the next-idea POLICY. ``e_gold`` = the observed next
-        end-state root (the SAME chain ``arma`` reads, DETACHED); the state = the
-        prior root. ``L = 1 - cos(e_hat, e_gold)``. ``None`` when there is no
-        >=2-entry chain / reasoning off / no predictor -- so the caller adds
-        nothing (byte-identical). Gated by ``predict_next_loss_weight > 0``."""
-        if int(getattr(self, "reasoning_iterations", 0) or 0) <= 0:
-            return None
-        disc = getattr(getattr(self, "symbolSpace", None), "discourse", None)
-        if disc is None or getattr(disc, "_inter_predictor", None) is None:
-            return None
-        chain = disc.get_stm_chain(n=2, b=0)
-        if len(chain) < 2:
-            return None
-        state = disc._reduce_end_state_to_root(chain[-2][1]).detach().reshape(-1)
-        e_gold = disc._reduce_end_state_to_root(chain[-1][1]).detach().reshape(-1)
-        out = self.reason_predict_next(state)
-        if out is None or out[0] is None:
-            return None
-        from reasoning import _fit_dim
-        e_hat = _fit_dim(out[0], int(e_gold.numel()))
-        eh = e_hat / e_hat.norm().clamp_min(1e-12)
-        eg = e_gold / e_gold.norm().clamp_min(1e-12)
-        return 1.0 - (eh * eg).sum()        # 1 - cosine; grad via the blend
+    @torch.no_grad()
+    def think_about(self, query_spec, *, spaces=None, row=0):
+        """The thinking API shares the normal controller and ordinary history."""
+        return self._run_public_thought(
+            query_spec, row=row,
+            work_budget=int(getattr(self, "thinking_budget", 0) or 0))
 
     def _answer_policy_loss(self):
         """Phase C: the differentiable answer-policy loss. Trains the soft
@@ -23668,7 +23370,7 @@ class BasicModel(BaseModel):
 
     def _realize_ideas(self, result, *, n=None):
         """Phase D: render ``result.ideas`` (already relevance-sorted + N-capped
-        in ``NeuralToolUser.run``) to surface sentences, top-``n`` by relevance,
+        by a numerical reasoning experiment) to surface sentences, top-``n`` by relevance,
         dropping empties. Empty for isTrue/isEqual leaves (no intervening ideas)
         -- the caller falls back to posture + trace."""
         ideas = getattr(result, "ideas", None) or []
@@ -23681,120 +23383,59 @@ class BasicModel(BaseModel):
                 out.append(s)
         return out
 
-    def _detect_query(self, user_msg):
-        """Legacy surface adapter, gated by the structural thought catalogue.
-
-        This public serving fallback still hands a parsed surface to the
-        historical ``QuerySpec`` reasoner, but it never revives a ``<Queries>``
-        block or an is-/query-alias as its authority.  It is available only
-        when the grammar structurally declares one of the canonical operations
-        that adapter can represent (``exist``, ``part``, or ``equal``).
-        """
-        try:
-            from Language import TheGrammar
-            if hasattr(TheGrammar, "_ensure_configured"):
-                TheGrammar._ensure_configured()
-            operation_ids = {
-                operation.semantic_id
-                for operation in getattr(TheGrammar, "thought_operations", ())}
-            has_query = bool(operation_ids.intersection(
-                {"exist", "part", "equal"}))
-        except Exception:
-            has_query = False
-        if not has_query:
-            return None, None, None
-        text = (user_msg or "").strip().lower()
-        if not (text.endswith("?")
-                or text.startswith(("is ", "are ", "does ", "do "))):
-            return None, None, None
-        sub = getattr(self.perceptualSpace, "subspace", None)
-        cb = getattr(sub, "what", None) if sub is not None else None
-
-        def lookup(tok):
-            if cb is None or not hasattr(cb, "wv"):
-                return None
-            try:
-                return cb.wv[tok]
-            except Exception:
-                return None
-
-        toks = [t.strip("?.,") for t in text.split() if t.strip("?.,")]
-        surface, A, B = "part", None, None
-        if "part" in toks:
-            i = toks.index("part")
-            left = [t for t in toks[:i] if t not in ("is", "are")]
-            right = [t for t in toks[i + 1:] if t != "of"]
-            if left:
-                A = lookup(left[-1])
-            if right:
-                B = lookup(right[-1])
-        else:
-            content = [t for t in toks if t not in
-                       ("is", "are", "does", "do", "a", "the", "of")]
-            if content and content[-1] in ("exist", "exists"):
-                content = content[:-1]               # "does X exist?" -> exist(X)
-                if content:
-                    surface, A = "exist", lookup(content[0])
-            elif len(content) >= 2:
-                A, B = lookup(content[0]), lookup(content[-1])
-            elif len(content) == 1:
-                surface, A = "exist", lookup(content[0])
-        if A is None:
-            return None, None, None
-        A = torch.as_tensor(A, dtype=torch.float32)
-        if B is not None:
-            B = torch.as_tensor(B, dtype=torch.float32)
-        return surface, A, B
-
+    @torch.no_grad()
     def answer_query(self, user_msg, *, beam=8):
-        """Phase E: when reasoning is on AND ``user_msg`` is a query, run the
-        truth-grounded reasoner and return a payload dict (posture + the N
-        relevance-ranked sentences + trace); else ``None`` so the caller falls
-        back to the generative ``infer()``. Byte-identical off: returns ``None``
-        immediately when ``reasoning_iterations == 0``, before any detection."""
+        """Understand text, then execute its completed grammatical question.
+
+        A supplied meaning is already a completed conceptual request. Text
+        uses the same forward/program recovery as ordinary answer resolution;
+        spelling, punctuation and word positions cannot select a thought tool.
+        The returned serving summary is JSON data; the typed result remains
+        available as ``_last_selected_thought`` and in ordinary history.
+        """
         self._assert_queries_outside_sentence()
-        if int(getattr(self, "reasoning_iterations", 0) or 0) <= 0:
+        budget = int(getattr(self, "reasoning_iterations", 0) or 0)
+        if budget <= 0:
             return None
-        surface, A, B = self._detect_query(user_msg)
-        if surface is None:
+        self._last_selected_thought = None
+        if isinstance(user_msg, ConceptualMeaning):
+            meaning = user_msg
+        elif isinstance(user_msg, Understanding):
+            programs = user_msg.answer_program
+            meaning = (self.languageSpace.program_meaning(programs[0], _boundary_registry(self))
+                       if programs and programs[0] is not None else None)
+        else:
+            if not isinstance(user_msg, str):
+                raise TypeError("answer_query requires text or a completed meaning")
+            with self._runtime_batch([user_msg]):
+                inputs = self.inputSpace.prepInput(list(self.data.train_input))
+                understanding = self.understand(inputs)
+                programs = understanding.answer_program
+                if not programs or programs[0] is None:
+                    return None
+                meaning = self.languageSpace.program_meaning(
+                    programs[0], _boundary_registry(self))
+        if meaning is None or meaning.mode != "interrogative":
             return None
-        from reasoning import QuerySpec, KIND_IS_TRUE
-        try:
-            spec = QuerySpec.from_surface(surface, A, B)
-        except ValueError:
-            return None
-        # isPart/isEqual need BOTH operands; a missing/OOV right operand cannot
-        # form a binary query -> fall back to the generative path.
-        if spec.predicate != KIND_IS_TRUE and spec.right is None:
-            return None
-        result = self.reason_about(spec, beam=beam)
+        result = self._run_public_thought(meaning, work_budget=budget)
         if result is None:
             return None
-        payload = {
-            "posture": result.posture,
-            "confidence": float(result.confidence),
-            "support_true": float(result.support_true),
-            "support_false": float(result.support_false),
-            "sentences": self._realize_ideas(result, n=self.reasoning_iterations),
-            "trace": result.trace,
+        positive = float(result.evidence.get("support_true", 0.0))
+        negative = float(result.evidence.get("support_false", 0.0))
+        posture = ("BOTH" if positive >= .5 and negative >= .5 else
+                   "TRUE" if positive >= .5 else
+                   "FALSE" if negative >= .5 else "UNKNOWN")
+        return {
+            "posture": posture, "confidence": max(positive, negative),
+            "support_true": positive, "support_false": negative,
+            "sentences": list(self._realize_thought_sentences(result)),
+            "trace": [{"kind": record.kind, "operation": record.operation,
+                       "level": record.level} for record in result.records],
+            "work": result.work.spent,
+            "result_kind": (None if result.result is None
+                            else result.result.result_kind),
+            "incomplete": list(result.evidence.get("incomplete", ())),
         }
-        # The Thinking Kernel rides ALONGSIDE the reasoner payload (off ⇒ no
-        # key ⇒ byte-identical). A kernel error must not break the answer.
-        if int(getattr(self, "thinking_budget", 0) or 0) > 0:
-            try:
-                kres = self.think_about(spec)
-            except Exception:
-                kres = None
-            if kres is not None:
-                payload["kernel"] = {
-                    "value": str(kres.value),
-                    "interval": [float(kres.interval.lower),
-                                 float(kres.interval.upper)],
-                    "trust": float(kres.trust),
-                    "luminosity": float(kres.interval.luminosity),
-                    "ops": [str(e.get("op")) for e in kres.trace],
-                }
-        return payload
 
     def _passback_scope_ps(self, pass_idx, ps_default, prevCS_forSS,
                            prevPS_forPS=None):

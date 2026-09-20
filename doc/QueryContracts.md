@@ -180,9 +180,9 @@ history](ThoughtHistory.md).
 
 ## Compatibility quarantine
 
-`QueryContext`, `QuerySignature`, `GrammaticalQueryRegistry`, and the older
-reasoner/kernel APIs are retained only as isolated historical compatibility
-code until Alec reviews their deletion. A production `BasicModel` installs only
+`QueryContext`, `QuerySignature`, and `GrammaticalQueryRegistry` remain isolated
+historical reader contracts pending review. The frame kernel and `NeuralToolUser`
+class are deleted; public reasoning APIs enter the one normal controller. A production `BasicModel` installs only
 `GrammaticalThoughtRegistry`, and its boundary lookup cannot find the legacy
 registry. Compatibility aliases cannot define grammar identity, become policy
 features, or grant a thought executor authority.

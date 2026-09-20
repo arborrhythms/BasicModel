@@ -5,22 +5,22 @@ import torch
 from Meaning import ConceptualMeaning
 from Layers import TernaryTruthStore
 from reasoning import TruthGroundedReasoner
-from thinking import ThinkingKernel
+from reasoning import QuerySpec
 
 
 @pytest.mark.parametrize("structured", [True, False])
-def test_public_kernel_accepts_complete_description_without_collapsing_roles(structured):
+def test_checked_reader_accepts_complete_description_without_collapsing_roles(structured):
     roles = torch.eye(6)[:3]
     fact = ConceptualMeaning.from_description(roles)
     store = TernaryTruthStore(6, capacity=8)
     store.append_meaning(fact, trust=.8)
-    kernel = ThinkingKernel(TruthGroundedReasoner(store=store))
+    reasoner = TruthGroundedReasoner(store=store)
     query = fact if structured else roles
-    assert kernel.lookup(query).upper == pytest.approx(.8)
+    assert reasoner.evaluate(QuerySpec.from_surface('exist', query))['support_true'] == pytest.approx(.8)
     altered = roles.clone()
     altered[1] = torch.eye(6)[3]
     other = ConceptualMeaning.from_description(altered) if structured else altered
-    assert kernel.lookup(other).upper == 0
+    assert reasoner.evaluate(QuerySpec.from_surface('exist', other))['support_true'] == 0
 
 
 @pytest.mark.parametrize("trust", [float("nan"), float("inf"), -float("inf")])

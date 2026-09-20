@@ -78,6 +78,7 @@ class ConceptualMeaning:
     role_refs: tuple = (None, None, None)
     bindings: Any = ()
     scope: Any = ()
+    constituents: tuple = field(default=(), repr=False)
 
     def __post_init__(self):
         if not torch.is_tensor(self.roles) or self.roles.ndim != 2 or self.roles.shape[0] != 3:
@@ -100,6 +101,11 @@ class ConceptualMeaning:
         object.__setattr__(self, "role_refs", refs)
         object.__setattr__(self, "bindings", _freeze_metadata(() if self.bindings is None else self.bindings))
         object.__setattr__(self, "scope", _freeze_metadata(() if self.scope is None else self.scope))
+        children = tuple(self.constituents)
+        if any(not isinstance(child, ConceptualMeaning)
+               or child.roles.shape[-1] != roles.shape[-1] for child in children):
+            raise ValueError("constituents must be complete meanings of the same width")
+        object.__setattr__(self, "constituents", children)
 
     @classmethod
     def from_payload(cls, payload, *, depth, layout, role_mask=None, **metadata):
@@ -132,4 +138,5 @@ class ConceptualMeaning:
                 "role_refs": self.role_refs, "bindings": self.bindings, "scope": self.scope}
 
     def detached(self):
-        return type(self)(self.roles.detach(), self.role_mask, **self.metadata())
+        return type(self)(self.roles.detach(), self.role_mask, **self.metadata(),
+                          constituents=tuple(child.detached() for child in self.constituents))

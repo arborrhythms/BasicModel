@@ -28,15 +28,14 @@ The result includes both degrees and each matching fact's stable occurrence,
 origin, source text, bindings, scope and references. No match means unknown.
 Low support remains visible even below the posture threshold; strong positive
 and negative support yields `BOTH`. Missing required metadata is reported as
-incomplete evidence. The legacy kernel retains these sources through its final
-result, including missing-context diagnostics.
-[Posture](../bin/reasoning.py#L586),
-[kernel lookup](../bin/thinking.py#L268),
-[kernel aggregation](../bin/thinking.py#L398).
+incomplete evidence. The normal controller retains the checked typed result
+and its sources through child returns, history and final answer preparation,
+including missing-context diagnostics.
+[Posture](../bin/reasoning.py), [controller](SelectedMeaning.md).
 
 `exist()` and `is_true()` retain a scalar compatibility view, positive minus
 negative support. That scalar loses conflict information. Checked evaluation
-and the kernel use the rich evidence result. Neither path consults model
+and the normal controller use the rich evidence result. Neither path consults model
 activation as a substitute for a fact.
 [Compatibility view](../bin/reasoning.py#L213).
 
@@ -67,9 +66,10 @@ a fact. A question or estimate cannot certify its own referent.
 
 Durable occurrence references contain a store namespace and a monotonically
 allocated ID. Row positions may change during compaction; those references do
-not. Reset clears records without reusing their occurrence IDs. This migration
-compares retained constituent-reference identities; it does not yet implement
-arbitrary nested-meaning traversal or claim its separate acceptance gate.
+not. Reset clears records without reusing their occurrence IDs. Exist compares retained constituent-reference identities. The bounded
+nested-meaning reader and retention graph are described in
+[NestedRetention](NestedRetention.md); selected composition and all three
+observation writers now preserve nested occurrences ([SelectedMeaning](SelectedMeaning.md)).
 [Occurrence identity](../bin/Layers.py#L8781),
 [compaction](../bin/Layers.py#L9125),
 [reset](../bin/Layers.py#L9163).

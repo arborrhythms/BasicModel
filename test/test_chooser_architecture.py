@@ -25,6 +25,11 @@ from torch import nn
 
 import Language
 from Language import MLPTransformChooser, WhatStepChooser, make_transform_chooser
+from Meaning import ConceptualMeaning
+
+def _meaning():
+    return ConceptualMeaning(torch.ones(3, 8), torch.ones(3, dtype=torch.bool))
+
 from util import XMLConfig
 
 
@@ -256,7 +261,7 @@ def test_real_model_xml_wires_both_chooser_architectures(monkeypatch, tmp_path):
     assert grammar_heads
     for chooser in grammar_heads:
         assert chooser.hidden == 19 and chooser.depth == 2
-    step = model._what_step_chooser()
+    step = model._selected_thought_chooser(_meaning())
     assert step.hidden == 23 and step.depth == 3
 
 
@@ -272,31 +277,31 @@ def _model_shell(**capacity):
 
 def test_model_lazy_step_head_uses_configured_capacity():
     model = _model_shell(what_thinking_hidden=23, what_thinking_depth=3)
-    chooser = model._what_step_chooser(device=torch.device("cpu"), dtype=torch.float64)
+    chooser = model._selected_thought_chooser(_meaning(), device=torch.device("cpu"), dtype=torch.float64)
     assert len(_linears(chooser)) == 4
     assert _linears(chooser)[0].out_features == 23
     assert next(chooser.parameters()).dtype == torch.float64
-    assert model._what_step_chooser() is chooser
+    assert model._selected_thought_chooser(_meaning()) is chooser
 
 
 def test_deep_step_checkpoint_materializes_saved_architecture_and_loads_strictly():
     """The absent-head restore path infers depth as well as first-layer width."""
     torch.manual_seed(331)
     source = _model_shell(what_thinking_hidden=17, what_thinking_depth=3)
-    chooser = source._what_step_chooser()
+    chooser = source._selected_thought_chooser(_meaning())
     with torch.no_grad():
         chooser.mlp[-1].weight.fill_(0.2)
         chooser.mlp[-1].bias.fill_(0.1)
     saved = {key: value.detach().clone() for key, value in source.state_dict().items()}
 
     restored = _model_shell()
-    assert getattr(restored, "what_step_chooser", None) is None
+    assert getattr(restored, "selected_thought_choosers", None) is None
     assert restored._materialize_answer_path_from_checkpoint(saved) == 1
     restored.load_state_dict(saved, strict=True)
     _assert_same_state(restored, source)
-    assert len(_linears(restored.what_step_chooser)) == 4
-    assert _linears(restored.what_step_chooser)[0].out_features == 17
-    candidates = [{"kind": "answer", "active": True}, {"kind": "open"}]
-    context = torch.randn(29)
+    assert len(_linears(restored.selected_thought_choosers["8"])) == 4
+    assert _linears(restored.selected_thought_choosers["8"])[0].out_features == 17
+    candidates = (False, True)
+    context = torch.randn(2, 9 * 8 + 15)
     assert torch.equal(chooser.logits(context, candidates),
-                       restored.what_step_chooser.logits(context, candidates))
+                       restored.selected_thought_choosers["8"].logits(context, candidates))

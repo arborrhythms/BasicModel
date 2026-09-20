@@ -3,8 +3,8 @@ from types import SimpleNamespace
 
 import pytest
 
-from reasoning import QuerySpec, TruthGroundedReasoner, NeuralToolUser
-from thinking import ThinkingKernel
+from reasoning import QuerySpec, TruthGroundedReasoner
+from test_thought_model_fixture import model_for
 from test_cs_symbol_table import _cs
 
 
@@ -13,7 +13,9 @@ def _chain():
     a, b, c = (("sym", cs.new_concept()) for _ in range(3))
     cs.add_whole(a[1], b)
     cs.add_whole(b[1], c)
-    return (a, b, c), TruthGroundedReasoner(SimpleNamespace(conceptualSpace=cs))
+    for ref in (a, b, c):
+        cs._csw_concept_row(0, ref[1])
+    return (a, b, c), TruthGroundedReasoner(model_for(cs))
 
 
 def test_negated_partof_keeps_the_supported_proposition_and_evidence():
@@ -24,30 +26,32 @@ def test_negated_partof_keeps_the_supported_proposition_and_evidence():
     assert result["support_true"] == 0 and result["support_false"] == 1
     assert result["path"][0].part == a and result["path"][-1].whole == c
     assert reasoner.evaluate(QuerySpec.from_surface("isPart", c, a, polarity=False))["posture"] == "UNKNOWN"
-    assert ThinkingKernel(reasoner).run(q).value == "false"
+    assert reasoner.model.reason_about(q).posture == "FALSE"
 
 
-def test_neural_result_retains_missing_reference_diagnostics():
+def test_normal_result_retains_missing_reference_diagnostics():
     (a, _b, _c), reasoner = _chain()
-    result = NeuralToolUser(reasoner).run(QuerySpec.from_surface("isPart", a, ("sym", 999999)))
-    assert result.posture == "UNKNOWN"
-    assert "unavailable_reference" in result.evidence["incomplete"]
+    with pytest.raises(ValueError, match="unavailable|allocated|concept"):
+        reasoner.model.reason_about(QuerySpec.from_surface("isPart", a, ("sym", 999999)))
 
 
-def test_model_taxonomy_entries_skip_global_vector_proposal_setup(monkeypatch):
+def test_model_taxonomy_entries_skip_global_vector_proposal_setup(monkeypatch, tmp_path):
     from test_ltm_consolidation import _make_model, _STATEFUL_CONFIG
-    model = _make_model(_STATEFUL_CONFIG)
+    from test_thought_model_fixture import thought_config
+    model = _make_model(thought_config(tmp_path))
     try:
-        model.reasoning_iterations = model.thinking_budget = 8
+        model.reasoning_iterations = model.thinking_budget = 128
         cs = model.conceptualSpace
         a, b = (("sym", cs.new_concept()) for _ in range(2))
+        for ref in (a, b):
+            cs._csw_concept_row(0, ref[1])
         cs.add_whole(a[1], b)
         def forbidden(*args, **kwargs):
             raise AssertionError("taxonomy query must not build/read the vector proposal route")
         monkeypatch.setattr(model, "_reasoning_spaces", forbidden)
-        monkeypatch.setattr(model, "_reasoning_tooluser", forbidden)
+        monkeypatch.setattr(model, "_legacy_bridge_components", forbidden)
         q = QuerySpec.from_surface("isPart", a, b)
         assert model.reason_about(q).posture == "TRUE"
-        assert model.think_about(q).value == "true"
+        assert model.think_about(q).posture == "TRUE"
     finally:
         model.End()

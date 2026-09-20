@@ -430,7 +430,7 @@ def test_supplied_text_scores_fixed_surface_and_masks_automatic_text():
 
 
 @pytest.mark.parametrize("concept_width", _NATIVE_CONCEPT_WIDTHS)
-def test_native_thinking_changes_the_owned_conceptual_answer(tmp_path, concept_width):
+def test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer(tmp_path, concept_width):
     from What import LTMSlot
     from Layers import WhatInteractionMemory
     from test_output_walk import _capture_program_probe
@@ -456,7 +456,7 @@ def test_native_thinking_changes_the_owned_conceptual_answer(tmp_path, concept_w
             d = m._resolve_answer(u, questions)
             assert m.ltm_attention is module
             assert d.conceptual_answer.shape == (2, 3, concept_width)
-            torch.testing.assert_close(d.conceptual_answer[:, 0], base[:, 0] + deltas)
+            torch.testing.assert_close(d.conceptual_answer[:, 0], base[:, 0])
             torch.testing.assert_close(d.conceptual_answer[:, 1:], base[:, 1:])
             idea = m._materialize_answer_idea(u, d, questions)[0]
             torch.testing.assert_close(idea, d.conceptual_answer)

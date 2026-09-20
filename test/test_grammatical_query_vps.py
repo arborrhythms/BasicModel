@@ -108,10 +108,21 @@ def test_unary_existence_keeps_full_description_through_an_existing_occurrence()
     torch.testing.assert_close(result.evidence['meaning'].roles, description.roles)
     assert result.evidence['meaning'].scope == description.scope
     assert len(store) == 1
-    # A descriptor without an owned occurrence may not be silently flattened
-    # into NP1 or committed by candidate construction.
+    # Pure construction owns the complete child without writing or granting
+    # execution authority. Only the completed boundary binds its occurrence.
+    inline = registry.form('exist', description, context=context)
+    assert inline.constituents[0] is description
+    assert inline.role_refs[0] == ('constituent', 0)
+    assert len(store) == 1
     with pytest.raises((TypeError, ValueError), match='occurrence|reference'):
-        registry.form('exist', description, context=context)
+        registry.execute(inline, context)
+    bound = store.bind_constituents(inline)
+    assert len(store) == 2
+    assert store.row(1)['kind'] == 'unverified' and store.row(1)['trust'] == 0
+    result = registry.execute(bound, _context(cs, store=store))
+    assert result.support_true == pytest.approx(0.75)
+    torch.testing.assert_close(result.evidence['meaning'].roles, description.roles)
+    assert result.evidence['meaning'].scope == description.scope
 
 
 def test_missing_or_retired_vp_binding_fails_without_lazy_reinstallation():

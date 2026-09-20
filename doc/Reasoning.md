@@ -11,8 +11,9 @@
 > on multi-stage chart parses.
 
 Truth-aware model methods plus the query-reasoning helpers in
-`bin/reasoning.py`: `QuerySpec`, `TruthGroundedReasoner`, `NeuralToolUser`,
-and `policy_answer_loss`. Builds on the TruthLayer infrastructure
+`bin/reasoning.py`: `QuerySpec`, `TruthGroundedReasoner`, and the retained
+numerical prediction/loss experiments. `BasicModel.run_selected_thought` is
+the one query controller. Builds on the TruthLayer infrastructure
 ([Logic.md](Logic.md)) and grammar composition ([Language.md](Language.md)).
 
 ## Relation to LLMs, Formal Concept Analysis, and DisCoCat
@@ -128,177 +129,84 @@ $\mathrm{totalLoss} \cdot (1 + w_{lum}(1 - \mathrm{lum}) + w_{univ}(1 - u))$.
 
 Luminosity non-decrease is the validity certificate.
 
-## Query Reasoning And Policy Loss
+## Selected meaning and the normal controller
 
-There is no live `grammar_learning_step()` method. Query reasoning is routed
-through:
+A completed `AnswerProgram` owns its word leaves, native identities, WORD-row
+provenance and grammatical actions. `LanguageSpace.program_meaning` recovers
+its complete `ConceptualMeaning` without executing a thought or writing memory.
+Nested descriptions preserve their child role triples; the existing LTM owner
+binds local constituent references when the completed observation is recorded.
+A containing claim cannot certify its embedded claim or question.
 
-1. `QuerySpec`, which normalizes query surfaces (`exist`, `isTrue`, `part`,
-   `isPart`, `equal`, `isEqual`, `queryPart`, `queryEqual`) to `isTrue`,
-   `isPart`, or `isEqual`.
-2. `TruthGroundedReasoner`, the exact hard-tool layer over stored truth,
-   parthood, equality, and derived chains.
-3. `NeuralToolUser`, the recurrent soft-propose / hard-verify loop for
-   intervening ideas.
-4. `policy_answer_loss`, which trains the soft query route while detaching the
-   hard proof mask.
+`BasicModel.run_selected_thought` is the only normal thought controller. It
+chooses from the model's `<thought>` catalogue, executes checked native VPs,
+and records ordinary thoughts in `SymbolSpace.what_memory`. `what(Q)` descends
+into a child context in that same controller. Children can make repeated
+choices, and their typed returned evidence is a causal source of the parent's
+conclusion. One shared meter pays for choices, native payloads, evidence reads,
+traversal and children. Cutoff permits only the bounded return drain and finish.
 
-**Step-2 next-idea blend.** `NeuralToolUser.reason_predict_next` (surfaced
-as `BasicModel.reason_predict_next`) blends the three hard tools
-`{arma, retrieval, deduction}` into ONE differentiable next-idea
-$\hat{e}$: the candidate ideas are detached (hard/grounded), and the
-gradient rides only the generator's query head — plus the optional
-`NextIdeaScorer`, a learned per-tool logit prior riding the state_dict —
-through the cosine-softmax blend weights (an absent tool gets a $-\infty$
-logit, so its weight is exactly 0). Two `<training>` knobs gate the
-associated losses, both defaulting to 0.0 (off, byte-identical):
-`<answerLossWeight>` trains the soft query route via the policy answer
-loss (NLL on the $[0, 1]$ proof score), and `<predictNextLossWeight>`
-trains the blend as a next-idea predictor.
+`reason_about`, `think_about` and `answer_query` enter `_query_boundary_scope`.
+The first two accept completed meanings or explicit typed `QuerySpec` requests.
+`answer_query` also accepts a captured `Understanding`, or understands text
+once before testing its selected meaning. Natural words do not dispatch a
+reader. Serving reuses that one understanding and summarizes its actual trace.
+`think()` is a single presentation wrapper around the same answer boundary.
 
-`BasicModel.reason(...)` remains as the model-level bidirectional reasoning
-entry point. Inference query routing is enabled when `reasoningIterations > 0`.
+The old frame controller, addressee/testimony system, next-op head and
+recurrent neural-tool facade are deleted. There is no facade or
+second What parity selector on the answer path. `bin/thinking.py` retains only
+the numerical `TruthInterval` value and status names. Old parity/next-op policy
+weights are discarded on checkpoint migration, never relabelled as the new
+policy's logits.
 
-## The Thinking Kernel
+Truth, prediction, set, code and subgoal results have typed answer adapters.
+Sets retain every checked member; codes retain their checked atom and reference;
+subgoals unwrap the typed child. `resolveAnswer` prepares these owned values,
+and `reverseOutput` realizes them without executing another reader. Missing
+payloads remain unavailable rather than becoming an invented answer.
 
-`bin/thinking.py` implements the Thinking Kernel's runtime-enforced execution
-loop over the reasoner's hard tools (gate: `<architecture><thinkingBudget>`; absent/0 = off,
-byte-identical; positive N = the op budget of a top-level `think()` frame):
+## Learning and credit
 
-1. `TruthInterval` — signed `[lower, upper]` contained in `[-1, 1]` + trust + provenance;
-   `luminosity` is the max-abs distance from unknownness; `status` classifies
-   true / false / unknown / mixed / conflicting against the `tau` bar.
-2. `Frame` / STM stack — `think()` pushes, `answer()` pops; only the certified
-   `ChildResult` (value, interval, trust, trace) crosses a frame boundary;
-   scratch is discarded.
-3. `ThinkingKernel.execute` — validates each proposed op, charges the shared
-   budget pool, and enforces the closure rules: a true/false answer the
-   frame's evidence does not support is refused (unsupported assertion →
-   unknown); budget exhaustion closes `bounded_unknown`; unknown is a valid
-   terminal. LTM writes happen only inside the runtime: `_materialize_close`
-   (trusted derivation via `reasoner.materialize`, gated
-   `<ltmConsolidation>` — read off the model's `ltm_consolidation` flag; a
-   dead underscored `getattr` that silently kept `materialize` off from
-   `reason_about` / `think_about` was fixed 2026-07-16, so lemma write-back
-   now fires from those entry points when the gate is on)
-   and `incorporate` (testimony above the source×channel trust floor).
-4. `KernelPolicy` — the deterministic baseline: `lookup` (LTM-direct, no
-   chaining) → close if luminous → climb `part(·, up)` opening one `think()`
-   subgoal per unvisited whole (soft $\alpha$ ordering via the
-   `InterveningIdeaGenerator` when present — $\alpha$ only orders, never
-   asserts). On an unknown LEAF the policy consults each registered
-   addressee once via `query()` (`arma` built in): NUMERIC testimony folds
-   into the frame interval as `asserted × source_trust` (§14.2 — flimsy
-   testimony cannot manufacture luminosity); tensor testimony is content,
-   never truth; the durable write stays the explicit `incorporate`.
-5. `compile_rewards` / `trace_examples` — the §12 reward compilation
-   (per-op $\Delta\mathrm{luminosity} - \mathrm{step\_cost}$ plus the
-   terminal on grounded closes; the spec §12.2 trust/relevance factors are
-   NOT applied) and the `(state, op)` supervision exporters for
-   next-operation training.
-6. `NextOpPolicy` / `next_op_loss` / `traces_from_store` — §12.6 next-op
-   learning: the head is behavior-cloned on grounded traces generated from
-   the store's 2-hop chains (`<training><thinkingLossWeight>`, runBatch
-   hook, eager build for optimizer membership; the teacher never writes
-   LTM). At inference the head is consulted only at explore-vs-stop choice
-   points over the legal option menu — it can waste budget, never assert.
+Natural operator associations are learned from owned word payloads. No natural
+word, including “has,” is anchored to `part` or `whole`. The technical
+`partOf` / `wholeOf` / `isEqual` corpus tokens remain explicit grammar provenance.
+The optional `LanguageSpace.meaning_codec` learns operation, mode and canonical
+operand alignment plus conditional word generation. Its targets are read only
+by the loss after output; model optimizer adoption and checkpoint restoration
+include these language parameters. A captured hard meaning is stable across
+later parameter updates. See [selected linguistic meaning](SelectedMeaning.md)
+for the supervision API, held-out learning evidence and current bounds.
 
-`BasicModel.think_about(query_spec)` builds the kernel from the model;
-`answer_query` attaches the kernel's certified result under the payload's
-`kernel` key when the budget is positive. Tests:
-`test/test_thinking_kernel.py`.
+The normal `SelectedThoughtChooser` sees full, separately masked root, active
+and candidate role triples plus level, pressure and bounded evidence. Its input
+width is `9D + 17`, including two action-kind flags. Root and active payloads
+remain live within the optimizer episode; hard candidates are detached. Native
+IDs and word spellings never supply numerical features. Capacity uses
+`whatThinkingHidden` and `whatThinkingDepth`; changing it is not evidence of
+learned reasoning.
 
-## Two thinking loops
+There is one hard thought-choice credit objective:
+`selectedThoughtPolicyWeight` multiplies REINFORCE credit from the later
+supplied-answer loss and `0.01 * actual_shared_work`, with one EMA baseline.
+`thinkingLossWeight` and `whatThinkingPolicyWeight` are migration aliases;
+the maximum of the three values enables this same objective once. Checked
+reader results and rewards remain detached; retained ordinary values detach at
+the optimizer boundary. The detailed contract is in [GradientFlow](GradientFlow.md).
 
-> The following describes the current implementation. The replacement target
-> is [Sentence-boundary thinking](specs/2026-09-11-sentence-boundary-thinking.md):
-> typed query dispatch and linguistic subgoals under a boundary controller,
-> with results on the actual answer path. Its 2026-09-12 revision uses ordinary
-> thoughts with context levels, replacing Q/A pairing and parity as the
-> internal control contract. Its acceptance gates are not yet claimed here.
+The independent `policy_answer_loss` bridge experiment remains available for
+reviewed callers, with `answerLossWeight` defaulting to zero. It preserves
+its soft query loss over detached candidates and performs no recurrent query
+control. The separate next-idea blend, scorer and model prediction route are
+removed; nonzero `predictNextLossWeight` is rejected.
 
-BasicModel has two distinct iterative loops, and they must not be confused:
-
-| | Thinking Kernel (`bin/thinking.py`) | What thinking (`Model.think()`, `bin/Models.py`) |
-|---|---|---|
-| Question kind | `isTrue` / `isPart` / `isEqual` over stored truth | `what` over conceptual state (present / past / future / supervised / inference) |
-| Stack | its own `Frame` stack, budgeted per op | the parity of LTM interaction slots (`LTMSlot`: input-only pushes, output-only pops); no frame object |
-| Terminal | true / false / unknown / mixed / conflicting / bounded_unknown | a concrete answer symbol; `unknown` is not a valid escape; forced best-effort LIFO closure at the iteration limit |
-| Answer route | `answer_query` payload (`kernel` key) | `reverseOutput()` (answer symbol -> conceptual / perceptual synthesis -> `OutputSpace`) |
-| Credit | next-op behaviour cloning on grounded traces (`thinkingLossWeight`) | root `answer_construction` after parity; the resolve-step choices by the `WhatStepChooser` policy objective (`whatThinkingPolicyWeight`) |
-| Gate | `<thinkingBudget>` | `<whatThinkingIterations>` (the resolve step with `WhatStepChooser`: ANSWER or OPEN a subquestion about a presented word; `runBatch` drives the episode when the limit exceeds one) |
-
-The kernel is reachable from a What resolve step as an external tool
-(prompted questions consult `answer_query` when `reasoningIterations > 0`),
-but its truth/support values currently enter the derivation trace rather than
-setting the What answer symbol. The What loop's content (a learned ANSWER/OPEN
-resolve step, attention over LTM outputs, and the episode credit boundary) is
-specified in the
-[mathematical thinking specification](specs/2026-09-09-mathematical-thinking.md);
-its former runtime arithmetic primitives are retired. Mathematics is an
-evaluation domain for general syntax and memory, not a separate solver.
-The substrate (`WhatQuestion`, `LTMSlot`, parity, closure pressure) is in
-[STM.md Section 13](STM.md#13-interaction-ltm-and-the-what-stack).
-
-## Learned thought: capacity and current limits
-
-Implementation audit, 2026-09-10. Thought is distributed across representation,
-grammatical composition, memory access, action selection and answer construction;
-neither chooser alone is the whole reasoning system. Conceptual activation can
-be interpreted as illumination of a learned basis, but What LTM does not simply
-save and restore the entire field: slots contain conceptual inputs and emitted
-responses, while temporal recall uses pooled sentence representations. Future
-queries use an optional predictor, not stored future truth.
-
-| Policy | Default capacity | What it sees / does |
-|---|---|---|
-| `MLPTransformChooser` | One hidden layer, width `max(8,D)`; canonical grammar `D=1024`, approximately 2.17M parameters per chooser | Scores grammatical composition from slot and candidate vectors, tool identity, role context and position; What context adds a separate linear bias. |
-| `WhatStepChooser` | `35 -> 16 -> 1`, one hidden layer, 593 parameters | Chooses ANSWER or OPEN a presented lexical referent, using temporal/address context, detached scalar LTM summaries and action/status/position features. |
-
-Both use GELU hidden activations and a scalar score. Architecture settings are
-`transformChooserHidden` / `transformChooserDepth` and `whatThinkingHidden` /
-`whatThinkingDepth` (see [Params](Params.md)). Depth counts hidden layers, not
-thought steps. For grammar input width `F=2D+8+8+C`, hidden width `H`, depth `L`
-and `T=max(1,n_copy+n_op)`, the parameter count is
-`H*(F+2)+1+(L-1)*(H*H+H)+37*T`; `C` is the role-context width. The thought-step
-count is `H*37+1+(L-1)*(H*H+H)`. These settings preserve existing defaults;
-canonical BasicModel still leaves thinking iterations at one, standalone memory
-off and thinking-policy loss off. Capacity changes do not enable those paths.
-
-The current information and credit boundaries matter more than the raw count:
-
-- `think()` performs one comprehension forward per episode and repeats answer
-  resolution with growing LTM; it does not re-run the complete grammar each step.
-  Active subquestion representations now seed their own answer before attention.
-- The thought chooser has no direct semantic root/query/candidate vector input.
-  Its memory summaries are detached mean, mean-absolute, RMS and max-absolute
-  values. Deeper layers cannot distinguish meanings collapsed by those summaries.
-- Under `whatThinkingDetach=episode`, root loss can reach earlier continuous
-  subanswers and memory-reading parameters until the single optimizer step, then
-  durable memory detaches. Hard choices receive a separate policy objective;
-  gradients do not pass through argmax, exact truth search or all past LTM writes.
-- Explicit truth/parthood/equality search and kernel syllogism tests do not prove
-  that the What policy learns to select a conditional and apply it to a grounded
-  antecedent. The trace-only reasoner connection is an outstanding output-causality
-  gap. Current arithmetic/dependency learning gates remain expected failures.
-
-Mechanism evidence: [What episodes](../test/test_what_thinking_episode.py) cover
-active-query and memory interventions, target isolation, parity and checkpoints;
-[episode training](../test/test_math_thinking_training.py) covers earlier-state
-gradients and policy updates; [chooser architecture](../test/test_chooser_architecture.py)
-covers capacity, default parity and saved topology. Several mechanism tests
-script choices or set attention weights; they are not learned-reasoning results.
-
-Before claiming learned multistep reasoning, add a general syntax/LTM evaluation
-with `A implies B`, `B implies C`, evidence `A`, and query `C`. Require emitted
-answers to change when a necessary antecedent or rule is removed/negated, with
-unsupported distinguished from false. Hold positions, stack sizes and scalar
-summaries fixed while changing which semantic subquestion is useful. Compare
-the same trained checkpoint across iteration budgets and memory ablations, then
-test renamed symbols and unseen chains. Report continuous-state, memory-reader,
-grammar-policy and thought-policy credit separately. Measure capacity only after
-those semantic inputs and causal paths are connected; wider/deeper choosers are
-an experiment, not evidence of reasoning by themselves.
+The learning probe trains parthood wording on six noun pairs and then maps
+“a bicycle has a wheel,” its converse and a paraphrase to the same canonical
+operator and roles. Thought checks that identity and generation emits the
+held-out sentence. Possessive controls remain unknown. This closes item 1's
+specific learning gate; residual-based query credit, held-out multistep utility,
+the separate generation-catalogue migration and throughput gates remain open.
+See [Testing](Testing.md#selected-meaning-and-one-controller-september-20).
 
 ## Parser And Conceptual Order
 
@@ -336,12 +244,12 @@ argument/return order.
 |-----------|----------|---------|-------------|
 | `<TruthLoss>` | `<training>` | 0.0 | Additive truth-loss weight |
 | `<subsymbolicOrder>` | `<architecture>` | 1 | Percept$\to$Concept$\to$Symbol iterations |
-| `<reasoningIterations>` | `<architecture>` | 1 | Query-reasoning chain depth. `0` restores the older off behavior. |
-| `<queryReasoning>` | `<architecture>` | false | Deprecated alias; `true` maps to depth 10 when `reasoningIterations` is unset. |
+| `<reasoningIterations>` | `<architecture>` | 1 | Shared work allowance for explicit `reason_about` / `answer_query`; `0` disables those APIs. |
+| `<queryReasoning>` | `<architecture>` | false | Deprecated alias; `true` maps to ten work units when `reasoningIterations` is unset. |
 | `<parserBackend>` | `<SymbolSpace>` | — | **RETIRED** (Stage 3, 2026-05-27): the chart and STM parsers are gone; the signal router (`LanguageLayer`) is the only parser. Setting this (or `routerKind` / `chartTau` / `chartTopK` / `chartNoiseEps`) raises a loud `ValueError` at config load. |
 | `truthCriterion` | `<architecture>` / `<ConceptualSpace>` / `<WholeSpace>` | 1.0 | Single continuous truth bar (0 $=$ all, 1 $=$ none; **default 1.0 $=$ off**, opt-in by lowering) governing BOTH WholeSpace truth **recording** (record a cell iff its clamped magnitude $\ge$ `truthCriterion`; fires in training + `store_truths` gold ingestion) AND learned relative-sentence **acceptance** (accept iff learn-score $\ge$ `truthCriterion`). Replaces the retired binary `<accumulateTruth>` / `<truthMinMagnitude>` switches. See [STM.md Section 9](STM.md#9-relative-vs-absolute-end-states). |
 | `answerLossWeight` | `<training>` | 0.0 | Policy answer loss weight (NLL on the $[0,1]$ proof score; trains the soft query route, hard proof mask detached). |
-| `predictNextLossWeight` | `<training>` | 0.0 | Step-2 next-idea blend loss weight (`reason_predict_next` over arma / retrieval / deduction + `NextIdeaScorer`). |
+| `predictNextLossWeight` | `<training>` | 0.0 | Retired; nonzero values are rejected. Thought selection uses the normal controller. |
 | `intraLossWeight` | `<training>` | 0.1 | In-STM next-idea loss $\mathcal{L}_\text{intra}$ weight (`IntraSentenceLayer`). See [STM.md Section 6](STM.md#6-intrasentencelayer). |
 | `interLossWeight` | `<training>` | 0.1 | Inter-sentence next-end-state loss $\mathcal{L}_\text{inter}$ weight. See [STM.md Section 11](STM.md#11-inter-sentence-prediction). |
 | `routerWireSerial` | `<architecture>` | both | Per-word router-fire gating on the serial path (`per-word` / `boundary` / `both` / `off`). See [STM.md Section 7](STM.md#7-per-word-router-firing). |
@@ -384,3 +292,6 @@ Unit tests in `basicmodel/test/test_reasoning.py` cover all methods without
 requiring a trained model. English-level tests (syllogisms, contrapositives,
 semantic equivalence) are `@pytest.mark.xfail` until word identity is
 learned through training.
+
+[Kernel test migration](KernelRetirement.md) maps every retired test and
+defines the replacement for conflicting, mixed and bounded-unknown statuses.

@@ -181,39 +181,21 @@ def _response_text_from_infer(items):
 
 
 def _thinking_payload(user_msg, thought_free):
-    """Run one bounded thinking episode over ``user_msg`` and summarize it
-    (iterations, forced closures, the slot operations, the step choices).
-    ``None`` when the model does not think, when the request is
-    thought-free, or when the episode fails."""
+    """Summarize the already completed episode; never run a second controller."""
     enabled = getattr(_model, "_thinking_enabled", None)
     if not callable(enabled) or not enabled():
         return None
     if thought_free:
         return {"thought_free": True, "iterations": 1, "forced_closures": 0,
                 "slots": [], "steps": []}
-    try:
-        from What import What
-        with torch.no_grad(), _model._runtime_batch([user_msg]):
-            x = _model.inputSpace.prepInput(list(_model.data.train_input))
-            result = _model.think(
-                What.inference(0, split="runtime", prompt=user_msg), x)
-        # Every iteration's step choices (the model accumulates them over
-        # the episode; the last construction's trace holds only its own).
-        trace = tuple(getattr(_model, "_what_episode_steps", ()) or ())
-        steps = [{"choice": e.get("choice"), "role": e.get("role"),
-                  "referent": e.get("referent"), "iteration": e.get("iteration")}
-                 for e in trace if isinstance(e, dict)
-                 and str(e.get("operation", "")).startswith("step:")]
-        return {
-            "thought_free": False,
-            "iterations": int(result.iterations),
-            "forced_closures": int(result.forced_closures),
-            "slots": [s.operation.value for s in result.slots],
-            "steps": steps,
-        }
-    except Exception as exc:
-        logger.warning("Thinking episode failed, falling back: %s", exc)
-        return None
+    result = getattr(_model, "_last_selected_thought", None)
+    records = tuple(getattr(result, "records", ()) or ())
+    return {"thought_free": False,
+            "iterations": sum(record.kind == "thought" for record in records),
+            "forced_closures": sum(record.kind in ("return", "finish") and record.forced for record in records),
+            "slots": [record.kind for record in records],
+            "steps": [{"choice": record.operation, "level": record.level}
+                      for record in records if record.kind == "thought"]}
 
 
 @app.route("/chat/completions", methods=["POST"])
@@ -284,29 +266,20 @@ def chat_completions():
         if thought_free:
             TheGrammar.thought_free = True
 
-        # Phase E: truth-grounded reasoning for QUERY inputs. Off
-        # (reasoning_iterations == 0) -> answer_query returns None before any
-        # detection, so the serve path is byte-identical. A reasoner error
-        # degrades to the generative path (do not 500).
-        reasoning_payload = None
-        if getattr(_model, "reasoning_iterations", 0) > 0:
-            try:
-                reasoning_payload = _model.answer_query(user_msg)
-            except Exception as exc:
-                logger.warning("Reasoning path failed, falling back: %s", exc)
-                reasoning_payload = None
-
-        # Mathematical thinking (doc/specs/2026-09-09-mathematical-thinking.md
-        # section 6): when the model is configured to think (an iteration
-        # limit above one or exact primitives), answer the prompt through a
-        # bounded Model.think() episode and attach its summary. Thought-free
-        # (Shamatha) requests never open an internal dialogue. A thinking
-        # error degrades to the ordinary path (do not 500).
-        thinking_payload = _thinking_payload(user_msg, thought_free)
-
-        # IR inference returns (slot, original, predicted) triples.
+        # Understand once. Public query execution consumes that owned
+        # completed program and the summary consumes the resulting episode.
+        _model._last_selected_thought = None
         predictions = _model.infer(user_msg, max_length=gen_budget)
         response_text = _response_text_from_infer(predictions)
+        reasoning_payload = None
+        if not thought_free and getattr(_model, "reasoning_iterations", 0) > 0:
+            understanding = getattr(_model, "_last_understanding", None)
+            if understanding is not None:
+                try:
+                    reasoning_payload = _model.answer_query(understanding)
+                except Exception as exc:
+                    logger.warning("Reasoning path failed: %s", exc)
+        thinking_payload = _thinking_payload(user_msg, thought_free)
 
         response = {
             "choices": [{

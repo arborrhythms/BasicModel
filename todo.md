@@ -12,9 +12,9 @@
 
 Work follows
 [2026-09-15-next-sentence-as-the-production-objective.md](doc/plans/2026-09-15-next-sentence-as-the-production-objective.md)
-§10 and its completion gates. Validation: the source-matched default selection
-at `60b1497` completed 4,668/4,668 with a green receipt in 1,040 s
-(`output/tests/20260919-125200-894ef3`), using eight-case/one-file batches
+§10 and its completion gates. Item 1's source-matched default selection
+completed 4,630/4,630 with a green receipt in 1,026 s
+(`output/tests/20260920-042439-ea7ff2`), using eight-case/one-file batches
 under the unchanged resource caps. Default batch memory stability remains
 under Residues below. The September 17 handoff and preserved
 candidates are in
@@ -23,6 +23,7 @@ of its six candidates only the generation catalogue (item 3) remains uninstalled
 
 ### Done (newest first)
 
+- `HEAD` **Item 1 complete:** one controller, learned selected meaning, typed/nested answers and all 61 kernel-test dispositions ([design](doc/SelectedMeaning.md), [full receipt](doc/Testing.md#selected-meaning-and-one-controller-september-20)); the containing WikiOracle bump records this landing hash.
 - `60b1497` Forward owns anchored lexical forms by WORD row; capture reads retained provenance ([Testing](doc/Testing.md#forward-owned-lexical-forms-september-19); item 1 increment).
 - `a70c77d` Direct `concept`-unary selected meaning (`what(quantize(x))`)
   preserves its live leaf into the normal controller; description operands
@@ -58,25 +59,6 @@ of its six candidates only the generation catalogue (item 3) remains uninstalled
 
 ### Open
 
-1. **Selected linguistic meaning and the normal thought controller** over the
-   `<thought>` catalogue. One grammar of thought in conceptual space: the
-   `ThinkingKernel`, `NeuralToolUser` and the thought/query MLP are three
-   drafts of it — merge them, add no fourth selector. Exit, all required:
-   - one controller; `ThinkingKernel`'s addressee table and `Testimony`,
-     `NeuralToolUser.run_legacy_world` and the legacy frame kernel deleted;
-     `reason_about` / `think_about` / `answer_query` route through
-     `_query_boundary_scope`, opened at each completed thought boundary;
-   - typed adapters for set, code and subgoal results (truth and prediction
-     landed); `what(Q)`'s `continuation` is the controller's child push;
-   - converse/paraphrase and nested-reference meaning across all three writers
-     (only the anchored `whole` converse is done; non-anchor and nested cases
-     open);
-   - full-width mandatory roles, actual shared work costs recorded in the
-     controller's own episode meter, causal child evidence, bounded return;
-   - replay/checkpoint isolation and policy credit (candidates detached,
-     gradient through the chooser — the one hard-choice credit contract, one
-     entry in [GradientFlow](doc/GradientFlow.md));
-   - the prepared selected-meaning probes red first, then green.
 2. **Expectation and residual learning.** Extend retained estimates to checked
    bindings/scope metadata without copying the arriving target; prior-view
    isolation from arriving/unseen input and other rows; residual query credit
@@ -86,7 +68,8 @@ of its six candidates only the generation catalogue (item 3) remains uninstalled
    generation-catalogue candidate (it no longer applies to primary); validate
    checkpoint/optimizer migration and normal supervised output; keep the §8.4
    downstream/reconstruction gradient contract and GradientFlow.md current.
-4. **Evidence gates and documentation.** Held-out causal utility,
+4. **Evidence gates and documentation.** Held-out causal utility against
+   direct-answer and equal-compute baselines across seeds,
    reconstruction/discrimination controls, warmed training throughput; the
    preserved arbitrary-symbol poison probes and renamed-vocabulary controls.
    Numerical values or symbol IDs never supply learner arithmetic or answer
@@ -181,9 +164,7 @@ change; delete the line with the commit.
   still lists contract 6 and the future predictor as open (both decided /
   landed); [answer-path §6](doc/plans/2026-09-14-answer-path-ownership-and-training.md)
   is titled "Open questions" but records answers — retitle; §3.7 closed by
-  `69233d1`/`b705a48`. [ExistenceEvidence](doc/ExistenceEvidence.md)'s
-  "nested-meaning traversal not implemented" line to be reconciled against
-  `3ab3c4b`.
+  `69233d1`/`b705a48`.
 
 ### Superseded — no work (recorded so nobody re-derives them)
 

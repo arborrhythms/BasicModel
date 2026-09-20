@@ -18,7 +18,7 @@ import torch
 
 import Models
 from Models import BaseModel
-from reasoning import QuerySpec, KIND_IS_PART, ReasoningResult
+from reasoning import QuerySpec, KIND_IS_PART
 
 _DATA = os.path.join(os.path.dirname(__file__), '..', 'data')
 _CONFIG = os.path.join(_DATA, 'MM_query_reasoning.xml')
@@ -32,7 +32,17 @@ class TestReasoningCDEModel(unittest.TestCase):
 
     def test_gates_on(self):
         self.assertEqual(self.m.reasoning_iterations, 10)
+        self.assertEqual(self.m.thinking_budget, 16)
+        self.assertEqual(self.m.selected_thought_policy_weight, .1)
         self.assertGreater(self.m.answer_loss_weight, 0.0)
+
+    def test_truthset_provisions_source_rows(self):
+        self.m.provision_ltm()
+        store = self.m.symbolSpace.ltm_store
+        rows = [store.row(int(i)) for i in store.relations(rel_type=store.REL_PARTOF)]
+        assert {row['text'] for row in rows} == {
+            'socrates partOf human', 'human partOf mortal'}
+        assert all(abs(row['trust'] - .9) < 1e-6 for row in rows)
 
     @staticmethod
     def _opt_param_ids(opt):
@@ -93,13 +103,10 @@ class TestReasoningCDEModel(unittest.TestCase):
         self.assertTrue(out is None or isinstance(out, dict))
 
     def test_reason_about_returns_honest_posture(self):
-        # Vector operands over the (empty) truth-space => an honest UNKNOWN
-        # ReasoningResult, never a hallucinated verdict and never a crash.
-        res = self.m.reason_about(
-            QuerySpec(KIND_IS_PART, left=torch.randn(1024),
-                      right=torch.randn(1024)))
-        self.assertIsInstance(res, ReasoningResult)
-        self.assertIn(res.posture, {'TRUE', 'FALSE', 'UNKNOWN', 'BOTH'})
+        # An unnamed vector cannot become a taxonomy identity at the boundary.
+        with self.assertRaises((ValueError, TypeError)):
+            self.m.reason_about(QuerySpec(KIND_IS_PART, left=torch.randn(1024),
+                                         right=torch.randn(1024)))
 
 
 if __name__ == '__main__':

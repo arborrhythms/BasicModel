@@ -541,6 +541,7 @@ def _freeze_boundary_value(value):
 
 
 _CHECKPOINT_CONCEPTUAL_MEANING = '__basicmodel_checkpoint_conceptual_meaning__'
+_CHECKPOINT_THOUGHT_RESULT = '__basicmodel_checkpoint_thought_result__'
 
 
 def _checkpoint_boundary_value(value):
@@ -553,6 +554,8 @@ def _checkpoint_boundary_value(value):
     """
     if torch.is_tensor(value):
         return value.detach().to('cpu').clone()
+    if isinstance(value, ThoughtResult):
+        return {_CHECKPOINT_THOUGHT_RESULT: value.checkpoint()}
     if isinstance(value, ConceptualMeaning):
         meaning = value.detached()
         return {
@@ -587,6 +590,10 @@ def _restore_checkpoint_boundary_value(value):
     detached, immutable result boundary for every other container.
     """
     if isinstance(value, (dict, MappingProxyType)):
+        if _CHECKPOINT_THOUGHT_RESULT in value:
+            if set(value) != {_CHECKPOINT_THOUGHT_RESULT}:
+                raise ValueError('invalid nested thought result checkpoint')
+            return ThoughtResult.from_checkpoint(value[_CHECKPOINT_THOUGHT_RESULT])
         tagged = value.get(_CHECKPOINT_CONCEPTUAL_MEANING)
         if tagged is not None:
             expected = {
@@ -648,6 +655,8 @@ class ThoughtConceptualCapability:
             self, '_ThoughtConceptualCapability__space') is space
 
     def payload(self, reference, *, work=None):
+        if work is not None:
+            work.require('payload')
         space = object.__getattribute__(self, '_ThoughtConceptualCapability__space')
         row = _existing_row(space, reference)
         basis = _basis(space)
@@ -761,8 +770,18 @@ class ThoughtTaxonomyCapability:
             if not work.consume('expansion'):
                 incomplete.append('work_budget')
                 break
+            # Capture the answer atom inside the selected, metered reader.
+            # Output and checkpoint replay must not perform a later lookup.
+            if not work.consume('payload'):
+                incomplete.append('work_budget')
+                break
+            target = edge.whole if direction == 'up' else edge.part
+            space = object.__getattribute__(self, '_ThoughtTaxonomyCapability__space')
+            row = _existing_row(space, target)
+            atom = _basis(space)[row].detach().clone()
             values.append({
-                'reference': edge.whole if direction == 'up' else edge.part,
+                'reference': target,
+                'value': atom,
                 'source': edge,
                 'trust': 1.0,
             })
@@ -1905,14 +1924,20 @@ class GrammaticalThoughtRegistry:
         preparation_context = (
             _descriptor_context(context, descriptor)
             if isinstance(context, ThoughtGrammarContext) else context)
+        constituents = []
         for role in occupied_roles:
             argument = supplied[source_by_canonical_role[role]]
             kind = kinds_by_role[role]
             if kind == 'description':
-                if context is None:
-                    raise TypeError('description thought operands require a ThoughtGrammarContext')
-                description, _ = _occurrence_description(
-                    preparation_context, argument)
+                if isinstance(argument, ConceptualMeaning):
+                    description = argument
+                    argument = ('constituent', len(constituents))
+                    constituents.append(description)
+                else:
+                    if context is None:
+                        raise TypeError('description thought operands require a ThoughtGrammarContext')
+                    description, _ = _occurrence_description(
+                        preparation_context, argument)
                 value = description.roles.sum(0) / description.role_mask.sum().sqrt()
                 references[self._slot_for_operand(role)] = argument
             else:
@@ -1931,7 +1956,8 @@ class GrammaticalThoughtRegistry:
         return ConceptualMeaning(torch.stack(payloads), mask, mode=mode,
                                  polarity=polarity,
                                  role_refs=tuple(references),
-                                 bindings=bindings, scope=scope)
+                                 bindings=bindings, scope=scope,
+                                 constituents=tuple(constituents))
 
     @staticmethod
     def _is_description_reference(reference):

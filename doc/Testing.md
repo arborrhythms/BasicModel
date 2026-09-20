@@ -596,3 +596,74 @@ Evaluate compatible preallocated fixture reuse with complete reset checks and
 separate construction/compilation counters. Existing fixed-capacity contracts
 remain in place. [Assessment and acceptance criteria](plans/2026-09-17-bounded-fixture-reuse.md)
 record the follow-up; comparative speedups remain unmeasured.
+
+## Selected meaning and one controller (September 20)
+
+Item 1 consolidates public and normal reasoning in `run_selected_thought`,
+retires the other controllers and next-idea selector, carries typed
+set/code/child answers, retains nested meanings through all three writers, and
+adds supervised natural lexical alignment without natural-word anchors.
+[SelectedMeaning](SelectedMeaning.md) specifies ownership, credit and limits;
+[KernelRetirement](KernelRetirement.md) maps all 61 removed frame-kernel tests.
+
+Development receipts were red before the relevant fixes:
+
+| Receipt under `output/tests/` | Observed failure |
+|---|---|
+| `20260920-024809-ab08f1` | Public entry points still used alternate paths; hard candidate values retained gradients. |
+| `20260920-025130-36147a` | Set, code and child results lacked owned typed answer adapters. |
+| `20260920-030228-999e68` | Nested selected meanings did not survive compose and observation. |
+| `20260920-031028-602bfe` | Retired controller hooks remained; policy cost counted choices instead of actual shared work. |
+| `20260920-033908-1796db` | Tool-user facade survived and set generation spent a fresh word allowance per member. A separate training probe also had a stale staged-input fixture, subsequently corrected. |
+| `20260920-035122-712aa9` | The real two-row training probe found internal thought references defaulting to row zero. |
+| `20260920-040001-ef5ef4` | The broad affected run completed 545/545 cases but failed legacy narrow-conditioner migration. |
+
+The final checkpoint correction passed `20260920-040354-15296e`: 7/7 selected
+cases completed, exit 0. This includes native-width and legacy strict reloads,
+the trained natural-language experiment and the real model's language
+loss/optimizer/checkpoint integration. The broader affected run had already
+passed the controller, row-local rewards, output, nested meaning, taxonomy and
+retirement contracts. Neither receipt substitutes for the full landing gate.
+
+The language experiment trains 36 annotated examples at seed 19 for 240 Adam
+steps, then checks held-out nouns, the parthood sense of “has,” “contains,”
+converse roles, alternate-sense negatives, execution, generation and
+recomposition. It starts unknown, adds no lexical anchor and verifies all three
+writers. The controller tests separately establish exact zero-init baseline
+behavior, actual-work policy credit and a real optimizer update. This is not the
+multi-seed learned reasoning utility study, which remains item 4; on FineWeb,
+controller reward awaits item 2's residual credit.
+
+The first full default receipt, `20260920-040537-5788f1`, completed
+4,630/4,630 cases in 1,029 seconds with three failures. One expected inline
+candidate descriptions to be rejected before retaining their complete children;
+two expected the retired repeated-presentation/parity loop. The updated tests
+check no-write candidate formation, refusal to execute before occurrence binding,
+retention without fact authority, one presentation, and no invented closure.
+Their preserved controller contracts are linked in the retirement audit.
+The implementation source was unchanged by these final test migrations.
+
+The corrected boundary/presentation tests and normal-controller regression
+selection passed `20260920-042401-e18b3d`: 42/42 cases completed, exit 0.
+
+The final **source-matched default receipt** is
+[`20260920-042439-ea7ff2/result.json`](../output/tests/20260920-042439-ea7ff2/result.json):
+**4,630/4,630 selected cases completed, exit 0**, in **1,026.3 seconds**.
+Unique outcomes are 4,299 passed, 330 skipped and one expected failure; there
+are no failures. The full selection used `--batch-size 8 --max-files 1`, ten
+workers and unchanged limits (8 GiB per worker, 28 GiB aggregate, 1,800-second
+worker and 10,800-second suite deadlines). Peak footprints were 7.19 GiB per
+worker and 10.80 GiB aggregate. No selector or test exclusion was added.
+
+All 615 entries in the receipt's `validated_source` manifest match a fresh
+`bounded_tests.source_snapshot()` of the landing source. Its SHA-256, over the
+sorted compact JSON map, is
+`6adaa745620cc69e44cccf773ae49b00769dbae10dc7235d05c32074e403e100`.
+The selected and completed case sets are identical. Final receipt notes and
+todo reconciliation were written after the run; they do not change that tested
+source map. The user-owned thought-operator specification edit is excluded from
+the implementation commit.
+
+This completes item 1's replacement and regression gates. Expectation/residual
+credit, the generation-catalogue migration and the full learned-utility study
+remain items 2–4.

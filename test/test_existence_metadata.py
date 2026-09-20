@@ -217,14 +217,13 @@ def test_actual_model_checkpoint_preserves_scoped_fact_identity(tmp_path):
             restored.End()
 
 
-def test_legacy_kernel_keeps_both_sides_of_exist_evidence():
-    from thinking import ThinkingKernel, CONFLICTING
+def test_checked_reader_keeps_both_sides_of_exist_evidence():
     store = TernaryTruthStore(6, capacity=8)
     store.append_meaning(_meaning(), kind="fact", trust=.8)
     store.append_meaning(_meaning(), kind="fact", trust=-.9)
-    kernel = ThinkingKernel(reasoner=TruthGroundedReasoner(store=store))
-    result = kernel.lookup(QuerySpec.from_surface("exist", _meaning()))
-    assert result.status() == CONFLICTING
-    assert result.lower == pytest.approx(-.9)
-    assert result.upper == pytest.approx(.8)
-    assert len(result.provenance) == 2
+    reasoner = TruthGroundedReasoner(store=store)
+    result = reasoner.evaluate(QuerySpec.from_surface("exist", _meaning()))
+    assert result['posture'] == 'BOTH'
+    assert -result['support_false'] == pytest.approx(-.9)
+    assert result['support_true'] == pytest.approx(.8)
+    assert len(result['candidates']) == 2

@@ -254,38 +254,32 @@ def test_model_what_ltm_records_actual_head_response_not_input_state():
     assert not torch.equal(stored.output, value + 2.0)
 
 
-def test_thinking_uses_completed_subquestion_context_and_restores_parity():
+def test_think_presents_once_and_returns_the_completed_answer():
     memory = _memory()
-    model = _TinyWhatModel(memory, actions=("open", "complete", "close"))
+    model = _TinyWhatModel(memory, actions=("complete", "open"))
     result = model.think(
         What.supervised(0, prompt="what is your name?"),
         torch.tensor([[1.0]]), max_iterations=5)
 
     assert result.answer.available
     assert result.forced_closures == 0
-    assert model.context_sizes == [0, 1, 2]
+    assert model.calls == result.iterations == 1
+    assert model.context_sizes == [0]
     assert memory.what_at_parity()
-    assert [slot.operation for slot in result.slots] == [
-        WhatSlotOperation.OPEN, WhatSlotOperation.COMPLETE,
-        WhatSlotOperation.CLOSE]
-    assert all(a <= b for a, b in zip(
-        result.closure_pressures, result.closure_pressures[1:]))
+    assert [slot.operation for slot in result.slots] == [WhatSlotOperation.COMPLETE]
+    torch.testing.assert_close(result.answer.what, torch.tensor([[4.0]]))
 
 
-def test_thinking_limit_forces_every_nested_question_closed():
+def test_think_rejects_an_unfinished_presentation_without_fabricated_closure():
     memory = _memory(capacity=16)
     model = _TinyWhatModel(memory, actions=("open", "open", "open"))
-    result = model.think(
-        What.inference(0, prompt="hard question"),
-        torch.tensor([[2.0]]), max_iterations=3)
-
-    assert result.iterations == 3
-    assert result.forced_closures == 3
-    assert memory.what_at_parity()
-    assert all(slot.forced for slot in result.slots[-3:])
-    assert all(slot.operation is WhatSlotOperation.CLOSE
-               for slot in result.slots[-3:])
-    assert result.answer.what is not None
+    with pytest.raises(RuntimeError, match="no completed grammatical answer"):
+        model.think(What.inference(0, prompt="hard question"),
+                    torch.tensor([[2.0]]), max_iterations=3)
+    assert model.calls == 1 and model.context_sizes == [0]
+    assert memory.what_open_depth() == 1
+    assert [slot.operation for slot in memory.get_what_slots()] == [WhatSlotOperation.OPEN]
+    assert not any(slot.forced for slot in memory.get_what_slots())
 
 
 def test_mlp_grammar_chooser_consumes_target_free_what_context():

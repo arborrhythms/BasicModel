@@ -232,16 +232,16 @@ def test_what_subgoal_descends_executes_returns_and_causally_carries_evidence():
     assert result.evidence["support_true"] == 1
     assert result.work.spent == state.work_spent
     records = memory.thought_history()
-    latest = records[-7:]
+    latest = records[-8:]
     assert [record.kind for record in latest] == [
-        "begin", "thought", "descend", "thought", "return", "thought", "finish",
+        "begin", "thought", "descend", "thought", "thought", "return", "thought", "finish",
     ]
     assert latest[1].meaning.role_refs == outer.role_refs
     assert latest[3].meaning.role_refs == inner.role_refs
-    assert latest[4].support_true == 1
-    assert any(ref[0] == "thought" for ref in latest[4].sources)
+    assert latest[5].support_true == 1
+    assert any(ref[0] == "thought" for ref in latest[5].sources)
     assert [record.operation for record in latest if record.kind == "thought"] == [
-        "what", "part", "conclude"]
+        "what", "part", "conclude", "conclude"]
     memory.end_what_episode()
 
 
@@ -782,7 +782,7 @@ def test_normal_what_uses_the_selected_thought_without_a_legacy_slot(monkeypatch
         "begin", "thought", "thought", "finish"]
 
 
-def test_selected_row_does_not_suppress_another_rows_legacy_resolver(monkeypatch):
+def test_selected_row_cannot_open_a_second_controller_for_another_row(monkeypatch):
     """A selected boundary is row-local, including its legacy handoff."""
     from test_selected_relation_meaning import _program_owner
 
@@ -833,14 +833,11 @@ def test_selected_row_does_not_suppress_another_rows_legacy_resolver(monkeypatch
         return adjusted, (None, "legacy-row"), (
             {"operation": "legacy-row", "row": 1},), ()
 
-    monkeypatch.setattr(model, "_resolve_step", legacy_resolve)
+    monkeypatch.setattr(model, "_resolve_step", legacy_resolve, raising=False)
     first_program = program()
     derivation = model.resolveAnswer(
         Understanding(answer_program=(first_program, None)), WhatQuestion.present(0))
 
-    assert len(calls) == 1
-    assert calls[0][0][0] is first_program and calls[0][0][1] is None
-    assert calls[0][1] == (0,)
-    assert derivation.step == (None, "legacy-row")
-    assert derivation.grammar_trace[-1] == {"operation": "legacy-row", "row": 1}
-    assert derivation.conceptual_answer[1, 0].eq(0.75).all()
+    assert calls == []
+    assert derivation.step == ()
+    assert not derivation.conceptual_answer[1, 0].eq(0.75).all()

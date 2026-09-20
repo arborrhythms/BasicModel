@@ -15155,6 +15155,26 @@ class LanguageSpace(nn.Module):
 
     @torch.compiler.disable
     def program_meaning(self, entry, registry):
+        """Recover owned structural meaning, or learned lexical alignment.
+
+        An explicit selected semantic fold wins over lexical inference. A
+        captured decision, including unknown, is never recomputed.
+        """
+        meaning = self._structural_program_meaning(entry, registry)
+        if meaning is not None or getattr(entry, "meaning_captured", False):
+            return meaning
+        codec = getattr(self, "meaning_codec", None)
+        if (codec is None or entry is None
+                or any(getattr(entry, "lexical_forms", ()) or ())):
+            return None
+        leaves = getattr(entry, "leaves", None)
+        ids = getattr(entry, "concept_ids", None)
+        if not (torch.is_tensor(leaves) and leaves.ndim == 2
+                and torch.is_tensor(ids) and ids.shape == (len(leaves),)):
+            return None
+        return codec.compose(entry, registry)
+
+    def _structural_program_meaning(self, entry, registry):
         """Recover one selected meaning from its owned compose program.
 
         A folded root is deliberately insufficient here: lossy compose faces
@@ -15165,19 +15185,20 @@ class LanguageSpace(nn.Module):
         surface as semantic payload.  It only forms structure; it never calls
         ``registry.execute`` or writes memory.
 
-        The current adapter is intentionally conservative.  It accepts a
-        completed root relation whose two operands are direct leaves, an
+        The adapter accepts a completed structural relation, an
         unreduced lexical ``[NP1, VP, NP2]`` whose middle leaf is an already
         registered native VP and whose frozen grammar-form provenance resolves
         any shared-VP converse, or a direct-leaf unary form whose declared
         operand is one full-width concept. Declared ``not``/``non`` wrappers
-        carry polarity. A description/reference unary form, nested, or
-        otherwise unsupported constituent remains represented by its physical
-        end state until a stable occurrence reference is available; it is not
-        silently flattened into an invented operand.
+        carry polarity. Nested operands retain complete child meanings with
+        local constituent references. The existing occurrence owner binds those
+        references at the completed observation/thought boundary; pure recovery
+        performs no durable write. A bare leaf cannot invent a description.
         """
         if not (hasattr(registry, "form") and entry is not None):
             return None
+        if getattr(entry, "meaning_captured", False):
+            return entry.selected_meaning
         actions = getattr(entry, "actions", None)
         leaves = getattr(entry, "leaves", None)
         concept_ids = getattr(entry, "concept_ids", None)
@@ -15187,7 +15208,6 @@ class LanguageSpace(nn.Module):
                 and leaves.ndim == 2 and concept_ids.ndim == 1
                 and int(concept_ids.numel()) == int(leaves.shape[0])):
             return None
-
         # Action and address metadata are structural, so the boundary may
         # read their bounded host values.  Leaf payloads remain live tensors.
         action_rows = actions.detach().to("cpu").tolist()
@@ -15348,7 +15368,9 @@ class LanguageSpace(nn.Module):
             if not callable(signature_for):
                 return None
             try:
-                signature = signature_for(canonical)
+                signature = signature_for(ConceptualMeaning(
+                    canonical.roles, canonical.role_mask,
+                    **dict(canonical.metadata(), mode="interrogative")))
             except (RuntimeError, ValueError):
                 return None
             if tuple(getattr(signature, "argument_kinds", ())) != ("concept",):
@@ -15419,41 +15441,112 @@ class LanguageSpace(nn.Module):
         if len(stack) != 1:
             return None
 
-        root = stack[0]
-        polarity = True
-        mode = "assertive"
-        while root[0] == "unary":
-            name = getattr(root[1], "method_name", None)
-            if name in ("not", "non"):
-                polarity = not polarity
-            elif name == "what":
-                # Grammar owns interrogative mode: a structural what wrapper
-                # preserves its completed clause rather than dispatching a
-                # boundary executor while the program is being recovered.
-                if mode == "interrogative":
-                    return None
-                mode = "interrogative"
-            else:
-                # This is the selected unary operation itself, rather than a
-                # metadata wrapper around it.  Leave it for the direct-leaf
-                # adapter below; unknown unary forms will still decline there.
-                break
-            root = root[2]
-        if root[0] == "unary":
-            rule, operand = root[1:]
-            if operand[0] != "leaf":
+        def recover(node, level=0):
+            if level > 64 or node[0] == "leaf":
                 return None
-            return unary_concept_operation(
-                getattr(rule, "method_name", None), int(operand[1]),
-                mode=mode, polarity=polarity)
-        if root[0] != "binary":
-            return None
-        rule, left, right = root[1:]
-        if left[0] != "leaf" or right[0] != "leaf":
-            return None
-        face = getattr(rule, "method_name", None)
-        return relation(
-            face, int(left[1]), int(right[1]), mode=mode, polarity=polarity)
+            name = getattr(node[1], "method_name", None)
+            if node[0] == "unary":
+                child = recover(node[2], level + 1)
+                if name in ("not", "non", "what") and child is not None:
+                    if name != "what" or child.mode != "interrogative":
+                        result = ConceptualMeaning(
+                            child.roles, child.role_mask,
+                            **dict(child.metadata(),
+                                   mode="interrogative" if name == "what" else child.mode,
+                                   polarity=child.polarity if name == "what" else not child.polarity),
+                            constituents=child.constituents)
+                        if result.mode == "interrogative":
+                            try:
+                                registry.signature_for(result)
+                            except (RuntimeError, ValueError):
+                                return None
+                        return result
+                if node[2][0] == "leaf":
+                    return unary_concept_operation(
+                        name, int(node[2][1]), mode="assertive", polarity=True)
+                operands = (child,)
+            else:
+                if node[2][0] == node[3][0] == "leaf":
+                    return relation(name, int(node[2][1]), int(node[3][1]),
+                                    mode="assertive", polarity=True)
+                operands = tuple(
+                    int(item[1]) if item[0] == "leaf" else recover(item, level + 1)
+                    for item in node[2:])
+            if any(item is None for item in operands):
+                return None
+            try:
+                operation, form = registry.operation_form(name)
+                descriptor = registry.descriptors[operation.semantic_id]
+                vp = registry._reference((descriptor.domain, operation.semantic_id))
+                vp_value = registry._payload(vp)
+            except (KeyError, ValueError, RuntimeError):
+                return None
+            if len(operation.operand_roles) != len(operands):
+                return None
+            supplied = dict(zip(form.operand_roles, operands))
+            sources = dict(zip(operation.operand_roles, form.permutation))
+            values = [torch.zeros_like(vp_value), vp_value, torch.zeros_like(vp_value)]
+            refs = [None, vp, None]
+            children = []
+            for role, kind in zip(operation.operand_roles, descriptor.argument_kinds):
+                item = supplied[sources[role]]
+                slot = {"I1": 0, "I2": 2}[role]
+                if isinstance(item, ConceptualMeaning):
+                    # The same bounded illumination summary as registry.form.
+                    # The complete child, never this summary, owns its meaning.
+                    values[slot] = item.roles.sum(0) / item.role_mask.sum().sqrt()
+                    refs[slot] = ("constituent", len(children))
+                    children.append(item)
+                else:
+                    if kind == "description" or native_ids[item] <= 0:
+                        return None
+                    values[slot] = leaves[item]
+                    refs[slot] = ("sym", int(native_ids[item]))
+            return ConceptualMeaning(
+                torch.stack(values), torch.tensor(
+                    ["I1" in operation.operand_roles, True, "I2" in operation.operand_roles],
+                    device=leaves.device),
+                mode="interrogative" if name == "what" else "assertive",
+                role_refs=tuple(refs), constituents=tuple(children))
+
+        return recover(stack[0])
+
+    def configure_meaning_learning(self, registry, word_rows, word_values, *, hidden=48):
+        """Configure learned language from WORD addresses, never spelling rules."""
+        from LinguisticMeaning import LinguisticMeaningCodec
+        if getattr(self, "meaning_codec", None) is not None:
+            raise RuntimeError("linguistic meaning parameters are already configured")
+        operations = tuple(semantic_id for semantic_id in registry.executable_operation_ids
+                           if tuple(registry.operation_spec(semantic_id).operand_roles) == ("I1", "I2"))
+        self.meaning_codec = LinguisticMeaningCodec(
+            operations, word_rows, word_values, hidden=hidden).to(word_values)
+        return self.meaning_codec
+
+    def meaning_learning_loss(self, examples, registry):
+        codec = getattr(self, "meaning_codec", None)
+        if codec is None:
+            raise RuntimeError("configure linguistic meaning parameters before supervision")
+        return codec.loss(tuple(examples), registry)
+
+    def generate_meaning(self, meaning, registry, *, max_words=32):
+        codec = getattr(self, "meaning_codec", None)
+        return None if codec is None else codec.generate(meaning, registry, max_words=max_words)
+
+    def restore_meaning_learning(self, state, prefix, registry):
+        """Restore the language module's topology before the strict key audit."""
+        key = prefix + "meaning_codec."
+        metadata = state.get(key + "schema")
+        if metadata is None:
+            return
+        if metadata.tolist()[0] != 1:
+            raise ValueError("unsupported linguistic meaning checkpoint")
+        codec = getattr(self, "meaning_codec", None)
+        if codec is None:
+            codec = self.configure_meaning_learning(
+                registry, state[key + "word_rows"].tolist(), state[key + "word_values"],
+                hidden=int(metadata[1]))
+        if not torch.equal(state[key + "operation_keys"].cpu(), codec.operation_keys.cpu()):
+            raise ValueError("learned language checkpoint has a different grammatical catalogue")
 
     def choose_capacity_binary(self, state, row_gate, *, base_tau):
         """Choose a legacy pre-deposit capacity Binary.

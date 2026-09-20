@@ -9270,6 +9270,65 @@ class TernaryTruthStore(Layer):
         self.record_kind[i] = self.KINDS.index("fact")
         self.grammatical_mode[i] = self.MODES.index("assertive")
 
+    def bind_constituents(self, meaning, *, reserve=0):
+        """Bind a pure compose tree through this existing occurrence owner.
+
+        Preflight the entire graph and capacity before writing. Embedded
+        clauses acquire no fact authority. The returned root keeps its live
+        tensor path; only the ordinary child writes detach their payloads.
+        """
+        order, visited, active = [], set(), set()
+
+        def local_refs(value):
+            if isinstance(value, tuple):
+                if value and value[0] == "constituent":
+                    yield value
+                else:
+                    for item in value:
+                        yield from local_refs(item)
+
+        def visit(value, depth=0):
+            if id(value) in active or depth > 64:
+                raise ValueError("semantic constituent cycle or depth limit")
+            if id(value) in visited:
+                return
+            if value.roles.shape[-1] != self.nDim:
+                raise ValueError("meaning width differs from the truth store")
+            self._validate_local_references(value)
+            for field in value.metadata().values():
+                for ref in local_refs(field):
+                    if (len(ref) != 2 or type(ref[1]) is not int
+                            or not 0 <= ref[1] < len(value.constituents)):
+                        raise ValueError("semantic constituent reference is unavailable")
+            active.add(id(value))
+            for child in value.constituents:
+                visit(child, depth + 1)
+            active.remove(id(value))
+            visited.add(id(value))
+            order.append(value)
+
+        visit(meaning)
+        if len(order) - 1 + reserve > self.capacity - len(self):
+            return None
+        bound, references = {}, {}
+        for value in order:
+            def remap(item):
+                if isinstance(item, tuple):
+                    if item and item[0] == "constituent":
+                        return references[id(value.constituents[item[1]])]
+                    return tuple(remap(part) for part in item)
+                return item
+            result = ConceptualMeaning(value.roles, value.role_mask,
+                **{key: remap(item) for key, item in value.metadata().items()})
+            bound[id(value)] = result
+            if value is not meaning:
+                index = self.append_meaning(result,
+                    kind="question" if result.mode == "interrogative" else "unverified")
+                if index < 0:  # preflight above reserves the complete graph
+                    raise RuntimeError("constituent capacity changed during append")
+                references[id(value)] = self.occurrence_of(index)
+        return bound[id(meaning)]
+
     @torch.no_grad()
     def append_meaning(self, meaning, *, kind="fact", rel_type=None,
                        trust=0.0, timestamp=None):
@@ -9282,13 +9341,16 @@ class TernaryTruthStore(Layer):
             raise ValueError(f"unknown evidence kind {kind!r}")
         if kind == "fact" and meaning.mode != "assertive":
             raise ValueError("a fact requires assertive meaning, not an interrogative question")
-        n = len(self)
-        if n >= self.capacity:
+        if len(self) >= self.capacity:
             return -1
         if not math.isfinite(float(trust)):
             raise ValueError("fact trust must be finite")
         if timestamp is not None and not math.isfinite(float(timestamp)):
             raise ValueError("fact timestamp must be finite")
+        meaning = self.bind_constituents(meaning, reserve=1)
+        if meaning is None:
+            return -1
+        n = len(self)
         self._validate_local_references(meaning)
         self.slots[n].copy_(meaning.roles)
         self.role_mask[n].copy_(meaning.role_mask)
@@ -9416,6 +9478,9 @@ class TernaryTruthStore(Layer):
         """
         if observation_kind not in ("observation", "question"):
             raise ValueError("expectation pair requires an observed input kind")
+        observation = self.bind_constituents(observation, reserve=1)
+        if observation is None:
+            return -1, -1
         if self.capacity - len(self) < 2:
             return -1, self.append_meaning(
                 observation, kind=observation_kind, trust=trust)

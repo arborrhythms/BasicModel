@@ -53,27 +53,20 @@ def _post(serve, payload):
 def test_thinking_payload_is_attached_for_a_thinking_model(served, monkeypatch):
     serve, model = served
     problem = model.inputSpace.data.math_problems["train"][0]
-    # Script the chooser: open a subquestion about the first chain word,
-    # answer it, then answer the root (the mechanism is what is under test).
-    labels = [f"open:{problem.order[0]}", "answer", "answer"]
-
-    def choose(self, context, candidates, *, pressure=0.0, sample=False,
-               temperature=1.0):
-        names = [c["label"] for c in candidates]
-        want = labels.pop(0) if labels else "answer"
-        index = names.index(want) if want in names else 0
-        return index, torch.log_softmax(
-            self.logits(context, candidates, pressure=pressure), dim=-1)[index]
-
-    monkeypatch.setattr(WhatStepChooser, "choose", choose)
+    calls = []
+    original = model.infer
+    def once(*args, **kwargs):
+        calls.append(1)
+        return original(*args, **kwargs)
+    monkeypatch.setattr(model, "infer", once)
+    monkeypatch.setattr(model, "think", lambda *_a, **_k: pytest.fail("second controller"))
     resp = _post(serve, {"messages": [{"role": "user", "content": problem.surface()}]})
     assert resp.status_code == 200, resp.get_json()
     body = resp.get_json()
     thinking = body.get("thinking")
     assert thinking is not None and thinking["thought_free"] is False
-    assert thinking["iterations"] >= 2 and thinking["forced_closures"] >= 0
-    assert thinking["slots"][0] == "open"
-    assert any(s["choice"].startswith("open:") for s in thinking["steps"])
+    assert calls == [1]
+    assert thinking["iterations"] == 0 and thinking["slots"] == []
     assert "content" in body["choices"][0]["message"]
 
 
