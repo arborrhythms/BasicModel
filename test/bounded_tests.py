@@ -417,7 +417,7 @@ def make_batches(nodes, batch_size=256, max_files=16, devices=None):
 def source_snapshot(root):
     paths = set()
     for directory, suffixes in (("bin", {".py"}), ("test", {".py"}),
-                                ("data", {".xml", ".xsd", ".grammar"})):
+                                ("data", {".xml", ".xsd", ".grammar", ".json"})):
         paths.update(p for p in (root / directory).rglob("*") if p.suffix in suffixes and p.is_file())
     paths.update(root / name for name in ("pytest.ini", "Makefile", "requirements.txt", "README.md")
                  if (root / name).is_file())

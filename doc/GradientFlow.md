@@ -43,6 +43,20 @@ and [§8.10](plans/2026-09-15-next-sentence-as-the-production-objective.md#810-q
 | **Thinking:** one selected-controller policy objective | `SelectedThoughtChooser` receives REINFORCE credit from each eligible row's later supplied-answer loss plus `0.01 * actual_shared_work`, including child execution and reader costs, with one EMA baseline | Full-width root and active role payloads remain live into the chooser; candidate roles are detached. Log probability trains the chooser and the live payloads it consumes. A selected truth meaning supplies its live role triples to the answer; prediction, set and code payloads are checked detached values. | Choices, native references, hard evidence and rewards have no ordinary derivative. `thinkingLossWeight` and `whatThinkingPolicyWeight` migrate to this same term once; the old heads are deleted. Residual query credit remains item 2. [Controller and credit](SelectedMeaning.md), [required residual credit](plans/2026-09-15-next-sentence-as-the-production-objective.md#810-queries-as-tools-at-inter-sentence-prediction-decided). |
 | **Output:** supplied-answer error and, when enabled, output-action policy loss | The answer path, conditioner and synthesis heads; sampled generation choices receive policy credit | Differentiable use of a live question/answer representation can train its upstream producer, under the same shared budget. Independent output heads retain their ordinary gradients. | Desired answers are supervision, not generation inputs. Output policy reward is detached: credit flows through action log probabilities, not through the reward calculation. The input parse is not a gold answer parse. [Answer resolution](../bin/Models.py), [head ownership](../bin/Models.py), [action credit](../bin/Models.py). |
 
+An optional annotated grammar curriculum adds `grammarLessonWeight *
+(compose_loss + generate_loss)` to this same trained total after student output.
+Compose teacher leaves and candidate values detach; choice cross entropy trains
+the existing grammar MLP, including its copy-neighbor inputs. Generate teacher
+roles/children detach; choice cross entropy trains the existing generate policy,
+and child-value error trains the selected operator's numerical generator.
+`surface` currently shares its marker map between composition and generation,
+so the normal reconstruction-priority budget also applies to that map. The
+in-operator marker prior and generate policy are answer-only computation.
+No annotation chooses student input/output actions or writes accepted facts.
+The optional curriculum is supervised structural learning, not evidence of
+unsupervised language acquisition. [Lessons](../bin/GrammarLessons.py),
+[configuration](../data/MM_grammar_wording.xml).
+
 An answer loss trains the sentence predictor only if the answer computation
 actually consumes a live prediction. The gradient balancer permits that path;
 it does not create it. The current resolver selects current/recalled
@@ -360,8 +374,8 @@ See [nested retention](NestedRetention.md).
 
 Natural word → operator associations must train compose/generate. The separate
 codec, its supervision API and loss are removed. The old codec test is not
-accepted language-learning evidence. Item 1 completes architecture/wiring;
-natural-wording quality remains an empirical goal. There is no replacement
+accepted language-learning evidence. The architecture/wiring increment does not
+complete item 1: its working natural-wording gate remains open. There is no replacement
 auxiliary interpreter or decoder loss.
 
 The compose MLP's binary `operand_order` projection adds signed left/right

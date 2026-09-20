@@ -65,13 +65,15 @@ def test_gradient_estimator_snap_forward_is_q_and_zero_grad_to_e():
 
 
 def test_gradient_estimator_ste_passes_gradient_through_to_e():
-
-    e = torch.randn(3, 4)
-    q = torch.randn(3, 4)
-    g = torch.randn_like(q)
-    grad_e, _grad_q, out = _estimator_grad("ste", e, q, g)
-    # Forward = q (as value).
-    assert torch.allclose(out, q)
+    # Cancellation in e + (q - e).detach() can erase the quantized value,
+    # even with unit-scale inputs. Keep this regression deterministic.
+    e = torch.tensor([[1., -1., .5, -.5], [1e8, -1e8, 1., -1.]])
+    q = torch.tensor([[1e-7, -1e-7, 1e-7, -1e-7], [.001, -.001, .007, -.0139]])
+    g = torch.tensor([[.2, -.3, .4, -.5], [.6, -.7, .8, -.9]])
+    grad_e, grad_q, out = _estimator_grad("ste", e, q, g)
+    # Forward is exactly q, with no gradient into the quantized target.
+    assert torch.equal(out, q)
+    assert grad_q is None
     # Backward = identity: grad flows straight into e.
     assert grad_e is not None
     assert torch.allclose(grad_e, g)
@@ -196,4 +198,3 @@ def test_codebook_freezing_zeros_gradient_of_frozen_entries():
     w = cb.getW()
     (w * w).sum().backward()
     assert torch.allclose(w.grad, torch.zeros_like(w.grad))
-

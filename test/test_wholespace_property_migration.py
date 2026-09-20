@@ -233,7 +233,9 @@ def test_symbolspace_and_grammar_use_conceptual_not_property_width(tmp_path):
 
     assert ss.muxedSize == cs.subspace.muxedSize
     assert ss.nWhat == ss.muxedSize - ss.nWhere - ss.nWhen
-    assert ss.languageLayer.feature_dim == ss.nWhat
+    # Grammar consumes opaque concept codes, not the symbol's located-event
+    # content slice. No conceptual coordinate may be truncated here.
+    assert ss.languageLayer.feature_dim == cs.subspace.muxedSize
     assert ss.truth_layer.nDim == cs.subspace.muxedSize      # ideas are concept codes
     assert ss.relative_store.nDim == cs.subspace.muxedSize
     assert ss._stm_payload_dim == cs.subspace.muxedSize

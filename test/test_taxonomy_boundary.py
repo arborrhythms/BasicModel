@@ -55,3 +55,23 @@ def test_model_taxonomy_entries_skip_global_vector_proposal_setup(monkeypatch, t
         assert model.think_about(q).posture == "TRUE"
     finally:
         model.End()
+
+
+def test_open_taxonomy_reports_a_neighbor_without_a_payload_without_allocating():
+    cs = _cs()
+    model = model_for(cs)
+    a, b = (("sym", cs.new_concept()) for _ in range(2))
+    cs._csw_concept_row(0, a[1])
+    cs.add_whole(a[1], b)
+    registry = model.grammatical_thoughts
+    query = registry.form("part", a, open_roles=("I2",))
+    from Queries import _existing_row
+    with pytest.raises(ValueError, match="no allocated payload"):
+        _existing_row(cs, b)
+    result = model.reason_about(query).result
+    assert result.result_kind == "set" and not result.value
+    assert "unavailable_concept_payload" in result.incomplete
+    assert result.evidence["unavailable_references"] == (b,)
+    assert result.evidence["edges_expanded"] >= 1
+    with pytest.raises(ValueError, match="no allocated payload"):
+        _existing_row(cs, b)

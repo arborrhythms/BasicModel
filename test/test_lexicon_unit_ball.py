@@ -283,17 +283,35 @@ class TestTopkRp(unittest.TestCase):
         self.assertTrue(torch.all(diffs >= -1e-5))
 
     def test_topk_rp_chunked_matches_unchunked(self):
-
-        V, D, B = 4096, 6, 8
-        emb = Lexicon(V, D)
-        W_index, W_norm2 = emb.lookup_index()
-        x = Lexicon.project_unit_ball(torch.randn(B, D))
+        # This seed has two neighbors separated by float32 roundoff. GEMM
+        # tiling can swap their order; topk does not promise a tie order.
+        with torch.random.fork_rng(devices=[]):
+            torch.manual_seed(2385)
+            V, D, B = 4096, 6, 8
+            emb = Lexicon(V, D)
+            W_index, W_norm2 = emb.lookup_index()
+            x = Lexicon.project_unit_ball(torch.randn(B, D))
 
         idx_full, dist_full, _ = Lexicon.topk_rp(x, W_index, W_norm2, k=16)
         idx_chunk, dist_chunk, _ = topk_rp_chunked(
             x, W_index, W_norm2, k=16, chunk_size=512)
-        self.assertTrue(torch.equal(idx_full, idx_chunk))
-        self.assertTrue(torch.allclose(dist_full, dist_chunk, atol=1e-4))
+        # Check the actual selected rows against an independent higher-
+        # precision distance oracle. This still rejects wrong neighbors,
+        # duplicate rows and incorrect distances, without requiring a
+        # numerically undefined ordering of tied/roundoff-separated rows.
+        # Keep the high-precision oracle portable to MPS executions.
+        xd, wd = x.detach().cpu().double(), W_index.detach().cpu().double()
+        exact = torch.minimum(
+            (xd[:, None] - wd[None]).square().sum(-1),
+            (xd[:, None] + wd[None]).square().sum(-1))
+        expected = exact.topk(16, largest=False).values
+        tolerance = 16 * torch.finfo(x.dtype).eps
+        for indices, distances in ((idx_full, dist_full), (idx_chunk, dist_chunk)):
+            selected = exact.gather(1, indices.cpu())
+            torch.testing.assert_close(selected, expected, rtol=0, atol=tolerance)
+            torch.testing.assert_close(distances.cpu().double(), selected, rtol=0, atol=tolerance)
+            self.assertTrue(bool((indices.sort(-1).values.diff(dim=-1) > 0).all()))
+        torch.testing.assert_close(dist_full, dist_chunk, rtol=0, atol=tolerance)
 
 
 class TestTorusLegacyMode(unittest.TestCase):

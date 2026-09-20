@@ -165,6 +165,10 @@
            ran / will run / ...); not a live rule until RewriteLayer exists. -->
       <rule>tense_O1 = tense.forward(tense_I1)</rule>
       <rule>morphology_O1 = morphology.forward(morphology_I1)</rule>
+      <!-- A selected surface attachment preserves its complete right-hand
+           meaning while retaining both operands in the numerical carrier.
+           Which spans are markers is learned by the ordinary grammar MLP. -->
+      <rule>surface_O1 = surface.forward(surface_I1, surface_I2)</rule>
     </compose>
 
     <!-- Explicit boundary allow-list. Structural declarations alone never
@@ -215,6 +219,7 @@
 
       <rule>tense_I1 = tense.reverse(tense_O1)</rule>
       <rule>morphology_I1 = morphology.reverse(morphology_O1)</rule>
+      <rule>surface_I1, surface_I2 = surface.reverse(surface_O1)</rule>
     </generate>
   </Symbolic>
 

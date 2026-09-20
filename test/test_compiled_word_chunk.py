@@ -318,7 +318,8 @@ def test_chunk_views_keep_one_graph_across_part_and_bucket_widths():
 def _tiny_canonical_model(
         tmp_path, monkeypatch, *, input_width=128, batch_size=2,
         word_buckets="16,32,64,128,256", forward_grammar_weight=0.0,
-        detached_reverse=False):
+        detached_reverse=False, concept_rows=64, dimension=16,
+        chooser_depth=None):
     """Build the real aligned serial model with 16-coordinate events."""
     tree = ET.parse(_ROOT / "data" / "BasicModel.xml")
     root = tree.getroot()
@@ -337,15 +338,23 @@ def _tiny_canonical_model(
     _set("./PartSpace/nDim", 16)
     _set("./PartSpace/nOutputDim", 16)
     _set("./ConceptualSpace/nInputDim", 16)
-    _set("./ConceptualSpace/nVectors", 64)
-    _set("./ConceptualSpace/activeVectors", 32)
+    _set("./ConceptualSpace/nVectors", concept_rows)
+    _set("./ConceptualSpace/activeVectors", concept_rows // 2)
     _set("./ConceptualSpace/nDim", 16)
     _set("./ConceptualSpace/nOutputDim", 16)
     _set("./WholeSpace/nInputDim", 16)
     _set("./WholeSpace/nDim", 16)
     _set("./WholeSpace/nOutputDim", 16)
     _set("./OutputSpace/nInputDim", 16)
+    if dimension != 16:
+        for section in ("InputSpace", "PartSpace", "WholeSpace", "ConceptualSpace", "OutputSpace"):
+            for tag in ("nInputDim", "nDim", "nOutputDim"):
+                node = root.find(f"./{section}/{tag}")
+                if node is not None and node.text == "16":
+                    node.text = str(dimension)
     _set("./architecture/training/batchSize", batch_size)
+    if chooser_depth is not None:
+        _set("./architecture/transformChooserDepth", chooser_depth)
     _set("./architecture/training/numWorkers", 0)
     _set("./architecture/training/autoload", False)
     _set("./architecture/training/autosave", False)

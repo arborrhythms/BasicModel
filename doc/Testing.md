@@ -740,9 +740,11 @@ untouched and excluded from the correction commit.
 
 ## Grammar-owned wording architecture (September 20)
 
-This landing closes item 1's architecture/wiring work. The concrete language-
-quality, structural-preference and routing-share checks remain explicit goals,
-not claimed passing empirical gates. See [SelectedMeaning](SelectedMeaning.md).
+`d1d8b5b` is an architecture/wiring increment, not completion of item 1. Its
+initial completion claim incorrectly moved the working natural-wording gate to
+item 4. The user's clarification relaxed structural-preference and routing-share
+measurements, not that original gate. At that commit language quality remained
+unproven and item 1 remained open. See [SelectedMeaning](SelectedMeaning.md).
 No additional LM, interpreter, realiser or auxiliary language loss is added.
 
 The existing compose MLP now retains ordered operand and role context. A zero
@@ -799,3 +801,129 @@ landing source. The SHA-256 over its sorted compact JSON map is
 `3338902b6483d4217b064f52b36abe083c64adb4fd58bddd27c7ce393f88581b`.
 This receipt note was added after the run and leaves that source map unchanged.
 The user-owned thought-operator specification edit is excluded from this commit.
+
+
+## Working grammar wording gate (September 20)
+
+This completion keeps the original item 1 gate with item 1. A selected
+`surface` attachment preserves the complete right semantic subtree while
+retaining the marker numerically. Both attachment and wait decisions are made
+by the existing grammar MLP; a small marker prior is computation inside the
+operator. The normal generate grammar emits word concepts before the lexical
+inverse compares against every known spelling. No LM or fallback interpreter
+is introduced. [SelectedMeaning](SelectedMeaning.md) records the design and
+the scope of the result.
+
+The explicit slow run uses seed 931, 1,599 actual forward-parsed training
+sentences, 1,000 generate-learning steps and 8,000 compose-learning steps. It
+holds input encodings fixed for this focused grammar study. Annotated operand
+variables get teacher-state full-code augmentation. There are 32 development
+cases and 24 additional cases with three previously unused complete marker
+wordings and eight previously unused nouns, in both orders. Result: 56/56
+comprehension/control cases, 53/53 natural relation outputs and 53/53 meaning
+recompositions. The three alternate `have` cases do not invent part relations.
+All 178 observed word spellings compete in lexical inversion. This is a small
+supervised compositional result, not general English, unsupervised learning,
+or useful learned questioning. The causal utility study remains item 4.
+
+Development receipts under `output/tests/`:
+
+| Receipt | Result and disposition |
+| --- | --- |
+| `20260920-082112-a31393` | Real text exposed mismatched concept-identity owners. Registry and input now use the first-stage allocator. |
+| `20260920-083914-c585c3` | Compose-only 31/32; not accepted as a generation gate. |
+| `20260920-084751-eedf09` | Generated words worked, but twelve parses failed; not accepted. |
+| `20260920-085402-fa09bb` | 29/32 parses: the correct modifier operation lost to an isolated copy score. Neighbor context now reaches that decision inside the same MLP. |
+| `20260920-085823-56d59a` | Resumed development checkpoint passed 32/32 and generation/recomposition. A fresh run was still required. |
+| `20260920-090413-8194c8` | 16/16 checks passed, including fresh training, normal compiled reconstruction/`runBatch` updates, unlabelled-credit isolation, chooser checkpoint/optimizer/fullgraph behavior. |
+| `20260920-091026-4437c5` | 109/109 passed: the expanded fresh 56-case language run plus affected selected-meaning, output, adapter, grammar-layer and bounded-runner tests. |
+
+The shipped XML validates against `model.xsd`. This ordinary CLI smoke exited
+0 after one training batch (reconstruction loss 1.2483), and saved its normal
+checkpoint. Its untrained diagnostic output is **not** language-quality evidence:
+
+```sh
+BASICMODEL_DEVICE=cpu MODEL_COMPILE=eager BASIC_MAX_BATCHES=1 DEVELOPER_DIR=/Library/Developer/CommandLineTools .venv/bin/python bin/Models.py data/MM_grammar_wording.xml
+```
+
+Reproduce the focused language gate with:
+
+```sh
+BASICMODEL_DEVICE=cpu RUN_SLOW=1 DEVELOPER_DIR=/Library/Developer/CommandLineTools .venv/bin/python test/test_report.py test/test_surface_grammar.py::test_real_text_has_a_complete_selected_meaning --batch-size 8 --max-files 1
+```
+
+The final explicit slow receipt is
+[`20260920-095850-51ad00/result.json`](../output/tests/20260920-095850-51ad00/result.json):
+**1/1 passed**, 154.5 seconds, 1.24 GiB peak on CPU. It reruns all 56 cases, 53 generated
+relations and 53 recompositions from fresh training at seed 931 on the final source. Its 620
+validated source entries match the full-suite snapshot. The default suite skips
+this marked slow study; these are separate receipts. No existing tests are deleted.
+
+The final **source-matched full default receipt** is
+[`20260920-095850-082122/result.json`](../output/tests/20260920-095850-082122/result.json):
+**4,616/4,616 selected cases completed, exit 0**, in **1,039.3 seconds**.
+Unique outcomes are **4,284 passed, 331 skipped and one expected failure**.
+Selected and completed case sets are identical. No selectors or exclusions
+were added to the default suite; the explicit slow receipt above supplies the
+separate language-quality evidence.
+
+Command from `basicmodel/`:
+
+```sh
+DEVELOPER_DIR=/Library/Developer/CommandLineTools .venv/bin/python test/test_report.py --batch-size 8 --max-files 1
+```
+
+Ten CPU workers used the unchanged 8 GiB worker / 28 GiB aggregate limits and
+1,800-second worker / 10,800-second suite deadlines. Peak footprints were
+4.46 GiB per worker and 8.70 GiB aggregate. All **620** entries in
+`validated_source` match a fresh `bounded_tests.source_snapshot()` and the
+explicit slow receipt. The SHA-256 over the sorted compact JSON source map is
+`e2c6a0c66dc5c1578c267f6a3e374ae2d49928742cb557ef9f692222ce088255`.
+This receipt note was added afterward without changing that source map.
+The user-owned thought-operator specification and figure edits are excluded
+from the completion commit. Learned questioning utility remains unproven.
+
+The first full run, `20260920-091556-2e1cc5`, completed all 4,615 cases
+in 1,055.3 seconds with five failures. Two revealed that separate-stage
+taxonomy configurations must retain their terminal registry owner; readers now
+use the registry's actual owner. One exposed a structural taxonomy neighbor
+without a numerical payload: the bounded reader now retains its unavailable
+reference and reports incompleteness without allocating or aborting. One width
+assertion still expected the symbol's content slice; it now checks the full
+opaque concept width. The fifth required identical float32 top-k index order
+across GEMM tilings. Seed 2385 reproduces a two-neighbor swap with distance
+differences no greater than 2.4e-7. That test now checks unique selected rows and
+distances against a float64 projective-distance oracle, with a 16-epsilon
+absolute bound. No production ranking code changes. These are corrections,
+not deleted tests or exclusions. The complete source is rerun after the fixes.
+
+Focused correction receipt `20260920-093532-2bf724` passed 41/41 cases,
+including both taxonomy ownership/checkpoint failures, actual per-row controller
+credit, the new missing-payload case, opaque grammar width and lexicon geometry.
+The next full run `20260920-093631-a0ea7f` was interrupted at 377/4,616 cases
+(exit 130), with no observed failures, after a direct MPS check showed that the
+new float64 oracle needed CPU storage. Its concurrent slow run was also stopped.
+All workers exited before the test was edited. Only the reference calculation
+moves to CPU; the lookup under test stays on its selected device. Neither
+interrupted run is a landing receipt.
+
+The portable lexicon checks passed **27/27 on MPS** in
+`20260920-093838-4d5332`. The earlier slow receipt
+`20260920-091556-ea2413` also passed before the full-suite corrections; the
+explicit CPU receipt linked above supersedes it for this landing.
+The intervening slow receipt `20260920-093930-b0e9b7` also passed before the
+straight-through estimator correction below; the final receipt repeats it afterward.
+
+The next full run, `20260920-093930-5223b0`, completed all 4,616 cases in
+1,038.9 seconds: 4,283 passed, 331 skipped, one expected failure and one
+failure. Its remaining failure exposed cancellation in the codebook's
+straight-through estimator, `e + (q - e).detach()`: a small quantized value
+can be rounded away even for unit-scale encoder values. A deterministic
+probe reproduced it in `20260920-095755-75737b`. The implementation now forms
+the zero-valued gradient carrier first, `q.detach() + (e - e.detach())`,
+preserving the quantized forward value exactly and the identity encoder
+gradient. The retained test now checks those values, gradients and the absence
+of target gradients on fixed cancellation cases. All 11 affected checks passed
+on CPU (`20260920-095823-3d7c1a`) and MPS (`20260920-095823-23fb9e`). All full-run
+workers had exited before either source or test was changed. Both the full
+default suite and the fresh slow language study are rerun after this correction.

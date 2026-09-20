@@ -762,7 +762,8 @@ class ThoughtTaxonomyCapability:
             object.__getattribute__(self, '_ThoughtTaxonomyCapability__space'),
             max_nodes=nodes, max_records=records, focus=(reference,), work=work)
         edges = view.neighbors(reference, direction=direction)
-        values, incomplete = [], list(view.incomplete)
+        values, incomplete, unavailable = [], list(view.incomplete), []
+        expanded = 0
         for index, edge in enumerate(edges):
             if index >= max_expansions:
                 incomplete.append('traversal_limit')
@@ -770,6 +771,7 @@ class ThoughtTaxonomyCapability:
             if not work.consume('expansion'):
                 incomplete.append('work_budget')
                 break
+            expanded += 1
             # Capture the answer atom inside the selected, metered reader.
             # Output and checkpoint replay must not perform a later lookup.
             if not work.consume('payload'):
@@ -777,7 +779,16 @@ class ThoughtTaxonomyCapability:
                 break
             target = edge.whole if direction == 'up' else edge.part
             space = object.__getattribute__(self, '_ThoughtTaxonomyCapability__space')
-            row = _existing_row(space, target)
+            try:
+                row = _existing_row(space, target)
+            except ValueError:
+                # Taxonomy can name a structural concept before that concept
+                # owns a numerical payload. Preserve the missing reference
+                # and incompleteness; do not allocate, invent a value or abort
+                # the controller's otherwise valid bounded read.
+                unavailable.append(target)
+                incomplete.append('unavailable_concept_payload')
+                continue
             atom = _basis(space)[row].detach().clone()
             values.append({
                 'reference': target,
@@ -790,7 +801,8 @@ class ThoughtTaxonomyCapability:
             'incomplete': tuple(dict.fromkeys(incomplete)),
             'nodes_scanned': view.nodes_scanned,
             'records_scanned': view.records_scanned,
-            'edges_expanded': len(values),
+            'edges_expanded': expanded,
+            'unavailable_references': tuple(unavailable),
         })
 
 

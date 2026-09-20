@@ -172,9 +172,11 @@ The standalone `LinguisticMeaningCodec` introduced in `288b56b` was a separate
 interpreter/realiser and has been removed. Its synthetic, noun-only holdout did
 not satisfy item 1. The architecture now uses the existing grammar chooser,
 including ordered operand/role inputs, and BasicModel's declared generate walk.
-The predefined natural-word anchor `equals` is removed. Language-quality and
-structural-preference evidence remain design goals; no learned utility is
-claimed. See [SelectedMeaning](SelectedMeaning.md).
+The predefined natural-word anchor `equals` is removed. Item 1's bounded
+supervised wording gate passes through actual compose/generate choices; no
+separate language model supplies it. Structural-preference and routing-share
+measurements remain design goals. No learned questioning utility is claimed. See
+[SelectedMeaning](SelectedMeaning.md).
 
 `SelectedThoughtChooser` receives full masked root/active/candidate roles,
 mode, polarity, bounded bindings/scope and attended visible STM/LTM values.

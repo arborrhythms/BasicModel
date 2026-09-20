@@ -12,11 +12,12 @@
 
 Work follows
 [2026-09-15-next-sentence-as-the-production-objective.md](doc/plans/2026-09-15-next-sentence-as-the-production-objective.md)
-§10 and its completion gates. **Item 1 architecture and production wiring are
-complete.** Natural word → operator associations use compose/generate; the
-standalone codec remains rejected. Concrete language-quality and structural
-preference checks remain explicit design/evidence goals under item 4, following
-the September 20 clarification. Current contracts, limits and receipts are in
+§10 and its completion gates. **Item 1's bounded supervised wording gate is
+complete; item 2 is next.** Natural word → operator associations use the existing
+compose/generate grammars. Structural-preference and routing-share measurements
+remain design goals; learned questioning utility remains unproven under item 4.
+Current contracts,
+limits and receipts are in
 [SelectedMeaning](doc/SelectedMeaning.md),
 [KernelRetirement](doc/KernelRetirement.md) and [Testing](doc/Testing.md).
 The September 17 handoff and preserved candidates are in
@@ -25,6 +26,9 @@ only the generation catalogue (item 3) remains uninstalled.
 
 ### Done (newest first)
 
+- This completion commit: item 1, grammar-owned wording on real parsed text, held-out complete wordings/nouns, converse/sense controls and full-vocabulary generation/recomposition ([evidence and receipt](doc/Testing.md#working-grammar-wording-gate-september-20)).
+
+- `d1d8b5b` Ordered compose-MLP inputs and production generate wiring (item 1 increment; the wording gate remains open, [SelectedMeaning](doc/SelectedMeaning.md), [Testing](doc/Testing.md#grammar-owned-wording-architecture-september-20)).
 - `02db7ef` Review corrections: removed the standalone codec and legacy policy; completed chooser context, bounded memory and nested-controller mechanisms ([SelectedMeaning](doc/SelectedMeaning.md), [Testing](doc/Testing.md)).
 - `288b56b` Initial controller replacement; review reopened item 1's wording gate ([current design and limits](doc/SelectedMeaning.md), [original receipt and review corrections](doc/Testing.md#selected-meaning-and-one-controller-september-20), [test dispositions](doc/KernelRetirement.md)).
 - `60b1497` Forward owns anchored lexical forms by WORD row; capture reads retained provenance ([Testing](doc/Testing.md#forward-owned-lexical-forms-september-19); item 1 increment).
@@ -71,17 +75,12 @@ only the generation catalogue (item 3) remains uninstalled.
    generation-catalogue candidate (it no longer applies to primary); validate
    checkpoint/optimizer migration and normal supervised output; keep the §8.4
    downstream/reconstruction gradient contract and GradientFlow.md current.
-4. **Evidence/design goals and documentation.** Grammar-owned natural wording:
-   real forward-parsed text, complete relation-wording and noun holdouts,
-   converse/alternate-sense controls, generation from the normal vocabulary,
-   and recomposition preserving meaning. Prefer understandable structural
+4. **Evidence/design goals and documentation.** Prefer understandable structural
    operators when
    they carry the meaning; any opaque operator must be an ordinary grammar-MLP
    choice, with the structural face preferred at equal fit. Measure the opaque
    routing share and its decrease as structural coverage grows on the same
-   corpus. These remain goals, not claimed passing language-quality tests.
-   An optional LM must be a declared grammar operator with normal configuration
-   and training, never a fallback interpreter or pre-generate realiser.
+   corpus. These preference/routing measurements remain design goals.
    Held-out causal utility against direct-answer and equal-compute baselines
    across seeds,
    reconstruction/discrimination controls, warmed training throughput; the

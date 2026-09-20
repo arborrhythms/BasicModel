@@ -137,6 +137,7 @@ class WhatAnswer:
     grammar_trace: Tuple[Any, ...] = field(default_factory=tuple)
     ltm_slot: Optional["LTMSlot"] = field(default=None, compare=False)
     execution: Any = field(default=None, repr=False, compare=False)
+    text: Optional[str] = None
 
     def __post_init__(self) -> None:
         if self.available and self.what is None:

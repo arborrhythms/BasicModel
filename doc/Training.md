@@ -1126,3 +1126,20 @@ their reachable constituents and discards only orphans. Tensor-only restore
 therefore retains zero-trust content while ownership metadata is unavailable.
 Checkpoint content is detached; a normal live episode retains its existing
 gradient route. See [nested retention](NestedRetention.md).
+
+
+## Annotated grammar wording curriculum
+
+`MM_grammar_wording.xml` selects `dataset=grammar` and the shipped JSON text
+curriculum. `Data.loadGrammarLessons` retains separate train/validation/test
+annotations, while normal text enters the forward and output paths without
+those annotations. Afterwards, `runBatch` adds `grammarLessonWeight` times the
+compose/generate lesson loss to the real trained total. It requires matching
+unpacked source rows and captured words; evaluation, missing annotations and
+prediction-only trials receive no such term. It fabricates no ordinary answer
+labels. Both choosers are the existing grammar MLPs, and numerical generation
+learning belongs to declared operators. This loss is supervised structural
+credit, not a second thought-policy objective. Shared parameters still obey
+the reconstruction-priority budget. See [SelectedMeaning](SelectedMeaning.md)
+for the bounded wording result and its limits, and [GradientFlow](GradientFlow.md)
+for the detach/ownership boundaries.

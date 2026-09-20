@@ -215,6 +215,9 @@
       <learningRate>0.001</learningRate>
       <!-- Teacher owns clean reconstruction lessons when enabled. -->
       <teacherReconstruction>false</teacherReconstruction>
+      <!-- Supplied grammar annotations train the existing grammar MLPs.
+           Unlabelled corpora have no grammar-lesson objective. -->
+      <grammarLessonWeight>1.0</grammarLessonWeight>
       <!-- Weight of reconstruction loss vs prediction loss in [0,1]:
            total = (1-r)*output + r*recon. -->
       <reconstructionScale>0.5</reconstructionScale>

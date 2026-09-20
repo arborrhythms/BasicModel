@@ -2702,6 +2702,10 @@ class BaseModel(Mereology, nn.Module):
             raise ValueError("outputGradientRatio must satisfy 0 <= ratio < 1")
         self.forward_grammar_weight = float(
             TheXMLConfig.training("forwardGrammarWeight", 0.0) or 0.0)
+        self.grammar_lesson_weight = float(
+            TheXMLConfig.training("grammarLessonWeight", 1.0))
+        if not math.isfinite(self.grammar_lesson_weight) or self.grammar_lesson_weight < 0:
+            raise ValueError("grammarLessonWeight must be finite and nonnegative")
         _pack_env = os.environ.get("BASIC_PACK_SENTENCES")
         self.pack_sentences = bool(
             TheXMLConfig.training("packSentences", False))
@@ -6231,17 +6235,19 @@ class BasicModel(BaseModel):
         reasoner = TruthGroundedReasoner(
             model=self, store=getattr(symbol_space, 'ltm_store', None))
         discourse = getattr(symbol_space, 'discourse', None)
+        registry = _boundary_registry(self)
+        concept_owner = registry.space if registry is not None else self.conceptualSpace
         return ThoughtGrammarContext(
             word_stream=freeze(stream),
             conceptual_space=ThoughtConceptualCapability(
-                self.conceptualSpace, TruthGroundedReasoner.equal),
+                concept_owner, TruthGroundedReasoner.equal),
             primed_symbols=freeze(primed),
             ltm=ThoughtLTMCapability(
                 existence_evidence=reasoner.existence_evidence,
                 store=reasoner.reasoning_store,
                 equal=TruthGroundedReasoner.equal, tau_id=reasoner.tau_id,
                 memory=self._what_memory(), discourse=discourse),
-            taxonomy=ThoughtTaxonomyCapability(self.conceptualSpace),
+            taxonomy=ThoughtTaxonomyCapability(concept_owner),
             work=work, continuation=continuation,
             boundary=self._assert_query_boundary, row=row)
 
@@ -9234,6 +9240,22 @@ class BasicModel(BaseModel):
         selected_answer_rows = list(answer.unbind(0))
         answer_meanings = [() for _ in range(B)]
         selected_answer_applied = False
+        # A declarative relation has the same full semantic operands as an
+        # interrogative one. Its lossy numerical root is not an answer seed.
+        # Recover only its actual selected grammar program; this performs no
+        # extra parse, learned classification, thought execution or LTM write.
+        language = getattr(self, "languageSpace", None)
+        registry = getattr(self, "grammatical_thoughts", None)
+        if language is not None and registry is not None:
+            for row, entry in enumerate(programs):
+                if row in selected_rows or entry is None:
+                    continue
+                meaning = language.program_meaning(entry, registry)
+                if meaning is None or meaning.mode == "interrogative":
+                    continue
+                answer_meanings[row] = (meaning,)
+                selected_answer_rows[row] = meaning.roles.to(answer)
+                selected_answer_applied = True
         for row, selected in selected_thoughts:
             checked = getattr(selected, "result", None)
             if not isinstance(checked, ThoughtResult):
@@ -10108,6 +10130,7 @@ class BasicModel(BaseModel):
         temporal = bool(questions) and questions[0].relation in (
             WhatRelation.PAST, WhatRelation.FUTURE)
         surface = None
+        texts = ()
         answer_event = derivation.answer_symbol
         output_truncated = None
         walked = None
@@ -10130,7 +10153,8 @@ class BasicModel(BaseModel):
                 sample_actions = self.training and torch.is_grad_enabled()
                 words, n_emitted, output_truncated, policy_cost = (
                     self._compiled_output_walk()(
-                        self._walk_operand(idea), budget, False,
+                        self._walk_operand(idea, infix_rows=tuple(
+                            bool(items) for items in derivation.answer_meanings)), budget, False,
                         None, sample_actions))
                 kept = max(2, 2 * int(getattr(self, "serial_word_capacity", 0) or 8))
                 if int(words.shape[1]) > kept:       # the realised slab keeps 2W words
@@ -10139,6 +10163,8 @@ class BasicModel(BaseModel):
                 object.__setattr__(self, "_output_truncated", output_truncated)
                 object.__setattr__(self, "_output_policy_cost", policy_cost)
                 walked = words
+                if not self.training or not torch.is_grad_enabled():
+                    texts = self._generated_word_text(words, n_emitted)
         with self._synthesis_guard():
             if walked is not None:
                 # words (concept width) -> percepts through the tied reverse
@@ -10177,6 +10203,9 @@ class BasicModel(BaseModel):
             {"operation": "output:from_percepts",
              "shape": tuple(actual.shape) if torch.is_tensor(actual) else None},
         )
+        if texts:
+            trace = trace + ({"operation": "generate:lexical_inverse",
+                              "vocabulary": "all_owned_word_surfaces"},)
         self._collect_fresh_synthesis_modules()
         if surface is not None:
             trace = trace + ({"operation": "output:surface",
@@ -10184,7 +10213,7 @@ class BasicModel(BaseModel):
                               if torch.is_tensor(surface) else None},)
         construction = AnswerConstruction(
             actual=actual, derivation=derivation, concepts=concepts,
-            percepts=percepts, surface=surface, trace=trace)
+            percepts=percepts, surface=surface, trace=trace, texts=texts)
         self._last_answer_construction = construction
         return construction
 
@@ -10908,6 +10937,12 @@ class BasicModel(BaseModel):
                     grammar_trace=answer.grammar_trace,
                     ltm_slot=stored, execution=answer.execution)
             answers.append(answer)
+        construction = getattr(self, "_last_answer_construction", None)
+        texts = tuple(getattr(construction, "texts", ()) or ())
+        if len(texts) == len(answers):
+            from dataclasses import replace
+            answers = [replace(answer, text=texts[b]) if answer.available else answer
+                       for b, answer in enumerate(answers)]
         self._last_what_answers = tuple(answers)
         return answers[0] if isinstance(question, WhatQuestion) else tuple(answers)
 
@@ -12823,7 +12858,7 @@ class BasicModel(BaseModel):
         cap = int(getattr(getattr(self.conceptualSpace, "stm", None), "capacity", 0) or 0)
         return max(2, 4 * W + max(0, cap - 1))
 
-    def _walk_operand(self, idea):
+    def _walk_operand(self, idea, infix_rows=()):
         """The materialised idea ``[B, K, D]`` as the walk's stack
         ``[B, cap, D]``: the idea's slots are newest first (the STM/LTM
         order) and the walk's top is its last live slot, so the live slots
@@ -12835,6 +12870,11 @@ class BasicModel(BaseModel):
         d = live.to(torch.long).sum(dim=1)                              # [B]
         pos = torch.arange(cap, device=idea.device).reshape(1, cap)
         src = (d.reshape(B, 1) - 1 - pos).clamp(0, K - 1)
+        if infix_rows:
+            if len(infix_rows) != B:
+                raise ValueError("generate layout must name every answer row")
+            infix = torch.tensor(infix_rows, device=idea.device, dtype=torch.bool)
+            src = torch.where(infix[:, None], pos.expand(B, cap).clamp_max(K - 1), src)
         gathered = idea.gather(1, src.unsqueeze(-1).expand(B, cap, D))
         keep = pos < d.reshape(B, 1)
         return torch.where(keep.unsqueeze(-1), gathered, torch.zeros_like(gathered))
@@ -14152,6 +14192,97 @@ class BasicModel(BaseModel):
             factory = lambda row: What.present(row, split=split)
         return tuple(factory(row) for row in resolved_rows)
 
+    @torch.no_grad()
+    def _generated_word_text(self, words, lengths):
+        """Invert generated word concepts through the whole known vocabulary.
+
+        This is the lexical inverse AFTER the generate grammar has emitted its
+        concepts. It does not choose a relation or insert function words. All
+        WORD/OBJECT rows with an owned spelling compete; neither the current
+        input brick nor a hand-selected output alphabet limits the candidates.
+        Both query and vocabulary axes are tiled to bound temporary storage.
+        """
+        owner = self._concept_owner()
+        vocabulary = sorted(set(getattr(owner, "_row_surfaces", ())) |
+                            set(getattr(owner, "_surface_object_rows", ())))
+        spellings = {row: owner.word_surface_for_row(row) for row in vocabulary}
+        vocabulary = [row for row in vocabulary if spellings[row] is not None]
+        counts = lengths.detach().cpu().tolist()
+        if not vocabulary:
+            return tuple(None for _ in counts)
+        B, W, D = words.shape
+        flat = torch.nn.functional.normalize(words.detach().reshape(-1, D), dim=-1)
+        chosen = torch.full((len(flat),), -1, device=flat.device, dtype=torch.long)
+        for lo in range(0, len(flat), 256):
+            queries = flat[lo:lo + 256]
+            best = queries.new_full((len(queries),), -1)
+            ids = chosen[lo:lo + 256]
+            for start in range(0, len(vocabulary), 4096):
+                rows = torch.tensor(vocabulary[start:start + 4096],
+                                    device=flat.device, dtype=torch.long)
+                atoms = owner.similarity_codebook.lookup_rows(rows).to(queries)
+                if atoms.shape[-1] != D:
+                    raise ValueError("word inverse requires the full conceptual width")
+                atoms = torch.nn.functional.normalize(atoms, dim=-1)
+                scores, index = (queries @ atoms.T).abs().max(-1)
+                ids.copy_(torch.where(scores > best, rows[index], ids))
+                best = torch.maximum(scores, best)
+        rows = chosen.reshape(B, W).cpu().tolist()
+        return tuple(b" ".join(spellings[index] for index in row[:min(W, int(count))]).decode("utf8")
+                     for row, count in zip(rows, counts))
+
+    def _grammar_target_word(self, word):
+        """Teacher-side full concept of a word already in the live vocabulary."""
+        owner = self._concept_owner()
+        allocator = getattr(owner, "_concept_allocator", None)
+        triple = getattr(allocator, "word_obj_meta", {}).get(word)
+        if triple is None:
+            return None
+        row = owner._csw_row_of(int(triple[1]))
+        if row is None:
+            raise ValueError("grammar target word has no live conceptual row")
+        reference = owner.similarity_codebook.W
+        return owner.similarity_codebook.lookup_rows(torch.tensor(row, device=reference.device)).detach()
+
+    def _grammar_lesson_loss(self, understanding, *, split, source_rows):
+        """Score supplied annotations after the student has fixed its parse.
+
+        No labels enter forward, resolution or generation. Ordinary unlabelled
+        corpora have no lessons. Stable source rows, not a word-to-operation
+        map, select the teacher target for an annotated training presentation.
+        """
+        if split != "train" or self.grammar_lesson_weight <= 0:
+            return None
+        table = getattr(self.inputSpace.data, "grammar_lessons", {}).get(split, ())
+        if not table:
+            return None
+        if source_rows is None or len(source_rows) != len(understanding.answer_program):
+            raise ValueError("annotated grammar training requires stable source rows")
+        lessons = []
+        for row, program in zip(source_rows, understanding.answer_program):
+            if isinstance(row, (tuple, list)) and len(row) == 1:
+                row = row[0]
+            if not isinstance(row, (int, np.integer)):
+                raise ValueError("grammar lessons require unpacked sentence source rows")
+            if not 0 <= int(row) < len(table) or program is None:
+                raise ValueError("grammar lesson requires a live captured source row")
+            lesson = table[int(row)]
+            # Guard against accidentally crediting a different staged input.
+            owner = self._concept_owner()
+            words = [owner.word_surface_for_row(int(value))
+                     for value in program.word_rows.detach().cpu().tolist()]
+            if any(value is None for value in words) or b" ".join(words).decode("utf8") != lesson["text"]:
+                raise ValueError("grammar lesson text does not match its captured forward words")
+            lessons.append(lesson)
+        from GrammarLessons import compose_loss, generate_loss
+        costs = [compose_loss(self.languageSpace, understanding.answer_program, lessons,
+                              base_tau=self.stm_reduce_tau,
+                              capacity=int(self.conceptualSpace.stm.capacity)),
+                 generate_loss(self.languageSpace, understanding.answer_program, lessons,
+                               self.grammatical_thoughts, self._grammar_target_word)]
+        costs = [cost for cost in costs if cost is not None]
+        return torch.stack(costs).sum() if costs else None
+
     def runBatch(self, train=True, batchNum=0, batchSize=10, split="train",
                  optimizer=None, batch_override=None, progress=None,
                  superposition_temperature=None, exploration_trial=False,
@@ -14974,6 +15105,14 @@ class BasicModel(BaseModel):
                 intra_loss = None
 
             totalLoss = self._primary_loss(lossOut, lossIn, sbow)
+            if train and trial_mode != "predict":
+                grammar_lesson = self._grammar_lesson_loss(
+                    self._last_understanding, split=split, source_rows=source_rows)
+                if grammar_lesson is not None:
+                    totalLoss = totalLoss + self.grammar_lesson_weight * grammar_lesson
+                    self.record_loss("grammar_lesson", grammar_lesson,
+                                     weight=self.grammar_lesson_weight,
+                                     space="LanguageSpace", category="grammar")
             if train and trial_mode != "predict" and output_policy_loss is not None:
                 totalLoss = totalLoss + self.output_policy_weight * output_policy_loss
                 self.record_loss(
@@ -17296,7 +17435,9 @@ class BasicModel(BaseModel):
         # bridge; the preserved legacy reasoner owns no grammar registry.
         object.__setattr__(
             self, 'grammatical_thoughts',
-            GrammaticalThoughtRegistry.install(self.conceptualSpace, TheGrammar))
+            GrammaticalThoughtRegistry.install(
+                self._concept_owner() if _share_concept_dictionary else self.conceptualSpace,
+                TheGrammar))
         object.__setattr__(
             self.symbolSpace, 'grammatical_thoughts', self.grammatical_thoughts)
 

@@ -3752,11 +3752,65 @@ class LowerLayer(GrammarLayer):
         """Binary GrammarLayer generate entry -- routes to ``reverse``."""
         return self.reverse(parent, gate=gate)
 
+class SurfaceLayer(GrammarLayer):
+    """Attach a surface marker to a complete content constituent.
+
+    The grammar chooser, never a word table, decides whether a word/span is
+    a marker. Semantically this rule projects its right operand, including
+    that operand's complete polarity, scope and nested structure. Numerically
+    both operands remain in the carrier, so the next grammar choice can use
+    the marker. A small in-operator MLP supplies an independently chosen
+    marker for generation; the residual content guarantees recomposition.
+    No text, vocabulary, thought executor or memory is available here.
+    """
+    rule_name = "surface"
+    arity = 2
+    space_role = 'CS'
+    invertible = False
+    lossy = True
+    semantic_operand = 1
+
+    def __init__(self, nInput=0, nOutput=0):
+        super().__init__(nInput, nOutput)
+        width = int(nInput)
+        if width <= 0 or int(nOutput) != width:
+            raise ValueError("surface requires one positive full conceptual width")
+        self.marker_map = nn.Linear(width, width)
+        self.marker_prior = nn.Sequential(
+            nn.Linear(width, width), nn.Tanh(), nn.Linear(width, width))
+        with torch.no_grad():
+            self.marker_map.weight.copy_(torch.eye(width))
+            self.marker_map.bias.zero_()
+            self.marker_prior[-1].weight.zero_()
+            self.marker_prior[-1].bias.zero_()
+
+    def compose(self, left, right):
+        return self.marker_map(left) + right
+
+    forward = compose
+
+    def generate(self, parent):
+        marker = self.marker_prior(parent)
+        return marker, parent - self.marker_map(marker)
+
+    reverse = generate
+
+    def reconstruct(self, parent, reference, side):
+        if side == "left":
+            return reference, parent - self.marker_map(reference)
+        if side != "right":
+            raise ValueError("surface witness side must be left or right")
+        rhs = parent - reference - self.marker_map.bias
+        marker = torch.linalg.solve(self.marker_map.weight, rhs.unsqueeze(-1)).squeeze(-1)
+        return marker, reference
+
+
 class PrepositionLayer(GrammarLayer):
     """Package a marker-headed phrase; content passes through with .where edit."""
     rule_name = "preposition"; arity = 2
     invertible = True; lossy = False; space_role = 'CS'; reads_activation = False
     event_aware = True          # operates on the muxed event (modifies .where)
+    semantic_operand = 1
 
     def __init__(self, nInput=0, nOutput=0, butterfly=False, N=None):
         super().__init__(nInput, nOutput, butterfly=butterfly, N=N)
@@ -5023,6 +5077,7 @@ GRAMMAR_LAYER_CLASSES = {
     'verb':         VerbLayer,
     'adverb':       AdverbLayer,
     'lower':        LowerLayer,
+    'surface':      SurfaceLayer,
     'preposition':  PrepositionLayer,
     'bind':         ContextualBindLayer,
     'tense':        TenseLayer,
@@ -7894,6 +7949,7 @@ class MLPTransformChooser(TransformChooser):
         # the RNG stream while ordinary reconstruction/answer credit learns
         # how order affects a grammar choice.
         self.operand_order = None
+        self.copy_order = None
         if ordered_binary:
             # Allocate without a random draw on ANY default device. A CPU
             # fork_rng alone would still advance the production MPS stream.
@@ -7903,6 +7959,15 @@ class MLPTransformChooser(TransformChooser):
             self.operand_order.weight = nn.Parameter(self.mlp[0].weight.new_zeros(
                 self.hidden, self.d_model + self.n_role_cats))
             self.register_buffer("_operand_order_version", torch.tensor(1))
+            # Waiting is also a contextual grammar decision. A function
+            # word's isolated copy preference must not override a licensed
+            # attachment to its neighbour. This feeds the same hidden layer;
+            # it is not another classifier or policy.
+            self.copy_order = nn.Linear(
+                self.d_model + self.n_role_cats, self.hidden, bias=False,
+                device="meta")
+            self.copy_order.weight = nn.Parameter(torch.zeros_like(self.operand_order.weight))
+            self.register_buffer("_copy_order_version", torch.tensor(1))
         # Question intent is a chooser input, not an output shortcut.  This
         # zero-initialized head preserves the established clean route exactly
         # until a temporal/supervised curriculum trains it.  One logit bias is
@@ -7920,6 +7985,13 @@ class MLPTransformChooser(TransformChooser):
 
     def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
                               missing_keys, unexpected_keys, error_msgs):
+        if self.copy_order is not None:
+            marker, weight = prefix + "_copy_order_version", prefix + "copy_order.weight"
+            if marker not in state_dict and weight not in state_dict:
+                state_dict[marker] = self._copy_order_version.detach().clone()
+                state_dict[weight] = torch.zeros_like(self.copy_order.weight)
+            elif marker in state_dict and int(state_dict[marker]) != 1:
+                error_msgs.append(prefix + "unsupported grammar copy-context schema")
         if self.operand_order is not None:
             marker = prefix + "_operand_order_version"
             weight = prefix + "operand_order.weight"
@@ -7950,7 +8022,8 @@ class MLPTransformChooser(TransformChooser):
                 [pe, pe.new_zeros(n, self.pos_dim - pe.shape[-1])], dim=-1)
         return pe[:, :self.pos_dim]
 
-    def _score(self, slot, cand, tool_rows, pos, cat_ctx=None, order_ctx=None):
+    def _score(self, slot, cand, tool_rows, pos, cat_ctx=None, order_ctx=None,
+               order_projection=None):
         """Score ``R`` candidates at each of ``Npos`` locations.
 
         ``slot`` / ``cand``: ``[B, Npos, D]`` (broadcast over R) or ``cand``
@@ -7987,9 +8060,10 @@ class MLPTransformChooser(TransformChooser):
         # Cast to the slot dtype so the computed path and the degenerate
         # zero fallbacks agree even under autocast (the MLP may emit
         # bf16/fp16; the fallbacks keep the input dtype).
-        if self.operand_order is not None and order_ctx is not None:
+        projection = self.operand_order if order_projection is None else order_projection
+        if projection is not None and order_ctx is not None:
             hidden = self.mlp[0](feat)
-            hidden = hidden + self.operand_order(order_ctx).unsqueeze(2).to(hidden.dtype)
+            hidden = hidden + projection(order_ctx).unsqueeze(2).to(hidden.dtype)
             for index, block in enumerate(self.mlp):
                 if index:
                     hidden = block(hidden)
@@ -8041,8 +8115,18 @@ class MLPTransformChooser(TransformChooser):
         B, N, D = x_score.shape
         pos = self._pos_emb(N, x_score.device, x_score.dtype)
         copy_rows = self.tool_embedding[:self.n_copy]
+        copy_context = None
+        if self.copy_order is not None and N >= 2:
+            pair = .5 * (x_score[:, :-1] - x_score[:, 1:])
+            if self.n_role_cats:
+                cats = (.5 * (cat_ctx[:, :-1] - cat_ctx[:, 1:]) if cat_ctx is not None
+                        else x_score.new_zeros(B, N - 1, self.n_role_cats))
+                pair = torch.cat((pair, cats.to(pair.dtype)), -1)
+            zero = torch.zeros_like(pair[:, :1])
+            copy_context = torch.cat((pair, zero), 1) + torch.cat((zero, pair), 1)
         copy_score = self._score(x_score, x_score, copy_rows, pos,
-                                 cat_ctx=cat_ctx)
+                                 cat_ctx=cat_ctx, order_ctx=copy_context,
+                                 order_projection=self.copy_order)
         if (N >= 2 and reduced_score.dim() == 4
                 and reduced_score.shape[1] > 0 and reduced_score.shape[2] > 0):
             pair_slot = 0.5 * (x_score[:, :-1] + x_score[:, 1:])       # [B,N-1,D]
@@ -9500,7 +9584,11 @@ def build_space_syntactic_layer(space, word_space, *, space_role,
         if cls is None:
             continue
         try:
-            host_layers[mn] = cls()
+            if cls is SurfaceLayer:
+                width = int(space.muxedSize)
+                host_layers[mn] = cls(nInput=width, nOutput=width)
+            else:
+                host_layers[mn] = cls()
         except TypeError:
             # Some GrammarLayer wrappers (IntersectionLayer / UnionLayer)
             # require a parametrized inner layer at construction. Without
@@ -11395,7 +11483,10 @@ class SymbolSubSpace(SubSpace):
         self.languageLayer = LanguageLayer(
             n_input=nSymbols, n_output=nSymbols,
             hidden_dim=chart_hidden,
-            feature_dim=symbol_dim,
+            # The grammar sees opaque concept codes, including every
+            # coordinate. The symbol's located-event content width is not
+            # a semantic slice of those codes.
+            feature_dim=self.muxedSize,
             max_depth=max(nSymbols - 1, 1),
             temperature=_signal_temperature,
         )
@@ -13877,6 +13968,13 @@ class SymbolSubSpace(SubSpace):
         cls = GRAMMAR_LAYER_CLASSES.get(rule_name)
         if cls is None:
             return None
+        if cls is SurfaceLayer:
+            # Parameter ownership is the ordinary compose catalogue; generate
+            # resolves the identical instance until the catalogue split.
+            width = int(self.muxedSize)
+            layer = cls(nInput=width, nOutput=width)
+            self.register_host_layer(space_role, rule_name, layer)
+            return layer
         try:
             return cls()
         except TypeError:
@@ -15395,6 +15493,19 @@ class LanguageSpace(nn.Module):
         if len(stack) != 1:
             return None
 
+        def semantic_tree(node):
+            # Only a SELECTED surface rule licenses this projection. There is
+            # no word list and no guessed head of lift/lower/verb/negation.
+            # Keeping the entire right subtree preserves nested descriptions,
+            # mode and scope instead of reducing every phrase to a noun index.
+            if node[0] == "binary":
+                if getattr(node[1], "method_name", None) in ("surface", "preposition"):
+                    return semantic_tree(node[3])
+                return (node[0], node[1], semantic_tree(node[2]), semantic_tree(node[3]))
+            if node[0] == "unary":
+                return (node[0], node[1], semantic_tree(node[2]))
+            return node
+
         def recover(node, level=0):
             if level > 64 or node[0] == "leaf":
                 return None
@@ -15463,7 +15574,7 @@ class LanguageSpace(nn.Module):
                 mode="interrogative" if name == "what" else "assertive",
                 role_refs=tuple(refs), constituents=tuple(children))
 
-        return recover(stack[0])
+        return recover(semantic_tree(stack[0]))
 
 
     def choose_capacity_binary(self, state, row_gate, *, base_tau):
@@ -15541,6 +15652,9 @@ class LanguageSpace(nn.Module):
         out = []
         for index, op in enumerate(ops):
             gl = getattr(op, "gl", op)
+            if isinstance(gl, SurfaceLayer):
+                out.append(torch.linalg.inv(gl.marker_map.weight))
+                continue
             # Verb and adverb inherit Lift's Sigma, but do not use it in
             # their actual compose operation.
             if getattr(gl, "rule_name", "") in ("verb", "adverb"):
@@ -15667,6 +15781,20 @@ class LanguageSpace(nn.Module):
             return self._finish_binary_inverse(
                 op, parent, ref, on_right, known, left, right, available,
                 basis, basis_valid, candidate_limit)
+
+        if name == "surface":
+            # A reconstruction witness belongs only to this occurrence. Free
+            # generation instead uses the operator's learned marker prior.
+            generated_left, generated_right = op.generate(parent)
+            if reference is None:
+                return generated_left, generated_right, yes
+            from_left = op.reconstruct(parent, ref, "left")
+            inverse = W_inv if W_inv is not None else torch.linalg.inv(op.marker_map.weight)
+            from_right = (F.linear(parent - ref - op.marker_map.bias, inverse), ref)
+            left = torch.where(on_right[:, None], from_right[0], from_left[0])
+            right = torch.where(on_right[:, None], from_right[1], from_left[1])
+            return (torch.where(known[:, None], left, generated_left),
+                    torch.where(known[:, None], right, generated_right), yes)
 
         # These subclasses own inherited Sigma modules which are not their
         # compose operator. Only lift/lower use the affine inverse below.

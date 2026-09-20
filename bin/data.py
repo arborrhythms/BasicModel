@@ -675,6 +675,7 @@ class Data():
         # Self-supervised corpora still carry placeholder OutputSpace tensors
         # for batching, but those placeholders are not supervised targets.
         self.has_supervised_outputs = False
+        self.grammar_lessons = {"train": [], "validation": [], "test": []}
         self.source_manifest = None
         # Parallel objective addresses for the Teacher's direct
         # What(where, when) lookup. FineWeb fills document/sentence/span
@@ -752,6 +753,7 @@ class Data():
         """
         self.has_supervised_outputs = False
         self.source_manifest = {"dataset": str(dataset)}
+        self.grammar_lessons = {"train": [], "validation": [], "test": []}
         self.source_addresses = {
             "train": [], "validation": [], "test": []
         }
@@ -764,6 +766,8 @@ class Data():
             self.loadXOR()
         if dataset == "phrases":
             self.loadPhrases()
+        if dataset == "grammar":
+            self.loadGrammarLessons()
         if dataset == "substitution":
             self.loadSubstitution()
         if dataset == "queries":
@@ -1213,6 +1217,31 @@ class Data():
         self.test_input       = data["test"]["text"]
         self.test_output       = data["test"]["label"]
         self.processLM(data)
+    def loadGrammarLessons(self):
+        """An explicit, annotated text curriculum for the existing grammars.
+
+        Annotations are targets, never student input. The normal loader and
+        runEpoch/runBatch path carry stable source rows to the scoring phase.
+        Validation/test annotations are retained for evaluation but are not
+        used by the training loss.
+        """
+        import json
+        from pathlib import Path
+        filename = util.TheXMLConfig.get(
+            "architecture.data.grammarLessons", default="grammar_wording.json")
+        path = Path(filename)
+        if not path.is_absolute():
+            path = Path(__file__).resolve().parents[1] / "data" / path
+        payload = json.loads(path.read_text())
+        lessons = {split: list(payload[split]) for split in self.grammar_lessons}
+        for split, rows in lessons.items():
+            if any(not isinstance(row.get("text"), str) or "tree" not in row for row in rows):
+                raise ValueError(f"invalid grammar lessons in {split}")
+        self.processLM({split: {"text": [row["text"] for row in rows], "label": []}
+                        for split, rows in lessons.items()})
+        self.grammar_lessons = lessons
+        self.source_manifest = {"dataset": "grammar", **_file_fingerprint(path)}
+
     def loadPhrases(self):
         """Tiny DET+noun / ADJ+noun phrase set for the idea-decoder round-trip
         (doc/old/2026-06-20-idea-decoder.md). Two-word phrases with shared

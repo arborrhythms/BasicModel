@@ -1,9 +1,10 @@
 # Selected linguistic meaning and one controller
 
-Item 1's **architecture and production wiring are complete**. The September 20
-clarification keeps concrete language-quality and structural-preference checks
-as design/evidence goals at this stage. Neither learned natural-wording quality
-nor learned questioning utility is established. The separate codec in `288b56b`
+**Item 1's working language gate is met on the bounded supervised curriculum**
+described below. This establishes grammar-owned wording in that setting;
+general English and useful learned questioning are not established.
+Structural-preference and routing-share measurements remain design goals.
+The separate codec in `288b56b`
 did not satisfy this architecture; its passing regression receipt never proved
 otherwise. See [Testing](Testing.md) for receipts and
 [KernelRetirement](KernelRetirement.md) for the earlier test dispositions.
@@ -19,29 +20,62 @@ BasicModel configures `reverseOutput` to use the declared generate walk and
 ordinary perceptual inverse. Other model configurations retain their existing
 synthesis compatibility. Input teachers never choose output actions.
 
-Word → operator associations train the existing compose MLP through the ordinary
-reconstruction/answer objectives. Its binary first hidden layer now receives
-both operand and role means **and signed left/right differences**. Symmetric
-candidate values therefore cannot erase word order. The extra input projection
-belongs to that same MLP and scalar choice head; it has no separate classifier,
-decoder, optimizer or loss. Its zero initialization preserves prior predictions
-and initialization order. Older checkpoints add only this zero projection;
-name-based optimizer restoration preserves existing moments and leaves the new
-parameter fresh. Current checkpoints restore its learned weights and moments.
+Word → operator associations use the existing compose MLP. Its binary first
+hidden layer receives full-width operand/category means and signed differences.
+The copy/wait scores also receive neighboring operand differences through the
+same hidden layer. A marker's isolated copy preference can therefore change
+when a suitable neighbor arrives. Both input projections start at zero without
+advancing the RNG; old chooser states extend by zeros, while current states
+must restore their learned weights. Name-based optimizer restoration preserves
+existing moments. Adding the `surface` rule changes the complete grammar's
+catalogue and category widths: a checkpoint from the earlier complete grammar
+is not an interchangeable training resume. Rule indices are appended, not
+renumbered; no claim of a general compose-catalogue migration is made.
 
-No additional LM is introduced. Learned numerical work remains inside declared
-grammar operators such as `lift`, `verb` and `lower`. An optional future LM must
-be an explicit selectable operator with ordinary configuration and training.
-The shipped anchor tables contain technical spellings only: the predefined
-natural word `equals` is removed. This does not rewrite previously owned traces.
+The declared binary `surface` operator preserves its complete right-hand
+semantic subtree, including mode, polarity and scope. Its numerical carrier is
+`W(marker) + content`, so outer grammar choices can still read the marker. A
+small MLP **inside that operator** learns the marker for free generation; the
+other child is the residual. Recomposition is exact by construction. Tied input
+reconstruction instead uses only the recorded occurrence's operand witness.
+The existing `preposition` projection can discard a semantically neutral marker.
+Neither operator reads spelling, selects a thought operation, or accesses LTM.
+Meaning recovery projects only wrappers present in the actual selected tree;
+it never guesses a head from arbitrary numerical `lift`/`verb` outputs.
 
-BasicModel enables `outputInLoop` and `outputPolicyWeight=1.0`. The generate
-policy receives supplied-answer credit through the existing `runBatch` total;
-unlabeled FineWeb supplies no such credit. Reconstruction still trains the
-compose MLP and shared numerical operators. Independent generation numerical
-ownership remains item 3. These settings do not create semantic labels or
-make an unsupported parse into a canonical relation: `program_meaning` still
-requires a supported, selected structural form.
+No additional LM is introduced. An optional future LM must be an explicit
+selectable grammar operator with ordinary configuration and training. Technical
+anchor spellings remain provenance only; natural relations have no predefined
+word → operator table. The shared-table architecture uses the first-stage concept allocator for both
+the thought registry and retained WORD/OBJECT identities. Configurations with
+separate stage dictionaries keep their terminal registry. All thought readers
+use that registry's owner. A taxonomy neighbor without an allocated payload is
+reported as an unavailable reference with incomplete evidence; reading it never
+allocates a row or fabricates an answer value.
+
+The optional `grammar` dataset supplies text and separate structural/output
+annotations. `GrammarLessons` has no parameters or inference entry point. It
+scores teacher states only after the student's own input program and output
+have been fixed. Explicitly annotated operand variables receive full-code
+augmentation in teacher states; these do not replace captured student leaves.
+Compose cross entropy trains the existing unary/binary chooser and matches the
+live copy/reduce occupancy threshold. Separately annotated output trees train
+the existing generate chooser and selected numerical operators. Desired output
+words must already belong to the ordinary input vocabulary. The shipped
+[MM_grammar_wording.xml](../data/MM_grammar_wording.xml) selects this curriculum;
+`grammarLessonWeight` adds its loss to the actual `runBatch` total. Unlabelled
+corpora and evaluation splits supply no grammar lessons. Shared weights remain
+subject to the reconstruction-priority gradient budget in normal training.
+
+Declarative relation answers retain all three canonical roles rather than a
+lossy numerical root. The normal generate walk chooses its own actions over
+those roles. Only **after** it emits word concepts does the lexical inverse
+compare them with all known WORD/OBJECT rows that own spellings, using tiled
+full-width cosine comparisons. It has no relation templates, function-word
+whitelist, current-input vocabulary restriction or fallback meaning decoder.
+`AnswerConstruction.texts` and `WhatAnswer.text` expose that generated wording.
+The ordinary perceptual/numeric output remains available. Independent numerical
+generation ownership remains item 3.
 
 `ConceptualMeaning.constituents` owns complete nested role triples and local
 references. `TernaryTruthStore.bind_constituents` validates references, depth,
@@ -60,7 +94,9 @@ of parent conclusions. Cutoff permits only the bounded return/finish drain.
 
 The frame kernel, addressees, testimony, `NeuralToolUser`, `TruthInterval`,
 `WhatStepChooser`, the separate prediction scorer, geometric `legacy_*`
-readers, nearest-word realisers and soft bridge-policy experiment are removed.
+readers, whole-meaning nearest-word realisers and soft bridge-policy experiment
+are removed. The lexical inverse of already generated word concepts is a
+different boundary, described above.
 Nonzero `answerLossWeight` and `predictNextLossWeight` fail configuration.
 Their checkpoint parameters are discarded, not reinterpreted as new policies.
 
@@ -110,19 +146,34 @@ caused by nested questions. Native multi-edge reader proofs are separate tests.
 The deleted codec's 36 synthetic examples, noun-only holdout and restricted
 function vocabulary are **not accepted language-learning evidence**. Its
 natural-wording and optimizer tests are retired with that architecture.
-The replacement checks establish a narrower mechanism: a real text batch runs
-through normal `runBatch`, retains its actual forward programs, updates the
-compose MLP including its order inputs through reconstruction, and invokes the
-declared generate walk. The same unlabeled batch leaves the generate policy
-unchanged. An equal-candidate test isolates learned sensitivity to operand and
-role order. Checkpoint, optimizer and full-graph checks cover that added input.
-These are correctness/wiring checks, not a held-out linguistic study.
+The replacement includes normal `runBatch` checks and a reproducible CPU
+language run, seed 931. All 1,599 training sentences pass through the real
+forward path before their detached leaves supply teacher states. The focused
+run trains the existing generate chooser/operator for 1,000 steps, then the
+compose MLP for 8,000; it holds the input encoding fixed and disables input
+reconstruction during this isolated language study. Ordinary reconstruction,
+loss assembly, optimizer updates and the shipped XML/loader are checked
+separately. This is supervised structural learning, with explicitly annotated
+operand-code augmentation, not a claim of unsupervised or full end-to-end
+production convergence.
 
-The retained empirical protocol uses forward-parsed text, holds out **complete
-relation wording as well as nouns**, includes converse and alternate-sense
-controls, and evaluates generation from the normal vocabulary followed by
-recomposition of meaning. Multiword canonical meaning and natural output quality
-remain unproven. No fourth interpreter or realiser may supply success.
+The 32 development cases were used while refining the architecture. An
+additional 24 cases then introduced three unseen complete relation wordings
+(`also are equal to`, `are also equal to`, `also are part of`) and eight unseen
+nouns in both operand orders. These are new combinations of learned marker
+words, not a claim to infer an unknown relation lexeme without evidence.
+The fresh run gets **56/56** comprehension/control cases, **53/53** generated
+relation sentences and **53/53** reparsed meaning matches. The three alternate
+uses of `have` do not acquire a false part relation. Generation chooses from
+all 178 observed word spellings; its function vocabulary is not restricted.
+No held-out annotation enters parsing or generation. Metadata recomposition
+checks role identity/order, mode, polarity, bindings and scope. The separate
+wrapper check also preserves the complete role values.
+
+[Testing](Testing.md#working-grammar-wording-gate-september-20) records commands,
+development failures, the normal training smoke, the explicit slow language
+run and the full default receipt. The slow case is retained for reproduction;
+the preference measurements below need not become artificial passing tests.
 
 The preference goal is to use understandable structural operators whenever
 they carry the meaning. Any opaque operator competes through the ordinary

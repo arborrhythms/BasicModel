@@ -81,6 +81,7 @@ def test_legacy_grammar_weights_keep_predictions_and_new_order_weights_start_zer
         current.operand_order.weight.fill_(9.)
     current.load_state_dict(legacy.state_dict(), strict=True)
     assert torch.count_nonzero(current.operand_order.weight) == 0
+    assert torch.count_nonzero(current.copy_order.weight) == 0
     x, candidate, cats = torch.randn(2, 3, 4), torch.randn(2, 2, 2, 4), torch.randn(2, 3, 2)
     old = legacy.score_binary(x, candidate, None, None, cat_ctx=cats)
     new = current.score_binary(x, candidate, None, None, cat_ctx=cats)
@@ -132,21 +133,24 @@ def test_order_projection_compiles_and_restores_with_its_optimizer_moments():
             optimizer.state[dict(current.named_parameters())[name]]["exp_avg"], atol=0, rtol=0)
     x, candidate, cats = torch.randn(2, 3, 4), torch.randn(2, 2, 2, 4), torch.randn(2, 3, 2)
     def score(value):
-        return current.score_binary(value, candidate, None, None, cat_ctx=cats)[1]
+        return current.score_binary(value, candidate, None, None, cat_ctx=cats)
     try:
         compiled = torch.compile(score, backend="eager", fullgraph=True)
         torch.testing.assert_close(compiled(x), score(x))
         optimizer.zero_grad()
-        compiled(x).square().sum().backward()
+        sum(value.square().sum() for value in compiled(x)).backward()
         assert current.operand_order.weight.grad.abs().sum() > 0
+        assert current.copy_order.weight.grad.abs().sum() > 0
         optimizer.step()
         restored = MLPTransformChooser(**kwargs, ordered_binary=True)
         restored.load_state_dict(current.state_dict(), strict=True)
         resumed = torch.optim.Adam(restored.parameters(), lr=.001)
         resumed.load_state_dict(optimizer.state_dict())
-        torch.testing.assert_close(restored.score_binary(x, candidate, None, None, cat_ctx=cats)[1], score(x))
+        torch.testing.assert_close(restored.score_binary(x, candidate, None, None, cat_ctx=cats), score(x))
         torch.testing.assert_close(resumed.state[restored.operand_order.weight]["exp_avg"],
                                    optimizer.state[current.operand_order.weight]["exp_avg"])
+        torch.testing.assert_close(resumed.state[restored.copy_order.weight]["exp_avg"],
+                                   optimizer.state[current.copy_order.weight]["exp_avg"])
     finally:
         torch._dynamo.reset()
 

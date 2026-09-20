@@ -764,6 +764,7 @@
     <xs:restriction base="xs:string">
       <xs:enumeration value="xor"/>
       <xs:enumeration value="phrases"/>
+      <xs:enumeration value="grammar"/>
       <xs:enumeration value="substitution"/>
       <xs:enumeration value="queries"/>
       <xs:enumeration value="sequences"/>
@@ -828,6 +829,7 @@
            excluded intact; they are never truncated into partial examples. -->
       <xs:element name="maxSentenceWords" type="xs:positiveInteger"/>
       <xs:element name="shardDir" type="xs:string"/>
+      <xs:element name="grammarLessons" type="xs:string"/>
       <!-- Stable name of the corpus/book/conversation whole that scopes
            objective Teacher addresses. This is not written into the model's
            subjective .where/.when event bands. -->
@@ -949,6 +951,7 @@
       <!-- Weight on the bounded one-fold grammar-choice objective. 0 leaves
            legacy routing byte-identical. -->
       <xs:element name="forwardGrammarWeight" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="grammarLessonWeight" type="nonNegativeFloat" minOccurs="0"/>
       <!-- Deprecated legacy alias for reconstructionScale; util.TheXMLConfig
            remaps it (with a deprecation warning). Accepted here so
            unmigrated configs still validate. -->
@@ -958,12 +961,8 @@
       <xs:element name="whenScale" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="negSamples" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="TruthLoss" type="nonNegativeFloat" minOccurs="0"/>
-      <!-- Weight of the truth-grounded reasoning answer (policy) loss
-           (doc/plans/2026-06-23-truth-grounded-reasoning.md, Phase 5): NLL on
-           the [0,1] proof-success score vs the gold answer, backpropagated
-           through the SOFT route (the intervening-idea generator's query head +
-           the attention alpha) only, never the hard deduction. Default 0.0 =
-           off (no answer loss term). Requires <queryReasoning>. -->
+      <!-- Retired separate soft bridge policy. Zero remains loadable for
+           old configurations; nonzero values are rejected by model setup. -->
       <xs:element name="answerLossWeight" type="nonNegativeFloat" minOccurs="0"/>
       <!-- Retired separate next-idea blend. Zero remains loadable for old
            configurations; nonzero values are rejected by model setup. -->

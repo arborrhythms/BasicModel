@@ -4418,7 +4418,10 @@ class Codebook(Tensor):
         if mode == "snap":
             return q.detach()
         if mode == "ste":
-            return e + (q - e).detach()
+            # Form the zero-valued gradient carrier before adding q. The
+            # algebraic equivalent e + (q - e).detach() loses small q values
+            # to cancellation when the encoder has a larger magnitude.
+            return q.detach() + (e - e.detach())
         if mode == "rotation":
             return Codebook._RotationTrickFn.apply(e, q)
         raise ValueError(
