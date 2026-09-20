@@ -191,8 +191,8 @@ features, or grant a thought executor authority.
 `WhatQuestion.prompt`, even when `reasoningIterations` is positive. An
 unselected program retains its owned identity/temporal seed rather than letting
 raw surface text select a hidden legacy tool or append a second reasoner trace.
-`answer_query()` remains callable only as an explicit compatibility API while
-the older controller is being migrated.
+`answer_query()` is an explicit serving API over the same completed meaning
+and normal controller. The older controller has been removed.
 
 ## Validation
 

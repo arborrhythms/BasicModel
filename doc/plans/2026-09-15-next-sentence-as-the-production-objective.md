@@ -2002,9 +2002,9 @@ realization consumes the same value without running resolution or queries.
 `what` explicitly performs the handoff. The owned conceptual clone retains
 current-step gradients, and standalone compiled realization initializes its
 own gradient anchors even when understanding was captured under `no_grad`.
-[Preparation](../../bin/Models.py#L8171),
-[realization](../../bin/Models.py#L9182),
-[owned value](../../bin/Output.py#L48).
+[Preparation](../../bin/Models.py),
+[realization](../../bin/Models.py),
+[owned value](../../bin/Output.py).
 
 The initial reviewer probes fail in all seven cases on `b5518a1`: the held
 answer calls re-enter the forbidden resolver, and the public preparation API
@@ -2023,11 +2023,12 @@ The output-length probe uses real
 captured one-unit inputs and a controlled sum/stop policy; it tests independent
 execution and termination, not learned linguistic quality.
 
-This change establishes the preparation/realization API. The legacy `think`
-loop still invokes `what` on each iteration, so the complete levelled episode,
-structured-query, nested-meaning and residual-credit migrations remain open.
-[Legacy loop](../../bin/Models.py#L10022). Explicitly unresolved temporal
-answers remain unresolved; output does not substitute the current input.
+This change established the preparation/realization API. The September 20
+controller replacement now executes selected grammatical queries and nested
+meanings in one ordinary episode before realization. Natural-wording learning
+and residual credit remain open; see [SelectedMeaning](../SelectedMeaning.md).
+Explicitly unresolved temporal answers remain unresolved; output does not
+substitute the current input.
 
 Full-suite command, from `basicmodel/` (runtime, tests and configuration frozen throughout):
 
@@ -2037,27 +2038,30 @@ DEVELOPER_DIR=/Library/Developer/CommandLineTools OMP_NUM_THREADS=1 MKL_NUM_THRE
 
 ## 15. Complete-description existence evidence (verified September 16)
 
+The receipt counts below describe the September 16 source. Controller
+references reflect the September 20 replacement and its review corrections.
+
 `ConceptualMeaning` retains canonical occupied roles, grammatical mode,
 polarity, bindings, scope and constituent references. The existing truth
 store owns durable facts/observations and their stable occurrence IDs.
 `Exist` matches the entire description against assertive facts, keeps
 positive/negative degrees separately, reports provenance and incomplete
 metadata, and never substitutes concept activation for referent evidence.
-The public legacy kernel preserves that evidence through its final result.
-[Meaning](../../bin/Meaning.py#L67),
-[store](../../bin/Layers.py#L8674),
-[lookup](../../bin/reasoning.py#L156),
-[kernel aggregation](../../bin/thinking.py#L398).
+The normal controller preserves both support degrees in its typed final result.
+[Meaning](../../bin/Meaning.py),
+[store](../../bin/Layers.py),
+[lookup](../../bin/reasoning.py),
+[controller and typed history](../../bin/Thoughts.py).
 
 All three observation writers share the explicit physical-to-canonical
 adapter, retaining depth-two VPs. Explicit TruthSet admission accepts facts;
 source tags alone do not. Questions, estimates and unspecified observations
 cannot satisfy Exist. Legacy relation writers without a grammatical VP
-remain unverified for that lookup. Numeric testimony retains complete
-descriptions and source identity; prediction content is not truth testimony.
-[Observation write](../../bin/Models.py#L133),
-[admission](../../bin/Layers.py#L8912),
-[testimony](../../bin/thinking.py#L355).
+remain unverified for that lookup. Prediction results retain complete
+descriptions and source identity as estimates, with no fact authority.
+[Observation write](../../bin/Models.py),
+[admission](../../bin/Layers.py),
+[typed results](../../bin/Thoughts.py).
 
 The existing structural sidecar stores context and source text, bound to the
 tensor occurrence by a content fingerprint. Partial semantic checkpoints and
@@ -2065,9 +2069,9 @@ missing, replaced or swapped context are rejected; a tensor-only restore
 quarantines evidence whose required metadata is absent. Legacy checkpoints
 have an explicit migration. No learned parameters or loss were added; live
 meaning clones preserve gradients and durable writes detach them.
-[Sidecar](../../bin/Models.py#L4409),
-[restore](../../bin/Layers.py#L8823),
-[legacy migration](../../bin/Layers.py#L8863).
+[Sidecar](../../bin/Models.py),
+[restore](../../bin/Layers.py),
+[legacy migration](../../bin/Layers.py).
 
 The repository's **51 new probes pass in 3.11 s**. The ten affected existing
 files pass **281 tests, with one skip and three warnings, in 89.56 s**.
@@ -2083,10 +2087,10 @@ for the repository gate. See [Existence evidence](../ExistenceEvidence.md)
 for contracts, limits and validation artifacts.
 
 This is the existence evidence foundation; taxonomy evidence follows in §16.
-The typed grammatical VP registry, ordinary levelled controller, nested traversal,
-anticipation read isolation, residual policy credit and learned-utility gates
-remain open. The September 16 two-truths spec remains reserved for the next
-session, as requested.
+The typed VP registry, ordinary controller and selected nested execution are
+implemented. Anticipation read isolation, residual policy credit and
+learned-utility gates remain open. The September 16 two-truths spec remains
+separate work.
 
 Full-suite command from `basicmodel/` (`OMP_NUM_THREADS` and `MKL_NUM_THREADS` unset):
 
@@ -2096,32 +2100,35 @@ DEVELOPER_DIR=/Library/Developer/CommandLineTools .venv/bin/python -m pytest tes
 
 ## 16. Conceptual-taxonomy PartOf evidence (verified September 16)
 
+The receipt counts below are historical; current execution and retirement
+contracts are in [TaxonomyQueries](../TaxonomyQueries.md).
+
 `PartOf` now reads native conceptual reference records, including reified
 relations without endpoint mutation. Typed concept handles remain addresses;
 perceptual edges, vector overlap, sparse weights and LTM world rows do not
 establish taxonomic inclusion. Proofs preserve their source owners and roles.
 Known paths support inclusion; missing paths are unknown, including at a zero
 posture threshold. Negated requests retain the opposite support channel.
-[Capture](../../bin/Taxonomy.py#L117),
-[query](../../bin/reasoning.py#L586).
+[Capture](../../bin/Taxonomy.py),
+[query](../../bin/reasoning.py).
 
-The public model/reasoner entries use this source without initializing the
-old vector-proposal route. The legacy kernel admits child evidence only via
-a real native hop toward the same goal/polarity; unrelated true children or
-numeric testimony cannot certify inclusion. Results preserve unknown and
+The public model entries use this source through the sole normal controller.
+Native premises support reader proofs; nested `what` returns carry their typed
+child result and causal sources. Unrelated true children and unaccepted
+predictions cannot certify inclusion. Results preserve unknown and
 incomplete-read diagnostics. Successful proofs do not write world facts.
-[Model entry](../../bin/Models.py#L22259),
-[kernel step](../../bin/thinking.py#L219),
-[write boundary](../../bin/thinking.py#L484).
+[Model entry](../../bin/Models.py),
+[controller](../../bin/Models.py),
+[write boundary](../SelectedMeaning.md).
 
 Capture and traversal have explicit node/record/edge limits. The derived
 view adds no authoritative memory, checkpoint schema, trainable parameter or
 gradient objective. Existing structural checkpoint ownership preserves source
-records; hard path selection has no ordinary derivative. Legacy operation-head
-training now draws its two-link examples from native taxonomy paths. The old
-geometric/world-row experiments remain explicitly named compatibility paths.
-[Curriculum](../../bin/thinking.py#L621),
-[legacy proposal](../../bin/reasoning.py#L772).
+records; hard path selection has no ordinary derivative. The frame curriculum,
+geometric/world-row proposal helpers and their separate policy objectives are
+removed. The normal chooser's supplied-answer credit does not establish useful
+learned decomposition. [Current policy](../SelectedMeaning.md),
+[retirement dispositions](../KernelRetirement.md).
 
 The repository's **37 new probes pass in 3.33 s**. The sixteen affected
 files pass **277 tests, with one skip, two expected failures and seven
@@ -2156,8 +2163,8 @@ ladder grammars declare `what(Q)` alongside the distinct two-operand LTM lookup.
 The real loader preserves whole query and anchor strings. Every checked entry
 has an executor, result type, read/write scope and evidence semantics; tense
 execution remains deferred.
-[Loader](../../bin/Language.py#L1027),
-[contracts](../../bin/Queries.py#L58).
+[Loader](../../bin/Language.py),
+[contracts](../../bin/Queries.py).
 
 An explicit setup adapter binds one native named conceptual VP per relation
 and domain. Compose/query aliases and converse forms share that identity;
@@ -2166,9 +2173,9 @@ open/absent masks, references, polarity, bindings and scope. Selected execution
 resolves its interface from the middle VP and occupancy and retains the full
 proposition with its evidence. Assertions, undeclared calls, unavailable
 referents and wrong widths cannot execute.
-[Binding](../../bin/Queries.py#L398),
-[formation](../../bin/Queries.py#L431),
-[dispatch](../../bin/Queries.py#L496).
+[Binding](../../bin/Queries.py),
+[formation](../../bin/Queries.py),
+[dispatch](../../bin/Queries.py).
 
 Description-valued arguments use existing occurrence references and bounded
 full-description reads. The compound NP's illumination summary is not the
@@ -2178,8 +2185,8 @@ Captured leaf programs also retain forward's selected native OBJECT/WORD IDs,
 with legacy unknown IDs remaining unknown. Native bindings use the existing
 conceptual checkpoint owners; no parallel semantic memory or parameter table
 is added.
-[Occurrence reader](../../bin/Queries.py#L348),
-[leaf identity](../../bin/Models.py#L11110).
+[Occurrence reader](../../bin/Queries.py),
+[leaf identity](../../bin/Models.py).
 
 The 53 new reviewer cases cover declarations, effects, loader/copy behavior,
 native leaf identities, shared VP/checkpoint identity and width/occurrence bounds.

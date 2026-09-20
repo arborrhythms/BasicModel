@@ -12,18 +12,18 @@
 
 Work follows
 [2026-09-15-next-sentence-as-the-production-objective.md](doc/plans/2026-09-15-next-sentence-as-the-production-objective.md)
-§10 and its completion gates. Item 1's source-matched default selection
-completed 4,630/4,630 with a green receipt in 1,026 s
-(`output/tests/20260920-042439-ea7ff2`), using eight-case/one-file batches
-under the unchanged resource caps. Default batch memory stability remains
-under Residues below. The September 17 handoff and preserved
-candidates are in
-[doc/checkpoints/2026-09-17-production-spec/README.md](doc/checkpoints/2026-09-17-production-spec/README.md);
-of its six candidates only the generation catalogue (item 3) remains uninstalled.
+§10 and its completion gates. **Item 1 remains open after review.** The
+standalone language codec is rejected; natural word → operator associations
+must be learned through compose/generate. Current contracts, review corrections
+and receipts are in [SelectedMeaning](doc/SelectedMeaning.md),
+[KernelRetirement](doc/KernelRetirement.md) and [Testing](doc/Testing.md).
+The September 17 handoff and preserved candidates are in
+[the checkpoint](doc/checkpoints/2026-09-17-production-spec/README.md);
+only the generation catalogue (item 3) remains uninstalled.
 
 ### Done (newest first)
 
-- `HEAD` **Item 1 complete:** one controller, learned selected meaning, typed/nested answers and all 61 kernel-test dispositions ([design](doc/SelectedMeaning.md), [full receipt](doc/Testing.md#selected-meaning-and-one-controller-september-20)); the containing WikiOracle bump records this landing hash.
+- `288b56b` Initial controller replacement; review reopened item 1's wording gate ([current design and limits](doc/SelectedMeaning.md), [original receipt and review corrections](doc/Testing.md#selected-meaning-and-one-controller-september-20), [test dispositions](doc/KernelRetirement.md)).
 - `60b1497` Forward owns anchored lexical forms by WORD row; capture reads retained provenance ([Testing](doc/Testing.md#forward-owned-lexical-forms-september-19); item 1 increment).
 - `a70c77d` Direct `concept`-unary selected meaning (`what(quantize(x))`)
   preserves its live leaf into the normal controller; description operands
@@ -59,6 +59,16 @@ of its six candidates only the generation catalogue (item 3) remains uninstalled
 
 ### Open
 
+1. **Grammar-owned natural wording (item 1).** Train word → operator
+   associations through the compose/generate grammar and its existing MLP
+   selection, with subsymbolic computation inside grammatical operators.
+   An optional LM must itself be an explicit selectable grammar operator with
+   normal production configuration and training; no fallback interpreter or
+   pre-generate realiser. Exit: real forward-parsed text, held-out complete
+   relation wording as well as nouns, converse/alternate-sense controls,
+   generation from a normal vocabulary, and recomposition preserving meaning.
+   The deleted codec's synthetic pairs and restricted-vocabulary result do not
+   satisfy this gate. Learned questioning utility remains unproven under item 4.
 2. **Expectation and residual learning.** Extend retained estimates to checked
    bindings/scope metadata without copying the arriving target; prior-view
    isolation from arriving/unseen input and other rows; residual query credit
@@ -73,7 +83,8 @@ of its six candidates only the generation catalogue (item 3) remains uninstalled
    reconstruction/discrimination controls, warmed training throughput; the
    preserved arbitrary-symbol poison probes and renamed-vocabulary controls.
    Numerical values or symbol IDs never supply learner arithmetic or answer
-   seeds. Record null results honestly.
+   seeds. Learned utility stays explicitly unproven until these comparisons
+   pass, even when mechanism and regression tests pass. Record null results honestly.
 5. **Publish each item:** failing probe → fix → affected files → one
    source-matched full receipt → BasicModel commit/push → WikiOracle bump/push,
    with the co-author trailer. Do not remove unused reasoning methods without

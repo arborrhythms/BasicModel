@@ -1,14 +1,13 @@
 <?xml version="1.0" ?>
 <model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:noNamespaceSchemaLocation="model.xsd">
-  <!-- MM_query_reasoning: explicit grammatical query and numerical-loss fixture.
+  <!-- MM_query_reasoning: explicit grammatical query and policy fixture.
        The completed linguistic meaning selects a native VP from complete.grammar's
        <thought> catalogue. reason_about and answer_query use ten shared work units;
        think_about uses sixteen. Reads and children spend the same allowance, so
        these small budgets may return incomplete evidence. No raw-word detector
        selects an executor and no second kernel result is attached.
 
-       answerLossWeight preserves the independent soft bridge-loss experiment.
        selectedThoughtPolicyWeight trains the normal controller from supplied
        answer error and actual work. This config alone does not train natural
        operator wording: partOf is a technical corpus token, not a predefined
@@ -29,8 +28,7 @@
     <conceptIndexRead>true</conceptIndexRead>
     <!-- (B) free attention over the typed truth-space; parks the soft read. -->
     <globalAttention>true</globalAttention>
-    <!-- close the loop: the answer/policy loss trains the retrieval via the
-         consume residual + the GlobalAttention scorer. -->
+    <!-- The normal answer objective can train attention through its consume residual. -->
     <globalAttentionConsume>true</globalAttentionConsume>
     <!-- the LTM "book": the TruthSet (the syllogism) parsed into ltm_store. -->
     <ltmConsolidation>true</ltmConsolidation>
@@ -57,8 +55,6 @@
       <batchSize>6</batchSize>
       <learningRate>0.01</learningRate>
       <reconstructionScale>0.1</reconstructionScale>
-      <!-- Phase C: train the soft reasoning route under the answer-policy loss. -->
-      <answerLossWeight>0.1</answerLossWeight>
       <!-- One normal thought policy; credit follows supplied answers and work. -->
       <selectedThoughtPolicyWeight>0.1</selectedThoughtPolicyWeight>
     </training>

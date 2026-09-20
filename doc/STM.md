@@ -737,8 +737,8 @@ switches are **retired**. See [Params.md](Params.md) and
 LTM retains external sentence observations. `<ltmConsolidation>` selects the
 legacy per-row deque or the consolidated ternary store; storage alone does
 not certify that a described referent exists.
-[Observation path](../bin/Layers.py#L10203),
-[consolidated observation writer](../bin/Models.py#L133).
+[Observation path](../bin/Layers.py),
+[consolidated observation writer](../bin/Models.py).
 
 **Legacy backing mode.** `InterSentenceLayer._stm_end_states` is a bounded
 per-row deque of `(depth, payload, trust)` values. The root-only compatibility
@@ -749,8 +749,8 @@ host state; its legacy tuple API does not preserve all grammatical metadata.
 An explicit adapter converts physical STM to NP1/VP/NP2: three slots use
 `[1, 2, 0]`, two use `[1, 0]`. Occupancy is metadata; a zero-valued occupied
 role is not padding.
-[Observation storage](../bin/Layers.py#L10203),
-[canonical adapter](../bin/Meaning.py#L15).
+[Observation storage](../bin/Layers.py),
+[canonical adapter](../bin/Meaning.py).
 
 **Consolidated mode.** `symbolSpace.ltm_store` is the existing
 `TernaryTruthStore`, with `[capacity, 3, D]` infix NP1/VP/NP2 values. Its
@@ -760,9 +760,9 @@ occurrence identity. A two-role observation retains NP1 and VP. Forward
 writers record `observation` with unspecified grammatical mode; explicit
 TruthSet admission may accept the observation as a fact. An origin tag alone
 does not do so, and questions/estimates cannot certify their own referents.
-[Store schema](../bin/Layers.py#L8674),
-[observation write](../bin/Models.py#L133),
-[fact admission](../bin/Layers.py#L8912).
+[Store schema](../bin/Layers.py),
+[observation write](../bin/Models.py),
+[fact admission](../bin/Layers.py).
 
 The consolidated legacy `get_stm_chain` view returns infix payloads up to the
 highest occupied role, including depth two. It reads global timestamp order
@@ -770,8 +770,8 @@ and ignores `b`; it is not the production expectation view. Sentence
 expectation uses its own bounded row/document-scoped observation view, so a
 different stream, an internal thought or a provisioned fact cannot become
 an external predecessor merely through this legacy recency reader.
-[Legacy read](../bin/Layers.py#L10427),
-[structured observation](../bin/Layers.py#L10096).
+[Legacy read](../bin/Layers.py),
+[structured observation](../bin/Layers.py).
 
 Role tensors and scalar columns ride `state_dict`; bindings, semantic scope,
 constituent references and source text ride the versioned `truth_semantics`
@@ -780,25 +780,25 @@ and its content fingerprint. Required metadata missing from a tensor-only
 restore makes that evidence unavailable until restored. Missing or swapped
 scope cannot silently become a different fact. Stable occurrence IDs survive
 row compaction and are not reused after reset.
-[Sidecar](../bin/Models.py#L4409),
-[validated restore](../bin/Layers.py#L8823),
-[guarded read](../bin/Layers.py#L8789).
+[Sidecar](../bin/Models.py),
+[validated restore](../bin/Layers.py),
+[guarded read](../bin/Layers.py).
 
 External observation is independent of `truthCriterion`. The legacy deque
 evicts its oldest entry at capacity; the consolidated append returns `-1`
-when full. This is the observation/evidence store contract, not the future
-levelled thought-history retention contract.
-[Capacity and evidence writes](../bin/Layers.py#L8925),
-[observation storage](../bin/Layers.py#L10203).
+when full. Observation/evidence storage and ordinary levelled thought-history
+retention have separate capacity contracts.
+[Capacity and evidence writes](../bin/Layers.py),
+[observation storage](../bin/Layers.py).
 
 `Exist` compares the full occupied description, bindings, scope and references
 against assertive fact records, retaining positive/negative degrees and
 provenance separately. Conversation observations, questions, estimates and
 unverified legacy rows are ineligible. The degree belongs to evidence about
 the referent; model activation alone cannot establish it.
-See [Existence evidence](ExistenceEvidence.md) for legacy migration, testimony,
+See [Existence evidence](ExistenceEvidence.md) for legacy migration, fact admission,
 matching and gradient boundaries, and
-[the implemented lookup](../bin/reasoning.py#L156).
+[the implemented lookup](../bin/reasoning.py).
 
 ---
 ## 11. Inter-sentence prediction
@@ -813,7 +813,7 @@ role and chronological positions remain distinct. It predicts three separate
 vectors and three presence logits. The loss is MSE over actual occupied
 roles plus mean binary cross entropy for presence. Targets are detached;
 current-step source representations remain live under the reconstruction
-gradient budget. See [Layers.py:9447](../bin/Layers.py#L9447).
+gradient budget. See [Layers.py](../bin/Layers.py).
 
 The packed observer uses the existing sealed end-slot/depth outputs for each
 sentence, with an explicit STM-to-infix permutation. Corpus source addresses
@@ -825,8 +825,8 @@ Weight restore starts the
 observation view cold. These are sequence and local-role contracts; retained
 compound references remain part of the separate nesting migration in the
 [integrated spec](plans/2026-09-15-next-sentence-as-the-production-objective.md).
-See [Layers.py:9975](../bin/Layers.py#L9975) and
-[Models.py:12556](../bin/Models.py#L12556).
+See [Layers.py](../bin/Layers.py) and
+[Models.py](../bin/Models.py).
 
 ### Historical root baseline (`sentenceExpectationScope=root`)
 
@@ -838,9 +838,9 @@ view is bounded and per-row; durable LTM retains detached observations.
 Current-step source context keeps its encoder graph. Consuming the prediction
 loss and entering the next brick detach that view without deleting history.
 Document resets clear the selected view and pending estimate, preserving
-other rows and durable LTM ([Layers.py:10281](../bin/Layers.py#L10281),
-[Layers.py:10637](../bin/Layers.py#L10637),
-[Layers.py:10757](../bin/Layers.py#L10757)). Its chain window is
+other rows and durable LTM ([Layers.py](../bin/Layers.py),
+[Layers.py](../bin/Layers.py),
+[Layers.py](../bin/Layers.py)). Its chain window is
 $K = \min(\text{ltmCapacity}, 8)$ (`_inter_chain_window`): the AR signal
 that predicts the next end-state lives in the last handful of sentences,
 so a small bounded window is used rather than the full `ltmCapacity`.
@@ -1082,15 +1082,14 @@ attribute escape.
 
 ## Taxonomy evidence and memory ownership (September 16)
 
-Conceptual-taxonomy queries capture a bounded read view of the existing
-allocator's reference records. The view owns no durable state and is rebuilt
-after restore. Proof sources identify actual native edges; successful paths
-and numeric testimony cannot append world-fact lemmas. This does not migrate
-the legacy frame/parity controller to ordinary levelled history.
-[Reader](../bin/Taxonomy.py#L117),
-[testimony](../bin/thinking.py#L355),
-[write boundary](../bin/thinking.py#L484),
-[details](TaxonomyQueries.md).
+Conceptual-taxonomy queries capture a bounded view of the existing native
+reference records. The view owns no durable state and is rebuilt after restore.
+Proof sources identify native edges; successful paths cannot append world-fact
+lemmas. The single normal controller records nested questions and typed returns
+on `WhatInteractionMemory`. Its attended context uses row-owned STM/history and
+visible LTM content under the same work allowance.
+See [Taxonomy](../bin/Taxonomy.py), [Thoughts](../bin/Thoughts.py),
+[SelectedMeaning](SelectedMeaning.md) and [TaxonomyQueries](TaxonomyQueries.md).
 
 ## Shared grammatical query references (September 16)
 
@@ -1100,15 +1099,15 @@ through the ordinary conceptual tensor state and structural sidecar. Complete
 description operands reference existing LTM occurrences, retaining the inner
 VP, NP2, bindings and scope. Candidate formation cannot create occurrences;
 unknown namespaces or missing metadata fail without row substitution.
-[VP owner](../bin/Queries.py#L398),
-[occurrence resolution](../bin/Queries.py#L348).
+[VP owner](../bin/Queries.py),
+[occurrence resolution](../bin/Queries.py).
 
-The current occurrence reader is a bounded durable read and does not provide
-live episode memory. The direct completed-relation adapter now runs through
-ordinary levelled history, nested retention and one shared work meter; it does
-not flatten unsupported physical nested folds. General nested syntactic
-adaptation and residual policy learning remain open. [Query contracts](QueryContracts.md)
-distinguishes these integration gates.
+Durable LTM occurrence reads detach their content; row-owned ordinary thought
+references preserve live episode meanings. Completed selected programs use
+ordinary levelled history, nested retention and one shared work meter. Complete
+child meanings retain their structure; unsupported physical folds stay
+unavailable. Natural-wording learning and residual policy credit remain open.
+[Query contracts](QueryContracts.md) describes the execution boundary.
 
 ## Ordinary levelled thoughts (September 17)
 

@@ -13,7 +13,6 @@ import torch
 
 import reasoning
 from reasoning import (QuerySpec, TruthGroundedReasoner,
-                       InterveningIdeaGenerator,
                        KIND_IS_TRUE, KIND_IS_PART, KIND_IS_EQUAL,
                        TRUE, FALSE, UNKNOWN, BOTH)
 from Layers import TernaryTruthStore
@@ -96,120 +95,12 @@ class TestIsTrue(unittest.TestCase):
         self.assertEqual(r.is_true(IDEA_A), 0.0)
 
 
-class TestLegacyIsPartDirect(unittest.TestCase):
-    def test_geometric_containment(self):
-        r = TruthGroundedReasoner(store=_store())
-        res = r.legacy_is_part_direct(PART, WHOLE)
-        self.assertIsNotNone(res)
-        score, how = res
-        self.assertEqual(how, "geometric")
-        self.assertGreaterEqual(score, r.theta)
-
-    def test_stored_partof_row(self):
-        # LEFT/RIGHT are geometrically disjoint, so only the stored row answers.
-        r = TruthGroundedReasoner(
-            store=_store(rows_partof=[(LEFT, RIGHT, 0.85)]))
-        self.assertIsNone(  # sanity: not geometric
-            r.legacy_is_part_direct(LEFT, RIGHT) if False else None)
-        res = r.legacy_is_part_direct(LEFT, RIGHT)
-        self.assertIsNotNone(res)
-        score, how = res
-        self.assertEqual(how, "stored")
-        self.assertAlmostEqual(score, 0.85, places=5)
-
-    def test_disjoint_is_none(self):
-        r = TruthGroundedReasoner(store=_store())
-        self.assertIsNone(r.legacy_is_part_direct(LEFT, RIGHT))
-
-    def test_negative_trust_row_not_accepted(self):
-        r = TruthGroundedReasoner(
-            store=_store(rows_partof=[(LEFT, RIGHT, -0.9)]))
-        self.assertIsNone(r.legacy_is_part_direct(LEFT, RIGHT))
-
-
 # Discrete, pairwise-disjoint ideas: no geometric parthood holds between any
 # two, so only a stored chain can connect them (the syllogism case).
 SOCRATES = _v(1, 0, 0, 0, 0, 0, 0, 0)
 MAN = _v(0, 1, 0, 0, 0, 0, 0, 0)
 MORTAL = _v(0, 0, 1, 0, 0, 0, 0, 0)
 ANIMAL = _v(0, 0, 0, 1, 0, 0, 0, 0)
-
-
-class TestLegacyChain(unittest.TestCase):
-    def test_socrates_syllogism(self):
-        # Socrates ⊑ man, man ⊑ mortal  ⇒  isPart(Socrates, mortal) via 1 hop.
-        r = TruthGroundedReasoner(store=_store(rows_partof=[
-            (SOCRATES, MAN, 0.9), (MAN, MORTAL, 0.8)]))
-        # No direct geometric/stored edge Socrates→mortal.
-        self.assertIsNone(r.legacy_is_part_direct(SOCRATES, MORTAL))
-        cands = r.legacy_is_part(SOCRATES, MORTAL)
-        self.assertTrue(cands)
-        best = cands[0]
-        self.assertEqual(best["how"], "chain")
-        self.assertEqual(best["steps"], 2)
-        self.assertAlmostEqual(best["score"], 0.8, places=5)   # MIN(0.9, 0.8)
-
-    def test_no_chain_returns_empty(self):
-        r = TruthGroundedReasoner(store=_store(rows_partof=[
-            (SOCRATES, MAN, 0.9)]))                              # dead-ends at man
-        self.assertEqual(r.legacy_is_part(SOCRATES, MORTAL), [])
-
-    def test_min_trust_is_weakest_hop(self):
-        # man ⊑ mortal ⊑ animal: chain trust = min(0.6, 0.95) = 0.6
-        r = TruthGroundedReasoner(store=_store(rows_partof=[
-            (MAN, MORTAL, 0.6), (MORTAL, ANIMAL, 0.95)]))
-        cands = r.legacy_is_part(MAN, ANIMAL)
-        self.assertTrue(cands)
-        self.assertAlmostEqual(cands[0]["score"], 0.6, places=5)
-
-    def test_beam_caps_candidate_count(self):
-        # Many parallel distractor edges out of MAN; beam=2 caps the results.
-        rows = [(MAN, _v(0, 0, 0, 0, *[1 if j == k else 0 for j in range(4)]),
-                 0.5) for k in range(4)]
-        rows.append((MAN, MORTAL, 0.8))
-        r = TruthGroundedReasoner(store=_store(rows_partof=rows))
-        cands = r.legacy_is_part(MAN, MORTAL, beam=2)
-        self.assertLessEqual(len(cands), 2)
-        self.assertTrue(any(c["how"] == "chain" for c in cands))
-
-    def test_direct_ranks_first(self):
-        # PART ⊑ WHOLE is direct (geometric); also add a weaker stored chain.
-        r = TruthGroundedReasoner(store=_store(rows_partof=[
-            (PART, MAN, 0.5), (MAN, WHOLE, 0.4)]))
-        cands = r.legacy_is_part(PART, WHOLE)
-        self.assertTrue(cands)
-        self.assertEqual(cands[0]["how"], "geometric")
-
-
-class TestLegacyMaterialize(unittest.TestCase):
-    def test_verified_chain_becomes_direct_hit(self):
-        store = _store(rows_partof=[(SOCRATES, MAN, 0.9), (MAN, MORTAL, 0.8)])
-        r = TruthGroundedReasoner(store=store)
-        # Before: only the chain answers; no direct edge.
-        self.assertIsNone(r.legacy_is_part_direct(SOCRATES, MORTAL))
-        cands = r.legacy_is_part(SOCRATES, MORTAL, materialize=True)
-        self.assertEqual(cands[0]["how"], "chain")
-        self.assertIn("materialized", cands[0])
-        # After: the conclusion is a stored direct edge with the chain trust.
-        direct = r.legacy_is_part_direct(SOCRATES, MORTAL)
-        self.assertIsNotNone(direct)
-        score, how = direct
-        self.assertEqual(how, "stored")
-        self.assertAlmostEqual(score, 0.8, places=5)
-
-    def test_below_floor_not_written(self):
-        store = _store(rows_partof=[(SOCRATES, MAN, 0.4), (MAN, MORTAL, 0.3)])
-        r = TruthGroundedReasoner(store=store, materialize_floor=0.5)
-        cands = r.legacy_is_part(SOCRATES, MORTAL, materialize=True)
-        # chain score = min(0.4,0.3)=0.3 < floor -> not materialized
-        if cands:
-            self.assertNotIn("materialized", cands[0])
-        self.assertIsNone(r.legacy_is_part_direct(SOCRATES, MORTAL))
-
-    def test_materialize_noop_without_store(self):
-        r = TruthGroundedReasoner(model=_ModelStub())
-        self.assertEqual(r.legacy_materialize(SOCRATES, MORTAL, 0.9), -1)
-
 
 
 def _taxonomy(*links):
@@ -283,25 +174,6 @@ class TestGrammarOps(unittest.TestCase):
                                places=5)
         self.assertGreater(r.equal(SOCRATES, MAN, isomorphic=False), 0.0)
 
-    def test_part(self):
-        r = TruthGroundedReasoner()
-        self.assertGreaterEqual(r.legacy_part(PART, WHOLE), 0.7)
-        self.assertAlmostEqual(r.legacy_part(LEFT, RIGHT), 0.0, places=5)
-
-    def test_wholes_proximal_frontier(self):
-        r = TruthGroundedReasoner(store=_store(rows_partof=[
-            (SOCRATES, MAN, 0.9), (MAN, MORTAL, 0.8)]))
-        ws = r.legacy_wholes(SOCRATES)
-        self.assertEqual(len(ws), 1)                 # proximal: man, not mortal
-        self.assertGreaterEqual(r.equal(ws[0]["idea"], MAN), 0.99)
-        self.assertAlmostEqual(ws[0]["trust"], 0.9, places=5)
-
-    def test_parts_is_inverse_of_wholes(self):
-        r = TruthGroundedReasoner(store=_store(rows_partof=[
-            (SOCRATES, MAN, 0.9), (MAN, MORTAL, 0.8)]))
-        ps = r.legacy_parts(MORTAL)
-        self.assertEqual(len(ps), 1)                 # proximal: man
-        self.assertGreaterEqual(r.equal(ps[0]["idea"], MAN), 0.99)
 
     def test_query_idea_and_relation(self):
         r = TruthGroundedReasoner(store=_store(
@@ -358,30 +230,6 @@ class TestLegacyConsolidation(unittest.TestCase):
     """The chain climb is ONE canonical primitive on ConceptualSpace, shared by
     the reasoner's is_part and ConceptualSpace.reason."""
 
-    def test_chain_to_target_is_shared_loop(self):
-        from Spaces import ConceptualSpace
-        store = _store(rows_partof=[(SOCRATES, MAN, 0.9), (MAN, MORTAL, 0.8)])
-        chains = ConceptualSpace._chain_to_target(
-            SOCRATES, MORTAL, store, parthood_threshold=0.7, max_steps=8,
-            beam=8, trust_combine="min", rel_type=TernaryTruthStore.REL_PARTOF)
-        self.assertTrue(chains)
-        self.assertAlmostEqual(chains[0]["score"], 0.8, places=5)
-        # is_part delegates to the SAME loop -> same best score + chain.
-        cands = TruthGroundedReasoner(store=store).legacy_is_part(SOCRATES, MORTAL)
-        self.assertAlmostEqual(cands[0]["score"], chains[0]["score"], places=5)
-        self.assertEqual(cands[0]["chain"], chains[0]["chain"])
-
-    def test_wholes_is_canonical_conceptualspace_method(self):
-        from Spaces import ConceptualSpace
-        store = _store(rows_partof=[(SOCRATES, MAN, 0.9)])
-        ws = ConceptualSpace.wholes(
-            SOCRATES, store, theta=0.7,
-            rel_type=TernaryTruthStore.REL_PARTOF)
-        self.assertEqual(len(ws), 1)
-        # The reasoner's wholes() returns the same.
-        rw = TruthGroundedReasoner(store=store).legacy_wholes(SOCRATES)
-        self.assertEqual(len(rw), 1)
-        self.assertEqual(rw[0]["row"], ws[0]["row"])
 
     def test_reason_open_mode_unchanged_shape(self):
         # Default (no target) still returns the derived/luminosity_gain shape.
@@ -392,25 +240,8 @@ class TestLegacyConsolidation(unittest.TestCase):
         self.assertEqual(len(list(rows)), 1)
 
 
-class TestLegacyPartialOrder(unittest.TestCase):
-    """Phase 6: antisymmetry / cycle guard at edge insertion."""
-
-    def test_materialize_rejects_cycle(self):
-        # MORTAL ⊑ MAN already stored; writing MAN ⊑ MORTAL would cycle.
-        r = TruthGroundedReasoner(store=_store(rows_partof=[(MORTAL, MAN, 0.9)]))
-        self.assertEqual(r.legacy_materialize(MAN, MORTAL, 0.9), -1)
-
-    def test_materialize_rejects_self_loop(self):
-        r = TruthGroundedReasoner(store=_store())
-        self.assertEqual(r.legacy_materialize(MAN, MAN, 0.9), -1)
-
-    def test_materialize_accepts_acyclic(self):
-        r = TruthGroundedReasoner(store=_store(rows_partof=[(SOCRATES, MAN, 0.9)]))
-        self.assertGreaterEqual(r.legacy_materialize(MAN, MORTAL, 0.9), 0)
-
-
-class TestSoftGenerator(unittest.TestCase):
-    """Phase 3: the intervening-idea generator over the truth-space."""
+class TestSoftRead(unittest.TestCase):
+    """The retained numerical attention reader returns real stored keys."""
 
     def _spaces(self, store, D=8):
         from Spaces import GlobalAttention as GA
@@ -434,106 +265,6 @@ class TestSoftGenerator(unittest.TestCase):
         self.assertLessEqual(len(read["candidates"]), 3)
         self.assertIn(read["space_id"],
                       {GlobalAttention.SPACE_LTM, GlobalAttention.SPACE_WHOLE})
-
-    def test_generator_proposes_and_recurs(self):
-        from Spaces import GlobalAttention
-        store = _store(rows_ideas=[(IDEA_A, 0.9), (IDEA_C, 0.8)])
-        gen = InterveningIdeaGenerator(dim=8)
-        ga = GlobalAttention()
-        spaces = self._spaces(store)
-        out = gen.propose(SOCRATES, MORTAL, spaces, ga=ga, top_k=3)
-        self.assertIsNotNone(out)
-        self.assertEqual(int(out["idea"].shape[-1]), 8)
-        out2 = gen.propose(SOCRATES, MORTAL, spaces, ga=ga,
-                           prev_r=out["idea"], top_k=3)
-        self.assertIsNotNone(out2)
-
-    def test_query_head_is_differentiable(self):
-        gen = InterveningIdeaGenerator(dim=8)
-        q = gen.concept_q(SOCRATES, MORTAL)
-        self.assertTrue(q.requires_grad)
-        q.sum().backward()
-        # the head has a gradient -> the soft route trains
-        grads = [p.grad for p in gen.parameters() if p.grad is not None]
-        self.assertTrue(grads)
-
-
-class TestAnswerPolicyLoss(unittest.TestCase):
-    """Phase C: the differentiable answer-policy loss + store-derived examples."""
-
-    def _spaces(self, *ideas):
-        from Spaces import GlobalAttention as GA
-        keys = torch.stack(list(ideas)).detach()
-        return [{"id": GA.SPACE_WHOLE, "keys": keys}]
-
-    def test_examples_from_store_builds_transitive_pairs(self):
-        r = TruthGroundedReasoner(store=_store(rows_partof=[
-            (SOCRATES, MAN, 0.9), (MAN, MORTAL, 0.8)]))
-        ex = reasoning.policy_examples_from_store(r)
-        # the 2-hop (socrates -> mortal) is a positive; its reverse is negative.
-        pos = [(a, b, g) for (a, b, g) in ex if g == 1.0]
-        self.assertTrue(any(
-            TruthGroundedReasoner.equal(a, SOCRATES) >= 0.99
-            and TruthGroundedReasoner.equal(b, MORTAL) >= 0.99 for a, b, g in pos))
-        self.assertTrue(any(g == 0.0 for _, _, g in ex))   # a negative present
-
-    def test_policy_loss_trains_generator_head(self):
-        # The bridge (MAN) is present in the truth-space -> the positive example
-        # produces a real gradient on the generator query head (the soft route).
-        r = TruthGroundedReasoner(store=_store(rows_partof=[
-            (SOCRATES, MAN, 0.9), (MAN, MORTAL, 0.8)]))
-        gen = InterveningIdeaGenerator(dim=8)
-        spaces = self._spaces(MAN, ANIMAL, IDEA_C)
-        ex = reasoning.policy_examples_from_store(r)
-        loss = reasoning.policy_answer_loss(gen, spaces, r, ex)
-        self.assertIsNotNone(loss)
-        self.assertTrue(loss.requires_grad)
-        loss.backward()
-        g = gen.head[0].weight.grad
-        self.assertIsNotNone(g)
-        self.assertTrue(torch.isfinite(g).all())
-        self.assertGreater(float(g.norm()), 0.0)           # the head actually trained
-
-    def test_policy_loss_none_without_examples_or_spaces(self):
-        r = TruthGroundedReasoner(store=_store(rows_partof=[(SOCRATES, MAN, 0.9)]))
-        gen = InterveningIdeaGenerator(dim=8)
-        # no 2-hop chain -> no examples -> None
-        self.assertEqual(reasoning.policy_examples_from_store(r), [])
-        self.assertIsNone(reasoning.policy_answer_loss(
-            gen, self._spaces(MAN), r, []))                 # empty examples
-        ex = [(SOCRATES, MORTAL, 1.0)]
-        self.assertIsNone(reasoning.policy_answer_loss(gen, [], r, ex))  # no spaces
-
-    def test_policy_loss_skips_oversized_space(self):
-        # A percept-scale codebook (> max_keys rows) is skipped; with only that
-        # space present, the loss is None (no idea-scale keys).
-        r = TruthGroundedReasoner(store=_store(rows_partof=[
-            (SOCRATES, MAN, 0.9), (MAN, MORTAL, 0.8)]))
-        gen = InterveningIdeaGenerator(dim=8)
-        from Spaces import GlobalAttention as GA
-        big = [{"id": GA.SPACE_PART, "keys": torch.zeros(600, 8)}]
-        ex = reasoning.policy_examples_from_store(r)
-        self.assertIsNone(reasoning.policy_answer_loss(
-            gen, big, r, ex, max_keys=512))
-
-
-class TestAnswerLoss(unittest.TestCase):
-    """Phase 5: the policy (answer) loss primitive."""
-
-    def test_proof_score_maps_signed_to_unit(self):
-        self.assertAlmostEqual(reasoning.proof_score(1.0), 1.0, places=6)
-        self.assertAlmostEqual(reasoning.proof_score(-1.0), 0.0, places=6)
-        self.assertAlmostEqual(reasoning.proof_score(0.0), 0.5, places=6)
-
-    def test_answer_loss_lower_when_correct(self):
-        good = float(reasoning.answer_loss(torch.tensor(0.9), 1.0))
-        bad = float(reasoning.answer_loss(torch.tensor(-0.9), 1.0))
-        self.assertLess(good, bad)
-
-    def test_answer_loss_differentiable(self):
-        p = torch.tensor(0.2, requires_grad=True)
-        reasoning.answer_loss(p, 1.0).backward()
-        self.assertIsNotNone(p.grad)
 
 
 if __name__ == "__main__":

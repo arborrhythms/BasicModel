@@ -58,8 +58,8 @@ BasicModel now selects tied completed-input reconstruction. Its migration
 declaration, completed native measurements and green full-suite result are in
 [integrated specification §13](plans/2026-09-15-next-sentence-as-the-production-objective.md#13-tied-input-reconstruction-migration-verified).
 Full nested meaning and reasoning remain separate acceptance gates.
-See [Layers.py:10096](../bin/Layers.py#L10096),
-[Models.py:12726](../bin/Models.py#L12726), and
+See [Layers.py](../bin/Layers.py),
+[Models.py](../bin/Models.py), and
 [the implementation order](plans/2026-09-15-next-sentence-as-the-production-objective.md#10-consolidated-implementation-and-verification-order).
 
 Two phases: **embedding pretraining** and **network training**. Embedding
@@ -216,7 +216,7 @@ BasicModel enables `teacherReconstruction` and `reconstructInLoop`, with
 state and recorded compose derivation drive the tied traversal. Its cross
 entropy scores each word's bytes through the first NUL terminator (`0`), then
 averages over active words, completed sentences and batch rows. It uses the
-existing 256-byte alphabet and [token-buffer contract](../bin/Spaces.py#L1617).
+existing 256-byte alphabet and [token-buffer contract](../bin/Spaces.py).
 Thus `a\0` differs from `ab\0`; padding or stale bytes after NUL are ignored.
 At eager staging, each input percept ID expands to its complete stored byte
 spelling for the target. A promoted word or multi-byte prefix therefore keeps
@@ -225,18 +225,18 @@ reconstructed ideas.
 With no known candidate spelling, the uniform fallback gives `log(256)` for a
 scoreable target. The dictionary snapshot retains one extra byte beyond the
 input window, preventing a clipped longer spelling from acquiring a false word
-end ([Models.py:11016](../bin/Models.py#L11016),
-[Models.py:11719](../bin/Models.py#L11719)).
+end ([Models.py](../bin/Models.py),
+[Models.py](../bin/Models.py)).
 Training and evaluation consume that same owned cost once; neither adds D3,
 an independent root-to-leaf decoder, or a duplicate event-reconstruction term
-([Models.py:11300](../bin/Models.py#L11300)).
+([Models.py](../bin/Models.py)).
 
 The owned `InputReconstruction` retains recovered ideas, the realized input
 event, byte and idea costs, per-sentence costs and truncation. Ownership is
 established during understanding, before later staging can overwrite the
 carriers. `reverseReconstruct` returns that completed event; an explicitly
 supplied target only changes its optional diagnostic event score
-([Models.py:8025](../bin/Models.py#L8025)). Idea MSE and continuous event error
+([Models.py](../bin/Models.py)). Idea MSE and continuous event error
 are fidelity diagnostics. The cosine-based byte objective does not enforce
 equality of continuous concept amplitudes.
 
@@ -246,18 +246,18 @@ operand witnesses are detached. Reverse trace indices are constants. The forward
 chooser retains its existing straight-through soft approximation, which can
 receive reconstruction credit through the live completed representation; the
 separately weighted local chooser objective remains optional
-([Language.py:7874](../bin/Language.py#L7874),
-[Language.py:14029](../bin/Language.py#L14029)). Following a recorded reverse
+([Language.py](../bin/Language.py),
+[Language.py](../bin/Language.py)). Following a recorded reverse
 index adds no selection gradient of its own. Reconstruction owns no decoder
 parameters. The downstream
 gradient projection and combined norm budget remain those in
-[Models.py:2746](../bin/Models.py#L2746).
+[Models.py](../bin/Models.py).
 
 Separate reconstruction compilation caches its backward and disables donation
 of saved buffers. This permits the repeated gradient reads required by joint
 balancing even when the first backward used the cache only once. The compiler
 normalizes this PyTorch build's disabled-donation metadata without permanently
-changing its global setting ([Models.py:11257](../bin/Models.py#L11257)).
+changing its global setting ([Models.py](../bin/Models.py)).
 
 Explicit `detachedReverse=true` configurations retain the idea-only student
 from $\operatorname{stopgrad}(S)$ and are mutually exclusive with tied mode.
@@ -313,14 +313,14 @@ through any of the $W$ recurrent forward folds. Canonical BasicModel instead
 uses the tied traversal described above. Checkpoint migration drops student
 keys and their optimizer entries, preserving shared compose weights and Adam
 state by name; no replacement reconstruction decoder is initialized
-([Models.py:4938](../bin/Models.py#L4938),
-[Models.py:3005](../bin/Models.py#L3005)).
+([Models.py](../bin/Models.py),
+[Models.py](../bin/Models.py)).
 
 The optional `forwardGrammarWeight` adds local pressure on the forward
 chooser, alongside the completed-sentence tied reconstruction objective.
 For every type-valid unary or binary rule, the layer re-scores detached
 children and detached candidate results through the same chooser parameters
-([Language.py:7810](../bin/Language.py#L7810)). This local branch uses the
+([Language.py](../bin/Language.py)). This local branch uses the
 bounded proxy
 
 $$
@@ -450,8 +450,8 @@ actual fidelity and predictive utility; the objective is a representation
 that satisfies both tasks. The detached reverse student still does not train
 its encoder through reconstruction.
 The loss partition and parameter selection are in
-[Models.py:2708](../bin/Models.py#L2708); projection, the combined norm cap and
-the tolerance rule are in [Optimizer.py:113](../bin/Optimizer.py#L113).
+[Models.py](../bin/Models.py); projection, the combined norm cap and
+the tolerance rule are in [Optimizer.py](../bin/Optimizer.py).
 
 Inter-sentence MSE/contrastive losses are consumed independently of Teacher's
 legacy ARMA/intra gate. Prediction sees a bounded per-row view of external
@@ -462,10 +462,10 @@ LTM remains detached. Expectation is now on by default and predicts local roles.
 meaning and the reasoning migrations remain tracked in the
 [integrated spec](plans/2026-09-15-next-sentence-as-the-production-objective.md#84-joint-representation-learning-and-gradient-balance).
 The observation and cleanup code is in
-[Layers.py:10149](../bin/Layers.py#L10149) and
-[Layers.py:10689](../bin/Layers.py#L10689); the training gates are in
-[Models.py:13978](../bin/Models.py#L13978) and
-[Models.py:14087](../bin/Models.py#L14087).
+[Layers.py](../bin/Layers.py) and
+[Layers.py](../bin/Layers.py); the training gates are in
+[Models.py](../bin/Models.py) and
+[Models.py](../bin/Models.py).
 
 SBOW loss uses the same negative-sampling objective, with $s(a, b)$ the
 wrapped-MSE torus similarity (`_wrapped_mse_score`) rather than a dot
@@ -563,13 +563,13 @@ For each B-wide batch:
    - `reconstruction`: tied mode scores the completed input's recovered
      WORD spellings through the existing NUL terminator. Explicit legacy
      paths retain masked perceptual MSE or the D3 reverse($S$) objective
-     ([Models.py:13815](../bin/Models.py#L13815)).
+     ([Models.py](../bin/Models.py)).
    - `reconstruction_reverse` (concepts-seeded): the reverse pass
      seeded from the terminal `ConceptualSpace` STM snapshot (the
      `<reconstruct>` enum was retired), weighted by
      `reconstructionScale`. Tied mode skips this duplicate in training and
      evaluation; the legacy paths also deduplicate their active reverse
-     objectives ([Models.py:13864](../bin/Models.py#L13864)).
+     objectives ([Models.py](../bin/Models.py)).
    - `embedding_sbow` (`JOINT` / byte-lexer perceptual SBOW), weighted
      by `<embeddingScale>`.
    - `arma` (sentence-level): `InterSentenceLayer.observe(s_t)` MSE
@@ -602,7 +602,7 @@ independently normalized primary costs recorded before `backward()`:
 | Cost (`primary_costs()`) | Compares | Trains |
 |---|---|---|
 | `input_reconstruction` (+ `input_reconstruction_reverse`, `reverseReconstruct()`'s own cost) | the reconstructed input with the presented (or clean) input | the bottom-up understanding and its input-associated inverse |
-| `answer_construction` | the realized response from `reverseOutput()` against an available, separately supplied `Data.what(What.supervised(...))` answer; automatic temporal targets are evaluation metrics only ([Models.py:9419](../bin/Models.py#L9419)) | the resolve step, conceptual conditioner, dedicated synthesis layers, output adapter, and shared understanding under reconstruction priority |
+| `answer_construction` | the realized response from `reverseOutput()` against an available, separately supplied `Data.what(What.supervised(...))` answer; automatic temporal targets are evaluation metrics only ([Models.py](../bin/Models.py)) | the resolve step, conceptual conditioner, dedicated synthesis layers, output adapter, and shared understanding under reconstruction priority |
 
 The desired answer is resolved only after the model response is fixed and
 enters loss preparation only. `reconstructionPriority` balances the weighted
@@ -612,23 +612,16 @@ thinking statistics (episodes, mean iterations, forced-closure rate), the
 hard-choice policy credit (`forwardGrammarWeight`) separately from the
 continuous answer credit, and sentences/s. Full contract: the
 [What spec, Section 9](specs/2026-07-27-teaching-modes-and-next-iteration.md#9-training-and-loss);
-training *through* multi-iteration thinking episodes is the
-[mathematical thinking specification](specs/2026-09-09-mathematical-thinking.md):
-with `<whatThinkingIterations>` above one, `runBatch` drives
-`Model.think()` (one `forward()`, iterated resolve steps, LIFO closure),
-scores the root answers after parity, adds the `WhatStepChooser` policy
-term (`<whatThinkingPolicyWeight>`), takes the one optimizer step, and
-then ends the episode (`<whatThinkingDetach>`), all reported under
-`what_report()["thinking"]` and `["policy"]["thinking"]`.
-
-Completed interrogative grammatical programs take a separate normal boundary
-path before legacy thinking and `reverseOutput()`. Its `SelectedThoughtChooser`
-logs hard `query` / `finish` actions against live root/active/candidate role
-payloads, and `runBatch` adds the separately default-zero
-`<selectedThoughtPolicyWeight>` REINFORCE term after answer loss is known.
-The episode stays live through that one optimizer step, then shares the normal
-episode teardown. This is supplied-answer policy credit with a separate EMA
-baseline, not residual-driven corpus credit or learned-utility evidence.
+Completed grammatical questions run through `BasicModel.run_selected_thought`
+before `reverseOutput`. `think()` presents the input once. The one
+`SelectedThoughtChooser` selects catalogue operations and `conclude`, including
+nested `what` requests on the same history owner and work meter.
+`runBatch` adds `selectedThoughtPolicyWeight` times the later row-local answer
+credit, takes one optimizer step, then detaches the episode. Old thinking-weight
+aliases migrate to that same objective; no parity chooser or bridge-policy
+loss remains. This is supplied-answer credit. Residual credit and learned
+utility are still open. [SelectedMeaning](SelectedMeaning.md) describes the
+complete bounded semantic/memory input and checkpoint migration.
 
 ---
 
@@ -693,24 +686,24 @@ UTF-8 bytes in its ConceptualSpace owner's `_row_surfaces`; an OBJECT owns
 only an index back to its concept identity, then translates through the
 current `word_concept_of_object()` association to the WORD row. Changing an
 interpretation therefore does not copy or overwrite WORD bytes
-([Spaces.py:19949](../bin/Spaces.py#L19949)). The brick's bounded dictionary snapshot contains
+([Spaces.py](../bin/Spaces.py)). The brick's bounded dictionary snapshot contains
 only its staged WORD/OBJECT rows (`_ar_concept_lookup_rows`) and resolves
 their candidate bytes from this store (`_ar_bank_bytes`); input part IDs
 provide the byte-window shape and scoring targets, never candidate bytes
-([Models.py:11016](../bin/Models.py#L11016)).
+([Models.py](../bin/Models.py)).
 
 Per-stage WORD stores and OBJECT row indices persist in `vocab_extras`
 under `concept_word_surfaces`, including stage 0 when it owns the shared
-identities ([Models.py:4269](../bin/Models.py#L4269), [Models.py:5530](../bin/Models.py#L5530)). The existing
+identities ([Models.py](../bin/Models.py), [Models.py](../bin/Models.py)). The existing
 structural extras retain the current OBJECT-to-WORD association. Strict
 load also materialises a saved lazy chunk prior before the key audit,
-so no preparatory input pass is required ([Models.py:4928](../bin/Models.py#L4928)).
+so no preparatory input pass is required ([Models.py](../bin/Models.py)).
 
 A missing WORD surface removes that candidate. A missing snapshot never
 falls back to the presented words' bytes. A null candidate of similarity
 zero and uniform bytes remains available: with scoreable targets and no
 known candidates, the byte cost is `log(256)`, not a manufactured perfect
-reconstruction ([Models.py:11719](../bin/Models.py#L11719)). Rows absent from the snapshot do
+reconstruction ([Models.py](../bin/Models.py)). Rows absent from the snapshot do
 not enter the score. The
 score is taken at the pop step, inside the traversal, and the loop carries
 only the running sums (idea cost, byte cost, word count) besides the
@@ -769,10 +762,10 @@ The answer-materialisation boundary (2026-09-15).
 its interpreted symbol rows, separate WORD rows, signed activations,
 compact conceptual leaves, identified compose actions, reconstruction
 targets and three-slot end state. Each `AnswerProgram` clones its tensors
-while retaining the current forward's gradients ([Understanding.py:25](../bin/Understanding.py#L25)).
+while retaining the current forward's gradients ([Understanding.py](../bin/Understanding.py)).
 The capture publishes explicit compiled outputs before reading them;
 packed sentence slots and the final per-row programs share the same records
-([Models.py:7954](../bin/Models.py#L7954), [Models.py:12072](../bin/Models.py#L12072)).
+([Models.py](../bin/Models.py), [Models.py](../bin/Models.py)).
 
 Resolution selects the current program for identity or a grammar-selected
 thought, or a frozen program for recall, then replays its full-width concepts
@@ -781,57 +774,57 @@ once. A normal boundary never promotes its raw surface prompt into
 interface, while older configured controller steps remain quarantined during
 their migration. Thinking transforms owned concepts through LTM attention or a
 referent's owned leaf, located by its WORD row
-([Models.py:8186](../bin/Models.py#L8186), [Models.py:8530](../bin/Models.py#L8530),
-[Models.py:8568](../bin/Models.py#L8568)). The derivation owns this resolved conceptual answer
-and the question's target-free context ([Output.py:72](../bin/Output.py#L72)). Discourse
+([Models.py](../bin/Models.py), [Models.py](../bin/Models.py),
+[Models.py](../bin/Models.py)). The derivation owns this resolved conceptual answer
+and the question's target-free context ([Output.py](../bin/Output.py)). Discourse
 observation retains detached captured sentence products, including packed
-slots ([Models.py:8783](../bin/Models.py#L8783)). A later staging or memory advance cannot
+slots ([Models.py](../bin/Models.py)). A later staging or memory advance cannot
 replace the held answer. The What interaction's input retains all three
-captured idea slots ([Models.py:9889](../bin/Models.py#L9889)).
+captured idea slots ([Models.py](../bin/Models.py)).
 
 `_materialize_answer_idea` applies one conceptual-width conditioner to the
 resolved root, once. Missing programs are explicitly unresolved; a future
 prediction without a conceptual predictor has no program
-([Models.py:11806](../bin/Models.py#L11806)). Replaying the identified compose actions recovers
+([Models.py](../bin/Models.py)). Replaying the identified compose actions recovers
 the idea; output chooses its own generate derivation. Reconstruction
 targets remain metadata and never choose output actions
-([Models.py:12237](../bin/Models.py#L12237)).
+([Models.py](../bin/Models.py)).
 
 Both output modes consume the full-width concepts directly. With
 `outputInLoop`, the three opaque slots enter a bounded traversal, newest
 at slot 0; the generate walk emits concepts for the shared reverse chain
-([Models.py:12237](../bin/Models.py#L12237), [Models.py:9182](../bin/Models.py#L9182)). Otherwise, the conditioned
+([Models.py](../bin/Models.py), [Models.py](../bin/Models.py)). Otherwise, the conditioned
 concepts enter the dedicated conceptual synthesis operator, then the shared
 reverse body and perceptual inverse, the dedicated perceptual operator,
-and the output adapter ([Spaces.py:22885](../bin/Spaces.py#L22885), [Models.py:9182](../bin/Models.py#L9182)). The
+and the output adapter ([Spaces.py](../bin/Spaces.py), [Models.py](../bin/Models.py)). The
 native 1032-wide concept / 136-wide percept path needs no dense symbolic
 seed; topologies without row programs retain the dense compatibility path
-([Models.py:8186](../bin/Models.py#L8186)).
+([Models.py](../bin/Models.py)).
 
 Historical conditioner widths remain in the checkpoint registry. Strict
 loading restores their exact weights and initializes a missing active
 conceptual width to zero when migrating a narrow-only checkpoint
-([Models.py:9007](../bin/Models.py#L9007)). Already materialized answer parameters join a newly
+([Models.py](../bin/Models.py)). Already materialized answer parameters join a newly
 created optimizer; later lazy modules join the live optimizer once
-([Models.py:2796](../bin/Models.py#L2796), [Models.py:9129](../bin/Models.py#L9129), [Models.py:13587](../bin/Models.py#L13587)).
+([Models.py](../bin/Models.py), [Models.py](../bin/Models.py), [Models.py](../bin/Models.py)).
 
 Realized-answer supervision (2026-09-15).
 Answer preparation is explicit: `resolveAnswer(understanding, questions)`
 returns the owned, target-free derivation accepted by `reverseOutput`.
 Generation cannot rerun answer/query resolution, and the conceptual handoff
 retains gradients within the current optimizer step
-([preparation](../bin/Models.py#L8171),
-[realization](../bin/Models.py#L9182), [owned value](../bin/Output.py#L48)).
+([preparation](../bin/Models.py),
+[realization](../bin/Models.py), [owned value](../bin/Output.py)).
 Training accepts only available, separately supplied answers to supervised
 questions. It filters rows before selecting numeric or text scoring, so an
 automatic text target cannot displace a supplied numeric label. For text,
 the fixed answer percepts are realized in input-event space without desired
 content, then scored against the embedded supplied text
-([Models.py:9419](../bin/Models.py#L9419)). Evaluation retains automatic present/past/future
+([Models.py](../bin/Models.py)). Evaluation retains automatic present/past/future
 metrics. Missing labels and automatic input targets provide no dedicated
 answer gradient or optimizer update, including after an earlier Adam step;
 thinking policy credit also excludes these rows, including closure costs
-([Models.py:8325](../bin/Models.py#L8325), `test/test_output_path_supervised.py:284`). Shared
+([Models.py](../bin/Models.py), `test/test_output_path_supervised.py:284`). Shared
 understanding parameters can still learn input reconstruction.
 
 The output walk's generate policy (2026-09-15, contract 5).
@@ -860,9 +853,9 @@ credit pattern used by the thinking chooser; no gold parse is assumed.
 Evaluation uses the chooser's highest-scoring action. The rule inventory
 comes from the grammar's `<generate>` section, with the number of LHS
 outputs determining binary/unary expansion; it can differ from `<compose>`
-and can contain rules absent there ([Language.py:14129](../bin/Language.py#L14129)). The numerical
+and can contain rules absent there ([Language.py](../bin/Language.py)). The numerical
 inverse kernels remain shared with reconstruction, while the catalogs,
-policies and traversal state are independent ([Models.py:12237](../bin/Models.py#L12237)). An
+policies and traversal state are independent ([Models.py](../bin/Models.py)). An
 explicit output-owned generate stamp can replay an output rule; an input
 compose stamp cannot. The low-level `targets` argument is retained only as
 an ignored compatibility argument. There is no `outputTeacherForcing` knob.
@@ -872,8 +865,8 @@ that parse is not assumed correct and provides no output imitation credit.
 Checkpoints record stable generate-action keys. Loading maps chooser rows
 and Adam moments by those keys, preserving stop and giving new actions
 fresh weights and zero moments. Older checkpoints without keys map from
-the legacy compose catalog ([Language.py:14185](../bin/Language.py#L14185),
-[checkpoint_migrations.py:800](../bin/checkpoint_migrations.py#L800)).
+the legacy compose catalog ([Language.py](../bin/Language.py),
+[checkpoint_migrations.py](../bin/checkpoint_migrations.py)).
 A completed constituent is popped into the emitted sequence and the walk
 continues with its pending constituents. A row completes when no live slot
 remains; exhausting the budget with pending slots reports truncation.
@@ -1058,26 +1051,23 @@ TruthSet admission can accept a fact; an origin tag or high activation alone
 cannot. Internal questions, predictions and unverified legacy relations remain
 ineligible for `Exist` fact support. The lookup preserves both signed degrees
 and provenance, and adds no gradient objective or trainable parameters.
-[Observation adapter](../bin/Models.py#L133),
-[admission](../bin/Layers.py#L8912),
-[lookup](../bin/reasoning.py#L156).
+[Observation adapter](../bin/Models.py),
+[admission](../bin/Layers.py),
+[lookup](../bin/reasoning.py).
 
 See [Existence evidence](ExistenceEvidence.md) for complete-description matching,
-testimony, checkpoint migration and the hard lookup boundary, and
+fact admission, checkpoint migration and the hard lookup boundary, and
 [GradientFlow](GradientFlow.md) for the architecture-wide gradient budget.
 
 ## Conceptual-taxonomy queries (September 16)
 
-The legacy operation-head curriculum uses bounded native two-link taxonomy
-paths. Successful queries preserve their native proof sources and cannot
-materialize world facts. Old geometric/world-row experiments remain under
-explicit `legacy_...` helpers and `run_legacy_world`; their optional policy
-objectives are not the default sentence-expectation controller. No new loss
-or learned parameters were added. These mechanics do not establish learned
-question utility. See [Taxonomy queries](TaxonomyQueries.md).
-[Curriculum](../bin/thinking.py#L621),
-[legacy experiment](../bin/reasoning.py#L772),
-[read-only close](../bin/thinking.py#L484).
+Successful checked taxonomy queries preserve native proof sources and cannot
+materialize world facts. Their bounded reader traversal is distinct from
+policy-selected nested `what` execution. The frame-kernel curriculum,
+`legacy_*` readers and optional bridge/prediction policy objectives are removed.
+Only the normal thought chooser receives episode credit. Mechanism tests do
+not establish learned utility. See [Taxonomy queries](TaxonomyQueries.md) and
+[SelectedMeaning](SelectedMeaning.md).
 
 ## Checked queries and native grammatical referents (September 16)
 
@@ -1086,11 +1076,12 @@ parameter. Captured answer programs retain the native concept IDs selected by
 forward's OBJECT/WORD row decision; an unknown referent stays unknown. These
 addresses remain separate from numerical semantic features and survive later
 staging. Pure grammatical formation retains live operand gradients. Hard
-lookup is nondifferentiable and durable descriptions stay detached; policy
-credit and live episode integration remain subsequent gates.
-[Capture](../bin/Models.py#L11110),
-[owned programs](../bin/Understanding.py#L25),
-[formation](../bin/Queries.py#L431),
+lookup is nondifferentiable and durable descriptions stay detached. The normal
+controller retains live episode values and receives supplied-answer policy
+credit; residual credit and learned utility remain open.
+[Capture](../bin/Models.py),
+[owned programs](../bin/Understanding.py),
+[formation](../bin/Queries.py),
 [details](QueryContracts.md).
 
 ## Ordinary history and live query credit (September 17)

@@ -380,7 +380,6 @@ def _grammar_row_preview(row, limit=64):
     return row[:n_head], len(row) - limit, row[-n_tail:]
 
 
-
 _GRAD_ANCHORS = {}
 
 
@@ -2835,16 +2834,6 @@ class BaseModel(Mereology, nn.Module):
         # stays callable explicitly (tests / serve) after data is loaded.
         self._ltm_provisioned = False
 
-        # Phase C / Step 2: when reasoning trains under the answer-policy loss OR
-        # the next-idea-prediction loss, build the InterveningIdeaGenerator +
-        # Build the retained numerical bridge-loss experiment before its
-        # optimizer. It does not select or execute grammatical thoughts.
-        if float(getattr(self, "answer_loss_weight", 0.0) or 0.0) > 0.0:
-            try:
-                self._legacy_bridge_components(self._reasoning_spaces())
-            except Exception:
-                pass
-
         return cfg
 
     def create(self, **kwargs):
@@ -2992,13 +2981,7 @@ class BaseModel(Mereology, nn.Module):
         # the ``self.spaces`` walk above misses their params -- collect them
         # explicitly (deduped). Absent / gate-off => the attr is None => no
         # extra params => byte-identical optimizer state.
-        # ``_intervening_generator`` (the reasoning query head) + ``_reasoning_ga``
-        # are likewise model-level nn.Modules (Phase C); they must be optimized so
-        # the answer-policy loss can actually train the soft route. The data_ptr
-        # dedup handles ``_reasoning_ga`` aliasing ``global_attention``; gate-off
-        # => the attrs are unset => no extra params (byte-identical).
-        for _att_name in ("reading_attention", "global_attention",
-                          "_intervening_generator", "_reasoning_ga"):
+        for _att_name in ("reading_attention", "global_attention"):
             _att = getattr(self, _att_name, None)
             if _att is not None:
                 for p in _att.parameters():
@@ -3155,6 +3138,7 @@ class BaseModel(Mereology, nn.Module):
                     pending, saved_manifest, optimizer.state_dict(),
                     live_manifest,
                     reset_wholespace=reset_wholespace,
+                    reset_parameters=getattr(self, "_pending_thought_policy_reset", ()),
                     parameter_row_maps=getattr(
                         self, "_pending_generate_policy_rows", None))
                 optimizer.load_state_dict(remapped.state)
@@ -6271,7 +6255,7 @@ class BasicModel(BaseModel):
 
     @staticmethod
     def _selected_thought_context(root, active=None, candidate=None, *, level,
-                                  pressure, evidence=None):
+                                  pressure, evidence=None, memory_context=None):
         """Numerical controller input for one selected grammatical action.
 
         The root request, active context and action candidate each retain
@@ -6279,8 +6263,9 @@ class BasicModel(BaseModel):
         defaults to ``root`` and ``candidate`` to ``active`` only for callers
         migrating from the first boundary adapter.  Native IDs, row numbers,
         occurrence addresses and surface tokens never enter the learned
-        vector.  Actual prior evidence is four bounded scalar values, not a
-        fabricated concept or an answer target.
+        vector. Mode, polarity, bindings and scope use bounded categorical
+        features, with alpha-renamed references. Visible attended STM/LTM
+        values supplement the four actual-evidence scalars; no target enters.
         """
         if active is None:
             active = root
@@ -6319,7 +6304,11 @@ class BasicModel(BaseModel):
              float(evidence is not None),
              float(bool(source.get("incomplete", ())))),
             device=root.roles.device, dtype=root.roles.dtype)
-        return torch.cat((*roles, metadata))
+        from ThoughtFeatures import semantic_metadata, attend_meanings
+        semantics = semantic_metadata(meanings)
+        if memory_context is None:
+            memory_context = (attend_meanings(active, ()),) * 2
+        return torch.cat((*roles, metadata, *semantics, *memory_context))
 
     def _selected_thought_chooser(self, meaning, *, device=None, dtype=None):
         """Return the width-owned learned chooser for complete meanings."""
@@ -6334,15 +6323,15 @@ class BasicModel(BaseModel):
         module = table[key] if key in table else None
         if module is None:
             from Language import SelectedThoughtChooser
+            from ThoughtFeatures import context_width
             if device is None:
                 device = meaning.roles.device
             if dtype is None:
                 dtype = meaning.roles.dtype
             module = SelectedThoughtChooser(
-                # Three [NP1, VP, NP2]+mask schemas plus level, pressure
-                # and actual previous-evidence flags.  Addresses remain
-                # non-numerical metadata beside the history owner.
-                context_dim=9 * width + 15,
+                # Width includes semantic metadata and two bounded memory
+                # attention results. Native IDs remain address metadata.
+                context_dim=context_width(width),
                 hidden=getattr(self, "what_thinking_hidden", 16),
                 depth=getattr(self, "what_thinking_depth", 1),
             ).to(device=device, dtype=dtype)
@@ -6415,8 +6404,61 @@ class BasicModel(BaseModel):
                                else self.loss.compute(pred, gold))
         return errors, eligible
 
+    def _selected_thought_memory(self, active, *, row, work):
+        """Bounded attended STM and visible LTM, charged to the shared meter.
+
+        Ordinary thought history is row-owned. The durable read admits shared
+        facts and this row's held occurrence references, never another row's
+        observations, estimates or private questions. No global recency reader
+        is used (its legacy API ignores the row). A small budget may reserve
+        all remaining work for execution and expose an incomplete read.
+        """
+        from ThoughtFeatures import attend_meanings
+        if work is None:
+            return (attend_meanings(active, ()),) * 2
+        self._assert_query_boundary(row)
+        limit = min(4, work.remaining // 16)
+        memory = self._what_memory()
+        short, long = [], []
+        stm = getattr(getattr(self, "conceptualSpace", None), "stm", None)
+        buffer, depth = getattr(stm, "_buffer", None), getattr(stm, "_depth", None)
+        if (limit and torch.is_tensor(buffer) and torch.is_tensor(depth)
+                and row < len(depth) and buffer.shape[-1] == active.roles.shape[-1]):
+            for slot in range(min(limit // 2, int(depth[row]))):
+                if not work.consume("context_record"):
+                    break
+                value = ConceptualMeaning.from_description(buffer[row, slot].detach())
+                short.append((value, 0.))
+        history = memory.thought_window(b=row, limit=limit - len(short)) if limit else ()
+        visible = set(ref for ref in active.role_refs
+                      if isinstance(ref, tuple) and ref[0] == "ltm")
+        for record in history:
+            if not work.consume("context_record"):
+                break
+            if record.meaning is not None:
+                short.append((record.meaning, record.support_true - record.support_false))
+                visible.update(ref for ref in record.meaning.role_refs
+                               if isinstance(ref, tuple) and ref[0] == "ltm")
+        owner = getattr(self, "symbolSpace", None)
+        discourse = getattr(owner, "discourse", None)
+        occurrences = getattr(discourse, "_inter_context_occurrences", ())
+        if limit and row < len(occurrences):
+            visible.update(ref for ref in list(occurrences[row])[-limit:] if ref is not None)
+        store = getattr(owner, "ltm_store", None)
+        total = len(store) if store is not None else 0
+        for index in range(max(0, total - limit), total):
+            if not work.consume("context_record"):
+                break
+            kind = store.KINDS[int(store.record_kind[index])]
+            if kind == "fact" or store.occurrence_of(index) in visible:
+                value = store.meaning_of(index)
+                if value is not None:
+                    long.append((value, float(store.trust[index])))
+        return (attend_meanings(active, short, incomplete=not limit),
+                attend_meanings(active, long, incomplete=total > limit))
+
     def _choose_selected_thought_action(self, root, active, actions, *, row,
-                                        level, pressure, evidence=None):
+                                        level, pressure, evidence=None, work=None):
         """Choose a catalog operation or the non-semantic conclude transition.
 
         ``actions`` is a tuple of grammar-derived ``ThoughtOperationCandidate``
@@ -6433,10 +6475,12 @@ class BasicModel(BaseModel):
                 action, ThoughtOperationCandidate) for action in actions):
             raise TypeError("selected thought action must be a grammar candidate or conclude")
         current = active
+        memory_context = self._selected_thought_memory(active, row=row, work=work)
         contexts = tuple(self._selected_thought_context(
             root, active,
             (current if action is None else action.request),
-            level=level, pressure=pressure, evidence=evidence)
+            level=level, pressure=pressure, evidence=evidence,
+            memory_context=memory_context)
             for action in actions)
         context = torch.stack(contexts)
         chooser = self._selected_thought_chooser(
@@ -6604,6 +6648,16 @@ class BasicModel(BaseModel):
                 "record": None,
             }
 
+        def candidates(current, state):
+            # Each context's begin/descent record already owns its question.
+            # A grammar what alternative refers to that occurrence directly.
+            initiating = next(record for record in reversed(memory.thought_history(b=row))
+                              if record.episode == episode and record.level == state.level
+                              and record.kind in ("begin", "descend"))
+            return registry.controller_candidates(
+                meaning, state.contexts[-1].meaning, current,
+                descriptions=((state.contexts[-1].initial, reference(initiating)),))
+
         unselected = object()
 
         def execute(current, *, actions=None, evidence_context=None,
@@ -6621,15 +6675,14 @@ class BasicModel(BaseModel):
             if state is None or state.forced:
                 return exhausted(current)
             if actions is None:
-                actions = tuple(registry.controller_candidates(
-                    meaning, state.contexts[-1].meaning, current)) + (None,)
+                actions = tuple(candidates(current, state)) + (None,)
             else:
                 actions = tuple(actions)
             if action is unselected:
                 action = self._choose_selected_thought_action(
                     meaning, state.contexts[-1].meaning, actions, row=row,
                     level=state.level, pressure=state.pressure,
-                    evidence=evidence_context)
+                    evidence=evidence_context, work=meter)
             elif action not in actions:
                 raise ValueError("selected thought chose an unavailable action")
             if action is None:
@@ -6746,12 +6799,11 @@ class BasicModel(BaseModel):
                 state = memory.thought_state(b=row)
                 if state is None or state.forced:
                     break
-                actions = (None,) + tuple(registry.controller_candidates(
-                    meaning, state.contexts[-1].meaning, outcome["meaning"]))
+                actions = (None,) + tuple(candidates(outcome["meaning"], state))
                 action = self._choose_selected_thought_action(
                     meaning, state.contexts[-1].meaning, actions,
                     row=row, level=state.level, pressure=state.pressure,
-                    evidence=outcome["evidence"])
+                    evidence=outcome["evidence"], work=meter)
                 if action is None:
                     # This is the required concluding ordinary thought before
                     # the separate root-finish transition.  At cutoff only
@@ -6932,7 +6984,6 @@ class BasicModel(BaseModel):
     # (``_pair_merge`` / ``_pair_unmerge``) were retired 2026-05-14
     # alongside the reverse pipeline; ``GrammarMergeGlue.forward`` and
     # ``.reverse`` (top of file) carry the live merge/unmerge math.
-
 
 
     def _bound_concept_input(self, x):
@@ -9883,18 +9934,14 @@ class BasicModel(BaseModel):
             key_width = int(state[key_k].shape[1])
             self._ltm_attention(width, key_width, device=device, dtype=dtype)
             built += 1
-        language = getattr(self, "languageSpace", None)
-        if language is not None:
-            for key in tuple(state):
-                suffix = "meaning_codec.schema"
-                if key.endswith(suffix):
-                    language.restore_meaning_learning(state, key[:-len(suffix)], _boundary_registry(self))
-            self._collect_fresh_synthesis_modules()
         # Retired controllers had incompatible action/context schemas.
         # Discard their parameters explicitly; never reinterpret their logits.
         for key in tuple(state):
-            if key.startswith(("what_step_chooser.", "_next_op_policy.", "_predict_next_scorer.")):
+            if (key.startswith(("what_step_chooser.", "_next_op_policy.",
+                                "_predict_next_scorer.", "_intervening_generator.",
+                                "_reasoning_ga.")) or "meaning_codec." in key):
                 del state[key]
+        self._pending_thought_policy_reset = set()
         # Width-owned normal selected-thought choosers are lazy like the
         # answer conditioner. Rebuild exactly the saved MLP shape before the
         # strict state-dict audit; never infer a semantic width from a native
@@ -9918,12 +9965,28 @@ class BasicModel(BaseModel):
                 self.selected_thought_choosers = table
             for width, first_weight in selected.items():
                 hidden, in_dim = (int(value) for value in first_weight.shape)
-                # Three complete role/mask schemas (root, active, candidate)
-                # and six scalar controller/evidence fields.  This must stay
-                # in lockstep with ``_selected_thought_context``; a saved
-                # policy is never padded or reinterpreted from native IDs.
-                context_dim = 9 * int(width) + 15
+                # The input schema is owned by ThoughtFeatures. Retire a
+                # saved incomplete-context policy instead of padding it.
+                from ThoughtFeatures import context_width
+                context_dim = context_width(int(width))
                 expected_in = context_dim + SelectedThoughtChooser.CANDIDATE_FEATURES
+                if in_dim == 9 * int(width) + 17:
+                    # Retired incomplete-context schema: reset this policy at
+                    # its neutral baseline, retaining no fabricated columns.
+                    if width in table:
+                        del table[width]
+                    module = self._selected_thought_chooser(ConceptualMeaning(
+                        torch.zeros(3, int(width), device=device, dtype=dtype),
+                        torch.ones(3, device=device, dtype=torch.bool)))
+                    prefix = f"{selected_prefix}{width}."
+                    for name in tuple(state):
+                        if name.startswith(prefix):
+                            self._pending_thought_policy_reset.add(name)
+                            del state[name]
+                    state.update({prefix + name: value.detach().clone()
+                                  for name, value in module.state_dict().items()})
+                    built += 1
+                    continue
                 if in_dim != expected_in:
                     raise ValueError(
                         f"selected thought chooser width {width} has input "
@@ -9965,67 +10028,6 @@ class BasicModel(BaseModel):
             modules.append(legacy)
         return modules
 
-    def configure_meaning_learning(self, word_rows, word_values, *, hidden=48):
-        """Install the language parameters and register them with the optimizer."""
-        module = self.languageSpace.configure_meaning_learning(
-            _boundary_registry(self), word_rows, word_values, hidden=hidden)
-        self._collect_fresh_synthesis_modules()
-        return module
-
-    def _generate_thought_words(self, derivation):
-        """Realize typed answer members through the trained language decoder."""
-        language = getattr(self, "languageSpace", None)
-        if getattr(language, "meaning_codec", None) is None or not derivation.answer_meanings:
-            return None
-        rows, truncated = [], []
-        for meanings in derivation.answer_meanings:
-            remaining = min(128, self._walk_budget())
-            outputs, incomplete = [], False
-            for meaning in meanings:
-                if remaining <= 0:
-                    incomplete = True
-                    break
-                output = language.generate_meaning(
-                    meaning, _boundary_registry(self), max_words=remaining)
-                if output is None:
-                    return None
-                outputs.append(output)
-                remaining -= len(output.words)
-                incomplete = incomplete or output.truncated
-            if not outputs:
-                return None
-            rows.append(torch.cat(tuple(output.words for output in outputs)))
-            truncated.append(incomplete)
-        width = max(len(row) for row in rows)
-        return (torch.stack(tuple(F.pad(row, (0, 0, 0, width - len(row))) for row in rows)),
-                torch.tensor(truncated, device=rows[0].device))
-
-    def _realize_thought_sentences(self, selected):
-        """Decode only the selected result, using WORD-owned orthography."""
-        language = getattr(self, "languageSpace", None)
-        if getattr(language, "meaning_codec", None) is None:
-            return ()
-        owner = self.conceptualSpace
-        sentences = []
-        for meaning in thought_answer_meanings(selected):
-            output = language.generate_meaning(meaning, _boundary_registry(self), max_words=128)
-            if output is None or output.truncated:
-                continue
-            words = []
-            for source, index in output.selections:
-                if source == "role":
-                    reference = meaning.role_refs[index]
-                    if not (isinstance(reference, tuple) and reference[0] == "sym"):
-                        break
-                    index = owner._csw_row_of(reference[1])
-                raw = owner.word_surface_for_row(index) if index is not None else None
-                if raw is None:
-                    break
-                words.append(raw.decode("utf-8"))
-            else:
-                if words:
-                    sentences.append(" ".join(words))
-        return tuple(sentences)
 
     def _selected_thought_chooser_modules(self):
         """One normal-controller chooser per semantic payload width."""
@@ -10044,7 +10046,6 @@ class BasicModel(BaseModel):
         fresh = self.__dict__.setdefault("_fresh_synthesis_params", [])
         modules = (self._question_conditioner_modules()
                    + self._selected_thought_chooser_modules() + [
-            getattr(getattr(self, "languageSpace", None), "meaning_codec", None),
             getattr(self, "ltm_attention", None)])
         for module in modules:
             if module is not None and id(module) not in registered:
@@ -10074,8 +10075,7 @@ class BasicModel(BaseModel):
             params.extend(conditioner.parameters())
         for chooser in self._selected_thought_chooser_modules():
             params.extend(chooser.parameters())
-        for module in (getattr(getattr(self, "languageSpace", None), "meaning_codec", None),
-                       getattr(self, "ltm_attention", None),
+        for module in (getattr(self, "ltm_attention", None),
                        getattr(getattr(self, "languageSpace", None), "generate_policy", None)):
             if module is not None:
                 params.extend(module.parameters())
@@ -10112,11 +10112,7 @@ class BasicModel(BaseModel):
         output_truncated = None
         walked = None
         idea = None
-        linguistic = self._generate_thought_words(derivation)
-        if linguistic is not None:
-            walked, output_truncated = linguistic
-            object.__setattr__(self, "_output_truncated", output_truncated)
-        if derivation.program and walked is None:
+        if derivation.program:
             # The answer-materialisation boundary (spec sections 1-2): the
             # resolved answer as its own conceptual idea, the operand of the
             # output loop; the walk un-folds it into words (the second
@@ -13069,11 +13065,6 @@ class BasicModel(BaseModel):
                 concept_ids=(concept_ids[b].index_select(0, pos.to(concept_ids.device))
                              if torch.is_tensor(concept_ids) else None),
                 lexical_forms=selected_forms)
-            language = getattr(self, "languageSpace", None)
-            if getattr(language, "meaning_codec", None) is not None:
-                from dataclasses import replace
-                entry = replace(entry, meaning_captured=True,
-                    selected_meaning=language.program_meaning(entry, _boundary_registry(self)))
             entries.append(entry)
         return tuple(entries)
 
@@ -14165,7 +14156,7 @@ class BasicModel(BaseModel):
                  optimizer=None, batch_override=None, progress=None,
                  superposition_temperature=None, exploration_trial=False,
                  trial_mode="reconstruct", questions=None,
-                 source_rows=None, attach_outputs=False, meaning_supervision=None):
+                 source_rows=None, attach_outputs=False):
         """Run a single batch: forward pass, loss, and (if training) backward + step.
 
         ``superposition_temperature`` (two-pass learning): when not None, the
@@ -14208,10 +14199,7 @@ class BasicModel(BaseModel):
             attach_outputs: on runtime inference, retain each generated
                 response on the presentation's output side with model
                 provenance. Supplied labels remain unchanged.
-            meaning_supervision: optional per-row ``(meaning, realization)``
-                annotations for the completed sentence. A None meaning labels
-                an unknown operation. Only the loss after output reads these
-                targets; configure_meaning_learning installs the parameters.
+
 
         Returns:
             (BatchResult, nextBatchNum) on success, or (None, batchNum) when
@@ -14986,18 +14974,6 @@ class BasicModel(BaseModel):
                 intra_loss = None
 
             totalLoss = self._primary_loss(lossOut, lossIn, sbow)
-            if train and trial_mode != "predict" and meaning_supervision is not None:
-                programs = self._last_understanding.answer_program
-                annotations = tuple(meaning_supervision)
-                if len(annotations) != len(programs) or any(p is None for p in programs):
-                    raise ValueError("meaning supervision requires one completed program per row")
-                examples = tuple((program, *annotation)
-                                 for program, annotation in zip(programs, annotations))
-                meaning_loss = self.languageSpace.meaning_learning_loss(
-                    examples, _boundary_registry(self))
-                totalLoss = totalLoss + meaning_loss
-                self.record_loss("linguistic_meaning", meaning_loss,
-                    space="LanguageSpace", category="supervision")
             if train and trial_mode != "predict" and output_policy_loss is not None:
                 totalLoss = totalLoss + self.output_policy_weight * output_policy_loss
                 self.record_loss(
@@ -15113,25 +15089,6 @@ class BasicModel(BaseModel):
                             name, tensor, weight=weight,
                             space=space, category=category)
                 pipeline_errors.clear()
-
-            # Phase C: truth-grounded answer-policy loss -- trains the soft
-            # reasoning route (the InterveningIdeaGenerator query head + the
-            # GlobalAttention scorer) against store-derived (A, B, gold)
-            # examples. The hard deduction is never differentiated (the bridge
-            # mask is detached). Default weight 0.0 -> skipped -> byte-identical;
-            # also a no-op when the generator/store is absent.
-            if train and float(
-                    getattr(self, "answer_loss_weight", 0.0) or 0.0) > 0.0:
-                try:
-                    a_loss = self._answer_policy_loss()
-                except Exception:
-                    a_loss = None          # a reasoning hiccup must not abort training
-                if a_loss is not None:
-                    totalLoss = totalLoss + self.answer_loss_weight * a_loss
-                    self.record_loss(
-                        "answer", a_loss,
-                        weight=self.answer_loss_weight,
-                        space="SymbolSpace", category="policy")
 
             # One hard-choice credit contract for completed grammatical
             # episodes, using the shared meter and the later answer error.
@@ -16559,11 +16516,8 @@ class BasicModel(BaseModel):
         self.allow_contradiction = int(
             TheXMLConfig.get("architecture.allowContradiction", default=0) or 0)
         self.truth_loss_weight = float(TheXMLConfig.training("TruthLoss", default=0.0) or 0.0)
-        # Truth-grounded reasoning answer (policy) loss weight (Phase 5; dark
-        # until the <queryReasoning> consumer trains the soft route). Default
-        # 0.0 -> no answer-loss term (byte-identical).
-        self.answer_loss_weight = float(
-            TheXMLConfig.training("answerLossWeight", default=0.0) or 0.0)
+        if float(TheXMLConfig.training("answerLossWeight", default=0.0) or 0.0):
+            raise ValueError("answerLossWeight is retired; use selectedThoughtPolicyWeight")
         if float(TheXMLConfig.training("predictNextLossWeight", default=0.0) or 0.0):
             raise ValueError("predictNextLossWeight is retired; use the normal thought policy")
         # Legacy loss knobs migrate into the one hard-choice contract.
@@ -17855,9 +17809,6 @@ class BasicModel(BaseModel):
         if ws is None:
             return None
         return getattr(ws, 'subspace', None)
-
-
-
 
 
     def _forward_head(self, sub):
@@ -23217,40 +23168,6 @@ class BasicModel(BaseModel):
             spaces = []
         return spaces or []
 
-    def _legacy_bridge_components(self, spaces):
-        """Lazily build + cache the reasoning policy's soft components: the
-        InterveningIdeaGenerator (an MLP query head) + a GlobalAttention, sized
-        to the truth-space content width. Registered as submodules so they ride
-        the state_dict and train under the answer loss (Phase C). Returns
-        ``(generator, ga)`` -- ``(None, None)`` when the truth-space is empty."""
-        gen = getattr(self, "_intervening_generator", None)
-        if gen is not None:
-            return gen, getattr(self, "_reasoning_ga", None)
-        Dc = None
-        for s in (spaces or []):
-            k = s.get("keys")
-            if k is not None and torch.is_tensor(k) and k.dim() in (2, 3):
-                w = int(k.shape[-1])
-                Dc = w if Dc is None else min(Dc, w)
-        if not Dc:
-            return None, None
-        # Place the soft components on the model device (the spaces' keys carry
-        # it) so answer-loss training does not hit a CPU/MPS/CUDA mismatch.
-        dev = None
-        for s in (spaces or []):
-            k = s.get("keys")
-            if k is not None and torch.is_tensor(k):
-                dev = k.device
-                break
-        from reasoning import InterveningIdeaGenerator
-        gen = InterveningIdeaGenerator(dim=int(Dc))
-        self._intervening_generator = gen if dev is None else gen.to(dev)
-        if self.global_attention is not None:
-            self._reasoning_ga = self.global_attention
-        else:
-            ga = GlobalAttention()
-            self._reasoning_ga = ga if dev is None else ga.to(dev)
-        return self._intervening_generator, self._reasoning_ga
 
     def _run_public_thought(self, meaning, *, row=0, work_budget=32):
         """Admit a completed meaning to the one normal controller.
@@ -23315,73 +23232,6 @@ class BasicModel(BaseModel):
             query_spec, row=row,
             work_budget=int(getattr(self, "thinking_budget", 0) or 0))
 
-    def _answer_policy_loss(self):
-        """Phase C: the differentiable answer-policy loss. Trains the soft
-        reasoning route (the InterveningIdeaGenerator query head + the
-        GlobalAttention scorer) on (A, B, gold) examples derived from the
-        reasoning store; the hard deduction (the bridge mask) is detached, so
-        gradient never flows through a verdict (§0). ``None`` when the generator
-        is not built / no store / no chains -- so the caller adds nothing
-        (byte-identical). Gated by ``answer_loss_weight > 0`` at the call site."""
-        gen = getattr(self, "_intervening_generator", None)
-        if gen is None:
-            return None
-        from reasoning import (TruthGroundedReasoner,
-                               policy_examples_from_store, policy_answer_loss)
-        reasoner = TruthGroundedReasoner(self)
-        examples = policy_examples_from_store(reasoner)
-        if not examples:
-            return None
-        return policy_answer_loss(gen, self._reasoning_spaces(),
-                                  reasoner, examples)
-
-    def _realize_vec(self, vec):
-        """Tier-1 realize (Phase D): snap an idea vector to its nearest lexicon
-        word via the PERCEPTUAL codebook -- the same nearest-codebook path
-        ``_infer_ir`` uses. Returns '' on a zero-norm vector or a codebook miss.
-        Tier-2 (the grammatical ``decode_to_concept``) is inert on compact
-        configs (identity unless symbol_dim == concept_dim) and is deliberately
-        NOT used here -- a silent identity passthrough must not masquerade as a
-        decode (it lands once the decode round-trip ships on a tall-WS config)."""
-        sub = getattr(self.perceptualSpace, "subspace", None)
-        cb = getattr(sub, "what", None) if sub is not None else None
-        if cb is None or not hasattr(cb, "wv"):
-            return ""
-        v = vec.detach().reshape(-1).float()
-        if float(v.norm()) == 0.0:
-            return ""
-        try:
-            D = cb.wv.vector_size
-            nbrs = cb.wv.most_similar(v[:D], topn=1)
-        except Exception:
-            return ""
-        return str(nbrs[0][0]) if nbrs else ""
-
-    def _realize_idea(self, idea):
-        """Realize ONE reasoning idea dict to a surface string: the intervening
-        idea is a bridge concept vector, realized to its nearest lexicon word.
-        (Multi-word 'np1 vp np2' relation rendering lands once an idea carries a
-        stored-relation ``row`` -- the chain hops in ``result.chain`` do; the
-        ``result.ideas`` the N-sentence output draws from are bare concepts.)"""
-        vec = idea.get("idea")
-        if vec is None or not torch.is_tensor(vec):
-            return ""
-        return self._realize_vec(vec)
-
-    def _realize_ideas(self, result, *, n=None):
-        """Phase D: render ``result.ideas`` (already relevance-sorted + N-capped
-        by a numerical reasoning experiment) to surface sentences, top-``n`` by relevance,
-        dropping empties. Empty for isTrue/isEqual leaves (no intervening ideas)
-        -- the caller falls back to posture + trace."""
-        ideas = getattr(result, "ideas", None) or []
-        if n is not None:
-            ideas = ideas[:int(n)]
-        out = []
-        for idea in ideas:
-            s = self._realize_idea(idea)
-            if s:
-                out.append(s)
-        return out
 
     @torch.no_grad()
     def answer_query(self, user_msg, *, beam=8):
@@ -23428,7 +23278,7 @@ class BasicModel(BaseModel):
         return {
             "posture": posture, "confidence": max(positive, negative),
             "support_true": positive, "support_false": negative,
-            "sentences": list(self._realize_thought_sentences(result)),
+            "sentences": [],  # Text realization belongs to reverseOutput / <generate>.
             "trace": [{"kind": record.kind, "operation": record.operation,
                        "level": record.level} for record in result.records],
             "work": result.work.spent,
@@ -24242,11 +24092,6 @@ class BasicModel(BaseModel):
         return loss, metric
 
 
-
-
-
-
-
     def _forward_per_stage(self, inputData, in_sub_override=None, *,
                            return_sentence_state=False):
         """IR-only forward via stem/body/head pipeline.
@@ -24553,8 +24398,6 @@ class BasicModel(BaseModel):
         if return_sentence_state:
             return (*public, *sentence_state)
         return public
-
-
 
 
     def write_syntax_tree(self, path):

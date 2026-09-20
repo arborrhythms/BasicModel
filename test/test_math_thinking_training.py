@@ -1,13 +1,8 @@
-"""Phase 4 of the mathematical thinking plan: training THROUGH thinking
-episodes on ``MM_math`` (spec 8): root scored after parity, one optimizer
-step, the episode credit boundary (invariant 7), the desired answer out of
-reach until loss, the step-chooser policy credit, and the report.
+"""MM_math regression and optional syntax-learning experiments.
 
-The runtime carries no arithmetic (Alec 2026-09-09): the resolve step
-chooses ANSWER or OPEN a subquestion about a presented word, and the root
-answer is conditioned on the row's LTM outputs.  Scripted choosers
-exercise the mechanism; the stage-0 / stage-1 learning tests are strict
-xfails until a syntactic configuration learns ``plus`` as a verb."""
+The retired ANSWER/OPEN parity chooser is not part of these probes. Nested
+ordinary thoughts and their credit are tested in test_thought_review.py.
+"""
 import os
 import sys
 from pathlib import Path
@@ -25,8 +20,7 @@ _DATA = _ROOT / "data"
 if str(_BIN) not in sys.path:
     sys.path.insert(0, str(_BIN))
 
-from Language import WhatStepChooser  # noqa: E402
-from What import What, WhatSlotOperation  # noqa: E402
+from What import What  # noqa: E402
 
 _MATH_DAT = {"mathRange": 16, "mathDepths": "1-2", "mathTestDepths": "3",
              "mathDistractors": 1, "mathProblems": 64, "mathSeed": 0}
@@ -68,100 +62,9 @@ def _batch(m, rows=2):
             m.outputSpace.prepOutput(out_items))
 
 
-def _problem(m, row):
-    return m.inputSpace.data.math_problems["train"][row]
-
-
-def _solver_labels(problem):
-    """A chain-shaped dialogue: open each chain word from the root, answer
-    it, return, and finally answer the root."""
-    labels = []
-    for v in problem.order[:-1]:
-        labels += [f"open:{v}", "answer"]
-    labels.append("answer")
-    return labels
-
-
-def _script_rows(monkeypatch, per_row_labels):
-    """Drive the chooser per ROW (``_active_referent`` is called once per
-    row by the runtime; the tracker below uses it to learn the row)."""
-    queues = {b: list(labels) for b, labels in per_row_labels.items()}
-    state = {"row": 0}
-    chosen = []
-
-    def choose(self, context, candidates, *, pressure=0.0, sample=False,
-               temperature=1.0):
-        labels = [c["label"] for c in candidates]
-        queue = queues.get(state["row"], [])
-        want = queue.pop(0) if queue else "answer"
-        if want not in labels:
-            want = "answer"
-        chosen.append((state["row"], want))
-        index = labels.index(want)
-        return index, torch.log_softmax(
-            self.logits(context, candidates, pressure=pressure), dim=-1)[index]
-
-    monkeypatch.setattr(WhatStepChooser, "choose", choose)
-    return state, chosen
-
-
-def _install_row_tracker(monkeypatch, model, state):
-    real_active = model._active_referent
-
-    def active(b):
-        state["row"] = int(b)
-        return real_active(b)
-
-    monkeypatch.setattr(model, "_active_referent", active)
-
-
 @pytest.fixture(scope="module")
 def episode_config(tmp_path_factory):
     return _config(tmp_path_factory, "MM_math_episode.xml")
-
-
-@pytest.fixture(scope="module")
-def slot_config(tmp_path_factory):
-    return _config(tmp_path_factory, "MM_math_slot.xml", whatThinkingDetach="slot")
-
-
-@pytest.fixture(scope="module")
-def policy_config(tmp_path_factory):
-    return _config(tmp_path_factory, "MM_math_policy.xml",
-                   whatThinkingPolicyWeight="0.5")
-
-
-def _train_one(model, monkeypatch, rows=2, spies=None):
-    """One runBatch with the chain script on every row; returns the result
-    and the number of optimizer steps taken."""
-    problems = [_problem(model, b) for b in range(rows)]
-    state, chosen = _script_rows(
-        monkeypatch, {b: _solver_labels(p) for b, p in enumerate(problems)})
-    _install_row_tracker(monkeypatch, model, state)
-    opt = model.getOptimizer(lr=1e-3)
-    steps = []
-    real_step = opt.step
-
-    def counting_step(*a, **k):
-        steps.append(1)
-        if spies is not None:
-            spies(model)
-        return real_step(*a, **k)
-
-    monkeypatch.setattr(opt, "step", counting_step)
-    batch = _batch(model, rows=rows)
-    model.train()
-    result, _ = model.runBatch(train=True, batchSize=rows, split="train",
-                               optimizer=opt, batch_override=batch)
-    return result, len(steps), chosen, problems
-
-
-
-
-
-
-
-
 
 
 def test_iterations_one_is_byte_identical_to_a_plain_batch(episode_config, tmp_path_factory, monkeypatch):

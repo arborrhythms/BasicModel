@@ -7758,90 +7758,11 @@ def _chooser_mlp(in_dim, hidden, depth):
     return nn.Sequential(*layers)
 
 
-class WhatStepChooser(nn.Module):
-    """Hard-choice head for the thinking resolve step (mathematical
-    thinking spec 6.3): ANSWER the active question or OPEN a subquestion
-    about one of the presented referents, for one batch row.
-
-    Scores every candidate from the same target-free 29-dim What context
-    the grammar chooser sees plus the closure pressure and a small
-    per-candidate block of LEXICAL / MNEMONIC features (kind, surface
-    position of the referent, whether this row's LTM already answered it).
-    Nothing is computed about a referent: the runtime carries no
-    mathematical machinery (Alec 2026-09-09).  The output layer is
-    ZERO-INITIALISED so an untrained head ties every candidate and
-    ``choose`` breaks the tie toward the FIRST candidate -- ANSWER -- which
-    is exactly today's single-step behaviour.  Training samples (policy
-    credit, spec 8.3); evaluation takes the argmax.
-    """
-
-    KINDS = ("answer", "open")
-    # kind one-hot (2) + active flag + answered flag + normalized position
-    # + closure pressure
-    CANDIDATE_FEATURES = 2 + 3 + 1
-
-    def __init__(self, *, context_dim=29, hidden=16, depth=1):
-        super().__init__()
-        self.context_dim = int(context_dim)
-        self.hidden = _chooser_size(hidden, "whatThinkingHidden")
-        self.depth = _chooser_size(depth, "whatThinkingDepth")
-        in_dim = self.context_dim + self.CANDIDATE_FEATURES
-        with torch.random.fork_rng(devices=[]):
-            self.mlp = _chooser_mlp(in_dim, self.hidden, self.depth)
-        nn.init.zeros_(self.mlp[-1].weight)
-        nn.init.zeros_(self.mlp[-1].bias)
-
-    def featurize(self, candidates, *, pressure, device, dtype):
-        rows = []
-        for cand in candidates:
-            f = torch.zeros(self.CANDIDATE_FEATURES)
-            f[self.KINDS.index(cand["kind"])] = 1.0
-            f[2] = 1.0 if cand.get("active") else 0.0
-            f[3] = 1.0 if cand.get("answered") else 0.0
-            f[4] = float(cand.get("position", 0.0))
-            f[5] = float(pressure)
-            rows.append(f)
-        if not rows:
-            return torch.zeros(0, self.CANDIDATE_FEATURES, device=device, dtype=dtype)
-        return torch.stack(rows).to(device=device, dtype=dtype)
-
-    def logits(self, context, candidates, *, pressure=0.0):
-        """``[K]`` scores for ``candidates`` given one row's ``[C]`` context."""
-        context = torch.as_tensor(context)
-        device, dtype = context.device, context.dtype
-        if context.dim() == 2:
-            context = context[0]
-        if context.shape[-1] != self.context_dim:
-            raise ValueError(
-                f"what step context width {context.shape[-1]} != {self.context_dim}")
-        feats = self.featurize(candidates, pressure=pressure, device=device, dtype=dtype)
-        K = int(feats.shape[0])
-        if K == 0:
-            return context.new_zeros(0)
-        ctx = context.unsqueeze(0).expand(K, -1)
-        return self.mlp(torch.cat([ctx, feats], dim=-1)).squeeze(-1)
-
-    def choose(self, context, candidates, *, pressure=0.0, sample=False,
-               temperature=1.0):
-        """Return ``(index, log_prob)``: the argmax (ties -> first) or a
-        sample from the softmax at ``temperature``.  ``log_prob`` stays on
-        the graph for the policy objective."""
-        logits = self.logits(context, candidates, pressure=pressure)
-        if logits.numel() == 0:
-            raise ValueError("WhatStepChooser.choose needs at least one candidate")
-        log_probs = torch.log_softmax(logits / max(1e-6, float(temperature)), dim=-1)
-        if sample and logits.numel() > 1:
-            index = int(torch.multinomial(log_probs.detach().exp(), 1).item())
-        else:
-            index = int(torch.argmax(logits.detach()).item())
-        return index, log_probs[index]
-
-
 class SelectedThoughtChooser(nn.Module):
     """Hard selector for an ordinary grammatical thought at a boundary.
 
-    Its context is supplied by ``BasicModel`` as the complete, masked
-    ``[NP1, VP, NP2]`` payload plus execution level and pressure.  References
+    BasicModel supplies complete masked root/active/candidate roles, bounded
+    semantic metadata, attended visible memory, execution level and pressure.  References
     and native IDs deliberately stay out of the numerical features: they are
     addresses owned by the registry/history, not operand values.  Each
     operation is represented by its complete candidate meaning; the only
@@ -15155,26 +15076,6 @@ class LanguageSpace(nn.Module):
 
     @torch.compiler.disable
     def program_meaning(self, entry, registry):
-        """Recover owned structural meaning, or learned lexical alignment.
-
-        An explicit selected semantic fold wins over lexical inference. A
-        captured decision, including unknown, is never recomputed.
-        """
-        meaning = self._structural_program_meaning(entry, registry)
-        if meaning is not None or getattr(entry, "meaning_captured", False):
-            return meaning
-        codec = getattr(self, "meaning_codec", None)
-        if (codec is None or entry is None
-                or any(getattr(entry, "lexical_forms", ()) or ())):
-            return None
-        leaves = getattr(entry, "leaves", None)
-        ids = getattr(entry, "concept_ids", None)
-        if not (torch.is_tensor(leaves) and leaves.ndim == 2
-                and torch.is_tensor(ids) and ids.shape == (len(leaves),)):
-            return None
-        return codec.compose(entry, registry)
-
-    def _structural_program_meaning(self, entry, registry):
         """Recover one selected meaning from its owned compose program.
 
         A folded root is deliberately insufficient here: lossy compose faces
@@ -15197,8 +15098,6 @@ class LanguageSpace(nn.Module):
         """
         if not (hasattr(registry, "form") and entry is not None):
             return None
-        if getattr(entry, "meaning_captured", False):
-            return entry.selected_meaning
         actions = getattr(entry, "actions", None)
         leaves = getattr(entry, "leaves", None)
         concept_ids = getattr(entry, "concept_ids", None)
@@ -15511,42 +15410,6 @@ class LanguageSpace(nn.Module):
 
         return recover(stack[0])
 
-    def configure_meaning_learning(self, registry, word_rows, word_values, *, hidden=48):
-        """Configure learned language from WORD addresses, never spelling rules."""
-        from LinguisticMeaning import LinguisticMeaningCodec
-        if getattr(self, "meaning_codec", None) is not None:
-            raise RuntimeError("linguistic meaning parameters are already configured")
-        operations = tuple(semantic_id for semantic_id in registry.executable_operation_ids
-                           if tuple(registry.operation_spec(semantic_id).operand_roles) == ("I1", "I2"))
-        self.meaning_codec = LinguisticMeaningCodec(
-            operations, word_rows, word_values, hidden=hidden).to(word_values)
-        return self.meaning_codec
-
-    def meaning_learning_loss(self, examples, registry):
-        codec = getattr(self, "meaning_codec", None)
-        if codec is None:
-            raise RuntimeError("configure linguistic meaning parameters before supervision")
-        return codec.loss(tuple(examples), registry)
-
-    def generate_meaning(self, meaning, registry, *, max_words=32):
-        codec = getattr(self, "meaning_codec", None)
-        return None if codec is None else codec.generate(meaning, registry, max_words=max_words)
-
-    def restore_meaning_learning(self, state, prefix, registry):
-        """Restore the language module's topology before the strict key audit."""
-        key = prefix + "meaning_codec."
-        metadata = state.get(key + "schema")
-        if metadata is None:
-            return
-        if metadata.tolist()[0] != 1:
-            raise ValueError("unsupported linguistic meaning checkpoint")
-        codec = getattr(self, "meaning_codec", None)
-        if codec is None:
-            codec = self.configure_meaning_learning(
-                registry, state[key + "word_rows"].tolist(), state[key + "word_values"],
-                hidden=int(metadata[1]))
-        if not torch.equal(state[key + "operation_keys"].cpu(), codec.operation_keys.cpu()):
-            raise ValueError("learned language checkpoint has a different grammatical catalogue")
 
     def choose_capacity_binary(self, state, row_gate, *, base_tau):
         """Choose a legacy pre-deposit capacity Binary.

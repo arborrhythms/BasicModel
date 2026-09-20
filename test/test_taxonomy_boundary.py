@@ -49,7 +49,7 @@ def test_model_taxonomy_entries_skip_global_vector_proposal_setup(monkeypatch, t
         def forbidden(*args, **kwargs):
             raise AssertionError("taxonomy query must not build/read the vector proposal route")
         monkeypatch.setattr(model, "_reasoning_spaces", forbidden)
-        monkeypatch.setattr(model, "_legacy_bridge_components", forbidden)
+        assert not hasattr(model, "_legacy_bridge_components")
         q = QuerySpec.from_surface("isPart", a, b)
         assert model.reason_about(q).posture == "TRUE"
         assert model.think_about(q).posture == "TRUE"

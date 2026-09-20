@@ -1,16 +1,14 @@
-"""Truth-grounded reasoning tools and differentiable policy losses.
+"""Checked existence, equality and conceptual-taxonomy readers.
 
-The hard tools reduce query ops to truth/parthood/equality checks over stored
-ideas; the soft policy ranks candidate intervening ideas. See ``doc/Reasoning.md``.
+Grammatical thought selection and its sole policy loss belong to BasicModel.
 """
 
 from dataclasses import dataclass
 from typing import Any, Optional
 
 import torch
-import torch.nn as nn
 
-from Spaces import ConceptualSpace, GlobalAttention
+from Spaces import ConceptualSpace
 from Layers import TernaryTruthStore
 from Meaning import ConceptualMeaning
 from Taxonomy import capture_taxonomy, concept_reference
@@ -44,8 +42,8 @@ BOTH = "BOTH"
 class QuerySpec:
     """Legacy query interface; Exist accepts one complete ConceptualMeaning.
 
-    The checked grammatical-VP registry is a separate migration. This wrapper
-    never flattens a structured description into an apparent unary operand.
+    Public model entry points adapt this value into the checked grammatical-VP
+    registry. It never flattens a structured description into a unary operand.
     """
 
     predicate: str                       # KIND_IS_TRUE | KIND_IS_PART | KIND_IS_EQUAL
@@ -102,21 +100,18 @@ _REL_PARTOF = TernaryTruthStore.REL_PARTOF
 class TruthGroundedReasoner:
     """Fact existence and conceptual-taxonomy query evidence.
 
-    The older geometric/world-row helpers below remain explicit compatibility
-    utilities. Public query evaluation does not use those helpers as PartOf
-    evidence; typed concept references address the conceptual taxonomy.
+    Typed concept references address the conceptual taxonomy. World facts
+    and geometric similarity cannot establish a taxonomy edge.
     """
 
     def __init__(self, model=None, *, store=None,
                  theta: float = 0.7, tau_id: float = 0.7,
-                 trust_threshold: float = 0.0,
-                 materialize_floor: float = 0.5):
+                 trust_threshold: float = 0.0):
         self.model = model
         self._store = store
         self.theta = float(theta)
         self.tau_id = float(tau_id)
         self.trust_threshold = float(trust_threshold)
-        self.materialize_floor = float(materialize_floor)
 
     def reasoning_store(self):
         """The reasoning corpus: an explicit ``store=`` wins; else the model's
@@ -134,11 +129,6 @@ class TruthGroundedReasoner:
 
     # == grammar query ops (the hard tools) ==============================
 
-    @staticmethod
-    def legacy_part(x, y) -> float:
-        """``part(X, Y)``: graded parthood ``X ⊆ Y`` in [0,1] (the fraction of
-        X's signed energy Y also carries; ConceptualSpace._idea_parthood)."""
-        return float(ConceptualSpace._idea_parthood(_as_vec(x), _as_vec(y)))
 
     @staticmethod
     def equal(x, y, *, isomorphic: bool = True) -> float:
@@ -217,27 +207,12 @@ class TruthGroundedReasoner:
     def exist(self, X) -> float:
         """Lossy legacy scalar view: positive minus negative fact support.
 
-        Checked evaluation and the thinking kernel consume existence_evidence
+        Checked grammatical execution and evaluation consume existence_evidence
         instead, since a scalar cannot preserve contradictory support.
         """
         evidence = self.existence_evidence(X)
         return evidence["support_true"] - evidence["support_false"]
 
-    def legacy_wholes(self, X) -> list:
-        """``wholes(X)``: the proximal containing wholes of X -- the canonical
-        ConceptualSpace.wholes over the REL_PARTOF rows. Returns
-        ``[{idea, trust, row}, ...]``."""
-        return ConceptualSpace.wholes(
-            _as_vec(X), self.reasoning_store(), theta=self.theta,
-            trust_threshold=self.trust_threshold, rel_type=_REL_PARTOF)
-
-    def legacy_parts(self, X) -> list:
-        """``parts(X)``: the proximal contained parts of X -- the canonical
-        ConceptualSpace.parts (inverse of ``wholes``). Returns
-        ``[{idea, trust, row}, ...]``."""
-        return ConceptualSpace.parts(
-            _as_vec(X), self.reasoning_store(), theta=self.theta,
-            trust_threshold=self.trust_threshold, rel_type=_REL_PARTOF)
 
     def query(self, X, Y=None) -> Optional[dict]:
         """``query(X[, Y])``: an LTM lookup. ``query(X)`` returns the best
@@ -246,9 +221,8 @@ class TruthGroundedReasoner:
         ``{np1, np2, trust, row, kind:'relation'}`` (joint identity to X, Y).
         None when nothing matches.
 
-        This is the HARD retrieval. The soft, ``.where``-typed read over the
-        full truth-space (input / codebooks / STM / LTM via GlobalAttention)
-        that the intervening-idea generator conditions on is Phase 3.
+        This numerical reader is retained independently of the normal thought
+        controller. It neither proposes actions nor receives policy credit.
         """
         store = self.reasoning_store()
         if store is None:
@@ -316,7 +290,7 @@ class TruthGroundedReasoner:
             return None
         return payload.reshape(-1, int(payload.shape[-1]))[0]   # predicted root idea
 
-    # == soft .where-read over the FULL truth-space (Phase 3) ============
+    # == retained numerical .where-read ================================
 
     @staticmethod
     def _valid_space(s):
@@ -351,9 +325,9 @@ class TruthGroundedReasoner:
     @staticmethod
     def where_read(concept_q, spaces, *, ga, symbol_q=None,
                    temperature=0.0, top_k=8):
-        """The soft ``.where``-typed read over the full truth-space (input /
-        codebooks / STM / LTM) the intervening-idea generator conditions on
-        (§4.3a). Runs ``ga`` (a GlobalAttention) over the typed ``spaces`` and
+        """A numerical ``.where``-typed read over caller-supplied spaces.
+
+        Runs ``ga`` (a GlobalAttention) over the typed ``spaces`` and
         returns ``{idea, where, space_id, candidates, alpha}`` where ``idea`` =
         the soft-read ``Σ αₖ·keyₖ`` (a blend of REAL keys, grounded by
         construction) and ``space_id`` is the typed provenance. Gradient flows
@@ -384,7 +358,7 @@ class TruthGroundedReasoner:
 
         Legacy vector-only operands have no concept handle and remain unknown.
         Their geometry is never used to guess a referent. Checked grammatical
-        callers supply typed references; the VP registry is a later adapter.
+        callers supply typed references through the current VP registry.
         """
         try:
             part, whole = concept_reference(part), concept_reference(whole)
@@ -450,115 +424,6 @@ class TruthGroundedReasoner:
         """Query evidence cannot edit conceptual definitions or assert world facts."""
         raise ValueError("PartOf is read-only; materialization is not a supported query effect")
 
-    def legacy_is_part_direct(self, A, B) -> Optional[tuple]:
-        """Direct parthood ``A ⊑ B`` without a chain: ``(score, how)`` in [0,1]
-        or None. ``how`` is "geometric" (``part(A,B) ≥ theta``) or "stored" (a
-        positive-trust REL_PARTOF row whose endpoints match A, B by ``equal``).
-        """
-        A = _as_vec(A)
-        B = _as_vec(B)
-        p = self.legacy_part(A, B)
-        if p >= self.theta:
-            return (float(p), "geometric")
-        best = None
-        for (idx, np1, vp, np2, t1) in ConceptualSpace._iter_relation_rows(
-                self.reasoning_store(), _REL_PARTOF):
-            if (t1 > self.trust_threshold
-                    and self.equal(A, np1) >= self.tau_id
-                    and self.equal(B, np2) >= self.tau_id):
-                if best is None or t1 > best:
-                    best = t1
-        if best is not None:
-            return (float(best), "stored")
-        return None
-
-    def legacy_is_part(self, A, B, *, max_steps: int = 8, beam: int = 8,
-                materialize: bool = False) -> list:
-        """Candidate chains supporting ``A ⊑ B``, ranked by score, never a bare
-        boolean.
-
-        Direct candidate first (§4.2), then a beam-limited climb via
-        ``wholes()`` (§4.3): from the frontier concept fire each proximal whole,
-        and succeed when a whole reaches ``B`` (``part(whole, B) ≥ theta``). A
-        chain's score is the MIN over its hop trusts -- only as true as its
-        weakest intervening idea. The frontier is pruned to the top-``beam``
-        running scores each step; ``max_steps`` bounds depth; each row fires at
-        most once per chain. When ``materialize`` is set, a verified chain's
-        conclusion is written back as a direct edge (§4.4).
-        """
-        A = _as_vec(A)
-        B = _as_vec(B)
-        results = []
-        d = self.legacy_is_part_direct(A, B)
-        if d is not None:
-            score, how = d
-            results.append({"score": float(score), "how": how, "chain": [],
-                            "trust": float(score), "steps": 0})
-        # The single canonical chain search (shared with ConceptualSpace.reason):
-        # a beam-limited MIN-trust climb via wholes() toward B.
-        for c in ConceptualSpace._chain_to_target(
-                A, B, self.reasoning_store(), parthood_threshold=self.theta,
-                max_steps=int(max_steps), beam=int(beam), trust_combine="min",
-                rel_type=_REL_PARTOF, trust_threshold=self.trust_threshold):
-            results.append({"score": c["score"], "how": "chain",
-                            "chain": c["chain"], "trust": c["trust"],
-                            "steps": c["steps"]})
-        results.sort(key=lambda r: -r["score"])
-        results = results[:int(beam)]
-        if materialize and results and results[0]["how"] == "chain":
-            row = self.legacy_materialize(A, B, results[0]["score"])
-            if row >= 0:
-                results[0]["materialized"] = row
-        return results
-
-    def legacy_materialize(self, A, B, score, *, store=None) -> int:
-        """Write a verified ``isPart(A, B)`` conclusion back as a REL_PARTOF
-        lemma carrying the chain's MIN-composed ``score`` as trust, so a later
-        identical query is a DIRECT hit and future ``wholes()`` reach it (§4.4).
-        No-op (returns -1) below ``materialize_floor`` or with no writable store.
-        """
-        store = store if store is not None else self.reasoning_store()
-        if store is None or float(score) < self.materialize_floor:
-            return -1
-        if self._legacy_creates_cycle(A, B):
-            return -1
-        A = _as_vec(A)
-        B = _as_vec(B)
-        if isinstance(store, TernaryTruthStore):
-            # This legacy adapter has no grammatical VP. Its relation tag may
-            # serve legacy Part readers, but cannot certify a full Exist fact.
-            return int(store.append_relation(
-                A, torch.zeros_like(A), B,
-                rel_type=store.REL_PARTOF, trust=float(score), kind="unverified"))
-        if hasattr(store, "record_triple"):
-            return int(store.record_triple(
-                A, torch.zeros_like(A), B, degree=float(score)))
-        return -1
-
-    def _legacy_creates_cycle(self, A, B) -> bool:
-        """True iff writing ``A ⊑ B`` would violate the parthood partial order
-        (antisymmetry): A and B are already the same idea, or B already reaches
-        A by parthood (``B ⊑* A``). Enforced at edge insertion so the climb
-        cannot loop (Phase 6); read-only."""
-        if self.equal(A, B) >= self.tau_id:
-            return True
-        return bool(self.legacy_is_part(B, A))      # any direct/chain B -> A
-
-    def _legacy_refuting_direct(self, A, B) -> float:
-        """Best refuting evidence for ``isPart(A, B)`` in [0,1]: a stored
-        REL_PARTOF (A→B) row asserted with NEGATIVE trust (¬isPart). 0 when
-        none. (Chain-based refutation is Phase 5.)"""
-        A = _as_vec(A)
-        B = _as_vec(B)
-        best = 0.0
-        for (idx, np1, vp, np2, t1) in ConceptualSpace._iter_relation_rows(
-                self.reasoning_store(), _REL_PARTOF):
-            if (t1 < -self.trust_threshold
-                    and self.equal(A, np1) >= self.tau_id
-                    and self.equal(B, np2) >= self.tau_id):
-                if -t1 > best:
-                    best = -t1
-        return float(best)
 
     # == trace + posture =================================================
 
@@ -637,180 +502,3 @@ class TruthGroundedReasoner:
                         f"{evidence['edges_expanded']} expansions; "
                         f"support +{evidence['support_true']:.3f}/-{evidence['support_false']:.3f}")
         return res
-
-
-# -- The intervening-idea generator (Phase 3, the SOFT policy) ----------------
-
-def _fit_dim(v, d):
-    """Pad/truncate a 1-D tensor to width d."""
-    v = _as_vec(v)
-    if v.numel() == d:
-        return v
-    out = v.new_zeros(d)
-    k = min(d, v.numel())
-    out[:k] = v[:k]
-    return out
-
-
-class InterveningIdeaGenerator(nn.Module):
-    """Creates a candidate intervening idea ``M`` to bridge ``A → B`` (§4.3a).
-
-    The guess is SOFT: an MLP query head over ``[A ; B ; prev_r]`` (the full
-    solution space + the previous queried idea) produces the ``concept_q`` that
-    GlobalAttention (:meth:`TruthGroundedReasoner.where_read`) indexes the
-    truth-space with. The soft-read content IS ``M`` -- a blend of REAL stored
-    ideas, grounded on the manifold by construction; the top-``k`` ``α`` are the
-    candidate beam. Gradient flows through the head + ``α`` only (keys
-    detached), so the deduction stays hard. ``M`` recurs as ``prev_r`` to the
-    next reasoning iteration.
-
-    Untrained here; the Phase-5 answer loss (:func:`answer_loss`) shapes which
-    guesses lead to verifiable chains. Gated dark by the consumer.
-    """
-
-    def __init__(self, dim, hidden=None):
-        super().__init__()
-        self.dim = int(dim)
-        h = int(hidden) if hidden else max(8, self.dim)
-        self.head = nn.Sequential(
-            nn.Linear(3 * self.dim, h), nn.ReLU(), nn.Linear(h, self.dim))
-
-    def concept_q(self, A, B, prev_r=None):
-        """The learned query: ``MLP([A ; B ; prev_r])`` at full width."""
-        r = (torch.zeros(self.dim) if prev_r is None else _fit_dim(prev_r,
-                                                                   self.dim))
-        x = torch.cat([_fit_dim(A, self.dim), _fit_dim(B, self.dim), r])
-        return self.head(x)
-
-    def propose(self, A, B, spaces, *, ga, prev_r=None, top_k=8,
-                temperature=0.0):
-        """Propose ``M`` and the candidate beam by grounding the learned query
-        in the truth-space. Returns the :meth:`where_read` dict (``idea`` = M;
-        recur ``prev_r=result['idea']``), or None when no space has candidates.
-        """
-        q = self.concept_q(A, B, prev_r)
-        return TruthGroundedReasoner.where_read(
-            q, spaces, ga=ga, top_k=top_k, temperature=temperature)
-
-
-# -- Answer (policy) loss (Phase 5) ------------------------------------------
-
-def proof_score(signed_trust):
-    """Map a signed trust / DoT in [-1,1] to a [0,1] proof-success score via the
-    documented monotonic map ``(t+1)/2`` -- so a negative (refuting) score does
-    NOT silently read as 'unknown' (0.5 = unknown, 0 = false, 1 = true)."""
-    if torch.is_tensor(signed_trust):
-        return ((signed_trust.float() + 1.0) / 2.0).clamp(0.0, 1.0)
-    return max(0.0, min(1.0, (float(signed_trust) + 1.0) / 2.0))
-
-
-def answer_loss(predicted_signed, gold_label):
-    """The differentiable policy signal (Phase 5): NLL on the [0,1] proof score
-    against a gold boolean (1 = true, 0 = false). Trains the SOFT route that
-    produced ``predicted_signed`` (the generator's query head + the attention
-    α); the hard deduction is never differentiated. ``predicted_signed`` should
-    be a tensor that carries gradient from the policy."""
-    p = predicted_signed if torch.is_tensor(predicted_signed) else \
-        torch.as_tensor(float(predicted_signed))
-    p01 = proof_score(p.float()).clamp(1e-6, 1.0 - 1e-6)
-    y = torch.as_tensor(float(gold_label))
-    return -(y * torch.log(p01) + (1.0 - y) * torch.log(1.0 - p01))
-
-
-# -- Retained numerical prediction experiments (not a query controller) -----
-
-@dataclass
-class ReasoningResult:
-    """Structured result for one query-reasoning run."""
-
-    posture: str
-    confidence: float
-    support_true: float
-    support_false: float
-    ideas: list
-    chain: list
-    trace: Optional[str] = None
-    iterations: int = 0
-    evidence: Optional[dict] = None
-
-
-# -- The answer (policy) loss: train the soft route (Phase C) -----------------
-
-def policy_examples_from_store(reasoner, *, max_examples: int = 8) -> list:
-    """Build ``(A, B, gold)`` training examples from the reasoning store,
-    self-supervised from the provisioned truthSet -- no labelled QA set needed.
-    Each stored 2-hop transitive parthood ``a ⊑ b ⊑ c`` yields a POSITIVE
-    ``(a, c, 1.0)`` whose bridge is ``b``; its reverse ``(c, a, 0.0)`` is a
-    NEGATIVE. The positives carry the gradient (the policy learns to attend to a
-    real bridge); negatives have an empty bridge mask, so they only assert the
-    no-hallucination floor. Returns ``[]`` when no store / no 2-hop chains."""
-    store = reasoner.reasoning_store()
-    if store is None:
-        return []
-    edges = []
-    for (idx, np1, vp, np2, t1) in ConceptualSpace._iter_relation_rows(
-            store, _REL_PARTOF):
-        if t1 > reasoner.trust_threshold:
-            edges.append((_as_vec(np1), _as_vec(np2)))
-    examples = []
-    for (a, b) in edges:
-        for (b2, c) in edges:
-            if (reasoner.equal(b, b2) >= reasoner.tau_id
-                    and reasoner.equal(a, c) < reasoner.tau_id):
-                examples.append((a, c, 1.0))          # a ⊑ b ⊑ c  (true)
-                examples.append((c, a, 0.0))          # reversed   (false)
-                if len(examples) >= int(max_examples):
-                    return examples
-    return examples
-
-
-def _fit_keys(block, d):
-    """Pad/truncate a key matrix ``[M, W]`` to width ``d``."""
-    M, W = int(block.shape[0]), int(block.shape[1])
-    if W == d:
-        return block
-    out = block.new_zeros(M, d)
-    k = min(d, W)
-    out[:, :k] = block[:, :k]
-    return out
-
-
-def policy_answer_loss(generator, spaces, reasoner, examples, *,
-                       max_keys: int = 512):
-    """Train the soft query head against detached hard bridge masks."""
-    if generator is None or not spaces or not examples:
-        return None
-    D = int(generator.dim)
-    blocks = []
-    for s in spaces:
-        k = s.get("keys")
-        if not (k is not None and torch.is_tensor(k) and k.dim() in (2, 3)
-                and int(k.shape[-2]) > 0):
-            continue
-        block = (k if k.dim() == 2 else k[0])
-        if int(block.shape[0]) > int(max_keys):
-            continue                                  # skip a huge percept codebook
-        blocks.append(_fit_keys(block.detach().float(), D))
-    if not blocks:
-        return None
-    K = torch.cat(blocks, dim=0)                       # [Mtot, D], detached
-    Kn = K / K.norm(dim=-1, keepdim=True).clamp_min(1e-12)
-    losses = []
-    for (A, B, gold) in examples:
-        Av = _fit_dim(A, D)
-        Bv = _fit_dim(B, D)
-        q = generator.concept_q(Av, Bv)               # [D], grad-bearing
-        qn = q / q.norm().clamp_min(1e-12)
-        alpha = torch.softmax(Kn @ qn, dim=0)         # [Mtot], grad through q
-        mask = torch.zeros(int(K.shape[0]))
-        for m in range(int(K.shape[0])):
-            key = K[m]
-            if (reasoner.legacy_is_part_direct(Av, key) is not None
-                    and reasoner.legacy_is_part_direct(key, Bv) is not None):
-                mask[m] = 1.0
-        support = (alpha * mask.detach()).sum()        # bridge-attention mass (grad)
-        predicted_signed = torch.tanh(support)         # (-1,1) via α; mask detached
-        losses.append(answer_loss(predicted_signed, gold))
-    if not losses:
-        return None
-    return torch.stack(losses).mean()

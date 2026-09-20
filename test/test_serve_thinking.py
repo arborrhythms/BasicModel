@@ -18,7 +18,6 @@ _DATA = _ROOT / "data"
 if str(_BIN) not in sys.path:
     sys.path.insert(0, str(_BIN))
 
-from Language import WhatStepChooser  # noqa: E402
 
 _MATH_DAT = {"mathRange": 16, "mathDepths": "1-2", "mathTestDepths": "3",
              "mathDistractors": 1, "mathProblems": 64, "mathSeed": 0}

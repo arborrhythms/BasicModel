@@ -599,10 +599,16 @@ record the follow-up; comparative speedups remain unmeasured.
 
 ## Selected meaning and one controller (September 20)
 
-Item 1 consolidates public and normal reasoning in `run_selected_thought`,
+**Review correction:** `288b56b` passed regression but did not complete item 1.
+Its standalone language codec violated the three-grammar architecture, and its
+natural-wording experiment is not accepted learning evidence. The review
+correction below removes that path. Grammar-owned wording remains open and
+learned questioning utility remains unproven.
+
+The original landing consolidates public and normal reasoning in `run_selected_thought`,
 retires the other controllers and next-idea selector, carries typed
 set/code/child answers, retains nested meanings through all three writers, and
-adds supervised natural lexical alignment without natural-word anchors.
+adds a separate supervised codec, subsequently rejected and removed.
 [SelectedMeaning](SelectedMeaning.md) specifies ownership, credit and limits;
 [KernelRetirement](KernelRetirement.md) maps all 61 removed frame-kernel tests.
 
@@ -625,11 +631,13 @@ loss/optimizer/checkpoint integration. The broader affected run had already
 passed the controller, row-local rewards, output, nested meaning, taxonomy and
 retirement contracts. Neither receipt substitutes for the full landing gate.
 
-The language experiment trains 36 annotated examples at seed 19 for 240 Adam
+The rejected language experiment trained 36 annotated examples at seed 19 for 240 Adam
 steps, then checks held-out nouns, the parthood sense of “has,” “contains,”
 converse roles, alternate-sense negatives, execution, generation and
-recomposition. It starts unknown, adds no lexical anchor and verifies all three
-writers. The controller tests separately establish exact zero-init baseline
+recomposition. All relation wordings appeared in training; its programs were
+synthetic, and its function vocabulary was restricted to `a`, `has`, `equals`.
+These results do not demonstrate grammar-owned interpretation or generation.
+The controller tests separately establish exact zero-init baseline
 behavior, actual-work policy credit and a real optimizer update. This is not the
 multi-seed learned reasoning utility study, which remains item 4; on FineWeb,
 controller reward awaits item 2's residual credit.
@@ -655,8 +663,8 @@ workers and unchanged limits (8 GiB per worker, 28 GiB aggregate, 1,800-second
 worker and 10,800-second suite deadlines). Peak footprints were 7.19 GiB per
 worker and 10.80 GiB aggregate. No selector or test exclusion was added.
 
-All 615 entries in the receipt's `validated_source` manifest match a fresh
-`bounded_tests.source_snapshot()` of the landing source. Its SHA-256, over the
+All 615 entries in the receipt's `validated_source` manifest matched a fresh
+`bounded_tests.source_snapshot()` of the `288b56b` landing source. Its SHA-256, over the
 sorted compact JSON map, is
 `6adaa745620cc69e44cccf773ae49b00769dbae10dc7235d05c32074e403e100`.
 The selected and completed case sets are identical. Final receipt notes and
@@ -664,6 +672,67 @@ todo reconciliation were written after the run; they do not change that tested
 source map. The user-owned thought-operator specification edit is excluded from
 the implementation commit.
 
-This completes item 1's replacement and regression gates. Expectation/residual
-credit, the generation-catalogue migration and the full learned-utility study
-remain items 2–4.
+This establishes the original regression result only. The review reopens item
+1; expectation/residual credit, the generation-catalogue migration and the
+full learned-utility study remain items 2–4.
+
+## Three-grammar review correction (September 20)
+
+The separate `LinguisticMeaningCodec`, its fallback and pre-generate route,
+`WhatStepChooser`, `TruthInterval`, nearest-word realisers and the soft bridge
+policy are removed. The sole controller now receives mode, polarity,
+alpha-renamed bindings/scope and bounded attended visible STM/LTM content.
+Incomplete-context checkpoint policies and their optimizer moments reset;
+current policies restore strictly. The chooser can select the active question
+as a nested `what(Q)` through its already-owned occurrence.
+
+The depth-one/two probe fits the real MLP to authored routing examples, then
+runs its selections and actual episode credit without a scripted chooser.
+That is mechanism evidence only, not useful learned decomposition. The
+natural-wording replacement must run through compose/generate on actual
+forward text and a normal generation vocabulary; that gate is still open.
+The matched-compute, multi-seed utility comparison remains item 4 and gates
+every learned-utility claim.
+
+Development receipts under `output/tests/`:
+
+| Receipt | Result and disposition |
+|---|---|
+| `20260920-050623-6107ad` | 5/5 completed, all failed: missing semantic context and forbidden extra codec/policy. |
+| `20260920-051310-78166c` | 77/77 completed, 20 failed: deque slicing, fixture graph reuse and old context-width assumptions. |
+| `20260920-051418-af928a` | 125/125 completed, three failures and three skips: nested fixture routing and a stale fixture variable. |
+| `20260920-051535-54ea52` | 44/44 completed, depth-two fixture still selected an unwanted third descent. |
+| `20260920-051632-3adeb1` | 9/9 completed, one failed auxiliary training-loss threshold. It was replaced by an assertion that every trained discrete routing choice matches its label; actual depth/support/credit checks stay strict. |
+| `20260920-051736-eec5e0` | 9/9 passed with both actual chooser-selected depths. |
+| `20260920-052549-f3e4a4` | 167/167 passed across the affected controller, context, adapters, queries and retirement tests. |
+| `20260920-052710-743926` | Full default selection completed 4,599/4,599 in 1,025 s; two failures: five deleted-file links in the older plan and a test monkeypatch of the deleted bridge builder. Both are corrected without restoring a legacy path. |
+| `20260920-054832-33af0f` | Final focused selection completed 112/112 with exit 0, covering review probes, all documentation links, public taxonomy entry points, numerical readers and the remaining math/configuration tests. |
+
+All 19 previously unexplained test deletions have individual dispositions in
+[KernelRetirement](KernelRetirement.md), along with the tests removed or
+migrated in this correction. The taxonomy public-entry probe now asserts the
+bridge builder is absent and still forbids the global vector-read route.
+
+The final **source-matched full default receipt** is
+[`20260920-054917-5d73b8/result.json`](../output/tests/20260920-054917-5d73b8/result.json):
+**4,599/4,599 selected cases completed, exit 0**, in **1,029.4 seconds**.
+Unique outcomes are **4,268 passed, 330 skipped and one expected failure**.
+The selected and completed case sets are identical; no selector or exclusion
+was added. The default selection includes the documented slow-test skips and
+does not establish any open learning or throughput gate.
+
+Command from `basicmodel/`:
+
+```sh
+DEVELOPER_DIR=/Library/Developer/CommandLineTools .venv/bin/python test/test_report.py --batch-size 8 --max-files 1
+```
+
+Ten workers used the unchanged 8 GiB worker / 28 GiB aggregate limits and
+1,800-second worker / 10,800-second suite deadlines. Peak footprints were
+4.46 GiB per worker and 12.56 GiB aggregate. All **614** entries in
+`validated_source` match a fresh `bounded_tests.source_snapshot()` of the
+landing source. The SHA-256 over its sorted compact JSON map is
+`e34d256402a69525f256c9928c4ff6d23901d6f013edbd2ac1e67126d27051fa`.
+This receipt note was added after the run; it does not change the validated
+source map. The user-owned thought-operator specification edit remains
+untouched and excluded from the correction commit.

@@ -2047,7 +2047,7 @@ class GrammaticalThoughtRegistry:
             role_refs=tuple(references), bindings=source.bindings,
             scope=source.scope)
 
-    def controller_candidates(self, root, active, candidate):
+    def controller_candidates(self, root, active, candidate, *, descriptions=()):
         """Return catalog-derived executable requests without touching readers.
 
         The completed parse provides values and typed provenance, not a menu
@@ -2106,6 +2106,25 @@ class GrammaticalThoughtRegistry:
             if descriptor.executor is _part:
                 for role in operation.operand_roles:
                     append_form(operation, descriptor, (role,))
+        # The active question already has an ordinary history occurrence.
+        # Present it as a description operand so the policy can choose
+        # what(Q) even when the input itself was a plain part/equal request.
+        # No speculative occurrence, reader call or eager child is created.
+        if ('what', ()) not in seen and 'what' in self.executable_operation_ids:
+            for description, reference in descriptions:
+                if not (isinstance(description, ConceptualMeaning)
+                        and self._is_description_reference(reference)):
+                    raise ValueError('controller descriptions require owned occurrences')
+                operation = self._operations_by_id['what']
+                descriptor = self.descriptors['what']
+                source = ConceptualMeaning(
+                    candidate.roles, candidate.role_mask,
+                    **dict(candidate.metadata(), polarity=True))
+                value = description.roles.sum(0) / description.role_mask.sum().sqrt()
+                request = self._form_candidate(operation, descriptor,
+                    {operation.operand_roles[0]: (value, reference)}, source=source)
+                requests.append(ThoughtOperationCandidate(operation, request, ()))
+                break
         return tuple(requests)
 
     def signature_for(self, meaning, *, work=None, verify_reference=True):

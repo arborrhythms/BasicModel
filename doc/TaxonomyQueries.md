@@ -6,8 +6,8 @@ dictionary row or a numeric feature. The derived invocation view contains no
 authoritative memory and creates no allocator, concept, fact or learned
 parameter. Raw percept/whole codes, vector containment and LTM world-relation
 rows cannot establish this relation.
-[Reference validation](../bin/Taxonomy.py#L11),
-[bounded capture](../bin/Taxonomy.py#L117).
+[Reference validation](../bin/Taxonomy.py),
+[bounded capture](../bin/Taxonomy.py).
 
 ## Evidence and domains
 
@@ -18,8 +18,8 @@ R with part A and whole B, the evidence is the two native links A → R → B;
 the endpoint sets need not have been modified. Each proof keeps its record
 owner, role and endpoints. Retired/unavailable references cannot supply a
 link. The snapshot does not change when its source is subsequently edited.
-[Capture](../bin/Taxonomy.py#L117),
-[proof search](../bin/Taxonomy.py#L69).
+[Capture](../bin/Taxonomy.py),
+[proof search](../bin/Taxonomy.py).
 
 Structural inclusion has support 1 when a path exists; repeated links do not
 increase it. Sparse learned weights are not interpreted as world-fact
@@ -27,7 +27,7 @@ confidence. Missing paths remain unknown. A supported path refutes the
 negated inclusion question; a missing path does not prove that negation.
 LTM existence degrees and conflicting world facts remain the separate
 [Exist evidence domain](ExistenceEvidence.md).
-[PartOf evaluation](../bin/reasoning.py#L586).
+[PartOf evaluation](../bin/reasoning.py).
 
 The public legacy `QuerySpec` aliases `PartOf`, `part`, `queryPart` and
 `isPart` select conceptual-taxonomy evidence. `whole` / `isWhole` reverse
@@ -35,45 +35,32 @@ their supplied operands into that canonical direction. Unsupported requested
 domains fail explicitly. A legacy vector-only operand has no grounded
 concept reference and returns unknown with an `unbound_concept_reference`
 diagnostic; it is not silently snapped to a codebook row.
-[Interface](../bin/reasoning.py#L59),
-[evidence adapter](../bin/reasoning.py#L376).
+[Interface](../bin/reasoning.py),
+[evidence adapter](../bin/reasoning.py).
 
-`parts` and `wholes` return typed neighboring references and their native
-record sources. The legacy kernel's `part(..., mode="taxonomy")` uses this
-reader. Its former `meronomy` mode is rejected as unsupported: a perceptual
-mereonomy adapter must declare its own domain and source before it can run.
-[Neighbors](../bin/reasoning.py#L397),
-[kernel adapter](../bin/thinking.py#L305).
+Grammar-open `part` forms return typed neighboring references and their native
+record sources. They share the canonical operation identity and checked reader.
 
 ## Public routes and provenance
 
-`TruthGroundedReasoner.evaluate`, `NeuralToolUser.run`, `BasicModel.reason_about`
-and the PartOf path through `BasicModel.think_about` use this evidence source.
-The model entries do not initialize or read the old global vector-proposal
-route. The returned reasoning result preserves the complete evidence dict,
-including unknown/incomplete diagnostics, rather than only its posture.
-[Reasoner](../bin/reasoning.py#L586),
-[tool entry](../bin/reasoning.py#L762),
-[model entry](../bin/Models.py#L22259),
-[kernel entry](../bin/Models.py#L22277).
+`TruthGroundedReasoner.evaluate` is a checked evidence adapter.
+`BasicModel.reason_about`, `think_about`, `answer_query` and normal answer
+resolution enter `run_selected_thought`, the one boundary controller. Typed
+results preserve full evidence and incomplete diagnostics.
 
-The existing frame kernel may still follow a taxonomy neighbor into a child
-question. A child contributes to its parent only through a checked native
-taxonomy hop, with the same requested goal and polarity. An unrelated true
-child or numeric testimony cannot certify the parent's taxonomic inclusion.
-The final result retains the hop sources and the child's evidence. An
-incomplete-read diagnostic remains visible but contributes no invented zero
-evidence to an otherwise supported interval.
-[Selected step](../bin/thinking.py#L219),
-[aggregation](../bin/thinking.py#L398).
+A selected `what(Q)` opens a child on the ordinary history owner. Its checked
+return is recorded as a causal source of its parent's result. An unrelated
+true child cannot establish a different taxonomy edge. Reader traversal may
+prove several native edges within one operation; that is not evidence of
+policy-selected decomposition. The [review probes](../test/test_thought_review.py)
+separately exercise a chooser-selected descent and its policy credit.
 
-Taxonomy queries are read-only. Neither a successful proof nor the legacy
-`materialize` flag grants permission to append a world-fact lemma. Legacy
-incomplete relation testimony remains unverified and cannot satisfy the
-taxonomy reader or full-description Exist.
-[Public PartOf helper](../bin/reasoning.py#L429),
-[write boundary](../bin/thinking.py#L484),
-[testimony](../bin/thinking.py#L355).
+Taxonomy queries are read-only. Successful proofs cannot append world-fact
+lemmas or change conceptual definitions. Unsupported/world-row evidence cannot
+certify taxonomy inclusion. The frame kernel, neural-tool facade, addressees,
+legacy geometric readers and bridge-policy loss have been deleted.
+See [checked registry](../bin/Queries.py), [evidence readers](../bin/reasoning.py)
+and [the controller](SelectedMeaning.md).
 
 ## Bounds, persistence and gradients
 
@@ -87,9 +74,9 @@ selected QueryWorkBudget is supplied, each of those actions debits the same
 meter before its read; capture reserves a bounded share for proof traversal.
 Local limits still only tighten that allowance. Standalone taxonomy audits can
 omit the meter and retain their explicit bounds.
-[Capture limits](../bin/Taxonomy.py#L117),
-[traversal limits](../bin/Taxonomy.py#L69),
-[query limits](../bin/reasoning.py#L586). See
+[Capture limits](../bin/Taxonomy.py),
+[traversal limits](../bin/Taxonomy.py),
+[query limits](../bin/reasoning.py). See
 [shared query work](QueryWork.md).
 
 Concept identities and ordered reference records already belong to the
@@ -98,36 +85,21 @@ a restored model captures it again from that owner. The model save/load probe
 checks identical proof sources after strict restore and loss of support when
 the restored reified relation is retired. No checkpoint schema or learned
 parameter was added for this reader.
-[Structural ownership](../bin/Models.py#L4409).
+[Structural ownership](../bin/Models.py).
 
-Native reference traversal and its evidence are hard reads, with no gradient
-through the discrete lookup/path choice. IDs do not enter numerical chooser
-features. The old operation head's behavior-cloning examples now come from
-bounded native taxonomy paths; this checks the existing training mechanism,
-not learned question utility. The architecture-wide gradient contract remains
-in [GradientFlow](GradientFlow.md).
-[Trace curriculum](../bin/thinking.py#L621),
-[operation-head training](../bin/thinking.py#L610).
+Native traversal and evidence are hard reads, with no derivative through the
+lookup/path choice. Native IDs do not enter numerical chooser features. The
+one thought policy receives supplied-answer quality and actual shared work;
+verifier traces do not manufacture training labels. Learned utility remains
+unproven pending the held-out, matched-compute multi-seed study.
+See [GradientFlow](GradientFlow.md).
 
-## Compatibility and unfinished work
+## Remaining work
 
-Old geometric/world-row helper methods have explicit `legacy_...` names;
-`NeuralToolUser.run_legacy_world` retains the historical vector-proposal
-experiment. Its tests are labelled as legacy. Those helpers are not used by
-public PartOf dispatch. The older optional prediction/answer policy objectives
-still use their explicitly named legacy evidence machinery and are not the
-default sentence-expectation controller.
-[Legacy proposal entry](../bin/reasoning.py#L772),
-[legacy prediction experiment](../bin/reasoning.py#L864),
-[legacy answer objective](../bin/reasoning.py#L972).
-
-[Query contracts](QueryContracts.md) supplies the explicit shared-VP adapter
-above this evidence reader. This change does not implement linguistic relation/sense composition, the causal
-answer adapter, ordinary levelled thought history, nested semantic traversal,
-anticipation isolation, residual policy credit or learned utility. The frame
-kernel remains a legacy controller. The full integrated specification remains
-unfinished, and the separate two-truths design remains deferred as requested.
-[Implementation order](plans/2026-09-15-next-sentence-as-the-production-objective.md#10-consolidated-implementation-and-verification-order).
+Natural wording must be learned by compose/generate. The previous standalone
+codec is removed and its learning gate reopened. Expectation/residual credit,
+generation ownership and causal utility remain explicit todo items. The separate
+two-truths design remains deferred. See [SelectedMeaning](SelectedMeaning.md).
 
 ## Validation
 

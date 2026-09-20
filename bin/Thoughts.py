@@ -310,6 +310,16 @@ class LevelledThoughtHistory:
             if isinstance(record, ThoughtRecord)
         ]
 
+    def thought_window(self, b=0, limit=4):
+        """At most ``limit`` recent owned slots, without a full-history scan."""
+        if type(limit) is not int or limit < 0:
+            raise ValueError("thought window requires a non-negative bound")
+        slots = self._what_slots[self._thought_row(b)]
+        from itertools import islice
+        window = tuple(islice(reversed(slots), limit))
+        return tuple(record for record in reversed(window)
+                     if isinstance(record, ThoughtRecord))
+
     def thought_state(self, b=0):
         return replay_thoughts(self.thought_history(b=b))
 

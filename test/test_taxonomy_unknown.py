@@ -20,8 +20,3 @@ def test_no_support_remains_unknown_even_at_zero_threshold(predicate):
 def test_zero_threshold_cannot_fabricate_the_other_evidence_polarity(support, expected):
     result = TruthGroundedReasoner()._posture(*support, tau=0.)
     assert result["posture"] == expected
-
-
-def test_empty_legacy_interval_is_unknown_at_zero_threshold():
-    from thinking import TruthInterval
-    assert TruthInterval().status(tau=0.) == "unknown"

@@ -112,11 +112,8 @@ def test_child_context_can_refine_before_returning_its_causal_result(monkeypatch
 
 
 def test_retired_controllers_cannot_be_constructed_or_restored():
-    import thinking
     import reasoning
     from Models import BasicModel
-    for name in ('ThinkingKernel', 'Frame', 'ChildResult', 'Testimony', 'NextOpPolicy', 'KernelPolicy'):
-        assert not hasattr(thinking, name)
     assert not hasattr(reasoning, 'NeuralToolUser')
     assert not hasattr(BasicModel, '_what_step_chooser')
     assert not hasattr(BasicModel, '_thinking_policy_loss')

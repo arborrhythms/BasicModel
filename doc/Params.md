@@ -80,10 +80,10 @@ sub-elements `<training>` and `<data>` (see below).
 | `transformChooser` | string | `"anchordot"` | Placement scorer for the structured grammar layers. `anchordot` = stateless cosine-to-anchor (byte-identical default, no new params); `mlp` = learned `MLPTransformChooser` (owns tool-embedding + MLP params $\to$ deliberate fresh-basin cutover). See [Language.md](Language.md). |
 | `transformChooserHidden` | int | `0` | Hidden width of each grammar MLP when `transformChooser=mlp`; `0` derives `max(8, grammar feature width)`. Positive values override it. Canonical BasicModel currently derives 1024. Inert for `anchordot`. |
 | `transformChooserDepth` | int | `1` | Number of hidden Linear/GELU blocks in each grammar MLP, followed by one scalar Linear head; must be positive. Not the number of grammatical reductions or thought iterations. |
-| `whatThinkingHidden` | int | `16` | Positive hidden width of the ANSWER/OPEN thought-step MLP. Its default input is 29 What-context features plus six candidate features. Does not enable thinking or add semantic inputs. |
-| `whatThinkingDepth` | int | `1` | Positive number of hidden Linear/GELU blocks in the thought-step MLP, followed by its zero-initialized scalar head. Independent of `whatThinkingIterations`, memory configuration and policy-loss weight. |
+| `whatThinkingHidden` | int | `16` | Positive hidden width of the sole `SelectedThoughtChooser` MLP. Its context includes masked root/active/candidate roles, semantic metadata, attended visible STM/LTM and execution state; see [SelectedMeaning](SelectedMeaning.md). |
+| `whatThinkingDepth` | int | `1` | Positive number of hidden Linear/GELU blocks in the selected-thought MLP, followed by its zero-initialized scalar head. It does not change the shared work allowance or enable policy credit. |
 | `selectedThoughtBudget` | non-negative int | `32` | Shared work allowance for one completed interrogative grammatical-thought episode. It covers controller choices plus the forwarded `QueryWorkBudget`; `0` permits only the defined cutoff/root-finish drain. It is independent of legacy `whatThinkingIterations`. |
-| `reconstructFromIdea` | bool | `false` | Legacy evaluation selection of recovered word ideas instead of the single-slot seed. Tied mode always returns its owned completed reconstruction, independently of this flag, and never enters the free generate chart ([Models.py:8063](../bin/Models.py#L8063)). |
+| `reconstructFromIdea` | bool | `false` | Legacy evaluation selection of recovered word ideas instead of the single-slot seed. Tied mode always returns its owned completed reconstruction, independently of this flag, and never enters the free generate chart ([Models.py](../bin/Models.py)). |
 | `categoryCodebook` | bool | `true` | MetaSymbol participation-category codebook for the role-collapsed grammar: a small role-space `VectorQuantize` initialized with one prototype per labelled grammar role (`op_I1`, `op_I2`, `op_O1`, ...). Unsettled MetaSymbols accumulate bounded temporary role evidence; once mass/confidence/margin/stability thresholds are met, the MetaSymbol commits to one category id and its pending row is discarded. Structured grammar layers use the role context for all `transformChooser` modes: as an input feature for `mlp`, and as a labelled-role score prior for anchordot/default routing. See [Language.md $\to$ Participation Categories](Language.md). |
 | `adverbEigEdit` | bool | `false` | Legacy/direct `LiftLayer` helper flag for the adverb sparse eigenvalue edit. The live `adverb` grammar operator force-builds the same zero-init projection and calls `LiftLayer.apply_adverb`, so ordinary grammar use does not depend on this flag. When enabled for plain `LiftLayer`, an adverb modifies a composed VP by `a2 = atanh(vp) + p_vp * delta_adv`, masked by the VP's own eigen-signature. Default off keeps plain `LiftLayer` byte-identical. |
 | `mereologyRaise` | bool | `false` | Mereological node raising: perception's autobind hook builds a lattice over the two towers and raises a higher-order PART when a whole accumulates more than `K_many` parts; the actual parthood provenance lives in `part_chain`. The always-built ramsification table separately records sigma/pi derivation paths and must not be read as the lattice rank or noun class. Default off disables node raising but not fold-path recording. |
@@ -160,11 +160,11 @@ Training loop and I/O.
 | `conceptualContextLearningRate` | float | `0.0` | Enables the context-owned ConceptualSpace dictionary updater. Each completed sentence produces one deterministic, reduced tangent rotation per observed codebook row; `similarity_codebook.W` is a persistent non-grad buffer, read through an eager compiler boundary, and never enters Adam. Mutually exclusive with `conceptualSimilarityScale`. |
 | `conceptualContextNegatives` | int | `4` | Number of deterministic detached negative prototype rows in the contextual SBOW rotation. |
 | `detachedReverse` | bool | `false` | On serial grammar training, supervise the static idea-only reverse chooser from `stopgrad(S)` using detached `ReconstructionStack` rule/arity/leaf targets instead of replaying the D3 recurrence. |
-| `reconstructInLoop` | bool | `false`; BasicModel `true` | One owned completed-input reconstruction. A bounded occurrence prepass, seal reversal and reverse word walk follow the identified compose derivation using shared transforms. Train/eval consume the same byte objective once; idea/event fidelity is diagnostic. Mutually exclusive with `detachedReverse`; suppresses standalone leaf distillation. Student checkpoint keys and optimizer entries are dropped while shared weights/moments survive. WORD-owned spelling candidates and a uniform null candidate score the recovered ideas ([Models.py:8025](../bin/Models.py#L8025), [Models.py:11300](../bin/Models.py#L11300)). |
-| `reconstructionBasisLimit` | positive int | `16` | Maximum candidate prototypes per side for approximate reconstruction through the selected compose operator: at most `K*K` pairs. Independent of word, STM and field capacity. The invocation owns detached values/masks; missing candidates or inverses report incompleteness ([Language.py:14528](../bin/Language.py#L14528)). |
-| `reconstructionPlacement` | `graph` / `compiled` / `eager` | `graph`; BasicModel `compiled` | Run the traversal inside the forward graph, as a separate fullgraph call, or eagerly. The separate call promotes the `eager` backend to `aot_eager` to cache backward too. The `auto` policy resolves to its first configured backend before PyTorch lookup. `BASICMODEL_RECON_PLACEMENT` remains a diagnostic override. Placement changes execution, not the tied objective or 21-value forward state ([Models.py:11257](../bin/Models.py#L11257)). |
-| `outputInLoop` | bool | `false` | `reverseOutput` unfolds owned answer concepts with its bounded generate walk. The chooser uses declared `<generate>` rules and stop: training samples actions; evaluation selects the highest-scoring action. It ignores input compose traces, teacher targets and reconstruction witnesses. Policy and traversal state are independent; numerical operator instances still share comprehension parameters pending the integrated specification's catalog migration. Unavailable requested operations remain pending and report bounded truncation ([Models.py:9214](../bin/Models.py#L9214), [Models.py:12237](../bin/Models.py#L12237)). Resolution still occurs inside `reverseOutput` pending the separate phase-controller migration. |
-| `outputPolicyWeight` | float | `0.0` | Weight of the output chooser's supervised action credit. Training samples its own output actions and credits their sequence log probability using detached realised-answer error and an EMA return baseline. Only separately supplied, available `What.supervised` numeric or text targets contribute ([Models.py:9293](../bin/Models.py#L9293)); zero weight or missing supervision gives no policy update. The term is added to the `runBatch` total and reported as `output_policy`. `LanguageSpace.generate_policy` belongs to SymbolSpace's optimizer parameters and exists only with `outputInLoop`. Input compose choices are not output supervision. |
+| `reconstructInLoop` | bool | `false`; BasicModel `true` | One owned completed-input reconstruction. A bounded occurrence prepass, seal reversal and reverse word walk follow the identified compose derivation using shared transforms. Train/eval consume the same byte objective once; idea/event fidelity is diagnostic. Mutually exclusive with `detachedReverse`; suppresses standalone leaf distillation. Student checkpoint keys and optimizer entries are dropped while shared weights/moments survive. WORD-owned spelling candidates and a uniform null candidate score the recovered ideas ([Models.py](../bin/Models.py), [Models.py](../bin/Models.py)). |
+| `reconstructionBasisLimit` | positive int | `16` | Maximum candidate prototypes per side for approximate reconstruction through the selected compose operator: at most `K*K` pairs. Independent of word, STM and field capacity. The invocation owns detached values/masks; missing candidates or inverses report incompleteness ([Language.py](../bin/Language.py)). |
+| `reconstructionPlacement` | `graph` / `compiled` / `eager` | `graph`; BasicModel `compiled` | Run the traversal inside the forward graph, as a separate fullgraph call, or eagerly. The separate call promotes the `eager` backend to `aot_eager` to cache backward too. The `auto` policy resolves to its first configured backend before PyTorch lookup. `BASICMODEL_RECON_PLACEMENT` remains a diagnostic override. Placement changes execution, not the tied objective or 21-value forward state ([Models.py](../bin/Models.py)). |
+| `outputInLoop` | bool | `false` | `reverseOutput` unfolds owned answer concepts with its bounded generate walk. The chooser uses declared `<generate>` rules and stop: training samples actions; evaluation selects the highest-scoring action. It ignores input compose traces, teacher targets and reconstruction witnesses. Policy and traversal state are independent; numerical operator instances still share comprehension parameters pending the integrated specification's catalog migration. Unavailable requested operations remain pending and report bounded truncation ([Models.py](../bin/Models.py), [Models.py](../bin/Models.py)). Resolution completes before `reverseOutput` and supplies its owned `AnswerDerivation`. |
+| `outputPolicyWeight` | float | `0.0` | Weight of the output chooser's supervised action credit. Training samples its own output actions and credits their sequence log probability using detached realised-answer error and an EMA return baseline. Only separately supplied, available `What.supervised` numeric or text targets contribute ([Models.py](../bin/Models.py)); zero weight or missing supervision gives no policy update. The term is added to the `runBatch` total and reported as `output_policy`. `LanguageSpace.generate_policy` belongs to SymbolSpace's optimizer parameters and exists only with `outputInLoop`. Input compose choices are not output supervision. |
 | `forwardGrammarWeight` | float | `0.0` | Weight of the bounded local structural contrast for committed unary/binary folds. Its candidate evidence is detached, so it updates only the chooser at that fold. |
 | `whatScale` | float | `0.7` | Loss weight on the `.what` (content) channel. |
 | `whereScale` | float | `0.2` | Loss weight on the `.where` (positional) channel. |
@@ -187,9 +187,9 @@ Training loop and I/O.
 | `interLossWeight` | float | `0.1` | Weight on occupied-role MSE plus mean role-presence binary cross entropy (`structured`), or root MSE (`root`). Uses a bounded row/document observation view: current-step source context can train its encoder, targets/durable history are detached. Consumed alongside Teacher reconstruction; `0` disables. See [STM.md Section 11](STM.md#11-inter-sentence-prediction). |
 
 Gradient-balance defaults and validation are implemented in
-[Models.py:2532](../bin/Models.py#L2532), with the numerical contract in
-[Optimizer.py:113](../bin/Optimizer.py#L113). The inter-sentence training gate
-is in [Models.py:13978](../bin/Models.py#L13978).
+[Models.py](../bin/Models.py), with the numerical contract in
+[Optimizer.py](../bin/Optimizer.py). The inter-sentence training gate
+is in [Models.py](../bin/Models.py).
 
 #### `<trainEmbedding>` --- Embedding Update Modes
 
@@ -442,7 +442,7 @@ symbol (line anchors drift).
 | `sentenceProtocol` | `Models.py` (BaseModel init) | = `serial` | Whole-sentence gist prelude (parallel `subsymbolicOrder` pumps, intent-only commit) before the serial per-word loop. |
 | `truthSet` (`<truth>` rows: text, `trust` / `kind` attrs) | `Models.py` (`provision_ltm`) | (none) | Config-provisioned trusted truths run through the real forward and appended to the consolidated LTM at load; row trust $\times$ `architecture.trust`. Read only when `<ltmConsolidation>` is on — otherwise ignored. |
 | `thinkingBudget` | `Models.py` (BaseModel init; `think_about`) | `0` | Shared work allowance for the explicit `think_about` API on the normal grammatical controller. Choices, reads, traversal and child execution all spend it; `0` disables this API. It adds no second result to `answer_query`. |
-| `answerSynthesis` | `Models.py` (BaseModel init; `what()` / `reverseOutput()`) | `false`; `data/BasicModel.xml` ships `true` | Resolve the owned row program into full-width conceptual ideas, apply thinking and one conceptual conditioner, and realize the answer through the selected output mode ([Models.py:8186](../bin/Models.py#L8186), [Models.py:9182](../bin/Models.py#L9182)). Without `outputInLoop`, concepts enter `ConceptualSpace.synthesize_idea`, the shared reverse body and perceptual inverse, dedicated perceptual synthesis, then `OutputSpace.from_percepts`. New adapters use the forward-equivalent rectangular LDU readout over all generated percept coordinates; old checkpoint adapters keep their layout ([Spaces.py:30277](../bin/Spaces.py#L30277)). Topologies without row programs retain dense synthesis compatibility. Training scores only separately supplied desired answers; automatic temporal targets remain evaluation metrics ([Models.py:9419](../bin/Models.py#L9419)). |
+| `answerSynthesis` | `Models.py` (BaseModel init; `what()` / `reverseOutput()`) | `false`; `data/BasicModel.xml` ships `true` | Resolve the owned row program into full-width conceptual ideas, apply thinking and one conceptual conditioner, and realize the answer through the selected output mode ([Models.py](../bin/Models.py), [Models.py](../bin/Models.py)). Without `outputInLoop`, concepts enter `ConceptualSpace.synthesize_idea`, the shared reverse body and perceptual inverse, dedicated perceptual synthesis, then `OutputSpace.from_percepts`. New adapters use the forward-equivalent rectangular LDU readout over all generated percept coordinates; old checkpoint adapters keep their layout ([Spaces.py](../bin/Spaces.py)). Topologies without row programs retain dense synthesis compatibility. Training scores only separately supplied desired answers; automatic temporal targets remain evaluation metrics ([Models.py](../bin/Models.py)). |
 | `synthesisBindings` | `Models.py` (`_select_perceptual_bindings`) | `0`; BasicModel `4` | Number of most-salient perceptual context slots a derivation may NAME as bindings for answer synthesis; they ride in the derivation trace. `0` keeps perceptual context out of the answer. |
 | `whatCurriculum` | `Models.py` (`_curriculum_questions`) | `none`; BasicModel `full` | `none` \| `present` \| `temporal` \| `full`: a Bresenham fraction (`whatCurriculumRatio`) of training batches asks past/future (`temporal`) or also inference (`full`) questions instead of the default family. `none` is byte-identical. |
 | `whatCurriculumDistance` | `Models.py` (`_curriculum_questions`) | `1` | Presentation offset of the past/future curriculum questions. |
@@ -484,7 +484,7 @@ symbol (line anchors drift).
 | Knob | Where read | Default | Purpose |
 |------|-----------|---------|---------|
 | `seed` | `Models.py` (run entry; env `BASIC_SEED` overrides) | unset | RNG pin (torch/python/numpy) for reproducible single-CLI runs; the `XOR_exact` gates rely on it. |
-| `answerLossWeight` | `Models.py` (BaseModel init) | `0.0` | Reasoner answer loss weight. |
+| `answerLossWeight` | `Models.py` (BaseModel init) | `0.0` | Retired; nonzero values are rejected. Use the one `selectedThoughtPolicyWeight` objective. |
 | `predictNextLossWeight` | `Models.py` (BaseModel init) | `0.0` | Retired; nonzero values raise at configuration load. The separate next-idea proposal/scoring route is deleted. |
 | `thinkingLossWeight` | `Models.py` (BaseModel init) | `0.0` | Migration alias for `selectedThoughtPolicyWeight`; the maximum of this, `whatThinkingPolicyWeight` and the selected weight enables one normal controller objective. No trace-cloning head remains. |
 | `whatThinkingPolicyWeight` | `Models.py` (BaseModel init) | `0.0` | Migration alias for the one `selectedThoughtPolicyWeight` objective. The former parity policy and its separate report/credit path are retired. |
@@ -694,8 +694,8 @@ existing truth store. Its structural sidecar retains bindings, scope,
 constituent references and source text. This adds no configuration switch,
 learned parameter or loss. Legacy conversation rows migrate as unverified;
 missing required metadata cannot silently become empty scope.
-[Store and migration](../bin/Layers.py#L8674),
-[checkpoint sidecar](../bin/Models.py#L4409),
+[Store and migration](../bin/Layers.py),
+[checkpoint sidecar](../bin/Models.py),
 [details](ExistenceEvidence.md).
 
 ### Conceptual-taxonomy query bounds
@@ -706,9 +706,9 @@ public predicate evaluation uses `beam * max_steps` as its edge limit. These
 are explicit call bounds, distinct from STM capacity or a shared episode
 budget. Limits/unavailable references report incomplete evidence. No new
 configuration switch, checkpoint schema or learned parameters were added.
-[Capture](../bin/Taxonomy.py#L117),
-[traversal](../bin/Taxonomy.py#L69),
-[public evaluation](../bin/reasoning.py#L586).
+[Capture](../bin/Taxonomy.py),
+[traversal](../bin/Taxonomy.py),
+[public evaluation](../bin/reasoning.py).
 
 ### Checked thought call bounds and native VP setup
 
@@ -720,8 +720,8 @@ At explicit setup, each `<thought>`-selected executable operation/domain uses on
 existing aligned concept row and named handle. No new parameter tensor or configuration switch
 is introduced. A missing native binding cannot be lazily recreated by
 candidate formation or execution.
-[Context](../bin/Queries.py#L88),
-[setup](../bin/Queries.py#L1474),
+[Context](../bin/Queries.py),
+[setup](../bin/Queries.py),
 [contract](QueryContracts.md).
 
 ### Ordinary thought-history bounds

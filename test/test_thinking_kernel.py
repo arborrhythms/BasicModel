@@ -2,36 +2,7 @@
 import os
 import unittest
 import torch
-from thinking import TruthInterval, TRUE, FALSE, UNKNOWN, MIXED, CONFLICTING
 
-class TestTruthInterval(unittest.TestCase):
-    def test_empty_is_unknown(self):
-        iv = TruthInterval.from_evidence([])
-        self.assertEqual((iv.lower, iv.upper, iv.trust), (0.0, 0.0, 0.0))
-        self.assertEqual(iv.status(0.5), UNKNOWN)
-        self.assertEqual(iv.luminosity, 0.0)
-
-    def test_one_sided_true_false(self):
-        t = TruthInterval.from_evidence([(0.9, 0.9, {})])
-        self.assertEqual(t.status(0.5), TRUE)
-        self.assertAlmostEqual(t.luminosity, 0.9)
-        f = TruthInterval.from_evidence([(-0.8, 0.8, {})])
-        self.assertEqual(f.status(0.5), FALSE)
-
-    def test_conflicting_two_sided(self):
-        iv = TruthInterval.from_evidence([(0.8, 0.8, {}), (-0.7, 0.7, {})])
-        self.assertEqual((iv.lower, iv.upper), (-0.7, 0.8))
-        self.assertEqual(iv.status(0.5), CONFLICTING)
-
-    def test_mixed_luminous_straddle(self):
-        # Strong true evidence + weak refutation: straddles 0, only one side
-        # clears tau -> mixed, not conflicting.
-        iv = TruthInterval.from_evidence([(0.8, 0.8, {}), (-0.1, 0.1, {})])
-        self.assertEqual(iv.status(0.5), MIXED)
-
-    def test_below_tau_is_unknown(self):
-        iv = TruthInterval.from_evidence([(0.2, 0.2, {})])
-        self.assertEqual(iv.status(0.5), UNKNOWN)
 
 
 class TestDepth3RelativeEndState(unittest.TestCase):

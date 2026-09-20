@@ -11,8 +11,7 @@
 > on multi-stage chart parses.
 
 Truth-aware model methods plus the query-reasoning helpers in
-`bin/reasoning.py`: `QuerySpec`, `TruthGroundedReasoner`, and the retained
-numerical prediction/loss experiments. `BasicModel.run_selected_thought` is
+`bin/reasoning.py`: `QuerySpec` and `TruthGroundedReasoner`. `BasicModel.run_selected_thought` is
 the one query controller. Builds on the TruthLayer infrastructure
 ([Logic.md](Logic.md)) and grammar composition ([Language.md](Language.md)).
 
@@ -155,8 +154,8 @@ reader. Serving reuses that one understanding and summarizes its actual trace.
 
 The old frame controller, addressee/testimony system, next-op head and
 recurrent neural-tool facade are deleted. There is no facade or
-second What parity selector on the answer path. `bin/thinking.py` retains only
-the numerical `TruthInterval` value and status names. Old parity/next-op policy
+second What parity selector on the answer path. `bin/thinking.py` and its
+unconsumed `TruthInterval` are removed. Old parity/next-op policy
 weights are discarded on checkpoint migration, never relabelled as the new
 policy's logits.
 
@@ -168,45 +167,28 @@ payloads remain unavailable rather than becoming an invented answer.
 
 ## Learning and credit
 
-Natural operator associations are learned from owned word payloads. No natural
-word, including “has,” is anchored to `part` or `whole`. The technical
-`partOf` / `wholeOf` / `isEqual` corpus tokens remain explicit grammar provenance.
-The optional `LanguageSpace.meaning_codec` learns operation, mode and canonical
-operand alignment plus conditional word generation. Its targets are read only
-by the loss after output; model optimizer adoption and checkpoint restoration
-include these language parameters. A captured hard meaning is stable across
-later parameter updates. See [selected linguistic meaning](SelectedMeaning.md)
-for the supervision API, held-out learning evidence and current bounds.
+Natural word → operator association belongs to the compose/generate grammar.
+The standalone `LinguisticMeaningCodec` introduced in `288b56b` was a separate
+interpreter/realiser and has been removed. Its synthetic, noun-only holdout did
+not satisfy item 1. The natural-wording gate remains open; no natural word is
+added to the technical anchor table. See [SelectedMeaning](SelectedMeaning.md).
 
-The normal `SelectedThoughtChooser` sees full, separately masked root, active
-and candidate role triples plus level, pressure and bounded evidence. Its input
-width is `9D + 17`, including two action-kind flags. Root and active payloads
-remain live within the optimizer episode; hard candidates are detached. Native
-IDs and word spellings never supply numerical features. Capacity uses
-`whatThinkingHidden` and `whatThinkingDepth`; changing it is not evidence of
-learned reasoning.
+`SelectedThoughtChooser` receives full masked root/active/candidate roles,
+mode, polarity, bounded bindings/scope and attended visible STM/LTM values.
+Native addresses are alpha-renamed metadata, never scalar payloads. The MLP
+uses `whatThinkingHidden` and `whatThinkingDepth`, with a zero final layer.
 
-There is one hard thought-choice credit objective:
-`selectedThoughtPolicyWeight` multiplies REINFORCE credit from the later
-supplied-answer loss and `0.01 * actual_shared_work`, with one EMA baseline.
-`thinkingLossWeight` and `whatThinkingPolicyWeight` are migration aliases;
-the maximum of the three values enables this same objective once. Checked
-reader results and rewards remain detached; retained ordinary values detach at
-the optimizer boundary. The detailed contract is in [GradientFlow](GradientFlow.md).
+`selectedThoughtPolicyWeight` scales the one thought REINFORCE objective:
+`-answer_error - 0.01 * actual_shared_work`, with one EMA baseline. Checked
+results and reward detach; ordinary live values survive to the optimizer step.
+Old thinking-weight aliases select this objective once. The soft bridge loss
+is removed; nonzero `answerLossWeight` and `predictNextLossWeight` are rejected.
+See [GradientFlow](GradientFlow.md).
 
-The independent `policy_answer_loss` bridge experiment remains available for
-reviewed callers, with `answerLossWeight` defaulting to zero. It preserves
-its soft query loss over detached candidates and performs no recurrent query
-control. The separate next-idea blend, scorer and model prediction route are
-removed; nonzero `predictNextLossWeight` is rejected.
-
-The learning probe trains parthood wording on six noun pairs and then maps
-“a bicycle has a wheel,” its converse and a paraphrase to the same canonical
-operator and roles. Thought checks that identity and generation emits the
-held-out sentence. Possessive controls remain unknown. This closes item 1's
-specific learning gate; residual-based query credit, held-out multistep utility,
-the separate generation-catalogue migration and throughput gates remain open.
-See [Testing](Testing.md#selected-meaning-and-one-controller-september-20).
+The review tests exercise real chooser-selected nested `what(part)` descents
+and credit, separately from multi-edge reader traversal. These are mechanism
+probes. **Learned utility is unproven** until the matched-compute, multi-seed
+comparisons against direct answering and no-subgoal controls pass in item 4.
 
 ## Parser And Conceptual Order
 
@@ -248,7 +230,7 @@ argument/return order.
 | `<queryReasoning>` | `<architecture>` | false | Deprecated alias; `true` maps to ten work units when `reasoningIterations` is unset. |
 | `<parserBackend>` | `<SymbolSpace>` | — | **RETIRED** (Stage 3, 2026-05-27): the chart and STM parsers are gone; the signal router (`LanguageLayer`) is the only parser. Setting this (or `routerKind` / `chartTau` / `chartTopK` / `chartNoiseEps`) raises a loud `ValueError` at config load. |
 | `truthCriterion` | `<architecture>` / `<ConceptualSpace>` / `<WholeSpace>` | 1.0 | Single continuous truth bar (0 $=$ all, 1 $=$ none; **default 1.0 $=$ off**, opt-in by lowering) governing BOTH WholeSpace truth **recording** (record a cell iff its clamped magnitude $\ge$ `truthCriterion`; fires in training + `store_truths` gold ingestion) AND learned relative-sentence **acceptance** (accept iff learn-score $\ge$ `truthCriterion`). Replaces the retired binary `<accumulateTruth>` / `<truthMinMagnitude>` switches. See [STM.md Section 9](STM.md#9-relative-vs-absolute-end-states). |
-| `answerLossWeight` | `<training>` | 0.0 | Policy answer loss weight (NLL on the $[0,1]$ proof score; trains the soft query route, hard proof mask detached). |
+| `answerLossWeight` | `<training>` | 0.0 | Retired; nonzero values are rejected. Use the one `selectedThoughtPolicyWeight` objective. |
 | `predictNextLossWeight` | `<training>` | 0.0 | Retired; nonzero values are rejected. Thought selection uses the normal controller. |
 | `intraLossWeight` | `<training>` | 0.1 | In-STM next-idea loss $\mathcal{L}_\text{intra}$ weight (`IntraSentenceLayer`). See [STM.md Section 6](STM.md#6-intrasentencelayer). |
 | `interLossWeight` | `<training>` | 0.1 | Inter-sentence next-end-state loss $\mathcal{L}_\text{inter}$ weight. See [STM.md Section 11](STM.md#11-inter-sentence-prediction). |

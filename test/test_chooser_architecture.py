@@ -24,7 +24,7 @@ import torch
 from torch import nn
 
 import Language
-from Language import MLPTransformChooser, WhatStepChooser, make_transform_chooser
+from Language import MLPTransformChooser, SelectedThoughtChooser, make_transform_chooser
 from Meaning import ConceptualMeaning
 
 def _meaning():
@@ -80,23 +80,14 @@ def test_default_grammar_head_preserves_legacy_weights_rng_and_outputs(d_model):
         assert torch.equal(actual, legacy.mlp(features).squeeze(-1))
 
 
-def test_default_step_head_preserves_legacy_weights_rng_and_answer_tie():
+def test_default_step_head_preserves_rng_and_first_candidate_tie():
     torch.manual_seed(153)
     rng_before = torch.random.get_rng_state().clone()
-    legacy = nn.Module()
-    with torch.random.fork_rng(devices=[]):
-        legacy.mlp = nn.Sequential(nn.Linear(35, 16), nn.GELU(), nn.Linear(16, 1))
-    nn.init.zeros_(legacy.mlp[-1].weight)
-    nn.init.zeros_(legacy.mlp[-1].bias)
-
-    chooser = WhatStepChooser()
-    _assert_same_state(chooser, legacy)
+    chooser = SelectedThoughtChooser(context_dim=29)
     assert torch.equal(torch.random.get_rng_state(), rng_before)
-    candidates = [{"kind": "answer", "active": True},
-                  {"kind": "open", "position": 0.5}]
-    context = torch.randn(29)
-    assert torch.equal(chooser.logits(context, candidates), torch.zeros(2))
-    choice, log_prob = chooser.choose(context, candidates)
+    contexts = torch.randn(2, 29)
+    assert torch.equal(chooser.logits(contexts, (False, True)), torch.zeros(2))
+    choice, log_prob = chooser.choose(contexts, (False, True))
     assert choice == 0
     assert torch.allclose(log_prob, -torch.tensor(2.0).log())
 
@@ -133,24 +124,22 @@ def test_custom_grammar_capacity_shapes_and_all_hidden_gradients(depth):
 @pytest.mark.parametrize("depth", [1, 3])
 def test_custom_step_capacity_gradients_after_output_head_learns(depth):
     torch.manual_seed(251)
-    chooser = WhatStepChooser(context_dim=7, hidden=11, depth=depth)
+    chooser = SelectedThoughtChooser(context_dim=7, hidden=11, depth=depth)
     layers = _linears(chooser)
     assert [(layer.in_features, layer.out_features) for layer in layers] == (
-        [(13, 11)] + [(11, 11)] * (depth - 1) + [(11, 1)])
+        [(9, 11)] + [(11, 11)] * (depth - 1) + [(11, 1)])
     assert sum(isinstance(layer, nn.GELU) for layer in chooser.mlp) == depth
     assert torch.count_nonzero(layers[-1].weight) == 0
     assert torch.count_nonzero(layers[-1].bias) == 0
-    candidates = [{"kind": "answer", "active": True},
-                  {"kind": "open", "position": 0.5},
-                  {"kind": "open", "position": 1.0, "answered": True}]
-    context = torch.randn(7, requires_grad=True)
-    logits = chooser.logits(context, candidates, pressure=0.4)
+    context = torch.randn(3, 7, requires_grad=True)
+    concludes = (False, False, True)
+    logits = chooser.logits(context, concludes)
     assert logits.shape == (3,) and torch.count_nonzero(logits) == 0
     # Zero final weights deliberately block the initial hidden-state gradient.
     # Once that head changes, the complete configured depth must receive credit.
     with torch.no_grad():
         layers[-1].weight.fill_(0.1)
-    logits = chooser.logits(context, candidates, pressure=0.4)
+    logits = chooser.logits(context, concludes)
     (logits.square().mean() + logits.mean()).backward()
     for name, parameter in chooser.named_parameters():
         assert parameter.grad is not None, name
@@ -166,7 +155,7 @@ def test_custom_step_capacity_gradients_after_output_head_learns(depth):
 ])
 def test_direct_heads_reject_nonpositive_capacity(kind, parameter, value):
     constructor, kwargs = ((MLPTransformChooser, {"d_model": 4, "n_copy": 1, "n_op": 2})
-                           if kind == "grammar" else (WhatStepChooser, {}))
+                           if kind == "grammar" else (SelectedThoughtChooser, {"context_dim": 7}))
     with pytest.raises(ValueError):
         constructor(**kwargs, **{parameter: value})
 
@@ -302,6 +291,6 @@ def test_deep_step_checkpoint_materializes_saved_architecture_and_loads_strictly
     assert len(_linears(restored.selected_thought_choosers["8"])) == 4
     assert _linears(restored.selected_thought_choosers["8"])[0].out_features == 17
     candidates = (False, True)
-    context = torch.randn(2, 9 * 8 + 15)
+    context = torch.randn(2, chooser.context_dim)
     assert torch.equal(chooser.logits(context, candidates),
                        restored.selected_thought_choosers["8"].logits(context, candidates))

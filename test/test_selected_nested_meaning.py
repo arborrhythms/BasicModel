@@ -46,18 +46,6 @@ def test_nested_compose_preserves_complete_child_roles_without_a_write(monkeypat
     assert leaves.grad is not None and bool(leaves.grad.any())
 
 
-def test_learned_lexical_policy_cannot_replace_an_explicit_nested_fold(monkeypatch):
-    _cs, registry, language, entry, _leaves = _nested(monkeypatch)
-    expected = language.program_meaning(entry, registry)
-    language.configure_meaning_learning(registry, (int(entry.word_rows[0]),),
-                                        entry.leaves[:1], hidden=8)
-    monkeypatch.setattr(language.meaning_codec, 'compose',
-                        lambda *_a: pytest.fail('explicit nested meaning was reinterpreted'))
-    actual = language.program_meaning(entry, registry)
-    assert actual.role_refs == expected.role_refs
-    torch.testing.assert_close(actual.constituents[0].roles, expected.constituents[0].roles)
-
-
 @pytest.mark.parametrize("path", ["eager", "pending", "packed"])
 def test_nested_observation_writers_retain_children_without_certifying_them(monkeypatch, path):
     _cs, registry, language, entry, leaves = _nested(monkeypatch)

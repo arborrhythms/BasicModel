@@ -8,7 +8,8 @@ from reasoning import QuerySpec, TruthGroundedReasoner, UNKNOWN
 def test_legacy_materialized_relation_without_a_vp_stays_unverified():
     left, right = torch.eye(6)[:2]
     store = TernaryTruthStore(6, capacity=8)
-    row = TruthGroundedReasoner(store=store).legacy_materialize(left, right, .8)
+    row = store.append_relation(left, torch.zeros_like(left), right,
+                                rel_type=store.REL_PARTOF, trust=.8, kind="unverified")
     assert row >= 0
     assert store.row(row)["kind"] == "unverified"
 

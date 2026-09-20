@@ -18,7 +18,7 @@ occurrence-specific operand in the corresponding chart when available. Their
 balanced split without a witness establishes recomposition, not original-child
 fidelity. Verb reversal uses the actual spectral transform; adverb reversal
 uses eight bounded corrections with its own shared edit weights
-([Language.py:14346](../bin/Language.py#L14346)).
+([Language.py](../bin/Language.py)).
 
 Lossy folds use the actual selected compose kernel over a masked, detached
 per-invocation snapshot. `reconstructionBasisLimit` bounds candidates per side
@@ -26,13 +26,13 @@ per-invocation snapshot. `reconstructionBasisLimit` bounds candidates per side
 Insufficient candidates or an unsupported inverse report incompleteness.
 Inactive rows and candidates are masked before nonlinear work so their unused
 values cannot contaminate active gradients
-([Language.py:14528](../bin/Language.py#L14528)).
+([Language.py](../bin/Language.py)).
 
 Input realization uses the recovered ideas and shared numerical inverse chain;
 it does not enter the free `<generate>` chart. `Understanding` owns the result,
 so later staging and scoring targets cannot change it
-([Models.py:8025](../bin/Models.py#L8025),
-[Understanding.py:67](../bin/Understanding.py#L67)). Output keeps its own
+([Models.py](../bin/Models.py),
+[Understanding.py](../bin/Understanding.py)). Output keeps its own
 generate choices, state and budget; it receives no reconstruction-only operand
 witnesses or basis. The further parameter-catalog and query-controller changes
 remain ordered separately in the
@@ -141,24 +141,24 @@ it once selected is now unconditional. The retired
 
 `SymbolSubSpace` always owns one `WhatInteractionMemory`; expectation uses
 its own `InterSentenceLayer`. Construction is in
-[`SymbolSubSpace.__init__`](../bin/Language.py#L10961), and model thinking
-reads the owner through [`_what_memory`](../bin/Models.py#L7905).
+[`SymbolSubSpace.__init__`](../bin/Language.py), and model thinking
+reads the owner through [`_what_memory`](../bin/Models.py).
 The retired `whatThinkingMemory` switch and discourse delegates are removed.
 
 `sentenceExpectation` defaults to true, with structured NP1/VP/NP2 expectation.
-[`set_sentence_expectation`](../bin/Models.py#L12700) can switch it at runtime;
-[`ensure_sentence_expectation`](../bin/Language.py#L13586) creates its parameters
+[`set_sentence_expectation`](../bin/Models.py) can switch it at runtime;
+[`ensure_sentence_expectation`](../bin/Language.py) creates its parameters
 once and registers them for optimization when first enabled. Re-enabling starts
 a fresh observation stream. Soft packed-brick resets preserve an enabled
 stream; hard resets and document changes make the affected row cold.
-See [`InterSentenceLayer.Reset`](../bin/Layers.py#L10809) and
+See [`InterSentenceLayer.Reset`](../bin/Layers.py) and
 [the integrated specification](plans/2026-09-15-next-sentence-as-the-production-objective.md#11-code-review-2026-09-16-local-role-expectation-implementation).
 
 ## Recorded compose execution
 
 Answer materialization replays its captured compose program through
-[`_replay_program`](../bin/Models.py#L12192).
-[`forward_binary_step`](../bin/Language.py#L14615) executes the recorded
+[`_replay_program`](../bin/Models.py).
+[`forward_binary_step`](../bin/Language.py) executes the recorded
 operator for each live row, preserving the newest operand on inactive rows.
 Eager calls dispatch the selected operator set; compiled calls use conditional
 branches. Both retain the existing operator parameters and input gradients,
@@ -494,35 +494,23 @@ the number of hidden Linear/GELU blocks (default `1`). Every block has the same
 width; a scalar Linear head follows. The 29-dimensional What context still
 enters through a separate linear operation bias, not through this MLP.
 
-`WhatStepChooser` controls ANSWER versus OPEN within `Model.think()`; its
-architecture knobs are `whatThinkingHidden` (default `16`) and
-`whatThinkingDepth` (default `1`). The input remains 29 What-context values plus
-six lexical/memory-status features. Increasing depth does not add missing
-semantic query or candidate representations, expand the action vocabulary, or
-enable episodes. Its final layer remains zero-initialized, so an untrained
-evaluation policy ties and chooses ANSWER.
+`SelectedThoughtChooser` is the sole thought policy. It selects catalogue
+operations or `conclude` on the ordinary boundary controller, including a
+`what(Q)` alternative addressed to the active question's owned occurrence.
+Its input contains complete masked root/active/candidate roles, mode, polarity,
+bounded binding/scope metadata, attended visible STM/LTM and execution context.
+The MLP uses `whatThinkingHidden` (16) and `whatThinkingDepth` (1); a zero final
+layer preserves the execute/conclude baseline. The retired `WhatStepChooser`
+is deleted. The shared-context dimension and limits live in
+[ThoughtFeatures](../bin/ThoughtFeatures.py) and
+[SelectedMeaning](SelectedMeaning.md).
 
-`SelectedThoughtChooser` is distinct from that legacy What step chooser. It
-scores the ordinary boundary controller's legal `query` / `finish` actions.
-For semantic width `D`, it receives root, active and candidate
-`[NP1, VP, NP2]` payloads with a mask per schema (`9D + 9` values), then level,
-closure pressure, true/false support and two evidence flags (`+6`), for a
-`9D + 15` context. Its two action-kind indicators make the first MLP layer
-`9D + 17` wide. Addresses, native IDs, token strings and row numbers remain
-outside that numerical input. The chooser shares the positive
-`whatThinkingHidden` / `whatThinkingDepth` capacity knobs, is lazily rebuilt
-from its saved shape, and has a zero final layer. Its default sequence is the
-safe checked-query baseline followed by `finish`; sampling and REINFORCE credit
-require the separate default-zero `selectedThoughtPolicyWeight`.
-
-Omitting these settings preserves the previous parameter keys, initialization
-and default topology. Changing them is an architecture change: use a matching
-checkpoint/configuration, not an implicit weight migration. A lazily absent
-thought-step module can recover its width/depth from checkpoint tensor shapes;
-an already constructed incompatible module must still fail the weight audit.
-Tests: [chooser architecture](../test/test_chooser_architecture.py). For current
-reasoning limits and the required behavioral tests, see
-[Reasoning](Reasoning.md#learned-thought-capacity-and-current-limits).
+Sampling and supplied-answer REINFORCE use `selectedThoughtPolicyWeight`.
+Old incomplete-context policy checkpoints reset their weights and optimizer
+moments; current schemas restore their saved width/depth strictly. Capacity
+and mechanism tests are not evidence of useful learned questioning.
+See [chooser tests](../test/test_chooser_architecture.py) and
+[review probes](../test/test_thought_review.py).
 
 ### Soft Operator Superposition
 
@@ -825,7 +813,7 @@ catalogue only from the model's explicit `<thought>` declarations. Static
 anchor strings remain whole when the loader expands order alternatives.
 Complete and production ladder grammars include structural `what`, which marks
 a completed question interrogative.
-[Declarations](../bin/Language.py#L1137).
+[Declarations](../bin/Language.py).
 
 The explicit shared-VP adapter forms `[NP1, VP, NP2]` with native references,
 mode, polarity, scope and bindings. `whole` reverses surface operands into the
@@ -857,8 +845,8 @@ declining it is safer than flattening, rebinding, or inventing a semantic role.
 So the direct relation and direct concept-unary routes are live, while broad
 sense selection, paraphrase realization and general syntactic nested-clause
 adaptation remain separate work.
-[Formation](../bin/Queries.py#L1556),
-[dispatch](../bin/Queries.py#L1855),
+[Formation](../bin/Queries.py),
+[dispatch](../bin/Queries.py),
 [full contract](QueryContracts.md). Per-row thought permission is now enforced
 at the completed answer boundary; the normal linguistic derivation adapter,
 sense selection and paraphrase realization remain separate work. See

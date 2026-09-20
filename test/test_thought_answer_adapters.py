@@ -88,25 +88,6 @@ def test_missing_code_is_incomplete_rather_than_a_zero_or_request_answer():
     assert thought_answer_meanings(SimpleNamespace(meaning=query, result=checked)) == ()
 
 
-def test_generated_set_shares_one_row_word_budget():
-    from types import SimpleNamespace
-    from LinguisticMeaning import GeneratedMeaning
-    from Output import AnswerDerivation
-    model, registry, _memory, part, whole = _catalog_world()
-    meaning = registry.form('part', part, whole)
-    calls = []
-    def generate(_meaning, _registry, *, max_words):
-        calls.append(max_words)
-        count = min(5, max_words)
-        return GeneratedMeaning(torch.ones(count, 8), (), count < 5)
-    object.__setattr__(model, 'languageSpace', SimpleNamespace(
-        meaning_codec=object(), generate_meaning=generate))
-    model._walk_budget = lambda: 8
-    words, truncated = model._generate_thought_words(AnswerDerivation(
-        answer_symbol=None, answer_meanings=((meaning, meaning, meaning),)))
-    assert words.shape == (1, 8, 8)
-    assert calls == [8, 3]
-    assert truncated.tolist() == [True]
 
 
 @pytest.mark.parametrize('kind', ['set', 'code', 'subgoal'])
@@ -131,10 +112,9 @@ def test_typed_results_survive_resolve_and_reverse_without_execution(monkeypatch
     entry = AnswerProgram(rows=torch.tensor([1]), word_rows=torch.tensor([1]),
         concept_ids=torch.tensor([part[1]]), activations=torch.ones(1),
         leaves=registry._payload(part)[None], actions=torch.tensor([[0, -1, 0]]),
-        targets=torch.tensor([-1]), end_state=torch.zeros(3, 8),
-        meaning_captured=True, selected_meaning=query)
+        targets=torch.tensor([-1]), end_state=torch.zeros(3, 8))
     object.__setattr__(model, 'languageSpace', SimpleNamespace(
-        program_meaning=lambda item, _registry: item.selected_meaning))
+        program_meaning=lambda item, _registry: query))
     object.__setattr__(model.conceptualSpace, 'stm', SimpleNamespace(concept_dim=8))
     model._materialize_entries = lambda _entries, base, _budget: (base, None)
     model._what_grammar_context = lambda *_a, **_k: (torch.zeros(1, 8), None)

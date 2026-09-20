@@ -48,11 +48,6 @@ class AnswerProgram:
     # address, or numerical feature.  Older programs remain explicitly
     # unprovenanced rather than guessing a first form.
     lexical_forms: Any = None
-    # A learned language decision is frozen at capture, including unknown.
-    # Later optimizer steps cannot reinterpret an earlier completed sentence.
-    meaning_captured: bool = False
-    selected_meaning: Any = field(default=None, repr=False)
-
     _tensor_fields = ("rows", "word_rows", "activations", "leaves", "actions", "targets", "end_state", "concept_ids")
 
     def __post_init__(self) -> None:
@@ -81,12 +76,6 @@ class AnswerProgram:
                 raise TypeError(
                     "program lexical forms must be grammar-form strings or None")
         object.__setattr__(self, "lexical_forms", forms)
-        from Meaning import ConceptualMeaning
-        if self.selected_meaning is not None and (
-                not isinstance(self.selected_meaning, ConceptualMeaning)
-                or self.selected_meaning.roles.shape[-1] != self.leaves.shape[-1]
-                or not self.meaning_captured):
-            raise ValueError("selected program meaning requires a captured full-width value")
         for name in self._tensor_fields:
             object.__setattr__(self, name, getattr(self, name).clone())
 
@@ -95,9 +84,6 @@ class AnswerProgram:
         values = {name: getattr(self, name).detach().to("cpu")
                   for name in self._tensor_fields}
         values["lexical_forms"] = self.lexical_forms
-        values["meaning_captured"] = self.meaning_captured
-        values["selected_meaning"] = (self.selected_meaning.detached()
-                                      if self.selected_meaning is not None else None)
         return type(self)(**values)
 
 

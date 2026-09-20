@@ -46,13 +46,12 @@ When a later catalogue operation refines that request, it replaces only the
 grammar-owned VP and legal operand assignment, preserving the selected source's
 mode, polarity, bindings, and scope through execution and the next choice.
 
-The controller's hard `query` / `finish` choice sees three separately masked
-role schemas — root request, active context and candidate — plus level,
-pressure and bounded actual-evidence flags. For width `D`, that controller
-context is `9D + 15`; the two action-kind features make the MLP input `9D +
-17`. Native IDs, row numbers, addresses and surface tokens remain metadata,
-not numerical features. The chooser is width-owned, lazy/checkpointed and uses
-the existing `whatThinkingHidden` / `whatThinkingDepth` capacity settings.
+The controller's operation/conclude choice sees masked root, active and
+candidate meanings with mode, polarity, bounded binding/scope metadata,
+attended visible STM/LTM, level, pressure and actual evidence. Native references
+are alpha-renamed, preserving binding equality without allocator magnitudes.
+The same meter pays for context reads and execution. See
+[SelectedMeaning](SelectedMeaning.md) for bounds and the current input schema.
 
 `selectedThoughtPolicyWeight` is the one default-off thought REINFORCE objective:
 each eligible row's later answer error and its actual shared work cost,
@@ -93,8 +92,8 @@ controller/history/query selection then passed 136/136 in
 ## Sentence-runtime integration
 
 `resolveAnswer()` opens only its completed rows, then runs an interrogative
-owned program through the ordinary controller before legacy thinking or
-`reverseOutput()`. Assertions and unsupported/nested physical programs remain
+owned program through the ordinary controller before `reverseOutput()`.
+Assertions and unrecoverable physical programs remain
 observations; they cannot execute a checked VP. The boundary guard is checked
 before registry, native or occurrence reads. A standalone/evaluation
 resolution ends its finished ordinary episode immediately; training retains it

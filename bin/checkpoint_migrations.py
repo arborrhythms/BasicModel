@@ -656,6 +656,7 @@ def remap_optimizer_state_by_name(
     *,
     reset_wholespace: bool = False,
     parameter_row_maps: Mapping[str, tuple[int, ...]] | None = None,
+    reset_parameters: tuple[str, ...] = (),
 ) -> OptimizerRemapResult:
     """Return optimizer state aligned to the live named parameter layout.
 
@@ -783,6 +784,10 @@ def remap_optimizer_state_by_name(
             for live_id, entry in zip(live_ids, entries):
                 name = _entry_name(entry)
                 live_names.add(name)
+                if name in reset_parameters:
+                    if name in saved_by_name:
+                        dropped.append(name)
+                    continue
                 if (reset_wholespace
                         and is_reset_wholespace_parameter(name)):
                     saved_reset = saved_by_name.get(name)
