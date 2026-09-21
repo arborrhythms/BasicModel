@@ -31,6 +31,9 @@ source-matched full receipt → BasicModel commit/push → WikiOracle bump/push,
 with the co-author trailer; then stop and report for review. Natural word →
 operator associations use the existing compose/generate grammars. Mechanism
 probes do not satisfy learning gates, and a null result is recorded as null.
+**No test pins a random seed in order to pass** (Alec, 2026-09-21): a fixed
+seed may make a *measurement* reproducible, never an *assertion* true. A test
+that fails at some seed has found a defect; fix the defect, or let it fail.
 Do not remove unused reasoning methods without Alec's review.
 
 - **10. Reconstruction parity baseline.** Extend the fixed-seed probe of
@@ -126,12 +129,17 @@ Do not remove unused reasoning methods without Alec's review.
    Delete the radix-backed non-word-major meronomy path (no legacy paths), and
    remove the stale `dispatch_per_row_reset` note in
    [the fold-ladder plan](doc/plans/2026-09-10-meronomy-fold-ladder.md#open-defects-found-on-the-way)
-   (`taxonomy_parent_map` is now initialised).
+   (`taxonomy_parent_map` is now initialised). Find and bound the expansion that
+  overflows fp32 in an untrained `MentalModel.xml` at seed 3, and then remove
+  the seed pin `f8aa23c` put on its compatibility test: pinning hid the defect
+  it found. List the other tests whose assertions hold only at their pinned
+  seed (the XOR gates are known), and fix or unpin each
+  ([record](doc/Testing.md#item-11-generation-ownership-september-21)).
 - **1. Compiler work.** Forward chooser split/lift once per slot; backward's
    launch-bound kernel count per brick; B24 brick +25% against pre-ladder.
    Exit: sentences/s and peak memory at the run's batch and brick size against
    the July baseline.
-- **0. The full training session**: the long FineWeb run, only with items 12–2
+- **0. The full training session**: the long FineWeb run, only with items 10–2
    done and item 1 measured. Expectation on in `model.xml`; the
    `BasicModel.xml` flip follows the plan's §10 gates. Stop on rising
    expectation discrepancy, a reconstruction regression against item 10's
