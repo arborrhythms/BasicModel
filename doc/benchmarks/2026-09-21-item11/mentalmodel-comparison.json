@@ -1,0 +1,43 @@
+{
+  "baseline_commit": "3f92150fa47101df91099262fe260cfff1167865",
+  "seed": 3,
+  "comparison": {
+    "c": {
+      "equal": true,
+      "shape": [
+        1,
+        8,
+        1
+      ],
+      "sha256": "f65b571611fe0603777fc214207ccf7d1147590839381d760dcf11511a76c2f8"
+    },
+    "r": {
+      "equal": true,
+      "shape": [
+        1,
+        7,
+        17
+      ],
+      "sha256": "4818868196717beec69ca18d92931f482466b4ab247a9d43d2983524bde1dce8"
+    },
+    "x": {
+      "equal": true,
+      "shape": [
+        1,
+        8,
+        104
+      ],
+      "sha256": "7330df03277757cf191805824fa955dfa061c705c7d8bba0496638dcfb8f9d9c"
+    },
+    "candidates": {
+      "equal": true,
+      "shape": [
+        1,
+        7,
+        17,
+        104
+      ],
+      "sha256": "3d2b50c2027f19e1b729c66e4c477b1166bb151f886f6f560fcf54dcc7964a6f"
+    }
+  }
+}

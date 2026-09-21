@@ -10391,7 +10391,7 @@ class BasicModel(BaseModel):
                 walked = words
                 if not self.training or not torch.is_grad_enabled():
                     texts = self._generated_word_text(words, n_emitted)
-        with self._synthesis_guard():
+        with self.languageSpace.generation_scope(), self._synthesis_guard():
             if walked is not None:
                 # words (concept width) -> percepts through the tied reverse
                 # chain, the same realisation the reconstruction uses

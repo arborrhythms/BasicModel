@@ -16,6 +16,13 @@ The last product-code commit is `639034cc36e0c1cc7630a88783539cd0fe696be9`.
 The bounded test workflow checkpoint is `88425276f8dfdb31bc034bded213c4d5df236d10`.
 No candidate below has been installed into the main runtime by this checkpoint.
 
+**September 21 follow-up:** the remaining generation candidate is rebased by
+countdown item 11 under the superseding shared-operator contract. Its copied
+weights and global gradient-budget assumptions are not installed. The archive
+and patch below remain unchanged historical evidence; see the
+[current implementation, probe dispositions and receipts](../../benchmarks/2026-09-21-item11/README.md)
+before considering any archived helper or assertion.
+
 - Current runner/device tests: **29 passed in 138.27 seconds**, peak 0.56 GiB.
 - Last full default attempt: **exit 124**, 2,907/4,458 completed, 5,136 seconds.
   It timed out; no replacement full run was started.

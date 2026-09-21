@@ -205,15 +205,7 @@ def test_native_answer_uses_owned_ideas_without_dense_symbol_state(tmp_path, out
 
 
 def _dedicated_answer_parameters(m):
-    modules = list(getattr(m, "question_conditioners", {}).values())
-    modules.extend([getattr(m, "what_step_chooser", None),
-                    getattr(m, "ltm_attention", None),
-                    getattr(m.languageSpace, "generate_policy", None)])
-    for space in (m.conceptualSpace, m.perceptualSpace, m.outputSpace):
-        modules.extend(getattr(space, name, None)
-                       for name in ("synthesis_layer", "percept_adapter"))
-    return list({id(p): p for module in modules if module is not None
-                 for p in module.parameters() if p.requires_grad}.values())
+    return [p for p in m.synthesis_parameters() if p.requires_grad]
 
 
 def _answer_training_probe(m, opt, questions):
@@ -298,17 +290,11 @@ def test_native_realized_answer_loss_trains_the_active_conditioner(tmp_path, out
 @pytest.mark.parametrize("output_loop", [False, True])
 def test_available_input_targets_do_not_train_answer_modules_after_adam(output_loop):
     from copy import deepcopy
-    from Layers import WhatInteractionMemory
     from test_output_walk import _model
     m = _model()
-    m.output_in_loop = output_loop
     m._tensor_peer_while_eager = True
     m._chart_compose_per_word = lambda: None
-    m.what_thinking_iterations = 2
-    m.what_thinking_policy_weight = 1.0
-    if m._what_memory() is None:
-        object.__setattr__(m.symbolSpace, "what_memory",
-                           WhatInteractionMemory(batch=2, capacity=64))
+    m.output_policy_weight = 1.0
     data = m.inputSpace.data
     saved_addresses = deepcopy(data.source_addresses["train"])
     had_outputs = data.has_supervised_outputs
@@ -318,9 +304,14 @@ def test_available_input_targets_do_not_train_answer_modules_after_adam(output_l
     opt = m.getOptimizer(lr=1e-3)
     try:
         supplied = (What.supervised(0), What.supervised(1))
+        # Warm the live generate chooser's Adam moments before testing both
+        # output modes. Shared maps may still learn from reconstruction;
+        # only dedicated answer parameters must stop receiving credit.
         got = _answer_training_probe(m, opt, supplied)
         assert got["changed"][got["active_index"]]
-        assert "what_step_policy" in got["recorded"]
+        assert "output_policy" in got["recorded"]
+        assert all(opt.state.get(p) for p in m.languageSpace.generate_policy.parameters())
+        m.output_in_loop = output_loop
         for family, questions in (
                 ("present", (What.present(0), What.present(1))),
                 ("past", (What.past(1), What.past(2))),
@@ -331,14 +322,14 @@ def test_available_input_targets_do_not_train_answer_modules_after_adam(output_l
             else:
                 assert all(data.what(q).available for q in questions)
             baselines = (m.__dict__.get("_output_policy_baseline"),
-                         m.__dict__.get("_what_policy_baseline"))
+                         m.__dict__.get("_selected_thought_policy_baseline"))
             got = _answer_training_probe(m, opt, questions)
             assert got["mask"] == [False, False], family
             assert got["answer_loss"] == 0 and not got["answer_requires_grad"], family
             assert all(g is None for g in got["total_grads"]), family
             assert not any(got["changed"]), family
             assert baselines == (m.__dict__.get("_output_policy_baseline"),
-                                 m.__dict__.get("_what_policy_baseline")), family
+                                 m.__dict__.get("_selected_thought_policy_baseline")), family
     finally:
         data.has_supervised_outputs = had_outputs
         data.source_addresses["train"] = saved_addresses

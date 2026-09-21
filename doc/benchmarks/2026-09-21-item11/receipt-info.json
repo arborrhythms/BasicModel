@@ -1,0 +1,40 @@
+{
+  "baseline_commit": "3f92150fa47101df91099262fe260cfff1167865",
+  "full_run": "20260921-085748-b59239",
+  "command": "DEVELOPER_DIR=/Library/Developer/CommandLineTools .venv/bin/python test/test_report.py --batch-size 8 --max-files 1",
+  "source_sha256": "215308c7bed6922c72e6599319f6fefd62e124bb0032b75d10e183d77f3c1cd0",
+  "source_files": 630,
+  "selected": 4695,
+  "completed": 4695,
+  "outcomes": {
+    "passed": 4364,
+    "skipped": 330,
+    "xfailed": 1
+  },
+  "exit_code": 0,
+  "elapsed_seconds": 1059.33625212498,
+  "peak_aggregate_memory_bytes": 15819051024,
+  "compile_cache_retries": [],
+  "affected_run": "20260921-085306-14909c",
+  "broad_affected_run": "20260921-081431-7fdbd2",
+  "supervised_integration_run": "20260921-081850-49fd99",
+  "phase_reports": {
+    "passed": 4368,
+    "skipped": 330,
+    "xfailed": 1
+  },
+  "repeated_pass_reports": {
+    "test/test_use_flags.py::TestOrthogonalFlags::test_flags_match_expected": 5
+  },
+  "expected_failures": [
+    "test/test_stm_recon_from_cleared_cache.py::test_topk_recovered_words_overlap_input"
+  ],
+  "documentation_run": {
+    "run": "20260921-091700-f39470",
+    "selected": 69,
+    "completed": 69,
+    "exit_code": 0,
+    "result": "documentation-result.json.gz",
+    "source_manifest": "documentation-source-manifest.json"
+  }
+}

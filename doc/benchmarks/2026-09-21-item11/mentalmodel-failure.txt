@@ -1,0 +1,55 @@
+.......F                                                                 [100%]
+=================================== FAILURES ===================================
+________________ TestBackwardCompat.test_mentalmodel_unchanged _________________
+test/test_hierarchical.py:140: in test_mentalmodel_unchanged
+    result = model.forward(x)
+             ^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:9061: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:24510: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:18204: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:22511: in _forward_body_per_word
+    last_cs = self._run_peer_word_pipeline(out_slot, _n_trips)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22238: in _run_peer_word_pipeline
+    trace = StaticPeerPipeline(width).run(
+bin/Models.py:551: in run
+    feedback = stage_c(b_fifo[c_idx], c_idx)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22236: in stage_c
+    return self._peer_stage_c(b_result, p)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21309: in _peer_stage_c
+    return self.languageSpace.forward(b_result.symbolic_snapshot)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:16097: in forward
+    self._symbol_space.forward(symbolic_snapshot)
+bin/Language.py:16317: in forward
+    self._compose_eager(snap)
+.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1548: in _fn
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+bin/Language.py:16330: in _compose_eager
+    self.compose(snap)
+bin/Language.py:13043: in compose
+    self.routing_state = self._build_routing_state(
+bin/Language.py:13500: in _build_routing_state
+    rule_probs = self._synthesize_rule_probs(
+bin/Language.py:13185: in _synthesize_rule_probs
+    soft = self._synthesize_rule_probs_soft(
+bin/Language.py:13292: in _synthesize_rule_probs_soft
+    _check_finite("binary reduce_marginal_op", rmo)
+bin/Language.py:13246: in _check_finite
+    raise ValueError(
+E   ValueError: SymbolSubSpace._synthesize_rule_probs_soft: non-finite binary reduce_marginal_op marginal (fail-loud per numerical policy).
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 96-dim embedding (words added at runtime)
+=========================== short test summary info ============================
+FAILED test/test_hierarchical.py::TestBackwardCompat::test_mentalmodel_unchanged
+1 failed, 7 passed in 3.99s

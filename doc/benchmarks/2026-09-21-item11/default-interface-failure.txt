@@ -1,0 +1,18 @@
+..F....                                                                  [100%]
+=================================== FAILURES ===================================
+_____ test_parallel_aligned_meta_model_does_not_enable_sparse_lookup_mode ______
+test/test_row_local_concept_optimizer.py:295: in test_parallel_aligned_meta_model_does_not_enable_sparse_lookup_mode
+    model.create(
+bin/Models.py:7203: in create
+    return self._create_per_stage(
+bin/Models.py:17578: in _create_per_stage
+    self.symbolSpace = SymbolSpace(
+bin/Language.py:16197: in __init__
+    self.languageSpace = LanguageSpace(self)
+                         ^^^^^^^^^^^^^^^^^^^
+bin/Language.py:14933: in __init__
+    raise ValueError(f"unresolved generate rule: {rule.canonical}")
+E   ValueError: unresolved generate rule: P -> sigma.reverse(P)
+=========================== short test summary info ============================
+FAILED test/test_row_local_concept_optimizer.py::test_parallel_aligned_meta_model_does_not_enable_sparse_lookup_mode
+1 failed, 6 passed in 3.21s

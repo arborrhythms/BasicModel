@@ -24,8 +24,7 @@ Work follows
 [KernelRetirement](doc/KernelRetirement.md),
 [ExpectationRetention](doc/ExpectationRetention.md) and
 [Testing](doc/Testing.md). The September 17 handoff and preserved candidates
-are in [the checkpoint](doc/checkpoints/2026-09-17-production-spec/README.md);
-only the generation catalogue (item 11) remains uninstalled.
+are in [the checkpoint](doc/checkpoints/2026-09-17-production-spec/README.md).
 
 **Publish rule, every item:** failing probe → fix → affected files → one
 source-matched full receipt → BasicModel commit/push → WikiOracle bump/push,
@@ -34,11 +33,6 @@ operator associations use the existing compose/generate grammars. Mechanism
 probes do not satisfy learning gates, and a null result is recorded as null.
 Do not remove unused reasoning methods without Alec's review.
 
-- **11. Generation ownership and end-to-end output.** Rebase the preserved
-    generation-catalogue candidate (it no longer applies to primary); validate
-    checkpoint/optimizer migration and normal supervised output under the
-    gradient contract (output error stops at the concluded idea; shared
-    operators train); keep GradientFlow.md current.
 - **10. Reconstruction parity baseline.** Extend the fixed-seed probe of
     `6bf211a` ([probe](doc/benchmarks/2026-09-21-item1d/probe.py)) with
     packed against single-sentence parity and record both in the plan's §8.2
@@ -148,6 +142,7 @@ Everything that is decided in direction but not on this path is in
 
 ### Done (newest first)
 
+- Item 11 completes generation catalogue ownership, scoped output dispatch, checkpoint/Adam migration and supervised gradient boundaries ([receipt](doc/Testing.md#item-11-generation-ownership-september-21)).
 - `afdcdfa` Item 12 completes the expectation review corrections: role-normalized retention surprise, indexed pairs, reading purity, bounded cache recovery and gradient norm ratios ([receipt](doc/Testing.md#item-12-review-corrections-september-21)).
 - `7d7dc4f` Item 2 implements negative-image expectation and residual credit; measured joint/useful-query learning remains open under item 9 ([design](doc/ExpectationRetention.md), [receipt](doc/Testing.md#negative-image-expectation-september-21)).
 - `6bf211a` Item 1d restores rotation-owned concept codes and completes the 1b/1c review corrections ([GradientFlow](doc/GradientFlow.md), [receipt](doc/Testing.md#item-1d-review-corrections-september-21)).

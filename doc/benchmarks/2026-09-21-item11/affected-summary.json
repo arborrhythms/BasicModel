@@ -1,0 +1,13 @@
+{
+  "run": "20260921-081431-7fdbd2",
+  "selected": 230,
+  "completed": 230,
+  "outcomes": {
+    "passed": 212,
+    "skipped": 18
+  },
+  "exit_code": 0,
+  "elapsed_seconds": 234.6588171669864,
+  "compile_cache_retries": [],
+  "source_sha256": "d8722750142b320a8816c576286962bdf1106ea609d1a58d6220892cb95b305d"
+}

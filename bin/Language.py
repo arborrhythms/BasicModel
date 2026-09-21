@@ -6536,7 +6536,13 @@ class LanguageLayer(Layer):
 
         rule_id = int(decoded_id)
         method_name = grammar.method_name(rule_id)
-        layer = syntactic_layer._by_name.get(method_name)
+        owner = getattr(syntactic_layer, '_word_space', None)
+        generation = getattr(owner, '_generation_space', None)
+        # Output may dispatch only its declared catalogue. Reconstruction
+        # replays the recorded compose rule, using the same numerical owner.
+        layer = (generation.resolve_generation_op(syntactic_layer.space_role, method_name)
+                 if generation is not None and generation._generation_active
+                 else syntactic_layer._by_name.get(method_name))
         if layer is None:
             # Post-2026-05-29 grammar-file-refactor (\xa75): rule's class
             # space_role may differ from this syntactic_layer's space_role (e.g.
@@ -9416,7 +9422,10 @@ class SyntacticLayer(Layer):
         rule_name = self._next_rule_name(direction='generate')
         if rule_name is None:
             return subspace
-        layer = self._by_name.get(rule_name)
+        generation = getattr(ss, '_generation_space', None)
+        layer = (generation.resolve_generation_op(self.space_role, rule_name)
+                 if generation is not None and generation._generation_active
+                 else self._by_name.get(rule_name))
         if layer is None:
             return subspace                 # cross-space_role routing skip
         if not getattr(layer, 'invertible', False):
@@ -13814,8 +13823,8 @@ class SymbolSubSpace(SubSpace):
         if cls is None:
             return None
         if cls is SurfaceLayer:
-            # Parameter ownership is the ordinary compose catalogue; generate
-            # resolves the identical instance until the catalogue split.
+            # The host owns this numerical map once; the separate compose and
+            # generate catalogues retain references to that identical instance.
             width = int(self.muxedSize)
             layer = cls(nInput=width, nOutput=width)
             self.register_host_layer(space_role, rule_name, layer)
@@ -14906,16 +14915,50 @@ class LanguageSpace(nn.Module):
         # children; the RHS arity of a binary reverse is only one parent.
         from util import TheXMLConfig as _cfg
         walk_on = bool(_cfg.training("outputInLoop", False))
+        width = int(getattr(symbol_space.subspace, "muxedSize", 0))
         catalog = {1: [], 2: []}
-        for offset, rule in enumerate(TheGrammar.rules_downward if walk_on else ()):
+        resolved = {}
+        default_only = getattr(symbol_space.subspace, "_grammar_is_default_only", False)
+        default_interfaces = {}
+        # Natural-fold dispatch uses exact per-space hosts. An inactive space
+        # may retain a declaration in the grammar but has no executable fold;
+        # borrowing another space's sigma/pi would also borrow its geometry.
+        if width and default_only:
+            hosts = symbol_space.subspace._host_layer_registry
+            for role, rows in symbol_space.subspace._default_generate_rules().items():
+                for row in rows:
+                    for rule_id in row:
+                        rule = TheGrammar.rules[rule_id]
+                        identity = (role, _dispatch_method_name_for_rule(rule))
+                        if identity in hosts:
+                            default_interfaces[rule_id] = (identity, hosts[identity])
+                            resolved[identity] = hosts[identity]
+        # A zero-width scheduling harness has no numerical dispatcher. Every
+        # real model snapshots its declarations, including non-loop output;
+        # only the learned walk chooser is gated by outputInLoop.
+        for offset, rule in enumerate(TheGrammar.rules_downward if width else ()):
             arity = len(str(rule.lhs).split(','))
             if arity not in catalog or not rule.method_name:
                 continue
-            op = symbol_space.subspace._resolve_rule_layer(
-                rule.space_role, _dispatch_method_name_for_rule(rule))
+            identity = (rule.space_role, _dispatch_method_name_for_rule(rule))
+            if default_only:
+                interface = default_interfaces.get(len(TheGrammar.rules_upward) + offset)
+                if interface is None:
+                    continue
+                identity, op = interface
+            else:
+                op = resolved.get(identity)
+                if op is None:
+                    op = symbol_space.subspace._resolve_rule_layer(*identity)
             if op is None:
                 raise ValueError(f"unresolved generate rule: {rule.canonical}")
+            resolved[identity] = op
             catalog[arity].append((rule.space_role, offset, rule, op))
+        # Non-owning views: no copied weights, state-dict aliases, parameter
+        # adoption or RNG consumption. The host keeps its checkpoint identity.
+        object.__setattr__(self, "_generation_resolved", resolved)
+        object.__setattr__(symbol_space.subspace, "_generation_space", self)
+        self._generation_active = False
         for arity in (2, 1):
             catalog[arity].sort(key=lambda entry: entry[:2])
             entries = catalog[arity]
@@ -14931,7 +14974,7 @@ class LanguageSpace(nn.Module):
                     tuple(entry[2].method_name for entry in entries))
         keys = [self._generate_rule_key(entry[2], arity)
                 for arity in (2, 1) for entry in catalog[arity]] + [0]
-        cw = int(symbol_space.subspace.muxedSize) if walk_on else 0
+        cw = width if walk_on else 0
         # Legacy action keys exist only to migrate the output-owned chooser.
         # A non-output LanguageSpace may legitimately be assembled from a
         # local chooser harness whose rule ids have no configured grammar
@@ -14955,6 +14998,35 @@ class LanguageSpace(nn.Module):
                 # output loop then emits the idea's slots as they are, and
                 # expansions are learned from supplied-answer credit.
                 self.generate_policy.bias[-1] = 2.0
+
+    @contextmanager
+    def generation_scope(self):
+        """Scope ordinary output dispatch to this model's declared catalogue.
+
+        The model already scopes its mutable synthesis carriers. This host
+        phase bit restores on errors and nested calls; compiled dispatch can
+        guard its value without reading a process-global context variable.
+        """
+        previous = self._generation_active
+        self._generation_active = True
+        try:
+            yield
+        finally:
+            self._generation_active = previous
+
+    def resolve_generation_op(self, space_role, method):
+        """Resolve a declared interface to its shared numerical host."""
+        exact = self._generation_resolved.get((str(space_role), str(method)))
+        if exact is not None:
+            return exact
+        # Structural aliases can share a host across roles; natural folds
+        # have space-specific geometry and require the exact interface.
+        if method not in SymbolSubSpace._NATURAL_FOLD_METHODS:
+            matches = {id(op): op for (_role, name), op in self._generation_resolved.items()
+                       if name == method}
+            if len(matches) == 1:
+                return next(iter(matches.values()))
+        raise KeyError(f"undeclared or ambiguous generate operator: {space_role}:{method}")
 
     @staticmethod
     def _generate_rule_key(rule, arity):

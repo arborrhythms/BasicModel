@@ -1,0 +1,13 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/tmp/item11_mental_probe.py",
+    "/tmp/basicmodel-item11-baseline"
+  ],
+  "pid": 86226,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 3386756480,
+  "elapsed_seconds": 13.939104584045708,
+  "log": "/tmp/item11-mental-1.log"
+}

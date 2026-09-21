@@ -1,0 +1,45 @@
+FFFF                                                                     [100%]
+=================================== FAILURES ===================================
+______ test_declared_generation_catalog_shares_one_optimizer_owner[False] ______
+test/test_generation_catalog.py:23: in test_declared_generation_catalog_shares_one_optimizer_owner
+    assert set(names) == {rule.method_name for rule in TheGrammar.rules_downward}
+E   AssertionError: assert set() == {'adverb', 'b... 'equal', ...}
+E
+E     Extra items in the right set:
+E     'equal'
+E     'tense'
+E     'exist'
+E     'chunk'
+E     'disjunction'...
+E
+E     ...Full output truncated (18 lines hidden), use '-vv' to show
+______ test_declared_generation_catalog_shares_one_optimizer_owner[True] _______
+test/test_generation_catalog.py:26: in test_declared_generation_catalog_shares_one_optimizer_owner
+    assert language.resolve_generation_op("CS", "lift") is shared
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'LanguageSpace' object has no attribute 'resolve_generation_op'
+_ test_alias_catalog_reordering_preserves_shared_identity_without_rng_or_state _
+test/test_generation_catalog.py:69: in test_alias_catalog_reordering_preserves_shared_identity_without_rng_or_state
+    first = catalog(("CS", "SS"))
+            ^^^^^^^^^^^^^^^^^^^^^
+test/test_generation_catalog.py:63: in catalog
+    assert result.resolve_generation_op("CS", "sum") is source
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'LanguageSpace' object has no attribute 'resolve_generation_op'
+_ test_output_dispatch_scope_uses_declared_shared_inverse_and_resets_on_error __
+test/test_generation_catalog.py:91: in test_output_dispatch_scope_uses_declared_shared_inverse_and_resets_on_error
+    resolve = language.resolve_generation_op
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'LanguageSpace' object has no attribute 'resolve_generation_op'
+=========================== short test summary info ============================
+FAILED test/test_generation_catalog.py::test_declared_generation_catalog_shares_one_optimizer_owner[False]
+FAILED test/test_generation_catalog.py::test_declared_generation_catalog_shares_one_optimizer_owner[True]
+FAILED test/test_generation_catalog.py::test_alias_catalog_reordering_preserves_shared_identity_without_rng_or_state
+FAILED test/test_generation_catalog.py::test_output_dispatch_scope_uses_declared_shared_inverse_and_resets_on_error
+4 failed in 2.77s

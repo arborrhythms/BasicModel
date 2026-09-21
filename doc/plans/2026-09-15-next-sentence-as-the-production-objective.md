@@ -1477,7 +1477,12 @@ the earlier proposal to copy and then independently train operator weights is
 superseded. Generation receives a detached concluded idea. A catalog migration
 must preserve rule-meaning-based chooser rows and optimizer ownership without
 reopening that state path. Test actual gradient reach and parameter identity
-separately; the remaining generation-catalog work is NEXT item 3.
+separately. Countdown item 11 rebases the preserved candidate onto this
+contract: declared catalogue views exist in both output modes, numerical
+hosts retain their identity, ordinary output dispatch has a scoped catalogue,
+and chooser/Adam rows migrate by meaning. The independent-copy proposal is
+not installed. [Implementation evidence and dispositions](../benchmarks/2026-09-21-item11/README.md)
+and [current gradient contract](../GradientFlow.md).
 
 ### 8.10 Queries as tools at inter-sentence prediction (decided)
 
@@ -1499,7 +1504,7 @@ records the precise estimator, migration and prior-view boundary. Ordinary MSE
 has no policy baseline to share. The mechanism is implemented; useful queries
 and joint causal benefit remain unproven in the
 [measurements](../benchmarks/2026-09-21-item2/README.md), including a null
-reasoning-work comparison. Those learning gates remain in todo item 2.
+reasoning-work comparison. Those learning gates remain in countdown item 9.
 
 The predictor may train comprehension through live source representations
 under §8.4; thought effects and chooser observations are detached. Targets
@@ -1644,7 +1649,9 @@ queries may introduce their use. Preserve those methods until that decision.
    checkpoint migration. Shared numerical operators and tied inverses remain
    permitted under §8.4; independent catalogs do not require copied operator
    weights. Test catalog ownership, optimizer membership and the detached
-   concluded-idea handoff separately. This is NEXT item 3.
+   concluded-idea handoff separately. Countdown item 11 implements this under
+   the shared-operator contract; its source-matched landing receipt is in
+   [Testing](../Testing.md).
 7. **Objective-local representation learning (§8.4).** Verify live
    predictor-to-encoder feedback, detached observed targets, ordinary weighted
    objectives without supplied answers, shared operator ownership, AMP, sparse

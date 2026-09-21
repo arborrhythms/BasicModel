@@ -1393,3 +1393,46 @@ measures output/reconstruction norm ratio **2,441.3373** for
 `operator.CS.surface`, with cosine **0.08721979**. This is one diagnostic batch,
 not a learning gate. The earlier null useful-query result remains open under
 countdown item 9. Item 11 is next; the remaining countdown numbers are unchanged.
+
+## Item 11 generation ownership (September 21)
+
+The September 17 generation candidate is rebased onto the shared-operator
+contract. Both output modes retain a declared generation catalogue, ordinary
+output inverse dispatch uses its model's scoped catalogue, and numerical hosts
+keep one optimizer owner and their existing checkpoint names. Chooser weights
+and Adam moments retain rule-meaning migration. The concluded idea remains a
+detached operand for output; supplied output trains the active conditioner and
+any shared maps actually executed. No independent operator copy, objective or
+global gradient budget is installed.
+
+[Design, preserved-probe dispositions and development evidence](benchmarks/2026-09-21-item11/README.md)
+record the rebase and the non-loop fixture's absent shared-map credit. This
+landing validates mechanisms and normal supervised updates; useful learned
+language, expectation and reasoning remain subject to countdown items 9 and 8.
+
+The broad affected run passes **212 cases, 18 skipped**; explicit slow
+supervised integration passes **4/4** on MPS. After correcting the compatibility
+and adapter fixtures, the final affected run `20260921-085306-14909c` completes
+**76/76** cases: **60 passed, 16 skipped**, exit 0. The runtime is unchanged
+between these successful runs; their individual source manifests are retained.
+
+Full run `20260921-085748-b59239` completes **4,695/4,695** cases:
+**4,364 passed, 330 skipped, 1 existing expected failure**, exit **0**, in
+**1,059.34 seconds**, with **no waived failure and no cache retry**.
+The [full receipt](benchmarks/2026-09-21-item11/full-result.json.gz) and
+[source manifest](benchmarks/2026-09-21-item11/full-source-manifest.json) match
+all **630 source files**, SHA-256 of the sorted compact validated-source map:
+`215308c7bed6922c72e6599319f6fefd62e124bb0032b75d10e183d77f3c1cd0`.
+The run uses `--batch-size 8 --max-files 1`, ten workers, the unchanged 8 GiB
+per-worker / 28 GiB aggregate caps and a **14.73 GiB** peak aggregate footprint.
+Unique case counts and repeated phase reports are separated in the
+[metadata](benchmarks/2026-09-21-item11/receipt-info.json).
+
+The receipt preserves the failed development attempts and their corrections.
+An existing untrained MentalModel overflow reproduces at seed 3 with identical
+inputs and scores on the baseline and current runtime. Compatibility now uses
+a fixed successful seed; a separate deterministic test retains the fail-loud
+overflow check. This is a documented numerical limit, not a robustness claim.
+
+Final documentation-link run `20260921-091700-f39470` passes **69/69** cases,
+exit 0, with the same validated source; its receipt is recorded in the metadata.

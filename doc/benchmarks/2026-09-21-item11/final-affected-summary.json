@@ -1,0 +1,15 @@
+{
+  "run": "20260921-085306-14909c",
+  "selected": 76,
+  "completed": 76,
+  "outcomes": {
+    "passed": 60,
+    "skipped": 16
+  },
+  "exit_code": 0,
+  "elapsed_seconds": 76.36919512500754,
+  "peak_aggregate_memory_bytes": 8331741232,
+  "compile_cache_retries": [],
+  "source_files": 630,
+  "source_sha256": "215308c7bed6922c72e6599319f6fefd62e124bb0032b75d10e183d77f3c1cd0"
+}

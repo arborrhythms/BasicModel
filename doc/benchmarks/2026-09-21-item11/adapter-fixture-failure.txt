@@ -1,0 +1,40 @@
+....FFF                                                                  [100%]
+=================================== FAILURES ===================================
+____ test_typed_results_survive_resolve_and_reverse_without_execution[set] _____
+test/test_thought_answer_adapters.py:136: in test_typed_results_survive_resolve_and_reverse_without_execution
+    result = model.reverseOutput(understanding, derivation)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10394: in reverseOutput
+    with self.languageSpace.generation_scope(), self._synthesis_guard():
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'types.SimpleNamespace' object has no attribute 'generation_scope'
+____ test_typed_results_survive_resolve_and_reverse_without_execution[code] ____
+test/test_thought_answer_adapters.py:136: in test_typed_results_survive_resolve_and_reverse_without_execution
+    result = model.reverseOutput(understanding, derivation)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10394: in reverseOutput
+    with self.languageSpace.generation_scope(), self._synthesis_guard():
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'types.SimpleNamespace' object has no attribute 'generation_scope'
+__ test_typed_results_survive_resolve_and_reverse_without_execution[subgoal] ___
+test/test_thought_answer_adapters.py:136: in test_typed_results_survive_resolve_and_reverse_without_execution
+    result = model.reverseOutput(understanding, derivation)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10394: in reverseOutput
+    with self.languageSpace.generation_scope(), self._synthesis_guard():
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'types.SimpleNamespace' object has no attribute 'generation_scope'
+=========================== short test summary info ============================
+FAILED test/test_thought_answer_adapters.py::test_typed_results_survive_resolve_and_reverse_without_execution[set]
+FAILED test/test_thought_answer_adapters.py::test_typed_results_survive_resolve_and_reverse_without_execution[code]
+FAILED test/test_thought_answer_adapters.py::test_typed_results_survive_resolve_and_reverse_without_execution[subgoal]
+3 failed, 4 passed in 3.68s

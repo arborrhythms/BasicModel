@@ -34,6 +34,25 @@ cannot train a predictor or composer through the concluded-state path.
 It can update an operator that is used again by generation.
 [Implementation](../bin/Models.py), [owned values](../bin/Output.py).
 
+The generation catalogue snapshots the declared interfaces in both output
+modes. `outputInLoop` controls its learned walk chooser, not the existence of
+the catalogue. Ordinary output inverse dispatch enters a model-local scope
+and resolves only declared generation interfaces; input reconstruction retains
+its recorded compose dispatch. Both resolve to the same numerical host,
+including an existing two-pass natural-fold adapter. Scope restoration covers
+nested calls and exceptions. No operator is copied, adopted a second time by
+the optimizer, or given a new checkpoint key.
+Default natural-fold interfaces are included only where that space has an
+actual host. An inactive space's declaration neither creates a walk action
+nor borrows a differently shaped fold from another space.
+
+Chooser weights and Adam moments still migrate by rule meaning when actions
+move, disappear or are introduced. New actions keep their initialized weights
+and zero moments. Shared numerical maps keep their existing host names and
+moments. The catalogue adds no numerical-state migration or independent loss.
+[Catalogue and integration checks](../test/test_generation_catalog.py),
+[chooser migration checks](../test/test_output_walk.py).
+
 ```mermaid
 flowchart LR
     C[Compose] --> I[Input idea]
@@ -142,8 +161,9 @@ Thought faces and hard native/taxonomy/LTM reads are parameter-free. Checked
 Set members, code results and prediction effects cannot reopen their readers'
 graphs through output. The chooser observes detached state and learns only from
 its explicit policy objective; its reward and actual shared-work charge are
-also detached. Residual-based query credit remains item 2, and held-out causal
-utility remains unproven under item 4.
+also detached. Residual-based query credit is implemented; its expectation
+learning gates remain in countdown item 9. Held-out causal utility remains
+unproven under item 8.
 [Controller](SelectedMeaning.md), [thought contracts](QueryContracts.md).
 
 Ordinary episode history may retain a composed request while that episode is
@@ -177,6 +197,15 @@ coverage is preserved in the two files above. An invertible-family learning
 probe still checks that prediction can improve an exactly reconstructable
 representation. Full source-matched receipts and explicit test dispositions
 belong in [Testing](Testing.md).
+
+The preserved September 17 generation candidate's independently trained
+copies and reconstruction-priority budget assertions are superseded by §8.4.
+Its catalogue, alias, dispatch, checkpoint and supervised-output checks are
+rebased onto shared ownership. The ordinary native fixture selects no shared
+numerical map and trains its dedicated conditioner; the native output walk
+trains shared `lift` and `lower` maps from supplied answers. Both cut the live
+conclusion derivative. These are one-step mechanism checks, not an output
+learning gate. [Item 11 evidence and probe dispositions](benchmarks/2026-09-21-item11/README.md).
 
 ## Expectation at the seal (September 21, item 2)
 

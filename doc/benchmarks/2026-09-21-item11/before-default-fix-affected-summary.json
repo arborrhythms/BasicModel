@@ -1,0 +1,12 @@
+{
+  "run": "20260921-074839-542f45",
+  "selected": 214,
+  "completed": 214,
+  "outcomes": {
+    "passed": 196,
+    "skipped": 18
+  },
+  "exit_code": 0,
+  "elapsed_seconds": 234.24633599998197,
+  "compile_cache_retries": []
+}

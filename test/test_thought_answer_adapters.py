@@ -114,7 +114,9 @@ def test_typed_results_survive_resolve_and_reverse_without_execution(monkeypatch
         leaves=registry._payload(part)[None], actions=torch.tensor([[0, -1, 0]]),
         targets=torch.tensor([-1]), end_state=torch.zeros(3, 8))
     object.__setattr__(model, 'languageSpace', SimpleNamespace(
-        program_meaning=lambda item, _registry: query))
+        program_meaning=lambda item, _registry: query,
+        # This adapter fixture stubs every numerical synthesis operation.
+        generation_scope=nullcontext))
     object.__setattr__(model.conceptualSpace, 'stm', SimpleNamespace(concept_dim=8))
     model._materialize_entries = lambda _entries, base, _budget: (base, None)
     model._what_grammar_context = lambda *_a, **_k: (torch.zeros(1, 8), None)
