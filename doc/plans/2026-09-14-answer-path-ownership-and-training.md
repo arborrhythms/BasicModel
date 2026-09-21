@@ -344,7 +344,7 @@ the staged input bytes keeping rows → decoding unchanged; change a
 row's stored surface → decoding changes; a row whose surface is unknown
 is absent from the candidates (the null candidate covers it).
 
-### 3.7 Item 7: the production answer symbol (found here, not yet reported)
+### 3.7 Item 7: the production answer symbol (closed by `69233d1` / `b705a48`)
 
 Evidence. On `data/BasicModel.xml` the understanding's
 `conceptual_state` is None and `symbolic_state` is the SS activation
@@ -565,7 +565,7 @@ user files still match their pre-execution hashes and remain uncommitted.
    and 136-wide percepts without dense seeds; only supplied answers train
    the realized output or its policies, including after an Adam update.
 
-## 6. Open questions for Alec
+## 6. Questions for Alec, with his answers
 
 2026-09-15 decisions and clarification during execution:
 

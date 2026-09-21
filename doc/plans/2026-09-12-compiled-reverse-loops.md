@@ -231,8 +231,10 @@ as the generate walk (`<outputInLoop>`, `_output_generate_walk`, the
 second compiled call in `reverseOutput`) with the output gates of mixed
 per-row lengths, truncation, fullgraph parity and invariance to
 reconstruction-only state (`test/test_output_walk.py`); the learned
-generate policy and the single compiled segment of contract 6 remain open
-with slice 4. The first production-width run of the traversal ran out of
+generate policy and the single compiled segment of contract 6 remained open
+with slice 4 at that point (both since settled: the learned generate policy
+landed with slice 4, and contract 6 was reconciled on 2026-09-13 as two
+compiled calls; see below). The first production-width run of the traversal ran out of
 accelerator memory: the loop's autograd stacks every carried tensor once
 per step, so the traversal now scores each popped word on the spot and
 carries only running sums (the recovered-idea slab is a test diagnostic),

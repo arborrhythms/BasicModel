@@ -8,24 +8,161 @@
 > starts. When a spec or plan leaves residue, that residue is a line here or
 > it is lost. Reconcile this file at every landing, before the commit.
 
-## NEXT — the integrated production/thinking spec
+## Countdown to the full training session
+
+Items count **down**: the next item to do has the highest number and **item 0
+is the full training session**. (They are bullets, not a numbered list, because
+Markdown renumbers a numbered list upward.) The order is the intended order; an item may
+be taken early when it does not depend on a higher-numbered one. Codex builds;
+Claude writes the specs and reviews each landing (Alec, 2026-09-21). "Done"
+lines below keep the numbers their items had when they landed.
 
 Work follows
 [2026-09-15-next-sentence-as-the-production-objective.md](doc/plans/2026-09-15-next-sentence-as-the-production-objective.md)
-§10 and its completion gates. **Item 1's bounded supervised wording gate and items 1b–1d are complete.
-Item 2's implementation and measurements are landed for review; its joint and
-useful-query learning gates remain open. Item 3 has not started.**
-Natural word → operator associations use the existing compose/generate grammars.
-Structural-preference and routing-share measurements
-remain design goals under item 4. Expectation-specific questioning utility
-remains unproven under item 2.
-Current contracts,
-limits and receipts are in
+§10 and its completion gates. Current contracts, limits and receipts are in
 [SelectedMeaning](doc/SelectedMeaning.md),
-[KernelRetirement](doc/KernelRetirement.md) and [Testing](doc/Testing.md).
-The September 17 handoff and preserved candidates are in
-[the checkpoint](doc/checkpoints/2026-09-17-production-spec/README.md);
-only the generation catalogue (item 3) remains uninstalled.
+[KernelRetirement](doc/KernelRetirement.md),
+[ExpectationRetention](doc/ExpectationRetention.md) and
+[Testing](doc/Testing.md). The September 17 handoff and preserved candidates
+are in [the checkpoint](doc/checkpoints/2026-09-17-production-spec/README.md);
+only the generation catalogue (item 11) remains uninstalled.
+
+**Publish rule, every item:** failing probe → fix → affected files → one
+source-matched full receipt → BasicModel commit/push → WikiOracle bump/push,
+with the co-author trailer; then stop and report for review. Natural word →
+operator associations use the existing compose/generate grammars. Mechanism
+probes do not satisfy learning gates, and a null result is recorded as null.
+Do not remove unused reasoning methods without Alec's review.
+
+- **12. Review corrections for the expectation landing** (`7d7dc4f`; Claude
+    review, 2026-09-21). The mechanism is accepted; these are small.
+    (a) `surprise` is the mean over all three roles, so an idea row, with one
+    role in play, scores a third of an equally surprising relation row.
+    Normalise over the roles in play (occupied in the observation, or expected
+    by presence) before forgetting compares rows.
+    (b) Add the priority surface and the reading scope to the purity test's
+    bit-identical snapshot (spec test 28, second half).
+    (c) `expectation_pair` finds its counterpart by scanning the store twice;
+    use the occurrence index. Forgetting will call it per candidate row.
+    (d) The archived full receipt exits 1 on a stale compiled-kernel cache.
+    Have the harness refresh or retry a compile-cache load failure once and
+    report it as such, so an environment fault can neither mask nor mimic a
+    test failure in a long run.
+    (e) Log the norm ratio beside the cosine in the operator-gradient report:
+    the one operator measured so far has output about 2,400 times
+    reconstruction, which a cosine-only opposition rule cannot see.
+    Exit: tests for (a)–(c), and a clean full receipt.
+- **11. Generation ownership and end-to-end output.** Rebase the preserved
+    generation-catalogue candidate (it no longer applies to primary); validate
+    checkpoint/optimizer migration and normal supervised output under the
+    gradient contract (output error stops at the concluded idea; shared
+    operators train); keep GradientFlow.md current.
+- **10. Reconstruction parity baseline.** Extend the fixed-seed probe of
+    `6bf211a` ([probe](doc/benchmarks/2026-09-21-item1d/probe.py)) with
+    packed against single-sentence parity and record both in the plan's §8.2
+    with the commit. Items 7 and 5 must leave it unchanged.
+- **9. Expectation learning gates.** The negative-image mechanism and residual
+   query credit are in (`7d7dc4f`,
+   [measurements](doc/benchmarks/2026-09-21-item2/README.md)): the predictor
+   learns in controlled settings and a related continuation leaves a smaller
+   remainder than an unrelated one, but the native runs are seven optimizer
+   steps on one seed, prediction does not beat its context-free control, and
+   the reasoning comparison is null. Exit: on the packed native config, at
+   least three seeds and a run length declared in advance — ordered prediction
+   beats the shuffled and context-free controls at equal updates, with
+   reconstruction and discrimination no worse than the reconstruction-only
+   control; and thought work at matched answer error with the conceived
+   remainder against the full observation as evidence (spec test 32, plan
+   §10). A null that survives that run is recorded, and Alec decides.
+- **8. Evidence: learned utility and structural preference.** Prefer
+   understandable structural operators when they carry the meaning; any opaque
+   operator must be an ordinary grammar-MLP choice, with the structural face
+   preferred at equal fit. Measure the opaque routing share and its decrease
+   as structural coverage grows on the same corpus. Held-out causal utility
+   against direct-answer and equal-compute baselines across seeds;
+   reconstruction/discrimination controls; warmed training throughput; the
+   preserved arbitrary-symbol poison probes and renamed-vocabulary controls.
+   Numerical values or symbol IDs never supply learner arithmetic or answer
+   seeds. Learned utility stays explicitly unproven until these comparisons
+   pass.
+- **7. Two truths** ([spec](doc/specs/2026-09-16-two-truths-ideas-and-relations.md)),
+   new session. One S = one LTM row: an absolute S fuses to one point and
+   writes an idea row with derivation and `refs`; a relative S (generic
+   subject, or any S referencing a relation) stays three slots and writes a
+   relation row of kind part / implies / operator over row references.
+   Clause-level seal as grammar (`NP → S`, `NP → REF(S)`), one relation writer
+   at the seal, `REL_OTHER` and the reducible/ineffable routing deleted, the
+   WholeSpace META taxonomy retired for a concept-level index, luminosity
+   restricted to idea rows, the sentence never setting its own trust; do not
+   assume one word per META (§3.4). **Object permanence by reference** (§3.5):
+   translating a word to its object may tie it to an earlier noun or sentence
+   in the recency buffer; identity is imputed and carried by the predictor.
+   Then the distributional context widens from the sentence to the
+   **situation** the predictor anchors, under three `model.xml` variables
+   (plan §8.4 point 2: situation weight, anchor bound, expectation weight);
+   the frames that anticipatory `what`s already hand the predictor are its
+   start. Exit: the twenty-one §7 tests, the §8 docs, item 10's baseline
+   unchanged, and the `true` operator over the sealed clause declared in
+   `<thought>` and executable.
+- **6. Stored-idea generativity.** Forgetting's dropping of derivations depends
+   on it. Item 1c's probe reports zero compound recovery
+   ([measurements](doc/AccessibleMind.md#measured-limits)). It trains for 8
+   small updates, so it mostly measures a split/stop policy that has not
+   learned to split (it does within ~100). The deeper limit is the operator:
+   with the correct split actions *forced*, the tied inverse of `lower` returns
+   children about 65% from their codes at depth 1, they project to the wrong
+   code, and 400 updates of the probe's training do not move that. Exit:
+   recovery reported separately for forced actions (the operator's inverse)
+   and free running (the policy, trained to convergence), by depth and chain
+   length; clean-up decoding evaluated for lift / lower — bounded candidate
+   search through the forward kernel (`_bounded_binary_reconstruction`) in
+   place of the reference-free affine inverse. Until a recovery rate is
+   measured, item 5 must not drop derivations.
+- **5. Forgetting** ([spec](doc/specs/2026-09-16-forgetting.md)), after item 7
+   (needs `refs` and every S writing a row). Document-boundary pass from the
+   high-water to the low-water mark deleting the lowest-value unprotected
+   rows; value = `|trust|` + utility (1 − deducibility) + luminosity
+   contribution; cascade, reference remap, dependents rebuilt, the human
+   profile's age term; and **detail before rows** (§4a): wording, then
+   subordinate rows, then the row, gradually, coarsening the referring row
+   instead of cascading where the operand's point survives. Exit: the fourteen
+   §7 tests, the accessible-mind spec's test 31 (retention by surprise), the
+   §6 elements in schema/`model.xml`/Params.md, the §8 docs.
+- **4. Run harness and resume test.** One logger per interval: reconstruction
+   loss; expectation discrepancy; LTM occupancy, forgetting passes, rows
+   deleted per origin, value cut-off; luminosity of provisioned truths; the
+   per-shared-operator gradient cosine and norm ratio — reconstruction against
+   expectation, and against output where answers are supplied — with the
+   operators in persistent opposition named; the held-out two-truths §7
+   test-12 probe and a fixed reconstruction sample. And a resume test proving
+   a mid-epoch checkpoint restores cursor, stream count, `refs` / surprise
+   columns and forgetting counters with the next batch byte-identical. Exit:
+   one command on a small config; the test in the suite.
+- **3. Corpus at target size.** Raise `maxDocs`, exercise multi-shard if needed,
+   measure sentence-list/address-table memory and loader time, confirm
+   `resume_skip` with the run's stream count. Exit: the load recorded and
+   `maxDocs`/`shardDir`/stream count in the run config.
+- **2. Housekeeping.** Restore safe, faster bounded-test batching: the default
+   256-case/16-file and 32-case/4-file workers exceeded the 8 GiB cap, and
+   eight-case/one-file batches pass the same selection; do not raise caps or
+   omit cases; reconsider [fixture reuse](doc/plans/2026-09-17-bounded-fixture-reuse.md)
+   if useful ([evidence](doc/Testing.md#forward-owned-lexical-forms-september-19)).
+   Delete the radix-backed non-word-major meronomy path (no legacy paths), and
+   remove the stale `dispatch_per_row_reset` note in
+   [the fold-ladder plan](doc/plans/2026-09-10-meronomy-fold-ladder.md#open-defects-found-on-the-way)
+   (`taxonomy_parent_map` is now initialised).
+- **1. Compiler work.** Forward chooser split/lift once per slot; backward's
+   launch-bound kernel count per brick; B24 brick +25% against pre-ladder.
+   Exit: sentences/s and peak memory at the run's batch and brick size against
+   the July baseline.
+- **0. The full training session**: the long FineWeb run, only with items 12–2
+   done and item 1 measured. Expectation on in `model.xml`; the
+   `BasicModel.xml` flip follows the plan's §10 gates. Stop on rising
+   expectation discrepancy, a reconstruction regression against item 10's
+   baseline, or a forgetting pass deleting protected rows.
+
+Everything that is decided in direction but not on this path is in
+[FutureWork](doc/FutureWork.md).
 
 ### Done (newest first)
 
@@ -69,198 +206,5 @@ only the generation catalogue (item 3) remains uninstalled.
 - `3a5703e` Checked query execution phases ([QueryPhases](doc/QueryPhases.md)).
 - `985b594` Replayable ordinary thought history ([ThoughtHistory](doc/ThoughtHistory.md)).
 - `3ffb465` Bounded runner foundations, 512 MiB VQ tile, MPS routing receipt.
-
-### Open
-
-2. **Expectation learning gates remain open.** Negative-image mechanisms and
-   residual credit are implemented ([ExpectationRetention](doc/ExpectationRetention.md)).
-   The [item-2 measurements](doc/benchmarks/2026-09-21-item2/README.md) show
-   bounded prediction and semantic-remainder gains, but useful anticipation,
-   joint representation benefit with reconstruction/discrimination, and reduced
-   thought work at matched answer error remain unproven (spec test 32 and
-   plan §10). The reasoning comparison is null. Keep this residue under item 2;
-   mechanism probes and policy updates do not close it. Test 31 still belongs
-   to forgetting; situation context still belongs to two-truths §3.5.
-3. **Generation ownership and end-to-end output.** Rebase the preserved
-   generation-catalogue candidate (it no longer applies to primary); validate
-   checkpoint/optimizer migration and normal supervised output under item
-   1b's contract (output error stops at the concluded idea; shared operators
-   train); keep GradientFlow.md current.
-4. **Evidence/design goals and documentation.** Prefer understandable structural
-   operators when
-   they carry the meaning; any opaque operator must be an ordinary grammar-MLP
-   choice, with the structural face preferred at equal fit. Measure the opaque
-   routing share and its decrease as structural coverage grows on the same
-   corpus. These preference/routing measurements remain design goals.
-   Held-out causal utility against direct-answer and equal-compute baselines
-   across seeds,
-   reconstruction/discrimination controls, warmed training throughput; the
-   preserved arbitrary-symbol poison probes and renamed-vocabulary controls.
-   Numerical values or symbol IDs never supply learner arithmetic or answer
-   seeds. Learned utility stays explicitly unproven until these comparisons
-   pass, even when mechanism and regression tests pass. Record null results honestly.
-5. **Publish each item:** failing probe → fix → affected files → one
-   source-matched full receipt → BasicModel commit/push → WikiOracle bump/push,
-   with the co-author trailer. Do not remove unused reasoning methods without
-   Alec's review.
-
-**Exit:** the §10 gates have evidence and both repositories are pushed. Then
-the pre-FineWeb list below.
-
-## Before the long FineWeb run
-
-### Codex
-
-1. **Two-truths spec** ([doc/specs/2026-09-16-two-truths-ideas-and-relations.md](doc/specs/2026-09-16-two-truths-ideas-and-relations.md)),
-   new session. One S = one LTM row: an absolute S fuses to one point and
-   writes an idea row with derivation and `refs`; a relative S (generic
-   subject, or any S referencing a relation) stays three slots and writes a
-   relation row of kind part / implies / operator over row references.
-   Clause-level seal as grammar (`NP → S`, `NP → REF(S)`), one relation
-   writer at the seal, `REL_OTHER` and the reducible/ineffable routing
-   deleted, the WholeSpace META taxonomy retired for a concept-level index,
-   luminosity restricted to idea rows, the sentence never setting its own
-   trust; do not assume one word per META (§3.4); **object permanence by
-   reference** (§3.5, Alec 2026-09-21): translating a word to its object may
-   tie it to an earlier noun or sentence in the recency buffer; then the
-   distributional context widens from the sentence to the **situation** the
-   predictor anchors, under three `model.xml` variables (plan §8.4 point 2:
-   situation weight, anchor bound, expectation weight). Exit: the
-   twenty-one §7 tests,
-   the §8 docs, the item 6 reconstruction baseline unchanged, **and the
-   `true` operator over the sealed clause declared in `<thought>` and
-   executable** (deferred here by the unification plan). Claude reviews.
-2. **Forgetting spec** ([doc/specs/2026-09-16-forgetting.md](doc/specs/2026-09-16-forgetting.md)),
-   after item 1 (needs `refs` and every S writing a row). Document-boundary
-   pass from the high-water to the low-water mark deleting the lowest-value
-   unprotected rows; value = `|trust|` (Alec, September 18) + utility
-   (1 − deducibility) + luminosity contribution; cascade, reference remap,
-   dependents rebuilt, the human profile's age term; and **detail before
-   rows** (§4a, Alec 2026-09-20): wording, then subordinate rows, then the
-   row, gradually, coarsening the referring row instead of cascading where
-   the operand's point survives. Exit: the fourteen §7 tests, the
-   accessible-mind spec's test 31 (retention by surprise),
-   the §6 elements in schema/`model.xml`/Params.md, the §8 docs.
-3. **Expectation review** (plan [§11](doc/plans/2026-09-15-next-sentence-as-the-production-objective.md#11-code-review-2026-09-16-local-role-expectation-implementation)):
-   discourse `Reset` honours `hard`; rename to "expectation", on in
-   `model.xml`, staging tolerant of unaddressed rows; one owner for the What
-   interaction memory; the seal-layout assertion; stale references. Exit:
-   the §11.1–§11.4 tests and the suite green.
-
-### Claude
-
-4. **Reconstruction baseline** before Codex merges item 1: reconstruction
-   loss and packed/single-sentence parity at a fixed seed and config,
-   recorded in the plan's §8.2 with the commit; gate the merge on matching.
-5. **Run harness and resume test:** one logger per interval (reconstruction
-   loss; expectation discrepancy; LTM occupancy, forgetting passes, rows
-   deleted per origin, value cut-off; luminosity of provisioned truths;
-   the per-shared-operator gradient cosine of NEXT item 1b — reconstruction
-   vs expectation, and vs output where answers are supplied — with the
-   operators showing persistent negative cosine named in the report;
-   held-out two-truths §7 test-12 probe plus a fixed reconstruction sample)
-   and a resume test proving a mid-epoch checkpoint restores cursor, stream
-   count, `refs`/surprise columns and forgetting counters with the next batch
-   byte-identical. Exit: one command on a small config; the test in the suite.
-6. **Corpus at target size:** raise `maxDocs`, exercise multi-shard if needed,
-   measure sentence-list/address-table memory and loader time, confirm
-   `resume_skip` with the run's stream count. Exit: the load recorded and
-   `maxDocs`/`shardDir`/stream count in the run config.
-
-### Then
-
-7. **Compiler work:** forward chooser split/lift once per slot; backward's
-   launch-bound kernel count per brick; B24 brick +25% vs pre-ladder. Exit:
-   sentences/s and peak memory at the run's batch and brick size against the
-   July baseline.
-8. **The long FineWeb run**, only with 1–6 done and 7 measured. Expectation on
-   in `model.xml`; the `BasicModel.xml` flip follows the plan's §10 gates.
-   Stop on rising expectation discrepancy, a reconstruction regression against
-   item 4, or a forgetting pass deleting protected rows.
-
-### Done
-
-- Xcode licence accepted (Alec, September 18).
-- Trust term sign: `|trust|` (Alec, September 18).
-- Thought operations as compose/thought rules (`ea92851`, NEXT item 0).
-
-## Residues of earlier specs (audit 2026-09-19)
-
-Small, real, and not on the critical path. Fold each into the nearest Codex
-change; delete the line with the commit.
-
-- **Stored-idea generativity — not small: forgetting §4a's dropping of
-  derivations depends on it.** Item 1c's probe reports zero compound recovery
-  ([measurements](doc/AccessibleMind.md#measured-limits)). It trains for 8
-  small updates, so it mostly measures a split/stop policy that has not learned
-  to split (it does within ~100). The deeper limit is the operator: with the
-  correct split actions *forced*, the tied inverse of `lower` returns children
-  about 65% from their codes at depth 1, they project to the wrong code, and
-  400 updates of the probe's training do not move that. Report the two
-  separately (forced actions = the operator's inverse; free-running = the
-  policy, trained to convergence), and evaluate clean-up decoding for lift /
-  lower: bounded candidate search through the forward kernel
-  (`_bounded_binary_reconstruction`) in place of the reference-free affine
-  inverse. Until a recovery rate is measured, forgetting must not drop
-  derivations.
-- **Bounded test batches:** default 256-case/16-file and 32-case/4-file
-  workers exceeded the 8 GiB cap; eight-case/one-file batches pass the same
-  default selection. Restore safe, faster batching without raising caps or
-  omitting cases; reconsider [fixture reuse](doc/plans/2026-09-17-bounded-fixture-reuse.md)
-  if useful ([evidence](doc/Testing.md#forward-owned-lexical-forms-september-19)).
-- **Fold ladder:** delete the radix-backed non-word-major meronomy path (no
-  legacy paths); confirm the `dispatch_per_row_reset` note in
-  [the plan](doc/plans/2026-09-10-meronomy-fold-ladder.md#open-defects-found-on-the-way)
-  is stale (`taxonomy_parent_map` is now initialised) and remove it.
-- **Plan status hygiene:** [compiled reverse loops](doc/plans/2026-09-12-compiled-reverse-loops.md)
-  still lists contract 6 and the future predictor as open (both decided /
-  landed); [answer-path §6](doc/plans/2026-09-14-answer-path-ownership-and-training.md)
-  is titled "Open questions" but records answers — retitle; §3.7 closed by
-  `69233d1`/`b705a48`.
-
-### Superseded — no work (recorded so nobody re-derives them)
-
-- Mathematical thinking's lexical `{ANSWER, OPEN, EXECUTE}` policy, its §12
-  Q1/Q2/Q5 and self-cloning from verifier traces: replaced by the one grammar
-  of thought (NEXT item 1). Q3/Q4 (numeral representation, clause lexing) and
-  "multi-digit wholes, then counting" remain an evaluation target for the
-  unified controller — in [FutureWork](doc/FutureWork.md), not here.
-- Fold-ladder Q1–Q3 (admission knobs, coverage schedule, category-utility
-  floor): tuning questions with no evidence until the long run produces some.
-- The answer path and owned output programs, queries-as-prediction with
-  residual credit, surface prediction, derivation decay, cross-document
-  context, the n-ary META chooser: [FutureWork](doc/FutureWork.md).
-
-## Deferred Teacher-to-LTM persistence
-
-- When the deferred NP-VP transition cache is implemented, retain only
-  detached, row-local student-produced records. Do not describe that cache as
-  already implemented in Teacher v1 or commit reconstructions/predictions
-  directly to the persistent/global truth store.
-- Define an admission policy for student-generated memories with provenance,
-  confidence, `asserted_at`, represented/target-event support, revision, and
-  contradiction handling.
-- Prevent Teacher-only clean targets and future information from entering
-  student-visible LTM before evaluation.
-- Add leakage, replay, correction, and document-boundary tests before enabling
-  persistent writes.
-
-## Objective-address conditioning
-
-- Follow the [unified Teacher specification](doc/specs/2026-07-27-teaching-modes-and-next-iteration.md)
-  and its gated milestones. The [What and spacetime design](doc/WhatSpacetimeDesign.md)
-  describes the interface ownership and chooser/stack context.
-- Keep corpus/snapshot/document/sentence/span coordinates on the Teacher query
-  seam; never reuse or overwrite the model's subjective `.where`/`.when`.
-- Split target observation/event time from source snapshot validity; retain the
-  latter as provenance rather than overloading objective `when`.
-- After the clean Teacher throughput gate, add a student-side encoder that
-  embeds corpus/snapshot/split IDs categorically and document/sentence/span
-  positions as ordered coordinates. Raw hash magnitude must have no meaning.
-- Prove that an addressed clean input round-trips through the privileged
-  `Teacher.Data(address)`, keeping `Teacher.What(where, when)` only as a
-  controller-side compatibility adapter. Measure whether the separate
-  `model.what(address)` uses addresses on partial and blank lessons without
-  accessing private clean content.
-- Treat DOI and source date as optional aliases/provenance. FineWeb has neither;
-  retain shard SHA-256 and corpus release metadata instead of fabricating them.
+- Expectation review (plan §11): implemented and validated on September 16 ([record](doc/plans/2026-09-15-next-sentence-as-the-production-objective.md#116-implementation-and-validation-september-16)).
+- Xcode licence accepted; trust term sign `|trust|` (Alec, September 18).

@@ -7,7 +7,11 @@
 > new target. It also replaces Q/A pairing and parity with depth-labelled
 > thought contexts and implicit serial LIFO return. Preserve append-only
 > history and compatible budget, target-isolation and credit contracts;
-> arithmetic remains a data/evaluation domain only.
+> arithmetic remains a data/evaluation domain only. Since 2026-09-20 the one
+> grammar of thought ([SelectedMeaning](../SelectedMeaning.md)) replaces the
+> lexical `{ANSWER, OPEN, EXECUTE}` policy, its §12 Q1/Q2/Q5 and self-cloning
+> from verifier traces; numeral representation and counting remain an
+> evaluation target in [FutureWork](../FutureWork.md).
 
 > **Status:** specification, 2026-09-09, formalized from the Codex execution
 > draft (archived verbatim as
