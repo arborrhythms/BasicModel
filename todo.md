@@ -13,8 +13,9 @@
 Work follows
 [2026-09-15-next-sentence-as-the-production-objective.md](doc/plans/2026-09-15-next-sentence-as-the-production-objective.md)
 §10 and its completion gates. **Item 1's bounded supervised wording gate is
-complete; items 1b and 1c are complete. Next: 1d, then item 2.** Natural word → operator associations use the existing
-compose/generate grammars. Structural-preference and routing-share measurements
+complete; items 1b, 1c and 1d are complete. Next: item 2, after review of 1d.**
+Natural word → operator associations use the existing compose/generate grammars.
+Structural-preference and routing-share measurements
 remain design goals; learned questioning utility remains unproven under item 4.
 Current contracts,
 limits and receipts are in
@@ -26,6 +27,7 @@ only the generation catalogue (item 3) remains uninstalled.
 
 ### Done (newest first)
 
+- This completion commit: Item 1d restores rotation-owned concept codes and completes the 1b/1c review corrections ([GradientFlow](doc/GradientFlow.md), [receipt](doc/Testing.md#item-1d-review-corrections-september-21)).
 - `101dc22` Item 1c complete in mechanism: checked subsystem effects, indexed cued retrieval and retained frames; compound recovery remains unproven ([AccessibleMind](doc/AccessibleMind.md), [receipt](doc/Testing.md#accessible-mind-effects-september-20)).
 - `7c2fa5a` Item 1b complete: objective-local state gradients and measured shared operator/codebook credit ([GradientFlow](doc/GradientFlow.md), [receipt](doc/Testing.md#gradient-factorization-september-20)).
 - `6a6bb21` Item 1 complete: grammar-owned wording on real parsed text, held-out complete wordings/nouns, converse/sense controls and full-vocabulary generation/recomposition ([evidence and receipt](doc/Testing.md#working-grammar-wording-gate-september-20)).
@@ -67,41 +69,6 @@ only the generation catalogue (item 3) remains uninstalled.
 
 ### Open
 
-1d. **Review corrections for 1b and 1c** (Claude review, 2026-09-20). Its own
-   landing, before item 2: (b) changes the training baseline every later
-   measurement rests on.
-   (a) *Scope of the state cut.* It holds on the prepared-answer path
-   (`answerSynthesis` true: 14 of 71 configs, production included); the direct
-   head still trains the whole state. Say so in
-   [GradientFlow](doc/GradientFlow.md), and reject or warn on a config that has
-   a reconstruction objective and supervised outputs without `answerSynthesis`.
-   (b) *The concept dictionary's update law.* `7c2fa5a` moved it from the
-   unit-sphere rotation updater (outside autograd) to the optimizer in 11
-   configs. **Decided (Alec, 2026-09-21): concept atoms stay on the unit
-   sphere and are updated by rotation**, so that an inner product with an
-   incoming vector preserves that vector's magnitude. Adam does not keep them
-   there; the rotation updater stays the dictionary's one owner. **Codes by
-   distribution, maps by the objectives** (plan §8.4 point 2): restore
-   `conceptualContextLearningRate` and the non-grad dictionary in the 11
-   configs; no objective's gradient reaches a code's position; the objectives
-   train the operators and the code-to-operation projections. Drop the
-   `codebook.*` entries from the gradient diagnostic, and correct
-   [GradientFlow](doc/GradientFlow.md) and [Training](doc/Training.md).
-   (c) *Dissonance is not yet measured anywhere real.* The only config with
-   `branchDiagnosticsEvery` on has no output objective. Turn it on in one
-   config that has one; a diagnostic failure warns and never aborts training;
-   the opposition streak is checkpointed and an unused-operator sample does
-   not reset it.
-   (d) Remove the deleted projection from [Training](doc/Training.md),
-   [STM](doc/STM.md) and the plan's later sections.
-   (e) Add `lxml` to `requirements.txt`: every schema case skips today (the 11
-   changed configs do validate under `xmllint`).
-   (f) `QuerySignature` still carries free-form scope strings beside the
-   checked subsystem scopes: one vocabulary.
-   (g) Hot path: `apply_thought_effect` rebuilds a reverse map over every
-   codebook row per effect, and `leaf_codes` is re-concatenated per append.
-   Cache the map, grow the column geometrically, and report sentences/s with
-   thought on.
 2. **Expectation as a negative image** (Alec 2026-09-20; design:
    [spec §2.6](doc/specs/2026-09-20-accessible-mind-subsystems.md#26-expectation);
    meaning: [Philosophy](doc/Philosophy.md#expectation-as-a-negative-image-attention-as-exclusion-2026-09-20)).

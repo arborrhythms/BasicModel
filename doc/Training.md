@@ -2,7 +2,16 @@
 
 The current cross-architecture reference is
 [Gradient flow across the architecture](GradientFlow.md): what each objective
-trains, where gradients stop, and how their shared contribution is balanced.
+trains, where gradients stop, and how shared operator gradients are measured.
+
+**Concept dictionary ownership (September 21).** Codes are placed by word
+distribution; objectives train maps. The 11 canonical configs changed in
+`7c2fa5a` restore `conceptualContextLearningRate=0.01`: one detached
+sentence-local SBOW reducer rotates unit-sphere atoms after the optimizer
+step. The shared dictionary is a persistent non-grad buffer, absent from
+optimizer groups and operator-gradient diagnostics. Reconstruction, output
+and expectation train operators and code-to-operation projections, never
+these code positions. Situation context is deferred to two-truths §3.5.
 
 > For the current ownership of the training lifecycle and the proposed split
 > between launch resolution, corpus cursors, host orchestration, compiled tensor
@@ -49,8 +58,9 @@ For the current production expectation rollout, use the
 The enabled sentence predictor defaults to distinct local NP1/VP/NP2 targets
 and an occupancy objective. The root-only predictor remains an explicit
 benchmark option. Prediction targets and durable history are detached;
-preceding source encodings within a training step remain live under the joint
-gradient budget. Cursor document addresses reset the affected transient
+preceding source encodings within a training step remain live under the
+objective-local state boundaries in [GradientFlow](GradientFlow.md). Cursor
+document addresses reset the affected transient
 prediction view without discarding already-scored pairs. No supplied-answer
 label is manufactured by this objective. Expectation is on by default, with
 `interLossWeight=0.1`, `armaScale=0` and `interContrastiveWeight=0`.
@@ -78,10 +88,12 @@ Network training climbs five objectives, from substrate-building reconstruction
 to deliberate question answering. The order is not arbitrary — it is the
 architecture's **two learning rules** in their natural developmental order:
 
-- **EMA / occurrence** moves the codebooks: concepts form by being *seen*, with
+- **Distribution / occurrence** moves the concept dictionary: concepts form by
+  being *seen*, with
   no gradient and no goal. This is *prediction as substrate* — unconscious,
   statistical, **System 1**. You cannot ask "why did the empire fall?" until
-  *empire* and *fall* are codebook rows, and those are EMA-built by exposure.
+  *empire* and *fall* are codebook rows, placed by exposure through the
+  sentence-local rotation rule above. EMA is used by other configured VQ stores.
 - **Gradient on a task error** moves the attention readouts and the relation
   store: the model learns *where to look* and *what relates to what* by being
   *tested* — directed, credit-assigned, **System 2**.
@@ -249,13 +261,12 @@ separately weighted local chooser objective remains optional
 ([Language.py](../bin/Language.py),
 [Language.py](../bin/Language.py)). Following a recorded reverse
 index adds no selection gradient of its own. Reconstruction owns no decoder
-parameters. The downstream
-gradient projection and combined norm budget remain those in
-[Models.py](../bin/Models.py).
+parameters. Shared operators receive the ordinary sum of objective gradients;
+the concluded-answer state cut is specified in [GradientFlow](GradientFlow.md).
 
 Separate reconstruction compilation caches its backward and disables donation
-of saved buffers. This permits the repeated gradient reads required by joint
-balancing even when the first backward used the cache only once. The compiler
+of saved buffers. This permits repeated gradient reads for per-objective
+diagnostics even when the first backward used the cache only once. The compiler
 normalizes this PyTorch build's disabled-donation metadata without permanently
 changing its global setting ([Models.py](../bin/Models.py)).
 
@@ -395,9 +406,11 @@ enabled (CBOW, SBOW, or BOTH), implements EM-like alternation:
 | `BOTH` | SBOW post-batch | Trained | Two optimizers |
 | `JOINT` | Single backward | Trained | Single optimizer: combined model + SBOW loss |
 
-### Gradient Flow Through Codebook
+### Gradient Flow Through Perceptual Embeddings
 
-`<trainEmbedding>` determines whether the embedding parameters appear in the
+This section concerns perceptual embeddings, not the buffer-owned concept
+dictionary above. `<trainEmbedding>` determines whether embedding parameters
+appear in the
 **main optimizer** --- that is the whole freezing mechanism. There is no
 mode-conditional `detach()` of the codebook weight anywhere:
 `optimize_embedding = train_embedding not in ("NONE", "CBOW", "SBOW")`, and
@@ -442,8 +455,8 @@ persistent opposition is a diagnostic, not an automatic intervention. See
 The detached reverse student still does not train
 its encoder through reconstruction.
 The loss partition and parameter selection are in
-[Models.py](../bin/Models.py); projection, the combined norm cap and
-the tolerance rule are in [Optimizer.py](../bin/Optimizer.py).
+[Models.py](../bin/Models.py); the optimizer takes one ordinary summed-gradient
+step. No projection, norm cap or reconstruction-tolerance rule remains.
 
 Inter-sentence MSE/contrastive losses are consumed independently of Teacher's
 legacy ARMA/intra gate. Prediction sees a bounded per-row view of external
@@ -493,7 +506,7 @@ only admitted input connections. Its threshold is
 `lr * (lambda / distinct_observed_concepts) / (sqrt(v_hat) + eps)`;
 biases and unused slots are excluded. `concept_readout_l1` is a separate
 detached reporting cost, not another backpropagated penalty. Output-gradient
-projection stays unchanged; L1 itself is an intentional sparsity/accuracy
+state boundary stays unchanged; L1 itself is an intentional sparsity/accuracy
 tradeoff, not a promise of monotonic reconstruction improvement. Policies are
 batch-local, never applied in evaluation, and cleared at the next `zero_grad`
 after a skipped update.
@@ -1049,7 +1062,7 @@ and provenance, and adds no gradient objective or trainable parameters.
 
 See [Existence evidence](ExistenceEvidence.md) for complete-description matching,
 fact admission, checkpoint migration and the hard lookup boundary, and
-[GradientFlow](GradientFlow.md) for the architecture-wide gradient budget.
+[GradientFlow](GradientFlow.md) for the architecture-wide gradient boundaries.
 
 ## Conceptual-taxonomy queries (September 16)
 

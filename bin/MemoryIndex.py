@@ -19,6 +19,7 @@ class LeafCodeIndex:
 
     def _init_leaf_index(self):
         self.register_buffer('leaf_codes', torch.empty(0, dtype=torch.long))
+        self._leaf_used = 0
         self.register_buffer('leaf_offsets', torch.zeros(self.capacity, 3, 2, dtype=torch.long))
         self.register_buffer('leaf_complete', torch.zeros(self.capacity, 3, dtype=torch.bool))
         self.register_buffer('index_stream', torch.full((self.capacity,), -1, dtype=torch.long))
@@ -105,14 +106,36 @@ class LeafCodeIndex:
             self._leaf_postings.get((code, r), ()) for r in range(3)))))
 
     @torch.no_grad()
+    def _reserve_leaf_codes(self, size):
+        """Geometric capacity makes successive writes amortized linear."""
+        if size <= self.leaf_codes.numel():
+            return
+        capacity = max(64, 2 * self.leaf_codes.numel())
+        while capacity < size:
+            capacity *= 2
+        column = self.leaf_codes.new_empty(capacity)
+        column[:self._leaf_used].copy_(self.leaf_codes[:self._leaf_used])
+        self.leaf_codes = column
+
+    def _save_to_state_dict(self, destination, prefix, keep_vars):
+        super()._save_to_state_dict(destination, prefix, keep_vars)
+        # Capacity is an allocation detail, not persisted index content. The
+        # used prefix preserves the existing checkpoint column format. Clone
+        # it: torch.save retains a view's entire backing allocation otherwise.
+        value = self.leaf_codes[:self._leaf_used].clone()
+        destination[prefix + 'leaf_codes'] = value if keep_vars else value.detach()
+
+    @torch.no_grad()
     def _append_leaf_terms(self, row, terms, complete, stream=-1):
         terms = self._checked_leaf_terms(terms)
         if self._index_code_row is None and not all(complete):
             self._leaf_needs_owner_reindex = True
         flat = tuple(itertools.chain.from_iterable(terms))
-        offset = self.leaf_codes.numel()
+        offset = self._leaf_used
         if flat:
-            self.leaf_codes = torch.cat((self.leaf_codes, self.leaf_codes.new_tensor(flat)))
+            self._reserve_leaf_codes(offset + len(flat))
+            self.leaf_codes[offset:offset + len(flat)] = self.leaf_codes.new_tensor(flat)
+            self._leaf_used += len(flat)
         for role, codes in enumerate(terms):
             self.leaf_offsets[row, role] = self.leaf_offsets.new_tensor((offset, len(codes)))
             self.leaf_complete[row, role] = complete[role]
@@ -128,7 +151,7 @@ class LeafCodeIndex:
             self._index_occurrences[self.occurrence_of(row)] = row
             for role in range(3):
                 start, count = self.leaf_offsets[row, role].tolist()
-                if start < 0 or count < 0 or start + count > self.leaf_codes.numel():
+                if start < 0 or count < 0 or start + count > self._leaf_used:
                     raise ValueError('invalid leaf index offsets in checkpoint')
                 codes = self.leaf_terms(row, role)
                 if any(code < 0 for code in codes):
@@ -143,7 +166,7 @@ class LeafCodeIndex:
         previous = [tuple(self.leaf_terms(row, role) for role in range(3))
                     for row in range(len(self))]
         complete_before = self.leaf_complete.clone()
-        self.leaf_codes = self.leaf_codes.new_empty(0)
+        self._leaf_used = 0
         self.leaf_offsets.zero_()
         self.leaf_complete.zero_()
         self._leaf_postings, self._index_occurrences = {}, {}
@@ -168,7 +191,7 @@ class LeafCodeIndex:
         terms = [tuple(self.leaf_terms(int(row), role) for role in range(3)) for row in keep]
         statuses = self.leaf_complete[keep].clone()
         streams = self.index_stream[keep].clone()
-        self.leaf_codes = self.leaf_codes.new_empty(0)
+        self._leaf_used = 0
         self.leaf_offsets.zero_()
         self.leaf_complete.zero_()
         self.index_stream.fill_(-1)
@@ -179,7 +202,9 @@ class LeafCodeIndex:
                 self.leaf_offsets[row, role] = self.leaf_offsets.new_tensor((offset, len(codes)))
                 flat.extend(codes)
                 offset += len(codes)
-        self.leaf_codes = self.leaf_codes.new_tensor(flat)
+        self._reserve_leaf_codes(len(flat))
+        self.leaf_codes[:len(flat)] = self.leaf_codes.new_tensor(flat)
+        self._leaf_used = len(flat)
         self.leaf_complete[:len(keep)] = statuses
         self.index_stream[:len(keep)] = streams
 
@@ -199,7 +224,7 @@ class LeafCodeIndex:
                 roles.append(kept)
             terms.append(tuple(roles))
         complete, streams = self.leaf_complete.clone(), self.index_stream.clone()
-        self.leaf_codes = self.leaf_codes.new_empty(0)
+        self._leaf_used = 0
         self._leaf_postings, self._index_occurrences = {}, {}
         for row, roles in enumerate(terms):
             self._append_leaf_terms(row, roles, complete[row], int(streams[row]))

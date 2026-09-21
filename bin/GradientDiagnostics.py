@@ -1,6 +1,6 @@
 """Read-only objective agreement on named, optimizer-owned shared operators.
 
-No projection, clipping or gradient replacement happens here. Sparse codebook
+No projection, clipping or gradient replacement happens here. Sparse operator
 gradients are compared over touched entries, without a dense capacity slab.
 """
 from __future__ import annotations
@@ -68,7 +68,7 @@ def _dot_unit(left, right, left_norm, right_norm):
 def objective_agreement(objectives, groups):
     """Compare reconstruction with output/expectation at one parameter version.
 
-    ``groups`` maps stable operator/codebook names to parameter sequences.
+    ``groups`` maps stable operator names to parameter sequences.
     Missing and zero gradients have no cosine (None), rather than agreement.
     ``autograd.grad`` leaves optimizer .grad buffers and parameters unchanged.
     """
@@ -112,7 +112,10 @@ def record_opposition(report, history, *, persistence=3):
         for other in ("output", "expectation"):
             key = (name, other)
             cosine = entry["reconstruction_" + other + "_cosine"]
-            streak = history.get(key, 0) + 1 if cosine is not None and cosine < 0 else 0
+            # An unused operator supplies no new agreement evidence.
+            streak = history.get(key, 0)
+            if cosine is not None:
+                streak = streak + 1 if cosine < 0 else 0
             history[key] = streak
             entry[other + "_negative_streak"] = streak
             if streak >= persistence:

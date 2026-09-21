@@ -1,13 +1,20 @@
 # Gradient flow across the architecture
 
-Current contract, September 20: each objective differentiates its own
-computation. Output receives a **given concluded idea**, so its error stops at
+Current contract, September 21: each objective differentiates its own
+computation. Prepared-answer output receives a **given concluded idea**, so its error stops at
 that state boundary. Reconstruction, expectation and generation still share
 operator parameters. The former global reconstruction-priority projection is
 removed, including its configuration and optimizer helpers. This implements
 [the superseding §8.4 decision](plans/2026-09-15-next-sentence-as-the-production-objective.md#84-gradient-boundaries-and-learning-evidence).
 
 ## State paths and shared parameters
+
+The output state cut below applies to the prepared-answer path
+(`answerSynthesis=true`, including production). The direct supervised head
+still differentiates its entire input state. Configurations combining
+reconstruction with supplied outputs and `answerSynthesis=false` warn at
+configuration and on first use if the data is supplied later. This warning
+makes that boundary explicit; it does not claim the direct head is factored.
 
 | Objective | Differentiable path | Given or detached values |
 |---|---|---|
@@ -35,7 +42,7 @@ flowchart LR
     I --> T[Thought]
     T --> D[Given detached conclusion]
     D --> G[Generate]
-    W[Shared operators and trainable codebooks] --> C
+    W[Shared operators and code-to-operation projections] --> C
     W --> R
     W --> E
     W --> G
@@ -88,9 +95,10 @@ reporting cost and one proximal optimizer update, not duplicate autograd loss.
 ## Per-operator agreement
 
 `branchDiagnosticsEvery` samples before backward, at one parameter version.
-Zero disables it; BasicModel sets 100. The existing state-branch report remains
+Zero disables it; BasicModel sets 100 and the supplied-answer tied benchmark
+sets 1. The existing state-branch report remains
 available; the run log also emits `[operator-gradients]` JSON. Each named
-shared operator/codebook reports weighted gradient norms and the cosines of
+shared operator reports weighted gradient norms and the cosines of
 reconstruction with output and with expectation.
 [Diagnostic implementation](../bin/GradientDiagnostics.py),
 [run harness](../bin/Models.py).
@@ -98,24 +106,30 @@ reconstruction with output and with expectation.
 Names come from the actual grammar registry and registered parameter owners.
 Aliases/tied parameters are counted once, and only optimizer-owned parameters
 are differentiated. Independent synthesis heads are excluded. A missing or
-zero gradient has a null cosine, not agreement. Sparse codebook comparisons
+zero gradient has a null cosine, not agreement. Sparse operator comparisons
 use touched rows without allocating a dense capacity slab. Stable norm
 calculation handles large finite gradients. Inspection leaves `.grad` and
 parameter values unchanged and preserves the graph for the normal backward.
 
-Three consecutive negative observations name persistent opposition on that
-operator. A missing, zero or nonnegative observation resets that streak.
+Three measured negative observations name persistent opposition on that
+operator. A missing or zero gradient leaves the streak unchanged; a measured
+nonnegative cosine resets it. The integrated checkpoint retains the streak.
+Diagnostic failures warn without aborting training.
 This is evidence to examine, never automatic clipping or projection. No
 operator-specific guard is installed by this change. A few diagnostic batches
 do not demonstrate persistent incompatibility or useful learning.
 
-The production ConceptualSpace dictionary is optimizer-owned again:
-`conceptualContextLearningRate=0` disables the older detached rotation updater.
-Shared row parameters use sparse gradients and one optimizer owner. Existing
-rotation-only experimental configurations remain explicit; their diagnostic
-entry reports unavailable cosines and names the non-autograd update owner.
-They are not evidence of objective credit to the codebook. `trainEmbedding`
-likewise determines participation in the main optimizer.
+**Codes by distribution, maps by the objectives** (plan §8.4 point 2).
+The 11 canonical configurations changed by `7c2fa5a` again set
+`conceptualContextLearningRate=0.01`. Their shared concept dictionary is a
+persistent non-grad buffer, updated only by the existing sentence-local
+unit-sphere rotation reducer. No objective gradient reaches those code
+positions. Objectives train the operators and code-to-operation projections;
+the unit atoms preserve the magnitude convention of their inner products.
+Codebooks are excluded from the operator diagnostic, including its fallback
+parameter names. The fixed-seed reconstruction comparison is recorded in
+[Testing](Testing.md). Situation context and its three proposed XML variables
+belong to two-truths §3.5 and are not implemented here.
 
 ## Thought, memory and graph lifetime
 

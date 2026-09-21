@@ -40,13 +40,15 @@
       <mathOperators>add</mathOperators>
     </data>
     <training>
+      <!-- Measure R/O/E agreement on the native supplied-answer workload. -->
+      <branchDiagnosticsEvery>1</branchDiagnosticsEvery>
       <numEpochs>1</numEpochs>
       <seed>42</seed>
       <batchSize>28</batchSize>
       <packSentences>false</packSentences>
       <numWorkers>2</numWorkers>
       <learningRate>0.0005</learningRate>
-      <conceptualContextLearningRate>0.0</conceptualContextLearningRate>
+      <conceptualContextLearningRate>0.01</conceptualContextLearningRate>
       <conceptualContextNegatives>4</conceptualContextNegatives>
       <reconstructionScale>0.5</reconstructionScale>
       <teacherReconstruction>true</teacherReconstruction>

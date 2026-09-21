@@ -12,3 +12,4 @@ torchvision
 pytest
 pytest-xdist
 executorch
+lxml

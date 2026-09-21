@@ -23,6 +23,9 @@ any matching forward/reverse rule IDs (empty for a thought-only face). The
 executor table supplies only
 non-grammatical capability facts: domain, argument kinds, subsystem write
 target, enumerated read/write scopes, evidence kind, and the callable.
+`QuerySignature` variants inherit those same `Subsystem` members from the
+canonical descriptor and validate the thought permission row. Free-form scope
+strings are rejected; aliases cannot introduce a second access vocabulary.
 
 A structural family omitted from `<thought>` stays pure grammar even if an
 executor exists. An executor with no selected thought form is unavailable. A

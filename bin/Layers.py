@@ -5418,6 +5418,7 @@ class ConceptualAttentionLayer(SparseLayer):
         # map. Host-side (no tensor shape dependence).
         self._constituents = {}    # key -> [(role, ref), ...] insertion order
         self._tensor_rows = {}     # key -> GLOBAL tensor row
+        self._tensor_row_keys = {} # derived reverse map; updated at allocation/load
         self._row_next = {}        # region base -> next unallocated local row
 
     @classmethod
@@ -5532,6 +5533,7 @@ class ConceptualAttentionLayer(SparseLayer):
             r = b + nxt
             self._row_next[b] = nxt + 1
             self._tensor_rows[k] = r
+            self._tensor_row_keys[r] = k
         return int(r)
 
     def row_of(self, key):
@@ -9237,6 +9239,7 @@ class TernaryTruthStore(LeafCodeIndex, Layer):
             # are shared; unknown stream ownership is never treated as row 0.
             state_dict[prefix + 'index_stream'] = torch.full_like(self.index_stream, -2)
         self.leaf_codes = self.leaf_codes.new_empty(state_dict[prefix + 'leaf_codes'].shape)
+        self._leaf_used = self.leaf_codes.numel()
         semantic_keys = (
             'record_kind', 'grammatical_mode', 'role_mask', 'polarity',
             'occurrence_id', '_next_occurrence', '_occurrence_namespace',
@@ -9896,7 +9899,7 @@ class TernaryTruthStore(LeafCodeIndex, Layer):
         self.semantic_fingerprint.zero_()
         self._semantic_rows = {}
         self._expectation_rows = {}
-        self.leaf_codes = self.leaf_codes.new_empty(0)
+        self._leaf_used = 0
         self.leaf_offsets.zero_()
         self.leaf_complete.zero_()
         self.index_stream.fill_(-1)

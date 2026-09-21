@@ -150,10 +150,11 @@
       <numWorkers>2</numWorkers>
       <learningRate>0.0005</learningRate>
 
-      <!-- Shared concept atoms are optimizer-owned, with sparse row gradients
-           from their uses in the separate objective paths. The older detached
-           contextual-rotation updater is disabled, so each row has one owner. -->
-      <conceptualContextLearningRate>0.0</conceptualContextLearningRate>
+      <!-- Codes by distribution, maps by the objectives (plan 8.4).
+           The shared concept dictionary is a non-grad buffer. One detached
+           sentence-local SBOW reducer rotates its unit-sphere atoms; model
+           losses train operators and code-to-operation projections only. -->
+      <conceptualContextLearningRate>0.01</conceptualContextLearningRate>
       <conceptualContextNegatives>4</conceptualContextNegatives>
 
       <!-- FineWeb is unlabeled. Completed input sentences reconstruct once

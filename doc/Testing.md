@@ -938,8 +938,9 @@ parameters train. Expectation still reaches current-step preceding encodings;
 its target and previous-step context detach. The thought chooser's credit
 trains its policy only. [Contract](GradientFlow.md).
 
-The production dictionary uses the shared optimizer (`conceptualContextLearningRate=0`).
-The normal-batch diagnostic verifies nonzero codebook reconstruction credit
+At the 1b landing, the production dictionary used the shared optimizer
+(`conceptualContextLearningRate=0`); item 1d below restores rotation ownership.
+That landing's normal-batch diagnostic verified nonzero codebook reconstruction credit
 and actual operator reconstruction/output overlap, in addition to standalone
 cosine arithmetic. Sparse measurements never densify the inventory. The run
 harness logs weighted R/O/E norms, R/O and R/E cosines and names persistent
@@ -1088,3 +1089,161 @@ The supplemental main-checkout receipt, `20260920-172952-394937`, completed
 all 17 `test_testpoint.py` cases with exit 0 (five passed, twelve skipped),
 including all five embedding probes using the existing `sentence.pt`. Its validated source map is identical
 to the full receipt above.
+
+
+## Item 1d review corrections (September 21)
+
+The baseline includes documentation commits `7d4c290` and `e13c4ea`. The
+dictionary correction was made and measured first, as requested. All 11
+configurations changed by `7c2fa5a` restore
+`conceptualContextLearningRate=0.01`: the shared concept dictionary is a
+non-grad buffer, with the existing sentence-local unit-sphere rotation updater
+as its sole owner. Objectives train operators and code-to-operation
+projections; dictionary positions and `codebook.*` entries are absent from
+the gradient diagnostic. Situation context and its three proposed XML
+variables remain under two-truths §3.5.
+
+The prepared-answer boundary applies when `answerSynthesis=true`; the direct
+head still trains the whole input state. Combining reconstruction and
+supervised outputs without answer synthesis now warns at configuration, or
+first training use if the data arrives later. The supplied-answer tied
+benchmark now samples operator gradients every batch. Diagnostic exceptions
+warn without aborting backward or the optimizer step; checkpointed opposition
+streaks survive unused samples and reset on measured nonnegative agreement.
+
+`QuerySignature` inherits checked `Subsystem` scopes from its canonical
+thought descriptor. The allocator caches row-to-concept identities, restoring
+the cache from its existing checkpoint owner. The leaf-code column grows
+geometrically and stores its used prefix in the checkpoint tensor; reset,
+compaction, remap and subsequent appends retain the existing index contract.
+The current docs and later plan sections now describe ordinary gradients and
+the state boundaries, rather than the deleted projection. `lxml` was added to
+requirements only; no dependency was installed. The 11 XML files validate
+under `xmllint`; pytest's optional `lxml` cases still skip in this environment.
+
+### Fixed-seed reconstruction baseline
+
+[Probe](benchmarks/2026-09-21-item1d/probe.py), seed 42, CPU, one Torch thread,
+Torch 2.14.0, native eager tensor loop, `data/MM_ladder.xml`, batch size 2.
+Each run uses four validation batches, seven ordinary training updates, then
+the same four validation batches. The training mean and rate exclude two
+warmup batches. Both runs begin from the same seeded initialization and data;
+the dictionary update setting is the intended configuration difference.
+Checkpoint writes and compilation are disabled. Raw results include complete
+validated source maps and config hashes:
+[optimizer-owned baseline](benchmarks/2026-09-21-item1d/before.json),
+[rotation restored](benchmarks/2026-09-21-item1d/rotation.json).
+
+| Measurement | Optimizer-owned dictionary | Rotation-owned dictionary |
+|---|---:|---:|
+| Initial validation reconstruction | 0.100593256 | 0.100593256 |
+| Training reconstruction, last five batches | 0.092587703 | 0.092793070 |
+| Validation reconstruction after seven updates | 0.092143942 | 0.092326729 |
+| Training sentences/s, after warmup | 0.56807 | 0.56798 |
+
+The post-update validation shift is **+0.000182787 (+0.198%)**. This records
+the changed baseline; it is not evidence of improved learning.
+
+```sh
+DEVELOPER_DIR=/Library/Developer/CommandLineTools PYTHONPATH=bin:test .venv/bin/python doc/benchmarks/2026-09-21-item1d/probe.py --out /tmp/item1d-reconstruction.json
+```
+
+### Thought-enabled throughput
+
+The [fixed thought config](benchmarks/2026-09-21-item1d/thought.xml) declares
+the complete grammar and enables the ordinary LTM owner. For each parsed
+sentence, the probe executes one declared `quantize` request on a retained
+leaf through the normal controller. This deliberately exercises thought
+effects and retention; it is not learned question selection or a wording
+gate. It measures native parsing, reading, appends, the thought call and the
+epoch's post-tick compaction together. Two warmup batches precede ten measured
+batches, comprising 20 sentences and 20 executed thought requests.
+
+| Measurement | Before cache/capacity changes | After |
+|---|---:|---:|
+| Sentences/s with thought | 14.65773 | 14.64366 |
+| Reconstruction | 0.102225167 | 0.102225167 |
+| Executed thought requests | 20 | 20 |
+
+The rate changes by −0.096%, a **null throughput result** on this small
+workload. The amortized allocation and absence of a per-effect dictionary
+scan are mechanism checks, not a demonstrated end-to-end speedup. Raw results:
+[before](benchmarks/2026-09-21-item1d/thought-before.json),
+[after](benchmarks/2026-09-21-item1d/thought-after.json).
+
+```sh
+DEVELOPER_DIR=/Library/Developer/CommandLineTools PYTHONPATH=bin:test .venv/bin/python doc/benchmarks/2026-09-21-item1d/probe.py --config doc/benchmarks/2026-09-21-item1d/thought.xml --thought --eval-only --out /tmp/item1d-thought.json
+```
+
+### Regression evidence and dispositions
+
+| Receipt | Result |
+|---|---|
+| `20260921-015653-a5d584` | The inverted real-batch dictionary-ownership probe failed on the optimizer-owned parameter before the correction. |
+| `20260921-020340-0472ba` | All 18 new cases completed: 11 configuration checks passed after (b); seven probes exposed missing warning, diagnostic failure handling, opposition persistence, checked signature scopes, cached identities and geometric leaf growth. |
+| `20260921-021212-11780c` | All 67 focused cases passed after the remaining corrections. |
+| `20260921-021549-5b4875` | All 112 affected cases passed, including the actual normal-batch operator diagnostic, prepared-answer state boundaries and checkpoint/index lifecycle. |
+
+That native training batch measured `operator.CS.surface` reconstruction norm
+0.000749390, output norm 1.829513384 and R/O cosine 0.087219789. Expectation
+was unused in that batch and has a null cosine. This is an actual shared
+operator measurement, not evidence about persistent agreement or useful
+learning.
+
+The mistaken selector run `20260921-021439-d30882` exited at collection
+because `test_query_contracts.py` does not exist. The corrected affected run
+above selects `test_query_contract_boundaries.py` and `test_query_registry.py`;
+the collection error is not a validation receipt.
+
+No existing tests were deleted. The real-batch optimizer-ownership assertion
+is inverted: the dictionary must be a non-grad buffer outside all optimizer
+groups, while shared operators still receive actual reconstruction/output
+credit. Generic sparse cosine tests retain their numerical coverage under
+operator names. Added checks exercise all 11 configs, direct-head warnings,
+nonfatal diagnostics, integrated opposition checkpoint restore, checked
+signature scopes, geometric growth and cached thought effects. The existing
+structural checkpoint test also verifies the reconstructed reverse cache.
+
+The first full run, `20260921-022112-2e9f67`, was explicitly interrupted at
+3,228/4,651 completed cases with no observed test failure. Review found that
+PyTorch serializes a tensor view's entire backing allocation: saving the used
+leaf-column slice still retained spare capacity. All workers exited before
+edits. The strengthened serialization probe `20260921-023349-88e051` failed
+as intended (4,096 stored bytes for 3,072 logical bytes). Checkpoint export now
+clones the used prefix, and the test exercises an actual save/load round trip
+before appending. The interrupted run is not a landing receipt. This
+checkpoint-only correction does not change the timed workload, whose
+checkpoint writes are disabled; its original source maps remain in the raw
+measurements above.
+The corrected checkpoint/index/retention receipt
+`20260921-023423-81fc5f` passed all 31 cases before the final full run.
+
+### Full source-matched landing receipt
+
+The final default receipt is **`20260921-023448-ddf5f0`**: exit 0, all
+**4,651/4,651** selected cases completed (**4,319 passed, 331 skipped, one
+expected failure**), 1,045.1 seconds and 13.06 GiB peak aggregate memory.
+Command from `basicmodel/`:
+
+```sh
+DEVELOPER_DIR=/Library/Developer/CommandLineTools .venv/bin/python test/test_report.py --batch-size 8 --max-files 1
+```
+
+The entire **627-file** validated source map, including unchanged files,
+matches the landing source. SHA-256 over sorted compact JSON:
+`8ae5ceae6380886964b2529aee8347b7bfbd166d8755a6a7da2c18c5860352c7`.
+The [complete result](benchmarks/2026-09-21-item1d/full-result.json.gz)
+is archived as gzip-compressed JSON, alongside its
+[source manifest](benchmarks/2026-09-21-item1d/full-source-manifest.json)
+and the full run's
+[measured operator gradients](benchmarks/2026-09-21-item1d/operator-gradients.json).
+The archive retains every selected/completed case, worker outcome, resource
+limit and captured report. Receipt prose and the todo reconciliation were
+added after validation; they do not change the validated source map.
+Optional slow learning studies are not part of this default receipt, and
+the unavailable `lxml` schema cases remain skips. Nothing here closes the
+remaining learning gates or starts item 2.
+
+After adding the archived receipt and completion notes, documentation-link
+receipt `20260921-025341-86b75b` passed all 66 cases with the same validated
+source map.

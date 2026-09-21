@@ -28,16 +28,16 @@ def test_operator_cosine_reads_weighted_objectives_without_mutating_gradients(ot
     torch.testing.assert_close(p.grad, torch.tensor([10., 9.]) + 3 * torch.tensor(other))
 
 
-def test_sparse_codebook_cosine_uses_touched_rows(monkeypatch):
+def test_sparse_operator_cosine_uses_touched_rows(monkeypatch):
     table = torch.nn.Embedding(1_000_000, 2, sparse=True)
     a = table(torch.tensor([3, 42])).sum()
     b = -table(torch.tensor([42, 900_000])).sum()
     def forbidden(*args, **kwargs):
-        raise AssertionError("diagnostics must not densify a codebook gradient")
+        raise AssertionError("diagnostics must not densify an operator gradient")
     monkeypatch.setattr(torch.Tensor, "to_dense", forbidden)
-    report = objective_agreement({"reconstruction": a, "output": b}, {"codebook": [table.weight]})
-    assert report["codebook"]["reconstruction_output_cosine"] == pytest.approx(-.5)
-    assert report["codebook"]["reconstruction_expectation_cosine"] is None
+    report = objective_agreement({"reconstruction": a, "output": b}, {"operator.row_projection": [table.weight]})
+    assert report["operator.row_projection"]["reconstruction_output_cosine"] == pytest.approx(-.5)
+    assert report["operator.row_projection"]["reconstruction_expectation_cosine"] is None
     assert table.weight.grad is None
 
 
@@ -69,8 +69,8 @@ def test_large_finite_gradients_and_mixed_sparse_dense_cosine():
     assert report["operator"]["reconstruction_output_cosine"] == pytest.approx(-.6)
     table = torch.nn.Embedding(10, 2, sparse=True)
     report = objective_agreement({"reconstruction": table(torch.tensor([2])).sum(),
-        "output": table.weight.sum()}, {"codebook": [table.weight]})
-    assert report["codebook"]["reconstruction_output_cosine"] == pytest.approx(10 ** -.5)
+        "output": table.weight.sum()}, {"operator.row_projection": [table.weight]})
+    assert report["operator.row_projection"]["reconstruction_output_cosine"] == pytest.approx(10 ** -.5)
 
 
 @pytest.mark.parametrize("name,value", [("reconstructionPriority", "true"),
@@ -126,9 +126,11 @@ def test_normal_batch_logs_named_shared_operator_gradients(tmp_path, monkeypatch
         assert any(name.startswith("operator.") for name in report)
         assert any(entry["reconstruction_norm"] > 0 for entry in report.values())
         assert any(entry["output_norm"] > 0 for entry in report.values())
-        assert isinstance(model.conceptualSpace.similarity_codebook.W, torch.nn.Parameter)
-        assert any(name.startswith("codebook.") and entry["reconstruction_norm"] > 0
-                   for name, entry in report.items())
+        dictionary = model.conceptualSpace.similarity_codebook.W
+        assert not isinstance(dictionary, torch.nn.Parameter)
+        assert not dictionary.requires_grad and dictionary.grad is None
+        assert all(p is not dictionary for group in optimizer.param_groups for p in group["params"])
+        assert not any(name.startswith("codebook.") for name in report)
         assert "[operator-gradients]" in capsys.readouterr().out
         active = {name: entry for name, entry in report.items()
                   if entry["reconstruction_output_cosine"] is not None}

@@ -1,0 +1,16 @@
+{
+  "receipt": "20260921-023448-ddf5f0",
+  "nodeid": "test/test_gradient_factorization.py::test_normal_batch_logs_named_shared_operator_gradients",
+  "gradients": {
+    "operator.CS.surface": {
+      "expectation_negative_streak": 0,
+      "expectation_norm": 0.0,
+      "output_negative_streak": 0,
+      "output_norm": 1.8295133836414657,
+      "persistent_opposition": [],
+      "reconstruction_expectation_cosine": null,
+      "reconstruction_norm": 0.0007493898415939745,
+      "reconstruction_output_cosine": 0.08721978874652381
+    }
+  }
+}

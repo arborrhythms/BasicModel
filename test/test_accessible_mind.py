@@ -27,6 +27,51 @@ def test_leaf_index_retrieves_an_old_row_by_any_derivation_leaf():
     assert store.leaf_terms(first, 0) == (3, 17, 9)
 
 
+def test_leaf_column_growth_is_amortized_and_checkpoint_append_is_safe():
+    import io
+    store = TernaryTruthStore(8, capacity=256)
+    pointers = set()
+    for _ in range(128):
+        store.append_meaning(_meaning(), leaf_codes=((3, 17), (), (6,)))
+        pointers.add(store.leaf_codes.data_ptr())
+    assert len(pointers) <= 5, "append must not copy the entire leaf history"
+    checkpoint = io.BytesIO()
+    torch.save(store.state_dict(), checkpoint)
+    checkpoint.seek(0)
+    state = torch.load(checkpoint, weights_only=True)
+    column = state["leaf_codes"]
+    assert column.numel() == 384
+    assert column.untyped_storage().nbytes() == column.numel() * column.element_size()
+    restored = TernaryTruthStore(8, capacity=256)
+    restored.load_state_dict(state)
+    restored.load_semantic_extras(store.semantic_extras())
+    row = restored.append_meaning(_meaning(), leaf_codes=((9,), (), (10,)))
+    assert restored.leaf_terms(127, 0) == (3, 17)
+    assert restored.leaf_terms(row, 0) == (9,)
+    restored.reset()
+    row = restored.append_meaning(_meaning(), leaf_codes=((11,), (), (12,)))
+    assert restored.leaf_terms(row, 0) == (11,)
+
+
+def test_thought_effect_uses_cached_row_identity(monkeypatch):
+    from AccessibleMind import apply_thought_effect
+    from Queries import ThoughtResult
+    from QueryWork import QueryWorkBudget
+    from types import MappingProxyType
+    from test_cs_symbol_table import _cs
+    cs = _cs()
+    member = cs.new_concept()
+    row = cs._csw_concept_row(0, member)
+    def forbidden(self):
+        raise AssertionError("thought must not rebuild the dictionary reverse map")
+    monkeypatch.setattr(type(cs), "_csw_rows", property(forbidden))
+    result = ThoughtResult('what', 'conceptual-subgoal', 'set', 'retrieval', _meaning(),
+        MappingProxyType({'frames': ({'leaf_codes': ((row,), (), ())},)}))
+    for _ in range(2):
+        apply_thought_effect(SimpleNamespace(conceptualSpace=cs), result, row=0, work=QueryWorkBudget(32))
+    assert cs.subspace._concept_activations[row, 0] == 1
+
+
 def test_index_checkpoint_compaction_and_codebook_remap():
     import copy
     store = TernaryTruthStore(8, capacity=8)

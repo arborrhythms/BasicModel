@@ -2831,6 +2831,7 @@ class BaseModel(Mereology, nn.Module):
         # ``self._ltm_provisioned``); see ``runEpoch``. ``provision_ltm()``
         # stays callable explicitly (tests / serve) after data is loaded.
         self._ltm_provisioned = False
+        self._warn_unfactored_output_state()
 
         return cfg
 
@@ -2880,8 +2881,22 @@ class BaseModel(Mereology, nn.Module):
         return list(selected.values())
 
     def _shared_operator_parameter_groups(self, optimizer):
-        """Name shared grammar operators/codebooks by their actual ownership."""
+        """Name shared grammar operators by their actual ownership."""
         available = {id(p): p for p in self._shared_representation_parameters(optimizer)}
+        # Distribution-owned dictionaries are outside objective agreement.
+        # Exclude their identities before registry/fallback naming so tied
+        # aliases cannot reintroduce them under another module path.
+        for space in self.spaces:
+            if not isinstance(space, (PartSpace, WholeSpace, ConceptualSpace)):
+                continue
+            sub = getattr(space, "subspace", None)
+            for module in (
+                    getattr(space, "similarity_codebook", None),
+                    getattr(sub, "what", None),
+                    getattr(sub, "basis", None)):
+                if isinstance(module, nn.Module):
+                    for parameter in module.parameters():
+                        available.pop(id(parameter), None)
         groups, used = {}, set()
 
         def add(name, parameters):
@@ -2894,17 +2909,6 @@ class BaseModel(Mereology, nn.Module):
         for key, layer in sorted(registry.items(), key=lambda item: repr(item[0])):
             label = ".".join(map(str, key)) if isinstance(key, tuple) else str(key)
             add("operator." + label, layer.parameters())
-        for index, space in enumerate(self.spaces):
-            if not isinstance(space, (PartSpace, WholeSpace, ConceptualSpace)):
-                continue
-            label = f"{type(space).__name__}[{index}]"
-            sub = getattr(space, "subspace", None)
-            for name, module in (
-                    ("concepts", getattr(space, "similarity_codebook", None)),
-                    ("what", getattr(sub, "what", None)),
-                    ("basis", getattr(sub, "basis", None))):
-                if isinstance(module, nn.Module):
-                    add(f"codebook.{label}.{name}", module.parameters())
         # Remaining tied transforms keep their concrete module names. This
         # includes perceptual inverses; no anonymous tensor-address labels.
         for name, module in self.named_modules():
@@ -2916,26 +2920,41 @@ class BaseModel(Mereology, nn.Module):
     def operator_gradient_diagnostics(self, objectives, optimizer):
         from GradientDiagnostics import objective_agreement, record_opposition
         report = objective_agreement(objectives, self._shared_operator_parameter_groups(optimizer))
-        # A context-rotated dictionary has a separate, non-autograd owner.
-        # Name that absence rather than silently omit the central codebook
-        # or report zero cosine as evidence that objectives agree.
-        rotated = {id(cb) for cb in getattr(self, "_contextual_concept_codebooks", ())}
-        seen = set()
-        for index, space in enumerate(self.spaces):
-            cb = getattr(space, "similarity_codebook", None)
-            if cb is None or id(cb) in seen or id(cb) not in rotated:
-                continue
-            seen.add(id(cb))
-            report[f"codebook.{type(space).__name__}[{index}].concepts"] = {
-                "reconstruction_norm": 0.0, "output_norm": 0.0,
-                "expectation_norm": 0.0, "reconstruction_output_cosine": None,
-                "reconstruction_expectation_cosine": None,
-                "gradient_owner": "none: contextual rotation buffer",
-            }
         history = self.__dict__.setdefault("_operator_gradient_opposition", {})
         report = record_opposition(report, history)
         self._last_operator_gradients = report
         return report
+
+    def _warn_unfactored_output_state(self):
+        """Expose the direct head's live state path when both tasks are configured."""
+        data = getattr(getattr(self, "inputSpace", None), "data", None)
+        if (not bool(getattr(self, "answer_synthesis", False))
+                and float(self.loss.reconstruction_scale) > 0
+                and bool(getattr(data, "has_supervised_outputs", False))):
+            self._warn_zeroed_channel(
+                "output_state_boundary",
+                "supervised outputs with reconstruction and answerSynthesis=false "
+                "use the direct head: output gradients train the whole input state; "
+                "enable answerSynthesis for the concluded-idea state boundary")
+
+    def _sample_gradient_diagnostics(self, objectives, optimizer):
+        """Observe each diagnostic independently; faults never replace an update."""
+        for label, observe in (
+                ("branch", self.branch_gradient_diagnostics),
+                ("operator", lambda: self.operator_gradient_diagnostics(objectives, optimizer))):
+            if label == "operator" and objectives is None:
+                continue
+            try:
+                report = observe()
+                if label == "operator":
+                    import json
+                    TheMessage("  [operator-gradients] " + json.dumps(report, sort_keys=True))
+            except Exception as exc:
+                # Reporting is advisory even under a caller's warnings-as-errors
+                # policy. Leave the loss graph for the ordinary backward/step.
+                with warnings.catch_warnings():
+                    warnings.simplefilter("always", RuntimeWarning)
+                    warnings.warn(f"{label} gradient diagnostic skipped: {exc}", RuntimeWarning)
 
     def _backward_training_loss(self, total_loss, amp_scaler=None):
         """Ordinary summed-objective backward; one later optimizer step.
@@ -4408,6 +4427,8 @@ class BaseModel(Mereology, nn.Module):
             "training_state": {
                 "training_step_count": int(getattr(
                     self, "_training_step_count", 0) or 0),
+                "operator_gradient_opposition": dict(getattr(
+                    self, "_operator_gradient_opposition", {})),
                 "train_batches_seen": int(getattr(
                     self, "_train_batches_seen", 0) or 0),
                 "epoch_batches_seen": int(getattr(
@@ -4837,6 +4858,7 @@ class BaseModel(Mereology, nn.Module):
                 blob.get("constituents") or {})
             layer._tensor_rows = _checkpoint_host_copy(
                 blob.get("tensor_rows") or {})
+            layer._tensor_row_keys = {row: key for key, row in layer._tensor_rows.items()}
             layer._row_next = _checkpoint_host_copy(blob.get("row_next") or {})
             layer._rows = rows
             layer._cols = cols
@@ -5683,6 +5705,8 @@ class BaseModel(Mereology, nn.Module):
         self._pending_optimizer_require_match = bool(require_match)
         self._training_step_count = int(
             training_state.get("training_step_count", 0) or 0)
+        self._operator_gradient_opposition = dict(
+            training_state.get("operator_gradient_opposition", {}))
         self._train_batches_seen = int(
             training_state.get("train_batches_seen", 0) or 0)
         self._epoch_batches_seen = int(
@@ -14466,6 +14490,8 @@ class BasicModel(BaseModel):
         self._stage_expectation_documents(
             split, source_rows, int(inputTensor.shape[0])
             if isinstance(inputTensor, torch.Tensor) else len(inputTensor))
+        if train:
+            self._warn_unfactored_output_state()
         inference_only = not train and split == "runtime"
         what_questions = self._questions_for_batch(
             split=split,
@@ -15504,16 +15530,7 @@ class BasicModel(BaseModel):
             _every = int(getattr(self, "branch_diagnostics_every", 0) or 0)
             if (_every > 0 and int(getattr(
                     self, "_training_step_count", 0) or 0) % _every == 0):
-                try:
-                    self.branch_gradient_diagnostics()
-                except RuntimeError as _diag_exc:
-                    self._warn_zeroed_channel(
-                        "branch_diagnostics",
-                        f"branch diagnostics skipped: {_diag_exc}")
-                if gradient_objectives is not None:
-                    report = self.operator_gradient_diagnostics(gradient_objectives, optimizer)
-                    import json
-                    TheMessage("  [operator-gradients] " + json.dumps(report, sort_keys=True))
+                self._sample_gradient_diagnostics(gradient_objectives, optimizer)
             if amp_scaler is not None:
                 # fp16 on CUDA: scale grads to avoid underflow, then unscale
                 # inside scaler.step() before the actual optimizer update.

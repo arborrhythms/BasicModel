@@ -77,7 +77,6 @@ def apply_thought_effect(model, result, *, row, work):
     if torch.is_tensor(existing):
         n = min(len(field), len(existing))
         field[:n, :existing.shape[1]] = existing[:n].detach()
-    row_ids = {value: cid for (_order, cid), value in space._csw_rows.items()}
     pending, seen = list(seeds), set()
     while pending:
         reference = pending.pop()
@@ -87,7 +86,7 @@ def apply_thought_effect(model, result, *, row, work):
         if not work.consume('effect_node'):
             break
         if reference[0] == 'row':
-            index, cid = reference[1], row_ids.get(reference[1])
+            index, cid = reference[1], space.concept_id_at_row(reference[1])
         else:
             cid = reference[1]
             try:

@@ -384,6 +384,7 @@ class QuerySignature:
     executor: Callable
 
     def __post_init__(self):
+        check_access('thought', self.read_scope, self.write_scope)
         if not callable(self.executor):
             raise ValueError('query signature requires an executor')
         if not self.semantic_id or not self.domain or not self.read_scope:
@@ -1435,45 +1436,43 @@ class ThoughtSignature:
         return result
 
 
-def _signature(name, semantic_id, domain, roles, kinds, result_kind, read_scope,
+def _signature(name, semantic_id, domain, roles, kinds, result_kind,
                evidence_kind, executor, *, open_roles=(), result_roles=(),
-               write_scope=(), compose_faces=()):
+               compose_faces=()):
+    # Grammatical variants inherit the same checked subsystem vocabulary and
+    # capability owner as the canonical thought face; no parallel scope names.
+    descriptor = THOUGHT_EXECUTORS[semantic_id]
     return QuerySignature(name, semantic_id, domain, roles, kinds,
                           tuple(sorted(set(roles) | {1})), open_roles,
-                          result_roles, result_kind, read_scope, write_scope,
-                          evidence_kind, compose_faces, executor)
+                          result_roles, result_kind, descriptor.read_scope,
+                          descriptor.write_scope, evidence_kind, compose_faces, executor)
 
 
 _signatures = []
 for name in ('isTrue', 'exist'):
     _signatures.append(_signature(name, 'exist', 'ltm-facts', (0,), ('description',),
-        'truth', ('ltm.facts',), 'fact', _exist, compose_faces=('exist',)))
+        'truth', 'fact', _exist, compose_faces=('exist',)))
 for names, roles in [(('isPart', 'part', 'queryPart', 'PartOf'), (0, 2)),
                      (('isWhole', 'whole'), (2, 0))]:
     for name in names:
         _signatures.append(_signature(name, 'part', 'conceptual-taxonomy', roles,
-            ('reference', 'reference'), 'truth', ('conceptual.references',),
-            'taxonomy', _part, compose_faces=('part', 'whole')))
+            ('reference', 'reference'), 'truth', 'taxonomy', _part, compose_faces=('part', 'whole')))
 for name, role, opened in [('parts', 2, 0), ('wholes', 0, 2)]:
     _signatures.append(_signature(name, 'part', 'conceptual-taxonomy', (role,),
-        ('reference',), 'set', ('conceptual.references',), 'taxonomy', _neighbors,
+        ('reference',), 'set', 'taxonomy', _neighbors,
         open_roles=(opened,), result_roles=(opened,), compose_faces=('part', 'whole')))
 for name in ('isEqual', 'equal', 'queryEqual'):
     _signatures.append(_signature(name, 'equal', 'conceptual-identity', (0, 2),
-        ('concept', 'concept'), 'truth', ('conceptual.payloads',),
-        'conceptual-identity', _equal, compose_faces=('equal',)))
+        ('concept', 'concept'), 'truth', 'conceptual-identity', _equal, compose_faces=('equal',)))
 _signatures += [
     _signature('query', 'lookup', 'ltm-lookup', (0, 2), ('concept', 'concept'),
-               'set', ('ltm.records',), 'retrieval', _lookup),
+               'set', 'retrieval', _lookup),
     _signature('quantize', 'quantize', 'conceptual-codebook', (0,), ('concept',),
-               'code', ('conceptual.codebook',), 'concept-codebook', _quantize,
-               result_roles=(2,)),
+               'code', 'concept-codebook', _quantize, result_roles=(2,)),
     _signature('arma', 'arma', 'discourse-prediction', (0,), ('description',),
-               'prediction', ('external.prior-context',), 'estimate', _arma,
-               result_roles=(2,)),
+               'prediction', 'estimate', _arma, result_roles=(2,)),
     _signature('what', 'what', 'conceptual-subgoal', (0,), ('description',),
-               'subgoal', ('question.meaning', 'episode.context'), 'subgoal', _what,
-               write_scope=('episode.schedule',), result_roles=(2,)),
+               'subgoal', 'subgoal', _what, result_roles=(2,)),
 ]
 BUILTIN_QUERIES = MappingProxyType({item.name: item for item in _signatures})
 

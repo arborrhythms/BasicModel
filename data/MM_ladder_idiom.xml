@@ -139,7 +139,7 @@
            leave-one-out contextual SBOW reducer snapshots the completed
            sentence, contrasts four detached negative rows, then commits one
            unit-sphere rotation per observed concept row. -->
-      <conceptualContextLearningRate>0.0</conceptualContextLearningRate>
+      <conceptualContextLearningRate>0.01</conceptualContextLearningRate>
       <conceptualContextNegatives>4</conceptualContextNegatives>
 
       <!-- FineWeb is unlabeled.  On the serial grammar path the D3
@@ -148,11 +148,9 @@
            no reverse gradient traverses the recurrent sentence construction.
            The output head is structural and receives no fabricated labels. -->
       <reconstructionScale>0.1</reconstructionScale>
-      <!-- On supervised batches remove opposing output credit on P/W/concept
-           parameters and cap the remainder below reconstruction's norm.
-           A detached/zero reconstruction gradient gives output no budget on
-           those parameters; independent decoder heads can still learn.
-           FineWeb has no output loss, so this adds no backward work here. -->
+      <!-- Output state is given at the prepared-answer boundary. Shared
+           operators receive ordinary objective gradients (plan 8.4); there
+           is no reconstruction-priority projection or norm allowance. -->
       <!-- Keep the bounded local chooser objective available but outside this
            production run for now. Its extra candidate re-score is paid on
            every live fold; benchmark that pressure separately before

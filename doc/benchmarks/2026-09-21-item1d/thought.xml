@@ -51,6 +51,7 @@
     It is a language-acquisition gate, not a compute-optimal pretraining run.
   -->
   <architecture>
+    <ltmConsolidation>true</ltmConsolidation>
     <!-- Keep traversal separate from the symbolic iteration budget. -->
     <serial>true</serial>
     <subsymbolicOrder>4</subsymbolicOrder>
@@ -80,8 +81,8 @@
          seam as the word recursion; otherwise it would reintroduce a hidden
          136 -> 1032 coordinate pad before the aligned loop begins. -->
     <sentenceProtocol>false</sentenceProtocol>
-    <serialWordCapacity>128</serialWordCapacity>
-    <serialWordBuckets>128</serialWordBuckets>
+    <serialWordCapacity>8</serialWordCapacity>
+    <serialWordBuckets>8</serialWordBuckets>
     <!-- Fixed compiler input extent; words remain complete and PS still
          reduces them into its configured eight live locations. P64 means at
          most 64 radix/subword integer IDs per cold spelling, not 64 dense byte
@@ -114,9 +115,12 @@
 
     <data>
       <dataType>embedding</dataType>
-      <dataset>text</dataset>
-      <shardDir>data/fineweb</shardDir>
-      <maxDocs>400</maxDocs>
+      <dataset>math</dataset>
+      <mathStage>0</mathStage>
+      <mathRange>16</mathRange>
+      <mathOperators>succ</mathOperators>
+      <mathProblems>256</mathProblems>
+      <mathSeed>0</mathSeed>
     </data>
 
     <training>
@@ -146,9 +150,11 @@
            no reverse gradient traverses the recurrent sentence construction.
            The output head is structural and receives no fabricated labels. -->
       <reconstructionScale>0.1</reconstructionScale>
-      <!-- Output state is given at the prepared-answer boundary. Shared
-           operators receive ordinary objective gradients (plan 8.4); there
-           is no reconstruction-priority projection or norm allowance. -->
+      <!-- On supervised batches remove opposing output credit on P/W/concept
+           parameters and cap the remainder below reconstruction's norm.
+           A detached/zero reconstruction gradient gives output no budget on
+           those parameters; independent decoder heads can still learn.
+           FineWeb has no output loss, so this adds no backward work here. -->
       <!-- Keep the bounded local chooser objective available but outside this
            production run for now. Its extra candidate re-score is paid on
            every live fold; benchmark that pressure separately before
@@ -166,8 +172,8 @@
       <interContrastiveTemp>0.1</interContrastiveTemp>
 
       <autoload>false</autoload>
-      <autosave>false</autosave>
-      <checkpointEveryBatches>0</checkpointEveryBatches>
+      <autosave>true</autosave>
+      <checkpointEveryBatches>100</checkpointEveryBatches>
     </training>
     <!-- Geometry changes always start fresh. Keep the canonical checkpoint
          beside this model file so XML and weights have the same stem/path. -->
@@ -265,7 +271,7 @@
 
   <SymbolSpace>
     <language>
-      <grammar>ladder.grammar</grammar>
+      <grammar>complete.grammar</grammar>
     </language>
   </SymbolSpace>
 </model>

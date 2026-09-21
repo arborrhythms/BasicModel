@@ -105,6 +105,7 @@ def test_integrated_checkpoint_restores_allocator_and_identity_caches(tmp_path):
     assert restored_alloc.records(meta) == [
         ("whole", ("sym", word)), ("part", ("sym", obj))]
     assert restored_alloc.layer()._tensor_rows == layer._tensor_rows
+    assert restored_alloc.layer()._tensor_row_keys == layer._tensor_row_keys
     assert restored_alloc.layer()._row_next == layer._row_next
     assert restored_alloc.layer()._rows == [5]
     assert restored_alloc.layer()._cols == [2]

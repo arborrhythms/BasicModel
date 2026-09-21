@@ -1418,21 +1418,11 @@ The maintained implementation reference is
 [Gradient flow across the architecture](../GradientFlow.md). It maps each
 objective to its live inputs, stop-gradient boundaries and optimizer owners,
 and distinguishes implemented credit paths from the remaining migrations.
-The shared rule prevents aggregate downstream opposition to reconstruction;
-it does not independently resolve conflicts among prediction, thinking and
-output before those downstream gradients are aggregated.
-
-**Latest decisions (2026-09-15), superseding the earlier disjoint-gradient
-interpretation in this document:**
-
-1. Comprehension and input reconstruction share compose transforms (§6).
-   Generation owns its generate catalog (§8.9); this separates numerical
-   parameter ownership without blocking useful feedback through live inputs.
-2. Queries are tools of prediction/thinking (§8.10), before surface generation.
-3. Jointly learn a representation that supports reconstruction, prediction
-   and answering. Reconstruction constrains fidelity; downstream objectives
-   help select useful encodings among those that satisfy it. They may train
-   the encoder under §8.4's combined budget and fidelity tolerance.
+The current rule is §8.4's September 20/21 decision: shared operators and
+code-to-operation projections receive each objective's own gradient, while
+the concluded idea is given to generation and code positions are placed only
+by distribution. Per-operator cosine diagnoses opposition; it does not remove
+or cap a gradient. The earlier combined-budget decision is superseded.
 
 #### Earlier measured baseline
 
@@ -1450,9 +1440,9 @@ regression tests exercise both ownership and live training gradients.
 | Component | Direct objectives | Feedback into shared representation |
 |---|---|---|
 | Comprehension and reconstruction | Input reconstruction through identified compose derivation | Reconstruction reference; jointly adapts with downstream learning |
-| Prediction | Observed concept target; supplied-answer credit when a response path actually uses prediction | Live preceding context under the combined budget; observed target detached |
-| Thinking/query control | Prediction residual or appropriate supplied-answer credit; explicit policy estimator for hard choices | Continuous episode paths use the same budget; hard actions need their own credit |
-| Output generation | Supplied desired answer, through an independent generate derivation | Live conceptual inputs/shared transforms use the same budget; independent heads learn ordinarily |
+| Prediction | Observed concept target | Live preceding context; observed target detached |
+| Thinking/query control | Appropriate supplied-answer credit; residual credit is item 2 | Detached observations and effects; chooser receives explicit policy credit |
+| Output generation | Supplied desired answer, through an independent generate derivation | Concluded idea and contexts detached; generation operators and independent heads learn |
 
 Separate parameter sets do not establish gradient isolation. Test actual
 reach through tensor handoffs, dictionary reads and operators. Parameters
@@ -1460,13 +1450,10 @@ that are persistent non-grad buffers remain under their existing update
 protocol; this change does not silently convert those stores into Adam
 parameters.
 
-On each step aggregate downstream contributions before projecting/capping;
-separate allowances for prediction and output would not bound their sum.
-Use actual loss weights and the single optimizer version. Below the declared
-reconstruction tolerance, permit further predictive refinement rather than
-forcing the representation to remain fixed. Neither an absent encoder
-gradient from the detached reverse student nor a scalar low loss is evidence
-that the complete intended fidelity contract has been implemented.
+Each step sums the weighted objectives once, with state boundaries at their
+owned handoffs. A low reconstruction loss or an absent reconstruction
+gradient is not evidence of representation quality. Measure fidelity and
+held-out utility; diagnostics never change the optimizer update.
 
 When a new observation is absent there is no new observation-based prediction
 target. Internal estimates remain estimates, and cannot supervise themselves.
@@ -1477,29 +1464,20 @@ its scalar reward, work cost and delayed-observation attribution explicitly.
 Loss aggregation remains a **mean over eligible observed pairs**. Increasing
 sentence packing changes available within-step contexts and gradient reach;
 it does not automatically multiply the reported loss or its configured weight.
-Keep discrimination/collapse checks and held-out causal controls even with
-projection and detached targets. Comprehension learning may legitimately move
+Keep discrimination/collapse checks and held-out causal controls with
+objective-local boundaries and detached targets. Comprehension learning may
+legitimately move
 encodings; do not demand byte-identical representations across joint updates.
 
 ### 8.9 Separate comprehension and generation catalogs (decided)
 
-The target remains separate compose/generate parameter catalogs. Comprehension
-owns forward composition and its tied reconstruction inverses; generation
-owns the operators selected by `<generate>`. Use the same operator classes,
-copy comprehension's values once at construction/checkpoint migration, and
-then allow the catalogs to learn independently. Preserve rule-meaning-based
-chooser row migration and optimizer ownership.
-
-The current host registry still supplies shared operators to both catalogs.
-Until the split lands, §8.4 protects those shared transforms. After the split,
-a live representation input may still carry output gradients into its
-comprehension producer; those paths are intentional and must remain balanced.
-
-Test parameter identity separately from gradient reach. With detached input
-codes, reconstruction must train comprehension's operators and generation must
-train its own. With live inputs, verify the permitted downstream encoder
-gradient and combined budget. Catalog separation alone cannot demonstrate that
-only the shared reverse perceptual chain remains an overlap.
+The grammars have separate declared catalogs and choosers. The later §8.4
+decision retains shared numerical operators and tied reconstruction inverses;
+the earlier proposal to copy and then independently train operator weights is
+superseded. Generation receives a detached concluded idea. A catalog migration
+must preserve rule-meaning-based chooser rows and optimizer ownership without
+reopening that state path. Test actual gradient reach and parameter identity
+separately; the remaining generation-catalog work is NEXT item 3.
 
 ### 8.10 Queries as tools at inter-sentence prediction (decided)
 
@@ -1518,8 +1496,9 @@ residual-to-scalar reward, work penalty, baseline and delayed trajectory
 attribution before implementation. Ordinary differentiable MSE has no policy
 baseline to share; each actual score-function estimator must be accounted for.
 
-The predictor and continuous query paths may train comprehension through live
-source representations under §8.4. Detached targets prevent a comparison from
+The predictor may train comprehension through live source representations
+under §8.4; thought effects and chooser observations are detached. Targets
+are detached to prevent a comparison from
 moving its own target directly; they do not prove that representation collapse,
 shortcut learning or useless queries are impossible. Require held-out utility,
 reconstruction and discrimination evidence with causal query ablations.
@@ -1539,9 +1518,9 @@ separately identified and cannot become an observation or its own target.
 | The plan named `WhatInteractionMemory` as the predictor owner and `interChainWindow` as a knob | Corrected to `InterSentenceLayer` and the current capacity-derived window (§8.2) |
 | "Nothing is scored in evaluation" conflicted with held-out learning evidence | Separate read-only validation metrics from training accumulators and optimizer updates (§8.4) |
 | A shuffled control was required never to improve; reconstruction was said to guard collapse automatically | Require measured sequence-context benefit and representation/fidelity controls (§8.4) |
-| Whether prediction may update the encoder | Latest clarification 2026-09-15: yes. Jointly learn a representation that reconstructs and predicts/answers well, with a combined downstream gradient budget and reconstruction fidelity tolerance (§§8.4, 8.8) |
-| The compose and generate catalogs were treated as one shared set of operators | Separate catalogs remain the target (§8.9). Shared operators are protected until migration; live handoffs may still send balanced downstream gradients into comprehension after the split |
-| Query and subgoal control was credited only by supplied-answer error | Queries are tools of prediction; migrate credit to observed residuals with explicit attribution and causal tests (§8.10). Detached targets and gradient balance do not prove freedom from shortcuts |
+| Whether prediction may update the encoder | Yes, through live preceding context with its observed target detached. September 20/21 supersedes the global budget: output stops at the concluded idea; objectives couple through shared operators; code positions are distribution-owned (§§8.4, 8.8). |
+| The compose and generate catalogs were treated as one shared set of operators | Separate declared catalogs/choosers (§8.9); the later §8.4 decision retains shared numerical operators and detaches the concluded idea at generation. |
+| Query and subgoal control was credited only by supplied-answer error | Queries are tools of prediction; migrate credit to observed residuals with explicit attribution and causal tests (§8.10). Detached targets and objective-local boundaries do not prove freedom from shortcuts |
 | Prediction was opt-in and could be read as requiring a separately supplied future example | Alec has specified default-on expectation for each eligible arriving input, with an explicit off switch; that input supervises its prior estimate in the same call, and estimate/residual provenance remains explicit (§8.7) |
 
 These are documentation corrections and implementation requirements, not
@@ -1585,10 +1564,11 @@ passing focused evidence and incomplete full validation. Resume the item order
 below and its ordinary test/commit/push gates; do not treat this checkpoint as
 completion or a general relaxation of those gates.
 
-This is implementation dependency order for the remaining work. The requested
-joint-gradient revision (item 7) is implemented against the current shared
-catalogs, with supporting loss-gate/context fixes from items 1–2; it does not
-depend on the later catalog split or default-on rollout. Runtime phase order remains
+This is implementation dependency order for the remaining work. The September
+20/21 §8.4 decision supersedes the earlier joint-gradient budget: state handoffs
+have objective-local boundaries, shared operators receive ordinary gradients,
+and concept positions have only the distributional rotation owner. The current
+landing order and remaining work are in [todo.md](../../todo.md). Runtime phase order remains
 understanding/reconstruction, then reasoning, then response generation (§1).
 The seven fixes in the September 14 ownership plan are already recorded as
 complete; this list does not repeat them. Each future implementation item
@@ -1602,7 +1582,7 @@ in full before code changes and re-read its
 after each context compaction. They include the exact co-author trailer,
 protected paths and prohibition on editing `bin/*.py` while pytest runs.
 The September 17 [bounded test workflow](../Testing.md) supplies the full-suite
-commit gate: one suite per user, fresh sequential workers, memory limits,
+commit gate: one suite per user, fresh bounded workers, memory limits,
 worker/overall deadlines and persistent coverage/exit receipts. Use affected
 file or node selections during development; use the full selected default suite
 before each implementation commit. An incomplete or resource-terminated run
@@ -1654,21 +1634,23 @@ queries may introduce their use. Preserve those methods until that decision.
    and provenance tests. Keep those changes in separate commits
    with §4's phase, lifecycle, semantic, gradient and learned-utility tests.
    Completing the concept-prediction milestone does not close these gates.
-6. **Split the comprehension and generation catalogs (§8.9).** Probe first:
-   the generate ops and the compose ops currently share 16 modules and 28
-   parameters. Resolve `<generate>` rules against a generation-owned
-   registry, initialize those instances from comprehension's at construction
-   and at checkpoint migration, and verify the generate policy's
-   rule-meaning row migration still holds. Test catalog identity and
-   input-mediated gradient reach separately, and protect all permitted
-   downstream paths into representation parameters (§8.9).
-7. **Joint representation learning (§8.4, implemented and verified).** Replace the
-   no-encoder-gradient rule. Verify live predictor-to-encoder feedback,
-   detached targets, all-downstream aggregation without supplied answers,
-   actual shared-grammar ownership, zero/near-zero reconstruction refinement,
-   AMP, sparse tensors, and graph cleanup across optimizer steps. Demonstrate
-   a more predictive encoding while retaining reconstruction fidelity. Record
-   the root/full-meaning milestone separately (§9.2 decision 1).
+6. **Separate comprehension and generation catalogs (§8.9).** Preserve the
+   declared generation catalog and chooser's rule-meaning rows through
+   checkpoint migration. Shared numerical operators and tied inverses remain
+   permitted under §8.4; independent catalogs do not require copied operator
+   weights. Test catalog ownership, optimizer membership and the detached
+   concluded-idea handoff separately. This is NEXT item 3.
+7. **Objective-local representation learning (§8.4).** Verify live
+   predictor-to-encoder feedback, detached observed targets, ordinary weighted
+   objectives without supplied answers, shared operator ownership, AMP, sparse
+   tensors and graph cleanup across optimizer steps. Output receives a
+   detached concluded idea on the prepared-answer path; the direct head's
+   unfactored state path is explicitly warned about. Concept code positions
+   remain outside autograd. The mechanism receipts are in
+   [GradientFlow](../GradientFlow.md) and [Testing](../Testing.md); learned
+   utility still requires a more predictive encoding with reconstruction
+   fidelity and the held-out controls. Record the root/full-meaning milestone
+   separately (§9.2 decision 1).
 8. **Move queries to prediction and credit them by the residual (§8.10).**
    Keep §3's episode budget, credit contract and append-only history. Prove
    the chooser trains on an unlabelled corpus, that anticipation reads no
@@ -1682,9 +1664,9 @@ queries may introduce their use. Preserve those methods until that decision.
 Update the linked Architecture, Language, Training, Params, STM and Reasoning
 documentation as each implementation lands (§5). This consolidated document
 remains **unfinished** until its relevant implementation and behavioral gates
-have evidence. This revision implements §8.4's joint-gradient behavior and
-related training-gate/context fixes; its evidence is recorded there. The
-broader gates in this list remain open.
+have evidence. The current objective-local mechanism evidence is recorded in
+[Testing](../Testing.md). Those receipts do not satisfy the broader learning
+gates in this list.
 
 ## 11. Code Review (2026-09-16): local-role expectation implementation
 

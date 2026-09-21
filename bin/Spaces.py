@@ -18664,6 +18664,16 @@ class ConceptualSpace(Space):
                 out[(alloc.placement.get(cid, 0), cid)] = r
         return out
 
+    def concept_id_at_row(self, row):
+        """Read the allocator's derived reverse index, without scanning codes."""
+        alloc = getattr(self, "_concept_allocator", None)
+        if alloc is not None:
+            for layer in reversed(tuple(alloc._layers.values())):
+                key = layer._tensor_row_keys.get(int(row))
+                if key is not None:
+                    return key[1] if isinstance(key, tuple) else key
+        return None
+
     def _csw_concept_row(self, order, concept_id):
         """First-seen GLOBAL row of ``concept_id``: order 0 allocates in the
         snap block ``[0, n_snap)``, relations in the pool ``[n_snap, N)``.

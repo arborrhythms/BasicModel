@@ -61,6 +61,11 @@ LTM retains its `[capacity, 3, width]` idea slots. New registered tensor columns
 are `leaf_codes`, per-row/per-role `leaf_offsets`, `leaf_complete`, and
 `index_stream`. Posting lists from `(code, role)` to store rows are derived from
 these columns. They contain addresses, not another copy of semantic vectors.
+The leaf column doubles its allocated capacity when needed; appends write only
+new terms. Checkpoints serialize its used prefix, and reset/compaction rebuild
+its extent and postings. Row-to-concept identity is cached by the allocator's
+row owner at allocation and reconstructed on checkpoint load, so thought
+effects do not scan the dictionary to recreate a reverse map.
 [Writer and checkpoint](../bin/Layers.py), [index](../bin/MemoryIndex.py).
 
 A canonical meaning supplies native leaf references and nested constituents.

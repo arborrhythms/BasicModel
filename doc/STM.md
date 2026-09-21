@@ -812,8 +812,8 @@ The three positions are NP1, VP and NP2. Padding is masked before the network;
 role and chronological positions remain distinct. It predicts three separate
 vectors and three presence logits. The loss is MSE over actual occupied
 roles plus mean binary cross entropy for presence. Targets are detached;
-current-step source representations remain live under the reconstruction
-gradient budget. See [Layers.py](../bin/Layers.py).
+current-step source representations remain live under the objective-local
+boundaries in [GradientFlow](GradientFlow.md). See [Layers.py](../bin/Layers.py).
 
 The packed observer uses the existing sealed end-slot/depth outputs for each
 sentence, with an explicit STM-to-infix permutation. Corpus source addresses
@@ -877,7 +877,7 @@ produces the next end-state **shape** $(\hat{d}, \hat{p}[\hat{d}, D])$:
   can train the encoder as well as `_inter_predictor`. Teacher reconstruction
   does not disable this term. `observe_stm_end_state` scores each arriving
   observation once. Evaluation does not accumulate training losses. Joint
-  gradients use the [Training.md balance rule](Training.md).
+  gradients use the [objective-local gradient contract](GradientFlow.md).
 - **InfoNCE next-idea contrastive term (optional, additive).** When
   `<interContrastiveWeight>` is positive (default `0.0`, off),
   `observe_stm_end_state` also ranks the actual next root above the

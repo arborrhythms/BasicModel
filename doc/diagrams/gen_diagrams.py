@@ -713,7 +713,7 @@ GO_GRAMMARS = [
 ]
 
 GO_GRAMMAR_NOTE = (
-    "one vocabulary of operator identities; shared operators + codebook are the ONE gradient "
+    "one vocabulary of operator identities; shared operators are the ONE gradient "
     "coupling between objectives (dissonance = per-operator gradient cosine); a compose face "
     "alone grants no thought permission   ·   the SEAL (not an operator) adds the negative image")
 
