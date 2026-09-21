@@ -899,7 +899,8 @@ learning gate; its cause must be accounted for before the item 9 learning
 comparisons. The [comparison record](../benchmarks/2026-09-21-item10/final-source/parity-comparison.json)
 retains per-sentence values and tolerances. Countdown items 7 and 5 must
 preserve both measurements unless an explicit reviewed correction replaces
-the baseline. The landing's source commit is recorded with the linked receipt.
+the baseline. Measured source: `d4dc385f1dbf8a447e9108f13483def3dfef9c00`; the linked receipt
+verifies the same source map for the full suite and all three measurements.
 
 ### 8.3 Sequence identity, memory and complete meaning
 

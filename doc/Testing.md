@@ -1478,6 +1478,6 @@ caps and a **10.78 GiB** peak aggregate footprint. The interrupted development
 selection and the unchanged binder assertion's correction remain in the
 linked audit record; the corrected affected selection passes **48/48**.
 
-Final documentation links pass **70/70**, `20260921-104236-e8452e`, with the
-same validated source ([receipt](benchmarks/2026-09-21-item10/doc-links-result.json.gz),
+Final documentation links pass **70/70**, `20260921-104438-87cac7`, with the
+same validated source ([receipt](benchmarks/2026-09-21-item10/doc-links-final-result.json.gz),
 [landing metadata](benchmarks/2026-09-21-item10/receipt-info.json)).

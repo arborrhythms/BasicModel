@@ -1,5 +1,7 @@
 # Item 10: reconstruction measurements and seed-selection audit
 
+Implementation source: `d4dc385f1dbf8a447e9108f13483def3dfef9c00`.
+
 Baseline includes local documentation commit `0c8bea8`, which is published with
 this landing. The MentalModel/seed bullet was taken early from countdown item 2
 at Alec's request. This record does not close any expectation learning gate.
@@ -226,7 +228,7 @@ All three final reconstruction records have the same source map. Unique case
 counts are reported separately from repeated phase reports. This default
 receipt does not erase the explicit slow learning failures above.
 
-Final documentation links pass **70/70**, `20260921-104236-e8452e`, exit 0,
-with the same source map ([receipt](doc-links-result.json.gz)). The
+Final documentation links pass **70/70**, `20260921-104438-87cac7`, exit 0,
+with the same source map ([receipt](doc-links-final-result.json.gz)). The
 [landing metadata](receipt-info.json) ties the implementation commit, full
 receipt, documentation check and final measurement source maps together.
