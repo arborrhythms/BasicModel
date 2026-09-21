@@ -13,7 +13,7 @@
 Work follows
 [2026-09-15-next-sentence-as-the-production-objective.md](doc/plans/2026-09-15-next-sentence-as-the-production-objective.md)
 §10 and its completion gates. **Item 1's bounded supervised wording gate and items 1b–1d are complete.
-Item 2's implementation and measurements are ready for review; its joint and
+Item 2's implementation and measurements are landed for review; its joint and
 useful-query learning gates remain open. Item 3 has not started.**
 Natural word → operator associations use the existing compose/generate grammars.
 Structural-preference and routing-share measurements
@@ -29,6 +29,7 @@ only the generation catalogue (item 3) remains uninstalled.
 
 ### Done (newest first)
 
+- `7d7dc4f` Item 2 implements negative-image expectation and residual credit; measured joint/useful-query learning remains open under item 2 ([design](doc/ExpectationRetention.md), [receipt](doc/Testing.md#negative-image-expectation-september-21)).
 - `6bf211a` Item 1d restores rotation-owned concept codes and completes the 1b/1c review corrections ([GradientFlow](doc/GradientFlow.md), [receipt](doc/Testing.md#item-1d-review-corrections-september-21)).
 - `101dc22` Item 1c complete in mechanism: checked subsystem effects, indexed cued retrieval and retained frames; compound recovery remains unproven ([AccessibleMind](doc/AccessibleMind.md), [receipt](doc/Testing.md#accessible-mind-effects-september-20)).
 - `7c2fa5a` Item 1b complete: objective-local state gradients and measured shared operator/codebook credit ([GradientFlow](doc/GradientFlow.md), [receipt](doc/Testing.md#gradient-factorization-september-20)).
