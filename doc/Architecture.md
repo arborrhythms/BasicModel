@@ -1613,6 +1613,67 @@ pyramid alternates pi with sigma — conjunctions of members, then unions of
 alternatives, which is the disjunctive normal form XOR itself needs — or its
 sigma has to be a union that does not decay.
 
+#### Decided in direction: a concept is sigma over pi (Alec, 2026-09-21)
+
+> The best psychological support is for sigma-over-pi (DNF), not just
+> successive sigma. […] Since we have symbols mapping 1:1 to concepts, then
+> concepts from symbols (and perhaps even from percepts) should be sigma-pi
+> DNF.
+
+Todo item 11. The best-supported models of categorisation have this shape:
+similarity to each stored exemplar is a *product* over feature matches, and
+the evidence for a category is the *sum* over its exemplars (Medin & Schaffer
+1978; Nosofsky 1986); the difficulty people have with a Boolean concept
+tracks the length of its shortest formula (Feldman 2000), and the rational
+rules model represents concepts as disjunctive normal form (Goodman,
+Tenenbaum, Feldman & Griffiths 2008); ventral-stream models alternate
+template matching with MAX pooling, and chose MAX over averaging because an
+average dilutes one active input (Riesenhuber & Poggio 1999), which is
+finding 10. It is graded DNF — sets with similarity, not logic formulas:
+people find explicit disjunctive rules hard (Bruner, Goodnow & Austin 1956)
+and natural categories are graded (Rosch & Mervis 1975).
+
+**The rung.** Today every rung of the concept pyramid is one additive hop,
+`tanh(W[a|1])`; the typed per-order families that came before it were
+collapsed into that one untyped layer on 2026-07-03. The rung becomes two
+folds over *rows*, never hidden units, since a symbol is a concept and every
+unit that matters should be addressable:
+
+- a **pi row** is a term: *these members together*. It is what
+  `synthesize_higher_order` already mints from a set of co-active members;
+- a **sigma row** is a class: *any of these*. It is a union over terms or
+  members — META over a word and its object, subsumption between concepts;
+- within a rung the pi rows are computed first and the sigma rows after
+  them, so a class can take in terms minted at its own order. The
+  ramsification stamp that records sigma or pi per fold is the natural place
+  to type a row.
+
+**The folds**, on presence `u = (a + 1)/2`, with non-negative exponents and
+**no normalisation** — each factor lies in `[0, 1]`, so the result does:
+
+    pi:     y = ∏ lit_i ^ w_i                 all present → 1; a missing member lowers it
+    sigma:  y = 1 − ∏ (1 − t_j) ^ v_j         any term present → 1; or max
+
+Neither decays with order (finding 10), the two add in different charts
+(`log u` and `log(1 − u)`), which is the mismatch of §2, and the exact
+reverse is the same solve in each chart.
+
+**Negation enters only above order 0.** From symbols, a literal may be a
+member or its negation — `lit = u` for a positive weight, `1 − u` for a
+negative one — so a term can say *this and not that*. That is XOR's home,
+`(x ∧ ¬y) ∨ (¬x ∧ y)`, two pi rows and one sigma row in conceptual space; it
+is also a concept formed by exclusion, which is what *apoha* says a concept
+is ([Philosophy](Philosophy.md#expectation-as-a-negative-image-attention-as-exclusion-2026-09-20)).
+From percepts, if the same form is used there, it is **monotone** DNF:
+perceptual space carries no negation, so every literal is a presence. That
+is the form that keeps parthood.
+
+**To settle in the build.** How a class row comes to have several terms
+(today each distinct member set mints its own row); whether the sign of a
+literal is learned per edge or minted; the top-K taper over two kinds of row;
+saturation of the probabilistic sum under many weak terms; and the reverse
+through a rung.
+
 **Recommendation.** Evaluate behind a `normalize` mode, turned on
 selectively. First the two XOR gates, in conceptual space with the monotonic
 flags off: the signed mean sigma in the raw chart feeding today's pi, at

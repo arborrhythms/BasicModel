@@ -36,6 +36,22 @@ seed may make a *measurement* reproducible, never an *assertion* true. A test
 that fails at some seed has found a defect; fix the defect, or let it fail.
 Do not remove unused reasoning methods without Alec's review.
 
+- **11. A concept is sigma over pi** (Alec, 2026-09-21;
+   [design](doc/Architecture.md#decided-in-direction-a-concept-is-sigma-over-pi-alec-2026-09-21)).
+   Each rung of the concept pyramid stops being one additive hop and becomes
+   two folds over rows: **pi rows** are terms, these members together (what
+   `synthesize_higher_order` mints); **sigma rows** are classes, any of these;
+   pi before sigma within a rung. On presence, non-negative exponents, no
+   normalisation: `∏ lit^w` and `1 − ∏(1 − t)^v` (or max), which do not decay
+   with order and invert by the same solve. From symbols a literal may be
+   negated by the sign of its weight, so XOR is two pi rows and one sigma row
+   in conceptual space; from percepts, if adopted there, the form is monotone.
+   Exit: the unseeded XOR gates pass through the pyramid at four or more
+   terms; activation holds across `symbolicOrder` rungs with one member of
+   several active (the table in finding 10, measured in the real layer); the
+   reverse through a rung round-trips; the reconstruction baseline of
+   `d4dc385` is unchanged, or the change is explained; the design note's open
+   points settled and written back.
 - **10. Evaluate bounded pi and sigma folds as normalized means** (Alec's
    proposal, 2026-09-21; [proposal and first evaluation](doc/Architecture.md#proposal-bounded-pi-and-sigma-folds-as-normalized-means-alec-2026-09-21)).
    A new item; the number is reused. Today Sigma and Pi are one map in the
@@ -188,7 +204,7 @@ Do not remove unused reasoning methods without Alec's review.
    launch-bound kernel count per brick; B24 brick +25% against pre-ladder.
    Exit: sentences/s and peak memory at the run's batch and brick size against
    the July baseline.
-- **0. The full training session**: the long FineWeb run, only with items 10–2
+- **0. The full training session**: the long FineWeb run, only with items 11–2
    done and item 1 measured. Expectation on in `model.xml`; the
    `BasicModel.xml` flip follows the plan's §10 gates. Stop on rising
    expectation discrepancy, a reconstruction regression against the `d4dc385`
