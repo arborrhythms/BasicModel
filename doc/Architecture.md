@@ -1668,11 +1668,21 @@ From percepts, if the same form is used there, it is **monotone** DNF:
 perceptual space carries no negation, so every literal is a presence. That
 is the form that keeps parthood.
 
-**To settle in the build.** How a class row comes to have several terms
-(today each distinct member set mints its own row); whether the sign of a
-literal is learned per edge or minted; the top-K taper over two kinds of row;
-saturation of the probabilistic sum under many weak terms; and the reverse
-through a rung.
+**Five open points, to settle before the build.**
+
+1. **How a class row comes to have several terms.** Today each distinct
+   member set mints its own row, so every minted row is a single term. What
+   makes a sigma row, and what adds a term to one that exists?
+2. **The sign of a literal.** Learned per edge, or fixed when the row is
+   minted? And what initialises it?
+3. **The top-K taper over two kinds of row.** One budget per order shared by
+   pi and sigma rows, or one each, given that sigma rows read pi rows of the
+   same rung?
+4. **Saturation of the probabilistic sum.** Many weakly active terms
+   accumulate toward 1. Are exponents below one and the taper enough, or is
+   max the safer union?
+5. **The reverse through a rung.** Each fold inverts in its own chart; what
+   does the reverse of a whole rung recover, and what does it need retained?
 
 **Recommendation.** Evaluate behind a `normalize` mode, turned on
 selectively. First the two XOR gates, in conceptual space with the monotonic
