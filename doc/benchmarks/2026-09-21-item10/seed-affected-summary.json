@@ -1,0 +1,42 @@
+{
+  "selected": 28,
+  "completed": 28,
+  "exit_code": 1,
+  "reason": "test_failure",
+  "elapsed_seconds": 54.33100495801773,
+  "peak_aggregate_memory_bytes": 2628573256,
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 30064771072,
+    "aggregate_memory_bytes": 30064771072,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 10,
+    "worker_seconds": 1800,
+    "suite_seconds": 10800,
+    "batch_size": 8,
+    "max_files": 1
+  },
+  "run": "20260921-100032-727d32",
+  "outcomes": {
+    "passed": 26,
+    "failed": 1,
+    "skipped": 1
+  },
+  "source_files": 630,
+  "source_sha256": "97ab4ee9d0c64c87e402828277e481404b241f4e982e8db7b90a01410513b0ea",
+  "phase_reports": {
+    "passed": 26,
+    "failed": 1,
+    "skipped": 1
+  },
+  "failures": [
+    {
+      "nodeid": "test/test_sigmapi.py::TestPiSigmaXOR::test_xor_convergence",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.16184324998175725,
+      "message": "test/test_sigmapi.py:110: in test_xor_convergence\n    self.assertLess(loss.item(), 0.1,\nE   AssertionError: 0.2560509443283081 not less than 0.1 : XOR did not converge within the declared 1000 steps",
+      "stdout": ""
+    }
+  ]
+}

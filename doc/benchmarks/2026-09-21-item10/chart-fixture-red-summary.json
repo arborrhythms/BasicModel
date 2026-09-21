@@ -1,0 +1,40 @@
+{
+  "selected": 37,
+  "completed": 37,
+  "exit_code": 1,
+  "reason": "test_failure",
+  "elapsed_seconds": 13.119248708011582,
+  "peak_aggregate_memory_bytes": 5562837000,
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 30064771072,
+    "aggregate_memory_bytes": 30064771072,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 10,
+    "worker_seconds": 1800,
+    "suite_seconds": 10800,
+    "batch_size": 8,
+    "max_files": 1
+  },
+  "run": "20260921-101251-03ff86",
+  "outcomes": {
+    "passed": 36,
+    "failed": 1
+  },
+  "source_files": 630,
+  "source_sha256": "f1b048e30d3d86048b61554dd33215e770dad1d44ca0cf604620c789c4c37840",
+  "phase_reports": {
+    "passed": 36,
+    "failed": 1
+  },
+  "failures": [
+    {
+      "nodeid": "test/test_sigmapi.py::TestPiSigmaChartComposition::test_hidden_tanh_is_cancelled_by_the_next_chart",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0014057920197956264,
+      "message": "test/test_sigmapi.py:110: in test_hidden_tanh_is_cancelled_by_the_next_chart\n    torch.testing.assert_close(sigma(hidden), chart_affine.tanh(), rtol=1e-10, atol=1e-10)\nE   AssertionError: Tensor-likes are not close!\nE   \nE   Mismatched elements: 4 / 4 (100.0%)\nE   Greatest absolute difference: 0.19930494512072439 at index (1, 0) (up to 1e-10 allowed)\nE   Greatest relative difference: 2.2994777183844777 at index (3, 0) (up to 1e-10 allowed)",
+      "stdout": ""
+    }
+  ]
+}

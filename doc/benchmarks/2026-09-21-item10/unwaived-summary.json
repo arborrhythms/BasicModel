@@ -1,0 +1,48 @@
+{
+  "selected": 3,
+  "completed": 3,
+  "exit_code": 1,
+  "reason": "test_failure",
+  "elapsed_seconds": 33.567982457985636,
+  "peak_aggregate_memory_bytes": 4117368744,
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 30064771072,
+    "aggregate_memory_bytes": 30064771072,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 4,
+    "worker_seconds": 1800,
+    "suite_seconds": 10800,
+    "batch_size": 1,
+    "max_files": 1
+  },
+  "run": "20260921-100810-9195ca",
+  "outcomes": {
+    "failed": 2,
+    "passed": 1
+  },
+  "source_files": 630,
+  "source_sha256": "879ab81794146513dc678bd7af13bf0522c7469c7d586184eb4bcf29e2d75c10",
+  "phase_reports": {
+    "failed": 2,
+    "passed": 1
+  },
+  "failures": [
+    {
+      "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.4699453329667449,
+      "message": "test/test_explicit_dimensions.py:256: in test_xor_class_accuracy\n    model = _run_xor_grammar_in_process()\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_explicit_dimensions.py:247: in _run_xor_grammar_in_process\n    results = ModelFactory.run(\"data/XOR_grammar.xml\")\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:25731: in run\n    return ModelFactory._run_hydrated(config_path, arch, dat, trn)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:25838: in _run_hydrated\n    m.run(_t(\"numTrials\", 1),\nbin/Models.py:3972: in run\n    acc[trial, :] = self.runTrial(\nbin/Models.py:11338: in runTrial\n    outErr, inErr, allOut, lastIn = self.runEpoch(optimizer=self._optimizer, batchSize=batchSize, split=\"train\")\n                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16534: in runEpoch\n    result, _ = self.runBatch(\nbin/Models.py:14831: in runBatch\n    _what_answers = self._what_or_think(\nbin/Models.py:9531: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:11033: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9240: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9061: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24510: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18204: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22511: in _forward_body_per_word\n    last_cs = self._run_peer_word_pipeline(out_slot, _n_trips)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:22211: in _run_peer_word_pipeline\n    raise ValueError(\nE   ValueError: peer word pipeline requires one of (8, 16, 32, 64, 128, 256, 512, 1024), got W=6",
+      "stdout": "Starting with dynamic 2-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\nDevice: cpu\r\nPeer pipeline: static PS/WS stage bodies compiled separately; legacy compatibility scheduler remains outside fullgraph capture\r\n\n\n==== BasicModel ====\r\n\nTrial [1/1]\r\nBaseline test pass skipped (--test not specified). Re-invoke train.py with --test to include baseline + post-epoch evaluation.\r\nEpoch [1/400]\r\n[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+    },
+    {
+      "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.4686276250286028,
+      "message": "test/test_explicit_dimensions.py:286: in test_piecewise_overall_at_least_50_pct\n    model = _run_xor_grammar_in_process()\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_explicit_dimensions.py:247: in _run_xor_grammar_in_process\n    results = ModelFactory.run(\"data/XOR_grammar.xml\")\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:25731: in run\n    return ModelFactory._run_hydrated(config_path, arch, dat, trn)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:25838: in _run_hydrated\n    m.run(_t(\"numTrials\", 1),\nbin/Models.py:3972: in run\n    acc[trial, :] = self.runTrial(\nbin/Models.py:11338: in runTrial\n    outErr, inErr, allOut, lastIn = self.runEpoch(optimizer=self._optimizer, batchSize=batchSize, split=\"train\")\n                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16534: in runEpoch\n    result, _ = self.runBatch(\nbin/Models.py:14831: in runBatch\n    _what_answers = self._what_or_think(\nbin/Models.py:9531: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:11033: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9240: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9061: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24510: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18204: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22511: in _forward_body_per_word\n    last_cs = self._run_peer_word_pipeline(out_slot, _n_trips)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:22211: in _run_peer_word_pipeline\n    raise ValueError(\nE   ValueError: peer word pipeline requires one of (8, 16, 32, 64, 128, 256, 512, 1024), got W=6",
+      "stdout": "Starting with dynamic 2-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\nDevice: cpu\r\nPeer pipeline: static PS/WS stage bodies compiled separately; legacy compatibility scheduler remains outside fullgraph capture\r\n\n\n==== BasicModel ====\r\n\nTrial [1/1]\r\nBaseline test pass skipped (--test not specified). Re-invoke train.py with --test to include baseline + post-epoch evaluation.\r\nEpoch [1/400]\r\n[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "selected": 24,
+  "completed": 24,
+  "exit_code": 1,
+  "reason": "test_failure",
+  "elapsed_seconds": 11.2227469580248,
+  "peak_aggregate_memory_bytes": 1727239496,
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 30064771072,
+    "aggregate_memory_bytes": 30064771072,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 10,
+    "worker_seconds": 1800,
+    "suite_seconds": 10800,
+    "batch_size": 8,
+    "max_files": 1
+  },
+  "run": "20260921-093930-0752c8",
+  "outcomes": {
+    "passed": 23,
+    "failed": 1
+  },
+  "source_files": 630,
+  "source_sha256": "4ad65637985cfefd102e4375618c05947b39382a82d81389bdd1cf7d65d623a9",
+  "phase_reports": {
+    "passed": 23,
+    "failed": 1
+  },
+  "failures": [
+    {
+      "nodeid": "test/test_signal_router_compaction.py::test_compact_soft_gradient_flows_through_marginals",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.013343541999347508,
+      "message": "test/test_signal_router_compaction.py:134: in test_compact_soft_gradient_flows_through_marginals\n    assert p_copy.grad is not None and p_copy.grad.abs().sum() > 0\nE   assert (tensor([[0., 0., 0., 0.]]) is not None and tensor(0.) > 0)\nE    +  where tensor([[0., 0., 0., 0.]]) = tensor([[0.5000, 0.5000, 0.5000, 0.5000]], requires_grad=True).grad\nE    +  and   tensor(0.) = <built-in method sum of Tensor object at 0x11f47dcc0>()\nE    +    where <built-in method sum of Tensor object at 0x11f47dcc0> = tensor([[0., 0., 0., 0.]]).sum\nE    +      where tensor([[0., 0., 0., 0.]]) = <built-in method abs of Tensor object at 0x11de05540>()\nE    +        where <built-in method abs of Tensor object at 0x11de05540> = tensor([[0., 0., 0., 0.]]).abs\nE    +          where tensor([[0., 0., 0., 0.]]) = tensor([[0.5000, 0.5000, 0.5000, 0.5000]], requires_grad=True).grad",
+      "stdout": ""
+    }
+  ]
+}

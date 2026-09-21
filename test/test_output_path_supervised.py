@@ -41,7 +41,6 @@ def _build(config_path, dataset):
     init_config(path=str(config_path), defaults_path=str(_DATA / "model.xml"))
     Language.TheGrammar._configured = False
     TheData.load(dataset)
-    torch.manual_seed(0)
     m, _ = Models.BaseModel.from_config(str(config_path), data=TheData)
     return m.to("cpu")
 
@@ -243,7 +242,6 @@ def _answer_training_probe(m, opt, questions):
     try:
         batch = (m.inputSpace.prepInput(["1 plus 2", "3 plus 4"]),
                  torch.zeros(2, 1, 1))
-        torch.manual_seed(11)
         m.runBatch(train=True, batchSize=2, split="train", optimizer=opt,
                    batch_override=batch, questions=questions)
     finally:

@@ -6,7 +6,6 @@ objective (no reconstruction/reconstruction_reverse double count), and the
 meronomy percepts TILE WORDS (5e: the word-isolation cut bounds promotion
 and spell-out; no percept spans a word/space/punct boundary)."""
 import os
-import random
 import warnings
 
 os.environ.setdefault("BASICMODEL_DEVICE", "cpu")
@@ -20,45 +19,13 @@ import recon_bench
 from recon_bench import run_config
 
 
-def _seed(seed=0):
-    random.seed(seed)
-    torch.manual_seed(seed)
-    np.random.seed(seed)
-
-
-def _build(config, seed=0):
-    """Seeded model build via the shared harness path."""
-    _seed(seed)
+def _build(config):
+    """Use the ambient initialization, with no selected training trajectory."""
     return recon_bench._build_model(recon_bench._resolve_config(config))
 
 
-# 5.5 THE bar's budget: smallest stable convergence is E=20 (exact-match 1.0
-# holds over the verified plateau E in [20, 80]; E=1/3 hit 1.0 but E=2/10/15
-# dip) -- 20 + 25% margin = 25. Evidence: plan EXECUTION NOTES Task 5c/5d.
-# 2026-07-04 nWhere=0 lossRev wiring fix: the seed-0 plateau moved to
-# [30, 80]; re-pinned per the plan's formula (smallest stable 30 + 25% = 38,
-# verified 1.0 at exactly 38) -- plan EXECUTION NOTES, nWhere entry.
-# RE-PINNED (2026-07-04 encoding pass, Gate A re-baseline): the (2, 4) band
-# + <wherePeriod> 8192 moved the seed-0 trajectory again -- measured E=
-# {3: .75, 10: 0, 20: 0, 30: 0, 38: 0, 50: 0, 60: .75, 70: .75, 75: 1.0,
-# 80: 1.0, 90: .75, 100: .75}. 1.0/1.0 is VERIFIED on [75, 80] only; the
-# formula's stable-plateau premise DOES NOT HOLD (90/100 regress to 0.75 --
-# one row of content-association drift, the known residual; where_recovery
-# is 1.0 from E=50 up). Pinned at 80 (verified point); the instability is
-# recorded in the encoding plan's EXECUTION NOTES for Alec's review.
-# RE-PINNED (2026-07-09 multi-rung pass): the (4, 4) band -- .where is now the
-# 2-rung LADDER (LF range + HF resolution; nWhat 1018 -> 1016) -- moved the
-# seed-0 trajectory again. Measured E={75: scaffold 1.0/blind .75, 80: .75/.75,
-# 85: BOTH 1.0/1.0, 90: .75/.75, 100: .5-.75}. Pinned at 85, the point where
-# the blind bar AND the scaffold bar are both exact under the DEFAULT ladder
-# (wherePeriod 8192 / whereRungRatio 32 -- no per-config period override; the
-# ladder decodes byte-exact starts at the full period, start error 0.0). The
-# 90/100 content-drift tail persists (same residual as before).
-# (That 85-window analysis is SUPERSEDED by the 2026-07-12 re-pin below.)
-# 2026-07-12 re-pin (WS geometry transposes, decision 4 applied to
-# MM_20M_xor/grammar): converges at 128 (exact 1.0, recon 3.8e-4;
-# 104 insufficient) -> 128 + 25% margin = 160. Prior pin: 85.
-EPOCHS_PINNED = 160
+# Keep the pre-audit training budget; it is not evidence of convergence.
+RECONSTRUCTION_EPOCHS = 160
 
 
 @pytest.mark.slow
@@ -69,7 +36,7 @@ def test_xor_recon_loss_is_live(tmp_path):
     Codebook-``.what`` early return in ``create_ir_mask`` starved the
     masked-LM branch and lossIn was explicit zeros, silently.
     """
-    rec = run_config("data/MM_20M_xor.xml", epochs=1, seed=0,
+    rec = run_config("data/MM_20M_xor.xml", epochs=1, seed=None,
                      out_dir=str(tmp_path))
     assert rec.recon_loss > 0.0
 
@@ -379,7 +346,7 @@ def test_grammar_output_loss_not_silent_zero(tmp_path):
     [4,1,1] carrying the labels) -- the pin is liveness AND now real
     supervision.
     """
-    rec = run_config("data/MM_20M_grammar.xml", epochs=1, seed=0,
+    rec = run_config("data/MM_20M_grammar.xml", epochs=1, seed=None,
                      out_dir=str(tmp_path))
     assert rec.output_loss > 0.0
 
@@ -579,38 +546,8 @@ def test_reconstruction_not_double_counted():
 
 @pytest.mark.slow
 def test_mm20m_xor_roundtrip_at_harness_budget(tmp_path):
-    """Harness-default-budget trajectory pin (epochs=3, seed 0).
-
-    BAR STATUS (Alec's derivation principle, 2026-07-13): this is an
-    EMPIRICAL TRAJECTORY PIN (reproducibility of the E=3 point), not a
-    capability bar -- the theory bar (exact == 1.0, nonlinear config +
-    discrete vocab) lives on test_mm20m_xor_exact_roundtrip below.
-    Verified green IN ISOLATION and in pairs on 2026-07-13 (measured
-    E=3 = 0.5/1.0, matching this pin); its failures inside larger
-    single-process compositions are ORDER CONTAMINATION (state leaked
-    by earlier test files shifts the E=3 dynamics) -- tracked as the
-    open test-hygiene item, not re-pinned around.
-
-    RE-BASELINED (nWhere=0 lossRev wiring fix, Alec-approved 2026-07-04):
-    with the where band entering lossRev at where_scale the E=3
-    early-geometry blip at 1.0 is gone -- measured exact_match at E=3 is
-    0.5 (deterministic cpu/eager seed 0; new plateau starts at E=30, see
-    the wiring-fix EXECUTION NOTES). where_recovery stays 1.0 (the tiling
-    channel is budget-independent). This pin holds the fast-budget
-    trajectory point; the exact-roundtrip bar is the RUN_SLOW test below.
-    RE-MEASURED (silent-band lossIn wiring fix, 2026-07-04): E=3 stays
-    0.5/1.0 and the plateau holds (1.0/1.0 verified at E=30/38/50) --
-    values unchanged, no re-pin.
-    RE-PINNED (encoding pass Gate A, 2026-07-04): the (2, 4) when band +
-    <wherePeriod> 8192 shift the E=3 point 0.5 -> 0.75 (deterministic
-    cpu/eager seed 0; where_recovery stays 1.0). Full trajectory + the
-    moved 1.0 window: see EPOCHS_PINNED comment. This pin is the SCAFFOLD
-    trajectory point (blind=False explicit -- the harness default flipped
-    to blind at Gate B; the blind bar lives in test_blind_decode.py).
-    The current deterministic E=3 scaffold point is 0.5; this is a trajectory
-    smoke test, not the exact-roundtrip acceptance below.
-    """
-    rec = run_config("data/MM_20M_xor.xml", epochs=3, seed=0,
+    """Retain the three-epoch .5 reconstruction bar without a selected seed."""
+    rec = run_config("data/MM_20M_xor.xml", epochs=3, seed=None,
                      out_dir=str(tmp_path), blind=False)
     assert rec.exact_match_rate >= 0.5
     assert rec.where_recovery == 1.0
@@ -618,47 +555,24 @@ def test_mm20m_xor_roundtrip_at_harness_budget(tmp_path):
 
 @pytest.mark.skipif(os.environ.get("RUN_SLOW") != "1",
                     reason="~40s (build + 3 epochs + decode) -- RUN_SLOW gates it")
-def test_mm20m_grammar_free_derivation_ceiling(tmp_path):
-    """THE Method-2 bar (serial plan Task 4): the TRAINED free-derivation,
-    scored on surfaces via recon_bench's ``--free-derivation`` mode (the decode
-    routes through the trained STUDENT reverse -- reconstruct_from_idea +
-    serial_tensor_reverse_debug -- NOT the Method-1 leaves replay).
+def test_mm20m_grammar_free_derivation_roundtrip(tmp_path):
+    """Free derivation should recover the input; a measured zero is a gap.
 
-    NOT GREEN -- and the cause is ROUTING, not an intrinsic fold ceiling
-    (corrected 2026-07-09; the earlier "non-invertible fold" framing was WRONG).
-    Instrumented: the lattice-fold reverses (union/intersection ``reverse``, the
-    ``Ops.disjunctionReverse`` codebook-walk recommender that reconstitutes an
-    operand pair ``(x1, x2)`` with ``union(x1,x2) ~= parent``) fire ZERO times in
-    this decode -- the free-derivation falls through to the CS reverse
-    (``_reverse_from_S``, nearest-concept on the collapsed root), which renders
-    ONE dominant word (measured exact 0.0 at E=3 AND E=80; where 0.25->0.33).
-    The forward reduce parks which op fired per step
-    (``_stm_last_reduce_routing``) but NO reverse walks those steps backward
-    calling each op's basis-threaded ``reverse`` (Alec: the union reverse is a
-    CODEBOOK LOOKUP -- since neither word is a part of the other, the join keeps
-    enough edge to reconstitute the residual word -- NOT a subtraction). Wiring
-    that reverse-reduce is the open Method-2 build; Method-1 (leaves replay, the
-    test above) stays the exact TEACHER (1.0). If exact_match ever exceeds 0 the
-    reverse-reduce is landing: re-pin (expected-improvement signal)."""
-    rec = run_config("data/MM_20M_grammar.xml", epochs=3, seed=0,
+    The old assertion required the seed-0 failure (exact match == 0). Its
+    historical measurement is not a correctness contract or a ceiling.
+    """
+    rec = run_config("data/MM_20M_grammar.xml", epochs=3, seed=None,
                      out_dir=str(tmp_path), blind=False, free_derivation=True)
-    assert rec.exact_match_rate == 0.0      # the non-invertible-fold ceiling
-    assert rec.where_recovery < 1.0         # does not reach the Method-1 teacher
+    assert rec.exact_match_rate == 1.0
+    assert rec.where_recovery == 1.0
 
 
 @pytest.mark.skipif(
     os.environ.get("RUN_SLOW") != "1",
     reason="160-epoch reconstruction acceptance -- set RUN_SLOW=1")
-@pytest.mark.xfail(reason=(
-    "MM_20M_xor scaffold reconstruction currently tops out below exact "
-    "identity at the pinned budget; retain as the active reverse-path gap."))
 def test_mm20m_xor_exact_roundtrip(tmp_path):
-    """THE bar (Alec 2026-07-03): decoded reconstruction == input, exactly,
-    at EPOCHS_PINNED (2026-07-04 encoding pass: the verified 1.0 window is
-    [75, 80]; see the EPOCHS_PINNED comment for the full trajectory and the
-    open 90/100 instability). SCAFFOLD variant (blind=False -- Q4: the
-    blind bar STANDS BESIDE this content-identity pin, test_blind_decode)."""
-    rec = run_config("data/MM_20M_xor.xml", epochs=EPOCHS_PINNED, seed=0,
+    """Decoded reconstruction must equal input at the declared 160 epochs."""
+    rec = run_config("data/MM_20M_xor.xml", epochs=RECONSTRUCTION_EPOCHS, seed=None,
                      out_dir=str(tmp_path), blind=False)
     assert rec.exact_match_rate == 1.0
     assert rec.where_recovery == 1.0
@@ -671,7 +585,6 @@ def test_associate_span_two_arms():
     falls back to parts); NaN fails loud; a zero vector is no-symbol."""
     from Layers import RadixLayer
 
-    _seed(0)
     store = RadixLayer(8, promotion_threshold=2, promotion_min_length=2)
     pid_world = store.insert(b"world")
     store.insert(b"hello")
@@ -723,7 +636,7 @@ def test_idempotent_config_trains_one_epoch_clean(tmp_path):
     (muxed event Codebook) + the uniform 104-wide slab (both width gates
     pass). One epoch must complete with finite losses.
     """
-    rec = run_config("data/idempotent.xml", epochs=1, seed=0,
+    rec = run_config("data/idempotent.xml", epochs=1, seed=None,
                      out_dir=str(tmp_path))
     assert np.isfinite(rec.output_loss) and np.isfinite(rec.recon_loss)
 

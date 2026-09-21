@@ -5818,6 +5818,8 @@ class LanguageLayer(Layer):
                 "LanguageLayer.compose called before attach_layer_ops() / "
                 "attach_unary_ops().")
         x = data
+        live_lengths = torch.full((x.shape[0],), x.shape[1],
+                                  dtype=torch.long, device=x.device)
         rules = {}
         self._last_space_role_routings = {}
         all_space_roles = sorted(set(self._unary_layers.keys())
@@ -5872,25 +5874,19 @@ class LanguageLayer(Layer):
 
             binary_layer = self._binary_layers[space_role] if space_role in self._binary_layers else None
             if binary_layer is not None:
-                # Recursive reduction: iterate the binary layer up to
-                # (N-1) times so the slab folds down to a single S start
-                # state. Each round's marginal_slab feeds the next; the
-                # leading position (index 0) accumulates the fully-folded
-                # state. The shape stays [B, N, D] in soft form (right-
-                # tail positions get pad-weighted as reductions fire);
-                # the canonical [B, 1, D] root state is x[:, 0:1, :]
-                # after the final round.
-                #
                 rid_table = self._binary_rule_ids[space_role]
-                # plan \xa76: with CS and SS collapsed into one reduction space_role,
-                # fold for ``max(subsymbolicOrder, N-1)`` rounds. Extra rounds
-                # on an already-folded slab are safe no-ops (the layer
-                # returns the degenerate path for N<=1).
+                # Compaction packs each disjoint tile into its output ordinal.
+                # Hard routing carries the remaining live lengths, so a later
+                # round cannot consume padding or reuse an already consumed
+                # child. Soft routing retains its distribution over lengths.
                 max_rounds = max(self.subsymbolic_order, x.shape[1] - 1)
                 round_routings = []
                 for _round_i in range(max_rounds):
+                    if x.shape[1] <= 1:
+                        break
                     b_hard, b_soft, b_routing = binary_layer(
                         x,
+                        lengths=live_lengths,
                         cat_ctx=(cat_e if (space_role == terminal_space_role
                                            and _round_i == 0) else None),
                         what_ctx=(getattr(self, "_what_context", None)
@@ -5914,6 +5910,9 @@ class LanguageLayer(Layer):
                                 space_role_rules_per_row[b].append(
                                     rid_table[int(action_op)])
                     x = b_soft
+                    if getattr(binary_layer, 'superposition_temperature', None) is None:
+                        live_lengths = lengths
+                        x = x[:, :max(length_rows)]
                 if round_routings:
                     # Last round's routing is the canonical "binary"
                     # diagnostic; the full sequence is in "binary_rounds".
@@ -7498,6 +7497,7 @@ def compact_hard(
     reduce_mask: torch.Tensor,       # [B, N-1, R_reduce]
     span_start: torch.Tensor = None,
     span_end: torch.Tensor = None,
+    input_lengths: torch.Tensor = None,
 ):
     """Walk the hard route and write the compacted slab. Output is padded
     to length N so all batches share a tensor; per-row valid length is
@@ -7506,6 +7506,8 @@ def compact_hard(
     B, N, D = x.shape
     device = x.device
     dtype = x.dtype
+    source_lengths = (torch.full((B,), N, device=device, dtype=torch.long)
+                      if input_lengths is None else input_lengths.to(device=device))
 
     y = x.new_zeros(B, N, D)
     src_left = torch.full((B, N), -1, device=device, dtype=torch.long)
@@ -7553,8 +7555,8 @@ def compact_hard(
     j_idx = torch.zeros(B, device=device, dtype=torch.long)    # dest pos j
 
     for _ in range(N):
-        in_range = cursor < N
-        can_reduce = in_range & (cursor < (N - 1))
+        in_range = cursor < source_lengths
+        can_reduce = in_range & (cursor + 1 < source_lengths)
         ci = cursor.clamp(max=max(N - 1, 0))
         ci_r = cursor.clamp(max=max(rm_per_pos_safe.shape[1] - 1, 0))
         rm_here = rm_per_pos_safe[B_idx, ci_r]                # [B]
@@ -7644,48 +7646,38 @@ def compact_soft(
     copy_marginal: torch.Tensor,      # [B, N]
     reduce_marginal: torch.Tensor,    # [B, N-1]
 ):
-    """Length-N soft compaction view: per output position j,
-        y_j = (mu_no_reduce_left[j])         * x_j
-            + (P[reduce-here at j])          * r_j
-            + (P[reduce-to-the-left of j])   * x_{j+1}
-            + (P[shrunk past j])             * 0
-    where the partition treats positions independently to a first
-    approximation. Sufficient for gradient on routing decisions; the
-    hard slab from compact_hard remains the clean operand source.
+    """Expected packed output over the COPY/REDUCE tiling distribution.
+
+    Forward-backward marginals give the conditional next action at a visited
+    source position: copy / (copy + reduce), or reduce / (copy + reduce).
+    A second dynamic program tracks both source position and output ordinal.
+    Unlike a one-position shift approximation, this handles any number of
+    earlier reductions without duplicating children. One-hot marginals give
+    exactly the hard compaction; gradients retain the same tiling expectation.
     """
     B, N, D = x.shape
-
-    # Probability that a reduction has fired strictly before position j.
-    # Cumulative sum of reduce_marginal up to but not including j.
-    if reduce_marginal.shape[1] == 0:
-        cumshift = x.new_zeros(B, N)
-    else:
-        cum = torch.cumsum(reduce_marginal, dim=1)             # [B, N-1]
-        cumshift = torch.cat(
-            [x.new_zeros(B, 1), cum], dim=1)                   # [B, N]
-
-    keep = copy_marginal * (1.0 - cumshift.clamp(0.0, 1.0))
-    if reduce_marginal.shape[1] == 0:
-        reduce_w = x.new_zeros(B, N)
-    else:
-        pad_zero = x.new_zeros(B, 1)
-        reduce_w = torch.cat([reduce_marginal, pad_zero], dim=1)
-    shift = cumshift.clamp(0.0, 1.0)
-    pad_w = (1.0 - keep - reduce_w - shift).clamp(min=0.0)
-
-    pad_slab = x.new_zeros(B, 1, D)
-    x_shift = torch.cat([x[:, 1:, :], pad_slab], dim=1)        # x_{j+1}, last=pad
-    if reduce_marginal.shape[1] == 0:
-        r_padded = x.new_zeros(B, N, D)
-    else:
-        r_padded = torch.cat([reduced, pad_slab], dim=1)        # r_j, last=pad
-
-    y = (
-        keep.unsqueeze(-1) * x
-        + reduce_w.unsqueeze(-1) * r_padded
-        + shift.unsqueeze(-1) * x_shift
-        + pad_w.unsqueeze(-1) * pad_slab.expand_as(x)
-    )
+    if N == 0:
+        return x
+    arrivals = [x.new_zeros(B, N) for _ in range(N + 1)]
+    arrivals[0] = torch.cat((x.new_ones(B, 1), x.new_zeros(B, N - 1)), dim=1)
+    y = torch.zeros_like(x)
+    for position in range(N):
+        copy = copy_marginal[:, position:position + 1]
+        reduce = (reduce_marginal[:, position:position + 1]
+                  if position + 1 < N else torch.zeros_like(copy))
+        visit = copy + reduce
+        # An unreachable boundary has zero incoming mass. Use denominator
+        # one there, preserving exact zero without an epsilon-sized slope.
+        denominator = torch.where(visit > 0, visit, torch.ones_like(visit))
+        copy_mass = arrivals[position] * (copy / denominator)
+        y = y + copy_mass.unsqueeze(-1) * x[:, position:position + 1]
+        arrivals[position + 1] = (arrivals[position + 1]
+                                 + F.pad(copy_mass[:, :-1], (1, 0)))
+        if position + 1 < N:
+            reduce_mass = arrivals[position] * (reduce / denominator)
+            y = y + reduce_mass.unsqueeze(-1) * reduced[:, position:position + 1]
+            arrivals[position + 2] = (arrivals[position + 2]
+                                     + F.pad(reduce_mass[:, :-1], (1, 0)))
     return y
 
 class _IdentityContext(nn.Module):
@@ -8489,7 +8481,7 @@ class BinaryStructuredReductionLayer(nn.Module):
     # _stacked_reduced), the counterpart to SymbolSubSpace.compose's
     # WS-side analysis. See SymbolSubSpace.compose docstring for the split.
     def forward(self, x, *, span_start=None, span_end=None, cat_ctx=None,
-                what_ctx=None, op_prior=None, grammar_context=None):
+                what_ctx=None, op_prior=None, grammar_context=None, lengths=None):
         if what_ctx is None:
             # The question context is installed per batch by ``Model.what()``
             # (LanguageLayer AND each grammar layer); callers that do not
@@ -8511,11 +8503,19 @@ class BinaryStructuredReductionLayer(nn.Module):
         contributes the layer-level labelled-role prior.
         """
         B, N, D = x.shape
+        if lengths is None:
+            lengths = torch.full((B,), N, device=x.device, dtype=torch.long)
+            # With no padding contract, preserve the caller's live slab for
+            # contextual binding and the degenerate identity return.
+            valid = torch.ones((B, N), device=x.device, dtype=torch.bool)
+        else:
+            valid = torch.arange(N, device=x.device)[None, :] < lengths[:, None]
+            x = torch.where(valid.unsqueeze(-1), x, torch.zeros_like(x))
         if N <= 1:
             routing = {
                 "copy_mask": x.new_zeros(B, N, self.r_copy),
                 "reduce_mask": x.new_zeros(B, 0, self.r_reduce),
-                "lengths": torch.full((B,), N, device=x.device, dtype=torch.long),
+                "lengths": lengths,
                 "copy_marginal": x.new_zeros(B, N),
                 "reduce_marginal": x.new_zeros(B, 0),
                 "logZ": x.new_zeros(B),
@@ -8563,6 +8563,12 @@ class BinaryStructuredReductionLayer(nn.Module):
             reduce_score = reduce_score + op_prior.to(
                 device=reduce_score.device, dtype=reduce_score.dtype)
 
+        # Padding completes the fixed-size DP with neutral COPY tiles. It
+        # never supplies an operand or receives a grammar reduction.
+        reduce_valid = valid[:, :-1] & valid[:, 1:]
+        copy_score = torch.where(valid.unsqueeze(-1), copy_score, 0.0)
+        reduce_score = torch.where(reduce_valid.unsqueeze(-1), reduce_score, -torch.inf)
+
         # Local construction pressure.  Re-score DETACHED operands/candidates
         # through the same chooser parameters, then contrast the type-valid
         # binary rules by bounded carrier-closure + child-incidence energy.
@@ -8589,6 +8595,7 @@ class BinaryStructuredReductionLayer(nn.Module):
             energy = (0.8 * incidence + 0.2 * closure).clamp(0.0, 1.0)
             local_structural_loss = _bounded_rule_contrast(
                 local_logits, energy)
+            local_structural_loss = torch.where(reduce_valid, local_structural_loss, 0.0)
 
         # Soft-superposition temperature (the parser's differentiable route
         # under <learning>; doc/Language.md "weighted deduction"). When set,
@@ -8603,7 +8610,8 @@ class BinaryStructuredReductionLayer(nn.Module):
         _st = getattr(self, 'superposition_temperature', None)
         if _st is not None:
             _sc = superposition_scale(_st)
-            cs_dp, rs_dp = copy_score * _sc, reduce_score * _sc
+            cs_dp = copy_score * _sc
+            rs_dp = torch.where(reduce_valid.unsqueeze(-1), reduce_score * _sc, -torch.inf)
         else:
             cs_dp, rs_dp = copy_score, reduce_score
         soft = binary_tiling_soft_dp(cs_dp, rs_dp)
@@ -8643,6 +8651,7 @@ class BinaryStructuredReductionLayer(nn.Module):
             x=x, reduced=chosen_reduced,
             copy_mask=hard["copy_mask"], reduce_mask=hard["reduce_mask"],
             span_start=span_start, span_end=span_end,
+            input_lengths=lengths,
         )
 
         # Hardened DP marginals: forward uses the Viterbi route's hard
@@ -8673,7 +8682,7 @@ class BinaryStructuredReductionLayer(nn.Module):
             )
         marginal_slab = compact_soft(
             x=x, reduced=chosen_reduced,
-            copy_marginal=copy_marginal_st,
+            copy_marginal=torch.where(valid, copy_marginal_st, 0.0),
             reduce_marginal=reduce_marginal_st,
         )
 

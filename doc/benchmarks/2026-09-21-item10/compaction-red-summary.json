@@ -1,0 +1,80 @@
+{
+  "selected": 15,
+  "completed": 15,
+  "exit_code": 1,
+  "reason": "test_failure",
+  "elapsed_seconds": 8.736601334006991,
+  "peak_aggregate_memory_bytes": 865569456,
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 30064771072,
+    "aggregate_memory_bytes": 30064771072,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 10,
+    "worker_seconds": 1800,
+    "suite_seconds": 10800,
+    "batch_size": 8,
+    "max_files": 1
+  },
+  "run": "20260921-093709-480545",
+  "outcomes": {
+    "passed": 9,
+    "failed": 6
+  },
+  "source_files": 630,
+  "source_sha256": "273a95354dd22184da1e88214890ec820de5877eff03c6586937cf899d343183",
+  "phase_reports": {
+    "passed": 9,
+    "failed": 6
+  },
+  "failures": [
+    {
+      "nodeid": "test/test_signal_router_compaction.py::test_soft_compaction_agrees_with_every_committed_tiling[4]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0023699160083197057,
+      "message": "test/test_signal_router_compaction.py:158: in test_soft_compaction_agrees_with_every_committed_tiling\n    torch.testing.assert_close(soft, hard, rtol=0, atol=0, msg=str(tiling))\nE   AssertionError: [('reduce', 0), ('reduce', 0)]",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_signal_router_compaction.py::test_soft_compaction_agrees_with_every_committed_tiling[5]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0027234579902142286,
+      "message": "test/test_signal_router_compaction.py:158: in test_soft_compaction_agrees_with_every_committed_tiling\n    torch.testing.assert_close(soft, hard, rtol=0, atol=0, msg=str(tiling))\nE   AssertionError: [('copy', 0), ('reduce', 0), ('reduce', 0)]",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_signal_router_compaction.py::test_soft_compaction_agrees_with_every_committed_tiling[6]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0029660830041393638,
+      "message": "test/test_signal_router_compaction.py:158: in test_soft_compaction_agrees_with_every_committed_tiling\n    torch.testing.assert_close(soft, hard, rtol=0, atol=0, msg=str(tiling))\nE   AssertionError: [('copy', 0), ('copy', 0), ('reduce', 0), ('reduce', 0)]",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_signal_router_compaction.py::test_soft_compaction_matches_enumerated_outputs_and_derivatives",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.00098341703414917,
+      "message": "test/test_signal_router_compaction.py:189: in test_soft_compaction_matches_enumerated_outputs_and_derivatives\n    torch.testing.assert_close(actual, expected, rtol=1e-10, atol=1e-10)\nE   AssertionError: Tensor-likes are not close!\nE   \nE   Mismatched elements: 4 / 5 (80.0%)\nE   Greatest absolute difference: 3.5100017479933845 at index (0, 3, 0) (up to 1e-10 allowed)\nE   Greatest relative difference: 1.0 at index (0, 4, 0) (up to 1e-10 allowed)",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_signal_router_compaction.py::test_recursive_product_consumes_each_operand_once",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.003959875029977411,
+      "message": "test/test_signal_router_compaction.py:210: in test_recursive_product_consumes_each_operand_once\n    torch.testing.assert_close(router._last_root_state.reshape(()), operands.prod())\nE   AssertionError: Scalars are not close!\nE   \nE   Expected 210.0 but got 1260.0.\nE   Absolute difference: 1050.0 (up to 1e-05 allowed)\nE   Relative difference: 5.0 (up to 1.3e-06 allowed)",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_signal_router_compaction.py::test_binary_reduction_excludes_padding_from_the_next_round",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0002912500058300793,
+      "message": "test/test_signal_router_compaction.py:224: in test_binary_reduction_excludes_padding_from_the_next_round\n    hard, soft, route = layer(x, lengths=torch.tensor([4, 2]))\n                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl\n    return forward_call(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   TypeError: BinaryStructuredReductionLayer.forward() got an unexpected keyword argument 'lengths'",
+      "stdout": ""
+    }
+  ]
+}

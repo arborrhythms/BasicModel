@@ -1,0 +1,17 @@
+{
+  "source_parent": "0c8bea8c78d65c0fd6bb83a4d31b1b36ae13f996",
+  "full_run": "20260921-102325-6e2fd3",
+  "full_summary": "full-summary.json",
+  "source_files": 630,
+  "source_sha256": "0e47c3133f953bd5920e1a02f977509cefda0f6394ff3cf32b4bd02980a5e0d2",
+  "full_source_verified": true,
+  "measurement_sources_verified": true,
+  "measurement_manifest": "final-source/measurement-manifest.json",
+  "affected_run": "20260921-102302-f01230",
+  "doc_links_run": "20260921-104236-e8452e",
+  "doc_links_cases": 70,
+  "doc_links_source_verified": true,
+  "existing_default_xfail": "test/test_stm_recon_from_cleared_cache.py::test_topk_recovered_words_overlap_input",
+  "parity_demonstrated": false,
+  "expectation_learning_gates_closed": false
+}

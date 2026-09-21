@@ -1,0 +1,58 @@
+{
+  "selected": 14,
+  "completed": 14,
+  "exit_code": 1,
+  "reason": "test_failure",
+  "elapsed_seconds": 100.33994229201926,
+  "peak_aggregate_memory_bytes": 20059081208,
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 30064771072,
+    "aggregate_memory_bytes": 30064771072,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 4,
+    "worker_seconds": 1800,
+    "suite_seconds": 10800,
+    "batch_size": 1,
+    "max_files": 1
+  },
+  "run": "20260921-100516-8b8557",
+  "outcomes": {
+    "passed": 9,
+    "xfailed": 2,
+    "failed": 3
+  },
+  "source_files": 630,
+  "source_sha256": "97ab4ee9d0c64c87e402828277e481404b241f4e982e8db7b90a01410513b0ea",
+  "phase_reports": {
+    "passed": 9,
+    "xfailed": 2,
+    "failed": 3
+  },
+  "failures": [
+    {
+      "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_grammar_free_derivation_roundtrip",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 7.254151250002906,
+      "message": "test/test_reconstruction_roundtrip.py:566: in test_mm20m_grammar_free_derivation_roundtrip\n    assert rec.exact_match_rate == 1.0\nE   AssertionError: assert 0.0 == 1.0\nE    +  where 0.0 = RunRecord(config='data/MM_20M_grammar.xml', seed=3599656820, epochs=3, wall_s_per_epoch=1.107864270976279, output_loss...odelLoss and not exposed on the model', 'epoch_times_s': [1.8025877920445055, 1.1128067919635214, 1.1029217499890365]}).exact_match_rate",
+      "stdout": "[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/output/MM_20M_grammar.ckpt, starting fresh\r\n[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 100.00%)\r\nTraining throughput: 1 batches in 1.801s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=1.200s, 100.00%)\r\nTraining throughput: 1 batches in 1.112s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=1.096s, 100.00%)\r\nTraining throughput: 1 batches in 1.102s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=1.052s, 100.00%)\r\nTraining throughput: 1 batches in 0.649s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+    },
+    {
+      "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 29.494981208001263,
+      "message": "[XPASS(strict)] MM_20M_xor scaffold reconstruction currently tops out below exact identity at the declared budget; retain as the active reverse-path gap.",
+      "stdout": " in 0.173s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.167s, 100.00%)\r\nTraining throughput: 1 batches in 0.162s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.156s, 100.00%)\r\nTraining throughput: 1 batches in 0.159s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.173s, 100.00%)\r\nTraining throughput: 1 batches in 0.172s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.171s, 100.00%)\r\nTraining throughput: 1 batches in 0.165s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.162s, 100.00%)\r\nTraining throughput: 1 batches in 0.169s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.185s, 100.00%)\r\nTraining throughput: 1 batches in 0.185s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.180s, 100.00%)\r\nTraining throughput: 1 batches in 0.179s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.168s, 100.00%)\r\nTraining throughput: 1 batches in 0.160s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.162s, 100.00%)\r\nTraining throughput: 1 batches in 0.161s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.155s, 100.00%)\r\nTraining throughput: 1 batches in 0.154s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.154s, 100.00%)\r\nTraining throughput: 1 batches in 0.153s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.156s, 100.00%)\r\nTraining throughput: 1 batches in 0.158s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.166s, 100.00%)\r\nTraining throughput: 1 batches in 0.165s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.162s, 100.00%)\r\nTraining throughput: 1 batches in 0.161s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.160s, 100.00%)\r\nTraining throughput: 1 batches in 0.159s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.159s, 100.00%)\r\nTraining throughput: 1 batches in 0.158s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.165s, 100.00%)\r\nTraining throughput: 1 batches in 0.163s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.158s, 100.00%)\r\nTraining throughput: 1 batches in 0.156s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.155s, 100.00%)\r\nTraining throughput: 1 batches in 0.155s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.166s, 100.00%)\r\nTraining throughput: 1 batches in 0.169s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.173s, 100.00%)\r\nTraining throughput: 1 batches in 0.172s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.168s, 100.00%)\r\nTraining throughput: 1 batches in 0.163s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.168s, 100.00%)\r\nTraining throughput: 1 batches in 0.172s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.179s, 100.00%)\r\nTraining throughput: 1 batches in 0.179s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.175s, 100.00%)\r\nTraining throughput: 1 batches in 0.175s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.178s, 100.00%)\r\nTraining throughput: 1 batches in 0.178s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.176s, 100.00%)\r\nTraining throughput: 1 batches in 0.176s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.179s, 100.00%)\r\nTraining throughput: 1 batches in 0.175s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.172s, 100.00%)\r\nTraining throughput: 1 batches in 0.166s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.152s, 100.00%)\r\nTraining throughput: 1 batches in 0.113s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+    },
+    {
+      "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 89.87352066696621,
+      "message": "test/test_mm_xor.py:187: in test_mm_grammar_learns_xor_signal\n    self._fit_xor(os.path.join(_PROJECT, \"data\", \"MM_grammar.xml\"),\ntest/test_mm_xor.py:173: in _fit_xor\n    self.assertLess(best_loss, threshold,\nE   AssertionError: 0.217572420835495 not less than 0.2 : XOR loss 0.217572 after at most 900 epochs",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    }
+  ]
+}

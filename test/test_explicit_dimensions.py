@@ -52,15 +52,6 @@ _BIN = os.path.join(_PROJECT, "bin")
 if _BIN not in sys.path:
     sys.path.insert(0, _BIN)
 
-# Seed pinned for XOR_grammar.xml: with this seed the chart parser commits to a
-# differentiable path through the {not, conjunction, disjunction} grammar
-# that solves XOR. Other seeds collapse to one accuracy class above the
-# threshold while the other hangs. Re-pin whenever the XOR_grammar.xml
-# config (architecture, codebook, lexicon, nVectors) is altered enough to
-# shift the loss landscape; sweep with /tmp/sweep_seed.py over [0, 16).
-XOR_GRAMMAR_SEED = 5
-
-
 def _run_cli(config_relpath, env_extra=None, timeout=180):
     """Invoke ``python bin/Models.py data/<config>.xml`` as a subprocess.
 
@@ -68,6 +59,7 @@ def _run_cli(config_relpath, env_extra=None, timeout=180):
     """
     env = os.environ.copy()
     env["PYTHONUNBUFFERED"] = "1"
+    env.pop("BASIC_SEED", None)  # capability checks use a fresh initialization
     if env_extra:
         env.update(env_extra)
     proc = subprocess.run(
@@ -215,15 +207,10 @@ class TestXorExactCliReconstruction(unittest.TestCase):
 
     @pytest.mark.slow
     def test_at_least_50_pct_inputs_reconstruct(self):
-        # The invertible-butterfly XOR converges to exact reconstruction
-        # (4/4).  Use the same documented crisp seed as the output-MSE test
-        # below: XOR is seed-fragile, so an unseeded subprocess sometimes
-        # selects the known 0/4 basin and makes this architecture gate random.
-        # Eager execution also matches the deterministic seed discipline used
-        # by the sibling grammar test.
+        # Initialization may expose a learning defect; never select a passing basin.
         rc, stdout, stderr = _run_cli(
             "data/XOR_exact.xml", timeout=480,
-            env_extra={"BASIC_SEED": "4", "MODEL_COMPILE": "eager"})
+            env_extra={"MODEL_COMPILE": "eager"})
         self.assertEqual(rc, 0, f"CLI failed: stderr={stderr[-1000:]}")
         ok, total = _parse_input_match_counts(stdout)
         self.assertGreater(total, 0,
@@ -236,29 +223,10 @@ class TestXorExactCliReconstruction(unittest.TestCase):
 
     @pytest.mark.slow
     def test_output_mse_is_crisp(self):
-        # XOR accuracy + reconstruction can both pass while the predictions
-        # sit near 0.5 (mushy). Assert the OUTPUT MSE so a mushy-but-accurate
-        # XOR cannot silently regress again. The crisp basin (OutputSpace
-        # lrScale=0.5 -- the readout trains at half the model LR so it stops
-        # chasing the co-adapting features) gives MSE ~0.004; the prior
-        # readout-convergence regression gave ~0.22.
-        # Determinism pin (2026-07-09): XOR_exact.xml carries NO <seed>, so an
-        # unpinned CLI run trains from a random init whose XOR-hard row crisps
-        # only for a fraction of seeds at 600 epochs (a seed-fragile bar) --
-        # under the parallel suite that surfaced as an intermittent failure. A/B
-        # measured the .where origin-shift to be NEUTRAL-to-better here (3/4 vs
-        # 2/4 seeds crisp), i.e. NOT the cause. Pin a crisp seed + eager for a
-        # deterministic run, matching the XOR_grammar sibling's pin.
-        # RE-PINNED (2026-07-16 fold-width unification): content-width folds
-        # + band passthrough moved the seed trajectories again. Measured
-        # seeds 0-5: {0: .1028, 1: .0567, 2: .0495, 3: .1717, 4: .0008,
-        # 5: .0413} -- the crisp basin exists (seed 4, also 4/4 exact
-        # reconstruction) but is rarer than pre-change; prior pin seed 0.
-        # timeout 240->480 (2026-07-16): ~66s standalone; under make testp
-        # (xdist, all cores busy) the CPU-bound CLI can exceed 240s.
+        # Accuracy alone misses predictions clustered near .5; keep MSE < .05.
         rc, stdout, stderr = _run_cli(
             "data/XOR_exact.xml", timeout=480,
-            env_extra={"BASIC_SEED": "4", "MODEL_COMPILE": "eager"})
+            env_extra={"MODEL_COMPILE": "eager"})
         self.assertEqual(rc, 0, f"CLI failed: stderr={stderr[-1000:]}")
         mse, n = _parse_output_mse(stdout)
         self.assertIsNotNone(
@@ -272,54 +240,28 @@ class TestXorExactCliReconstruction(unittest.TestCase):
             f"two-timescale fix).")
 
 
-def _run_xor_grammar_in_process(seed):
-    """Run ``data/XOR_grammar.xml`` end-to-end with a fixed torch seed.
-
-    Returns the trained ``BasicModel`` instance for inspection. Uses
-    ``MODEL_COMPILE=none`` to keep training deterministic across runs --
-    ``inductor`` introduces nondeterminism that defeats the seed pin.
-    """
+def _run_xor_grammar_in_process():
+    """Run the grammar capability gate without selecting an initialization."""
     os.environ["MODEL_COMPILE"] = "none"
-    import torch
-
     from Models import ModelFactory
     results = ModelFactory.run("data/XOR_grammar.xml")
     return results[0][2]  # (name, rCorrect, model)
 
 
 class TestXorGrammarLearnsXor(unittest.TestCase):
-    """``data/XOR_grammar.xml`` solves XOR when seeded correctly.
-
-    The chart parser's grammar commitment is gradient-fragile: most random
-    inits collapse to constant 0.5 output (no XOR signal). Seed
-    ``XOR_GRAMMAR_SEED`` lands in the basin that solves XOR. This test pins
-    that seed; if a future code change perturbs the basin, this test goes red
-    and we know to re-pick a seed deliberately.
-    """
+    """Grammar XOR convergence must survive an arbitrary initialization."""
 
     @unittest.skipIf(not _RUN_SLOW, "slow (~60s end-to-end XOR_grammar train) -- set RUN_SLOW=1")
-    @pytest.mark.xfail(reason=(
-        "XOR_GRAMMAR_SEED was pinned for the legacy butterfly + "
-        "Codebook bivector path; after 2026-05-12 butterfly removal "
-        "+ 2026-05-13 ProjectionBasis refactor the convergence basin "
-        "moved.  Pick a new seed deliberately as a follow-up."))
-    def test_xor_solved_with_pinned_seed(self):
-        # XOR-via-linear-grammar (union/intersection/negation only, no
-        # nonlinearity) cannot universally solve XOR -- the best a
-        # linear grammar can do on this problem is random (~0.5) on
-        # arbitrary seeds. We loosen the tolerance to >= 0.5 (random
-        # baseline) instead of 1.0 so the test doesn't fluctuate with
-        # seed luck. A nonlinear-grammar variant (bivector lift /
-        # explicit nonlinear op) is the path to a 1.0-accuracy XOR.
-        model = _run_xor_grammar_in_process(XOR_GRAMMAR_SEED)
+    def test_xor_class_accuracy(self):
+        model = _run_xor_grammar_in_process()
         self.assertGreaterEqual(
             model.rCorrect[0], 0.5,
-            f"Expected >=0.5 accuracy on class 0 with seed={XOR_GRAMMAR_SEED}, "
+            f"Expected >=0.5 accuracy on class 0 from an unselected initialization, "
             f"got {model.rCorrect[0]}",
         )
         self.assertGreaterEqual(
             model.rCorrect[1], 0.5,
-            f"Expected >=0.5 accuracy on class 1 with seed={XOR_GRAMMAR_SEED}, "
+            f"Expected >=0.5 accuracy on class 1 from an unselected initialization, "
             f"got {model.rCorrect[1]}",
         )
 
@@ -335,17 +277,13 @@ class TestXorGrammarReconstruction(unittest.TestCase):
     pairs that share parse-tree shape but differ in leaves alias to
     the same reconstruction (e.g. ``'loving world'`` and
     ``'loving there'`` both reconstruct as ``'loving xxxxxx'``).
-    Marked ``xfail`` until the reverse path is rewired to walk the
-    parse tree (recovering leaf vectors directly) instead of inverting
-    the root.
+    This remains an active acceptance assertion: neither initialization
+    selection nor an expected-failure marker may hide a failure.
     """
 
     @unittest.skipIf(not _RUN_SLOW, "slow (~65s end-to-end XOR_grammar train) -- set RUN_SLOW=1")
-    @pytest.mark.xfail(reason=(
-        "The lossy grammar root cannot yet reconstruct leaves without "
-        "walking the recorded parse tree."))
-    def test_piecewise_overall_at_least_50_pct_with_pinned_seed(self):
-        model = _run_xor_grammar_in_process(XOR_GRAMMAR_SEED)
+    def test_piecewise_overall_at_least_50_pct(self):
+        model = _run_xor_grammar_in_process()
         psp = model.perceptualSpace
         recon_texts = psp.reconstruct_data(text=True)
         test_input, _ = model.inputSpace.getTestData()
@@ -359,7 +297,7 @@ class TestXorGrammarReconstruction(unittest.TestCase):
         total = len(test_input)
         self.assertGreaterEqual(
             perfect / total, 0.5,
-            f"XOR_grammar reconstruction with seed={XOR_GRAMMAR_SEED}: "
+            "XOR_grammar reconstruction: "
             f"{perfect}/{total} inputs recovered (expected >=50%). "
             f"Sample reconstructions: "
             f"{[(model._bytes_to_text(test_input[i]).rstrip(chr(0)), recon_texts[i]) for i in range(min(2, total))]}",

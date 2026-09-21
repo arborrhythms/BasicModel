@@ -1429,10 +1429,55 @@ Unique case counts and repeated phase reports are separated in the
 [metadata](benchmarks/2026-09-21-item11/receipt-info.json).
 
 The receipt preserves the failed development attempts and their corrections.
-An existing untrained MentalModel overflow reproduces at seed 3 with identical
-inputs and scores on the baseline and current runtime. Compatibility now uses
-a fixed successful seed; a separate deterministic test retains the fail-loud
-overflow check. This is a documented numerical limit, not a robustness claim.
+An existing untrained MentalModel overflow reproduced at seed 3 with identical
+inputs and scores on that landing's baseline and runtime. Item 11 pinned the
+compatibility fixture to a successful seed and separately asserted rejection
+of the failing initialization. **Item 10 removes that workaround:** consumed
+operands were reused by recursive soft compaction. See the correction and
+seed-selection audit below; the historical receipt remains unchanged.
 
 Final documentation-link run `20260921-091700-f39470` passes **69/69** cases,
 exit 0, with the same validated source; its receipt is recorded in the metadata.
+
+## Item 10: reconstruction baseline and seed audit (September 21)
+
+The [measurement and audit record](benchmarks/2026-09-21-item10/README.md)
+contains the fixed-seed native baseline, packed/single reconstruction
+comparison, MentalModel overflow diagnosis and test dispositions. A seed may
+make a measurement reproducible; it cannot be selected to make a capability
+assertion pass. Known failing initializations remain useful regression cases
+beside unseeded compatibility assertions. Convergence failures remain failures,
+with no replacement passing seed, relaxed threshold or new expected-failure
+marker.
+
+The corrected compaction matches exhaustive small tilings and enumerated
+derivatives, including a fullgraph capture. The known failing MentalModel
+seed 3 now forwards successfully beside an unseeded smoke test. The declared
+32-seed measurement passes 32/32. The native item-1d reconstruction baseline
+is exactly unchanged; the tied packed/single comparison is a null for parity,
+with mean costs **.7866926491 / .6838697642**. The plan's §8.2 records both.
+
+The bounded Pi/Sigma pair's hidden tanh is cancelled by the next atanh;
+its old seed-selected XOR assertion is replaced by an interior algebra check.
+The adjacent exponential-feature XOR learning gate retains its original bar.
+The explicit slow audit exposes a grammar-XOR miss, zero free-derivation
+recovery and two unsupported W=6 configurations. Those failures remain open
+in the countdown. A default receipt does not close these learning gates.
+
+The final source-matched full selection `20260921-102325-6e2fd3` completes
+**4,706/4,706** cases: **4,375 passed, 330 skipped, 1 existing expected failure**,
+exit **0**, in **1,064.73 seconds**, with **no waived failure and no cache retry**.
+The [full receipt](benchmarks/2026-09-21-item10/full-result.json.gz),
+[source manifest](benchmarks/2026-09-21-item10/full-source-manifest.json) and
+[summary](benchmarks/2026-09-21-item10/full-summary.json) match all **630 source
+files**, SHA-256 of the sorted compact validated-source map:
+`0e47c3133f953bd5920e1a02f977509cefda0f6394ff3cf32b4bd02980a5e0d2`.
+The three final reconstruction measurements match the same source map.
+The run uses `--batch-size 8 --max-files 1`, ten workers, unchanged 8/28 GiB
+caps and a **10.78 GiB** peak aggregate footprint. The interrupted development
+selection and the unchanged binder assertion's correction remain in the
+linked audit record; the corrected affected selection passes **48/48**.
+
+Final documentation links pass **70/70**, `20260921-104236-e8452e`, with the
+same validated source ([receipt](benchmarks/2026-09-21-item10/doc-links-result.json.gz),
+[landing metadata](benchmarks/2026-09-21-item10/receipt-info.json)).

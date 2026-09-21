@@ -700,6 +700,22 @@ the Viterbi route hardens to one rule, two tied reduce rules both keep
 positive mass and both receive gradient --- the property pinned by
 `test/test_signal_router_layer.py::test_layer_keeps_soft_superposition_over_reduce_rules`.
 
+The packed value uses a second dynamic program over source boundaries and
+output ordinals. At a visited boundary, COPY and REDUCE probabilities are
+their marginal masses divided by their sum. Each transition writes one
+output slot and advances the source by one or two positions. This computes
+the expected packed slab exactly for the tiling distribution; one-hot
+marginals reproduce the hard route, including several reductions in a row.
+The former cumulative one-position-shift approximation could reuse consumed
+operands during recursive composition. Hard rounds now carry per-row live
+lengths, zero padded inputs before candidate evaluation, and forbid reductions
+involving padded slots.
+Pure soft rounds keep the full expected slab rather than clipping it to the
+Viterbi length. Exhaustive small tilings, output/gradient enumeration and a
+fullgraph capture check this contract in `test_signal_router_compaction.py`. The
+[item 10 record](benchmarks/2026-09-21-item10/README.md) bounds the observed
+MentalModel failure without clamping the grammar's arithmetic operators.
+
 ### Soft-superposition route (the `<learning>` two-pass)
 
 The straight-through forward above is the **default** (and the byte-identical

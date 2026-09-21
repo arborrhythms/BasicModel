@@ -299,11 +299,11 @@ def test_normal_supervised_output_respects_gradient_contract(tmp_path, monkeypat
         assert all(g is None or not bool(g.any()) for g in gradients[1:1 + len(sources)])
         reached = [(name, p, float(g.detach().norm())) for (name, p), g in
                    zip(named, gradients[1 + len(sources):]) if g is not None and bool(g.any())]
-        # This fixture's ordinary path uses dedicated synthesis and a
-        # parameter-free reverse. Its grammar walk executes shared maps.
-        # Do not demand credit for an operator that never participated.
-        if output_loop:
-            assert reached, "the active output walk must train a shared numerical map"
+        # An unselected walk may stop or use parameter-free operators. Record
+        # absent shared credit as absent. The fixed-action mechanism case in
+        # test_prepared_answer_boundary requires nonzero shared-inverse credit;
+        # this ordinary run must not select a seed just to visit that branch.
+        assert all(g is None or bool(torch.isfinite(g).all()) for g in gradients)
         observed["reached"] = [(name, p, p.detach().clone(), norm) for name, p, norm in reached]
         observed["conditioner"] = (conditioner, conditioner.detach().clone())
         observed["loss"] = float(loss.detach())
@@ -313,19 +313,18 @@ def test_normal_supervised_output_respects_gradient_contract(tmp_path, monkeypat
     monkeypatch.setattr(model, "_backward_training_loss", check_gradients)
     try:
         batch = (model.inputSpace.prepInput(["1 plus 2", "3 plus 4"]), torch.zeros(2, 1, 1))
-        torch.manual_seed(11)
         model.runBatch(train=True, batchSize=2, split="train", optimizer=optimizer,
                        batch_override=batch, questions=(What.supervised(0), What.supervised(1)))
         owned = [id(p) for group in optimizer.param_groups for p in group["params"]]
         stepped = [(name, norm) for name, p, before, norm in observed["reached"]
                    if not torch.equal(p, before) and optimizer.state.get(p)]
-        if output_loop:
+        if observed["reached"]:
             assert stepped
         conditioner, before = observed["conditioner"]
         assert not torch.equal(conditioner, before) and optimizer.state.get(conditioner)
         assert all(owned.count(id(p)) == 1 for _, p, _, _ in observed["reached"])
         print("generation-gradient-evidence " + json.dumps({
-            "output_loop": output_loop, "seed": 11, "output_loss": observed["loss"],
+            "output_loop": output_loop, "initialization": "ambient RNG", "output_loss": observed["loss"],
             "stepped_shared_groups": sorted({name for name, _ in stepped}),
             "conclusion_gradient": 0}))
     finally:

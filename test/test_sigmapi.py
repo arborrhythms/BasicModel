@@ -84,41 +84,36 @@ class TestSigmaLayerForward(unittest.TestCase):
         self.assertIsNotNone(x.grad)
 
 
-class TestPiSigmaXOR(unittest.TestCase):
-    """An PiLayer+SigmaLayer stack can learn XOR with low temperature."""
+class TestPiSigmaChartComposition(unittest.TestCase):
+    """Adjacent bounded charts cancel; they do not create an XOR hidden layer."""
 
-    def test_xor_convergence(self):
-        X = torch.tensor([[0, 0], [0, 1], [1, 0], [1, 1]], dtype=torch.float32).to(TheDevice.get())
-        Y = torch.tensor([[0], [1], [1], [0]], dtype=torch.float32).to(TheDevice.get())
-        X = X.unsqueeze(1)
-        Y = Y.unsqueeze(1)
-
-        # Seed 42 hits a local minimum (~0.125) on CPU but converges on MPS.
-        # Try multiple seeds -- the test verifies PiLayer+SigmaLayer *can*
-        # learn XOR, not that every random init converges.
-        criterion = nn.MSELoss()
-        from itertools import chain
-        best_loss = float('inf')
-        for seed in (33, 3, 123, 99, 42, 7, 11, 2024, 17):
-            torch.manual_seed(seed)
-
-            pi = Layers.PiLayer(2, 4, nonlinear=True)
-            sigma = Layers.SigmaLayer(4, 1, nonlinear=True)
-            pi.set_sigma(0)
-            sigma.set_sigma(0)
-            optimizer = optim.Adam(chain(pi.parameters(), sigma.parameters()), lr=0.001)
-            for _ in range(1000):
-                optimizer.zero_grad()
-                y = sigma(pi(X))
-                loss = criterion(y, Y)
-                loss.backward()
-                optimizer.step()
-            best_loss = min(best_loss, loss.item())
-            if best_loss < 0.1:
-                return  # pass
-
-        self.fail(f"XOR loss should converge below 0.1 on at least one seed, "
-                  f"best was {best_loss}")
+    def test_hidden_tanh_is_cancelled_by_the_next_chart(self):
+        # Explicit interior inputs/weights test the algebra, not a selected
+        # training trajectory. Sigma's atanh cancels Pi's output tanh.
+        pi = Layers.PiLayer(2, 4, nonlinear=True).double()
+        sigma = Layers.SigmaLayer(4, 1, nonlinear=True).double()
+        pi.set_sigma(0)
+        sigma.set_sigma(0)
+        with torch.no_grad():
+            for layer in (pi, sigma):
+                for parameter in layer.parameters():
+                    parameter.copy_(torch.linspace(-.2, .3, parameter.numel(),
+                                                   device=parameter.device,
+                                                   dtype=parameter.dtype).reshape_as(parameter))
+        x = torch.tensor([[-.4, -.2], [-.4, .3], [.2, -.2], [.2, .3]],
+                         dtype=torch.float64, device=TheDevice.get())
+        w_pi, w_sigma = pi.layer.compute_W_current(), sigma.layer.compute_W_current()
+        # Plain LinearLayer.forward omits its separately applied bias. Pi
+        # includes its bias explicitly; this Sigma host has no affine offset.
+        b_pi = pi.layer._effective_bias()
+        chart_affine = x.atanh() @ (w_pi @ w_sigma) + (b_pi / 2) @ w_sigma
+        hidden = pi(x)
+        self.assertLess(float(hidden.detach().abs().max()), .9)
+        torch.testing.assert_close(sigma(hidden), chart_affine.tanh(), rtol=1e-10, atol=1e-10)
+        # The former <.1 XOR learning assertion selected among nine seeds.
+        # Away from clipping this composition is a monotone readout of an
+        # affine chart, so it has no XOR decision boundary. The exponential
+        # Pi + linear Sigma case below retains the genuine learning gate.
 
 
 class TestTanhFreePiSigmaXORTestpoint(unittest.TestCase):

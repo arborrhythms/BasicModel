@@ -3053,9 +3053,14 @@ class SigmaLayer(GrammarLayer):
     (``ConceptualSpace.sigma_percept``) and used by the subsymbolic
     loop; not chart-dispatched.
 
-    With ``nonlinear=True`` (legacy behavior), ``forward`` returns
-    ``tanh(W @ x + b)``. With ``nonlinear=False``, ``forward`` returns the
-    raw linear result. ``reverse`` mirrors the same choice.
+    With ``nonlinear=True``, ``forward`` charts its input through atanh,
+    applies the inner linear map, then returns tanh of the result. For the
+    default plain host this is ``tanh(atanh(x) @ W)``; the invertible host
+    also applies its affine bias. An immediately preceding Pi tanh is
+    cancelled by this entry chart away from clipping: stacking these bounded
+    charts does not create a hidden nonlinear feature layer. With
+    ``nonlinear=False``, ``forward`` returns the raw inner map result.
+    ``reverse`` mirrors the same chart choice.
 
     When ``invertible=True``, uses an invertible linear layer so
     ``reverse()`` is available via the exact LDU inverse.  When
@@ -4495,7 +4500,11 @@ class PiLayer(GrammarLayer):
         x = 0  ->  1  ->  log = 0   : absent = multiplicative identity
         x = +k and x = -k produce equal and opposite log-space contributions
 
-    Exit transform (y-1)/(y+1) is the exact inverse.
+    Exit transform (y-1)/(y+1) is the exact inverse. In ``nonlinear=True``
+    mode this gives ``tanh(W @ atanh(x) + b/2)``; a following bounded
+    Sigma chart cancels that tanh away from clipping. ``nonlinear=False``
+    instead retains the exponential output, ``exp(2*W @ atanh(x) + b)``.
+    Those exponential features remain nonlinear under a linear Sigma readout.
 
     ``monotonic`` selects the weight constraint:
         monotonic=True:  W >= 0 (NonNegativeInvertibleLinearLayer) -- ordering preserved

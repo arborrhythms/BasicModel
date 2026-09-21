@@ -167,12 +167,16 @@ def run_config(config, epochs, seed, out_dir, profile=False,
 
     The `seed` argument deliberately overrides BASIC_SEED / the XML
     <training><seed>: harness records must be reproducible standalone.
+    ``seed=None`` draws and records one fresh seed, for capability assertions
+    that must not select their initialization. There is no retry or filtering.
 
     ``blind`` (Gate 2b, default True): the decode pass re-derives the
     tiling from the `.where` band (scaffold OFF); ``blind=False`` keeps
     the forward-scaffold debug/fallback path (the 5c/5d pins run there).
     """
     timestamp = time.strftime("%Y%m%d-%H%M%S")
+    if seed is None:
+        seed = random.SystemRandom().randrange(2**32)
     random.seed(seed)
     torch.manual_seed(seed)
     np.random.seed(seed)
@@ -216,7 +220,7 @@ def run_config(config, epochs, seed, out_dir, profile=False,
     # scores 0.0: the reverse-reduce (backward walk over the recorded fold steps
     # calling each op's basis-threaded reverse -- the codebook-walk recommender)
     # is not yet wired, so the decode falls through to the CS reverse; see
-    # test_mm20m_grammar_free_derivation_ceiling.
+    # test_mm20m_grammar_free_derivation_roundtrip.
     if free_derivation:
         model.reconstruct_from_idea = True
         model.serial_tensor_reverse_debug = True

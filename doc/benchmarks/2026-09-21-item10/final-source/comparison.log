@@ -1,0 +1,111 @@
+{
+  "seed": 42,
+  "config_sha256": "4a7afbe71ea0e87cdd1ea7d7ca5d9556627a6df56928439325cf04144adbebcc",
+  "source_equal": true,
+  "parameters_equal": true,
+  "dictionary_equal": true,
+  "boundary_convention": "joining space belongs to the first sentence in each row",
+  "atol": 1e-06,
+  "rtol": 1e-05,
+  "sentences": [
+    {
+      "source_row": 0,
+      "text": "9 plus 1",
+      "packed_units": 6,
+      "single_units": 6,
+      "packed_byte_cost": 0.6540764570236206,
+      "single_byte_cost": 0.6137780547142029,
+      "root": {
+        "same_shape": true,
+        "max_abs_difference": 0.0,
+        "close": true
+      },
+      "reference": {
+        "same_shape": true,
+        "max_abs_difference": 0.0,
+        "close": true
+      },
+      "recovered": {
+        "same_shape": true,
+        "max_abs_difference": 0.04728598892688751,
+        "close": false
+      },
+      "byte_cost_close": false
+    },
+    {
+      "source_row": 1,
+      "text": "14 plus 1",
+      "packed_units": 6,
+      "single_units": 6,
+      "packed_byte_cost": 0.9466432929039001,
+      "single_byte_cost": 0.7259087562561035,
+      "root": {
+        "same_shape": true,
+        "max_abs_difference": 0.24583058059215546,
+        "close": false
+      },
+      "reference": {
+        "same_shape": true,
+        "max_abs_difference": 0.0,
+        "close": true
+      },
+      "recovered": {
+        "same_shape": true,
+        "max_abs_difference": 0.09342970699071884,
+        "close": false
+      },
+      "byte_cost_close": false
+    },
+    {
+      "source_row": 2,
+      "text": "2 plus 1",
+      "packed_units": 6,
+      "single_units": 6,
+      "packed_byte_cost": 0.7255163192749023,
+      "single_byte_cost": 0.6725499629974365,
+      "root": {
+        "same_shape": true,
+        "max_abs_difference": 0.0,
+        "close": true
+      },
+      "reference": {
+        "same_shape": true,
+        "max_abs_difference": 0.0,
+        "close": true
+      },
+      "recovered": {
+        "same_shape": true,
+        "max_abs_difference": 0.05340423434972763,
+        "close": false
+      },
+      "byte_cost_close": false
+    },
+    {
+      "source_row": 3,
+      "text": "3 plus 1",
+      "packed_units": 5,
+      "single_units": 5,
+      "packed_byte_cost": 0.8205345273017883,
+      "single_byte_cost": 0.7232422828674316,
+      "root": {
+        "same_shape": true,
+        "max_abs_difference": 0.26843202114105225,
+        "close": false
+      },
+      "reference": {
+        "same_shape": true,
+        "max_abs_difference": 0.0,
+        "close": true
+      },
+      "recovered": {
+        "same_shape": true,
+        "max_abs_difference": 0.06567589193582535,
+        "close": false
+      },
+      "byte_cost_close": false
+    }
+  ],
+  "packed_mean_byte_cost": 0.7866926491260529,
+  "single_mean_byte_cost": 0.6838697642087936,
+  "parity_demonstrated": false
+}

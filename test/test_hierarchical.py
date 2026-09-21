@@ -10,6 +10,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'bin'))
 
 import unittest
 import warnings
+import gc
 import random
 import numpy as np
 import torch
@@ -126,41 +127,47 @@ class TestWordEncoding(unittest.TestCase):
 
 class TestBackwardCompat(unittest.TestCase):
 
-    def _mentalmodel_forward(self, seed):
-        # This untrained arithmetic grammar can expand beyond fp32 at some
-        # initializations. Compatibility and numerical rejection are separate
-        # reproducible cases, not a draw from ambient worker RNG state.
-        py_state, np_state = random.getstate(), np.random.get_state()
+    def _mentalmodel_forward(self):
+        model = _make_model('MentalModel.xml')
         try:
-            with torch.random.fork_rng(devices=[]):
-                torch.random.default_generator.manual_seed(seed)
-                random.seed(seed)
-                np.random.seed(seed)
-                model = _make_model('MentalModel.xml')
-                try:
-                    with Models.TheData.runtime_batch(['hello world'], [torch.tensor([0.0])]), \
-                         warnings.catch_warnings():
-                        warnings.filterwarnings("ignore")
-                        train_input, _ = model.inputSpace.getTrainData()
-                        x = model.inputSpace.prepInput(train_input[:1])
-                        with torch.no_grad():
-                            return model.forward(x)
-                finally:
-                    model.End()
-                    model.symbolSpace.soft_reset()
+            with Models.TheData.runtime_batch(['hello world'], [torch.tensor([0.0])]), \
+                 warnings.catch_warnings():
+                warnings.filterwarnings("ignore")
+                train_input, _ = model.inputSpace.getTrainData()
+                x = model.inputSpace.prepInput(train_input[:1])
+                with torch.no_grad():
+                    return model.forward(x)
         finally:
-            random.setstate(py_state)
-            np.random.set_state(np_state)
+            model.End()
+            model.symbolSpace.soft_reset()
+            del model
+            gc.collect()
 
     def test_mentalmodel_unchanged(self):
         """MentalModel.xml (subsymbolicOrder=1) still creates and forwards."""
-        result = self._mentalmodel_forward(0)
+        result = self._mentalmodel_forward()
         self.assertIsNotNone(result)
+        self.assertTrue(all(bool(torch.isfinite(value).all())
+                            for value in result if torch.is_tensor(value)))
 
-    def test_untrained_mentalmodel_rejects_overflow(self):
-        """Seed 3 overflows identically on the baseline; never mask its NaNs."""
-        with self.assertRaisesRegex(ValueError, 'non-finite binary reduce_marginal_op'):
-            self._mentalmodel_forward(3)
+    def test_mentalmodel_compaction_overflow_regression(self):
+        """Reproduce the known failing initialization, never a selected pass.
+
+        The ordinary compatibility assertion above uses ambient RNG. This
+        separate regression retains the seed that exposed reused operands.
+        """
+        py_state, np_state = random.getstate(), np.random.get_state()
+        try:
+            with torch.random.fork_rng(devices=[]):
+                torch.random.default_generator.manual_seed(3)
+                random.seed(3)
+                np.random.seed(3)
+                result = self._mentalmodel_forward()
+            self.assertTrue(all(bool(torch.isfinite(value).all())
+                                for value in result if torch.is_tensor(value)))
+        finally:
+            random.setstate(py_state)
+            np.random.set_state(np_state)
 
     def test_symbolicspace_per_stage_instances(self):
         """BasicModel builds T independent WholeSpace instances

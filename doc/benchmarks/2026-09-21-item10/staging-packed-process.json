@@ -1,0 +1,18 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "doc/benchmarks/2026-09-21-item10/probe.py",
+    "--config",
+    "doc/benchmarks/2026-09-21-item10/parity.xml",
+    "--parity",
+    "packed",
+    "--out",
+    "doc/benchmarks/2026-09-21-item10/packed.json"
+  ],
+  "pid": 4829,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 714884512,
+  "elapsed_seconds": 3.8482371660065837,
+  "log": "doc/benchmarks/2026-09-21-item10/packed.log"
+}

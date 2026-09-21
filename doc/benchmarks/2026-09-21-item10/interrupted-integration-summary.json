@@ -1,0 +1,42 @@
+{
+  "selected": 4706,
+  "completed": 1068,
+  "exit_code": 130,
+  "reason": "interrupted",
+  "elapsed_seconds": 237.41451795899775,
+  "peak_aggregate_memory_bytes": 5405784056,
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 30064771072,
+    "aggregate_memory_bytes": 30064771072,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 10,
+    "worker_seconds": 1800,
+    "suite_seconds": 10800,
+    "batch_size": 8,
+    "max_files": 1
+  },
+  "run": "20260921-101843-869d6a",
+  "outcomes": {
+    "passed": 978,
+    "skipped": 89,
+    "failed": 1
+  },
+  "source_files": 630,
+  "source_sha256": "a681cc931c770de8ec404f4f8ac5e0eaa2f1ef64df0ecb3c1ae58557c4faa8e6",
+  "phase_reports": {
+    "passed": 978,
+    "skipped": 89,
+    "failed": 1
+  },
+  "failures": [
+    {
+      "nodeid": "test/test_contextual_bind.py::test_reduction_layer_stashes_live_slab_on_bind",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0036643329658545554,
+      "message": "test/test_contextual_bind.py:107: in test_reduction_layer_stashes_live_slab_on_bind\n    assert bind._bind_context is not None and bind._bind_context['slab'] is x\nE   AssertionError: assert ({'slab': tensor([[[1., 0., 0., 0.],\\n         [0., 1., 0., 0.],\\n         [0., 0., 1., 0.]]]), 'participants': None, 'licensing': None} is not None and tensor([[[1., 0., 0., 0.],\\n         [0., 1., 0., 0.],\\n         [0., 0., 1., 0.]]]) is tensor([[[1., 0., 0., 0.],\\n         [0., 1., 0., 0.],\\n         [0., 0., 1., 0.]]]))\nE    +  where {'slab': tensor([[[1., 0., 0., 0.],\\n         [0., 1., 0., 0.],\\n         [0., 0., 1., 0.]]]), 'participants': None, 'licensing': None} = ContextualBindLayer()._bind_context",
+      "stdout": ""
+    }
+  ]
+}

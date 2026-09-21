@@ -1,0 +1,20 @@
+[collect] 4 selectors; limit 1800s, 8.0 GiB
+[collect] exit 0; 3.7s; peak 0.43 GiB
+[worker-000] 8 selectors; limit 1800s, 8.0 GiB
+[worker-001] 3 selectors; limit 1800s, 8.0 GiB
+[worker-002] 8 selectors; limit 1800s, 8.0 GiB
+[worker-003] 8 selectors; limit 1800s, 8.0 GiB
+[worker-004] 8 selectors; limit 1800s, 8.0 GiB
+[worker-005] 3 selectors; limit 1800s, 8.0 GiB
+[worker-006] 8 selectors; limit 1800s, 8.0 GiB
+[worker-007] 2 selectors; limit 1800s, 8.0 GiB
+[worker-000] exit 0; 4.4s; peak 0.40 GiB
+[worker-001] exit 0; 5.4s; peak 0.40 GiB
+[worker-002] exit 0; 6.4s; peak 0.40 GiB
+[worker-003] exit 0; 7.4s; peak 0.46 GiB
+[worker-004] exit 0; 8.3s; peak 1.76 GiB
+[worker-005] exit 0; 9.3s; peak 1.76 GiB
+[worker-006] exit 0; 10.3s; peak 0.40 GiB
+[worker-007] exit 0; 11.3s; peak 0.40 GiB
+Result: passed, exit 0; 48/48 cases completed.
+/Users/arogers/github/WikiOracle/basicmodel/output/tests/20260921-102302-f01230/result.json

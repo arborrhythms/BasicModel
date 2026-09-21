@@ -37,16 +37,7 @@ import recon_bench
 from recon_bench import run_config
 
 
-def _seed(seed=0):
-    import random
-    import numpy as np
-    random.seed(seed)
-    torch.manual_seed(seed)
-    np.random.seed(seed)
-
-
 def _trained_model(epochs=3, config="data/MM_20M_xor.xml"):
-    _seed(0)
     model, dev, lr, bs = recon_bench._build_model(
         recon_bench._resolve_config(config))
     opt = model.getOptimizer(lr=lr)
@@ -189,10 +180,10 @@ def test_curriculum_fraction_masks_some_tiles():
 def test_recon_bench_blind_flag(tmp_path):
     """recon_bench --blind computes the decode + where_recovery blind
     (default); --scaffold keeps the debug/fallback path."""
-    rec_blind = run_config("data/MM_20M_xor.xml", epochs=3, seed=0,
+    rec_blind = run_config("data/MM_20M_xor.xml", epochs=3, seed=None,
                            out_dir=str(tmp_path), blind=True)
     assert rec_blind.notes.get("decode_mode") == "blind"
-    rec_scaf = run_config("data/MM_20M_xor.xml", epochs=3, seed=0,
+    rec_scaf = run_config("data/MM_20M_xor.xml", epochs=3, seed=None,
                           out_dir=str(tmp_path), blind=False)
     assert rec_scaf.notes.get("decode_mode") == "scaffold"
     # This test selects the decode mode.  The historical E=3 scaffold score
@@ -203,28 +194,11 @@ def test_recon_bench_blind_flag(tmp_path):
 
 
 @pytest.mark.skipif(os.environ.get("RUN_SLOW") != "1",
-                    reason="~24s (build + pinned epochs) -- RUN_SLOW gates the bar")
+                    reason="~24s (build + declared epochs) -- RUN_SLOW gates the bar")
 def test_mm20m_xor_blind_roundtrip(tmp_path):
-    """THE Gate-2b bar: scaffold OFF, tiling re-derived from the band,
-    exact_match == 1.0 at the pinned budget.
-
-    GREEN (2026-07-09): closed by the .where FREQUENCY fix, not a training
-    knob. The 8192 default period buried the byte-offset signal under the
-    reverse-transport noise floor (~0.008 rad = ~10 bytes at 1 byte =
-    0.00077 rad), so the band collapsed and 5-vs-6 could not separate. Three
-    changes close it: (1) WhereEncoding.where_origin -- a quarter-period
-    ORIGIN SHIFT so offset 0 sits off the atan2 wrap seam (no more
-    ~maxVal aliasing at offset 0); (2) <wherePeriod>256 for MM_20M_xor
-    (the ~12-byte buffer only needs a short period, giving 1 byte = 0.0245
-    rad, so the same noise is sub-byte and the band decodes EXACT starts --
-    measured start-offset error 0.0); (3) NUL-exclusion in
-    RadixLayer.associate_span for the content-terminated last tile (size=None),
-    so an active content slot never resolves to the 1-byte NUL pad row.
-    Net at E=80: start error 0.0, content 12/12, exact_match 1.0. Long-
-    sentence configs need a coarse+fine multi-rung period, not this single
-    short period (a follow-up)."""
-    from test_reconstruction_roundtrip import EPOCHS_PINNED
-    rec = run_config("data/MM_20M_xor.xml", epochs=EPOCHS_PINNED, seed=0,
+    """Blind decode must recover all inputs at the declared training budget."""
+    from test_reconstruction_roundtrip import RECONSTRUCTION_EPOCHS
+    rec = run_config("data/MM_20M_xor.xml", epochs=RECONSTRUCTION_EPOCHS, seed=None,
                      out_dir=str(tmp_path), blind=True)
     assert rec.exact_match_rate == 1.0
     assert rec.where_recovery == 1.0

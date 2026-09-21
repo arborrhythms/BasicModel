@@ -873,6 +873,34 @@ Retain the measured reconstruction baseline until §6's tied-reconstruction
 migration is implemented and verified; the prediction change must name which
 reconstruction path it actually ran.
 
+**September 21, item 10 reconstruction baseline.** The
+[measurement and seed-audit record](../benchmarks/2026-09-21-item10/README.md)
+extends item 1d's probe at seed 42, CPU fp32, one thread, `MM_ladder.xml`,
+batch 2, four validation batches before and after seven training batches
+(two warmup, five timed). The native reconstruction loss is unchanged from
+`6bf211a`: **0.10059325583279133** before training,
+**0.09279306977987290** over the five timed training batches and
+**0.09232672862708569** after training. The dictionary remains a non-grad
+buffer with one unit-sphere rotation owner at rate .01. This comparison
+preserves that config's existing reconstruction path; it does not silently
+replace it with tied traversal.
+
+The separate packed/single comparison explicitly enables `reconstructInLoop`
+and increases the word capacity/bucket from 8 to 16 in the
+[measurement XML](../benchmarks/2026-09-21-item10/parity.xml). Both presentations
+start with identical parameters and dictionary after common vocabulary
+allocation, use identical sentence byte/unit streams including joining
+spaces, and take no optimizer steps. Over four sentences, the mean tied
+byte cost is **0.7866926491260529 packed** and **0.6838697642087936 single**.
+All retained leaf slabs match, but reconstructed leaves differ; the first
+sentence's sealed state matches in each row, while later sealed states differ.
+**Parity is not demonstrated.** This is a measured baseline gap, not a passed
+learning gate; its cause must be accounted for before the item 9 learning
+comparisons. The [comparison record](../benchmarks/2026-09-21-item10/final-source/parity-comparison.json)
+retains per-sentence values and tolerances. Countdown items 7 and 5 must
+preserve both measurements unless an explicit reviewed correction replaces
+the baseline. The landing's source commit is recorded with the linked receipt.
+
 ### 8.3 Sequence identity, memory and complete meaning
 
 Use consecutive external sentences from the **same row/stream and document**

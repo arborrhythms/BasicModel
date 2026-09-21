@@ -1,0 +1,1838 @@
+[
+  {
+    "file": "test/test_abstraction_order_canonical.py",
+    "line": 97,
+    "function": "_trained_sigma",
+    "call": "torch.manual_seed(seed)"
+  },
+  {
+    "file": "test/test_abstraction_order_canonical.py",
+    "line": 350,
+    "function": "test_constraint_updates_high_order_preserves_low",
+    "call": "torch.manual_seed(12)"
+  },
+  {
+    "file": "test/test_abstraction_order_canonical.py",
+    "line": 379,
+    "function": "test_ws_constraint_targets_the_right_rung",
+    "call": "torch.manual_seed(14)"
+  },
+  {
+    "file": "test/test_adverb_eig_edit.py",
+    "line": 40,
+    "function": "_vp_and_adv",
+    "call": "torch.Generator().manual_seed(seed)"
+  },
+  {
+    "file": "test/test_adverb_eig_edit.py",
+    "line": 49,
+    "function": "_strong_edit",
+    "call": "torch.Generator().manual_seed(seed)"
+  },
+  {
+    "file": "test/test_analysis_attention_gate.py",
+    "line": 47,
+    "function": "test_mask_keeps_top_half_and_is_shape_safe",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_analysis_attention_gate.py",
+    "line": 61,
+    "function": "test_priming_selects_the_aligned_positions",
+    "call": "torch.manual_seed(1)"
+  },
+  {
+    "file": "test/test_basicmodel.py",
+    "line": 368,
+    "function": "test_factorize_over_set_is_log_domain_dual_of_sigma_split",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_boolean_reverse_recommender.py",
+    "line": 58,
+    "function": "test_conjunction_reverse_with_basis_recovers_pair",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_boolean_reverse_recommender.py",
+    "line": 71,
+    "function": "test_disjunction_reverse_with_basis_recovers_pair",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_bounded_charts.py",
+    "line": 62,
+    "function": "test_nested_lift_folds_over_saturated_operands_keep_gradients_bounded",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_c_prior_slotwise.py",
+    "line": 49,
+    "function": "test_staged_expectation_never_enters_conceptual_forward",
+    "call": "torch.manual_seed(414)"
+  },
+  {
+    "file": "test/test_category_codebook.py",
+    "line": 158,
+    "function": "test_category_vq_assign_is_pure_lookup",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_category_collapse.py",
+    "line": 136,
+    "function": "test_consumption_is_clean_noop_in_serial_mode_on_live_grammar",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_category_collapse.py",
+    "line": 140,
+    "function": "test_consumption_is_clean_noop_in_serial_mode_on_live_grammar",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_chooser_architecture.py",
+    "line": 50,
+    "function": "test_default_grammar_head_preserves_legacy_weights_rng_and_outputs",
+    "call": "torch.manual_seed(127)"
+  },
+  {
+    "file": "test/test_chooser_architecture.py",
+    "line": 61,
+    "function": "test_default_grammar_head_preserves_legacy_weights_rng_and_outputs",
+    "call": "torch.manual_seed(127)"
+  },
+  {
+    "file": "test/test_chooser_architecture.py",
+    "line": 84,
+    "function": "test_default_step_head_preserves_rng_and_first_candidate_tie",
+    "call": "torch.manual_seed(153)"
+  },
+  {
+    "file": "test/test_chooser_architecture.py",
+    "line": 97,
+    "function": "test_custom_grammar_capacity_shapes_and_all_hidden_gradients",
+    "call": "torch.manual_seed(207)"
+  },
+  {
+    "file": "test/test_chooser_architecture.py",
+    "line": 126,
+    "function": "test_custom_step_capacity_gradients_after_output_head_learns",
+    "call": "torch.manual_seed(251)"
+  },
+  {
+    "file": "test/test_chooser_architecture.py",
+    "line": 278,
+    "function": "test_deep_step_checkpoint_materializes_saved_architecture_and_loads_strictly",
+    "call": "torch.manual_seed(331)"
+  },
+  {
+    "file": "test/test_codebook_update_law.py",
+    "line": 56,
+    "function": "make_vq",
+    "call": "torch.manual_seed(seed)"
+  },
+  {
+    "file": "test/test_codebook_update_law.py",
+    "line": 64,
+    "function": "steps",
+    "call": "torch.manual_seed(seed)"
+  },
+  {
+    "file": "test/test_codebook_update_law.py",
+    "line": 161,
+    "function": "test_dead_code_revival_respects_the_freeze",
+    "call": "torch.manual_seed(3)"
+  },
+  {
+    "file": "test/test_compiled_word_chunk.py",
+    "line": 144,
+    "function": "test_k2_adapter_matches_legacy_loop_stm_loss_and_gradients",
+    "call": "torch.manual_seed(71)"
+  },
+  {
+    "file": "test/test_compiled_word_chunk.py",
+    "line": 199,
+    "function": "test_k2_adapter_maps_local_choice_trace_into_sentence_slots",
+    "call": "torch.manual_seed(73)"
+  },
+  {
+    "file": "test/test_compiled_word_chunk.py",
+    "line": 248,
+    "function": "test_chunk_views_keep_one_graph_across_part_and_bucket_widths",
+    "call": "torch.manual_seed(151)"
+  },
+  {
+    "file": "test/test_compiled_word_chunk.py",
+    "line": 432,
+    "function": "test_real_aligned_loop_matches_prior_compiled_semantics_across_chunks",
+    "call": "torch.manual_seed(83)"
+  },
+  {
+    "file": "test/test_compiled_word_chunk.py",
+    "line": 442,
+    "function": "test_real_aligned_loop_matches_prior_compiled_semantics_across_chunks",
+    "call": "torch.manual_seed(991)"
+  },
+  {
+    "file": "test/test_compiled_word_chunk.py",
+    "line": 446,
+    "function": "test_real_aligned_loop_matches_prior_compiled_semantics_across_chunks",
+    "call": "torch.manual_seed(991)"
+  },
+  {
+    "file": "test/test_compiled_word_chunk.py",
+    "line": 482,
+    "function": "test_tensor_peer_while_runs_symbolic_reference_transaction_and_releases_owner_state",
+    "call": "torch.manual_seed(211)"
+  },
+  {
+    "file": "test/test_compiled_word_chunk.py",
+    "line": 500,
+    "function": "test_tensor_peer_while_runs_symbolic_reference_transaction_and_releases_owner_state",
+    "call": "torch.manual_seed(991)"
+  },
+  {
+    "file": "test/test_compiled_word_chunk.py",
+    "line": 754,
+    "function": "test_tensor_peer_complete_forward_is_one_graph_across_runtime_lengths",
+    "call": "torch.manual_seed(313)"
+  },
+  {
+    "file": "test/test_compiled_word_chunk.py",
+    "line": 920,
+    "function": "test_tiny_canonical_detached_reverse_stops_at_root",
+    "call": "torch.manual_seed(109)"
+  },
+  {
+    "file": "test/test_compiled_word_chunk.py",
+    "line": 949,
+    "function": "test_tiny_canonical_detached_reverse_train_step_is_finite",
+    "call": "torch.manual_seed(127)"
+  },
+  {
+    "file": "test/test_compiled_word_chunk.py",
+    "line": 976,
+    "function": "test_no_grad_fallback_retains_eager_stm_depth_semantics",
+    "call": "torch.manual_seed(109)"
+  },
+  {
+    "file": "test/test_compiled_word_chunk.py",
+    "line": 863,
+    "function": "test_tensor_peer_mps_inductor_w16_w64_fullgraph_smoke",
+    "call": "torch.manual_seed(617 + expected_capacity)"
+  },
+  {
+    "file": "test/test_compiled_word_chunk.py",
+    "line": 989,
+    "function": "test_no_grad_fallback_retains_eager_stm_depth_semantics",
+    "call": "torch.manual_seed(733)"
+  },
+  {
+    "file": "test/test_compiled_word_chunk.py",
+    "line": 991,
+    "function": "test_no_grad_fallback_retains_eager_stm_depth_semantics",
+    "call": "torch.manual_seed(733)"
+  },
+  {
+    "file": "test/test_conceptual_recurrence.py",
+    "line": 80,
+    "function": "test_combine_square_roundtrip_exact_butterfly",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_conceptual_recurrence.py",
+    "line": 149,
+    "function": "test_combine_square_roundtrip_exact_dense_large_leading",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_contextual_concept_codebook.py",
+    "line": 45,
+    "function": "test_contextual_codebook_is_non_grad_buffer_and_rotates_without_projection",
+    "call": "torch.manual_seed(3)"
+  },
+  {
+    "file": "test/test_contextual_concept_codebook.py",
+    "line": 94,
+    "function": "test_contextual_reducer_is_deterministic_row_reduced_and_skips_normalizer",
+    "call": "torch.manual_seed(17)"
+  },
+  {
+    "file": "test/test_contractive_linear.py",
+    "line": 126,
+    "function": "test_constraints_hold_after_adversarial_descent",
+    "call": "torch.manual_seed(1)"
+  },
+  {
+    "file": "test/test_contractive_linear.py",
+    "line": 136,
+    "function": "test_stable_clamp_bounds_d_after_ascent",
+    "call": "torch.manual_seed(1)"
+  },
+  {
+    "file": "test/test_contractive_linear.py",
+    "line": 146,
+    "function": "test_stable_clamp_bounds_d_after_ascent",
+    "call": "torch.manual_seed(1)"
+  },
+  {
+    "file": "test/test_contractive_linear.py",
+    "line": 156,
+    "function": "test_constraints_hold_after_random_regression",
+    "call": "torch.manual_seed(seed)"
+  },
+  {
+    "file": "test/test_contractive_linear.py",
+    "line": 172,
+    "function": "test_square_roundtrip",
+    "call": "torch.manual_seed(1)"
+  },
+  {
+    "file": "test/test_contractive_linear.py",
+    "line": 186,
+    "function": "test_square_W_Winverse_identity",
+    "call": "torch.manual_seed(1)"
+  },
+  {
+    "file": "test/test_contractive_linear.py",
+    "line": 199,
+    "function": "test_binary_right_inverse",
+    "call": "torch.manual_seed(1)"
+  },
+  {
+    "file": "test/test_contractive_linear.py",
+    "line": 208,
+    "function": "test_roundtrip_survives_optimizer_steps",
+    "call": "torch.manual_seed(1)"
+  },
+  {
+    "file": "test/test_contractive_linear.py",
+    "line": 227,
+    "function": "test_constraints_hold_under_ergodic_noise",
+    "call": "torch.manual_seed(1)"
+  },
+  {
+    "file": "test/test_contractive_linear.py",
+    "line": 265,
+    "function": "test_ergodic_roundtrip",
+    "call": "torch.manual_seed(1)"
+  },
+  {
+    "file": "test/test_cs_reentrancy.py",
+    "line": 191,
+    "function": "test_fold_step_forward_then_reverse_recovers_carrier",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_cs_sparse_weights.py",
+    "line": 162,
+    "function": "test_snap_order0_is_input_dependent_not_saturated",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_cs_sparse_weights.py",
+    "line": 182,
+    "function": "test_snap_order0_ema_traces_winning_rows_training_only",
+    "call": "torch.manual_seed(1)"
+  },
+  {
+    "file": "test/test_data_no_byte_loss.py",
+    "line": 75,
+    "function": "test_concat_per_tick_slabs_equals_original_doc_bytes",
+    "call": "random.Random(20260426)"
+  },
+  {
+    "file": "test/test_detached_reverse_objective.py",
+    "line": 74,
+    "function": "test_packed_reverse_loss_matches_serial_sentence_layout",
+    "call": "torch.manual_seed(19)"
+  },
+  {
+    "file": "test/test_dynamic_part_padding.py",
+    "line": 33,
+    "function": "serial_model",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_exact_primitives.py",
+    "line": 83,
+    "function": "test_primitives_are_total_on_random_operands",
+    "call": "random.Random(0)"
+  },
+  {
+    "file": "test/test_expectation_retention.py",
+    "line": 26,
+    "function": "_discourse",
+    "call": "torch.manual_seed(91)"
+  },
+  {
+    "file": "test/test_gradient_factorization.py",
+    "line": 125,
+    "function": "test_normal_batch_logs_named_shared_operator_gradients",
+    "call": "torch.manual_seed(942)"
+  },
+  {
+    "file": "test/test_grammar_fixtures.py",
+    "line": 58,
+    "function": "<module>",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_grammar_layer_butterfly.py",
+    "line": 115,
+    "function": "test_grammar_layer_identity_forward_n4",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_grammar_layer_butterfly.py",
+    "line": 128,
+    "function": "test_grammar_layer_identity_forward_n8",
+    "call": "torch.manual_seed(1)"
+  },
+  {
+    "file": "test/test_grammar_layer_butterfly.py",
+    "line": 139,
+    "function": "test_grammar_layer_identity_reverse_n4",
+    "call": "torch.manual_seed(2)"
+  },
+  {
+    "file": "test/test_grammar_layer_butterfly.py",
+    "line": 154,
+    "function": "_roundtrip",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_grammar_layer_butterfly.py",
+    "line": 232,
+    "function": "test_identity_init",
+    "call": "torch.manual_seed(3)"
+  },
+  {
+    "file": "test/test_grammar_layer_butterfly.py",
+    "line": 248,
+    "function": "test_forward_reverse_roundtrip",
+    "call": "torch.manual_seed(4)"
+  },
+  {
+    "file": "test/test_grammar_layer_butterfly.py",
+    "line": 283,
+    "function": "test_identity_init",
+    "call": "torch.manual_seed(5)"
+  },
+  {
+    "file": "test/test_grammar_layer_butterfly.py",
+    "line": 297,
+    "function": "test_forward_reverse_roundtrip",
+    "call": "torch.manual_seed(6)"
+  },
+  {
+    "file": "test/test_grammar_layer_butterfly.py",
+    "line": 330,
+    "function": "test_lift_butterfly_identity_init",
+    "call": "torch.manual_seed(7)"
+  },
+  {
+    "file": "test/test_grammar_layer_butterfly.py",
+    "line": 350,
+    "function": "test_lower_butterfly_identity_init",
+    "call": "torch.manual_seed(8)"
+  },
+  {
+    "file": "test/test_grammar_word_learning.py",
+    "line": 46,
+    "function": "test_same_candidate_values_do_not_erase_operand_order",
+    "call": "torch.manual_seed(391)"
+  },
+  {
+    "file": "test/test_grammar_word_learning.py",
+    "line": 73,
+    "function": "test_legacy_grammar_weights_keep_predictions_and_new_order_weights_start_zero",
+    "call": "torch.manual_seed(793)"
+  },
+  {
+    "file": "test/test_grammar_word_learning.py",
+    "line": 76,
+    "function": "test_legacy_grammar_weights_keep_predictions_and_new_order_weights_start_zero",
+    "call": "torch.manual_seed(793)"
+  },
+  {
+    "file": "test/test_grammar_word_learning.py",
+    "line": 161,
+    "function": "test_normal_text_reconstruction_updates_the_grammar_chooser",
+    "call": "torch.manual_seed(613)"
+  },
+  {
+    "file": "test/test_grammar_word_learning.py",
+    "line": 101,
+    "function": "test_order_projection_does_not_advance_the_default_device_rng",
+    "call": "torch.manual_seed(941)"
+  },
+  {
+    "file": "test/test_grammar_word_learning.py",
+    "line": 104,
+    "function": "test_order_projection_does_not_advance_the_default_device_rng",
+    "call": "torch.manual_seed(941)"
+  },
+  {
+    "file": "test/test_heat_reverse_wiring.py",
+    "line": 66,
+    "function": "_seed_rng",
+    "call": "torch.manual_seed(20260606)"
+  },
+  {
+    "file": "test/test_hierarchical.py",
+    "line": 162,
+    "function": "test_mentalmodel_compaction_overflow_regression",
+    "call": "torch.random.default_generator.manual_seed(3)"
+  },
+  {
+    "file": "test/test_hierarchical.py",
+    "line": 163,
+    "function": "test_mentalmodel_compaction_overflow_regression",
+    "call": "random.seed(3)"
+  },
+  {
+    "file": "test/test_hierarchical.py",
+    "line": 164,
+    "function": "test_mentalmodel_compaction_overflow_regression",
+    "call": "np.random.seed(3)"
+  },
+  {
+    "file": "test/test_idempotent_loop.py",
+    "line": 156,
+    "function": "test_v7_perslot_roundtrip_is_fixed_point",
+    "call": "torch.manual_seed(1234)"
+  },
+  {
+    "file": "test/test_init_scale.py",
+    "line": 45,
+    "function": "test_init_scale_shrinks_rows_generic_branch",
+    "call": "torch.manual_seed(3)"
+  },
+  {
+    "file": "test/test_init_scale.py",
+    "line": 50,
+    "function": "test_init_scale_shrinks_rows_generic_branch",
+    "call": "torch.manual_seed(3)"
+  },
+  {
+    "file": "test/test_init_scale.py",
+    "line": 62,
+    "function": "test_init_scale_zero_is_none_byte_identical",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_init_scale.py",
+    "line": 66,
+    "function": "test_init_scale_zero_is_none_byte_identical",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_init_scale.py",
+    "line": 77,
+    "function": "test_init_scale_selection_invariant",
+    "call": "torch.manual_seed(1)"
+  },
+  {
+    "file": "test/test_init_scale.py",
+    "line": 81,
+    "function": "test_init_scale_selection_invariant",
+    "call": "torch.manual_seed(1)"
+  },
+  {
+    "file": "test/test_init_scale.py",
+    "line": 96,
+    "function": "_fold_saturation",
+    "call": "torch.manual_seed(2)"
+  },
+  {
+    "file": "test/test_intent_priming.py",
+    "line": 42,
+    "function": "_rows",
+    "call": "torch.manual_seed(seed)"
+  },
+  {
+    "file": "test/test_intent_priming.py",
+    "line": 90,
+    "function": "test_vq_selection_biased_monotonically_by_boost",
+    "call": "torch.manual_seed(5)"
+  },
+  {
+    "file": "test/test_intent_priming.py",
+    "line": 125,
+    "function": "test_vq_selection_byte_identical_with_no_intent",
+    "call": "torch.manual_seed(9)"
+  },
+  {
+    "file": "test/test_intent_priming.py",
+    "line": 174,
+    "function": "test_same_intent_moves_both_towers_same_direction",
+    "call": "torch.manual_seed(13)"
+  },
+  {
+    "file": "test/test_inter_sentence_prediction_shape.py",
+    "line": 28,
+    "function": "test_prediction_trains_live_context_encoder_but_not_observed_target",
+    "call": "torch.manual_seed(321)"
+  },
+  {
+    "file": "test/test_inter_sentence_prediction_shape.py",
+    "line": 46,
+    "function": "test_consuming_prediction_loss_ends_encoder_graph_lifetime",
+    "call": "torch.manual_seed(321)"
+  },
+  {
+    "file": "test/test_inter_sentence_prediction_shape.py",
+    "line": 62,
+    "function": "test_prediction_context_is_row_local_and_reset_keeps_other_rows",
+    "call": "torch.manual_seed(321)"
+  },
+  {
+    "file": "test/test_inter_sentence_prediction_shape.py",
+    "line": 432,
+    "function": "test_combined_call_matches_manual_two_call_order",
+    "call": "torch.manual_seed(1234)"
+  },
+  {
+    "file": "test/test_interface_factoring.py",
+    "line": 43,
+    "function": "unit_rows",
+    "call": "torch.manual_seed(seed)"
+  },
+  {
+    "file": "test/test_interface_factoring.py",
+    "line": 100,
+    "function": "test_evidence_is_signed_and_capped",
+    "call": "torch.manual_seed(2)"
+  },
+  {
+    "file": "test/test_interface_factoring.py",
+    "line": 180,
+    "function": "test_factored_crossing_lives_in_the_row_span",
+    "call": "torch.manual_seed(3)"
+  },
+  {
+    "file": "test/test_interface_factoring.py",
+    "line": 241,
+    "function": "test_bind_streams_knob_paths",
+    "call": "torch.manual_seed(1)"
+  },
+  {
+    "file": "test/test_interface_factoring.py",
+    "line": 250,
+    "function": "test_bind_streams_knob_paths",
+    "call": "torch.manual_seed(2)"
+  },
+  {
+    "file": "test/test_intra_routing_grad_to_router.py",
+    "line": 144,
+    "function": "test_grad_reaches_unary_anchors_via_projection",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_intra_routing_grad_to_router.py",
+    "line": 217,
+    "function": "test_grad_reaches_unary_and_binary_anchors_bare_router",
+    "call": "torch.manual_seed(1)"
+  },
+  {
+    "file": "test/test_intra_sentence_layer_reverse.py",
+    "line": 75,
+    "function": "_make_layer",
+    "call": "torch.manual_seed(seed)"
+  },
+  {
+    "file": "test/test_inverse_recommend.py",
+    "line": 88,
+    "function": "_build_codebook",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_inverse_recommend.py",
+    "line": 136,
+    "function": "_build_codebook",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_invertibility.py",
+    "line": 404,
+    "function": "test_paired_roundtrip",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_invertibility.py",
+    "line": 437,
+    "function": "test_paired_roundtrip",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_invertibility.py",
+    "line": 845,
+    "function": "_basis",
+    "call": "torch.manual_seed(seed)"
+  },
+  {
+    "file": "test/test_joint_objectives.py",
+    "line": 339,
+    "function": "test_answer_path_operators_are_independently_owned_and_keep_learning",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_lexical_gate_lift_lower.py",
+    "line": 44,
+    "function": "_op",
+    "call": "torch.manual_seed(7)"
+  },
+  {
+    "file": "test/test_lexical_gate_lift_lower.py",
+    "line": 49,
+    "function": "_operands",
+    "call": "torch.manual_seed(seed)"
+  },
+  {
+    "file": "test/test_lexical_gate_lift_lower.py",
+    "line": 61,
+    "function": "test_two_verbs_distinct_with_masks_on_ablated_identical",
+    "call": "torch.manual_seed(13)"
+  },
+  {
+    "file": "test/test_lexical_gate_lift_lower.py",
+    "line": 103,
+    "function": "test_projection_trains_end_to_end_with_composition_loss",
+    "call": "torch.manual_seed(17)"
+  },
+  {
+    "file": "test/test_lexical_gate_lift_lower.py",
+    "line": 139,
+    "function": "test_weight_law_holds_under_arbitrary_gates",
+    "call": "torch.manual_seed(23)"
+  },
+  {
+    "file": "test/test_lexical_gate_lift_lower.py",
+    "line": 185,
+    "function": "test_gate_flows_through_meronymic_adapter",
+    "call": "torch.manual_seed(31)"
+  },
+  {
+    "file": "test/test_lexicon_unit_ball.py",
+    "line": 289,
+    "function": "test_topk_rp_chunked_matches_unchunked",
+    "call": "torch.manual_seed(2385)"
+  },
+  {
+    "file": "test/test_lift_lower_binary_grammar_ops.py",
+    "line": 120,
+    "function": "test_lift_forward_two_operands_one_result",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_lift_lower_binary_grammar_ops.py",
+    "line": 134,
+    "function": "test_lower_forward_two_operands_one_result",
+    "call": "torch.manual_seed(1)"
+  },
+  {
+    "file": "test/test_lift_lower_binary_grammar_ops.py",
+    "line": 146,
+    "function": "test_lift_reverse_returns_pair",
+    "call": "torch.manual_seed(2)"
+  },
+  {
+    "file": "test/test_lift_lower_binary_grammar_ops.py",
+    "line": 164,
+    "function": "test_lower_reverse_returns_pair",
+    "call": "torch.manual_seed(3)"
+  },
+  {
+    "file": "test/test_lift_lower_binary_grammar_ops.py",
+    "line": 195,
+    "function": "test_lift_round_trip_consistent",
+    "call": "torch.manual_seed(4)"
+  },
+  {
+    "file": "test/test_lift_lower_binary_grammar_ops.py",
+    "line": 215,
+    "function": "test_lower_round_trip_consistent",
+    "call": "torch.manual_seed(5)"
+  },
+  {
+    "file": "test/test_lift_lower_binary_grammar_ops.py",
+    "line": 235,
+    "function": "test_lift_compose_dispatches_to_forward",
+    "call": "torch.manual_seed(6)"
+  },
+  {
+    "file": "test/test_lift_lower_binary_grammar_ops.py",
+    "line": 246,
+    "function": "test_lower_compose_dispatches_to_forward",
+    "call": "torch.manual_seed(7)"
+  },
+  {
+    "file": "test/test_lift_lower_binary_grammar_ops.py",
+    "line": 258,
+    "function": "test_lift_generate_dispatches_to_reverse",
+    "call": "torch.manual_seed(8)"
+  },
+  {
+    "file": "test/test_lift_lower_factorization.py",
+    "line": 73,
+    "function": "_random_bivec",
+    "call": "torch.manual_seed(seed)"
+  },
+  {
+    "file": "test/test_lift_lower_factorization.py",
+    "line": 272,
+    "function": "test_lift_self_contained_no_substrate_fallback",
+    "call": "torch.manual_seed(31)"
+  },
+  {
+    "file": "test/test_lift_lower_factorization.py",
+    "line": 274,
+    "function": "test_lift_self_contained_no_substrate_fallback",
+    "call": "torch.manual_seed(32)"
+  },
+  {
+    "file": "test/test_lift_lower_factorization.py",
+    "line": 296,
+    "function": "test_lower_self_contained_no_substrate_fallback",
+    "call": "torch.manual_seed(41)"
+  },
+  {
+    "file": "test/test_lift_lower_factorization.py",
+    "line": 298,
+    "function": "test_lower_self_contained_no_substrate_fallback",
+    "call": "torch.manual_seed(42)"
+  },
+  {
+    "file": "test/test_lift_lower_recommender.py",
+    "line": 35,
+    "function": "setUp",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_masked_semantic.py",
+    "line": 45,
+    "function": "_run",
+    "call": "torch.manual_seed(7)"
+  },
+  {
+    "file": "test/test_masked_semantic.py",
+    "line": 81,
+    "function": "_run",
+    "call": "torch.manual_seed(1000 + e)"
+  },
+  {
+    "file": "test/test_math_thinking_training.py",
+    "line": 53,
+    "function": "_build",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_mereological.py",
+    "line": 33,
+    "function": "test_join_from_bottom_dominates_its_parts",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_mereological.py",
+    "line": 43,
+    "function": "test_projection_repairs_every_edge_incl_cross_boundary",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_mereological.py",
+    "line": 59,
+    "function": "test_projection_is_minimal_and_bounded",
+    "call": "torch.manual_seed(3)"
+  },
+  {
+    "file": "test/test_mereological.py",
+    "line": 80,
+    "function": "test_codebook_substring_poset_and_projection",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_mereological.py",
+    "line": 88,
+    "function": "test_analyzer_is_the_complement_mirror",
+    "call": "torch.manual_seed(1)"
+  },
+  {
+    "file": "test/test_mereology_raise.py",
+    "line": 59,
+    "function": "test_synthesize_over_set_shape_and_binary_equivalence",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_meronomy_ladder.py",
+    "line": 97,
+    "function": "test_forward_equals_compose_on_a_live_snapshot",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_meronomy_ladder.py",
+    "line": 141,
+    "function": "_build_ladder",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_meronomy_ladder.py",
+    "line": 482,
+    "function": "_build_ladder_variant",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_meronomy_ladder.py",
+    "line": 621,
+    "function": "_build_none_ladder",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_meronomy_ladder.py",
+    "line": 654,
+    "function": "test_cold_start_learns_space_as_the_basic_boundary",
+    "call": "random.Random(7)"
+  },
+  {
+    "file": "test/test_meronomy_ladder.py",
+    "line": 672,
+    "function": "test_cold_start_learns_space_as_the_basic_boundary",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_meronomy_ladder.py",
+    "line": 741,
+    "function": "test_recurring_phrases_are_admitted_on_a_text_corpus_with_positive_gain",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_meronomy_laws.py",
+    "line": 66,
+    "function": "test_eval_chart_bijection",
+    "call": "torch.manual_seed(1)"
+  },
+  {
+    "file": "test/test_meronymic_butterfly.py",
+    "line": 60,
+    "function": "_slab",
+    "call": "torch.manual_seed(seed)"
+  },
+  {
+    "file": "test/test_meronymic_butterfly.py",
+    "line": 98,
+    "function": "test_three_fold_corner_adjoint_is_finite_and_bounded",
+    "call": "torch.manual_seed(41)"
+  },
+  {
+    "file": "test/test_meronymic_butterfly.py",
+    "line": 153,
+    "function": "test_order_preserved_through_cascade",
+    "call": "torch.manual_seed(17)"
+  },
+  {
+    "file": "test/test_meronymic_butterfly.py",
+    "line": 358,
+    "function": "test_iterated_aggressive_law_concentrates_without_singular_collapse",
+    "call": "torch.manual_seed(37)"
+  },
+  {
+    "file": "test/test_meronymic_butterfly.py",
+    "line": 52,
+    "function": "_adapter",
+    "call": "torch.manual_seed(seed)"
+  },
+  {
+    "file": "test/test_meronymic_butterfly.py",
+    "line": 400,
+    "function": "test_xor_exact_slots_keep_butterfly_under_meronomy",
+    "call": "torch.manual_seed(31)"
+  },
+  {
+    "file": "test/test_mind_generativity.py",
+    "line": 18,
+    "function": "test_current_grammar_recovery_by_depth_training_and_chain_length",
+    "call": "torch.manual_seed(946)"
+  },
+  {
+    "file": "test/test_mlp_transform_chooser.py",
+    "line": 147,
+    "function": "_build_model",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_negative_expectation.py",
+    "line": 222,
+    "function": "test_native_unlabelled_batch_trains_the_same_chooser",
+    "call": "torch.manual_seed(946)"
+  },
+  {
+    "file": "test/test_negative_expectation.py",
+    "line": 470,
+    "function": "test_native_nonzero_composition_is_bit_identical_at_every_stance",
+    "call": "torch.manual_seed(948)"
+  },
+  {
+    "file": "test/test_order_k_unfold.py",
+    "line": 49,
+    "function": "test_unfolded_prototypes_reconstitutes_stamped_rows",
+    "call": "torch.manual_seed(9)"
+  },
+  {
+    "file": "test/test_order_k_unfold.py",
+    "line": 106,
+    "function": "_trained_sigma",
+    "call": "torch.manual_seed(seed)"
+  },
+  {
+    "file": "test/test_order_k_unfold.py",
+    "line": 121,
+    "function": "test_order_k_member_missed_at_order0_recovered_by_unfold",
+    "call": "torch.manual_seed(6)"
+  },
+  {
+    "file": "test/test_output_synthesis.py",
+    "line": 41,
+    "function": "_build",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_output_synthesis.py",
+    "line": 720,
+    "function": "test_chooser_question_bias_trains_through_the_policy_objective",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_output_walk.py",
+    "line": 39,
+    "function": "_stamped_event",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_output_walk.py",
+    "line": 163,
+    "function": "test_generate_policy_returns_sampled_action_credit_without_imitation",
+    "call": "torch.manual_seed(7)"
+  },
+  {
+    "file": "test/test_output_walk.py",
+    "line": 304,
+    "function": "_policy_training_probe",
+    "call": "torch.manual_seed(11)"
+  },
+  {
+    "file": "test/test_output_walk.py",
+    "line": 255,
+    "function": "test_output_ignores_input_derivation_on_conceptual_slots",
+    "call": "torch.manual_seed(13)"
+  },
+  {
+    "file": "test/test_output_walk.py",
+    "line": 257,
+    "function": "test_output_ignores_input_derivation_on_conceptual_slots",
+    "call": "torch.manual_seed(13)"
+  },
+  {
+    "file": "test/test_output_walk.py",
+    "line": 758,
+    "function": "test_held_answer_idea_ignores_later_staging_and_memory_context",
+    "call": "torch.manual_seed(19)"
+  },
+  {
+    "file": "test/test_parthood_orders.py",
+    "line": 50,
+    "function": "test_monotone_sigma_preserves_order",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_parthood_orders.py",
+    "line": 67,
+    "function": "test_zero_preservation_is_the_terminate_invariant",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_parthood_orders.py",
+    "line": 89,
+    "function": "test_reflexive",
+    "call": "torch.manual_seed(1)"
+  },
+  {
+    "file": "test/test_parthood_orders.py",
+    "line": 96,
+    "function": "test_zero_is_universal_part",
+    "call": "torch.manual_seed(2)"
+  },
+  {
+    "file": "test/test_parthood_orders.py",
+    "line": 104,
+    "function": "test_contained_scores_higher_than_disjoint",
+    "call": "torch.manual_seed(3)"
+  },
+  {
+    "file": "test/test_parthood_orders.py",
+    "line": 112,
+    "function": "test_equal_kernel_is_mutual_parthood",
+    "call": "torch.manual_seed(4)"
+  },
+  {
+    "file": "test/test_parthood_orders.py",
+    "line": 127,
+    "function": "test_part_preserved_through_one_monotone_loop",
+    "call": "torch.manual_seed(5)"
+  },
+  {
+    "file": "test/test_parthood_orders.py",
+    "line": 202,
+    "function": "test_order_zero_is_identity",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_parthood_orders.py",
+    "line": 212,
+    "function": "test_order_k_is_k_loops",
+    "call": "torch.manual_seed(1)"
+  },
+  {
+    "file": "test/test_parthood_orders.py",
+    "line": 226,
+    "function": "test_cross_order_parthood_via_lift",
+    "call": "torch.manual_seed(2)"
+  },
+  {
+    "file": "test/test_pi2_sigma2_folds.py",
+    "line": 45,
+    "function": "randomize_admissible",
+    "call": "torch.manual_seed(seed)"
+  },
+  {
+    "file": "test/test_pi2_sigma2_folds.py",
+    "line": 103,
+    "function": "test_monotone_transport",
+    "call": "torch.manual_seed(seed + 100)"
+  },
+  {
+    "file": "test/test_pi2_sigma2_folds.py",
+    "line": 53,
+    "function": "memberships",
+    "call": "torch.manual_seed(seed)"
+  },
+  {
+    "file": "test/test_primed_reverse_combined.py",
+    "line": 35,
+    "function": "test_identity_priming_matches_unprimed_disjunction",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_primed_reverse_combined.py",
+    "line": 52,
+    "function": "test_identity_priming_matches_unprimed_conjunction",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_priming_energy.py",
+    "line": 111,
+    "function": "_projected_model",
+    "call": "torch.manual_seed(7)"
+  },
+  {
+    "file": "test/test_priming_energy.py",
+    "line": 115,
+    "function": "_projected_model",
+    "call": "torch.manual_seed(1000 + e)"
+  },
+  {
+    "file": "test/test_ps_meronymic_router.py",
+    "line": 51,
+    "function": "test_route_once_is_exact_viterbi_not_beam",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_ps_meronymic_router.py",
+    "line": 83,
+    "function": "test_depth_penalty_monotonically_reduces_merges",
+    "call": "torch.manual_seed(1)"
+  },
+  {
+    "file": "test/test_query_phase_fullgraph.py",
+    "line": 10,
+    "function": "test_query_mask_preserves_real_fullgraph_forward_backward_across_lengths",
+    "call": "torch.manual_seed(313)"
+  },
+  {
+    "file": "test/test_reading_attention.py",
+    "line": 42,
+    "function": "_module_inputs",
+    "call": "torch.manual_seed(seed)"
+  },
+  {
+    "file": "test/test_reading_attention.py",
+    "line": 113,
+    "function": "test_codebook_retrieval_prior_is_the_subsymbolic_term",
+    "call": "torch.manual_seed(1)"
+  },
+  {
+    "file": "test/test_recorded_compose_dispatch.py",
+    "line": 48,
+    "function": "test_recorded_dispatch_preserves_values_and_gradients_for_mixed_rows",
+    "call": "torch.manual_seed(461)"
+  },
+  {
+    "file": "test/test_reference_lookup_gauge.py",
+    "line": 35,
+    "function": "unit_rows",
+    "call": "torch.manual_seed(seed)"
+  },
+  {
+    "file": "test/test_reference_lookup_gauge.py",
+    "line": 53,
+    "function": "test_gauge_orient_toward_positive_referent",
+    "call": "torch.manual_seed(2)"
+  },
+  {
+    "file": "test/test_reference_lookup_gauge.py",
+    "line": 61,
+    "function": "test_gauge_orient_quotient_consistency",
+    "call": "torch.manual_seed(3)"
+  },
+  {
+    "file": "test/test_reference_lookup_gauge.py",
+    "line": 85,
+    "function": "test_pole_lookup_relabeling_invariance",
+    "call": "torch.manual_seed(4)"
+  },
+  {
+    "file": "test/test_reference_lookup_gauge.py",
+    "line": 107,
+    "function": "test_certainty_survives_retrieval",
+    "call": "torch.manual_seed(5)"
+  },
+  {
+    "file": "test/test_reference_lookup_gauge.py",
+    "line": 136,
+    "function": "test_torus_snap_unaffected_by_knob",
+    "call": "torch.manual_seed(8)"
+  },
+  {
+    "file": "test/test_reference_lookup_gauge.py",
+    "line": 163,
+    "function": "test_sphere_snap_knob_off_is_legacy_cosine",
+    "call": "torch.manual_seed(10)"
+  },
+  {
+    "file": "test/test_reference_lookup_gauge.py",
+    "line": 178,
+    "function": "test_sphere_snap_knob_on_is_gauge_invariant",
+    "call": "torch.manual_seed(12)"
+  },
+  {
+    "file": "test/test_reference_lookup_gauge.py",
+    "line": 212,
+    "function": "test_sphere_snap_knob_on_monotonic_exempt",
+    "call": "torch.manual_seed(15)"
+  },
+  {
+    "file": "test/test_reference_table.py",
+    "line": 144,
+    "function": "test_minted_whole_is_searchable_by_its_parts",
+    "call": "torch.manual_seed(1)"
+  },
+  {
+    "file": "test/test_reference_table.py",
+    "line": 171,
+    "function": "test_bind_gauge_orients_object_row",
+    "call": "torch.manual_seed(2)"
+  },
+  {
+    "file": "test/test_registration_drift.py",
+    "line": 31,
+    "function": "towers",
+    "call": "torch.manual_seed(seed)"
+  },
+  {
+    "file": "test/test_registration_drift.py",
+    "line": 46,
+    "function": "test_registration_loss_decreases_on_toy_corpus",
+    "call": "torch.manual_seed(2)"
+  },
+  {
+    "file": "test/test_registration_drift.py",
+    "line": 63,
+    "function": "test_fixed_points_non_degenerate",
+    "call": "torch.manual_seed(4)"
+  },
+  {
+    "file": "test/test_registration_drift.py",
+    "line": 85,
+    "function": "test_drift_flagged_and_re_registered",
+    "call": "torch.manual_seed(5)"
+  },
+  {
+    "file": "test/test_registration_drift.py",
+    "line": 120,
+    "function": "test_predication_pressure_sculpts_the_order",
+    "call": "torch.manual_seed(6)"
+  },
+  {
+    "file": "test/test_reverse_traversal.py",
+    "line": 65,
+    "function": "test_tied_binary_reverse_recomposes_the_parent",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_reverse_traversal.py",
+    "line": 455,
+    "function": "test_seal_chain_of_chunks_unwinds_to_the_words",
+    "call": "torch.manual_seed(3)"
+  },
+  {
+    "file": "test/test_row_local_concept_optimizer.py",
+    "line": 78,
+    "function": "test_row_local_adam_matches_sparse_adam_on_touched_rows",
+    "call": "torch.manual_seed(7)"
+  },
+  {
+    "file": "test/test_row_local_concept_optimizer.py",
+    "line": 253,
+    "function": "test_post_step_concept_projection_is_row_local_and_signed_bounded",
+    "call": "torch.manual_seed(23)"
+  },
+  {
+    "file": "test/test_row_local_concept_optimizer.py",
+    "line": 158,
+    "function": "test_bfloat16_moment_storage_uses_fp32_math_close_to_sparse_adam",
+    "call": "torch.manual_seed(7)"
+  },
+  {
+    "file": "test/test_search_then_mint.py",
+    "line": 159,
+    "function": "test_folds_never_create_rows",
+    "call": "torch.manual_seed(1)"
+  },
+  {
+    "file": "test/test_sentence_expectation.py",
+    "line": 17,
+    "function": "layer",
+    "call": "torch.manual_seed(165)"
+  },
+  {
+    "file": "test/test_serial_object_meta.py",
+    "line": 35,
+    "function": "_serial_model_and_batch",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_serial_reverse_errors.py",
+    "line": 73,
+    "function": "test_recommender_path_still_runs_with_basis",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_serial_stm_split.py",
+    "line": 253,
+    "function": "test_serial_reduce_chain_matches_parallel_sigma_extent",
+    "call": "torch.manual_seed(4)"
+  },
+  {
+    "file": "test/test_serve_thinking.py",
+    "line": 37,
+    "function": "served",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_signal_router_dp.py",
+    "line": 18,
+    "function": "_rand_scores",
+    "call": "torch.Generator(device='cpu').manual_seed(seed)"
+  },
+  {
+    "file": "test/test_signal_router_layer.py",
+    "line": 41,
+    "function": "test_layer_gradient_into_op_and_anchors",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_signal_router_viterbi.py",
+    "line": 15,
+    "function": "_rand_scores",
+    "call": "torch.Generator(device='cpu').manual_seed(seed)"
+  },
+  {
+    "file": "test/test_soft_superposition.py",
+    "line": 78,
+    "function": "test_unary_soft_superposition_is_differentiable_into_chooser",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_soft_superposition.py",
+    "line": 92,
+    "function": "test_temperature_one_is_flatter_than_zero",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_sparse_compile_boundary.py",
+    "line": 65,
+    "function": "test_dynamo_eager_island_preserves_sparse_gradient_and_row_local_step",
+    "call": "torch.manual_seed(17)"
+  },
+  {
+    "file": "test/test_sparse_compile_boundary.py",
+    "line": 97,
+    "function": "test_staged_sentence_bank_is_fullgraph_clean_and_gradient_equivalent",
+    "call": "torch.manual_seed(23)"
+  },
+  {
+    "file": "test/test_sparse_concept_activation_boundary.py",
+    "line": 172,
+    "function": "test_membership_activations_decode_to_signed_bounded_concepts",
+    "call": "torch.manual_seed(19)"
+  },
+  {
+    "file": "test/test_sparse_layer.py",
+    "line": 32,
+    "function": "test_forward_matches_dense_tanh",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_sparse_layer.py",
+    "line": 77,
+    "function": "test_reverse_matches_dense_transpose_tanh",
+    "call": "torch.manual_seed(1)"
+  },
+  {
+    "file": "test/test_sparse_layer.py",
+    "line": 103,
+    "function": "test_spmm_kernel_parity",
+    "call": "torch.manual_seed(2)"
+  },
+  {
+    "file": "test/test_stm_opportunistic_reduce.py",
+    "line": 29,
+    "function": "_build",
+    "call": "torch.manual_seed(3)"
+  },
+  {
+    "file": "test/test_stm_opportunistic_reduce.py",
+    "line": 40,
+    "function": "_stm_with_depth2",
+    "call": "torch.manual_seed(11)"
+  },
+  {
+    "file": "test/test_stm_reverse_roundtrip_lift_lower.py",
+    "line": 89,
+    "function": "setUp",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_stm_reverse_roundtrip_lift_lower.py",
+    "line": 128,
+    "function": "setUp",
+    "call": "torch.manual_seed(1)"
+  },
+  {
+    "file": "test/test_subsymbolic_stack.py",
+    "line": 100,
+    "function": "test_stack_construction_is_rng_neutral",
+    "call": "torch.manual_seed(1234)"
+  },
+  {
+    "file": "test/test_subsymbolic_stack.py",
+    "line": 103,
+    "function": "test_stack_construction_is_rng_neutral",
+    "call": "torch.manual_seed(1234)"
+  },
+  {
+    "file": "test/test_surface_grammar.py",
+    "line": 29,
+    "function": "test_surface_generation_learns_distinct_children_from_full_width_values",
+    "call": "torch.manual_seed(827)"
+  },
+  {
+    "file": "test/test_surface_grammar.py",
+    "line": 100,
+    "function": "test_real_text_has_a_complete_selected_meaning",
+    "call": "torch.manual_seed(931)"
+  },
+  {
+    "file": "test/test_surface_grammar.py",
+    "line": 189,
+    "function": "test_normal_batch_trains_supplied_grammar_lessons",
+    "call": "torch.manual_seed(942)"
+  },
+  {
+    "file": "test/test_symbolic_heat_retrieval.py",
+    "line": 400,
+    "function": "_setup",
+    "call": "torch.manual_seed(42)"
+  },
+  {
+    "file": "test/test_symbolic_heat_retrieval.py",
+    "line": 460,
+    "function": "_setup",
+    "call": "torch.manual_seed(7)"
+  },
+  {
+    "file": "test/test_symbolic_heat_retrieval.py",
+    "line": 527,
+    "function": "_setup",
+    "call": "torch.manual_seed(99)"
+  },
+  {
+    "file": "test/test_symbolic_heat_retrieval.py",
+    "line": 675,
+    "function": "test_typed_only_fallback",
+    "call": "torch.manual_seed(13)"
+  },
+  {
+    "file": "test/test_symbolic_heat_retrieval.py",
+    "line": 716,
+    "function": "test_diagnostics_consistent_on_normal_path",
+    "call": "torch.manual_seed(55)"
+  },
+  {
+    "file": "test/test_symbolic_heat_retrieval.py",
+    "line": 763,
+    "function": "_random_W_and_result",
+    "call": "torch.manual_seed(seed)"
+  },
+  {
+    "file": "test/test_symbolic_heat_retrieval.py",
+    "line": 1103,
+    "function": "test_reset_clears_row_heat_and_semantic",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_symbolic_heat_retrieval.py",
+    "line": 1199,
+    "function": "_setup",
+    "call": "torch.manual_seed(2025)"
+  },
+  {
+    "file": "test/test_symbolic_heat_retrieval.py",
+    "line": 1288,
+    "function": "test_lowrank_delta_equals_dense_delta",
+    "call": "torch.manual_seed(31415)"
+  },
+  {
+    "file": "test/test_symbolic_heat_retrieval.py",
+    "line": 1345,
+    "function": "test_gamma_changes_weight",
+    "call": "torch.manual_seed(7777)"
+  },
+  {
+    "file": "test/test_symbolic_heat_retrieval.py",
+    "line": 1378,
+    "function": "test_delta_changes_weight",
+    "call": "torch.manual_seed(8888)"
+  },
+  {
+    "file": "test/test_symbolic_iteration.py",
+    "line": 49,
+    "function": "_build",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_thinking_kernel.py",
+    "line": 26,
+    "function": "test_first_trained_read_reaches_depth3_end_state",
+    "call": "random.seed(0)"
+  },
+  {
+    "file": "test/test_thinking_kernel.py",
+    "line": 27,
+    "function": "test_first_trained_read_reaches_depth3_end_state",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_thinking_kernel.py",
+    "line": 28,
+    "function": "test_first_trained_read_reaches_depth3_end_state",
+    "call": "np.random.seed(0)"
+  },
+  {
+    "file": "test/test_thought_review.py",
+    "line": 114,
+    "function": "test_policy_selects_nested_what_part_and_receives_actual_episode_credit",
+    "call": "torch.manual_seed(23)"
+  },
+  {
+    "file": "test/test_thought_review.py",
+    "line": 159,
+    "function": "test_policy_selects_nested_what_part_and_receives_actual_episode_credit",
+    "call": "torch.manual_seed(23)"
+  },
+  {
+    "file": "test/test_tied_operator_gradient.py",
+    "line": 35,
+    "function": "test_autograd_matches_finite_differences_on_tied_operator",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_tied_operator_gradient.py",
+    "line": 61,
+    "function": "test_both_derivative_paths_are_live",
+    "call": "torch.manual_seed(1)"
+  },
+  {
+    "file": "test/test_tied_operator_gradient.py",
+    "line": 75,
+    "function": "test_inverse_stays_conditioned_and_exact",
+    "call": "torch.manual_seed(2)"
+  },
+  {
+    "file": "test/test_tied_reconstruction_migration.py",
+    "line": 97,
+    "function": "test_traced_verb_reverse_uses_the_actual_verb_operand",
+    "call": "torch.Generator().manual_seed(812)"
+  },
+  {
+    "file": "test/test_transform_chooser_parity.py",
+    "line": 47,
+    "function": "test_unary_score_matches_raw_einsum",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_transform_chooser_parity.py",
+    "line": 76,
+    "function": "test_binary_score_matches_raw_einsum",
+    "call": "torch.manual_seed(1)"
+  },
+  {
+    "file": "test/test_truth_luminosity_codes.py",
+    "line": 60,
+    "function": "test_positive_store_measures_positive",
+    "call": "torch.manual_seed(1)"
+  },
+  {
+    "file": "test/test_truth_luminosity_codes.py",
+    "line": 71,
+    "function": "test_negative_store_measures_negative",
+    "call": "torch.manual_seed(2)"
+  },
+  {
+    "file": "test/test_truth_luminosity_codes.py",
+    "line": 98,
+    "function": "test_full_contradiction_measures_negative",
+    "call": "torch.manual_seed(3)"
+  },
+  {
+    "file": "test/test_truth_luminosity_codes.py",
+    "line": 112,
+    "function": "test_duplicate_truths_do_not_inflate_coverage",
+    "call": "torch.manual_seed(4)"
+  },
+  {
+    "file": "test/test_truth_luminosity_codes.py",
+    "line": 125,
+    "function": "test_trust_scales_contribution",
+    "call": "torch.manual_seed(5)"
+  },
+  {
+    "file": "test/test_truth_luminosity_codes.py",
+    "line": 148,
+    "function": "test_order_independence",
+    "call": "torch.manual_seed(6)"
+  },
+  {
+    "file": "test/test_truth_luminosity_codes.py",
+    "line": 176,
+    "function": "test_no_decode_pullback",
+    "call": "torch.manual_seed(7)"
+  },
+  {
+    "file": "test/test_truth_luminosity_codes.py",
+    "line": 211,
+    "function": "test_range_clamped",
+    "call": "torch.manual_seed(8)"
+  },
+  {
+    "file": "test/test_truth_luminosity_codes.py",
+    "line": 236,
+    "function": "test_paired_bivector_store_reads_as_positive_area",
+    "call": "torch.manual_seed(9)"
+  },
+  {
+    "file": "test/test_two_pass_driver.py",
+    "line": 38,
+    "function": "_build",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_union_difference_ops.py",
+    "line": 51,
+    "function": "test_chunk_and_sum_compose_are_additive",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_union_difference_ops.py",
+    "line": 61,
+    "function": "test_product_compose_is_hadamard",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_union_difference_ops.py",
+    "line": 76,
+    "function": "test_chunk_difference_is_exact_residual",
+    "call": "torch.manual_seed(1)"
+  },
+  {
+    "file": "test/test_union_difference_ops.py",
+    "line": 87,
+    "function": "test_bare_reverse_is_null_decomposition",
+    "call": "torch.manual_seed(2)"
+  },
+  {
+    "file": "test/test_union_difference_ops.py",
+    "line": 104,
+    "function": "test_basis_reverse_peels_one_part",
+    "call": "torch.manual_seed(3)"
+  },
+  {
+    "file": "test/test_union_difference_ops.py",
+    "line": 120,
+    "function": "test_peel_recovers_multiset_signed",
+    "call": "torch.manual_seed(4)"
+  },
+  {
+    "file": "test/test_union_difference_ops.py",
+    "line": 136,
+    "function": "test_peel_recovers_signed_exclusion",
+    "call": "torch.manual_seed(7)"
+  },
+  {
+    "file": "test/test_verb_adverb_grammar_ops.py",
+    "line": 28,
+    "function": "_np_and_word",
+    "call": "torch.Generator().manual_seed(seed)"
+  },
+  {
+    "file": "test/test_verb_adverb_grammar_ops.py",
+    "line": 35,
+    "function": "_strong_spectrum",
+    "call": "torch.Generator().manual_seed(seed)"
+  },
+  {
+    "file": "test/test_verb_adverb_grammar_ops.py",
+    "line": 44,
+    "function": "_strong_adverb",
+    "call": "torch.Generator().manual_seed(seed)"
+  },
+  {
+    "file": "test/test_verb_spectrum.py",
+    "line": 40,
+    "function": "_np_and_verb",
+    "call": "torch.Generator().manual_seed(seed)"
+  },
+  {
+    "file": "test/test_verb_spectrum.py",
+    "line": 48,
+    "function": "_strong_spectrum",
+    "call": "torch.Generator().manual_seed(seed)"
+  },
+  {
+    "file": "test/test_verb_successor.py",
+    "line": 76,
+    "function": "test_successor_is_learned_from_zero_init",
+    "call": "torch.manual_seed(1)"
+  },
+  {
+    "file": "test/test_vq_active_rows.py",
+    "line": 93,
+    "function": "test_reserved_vq_is_bit_exact_to_physical_active_size",
+    "call": "torch.manual_seed(117)"
+  },
+  {
+    "file": "test/test_what_episode_memory.py",
+    "line": 116,
+    "function": "_build",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_what_thinking_episode.py",
+    "line": 39,
+    "function": "_build",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_what_training.py",
+    "line": 210,
+    "function": "_build_synth",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_what_training.py",
+    "line": 316,
+    "function": "synth_discourse_model",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_while_loop_gradients.py",
+    "line": 32,
+    "function": "_grads",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_whole_property_codebook.py",
+    "line": 37,
+    "function": "_property_codebook",
+    "call": "torch.manual_seed(seed)"
+  },
+  {
+    "file": "test/test_wholespace_fixed_capacity.py",
+    "line": 109,
+    "function": "test_legacy_fixed_reserve_is_rng_neutral_and_logically_lazy",
+    "call": "torch.manual_seed(1234)"
+  },
+  {
+    "file": "test/test_wholespace_fixed_capacity.py",
+    "line": 115,
+    "function": "test_legacy_fixed_reserve_is_rng_neutral_and_logically_lazy",
+    "call": "torch.manual_seed(1234)"
+  },
+  {
+    "file": "test/test_word_grain_attention.py",
+    "line": 43,
+    "function": "_seed_rng",
+    "call": "torch.manual_seed(20260713)"
+  },
+  {
+    "file": "test/test_word_loop_buckets_and_orders.py",
+    "line": 97,
+    "function": "_grammar_model",
+    "call": "torch.manual_seed(19)"
+  },
+  {
+    "file": "test/test_word_store.py",
+    "line": 470,
+    "function": "test_word_pair_snap_recovers_folded_pair",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_word_store.py",
+    "line": 566,
+    "function": "test_union_snap_needs_no_priming",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_word_store.py",
+    "line": 616,
+    "function": "test_word_side_snap_minimal_residual",
+    "call": "torch.manual_seed(1)"
+  },
+  {
+    "file": "test/test_word_store.py",
+    "line": 876,
+    "function": "test_two_epoch_training_severs_cross_batch_graph",
+    "call": "random.seed(0)"
+  },
+  {
+    "file": "test/test_word_store.py",
+    "line": 877,
+    "function": "test_two_epoch_training_severs_cross_batch_graph",
+    "call": "torch.manual_seed(0)"
+  },
+  {
+    "file": "test/test_word_store.py",
+    "line": 878,
+    "function": "test_two_epoch_training_severs_cross_batch_graph",
+    "call": "np.random.seed(0)"
+  }
+]

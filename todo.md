@@ -36,17 +36,16 @@ seed may make a *measurement* reproducible, never an *assertion* true. A test
 that fails at some seed has found a defect; fix the defect, or let it fail.
 Do not remove unused reasoning methods without Alec's review.
 
-- **10. Reconstruction parity baseline.** Extend the fixed-seed probe of
-    `6bf211a` ([probe](doc/benchmarks/2026-09-21-item1d/probe.py)) with
-    packed against single-sentence parity and record both in the plan's §8.2
-    with the commit. Items 7 and 5 must leave it unchanged.
 - **9. Expectation learning gates.** The negative-image mechanism and residual
    query credit are in (`7d7dc4f`,
    [measurements](doc/benchmarks/2026-09-21-item2/README.md)): the predictor
    learns in controlled settings and a related continuation leaves a smaller
    remainder than an unrelated one, but the native runs are seven optimizer
    steps on one seed, prediction does not beat its context-free control, and
-   the reasoning comparison is null. Exit: on the packed native config, at
+   the reasoning comparison is null. Before the comparison, account for item
+   10's packed/single reconstruction gap (mean tied byte cost .78669/.68387
+   with matching retained leaves; [baseline](doc/benchmarks/2026-09-21-item10/README.md)).
+   Exit: on the packed native config, at
    least three seeds and a run length declared in advance — ordered prediction
    beats the shuffled and context-free controls at equal updates, with
    reconstruction and discrimination no worse than the reconstruction-only
@@ -63,7 +62,11 @@ Do not remove unused reasoning methods without Alec's review.
    preserved arbitrary-symbol poison probes and renamed-vocabulary controls.
    Numerical values or symbol IDs never supply learner arithmetic or answer
    seeds. Learned utility stays explicitly unproven until these comparisons
-   pass.
+   pass. The item 10 seed audit leaves the unseeded MM-grammar XOR gate
+   failing (.21757 after 900 epochs, bar <.20), and the two `XOR_grammar.xml`
+   CLI gates stop before training at unsupported W=6. Keep these failures
+   visible; no passing-seed selection or expected-failure waiver
+   ([audit](doc/benchmarks/2026-09-21-item10/README.md#validation-and-limits)).
 - **7. Two truths** ([spec](doc/specs/2026-09-16-two-truths-ideas-and-relations.md)),
    new session. One S = one LTM row: an absolute S fuses to one point and
    writes an idea row with derivation and `refs`; a relative S (generic
@@ -96,7 +99,10 @@ Do not remove unused reasoning methods without Alec's review.
    length; clean-up decoding evaluated for lift / lower — bounded candidate
    search through the forward kernel (`_bounded_binary_reconstruction`) in
    place of the reference-free affine inverse. Until a recovery rate is
-   measured, item 5 must not drop derivations.
+   measured, item 5 must not drop derivations. The item 10 audit also records
+   the existing MM_20M grammar free-derivation harness at 0/4 exact recovery
+   after three epochs; its acceptance assertion now requires recovery rather
+   than preserving that zero ([audit](doc/benchmarks/2026-09-21-item10/README.md#validation-and-limits)).
 - **5. Forgetting** ([spec](doc/specs/2026-09-16-forgetting.md)), after item 7
    (needs `refs` and every S writing a row). Document-boundary pass from the
    high-water to the low-water mark deleting the lowest-value unprotected
@@ -106,7 +112,8 @@ Do not remove unused reasoning methods without Alec's review.
    subordinate rows, then the row, gradually, coarsening the referring row
    instead of cascading where the operand's point survives. Exit: the fourteen
    §7 tests, the accessible-mind spec's test 31 (retention by surprise), the
-   §6 elements in schema/`model.xml`/Params.md, the §8 docs.
+   §6 elements in schema/`model.xml`/Params.md, the §8 docs, and item 10's
+   reconstruction measurements unchanged unless explicitly re-baselined.
 - **4. Run harness and resume test.** One logger per interval: reconstruction
    loss; expectation discrepancy; LTM occupancy, forgetting passes, rows
    deleted per origin, value cut-off; luminosity of provisioned truths; the
@@ -129,12 +136,7 @@ Do not remove unused reasoning methods without Alec's review.
    Delete the radix-backed non-word-major meronomy path (no legacy paths), and
    remove the stale `dispatch_per_row_reset` note in
    [the fold-ladder plan](doc/plans/2026-09-10-meronomy-fold-ladder.md#open-defects-found-on-the-way)
-   (`taxonomy_parent_map` is now initialised). Find and bound the expansion that
-  overflows fp32 in an untrained `MentalModel.xml` at seed 3, and then remove
-  the seed pin `f8aa23c` put on its compatibility test: pinning hid the defect
-  it found. List the other tests whose assertions hold only at their pinned
-  seed (the XOR gates are known), and fix or unpin each
-  ([record](doc/Testing.md#item-11-generation-ownership-september-21)).
+   (`taxonomy_parent_map` is now initialised).
 - **1. Compiler work.** Forward chooser split/lift once per slot; backward's
    launch-bound kernel count per brick; B24 brick +25% against pre-ladder.
    Exit: sentences/s and peak memory at the run's batch and brick size against
@@ -150,6 +152,7 @@ Everything that is decided in direction but not on this path is in
 
 ### Done (newest first)
 
+- Item 10 records the reconstruction baseline and packed/single parity gap, fixes MentalModel compaction overflow, and removes selected passing seeds (taken early from item 2; [receipt](doc/Testing.md#item-10-reconstruction-baseline-and-seed-audit-september-21)).
 - `f8aa23c` Item 11 completes generation catalogue ownership, scoped output dispatch, checkpoint/Adam migration and supervised gradient boundaries ([receipt](doc/Testing.md#item-11-generation-ownership-september-21)).
 - `afdcdfa` Item 12 completes the expectation review corrections: role-normalized retention surprise, indexed pairs, reading purity, bounded cache recovery and gradient norm ratios ([receipt](doc/Testing.md#item-12-review-corrections-september-21)).
 - `7d7dc4f` Item 2 implements negative-image expectation and residual credit; measured joint/useful-query learning remains open under item 9 ([design](doc/ExpectationRetention.md), [receipt](doc/Testing.md#negative-image-expectation-september-21)).

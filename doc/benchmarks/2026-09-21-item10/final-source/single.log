@@ -1,0 +1,4 @@
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+batch = 0 (Δ=36.898s)
+batch = 1 (Δ=0.196s)

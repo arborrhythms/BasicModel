@@ -2,6 +2,7 @@ import os, sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'bin'))
 
 import torch
+import pytest
 
 from Language import compact_hard, compact_soft, binary_tiling_viterbi
 
@@ -121,7 +122,7 @@ def test_compact_soft_single_reduction_blends_neighbours():
 
 def test_compact_soft_gradient_flows_through_marginals():
     B, N, D = 1, 4, 3
-    x = torch.randn(B, N, D)
+    x = torch.arange(1, B * N * D + 1, dtype=torch.float32).reshape(B, N, D)
     reduced = x[:, :-1] + x[:, 1:]
     p_copy = torch.full((B, N), 0.5, requires_grad=True)
     p_reduce = torch.full((B, N - 1), 0.25, requires_grad=True)
@@ -129,6 +130,104 @@ def test_compact_soft_gradient_flows_through_marginals():
         x=x, reduced=reduced,
         copy_marginal=p_copy, reduce_marginal=p_reduce,
     )
-    y_soft.sum().backward()
+    # Every legal tiling preserves the sum under addition; its derivative
+    # with respect to routing is zero. Squared packed values distinguish
+    # the tilings and therefore provide actual routing credit.
+    y_soft.square().sum().backward()
     assert p_copy.grad is not None and p_copy.grad.abs().sum() > 0
     assert p_reduce.grad is not None and p_reduce.grad.abs().sum() > 0
+
+
+@pytest.mark.parametrize("n", range(1, 7))
+def test_soft_compaction_agrees_with_every_committed_tiling(n):
+    from test_signal_router_brute_force import enumerate_tilings
+
+    x = torch.arange(1, n + 1, dtype=torch.float64).reshape(1, n, 1)
+    reduced = x[:, :-1] * x[:, 1:]
+    for tiling in enumerate_tilings(n, 1, 1):
+        copy = torch.zeros(1, n, 1, dtype=x.dtype)
+        reduce = torch.zeros(1, n - 1, 1, dtype=x.dtype)
+        position = 0
+        for kind, _ in tiling:
+            if kind == "copy":
+                copy[:, position] = 1
+                position += 1
+            else:
+                reduce[:, position] = 1
+                position += 2
+        hard, _ = compact_hard(x=x, reduced=reduced, copy_mask=copy, reduce_mask=reduce)
+        soft = compact_soft(x=x, reduced=reduced, copy_marginal=copy.squeeze(-1),
+                            reduce_marginal=reduce.squeeze(-1))
+        torch.testing.assert_close(soft, hard, rtol=0, atol=0, msg=str(tiling))
+
+
+@pytest.mark.parametrize("compiled", [False, True])
+def test_soft_compaction_matches_enumerated_outputs_and_derivatives(compiled):
+    from Language import binary_tiling_soft_dp
+    from test_signal_router_brute_force import enumerate_tilings
+
+    n = 5
+    x = torch.arange(1, n + 1, dtype=torch.float64).reshape(1, n, 1).requires_grad_()
+    reduced = x[:, :-1] * x[:, 1:]
+    copy_score = torch.linspace(-.7, .9, n, dtype=x.dtype).reshape(1, n, 1).requires_grad_()
+    reduce_score = torch.linspace(.6, -.4, n - 1, dtype=x.dtype).reshape(1, n - 1, 1).requires_grad_()
+    scores, outputs = [], []
+    for tiling in enumerate_tilings(n, 1, 1):
+        score = x.new_zeros(())
+        output, position = [], 0
+        for kind, _ in tiling:
+            if kind == "copy":
+                score = score + copy_score[0, position, 0]
+                output.append(x[0, position])
+                position += 1
+            else:
+                score = score + reduce_score[0, position, 0]
+                output.append(reduced[0, position])
+                position += 2
+        outputs.append(torch.cat((torch.stack(output), x.new_zeros(n - len(output), 1))))
+        scores.append(score)
+    expected = (torch.stack(scores).softmax(0)[:, None, None] * torch.stack(outputs)).sum(0)[None]
+    marginals = binary_tiling_soft_dp(copy_score, reduce_score)
+    compact = torch.compile(compact_soft, backend="eager", fullgraph=True) if compiled else compact_soft
+    actual = compact(x=x, reduced=reduced, copy_marginal=marginals["copy_marginal"],
+                     reduce_marginal=marginals["reduce_marginal"])
+    torch.testing.assert_close(actual, expected, rtol=1e-10, atol=1e-10)
+    operands = (x, copy_score, reduce_score)
+    want = torch.autograd.grad(expected.square().sum(), operands, retain_graph=True)
+    got = torch.autograd.grad(actual.square().sum(), operands)
+    for measured, reference in zip(got, want):
+        torch.testing.assert_close(measured, reference, rtol=1e-9, atol=1e-9)
+
+
+def test_recursive_product_consumes_each_operand_once():
+    from types import SimpleNamespace
+    from Language import LanguageLayer, ProductLayer
+
+    router = LanguageLayer(n_input=4, n_output=4, hidden_dim=8,
+                           feature_dim=1, max_depth=3)
+    router.attach_layer_ops(ops=[ProductLayer(nInput=1, nOutput=1)], rule_ids=[0])
+    layer = next(iter(router._binary_layers.values()))
+    with torch.no_grad():
+        layer.copy_anchor.zero_()
+        layer.reduce_anchor.fill_(1)
+    operands = torch.tensor([2., 3., 5., 7.]).reshape(1, 4, 1).requires_grad_()
+    router.compose(operands, SimpleNamespace(wholeSpace=None))
+    torch.testing.assert_close(router._last_root_state.reshape(()), operands.prod())
+    router._last_root_state.sum().backward()
+    assert torch.isfinite(operands.grad).all()
+    assert (operands.grad != 0).all()
+
+
+def test_binary_reduction_excludes_padding_from_the_next_round():
+    from Language import BinaryStructuredReductionLayer, ProductLayer
+
+    layer = BinaryStructuredReductionLayer(d_model=1, ops=[ProductLayer()])
+    with torch.no_grad():
+        layer.copy_anchor.zero_()
+        layer.reduce_anchor.fill_(1)
+    x = torch.tensor([[[2.], [3.], [5.], [7.]], [[11.], [13.], [1e30], [1e30]]])
+    hard, soft, route = layer(x, lengths=torch.tensor([4, 2]))
+    torch.testing.assert_close(hard, torch.tensor([[[6.], [35.], [0.], [0.]],
+                                                 [[143.], [0.], [0.], [0.]]]))
+    torch.testing.assert_close(soft, hard)
+    assert route["lengths"].tolist() == [2, 1]
