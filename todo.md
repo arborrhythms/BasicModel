@@ -13,7 +13,7 @@
 Work follows
 [2026-09-15-next-sentence-as-the-production-objective.md](doc/plans/2026-09-15-next-sentence-as-the-production-objective.md)
 §10 and its completion gates. **Item 1's bounded supervised wording gate is
-complete; gradient factorization (1b) is complete. Next: 1c, then 2.** Natural word → operator associations use the existing
+complete; items 1b and 1c are complete. Next: item 2.** Natural word → operator associations use the existing
 compose/generate grammars. Structural-preference and routing-share measurements
 remain design goals; learned questioning utility remains unproven under item 4.
 Current contracts,
@@ -26,7 +26,8 @@ only the generation catalogue (item 3) remains uninstalled.
 
 ### Done (newest first)
 
-- This completion commit: item 1b, objective-local state gradients and measured shared operator/codebook credit ([GradientFlow](doc/GradientFlow.md), [receipt](doc/Testing.md#gradient-factorization-september-20)).
+- This completion commit: item 1c, checked subsystem effects, indexed cued retrieval and retained frames; compound recovery remains unproven ([AccessibleMind](doc/AccessibleMind.md), [receipt](doc/Testing.md#accessible-mind-effects-september-20)).
+- `7c2fa5a` Item 1b complete: objective-local state gradients and measured shared operator/codebook credit ([GradientFlow](doc/GradientFlow.md), [receipt](doc/Testing.md#gradient-factorization-september-20)).
 - `6a6bb21` Item 1 complete: grammar-owned wording on real parsed text, held-out complete wordings/nouns, converse/sense controls and full-vocabulary generation/recomposition ([evidence and receipt](doc/Testing.md#working-grammar-wording-gate-september-20)).
 - `d1d8b5b` Ordered compose-MLP inputs and production generate wiring (item 1 increment; the wording gate remains open, [SelectedMeaning](doc/SelectedMeaning.md), [Testing](doc/Testing.md#grammar-owned-wording-architecture-september-20)).
 - `02db7ef` Review corrections: removed the standalone codec and legacy policy; completed chooser context, bounded memory and nested-controller mechanisms ([SelectedMeaning](doc/SelectedMeaning.md), [Testing](doc/Testing.md)).
@@ -66,10 +67,6 @@ only the generation catalogue (item 3) remains uninstalled.
 
 ### Open
 
-1c. **Operators as effects on the accessible mind.** Checked subsystem permissions,
-   residual meronymy and symbolic taxonomy, indexed cued LTM retrieval and
-   `what`-owned frames in recency; measure derivation recovery by depth and
-   training and chained recovery by length ([QueryContracts](doc/QueryContracts.md)).
 2. **Expectation and residual learning.** Extend retained estimates to checked
    bindings/scope metadata without copying the arriving target; prior-view
    isolation from arriving/unseen input and other rows; residual query credit
@@ -169,6 +166,10 @@ the pre-FineWeb list below.
 Small, real, and not on the critical path. Fold each into the nearest Codex
 change; delete the line with the commit.
 
+- **Stored-idea generativity:** improve and measure recovery of stored ideas and
+  distinct-code chains across depth and further training. Item 1c reports zero
+  compound recovery in its small baseline, not a learned success
+  ([measurements](doc/AccessibleMind.md#measured-limits)).
 - **Bounded test batches:** default 256-case/16-file and 32-case/4-file
   workers exceeded the 8 GiB cap; eight-case/one-file batches pass the same
   default selection. Restore safe, faster batching without raising caps or

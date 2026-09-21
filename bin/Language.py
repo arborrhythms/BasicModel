@@ -5352,9 +5352,9 @@ class RuleCodebook(nn.Module):
 # alongside the chart class.
 # =====================================================================
 def _freeze_structural_snapshot(value):
-    """Copy owner metadata without retaining an autograd or mutable-state path."""
+    """Copy owner metadata without retaining aliases; current structural reads stay live."""
     if torch.is_tensor(value):
-        return value.detach().clone()
+        return value.clone()
     if isinstance(value, tuple):
         return tuple(_freeze_structural_snapshot(item) for item in value)
     if isinstance(value, list):
@@ -5394,6 +5394,10 @@ def _structural_face_phase(layer, operands, *, context, phase=None):
     """
     if not isinstance(context, StructuralGrammarContext):
         raise TypeError('structural grammar execution requires StructuralGrammarContext')
+    if any(getattr(context, name, None) is not None for name in ('ltm', 'taxonomy', 'continuation', 'expectation')):
+        raise ValueError('structural context contains a forbidden capability')
+    if context.phase == 'generate' and context.primed_symbols is not None:
+        raise ValueError('generate context cannot read priming')
     resolved_phase = context.phase if phase is None else str(phase)
     if resolved_phase not in ('compose', 'generate'):
         raise ValueError('structural grammar phase must be compose or generate')
@@ -13063,7 +13067,7 @@ class SymbolSubSpace(SubSpace):
         taxonomy = getattr(self, 'taxonomy', None)
         primed = None
         priming_enabled = getattr(taxonomy, 'priming_enabled', None)
-        if taxonomy is not None and (priming_enabled is None or bool(priming_enabled)):
+        if phase == 'compose' and taxonomy is not None and (priming_enabled is None or bool(priming_enabled)):
             snapshot = getattr(taxonomy, 'priming_mask', None)
             if callable(snapshot):
                 primed = snapshot()

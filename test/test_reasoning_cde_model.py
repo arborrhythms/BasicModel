@@ -53,10 +53,23 @@ class TestReasoningCDEModel(unittest.TestCase):
         self.assertTrue(out is None or isinstance(out, dict))
 
     def test_reason_about_returns_honest_posture(self):
-        # An unnamed vector cannot become a taxonomy identity at the boundary.
-        with self.assertRaises((ValueError, TypeError)):
-            self.m.reason_about(QuerySpec(KIND_IS_PART, left=torch.randn(1024),
-                                         right=torch.randn(1024)))
+        # Order-zero vectors now have a geometric part effect. They still
+        # cannot manufacture taxonomy identities or a native proof path.
+        cs = self.m.conceptualSpace
+        width = cs.outputShape[-1]
+        before = dict(cs._concept_allocator.placement)
+        result = self.m.reason_about(QuerySpec(KIND_IS_PART,
+            left=torch.ones(width), right=torch.ones(width)))
+        self.assertIn(result.posture, ('TRUE', 'FALSE', 'BOTH', 'UNKNOWN'))
+        # The trained chooser may select another legal operation. Any
+        # geometric part it executes still supplies no taxonomy proof.
+        for record in result.records:
+            if record.result is not None and record.result.evidence_kind == 'meronymy':
+                self.assertNotIn('path', record.result.evidence)
+        self.assertEqual(cs._concept_allocator.placement, before)
+        with self.assertRaises(ValueError):
+            self.m.reason_about(QuerySpec(KIND_IS_PART,
+                left=torch.ones(width - 1), right=torch.ones(width - 1)))
 
 
 if __name__ == '__main__':

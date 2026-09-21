@@ -157,7 +157,7 @@ def _sentence_query_mask(method):
 
 
 def _append_observed_meaning(store, payload, depth, *, trust=0.0, meaning=None,
-                             expectation=None):
+                             expectation=None, program=None, stream=-1):
     """Record one understood input without certifying a world fact.
 
     ``meaning`` is an already formed grammatical description when the owned
@@ -167,6 +167,8 @@ def _append_observed_meaning(store, payload, depth, *, trust=0.0, meaning=None,
     estimate with fully bound source occurrences, retain that estimate before
     this observation and link the two append-only records.
     """
+    from MemoryIndex import recorded_leaf_terms
+    leaf_codes = recorded_leaf_terms(program, meaning, depth)
     if meaning is None:
         meaning = ConceptualMeaning.from_payload(
             payload, depth=depth, layout="stm", mode="unspecified")
@@ -195,9 +197,9 @@ def _append_observed_meaning(store, payload, depth, *, trust=0.0, meaning=None,
                 source_occurrences=sources,
                 stream=getattr(expectation, "stream", None),
                 document=getattr(expectation, "document", None),
-                observation_kind=kind, trust=trust)
+                observation_kind=kind, trust=trust, leaf_codes=leaf_codes, index_stream=stream)
             return observed
-    return store.append_meaning(meaning, kind=kind, trust=trust)
+    return store.append_meaning(meaning, kind=kind, trust=trust, leaf_codes=leaf_codes, stream=stream)
 
 
 def _is_external_expectation_observation(discourse):
@@ -264,6 +266,8 @@ def _boundary_programs(owner):
 
 def _boundary_registry(owner):
     """Locate the one setup-time thought-grammar registry without minting."""
+    from MemoryIndex import configure_model_index
+    configure_model_index(owner, getattr(getattr(owner, "symbolSpace", None), "ltm_store", None))
     registry = getattr(owner, "grammatical_thoughts", None)
     if registry is None:
         registry = getattr(getattr(owner, "symbolSpace", None),
@@ -6274,10 +6278,11 @@ class BasicModel(BaseModel):
                 concept_owner, TruthGroundedReasoner.equal),
             primed_symbols=freeze(primed),
             ltm=ThoughtLTMCapability(
-                existence_evidence=reasoner.existence_evidence,
                 store=reasoner.reasoning_store,
                 equal=TruthGroundedReasoner.equal, tau_id=reasoner.tau_id,
-                memory=self._what_memory(), discourse=discourse),
+                memory=self._what_memory(), discourse=discourse, row=row,
+                primed=((primed.reshape(-1) > 1.).nonzero().reshape(-1).tolist()
+                        if torch.is_tensor(primed) else ())),
             taxonomy=ThoughtTaxonomyCapability(concept_owner),
             work=work, continuation=continuation,
             boundary=self._assert_query_boundary, row=row)
@@ -6444,7 +6449,7 @@ class BasicModel(BaseModel):
         return errors, eligible
 
     def _selected_thought_memory(self, active, *, row, work):
-        """Bounded attended STM and visible LTM, charged to the shared meter.
+        """Bounded attended STM/discourse and what-retrieved frames on one meter.
 
         Ordinary thought history is row-owned. The durable read admits shared
         facts and this row's held occurrence references, never another row's
@@ -6468,33 +6473,40 @@ class BasicModel(BaseModel):
                     break
                 value = ConceptualMeaning.from_description(buffer[row, slot].detach())
                 short.append((value, 0.))
+        carrier = getattr(getattr(self, "conceptualSpace", None), "subspace", None)
+        knowing = getattr(carrier, '_concept_activations', None)
+        if limit and torch.is_tensor(knowing) and row < knowing.shape[1] and work.consume('context_record'):
+            from Queries import _basis
+            basis = _basis(self.conceptualSpace).detach()
+            n = min(len(knowing), len(basis))
+            weights = knowing[:n, row].detach()
+            idea = (weights[:, None] * basis[:n]).sum(0) / weights.abs().sum().clamp_min(1.)
+            if bool(weights.abs().any()):
+                short.append((ConceptualMeaning.from_description(idea), 0.))
         history = memory.thought_window(b=row, limit=limit - len(short)) if limit else ()
-        visible = set(ref for ref in active.role_refs
-                      if isinstance(ref, tuple) and ref[0] == "ltm")
         for record in history:
             if not work.consume("context_record"):
                 break
             if record.meaning is not None:
                 short.append((record.meaning, record.support_true - record.support_false))
-                visible.update(ref for ref in record.meaning.role_refs
-                               if isinstance(ref, tuple) and ref[0] == "ltm")
-        owner = getattr(self, "symbolSpace", None)
-        discourse = getattr(owner, "discourse", None)
-        occurrences = getattr(discourse, "_inter_context_occurrences", ())
-        if limit and row < len(occurrences):
-            visible.update(ref for ref in list(occurrences[row])[-limit:] if ref is not None)
-        store = getattr(owner, "ltm_store", None)
-        total = len(store) if store is not None else 0
-        for index in range(max(0, total - limit), total):
+        discourse = getattr(getattr(self, "symbolSpace", None), "discourse", None)
+        chains = getattr(discourse, "_inter_context", ())
+        if limit and row < len(chains):
+            for depth, payload, mask in list(chains[row])[-limit:]:
+                if not work.consume("context_record"):
+                    break
+                if payload.shape == active.roles.shape and torch.is_tensor(mask):
+                    value = ConceptualMeaning(payload, mask, mode='unspecified')
+                else:
+                    value = ConceptualMeaning.from_payload(payload, depth=depth, layout='stm')
+                short.append((value, 0.))
+        frames = memory.retrieved_frames(b=row, limit=limit) if limit else ()
+        for frame in frames:
             if not work.consume("context_record"):
                 break
-            kind = store.KINDS[int(store.record_kind[index])]
-            if kind == "fact" or store.occurrence_of(index) in visible:
-                value = store.meaning_of(index)
-                if value is not None:
-                    long.append((value, float(store.trust[index])))
+            long.append((frame['meaning'], float(frame['trust'])))
         return (attend_meanings(active, short, incomplete=not limit),
-                attend_meanings(active, long, incomplete=total > limit))
+                attend_meanings(active, long, incomplete=not limit))
 
     def _choose_selected_thought_action(self, root, active, actions, *, row,
                                         level, pressure, evidence=None, work=None):
@@ -6569,7 +6581,7 @@ class BasicModel(BaseModel):
             store = getattr(getattr(self, "symbolSpace", None), "ltm_store", None)
             if store is None:
                 raise RuntimeError("selected nested thought requires its occurrence owner")
-            meaning = store.bind_constituents(meaning)
+            meaning = store.bind_constituents(meaning, stream=row)
             if meaning is None:
                 raise RuntimeError("selected nested thought exhausted occurrence capacity")
         # Reject a non-executable VP before opening an episode that could not
@@ -6796,6 +6808,8 @@ class BasicModel(BaseModel):
                     context = self._thought_grammar_context(
                         current, row=row, work=meter, continuation=schedule_subgoal)
                     raw = registry.execute(current, context)
+                    from AccessibleMind import apply_thought_effect
+                    apply_thought_effect(self, raw, row=row, work=meter)
             except Exception:
                 # Do not leave an active live episode behind if a checked
                 # executor rejects malformed runtime evidence.  The original
@@ -6810,6 +6824,15 @@ class BasicModel(BaseModel):
                     memory.finish_thought(current, b=row)
                 raise
             evidence, checked = normalized(raw)
+            if (parent_record is not None and child_result is None
+                    and memory.thought_state(b=row).forced):
+                # what already recorded its parent and exhausted the meter
+                # before a child could begin. Only the existing finish drain
+                # is legal; never append another ordinary thought at cutoff.
+                evidence = dict(evidence, incomplete=tuple(dict.fromkeys(
+                    (*evidence['incomplete'], 'work_budget'))))
+                return {'meaning': current, 'evidence': evidence,
+                        'result': checked, 'record': parent_record}
             if child_result is not None:
                 # A ``what`` result is the child result, not a new proposition
                 # established by the outer question.  The parent return and
@@ -13853,7 +13876,7 @@ class BasicModel(BaseModel):
                 row = _append_observed_meaning(
                     ltm_store, payload, d, trust=trust,
                     meaning=meanings[b] if b < len(meanings) else None,
-                    expectation=comparison)
+                    expectation=comparison, program=entries[b] if b < len(entries) else None, stream=b)
                 if (row >= 0 and retain_expectation
                         and hasattr(discourse, "bind_observation_occurrence")):
                     discourse.bind_observation_occurrence(
@@ -13944,7 +13967,7 @@ class BasicModel(BaseModel):
                         row = _append_observed_meaning(
                             ltm_store, payload, depth,
                             meaning=meanings[b] if b < len(meanings) else None,
-                            expectation=comparison)
+                            expectation=comparison, program=entries[b] if b < len(entries) else None, stream=b)
                         if (row >= 0 and retain_expectation
                                 and hasattr(discourse, "bind_observation_occurrence")):
                             discourse.bind_observation_occurrence(
@@ -22833,7 +22856,7 @@ class BasicModel(BaseModel):
                             row = _append_observed_meaning(
                                 ltm_store, payload, d, trust=trust,
                                 meaning=meanings[b] if b < len(meanings) else None,
-                                expectation=comparison)
+                                expectation=comparison, program=entries[b] if b < len(entries) else None, stream=b)
                             if (row >= 0 and retain_expectation
                                     and hasattr(discourse, "bind_observation_occurrence")):
                                 discourse.bind_observation_occurrence(

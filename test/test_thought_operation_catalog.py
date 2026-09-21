@@ -1,3 +1,5 @@
+from Queries import ConceptualSpaceCapability
+from AccessibleMind import Subsystem as Mind
 """Reviewer probes for item 0's single structural thought-operation catalog."""
 
 from types import SimpleNamespace
@@ -236,7 +238,7 @@ def test_canonical_form_derives_closed_and_open_roles_without_alias_methods():
     grammar = Grammar()
     grammar.configure(_family())
     registry = GrammaticalThoughtRegistry.install(space, grammar)
-    part = ("sym", space.new_concept())
+    part = ("sym", space.synthesize_higher_order([("sym", space.new_concept())]))
     whole = ("sym", space.new_concept())
     for reference in (part, whole):
         space._csw_concept_row(0, reference[1])
@@ -335,15 +337,17 @@ def test_thought_execution_receives_the_common_context_and_only_capability_views
     grammar = Grammar()
     grammar.configure(_family())
     registry = GrammaticalThoughtRegistry.install(space, grammar)
-    part = ("sym", space.new_concept())
+    part = ("sym", space.synthesize_higher_order([("sym", space.new_concept())]))
     whole = ("sym", space.new_concept())
     for reference in (part, whole):
         space._csw_concept_row(0, reference[1])
     request = registry.form("part", part, whole)
     taxonomy = TaxonomyRead()
     boundary_rows = []
+    from Queries import ThoughtConceptualCapability
+    from reasoning import TruthGroundedReasoner
     context = ThoughtGrammarContext(
-        word_stream=("the", "part"), conceptual_space=space,
+        word_stream=("the", "part"), conceptual_space=ThoughtConceptualCapability(space, TruthGroundedReasoner.equal),
         primed_symbols=("recent",), ltm=object(), taxonomy=taxonomy,
         work=QueryWorkBudget(8), continuation=None,
         boundary=lambda row: boundary_rows.append(row), row=0,
@@ -355,7 +359,7 @@ def test_thought_execution_receives_the_common_context_and_only_capability_views
     assert taxonomy.calls[0][0:2] == (part, whole)
     assert boundary_rows == [0]
     assert context.word_stream == ("the", "part")
-    assert context.conceptual_space is space
+    assert context.conceptual_space.matches(space)
     assert context.primed_symbols == ("recent",)
     assert not hasattr(context, "reasoner")
 
@@ -376,8 +380,8 @@ def test_thought_boundary_detaches_executor_operands_and_recorded_request():
         return {"support_true": 1.0, "support_false": 0.0}
 
     descriptor = ThoughtExecutorDescriptor(
-        "probe", "probe-domain", ("concept",), "truth",
-        ("conceptual.payloads",), (), "probe", execute)
+        "probe", "probe-domain", ("concept",), Mind.SERIAL,
+        (Mind.KNOWING,), (Mind.SERIAL,), "probe", execute)
     operation = SimpleNamespace(semantic_id="probe", operand_roles=("I1",))
     signature = ThoughtSignature(operation, descriptor, ("I1",))
     value = torch.ones(8, requires_grad=True)
@@ -472,7 +476,7 @@ def test_structural_dispatch_receives_only_the_common_owned_context():
 
     space = _cs()
     context = StructuralGrammarContext(
-        word_stream=("older", "newer"), conceptual_space=space,
+        word_stream=("older", "newer"), conceptual_space=ConceptualSpaceCapability(4),
         primed_symbols=("recent",), phase="compose")
     layer = Capture()
     left, right = torch.ones(4), torch.full((4,), 2.0)
@@ -513,11 +517,11 @@ def test_structural_dispatch_adapts_legacy_forward_reverse_behind_the_contract()
     value = torch.ones(4)
     layer = LegacyFold()
     compose = StructuralGrammarContext(
-        word_stream=("word",), conceptual_space=space,
+        word_stream=("word",), conceptual_space=ConceptualSpaceCapability(4),
         primed_symbols=(), phase="compose")
     generate = StructuralGrammarContext(
-        word_stream=("emitted",), conceptual_space=space,
-        primed_symbols=(), phase="generate")
+        word_stream=("emitted",), conceptual_space=ConceptualSpaceCapability(4),
+        primed_symbols=None, phase="generate")
 
     torch.testing.assert_close(
         invoke_structural_face(layer, (value,), context=compose), value + 1.0)
@@ -560,7 +564,7 @@ def test_owner_built_structural_context_freezes_only_owned_stream_and_priming():
         owner, phase="compose", input_stream=input_stream)
     assert compose.phase == "compose"
     assert compose.word_stream is not input_stream
-    assert not compose.word_stream.requires_grad
+    assert compose.word_stream.requires_grad
     torch.testing.assert_close(compose.word_stream, input_stream.detach())
     assert compose.primed_symbols is not priming
     torch.testing.assert_close(compose.primed_symbols, priming)
@@ -626,7 +630,7 @@ def test_live_router_adapters_receive_the_owner_built_structural_context():
 
     space = _cs()
     context = StructuralGrammarContext(
-        word_stream=("older", "newer"), conceptual_space=space,
+        word_stream=("older", "newer"), conceptual_space=ConceptualSpaceCapability(4),
         primed_symbols=("recent",), phase="compose")
     unary, binary = Unary(), Binary()
     router = LanguageLayer(
@@ -681,7 +685,7 @@ def test_syntactic_executor_uses_the_same_structural_context_dispatcher():
         capture = Capture()
         layer = SyntacticLayer("SS", WordSpace(), {"not": capture})
         context = StructuralGrammarContext(
-            word_stream=("word",), conceptual_space=_cs(),
+            word_stream=("word",), conceptual_space=ConceptualSpaceCapability(4),
             primed_symbols=(), phase="compose")
         value = torch.ones(1, 4)
         torch.testing.assert_close(
@@ -717,7 +721,7 @@ def test_recorded_compose_step_keeps_the_same_structural_context_contract():
     capture = Capture()
     owner = SimpleNamespace(
         _last_structural_compose_context=StructuralGrammarContext(
-            word_stream=("older", "newer"), conceptual_space=_cs(),
+            word_stream=("older", "newer"), conceptual_space=ConceptualSpaceCapability(4),
             primed_symbols=(), phase="compose"))
     binary = SimpleNamespace(ops=[_BinaryGrammarOpAdapter(capture)])
     language = LanguageSpace.__new__(LanguageSpace)
@@ -759,7 +763,7 @@ def test_live_tree_choice_keeps_the_same_structural_context_contract():
 
     capture = Capture()
     context = StructuralGrammarContext(
-        word_stream=("older", "newer"), conceptual_space=_cs(),
+        word_stream=("older", "newer"), conceptual_space=ConceptualSpaceCapability(4),
         primed_symbols=(), phase="compose")
     owner = SimpleNamespace(_last_structural_compose_context=context)
     reducer = BinaryStructuredReductionLayer(
@@ -799,6 +803,8 @@ def test_canonical_thought_executors_use_only_their_named_capability_views():
                     "nodes_scanned": 1, "incomplete": ()}
 
     class LTMRead:
+        def retrieve(self, *_args, **_kwargs):
+            return {'frames': (), 'value': (), 'records_scanned': 0, 'incomplete': ()}
         def existence_evidence(self, meaning, **limits):
             return {"support_true": 1.0, "support_false": 0.0,
                     "candidates": (), "incomplete": ()}
@@ -837,8 +843,7 @@ def test_canonical_thought_executors_use_only_their_named_capability_views():
         "reference"] == ("sym", 7)
     arma = THOUGHT_EXECUTORS["arma"].executor(context, {"I1": meaning})
     torch.testing.assert_close(arma["value"], torch.full((3, 4), 3.0))
-    assert THOUGHT_EXECUTORS["what"].executor(context, {"I1": meaning}) == {
-        "value": {"child": meaning}}
+    assert THOUGHT_EXECUTORS["what"].executor(context, {"I1": meaning})["value"] == {"child": meaning}
     assert not hasattr(context, "reasoner")
 
 
@@ -860,8 +865,8 @@ def test_descriptor_scopes_hide_undeclared_capability_methods_at_execution():
         return {"value": None, "incomplete": ()}
 
     descriptor = ThoughtExecutorDescriptor(
-        "probe", "ltm-facts", ("concept",), "concept",
-        ("ltm.facts",), (), "probe", execute)
+        "probe", "ltm-facts", ("concept",), Mind.SERIAL,
+        (Mind.LTM,), (Mind.SERIAL,), "probe", execute)
     operation = SimpleNamespace(
         semantic_id="probe", operand_roles=("I1",), result_role="O1")
     signature = ThoughtSignature(operation, descriptor, ("I1",))
@@ -1044,7 +1049,7 @@ def test_normal_boundary_execution_uses_the_thought_registry_and_common_context(
 
     assert result.evidence["support_true"] == 1.0
     assert [record.kind for record in memory.thought_history() if record.kind != "cutoff"] == [
-        "begin", "thought", "finish"]
+        "begin", "thought", "thought", "finish"]
 
 
 def test_completed_structural_whole_and_what_program_forms_one_canonical_request():

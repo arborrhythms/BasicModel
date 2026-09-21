@@ -1,12 +1,18 @@
 # Existence evidence and grammatical descriptions
 
-Implementation reference, September 16. Focused probes pass; affected-file
-and full-suite validation are recorded in integrated specification §15. The normal grammatical query route and ordinary thought controller remain
-separate work. [Query contracts](QueryContracts.md) supplies the explicit
-checked shared-VP adapter. [Conceptual-taxonomy PartOf](TaxonomyQueries.md)
-now has its own evidence reader.
+The normal grammatical `exist` runs through the single thought controller and
+the indexed cue reader. It sums masked role similarity times signed fact trust,
+separates positive and negative support, and clips each at one. More matching
+facts can increase familiarity. Polarity determines the support direction;
+scope and bindings filter candidates. Only facts certify truth. `exist` brings
+no frame into STM; a cued `what` does that. See
+[AccessibleMind](AccessibleMind.md) and [QueryContracts](QueryContracts.md).
 
-## What the lookup establishes
+The older standalone `TruthGroundedReasoner` reader below retains its original
+maximum-support compatibility contract pending review. It is not the normal
+thought executor. The storage and admission rules remain shared.
+
+## Historical standalone reader contract
 
 `Exist` asks whether the referent of a complete conceptual description is
 supported by accepted LTM facts. Its input retains all occupied NP1/VP/NP2
@@ -122,12 +128,14 @@ support aggregation are hard operations with scalar evidence; they provide no
 ordinary derivative through their choices. Later learned query selection needs
 its declared policy credit. This migration adds no learned parameters or new
 loss, and does not itself train useful questioning. The architecture-wide
-gradient budget remains documented in [GradientFlow](GradientFlow.md).
+gradient boundaries remain documented in [GradientFlow](GradientFlow.md).
 [Owned value](../bin/Meaning.py),
 [detached write](../bin/Layers.py),
 [hard lookup](../bin/reasoning.py).
 
-## Validation
+## Historical validation (September 16)
+
+Current controller/effect receipts are in [Testing](Testing.md).
 
 The repository's 51 new probes pass in 3.11 s; ten affected existing files
 pass 281 tests with one skip and three warnings in 89.56 s. The full suite
@@ -151,6 +159,7 @@ fact admission; each failed before its corresponding fix.
 [legacy admission red](benchmarks/2026-09-16-existence-evidence-data/legacy-admission-red.log).
 
 The isolated candidate checks are preparation evidence. Repository checks
-above use the installed runtime and test files. Grammatical routing, ordinary thought history, nested retention and
-residual policy credit remain open. Taxonomy evidence is documented separately
+above describe the September 16 runtime. Grammatical routing, ordinary thought
+history and nested retention now use the one controller. Residual policy credit
+remains item 2. Taxonomy evidence is documented separately
 in [Taxonomy queries](TaxonomyQueries.md).

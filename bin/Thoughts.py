@@ -7,6 +7,7 @@ as a second planner stack. ConceptualMeaning remains the semantic value.
 
 from dataclasses import dataclass, replace
 import collections
+from collections.abc import Mapping
 import math
 
 from Meaning import ConceptualMeaning, _freeze_metadata
@@ -76,6 +77,7 @@ class ThoughtRecord:
             "observation",
             "estimate",
             "taxonomy",
+            "meronymy",
             "retrieval",
             "concept-codebook",
             "conceptual-identity",
@@ -320,6 +322,20 @@ class LevelledThoughtHistory:
         return tuple(record for record in reversed(window)
                      if isinstance(record, ThoughtRecord))
 
+    def retrieved_frames(self, b=0, limit=32):
+        """Only what effects enter this STM view; never read the store here."""
+        frames, seen = [], set()
+        for record in reversed(self.thought_window(b=b, limit=limit)):
+            result = record.result
+            if result is None or result.semantic_id != 'what':
+                continue
+            for frame in result.evidence.get('frames', ()):
+                reference = frame['occurrence']
+                if reference not in seen:
+                    frames.append(frame)
+                    seen.add(reference)
+        return tuple(reversed(frames))
+
     def thought_state(self, b=0):
         return replay_thoughts(self.thought_history(b=b))
 
@@ -338,11 +354,18 @@ class LevelledThoughtHistory:
         for row in range(self.batch):
             for record in self.thought_history(b=row):
                 pending.append(record.sources)
+                pending.append(record.result)
                 if record.meaning is not None:
                     pending.append(record.meaning.metadata())
         while pending:
             value = pending.pop()
-            if isinstance(value, dict):
+            if isinstance(value, ThoughtResult):
+                pending.append(value.evidence)
+                continue
+            if isinstance(value, ConceptualMeaning):
+                pending.append(value.metadata())
+                continue
+            if isinstance(value, Mapping):
                 pending.extend(value.values())
                 continue
             if not isinstance(value, (tuple, list)):

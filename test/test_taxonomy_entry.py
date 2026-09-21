@@ -12,7 +12,8 @@ from test_cs_symbol_table import _cs
 
 def _world():
     cs = _cs()
-    refs = tuple(("sym", cs.new_concept()) for _ in range(3))
+    refs = tuple(('sym', cs.synthesize_higher_order([('sym', cs.new_concept())]))
+                 for _ in range(3))
     for ref in refs:
         cs._csw_concept_row(0, ref[1])
     cs._ltm_store = TernaryTruthStore(8, capacity=16)
@@ -62,8 +63,10 @@ def test_normal_entry_does_not_verify_generated_vectors_as_taxonomy():
     assert result.posture == TRUE
     assert result.result.domain == "conceptual-taxonomy"
     assert len(cs._ltm_store) == 0
-    with pytest.raises((TypeError, ValueError)):
-        reasoner.model.reason_about(QuerySpec.from_surface("isPart", torch.eye(8)[0], torch.ones(8)))
+    geometric = reasoner.model.reason_about(
+        QuerySpec.from_surface("isPart", torch.eye(8)[0], torch.ones(8)))
+    assert geometric.result.evidence_kind == 'meronymy'
+    assert 'path' not in geometric.result.evidence
 
 
 def test_normal_controller_does_not_certify_a_world_row_as_taxonomy():
@@ -95,7 +98,8 @@ def test_actual_model_entry_and_checkpoint_keep_taxonomy_identity(tmp_path):
     try:
         source.reasoning_iterations = 128
         cs = source.conceptualSpace
-        a, b = (("sym", cs.new_concept()) for _ in range(2))
+        a, b = (('sym', cs.synthesize_higher_order([('sym', cs.new_concept())]))
+                for _ in range(2))
         for ref in (a, b):
             cs._csw_concept_row(0, ref[1])
         relation = cs.reify_concept(a[1], b[1])

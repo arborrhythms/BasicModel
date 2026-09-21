@@ -48,7 +48,7 @@ mode, polarity, bindings, and scope through execution and the next choice.
 
 The controller's operation/conclude choice sees masked root, active and
 candidate meanings with mode, polarity, bounded binding/scope metadata,
-attended visible STM/LTM, level, pressure and actual evidence. Native references
+attended STM/discourse and `what`-retrieved LTM frames, level, pressure and actual evidence. Native references
 are alpha-renamed, preserving binding equality without allocator magnitudes.
 The same meter pays for context reads and execution. See
 [SelectedMeaning](SelectedMeaning.md) for bounds and the current input schema.
@@ -131,6 +131,10 @@ mechanism and lifecycle evidence, not a learned-utility or residual-policy
 result.
 
 ## LTM roots retained by ordinary history
+
+The existing owner also walks typed result evidence, including retrieved frames
+and their nested meanings, so a retained result keeps its referenced occurrences
+alive. No separate frame cache owns them.
 
 The existing owner derives LTM roots from every retained ordinary record's role
 references, bindings, scope and recorded sources. It reads that data on demand,

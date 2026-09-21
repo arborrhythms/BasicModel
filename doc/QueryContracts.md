@@ -1,8 +1,8 @@
 # Thought-operator contracts
 
-Status: explicit `<thought>` grammar contract; loader/registry catalogue
-foundation implemented September 19. The normal controller's remaining
-lifecycle and learned-policy integration is still unfinished.
+Status: one normal controller and subsystem-scoped thought effects. The
+loader/registry catalogue is grammar-owned. Learned questioning utility and
+compound generativity remain unproven. See [AccessibleMind](AccessibleMind.md).
 
 Thought operators are the checked, boundary-executed faces of the one sentence
 grammar. They were formerly called checked queries. This document describes the
@@ -21,8 +21,8 @@ Each `ThoughtOperationSpec` supplies canonical semantic ID, `I1 … In` operand
 roles, `O1` result role, selected structural forms, role permutation, and
 any matching forward/reverse rule IDs (empty for a thought-only face). The
 executor table supplies only
-non-grammatical capability facts: domain, argument kinds, result kind,
-read/write scopes, evidence kind, and the callable.
+non-grammatical capability facts: domain, argument kinds, subsystem write
+target, enumerated read/write scopes, evidence kind, and the callable.
 
 A structural family omitted from `<thought>` stays pure grammar even if an
 executor exists. An executor with no selected thought form is unavailable. A
@@ -33,16 +33,17 @@ checkpoint schema.
 | Canonical thought operator | Bound input kind | Checked result |
 | --- | --- | --- |
 | `exist` | complete description | LTM fact evidence |
-| `part` | typed conceptual references | taxonomy evidence, or an open-role set |
+| `part` | full-width concepts or higher-order references | vector residual at order zero; symbolic inclusion or an open-role taxonomy set above it |
 | `isPart` | typed conceptual references | taxonomy evidence under that exact model spelling |
 | `equal` | full-width concepts | identity evidence |
-| `lookup` | full-width concepts | retained LTM records |
+| `lookup` | full-width concepts | members of already retrieved frames |
 | `quantize` | full-width concept | existing conceptual-code result |
 | `arma` | complete description | `[3, D]` expectation end state |
-| `what` | complete interrogative description | controller-scheduled subgoal |
+| `what` | complete interrogative description | one cued LTM frame in serial context, or a same-controller subgoal |
 
-`part` and `isPart` are exact model-level identities with the same current
-taxonomy executor implementation; neither is a hidden alias for the other.
+`part` and `isPart` are exact model-level identities. `part` distinguishes
+order-zero geometry from higher-order taxonomy; `isPart` explicitly selects
+taxonomy. Neither spelling implicitly enables the other.
 A model ordinarily declares one spelling in whichever of compose, thought,
 and generate it needs.
 
@@ -75,7 +76,7 @@ execute(request: ConceptualMeaning, *, context: ThoughtGrammarContext)
 
 `StructuralGrammarContext` is exactly the base context plus phase
 `compose`/`generate`. Compose receives the current input-owned stream; generate
-receives only its output-owned emitted prefix. It has neither LTM, taxonomy, a
+receives only its output-owned emitted prefix and no priming. It has neither LTM, taxonomy, a
 controller, a model/reasoner, nor a writable priming buffer. The dispatcher
 adapts old tensor-kernel `compose`/`generate` and unary `forward`/`reverse`
 call shapes behind this contract, preserving gradients through full-width
@@ -88,17 +89,15 @@ snapshot, plus descriptor-scoped read-only LTM/taxonomy views, one shared
 permit. An executor never receives a generic model or reasoner. An undeclared
 reader is absent from its capability view.
 
-The contexts, priming snapshots, reader outputs, meter, and `ThoughtResult` are
-hard-boundary data. They are detached and immutable at the boundary; policy and
-residual learning must receive explicit credit rather than a hidden reader
-gradient.
+Compose/generate snapshots preserve live structural values without aliases.
+Thought context and effects are detached boundary data. Policy learning uses
+explicit credit; no answer-state gradient crosses back through a reader.
 
-The sole answer adapter for a non-truth result is `arma`'s typed prediction:
-at normal answer resolution a non-cold `MeaningExpectation` with finite
-`[NP1, VP, NP2]` roles and three presence logits supplies a detached fixed-slot
-prediction seed. Its logits remain validated result metadata; the estimate is
-not accepted as a fact and its reader/predictor receives no output-loss
-gradient. Set, code and subgoal results have no answer adapter.
+Typed truth, residual, set, code, prediction and subgoal effects all have owned
+answer adapters. A retrieved set remains complete meanings; a residual or code
+is a conceptual value; a prediction retains all roles and presence logits.
+`reverseOutput` never rereads LTM or repeats a thought to realize an answer.
+The given-conclusion cut is documented in [GradientFlow](GradientFlow.md).
 
 ## Formation and dispatch
 
@@ -196,11 +195,8 @@ and normal controller. The older controller has been removed.
 
 ## Validation
 
-Focused catalogue, VP, program-recovery, and normal-controller probes cover the
-common contexts, descriptor scopes, canonical/converse/open-role forms,
-boundary admission, signed-leaf preservation, detached evidence, and shared
-work accounting. The current bounded no-rerun coverage record is documented in
-[Testing](Testing.md#thought-operator-catalogue-record-september-18) and
-`todo.md`: 4,623 default node IDs completed once, with the one adapter-shape
-reviewer assertion repaired and re-run 1/1. It is deliberately not described
-as a fresh single-snapshot all-green receipt.
+Catalogue, VP, program-recovery and normal-controller probes cover the
+contexts, subsystem permissions, canonical/converse/open-role forms, boundary
+admission, signed leaves, detached effects and shared work. Index, retrieval,
+checkpoint and generativity measurements are in
+[AccessibleMind](AccessibleMind.md) and [Testing](Testing.md).

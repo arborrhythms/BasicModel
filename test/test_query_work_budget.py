@@ -80,8 +80,14 @@ def test_invalid_call_spends_no_work_and_never_executes():
 
 
 def test_fact_reads_stop_at_shared_budget_and_preserve_partial_evidence(monkeypatch):
-    meaning = ConceptualMeaning.from_description(torch.ones(8))
+    from Queries import _existing_row
+    cs = _cs()
+    ref = ('sym', cs.new_concept())
+    cs._csw_concept_row(0, ref[1])
+    meaning = replace(ConceptualMeaning.from_description(torch.ones(8)),
+                      role_refs=(ref, None, None))
     store = TernaryTruthStore(8)
+    store.configure_leaf_index(code_row=lambda value: _existing_row(cs, value))
     store.append_meaning(meaning, kind="fact", trust=.6)
     store.append_meaning(meaning, kind="fact", trust=-.4)
     read, original = [], store.row
@@ -94,7 +100,7 @@ def test_fact_reads_stop_at_shared_budget_and_preserve_partial_evidence(monkeypa
     meter = budget(2)
     from test_query_vp_boundaries import _signature
     result = _signature('exist', 'I1').invoke(
-        _context(_cs(), store=store, work=meter), meaning)
+        _context(cs, store=store, work=meter), meaning)
     assert read == [0] and result["records_scanned"] == 1
     assert result["support_true"] == pytest.approx(.6)
     assert result["support_false"] == 0 and "work_budget" in result["incomplete"]

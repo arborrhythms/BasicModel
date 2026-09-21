@@ -1,5 +1,6 @@
 """A selected checked thought preserves its declared object and effects."""
 from types import SimpleNamespace
+from dataclasses import replace
 
 import pytest
 import torch
@@ -8,7 +9,7 @@ from Meaning import ConceptualMeaning
 from Layers import TernaryTruthStore
 from test_cs_symbol_table import _cs
 from Language import Grammar
-from Queries import GrammaticalThoughtRegistry, THOUGHT_EXECUTORS, ThoughtSignature
+from Queries import GrammaticalThoughtRegistry, THOUGHT_EXECUTORS, ThoughtSignature, _existing_row
 from test_query_vp_boundaries import _context, _signature
 
 
@@ -18,17 +19,25 @@ def _meaning():
 
 
 def test_exist_executor_keeps_all_roles_and_conflicting_fact_sources():
+    cs = _cs()
+    refs = tuple(('sym', cs.new_concept()) for _ in range(3))
+    for ref in refs:
+        cs._csw_concept_row(0, ref[1])
     store = TernaryTruthStore(8)
-    idea = _meaning()
+    store.configure_leaf_index(code_row=lambda ref: _existing_row(cs, ref))
+    idea = replace(_meaning(), role_refs=refs)
     first = store.append_meaning(idea, kind="fact", trust=0.6)
     second = store.append_meaning(idea, kind="fact", trust=-0.4)
     store.set_origin(first, store.ORIGIN_PROVISIONED, text="teacher")
     store.set_origin(second, store.ORIGIN_USER, text="witness")
-    result = _signature('exist', 'I1').invoke(_context(_cs(), store=store), idea)
+    result = _signature('exist', 'I1').invoke(_context(cs, store=store), idea)
     assert result["support_true"] == pytest.approx(0.6)
     assert result["support_false"] == pytest.approx(0.4)
     torch.testing.assert_close(result["meaning"].roles, idea.roles)
     assert {item["text"] for item in result["candidates"]} == {"teacher", "witness"}
+    assert {item['occurrence'] for item in result['candidates']} == {
+        store.occurrence_of(first), store.occurrence_of(second)}
+    assert all('meaning' not in item for item in result['candidates'])
     assert len(store) == 2
 
 
@@ -87,8 +96,9 @@ def test_what_preserves_the_complete_question_and_schedules_same_controller():
     assert result["value"] is not question
     torch.testing.assert_close(result["value"].roles, question.roles)
     assert result["result_kind"] == "subgoal"
-    with pytest.raises(RuntimeError, match="controller"):
-        _signature('what', 'I1').invoke(_context(_cs()), question)
+    empty = _signature('what', 'I1').invoke(_context(_cs()), question)
+    assert empty['result_kind'] == 'set' and empty['frames'] == ()
+    assert 'unavailable_ltm' in empty['incomplete']
 
 
 def test_wrong_domain_and_types_fail_before_execution():

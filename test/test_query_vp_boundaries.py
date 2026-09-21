@@ -37,7 +37,6 @@ def _context(cs, *, store=None, model=None, continuation=None, row=0,
             cs, TruthGroundedReasoner.equal),
         primed_symbols=(),
         ltm=ThoughtLTMCapability(
-            existence_evidence=reasoner.existence_evidence,
             store=reasoner.reasoning_store,
             equal=TruthGroundedReasoner.equal,
             tau_id=reasoner.tau_id,
@@ -68,7 +67,8 @@ def _world():
     grammar = Grammar()
     grammar.load_from_grammar_file('complete.grammar')
     registry = GrammaticalThoughtRegistry.install(cs, grammar)
-    a, b = (('sym', cs.new_concept()) for _ in range(2))
+    base = cs.new_concept()
+    a, b = ('sym', cs.synthesize_higher_order([('sym', base)])), ('sym', cs.new_concept())
     for ref in (a, b):
         cs._csw_concept_row(0, ref[1])
     cs.add_whole(a[1], b)
@@ -138,8 +138,11 @@ def test_occurrence_namespace_and_bound_are_never_rebound_to_matching_row():
     first = store.append_meaning(description)
     second = store.append_meaning(description)
     context = _context(cs, store=store, max_records=1)
+    # A direct occurrence address costs one read regardless of row age.
+    question = registry.form('exist', store.occurrence_of(second), context=context)
+    assert question.role_refs[0] == store.occurrence_of(second)
     with pytest.raises(ValueError, match='limit|unavailable'):
-        registry.form('exist', store.occurrence_of(second), context=context)
+        registry.form('exist', store.occurrence_of(second), context=replace(context, max_records=0))
     foreign = ('ltm', 'foreign-namespace', store.occurrence_of(first)[2])
     with pytest.raises(ValueError, match='namespace'):
         registry.form('exist', foreign, context=context)

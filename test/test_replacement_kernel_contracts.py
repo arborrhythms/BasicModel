@@ -11,7 +11,8 @@ from test_thought_model_fixture import model_for
 
 def _world():
     cs = _cs()
-    refs = tuple(('sym', cs.new_concept()) for _ in range(4))
+    refs = tuple(('sym', cs.synthesize_higher_order([('sym', cs.new_concept())]))
+                 for _ in range(4))
     for ref in refs:
         cs._csw_concept_row(0, ref[1])
     store = TernaryTruthStore(8, capacity=32)

@@ -1086,8 +1086,10 @@ Conceptual-taxonomy queries capture a bounded view of the existing native
 reference records. The view owns no durable state and is rebuilt after restore.
 Proof sources identify native edges; successful paths cannot append world-fact
 lemmas. The single normal controller records nested questions and typed returns
-on `WhatInteractionMemory`. Its attended context uses row-owned STM/history and
-visible LTM content under the same work allowance.
+on `WhatInteractionMemory`. Its attended context uses row-owned STM/history,
+the recent discourse chain and frames brought into STM by cued `what`, under
+the same work allowance. It never reads a recent slice of the LTM store.
+The seal writer owns the per-role leaf-code index ([AccessibleMind](AccessibleMind.md)).
 See [Taxonomy](../bin/Taxonomy.py), [Thoughts](../bin/Thoughts.py),
 [SelectedMeaning](SelectedMeaning.md) and [TaxonomyQueries](TaxonomyQueries.md).
 

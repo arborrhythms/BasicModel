@@ -12,24 +12,25 @@ import re
 import torch
 
 from Meaning import ConceptualMeaning
+from AccessibleMind import Subsystem as Mind, check_access
 from QueryWork import QueryWorkBudget, QueryWorkExhausted, capture_limits
 from Taxonomy import capture_taxonomy, concept_reference
 
 
-def _snapshot_grammar_context_value(value):
+def _snapshot_grammar_context_value(value, *, detach=True):
     """Freeze owner-supplied stream/priming data before any face sees it."""
     if torch.is_tensor(value):
-        return value.detach().clone()
+        return value.detach().clone() if detach else value.clone()
     if isinstance(value, ConceptualMeaning):
-        return value.detached()
+        return value.detached() if detach else replace(value)
     if isinstance(value, (dict, MappingProxyType)):
         return MappingProxyType({
-            key: _snapshot_grammar_context_value(item)
+            key: _snapshot_grammar_context_value(item, detach=detach)
             for key, item in value.items()})
     if isinstance(value, list):
-        return tuple(_snapshot_grammar_context_value(item) for item in value)
+        return tuple(_snapshot_grammar_context_value(item, detach=detach) for item in value)
     if isinstance(value, tuple):
-        return tuple(_snapshot_grammar_context_value(item) for item in value)
+        return tuple(_snapshot_grammar_context_value(item, detach=detach) for item in value)
     return value
 
 
@@ -71,10 +72,11 @@ class GrammarContext:
         # immutable snapshot regardless of whether a caller used the standard
         # SymbolSubSpace builder or constructed a context in a test/tool.
         object.__setattr__(
-            self, 'word_stream', _snapshot_grammar_context_value(self.word_stream))
+            self, 'word_stream', _snapshot_grammar_context_value(
+                self.word_stream, detach=not isinstance(self, StructuralGrammarContext)))
         object.__setattr__(
             self, 'primed_symbols', _snapshot_grammar_context_value(
-                self.primed_symbols))
+                self.primed_symbols, detach=not isinstance(self, StructuralGrammarContext)))
 
 
 @dataclass(frozen=True)
@@ -86,6 +88,8 @@ class StructuralGrammarContext(GrammarContext):
         super().__post_init__()
         if self.phase not in ('compose', 'generate'):
             raise ValueError('structural grammar context phase must be compose or generate')
+        if not isinstance(self.conceptual_space, ConceptualSpaceCapability):
+            raise ValueError('structural context requires a geometry-only conceptual capability')
 
 
 @dataclass(frozen=True)
@@ -654,6 +658,14 @@ class ThoughtConceptualCapability:
         return object.__getattribute__(
             self, '_ThoughtConceptualCapability__space') is space
 
+    def order(self, reference):
+        space = object.__getattribute__(self, '_ThoughtConceptualCapability__space')
+        allocator = getattr(space, '_concept_allocator', None)
+        if allocator is None:
+            raise ValueError('concept order owner unavailable')
+        cid = concept_reference(reference)[1]
+        return max(int(allocator.order_of(cid)), int(cid in allocator.raised))
+
     def payload(self, reference, *, work=None):
         if work is not None:
             work.require('payload')
@@ -809,28 +821,67 @@ class ThoughtTaxonomyCapability:
 class ThoughtLTMCapability:
     """Narrow LTM/episode/prediction reader used only at a thought boundary."""
 
-    __slots__ = ('__existence', '__store', '__equal', '__tau', '__memory',
-                 '__discourse')
+    __slots__ = ('__store', '__equal', '__tau', '__memory',
+                 '__discourse', '__row', '__primed')
 
-    def __init__(self, *, existence_evidence, store, equal, tau_id,
-                 memory=None, discourse=None):
-        if (not callable(existence_evidence) or not callable(store)
-                or not callable(equal)):
+    def __init__(self, *, store, equal, tau_id,
+                 memory=None, discourse=None, row=0, primed=()):
+        if not callable(store) or not callable(equal):
             raise TypeError('thought LTM capability requires bounded reader callables')
-        object.__setattr__(self, '_ThoughtLTMCapability__existence',
-                           existence_evidence)
         object.__setattr__(self, '_ThoughtLTMCapability__store', store)
         object.__setattr__(self, '_ThoughtLTMCapability__equal', equal)
         object.__setattr__(self, '_ThoughtLTMCapability__tau', float(tau_id))
         object.__setattr__(self, '_ThoughtLTMCapability__memory', memory)
         object.__setattr__(self, '_ThoughtLTMCapability__discourse', discourse)
+        object.__setattr__(self, '_ThoughtLTMCapability__row', int(row))
+        object.__setattr__(self, '_ThoughtLTMCapability__primed', tuple(primed))
+
+    def held_frames(self, limit=32):
+        memory = object.__getattribute__(self, '_ThoughtLTMCapability__memory')
+        read = getattr(memory, 'retrieved_frames', None)
+        return read(b=object.__getattribute__(self, '_ThoughtLTMCapability__row'), limit=limit) if callable(read) else ()
+
+    def _cued(self, description, *, max_records, work):
+        store = object.__getattribute__(self, '_ThoughtLTMCapability__store')()
+        from Layers import TernaryTruthStore
+        if not isinstance(store, TernaryTruthStore):
+            return {'value': (), 'records_scanned': 0, 'incomplete': ('unavailable_ltm',)}
+        return store.cued_rows(description,
+            primed=object.__getattribute__(self, '_ThoughtLTMCapability__primed'),
+            references=tuple(ref for ref in description.role_refs if ref and ref[0] == 'ltm'),
+            retrieved=tuple(frame['occurrence'] for frame in self.held_frames()),
+            stream=object.__getattribute__(self, '_ThoughtLTMCapability__row'),
+            max_candidates=max_records, work=work)
 
     def existence_evidence(self, description, *, max_records, work):
-        read = object.__getattribute__(self, '_ThoughtLTMCapability__existence')
-        return _detach_boundary_value(read(
-            description.detached() if isinstance(description, ConceptualMeaning)
-            else _detach_boundary_value(description),
-            max_records=max_records, work=work))
+        result = self._cued(description, max_records=max_records, work=work)
+        positive = negative = 0.
+        sources = []
+        # Familiarity is summed support, not a retrieved row or a maximum.
+        # Only facts certify truth; observations can be retrieved by what.
+        for record in result['value']:
+            if record['kind'] != 'fact':
+                continue
+            # Preserve the evidence source without retaining an LTM frame.
+            # Only what may expose a stored meaning to serial context.
+            sources.append({key: record[key] for key in
+                            ('occurrence', 'origin', 'text', 'trust', 'match')})
+            signed = float(record['trust'])
+            if record['meaning'].polarity != description.polarity:
+                signed = -signed
+            positive += record['match'] * max(0., signed)
+            negative += record['match'] * max(0., -signed)
+        return {'support_true': min(1., positive), 'support_false': min(1., negative),
+                'familiarity': positive + negative, 'meaning': description.detached(),
+                'candidates': tuple(sources),
+                'records_scanned': result['records_scanned'], 'incomplete': result['incomplete']}
+
+    def retrieve(self, question, *, max_records, work):
+        result = self._cued(question, max_records=max_records, work=work)
+        tau = object.__getattribute__(self, '_ThoughtLTMCapability__tau')
+        frames = tuple(record for record in result['value'] if record['match'] >= tau)[:1]
+        return dict(result, value=frames, frames=frames, result_kind='set',
+                    write_target=Mind.SERIAL.value, evidence_kind='retrieval')
 
     def resolve_description(self, reference, *, row, max_records, work):
         memory = object.__getattribute__(self, '_ThoughtLTMCapability__memory')
@@ -849,47 +900,34 @@ class ThoughtLTMCapability:
         if (not isinstance(store, TernaryTruthStore)
                 or bytes(store._occurrence_namespace.tolist()).hex() != reference[1]):
             raise ValueError('description occurrence namespace is unavailable')
-        for index in range(min(len(store), max_records)):
+        # Description addresses are owner-given cue metadata, not a store
+        # scan. A bounded direct read prepares what/exist/arma only.
+        index = store._index_occurrences.get(reference)
+        if index is not None and max_records:
             work.require('record')
-            if int(store.occurrence_id[index]) == reference[2]:
-                value = store.meaning_of(index)
-                if value is None:
-                    raise ValueError('description occurrence metadata is unavailable')
-                return value.detached(), index + 1
+            value = store.meaning_of(index)
+            if value is not None:
+                return value.detached(), 1
         raise ValueError('description occurrence is unavailable within the query read limit')
 
     def lookup(self, left, right, *, max_records, max_expansions, work):
-        store = object.__getattribute__(self, '_ThoughtLTMCapability__store')()
-        from Layers import TernaryTruthStore
-        if not isinstance(store, TernaryTruthStore):
-            return {'value': (), 'records_scanned': 0,
-                    'incomplete': ('unavailable_ltm',)}
-        if store.nDim != left.numel():
-            raise ValueError('thought lookup width differs from LTM')
         equal = object.__getattribute__(self, '_ThoughtLTMCapability__equal')
         tau = object.__getattribute__(self, '_ThoughtLTMCapability__tau')
-        found, incomplete, scanned = [], [], 0
-        count = min(len(store), max_records)
-        if count < len(store):
-            incomplete.append('capture_limit')
-        for index in range(count):
+        found, scanned, incomplete = [], 0, []
+        for record in self.held_frames(limit=max_records):
             if not work.consume('record'):
                 incomplete.append('work_budget')
                 break
             scanned += 1
-            record = store.row(index)
             meaning = record['meaning']
-            if meaning is None or not record['metadata_complete']:
-                incomplete.append('unavailable_metadata')
-                continue
             if not bool(meaning.role_mask[0] and meaning.role_mask[2]):
                 continue
             match = min(equal(left.detach().to(meaning.roles), meaning.roles[0]),
                         equal(right.detach().to(meaning.roles), meaning.roles[2]))
             if match >= tau:
-                found.append(_detach_boundary_value(dict(record, match=float(match))))
+                found.append(dict(record, match=float(match)))
         return {'value': tuple(found), 'records_scanned': scanned,
-                'incomplete': tuple(dict.fromkeys(incomplete))}
+                'incomplete': tuple(incomplete)}
 
     def expectation(self, row, *, work):
         discourse = object.__getattribute__(self, '_ThoughtLTMCapability__discourse')
@@ -954,15 +992,32 @@ def _part(context, arguments):
             neighbors = getattr(context.taxonomy, 'neighbors', None)
             if not callable(neighbors):
                 raise ValueError('thought taxonomy capability does not admit neighbors')
-            return neighbors(
+            return dict(neighbors(
                 reference, direction='up' if role == 'I1' else 'down',
                 max_nodes=context.max_nodes, max_records=context.max_records,
-                max_expansions=context.max_expansions, work=context.work)
-        return context.taxonomy.evidence(
-            _argument(arguments, 'I1'), _argument(arguments, 'I2'),
-            max_nodes=context.max_nodes,
+                max_expansions=context.max_expansions, work=context.work),
+                evidence_kind='taxonomy', write_target=Mind.KNOWING.value)
+        left, right = (_argument(arguments, role) for role in ('I1', 'I2'))
+        order = getattr(context.conceptual_space, 'order', None)
+        conceptual = (torch.is_tensor(left) or torch.is_tensor(right)
+                      or (callable(order) and max(order(left), order(right)) == 0))
+        if conceptual:
+            from Layers import Ops
+            left, right = _vector(context, left), _vector(context, right)
+            residual = Ops.part(left, right).detach()
+            return {'value': residual, 'support_true': float(Ops.part(left, right, scalar=True)),
+                    'support_false': 0., 'result_kind': 'concept',
+                    'write_target': Mind.SERIAL.value, 'evidence_kind': 'meronymy'}
+        evidence = dict(context.taxonomy.evidence(
+            left, right, max_nodes=context.max_nodes,
             max_records=context.max_records, max_steps=context.max_steps,
-            max_expansions=context.max_expansions, work=context.work)
+            max_expansions=context.max_expansions, work=context.work))
+        # All allocated symbols participate. No path gives zero symbolic
+        # inclusion, even though bounded/incomplete traversal remains marked.
+        evidence.update(symbolic_value=float(evidence.get('support_true', 0.)),
+                        result_kind='truth', write_target=Mind.SYMBOLIC.value,
+                        evidence_kind='taxonomy')
+        return evidence
     keyword = {} if context.work is None else {"work": context.work}
     return context.reasoner.taxonomy_evidence(
         arguments[0], arguments[2], max_nodes=context.max_nodes,
@@ -1139,9 +1194,10 @@ def _what(context, arguments):
     if question.mode != 'interrogative':
         raise ValueError('query what requires an interrogative conceptual question')
     if isinstance(context, ThoughtGrammarContext):
-        if not callable(context.continuation):
-            raise RuntimeError('thought what requires the active boundary controller')
-        return {'value': context.continuation(question)}
+        found = context.ltm.retrieve(question, max_records=context.max_records, work=context.work)
+        if found['frames'] or not callable(context.continuation):
+            return found
+        return dict(found, value=context.continuation(question), result_kind='subgoal')
     if not callable(context.schedule_subgoal):
         raise RuntimeError('query what requires the active boundary controller')
     return {'value': context.schedule_subgoal(question)}
@@ -1159,7 +1215,7 @@ class ThoughtExecutorDescriptor:
     semantic_id: str
     domain: str
     argument_kinds: tuple
-    result_kind: str
+    write_target: Mind
     read_scope: tuple
     write_scope: tuple
     evidence_kind: str
@@ -1176,9 +1232,11 @@ class ThoughtExecutorDescriptor:
                 or any(kind not in ('reference', 'description', 'concept')
                        for kind in self.argument_kinds)):
             raise ValueError('thought executor has unsupported argument kinds')
-        if self.result_kind not in ('truth', 'concept', 'set', 'code',
-                                    'prediction', 'subgoal'):
-            raise ValueError('thought executor has unsupported result kind')
+        if not isinstance(self.write_target, Mind):
+            raise ValueError('thought executor requires a subsystem write target')
+        check_access('thought', self.read_scope, self.write_scope)
+        if self.write_target not in self.write_scope:
+            raise ValueError('thought effect target must be in its write scope')
         if (not isinstance(self.read_scope, tuple) or not self.read_scope
                 or not isinstance(self.write_scope, tuple)
                 or not isinstance(self.evidence_kind, str)
@@ -1186,60 +1244,56 @@ class ThoughtExecutorDescriptor:
             raise ValueError('thought executor has an incomplete capability contract')
 
 
-# A model uses its exact grammar spelling as the canonical identity. `part`
-# and `isPart` are separate declarations that currently share the taxonomy
-# implementation; neither is an implicit alias of the other. Old query/plural
-# spellings below remain compatibility-only and do not authorize this table.
+# Serialized result kinds describe the internal effect record only. Dispatch
+# and ownership are constrained by the subsystem write target above.
+    @property
+    def result_kind(self):
+        return {'exist': 'truth', 'part': 'concept', 'isPart': 'truth',
+                'equal': 'truth', 'lookup': 'set', 'quantize': 'code',
+                'arma': 'prediction', 'what': 'subgoal'}.get(self.semantic_id,
+                    {Mind.SERIAL: 'concept', Mind.SYMBOLIC: 'code',
+                     Mind.KNOWING: 'set', Mind.EXPECTATION: 'prediction'}.get(self.write_target, 'concept'))
+
+    def kinds_for(self, open_roles=()):
+        # Closed part can act on vectors. A grammar-open side enumerates
+        # taxonomy neighbors and therefore needs the remaining native name.
+        return (('reference',) * len(self.argument_kinds)
+                if open_roles and self.executor is _part else self.argument_kinds)
+
+
 _thought_executors = (
-    ThoughtExecutorDescriptor(
-        'exist', 'ltm-facts', ('description',), 'truth',
-        ('ltm.descriptions', 'ltm.facts'), (), 'fact', _exist),
-    ThoughtExecutorDescriptor(
-        'part', 'conceptual-taxonomy', ('reference', 'reference'), 'truth',
-        ('conceptual.references',), (), 'taxonomy', _part),
-    ThoughtExecutorDescriptor(
-        'isPart', 'conceptual-taxonomy', ('reference', 'reference'), 'truth',
-        ('conceptual.references',), (), 'taxonomy', _part),
-    ThoughtExecutorDescriptor(
-        'equal', 'conceptual-identity', ('concept', 'concept'), 'truth',
-        ('conceptual.payloads',), (), 'conceptual-identity', _equal),
-    ThoughtExecutorDescriptor(
-        'lookup', 'ltm-lookup', ('concept', 'concept'), 'set',
-        ('ltm.records',), (), 'retrieval', _lookup),
-    ThoughtExecutorDescriptor(
-        'quantize', 'conceptual-codebook', ('concept',), 'code',
-        ('conceptual.codebook',), (), 'concept-codebook', _quantize),
-    ThoughtExecutorDescriptor(
-        'arma', 'discourse-prediction', ('description',), 'prediction',
-        ('ltm.descriptions', 'ltm.prediction'), (), 'estimate', _arma),
-    ThoughtExecutorDescriptor(
-        'what', 'conceptual-subgoal', ('description',), 'subgoal',
-        ('ltm.descriptions', 'question.meaning', 'episode.context'),
-        ('episode.schedule',),
-        'subgoal', _what),
+    ThoughtExecutorDescriptor('exist', 'ltm-facts', ('description',), Mind.SERIAL,
+        (Mind.SERIAL, Mind.LTM, Mind.PRIMING, Mind.BUDGET), (Mind.SERIAL,), 'fact', _exist),
+    ThoughtExecutorDescriptor('part', 'conceptual-taxonomy', ('concept', 'concept'), Mind.SERIAL,
+        (Mind.KNOWING, Mind.SYMBOLIC, Mind.SERIAL, Mind.MERONYMY, Mind.TAXONOMY, Mind.BUDGET),
+        (Mind.SERIAL, Mind.SYMBOLIC, Mind.KNOWING), 'meronymy', _part),
+    ThoughtExecutorDescriptor('isPart', 'conceptual-taxonomy', ('reference', 'reference'), Mind.SYMBOLIC,
+        (Mind.SYMBOLIC, Mind.TAXONOMY, Mind.BUDGET), (Mind.SYMBOLIC,), 'taxonomy', _part),
+    ThoughtExecutorDescriptor('equal', 'conceptual-identity', ('concept', 'concept'), Mind.SERIAL,
+        (Mind.SERIAL, Mind.KNOWING, Mind.SYMBOLIC, Mind.BUDGET), (Mind.SERIAL,), 'conceptual-identity', _equal),
+    ThoughtExecutorDescriptor('lookup', 'ltm-lookup', ('concept', 'concept'), Mind.KNOWING,
+        (Mind.SERIAL, Mind.KNOWING, Mind.SYMBOLIC, Mind.BUDGET), (Mind.KNOWING, Mind.SYMBOLIC), 'retrieval', _lookup),
+    ThoughtExecutorDescriptor('quantize', 'conceptual-codebook', ('concept',), Mind.SYMBOLIC,
+        (Mind.SERIAL, Mind.KNOWING, Mind.SYMBOLIC, Mind.BUDGET), (Mind.SYMBOLIC, Mind.KNOWING), 'concept-codebook', _quantize),
+    ThoughtExecutorDescriptor('arma', 'discourse-prediction', ('description',), Mind.EXPECTATION,
+        (Mind.SERIAL, Mind.EXPECTATION, Mind.LTM, Mind.BUDGET), (Mind.EXPECTATION,), 'estimate', _arma),
+    ThoughtExecutorDescriptor('what', 'conceptual-subgoal', ('description',), Mind.SERIAL,
+        (Mind.SERIAL, Mind.LTM, Mind.PRIMING, Mind.BUDGET), (Mind.SERIAL, Mind.KNOWING, Mind.SYMBOLIC), 'subgoal', _what),
 )
-THOUGHT_EXECUTORS = MappingProxyType(
-    {descriptor.semantic_id: descriptor for descriptor in _thought_executors})
+THOUGHT_EXECUTORS = MappingProxyType({d.semantic_id: d for d in _thought_executors})
 
-
-_THOUGHT_SCOPE_METHODS = MappingProxyType({
-    # The name before the dot is a declared semantic capability, not a
-    # concrete class.  The tuple says which context member receives which
-    # callable names once an operation has been selected.
-    'ltm.facts': ('ltm', ('existence_evidence',)),
-    'ltm.descriptions': ('ltm', ('resolve_description',)),
-    'ltm.records': ('ltm', ('lookup',)),
-    'ltm.prediction': ('ltm', ('expectation',)),
-    'conceptual.references': ('taxonomy', ('evidence', 'neighbors')),
-    'conceptual.payloads': ('conceptual_space', ('payload', 'equal')),
-    'conceptual.codebook': ('conceptual_space', ('quantize',)),
-    # These scopes certify a completed meaning / episode context but do not
-    # turn into a broad reader.  ``episode.schedule`` below is the one narrow
-    # continuation capability and is intentionally write-scoped.
-    'question.meaning': (None, ()),
-    'episode.context': (None, ()),
-})
-_THOUGHT_WRITE_SCOPES = frozenset(('episode.schedule',))
+# Method-level grants narrow each permitted subsystem further. In particular
+# equal/quantize cannot resolve an LTM reference, and lookup sees held frames.
+_THOUGHT_METHODS = {
+    'exist': {'ltm': ('existence_evidence', 'resolve_description')},
+    'part': {'conceptual_space': ('payload', 'order'), 'taxonomy': ('evidence', 'neighbors')},
+    'isPart': {'taxonomy': ('evidence', 'neighbors')},
+    'equal': {'conceptual_space': ('payload', 'equal')},
+    'lookup': {'conceptual_space': ('payload',), 'ltm': ('lookup',)},
+    'quantize': {'conceptual_space': ('quantize',)},
+    'arma': {'ltm': ('expectation', 'resolve_description')},
+    'what': {'ltm': ('retrieve', 'resolve_description')},
+}
 
 
 def _descriptor_context(context, descriptor):
@@ -1251,29 +1305,34 @@ def _descriptor_context(context, descriptor):
     conceptual capability while still making every *available* method an
     explicit descriptor grant.
     """
-    grants = {'conceptual_space': set(), 'ltm': set(), 'taxonomy': set()}
+    check_access('thought', descriptor.read_scope, descriptor.write_scope)
+    fallback = {'conceptual_space': set(), 'ltm': set(), 'taxonomy': set()}
+    methods = {
+        Mind.SERIAL: ('ltm', ('lookup', 'resolve_held_description')),
+        Mind.LTM: ('ltm', ('existence_evidence', 'resolve_description')),
+        Mind.EXPECTATION: ('ltm', ('expectation',)),
+        Mind.KNOWING: ('conceptual_space', ('payload', 'equal', 'quantize', 'order')),
+        Mind.SYMBOLIC: ('conceptual_space', ('payload', 'equal', 'quantize', 'order')),
+        Mind.TAXONOMY: ('taxonomy', ('evidence', 'neighbors')),
+    }
     for scope in descriptor.read_scope:
-        surface = _THOUGHT_SCOPE_METHODS.get(scope)
-        if surface is None:
-            raise ValueError(
-                f'thought executor {descriptor.semantic_id!r} declares '
-                f'an unknown read scope {scope!r}')
-        member, names = surface
-        if member is not None:
-            grants[member].update(names)
-    unknown_writes = set(descriptor.write_scope).difference(_THOUGHT_WRITE_SCOPES)
-    if unknown_writes:
-        raise ValueError(
-            f'thought executor {descriptor.semantic_id!r} declares unknown '
-            f'write scope(s) {sorted(unknown_writes)!r}')
+        if scope in methods:
+            member, names = methods[scope]
+            fallback[member].update(names)
+    if descriptor.semantic_id == 'what' and Mind.LTM in descriptor.read_scope:
+        fallback['ltm'].add('retrieve')
+    selected = _THOUGHT_METHODS.get(descriptor.semantic_id, fallback)
+    grants = {name: set(selected.get(name, ())) & fallback[name] for name in fallback}
     return replace(
         context,
+        word_stream=context.word_stream if Mind.SERIAL in descriptor.read_scope else (),
+        primed_symbols=context.primed_symbols if Mind.PRIMING in descriptor.read_scope else None,
         conceptual_space=_ThoughtCapabilityView(
             context.conceptual_space, grants['conceptual_space']),
         ltm=_ThoughtCapabilityView(context.ltm, grants['ltm']),
         taxonomy=_ThoughtCapabilityView(context.taxonomy, grants['taxonomy']),
         continuation=(context.continuation
-                      if 'episode.schedule' in descriptor.write_scope else None),
+                      if descriptor.semantic_id == 'what' and Mind.SERIAL in descriptor.write_scope else None),
     )
 
 
@@ -1305,7 +1364,7 @@ class ThoughtSignature:
     @property
     def argument_kinds(self):
         kinds = dict(zip(self.operation.operand_roles,
-                         self.descriptor.argument_kinds))
+                         self.descriptor.kinds_for(self.open_roles)))
         return tuple(kinds[role] for role in self.occupied_roles)
 
     @property
@@ -1362,9 +1421,13 @@ class ThoughtSignature:
         if not isinstance(result, dict):
             raise TypeError(
                 f'thought executor {self.operation.semantic_id!r} returned an invalid result')
+        target = Mind(result.get('write_target', self.descriptor.write_target.value))
+        if target not in self.descriptor.write_scope:
+            raise ValueError('thought effect target exceeds its declared write scope')
         result = _freeze_boundary_value(dict(
-            result, result_kind=self.result_kind,
-            evidence_kind=self.descriptor.evidence_kind,
+            result, result_kind=result.get('result_kind', self.result_kind),
+            write_target=target.value,
+            evidence_kind=result.get('evidence_kind', self.descriptor.evidence_kind),
             semantic_id=self.operation.semantic_id,
             domain=self.descriptor.domain))
         if not isinstance(result, MappingProxyType):  # pragma: no cover - helper invariant
@@ -1595,7 +1658,7 @@ class GrammaticalQueryRegistry:
             raise ValueError('query VP and occupied/open roles have no checked interface')
         # Alias names and converse surface order cannot change the canonical idea.
         signature = matches[0]
-        if not meaning.polarity and signature.result_kind != 'truth':
+        if not meaning.polarity and signature.result_kind != 'truth' and signature.operation.semantic_id != 'part':
             raise ValueError('negated query requires a truth-valued grammatical relation')
         return signature
 
@@ -1932,7 +1995,7 @@ class GrammaticalThoughtRegistry:
                     torch.zeros_like(vp_payload)]
         references = [None, vp, None]
         kinds_by_role = dict(zip(operation.operand_roles,
-                                 descriptor.argument_kinds))
+                                 descriptor.kinds_for(canonical_open_roles)))
         preparation_context = (
             _descriptor_context(context, descriptor)
             if isinstance(context, ThoughtGrammarContext) else context)
@@ -2028,7 +2091,7 @@ class GrammaticalThoughtRegistry:
         payloads = [torch.zeros_like(vp_payload), vp_payload,
                     torch.zeros_like(vp_payload)]
         references = [None, vp, None]
-        kinds = dict(zip(operation.operand_roles, descriptor.argument_kinds))
+        kinds = dict(zip(operation.operand_roles, descriptor.kinds_for(open_roles)))
         for role in operation.operand_roles:
             if role in open_roles:
                 continue
@@ -2092,7 +2155,7 @@ class GrammaticalThoughtRegistry:
                 return
             bindings = {}
             for role, kind in zip(operation.operand_roles,
-                                  descriptor.argument_kinds):
+                                  descriptor.kinds_for(open_roles)):
                 if role in open_roles:
                     continue
                 bound = self._candidate_operand(sources, role, kind)
@@ -2165,7 +2228,12 @@ class GrammaticalThoughtRegistry:
                for index in range(len(meaning.role_mask))):
             raise ValueError('thought meaning has occupancy outside its structural role contract')
         signature = ThoughtSignature(operation, self.descriptors[semantic_id], occupied)
-        if not meaning.polarity and signature.result_kind != 'truth':
+        if signature.open_roles and any(
+                not (isinstance(meaning.role_refs[self._slot_for_operand(role)], tuple)
+                     and meaning.role_refs[self._slot_for_operand(role)][0] == 'sym')
+                for role in occupied):
+            raise ValueError('open taxonomy operand requires a native concept reference')
+        if not meaning.polarity and signature.result_kind != 'truth' and signature.operation.semantic_id != 'part':
             raise ValueError('negated thought requires a truth-valued operation')
         return signature
 
@@ -2194,6 +2262,13 @@ class GrammaticalThoughtRegistry:
             preparation_context = _descriptor_context(
                 context, signature.descriptor)
             arguments = []
+            order = getattr(context.conceptual_space, 'order', None)
+            part_refs = [meaning.role_refs[self._slot_for_operand(role)]
+                         for role in signature.occupied_roles]
+            part_taxonomic = (signature.operation.semantic_id == 'part'
+                and all(ref and ref[0] == 'sym' for ref in part_refs)
+                and (bool(signature.open_roles) or (callable(order)
+                     and any(order(ref) > 0 for ref in part_refs))))
             for role, kind in zip(signature.occupied_roles,
                                   signature.argument_kinds):
                 slot = self._slot_for_operand(role)
@@ -2206,7 +2281,11 @@ class GrammaticalThoughtRegistry:
                     # Concept operands are the selected full-width values.
                     # A typed reference remains provenance metadata; routing
                     # through it here would silently discard a signed leaf.
-                    value = meaning.roles[slot]
+                    order = getattr(context.conceptual_space, 'order', None)
+                    value = (reference if signature.operation.semantic_id == 'part'
+                             and reference is not None and reference[0] == 'sym'
+                             and part_taxonomic
+                             else meaning.roles[slot])
                 elif reference is not None:
                     context.work.require('reference')
                     _existing_row(self.space, reference)

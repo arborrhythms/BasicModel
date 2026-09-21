@@ -987,3 +987,104 @@ seal-layout checks remain. The retired tests' dispositions are:
 The immediate-stop generation fixture proves the state cut and generator
 credit. A separate real `lower` inverse fixture executes the shared operator
 and proves its nonzero gradient; an unused operator is never counted as evidence.
+
+
+## Accessible-mind effects (September 20)
+
+Item 1c replaces descriptor scope strings with ten checked subsystems and
+explicit effect targets. The ordinary controller commits detached effects;
+structural reads stay live owned snapshots. Order-zero `part` leaves its
+vector residual, while higher-order parthood emits bounded symbolic support.
+The existing LTM writer owns per-role leaf-code tensor columns and their
+checkpoint/compaction lifecycle. Cued `what` retrieves an old matching frame
+into ordinary thought history; the chooser's recent-store scan is gone.
+[Current contract and limitations](AccessibleMind.md).
+
+| Coverage | Evidence |
+|---|---|
+| Grammar permissions, structural capability refusal, detached thought effects | `test_accessible_mind.py`, `test_thought_operation_catalog.py` |
+| Meronymic residual and higher-order symbolic value, including missing paths | `test_accessible_mind.py`, `test_query_vp_boundaries.py`, `test_grammatical_query_vps.py` |
+| Old-row cue retrieval, priming, scope, fan, familiarity and contiguity | `test_accessible_mind.py`, `test_query_contract_boundaries.py` |
+| Exact leaf postings, forward-forest indexing, checkpoint, compaction and actual codebook remap | `test_accessible_mind.py`, `test_nested_retention_owners.py` |
+| Normal `what` effect, detached knowing, retained frame ownership and no implicit recent-LTM read | `test_accessible_mind.py`, `test_thought_review.py` |
+| Budget cutoff, nested return/finish, typed result retention | `test_normal_thought_controller.py`, `test_nested_retention.py`, `test_thought_checkpoint_credit.py` |
+| Measured recovery by depth, training since storage and distinct-code chain length | `test_mind_generativity.py`; rates and limits in [AccessibleMind](AccessibleMind.md#measured-limits) |
+
+No existing tests were deleted. Taxonomy fixtures now use higher-order symbols;
+order-zero `part` has its own geometric checks. Structural fixtures carry the
+geometry capability and expect live cloned compose inputs. Description
+occurrences use a charged direct address, so one record of allowance reaches
+an old row; zero allowance still rejects it. `lookup` checks a previously held
+frame and first proves that an unseen row is inaccessible. The controller
+trace includes its ordinary explicit conclusion when reduced read work leaves
+room for that action.
+
+Development receipts under `output/tests/`:
+
+| Receipt | Result |
+|---|---|
+| `20260920-154425-c452b7` | Initial leaf-index probe failed as intended before implementation. |
+| `20260920-155402-05c5b9` | 45 index/retention checks completed green. |
+| `20260920-161847-25c26a` | 70 affected cases completed green, including a real normal training batch. |
+| `20260920-162453-258d6a` → `20260920-162719-910047` | The 89-case edge run found a nested cutoff append; fixed, then 33 selected cases completed green. |
+| `20260920-163001-88f9de` | 67 checkpoint/retention cases completed green. |
+| `20260920-163525-ebc533` | New failing probe: a held retrieved frame was missing from retention roots. Fixed by walking typed result evidence on the existing owner. |
+| `20260920-163651-f187ca` → `20260920-163752-22e6f9` | 106 cases completed; only two link checks failed because the isolated checkout lacked real parent-doc and prior-receipt artifacts. Restored those files; all 66 link checks passed. |
+| `20260920-163821-246b1d` | Explicitly interrupted at 455/4,629 cases to fix late codebook binding. All workers exited before source edits. Not a landing receipt. |
+| `20260920-164036-ad7cf0` | New failing probe: an unbound writer treated allocator IDs as codebook rows. Missing terms now wait for real owner binding, preserving recorded leaves. |
+| `20260920-164202-415076` → `20260920-164303-f05ff6` | The 101-case run exposed a small controller fixture without a generate owner; code-row binding is now independent of unfolding. The final 68-case controller/index/checkpoint recheck passed, including nested stream isolation and write-target enforcement. |
+| `20260920-164354-f26608` | Explicitly interrupted at 351/4,632 cases to strengthen the chain probe from repeated to distinct codes. All workers exited before edits. Not a landing receipt. |
+
+The final distinct-code measurement, `20260920-164554-616d87`, passed all
+22 selected measurement/index cases. At 0, 1 and 8 updates, a single code
+recovered exactly; chains of lengths 2, 3 and 5 recovered at rate zero.
+These are reported null results, not successful learned generativity.
+
+The first complete 1c default run, `20260920-164725-78e442`, completed all
+4,632 cases with eleven failures. Old taxonomy fixtures used order-zero
+points, two standalone fact fixtures supplied no index cues, and interface
+checks still expected an empty write scope or an obligatory `what` child.
+Those checks now cover the corresponding subsystem effects without deleting
+cases. Public vector questions assert a meronymic result and no taxonomy
+identity/proof; native taxonomy fixtures use higher-order symbols. Fact
+support retains bounded occurrence/origin/text/trust provenance without
+retaining the stored meanings as frames. The existing conflicting-source
+check verifies both source texts and occurrence identities.
+
+The first correction run, `20260920-170647-e26621`, completed 72 cases
+and found one additional candidate-contract defect: a trained chooser could
+select open `part` with an unnamed vector. Closed `part` accepts full-width
+vectors, but grammar-open taxonomy enumeration now requires a native
+reference consistently in formation, candidate construction and dispatch.
+The new regression check asserts that no such invalid open candidate is offered.
+
+The expanded correction recheck, `20260920-170916-4bf690`, passed all
+140 selected cases, including the public model entry, taxonomy provenance,
+checkpoint restore, index and normal controller contracts.
+
+The final **source-matched full default receipt** is `20260920-171033-62d16c`:
+exit 0, all 4,633 selected cases completed (4,296 passed, 336 skipped, one
+expected failure), 1,041.8 s and 14.11 GiB peak aggregate memory.
+Command, from the isolated BasicModel checkout:
+
+```sh
+DEVELOPER_DIR=/Library/Developer/CommandLineTools .venv/bin/python test/test_report.py --batch-size 8 --max-files 1
+```
+
+The receipt was produced at `/private/tmp/wikioracle-item1c` and copied to
+`output/tests/20260920-171033-62d16c` beside the main checkout. Its entire
+626-file validated source map equals the staged landing source, including
+unchanged files. SHA-256 over sorted compact JSON:
+`553d40622f177fa9b2fe2b68af30e03c947d60f5d47f47a392eb4bdadf504f8f`.
+The full run repeats the distinct-code recovery measurement and reports the
+same zero compound rates. Five optional `sentence.pt` embedding probes skip
+in this isolated checkout because that locally built artifact is absent;
+the main-checkout supplemental receipt below exercises the existing artifact.
+This completion note and todo reconciliation were added after the full run;
+they do not change the validated source map.
+
+
+The supplemental main-checkout receipt, `20260920-172952-394937`, completed
+all 17 `test_testpoint.py` cases with exit 0 (five passed, twelve skipped),
+including all five embedding probes using the existing `sentence.pt`. Its validated source map is identical
+to the full receipt above.

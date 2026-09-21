@@ -27,6 +27,7 @@ from collections import namedtuple
 from dataclasses import dataclass, replace
 from contextlib import contextmanager
 from Meaning import ConceptualMeaning, canonical_role_payload
+from MemoryIndex import LeafCodeIndex
 from Thoughts import LevelledThoughtHistory, ThoughtRecord
 
 epsilon = 1e-7  # to avoid log(0)
@@ -8698,7 +8699,7 @@ class RelativeTruthStore(Layer):
         self.trust.zero_()
 
 
-class TernaryTruthStore(Layer):
+class TernaryTruthStore(LeafCodeIndex, Layer):
     """The unified LTM + relative-truth store (Truth / Ideas consolidation,
     Alec 2026-06-18): ONE tensor of ternary rows that combines the discourse
     LTM end-state chain and the ``RelativeTruthStore`` relation corpus.
@@ -8797,6 +8798,7 @@ class TernaryTruthStore(Layer):
         # rows themselves. It is sidecar data, not a second LTM: occurrence
         # IDs, role vectors and evidence kind remain in the buffers above.
         self._expectation_rows = {}
+        self._init_leaf_index()
 
     @staticmethod
     def _context_fingerprint(context, text, expectation=None):
@@ -9207,9 +9209,34 @@ class TernaryTruthStore(Layer):
         self._semantic_rows = incoming
         self._texts = texts
         self._expectation_rows = expectation_rows
+        if getattr(self, "_leaf_index_missing", False):
+            for row in range(len(self)):
+                if self.KINDS[int(self.record_kind[row])] == "fact":
+                    self.index_stream[row] = -1
+                meaning = self.meaning_of(row)
+                if meaning is not None:
+                    terms, complete = self._meaning_leaf_terms(meaning)
+                    self._append_leaf_terms(row, terms, complete, int(self.index_stream[row]))
+            self._leaf_index_missing = False
+        self.rebuild_leaf_postings()
 
     def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
                               missing_keys, unexpected_keys, error_msgs):
+        index_keys = ('leaf_codes', 'leaf_offsets', 'leaf_complete', 'index_stream')
+        present_index = [prefix + key in state_dict for key in index_keys]
+        if any(present_index) and not all(present_index):
+            error_msgs.append(f"{prefix}incomplete leaf-code index checkpoint")
+            return
+        self._leaf_index_missing = not any(present_index)
+        self._leaf_needs_owner_reindex = self._leaf_index_missing and self._index_code_row is None
+        if self._leaf_index_missing:
+            state_dict[prefix + 'leaf_codes'] = self.leaf_codes.new_empty(0)
+            state_dict[prefix + 'leaf_offsets'] = torch.zeros_like(self.leaf_offsets)
+            state_dict[prefix + 'leaf_complete'] = torch.zeros_like(self.leaf_complete)
+            # Legacy observations have no row isolation proof. Facts alone
+            # are shared; unknown stream ownership is never treated as row 0.
+            state_dict[prefix + 'index_stream'] = torch.full_like(self.index_stream, -2)
+        self.leaf_codes = self.leaf_codes.new_empty(state_dict[prefix + 'leaf_codes'].shape)
         semantic_keys = (
             'record_kind', 'grammatical_mode', 'role_mask', 'polarity',
             'occurrence_id', '_next_occurrence', '_occurrence_namespace',
@@ -9256,6 +9283,7 @@ class TernaryTruthStore(Layer):
         self._expectation_rows = {}
         super()._load_from_state_dict(state_dict, prefix, local_metadata, strict,
                                       missing_keys, unexpected_keys, error_msgs)
+        self.rebuild_leaf_postings()
 
     @torch.no_grad()
     def accept_fact(self, idx):
@@ -9270,7 +9298,7 @@ class TernaryTruthStore(Layer):
         self.record_kind[i] = self.KINDS.index("fact")
         self.grammatical_mode[i] = self.MODES.index("assertive")
 
-    def bind_constituents(self, meaning, *, reserve=0):
+    def bind_constituents(self, meaning, *, reserve=0, stream=-1):
         """Bind a pure compose tree through this existing occurrence owner.
 
         Preflight the entire graph and capacity before writing. Embedded
@@ -9323,7 +9351,8 @@ class TernaryTruthStore(Layer):
             bound[id(value)] = result
             if value is not meaning:
                 index = self.append_meaning(result,
-                    kind="question" if result.mode == "interrogative" else "unverified")
+                    kind="question" if result.mode == "interrogative" else "unverified",
+                    stream=stream)
                 if index < 0:  # preflight above reserves the complete graph
                     raise RuntimeError("constituent capacity changed during append")
                 references[id(value)] = self.occurrence_of(index)
@@ -9331,7 +9360,7 @@ class TernaryTruthStore(Layer):
 
     @torch.no_grad()
     def append_meaning(self, meaning, *, kind="fact", rel_type=None,
-                       trust=0.0, timestamp=None):
+                       trust=0.0, timestamp=None, leaf_codes=None, stream=-1):
         """Commit a complete description with explicit evidential provenance."""
         if not isinstance(meaning, ConceptualMeaning):
             raise TypeError("append_meaning requires a ConceptualMeaning")
@@ -9347,7 +9376,11 @@ class TernaryTruthStore(Layer):
             raise ValueError("fact trust must be finite")
         if timestamp is not None and not math.isfinite(float(timestamp)):
             raise ValueError("fact timestamp must be finite")
-        meaning = self.bind_constituents(meaning, reserve=1)
+        if type(stream) is not int or stream < -1:
+            raise ValueError("index stream must be a row or shared (-1)")
+        terms, complete = (self._meaning_leaf_terms(meaning) if leaf_codes is None else
+                           (self._checked_leaf_terms(leaf_codes), (True, True, True)))
+        meaning = self.bind_constituents(meaning, reserve=1, stream=stream)
         if meaning is None:
             return -1
         n = len(self)
@@ -9380,6 +9413,7 @@ class TernaryTruthStore(Layer):
             if ts >= float(self._next_ts):
                 self._next_ts.fill_(int(ts) + 1)
         self.count.fill_(n + 1)
+        self._append_leaf_terms(n, terms, complete, stream)
         return n
 
     @torch.no_grad()
@@ -9467,7 +9501,7 @@ class TernaryTruthStore(Layer):
     @torch.no_grad()
     def append_expectation_pair(self, estimate, observation, *, presence_logits,
                                 source_occurrences=(), stream=None, document=None,
-                                observation_kind="observation", trust=0.0):
+                                observation_kind="observation", trust=0.0, leaf_codes=None, index_stream=-1):
         """Atomically prefer one external observation over an optional estimate.
 
         A nearly full store must never discard an understood input merely to
@@ -9478,12 +9512,13 @@ class TernaryTruthStore(Layer):
         """
         if observation_kind not in ("observation", "question"):
             raise ValueError("expectation pair requires an observed input kind")
-        observation = self.bind_constituents(observation, reserve=1)
+        observation = self.bind_constituents(observation, reserve=1, stream=index_stream)
         if observation is None:
             return -1, -1
         if self.capacity - len(self) < 2:
             return -1, self.append_meaning(
-                observation, kind=observation_kind, trust=trust)
+                observation, kind=observation_kind, trust=trust, leaf_codes=leaf_codes,
+                stream=index_stream)
         estimate_index = self.append_estimate(
             estimate, presence_logits=presence_logits,
             source_occurrences=source_occurrences, stream=stream,
@@ -9493,7 +9528,8 @@ class TernaryTruthStore(Layer):
             # if a future store implementation violates that invariant.
             raise RuntimeError("estimate append unexpectedly exhausted durable capacity")
         observation_index = self.append_meaning(
-            observation, kind=observation_kind, trust=trust)
+            observation, kind=observation_kind, trust=trust, leaf_codes=leaf_codes,
+                stream=index_stream)
         if observation_index < 0:
             raise RuntimeError("observation append unexpectedly exhausted durable capacity")
         self.link_estimate_observation(estimate_index, observation_index)
@@ -9806,6 +9842,7 @@ class TernaryTruthStore(Layer):
             return 0
         self._ensure_texts(c)
         kept_texts = [self._texts[int(i)] for i in keep.tolist()]
+        self.compact_leaf_rows(keep)
         self.slots[:n_keep] = self.slots[keep]
         self.rel_type[:n_keep] = self.rel_type[keep]
         self.timestamp[:n_keep] = self.timestamp[keep]
@@ -9835,6 +9872,7 @@ class TernaryTruthStore(Layer):
         self.semantic_fingerprint[n_keep:c].zero_()
         self._texts = kept_texts + [None] * (len(self._texts) - n_keep)
         self.count.fill_(n_keep)
+        self.rebuild_leaf_postings()
         self._validate_expectation_links()
         return removed
 
@@ -9858,6 +9896,11 @@ class TernaryTruthStore(Layer):
         self.semantic_fingerprint.zero_()
         self._semantic_rows = {}
         self._expectation_rows = {}
+        self.leaf_codes = self.leaf_codes.new_empty(0)
+        self.leaf_offsets.zero_()
+        self.leaf_complete.zero_()
+        self.index_stream.fill_(-1)
+        self._leaf_postings, self._index_occurrences = {}, {}
         # Occurrence IDs are never reused, even after reset. A held reference
         # cannot silently bind to a later fact at the same physical row.
 

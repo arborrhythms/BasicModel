@@ -4802,6 +4802,16 @@ class Codebook(Tensor):
                 and int(self.ramsification.shape[0]) == int(w.shape[0])):
             self.ramsification = self.ramsification[mask.cpu()]
         self.replace(w[mask])
+        observers = getattr(self, '_row_remap_observers', ())
+        if observers:
+            mapping = {old: new for new, old in enumerate(mask.nonzero().reshape(-1).tolist())}
+            live = []
+            for reference in observers:
+                callback = reference()
+                if callback is not None:
+                    callback(mapping)
+                    live.append(reference)
+            object.__setattr__(self, '_row_remap_observers', live)
         return self.getW()
 
     def learn(self, x, target_idx, lr=0.01):

@@ -111,11 +111,13 @@ Typed native references are alpha-renamed jointly against the canonical roles,
 so binding equality survives renaming and allocator magnitudes never enter.
 The bounds are a representation limit, not a claim of arbitrary scope support.
 
-Each context read spends the shared meter on at most four STM/history records
-and four recent LTM records. Small budgets reserve work for execution. STM and
-ordinary history use the active batch row. LTM admits shared accepted facts
-and the row's held occurrence references; other rows' private observations and
-estimates cannot supply content. The read reports a bounded/incomplete view.
+Each context read charges the shared meter for at most four STM/history/knowing
+records, four recent discourse ideas and four frames already brought into
+serial context by `what`. Small budgets reduce these limits to reserve work
+for execution. A recent LTM write alone supplies no chooser content. Indexed
+retrieval admits shared facts and this row's stream; other streams' observations
+and estimate/question rows cannot become retrieved frames. See
+[AccessibleMind](AccessibleMind.md) for cue ranking and index ownership.
 Attention reads the active meaning and detached memory values; its final chooser features detach. It has no
 answer target or additional learned head. `ThoughtFeatures.context_width`
 owns the input dimension (`15D + 3509`, plus two action flags).

@@ -1,6 +1,8 @@
 # Conceptual-taxonomy PartOf evidence
 
-PartOf reads ConceptualSpace's existing conceptual reference records. A native
+Higher-order `part`, and explicit `isPart`, read ConceptualSpace's existing
+conceptual reference records. Order-zero `part` instead leaves the geometric
+vector residual, without a taxonomy read ([AccessibleMind](AccessibleMind.md)). A native
 `("sym", concept_id)` handle is an address; it is never interpreted as a
 dictionary row or a numeric feature. The derived invocation view contains no
 authoritative memory and creates no allocator, concept, fact or learned
@@ -23,7 +25,8 @@ link. The snapshot does not change when its source is subsequently edited.
 
 Structural inclusion has support 1 when a path exists; repeated links do not
 increase it. Sparse learned weights are not interpreted as world-fact
-confidence. Missing paths remain unknown. A supported path refutes the
+confidence. A missing path emits symbolic inclusion value zero; the evidence
+support still remains unknown, with traversal incompleteness retained. A supported path refutes the
 negated inclusion question; a missing path does not prove that negation.
 LTM existence degrees and conflicting world facts remain the separate
 [Exist evidence domain](ExistenceEvidence.md).
@@ -48,7 +51,8 @@ record sources. They share the canonical operation identity and checked reader.
 resolution enter `run_selected_thought`, the one boundary controller. Typed
 results preserve full evidence and incomplete diagnostics.
 
-A selected `what(Q)` opens a child on the ordinary history owner. Its checked
+A selected `what(Q)` first attempts bounded cue retrieval. If it finds no
+frame, it can open a child on the ordinary history owner. That child's checked
 return is recorded as a causal source of its parent's result. An unrelated
 true child cannot establish a different taxonomy edge. Reader traversal may
 prove several native edges within one operation; that is not evidence of
@@ -96,12 +100,15 @@ See [GradientFlow](GradientFlow.md).
 
 ## Remaining work
 
-Natural wording must be learned by compose/generate. The previous standalone
-codec is removed and its learning gate reopened. Expectation/residual credit,
+The bounded supervised wording gate is met through compose/generate; general
+English and learned questioning utility remain unproven. The standalone codec
+is removed. Expectation/residual credit,
 generation ownership and causal utility remain explicit todo items. The separate
 two-truths design remains deferred. See [SelectedMeaning](SelectedMeaning.md).
 
-## Validation
+## Historical validation (September 16)
+
+Current controller/effect receipts are in [Testing](Testing.md).
 
 The repository's **37 new probes pass in 3.33 s**. The sixteen affected
 files pass **277 tests, with one skip, two expected failures and seven

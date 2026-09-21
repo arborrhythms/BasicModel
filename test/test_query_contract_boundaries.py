@@ -15,6 +15,7 @@ from test_query_vp_boundaries import _context, _signature
 
 def test_exist_executor_limits_native_fact_reads_and_reports_incompleteness(monkeypatch):
     store = TernaryTruthStore(8)
+    store.configure_leaf_index(unfold=lambda idea, limit, **kw: ((7,), 1, True))
     meaning = ConceptualMeaning.from_description(torch.ones(8))
     for strength in (0.2, 0.8):
         store.append_meaning(meaning, trust=strength)
@@ -29,7 +30,7 @@ def test_exist_executor_limits_native_fact_reads_and_reports_incompleteness(monk
     assert rows == [0]
     assert result['support_true'] == pytest.approx(0.2)
     assert result['records_scanned'] == 1
-    assert 'capture_limit' in result['incomplete']
+    assert 'candidate_limit' in result['incomplete']
 
 
 def test_zero_quantize_budget_does_not_fetch_a_named_concept_payload(monkeypatch):
@@ -61,6 +62,10 @@ def test_distinct_lookup_returns_complete_record_and_does_not_admit_observation(
     meaning = ConceptualMeaning.from_description(roles)
     row = store.append_meaning(meaning, kind='observation', trust=0.9)
     context = _context(_cs(), store=store)
+    # Only a prior what may bring this row into serial thinking.
+    assert not _signature('lookup', 'I1', 'I2').invoke(context, roles[0], roles[2])['value']
+    context = _context(context.conceptual_space._ThoughtConceptualCapability__space, store=store,
+                       memory=SimpleNamespace(retrieved_frames=lambda **kw: (store.row(row),)))
     found = _signature('lookup', 'I1', 'I2').invoke(context, roles[0], roles[2])
     assert found['result_kind'] == 'set'
     assert found['evidence_kind'] == 'retrieval'

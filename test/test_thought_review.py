@@ -89,7 +89,7 @@ def test_memory_attention_is_bounded_metered_and_row_local():
         first = model._selected_thought_memory(question, row=0, work=work)
         assert 0 < work.spent <= 8
         assert work.counts['context_record'] == work.spent
-        assert bool(first[0].abs().any()) and bool(first[1].abs().any())
+        assert bool(first[0].abs().any()) and not bool(first[1].abs().any())
         store.slots[private].fill_(500)
         memory.commit_thought(replace(question, roles=question.roles - 50), b=1,
                               operation='equal')
@@ -98,7 +98,7 @@ def test_memory_attention_is_bounded_metered_and_row_local():
             torch.testing.assert_close(a, b)
         store.slots[0].add_(1)
         third = model._selected_thought_memory(question, row=0, work=QueryWorkBudget(128))
-        assert not torch.equal(first[1], third[1])
+        torch.testing.assert_close(first[1], third[1])  # a write alone grants no read
     for row in (0, 1):
         memory.finish_thought(question, b=row)
         memory.end_what_episode(row)

@@ -11,7 +11,8 @@ def _setup():
     cs = _cs(nS=128)
     store = TernaryTruthStore(8, capacity=32)
     model = model_for(cs, store)
-    refs = tuple(('sym', cs.new_concept()) for _ in range(3))
+    refs = tuple(('sym', cs.synthesize_higher_order([('sym', cs.new_concept())]))
+                 for _ in range(3))
     for ref in refs:
         cs._csw_concept_row(0, ref[1])
     return cs, refs, store, model
@@ -27,7 +28,7 @@ def test_numeric_world_evidence_cannot_establish_taxonomic_inclusion():
 
 def test_unrelated_true_episode_cannot_establish_the_next_parent_relation():
     cs, (a, b, _), store, model = _setup()
-    fact = ConceptualMeaning.from_description(torch.eye(8)[:3])
+    fact = model.grammatical_thoughts.form('part', a, b, mode='assertive')
     store.append_meaning(fact, trust=1)
     assert model.reason_about(QuerySpec.from_surface('exist', fact)).support_true == 1
     result = model.reason_about(QuerySpec.from_surface('part', a, b))
