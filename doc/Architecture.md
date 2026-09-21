@@ -1596,6 +1596,23 @@ members accumulate toward 1, which learned exponents below one and the
 pyramid's top-K taper have to hold down. The arithmetic mean remains right
 where an average is what is meant.
 
+*Does pi build higher orders too?* In the perceptual towers, yes: each
+subsymbolic pass routes a code through the sigma fold or the pi fold, and the
+ramsification table records which. In the concept pyramid, no: every rung is
+one additive hop, `tanh(W[a|1])`, then the top-K taper. That matters for
+this finding in two ways. A pi rung is a *conjunction* — these members
+together — and there a normalised geometric mean is harmless: all members
+present gives 1 at every order, and a missing member is supposed to lower
+it. The decay belongs to a mean-type sigma asked to be a union. And in
+conceptual space pi is the fold that keeps gain (finding 2), so a rung that
+alternates the normalised sigma with today's pi restores what the mean took:
+`tanh(g · atanh(.125))` is .76 at `g = 8` and .97 at `g = 16`, a gain of
+about the fan-in, which is learnable. A sigma-only pyramid has no such stage;
+today its tanh with weights above one is what does that work. So either the
+pyramid alternates pi with sigma — conjunctions of members, then unions of
+alternatives, which is the disjunctive normal form XOR itself needs — or its
+sigma has to be a union that does not decay.
+
 **Recommendation.** Evaluate behind a `normalize` mode, turned on
 selectively. First the two XOR gates, in conceptual space with the monotonic
 flags off: the signed mean sigma in the raw chart feeding today's pi, at
