@@ -497,10 +497,11 @@ def run_suite(*, root, selectors, run_dir, memory_bytes, timeout=1800, suite_tim
     root, run_dir = Path(root).resolve(), Path(run_dir).resolve()
     env = worker_environment(root)
     split_devices = env.get("RUN_SLOW") == "1" and not os.environ.get("BASICMODEL_DEVICE")
-    devices, active = {}, {}
+    devices, active, cache_retried = {}, {}, set()
     run_dir.mkdir(parents=True, exist_ok=False)  # Never reuse a stale success receipt.
     started, frozen = time.monotonic(), None
     result = dict(exit_code=125, reason="incomplete", selected=[], completed=[], workers=[],
+                  compile_cache_retries=[],
                   limits=dict(memory_bytes=memory_bytes, aggregate_memory_bytes=memory_bytes,
                               per_worker_memory_bytes=worker_memory_bytes, workers=workers,
                               worker_seconds=timeout, suite_seconds=suite_timeout,
@@ -540,6 +541,10 @@ def run_suite(*, root, selectors, run_dir, memory_bytes, timeout=1800, suite_tim
         recycle_file = None if request.get("collect") else run_dir / f"{name}.recycle.json"
         request["recycle_file"] = str(recycle_file) if recycle_file is not None else None
         worker_env = env.copy()
+        if not request.get("collect") and any(node in cache_retried for node in request["selectors"]):
+            # Retry in a fresh interpreter without loading the stale PCH.
+            # Other workers keep their caches and ordinary compilation policy.
+            worker_env["TORCHINDUCTOR_CPP_CACHE_PRECOMPILE_HEADERS"] = "0"
         if split_devices:
             worker_env["BASICMODEL_DEVICE"] = (
                 "cpu" if request.get("collect") else devices[request["selectors"][0]])
@@ -590,8 +595,6 @@ def run_suite(*, root, selectors, run_dir, memory_bytes, timeout=1800, suite_tim
         if receipt["exit_code"] != 0 and not (receipt["exit_code"] == 1 and test_failure):
             result.update(exit_code=receipt["exit_code"], reason=receipt["reason"])
             return False
-        if test_failure:
-            result.update(exit_code=1, reason="test_failure")
         completed = receipt["completed"]
         if receipt["recycled"]:
             if not completed or completed != nodes[:len(completed)]:
@@ -605,6 +608,33 @@ def run_suite(*, root, selectors, run_dir, memory_bytes, timeout=1800, suite_tim
         if Counter(receipt["selected"]) != Counter(nodes):
             result.update(exit_code=125, reason="incomplete_coverage")
             return False
+        retry = []
+        for node in completed:
+            failures = [r for r in receipt["reports"] if r["nodeid"] == node
+                        and r["outcome"] in ("failed", "xpassed")]
+            # Never erase a concurrent setup/teardown/assertion failure, nor
+            # retry a second failure. Raw worker JSON and logs keep attempt 1.
+            if (node not in cache_retried and failures
+                    and all(r.get("compile_cache_failure") for r in failures)):
+                retry.append(node)
+                cache_retried.add(node)
+                event = dict(nodeid=node, original_log=receipt["log"], attempt=1,
+                             **failures[0]["compile_cache_failure"])
+                result["compile_cache_retries"].append(event)
+                for report in failures:
+                    report["original_outcome"] = report["outcome"]
+                    report["outcome"] = "compile_cache_retry"
+                print(f"[compile-cache-retry] {node}: {event['technique']} (once)", flush=True)
+        if retry:
+            # Coverage is counted once, on the final attempt; the first
+            # attempt's reports stay visible with an explicit retry outcome.
+            batches.appendleft(retry)
+            receipt["retried"] = retry
+            receipt["completed"] = [node for node in completed if node not in retry]
+            for node in retry:
+                result["completed"].remove(node)
+        if any(r["outcome"] in ("failed", "xpassed") for r in receipt["reports"]):
+            result.update(exit_code=1, reason="test_failure")
         return True
 
     def uses_accelerator(device):

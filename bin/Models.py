@@ -199,7 +199,7 @@ def _append_observed_meaning(store, payload, depth, *, trust=0.0, meaning=None,
     from Meaning import expectation_surprise
     prediction = None if expectation is None else expectation.estimate
     surprise = (-1. if prediction is None else expectation_surprise(
-        meaning.roles, prediction.roles))
+        meaning.roles, prediction.roles, meaning.role_mask, prediction.presence_logits.sigmoid()))
     return store.append_meaning(meaning, kind=kind, trust=trust, leaf_codes=leaf_codes,
                                 stream=stream, surprise=surprise)
 

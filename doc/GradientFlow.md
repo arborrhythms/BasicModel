@@ -98,8 +98,12 @@ reporting cost and one proximal optimizer update, not duplicate autograd loss.
 Zero disables it; BasicModel sets 100 and the supplied-answer tied benchmark
 sets 1. The existing state-branch report remains
 available; the run log also emits `[operator-gradients]` JSON. Each named
-shared operator reports weighted gradient norms and the cosines of
-reconstruction with output and with expectation.
+shared operator reports weighted gradient norms, the cosines of reconstruction
+with output and expectation, and `output_reconstruction_norm_ratio` /
+`expectation_reconstruction_norm_ratio`. Each ratio is the other objective's
+norm divided by reconstruction's norm: 2,400 means 2,400 times larger, even
+when the gradients point in the same direction. A zero reconstruction norm
+gives a null ratio; a zero other norm with nonzero reconstruction gives zero.
 [Diagnostic implementation](../bin/GradientDiagnostics.py),
 [run harness](../bin/Models.py).
 

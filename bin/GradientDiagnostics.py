@@ -101,6 +101,9 @@ def objective_agreement(objectives, groups):
                     for i, a, b in zip(indices, norms["reconstruction"], norms[other]))
                 cosine = max(-1.0, min(1.0, cosine))
             entry["reconstruction_" + other + "_cosine"] = cosine
+            # Orientation is explicit: >1 means the other weighted objective
+            # is larger. A zero reference norm has no finite comparison.
+            entry[other + "_reconstruction_norm_ratio"] = no / nr if nr else None
         report[name] = entry
     return report
 

@@ -34,24 +34,6 @@ operator associations use the existing compose/generate grammars. Mechanism
 probes do not satisfy learning gates, and a null result is recorded as null.
 Do not remove unused reasoning methods without Alec's review.
 
-- **12. Review corrections for the expectation landing** (`7d7dc4f`; Claude
-    review, 2026-09-21). The mechanism is accepted; these are small.
-    (a) `surprise` is the mean over all three roles, so an idea row, with one
-    role in play, scores a third of an equally surprising relation row.
-    Normalise over the roles in play (occupied in the observation, or expected
-    by presence) before forgetting compares rows.
-    (b) Add the priority surface and the reading scope to the purity test's
-    bit-identical snapshot (spec test 28, second half).
-    (c) `expectation_pair` finds its counterpart by scanning the store twice;
-    use the occurrence index. Forgetting will call it per candidate row.
-    (d) The archived full receipt exits 1 on a stale compiled-kernel cache.
-    Have the harness refresh or retry a compile-cache load failure once and
-    report it as such, so an environment fault can neither mask nor mimic a
-    test failure in a long run.
-    (e) Log the norm ratio beside the cosine in the operator-gradient report:
-    the one operator measured so far has output about 2,400 times
-    reconstruction, which a cosine-only opposition rule cannot see.
-    Exit: tests for (a)–(c), and a clean full receipt.
 - **11. Generation ownership and end-to-end output.** Rebase the preserved
     generation-catalogue candidate (it no longer applies to primary); validate
     checkpoint/optimizer migration and normal supervised output under the
@@ -166,7 +148,8 @@ Everything that is decided in direction but not on this path is in
 
 ### Done (newest first)
 
-- `7d7dc4f` Item 2 implements negative-image expectation and residual credit; measured joint/useful-query learning remains open under item 2 ([design](doc/ExpectationRetention.md), [receipt](doc/Testing.md#negative-image-expectation-september-21)).
+- Item 12 completes the expectation review corrections: role-normalized retention surprise, indexed pairs, reading purity, bounded cache recovery and gradient norm ratios ([receipt](doc/Testing.md#item-12-review-corrections-september-21)).
+- `7d7dc4f` Item 2 implements negative-image expectation and residual credit; measured joint/useful-query learning remains open under item 9 ([design](doc/ExpectationRetention.md), [receipt](doc/Testing.md#negative-image-expectation-september-21)).
 - `6bf211a` Item 1d restores rotation-owned concept codes and completes the 1b/1c review corrections ([GradientFlow](doc/GradientFlow.md), [receipt](doc/Testing.md#item-1d-review-corrections-september-21)).
 - `101dc22` Item 1c complete in mechanism: checked subsystem effects, indexed cued retrieval and retained frames; compound recovery remains unproven ([AccessibleMind](doc/AccessibleMind.md), [receipt](doc/Testing.md#accessible-mind-effects-september-20)).
 - `7c2fa5a` Item 1b complete: objective-local state gradients and measured shared operator/codebook credit ([GradientFlow](doc/GradientFlow.md), [receipt](doc/Testing.md#gradient-factorization-september-20)).

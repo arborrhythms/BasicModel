@@ -21,6 +21,8 @@ def test_operator_cosine_reads_weighted_objectives_without_mutating_gradients(ot
     assert report["reconstruction_output_cosine"] == pytest.approx(expected)
     assert report["reconstruction_norm"] == pytest.approx(2.)
     assert report["output_norm"] == pytest.approx(3.)
+    assert report["output_reconstruction_norm_ratio"] == pytest.approx(1.5)
+    assert report["expectation_reconstruction_norm_ratio"] == pytest.approx(2 ** -.5)
     assert report["reconstruction_expectation_cosine"] == pytest.approx(2 ** -.5)
     torch.testing.assert_close(p, before)
     torch.testing.assert_close(p.grad, torch.tensor([7., 8.]))
@@ -46,6 +48,17 @@ def test_missing_or_zero_gradients_are_not_reported_as_agreement():
     report = objective_agreement({"reconstruction": 0 * p.sum(), "output": p.sum()}, {"operator": [p]})
     assert report["operator"]["reconstruction_output_cosine"] is None
     assert report["operator"]["reconstruction_expectation_cosine"] is None
+    assert report["operator"]["output_reconstruction_norm_ratio"] is None
+    assert report["operator"]["expectation_reconstruction_norm_ratio"] is None
+
+
+def test_norm_ratio_exposes_magnitude_even_when_cosine_is_aligned():
+    p = torch.nn.Parameter(torch.tensor([1.]))
+    report = objective_agreement({"reconstruction": p.sum(), "output": 2400 * p.sum()},
+                                  {"operator": [p]})["operator"]
+    assert report["reconstruction_output_cosine"] == 1.
+    assert report["output_reconstruction_norm_ratio"] == 2400.
+    assert report["expectation_reconstruction_norm_ratio"] == 0.
 
 
 def test_persistent_opposition_is_named_without_changing_training():
@@ -135,6 +148,9 @@ def test_normal_batch_logs_named_shared_operator_gradients(tmp_path, monkeypatch
         active = {name: entry for name, entry in report.items()
                   if entry["reconstruction_output_cosine"] is not None}
         assert active, "measure actual overlap, not two disconnected gradient sets"
+        for entry in active.values():
+            assert entry["output_reconstruction_norm_ratio"] == pytest.approx(
+                entry["output_norm"] / entry["reconstruction_norm"])
         print("MEASURED_OPERATOR_GRADIENTS", json.dumps(active, sort_keys=True))
     finally:
         model.inputSpace.data.grammar_lessons = {}

@@ -1,0 +1,157 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+_______ test_pair_lookup_uses_occurrence_index_in_both_directions[live] ________
+
+state = 'live'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x123089ac0>
+
+    @pytest.mark.parametrize("state", ["live", "restored", "compacted"])
+    def test_pair_lookup_uses_occurrence_index_in_both_directions(state, monkeypatch):
+        store = TernaryTruthStore(4, capacity=64)
+        meaning = ConceptualMeaning(torch.ones(3, 4), torch.ones(3, dtype=torch.bool))
+        for _ in range(24):
+            row = store.append_idea(torch.ones(4))
+            store.origin[row] = store.ORIGIN_USER
+        source = store.append_meaning(meaning, kind="observation")
+        e, o = store.append_expectation_pair(meaning, meaning, presence_logits=torch.ones(3),
+            source_occurrences=(store.occurrence_of(source),))
+        eref, oref = store.occurrence_of(e), store.occurrence_of(o)
+        if state == "restored":
+            restored = TernaryTruthStore(4, capacity=64)
+            restored.load_state_dict(copy.deepcopy(store.state_dict()))
+            restored.load_semantic_extras(copy.deepcopy(store.semantic_extras()))
+            store = restored
+        elif state == "compacted":
+            assert store.clear_origin(store.ORIGIN_USER) == 24
+        e, o = store._index_occurrences[eref], store._index_occurrences[oref]
+        occurrence_of = store.occurrence_of
+        def indexed_only(row):
+            assert row in (e, o), "pair lookup scanned an unrelated row"
+            return occurrence_of(row)
+        monkeypatch.setattr(store, "occurrence_of", indexed_only)
+        for row in (e, o):
+>           pair = store.expectation_pair(row)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_negative_expectation.py:308: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Layers.py:9583: in expectation_pair
+    observation_index = next((row for row in range(len(self))
+bin/Layers.py:9584: in <genexpr>
+    if self.occurrence_of(row) == observation_ref), -1)
+       ^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+row = 0
+
+    def indexed_only(row):
+>       assert row in (e, o), "pair lookup scanned an unrelated row"
+E       AssertionError: pair lookup scanned an unrelated row
+E       assert 0 in (25, 26)
+
+test/test_negative_expectation.py:304: AssertionError
+_____ test_pair_lookup_uses_occurrence_index_in_both_directions[restored] ______
+
+state = 'restored'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1230c8200>
+
+    @pytest.mark.parametrize("state", ["live", "restored", "compacted"])
+    def test_pair_lookup_uses_occurrence_index_in_both_directions(state, monkeypatch):
+        store = TernaryTruthStore(4, capacity=64)
+        meaning = ConceptualMeaning(torch.ones(3, 4), torch.ones(3, dtype=torch.bool))
+        for _ in range(24):
+            row = store.append_idea(torch.ones(4))
+            store.origin[row] = store.ORIGIN_USER
+        source = store.append_meaning(meaning, kind="observation")
+        e, o = store.append_expectation_pair(meaning, meaning, presence_logits=torch.ones(3),
+            source_occurrences=(store.occurrence_of(source),))
+        eref, oref = store.occurrence_of(e), store.occurrence_of(o)
+        if state == "restored":
+            restored = TernaryTruthStore(4, capacity=64)
+            restored.load_state_dict(copy.deepcopy(store.state_dict()))
+            restored.load_semantic_extras(copy.deepcopy(store.semantic_extras()))
+            store = restored
+        elif state == "compacted":
+            assert store.clear_origin(store.ORIGIN_USER) == 24
+        e, o = store._index_occurrences[eref], store._index_occurrences[oref]
+        occurrence_of = store.occurrence_of
+        def indexed_only(row):
+            assert row in (e, o), "pair lookup scanned an unrelated row"
+            return occurrence_of(row)
+        monkeypatch.setattr(store, "occurrence_of", indexed_only)
+        for row in (e, o):
+>           pair = store.expectation_pair(row)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_negative_expectation.py:308: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Layers.py:9583: in expectation_pair
+    observation_index = next((row for row in range(len(self))
+bin/Layers.py:9584: in <genexpr>
+    if self.occurrence_of(row) == observation_ref), -1)
+       ^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+row = 0
+
+    def indexed_only(row):
+>       assert row in (e, o), "pair lookup scanned an unrelated row"
+E       AssertionError: pair lookup scanned an unrelated row
+E       assert 0 in (25, 26)
+
+test/test_negative_expectation.py:304: AssertionError
+_____ test_pair_lookup_uses_occurrence_index_in_both_directions[compacted] _____
+
+state = 'compacted'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x123214a40>
+
+    @pytest.mark.parametrize("state", ["live", "restored", "compacted"])
+    def test_pair_lookup_uses_occurrence_index_in_both_directions(state, monkeypatch):
+        store = TernaryTruthStore(4, capacity=64)
+        meaning = ConceptualMeaning(torch.ones(3, 4), torch.ones(3, dtype=torch.bool))
+        for _ in range(24):
+            row = store.append_idea(torch.ones(4))
+            store.origin[row] = store.ORIGIN_USER
+        source = store.append_meaning(meaning, kind="observation")
+        e, o = store.append_expectation_pair(meaning, meaning, presence_logits=torch.ones(3),
+            source_occurrences=(store.occurrence_of(source),))
+        eref, oref = store.occurrence_of(e), store.occurrence_of(o)
+        if state == "restored":
+            restored = TernaryTruthStore(4, capacity=64)
+            restored.load_state_dict(copy.deepcopy(store.state_dict()))
+            restored.load_semantic_extras(copy.deepcopy(store.semantic_extras()))
+            store = restored
+        elif state == "compacted":
+            assert store.clear_origin(store.ORIGIN_USER) == 24
+        e, o = store._index_occurrences[eref], store._index_occurrences[oref]
+        occurrence_of = store.occurrence_of
+        def indexed_only(row):
+            assert row in (e, o), "pair lookup scanned an unrelated row"
+            return occurrence_of(row)
+        monkeypatch.setattr(store, "occurrence_of", indexed_only)
+        for row in (e, o):
+>           pair = store.expectation_pair(row)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_negative_expectation.py:308: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Layers.py:9583: in expectation_pair
+    observation_index = next((row for row in range(len(self))
+bin/Layers.py:9584: in <genexpr>
+    if self.occurrence_of(row) == observation_ref), -1)
+       ^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+row = 0
+
+    def indexed_only(row):
+>       assert row in (e, o), "pair lookup scanned an unrelated row"
+E       AssertionError: pair lookup scanned an unrelated row
+E       assert 0 in (1, 2)
+
+test/test_negative_expectation.py:304: AssertionError
+=========================== short test summary info ============================
+FAILED test/test_negative_expectation.py::test_pair_lookup_uses_occurrence_index_in_both_directions[live]
+FAILED test/test_negative_expectation.py::test_pair_lookup_uses_occurrence_index_in_both_directions[restored]
+FAILED test/test_negative_expectation.py::test_pair_lookup_uses_occurrence_index_in_both_directions[compacted]
+3 failed, 26 deselected in 2.42s

@@ -43,12 +43,19 @@ observation retains its own bindings, scope and original `o`.
 `expectation_pair(gain=..., object_mask=...)` derives `r`, `n` and `c` from those
 two rows. There is no third durable delta or conceived row. `c - n` recovers `o`
 up to floating-point roundoff; the retained observation remains exact. Capacity
-favors the observation when only one row fits.
+favors the observation when only one row fits. Pair reads resolve stable
+occurrences through the store's existing index, maintained on append, restore
+and compaction; they do not scan unrelated rows.
 
 Surprise uses **every** role: `r = o - e`, including a zero target for an empty
 role. The differentiable prediction objective is mean squared residual plus
-mean presence BCE. The detached row scalar is `s / (1+s)`, where `s` is
-the all-role mean squared residual alone; presence is a separate training term. It is independent of gain and object mask. Unknown
+mean presence BCE. For retention, the detached row scalar is `s / (1+s)`, with
+`w = observed_mask + (1 - observed_mask) * presence` per role and
+`s = sum(w * mean(r², coordinates)) / sum(w)`. No roles in play gives zero.
+This soft union counts occupied roles fully and empty roles by expected
+presence, so equally surprising idea and relation rows have the same score.
+It changes only retention normalization: predictor loss and the full residual
+still include every role. The score is independent of gain and object mask. Unknown
 surprise is `-1`, including older checkpoints, rather than a fabricated zero.
 Compaction and reset preserve this column's row alignment. The forgetting pass
 that uses it remains a separate item.

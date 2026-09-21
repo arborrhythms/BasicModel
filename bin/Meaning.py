@@ -44,14 +44,27 @@ def negative_image(observed, estimate, presence, *, gain=1., object_mask=None):
 
 
 @torch.no_grad()
-def expectation_surprise(observed, estimate):
-    """Bound the honest all-role mean squared residual by s/(1+s).
+def expectation_surprise(observed, estimate, observed_mask, presence):
+    """Bound the role-normalized retention residual by s/(1+s).
 
-    This monotone normalization leaves an exact prediction at zero and makes
-    surprise comparable to other retention terms in [0, 1]. Neither gain nor
-    the active question enters it. Unknown surprise is stored separately as -1.
+    The soft union of observed occupancy and expected presence weights each
+    role once: occupied roles count fully, empty roles by their expectation.
+    Dividing by that union's mass makes equal per-role errors comparable for
+    idea and relation rows. No roles in play gives zero. This detached retention
+    statistic does not change the predictor's all-role MSE or raw residual;
+    neither gain nor the active question enters it. Unknown remains -1.
     """
-    error = (observed.to(estimate) - estimate).square().mean()
+    if observed.ndim != 2 or observed.shape[0] != 3 or estimate.shape != observed.shape:
+        raise ValueError("surprise requires matching three-role meanings")
+    mask = torch.as_tensor(observed_mask, device=estimate.device, dtype=torch.bool)
+    presence = torch.as_tensor(presence, device=estimate.device, dtype=estimate.dtype)
+    if mask.shape != (3,) or presence.shape != (3,):
+        raise ValueError("surprise occupancy and presence require three roles")
+    if not bool(torch.isfinite(presence).all() and ((presence >= 0) & (presence <= 1)).all()):
+        raise ValueError("surprise presence must be finite and in [0, 1]")
+    weights = torch.where(mask, torch.ones_like(presence), presence)
+    role_error = (observed.to(estimate) - estimate).square().mean(dim=-1)
+    error = (weights * role_error).sum() / weights.sum().clamp_min(torch.finfo(weights.dtype).tiny)
     return error / (1 + error)
 
 

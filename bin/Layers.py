@@ -9523,7 +9523,8 @@ class TernaryTruthStore(LeafCodeIndex, Layer):
         if observation_kind not in ("observation", "question"):
             raise ValueError("expectation pair requires an observed input kind")
         from Meaning import expectation_surprise
-        surprise = expectation_surprise(observation.roles, estimate.roles)
+        surprise = expectation_surprise(observation.roles, estimate.roles,
+            observation.role_mask, torch.as_tensor(presence_logits).sigmoid())
         observation = self.bind_constituents(observation, reserve=1, stream=index_stream)
         if observation is None:
             return -1, -1
@@ -9567,7 +9568,6 @@ class TernaryTruthStore(LeafCodeIndex, Layer):
         provenance = self.expectation_of(i)
         if provenance is None:
             raise ValueError("row has no retained expectation provenance")
-        namespace = bytes(self._occurrence_namespace.tolist()).hex()
         if provenance["kind"] == "estimate":
             estimate_index = i
             observation_ref = provenance["intended_occurrence"]
@@ -9576,12 +9576,12 @@ class TernaryTruthStore(LeafCodeIndex, Layer):
         else:
             observation_ref = self.occurrence_of(i)
             estimate_ref = provenance["estimate_occurrence"]
-            estimate_index = next((row for row in range(len(self))
-                                   if self.occurrence_of(row) == estimate_ref), -1)
+            estimate_index = self._index_occurrences.get(estimate_ref, -1)
             if estimate_index < 0:
                 raise ValueError("observation estimate counterpart is unavailable")
-        observation_index = next((row for row in range(len(self))
-                                  if self.occurrence_of(row) == observation_ref), -1)
+        # Stable occurrence -> physical row is maintained by the existing
+        # leaf index on append, restore and compaction; pair reads stay O(1).
+        observation_index = self._index_occurrences.get(observation_ref, -1)
         if observation_index < 0:
             raise ValueError("estimate observation counterpart is unavailable")
         estimate = self.meaning_of(estimate_index)

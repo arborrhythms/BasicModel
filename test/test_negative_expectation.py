@@ -77,7 +77,8 @@ def test_retained_pair_keeps_full_estimate_and_normalized_surprise():
     torch.testing.assert_close(pair["observation"].roles, actual.roles)
     torch.testing.assert_close(pair["residual"], comparison.residual)
     torch.testing.assert_close(pair["conceived"] - pair["negative_image"], actual.roles)
-    expected = expectation_surprise(actual.roles, prediction.roles)
+    expected = expectation_surprise(actual.roles, prediction.roles,
+        actual.role_mask, prediction.presence_logits.sigmoid())
     assert store.row(row)["surprise"] == pytest.approx(float(expected))
     restored = TernaryTruthStore(4, capacity=8)
     restored.load_state_dict(copy.deepcopy(store.state_dict()))
@@ -243,14 +244,71 @@ def test_native_unlabelled_batch_trains_the_same_chooser(tmp_path, monkeypatch):
     assert model._expectation_policy_loss() is None
 
 
-def test_surprise_is_the_all_role_residual_not_presence_or_stance():
+def test_surprise_normalizes_observed_or_expected_roles_without_stance():
     from Meaning import expectation_surprise
-    observed = torch.eye(3)
-    estimate = observed.clone()
-    assert expectation_surprise(observed, estimate) == 0
-    estimate[2] += 2
-    error = (observed - estimate).square().mean()
-    torch.testing.assert_close(expectation_surprise(observed, estimate), error / (1 + error))
+    observed = torch.zeros(3, 4, requires_grad=True)
+    estimate = torch.tensor([[1.] * 4, [2.] * 4, [9.] * 4], requires_grad=True)
+    mask = torch.tensor([True, False, False])
+    presence = torch.tensor([0., .5, 0.], requires_grad=True)
+    # Observed roles have unit weight; otherwise use expected presence.
+    # The half-expected empty role counts; unused padding does not dilute it.
+    score = expectation_surprise(observed, estimate, mask, presence)
+    error = (1. + .5 * 4.) / 1.5
+    assert float(score) == pytest.approx(error / (1 + error))
+    assert not score.requires_grad
+    assert expectation_surprise(observed, observed, mask, presence) == 0
+    assert expectation_surprise(observed, estimate, torch.zeros(3, dtype=torch.bool),
+                                torch.zeros(3)) == 0
+
+
+@pytest.mark.parametrize("capacity,sources", [(8, True), (2, True), (8, False)])
+def test_idea_and_relation_rows_have_equal_surprise_per_role(capacity, sources):
+    scores = []
+    for depth in (1, 3):
+        store = TernaryTruthStore(4, capacity=capacity)
+        mask = torch.arange(3) < depth
+        actual = ConceptualMeaning(torch.ones(3, 4), mask)
+        source = store.append_meaning(actual, kind="observation")
+        prediction = MeaningExpectation(torch.zeros(3, 4),
+                                        torch.where(mask, 100., -100.))
+        comparison = ExpectationComparison(prediction, actual.roles, mask,
+            actual.roles - prediction.roles, mask.float() - prediction.presence_logits.sigmoid(),
+            "doc", (store.occurrence_of(source),) if sources else (), ("external", "doc"))
+        row = _append_observed_meaning(store, actual.roles, depth,
+                                       meaning=actual, expectation=comparison)
+        scores.append(store.row(row)["surprise"])
+    assert scores == pytest.approx([.5, .5])
+
+
+@pytest.mark.parametrize("state", ["live", "restored", "compacted"])
+def test_pair_lookup_uses_occurrence_index_in_both_directions(state, monkeypatch):
+    store = TernaryTruthStore(4, capacity=64)
+    meaning = ConceptualMeaning(torch.ones(3, 4), torch.ones(3, dtype=torch.bool))
+    for _ in range(24):
+        row = store.append_idea(torch.ones(4))
+        store.set_origin(row, store.ORIGIN_USER)
+    source = store.append_meaning(meaning, kind="observation")
+    e, o = store.append_expectation_pair(meaning, meaning, presence_logits=torch.ones(3),
+        source_occurrences=(store.occurrence_of(source),))
+    eref, oref = store.occurrence_of(e), store.occurrence_of(o)
+    if state == "restored":
+        restored = TernaryTruthStore(4, capacity=64)
+        restored.load_state_dict(copy.deepcopy(store.state_dict()))
+        restored.load_semantic_extras(copy.deepcopy(store.semantic_extras()))
+        store = restored
+    elif state == "compacted":
+        assert store.clear_origin(store.ORIGIN_USER) == 24
+    e, o = store._index_occurrences[eref], store._index_occurrences[oref]
+    occurrence_of = store.occurrence_of
+    def indexed_only(row):
+        assert row in (e, o), "pair lookup scanned an unrelated row"
+        return occurrence_of(row)
+    monkeypatch.setattr(store, "occurrence_of", indexed_only)
+    for row in (e, o):
+        pair = store.expectation_pair(row)
+        assert pair["estimate_occurrence"] == eref
+        assert pair["observation_occurrence"] == oref
+        assert not pair["residual"].any()
 
 
 def test_detached_pending_prediction_replays_without_an_optimizer_step():
@@ -406,25 +464,45 @@ def test_previous_chooser_checkpoint_preserves_logits_with_zero_new_columns():
 
 def test_native_nonzero_composition_is_bit_identical_at_every_stance(tmp_path, monkeypatch):
     from test_compiled_word_chunk import _tiny_canonical_model
-    from test_output_walk import _capture_program_probe
+    from test_compiled_word_chunk import _stage_fullgraph_tensor_peer
     snapshots = []
     for enabled, staged, gain in ((True, False, 1.), (True, True, 0.), (True, True, 1.), (False, False, 1.)):
         torch.manual_seed(948)
         model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets="8", batch_size=1,
-            training_overrides={"reconstructInLoop": False, "sentenceExpectation": enabled, "expectationGain": gain})
+            training_overrides={"reconstructInLoop": False, "sentenceExpectation": enabled, "expectationGain": gain},
+            architecture_overrides={"readingAttention": True})
         model.eval()
         model._tensor_peer_while_eager = True
         model._chart_compose_per_word = lambda: None
-        if staged:
-            discourse = model.symbolSpace.discourse
-            observe(discourse, torch.ones(3, discourse.concept_dim))
-            discourse.expect_next_meaning()
         with torch.no_grad():
-            result = _capture_program_probe(model, ["a bicycle has a wheel"])
+            # A nonzero readout makes the snapshot sensitive to content;
+            # the zero-init cursor bootstrap alone could hide leaked inputs.
+            model.reading_attention.scorer[-1].weight.fill_(.25)
+            _stage_fullgraph_tensor_peer(model, ["a bicycle has a wheel"])
+            if staged:
+                discourse = model.symbolSpace.discourse
+                observe(discourse, torch.ones(3, discourse.concept_dim))
+                assert discourse.expect_next_meaning() is not None
+            cs = model.conceptualSpace
+            # Seed ordinary intent through its owner so the priority surface
+            # is live and nonuniform; use the real staged percepts for scope.
+            cs.prime_desire(torch.tensor([0, 1]), valence=1.)
+            before_priority = model._assemble_relevance_priority(cs, 0, None, None).clone()
+            model._reading_attention_step(1, cs.stm.snapshot(detach=True), model._staged_in_sub, None)
+            before_scope = cs._passback_scope_where.clone()
+            out = model._forward_with_compiled_sentence_state(None)
+            model._publish_compiled_sentence_state(out)
+            result = model._capture_understanding(out[:4])
+            priority = model._assemble_relevance_priority(cs, 0, None, None)
+            model._reading_attention_step(1, cs.stm.snapshot(detach=True), model._staged_in_sub, None)
+            scope = cs._passback_scope_where
+            assert priority.abs().sum() > 0 and priority.max() > priority.min()
+            assert scope.numel() == 2 and scope[1] > scope[0]
         program = result.answer_program[0]
         snapshots.append(tuple(getattr(program, name).detach().clone() for name in program._tensor_fields) +
             (model.conceptualSpace.similarity_codebook.W.clone(),
-             model.inputSpace._ar_embedded_N.detach().clone()))
+             model.inputSpace._ar_embedded_N.detach().clone(),
+             before_priority, before_scope, priority.clone(), scope.clone()))
         assert program.leaves.abs().sum() > 0
     for snapshot in snapshots[1:]:
         torch.testing.assert_close(snapshot, snapshots[0], rtol=0, atol=0)

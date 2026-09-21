@@ -104,8 +104,8 @@ never an automatic slow mark.
 - At 80% of a worker deadline, or at the earlier of 80% of its 8 GiB cap and
   that cap minus 64 MiB (never later than half its cap for a small cap), a
   worker finishes its current test and exits. A fresh worker runs remaining
-  cases. Coverage records prove that each selected case completed once; tests
-  are not repeated or discarded. The hard memory limit still applies within a
+  cases. Coverage records count one final completion per selected case; resource
+  recycling does not repeat cases. The hard memory limit still applies within a
   test, and a killed worker is a failure.
 - An ordinary pytest assertion, setup or teardown failure does **not** cancel
   the remaining workers. The receipt keeps its `test_failure` outcome and
@@ -114,6 +114,14 @@ never an automatic slow mark.
   collection/protocol failure, interrupted execution or invalid coverage)
   still stop the pool immediately to protect the machine and preserve an
   honest receipt.
+- A typed Inductor `CppCompileError` reporting a modified input to a stale
+  precompiled header gets **one** fresh-worker retry with
+  `TORCHINDUCTOR_CPP_CACHE_PRECOMPILE_HEADERS=0`. Compilation still runs;
+  shared caches are not deleted. The receipt records `compile_cache_retries`
+  and marks the original report `compile_cache_retry`; raw worker JSON and
+  logs retain the original failure. The retry must pass normally. A second
+  cache failure, an ordinary compiler error, or any simultaneous assertion,
+  setup or teardown failure remains a failure. No other errors are retried.
 - CPU, BLAS and compiler pools use one thread. The existing on-disk Inductor cache
   remains reusable between workers. macOS workers run at `nice -n 10`, not the
   throughput-throttling `taskpolicy -b` background class.
@@ -1350,3 +1358,38 @@ remain skips.
 
 After adding the final receipt and measurement notes, documentation-link run
 `20260921-060447-d4ce9c` passed **67/67 cases** with the same validated source.
+
+
+## Item 12 review corrections (September 21)
+
+Countdown item 12 corrects the expectation landing's retention score and pair
+lookup. The retained scalar normalizes over the soft union of observed and
+expected roles, so equally surprising idea and relation rows score equally;
+the predictor still trains against the full all-role residual. Native purity
+checks now include nonuniform priority and live reading scope. Indexed pair
+reads are checked after restore and compaction. The harness performs one
+visible fresh-worker retry for a typed stale precompiled-header failure, with
+PCH reuse disabled and compilation still active; genuine test failures remain
+failures. Operator reports now include both norm ratios beside cosine.
+[Design and development evidence](benchmarks/2026-09-21-item12/README.md).
+
+The affected run `20260921-063236-32ba94` completes **131/131** cases:
+**128 passed, 3 skipped**, exit 0. Full run `20260921-063627-f5a587` completes
+**4,683/4,683** cases: **4,352 passed, 330 skipped, 1 expected failure**,
+exit **0**, in **1,059.92 seconds**, with **no waived failure and no cache retry**.
+The previously failing grammar-lesson compiler case passes. These are unique
+case counts; repeated passing phase reports are preserved separately in the
+[receipt metadata](benchmarks/2026-09-21-item12/receipt-info.json).
+
+The [full receipt](benchmarks/2026-09-21-item12/full-result.json.gz) and
+[source manifest](benchmarks/2026-09-21-item12/full-source-manifest.json) match
+**629 source files**, SHA-256 of the sorted compact validated-source map:
+`ec2a3c999c5e3c5c26de2ca2034fbf2195cc55c82f5e47628fd1eb652f06f034`.
+The run used `--batch-size 8 --max-files 1`, ten workers, the unchanged 8 GiB
+per-worker / 28 GiB aggregate caps, and a 14.34 GiB peak aggregate footprint.
+
+The [native gradient report](benchmarks/2026-09-21-item12/operator-gradients.json)
+measures output/reconstruction norm ratio **2,441.3373** for
+`operator.CS.surface`, with cosine **0.08721979**. This is one diagnostic batch,
+not a learning gate. The earlier null useful-query result remains open under
+countdown item 9. Item 11 is next; the remaining countdown numbers are unchanged.

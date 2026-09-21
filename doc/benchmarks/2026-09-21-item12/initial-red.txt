@@ -1,0 +1,233 @@
+FFFFFFFFF                                                                [100%]
+=================================== FAILURES ===================================
+______ test_surprise_normalizes_observed_or_expected_roles_without_stance ______
+
+    def test_surprise_normalizes_observed_or_expected_roles_without_stance():
+        from Meaning import expectation_surprise
+        observed = torch.zeros(3, 4, requires_grad=True)
+        estimate = torch.tensor([[1.] * 4, [2.] * 4, [9.] * 4], requires_grad=True)
+        mask = torch.tensor([True, False, False])
+        presence = torch.tensor([0., .5, 0.], requires_grad=True)
+        # Observed roles have unit weight; otherwise use expected presence.
+        # The half-expected empty role counts; unused padding does not dilute it.
+>       score = expectation_surprise(observed, estimate, mask, presence)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_negative_expectation.py:255: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+args = (tensor([[0., 0., 0., 0.],
+        [0., 0., 0., 0.],
+        [0., 0., 0., 0.]], requires_grad=True), tensor([[1., 1., ...9., 9., 9.]], requires_grad=True), tensor([ True, False, False]), tensor([0.0000, 0.5000, 0.0000], requires_grad=True))
+kwargs = {}
+
+    @functools.wraps(func)
+    def decorate_context(*args, **kwargs):
+        # pyrefly: ignore [bad-context-manager]
+        with ctx_factory():
+>           return func(*args, **kwargs)
+                   ^^^^^^^^^^^^^^^^^^^^^
+E           TypeError: expectation_surprise() takes 2 positional arguments but 4 were given
+
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: TypeError
+_______ test_idea_and_relation_rows_have_equal_surprise_per_role[8-True] _______
+
+capacity = 8, sources = True
+
+    @pytest.mark.parametrize("capacity,sources", [(8, True), (2, True), (8, False)])
+    def test_idea_and_relation_rows_have_equal_surprise_per_role(capacity, sources):
+        scores = []
+        for depth in (1, 3):
+            store = TernaryTruthStore(4, capacity=capacity)
+            mask = torch.arange(3) < depth
+            actual = ConceptualMeaning(torch.ones(3, 4), mask)
+            source = store.append_meaning(actual, kind="observation")
+            prediction = MeaningExpectation(torch.zeros(3, 4),
+                                            torch.where(mask, 100., -100.))
+            comparison = ExpectationComparison(prediction, actual.roles, mask,
+                actual.roles - prediction.roles, mask.float() - prediction.presence_logits.sigmoid(),
+                "doc", (store.occurrence_of(source),) if sources else (), ("external", "doc"))
+            row = _append_observed_meaning(store, actual.roles, depth,
+                                           meaning=actual, expectation=comparison)
+            scores.append(store.row(row)["surprise"])
+>       assert scores == pytest.approx([.5, .5])
+E       assert [0.25, 0.5] == approx([0.5 ±....5 ± 5.0e-07])
+E         
+E         comparison failed. Mismatched elements: 1 / 2:
+E         Max absolute difference: 0.25
+E         Max relative difference: 1.0
+E         Index | Obtained | Expected     
+E         0     | 0.25     | 0.5 ± 5.0e-07
+
+test/test_negative_expectation.py:280: AssertionError
+_______ test_idea_and_relation_rows_have_equal_surprise_per_role[2-True] _______
+
+capacity = 2, sources = True
+
+    @pytest.mark.parametrize("capacity,sources", [(8, True), (2, True), (8, False)])
+    def test_idea_and_relation_rows_have_equal_surprise_per_role(capacity, sources):
+        scores = []
+        for depth in (1, 3):
+            store = TernaryTruthStore(4, capacity=capacity)
+            mask = torch.arange(3) < depth
+            actual = ConceptualMeaning(torch.ones(3, 4), mask)
+            source = store.append_meaning(actual, kind="observation")
+            prediction = MeaningExpectation(torch.zeros(3, 4),
+                                            torch.where(mask, 100., -100.))
+            comparison = ExpectationComparison(prediction, actual.roles, mask,
+                actual.roles - prediction.roles, mask.float() - prediction.presence_logits.sigmoid(),
+                "doc", (store.occurrence_of(source),) if sources else (), ("external", "doc"))
+            row = _append_observed_meaning(store, actual.roles, depth,
+                                           meaning=actual, expectation=comparison)
+            scores.append(store.row(row)["surprise"])
+>       assert scores == pytest.approx([.5, .5])
+E       assert [0.25, 0.5] == approx([0.5 ±....5 ± 5.0e-07])
+E         
+E         comparison failed. Mismatched elements: 1 / 2:
+E         Max absolute difference: 0.25
+E         Max relative difference: 1.0
+E         Index | Obtained | Expected     
+E         0     | 0.25     | 0.5 ± 5.0e-07
+
+test/test_negative_expectation.py:280: AssertionError
+______ test_idea_and_relation_rows_have_equal_surprise_per_role[8-False] _______
+
+capacity = 8, sources = False
+
+    @pytest.mark.parametrize("capacity,sources", [(8, True), (2, True), (8, False)])
+    def test_idea_and_relation_rows_have_equal_surprise_per_role(capacity, sources):
+        scores = []
+        for depth in (1, 3):
+            store = TernaryTruthStore(4, capacity=capacity)
+            mask = torch.arange(3) < depth
+            actual = ConceptualMeaning(torch.ones(3, 4), mask)
+            source = store.append_meaning(actual, kind="observation")
+            prediction = MeaningExpectation(torch.zeros(3, 4),
+                                            torch.where(mask, 100., -100.))
+            comparison = ExpectationComparison(prediction, actual.roles, mask,
+                actual.roles - prediction.roles, mask.float() - prediction.presence_logits.sigmoid(),
+                "doc", (store.occurrence_of(source),) if sources else (), ("external", "doc"))
+            row = _append_observed_meaning(store, actual.roles, depth,
+                                           meaning=actual, expectation=comparison)
+            scores.append(store.row(row)["surprise"])
+>       assert scores == pytest.approx([.5, .5])
+E       assert [0.25, 0.5] == approx([0.5 ±....5 ± 5.0e-07])
+E         
+E         comparison failed. Mismatched elements: 1 / 2:
+E         Max absolute difference: 0.25
+E         Max relative difference: 1.0
+E         Index | Obtained | Expected     
+E         0     | 0.25     | 0.5 ± 5.0e-07
+
+test/test_negative_expectation.py:280: AssertionError
+_______ test_pair_lookup_uses_occurrence_index_in_both_directions[live] ________
+
+state = 'live'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x127d038c0>
+
+    @pytest.mark.parametrize("state", ["live", "restored", "compacted"])
+    def test_pair_lookup_uses_occurrence_index_in_both_directions(state, monkeypatch):
+        store = TernaryTruthStore(4, capacity=64)
+        meaning = ConceptualMeaning(torch.ones(3, 4), torch.ones(3, dtype=torch.bool))
+        for _ in range(24):
+>           store.append_meaning(meaning, kind="observation", origin=store.ORIGIN_USER)
+
+test/test_negative_expectation.py:288: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+args = (TernaryTruthStore(), ConceptualMeaning(mode='assertive', polarity=True, role_refs=(None, None, None), bindings=(), scope=()))
+kwargs = {'kind': 'observation', 'origin': 2}
+
+    @functools.wraps(func)
+    def decorate_context(*args, **kwargs):
+        # pyrefly: ignore [bad-context-manager]
+        with ctx_factory():
+>           return func(*args, **kwargs)
+                   ^^^^^^^^^^^^^^^^^^^^^
+E           TypeError: TernaryTruthStore.append_meaning() got an unexpected keyword argument 'origin'
+
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: TypeError
+_____ test_pair_lookup_uses_occurrence_index_in_both_directions[restored] ______
+
+state = 'restored'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x127d00f80>
+
+    @pytest.mark.parametrize("state", ["live", "restored", "compacted"])
+    def test_pair_lookup_uses_occurrence_index_in_both_directions(state, monkeypatch):
+        store = TernaryTruthStore(4, capacity=64)
+        meaning = ConceptualMeaning(torch.ones(3, 4), torch.ones(3, dtype=torch.bool))
+        for _ in range(24):
+>           store.append_meaning(meaning, kind="observation", origin=store.ORIGIN_USER)
+
+test/test_negative_expectation.py:288: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+args = (TernaryTruthStore(), ConceptualMeaning(mode='assertive', polarity=True, role_refs=(None, None, None), bindings=(), scope=()))
+kwargs = {'kind': 'observation', 'origin': 2}
+
+    @functools.wraps(func)
+    def decorate_context(*args, **kwargs):
+        # pyrefly: ignore [bad-context-manager]
+        with ctx_factory():
+>           return func(*args, **kwargs)
+                   ^^^^^^^^^^^^^^^^^^^^^
+E           TypeError: TernaryTruthStore.append_meaning() got an unexpected keyword argument 'origin'
+
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: TypeError
+_____ test_pair_lookup_uses_occurrence_index_in_both_directions[compacted] _____
+
+state = 'compacted'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x127c94c50>
+
+    @pytest.mark.parametrize("state", ["live", "restored", "compacted"])
+    def test_pair_lookup_uses_occurrence_index_in_both_directions(state, monkeypatch):
+        store = TernaryTruthStore(4, capacity=64)
+        meaning = ConceptualMeaning(torch.ones(3, 4), torch.ones(3, dtype=torch.bool))
+        for _ in range(24):
+>           store.append_meaning(meaning, kind="observation", origin=store.ORIGIN_USER)
+
+test/test_negative_expectation.py:288: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+args = (TernaryTruthStore(), ConceptualMeaning(mode='assertive', polarity=True, role_refs=(None, None, None), bindings=(), scope=()))
+kwargs = {'kind': 'observation', 'origin': 2}
+
+    @functools.wraps(func)
+    def decorate_context(*args, **kwargs):
+        # pyrefly: ignore [bad-context-manager]
+        with ctx_factory():
+>           return func(*args, **kwargs)
+                   ^^^^^^^^^^^^^^^^^^^^^
+E           TypeError: TernaryTruthStore.append_meaning() got an unexpected keyword argument 'origin'
+
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: TypeError
+________ test_norm_ratio_exposes_magnitude_even_when_cosine_is_aligned _________
+
+    def test_norm_ratio_exposes_magnitude_even_when_cosine_is_aligned():
+        p = torch.nn.Parameter(torch.tensor([1.]))
+        report = objective_agreement({"reconstruction": p.sum(), "output": 2400 * p.sum()},
+                                      {"operator": [p]})["operator"]
+        assert report["reconstruction_output_cosine"] == 1.
+>       assert report["output_reconstruction_norm_ratio"] == 2400.
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'output_reconstruction_norm_ratio'
+
+test/test_gradient_factorization.py:60: KeyError
+_____ test_ordinary_compiler_errors_and_assertions_are_not_cache_failures ______
+
+    def test_ordinary_compiler_errors_and_assertions_are_not_cache_failures():
+>       from pytest_worker import compile_cache_failure
+E       ImportError: cannot import name 'compile_cache_failure' from 'pytest_worker' (/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py)
+
+test/test_compile_cache_recovery.py:61: ImportError
+=========================== short test summary info ============================
+FAILED test/test_negative_expectation.py::test_surprise_normalizes_observed_or_expected_roles_without_stance
+FAILED test/test_negative_expectation.py::test_idea_and_relation_rows_have_equal_surprise_per_role[8-True]
+FAILED test/test_negative_expectation.py::test_idea_and_relation_rows_have_equal_surprise_per_role[2-True]
+FAILED test/test_negative_expectation.py::test_idea_and_relation_rows_have_equal_surprise_per_role[8-False]
+FAILED test/test_negative_expectation.py::test_pair_lookup_uses_occurrence_index_in_both_directions[live]
+FAILED test/test_negative_expectation.py::test_pair_lookup_uses_occurrence_index_in_both_directions[restored]
+FAILED test/test_negative_expectation.py::test_pair_lookup_uses_occurrence_index_in_both_directions[compacted]
+FAILED test/test_gradient_factorization.py::test_norm_ratio_exposes_magnitude_even_when_cosine_is_aligned
+FAILED test/test_compile_cache_recovery.py::test_ordinary_compiler_errors_and_assertions_are_not_cache_failures
+9 failed, 38 deselected in 2.21s
