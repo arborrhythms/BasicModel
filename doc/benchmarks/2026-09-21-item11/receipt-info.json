@@ -36,5 +36,6 @@
     "exit_code": 0,
     "result": "documentation-result.json.gz",
     "source_manifest": "documentation-source-manifest.json"
-  }
+  },
+  "source_commit": "f8aa23c09c9c7a4e0d401eb105420e9c2c89beb0"
 }
