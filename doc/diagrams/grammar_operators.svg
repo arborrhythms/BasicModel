@@ -1,0 +1,287 @@
+<svg width='1760' height='1174' xmlns='http://www.w3.org/2000/svg' font-family='Georgia, serif' >
+  <rect width='1760' height='1174' fill='#fafafa'/>
+<rect x='0' y='0' width='1760' height='1174' fill='#fff' fill-opacity='1.0' rx='0'/>
+<text x='40' y='44' text-anchor='start' font-size='22' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>BasicModel — the three grammars, their operators, and what each face may touch</text>
+<text x='40' y='68' text-anchor='start' font-size='13' fill='#444' font-style='italic' font-family='Helvetica, Arial, sans-serif'>Draft for annotation · 2026-09-20 (rev 10) · operators have no return values, only effects: a signature is roles × faces × read (R) / write (W) over the accessible mind</text>
+<text x='40' y='100' text-anchor='start' font-size='16' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>A.  The accessible mind — ten subsystems (dashed = reducible or derived; every access is bounded)</text>
+<rect x='40' y='114' width='160' height='98' fill='#fff' fill-opacity='1.0' rx='6' stroke='#333' stroke-width='1.2'/>
+<text x='48' y='132' text-anchor='start' font-size='12' fill='#666' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>1</text>
+<text x='68' y='132' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>Perceptual knowing</text>
+<text x='48' y='152' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>activation of the two meronymic</text>
+<text x='48' y='167' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>towers (PartSpace, WholeSpace);</text>
+<text x='48' y='182' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>the word stream</text>
+<rect x='208' y='114' width='160' height='98' fill='#fff' fill-opacity='1.0' rx='6' stroke='#333' stroke-width='1.2'/>
+<text x='216' y='132' text-anchor='start' font-size='12' fill='#666' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>2</text>
+<text x='236' y='132' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>Conceptual · order 0</text>
+<text x='216' y='152' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>FIELD: one activation per 0-order</text>
+<text x='216' y='167' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>symbol, whole codebook at once;</text>
+<text x='216' y='182' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>parallel</text>
+<rect x='376' y='114' width='160' height='98' fill='#fff' fill-opacity='1.0' rx='6' stroke='#333' stroke-width='1.2'/>
+<text x='384' y='132' text-anchor='start' font-size='12' fill='#666' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>3</text>
+<text x='404' y='132' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>Conceptual · higher</text>
+<text x='384' y='152' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>FIELD over higher-order symbols;</text>
+<text x='384' y='167' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>one point = a REGION of order 0,</text>
+<text x='384' y='182' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>possibly discontinuous (rows as in 2)</text>
+<rect x='544' y='114' width='160' height='98' fill='#fff' fill-opacity='1.0' rx='6' stroke='#333' stroke-width='1.2' stroke-dasharray='5,4'/>
+<text x='552' y='132' text-anchor='start' font-size='12' fill='#666' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>4</text>
+<text x='572' y='132' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>Serial thinking</text>
+<text x='552' y='152' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>CODES enter projected; operators</text>
+<text x='552' y='167' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>move / extend them into one IDEA,</text>
+<text x='552' y='182' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>an off-codebook, generative vector</text>
+<rect x='712' y='114' width='160' height='98' fill='#fff' fill-opacity='1.0' rx='6' stroke='#333' stroke-width='1.2'/>
+<text x='720' y='132' text-anchor='start' font-size='12' fill='#666' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>5</text>
+<text x='740' y='132' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>Priming</text>
+<text x='720' y='152' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>spreading activation over the</text>
+<text x='720' y='167' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>concept store's edges; lives with</text>
+<text x='720' y='182' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>the codebook; decays</text>
+<rect x='880' y='114' width='160' height='98' fill='#fff' fill-opacity='1.0' rx='6' stroke='#333' stroke-width='1.2' stroke-dasharray='5,4'/>
+<text x='888' y='132' text-anchor='start' font-size='12' fill='#666' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>6</text>
+<text x='908' y='132' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>Expectation</text>
+<text x='888' y='152' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>NEGATIVE IMAGE: predicted idea,</text>
+<text x='888' y='167' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>sign-reversed, added at the seal:</text>
+<text x='888' y='182' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>c = o − g·ê (order 1+); learns o − ê</text>
+<rect x='1048' y='114' width='160' height='98' fill='#fff' fill-opacity='1.0' rx='6' stroke='#333' stroke-width='1.2'/>
+<text x='1056' y='132' text-anchor='start' font-size='12' fill='#666' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>7</text>
+<text x='1076' y='132' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>LTM</text>
+<text x='1056' y='152' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>serial form ONLY: ideas, any order</text>
+<text x='1056' y='167' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>episodes = chained NP/VP;</text>
+<text x='1056' y='182' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>reached by CUE only (no last-N)</text>
+<rect x='1216' y='114' width='160' height='98' fill='#fff' fill-opacity='1.0' rx='6' stroke='#333' stroke-width='1.2'/>
+<text x='1224' y='132' text-anchor='start' font-size='12' fill='#666' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>8</text>
+<text x='1244' y='132' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>Budget</text>
+<text x='1224' y='152' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>remaining work + closure pressure;</text>
+<text x='1224' y='167' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>READ to know cutoff is near,</text>
+<text x='1224' y='182' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>CHARGED by every thought op</text>
+<rect x='1384' y='114' width='160' height='98' fill='#fff' fill-opacity='1.0' rx='6' stroke='#333' stroke-width='1.2' stroke-dasharray='5,4'/>
+<text x='1392' y='132' text-anchor='start' font-size='12' fill='#666' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>9</text>
+<text x='1412' y='132' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>Meronymic access</text>
+<text x='1392' y='152' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>residual of part(x,y)=x·(y/|y|),</text>
+<text x='1392' y='167' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>left as an idea VECTOR (serial, 4),</text>
+<text x='1392' y='182' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>not a 1/0); order 0; no store</text>
+<rect x='1552' y='114' width='160' height='98' fill='#fff' fill-opacity='1.0' rx='6' stroke='#333' stroke-width='1.2'/>
+<text x='1560' y='132' text-anchor='start' font-size='12' fill='#666' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>10</text>
+<text x='1580' y='132' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>Taxonomic access</text>
+<text x='1560' y='152' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>relations over higher-order symbols;</text>
+<text x='1560' y='167' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>emits a SYMBOLIC value (graded);</text>
+<text x='1560' y='182' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>every symbol participates; bounded</text>
+<text x='40' y='228' text-anchor='start' font-size='11' fill='#444' font-style='italic' font-family='Helvetica, Arial, sans-serif'>field (parallel, graded) → CODE = nearest-row projection; words arrive as codes → operators compose an IDEA: one off-codebook vector that must regenerate its codes + operations (generativity)   ·   stores: perceptual, conceptual, priming, LTM   ·   resource: budget   ·   relation: taxonomy</text>
+<text x='40' y='254' text-anchor='start' font-size='16' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>B.  The three grammars (faces) and their contexts</text>
+<rect x='40' y='268' width='546' height='150' fill='#fff' fill-opacity='1.0' rx='6' stroke='#333' stroke-width='1.4'/>
+<text x='50' y='290' text-anchor='start' font-size='14' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>&lt;compose&gt;  ·  understanding</text>
+<text x='50' y='312' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>reads: 1 perceptual knowing (word stream, row-owned), 2/3, 4, 5, 9</text>
+<text x='50' y='329' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>never 6: PURITY — the composed idea o is the same whatever was predicted</text>
+<text x='50' y='346' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>writes: 4 (push / fold), 2/3 (the composed idea)</text>
+<text x='50' y='363' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>never: 7 LTM, 10 taxonomy, allocation, subgoals, 8</text>
+<text x='50' y='380' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>gradient: live — operands, outputs, shared operator parameters</text>
+<text x='50' y='397' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>cost: not metered (reading is not thinking)</text>
+<rect x='606' y='268' width='546' height='150' fill='#fff' fill-opacity='1.0' rx='6' stroke='#333' stroke-width='1.4'/>
+<text x='616' y='290' text-anchor='start' font-size='14' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>&lt;thought&gt;  ·  thinking  (per-model allow-list)</text>
+<text x='616' y='312' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>reads: 4 the completed idea + recency buffer, 2/3, 6 (what is conceived), 8, 9, 10,</text>
+<text x='616' y='329' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>and 7 only as frames a what() brought into STM by cue</text>
+<text x='616' y='346' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>writes: effects on 2/3 and 4; the controller alone records / writes 7</text>
+<text x='616' y='363' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>chooser: (operator, operands, open roles, level) | conclude</text>
+<text x='616' y='380' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>gradient: none through effects; chooser on policy credit only</text>
+<text x='616' y='397' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>cost: every choice / execute / descend / return charges 8</text>
+<rect x='1172' y='268' width='546' height='150' fill='#fff' fill-opacity='1.0' rx='6' stroke='#333' stroke-width='1.4'/>
+<text x='1182' y='290' text-anchor='start' font-size='14' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>&lt;generate&gt;  ·  speech production</text>
+<text x='1182' y='312' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>reads: the concluded idea in 4 (GIVEN, on-manifold), 2/3,</text>
+<text x='1182' y='329' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>its OWN emitted prefix — never the input stream or a parse trace</text>
+<text x='1182' y='346' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>writes: 1 the output stream (words via the reverse chain)</text>
+<text x='1182' y='363' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>never: 7, 10, thought execution</text>
+<text x='1182' y='380' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>gradient: live in generate; stops at the concluded idea</text>
+<text x='1182' y='397' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>cost: output walk budget (not 8)</text>
+<line x1='588' y1='343.0' x2='599' y2='343.0' stroke='#333' stroke-width='1.5'/>
+<path d='M598,338.0 L605,343.0 L598,348.0 z' fill='#333' stroke='#333' stroke-width='1'/>
+<line x1='1154' y1='343.0' x2='1165' y2='343.0' stroke='#333' stroke-width='1.5'/>
+<path d='M1164,338.0 L1171,343.0 L1164,348.0 z' fill='#333' stroke='#333' stroke-width='1'/>
+<text x='40' y='432' text-anchor='start' font-size='11' fill='#444' font-style='italic' font-family='Helvetica, Arial, sans-serif'>one vocabulary of operator identities; shared operators + codebook are the ONE gradient coupling between objectives (dissonance = per-operator gradient cosine); a compose face alone grants no thought permission   ·   the SEAL (not an operator) adds the negative image</text>
+<text x='40' y='460' text-anchor='start' font-size='16' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>C.  Operator signatures — roles × faces × subsystem access</text>
+<rect x='40' y='472' width='1680' height='26' fill='#eee' fill-opacity='1.0' rx='0' stroke='#333' stroke-width='1'/>
+<text x='46' y='489' text-anchor='start' font-size='11' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>operator</text>
+<text x='296' y='489' text-anchor='start' font-size='11' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>faces</text>
+<text x='358' y='489' text-anchor='start' font-size='11' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>roles</text>
+<text x='596' y='489' text-anchor='start' font-size='11' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>1</text>
+<text x='640' y='489' text-anchor='start' font-size='11' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>2</text>
+<text x='684' y='489' text-anchor='start' font-size='11' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>3</text>
+<text x='728' y='489' text-anchor='start' font-size='11' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>4</text>
+<text x='772' y='489' text-anchor='start' font-size='11' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>5</text>
+<text x='816' y='489' text-anchor='start' font-size='11' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>6</text>
+<text x='860' y='489' text-anchor='start' font-size='11' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>7</text>
+<text x='904' y='489' text-anchor='start' font-size='11' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>8</text>
+<text x='948' y='489' text-anchor='start' font-size='11' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>9</text>
+<text x='992' y='489' text-anchor='start' font-size='11' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>10</text>
+<text x='1036' y='489' text-anchor='start' font-size='11' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>note</text>
+<rect x='40' y='498' width='1680' height='24' fill='#f7f7f7' fill-opacity='1.0' rx='0' stroke='#333' stroke-width='0.8'/>
+<text x='46' y='514' text-anchor='start' font-size='11.5' fill='#333' font-weight='bold' font-style='italic' font-family='Helvetica, Arial, sans-serif'>structural only (compose + generate)</text>
+<rect x='40' y='522' width='1680' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
+<text x='46' y='538' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>not / non</text>
+<text x='296' y='538' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>C G</text>
+<text x='358' y='538' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>I1→O1</text>
+<text x='640' y='538' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='684' y='538' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='728' y='538' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='1036' y='538' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>not = sign reversal, order 1+ (expectation's image); non = withdrawal, any order (attention's exclusion)</text>
+<rect x='40' y='546' width='1680' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
+<text x='46' y='562' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>conjunction / disjunction</text>
+<text x='296' y='562' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>C G</text>
+<text x='358' y='562' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>I1,I2→O1</text>
+<text x='640' y='562' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='684' y='562' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='728' y='562' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='1036' y='562' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>symbolic tier</text>
+<rect x='40' y='570' width='1680' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
+<text x='46' y='586' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>intersection / union</text>
+<text x='296' y='586' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>C G</text>
+<text x='358' y='586' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>I1,I2→O1</text>
+<text x='640' y='586' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='728' y='586' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='1036' y='586' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>subsymbolic tier</text>
+<rect x='40' y='594' width='1680' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
+<text x='46' y='610' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>sum / product</text>
+<text x='296' y='610' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>C G</text>
+<text x='358' y='610' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>I1,I2→O1</text>
+<text x='640' y='610' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='728' y='610' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='1036' y='610' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>additive / multiplicative concept ops</text>
+<rect x='40' y='618' width='1680' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
+<text x='46' y='634' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>lift · verb · adverb · lower</text>
+<text x='296' y='634' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>C G</text>
+<text x='358' y='634' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>I1,I2→O1</text>
+<text x='640' y='634' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='728' y='634' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='772' y='634' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='1036' y='634' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>VP application; lift = eig edit</text>
+<rect x='40' y='642' width='1680' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
+<text x='46' y='658' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>preposition · bind · tense · morphology</text>
+<text x='296' y='658' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>C G</text>
+<text x='358' y='658' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>I1(,I2)→O1</text>
+<text x='596' y='658' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='640' y='658' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='728' y='658' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='1036' y='658' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>bind: referents from the serial stream</text>
+<rect x='40' y='666' width='1680' height='24' fill='#f7f7f7' fill-opacity='1.0' rx='0' stroke='#333' stroke-width='0.8'/>
+<text x='46' y='682' text-anchor='start' font-size='11.5' fill='#333' font-weight='bold' font-style='italic' font-family='Helvetica, Arial, sans-serif'>two-faced (compose + thought + generate)</text>
+<rect x='40' y='690' width='1680' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
+<text x='46' y='706' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>part / whole (one family, I2,I1)</text>
+<text x='296' y='706' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>C T G</text>
+<text x='358' y='706' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>I1,I2→O1; open I1=parts, I2=wholes</text>
+<text x='640' y='706' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='684' y='706' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='728' y='706' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='904' y='706' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>W</text>
+<text x='948' y='706' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='992' y='706' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='1036' y='706' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>effect = idea-vector residual left in 4 (9); scalar truth derived; higher order → symbolic value via 10</text>
+<rect x='40' y='714' width='1680' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
+<text x='46' y='730' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>equal</text>
+<text x='296' y='730' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>C T G</text>
+<text x='358' y='730' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>I1,I2→O1</text>
+<text x='640' y='730' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='684' y='730' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='728' y='730' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='904' y='730' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>W</text>
+<text x='1036' y='730' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>mutual parthood on payloads</text>
+<rect x='40' y='738' width='1680' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
+<text x='46' y='754' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>exist</text>
+<text x='296' y='754' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>C T G</text>
+<text x='358' y='754' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>I1→O1</text>
+<text x='640' y='754' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='728' y='754' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='860' y='754' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='904' y='754' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>W</text>
+<text x='1036' y='754' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>T reads facts among frames in STM</text>
+<rect x='40' y='762' width='1680' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
+<text x='46' y='778' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>quantize</text>
+<text x='296' y='778' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>C T G</text>
+<text x='358' y='778' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>I1→O1</text>
+<text x='640' y='778' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='684' y='778' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>W</text>
+<text x='904' y='778' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>W</text>
+<text x='1036' y='778' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>snap to the codebook; keeps ideas on-manifold</text>
+<rect x='40' y='786' width='1680' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
+<text x='46' y='802' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>arma</text>
+<text x='296' y='802' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>C T G</text>
+<text x='358' y='802' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>I1→O1</text>
+<text x='728' y='802' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='816' y='802' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>W</text>
+<text x='904' y='802' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>W</text>
+<text x='1036' y='802' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>reads the recency buffer; its estimate, sign-reversed, is the NEGATIVE IMAGE the seal adds; positive as the &lt;generate&gt; seed; never a fact</text>
+<rect x='40' y='810' width='1680' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
+<text x='46' y='826' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>what (Q)</text>
+<text x='296' y='826' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>C T G</text>
+<text x='358' y='826' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>I1→O1</text>
+<text x='640' y='826' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>W*</text>
+<text x='684' y='826' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>W*</text>
+<text x='728' y='826' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='860' y='826' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='904' y='826' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>W</text>
+<text x='1036' y='826' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>what(Q, where?, when?): wh-word = open role; cue → code postings → rank → frames; episodes return frame by frame  (* FutureWork §7)</text>
+<rect x='40' y='834' width='1680' height='24' fill='#f7f7f7' fill-opacity='1.0' rx='0' stroke='#333' stroke-width='0.8'/>
+<text x='46' y='850' text-anchor='start' font-size='11.5' fill='#333' font-weight='bold' font-style='italic' font-family='Helvetica, Arial, sans-serif'>asymmetric / deferred / planned</text>
+<rect x='40' y='858' width='1680' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
+<text x='46' y='874' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>lookup</text>
+<text x='296' y='874' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>C T –</text>
+<text x='358' y='874' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>I1,I2→O1</text>
+<text x='728' y='874' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>W</text>
+<text x='860' y='874' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='904' y='874' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>W</text>
+<text x='1036' y='874' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>same retrieval as what / parts / wholes — one mechanism; no generate face?</text>
+<rect x='40' y='882' width='1680' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
+<text x='46' y='898' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>true</text>
+<text x='296' y='898' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>– T? –</text>
+<text x='358' y='898' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>I1→O1 (sealed clause NP→REF(S))</text>
+<text x='860' y='898' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='992' y='898' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='1036' y='898' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>deferred to two-truths</text>
+<rect x='40' y='906' width='1680' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
+<text x='46' y='922' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>(subsymbolic LM operator)</text>
+<text x='296' y='922' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>C   G</text>
+<text x='358' y='922' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>I1..In→O1</text>
+<text x='596' y='922' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='640' y='922' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='728' y='922' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='772' y='922' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='1036' y='922' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>SAME row as structural faces; nothing more</text>
+<rect x='40' y='930' width='1680' height='24' fill='#f7f7f7' fill-opacity='1.0' rx='0' stroke='#333' stroke-width='0.8'/>
+<text x='46' y='946' text-anchor='start' font-size='11.5' fill='#333' font-weight='bold' font-style='italic' font-family='Helvetica, Arial, sans-serif'>not operators</text>
+<rect x='40' y='954' width='1680' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
+<text x='46' y='970' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>thought chooser</text>
+<text x='296' y='970' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>– T –</text>
+<text x='358' y='970' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>(op, operands, open roles, level) | conclude</text>
+<text x='640' y='970' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='684' y='970' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='728' y='970' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='816' y='970' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='860' y='970' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='904' y='970' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='1036' y='970' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>context = recency buffer (live STM + last 8 ideas) + cued LTM frames; reads 6 as c per role; policy credit only, never residual credit</text>
+<rect x='40' y='978' width='1680' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
+<text x='46' y='994' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>the seal</text>
+<text x='296' y='994' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>– – –</text>
+<text x='358' y='994' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>o → c = o − g·(1 − m)·κ·ê</text>
+<text x='728' y='994' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='816' y='994' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='860' y='994' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>W</text>
+<text x='1036' y='994' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>AFTER composition (purity); κ = predicted presence; m = open roles (object spared); empty expected role = absence, concluded in thought</text>
+<rect x='40' y='1002' width='1680' height='24' fill='#f7f7f7' fill-opacity='1.0' rx='0' stroke='#333' stroke-width='0.8'/>
+<text x='46' y='1018' text-anchor='start' font-size='11.5' fill='#333' font-weight='bold' font-style='italic' font-family='Helvetica, Arial, sans-serif'>… (add)</text>
+<rect x='40' y='1026' width='1680' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
+<rect x='40' y='1050' width='1680' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
+<rect x='40' y='1074' width='1680' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
+<line x1='40' y1='472' x2='40' y2='1098' stroke='#bbb' stroke-width='0.6'/>
+<line x1='290' y1='472' x2='290' y2='1098' stroke='#bbb' stroke-width='0.6'/>
+<line x1='352' y1='472' x2='352' y2='1098' stroke='#bbb' stroke-width='0.6'/>
+<line x1='590' y1='472' x2='590' y2='1098' stroke='#bbb' stroke-width='0.6'/>
+<line x1='634' y1='472' x2='634' y2='1098' stroke='#bbb' stroke-width='0.6'/>
+<line x1='678' y1='472' x2='678' y2='1098' stroke='#bbb' stroke-width='0.6'/>
+<line x1='722' y1='472' x2='722' y2='1098' stroke='#bbb' stroke-width='0.6'/>
+<line x1='766' y1='472' x2='766' y2='1098' stroke='#bbb' stroke-width='0.6'/>
+<line x1='810' y1='472' x2='810' y2='1098' stroke='#bbb' stroke-width='0.6'/>
+<line x1='854' y1='472' x2='854' y2='1098' stroke='#bbb' stroke-width='0.6'/>
+<line x1='898' y1='472' x2='898' y2='1098' stroke='#bbb' stroke-width='0.6'/>
+<line x1='942' y1='472' x2='942' y2='1098' stroke='#bbb' stroke-width='0.6'/>
+<line x1='986' y1='472' x2='986' y2='1098' stroke='#bbb' stroke-width='0.6'/>
+<line x1='1030' y1='472' x2='1030' y2='1098' stroke='#bbb' stroke-width='0.6'/>
+<text x='40' y='1118' text-anchor='start' font-size='11' fill='#444' font-family='Helvetica, Arial, sans-serif'>Open questions for the pen:  (1) negating a 0-order point gives a REGION, so the image −ê is order 1+ even for a bare noun — right?   (2) is priming read by thought, or only as a retrieval cue + by compose?   (3) lookup without a generate face — intended?</text>
+<text x='40' y='1134' text-anchor='start' font-size='11' fill='#444' font-family='Helvetica, Arial, sans-serif'>(4) which structural operators may a model think with — `not`, to conclude absences?   (5) why / how as walks over implies / operator rows — wait for two-truths?   (6) rows keep o with the estimate linked (c derived) — or should a row hold only its residual?</text>
+</svg>

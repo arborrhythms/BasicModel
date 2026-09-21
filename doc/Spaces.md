@@ -550,6 +550,19 @@ Complement on `[0,1]` and negation in centered signed coordinates are the same
 reflection. Let `y = x - 1/2`; then `1-x = 1/2-y`. The operation is shared, but
 the stored carriers and their semantics remain distinct.
 
+**Consequence for expectation and attention (2026-09-20).** The cube has a
+complement but no additive inverse: `x + (1 - e)` leaves `[0,1]`, and nothing
+added to a presence cancels it. Expectation enters the mind as a
+*negative image*, the sign-reversed predicted idea added to what was composed,
+so it cannot be formed over percepts or over the order-0 presence field; it
+is formed over the sealed idea, at order 1 and above, where the signed carrier
+exists. Sensation is therefore never subtracted from. What the unsigned
+carrier does support is withdrawal, the non-affirming `non`, and that is how
+attention works here: the reading scope and the priority surface exclude
+the non-object without predicting it. See the
+[accessible-mind spec §2.6.2](specs/2026-09-20-accessible-mind-subsystems.md#262-negation-exists-only-above-order-0)
+and [Philosophy](Philosophy.md#expectation-as-a-negative-image-attention-as-exclusion-2026-09-20).
+
 ### Sigma/Pi Membership Lattice {#percept-membership-lattice}
 
 The meronymic fold/split operators form a bounded lattice:

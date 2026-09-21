@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
-"""Generate WikiOracle conceptual diagrams as SVG files."""
-import os, math
+"""Generate WikiOracle conceptual diagrams as SVG files.
+
+    python gen_diagrams.py                        # write every diagram
+    python gen_diagrams.py grammar_operators.svg  # write only the named ones
+"""
+import os, math, sys
+from html import escape
 
 DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -27,10 +32,11 @@ def g(content, transform=""):
     t = f" transform='{transform}'" if transform else ""
     return f"<g{t}>{content}</g>"
 
-def rect(x, y, w, h, fill, stroke=None, sw=1.5, rx=6, op=1.0):
+def rect(x, y, w, h, fill, stroke=None, sw=1.5, rx=6, op=1.0, dash=""):
     s = f" stroke='{stroke}' stroke-width='{sw}'" if stroke else ""
+    d = f" stroke-dasharray='{dash}'" if dash else ""
     return (f"<rect x='{x}' y='{y}' width='{w}' height='{h}' fill='{fill}'"
-            f" fill-opacity='{op}' rx='{rx}'{s}/>")
+            f" fill-opacity='{op}' rx='{rx}'{s}{d}/>")
 
 def txt(x, y, s, anchor="middle", fs=14, fill=BLUE_DK, bold=False, italic=False, ff=None):
     fw = " font-weight='bold'" if bold else ""
@@ -646,17 +652,280 @@ def make_mm5m():
     return svg(W, H, "\n".join(parts))
 
 
-# ── Write files ────────────────────────────────────────────────────────────────
+# ── Grammar operators sheet ────────────────────────────────────────────────────
+# Data for doc/specs/2026-09-20-accessible-mind-subsystems.md. Monochrome and
+# sans-serif so the sheet prints and takes ink; the blank rows are for the pen.
 
-files = [
-    ("ternary_logic.svg",    make_ternary()),
-    ("luminosity.svg",       make_luminosity()),
-    ("vector_spaces.svg",    make_vector_spaces()),
-    ("mm5m_architecture.svg", make_mm5m()),
+GO_REV = "2026-09-20 (rev 10)"
+
+# (id, title, three body lines, dashed = reducible or derived)
+GO_SUBSYSTEMS = [
+    ("1", "Perceptual knowing",
+     ["activation of the two meronymic", "towers (PartSpace, WholeSpace);", "the word stream"], False),
+    ("2", "Conceptual · order 0",
+     ["FIELD: one activation per 0-order", "symbol, whole codebook at once;", "parallel"], False),
+    ("3", "Conceptual · higher",
+     ["FIELD over higher-order symbols;", "one point = a REGION of order 0,", "possibly discontinuous (rows as in 2)"], False),
+    ("4", "Serial thinking",
+     ["CODES enter projected; operators", "move / extend them into one IDEA,", "an off-codebook, generative vector"], True),
+    ("5", "Priming",
+     ["spreading activation over the", "concept store's edges; lives with", "the codebook; decays"], False),
+    ("6", "Expectation",
+     ["NEGATIVE IMAGE: predicted idea,", "sign-reversed, added at the seal:", "c = o − g·ê (order 1+); learns o − ê"], True),
+    ("7", "LTM",
+     ["serial form ONLY: ideas, any order", "episodes = chained NP/VP;", "reached by CUE only (no last-N)"], False),
+    ("8", "Budget",
+     ["remaining work + closure pressure;", "READ to know cutoff is near,", "CHARGED by every thought op"], False),
+    ("9", "Meronymic access",
+     ["residual of part(x,y)=x·(y/|y|),", "left as an idea VECTOR (serial, 4),", "not a 1/0); order 0; no store"], True),
+    ("10", "Taxonomic access",
+     ["relations over higher-order symbols;", "emits a SYMBOLIC value (graded);", "every symbol participates; bounded"], False),
 ]
 
-for fname, content in files:
-    fp = os.path.join(DIR, fname)
-    with open(fp, "w") as f:
-        f.write(content)
-    print(f"✓  {fp}")
+GO_SUBSYSTEM_NOTE = (
+    "field (parallel, graded) → CODE = nearest-row projection; words arrive as codes → "
+    "operators compose an IDEA: one off-codebook vector that must regenerate its codes + "
+    "operations (generativity)   ·   stores: perceptual, conceptual, priming, LTM   ·   "
+    "resource: budget   ·   relation: taxonomy")
+
+GO_GRAMMARS = [
+    ("<compose>  ·  understanding", [
+        "reads: 1 perceptual knowing (word stream, row-owned), 2/3, 4, 5, 9",
+        "never 6: PURITY — the composed idea o is the same whatever was predicted",
+        "writes: 4 (push / fold), 2/3 (the composed idea)",
+        "never: 7 LTM, 10 taxonomy, allocation, subgoals, 8",
+        "gradient: live — operands, outputs, shared operator parameters",
+        "cost: not metered (reading is not thinking)"]),
+    ("<thought>  ·  thinking  (per-model allow-list)", [
+        "reads: 4 the completed idea + recency buffer, 2/3, 6 (what is conceived), 8, 9, 10,",
+        "and 7 only as frames a what() brought into STM by cue",
+        "writes: effects on 2/3 and 4; the controller alone records / writes 7",
+        "chooser: (operator, operands, open roles, level) | conclude",
+        "gradient: none through effects; chooser on policy credit only",
+        "cost: every choice / execute / descend / return charges 8"]),
+    ("<generate>  ·  speech production", [
+        "reads: the concluded idea in 4 (GIVEN, on-manifold), 2/3,",
+        "its OWN emitted prefix — never the input stream or a parse trace",
+        "writes: 1 the output stream (words via the reverse chain)",
+        "never: 7, 10, thought execution",
+        "gradient: live in generate; stops at the concluded idea",
+        "cost: output walk budget (not 8)"]),
+]
+
+GO_GRAMMAR_NOTE = (
+    "one vocabulary of operator identities; shared operators + codebook are the ONE gradient "
+    "coupling between objectives (dissonance = per-operator gradient cosine); a compose face "
+    "alone grants no thought permission   ·   the SEAL (not an operator) adds the negative image")
+
+# group -> rows of (operator, faces, roles, {subsystem id: access}, note); W* = FutureWork §7
+GO_OPERATORS = [
+    ("structural only (compose + generate)", [
+        ("not / non", "C G", "I1→O1", {"2": "RW", "3": "RW", "4": "RW"},
+         "not = sign reversal, order 1+ (expectation's image); non = withdrawal, any order "
+         "(attention's exclusion)"),
+        ("conjunction / disjunction", "C G", "I1,I2→O1", {"2": "R", "3": "RW", "4": "RW"},
+         "symbolic tier"),
+        ("intersection / union", "C G", "I1,I2→O1", {"2": "RW", "4": "RW"}, "subsymbolic tier"),
+        ("sum / product", "C G", "I1,I2→O1", {"2": "RW", "4": "RW"},
+         "additive / multiplicative concept ops"),
+        ("lift · verb · adverb · lower", "C G", "I1,I2→O1", {"2": "RW", "4": "RW", "5": "R"},
+         "VP application; lift = eig edit"),
+        ("preposition · bind · tense · morphology", "C G", "I1(,I2)→O1",
+         {"1": "R", "2": "RW", "4": "RW"}, "bind: referents from the serial stream"),
+    ]),
+    ("two-faced (compose + thought + generate)", [
+        ("part / whole (one family, I2,I1)", "C T G", "I1,I2→O1; open I1=parts, I2=wholes",
+         {"2": "R", "3": "R", "4": "RW", "8": "W", "9": "R", "10": "R"},
+         "effect = idea-vector residual left in 4 (9); scalar truth derived; "
+         "higher order → symbolic value via 10"),
+        ("equal", "C T G", "I1,I2→O1", {"2": "R", "3": "R", "4": "RW", "8": "W"},
+         "mutual parthood on payloads"),
+        ("exist", "C T G", "I1→O1", {"2": "R", "4": "RW", "7": "R", "8": "W"},
+         "T reads facts among frames in STM"),
+        ("quantize", "C T G", "I1→O1", {"2": "R", "3": "W", "8": "W"},
+         "snap to the codebook; keeps ideas on-manifold"),
+        ("arma", "C T G", "I1→O1", {"4": "R", "6": "W", "8": "W"},
+         "reads the recency buffer; its estimate, sign-reversed, is the NEGATIVE IMAGE the seal "
+         "adds; positive as the <generate> seed; never a fact"),
+        ("what (Q)", "C T G", "I1→O1",
+         {"2": "W*", "3": "W*", "4": "RW", "7": "R", "8": "W"},
+         "what(Q, where?, when?): wh-word = open role; cue → code postings → rank → frames; "
+         "episodes return frame by frame  (* FutureWork §7)"),
+    ]),
+    ("asymmetric / deferred / planned", [
+        ("lookup", "C T –", "I1,I2→O1", {"4": "W", "7": "R", "8": "W"},
+         "same retrieval as what / parts / wholes — one mechanism; no generate face?"),
+        ("true", "– T? –", "I1→O1 (sealed clause NP→REF(S))", {"7": "R", "10": "R"},
+         "deferred to two-truths"),
+        ("(subsymbolic LM operator)", "C   G", "I1..In→O1",
+         {"1": "R", "2": "RW", "4": "RW", "5": "R"}, "SAME row as structural faces; nothing more"),
+    ]),
+    ("not operators", [
+        ("thought chooser", "– T –", "(op, operands, open roles, level) | conclude",
+         {"2": "R", "3": "R", "4": "R", "6": "R", "7": "R", "8": "R"},
+         "context = recency buffer (live STM + last 8 ideas) + cued LTM frames; reads 6 as c "
+         "per role; policy credit only, never residual credit"),
+        ("the seal", "– – –", "o → c = o − g·(1 − m)·κ·ê",
+         {"4": "R", "6": "RW", "7": "W"},
+         "AFTER composition (purity); κ = predicted presence; m = open roles (object spared); "
+         "empty expected role = absence, concluded in thought"),
+    ]),
+    ("… (add)", [("", "", "", {}, "")] * 3),
+]
+
+GO_QUESTIONS = [
+    "Open questions for the pen:  (1) negating a 0-order point gives a REGION, so the image −ê "
+    "is order 1+ even for a bare noun — right?   (2) is priming read by thought, or only as a "
+    "retrieval cue + by compose?   (3) lookup without a generate face — intended?",
+    "(4) which structural operators may a model think with — `not`, to conclude absences?   "
+    "(5) why / how as walks over implies / operator rows — wait for two-truths?   "
+    "(6) rows keep o with the estimate linked (c derived) — or should a row hold only its "
+    "residual?",
+]
+
+
+# Helvetica advance widths (AFM, per 1000 em), so a string that would overflow
+# its box is an error at generation time rather than a clipped sheet.
+_HELV = dict(zip(
+    " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`"
+    "abcdefghijklmnopqrstuvwxyz{|}~",
+    [278, 278, 355, 556, 556, 889, 667, 191, 333, 333, 389, 584, 278, 333, 278, 278,
+     556, 556, 556, 556, 556, 556, 556, 556, 556, 556, 278, 278, 584, 584, 584, 556, 1015,
+     667, 667, 722, 722, 667, 611, 778, 722, 278, 500, 667, 556, 833, 722, 778, 667, 778,
+     722, 667, 611, 722, 667, 944, 667, 667, 611, 278, 278, 278, 469, 556, 333,
+     556, 556, 500, 556, 556, 278, 556, 556, 222, 222, 500, 222, 833, 556, 556, 556, 556,
+     333, 500, 278, 556, 500, 722, 500, 500, 500, 334, 260, 334, 584]))
+_HELV.update({"·": 278, "×": 584, "—": 1000, "–": 556, "→": 1000, "−": 584, "§": 556,
+              "ê": 556, "…": 1000, "’": 222})
+
+
+def _helv_width(s, fs, bold=False):
+    return sum(_HELV.get(c, 556) for c in s) / 1000 * fs * (1.06 if bold else 1.0)
+
+
+def make_grammar_operators():
+    INK, SOFT, FAINT, MUTE = "#111", "#333", "#444", "#666"
+    SANS = "Helvetica, Arial, sans-serif"
+    W, X0 = 1760, 40
+
+    def t(x, y, s, fs=13, fill=INK, bold=False, italic=False, right=None):
+        # right = the x the text must not pass (default: the sheet's right margin)
+        over = x + _helv_width(s, fs, bold) - ((W - X0) if right is None else right - 2)
+        if over > 0:
+            raise ValueError(f"grammar_operators: {over:.0f}px too wide at {fs}px: {s!r}")
+        return txt(x, y, escape(s, quote=False), anchor="start", fs=fs, fill=fill,
+                   bold=bold, italic=italic, ff=SANS)
+
+    parts = [None]                       # the white ground, sized once H is known
+    parts.append(t(X0, 44, "BasicModel — the three grammars, their operators, "
+                   "and what each face may touch", fs=22, bold=True))
+    parts.append(t(X0, 68, f"Draft for annotation · {GO_REV} · operators have no return "
+                   "values, only effects: a signature is roles × faces × read (R) / write (W) "
+                   "over the accessible mind", fs=13, fill=FAINT, italic=True))
+
+    # A. subsystems
+    y = 100
+    parts.append(t(X0, y, "A.  The accessible mind — ten subsystems (dashed = reducible or "
+                   "derived; every access is bounded)", fs=16, bold=True))
+    y += 14
+    bw, bh, gap = 160, 98, 8
+    for i, (sid, title, body, dashed) in enumerate(GO_SUBSYSTEMS):
+        x = X0 + i * (bw + gap)
+        parts.append(rect(x, y, bw, bh, "#fff", stroke=SOFT, sw=1.2,
+                          dash="5,4" if dashed else ""))
+        parts.append(t(x + 8, y + 18, sid, fs=12, fill=MUTE, bold=True))
+        parts.append(t(x + 28, y + 18, title, fs=11.5, bold=True, right=x + bw))
+        for j, row in enumerate(body):
+            parts.append(t(x + 8, y + 38 + j * 15, row, fs=9.1, fill=SOFT, right=x + bw))
+    y += bh + 16
+    parts.append(t(X0, y, GO_SUBSYSTEM_NOTE, fs=11, fill=FAINT, italic=True))
+
+    # B. the three grammars
+    y += 26
+    parts.append(t(X0, y, "B.  The three grammars (faces) and their contexts", fs=16, bold=True))
+    y += 14
+    gw, gh, ggap = 546, 150, 20
+    for i, (title, body) in enumerate(GO_GRAMMARS):
+        x = X0 + i * (gw + ggap)
+        parts.append(rect(x, y, gw, gh, "#fff", stroke=SOFT, sw=1.4))
+        parts.append(t(x + 10, y + 22, title, fs=14, bold=True, right=x + gw))
+        for j, row in enumerate(body):
+            parts.append(t(x + 10, y + 44 + j * 17, row, fs=11.3, fill="#222", right=x + gw))
+    for i in range(len(GO_GRAMMARS) - 1):
+        x, ym = X0 + (i + 1) * gw + i * ggap, y + gh / 2
+        parts.append(line(x + 2, ym, x + ggap - 7, ym, stroke=SOFT, sw=1.5))
+        parts.append(path(f"M{x + ggap - 8},{ym - 5} L{x + ggap - 1},{ym} "
+                          f"L{x + ggap - 8},{ym + 5} z", fill=SOFT, stroke=SOFT, sw=1))
+    y += gh + 14
+    parts.append(t(X0, y, GO_GRAMMAR_NOTE, fs=11, fill=FAINT, italic=True))
+
+    # C. the signature matrix
+    y += 28
+    parts.append(t(X0, y, "C.  Operator signatures — roles × faces × subsystem access",
+                   fs=16, bold=True))
+    y += 12
+    ids = [s[0] for s in GO_SUBSYSTEMS]
+    cols = [("operator", 250), ("faces", 62), ("roles", 238)] + [(i, 44) for i in ids] \
+        + [("note", 690)]
+    total, top, rowh = sum(w for _, w in cols), y, 24
+    parts.append(rect(X0, y, total, 26, "#eee", stroke=SOFT, sw=1, rx=0))
+    cx = X0
+    for name, w in cols:
+        parts.append(t(cx + 6, y + 17, name, fs=11, bold=True, right=cx + w))
+        cx += w
+    y += 26
+    for group, rows in GO_OPERATORS:
+        parts.append(rect(X0, y, total, rowh, "#f7f7f7", stroke=SOFT, sw=0.8, rx=0))
+        parts.append(t(X0 + 6, y + 16, group, fs=11.5, fill=SOFT, bold=True, italic=True))
+        y += rowh
+        for name, faces, roles, access, note in rows:
+            parts.append(rect(X0, y, total, rowh, "#fff", stroke="#999", sw=0.6, rx=0))
+            cells = [name, faces, roles] + [access.get(i, "") for i in ids] + [note]
+            cx = X0
+            for (col, w), value in zip(cols, cells):
+                if value:
+                    numeric = col in ids
+                    parts.append(t(cx + 6, y + 16, value, fs=11.5 if numeric else 10.8,
+                                   bold=numeric, right=cx + w))
+                cx += w
+            y += rowh
+    cx = X0
+    for _, w in cols:
+        parts.append(line(cx, top, cx, y, stroke="#bbb", sw=0.6))
+        cx += w
+
+    y += 20
+    for q in GO_QUESTIONS:
+        parts.append(t(X0, y, q, fs=11, fill=FAINT))
+        y += 16
+    H = y + 24
+    parts[0] = rect(0, 0, W, H, "#fff", rx=0)
+    return svg(W, H, "\n".join(parts))
+
+
+# ── Write files ────────────────────────────────────────────────────────────────
+
+DIAGRAMS = {
+    "ternary_logic.svg":     make_ternary,
+    "luminosity.svg":        make_luminosity,
+    "vector_spaces.svg":     make_vector_spaces,
+    "mm5m_architecture.svg": make_mm5m,
+    "grammar_operators.svg": make_grammar_operators,
+}
+
+
+def main(argv):
+    names = argv[1:] or list(DIAGRAMS)
+    unknown = [n for n in names if n not in DIAGRAMS]
+    if unknown:
+        sys.exit(f"unknown diagram(s): {', '.join(unknown)}; known: {', '.join(DIAGRAMS)}")
+    for fname in names:
+        fp = os.path.join(DIR, fname)
+        content = DIAGRAMS[fname]()      # generate first: a width error must not truncate
+        with open(fp, "w") as f:
+            f.write(content)
+        print(f"✓  {fp}")
+
+
+if __name__ == "__main__":
+    main(sys.argv)

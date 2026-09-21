@@ -149,6 +149,14 @@ The architecture realizes this distinction structurally:
   filter; relative truths are the conceptual overlay's own products
   and are evaluated within it.
 
+**Expectation belongs to the overlay and cannot reach the first moment**
+(2026-09-20). The expected next idea is held as a sign-reversed *negative
+image* and added to the sealed idea, so what is conceived is what was not
+predicted. Perceptual space carries no negation, so the first moment is met
+in full whatever is expected; attention, which excludes without predicting,
+is the faculty that can reach it. See
+[Expectation as a Negative Image; Attention as Exclusion](#expectation-as-a-negative-image-attention-as-exclusion-2026-09-20).
+
 At the corpus callosum, objects are analysed and synthesized — by
 sending them back to PerceptualSpace (the shared base of the two
 perceptual views): wholes get split and parts get chunked. In symbolic
@@ -332,6 +340,13 @@ produces **epistemic openness** rather than contradiction. Valid cognitions
 deepen stable conceptual attractors; false cognitions weaken them, producing
 a truth-weighted energy landscape similar to a Hopfield memory.
 
+The two negations are also two faculties (2026-09-20). `not` needs a signed
+carrier and is how **expectation** enters: the predicted idea, sign-reversed,
+is added to what was composed. `non` needs no sign and is how **attention**
+works: the non-object is removed and nothing is put in its place, so
+attention needs no prediction. See
+[Expectation as a Negative Image; Attention as Exclusion](#expectation-as-a-negative-image-attention-as-exclusion-2026-09-20).
+
 ## Truth Lattice
 
 | State | Interpretation | Examples |
@@ -386,6 +401,313 @@ rather than truth: illumination weighted by trust-sign measures how *welcome* th
 determined content is, not merely how *settled* it is. The epistemic and
 contemplative luminosities coincide in magnitude and differ only in the
 sign-weighting.
+
+## Expectation as a Negative Image; Attention as Exclusion (2026-09-20)
+
+Four statements of Alec's (2026-09-20) fix how expectation and attention
+enter the mind. The mechanism is specified in the
+[accessible-mind spec §2.6](specs/2026-09-20-accessible-mind-subsystems.md#26-expectation);
+this section records what it means and what it answers to.
+
+> Prediction is the negation (the affirming negation, or sign-reversal) over
+> the conceptual activation, which is left in conceptual space and added to
+> the incoming conceptual activation. For a perfect prediction we then
+> conceive of nothing.
+
+> The object appears to the mind as the negation of the non-object. So we
+> apply expectation to everything but the object of observation, which allows
+> it to (for example) be recognized more quickly.
+
+> I'm not sure negation can be applied to zero-order concepts, which are just
+> perceptual assemblages, since perceptual space does not carry negation.
+
+> Opposite of non-pot is a non-affirming negation. So I guess attention does
+> not need full prediction in order to focus (which makes sense).
+
+### The rule
+
+With `o` the idea composed from a sentence, `ê` the idea that was expected,
+`κ` how strongly each role was expected to be filled, `g` a gain and `m` the
+attention on each role, what is **conceived** is
+
+```text
+c = o − g · (1 − m) ⊙ κ ⊙ ê
+```
+
+A sentence that was perfectly predicted conceives nothing. One that departs
+from its prediction conceives the departure. A role that was expected and did
+not come conceives `−ê`: an absence. And `o = c + g(1 − m)κê` exactly while
+the estimate is kept, so nothing of the input is lost: the sentence is met
+from the expected point instead of from zero. It is a change of origin, not a
+distortion.
+
+This is the opposite sign to the natural first idea, that expecting something
+should *raise* it in the mind. Raising the expected makes comprehension lean
+toward its own prediction: the input is no longer accepted as it is, and a
+predictor trained on what was understood is then trained on its own echo.
+Subtracting leaves the understanding alone. "If we do not predict, we process
+exactly what is there" (Alec); under this rule that is equally true when we
+do predict, and the difference expectation makes is confined to what is
+*new*.
+
+### Perception carries no negation
+
+The third statement is settled by the percept geometry
+([Spaces](Spaces.md#percept-geometry-positive-unit-hypercube)): a percept is a
+presence in `[0, 1]`, "one-sided; its opposite is the complement `1-x`, not
+the signed negation `-x`". The cube has a complement but no additive inverse,
+and cancelling by addition needs one. Zeroth-order concepts are assemblages
+of percepts; sign enters conceptual activation only at the first rung above
+them. So the negative image cannot be formed at order 0 at all. It is an
+*idea* — and the negation of a zeroth-order point is not another such point
+but a region, everything the exclusion leaves, which makes it higher-order —
+and it is added where signed serial form exists: to the sealed idea.
+
+Read against [the Gelug account above](#direct-perception-and-the-conceptual-overlay-gelug),
+this is exact. The **first moment** — the parallel prelude, percepts crossing
+nameless — is out of expectation's reach by construction: sensation is never
+subtracted from. Expectation belongs wholly to the **conceptual overlay**.
+The purity of accepting the input is the purity of the first moment, and it
+is guaranteed by the geometry, not by restraint.
+
+It also forces the two negations of
+[the operators table](#negation-and-logical-operators) apart into two
+faculties, by the carrier each needs:
+
+| | unsigned carrier | signed carrier |
+| --- | --- | --- |
+| Where | presence `[0,1]`; the priority surface; the reading scope | conceptual activation `[-1,1]` above order 0; ideas |
+| Negation | `non` (*prasajya-pratisedha*): withdrawal, "not taken up" | `not` (*paryudasa*): sign reversal, "the opposite is affirmed" |
+| Faculty | **attention**, as selection | **expectation**, as the negative image |
+| Failing to register | the unattended is not conceived: no trace, no absence (inattentional blindness) | the expected is cancelled: nothing new is conceived, and the estimate stands for it (habituation) |
+| Omission | nothing: one does not miss what one was not looking for | the uncancelled image: the absence is conceived |
+
+One can habituate only to what one can conceptualise: content that reaches no
+idea has no negative image and is met in full every time.
+
+### Eliminative and collective engagement
+
+Gelug epistemology divides awarenesses by how they engage their objects. A
+direct perceiver is a **collective engager** (*sgrub 'jug*): it engages its
+object by the power of the thing, and everything that is of one substance
+with the object appears to it together. A conceptual consciousness is an
+**eliminative engager** (*sel 'jug*): it gets at its object by eliminating
+what is not that object, and so never takes in all of the object's features.
+
+The architecture has both, in the same places. Order-0 presence is engaged
+collectively: all of it, nothing subtracted. Conception is eliminative twice
+over: a code is already a projection, the nearest row with every other row
+eliminated; and what is conceived of a sentence is what the negative image
+leaves.
+
+### Apoha: attention excludes, and needs no prediction
+
+*Apoha* (*gzhan sel*, exclusion of the other) is Dignaga's and Dharmakirti's
+account of how a concept can apply to many particulars without a real
+universal: "cow" is whatever is not non-cow. The second and fourth statements
+above apply it to attention, and the kind of negation decides what attention
+needs. The exclusion by which an object appears — opposite from non-pot — is
+**non-affirming**: it removes the non-object and puts nothing in its place.
+It therefore needs no estimate of what the non-object *is*, only which thing
+is the object.
+
+- **Attention focuses without prediction.** One can attend in a wholly novel
+  scene. In the architecture attention is the unsigned machinery that was
+  already there — the reading scope over the percepts, and the intent channel
+  of the priority surface at the competitive readout — and neither reads the
+  predictor. What they exclude is *not taken up*: not conceived, no trace, no
+  absence.
+- **Where there is also a prediction, it is applied to everything but the
+  object.** The context is cancelled to the extent that it was expected, and
+  the object of observation is conceived in full, expected or not. This is
+  the one place the two faculties meet, and with no prediction it costs
+  attention nothing.
+- **Facilitation is reduced competition.** Serial thinking takes one thing at
+  a time. With the non-object excluded, and cancelled where it was expected,
+  the object is the only content with magnitude and wins without a contest.
+  Expectation silences; attention is what makes the expected thing *easier*
+  to see. They are different faculties, and the experimental literature that
+  treats them as one reports a paradox (below). How soft the exclusion is
+  decides whether an unexpected, unattended thing captures the mind or goes
+  unseen.
+- **Exclusion and selection are one act at a competitive readout.** A readout
+  that depends only on relative score is unchanged by a shift common to all
+  candidates, so lowering every non-object by `δ` selects exactly what
+  raising the object by `δ` selects. A concept can therefore work by
+  exclusion alone, with no positive universal standing behind it — the
+  nominalist point of *apoha*, as arithmetic.
+- **A question is an expectation with a hole in it.** Its bound roles are the
+  context and its open role is the object of observation. Laid over a
+  remembered frame, the bound roles cancel and what remains conceived is the
+  answer. *Answering is subtracting the question.*
+
+### Absence is inferred, never perceived
+
+Dharmakirti counts **non-observation** (*anupalabdhi*) among the three kinds
+of valid reason, and restricts it: only the non-observation of what is
+*suitable to appear* (*drsyanupalabdhi*) establishes an absence; the
+non-observation of what would not have appeared anyway establishes nothing
+beyond the lack of a warrant to affirm.
+
+The negative image gives the same account. Nothing in the input says that the
+dog did not bark. The sentence is silent, and the silence is informative only
+against the expectation of a bark: the uncancelled image `−ê` *is* the
+absence, conceived. So:
+
+- an absence is never composed from the input, only **concluded** in thought,
+  as an inference;
+- it is licensed only where the thing **would have been observed**: the role
+  was strongly expected (`κ`) and within the scope of what was read;
+- a conceptual activation of zero is **unknown, not absent** (presence `½`).
+  "Confirmed" and "never in play" both conceive nothing, and only the
+  retained estimate tells them apart.
+
+Negative facts therefore exist only against expectations, which is also the
+psycholinguistic finding: a denial is natural only where the affirmative was
+plausible (Wason 1965).
+
+### Beginner's mind
+
+At `g = 0` nothing is subtracted. Every sentence is conceived in full, as if
+for the first time, and no absence can be conceived, because there is nothing
+for the world to fall short of. That is a formal reading of **beginner's
+mind** (*shoshin*). The world-model goes on learning — estimating continues;
+only its application to what is conceived is suspended — and every document
+begins this way, since there is no prior context to expect from.
+
+Two cautions keep the reading honest. Beginner's mind in this sense is **not
+non-conceptual**: a code is still a projection, so conception remains an
+eliminative engager; what is suspended is the *prior*, not the concept. And
+it is **not free**: with nothing cancelled nothing stands out, so load rises,
+and the absences, which are real information, are given up. It is a setting
+to be able to reach, not a default to prefer.
+
+The contemplative literature's two families of attention regulation (Lutz et
+al. 2008) fall on the rule's two parameters: **focused attention** holds one
+object of observation and excludes the rest (`m` on one object); **open
+monitoring** holds no object and lets what arises arise (`m = 0`, with the
+gain lowered).
+
+### Desire, lack and feeling-tone
+
+A desire is a standing prediction. Held as a negative image it makes the
+*absence* of the desired thing perceptible: what is wanted and not there is
+conceived as `−ê`, a **lack**. Valence becomes reference-dependent:
+disappointment is an uncancelled image, relief a cancelled threat, and the
+same outcome is gain or loss according to what was expected.
+
+This separates lack from
+[feeling-tone](#feelings-vedana-and-the-neither-position). *Vedana* arises
+from contact and is pre-conceptual: it lives where there is no negation, so
+there is pleasant, unpleasant and neutral sensation but **no lack in
+sensation**. Lack needs the signed carrier. It is a conceived absence, a
+product of the overlay — "preference and afflictive projection" in the Gelug
+list above — and at `g = 0` it cannot be formed. On this reading craving
+conditions suffering through a specific mechanism: the standing prediction is
+what makes the world fall short.
+
+The same sign creates a degenerate optimum, the "dark room": a mind rewarded
+for conceiving little would seek what it can predict, or stop looking. The
+rule in the spec is that residual credit may train how an estimate is
+*formed* and never what is *observed or conceived* — not the gain, not the
+object of observation, not reading attention.
+
+### Correspondences, and where they strain
+
+The full table, with sources, is in the
+[spec's §7](specs/2026-09-20-accessible-mind-subsystems.md#7-correspondence-with-the-psychological-literature).
+In brief:
+
+- **The negative image is a known circuit.** Cerebellum-like structures in
+  weakly electric fish learn, by anti-Hebbian plasticity, a negative image of
+  the sensory consequences of the animal's own discharge; it is added to the
+  input and cancels it, leaving what the world added (Bell 1981; Bell, Han &
+  Sawtell 2008). It is the reafference principle (von Holst & Mittelstaedt
+  1950), and it gives the estimate its two signs: positive in production,
+  where the predicted idea is what is said, and negative in comprehension,
+  where it is what need not be conceived. Generation is the dual of
+  comprehension in sign as well as in direction.
+- **Habituation, and its release.** Sokolov's (1963) neuronal model: a
+  repeated stimulus builds a model, the response fades, and any mismatch —
+  including an omission — brings it back.
+- **Omission responses.** The omission of an expected sound evokes activity
+  with the expected sound's signature (SanMiguel et al. 2013); dopamine
+  neurons dip at the moment of an omitted reward (Schultz, Dayan & Montague
+  1997).
+- **Attention reverses silencing.** Prediction silences unattended signals
+  and attention reverses the effect (Kok, Rahnev et al. 2012); expectation and
+  attention are distinct and routinely confounded (Summerfield & Egner 2009).
+  The rule reproduces that 2 × 2, the better identification of an object in
+  its expected scene (Palmer 1975), and inattentional blindness (Simons &
+  Chabris 1999).
+- **Pointer plus tag.** A scripted event is remembered as a pointer to the
+  script plus tags for what was atypical; typical actions are falsely
+  recognised and atypical ones kept (Graesser, Gordon & Sawyer 1979). The
+  store's linked estimate and observation rows are that layout, and a
+  perfectly predicted sentence is the first thing forgotten.
+
+Where it strains: expectation also *sharpens* the representation of what was
+expected (Kok, Jehee & de Lange 2012), and this design has no sharpening;
+cortical gain control is mostly divisive, not subtractive (Carandini & Heeger
+2012); and the classic report that Zen practitioners do not habituate
+(Kasamatsu & Hirai 1966) did not replicate (Becker & Shapiro 1981), though
+habituation of startle is reduced with intensive practice (Antonova, Chadwick
+& Kumari 2015).
+
+> Scholarship hedge (recorded deliberately): this section states the
+> project's working usage. The division of awarenesses into eliminative and
+> collective engagers follows the Gelug presentation (Lati Rinbochay & Napper
+> 1980; Klein 1986; Dreyfus 1997). Gelug textbooks divide exclusions three
+> ways — objective, mental, and non-affirming-negative exclusions — and the
+> secondary sources consulted (Berzin, below) class the *mental* exclusions,
+> the categories through which conception works, as affirming negations. The
+> project takes the exclusion by which attention isolates its object,
+> opposite from non-pot, as non-affirming (Alec); which textbook category
+> that answers to should be checked against Klein and Dreyfus before it is
+> presented as exegesis. The readings of *anupalabdhi* (Kellner 2003), of
+> beginner's mind and of craving are the project's own mappings onto the
+> mechanism.
+
+**References.** Antonova, Chadwick & Kumari (2015), *More meditation, less
+habituation? The effect of mindfulness practice on the acoustic startle
+reflex*, PLoS ONE 10(5). Becker & Shapiro (1981), *Physiological responses to
+clicks during Zen, Yoga, and TM meditation*, Psychophysiology 18. Bell (1981),
+*An efference copy which is modified by reafferent input*, Science 214. Bell,
+Han & Sawtell (2008), *Cerebellum-like structures and their implications for
+cerebellar function*, Annual Review of Neuroscience 31. Berzin, *Negation
+phenomena: implicative and non-implicative* and *Special features of the
+Gelug tradition*, Study Buddhism (studybuddhism.com). Carandini & Heeger
+(2012), *Normalization as a canonical neural computation*, Nature Reviews
+Neuroscience 13. Dreyfus (1997), *Recognizing Reality: Dharmakirti's
+Philosophy and Its Tibetan Interpretations*, SUNY. Graesser, Gordon & Sawyer
+(1979), *Recognition memory for typical and atypical actions in scripted
+activities: tests of a script pointer + tag hypothesis*, Journal of Verbal
+Learning and Verbal Behavior 18. Kasamatsu & Hirai (1966), *An
+electroencephalographic study on the Zen meditation (Zazen)*, Folia
+Psychiatrica et Neurologica Japonica 20. Kellner (2003), *Integrating
+negative knowledge into pramana theory: the development of the
+drsyanupalabdhi in Dharmakirti's earlier works*, Journal of Indian Philosophy
+31. Klein (1986), *Knowledge and Liberation*, Snow Lion. Kok, Jehee & de
+Lange (2012), *Less is more: expectation sharpens representations in the
+primary visual cortex*, Neuron 75. Kok, Rahnev, Jehee, Lau & de Lange (2012),
+*Attention reverses the effect of prediction in silencing sensory signals*,
+Cerebral Cortex 22. Lati Rinbochay & Napper (1980), *Mind in Tibetan
+Buddhism*, Snow Lion. Lutz, Slagter, Dunne & Davidson (2008), *Attention
+regulation and monitoring in meditation*, Trends in Cognitive Sciences 12(4).
+Palmer (1975), *The effects of contextual scenes on the identification of
+objects*, Memory & Cognition 3. SanMiguel, Widmann, Bendixen, Trujillo-Barreto
+& Schröger (2013), *Hearing silences: human auditory processing relies on
+preactivation of sound-specific brain activity patterns*, Journal of
+Neuroscience 33. Schultz, Dayan & Montague (1997), *A neural substrate of
+prediction and reward*, Science 275. Siderits, Tillemans & Chakrabarti (eds.)
+(2011), *Apoha: Buddhist Nominalism and Human Cognition*, Columbia. Simons &
+Chabris (1999), *Gorillas in our midst: sustained inattentional blindness for
+dynamic events*, Perception 28. Sokolov (1963), *Perception and the
+Conditioned Reflex*, Pergamon. Summerfield & Egner (2009), *Expectation (and
+attention) in visual cognition*, Trends in Cognitive Sciences 13(9). von Holst
+& Mittelstaedt (1950), *Das Reafferenzprinzip*, Naturwissenschaften 37. Wason
+(1965), *The contexts of plausible denial*, Journal of Verbal Learning and
+Verbal Behavior 4.
 
 ## The Four Foundations of Mindfulness
 
@@ -549,7 +871,11 @@ covers memory, the two truths, expectation, testimony and feeling.
   prediction during comprehension runs the production system in reverse
   (Pickering & Garrod 2013). The concept-to-concept expectation of the next
   sentence, scored by discrepancy, and generation as the dual of
-  comprehension, are both of a piece with this.
+  comprehension, are both of a piece with this. Since 2026-09-20 the
+  estimate enters comprehension with *negative* sign, after composition,
+  so that what is conceived is the discrepancy itself and the input is
+  never bent toward the prediction
+  ([above](#expectation-as-a-negative-image-attention-as-exclusion-2026-09-20)); in production the same estimate is what is said.
 
 - **Reasoning by simulation and by rule are both real.** Relative truths
   are evaluated "relationally or by simulation": simulation is the
@@ -654,6 +980,14 @@ are not discrepancies on inspection.
    reconstruction teaches nothing. The trace-dropping schedule is in
    FutureWork.md; Architecture.md's note that brains approximate rather
    than invert then applies to the model too.
+
+10. **Silencing without sharpening (open).** In people expectation both
+    reduces the response to what was predicted and sharpens its
+    representation (Kok, Jehee & de Lange 2012), and cortical gain control
+    is largely divisive rather than subtractive (Carandini & Heeger 2012).
+    The model has the subtractive silencing and leaves facilitation to
+    attention; it has no sharpening. References and the rest of the
+    comparison are [above](#expectation-as-a-negative-image-attention-as-exclusion-2026-09-20).
 
 **References.** Baddeley & Hitch (1974), *Working memory*, in Bower (ed.),
 The Psychology of Learning and Motivation 8. Braine & O'Brien (1998),

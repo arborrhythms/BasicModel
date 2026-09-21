@@ -487,6 +487,19 @@ ADMITTED rows write back through `prime_seen`: awareness primes. Gated
 `<architecture><relevance>` (default false, byte-identical);
 `<primingDecay>` sets the seen decay.
 
+**Attention and expectation are different faculties (2026-09-20).** This
+surface is unsigned (floor 0), so what it expresses is the non-affirming
+negation: the non-object is withdrawn and nothing is put in its place. That
+is why attention needs no prediction in order to focus — neither write
+channel reads the sentence predictor. Expectation is the other negation: the
+predicted idea, sign-reversed, is added to the *sealed idea* (order 1 and
+above, where a signed carrier exists), never to activations and never to
+this surface, so what is conceived is what was not predicted and composition
+stays pure. The one interaction is that the image is applied to everything
+but the object of observation. Specified in the
+[accessible-mind spec §2.6](specs/2026-09-20-accessible-mind-subsystems.md#26-expectation); letting the estimate
+also lower row priority here is [FutureWork §9](FutureWork.md#9-exclusion-at-the-readout).
+
 **The bases interact (cross-basis priming).** The psychological literature
 is unambiguous that symbolic activation primes the subsymbolic layers:
 automatic spreading activation vs. strategic expectancy in semantic priming
@@ -1452,6 +1465,12 @@ continuity unless the caller explicitly calls `Reset`.
    positions.
 5. Commits the produced sentence's SS root to the ARMA ring via
    `discourse.observe(s_tensor)`.
+
+> Scheduled for deletion (2026-09-20): the additive `_c_prior` staging has
+> the assimilative sign. Under the
+> [accessible-mind spec §2.6.3](specs/2026-09-20-accessible-mind-subsystems.md#263-purity) no estimate enters
+> composition; the estimate is subtracted from the sealed idea instead, and
+> a production prior belongs to the `<generate>` seed (todo NEXT item 2).
 
 The IR head plays no role at inference --- the prediction lives at the
 masked subsymbolic (PS) positions, decoded against the (frozen) perceptual

@@ -6,7 +6,8 @@
 > Builds on the [two-truths spec](2026-09-16-two-truths-ideas-and-relations.md)
 > (every S writes a row; rows are referenced by index) and on the
 > [operation profile](../FutureWork.md#1-operation-profile-optimal-versus-human).
-> Everything marked **(decided)** is Alec's decision.
+> Everything marked **(decided)** is Alec's decision. §4a (detail before rows)
+> added 2026-09-20 from his ruling that day.
 
 ## 1. The problem
 
@@ -119,6 +120,51 @@ Weights `w_t, w_u, w_l, w_a` are `model.xml` elements (§6). Terms are in
    and the count deleted by cascade. A checkpoint records the number of
    passes and the last pass's cut-off, nothing about deleted rows.
 
+## 4a. Detail before rows (Alec, 2026-09-20)
+
+**Decided.** Dropping detail under forgetting pressure is the precursor to
+deleting rows, and it is gradual: a memory loses detail over successive
+passes before it is lost entirely. This promotes the lossy reconstruction
+trace of [FutureWork.md §3](../FutureWork.md#3-lossy-reconstruction-trace-inversion-as-learning)
+("derivations decay; fused points persist") from a separate future item to
+the first stage of this pass, on the same schedule. *The order and the
+coarsening rule below are proposed detail for review; the ruling is the
+paragraph above.*
+
+What is detail, in the order it goes (wording before clauses before gist:
+Sachs 1967; Reyna & Brainerd 1995):
+
+1. **Wording.** The row's source text, then its derivation trace — leaf
+   activations and leaf identities, then the operations. Before the trace
+   goes, the row is re-indexed by the codes its **fused point alone
+   regenerates** (generativity,
+   [accessible-mind spec §2.0](2026-09-20-accessible-mind-subsystems.md)):
+   a memory stays cueable by its gist and stops being cueable by details it
+   can no longer produce. This frees sidecar memory, not store rows, and it
+   is what gives the reconstruction objective something to learn.
+2. **Subordinate rows.** A row that survives only as an operand of another
+   row — a clause under `NP → S` or `NP → REF(S)`, a link in a chained
+   episode — goes before the row that refers to it. This frees store rows
+   and counts toward the target.
+3. **The row itself**, by value (§4 steps 3–4).
+
+**Coarsening, not cascade, where the gist survives.** When a subordinate
+*idea* row is dropped, the row referring to it is kept: its slot already
+holds that operand's fused point, so its `refs` entry becomes `-1` and it
+reads thereafter as a relation over a point with no inner structure. Step 5's
+cascade still applies where there is no point to keep — an operand that was
+itself a relation, since fusion is fair only where operands have points
+([two truths](2026-09-16-two-truths-ideas-and-relations.md)).
+
+**Gradual.** A pass takes each row at most one stage further, lowest value
+first, and stops as soon as the target occupancy is met. A row's main idea,
+its trust and its `surprise` are unchanged by stages 1 and 2.
+
+**Profiles.** Pressure-driven detail-dropping applies under both profiles,
+because the capacity wall does. Age-driven decay with no pressure remains
+`human` only (§3's `A(i)`); under `optimal` a derivation is kept losslessly
+until a pass needs the room.
+
 ## 5. What is not forgotten and what is not done
 
 - Concept rows in the shared index are not the store's rows and are not
@@ -127,9 +173,11 @@ Weights `w_t, w_u, w_l, w_a` are `model.xml` elements (§6). Terms are in
   the concept row's release is the codebook's own business and out of
   scope here.
 - Derivation decay (dropping parts of a surviving row's reconstruction
-  trace) is FutureWork.md §3, not this spec; the two share the human
-  profile's age curve when both exist.
-- No merging of near-duplicate rows into a coarser row. Deletion only.
+  trace) is now the first stage of this pass (§4a). What FutureWork.md §3
+  still owns is the learning side: how the reconstruction loss is weighted
+  between a full trace and none.
+- No merging of near-duplicate rows into a coarser row. A row is coarsened
+  only by losing its own detail (§4a), never by being merged with another.
 - No forgetting inside a request in stateless serving; the pass runs in
   training and in stateful serving only.
 
@@ -187,6 +235,19 @@ Schema entries with these defaults; Params.md rows; the comment in
 9. **Checkpoint.** The pass count and last cut-off round-trip; a
    checkpoint saved between passes reloads with the same occupancy.
 10. **Determinism.** Two runs with the same seed delete the same rows.
+11. **Detail before rows.** Under pressure a pass drops wording from the
+    lowest-value rows, then subordinate rows, and deletes a standalone row
+    only when that has not reached low water; after its trace is dropped a
+    row is retrieved by a code its point regenerates and not by a leaf code
+    it no longer regenerates.
+12. **Coarsening, not cascade.** Dropping a subordinate idea row leaves the
+    referring row with that operand's point and `refs = -1`, its trust and
+    `surprise` unchanged; the referring row is deleted by cascade only when
+    the dropped operand had no point.
+13. **Gradual.** Successive passes take the same row one stage further
+    before it is deleted; no pass takes a row more than one stage.
+14. **Profiles.** With no pressure, `optimal` drops no detail at any age;
+    `human` drops it on the age curve.
 
 ## 8. Documentation required with implementation
 
@@ -195,4 +256,5 @@ Schema entries with these defaults; Params.md rows; the comment in
 - Philosophy.md discrepancy 3 marked as specified here; the luminosity
   term's relation to the catuṣkoṭi coverage.
 - Params.md: the elements in §6.
-- FutureWork.md §2: replaced by a pointer to this spec.
+- FutureWork.md §2: replaced by a pointer to this spec; §3's schedule is
+  §4a here.

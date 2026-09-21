@@ -18,6 +18,26 @@ One model grammar has three peer sections, in model-file order:
 <generate>...</generate>
 ```
 
+These are the three grammars of understanding, thought and speech
+production (Alec, 2026-09-20): composition interprets the input sentence,
+thought operates between interpretation and production in conceptual space,
+and generation realises the output sentence. One unified model, three faces.
+Operators are shared across the three: the parthood identity is composed
+from language, executed in thought as the checked `part` / `whole` face, and
+generated back into language. Operators have **no predefined surface**: a
+word such as English "has" reaching `partOf` is learned (the word's
+association to the operator), never declared, because a declared surface
+would make every language share that one word. One identity, one role
+contract; the surfaces are per language and learned.
+
+A subsymbolic operator (a learned language model) may be declared like any
+other grammar operator, but never as a fallback interpreter or a separate
+realiser outside the grammar. Structural operators that can be understood
+are used whenever they are available; the subsymbolic operator is selected
+only where no structural operator carries the meaning. The purpose is to
+limit, and keep visible, the amount of indecipherable subsymbolic computation
+in the architecture (Alec, 2026-09-20).
+
 They use one vocabulary of canonical operator identities, but they do not
 have one availability list. An operator can have a structural compose face, a
 structural generate face, or a checked thought face. Where the same named operator is

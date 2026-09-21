@@ -26,7 +26,7 @@ only the generation catalogue (item 3) remains uninstalled.
 
 ### Done (newest first)
 
-- This completion commit: item 1c, checked subsystem effects, indexed cued retrieval and retained frames; compound recovery remains unproven ([AccessibleMind](doc/AccessibleMind.md), [receipt](doc/Testing.md#accessible-mind-effects-september-20)).
+- `101dc22` Item 1c complete in mechanism: checked subsystem effects, indexed cued retrieval and retained frames; compound recovery remains unproven ([AccessibleMind](doc/AccessibleMind.md), [receipt](doc/Testing.md#accessible-mind-effects-september-20)).
 - `7c2fa5a` Item 1b complete: objective-local state gradients and measured shared operator/codebook credit ([GradientFlow](doc/GradientFlow.md), [receipt](doc/Testing.md#gradient-factorization-september-20)).
 - `6a6bb21` Item 1 complete: grammar-owned wording on real parsed text, held-out complete wordings/nouns, converse/sense controls and full-vocabulary generation/recomposition ([evidence and receipt](doc/Testing.md#working-grammar-wording-gate-september-20)).
 - `d1d8b5b` Ordered compose-MLP inputs and production generate wiring (item 1 increment; the wording gate remains open, [SelectedMeaning](doc/SelectedMeaning.md), [Testing](doc/Testing.md#grammar-owned-wording-architecture-september-20)).
@@ -67,15 +67,63 @@ only the generation catalogue (item 3) remains uninstalled.
 
 ### Open
 
-2. **Expectation and residual learning.** Extend retained estimates to checked
-   bindings/scope metadata without copying the arriving target; prior-view
-   isolation from arriving/unseen input and other rows; residual query credit
-   with its separate baseline and parameter-version-safe trajectories.
-   Mechanism probes alone do not satisfy the learning gates.
+1d. **Review corrections for 1b and 1c** (Claude review, 2026-09-20; fold into
+   item 2's first change).
+   (a) *Scope of the state cut.* It holds on the prepared-answer path
+   (`answerSynthesis` true: 14 of 71 configs, production included); the direct
+   head still trains the whole state. Say so in
+   [GradientFlow](doc/GradientFlow.md), and reject or warn on a config that has
+   a reconstruction objective and supervised outputs without `answerSynthesis`.
+   (b) *The concept dictionary's update law.* `7c2fa5a` moved it from the
+   unit-sphere rotation updater (outside autograd) to the optimizer in 11
+   configs. **Decided (Alec, 2026-09-21): concept atoms stay on the unit
+   sphere and are updated by rotation**, so that an inner product with an
+   incoming vector preserves that vector's magnitude. Adam does not keep them
+   there; the rotation updater stays the dictionary's one owner. **Open, under
+   discussion — do not start:** which signals drive the rotation (the
+   distribution of words alone, or also the objectives' gradients projected
+   onto the tangent plane).
+   (c) *Dissonance is not yet measured anywhere real.* The only config with
+   `branchDiagnosticsEvery` on has no output objective. Turn it on in one
+   config that has one; a diagnostic failure warns and never aborts training;
+   the opposition streak is checkpointed and an unused-operator sample does
+   not reset it.
+   (d) Remove the deleted projection from [Training](doc/Training.md),
+   [STM](doc/STM.md) and the plan's later sections.
+   (e) Add `lxml` to `requirements.txt`: every schema case skips today (the 11
+   changed configs do validate under `xmllint`).
+   (f) `QuerySignature` still carries free-form scope strings beside the
+   checked subsystem scopes: one vocabulary.
+   (g) Hot path: `apply_thought_effect` rebuilds a reverse map over every
+   codebook row per effect, and `leaf_codes` is re-concatenated per append.
+   Cache the map, grow the column geometrically, and report sentences/s with
+   thought on.
+2. **Expectation as a negative image** (Alec 2026-09-20; design:
+   [spec §2.6](doc/specs/2026-09-20-accessible-mind-subsystems.md#26-expectation);
+   meaning: [Philosophy](doc/Philosophy.md#expectation-as-a-negative-image-attention-as-exclusion-2026-09-20)).
+   Composition stays pure: no estimate enters compose, and the
+   comprehension-time additive prior (`_c_prior`, `sentencePrimingScale`) is
+   deleted. At the seal the sign-reversed estimate is added to the composed
+   idea per role, `c = o − g·(1 − m)·κ·ê` — `κ` the predicted presence, `m`
+   the open roles of the active question (the object of observation is
+   spared), `g` a `model.xml` gain whose zero is beginner's mind. The
+   surprise `r = o − ê` is what is learned, target detached, identical at
+   every gain; its magnitude is the row's `surprise`. An expected role left
+   empty is a conceived absence: evidence for the chooser, concluded as
+   `not X` only in thought, never written by compose. The retained
+   estimate/observation pair is the pointer and tag; no third record.
+   Residual credit never trains the gain, the object of observation or
+   reading attention. Then, as before: retained estimates extended to
+   checked bindings/scope metadata without copying the arriving target;
+   prior-view isolation from arriving/unseen input and other rows; residual
+   query credit with its separate baseline and parameter-version-safe
+   trajectories. Mechanism probes alone do not satisfy the learning gates.
+   Exit: spec tests 3, 19 and 23–32, plus the plan's §10 expectation gates.
 3. **Generation ownership and end-to-end output.** Rebase the preserved
    generation-catalogue candidate (it no longer applies to primary); validate
-   checkpoint/optimizer migration and normal supervised output; keep the §8.4
-   downstream/reconstruction gradient contract and GradientFlow.md current.
+   checkpoint/optimizer migration and normal supervised output under item
+   1b's contract (output error stops at the concluded idea; shared operators
+   train); keep GradientFlow.md current.
 4. **Evidence/design goals and documentation.** Prefer understandable structural
    operators when
    they carry the meaning; any opaque operator must be an ordinary grammar-MLP
@@ -119,7 +167,10 @@ the pre-FineWeb list below.
    pass from the high-water to the low-water mark deleting the lowest-value
    unprotected rows; value = `|trust|` (Alec, September 18) + utility
    (1 − deducibility) + luminosity contribution; cascade, reference remap,
-   dependents rebuilt, the human profile's age term. Exit: the ten §7 tests,
+   dependents rebuilt, the human profile's age term; and **detail before
+   rows** (§4a, Alec 2026-09-20): wording, then subordinate rows, then the
+   row, gradually, coarsening the referring row instead of cascading where
+   the operand's point survives. Exit: the fourteen §7 tests,
    the §6 elements in schema/`model.xml`/Params.md, the §8 docs.
 3. **Expectation review** (plan [§11](doc/plans/2026-09-15-next-sentence-as-the-production-objective.md#11-code-review-2026-09-16-local-role-expectation-implementation)):
    discourse `Reset` honours `hard`; rename to "expectation", on in
@@ -135,6 +186,9 @@ the pre-FineWeb list below.
 5. **Run harness and resume test:** one logger per interval (reconstruction
    loss; expectation discrepancy; LTM occupancy, forgetting passes, rows
    deleted per origin, value cut-off; luminosity of provisioned truths;
+   the per-shared-operator gradient cosine of NEXT item 1b — reconstruction
+   vs expectation, and vs output where answers are supplied — with the
+   operators showing persistent negative cosine named in the report;
    held-out two-truths §7 test-12 probe plus a fixed reconstruction sample)
    and a resume test proving a mid-epoch checkpoint restores cursor, stream
    count, `refs`/surprise columns and forgetting counters with the next batch
@@ -166,10 +220,20 @@ the pre-FineWeb list below.
 Small, real, and not on the critical path. Fold each into the nearest Codex
 change; delete the line with the commit.
 
-- **Stored-idea generativity:** improve and measure recovery of stored ideas and
-  distinct-code chains across depth and further training. Item 1c reports zero
-  compound recovery in its small baseline, not a learned success
-  ([measurements](doc/AccessibleMind.md#measured-limits)).
+- **Stored-idea generativity — not small: forgetting §4a's dropping of
+  derivations depends on it.** Item 1c's probe reports zero compound recovery
+  ([measurements](doc/AccessibleMind.md#measured-limits)). It trains for 8
+  small updates, so it mostly measures a split/stop policy that has not learned
+  to split (it does within ~100). The deeper limit is the operator: with the
+  correct split actions *forced*, the tied inverse of `lower` returns children
+  about 65% from their codes at depth 1, they project to the wrong code, and
+  400 updates of the probe's training do not move that. Report the two
+  separately (forced actions = the operator's inverse; free-running = the
+  policy, trained to convergence), and evaluate clean-up decoding for lift /
+  lower: bounded candidate search through the forward kernel
+  (`_bounded_binary_reconstruction`) in place of the reference-free affine
+  inverse. Until a recovery rate is measured, forgetting must not drop
+  derivations.
 - **Bounded test batches:** default 256-case/16-file and 32-case/4-file
   workers exceeded the 8 GiB cap; eight-case/one-file batches pass the same
   default selection. Restore safe, faster batching without raising caps or

@@ -1254,6 +1254,13 @@ preceding LTM context, then use the actual input as its observation and training
 target. "Future" describes its relationship to that prior context; the caller
 does not need to supply a second, future input to train the first prediction.
 
+**How the estimate enters comprehension (Alec, 2026-09-20).** As a *negative
+image*: the predicted idea, sign-reversed, is added to the sealed idea after
+composition, so what is conceived is what was not predicted, and nothing of
+the estimate ever enters composition. This sharpens steps 2 and 4 below and
+is specified in the
+[accessible-mind spec §2.6](../specs/2026-09-20-accessible-mind-subsystems.md#26-expectation).
+
 This builds the predictor through corpus continuation at encoded-sentence
 granularity: each eligible observation supplies supervision for the estimate
 made from its preceding context. The analogy to LLM corpus learning concerns
