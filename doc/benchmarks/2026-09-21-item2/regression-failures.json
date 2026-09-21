@@ -1,0 +1,25 @@
+{
+  "run": "20260921-053243-5154bb",
+  "source_sha256": "19caf660da968268b5e419013ad2acf301af9128ac3d70a36a48eff218c15617",
+  "reason": "test_failure",
+  "selected": 4665,
+  "completed": 4665,
+  "failures": [
+    {
+      "nodeid": "test/test_thought_review.py::test_policy_selects_nested_what_part_and_receives_actual_episode_credit[2]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 1.0889674160280265,
+      "message": "test/test_thought_review.py:167: in test_policy_selects_nested_what_part_and_receives_actual_episode_credit\n    assert all(chooser.choose(ctx, [a is None for a in menu])[0] == target\nE   assert False\nE    +  where False = all(<generator object test_policy_selects_nested_what_part_and_receives_actual_episode_credit.<locals>.<genexpr> at 0x129ef56c0>)",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[1]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.009081290976610035,
+      "message": "test/test_unified_thought_controller.py:200: in test_nested_cutoff_drains_the_actual_depth_without_fresh_work\n    result = model.run_selected_thought(question, work_budget=budget)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:7071: in run_selected_thought\n    raise RuntimeError(\"selected controller could not reserve finish work\")\nE   RuntimeError: selected controller could not reserve finish work",
+      "stdout": ""
+    }
+  ]
+}

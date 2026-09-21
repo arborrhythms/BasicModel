@@ -53,7 +53,6 @@ def _stage_peer_profile_batch(model, texts):
     model.conceptualSpace.stm.begin_forward(
         int(slab.shape[0]), device=slab.device, dtype=slab.dtype)
     model._stage_fixed_residual_part_capacity()
-    model._stage_intersentence_seed()
     return raw
 
 

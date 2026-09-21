@@ -510,7 +510,6 @@
       <xs:element name="retrievalDelta" type="xs:decimal" minOccurs="0"/>
       <xs:element name="retrievalUseOuterProduct" type="xs:boolean" minOccurs="0"/>
       <xs:element name="sigmaPi" type="sigmaPiEnum" minOccurs="0"/>
-      <xs:element name="prediction" type="predictionEnum" minOccurs="0"/>
       <!-- Trial-split: fraction of training batches run as pure next-idea
            prediction trials (reconstruction terms zeroed). 0.0 -> off ->
            byte-identical. -->
@@ -741,13 +740,6 @@
     </xs:all>
     <xs:attribute name="enabled" type="xs:boolean" use="optional"/>
   </xs:complexType>
-
-  <xs:simpleType name="predictionEnum">
-    <xs:restriction base="xs:string">
-      <xs:enumeration value="none"/>
-      <xs:enumeration value="interSentence"/>
-    </xs:restriction>
-  </xs:simpleType>
 
   <xs:simpleType name="trainEnum">
     <xs:restriction base="xs:string">
@@ -1008,7 +1000,9 @@
         </xs:simpleType>
       </xs:element>
       <xs:element name="armaScale" type="nonNegativeFloat" minOccurs="0"/>
-      <xs:element name="sentencePrimingScale" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="expectationGain" type="unitInterval" minOccurs="0"/>
+      <xs:element name="expectationPolicyWeight" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="expectationQueryBudget" type="xs:nonNegativeInteger" minOccurs="0"/>
       <!-- In-STM autoregressive prediction (IntraSentenceLayer). Loss
            weight on the per-word L_intra = MSE(predicted idea, observed
            idea), added to the IR-loss path. The PI-then-Sigma predictor

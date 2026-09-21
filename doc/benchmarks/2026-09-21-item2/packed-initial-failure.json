@@ -1,0 +1,56 @@
+{
+  "command": [
+    "bin/bench_sentence_expectation.py",
+    "fineweb",
+    "--config",
+    "doc/benchmarks/2026-09-21-item2/packed.xml",
+    "--docs",
+    "64",
+    "--batch-size",
+    "2",
+    "--train-steps",
+    "7",
+    "--eval-steps",
+    "8",
+    "--updates",
+    "300",
+    "--threads",
+    "1",
+    "--out",
+    "doc/benchmarks/2026-09-21-item2/packed.json"
+  ],
+  "config_sha256": "213c867a330533fdfbcd3fc4fe235528533171ab873d7171ba7e6c42bd102ca1",
+  "runtime_sha256": {
+    "Models.py": "001ce50d56ab9ceb1824d6ee52b73bf6e2c6efb51e734488b9b47e2fd5a4b279",
+    "Language.py": "c338dbadb3a3a9f2306042158eb555e1aa132a23b2764baf0cf8903ab046e1fb",
+    "Layers.py": "964c806b644ac7ef099f854f1ec636dad5268a86bc02fe0a04d1eae331c4898d",
+    "Understanding.py": "8144ce64b6a28299db59b8b1efd9bcdcb520bf9dac8152de75e6c78d8d2087aa",
+    "Spaces.py": "f019fb6c66ad3fe94dafc5b311a1beb1f23757f2a278a48b9bfebcdea2703096",
+    "data.py": "63440e3d142673821d4f7e5a9fe2814a51111c7bf830313d5dccd404bc72e696",
+    "Optimizer.py": "6ad0e7d679f540a0602146e443fe5587cf40872ac77f21ff6bc9da0c743700db",
+    "mps_memory.py": "91f1b995c1294c80611939dfc00f3bdb5a0cd6b898554020851c93529ef8e400",
+    "bench_sentence_expectation.py": "458806d2d43eea4a8955fe683dd5555cd2cef29991b0f319c96cc4b9566ee777"
+  },
+  "source_manifest": {
+    "dataset": "text",
+    "corpus": "karpathy/fineweb-edu-100b-shuffle",
+    "source": "https://huggingface.co/datasets/karpathy/fineweb-edu-100b-shuffle/resolve/main",
+    "shards": [
+      {
+        "name": "shard_00000.parquet",
+        "bytes": 94511680,
+        "sha256": "6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22"
+      }
+    ],
+    "max_docs": 64,
+    "max_tokens": null,
+    "max_sentence_words": 8,
+    "random_shards": false,
+    "split": "document_mod10_8_1_1"
+  },
+  "error": {
+    "type": "ValueError",
+    "message": "thought occurrence is unavailable within this row and read limit"
+  },
+  "traceback_log": "/tmp/item2-packed.log"
+}

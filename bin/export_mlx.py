@@ -118,8 +118,6 @@ def stage_for_core(model, x):
     model._staged_in_sub = in_sub
     # Pure tensor core: park an empty inter-sentence seed so the in-trace read
     # is a pure attr read (no predictor call inside the core).
-    model._staged_intersentence_seed = None
-    model._intersentence_seed_staged = True
     return in_sub.materialize() if in_sub is not None else None
 
 

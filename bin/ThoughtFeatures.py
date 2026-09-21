@@ -15,7 +15,7 @@ METADATA_WIDTH = 4 + 2 * (9 * METADATA_BYTES + 1)
 
 
 def context_width(width):
-    return 9 * width + 15 + 3 * METADATA_WIDTH + 2 * (3 * width + 10)
+    return 9 * width + 15 + 3 * METADATA_WIDTH + 2 * (3 * width + 10) + 3 * width + 7
 
 
 def semantic_metadata(meanings):

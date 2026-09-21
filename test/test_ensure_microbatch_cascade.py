@@ -2,7 +2,7 @@
 
 Body-side state (subspace, stacks, last_svo) sizes to B*K so each
 microbatch window has its own row inside the body's flattened view.
-_stm_fired stays at B because STM firing is a per-source-row gate
+_sentence_completed stays at B because STM firing is a per-source-row gate
 shared across all K windows. Discourse buffers also stay at B because
 discourse history accumulates across sentences within one source stream
 (BasicModel.forward collapses K to mirror legacy last-cursor semantics
@@ -53,9 +53,9 @@ def test_inputspace_forward_triggers_ensure_microbatch():
     # peer attribute on SymbolSubSpace.
     assert model.symbolSpace.category_stack._batch == model.symbolSpace.batch
     assert model.symbolSpace.reconstruction_stack._batch == model.symbolSpace.batch
-    # _stm_fired stays at B
-    assert model.symbolSpace._stm_fired.shape == (B,), (
-        f"_stm_fired must stay at B={B}, got {model.symbolSpace._stm_fired.shape}")
+    # _sentence_completed stays at B
+    assert len(model.symbolSpace._sentence_completed) == B, (
+        f"_sentence_completed must stay at B={B}, got {len(model.symbolSpace._sentence_completed)}")
 
 
 def test_ensure_microbatch_cascades_to_discourse():
@@ -79,7 +79,7 @@ def test_ensure_microbatch_cascades_to_discourse():
 
 
 def test_ensure_microbatch_method_explicit_BK():
-    """SymbolSpace.ensure_microbatch(B, K) sizes body to B*K, _stm_fired to B,
+    """SymbolSpace.ensure_microbatch(B, K) sizes body to B*K, _sentence_completed to B,
     discourse to B."""
     from data import TheData
     from Models import BaseModel
@@ -93,21 +93,21 @@ def test_ensure_microbatch_method_explicit_BK():
 
     model.symbolSpace.ensure_microbatch(B=2, K=5)
     assert model.symbolSpace.batch == 10
-    assert model.symbolSpace._stm_fired.shape == (2,)
+    assert len(model.symbolSpace._sentence_completed) == 2
     assert model.symbolSpace._last_svo.shape[0] == 10
     if model.symbolSpace.discourse is not None:
         assert model.symbolSpace.discourse._batch == 2, (
             f"discourse must stay at B=2, got {model.symbolSpace.discourse._batch}")
 
 
-def test_stm_fired_survives_K_change():
-    """``_stm_fired`` is B-indexed sentence-lifecycle state.  When the
+def test_sentence_completed_survives_K_change():
+    """``_sentence_completed`` is B-indexed sentence-lifecycle state.  When the
     AR microbatch K changes between batches (PartSpace.forward
     re-quantises K to a power-of-two from the current batch's
     ``actual_max`` BPE word count), the cumulative B*K body batch
     changes -- but the per-source-row fire flag must NOT reset.
     Regression for the bug where ``ensure_batch(BK)`` reallocated
-    ``_stm_fired`` to BK-zeros, then ``ensure_microbatch`` reshaped it
+    ``_sentence_completed`` to BK-zeros, then ``ensure_microbatch`` reshaped it
     back to B-zeros, wiping the firing history mid-sentence.
     """
     from data import TheData
@@ -124,34 +124,34 @@ def test_stm_fired_survives_K_change():
 
     # Initial sizing at (B=3, K=4)  ->  BK=12.
     ss.ensure_microbatch(B=B, K=4)
-    assert ss._stm_fired.shape == (B,)
+    assert len(ss._sentence_completed) == B
 
     # Simulate a source row firing its STM residual.
-    ss.mark_stm_fired(0)
-    ss.mark_stm_fired(2)
-    assert bool(ss._stm_fired[0].item()) is True
-    assert bool(ss._stm_fired[1].item()) is False
-    assert bool(ss._stm_fired[2].item()) is True
+    ss._sentence_completed[0] = True
+    ss._sentence_completed[2] = True
+    assert bool(ss._sentence_completed[0]) is True
+    assert bool(ss._sentence_completed[1]) is False
+    assert bool(ss._sentence_completed[2]) is True
 
     # K changes (e.g. next batch's actual_max crosses a pow2 boundary).
     # BK goes 12 -> 24; body-side state reallocates.
     ss.ensure_microbatch(B=B, K=8)
-    assert ss._stm_fired.shape == (B,)
-    assert bool(ss._stm_fired[0].item()) is True, (
-        "_stm_fired[0] was wiped by the K-change; sentence-lifecycle "
+    assert len(ss._sentence_completed) == B
+    assert bool(ss._sentence_completed[0]) is True, (
+        "_sentence_completed[0] was wiped by the K-change; sentence-lifecycle "
         "state must survive body-batch reshape")
-    assert bool(ss._stm_fired[1].item()) is False
-    assert bool(ss._stm_fired[2].item()) is True, (
-        "_stm_fired[2] was wiped by the K-change")
+    assert bool(ss._sentence_completed[1]) is False
+    assert bool(ss._sentence_completed[2]) is True, (
+        "_sentence_completed[2] was wiped by the K-change")
 
     # K changes back to 4 (shrink): same invariant.
     ss.ensure_microbatch(B=B, K=4)
-    assert bool(ss._stm_fired[0].item()) is True
-    assert bool(ss._stm_fired[2].item()) is True
+    assert bool(ss._sentence_completed[0]) is True
+    assert bool(ss._sentence_completed[2]) is True
 
     # B changes (real sentence-stream boundary): fresh zeros is correct.
     ss.ensure_microbatch(B=B + 1, K=4)
-    assert ss._stm_fired.shape == (B + 1,)
-    assert not ss._stm_fired.any().item(), (
-        "When B changes, _stm_fired should reset -- the rows refer to "
+    assert len(ss._sentence_completed) == B + 1
+    assert not any(ss._sentence_completed), (
+        "When B changes, _sentence_completed should reset -- the rows refer to "
         "different source streams now")

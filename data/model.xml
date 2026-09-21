@@ -263,10 +263,11 @@
       <!-- Complete occupied local roles; root selects the old benchmark. -->
       <sentenceExpectationScope>structured</sentenceExpectationScope>
       <armaScale>0.0</armaScale>
-      <!-- Priming: ARMA prediction cast into concept_dim and added as
-           a bias to concept_input before the sigma-pi loop.  Scaled
-           by confidence * sentencePrimingScale.  Default small. -->
-      <sentencePrimingScale>0.05</sentencePrimingScale>
+      <!-- Per-role negative image at the seal; zero is beginner's mind. -->
+      <expectationGain>1</expectationGain>
+      <!-- Residual credit for prior-only queries through the ordinary chooser. -->
+      <expectationPolicyWeight>0</expectationPolicyWeight>
+      <expectationQueryBudget>64</expectationQueryBudget>
 
       <!-- In-STM autoregressive prediction (IntraSentenceLayer, STM
            serial/parallel modes plan).  Loss weight on the per-word
@@ -276,7 +277,7 @@
            loss. -->
       <intraLossWeight>0.1</intraLossWeight>
 
-      <!-- Inter-sentence prediction: occupied-role MSE plus presence
+      <!-- Inter-sentence prediction: all-role MSE plus presence
            loss in structured scope, root MSE in the historical baseline.
            The predictor reads a bounded row/document observation view;
            targets and durable history are detached, current-step source

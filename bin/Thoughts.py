@@ -72,6 +72,7 @@ class ThoughtRecord:
             raise ValueError("thought semantic delta must be finite and non-negative")
         if self.evidence_kind not in (
             "unverified",
+            "inference",
             "fact",
             "question",
             "observation",

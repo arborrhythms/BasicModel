@@ -181,9 +181,11 @@ Training loop and I/O.
 | `sentenceExpectation` | bool | `true` | Enables automatic structured expectation and observed residuals. Explicit `false` bypasses the cycle while understanding and the single What memory remain available. Replaces `sentencePrediction`. |
 | `sentenceExpectationScope` | string | `structured` | Predict distinct NP1/VP/NP2 vectors and occupancy from the bounded chronological observation context. `root` selects the historical single-vector benchmark. |
 | `armaScale` | float | `0.0` | Loss weight for the ARMA sentence-prediction MSE. |
-| `sentencePrimingScale` | float | `0.05` | AR prediction cast into `concept_dim` and added as a bias to `concept_input` before the sigma-pi loop. Scaled by `confidence * sentencePrimingScale`. **Scheduled for deletion** with the additive `_c_prior` prior (todo NEXT item 2; [spec §2.6.3](specs/2026-09-20-accessible-mind-subsystems.md#263-purity)). |
+| `expectationGain` | float in `[0,1]` | `1` | Seal-only per-role negative image gain. Zero conceives the raw observation while leaving prediction loss and gradients unchanged. |
+| `expectationPolicyWeight` | nonnegative float | `0` | Residual policy credit on the ordinary chooser before an incoming batch; requires `arma` in `<thought>` and `ltmConsolidation=true`. Independent EMA baseline, detached trajectory replay. See [ExpectationRetention](ExpectationRetention.md). |
+| `expectationQueryBudget` | nonnegative integer | `64` | Shared work allowance for each optional anticipatory episode. Later packed slots use prediction without an optional query episode. |
 | `intraLossWeight` | float | `0.1` | Loss weight on the in-STM next-idea term $\mathcal{L}_\text{intra} = \mathrm{MSE}(\hat{c}_t, c_t)$ from `IntraSentenceLayer` (owned by ConceptualSpace), added to the IR-loss path. `0` disables. See [STM.md Section 6](STM.md#6-intrasentencelayer). |
-| `interLossWeight` | float | `0.1` | Weight on occupied-role MSE plus mean role-presence binary cross entropy (`structured`), or root MSE (`root`). Uses a bounded row/document observation view: current-step source context can train its encoder, targets/durable history are detached. Consumed alongside Teacher reconstruction; `0` disables. See [STM.md Section 11](STM.md#11-inter-sentence-prediction). |
+| `interLossWeight` | float | `0.1` | Weight on all-role MSE (empty roles target zero) plus mean role-presence binary cross entropy (`structured`), or root MSE (`root`). Uses a bounded row/document observation view: current-step source context can train its encoder, targets/durable history are detached. Consumed alongside Teacher reconstruction; `0` disables. See [STM.md Section 11](STM.md#11-inter-sentence-prediction). |
 
 Gradient-balance defaults and validation are implemented in
 [Models.py](../bin/Models.py), with the numerical contract in
@@ -470,7 +472,6 @@ symbol (line anchors drift).
 | `conceptIndexRead` | `Models.py` (BaseModel init) | `false` | Serial per-word idea reads through the index to the concept's `similarity_codebook` row instead of the computed percept-binding event. |
 | `ideaDecode` | `Models.py` (BaseModel init) | `false` | Chart-free reverse: generate the surface from the idea alone (no `generate_rules` rebuild). |
 | `verbSpectrum` | `Language.py` (`LiftLayer` init) | `false` | Verb eig-spectrum operator on the composed VP (VP parameterization). |
-| `prediction` | `Models.py` (BaseModel init) | `"none"` | `predictionEnum`: `none` \| `interSentence`; stored as the exact enum string for dispatch. |
 | `predictionTrialRatio` | `Models.py` (ModelLoss wiring) | `0.0` | Fraction of training batches run as pure next-idea prediction (recon terms zeroed). |
 | `overlapWhereTiling` | `Models.py` (BaseModel init) | `false` | Experimental overlapping PS/WS `.where` lattice; requires `<mereologyRaise>true</mereologyRaise>` (loud `ValueError` otherwise). |
 | `continuityNorm` | `Mereology.py` (contemplative mixin) | `'inf'` | Norm for the continuity measure (`'l2'` available). |

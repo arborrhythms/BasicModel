@@ -193,10 +193,10 @@ def test_provisioned_ltm_does_not_make_a_cold_prediction_a_seed():
     disc = layer(consolidated=True)
     disc._ltm_store.append_idea(torch.ones(4), trust=1.)
     host = SimpleNamespace(symbolSpace=SimpleNamespace(discourse=disc))
-    assert BasicModel._intersentence_seed(host) is None
+    assert disc.expect_next_meaning() is None
 
 
-def test_new_document_is_reset_before_forward_priming():
+def test_new_document_is_reset_before_forward():
     from Models import BasicModel
 
     disc = layer()
@@ -257,7 +257,7 @@ def test_real_provisioning_is_not_an_external_prediction_stream(monkeypatch):
     assert not bound
     assert len(model.symbolSpace.ltm_store) == 3
     assert not any(discourse._inter_context)
-    assert model._intersentence_seed() is None
+    assert model.symbolSpace.discourse.expect_next_meaning() is None
 
 
 def test_truth_ingestion_preserves_all_external_row_contexts_and_losses():

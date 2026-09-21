@@ -80,7 +80,7 @@ def test_per_row_state_clears_between_batches():
     """After a batch, per-row state must be cleared for the next batch.
 
     Reset clears: parse stack `_top`, SVO valid flags `_svo_valid`,
-    STM-fired `_stm_fired`, and the serial cache. After running a
+    STM-fired `_sentence_completed`, and the serial cache. After running a
     full epoch (multiple batches), at the end of the epoch all
     per-row state should be at its post-Reset baseline.
     """
@@ -96,8 +96,8 @@ def test_per_row_state_clears_between_batches():
     # all per-row state should be cleared.
     assert ss._svo_valid is None or not ss._svo_valid.any().item(), (
         "_svo_valid not cleared after batch-boundary Reset")
-    assert ss._stm_fired is None or not ss._stm_fired.any().item(), (
-        "_stm_fired not cleared after batch-boundary Reset")
+    assert ss._sentence_completed is None or not any(ss._sentence_completed), (
+        "_sentence_completed not cleared after batch-boundary Reset")
     # serial_cache cleared by Subspace.Reset.
     assert len(model.inputSpace.subspace.serial_cache) == 0, (
         "serial_cache not cleared after batch-boundary Reset")

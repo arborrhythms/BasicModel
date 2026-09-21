@@ -240,13 +240,9 @@ class TestBackCompatShims(_DiscourseTestBase):
             predicted=torch.randn(3))
         self.assertIsNone(out)
 
-    def test_prime_lifts_prediction_to_concept_dim(self):
-        """``prime`` is used by the chat-loop's ``_c_prior`` injection."""
-        self.layer.observe(torch.randn(1, 4, 3))
-        s_hat = self.layer.predict_next()
-        primed = self.layer.prime(s_hat, confidence=None, scale=0.5)
-        self.assertIsNotNone(primed)
-        self.assertEqual(primed.shape[-1], 6)
+    def test_comprehension_priming_projection_is_removed(self):
+        self.assertFalse(hasattr(self.layer, "prime"))
+        self.assertFalse(hasattr(self.layer, "cast"))
 
 
 class TestModelIntegration(_DiscourseTestBase):

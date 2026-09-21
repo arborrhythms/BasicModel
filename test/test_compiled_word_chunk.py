@@ -319,7 +319,7 @@ def _tiny_canonical_model(
         tmp_path, monkeypatch, *, input_width=128, batch_size=2,
         word_buckets="16,32,64,128,256", forward_grammar_weight=0.0,
         detached_reverse=False, concept_rows=64, dimension=16,
-        chooser_depth=None):
+        chooser_depth=None, training_overrides=None, architecture_overrides=None):
     """Build the real aligned serial model with 16-coordinate events."""
     tree = ET.parse(_ROOT / "data" / "BasicModel.xml")
     root = tree.getroot()
@@ -376,6 +376,13 @@ def _tiny_canonical_model(
         max(int(value) for value in str(word_buckets).split(",")))
     _set("./architecture/serialWordBuckets", word_buckets)
     _set("./architecture/weightsPath", tmp_path / "unused.ckpt")
+    for path, values in (("./architecture/training", training_overrides),
+                         ("./architecture", architecture_overrides)):
+        for tag, value in (values or {}).items():
+            node = root.find(f"{path}/{tag}")
+            if node is None:
+                node = ET.SubElement(root.find(path), tag)
+            node.text = str(value).lower() if isinstance(value, bool) else str(value)
     config = tmp_path / "tiny_chunk_model.xml"
     tree.write(config, encoding="unicode")
 
@@ -409,7 +416,6 @@ def _stage_fullgraph_tensor_peer(model, samples):
     model.conceptualSpace.stm.begin_forward(
         int(slab.shape[0]), device=slab.device, dtype=slab.dtype)
     model._stage_fixed_residual_part_capacity()
-    model._stage_intersentence_seed()
     return raw
 
 

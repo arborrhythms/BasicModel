@@ -1,12 +1,7 @@
-"""ShortTermMemory on ConceptualSpace -- acceptance tests.
+"""Conceptual working-stack allocation, push/pop and reset acceptance tests.
 
-The STM is a per-batch stack of unquantized C-space_role "ideas". The
-serial / shift-reduce parser (deferred work) will push and pop
-here as it reduces concepts into ideas. The current batched-CKY
-chart doesn't consume the STM yet -- this is the structural slot.
-
-Distinct from ``SymbolSpace._stm_fired`` (a once-per-sentence
-discourse-priming flag, not a working-memory buffer).
+The stack holds unquantized grammatical ideas. Sentence completion belongs
+separately to SymbolSpace; expectation never writes either compose carrier.
 """
 import os
 import sys

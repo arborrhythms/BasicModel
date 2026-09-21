@@ -282,3 +282,13 @@ learned through training.
 
 [Kernel test migration](KernelRetirement.md) maps every retired test and
 defines the replacement for conflicting, mixed and bounded-unknown statuses.
+
+## Expectation evidence
+
+The ordinary chooser also reads the seal's conceived NP1/VP/NP2 values.
+`expectationGain=0` exposes the raw observation; prediction still trains. A
+negative image of an absent role is evidence only. `not` can execute only if
+declared in the model's `<thought>` catalogue and produces an inference in
+ordinary thought history. Optional anticipatory queries use this same controller
+and an independent residual-credit baseline, without changing the arriving
+observation. See [ExpectationRetention](ExpectationRetention.md).

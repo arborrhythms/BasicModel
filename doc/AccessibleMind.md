@@ -4,7 +4,8 @@ The three grammars share numerical operators and a conceptual dictionary.
 `<thought>` effects use the existing controller, chronological thought history,
 conceptual activation carrier and ternary LTM store. There is no added language
 model, interpreter, policy or semantic store. This is item 1c's implementation;
-expectation's negative-image transformation remains item 2.
+expectation's negative image is derived at the seal;
+[ExpectationRetention](ExpectationRetention.md) gives its gradient and credit contracts.
 
 ## Permissions and effects
 

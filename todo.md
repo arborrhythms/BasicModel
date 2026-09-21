@@ -12,11 +12,13 @@
 
 Work follows
 [2026-09-15-next-sentence-as-the-production-objective.md](doc/plans/2026-09-15-next-sentence-as-the-production-objective.md)
-§10 and its completion gates. **Item 1's bounded supervised wording gate is
-complete; items 1b, 1c and 1d are complete. Next: item 2, after review of 1d.**
+§10 and its completion gates. **Item 1's bounded supervised wording gate and items 1b–1d are complete.
+Item 2's implementation and measurements are ready for review; its joint and
+useful-query learning gates remain open. Item 3 has not started.**
 Natural word → operator associations use the existing compose/generate grammars.
 Structural-preference and routing-share measurements
-remain design goals; learned questioning utility remains unproven under item 4.
+remain design goals under item 4. Expectation-specific questioning utility
+remains unproven under item 2.
 Current contracts,
 limits and receipts are in
 [SelectedMeaning](doc/SelectedMeaning.md),
@@ -69,28 +71,15 @@ only the generation catalogue (item 3) remains uninstalled.
 
 ### Open
 
-2. **Expectation as a negative image** (Alec 2026-09-20; design:
-   [spec §2.6](doc/specs/2026-09-20-accessible-mind-subsystems.md#26-expectation);
-   meaning: [Philosophy](doc/Philosophy.md#expectation-as-a-negative-image-attention-as-exclusion-2026-09-20)).
-   Composition stays pure: no estimate enters compose, and the
-   comprehension-time additive prior (`_c_prior`, `sentencePrimingScale`) is
-   deleted. At the seal the sign-reversed estimate is added to the composed
-   idea per role, `c = o − g·(1 − m)·κ·ê` — `κ` the predicted presence, `m`
-   the open roles of the active question (the object of observation is
-   spared), `g` a `model.xml` gain whose zero is beginner's mind. The
-   surprise `r = o − ê` is what is learned, target detached, identical at
-   every gain; its magnitude is the row's `surprise`. An expected role left
-   empty is a conceived absence: evidence for the chooser, concluded as
-   `not X` only in thought, never written by compose. The retained
-   estimate/observation pair is the pointer and tag; no third record.
-   Residual credit never trains the gain, the object of observation or
-   reading attention. Then, as before: retained estimates extended to
-   checked bindings/scope metadata without copying the arriving target;
-   prior-view isolation from arriving/unseen input and other rows; residual
-   query credit with its separate baseline and parameter-version-safe
-   trajectories. Mechanism probes alone do not satisfy the learning gates.
-   Exit: spec tests 3, 19, 23–30 and 32, plus the plan's §10 expectation
-   gates (test 31 needs the forgetting pass and belongs to that item).
+2. **Expectation learning gates remain open.** Negative-image mechanisms and
+   residual credit are implemented ([ExpectationRetention](doc/ExpectationRetention.md)).
+   The [item-2 measurements](doc/benchmarks/2026-09-21-item2/README.md) show
+   bounded prediction and semantic-remainder gains, but useful anticipation,
+   joint representation benefit with reconstruction/discrimination, and reduced
+   thought work at matched answer error remain unproven (spec test 32 and
+   plan §10). The reasoning comparison is null. Keep this residue under item 2;
+   mechanism probes and policy updates do not close it. Test 31 still belongs
+   to forgetting; situation context still belongs to two-truths §3.5.
 3. **Generation ownership and end-to-end output.** Rebase the preserved
    generation-catalogue candidate (it no longer applies to primary); validate
    checkpoint/optimizer migration and normal supervised output under item

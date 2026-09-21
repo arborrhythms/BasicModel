@@ -106,25 +106,25 @@ def test_dispatch_per_row_reset_empty_or_all_false_is_noop():
 def test_per_row_hard_reset_clears_only_target_row_state():
     """SymbolSpace.Reset(batch=b) clears row b's per-row state, not other rows.
 
-    Sets _stm_fired[0] and _stm_fired[1] to True, fires Reset(batch=0),
-    asserts _stm_fired[0] is False but [1] is still True.
+    Sets _sentence_completed[0] and _sentence_completed[1] to True, fires Reset(batch=0),
+    asserts _sentence_completed[0] is False but [1] is still True.
     """
     model = _model()
     ss = model.symbolSpace
     if ss is None:
         pytest.skip("model has no SymbolSpace")
     # Ensure state is sized to at least 2 rows.
-    if ss._stm_fired.shape[0] < 2:
+    if len(ss._sentence_completed) < 2:
         ss.ensure_microbatch(2, 1)
-    ss._stm_fired[0] = True
-    ss._stm_fired[1] = True
+    ss._sentence_completed[0] = True
+    ss._sentence_completed[1] = True
     ss._svo_valid[0] = True
     ss._svo_valid[1] = True
 
     ss.Reset(batch=0, hard=True)
 
-    assert ss._stm_fired[0].item() is False
-    assert ss._stm_fired[1].item() is True
+    assert ss._sentence_completed[0] is False
+    assert ss._sentence_completed[1] is True
     assert ss._svo_valid[0].item() is False
     assert ss._svo_valid[1].item() is True
 

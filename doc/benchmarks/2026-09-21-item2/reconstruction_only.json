@@ -1,0 +1,5868 @@
+{
+  "workload": "FineWeb-Edu",
+  "dataset": "text",
+  "device": "cpu",
+  "backend": "eager",
+  "torch": "2.14.0",
+  "threads": 1,
+  "allocator_environment": {
+    "PYTORCH_MPS_HIGH_WATERMARK_RATIO": "0.60",
+    "PYTORCH_MPS_LOW_WATERMARK_RATIO": "0.50"
+  },
+  "amp_requested": "off",
+  "autocast_compute_dtype": "torch.float32",
+  "revision": "2de9672a3429654595e405ea4166c12d05ecff94",
+  "command": [
+    "bin/bench_sentence_expectation.py",
+    "fineweb",
+    "--config",
+    "doc/benchmarks/2026-09-21-item2/reconstruction_only.xml",
+    "--docs",
+    "64",
+    "--batch-size",
+    "2",
+    "--train-steps",
+    "7",
+    "--eval-steps",
+    "8",
+    "--updates",
+    "300",
+    "--threads",
+    "1",
+    "--out",
+    "doc/benchmarks/2026-09-21-item2/reconstruction_only.json"
+  ],
+  "config": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-21-item2/reconstruction_only.xml",
+  "config_sha256": "336096ccdabc8d0d7e15723cd7f7f558d750058312d2ac0b074f44385e86ab93",
+  "defaults_sha256": "7861ddae55d74f23c27b51f6ebd4cc458692283de7633ca9a96cd10b49b7121e",
+  "effective_architecture": {
+    "subsymbolicOrder": 4,
+    "routerWireSerial": "both",
+    "transformChooserHidden": 0,
+    "transformChooserDepth": 1,
+    "whatThinkingHidden": 16,
+    "whatThinkingDepth": 1,
+    "selectedThoughtBudget": 32,
+    "reconstructFromIdea": false,
+    "answerSynthesis": true,
+    "synthesisBindings": 4,
+    "whatCurriculum": "full",
+    "whatCurriculumDistance": 1,
+    "whatCurriculumRatio": 0.25,
+    "processSymbols": false,
+    "meronomy": {
+      "_": "on",
+      "dMaxStable": "4.0"
+    },
+    "monotonic": false,
+    "ergodic": false,
+    "naive": false,
+    "embeddingPath": "",
+    "weightsPath": "/tmp/item2-native-unused.ckpt",
+    "maxResponseLength": 4096,
+    "amp": "off",
+    "truthBiasScale": 0.1,
+    "LuminosityWeight": 0.1,
+    "UniversalityWeight": 0.1,
+    "allowExcludedMiddle": 1,
+    "allowContradiction": 0,
+    "gateL1Lambda": 0.0,
+    "loadBalanceWeight": 0.0,
+    "l1Lambda": 0.01,
+    "discontinuityLambda": 0.0,
+    "conceptualWidth": "uniform",
+    "maxActivePerLayer": 8,
+    "categoryCodebook": true,
+    "overlapWhereTiling": false,
+    "codebookRetire": false,
+    "truthCriterion": 1.0,
+    "trust": 1.0,
+    "symbolLearning": {
+      "enabled": false
+    },
+    "data": {
+      "dataType": "embedding",
+      "dataset": "text",
+      "numShards": 1,
+      "maxDocs": 64,
+      "shardDir": "data/fineweb",
+      "minFrequency": 0.0,
+      "classificationMin": "",
+      "classificationMax": "",
+      "contextWhole": "FineWeb-Edu 100B shuffle",
+      "maxSentenceWords": 8
+    },
+    "training": {
+      "numTrials": 1,
+      "numEpochs": 1,
+      "batchSize": 2,
+      "numWorkers": 0,
+      "learningRate": 0.0005,
+      "teacherReconstruction": true,
+      "grammarLessonWeight": 1.0,
+      "reconstructionScale": 1.0,
+      "whatScale": 0.7,
+      "whereScale": 0.2,
+      "whenScale": 0.1,
+      "negSamples": 64,
+      "TruthLoss": 0.0,
+      "maskRate": 0.15,
+      "trainEmbedding": "NONE",
+      "embeddingScale": 0.25,
+      "autoload": false,
+      "autosave": false,
+      "checkpointEveryBatches": 0,
+      "profile": false,
+      "certainty": false,
+      "sentenceExpectation": true,
+      "sentenceExpectationScope": "structured",
+      "armaScale": 0.0,
+      "expectationGain": 1,
+      "expectationPolicyWeight": 0,
+      "expectationQueryBudget": 64,
+      "intraLossWeight": 0.0,
+      "interLossWeight": 0.0,
+      "interContrastiveWeight": 0.0,
+      "interContrastiveTemp": 0.1,
+      "selectedThoughtPolicyWeight": 0.0,
+      "seed": 42,
+      "packSentences": false,
+      "conceptualContextLearningRate": 0.01,
+      "conceptualContextNegatives": 4,
+      "branchDiagnosticsEvery": 0,
+      "detachedReverse": false,
+      "reconstructInLoop": true,
+      "reconstructionPlacement": "eager",
+      "reconstructionBasisLimit": 16,
+      "outputInLoop": true,
+      "outputPolicyWeight": 1.0,
+      "leafDistillWeight": 0.0,
+      "forwardGrammarWeight": 0.0
+    },
+    "server": {
+      "host": "127.0.0.1",
+      "port": 8001,
+      "timeout": 120
+    },
+    "serial": true,
+    "conceptBinding": "aligned",
+    "symbolicOrder": 4,
+    "syntacticOrder": 0,
+    "mereologyRaise": true,
+    "serialObjectMeta": true,
+    "sentenceProtocol": false,
+    "serialWordCapacity": 16,
+    "serialWordBuckets": 16,
+    "serialResidualPartCapacity": 64,
+    "sigmaPi": "butterfly",
+    "transformChooser": "mlp",
+    "stmReduceTau": 0.75,
+    "learning": false,
+    "ltmConsolidation": true
+  },
+  "runtime_sha256": {
+    "Models.py": "001ce50d56ab9ceb1824d6ee52b73bf6e2c6efb51e734488b9b47e2fd5a4b279",
+    "Language.py": "c338dbadb3a3a9f2306042158eb555e1aa132a23b2764baf0cf8903ab046e1fb",
+    "Layers.py": "964c806b644ac7ef099f854f1ec636dad5268a86bc02fe0a04d1eae331c4898d",
+    "Understanding.py": "8144ce64b6a28299db59b8b1efd9bcdcb520bf9dac8152de75e6c78d8d2087aa",
+    "Spaces.py": "f019fb6c66ad3fe94dafc5b311a1beb1f23757f2a278a48b9bfebcdea2703096",
+    "data.py": "63440e3d142673821d4f7e5a9fe2814a51111c7bf830313d5dccd404bc72e696",
+    "Optimizer.py": "6ad0e7d679f540a0602146e443fe5587cf40872ac77f21ff6bc9da0c743700db",
+    "mps_memory.py": "91f1b995c1294c80611939dfc00f3bdb5a0cd6b898554020851c93529ef8e400",
+    "bench_sentence_expectation.py": "458806d2d43eea4a8955fe683dd5555cd2cef29991b0f319c96cc4b9566ee777"
+  },
+  "source_manifest": {
+    "dataset": "text",
+    "corpus": "karpathy/fineweb-edu-100b-shuffle",
+    "source": "https://huggingface.co/datasets/karpathy/fineweb-edu-100b-shuffle/resolve/main",
+    "shards": [
+      {
+        "name": "shard_00000.parquet",
+        "bytes": 94511680,
+        "sha256": "6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22"
+      }
+    ],
+    "max_docs": 64,
+    "max_tokens": null,
+    "max_sentence_words": 8,
+    "random_shards": false,
+    "split": "document_mod10_8_1_1"
+  },
+  "setup_seconds": 0.28196712501812726,
+  "max_docs": 64,
+  "batch_size": 2,
+  "detached_reverse": false,
+  "reconstruct_in_loop": true,
+  "reconstruction_basis_limit": 16,
+  "reconstruction_placement": "eager",
+  "reconstruction_backend": "none",
+  "overrides": {},
+  "sigma": 0,
+  "answer_synthesis": true,
+  "output_in_loop": true,
+  "fullgraph_word_loop": false,
+  "model_parameter_count": 109073,
+  "inter_weight": 0.0,
+  "arma_weight": 0.0,
+  "reconstruction_weight": 1.0,
+  "answer_weight": 0.0,
+  "document_counts": {
+    "train": 49,
+    "validation": 6,
+    "test": 6
+  },
+  "phases": [
+    {
+      "name": "validation_before",
+      "split": "validation",
+      "steps": [
+        {
+          "input_sentences": 2,
+          "observations": 2,
+          "predicted_targets": 0,
+          "cold_starts": 2,
+          "reconstruction": 1.1968185901641846,
+          "answer": 0.07234489917755127,
+          "supplied_answer_rows": 0,
+          "training": false,
+          "optimizer_steps": 0,
+          "trained_inter": null,
+          "word_counts": [
+            9,
+            11
+          ],
+          "sources": [
+            0,
+            28
+          ],
+          "reconstruction_fidelity": {
+            "owned": true,
+            "event_mse": 0.09026223421096802,
+            "event_score": 0.07438484579324722,
+            "byte_cost": 1.1968185901641846,
+            "idea_mse": 0.017162684351205826,
+            "truncated_rows": 2,
+            "active_basis_rows": [
+              18,
+              22
+            ]
+          },
+          "output_word_counts": [
+            1,
+            1
+          ],
+          "output_truncated_rows": 0,
+          "output_tensor_shape": [
+            2,
+            1,
+            16
+          ],
+          "shared_compose_gradient_norms": {},
+          "forward_backward_optimizer_seconds": 18.607191542047076,
+          "context_detached": true,
+          "seconds": 18.612408042012248,
+          "batch_plus_tail_seconds": 18.61074616701808,
+          "memory": {
+            "process_peak_rss_bytes": 947945472
+          },
+          "compiler_counters": {
+            "frames": {},
+            "stats": {
+              "calls_captured": 158,
+              "unique_graphs": 5
+            },
+            "aot_autograd": {},
+            "graph_break": {},
+            "compiler_timing_seconds": {
+              "_compile.compile_inner": [
+                6.136011,
+                0.427378,
+                7.548263,
+                3.0068,
+                1.011207
+              ],
+              "compile_attempt_0": [
+                6.006731,
+                0.411576,
+                7.504928,
+                2.908238,
+                0.980845
+              ],
+              "bytecode_tracing": [
+                5.60358,
+                0.381381,
+                6.953278,
+                2.324219,
+                0.91537
+              ],
+              "get_fake_value": [
+                1.948734,
+                0.173723,
+                2.891367,
+                1.218883,
+                0.252707
+              ],
+              "create_proxy": [
+                1.376628,
+                0.055287,
+                1.327208,
+                0.314179,
+                0.121895
+              ],
+              "wrap_to_fake_tensor_and_record": [
+                0.046757,
+                0.015892,
+                0.018299,
+                0.029847,
+                0.007279
+              ],
+              "variable_builder_call": [
+                0.199472,
+                0.031884,
+                0.069954,
+                0.076356,
+                0.051811
+              ],
+              "insert_deferred_runtime_asserts": [
+                0.159887,
+                0.01396,
+                0.270995,
+                0.441064,
+                0.026601
+              ],
+              "OutputGraph.call_user_compiler": [
+                0.000949,
+                8.6e-05,
+                0.001309,
+                0.000534,
+                0.000217
+              ],
+              "build_guards": [
+                0.119634,
+                0.014389,
+                0.039144,
+                0.093666,
+                0.027621
+              ],
+              "pgo.dynamic_whitelist": [
+                4e-05,
+                1.3e-05,
+                1.2e-05,
+                3.9e-05
+              ],
+              "gc": [
+                0.000808,
+                0.000321,
+                0.000101,
+                0.000737,
+                0.000779
+              ]
+            }
+          }
+        },
+        {
+          "input_sentences": 2,
+          "observations": 2,
+          "predicted_targets": 2,
+          "cold_starts": 0,
+          "reconstruction": 1.219625473022461,
+          "answer": 0.06561432778835297,
+          "supplied_answer_rows": 0,
+          "training": false,
+          "optimizer_steps": 0,
+          "trained_inter": null,
+          "word_counts": [
+            10,
+            10
+          ],
+          "sources": [
+            1,
+            29
+          ],
+          "reconstruction_fidelity": {
+            "owned": true,
+            "event_mse": 0.08386562019586563,
+            "event_score": 0.06802745908498764,
+            "byte_cost": 1.219625473022461,
+            "idea_mse": 0.012607956305146217,
+            "truncated_rows": 2,
+            "active_basis_rows": [
+              20,
+              20
+            ]
+          },
+          "output_word_counts": [
+            1,
+            1
+          ],
+          "output_truncated_rows": 0,
+          "output_tensor_shape": [
+            2,
+            1,
+            16
+          ],
+          "shared_compose_gradient_norms": {},
+          "forward_backward_optimizer_seconds": 0.2142636250355281,
+          "context_detached": true,
+          "seconds": 0.21831633301917464,
+          "batch_plus_tail_seconds": 0.21774641703814268,
+          "memory": {
+            "process_peak_rss_bytes": 948453376
+          },
+          "compiler_counters": {
+            "frames": {},
+            "stats": {
+              "calls_captured": 158,
+              "unique_graphs": 5
+            },
+            "aot_autograd": {},
+            "graph_break": {},
+            "compiler_timing_seconds": {
+              "_compile.compile_inner": [
+                6.136011,
+                0.427378,
+                7.548263,
+                3.0068,
+                1.011207
+              ],
+              "compile_attempt_0": [
+                6.006731,
+                0.411576,
+                7.504928,
+                2.908238,
+                0.980845
+              ],
+              "bytecode_tracing": [
+                5.60358,
+                0.381381,
+                6.953278,
+                2.324219,
+                0.91537
+              ],
+              "get_fake_value": [
+                1.948734,
+                0.173723,
+                2.891367,
+                1.218883,
+                0.252707
+              ],
+              "create_proxy": [
+                1.376628,
+                0.055287,
+                1.327208,
+                0.314179,
+                0.121895
+              ],
+              "wrap_to_fake_tensor_and_record": [
+                0.046757,
+                0.015892,
+                0.018299,
+                0.029847,
+                0.007279
+              ],
+              "variable_builder_call": [
+                0.199472,
+                0.031884,
+                0.069954,
+                0.076356,
+                0.051811
+              ],
+              "insert_deferred_runtime_asserts": [
+                0.159887,
+                0.01396,
+                0.270995,
+                0.441064,
+                0.026601
+              ],
+              "OutputGraph.call_user_compiler": [
+                0.000949,
+                8.6e-05,
+                0.001309,
+                0.000534,
+                0.000217
+              ],
+              "build_guards": [
+                0.119634,
+                0.014389,
+                0.039144,
+                0.093666,
+                0.027621
+              ],
+              "pgo.dynamic_whitelist": [
+                4e-05,
+                1.3e-05,
+                1.2e-05,
+                3.9e-05
+              ],
+              "gc": [
+                0.000808,
+                0.000321,
+                0.000101,
+                0.000737,
+                0.000779
+              ]
+            }
+          }
+        },
+        {
+          "input_sentences": 2,
+          "observations": 2,
+          "predicted_targets": 2,
+          "cold_starts": 0,
+          "reconstruction": 1.006026268005371,
+          "answer": 0.07234665006399155,
+          "supplied_answer_rows": 0,
+          "training": false,
+          "optimizer_steps": 0,
+          "trained_inter": null,
+          "word_counts": [
+            9,
+            10
+          ],
+          "sources": [
+            2,
+            30
+          ],
+          "reconstruction_fidelity": {
+            "owned": true,
+            "event_mse": 0.08477365970611572,
+            "event_score": 0.06855892390012741,
+            "byte_cost": 1.006026268005371,
+            "idea_mse": 0.01699351891875267,
+            "truncated_rows": 2,
+            "active_basis_rows": [
+              18,
+              20
+            ]
+          },
+          "output_word_counts": [
+            1,
+            1
+          ],
+          "output_truncated_rows": 0,
+          "output_tensor_shape": [
+            2,
+            1,
+            16
+          ],
+          "shared_compose_gradient_norms": {},
+          "forward_backward_optimizer_seconds": 0.1977789580123499,
+          "context_detached": true,
+          "seconds": 0.201992166985292,
+          "batch_plus_tail_seconds": 0.20139629201730713,
+          "memory": {
+            "process_peak_rss_bytes": 948600832
+          },
+          "compiler_counters": {
+            "frames": {},
+            "stats": {
+              "calls_captured": 158,
+              "unique_graphs": 5
+            },
+            "aot_autograd": {},
+            "graph_break": {},
+            "compiler_timing_seconds": {
+              "_compile.compile_inner": [
+                6.136011,
+                0.427378,
+                7.548263,
+                3.0068,
+                1.011207
+              ],
+              "compile_attempt_0": [
+                6.006731,
+                0.411576,
+                7.504928,
+                2.908238,
+                0.980845
+              ],
+              "bytecode_tracing": [
+                5.60358,
+                0.381381,
+                6.953278,
+                2.324219,
+                0.91537
+              ],
+              "get_fake_value": [
+                1.948734,
+                0.173723,
+                2.891367,
+                1.218883,
+                0.252707
+              ],
+              "create_proxy": [
+                1.376628,
+                0.055287,
+                1.327208,
+                0.314179,
+                0.121895
+              ],
+              "wrap_to_fake_tensor_and_record": [
+                0.046757,
+                0.015892,
+                0.018299,
+                0.029847,
+                0.007279
+              ],
+              "variable_builder_call": [
+                0.199472,
+                0.031884,
+                0.069954,
+                0.076356,
+                0.051811
+              ],
+              "insert_deferred_runtime_asserts": [
+                0.159887,
+                0.01396,
+                0.270995,
+                0.441064,
+                0.026601
+              ],
+              "OutputGraph.call_user_compiler": [
+                0.000949,
+                8.6e-05,
+                0.001309,
+                0.000534,
+                0.000217
+              ],
+              "build_guards": [
+                0.119634,
+                0.014389,
+                0.039144,
+                0.093666,
+                0.027621
+              ],
+              "pgo.dynamic_whitelist": [
+                4e-05,
+                1.3e-05,
+                1.2e-05,
+                3.9e-05
+              ],
+              "gc": [
+                0.000808,
+                0.000321,
+                0.000101,
+                0.000737,
+                0.000779
+              ]
+            }
+          }
+        },
+        {
+          "input_sentences": 2,
+          "observations": 2,
+          "predicted_targets": 2,
+          "cold_starts": 0,
+          "reconstruction": 1.1840404272079468,
+          "answer": 0.060044750571250916,
+          "supplied_answer_rows": 0,
+          "training": false,
+          "optimizer_steps": 0,
+          "trained_inter": null,
+          "word_counts": [
+            3,
+            10
+          ],
+          "sources": [
+            3,
+            31
+          ],
+          "reconstruction_fidelity": {
+            "owned": true,
+            "event_mse": 0.06786587089300156,
+            "event_score": 0.056801311671733856,
+            "byte_cost": 1.1840404272079468,
+            "idea_mse": 0.0375487357378006,
+            "truncated_rows": 2,
+            "active_basis_rows": [
+              6,
+              20
+            ]
+          },
+          "output_word_counts": [
+            1,
+            1
+          ],
+          "output_truncated_rows": 0,
+          "output_tensor_shape": [
+            2,
+            1,
+            16
+          ],
+          "shared_compose_gradient_norms": {},
+          "forward_backward_optimizer_seconds": 0.23061445797793567,
+          "context_detached": true,
+          "seconds": 0.23490379098802805,
+          "batch_plus_tail_seconds": 0.23422083299374208,
+          "memory": {
+            "process_peak_rss_bytes": 948666368
+          },
+          "compiler_counters": {
+            "frames": {},
+            "stats": {
+              "calls_captured": 158,
+              "unique_graphs": 5
+            },
+            "aot_autograd": {},
+            "graph_break": {},
+            "compiler_timing_seconds": {
+              "_compile.compile_inner": [
+                6.136011,
+                0.427378,
+                7.548263,
+                3.0068,
+                1.011207
+              ],
+              "compile_attempt_0": [
+                6.006731,
+                0.411576,
+                7.504928,
+                2.908238,
+                0.980845
+              ],
+              "bytecode_tracing": [
+                5.60358,
+                0.381381,
+                6.953278,
+                2.324219,
+                0.91537
+              ],
+              "get_fake_value": [
+                1.948734,
+                0.173723,
+                2.891367,
+                1.218883,
+                0.252707
+              ],
+              "create_proxy": [
+                1.376628,
+                0.055287,
+                1.327208,
+                0.314179,
+                0.121895
+              ],
+              "wrap_to_fake_tensor_and_record": [
+                0.046757,
+                0.015892,
+                0.018299,
+                0.029847,
+                0.007279
+              ],
+              "variable_builder_call": [
+                0.199472,
+                0.031884,
+                0.069954,
+                0.076356,
+                0.051811
+              ],
+              "insert_deferred_runtime_asserts": [
+                0.159887,
+                0.01396,
+                0.270995,
+                0.441064,
+                0.026601
+              ],
+              "OutputGraph.call_user_compiler": [
+                0.000949,
+                8.6e-05,
+                0.001309,
+                0.000534,
+                0.000217
+              ],
+              "build_guards": [
+                0.119634,
+                0.014389,
+                0.039144,
+                0.093666,
+                0.027621
+              ],
+              "pgo.dynamic_whitelist": [
+                4e-05,
+                1.3e-05,
+                1.2e-05,
+                3.9e-05
+              ],
+              "gc": [
+                0.000808,
+                0.000321,
+                0.000101,
+                0.000737,
+                0.000779
+              ]
+            }
+          }
+        },
+        {
+          "input_sentences": 2,
+          "observations": 2,
+          "predicted_targets": 2,
+          "cold_starts": 0,
+          "reconstruction": 2.026103973388672,
+          "answer": 0.03785974159836769,
+          "supplied_answer_rows": 0,
+          "training": false,
+          "optimizer_steps": 0,
+          "trained_inter": null,
+          "word_counts": [
+            3,
+            7
+          ],
+          "sources": [
+            4,
+            32
+          ],
+          "reconstruction_fidelity": {
+            "owned": true,
+            "event_mse": 0.041917651891708374,
+            "event_score": 0.033979594707489014,
+            "byte_cost": 2.026103973388672,
+            "idea_mse": 0.04845777153968811,
+            "truncated_rows": 2,
+            "active_basis_rows": [
+              6,
+              14
+            ]
+          },
+          "output_word_counts": [
+            1,
+            1
+          ],
+          "output_truncated_rows": 0,
+          "output_tensor_shape": [
+            2,
+            1,
+            16
+          ],
+          "shared_compose_gradient_norms": {},
+          "forward_backward_optimizer_seconds": 0.18150441598845646,
+          "context_detached": true,
+          "seconds": 0.1857840419979766,
+          "batch_plus_tail_seconds": 0.18502933299168944,
+          "memory": {
+            "process_peak_rss_bytes": 948731904
+          },
+          "compiler_counters": {
+            "frames": {},
+            "stats": {
+              "calls_captured": 158,
+              "unique_graphs": 5
+            },
+            "aot_autograd": {},
+            "graph_break": {},
+            "compiler_timing_seconds": {
+              "_compile.compile_inner": [
+                6.136011,
+                0.427378,
+                7.548263,
+                3.0068,
+                1.011207
+              ],
+              "compile_attempt_0": [
+                6.006731,
+                0.411576,
+                7.504928,
+                2.908238,
+                0.980845
+              ],
+              "bytecode_tracing": [
+                5.60358,
+                0.381381,
+                6.953278,
+                2.324219,
+                0.91537
+              ],
+              "get_fake_value": [
+                1.948734,
+                0.173723,
+                2.891367,
+                1.218883,
+                0.252707
+              ],
+              "create_proxy": [
+                1.376628,
+                0.055287,
+                1.327208,
+                0.314179,
+                0.121895
+              ],
+              "wrap_to_fake_tensor_and_record": [
+                0.046757,
+                0.015892,
+                0.018299,
+                0.029847,
+                0.007279
+              ],
+              "variable_builder_call": [
+                0.199472,
+                0.031884,
+                0.069954,
+                0.076356,
+                0.051811
+              ],
+              "insert_deferred_runtime_asserts": [
+                0.159887,
+                0.01396,
+                0.270995,
+                0.441064,
+                0.026601
+              ],
+              "OutputGraph.call_user_compiler": [
+                0.000949,
+                8.6e-05,
+                0.001309,
+                0.000534,
+                0.000217
+              ],
+              "build_guards": [
+                0.119634,
+                0.014389,
+                0.039144,
+                0.093666,
+                0.027621
+              ],
+              "pgo.dynamic_whitelist": [
+                4e-05,
+                1.3e-05,
+                1.2e-05,
+                3.9e-05
+              ],
+              "gc": [
+                0.000808,
+                0.000321,
+                0.000101,
+                0.000737,
+                0.000779
+              ]
+            }
+          }
+        },
+        {
+          "input_sentences": 2,
+          "observations": 2,
+          "predicted_targets": 2,
+          "cold_starts": 0,
+          "reconstruction": 1.6774498224258423,
+          "answer": 0.04796736687421799,
+          "supplied_answer_rows": 0,
+          "training": false,
+          "optimizer_steps": 0,
+          "trained_inter": null,
+          "word_counts": [
+            4,
+            9
+          ],
+          "sources": [
+            5,
+            33
+          ],
+          "reconstruction_fidelity": {
+            "owned": true,
+            "event_mse": 0.06079297512769699,
+            "event_score": 0.04923427104949951,
+            "byte_cost": 1.6774498224258423,
+            "idea_mse": 0.03534359484910965,
+            "truncated_rows": 2,
+            "active_basis_rows": [
+              8,
+              18
+            ]
+          },
+          "output_word_counts": [
+            1,
+            1
+          ],
+          "output_truncated_rows": 0,
+          "output_tensor_shape": [
+            2,
+            1,
+            16
+          ],
+          "shared_compose_gradient_norms": {},
+          "forward_backward_optimizer_seconds": 16.995371541997883,
+          "context_detached": true,
+          "seconds": 17.000522917020135,
+          "batch_plus_tail_seconds": 16.999633459025063,
+          "memory": {
+            "process_peak_rss_bytes": 1048248320
+          },
+          "compiler_counters": {
+            "frames": {},
+            "stats": {
+              "calls_captured": 172,
+              "unique_graphs": 7
+            },
+            "aot_autograd": {},
+            "graph_break": {},
+            "compiler_timing_seconds": {
+              "_compile.compile_inner": [
+                6.136011,
+                0.427378,
+                7.548263,
+                3.0068,
+                1.011207,
+                14.115387,
+                2.674837
+              ],
+              "compile_attempt_0": [
+                6.006731,
+                0.411576,
+                7.504928,
+                2.908238,
+                0.980845,
+                13.872305,
+                2.612555
+              ],
+              "bytecode_tracing": [
+                5.60358,
+                0.381381,
+                6.953278,
+                2.324219,
+                0.91537,
+                13.02436,
+                2.426724
+              ],
+              "get_fake_value": [
+                1.948734,
+                0.173723,
+                2.891367,
+                1.218883,
+                0.252707,
+                8.197226,
+                1.218247
+              ],
+              "create_proxy": [
+                1.376628,
+                0.055287,
+                1.327208,
+                0.314179,
+                0.121895,
+                1.836135,
+                0.343271
+              ],
+              "wrap_to_fake_tensor_and_record": [
+                0.046757,
+                0.015892,
+                0.018299,
+                0.029847,
+                0.007279,
+                0.031786,
+                0.040295
+              ],
+              "variable_builder_call": [
+                0.199472,
+                0.031884,
+                0.069954,
+                0.076356,
+                0.051811,
+                0.105403,
+                0.100932
+              ],
+              "insert_deferred_runtime_asserts": [
+                0.159887,
+                0.01396,
+                0.270995,
+                0.441064,
+                0.026601,
+                0.412912,
+                0.093698
+              ],
+              "OutputGraph.call_user_compiler": [
+                0.000949,
+                8.6e-05,
+                0.001309,
+                0.000534,
+                0.000217,
+                0.006046,
+                0.000453
+              ],
+              "build_guards": [
+                0.119634,
+                0.014389,
+                0.039144,
+                0.093666,
+                0.027621,
+                0.236836,
+                0.059484
+              ],
+              "pgo.dynamic_whitelist": [
+                4e-05,
+                1.3e-05,
+                1.2e-05,
+                3.9e-05,
+                1.8e-05,
+                1.4e-05
+              ],
+              "gc": [
+                0.000808,
+                0.000321,
+                0.000101,
+                0.000737,
+                0.000779,
+                0.000199,
+                0.000376
+              ]
+            }
+          }
+        },
+        {
+          "input_sentences": 2,
+          "observations": 2,
+          "predicted_targets": 1,
+          "cold_starts": 1,
+          "reconstruction": 1.7979846000671387,
+          "answer": 0.0660042092204094,
+          "supplied_answer_rows": 0,
+          "training": false,
+          "optimizer_steps": 0,
+          "trained_inter": null,
+          "word_counts": [
+            10,
+            4
+          ],
+          "sources": [
+            6,
+            34
+          ],
+          "reconstruction_fidelity": {
+            "owned": true,
+            "event_mse": 0.06512458622455597,
+            "event_score": 0.05453706905245781,
+            "byte_cost": 1.7979846000671387,
+            "idea_mse": 0.027988631278276443,
+            "truncated_rows": 2,
+            "active_basis_rows": [
+              20,
+              8
+            ]
+          },
+          "output_word_counts": [
+            1,
+            1
+          ],
+          "output_truncated_rows": 0,
+          "output_tensor_shape": [
+            2,
+            1,
+            16
+          ],
+          "shared_compose_gradient_norms": {},
+          "forward_backward_optimizer_seconds": 0.15535862499382347,
+          "context_detached": true,
+          "seconds": 0.16025266598444432,
+          "batch_plus_tail_seconds": 0.1594355829874985,
+          "memory": {
+            "process_peak_rss_bytes": 1048461312
+          },
+          "compiler_counters": {
+            "frames": {},
+            "stats": {
+              "calls_captured": 172,
+              "unique_graphs": 7
+            },
+            "aot_autograd": {},
+            "graph_break": {},
+            "compiler_timing_seconds": {
+              "_compile.compile_inner": [
+                6.136011,
+                0.427378,
+                7.548263,
+                3.0068,
+                1.011207,
+                14.115387,
+                2.674837
+              ],
+              "compile_attempt_0": [
+                6.006731,
+                0.411576,
+                7.504928,
+                2.908238,
+                0.980845,
+                13.872305,
+                2.612555
+              ],
+              "bytecode_tracing": [
+                5.60358,
+                0.381381,
+                6.953278,
+                2.324219,
+                0.91537,
+                13.02436,
+                2.426724
+              ],
+              "get_fake_value": [
+                1.948734,
+                0.173723,
+                2.891367,
+                1.218883,
+                0.252707,
+                8.197226,
+                1.218247
+              ],
+              "create_proxy": [
+                1.376628,
+                0.055287,
+                1.327208,
+                0.314179,
+                0.121895,
+                1.836135,
+                0.343271
+              ],
+              "wrap_to_fake_tensor_and_record": [
+                0.046757,
+                0.015892,
+                0.018299,
+                0.029847,
+                0.007279,
+                0.031786,
+                0.040295
+              ],
+              "variable_builder_call": [
+                0.199472,
+                0.031884,
+                0.069954,
+                0.076356,
+                0.051811,
+                0.105403,
+                0.100932
+              ],
+              "insert_deferred_runtime_asserts": [
+                0.159887,
+                0.01396,
+                0.270995,
+                0.441064,
+                0.026601,
+                0.412912,
+                0.093698
+              ],
+              "OutputGraph.call_user_compiler": [
+                0.000949,
+                8.6e-05,
+                0.001309,
+                0.000534,
+                0.000217,
+                0.006046,
+                0.000453
+              ],
+              "build_guards": [
+                0.119634,
+                0.014389,
+                0.039144,
+                0.093666,
+                0.027621,
+                0.236836,
+                0.059484
+              ],
+              "pgo.dynamic_whitelist": [
+                4e-05,
+                1.3e-05,
+                1.2e-05,
+                3.9e-05,
+                1.8e-05,
+                1.4e-05
+              ],
+              "gc": [
+                0.000808,
+                0.000321,
+                0.000101,
+                0.000737,
+                0.000779,
+                0.000199,
+                0.000376
+              ]
+            }
+          }
+        },
+        {
+          "input_sentences": 2,
+          "observations": 2,
+          "predicted_targets": 1,
+          "cold_starts": 1,
+          "reconstruction": 1.4906160831451416,
+          "answer": 0.039883341640233994,
+          "supplied_answer_rows": 0,
+          "training": false,
+          "optimizer_steps": 0,
+          "trained_inter": null,
+          "word_counts": [
+            6,
+            3
+          ],
+          "sources": [
+            7,
+            35
+          ],
+          "reconstruction_fidelity": {
+            "owned": true,
+            "event_mse": 0.043514516204595566,
+            "event_score": 0.036755725741386414,
+            "byte_cost": 1.4906160831451416,
+            "idea_mse": 0.050600677728652954,
+            "truncated_rows": 2,
+            "active_basis_rows": [
+              12,
+              6
+            ]
+          },
+          "output_word_counts": [
+            1,
+            1
+          ],
+          "output_truncated_rows": 0,
+          "output_tensor_shape": [
+            2,
+            1,
+            16
+          ],
+          "shared_compose_gradient_norms": {},
+          "forward_backward_optimizer_seconds": 0.11853966600028798,
+          "context_detached": true,
+          "seconds": 0.12255420902511105,
+          "batch_plus_tail_seconds": 0.12164787499932572,
+          "memory": {
+            "process_peak_rss_bytes": 1048510464
+          },
+          "compiler_counters": {
+            "frames": {},
+            "stats": {
+              "calls_captured": 172,
+              "unique_graphs": 7
+            },
+            "aot_autograd": {},
+            "graph_break": {},
+            "compiler_timing_seconds": {
+              "_compile.compile_inner": [
+                6.136011,
+                0.427378,
+                7.548263,
+                3.0068,
+                1.011207,
+                14.115387,
+                2.674837
+              ],
+              "compile_attempt_0": [
+                6.006731,
+                0.411576,
+                7.504928,
+                2.908238,
+                0.980845,
+                13.872305,
+                2.612555
+              ],
+              "bytecode_tracing": [
+                5.60358,
+                0.381381,
+                6.953278,
+                2.324219,
+                0.91537,
+                13.02436,
+                2.426724
+              ],
+              "get_fake_value": [
+                1.948734,
+                0.173723,
+                2.891367,
+                1.218883,
+                0.252707,
+                8.197226,
+                1.218247
+              ],
+              "create_proxy": [
+                1.376628,
+                0.055287,
+                1.327208,
+                0.314179,
+                0.121895,
+                1.836135,
+                0.343271
+              ],
+              "wrap_to_fake_tensor_and_record": [
+                0.046757,
+                0.015892,
+                0.018299,
+                0.029847,
+                0.007279,
+                0.031786,
+                0.040295
+              ],
+              "variable_builder_call": [
+                0.199472,
+                0.031884,
+                0.069954,
+                0.076356,
+                0.051811,
+                0.105403,
+                0.100932
+              ],
+              "insert_deferred_runtime_asserts": [
+                0.159887,
+                0.01396,
+                0.270995,
+                0.441064,
+                0.026601,
+                0.412912,
+                0.093698
+              ],
+              "OutputGraph.call_user_compiler": [
+                0.000949,
+                8.6e-05,
+                0.001309,
+                0.000534,
+                0.000217,
+                0.006046,
+                0.000453
+              ],
+              "build_guards": [
+                0.119634,
+                0.014389,
+                0.039144,
+                0.093666,
+                0.027621,
+                0.236836,
+                0.059484
+              ],
+              "pgo.dynamic_whitelist": [
+                4e-05,
+                1.3e-05,
+                1.2e-05,
+                3.9e-05,
+                1.8e-05,
+                1.4e-05
+              ],
+              "gc": [
+                0.000808,
+                0.000321,
+                0.000101,
+                0.000737,
+                0.000779,
+                0.000199,
+                0.000376
+              ]
+            }
+          }
+        }
+      ],
+      "epoch_seconds": 36.737748542043846,
+      "peak_memory": {
+        "process_peak_rss_bytes": 1048510464
+      },
+      "memory_sampling_interval_seconds": 0.02,
+      "expectation": {
+        "observations": 16,
+        "cold_starts": 4,
+        "predicted_targets": 12,
+        "document_starts": 4,
+        "enabled": true,
+        "scope": "structured",
+        "feature_mse": 0.04653147980570793,
+        "presence_bce": 0.6952564716339111,
+        "document_boundary_fraction": 0.25
+      },
+      "encoded_meaning_controls": {
+        "ordered": {
+          "feature_mse": 0.04653148353099823,
+          "role_mse": [
+            0.12966910004615784,
+            0.005648681428283453,
+            0.004276655614376068
+          ],
+          "root_objective_mse": 0.12966910004615784,
+          "presence_bce": 0.6952564716339111,
+          "predicted_targets": 12,
+          "target_role_variance": [
+            0.08635476231575012,
+            0.0,
+            0.0
+          ],
+          "estimate_role_variance": [
+            0.001425083028152585,
+            0.0012971007963642478,
+            0.0008947347523644567
+          ]
+        },
+        "shuffled": {
+          "feature_mse": 0.04784689471125603,
+          "role_mse": [
+            0.13361532986164093,
+            0.005648681428283453,
+            0.004276656080037355
+          ],
+          "root_objective_mse": 0.13361532986164093,
+          "presence_bce": 0.6952564716339111,
+          "predicted_targets": 12,
+          "target_role_variance": [
+            0.08635476231575012,
+            0.0,
+            0.0
+          ],
+          "estimate_role_variance": [
+            0.001425083028152585,
+            0.0012971007963642478,
+            0.0008947347523644567
+          ]
+        },
+        "context_free": {
+          "feature_mse": 0.04460485279560089,
+          "role_mse": [
+            0.12709607183933258,
+            0.003327907295897603,
+            0.003390580415725708
+          ],
+          "root_objective_mse": 0.12709607183933258,
+          "presence_bce": 0.6921951770782471,
+          "predicted_targets": 12,
+          "target_role_variance": [
+            0.08635476231575012,
+            0.0,
+            0.0
+          ],
+          "estimate_role_variance": [
+            0.00032078835647553205,
+            0.0002496202359907329,
+            0.0002147254563169554
+          ]
+        }
+      }
+    },
+    {
+      "name": "training",
+      "split": "train",
+      "steps": [
+        {
+          "input_sentences": 2,
+          "observations": 2,
+          "predicted_targets": 0,
+          "cold_starts": 2,
+          "reconstruction": 1.1245853900909424,
+          "answer": 0.0,
+          "supplied_answer_rows": 0,
+          "training": true,
+          "optimizer_steps": 1,
+          "trained_inter": null,
+          "word_counts": [
+            13,
+            6
+          ],
+          "sources": [
+            0,
+            241
+          ],
+          "reconstruction_fidelity": {
+            "owned": true,
+            "event_mse": 0.08178692311048508,
+            "event_score": 0.06803113967180252,
+            "byte_cost": 1.1245853900909424,
+            "idea_mse": 0.02130284532904625,
+            "truncated_rows": 2,
+            "active_basis_rows": [
+              26,
+              12
+            ]
+          },
+          "output_word_counts": [
+            1,
+            1
+          ],
+          "output_truncated_rows": 0,
+          "output_tensor_shape": [
+            2,
+            1,
+            16
+          ],
+          "shared_compose_gradient_norms": {
+            "surface.gl.marker_prior.0.bias": 0.0,
+            "surface.gl.marker_prior.0.weight": 0.0,
+            "surface.gl.marker_prior.2.bias": 1.223385214805603,
+            "surface.gl.marker_prior.2.weight": 0.9610857963562012,
+            "adverb.gl._adv_edit.bias": 0.0,
+            "adverb.gl._adv_edit.weight": 0.0,
+            "lower.gl._pi.layer.biasWeight": 0.0009854885283857584,
+            "lower.gl._pi.layer.d": 0.0,
+            "lower.gl._pi.layer.raw_L": 0.0013765960466116667,
+            "lower.gl._pi.layer.raw_U": 0.001098516397178173,
+            "surface.gl.marker_map.bias": 0.00758058438077569,
+            "surface.gl.marker_map.weight": 1.1591949462890625,
+            "lift.gl._sigma.layer.biasWeight": 0.0019656303338706493,
+            "verb.gl._verb_spec.bias": 0.00016143330140039325,
+            "lift.gl._sigma.layer.d": 0.000403455866035074,
+            "lift.gl._sigma.layer.raw_L": 0.001372867962345481,
+            "lift.gl._sigma.layer.raw_U": 0.001095125451683998,
+            "verb.gl._verb_spec.weight": 0.0001456661702832207
+          },
+          "forward_backward_optimizer_seconds": 86.82410208298825,
+          "context_detached": true,
+          "seconds": 86.82896633300697,
+          "batch_plus_tail_seconds": 86.8276404159842,
+          "memory": {
+            "process_peak_rss_bytes": 1598357504
+          },
+          "compiler_counters": {
+            "frames": {},
+            "stats": {
+              "calls_captured": 333,
+              "unique_graphs": 12
+            },
+            "aot_autograd": {},
+            "graph_break": {},
+            "compiler_timing_seconds": {
+              "_compile.compile_inner": [
+                6.136011,
+                0.427378,
+                7.548263,
+                3.0068,
+                1.011207,
+                14.115387,
+                2.674837,
+                4.937664,
+                0.373373,
+                23.837,
+                4.09123,
+                1.874196
+              ],
+              "compile_attempt_0": [
+                6.006731,
+                0.411576,
+                7.504928,
+                2.908238,
+                0.980845,
+                13.872305,
+                2.612555,
+                4.848768,
+                0.348034,
+                23.688526,
+                4.010958,
+                1.849542
+              ],
+              "bytecode_tracing": [
+                5.60358,
+                0.381381,
+                6.953278,
+                2.324219,
+                0.91537,
+                13.02436,
+                2.426724,
+                4.54281,
+                0.315072,
+                23.062263,
+                3.777167,
+                1.786912
+              ],
+              "get_fake_value": [
+                1.948734,
+                0.173723,
+                2.891367,
+                1.218883,
+                0.252707,
+                8.197226,
+                1.218247,
+                1.955831,
+                0.147296,
+                18.150032,
+                2.609683,
+                1.200387
+              ],
+              "create_proxy": [
+                1.376628,
+                0.055287,
+                1.327208,
+                0.314179,
+                0.121895,
+                1.836135,
+                0.343271,
+                0.637479,
+                0.042586,
+                1.704324,
+                0.324774,
+                0.105602
+              ],
+              "wrap_to_fake_tensor_and_record": [
+                0.046757,
+                0.015892,
+                0.018299,
+                0.029847,
+                0.007279,
+                0.031786,
+                0.040295,
+                0.044872,
+                0.010635,
+                0.033245,
+                0.043061,
+                0.006132
+              ],
+              "variable_builder_call": [
+                0.199472,
+                0.031884,
+                0.069954,
+                0.076356,
+                0.051811,
+                0.105403,
+                0.100932,
+                0.149845,
+                0.021103,
+                0.098371,
+                0.091208,
+                0.049649
+              ],
+              "insert_deferred_runtime_asserts": [
+                0.159887,
+                0.01396,
+                0.270995,
+                0.441064,
+                0.026601,
+                0.412912,
+                0.093698,
+                0.127463,
+                0.0152,
+                0.321006,
+                0.118055,
+                0.028553
+              ],
+              "OutputGraph.call_user_compiler": [
+                0.000949,
+                8.6e-05,
+                0.001309,
+                0.000534,
+                0.000217,
+                0.006046,
+                0.000453,
+                0.000445,
+                6.7e-05,
+                0.002062,
+                0.000619,
+                0.000243
+              ],
+              "build_guards": [
+                0.119634,
+                0.014389,
+                0.039144,
+                0.093666,
+                0.027621,
+                0.236836,
+                0.059484,
+                0.084035,
+                0.023628,
+                0.1435,
+                0.077128,
+                0.022697
+              ],
+              "pgo.dynamic_whitelist": [
+                4e-05,
+                1.3e-05,
+                1.2e-05,
+                3.9e-05,
+                1.8e-05,
+                1.4e-05,
+                1.4e-05,
+                1.2e-05,
+                1.3e-05,
+                1.6e-05
+              ],
+              "gc": [
+                0.000808,
+                0.000321,
+                0.000101,
+                0.000737,
+                0.000779,
+                0.000199,
+                0.000376,
+                0.000551,
+                0.000693,
+                0.000352,
+                0.000232,
+                0.000155
+              ]
+            }
+          }
+        },
+        {
+          "input_sentences": 2,
+          "observations": 2,
+          "predicted_targets": 2,
+          "cold_starts": 0,
+          "reconstruction": 2.1460072994232178,
+          "answer": 0.0,
+          "supplied_answer_rows": 0,
+          "training": true,
+          "optimizer_steps": 1,
+          "trained_inter": null,
+          "word_counts": [
+            6,
+            5
+          ],
+          "sources": [
+            1,
+            242
+          ],
+          "reconstruction_fidelity": {
+            "owned": true,
+            "event_mse": 0.05617028474807739,
+            "event_score": 0.046645257622003555,
+            "byte_cost": 2.1460072994232178,
+            "idea_mse": 0.038734667003154755,
+            "truncated_rows": 2,
+            "active_basis_rows": [
+              12,
+              10
+            ]
+          },
+          "output_word_counts": [
+            2,
+            1
+          ],
+          "output_truncated_rows": 0,
+          "output_tensor_shape": [
+            2,
+            1,
+            16
+          ],
+          "shared_compose_gradient_norms": {
+            "surface.gl.marker_prior.0.bias": 0.019661234691739082,
+            "surface.gl.marker_prior.0.weight": 0.030150162056088448,
+            "surface.gl.marker_prior.2.bias": 115.01365661621094,
+            "surface.gl.marker_prior.2.weight": 132.56478881835938,
+            "adverb.gl._adv_edit.bias": 0.0,
+            "adverb.gl._adv_edit.weight": 0.0,
+            "lower.gl._pi.layer.biasWeight": 0.01046986784785986,
+            "lower.gl._pi.layer.d": 0.0,
+            "lower.gl._pi.layer.raw_L": 0.01710457168519497,
+            "lower.gl._pi.layer.raw_U": 0.01941753923892975,
+            "surface.gl.marker_map.bias": 1.5781389474868774,
+            "surface.gl.marker_map.weight": 1.662030816078186,
+            "lift.gl._sigma.layer.biasWeight": 0.0031488544773310423,
+            "verb.gl._verb_spec.bias": 0.00036109169013798237,
+            "lift.gl._sigma.layer.d": 0.0007288312190212309,
+            "lift.gl._sigma.layer.raw_L": 0.003300311043858528,
+            "lift.gl._sigma.layer.raw_U": 0.005395154468715191,
+            "verb.gl._verb_spec.weight": 0.0004302802844904363
+          },
+          "forward_backward_optimizer_seconds": 80.05213145900052,
+          "context_detached": true,
+          "seconds": 80.05647970899008,
+          "batch_plus_tail_seconds": 80.05519283399917,
+          "memory": {
+            "process_peak_rss_bytes": 1784315904
+          },
+          "compiler_counters": {
+            "frames": {},
+            "stats": {
+              "calls_captured": 347,
+              "unique_graphs": 14
+            },
+            "aot_autograd": {},
+            "graph_break": {},
+            "compiler_timing_seconds": {
+              "_compile.compile_inner": [
+                6.136011,
+                0.427378,
+                7.548263,
+                3.0068,
+                1.011207,
+                14.115387,
+                2.674837,
+                4.937664,
+                0.373373,
+                23.837,
+                4.09123,
+                1.874196,
+                24.37383,
+                4.531135
+              ],
+              "compile_attempt_0": [
+                6.006731,
+                0.411576,
+                7.504928,
+                2.908238,
+                0.980845,
+                13.872305,
+                2.612555,
+                4.848768,
+                0.348034,
+                23.688526,
+                4.010958,
+                1.849542,
+                24.22267,
+                4.42741
+              ],
+              "bytecode_tracing": [
+                5.60358,
+                0.381381,
+                6.953278,
+                2.324219,
+                0.91537,
+                13.02436,
+                2.426724,
+                4.54281,
+                0.315072,
+                23.062263,
+                3.777167,
+                1.786912,
+                23.599068,
+                4.15964
+              ],
+              "get_fake_value": [
+                1.948734,
+                0.173723,
+                2.891367,
+                1.218883,
+                0.252707,
+                8.197226,
+                1.218247,
+                1.955831,
+                0.147296,
+                18.150032,
+                2.609683,
+                1.200387,
+                19.238456,
+                2.906015
+              ],
+              "create_proxy": [
+                1.376628,
+                0.055287,
+                1.327208,
+                0.314179,
+                0.121895,
+                1.836135,
+                0.343271,
+                0.637479,
+                0.042586,
+                1.704324,
+                0.324774,
+                0.105602,
+                1.245256,
+                0.345828
+              ],
+              "wrap_to_fake_tensor_and_record": [
+                0.046757,
+                0.015892,
+                0.018299,
+                0.029847,
+                0.007279,
+                0.031786,
+                0.040295,
+                0.044872,
+                0.010635,
+                0.033245,
+                0.043061,
+                0.006132,
+                0.031108,
+                0.036528
+              ],
+              "variable_builder_call": [
+                0.199472,
+                0.031884,
+                0.069954,
+                0.076356,
+                0.051811,
+                0.105403,
+                0.100932,
+                0.149845,
+                0.021103,
+                0.098371,
+                0.091208,
+                0.049649,
+                0.094201,
+                0.083726
+              ],
+              "insert_deferred_runtime_asserts": [
+                0.159887,
+                0.01396,
+                0.270995,
+                0.441064,
+                0.026601,
+                0.412912,
+                0.093698,
+                0.127463,
+                0.0152,
+                0.321006,
+                0.118055,
+                0.028553,
+                0.316196,
+                0.151581
+              ],
+              "OutputGraph.call_user_compiler": [
+                0.000949,
+                8.6e-05,
+                0.001309,
+                0.000534,
+                0.000217,
+                0.006046,
+                0.000453,
+                0.000445,
+                6.7e-05,
+                0.002062,
+                0.000619,
+                0.000243,
+                0.001654,
+                0.001109
+              ],
+              "build_guards": [
+                0.119634,
+                0.014389,
+                0.039144,
+                0.093666,
+                0.027621,
+                0.236836,
+                0.059484,
+                0.084035,
+                0.023628,
+                0.1435,
+                0.077128,
+                0.022697,
+                0.146249,
+                0.098931
+              ],
+              "pgo.dynamic_whitelist": [
+                4e-05,
+                1.3e-05,
+                1.2e-05,
+                3.9e-05,
+                1.8e-05,
+                1.4e-05,
+                1.4e-05,
+                1.2e-05,
+                1.3e-05,
+                1.6e-05,
+                1.5e-05,
+                1.7e-05
+              ],
+              "gc": [
+                0.000808,
+                0.000321,
+                0.000101,
+                0.000737,
+                0.000779,
+                0.000199,
+                0.000376,
+                0.000551,
+                0.000693,
+                0.000352,
+                0.000232,
+                0.000155,
+                0.000309,
+                0.000257
+              ]
+            }
+          }
+        },
+        {
+          "input_sentences": 2,
+          "observations": 2,
+          "predicted_targets": 2,
+          "cold_starts": 0,
+          "reconstruction": 2.283299684524536,
+          "answer": 0.0,
+          "supplied_answer_rows": 0,
+          "training": true,
+          "optimizer_steps": 1,
+          "trained_inter": null,
+          "word_counts": [
+            4,
+            4
+          ],
+          "sources": [
+            2,
+            243
+          ],
+          "reconstruction_fidelity": {
+            "owned": true,
+            "event_mse": 0.029249846935272217,
+            "event_score": 0.024048222228884697,
+            "byte_cost": 2.283299684524536,
+            "idea_mse": 0.045125916600227356,
+            "truncated_rows": 1,
+            "active_basis_rows": [
+              8,
+              8
+            ]
+          },
+          "output_word_counts": [
+            1,
+            3
+          ],
+          "output_truncated_rows": 0,
+          "output_tensor_shape": [
+            2,
+            1,
+            16
+          ],
+          "shared_compose_gradient_norms": {
+            "surface.gl.marker_prior.0.bias": 0.19607937335968018,
+            "surface.gl.marker_prior.0.weight": 0.25720494985580444,
+            "surface.gl.marker_prior.2.bias": 117.26792907714844,
+            "surface.gl.marker_prior.2.weight": 107.38489532470703,
+            "adverb.gl._adv_edit.bias": 0.0,
+            "adverb.gl._adv_edit.weight": 0.0,
+            "lower.gl._pi.layer.biasWeight": 0.0006666932022199035,
+            "lower.gl._pi.layer.d": 0.0,
+            "lower.gl._pi.layer.raw_L": 0.000715890375431627,
+            "lower.gl._pi.layer.raw_U": 0.0009498189319856465,
+            "surface.gl.marker_map.bias": 0.13064472377300262,
+            "surface.gl.marker_map.weight": 0.30130136013031006,
+            "lift.gl._sigma.layer.biasWeight": 0.001324104843661189,
+            "verb.gl._verb_spec.bias": 0.00020222627790644765,
+            "lift.gl._sigma.layer.d": 0.00028823394677601755,
+            "lift.gl._sigma.layer.raw_L": 0.0007111342274583876,
+            "lift.gl._sigma.layer.raw_U": 0.0009429543279111385,
+            "verb.gl._verb_spec.weight": 0.00013071719149593264
+          },
+          "forward_backward_optimizer_seconds": 53.24822762503754,
+          "context_detached": true,
+          "seconds": 53.25298204104183,
+          "batch_plus_tail_seconds": 53.251734250050504,
+          "memory": {
+            "process_peak_rss_bytes": 1889615872
+          },
+          "compiler_counters": {
+            "frames": {},
+            "stats": {
+              "calls_captured": 347,
+              "unique_graphs": 14
+            },
+            "aot_autograd": {},
+            "graph_break": {},
+            "compiler_timing_seconds": {
+              "_compile.compile_inner": [
+                6.136011,
+                0.427378,
+                7.548263,
+                3.0068,
+                1.011207,
+                14.115387,
+                2.674837,
+                4.937664,
+                0.373373,
+                23.837,
+                4.09123,
+                1.874196,
+                24.37383,
+                4.531135
+              ],
+              "compile_attempt_0": [
+                6.006731,
+                0.411576,
+                7.504928,
+                2.908238,
+                0.980845,
+                13.872305,
+                2.612555,
+                4.848768,
+                0.348034,
+                23.688526,
+                4.010958,
+                1.849542,
+                24.22267,
+                4.42741
+              ],
+              "bytecode_tracing": [
+                5.60358,
+                0.381381,
+                6.953278,
+                2.324219,
+                0.91537,
+                13.02436,
+                2.426724,
+                4.54281,
+                0.315072,
+                23.062263,
+                3.777167,
+                1.786912,
+                23.599068,
+                4.15964
+              ],
+              "get_fake_value": [
+                1.948734,
+                0.173723,
+                2.891367,
+                1.218883,
+                0.252707,
+                8.197226,
+                1.218247,
+                1.955831,
+                0.147296,
+                18.150032,
+                2.609683,
+                1.200387,
+                19.238456,
+                2.906015
+              ],
+              "create_proxy": [
+                1.376628,
+                0.055287,
+                1.327208,
+                0.314179,
+                0.121895,
+                1.836135,
+                0.343271,
+                0.637479,
+                0.042586,
+                1.704324,
+                0.324774,
+                0.105602,
+                1.245256,
+                0.345828
+              ],
+              "wrap_to_fake_tensor_and_record": [
+                0.046757,
+                0.015892,
+                0.018299,
+                0.029847,
+                0.007279,
+                0.031786,
+                0.040295,
+                0.044872,
+                0.010635,
+                0.033245,
+                0.043061,
+                0.006132,
+                0.031108,
+                0.036528
+              ],
+              "variable_builder_call": [
+                0.199472,
+                0.031884,
+                0.069954,
+                0.076356,
+                0.051811,
+                0.105403,
+                0.100932,
+                0.149845,
+                0.021103,
+                0.098371,
+                0.091208,
+                0.049649,
+                0.094201,
+                0.083726
+              ],
+              "insert_deferred_runtime_asserts": [
+                0.159887,
+                0.01396,
+                0.270995,
+                0.441064,
+                0.026601,
+                0.412912,
+                0.093698,
+                0.127463,
+                0.0152,
+                0.321006,
+                0.118055,
+                0.028553,
+                0.316196,
+                0.151581
+              ],
+              "OutputGraph.call_user_compiler": [
+                0.000949,
+                8.6e-05,
+                0.001309,
+                0.000534,
+                0.000217,
+                0.006046,
+                0.000453,
+                0.000445,
+                6.7e-05,
+                0.002062,
+                0.000619,
+                0.000243,
+                0.001654,
+                0.001109
+              ],
+              "build_guards": [
+                0.119634,
+                0.014389,
+                0.039144,
+                0.093666,
+                0.027621,
+                0.236836,
+                0.059484,
+                0.084035,
+                0.023628,
+                0.1435,
+                0.077128,
+                0.022697,
+                0.146249,
+                0.098931
+              ],
+              "pgo.dynamic_whitelist": [
+                4e-05,
+                1.3e-05,
+                1.2e-05,
+                3.9e-05,
+                1.8e-05,
+                1.4e-05,
+                1.4e-05,
+                1.2e-05,
+                1.3e-05,
+                1.6e-05,
+                1.5e-05,
+                1.7e-05
+              ],
+              "gc": [
+                0.000808,
+                0.000321,
+                0.000101,
+                0.000737,
+                0.000779,
+                0.000199,
+                0.000376,
+                0.000551,
+                0.000693,
+                0.000352,
+                0.000232,
+                0.000155,
+                0.000309,
+                0.000257
+              ]
+            }
+          }
+        },
+        {
+          "input_sentences": 2,
+          "observations": 2,
+          "predicted_targets": 2,
+          "cold_starts": 0,
+          "reconstruction": 1.5069094896316528,
+          "answer": 0.0,
+          "supplied_answer_rows": 0,
+          "training": true,
+          "optimizer_steps": 1,
+          "trained_inter": null,
+          "word_counts": [
+            9,
+            7
+          ],
+          "sources": [
+            3,
+            244
+          ],
+          "reconstruction_fidelity": {
+            "owned": true,
+            "event_mse": 0.07633413374423981,
+            "event_score": 0.0631747618317604,
+            "byte_cost": 1.5069094896316528,
+            "idea_mse": 0.023997802287340164,
+            "truncated_rows": 2,
+            "active_basis_rows": [
+              18,
+              14
+            ]
+          },
+          "output_word_counts": [
+            0,
+            0
+          ],
+          "output_truncated_rows": 0,
+          "output_tensor_shape": [
+            2,
+            1,
+            16
+          ],
+          "shared_compose_gradient_norms": {
+            "surface.gl.marker_prior.0.bias": 0.0620584599673748,
+            "surface.gl.marker_prior.0.weight": 0.12564906477928162,
+            "surface.gl.marker_prior.2.bias": 107.33364868164062,
+            "surface.gl.marker_prior.2.weight": 102.14805603027344,
+            "adverb.gl._adv_edit.bias": 0.0,
+            "adverb.gl._adv_edit.weight": 0.0,
+            "lower.gl._pi.layer.biasWeight": 0.05210641026496887,
+            "lower.gl._pi.layer.d": 0.0,
+            "lower.gl._pi.layer.raw_L": 0.08673740178346634,
+            "lower.gl._pi.layer.raw_U": 0.06301607936620712,
+            "surface.gl.marker_map.bias": 0.44334888458251953,
+            "surface.gl.marker_map.weight": 0.16661590337753296,
+            "lift.gl._sigma.layer.biasWeight": 0.0005353507003746927,
+            "verb.gl._verb_spec.bias": 7.348016515607014e-05,
+            "lift.gl._sigma.layer.d": 0.00012420755228959024,
+            "lift.gl._sigma.layer.raw_L": 0.000530745426658541,
+            "lift.gl._sigma.layer.raw_U": 0.0006434623501263559,
+            "verb.gl._verb_spec.weight": 0.00010244658187730238
+          },
+          "forward_backward_optimizer_seconds": 56.20304929203121,
+          "context_detached": true,
+          "seconds": 56.20819999999367,
+          "batch_plus_tail_seconds": 56.20659308304312,
+          "memory": {
+            "process_peak_rss_bytes": 1964081152
+          },
+          "compiler_counters": {
+            "frames": {},
+            "stats": {
+              "calls_captured": 347,
+              "unique_graphs": 14
+            },
+            "aot_autograd": {},
+            "graph_break": {},
+            "compiler_timing_seconds": {
+              "_compile.compile_inner": [
+                6.136011,
+                0.427378,
+                7.548263,
+                3.0068,
+                1.011207,
+                14.115387,
+                2.674837,
+                4.937664,
+                0.373373,
+                23.837,
+                4.09123,
+                1.874196,
+                24.37383,
+                4.531135
+              ],
+              "compile_attempt_0": [
+                6.006731,
+                0.411576,
+                7.504928,
+                2.908238,
+                0.980845,
+                13.872305,
+                2.612555,
+                4.848768,
+                0.348034,
+                23.688526,
+                4.010958,
+                1.849542,
+                24.22267,
+                4.42741
+              ],
+              "bytecode_tracing": [
+                5.60358,
+                0.381381,
+                6.953278,
+                2.324219,
+                0.91537,
+                13.02436,
+                2.426724,
+                4.54281,
+                0.315072,
+                23.062263,
+                3.777167,
+                1.786912,
+                23.599068,
+                4.15964
+              ],
+              "get_fake_value": [
+                1.948734,
+                0.173723,
+                2.891367,
+                1.218883,
+                0.252707,
+                8.197226,
+                1.218247,
+                1.955831,
+                0.147296,
+                18.150032,
+                2.609683,
+                1.200387,
+                19.238456,
+                2.906015
+              ],
+              "create_proxy": [
+                1.376628,
+                0.055287,
+                1.327208,
+                0.314179,
+                0.121895,
+                1.836135,
+                0.343271,
+                0.637479,
+                0.042586,
+                1.704324,
+                0.324774,
+                0.105602,
+                1.245256,
+                0.345828
+              ],
+              "wrap_to_fake_tensor_and_record": [
+                0.046757,
+                0.015892,
+                0.018299,
+                0.029847,
+                0.007279,
+                0.031786,
+                0.040295,
+                0.044872,
+                0.010635,
+                0.033245,
+                0.043061,
+                0.006132,
+                0.031108,
+                0.036528
+              ],
+              "variable_builder_call": [
+                0.199472,
+                0.031884,
+                0.069954,
+                0.076356,
+                0.051811,
+                0.105403,
+                0.100932,
+                0.149845,
+                0.021103,
+                0.098371,
+                0.091208,
+                0.049649,
+                0.094201,
+                0.083726
+              ],
+              "insert_deferred_runtime_asserts": [
+                0.159887,
+                0.01396,
+                0.270995,
+                0.441064,
+                0.026601,
+                0.412912,
+                0.093698,
+                0.127463,
+                0.0152,
+                0.321006,
+                0.118055,
+                0.028553,
+                0.316196,
+                0.151581
+              ],
+              "OutputGraph.call_user_compiler": [
+                0.000949,
+                8.6e-05,
+                0.001309,
+                0.000534,
+                0.000217,
+                0.006046,
+                0.000453,
+                0.000445,
+                6.7e-05,
+                0.002062,
+                0.000619,
+                0.000243,
+                0.001654,
+                0.001109
+              ],
+              "build_guards": [
+                0.119634,
+                0.014389,
+                0.039144,
+                0.093666,
+                0.027621,
+                0.236836,
+                0.059484,
+                0.084035,
+                0.023628,
+                0.1435,
+                0.077128,
+                0.022697,
+                0.146249,
+                0.098931
+              ],
+              "pgo.dynamic_whitelist": [
+                4e-05,
+                1.3e-05,
+                1.2e-05,
+                3.9e-05,
+                1.8e-05,
+                1.4e-05,
+                1.4e-05,
+                1.2e-05,
+                1.3e-05,
+                1.6e-05,
+                1.5e-05,
+                1.7e-05
+              ],
+              "gc": [
+                0.000808,
+                0.000321,
+                0.000101,
+                0.000737,
+                0.000779,
+                0.000199,
+                0.000376,
+                0.000551,
+                0.000693,
+                0.000352,
+                0.000232,
+                0.000155,
+                0.000309,
+                0.000257
+              ]
+            }
+          }
+        },
+        {
+          "input_sentences": 2,
+          "observations": 2,
+          "predicted_targets": 2,
+          "cold_starts": 0,
+          "reconstruction": 1.6003092527389526,
+          "answer": 0.0,
+          "supplied_answer_rows": 0,
+          "training": true,
+          "optimizer_steps": 1,
+          "trained_inter": null,
+          "word_counts": [
+            6,
+            2
+          ],
+          "sources": [
+            4,
+            245
+          ],
+          "reconstruction_fidelity": {
+            "owned": true,
+            "event_mse": 0.036110952496528625,
+            "event_score": 0.029856298118829727,
+            "byte_cost": 1.6003092527389526,
+            "idea_mse": 0.02845150977373123,
+            "truncated_rows": 2,
+            "active_basis_rows": [
+              12,
+              4
+            ]
+          },
+          "output_word_counts": [
+            1,
+            1
+          ],
+          "output_truncated_rows": 0,
+          "output_tensor_shape": [
+            2,
+            1,
+            16
+          ],
+          "shared_compose_gradient_norms": {
+            "surface.gl.marker_prior.0.bias": 0.025786301121115685,
+            "surface.gl.marker_prior.0.weight": 0.011451422236859798,
+            "surface.gl.marker_prior.2.bias": 57.41475296020508,
+            "surface.gl.marker_prior.2.weight": 32.27797317504883,
+            "adverb.gl._adv_edit.bias": 0.0,
+            "adverb.gl._adv_edit.weight": 0.0,
+            "lower.gl._pi.layer.biasWeight": 0.0007895163726061583,
+            "lower.gl._pi.layer.d": 0.0,
+            "lower.gl._pi.layer.raw_L": 0.0008649876690469682,
+            "lower.gl._pi.layer.raw_U": 0.00175411906093359,
+            "surface.gl.marker_map.bias": 3.168433904647827,
+            "surface.gl.marker_map.weight": 2.0734872817993164,
+            "lift.gl._sigma.layer.biasWeight": 0.0015560361789539456,
+            "verb.gl._verb_spec.bias": 0.00023448985302820802,
+            "lift.gl._sigma.layer.d": 0.00044201838318258524,
+            "lift.gl._sigma.layer.raw_L": 0.0008516067173331976,
+            "lift.gl._sigma.layer.raw_U": 0.0017280839383602142,
+            "verb.gl._verb_spec.weight": 0.0003146147355437279
+          },
+          "forward_backward_optimizer_seconds": 59.342962124967016,
+          "context_detached": true,
+          "seconds": 59.35052670899313,
+          "batch_plus_tail_seconds": 59.34679874998983,
+          "memory": {
+            "process_peak_rss_bytes": 1993244672
+          },
+          "compiler_counters": {
+            "frames": {},
+            "stats": {
+              "calls_captured": 347,
+              "unique_graphs": 14
+            },
+            "aot_autograd": {},
+            "graph_break": {},
+            "compiler_timing_seconds": {
+              "_compile.compile_inner": [
+                6.136011,
+                0.427378,
+                7.548263,
+                3.0068,
+                1.011207,
+                14.115387,
+                2.674837,
+                4.937664,
+                0.373373,
+                23.837,
+                4.09123,
+                1.874196,
+                24.37383,
+                4.531135
+              ],
+              "compile_attempt_0": [
+                6.006731,
+                0.411576,
+                7.504928,
+                2.908238,
+                0.980845,
+                13.872305,
+                2.612555,
+                4.848768,
+                0.348034,
+                23.688526,
+                4.010958,
+                1.849542,
+                24.22267,
+                4.42741
+              ],
+              "bytecode_tracing": [
+                5.60358,
+                0.381381,
+                6.953278,
+                2.324219,
+                0.91537,
+                13.02436,
+                2.426724,
+                4.54281,
+                0.315072,
+                23.062263,
+                3.777167,
+                1.786912,
+                23.599068,
+                4.15964
+              ],
+              "get_fake_value": [
+                1.948734,
+                0.173723,
+                2.891367,
+                1.218883,
+                0.252707,
+                8.197226,
+                1.218247,
+                1.955831,
+                0.147296,
+                18.150032,
+                2.609683,
+                1.200387,
+                19.238456,
+                2.906015
+              ],
+              "create_proxy": [
+                1.376628,
+                0.055287,
+                1.327208,
+                0.314179,
+                0.121895,
+                1.836135,
+                0.343271,
+                0.637479,
+                0.042586,
+                1.704324,
+                0.324774,
+                0.105602,
+                1.245256,
+                0.345828
+              ],
+              "wrap_to_fake_tensor_and_record": [
+                0.046757,
+                0.015892,
+                0.018299,
+                0.029847,
+                0.007279,
+                0.031786,
+                0.040295,
+                0.044872,
+                0.010635,
+                0.033245,
+                0.043061,
+                0.006132,
+                0.031108,
+                0.036528
+              ],
+              "variable_builder_call": [
+                0.199472,
+                0.031884,
+                0.069954,
+                0.076356,
+                0.051811,
+                0.105403,
+                0.100932,
+                0.149845,
+                0.021103,
+                0.098371,
+                0.091208,
+                0.049649,
+                0.094201,
+                0.083726
+              ],
+              "insert_deferred_runtime_asserts": [
+                0.159887,
+                0.01396,
+                0.270995,
+                0.441064,
+                0.026601,
+                0.412912,
+                0.093698,
+                0.127463,
+                0.0152,
+                0.321006,
+                0.118055,
+                0.028553,
+                0.316196,
+                0.151581
+              ],
+              "OutputGraph.call_user_compiler": [
+                0.000949,
+                8.6e-05,
+                0.001309,
+                0.000534,
+                0.000217,
+                0.006046,
+                0.000453,
+                0.000445,
+                6.7e-05,
+                0.002062,
+                0.000619,
+                0.000243,
+                0.001654,
+                0.001109
+              ],
+              "build_guards": [
+                0.119634,
+                0.014389,
+                0.039144,
+                0.093666,
+                0.027621,
+                0.236836,
+                0.059484,
+                0.084035,
+                0.023628,
+                0.1435,
+                0.077128,
+                0.022697,
+                0.146249,
+                0.098931
+              ],
+              "pgo.dynamic_whitelist": [
+                4e-05,
+                1.3e-05,
+                1.2e-05,
+                3.9e-05,
+                1.8e-05,
+                1.4e-05,
+                1.4e-05,
+                1.2e-05,
+                1.3e-05,
+                1.6e-05,
+                1.5e-05,
+                1.7e-05
+              ],
+              "gc": [
+                0.000808,
+                0.000321,
+                0.000101,
+                0.000737,
+                0.000779,
+                0.000199,
+                0.000376,
+                0.000551,
+                0.000693,
+                0.000352,
+                0.000232,
+                0.000155,
+                0.000309,
+                0.000257
+              ]
+            }
+          }
+        },
+        {
+          "input_sentences": 2,
+          "observations": 2,
+          "predicted_targets": 2,
+          "cold_starts": 0,
+          "reconstruction": 0.8861578106880188,
+          "answer": 0.0,
+          "supplied_answer_rows": 0,
+          "training": true,
+          "optimizer_steps": 1,
+          "trained_inter": null,
+          "word_counts": [
+            7,
+            2
+          ],
+          "sources": [
+            5,
+            246
+          ],
+          "reconstruction_fidelity": {
+            "owned": true,
+            "event_mse": 0.03854839876294136,
+            "event_score": 0.03155410662293434,
+            "byte_cost": 0.8861578106880188,
+            "idea_mse": 0.02344099059700966,
+            "truncated_rows": 2,
+            "active_basis_rows": [
+              14,
+              4
+            ]
+          },
+          "output_word_counts": [
+            1,
+            3
+          ],
+          "output_truncated_rows": 0,
+          "output_tensor_shape": [
+            2,
+            1,
+            16
+          ],
+          "shared_compose_gradient_norms": {
+            "surface.gl.marker_prior.0.bias": 0.22012768685817719,
+            "surface.gl.marker_prior.0.weight": 0.17341387271881104,
+            "surface.gl.marker_prior.2.bias": 58.74684143066406,
+            "surface.gl.marker_prior.2.weight": 43.62882614135742,
+            "adverb.gl._adv_edit.bias": 0.0,
+            "adverb.gl._adv_edit.weight": 0.0,
+            "lower.gl._pi.layer.biasWeight": 0.00032785304938443005,
+            "lower.gl._pi.layer.d": 0.0,
+            "lower.gl._pi.layer.raw_L": 0.0007371119572781026,
+            "lower.gl._pi.layer.raw_U": 0.0008003494585864246,
+            "surface.gl.marker_map.bias": 1.0025750398635864,
+            "surface.gl.marker_map.weight": 0.446167528629303,
+            "lift.gl._sigma.layer.biasWeight": 0.0006390940397977829,
+            "verb.gl._verb_spec.bias": 0.00010810438834596425,
+            "lift.gl._sigma.layer.d": 0.00017336667224299163,
+            "lift.gl._sigma.layer.raw_L": 0.0007263225270435214,
+            "lift.gl._sigma.layer.raw_U": 0.0007917777984403074,
+            "verb.gl._verb_spec.weight": 0.0001227410539286211
+          },
+          "forward_backward_optimizer_seconds": 63.39824695896823,
+          "context_detached": true,
+          "seconds": 63.403679040959105,
+          "batch_plus_tail_seconds": 63.40169549995335,
+          "memory": {
+            "process_peak_rss_bytes": 2093416448
+          },
+          "compiler_counters": {
+            "frames": {},
+            "stats": {
+              "calls_captured": 406,
+              "unique_graphs": 15
+            },
+            "aot_autograd": {},
+            "graph_break": {},
+            "compiler_timing_seconds": {
+              "_compile.compile_inner": [
+                6.136011,
+                0.427378,
+                7.548263,
+                3.0068,
+                1.011207,
+                14.115387,
+                2.674837,
+                4.937664,
+                0.373373,
+                23.837,
+                4.09123,
+                1.874196,
+                24.37383,
+                4.531135,
+                4.904286
+              ],
+              "compile_attempt_0": [
+                6.006731,
+                0.411576,
+                7.504928,
+                2.908238,
+                0.980845,
+                13.872305,
+                2.612555,
+                4.848768,
+                0.348034,
+                23.688526,
+                4.010958,
+                1.849542,
+                24.22267,
+                4.42741,
+                4.797708
+              ],
+              "bytecode_tracing": [
+                5.60358,
+                0.381381,
+                6.953278,
+                2.324219,
+                0.91537,
+                13.02436,
+                2.426724,
+                4.54281,
+                0.315072,
+                23.062263,
+                3.777167,
+                1.786912,
+                23.599068,
+                4.15964,
+                4.438285
+              ],
+              "get_fake_value": [
+                1.948734,
+                0.173723,
+                2.891367,
+                1.218883,
+                0.252707,
+                8.197226,
+                1.218247,
+                1.955831,
+                0.147296,
+                18.150032,
+                2.609683,
+                1.200387,
+                19.238456,
+                2.906015,
+                1.556272
+              ],
+              "create_proxy": [
+                1.376628,
+                0.055287,
+                1.327208,
+                0.314179,
+                0.121895,
+                1.836135,
+                0.343271,
+                0.637479,
+                0.042586,
+                1.704324,
+                0.324774,
+                0.105602,
+                1.245256,
+                0.345828,
+                0.703969
+              ],
+              "wrap_to_fake_tensor_and_record": [
+                0.046757,
+                0.015892,
+                0.018299,
+                0.029847,
+                0.007279,
+                0.031786,
+                0.040295,
+                0.044872,
+                0.010635,
+                0.033245,
+                0.043061,
+                0.006132,
+                0.031108,
+                0.036528,
+                0.050114
+              ],
+              "variable_builder_call": [
+                0.199472,
+                0.031884,
+                0.069954,
+                0.076356,
+                0.051811,
+                0.105403,
+                0.100932,
+                0.149845,
+                0.021103,
+                0.098371,
+                0.091208,
+                0.049649,
+                0.094201,
+                0.083726,
+                0.174056
+              ],
+              "insert_deferred_runtime_asserts": [
+                0.159887,
+                0.01396,
+                0.270995,
+                0.441064,
+                0.026601,
+                0.412912,
+                0.093698,
+                0.127463,
+                0.0152,
+                0.321006,
+                0.118055,
+                0.028553,
+                0.316196,
+                0.151581,
+                0.15042
+              ],
+              "OutputGraph.call_user_compiler": [
+                0.000949,
+                8.6e-05,
+                0.001309,
+                0.000534,
+                0.000217,
+                0.006046,
+                0.000453,
+                0.000445,
+                6.7e-05,
+                0.002062,
+                0.000619,
+                0.000243,
+                0.001654,
+                0.001109,
+                0.000553
+              ],
+              "build_guards": [
+                0.119634,
+                0.014389,
+                0.039144,
+                0.093666,
+                0.027621,
+                0.236836,
+                0.059484,
+                0.084035,
+                0.023628,
+                0.1435,
+                0.077128,
+                0.022697,
+                0.146249,
+                0.098931,
+                0.101006
+              ],
+              "pgo.dynamic_whitelist": [
+                4e-05,
+                1.3e-05,
+                1.2e-05,
+                3.9e-05,
+                1.8e-05,
+                1.4e-05,
+                1.4e-05,
+                1.2e-05,
+                1.3e-05,
+                1.6e-05,
+                1.5e-05,
+                1.7e-05,
+                1.7e-05
+              ],
+              "gc": [
+                0.000808,
+                0.000321,
+                0.000101,
+                0.000737,
+                0.000779,
+                0.000199,
+                0.000376,
+                0.000551,
+                0.000693,
+                0.000352,
+                0.000232,
+                0.000155,
+                0.000309,
+                0.000257,
+                0.000388
+              ]
+            }
+          }
+        },
+        {
+          "input_sentences": 2,
+          "observations": 2,
+          "predicted_targets": 2,
+          "cold_starts": 0,
+          "reconstruction": 1.2492432594299316,
+          "answer": 0.0,
+          "supplied_answer_rows": 0,
+          "training": true,
+          "optimizer_steps": 1,
+          "trained_inter": null,
+          "word_counts": [
+            9,
+            2
+          ],
+          "sources": [
+            6,
+            247
+          ],
+          "reconstruction_fidelity": {
+            "owned": true,
+            "event_mse": 0.05144769698381424,
+            "event_score": 0.04303380101919174,
+            "byte_cost": 1.2492432594299316,
+            "idea_mse": 0.015299352817237377,
+            "truncated_rows": 2,
+            "active_basis_rows": [
+              18,
+              4
+            ]
+          },
+          "output_word_counts": [
+            4,
+            1
+          ],
+          "output_truncated_rows": 0,
+          "output_tensor_shape": [
+            2,
+            1,
+            16
+          ],
+          "shared_compose_gradient_norms": {
+            "surface.gl.marker_prior.0.bias": 0.11538573354482651,
+            "surface.gl.marker_prior.0.weight": 0.050625648349523544,
+            "surface.gl.marker_prior.2.bias": 38.89431381225586,
+            "surface.gl.marker_prior.2.weight": 20.788637161254883,
+            "adverb.gl._adv_edit.bias": 0.0,
+            "adverb.gl._adv_edit.weight": 0.0,
+            "lower.gl._pi.layer.biasWeight": 0.00046353033394552767,
+            "lower.gl._pi.layer.d": 0.0,
+            "lower.gl._pi.layer.raw_L": 0.0015843152068555355,
+            "lower.gl._pi.layer.raw_U": 0.0011984697775915265,
+            "surface.gl.marker_map.bias": 0.8986478447914124,
+            "surface.gl.marker_map.weight": 0.891755223274231,
+            "lift.gl._sigma.layer.biasWeight": 0.0009332886547781527,
+            "verb.gl._verb_spec.bias": 0.00010467444371897727,
+            "lift.gl._sigma.layer.d": 0.00040469999657943845,
+            "lift.gl._sigma.layer.raw_L": 0.0015647636028006673,
+            "lift.gl._sigma.layer.raw_U": 0.001191087649203837,
+            "verb.gl._verb_spec.weight": 0.00019719886768143624
+          },
+          "forward_backward_optimizer_seconds": 61.731863750028424,
+          "context_detached": true,
+          "seconds": 61.73720750003122,
+          "batch_plus_tail_seconds": 61.73521675000666,
+          "memory": {
+            "process_peak_rss_bytes": 2156969984
+          },
+          "compiler_counters": {
+            "frames": {},
+            "stats": {
+              "calls_captured": 406,
+              "unique_graphs": 15
+            },
+            "aot_autograd": {},
+            "graph_break": {},
+            "compiler_timing_seconds": {
+              "_compile.compile_inner": [
+                6.136011,
+                0.427378,
+                7.548263,
+                3.0068,
+                1.011207,
+                14.115387,
+                2.674837,
+                4.937664,
+                0.373373,
+                23.837,
+                4.09123,
+                1.874196,
+                24.37383,
+                4.531135,
+                4.904286
+              ],
+              "compile_attempt_0": [
+                6.006731,
+                0.411576,
+                7.504928,
+                2.908238,
+                0.980845,
+                13.872305,
+                2.612555,
+                4.848768,
+                0.348034,
+                23.688526,
+                4.010958,
+                1.849542,
+                24.22267,
+                4.42741,
+                4.797708
+              ],
+              "bytecode_tracing": [
+                5.60358,
+                0.381381,
+                6.953278,
+                2.324219,
+                0.91537,
+                13.02436,
+                2.426724,
+                4.54281,
+                0.315072,
+                23.062263,
+                3.777167,
+                1.786912,
+                23.599068,
+                4.15964,
+                4.438285
+              ],
+              "get_fake_value": [
+                1.948734,
+                0.173723,
+                2.891367,
+                1.218883,
+                0.252707,
+                8.197226,
+                1.218247,
+                1.955831,
+                0.147296,
+                18.150032,
+                2.609683,
+                1.200387,
+                19.238456,
+                2.906015,
+                1.556272
+              ],
+              "create_proxy": [
+                1.376628,
+                0.055287,
+                1.327208,
+                0.314179,
+                0.121895,
+                1.836135,
+                0.343271,
+                0.637479,
+                0.042586,
+                1.704324,
+                0.324774,
+                0.105602,
+                1.245256,
+                0.345828,
+                0.703969
+              ],
+              "wrap_to_fake_tensor_and_record": [
+                0.046757,
+                0.015892,
+                0.018299,
+                0.029847,
+                0.007279,
+                0.031786,
+                0.040295,
+                0.044872,
+                0.010635,
+                0.033245,
+                0.043061,
+                0.006132,
+                0.031108,
+                0.036528,
+                0.050114
+              ],
+              "variable_builder_call": [
+                0.199472,
+                0.031884,
+                0.069954,
+                0.076356,
+                0.051811,
+                0.105403,
+                0.100932,
+                0.149845,
+                0.021103,
+                0.098371,
+                0.091208,
+                0.049649,
+                0.094201,
+                0.083726,
+                0.174056
+              ],
+              "insert_deferred_runtime_asserts": [
+                0.159887,
+                0.01396,
+                0.270995,
+                0.441064,
+                0.026601,
+                0.412912,
+                0.093698,
+                0.127463,
+                0.0152,
+                0.321006,
+                0.118055,
+                0.028553,
+                0.316196,
+                0.151581,
+                0.15042
+              ],
+              "OutputGraph.call_user_compiler": [
+                0.000949,
+                8.6e-05,
+                0.001309,
+                0.000534,
+                0.000217,
+                0.006046,
+                0.000453,
+                0.000445,
+                6.7e-05,
+                0.002062,
+                0.000619,
+                0.000243,
+                0.001654,
+                0.001109,
+                0.000553
+              ],
+              "build_guards": [
+                0.119634,
+                0.014389,
+                0.039144,
+                0.093666,
+                0.027621,
+                0.236836,
+                0.059484,
+                0.084035,
+                0.023628,
+                0.1435,
+                0.077128,
+                0.022697,
+                0.146249,
+                0.098931,
+                0.101006
+              ],
+              "pgo.dynamic_whitelist": [
+                4e-05,
+                1.3e-05,
+                1.2e-05,
+                3.9e-05,
+                1.8e-05,
+                1.4e-05,
+                1.4e-05,
+                1.2e-05,
+                1.3e-05,
+                1.6e-05,
+                1.5e-05,
+                1.7e-05,
+                1.7e-05
+              ],
+              "gc": [
+                0.000808,
+                0.000321,
+                0.000101,
+                0.000737,
+                0.000779,
+                0.000199,
+                0.000376,
+                0.000551,
+                0.000693,
+                0.000352,
+                0.000232,
+                0.000155,
+                0.000309,
+                0.000257,
+                0.000388
+              ]
+            }
+          }
+        }
+      ],
+      "epoch_seconds": 460.8399610000197,
+      "peak_memory": {
+        "process_peak_rss_bytes": 2156969984
+      },
+      "memory_sampling_interval_seconds": 0.02,
+      "expectation": {
+        "observations": 14,
+        "cold_starts": 2,
+        "predicted_targets": 12,
+        "document_starts": 2,
+        "enabled": true,
+        "scope": "structured",
+        "feature_mse": 0.036130578722804785,
+        "presence_bce": 0.6965942084789276,
+        "document_boundary_fraction": 0.14285714285714285
+      },
+      "steady": {
+        "steps": 5,
+        "seconds": 293.95259529101895,
+        "warmup_seconds": 166.88544604199706,
+        "median_step_seconds": 59.35052670899313,
+        "input_sentences": 10,
+        "observations": 10,
+        "predicted_targets": 10,
+        "input_sentences_per_second": 0.03401909069759973,
+        "predicted_targets_per_second": 0.03401909069759973,
+        "supplied_answer_rows": 0,
+        "supplied_answer_rows_per_second": 0.0,
+        "document_boundary_fraction": 0.0,
+        "reconstruction_mean": 1.5051838994026183,
+        "supplied_answer_mean": 0.0
+      }
+    },
+    {
+      "name": "validation_after",
+      "split": "validation",
+      "steps": [
+        {
+          "input_sentences": 2,
+          "observations": 2,
+          "predicted_targets": 0,
+          "cold_starts": 2,
+          "reconstruction": 1.3256826400756836,
+          "answer": 0.06663256883621216,
+          "supplied_answer_rows": 0,
+          "training": false,
+          "optimizer_steps": 0,
+          "trained_inter": null,
+          "word_counts": [
+            9,
+            11
+          ],
+          "sources": [
+            0,
+            28
+          ],
+          "reconstruction_fidelity": {
+            "owned": true,
+            "event_mse": 0.09120934456586838,
+            "event_score": 0.0747862383723259,
+            "byte_cost": 1.3256826400756836,
+            "idea_mse": 0.013614325784146786,
+            "truncated_rows": 2,
+            "active_basis_rows": [
+              18,
+              22
+            ]
+          },
+          "output_word_counts": [
+            1,
+            1
+          ],
+          "output_truncated_rows": 0,
+          "output_tensor_shape": [
+            2,
+            1,
+            16
+          ],
+          "shared_compose_gradient_norms": {},
+          "forward_backward_optimizer_seconds": 5.824522332986817,
+          "context_detached": true,
+          "seconds": 5.8293000419507734,
+          "batch_plus_tail_seconds": 5.827996291976888,
+          "memory": {
+            "process_peak_rss_bytes": 2206711808
+          },
+          "compiler_counters": {
+            "frames": {},
+            "stats": {
+              "calls_captured": 465,
+              "unique_graphs": 16
+            },
+            "aot_autograd": {},
+            "graph_break": {},
+            "compiler_timing_seconds": {
+              "_compile.compile_inner": [
+                6.136011,
+                0.427378,
+                7.548263,
+                3.0068,
+                1.011207,
+                14.115387,
+                2.674837,
+                4.937664,
+                0.373373,
+                23.837,
+                4.09123,
+                1.874196,
+                24.37383,
+                4.531135,
+                4.904286,
+                5.639361
+              ],
+              "compile_attempt_0": [
+                6.006731,
+                0.411576,
+                7.504928,
+                2.908238,
+                0.980845,
+                13.872305,
+                2.612555,
+                4.848768,
+                0.348034,
+                23.688526,
+                4.010958,
+                1.849542,
+                24.22267,
+                4.42741,
+                4.797708,
+                5.532134
+              ],
+              "bytecode_tracing": [
+                5.60358,
+                0.381381,
+                6.953278,
+                2.324219,
+                0.91537,
+                13.02436,
+                2.426724,
+                4.54281,
+                0.315072,
+                23.062263,
+                3.777167,
+                1.786912,
+                23.599068,
+                4.15964,
+                4.438285,
+                5.202861
+              ],
+              "get_fake_value": [
+                1.948734,
+                0.173723,
+                2.891367,
+                1.218883,
+                0.252707,
+                8.197226,
+                1.218247,
+                1.955831,
+                0.147296,
+                18.150032,
+                2.609683,
+                1.200387,
+                19.238456,
+                2.906015,
+                1.556272,
+                1.819259
+              ],
+              "create_proxy": [
+                1.376628,
+                0.055287,
+                1.327208,
+                0.314179,
+                0.121895,
+                1.836135,
+                0.343271,
+                0.637479,
+                0.042586,
+                1.704324,
+                0.324774,
+                0.105602,
+                1.245256,
+                0.345828,
+                0.703969,
+                0.820721
+              ],
+              "wrap_to_fake_tensor_and_record": [
+                0.046757,
+                0.015892,
+                0.018299,
+                0.029847,
+                0.007279,
+                0.031786,
+                0.040295,
+                0.044872,
+                0.010635,
+                0.033245,
+                0.043061,
+                0.006132,
+                0.031108,
+                0.036528,
+                0.050114,
+                0.046367
+              ],
+              "variable_builder_call": [
+                0.199472,
+                0.031884,
+                0.069954,
+                0.076356,
+                0.051811,
+                0.105403,
+                0.100932,
+                0.149845,
+                0.021103,
+                0.098371,
+                0.091208,
+                0.049649,
+                0.094201,
+                0.083726,
+                0.174056,
+                0.181789
+              ],
+              "insert_deferred_runtime_asserts": [
+                0.159887,
+                0.01396,
+                0.270995,
+                0.441064,
+                0.026601,
+                0.412912,
+                0.093698,
+                0.127463,
+                0.0152,
+                0.321006,
+                0.118055,
+                0.028553,
+                0.316196,
+                0.151581,
+                0.15042,
+                0.136499
+              ],
+              "OutputGraph.call_user_compiler": [
+                0.000949,
+                8.6e-05,
+                0.001309,
+                0.000534,
+                0.000217,
+                0.006046,
+                0.000453,
+                0.000445,
+                6.7e-05,
+                0.002062,
+                0.000619,
+                0.000243,
+                0.001654,
+                0.001109,
+                0.000553,
+                0.000173
+              ],
+              "build_guards": [
+                0.119634,
+                0.014389,
+                0.039144,
+                0.093666,
+                0.027621,
+                0.236836,
+                0.059484,
+                0.084035,
+                0.023628,
+                0.1435,
+                0.077128,
+                0.022697,
+                0.146249,
+                0.098931,
+                0.101006,
+                0.101256
+              ],
+              "pgo.dynamic_whitelist": [
+                4e-05,
+                1.3e-05,
+                1.2e-05,
+                3.9e-05,
+                1.8e-05,
+                1.4e-05,
+                1.4e-05,
+                1.2e-05,
+                1.3e-05,
+                1.6e-05,
+                1.5e-05,
+                1.7e-05,
+                1.7e-05,
+                1.7e-05
+              ],
+              "gc": [
+                0.000808,
+                0.000321,
+                0.000101,
+                0.000737,
+                0.000779,
+                0.000199,
+                0.000376,
+                0.000551,
+                0.000693,
+                0.000352,
+                0.000232,
+                0.000155,
+                0.000309,
+                0.000257,
+                0.000388,
+                0.000501
+              ]
+            }
+          }
+        },
+        {
+          "input_sentences": 2,
+          "observations": 2,
+          "predicted_targets": 2,
+          "cold_starts": 0,
+          "reconstruction": 1.1056809425354004,
+          "answer": 0.06309731304645538,
+          "supplied_answer_rows": 0,
+          "training": false,
+          "optimizer_steps": 0,
+          "trained_inter": null,
+          "word_counts": [
+            10,
+            10
+          ],
+          "sources": [
+            1,
+            29
+          ],
+          "reconstruction_fidelity": {
+            "owned": true,
+            "event_mse": 0.08227667957544327,
+            "event_score": 0.06658151000738144,
+            "byte_cost": 1.1056809425354004,
+            "idea_mse": 0.007444310467690229,
+            "truncated_rows": 1,
+            "active_basis_rows": [
+              20,
+              20
+            ]
+          },
+          "output_word_counts": [
+            1,
+            1
+          ],
+          "output_truncated_rows": 0,
+          "output_tensor_shape": [
+            2,
+            1,
+            16
+          ],
+          "shared_compose_gradient_norms": {},
+          "forward_backward_optimizer_seconds": 0.18187349999789149,
+          "context_detached": true,
+          "seconds": 0.18749662500340492,
+          "batch_plus_tail_seconds": 0.1853154589771293,
+          "memory": {
+            "process_peak_rss_bytes": 2206777344
+          },
+          "compiler_counters": {
+            "frames": {},
+            "stats": {
+              "calls_captured": 465,
+              "unique_graphs": 16
+            },
+            "aot_autograd": {},
+            "graph_break": {},
+            "compiler_timing_seconds": {
+              "_compile.compile_inner": [
+                6.136011,
+                0.427378,
+                7.548263,
+                3.0068,
+                1.011207,
+                14.115387,
+                2.674837,
+                4.937664,
+                0.373373,
+                23.837,
+                4.09123,
+                1.874196,
+                24.37383,
+                4.531135,
+                4.904286,
+                5.639361
+              ],
+              "compile_attempt_0": [
+                6.006731,
+                0.411576,
+                7.504928,
+                2.908238,
+                0.980845,
+                13.872305,
+                2.612555,
+                4.848768,
+                0.348034,
+                23.688526,
+                4.010958,
+                1.849542,
+                24.22267,
+                4.42741,
+                4.797708,
+                5.532134
+              ],
+              "bytecode_tracing": [
+                5.60358,
+                0.381381,
+                6.953278,
+                2.324219,
+                0.91537,
+                13.02436,
+                2.426724,
+                4.54281,
+                0.315072,
+                23.062263,
+                3.777167,
+                1.786912,
+                23.599068,
+                4.15964,
+                4.438285,
+                5.202861
+              ],
+              "get_fake_value": [
+                1.948734,
+                0.173723,
+                2.891367,
+                1.218883,
+                0.252707,
+                8.197226,
+                1.218247,
+                1.955831,
+                0.147296,
+                18.150032,
+                2.609683,
+                1.200387,
+                19.238456,
+                2.906015,
+                1.556272,
+                1.819259
+              ],
+              "create_proxy": [
+                1.376628,
+                0.055287,
+                1.327208,
+                0.314179,
+                0.121895,
+                1.836135,
+                0.343271,
+                0.637479,
+                0.042586,
+                1.704324,
+                0.324774,
+                0.105602,
+                1.245256,
+                0.345828,
+                0.703969,
+                0.820721
+              ],
+              "wrap_to_fake_tensor_and_record": [
+                0.046757,
+                0.015892,
+                0.018299,
+                0.029847,
+                0.007279,
+                0.031786,
+                0.040295,
+                0.044872,
+                0.010635,
+                0.033245,
+                0.043061,
+                0.006132,
+                0.031108,
+                0.036528,
+                0.050114,
+                0.046367
+              ],
+              "variable_builder_call": [
+                0.199472,
+                0.031884,
+                0.069954,
+                0.076356,
+                0.051811,
+                0.105403,
+                0.100932,
+                0.149845,
+                0.021103,
+                0.098371,
+                0.091208,
+                0.049649,
+                0.094201,
+                0.083726,
+                0.174056,
+                0.181789
+              ],
+              "insert_deferred_runtime_asserts": [
+                0.159887,
+                0.01396,
+                0.270995,
+                0.441064,
+                0.026601,
+                0.412912,
+                0.093698,
+                0.127463,
+                0.0152,
+                0.321006,
+                0.118055,
+                0.028553,
+                0.316196,
+                0.151581,
+                0.15042,
+                0.136499
+              ],
+              "OutputGraph.call_user_compiler": [
+                0.000949,
+                8.6e-05,
+                0.001309,
+                0.000534,
+                0.000217,
+                0.006046,
+                0.000453,
+                0.000445,
+                6.7e-05,
+                0.002062,
+                0.000619,
+                0.000243,
+                0.001654,
+                0.001109,
+                0.000553,
+                0.000173
+              ],
+              "build_guards": [
+                0.119634,
+                0.014389,
+                0.039144,
+                0.093666,
+                0.027621,
+                0.236836,
+                0.059484,
+                0.084035,
+                0.023628,
+                0.1435,
+                0.077128,
+                0.022697,
+                0.146249,
+                0.098931,
+                0.101006,
+                0.101256
+              ],
+              "pgo.dynamic_whitelist": [
+                4e-05,
+                1.3e-05,
+                1.2e-05,
+                3.9e-05,
+                1.8e-05,
+                1.4e-05,
+                1.4e-05,
+                1.2e-05,
+                1.3e-05,
+                1.6e-05,
+                1.5e-05,
+                1.7e-05,
+                1.7e-05,
+                1.7e-05
+              ],
+              "gc": [
+                0.000808,
+                0.000321,
+                0.000101,
+                0.000737,
+                0.000779,
+                0.000199,
+                0.000376,
+                0.000551,
+                0.000693,
+                0.000352,
+                0.000232,
+                0.000155,
+                0.000309,
+                0.000257,
+                0.000388,
+                0.000501
+              ]
+            }
+          }
+        },
+        {
+          "input_sentences": 2,
+          "observations": 2,
+          "predicted_targets": 2,
+          "cold_starts": 0,
+          "reconstruction": 1.398977518081665,
+          "answer": 0.06586990505456924,
+          "supplied_answer_rows": 0,
+          "training": false,
+          "optimizer_steps": 0,
+          "trained_inter": null,
+          "word_counts": [
+            9,
+            10
+          ],
+          "sources": [
+            2,
+            30
+          ],
+          "reconstruction_fidelity": {
+            "owned": true,
+            "event_mse": 0.09095749258995056,
+            "event_score": 0.07382718473672867,
+            "byte_cost": 1.398977518081665,
+            "idea_mse": 0.014108002185821533,
+            "truncated_rows": 1,
+            "active_basis_rows": [
+              18,
+              20
+            ]
+          },
+          "output_word_counts": [
+            1,
+            1
+          ],
+          "output_truncated_rows": 0,
+          "output_tensor_shape": [
+            2,
+            1,
+            16
+          ],
+          "shared_compose_gradient_norms": {},
+          "forward_backward_optimizer_seconds": 0.17856683395802975,
+          "context_detached": true,
+          "seconds": 0.18462225003167987,
+          "batch_plus_tail_seconds": 0.18208320898702368,
+          "memory": {
+            "process_peak_rss_bytes": 2206777344
+          },
+          "compiler_counters": {
+            "frames": {},
+            "stats": {
+              "calls_captured": 465,
+              "unique_graphs": 16
+            },
+            "aot_autograd": {},
+            "graph_break": {},
+            "compiler_timing_seconds": {
+              "_compile.compile_inner": [
+                6.136011,
+                0.427378,
+                7.548263,
+                3.0068,
+                1.011207,
+                14.115387,
+                2.674837,
+                4.937664,
+                0.373373,
+                23.837,
+                4.09123,
+                1.874196,
+                24.37383,
+                4.531135,
+                4.904286,
+                5.639361
+              ],
+              "compile_attempt_0": [
+                6.006731,
+                0.411576,
+                7.504928,
+                2.908238,
+                0.980845,
+                13.872305,
+                2.612555,
+                4.848768,
+                0.348034,
+                23.688526,
+                4.010958,
+                1.849542,
+                24.22267,
+                4.42741,
+                4.797708,
+                5.532134
+              ],
+              "bytecode_tracing": [
+                5.60358,
+                0.381381,
+                6.953278,
+                2.324219,
+                0.91537,
+                13.02436,
+                2.426724,
+                4.54281,
+                0.315072,
+                23.062263,
+                3.777167,
+                1.786912,
+                23.599068,
+                4.15964,
+                4.438285,
+                5.202861
+              ],
+              "get_fake_value": [
+                1.948734,
+                0.173723,
+                2.891367,
+                1.218883,
+                0.252707,
+                8.197226,
+                1.218247,
+                1.955831,
+                0.147296,
+                18.150032,
+                2.609683,
+                1.200387,
+                19.238456,
+                2.906015,
+                1.556272,
+                1.819259
+              ],
+              "create_proxy": [
+                1.376628,
+                0.055287,
+                1.327208,
+                0.314179,
+                0.121895,
+                1.836135,
+                0.343271,
+                0.637479,
+                0.042586,
+                1.704324,
+                0.324774,
+                0.105602,
+                1.245256,
+                0.345828,
+                0.703969,
+                0.820721
+              ],
+              "wrap_to_fake_tensor_and_record": [
+                0.046757,
+                0.015892,
+                0.018299,
+                0.029847,
+                0.007279,
+                0.031786,
+                0.040295,
+                0.044872,
+                0.010635,
+                0.033245,
+                0.043061,
+                0.006132,
+                0.031108,
+                0.036528,
+                0.050114,
+                0.046367
+              ],
+              "variable_builder_call": [
+                0.199472,
+                0.031884,
+                0.069954,
+                0.076356,
+                0.051811,
+                0.105403,
+                0.100932,
+                0.149845,
+                0.021103,
+                0.098371,
+                0.091208,
+                0.049649,
+                0.094201,
+                0.083726,
+                0.174056,
+                0.181789
+              ],
+              "insert_deferred_runtime_asserts": [
+                0.159887,
+                0.01396,
+                0.270995,
+                0.441064,
+                0.026601,
+                0.412912,
+                0.093698,
+                0.127463,
+                0.0152,
+                0.321006,
+                0.118055,
+                0.028553,
+                0.316196,
+                0.151581,
+                0.15042,
+                0.136499
+              ],
+              "OutputGraph.call_user_compiler": [
+                0.000949,
+                8.6e-05,
+                0.001309,
+                0.000534,
+                0.000217,
+                0.006046,
+                0.000453,
+                0.000445,
+                6.7e-05,
+                0.002062,
+                0.000619,
+                0.000243,
+                0.001654,
+                0.001109,
+                0.000553,
+                0.000173
+              ],
+              "build_guards": [
+                0.119634,
+                0.014389,
+                0.039144,
+                0.093666,
+                0.027621,
+                0.236836,
+                0.059484,
+                0.084035,
+                0.023628,
+                0.1435,
+                0.077128,
+                0.022697,
+                0.146249,
+                0.098931,
+                0.101006,
+                0.101256
+              ],
+              "pgo.dynamic_whitelist": [
+                4e-05,
+                1.3e-05,
+                1.2e-05,
+                3.9e-05,
+                1.8e-05,
+                1.4e-05,
+                1.4e-05,
+                1.2e-05,
+                1.3e-05,
+                1.6e-05,
+                1.5e-05,
+                1.7e-05,
+                1.7e-05,
+                1.7e-05
+              ],
+              "gc": [
+                0.000808,
+                0.000321,
+                0.000101,
+                0.000737,
+                0.000779,
+                0.000199,
+                0.000376,
+                0.000551,
+                0.000693,
+                0.000352,
+                0.000232,
+                0.000155,
+                0.000309,
+                0.000257,
+                0.000388,
+                0.000501
+              ]
+            }
+          }
+        },
+        {
+          "input_sentences": 2,
+          "observations": 2,
+          "predicted_targets": 2,
+          "cold_starts": 0,
+          "reconstruction": 1.9605095386505127,
+          "answer": 0.050610486418008804,
+          "supplied_answer_rows": 0,
+          "training": false,
+          "optimizer_steps": 0,
+          "trained_inter": null,
+          "word_counts": [
+            3,
+            10
+          ],
+          "sources": [
+            3,
+            31
+          ],
+          "reconstruction_fidelity": {
+            "owned": true,
+            "event_mse": 0.06212577968835831,
+            "event_score": 0.05082930251955986,
+            "byte_cost": 1.9605095386505127,
+            "idea_mse": 0.03252619877457619,
+            "truncated_rows": 2,
+            "active_basis_rows": [
+              6,
+              20
+            ]
+          },
+          "output_word_counts": [
+            1,
+            1
+          ],
+          "output_truncated_rows": 0,
+          "output_tensor_shape": [
+            2,
+            1,
+            16
+          ],
+          "shared_compose_gradient_norms": {},
+          "forward_backward_optimizer_seconds": 0.17131470900494605,
+          "context_detached": true,
+          "seconds": 0.17710245796479285,
+          "batch_plus_tail_seconds": 0.17461329197976738,
+          "memory": {
+            "process_peak_rss_bytes": 2206777344
+          },
+          "compiler_counters": {
+            "frames": {},
+            "stats": {
+              "calls_captured": 465,
+              "unique_graphs": 16
+            },
+            "aot_autograd": {},
+            "graph_break": {},
+            "compiler_timing_seconds": {
+              "_compile.compile_inner": [
+                6.136011,
+                0.427378,
+                7.548263,
+                3.0068,
+                1.011207,
+                14.115387,
+                2.674837,
+                4.937664,
+                0.373373,
+                23.837,
+                4.09123,
+                1.874196,
+                24.37383,
+                4.531135,
+                4.904286,
+                5.639361
+              ],
+              "compile_attempt_0": [
+                6.006731,
+                0.411576,
+                7.504928,
+                2.908238,
+                0.980845,
+                13.872305,
+                2.612555,
+                4.848768,
+                0.348034,
+                23.688526,
+                4.010958,
+                1.849542,
+                24.22267,
+                4.42741,
+                4.797708,
+                5.532134
+              ],
+              "bytecode_tracing": [
+                5.60358,
+                0.381381,
+                6.953278,
+                2.324219,
+                0.91537,
+                13.02436,
+                2.426724,
+                4.54281,
+                0.315072,
+                23.062263,
+                3.777167,
+                1.786912,
+                23.599068,
+                4.15964,
+                4.438285,
+                5.202861
+              ],
+              "get_fake_value": [
+                1.948734,
+                0.173723,
+                2.891367,
+                1.218883,
+                0.252707,
+                8.197226,
+                1.218247,
+                1.955831,
+                0.147296,
+                18.150032,
+                2.609683,
+                1.200387,
+                19.238456,
+                2.906015,
+                1.556272,
+                1.819259
+              ],
+              "create_proxy": [
+                1.376628,
+                0.055287,
+                1.327208,
+                0.314179,
+                0.121895,
+                1.836135,
+                0.343271,
+                0.637479,
+                0.042586,
+                1.704324,
+                0.324774,
+                0.105602,
+                1.245256,
+                0.345828,
+                0.703969,
+                0.820721
+              ],
+              "wrap_to_fake_tensor_and_record": [
+                0.046757,
+                0.015892,
+                0.018299,
+                0.029847,
+                0.007279,
+                0.031786,
+                0.040295,
+                0.044872,
+                0.010635,
+                0.033245,
+                0.043061,
+                0.006132,
+                0.031108,
+                0.036528,
+                0.050114,
+                0.046367
+              ],
+              "variable_builder_call": [
+                0.199472,
+                0.031884,
+                0.069954,
+                0.076356,
+                0.051811,
+                0.105403,
+                0.100932,
+                0.149845,
+                0.021103,
+                0.098371,
+                0.091208,
+                0.049649,
+                0.094201,
+                0.083726,
+                0.174056,
+                0.181789
+              ],
+              "insert_deferred_runtime_asserts": [
+                0.159887,
+                0.01396,
+                0.270995,
+                0.441064,
+                0.026601,
+                0.412912,
+                0.093698,
+                0.127463,
+                0.0152,
+                0.321006,
+                0.118055,
+                0.028553,
+                0.316196,
+                0.151581,
+                0.15042,
+                0.136499
+              ],
+              "OutputGraph.call_user_compiler": [
+                0.000949,
+                8.6e-05,
+                0.001309,
+                0.000534,
+                0.000217,
+                0.006046,
+                0.000453,
+                0.000445,
+                6.7e-05,
+                0.002062,
+                0.000619,
+                0.000243,
+                0.001654,
+                0.001109,
+                0.000553,
+                0.000173
+              ],
+              "build_guards": [
+                0.119634,
+                0.014389,
+                0.039144,
+                0.093666,
+                0.027621,
+                0.236836,
+                0.059484,
+                0.084035,
+                0.023628,
+                0.1435,
+                0.077128,
+                0.022697,
+                0.146249,
+                0.098931,
+                0.101006,
+                0.101256
+              ],
+              "pgo.dynamic_whitelist": [
+                4e-05,
+                1.3e-05,
+                1.2e-05,
+                3.9e-05,
+                1.8e-05,
+                1.4e-05,
+                1.4e-05,
+                1.2e-05,
+                1.3e-05,
+                1.6e-05,
+                1.5e-05,
+                1.7e-05,
+                1.7e-05,
+                1.7e-05
+              ],
+              "gc": [
+                0.000808,
+                0.000321,
+                0.000101,
+                0.000737,
+                0.000779,
+                0.000199,
+                0.000376,
+                0.000551,
+                0.000693,
+                0.000352,
+                0.000232,
+                0.000155,
+                0.000309,
+                0.000257,
+                0.000388,
+                0.000501
+              ]
+            }
+          }
+        },
+        {
+          "input_sentences": 2,
+          "observations": 2,
+          "predicted_targets": 2,
+          "cold_starts": 0,
+          "reconstruction": 1.9450750350952148,
+          "answer": 0.038167938590049744,
+          "supplied_answer_rows": 0,
+          "training": false,
+          "optimizer_steps": 0,
+          "trained_inter": null,
+          "word_counts": [
+            3,
+            7
+          ],
+          "sources": [
+            4,
+            32
+          ],
+          "reconstruction_fidelity": {
+            "owned": true,
+            "event_mse": 0.04517868533730507,
+            "event_score": 0.03719928860664368,
+            "byte_cost": 1.9450750350952148,
+            "idea_mse": 0.026139069348573685,
+            "truncated_rows": 1,
+            "active_basis_rows": [
+              6,
+              14
+            ]
+          },
+          "output_word_counts": [
+            1,
+            1
+          ],
+          "output_truncated_rows": 0,
+          "output_tensor_shape": [
+            2,
+            1,
+            16
+          ],
+          "shared_compose_gradient_norms": {},
+          "forward_backward_optimizer_seconds": 0.14394000003812835,
+          "context_detached": true,
+          "seconds": 0.1496910000569187,
+          "batch_plus_tail_seconds": 0.14723525004228577,
+          "memory": {
+            "process_peak_rss_bytes": 2206777344
+          },
+          "compiler_counters": {
+            "frames": {},
+            "stats": {
+              "calls_captured": 465,
+              "unique_graphs": 16
+            },
+            "aot_autograd": {},
+            "graph_break": {},
+            "compiler_timing_seconds": {
+              "_compile.compile_inner": [
+                6.136011,
+                0.427378,
+                7.548263,
+                3.0068,
+                1.011207,
+                14.115387,
+                2.674837,
+                4.937664,
+                0.373373,
+                23.837,
+                4.09123,
+                1.874196,
+                24.37383,
+                4.531135,
+                4.904286,
+                5.639361
+              ],
+              "compile_attempt_0": [
+                6.006731,
+                0.411576,
+                7.504928,
+                2.908238,
+                0.980845,
+                13.872305,
+                2.612555,
+                4.848768,
+                0.348034,
+                23.688526,
+                4.010958,
+                1.849542,
+                24.22267,
+                4.42741,
+                4.797708,
+                5.532134
+              ],
+              "bytecode_tracing": [
+                5.60358,
+                0.381381,
+                6.953278,
+                2.324219,
+                0.91537,
+                13.02436,
+                2.426724,
+                4.54281,
+                0.315072,
+                23.062263,
+                3.777167,
+                1.786912,
+                23.599068,
+                4.15964,
+                4.438285,
+                5.202861
+              ],
+              "get_fake_value": [
+                1.948734,
+                0.173723,
+                2.891367,
+                1.218883,
+                0.252707,
+                8.197226,
+                1.218247,
+                1.955831,
+                0.147296,
+                18.150032,
+                2.609683,
+                1.200387,
+                19.238456,
+                2.906015,
+                1.556272,
+                1.819259
+              ],
+              "create_proxy": [
+                1.376628,
+                0.055287,
+                1.327208,
+                0.314179,
+                0.121895,
+                1.836135,
+                0.343271,
+                0.637479,
+                0.042586,
+                1.704324,
+                0.324774,
+                0.105602,
+                1.245256,
+                0.345828,
+                0.703969,
+                0.820721
+              ],
+              "wrap_to_fake_tensor_and_record": [
+                0.046757,
+                0.015892,
+                0.018299,
+                0.029847,
+                0.007279,
+                0.031786,
+                0.040295,
+                0.044872,
+                0.010635,
+                0.033245,
+                0.043061,
+                0.006132,
+                0.031108,
+                0.036528,
+                0.050114,
+                0.046367
+              ],
+              "variable_builder_call": [
+                0.199472,
+                0.031884,
+                0.069954,
+                0.076356,
+                0.051811,
+                0.105403,
+                0.100932,
+                0.149845,
+                0.021103,
+                0.098371,
+                0.091208,
+                0.049649,
+                0.094201,
+                0.083726,
+                0.174056,
+                0.181789
+              ],
+              "insert_deferred_runtime_asserts": [
+                0.159887,
+                0.01396,
+                0.270995,
+                0.441064,
+                0.026601,
+                0.412912,
+                0.093698,
+                0.127463,
+                0.0152,
+                0.321006,
+                0.118055,
+                0.028553,
+                0.316196,
+                0.151581,
+                0.15042,
+                0.136499
+              ],
+              "OutputGraph.call_user_compiler": [
+                0.000949,
+                8.6e-05,
+                0.001309,
+                0.000534,
+                0.000217,
+                0.006046,
+                0.000453,
+                0.000445,
+                6.7e-05,
+                0.002062,
+                0.000619,
+                0.000243,
+                0.001654,
+                0.001109,
+                0.000553,
+                0.000173
+              ],
+              "build_guards": [
+                0.119634,
+                0.014389,
+                0.039144,
+                0.093666,
+                0.027621,
+                0.236836,
+                0.059484,
+                0.084035,
+                0.023628,
+                0.1435,
+                0.077128,
+                0.022697,
+                0.146249,
+                0.098931,
+                0.101006,
+                0.101256
+              ],
+              "pgo.dynamic_whitelist": [
+                4e-05,
+                1.3e-05,
+                1.2e-05,
+                3.9e-05,
+                1.8e-05,
+                1.4e-05,
+                1.4e-05,
+                1.2e-05,
+                1.3e-05,
+                1.6e-05,
+                1.5e-05,
+                1.7e-05,
+                1.7e-05,
+                1.7e-05
+              ],
+              "gc": [
+                0.000808,
+                0.000321,
+                0.000101,
+                0.000737,
+                0.000779,
+                0.000199,
+                0.000376,
+                0.000551,
+                0.000693,
+                0.000352,
+                0.000232,
+                0.000155,
+                0.000309,
+                0.000257,
+                0.000388,
+                0.000501
+              ]
+            }
+          }
+        },
+        {
+          "input_sentences": 2,
+          "observations": 2,
+          "predicted_targets": 2,
+          "cold_starts": 0,
+          "reconstruction": 1.925595998764038,
+          "answer": 0.04464137181639671,
+          "supplied_answer_rows": 0,
+          "training": false,
+          "optimizer_steps": 0,
+          "trained_inter": null,
+          "word_counts": [
+            4,
+            9
+          ],
+          "sources": [
+            5,
+            33
+          ],
+          "reconstruction_fidelity": {
+            "owned": true,
+            "event_mse": 0.06329141557216644,
+            "event_score": 0.05363858863711357,
+            "byte_cost": 1.925595998764038,
+            "idea_mse": 0.04511738941073418,
+            "truncated_rows": 1,
+            "active_basis_rows": [
+              8,
+              18
+            ]
+          },
+          "output_word_counts": [
+            1,
+            1
+          ],
+          "output_truncated_rows": 0,
+          "output_tensor_shape": [
+            2,
+            1,
+            16
+          ],
+          "shared_compose_gradient_norms": {},
+          "forward_backward_optimizer_seconds": 0.16458045900799334,
+          "context_detached": true,
+          "seconds": 0.1719894579728134,
+          "batch_plus_tail_seconds": 0.16927937499713153,
+          "memory": {
+            "process_peak_rss_bytes": 2206810112
+          },
+          "compiler_counters": {
+            "frames": {},
+            "stats": {
+              "calls_captured": 465,
+              "unique_graphs": 16
+            },
+            "aot_autograd": {},
+            "graph_break": {},
+            "compiler_timing_seconds": {
+              "_compile.compile_inner": [
+                6.136011,
+                0.427378,
+                7.548263,
+                3.0068,
+                1.011207,
+                14.115387,
+                2.674837,
+                4.937664,
+                0.373373,
+                23.837,
+                4.09123,
+                1.874196,
+                24.37383,
+                4.531135,
+                4.904286,
+                5.639361
+              ],
+              "compile_attempt_0": [
+                6.006731,
+                0.411576,
+                7.504928,
+                2.908238,
+                0.980845,
+                13.872305,
+                2.612555,
+                4.848768,
+                0.348034,
+                23.688526,
+                4.010958,
+                1.849542,
+                24.22267,
+                4.42741,
+                4.797708,
+                5.532134
+              ],
+              "bytecode_tracing": [
+                5.60358,
+                0.381381,
+                6.953278,
+                2.324219,
+                0.91537,
+                13.02436,
+                2.426724,
+                4.54281,
+                0.315072,
+                23.062263,
+                3.777167,
+                1.786912,
+                23.599068,
+                4.15964,
+                4.438285,
+                5.202861
+              ],
+              "get_fake_value": [
+                1.948734,
+                0.173723,
+                2.891367,
+                1.218883,
+                0.252707,
+                8.197226,
+                1.218247,
+                1.955831,
+                0.147296,
+                18.150032,
+                2.609683,
+                1.200387,
+                19.238456,
+                2.906015,
+                1.556272,
+                1.819259
+              ],
+              "create_proxy": [
+                1.376628,
+                0.055287,
+                1.327208,
+                0.314179,
+                0.121895,
+                1.836135,
+                0.343271,
+                0.637479,
+                0.042586,
+                1.704324,
+                0.324774,
+                0.105602,
+                1.245256,
+                0.345828,
+                0.703969,
+                0.820721
+              ],
+              "wrap_to_fake_tensor_and_record": [
+                0.046757,
+                0.015892,
+                0.018299,
+                0.029847,
+                0.007279,
+                0.031786,
+                0.040295,
+                0.044872,
+                0.010635,
+                0.033245,
+                0.043061,
+                0.006132,
+                0.031108,
+                0.036528,
+                0.050114,
+                0.046367
+              ],
+              "variable_builder_call": [
+                0.199472,
+                0.031884,
+                0.069954,
+                0.076356,
+                0.051811,
+                0.105403,
+                0.100932,
+                0.149845,
+                0.021103,
+                0.098371,
+                0.091208,
+                0.049649,
+                0.094201,
+                0.083726,
+                0.174056,
+                0.181789
+              ],
+              "insert_deferred_runtime_asserts": [
+                0.159887,
+                0.01396,
+                0.270995,
+                0.441064,
+                0.026601,
+                0.412912,
+                0.093698,
+                0.127463,
+                0.0152,
+                0.321006,
+                0.118055,
+                0.028553,
+                0.316196,
+                0.151581,
+                0.15042,
+                0.136499
+              ],
+              "OutputGraph.call_user_compiler": [
+                0.000949,
+                8.6e-05,
+                0.001309,
+                0.000534,
+                0.000217,
+                0.006046,
+                0.000453,
+                0.000445,
+                6.7e-05,
+                0.002062,
+                0.000619,
+                0.000243,
+                0.001654,
+                0.001109,
+                0.000553,
+                0.000173
+              ],
+              "build_guards": [
+                0.119634,
+                0.014389,
+                0.039144,
+                0.093666,
+                0.027621,
+                0.236836,
+                0.059484,
+                0.084035,
+                0.023628,
+                0.1435,
+                0.077128,
+                0.022697,
+                0.146249,
+                0.098931,
+                0.101006,
+                0.101256
+              ],
+              "pgo.dynamic_whitelist": [
+                4e-05,
+                1.3e-05,
+                1.2e-05,
+                3.9e-05,
+                1.8e-05,
+                1.4e-05,
+                1.4e-05,
+                1.2e-05,
+                1.3e-05,
+                1.6e-05,
+                1.5e-05,
+                1.7e-05,
+                1.7e-05,
+                1.7e-05
+              ],
+              "gc": [
+                0.000808,
+                0.000321,
+                0.000101,
+                0.000737,
+                0.000779,
+                0.000199,
+                0.000376,
+                0.000551,
+                0.000693,
+                0.000352,
+                0.000232,
+                0.000155,
+                0.000309,
+                0.000257,
+                0.000388,
+                0.000501
+              ]
+            }
+          }
+        },
+        {
+          "input_sentences": 2,
+          "observations": 2,
+          "predicted_targets": 1,
+          "cold_starts": 1,
+          "reconstruction": 1.8277397155761719,
+          "answer": 0.05640081316232681,
+          "supplied_answer_rows": 0,
+          "training": false,
+          "optimizer_steps": 0,
+          "trained_inter": null,
+          "word_counts": [
+            10,
+            4
+          ],
+          "sources": [
+            6,
+            34
+          ],
+          "reconstruction_fidelity": {
+            "owned": true,
+            "event_mse": 0.061192840337753296,
+            "event_score": 0.05134741589426994,
+            "byte_cost": 1.8277397155761719,
+            "idea_mse": 0.021251823753118515,
+            "truncated_rows": 2,
+            "active_basis_rows": [
+              20,
+              8
+            ]
+          },
+          "output_word_counts": [
+            1,
+            1
+          ],
+          "output_truncated_rows": 0,
+          "output_tensor_shape": [
+            2,
+            1,
+            16
+          ],
+          "shared_compose_gradient_norms": {},
+          "forward_backward_optimizer_seconds": 4.872872375010047,
+          "context_detached": true,
+          "seconds": 4.8802779170218855,
+          "batch_plus_tail_seconds": 4.877418292046059,
+          "memory": {
+            "process_peak_rss_bytes": 2245836800
+          },
+          "compiler_counters": {
+            "frames": {},
+            "stats": {
+              "calls_captured": 524,
+              "unique_graphs": 17
+            },
+            "aot_autograd": {},
+            "graph_break": {},
+            "compiler_timing_seconds": {
+              "_compile.compile_inner": [
+                6.136011,
+                0.427378,
+                7.548263,
+                3.0068,
+                1.011207,
+                14.115387,
+                2.674837,
+                4.937664,
+                0.373373,
+                23.837,
+                4.09123,
+                1.874196,
+                24.37383,
+                4.531135,
+                4.904286,
+                5.639361,
+                4.643004
+              ],
+              "compile_attempt_0": [
+                6.006731,
+                0.411576,
+                7.504928,
+                2.908238,
+                0.980845,
+                13.872305,
+                2.612555,
+                4.848768,
+                0.348034,
+                23.688526,
+                4.010958,
+                1.849542,
+                24.22267,
+                4.42741,
+                4.797708,
+                5.532134,
+                4.524087
+              ],
+              "bytecode_tracing": [
+                5.60358,
+                0.381381,
+                6.953278,
+                2.324219,
+                0.91537,
+                13.02436,
+                2.426724,
+                4.54281,
+                0.315072,
+                23.062263,
+                3.777167,
+                1.786912,
+                23.599068,
+                4.15964,
+                4.438285,
+                5.202861,
+                4.18926
+              ],
+              "get_fake_value": [
+                1.948734,
+                0.173723,
+                2.891367,
+                1.218883,
+                0.252707,
+                8.197226,
+                1.218247,
+                1.955831,
+                0.147296,
+                18.150032,
+                2.609683,
+                1.200387,
+                19.238456,
+                2.906015,
+                1.556272,
+                1.819259,
+                1.45012
+              ],
+              "create_proxy": [
+                1.376628,
+                0.055287,
+                1.327208,
+                0.314179,
+                0.121895,
+                1.836135,
+                0.343271,
+                0.637479,
+                0.042586,
+                1.704324,
+                0.324774,
+                0.105602,
+                1.245256,
+                0.345828,
+                0.703969,
+                0.820721,
+                0.665814
+              ],
+              "wrap_to_fake_tensor_and_record": [
+                0.046757,
+                0.015892,
+                0.018299,
+                0.029847,
+                0.007279,
+                0.031786,
+                0.040295,
+                0.044872,
+                0.010635,
+                0.033245,
+                0.043061,
+                0.006132,
+                0.031108,
+                0.036528,
+                0.050114,
+                0.046367,
+                0.044
+              ],
+              "variable_builder_call": [
+                0.199472,
+                0.031884,
+                0.069954,
+                0.076356,
+                0.051811,
+                0.105403,
+                0.100932,
+                0.149845,
+                0.021103,
+                0.098371,
+                0.091208,
+                0.049649,
+                0.094201,
+                0.083726,
+                0.174056,
+                0.181789,
+                0.167924
+              ],
+              "insert_deferred_runtime_asserts": [
+                0.159887,
+                0.01396,
+                0.270995,
+                0.441064,
+                0.026601,
+                0.412912,
+                0.093698,
+                0.127463,
+                0.0152,
+                0.321006,
+                0.118055,
+                0.028553,
+                0.316196,
+                0.151581,
+                0.15042,
+                0.136499,
+                0.136548
+              ],
+              "OutputGraph.call_user_compiler": [
+                0.000949,
+                8.6e-05,
+                0.001309,
+                0.000534,
+                0.000217,
+                0.006046,
+                0.000453,
+                0.000445,
+                6.7e-05,
+                0.002062,
+                0.000619,
+                0.000243,
+                0.001654,
+                0.001109,
+                0.000553,
+                0.000173,
+                0.000179
+              ],
+              "build_guards": [
+                0.119634,
+                0.014389,
+                0.039144,
+                0.093666,
+                0.027621,
+                0.236836,
+                0.059484,
+                0.084035,
+                0.023628,
+                0.1435,
+                0.077128,
+                0.022697,
+                0.146249,
+                0.098931,
+                0.101006,
+                0.101256,
+                0.113094
+              ],
+              "pgo.dynamic_whitelist": [
+                4e-05,
+                1.3e-05,
+                1.2e-05,
+                3.9e-05,
+                1.8e-05,
+                1.4e-05,
+                1.4e-05,
+                1.2e-05,
+                1.3e-05,
+                1.6e-05,
+                1.5e-05,
+                1.7e-05,
+                1.7e-05,
+                1.7e-05,
+                1.6e-05
+              ],
+              "gc": [
+                0.000808,
+                0.000321,
+                0.000101,
+                0.000737,
+                0.000779,
+                0.000199,
+                0.000376,
+                0.000551,
+                0.000693,
+                0.000352,
+                0.000232,
+                0.000155,
+                0.000309,
+                0.000257,
+                0.000388,
+                0.000501,
+                0.000367
+              ]
+            }
+          }
+        },
+        {
+          "input_sentences": 2,
+          "observations": 2,
+          "predicted_targets": 1,
+          "cold_starts": 1,
+          "reconstruction": 1.7384917736053467,
+          "answer": 0.030414564535021782,
+          "supplied_answer_rows": 0,
+          "training": false,
+          "optimizer_steps": 0,
+          "trained_inter": null,
+          "word_counts": [
+            6,
+            3
+          ],
+          "sources": [
+            7,
+            35
+          ],
+          "reconstruction_fidelity": {
+            "owned": true,
+            "event_mse": 0.041176293045282364,
+            "event_score": 0.03398709371685982,
+            "byte_cost": 1.7384917736053467,
+            "idea_mse": 0.04384838417172432,
+            "truncated_rows": 1,
+            "active_basis_rows": [
+              12,
+              6
+            ]
+          },
+          "output_word_counts": [
+            1,
+            1
+          ],
+          "output_truncated_rows": 0,
+          "output_tensor_shape": [
+            2,
+            1,
+            16
+          ],
+          "shared_compose_gradient_norms": {},
+          "forward_backward_optimizer_seconds": 0.17228920804336667,
+          "context_detached": true,
+          "seconds": 0.1788021669490263,
+          "batch_plus_tail_seconds": 0.17582162498729303,
+          "memory": {
+            "process_peak_rss_bytes": 2245869568
+          },
+          "compiler_counters": {
+            "frames": {},
+            "stats": {
+              "calls_captured": 524,
+              "unique_graphs": 17
+            },
+            "aot_autograd": {},
+            "graph_break": {},
+            "compiler_timing_seconds": {
+              "_compile.compile_inner": [
+                6.136011,
+                0.427378,
+                7.548263,
+                3.0068,
+                1.011207,
+                14.115387,
+                2.674837,
+                4.937664,
+                0.373373,
+                23.837,
+                4.09123,
+                1.874196,
+                24.37383,
+                4.531135,
+                4.904286,
+                5.639361,
+                4.643004
+              ],
+              "compile_attempt_0": [
+                6.006731,
+                0.411576,
+                7.504928,
+                2.908238,
+                0.980845,
+                13.872305,
+                2.612555,
+                4.848768,
+                0.348034,
+                23.688526,
+                4.010958,
+                1.849542,
+                24.22267,
+                4.42741,
+                4.797708,
+                5.532134,
+                4.524087
+              ],
+              "bytecode_tracing": [
+                5.60358,
+                0.381381,
+                6.953278,
+                2.324219,
+                0.91537,
+                13.02436,
+                2.426724,
+                4.54281,
+                0.315072,
+                23.062263,
+                3.777167,
+                1.786912,
+                23.599068,
+                4.15964,
+                4.438285,
+                5.202861,
+                4.18926
+              ],
+              "get_fake_value": [
+                1.948734,
+                0.173723,
+                2.891367,
+                1.218883,
+                0.252707,
+                8.197226,
+                1.218247,
+                1.955831,
+                0.147296,
+                18.150032,
+                2.609683,
+                1.200387,
+                19.238456,
+                2.906015,
+                1.556272,
+                1.819259,
+                1.45012
+              ],
+              "create_proxy": [
+                1.376628,
+                0.055287,
+                1.327208,
+                0.314179,
+                0.121895,
+                1.836135,
+                0.343271,
+                0.637479,
+                0.042586,
+                1.704324,
+                0.324774,
+                0.105602,
+                1.245256,
+                0.345828,
+                0.703969,
+                0.820721,
+                0.665814
+              ],
+              "wrap_to_fake_tensor_and_record": [
+                0.046757,
+                0.015892,
+                0.018299,
+                0.029847,
+                0.007279,
+                0.031786,
+                0.040295,
+                0.044872,
+                0.010635,
+                0.033245,
+                0.043061,
+                0.006132,
+                0.031108,
+                0.036528,
+                0.050114,
+                0.046367,
+                0.044
+              ],
+              "variable_builder_call": [
+                0.199472,
+                0.031884,
+                0.069954,
+                0.076356,
+                0.051811,
+                0.105403,
+                0.100932,
+                0.149845,
+                0.021103,
+                0.098371,
+                0.091208,
+                0.049649,
+                0.094201,
+                0.083726,
+                0.174056,
+                0.181789,
+                0.167924
+              ],
+              "insert_deferred_runtime_asserts": [
+                0.159887,
+                0.01396,
+                0.270995,
+                0.441064,
+                0.026601,
+                0.412912,
+                0.093698,
+                0.127463,
+                0.0152,
+                0.321006,
+                0.118055,
+                0.028553,
+                0.316196,
+                0.151581,
+                0.15042,
+                0.136499,
+                0.136548
+              ],
+              "OutputGraph.call_user_compiler": [
+                0.000949,
+                8.6e-05,
+                0.001309,
+                0.000534,
+                0.000217,
+                0.006046,
+                0.000453,
+                0.000445,
+                6.7e-05,
+                0.002062,
+                0.000619,
+                0.000243,
+                0.001654,
+                0.001109,
+                0.000553,
+                0.000173,
+                0.000179
+              ],
+              "build_guards": [
+                0.119634,
+                0.014389,
+                0.039144,
+                0.093666,
+                0.027621,
+                0.236836,
+                0.059484,
+                0.084035,
+                0.023628,
+                0.1435,
+                0.077128,
+                0.022697,
+                0.146249,
+                0.098931,
+                0.101006,
+                0.101256,
+                0.113094
+              ],
+              "pgo.dynamic_whitelist": [
+                4e-05,
+                1.3e-05,
+                1.2e-05,
+                3.9e-05,
+                1.8e-05,
+                1.4e-05,
+                1.4e-05,
+                1.2e-05,
+                1.3e-05,
+                1.6e-05,
+                1.5e-05,
+                1.7e-05,
+                1.7e-05,
+                1.7e-05,
+                1.6e-05
+              ],
+              "gc": [
+                0.000808,
+                0.000321,
+                0.000101,
+                0.000737,
+                0.000779,
+                0.000199,
+                0.000376,
+                0.000551,
+                0.000693,
+                0.000352,
+                0.000232,
+                0.000155,
+                0.000309,
+                0.000257,
+                0.000388,
+                0.000501,
+                0.000367
+              ]
+            }
+          }
+        }
+      ],
+      "epoch_seconds": 11.764464957988821,
+      "peak_memory": {
+        "process_peak_rss_bytes": 2245869568
+      },
+      "memory_sampling_interval_seconds": 0.02,
+      "expectation": {
+        "observations": 16,
+        "cold_starts": 4,
+        "predicted_targets": 12,
+        "document_starts": 4,
+        "enabled": true,
+        "scope": "structured",
+        "feature_mse": 0.024450670617322128,
+        "presence_bce": 0.6959353586037954,
+        "document_boundary_fraction": 0.25
+      },
+      "encoded_meaning_controls": {
+        "ordered": {
+          "feature_mse": 0.024450669065117836,
+          "role_mse": [
+            0.0642683133482933,
+            0.004883998539298773,
+            0.004199703689664602
+          ],
+          "root_objective_mse": 0.0642683133482933,
+          "presence_bce": 0.6959353685379028,
+          "predicted_targets": 12,
+          "target_role_variance": [
+            0.052923381328582764,
+            0.0,
+            0.0
+          ],
+          "estimate_role_variance": [
+            0.0009536047582514584,
+            0.0008333918522112072,
+            0.000619127182289958
+          ]
+        },
+        "shuffled": {
+          "feature_mse": 0.024436738342046738,
+          "role_mse": [
+            0.06422651559114456,
+            0.00488399900496006,
+            0.004199703689664602
+          ],
+          "root_objective_mse": 0.06422651559114456,
+          "presence_bce": 0.6959353089332581,
+          "predicted_targets": 12,
+          "target_role_variance": [
+            0.052923381328582764,
+            0.0,
+            0.0
+          ],
+          "estimate_role_variance": [
+            0.0009536047582514584,
+            0.0008333918522112072,
+            0.000619127182289958
+          ]
+        },
+        "context_free": {
+          "feature_mse": 0.02326677367091179,
+          "role_mse": [
+            0.06308183073997498,
+            0.003327907295897603,
+            0.003390580415725708
+          ],
+          "root_objective_mse": 0.06308183073997498,
+          "presence_bce": 0.6921951770782471,
+          "predicted_targets": 12,
+          "target_role_variance": [
+            0.052923381328582764,
+            0.0,
+            0.0
+          ],
+          "estimate_role_variance": [
+            0.00032078835647553205,
+            0.0002496202359907329,
+            0.0002147254563169554
+          ]
+        }
+      },
+      "fixed_pretraining_encoding_score": {
+        "feature_mse": 0.04653148353099823,
+        "role_mse": [
+          0.12966910004615784,
+          0.005648681428283453,
+          0.004276655614376068
+        ],
+        "root_objective_mse": 0.12966910004615784,
+        "presence_bce": 0.6952564716339111,
+        "predicted_targets": 12,
+        "target_role_variance": [
+          0.08635476231575012,
+          0.0,
+          0.0
+        ],
+        "estimate_role_variance": [
+          0.001425083028152585,
+          0.0012971007963642478,
+          0.0008947347523644567
+        ]
+      }
+    }
+  ],
+  "timing_scope": "consecutive native step completions including next input staging, runBatch, reset/compaction and measurement overhead; epoch wall time also reported",
+  "compiler_timing_scope": "PyTorch named compiler intervals in seconds; nested intervals overlap and must not be summed together",
+  "shard_sha256": "6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22",
+  "compose_optimizer_ownership": {
+    "lift.gl._sigma.layer.raw_L": true,
+    "lift.gl._sigma.layer.d": true,
+    "lift.gl._sigma.layer.raw_U": true,
+    "lift.gl._sigma.layer.biasWeight": true,
+    "lift.gl._lex_gate.weight": true,
+    "lift.gl._lex_gate.bias": true,
+    "verb.gl._sigma.layer.raw_L": true,
+    "verb.gl._sigma.layer.d": true,
+    "verb.gl._sigma.layer.raw_U": true,
+    "verb.gl._sigma.layer.biasWeight": true,
+    "verb.gl._lex_gate.weight": true,
+    "verb.gl._lex_gate.bias": true,
+    "verb.gl._verb_spec.weight": true,
+    "verb.gl._verb_spec.bias": true,
+    "adverb.gl._sigma.layer.raw_L": true,
+    "adverb.gl._sigma.layer.d": true,
+    "adverb.gl._sigma.layer.raw_U": true,
+    "adverb.gl._sigma.layer.biasWeight": true,
+    "adverb.gl._lex_gate.weight": true,
+    "adverb.gl._lex_gate.bias": true,
+    "adverb.gl._adv_edit.weight": true,
+    "adverb.gl._adv_edit.bias": true,
+    "lower.gl._pi.layer.raw_L": true,
+    "lower.gl._pi.layer.d": true,
+    "lower.gl._pi.layer.raw_U": true,
+    "lower.gl._pi.layer.biasWeight": true,
+    "lower.gl._lex_gate.weight": true,
+    "lower.gl._lex_gate.bias": true,
+    "surface.gl.marker_map.weight": true,
+    "surface.gl.marker_map.bias": true,
+    "surface.gl.marker_prior.0.weight": true,
+    "surface.gl.marker_prior.0.bias": true,
+    "surface.gl.marker_prior.2.weight": true,
+    "surface.gl.marker_prior.2.bias": true
+  },
+  "head_parameter_delta_norm": 0.0,
+  "answer_parameter_delta_norm": 0.0,
+  "compose_parameter_delta_norms": {
+    "lift.gl._sigma.layer.raw_L": 0.01925070397555828,
+    "lift.gl._sigma.layer.d": 0.0067140208557248116,
+    "lift.gl._sigma.layer.raw_U": 0.016657449305057526,
+    "lift.gl._sigma.layer.biasWeight": 0.0034161333460360765,
+    "lift.gl._lex_gate.weight": 0.0,
+    "lift.gl._lex_gate.bias": 0.0,
+    "verb.gl._sigma.layer.raw_L": 0.0,
+    "verb.gl._sigma.layer.d": 0.0,
+    "verb.gl._sigma.layer.raw_U": 0.0,
+    "verb.gl._sigma.layer.biasWeight": 0.0,
+    "verb.gl._lex_gate.weight": 0.0,
+    "verb.gl._lex_gate.bias": 0.0,
+    "verb.gl._verb_spec.weight": 0.023237906396389008,
+    "verb.gl._verb_spec.bias": 0.005576282273977995,
+    "adverb.gl._sigma.layer.raw_L": 0.0,
+    "adverb.gl._sigma.layer.d": 0.0,
+    "adverb.gl._sigma.layer.raw_U": 0.0,
+    "adverb.gl._sigma.layer.biasWeight": 0.0,
+    "adverb.gl._lex_gate.weight": 0.0,
+    "adverb.gl._lex_gate.bias": 0.0,
+    "adverb.gl._adv_edit.weight": 0.0,
+    "adverb.gl._adv_edit.bias": 0.0,
+    "lower.gl._pi.layer.raw_L": 0.015348882414400578,
+    "lower.gl._pi.layer.d": 0.0,
+    "lower.gl._pi.layer.raw_U": 0.015288131311535835,
+    "lower.gl._pi.layer.biasWeight": 0.0046116989105939865,
+    "lower.gl._lex_gate.weight": 0.0,
+    "lower.gl._lex_gate.bias": 0.0,
+    "surface.gl.marker_map.weight": 0.024639129638671875,
+    "surface.gl.marker_map.bias": 0.005909862462431192,
+    "surface.gl.marker_prior.0.weight": 0.018912719562649727,
+    "surface.gl.marker_prior.0.bias": 0.006267580669373274,
+    "surface.gl.marker_prior.2.weight": 0.023397793993353844,
+    "surface.gl.marker_prior.2.bias": 0.006352644879370928
+  },
+  "target_detached": true,
+  "context_detached": true,
+  "predictor_update_verified": false,
+  "supplied_answer_update_verified": false
+}

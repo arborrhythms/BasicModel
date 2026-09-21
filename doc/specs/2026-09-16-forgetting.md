@@ -56,7 +56,7 @@ V(i) = the same − w_a · A(i)                           (profile: human)
 - **U(i) = 1 − deducibility(i)**, with deducibility in `[0, 1]`:
   - For an **idea row**: the expectation's discrepancy when the row was
     observed, recorded at write time as a per-row `surprise` column
-    (normalised occupied-role MSE plus presence loss of the local-role
+    (normalised all-role squared residual of the local-role
     expectation; `-1` when no expectation was staged, treated as
     surprise `1`). A well-expected sentence was deducible from its
     context and is low utility. No extra computation at pass time.

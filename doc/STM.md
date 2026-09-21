@@ -890,11 +890,14 @@ produces the next end-state **shape** $(\hat{d}, \hat{p}[\hat{d}, D])$:
   with none; the MSE term above still runs regardless). Fail-loud on a
   non-finite step.
 
-The prediction is consumed by `generate_sentence` via the `_c_prior`
-`[depth, D]` staging path: a predicted next-end-state shape is staged
-across the first `depth` STM slots as a sentence-level conditioning bias
-(`ConceptualSpace.forward`'s slotwise `_c_prior` branch,
-[Spaces.py](../bin/Spaces.py)).
+The prediction is subtracted only at the seal, as described in
+[ExpectationRetention](ExpectationRetention.md). The observation remains in STM
+and LTM unchanged; the conceived roles are derived evidence for the chooser.
+`generate_sentence` sends a positive predicted idea directly to `<generate>`.
+There is no comprehension-time prediction injection.
+
+The following depth-copy behavior describes the explicit **root benchmark**;
+production structured expectation predicts three distinct vectors and presence.
 
 > **Honesty — $\hat{d}$ is a copy-last AR prior.**
 > The predicted **depth** $\hat{d}$ is a simple AR prior: the depth of the

@@ -1247,3 +1247,106 @@ remaining learning gates or starts item 2.
 After adding the archived receipt and completion notes, documentation-link
 receipt `20260921-025341-86b75b` passed all 66 cases with the same validated
 source map.
+
+## Negative-image expectation (September 21)
+
+Item 2 implements pure composition, the per-role signed image at the seal,
+all-role surprise, observation/estimate retention, grammatical object masks,
+and residual credit on the existing controller. The design, configuration and
+checkpoint migrations are in [ExpectationRetention](ExpectationRetention.md).
+The situation context and its three configuration variables are untouched.
+
+The initial failing probes exposed absent negative-image helpers, erased
+residuals on empty roles and missing durable surprise. Native exploration then
+exposed two integration defects: `what` could bind a declarative description,
+and a subsequent declarative input attempted to append a legacy parity slot to
+ordinary thought history. The catalogue now uses known question occurrences
+for `what`; sealed observations stay with their existing observation owner.
+The final generation smoke also caught raw text crossing the tensor input API.
+Packed native exploration exposed the new object-mask lookup's one-record
+limit: a later serial occurrence could not be read. It now scans the bounded
+history on the shared meter and handles exhaustion through the controller's
+normal cutoff. A separate delayed-contrastive probe found that replay had
+covered MSE but not the optional contrastive objective; both now replay current
+predictor parameters while retaining the original estimate as evidence.
+
+Affected validation: **235 passed, 14 skipped** across the prediction,
+retention, controller, output, migration, reset and retired-prior files. After
+strengthening the absence probe and cleaning obsolete test descriptions,
+**92 passed, 1 deselected** in the relevant focused selection. The native
+unlabelled run includes three real `runBatch` calls, tied reconstruction,
+backward and optimizer updates to the same chooser. No answer is supplied.
+The generation correction passed **29 cases, 2 skipped, 1 deselected**.
+After the final history and contrastive corrections, the focused prediction,
+controller and work-boundary selection passed **71 cases, 1 skipped,
+3 deselected**. The first full run (`20260921-051525-796d18`) was explicitly
+stopped before editing source for these corrections; it is not a landing
+receipt.
+The final [history red probe](benchmarks/2026-09-21-item2/history-red.txt),
+[contrastive red probe](benchmarks/2026-09-21-item2/contrastive-red.txt) and
+[affected green result](benchmarks/2026-09-21-item2/affected-final.txt) are archived.
+The next full run (`20260921-053243-5154bb`) completed all 4,665 cases and
+found two [controller regressions](benchmarks/2026-09-21-item2/regression-failures.json).
+Reads could consume the last work unit before history recorded it; exhaustion
+now records the already-paid work and enters the ordinary zero-cost drain.
+The explicit routing-calibration fixture now initializes only its selected
+feature subspace, so ignored columns cannot change its initialization. Its
+800-update limit, actual learned descent, depth and credit assertions are
+unchanged. Cutoff coverage now runs both with and without a prior comparison.
+The corrected [controller selection](benchmarks/2026-09-21-item2/controller-green.txt)
+passed **80 cases, 4 deselected** before the final full run.
+
+The [measurement report](benchmarks/2026-09-21-item2/README.md) separates learning
+from these mechanisms. Three-seed frozen synthetic and parsed-English studies
+beat shuffled/context-free prediction controls. The existing wording recipe
+again parses all 56 held-out examples and generates/recomposes the expected
+meanings. Related unexpected text leaves a smaller conceived remainder in
+120/120 comparisons. Residual policy updates run without labels, with their own
+baseline and measured return variance.
+
+Six native runs cover unpacked and packed input, each with prediction plus
+queries, prediction alone, and reconstruction alone. The packed runs each
+complete 78 observations and 74 pairs in seven optimizer steps. None beats its
+context-free prediction control; none demonstrates joint quality benefit.
+Native reconstruction uses a 16-row basis and still reports truncated rows,
+so it does not establish full-basis fidelity or discrimination. Commands,
+counts, losses, warm-up, throughput, source fingerprints and limitations are
+in the measurement report.
+
+**Reasoning utility is null:** at gains 0 and 1, held-out questions take the
+same two thought steps and 17 work units, and have identical unsuccessful
+positive-assertion answers (Brier score 1.0). This does not pass the useful-query
+or reasoning-work learning gate. The remaining joint/causal learning evidence
+stays under item 2 in `todo.md`; it is not transferred to item 4.
+
+Retired assertions and their replacements are dispositioned in
+[ExpectationRetention](ExpectationRetention.md#migration-and-regression-dispositions).
+
+Final source-matched default selection, `20260921-055251-c20fa5`:
+**4,338 passed, 330 skipped, 1 expected failure, 1 compiler-cache failure**;
+all **4,670 selected cases completed** in 371.338 s. The sole failure was
+`test_normal_batch_trains_supplied_grammar_lessons`: clang rejected a generated
+precompiled header whose recorded PyTorch header timestamp predates the
+installed header. It was not an assertion failure. The old generated-header
+directory was preserved as a backup so compilation can rebuild it. No package
+or repository source was changed to address the environment error.
+The affected case then [passed in 185.99 s](benchmarks/2026-09-21-item2/compiler-cache-green.txt)
+against the same source after rebuilding the generated headers.
+
+The user explicitly waived another full rerun: **“No need for the full rerun.”**
+This is a completed full receipt with a documented exception, not a claim of a
+green full run. The [complete result](benchmarks/2026-09-21-item2/full-result.json.gz),
+[source manifest](benchmarks/2026-09-21-item2/full-source-manifest.json),
+[receipt summary](benchmarks/2026-09-21-item2/receipt-info.json) and
+[compiler failure](benchmarks/2026-09-21-item2/compiler-cache-failure.json)
+are archived. The full **628-file** validated source map matches the landing
+source; SHA-256 of sorted compact JSON:
+`8fb4b1752effbf1bdcc57783fde48a95eea8c0927251ec929fc60806e73b879a`.
+The runner used its default 256-case/16-file batches, 10 one-thread workers,
+8 GiB per worker and 28 GiB aggregate cap; peak aggregate memory was 18.83 GiB.
+Receipt prose, measurements and todo reconciliation do not change that source
+map. Optional slow learning studies are separate; unavailable `lxml` checks
+remain skips.
+
+After adding the final receipt and measurement notes, documentation-link run
+`20260921-060447-d4ce9c` passed **67/67 cases** with the same validated source.

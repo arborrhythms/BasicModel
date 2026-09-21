@@ -15425,25 +15425,6 @@ class ConceptualSpace(Space):
         # loop) from explicit ``forward(PS_subspace, WS_subspace)``
         # arguments supplied by the recurrent cell -- no post-construction
         # sibling refs.
-        # Optional C-space_role prior for chat-loop generation: the inference
-        # loop (BasicModel.generate_sentence) lifts the ARMA-predicted
-        # next sentence rep through InterSentenceLayer.cast into
-        # concept_dim and stages it here. When set under Stage 1.C, the
-        # prior is added to the pushed-idea activation before the
-        # codebook lookup (the residual injection point is preserved on
-        # the bookkeeping path), then cleared. None during training --
-        # the attribute exists so the forward path can read it
-        # unconditionally.
-        self._c_prior = None
-        # Slot-wise staging flag (Task 8, plan §9). When the chat-loop's
-        # ``BasicModel.generate_sentence`` stages a predicted next-end-state
-        # SHAPE ``payload_hat[depth, D]`` (one row per STM slot) rather than
-        # a single sentence-prior vector, it sets this True so the forward
-        # path aligns the prior on the SLOT axis (stage across the first
-        # ``depth`` slots of ``event_for_carrier``) instead of the legacy
-        # batch-broadcast-over-all-slots path. ``False`` keeps the existing
-        # ``[D]`` / ``[1, D]`` / ``[B, D]`` behavior byte-identical.
-        self._c_prior_slotwise = False
         # ``QKVAttentionLayer`` enlistment removed (plan 2026-06-06-symbolic-
         # heat-retrieval.md §Handoff addendum): ConceptualSpace no longer
         # constructs a tensor self-attention pass when ``hasAttention`` is set.
@@ -21244,28 +21225,6 @@ class ConceptualSpace(Space):
         return content.reshape(
             int(content.shape[0]), n_vectors, slab // n_vectors)
 
-    @staticmethod
-    def _bind_seed_slab(payload_hat, like, D):
-        """Broadcast a predicted end-state ``payload_hat[depth, Dp]`` into a
-        ``[B, N, D]`` content slab (Task A6, re-homed by the 2-stream bind:
-        the seed primes the SYMBOLIC stream at stage 0).
-
-        ``payload_hat`` is one ROW PER STM SLOT (newest-at-slot-0). Stage the
-        first ``depth`` rows across the first ``depth`` slots of an otherwise-
-        zero ``[B, N, D]`` slab, broadcast over the batch. ``like`` supplies
-        the leading ``[B, N]`` shape / device / dtype; the predictor width is
-        fit to ``D`` by :meth:`_bind_fit`. Returns a ``[B, N, D]`` tensor.
-        """
-        D = int(D)
-        B = int(like.shape[0])
-        N = int(like.shape[1])
-        depth = min(int(payload_hat.shape[0]), N)
-        slab = like.new_zeros(B, N, payload_hat.shape[-1])
-        if depth > 0:
-            slab[:, :depth, :] = (
-                payload_hat[:depth].to(device=like.device, dtype=like.dtype)
-                .unsqueeze(0).expand(B, -1, -1))
-        return ConceptualSpace._bind_fit(slab, D, like)
 
     # -- Interface factoring (MeronomySpec §3; MeronomyPlan Stage 4) ----
     # The percept leg crosses the callosum NAMELESS and FACTORED:
@@ -21991,7 +21950,7 @@ class ConceptualSpace(Space):
         # The serial model normally binds before consuming the event.  Its
         # current aligned word cell instead calls this after ``cs.forward`` so
         # it can attach fold/order provenance to the returned carrier.  That
-        # forward may have added and consumed ``_c_prior``; in provenance-only
+        # forward owns the pure composed payload; in provenance-only
         # mode retain the already-materialized event exactly, rather than
         # replacing it with a fresh source readout.
         if not preserve_target_event:
@@ -22168,8 +22127,7 @@ class ConceptualSpace(Space):
             preserve_target_event=preserve_target_event,
             source_validity=validity)
 
-    def bind_streams(self, PS_sub, WS_sub, CS_sub, SS_sub=None,
-                     seed_payload=None):
+    def bind_streams(self, PS_sub, WS_sub, CS_sub, SS_sub=None):
         """The stage's conceptual advance: bind, glue, store -- in-Space.
 
         ``CS_t = ILL(stack[PS_t ; WS_t])`` (the 2-stream slot bind, C-10):
@@ -22179,8 +22137,7 @@ class ConceptualSpace(Space):
         matrix into the N-vector operation event (written onto ``CS_sub``,
         band re-attached), and store the FULL bind carrier ON ``CS_sub``
         (``_bind_carrier``) for :meth:`unbind` / the reconstruction
-        reverse. ``seed_payload`` (stage 0, A6 interSentence) primes the
-        SYMBOLIC stream. Returns the carrier (``[..., M]``) or None when
+        reverse. Returns the carrier (``[..., M]``) or None when
         the carrier subspace is degenerate / slot-mismatched.
 
         Slice B (2026-06-21, gated on ``combine.n_streams == 3``): when the
@@ -22236,8 +22193,6 @@ class ConceptualSpace(Space):
 
             PS_t = _mask_candidates(PS_t, "part_valid")
             WS_t = _mask_candidates(WS_t, "whole_valid")
-        if seed_payload is not None:
-            WS_t = WS_t + self._bind_seed_slab(seed_payload, cs_content, D)
         # Slice B: the THIRD (symbol) peer leg -- present whenever the combine
         # is 3-stream. An absent/empty SS_sub yields a ZERO symbol leg (via
         # _bind_fit's None->zeros), so a 3-stream combine ALWAYS receives three
@@ -22672,51 +22627,6 @@ class ConceptualSpace(Space):
             # Defensive: degenerate shape — fall back to a no-op
             # (don't crash; return the input subspace unchanged).
             return subspace
-        # Optional C-prior injection (chat-loop generation): preserved
-        # for backward compatibility with InterSentenceLayer.cast /
-        # BasicModel.generate_sentence consumers that stage a prior
-        # before the forward call. Added to the pushed-idea event so
-        # downstream consumers see the conditioned vector.
-        if self._c_prior is not None:
-            prior = self._c_prior
-            if (self._c_prior_slotwise and prior.dim() == 2
-                    and event_for_carrier.dim() == 3
-                    and prior.shape[-1] == event_for_carrier.shape[-1]):
-                # NEW (Task 8, plan §9): a predicted next-end-state SHAPE
-                # ``payload_hat[depth, D]`` -- one row per STM SLOT, NOT a
-                # batch-broadcast vector. Stage it across the FIRST ``depth``
-                # slots of ``event_for_carrier`` (clamped to the available N),
-                # broadcast over the batch axis. Slots beyond ``depth`` are
-                # left untouched.
-                B = event_for_carrier.shape[0]
-                N = event_for_carrier.shape[1]
-                depth = min(int(prior.shape[0]), int(N))
-                if depth > 0:
-                    add = torch.zeros_like(event_for_carrier)
-                    # [depth, D] -> [1, depth, D] -> broadcast over B.
-                    add[:, :depth, :] = (
-                        prior[:depth].unsqueeze(0).expand(B, -1, -1))
-                    event_for_carrier = event_for_carrier + add
-            elif prior.dim() == 1 or prior.dim() == 2:
-                # Legacy batch-broadcast path (byte-identical): a single
-                # sentence-prior vector added to ALL slots.
-                if prior.dim() == 1:
-                    prior = prior.unsqueeze(0)
-                if event_for_carrier.dim() == 3 and prior.dim() == 2:
-                    if prior.shape[0] == 1:
-                        prior_b = prior.expand(
-                            event_for_carrier.shape[0], -1)
-                    elif prior.shape[0] == event_for_carrier.shape[0]:
-                        prior_b = prior
-                    else:
-                        K = max(1, event_for_carrier.shape[0]
-                                // max(1, prior.shape[0]))
-                        prior_b = prior.repeat_interleave(K, dim=0)
-                    if prior_b.shape[-1] == event_for_carrier.shape[-1]:
-                        event_for_carrier = (
-                            event_for_carrier + prior_b.unsqueeze(1))
-            self._c_prior = None
-            self._c_prior_slotwise = False
         # Write the pushed-idea event back to the carrier subspace so
         # downstream consumers (WholeSpace.forward via
         # ``_subspaceForWS``) see the bookkept event.

@@ -970,8 +970,7 @@ fires for that row only; other rows continue mid-document with state
 preserved.
 
 **Soft reset.** The active parser signals when a row's parse reduces to
-`<start>`. `wordSpace._sentence_completed` is drained per-tick: re-arms
-`_stm_fired[b]`, clears `_last_svo[b*K..]` and parse-stack rows for `b`,
+`<start>`. `wordSpace._sentence_completed` is drained per-tick, clearing `_last_svo[b*K..]` and parse-stack rows for `b`,
 but **preserves discourse history** (discourse accumulates across sentences
 within a document and clears only on hard reset).
 
@@ -1446,35 +1445,21 @@ continuity unless the caller explicitly calls `Reset`.
    - Computes `e_t = s_t - s_hat_t`, pushes both into the rings.
 3. `runBatch` adds the loss to `TheError` under category
    `"discourse"` with weight `armaScale` (training XSD knob, default
-   0.1).
+   0.0; this auxiliary predictor is off in production).
 
-### Inference (chat-loop seeding)
+### Expectation at comprehension and generation boundaries
 
-`BasicModel.generate_sentence(seed_text)`:
+Composition is pure. At the seal, the estimate is sign-reversed per role:
+`c = o - expectationGain * (1-object_mask) * presence * estimate`.
+The observation row keeps `o`, and the linked pair derives the conceived view.
+The chooser sees that detached view; prediction learns the all-role `o-estimate`
+residual regardless of gain. No image changes the order-zero field or reading
+attention. See [ExpectationRetention](ExpectationRetention.md).
 
-1. Calls `discourse.predict_next()` for the ARMA-predicted
-   sentence-rep prior `s_hat_{t+1}`.
-2. Lifts it through `discourse.cast` to `concept_dim` and stages on
-   `ConceptualSpace._c_prior`.
-3. Runs the IR forward --- the body's first sigma_percept output gets
-   `_c_prior` summed in as a sentence-level conditioning bias before
-   the codebook lookup. Cleared after the forward consumes it.
-4. The post-body perceptual event is decoded by nearest-neighbour
-   against the perceptual codebook, producing the
-   `(slot, original, predicted)` triples for the seed text's masked
-   positions.
-5. Commits the produced sentence's SS root to the ARMA ring via
-   `discourse.observe(s_tensor)`.
-
-> Scheduled for deletion (2026-09-20): the additive `_c_prior` staging has
-> the assimilative sign. Under the
-> [accessible-mind spec §2.6.3](specs/2026-09-20-accessible-mind-subsystems.md#263-purity) no estimate enters
-> composition; the estimate is subtracted from the sealed idea instead, and
-> a production prior belongs to the `<generate>` seed (todo NEXT item 2).
-
-The IR head plays no role at inference --- the prediction lives at the
-masked subsymbolic (PS) positions, decoded against the (frozen) perceptual
-codebook.
+`BasicModel.generate_sentence(seed_text)` understands the text normally, then
+uses the positive predicted idea as the existing `<generate>` walk's seed.
+It returns generated words through the full owned spelling inverse and never
+feeds generated output to the external observation stream.
 
 ### Configuration
 

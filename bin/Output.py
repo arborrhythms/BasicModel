@@ -56,7 +56,7 @@ def thought_answer_meanings(selected):
             raise ValueError("prediction answer differs from the full role shape")
         return (ConceptualMeaning(value.roles.detach(),
                 torch.ones(3, dtype=torch.bool, device=value.roles.device),
-                mode="unspecified"),)
+                mode="unspecified", bindings=value.bindings, scope=value.scope),)
     if checked.result_kind in ("code", "concept"):
         value = checked.value
         if value is None:

@@ -1489,12 +1489,17 @@ After that input has been understood, it may inform subsequent thoughts,
 answers and the expectation for the next observation. §3's budget, episode
 credit and append-only provenance remain in force.
 
-A later observed prediction residual can supply query-policy credit on an
-unlabelled corpus. This is the intended migration from answer-only query
-reward, not a claim that the current controller already does it. Specify
-residual-to-scalar reward, work penalty, baseline and delayed trajectory
-attribution before implementation. Ordinary differentiable MSE has no policy
-baseline to share; each actual score-function estimator must be accounted for.
+September 21 implementation: optional `expectationPolicyWeight` supplies
+unlabelled residual credit through the same ordinary chooser before the first
+external observation of a batch. Its return is negative all-role MSE plus
+presence BCE, less actual work; it has an independent EMA baseline and replays
+frozen trajectories at current parameters. Later packed slots currently take
+an empty optional query phase. [ExpectationRetention](../ExpectationRetention.md)
+records the precise estimator, migration and prior-view boundary. Ordinary MSE
+has no policy baseline to share. The mechanism is implemented; useful queries
+and joint causal benefit remain unproven in the
+[measurements](../benchmarks/2026-09-21-item2/README.md), including a null
+reasoning-work comparison. Those learning gates remain in todo item 2.
 
 The predictor may train comprehension through live source representations
 under §8.4; thought effects and chooser observations are detached. Targets

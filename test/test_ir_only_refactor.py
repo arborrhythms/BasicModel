@@ -329,8 +329,8 @@ class TestGenerateSentenceSmoke(unittest.TestCase):
 
     def test_generate_sentence_runs(self):
         """Smoke: ``BasicModel.generate_sentence`` returns a list (the
-        IR-only infill decode of the seed text's masked positions).
-        Cold-start with no prior priming is acceptable -- the call
+        generate grammar's words seeded by a positive idea prediction).
+        A cold predictor may return an empty list; the call
         must succeed and not raise.
         """
         init_config(path=os.path.join(_DATA, "MM_xor.xml"),

@@ -152,6 +152,16 @@ def test_policy_selects_nested_what_part_and_receives_actual_episode_credit(dept
     keep[:, 9 * width + 9] = 1   # context level
     keep[:, 9 * width + 11:9 * width + 15] = 1  # actual evidence
     keep[:, -2:] = 1  # operation/conclude
+    # Calibrate only the tested feature subspace. Adding ignored evidence
+    # columns must not change the seed's initial active projection or bias.
+    active_columns = keep[0].bool()
+    with torch.random.fork_rng(devices=[]), torch.no_grad():
+        torch.manual_seed(23)
+        initial = torch.empty(chooser.hidden, int(active_columns.sum()))
+        torch.nn.init.kaiming_uniform_(initial, a=5 ** .5)
+        chooser.mlp[0].weight.zero_()
+        chooser.mlp[0].weight[:, active_columns] = initial
+        chooser.mlp[0].bias.zero_()
     for _ in range(800):
         optimizer.zero_grad()
         loss = sum(torch.nn.functional.cross_entropy(

@@ -182,16 +182,13 @@ def _append_observed_meaning(store, payload, depth, *, trust=0.0, meaning=None,
             logits = prediction.presence_logits.detach()
             if logits.shape != (3,) or not bool(torch.isfinite(logits).all()):
                 raise ValueError("retained expectation requires three finite presence logits")
-            mask = logits >= 0
-            # A structured meaning always has an anchor.  Preserve the full
-            # learned occupancy vector separately; if every logit is negative,
-            # the least-absent role is the minimal syntactic anchor rather than
-            # leaking the arriving target's mask into the estimate.
-            if not bool(mask.any()):
-                mask = mask.clone()
-                mask[int(torch.argmax(logits))] = True
+            # All three estimated vectors survive, even for low presence.
+            # The carrier mask describes stored coordinates; k is retained
+            # separately as logits, never thresholded into lost information.
             estimate = ConceptualMeaning(
-                prediction.roles.detach(), mask.detach(), mode="unspecified")
+                prediction.roles.detach(), torch.ones(3, dtype=torch.bool,
+                    device=logits.device), mode="unspecified",
+                bindings=prediction.bindings, scope=prediction.scope)
             _estimate, observed = store.append_expectation_pair(
                 estimate, meaning, presence_logits=logits,
                 source_occurrences=sources,
@@ -199,7 +196,12 @@ def _append_observed_meaning(store, payload, depth, *, trust=0.0, meaning=None,
                 document=getattr(expectation, "document", None),
                 observation_kind=kind, trust=trust, leaf_codes=leaf_codes, index_stream=stream)
             return observed
-    return store.append_meaning(meaning, kind=kind, trust=trust, leaf_codes=leaf_codes, stream=stream)
+    from Meaning import expectation_surprise
+    prediction = None if expectation is None else expectation.estimate
+    surprise = (-1. if prediction is None else expectation_surprise(
+        meaning.roles, prediction.roles))
+    return store.append_meaning(meaning, kind=kind, trust=trust, leaf_codes=leaf_codes,
+                                stream=stream, surprise=surprise)
 
 
 def _is_external_expectation_observation(discourse):
@@ -1671,7 +1673,7 @@ class BaseModel(Mereology, nn.Module):
     # <maskedPrediction>; the single ARMA MSE replaces the contrastive
     # + predictive cosine pair.
     arma_scale = 0.1
-    sentence_priming_scale = 0.05
+    expectation_gain = 1.0
     # Inter-sentence end-state prediction loss weight (Task 8, plan §9).
     # ``InterSentenceLayer.consume_inter_loss`` returns a per-sentence-mean
     # MSE which ``runBatch`` weights by this before adding to ``TheError``.
@@ -2637,14 +2639,22 @@ class BaseModel(Mereology, nn.Module):
         # when ``<training><sentenceExpectation>`` is true.
         self.arma_scale = float(
             TheXMLConfig.training("armaScale", 0.0))
-        self.sentence_priming_scale = float(
-            TheXMLConfig.training("sentencePrimingScale", 0.05))
+        if TheXMLConfig.training("sentencePrimingScale", None) is not None:
+            raise ValueError("sentencePrimingScale is retired: compose never reads expectation")
+        self.expectation_gain = float(TheXMLConfig.training("expectationGain", 1.0))
+        if not math.isfinite(self.expectation_gain) or not 0. <= self.expectation_gain <= 1.:
+            raise ValueError("expectationGain must be in [0, 1]")
         # Inter-sentence end-state prediction loss weight (Task 8, plan §9).
         # Mirrors ``arma_scale`` / ``intra_loss_weight``: ``runBatch`` scales
         # the consumed ``L_inter`` by this. Active only when the discourse
         # layer is present (``<training><sentenceExpectation>`` true).
         self.inter_loss_weight = float(
             TheXMLConfig.training("interLossWeight", 0.1))
+        self.expectation_policy_weight = float(TheXMLConfig.training("expectationPolicyWeight", 0.))
+        self.expectation_query_budget = int(TheXMLConfig.training("expectationQueryBudget", 64))
+        if (not math.isfinite(self.expectation_policy_weight) or self.expectation_policy_weight < 0
+                or self.expectation_query_budget < 0):
+            raise ValueError("expectation policy weight and query budget must be non-negative")
         # InfoNCE next-idea contrastive term weight + temperature (the discourse
         # layer accumulates it; runBatch consumes + weights it). 0.0 -> MSE-only.
         self.inter_contrastive_weight = float(
@@ -3419,7 +3429,7 @@ class BaseModel(Mereology, nn.Module):
         """Stage the retired ARMA snapshot only for non-sentence-loop paths.
 
         The canonical complete W-loop has a separate, eager
-        ``_stage_intersentence_seed`` contract for its real CS prior.  The
+        pure-composition contract; expectation is compared at the seal.  The
         older ``_predicted_snapshot`` tuple has no consumer in that path.
         Parking ``(None, None)`` on the first sentence and tensors on the
         next one made Dynamo guard on a Python tuple and recompile the entire
@@ -6272,7 +6282,7 @@ class BasicModel(BaseModel):
         stream = meaning.roles
         understanding = getattr(self, '_last_understanding', None)
         programs = tuple(getattr(understanding, 'answer_program', ()) or ())
-        if 0 <= row < len(programs):
+        if getattr(self, "_anticipating_expectation_row", None) != row and 0 <= row < len(programs):
             candidate = programs[row]
             leaves = getattr(candidate, 'leaves', None)
             if torch.is_tensor(leaves):
@@ -6321,7 +6331,8 @@ class BasicModel(BaseModel):
 
     @staticmethod
     def _selected_thought_context(root, active=None, candidate=None, *, level,
-                                  pressure, evidence=None, memory_context=None):
+                                  pressure, evidence=None, memory_context=None,
+                                  expectation_context=None):
         """Numerical controller input for one selected grammatical action.
 
         The root request, active context and action candidate each retain
@@ -6376,7 +6387,55 @@ class BasicModel(BaseModel):
             memory_context = (attend_meanings(active, ()),) * 2
         # Policy credit belongs to this chooser. The world it observes is
         # given, including live episode meanings and attended query features.
-        return torch.cat((*roles, metadata, *semantics, *memory_context)).detach()
+        if expectation_context is None:
+            expectation_context = torch.cat((active.roles.detach().reshape(-1),
+                                             active.roles.new_zeros(7)))
+        return torch.cat((*roles, metadata, *semantics, *memory_context,
+                          expectation_context)).detach()
+
+    def _selected_thought_expectation(self, active, *, row, work=None):
+        """Read the seal's conceived roles; this never changes reading attention.
+
+        The active question supplies only its grammatical open-role mask.
+        Gain/presence/mask and both paired payloads are detached evidence.
+        """
+        from Meaning import negative_image
+        from QueryWork import QueryWorkExhausted
+        mask = active.roles.new_zeros(3)
+        registry = _boundary_registry(self)
+        if registry is not None:
+            signature = registry.signature_for(active)
+            question = active
+            while (signature.operation.semantic_id == "what" and work is not None
+                   and work.remaining > 0):
+                # what holds a question occurrence, not its filler. Follow
+                # that checked address on the same meter to read its holes.
+                context = self._thought_grammar_context(question, row=row,
+                    work=work, continuation=None)
+                try:
+                    # LTM addresses cost one read. Serial addresses may name
+                    # a later record; scan the bounded owner on the same meter.
+                    question, _ = context.ltm.resolve_description(
+                        question.role_refs[0], row=row,
+                        max_records=self._what_memory().capacity, work=work)
+                except QueryWorkExhausted:
+                    # The controller's ordinary cutoff drains this exhausted
+                    # episode; no unmetered read or guessed open role follows.
+                    break
+                signature = registry.signature_for(question)
+            for role in signature.open_roles:
+                mask[registry._slot_for_operand(role)] = 1
+        discourse = getattr(getattr(self, "symbolSpace", None), "discourse", None)
+        comparison = (discourse.last_expectation_comparison(row)
+                      if discourse is not None and discourse.expectation_enabled else None)
+        observed = active.roles.detach() if comparison is None else comparison.observed.to(active.roles)
+        presence = (active.roles.new_zeros(3) if comparison is None
+                    else comparison.estimate.presence_logits.sigmoid().to(active.roles))
+        conceived, _image = negative_image(observed,
+            None if comparison is None else comparison.estimate.roles.to(active.roles),
+            presence, gain=getattr(self, "expectation_gain", 1.), object_mask=mask)
+        return torch.cat((conceived.reshape(-1), presence, mask,
+                          active.roles.new_tensor([comparison is not None]))).detach()
 
     def _selected_thought_chooser(self, meaning, *, device=None, dtype=None):
         """Return the width-owned learned chooser for complete meanings."""
@@ -6406,6 +6465,92 @@ class BasicModel(BaseModel):
             table[key] = module
             self._collect_fresh_synthesis_modules()
         return module
+
+    def _stage_expectation_queries(self, *, training=None):
+        """Optional prior-only thought before the batch's first external input.
+
+        Packed later slots still receive ordinary chronological prediction;
+        their optional query phase is empty. No query is run during a packed
+        drain, when unseen inputs have already altered the model's staging.
+        """
+        discourse = getattr(getattr(self, "symbolSpace", None), "discourse", None)
+        registry = _boundary_registry(self)
+        if (getattr(self, "expectation_policy_weight", 0.) <= 0 or discourse is None
+                or not discourse.expectation_enabled or discourse._external_observations_suspended
+                or getattr(self, "expectation_query_budget", 0) == 0):
+            return
+        if registry is None:
+            raise ValueError("expectationPolicyWeight requires the model's thought catalogue")
+        if "arma" not in registry.executable_operation_ids:
+            raise ValueError("expectationPolicyWeight requires arma in the model's thought catalogue")
+        store = getattr(self.symbolSpace, "ltm_store", None)
+        if store is None:
+            raise ValueError("expectationPolicyWeight requires ltmConsolidation for owned prior occurrences")
+        from dataclasses import replace
+        for row, occurrences in enumerate(discourse._inter_context_occurrences):
+            if not occurrences or occurrences[-1] is None:
+                continue
+            index = store._index_occurrences.get(occurrences[-1])
+            source = None if index is None else store.meaning_of(index)
+            if source is None:
+                continue
+            operation = registry.operation_spec("arma")
+            root = registry._form_candidate(operation, registry.descriptors["arma"],
+                {operation.operand_roles[0]: (source.roles.sum(0) / source.role_mask.sum().sqrt(),
+                                            occurrences[-1])},
+                source=replace(source, mode="interrogative", polarity=True))
+            self._anticipating_expectation_row = row
+            self._anticipation_training = bool(self.training if training is None else training)
+            self._anticipatory_choices = []
+            try:
+                with self._query_boundary_scope((row,)):
+                    result = self.run_selected_thought(root, row=row,
+                        work_budget=self.expectation_query_budget, registry=registry)
+                frames = self._what_memory().retrieved_frames(b=row, limit=discourse._inter_chain_window - 1)
+                discourse.expect_next_meaning(row, frames=tuple(f['meaning'] for f in frames),
+                    frame_occurrences=tuple(f['occurrence'] for f in frames), policy=tuple(self._anticipatory_choices), policy_work=result.work.spent,
+                    refresh=True)
+            finally:
+                self._anticipating_expectation_row = None
+                self._anticipatory_choices = []
+                self._end_finished_selected_thought_episodes()
+
+    def _expectation_policy_loss(self):
+        """Residual REINFORCE with an independent EMA return baseline.
+
+        Replay frozen candidate features through the current single chooser.
+        A detached, capped importance ratio accounts for a changed parameter
+        version (cap 4); there is no backward through an old policy graph.
+        Reward is minus all-role MSE/presence BCE and actual metered work.
+        Gain, the object mask and reading attention are outside this estimator.
+        """
+        discourse = getattr(getattr(self, "symbolSpace", None), "discourse", None)
+        outcomes = [] if discourse is None else discourse.consume_expectation_policy_outcomes()
+        if not outcomes or getattr(self, "expectation_policy_weight", 0.) <= 0:
+            return None
+        baseline = self.__dict__.get("_expectation_policy_baseline", 0.)
+        losses, returns, ratios = [], [], []
+        for trajectory, residual_reward, spent in outcomes:
+            reward = residual_reward - self.WHAT_STEP_COST * spent
+            terms = []
+            for width, contexts, concludes, index, old_log_prob in trajectory:
+                chooser = self.selected_thought_choosers[str(width)]
+                log_prob = chooser.logits(contexts, concludes).log_softmax(0)[index]
+                ratio = (log_prob.detach() - old_log_prob).exp().clamp(max=4.)
+                terms.append(-ratio * (reward - baseline) * log_prob)
+                ratios.append(float(ratio))
+            if terms:
+                losses.append(torch.stack(terms).mean())
+                returns.append(reward)
+        if not losses:
+            return None
+        mean_return = sum(returns) / len(returns)
+        self._expectation_policy_baseline = (.9 * baseline + .1 * mean_return
+            if "_expectation_policy_baseline" in self.__dict__ else mean_return)
+        self._expectation_policy_report = dict(episodes=len(returns), choices=len(ratios),
+            mean_return=mean_return, return_variance=sum((r - mean_return) ** 2 for r in returns) / len(returns),
+            mean_importance=sum(ratios) / len(ratios))
+        return torch.stack(losses).mean()
 
     def _selected_thought_policy_loss(self, answer_loss, mask=None):
         """REINFORCE credit for hard normal-controller query/finish choices.
@@ -6488,7 +6633,8 @@ class BasicModel(BaseModel):
         limit = min(4, work.remaining // 16)
         memory = self._what_memory()
         short, long = [], []
-        stm = getattr(getattr(self, "conceptualSpace", None), "stm", None)
+        anticipating = getattr(self, "_anticipating_expectation_row", None) == row
+        stm = None if anticipating else getattr(getattr(self, "conceptualSpace", None), "stm", None)
         buffer, depth = getattr(stm, "_buffer", None), getattr(stm, "_depth", None)
         if (limit and torch.is_tensor(buffer) and torch.is_tensor(depth)
                 and row < len(depth) and buffer.shape[-1] == active.roles.shape[-1]):
@@ -6498,7 +6644,7 @@ class BasicModel(BaseModel):
                 value = ConceptualMeaning.from_description(buffer[row, slot].detach())
                 short.append((value, 0.))
         carrier = getattr(getattr(self, "conceptualSpace", None), "subspace", None)
-        knowing = getattr(carrier, '_concept_activations', None)
+        knowing = None if anticipating else getattr(carrier, '_concept_activations', None)
         if limit and torch.is_tensor(knowing) and row < knowing.shape[1] and work.consume('context_record'):
             from Queries import _basis
             basis = _basis(self.conceptualSpace).detach()
@@ -6507,7 +6653,7 @@ class BasicModel(BaseModel):
             idea = (weights[:, None] * basis[:n]).sum(0) / weights.abs().sum().clamp_min(1.)
             if bool(weights.abs().any()):
                 short.append((ConceptualMeaning.from_description(idea), 0.))
-        history = memory.thought_window(b=row, limit=limit - len(short)) if limit else ()
+        history = memory.thought_window(b=row, limit=limit - len(short)) if limit and not anticipating else ()
         for record in history:
             if not work.consume("context_record"):
                 break
@@ -6551,21 +6697,27 @@ class BasicModel(BaseModel):
             raise TypeError("selected thought action must be a grammar candidate or conclude")
         current = active
         memory_context = self._selected_thought_memory(active, row=row, work=work)
+        expectation_context = self._selected_thought_expectation(active, row=row, work=work)
         contexts = tuple(self._selected_thought_context(
             root, active,
             (current if action is None else action.request),
             level=level, pressure=pressure, evidence=evidence,
-            memory_context=memory_context)
+            memory_context=memory_context, expectation_context=expectation_context)
             for action in actions)
         context = torch.stack(contexts)
         chooser = self._selected_thought_chooser(
             current, device=context.device, dtype=context.dtype)
-        sample = (bool(self.training)
-                  and float(getattr(self, "selected_thought_policy_weight", 0.0)
-                            or 0.0) > 0.0)
-        index, log_prob = chooser.choose(
-            context, tuple(action is None for action in actions), sample=sample)
-        if float(getattr(self, "selected_thought_policy_weight", 0.0) or 0.0) > 0.0:
+        anticipating = getattr(self, "_anticipating_expectation_row", None) == row
+        weight = getattr(self, "expectation_policy_weight" if anticipating else "selected_thought_policy_weight", 0.)
+        concludes = tuple(action is None for action in actions)
+        index, log_prob = chooser.choose(context, concludes,
+                                         sample=(self._anticipation_training if anticipating else bool(self.training)) and weight > 0.)
+        if anticipating and weight > 0.:
+            # Keep data, not an autograd graph across the arriving input or
+            # an optimizer step. Credit replays this same chooser on this view.
+            self._anticipatory_choices.append((int(root.roles.shape[-1]),
+                context.detach().clone(), concludes, index, float(log_prob.detach())))
+        elif float(getattr(self, "selected_thought_policy_weight", 0.0) or 0.0) > 0.0:
             self.__dict__.setdefault("_selected_thought_policy_records", []).append(
                 (int(row), log_prob))
         return actions[index]
@@ -6710,7 +6862,7 @@ class BasicModel(BaseModel):
             return record
 
         def exhausted(current):
-            return {
+            outcome = {
                 "meaning": current,
                 "evidence": {
                     "support_true": 0.0,
@@ -6722,6 +6874,14 @@ class BasicModel(BaseModel):
                 "result": None,
                 "record": None,
             }
+            state = memory.thought_state(b=row)
+            if state is not None and not state.forced and meter.spent > recorded_spend:
+                # Context reads can spend the last unit before any executor
+                # runs. Record that already-paid work, inducing the ordinary
+                # cutoff; the subsequent return/finish drain costs nothing.
+                outcome["record"] = event("thought", current, outcome["evidence"],
+                    operation="conclude", sources=refs(current))
+            return outcome
 
         def candidates(current, state):
             # Each context's begin/descent record already owns its question.
@@ -6903,6 +7063,8 @@ class BasicModel(BaseModel):
                                 outcome["meaning"],
                                 reference(outcome["record"])))
                         outcome = dict(outcome, record=conclusion)
+                    else:
+                        outcome = exhausted(outcome["meaning"])
                     break
                 outcome = execute(outcome["meaning"], actions=(action,),
                                   evidence_context=outcome["evidence"],
@@ -7651,65 +7813,30 @@ class BasicModel(BaseModel):
             out.append((int(idx), str(orig), str(pred)))
         return out
 
+    @torch.no_grad()
     def generate_sentence(self, seed_text="", max_chars=128):
-        """Chat-loop sentence generation via InterSentenceLayer ARMA.
+        """Realise a positive predicted idea through the existing generate walk.
 
-        Steps (per plan §4, updated for §9):
-          1. Ask ``discourse.predict_next_end_state()`` for the predicted
-             next-STM-end-state SHAPE ``(depth_hat, payload_hat[depth, D])``
-             from the LTM end-state chain (the inter-level
-             ``IntraSentenceLayer``). (Was: the single ARMA ``predict_next``
-             sentence rep + ``cast`` lift.)
-          2. Stage ``payload_hat`` per-slot on ``ConceptualSpace._c_prior``
-             (slot-wise) so the body's forward adds it across the first
-             ``depth`` STM slots before the codebook lookup.
-          3. Run the IR forward over the seed text; sample tokens at
-             masked positions by nearest-neighbor lookup in the
-             perceptual codebook.
-          4. Pool the produced S-space_role root into ``s_t`` and call
-             ``discourse.observe(s_t)`` to commit to the AR ring.
-
-        This is a minimal scaffold: a single IR forward + one-shot
-        decode of every masked position.  Iterative mask-and-resample
-        is left to a later refinement.
-
-        Returns a list of decoded tokens (the predictions at the
-        masked positions of the seed).
+        Supplied text is understood without a prior. The next prediction is
+        a generation seed only; generated words are never external observations.
         """
-        del max_chars  # reserved for the iterative variant
-        discourse = (self.symbolSpace.discourse
-                     if self.symbolSpace is not None else None)
-        # Stage the C-prior from the predicted next-end-state SHAPE (Task 8,
-        # plan §9): ``_intersentence_seed`` runs the inter-level
-        # ``IntraSentenceLayer`` over the LTM end-state chain and returns
-        # ``(depth_hat, payload_hat[depth_hat, D])`` already in C-space_role
-        # (concept_dim) -- no ``cast`` needed (that lifted the OLD flat ARMA
-        # rep; the inter-predictor already emits concept-width slots). Stage
-        # ``payload_hat`` per-slot on ``_c_prior`` (slot-wise flag set) so the
-        # body's forward adds it across the first ``depth`` STM slots.
-        # Cold-start (empty chain -> depth 1 / zeros root): ``_intersentence_
-        # seed`` returns None, so staging is skipped and the seed text is the
-        # only signal (the degenerate zeros prior would be a no-op add anyway).
-        #
-        # A6 unification: this is the SAME ``_intersentence_seed`` (one
-        # ``predict_next_end_state`` source) the forward's CS_{-1} seed sites
-        # use -- the chat-loop prime and the forward seed never diverge into
-        # two predictor calls. (generate_sentence primes whenever a predictor
-        # exists; the forward additionally gates on ``prediction_mode``.)
-        seed = self._intersentence_seed()
-        if seed is not None:
-            _depth_hat, payload_hat = seed
-            self.conceptualSpace._c_prior = (
-                payload_hat * float(self.sentence_priming_scale))
-            self.conceptualSpace._c_prior_slotwise = True
-        # Run the IR forward over the seed text.
-        out = self._infer_ir(seed_text)
-        # Commit the produced sentence to the ARMA ring.
-        if discourse is not None and self._current_discourse_s is not None:
-            self._observe_discourse(
-                discourse, self._current_discourse_s,
-                understanding=self._last_understanding)
-        return out
+        if seed_text:
+            self.eval()
+            self.set_sigma(0)
+            with self._runtime_batch([seed_text]):
+                self.understand(self.inputSpace.prepInput([seed_text]))
+                self._end_step()
+        discourse = getattr(self.symbolSpace, "discourse", None)
+        estimate = (discourse.expect_next_meaning(0, record=False)
+                    if discourse is not None and discourse.expectation_enabled else None)
+        if estimate is None or max_chars <= 0:
+            return []
+        idea = (estimate.roles * estimate.presence_logits.sigmoid()[:, None])[None]
+        words, lengths, _truncated, _credit = self._compiled_output_walk()(
+            self._walk_operand(idea, infix_rows=(True,)), self._walk_budget(),
+            False, None, False)
+        text = self._generated_word_text(words, lengths)[0]
+        return [] if text is None else text[:int(max_chars)].split()
 
     def _warn_zeroed_channel(self, site, detail):
         """Warn-once per site+config when a loss channel degrades to zero (5b fail-loud)."""
@@ -10089,6 +10216,14 @@ class BasicModel(BaseModel):
                                   for name, value in module.state_dict().items()})
                     built += 1
                     continue
+                if in_dim == expected_in - (3 * int(width) + 7):
+                    first_weight = torch.cat((first_weight[:, :-2],
+                        first_weight.new_zeros(hidden, 3 * int(width) + 7),
+                        first_weight[:, -2:]), dim=1)
+                    key = f"{selected_prefix}{width}.mlp.0.weight"
+                    state[key] = first_weight
+                    self._pending_thought_policy_reset.add(key)
+                    in_dim = expected_in
                 if in_dim != expected_in:
                     raise ValueError(
                         f"selected thought chooser width {width} has input "
@@ -10963,6 +11098,15 @@ class BasicModel(BaseModel):
                         "incomplete": selected.evidence.get("incomplete", ()),
                     },),
                     ltm_slot=None, execution=execution))
+                continue
+            if memory is not None and memory.thought_state(b=b) is not None:
+                # The ordinary controller already owns this row's history.
+                # A declarative presentation is retained by the seal, not as
+                # a legacy input/output parity slot or a new thought episode.
+                answers.append(WhatAnswer(
+                    question=current, what=produced, available=True,
+                    provenance="model", source_where=current.where,
+                    grammar_trace=(), ltm_slot=None, execution=execution))
                 continue
             # Rows already at parity with nothing pending are SETTLED at
             # iteration >= 1 (spec 6.2): their answer stands and no further
@@ -13679,16 +13823,6 @@ class BasicModel(BaseModel):
                                          if _schedule else None)
         return in_sub
 
-    def _stage_intersentence_seed(self):
-        """Eagerly compute + park the stage-0 CS_{-1} seed for the upcoming
-        compiled forward (Task A6); ``_consume_intersentence_seed`` returns it
-        in-trace. Gated to ``<prediction>interSentence`` (parks None
-        otherwise). No-op-safe to call repeatedly; ``_end_step`` clears it."""
-        seed = None
-        if self.prediction_mode == "interSentence":
-            seed = self._intersentence_seed()
-        self._staged_intersentence_seed = seed
-        self._intersentence_seed_staged = True
 
     def _end_step(self):
         """Per-step teardown: drop the staging parked by ``runBatch``
@@ -13733,8 +13867,6 @@ class BasicModel(BaseModel):
             _ss._staged_word_property_spans = None
             _ss._where_tiling_schedule = None
             _ss._where_tiling_obs = None
-        self._staged_intersentence_seed = None
-        self._intersentence_seed_staged = False
         # Drop the global-attention soft-read (consume-once; the consumer in
         # Finish read it earlier this forward) so a stale obs can never leak
         # into the next forward's head.
@@ -13767,9 +13899,6 @@ class BasicModel(BaseModel):
             discourse.set_inter_contrastive(
                 self.inter_contrastive_weight, self.inter_contrastive_temp)
             discourse.set_expectation_enabled(enabled)
-        symbol_space._disc_pred = symbol_space._disc_conf = None
-        self._staged_intersentence_seed = None
-        self._intersentence_seed_staged = False
 
     def _stage_expectation_documents(self, split, source_rows, batch):
         """Capture only cursor addresses, never text or supplied targets.
@@ -13806,7 +13935,7 @@ class BasicModel(BaseModel):
         self._expectation_documents = tuple(documents)
         discourse = getattr(getattr(self, "symbolSpace", None), "discourse", None)
         if discourse is not None:
-            # Clear a new document's predecessor before forward priming or
+            # Clear a new document's predecessor before anticipatory queries or
             # any other staging can consume it. Later packed slots repeat
             # this identity check at their individual observation boundary.
             discourse._prepare_expectation_documents(
@@ -13997,73 +14126,7 @@ class BasicModel(BaseModel):
                             discourse.bind_observation_occurrence(
                                 b, ltm_store.row(row)["occurrence"])
 
-    def _intersentence_seed(self):
-        """The predicted next-end-state SHAPE for the stage-0 CS_{-1} seed,
-        or ``None`` (Task A6).
 
-        THE single inter-sentence predictor source: this is the SAME
-        ``discourse.predict_next_end_state()`` call ``generate_sentence``
-        primes from (``generate_sentence`` now routes through here too), so
-        the forward seed and the chat-loop prime share ONE predictor path --
-        never two divergent calls.
-
-        Returns ``(depth_hat:int, payload_hat:[depth_hat, D] tensor)`` -- the
-        predicted next STM end-state slots in C-space_role (the muxed concept event
-        width ``D == discourse._inter_predictor.concept_dim``) -- or ``None``
-        when there is nothing real to seed from:
-
-          * no discourse layer / no inter-predictor (``sentenceExpectation``
-            off, absolute-only configs);
-          * a COLD AR ring (empty chain): ``predict_next_end_state`` would
-            return the degenerate ``(1, zeros[1, D])``; we treat that as "no
-            seed" so a cold start is byte-identical to the empty seed
-            (back-compat -- the seed sites keep their zeros);
-          * a non-finite predicted payload (defensive -- fail loud is the
-            predictor's job, but never seed a corrupt carrier).
-
-        Does NOT gate on ``prediction_mode``: the gate lives at the forward
-        seed sites (so ``generate_sentence`` keeps its always-on priming when
-        a predictor exists, unchanged). Mirrors ``generate_sentence``'s guard
-        exactly (predictor present + non-empty chain + finite payload).
-        """
-        disc = (self.symbolSpace.discourse
-                if self.symbolSpace is not None else None)
-        if disc is None or getattr(disc, "_inter_predictor", None) is None:
-            return None
-        shape = disc.predict_next_end_state()
-        # Empty AR ring -> degenerate cold-start prediction; not a real seed.
-        if shape is None or not disc._inter_context[0]:
-            return None
-        depth_hat, payload_hat = shape
-        if payload_hat is None or not torch.isfinite(payload_hat).all():
-            return None
-        return depth_hat, payload_hat
-
-    def _consume_intersentence_seed(self):
-        """Traced-safe accessor for the stage-0 CS_{-1} seed, gated by
-        ``<prediction>interSentence`` (Task A6).
-
-        Returns ``(depth_hat, payload_hat)`` or ``None``. Mirrors the
-        established ARMA staging idiom (``InterSentenceLayer.predict`` /
-        ``stage_prediction``): ``predict_next_end_state`` is
-        ``@torch.compiler.disable``'d, so it must NOT run inside the compiled
-        forward. ``runBatch``'s eager compiled pre-forward branch parks the
-        seed via ``_stage_intersentence_seed`` and sets
-        ``_intersentence_seed_staged``; this accessor then returns the parked
-        tuple -- a pure attribute read, trace-safe. On the eager/uncompiled
-        path (direct ``forward``, unit tests) nothing is staged, so it computes
-        the seed live (the disabled predictor is fine there -- not traced).
-
-        The ``prediction_mode != "interSentence"`` gate lives HERE (not in
-        ``_intersentence_seed``) so ``generate_sentence`` keeps its always-on
-        priming when a predictor exists, while the forward seed only fires
-        under interSentence.
-        """
-        if self.prediction_mode != "interSentence":
-            return None
-        if getattr(self, "_intersentence_seed_staged", False):
-            return self._staged_intersentence_seed
-        return self._intersentence_seed()
 
     def _discourse_arma_loss(self):
         """Inter-sentence ARMA(p, q) loss term for this step, or ``None``.
@@ -14516,7 +14579,7 @@ class BasicModel(BaseModel):
             self._advance_when_time()
 
         # Pre-allocate per-batch state OUTSIDE the compiled forward.
-        # ``SymbolSpace.ensure_microbatch`` allocates ``_stm_fired`` /
+        # ``SymbolSpace.ensure_microbatch`` allocates completion state /
         # ``_last_svo`` / ``_svo_valid`` / ``_recent_count`` etc. on
         # first call (and on shape changes); when those allocations
         # happen INSIDE a torch.compile region, CUDAGraph capture
@@ -14540,6 +14603,9 @@ class BasicModel(BaseModel):
 
         if train:
             optimizer.zero_grad()
+        if not exploration_trial:
+            with torch.set_grad_enabled(bool(train)):
+                self._stage_expectation_queries(training=bool(train))
 
         # Teacher owns the lesson, clean complete-input target, and error-term
         # registration window. Objective corpus addresses staged by runEpoch
@@ -14735,9 +14801,6 @@ class BasicModel(BaseModel):
                         if self.symbolSpace is not None else None)
                 self._stage_legacy_discourse_prediction(
                     disc, fullgraph_word_loop=_fullgraph_word_loop)
-                # Park the stage-0 CS_{-1} interSentence seed outside the
-                # fullgraph capture; the body consumes the parked tuple.
-                self._stage_intersentence_seed()
             # Two-pass learning: switch the structured layers to the pure
             # soft-superposition route at this trial's temperature (eager
             # forward, since the compiled step does not trace the branch).
@@ -15177,6 +15240,7 @@ class BasicModel(BaseModel):
                 self._discourse_inter_loss()
                 if train and not exploration_trial else None
             )
+            expectation_policy_loss = self._expectation_policy_loss() if train and not exploration_trial else None
             # InfoNCE next-idea contrastive term (the discourse layer's second
             # accumulator; populated during the forward boundary observe).
             inter_contrastive = None
@@ -15337,6 +15401,13 @@ class BasicModel(BaseModel):
                             space=space, category=category)
                 pipeline_errors.clear()
 
+            if expectation_policy_loss is not None and self.expectation_policy_weight > 0:
+                self.record_loss("expectation_policy", expectation_policy_loss,
+                    weight=self.expectation_policy_weight, space="SymbolSpace", category="policy")
+                totalLoss = totalLoss + self.expectation_policy_weight * expectation_policy_loss
+                if gradient_objectives is not None:
+                    gradient_objectives["expectation"] = (gradient_objectives["expectation"]
+                        + self.expectation_policy_weight * expectation_policy_loss)
             # One hard-choice credit contract for completed grammatical
             # episodes, using the shared meter and the later answer error.
             if train and selected_answer_credit is not None and float(
@@ -15824,7 +15895,7 @@ class BasicModel(BaseModel):
         after ``runBatch`` returns.
 
         Also severs any cross-batch autograd graph carried by persistent
-        state (``SymbolSpace._disc_pred``, ``_last_svo``; Basis transient
+        state (``SymbolSpace._last_svo``; Basis transient
         activations in ``_active_payload`` / non-Parameter ``W``; all
         floating-point registered buffers). In-place writes during the
         brick's forward leave persistent attributes wired to that
@@ -15861,8 +15932,7 @@ class BasicModel(BaseModel):
           * Basis ``W`` (when ``W`` is a plain tensor, i.e. not an
             ``nn.Parameter``)
           * Model-level cached state tensors that don't live as buffers
-            (``SymbolSpace._disc_pred`` / ``_disc_conf``,
-            ``InputSpace._ar_embedded``, ``inputSpace._embedded_input``,
+            (``InputSpace._ar_embedded``, ``inputSpace._embedded_input``,
             spaces' ``_embedded_input``).
         """
         # 1. All registered FP buffers in the model tree.
@@ -15881,12 +15951,6 @@ class BasicModel(BaseModel):
                     and w.is_floating_point()):
                 mod.W = w.detach()
         # 3. Known plain-attribute tensor caches that ride across batches.
-        ss = self.symbolSpace
-        if ss is not None:
-            if getattr(ss, '_disc_pred', None) is not None:
-                ss._disc_pred = ss._disc_pred.detach()
-            if getattr(ss, '_disc_conf', None) is not None:
-                ss._disc_conf = ss._disc_conf.detach()
         for sp_attr in ("inputSpace", "perceptualSpace",
                         "conceptualSpace", "wholeSpace", "outputSpace"):
             sp = getattr(self, sp_attr, None)
@@ -16800,12 +16864,8 @@ class BasicModel(BaseModel):
         # No ``self.reconstruct`` / ``self.perfect_reconstruction`` attribute
         # is parsed; binding mode, not reconstruction mode, now selects the
         # appropriate forward/reverse carrier.
-        # ``<architecture><prediction>`` (predictionEnum: none|interSentence,
-        # default "none"). Stored as the canonical XSD enum string (NOT
-        # lowercased) so downstream dispatch matches "interSentence" exactly.
-        self.prediction_mode = str(
-            TheXMLConfig.get("architecture.prediction", default="none")
-            or "none")
+        if TheXMLConfig.get("architecture.prediction", default=None) is not None:
+            raise ValueError("architecture.prediction is retired: use sentenceExpectation and expectationGain")
         # ``<architecture><sigmaPi>`` (sigmaPiEnum: last|butterfly|full,
         # default "butterfly" at the architecture level per the XSD default).
         # Routed through the same Space.sigma_pi_mode() normalizer used by
@@ -17755,17 +17815,6 @@ class BasicModel(BaseModel):
         self._stm_post_depth = None
         self._packed_sentence_roots = None
         self._tensor_peer_trip_count = None
-        # A6 stage-0 CS_{-1} interSentence seed staging (mirrors
-        # _staged_in_sub): the predicted next-end-state tuple parked by
-        # runBatch for the compiled forward (predict_next_end_state is
-        # @torch.compiler.disable'd, so it cannot run in-trace). The flag
-        # distinguishes "staged None" (cold / none-mode) from "not staged"
-        # (eager path computes live). Both reset by _end_step.
-        self._staged_intersentence_seed = None
-        self._intersentence_seed_staged = False
-        # Forward-local verification handle (Task A6 test): the seed payload
-        # actually used on the last forward (None == empty seed).
-        self._intersentence_seed_payload = None
         # MPHF instrumentation handles -- always initialised so the
         # per-word body can use direct attribute reads (no getattr
         # fallback, which is a Dynamo graph break).
@@ -18225,26 +18274,10 @@ class BasicModel(BaseModel):
         # list, threaded as a LOCAL through the T stages and into the SAME
         # forward's reverse. NOT stored on any space/layer (the design's
         # data-flow rule; A5 makes the per-batch threading fully clean).
-        # ``prev_cs_content`` is the conceptual carrier content CS_t fed to
-        # the combine -- CS_{-1} is the empty seed (zeros) UNLESS
-        # ``<prediction>interSentence`` is set AND the discourse AR ring is
-        # warm, in which case A6 seeds CS_{-1} from the SAME predictor
-        # ``generate_sentence`` primes from (``_intersentence_seed`` -- one
-        # source). The predicted ``payload_hat[depth, Dp]`` is broadcast into
-        # the ``[B, N, D]`` slab at the t=0 bind site (where ``cs_content``
-        # supplies the leading shape) and ADDED INTO WS_t -- the symbolic
-        # prior (the CS stream is retired by the 2-stream bind, C-10).
-        # ``prediction_mode == "none"`` (default) and a cold ring both keep
-        # ``payload`` None -> no addition (byte-identical empty seed).
+        # Composition starts from its own percepts and codes, never an estimate.
         carriers = []            # per-stage exact bind output (the FULL mix)
         prev_cs_stage = None     # P3: prior stage's cs (demux-feedback reads)
         _pump_qe = []            # P4: per-stage per-percept settle signal
-        _seed = self._consume_intersentence_seed()
-        seed_payload = _seed[1] if _seed is not None else None
-        # Verification handle (Task A6 test): the predicted CS_{-1} seed
-        # payload actually used this forward (None when empty / none-mode /
-        # cold). Forward-local, not an nn.Module buffer.
-        object.__setattr__(self, "_intersentence_seed_payload", seed_payload)
         for t, stage in enumerate(self.body_stages):
             cs = stage["cs"]
             ws = stage["ws"]
@@ -18374,8 +18407,7 @@ class BasicModel(BaseModel):
                 # lives on ConceptualSpace (``bind_streams``: demux / fit /
                 # slot-stack / cascade / corpus-callosum glue / event
                 # write); this loop only orchestrates. PS_t is the stage-0
-                # percept re-fed at EVERY stage; the A6 interSentence seed
-                # primes the SYMBOLIC stream at t=0; the FULL bind carrier
+                # percept re-fed at every stage; the full bind carrier
                 # rides ON the stage's SubSpace (``_bind_carrier``) for the
                 # reverse, with ``carriers`` kept as a test/verification
                 # handle.
@@ -18456,8 +18488,7 @@ class BasicModel(BaseModel):
                     full_t = cs.bind_aligned_streams(ps_t, WS_sub, CS_sub)
                 else:
                     full_t = cs.bind_streams(
-                        ps_t, WS_sub, CS_sub, SS_sub=SS_sub,
-                        seed_payload=(seed_payload if t == 0 else None))
+                        ps_t, WS_sub, CS_sub, SS_sub=SS_sub)
                 if full_t is not None and t == 0:
                     # Snapshot the stage-0 bind so round-trip tests can
                     # compare it against the threaded carrier.
@@ -19914,30 +19945,6 @@ class BasicModel(BaseModel):
         # Grammar feedback is sentence-local.  The first two B ticks have no
         # eligible C result, so they must not inherit a prior sentence's plan.
         self.conceptualSpace.clear_language_plan()
-        # A6: the serial per-word path has no combine ``prev_cs_content`` leg
-        # (that is the parallel-only carrier). Its CS_{-1} analog is the
-        # ``_c_prior`` priming ``ConceptualSpace.forward`` adds across the
-        # first ``depth`` STM slots -- the SAME mechanism
-        # ``generate_sentence`` primes from. The seed comes from
-        # ``_consume_intersentence_seed`` (parked eagerly by ``runBatch`` on
-        # the compiled path so the disabled predictor never runs in the trace;
-        # computed live on the eager path), gated to ``<prediction>
-        # interSentence`` + a warm AR ring. ``prediction_mode == "none"``
-        # (default) yields None, leaving ``_c_prior`` None -> byte-identical to
-        # today. Scaled by ``sentence_priming_scale`` to match the chat-loop
-        # prime exactly.
-        seed_payload = None
-        _seed = self._consume_intersentence_seed()
-        if _seed is not None:
-            _, payload_hat = _seed
-            if payload_hat.shape[-1] == int(
-                    self.conceptualSpace.stm.concept_dim):
-                seed_payload = (
-                    payload_hat * float(self.sentence_priming_scale))
-                self.conceptualSpace._c_prior = seed_payload
-                self.conceptualSpace._c_prior_slotwise = True
-        object.__setattr__(self, "_intersentence_seed_payload", seed_payload)
-
         N_target = (int(in_event.shape[1])
                     if in_event is not None and in_event.dim() == 3
                     else None)
@@ -20739,7 +20746,7 @@ class BasicModel(BaseModel):
         if word_commit_mode and CS_sub is not None:
             if aligned_fold_binding:
                 # Attach complete processed fields without re-evaluating or
-                # overwriting the live event (which may now contain _c_prior).
+                # overwriting the live event.
                 cs.commit_percept_field(
                     native_part_sources, native_whole_sources,
                     reference_codes=reference_codes, reference_roles=reference_roles,
@@ -21324,8 +21331,7 @@ class BasicModel(BaseModel):
         ws = self.wholeSpace
         cs = self.conceptualSpace
         stm = getattr(cs, "stm", None)
-        if (stm is None or not getattr(ws, "property_basis", False)
-                or getattr(cs, "_c_prior", None) is not None):
+        if stm is None or not getattr(ws, "property_basis", False):
             return False
         required = (
             getattr(isp, "_ar_embedded_N", None),
@@ -24446,7 +24452,7 @@ class BasicModel(BaseModel):
         # Inter-sentence prior (read-only at forward time; the actual
         # ARMA observe + loss happen in ``runBatch`` after the body). The
         # full-sentence W loop receives its actual prior through the eager
-        # ``_stage_intersentence_seed`` slab.  The older ARMA snapshot below
+        # seal-time expectation pair.  The older ARMA snapshot below
         # has no consumer there, so skip its Python tuple reader: cold
         # ``(None, None)`` followed by a tensor tuple would otherwise guard
         # and recompile the complete graph on sentence two.

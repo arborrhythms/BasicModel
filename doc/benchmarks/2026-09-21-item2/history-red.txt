@@ -1,0 +1,130 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+____ test_nested_object_mask_reads_a_later_thought_on_the_shared_budget[1] _____
+
+budget = 1
+
+    @pytest.mark.parametrize("budget", [1, 64])
+    def test_nested_object_mask_reads_a_later_thought_on_the_shared_budget(budget):
+        from QueryWork import QueryWorkBudget
+        model, discourse, meaning = _anticipating_model()
+        registry = model.grammatical_thoughts
+        question = registry.form("part", meaning.role_refs[2], open_roles=("I1",))
+        memory = model._what_memory()
+        memory.begin_thought_episode(meaning, work_budget=8)
+        memory.commit_thought(question, operation="part")
+        memory.finish_thought(question)
+        memory.end_what_episode()
+        with model._query_boundary_scope((0,)):
+            context = model._thought_grammar_context(question, row=0,
+                work=QueryWorkBudget(64), continuation=None)
+            outer = registry.form("what", memory.thought_reference(memory.thought_history()[1]), context=context)
+            meter = QueryWorkBudget(budget)
+>           nested = model._selected_thought_expectation(outer, row=0, work=meter)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_negative_expectation.py:340:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+bin/Models.py:6414: in _selected_thought_expectation
+    question, _ = context.ltm.resolve_description(
+bin/Queries.py:892: in resolve_description
+    value, scanned = memory.resolve_thought(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <Layers.WhatInteractionMemory object at 0x122f3dc40>
+reference = ('thought', '66b00595f90f4039b442463b238279ba', 1), b = 0
+max_records = 1, work = <QueryWork.QueryWorkBudget object at 0x122a615b0>
+
+    def resolve_thought(self, reference, *, b=0, max_records=1024, work=None):
+        if (
+            not isinstance(reference, tuple)
+            or len(reference) != 3
+            or reference[:2] != ("thought", self._thought_namespace)
+            or type(reference[2]) is not int
+            or reference[2] < 0
+        ):
+            raise ValueError("thought occurrence reference is unavailable")
+        if type(max_records) is not int or max_records < 0:
+            raise ValueError("thought read limit must be a non-negative integer")
+        records = self._what_slots[self._thought_row(b)]
+        iterator = iter(records)
+        for index in range(min(len(records), max_records)):
+            if work is not None:
+                work.require("record")
+            record = next(iterator)
+            if isinstance(record, ThoughtRecord) and record.id == reference[2]:
+                if record.meaning is None:
+                    raise ValueError("transition occurrence has no grammatical content")
+                return record.meaning, index + 1
+>       raise ValueError(
+            "thought occurrence is unavailable within this row and read limit"
+        )
+E       ValueError: thought occurrence is unavailable within this row and read limit
+
+bin/Thoughts.py:412: ValueError
+____ test_nested_object_mask_reads_a_later_thought_on_the_shared_budget[64] ____
+
+budget = 64
+
+    @pytest.mark.parametrize("budget", [1, 64])
+    def test_nested_object_mask_reads_a_later_thought_on_the_shared_budget(budget):
+        from QueryWork import QueryWorkBudget
+        model, discourse, meaning = _anticipating_model()
+        registry = model.grammatical_thoughts
+        question = registry.form("part", meaning.role_refs[2], open_roles=("I1",))
+        memory = model._what_memory()
+        memory.begin_thought_episode(meaning, work_budget=8)
+        memory.commit_thought(question, operation="part")
+        memory.finish_thought(question)
+        memory.end_what_episode()
+        with model._query_boundary_scope((0,)):
+            context = model._thought_grammar_context(question, row=0,
+                work=QueryWorkBudget(64), continuation=None)
+            outer = registry.form("what", memory.thought_reference(memory.thought_history()[1]), context=context)
+            meter = QueryWorkBudget(budget)
+>           nested = model._selected_thought_expectation(outer, row=0, work=meter)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_negative_expectation.py:340:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+bin/Models.py:6414: in _selected_thought_expectation
+    question, _ = context.ltm.resolve_description(
+bin/Queries.py:892: in resolve_description
+    value, scanned = memory.resolve_thought(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <Layers.WhatInteractionMemory object at 0x122b15610>
+reference = ('thought', 'e1e203420801487bbb9678b930264670', 1), b = 0
+max_records = 1, work = <QueryWork.QueryWorkBudget object at 0x122fb8830>
+
+    def resolve_thought(self, reference, *, b=0, max_records=1024, work=None):
+        if (
+            not isinstance(reference, tuple)
+            or len(reference) != 3
+            or reference[:2] != ("thought", self._thought_namespace)
+            or type(reference[2]) is not int
+            or reference[2] < 0
+        ):
+            raise ValueError("thought occurrence reference is unavailable")
+        if type(max_records) is not int or max_records < 0:
+            raise ValueError("thought read limit must be a non-negative integer")
+        records = self._what_slots[self._thought_row(b)]
+        iterator = iter(records)
+        for index in range(min(len(records), max_records)):
+            if work is not None:
+                work.require("record")
+            record = next(iterator)
+            if isinstance(record, ThoughtRecord) and record.id == reference[2]:
+                if record.meaning is None:
+                    raise ValueError("transition occurrence has no grammatical content")
+                return record.meaning, index + 1
+>       raise ValueError(
+            "thought occurrence is unavailable within this row and read limit"
+        )
+E       ValueError: thought occurrence is unavailable within this row and read limit
+
+bin/Thoughts.py:412: ValueError
+=========================== short test summary info ============================
+FAILED test/test_negative_expectation.py::test_nested_object_mask_reads_a_later_thought_on_the_shared_budget[1]
+FAILED test/test_negative_expectation.py::test_nested_object_mask_reads_a_later_thought_on_the_shared_budget[64]
+2 failed, 20 deselected in 2.45s

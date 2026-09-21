@@ -146,6 +146,11 @@ reads the owner through [`_what_memory`](../bin/Models.py).
 The retired `whatThinkingMemory` switch and discourse delegates are removed.
 
 `sentenceExpectation` defaults to true, with structured NP1/VP/NP2 expectation.
+Composition has no expectation capability. Subtraction belongs to the seal;
+the chooser receives detached conceived roles. A declared `not.thought` may
+conclude a serial inference, but absence itself executes nothing. The positive
+production prior seeds `<generate>` only. See
+[ExpectationRetention](ExpectationRetention.md).
 [`set_sentence_expectation`](../bin/Models.py) can switch it at runtime;
 [`ensure_sentence_expectation`](../bin/Language.py) creates its parameters
 once and registers them for optimization when first enabled. Re-enabling starts

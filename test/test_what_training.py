@@ -291,7 +291,7 @@ def synth_discourse_config_path(tmp_path_factory):
     patched = src.replace(
         "<architecture>",
         "<architecture>\n    <answerSynthesis>true</answerSynthesis>"
-        "\n    <prediction>interSentence</prediction>", 1)
+        , 1)
     patched = patched.replace(
         "</training>",
         "      <sentenceExpectation>true</sentenceExpectation>\n    </training>", 1)

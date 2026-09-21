@@ -189,11 +189,18 @@ def test_runbatch_credits_each_controller_row_from_its_own_answer(monkeypatch):
 
 
 @pytest.mark.parametrize('budget', [0, 1, 6, 12, 24])
-def test_nested_cutoff_drains_the_actual_depth_without_fresh_work(budget):
-    from Layers import TernaryTruthStore
+@pytest.mark.parametrize('with_expectation', [False, True])
+def test_nested_cutoff_drains_the_actual_depth_without_fresh_work(budget, with_expectation):
+    from Layers import TernaryTruthStore, InterSentenceLayer
     model, registry, memory, part, whole = _catalog_world()
     model.symbolSpace.ltm_store = TernaryTruthStore(8, capacity=32)
     question = registry.form('part', part, whole)
+    if with_expectation:
+        from test_sentence_expectation import observe
+        discourse = InterSentenceLayer(4, 8, 8, concept_dim=8, expectation_scope='structured')
+        model.symbolSpace.discourse = discourse
+        observe(discourse, question.roles)
+        observe(discourse, question.roles)
     for _ in range(4):
         question = registry.form('what', question)
     with model._query_boundary_scope((0,)):

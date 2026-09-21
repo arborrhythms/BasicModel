@@ -11831,27 +11831,7 @@ class SymbolSubSpace(SubSpace):
             "_svo_valid", torch.zeros(self.batch, dtype=torch.bool),
             persistent=False)
 
-        # STM-residual: fires once per sentence per row on the first
-        # stm_residual(b) call; arm_stm() / Reset() re-arm. Runtime scratch.
-        self.register_buffer(
-            "_stm_fired", torch.zeros(self.batch, dtype=torch.bool),
-            persistent=False)
-        self.stm_residual_scale = float(
-            TheXMLConfig.training("sentencePrimingScale", 0.05) or 0.05)
-        # D8 capture-gate (2026-05-19): discourse-prediction cache.
-        # ``stm_residual_microbatch`` is called per-word from
-        # ``ConceptualSpace.forward`` and used to fire
-        # ``discourse.predict()`` per-word -- which has a Python
-        # ``predict_next(b=b)`` row-loop that's untraceable under
-        # fullgraph=True and produces N DtoHs on CUDA. Discourse
-        # prediction is **sentence-scoped** (the inter-sentence ARMA
-        # state only changes when ``disc.observe()`` is called in
-        # ``runBatch`` post-body), so we cache ``(pred, conf)`` here
-        # and refresh it in ``arm_stm`` (the sentence-boundary
-        # rearm). The per-word body reads the cache; the captured
-        # graph never enters ``disc.predict()``.
-        self._disc_pred = None
-        self._disc_conf = None
+        self._source_batch = int(self.batch)
 
         # Per-source-row sentence-completed signal driven by
         # SyntacticLayer.compose: True for row b when this tick's parse
@@ -12785,145 +12765,6 @@ class SymbolSubSpace(SubSpace):
             self._svo_valid.zero_()
         else:
             self._svo_valid[b] = False
-
-    # -- per-row STM-fired accessors --------------------------------------
-    def stm_fired(self, b):
-        """True iff stm_residual(b) has fired since last arm.
-
-        Single-shot per sentence: re-armed by ``arm_stm`` or ``Reset``.
-        """
-        return bool(self._stm_fired[b].item())
-
-    def mark_stm_fired(self, b):
-        """Mark row ``b`` as having fired its STM residual this sentence.
-
-        Subsequent ``stm_residual`` calls for ``b`` return None until
-        ``arm_stm`` re-arms the row.
-        """
-        self._stm_fired[b] = True
-
-    def arm_stm(self, b=None):
-        """Re-arm row ``b`` (or all rows when None) for the next sentence.
-
-        Resets the per-row single-shot flag so the next ``stm_residual``
-        call can fire and stamp a new prediction bias.
-
-        D8 capture-gate (2026-05-19): also refreshes the discourse-
-        prediction cache (``_disc_pred`` / ``_disc_conf``). The
-        inter-sentence ARMA state only updates when ``disc.observe()``
-        fires post-body in ``runBatch``, so ``predict()`` returns the
-        same value for the entire sentence; caching here keeps the
-        per-word body free of any ``disc.predict()`` call.
-        """
-        if b is None:
-            self._stm_fired.zero_()
-        else:
-            self._stm_fired[b] = False
-        # Refresh discourse-prediction cache at the sentence boundary.
-        disc = self.discourse
-        if disc is not None:
-            try:
-                self._disc_pred, self._disc_conf = disc.predict()
-            except Exception:
-                self._disc_pred, self._disc_conf = None, None
-        else:
-            self._disc_pred, self._disc_conf = None, None
-
-    def stm_residual(self, b=0):
-        """Discourse prediction bias applied once per sentence per row.
-
-        Reads the discourse-prediction cache (populated by ``arm_stm``)
-        and returns ``discourse.prime(predicted, confidence, scale)``,
-        or ``None`` when discourse is unavailable, not yet built, or the
-        bias already fired this sentence for row ``b``.  ``arm_stm(b)``
-        / ``Reset()`` re-arms and refreshes the cache.
-
-        D8 capture-gate (2026-05-19): the cache replaces the per-call
-        ``disc.predict()``, sentence-scoped (refreshed only when
-        ``arm_stm`` fires at the sentence boundary).
-
-        ``b`` defaults to 0 for back-compat with single-row callers; the
-        Task 9 cutover threads the row index from the body iteration.
-        """
-        if self.stm_fired(b):
-            return None
-        self.mark_stm_fired(b)
-        disc = self.discourse
-        if disc is None:
-            return None
-        pred = self._disc_pred
-        conf = self._disc_conf
-        if pred is None or conf is None:
-            return None
-        return disc.prime(pred, conf, self.stm_residual_scale)
-
-    def stm_residual_microbatch(self, B, K, expected_dim=None):
-        """Vectorized STM residual for the microbatch body.
-
-        For each source row ``b`` in ``[0, B)``: if ``_stm_fired[b]`` is
-        False, this call contributes one discourse-bias term that broadcasts
-        across all ``K`` windows derived from that source row.  Sources
-        already fired contribute zero.  After the call, every source that
-        contributed is marked fired.
-
-        Returns a ``[B*K, concept_dim]`` tensor, or ``None`` when discourse
-        is unavailable, every source row has already fired this sentence,
-        or the priming vector does not live in the caller's basis width.
-
-        The call site (ConceptualSpace.forward) broadcasts the result over
-        the ``N`` axis via ``bias.unsqueeze(1)``.
-        """
-        BK = int(B) * int(K)
-        not_fired = ~self._stm_fired  # [B] bool, no host sync
-        # Removed: `if not bool(not_fired.any().item()): return None` early-out.
-        # The gate at the bottom multiplies the bias by ``not_fired``, so when
-        # every row has already fired the returned tensor is all-zero and the
-        # caller's `y = y + bias.unsqueeze(1)` is a no-op anyway. The early-out
-        # was a per-batch host sync that blocked CUDA-graph capture.
-        #
-        # D8 capture-gate (2026-05-19): read the discourse cache instead
-        # of calling ``disc.predict()`` here. The cache is populated once
-        # per sentence in ``arm_stm()`` (the sentence boundary). This
-        # eliminates the per-word ``disc.predict()`` call (which had a
-        # Python row-loop in ``_predict_live(b=b)`` that's untraceable
-        # under fullgraph=True and a per-word DtoH on CUDA).
-        disc = self.discourse
-        if disc is None:
-            return None
-        pred = self._disc_pred
-        conf = self._disc_conf
-        if pred is None or conf is None:
-            return None
-        bias_full = disc.prime(pred, conf, self.stm_residual_scale)
-        if bias_full is None:
-            return None
-        # predict() returns 1D ``[s_dim]`` for B=1 layers and 2D ``[B*K,
-        # s_dim]`` for batched layers; prime() preserves that rank.  Lift
-        # 1D to a single-row 2D tensor so downstream broadcasting is uniform.
-        if bias_full.ndim == 1:
-            bias_full = bias_full.unsqueeze(0)
-        # Expand a single-row discourse output up to the body batch when
-        # discourse and body have diverged (legacy non-microbatch paths
-        # leave discourse at its construction batch).
-        if bias_full.shape[0] != BK:
-            if bias_full.shape[0] == 1:
-                bias_full = bias_full.expand(BK, -1).contiguous()
-            else:
-                # Mismatched and not broadcastable: keep semantics safe by
-                # skipping the bias rather than mis-broadcasting.
-                return None
-        if expected_dim is not None and int(bias_full.shape[-1]) != int(expected_dim):
-            # Hierarchical stages may operate in a state basis that is
-            # narrower than the global DiscourseSpace concept projection.
-            # Do not inject a residual across incompatible bases.
-            return None
-        # Gate per source row: each source's bias broadcasts to its K
-        # windows; sources already fired are masked to zero.
-        gate = not_fired.repeat_interleave(int(K)).to(bias_full.device)
-        bias_full = bias_full * gate.to(bias_full.dtype).unsqueeze(-1)
-        # Mark sources that contributed.
-        self._stm_fired = self._stm_fired | not_fired
-        return bias_full
 
     # -- Category helpers ---------------------------------------------
     def category_lookup(self, category):
@@ -14391,8 +14232,7 @@ class SymbolSubSpace(SubSpace):
         """Sever the autograd graph carried across batches by persistent
         per-row state tensors.
 
-        In-place writes during forward (``set_last_svo``, ``arm_stm`` →
-        ``self._disc_pred = disc.predict()``, ``subspace.event.setW(...)``,
+        In-place writes during forward (``set_last_svo``, ``subspace.event.setW(...)``,
         etc.) leave the persistent buffers wired to the previous batch's
         autograd graph. Once that batch's ``backward()`` runs, the saved
         tensors are freed; the next batch's forward re-reads the same
@@ -14409,10 +14249,6 @@ class SymbolSubSpace(SubSpace):
         iteration trips Dynamo's "getattr() on nn.Module with pending
         mutation" guard under ``fullgraph=True``.
         """
-        if self._disc_pred is not None:
-            self._disc_pred = self._disc_pred.detach()
-        if self._disc_conf is not None:
-            self._disc_conf = self._disc_conf.detach()
         self._last_svo = self._last_svo.detach()
         # Catch floating-point buffers carried transitively by
         # submodules (subspace, category_stack, reconstruction_stack,
@@ -14513,7 +14349,7 @@ class SymbolSubSpace(SubSpace):
         row ``batch``. ``None`` clears every row. When ``batch`` is set,
         the SyntacticLayer per-cell state at rows ``batch*K..(batch+1)*K``
         is cleared via the underlying stack helpers; the per-source-row
-        ``_stm_fired[batch]`` is re-armed.
+        ``_sentence_completed[batch]`` is cleared.
 
         ``hard`` (default True): True is the document boundary (full
         wipe of stack, SVO, STM, discourse). False is a sentence-internal
@@ -14532,7 +14368,7 @@ class SymbolSubSpace(SubSpace):
             # request to soft_reset every row in batch=None scope so the
             # cascade stays well-defined for callers that pass hard=False.
             if batch is None:
-                B = int(self._stm_fired.shape[0])
+                B = int(self._source_batch)
                 for b in range(B):
                     self.soft_reset(batch=b)
             else:
@@ -14543,7 +14379,7 @@ class SymbolSubSpace(SubSpace):
             # Re-arm STM residual on every row so the next sentence fires
             # once per row; drop the stale per-row SVO so composed-chart
             # readers don't carry it across sentence boundaries.
-            self.arm_stm()
+
             self.clear_last_svo()
             self.clear_sentence_completed()
             return
@@ -14570,7 +14406,7 @@ class SymbolSubSpace(SubSpace):
             if hasattr(self.reconstruction_stack, 'clear_rows'):
                 self.reconstruction_stack.clear_rows(bk_start, bk_end)
         # Per-source-row STM / SVO / sentence-complete signal.
-        self.arm_stm(int(batch))
+
         self.clear_last_svo(int(batch))
         self.clear_sentence_completed(int(batch))
 
@@ -14630,10 +14466,10 @@ class SymbolSubSpace(SubSpace):
         sentence starts fresh, while preserving the document-scoped
         carryover that bridges sentences:
           * **Cleared**: parse stack, category stack, reconstruction
-            stack, ``_last_svo[batch]``, ``_stm_fired[batch]`` (re-armed);
+            stack, ``_last_svo[batch]``, ``_sentence_completed[batch]`` (cleared);
             sentence-completed flag.
           * **Preserved**: ``InterSentenceLayer`` discourse history (the
-            centroid ring buffer + the predictive bias) — this is the
+            chronological context and predictor) — this is the
             inter-sentence prior, accumulating across true sentences
             within a document.
           * **Preserved**: codebook EMA, learned weights — those are
@@ -14643,7 +14479,7 @@ class SymbolSubSpace(SubSpace):
         leaving discourse history alone; hard reset wipes that too.
         """
         if batch is None:
-            self.arm_stm()
+
             self.clear_last_svo()
             self.clear_sentence_completed()
             # ``cursor`` is a host-side list[int] of length 3 (see
@@ -14672,7 +14508,7 @@ class SymbolSubSpace(SubSpace):
                 tax.reset()
             return
         b = int(batch)
-        self.arm_stm(b)
+
         self.clear_last_svo(b)
         self.clear_sentence_completed(b)
         # ``cursor`` is a host-side list[int] (see __init__); reset in
@@ -14707,12 +14543,12 @@ class SymbolSubSpace(SubSpace):
     def _row_K(self):
         """Per-source-row K (microbatch window count) inferred from state.
 
-        ``_stm_fired`` is sized [B] (per source row); the body-side
+        ``_source_batch`` retains B (source rows); the body-side
         ``self.batch`` is sized [B*K]. The ratio recovers K. Returns 1
         when no microbatch has been allocated yet.
         """
         try:
-            B = int(self._stm_fired.shape[0])
+            B = int(self._source_batch)
         except (AttributeError, IndexError, TypeError):
             return 1
         if B <= 0:
@@ -14731,7 +14567,7 @@ class SymbolSubSpace(SubSpace):
         # has populated the list.
         if not hasattr(self, '_sentence_completed') or self._sentence_completed is None:
             try:
-                B = int(self._stm_fired.shape[0])
+                B = int(self._source_batch)
             except (AttributeError, IndexError, TypeError):
                 B = 1
             self._sentence_completed = [False] * B
@@ -14772,14 +14608,8 @@ class SymbolSubSpace(SubSpace):
         fresh-zero on shape change -- they're per-microbatch-row state
         with no cross-batch lifecycle.
 
-        ``_stm_fired`` and ``discourse`` are NOT touched here: they live
-        at B (per source row), persist across forward calls within a
-        sentence, and are owned by :meth:`ensure_microbatch`.  Wiping
-        them on every K-change (which happens whenever ``actual_max``
-        BPE word count crosses a power-of-two boundary in PartSpace's
-        AR unfold) would re-arm the once-per-sentence STM-residual fire
-        flag mid-sentence, causing the discourse bias to inject multiple
-        times for the same source row.
+        Source-row completion and discourse are owned by ensure_microbatch;
+        changing K must not clear the B chronological streams.
         """
         batch = int(batch)
         if batch == self.batch:
@@ -14810,7 +14640,7 @@ class SymbolSubSpace(SubSpace):
                 live=int(view.n_refs_live),
                 device=device,
             )
-        # ``_stm_fired`` is intentionally NOT reallocated here -- see
+        # Source-row completion is intentionally not resized here -- see
         # docstring.  ``ensure_microbatch`` handles the B-sized fields.
 
     def ensure_microbatch(self, B, K):
@@ -14818,20 +14648,15 @@ class SymbolSubSpace(SubSpace):
 
         Body-side state (subspace, stacks, last_svo, svo_valid) is sized
         to B*K — each window has its own row inside the body's flattened
-        view. _stm_fired stays at B because STM firing is a per-source-row
-        once-per-sentence event shared across all K windows of that row.
+        view. Sentence completion stays at B, shared by all K windows.
         Discourse buffers (InterSentenceLayer) also stay at B: discourse
         history accumulates across sentences within one source stream,
         and all K windows of a stream share that history (the post-body
         snapshot collapses K to mirror legacy last-cursor semantics).
         """
         BK = int(B) * int(K)
-        self.ensure_batch(BK)  # body-side only; preserves _stm_fired
-        device = self._stm_fired.device
-        if self._stm_fired.shape[0] != int(B):
-            # First allocation, or source-row count B changed (a real
-            # sentence-stream boundary, not a K-change). Fresh zeros.
-            self._stm_fired = torch.zeros(int(B), dtype=torch.bool, device=device)
+        self.ensure_batch(BK)  # body-side only; preserves source rows
+        self._source_batch = int(B)
         if self.discourse is not None and hasattr(self.discourse, 'ensure_batch'):
             self.discourse.ensure_batch(int(B))
         if getattr(self, 'what_memory', None) is not None:

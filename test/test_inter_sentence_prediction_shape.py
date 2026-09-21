@@ -1,33 +1,9 @@
-"""Task 8 (plan §9): inter-sentence prediction of the next STM end-state
-SHAPE from the LTM chain.
+"""Root-scope predictor benchmark and shared end-state lifecycle checks.
 
-``InterSentenceLayer`` gains an inter-level ``IntraSentenceLayer`` instance
-(``_inter_predictor``) that reads the LTM end-state chain
-(``get_stm_chain``) and predicts the SHAPE of the NEXT end-state:
-``predict_next_end_state()`` -> ``(depth_hat:int, payload_hat:[depth_hat, D]
-tensor)``. The chat-loop's ``generate_sentence`` stages ``payload_hat``
-per-slot on ``ConceptualSpace._c_prior`` (extended to accept a ``[depth, D]``
-slot-stack), and a per-sentence ``L_inter = MSE(payload_hat_root,
-observed_root)`` accumulates live for the training path.
-
-Core plan-§9 assertion (the verbatim new test): observe a relative
-(depth=3) sentence followed by an absolute (depth=1) sentence; assert the
-predictor after the relative emits a predicted shape ``(depth, payload)``
-with ``depth in {1, 3}`` and finite payload.
-
-Also covers:
-  * Cold start (empty chain) -> degenerate ``(1, zeros[1, D])``.
-  * depth_hat AR prior tracks the most-recent end-state depth.
-  * Fail-loud: a NaN-producing prediction RAISES (not silenced).
-  * The inter-level predictor's params are exposed (trainable) and it is
-    on ``self.layers`` (ergodic / Start / Reset cascade).
-  * L_inter accumulates a live grad tensor + ``consume_inter_loss`` mean +
-    reset; grad-gated (no accumulation under no-grad); weight gate.
-  * ``ConceptualSpace._c_prior`` accepts a ``[depth, D]`` slot-stack AND
-    keeps the legacy ``[D]`` / ``[1, D]`` broadcast byte-identical.
-  * Reset clears the pending prediction + loss accumulator.
-  * Absolute-only / no-discourse configs no-op (the model helper returns
-    None).
+The structured production predictor is covered by test_sentence_expectation.
+This file retains the explicit root benchmark's cold start, ragged depth,
+finite prediction, trainable parameters, loss gates and reset behavior.
+Comprehension seed arithmetic was retired with the additive prior.
 """
 
 import os
@@ -479,111 +455,6 @@ class TestTrainingBoundaryStagesPrediction(_Base):
         self.layer = a  # tearDown release
 
 
-class TestCPriorSlotStack(_Base):
-    """``ConceptualSpace._c_prior`` accepts a ``[depth, D]`` slot-stack and
-    keeps the legacy ``[D]`` / ``[1, D]`` broadcast byte-identical.
-
-    Replicates the forward-path staging logic on a synthetic
-    ``event_for_carrier`` so the test stays a focused unit test (no full
-    model build): the production block lives at
-    ``ConceptualSpace.forward`` (bin/Spaces.py).
-    """
-
-    @staticmethod
-    def _apply_prior(event, prior, slotwise):
-        """Mirror of the bin/Spaces.py ``_c_prior`` injection block."""
-        if (slotwise and prior.dim() == 2 and event.dim() == 3
-                and prior.shape[-1] == event.shape[-1]):
-            B = event.shape[0]
-            N = event.shape[1]
-            depth = min(int(prior.shape[0]), int(N))
-            if depth > 0:
-                add = torch.zeros_like(event)
-                add[:, :depth, :] = prior[:depth].unsqueeze(0).expand(B, -1, -1)
-                event = event + add
-            return event
-        if prior.dim() == 1 or prior.dim() == 2:
-            if prior.dim() == 1:
-                prior = prior.unsqueeze(0)
-            if event.dim() == 3 and prior.dim() == 2:
-                if prior.shape[0] == 1:
-                    prior_b = prior.expand(event.shape[0], -1)
-                elif prior.shape[0] == event.shape[0]:
-                    prior_b = prior
-                else:
-                    K = max(1, event.shape[0] // max(1, prior.shape[0]))
-                    prior_b = prior.repeat_interleave(K, dim=0)
-                if prior_b.shape[-1] == event.shape[-1]:
-                    event = event + prior_b.unsqueeze(1)
-        return event
-
-    def test_depth3_slotstack_stages_first_three_slots(self):
-        B, N, D = 1, 5, 4
-        event = torch.zeros(B, N, D)
-        payload_hat = torch.arange(1, 3 * D + 1, dtype=torch.float).reshape(3, D)
-        out = self._apply_prior(event, payload_hat, slotwise=True)
-        # First 3 slots get the payload rows; slots 3,4 stay zero.
-        self.assertTrue(torch.equal(out[0, 0], payload_hat[0]))
-        self.assertTrue(torch.equal(out[0, 1], payload_hat[1]))
-        self.assertTrue(torch.equal(out[0, 2], payload_hat[2]))
-        self.assertTrue(torch.all(out[0, 3] == 0.0))
-        self.assertTrue(torch.all(out[0, 4] == 0.0))
-
-    def test_depth1_slotstack_stages_only_slot0(self):
-        B, N, D = 1, 4, 4
-        event = torch.zeros(B, N, D)
-        payload_hat = torch.full((1, D), 7.0)
-        out = self._apply_prior(event, payload_hat, slotwise=True)
-        self.assertTrue(torch.all(out[0, 0] == 7.0))
-        self.assertTrue(torch.all(out[0, 1:] == 0.0),
-                        "a depth-1 slot-stack must touch ONLY slot 0")
-
-    def test_slotstack_clamped_to_available_slots(self):
-        # depth 3 but only N=2 slots -> stage the first 2, drop the 3rd.
-        B, N, D = 1, 2, 4
-        event = torch.zeros(B, N, D)
-        payload_hat = torch.ones(3, D)
-        out = self._apply_prior(event, payload_hat, slotwise=True)
-        self.assertEqual(tuple(out.shape), (B, N, D))
-        self.assertTrue(torch.all(out == 1.0))
-
-    def test_slotstack_broadcasts_over_batch(self):
-        B, N, D = 3, 4, 4
-        event = torch.zeros(B, N, D)
-        payload_hat = torch.full((2, D), 5.0)
-        out = self._apply_prior(event, payload_hat, slotwise=True)
-        for b in range(B):
-            self.assertTrue(torch.all(out[b, 0] == 5.0))
-            self.assertTrue(torch.all(out[b, 1] == 5.0))
-            self.assertTrue(torch.all(out[b, 2] == 0.0))
-
-    def test_legacy_1d_prior_broadcasts_all_slots_byte_identical(self):
-        B, N, D = 2, 3, 4
-        event = torch.zeros(B, N, D)
-        prior = torch.full((D,), 2.0)               # [D]
-        out_new = self._apply_prior(event, prior, slotwise=False)
-        # Legacy reference: unsqueeze to [1, D], broadcast to [B, D], add
-        # across ALL slots.
-        ref = event + prior.unsqueeze(0).expand(B, -1).unsqueeze(1)
-        self.assertTrue(torch.equal(out_new, ref))
-        self.assertTrue(torch.all(out_new == 2.0),
-                        "[D] prior must hit every slot (legacy broadcast)")
-
-    def test_legacy_1xD_prior_broadcasts_all_slots(self):
-        B, N, D = 2, 3, 4
-        event = torch.zeros(B, N, D)
-        prior = torch.full((1, D), 3.0)             # [1, D]
-        out = self._apply_prior(event, prior, slotwise=False)
-        self.assertTrue(torch.all(out == 3.0))
-
-    def test_legacy_BxD_prior_per_row(self):
-        B, N, D = 2, 3, 4
-        event = torch.zeros(B, N, D)
-        prior = torch.stack([torch.full((D,), 1.0),
-                             torch.full((D,), 2.0)], dim=0)   # [B, D]
-        out = self._apply_prior(event, prior, slotwise=False)
-        self.assertTrue(torch.all(out[0] == 1.0))
-        self.assertTrue(torch.all(out[1] == 2.0))
 
 
 class TestInterContrastive(_Base):

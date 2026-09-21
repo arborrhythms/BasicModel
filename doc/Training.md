@@ -56,7 +56,10 @@ separate deliberate objective.
 For the current production expectation rollout, use the
 [integrated specification](plans/2026-09-15-next-sentence-as-the-production-objective.md).
 The enabled sentence predictor defaults to distinct local NP1/VP/NP2 targets
-and an occupancy objective. The root-only predictor remains an explicit
+and an occupancy objective. Empty roles have zero targets and remain in
+the MSE. Seal gain and object masks affect conceived evidence only, never the
+predictor objective; [ExpectationRetention](ExpectationRetention.md) specifies
+the subtraction, row surprise and residual query credit. The root-only predictor remains an explicit
 benchmark option. Prediction targets and durable history are detached;
 preceding source encodings within a training step remain live under the
 objective-local state boundaries in [GradientFlow](GradientFlow.md). Cursor
@@ -1083,7 +1086,9 @@ addresses remain separate from numerical semantic features and survive later
 staging. Pure grammatical formation retains live operand gradients. Hard
 lookup is nondifferentiable and durable descriptions stay detached. The normal
 controller retains live episode values and receives supplied-answer policy
-credit; residual credit and learned utility remain open.
+credit. Residual credit now has its own baseline and trajectory replay on that
+same chooser; learned utility still requires measurement. See
+[ExpectationRetention](ExpectationRetention.md).
 [Capture](../bin/Models.py),
 [owned programs](../bin/Understanding.py),
 [formation](../bin/Queries.py),
@@ -1118,7 +1123,8 @@ calls, native reads, and nested callbacks, while preserving existing live
 operand gradients and durable-record detachment. It neither creates residual
 policy credit nor learned utility. The normal controller creates it from the
 episode allowance, propagates it and commits its actual final cost once; its
-separate supplied-answer policy term still leaves residual credit open. See
+separate residual estimator uses the final metered work alongside prediction
+error; the supplied-answer estimator keeps its own baseline. See
 [shared query work](QueryWork.md) and [gradient flow](GradientFlow.md).
 
 ## Restoring dependent occurrences

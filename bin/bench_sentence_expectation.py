@@ -113,10 +113,9 @@ def _score_head(head, values, masks, targets, root=False, target_masks=None):
         else:
             roles, presence = head(values, masks)
         squared = (roles - targets).square().mean(-1)
-        per_role = (squared * target_masks).sum(0) / target_masks.sum(0).clamp(min=1)
+        per_role = squared.mean(0)
         return {
-            "feature_mse": float(((squared * target_masks).sum(-1)
-                                  / target_masks.sum(-1).clamp(min=1)).mean()),
+            "feature_mse": float(squared.mean()),
             "role_mse": per_role.tolist(),
             "root_objective_mse": float(per_role[0]),
             "presence_bce": None if presence is None else float(

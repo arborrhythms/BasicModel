@@ -181,47 +181,8 @@ def test_wordspace_last_svo_default_invalid(model):
     assert not ss.svo_valid(0)
 
 
-def test_wordspace_stm_residual_none_when_no_discourse(model):
-    ss = model.symbolSpace
-    # Disable discourse for this test; stm_residual should pass through None.
-    ss.discourse = None
-    ss.arm_stm()
-    assert ss.stm_residual() is None
 
 
-def test_wordspace_stm_residual_fires_once_per_sentence(model):
-    """stm_residual fires once, then no-ops until Reset re-arms."""
-    ss = model.symbolSpace
-
-    class _FakeDiscourse(torch.nn.Module):
-        def __init__(self):
-            super().__init__()
-            self.calls = 0
-
-        def predict(self):
-            self.calls += 1
-            return torch.zeros(4), torch.tensor(1.0)
-
-        def prime(self, pred, conf, scale):
-            return torch.ones(4) * float(scale)
-
-    # Replace the registered child on its actual owner. Assigning a Module
-    # to the Space facade would register a second child and leave arm_stm's
-    # coordinator reading the original predictor.
-    ss.subspace.discourse = _FakeDiscourse()
-    ss.arm_stm()
-    ss.stm_residual_scale = 0.1
-
-    b1 = ss.stm_residual()
-    b2 = ss.stm_residual()   # second call same sentence: pass-through None
-    ss.Reset()
-    b3 = ss.stm_residual()
-
-    assert b1 is not None
-    assert torch.allclose(b1, torch.ones(4) * 0.1)
-    assert b2 is None
-    assert b3 is not None
-    assert ss.discourse.calls == 2   # fired once after init, once after Reset
 
 
 def test_wordspace_reset_clears_last_svo(model):
@@ -283,13 +244,3 @@ def test_pipeline_spaces_carry_symbolSpace(model):
     assert model.conceptualSpace.symbolSpace is model.symbolSpace
     assert model.wholeSpace.symbolSpace is model.symbolSpace
     assert model.outputSpace.symbolSpace is model.symbolSpace
-
-
-# 2026-05-29: removed test_stm_residual_flows_through_conceptualspace.
-# The test asserted that ``ConceptualSpace.forward`` reads
-# ``ss.stm_residual_microbatch`` and adds it to the event. That wiring
-# was retired by the parallel-mode STM-set-all-slots fix (2026-05-28);
-# CS.forward writes the [B, N, D] slab directly to STM and no longer
-# consumes the per-word residual injection point. The
-# ``stm_residual_microbatch`` API survives but is consumed elsewhere
-# (Language.py per-word path and Layers.py).

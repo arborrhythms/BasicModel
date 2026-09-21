@@ -154,7 +154,6 @@ def _stage_packed(m, rows):
     m._prepare_reconstruction_choices(int(slab.shape[0]), int(slab.shape[1]), slab.device)
     m.conceptualSpace.stm.begin_forward(int(slab.shape[0]), device=slab.device, dtype=slab.dtype)
     m._stage_fixed_residual_part_capacity()
-    m._stage_intersentence_seed()
     return raw
 
 

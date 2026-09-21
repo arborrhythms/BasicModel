@@ -12,6 +12,49 @@ import torch
 from torch.nn import functional as F
 
 
+@torch.no_grad()
+def negative_image(observed, estimate, presence, *, gain=1., object_mask=None):
+    """Seal-time subtraction, detached from all reading and policy choices.
+
+    These are derived serial values, never writes to a presence field or a
+    third memory record. The predictor is trained separately against the
+    complete observation, including empty roles, irrespective of this gain.
+    """
+    if observed.ndim != 2 or observed.shape[0] != 3:
+        raise ValueError("negative image requires three canonical roles")
+    gain = torch.as_tensor(gain, device=observed.device, dtype=observed.dtype).detach()
+    mask = (torch.zeros(3, device=observed.device, dtype=observed.dtype)
+            if object_mask is None else torch.as_tensor(
+                object_mask, device=observed.device, dtype=observed.dtype).detach())
+    if gain.numel() != 1 or mask.shape != (3,):
+        raise ValueError("expectation gain is scalar and object mask has three roles")
+    if not bool(torch.isfinite(gain).all() and ((gain >= 0) & (gain <= 1)).all()
+                and torch.isfinite(mask).all() and ((mask >= 0) & (mask <= 1)).all()):
+        raise ValueError("expectation gain and object mask must be in [0, 1]")
+    if estimate is None:
+        return observed.detach().clone(), torch.zeros_like(observed)
+    presence = torch.as_tensor(presence, device=observed.device, dtype=observed.dtype).detach()
+    if estimate.shape != observed.shape or presence.shape != (3,):
+        raise ValueError("estimate and presence must align with the three roles")
+    if not bool(torch.isfinite(estimate).all() and torch.isfinite(presence).all()
+                and ((presence >= 0) & (presence <= 1)).all()):
+        raise ValueError("estimate must be finite and presence in [0, 1]")
+    image = -gain * ((1 - mask) * presence)[:, None] * estimate.detach().to(observed)
+    return observed.detach() + image, image
+
+
+@torch.no_grad()
+def expectation_surprise(observed, estimate):
+    """Bound the honest all-role mean squared residual by s/(1+s).
+
+    This monotone normalization leaves an exact prediction at zero and makes
+    surprise comparable to other retention terms in [0, 1]. Neither gain nor
+    the active question enters it. Unknown surprise is stored separately as -1.
+    """
+    error = (observed.to(estimate) - estimate).square().mean()
+    return error / (1 + error)
+
+
 def canonical_role_payload(payload, depth, layout, role_mask=None, *, concept_dim=None):
     """Return infix NP1/VP/NP2 roles and their explicit occupancy mask.
 

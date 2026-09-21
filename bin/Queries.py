@@ -940,8 +940,7 @@ class ThoughtLTMCapability:
         if value is None:
             return None
         try:
-            return type(value)(value.roles.detach().clone(),
-                               value.presence_logits.detach().clone())
+            return value.detached()
         except (AttributeError, TypeError):
             return _detach_boundary_value(value)
 
@@ -1169,6 +1168,17 @@ def _quantize(context, arguments):
             'nodes_scanned': scanned, 'incomplete': tuple(incomplete)}
 
 
+def _not(context, arguments):
+    """A declared thought negates serial content with the shared operator.
+
+    Absence in a seal is evidence, never a command to call this operator.
+    Only the ordinary chooser may select it; its result is an inference.
+    """
+    from Language import NotLayer
+    value = _vector(context, _argument(arguments, 'I1')).detach()
+    return {'value': NotLayer()(value), 'evidence_kind': 'inference'}
+
+
 def _arma(context, arguments):
     """Read the row's full prior estimate without staging an observation target."""
     if isinstance(context, ThoughtGrammarContext):
@@ -1263,6 +1273,8 @@ class ThoughtExecutorDescriptor:
 
 
 _thought_executors = (
+    ThoughtExecutorDescriptor('not', 'serial-negation', ('concept',), Mind.SERIAL,
+        (Mind.SERIAL, Mind.KNOWING, Mind.SYMBOLIC, Mind.BUDGET), (Mind.SERIAL,), 'inference', _not),
     ThoughtExecutorDescriptor('exist', 'ltm-facts', ('description',), Mind.SERIAL,
         (Mind.SERIAL, Mind.LTM, Mind.PRIMING, Mind.BUDGET), (Mind.SERIAL,), 'fact', _exist),
     ThoughtExecutorDescriptor('part', 'conceptual-taxonomy', ('concept', 'concept'), Mind.SERIAL,
@@ -1286,6 +1298,7 @@ THOUGHT_EXECUTORS = MappingProxyType({d.semantic_id: d for d in _thought_executo
 # Method-level grants narrow each permitted subsystem further. In particular
 # equal/quantize cannot resolve an LTM reference, and lookup sees held frames.
 _THOUGHT_METHODS = {
+    'not': {'conceptual_space': ('payload',)},
     'exist': {'ltm': ('existence_evidence', 'resolve_description')},
     'part': {'conceptual_space': ('payload', 'order'), 'taxonomy': ('evidence', 'neighbors')},
     'isPart': {'taxonomy': ('evidence', 'neighbors')},
@@ -2152,6 +2165,11 @@ class GrammaticalThoughtRegistry:
             key = (operation.semantic_id, tuple(open_roles))
             if key in seen:
                 return
+            if descriptor.executor is _what:
+                # A generic description reference can name an observation.
+                # what requires a checked question; use the owned question
+                # occurrences supplied below, never guess its mode from a code.
+                return
             bindings = {}
             for role, kind in zip(operation.operand_roles,
                                   descriptor.kinds_for(open_roles)):
@@ -2189,6 +2207,8 @@ class GrammaticalThoughtRegistry:
                 if not (isinstance(description, ConceptualMeaning)
                         and self._is_description_reference(reference)):
                     raise ValueError('controller descriptions require owned occurrences')
+                if description.mode != 'interrogative':
+                    continue
                 operation = self._operations_by_id['what']
                 descriptor = self.descriptors['what']
                 source = ConceptualMeaning(

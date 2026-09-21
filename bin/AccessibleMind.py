@@ -47,7 +47,20 @@ def apply_thought_effect(model, result, *, row, work):
     """
     import torch
     from Queries import _existing_row, _basis
-    if result is None or result.semantic_id not in ('quantize', 'lookup', 'what'):
+    if result is None:
+        return
+    if result.semantic_id == 'arma':
+        discourse = getattr(getattr(model, 'symbolSpace', None), 'discourse', None)
+        if discourse is not None and result.value is not None:
+            # The sole predictor owns staging. Its live prior calculation is
+            # numerically the same detached value retained on the thought.
+            discourse.expect_next_meaning(row, record=True, refresh=True)
+        return
+    if getattr(model, '_anticipating_expectation_row', None) == row:
+        # Anticipation can retrieve serial frames and form an estimate, but
+        # cannot change the input's order-0 field or its reading attention.
+        return
+    if result.semantic_id not in ('quantize', 'lookup', 'what'):
         return
     space = getattr(model, 'conceptualSpace', None)
     carrier = getattr(space, 'subspace', None)

@@ -8770,6 +8770,7 @@ class TernaryTruthStore(LeafCodeIndex, Layer):
                              torch.zeros(capacity, dtype=torch.long))
         self.register_buffer('timestamp', torch.zeros(capacity))
         self.register_buffer('trust', torch.zeros(capacity))
+        self.register_buffer('surprise', torch.full((capacity,), -1.))
         self.register_buffer('count', torch.tensor(0, dtype=torch.long))
         # Per-row writer provenance (ORIGIN_*); default 0 = conversation so
         # the observe-site push needs no change.
@@ -9224,6 +9225,8 @@ class TernaryTruthStore(LeafCodeIndex, Layer):
 
     def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
                               missing_keys, unexpected_keys, error_msgs):
+        # Older checkpoints did not score surprise: unknown is not perfect.
+        state_dict.setdefault(prefix + 'surprise', torch.full_like(self.surprise, -1.))
         index_keys = ('leaf_codes', 'leaf_offsets', 'leaf_complete', 'index_stream')
         present_index = [prefix + key in state_dict for key in index_keys]
         if any(present_index) and not all(present_index):
@@ -9363,7 +9366,7 @@ class TernaryTruthStore(LeafCodeIndex, Layer):
 
     @torch.no_grad()
     def append_meaning(self, meaning, *, kind="fact", rel_type=None,
-                       trust=0.0, timestamp=None, leaf_codes=None, stream=-1):
+                       trust=0.0, timestamp=None, leaf_codes=None, stream=-1, surprise=-1.):
         """Commit a complete description with explicit evidential provenance."""
         if not isinstance(meaning, ConceptualMeaning):
             raise TypeError("append_meaning requires a ConceptualMeaning")
@@ -9381,6 +9384,9 @@ class TernaryTruthStore(LeafCodeIndex, Layer):
             raise ValueError("fact timestamp must be finite")
         if type(stream) is not int or stream < -1:
             raise ValueError("index stream must be a row or shared (-1)")
+        surprise = float(surprise)
+        if not math.isfinite(surprise) or not (surprise == -1. or 0. <= surprise <= 1.):
+            raise ValueError("surprise must be unknown (-1) or in [0, 1]")
         terms, complete = (self._meaning_leaf_terms(meaning) if leaf_codes is None else
                            (self._checked_leaf_terms(leaf_codes), (True, True, True)))
         meaning = self.bind_constituents(meaning, reserve=1, stream=stream)
@@ -9394,6 +9400,7 @@ class TernaryTruthStore(LeafCodeIndex, Layer):
             rel_type = self.REL_OTHER if bool(meaning.role_mask[1:].any()) else self.REL_NONE
         self.rel_type[n] = int(rel_type)
         self.trust[n] = max(-1.0, min(1.0, float(trust)))
+        self.surprise[n] = surprise
         self.origin[n] = self.ORIGIN_CONVERSATION
         self.record_kind[n] = self.KINDS.index(kind)
         self.grammatical_mode[n] = self.MODES.index(meaning.mode)
@@ -9515,13 +9522,15 @@ class TernaryTruthStore(LeafCodeIndex, Layer):
         """
         if observation_kind not in ("observation", "question"):
             raise ValueError("expectation pair requires an observed input kind")
+        from Meaning import expectation_surprise
+        surprise = expectation_surprise(observation.roles, estimate.roles)
         observation = self.bind_constituents(observation, reserve=1, stream=index_stream)
         if observation is None:
             return -1, -1
         if self.capacity - len(self) < 2:
             return -1, self.append_meaning(
                 observation, kind=observation_kind, trust=trust, leaf_codes=leaf_codes,
-                stream=index_stream)
+                stream=index_stream, surprise=surprise)
         estimate_index = self.append_estimate(
             estimate, presence_logits=presence_logits,
             source_occurrences=source_occurrences, stream=stream,
@@ -9532,7 +9541,7 @@ class TernaryTruthStore(LeafCodeIndex, Layer):
             raise RuntimeError("estimate append unexpectedly exhausted durable capacity")
         observation_index = self.append_meaning(
             observation, kind=observation_kind, trust=trust, leaf_codes=leaf_codes,
-                stream=index_stream)
+                stream=index_stream, surprise=surprise)
         if observation_index < 0:
             raise RuntimeError("observation append unexpectedly exhausted durable capacity")
         self.link_estimate_observation(estimate_index, observation_index)
@@ -9546,7 +9555,7 @@ class TernaryTruthStore(LeafCodeIndex, Layer):
         value = self._expectation_rows.get(int(self.occurrence_id[i]))
         return None if value is None else dict(value)
 
-    def expectation_pair(self, idx):
+    def expectation_pair(self, idx, *, gain=1., object_mask=None):
         """Read one linked estimate/observation pair and derive its residual.
 
         The residual is intentionally reconstructed from the two retained
@@ -9585,9 +9594,10 @@ class TernaryTruthStore(LeafCodeIndex, Layer):
         logits = estimate.roles.new_tensor(estimate_provenance["presence_logits"])
         observed_mask = observation.role_mask.to(device=estimate.roles.device)
         observed_roles = observation.roles.to(estimate.roles)
-        residual = torch.where(
-            observed_mask[:, None], observed_roles - estimate.roles,
-            torch.zeros_like(estimate.roles))
+        residual = observed_roles - estimate.roles
+        from Meaning import negative_image
+        conceived, image = negative_image(observed_roles, estimate.roles, logits.sigmoid(),
+                                          gain=gain, object_mask=object_mask)
         return {
             "estimate": estimate,
             "observation": observation,
@@ -9599,6 +9609,9 @@ class TernaryTruthStore(LeafCodeIndex, Layer):
             "intended_occurrence": estimate_provenance["intended_occurrence"],
             "presence_logits": logits,
             "residual": residual,
+            "conceived": conceived,
+            "negative_image": image,
+            "surprise": float(self.surprise[observation_index]),
             "presence_residual": observed_mask.to(logits.dtype) - logits.sigmoid(),
         }
 
@@ -9660,6 +9673,7 @@ class TernaryTruthStore(LeafCodeIndex, Layer):
             'np2': self.slots[i, 2], 'rel_type': int(self.rel_type[i].item()),
             'timestamp': float(self.timestamp[i].item()),
             'trust': float(self.trust[i].item()),
+            'surprise': float(self.surprise[i].item()),
             'origin': int(self.origin[i].item()),
             'text': self.text_of(i),
             'kind': self.KINDS[int(self.record_kind[i])],
@@ -9850,6 +9864,7 @@ class TernaryTruthStore(LeafCodeIndex, Layer):
         self.rel_type[:n_keep] = self.rel_type[keep]
         self.timestamp[:n_keep] = self.timestamp[keep]
         self.trust[:n_keep] = self.trust[keep]
+        self.surprise[:n_keep] = self.surprise[keep]
         self.origin[:n_keep] = self.origin[keep]
         for name in ('role_mask', 'record_kind', 'grammatical_mode', 'polarity',
                      'occurrence_id', 'metadata_required', 'semantic_fingerprint'):
@@ -9865,6 +9880,7 @@ class TernaryTruthStore(LeafCodeIndex, Layer):
         self.rel_type[n_keep:c].zero_()
         self.timestamp[n_keep:c].zero_()
         self.trust[n_keep:c].zero_()
+        self.surprise[n_keep:c].fill_(-1.)
         self.origin[n_keep:c].zero_()
         self.role_mask[n_keep:c].zero_()
         self.record_kind[n_keep:c].zero_()
@@ -9886,6 +9902,7 @@ class TernaryTruthStore(LeafCodeIndex, Layer):
         self.rel_type.zero_()
         self.timestamp.zero_()
         self.trust.zero_()
+        self.surprise.fill_(-1.)
         self.count.zero_()
         self.origin.zero_()
         self._next_ts.zero_()
@@ -10240,6 +10257,19 @@ class MeaningExpectation:
 
     roles: torch.Tensor
     presence_logits: torch.Tensor
+    bindings: object = ()
+    scope: object = ()
+
+    def __post_init__(self):
+        from Meaning import _freeze_metadata
+        if self.roles.ndim != 2 or self.roles.shape[0] != 3 or self.presence_logits.shape != (3,):
+            raise ValueError("expectation requires three roles and presence logits")
+        object.__setattr__(self, "bindings", _freeze_metadata(self.bindings))
+        object.__setattr__(self, "scope", _freeze_metadata(self.scope))
+
+    def detached(self):
+        return type(self)(self.roles.detach().clone(), self.presence_logits.detach().clone(),
+                          self.bindings, self.scope)
 
 
 @dataclass(frozen=True)
@@ -10264,6 +10294,10 @@ class _PendingMeaningExpectation:
     source_occurrences: tuple
     stream: object
     document: object
+    inputs: object = None
+    versions: tuple = ()
+    policy: tuple = ()
+    work: int = 0
 
 
 class SentenceExpectation(Layer):
@@ -10363,9 +10397,8 @@ class InterSentenceLayer(Layer):
         ``p`` = AR lag count (number of past sentence reps consumed
         by the predictor); ``q`` = MA lag count (past residuals).
         ``hidden_dim`` defaults to ``2 * sentence_dim``.
-        ``concept_dim`` is the target dim for the optional priming
-        cast that lifts ``s_hat_{t+1}`` into C-space_role for the chat-
-        loop's ``_c_prior`` injection.
+        ``concept_dim`` is the full width of each predicted grammatical role.
+        No prediction is cast into a comprehension input.
 
         ``ltm_capacity`` bounds the long-term-memory (LTM) chain of
         per-sentence STM end-states (the AR sequence used for
@@ -10484,15 +10517,6 @@ class InterSentenceLayer(Layer):
         else:
             self.predictor = None
 
-        # Optional priming cast for the chat-loop's c_prior injection
-        # (Phase 4 of the IR-only refactor).  When concept_dim is set
-        # the cast lifts s_hat_{t+1} into C-space_role so it can be added
-        # as a bias before the body's sigma-pi loop.
-        self.cast = None
-        if self.concept_dim is not None and self.sentence_dim > 0:
-            self.cast = LinearLayer(self.sentence_dim, self.concept_dim)
-            self.layers.append(self.cast)
-
         # -- Inter-level next-end-state predictor (Task 8, plan §9). -----
         # The SAME predictor class as the intra-sentence in-STM predictor
         # (``IntraSentenceLayer``), instantiated HERE at the inter-sentence
@@ -10553,6 +10577,7 @@ class InterSentenceLayer(Layer):
         self._inter_loss_count = 0
         self._inter_last_pred_root = [None] * self._batch
         self._inter_loss_weight = 0.1
+        self._expectation_policy_outcomes = []
         # Second accumulator: the InfoNCE next-idea CONTRASTIVE term -- ranks the
         # actual next root above the chain's past roots under cosine(pred, .).
         # Off (weight 0) -> the layer carries only the legacy MSE L_inter
@@ -10785,7 +10810,7 @@ class InterSentenceLayer(Layer):
         names = (
             "_batch", "_s_history", "_s_count", "_e_history", "_e_count",
             "_staged_prediction", "_stm_end_states", "_inter_context",
-            "_inter_context_occurrences",
+            "_inter_context_occurrences", "_expectation_policy_outcomes",
             "_inter_last_pred_root", "_inter_last_meaning",
             "_last_expectation_comparisons",
             "_expectation_documents", "_inter_loss_accum", "_inter_loss_count",
@@ -10793,6 +10818,7 @@ class InterSentenceLayer(Layer):
             "_external_observations_suspended")
         saved = {name: getattr(self, name) for name in names}
         self._external_observations_suspended = True
+        self._expectation_policy_outcomes = []
         self._batch = 0
         self.ensure_batch(saved["_batch"])
         self._staged_prediction = None
@@ -10842,18 +10868,22 @@ class InterSentenceLayer(Layer):
                                       concept_dim=self.concept_dim)
 
     @torch.compiler.disable
-    def expect_next_meaning(self, b=0, *, record=True, work=None):
+    def expect_next_meaning(self, b=0, *, record=True, work=None,
+                            frames=(), frame_occurrences=(), policy=(), policy_work=0, refresh=False):
         """Return the complete prior estimate, or None at a cold boundary.
 
-        Observation staging records its prior by default. A selected boundary
-        tool uses ``record=False`` so reading an estimate cannot replace the
-        pending comparison for an arriving external observation.
+        Reading an already staged estimate does not replace it. ``refresh``
+        is reserved for the explicit prior-only query phase, before input.
+        Source occurrences and optional retrieved frames are its only context.
         """
         if self._external_observations_suspended or not self.expectation_enabled:
             return None
         if self.expectation_scope != "structured":
             raise RuntimeError("complete meanings require structured prediction")
         b = int(b)
+        pending = self._inter_last_meaning[b]
+        if not refresh and isinstance(pending, _PendingMeaningExpectation):
+            return pending.prediction
         if work is not None:
             work.require("record", len(self._inter_context[b]))
         chain = list(self._inter_context[b])
@@ -10867,21 +10897,39 @@ class InterSentenceLayer(Layer):
         parameter = next(self._inter_predictor.parameters())
         zero = parameter.new_zeros(3, self.concept_dim)
         empty = torch.zeros(3, dtype=torch.bool, device=parameter.device)
+        # Queried frames are detached extra prior context, never observations.
+        # Preserve the latest actual meaning; retrieved frames occupy older
+        # context positions on the same bounded predictor, with no new head.
+        query_context = [(int(m.role_mask.sum()), m.roles.detach(), m.role_mask)
+                         for m in tuple(frames)[:self._inter_chain_window - 1]]
+        if query_context:
+            chain = (chain[:-1] + query_context + chain[-1:])[-self._inter_chain_window:]
         pad = self._inter_chain_window - len(chain)
         roles = [zero] * pad + [p.to(parameter) for _, p, _ in chain]
         masks = [empty] * pad + [m.to(parameter.device) for _, _, m in chain]
-        values, logits = self._inter_predictor(
-            torch.stack(roles)[None], torch.stack(masks)[None])
+        inputs = (torch.stack(roles)[None], torch.stack(masks)[None])
+        values, logits = self._inter_predictor(*inputs)
         if not bool(torch.isfinite(values).all() and torch.isfinite(logits).all()):
             raise FloatingPointError("non-finite structured sentence prediction")
-        prediction = MeaningExpectation(values[0], logits[0])
+        # Metadata comes only from an already retained source occurrence.
+        # The arriving target's bindings/scope are not an input to this call.
+        bindings, scope = (), ()
+        if self._ltm_store is not None and occurrences and occurrences[-1] is not None:
+            reference = occurrences[-1]
+            index = self._ltm_store._index_occurrences.get(reference)
+            source = None if index is None else self._ltm_store.meaning_of(index)
+            if source is not None:
+                bindings, scope = source.bindings, source.scope
+        prediction = MeaningExpectation(values[0], logits[0], bindings, scope)
         if record:
             document = self._expectation_documents[b]
             self._inter_last_meaning[b] = _PendingMeaningExpectation(
                 prediction,
-                tuple(reference for reference in occurrences
-                      if reference is not None),
-                ("external", document), document)
+                tuple(dict.fromkeys(reference for reference in (*occurrences, *frame_occurrences)
+                                    if reference is not None)),
+                ("external", document), document, inputs,
+                tuple(p._version for p in self._inter_predictor.parameters()),
+                tuple(policy), int(policy_work))
         return prediction
 
     def _observe_meanings(self, depths, payloads, tetralemmas, mask,
@@ -10913,7 +10961,7 @@ class InterSentenceLayer(Layer):
                 target = roles.detach().to(prediction.roles)
                 target_mask = occupied.to(prediction.roles.device)
                 squared = (prediction.roles - target).square()
-                mse = squared[target_mask].mean() if bool(target_mask.any()) else squared.sum() * 0
+                mse = squared.mean()
                 presence = F.binary_cross_entropy_with_logits(
                     prediction.presence_logits, target_mask.to(prediction.roles.dtype))
                 if not bool(torch.isfinite(mse) and torch.isfinite(presence)):
@@ -10921,28 +10969,42 @@ class InterSentenceLayer(Layer):
                 self._expectation_stats["predicted_targets"] += 1
                 self._expectation_stats["feature_sum"] += float(mse.detach())
                 self._expectation_stats["presence_sum"] += float(presence.detach())
-                estimate = MeaningExpectation(
-                    prediction.roles.detach().clone(),
-                    prediction.presence_logits.detach().clone())
+                estimate = prediction.detached()
                 actual = target.detach().clone()
                 self._last_expectation_comparisons[b] = ExpectationComparison(
                     estimate, actual, target_mask.detach().clone(),
-                    torch.where(target_mask[:, None], actual - estimate.roles,
-                                torch.zeros_like(actual)),
+                    actual - estimate.roles,
                     target_mask.to(actual.dtype) - estimate.presence_logits.sigmoid(),
                     self._expectation_documents[b],
                     (pending.source_occurrences
                      if isinstance(pending, _PendingMeaningExpectation) else ()),
                     (pending.stream
                      if isinstance(pending, _PendingMeaningExpectation) else None))
+                train_roles, train_logits = prediction.roles, prediction.presence_logits
+                if (self.training and torch.is_grad_enabled()
+                        and (self._inter_loss_weight > 0 or self._inter_contrastive_weight > 0)):
+                    if (isinstance(pending, _PendingMeaningExpectation) and pending.inputs is not None
+                            and (not prediction.roles.requires_grad or pending.versions != tuple(
+                                p._version for p in self._inter_predictor.parameters()))):
+                        # A delayed estimate remains unchanged as evidence.
+                        # Both residual and contrastive objectives train the
+                        # current predictor from the frozen prior, never an
+                        # old parameter version's graph.
+                        replay, logits = self._inter_predictor(*(v.detach() for v in pending.inputs))
+                        train_roles, train_logits = replay[0], logits[0]
                 if self.training and torch.is_grad_enabled() and self._inter_loss_weight > 0:
-                    step = mse + presence
+                    step = (train_roles - target).square().mean() + F.binary_cross_entropy_with_logits(
+                        train_logits, target_mask.to(train_logits))
                     self._inter_loss_accum = (step if self._inter_loss_accum is None
                                               else self._inter_loss_accum + step)
                     self._inter_loss_count += 1
+                if (isinstance(pending, _PendingMeaningExpectation) and pending.policy
+                        and self.training and torch.is_grad_enabled()):
+                    self._expectation_policy_outcomes.append((
+                        pending.policy, -float((mse + presence).detach()), pending.work))
                 if self._inter_contrastive_weight > 0:
                     self._accumulate_inter_contrastive(
-                        prediction.roles.flatten(), target.flatten(),
+                        train_roles.flatten(), target.flatten(),
                         [p.detach().to(target).flatten() for _, p, _ in self._inter_context[b]])
             context = roles.clone()
             if (not self.training or not torch.is_grad_enabled()
@@ -11004,6 +11066,10 @@ class InterSentenceLayer(Layer):
 
     def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
                               missing_keys, unexpected_keys, error_msgs):
+        # Retired comprehension projection: no replacement parameter or owner.
+        for key in tuple(state_dict):
+            if key.startswith(prefix + "cast."):
+                del state_dict[key]
         # Model restoration is a new external-observation stream. Durable
         # records are owned separately; neither those nor provisioned facts
         # are eligible predecessors for this transient prediction context.
@@ -11016,6 +11082,7 @@ class InterSentenceLayer(Layer):
         self.reset_expectation_metrics()
         self._inter_last_meaning = [None] * self._batch
         self._inter_last_pred_root = [None] * self._batch
+        self._expectation_policy_outcomes = []
         self._inter_loss_accum = self._inter_contrastive_accum = None
         self._inter_loss_count = self._inter_contrastive_count = 0
         self._s_history.zero_()
@@ -11540,7 +11607,16 @@ class InterSentenceLayer(Layer):
                 ((d, p.detach(), t) for d, p, t in chain),
                 maxlen=self._inter_chain_window)
         self._inter_last_pred_root = [None] * self._batch
-        self._inter_last_meaning = [None] * self._batch
+        self._inter_last_meaning = [
+            None if value is None else _PendingMeaningExpectation(
+                value.prediction.detached(), value.source_occurrences, value.stream,
+                value.document, None if value.inputs is None else tuple(x.detach() for x in value.inputs),
+                value.versions, value.policy, value.work)
+            for value in self._inter_last_meaning]
+
+    def consume_expectation_policy_outcomes(self):
+        outcomes, self._expectation_policy_outcomes = self._expectation_policy_outcomes, []
+        return outcomes
 
     def set_inter_loss_weight(self, weight):
         """Set the inter-loss accumulation gate (read from the
@@ -11572,7 +11648,7 @@ class InterSentenceLayer(Layer):
         if value is None:
             return None
         return ExpectationComparison(
-            MeaningExpectation(value.estimate.roles.clone(), value.estimate.presence_logits.clone()),
+            value.estimate.detached(),
             value.observed.clone(), value.occupied.clone(), value.residual.clone(),
             value.presence_residual.clone(), value.document,
             tuple(value.source_occurrences), value.stream)
@@ -11584,6 +11660,8 @@ class InterSentenceLayer(Layer):
             return
         self.expectation_enabled = enabled
         self.detach_prediction_context()
+        self._inter_last_meaning = [None] * self._batch
+        self._expectation_policy_outcomes = []
         for chain in self._inter_context:
             chain.clear()
         for chain in self._inter_context_occurrences:
@@ -11663,6 +11741,7 @@ class InterSentenceLayer(Layer):
             return
         if batch is None:
             self._last_expectation_comparisons = [None] * self._batch
+            self._expectation_policy_outcomes = []
         else:
             self._last_expectation_comparisons[int(batch)] = None
         if batch is None:
@@ -11815,22 +11894,6 @@ class InterSentenceLayer(Layer):
         del s_tensor, w_tensor, predicted
         return None
 
-    def prime(self, predicted, confidence, scale):
-        """Lift a predicted sentence rep into C-space_role for the chat-
-        loop's ``_c_prior`` injection.
-
-        Returns ``cast(predicted) * scale`` (``confidence`` accepted
-        for signature back-compat but always treated as 1.0 under
-        ARMA, which has no per-prediction confidence score).
-        Returns ``None`` when inputs or the cast are missing.
-        """
-        del confidence  # not produced by the ARMA predictor
-        if self.cast is None or predicted is None:
-            return None
-        if predicted.ndim == 1:
-            cast_out = self.cast(predicted.unsqueeze(0)).squeeze(0)
-            return cast_out * float(scale)
-        return self.cast(predicted) * float(scale)
 
 
 class IntraSentenceLayer(Layer):

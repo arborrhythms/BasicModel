@@ -173,3 +173,22 @@ coverage is preserved in the two files above. An invertible-family learning
 probe still checks that prediction can improve an exactly reconstructable
 representation. Full source-matched receipts and explicit test dispositions
 belong in [Testing](Testing.md).
+
+## Expectation at the seal (September 21, item 2)
+
+Compose has no prediction input. The signed image and the observation produce
+`c = o - g*(1-m)*k*e` as detached chooser evidence. The predictor separately
+minimizes **all-role** squared error plus presence BCE against detached `o`;
+empty roles have a zero target, not a zero residual. Its gradients are identical
+at gains zero and one. Neither this discrepancy nor a conceived norm trains
+the fixed gain, grammatical object mask, or reading attention.
+
+Optional `expectationPolicyWeight` credit replays frozen action features through
+the same thought chooser. Its return is negative prediction error and actual
+work, with an independent residual EMA baseline; there is no supplied answer.
+It joins the explicit trained total and the expectation diagnostic branch.
+A pending estimate survives a parameter update as detached evidence; credit
+recomputes the current predictor/chooser instead of backpropagating an old
+graph. The capped importance ratio and its bias are documented in
+[ExpectationRetention](ExpectationRetention.md#residual-credit-on-the-existing-controller).
+These gradient mechanisms do not prove useful anticipation or reasoning.
