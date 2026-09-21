@@ -12,6 +12,7 @@
 > [the integrated plan §2.1](../plans/2026-09-15-next-sentence-as-the-production-objective.md#21-nested-clauses-and-phrases),
 > where every embedded clause was a reference. Everything marked
 > **(decided)** is Alec's decision. Nothing here claims learned behaviour.
+> §3.5, object permanence by reference, was added on 2026-09-21.
 
 ## 1. Definitions (decided)
 
@@ -275,6 +276,71 @@ object never traverses the taxonomy. The word-keyed binding table
 (`References`, `deref(word)`) is the fast path and stays the only one;
 the taxonomy is for generalisation.
 
+### 3.5 Object permanence: a word may translate to an earlier occurrence (decided, 2026-09-21)
+
+Translating a word to its object (§3.4) carries a **decision**: the object is
+the type, as `deref(word)` gives it today, or it is a **token** — an earlier
+noun, or an earlier sentence. In "The lion runs. The lion is tired." the
+second *lion* is the lion that ran. Pronouns are the same decision with no
+type of their own to fall back on.
+
+It is **by reference**, the mechanism §2 already licenses ("an NP slot may
+hold any row"); nothing new is stored:
+
+- **An earlier noun in the same sentence** is the existing `bind`: the
+  constituent reference to a live participant.
+- **An earlier sentence** is that sentence's row. The second sentence's
+  subject operand is the first row: `refs[0]` points to it, and the operand's
+  vector is that row's fused point — the lion that ran, not the generic lion.
+  An idea row has a fused point, so the referring sentence still fuses (§1).
+  The word side still records *lion*, so reconstruction yields the words that
+  were said; the derivation records the choice.
+- **State is the chain; identity is imputed.** The latest row in a chain of
+  such references is the individual's current state, and a second lion is a
+  second chain. There is no referent table and no state-update rule. But a
+  reference does not record a fact of sameness, because there is none to
+  record: "identity has to be carried by expectation or prediction because
+  (at least from a philosophical point of view) identity does not exist"
+  (Alec, 2026-09-21). The reference records that the mind *took* the two as
+  one.
+
+**Who decides, and what carries it.** The grammar decides, at interpretation
+time, as part of the n-ary META discrimination of §3.4: the candidates are
+the type-level objects *and* the earlier occurrences. It is learned. No word
+is wired to it — not "the", not "it" — since an operator has no predefined
+surface. What *carries* an individual from one sentence to the next is the
+predictor: each anchor in its situation
+([accessible mind §2.7.3](2026-09-20-accessible-mind-subsystems.md#273-two-ways-in-what-is-still-active-and-what-is-cued))
+is a standing prediction that an individual continues, and a word is tied to
+an earlier occurrence when the situation expects one. Empty the situation and
+the same words translate to their types. An anchored individual that fails to
+recur leaves its expectation unmet — the surprise by which object permanence
+is measured in infants.
+
+**What keeps it honest.** Nothing in the input settles which individual a
+word is about, so the input cannot correct a wrong imputation. Its
+consequences can: what is *said* of the individual is composed from the input
+alone, so a prediction that leaned on a wrong identity fails on content, and
+that surprise is what revises the imputation.
+
+**Bounds.** Candidates come from the recency buffer only: the live
+constituents of the current sentence and the discourse chain of the last few
+rows. `<compose>` gains no LTM access
+([accessible mind §4](2026-09-20-accessible-mind-subsystems.md#4-which-grammar-may-touch-what));
+an older individual becomes a candidate once a `what` has brought its frame
+into STM. Identity is the one thing expectation contributes to composition;
+what is said of the individual stays pure
+([§2.6.3](2026-09-20-accessible-mind-subsystems.md#263-purity)). A row that a
+later row refers to falls under the forgetting spec's reference rules like any
+other referenced row.
+
+**Why it matters beyond anaphora.** Words that share their contexts inside a
+sentence — approximate antonyms such as *runs* and *does nothing* — differ in
+what follows for the same individual: tired, or rested. With the chain in
+place the expectation's source ideas carry the individual and what was done
+to it, so consequences can tell such words apart. Without it the evidence is
+there in the text and attaches to nothing.
+
 ## 4. Trust and scope (decided)
 
 Rows are always written. Trust is decided at the top of the derivation
@@ -407,6 +473,30 @@ Each test names the sentence, the rows written, and what must be readable.
     taxonomy state loads with the warning, without those rows, and with
     the concept-level index rebuilt from rows and bindings.
 
+Object permanence (§3.5). The choice is forced in tests 17–20; how well it
+is *learned* is measured, not asserted.
+
+17. **Same individual.** "The lion runs. The lion is tired." with the token
+    choice: the second row's `refs[0]` is the first row and its subject
+    operand equals the first row's fused point, not the type-level lion;
+    reconstruction of the second sentence yields its own words.
+18. **Pronoun.** A word with no type-level object resolves to an occurrence
+    in the recency buffer, or fails explicitly; it never falls back silently
+    to a type.
+19. **Two individuals.** With the type choice on a second lion there is no
+    reference to the first, and afterwards two chains coexist; a later
+    reference reaches exactly one of them.
+20. **Bounds and carrier.** Candidates are the current sentence's live
+    constituents, the discourse chain, and frames a `what` brought into STM;
+    resolution performs no LTM read. With the situation emptied, the same
+    words translate to their types: identity is carried by the predictor's
+    state, not by the rows.
+21. **Consequences separate near-synonymous contexts (measurement).** On a
+    small corpus where, for the same individual, *runs* is followed by
+    *tired* and *rests* by *rested*, report the expectation residual and the
+    separation of the two verbs' effects with references on and off; and,
+    with a wrong identity forced, the rise in content surprise that follows.
+
 ## 8. Documentation required with implementation
 
 - [Philosophy.md](../Philosophy.md) two-truths paragraph: idea = one fused
@@ -479,3 +569,8 @@ further decision, are folded into the sections above:
    specified in [FutureWork.md](../FutureWork.md) and are not part of the
    Codex implementation of this spec, except that the store must not
    assume one word per META.
+7. **Object permanence is by reference (2026-09-21).** Translating a word to
+   its object may tie it to an earlier noun or an earlier sentence; state is
+   the chain of such references and no referent table is added. Identity is
+   imputed, not stored: the predictor carries it, and content surprise
+   corrects it (§3.5).

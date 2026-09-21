@@ -13,7 +13,7 @@
 Work follows
 [2026-09-15-next-sentence-as-the-production-objective.md](doc/plans/2026-09-15-next-sentence-as-the-production-objective.md)
 §10 and its completion gates. **Item 1's bounded supervised wording gate is
-complete; items 1b and 1c are complete. Next: item 2.** Natural word → operator associations use the existing
+complete; items 1b and 1c are complete. Next: 1d, then item 2.** Natural word → operator associations use the existing
 compose/generate grammars. Structural-preference and routing-share measurements
 remain design goals; learned questioning utility remains unproven under item 4.
 Current contracts,
@@ -67,8 +67,9 @@ only the generation catalogue (item 3) remains uninstalled.
 
 ### Open
 
-1d. **Review corrections for 1b and 1c** (Claude review, 2026-09-20; fold into
-   item 2's first change).
+1d. **Review corrections for 1b and 1c** (Claude review, 2026-09-20). Its own
+   landing, before item 2: (b) changes the training baseline every later
+   measurement rests on.
    (a) *Scope of the state cut.* It holds on the prepared-answer path
    (`answerSynthesis` true: 14 of 71 configs, production included); the direct
    head still trains the whole state. Say so in
@@ -79,10 +80,13 @@ only the generation catalogue (item 3) remains uninstalled.
    configs. **Decided (Alec, 2026-09-21): concept atoms stay on the unit
    sphere and are updated by rotation**, so that an inner product with an
    incoming vector preserves that vector's magnitude. Adam does not keep them
-   there; the rotation updater stays the dictionary's one owner. **Open, under
-   discussion — do not start:** which signals drive the rotation (the
-   distribution of words alone, or also the objectives' gradients projected
-   onto the tangent plane).
+   there; the rotation updater stays the dictionary's one owner. **Codes by
+   distribution, maps by the objectives** (plan §8.4 point 2): restore
+   `conceptualContextLearningRate` and the non-grad dictionary in the 11
+   configs; no objective's gradient reaches a code's position; the objectives
+   train the operators and the code-to-operation projections. Drop the
+   `codebook.*` entries from the gradient diagnostic, and correct
+   [GradientFlow](doc/GradientFlow.md) and [Training](doc/Training.md).
    (c) *Dissonance is not yet measured anywhere real.* The only config with
    `branchDiagnosticsEvery` on has no output objective. Turn it on in one
    config that has one; a diagnostic failure warns and never aborts training;
@@ -118,7 +122,8 @@ only the generation catalogue (item 3) remains uninstalled.
    prior-view isolation from arriving/unseen input and other rows; residual
    query credit with its separate baseline and parameter-version-safe
    trajectories. Mechanism probes alone do not satisfy the learning gates.
-   Exit: spec tests 3, 19 and 23–32, plus the plan's §10 expectation gates.
+   Exit: spec tests 3, 19, 23–30 and 32, plus the plan's §10 expectation
+   gates (test 31 needs the forgetting pass and belongs to that item).
 3. **Generation ownership and end-to-end output.** Rebase the preserved
    generation-catalogue candidate (it no longer applies to primary); validate
    checkpoint/optimizer migration and normal supervised output under item
@@ -158,7 +163,13 @@ the pre-FineWeb list below.
    writer at the seal, `REL_OTHER` and the reducible/ineffable routing
    deleted, the WholeSpace META taxonomy retired for a concept-level index,
    luminosity restricted to idea rows, the sentence never setting its own
-   trust; do not assume one word per META (§3.4). Exit: the sixteen §7 tests,
+   trust; do not assume one word per META (§3.4); **object permanence by
+   reference** (§3.5, Alec 2026-09-21): translating a word to its object may
+   tie it to an earlier noun or sentence in the recency buffer; then the
+   distributional context widens from the sentence to the **situation** the
+   predictor anchors, under three `model.xml` variables (plan §8.4 point 2:
+   situation weight, anchor bound, expectation weight). Exit: the
+   twenty-one §7 tests,
    the §8 docs, the item 6 reconstruction baseline unchanged, **and the
    `true` operator over the sealed clause declared in `<thought>` and
    executable** (deferred here by the unification plan). Claude reviews.
@@ -170,7 +181,8 @@ the pre-FineWeb list below.
    dependents rebuilt, the human profile's age term; and **detail before
    rows** (§4a, Alec 2026-09-20): wording, then subordinate rows, then the
    row, gradually, coarsening the referring row instead of cascading where
-   the operand's point survives. Exit: the fourteen §7 tests,
+   the operand's point survives. Exit: the fourteen §7 tests, the
+   accessible-mind spec's test 31 (retention by surprise),
    the §6 elements in schema/`model.xml`/Params.md, the §8 docs.
 3. **Expectation review** (plan [§11](doc/plans/2026-09-15-next-sentence-as-the-production-objective.md#11-code-review-2026-09-16-local-role-expectation-implementation)):
    discourse `Reset` honours `hard`; rename to "expectation", on in

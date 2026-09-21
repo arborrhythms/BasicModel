@@ -566,6 +566,46 @@ Negative facts therefore exist only against expectations, which is also the
 psycholinguistic finding: a denial is natural only where the affirmative was
 plausible (Wason 1965).
 
+### Identity is an expectation
+
+> Identity has to be carried by expectation or prediction because (at least
+> from a philosophical point of view) identity does not exist. (Alec,
+> 2026-09-21)
+
+"The lion runs. The lion is tired." Nothing in the second sentence says that
+its lion is the first one, and on the view this document takes
+([Implicit Existence and Svabhava](#implicit-existence-and-svabhava)) there is
+no further fact that would: what persists is a continuum of moments, and "the
+same lion" is imputed upon it. Recognition, *this is that*, was for the
+Buddhist epistemologists a conceptual cognition built on memory, not a
+perception; Hume called the identity we ascribe to things and persons a
+fiction of the imagination, produced by resemblance and causation among
+successive perceptions.
+
+So the architecture stores no identity. A later sentence's word may be tied by
+reference to an earlier row
+([two truths §3.5](specs/2026-09-16-two-truths-ideas-and-relations.md#35-object-permanence-a-word-may-translate-to-an-earlier-occurrence-decided-2026-09-21)),
+and that reference records only that the mind *took* the two as one. What
+carries the individual across the gap is the predictor: each anchor in its
+situation is a standing prediction that something continues. Empty the
+situation and the same words name only their types.
+
+This is also how identity is found in people. Object permanence in infants is
+*measured* as surprise when a hidden object fails to persist (Baillargeon
+1987): it is an expectation before it is anything else. An object file keeps
+an object's identity through changes of its features by continuity, not by
+matching them (Kahneman, Treisman & Gibbs 1992). And the expectation is
+strong enough to override the evidence: most people fail to notice that the
+stranger they are talking to has been replaced by another person during a
+brief interruption (Simons & Levin 1998).
+
+Since the input cannot settle identity, it cannot correct it either. Its
+consequences can. What is *said* of an individual is composed from the input
+alone, so a prediction that leaned on a wrong identity fails on content, and
+that surprise is what revises the imputation. Identity is the one place where
+expectation is allowed into composition, and it is kept honest from
+downstream.
+
 ### Beginner's mind
 
 At `g = 0` nothing is subtracted. Every sentence is conceived in full, as if
@@ -581,6 +621,22 @@ eliminative engager; what is suspended is the *prior*, not the concept. And
 it is **not free**: with nothing cancelled nothing stands out, so load rises,
 and the absences, which are real information, are given up. It is a setting
 to be able to reach, not a default to prefer.
+
+**Learning has its own beginner's mind** (Alec, 2026-09-21). The negative
+image keeps *comprehension* honest at any gain, because it is added after
+composition. *Learning* is a separate matter. Where a word's meaning settles
+depends on its context, and that context can be what occurred or, in part,
+what was expected. In people it is both: anomalous playing cards are seen,
+and reported, as the normal cards that were expected (Bruner & Postman
+1949), and evidence is assimilated to the belief it was meant to test (Lord,
+Ross & Lepper 1979). With a share `w` of the context taken from the
+estimate, the step toward what occurred shrinks to `(1 − w)` and the rest
+goes toward what was already believed; at `w = 1` nothing new can be
+learned. "We get perfect learning only when we drop our preconceived ideas
+about the situation." `w` is a model variable, not a prohibition: zero is
+the unbiased learner, above zero the human one. And the model has two knobs
+where a person has one — it can conceive through its expectations and still
+learn without them.
 
 The contemplative literature's two families of attention regulation (Lutz et
 al. 2008) fall on the rule's two parameters: **focused attention** holds one
@@ -665,8 +721,8 @@ habituation of startle is reduced with intensive practice (Antonova, Chadwick
 > opposite from non-pot, as non-affirming (Alec); which textbook category
 > that answers to should be checked against Klein and Dreyfus before it is
 > presented as exegesis. The readings of *anupalabdhi* (Kellner 2003), of
-> beginner's mind and of craving are the project's own mappings onto the
-> mechanism.
+> beginner's mind, of craving and of recognition as conceptual are the
+> project's own mappings onto the mechanism.
 
 **References.** Antonova, Chadwick & Kumari (2015), *More meditation, less
 habituation? The effect of mindfulness practice on the acoustic startle
@@ -674,15 +730,22 @@ reflex*, PLoS ONE 10(5). Becker & Shapiro (1981), *Physiological responses to
 clicks during Zen, Yoga, and TM meditation*, Psychophysiology 18. Bell (1981),
 *An efference copy which is modified by reafferent input*, Science 214. Bell,
 Han & Sawtell (2008), *Cerebellum-like structures and their implications for
-cerebellar function*, Annual Review of Neuroscience 31. Berzin, *Negation
+cerebellar function*, Annual Review of Neuroscience 31. Baillargeon (1987),
+*Object permanence in 3½- and 4½-month-old infants*, Developmental Psychology
+23. Bruner & Postman
+(1949), *On the perception of incongruity: a paradigm*, Journal of
+Personality 18. Berzin, *Negation
 phenomena: implicative and non-implicative* and *Special features of the
 Gelug tradition*, Study Buddhism (studybuddhism.com). Carandini & Heeger
 (2012), *Normalization as a canonical neural computation*, Nature Reviews
 Neuroscience 13. Dreyfus (1997), *Recognizing Reality: Dharmakirti's
-Philosophy and Its Tibetan Interpretations*, SUNY. Graesser, Gordon & Sawyer
+Philosophy and Its Tibetan Interpretations*, SUNY. Hume (1739), *A Treatise
+of Human Nature*, I.iv.6, "Of personal identity". Graesser, Gordon & Sawyer
 (1979), *Recognition memory for typical and atypical actions in scripted
 activities: tests of a script pointer + tag hypothesis*, Journal of Verbal
-Learning and Verbal Behavior 18. Kasamatsu & Hirai (1966), *An
+Learning and Verbal Behavior 18. Kahneman, Treisman & Gibbs (1992), *The
+reviewing of object files: object-specific integration of information*,
+Cognitive Psychology 24. Kasamatsu & Hirai (1966), *An
 electroencephalographic study on the Zen meditation (Zazen)*, Folia
 Psychiatrica et Neurologica Japonica 20. Kellner (2003), *Integrating
 negative knowledge into pramana theory: the development of the
@@ -695,14 +758,18 @@ Cerebral Cortex 22. Lati Rinbochay & Napper (1980), *Mind in Tibetan
 Buddhism*, Snow Lion. Lutz, Slagter, Dunne & Davidson (2008), *Attention
 regulation and monitoring in meditation*, Trends in Cognitive Sciences 12(4).
 Palmer (1975), *The effects of contextual scenes on the identification of
-objects*, Memory & Cognition 3. SanMiguel, Widmann, Bendixen, Trujillo-Barreto
+objects*, Memory & Cognition 3. Lord, Ross & Lepper (1979), *Biased
+assimilation and attitude polarization*, Journal of Personality and Social
+Psychology 37(11). SanMiguel, Widmann, Bendixen, Trujillo-Barreto
 & Schröger (2013), *Hearing silences: human auditory processing relies on
 preactivation of sound-specific brain activity patterns*, Journal of
 Neuroscience 33. Schultz, Dayan & Montague (1997), *A neural substrate of
 prediction and reward*, Science 275. Siderits, Tillemans & Chakrabarti (eds.)
 (2011), *Apoha: Buddhist Nominalism and Human Cognition*, Columbia. Simons &
 Chabris (1999), *Gorillas in our midst: sustained inattentional blindness for
-dynamic events*, Perception 28. Sokolov (1963), *Perception and the
+dynamic events*, Perception 28. Simons & Levin (1998), *Failure to detect
+changes to people during a real-world interaction*, Psychonomic Bulletin &
+Review 5. Sokolov (1963), *Perception and the
 Conditioned Reflex*, Pergamon. Summerfield & Egner (2009), *Expectation (and
 attention) in visual cognition*, Trends in Cognitive Sciences 13(9). von Holst
 & Mittelstaedt (1950), *Das Reafferenzprinzip*, Naturwissenschaften 37. Wason

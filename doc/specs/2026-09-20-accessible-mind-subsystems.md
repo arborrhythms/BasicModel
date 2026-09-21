@@ -236,10 +236,16 @@ nowhere to put it. Consequences:
 "If we do not predict, we process exactly what is there" (Alec). Under this
 rule the same holds when we do predict:
 
-**For a fixed input and a fixed object of observation, everything composed
-from the input — order-0 presence, the codes, the derivation, the raw idea
-`o` — is independent of `ê` and of `g`.** Expectation enters once, after
-composition, as an addition to the sealed idea.
+**For a fixed input, a fixed object of observation and fixed identities,
+everything composed from the input — order-0 presence, the codes, the
+derivation, the raw idea `o` — is independent of `ê` and of `g`.** Expectation
+enters once, after composition, as an addition to the sealed idea.
+
+*Identity is the exception, and it has to be* (Alec, 2026-09-21). Which
+earlier individual a word is tied to is not in the input and is not a fact
+anywhere else: it is an imputation, and the predictor's situation carries it
+([two truths §3.5](2026-09-16-two-truths-ideas-and-relations.md#35-object-permanence-a-word-may-translate-to-an-earlier-occurrence-decided-2026-09-21)).
+Expectation may say *which* lion; it never alters what is said of it.
 
 * **The predictor's target is honest at every gain.** `o` cannot lean toward
   `ê`, so the residual cannot shrink without the world-model improving. The
@@ -317,6 +323,12 @@ still learns.
 * **The network.** Setting the gain for the next sentence is an act the
   thought chooser may take. It comes after the fixed-gain measurements (§6,
   test 32), and it is never trained on the residual (2.6.9).
+* **Learning has a separate knob.** `g` governs what is conceived, and
+  composition is pure at any `g`. Whether expectation also shapes what is
+  *learned* — where codes settle — is a different variable,
+  `conceptualContextExpectationWeight`
+  ([plan §8.4](../plans/2026-09-15-next-sentence-as-the-production-objective.md#84-gradient-boundaries-and-learning-evidence)):
+  zero learns only from what occurred.
 
 #### 2.6.7 Attention: the exclusion of the non-object
 
@@ -505,6 +517,14 @@ Thought needs **both** (Alec, 2026-09-20):
   STM itself: the live constituents of the current sentence
   (`<stmCapacity>`, 8) and the discourse chain of the last few completed
   ideas (the window `arma` reads, 8). This is the span of immediate memory.
+  It is also where an individual persists: a word may be tied, by reference,
+  to an earlier noun or sentence held here
+  ([two truths §3.5](2026-09-16-two-truths-ideas-and-relations.md#35-object-permanence-a-word-may-translate-to-an-earlier-occurrence-decided-2026-09-21)).
+  *Direction (Alec, 2026-09-21):* the predictor may hold the buffer as a
+  **situation** — a small set of anchors into LTM, references to the rows
+  and individuals in play, rather than copies of their vectors. An anchored
+  individual then stays in play for as long as the situation holds it, not
+  only for the last few sentences.
 * **Cued retrieval** from LTM: access to all of LTM is prohibitive, and
   retrieval must not be a shot in the dark, so **access to LTM means access
   to the several frames that a `what()` has brought into STM**, by cue, index
@@ -726,7 +746,8 @@ invariant (2.6.3) in table form.
 
 Ownership, so that each work item has a definite exit: tests 1, 2, 4–13,
 15–17 and 20–22 belong to [todo](../../todo.md) item 1c; tests 3, 19 and
-23–32 to item 2 (expectation); test 14 to
+23–30 and 32 to item 2 (expectation); test 31 to the forgetting item, since
+it needs the forgetting pass; test 14 to
 [FutureWork §7](../FutureWork.md#7-episodic-memory-a-few-active-indices-beside-each-row);
 18 is a pointer to the forgetting spec's own tests.
 
@@ -734,10 +755,11 @@ Ownership, so that each work item has a definite exit: tests 1, 2, 4–13,
    configuration fails otherwise.
 2. A structural face given a context with LTM or taxonomy capability refuses
    to run (capability views are absent, not merely unused).
-3. **Purity.** For a fixed input, the order-0 field, the codes, the
-   derivation and the composed idea `o` are bit-identical with and without a
-   staged estimate, and at `g = 0` and `g = 1`. No code path adds an
-   estimate to compose's inputs: the `_c_prior` staging is gone.
+3. **Purity.** For a fixed input and fixed identity choices, the order-0
+   field, the codes, the derivation and the composed idea `o` are
+   bit-identical with and without a staged estimate, and at `g = 0` and
+   `g = 1`. No code path adds an estimate to compose's inputs: the `_c_prior`
+   staging is gone.
 4. `part(a, b)` leaves its vector-form residual in conceptual space, equal to
    `Ops.part`, with no store read and no budget charge on the compose face;
    the scalar reading is derived from it.

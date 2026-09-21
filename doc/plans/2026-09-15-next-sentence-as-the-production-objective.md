@@ -979,19 +979,47 @@ only effects on the accessible mind, so the gradient factorizes:
    reconstruction error never enters the output path. Thought's effects and
    LTM writes are detached; thought faces are parameter-free; the chooser
    learns from explicit policy credit alone.
-2. **Shared operators are the intended coupling.** Grammar operators and the
-   codebook are shared by compose, its tied inverse and generate, and every
-   objective updates them. That is how the central representation becomes
-   suitable for all of them — through named, interpretable parameters, not
-   through one loss reaching into another's computation. Tied weights are
-   retained; generate's operators are not untied.
+2. **Shared operators are the intended coupling.** Grammar operators are
+   shared by compose, its tied inverse and generate, and every objective
+   updates them. That is how the central representation becomes suitable for
+   all of them — through named, interpretable parameters, not through one
+   loss reaching into another's computation. Tied weights are retained;
+   generate's operators are not untied.
+   **Codes by distribution, maps by the objectives (Alec, 2026-09-21).** The
+   concept dictionary is not part of that coupling. Every code, noun or verb,
+   is an identity placed by the distribution of words, on the unit sphere and
+   by rotation, so that an inner product with an incoming vector preserves
+   that vector's magnitude. What a verb does to a noun is a map from one
+   space to another, not a position among things, and the code is not
+   directly tied to the operation; the objectives train the maps — the
+   operators, and the projection from a code to its operation — never the
+   positions of codes.
+   *What counts as a code's context (direction, Alec 2026-09-21).* Today it
+   is the other words of the same sentence only, so words that meet only
+   across sentences (*runs*, then *tired*) never share a context. The context
+   should also include the **situation**: the codes of the rows the
+   predictor's state anchors, reached through references
+   ([two truths §3.5](../specs/2026-09-16-two-truths-ideas-and-relations.md#35-object-permanence-a-word-may-translate-to-an-earlier-occurrence-decided-2026-09-21)).
+   Its limits are `model.xml` variables (Alec, 2026-09-21), beside
+   `conceptualContextLearningRate` and `conceptualContextNegatives`:
+   `conceptualContextSituationWeight` and `conceptualContextSituationAnchors`
+   weight and bound the situation against the sentence's own words (zero is
+   today's sentence-local context; too much and everything in a document
+   converges); `conceptualContextExpectationWeight`, `w`, is the share of
+   the context taken from the predictor's *estimate* instead of from what was
+   observed. At `w = 0` codes are placed only by what occurred. At `w > 0`
+   preconceptions shape where meanings settle, as they do in people: the step
+   toward what occurred shrinks to `(1 − w)`, the rest goes toward what was
+   already believed, and at `w = 1` learning is sealed. Perfect learning
+   needs the preconception dropped — the learning-side sense of beginner's
+   mind ([Philosophy](../Philosophy.md#beginners-mind)).
 3. **On-manifold hand-off.** What thought hands to generate is a
    composed-space idea over existing concepts, which can be off-codebook,
    or an explicitly quantized idea — never a free answer vector. Otherwise
    the output loss trains the inverse on ideas compose never produces and
    manufactures conflict.
-4. **Dissonance is a warning, not a mechanism.** Per shared operator (and
-   the codebook), log the cosine between the reconstruction gradient and the
+4. **Dissonance is a warning, not a mechanism.** Per shared operator, log
+   the cosine between the reconstruction gradient and the
    output and expectation gradients. Non-negative: the goals agree and
    nothing intervenes. Persistent negative cosine on a named operator is the
    signal that it is being asked to serve incompatible goals — information
