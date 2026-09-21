@@ -36,16 +36,63 @@ seed may make a *measurement* reproducible, never an *assertion* true. A test
 that fails at some seed has found a defect; fix the defect, or let it fail.
 Do not remove unused reasoning methods without Alec's review.
 
+- **10. Evaluate bounded pi and sigma folds as normalized means** (Alec's
+   proposal, 2026-09-21; [proposal and first evaluation](doc/Architecture.md#proposal-bounded-pi-and-sigma-folds-as-normalized-means-alec-2026-09-21)).
+   A new item; the number is reused. Today Sigma and Pi are one map in the
+   atanh chart, so a stack collapses to one affine map and one tanh and the
+   only nonlinearity is the clamp at the rails. Proposed: sigma a weighted
+   arithmetic mean in the raw chart, pi a weighted geometric mean in the log
+   chart, non-negative `L D U` weights normalised per output, a convex bias,
+   exact reverses, on `u` in `[0, 1]`. Claude's evaluation is in the doc: the
+   algebra holds. As written it is the **monotone** form, which is what parts
+   and wholes need and which cannot fit XOR (MSE .25). **XOR belongs to
+   conceptual space with the monotonic flags off** (Alec): signed weights,
+   where a negative weight is the complement. There the pair that works is a
+   signed normalised sigma in the raw chart feeding today's pi unchanged — 8
+   of 8 unseeded runs at four hidden units, 6 of 8 at two; today's same-chart
+   pair 0 of 8; both folds normalised 0 of 8, since a mean has no gain.
+   **Signed weights take the L2 norm, the monotone means the L1 sum** (Alec):
+   over 20 signed layers L1 keeps none of the energy and its reverse gains
+   10⁹, L2 keeps all of it with reverse gain 2.3; L2 is bounded on inputs of
+   at most unit energy, and overshoots into pi's clamp on cube-valued ones,
+   where both are needed. Codex
+   evaluates in the real layers behind a `normalize` mode, **turned on
+   selectively**: first `test_sigmapi` and the crisp-XOR gates of
+   `test_explicit_dimensions`, in conceptual space without the monotonic flag
+   and with at least four hidden units; then the membership folds of the
+   perceptual towers with the monotone means; no production config until
+   measured. **Not the concept pyramid as it stands:** where sigma alone builds
+   higher orders and one member of several is active, a normalised mean gives
+   .125 → .016 → .002 over three orders at 8 members, while max and the
+   probabilistic sum hold 1 (finding 10); compare those union forms there.
+   Answer the doc's findings 4–9 with measurements (init at
+   width or per-node normalisation in butterfly mode; the slope at the log
+   floor; the operating range of fold inputs; contraction with depth; kernel
+   count and sentences/s). Exit: the measurements recorded; the unseeded XOR
+   gates passing under the new mode, or the recorded reason they cannot; and a
+   recommendation for Alec — adopt (then the tanh/atanh path is deleted: no
+   two permanent modes), adopt for memberships only, or drop.
 - **9. Expectation learning gates.** The negative-image mechanism and residual
    query credit are in (`7d7dc4f`,
    [measurements](doc/benchmarks/2026-09-21-item2/README.md)): the predictor
    learns in controlled settings and a related continuation leaves a smaller
    remainder than an unrelated one, but the native runs are seven optimizer
    steps on one seed, prediction does not beat its context-free control, and
-   the reasoning comparison is null. Before the comparison, account for item
-   10's packed/single reconstruction gap (mean tied byte cost .78669/.68387
-   with matching retained leaves; [baseline](doc/benchmarks/2026-09-21-item10/README.md)).
-   Exit: on the packed native config, at
+   the reasoning comparison is null.
+   **First, its own landing: diagnose the packed/single reconstruction
+   gap that `d4dc385` recorded** (mean tied byte cost .78669 packed against
+   .68387 single;
+   [baseline](doc/benchmarks/2026-09-21-item10/README.md)). The evidence runs
+   below and the full training session both train packed, so a 15% penalty for
+   packing is not a number to carry. The clue is sharp: for the first sentence
+   of a row the retained leaves and the sealed state are identical and the
+   reconstruction still differs, so the difference enters the reverse path
+   from something other than the sealed idea; and later sentences' sealed
+   states differ, so composition is not independent across a pack. Name each
+   input that differs between the two modes. Exit: parity within a stated
+   tolerance after a fix, or a written account of why packing legitimately
+   changes the result, for Alec to accept.
+   Then the gates. Exit: on the packed native config, at
    least three seeds and a run length declared in advance — ordered prediction
    beats the shuffled and context-free controls at equal updates, with
    reconstruction and discrimination no worse than the reconstruction-only
@@ -62,7 +109,7 @@ Do not remove unused reasoning methods without Alec's review.
    preserved arbitrary-symbol poison probes and renamed-vocabulary controls.
    Numerical values or symbol IDs never supply learner arithmetic or answer
    seeds. Learned utility stays explicitly unproven until these comparisons
-   pass. The item 10 seed audit leaves the unseeded MM-grammar XOR gate
+   pass. The seed audit of `d4dc385` leaves the unseeded MM-grammar XOR gate
    failing (.21757 after 900 epochs, bar <.20), and the two `XOR_grammar.xml`
    CLI gates stop before training at unsupported W=6. Keep these failures
    visible; no passing-seed selection or expected-failure waiver
@@ -83,7 +130,7 @@ Do not remove unused reasoning methods without Alec's review.
    **situation** the predictor anchors, under three `model.xml` variables
    (plan §8.4 point 2: situation weight, anchor bound, expectation weight);
    the frames that anticipatory `what`s already hand the predictor are its
-   start. Exit: the twenty-one §7 tests, the §8 docs, item 10's baseline
+   start. Exit: the twenty-one §7 tests, the §8 docs, the reconstruction baseline of `d4dc385`
    unchanged, and the `true` operator over the sealed clause declared in
    `<thought>` and executable.
 - **6. Stored-idea generativity.** Forgetting's dropping of derivations depends
@@ -99,7 +146,7 @@ Do not remove unused reasoning methods without Alec's review.
    length; clean-up decoding evaluated for lift / lower — bounded candidate
    search through the forward kernel (`_bounded_binary_reconstruction`) in
    place of the reference-free affine inverse. Until a recovery rate is
-   measured, item 5 must not drop derivations. The item 10 audit also records
+   measured, item 5 must not drop derivations. The `d4dc385` audit also records
    the existing MM_20M grammar free-derivation harness at 0/4 exact recovery
    after three epochs; its acceptance assertion now requires recovery rather
    than preserving that zero ([audit](doc/benchmarks/2026-09-21-item10/README.md#validation-and-limits)).
@@ -112,7 +159,7 @@ Do not remove unused reasoning methods without Alec's review.
    subordinate rows, then the row, gradually, coarsening the referring row
    instead of cascading where the operand's point survives. Exit: the fourteen
    §7 tests, the accessible-mind spec's test 31 (retention by surprise), the
-   §6 elements in schema/`model.xml`/Params.md, the §8 docs, and item 10's
+   §6 elements in schema/`model.xml`/Params.md, the §8 docs, and the `d4dc385`
    reconstruction measurements unchanged unless explicitly re-baselined.
 - **4. Run harness and resume test.** One logger per interval: reconstruction
    loss; expectation discrepancy; LTM occupancy, forgetting passes, rows
@@ -144,7 +191,7 @@ Do not remove unused reasoning methods without Alec's review.
 - **0. The full training session**: the long FineWeb run, only with items 10–2
    done and item 1 measured. Expectation on in `model.xml`; the
    `BasicModel.xml` flip follows the plan's §10 gates. Stop on rising
-   expectation discrepancy, a reconstruction regression against item 10's
+   expectation discrepancy, a reconstruction regression against the `d4dc385`
    baseline, or a forgetting pass deleting protected rows.
 
 Everything that is decided in direction but not on this path is in
@@ -152,7 +199,7 @@ Everything that is decided in direction but not on this path is in
 
 ### Done (newest first)
 
-- `d4dc385` Item 10 records the reconstruction baseline and packed/single parity gap, fixes MentalModel compaction overflow, and removes selected passing seeds (taken early from item 2; [receipt](doc/Testing.md#item-10-reconstruction-baseline-and-seed-audit-september-21)).
+- `d4dc385` Item 10 (the first of that number) records the reconstruction baseline and packed/single parity gap, fixes MentalModel compaction overflow, and removes selected passing seeds (taken early from item 2; [receipt](doc/Testing.md#item-10-reconstruction-baseline-and-seed-audit-september-21)).
 - `f8aa23c` Item 11 completes generation catalogue ownership, scoped output dispatch, checkpoint/Adam migration and supervised gradient boundaries ([receipt](doc/Testing.md#item-11-generation-ownership-september-21)).
 - `afdcdfa` Item 12 completes the expectation review corrections: role-normalized retention surprise, indexed pairs, reading purity, bounded cache recovery and gradient norm ratios ([receipt](doc/Testing.md#item-12-review-corrections-september-21)).
 - `7d7dc4f` Item 2 implements negative-image expectation and residual credit; measured joint/useful-query learning remains open under item 9 ([design](doc/ExpectationRetention.md), [receipt](doc/Testing.md#negative-image-expectation-september-21)).

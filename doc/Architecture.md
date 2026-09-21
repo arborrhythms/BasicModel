@@ -1305,6 +1305,308 @@ remain live for user-supplied truths; they are explicit truth/operator
 surfaces rather than a space-wide output mode.
 See [Spaces.md](Spaces.md#monotonicity-of-the-lift--lower-chain).
 
+### Proposal: bounded pi and sigma folds as normalized means (Alec, 2026-09-21)
+
+Under evaluation as [todo](../todo.md) item 10. Not implemented. Alec's text,
+then the evaluation.
+
+#### 1. Problem
+
+The current SigmaLayer is tanh(W·atanh(x) + b) and the current PiLayer is
+tanh((W·2atanh(x) + b)/2). These are the same map up to a factor of 2 in W
+and b. Multiplying odds is adding log-odds, so pi and sigma operate in the
+same chart, and any stack pi(sigma(...)) collapses to a single affine map
+in the atanh chart followed by one tanh (verified numerically to 1e-16).
+The network can only express a nonlinearity by driving values into the
+clamp at ±(1 − eps), where the chart derivative 1/(1 − x²) explodes.
+This is the root of both the wasted tanh/atanh pairs and the gradient
+blow-up in the packed-row folds.
+
+#### 2. Principle
+
+A sigma-pi network gets its nonlinearity from the mismatch between the
+chart where it multiplies and the chart where it adds. Therefore:
+
+- sigma adds in the raw chart, with no entry or exit transform;
+- pi multiplies in the log chart, and exits back to the raw chart.
+
+Boundedness comes from making both folds *means*: every output lies between
+the min and max of its inputs. A stack of means of any depth stays inside
+the interval with no squashing and no clamp (only a log floor for pi).
+
+#### 3. Definitions
+
+All folds run on the perceptual chart u in [0, 1]. Conceptual space
+x in [-1, 1] enters through u = (x + 1)/2 and leaves through x = 2u − 1.
+Both maps are affine and exactly invertible; a signed product would give
+parity rather than AND, so the rescale is not optional for pi.
+
+Row-vector convention as in Layers.py: y = u @ W, so columns are outputs.
+
+Weights. W = L D U as in NonNegativeInvertibleLinearLayer (softplus, so
+every entry >= 0; init raw = −5 so W ~ I). Define the column sums
+s = 1ᵀ W (a vector of length nOutput, s_j >= nInput · eps > 0) and
+
+    W_n = W / s          (each column of W_n sums to 1)
+
+W_n is a convex combination per output. It is invertible iff W is,
+because W_n = W diag(1/s) and diag(1/s) is invertible.
+
+Sigma (weighted arithmetic mean):
+
+    forward:  y = u @ W_n
+    reverse:  u = (y * s) @ W^-1          (the existing LDU solve)
+
+Pi (weighted geometric mean):
+
+    forward:  y = exp( log(max(u, EPS_LOG)) @ W_n )
+    reverse:  u = exp( (log(y) * s) @ W^-1 ).clamp(0, 1)
+
+Bias. An additive bias is what broke boundedness. Replace it with a convex
+mix against a learned constant c in [0, 1] and a gate beta in [0, 1):
+
+    sigma:  y = (1 − beta) * (u @ W_n) + beta * c
+    pi:     y = (u-fold)^(1 − beta) * c^beta      (same thing in log chart)
+
+with beta = sigmoid(raw_beta) and c = sigmoid(raw_c), init raw_beta = −5
+so beta ~ 0 (no bias at init, matching today's near-identity init).
+Reverse: u @ W_n = (y − beta c)/(1 − beta), then the solve above. Exact
+because beta < 1 by construction.
+
+#### 4. Invertibility and reconstruction
+
+- The normalization is a rescale of the *weights*, computed from W alone,
+  so it is a fixed positive diagonal and inverts exactly. It does not
+  normalize activations and loses no degree of freedom in the data.
+- Uniform averaging (W = 11ᵀ / n) is rank one and NOT invertible. That is
+  why the fold must be a learned convex combination, not a plain average.
+  Near-identity init gives an invertible start.
+- Unary reverse: exact when y is in the image of the interval under W_n.
+  When y is a reconstruction seed that no in-interval u produces, the
+  solve can leave [0, 1]; clamp on the way out, as PiLayer2.reverse
+  already does. No other guard is needed.
+- Binary compose (chart parser): y = w_l * a_l + w_r * a_r per element
+  (sigma) or the same in log chart (pi), with w_l + w_r = 1.
+  Balanced split: a_l = a_r = y. The mean of equal operands is the
+  operand itself, so generate() becomes the identity instead of
+  tanh(s/2). synthesize_over_set: all M constituents = y.
+  Known-reference split: a_r = (y − w_l a_l)/w_r, requires w_r > 0,
+  which softplus guarantees; clamp to [0, 1].
+- Gate on the LDU diagonal: unchanged. It scales columns before
+  normalization; s is recomputed from the gated W.
+
+#### 5. Sharpness (optional, same framework)
+
+Means have no saturation, so crisp fits (XOR) may converge more slowly
+than with tanh. If needed, both folds are members of the power-mean
+family, which stays bounded for every exponent:
+
+    M_p(u) = ( u^p @ W_n )^(1/p)
+
+p = 1 is sigma, p -> 0 is pi, p -> +inf is max (OR), p -> −inf is min
+(AND). One learned or scheduled p per layer buys sharpness without
+leaving the interval. Reverse for fixed p: u^p = (y^p * s) @ W^-1, then
+the 1/p root, clamped at 0 from below.
+
+#### 6. Cost
+
+Per element and layer today: atanh, clamp, matmul, tanh, plus a
+singular gradient. Proposed: sigma is one matmul; pi is log, matmul,
+exp. The reverse adds one elementwise multiply by s to the existing
+solve. No custom autograd Function, no slope cap, no clamp inside the
+grammar folds.
+
+#### 7. Minimal implementation path
+
+1. NonNegativeInvertibleLinearLayer: add a `normalize=True` mode that
+   computes s = 1ᵀ W in compute_W_current and returns W / s; the
+   reverse multiplies by s before the LDU solve. Gate flows as today.
+2. SigmaLayer(nonlinear=False, invertible=True, monotonic=True,
+   normalize=True): remove the atanh/tanh branches on this path; add the
+   (beta, c) convex bias in place of the additive bias.
+3. PiLayer: same inner layer; forward log -> matmul -> exp with the
+   EPS_LOG floor; reverse as in section 3; drop _to_mult/_from_mult and
+   _BoundedLogMult on this path.
+4. generate / generate_functional / factorize_over_set: balanced split
+   returns y; known-reference split per section 4.
+5. Conceptual-space call sites: wrap with the [-1, 1] <-> [0, 1] affine
+   rescale.
+6. Tests: 30-deep alternating stack stays in [0, 1] without clamp;
+   round-trip reverse(forward(u)) == u to solve tolerance; compose /
+   generate round-trip; test_sigmapi and test_explicit_dimensions
+   (crisp XOR) as the regression gate for section 5.
+
+#### Evaluation (Claude, 2026-09-21)
+
+Measured with small scratch scripts outside the repository, unseeded, every
+run reported. Codex repeats them in the real layers under item 10.
+
+**The algebra holds.** Sigma and Pi are one map in the atanh chart today, so
+the diagnosis is right (the item 10 seed audit reached the same identity).
+Weighted arithmetic and geometric means with convex weights stay inside
+`[min, max]` of their inputs at any depth; `W_n = W diag(1/s)` is invertible
+iff `W` is; the reverse formulas and the convex bias invert exactly; and the
+rescale to `[0, 1]` is needed for pi.
+
+**1. As written this is the monotone form, and that is its place.** Every
+fold is non-decreasing in every input, for every power-mean exponent, and so
+is any stack of them. That is what parts and wholes need — it is what keeps
+parthood through a fold — and it is why this form cannot fit XOR (MSE .2500
+in every run, a constant ½), and need not. The monotone form belongs to the
+perceptual towers.
+
+**2. XOR belongs to conceptual space, with the monotonic flags off** (Alec,
+2026-09-21). Conceptual space needs no monotone operations, so its folds
+take signed weights, and a negative weight *is* the complement: weight `−w`
+on `x` is weight `w` on `not x`. No second rail is needed. What conceptual
+space does need is that sigma and pi stop sharing a chart, and that they are
+not *both* normalised: a mean has gain at most one, and a crisp XOR needs one
+fold that can amplify. Inputs ±.9, targets ±1, eight runs each:
+
+| signed pair in conceptual space | 2 hidden | 4 hidden |
+|---|---|---|
+| today: sigma and pi both in the log-odds chart | 0 of 8 (MSE 1.0) | 0 of 8 |
+| pi → sigma in the raw chart, plain weights, tanh exit | 2 of 8 | 8 of 8 |
+| **mean sigma in the raw chart → pi as it is today** | 6 of 8 | **8 of 8** |
+| mean sigma → pi with normalised exponents too | 0 of 8 (MSE ≥ .63) | 0 of 8 |
+
+The third row is the pair to try: **sigma** a signed, normalised combination
+in the raw chart, with the convex bias toward a learned `c` in `[−1, 1]`,
+inverting exactly as in §3 with `s` the column norm — feeding **pi
+unchanged**, linear in the log-odds chart, where a signed exponent is a
+literal (`m(−x) = 1/m(x)`) and the exit tanh bounds the result whatever the
+weights. The gate should have at least four hidden units: at two it is
+solved in six runs of eight, and a gate written at the minimal width invites
+a seed again.
+
+**Which norm: L2 for signed weights, L1 for the monotone means** (Alec,
+2026-09-21: "signed weights will need an L2 norm, not an L1 norm (or both),
+otherwise they might go unstable"). Measured on a signed near-identity
+`L D U` (off-diagonals ±.0067):
+
+| signed fold, column-normalised by | own-input weight at width 1032 | energy kept by one layer | gain of the reverse | 20 layers at width 264: energy kept / reverse gain |
+|---|---|---|---|---|
+| L1, `Σ|W|` | .13 | .13 | 10.8 | .0000 / 1.3 × 10⁹ |
+| L2, `‖W‖₂` | .98 | 1.00 | 1.4 | 1.00 / 2.3 |
+
+Under L1 the many small signed entries count in full in the normaliser and
+cancel in the output, so the signal dies and its reverse explodes. L2 keeps
+the energy and keeps the reverse tame, and it removes finding 4's width
+problem for signed folds. Its bound is Cauchy–Schwarz, `|y| ≤ ‖w‖₂ ‖x‖₂`, so
+it is exact on inputs of **at most unit energy** — which conceptual vectors
+are, their codes lying on the unit sphere. On cube-valued activations
+(coordinates near ±1, energy above one) L2 alone overshoots into pi's clamp:
+with XOR inputs of ±.9 per coordinate it was solved in 4 of 8 runs with a
+third of sigma's outputs at the clamp, against 8 of 8 and none at the clamp
+once the input vectors had energy .9. So: L2 for signed folds over unit-energy
+vectors; L1, the plain column sum, for the non-negative means over
+memberships; and where a signed fold must take cube-valued activations, both
+— rescale to unit energy at entry, or keep the L1 bound there.
+
+For the record, the monotone form can be made to fit XOR by giving it the
+complement `[u, 1 − u]` and a learned power-mean sigma (`p` → 20): unsolved
+with an arithmetic sigma (MSE .1669 every run; .125 is the best possible,
+above the test's bar of .1), solved in 2 of 8 runs at two hidden units and
+8 of 8 at four. That is not the recommended route — it puts negation into
+the chart that does not carry it.
+
+**3. The power mean must be computed in the log chart.** The literal
+`(u^p @ W_n)^(1/p)` returned NaN in every run once an input sat at the floor.
+`exp(logsumexp(p·log u + log W_n) / p)` is stable, and it is what the
+complement runs above used.
+
+**4. Near-identity does not survive normalisation at width.** With the
+documented init (`raw = −5`, off-diagonals ≈ .007) the dense `L D U` product
+has many small entries per column, and after column normalisation:
+
+| width | own-input weight | spread kept by one layer | cond(W_n) |
+|---|---|---|---|
+| 8 | .95 | .96 | 1.1 |
+| 64 | .66 – .70 | .68 | 1.5 |
+| 264 | .23 – .36 | .27 | 4.4 |
+| 1032 | .03 – .13 | .06 | 33 |
+
+At production width one layer is already close to the uniform average the
+proposal rules out as rank one. The off-diagonal init has to scale with
+width (`raw ≈ −10` restores .95 at 1032), or the normalisation has to be per
+node in butterfly mode, where every 2 × 2 node stays near identity whatever
+the width. §7 step 1 should say which.
+
+**5. The singular gradient moves; it does not vanish.** The atanh chart is
+singular at both rails. The geometric mean is singular only at zero — but
+zero is the common value of a sparse membership, and for a weight `w < 1`
+the slope `w·u^(w−1)` is unbounded there. "No slope cap" needs checking in
+the packed-row folds: a larger floor, or a cap at the floor only.
+
+**6. Where inputs sit near ½, pi and sigma agree.** For `u = ½ + δ`,
+`AM − GM ≈ (δ₁ − δ₂)² / 4`: second order. Coordinates of unit-norm codes at
+production width are ≈ ½ ± .015, so folds over idea vectors stay close to
+linear under this design, as they do under today's. The mismatch does its
+work on memberships and activations, which span the interval. That may be
+the right division — superposition is what keeps an idea decodable — but it
+should be measured: the distribution of fold inputs in a trained model.
+
+**7. A stack of means drifts to consensus.** Each layer's Jacobian is a
+stochastic matrix, so spread and gradient both contract with depth (row 4
+shows how fast when the weights are not near identity). The 30-deep test
+should assert that spread survives, not only that the range holds.
+
+**8. It does not help stored-idea generativity.** The balanced split returns
+the parent for both children, which is what the reference-free inverse does
+today (todo item 6). A mean is bundling: two codes are recovered from it by
+correlation against the codebook, and their order only if the two weights
+differ.
+
+**9. Cost.** Sigma loses its chart entirely (one matmul and the bias mix);
+pi goes from about nine elementwise kernels to about six; the custom
+autograd function and the rail clamps go. The model is bound by kernel
+launches, so that is where a gain would come from. Swapping one chart for
+another, by itself, measured no faster.
+
+**10. Where sigma alone builds higher orders, a normalised mean kills the
+signal** (Alec's question, 2026-09-21). The concept pyramid is sigma only:
+one hop per rung, a higher-order symbol from its members. A higher-order
+symbol is a class — any of its members — and activity is sparse, so usually
+one member of several is active. A mean then gives the symbol the *share* of
+its members that is active, and the shares multiply up the orders. With
+equal weights and the leaf at 1:
+
+| sigma at each rung, 8 members | one member active, orders 1 → 4 | all members active |
+|---|---|---|
+| normalised arithmetic mean (L1) | .125 → .016 → .002 → .000 | 1 at every order |
+| L2-normalised, non-negative | .354 → .125 → .044 → .016 | 2.8 → 8 → 23 → 64 |
+| power mean, `p = 20` | .90 → .81 → .73 → .66 | 1 at every order |
+| max (`p → ∞`) | 1 at every order | 1 at every order |
+| probabilistic sum `1 − ∏(1 − u)` | 1 at every order | 1 at every order |
+| today, `tanh` of the sum at weight 1 | .76 → .64 → .57 → .51 | 1 at every order |
+
+At 32 members the mean is at .001 by the second order. The L2 form is worse
+here: it still decays when one member is active and it grows without bound
+when all are. So the arithmetic mean is the wrong sigma wherever sigma means
+*union*. The laws this document already gives for sigma — identity 0,
+absorber 1 — say the same: a mean has neither (`mean(x, 0) ≠ x`), while max
+and the probabilistic sum have both, and neither decays. In the family of §5
+that places the pyramid's sigma toward `p → ∞`. The probabilistic sum is the
+other candidate, and it may be the cleaner monotone form: it is pi's De
+Morgan dual, adding in the chart `log(1 − u)` where pi adds in `log u` — two
+charts, so §2's mismatch holds — with non-negative exponents that need **no
+normalisation** to stay in `[0, 1]`, and the same exact reverse through the
+`L D U` solve. Its risk is the opposite of the mean's: many weakly active
+members accumulate toward 1, which learned exponents below one and the
+pyramid's top-K taper have to hold down. The arithmetic mean remains right
+where an average is what is meant.
+
+**Recommendation.** Evaluate behind a `normalize` mode, turned on
+selectively. First the two XOR gates, in conceptual space with the monotonic
+flags off: the signed mean sigma in the raw chart feeding today's pi, at
+least four hidden units. Then the membership folds of the perceptual towers,
+which already live on `[0, 1]`, comparing the monotone means as proposed
+against the union forms of finding 10; the concept pyramid keeps a sigma that
+does not decay. The grammar's idea-vector folds last, after finding 6 is
+measured. Where a form
+is adopted, the path it replaces is deleted rather than kept as a second
+mode.
+
 ---
 
 ## Dimensionality Constraints
