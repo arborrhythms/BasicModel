@@ -1668,9 +1668,9 @@ From percepts, if the same form is used there, it is **monotone** DNF:
 perceptual space carries no negation, so every literal is a presence. That
 is the form that keeps parthood.
 
-**The five open points, settled (Alec, 2026-09-22).** Point 1b carries
-Claude's recommendation and awaits Alec's confirmation; the item is not
-handed to Codex until it has it.
+**The open points, settled (Alec, 2026-09-22).** Points 1b and 6 carry
+Claude's recommendation and await Alec's confirmation; the item is not
+handed to Codex until they have it.
 
 1. **How a class row comes to have several terms — it is the sparse
    matrix.** The concept store already is a sparse matrix in `(I, J, weight)`
@@ -1745,24 +1745,24 @@ handed to Codex until it has it.
            pi row r:         s_r += |w| · log lit             y_r = exp(s_r)
            sigma row r:      s_r += |w| · log1p(−lit)         y_r = −expm1(s_r)
 
-   One rung is one such pass over the rows of that order, exactly as today,
-   then the top-K taper. Nothing new is scheduled: the allocator already
-   places a row at one order above its highest constituent, so a class over
-   terms sits one order above them and reads them in the next pass, and a
-   class over raw members shares order 1 with the terms over raw members
-   and reads the same order 0. The one edge case is the `symbolicOrder`
-   cap: a row reads only lower orders, so a class whose terms are at the
-   cap is not minted. Per rung the cost is the same kernel count as the
-   additive hop, with `log`/`log1p` and `exp`/`expm1` in place of `tanh`.
+   One rung is **two such passes over the rows of that order — the pi rows
+   first, then the sigma rows — then the top-K taper.** Each edge is
+   visited once, in the pass of its target's type, so the edge work is that
+   of one pass and the rung costs one extra launch. The order of sigma over
+   pi is the reason for the two: a class of order `k` reads the terms of
+   order `k` (its own disjuncts) as well as lower orders, so a class takes
+   the order of its terms, not one above — the allocator's `1 + max` rule
+   applies to terms and to classes over raw members, and `max` to a class
+   over terms. That keeps `symbolicOrder` a count of class levels rather
+   than halving the depth, and a term at the cap still has its class. Per
+   rung the cost is the same kernel count as the additive hop plus one
+   launch, with `log`/`log1p` and `exp`/`expm1` in place of `tanh`.
 
-   `<conceptualPi>` in `model.xml` (default off until measured) decides
-   only what `synthesize_higher_order` mints from a co-active member set: a
-   pi row (a term) when on, a sigma row (a class, today's union reading)
-   when off. The perceptual towers' binary folds are what map N → N/2 (two
-   operands to one; `σ.generate` returns equal halves); the pyramid's width
-   per order is the allocated row count under the taper, not a halving.
-   The XOR gates run with the option on; the reconstruction baseline is
-   taken with it off and on.
+   The perceptual towers' binary folds are what map N → N/2 (two operands
+   to one; `σ.generate` returns equal halves); the pyramid's width per
+   order is the allocated row count under the taper, not a halving. The
+   XOR gates run with `<conceptualPi>` on (point 6); the reconstruction
+   baseline is taken with it off and on.
 
 4. **Saturation — compute the union with `log1p` / `expm1`, and let the
    taper bound it (accepted; Codex's arithmetic).** The probabilistic
@@ -1800,6 +1800,44 @@ handed to Codex until it has it.
    `y` — the same rule as the balanced split in the grammar's generate.
    This is the class / conjunction distinction of the accessible-mind
    spec, read backwards.
+
+6. **What mints a class over terms — so that the option is sigma *over* pi
+   and not pi in place of sigma (verified; recommendation).** As first
+   written, `<conceptualPi>` only changed what a co-active member set mints,
+   and nothing in the pyramid mints a class over terms: the two automatic
+   minters — mereological synthesis when a concept's parts overflow, and
+   attention promotion of a recurrent co-active set — each mint one row over
+   a member set, and META is a class over a word and its object, not over
+   terms. With the option on, every automatic row would have become a term
+   and the pyramid would have had no unions: pi replacing sigma. The
+   correction:
+
+   - **A term is minted with its class.** With the option on, a co-active
+     set mints a term T *and* a class C(T) over it, one edge, at the same
+     order (point 3). C(T) is the symbol: what the snap, the projection and
+     LTM references address, and what stays stable as terms join it; T is
+     its first disjunct. With the option off a set mints one class row over
+     its members, as today. Cost: one row and one edge per minted term. The
+     alternative — mint the class only when a second term arrives — would
+     change the symbol's row under existing references, so it is not taken.
+   - **A class gains terms by substitution, and by language.** Conjunction
+     evidence (co-activity) mints terms; class evidence is substitution:
+     the same context with a different filler. The architecture has that
+     evidence at the seal, in the references of item 7 — two sealed rows
+     alike in two roles and different in the third make the two fillers
+     terms of one class — and in language: META (word ↔ object) and the
+     two-truths part row between concept rows ("cats are animals"). Never
+     from code geometry alone: a class is membership, not a neighbourhood
+     ([spec §2.0](specs/2026-09-20-accessible-mind-subsystems.md)).
+     Until item 7 lands, classes are singletons plus META, which is enough
+     for the XOR gates and the baseline; substitution-minted classes land
+     with item 7.
+   - **The XOR gate.** The test mints two terms, `(x ∧ ¬y)` and `(¬x ∧ y)`,
+     and one class over them, and learns the edge weights, unseeded. It is a
+     test of the folds and of learning through them, not of minting.
+   - Edges written from evidence carry it: attention promotion already
+     scales a member's edge by its co-activation support, a positive
+     literal. Edges added without evidence start at zero (point 2).
 
 **Recommendation.** Evaluate behind a `normalize` mode, turned on
 selectively. First the two XOR gates, in conceptual space with the monotonic
