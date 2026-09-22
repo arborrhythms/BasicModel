@@ -1,0 +1,2 @@
+item11-fixture-red
+test_failure: 1/1 completed; exit 1

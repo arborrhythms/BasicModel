@@ -21,6 +21,7 @@ if _BIN not in sys.path:
     sys.path.insert(0, _BIN)
 
 import torch
+import pytest
 
 import Spaces
 from test_basicmodel import _populate_test_config
@@ -84,13 +85,13 @@ def test_shared_untyped_square_store():
     raise (the Quine atom); the learnable values register EXACTLY ONCE."""
     cs = _cs(nS=16, order=2)                         # taper (8, 4, 2): S = 14
     _p, s1 = cs._sparse_families(1)
-    assert _p is None                                # percept family RETIRED
+    assert _p is s1.conjunctive                       # same concepts, conjunctive parts
     assert s1 is cs._sparse_families(2)[1]           # ONE shared store
     assert (s1.nOutput, s1.nInput) == (14, 15)       # [S+1 inputs x S outputs]
     assert s1.roles is None                          # untyped: no role blocks
     cs.add_concept_edge(8, 2)                        # order-1 row <- snap col
     cs.add_concept_edge(8, 16)                       # bias: col nVectors -> S
-    assert (16, 1.0) in cs.concept_weights(8)        # read back as nVectors
+    assert (16, 0.0) in cs.concept_weights(8)        # read back as nVectors
     try:
         cs.add_concept_edge(9, 9)
         assert False, "self-edge must raise (the Quine atom)"
@@ -240,7 +241,7 @@ def test_forward_content_shape_and_stacking():
     assert content.shape == (B, 16, _D)                # stacked [B, N, CDim]
     assert a.shape == (16, B)                          # full-inventory acts
     assert torch.equal(a[:8], a_0)                     # order-0 passes 1:1
-    assert torch.allclose(a[r], torch.tanh(2.0 * a_0[0]), atol=1e-5)
+    assert torch.allclose(a[r], 2 * (1 - ((1 - a_0[0]) / 2).square()) - 1, atol=1e-5)
     assert torch.equal(a[r + 1:], torch.zeros(16 - r - 1, B))   # unallocated
 
 
@@ -260,10 +261,13 @@ def test_forward_content_legs_and_bias_sum_pre_tanh():
     cs.add_concept_edge(r, 16, weight=0.25)            # bias: col nVectors -> S
     _content, a = cs.cs_forward_content(a_0, what)
     nV = int(cs.nVectors)
-    acc = sum(w * (1.0 if c == nV else float(a_0[c, 0]))
-              for c, w in cs.concept_weights(r))       # 3*0.5 - 0.5*0.25 + 0.25
-    want = torch.tanh(torch.tensor(acc))
-    assert abs(float(a[r, 0]) - float(want)) < 1e-5
+    import math
+    eps = torch.finfo(a.dtype).eps
+    log_absence = sum(abs(w) * math.log(max(eps, 1 -
+                      ((1 + (1 if c == nV else float(a_0[c, 0])) * (1 if w >= 0 else -1)) / 2)))
+                      for c, w in cs.concept_weights(r))
+    assert float(a[r, 0]) == pytest.approx(2 * -math.expm1(log_absence) - 1, abs=1e-6)
+
 
 
 def test_forward_content_activation_is_bounded_tanh():

@@ -1481,3 +1481,62 @@ linked audit record; the corrected affected selection passes **48/48**.
 Final documentation links pass **70/70**, `20260921-104438-87cac7`, with the
 same validated source ([receipt](benchmarks/2026-09-21-item10/doc-links-final-result.json.gz),
 [landing metadata](benchmarks/2026-09-21-item10/receipt-info.json)).
+
+## Item 11: concept parts and provisional rows (September 22)
+
+The [implementation and measurement record](benchmarks/2026-09-22-item11/README.md)
+links the settled design and records the live union default, optional
+conjunction/union passes, signed exponents, provisional row pool, context
+weights, detached use gate, transpose reverse and checkpoint/optimizer
+ownership. The host promotion dictionaries and additive conceptual hop are
+removed. Object testimony and sequence removal remain item 7.
+
+The layer retains presence .9999998808 through four orders with one of eight
+parts present. Thirty-two weak parts at .001 give .0315085351, below the
+stated .031 excess bound. Balanced transpose checks recover conjunction parts
+at .9 from .81 and union alternatives at .6 from .84, within 1e-6. Context
+matches assign a provisional pair immediately; use promotes it in place,
+non-use permits recycling, and the optional co-present whole requires all
+its parts. Both matrices and their state survive a fresh model checkpoint;
+sparse growth/pruning preserves optimizer moments and pending credit by edge
+allocation identity.
+
+The [affected selection](benchmarks/2026-09-22-item11/affected-result.json.gz)
+completes **140/140** cases, **133 passed and 7 skipped**, exit 0. The explicit
+[unseeded XOR selection](benchmarks/2026-09-22-item11/xor-result.json.gz)
+completes **3/3**, exit 1: the four-conjunction signed representation passes,
+but four and eight zero-initialized conjunction concepts both finish 900 Adam
+updates at **MSE .5**, against the unchanged **< .1** bar. There is no seed
+selection, retry of an initialization, relaxed threshold or expected-failure
+marker. Item 11 retains this learning residue.
+
+The repeated `d4dc385` native reconstruction means are unchanged with the
+switch off and on. The native workload is serial and does not exercise the
+sparse pyramid; trained sparse-pyramid reconstruction remains unmeasured.
+The packed/single payloads remain unchanged, including the .7866926491 /
+.6838697642 mean tied byte costs. Diagnosing that gap remains item 9's first
+landing.
+
+The development record retains the initial mechanism failures, checkpoint
+regression, interrupted selections and temporary-config source-hashing race.
+Scratch XML fixtures now live outside the validated source tree, with a
+regression checking the snapshot while a scratch file exists. The runner's
+source guard, finite limits and coverage requirements are unchanged.
+
+The source-matched full selection `item11-publish-full` completes
+**4,717/4,717** cases: **4,384 passed, 332 skipped and one existing expected
+failure**, exit **0**, in **1072.14 seconds**. There is no waived
+failure and no compiler-cache retry. The
+[full receipt](benchmarks/2026-09-22-item11/full-result.json.gz),
+[source manifest](benchmarks/2026-09-22-item11/full-source-manifest.json),
+[summary](benchmarks/2026-09-22-item11/full-summary.json) and
+[landing metadata](benchmarks/2026-09-22-item11/receipt-info.json) match all
+**631 source files**, SHA-256 of the sorted compact validated-source map:
+`b289442fecf0af783383cebe5560e6d26d22f803ff7f078eca45034f8e478596`.
+The affected and explicit XOR receipts and all six reconstruction records
+match this source map. Peak aggregate footprint is **10.63 GiB** under
+the 20 GiB cap, with 8 GiB per worker. The two new default slow skips are
+explicitly measured XOR failures, not capability passes.
+
+Final documentation links pass **71/71**, `item11-doc-links`, with the same
+validated source ([receipt](benchmarks/2026-09-22-item11/doc-links-result.json.gz)).

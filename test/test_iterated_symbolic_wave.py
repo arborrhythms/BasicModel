@@ -128,7 +128,7 @@ def test_depth_d_vine_completes_structurally():
         for c, _w in cs.concept_weights(r):
             _set_edge_value(cs, r, c, 0.0)
     _c, a2 = cs.cs_forward_content(a_0, what)
-    assert abs(float(a2.detach()[h, 0])) < 1e-6      # the vine was the cause
+    assert abs(float(a2.detach()[h, 0]) + 1.) < 1e-6      # the vine was the cause
 
 
 # -- 2/3. self-reference at the store boundary ----------------------------------

@@ -5226,6 +5226,9 @@ class SparseLayer(Layer):
         self._cols = []            # host COO col (input) indices
         self._init_vals = []       # host init weights (growth tail source)
         self._index = {}           # (row, col) -> position in values
+        self._edge_ids = []        # allocation identities survive growth, not recycling
+        self._next_edge_id = 0
+        self._optimizer = None
         self.values = None         # nn.Parameter [nnz]
         self._dev_cache = None     # (device, rows_t, cols_t), dirty on edit
         # Role-tagged column blocks: ordered (name, width) pairs partitioning
@@ -5266,8 +5269,61 @@ class SparseLayer(Layer):
             if keep > 0:
                 with torch.no_grad():
                     new[:keep] = prev.detach()[:keep].to(dev)
-        self.values = nn.Parameter(new)
+        self._replace_values(nn.Parameter(new), list(range(0 if prev is None else len(prev))))
         self._dev_cache = None
+
+    def _replace_values(self, new, old_positions):
+        """Migrate moments and pending gradients by surviving COO position.
+
+        Boundary edits can precede backward. A hook on the old leaf relays
+        that pending gradient to surviving allocation identities only.
+        Recycled edges have fresh identities and cannot inherit old credit.
+        """
+        old = self.values
+        old_ids = tuple(getattr(self, '_parameter_edge_ids', ()))
+        self.values = new
+        self._parameter_edge_ids = tuple(self._edge_ids)
+        optimizer = self._optimizer
+        if optimizer is not None:
+            from Layers import RadixLayer
+            leaves = list(RadixLayer._optimizer_leaves(optimizer))
+            owned = False
+            for leaf in leaves:
+                for group in leaf.param_groups:
+                    if old is not None and any(p is old for p in group['params']):
+                        group['params'] = [new if p is old else p for p in group['params'] if p is not old or new is not None]
+                        owned = True
+                if old is not None and old in leaf.state:
+                    state = leaf.state.pop(old)
+                    if new is not None:
+                        migrated = {}
+                        for name, value in state.items():
+                            if torch.is_tensor(value) and value.shape == old.shape and name != 'step':
+                                target = torch.zeros_like(new)
+                                if old_positions:
+                                    target[:len(old_positions)] = value[old_positions]
+                                migrated[name] = target
+                            else:
+                                migrated[name] = value
+                        leaf.state[new] = migrated
+            if not owned and new is not None:
+                leaves[0].add_param_group({'params': [new]})
+        if old is not None and old.requires_grad:
+            def relay(gradient):
+                live = self.values
+                if live is None:
+                    return gradient.new_zeros(gradient.shape)
+                positions = {key: i for i, key in enumerate(self._edge_ids)}
+                pairs = [(i, positions[key]) for i, key in enumerate(old_ids) if key in positions]
+                if pairs:
+                    old_i, new_i = zip(*pairs)
+                    credit = torch.zeros_like(live)
+                    credit[list(new_i)] = gradient[list(old_i)].to(credit)
+                    live.grad = credit if live.grad is None else live.grad + credit
+                return gradient.new_zeros(gradient.shape)
+            old.register_hook(relay)
+            if old.grad is not None:
+                relay(old.grad)
 
     def role_slice(self, name):
         """The ``(start, end)`` input-column range of role block ``name``."""
@@ -5277,7 +5333,7 @@ class SparseLayer(Layer):
         width = dict((str(n), int(w)) for (n, w) in self.roles)[str(name)]
         return off, off + width
 
-    def add_edge(self, row, col, weight=1.0, role=None):
+    def add_edge(self, row, col, weight=0.0, role=None):
         """Append edge output[row] <- weight * input[col]; idempotent. With
         ``role``, ``col`` is block-local and offsets into that role block."""
         if role is not None:
@@ -5303,6 +5359,8 @@ class SparseLayer(Layer):
         self._rows.append(r)
         self._cols.append(c)
         self._init_vals.append(float(weight))
+        self._edge_ids.append(self._next_edge_id)
+        self._next_edge_id += 1
         self._index[(r, c)] = pos
         self._grow_values()
         return pos
@@ -5318,14 +5376,15 @@ class SparseLayer(Layer):
         self._rows = [self._rows[i] for i in keep]
         self._cols = [self._cols[i] for i in keep]
         self._init_vals = [self._init_vals[i] for i in keep]
+        self._edge_ids = [self._edge_ids[i] for i in keep]
         self._index = {(r, c): i
                        for i, (r, c) in enumerate(zip(self._rows, self._cols))}
         if not keep:
-            self.values = None
+            self._replace_values(None, [])
         else:
             with torch.no_grad():
-                kept = old_vals.detach()[torch.tensor(keep)].clone()
-            self.values = nn.Parameter(kept.to(old_vals.device))
+                kept = old_vals.detach()[torch.tensor(keep, device=old_vals.device)].clone()
+            self._replace_values(nn.Parameter(kept), keep)
         self._dev_cache = None
         return len(drop)
 
@@ -5398,23 +5457,103 @@ class SparseLayer(Layer):
         return self._apply_shape(y, transpose=True)
 
 
-class ConceptualAttentionLayer(SparseLayer):
-    """BOTTOM-UP ATTENTION over the concept inventory + the concept relation
-    store. The wave a^{i+1} = tanh(W [a^i | 1] + s) propagates perceptual
-    salience one membership-weighted hop per step over the square untyped
-    store [N x N+1] whose edges are fuzzy set-membership degrees (the
-    horizontal channel lifted into relation space -- doc/Architecture.md
-    "Parse time" sec C; the iterated symbolic loop,
-    doc/plans/2026-07-02-iterated-symbolic-loop.md). Self-edges are forbidden
-    on the square store (x = {x}, the Quine atom); longer cycles are
-    deliberate.
+    def fold_presence(self, u, *, conjunctive=False, start=0, end=None,
+                      admitted=None, own=None):
+        """Scatter signed exponents in log-presence or log-complement.
 
-    This subclass ALSO owns the discrete relation store (the concept
-    structure the ConceptAllocator parks per row): ordered role-tagged
-    constituent records keyed by GLOBAL concept id, plus the
-    capacity-bounded tensor-row map. The generic COO substrate (edges,
-    values, forward/reverse) is inherited from :class:`SparseLayer` and
-    carries no concept vocabulary."""
+        Zero has the symmetric directional derivative of the two signed
+        charts. This lets an unknown edge learn either polarity without a
+        random nonzero initialization. Rail floors bound log derivatives;
+        log1p/expm1 preserve weak union evidence.
+        """
+        end = self.nOutput if end is None else int(end)
+        rows, cols = self._indices(u.device)
+        select = (rows >= int(start)) & (rows < end)
+        rows, cols = rows[select], cols[select]
+        out = u.new_zeros((end - int(start), u.shape[-1]))
+        if self.values is not None:
+            w = self.values.clone().to(u.device)[select, None]
+            v = u.index_select(0, cols).clamp(0, 1)
+            eps = torch.finfo(v.dtype).eps
+            if conjunctive:
+                # Straight-through floors retain a finite chart slope at
+                # a rail; a newly zero-initialized conjunction starts at 1.
+                vp = v + (v.clamp_min(eps) - v).detach()
+                vn = 1 - v
+                vn = vn + (vn.clamp_min(eps) - vn).detach()
+                positive, negative = vp.log(), vn.log()
+            else:
+                vp = v + (v.clamp_max(1 - eps) - v).detach()
+                vn = 1 - v
+                vn = vn + (vn.clamp_max(1 - eps) - vn).detach()
+                positive, negative = torch.log1p(-vp), torch.log1p(-vn)
+            contribution = torch.where(
+                w > 0, w * positive,
+                torch.where(w < 0, -w * negative,
+                            w * (positive - negative) * .5))
+            if admitted is not None:
+                contribution = contribution * admitted.index_select(0, cols)
+            out = out.index_add(0, rows - int(start), contribution)
+        count = torch.zeros(end - int(start), device=u.device, dtype=torch.long)
+        count = count.index_add(0, rows - int(start), torch.ones_like(rows))
+        if conjunctive:
+            return out.exp() * (count > 0).unsqueeze(-1)
+        if own is not None:
+            eps = torch.finfo(out.dtype).eps
+            safe = own + (own.clamp_max(1 - eps) - own).detach()
+            out = out + torch.log1p(-safe)
+        return -torch.expm1(out)
+
+    def reverse_presence(self, y, *, conjunctive=False, start=0, end=None,
+                         own=None):
+        """Row-normalized chart transpose, sharing evidence among parts.
+
+        The implicit own conjunct has exponent one in the union. Return
+        its share separately so the next transpose can read W_pi.
+        """
+        end = self.nOutput if end is None else int(end)
+        rows, cols = self._indices(y.device)
+        selected = (rows >= int(start)) & (rows < end)
+        rows, cols = rows[selected], cols[selected]
+        weights = (y.new_zeros((0,)) if self.values is None else
+                   self.values.clone().to(y.device)[selected])
+        magnitude = weights.abs()
+        denominator = y.new_zeros(self.nOutput).index_add(0, rows, magnitude)
+        if own is not None:
+            denominator = denominator + own.to(y.dtype)
+        share = magnitude / denominator.index_select(0, rows).clamp_min(1e-12)
+        eps = torch.finfo(y.dtype).eps
+        chart = (y.clamp_min(eps).log() if conjunctive else
+                 torch.log1p(-y.clamp_max(1 - eps)))
+        evidence = chart.index_select(0, rows) * share[:, None] * (y.index_select(0, rows) > 0)
+        # Opposite polarities are independent evidence. Combine their signed
+        # readouts after the transpose, never by cancelling their exponents.
+        result = y.new_zeros((self.nInput, y.shape[-1]))
+        used = y.new_zeros((self.nInput, y.shape[-1]))
+        for positive in (True, False):
+            mask = (weights > 0) if positive else (weights < 0)
+            acc = result.new_zeros(result.shape).index_add(0, cols[mask], evidence[mask])
+            hit = used.new_zeros(used.shape).index_add(
+                0, cols[mask], (y.index_select(0, rows[mask]) > 0).to(y.dtype))
+            presence = acc.exp() if conjunctive else -torch.expm1(acc)
+            if not positive:
+                presence = 1 - presence
+            result = result + presence * (hit > 0)
+            used = used + (hit > 0)
+        result = result / used.clamp_min(1)
+        own_share = None
+        if own is not None:
+            own_share = -torch.expm1(chart / denominator.clamp_min(1e-12)[:, None])
+            own_share = own_share * own[:, None]
+        return result, own_share
+
+
+class ConceptualAttentionLayer(SparseLayer):
+    """Concept records and disjunctive parts W_sigma on one row inventory.
+
+    W_pi stores conjunctive parts of the same concepts. Context weights are
+    the witnessed where; participation is an EWMA buffer, never a parameter.
+    """
 
     def __init__(self, nInput, nOutput, nonlinear=True, kernel="scatter",
                  device=None, roles=None, forbid_self_edges=False):
@@ -5430,6 +5569,26 @@ class ConceptualAttentionLayer(SparseLayer):
         self._tensor_row_keys = {} # derived reverse map; updated at allocation/load
         self._row_next = {}        # region base -> next unallocated local row
 
+        self.conjunctive = SparseLayer(nInput, nOutput, nonlinear=False,
+                                      device=device, forbid_self_edges=True)
+        self.where = SparseLayer(nOutput, nOutput, nonlinear=False, device=device)
+        for name, value in (
+                ('participation', torch.ones(nOutput)),
+                ('provisional', torch.zeros(nOutput, dtype=torch.bool)),
+                ('assigned', torch.zeros(nOutput, dtype=torch.bool)),
+                ('managed', torch.zeros(nOutput, dtype=torch.bool)),
+                ('witnessed', torch.zeros(nOutput, dtype=torch.bool)),
+                ('witness_strength', torch.zeros(nOutput)),
+                ('context_seen', torch.zeros(nOutput, dtype=torch.long)),
+                ('observation', torch.zeros((), dtype=torch.long))):
+            # The structural sidecar owns these row-aligned values. Keeping
+            # them out of state_dict also preserves strict loads for a store
+            # whose sparse module had not been registered before saving.
+            self.register_buffer(name, value, persistent=False)
+
+    def part_matrices(self):
+        return self, self.conjunctive
+
     @classmethod
     def square(cls, n_concepts, device=None):
         """THE square [ (N+1) x N ] wave store: forbid_self_edges (x = {x},
@@ -5438,12 +5597,56 @@ class ConceptualAttentionLayer(SparseLayer):
         return cls(int(n_concepts) + 1, int(n_concepts),
                    device=device, forbid_self_edges=True)
 
-    def wave_step(self, a, s, bias=1.0):
-        """One bottom-up-attention hop: tanh(W [a | 1] + s); a, s: [N, B];
-        bias scales the constant column (0 masks the EVERYTHING pole)."""
-        x = torch.cat([a, a.new_full((1, int(a.shape[-1])), float(bias))],
-                      dim=0)
-        return torch.tanh(self.forward_linear(x) + s)
+    def forward(self, presence):
+        """The concept store reads disjunctive parts in their presence chart."""
+        return self.fold_presence(presence)
+
+    def reverse(self, presence):
+        return self.reverse_presence(presence)[0]
+
+    def parts_extras(self):
+        """Checkpoint both parts matrices and row-aligned discovery state."""
+        matrices = {}
+        for name, matrix in (('conjunctive', self.conjunctive), ('where', self.where)):
+            matrices[name] = dict(rows=list(matrix._rows), cols=list(matrix._cols),
+                                  values=None if matrix.values is None else matrix.values.detach().cpu().clone())
+        return dict(version=1, matrices=matrices,
+                    buffers={name: value.detach().cpu().clone()
+                             for name, value in self.named_buffers(recurse=False)})
+
+    def load_parts_extras(self, saved, *, old_size=None):
+        if saved is None:
+            return
+        if saved.get('version') != 1:
+            raise ValueError('unsupported conceptual parts checkpoint')
+        for name in ('conjunctive', 'where'):
+            matrix = getattr(self, name)
+            blob = saved['matrices'][name]
+            rows, cols, values = blob['rows'], blob['cols'], blob['values']
+            if name == 'conjunctive' and old_size is not None:
+                cols = [self.nOutput if col == old_size else col for col in cols]
+            if (len(rows) != len(cols) or len(set(zip(rows, cols))) != len(rows)
+                    or (values is not None and values.numel() != len(rows))
+                    or any(not 0 <= r < matrix.nOutput for r in rows)
+                    or any(not 0 <= c < matrix.nInput for c in cols)):
+                raise ValueError('malformed conceptual parts checkpoint')
+            matrix._rows, matrix._cols = list(rows), list(cols)
+            matrix._index = {pair: i for i, pair in enumerate(zip(rows, cols))}
+            matrix._init_vals = [] if values is None else values.tolist()
+            matrix._dev_cache = None
+            matrix._edge_ids = list(range(len(rows)))
+            matrix._next_edge_id = len(rows)
+            matrix._parameter_edge_ids = tuple(matrix._edge_ids)
+            matrix.values = None if values is None else nn.Parameter(
+                values.to(self._device()).clone(), requires_grad=name != 'where')
+        for name, value in saved['buffers'].items():
+            target = getattr(self, name)
+            if target.shape == value.shape:
+                target.copy_(value.to(target))
+            elif old_size is not None and value.ndim == 1 and len(value) == old_size:
+                target[:old_size].copy_(value.to(target))
+            else:
+                raise ValueError(f'conceptual buffer shape mismatch: {name}')
 
     # -- discrete relation store: the ordered role-tagged relation records.
     # Row keys are GLOBAL concept ids; the local tensor row of a key is a

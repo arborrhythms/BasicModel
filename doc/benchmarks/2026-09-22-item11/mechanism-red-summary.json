@@ -1,0 +1,62 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "elapsed_seconds": 9.76152274996275,
+  "peak_aggregate_memory_bytes": 433423680,
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 30064771072,
+    "aggregate_memory_bytes": 30064771072,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 2,
+    "worker_seconds": 120.0,
+    "suite_seconds": 300.0,
+    "batch_size": 8,
+    "max_files": 1
+  },
+  "run": "20260922-065346-4a9e45",
+  "selected": 4,
+  "completed": 4,
+  "outcomes": {
+    "failed": 4
+  },
+  "source_files": 631,
+  "source_sha256": "8162698d95ce23d008535807eb4aaff1eb4bdffcdd330894989c32ca9bdca4ae",
+  "phase_reports": {
+    "failed": 4
+  },
+  "failures": [
+    {
+      "nodeid": "test/test_concept_sigma_pi.py::test_union_holds_one_present_part_across_orders",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.018159917031880468,
+      "message": "test/test_concept_sigma_pi.py:22: in test_union_holds_one_present_part_across_orders\n    torch.testing.assert_close(a[rows], torch.ones(4, 1), atol=2e-6, rtol=0)\nE   AssertionError: Tensor-likes are not close!\nE   \nE   Mismatched elements: 4 / 4 (100.0%)\nE   Greatest absolute difference: 1.999999761581421 at index (1, 0) (up to 2e-06 allowed)\nE   Greatest relative difference: 1.999999761581421 at index (1, 0) (up to 0 allowed)",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_sigma_pi.py::test_sigma_reads_same_order_conjunction_and_lower_order_parts",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0016549170250073075,
+      "message": "test/test_concept_sigma_pi.py:30: in test_sigma_reads_same_order_conjunction_and_lower_order_parts\n    cs.add_concept_edge(p, 0, weight=1., conjunctive=True)\nE   TypeError: ConceptualSpace.add_concept_edge() got an unexpected keyword argument 'conjunctive'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_sigma_pi.py::test_unspecified_exponents_start_at_zero_and_can_learn",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.003865292004775256,
+      "message": "test/test_concept_sigma_pi.py:46: in test_unspecified_exponents_start_at_zero_and_can_learn\n    assert ly.values.item() == 0.\nE   assert 1.0 == 0.0\nE    +  where 1.0 = <built-in method item of Parameter object at 0x122e6f160>()\nE    +    where <built-in method item of Parameter object at 0x122e6f160> = Parameter containing:\\ntensor([1.], requires_grad=True).item\nE    +      where Parameter containing:\\ntensor([1.], requires_grad=True) = ConceptualAttentionLayer().values",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_sigma_pi.py::test_transpose_splits_union_and_implies_conjunctive_parts",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0015778329689055681,
+      "message": "test/test_concept_sigma_pi.py:60: in test_transpose_splits_union_and_implies_conjunctive_parts\n    cs.add_concept_edge(p, col, weight=1., conjunctive=True)\nE   TypeError: ConceptualSpace.add_concept_edge() got an unexpected keyword argument 'conjunctive'",
+      "stdout": ""
+    }
+  ]
+}

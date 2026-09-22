@@ -1,0 +1,40 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "elapsed_seconds": 7.556271750014275,
+  "peak_aggregate_memory_bytes": 539755816,
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 30064771072,
+    "aggregate_memory_bytes": 30064771072,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 180.0,
+    "suite_seconds": 300.0,
+    "batch_size": 8,
+    "max_files": 1
+  },
+  "run": "20260922-071906-e74b99",
+  "selected": 2,
+  "completed": 2,
+  "outcomes": {
+    "failed": 1,
+    "passed": 1
+  },
+  "source_files": 631,
+  "source_sha256": "4454347d1d087d9426ae7678c137d7d85dbc08c24cc3598bdc1ab87d7d9486f9",
+  "phase_reports": {
+    "failed": 1,
+    "passed": 1
+  },
+  "failures": [
+    {
+      "nodeid": "test/test_attention_promotion.py::test_registered_pool_checkpoint_loads_before_parameter_shape_validation",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.014199957950040698,
+      "message": "test/test_attention_promotion.py:250: in test_registered_pool_checkpoint_loads_before_parameter_shape_validation\n    assert target.load_weights(path, require_match=True)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:5670: in load_weights\n    raise ValueError(\"\\n\".join(lines))\nE   ValueError: [StructuralCheckpointTest] Weight file mismatch -- cannot load /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2891/test_registered_pool_checkpoin0/pool.pt\nE     Keys in model but missing from file: 102 (initialized fresh)\nE     Keys in file not present in model: 10\nE       conceptualSpaces.0.concept_parts_layer.participation\nE       conceptualSpaces.0.concept_parts_layer.provisional\nE       conceptualSpaces.0.concept_parts_layer.assigned\nE       conceptualSpaces.0.concept_parts_layer.managed\nE       conceptualSpaces.0.concept_parts_layer.witnessed\nE       conceptualSpaces.0.concept_parts_layer.witness_strength\nE       conceptualSpaces.0.concept_parts_layer.context_seen\nE       conceptualSpaces.0.concept_parts_layer.observation\nE       conceptualSpaces.0.concept_parts_layer.conjunctive.values\nE       conceptualSpaces.0.concept_parts_layer.where.values\nE     The model config likely changed since this checkpoint was saved.\nE     To fix: correct the model XML to match the saved weights,\nE             or delete/move /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2891/test_registered_pool_checkpoin0/pool.pt to start fresh.",
+      "stdout": "[StructuralCheckpointTest] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2891/test_registered_pool_checkpoin0/pool.pt\r\n[StructuralCheckpointTest] Legacy checkpoint at /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2891/test_registered_pool_checkpoin0/pool.pt has no embedding bundle; embeddings stay at random init.\r\n"
+    }
+  ]
+}

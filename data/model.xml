@@ -35,6 +35,18 @@
          explicitly when they need a symbolic loop limit. -->
     <!-- <symbolicOrder>0</symbolicOrder> -->
 
+    <!-- Concept rows compose by union; the optional conjunctive pass
+         discovers co-present wholes. Pool participation is an EWMA of use. -->
+    <attentionPromotion>false</attentionPromotion>
+    <conceptualPi>false</conceptualPi>
+    <conceptPoolSize>1</conceptPoolSize>
+    <conceptUseEWMA>0.9</conceptUseEWMA>
+    <conceptUseFloor>0.5</conceptUseFloor>
+    <conceptMintThreshold>0.8</conceptMintThreshold>
+    <conceptRecycleThreshold>0.2</conceptRecycleThreshold>
+    <conceptMatchCos>0.8</conceptMatchCos>
+    <conceptPartFloor>0.001</conceptPartFloor>
+
     <!-- Task 4 (doc/plans/2026-05-29-stm-serial-parallel-modes.md §4):
          per-word router-fire gating for serial mode.
            per-word  = fire symbolSpace.compose once per word in the

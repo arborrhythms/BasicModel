@@ -1,0 +1,38 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "elapsed_seconds": 7.391606332967058,
+  "peak_aggregate_memory_bytes": 432637224,
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 30064771072,
+    "aggregate_memory_bytes": 30064771072,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 10,
+    "worker_seconds": 1800,
+    "suite_seconds": 10800,
+    "batch_size": 256,
+    "max_files": 16
+  },
+  "run": "item11-fixture-red",
+  "selected": 1,
+  "completed": 1,
+  "outcomes": {
+    "failed": 1
+  },
+  "source_files": 631,
+  "source_sha256": "7b5fd995d57b47ea24c36a92c05b1fa723310bf2838b0b4b59a4e6584e9f6afb",
+  "phase_reports": {
+    "failed": 1
+  },
+  "failures": [
+    {
+      "nodeid": "test/test_dimensional_governance.py::test_temporary_config_preserves_validated_source",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.061136749980505556,
+      "message": "test/test_dimensional_governance.py:171: in test_temporary_config_preserves_validated_source\n    _build_from_text('<model/>', 'source_integrity')\ntest/test_dimensional_governance.py:142: in _build_from_text\n    m, _ = Models.BasicModel.from_config(p)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_dimensional_governance.py:166: in build\n    assert source_snapshot(root) == before\nE   AssertionError: assert {'Makefile': ...08e9bdb', ...} == {'Makefile': ...08e9bdb', ...}\nE     \nE     Omitting 631 identical items, use -vv to show\nE     Left contains 1 more item:\nE     {'data/_tmp_source_integrity.xml': '50d16dbedaefeccd0260f0f9a21bb92b559fdb82563d1b5724aab537db88e646'}\nE     Use -v to get more diff",
+      "stdout": ""
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "source_parent": "c1543b1ec878271fe3f8b2d2302f46e7a90abb05",
+  "baseline_commits": [
+    "26c4fa87b3bb8e2a657e4e58e7bc416e21575e5e",
+    "e7145d20c8caad9841a10d45a2c61230eed04651",
+    "7d64aaf35577fdc0452f083d9b9154233d64c0f8",
+    "a3f64d29b7814db9231567c2bc73bbcacc7d6ec2",
+    "48a56c2d189b61b97af2428caf3569f3dca14d37",
+    "f08dccba8575979302834502174f2eaf259cd0f4",
+    "a39c5e44f4deffb9c11e8833f66ac7f600ba7f47",
+    "90f844c2ba40e8c67cb73d39d515944e50103bf7",
+    "26c72513617e4f54d2b19e83c006db6fa0b39586",
+    "9c8c1ae43273aa0591f562139da6572a32e2f615",
+    "c1543b1ec878271fe3f8b2d2302f46e7a90abb05"
+  ],
+  "full_run": "item11-publish-full",
+  "full_summary": "full-summary.json",
+  "source_files": 631,
+  "source_sha256": "b289442fecf0af783383cebe5560e6d26d22f803ff7f078eca45034f8e478596",
+  "full_source_verified": true,
+  "measurement_sources_verified": true,
+  "measurement_manifest": "final-source/manifest.json",
+  "affected_run": "item11-publish-affected",
+  "xor_run": "item11-publish-xor",
+  "xor_learning_passed": false,
+  "sparse_pyramid_training_reconstruction_measured": false,
+  "existing_default_xfail": [
+    "test/test_stm_recon_from_cleared_cache.py::test_topk_recovered_words_overlap_input"
+  ],
+  "doc_links_run": "item11-doc-links",
+  "doc_links_cases": 71,
+  "doc_links_source_verified": true
+}

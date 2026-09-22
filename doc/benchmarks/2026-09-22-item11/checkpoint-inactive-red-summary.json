@@ -1,0 +1,50 @@
+{
+  "exit_code": 130,
+  "reason": "interrupted",
+  "elapsed_seconds": 474.0389139170293,
+  "peak_aggregate_memory_bytes": 7717372440,
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 21474836480,
+    "aggregate_memory_bytes": 21474836480,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 10,
+    "worker_seconds": 1800,
+    "suite_seconds": 10800,
+    "batch_size": 8,
+    "max_files": 1
+  },
+  "run": "item11-source-final",
+  "selected": 4716,
+  "completed": 2116,
+  "outcomes": {
+    "passed": 1958,
+    "skipped": 156,
+    "failed": 2
+  },
+  "source_files": 631,
+  "source_sha256": "cac718f87774cf8a7a0956630d8daf494ce0d03664b20bb6467d74ff1d6c5ab5",
+  "phase_reports": {
+    "passed": 1958,
+    "skipped": 156,
+    "failed": 2
+  },
+  "failures": [
+    {
+      "nodeid": "test/test_generation_catalog.py::test_shared_generation_weights_and_adam_survive_strict_reload[False]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.6456216659862548,
+      "message": "test/test_generation_catalog.py:59: in test_shared_generation_weights_and_adam_survive_strict_reload\n    assert fresh.load_weights(str(checkpoint), strict=True, require_match=True)\nE   AssertionError: assert False\nE    +  where False = load_weights('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2942/test_shared_generation_weights0/shared_catalog.ckpt', strict=True, require_match=True)\nE    +    where load_weights = BasicModel(\\n  (loss): ModelLoss(\\n    (output_criterion): MSELoss()\\n  )\\n  (inputSpace): InputSpace(\\n    (subspace): Sub...=29, out_features=136, bias=False)\\n  )\\n  (question_conditioner): Linear(in_features=29, out_features=136, bias=False)\\n).load_weights\nE    +    and   '/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2942/test_shared_generation_weights0/shared_catalog.ckpt' = str(PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2942/test_shared_generation_weights0/shared_catalog.ckpt'))",
+      "stdout": "[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2942/test_shared_generation_weights0/shared_catalog.ckpt\r\n[BasicModel] Weight file partial -- /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2942/test_shared_generation_weights0/shared_catalog.ckpt\n  Keys in model but missing from file: 8 (initialized fresh)\r\n[BasicModel] Warning: cannot load /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2942/test_shared_generation_weights0/shared_catalog.ckpt: Error(s) in loading state_dict for BasicModel:\n\tMissing key(s) in state_dict: \"conceptualSpaces.0.concept_parts_layer.participation\", \"conceptualSpaces.0.concept_parts_layer.provisional\", \"conceptualSpaces.0.concept_parts_layer.assigned\", \"conceptualSpaces.0.concept_parts_layer.managed\", \"conceptualSpaces.0.concept_parts_layer.witnessed\", \"conceptualSpaces.0.concept_parts_layer.witness_strength\", \"conceptualSpaces.0.concept_parts_layer.context_seen\", \"conceptualSpaces.0.concept_parts_layer.observation\". \r\n"
+    },
+    {
+      "nodeid": "test/test_generation_catalog.py::test_shared_generation_weights_and_adam_survive_strict_reload[True]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.6934265830204822,
+      "message": "test/test_generation_catalog.py:59: in test_shared_generation_weights_and_adam_survive_strict_reload\n    assert fresh.load_weights(str(checkpoint), strict=True, require_match=True)\nE   AssertionError: assert False\nE    +  where False = load_weights('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2942/test_shared_generation_weights1/shared_catalog.ckpt', strict=True, require_match=True)\nE    +    where load_weights = BasicModel(\\n  (loss): ModelLoss(\\n    (output_criterion): MSELoss()\\n  )\\n  (inputSpace): InputSpace(\\n    (subspace): Sub...=29, out_features=136, bias=False)\\n  )\\n  (question_conditioner): Linear(in_features=29, out_features=136, bias=False)\\n).load_weights\nE    +    and   '/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2942/test_shared_generation_weights1/shared_catalog.ckpt' = str(PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2942/test_shared_generation_weights1/shared_catalog.ckpt'))",
+      "stdout": "[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2942/test_shared_generation_weights1/shared_catalog.ckpt\r\n[BasicModel] Weight file partial -- /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2942/test_shared_generation_weights1/shared_catalog.ckpt\n  Keys in model but missing from file: 8 (initialized fresh)\r\n[BasicModel] Warning: cannot load /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2942/test_shared_generation_weights1/shared_catalog.ckpt: Error(s) in loading state_dict for BasicModel:\n\tMissing key(s) in state_dict: \"conceptualSpaces.0.concept_parts_layer.participation\", \"conceptualSpaces.0.concept_parts_layer.provisional\", \"conceptualSpaces.0.concept_parts_layer.assigned\", \"conceptualSpaces.0.concept_parts_layer.managed\", \"conceptualSpaces.0.concept_parts_layer.witnessed\", \"conceptualSpaces.0.concept_parts_layer.witness_strength\", \"conceptualSpaces.0.concept_parts_layer.context_seen\", \"conceptualSpaces.0.concept_parts_layer.observation\". \r\n"
+    }
+  ]
+}

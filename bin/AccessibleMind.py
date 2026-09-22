@@ -90,6 +90,17 @@ def apply_thought_effect(model, result, *, row, work):
     if torch.is_tensor(existing):
         n = min(len(field), len(existing))
         field[:n, :existing.shape[1]] = existing[:n].detach()
+    inferred = None
+    if callable(getattr(space, '_sparse_active', None)) and space._sparse_active():
+        query = field.new_zeros(field.shape)
+        for reference in seeds:
+            try:
+                index = reference[1] if reference[0] == 'row' else _existing_row(space, reference)
+            except ValueError:
+                continue
+            if 0 <= index < len(query):
+                query[index, row] = 1.
+        inferred = space.cs_reverse_presence(query)
     pending, seen = list(seeds), set()
     while pending:
         reference = pending.pop()
@@ -107,7 +118,7 @@ def apply_thought_effect(model, result, *, row, work):
             except ValueError:
                 continue
         if 0 <= index < len(field):
-            field[index, row] = 1.
+            field[index, row] = 1. if inferred is None else inferred[index, row]
         if cid is not None:
             pending.extend(part for part in space.concept_parts(cid)
                            if isinstance(part, tuple) and part[0] == 'sym')

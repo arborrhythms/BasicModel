@@ -1,0 +1,13 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-22-item11/rungs.py",
+    "/Users/arogers/github/WikiOracle/basicmodel/output/item11-publish-measurements/rungs.json"
+  ],
+  "pid": 46655,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 407766192,
+  "elapsed_seconds": 3.610285583010409,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/output/item11-publish-measurements/rungs.log"
+}

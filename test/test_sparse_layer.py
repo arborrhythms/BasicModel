@@ -132,31 +132,19 @@ def test_conceptual_attention_layer_is_square_and_forbids_self_edges():
         ly.add_edge(3, 3)
 
 
-def test_conceptual_attention_layer_wave_step_matches_formula():
+def test_conceptual_attention_union_uses_presence_chart():
     ly = ConceptualAttentionLayer.square(4)
-    ly.add_edge(2, 0, weight=0.5)          # relation row 2 reads concept 0
-    a = torch.zeros(4, 1); a[0, 0] = 1.0
-    s = a.clone()
-    out = ly.wave_step(a, s)
-    assert torch.allclose(out[2], torch.tanh(torch.tensor([0.5])))
-    assert torch.allclose(out[0], torch.tanh(torch.tensor([1.0])))  # tanh(s)
-    ly.add_edge(3, 4, weight=0.25)         # bias col (== nInput-1) reads 1
-    out = ly.wave_step(a, s)
-    assert torch.allclose(out[3], torch.tanh(torch.tensor([0.25])))
-    # bias=0.0 masks the EVERYTHING pole: the bias-col edge contributes 0,
-    # every activation-driven edge is unchanged.
-    out0 = ly.wave_step(a, s, bias=0.0)
-    assert torch.allclose(out0[3], torch.tensor([0.0]))
-    assert torch.allclose(out0[2], out[2])
-    assert torch.allclose(ly.wave_step(a, s, bias=1.0), out)   # default == 1
+    ly.add_edge(2, 0, weight=.5)
+    u = torch.zeros(5, 1)
+    u[0] = .75
+    out = ly.fold_presence(u)
+    torch.testing.assert_close(out[2], torch.tensor([.5]))
+    assert not out[:2].any()
 
 
-def test_conceptual_attention_layer_wave_step_empty_layer_is_tanh_s():
+def test_conceptual_attention_empty_union_is_absent():
     ly = ConceptualAttentionLayer.square(3)
-    assert torch.all(ly.wave_step(torch.rand(3, 2), torch.zeros(3, 2)) == 0)
-    s = torch.tensor([[0.5, -0.5], [0.0, 1.0], [-1.0, 0.25]])
-    out = ly.wave_step(torch.rand(3, 2), s)
-    assert torch.allclose(out, torch.tanh(s))
+    assert not ly.fold_presence(torch.rand(4, 2)).any()
 
 
 # -- concept relation store (moved off SparseLayer onto ConceptualAttentionLayer)

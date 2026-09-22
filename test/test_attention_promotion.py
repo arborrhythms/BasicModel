@@ -1,10 +1,8 @@
-"""Attention-to-relation promotion (2026-07-12 execution of
-doc/plans/2026-07-04-attention-to-relation-promotion.md).
+"""Provisional concept rows retain witnessed context and observed use.
 
-The pyramid's admitted field feeds a bounded candidate cache at the
-sentence boundary; recurrent shared-context member sets that clear the
-truth_criterion learn-score law mint a higher-order whole. Byte-identical
-when the <attentionPromotion> gate is off.
+Matching contexts assign disjunctive parts; conceptualPi admits complete
+co-present sets as conjunctive parts. Detached use EWMA promotes the same
+row in place and replenishes the per-order provisional pool.
 """
 import os
 import sys
@@ -71,280 +69,214 @@ def _observe(cs, active, B_rows=None):
     cs.promotion_observe()
 
 
-def _mock_promotion_score(cs, children, obvious, resolves):
-    """Monkeypatch the three factor seams (the Task-6c test convention)
-    so the promotion learn-score product is deterministic."""
-    cs._learn_score_members_in_codebook = (
-        lambda vecs, _c=children: float(_c))
-    cs._learn_score_is_truth_obvious = (
-        lambda rel, _o=obvious: float(_o))
-    cs._learn_score_resolves_contradiction = (
-        lambda rel, _r=resolves: float(_r))
+
+def _pool_rows(cs, *, assigned=True):
+    ly = Spaces._concept_alloc_of(cs).layer()
+    mask = ly.provisional & ly.assigned if assigned else ly.provisional
+    return mask.nonzero().flatten().tolist()
 
 
-def _royal_rounds(cs, members, context, rounds=1):
-    """One observation per member: the member row active together with the
-    shared context rows ({king|queen|prince} + {crown, palace})."""
-    for _ in range(rounds):
-        for (_cid, row) in members:
-            active = {row: 1.0}
-            for i, (_c, r) in enumerate(context):
-                active[r] = 0.8 - 0.1 * i
-            _observe(cs, active)
-
-
-# -- gate ---------------------------------------------------------------------
-
-def test_default_off_is_inert():
-    cs = _cs(promote=False)
-    assert getattr(cs, "_promotion_enabled") is False
-    cs.promotion_observe()
-    assert cs.promotion_pass() == []
-    assert getattr(cs, "_promotion_cache_state", None) is None
-    # The cutover does not stash evidence when the gate is off.
-    cs.eval()
-    D = int(cs.similarity_codebook.getW().shape[-1])
-    cs.cs_symbolic_phase(torch.randn(2, int(cs.nVectors), D))
-    assert getattr(cs, "_promo_last_acts", None) is None
-
-
-# -- the collector + candidate cache ------------------------------------------
-
-def test_collector_accumulates_shared_context_support():
-    cs = _cs()
-    members = _mint_order0(cs, 3)                      # king, queen, prince
-    context = _mint_order0(cs, 2)                      # crown, palace
-    _royal_rounds(cs, members, context)
-    st = cs._promotion_state()
-    key = frozenset(r for (_c, r) in context)
-    e = st["cache"].get(key)
-    assert e is not None and e["support"] == 3
-    for (_cid, row) in members:
-        assert float(e["member_w"][row]) > 0.0
-
-
-def test_near_context_folds_by_cosine():
-    cs = _cs()
-    (king, k_row), = _mint_order0(cs, 1)
-    ctx = _mint_order0(cs, 3)                          # crown, palace, ruling
-    (c0, r0), (c1, r1), (c2, r2) = ctx
-    _observe(cs, {k_row: 1.0, r0: 0.8, r1: 0.7})
-    _observe(cs, {k_row: 1.0, r0: 0.8, r1: 0.7, r2: 0.6})   # near, not exact
-    cache = cs._promotion_state()["cache"]
-    # The king-focal observation folded into the existing {crown, palace}
-    # entry by cosine (no NEW {crown, palace, ruling} entry); sibling
-    # focal-context entries (crown-focal etc.) are expected and separate.
-    assert cache[frozenset({r0, r1})]["support"] == 2
-    assert frozenset({r0, r1, r2}) not in cache
-
-
-def test_cache_capacity_evicts_weakest():
-    cs = _cs()
-    object.__setattr__(cs, "_promotion_cache_cap", 2)
-    focal = _mint_order0(cs, 1)[0]
+def _fixture(pi=False):
+    cs = _cs(nS=128, order=2)
+    cs.conceptual_pi = pi
+    cs.concept_pool_size = 2
     rows = _mint_order0(cs, 6)
-    # Three disjoint contexts (pairwise cosine 0) -> third insert evicts.
+    return cs, rows
+
+
+def test_first_matching_context_assigns_pair_before_discovery():
+    cs, rows = _fixture()
+    (x, a), (y, b), (_, c), *_ = rows
+    _observe(cs, {a: 1., c: 1.})
+    assert not _pool_rows(cs)
+    _observe(cs, {b: 1., c: 1.})
+    ly = Spaces._concept_alloc_of(cs).layer()
+    assigned = _pool_rows(cs)
+    assert len(assigned) == 1
+    r = assigned[0]
+    assert dict(cs.concept_weights(r)) == {a: 1., b: 1.}
+    assert ly.participation[r].item() == pytest.approx(.1)
+    assert cs.concept_id_at_row(r) is None
+    assert cs.promotion_pass() == []
+    assert cs._context_vector(ly.where, r)[c] > 0
+    assert not hasattr(cs, '_promotion_cache_state')
+
+
+def test_use_discovers_identity_in_place_and_replenishes_pool():
+    cs, rows = _fixture()
+    a, b, c = [r for _, r in rows[:3]]
+    _observe(cs, {a: 1., c: 1.})
+    _observe(cs, {b: 1., c: 1.})
+    r = _pool_rows(cs)[0]
+    cs.truth_criterion = 1.  # truth significance no longer controls discovery
+    for i in range(20):
+        _observe(cs, {a if i % 2 else b: 1., c: 1.})
+    discovered = cs.promotion_pass()
+    assert len(discovered) == 1
+    assert cs.concept_id_at_row(r) == discovered[0]
+    assert set(cs.concept_parts(discovered[0])) == {('sym', rows[0][0]), ('sym', rows[1][0])}
+    start, end = cs.order_slice(1)
+    ly = Spaces._concept_alloc_of(cs).layer()
+    assert int(ly.provisional[start:end].sum()) == cs.concept_pool_size
+    assert not ly.participation.requires_grad
+
+
+def test_matching_alternative_joins_existing_kind_without_context_as_part():
+    cs, rows = _fixture()
+    a, b, c, d = [r for _, r in rows[:4]]
+    _observe(cs, {a: 1., c: 1.})
+    _observe(cs, {b: 1., c: 1.})
+    r = _pool_rows(cs)[0]
+    _observe(cs, {d: 1., c: 1.})
+    assert set(dict(cs.concept_weights(r))) == {a, b, d}
+    assert c not in dict(cs.concept_weights(r))
+
+
+def test_nonrecurring_row_decays_and_is_recycled():
+    cs, rows = _fixture()
+    cs.concept_pool_size = 1
+    a, b, c, d, e, f = [r for _, r in rows]
+    _observe(cs, {a: 1., c: 1.})
+    _observe(cs, {b: 1., c: 1.})
+    old = _pool_rows(cs)[0]
+    for _ in range(5):
+        _observe(cs, {d: 1., f: 1.})
+    _observe(cs, {e: 1., f: 1.})
+    assert _pool_rows(cs) == [old]
+    assert set(dict(cs.concept_weights(old))) == {d, e}
+    assert cs.concept_id_at_row(old) is None
+
+
+def test_switch_on_copresence_needs_every_part():
+    cs, rows = _fixture(pi=True)
+    parts = [r for _, r in rows[:3]]
+    _observe(cs, {r: 1. for r in parts})
+    ly = Spaces._concept_alloc_of(cs).layer()
+    r = _pool_rows(cs)[0]
+    assert set(dict(cs.concept_weights(r, conjunctive=True))) == set(parts)
+    assert cs.concept_weights(r) == []
+    a0 = torch.full((cs._order_caps()[0], 4), -1.)
+    a0[parts, 0] = 1.
     for i in range(3):
-        pair = rows[2 * i:2 * i + 2]
-        _observe(cs, {focal[1]: 1.0,
-                      pair[0][1]: 0.8, pair[1][1]: 0.7})
-    assert len(cs._promotion_state()["cache"]) == 2
+        a0[parts, i + 1] = 1.
+        a0[parts[i], i + 1] = -1.
+    ly.participation[r] = 1.
+    _, result = cs.cs_forward_content(a0, torch.randn(128, 8))
+    torch.testing.assert_close(result[r], torch.tensor([1., -1., -1., -1.]), atol=3e-6, rtol=0)
+
+
+def test_objects_never_acquire_witnessed_kinds():
+    cs, _ = _fixture()
+    word, obj, meta = cs.create_word_object_meta([1], 2, key='cat')
+    ly = Spaces._concept_alloc_of(cs).layer()
+    assert cs._csw_row_of(word) in cs._witnessed_rows()
+    assert cs._csw_row_of(obj) not in cs._witnessed_rows()
+    assert cs._csw_row_of(meta) not in cs._witnessed_rows()
+    a, b = cs._csw_row_of(obj), cs._csw_row_of(word)
+    _observe(cs, {a: 1., b: 1.})
+    assert not bool(ly.witnessed[a])
+
+
+def test_pool_parameter_controls_reservation_and_gate_off_is_inert():
+    cs = _cs(promote=False)
+    cs._ensure_concept_pool()
+    assert not _pool_rows(cs, assigned=False)
+    cs._promotion_enabled = True
+    cs.concept_pool_size = 2
+    cs._ensure_concept_pool()
+    ly = Spaces._concept_alloc_of(cs).layer()
+    for order in range(1, len(cs._order_caps())):
+        start, end = cs.order_slice(order)
+        assert int(ly.provisional[start:end].sum()) == 2
 
 
 def test_nonfinite_acts_fail_loud():
-    cs = _cs()
-    N = int(cs.nVectors)
-    a = torch.zeros(N, 1)
-    a[0, 0] = float("nan")
-    object.__setattr__(cs, "_promo_last_acts", a)
-    object.__setattr__(cs, "_cs_level_rows",
-                       [torch.arange(cs._order_caps()[0]).unsqueeze(-1)])
-    with pytest.raises(RuntimeError, match="NaN/Inf"):
-        cs.promotion_observe()
+    cs, _ = _fixture()
+    with pytest.raises(RuntimeError, match='NaN/Inf'):
+        _observe(cs, {0: float('nan')})
 
 
-# -- the acceptance law (todo.md: accept iff score >= tc AND tc < 1) ----------
-
-def test_tc_one_promotes_nothing():
-    cs = _cs()
-    members = _mint_order0(cs, 3)
-    context = _mint_order0(cs, 2)
-    _royal_rounds(cs, members, context)
-    _mock_promotion_score(cs, 1.0, 1.0, 1.0)           # perfect score
-    cs.truth_criterion = 1.0
-    assert cs.promotion_pass() == []                   # tc=1: NOTHING learned
-
-
-def test_tc_zero_promotes_even_zero_score():
-    cs = _cs()
-    members = _mint_order0(cs, 3)
-    context = _mint_order0(cs, 2)
-    _royal_rounds(cs, members, context)
-    _mock_promotion_score(cs, 0.0, 0.0, 0.0)           # zero score
-    cs.truth_criterion = 0.0
-    assert len(cs.promotion_pass()) == 1               # tc=0: everything
+def test_provisional_parts_receive_gradient_through_use_gate():
+    cs, rows = _fixture()
+    a, b, c = [r for _, r in rows[:3]]
+    _observe(cs, {a: .8, c: .8})
+    _observe(cs, {b: .8, c: .8})
+    r = _pool_rows(cs)[0]
+    ly = Spaces._concept_alloc_of(cs).layer()
+    a0 = torch.zeros(cs._order_caps()[0], 1, requires_grad=True)
+    _, acts = cs.cs_forward_content(a0, torch.randn(128, 8))
+    acts[r].sum().backward()
+    assert ly.values.grad.abs().sum() > 0
+    assert ly.participation.grad is None
 
 
-def test_score_product_gates_promotion():
-    cs = _cs()
-    members = _mint_order0(cs, 3)
-    context = _mint_order0(cs, 2)
-    _royal_rounds(cs, members, context)
-    cs.truth_criterion = 0.5
-    _mock_promotion_score(cs, 0.9, 0.9, 0.5)           # 0.405 < 0.5
-    assert cs.promotion_pass() == []
-    _mock_promotion_score(cs, 0.9, 0.9, 0.9)           # 0.729 >= 0.5
-    assert len(cs.promotion_pass()) == 1
+def test_pool_checkpoint_preserves_both_parts_where_use_and_next_assignment():
+    cs, rows = _fixture(pi=True)
+    _observe(cs, {r: 1. for _, r in rows[:3]})
+    from test_structural_checkpoint import _model_with
+    from types import SimpleNamespace
+    model = _model_with(cs, SimpleNamespace())
+    saved = model._collect_structural_extras()
+    restored, _ = _fixture(pi=True)
+    target = _model_with(restored, SimpleNamespace())
+    target._restore_structural_extras(saved)
+    before = Spaces._concept_alloc_of(cs).layer()
+    after = Spaces._concept_alloc_of(restored).layer()
+    assert before._tensor_rows == after._tensor_rows
+    torch.testing.assert_close(before.participation, after.participation)
+    torch.testing.assert_close(before.conjunctive.values, after.conjunctive.values)
+    torch.testing.assert_close(before.where.values, after.where.values)
+    for space in (cs, restored):
+        _observe(space, {r: 1. for _, r in rows[:3]})
+    torch.testing.assert_close(before.participation, after.participation)
 
 
-def test_below_min_support_never_scores():
-    cs = _cs()
-    members = _mint_order0(cs, 3)
-    context = _mint_order0(cs, 2)
-    # One round = support 1 per member entry... the shared-context entry
-    # sees each member once -> support 3 with THREE members; drop to a
-    # single member observation instead.
-    _observe(cs, {members[0][1]: 1.0,
-                  context[0][1]: 0.8, context[1][1]: 0.7})
-    _mock_promotion_score(cs, 1.0, 1.0, 1.0)
-    cs.truth_criterion = 0.0
-    assert cs.promotion_pass() == []                   # support 1 < 3
+def test_registered_pool_checkpoint_loads_before_parameter_shape_validation(tmp_path):
+    from test_structural_checkpoint import _model_with
+    from types import SimpleNamespace
+    cs, rows = _fixture(pi=True)
+    _observe(cs, {r: 1. for _, r in rows[:3]})
+    model = _model_with(cs, SimpleNamespace())
+    model.conceptualSpaces = torch.nn.ModuleList([cs])
+    model.conceptualSpace = cs
+    path = tmp_path / 'pool.pt'
+    model.save_weights(path)
+    restored, _ = _fixture(pi=True)
+    target = _model_with(restored, SimpleNamespace())
+    target.conceptualSpaces = torch.nn.ModuleList([restored])
+    target.conceptualSpace = restored
+    assert target.load_weights(path, require_match=True)
+    before = Spaces._concept_alloc_of(cs).layer()
+    after = Spaces._concept_alloc_of(restored).layer()
+    torch.testing.assert_close(before.participation, after.participation)
+    torch.testing.assert_close(before.conjunctive.values, after.conjunctive.values)
 
 
-# -- commit: mint, edges, intent, reuse ---------------------------------------
-
-def _promote_royalty(cs, members=None, context=None):
-    members = members if members is not None else _mint_order0(cs, 3)
-    context = context if context is not None else _mint_order0(cs, 2)
-    _royal_rounds(cs, members, context)
-    _mock_promotion_score(cs, 1.0, 1.0, 1.0)
-    cs.truth_criterion = 0.5
-    minted = cs.promotion_pass()
-    assert len(minted) == 1
-    return minted[0], members, context
-
-
-def test_promotion_mints_raised_whole_with_member_edges():
-    cs = _cs()
-    H, members, _context = _promote_royalty(cs)
-    alloc = Spaces._concept_alloc_of(cs)
-    assert H in alloc.raised
-    parts = set(alloc.refs(H, "part"))
-    for (cid, _row) in members:
-        assert ("sym", int(cid)) in parts
-    # Member edge values initialize from the NORMALIZED EWMA weights:
-    # last-observed member carries weight 1.0, earlier ones decayed by beta.
-    h_row = cs._csw_row_of(H)
-    assert h_row is not None
-    got = dict(cs.concept_weights(h_row))
-    beta = float(cs._promotion_ewma)
-    for age, (cid, row) in enumerate(reversed(members)):
-        assert got[row] == pytest.approx(beta ** age, rel=1e-4)
-
-
-def test_promotion_commits_weighted_intent_parts():
-    cs = _cs()
-    H, members, context = _promote_royalty(cs)
-    alloc = Spaces._concept_alloc_of(cs)
-    parts = set(alloc.refs(H, "part"))
-    h_row = cs._csw_row_of(H)
-    got = dict(cs.concept_weights(h_row))
-    # crown (0.8) and palace (0.7) commit as sym_part intent, weight
-    # normalized to the max context weight.
-    (crown, c_row), (palace, p_row) = context
-    assert ("sym", int(crown)) in parts
-    assert ("sym", int(palace)) in parts
-    assert got[c_row] == pytest.approx(1.0, rel=1e-4)
-    assert got[p_row] == pytest.approx(0.7 / 0.8, rel=1e-4)
-
-
-def test_resupport_strengthens_instead_of_reminting():
-    cs = _cs()
-    H, members, context = _promote_royalty(cs)
-    h_row = cs._csw_row_of(H)
-    before = dict(cs.concept_weights(h_row))
-    _royal_rounds(cs, members, context)                # fresh support
-    assert cs.promotion_pass() == []                   # no new mint
-    e = cs._promotion_state()["cache"][
-        frozenset(r for (_c, r) in context)]
-    assert e["committed"] == H
-    after = dict(cs.concept_weights(h_row))
-    for col, v in before.items():
-        assert after[col] == pytest.approx(min(4.0, v + 0.1), rel=1e-4)
-
-
-def test_promotion_is_idempotent_per_member_set():
-    cs = _cs()
-    H, members, _context = _promote_royalty(cs)
-    key = ("raise", frozenset(("sym", int(c)) for (c, _r) in members))
-    alloc = Spaces._concept_alloc_of(cs)
-    assert alloc.relate_idx.get(key) == H
-
-
-# -- pyramid coupling (the plan's ablation criterion) --------------------------
-
-def test_promoted_whole_enters_pyramid_and_ablates():
-    cs = _cs()
-    cs.eval()
-    H, members, _context = _promote_royalty(cs)
-    h_row = int(cs._csw_row_of(H))
-    o1_start, o1_end = cs.order_slice(1)
-    assert o1_start <= h_row < o1_end                  # order-1 block row
-    caps0 = cs._order_caps()[0]
-    a_0 = torch.zeros(caps0, 1)
-    for (_cid, row) in members:
-        a_0[row, 0] = 1.0
-    W = cs.similarity_codebook.getW()
-    _content, acts = cs.cs_forward_content(a_0, W)
-    live = float(acts[h_row, 0].abs())
-    assert live > 0.0                                  # composed from members
-    # Ablation: disabling the whole's relation edges must change the
-    # prediction-relevant activation (plan sec 6: functional connection).
-    ly = Spaces._concept_alloc_of(cs).layer(0)
-    cols = [c for (c, _w) in cs.concept_weights(h_row)]
-    ly.remove_edges([(h_row, c if c != int(cs.nVectors)
-                      else cs._bias_col()) for c in cols])
-    _content2, acts2 = cs.cs_forward_content(a_0, W)
-    assert float(acts2[h_row, 0].abs()) == pytest.approx(0.0, abs=1e-7)
-    assert float(acts2[h_row, 0].abs()) < live
-
-
-# -- prune / decay / retire ----------------------------------------------------
-
-def test_stale_weak_candidate_is_dropped():
-    cs = _cs()
-    focal = _mint_order0(cs, 1)[0]
-    ctx = _mint_order0(cs, 2)
-    _observe(cs, {focal[1]: 1.0, ctx[0][1]: 0.8, ctx[1][1]: 0.7})
-    st = cs._promotion_state()
-    assert len(st["cache"]) == 3                       # one entry per focal
-    st["obs"] += cs._promotion_stale_age + 1           # age them out
-    cs.promotion_pass()
-    assert len(st["cache"]) == 0
-
-
-def test_unsupported_whole_decays_and_retires():
-    cs = _cs()
-    H, _members, _context = _promote_royalty(cs)
-    object.__setattr__(cs, "_promotion_decay", 0.0)    # one-pass zeroing
-    st = cs._promotion_state()
-    st["obs"] += cs._promotion_stale_age + 1
-    cs.promotion_pass()
-    alloc = Spaces._concept_alloc_of(cs)
-    assert H in alloc.retired                          # decayed -> retired
-    assert alloc.records(H) == []
-    assert len(st["cache"]) == 0
-
-
-# -- the item-30 taper fix for _set_concept_edge_value -------------------------
-
-def test_set_concept_edge_value_reaches_per_order_blocks():
-    cs = _cs()
-    (a, a_row), (b, b_row) = _mint_order0(cs, 2)
-    H = cs.synthesize_higher_order((("sym", a), ("sym", b)))
-    h_row = cs._csw_row_of(H)
-    assert dict(cs.concept_weights(h_row))[a_row] == pytest.approx(1.0)
-    # Pre-fix this silently no-oped: the concept row resolved via the
-    # retired ("pool", cid) namespace, absent on rev-2 per-order blocks.
-    cs._set_concept_edge_value(H, a, "sym_part", 0.25)
-    assert dict(cs.concept_weights(h_row))[a_row] == pytest.approx(0.25)
+@pytest.mark.parametrize('pi', [False, True])
+def test_row_pool_prunes_weak_edges_when_use_discovers_it(pi):
+    cs, rows = _fixture()
+    a, b, c = [r for _, r in rows[:3]]
+    _observe(cs, {a: 1., c: 1.})
+    _observe(cs, {b: 1., c: 1.})
+    r = _pool_rows(cs)[0]
+    ly = Spaces._concept_alloc_of(cs).layer()
+    cs.add_concept_edge(r, rows[3][1], weight=.0001)
+    frozen = Spaces._concept_alloc_of(cs).new_concept()
+    frozen_row = cs._csw_concept_row(1, frozen)
+    cs.add_concept_edge(frozen_row, a, weight=.4)
+    if pi:
+        cs.add_concept_edge(r, rows[4][1], weight=.0001, conjunctive=True)
+        cs.add_concept_edge(frozen_row, b, weight=.4, conjunctive=True)
+    cs.conceptual_pi = pi
+    cs.freeze_concept(frozen)
+    ly.participation[r] = .9
+    assert cs.promotion_pass()
+    assert rows[3][1] not in dict(cs.concept_weights(r))
+    if pi:
+        assert rows[4][1] not in dict(cs.concept_weights(r, conjunctive=True))
+    _, activation = cs.cs_forward_content(
+        torch.full((cs._order_caps()[0], 1), -.5), torch.zeros(128, _D))
+    activation[frozen_row].sum().backward()
+    assert ly.values.grad[ly._index[(frozen_row, a)]] == 0
+    if pi:
+        assert ly.conjunctive.values.grad[ly.conjunctive._index[(frozen_row, b)]] == 0

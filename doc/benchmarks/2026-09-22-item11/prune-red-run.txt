@@ -1,0 +1,2 @@
+item11-prune-red
+test_failure: 2/2 completed; exit 1

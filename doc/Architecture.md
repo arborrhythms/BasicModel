@@ -1684,8 +1684,8 @@ order").
   is evidence of a word's part of speech or sense, according to the grain
   of the context; it is never evidence of an object's kind.
 
-**The computation.** Today every rung of the concept pyramid is one
-additive hop, `tanh(W[a|1])`; the typed per-order families that came before
+**The computation.** Before the item 11 landing, every rung of the concept
+pyramid was one additive hop, `tanh(W[a|1])`; the typed per-order families that came before
 it were collapsed into that one untyped layer on 2026-07-03. Under the
 switch, on presence `u = (a + 1)/2` with signed exponents and no
 normalisation — each factor lies in `[0, 1]`, so the result does — a
@@ -1809,7 +1809,7 @@ That is the form that keeps parthood.
    normalised by their sum, a present whole gives each disjunctive part
    `1 − (1 − y)^(1/n)` under equal weights — the presence that, shared
    equally, would produce `y` — the balanced split of the grammar's
-   generate. This is the class / conjunction distinction of the
+   generate. This is the union / conjunction distinction of the
    accessible-mind spec, read backwards.
 
 6. **A pool of unminted concepts, learning all the time, with a gate on
@@ -1819,7 +1819,7 @@ That is the form that keeps parthood.
    effect. I would prefer to have some number of 'unminted' concepts
    learning at any given time, with a gate that allows them to participate
    as concepts… almost like unassigned vectors in a VQ pool"). Concrete
-   form, awaiting Alec's confirmation:
+   form, settled by the September 22 handoff:
 
    - **What exists.** Attention promotion already keeps a pool of
      uncommitted candidates on the host: each entry has EWMA member
@@ -1903,6 +1903,7 @@ That is the form that keeps parthood.
      paradigm as the domain of exclusion; testimony for the unwitnessed — is
      in [Philosophy](Philosophy.md#where-is-context-particulars-universals-and-the-two-axes-2026-09-22).
 
+   - **Discovery.** At `g ≥ θ_mint`, the
      concept is discovered: it gets its symbol and its code, LTM may
      reference it, and it is no longer recyclable. Below `θ_recycle`, the
      least-used provisional concept is recycled when a new set needs one.
@@ -1923,6 +1924,15 @@ That is the form that keeps parthood.
      concept is a union of sufficient parts; on, co-present sets also mint
      wholes of necessary parts, and the two stages of the computation both
      run.
+
+**Implementation and evidence (September 22).** The
+[landing record](benchmarks/2026-09-22-item11/README.md) records the union
+replacement, both sparse part matrices, provisional rows and context weights,
+transpose, checkpoint and optimizer ownership. The default remains sigma
+alone; `conceptualPi` enables both passes. Rung activation and signed XOR
+representation pass their mechanism checks. Zero-initialized, unseeded XOR
+learning at four and eight conjunction concepts remains a null. The countdown
+retains that learning gate; the settled design above is unchanged.
 
 **Recommendation.** Evaluate behind a `normalize` mode, turned on
 selectively. First the two XOR gates, in conceptual space with the monotonic

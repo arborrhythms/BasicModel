@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import os
 import sys
+import tempfile
 import unittest
 import warnings
 
@@ -231,9 +232,11 @@ class TestTrustStamp(unittest.TestCase):
             "<symbolicOrder>0</symbolicOrder>",
             "<symbolicOrder>0</symbolicOrder>\n    "
             "<trust>0.25</trust>")
-        tmp = os.path.join(_DATA_DIR, "_tmp_trust_scale.xml")
-        with open(tmp, "w", encoding="utf-8") as fh:
+        # Scratch configurations must not enter the source snapshot.
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".xml",
+                                         encoding="utf-8", delete=False) as fh:
             fh.write(on)
+            tmp = fh.name
         try:
             m = _make_radix_model(config=tmp)
             self.assertAlmostEqual(m.trust, 0.25, places=6)

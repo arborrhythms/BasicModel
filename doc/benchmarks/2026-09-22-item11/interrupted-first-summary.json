@@ -1,0 +1,31 @@
+{
+  "exit_code": 130,
+  "reason": "interrupted",
+  "elapsed_seconds": 175.60124824999366,
+  "peak_aggregate_memory_bytes": 5410666440,
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 21474836480,
+    "aggregate_memory_bytes": 21474836480,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 10,
+    "worker_seconds": 1800,
+    "suite_seconds": 10800,
+    "batch_size": 8,
+    "max_files": 1
+  },
+  "run": "item11-integration",
+  "selected": 4709,
+  "completed": 751,
+  "outcomes": {
+    "passed": 706,
+    "skipped": 45
+  },
+  "source_files": 631,
+  "source_sha256": "04d6cb7a1358dab1a2d553421792bffd0d61654c7e56bec42587b4c74e076b4c",
+  "phase_reports": {
+    "passed": 706,
+    "skipped": 45
+  },
+  "failures": []
+}

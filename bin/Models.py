@@ -4629,7 +4629,7 @@ class BaseModel(Mereology, nn.Module):
             "_autobound_percept_ids", "_recognized_words",
             "_words_concept_id", "_percept_word_concept",
             "_object_word_concept", "_priming_bridge", "_frozen_concepts",
-            "_frozen_named", "_promotion_cache_state",
+            "_frozen_named",
             "_concept_admission_drops",
             # Fold-ladder plan (contracts 4, 6, 7): utility counts, phrase
             # hits / admissions / rows / gains ride the checkpoint.
@@ -4682,6 +4682,7 @@ class BaseModel(Mereology, nn.Module):
                             else _checkpoint_host_copy(values)),
                         "values_requires_grad": bool(
                             values is not None and values.requires_grad),
+                        "parts": layer.parts_extras(),
                     }
                 a["layers"] = layers
                 entry["allocator"] = a
@@ -4877,6 +4878,9 @@ class BaseModel(Mereology, nn.Module):
                 (r, c): i for i, (r, c) in enumerate(zip(rows, cols))
             }
             layer._dev_cache = None
+            layer._edge_ids = list(range(len(rows)))
+            layer._next_edge_id = len(rows)
+            layer._parameter_edge_ids = tuple(layer._edge_ids)
             if values is None:
                 layer.values = None
             else:
@@ -4889,6 +4893,9 @@ class BaseModel(Mereology, nn.Module):
                     requires_grad=bool(blob.get("values_requires_grad", True)),
                 )
 
+            layer.load_parts_extras(blob.get("parts"),
+                                    old_size=saved_n_output if square_expansion else None)
+
         object.__setattr__(cs, "_word_obj_meta", alloc.word_obj_meta)
         object.__setattr__(cs, "_joint_concepts", alloc.joint)
         register = getattr(cs, "_sparse_families", None)
@@ -4896,7 +4903,7 @@ class BaseModel(Mereology, nn.Module):
             register(0)
         object.__setattr__(
             cs, "_csw_registered_count",
-            sum(int(layer.nnz) for layer in alloc._layers.values()))
+            sum(int(m.nnz) for layer in alloc._layers.values() for m in layer.part_matrices()))
 
     def _restore_structural_extras(
             self, extras, *, legacy_whole_structure=None):
@@ -4921,6 +4928,8 @@ class BaseModel(Mereology, nn.Module):
             if isinstance(alloc_blob, dict):
                 self._restore_allocator_extras(cs, alloc_blob)
             for name, value in (entry.get("attributes") or {}).items():
+                if name == "_promotion_cache_state":
+                    raise ValueError("host promotion candidates require an explicit row-pool migration")
                 object.__setattr__(cs, str(name), _checkpoint_host_copy(value))
             conceptual_blob = entry.get("conceptual_structure")
             if (isinstance(conceptual_blob, dict)
@@ -5175,6 +5184,17 @@ class BaseModel(Mereology, nn.Module):
                     f"reconstructInLoop: dropped {len(_student)} detached "
                     "reverse-student keys from the checkpoint (declared "
                     "migration)")
+        # The row pool registers trainable parts for optimizer names. Restore
+        # its topology before auditing state_dict shapes, including on a
+        # fresh model that has not yet observed a conceptual field.
+        if isinstance(structural_extras, dict):
+            spaces = list(getattr(self, 'conceptualSpaces', ()) or ())
+            for raw_index, entry in structural_extras.get('conceptual_spaces', {}).items():
+                allocator = entry.get('allocator')
+                index = int(raw_index)
+                if allocator is not None and 0 <= index < len(spaces):
+                    self._restore_allocator_extras(spaces[index], allocator)
+
         # Pre-check for shape mismatches before attempting to load.
         # This produces an actionable diagnostic instead of a raw PyTorch error.
         model_state = dict(self.state_dict())

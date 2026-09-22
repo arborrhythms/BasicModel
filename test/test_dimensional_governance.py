@@ -1,7 +1,7 @@
 """Dimensional-governance gates (doc/specs/2026-06-05-dimensional-governance.md)."""
 
 import pytest
-import os, sys, warnings
+import os, sys, tempfile, warnings
 os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
 os.environ.setdefault("BASICMODEL_DEVICE", "cpu")
 os.environ.setdefault("MODEL_COMPILE", "eager")
@@ -125,15 +125,18 @@ _RUN_SLOW = os.getenv("RUN_SLOW") == "1"
 
 
 def _build_from_text(xml_text, stem):
-    """Write ``xml_text`` to a temp config under ``data/`` (so relative model.xsd
-    / sibling lookups resolve) and build it. Returns the model; raises whatever
-    from_config raises. Cleans up the temp file."""
+    """Build a scratch config outside the validated source tree.
+
+    Schema lookup falls back to the canonical data/model.xsd; defaults use
+    its absolute sibling path. Cleanup follows both successful and failed builds.
+    """
     import Models, Language
     from util import init_config
     data_dir = os.path.join(os.path.dirname(_BIN), "data")
-    p = os.path.join(data_dir, f"_tmp_{stem}.xml")
-    with open(p, "w") as fh:
+    with tempfile.NamedTemporaryFile(mode="w", prefix=f"{stem}-", suffix=".xml",
+                                     delete=False) as fh:
         fh.write(xml_text)
+        p = fh.name
     try:
         init_config(path=p, defaults_path=os.path.join(data_dir, "model.xml"))
         Language.TheGrammar._configured = False
@@ -149,6 +152,27 @@ def _build_from_text(xml_text, stem):
 def _ref_text(cfg_name):
     with open(os.path.join(os.path.dirname(_BIN), "data", cfg_name)) as fh:
         return fh.read()
+
+
+def test_temporary_config_preserves_validated_source(monkeypatch):
+    from pathlib import Path
+    import Models, util
+    from bounded_tests import source_snapshot
+
+    root = Path(_BIN).parent
+    before = source_snapshot(root)
+    seen = []
+
+    def build(path):
+        seen.append(Path(path))
+        assert seen[-1].is_file()
+        assert source_snapshot(root) == before
+        return object(), None
+
+    monkeypatch.setattr(util, 'init_config', lambda **kwargs: None)
+    monkeypatch.setattr(Models.BasicModel, 'from_config', staticmethod(build))
+    _build_from_text('<model/>', 'source_integrity')
+    assert len(seen) == 1 and not seen[0].exists()
 
 
 def test_cs_ws_recurrent_input_mismatch_raises():

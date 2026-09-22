@@ -1,0 +1,48 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "elapsed_seconds": 16.82992591598304,
+  "peak_aggregate_memory_bytes": 437699928,
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 30064771072,
+    "aggregate_memory_bytes": 30064771072,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 180.0,
+    "suite_seconds": 600.0,
+    "batch_size": 1,
+    "max_files": 1
+  },
+  "run": "item11-publish-xor",
+  "selected": 3,
+  "completed": 3,
+  "outcomes": {
+    "failed": 2,
+    "passed": 1
+  },
+  "source_files": 631,
+  "source_sha256": "b289442fecf0af783383cebe5560e6d26d22f803ff7f078eca45034f8e478596",
+  "phase_reports": {
+    "failed": 2,
+    "passed": 1
+  },
+  "failures": [
+    {
+      "nodeid": "test/test_concept_sigma_pi.py::test_unseeded_xor_learns_through_concept_pyramid[4]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.42925679200561717,
+      "message": "test/test_concept_sigma_pi.py:161: in test_unseeded_xor_learns_through_concept_pyramid\n    assert mse < .1, f'XOR learning null with {width} conjunctions: MSE={mse:.9f}'\nE   AssertionError: XOR learning null with 4 conjunctions: MSE=0.500000000\nE   assert 0.5 < 0.1",
+      "stdout": "{'conjunctions': 4, 'updates': 900, 'mse': 0.5, 'outputs': [0.0, 0.0, 0.0, 0.0]}\n"
+    },
+    {
+      "nodeid": "test/test_concept_sigma_pi.py::test_unseeded_xor_learns_through_concept_pyramid[8]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.46996962500270456,
+      "message": "test/test_concept_sigma_pi.py:161: in test_unseeded_xor_learns_through_concept_pyramid\n    assert mse < .1, f'XOR learning null with {width} conjunctions: MSE={mse:.9f}'\nE   AssertionError: XOR learning null with 8 conjunctions: MSE=0.500000000\nE   assert 0.5 < 0.1",
+      "stdout": "{'conjunctions': 8, 'updates': 900, 'mse': 0.5, 'outputs': [1.0, 1.0, 1.0, 1.0]}\n"
+    }
+  ]
+}

@@ -15593,12 +15593,33 @@ class ConceptualSpace(Space):
         self.truth_criterion = float(
             TheXMLConfig.space("ConceptualSpace", "truthCriterion", 1.0))
 
-        # Attention-to-relation promotion gate (2026-07-12 execution of the
-        # 2026-07-04 plan). Default false -> byte-identical; the promotion
-        # bar itself is the same truth_criterion law as sentence learning.
-        self._promotion_enabled = bool(
-            TheXMLConfig.space("ConceptualSpace", "attentionPromotion",
-                               False))
+        # Parts use presence charts. Discovery is a finite pool of rows;
+        # its gate is measured use, independent of sentence truth learning.
+        self.conceptual_pi = bool(TheXMLConfig.space(
+            "ConceptualSpace", "conceptualPi", False))
+        self._promotion_enabled = bool(TheXMLConfig.space(
+            "ConceptualSpace", "attentionPromotion", False))
+        self.concept_pool_size = int(TheXMLConfig.space(
+            "ConceptualSpace", "conceptPoolSize", 1))
+        self.concept_use_ewma = float(TheXMLConfig.space(
+            "ConceptualSpace", "conceptUseEWMA", .9))
+        self.concept_use_floor = float(TheXMLConfig.space(
+            "ConceptualSpace", "conceptUseFloor", .5))
+        self.concept_mint_threshold = float(TheXMLConfig.space(
+            "ConceptualSpace", "conceptMintThreshold", .8))
+        self.concept_recycle_threshold = float(TheXMLConfig.space(
+            "ConceptualSpace", "conceptRecycleThreshold", .2))
+        self.concept_part_floor = float(TheXMLConfig.space(
+            "ConceptualSpace", "conceptPartFloor", .001))
+        self.concept_match_cos = float(TheXMLConfig.space(
+            "ConceptualSpace", "conceptMatchCos", .8))
+        if not (self.concept_pool_size >= 1
+                and 0 <= self.concept_use_ewma < 1
+                and 0 < self.concept_use_floor < 1
+                and 0 <= self.concept_recycle_threshold < self.concept_mint_threshold <= 1
+                and 0 <= self.concept_part_floor < 1
+                and 0 < self.concept_match_cos <= 1):
+            raise ValueError("invalid conceptual pool parameters")
 
         # Task 3 (STM serial/parallel modes): explicit predict-then-
         # perceive state. ``forward`` now runs the intra-sentence
@@ -18192,23 +18213,8 @@ class ConceptualSpace(Space):
         return (int(getattr(self, "_symbolic_order", 0) or 0) > 0
                 and not bool(getattr(self, "_serial", True)))
 
-    # ====================================================================
-    # The shared untyped square concept store (v3, iterated symbolic loop)
-    #
-    # A concept is a high-dimensional atom stored on ``CS.subspace.what``
-    # (ConceptDim). Rows split two-block (_order_caps): the order-0 snap
-    # block [0, n_snap) reserves codebook rows (no in-edges); the relation
-    # pool [n_snap, N) holds every composition as UNTYPED edges on ONE
-    # shared square [N x N+1] ConceptualAttentionLayer (col N = the EVERYTHING
-    # bias). The forward is the iterated wave + dictionary decoder:
-    #
-    #     a^{i+1}         = tanh(W [a^i | 1] + s)     (s = padded snap a_0)
-    #     concept_code[c] = a^K[c] * what[c]              (signed unit atom)
-    #
-    # so percepts (PerceptDim) and concepts (ConceptDim) never share a
-    # vector space -- the matrix lives in index/activation space.
-    # (doc/plans/2026-07-02-iterated-symbolic-loop.md)
-    # ====================================================================
+    # The concept inventory is shared by W_sigma, W_pi and witnessed context.
+    # Edges run between row identities; dictionary vectors stay distributed.
 
     def _order_caps(self):
         """Cached per-order row caps of THIS CS's ``nVectors`` inventory.
@@ -18260,7 +18266,7 @@ class ConceptualSpace(Space):
         alloc = getattr(self, "_concept_allocator", None)
         if alloc is None:
             return None
-        layers = list(alloc._layers.values())
+        layers = [matrix for store in alloc._layers.values() for matrix in store.part_matrices()]
         nnz = sum(int(ly.nnz) for ly in layers)
         if nnz == 0:
             return None
@@ -18304,13 +18310,7 @@ class ConceptualSpace(Space):
         return start, start + caps[o]
 
     def _sparse_families(self, order):
-        """Registration shim over THE shared untyped square store (v3):
-        every ``order`` returns the same ``(None, alloc.layer(0))`` -- the
-        percept family is RETIRED (P2; ``a_0`` comes from the order-0
-        snap) and the pair shape is kept for back-compat. LOAD-BEARING
-        side effect: registers the store in ``_sparse_fam`` so
-        ``getParameters`` / ``_sparse_family_nnz`` / the optimizer
-        rebuild see the learnable values."""
+        """Register both part matrices over the shared concept inventory."""
         fams = getattr(self, "_sparse_fam", None)
         if fams is None:
             fams = {}
@@ -18318,19 +18318,19 @@ class ConceptualSpace(Space):
         o = int(order)
         got = fams.get(o)
         if got is None:
-            got = (None, _concept_alloc_of(self).layer(0))
+            store = _concept_alloc_of(self).layer(0)
+            self.add_module("concept_parts_layer", store)
+            got = (store.conjunctive, store)
             fams[o] = got
         return got
 
-    def add_concept_edge(self, row, col, weight=1.0):
-        """Append an UNTYPED sparse edge in GLOBAL coordinates (v3):
-        ``row <- weight * col`` on THE shared square store, where rows and
-        cols index the single stacked concept inventory and ``col ==
-        nVectors`` is the trailing bias column (the EVERYTHING pole). A
-        SNAP-region row accepts NO edges (order-0 concepts are codebook
-        rows, not compositions -- fail loud); a self-edge raises in the
-        layer (the Quine atom). IDEMPOTENT per edge; grows the learnable
-        values host-side."""
+    def add_concept_edge(self, row, col, weight=0.0, *, conjunctive=False):
+        """Add a signed exponent to W_pi or W_sigma, zero without evidence.
+
+        Concepts share one row inventory. Conjunctive parts read lower
+        orders; a disjunctive part at the same order reads its conjunction.
+        The trailing column is the standing EVERYTHING presence.
+        """
         n_snap = self._order_caps()[0]
         r = int(row)
         if r < n_snap:
@@ -18342,24 +18342,28 @@ class ConceptualSpace(Space):
         if getattr(self, "_frozen_concepts", None) and r in self._frozen_rows():
             return None
         # _sparse_families(0) registers the store in _sparse_fam (params/nnz)
-        _percept, ly = self._sparse_families(0)
+        pi, sigma = self._sparse_families(0)
+        ly = pi if conjunctive else sigma
         # Global bias convention col == nVectors; translate to the store's
         # own bias column (nOutput -- the taper span).
         _c = int(col)
         if _c == int(self.nVectors):
             _c = self._bias_col()
+        self._maybe_rebuild_optimizer_for_csw()
         out = ly.add_edge(r, _c, weight=weight)
         # Values may have regrown: re-arm the frozen-weights grad hook.
         if getattr(self, "_frozen_concepts", None):
             self._refresh_frozen_values_hook()
         return out
 
-    def concept_weights(self, row):
+    def concept_weights(self, row, *, conjunctive=False):
         """The ``(col, weight)`` edges of GLOBAL concept ``row`` on the
         shared untyped store (cols are global rows; ``nVectors`` is the
         bias column), sorted by col. Empty when none."""
         alloc = getattr(self, "_concept_allocator", None)
         ly = None if alloc is None else alloc._layers.get(0)
+        if ly is not None and conjunctive:
+            ly = ly.conjunctive
         if ly is None or ly.values is None:
             return []
         r = int(row)
@@ -18383,12 +18387,11 @@ class ConceptualSpace(Space):
         return total
 
     def getParameters(self):
-        """Optimizable parameters: the inherited set PLUS the sparse family
-        values (created host-side as edges are added, so the optimizer
-        trains them; v3 dedups by identity -- every order shares ONE layer).
-        With no edges this is exactly the inherited set -> byte-identical
-        optimizer state. (The model rebuilds its optimizer when new weights
-        appear; see :meth:`_maybe_rebuild_optimizer_for_csw`.)"""
+        """Inherited parameters plus the two shared sparse part matrices.
+
+        Deduplicate their values by identity across orders. Edge growth
+        migrates optimizer moments without resetting unrelated parameters.
+        """
         base = list(self.params)
         seen = set()
         for (p, s) in (getattr(self, "_sparse_fam", None) or {}).values():
@@ -18400,20 +18403,20 @@ class ConceptualSpace(Space):
         return base
 
     def _maybe_rebuild_optimizer_for_csw(self):
-        """Ask the model to rebuild its optimizer when the sparse edge count
-        changed, so fresh family values become trainable (mirrors the
-        codebook-growth rebuild). Debounced; a no-op without a model back-ref
-        / live optimizer."""
+        """Attach live part parameters without resetting other Adam state."""
         model = getattr(self, "_model", None)
-        if model is None or getattr(model, "_optimizer", None) is None:
+        optimizer = getattr(model, "_optimizer", None)
+        if optimizer is None:
             return
-        n = self._sparse_family_nnz()
-        if n != int(getattr(self, "_csw_registered_count", -1)):
-            object.__setattr__(self, "_csw_registered_count", n)
-            try:
-                model.rebuild_optimizer()
-            except Exception:
-                pass
+        from Layers import RadixLayer
+        leaves = list(RadixLayer._optimizer_leaves(optimizer))
+        owned = {id(p) for leaf in leaves for g in leaf.param_groups for p in g['params']}
+        for matrix in _concept_alloc_of(self).layer(0).part_matrices():
+            matrix._optimizer = optimizer
+            if matrix.values is not None and id(matrix.values) not in owned:
+                leaves[0].add_param_group({'params': [matrix.values]})
+                owned.add(id(matrix.values))
+        object.__setattr__(self, "_csw_registered_count", self._sparse_family_nnz())
 
     @staticmethod
     def source_code_activation(event, codebook_W, nonneg=True, normalize=False):
@@ -18536,89 +18539,121 @@ class ConceptualSpace(Space):
         penalty = getattr(layer, "definition_sparsity_penalty", None)
         if penalty is None:
             return None
-        total = penalty(free_size=free_size)
+        penalties = [penalty.__func__(m, free_size=free_size) for m in layer.part_matrices()]
+        live = [p for p in penalties if p is not None]
+        total = sum(live) if live else None
         if total is None:
             return None
         return lam * total
 
-    def cs_forward_content(self, a_0, dictionary):
-        """Feedforward sigma-pyramid over the single untyped layer
-        (dual-towers rev 2, 2026-07-12; supersedes the v3 iterated wave):
-        rung k computes NEW rows via ``order_slice(k)`` gathered under the
-        per-batch top-K ``_order_caps()`` taper -- one tanh(W [a | 1]) hop
-        per rung, no fixed point, no re-injection; K = symbolicOrder bounds
-        the rung count. Optional ``_relevance_priority`` boosts candidate
-        rank. Fixed-K unroll, no data-dependent control flow. Returns
-        ``(content [B, N, ConceptDim], a [N, B])`` -- the decoded content
-        (activation scaling the signed unit atom; consumed by
-        losses/the SS leg ONLY, never substituted -- P3) and the final
-        signed activations (the SS feed)."""
-        N = int(self.nVectors)
-        B = int(a_0.shape[-1])
-        caps = self._order_caps()
-        K = int(getattr(self, "_symbolic_order", 0) or 0)
+    def _concept_rung_presence(self, u, admitted, start, end):
+        """Two scatter passes over parts, with same-order pi feeding sigma."""
         ly = _concept_alloc_of(self).layer(0)
-        # Concept atoms are stored directly as signed unit directions.
-        # ``a`` is tanh-bounded below, so a*atom is intrinsically in [-1,1]
-        # without a squashing seam or unstable inverse. Post-step row-local
-        # projection maintains this dictionary contract.
-        atoms = dictionary                           # [N, CDim], signed unit
-        # Feedforward sigma-pyramid (dual-towers rev 2): a^0 = the SIGNED
-        # order-0 tiles padded to the inventory; each rung k is ONE
-        # feedforward hop tanh(W [a|1]) gathered to order-k rows with a
-        # per-batch top-K taper (caps). No fixed point, no re-injection.
-        a = torch.cat([a_0, a_0.new_zeros((N - int(a_0.shape[0]), B))], dim=0)
+        S = ly.nOutput
+        x = torch.cat([u[:S], u.new_ones((1, u.shape[-1]))])
+        allowed = torch.cat([admitted[:S], admitted.new_ones((1, u.shape[-1]))])
+        own = None
+        if self.conceptual_pi:
+            own = ly.conjunctive.fold_presence(
+                x * allowed, conjunctive=True, start=start, end=end)
+            x = x.index_copy(0, torch.arange(start, end, device=x.device), own)
+            # Same-order sources are conjunctions, including their gate.
+            gates = ly.participation[start:end].clone().to(x.device)[:, None]
+            x = x.index_copy(0, torch.arange(start, end, device=x.device), own * gates)
+            has_pi = x.new_zeros(end - start)
+            rr, _ = ly.conjunctive._indices(x.device)
+            rr = rr[(rr >= start) & (rr < end)] - start
+            has_pi = has_pi.index_add(0, rr, torch.ones_like(rr, dtype=x.dtype))
+            allowed = allowed.index_copy(0, torch.arange(start, end, device=x.device),
+                                         (has_pi > 0).to(x.dtype)[:, None].expand(-1, x.shape[-1]))
+        return ly.fold_presence(x, start=start, end=end, admitted=allowed, own=own)
+
+    def cs_forward_content(self, a_0, dictionary):
+        """Union over parts per rung; optional conjunction pass precedes it.
+
+        Presence travels between rungs; signed evidence scales code atoms.
+        Participation gates both readings before the top-K taper. Pruned
+        disjunctive parts contribute no evidence, including negated parts.
+        """
+        self._ensure_concept_pool()
+        N, B = int(self.nVectors), int(a_0.shape[-1])
+        caps = self._order_caps()
+        ly = _concept_alloc_of(self).layer(0)
+        n0 = int(a_0.shape[0])
+        a = torch.cat([a_0, a_0.new_zeros((N - n0, B))])
+        u = torch.cat([(a_0 + 1) * .5, a_0.new_zeros((N - n0, B))])
+        admitted = torch.cat([a_0.new_ones((n0, B)), a_0.new_zeros((N - n0, B))])
         level_acts = [float(a.detach().abs().max())]
-        sel_rows = [torch.arange(min(int(caps[0]), int(a_0.shape[0])),
-                                 device=a.device).unsqueeze(-1).expand(-1, B)]
-        _S = min(sum(int(c) for c in caps), N)
-        # Relevance priority (sec C spec): [N] or [N, B] nonnegative; rung
-        # score = p[row] + (|W| p)[row]; rank = |cand| * (1 + score); only
-        # ADMITTED rows carry their score upward (relevance spreads through
-        # awareness). Absent -> rank = |cand| (byte-identical).
-        _prio = getattr(self, "_relevance_priority", None)
-        if _prio is not None and torch.is_tensor(_prio):
-            p_rel = _prio if _prio.dim() == 2 else _prio.unsqueeze(-1)
-            p_rel = p_rel.to(a.dtype).expand(N, B).contiguous().detach()
+        sel_rows = [torch.arange(n0, device=a.device)[:, None].expand(-1, B)]
+        priority = getattr(self, "_relevance_priority", None)
+        if torch.is_tensor(priority):
+            p_rel = (priority if priority.dim() == 2 else priority[:, None])
+            p_rel = p_rel.to(a).expand(N, B).detach()
         else:
             p_rel = None
-        for k in range(1, min(K + 1, len(caps))):
+        for k in range(1, min(int(self._symbolic_order) + 1, len(caps))):
             start, end = self.order_slice(k)
             n_alloc = min(int(ly._row_next.get(start, 0)), end - start)
             if n_alloc <= 0:
-                level_acts.append(0.0)
+                level_acts.append(0.)
                 continue
-            rows_k = torch.arange(start, start + n_alloc, device=a.device)
-            # The store spans only the taper rows (sum(caps) x sum(caps)+1,
-            # the _sizer contract) -- fold in store coordinates, scatter back.
-            pre = ly.forward_linear(
-                torch.cat([a[:_S], a.new_ones((1, B))], dim=0))   # [S, B]
-            cand = torch.tanh(pre.index_select(0, rows_k))   # [n_k, B]
-            keep = min(int(caps[k]), n_alloc)
+            end = start + n_alloc
+            rows = torch.arange(start, end, device=a.device)
+            y = self._concept_rung_presence(u, admitted, start, end)
+            gate = ly.participation[start:end].clone().to(a)[:, None]
+            ready = (~ly.provisional[start:end] | ly.assigned[start:end]).to(a)[:, None]
+            cand = gate * (2 * y - 1) * ready
             rank = cand.abs()
             score = None
             if p_rel is not None:
                 with torch.no_grad():
-                    hop = ly.forward_linear_abs(
-                        torch.cat([p_rel[:_S], p_rel.new_zeros((1, B))],
-                                  dim=0))                    # |W| p  [S, B]
-                    score = (p_rel.index_select(0, rows_k)
-                             + hop.index_select(0, rows_k))  # [n_k, B]
-                rank = rank * (1.0 + score)
-            _v, topi = torch.topk(rank, keep, dim=0)         # [keep, B]
-            mask = torch.zeros_like(cand)
-            mask.scatter_(0, topi, 1.0)
-            a = a.index_copy(0, rows_k, cand * mask)         # winners only
+                    x = torch.cat([p_rel[:ly.nOutput], p_rel.new_zeros((1, B))])
+                    hop = ly.forward_linear_abs(x)
+                    if self.conceptual_pi:
+                        hop = hop + ly.conjunctive.forward_linear_abs(x)
+                    score = p_rel[start:end] + hop[start:end]
+                rank = rank * (1 + score)
+            _, topi = torch.topk(rank, min(int(caps[k]), n_alloc), dim=0)
+            mask = torch.zeros_like(cand).scatter(0, topi, 1.) * ready
+            a = a.index_copy(0, rows, cand * mask)
+            u = u.index_copy(0, rows, gate * y * mask)
+            admitted = admitted.index_copy(0, rows, mask)
             if p_rel is not None:
-                p_rel = p_rel.index_copy(0, rows_k, score * mask)
+                p_rel = p_rel.index_copy(0, rows, score * mask)
             level_acts.append(float((cand * mask).detach().abs().max()))
-            sel_rows.append(rows_k[topi])                    # global rows
+            sel_rows.append(rows[topi])
         object.__setattr__(self, "_cs_level_acts", level_acts)
-        object.__setattr__(self, "_cs_level_rows",
-                           [r.detach() for r in sel_rows])
-        object.__setattr__(self, "_cs_wave_qe", None)        # wave retired
-        content = a.t().unsqueeze(-1) * atoms.unsqueeze(0)   # [B, N, CDim]
-        return content, a
+        object.__setattr__(self, "_cs_level_rows", [r.detach() for r in sel_rows])
+        object.__setattr__(self, "_cs_wave_qe", None)
+        return a.t().unsqueeze(-1) * dictionary.clone().unsqueeze(0), a
+
+    def cs_reverse_presence(self, y):
+        """Traverse the pyramid by W_sigma then W_pi chart transposes.
+
+        Input and output are presences. A zero input row supplies no query;
+        a conjunction shares log-presence, a union shares log-complement.
+        This is a balanced many-to-one reconstruction, not an inverse of
+        a particular choice among alternative parts.
+        """
+        ly = _concept_alloc_of(self).layer(0)
+        S = ly.nOutput
+        result = y.clone()
+        for k in range(min(int(self._symbolic_order), len(self._order_caps()) - 1), 0, -1):
+            start, end = self.order_slice(k)
+            own = result.new_zeros(S)
+            if self.conceptual_pi:
+                rr, _ = ly.conjunctive._indices(y.device)
+                rr = rr[(rr >= start) & (rr < end)]
+                own = own.index_add(0, rr, torch.ones_like(rr, dtype=y.dtype)).gt(0)
+            sigma, pi_y = ly.reverse_presence(result[:S], start=start, end=end, own=own)
+            if self.conceptual_pi:
+                pi_input = 1 - (1 - pi_y) * (1 - sigma[:S] * own[:, None])
+                pi, _ = ly.conjunctive.reverse_presence(
+                    pi_input.clamp(0, 1), conjunctive=True, start=start, end=end)
+                sigma = sigma + pi
+            # Independent paths combine by union; preserve a stronger query.
+            result = torch.cat([1 - (1 - result[:S]) * (1 - sigma[:S].clamp(0, 1)), result[S:]])
+        return result
 
     # -- per-order weight population at mint (abstraction_order-keyed) ---------
 
@@ -18641,6 +18676,8 @@ class ConceptualSpace(Space):
         out = {}
         for ly in alloc._layers.values():
             for k, r in ly._tensor_rows.items():
+                if isinstance(k, tuple) and k[0] == "provisional":
+                    continue
                 cid = k[1] if isinstance(k, tuple) and len(k) == 2 else k
                 out[(alloc.placement.get(cid, 0), cid)] = r
         return out
@@ -18651,7 +18688,7 @@ class ConceptualSpace(Space):
         if alloc is not None:
             for layer in reversed(tuple(alloc._layers.values())):
                 key = layer._tensor_row_keys.get(int(row))
-                if key is not None:
+                if key is not None and not (isinstance(key, tuple) and key[0] == "provisional"):
                     return key[1] if isinstance(key, tuple) else key
         return None
 
@@ -18756,9 +18793,9 @@ class ConceptualSpace(Space):
             s_row = self._csw_concept_row(so, int(x[1]))
             if s_row is None:
                 continue
-            self.add_concept_edge(c_row, s_row)      # untyped; self-edge raises
+            self.add_concept_edge(c_row, s_row, weight=1.)  # asserted membership
         if _EVERYTHING in wholes:
-            self.add_concept_edge(c_row, int(self.nVectors))     # bias col
+            self.add_concept_edge(c_row, int(self.nVectors), weight=1.)  # standing pole
         # Make the freshly-grown sparse weights trainable (rebuilds the model
         # optimizer when the weight count changed; no-op pre-training).
         self._maybe_rebuild_optimizer_for_csw()
@@ -18935,36 +18972,30 @@ class ConceptualSpace(Space):
         return rows
 
     def _refresh_frozen_values_hook(self):
-        """Zero backprop grads on the frozen rows' edge VALUES (their
-        weights are frozen; other rows' values train normally). Re-run
-        after edge growth (``values`` is a fresh Parameter each grow)."""
-        alloc = getattr(self, "_concept_allocator", None)
+        """Frozen definitions stop gradients on both kinds of part."""
+        alloc = getattr(self, '_concept_allocator', None)
         if alloc is None:
             return
-        ly = alloc.layer(0)
-        vals = getattr(ly, "values", None)
         rows = self._frozen_rows()
-        h = getattr(ly, "_frozen_hook_handle", None)
-        if h is not None:
-            try:
-                h.remove()
-            except Exception:
-                pass
-            object.__setattr__(ly, "_frozen_hook_handle", None)
-        if vals is None or not vals.requires_grad or not rows:
-            return
-        idx = sorted(i for (r, _c), i in ly._index.items() if int(r) in rows)
-        if not idx:
-            return
-        _ix = torch.tensor(idx, dtype=torch.long)
-
-        def _zero_frozen(grad, _ix=_ix):
-            g = grad.clone()
-            g[_ix.to(grad.device)] = 0.0
-            return g
-
-        object.__setattr__(ly, "_frozen_hook_handle",
-                           vals.register_hook(_zero_frozen))
+        for matrix in alloc.layer(0).part_matrices():
+            handle = getattr(matrix, '_frozen_hook_handle', None)
+            if handle is not None:
+                # A replaced leaf may still own a pending graph. Keep its
+                # freeze hook before the migration relay until that graph dies.
+                if getattr(matrix, '_frozen_hook_parameter', None) is matrix.values:
+                    handle.remove()
+                matrix._frozen_hook_handle = None
+            if matrix.values is None or not matrix.values.requires_grad:
+                continue
+            positions = [i for (r, _), i in matrix._index.items() if r in rows]
+            if not positions:
+                continue
+            def zero_frozen(grad, positions=positions):
+                result = grad.clone()
+                result[positions] = 0
+                return result
+            matrix._frozen_hook_handle = matrix.values.register_hook(zero_frozen)
+            object.__setattr__(matrix, "_frozen_hook_parameter", matrix.values)
 
     def mint_frozen_concept(self, name):
         """Mint a HARD-CODED named concept (stable handle + order-0 snap
@@ -19295,9 +19326,8 @@ class ConceptualSpace(Space):
             row = self._csw_row_of(c)
             if row is not None:
                 ly.remove_edges([(int(row), self._bias_col())])
-        if weight != 1.0:
-            for (code, side) in asserted:
-                self._set_concept_edge_value(c, code, side, weight)
+        for (code, side) in asserted:
+            self._set_concept_edge_value(c, code, side, weight)
         return c
 
     def _hebbian_strengthen(self, cid, eta=0.1, cap=4.0):
@@ -19314,7 +19344,13 @@ class ConceptualSpace(Space):
         c_row = self._csw_row_of(cid)              # any block namespace
         if c_row is None:
             return                                 # unallocated: no edges
-        ly.hebbian_strengthen_row(c_row, eta=eta, cap=cap)
+        for matrix in ly.part_matrices():
+            # Preserve learned negation when repeated evidence raises use.
+            for (row, _), pos in matrix._index.items():
+                if row == c_row:
+                    with torch.no_grad():
+                        value = matrix.values[pos]
+                        matrix.values[pos] = value.sign() * (value.abs() + eta).clamp_max(cap)
 
     def _decay_concept_edges(self, cid, factor=0.9):
         """Scale ``cid``'s sparse edge values by ``factor`` (the forgetting
@@ -19330,329 +19366,274 @@ class ConceptualSpace(Space):
         c_row = self._csw_row_of(cid)
         if c_row is None:
             return None                            # unallocated: no edges
-        return float(ly.decay_row(c_row, factor=factor))
+        return max(float(matrix.decay_row(c_row, factor=factor)) for matrix in ly.part_matrices())
 
-    # ------------------------------------------------------------------
-    # Attention-to-relation promotion (2026-07-12 execution of
-    # doc/plans/2026-07-04-attention-to-relation-promotion.md; notes in
-    # doc/plans/2026-07-12-attention-promotion-execution.md).
-    #
-    # The pyramid's ADMITTED field is the discovery surface: each active
-    # order-0 row is a FOCAL member observation whose CONTEXT is the rest
-    # of the active set. Recurrent (context -> members) candidates that
-    # clear the SAME learn-score law as sentence learning
-    # (score >= truth_criterion AND truth_criterion < 1) mint a
-    # higher-order whole via synthesize_higher_order. Evidence is stashed
-    # at the P3 cutover and consumed at Reset(hard) -- the
-    # learn_relations_from_stm compile-safety hoist, mirrored.
-    # All policy constants are class attributes (test seams).
-    # ------------------------------------------------------------------
-
-    _promotion_act_eps = 1e-3        # |activation| bar for an ACTIVE row
-    _promotion_min_support = 3       # observations before a mint attempt
-    _promotion_cache_cap = 64        # bounded candidate cache
-    _promotion_ewma = 0.9            # EWMA beta for member/context stats
-    _promotion_member_frac = 0.5     # member iff w >= frac * max(member_w)
-    _promotion_match_cos = 0.8       # near-miss context fold-in bar
-    _promotion_contrast_min = 0.02   # member-vs-nonmember weight margin
-    _promotion_merge_jaccard = 0.8   # fold into an existing whole above this
-    _promotion_stale_age = 8         # observations before stale handling
-    _promotion_decay = 0.9           # edge decay for unsupported wholes
-    _promotion_retire_eps = 1e-3     # retire a whole decayed below this
-    _promotion_intent_top = 2        # context concepts committed as intent
-
-    def _promotion_state(self):
-        """Lazy host-side promotion state: the bounded candidate cache
-        (insertion-ordered dict keyed by context-row frozenset) and the
-        observation counter."""
-        st = getattr(self, "_promotion_cache_state", None)
-        if st is None:
-            st = {"cache": {}, "obs": 0}
-            object.__setattr__(self, "_promotion_cache_state", st)
-        return st
-
-    def _promotion_match_entry(self, cache, ctx_key, ctx_vec):
-        """Resolve an observation to a cache entry: exact context-set hit,
-        else the nearest entry by cosine over the EWMA context vector when
-        it clears ``_promotion_match_cos`` (the plan's "signature is a
-        weighted neighborhood, not a single pair"). ``None`` on no match."""
-        e = cache.get(ctx_key)
-        if e is not None:
-            return e
-        v = ctx_vec / max(float(ctx_vec.norm()), 1e-8)
-        best, best_cos = None, float(self._promotion_match_cos)
-        for entry in cache.values():
-            w = entry["context_w"]
-            n = float(w.norm())
-            if n <= 0.0:
-                continue
-            cos = float(torch.dot(v, w / n))
-            if cos >= best_cos:
-                best, best_cos = entry, cos
-        return best
-
-    def _promotion_evict(self, cache):
-        """Capacity policy: drop the weakest (support, last_seen)
-        UNCOMMITTED entry first; committed entries only when nothing else
-        remains (safe -- ``relate_idx`` idempotency re-finds the whole)."""
-        if len(cache) < int(self._promotion_cache_cap):
+    # Context is a sparse row over witnessed concepts. The provisional pool
+    # uses the same rows and part matrices as discovered concepts.
+    def _ensure_concept_pool(self):
+        if not self._promotion_enabled or not self._sparse_active():
             return
-        pool = [k for k, e in cache.items() if e["committed"] is None]
-        pool = pool or list(cache.keys())
-        victim = min(pool, key=lambda k: (cache[k]["support"],
-                                          cache[k]["last_seen"]))
-        del cache[victim]
+        ly = _concept_alloc_of(self).layer(0)
+        for order in range(1, len(self._order_caps())):
+            start, end = self.order_slice(order)
+            missing = self.concept_pool_size - int(ly.provisional[start:end].sum())
+            for _ in range(max(0, missing)):
+                next_row = start + int(ly._row_next.get(start, 0))
+                key = ('provisional', -next_row - 1)
+                row = ly.assign_row(key, capacity=end - start, base=start)
+                if row is None:
+                    warnings.warn(f"concept pool order {order} exhausted: "
+                                  f"cannot reserve {self.concept_pool_size} provisional rows",
+                                  RuntimeWarning)
+                    break
+                ly.provisional[row] = True
+                ly.managed[row] = True
+                ly.participation[row] = 0
+        self._sparse_families(0)
+
+    @staticmethod
+    def _context_vector(matrix, row):
+        result = torch.zeros(matrix.nInput, device='cpu')
+        if matrix.values is not None:
+            values = matrix.values.detach().cpu()
+            for (r, col), pos in matrix._index.items():
+                if r == row:
+                    result[col] = values[pos]
+        return result
+
+    @staticmethod
+    def _context_cosine(a, b):
+        return float(torch.dot(a, b) / (a.norm() * b.norm()).clamp_min(1e-12))
+
+    @torch.no_grad()
+    def _write_concept_context(self, row, context):
+        ly = _concept_alloc_of(self).layer(0)
+        where = ly.where
+        previous = self._context_vector(where, row)
+        beta = self.concept_use_ewma if int(ly.context_seen[row]) else 0.
+        updated = beta * previous + (1 - beta) * context
+        for col in updated.nonzero().flatten().tolist():
+            pos = where.add_edge(row, col, weight=0.)
+            where.values[pos] = updated[col].to(where.values.device)
+        if where.values is not None:
+            where.values.requires_grad_(False)
+        ly.context_seen[row] = ly.observation
+
+    def _witnessed_rows(self):
+        """Only percepts and kinds discovered from them have witnessed where."""
+        alloc = _concept_alloc_of(self)
+        ly = alloc.layer(0)
+        objects = set(getattr(self, '_object_word_concept', {}))
+        # META contains an unwitnessed object as well; it supplies no direct
+        # observation of that object's category.
+        objects.update(triple[1] for triple in alloc.word_obj_meta.values())
+        objects.update(triple[2] for triple in alloc.word_obj_meta.values())
+        out = []
+        for row, cid in self._row_to_concept().items():
+            if cid in objects or cid in alloc.retired:
+                continue
+            if row < self._order_caps()[0] or bool(ly.witnessed[row]):
+                out.append(row)
+        return out
+
+    @torch.no_grad()
+    def _assign_concept_parts(self, order, parts, context, *, conjunctive=False, evidence=None):
+        """VQ assignment touches provisional rows only; discovery fixes identity."""
+        ly = _concept_alloc_of(self).layer(0)
+        start, end = self.order_slice(order)
+        matrix = ly.conjunctive if conjunctive else ly
+        desired = torch.zeros(ly.nOutput)
+        desired[list(parts)] = 1.
+        # Recurrent definitions reuse their row, without competing against
+        # discovered concepts or suppressing any other concept's activity.
+        best, score = None, self.concept_match_cos
+        for row in range(start, end):
+            if not bool(ly.assigned[row]):
+                continue
+            current = self._context_vector(matrix, row)[:ly.nOutput].abs()
+            if conjunctive:
+                # Every co-present part is necessary: a partial set must not
+                # reuse and dilute a different conjunction's definition.
+                match = float(torch.equal(current > 0, desired > 0))
+            else:
+                if not bool(current.any()):
+                    continue
+                match = self._context_cosine(context, self._context_vector(ly.where, row))
+            if match >= score:
+                best, score = row, match
+        if best is None:
+            candidates = [r for r in range(start, end) if bool(ly.provisional[r])
+                          and (not bool(ly.assigned[r]) or
+                               float(ly.participation[r]) < self.concept_recycle_threshold)]
+            if not candidates:
+                return None
+            best = min(candidates, key=lambda r: (bool(ly.assigned[r]),
+                                                  float(ly.participation[r]),
+                                                  int(ly.context_seen[r]), r))
+            # Recycling clears every reference to the provisional row. No
+            # discovered identity or LTM reference can name it yet.
+            for m in (*ly.part_matrices(), ly.where):
+                m.remove_edges([(r, c) for r, c in m._index if r == best or c == best])
+            ly.participation[best] = 0.
+            ly.context_seen[best] = 0
+            ly.assigned[best] = True
+            ly.witnessed[best] = True
+        new_assignment = not any(r == best for r, _ in matrix._index)
+        if evidence is not None and not new_assignment:
+            for (r, col), pos in matrix._index.items():
+                if r == best:
+                    matrix.values[pos].mul_(self.concept_use_ewma)
+        for col in parts:
+            support = float(ly.witness_strength[col])
+            support = support if support > 0 else 1.
+            existed = (best, col) in matrix._index
+            pos = self.add_concept_edge(best, col, weight=support, conjunctive=conjunctive)
+            if pos is not None:
+                # Co-observation is positive evidence. EWMA acts alongside
+                # ordinary gradients; it never updates participation by loss.
+                if existed and evidence is not None:
+                    matrix.values[pos].add_((1 - self.concept_use_ewma) * float(evidence[col]))
+            cid = self.concept_id_at_row(best)
+            part = self.concept_id_at_row(col)
+            if cid is not None and part is not None:
+                _concept_alloc_of(self).add(cid, 'part', ('sym', int(part)))
+        self._write_concept_context(best, context)
+        return best
 
     @torch.no_grad()
     def promotion_observe(self):
-        """Attention-evidence collector: consume the P3 cutover's stashed
-        admitted field (one observation per batch row). For each ACTIVE
-        order-0 focal row, fold ``(focal | context)`` evidence into the
-        candidate cache: support count, EWMA member weights, EWMA context
-        weights, last-seen. Contrast against non-members is mined
-        within-entry at promotion time. Fail-loud on non-finite
-        activations. No-op when the gate is off or nothing is stashed."""
-        if not getattr(self, "_promotion_enabled", False):
+        """Match wheres across occasions, and optionally whole co-present sets.
+
+        The staged admitted field is consumed once at the sentence boundary.
+        Contexts and gates are buffers on rows; there is no candidate cache.
+        """
+        if not self._promotion_enabled or not self._sparse_active():
             return
-        acts = getattr(self, "_promo_last_acts", None)
-        if acts is None or not torch.is_tensor(acts):
+        acts = getattr(self, '_promo_last_acts', None)
+        if not torch.is_tensor(acts):
             return
-        object.__setattr__(self, "_promo_last_acts", None)   # consume once
+        object.__setattr__(self, '_promo_last_acts', None)
         if not torch.isfinite(acts).all():
-            raise RuntimeError(
-                "ConceptualSpace.promotion_observe: admitted activations "
-                "contain NaN/Inf. Numerical divergence must surface, not "
-                "be silently accumulated as promotion evidence.")
-        level_rows = getattr(self, "_cs_level_rows", None)
+            raise RuntimeError('ConceptualSpace.promotion_observe: NaN/Inf in admitted activations')
+        self._ensure_concept_pool()
+        ly = _concept_alloc_of(self).layer(0)
+        N = ly.nOutput
+        a = acts.detach().cpu()[:N]
+        level_rows = getattr(self, '_cs_level_rows', ())
         if not level_rows:
             return
-        a = acts.detach().to("cpu", torch.float32)           # [N, B]
-        N, B = int(a.shape[0]), int(a.shape[1])
-        rows_all = torch.cat([r.detach().to("cpu")
-                              for r in level_rows], dim=0)   # [n_sel, B]
-        start0, end0 = self.order_slice(0)
-        eps = float(self._promotion_act_eps)
-        st = self._promotion_state()
-        cache = st["cache"]
-        beta = float(self._promotion_ewma)
-        for b in range(B):
-            sel = sorted({int(r) for r in rows_all[:, b].tolist()})
-            active = {r: float(a[r, b]) for r in sel
-                      if abs(float(a[r, b])) >= eps}
-            if not active:
-                continue
-            st["obs"] += 1
-            focals = [r for r in active if start0 <= r < end0]
-            for f in focals:
-                ctx = frozenset(r for r in active if r != f)
-                if not ctx:
+        selected = torch.cat([r.detach().cpu() for r in level_rows])
+        for b in range(a.shape[-1]):
+            ly.observation.add_(1)
+            tick = int(ly.observation)
+            witnessed = self._witnessed_rows()
+            active = sorted(set(selected[:, b].tolist()) & set(witnessed))
+            active = [r for r in active if float(a[r, b]) > 1e-3]
+            field = torch.zeros(N)
+            field[active] = (a[active, b] + 1) * .5
+            for focal in active:
+                beta = self.concept_use_ewma if int(ly.context_seen[focal]) else 0.
+                ly.witness_strength[focal] = beta * ly.witness_strength[focal] + (1 - beta) * field[focal]
+            # Match against earlier occasions, never another focal from this
+            # occasion. Update source wheres only after assignment decisions.
+            for focal in active:
+                context = field.clone()
+                context[focal] = 0
+                if not bool(context.any()):
                     continue
-                ctx_vec = torch.zeros(N)
-                for r in ctx:
-                    ctx_vec[r] = abs(active[r])
-                e = self._promotion_match_entry(cache, ctx, ctx_vec)
-                if e is None:
-                    self._promotion_evict(cache)
-                    e = {"key": ctx, "support": 0,
-                         "member_w": torch.zeros(N),
-                         "context_w": torch.zeros(N),
-                         "last_seen": 0, "committed": None,
-                         "support_at_commit": 0}
-                    cache[ctx] = e
-                e["support"] += 1
-                e["last_seen"] = st["obs"]
-                e["member_w"].mul_(beta)
-                e["member_w"][f] += (1.0 - beta) * abs(active[f])
-                e["context_w"].mul_(beta).add_(ctx_vec, alpha=1.0 - beta)
+                order = next((k for k in range(len(self._order_caps()))
+                              if self.order_slice(k)[0] <= focal < self.order_slice(k)[1]), 0)
+                if order + 1 >= len(self._order_caps()):
+                    continue
+                start, end = self.order_slice(order)
+                alternatives = [r for r in witnessed if start <= r < end and r != focal
+                                and r not in active and 0 < int(ly.context_seen[r]) < tick]
+                matches = [(self._context_cosine(context, self._context_vector(ly.where, r)), r)
+                           for r in alternatives]
+                if matches:
+                    similarity, other = max(matches)
+                    if similarity >= self.concept_match_cos:
+                        self._assign_concept_parts(order + 1, (focal, other), context, evidence=field)
+            if self.conceptual_pi:
+                for order in range(len(self._order_caps()) - 1):
+                    start, end = self.order_slice(order)
+                    parts = [r for r in active if start <= r < end]
+                    if len(parts) >= 2:
+                        context = field.clone()
+                        context[parts] = 0
+                        self._assign_concept_parts(order + 1, parts, context, conjunctive=True, evidence=field)
+            for focal in active:
+                context = field.clone()
+                context[focal] = 0
+                self._write_concept_context(focal, context)
+            # Evaluate the raw concept, before its participation gate. Gates
+            # therefore grow from zero by use and cannot train themselves on.
+            u = field[:, None]
+            admitted = (field > 0).float()[:, None]
+            beta = self.concept_use_ewma
+            for order in range(1, len(self._order_caps())):
+                start, end = self.order_slice(order)
+                raw = self._concept_rung_presence(u, admitted, start, end).cpu()
+                managed = ly.managed[start:end] & ly.assigned[start:end]
+                use = (raw[:, 0] > self.concept_use_floor).to(ly.participation)
+                gates = ly.participation[start:end]
+                gates[managed] = beta * gates[managed] + (1 - beta) * use[managed]
+                u[start:end] = raw * gates.cpu()[:, None] * managed.cpu()[:, None]
+                admitted[start:end] = managed.cpu()[:, None]
+        self._maybe_rebuild_optimizer_for_csw()
 
-    def _learn_score_members_in_codebook(self, member_vecs):
-        """N-ary generalization of the Task-6c ``children_in_codebook``
-        factor: the fraction of member content vectors whose nearest
-        terminal-WS codebook row lies within
-        :attr:`_learn_children_dist_threshold`. 0.0 when no terminal WS is
-        reachable or no members are given. Overridable test seam."""
-        ws = self._terminal_ws_for_learning()
-        if ws is None or not hasattr(ws, "nearest_ws_row") or not member_vecs:
-            return 0.0
-        thr = float(self._learn_children_dist_threshold)
-        hits = 0
-        for vec in member_vecs:
-            _row, dist = ws.nearest_ws_row(self._as_idea_vec(vec))
-            if dist <= thr:
-                hits += 1
-        return hits / len(member_vecs)
-
-    def _promotion_learn_score(self, entry, member_rows):
-        """Promotion acceptance score in [0, 1] -- the todo.md law over the
-        Task-6c seams:
-
-        learn_score = members_in_codebook(member content rows)
-                      * is_truth_obvious(signature)
-                      * resolves_contradiction(signature)
-
-        The signature operand is the candidate's EWMA-context-weighted
-        codebook combination (the shared intent as content). Fail-loud on
-        a non-finite product, mirroring :meth:`_compute_learn_score`."""
-        cb = getattr(self, "similarity_codebook", None)
-        W = cb.getW() if (cb is not None and hasattr(cb, "getW")) else None
-        if W is None:
-            return 0.0
-        Wc = W.detach().to("cpu", torch.float32)
-        vecs = [Wc[int(r)] for r in member_rows]
-        ctx_w = entry["context_w"]
-        denom = max(float(ctx_w.sum()), 1e-8)
-        sig = (ctx_w.unsqueeze(0) @ Wc).reshape(-1) / denom
-        children = float(self._learn_score_members_in_codebook(vecs))
-        obvious = float(self._learn_score_is_truth_obvious(sig))
-        resolves = float(self._learn_score_resolves_contradiction(sig))
-        score = children * obvious * resolves
-        if not math.isfinite(score):
-            raise RuntimeError(
-                f"ConceptualSpace._promotion_learn_score produced a "
-                f"non-finite value ({score}) from factors "
-                f"children={children}, obvious={obvious}, "
-                f"resolves={resolves}. A divergent learn-score must "
-                f"surface, not be silently gated.")
-        return max(0.0, min(1.0, score))
-
-    def _promotion_members(self, entry):
-        """Mine an entry's MEMBER set: rows whose EWMA member weight
-        clears ``frac * max`` (>= 2 required), CONTRASTED against the
-        co-observed non-members (their mean weight must sit at least
-        ``_promotion_contrast_min`` below the members'). Returns
-        ``(member_rows, contrast_ok)``."""
-        w = entry["member_w"]
-        mx = float(w.max())
-        if mx <= 0.0:
-            return [], False
-        bar = float(self._promotion_member_frac) * mx
-        members = [int(r) for r in (w >= bar).nonzero().reshape(-1).tolist()]
-        others = [int(r) for r in (w > 0).nonzero().reshape(-1).tolist()
-                  if int(r) not in set(members)]
-        m_mean = float(w[members].mean()) if members else 0.0
-        o_mean = float(w[others].mean()) if others else 0.0
-        contrast_ok = (m_mean - o_mean) >= float(self._promotion_contrast_min)
-        return members, contrast_ok
-
+    @torch.no_grad()
     def promotion_pass(self):
-        """The promotion policy over the candidate cache (host-side, at the
-        sentence boundary):
-
-          * COMMITTED entries: fresh support Hebbian-strengthens the whole
-            (never re-mints); stale ones decay their edges and RETIRE below
-            the retire bar (frozen never retire).
-          * Stale weak candidates drop from the cache.
-          * Ripe candidates (support, >= 2 resolvable members, contrast)
-            face the learn-score gate -- accept iff
-            ``score >= truth_criterion`` AND ``truth_criterion < 1`` (the
-            todo.md law; tc=1 promotes NOTHING). Accepted member sets that
-            Jaccard-overlap an existing committed whole FOLD INTO it;
-            otherwise ``synthesize_higher_order`` mints the whole, member
-            edge values initialize from the normalized EWMA weights, and
-            the top context concepts commit as weighted ``sym_part``
-            intent assertions.
-
-        Returns the list of concept ids minted or folded into this pass."""
-        if not getattr(self, "_promotion_enabled", False):
+        """Discover used rows in place, then replenish the provisional pool."""
+        if not self._promotion_enabled or not self._sparse_active():
             return []
-        st = self._promotion_state()
-        cache, obs = st["cache"], st["obs"]
-        stale = int(self._promotion_stale_age)
-        min_support = int(self._promotion_min_support)
-        tc = float(self.truth_criterion)
-        committed_now = []
-        for key in list(cache):
-            e = cache[key]
-            H = e["committed"]
-            if H is not None:
-                if e["support"] > e["support_at_commit"]:
-                    self._hebbian_strengthen(H)
-                    e["support_at_commit"] = e["support"]
-                elif obs - e["last_seen"] > stale:
-                    peak = self._decay_concept_edges(
-                        H, factor=float(self._promotion_decay))
-                    if (peak is not None
-                            and peak < float(self._promotion_retire_eps)):
-                        self.retire_concept(H)
-                        del cache[key]
+        alloc = _concept_alloc_of(self)
+        ly = alloc.layer(0)
+        discovered = []
+        for row in (ly.provisional & ly.assigned &
+                    (ly.participation >= self.concept_mint_threshold)).nonzero().flatten().tolist():
+            order = next(k for k in range(1, len(self._order_caps()))
+                         if self.order_slice(k)[0] <= row < self.order_slice(k)[1])
+            if not ConceptualSpace._automatic_concept_admitted(self, 1, reason='used concept'):
                 continue
-            if e["support"] < min_support:
-                if obs - e["last_seen"] > stale:
-                    del cache[key]                 # stale weak candidate
-                continue
-            members, contrast_ok = self._promotion_members(e)
-            if len(members) < 2 or not contrast_ok:
-                continue
-            r2c = self._row_to_concept()
-            pairs = [(r, r2c[r]) for r in members if r in r2c]
-            if len(pairs) < 2:
-                continue                           # members must be concepts
-            cids = sorted(c for (_r, c) in pairs)
-            # Fold into an existing committed whole on member overlap --
-            # promotion strengthens structure, it does not duplicate it.
-            folded = False
-            for other in cache.values():
-                oH = other["committed"]
-                if oH is None or other is e:
-                    continue
-                om = set(other.get("member_cids", ()))
-                if not om:
-                    continue
-                jac = len(om & set(cids)) / max(1, len(om | set(cids)))
-                if jac >= float(self._promotion_merge_jaccard):
-                    self._hebbian_strengthen(oH)
-                    e["committed"] = oH
-                    e["member_cids"] = tuple(sorted(om | set(cids)))
-                    e["support_at_commit"] = e["support"]
-                    committed_now.append(int(oH))
-                    folded = True
-                    break
-            if folded:
-                continue
-            score = self._promotion_learn_score(e, [r for (r, _c) in pairs])
-            # The todo.md acceptance law -- identical endpoint semantics to
-            # _maybe_learn_relation (tc=0 promotes everything, tc=1 nothing).
-            if score < tc or tc >= 1.0:
-                continue
-            H = ConceptualSpace._automatic_synthesize_higher_order(
-                self, tuple(("sym", int(c)) for c in cids),
-                reason="attention promotion")
-            if H is None:
-                continue
-            mx = float(e["member_w"].max())
-            for (r, c) in pairs:
-                self._set_concept_edge_value(
-                    H, c, "sym_part", float(e["member_w"][r]) / mx)
-            self._promotion_commit_intent(e, H, set(cids), r2c)
-            e["committed"] = H
-            e["member_cids"] = tuple(cids)
-            e["support_at_commit"] = e["support"]
-            committed_now.append(int(H))
-        return committed_now
-
-    def _promotion_commit_intent(self, entry, H, member_cids, r2c):
-        """Commit the shared INTENT: the top context concepts become
-        weighted ``sym_part`` assertions on the promoted whole (this
-        codebase's "a body has a leg" property channel), weight = the
-        normalized EWMA context weight."""
-        ctx_w = entry["context_w"]
-        mx = float(ctx_w.max())
-        if mx <= 0.0:
-            return
-        order = torch.argsort(ctx_w, descending=True).tolist()
-        taken = 0
-        for r in order:
-            if taken >= int(self._promotion_intent_top):
-                break
-            w = float(ctx_w[int(r)])
-            if w <= 0.0:
-                break
-            c = r2c.get(int(r))
-            if c is None or c in member_cids or int(c) == int(H):
-                continue
-            self.assert_concept_relation(H, sym_part=int(c),
-                                         weight=w / mx)
-            taken += 1
+            for matrix in ly.part_matrices():
+                matrix.remove_edges([(r, col) for (r, col), pos in matrix._index.items()
+                                     if r == row and abs(float(matrix.values[pos])) < self.concept_part_floor])
+            cid = alloc.new_concept()
+            old_key = ly._tensor_row_keys.pop(row)
+            ly._tensor_rows.pop(old_key)
+            key = ('pool' if len(self._order_caps()) == 2 else f'o{order}', cid)
+            ly._tensor_rows[key] = row
+            ly._tensor_row_keys[row] = key
+            ly.provisional[row] = False
+            for matrix in ly.part_matrices():
+                for r, col in matrix._index:
+                    part = self.concept_id_at_row(col)
+                    if r == row and part is not None:
+                        alloc.add(cid, 'part', ('sym', int(part)))
+            alloc.placement[cid] = order
+            alloc.raised.add(cid)
+            # The distributed code is the normalized evidence-weighted part
+            # code. The row itself is the stable one-hot identity.
+            cb = getattr(self, 'similarity_codebook', None)
+            W = cb.getW() if cb is not None else None
+            if W is not None:
+                parts = [(col, abs(float(m.values[pos])))
+                         for m in ly.part_matrices() for (r, col), pos in m._index.items()
+                         if r == row and col < ly.nOutput]
+                if parts:
+                    code = sum(weight * W[col] for col, weight in parts)
+                    # Codebook updates occur at the host boundary; forward
+                    # reads clone its atoms before any pending backward.
+                    W[row].copy_(F.normalize(code, dim=0, eps=1e-8))
+            discovered.append(cid)
+        if discovered:
+            # Pruning replaces the shared Parameters; re-arm barriers on
+            # unrelated frozen rows as well as on the surviving new parts.
+            self._refresh_frozen_values_hook()
+            self._ensure_concept_pool()
+            self._maybe_rebuild_optimizer_for_csw()
+        return discovered
 
     def create_joint_concept(self, word_syms, key=None):
         """JOINT/sentence concept (v2, P2 decision 6): the ordered Gallistel
