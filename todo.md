@@ -38,19 +38,22 @@ Do not remove unused reasoning methods without Alec's review.
 
 - **11. A concept is sigma over pi** (Alec, 2026-09-21;
    [design](doc/Architecture.md#decided-in-direction-a-concept-is-sigma-over-pi-alec-2026-09-21)).
-   **Not ready for Codex until points 1b and 4 in the design note carry
-   Alec's confirmation.** Each rung of the concept pyramid stops being one
-   additive hop and becomes two folds over rows of the existing sparse
-   `(I, J, weight)` store: **pi rows** are terms, these members together
-   (what `synthesize_higher_order` mints), a square N → N fold under
-   `<conceptualPi>` (default off until measured); **sigma rows** are classes,
-   any of these, minted and extended by META and by the two-truths seal, and
-   the only rows when the option is off. On presence, exponents signed and
+   **Not ready for Codex until point 1b in the design note carries Alec's
+   confirmation.** Each rung of the concept pyramid stops being one additive
+   hop and becomes **one scatter pass over the existing COO `(I, J, weight)`
+   store with the chart chosen per edge by the target row's sigma / pi
+   stamp**: **pi rows** are terms, these members together (what
+   `synthesize_higher_order` mints when `<conceptualPi>` is on, default off
+   until measured); **sigma rows** are classes, any of these, minted and
+   extended by META and by the two-truths seal, and the only rows when the
+   option is off; a class over terms sits one order above them by the
+   allocator's existing rule. On presence, exponents signed and
    initialised at zero (zero = the member is unknown to the term; a negative
    weight is the presence of the negated activation), no normalisation:
    `∏ lit^w` and `1 − ∏(1 − t)^v` computed as `−expm1(Σ v·log1p(−t))`, bounded
-   by the top-K taper; the reverse is the substrate's transpose, many to one
-   (a class implies each member only partly). Sequences are not the concept
+   by the top-K taper; the reverse is the same pass backwards with exponents
+   normalised per row, many to one (a class implies each member only
+   partly). Same kernel count per rung as the additive hop. Sequences are not the concept
    store's business: `conceptualize_chain`, `chain_idx` and the JOINT
    concept go when item 7's seal chaining lands. Exit: the unseeded XOR gates
    pass through the pyramid with the option on at four or more terms;

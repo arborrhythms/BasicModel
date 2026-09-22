@@ -1668,9 +1668,9 @@ From percepts, if the same form is used there, it is **monotone** DNF:
 perceptual space carries no negation, so every literal is a presence. That
 is the form that keeps parthood.
 
-**The five open points, settled (Alec, 2026-09-22).** Points 1b and 4 carry
-Claude's recommendation and await Alec's confirmation; the item is not
-handed to Codex until they have it.
+**The five open points, settled (Alec, 2026-09-22).** Point 1b carries
+Claude's recommendation and awaits Alec's confirmation; the item is not
+handed to Codex until it has it.
 
 1. **How a class row comes to have several terms — it is the sparse
    matrix.** The concept store already is a sparse matrix in `(I, J, weight)`
@@ -1733,19 +1733,39 @@ handed to Codex until they have it.
    presence of the negated activation. Edges therefore initialise at 0, not
    near identity; a minted row says nothing until it has learned.
 
-3. **Pi is an option, square, under the sigma.** `<conceptualPi>` in
-   `model.xml` (default off until measured): when on, a pi fold maps the
-   inventory to itself — term rows computed from their members, N → N —
-   and the sigma fold reads term rows and members alike; when off, every
-   minted row is a class and the rung is the sigma fold alone. The
-   perceptual towers' binary folds are what map N → N/2 (two operands to
-   one; `σ.generate` returns equal halves); the pyramid's width per order
-   is the allocated row count under the top-K taper, not a halving. The
-   XOR gates run with the option on; the reconstruction baseline is taken
-   with it off and on.
+3. **Both folds are one pass over the COO matrix; pi is an option on what
+   is minted, not a layer.** (Alec: "it will be much faster to integrate
+   computation of the DNF with the COO matrix.") The substrate's scatter
+   kernel already computes a rung as `index_select` of the sources, a
+   per-edge multiply, and one `index_add_` into the target rows. The DNF is
+   the same pass with the chart chosen per edge by its **target row's
+   type** — the sigma / pi stamp the ramsification table already records:
+
+       for edge (r, j, w):   lit = presence(sign(w) · a_j)
+           pi row r:         s_r += |w| · log lit             y_r = exp(s_r)
+           sigma row r:      s_r += |w| · log1p(−lit)         y_r = −expm1(s_r)
+
+   One rung is one such pass over the rows of that order, exactly as today,
+   then the top-K taper. Nothing new is scheduled: the allocator already
+   places a row at one order above its highest constituent, so a class over
+   terms sits one order above them and reads them in the next pass, and a
+   class over raw members shares order 1 with the terms over raw members
+   and reads the same order 0. The one edge case is the `symbolicOrder`
+   cap: a row reads only lower orders, so a class whose terms are at the
+   cap is not minted. Per rung the cost is the same kernel count as the
+   additive hop, with `log`/`log1p` and `exp`/`expm1` in place of `tanh`.
+
+   `<conceptualPi>` in `model.xml` (default off until measured) decides
+   only what `synthesize_higher_order` mints from a co-active member set: a
+   pi row (a term) when on, a sigma row (a class, today's union reading)
+   when off. The perceptual towers' binary folds are what map N → N/2 (two
+   operands to one; `σ.generate` returns equal halves); the pyramid's width
+   per order is the allocated row count under the taper, not a halving.
+   The XOR gates run with the option on; the reconstruction baseline is
+   taken with it off and on.
 
 4. **Saturation — compute the union with `log1p` / `expm1`, and let the
-   taper bound it (recommendation, Codex's arithmetic).** The probabilistic
+   taper bound it (accepted; Codex's arithmetic).** The probabilistic
    sum is `y = −expm1(Σ vⱼ · log1p(−tⱼ))`: `log1p(−t)` is exact for the
    weakly active terms and `expm1` for a result near zero, where
    `1 − exp(Σ v log(1 − t))` loses digits. That is the arithmetic; it does
@@ -1768,11 +1788,18 @@ handed to Codex until they have it.
    when all its members are present, and when the term is present each
    member is fully implied. A **class** (sigma) is implied by any one
    member, and when the class is present each member is only partly
-   implied, since any of them could be the one. The reverse of a class
-   with `y` therefore assigns each member the presence that, shared
-   equally, would produce `y` — `1 − (1 − y)^(1/Σv)` — the same rule as
-   the balanced split in the grammar's generate. This is the class /
-   conjunction distinction of the accessible-mind spec, read backwards.
+   implied, since any of them could be the one. In the same pass run
+   backwards, with each row's exponents normalised by their sum:
+
+       pi row r:      log lit_j     += (|w_rj| / Σ_k |w_rk|) · log y_r
+       sigma row r:   log1p(−lit_j) += (|w_rj| / Σ_k |w_rk|) · log1p(−y_r)
+
+   so that a whole's log-presence is shared among its members by weight,
+   and with equal weights each member of a class receives
+   `1 − (1 − y)^(1/n)` — the presence that, shared equally, would produce
+   `y` — the same rule as the balanced split in the grammar's generate.
+   This is the class / conjunction distinction of the accessible-mind
+   spec, read backwards.
 
 **Recommendation.** Evaluate behind a `normalize` mode, turned on
 selectively. First the two XOR gates, in conceptual space with the monotonic
