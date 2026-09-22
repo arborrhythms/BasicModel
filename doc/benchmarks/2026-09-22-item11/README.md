@@ -1,5 +1,7 @@
 # Item 11: concept parts, witnessed context and provisional rows
 
+Implementation source: `eb45ae41655225b7f6670d9ed5f508a39f5ebc17`.
+
 The implementation builds on local commits `26c4fa8` through `c1543b1`.
 Those commits are preserved and published with this landing. The settled
 [design](../../Architecture.md#decided-in-direction-a-concept-is-sigma-over-pi-alec-2026-09-21)
@@ -233,5 +235,5 @@ usual 8 GiB for the machine. The measurements use CPU fp32; the small XOR
 checks also use CPU. The explicit learning command is expected to report the
 recorded failures until the learning defect is resolved.
 
-Final [documentation links](doc-links-result.json.gz) pass **71/71** with
+Final [documentation links](doc-links-final-result.json.gz) pass **71/71** with
 the same validated source map.

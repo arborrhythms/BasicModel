@@ -1538,5 +1538,5 @@ match this source map. Peak aggregate footprint is **10.63 GiB** under
 the 20 GiB cap, with 8 GiB per worker. The two new default slow skips are
 explicitly measured XOR failures, not capability passes.
 
-Final documentation links pass **71/71**, `item11-doc-links`, with the same
-validated source ([receipt](benchmarks/2026-09-22-item11/doc-links-result.json.gz)).
+Final documentation links pass **71/71**, `item11-doc-links-final`, with the same
+validated source ([receipt](benchmarks/2026-09-22-item11/doc-links-final-result.json.gz)).

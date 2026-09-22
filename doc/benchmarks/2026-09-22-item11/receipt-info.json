@@ -27,7 +27,10 @@
   "existing_default_xfail": [
     "test/test_stm_recon_from_cleared_cache.py::test_topk_recovered_words_overlap_input"
   ],
-  "doc_links_run": "item11-doc-links",
+  "doc_links_run": "item11-doc-links-final",
   "doc_links_cases": 71,
-  "doc_links_source_verified": true
+  "doc_links_source_verified": true,
+  "source_commit": "eb45ae41655225b7f6670d9ed5f508a39f5ebc17",
+  "source_commit_verified": true,
+  "initial_doc_links_run": "item11-doc-links"
 }
