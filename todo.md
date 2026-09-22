@@ -38,20 +38,28 @@ Do not remove unused reasoning methods without Alec's review.
 
 - **11. A concept is sigma over pi** (Alec, 2026-09-21;
    [design](doc/Architecture.md#decided-in-direction-a-concept-is-sigma-over-pi-alec-2026-09-21)).
-   Each rung of the concept pyramid stops being one additive hop and becomes
-   two folds over rows: **pi rows** are terms, these members together (what
-   `synthesize_higher_order` mints); **sigma rows** are classes, any of these;
-   pi before sigma within a rung. On presence, non-negative exponents, no
-   normalisation: `∏ lit^w` and `1 − ∏(1 − t)^v` (or max), which do not decay
-   with order and invert by the same solve. From symbols a literal may be
-   negated by the sign of its weight, so XOR is two pi rows and one sigma row
-   in conceptual space; from percepts, if adopted there, the form is monotone.
-   Exit: the unseeded XOR gates pass through the pyramid at four or more
-   terms; activation holds across `symbolicOrder` rungs with one member of
-   several active (the table in finding 10, measured in the real layer); the
-   reverse through a rung round-trips; the reconstruction baseline of
-   `d4dc385` is unchanged, or the change is explained; the design note's open
-   points settled and written back.
+   **Not ready for Codex until points 1b and 4 in the design note carry
+   Alec's confirmation.** Each rung of the concept pyramid stops being one
+   additive hop and becomes two folds over rows of the existing sparse
+   `(I, J, weight)` store: **pi rows** are terms, these members together
+   (what `synthesize_higher_order` mints), a square N → N fold under
+   `<conceptualPi>` (default off until measured); **sigma rows** are classes,
+   any of these, minted and extended by META and by the two-truths seal, and
+   the only rows when the option is off. On presence, exponents signed and
+   initialised at zero (zero = the member is unknown to the term; a negative
+   weight is the presence of the negated activation), no normalisation:
+   `∏ lit^w` and `1 − ∏(1 − t)^v` computed as `−expm1(Σ v·log1p(−t))`, bounded
+   by the top-K taper; the reverse is the substrate's transpose, many to one
+   (a class implies each member only partly). Sequences are not the concept
+   store's business: `conceptualize_chain`, `chain_idx` and the JOINT
+   concept go when item 7's seal chaining lands. Exit: the unseeded XOR gates
+   pass through the pyramid with the option on at four or more terms;
+   activation holds across `symbolicOrder` rungs with one member of several
+   active (finding 10's table, in the real layer); a class with many weak
+   members does not exceed its strongest member by more than a stated bound;
+   the transpose reverse recovers members within tolerance; the
+   reconstruction baseline of `d4dc385` unchanged with the option off, and
+   the change with it on recorded.
 - **10. Evaluate bounded pi and sigma folds as normalized means** (Alec's
    proposal, 2026-09-21; [proposal and first evaluation](doc/Architecture.md#proposal-bounded-pi-and-sigma-folds-as-normalized-means-alec-2026-09-21)).
    A new item; the number is reused. Today Sigma and Pi are one map in the
@@ -146,7 +154,10 @@ Do not remove unused reasoning methods without Alec's review.
    **situation** the predictor anchors, under three `model.xml` variables
    (plan §8.4 point 2: situation weight, anchor bound, expectation weight);
    the frames that anticipatory `what`s already hand the predictor are its
-   start. Exit: the twenty-one §7 tests, the §8 docs, the reconstruction baseline of `d4dc385`
+   start. With the seal chaining rows, `conceptualize_chain`, `chain_idx` and
+   the JOINT / sentence concept are deleted (item 11: sequences come from LTM
+   references, not the concept store). Exit: the twenty-one §7 tests, the §8
+   docs, the reconstruction baseline of `d4dc385`
    unchanged, and the `true` operator over the sealed clause declared in
    `<thought>` and executable.
 - **6. Stored-idea generativity.** Forgetting's dropping of derivations depends

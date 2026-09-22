@@ -1668,21 +1668,111 @@ From percepts, if the same form is used there, it is **monotone** DNF:
 perceptual space carries no negation, so every literal is a presence. That
 is the form that keeps parthood.
 
-**Five open points, to settle before the build.**
+**The five open points, settled (Alec, 2026-09-22).** Points 1b and 4 carry
+Claude's recommendation and await Alec's confirmation; the item is not
+handed to Codex until they have it.
 
-1. **How a class row comes to have several terms.** Today each distinct
-   member set mints its own row, so every minted row is a single term. What
-   makes a sigma row, and what adds a term to one that exists?
-2. **The sign of a literal.** Learned per edge, or fixed when the row is
-   minted? And what initialises it?
-3. **The top-K taper over two kinds of row.** One budget per order shared by
-   pi and sigma rows, or one each, given that sigma rows read pi rows of the
-   same rung?
-4. **Saturation of the probabilistic sum.** Many weakly active terms
-   accumulate toward 1. Are exponents below one and the taper enough, or is
-   max the safer union?
-5. **The reverse through a rung.** Each fold inverts in its own chart; what
-   does the reverse of a whole rung recover, and what does it need retained?
+1. **How a class row comes to have several terms — it is the sparse
+   matrix.** The concept store already is a sparse matrix in `(I, J, weight)`
+   form: `SparseLayer` holds host COO rows and columns with one learnable
+   value per edge, and `_populate_concept_weights` writes one edge per
+   symbol constituent of a minted row (row = the relation's row, column =
+   the constituent's row). The allocator's `(whole, part)` records are the
+   host-side list of the same matrix. So a row's terms are the columns of
+   its row, and a class gains a term by `add_edge(class, term)`; nothing new
+   is stored. What mints and extends sigma rows is what already writes
+   classes: META over a word and its object (`create_word_object_meta`, a
+   class of two), and, once two truths lands, the seal's part row between
+   concept rows ("cats are animals" adds *cat* as a term of *animal*). A
+   co-active member set mints a pi row, as `synthesize_higher_order` does
+   now; it gains members the same way.
+
+   **1a. Sequences leave the concept store.** The `(whole, part)` table was
+   also designed for sequence learning: `conceptualize_chain` builds a
+   tail-recursive `[whole, part]` list (Gallistel unitisation) and the
+   JOINT / sentence concept is built on it. Now that LTM rows carry `refs`
+   and leaf-code columns, **LTM references are the source of sequences**
+   (Alec): a sequence is an episode, a conjunction of particular things in
+   order, and it is the chain of rows the two-truths seal writes
+   ([accessible mind §2.7.1](specs/2026-09-20-accessible-mind-subsystems.md));
+   the predictor learns its regularities. The concept store keeps only
+   class and term structure. `conceptualize_chain`, `chain_idx` and the
+   JOINT concept are deleted when item 7 lands, not kept beside the seal's
+   chaining.
+
+   **1b. One-hot and distributed — keep both, as now (recommendation).**
+   The two already coexist and do different work. The *identity* of a
+   concept is its row, and a symbol is that row's activation times the
+   row-aligned identity (Architecture: "the signed bounded activation *is*
+   the 0-D symbol"), so the one-hot symbol comes free with the row: the
+   snap at the cutover (`cs_snap_order0`) extracts per-row presence at the
+   entrance to the conceptual layer, and the projection `π(a) = argmax` is
+   the one-hot readout at the symbolic layer
+   ([spec §2.0](specs/2026-09-20-accessible-mind-subsystems.md)). The
+   *content* of a concept is its code, a distributed vector on the unit
+   sphere; that is what similarity, retrieval by cue, composition into
+   off-codebook ideas and the tied reconstruction use, and the codes are
+   placed by distribution ([plan §8.4](plans/2026-09-15-next-sentence-as-the-production-objective.md)).
+   The DNF operates on the per-row activations, the edges run between rows,
+   and it never touches the codes: it is one-hot in exactly the sense that
+   "folds over rows, never hidden units" requires. A wholly one-hot
+   conceptual layer would lose the idea — one vector that is in no codebook
+   — and with it generativity; a wholly distributed one would lose
+   addressable parts and wholes. Nothing is added.
+
+2. **The sign of a literal is learned per edge, initialised at zero.** A
+   weight is a signed exponent: zero means the member is unknown to the
+   term — the factor `lit⁰ = 1` says nothing, total uncertainty — and the
+   sign and magnitude grow as the concept is learned. Negation in
+   conceptual space is literal negation: *not-cat* is the negation of *cat*,
+   and activation 0 is agnostic about catness
+   ([Spaces: complement and negation](Spaces.md#percept-complement),
+   [spec §2.6.2](specs/2026-09-20-accessible-mind-subsystems.md)). On
+   presence the two readings coincide exactly: `1 − u = (1 − a)/2` is the
+   presence of `−a`, so a negative weight multiplies the term by the
+   presence of the negated activation. Edges therefore initialise at 0, not
+   near identity; a minted row says nothing until it has learned.
+
+3. **Pi is an option, square, under the sigma.** `<conceptualPi>` in
+   `model.xml` (default off until measured): when on, a pi fold maps the
+   inventory to itself — term rows computed from their members, N → N —
+   and the sigma fold reads term rows and members alike; when off, every
+   minted row is a class and the rung is the sigma fold alone. The
+   perceptual towers' binary folds are what map N → N/2 (two operands to
+   one; `σ.generate` returns equal halves); the pyramid's width per order
+   is the allocated row count under the top-K taper, not a halving. The
+   XOR gates run with the option on; the reconstruction baseline is taken
+   with it off and on.
+
+4. **Saturation — compute the union with `log1p` / `expm1`, and let the
+   taper bound it (recommendation, Codex's arithmetic).** The probabilistic
+   sum is `y = −expm1(Σ vⱼ · log1p(−tⱼ))`: `log1p(−t)` is exact for the
+   weakly active terms and `expm1` for a result near zero, where
+   `1 − exp(Σ v log(1 − t))` loses digits. That is the arithmetic; it does
+   not by itself stop accumulation, and accumulation is the semantics of a
+   union — many weak alternatives *do* raise a class, as the exemplar
+   models sum evidence. What bounds it is the taper: a class row reads only
+   the rows the top-K per order admitted, so at most K terms per order
+   contribute, and diffuse noise is cut before it is summed. Max remains
+   the fallback if measurement shows classes saturating under real
+   activity: the test is that a class with many weak members must not rise
+   above its strongest member by more than a stated bound.
+
+5. **The reverse through a rung is the transpose, many-to-one, and that is
+   right.** The substrate's contract is already "no LDU inverse: the
+   reverse is the transpose", and in the fold charts the transpose divides
+   a whole's log-presence among its parts by weight. It is not bijective —
+   the rung has fewer outputs than inputs — and it need not be (Alec):
+   parts imply a whole, and a whole implies its parts with less certainty.
+   The two folds make the asymmetry exact. A **term** (pi) is implied only
+   when all its members are present, and when the term is present each
+   member is fully implied. A **class** (sigma) is implied by any one
+   member, and when the class is present each member is only partly
+   implied, since any of them could be the one. The reverse of a class
+   with `y` therefore assigns each member the presence that, shared
+   equally, would produce `y` — `1 − (1 − y)^(1/Σv)` — the same rule as
+   the balanced split in the grammar's generate. This is the class /
+   conjunction distinction of the accessible-mind spec, read backwards.
 
 **Recommendation.** Evaluate behind a `normalize` mode, turned on
 selectively. First the two XOR gates, in conceptual space with the monotonic
