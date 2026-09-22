@@ -38,30 +38,32 @@ Do not remove unused reasoning methods without Alec's review.
 
 - **11. A concept is sigma over pi** (Alec, 2026-09-21;
    [design](doc/Architecture.md#decided-in-direction-a-concept-is-sigma-over-pi-alec-2026-09-21)).
-   **Not ready for Codex until points 1b and 6 in the design note carry
-   Alec's confirmation.** Each rung of the concept pyramid stops being one
-   additive hop and becomes **two scatter passes over the existing COO
-   `(I, J, weight)` store, pi rows then sigma rows, the chart chosen per edge
-   by the target row's stamp**: **pi rows** are terms, these members
-   together; **sigma rows** are classes, any of these. With `<conceptualPi>`
-   on (default off until measured) a co-active set mints a term *and* its
-   class, so every symbol is read through a class of terms; off, one class
-   row per set as today. Classes gain terms by substitution at the seal
-   (with item 7) and by language (META, two-truths part rows), never from
-   code geometry. On presence, exponents signed and
-   initialised at zero (zero = the member is unknown to the term; a negative
-   weight is the presence of the negated activation), no normalisation:
-   `∏ lit^w` and `1 − ∏(1 − t)^v` computed as `−expm1(Σ v·log1p(−t))`, bounded
-   by the top-K taper; the reverse is the same pass backwards with exponents
-   normalised per row, many to one (a class implies each member only
-   partly). Same kernel count per rung as the additive hop. Sequences are not the concept
+   **Not ready for Codex until point 7 in the design note carries Alec's
+   confirmation of its concrete form.** Each rung of the concept pyramid
+   stops being one additive hop and becomes **scatter passes over the
+   existing COO `(I, J, weight)` store, pi rows then sigma rows, the chart
+   chosen per edge by the target row's stamp**: **pi rows** are terms, these
+   members together, `∏ lit^w` on presence with exponents signed and
+   initialised at zero (a negative weight is the presence of the negated
+   activation); **sigma rows** are classes, read by the **residual gate**:
+   the strongest term wins, its members are explained away (`u · (1 − t)`),
+   the remaining terms are recomputed on the residual, at most K rounds
+   above a floor θ — a class is its best term, terms present in a class have
+   disjoint support, and a candidate term joins a class in play when it is
+   the strongest on that class's residual, else mints a term with a new
+   class (`<conceptualPi>` on; off = one class row per set as today). A term
+   has one class. Language also writes classes (META, two-truths part rows);
+   never code geometry. The reverse: a winning term implies all its members;
+   a bare class shares equally. Cost `(1 + K)` passes per rung, fixed unroll,
+   classes in parallel. Sequences are not the concept
    store's business: `conceptualize_chain`, `chain_idx` and the JOINT
    concept go when item 7's seal chaining lands. Exit: the unseeded XOR gates
    pass through the pyramid with the option on at four or more terms;
    activation holds across `symbolicOrder` rungs with one member of several
-   active (finding 10's table, in the real layer); a class with many weak
-   members does not exceed its strongest member by more than a stated bound;
-   the transpose reverse recovers members within tolerance; the
+   active (finding 10's table, in the real layer); two terms sharing a member
+   claim it once (the second reads it explained); a candidate that explains a
+   class's residual joins it and one that does not mints its own; the reverse
+   recovers a winning term's members within tolerance; the
    reconstruction baseline of `d4dc385` unchanged with the option off, and
    the change with it on recorded.
 - **10. Evaluate bounded pi and sigma folds as normalized means** (Alec's
