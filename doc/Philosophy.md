@@ -776,6 +776,158 @@ attention) in visual cognition*, Trends in Cognitive Sciences 13(9). von Holst
 (1965), *The contexts of plausible denial*, Journal of Verbal Learning and
 Verbal Behavior 4.
 
+## Where Is Context: Particulars, Universals and the Two Axes (2026-09-22)
+
+> We need to integrate the "same space and time" that creates wholes and
+> parts, and the "substitution" that creates syntactic categories and parts
+> of speech. I think we proceed by defining "where" in terms of context, or
+> perhaps by using the location as embedded in conceptual space (which
+> reflects previous embeddings). (Alec, 2026-09-22)
+
+The rule, from
+[Architecture](Architecture.md#decided-in-direction-a-concept-is-sigma-over-pi-alec-2026-09-21):
+a percept has a `.where`, its span in the input; a concept has none, and its
+where is its **context**, what else is present when it is. Then one rule has
+two consequences. Things present at the *same time in different wheres* are
+parts of one whole. Things present in the *same where at different times*
+are alternatives, a category. A concept is a union, over occasions, of
+conjunctions over what was present: sigma over pi. The code's location in
+conceptual space is its where accumulated over occasions, so "codes by
+distribution" is the second consequence learned over time. This section
+records what that implies and which tenets it answers to.
+
+### Particulars are now; universals are over time
+
+The Buddhist epistemologists divide what can be known into the
+**specifically characterized** (*svalakṣaṇa*, *rang-mtshan*) — the
+particular, momentary, located, causally efficacious, and the object of
+direct perception — and the **generally characterized** (*sāmānyalakṣaṇa*,
+*spyi-mtshan*) — the universal, which is not perceived but constructed by
+conception across moments, through memory
+([above](#buddhist-epistemology)). The two axes are exactly this division,
+with time as the hinge:
+
+- A **whole** is a conjunction of what is present together, now, each part
+  in its own where. It is a particular: this cat on this mat, once. Its
+  presence is the conjunction of its parts' presences and its extent the
+  union of their spans, which is what the perceptual towers compute.
+- A **category** is a union over occasions of what has filled one where.
+  It is a universal: whatever has stood in this context. It cannot be
+  present in a single moment, because it is made of several. It is
+  constructed, and it lives in memory — for words, in the accumulated
+  location of the code.
+
+The maxim (Alec, 2026-09-22): **what co-occurs is a necessary part of the
+whole it forms; what substitutes is a sufficient part of the kind it
+forms.** Necessary parts make a meronomy, sufficient parts a taxonomy, and
+the hierarchy of concepts is a taxonomy of kinds, not a meronomy: wholes
+are left to the grammar, whose ideas are conjunctions of co-present parts
+with roles. So the mind perceives particulars and constructs universals,
+and the construction is recollection: a category is what the mind has *witnessed*
+in a place. That is Dharmakīrti's claim that universals are mental
+constructions with no causal efficacy of their own, made by "excluding the
+other" (below), and it is why a universal never appears to direct
+perception, which takes only the particular.
+
+### The paradigmatic set is the exclusion domain
+
+Saussure's two axes are the same pair: the **syntagmatic**, what is
+combined in the present chain, and the **paradigmatic**, what could have
+stood in a position instead (Saussure 1916). Jakobson's two poles follow —
+combination and contiguity, selection and similarity (Jakobson 1956). The
+paradigmatic set of a position is the set of things that could have been
+there. That is precisely the domain over which *apoha* operates: the
+concept *cow* is what excludes the non-cows *at that place*, the
+alternatives that the affirmation of *cow* rules out
+([above](#expectation-as-a-negative-image-attention-as-exclusion-2026-09-20)).
+Substitution therefore gives the concept its contrast class, and the
+negative image gives that class its work: an expectation at a where is a
+prediction over its paradigm, and what is conceived is the departure from
+it.
+
+### A concept has no where of its own
+
+Defining a concept's where as its context says that a concept has no
+location intrinsically. Where it is, is what surrounds it — the meaning of
+a word is its company (Firth 1957), a value in a system of differences with
+no positive terms (Saussure 1916), a meaning only in the context of a
+sentence (Frege 1884). This is dependent designation: the concept's place
+is empty of own-being and is imputed from its relations
+([Implicit Existence and Svabhava](#implicit-existence-and-svabhava)).
+The codes on the unit sphere carry only relational positions, placed by
+their contexts and moved only by rotation, which is the same statement in
+the architecture's own terms.
+
+### Identity across time is a one-member paradigm
+
+The individual that persists — the lion that ran and is now tired — is a
+union over moments at the same where with a single member: the same thing,
+again. A universal is the same construction with many members: different
+things, in the same place. Both are imputed over occasions; neither is
+perceived in a moment
+([Identity is an expectation](#identity-is-an-expectation)). The continuum
+(*santāna*) that Buddhist thought imputes over momentary particulars is the
+one-member case, and the taxonomy the many-member case, of one operation.
+
+### The witness and the testimony
+
+The rule applies to what the mind witnesses. Words and other percepts have
+wheres the mind sees, so their wholes and their categories can be
+discovered. Objects do not, until there is a video feed; their categories
+must be accepted from language. That is the division of the sources of
+valid cognition: **direct perception** (*pratyakṣa*) and **inference** over
+it for the witnessed, and **testimony** (*āgama*, *āpta-vacana*) for the
+unwitnessed, which Dharmakīrti reduces to inference about the speaker's
+reliability ([above](#valid-cognition-in-dharmakirti)). The architecture
+keeps that reduction: an asserted membership enters the same hierarchy as a
+discovered one, but its trust is the source's and stays on the sentence's
+row, never on the edge. A word's discovered categories reach its object
+only through what language asserts about the object. Testimony is not a
+weaker perception; it is the only way an unwitnessed thing gets a kind.
+
+### Correspondences
+
+- **Wholes from co-presence.** Cells that fire together wire together
+  (Hebb 1949): the assembly is the conjunction of what was present at
+  once. Gestalt grouping by proximity and common fate is the same axis in
+  perception (Wertheimer 1923).
+- **Categories from substitution.** Distributional structure (Harris
+  1954); syntactic categories learned from the frames words share
+  (Redington, Chater & Finch 1998; Mintz 2003); word meaning as the
+  low-rank structure of contexts (Landauer & Dumais 1997). The grain of the
+  context sets the grain of the category: a frame gives a part of speech, a
+  predicate gives a sense.
+- **Time as the axis of generality.** Abstraction as what survives across
+  occasions is the exemplar model's sum over stored instances (Medin &
+  Schaffer 1978), and Hume's account of a general idea as a particular
+  idea annexed to a term that recalls its resembling fellows (Hume 1739,
+  I.i.7).
+
+> Scholarship hedge (recorded deliberately): the pairing of the two axes
+> with the particular/universal division, and of the paradigmatic set with
+> the domain of *apoha*, is the project's working usage; Dharmakīrti's
+> account of universals as exclusions is standard (Dreyfus 1997; Siderits,
+> Tillemans & Chakrabarti 2011), the alignment with Saussure is not.
+> Jakobson's poles are cited for their content, not their aphasia
+> evidence.
+
+**References.** Firth (1957), *A synopsis of linguistic theory 1930–1955*,
+in Studies in Linguistic Analysis, Blackwell. Frege (1884), *Die Grundlagen
+der Arithmetik*, §62. Harris (1954), *Distributional structure*, Word 10.
+Hebb (1949), *The Organization of Behavior*, Wiley. Hume (1739), *A
+Treatise of Human Nature*, I.i.7, "Of abstract ideas". Jakobson (1956),
+*Two aspects of language and two types of aphasic disturbances*, in
+Jakobson & Halle, Fundamentals of Language, Mouton. Landauer & Dumais
+(1997), as cited in the accessible-mind spec. Medin & Schaffer (1978),
+*Context theory of classification learning*, Psychological Review 85.
+Mintz (2003), *Frequent frames as a cue for grammatical categories in
+child directed speech*, Cognition 90. Redington, Chater & Finch (1998),
+*Distributional information: a powerful cue for acquiring syntactic
+categories*, Cognitive Science 22. Saussure (1916), *Cours de linguistique
+générale*, Part II, ch. V–VI. Wertheimer (1923), *Untersuchungen zur Lehre
+von der Gestalt II*, Psychologische Forschung 4. Dreyfus (1997) and
+Siderits, Tillemans & Chakrabarti (2011), as cited above.
+
 ## The Four Foundations of Mindfulness
 
 Awareness must range over more than sense input. The four foundations of
@@ -1115,6 +1267,8 @@ memory*, Psychological Bulletin 123(2).
 | --- | --- | --- | --- |
 | Feeling | Direct Truth | direct perception / self-awareness / hedonic tone | *pratyaksa* / *svasamvedana* / *vedana* |
 | Fact | Direct Truth | inference / conceptual cognition | *anumana* / *kalpana* |
+| Whole (co-presence, one time) | Direct Truth | specifically characterized particular | *svalakṣaṇa* / *rang-mtshan* |
+| Category (substitution, over occasions) | Direct Truth | generally characterized universal, an exclusion | *sāmānyalakṣaṇa* / *spyi-mtshan* / *apoha* |
 | Operator | Direct Truth | logical pervasion / formal reasoning | *vyapti* / *prayoga* |
 | Reference | Indirect Truth | scripture / textual source | *agama* |
 | Provider | Indirect Truth | trustworthy person / valid cognizer | *apta* / *pramana-purusa* |

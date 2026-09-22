@@ -36,34 +36,45 @@ seed may make a *measurement* reproducible, never an *assertion* true. A test
 that fails at some seed has found a defect; fix the defect, or let it fail.
 Do not remove unused reasoning methods without Alec's review.
 
-- **11. A concept is sigma over pi** (Alec, 2026-09-21;
-   [design](doc/Architecture.md#decided-in-direction-a-concept-is-sigma-over-pi-alec-2026-09-21)).
-   **Not ready for Codex until point 6 in the design note carries Alec's
-   confirmation.** Each rung of the concept pyramid stops being one
-   additive hop and becomes **two scatter passes over the existing COO
-   `(I, J, weight)` store, pi rows then sigma rows, the chart chosen per edge
-   by the target row's stamp**: **pi rows** are terms, these members
-   together; **sigma rows** are classes, any of these. With `<conceptualPi>`
-   on (default off until measured) a co-active set mints a term *and* its
-   class, so every symbol is read through a class of terms; off, one class
-   row per set as today. Classes gain terms by substitution at the seal
-   (with item 7) and by language (META, two-truths part rows), never from
-   code geometry. On presence, exponents signed and
-   initialised at zero (zero = the member is unknown to the term; a negative
-   weight is the presence of the negated activation), no normalisation:
-   `∏ lit^w` and `1 − ∏(1 − t)^v` computed as `−expm1(Σ v·log1p(−t))`, bounded
-   by the top-K taper; the reverse is the same pass backwards with exponents
-   normalised per row, many to one (a class implies each member only
-   partly). Same kernel count per rung as the additive hop. Sequences are not the concept
-   store's business: `conceptualize_chain`, `chain_idx` and the JOINT
-   concept go when item 7's seal chaining lands. Exit: the unseeded XOR gates
-   pass through the pyramid with the option on at four or more terms;
-   activation holds across `symbolicOrder` rungs with one member of several
-   active (finding 10's table, in the real layer); a class with many weak
-   members does not exceed its strongest member by more than a stated bound;
-   the transpose reverse recovers members within tolerance; the
-   reconstruction baseline of `d4dc385` unchanged with the option off, and
-   the change with it on recorded.
+- **11. A concept is sigma over pi; the pyramid is a taxonomy of kinds**
+   (Alec, 2026-09-21/22;
+   [design](doc/Architecture.md#decided-in-direction-a-concept-is-sigma-over-pi-alec-2026-09-21),
+   [philosophy](doc/Philosophy.md#where-is-context-particulars-universals-and-the-two-axes-2026-09-22)).
+   Concepts are assemblages of wholes and parts, one kind of row; the
+   higher-order concepts **are the taxonomy**, read by union (a kind: any
+   member suffices), so **sigma alone is the default**. The maxim: what
+   co-occurs is a necessary part of the whole it forms (pi); what substitutes
+   is a sufficient part of the kind it forms (sigma). `<conceptualPi>`
+   (default off until measured) adds the discovery of wholes from presence in
+   the same space and time, with every co-present concept a necessary part —
+   two scatter passes per rung over two COO matrices `W_π` / `W_σ` in place of
+   today's `tanh` hop, on presence, exponents signed and initialised at zero
+   (a negative exponent is the negated part), no normalisation, the union
+   computed as `−expm1(Σ · log1p(−·))`, the taper as now, the reverse each
+   stage's transpose, many to one. **No minting by significance:** each order
+   keeps `P` provisional concepts — the attention-promotion candidate cache
+   made into rows, context weights kept as the concept's *where* — assigned
+   as a VQ pool is: by default a pair of concepts whose contexts match (the
+   same where on different occasions) seeds a kind and a matching concept
+   joins one; with the switch on a co-present set seeds a whole; learning all
+   the time (EWMA and gradient through the gate), read through a
+   participation gate `g` that is an EWMA of use (never gradient); a concept
+   is discovered at `g ≥ θ_mint`, recycled when least used below
+   `θ_recycle`; the host dictionaries go. Object-concepts are not witnessed:
+   their kinds come from testimony through the seal (item 7); taxonomic
+   access keeps walking this structure. Sequences are not the concept
+   store's business: `conceptualize_chain`, `chain_idx` and the JOINT concept
+   go when item 7's seal chaining lands. Exit: the unseeded XOR gates pass
+   through the pyramid with the switch on at four or more conjunction
+   concepts; activation holds across `symbolicOrder` rungs with one part of
+   several present (finding 10's table, in the real layer); a concept with
+   many weak disjunctive parts does not exceed its strongest by more than a
+   stated bound; a pair with matching contexts has a provisional kind from
+   its first match and is discovered only by use, one that does not recur is
+   recycled, and with the switch on a co-present set has a whole with all
+   its members necessary; the transpose reverse recovers parts within
+   tolerance; the reconstruction baseline of `d4dc385` with the switch off
+   recorded against the `tanh` hop, and the change with it on recorded.
 - **10. Evaluate bounded pi and sigma folds as normalized means** (Alec's
    proposal, 2026-09-21; [proposal and first evaluation](doc/Architecture.md#proposal-bounded-pi-and-sigma-folds-as-normalized-means-alec-2026-09-21)).
    A new item; the number is reused. Today Sigma and Pi are one map in the
@@ -154,6 +165,12 @@ Do not remove unused reasoning methods without Alec's review.
    assume one word per META (§3.4). **Object permanence by reference** (§3.5):
    translating a word to its object may tie it to an earlier noun or sentence
    in the recency buffer; identity is imputed and carried by the predictor.
+   **The taxonomy grows by language over those identities** (Alec,
+   2026-09-22): "cats are animals" writes its part row between the *object*
+   concepts the words resolve to, type or token as §3.5 decides, never
+   between words — into the concept store's own hierarchy of higher-order
+   concepts, which is the taxonomy (§3.4 as amended; item 11), trust on the
+   LTM row.
    Then the distributional context widens from the sentence to the
    **situation** the predictor anchors, under three `model.xml` variables
    (plan §8.4 point 2: situation weight, anchor bound, expectation weight);

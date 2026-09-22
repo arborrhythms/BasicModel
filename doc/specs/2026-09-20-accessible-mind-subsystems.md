@@ -116,8 +116,10 @@ with 2.2 (one symbol per concept). A higher-order symbol is a single point at
 its own order and a **region of order 0**: the sigma-pyramid computes its
 activation from its members, and `synthesize_higher_order` mints it from a
 recurrent member set, so the region is defined by membership and may be
-discontinuous (2.0). *Direction (Alec, 2026-09-21):* each rung becomes
-sigma over pi — terms of members together, then classes of any of them
+discontinuous (2.0). *Decided (Alec, 2026-09-22):* the higher-order
+concepts are the taxonomy, sigma alone by default (a type: any member);
+sigma over pi — a union over conjunctions, with negation — is a switch, off
+by default
 ([Architecture](../Architecture.md#decided-in-direction-a-concept-is-sigma-over-pi-alec-2026-09-21)).
 
 ### 2.4 Serial thinking

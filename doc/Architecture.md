@@ -1633,59 +1633,104 @@ finding 10. It is graded DNF — sets with similarity, not logic formulas:
 people find explicit disjunctive rules hard (Bruner, Goodnow & Austin 1956)
 and natural categories are graded (Rosch & Mervis 1975).
 
-**The rung.** Today every rung of the concept pyramid is one additive hop,
-`tanh(W[a|1])`; the typed per-order families that came before it were
-collapsed into that one untyped layer on 2026-07-03. The rung becomes two
-folds over *rows*, never hidden units, since a symbol is a concept and every
-unit that matters should be addressable:
+**Concepts are assemblages of wholes and parts** (Alec, 2026-09-22). Every
+row of the concept store is a concept; there are no kinds of row. A
+concept's *parts* are the concepts it is computed from and its *wholes* are
+the concepts it enters. With the pi stage on, a concept's parts are of two
+kinds: **conjunctive** parts, all of which it needs, and **disjunctive**
+parts, any of which suffices. A concept whose parts are all conjunctive is a
+conjunction; one whose parts are all disjunctive is a union; most are both.
 
-- a **pi row** is a term: *these members together*. It is what
-  `synthesize_higher_order` already mints from a set of co-active members;
-- a **sigma row** is a class: *any of these*. It is a union over terms or
-  members — META over a word and its object, subsumption between concepts;
-- within a rung the pi rows are computed first and the sigma rows after
-  them, so a class can take in terms minted at its own order. The
-  ramsification stamp that records sigma or pi per fold is the natural place
-  to type a row.
+**Two structures, and the taxonomy is the higher-order concepts** (Alec,
+2026-09-22: "let's leave the taxonomy the same as the higher order concepts.
+That means that by default, we are doing sigma, not sigma+pi for increasing
+order").
 
-**The folds**, on presence `u = (a + 1)/2`, with non-negative exponents and
-**no normalisation** — each factor lies in `[0, 1]`, so the result does:
+- *The meronomy of percepts*: parts and wholes at order 0, in the perceptual
+  towers and their `.where`; below it, WholeSpace's property rows type the
+  percept field. This is the hierarchy that is learned directly over letters
+  and words.
+- *The hierarchy of concepts*: the pyramid's higher-order concepts **are**
+  the knowledge hierarchy — a meronomy of types, and so the taxonomy. A
+  higher-order concept is a type: any of its members suffices, which is the
+  union, and that is why **sigma alone is the default** for increasing
+  order, as today. Taxonomic access keeps walking this structure
+  ([taxonomic access](specs/2026-09-20-accessible-mind-subsystems.md)); the
+  concept-level index of [two truths §3.4](specs/2026-09-16-two-truths-ideas-and-relations.md#34-meta-and-the-taxonomy-decided)
+  is this structure, and the seal is one of its writers. The pi stage is an
+  optional discriminative extension of the same structure, `<conceptualPi>`,
+  off by default: conjunctions with negation, for XOR-type concepts.
+- *Two ways in, and a maxim.* **What co-occurs is a necessary part of the
+  whole it forms; what substitutes is a sufficient part of the kind it
+  forms** (Alec, 2026-09-22). Necessary parts are pi, and make a meronomy of
+  concepts; sufficient parts are sigma, and make the taxonomy. The pyramid
+  is a **taxonomy of kinds, not a meronomy** (Alec): by default it discovers
+  kinds, and wholes of co-present concepts are the grammar's — an idea is
+  exactly that, with roles. A kind over things the mind **witnesses** — words
+  and other percepts — is **discovered** by substitution: concepts that fill
+  the same context on different occasions, the same where at different
+  times, which is the evidence the promotion observer's context weights
+  already collect. A kind over **objects** cannot be witnessed until the
+  mind has a video feed; its membership rests on **testimony**: the
+  two-truths seal writes the asserted part row ("cats are animals") into
+  this same structure, between the object concepts the words resolve to —
+  the identity the expectation layer carries
+  ([two truths §3.5](specs/2026-09-16-two-truths-ideas-and-relations.md#35-object-permanence-a-word-may-translate-to-an-earlier-occurrence-decided-2026-09-21))
+  — with the source's trust kept on the LTM row, never on the edge. With
+  `<conceptualPi>` on, the pyramid also discovers **wholes** from presence
+  in the same space and time, and every co-present concept is a necessary
+  part of the whole it forms; the XOR gate needs this, for conjunctions with
+  negation. Substitution in a context ("the cat / the dog sat on the mat")
+  is evidence of a word's part of speech or sense, according to the grain
+  of the context; it is never evidence of an object's kind.
 
-    pi:     y = ∏ lit_i ^ w_i                 all present → 1; a missing member lowers it
-    sigma:  y = 1 − ∏ (1 − t_j) ^ v_j         any term present → 1; or max
+**The computation.** Today every rung of the concept pyramid is one
+additive hop, `tanh(W[a|1])`; the typed per-order families that came before
+it were collapsed into that one untyped layer on 2026-07-03. Under the
+switch, on presence `u = (a + 1)/2` with signed exponents and no
+normalisation — each factor lies in `[0, 1]`, so the result does — a
+concept `r` at order `k` is computed in two stages, each one scatter pass
+over its own COO matrix, all concepts of the order in parallel:
 
-Neither decays with order (finding 10), the two add in different charts
-(`log u` and `log(1 − u)`), which is the mismatch of §2, and the exact
-reverse is the same solve in each chart.
+    conjunction (W_π):  p_r = ∏_j lit_rj ^ |w_rj|              over its conjunctive parts, of lower order
+    union       (W_σ):  y_r = 1 − (1 − p_r) · ∏_k (1 − q_k) ^ |v_rk|   over its disjunctive parts
 
-**Negation enters only above order 0.** From symbols, a literal may be a
-member or its negation — `lit = u` for a positive weight, `1 − u` for a
-negative one — so a term can say *this and not that*. That is XOR's home,
-`(x ∧ ¬y) ∨ (¬x ∧ y)`, two pi rows and one sigma row in conceptual space; it
-is also a concept formed by exclusion, which is what *apoha* says a concept
-is ([Philosophy](Philosophy.md#expectation-as-a-negative-image-attention-as-exclusion-2026-09-20)).
+where `lit_rj = presence(sign(w_rj) · a_j)` — a negative exponent is the
+negated part — `q_k` is `p_k` for a disjunctive part of the same order and
+`y_k` for one of lower order, and a concept with no conjunctive parts
+contributes no own conjunct. A union with a single disjunct is that
+disjunct; a conjunction with no disjunctive parts is `y_r = p_r`. The union
+is computed as `−expm1(Σ · log1p(−·))`. With the switch off there is no pi
+stage and `y_r` is the union over the concept's parts directly — today's
+reading of a minted row as any of its members, with a union that does not
+decay in place of the hop (finding 10). Neither stage decays with order,
+the two add in different charts (`log u` and `log(1 − u)`), which is the
+mismatch of §2, and each inverts by its transpose. Per rung the cost is two
+scatter passes in place of one, with `log`/`log1p` and `exp`/`expm1` in
+place of `tanh`; the top-K taper follows as now. The perceptual towers'
+binary folds are what map N → N/2 (two operands to one); the pyramid's
+width per order is the allocated row count under the taper.
+
+**Negation enters only above order 0.** From symbols a part may enter
+negated, by the sign of its exponent, so a conjunction can say *this and
+not that*. That is XOR's home: `(x ∧ ¬y) ∨ (¬x ∧ y)` is two conjunction
+concepts and one union concept over them in conceptual space; it is also a
+concept formed by exclusion, which is what *apoha* says a concept is
+([Philosophy](Philosophy.md#expectation-as-a-negative-image-attention-as-exclusion-2026-09-20)).
 From percepts, if the same form is used there, it is **monotone** DNF:
-perceptual space carries no negation, so every literal is a presence. That
-is the form that keeps parthood.
+perceptual space carries no negation, so every part enters as a presence.
+That is the form that keeps parthood.
 
-**The open points, settled (Alec, 2026-09-22).** Point 6 carries Claude's
-recommendation and awaits Alec's confirmation; the item is not handed to
-Codex until it has it.
+**The open points, settled (Alec, 2026-09-22).**
 
-1. **How a class row comes to have several terms — it is the sparse
-   matrix.** The concept store already is a sparse matrix in `(I, J, weight)`
-   form: `SparseLayer` holds host COO rows and columns with one learnable
-   value per edge, and `_populate_concept_weights` writes one edge per
-   symbol constituent of a minted row (row = the relation's row, column =
-   the constituent's row). The allocator's `(whole, part)` records are the
-   host-side list of the same matrix. So a row's terms are the columns of
-   its row, and a class gains a term by `add_edge(class, term)`; nothing new
-   is stored. What mints and extends sigma rows is what already writes
-   classes: META over a word and its object (`create_word_object_meta`, a
-   class of two), and, once two truths lands, the seal's part row between
-   concept rows ("cats are animals" adds *cat* as a term of *animal*). A
-   co-active member set mints a pi row, as `synthesize_higher_order` does
-   now; it gains members the same way.
+1. **The store is a sparse matrix, and now two.** The concept store already
+   is a sparse `(I, J, weight)` matrix: `SparseLayer` holds host COO rows
+   and columns with one learnable value per edge, and
+   `_populate_concept_weights` writes one edge per constituent of a minted
+   concept. The allocator's `(whole, part)` records are the host-side list
+   of the same matrix. With the pi stage on there are two such matrices,
+   `W_π` for conjunctive parts and `W_σ` for disjunctive parts; a concept's
+   parts are the columns of its rows, and it gains a part by `add_edge`.
 
    **1a. Sequences leave the concept store.** The `(whole, part)` table was
    also designed for sequence learning: `conceptualize_chain` builds a
@@ -1695,88 +1740,61 @@ Codex until it has it.
    (Alec): a sequence is an episode, a conjunction of particular things in
    order, and it is the chain of rows the two-truths seal writes
    ([accessible mind §2.7.1](specs/2026-09-20-accessible-mind-subsystems.md));
-   the predictor learns its regularities. The concept store keeps only
-   class and term structure. `conceptualize_chain`, `chain_idx` and the
-   JOINT concept are deleted when item 7 lands, not kept beside the seal's
-   chaining.
+   the predictor learns its regularities. `conceptualize_chain`, `chain_idx`
+   and the JOINT concept are deleted when item 7 lands.
 
-   **1b. One-hot and distributed — keep both, as now (confirmed, Alec 2026-09-22).**
-   The two already coexist and do different work. The *identity* of a
-   concept is its row, and a symbol is that row's activation times the
-   row-aligned identity (Architecture: "the signed bounded activation *is*
-   the 0-D symbol"), so the one-hot symbol comes free with the row: the
-   snap at the cutover (`cs_snap_order0`) extracts per-row presence at the
-   entrance to the conceptual layer, and the projection `π(a) = argmax` is
-   the one-hot readout at the symbolic layer
+   **1b. One-hot and distributed — keep both, as now (confirmed, Alec
+   2026-09-22).** The *identity* of a concept is its row, and a symbol is
+   that row's activation times the row-aligned identity, so the one-hot
+   symbol comes free with the row: the snap at the cutover
+   (`cs_snap_order0`) extracts per-row presence at the entrance to the
+   conceptual layer, and the projection `π(a) = argmax` is the one-hot
+   readout at the symbolic layer
    ([spec §2.0](specs/2026-09-20-accessible-mind-subsystems.md)). The
    *content* of a concept is its code, a distributed vector on the unit
-   sphere; that is what similarity, retrieval by cue, composition into
-   off-codebook ideas and the tied reconstruction use, and the codes are
-   placed by distribution ([plan §8.4](plans/2026-09-15-next-sentence-as-the-production-objective.md)).
-   The DNF operates on the per-row activations, the edges run between rows,
-   and it never touches the codes: it is one-hot in exactly the sense that
-   "folds over rows, never hidden units" requires. A wholly one-hot
-   conceptual layer would lose the idea — one vector that is in no codebook
-   — and with it generativity; a wholly distributed one would lose
-   addressable parts and wholes. Nothing is added.
+   sphere, used by similarity, retrieval by cue, composition into
+   off-codebook ideas and the tied reconstruction, and placed by
+   distribution ([plan §8.4](plans/2026-09-15-next-sentence-as-the-production-objective.md)).
+   The DNF operates on the per-row activations, its edges run between rows,
+   and it never touches the codes.
 
-2. **The sign of a literal is learned per edge, initialised at zero.** A
-   weight is a signed exponent: zero means the member is unknown to the
-   term — the factor `lit⁰ = 1` says nothing, total uncertainty — and the
-   sign and magnitude grow as the concept is learned. Negation in
-   conceptual space is literal negation: *not-cat* is the negation of *cat*,
-   and activation 0 is agnostic about catness
+2. **The sign of a part is learned per edge, initialised at zero.** An
+   exponent is signed: zero means the part is unknown to the concept — the
+   factor `lit⁰ = 1` says nothing, total uncertainty — and the sign and
+   magnitude grow as the concept is learned. Negation in conceptual space
+   is literal negation: *not-cat* is the negation of *cat*, and activation
+   0 is agnostic about catness
    ([Spaces: complement and negation](Spaces.md#percept-complement),
    [spec §2.6.2](specs/2026-09-20-accessible-mind-subsystems.md)). On
    presence the two readings coincide exactly: `1 − u = (1 − a)/2` is the
-   presence of `−a`, so a negative weight multiplies the term by the
-   presence of the negated activation. Edges therefore initialise at 0, not
-   near identity; a minted row says nothing until it has learned.
+   presence of `−a`. Edges written from evidence carry it — attention
+   promotion scales a part's edge by its co-activation support, a positive
+   part; edges added without evidence start at zero.
 
-3. **Both folds are one pass over the COO matrix; pi is an option on what
-   is minted, not a layer.** (Alec: "it will be much faster to integrate
-   computation of the DNF with the COO matrix.") The substrate's scatter
-   kernel already computes a rung as `index_select` of the sources, a
-   per-edge multiply, and one `index_add_` into the target rows. The DNF is
-   the same pass with the chart chosen per edge by its **target row's
-   type** — the sigma / pi stamp the ramsification table already records:
-
-       for edge (r, j, w):   lit = presence(sign(w) · a_j)
-           pi row r:         s_r += |w| · log lit             y_r = exp(s_r)
-           sigma row r:      s_r += |w| · log1p(−lit)         y_r = −expm1(s_r)
-
-   One rung is **two such passes over the rows of that order — the pi rows
-   first, then the sigma rows — then the top-K taper.** Each edge is
-   visited once, in the pass of its target's type, so the edge work is that
-   of one pass and the rung costs one extra launch. The order of sigma over
-   pi is the reason for the two: a class of order `k` reads the terms of
-   order `k` (its own disjuncts) as well as lower orders, so a class takes
-   the order of its terms, not one above — the allocator's `1 + max` rule
-   applies to terms and to classes over raw members, and `max` to a class
-   over terms. That keeps `symbolicOrder` a count of class levels rather
-   than halving the depth, and a term at the cap still has its class. Per
-   rung the cost is the same kernel count as the additive hop plus one
-   launch, with `log`/`log1p` and `exp`/`expm1` in place of `tanh`.
-
-   The perceptual towers' binary folds are what map N → N/2 (two operands
-   to one; `σ.generate` returns equal halves); the pyramid's width per
-   order is the allocated row count under the taper, not a halving. The
-   XOR gates run with `<conceptualPi>` on (point 6); the reconstruction
-   baseline is taken with it off and on.
+3. **The switch, and both stages on the COO matrices.** (Alec: "it will
+   be much faster to integrate computation of the DNF with the COO
+   matrix.") Each stage is the substrate's scatter kernel — `index_select`
+   of the sources, a per-edge multiply in the stage's chart, one
+   `index_add_` into the rows — over its own matrix; the pi stage of order
+   `k` reads lower orders, the sigma stage of order `k` reads the
+   conjunctions of order `k` and the activations of lower orders, so an
+   order is one DNF level and `symbolicOrder` counts levels. `<conceptualPi>`
+   (default off until measured) is the switch between sigma only and sigma
+   over pi. The XOR gates run with it on; the reconstruction baseline is
+   taken with it off and on.
 
 4. **Saturation — compute the union with `log1p` / `expm1`, and let the
-   taper bound it (accepted; Codex's arithmetic).** The probabilistic
-   sum is `y = −expm1(Σ vⱼ · log1p(−tⱼ))`: `log1p(−t)` is exact for the
-   weakly active terms and `expm1` for a result near zero, where
+   taper bound it (accepted; Codex's arithmetic).** `log1p(−t)` is exact for
+   weakly present parts and `expm1` for a result near zero, where
    `1 − exp(Σ v log(1 − t))` loses digits. That is the arithmetic; it does
    not by itself stop accumulation, and accumulation is the semantics of a
-   union — many weak alternatives *do* raise a class, as the exemplar
-   models sum evidence. What bounds it is the taper: a class row reads only
-   the rows the top-K per order admitted, so at most K terms per order
+   union — many weak alternatives *do* raise a concept, as the exemplar
+   models sum evidence. What bounds it is the taper: a concept reads only
+   the rows the top-K per order admitted, so at most K parts per order
    contribute, and diffuse noise is cut before it is summed. Max remains
-   the fallback if measurement shows classes saturating under real
-   activity: the test is that a class with many weak members must not rise
-   above its strongest member by more than a stated bound.
+   the fallback if measurement shows concepts saturating under real
+   activity: the test is that a concept with many weak disjunctive parts
+   must not rise above its strongest by more than a stated bound.
 
 5. **The reverse through a rung is the transpose, many-to-one, and that is
    right.** The substrate's contract is already "no LDU inverse: the
@@ -1784,60 +1802,127 @@ Codex until it has it.
    a whole's log-presence among its parts by weight. It is not bijective —
    the rung has fewer outputs than inputs — and it need not be (Alec):
    parts imply a whole, and a whole implies its parts with less certainty.
-   The two folds make the asymmetry exact. A **term** (pi) is implied only
-   when all its members are present, and when the term is present each
-   member is fully implied. A **class** (sigma) is implied by any one
-   member, and when the class is present each member is only partly
-   implied, since any of them could be the one. In the same pass run
-   backwards, with each row's exponents normalised by their sum:
+   The two stages make the asymmetry exact: a conjunction is implied only
+   when all its parts are present, and when it is present each part is
+   fully implied; a union is implied by any one part, and when it is present
+   each part is only partly implied. Run backwards with each row's exponents
+   normalised by their sum, a present whole gives each disjunctive part
+   `1 − (1 − y)^(1/n)` under equal weights — the presence that, shared
+   equally, would produce `y` — the balanced split of the grammar's
+   generate. This is the class / conjunction distinction of the
+   accessible-mind spec, read backwards.
 
-       pi row r:      log lit_j     += (|w_rj| / Σ_k |w_rk|) · log y_r
-       sigma row r:   log1p(−lit_j) += (|w_rj| / Σ_k |w_rk|) · log1p(−y_r)
+6. **A pool of unminted concepts, learning all the time, with a gate on
+   participation — in place of minting by significance** (Alec, 2026-09-22:
+   "the minting of a term is difficult, since it may mean that we miss
+   things that are not seen as significant, but they turn out to have large
+   effect. I would prefer to have some number of 'unminted' concepts
+   learning at any given time, with a gate that allows them to participate
+   as concepts… almost like unassigned vectors in a VQ pool"). Concrete
+   form, awaiting Alec's confirmation:
 
-   so that a whole's log-presence is shared among its members by weight,
-   and with equal weights each member of a class receives
-   `1 − (1 − y)^(1/n)` — the presence that, shared equally, would produce
-   `y` — the same rule as the balanced split in the grammar's generate.
-   This is the class / conjunction distinction of the accessible-mind
-   spec, read backwards.
+   - **What exists.** Attention promotion already keeps a pool of
+     uncommitted candidates on the host: each entry has EWMA member
+     weights, a support count and a last-seen time; an incoming co-active
+     set is matched to the nearest entry by cosine or opens a new one; the
+     pool is capped and the weakest entry by (support, last seen) is
+     evicted; an entry is minted as a row when its learn score crosses a
+     threshold (`promotion_observe`, `_promotion_match_entry`,
+     `_promotion_evict`, `_promotion_learn_score`). That is the VQ pool Alec
+     describes, except that it lives in Python dictionaries, computes
+     nothing, and mints by a threshold.
+   - **The pool becomes rows.** Each order keeps `P` provisional concepts
+     in the store beside its minted ones (`P` a `model.xml` element). A
+     provisional concept computes forward like any concept, but the next
+     rung, the taper and the symbolic layer read it only through its
+     **participation gate** `g ∈ [0, 1]`: they see `g · y`.
+   - **Assignment, as in VQ.** By default (kinds): when two concepts'
+     contexts match above a bar — the same where on different occasions —
+     and no kind already holds both, the pair is assigned to the least-used
+     provisional concept as its first two disjunctive parts; a concept whose
+     context matches an existing kind's is added to it. With `<conceptualPi>`
+     on (wholes as well): an incoming co-present set that no whole matches
+     above the bar — cosine over conjunctive parts, as now — is assigned to
+     the least-used provisional concept as its conjunctive parts, all of
+     them, each necessary. Assignment is among unminted concepts only;
+     minted concepts do not compete for input.
+   - **Learning before minting.** A provisional concept's parts are tracked
+     by EWMA — as the entry's member weights are now — and trained by the
+     ordinary gradient through `g`, as the pyramid's weights are. Its
+     context signature, the entry's context weights, is its where. This
+     applies to what the mind witnesses: words and other percepts.
+     Object-concepts are not witnessed, so their kinds are written by the
+     seal from testimony, not discovered by the pool. The gate is **use,
+     not gradient**: an EWMA of the concept's own activation being above a
+     floor on recent inputs — earned by recurring, never optimised, so a
+     concept cannot learn to participate by making itself cheap. `g` rises
+     with use and decays without it.
+   - **Where, for a concept, is its context — and that makes co-presence
+     and substitution one rule** (proposal for Alec's question of
+     2026-09-22: "We need to integrate the 'same space and time' that
+     creates wholes and parts, and the 'substitution' that creates
+     syntactic categories and parts of speech. I think we proceed by
+     defining 'where' in terms of context, or perhaps by using the location
+     as embedded in conceptual space (which reflects previous embeddings)").
+     A percept has a `.where`, its span in the input. A concept has none;
+     define its **where as its context**: what else is present in the field
+     when it is — the leave-one-out bag the promotion observer already keeps
+     as an entry's context weights, and the rotation updater already uses to
+     place codes. Then one rule has two consequences:
 
-6. **What mints a class over terms — so that the option is sigma *over* pi
-   and not pi in place of sigma (verified; recommendation).** As first
-   written, `<conceptualPi>` only changed what a co-active member set mints,
-   and nothing in the pyramid mints a class over terms: the two automatic
-   minters — mereological synthesis when a concept's parts overflow, and
-   attention promotion of a recurrent co-active set — each mint one row over
-   a member set, and META is a class over a word and its object, not over
-   terms. With the option on, every automatic row would have become a term
-   and the pyramid would have had no unions: pi replacing sigma. The
-   correction:
+     | | same time, different where | same where, different time |
+     |---|---|---|
+     | what it is | co-presence: parts of one whole | substitution: alternatives at one position |
+     | fold | pi, a conjunction over what is present together | sigma, a union over what fills the same context |
+     | in the towers | adjacent spans at one `.when`: a whole of its parts — its presence the conjunction of theirs, its extent the union of their spans (the synthesis fold) | one span position filled differently on other occasions: a type (WholeSpace's property rows) |
+     | in the pyramid | with the switch on, the assigned co-present set: conjunctive parts, a whole | concepts whose contexts match: disjunctive parts, a kind — the default |
+     | in linguistics | the syntagmatic axis | the paradigmatic axis (Saussure; Harris 1954) |
 
-   - **A term is minted with its class.** With the option on, a co-active
-     set mints a term T *and* a class C(T) over it, one edge, at the same
-     order (point 3). C(T) is the symbol: what the snap, the projection and
-     LTM references address, and what stays stable as terms join it; T is
-     its first disjunct. With the option off a set mints one class row over
-     its members, as today. Cost: one row and one edge per minted term. The
-     alternative — mint the class only when a second term arrives — would
-     change the symbol's row under existing references, so it is not taken.
-   - **A class gains terms by substitution, and by language.** Conjunction
-     evidence (co-activity) mints terms; class evidence is substitution:
-     the same context with a different filler. The architecture has that
-     evidence at the seal, in the references of item 7 — two sealed rows
-     alike in two roles and different in the third make the two fillers
-     terms of one class — and in language: META (word ↔ object) and the
-     two-truths part row between concept rows ("cats are animals"). Never
-     from code geometry alone: a class is membership, not a neighbourhood
-     ([spec §2.0](specs/2026-09-20-accessible-mind-subsystems.md)).
-     Until item 7 lands, classes are singletons plus META, which is enough
-     for the XOR gates and the baseline; substitution-minted classes land
-     with item 7.
-   - **The XOR gate.** The test mints two terms, `(x ∧ ¬y)` and `(¬x ∧ y)`,
-     and one class over them, and learns the edge weights, unseeded. It is a
-     test of the folds and of learning through them, not of minting.
-   - Edges written from evidence carry it: attention promotion already
-     scales a member's edge by its co-activation support, a positive
-     literal. Edges added without evidence start at zero (point 2).
+     Sigma over pi is then paradigmatic over syntagmatic: a concept is a
+     union, over occasions, of conjunctions over what was present. The two
+     definitions Alec offers are one thing at two time scales. The
+     occurrence's where is its context *now*, and the code's location in
+     conceptual space is its where *accumulated* — the rotation updater is
+     the EMA that turns the first into the second, so "codes by
+     distribution" is exactly substitution learned over time. Discovery uses
+     the first within a pass (two concepts whose contexts match; with the
+     switch on, a co-present set) and the second as the cue across passes (a
+     nearby code is a candidate alternative). Geometry is the *evidence*; the edge is the
+     *record*: a category is still membership, written when two concepts'
+     wheres coincide above a bar, and a nearby code that is never seen in a
+     matching context writes nothing. The category this discovers is the
+     one the contexts distinguish: syntactic when the context is the frame
+     ("the __ is": Mintz 2003; Redington, Chater & Finch 1998), semantic
+     when it is the predicates ("__ purrs"), which is the distributional
+     hypothesis at each grain. It applies to what the mind witnesses.
+     Object-concepts have no witnessed where until there is a video feed, so
+     their categories still come only from testimony; a word's discovered
+     categories reach its object only through what language asserts.
+     The context weights therefore stay in the pool: they are the where.
+     The philosophical reading — particulars now, universals over time; the
+     paradigm as the domain of exclusion; testimony for the unwitnessed — is
+     in [Philosophy](Philosophy.md#where-is-context-particulars-universals-and-the-two-axes-2026-09-22).
+
+     concept is discovered: it gets its symbol and its code, LTM may
+     reference it, and it is no longer recyclable. Below `θ_recycle`, the
+     least-used provisional concept is recycled when a new set needs one.
+     Nothing is missed for being insignificant at first sight: every
+     recurring substitution, and with the switch on every recurring
+     co-present set, has a concept from its first recurrence, and an effect
+     that shows late raises the gate then.
+   - **Cost.** `P` rows per order in the store, dense within the pool's
+     edges at first and pruned to the strong edges at minting; the host
+     dictionaries go. The forward cost is that of `P` more rows per rung.
+   - **The XOR gate.** The test mints two conjunction concepts,
+     `(x ∧ ¬y)` and `(¬x ∧ y)`, and one union concept over them, and learns
+     the edge weights, unseeded. It is a test of the two stages and of
+     learning through them, not of the pool.
+   - **The switch, restated.** `<conceptualPi>` (default off) is whether the
+     pyramid discovers wholes from co-presence as well as kinds from
+     substitution: off, it is a taxonomy of kinds and every discovered
+     concept is a union of sufficient parts; on, co-present sets also mint
+     wholes of necessary parts, and the two stages of the computation both
+     run.
 
 **Recommendation.** Evaluate behind a `normalize` mode, turned on
 selectively. First the two XOR gates, in conceptual space with the monotonic

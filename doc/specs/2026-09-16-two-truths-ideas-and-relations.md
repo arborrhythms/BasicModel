@@ -267,7 +267,15 @@ The taxonomy readers (the decode reverse walks over parent and children,
 the category-context builder, the autobind path) move to a concept-level
 **taxonomy index** derived from two sources and rebuilt on load: the
 part rows between concept rows (§3.2), and the META bindings. It is an
-index, not a store; it holds no trust of its own. The tetralemma trust
+index, not a store; it holds no trust of its own. **Amended (Alec,
+2026-09-22): that index is the concept store's own hierarchy of
+higher-order concepts** — the taxonomy and the higher-order concepts are
+one structure, read by union — and it has three writers: the seal's part
+rows between concept rows, the META bindings, and discovery from witnessed
+substitution — the same context on different occasions — for words and
+percepts
+([Architecture](../Architecture.md#decided-in-direction-a-concept-is-sigma-over-pi-alec-2026-09-21)).
+Trust stays on the LTM row; the edge carries none. The tetralemma trust
 tuple (t, f, both, neither) is computation-time only; the stored scalar
 is `t − f` as today.
 
