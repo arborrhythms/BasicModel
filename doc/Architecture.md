@@ -1668,9 +1668,9 @@ From percepts, if the same form is used there, it is **monotone** DNF:
 perceptual space carries no negation, so every literal is a presence. That
 is the form that keeps parthood.
 
-**The open points, settled (Alec, 2026-09-22).** Point 7, the residual
-gate, is Alec's mechanism in Claude's concrete form and awaits his
-confirmation of that form; the item is not handed to Codex until it has it.
+**The open points, settled (Alec, 2026-09-22).** Point 6 carries Claude's
+recommendation and awaits Alec's confirmation; the item is not handed to
+Codex until it has it.
 
 1. **How a class row comes to have several terms — it is the sparse
    matrix.** The concept store already is a sparse matrix in `(I, J, weight)`
@@ -1764,12 +1764,8 @@ confirmation of that form; the item is not handed to Codex until it has it.
    XOR gates run with `<conceptualPi>` on (point 6); the reconstruction
    baseline is taken with it off and on.
 
-4. **Saturation — superseded by the residual gate (point 7).** A class is
-   no longer read as a probabilistic sum over its terms but as its
-   strongest term on the residual, so nothing accumulates and the question
-   does not arise; the taper still bounds what a class reads. The
-   `log1p` / `expm1` form stays for the equal-share reverse (point 5). What
-   follows is kept as the record of the accepted arithmetic. The probabilistic
+4. **Saturation — compute the union with `log1p` / `expm1`, and let the
+   taper bound it (accepted; Codex's arithmetic).** The probabilistic
    sum is `y = −expm1(Σ vⱼ · log1p(−tⱼ))`: `log1p(−t)` is exact for the
    weakly active terms and `expm1` for a result near zero, where
    `1 − exp(Σ v log(1 − t))` loses digits. That is the arithmetic; it does
@@ -1806,102 +1802,42 @@ confirmation of that form; the item is not handed to Codex until it has it.
    spec, read backwards.
 
 6. **What mints a class over terms — so that the option is sigma *over* pi
-   and not pi in place of sigma (verified).** As first written,
-   `<conceptualPi>` only changed what a co-active member set mints, and
-   nothing in the pyramid mints a class over terms: the two automatic
+   and not pi in place of sigma (verified; recommendation).** As first
+   written, `<conceptualPi>` only changed what a co-active member set mints,
+   and nothing in the pyramid mints a class over terms: the two automatic
    minters — mereological synthesis when a concept's parts overflow, and
    attention promotion of a recurrent co-active set — each mint one row over
    a member set, and META is a class over a word and its object, not over
    terms. With the option on, every automatic row would have become a term
-   and the pyramid would have had no unions: pi replacing sigma. Corrected
-   as follows.
+   and the pyramid would have had no unions: pi replacing sigma. The
+   correction:
 
-   - **A co-active set is first offered to the classes in play (point 7);
-     only if no class takes it does it mint a term with a new class.** The
-     new class C(T) is the symbol: what the snap, the projection and LTM
-     references address, and what stays stable as terms join it; T is its
-     first disjunct. With the option off a set mints one class row over its
-     members, as today. The alternative — mint the class only when a second
-     term arrives — would change the symbol's row under existing
-     references, so it is not taken.
-   - **A term has one class.** A set that would be a disjunct of two classes
-     is two terms, so that the gate's residual is per class and classes are
-     independent in a rung.
-   - **Language also writes classes**: META (word ↔ object) and the
+   - **A term is minted with its class.** With the option on, a co-active
+     set mints a term T *and* a class C(T) over it, one edge, at the same
+     order (point 3). C(T) is the symbol: what the snap, the projection and
+     LTM references address, and what stays stable as terms join it; T is
+     its first disjunct. With the option off a set mints one class row over
+     its members, as today. Cost: one row and one edge per minted term. The
+     alternative — mint the class only when a second term arrives — would
+     change the symbol's row under existing references, so it is not taken.
+   - **A class gains terms by substitution, and by language.** Conjunction
+     evidence (co-activity) mints terms; class evidence is substitution:
+     the same context with a different filler. The architecture has that
+     evidence at the seal, in the references of item 7 — two sealed rows
+     alike in two roles and different in the third make the two fillers
+     terms of one class — and in language: META (word ↔ object) and the
      two-truths part row between concept rows ("cats are animals"). Never
-     code geometry alone: a class is membership, not a neighbourhood
+     from code geometry alone: a class is membership, not a neighbourhood
      ([spec §2.0](specs/2026-09-20-accessible-mind-subsystems.md)).
+     Until item 7 lands, classes are singletons plus META, which is enough
+     for the XOR gates and the baseline; substitution-minted classes land
+     with item 7.
    - **The XOR gate.** The test mints two terms, `(x ∧ ¬y)` and `(¬x ∧ y)`,
      and one class over them, and learns the edge weights, unseeded. It is a
      test of the folds and of learning through them, not of minting.
    - Edges written from evidence carry it: attention promotion already
      scales a member's edge by its co-activation support, a positive
      literal. Edges added without evidence start at zero (point 2).
-
-7. **The residual gate, in parallel: a member is shared among the terms
-   that use it in proportion to their strength, and a term reads its share**
-   (Alec, 2026-09-22: "a gate for inclusion in the class … examine the
-   product or sum of all terms to find the highest, under the condition
-   that the contribution of the other terms was removed … repeated
-   processing of the residual, which might get us the one-hot conceptual
-   orthogonality that we were looking for"; and, of a greedy first draft,
-   "it would partition conceptually based on the first to respond, so it
-   wouldn't work well in parallel"). Concrete form — every term of every
-   class at once, no order among them:
-
-   - **Readout.** Round 0 is the plain pi pass, `t_i = ∏_j lit_ij^{|w_ij|}`.
-     Then, for `K` rounds, all terms in parallel:
-
-         share_ij = t_i^β / Σ_{k ∈ C, k uses j} t_k^β      member j divided among the terms of C that use it
-         t_i      = ∏_j (lit_ij · share_ij)^{|w_ij|}        a term reads its share of each member
-
-     "The contribution of the other terms removed" is the share the others
-     hold. A member used by one term only has share 1 and is read in full.
-     Two terms that overlap divide the shared members by strength: the
-     stronger takes most of them and the weaker keeps its own; two equal
-     terms split them and both read lower. `β` is the sharpness: at
-     `β → ∞` each member goes wholly to one term — a hard partition, the
-     one-hot orthogonality — and finite `β` is its graded form. The rounds
-     are the fixed-point iteration of that partition (the E-step of a
-     mixture, monotone, no oscillation), and `K` of two or three suffices.
-     The members' presences `u_j` are never altered; each term reads its
-     own share of them, so "selection changes, activations never distort"
-     holds for the field. The class's activation is `max_i t_i` at the
-     fixed point (the `p → ∞` member of the power-mean family of §5), so
-     nothing accumulates and point 4 does not arise; the further terms
-     above `θ` are the class's other disjuncts present, with disjoint
-     support.
-   - **Inclusion.** A candidate term T (a co-active set, point 6) joins
-     class C when C is *in play* — admitted by the taper in this rung, or
-     expected by the estimate at gain `g` — and T, run through the same
-     rounds as a term of C against C's existing terms, holds an activation
-     above `θ` at the fixed point: it keeps enough of its members against
-     them. That is substitution evidence in residual form: where the class
-     was present or expected, its known terms did not account for the
-     input and T did. The edge C → T is written at zero-plus-evidence
-     (point 2). If no class in play takes T, T mints its own class
-     (point 6).
-   - **Reverse.** Given the fixed point, the reverse is sharp: each member
-     receives, from each term of the class that is present, that term's
-     presence times its share of the member — a member claimed by one term
-     is implied by it fully. Given a bare class with nothing recorded, the
-     equal share of point 5 applies.
-   - **Cost.** Per rung: the pi pass, then `K` rounds of one scatter over
-     the class-term edges for the denominators and one masked pi pass over
-     the same edges: `(1 + 2K)` edge passes, all classes and terms in
-     parallel, fixed unroll. `K`, `β` and `θ` are `model.xml` elements.
-   - **What it changes.** A class's activation is its best term at the
-     fixed point, not summed evidence: nearest-term rather than
-     summed-similarity categorisation; the difference is in the graded
-     tail, not in which class wins. Within a class this is competitive
-     learning — terms competing for members by normalised responsibility
-     (Rumelhart & Zipser 1985, already the spec's model of a category node
-     winning over a feature field), Földiák's decorrelation by lateral
-     inhibition in its parallel form (Földiák 1990), and the explaining-away
-     of a noisy-OR net done by mean field rather than greedily (Pearl 1988;
-     Saund 1995). The greedy form — take the strongest, explain it away,
-     repeat, as in matching pursuit — was rejected: it partitions by who
-     responds first and cannot run the terms in parallel.
 
 **Recommendation.** Evaluate behind a `normalize` mode, turned on
 selectively. First the two XOR gates, in conceptual space with the monotonic
