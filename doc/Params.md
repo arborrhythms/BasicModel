@@ -324,14 +324,11 @@ the analysis/synthesis orientation.
 
 ### `<ConceptualSpace>`
 
-`conceptEvidenceFloor` (decimal in `[0, 1)`, default **0.112**) admits
-per-position projections independently to the two poles with
-`relu(±p − τ)/(1 − τ)`. Unit-ball codes use cosine times slot norm;
-only explicitly cube-valued reads divide by `√D`. Positions are folded
-within a subject extent before concept composition. The
-[calibration receipt](benchmarks/2026-09-23-item11a/README.md) records
-its parallel workloads, control distributions and accumulation limits.
-It is independent of the later `conceptUseFloor` discovery gate.
+Order-0 concepts read their signed weights over native feature memberships.
+Both symbols use pervasion within an occurrence; readout unions occurrences
+inside the subject's extent. The projection admission parameter and its
+calibration are removed. `conceptUseFloor` remains the separate discovery
+gate over measured use.
 
 Holds the conceptual dictionary, location-aligned PS/WS binding state, and
 short-term memory. The sigma/pi fold ladders live on PS and WS, respectively.

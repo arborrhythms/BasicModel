@@ -65,13 +65,15 @@ class PrimitiveProperties(nn.Module):
     def complement(self, byte_ids, observed):
         return (1 - self(byte_ids)) * observed.to(self.members).unsqueeze(-1)
 
-    def on_counts(self, counts, *, conjunctive=True):
+    def on_counts(self, counts, *, conjunctive=True, complement=False):
         """Read a byte multiset by intersection or union of its properties.
 
         Counts keep the ordered witness separate while allowing each live
         run to use a bounded 256-column tensor in compiled code.
         """
         weights = self.coefficients()
+        if complement:
+            weights = 1 - weights
         base = weights if conjunctive else 1 - weights
         safe = base + (base.clamp_min(torch.finfo(base.dtype).eps) - base).detach()
         exponent = counts.to(weights) @ safe.log().t()
@@ -119,32 +121,5 @@ class PrimitiveProperties(nn.Module):
         key = prefix + 'members'
         if key not in state_dict:
             state_dict[key] = self.members.detach().clone()
-        super()._load_from_state_dict(state_dict, prefix, local_metadata, strict,
-                                     missing_keys, unexpected_keys, error_msgs)
-
-
-class PerceptRead(nn.Module):
-    """Independent percept coordinates read into the common conceptual chart.
-
-    Bias-free maps keep an empty observation empty. A unit-ball projection
-    bounds the conceptual event without selecting a code or inventing a
-    polarity; the dictionary projection performs that read afterwards.
-    """
-    def __init__(self, part_width, property_width, concept_width):
-        super().__init__()
-        self.maps = nn.ParameterList([
-            nn.Parameter(torch.eye(concept_width, width))
-            for width in (part_width, property_width)])
-
-    def forward(self, event, tower):
-        weight = self.maps[tower]
-        content = event[..., :weight.shape[1]]
-        mapped = content @ weight.t()
-        return mapped / mapped.norm(dim=-1, keepdim=True).clamp_min(1.)
-
-    def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
-                              missing_keys, unexpected_keys, error_msgs):
-        for index, weight in enumerate(self.maps):
-            state_dict.setdefault(prefix + f'maps.{index}', weight.detach().clone())
         super()._load_from_state_dict(state_dict, prefix, local_metadata, strict,
                                      missing_keys, unexpected_keys, error_msgs)

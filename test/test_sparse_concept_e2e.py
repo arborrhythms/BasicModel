@@ -60,18 +60,21 @@ def _build(name):
 
 # -- population at mint, keyed by ramsified order -----------------------------
 
-def test_word_symbol_reserves_order0_snap_row():
+def test_word_symbol_defines_order0_native_features_and_object_stays_unwritten():
     cs = _cs_active()
     A, B, C = cs.create_word_object_meta([1, 2], WORD, key="cat")
-    # A (word) is order 0: it RESERVES its order-0 codebook row (the snap
-    # reads it); its PS parts / WS whole live in the reference store, NOT as
-    # weight columns (P2 symbolic-only rework).
+    # A reads native features. B's standing bounds are no perceptual
+    # definition: only testimony can give the object its membership.
     assert cs._concept_source_order(A) == 0
     a_row = cs._csw_concept_row(0, A)
     assert a_row is not None
     assert cs.concept_weights(a_row) == []          # no edges at order 0
     assert set(cs.concept_parts(A)) == {1, 2}       # the reference store
     assert cs.concept_wholes(A) == [int(WORD)]
+    features = Spaces._concept_alloc_of(cs).layer().features
+    assert {col for row, col in features._index if row == a_row} == {4, 8, 4 * int(WORD) + 2}
+    b_row = cs._csw_concept_row(0, B)
+    assert not any(row == b_row for row, _ in features._index)
 
 
 def test_meta_is_ordered_pair_over_subsymbols():
@@ -128,26 +131,21 @@ def test_order_block_overflow_is_safe():
 
 # -- the forward glue ---------------------------------------------------------
 
-def test_symbolic_phase_snap_runs_even_unpopulated():
-    """P3: the order-0 snap is ALWAYS defined against the codebook -- a_0
-    flows (and yields activations) even before any edges exist; the higher
-    orders read as zero. The returned content NEVER substitutes the carrier
-    (decision 10) -- it feeds the losses/SS leg only."""
+def test_symbolic_phase_unwritten_definitions_are_neither():
     cs = _cs_active()
-    cs.eval()                                          # no EMA write here
-    D_dict = int(cs.similarity_codebook.getW().shape[-1])
-    settled = torch.randn(2, 64, D_dict)
-    settled = settled / settled.norm(dim=-1, keepdim=True).clamp_min(1.)
-    content, acts = cs.cs_symbolic_phase(settled)
-    # One subject extent contains all 64 positions; the snap keeps their
-    # individual evidence while the pyramid consumes the extent union.
-    assert acts is not None and acts.shape == (sum(cs._order_caps()), 2, 1, 2)
-    assert cs._cs_position_evidence.shape == (cs._order_caps()[0], 2, 1, 64, 2)
-    assert cs._cs_extents.tolist() == [[[0, 64]], [[0, 64]]]
-    start0, end0 = cs.order_slice(0)
-    assert torch.any(acts[start0:end0] != 0)           # a_0: live snap
-    assert torch.all(acts[end0:] == 0)                 # higher orders: empty
-    assert content.shape == (2, 2 * sum(cs._order_caps()), D_dict)            # the symbolic slab
+    cs.eval()
+    D = int(cs.similarity_codebook.getW().shape[-1])
+    settled = torch.randn(2, 64, D)
+    raw = torch.full((2, 64), 65, dtype=torch.long)
+    ix = torch.arange(64)
+    spans = torch.stack((ix, ix + 1), -1)[None].expand(2, -1, -1)
+    extents = torch.tensor([[[0, 64]]]).expand(2, -1, -1)
+    content, acts = cs.cs_symbolic_phase(settled, extents=extents,
+                                        percepts=(raw, spans, None, raw, spans))
+    assert acts.shape == (sum(cs._order_caps()), 2, 1, 2)
+    assert acts.count_nonzero() == 0
+    assert cs._cs_position_evidence.shape == (cs._order_caps()[0], 2, 1, 128, 2)
+    assert content.shape == (2, 2 * sum(cs._order_caps()), D)
 
 
 def test_symbolic_phase_inactive_is_noop():
@@ -325,10 +323,11 @@ def test_demux_feedback_is_views_of_the_mixed_carrier():
 
 @pytest.mark.slow
 def test_two_phase_forward_cutover_stamps_terminal_activations():
-    """P3 e2e: under the sparse driver config the pump runs 2-stream and the
-    POST-PUMP cutover stamps the terminal CS with the settled activations
-    (the SS leg + losses read them); the snap's EMA identity trace moves the
-    order-0 codebook rows while training."""
+    """The post-pump membership field reaches the terminal CS and SS leg.
+
+    Repeated forwards cannot invent a feature definition by moving codes.
+    Codes follow written definitions at the sentence boundary.
+    """
     import Models
     from util import TheXMLConfig
     m = _build("MM_sparse_concept.xml")
@@ -347,17 +346,12 @@ def test_two_phase_forward_cutover_stamps_terminal_activations():
     assert last_cs is not None
     acts = getattr(last_cs, "_concept_activations", None)
     assert acts is not None and int(acts.shape[0]) == sum(cs0._order_caps())
-    # EMA identity trace: order-0 rows moved; higher-order rows untouched.
-    after = W.detach().clone()
-    assert not torch.equal(after[start0:end0], before[start0:end0])
-    assert torch.equal(after[end0:], before[end0:])
-    # The rectified snap can read EXACTLY zero at a random init (every
-    # slot-mean projection clamped -- the documented init-blindness); the
-    # EMA trace is precisely the mechanism that makes it discriminative:
-    # after a few traced forwards the winning rows align with the field and
-    # the snap symbols come alive.
+    assert torch.equal(W.detach(), before)
+    assert acts[start0:end0].count_nonzero() == 0
     for _ in range(3):
+        m.End()
         m.forward(x)
-    last_cs = getattr(m, "_combine_last_cs_sub", None)
-    acts = getattr(last_cs, "_concept_activations", None)
-    assert torch.any(acts[start0:end0] != 0)             # live snap symbols
+        acts = m._combine_last_cs_sub._concept_activations
+        assert acts[start0:end0].count_nonzero() == 0
+        assert torch.equal(W.detach(), before)
+    m.End()

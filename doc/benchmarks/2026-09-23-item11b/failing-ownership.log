@@ -1,0 +1,47 @@
+.......F
+=================================== FAILURES ===================================
+_______ test_feature_growth_preserves_frozen_rows_and_optimizer_moments ________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3600/test_feature_growth_preserves_0')
+
+    def test_feature_growth_preserves_frozen_rows_and_optimizer_moments(tmp_path):
+        from test_grounded_xor import grounded_model
+        model, _ = grounded_model(tmp_path)
+        cs = model.conceptualSpaces[0]
+        frozen = _mint_row(cs, 0, 100)
+        live = _mint_row(cs, 0, 101)
+        cs.add_concept_feature(frozen, 'ws', 0, .5)
+        cs.add_concept_feature(live, 'ws', 1, .5)
+        cs.freeze_concept(100)
+        optimizer = model.getOptimizer(lr=.001)
+        matrix = Spaces._concept_alloc_of(cs).layer().features
+        matrix.values.sum().backward()
+        optimizer.step()
+        optimizer.zero_grad()
+        old = matrix.values
+        moment = optimizer.state[old]['exp_avg'].clone()
+        cs._prepare_part_learning()
+        cs._maybe_rebuild_optimizer_for_csw()
+        assert matrix.values is not old
+>       torch.testing.assert_close(optimizer.state[matrix.values]['exp_avg'][:2], moment)
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_concept_memberships.py:138: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <Optimizer._MergedOptimizerState object at 0x1261bed50>
+param = Parameter containing:
+tensor([0.5000, 0.4990, 0.0000], requires_grad=True)
+
+    def __getitem__(self, param):
+        owner = self._owner(param)
+        if owner is None:
+>           raise KeyError(param)
+E           KeyError: Parameter containing:
+E           tensor([0.5000, 0.4990, 0.0000], requires_grad=True)
+
+bin/Optimizer.py:863: KeyError
+=========================== short test summary info ============================
+FAILED test/test_concept_memberships.py::test_feature_growth_preserves_frozen_rows_and_optimizer_moments
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 7 passed in 2.25s

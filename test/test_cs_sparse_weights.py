@@ -151,56 +151,35 @@ def test_source_code_activation_is_nonneg_presence_by_default():
     assert torch.allclose(act, ref, atol=1e-5)
 
 
-def test_snap_order0_is_input_dependent_not_saturated():
-    """Cube-valued events use diagonal units; an extent unions its slots.
-
-    Fixed orthogonal directions test magnitude sensitivity without selecting
-    a random draw that avoids saturation.
-    """
+def test_membership_read_is_input_dependent_and_differentiable():
+    from test_concept_memberships import binary_features
     cs = _cs(nS=16, order=1)
-    W = cs.similarity_codebook.getW()
+    native, extents = binary_features(cs, torch.tensor([[48, 49]]))
+    primitive = native[2]
     with torch.no_grad():
-        W.zero_()
-        W[:8, :8] = torch.eye(8)
-    e1 = torch.full((2, 3, W.shape[-1]), .4)
-    e2 = e1.clone()
-    e2[..., 0] = -.2
-    p1 = cs.cs_snap_order0(e1, chart='cube')
-    p2 = cs.cs_snap_order0(e2, chart='cube')
-    assert p1.shape == (8, 2, 1, 2)
-    assert p1.min() >= 0. and p1.max() < .99
-    assert not torch.allclose(p1, p2)
-    p_half = cs.cs_snap_order0(.5 * e1, chart='cube')
-    assert torch.all(p_half[p1 > 0] < p1[p1 > 0])
+        primitive.members[:, 48:50] = torch.tensor([[.2, .8], [.7, .3]])
+    read = cs.cs_read_memberships(native, extents)
+    assert read.shape == (8, 1, 1, 2)
+    assert bool((read[0] > 0).all()) and bool((read[0] < 1).all())
+    read[..., 0].sum().backward()
+    assert primitive.members.grad is not None and primitive.members.grad.abs().sum() > 0
+    matrix = Spaces._concept_alloc_of(cs).layer().features
+    assert matrix.values.grad is not None and matrix.values.grad.abs().sum() > 0
+    with torch.no_grad():
+        primitive.members[:, 48:50] *= .5
+    assert not torch.equal(cs.cs_read_memberships(native, extents), read)
 
 
-def test_snap_order0_ema_traces_winning_rows_training_only():
-    """With ``ema=True`` the winning order-0 rows EMA toward their slot
-    contents (no_grad identity/position trace); eval mode never writes."""
+def test_membership_read_never_updates_the_dictionary():
+    from test_concept_memberships import binary_features
     cs = _cs(nS=16, order=1)
-    torch.manual_seed(1)
+    native, extents = binary_features(cs, torch.tensor([[48, 49]]))
     W = cs.similarity_codebook.getW()
-    D_dict = int(W.shape[-1])
-    ev = torch.rand(1, 2, D_dict)
     before = W.detach().clone()
-    cs.eval()
-    cs.cs_snap_order0(ev, ema=True)                    # eval -> no write
-    assert torch.equal(W.detach(), before)
-    cs.train()
-    cs.cs_snap_order0(ev, ema=True)
-    after = W.detach()
-    start, end = cs.order_slice(0)
-    assert not torch.equal(after[start:end], before[start:end])   # traced
-    assert torch.equal(after[end:], before[end:])      # higher orders untouched
-
-
-def test_snap_order0_is_differentiable_in_event():
-    cs = _cs(nS=16, order=1)
-    D_dict = int(cs.similarity_codebook.getW().shape[-1])
-    ev = torch.rand(2, 3, D_dict, requires_grad=True)
-    a0 = cs.cs_snap_order0(ev)
-    a0.sum().backward()
-    assert ev.grad is not None and torch.any(ev.grad != 0)
+    for training in (False, True):
+        cs.train(training)
+        cs.cs_read_memberships(native, extents)
+        assert torch.equal(W, before)
 
 
 def test_cs_decode_scales_dictionary_atoms():

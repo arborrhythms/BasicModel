@@ -1,0 +1,95 @@
+{
+  "affected-initial-source-manifest.json": {
+    "changed": [
+      "bin/Models.py",
+      "bin/PerceptProperties.py",
+      "bin/Spaces.py",
+      "data/MM_sparse_concept.xml",
+      "test/test_concept_memberships.py",
+      "test/test_dual_towers.py",
+      "test/test_grounded_xor.py",
+      "test/test_sparse_concept_e2e.py"
+    ],
+    "added": [],
+    "removed": []
+  },
+  "affected-source-manifest.json": {
+    "changed": [
+      "bin/Models.py",
+      "bin/Spaces.py",
+      "test/test_concept_memberships.py",
+      "test/test_dual_towers.py",
+      "test/test_sparse_concept_e2e.py"
+    ],
+    "added": [],
+    "removed": []
+  },
+  "contracts-red-source-manifest.json": {
+    "changed": [
+      "bin/Models.py",
+      "bin/Spaces.py",
+      "test/test_sparse_concept_e2e.py"
+    ],
+    "added": [],
+    "removed": []
+  },
+  "contracts-source-manifest.json": {
+    "changed": [
+      "bin/Models.py"
+    ],
+    "added": [],
+    "removed": []
+  },
+  "full-source-manifest.json": {
+    "changed": [],
+    "added": [],
+    "removed": []
+  },
+  "interrupted-full-source-manifest.json": {
+    "changed": [
+      "bin/Models.py"
+    ],
+    "added": [],
+    "removed": []
+  },
+  "slow-before-contract-fix-source-manifest.json": {
+    "changed": [
+      "bin/Models.py",
+      "bin/Spaces.py",
+      "test/test_concept_memberships.py",
+      "test/test_dual_towers.py",
+      "test/test_sparse_concept_e2e.py"
+    ],
+    "added": [],
+    "removed": []
+  },
+  "symbolic-slow-contract-red-source-manifest.json": {
+    "changed": [
+      "bin/Models.py",
+      "bin/Spaces.py",
+      "data/MM_sparse_concept.xml",
+      "test/test_concept_memberships.py",
+      "test/test_dual_towers.py",
+      "test/test_sparse_concept_e2e.py"
+    ],
+    "added": [],
+    "removed": []
+  },
+  "symbolic-slow-red-source-manifest.json": {
+    "changed": [
+      "bin/Models.py",
+      "bin/Spaces.py",
+      "data/MM_sparse_concept.xml",
+      "test/test_concept_memberships.py",
+      "test/test_dual_towers.py",
+      "test/test_sparse_concept_e2e.py"
+    ],
+    "added": [],
+    "removed": []
+  },
+  "witness-fix-source-manifest.json": {
+    "changed": [],
+    "added": [],
+    "removed": []
+  }
+}

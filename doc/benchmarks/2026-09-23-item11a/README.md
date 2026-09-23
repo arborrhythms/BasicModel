@@ -40,7 +40,7 @@ and the empty-definition/no-invented-gradient invariant remains tested.
 
 ## Calibration and reconstruction protocol
 
-The [evidence probe](evidence.py) trains a live parallel model for 16 native
+The [evidence probe](https://github.com/arborrhythms/BasicModel/blob/75f74e1a4caa953a98748bb61e7dfe86a7a2beb3/doc/benchmarks/2026-09-23-item11a/evidence.py) trains a live parallel model for 16 native
 updates at batch four. Calibration uses 64 feature permutations with random
 generator 1042; independent evaluation uses 64 with generator 2042. The
 candidate floor is 1.25 times the calibration maximum, rounded upward to

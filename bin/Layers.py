@@ -5477,7 +5477,7 @@ class SparseLayer(Layer):
 
 
     def fold_presence(self, u, *, conjunctive=False, start=0, end=None,
-                      own=None, own_mask=None, dual=False):
+                      own=None, own_mask=None, dual=False, edge_memberships=None):
         """Scatter nonnegative exponents; polarity is a source column.
 
         A dual pass swaps the two source blocks and the fold chart. Empty
@@ -5499,7 +5499,10 @@ class SparseLayer(Layer):
             # observed part, prospective zero edges can receive credit;
             # projection after the update constrains their stored magnitude.
             w = raw + (raw.clamp_min(0) - raw).detach()
-            v = u.index_select(0, cols).clamp(0, 1)
+            # Native percept inventories can be large. A membership read
+            # gathers only the written edges, using this same pi scatter.
+            v = (u.index_select(0, cols) if edge_memberships is None
+                 else edge_memberships[select]).clamp(0, 1)
             eps = torch.finfo(v.dtype).eps
             if conjunctive:
                 vp = v + (v.clamp_min(eps) - v).detach()
@@ -5588,6 +5591,11 @@ class ConceptualAttentionLayer(SparseLayer):
 
         self.conjunctive = SparseLayer(nInput, nOutput, nonlinear=False,
                                       device=device, forbid_self_edges=True)
+        # Feature addresses interleave PS/WS and membership/complement:
+        # 4*row + 2*tower + pole. No distributed coordinate is an address.
+        self.features = SparseLayer(1, nOutput, nonlinear=False, device=device)
+        self.features._feature_sources = True
+        self.features._sidecar_owned = True
         self._sidecar_owned = self.conjunctive._sidecar_owned = True
         self._paired_sources = self.conjunctive._paired_sources = nInput == 2 * (nOutput + 1)
         # Context is a bounded host slab over the taper span, not inventory.
@@ -5609,12 +5617,17 @@ class ConceptualAttentionLayer(SparseLayer):
     def part_matrices(self):
         return self, self.conjunctive
 
+    def definition_matrices(self):
+        return self, self.conjunctive, self.features
+
     @torch.no_grad()
     def project_parts(self):
         """Preserve polarity; only provisional alternatives normalize support."""
         for matrix in self.part_matrices():
             if matrix.values is not None:
                 matrix.values.clamp_min_(0)
+        if self.features.values is not None:
+            self.features.values.clamp_(0, 1)
         if self.values is not None:
             rows, _ = self._indices(self.values.device)
             maxima = self.values.new_zeros(self.nOutput).scatter_reduce_(
@@ -5662,17 +5675,18 @@ class ConceptualAttentionLayer(SparseLayer):
     def parts_extras(self):
         """Checkpoint both parts matrices and row-aligned discovery state."""
         matrices = {}
-        for name, matrix in (('conjunctive', self.conjunctive),):
+        for name, matrix in (('conjunctive', self.conjunctive), ('features', self.features)):
             matrices[name] = dict(rows=list(matrix._rows), cols=list(matrix._cols),
+                                  nInput=matrix.nInput,
                                   values=None if matrix.values is None else matrix.values.detach().cpu().clone())
-        return dict(version=2, matrices=matrices, where=self.where.clone(),
+        return dict(version=3, matrices=matrices, where=self.where.clone(),
                     buffers={name: value.detach().cpu().clone()
                              for name, value in self.named_buffers(recurse=False)})
 
     def load_parts_extras(self, saved, *, old_size=None):
         if saved is None:
             return
-        if saved.get('version') not in (1, 2):
+        if saved.get('version') not in (1, 2, 3):
             raise ValueError('unsupported conceptual parts checkpoint')
         old_span = self.nOutput if old_size is None else old_size
         self.where.zero_()
@@ -5687,18 +5701,20 @@ class ConceptualAttentionLayer(SparseLayer):
                 raise ValueError('concept context shape mismatch')
             if context.numel():
                 self.ensure_context()[:old_span, :old_span].copy_(context.cpu())
-        for name in ('conjunctive',):
+        for name in ('conjunctive', 'features'):
             matrix = getattr(self, name)
-            blob = saved['matrices'][name]
+            blob = saved['matrices'].get(name, dict(rows=[], cols=[], values=None, nInput=1))
+            if name == 'features':
+                matrix.nInput = int(blob['nInput'])
             rows, cols, values = blob['rows'], blob['cols'], blob['values']
-            if saved['version'] == 1:
+            if name != 'features' and saved['version'] == 1:
                 cols = [(self.nOutput if c == old_span else c) +
                         (self.nOutput + 1 if values is not None and values[i] < 0 else 0)
                         for i, c in enumerate(cols)]
                 if values is not None:
                     matrix._checkpoint_exponent_signs = torch.where(values < 0, -1., 1.)
                     values = values.abs()
-            elif old_size is not None:
+            elif name != 'features' and old_size is not None:
                 cols = [(self.nOutput if c % (old_span + 1) == old_span
                          else c % (old_span + 1)) + (c // (old_span + 1)) * (self.nOutput + 1)
                         for c in cols]
@@ -5875,7 +5891,9 @@ class ConceptualAttentionLayer(SparseLayer):
         ncol = int(self.nInput)
         free = max(0, int(free_size))
         rows_t, cols_t = self._indices(vals.device)
-        concept_col = ((cols_t % (self.nOutput + 1)) < self.nOutput
+        concept_col = (torch.ones_like(cols_t, dtype=torch.bool)
+                       if getattr(self, '_feature_sources', False) else
+                       (cols_t % (self.nOutput + 1)) < self.nOutput
                        if getattr(self, '_paired_sources', False) else cols_t < ncol - 1)
         rows, weights = rows_t[concept_col], vals[concept_col].clamp_min(0)
         # Sort edges by magnitude, then stably group rows. Segment ranks

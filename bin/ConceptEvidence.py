@@ -41,14 +41,6 @@ def decode(field, codes):
     return pair.flatten(1, 2).unsqueeze(-1) * poles.unsqueeze(0)
 
 
-def admit(projections, floor):
-    """Sign routes a projection; a measured floor rejects unrelated evidence."""
-    if not 0 <= float(floor) < 1:
-        raise ValueError('conceptEvidenceFloor must be in [0, 1)')
-    return torch.stack((torch.relu(projections - floor),
-                        torch.relu(-projections - floor)), -1).clamp_max(1 - floor) / (1 - floor)
-
-
 def in_extents(position_evidence, position_spans, extents):
     """Keep [C,B,E,L,2] position pairs and read [C,B,E,2] extent evidence.
 
@@ -69,27 +61,3 @@ def in_extents(position_evidence, position_spans, extents):
             & (pe[:, None] > ps[:, None]) & (ee[:, :, None] > es[:, :, None]))
     positions = position_evidence.unsqueeze(2) * mask[None, ..., None]
     return union(positions, dim=3), positions
-
-
-def fold_extents(position_evidence, position_spans, extents, *, conjunctive):
-    """Read a definition over a subject, retaining its supporting positions.
-
-    WholeSpace's alternatives use union/product; PartSpace's necessary
-    positions use product/union. Empty or incompletely covered extents
-    cannot supply the universal channel. Missing observations are neutral
-    for the existential channel, never counterexamples.
-    """
-    position_spans = position_spans.to(position_evidence.device)
-    extents = extents.to(position_evidence.device)
-    existential, positions = in_extents(position_evidence, position_spans, extents)
-    ps, pe = position_spans.unbind(-1)
-    es, ee = extents.unbind(-1)
-    mask = ((ps[:, None] >= es[:, :, None]) & (pe[:, None] <= ee[:, :, None])
-            & (pe[:, None] > ps[:, None]) & (ee[:, :, None] > es[:, :, None]))
-    universal = torch.where(mask[None, ..., None], positions, 1.).prod(dim=3)
-    covered = ((pe - ps)[:, None] * mask).sum(-1)
-    complete = (ee > es) & (covered == ee - es)
-    universal = universal * complete[None, ..., None]
-    field = torch.stack((universal[..., 0] if conjunctive else existential[..., 0],
-                         existential[..., 1] if conjunctive else universal[..., 1]), -1)
-    return field, positions

@@ -151,7 +151,12 @@ Consequences (decided):
   measured offline. **Decided (Alec, 2026-09-23): keep the calibrated
   floor** — a rank-based or trained admission was judged more machinery
   than the objection warrants; `conceptEvidenceFloor` stays a parameter,
-  recalibrated once in the corrected units below.) Every rectified fold is
+  recalibrated once in the corrected units below. *Superseded by todo item
+  11b (decided, Alec 2026-09-23): order-0 concepts read the towers'
+  feature memberships with their own signed weights by pervasion within an
+  occurrence, so unrelated features read zero and no floor exists; the
+  union across occurrences inside the subject is the readout, where both is
+  born, and XOR is the both corner of one property.*) Every rectified fold is
   biased upward by noise on both channels — noise has a positive and a
   negative part, and rectification hands one to each — so admission comes
   first, as the taper does for the pyramid (Architecture, settled point 4);

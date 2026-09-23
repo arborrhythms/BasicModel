@@ -110,28 +110,16 @@ def test_ensure_ws_position_rejects_inactive_row_without_taxonomy_mutation():
     assert ws._ws_row_to_pos[1] == pos
 
 
-def test_cs_direct_snap_cannot_score_or_ema_write_inactive_tail():
-    cb = _codebook(
-        [[0.0, 0.0], [0.5, 0.0], [-0.5, 0.0], [0.8, 0.8]],
-        active=2,
-    )
-    cs = object.__new__(ConceptualSpace)
-    torch.nn.Module.__init__(cs)
-    cs.similarity_codebook = cb
-    cs.nVectors = 4
-    cs.concept_evidence_floor = 0.
-    cs.outputShape = [4, 2]
-    object.__setattr__(cs, "_concept_binding", "aligned")
-    object.__setattr__(cs, "_serial", True)
-    object.__setattr__(cs, "_symbolic_order", 0)
-    cs.train()
-
-    inactive_before = cb.getW()[2:].detach().clone()
-    activation = cs.cs_snap_order0(
-        torch.tensor([[[0.8, 0.8]]]), ema=True)
-
-    assert activation.shape == (2, 1, 1, 2)
-    assert torch.equal(cb.getW()[2:].detach(), inactive_before)
+def test_membership_read_is_independent_of_active_and_inactive_codes():
+    from test_cs_sparse_weights import _cs
+    from test_concept_memberships import binary_features
+    cs = _cs(nS=16, order=1)
+    native, extents = binary_features(cs, torch.tensor([[48, 49]]))
+    before = cs.cs_read_memberships(native, extents)
+    with torch.no_grad():
+        cs.similarity_codebook.getW().normal_()
+    after = cs.cs_read_memberships(native, extents)
+    torch.testing.assert_close(after, before, atol=0, rtol=0)
 
 
 def test_topk_priming_scores_only_active_rows():

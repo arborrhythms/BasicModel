@@ -15610,10 +15610,6 @@ class ConceptualSpace(Space):
         # its gate is measured use, independent of sentence truth learning.
         self.conceptual_pi = bool(TheXMLConfig.space(
             "ConceptualSpace", "conceptualPi", False))
-        self.concept_evidence_floor = float(TheXMLConfig.space(
-            "ConceptualSpace", "conceptEvidenceFloor", 0.112))
-        if not 0 <= self.concept_evidence_floor < 1:
-            raise ValueError('conceptEvidenceFloor must be in [0, 1)')
         self._promotion_enabled = bool(TheXMLConfig.space(
             "ConceptualSpace", "attentionPromotion", False))
         self.concept_pool_size = int(TheXMLConfig.space(
@@ -17045,6 +17041,9 @@ class ConceptualSpace(Space):
             if getattr(self, "_promotion_enabled", False):
                 self.promotion_observe()
                 self.promotion_pass()
+            self._prepare_part_learning()
+            self._maybe_rebuild_optimizer_for_csw()
+            self._refresh_feature_codes()
         super().Reset(batch=batch, hard=hard)
         self._clear_percept_field(batch=batch)
         # Clear the predict-then-perceive held predictions and the
@@ -18355,8 +18354,7 @@ class ConceptualSpace(Space):
         if r < n_snap:
             raise ValueError(
                 f"add_concept_edge: snap row {r} accepts no edges -- "
-                f"order-0 concepts are codebook rows (the snap), not "
-                f"compositions")
+                f"order-0 concepts read native feature weights")
         # Frozen definition: no FORMING of new connections on its row.
         if getattr(self, "_frozen_concepts", None) and r in self._frozen_rows():
             return None
@@ -18380,6 +18378,131 @@ class ConceptualSpace(Space):
         if getattr(self, "_frozen_concepts", None):
             self._refresh_frozen_values_hook()
         return out
+
+    def add_concept_feature(self, row, tower, feature, weight=0.0, *, negated=False):
+        """Write a signed feature weight as a magnitude on a membership pole.
+
+        PS and WS addresses are independent. A negative exponent reads the
+        row's complement; a zero candidate states nothing until learned.
+        """
+        row, feature = int(row), int(feature)
+        if not 0 <= row < self._order_caps()[0] or feature < 0:
+            raise ValueError('feature definitions require an order-0 row and a native feature')
+        if tower not in ('ps', 'ws'):
+            raise ValueError('feature tower must be ps or ws')
+        if not -1 <= float(weight) <= 1:
+            raise ValueError('feature weights must be in [-1, 1]')
+        if getattr(self, '_frozen_concepts', None) and row in self._frozen_rows():
+            return None
+        _, store = self._sparse_families(0)
+        matrix = store.features
+        col = 4 * feature + 2 * (tower == 'ws') + (negated or float(weight) < 0)
+        matrix.nInput = max(matrix.nInput, col + 1)
+        self._maybe_rebuild_optimizer_for_csw()
+        result = matrix.add_edge(row, col, weight=abs(float(weight)))
+        self._maybe_rebuild_optimizer_for_csw()
+        if getattr(self, '_frozen_concepts', None):
+            self._refresh_frozen_values_hook()
+        return result
+
+    def cs_read_memberships(self, percepts, extents):
+        """Pervasion of native features at occurrences, union at extent readout.
+
+        Both poles use the same pi fold. Negative weights swap a feature's
+        membership and complement, never the fold. PS whole spans and WS
+        runs retain their input brackets; identical occurrences count once.
+        """
+        from ConceptEvidence import in_extents
+        from PerceptProperties import counts_in_spans
+        part_ids, part_spans, primitive, raw, whole_spans = percepts
+        if raw.ndim == 3:
+            raw = raw[:, 0]
+        B = raw.shape[0]
+        spans = torch.cat((part_spans, whole_spans), dim=1).to(raw.device)
+        # Stable integer span keys deduplicate without an inventory square.
+        keys = spans[..., 0] * (raw.shape[1] + 1) + spans[..., 1]
+        order = keys.argsort(dim=1, stable=True)
+        sorted_keys = keys.gather(1, order)
+        repeat = torch.cat((torch.zeros_like(sorted_keys[:, :1], dtype=torch.bool),
+                            sorted_keys[:, 1:] == sorted_keys[:, :-1]), 1)
+        duplicate = torch.zeros_like(repeat).scatter(1, order, repeat)
+        spans = spans.masked_fill(duplicate[..., None], 0)
+        L = spans.shape[1]
+        store = _concept_alloc_of(self).layer(0)
+        matrix = store.features
+        _, columns = matrix._indices(raw.device)
+        features, towers, poles = columns // 4, (columns // 2) % 2, columns % 2
+        dtype = self.similarity_codebook.getW().dtype
+        membership = torch.zeros(len(columns), B, L, 2, device=raw.device, dtype=dtype)
+        ps_edges = (towers == 0).nonzero().flatten()
+        if len(ps_edges):
+            overlap = (torch.minimum(spans[..., 1, None], part_spans[:, None, :, 1])
+                       - torch.maximum(spans[..., 0, None], part_spans[:, None, :, 0])).clamp_min(0)
+            valid = (part_spans[..., 1] > part_spans[..., 0]) & (part_ids >= 0)
+            overlap = overlap * valid[:, None]
+            length = spans[..., 1] - spans[..., 0]
+            covered = (length > 0) & (overlap.sum(-1) == length)
+            match = part_ids[None, :, None] == features[ps_edges, None, None, None]
+            hit = overlap[None] > 0
+            positive = (~(hit & ~match).any(-1)) & covered[None]
+            negative = (~(hit & match).any(-1)) & covered[None]
+            membership = membership.index_copy(0, ps_edges,
+                torch.stack((positive, negative), -1).to(membership))
+        ws_edges = (towers == 1).nonzero().flatten()
+        if len(ws_edges) and primitive is not None:
+            counts = counts_in_spans(raw, spans, observed=raw != 0)
+            positive = primitive.on_counts(counts)
+            negative = primitive.on_counts(counts, complement=True)
+            complete = counts.sum(-1) == spans[..., 1] - spans[..., 0]
+            pair = torch.stack((positive, negative), -1) * complete[..., None, None]
+            membership = membership.index_copy(0, ws_edges,
+                pair.index_select(2, features[ws_edges]).permute(2, 0, 1, 3).to(membership))
+        required = torch.where(poles[:, None, None, None].bool(),
+                               membership.flip(-1), membership)
+        prototype = membership.new_zeros(0, B * L)
+        start, end = self.order_slice(0)
+        positions = torch.stack([
+            matrix.fold_presence(prototype, conjunctive=True, start=start, end=end,
+                                 edge_memberships=required[..., pole].reshape(len(columns), B * L))
+            for pole in (0, 1)], -1).reshape(end - start, B, L, 2)
+        field, retained = in_extents(positions, spans, extents)
+        object.__setattr__(self, '_cs_position_evidence', retained)
+        object.__setattr__(self, '_cs_position_spans', spans.detach().clone())
+        object.__setattr__(self, '_cs_extents', extents.detach().clone())
+        return field
+
+    @torch.no_grad()
+    def _refresh_feature_codes(self):
+        """Derive distributed order-0 codes from the signed feature definition.
+
+        Codes serve retrieval and tied reconstruction. This boundary write
+        never supplies a membership or changes the retained reverse carrier.
+        """
+        model = getattr(self, '_model', None)
+        alloc = getattr(self, '_concept_allocator', None)
+        if model is None or alloc is None or not self._sparse_active():
+            return
+        matrix = alloc.layer(0).features
+        if matrix.values is None:
+            return
+        dictionary = self.similarity_codebook.getW()
+        rows, cols = matrix._indices(dictionary.device)
+        width = dictionary.shape[1]
+        codes = dictionary.new_zeros(matrix.nnz, width)
+        for tower, space in enumerate((model.perceptualSpace, model.wholeSpaces[0])):
+            select = ((cols // 2) % 2 == tower).nonzero().flatten()
+            if not len(select):
+                continue
+            source = space.subspace.what.getW().index_select(0, cols[select] // 4)
+            source = F.pad(source[:, :width], (0, max(0, width - source.shape[1])))
+            codes.index_copy_(0, select, source.to(codes))
+        weights = matrix.values.to(codes) * torch.where(cols % 2 == 0, 1., -1.)
+        values = dictionary.new_zeros(self._order_caps()[0], width).index_add_(0, rows, codes * weights[:, None])
+        defined = self._concept_part_rows(matrix, dictionary.device)[:len(values)]
+        frozen = self._frozen_rows() if getattr(self, '_frozen_concepts', None) else set()
+        if frozen:
+            defined[list(r for r in frozen if r < len(defined))] = False
+        dictionary[:len(values)][defined] = F.normalize(values[defined], dim=-1, eps=1e-8)
 
     def concept_weights(self, row, *, conjunctive=False, negated=False):
         """The ``(col, weight)`` edges of GLOBAL concept ``row`` on the
@@ -18406,23 +18529,22 @@ class ConceptualSpace(Space):
         shares ONE store, so dedup by identity before summing)."""
         seen, total = set(), 0
         for (p, s) in (getattr(self, "_sparse_fam", None) or {}).values():
-            for ly in (p, s):
+            for ly in (p, s, s.features):
                 if ly is not None and id(ly) not in seen:
                     seen.add(id(ly))
                     total += ly.nnz
         return total
 
     def getParameters(self):
-        """Inherited parameters plus the two shared sparse part matrices.
+        """Inherited parameters plus the shared sparse definition matrices.
 
         Deduplicate their values by identity across orders. Edge growth
         migrates optimizer moments without resetting unrelated parameters.
         """
-        self._prepare_part_learning()
         base = list(self.params)
         seen = set()
         for (p, s) in (getattr(self, "_sparse_fam", None) or {}).values():
-            for ly in (p, s):
+            for ly in (p, s, s.features):
                 if (ly is not None and ly.values is not None
                         and id(ly.values) not in seen):
                     seen.add(id(ly.values))
@@ -18439,12 +18561,26 @@ class ConceptualSpace(Space):
         """
         if not self._sparse_active():
             return
+        # Attach the current leaves before growth so their Adam moments and
+        # pending gradients migrate with the existing sparse replacement.
+        self._maybe_rebuild_optimizer_for_csw()
         frozen = self._frozen_rows() if getattr(self, '_frozen_concepts', None) else set()
+        changed = False
+        store = _concept_alloc_of(self).layer(0)
+        feature = store.features
+        if feature.values is not None:
+            defined = [(row, col) for (row, col), pos in list(feature._index.items())
+                       if row not in frozen and float(feature.values[pos]) > 0]
+            for row, col in defined:
+                opposite = col ^ 1
+                if (row, opposite) not in feature._index:
+                    feature.nInput = max(feature.nInput, opposite + 1)
+                    feature.add_edge(row, opposite, weight=0.)
+                    changed = True
         observed = getattr(self, '_cs_last_a0', None)
         active = ((observed.amax(dim=(1, 2, 3)) > self.concept_use_floor).nonzero().flatten().tolist()
                   if torch.is_tensor(observed) else [])
         seen = set()
-        changed = False
         for matrices in (getattr(self, '_sparse_fam', None) or {}).values():
             for matrix in matrices:
                 if id(matrix) in seen or matrix.values is None:
@@ -18477,11 +18613,10 @@ class ConceptualSpace(Space):
         optimizer = getattr(model, "_optimizer", None)
         if optimizer is None:
             return
-        self._prepare_part_learning()
         from Layers import RadixLayer
         leaves = list(RadixLayer._optimizer_leaves(optimizer))
         owned = {id(p) for leaf in leaves for g in leaf.param_groups for p in g['params']}
-        for matrix in _concept_alloc_of(self).layer(0).part_matrices():
+        for matrix in _concept_alloc_of(self).layer(0).definition_matrices():
             matrix._optimizer = optimizer
             if matrix.values is not None and id(matrix.values) not in owned:
                 leaves[0].add_param_group({'params': [matrix.values]})
@@ -18490,27 +18625,11 @@ class ConceptualSpace(Space):
 
     @staticmethod
     def source_code_activation(event, codebook_W, nonneg=True, normalize=False):
-        """Per-code PRESENCE activation of a source space from its materialized
-        ``event`` (``[B, N, D]``) against its codebook rows ``codebook_W``
-        (``[V, D]``): ``activation[v, b] = sum_n <event[b, n], W[v]>`` -- how
-        strongly each source code FIRES across the slots (a differentiable
-        readout; this is the ENCODER INPUT the sparse weight matrix consumes).
-        Mereological features are strictly-positive PRESENCES, so by default the
-        readout is rectified to be NON-NEGATIVE (``nonneg=True``); a feature is
-        present (>0) or absent (0), never negative -- the SIGN of the resulting
-        concept activation comes from the signed weights (a negative weight =
-        the feature's presence is anti-correlated with the concept), not from
-        the features. ``normalize=True`` reads the NORMALIZED SUM instead of
-        the raw dot-sum: the slot-MEAN of the event's projection onto the
-        UNIT code direction, in hypercube-diagonal units (``/ sqrt(D)``).
-        The code row's scale is removed but the EVENT magnitude is kept --
-        objects in the unit hypercube differentiate by magnitude (Alec
-        2026-07-02), so the events are NOT unit-normalized (no cosine).
-        Bounded by ``mean ||event|| / sqrt(D) <= 1`` inside the hypercube, so
-        consistently-aligned events cannot saturate every code to the same
-        constant (the sO=1 mean-collapse). Returns ``[V, B]``. Widths are
-        clipped to the common dim so a muxed event (content+band) reads
-        against a what-only codebook."""
+        """Distributed source-code similarity, optionally in diagonal units.
+
+        Rectified dot sums support retrieval diagnostics. Native conceptual
+        presence reads feature memberships through cs_read_memberships.
+        """
         if event is None or codebook_W is None:
             return None
         if event.dim() == 2:
@@ -18531,70 +18650,6 @@ class ConceptualSpace(Space):
         start, end = self.order_slice(order)
         return decode(concept_activation, what_W[start:end])
 
-    def cs_snap_order0(self, settled_event, ema=False, *, chart='unit_ball',
-                       position_spans=None, extents=None):
-        """Admit position evidence in its chart, then union within extents.
-
-        Unit-ball events project directly onto unit code directions. Only
-        cube events divide by sqrt(D). Position pairs remain attached to
-        the read; the returned [concept,batch,extent,2] composes subjects.
-        """
-        cb = getattr(self, "similarity_codebook", None)
-        W_full = cb.getW() if (cb is not None and hasattr(cb, "getW")) else None
-        if (settled_event is None or W_full is None
-                or not torch.is_tensor(W_full)
-                or int(W_full.shape[0]) != int(self.nVectors)):
-            return None
-        ev = settled_event
-        if ev.dim() == 2:
-            ev = ev.unsqueeze(1)                     # [B, 1, D]
-        start, end = self.order_slice(0)
-        active_W = (cb.active_prototypes()
-                    if hasattr(cb, "active_prototypes") else W_full)
-        W0 = active_W[start:end]                     # [selectable caps0, D_dict]
-        if int(W0.shape[0]) == 0:
-            return None
-        # CLONE for the differentiable read (grad still reaches the codebook
-        # through CloneBackward): the EMA write below mutates the same rows
-        # in-place, and a saved live VIEW would fail backward with a
-        # version-counter error (the SS-leg clone lesson).
-        from ConceptEvidence import admit, in_extents
-        D = min(int(ev.shape[-1]), int(W0.shape[-1]))
-        atoms = F.normalize(W0[:, :D].clone(), dim=-1, eps=1e-8)
-        if chart not in ('unit_ball', 'cube'):
-            raise ValueError('concept evidence chart must be unit_ball or cube')
-        projection = torch.matmul(ev[..., :D], atoms.t())
-        if chart == 'cube':
-            projection = projection / math.sqrt(max(1, D))
-        positions = admit(projection, self.concept_evidence_floor).permute(2, 0, 1, 3)
-        B, L = ev.shape[:2]
-        if position_spans is None:
-            index = torch.arange(L, device=ev.device)
-            position_spans = torch.stack((index, index + 1), -1).unsqueeze(0).expand(B, -1, -1)
-        if extents is None:
-            extents = torch.stack((position_spans[..., 0].amin(-1),
-                                   position_spans[..., 1].amax(-1)), -1).unsqueeze(1)
-        a_0, positions = in_extents(positions, position_spans, extents)
-        object.__setattr__(self, '_cs_position_evidence', positions)
-        object.__setattr__(self, '_cs_position_spans', position_spans.detach().clone())
-        object.__setattr__(self, '_cs_extents', extents.detach().clone())
-        if ema and self.training:
-            with torch.no_grad():
-                D = min(int(ev.shape[-1]), int(W0.shape[-1]))
-                sim = torch.matmul(ev[..., :D], W0[:, :D].t())   # [B, N, V0]
-                win = sim.argmax(dim=-1)                          # [B, N]
-                one = F.one_hot(win, int(W0.shape[0])).to(ev.dtype)
-                cnt = one.sum(dim=(0, 1))                         # [V0]
-                tgt = torch.einsum("bnv,bnd->vd", one, ev[..., :D])
-                mask = cnt > 0
-                if bool(mask.any()):
-                    eta = float(getattr(self, "_snap_ema_rate", 0.1))
-                    mean_tgt = tgt[mask] / cnt[mask].unsqueeze(-1)
-                    rows = W_full[start:start + int(W0.shape[0])]
-                    rows[mask, :D] = ((1.0 - eta) * rows[mask, :D]
-                                      + eta * mean_tgt.to(rows.dtype))
-        return a_0
-
     def definition_sparsity_loss(self, lam=0.0, free_size=None):
         """The rank-ordered soft-L0 training pressure that keeps each concept's
         definition COMPACT (snap contract sec 1.4 / sec 5, 2026-07-06): a
@@ -18613,43 +18668,12 @@ class ConceptualSpace(Space):
         penalty = getattr(layer, "definition_sparsity_penalty", None)
         if penalty is None:
             return None
-        penalties = [penalty.__func__(m, free_size=free_size) for m in layer.part_matrices()]
+        penalties = [penalty.__func__(m, free_size=free_size) for m in layer.definition_matrices()]
         live = [p for p in penalties if p is not None]
         total = sum(live) if live else None
         if total is None:
             return None
         return lam * total
-
-    def cs_snap_percepts(self, percepts, extents):
-        """Read independently coded towers by their positions in each extent.
-
-        The learned maps change coordinates only. PartSpace's whole needs
-        every position; WholeSpace's property admits any alternative. Their
-        counterevidence uses the dual fold over observed positions.
-        """
-        from ConceptEvidence import admit, fold_extents, union
-        part, part_spans, whole, whole_spans = percepts
-        dictionary = self.similarity_codebook.active_prototypes()
-        start, end = self.order_slice(0)
-        atoms = F.normalize(dictionary[start:end].clone(), dim=-1, eps=1e-8)
-        fields, positions, projection_fields = [], [], []
-        for tower, (event, spans) in enumerate(((part, part_spans), (whole, whole_spans))):
-            if spans is None or tuple(spans.shape[:2]) != tuple(event.shape[:2]):
-                raise ValueError('tower evidence requires its own input-position brackets')
-            mapped = self.percept_read(event, tower)
-            projections = mapped @ atoms.t()
-            projection_fields.append(projections)
-            pairs = admit(projections, self.concept_evidence_floor).permute(2, 0, 1, 3)
-            field, located = fold_extents(pairs, spans, extents, conjunctive=tower == 0)
-            fields.append(field)
-            positions.append(located)
-        evidence = torch.stack(fields, dim=-2)
-        object.__setattr__(self, '_cs_position_projections', tuple(projection_fields))
-        object.__setattr__(self, '_cs_tower_evidence', evidence)
-        object.__setattr__(self, '_cs_position_evidence', torch.cat(positions, dim=3))
-        object.__setattr__(self, '_cs_position_spans', torch.cat((part_spans, whole_spans), dim=1).detach().clone())
-        object.__setattr__(self, '_cs_extents', extents.detach().clone())
-        return union(evidence, dim=-2)
 
     def _concept_rung_presence(self, field, start, end):
         """Four chart scatters with pi on; each occurrence keeps its scope."""
@@ -18874,19 +18898,13 @@ class ConceptualSpace(Space):
         return row
 
     def _populate_concept_weights(self, concept_id):
-        """Decompose ``concept_id`` into the UNTYPED square store (v3):
-        every sym constituent gets ONE edge (row = the relation's global
-        row, col = the constituent's global row); EVERYTHING -> the bias
-        column ``nVectors``; raw refs stay reference-store-only (sec 4c:
-        store by reference, never duplicate codes). Direction and order
-        live in the RECORD store and the NESTING (the vine), never in
-        typed columns -- so ``relate(x, x)`` merges its part- and
-        whole-legs into ONE edge (idempotent per (row, col)) while a
-        self-REFERENTIAL row would be a self-edge and raises in the layer
-        (the Quine atom). Order-0 concepts write NO edges -- they RESERVE
-        their snap codebook row. MIN-SUPPORT: >= 2 constituents, poles
-        included, EXCEPT minted singletons (v2 arithmetic kept). NO-OP
-        unless the sparse transform is active -> byte-identical."""
+        """Write witnessed definitions into the shared concept inventory.
+
+        Order 0 addresses native PS percepts and WS properties by reference.
+        Higher orders address constituent concepts, with EVERYTHING as the
+        standing bias. Minimum support is two references, except singletons.
+        Object bounds alone supply no perceptual feature membership.
+        """
         if not self._sparse_active():
             return
 
@@ -18909,7 +18927,21 @@ class ConceptualSpace(Space):
         if c_row is None:
             return                                   # region full (loud above)
         if order == 0:
-            return                                   # snap row reserved; no edges
+            # Raw parts and wholes are independent native row addresses.
+            # Witnessing writes positive memberships only.
+            model = getattr(self, '_model', None)
+            for tower, refs in (('ps', parts), ('ws', wholes)):
+                if (tower == 'ws' and model is not None and not hasattr(
+                        model.wholeSpaces[0].subspace.what, 'primitive_properties')):
+                    # A word's taxonomy position is not a property row.
+                    # Only the property inventory supplies WS memberships.
+                    continue
+                for ref in refs:
+                    if (isinstance(ref, int) and ref >= 0
+                            and ref not in (_NOTHING, _EVERYTHING)):
+                        self.add_concept_feature(c_row, tower, ref, 1.)
+            self._maybe_rebuild_optimizer_for_csw()
+            return
         for x in sym_refs:
             so = self._concept_source_order(x[1])
             s_row = self._csw_concept_row(so, int(x[1]))
@@ -18922,48 +18954,12 @@ class ConceptualSpace(Space):
         # optimizer when the weight count changed; no-op pre-training).
         self._maybe_rebuild_optimizer_for_csw()
 
-    def snap_settle_qe(self, event, *, chart='unit_ball'):
-        """Per-percept SETTLE SIGNAL (P4, report-only): each slot's residual
-        against its best ORDER-0 atom in the event's declared chart.
-        in ``[0, 1]`` (0 = perfectly snapped). ``no_grad``; NO control flow
-        hangs off it (the later adaptive-exit work reads it). ``None`` when
-        inactive/unusable."""
-        if not self._sparse_active():
-            return None
-        cb = getattr(self, "similarity_codebook", None)
-        W = cb.getW() if (cb is not None and hasattr(cb, "getW")) else None
-        if (W is None or not torch.is_tensor(W) or event is None
-                or not torch.is_tensor(event) or event.dim() != 3):
-            return None
-        with torch.no_grad():
-            start, end = self.order_slice(0)
-            active_W = (cb.active_prototypes()
-                        if hasattr(cb, "active_prototypes") else W)
-            W0 = active_W[start:end]
-            if int(W0.shape[0]) == 0:
-                return None
-            D = min(int(event.shape[-1]), int(W0.shape[-1]))
-            Wn = F.normalize(W0[:, :D], dim=-1, eps=1e-8)
-            sim = torch.matmul(event[..., :D], Wn.t())
-            if chart == 'cube':
-                sim = sim / math.sqrt(max(1, D))
-            elif chart != 'unit_ball':
-                raise ValueError('concept evidence chart must be unit_ball or cube')
-            return 1.0 - sim.amax(dim=-1).clamp(0.0, 1.0)      # [B, N]
+    def cs_symbolic_phase(self, settled, *, extents=None, percepts=None):
+        """Read native memberships once after the pump, then compose symbols.
 
-    def cs_symbolic_phase(self, settled, *, chart='unit_ball', position_spans=None,
-                          extents=None, percepts=None):
-        """The POST-PUMP symbolic phase (P3, one LATE cutover): snap the
-        SETTLED mixed field to the ORDER-0 codebook block
-        (:meth:`cs_snap_order0`, EMA identity trace while training) and run
-        the iterated wave composition (:meth:`cs_forward_content`) --
-        quantization happens ONLY here, at the bandwidth seam, as late as
-        possible. Returns ``(content, evidence)`` -- the paired field
-        ``[S, B, occurrence, 2]`` carries the grad-bearing symbols; the
-        content feeds the losses/SS leg only and is
-        NEVER substituted back into the subsymbolic carrier (decision 10:
-        ``sparseReplace`` retired). ``(settled, None)`` when inactive or the
-        shapes are unusable."""
+        The distributed carrier retains its tied reconstruction. Presence
+        reads feature definitions; precision belongs only to location.
+        """
         if not self._sparse_active():
             return settled, None
         if not (torch.is_tensor(settled) and settled.dim() == 3):
@@ -18973,9 +18969,9 @@ class ConceptualSpace(Space):
         if (dict_W is None or not torch.is_tensor(dict_W)
                 or int(dict_W.shape[0]) != int(self.nVectors)):
             return settled, None
-        a_0 = (self.cs_snap_percepts(percepts, extents) if percepts is not None
-               else self.cs_snap_order0(settled, ema=True, chart=chart,
-                                       position_spans=position_spans, extents=extents))
+        if percepts is None:
+            return settled, None
+        a_0 = self.cs_read_memberships(percepts, extents)
         if a_0 is None:
             return settled, None
         object.__setattr__(self, "_cs_last_a0", a_0.detach())
@@ -19106,7 +19102,7 @@ class ConceptualSpace(Space):
         if alloc is None:
             return
         rows = self._frozen_rows()
-        for matrix in alloc.layer(0).part_matrices():
+        for matrix in alloc.layer(0).definition_matrices():
             handle = getattr(matrix, '_frozen_hook_handle', None)
             if handle is not None:
                 # A replaced leaf may still own a pending graph. Keep its
@@ -19372,20 +19368,21 @@ class ConceptualSpace(Space):
         return dropped
 
     def _drop_concept_edge(self, concept_id, code, side):
-        """Remove ``concept_id``'s sparse edge for a dropped link (the pruning
-        counterpart of :meth:`_populate_concept_weights`); no-op when the
-        concept has no allocated pool row / no edge. Raw part/whole codes
-        carry NO edges post-P2 (reference-store only), so only the
-        EVERYTHING bias edge -- global (row, nVectors) -- is physical here."""
-        if side != "everything":
-            return                                 # raw links: records only
+        """Prune the physical definition with its retired constituent link."""
         if not _concept_rows_exist(self):
             return                                 # never populated (inactive)
         ly = _concept_alloc_of(self).layer(0)
         c_row = self._csw_row_of(concept_id)
         if c_row is None:
             return                                 # unallocated: no edges
-        ly.remove_edges([(int(c_row), self._bias_col())])
+        self._maybe_rebuild_optimizer_for_csw()
+        if side == "everything":
+            ly.remove_edges([(int(c_row), self._bias_col())])
+        elif side in ('part', 'whole') and c_row < self._order_caps()[0]:
+            col = 4 * int(code) + 2 * (side == 'whole')
+            ly.features.remove_edges([(int(c_row), col), (int(c_row), col + 1)])
+        if getattr(self, '_frozen_concepts', None):
+            self._refresh_frozen_values_hook()
 
     def _set_concept_edge_value(self, cid, code, side, value):
         """Set the trained value of ``cid``'s edge for one sym constituent
@@ -19995,9 +19992,8 @@ class ConceptualSpace(Space):
         alloc.settle(C)
         if key is not None:
             wom[key] = (A, B, C)
-        # Sparse decomposition (P2): A and B are order 0 -> each RESERVES its
-        # order-0 codebook row (the snap reads them; no edges); the META C
-        # writes the role-tagged pair edges [whole=A | part=B] at order 1.
+        # The word's order-0 definition reads its native PS/WS features.
+        # The object remains unwritten until testimony supplies its parts.
         self._populate_concept_weights(A)
         self._populate_concept_weights(B)
         self._populate_concept_weights(C)

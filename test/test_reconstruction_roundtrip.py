@@ -631,7 +631,7 @@ def test_idempotent_config_trains_one_epoch_clean(tmp_path):
     Parameter; the four ``set_event`` -> ``Codebook.quantize`` VQ-EMA
     ``copy_`` writes later in the same runBatch bumped its version (0->4)
     and backward died ('inplace operation ... [104, 10] at version 4').
-    The read site must CLONE (the SS-leg clone lesson, cs_snap_order0).
+    The read site must CLONE before any later dictionary write.
     idempotent.xml uniquely arms the path: CS ``<codebook>quantize</codebook>``
     (muxed event Codebook) + the uniform 104-wide slab (both width gates
     pass). One epoch must complete with finite losses.

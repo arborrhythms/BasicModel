@@ -2,9 +2,9 @@
 <model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:noNamespaceSchemaLocation="model.xsd">
   <!-- Parallel conceptual smoke workload on the xor dataset.
-       One distributed code per concept names two symbols. A rectified
-       projection admits positive and negative evidence separately, scoped
-       to each occurrence. The pyramid computes a union over disjunctive
+       One distributed code per concept names two symbols. Signed feature
+       weights read native memberships by pervasion; a subject's readout
+       unions its occurrences. The pyramid computes a union over disjunctive
        parts, with an optional preceding conjunction over W_pi. Exponents
        are nonnegative; a negated part addresses the negative symbol.
        The taper allocates 8 + 4 + 2 + 1 = 15 live concept rows here.
@@ -15,7 +15,7 @@
     <subsymbolicOrder>3</subsymbolicOrder>
     <!-- explicit override: parallel symbolic loop at symbolicOrder>=1. -->
     <serial>false</serial>
-    <!-- Three conceptual composition rungs above the eight order-0 atoms. -->
+    <!-- Three conceptual composition rungs above eight order-0 concepts. -->
     <symbolicOrder>3</symbolicOrder>
     <l1Lambda>0.01</l1Lambda>
     <sigmaPi>butterfly</sigmaPi>

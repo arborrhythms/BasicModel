@@ -1,0 +1,17 @@
+{
+  "baseline": "17403a1",
+  "script_sha256": "5b33793169e07a36a3cda56cee1afd008e6fac0043952102e746c2539507eb9c",
+  "memberships": [
+    8,
+    256
+  ],
+  "max_prior_error": 0.0,
+  "differing_byte_signatures": 0,
+  "discarded_equal": true,
+  "corpus": "data/MM_ladder_idiom.xml",
+  "corpus_sha256": "e614574a2591a1499d1f251208ac89ea51ec5db5c90ff0af7190d5608cdfd10a",
+  "sentences": 32,
+  "differing_sentences": 0,
+  "runs": 160,
+  "source_unchanged": true
+}

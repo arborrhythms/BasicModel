@@ -1,0 +1,117 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+________________ test_one_property_has_the_four_extent_corners _________________
+
+    def test_one_property_has_the_four_extent_corners():
+        cs = _cs()
+>       native, extents = binary_features(cs, torch.tensor([[49, 49], [48, 48], [48, 49], [49, 48]]))
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_concept_memberships.py:24: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_concept_memberships.py:13: in binary_features
+    cs.add_concept_feature(0, 'ws', 0, 1.)
+    ^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = ConceptualSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Tensor()
+   ... (concept_source_readout): SigmaConceptsFromPercepts(
+    (sigma): SigmaLayer(
+      (layer): LinearLayer()
+    )
+  )
+)
+name = 'add_concept_feature'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'ConceptualSpace' object has no attribute 'add_concept_feature'. Did you mean: 'add_concept_edge'?
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+_________ test_unrelated_memberships_stay_exactly_zero_at_every_scope __________
+
+    def test_unrelated_memberships_stay_exactly_zero_at_every_scope():
+        cs = _cs()
+        for length in (1, 8, 256, 1024):
+>           native, extents = binary_features(cs, torch.full((1, length), 65))
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_concept_memberships.py:32: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_concept_memberships.py:13: in binary_features
+    cs.add_concept_feature(0, 'ws', 0, 1.)
+    ^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = ConceptualSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Tensor()
+   ... (concept_source_readout): SigmaConceptsFromPercepts(
+    (sigma): SigmaLayer(
+      (layer): LinearLayer()
+    )
+  )
+)
+name = 'add_concept_feature'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'ConceptualSpace' object has no attribute 'add_concept_feature'. Did you mean: 'add_concept_edge'?
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+________________ test_parameter_getter_does_not_offer_new_parts ________________
+
+    def test_parameter_getter_does_not_offer_new_parts():
+        cs = _cs()
+        row = _mint_row(cs, 1, 100)
+        cs.add_concept_edge(row, 0, 1., conjunctive=True)
+        matrix = Spaces._concept_alloc_of(cs).layer().conjunctive
+        before = tuple(matrix._index)
+        parameter = matrix.values
+        cs.getParameters()
+>       assert tuple(matrix._index) == before
+E       assert ((32, 0), (32, 61)) == ((32, 0),)
+E         
+E         Left contains one more item: (32, 61)
+E         Use -v to get more diff
+
+test/test_concept_memberships.py:46: AssertionError
+=========================== short test summary info ============================
+FAILED test/test_concept_memberships.py::test_one_property_has_the_four_extent_corners
+FAILED test/test_concept_memberships.py::test_unrelated_memberships_stay_exactly_zero_at_every_scope
+FAILED test/test_concept_memberships.py::test_parameter_getter_does_not_offer_new_parts
+3 failed in 2.05s

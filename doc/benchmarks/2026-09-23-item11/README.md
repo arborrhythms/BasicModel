@@ -75,9 +75,9 @@ unknown. The raw byte positions of A and B need not coincide.
 
 ## Measurement protocol
 
-[run_measurements.py](run_measurements.py) runs bounded CPU processes with
+[run_measurements.py](https://github.com/arborrhythms/BasicModel/blob/75f74e1a4caa953a98748bb61e7dfe86a7a2beb3/doc/benchmarks/2026-09-23-item11/run_measurements.py) runs bounded CPU processes with
 one Torch thread, an 8 GiB footprint cap and a 600-second deadline. Seed 42
-fixes measurements only. [evidence.py](evidence.py) trains the real parallel
+fixes measurements only. [evidence.py](https://github.com/arborrhythms/BasicModel/blob/75f74e1a4caa953a98748bb61e7dfe86a7a2beb3/doc/benchmarks/2026-09-23-item11/evidence.py) trains the real parallel
 `MM_sparse_concept.xml` model for 16 native updates at batch four, then
 measures its validation field. Sixty-four feature permutations calibrate an
 unrelated-alignment control; a different 64 check it. They preserve feature
@@ -97,7 +97,7 @@ remains item 9's first landing.
 
 ## Numerical results
 
-[The production-snap regression](background.py) reproduces the failure on
+[The production-snap regression](https://github.com/arborrhythms/BasicModel/blob/75f74e1a4caa953a98748bb61e7dfe86a7a2beb3/doc/benchmarks/2026-09-23-item11/background.py) reproduces the failure on
 `868fba2`: with 2, 4 and 8 inactive parts, the old kind reads **.75, .9375
 and .99609375**. Its zero-presence assertion exits 1
 ([record](background-red.json), [process](background-red-process.json)).

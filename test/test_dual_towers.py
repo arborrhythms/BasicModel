@@ -179,19 +179,23 @@ def test_ws_routing_after_serial_migration():
     assert stamps[0] == "universe", stamps      # live unity at the bootstrap
 
 
-# ---- Tasks B/C: signed snap + feedforward pyramid (rev 2 design §§2-5) ----
+# ---- Native membership read and feedforward pyramid ----
 
 @pytest.mark.slow
-def test_signed_snap_no_annihilation():
-    """B: the order-0 readout is SIGNED — the epoch-1 all-negative ->
-    clamp -> a_0=0 death (probe 2026-07-10) is structurally impossible."""
+def test_unwritten_order0_read_is_neither():
+    """The first forward precedes boundary admission of native definitions.
+
+    Random distributed codes cannot invent evidence for an unwritten row.
+    The primitive-input learning gate tests presence after naming.
+    """
     import torch
     m = _run_one_epoch("data/MM_sparse_concept.xml")
     cs0 = m.conceptualSpaces[0]
     a0 = getattr(cs0, "_cs_last_a0", None)
     assert a0 is not None and torch.is_tensor(a0)
-    assert float(a0.abs().max()) > 0.0, "order-0 presence must be alive"
-    assert bool((a0 < 0).any()) or bool((a0 > 0).any())
+    assert a0.count_nonzero() == 0
+    store = Spaces._concept_alloc_of(cs0).layer()
+    assert store.features.nnz > 0, 'the boundary must admit witnessed features'
 
 
 @pytest.mark.slow
@@ -203,7 +207,8 @@ def test_pyramid_replaces_wave():
     assert getattr(cs0, "_cs_wave_qe", None) is None, "wave statistic retired"
     lv = getattr(cs0, "_cs_level_acts", None)
     assert lv is not None and len(lv) >= 1, "per-rung stats must populate"
-    assert float(lv[0]) > 0.0, "rung 0 (order-0 tiles) must be lit"
+    assert all(0. <= float(value) <= 1. for value in lv)
+    assert float(lv[0]) == float(cs0._cs_last_a0.max())
 
 
 @pytest.mark.slow
@@ -220,7 +225,12 @@ def test_pyramid_taper_topk_selection():
     cs0 = m.conceptualSpaces[0]
     settled = torch.randn(2, int(cs0.outputShape[0]),
                           int(cs0.subspace.muxedSize))
-    content, acts = cs0.cs_symbolic_phase(settled)
+    raw = torch.full((2, settled.shape[1]), 65, dtype=torch.long)
+    from PerceptProperties import uniform_spans
+    spans = uniform_spans(2, raw.shape[1], raw.shape[1], device=raw.device)
+    extents = torch.tensor([[[0, raw.shape[1]]]]).expand(2, -1, -1)
+    content, acts = cs0.cs_symbolic_phase(settled, extents=extents,
+                                         percepts=(raw, spans, None, raw, spans))
     assert acts is not None, "symbolic phase must be active"
     idx = cs0.subspace.get_index()
     assert idx is not None and idx.ndim == 3, "top-K selection must be staged"

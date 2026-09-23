@@ -1,0 +1,120 @@
+.........F
+=================================== FAILURES ===================================
+________________________ test_native_unseeded_xor[0-4] _________________________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3602/test_native_unseeded_xor_0_4_0')
+pool = 4, trial = 0
+
+    @pytest.mark.parametrize('pool', [4, 8])
+    @pytest.mark.parametrize('trial', range(3))
+    def test_native_unseeded_xor(tmp_path, pool, trial):
+>       learn_grounded_xor(tmp_path, pool)
+
+test/test_grounded_xor.py:156: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3602/test_native_unseeded_xor_0_4_0')
+pool = 4
+
+    def learn_grounded_xor(tmp_path, pool):
+        model, x = grounded_model(tmp_path, pool)
+        cs, ws = model.conceptualSpaces[0], model.wholeSpaces[0]
+        prior = ws.subspace.what.primitive_properties
+        # Teach primitive memberships, then the name's feature definition.
+        # No conceptual truth table is installed as an activation.
+        for row, targets in ((8, [0., 1.]), (9, [1., 0.])):
+            before, after = prior.teach(row, [48, 49], targets)
+            assert before > .1 and after < 1e-12
+        assert cs._csw_concept_row(0, 10001) == 0
+        cs.add_concept_feature(0, 'ws', 8, 1.)
+        for negative in (False, True):
+            cs.add_concept_feature(0, 'ws', 9, 0., negated=negative)
+        native = torch.cat((x, x[:1].clone()))
+        native[-1, 0, :2] = 65
+        store = Spaces._concept_alloc_of(cs).layer()
+        optimizer = torch.optim.Adam([store.features.values], lr=.03)
+        expected = torch.tensor([[0., 1.], [1., 1.], [1., 1.], [1., 0.], [0., 0.]])
+        for _ in range(32):
+            optimizer.zero_grad()
+            model.forward(native)
+            loss = (model._combine_last_cs_sub._concept_activations[0, :, 0] - expected).square().mean()
+            loss.backward()
+            optimizer.step()
+            store.project_parts()
+            model.End()
+        model.forward(x)
+        torch.testing.assert_close(cs._cs_last_a0[0, :, 0], expected[:4], atol=1e-6, rtol=0)
+        torch.testing.assert_close(cs._cs_extents, torch.tensor([[[0, 2]]]).expand(4, -1, -1))
+        assert int(store.provisional.sum()) == pool
+        rows = store.provisional.nonzero().flatten().tolist()[:4]
+        # Four provisional hypotheses begin with the same witnessed positive
+        # property. Only its opposite symbol is offered at zero; supervision
+        # must learn that both are necessary. Participation begins at zero.
+        for row in rows:
+            cs.add_concept_edge(row, 0, 1., conjunctive=True)
+            store.assigned[row] = True
+        cs._prepare_part_learning()
+        negative = [store.conjunctive._index[row, store.nOutput + 1] for row in rows]
+        assert torch.count_nonzero(store.conjunctive.values[negative]) == 0
+        assert torch.count_nonzero(store.participation[rows]) == 0
+        assert not store.participation.requires_grad
+        optimizer = torch.optim.Adam([store.conjunctive.values], lr=.03)
+        target = torch.tensor([0., 1., 1., 0.])
+        for _ in range(120):
+            optimizer.zero_grad()
+            model.forward(x)
+            leg = model.symbolSpace.forward_concept_to_symbol(model._combine_last_cs_sub)
+            output = leg._symbol_evidence[rows]
+            loss = (output[..., 0] - target[None]).square().mean()
+            loss.backward()
+            optimizer.step()
+            store.project_parts()
+            cs.observe_concept_use(leg._concept_activations)
+            model.End()
+        with torch.no_grad():
+            model.forward(x)
+            leg = model.symbolSpace.forward_concept_to_symbol(model._combine_last_cs_sub)
+            output = leg._symbol_evidence[rows]
+            mse = float((output[..., 0] - target[None]).square().mean())
+        print({'pool': pool, 'primitive_updates': 32, 'definition_updates': 32,
+               'concept_updates': 120, 'mse': mse, 'output': output.tolist(),
+               'conjunctions': len(rows), 'gates': store.participation[rows].tolist(),
+               'positive_parts': [cs.concept_weights(row, conjunctive=True) for row in rows],
+               'negative_parts': [cs.concept_weights(row, conjunctive=True, negated=True) for row in rows]})
+        assert mse < 1e-6
+        torch.testing.assert_close(output[..., 0], target[None].expand(len(rows), -1), atol=1e-6, rtol=0)
+        assert bool((store.conjunctive.values[negative] > 0).all())
+        assert all({source for source, weight in cs.concept_weights(row, conjunctive=True)
+                    if weight > 0} == {0} for row in rows)
+        assert all({source for source, weight in cs.concept_weights(row, conjunctive=True, negated=True)
+                    if weight > 0} == {0} for row in rows)
+        torch.testing.assert_close(leg._concept_extents, cs._cs_extents)
+        torch.testing.assert_close(leg._concept_position_spans, cs._cs_position_spans)
+        assert leg.materialize().shape[1] == 2 * sum(cs._order_caps())
+        model.End()
+        # Learned exclusion is exact at every read scope, without a noise floor.
+        controls = x[:1].expand(4, -1, -1).clone()
+        controls[:, 0, :2] = torch.tensor([[65, 65], [90, 90], [50, 50], [33, 33]])
+        with torch.no_grad():
+            model.forward(controls)
+            leg = model.symbolSpace.forward_concept_to_symbol(model._combine_last_cs_sub)
+>           assert cs._cs_position_evidence.count_nonzero() == 0
+E           assert tensor(12) == 0
+E            +  where tensor(12) = <built-in method count_nonzero of Tensor object at 0x126313430>()
+E            +    where <built-in method count_nonzero of Tensor object at 0x126313430> = tensor([[[[[0., 1.],\n           [0., 1.],\n           [0., 0.],\n           ...,\n           [0., 0.],\n           [0., 0....      [0., 0.],\n           [0., 0.],\n           ...,\n           [0., 0.],\n           [0., 0.],\n           [0., 0.]]]]]).count_nonzero
+E            +      where tensor([[[[[0., 1.],\n           [0., 1.],\n           [0., 0.],\n           ...,\n           [0., 0.],\n           [0., 0....      [0., 0.],\n           [0., 0.],\n           ...,\n           [0., 0.],\n           [0., 0.],\n           [0., 0.]]]]]) = ConceptualSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Tensor()\n   ...  (concept_parts_layer): ConceptualAttentionLayer(\n    (conjunctive): SparseLayer()\n    (features): SparseLayer()\n  )\n)._cs_position_evidence
+
+test/test_grounded_xor.py:146: AssertionError
+----------------------------- Captured stdout call -----------------------------
+{'pool': 4, 'primitive_updates': 32, 'definition_updates': 32, 'concept_updates': 120, 'mse': 2.842170943040401e-14, 'output': [[[0.0, 0.9999997615814209], [0.9999997615814209, 0.9999997615814209], [0.9999997615814209, 0.9999997615814209], [0.0, 0.9999997615814209]], [[0.0, 0.9999997615814209], [0.9999997615814209, 0.9999997615814209], [0.9999997615814209, 0.9999997615814209], [0.0, 0.9999997615814209]], [[0.0, 0.9999997615814209], [0.9999997615814209, 0.9999997615814209], [0.9999997615814209, 0.9999997615814209], [0.0, 0.9999997615814209]], [[0.0, 0.9999997615814209], [0.9999997615814209, 0.9999997615814209], [0.9999997615814209, 0.9999997615814209], [0.0, 0.9999997615814209]]], 'conjunctions': 4, 'gates': [0.9999997615814209, 0.9999997615814209, 0.9999997615814209, 0.9999997615814209], 'positive_parts': [[(0, 1.0)], [(0, 1.0)], [(0, 1.0)], [(0, 1.0)]], 'negative_parts': [[(0, 0.166765496134758)], [(0, 0.166765496134758)], [(0, 0.166765496134758)], [(0, 0.166765496134758)]]}
+=============================== warnings summary ===============================
+test/test_grounded_xor.py::test_native_unseeded_xor[0-4]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_grounded_xor.py::test_native_unseeded_xor[0-4] - assert tens...
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 9 passed, 1 warning in 3.62s

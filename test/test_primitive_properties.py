@@ -1,43 +1,24 @@
 """Primitive property learning and concept evidence grounded in extents."""
 import torch
+import Spaces
 import pytest
 
 from test_cs_sparse_weights import _cs, _mint_row
 
 
-def test_unit_ball_snap_can_reach_the_use_floor():
-    cs = _cs()
-    cs.concept_evidence_floor = 0.
-    with torch.no_grad():
-        cs.similarity_codebook.getW()[0].zero_()
-        cs.similarity_codebook.getW()[0, 0] = 1.
-    event = torch.zeros(1, 1, 8)
-    event[..., 0] = 1.
-    snap = cs.cs_snap_order0(event)
-    torch.testing.assert_close(snap[0, 0, 0], torch.tensor([1., 0.]))
-    assert float(snap[0, 0, 0, 0]) > cs.concept_use_floor
-
-
-def test_different_positions_in_one_extent_supply_necessary_parts():
+def test_different_positions_in_one_extent_supply_the_two_symbols():
+    from test_concept_memberships import binary_features
     cs = _cs()
     cs.conceptual_pi = True
-    cs.concept_evidence_floor = 0.
-    with torch.no_grad():
-        cs.similarity_codebook.getW()[:2].zero_()
-        cs.similarity_codebook.getW()[0, 0] = 1.
-        cs.similarity_codebook.getW()[1, 1] = 1.
     row = _mint_row(cs, 1, 101)
     cs.add_concept_edge(row, 0, 1., conjunctive=True)
-    cs.add_concept_edge(row, 1, 1., conjunctive=True)
-    event = torch.zeros(1, 4, 8)
-    event[0, 0, 0] = event[0, 1, 1] = 1.
-    event[0, 2, 0] = event[0, 3, 1] = -1.
-    positions = torch.tensor([[[0, 1], [1, 2], [2, 3], [3, 4]]])
+    cs.add_concept_edge(row, 0, 1., conjunctive=True, negated=True)
+    native, _ = binary_features(cs, torch.tensor([[49, 48, 49, 49]]))
     extents = torch.tensor([[[0, 2], [2, 4]]])
-    snap = cs.cs_snap_order0(event, position_spans=positions, extents=extents)
-    _, result = cs.cs_forward_content(snap, cs.similarity_codebook.getW())
-    torch.testing.assert_close(result[row, 0], torch.tensor([[1., 0.], [0., 1.]]))
-    assert cs._cs_position_evidence.shape == (cs._order_caps()[0], 1, 2, 4, 2)
+    read = cs.cs_read_memberships(native, extents)
+    _, result = cs.cs_forward_content(read, cs.similarity_codebook.getW())
+    torch.testing.assert_close(result[row, 0, :, 0], torch.tensor([1., 0.]))
+    assert cs._cs_position_evidence.shape == (cs._order_caps()[0], 1, 2, 8, 2)
 
 
 def test_live_property_membership_is_a_learned_byte_definition(tmp_path):
@@ -183,36 +164,30 @@ def test_copresence_never_writes_a_witnessed_negative_part():
     assert all(column < store.nOutput for _, column in store.conjunctive._index)
 
 
-@pytest.mark.parametrize('conjunctive', [False, True])
-def test_extent_fold_keeps_missing_distinct_from_observed_zero(conjunctive):
-    from ConceptEvidence import fold_extents
+def test_extent_read_keeps_missing_distinct_from_observed_zero():
+    from ConceptEvidence import in_extents
     pairs = torch.tensor([[[[1., 0.], [0., 1.]]]])
     positions = torch.tensor([[[0, 1], [1, 2]]])
     extent = torch.tensor([[[0, 2]]])
-    field, retained = fold_extents(pairs, positions, extent, conjunctive=conjunctive)
-    expected = [0., 1.] if conjunctive else [1., 0.]
-    torch.testing.assert_close(field.flatten(), torch.tensor(expected))
+    field, retained = in_extents(pairs, positions, extent)
+    torch.testing.assert_close(field.flatten(), torch.tensor([1., 1.]))
     assert retained.shape == (1, 1, 1, 2, 2)
-    # A missing second position cannot support either universal claim.
-    field, _ = fold_extents(pairs[..., :1, :], positions[:, :1], extent,
-                            conjunctive=conjunctive)
-    torch.testing.assert_close(field.flatten(), torch.tensor([0., 0.] if conjunctive else [1., 0.]))
-    # A known counterexample remains evidence even with another part missing.
-    field, _ = fold_extents(pairs[..., 1:, :], positions[:, 1:], extent,
-                            conjunctive=conjunctive)
-    torch.testing.assert_close(field.flatten(), torch.tensor([0., 1.] if conjunctive else [0., 0.]))
+    for index, expected in ((0, [1., 0.]), (1, [0., 1.])):
+        field, _ = in_extents(pairs[..., index:index+1, :], positions[:, index:index+1], extent)
+        torch.testing.assert_close(field.flatten(), torch.tensor(expected))
 
 
 def test_grounded_read_has_one_owner_and_checkpoint_keeps_positions(tmp_path):
     from test_grounded_xor import grounded_model
     model, x = grounded_model(tmp_path)
-    model.forward(x)
     cs = model.conceptualSpaces[0]
+    cs.add_concept_feature(0, 'ws', 0, .7)
+    model.forward(x)
     carrier = model._combine_last_cs_sub
     optimizer = model.getOptimizer(lr=.001)
-    for parameter in cs.percept_read.parameters():
-        assert sum(p is parameter for g in optimizer.param_groups for p in g['params']) == 1
-        assert sum(v.data_ptr() == parameter.data_ptr() for v in model.state_dict().values()) == 1
+    parameter = Spaces._concept_alloc_of(cs).layer().features.values
+    assert sum(p is parameter for g in optimizer.param_groups for p in g['params']) == 1
+    assert not any(v.data_ptr() == parameter.data_ptr() for v in model.state_dict().values())
     evidence = carrier._concept_activations.clone()
     positions = carrier._concept_position_evidence.clone()
     spans = carrier._concept_position_spans.clone()
@@ -239,7 +214,7 @@ def test_zero_candidate_can_learn_negation_but_is_not_witnessed():
     cs.add_concept_edge(row, 0, 1., conjunctive=True)
     cs._cs_last_a0 = torch.zeros(cs._order_caps()[0], 2, 1, 2)
     cs._cs_last_a0[:2, :, 0, 0] = torch.tensor([[1., 1.], [0., 1.]])
-    cs.getParameters()
+    cs._prepare_part_learning()
     ly = __import__('Spaces')._concept_alloc_of(cs).layer()
     negative = ly.conjunctive._index[row, 1 + ly.nOutput + 1]
     assert float(ly.conjunctive.values[negative]) == 0.
@@ -259,7 +234,7 @@ def test_candidate_growth_keeps_freeze_and_positive_witness_barriers():
     cs.add_concept_edge(frozen, 0, .5, conjunctive=True)
     cs.freeze_concept(101)
     cs.add_concept_edge(live, 0, .5, conjunctive=True)
-    cs.getParameters()
+    cs._prepare_part_learning()
     matrix = Spaces._concept_alloc_of(cs).layer().conjunctive
     candidate = matrix._index[live, matrix.nOutput + 1]
     cs._hebbian_strengthen(102)

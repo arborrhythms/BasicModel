@@ -3,7 +3,8 @@ import pytest
 import torch
 
 import Spaces
-from ConceptEvidence import admit, corners, symbols, union
+from ConceptEvidence import corners, symbols, union
+from test_concept_memberships import binary_features
 from test_cs_sparse_weights import _cs, _mint_row
 
 
@@ -19,25 +20,22 @@ def test_production_snap_background_is_neither(pi, parts):
     row = _mint_row(cs, 1, 101)
     for part in range(parts):
         cs.add_concept_edge(row, part, 1., conjunctive=pi)
-    snap = cs.cs_snap_order0(torch.zeros(2, 8, 8))
+    native, extents = binary_features(cs, torch.zeros(2, 8, dtype=torch.long))
+    snap = cs.cs_read_memberships(native, extents)
     _, result = cs.cs_forward_content(snap, cs.similarity_codebook.getW())
     assert torch.count_nonzero(result) == 0
     torch.testing.assert_close(corners(symbols(result)[row])[:, 3], torch.ones(2))
 
 
-def test_snap_keeps_both_until_symbol_readout():
+def test_membership_read_keeps_both_until_symbol_readout():
     cs = _cs()
-    cs.concept_evidence_floor = .2
-    with torch.no_grad():
-        cs.similarity_codebook.getW()[0].fill_(1.)
-    event = torch.tensor([[[1.] * 8, [-1.] * 8]])
-    snap = cs.cs_snap_order0(event, chart='cube')
-    torch.testing.assert_close(cs._cs_position_evidence[0, 0, 0],
+    native, extents = binary_features(cs, torch.tensor([[49, 48]]))
+    read = cs.cs_read_memberships(native, extents)
+    torch.testing.assert_close(cs._cs_position_evidence[0, 0, 0, :2],
                                torch.tensor([[1., 0.], [0., 1.]]))
-    torch.testing.assert_close(snap[0, 0], torch.ones(1, 2))
-    torch.testing.assert_close(symbols(snap)[0, 0], torch.ones(2))
-    torch.testing.assert_close(corners(symbols(snap))[0, 0], torch.tensor([0., 0., 1., 0.]))
-    assert symbols(cs.cs_snap_order0(torch.full((1, 8, 8), .1), chart='cube'))[0].count_nonzero() == 0
+    torch.testing.assert_close(read[0, 0], torch.ones(1, 2))
+    torch.testing.assert_close(symbols(read)[0, 0], torch.ones(2))
+    torch.testing.assert_close(corners(symbols(read))[0, 0], torch.tensor([0., 0., 1., 0.]))
 
 
 @pytest.mark.parametrize('conjunctive', [False, True])
@@ -110,13 +108,6 @@ def test_reverse_keeps_counterevidence_and_its_occurrence():
     torch.testing.assert_close(result[0, 0, 1], torch.tensor([.9, 0.]))
     torch.testing.assert_close(result[1, 0, 1], torch.tensor([0., .9]))
     assert result[:, :, 0].count_nonzero() == 0
-
-
-def test_noise_admission_and_count_accumulation_are_explicit():
-    assert admit(torch.full((64,), .1), .2).count_nonzero() == 0
-    for count in (8, 64):
-        admitted = admit(torch.full((count,), .24), .2)
-        assert float(union(admitted[:, 0], 0)) == pytest.approx(1 - .95 ** count, abs=1e-6)
 
 
 def test_part_values_have_only_one_checkpoint_owner():

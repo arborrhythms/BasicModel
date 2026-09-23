@@ -2085,19 +2085,6 @@ class BaseModel(Mereology, nn.Module):
             # Same non-owning expansion seam for WholeSpace.insert_whole.
             object.__setattr__(_ws, "_model", self)
 
-        if (not self.serial and self.symbolicOrder > 0
-                and len(getattr(self, "wholeSpaces", ())) > 0
-                and self.wholeSpaces[0].property_basis
-                and self.wholeSpaces[0].analysis_mode == 'meronomy'
-                and self.perceptualSpace._meronomy):
-            from PerceptProperties import PerceptRead
-            owner = self.conceptualSpaces[0]
-            owner.percept_read = PerceptRead(
-                self.perceptualSpace.nWhat, self.wholeSpaces[0].nWhat,
-                owner.similarity_codebook.getW().shape[-1]).to(
-                    owner.similarity_codebook.getW())
-            owner.params.extend(owner.percept_read.parameters())
-
         # syntacticOrder (doc/specs/orders.md, NEW 2026-06-19): the parse-tree
         # DEPTH cap for the serial grammatical reduction. 0 (default) =
         # unbounded (the NULL-seal reduce sweep collapses to a single S, exactly
@@ -3252,6 +3239,10 @@ class BaseModel(Mereology, nn.Module):
             if allocator is not None:
                 for layer in allocator._layers.values():
                     layer.migrate_part_moments(optimizer)
+                    # Definition growth is a boundary mutation. Attach its
+                    # current leaves now, before any candidate is appended.
+                    for matrix in layer.definition_matrices():
+                        matrix._optimizer = optimizer
         return optimizer
 
     def rebuild_optimizer(self):
@@ -4925,7 +4916,7 @@ class BaseModel(Mereology, nn.Module):
             register(0)
         object.__setattr__(
             cs, "_csw_registered_count",
-            sum(int(m.nnz) for layer in alloc._layers.values() for m in layer.part_matrices()))
+            sum(int(m.nnz) for layer in alloc._layers.values() for m in layer.definition_matrices()))
 
     def _restore_structural_extras(
             self, extras, *, legacy_whole_structure=None):
@@ -18356,13 +18347,10 @@ class BasicModel(BaseModel):
             self.perceptualSpace._recurrent_pass_idx = 0
         PS_sub_stage0 = self.perceptualSpace.forward(in_sub)
         self.create_ir_mask(PS_sub_stage0)
-        # Retain independently located percepts before a recurrent bind can
-        # mix their coordinates. The late symbolic read owns the polarity.
-        _grounded = hasattr(self.conceptualSpaces[0], 'percept_read')
-        _part_event = PS_sub_stage0.materialize().clone() if _grounded else None
-        _part_spans = (self.perceptualSpace._forward_input.get('part_spans')
-                       if _grounded else None)
-        _property_event = None
+        # Retain native row identities and their locations before binding.
+        _part_input = getattr(self.perceptualSpace, '_forward_input', None)
+        _part_ids = _part_input.get('indices') if isinstance(_part_input, dict) else None
+        _part_spans = _part_input.get('part_spans') if isinstance(_part_input, dict) else None
         # ``contribution`` is the incoming subspace for each stage's
         # ``cs.forward``. Stage 0 -> PS output; stage k > 0 -> prior
         # stage's post-merge CS output.
@@ -18374,7 +18362,6 @@ class BasicModel(BaseModel):
         # Composition starts from its own percepts and codes, never an estimate.
         carriers = []            # per-stage exact bind output (the FULL mix)
         prev_cs_stage = None     # P3: prior stage's cs (demux-feedback reads)
-        _pump_qe = []            # P4: per-stage per-percept settle signal
         for t, stage in enumerate(self.body_stages):
             cs = stage["cs"]
             ws = stage["ws"]
@@ -18408,8 +18395,6 @@ class BasicModel(BaseModel):
                 (self._staged_concepts_in
                  if ((_par or t == 0) and _u_ok) else None),
                 cs_out=prevCS_forSS)
-            if _grounded and t == 0:
-                _property_event = WS_sub.materialize().clone()
             # ``cs.forward`` does the STM push + the C->P / C->S handoff
             # bookkeeping and produces this stage's perception event CS_0
             # (STM bookkeeping, no parameterised fold). PRESERVED intact --
@@ -18594,15 +18579,6 @@ class BasicModel(BaseModel):
                     object.__setattr__(
                         self, "_combine_fwd_cs0", full_t.detach())
                 carriers.append(full_t)
-                # P4 settle signal (report-only, no control flow): each
-                # pump stage's per-percept residual against the order-0
-                # block -- the QE snap-error read as a SIGNAL for the later
-                # adaptive-exit work. Runs whenever the sparse pump is live
-                # (the per-pass stack is now canonical).
-                if cs._sparse_active():
-                    _qe_t = cs.snap_settle_qe(CS_sub.materialize())
-                    if _qe_t is not None:
-                        _pump_qe.append(_qe_t)
             # Stage 1.F: ``_cs_cache[t] = CS_sub`` retired. The
             # terminal C-space_role idea lives on ``conceptualSpace.stm``
             # (the bookkeeping push happens inside cs.forward); the
@@ -18636,8 +18612,8 @@ class BasicModel(BaseModel):
             contribution = CS_sub
             prev_cs_stage = cs
         # P3 LATE CUTOVER (two-phase forward): the pump above stayed purely
-        # continuous/subsymbolic; NOW -- once, at the bandwidth seam -- snap
-        # the settled field to the order-0 codebook block and run the
+        # continuous/subsymbolic; NOW -- once, at the bandwidth seam -- read
+        # native feature memberships into order-0 concepts and run the
         # symbolic phase (``cs_symbolic_phase``). The activations stamp the
         # terminal CS (the SS leg + head-side losses read them); the settled
         # symbolic content feeds the conceptual SBOW (C1, live). The cutover
@@ -18660,14 +18636,19 @@ class BasicModel(BaseModel):
             # WholeSpace's input brackets identify subjects and positions;
             # independent tower code indices cannot supply this alignment.
             _layout_ws = self.wholeSpaces[0]
+            _raw = self._staged_concepts_in
             _positions, _extents = _layout_ws.concept_evidence_layout(
-                self._staged_concepts_in,
-                int(_property_event.shape[1]) if _grounded else int(_settled.shape[1]))
-            _percepts = ((_part_event, _part_spans, _property_event, _positions)
-                         if _grounded else None)
+                _raw, int(_layout_ws.inputShape[0]))
+            from PerceptProperties import uniform_spans
+            if _part_ids is None:
+                _part_ids = torch.empty(_raw.shape[0], 0, device=_raw.device, dtype=torch.long)
+            if _part_spans is None:
+                _part_spans = uniform_spans(_raw.shape[0], _raw.shape[-1],
+                                            _part_ids.shape[1], device=_raw.device)
+            _primitive = getattr(_layout_ws.subspace.what, 'primitive_properties', None)
+            _percepts = (_part_ids, _part_spans, _primitive, _raw, _positions)
             _content, _acts = _cut_cs.cs_symbolic_phase(
-                _settled, chart='unit_ball', position_spans=_positions,
-                extents=_extents, percepts=_percepts)
+                _settled, extents=_extents, percepts=_percepts)
             # SEEN write moved to ``_prime_seen_step`` (unconditional, once
             # per batch, both paths) -- awareness primes (simplified law).
             assert _acts is None or (
@@ -18708,8 +18689,6 @@ class BasicModel(BaseModel):
         # IS the whole bind, so the reverse needs nothing alongside it.
         object.__setattr__(self, "_combine_carriers", carriers)
         object.__setattr__(self, "_combine_last_cs_sub", last_cs)
-        # P4 settle signal: per-stage per-percept residuals (report-only).
-        object.__setattr__(self, "_pump_settle_qe", _pump_qe)
         # Reset so standalone PartSpace.forward calls (and the
         # next forward's pass 0) see the AR-streaming serial warm path.
         if self.symbolSpace is not None:
