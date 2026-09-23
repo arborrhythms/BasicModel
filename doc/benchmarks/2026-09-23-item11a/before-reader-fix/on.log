@@ -1,0 +1,23 @@
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up, 25.00%)
+batch = 2 (Δ=0.215s, 50.00%)
+batch = 4 (Δ=0.213s, 75.00%)
+batch = 6 (Δ=0.202s, 100.00%)
+runEpoch(validation): hit max_batches=4 cap; cursor exiting early (4 batches processed, ds.all_done=False).
+Training throughput: 4 batches in 8.008s; word units 91.7% of 24 words (letters-only 100.0% of 8).
+batch = 0 (Δ=6.923s, 14.29%)
+batch = 2 (Δ=4.892s, 28.57%)
+batch = 4 (Δ=4.236s, 42.86%)
+batch = 6 (Δ=4.995s, 57.14%)
+batch = 8 (Δ=4.604s, 71.43%)
+batch = 10 (Δ=4.207s, 85.71%)
+batch = 12 (Δ=5.230s, 100.00%)
+runEpoch(train): hit max_batches=7 cap; cursor exiting early (7 batches processed, ds.all_done=False).
+Training throughput: 7 batches in 39.154s; word units 88.1% of 42 words (letters-only 100.0% of 14).
+batch = 0 (Δ=4.270s, 25.00%)
+batch = 2 (Δ=0.211s, 50.00%)
+batch = 4 (Δ=0.211s, 75.00%)
+batch = 6 (Δ=0.199s, 100.00%)
+runEpoch(validation): hit max_batches=4 cap; cursor exiting early (4 batches processed, ds.all_done=False).
+Training throughput: 4 batches in 0.822s; word units 91.7% of 24 words (letters-only 100.0% of 8).
+{"phases": [{"name": "before_training", "steps": [{"reconstruction": 0.10065674036741257, "answer": 0.057922590523958206, "thought_calls": 0, "thought_work": 0, "execute_records": 0, "seconds": 7.379191333020572}, {"reconstruction": 0.1006564199924469, "answer": 0.05970361456274986, "thought_calls": 0, "thought_work": 0, "execute_records": 0, "seconds": 0.21535208297427744}, {"reconstruction": 0.10060950368642807, "answer": 0.05984175577759743, "thought_calls": 0, "thought_work": 0, "execute_records": 0, "seconds": 0.21335108403582126}, {"reconstruction": 0.10060452669858932, "answer": 0.06104932352900505, "thought_calls": 0, "thought_work": 0, "execute_records": 0, "seconds": 0.20134516595862806}], "reconstruction_mean": 0.10063179768621922, "sentences_per_second": 0.9988463741410394, "thought_calls": 0}, {"name": "training", "steps": [{"reconstruction": 0.10064849257469177, "answer": 0.060474246740341187, "thought_calls": 0, "thought_work": 0, "execute_records": 0, "seconds": 11.556606874975841}, {"reconstruction": 0.10295761376619339, "answer": 0.053946349769830704, "thought_calls": 0, "thought_work": 0, "execute_records": 0, "seconds": 4.255862458026968}, {"reconstruction": 0.10046201944351196, "answer": 0.0466546006500721, "thought_calls": 0, "thought_work": 0, "execute_records": 0, "seconds": 4.987515791959595}, {"reconstruction": 0.09538619965314865, "answer": 0.039650194346904755, "thought_calls": 0, "thought_work": 0, "execute_records": 0, "seconds": 4.621203124988824}, {"reconstruction": 0.11264089494943619, "answer": 0.04282788559794426, "thought_calls": 0, "thought_work": 0, "execute_records": 0, "seconds": 4.232830332999583}, {"reconstruction": 0.09336181730031967, "answer": 0.05954098328948021, "thought_calls": 0, "thought_work": 0, "execute_records": 0, "seconds": 5.107370125013404}, {"reconstruction": 0.09174549579620361, "answer": 0.049097880721092224, "thought_calls": 0, "thought_work": 0, "execute_records": 0, "seconds": 4.393304375000298}], "reconstruction_mean": 0.09871928542852401, "sentences_per_second": 0.4284081973987764, "thought_calls": 0}, {"name": "after_training", "steps": [{"reconstruction": 0.10071543604135513, "answer": 0.05887206643819809, "thought_calls": 0, "thought_work": 0, "execute_records": 0, "seconds": 0.2016229170258157}, {"reconstruction": 0.10077003389596939, "answer": 0.062435299158096313, "thought_calls": 0, "thought_work": 0, "execute_records": 0, "seconds": 0.21126925002317876}, {"reconstruction": 0.10072971880435944, "answer": 0.06160442531108856, "thought_calls": 0, "thought_work": 0, "execute_records": 0, "seconds": 0.21076991595327854}, {"reconstruction": 0.1006690263748169, "answer": 0.06266152858734131, "thought_calls": 0, "thought_work": 0, "execute_records": 0, "seconds": 0.198786334018223}], "reconstruction_mean": 0.10072105377912521, "sentences_per_second": 9.727053799898838, "thought_calls": 0}], "dictionary_parameter": false}

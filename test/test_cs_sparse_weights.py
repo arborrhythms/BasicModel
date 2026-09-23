@@ -152,29 +152,26 @@ def test_source_code_activation_is_nonneg_presence_by_default():
 
 
 def test_snap_order0_is_input_dependent_not_saturated():
-    """The order-0 SNAP readout: normalized-sum presence of the settled
-    field against the ORDER-0 codebook block -- slot-mean projection onto the
-    unit atom direction in hypercube-diagonal units. SIGNED in (-1, 1)
-    (dual-towers rev 2: the nonneg clamp annihilated the mean-negative
-    epoch-1 readout), input-dependent, and (per Alec) MAGNITUDE-SENSITIVE:
-    objects in the unit hypercube differentiate by magnitude, so events are
-    NOT unit-normalized (no cosine). Raw dot-SUM presences would saturate
-    tanh to an input-blind constant (the sO=1 mean-collapse root cause)."""
-    cs = _cs(nS=16, order=1)                           # taper caps (8, 4)
-    torch.manual_seed(0)
-    D_dict = int(cs.similarity_codebook.getW().shape[-1])
-    e1 = torch.rand(2, 3, D_dict)                      # unit-hypercube events
-    e2 = torch.rand(2, 3, D_dict)
-    p1 = cs.cs_snap_order0(e1)
-    p2 = cs.cs_snap_order0(e2)
-    assert p1.shape == (8, 2, 3, 2)                          # [caps[0], B]
-    assert p1.min() >= 0.0 and p1.max() <= 1.0          # SIGNED tanh range
-    assert float((p1.abs() > 0.99).float().mean()) == 0.0   # never saturates
-    assert not torch.allclose(p1, p2)                  # input-dependent
-    # Magnitude carries information: a half-magnitude object is LESS present.
-    p_half = cs.cs_snap_order0(0.5 * e1)
-    mask = p1 > 1e-6
-    assert torch.all(p_half[mask] < p1[mask])
+    """Cube-valued events use diagonal units; an extent unions its slots.
+
+    Fixed orthogonal directions test magnitude sensitivity without selecting
+    a random draw that avoids saturation.
+    """
+    cs = _cs(nS=16, order=1)
+    W = cs.similarity_codebook.getW()
+    with torch.no_grad():
+        W.zero_()
+        W[:8, :8] = torch.eye(8)
+    e1 = torch.full((2, 3, W.shape[-1]), .4)
+    e2 = e1.clone()
+    e2[..., 0] = -.2
+    p1 = cs.cs_snap_order0(e1, chart='cube')
+    p2 = cs.cs_snap_order0(e2, chart='cube')
+    assert p1.shape == (8, 2, 1, 2)
+    assert p1.min() >= 0. and p1.max() < .99
+    assert not torch.allclose(p1, p2)
+    p_half = cs.cs_snap_order0(.5 * e1, chart='cube')
+    assert torch.all(p_half[p1 > 0] < p1[p1 > 0])
 
 
 def test_snap_order0_ema_traces_winning_rows_training_only():

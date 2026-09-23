@@ -1,0 +1,45 @@
+{
+  "reference": "d4dc385",
+  "native": {
+    "off": [
+      {
+        "phase": "before_training",
+        "baseline": 0.10059325583279133,
+        "current": 0.10063179768621922,
+        "delta": 3.854185342788696e-05
+      },
+      {
+        "phase": "training",
+        "baseline": 0.0927930697798729,
+        "current": 0.09871928542852401,
+        "delta": 0.0059262156486511175
+      },
+      {
+        "phase": "after_training",
+        "baseline": 0.09232672862708569,
+        "current": 0.10072105377912521,
+        "delta": 0.008394325152039528
+      }
+    ],
+    "on": [
+      {
+        "phase": "before_training",
+        "baseline": 0.10059325583279133,
+        "current": 0.10063179768621922,
+        "delta": 3.854185342788696e-05
+      },
+      {
+        "phase": "training",
+        "baseline": 0.0927930697798729,
+        "current": 0.09871928542852401,
+        "delta": 0.0059262156486511175
+      },
+      {
+        "phase": "after_training",
+        "baseline": 0.09232672862708569,
+        "current": 0.10072105377912521,
+        "delta": 0.008394325152039528
+      }
+    ]
+  }
+}

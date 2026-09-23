@@ -31,11 +31,13 @@ def test_snap_keeps_both_until_symbol_readout():
     with torch.no_grad():
         cs.similarity_codebook.getW()[0].fill_(1.)
     event = torch.tensor([[[1.] * 8, [-1.] * 8]])
-    snap = cs.cs_snap_order0(event)
-    torch.testing.assert_close(snap[0, 0], torch.tensor([[1., 0.], [0., 1.]]))
+    snap = cs.cs_snap_order0(event, chart='cube')
+    torch.testing.assert_close(cs._cs_position_evidence[0, 0, 0],
+                               torch.tensor([[1., 0.], [0., 1.]]))
+    torch.testing.assert_close(snap[0, 0], torch.ones(1, 2))
     torch.testing.assert_close(symbols(snap)[0, 0], torch.ones(2))
     torch.testing.assert_close(corners(symbols(snap))[0, 0], torch.tensor([0., 0., 1., 0.]))
-    assert symbols(cs.cs_snap_order0(torch.full((1, 8, 8), .1)))[0].count_nonzero() == 0
+    assert symbols(cs.cs_snap_order0(torch.full((1, 8, 8), .1), chart='cube'))[0].count_nonzero() == 0
 
 
 @pytest.mark.parametrize('conjunctive', [False, True])
@@ -205,12 +207,28 @@ def test_projected_updates_keep_nonnegative_parts_and_kind_maximum():
         cs.add_concept_edge(row, part, .1)
     store = Spaces._concept_alloc_of(cs).layer()
     store.assigned[row] = True
+    store.provisional[row] = True
     with torch.no_grad():
         store.values.copy_(torch.tensor([-.1, .2, .4]))
     store.project_parts()
     torch.testing.assert_close(store.values, torch.tensor([0., .5, 1.]))
     with pytest.raises(ValueError, match='self-edge'):
         store.conjunctive.add_edge(row, row + store.nOutput + 1, 1.)
+
+
+def test_discovered_and_sealed_definitions_keep_learned_exponent_scale():
+    cs = _cs()
+    discovered = _mint_row(cs, 1, 101)
+    sealed = _mint_row(cs, 1, 102)
+    cs.add_concept_edge(discovered, 0, .4)
+    cs.add_concept_edge(discovered, 1, 1.2)
+    cs.add_concept_edge(sealed, 0, .3)
+    cs.add_concept_edge(sealed, 1, 1.5)
+    store = Spaces._concept_alloc_of(cs).layer()
+    store.assigned[discovered] = True
+    before = store.values.detach().clone()
+    store.project_parts()
+    torch.testing.assert_close(store.values, before)
 
 
 def test_signed_checkpoint_migrates_poles_and_optimizer_first_moments():
@@ -275,6 +293,10 @@ def test_thought_transpose_keeps_negated_literal_in_a_separate_occurrence():
     before = torch.zeros(sum(cs._order_caps()), 1, 1, 2)
     before[1, 0, 0, 0] = 1.
     cs.subspace._concept_activations = before.clone()
+    cs.subspace._concept_extents = torch.tensor([[[0, 2]]])
+    cs.subspace._concept_position_spans = torch.tensor([[[0, 1], [1, 2]]])
+    positions = before.unsqueeze(-2).expand(-1, -1, -1, 2, -1).clone()
+    cs.subspace._concept_position_evidence = positions
     result = SimpleNamespace(semantic_id='quantize', evidence={'reference': ('row', row)})
     apply_thought_effect(SimpleNamespace(conceptualSpace=cs), result,
                          row=0, work=QueryWorkBudget(32))
@@ -282,3 +304,7 @@ def test_thought_transpose_keeps_negated_literal_in_a_separate_occurrence():
     torch.testing.assert_close(after[:, :, :1], before)
     torch.testing.assert_close(after[1, 0, 1], torch.tensor([0., 1.]), atol=1e-6, rtol=0)
     torch.testing.assert_close(symbols(after)[1, 0], torch.ones(2), atol=1e-6, rtol=0)
+    assert cs.subspace._concept_extents.tolist() == [[[0, 2], [-1, -1]]]
+    torch.testing.assert_close(cs.subspace._concept_position_evidence[:, :, :1], positions)
+    assert cs.subspace._concept_position_evidence[:, :, 1].count_nonzero() == 0
+    assert cs.subspace._concept_position_spans.tolist() == [[[0, 1], [1, 2]]]

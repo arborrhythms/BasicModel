@@ -142,7 +142,16 @@ Consequences (decided):
   atom (`relu p_n`) and onto its negation (`relu −p_n`): the **union over
   admitted slots**, `1 − ∏(1 − e_n)`, where a slot is admitted to a
   channel only above a noise floor `τ`, `e_n = relu(|p_n| − τ)/(1 − τ)`
-  (confirmed for implementation, Alec 2026-09-23). Every rectified fold is
+  (implemented at `e917d9c`; **confirmed by Alec, 2026-09-23**, with the
+  reservation that a calibrated floor is archaic: the admission should be
+  a regularized weighting over the input space. Note that `relu(p − τ)` is
+  the soft-thresholding operator, the proximal map of an L1 penalty of
+  weight `τ` on the admitted evidence, so the floor already *is* an
+  L1-regularized weighting; what is archaic is that its strength is
+  measured offline. **Decided (Alec, 2026-09-23): keep the calibrated
+  floor** — a rank-based or trained admission was judged more machinery
+  than the objection warrants; `conceptEvidenceFloor` stays a parameter,
+  recalibrated once in the corrected units below.) Every rectified fold is
   biased upward by noise on both channels — noise has a positive and a
   negative part, and rectification hands one to each — so admission comes
   first, as the taper does for the pyramid (Architecture, settled point 4);
@@ -157,6 +166,44 @@ Consequences (decided):
   model (item 10, finding 6), not guessed. The tests state the meaning:
   slots `+1, −1` → `(1, 1)`, both = 1; all slots inactive → `(0, 0)`,
   neither = 1; eight slots at .1 under `τ = .2` → `(0, 0)`.
+- **The read is in the field's own chart** (decided, Alec 2026-09-23,
+  from the landing review). A projection in hypercube-diagonal units
+  divides by `√D`, which is right for cube-valued slots of norm up to `√D`
+  and wrong for the unit-ball codes the settled field carries (measured
+  slot norms .16–.97 at `D = 1024`): the presence ceiling for a perfectly
+  aligned slot is then `1/√D = .03`, the union of eight slots at most .22,
+  and the use floor .5 and discovery threshold .8 are unreachable by
+  construction. The read is cosine times slot norm for unit-ball codes,
+  with the `√D` divisor only where slots are cube-valued; the floor `τ`
+  is recalibrated in those units.
+- **An occurrence is an extent, not a tile** (decided, Alec 2026-09-23:
+  "let's see how it pans out in practice"). The field's occurrence axis
+  groups the positions inside one subject's extent — a word's or a
+  whole's `.where` from the towers — with the pair kept per position
+  inside it. Parts of a whole are at different positions of one extent at
+  one time; at a single tile there is one code, so "co-present at a tile"
+  is alternative readings of one code, not parts. Negation is scoped to
+  the extent (pervasion over its parts).
+- **Witnessing writes positive parts only** (Alec, 2026-09-23: "parts are
+  percepts; absence of a percept is possible (0), but the opposite of a
+  percept is not"). Co-presence discovery assigns the concepts present in
+  an extent as parts; it never writes a negated part from counterevidence,
+  since at the percept level there is nothing to witness but presence and
+  absence. A negated part enters a definition only by learning or by
+  testimony (the seal). The zeroth-order `c⁻` remains a computed reading —
+  the definition contradicted by what is present — never a witnessable
+  part.
+- **Concepts that require both poles of one constituent exist, and the
+  pair represents them.** A whole never needs `A` and `¬A` at one
+  position, and a kind over both is a tautology; but across the positions
+  of an extent a definition may require a constituent to be present and
+  absent — striped, spotted, pied, "black and white" — and XOR requires it
+  across its conjuncts. A conjunction addressing both poles of `A` computes
+  `c⁺_A · c⁻_A`, the both corner itself; a union over both poles computes
+  "A has been observed at all", the complement of neither. So the four
+  corners of a constituent are all definable as parts, and heterogeneity
+  can be a defining feature (the soccer ball's black and white; Alec's
+  question of 2026-09-23).
 - **A composed concept's `c⁻` is the De Morgan dual fold, never
   `1 − c⁺`** (which would erase both and neither). A literal over part `A`
   is the pair `(c⁺_A, c⁻_A)`, swapped for a negated part. A kind, a union

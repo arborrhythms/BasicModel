@@ -1583,3 +1583,54 @@ files**, SHA-256 of the sorted compact validated-source map:
 
 The final [documentation-link receipt](benchmarks/2026-09-23-item11/doc-links-result.json.gz)
 completes **72/72** cases, all passed, exit 0.
+
+### Item 11a: primitive properties and grounded extents (2026-09-23)
+
+The [implementation and measurement record](benchmarks/2026-09-23-item11a/README.md)
+replaces the canonical WholeSpace tag lookup with learned memberships over
+byte primitives. Its eight supplied properties reproduce all 256 byte
+memberships exactly, including the four requested properties; all 160
+constant-signature runs in the 32-sentence ladder idiom fixture are unchanged.
+Independent tower codes meet through one input extent and retain their
+positions through concept composition, symbol readout and checkpoints.
+
+The new native XOR learning assertions use six unseeded runs, pool sizes four
+and eight, and four actual conjunction definitions in each. Primitive naming
+receives 900 updates and paired XOR supervision 600. The native tower folds
+supply OR and AND; negative parts start unwritten and are learned. The gates
+pass in both the affected selection and fresh full-suite processes, whose
+[paired errors](benchmarks/2026-09-23-item11a/xor-full.json) range from
+.00001935 to .00002694. This is supervised learning, not an unsupervised
+concept-discovery result. The old strict-expected-failure pyramid assertions
+are replaced; their null remains in the preceding receipt.
+
+The [affected receipt](benchmarks/2026-09-23-item11a/affected-result.json.gz)
+completes **187/187**: **178 passed, 9 skipped**. The explicitly enabled
+[slow receipt](benchmarks/2026-09-23-item11a/slow-result.json.gz) completes
+**12/12**, all passed. The final [full receipt](benchmarks/2026-09-23-item11a/full-result.json.gz)
+completes **4,767/4,767**: **4,436 passed, 330 skipped, one existing expected
+failure**, exit 0, in **1,083.18 seconds**. No failure is waived and no
+compiler-cache retry ran. Ten one-thread CPU workers use eight-case,
+one-file batches, with 8/20 GiB worker/aggregate caps and a 16.99 GiB peak.
+The [source manifest](benchmarks/2026-09-23-item11a/full-source-manifest.json)
+matches **636** source files, SHA-256 of its sorted compact source map:
+`19e362842fde393680faeb47c027dbac060a6d9a38e0689c9534a13a13b6913a`.
+The final 25-case contract receipt uses the same source; earlier affected,
+slow and measurement receipts differ only in the [two corrected test files](benchmarks/2026-09-23-item11a/validation-source-delta.json).
+Runtime and configuration match throughout. Earlier assertion failures,
+the interrupted run and a larger-batch memory stop remain in the landing record.
+
+The corrected serial reference reader restores the exact `d4dc385`
+pre-training reconstruction mean. Learning the new memberships changes the
+training-window mean by +2.28% and the after-training mean by +.142%
+(.0924575571 versus .0923267286); freezing just those memberships reproduces
+all old means exactly. Pi off/on are identical in this serial control.
+The calibrated .112 floor uses unit-ball units and permits native evidence
+above the discovery threshold. Its synthetic controls remain below that
+threshold at eight slots but accumulate false support at 256; this is a
+bounded calibration, not a universal absence detector. The normalization
+lifetime remains a review decision, documented in the landing record.
+
+The final [documentation-link receipt](benchmarks/2026-09-23-item11a/doc-links-result.json.gz)
+passes **74/74** cases, exit 0. [Receipt metadata](benchmarks/2026-09-23-item11a/receipt-info.json)
+records the implementation source and review residue.

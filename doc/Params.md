@@ -324,11 +324,13 @@ the analysis/synthesis orientation.
 
 ### `<ConceptualSpace>`
 
-`conceptEvidenceFloor` (decimal in `[0, 1)`, default **0.005**) admits
-per-occurrence snap projections independently to the two poles with
-`relu(±p − τ)/(1 − τ)`. It is measured on the trained parallel smoke model;
-[the receipt](benchmarks/2026-09-23-item11/README.md) records its scope,
-synthetic controls, count accumulation and remaining weak live evidence.
+`conceptEvidenceFloor` (decimal in `[0, 1)`, default **0.112**) admits
+per-position projections independently to the two poles with
+`relu(±p − τ)/(1 − τ)`. Unit-ball codes use cosine times slot norm;
+only explicitly cube-valued reads divide by `√D`. Positions are folded
+within a subject extent before concept composition. The
+[calibration receipt](benchmarks/2026-09-23-item11a/README.md) records
+its parallel workloads, control distributions and accumulation limits.
 It is independent of the later `conceptUseFloor` discovery gate.
 
 Holds the conceptual dictionary, location-aligned PS/WS binding state, and
@@ -353,6 +355,16 @@ short-term memory. The sigma/pi fold ladders live on PS and WS, respectively.
 > metadata; symbolic generalization remains a separate phase.
 
 ### `<WholeSpace>`
+
+On the canonical `propertyBasis` / `analysis=meronomy` path, each property
+owns 256 learned primitive memberships alongside its distributed code.
+A-priori byte examples teach the initial properties; runtime analysis reads
+those parameters. Constant-signature runs keep their input brackets.
+Word staging retains byte counts, and the compiled read evaluates the live
+memberships. With parallel symbolic cutover and PartSpace meronomy, each
+tower has a learned map into the shared conceptual chart: WholeSpace unions
+support over an extent; PartSpace requires every contained position. See
+[the property design](Architecture.md#item-11a-primitive-properties-and-grounded-extents-september-23).
 
 The whole-percept/property side of perception and the home of top-down
 ANALYSIS. WholeSpace owns the Pi fold (multiplicative/intersection), the

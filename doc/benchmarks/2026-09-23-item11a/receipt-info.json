@@ -1,0 +1,52 @@
+{
+  "validated_source_files": 636,
+  "validated_source_sha256": "19e362842fde393680faeb47c027dbac060a6d9a38e0689c9534a13a13b6913a",
+  "full": {
+    "receipt": "full-result.json.gz",
+    "source_manifest": "full-source-manifest.json",
+    "summary": "full-summary.json",
+    "selected": 4767,
+    "completed": 4767,
+    "passed": 4436,
+    "skipped": 330,
+    "xfailed": 1,
+    "exit_code": 0
+  },
+  "affected": {
+    "receipt": "affected-result.json.gz",
+    "selected": 187,
+    "completed": 187,
+    "passed": 178,
+    "skipped": 9,
+    "exit_code": 0
+  },
+  "contracts": {
+    "receipt": "contracts-result.json.gz",
+    "selected": 25,
+    "completed": 25,
+    "passed": 19,
+    "skipped": 6,
+    "exit_code": 0
+  },
+  "explicit_slow": {
+    "receipt": "slow-result.json.gz",
+    "selected": 12,
+    "completed": 12,
+    "passed": 12,
+    "exit_code": 0
+  },
+  "documentation_links": {
+    "receipt": "doc-links-result.json.gz",
+    "selected": 74,
+    "completed": 74,
+    "passed": 74,
+    "exit_code": 0
+  },
+  "earlier_receipt_source_delta": "validation-source-delta.json",
+  "measurements": "validated-source/manifest.json",
+  "reconstruction_reference": "d4dc385",
+  "reconstruction_after_delta": 0.00013082846999168396,
+  "learning_disposition": "Six unseeded native XOR runs pass, each with four conjunction concepts, at pool sizes 4 and 8; supervised primitive naming and paired concept learning.",
+  "review_residue": "Post-optimizer maximum normalization currently applies only to assigned provisional disjunctive rows. Long unions accumulate false support at the 256-position stress scope.",
+  "next_item": "10; stop for review before implementation"
+}

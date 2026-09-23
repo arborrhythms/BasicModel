@@ -137,8 +137,13 @@ def test_symbolic_phase_snap_runs_even_unpopulated():
     cs.eval()                                          # no EMA write here
     D_dict = int(cs.similarity_codebook.getW().shape[-1])
     settled = torch.randn(2, 64, D_dict)
+    settled = settled / settled.norm(dim=-1, keepdim=True).clamp_min(1.)
     content, acts = cs.cs_symbolic_phase(settled)
-    assert acts is not None and acts.shape == (sum(cs._order_caps()), 2, 64, 2)
+    # One subject extent contains all 64 positions; the snap keeps their
+    # individual evidence while the pyramid consumes the extent union.
+    assert acts is not None and acts.shape == (sum(cs._order_caps()), 2, 1, 2)
+    assert cs._cs_position_evidence.shape == (cs._order_caps()[0], 2, 1, 64, 2)
+    assert cs._cs_extents.tolist() == [[[0, 64]], [[0, 64]]]
     start0, end0 = cs.order_slice(0)
     assert torch.any(acts[start0:end0] != 0)           # a_0: live snap
     assert torch.all(acts[end0:] == 0)                 # higher orders: empty

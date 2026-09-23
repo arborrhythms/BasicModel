@@ -549,14 +549,16 @@ def test_tensor_peer_while_runs_symbolic_reference_transaction_and_releases_owne
 
 def test_tensor_peer_ws_stages_distinct_word_local_property_views(
         tmp_path, monkeypatch):
-    """WS classifies each IS word once instead of rescanning the sentence."""
+    """WS stages each word's primitive observations for its learned read."""
     model = _tiny_canonical_model(tmp_path, monkeypatch)
     _stage_fullgraph_tensor_peer(
         model, ["Alpha 7 !", "lower case"])
-    weights = model.wholeSpace._staged_word_property_weights
+    counts = model.wholeSpace._staged_word_primitive_counts
+    weights = model.wholeSpace.subspace.what.primitive_properties.on_counts(counts)
     active = model.inputSpace._word_active_mask
 
     assert tuple(weights.shape[:2]) == tuple(active.shape)
+    assert counts.shape[-1] == 256
     assert tuple(weights.shape[2:]) == (
         int(model.wholeSpace.inputShape[0]),
         int(model.wholeSpace.subspace.what.getW().shape[0]))
@@ -565,6 +567,13 @@ def test_tensor_peer_ws_stages_distinct_word_local_property_views(
     assert bool(weights[0, 0, :, 4].any())
     assert not bool(weights[1, 0, :, 4].any())
     assert bool(weights[0, 1, :, 1].any())
+    # This serial reference bank reads property rows, not the first eight
+    # columns of the byte histogram (all zero for these ASCII words).
+    presence = model.inputSpace._ar_whole_reference_presence
+    assert float(presence.max()) > .5
+    assert counts[..., :8].count_nonzero() == 0
+    presence.clamp_min(0).sum().backward()
+    assert model.wholeSpace.subspace.what.primitive_properties.members.grad is not None
     model._tensor_peer_while_eager = True
     assert model._tensor_peer_while_ready(int(active.shape[1]))
 

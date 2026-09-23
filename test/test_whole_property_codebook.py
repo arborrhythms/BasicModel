@@ -151,11 +151,15 @@ def test_property_codebook_public_reads_share_membership_view(monkeypatch):
 
 def test_canonical_ws_stage_composes_transformed_property_rows(monkeypatch):
     """Stage-0 property mixing reads memberships, never raw coefficients."""
+    from PerceptProperties import PrimitiveProperties
     monkeypatch.setattr(Spaces, "meronomy_enabled", lambda: True)
     P, D, N = 8, 6, 2
     cb = Codebook()
     cb.is_percept_store = True
     cb.W = nn.Parameter(torch.full((P, D), -2.0))
+    cb.primitive_properties = PrimitiveProperties(P)
+    cb.primitive_properties.teach(0, [65], [1.])
+    cb.primitive_properties.teach(1, [49], [1.])
     stage = SimpleNamespace(
         property_basis=True,
         subspace=SimpleNamespace(what=cb, muxedSize=D),
@@ -167,7 +171,7 @@ def test_canonical_ws_stage_composes_transformed_property_rows(monkeypatch):
     input_bytes = torch.tensor([[[65, 49]]])       # capital letter + digit
     carrier, width = WholeSpace._stage0_carrier(stage, input_bytes, None)
 
-    # Both bytes activate canonical property predicates, so this would be a
+    # Both bytes activate taught primitive properties, so this would be a
     # negative carrier if stage-0 reached into raw W.  The transformed rows
     # are all zero and therefore so is their mixture.
     assert stage._stage0_property_membership.sum() > 0

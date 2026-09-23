@@ -3291,9 +3291,14 @@ class Codebook(Tensor):
         AND). Default (no tags / no ``input_bytes``) falls through to the
         sinusoidal whole-ranging basis below, byte-identical.
         """
-        # Char-class content-keyed backend (the documented seam, now wired).
-        # Gated by an explicit property_kind tag + supplied input_bytes, so the
-        # legacy sinusoidal path is unchanged when neither is present.
+        # Byte observations read the learned primitive memberships. Older
+        # non-property codebooks retain their existing tagged wave backend.
+        primitives = getattr(self, 'primitive_properties', None)
+        if input_bytes is not None and primitives is not None:
+            from ConceptEvidence import union
+            membership = primitives(input_bytes)
+            selected = torch.as_tensor(index, device=membership.device, dtype=torch.long).reshape(-1)
+            return union(membership.index_select(-1, selected), dim=-1)
         if input_bytes is not None and self.property_kind:
             classes = set()
             for _r in torch.as_tensor(index).reshape(-1).tolist():
@@ -3328,10 +3333,18 @@ class Codebook(Tensor):
         returns this row's byte-membership tiling (given ``input_bytes``)
         instead of the sinusoidal basis. Stored in the lazy ``property_kind``
         dict; selecting several tagged rows OR-unions their classes."""
-        if self.property_kind is None:
-            self.property_kind = {}
         if isinstance(classes, int):
             classes = (classes,)
+        primitives = getattr(self, 'primitive_properties', None)
+        if primitives is not None:
+            targets = primitives.members.new_zeros(256)
+            for kind in classes:
+                for lo, hi in _CHAR_CLASS_RANGES[int(kind)]:
+                    targets[lo:hi + 1] = 1.
+            primitives.teach(int(row), torch.arange(256, device=targets.device), targets)
+            return
+        if self.property_kind is None:
+            self.property_kind = {}
         self.property_kind[int(row)] = set(int(c) for c in classes)
         # Bump so a derived-LUT cache (WholeSpace.stage_analysis_spans) knows to
         # rebuild when the type-row tags change (doc/plans/2026-07-10-wholes-
@@ -15598,7 +15611,7 @@ class ConceptualSpace(Space):
         self.conceptual_pi = bool(TheXMLConfig.space(
             "ConceptualSpace", "conceptualPi", False))
         self.concept_evidence_floor = float(TheXMLConfig.space(
-            "ConceptualSpace", "conceptEvidenceFloor", 0.005))
+            "ConceptualSpace", "conceptEvidenceFloor", 0.112))
         if not 0 <= self.concept_evidence_floor < 1:
             raise ValueError('conceptEvidenceFloor must be in [0, 1)')
         self._promotion_enabled = bool(TheXMLConfig.space(
@@ -18405,6 +18418,7 @@ class ConceptualSpace(Space):
         Deduplicate their values by identity across orders. Edge growth
         migrates optimizer moments without resetting unrelated parameters.
         """
+        self._prepare_part_learning()
         base = list(self.params)
         seen = set()
         for (p, s) in (getattr(self, "_sparse_fam", None) or {}).values():
@@ -18415,12 +18429,55 @@ class ConceptualSpace(Space):
                     base.append(ly.values)
         return base
 
+    @torch.no_grad()
+    def _prepare_part_learning(self):
+        """Offer zero candidates from the observed lower-order context.
+
+        A zero edge states nothing. Only the subsequent gradient can turn
+        it into a negated part; witnessing never supplies that magnitude.
+        Wholly unwritten definitions and frozen definitions stay untouched.
+        """
+        if not self._sparse_active():
+            return
+        frozen = self._frozen_rows() if getattr(self, '_frozen_concepts', None) else set()
+        observed = getattr(self, '_cs_last_a0', None)
+        active = ((observed.amax(dim=(1, 2, 3)) > self.concept_use_floor).nonzero().flatten().tolist()
+                  if torch.is_tensor(observed) else [])
+        seen = set()
+        changed = False
+        for matrices in (getattr(self, '_sparse_fam', None) or {}).values():
+            for matrix in matrices:
+                if id(matrix) in seen or matrix.values is None:
+                    continue
+                seen.add(id(matrix))
+                offset = matrix.nOutput + 1
+                defined = [(row, col) for (row, col), pos in list(matrix._index.items())
+                           if row not in frozen and float(matrix.values[pos]) > 0]
+                candidates = [(row, (col + offset) % (2 * offset))
+                              for row, col in defined if col % offset != matrix.nOutput]
+                for row, col in candidates:
+                    if (row, col) not in matrix._index:
+                        matrix.add_edge(row, col, weight=0.)
+                        changed = True
+                for row in sorted({row for row, _ in defined}):
+                    start = next((self.order_slice(k)[0] for k in range(1, len(self._order_caps()))
+                                  if self.order_slice(k)[0] <= row < self.order_slice(k)[1]), 0)
+                    for source in active:
+                        if source < start:
+                            for col in (source, source + offset):
+                                if (row, col) not in matrix._index:
+                                    matrix.add_edge(row, col, weight=0.)
+                                    changed = True
+        if changed and frozen:
+            self._refresh_frozen_values_hook()
+
     def _maybe_rebuild_optimizer_for_csw(self):
         """Attach live part parameters without resetting other Adam state."""
         model = getattr(self, "_model", None)
         optimizer = getattr(model, "_optimizer", None)
         if optimizer is None:
             return
+        self._prepare_part_learning()
         from Layers import RadixLayer
         leaves = list(RadixLayer._optimizer_leaves(optimizer))
         owned = {id(p) for leaf in leaves for g in leaf.param_groups for p in g['params']}
@@ -18474,12 +18531,13 @@ class ConceptualSpace(Space):
         start, end = self.order_slice(order)
         return decode(concept_activation, what_W[start:end])
 
-    def cs_snap_order0(self, settled_event, ema=False):
-        """Read both poles per occurrence before any union over locations.
+    def cs_snap_order0(self, settled_event, ema=False, *, chart='unit_ball',
+                       position_spans=None, extents=None):
+        """Admit position evidence in its chart, then union within extents.
 
-        Projections use unit code directions in hypercube-diagonal units.
-        A measured floor admits evidence separately to each pole. Return
-        [order-zero concept, batch, occurrence, 2]; EMA stays identity-only.
+        Unit-ball events project directly onto unit code directions. Only
+        cube events divide by sqrt(D). Position pairs remain attached to
+        the read; the returned [concept,batch,extent,2] composes subjects.
         """
         cb = getattr(self, "similarity_codebook", None)
         W_full = cb.getW() if (cb is not None and hasattr(cb, "getW")) else None
@@ -18500,11 +18558,26 @@ class ConceptualSpace(Space):
         # through CloneBackward): the EMA write below mutates the same rows
         # in-place, and a saved live VIEW would fail backward with a
         # version-counter error (the SS-leg clone lesson).
-        from ConceptEvidence import admit
+        from ConceptEvidence import admit, in_extents
         D = min(int(ev.shape[-1]), int(W0.shape[-1]))
         atoms = F.normalize(W0[:, :D].clone(), dim=-1, eps=1e-8)
-        projection = torch.matmul(ev[..., :D], atoms.t()) / math.sqrt(max(1, D))
-        a_0 = admit(projection, self.concept_evidence_floor).permute(2, 0, 1, 3)
+        if chart not in ('unit_ball', 'cube'):
+            raise ValueError('concept evidence chart must be unit_ball or cube')
+        projection = torch.matmul(ev[..., :D], atoms.t())
+        if chart == 'cube':
+            projection = projection / math.sqrt(max(1, D))
+        positions = admit(projection, self.concept_evidence_floor).permute(2, 0, 1, 3)
+        B, L = ev.shape[:2]
+        if position_spans is None:
+            index = torch.arange(L, device=ev.device)
+            position_spans = torch.stack((index, index + 1), -1).unsqueeze(0).expand(B, -1, -1)
+        if extents is None:
+            extents = torch.stack((position_spans[..., 0].amin(-1),
+                                   position_spans[..., 1].amax(-1)), -1).unsqueeze(1)
+        a_0, positions = in_extents(positions, position_spans, extents)
+        object.__setattr__(self, '_cs_position_evidence', positions)
+        object.__setattr__(self, '_cs_position_spans', position_spans.detach().clone())
+        object.__setattr__(self, '_cs_extents', extents.detach().clone())
         if ema and self.training:
             with torch.no_grad():
                 D = min(int(ev.shape[-1]), int(W0.shape[-1]))
@@ -18546,6 +18619,37 @@ class ConceptualSpace(Space):
         if total is None:
             return None
         return lam * total
+
+    def cs_snap_percepts(self, percepts, extents):
+        """Read independently coded towers by their positions in each extent.
+
+        The learned maps change coordinates only. PartSpace's whole needs
+        every position; WholeSpace's property admits any alternative. Their
+        counterevidence uses the dual fold over observed positions.
+        """
+        from ConceptEvidence import admit, fold_extents, union
+        part, part_spans, whole, whole_spans = percepts
+        dictionary = self.similarity_codebook.active_prototypes()
+        start, end = self.order_slice(0)
+        atoms = F.normalize(dictionary[start:end].clone(), dim=-1, eps=1e-8)
+        fields, positions, projection_fields = [], [], []
+        for tower, (event, spans) in enumerate(((part, part_spans), (whole, whole_spans))):
+            if spans is None or tuple(spans.shape[:2]) != tuple(event.shape[:2]):
+                raise ValueError('tower evidence requires its own input-position brackets')
+            mapped = self.percept_read(event, tower)
+            projections = mapped @ atoms.t()
+            projection_fields.append(projections)
+            pairs = admit(projections, self.concept_evidence_floor).permute(2, 0, 1, 3)
+            field, located = fold_extents(pairs, spans, extents, conjunctive=tower == 0)
+            fields.append(field)
+            positions.append(located)
+        evidence = torch.stack(fields, dim=-2)
+        object.__setattr__(self, '_cs_position_projections', tuple(projection_fields))
+        object.__setattr__(self, '_cs_tower_evidence', evidence)
+        object.__setattr__(self, '_cs_position_evidence', torch.cat(positions, dim=3))
+        object.__setattr__(self, '_cs_position_spans', torch.cat((part_spans, whole_spans), dim=1).detach().clone())
+        object.__setattr__(self, '_cs_extents', extents.detach().clone())
+        return union(evidence, dim=-2)
 
     def _concept_rung_presence(self, field, start, end):
         """Four chart scatters with pi on; each occurrence keeps its scope."""
@@ -18818,9 +18922,9 @@ class ConceptualSpace(Space):
         # optimizer when the weight count changed; no-op pre-training).
         self._maybe_rebuild_optimizer_for_csw()
 
-    def snap_settle_qe(self, event):
+    def snap_settle_qe(self, event, *, chart='unit_ball'):
         """Per-percept SETTLE SIGNAL (P4, report-only): each slot's residual
-        against its best ORDER-0 atom -- ``1 - max_v <slot, atom_v>/sqrt(D)``
+        against its best ORDER-0 atom in the event's declared chart.
         in ``[0, 1]`` (0 = perfectly snapped). ``no_grad``; NO control flow
         hangs off it (the later adaptive-exit work reads it). ``None`` when
         inactive/unusable."""
@@ -18840,10 +18944,15 @@ class ConceptualSpace(Space):
                 return None
             D = min(int(event.shape[-1]), int(W0.shape[-1]))
             Wn = F.normalize(W0[:, :D], dim=-1, eps=1e-8)
-            sim = torch.matmul(event[..., :D], Wn.t()) / math.sqrt(max(1, D))
+            sim = torch.matmul(event[..., :D], Wn.t())
+            if chart == 'cube':
+                sim = sim / math.sqrt(max(1, D))
+            elif chart != 'unit_ball':
+                raise ValueError('concept evidence chart must be unit_ball or cube')
             return 1.0 - sim.amax(dim=-1).clamp(0.0, 1.0)      # [B, N]
 
-    def cs_symbolic_phase(self, settled):
+    def cs_symbolic_phase(self, settled, *, chart='unit_ball', position_spans=None,
+                          extents=None, percepts=None):
         """The POST-PUMP symbolic phase (P3, one LATE cutover): snap the
         SETTLED mixed field to the ORDER-0 codebook block
         (:meth:`cs_snap_order0`, EMA identity trace while training) and run
@@ -18864,7 +18973,9 @@ class ConceptualSpace(Space):
         if (dict_W is None or not torch.is_tensor(dict_W)
                 or int(dict_W.shape[0]) != int(self.nVectors)):
             return settled, None
-        a_0 = self.cs_snap_order0(settled, ema=True)
+        a_0 = (self.cs_snap_percepts(percepts, extents) if percepts is not None
+               else self.cs_snap_order0(settled, ema=True, chart=chart,
+                                       position_spans=position_spans, extents=extents))
         if a_0 is None:
             return settled, None
         object.__setattr__(self, "_cs_last_a0", a_0.detach())
@@ -19368,7 +19479,10 @@ class ConceptualSpace(Space):
                 if row == c_row:
                     with torch.no_grad():
                         value = matrix.values[pos]
-                        matrix.values[pos] = (value.clamp_min(0) + eta).clamp_max(cap)
+                        # Zero candidates have no asserted polarity. A
+                        # revisit cannot turn an unlearned negative into a part.
+                        if float(value) > 0:
+                            matrix.values[pos] = (value + eta).clamp_max(cap)
 
     def _decay_concept_edges(self, cid, factor=0.9):
         """Scale ``cid``'s sparse edge values by ``factor`` (the forgetting
@@ -19495,7 +19609,7 @@ class ConceptualSpace(Space):
             matrix.values[rr == best] *= self.concept_use_ewma
         for col in parts:
             source, negative = col % offset, col >= offset
-            support = float(ly.witness_strength[source]) or 1.
+            support = (float(ly.witness_strength[source]) or 1.) if source < ly.nOutput else 1.
             existed = (best, col) in matrix._index
             pos = self.add_concept_edge(best, source, weight=support,
                                         conjunctive=conjunctive, negated=negative)
@@ -19560,14 +19674,14 @@ class ConceptualSpace(Space):
                     if float(similarity) >= self.concept_match_cos:
                         self._assign_concept_parts(order + 1, (focal, alternatives[int(index)]), context, evidence=evidence)
             if self.conceptual_pi:
-                # Co-presence is within an occurrence. Independent locations
-                # cannot supply counterevidence to one another's conjunction.
+                # The snap unions positions within a subject extent. Only
+                # positive parts are witnessed; a negated part is learned
+                # or sealed, never assigned from observed counterevidence.
                 for location in range(a.shape[2]):
                     for order in range(len(self._order_caps()) - 1):
                         start, end = self.order_slice(order)
-                        parts = [r + polarity * offset for r in witnessed
-                                 if start <= r < end for polarity in range(2)
-                                 if float(a[r, b, location, polarity]) > self.concept_use_floor]
+                        parts = [r for r in witnessed if start <= r < end
+                                 if float(a[r, b, location, 0]) > self.concept_use_floor]
                         if len(parts) >= 2:
                             context = field.clone()
                             context[[c % offset for c in parts]] = 0
@@ -19577,7 +19691,16 @@ class ConceptualSpace(Space):
                 context = field.clone()
                 context[focal] = 0
                 self._write_concept_context(focal, context)
-            u = a[:, b:b + 1].clone()
+            self.observe_concept_use(a[:, b:b + 1])
+        self._maybe_rebuild_optimizer_for_csw()
+
+    @torch.no_grad()
+    def observe_concept_use(self, evidence):
+        """Advance participation from raw use, independently of edge learning."""
+        from ConceptEvidence import symbols
+        ly = _concept_alloc_of(self).layer(0)
+        for b in range(evidence.shape[1]):
+            u = evidence[:, b:b + 1].detach().cpu().clone()
             for order in range(1, len(self._order_caps())):
                 start, end = self.order_slice(order)
                 raw = self._concept_rung_presence(u, start, end).cpu()
@@ -19587,7 +19710,6 @@ class ConceptualSpace(Space):
                 gates[managed] = self.concept_use_ewma * gates[managed] + (1 - self.concept_use_ewma) * use[managed]
                 ready = (~ly.provisional[start:end] | ly.assigned[start:end]).cpu()
                 u[start:end] = raw * gates.cpu()[:, None, None, None] * ready[:, None, None, None]
-        self._maybe_rebuild_optimizer_for_csw()
 
     @torch.no_grad()
     def promotion_pass(self):
@@ -20089,7 +20211,10 @@ class ConceptualSpace(Space):
         if b is None or not br or store is None:
             return
         ps_rows, ps_heat, ws_rows, ws_heat = [], [], [], []
-        kind = store._pos_kind
+        # Property-basis word bridges already contain PS percept rows and WS
+        # property rows. Only the old word dictionary uses taxonomy positions.
+        direct_rows = bool(getattr(store, 'property_basis', False))
+        kind = None if direct_rows else store._pos_kind
         for cid, (parts, whole) in br.items():
             row = self._csw_row_of(cid)
             if row is None or row >= int(b.shape[0]):
@@ -20103,6 +20228,12 @@ class ConceptualSpace(Space):
                 whole_refs = list(whole)
             else:
                 whole_refs = [whole]
+            if direct_rows:
+                ps_rows.extend(int(p) for p in parts)
+                ps_heat.extend([e] * len(parts))
+                ws_rows.extend(int(w) for w in whole_refs)
+                ws_heat.extend([e] * len(whole_refs))
+                continue
             refs = list(parts) + whole_refs
             for pos in refs:
                 k = kind.get(int(pos))
@@ -20125,7 +20256,7 @@ class ConceptualSpace(Space):
                 continue
             idx = torch.tensor(rows, dtype=torch.long)
             val = torch.tensor(heat, dtype=torch.float32)
-            keep = idx < V
+            keep = (idx >= 0) & (idx < V)
             if not bool(keep.all()):
                 idx, val = idx[keep], val[keep]
             if not int(idx.numel()):
@@ -22550,6 +22681,8 @@ class ConceptualSpace(Space):
         object.__setattr__(self.subspace, "_concept_activations", None)
         object.__setattr__(self.subspace, "_concept_codes", None)
         object.__setattr__(self.subspace, "_thought_occurrence", None)
+        for name in ('position_evidence', 'position_spans', 'extents'):
+            object.__setattr__(self.subspace, '_concept_' + name, None)
         object.__setattr__(self.subspace, "_index", None)  # stale top-K clear
         # STM bookkeeping (2026-05-28 fix). Mode-dependent:
         #
@@ -22957,59 +23090,25 @@ _CANONICAL_PROPERTY_ROWS = (
 )
 
 
-def _build_property_signature_lut(property_kind=None):
-    """Return ``(byte->bit-signature, discarded-bit-mask)`` on CPU.
-
-    ``property_kind`` is the canonical Codebook tag map ``row -> classes``.
-    Each tagged row contributes one signature bit wherever any of its class
-    predicates holds.  Untagged/dynamic property rows are deliberately absent
-    until they acquire an analyzer predicate; they can still be activated by
-    other modalities without changing byte segmentation.
-    """
-    if not property_kind:
-        property_kind = {
-            row: {cls} for row, (_name, cls)
-            in enumerate(_CANONICAL_PROPERTY_ROWS)
-        }
-    lut = torch.zeros(256, dtype=torch.long, device="cpu")
-    discard = 0
-    for raw_row, classes in property_kind.items():
-        row = int(raw_row)
-        if row < 0 or row >= 63:
-            # The current byte analyzer uses an int64 signature.  A future
-            # dynamic-property analyzer can replace this with a bool slab;
-            # rows beyond the signature width remain valid WS properties but
-            # do not silently alias another bit.
-            continue
-        bit = 1 << row
-        for raw_cls in classes:
-            cls = int(raw_cls)
-            for lo, hi in _CHAR_CLASS_RANGES.get(cls, ()):
-                lut[int(lo):int(hi) + 1] |= bit
-            if cls in (_CLS_WHITESPACE, _CLS_PAD):
-                discard |= bit
-    return lut, int(discard)
-
-
-_LUT_PROPERTY_SIGNATURE, _PROPERTY_DISCARD_MASK = \
-    _build_property_signature_lut()
-
-
 def _analysis_property_signature(space):
-    """Read the canonical WholeSpace property tags and cache their LUT."""
-    cb = getattr(getattr(space, "subspace", None), "what", None)
-    pk = getattr(cb, "property_kind", None) if cb is not None else None
-    if not pk:
-        return _LUT_PROPERTY_SIGNATURE, _PROPERTY_DISCARD_MASK
-    ver = int(getattr(cb, "_property_kind_version", 0))
-    if (getattr(space, "_property_lut_cache", None) is None
-            or getattr(space, "_property_lut_version", None) != ver):
-        lut, discard = _build_property_signature_lut(pk)
-        object.__setattr__(space, "_property_lut_cache", lut)
-        object.__setattr__(space, "_property_discard_mask", discard)
-        object.__setattr__(space, "_property_lut_version", ver)
-    return (space._property_lut_cache,
-            int(getattr(space, "_property_discard_mask", 0)))
+    """Evaluate learned primitive memberships for the eager signature cut.
+
+    The temporary bit signatures are derived from the live coefficients;
+    no fixed tag lookup or independently mutable predicate cache supplies
+    memberships. The grad-bearing body reads coefficients directly.
+    """
+    cb = getattr(getattr(space, 'subspace', None), 'what', None)
+    primitives = getattr(cb, 'primitive_properties', None)
+    if primitives is None:
+        raise RuntimeError('property analysis requires learned primitive definitions')
+    membership = primitives.coefficients().detach().to('cpu').t()
+    count = min(int(membership.shape[-1]), 63)
+    bits = 1 << torch.arange(count, dtype=torch.long, device='cpu')
+    signature = ((membership[:, :count] > .5).long() * bits).sum(-1)
+    names = getattr(space, 'well_known_atoms', {})
+    discard = sum(1 << int(names[name]) for name in ('whitespace', 'pad')
+                  if name in names and 0 <= int(names[name]) < count)
+    return signature, discard
 
 
 def _derive_type_lut(property_kind):
@@ -23041,18 +23140,9 @@ def _derive_type_lut(property_kind):
 
 
 def _digit_signature_bits(space):
-    """The property-signature bits of the digit-tagged WholeSpace rows."""
-    cb = getattr(getattr(space, "subspace", None), "what", None)
-    pk = getattr(cb, "property_kind", None) if cb is not None else None
-    if not pk:
-        pk = {row: {cls} for row, (_name, cls)
-              in enumerate(_CANONICAL_PROPERTY_ROWS)}
-    bits = 0
-    for raw_row, classes in pk.items():
-        row = int(raw_row)
-        if 0 <= row < 63 and _CLS_DIGIT in {int(c) for c in classes}:
-            bits |= 1 << row
-    return bits
+    """The named digit property's bit; its membership is learned separately."""
+    row = (getattr(space, 'well_known_atoms', {}) or {}).get('digit')
+    return 1 << int(row) if row is not None and 0 <= int(row) < 63 else 0
 
 
 def _analysis_digit_mask(space, type_ids, property_basis):
@@ -23076,6 +23166,16 @@ def _analysis_type_lut(space):
     ``space`` as a plain argument (not a bound method) so it also runs on the
     unbound ``stage_analysis_spans`` test double whose ``self`` is a bare
     namespace."""
+    if getattr(space, 'property_basis', False):
+        membership = space.subspace.what.primitive_properties.coefficients().detach().to('cpu')
+        result = torch.full((256,), _TYPE_LETTER, dtype=torch.long, device='cpu')
+        for name, kind in (('digit', _TYPE_DIGIT), ('punctuation', _TYPE_PUNCT),
+                           ('whitespace', _TYPE_SPACE), ('pad', _TYPE_SPACE)):
+            row = space.well_known_atoms.get(name)
+            if row is not None and row < len(membership):
+                result[membership[row] > .5] = kind
+        result[0] = _TYPE_SPACE
+        return result
     cb = getattr(getattr(space, "type_subspace", None), "what", None)
     pk = getattr(cb, "property_kind", None) if cb is not None else None
     if not pk:
@@ -23645,10 +23745,10 @@ class WholeSpace(Space):
         # The serial word loop consumes one WholeSpace view per word, not the
         # sentence-wide analysis slab.  The eager lexical boundary stages the
         # primitive-property activations for every word once; the compiled
-        # CSSub lane dynamically selects one [B, N, P] column.  This keeps the
+        # CSSub lane selects one [B, N, 256] primitive-count slice.  This keeps the
         # hot path word-local and preserves a gradient only through the
         # canonical property table and the learned WS folds.
-        self._staged_word_property_weights = None
+        self._staged_word_primitive_counts = None
         self._staged_word_property_spans = None
         # The canonical property inventory is itself the analyzer.  The old
         # path allocated a second concept-sized VQ (``analysis_store``) to
@@ -24188,7 +24288,11 @@ class WholeSpace(Space):
     def getParameters(self):
         """Return parameters after checking fixed symbol-codebook ownership."""
         self._assert_symbol_codebook_optimizer_identity()
-        return super().getParameters()
+        parameters = list(super().getParameters())
+        primitives = getattr(getattr(self.subspace, 'what', None), 'primitive_properties', None)
+        if primitives is not None:
+            parameters.extend(primitives.parameters())
+        return parameters
 
     # ------------------------------------------------------------------
     # Knowledge artifact attach: WholeSpace owns the trainable scalar
@@ -24285,9 +24389,9 @@ class WholeSpace(Space):
 
     def _predicate_slab(self, idx):
         """``[B, N, C]`` bool signature slab for a ``[B, N]`` byte grid:
-        the byte's atomic column, every tagged property row holding at the
-        byte (from ``property_kind``), and every split row whose acquired
-        predicate contains the byte (``_row_bytes``)."""
+        the observed primitive column and the learned property memberships.
+        Split rows update those same coefficients, with no second definition.
+        """
         idx = idx.detach().to("cpu")
         B, N = int(idx.shape[0]), int(idx.shape[1])
         C = self._predicate_column_count()
@@ -24296,30 +24400,27 @@ class WholeSpace(Space):
         slab = torch.zeros(B, N, C, dtype=torch.bool, device="cpu")
         slab.scatter_(2, idx.clamp(0, 255).unsqueeze(-1), True)
         lut = self.__dict__.get("_predicate_byte_lut")
-        if lut is None or int(lut.shape[1]) != C - self._ATOMIC_COLUMNS:
+        primitives = getattr(self.subspace.what, 'primitive_properties', None)
+        version = primitives.members._version if primitives is not None else None
+        import threading
+        refresh = (threading.current_thread() is threading.main_thread()
+                   and self.__dict__.get('_predicate_members_version') != version)
+        if lut is None or int(lut.shape[1]) != C - self._ATOMIC_COLUMNS or refresh:
             lut = self._build_predicate_byte_lut(C - self._ATOMIC_COLUMNS)
         if lut is not None and lut.numel():
             slab[:, :, self._ATOMIC_COLUMNS:] = lut[idx.clamp(0, 255)]
         return slab
 
     def _build_predicate_byte_lut(self, n_rows):
-        """``[256, n_rows]`` bool: which property rows hold at which byte,
-        from the tagged classes and the acquired predicates of split rows."""
-        lut = torch.zeros(256, max(0, n_rows), dtype=torch.bool, device="cpu")
-        rows = getattr(self, "_predicate_rows", {}) or {}
-        for r, classes in rows.items():
-            if not (0 <= int(r) < n_rows):
-                continue
-            for cls in classes:
-                for lo, hi in _CHAR_CLASS_RANGES.get(int(cls), ()):
-                    lut[int(lo):int(hi) + 1, int(r)] = True
-        for r, bytes_ in (self.__dict__.get("_row_bytes") or {}).items():
-            if 0 <= int(r) < n_rows:
-                for bv in bytes_:
-                    lut[int(bv) & 0xFF, int(r)] = True
-        lut[0, :] = False                                   # the pad holds no property
-        self.__dict__["_predicate_byte_lut"] = lut
-        return lut
+        """Host snapshot of the learned memberships for the eager cut."""
+        primitives = getattr(self.subspace.what, 'primitive_properties', None)
+        if primitives is None:
+            return torch.zeros(256, max(0, n_rows), dtype=torch.bool, device='cpu')
+        membership = (primitives.coefficients().detach().to('cpu').t() > .5)
+        membership[0] = False
+        self.__dict__['_predicate_byte_lut'] = membership
+        self.__dict__['_predicate_members_version'] = primitives.members._version
+        return membership
 
     def _predicate_masks(self):
         C = self._predicate_column_count()
@@ -24599,7 +24700,8 @@ class WholeSpace(Space):
         W = cb.getW()
         n_rows = int(W.shape[0])
         used = self.__dict__.setdefault("_property_rows_used", set(getattr(self, "_predicate_rows", {}).keys()))
-        free = [r for r in range(n_rows) if r not in used and r not in (self.__dict__.get("_row_bytes") or {})]
+        defined = cb.primitive_properties.coefficients().detach().any(-1).cpu()
+        free = [r for r in range(n_rows) if r not in used and not bool(defined[r])]
         if not free:
             return None
         new_row = int(free[0]); used.add(new_row)
@@ -24615,7 +24717,11 @@ class WholeSpace(Space):
             for bv in bytes_:
                 side.setdefault(bv, [0, 0])[0 if proj >= 0 else 1] += 1
         new_bytes = {bv for bv, (pos, neg) in side.items() if neg > pos}
-        self.__dict__.setdefault("_row_bytes", {})[new_row] = sorted(new_bytes)
+        ids = torch.arange(256, device=W.device)
+        target = torch.zeros(256, device=W.device)
+        if new_bytes:
+            target[list(new_bytes)] = 1.
+        cb.primitive_properties.teach(new_row, ids, target)
         self.__dict__["_predicate_byte_lut"] = None
         self._grow_boundary_weights()
         self._prime_predicate_masks()
@@ -24663,11 +24769,9 @@ class WholeSpace(Space):
         self._predicate_rows = {}
         if not getattr(self, "property_basis", False):
             return
-        cb = getattr(getattr(self, "subspace", None), "what", None)
-        pk = getattr(cb, "property_kind", None) if cb is not None else None
-        if not pk:
-            return
-        self._predicate_rows = {int(r): {int(c) for c in cl} for r, cl in pk.items()}
+        self._predicate_rows = {
+            row: {kind} for row, (_name, kind) in enumerate(_CANONICAL_PROPERTY_ROWS)
+            if row < int(self.nVectors)}
         C = self._predicate_column_count()
         begins = torch.full((C,), -4.0); ends = torch.full((C,), -4.0); atom = torch.full((C,), -4.0)
         if getattr(self, "boundary_types", "canonical") != "none":
@@ -24735,19 +24839,15 @@ class WholeSpace(Space):
                 raise RuntimeError(
                     "WholeSpace propertyBasis requires subspace.what to be "
                     "the canonical Codebook")
-            tc.property_kind = None
-            tc._property_kind_version = int(
-                getattr(tc, "_property_kind_version", 0)) + 1
-            rows = (tags if isinstance(tags, dict) and tags else {
-                row: [cls] for row, (_name, cls)
-                in enumerate(_CANONICAL_PROPERTY_ROWS)
-            })
-            for row, classes in rows.items():
-                if 0 <= int(row) < int(tc.nVectors):
-                    tc.set_property_kind(int(row), [int(c) for c in classes])
+            # Construction already taught the a-priori examples. Only old
+            # checkpoint intake supplies tags; never overwrite a learned
+            # definition while loading a current checkpoint.
+            if tags:
+                for row, kinds in tags.items():
+                    if 0 <= int(row) < int(tc.nVectors):
+                        tc.set_property_kind(int(row), kinds)
             self.type_subspace = None
             self._type_lut_cache = None
-            self._property_lut_cache = None
             return
         tc = Codebook()
         n = len(self._TYPE_ROW_ATOMS)
@@ -24817,7 +24917,7 @@ class WholeSpace(Space):
             row for row in range(min(int(self.nVectors), 63))
             if signature & (1 << row))
 
-    def stage_word_property_weights(
+    def stage_word_primitives(
             self, word_texts, active_b_w, *, word_offsets=None):
         """Stage word-local primitive-property evidence for the CSSub loop.
 
@@ -24827,15 +24927,15 @@ class WholeSpace(Space):
         (for example lower-case letters, capital letters, or punctuation).
         At most ``inputShape[0]`` runs are retained, matching WholeSpace's
         fixed live field.  No learned value is copied here: the result is only
-        a dense [B,W,N,P] activation over primitive property row ids.  The
-        compiled body multiplies it by the owning Codebook table, so table and
-        fold gradients keep their ordinary path.
+        a dense [B,W,N,256] byte-count witness. The compiled body reads the
+        learned primitive memberships and composes the owning property codes,
+        so definitions, codes and folds keep their gradient paths.
 
         ``_staged_word_property_spans`` records the corresponding absolute
         byte brackets for the future ``.where`` feedback path.  It is eager
         structural metadata and is not yet used to alter PS attention.
         """
-        object.__setattr__(self, "_staged_word_property_weights", None)
+        object.__setattr__(self, "_staged_word_primitive_counts", None)
         object.__setattr__(self, "_staged_word_property_spans", None)
         if (not getattr(self, "property_basis", False)
                 or not torch.is_tensor(active_b_w)
@@ -24856,7 +24956,7 @@ class WholeSpace(Space):
                     "word_offsets must match active_b_w's [B,W] shape")
             offsets = word_offsets.detach().to("cpu", dtype=torch.long).tolist()
         weights = torch.zeros(
-            B, width, N, P, dtype=torch.float32, device="cpu")
+            B, width, N, 256, dtype=torch.float32, device="cpu")
         spans = torch.zeros(
             B, width, N, 2, dtype=torch.long, device="cpu")
         lut, discard = _analysis_property_signature(self)
@@ -24903,9 +25003,9 @@ class WholeSpace(Space):
                            and not (signature & digit_bits)):
                         end += 1
                     if signature and not (signature & int(discard)):
-                        for prop in range(min(P, 63)):
-                            if signature & (1 << prop):
-                                weights[b, w, slot, prop] = 1.0
+                        atoms = torch.tensor(values[start:end], device='cpu', dtype=torch.long)
+                        weights[b, w, slot].scatter_add_(
+                            0, atoms, torch.ones_like(atoms, dtype=weights.dtype))
                         spans[b, w, slot, 0] = base + start
                         spans[b, w, slot, 1] = base + end
                         slot += 1
@@ -24914,7 +25014,7 @@ class WholeSpace(Space):
         staged = weights.to(device=rows.device, dtype=rows.dtype)
         staged_spans = spans.to(device=active_b_w.device)
         object.__setattr__(
-            self, "_staged_word_property_weights", staged)
+            self, "_staged_word_primitive_counts", staged)
         object.__setattr__(
             self, "_staged_word_property_spans", staged_spans)
         return staged
@@ -27052,6 +27152,14 @@ class WholeSpace(Space):
                     and not isinstance(basis.getW(), nn.Parameter)):
                 basis.replace_W(nn.Parameter(
                     basis.getW().detach().clone(), requires_grad=True))
+            from PerceptProperties import PrimitiveProperties
+            basis.primitive_properties = PrimitiveProperties(
+                self.nVectors, device=basis.getW().device, dtype=basis.getW().dtype)
+            # A-priori examples teach definitions over byte atoms. Runtime
+            # analysis reads these learned coefficients, never the tags.
+            for row, (_name, kind) in enumerate(_CANONICAL_PROPERTY_ROWS):
+                if row < int(self.nVectors):
+                    basis.set_property_kind(row, kind)
             return basis
 
         mode = self.codebook_mode
@@ -28402,6 +28510,33 @@ class WholeSpace(Space):
         repel = (a_n * F.normalize(antipode, dim=0, eps=1e-8)).sum(-1)
         return w * (attract.mean() + repel.mean())
 
+    def concept_evidence_layout(self, unity, slots):
+        """Subject extents and contained position brackets from the input cut.
+
+        With no word cut the observed unity is one extent. A short input
+        leaves padded slots empty; padding is not an observed zero.
+        """
+        from PerceptProperties import uniform_spans
+        if not torch.is_tensor(unity):
+            return None, None
+        raw = unity[:, 0] if unity.ndim == 3 else unity
+        B, L = raw.shape
+        positions = getattr(self, '_staged_analysis_spans', None)
+        if not torch.is_tensor(positions):
+            positions = uniform_spans(B, L, slots, device=raw.device)
+        else:
+            positions = positions[:, :slots].to(raw.device)
+            positions = F.pad(positions, (0, 0, 0, max(0, slots - positions.shape[1])))
+        extents = getattr(self, '_staged_unit_spans', None)
+        if not torch.is_tensor(extents):
+            live_end = torch.where(raw != 0, torch.arange(L, device=raw.device) + 1, 0).amax(-1)
+            extents = torch.stack((torch.zeros_like(live_end), live_end), -1).unsqueeze(1)
+        else:
+            # Only extents containing admitted position slots enter the live
+            # bounded field. Their absolute input brackets remain unchanged.
+            extents = extents[:, :slots].to(raw.device)
+        return positions, extents
+
     def compute_stage0_carrier(self, IS_concepts, spans):
         """Purely compute the stage-0 carrier and optional property weights.
 
@@ -28439,36 +28574,17 @@ class WholeSpace(Space):
             flat_bytes = IS_concepts[:, 0, :] if IS_concepts.dim() == 3 \
                 else IS_concepts
             flat_bytes = flat_bytes.detach().long().clamp(0, 255)
-            sig_lut, _discard = _analysis_property_signature(self)
-            sig = sig_lut.to(flat_bytes.device)[flat_bytes]       # [B, L]
-            P = int(rows.shape[0])
-            bit_rows = min(P, 63)
-            bits = (1 << torch.arange(
-                bit_rows, device=flat_bytes.device, dtype=torch.long))
-            membership = ((sig.unsqueeze(-1) & bits) != 0).to(rows.dtype)
-            if P > bit_rows:
-                membership = F.pad(membership, (0, P - bit_rows))
-
-            if spans is not None and spans.numel() > 0:
-                L = int(flat_bytes.shape[1])
-                pref = F.pad(membership.cumsum(dim=1), (0, 0, 1, 0))
-                starts = spans[..., 0].clamp(min=0, max=L)
-                ends = spans[..., 1].clamp(min=0, max=L)
-                gi_s = starts.unsqueeze(-1).expand(-1, -1, P)
-                gi_e = ends.unsqueeze(-1).expand(-1, -1, P)
-                counts = (pref.gather(1, gi_e) - pref.gather(1, gi_s))
-                lens = (ends - starts).clamp(min=1).to(rows.dtype)
-                weights_k = counts / lens.unsqueeze(-1)
-                weights = rows.new_zeros(B, N, P)
-                K = min(int(weights_k.shape[1]), N)
-                weights[:, :K, :] = weights_k[:, :K, :]
+            from PerceptProperties import counts_in_spans, uniform_spans
+            if spans is None or spans.numel() == 0:
+                spans = uniform_spans(B, flat_bytes.shape[1], N, device=flat_bytes.device)
             else:
-                # Byte/raw analysis still reads properties: each of the N
-                # live WS locations receives the property prevalence of its
-                # contiguous input region.  This replaces scalar byte means
-                # without creating a learned descriptor dictionary.
-                weights = F.adaptive_avg_pool1d(
-                    membership.transpose(1, 2), N).transpose(1, 2)
+                spans = spans[:, :N]
+                spans = F.pad(spans, (0, 0, 0, max(0, N - spans.shape[1])))
+            counts = counts_in_spans(flat_bytes, spans, observed=flat_bytes != 0)
+            # A property pervades a run when every observed primitive has it.
+            # The definitions remain in this grad-bearing read, rather than
+            # being replaced by detached signature bits from the eager cut.
+            weights = basis.primitive_properties.on_counts(counts)
 
             # Several primitive properties may hold simultaneously.  Compose
             # them in-place as an activation over the P rows, normalized only
@@ -28536,20 +28652,20 @@ class WholeSpace(Space):
         return F.pad(narrow, (0, D - content)), membership
 
     def compute_word_property_event(self, weights_b_n_p):
-        """Materialize one staged word's WS event from primitive row weights.
+        """Materialize one staged word's WS event from its primitive counts.
 
         This is the word-local equivalent of the property-basis branch in
         :meth:`compute_stage0_unity_event`.  The host has already performed
-        byte classification and run cutting; only the learned, compiler-visible
-        row composition remains here.  The input is a read-only [B,N,P] view
-        into ``_staged_word_property_weights`` and is never mutated.
+        run cutting; the learned membership read and code composition remain
+        compiler-visible here. The input is a read-only [B,N,256] view
+        into ``_staged_word_primitive_counts`` and is never mutated.
         """
         if not getattr(self, "property_basis", False):
             raise RuntimeError(
                 "word property events require WholeSpace propertyBasis")
         if weights_b_n_p.dim() != 3:
             raise ValueError(
-                "word property weights must be a [B,N,P] tensor")
+                "word primitive counts must be a [B,N,256] tensor")
         basis = getattr(self.subspace, "what", None)
         rows = basis.getW() if isinstance(basis, Codebook) else None
         if rows is None or not torch.is_tensor(rows) or rows.dim() != 2:
@@ -28559,9 +28675,9 @@ class WholeSpace(Space):
         B, N, P = (int(weights_b_n_p.shape[0]),
                    int(weights_b_n_p.shape[1]),
                    int(weights_b_n_p.shape[2]))
-        if N != int(self.inputShape[0]) or P != int(rows.shape[0]):
+        if N != int(self.inputShape[0]) or P != 256:
             raise ValueError(
-                "word property weights do not match WholeSpace's [N,P] "
+                "word primitive counts do not match WholeSpace's [N,256] "
                 "layout")
         D = int(self.subspace.muxedSize)
         band = int(self.nWhere + self.nWhen)
@@ -28570,8 +28686,9 @@ class WholeSpace(Space):
             return torch.zeros(
                 B, N, D, device=weights_b_n_p.device,
                 dtype=rows.dtype)
-        norm = weights_b_n_p.sum(dim=-1, keepdim=True).clamp_min(1.0)
-        weights = weights_b_n_p / norm
+        properties = basis.primitive_properties.on_counts(weights_b_n_p)
+        norm = properties.sum(dim=-1, keepdim=True).clamp_min(1.0)
+        weights = properties / norm
         carrier = torch.matmul(weights.to(dtype=rows.dtype), rows)
         width = int(rows.shape[-1])
         if width == content:

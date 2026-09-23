@@ -5494,7 +5494,11 @@ class SparseLayer(Layer):
         mass = u.new_zeros(end - int(start))
         rail = torch.zeros_like(out)
         if self.values is not None:
-            w = self.values.clone().to(u.device)[select].clamp_min(0)
+            raw = self.values.clone().to(u.device)[select]
+            # Zero is the unwritten magnitude. Once a definition has an
+            # observed part, prospective zero edges can receive credit;
+            # projection after the update constrains their stored magnitude.
+            w = raw + (raw.clamp_min(0) - raw).detach()
             v = u.index_select(0, cols).clamp(0, 1)
             eps = torch.finfo(v.dtype).eps
             if conjunctive:
@@ -5607,7 +5611,7 @@ class ConceptualAttentionLayer(SparseLayer):
 
     @torch.no_grad()
     def project_parts(self):
-        """Projected gradient updates preserve polarity and discovered kinds."""
+        """Preserve polarity; only provisional alternatives normalize support."""
         for matrix in self.part_matrices():
             if matrix.values is not None:
                 matrix.values.clamp_min_(0)
@@ -5615,7 +5619,8 @@ class ConceptualAttentionLayer(SparseLayer):
             rows, _ = self._indices(self.values.device)
             maxima = self.values.new_zeros(self.nOutput).scatter_reduce_(
                 0, rows, self.values, reduce='amax')
-            divisor = torch.where(self.assigned.to(rows.device)[rows],
+            managed = (self.assigned & self.provisional).to(rows.device)
+            divisor = torch.where(managed[rows],
                                   maxima[rows].clamp_min(1e-12), 1.)
             self.values.div_(divisor)
 

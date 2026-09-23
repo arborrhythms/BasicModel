@@ -2085,6 +2085,19 @@ class BaseModel(Mereology, nn.Module):
             # Same non-owning expansion seam for WholeSpace.insert_whole.
             object.__setattr__(_ws, "_model", self)
 
+        if (not self.serial and self.symbolicOrder > 0
+                and len(getattr(self, "wholeSpaces", ())) > 0
+                and self.wholeSpaces[0].property_basis
+                and self.wholeSpaces[0].analysis_mode == 'meronomy'
+                and self.perceptualSpace._meronomy):
+            from PerceptProperties import PerceptRead
+            owner = self.conceptualSpaces[0]
+            owner.percept_read = PerceptRead(
+                self.perceptualSpace.nWhat, self.wholeSpaces[0].nWhat,
+                owner.similarity_codebook.getW().shape[-1]).to(
+                    owner.similarity_codebook.getW())
+            owner.params.extend(owner.percept_read.parameters())
+
         # syntacticOrder (doc/specs/orders.md, NEW 2026-06-19): the parse-tree
         # DEPTH cap for the serial grammatical reduction. 0 (default) =
         # unbounded (the NULL-seal reduce sweep collapses to a single S, exactly
@@ -4650,10 +4663,7 @@ class BaseModel(Mereology, nn.Module):
         # Schema-2 WholeSpace sidecars contain perceptual analysis state only.
         # LBG accumulators belong to the retired WS concept/META dictionary and
         # must not be serialized beside the fixed property basis.
-        property_ws_fields = ("_standalone_run_bytes",
-                              # acquired predicates of split rows and the
-                              # rows in use (fold-ladder plan, contract 2)
-                              "_row_bytes", "_property_rows_used")
+        property_ws_fields = ("_standalone_run_bytes", "_property_rows_used")
         property_basis = bool(getattr(self, "wholePropertyBasis", False))
 
         conceptual = {}
@@ -4708,6 +4718,10 @@ class BaseModel(Mereology, nn.Module):
                     'thought_occurrence': getattr(carrier, '_thought_occurrence', None),
                     'code_owner': int(getattr(carrier, '_concept_code_owner', i)),
                 }
+                for name in ('position_evidence', 'position_spans', 'extents'):
+                    value = getattr(carrier, '_concept_' + name, None)
+                    if torch.is_tensor(value):
+                        entry['knowing'][name] = _checkpoint_host_copy(value)
             if (property_basis and cs is getattr(
                     self, "conceptualSpace", None)
                     and hasattr(cs, "vocab_extras")):
@@ -4955,6 +4969,11 @@ class BaseModel(Mereology, nn.Module):
                 object.__setattr__(carrier, '_concept_codes', codes[:len(evidence)].detach())
                 object.__setattr__(carrier, '_concept_code_owner', owner)
                 object.__setattr__(carrier, '_thought_occurrence', knowing['thought_occurrence'])
+                for name in ('position_evidence', 'position_spans', 'extents'):
+                    value = knowing.get(name)
+                    if torch.is_tensor(value):
+                        object.__setattr__(carrier, '_concept_' + name,
+                                           value.to(device=codes.device).clone())
             conceptual_blob = entry.get("conceptual_structure")
             if (isinstance(conceptual_blob, dict)
                     and hasattr(cs, "load_vocab_extras")):
@@ -4989,11 +5008,16 @@ class BaseModel(Mereology, nn.Module):
                                               "_property_rows_used")):
                     continue
                 restored = _checkpoint_host_copy(value)
-                if str(name) == "_row_bytes" and isinstance(restored, dict):
-                    # Acquired predicates of split rows (fold-ladder plan):
-                    # row -> byte list; keys come back as strings from JSON.
-                    restored = {int(k): [int(b) for b in v] for k, v in restored.items()}
+                if property_basis and str(name) == "_row_bytes":
+                    # Old acquired predicates become primitive teaching
+                    # examples; their host dictionary is never reinstated.
+                    primitive = cb.primitive_properties
+                    for row, byte_values in (restored or {}).items():
+                        targets = primitive.members.new_zeros(256)
+                        targets[[int(b) for b in byte_values]] = 1.
+                        primitive.teach(int(row), torch.arange(256), targets)
                     object.__setattr__(ws, "_predicate_byte_lut", None)
+                    continue
                 elif str(name) == "_property_rows_used":
                     restored = set(int(r) for r in restored)
                 if (not property_basis
@@ -11873,7 +11897,7 @@ class BasicModel(BaseModel):
             return None
         ws = getattr(self, "wholeSpace", None)
         if ws is not None:
-            object.__setattr__(ws, "_staged_word_property_weights", None)
+            object.__setattr__(ws, "_staged_word_primitive_counts", None)
             object.__setattr__(ws, "_staged_word_property_spans", None)
         isp._ar_word_concept_rows = None
         isp._ar_word_concept_ids = None
@@ -11926,7 +11950,7 @@ class BasicModel(BaseModel):
         B, W, P = (int(part_ids.shape[0]), int(part_ids.shape[1]),
                    int(part_ids.shape[2]))
         stage_word_properties = getattr(
-            ws, "stage_word_property_weights", None)
+            ws, "stage_word_primitives", None)
         if callable(stage_word_properties):
             word_offsets = None
             part_offsets = getattr(isp, "_ar_word_part_offsets", None)
@@ -12097,12 +12121,15 @@ class BasicModel(BaseModel):
             whole_vectors[..., :int(ws.nWhat)],
             (0, max(0, int(ws.nWhat) - int(whole_vectors.shape[-1]))))
         isp._ar_readout_coefficients = owner.concepts_from_percepts.lookup_coefficients(rows)
-        properties = ws._staged_word_property_weights
-        if torch.is_tensor(properties):
+        primitive_counts = ws._staged_word_primitive_counts
+        if torch.is_tensor(primitive_counts):
+            # Reference ids name properties, while the staged witness names
+            # bytes. Evaluate the live definitions before gathering by id.
+            properties = ws.subspace.what.primitive_properties.on_counts(primitive_counts)
             indices = whole_codes.unsqueeze(2).expand(B, W, int(properties.shape[2]), 8)
             gathered = properties.gather(-1, indices)
             isp._ar_whole_reference_presence = torch.where(
-                properties.any(dim=-1, keepdim=True), gathered,
+                primitive_counts.any(dim=-1, keepdim=True), gathered,
                 torch.full_like(gathered, -1))
         else:
             isp._ar_whole_reference_presence = None
@@ -13913,7 +13940,7 @@ class BasicModel(BaseModel):
             _ss._staged_unit_spans = None
             _ss._staged_tiling_ladder = None
             _ss._staged_unit_parent = None
-            _ss._staged_word_property_weights = None
+            _ss._staged_word_primitive_counts = None
             _ss._staged_word_property_spans = None
             _ss._where_tiling_schedule = None
             _ss._where_tiling_obs = None
@@ -15679,6 +15706,10 @@ class BasicModel(BaseModel):
             # Project learned exponents onto the nonnegative orthant. The
             # source column owns polarity, so an update never flips a part.
             with torch.no_grad():
+                for ws in self.wholeSpaces:
+                    primitives = getattr(getattr(ws.subspace, 'what', None), 'primitive_properties', None)
+                    if primitives is not None:
+                        primitives.project()
                 for cs in self.conceptualSpaces:
                     allocator = getattr(cs, '_concept_allocator', None)
                     if allocator is not None:
@@ -18000,6 +18031,7 @@ class BasicModel(BaseModel):
                 )
             )
 
+
         # --- A4 (2026-06-06 parallel-conceptual-recurrence): per-stage
         # ConceptualCombine modules. One SQUARE augment-threaded invertible
         # combine per stage replaces the per-stage ``cs.forward`` content
@@ -18324,6 +18356,13 @@ class BasicModel(BaseModel):
             self.perceptualSpace._recurrent_pass_idx = 0
         PS_sub_stage0 = self.perceptualSpace.forward(in_sub)
         self.create_ir_mask(PS_sub_stage0)
+        # Retain independently located percepts before a recurrent bind can
+        # mix their coordinates. The late symbolic read owns the polarity.
+        _grounded = hasattr(self.conceptualSpaces[0], 'percept_read')
+        _part_event = PS_sub_stage0.materialize().clone() if _grounded else None
+        _part_spans = (self.perceptualSpace._forward_input.get('part_spans')
+                       if _grounded else None)
+        _property_event = None
         # ``contribution`` is the incoming subspace for each stage's
         # ``cs.forward``. Stage 0 -> PS output; stage k > 0 -> prior
         # stage's post-merge CS output.
@@ -18369,6 +18408,8 @@ class BasicModel(BaseModel):
                 (self._staged_concepts_in
                  if ((_par or t == 0) and _u_ok) else None),
                 cs_out=prevCS_forSS)
+            if _grounded and t == 0:
+                _property_event = WS_sub.materialize().clone()
             # ``cs.forward`` does the STM push + the C->P / C->S handoff
             # bookkeeping and produces this stage's perception event CS_0
             # (STM bookkeeping, no parameterised fold). PRESERVED intact --
@@ -18616,7 +18657,17 @@ class BasicModel(BaseModel):
             _prio = self._assemble_relevance_priority(
                 _cut_cs, prev_cs_stage, last_cs, _settled)
             object.__setattr__(_cut_cs, "_relevance_priority", _prio)
-            _content, _acts = _cut_cs.cs_symbolic_phase(_settled)
+            # WholeSpace's input brackets identify subjects and positions;
+            # independent tower code indices cannot supply this alignment.
+            _layout_ws = self.wholeSpaces[0]
+            _positions, _extents = _layout_ws.concept_evidence_layout(
+                self._staged_concepts_in,
+                int(_property_event.shape[1]) if _grounded else int(_settled.shape[1]))
+            _percepts = ((_part_event, _part_spans, _property_event, _positions)
+                         if _grounded else None)
+            _content, _acts = _cut_cs.cs_symbolic_phase(
+                _settled, chart='unit_ball', position_spans=_positions,
+                extents=_extents, percepts=_percepts)
             # SEEN write moved to ``_prime_seen_step`` (unconditional, once
             # per batch, both paths) -- awareness primes (simplified law).
             assert _acts is None or (
@@ -18626,6 +18677,9 @@ class BasicModel(BaseModel):
             object.__setattr__(last_cs, '_concept_activations', _acts)
             object.__setattr__(last_cs, '_thought_occurrence', None)
             object.__setattr__(last_cs, '_concept_code_owner', 0)
+            for name in ('position_evidence', 'position_spans', 'extents'):
+                object.__setattr__(last_cs, '_concept_' + name,
+                                   getattr(_cut_cs, '_cs_' + name, None))
             if _acts is not None:
                 object.__setattr__(last_cs, '_concept_codes',
                                    _cut_cs.similarity_codebook.getW()[:len(_acts)].detach().clone())
@@ -18941,12 +18995,11 @@ class BasicModel(BaseModel):
         texts = fi.get("word_texts"); codes = getattr(ps, "_embedded_input", None)
         if not texts or not torch.is_tensor(codes) or codes.dim() != 3:
             return
-        rows = getattr(ws, "_predicate_rows", {}) or {}
-        row_bytes = ws.__dict__.get("_row_bytes") or {}
+        primitive = ws.subspace.what.primitive_properties
         n_what = int(getattr(ws, "nWhat", codes.shape[-1]) or codes.shape[-1])
         # Which rows a byte holds: one [256, R] host table (the same
         # predicate LUT the tiling uses), so a unit's rows are a lookup.
-        n_rows = max([int(r) for r in rows] + [int(r) for r in row_bytes] + [-1]) + 1
+        n_rows = int(primitive.members.shape[0])
         lut = ws._build_predicate_byte_lut(n_rows) if n_rows > 0 and hasattr(
             ws, "_build_predicate_byte_lut") else None
         if lut is None or not lut.numel():
@@ -21415,7 +21468,7 @@ class BasicModel(BaseModel):
             getattr(isp, "_packed_sentence_end_mask", None),
             getattr(isp, "_packed_sentence_intermediate_end_mask", None),
             getattr(isp, "_packed_sentence_ids", None),
-            getattr(ws, "_staged_word_property_weights", None),
+            getattr(ws, "_staged_word_primitive_counts", None),
             getattr(stm, "_buffer", None),
             getattr(stm, "_depth", None),
         )
@@ -21546,7 +21599,7 @@ class BasicModel(BaseModel):
         object_atoms = isp._ar_word_object_atoms
         lookup_rows = isp._ar_concept_lookup_rows
         lookup_atoms = isp._ar_concept_lookup_atoms
-        word_property_weights = ws._staged_word_property_weights
+        word_property_weights = ws._staged_word_primitive_counts
         reference_codes = isp._ar_percept_reference_codes
         reference_roles = isp._ar_percept_reference_roles
         part_reference_vectors = isp._ar_part_reference_vectors

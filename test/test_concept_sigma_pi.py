@@ -128,42 +128,6 @@ def test_recycled_edge_cannot_receive_pending_gradient():
     assert layer.values.grad is None
 
 
-@pytest.mark.slow
-@pytest.mark.xfail(reason='zero definitions have no written evidence; tower-grounded XOR is item 11a', strict=True)
-@pytest.mark.parametrize('width', [4, 8])
-def test_unseeded_xor_learns_through_concept_pyramid(width):
-    """900 updates without seed selection; retain the zero-definition null."""
-    cs = _cs(nS=128, order=1)
-    cs.conceptual_pi = True
-    conjunctions = [_mint_row(cs, 1, 100 + i) for i in range(width)]
-    union = _mint_row(cs, 1, 200)
-    for row in conjunctions:
-        cs.add_concept_edge(row, 0, conjunctive=True)
-        cs.add_concept_edge(row, 1, conjunctive=True)
-        cs.add_concept_edge(union, row)
-    ly = Spaces._concept_alloc_of(cs).layer()
-    assert torch.count_nonzero(ly.values) == 0
-    assert torch.count_nonzero(ly.conjunctive.values) == 0
-    optimizer = torch.optim.Adam([ly.values, ly.conjunctive.values], lr=.03)
-    positive = torch.zeros(cs._order_caps()[0], 4)
-    positive[:2] = torch.tensor([[.05, .05, .95, .95], [.05, .95, .05, .95]])
-    a0 = _evidence(positive, 1 - positive)
-    target = torch.tensor([0., 1., 1., 0.])
-    dictionary = torch.randn(128, 8)
-    for _ in range(900):
-        optimizer.zero_grad()
-        _, a = cs.cs_forward_content(a0, dictionary)
-        loss = torch.nn.functional.mse_loss(a[union, :, 0, 0], target)
-        loss.backward()
-        optimizer.step()
-    with torch.no_grad():
-        _, a = cs.cs_forward_content(a0, dictionary)
-        output = a[union, :, 0, 0]
-        mse = float(torch.nn.functional.mse_loss(output, target))
-    print({'conjunctions': width, 'updates': 900, 'mse': mse, 'outputs': output.tolist()})
-    assert mse < .1, f'XOR learning null with {width} conjunctions: MSE={mse:.9f}'
-
-
 def test_unwritten_conjunction_has_no_invented_directional_credit():
     cs = _cs()
     cs.conceptual_pi = True

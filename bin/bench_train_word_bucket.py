@@ -77,7 +77,7 @@ def _profile_peer_legs(torch, model, device, texts, repeats):
     part_ids = isp._ar_word_part_ids[:, :1, :]
     part_mask = isp._ar_word_part_mask[:, :1, :]
     part_offsets = isp._ar_word_part_offsets[:, :1, :]
-    property_weights = ws._staged_word_property_weights[:, 0, :, :]
+    property_weights = ws._staged_word_primitive_counts[:, 0, :, :]
 
     def ps_leg(ids, mask, offsets):
         return ps.compute_word_fold_sources(

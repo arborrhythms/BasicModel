@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "doc/benchmarks/2026-09-23-item11a/reconstruction_ablation.py",
+    "--config",
+    "doc/benchmarks/2026-09-23-item11a/validated-source/off.xml",
+    "--out",
+    "doc/benchmarks/2026-09-23-item11a/validated-source/frozen.json"
+  ],
+  "pid": 79031,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 1411779224,
+  "elapsed_seconds": 53.639007750025485,
+  "log": "doc/benchmarks/2026-09-23-item11a/validated-source/frozen.log"
+}

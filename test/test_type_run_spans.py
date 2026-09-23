@@ -373,11 +373,13 @@ def test_stage_digit_wholes_knob():
         [[0, 2], [3, 7], [8, 9]]                                  # default: unchanged
 
 
-def test_digit_wholes_property_basis_signature():
-    from Spaces import (_analysis_digit_mask, _LUT_PROPERTY_SIGNATURE,
-                        _PROPERTY_DISCARD_MASK)
-    sig = _LUT_PROPERTY_SIGNATURE[_bytes("x12 9")]
-    single = _analysis_digit_mask(types.SimpleNamespace(), sig, True)
+def test_digit_wholes_property_basis_signature(tmp_path):
+    from Spaces import _analysis_digit_mask, _analysis_property_signature
+    from test_wholespace_property_migration import _small_property_model
+    ws = _small_property_model(tmp_path).wholeSpace
+    lookup, discarded = _analysis_property_signature(ws)
+    sig = lookup[_bytes("x12 9")]
+    single = _analysis_digit_mask(ws, sig, True)
     assert single[0].tolist() == [False, True, True, False, True]
-    out = _type_run_spans(sig, discard_mask=_PROPERTY_DISCARD_MASK, singleton=single)
+    out = _type_run_spans(sig, discard_mask=discarded, singleton=single)
     assert out[0].tolist() == [[0, 1], [1, 2], [2, 3], [4, 5]]

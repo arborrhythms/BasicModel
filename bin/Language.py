@@ -16516,6 +16516,9 @@ class SymbolSpace(Space):
             object.__setattr__(leg, '_symbol_evidence', symbols(acts))
             object.__setattr__(leg, '_concept_activations', acts)
             object.__setattr__(leg, '_concept_codes', codes)
+            for name in ('position_evidence', 'position_spans', 'extents'):
+                object.__setattr__(leg, '_concept_' + name,
+                                   getattr(concept_sub, '_concept_' + name, None))
             return leg
         sym_event = event.detach()
         if sym_event.dim() == 2:

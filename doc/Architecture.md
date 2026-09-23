@@ -1609,6 +1609,17 @@ pyramid alternates pi with sigma — conjunctions of members, then unions of
 alternatives, which is the disjunctive normal form XOR itself needs — or its
 sigma has to be a union that does not decay.
 
+**Recommendation.** Evaluate behind a `normalize` mode, turned on
+selectively. First the two XOR gates, in conceptual space with the monotonic
+flags off: the signed mean sigma in the raw chart feeding today's pi, at
+least four hidden units. Then the membership folds of the perceptual towers,
+which already live on `[0, 1]`, comparing the monotone means as proposed
+against the union forms of finding 10; the concept pyramid keeps a sigma that
+does not decay. The grammar's idea-vector folds last, after finding 6 is
+measured. Where a form
+is adopted, the path it replaces is deleted rather than kept as a second
+mode.
+
 #### Decided in direction: a concept is sigma over pi (Alec, 2026-09-21)
 
 > The best psychological support is for sigma-over-pi (DNF), not just
@@ -1725,18 +1736,21 @@ the snap reads each channel by an evidence fold over slots; rows store the
 pair; both `(1, 1)` is a compositional fact, not a contradiction. Rule and
 checks in
 [two truths §1.1](specs/2026-09-16-two-truths-ideas-and-relations.md#11-both-is-a-compositional-fact-decided-alec-2026-09-23).
-The live snap admits each pole with `relu(±p − τ)/(1 − τ)`, using
-`ConceptualSpace.conceptEvidenceFloor = .005` from the bounded trained-model
-[calibration](benchmarks/2026-09-23-item11/README.md). The field keeps
-occurrence scope until the final union over positions for each symbol.
-The calibration records controls and weak live responses; it establishes
-neither universal noise rejection nor learned tower-grounded XOR.
+The live snap admits each pole with `relu(±p − τ)/(1 − τ)`. The item 11
+[calibration](benchmarks/2026-09-23-item11/README.md) used
+`ConceptualSpace.conceptEvidenceFloor = .005` in hypercube-diagonal units.
+Item 11a below corrects the chart, recalibrates the floor to .112, and
+retains positions within subject extents. The earlier calibration records
+controls and weak live responses; it establishes neither universal noise
+rejection nor learned tower-grounded XOR.
 
 The previous four- and eight-conjunction learning gates had identically
 zero conjunctive gradients throughout their 900 balanced XOR updates.
-Identical zero definitions supplied no symmetry-breaking evidence. They
-remain strict expected failures; no selected seed or tie-break is added.
-Item 11a moves the learning gate to the whole architecture: WholeSpace OR,
+Identical zero definitions supplied no symmetry-breaking evidence. Item 11
+recorded these strict expected failures; item 11a replaces them with the
+native learning gate and preserves that null in the earlier receipt.
+No selected seed or tie-break is added. Item 11a moves the learning gate to
+the whole architecture: WholeSpace OR,
 PartSpace AND, and their concept's conjunction with the latter's negative
 pole, grounded at one occurrence/extent with its own roles or positions.
 
@@ -1781,7 +1795,9 @@ pole, grounded at one occurrence/extent with its own roles or positions.
    September 23 amendment replaces signed exponents with nonnegative
    exponents and an explicit source pole. Zero means the part is unknown
    to the concept; a wholly unwritten definition asserts neither polarity.
-   Evidence writes a part's positive or negative source column, and
+   Evidence writes positive parts only (Alec, 2026-09-23: parts are
+   percepts; a percept can be absent but has no opposite); a negated part
+   is learned or asserted by the seal, never witnessed; and
    learning refines its nonnegative magnitude. Negation in conceptual space
    is literal negation: *not-cat* is the negative symbol of *cat*, and
    `(0, 0)` is agnostic about catness
@@ -1937,10 +1953,10 @@ pole, grounded at one occurrence/extent with its own roles or positions.
      edges at first and pruned to the strong edges at minting; the host
      dictionaries go. The forward cost is that of `P` more rows per rung.
    - **The XOR gate, amended September 23.** The zero-initialized,
-     unseeded learning gates use four and eight conjunction concepts and
-     remain strict expected failures. The declared-part truth table checks
-     composition only. Item 11a's WholeSpace/PartSpace/concept path is the
-     next learning test point, as specified above.
+     unseeded learning gates used four and eight conjunction concepts and
+     were recorded as strict expected failures. The declared-part truth
+     table checks composition only. Item 11a replaces those assertions with
+     the WholeSpace/PartSpace/concept learning path specified above.
    - **The switch, restated.** `<conceptualPi>` (default off) is whether the
      pyramid discovers wholes from co-presence as well as kinds from
      substitution: off, it is a taxonomy of kinds and every discovered
@@ -1956,22 +1972,128 @@ alone; `conceptualPi` enables the conjunction stage. The
 [review correction](benchmarks/2026-09-23-item11/README.md) implements the
 paired representation, scoped dual folds, measured admission floor, dense
 host contexts, permanent discovered gates and one sidecar owner for part
-values. Rung and declared-part XOR checks establish composition. The two
-unseeded learning gates remain null, retained as strict expected failures;
-the learned WholeSpace redesign remains item 11a. The serial reconstruction
-baseline is unchanged, and a trained live parallel batch is measured with
-its weak-evidence limitation stated explicitly.
+values. Rung and declared-part XOR checks establish composition. At those
+commits, the two unseeded learning gates remained null and the serial
+reconstruction baseline was unchanged; the trained live parallel measurement
+records its weak-evidence limitation. Item 11a below supplies learned
+primitive properties and replaces the expected-failure learning assertions;
+its reconstruction and calibration differences are recorded separately.
 
-**Recommendation.** Evaluate behind a `normalize` mode, turned on
-selectively. First the two XOR gates, in conceptual space with the monotonic
-flags off: the signed mean sigma in the raw chart feeding today's pi, at
-least four hidden units. Then the membership folds of the perceptual towers,
-which already live on `[0, 1]`, comparing the monotone means as proposed
-against the union forms of finding 10; the concept pyramid keeps a sigma that
-does not decay. The grammar's idea-vector folds last, after finding 6 is
-measured. Where a form
-is adopted, the path it replaces is deleted rather than kept as a second
-mode.
+#### Item 11a: primitive properties and grounded extents (September 23)
+
+WholeSpace analyzes properties of the input; PartSpace composes its parts.
+Both start from the same observed byte positions, but own independent
+distributed codes. Byte identity and the observed-position mask are the
+primitive observations. A code in one tower never identifies a code in the
+other. The bridge is a shared input extent, with the positions or roles
+inside that extent retained.
+
+**The property basis.** A WholeSpace property is a learned membership over
+the complete set of 256 byte primitives. Its coefficients are bounded in
+`[0, 1]`. For primitive presences `x_b` and memberships `w_rb`, its read is
+the union `q_r = 1 − ∏_b (1 − w_rb x_b)`. On a single observed byte this
+reduces to reading that primitive's learned coefficient. The implementation
+may gather that coefficient without constructing a dense one-hot tensor;
+there is no fixed byte-tag lookup supplying the answer beside the learned
+definition. The complement of a property is available only on observed
+positions: `observed · (1 − q_r)`. A missing observation supplies neither
+presence nor complement.
+
+The familiar letter, digit, whitespace and punctuation properties, and
+their capital/control/high-byte/pad refinements, are a priori teaching
+examples over byte primitives. Their names and initial teaching data are
+the prior; their runtime definitions are learned coefficients, owned and
+checkpointed once with the property inventory. Later training reads and
+updates those same coefficients. An arbitrary byte subset can be learned;
+the vocabulary of predefined property names does not bound the algebra.
+The old property-tag and signature lookup must not remain an alternate
+forward path. Old checkpoint tags are intake evidence for migration only.
+
+**Folds and reverse.** WholeSpace unions alternatives and intersects
+properties to narrow a region. Runs with a constant property signature
+retain the existing segmentation contract; boundary and singleton policies
+continue to be learned separately. PartSpace conjoins the required parts
+of a whole, each at its own position. These are bounded union/product
+operations, not the normalized means proposed in item 10. Changing the
+learned membership folds to those means still requires item 10's separate
+measurement. The reverse of a property read distributes support through
+the same primitive memberships; it is an attribution, not an inverse of
+a many-to-one classification. Exact surface reconstruction retains its
+ordered byte witness, as PartSpace already does.
+
+**Extent ownership.** The conceptual field's occurrence index names a
+subject extent, not a tile. The snap retains its per-position evidence
+inside each extent and unions admitted supporting positions before a
+concept's parts are composed. Thus A at the left and B at the right may
+be necessary parts of the same whole. An unrelated extent cannot supply
+either support or counterevidence. The retained position pairs and extent
+boundaries travel with the conceptual field through checkpoint and symbol
+readout. Co-presence discovery reads positive parts only; counterevidence
+does not become a witnessed negated part.
+
+The snap projects onto unit code directions in the source field's chart:
+unit-ball events use the dot product (cosine times event norm); cube-valued
+events divide by `√D`. The chart is explicit metadata, never guessed from
+the current batch's magnitudes. Admission remains
+`relu(±p − τ)/(1 − τ)`, with `conceptEvidenceFloor` recalibrated in these
+units against separate control data. The previous `.005` calibration in
+hypercube-diagonal units is historical evidence, not a calibration of this
+corrected read.
+
+**The two perceptual reads at the seam.** In the parallel meronomy path,
+the retained PartSpace parts and WholeSpace property runs are read through
+two learned linear maps into the conceptual chart. They use the same
+concept dictionary, but do not share percept codes or assume equal slot
+indices. These maps contain no Boolean operation. The per-position snap
+is followed by the tower's extent fold: WholeSpace unions support and
+intersects counterevidence; PartSpace intersects support and unions
+counterevidence. The latter reads whether all required positions support a
+whole. Missing positions prevent a claim of complete coverage; they do not
+supply counterevidence. The two views contribute evidence independently,
+with a union on each channel. A concept can learn to read either view, or
+both. These are folds of evidence about a definition, not a change to the
+retained constituent code or to the unary membership flows reserved for
+item 10. The ordinary subsymbolic carrier and its retained reverse remain
+available; symbolic cutover reads the separately located tower evidence
+rather than assigning a mixed slot one tower's brackets.
+
+**The joint XOR gate.** At one extent, the WholeSpace property is `A ∨ B`
+and the PartSpace whole is `A ∧ B`. Their codes are independent; positions
+identify the same A and B observations in both. The concept reads the
+first positively and the second negatively, `(A ∨ B) ∧ ¬(A ∧ B)`, with
+`conceptualPi` enabled. The negative reading comes from observed parts
+that contradict the whole, not from a missing observation. This gate must
+start from the primitive input and exercise the learned tower reads,
+order-0 snap, concept composition and readout. A truth table supplied
+directly as conceptual activations is only a composition check. No seed
+selection or expected-failure waiver can satisfy the learning gate.
+
+Finite Boolean completeness belongs to this combined algebra with observed
+complements and sufficient definitions: conjunctions distinguish finite
+assignments, and unions select them. It does not claim that either tower
+alone, a fixed finite pool, or an untrained optimizer discovers every such
+definition. The four prior properties, constant-signature runs, scoped
+counterexamples and unseeded joint learning are separate validation gates.
+
+**Learning and normalization.** An observed positive definition can offer
+zero-magnitude candidate parts from its lower-order context, including the
+other source pole. A gradient may make one nonzero; neither co-presence nor
+Hebbian reuse writes a previously unwritten negative. Wholly empty definitions
+remain silent. Growing candidates preserves frozen-row gradient barriers and
+optimizer ownership. Participation is updated independently by EWMA use.
+
+For the todo's open normalization-lifetime question, this implementation
+limits post-optimizer maximum normalization to assigned provisional
+**disjunctive** definitions. Discovered and seal-written definitions keep
+their learned exponent scale; all stored magnitudes remain nonnegative.
+Witness assignment still normalizes its observed support. This is Codex's
+implementation choice for Alec's review, not an additional settled decision.
+
+**Shared symbol index.** A parallel symbol-leg row `j` addresses concept
+row `j // 2`; `j % 2` selects its pole. The codebook keeps one row per
+concept. Serial word references already carry concept rows and must not
+be halved. Readers must use their declared index domain.
+
 
 ---
 

@@ -766,7 +766,7 @@ def test_utility_state_and_predicates_round_trip_a_checkpoint(tmp_path):
         cs.ensure_chunk_prior().fill_(50.0)
     opt = m.getOptimizer(lr=1e-3)
     m.runEpoch(optimizer=opt, batchSize=8, split="train", max_batches=6)
-    ws.__dict__.setdefault("_row_bytes", {})[7] = [ord("a"), ord("e")]   # an acquired predicate
+    ws.subspace.what.primitive_properties.teach(7, [ord("a"), ord("e")], [1., 1.])
     counts = cs.utility_counts()["n"]
     admitted = dict(cs.__dict__.get("_chunk_admitted", {}))
     rows = dict(cs.__dict__.get("_chunk_rows", {}))
@@ -781,6 +781,8 @@ def test_utility_state_and_predicates_round_trip_a_checkpoint(tmp_path):
         {tuple(k): v for k, v in admitted.items()}
     assert {tuple(k): v for k, v in cs2.__dict__.get("_chunk_rows", {}).items()} == \
         {tuple(k): v for k, v in rows.items()}
-    assert list(ws2.__dict__.get("_row_bytes", {}).get(7, [])) == [ord("a"), ord("e")]
+    torch.testing.assert_close(ws2.subspace.what.primitive_properties.members,
+                               ws.subspace.what.primitive_properties.members)
+    assert "_row_bytes" not in ws2.__dict__
     # The learned boundary weights are parameters and round-trip too.
     assert torch.equal(ws2.begins_weight.detach(), ws.begins_weight.detach())

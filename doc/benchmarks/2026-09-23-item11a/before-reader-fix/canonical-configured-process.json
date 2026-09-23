@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-23-item11a/evidence.py",
+    "--config",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-23-item11a/final-source/canonical-configured.xml",
+    "--out",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-23-item11a/final-source/canonical-configured.json"
+  ],
+  "pid": 76595,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 1327482824,
+  "elapsed_seconds": 4.911801334004849,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-23-item11a/final-source/canonical-configured.log"
+}

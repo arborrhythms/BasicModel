@@ -1,0 +1,314 @@
+[
+  {
+    "run": "output/item11a-affected-2",
+    "reason": "test_failure",
+    "exit_code": 1,
+    "selected": 158,
+    "completed": 158,
+    "outcomes": {
+      "passed": 146,
+      "skipped": 11,
+      "failed": 1
+    },
+    "repeated_phase_reports": 0,
+    "failures": [
+      "test/test_cs_sparse_weights.py::test_snap_order0_is_input_dependent_not_saturated"
+    ]
+  },
+  {
+    "run": "output/item11a-affected-3",
+    "reason": "passed",
+    "exit_code": 0,
+    "selected": 146,
+    "completed": 146,
+    "outcomes": {
+      "passed": 137,
+      "skipped": 9
+    },
+    "repeated_phase_reports": 0,
+    "failures": []
+  },
+  {
+    "run": "output/item11a-affected-4",
+    "reason": "passed",
+    "exit_code": 0,
+    "selected": 64,
+    "completed": 64,
+    "outcomes": {
+      "passed": 64
+    },
+    "repeated_phase_reports": 0,
+    "failures": []
+  },
+  {
+    "run": "output/item11a-affected-final",
+    "reason": "passed",
+    "exit_code": 0,
+    "selected": 187,
+    "completed": 187,
+    "outcomes": {
+      "passed": 178,
+      "skipped": 9
+    },
+    "repeated_phase_reports": 0,
+    "failures": []
+  },
+  {
+    "run": "output/item11a-affected-initial",
+    "reason": "test_failure",
+    "exit_code": 1,
+    "selected": 108,
+    "completed": 108,
+    "outcomes": {
+      "passed": 96,
+      "failed": 3,
+      "skipped": 9
+    },
+    "repeated_phase_reports": 0,
+    "failures": [
+      "test/test_concept_evidence.py::test_snap_keeps_both_until_symbol_readout",
+      "test/test_compiled_word_chunk.py::test_tensor_peer_ws_stages_distinct_word_local_property_views",
+      "test/test_compiled_word_chunk.py::test_peer_leg_profiler_executes_real_ps_ws_and_conceptual_bodies"
+    ]
+  },
+  {
+    "run": "output/item11a-contracts-final",
+    "reason": "passed",
+    "exit_code": 0,
+    "selected": 25,
+    "completed": 25,
+    "outcomes": {
+      "passed": 19,
+      "skipped": 6
+    },
+    "repeated_phase_reports": 0,
+    "failures": []
+  },
+  {
+    "run": "output/item11a-four-conjunctions",
+    "reason": "test_failure",
+    "exit_code": 1,
+    "selected": 23,
+    "completed": 23,
+    "outcomes": {
+      "passed": 17,
+      "failed": 6
+    },
+    "repeated_phase_reports": 0,
+    "failures": [
+      "test/test_grounded_xor.py::test_native_unseeded_xor[2-4]",
+      "test/test_grounded_xor.py::test_native_unseeded_xor[2-8]",
+      "test/test_grounded_xor.py::test_native_unseeded_xor[0-4]",
+      "test/test_grounded_xor.py::test_native_unseeded_xor[0-8]",
+      "test/test_grounded_xor.py::test_native_unseeded_xor[1-4]",
+      "test/test_grounded_xor.py::test_native_unseeded_xor[1-8]"
+    ]
+  },
+  {
+    "run": "output/item11a-full",
+    "reason": "interrupted",
+    "exit_code": 130,
+    "selected": 4766,
+    "completed": 1760,
+    "outcomes": {
+      "passed": 1629,
+      "skipped": 131
+    },
+    "repeated_phase_reports": 0,
+    "failures": []
+  },
+  {
+    "run": "output/item11a-full-bounded",
+    "reason": "passed",
+    "exit_code": 0,
+    "selected": 4767,
+    "completed": 4767,
+    "outcomes": {
+      "passed": 4436,
+      "skipped": 330,
+      "xfailed": 1
+    },
+    "repeated_phase_reports": 4,
+    "failures": []
+  },
+  {
+    "run": "output/item11a-full-final",
+    "reason": "test_failure",
+    "exit_code": 1,
+    "selected": 4766,
+    "completed": 4766,
+    "outcomes": {
+      "passed": 4433,
+      "skipped": 330,
+      "failed": 2,
+      "xfailed": 1
+    },
+    "repeated_phase_reports": 4,
+    "failures": [
+      "test/test_sparse_concept_e2e.py::test_symbolic_phase_snap_runs_even_unpopulated",
+      "test/test_whole_property_codebook.py::test_canonical_ws_stage_composes_transformed_property_rows"
+    ]
+  },
+  {
+    "run": "output/item11a-full-landing",
+    "reason": "memory",
+    "exit_code": 137,
+    "selected": 4766,
+    "completed": 2964,
+    "outcomes": {
+      "passed": 2765,
+      "skipped": 199
+    },
+    "repeated_phase_reports": 0,
+    "failures": []
+  },
+  {
+    "run": "output/item11a-native-xor",
+    "reason": "test_failure",
+    "exit_code": 1,
+    "selected": 6,
+    "completed": 6,
+    "outcomes": {
+      "passed": 5,
+      "failed": 1
+    },
+    "repeated_phase_reports": 0,
+    "failures": [
+      "test/test_grounded_xor.py::test_native_unseeded_xor[2-4]"
+    ]
+  },
+  {
+    "run": "output/item11a-native-xor-convergence",
+    "reason": "runner_error",
+    "exit_code": 125,
+    "selected": 6,
+    "completed": 0,
+    "outcomes": {},
+    "repeated_phase_reports": 0,
+    "failures": []
+  },
+  {
+    "run": "output/item11a-prerequisites",
+    "reason": "passed",
+    "exit_code": 0,
+    "selected": 3,
+    "completed": 3,
+    "outcomes": {
+      "passed": 3
+    },
+    "repeated_phase_reports": 0,
+    "failures": []
+  },
+  {
+    "run": "output/item11a-properties",
+    "reason": "test_failure",
+    "exit_code": 1,
+    "selected": 54,
+    "completed": 54,
+    "outcomes": {
+      "passed": 46,
+      "failed": 3,
+      "skipped": 5
+    },
+    "repeated_phase_reports": 0,
+    "failures": [
+      "test/test_primitive_properties.py::test_arbitrary_byte_subset_learns_without_a_predefined_name",
+      "test/test_primitive_properties.py::test_word_read_trains_definitions_and_preserves_ordered_witness",
+      "test/test_primitive_properties.py::test_property_definition_has_one_optimizer_and_checkpoint_owner"
+    ]
+  },
+  {
+    "run": "output/item11a-properties-fixed",
+    "reason": "passed",
+    "exit_code": 0,
+    "selected": 54,
+    "completed": 54,
+    "outcomes": {
+      "passed": 49,
+      "skipped": 5
+    },
+    "repeated_phase_reports": 0,
+    "failures": []
+  },
+  {
+    "run": "output/item11a-readers",
+    "reason": "test_failure",
+    "exit_code": 1,
+    "selected": 61,
+    "completed": 61,
+    "outcomes": {
+      "passed": 60,
+      "failed": 1
+    },
+    "repeated_phase_reports": 0,
+    "failures": [
+      "test/test_primitive_properties.py::test_old_acquired_predicate_migrates_into_primitive_parameters"
+    ]
+  },
+  {
+    "run": "output/item11a-red",
+    "reason": "test_failure",
+    "exit_code": 1,
+    "selected": 3,
+    "completed": 3,
+    "outcomes": {
+      "failed": 3
+    },
+    "repeated_phase_reports": 0,
+    "failures": [
+      "test/test_primitive_properties.py::test_unit_ball_snap_can_reach_the_use_floor",
+      "test/test_primitive_properties.py::test_different_positions_in_one_extent_supply_necessary_parts",
+      "test/test_primitive_properties.py::test_live_property_membership_is_a_learned_byte_definition"
+    ]
+  },
+  {
+    "run": "output/item11a-serial-reader-red",
+    "reason": "test_failure",
+    "exit_code": 1,
+    "selected": 1,
+    "completed": 1,
+    "outcomes": {
+      "failed": 1
+    },
+    "repeated_phase_reports": 0,
+    "failures": [
+      "test/test_compiled_word_chunk.py::test_tensor_peer_ws_stages_distinct_word_local_property_views"
+    ]
+  },
+  {
+    "run": "output/item11a-slow",
+    "reason": "passed",
+    "exit_code": 0,
+    "selected": 12,
+    "completed": 12,
+    "outcomes": {
+      "skipped": 12
+    },
+    "repeated_phase_reports": 0,
+    "failures": []
+  },
+  {
+    "run": "output/item11a-slow-enabled",
+    "reason": "passed",
+    "exit_code": 0,
+    "selected": 12,
+    "completed": 12,
+    "outcomes": {
+      "passed": 12
+    },
+    "repeated_phase_reports": 0,
+    "failures": []
+  },
+  {
+    "run": "output/item11a-slow-final",
+    "reason": "passed",
+    "exit_code": 0,
+    "selected": 12,
+    "completed": 12,
+    "outcomes": {
+      "passed": 12
+    },
+    "repeated_phase_reports": 0,
+    "failures": []
+  }
+]

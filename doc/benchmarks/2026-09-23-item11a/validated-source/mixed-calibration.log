@@ -1,0 +1,410 @@
+/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7928: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-23-item11a/validated-source/mixed-calibration.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+  warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+batch = 0 (Δ=0.260s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+batch = 0 (Δ=0.210s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+batch = 0 (Δ=0.197s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+batch = 0 (Δ=0.194s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+batch = 0 (Δ=0.192s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+batch = 0 (Δ=0.193s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+batch = 0 (Δ=0.194s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+batch = 0 (Δ=0.188s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+batch = 0 (Δ=0.189s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+batch = 0 (Δ=0.184s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+batch = 0 (Δ=0.188s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+batch = 0 (Δ=0.184s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+batch = 0 (Δ=0.176s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+batch = 0 (Δ=0.171s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+batch = 0 (Δ=0.171s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7928: RuntimeWarning: reconstruction_zeroed [config /Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-23-item11a/validated-source/mixed-calibration.xml]: reconstruction loss zeroed: no D3 (per_word=False) and masked-LM inputs missing (mask, target); percept .what=Codebook, pred_full shape=(4, 8, 1024)
+  warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+batch = 0 (Δ=0.167s, 100.00%)
+runEpoch(validation): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+  return func(*args, **kwargs)
+{
+  "seed": 42,
+  "config": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-23-item11a/validated-source/mixed-calibration.xml",
+  "config_sha256": "816473d4335cef7794bb85bb5a38402113c68ee574ae0ccb966112c5de804500",
+  "device": "cpu",
+  "threads": 1,
+  "torch": "2.14.0",
+  "batch_size": 4,
+  "training": {
+    "updates": 16,
+    "seconds": 3.4357716669910587,
+    "losses": [
+      {
+        "reconstruction": 0.0001454525045119226,
+        "answer": 0.17500154674053192
+      },
+      {
+        "reconstruction": 0.00015145119687076658,
+        "answer": 0.17520619928836823
+      },
+      {
+        "reconstruction": 0.00014430582814384252,
+        "answer": 0.15389148890972137
+      },
+      {
+        "reconstruction": 0.00013322863378562033,
+        "answer": 0.17605985701084137
+      },
+      {
+        "reconstruction": 0.0001337734138360247,
+        "answer": 0.18376238644123077
+      },
+      {
+        "reconstruction": 0.0001212653296533972,
+        "answer": 0.17643214762210846
+      },
+      {
+        "reconstruction": 0.00012422665895428509,
+        "answer": 0.17541106045246124
+      },
+      {
+        "reconstruction": 0.0001037004913087003,
+        "answer": 0.17165914177894592
+      },
+      {
+        "reconstruction": 0.00012067554780514911,
+        "answer": 0.16499492526054382
+      },
+      {
+        "reconstruction": 0.00013234464859124273,
+        "answer": 0.19753512740135193
+      },
+      {
+        "reconstruction": 0.00013197567022871226,
+        "answer": 0.21334433555603027
+      },
+      {
+        "reconstruction": 0.0001148280207416974,
+        "answer": 0.18174564838409424
+      },
+      {
+        "reconstruction": 0.0001305890327785164,
+        "answer": 0.19972644746303558
+      },
+      {
+        "reconstruction": 0.00011200790322618559,
+        "answer": 0.19326616823673248
+      },
+      {
+        "reconstruction": 0.00010554804612183943,
+        "answer": 0.18421870470046997
+      },
+      {
+        "reconstruction": 0.0001285936014028266,
+        "answer": 0.17212653160095215
+      }
+    ]
+  },
+  "validation": {
+    "reconstruction": 0.0,
+    "answer": 0.1747819185256958
+  },
+  "projection": {
+    "chart": "unit_ball",
+    "tower_reads": false,
+    "slot_norm": {
+      "0.0": 0.04498995468020439,
+      "0.5": 0.12087540328502655,
+      "0.8999999761581421": 0.5379499197006226,
+      "0.9900000095367432": 0.5989530086517334,
+      "0.9990000128746033": 0.6007409691810608,
+      "1.0": 0.6009396314620972
+    },
+    "shape": [
+      4,
+      8,
+      8
+    ],
+    "magnitude": {
+      "0.0": 0.00019948571571148932,
+      "0.5": 0.06676416099071503,
+      "0.8999999761581421": 0.09511751681566238,
+      "0.9900000095367432": 0.12087937444448471,
+      "0.9990000128746033": 0.1221032664179802,
+      "1.0": 0.12214407324790955
+    },
+    "winning_magnitude": {
+      "0.0": 0.020452650263905525,
+      "0.5": 0.07658164203166962,
+      "0.8999999761581421": 0.12056505680084229,
+      "0.9900000095367432": 0.12209445983171463,
+      "0.9990000128746033": 0.122139111161232,
+      "1.0": 0.12214407324790955
+    },
+    "calibration": {
+      "0.0": 2.795557293211459e-06,
+      "0.5": 0.0171273835003376,
+      "0.8999999761581421": 0.028506683185696602,
+      "0.9900000095367432": 0.04487733915448189,
+      "0.9990000128746033": 0.06694509834051132,
+      "1.0": 0.08810070902109146
+    },
+    "heldout": {
+      "0.0": 1.3587313105745125e-06,
+      "0.5": 0.01712246611714363,
+      "0.8999999761581421": 0.02880563959479332,
+      "0.9900000095367432": 0.04536431282758713,
+      "0.9990000128746033": 0.06063147634267807,
+      "1.0": 0.07641340047121048
+    },
+    "calibration_margin": 1.25,
+    "proposed_floor": 0.111,
+    "configured_floor": 0.0
+  },
+  "control_scopes": [
+    {
+      "floor": 0.0,
+      "slots": 8,
+      "scopes": 256,
+      "positive_max": 0.19704805314540863,
+      "negative_max": 0.07641340047121048,
+      "both_max": 0.0072327833622694016
+    },
+    {
+      "floor": 0.0,
+      "slots": 64,
+      "scopes": 32,
+      "positive_max": 0.7677544951438904,
+      "negative_max": 0.2300443798303604,
+      "both_max": 0.13671427965164185
+    },
+    {
+      "floor": 0.0,
+      "slots": 256,
+      "scopes": 8,
+      "positive_max": 0.9925565123558044,
+      "negative_max": 0.23394747078418732,
+      "both_max": 0.22711364924907684
+    },
+    {
+      "floor": 0.111,
+      "slots": 8,
+      "scopes": 256,
+      "positive_max": 0.0,
+      "negative_max": 0.0,
+      "both_max": 0.0
+    },
+    {
+      "floor": 0.111,
+      "slots": 64,
+      "scopes": 32,
+      "positive_max": 0.0,
+      "negative_max": 0.0,
+      "both_max": 0.0
+    },
+    {
+      "floor": 0.111,
+      "slots": 256,
+      "scopes": 8,
+      "positive_max": 0.0,
+      "negative_max": 0.0,
+      "both_max": 0.0
+    }
+  ],
+  "live": {
+    "pi=False,floor=0.0": {
+      "field_shape": [
+        15,
+        4,
+        1,
+        2
+      ],
+      "symbol_shape": [
+        4,
+        30,
+        1024
+      ],
+      "positive": {
+        "0.0": 0.0,
+        "0.5": 0.3797187805175781,
+        "0.8999999761581421": 0.9189400672912598,
+        "0.9900000095367432": 0.9373881220817566,
+        "0.9990000128746033": 0.9374143481254578,
+        "1.0": 0.9374172687530518
+      },
+      "negative": {
+        "0.0": 0.0,
+        "0.5": 0.0,
+        "0.8999999761581421": 0.012416296638548374,
+        "0.9900000095367432": 0.024707132950425148,
+        "0.9990000128746033": 0.02556789666414261,
+        "1.0": 0.02566353604197502
+      },
+      "both": {
+        "0.0": 0.0,
+        "0.5": 0.0,
+        "0.8999999761581421": 0.004854208789765835,
+        "0.9900000095367432": 0.009569375775754452,
+        "0.9990000128746033": 0.00991024263203144,
+        "1.0": 0.009948116727173328
+      },
+      "active_symbols": 68,
+      "above_use_floor": 16,
+      "order_max": [
+        0.4630799889564514,
+        0.9374172687530518,
+        0.0,
+        0.0
+      ]
+    },
+    "pi=False,floor=0.111": {
+      "field_shape": [
+        15,
+        4,
+        1,
+        2
+      ],
+      "symbol_shape": [
+        4,
+        30,
+        1024
+      ],
+      "positive": {
+        "0.0": 0.0,
+        "0.5": 0.0,
+        "0.8999999761581421": 0.01615225151181221,
+        "0.9900000095367432": 0.054365649819374084,
+        "0.9990000128746033": 0.058224596083164215,
+        "1.0": 0.05865336209535599
+      },
+      "negative": {
+        "0.0": 0.0,
+        "0.5": 0.0,
+        "0.8999999761581421": 0.0,
+        "0.9900000095367432": 0.0,
+        "0.9990000128746033": 0.0,
+        "1.0": 0.0
+      },
+      "both": {
+        "0.0": 0.0,
+        "0.5": 0.0,
+        "0.8999999761581421": 0.0,
+        "0.9900000095367432": 0.0,
+        "0.9990000128746033": 0.0,
+        "1.0": 0.0
+      },
+      "active_symbols": 8,
+      "above_use_floor": 0,
+      "order_max": [
+        0.022979488596320152,
+        0.05865336209535599,
+        0.0,
+        0.0
+      ]
+    },
+    "pi=True,floor=0.0": {
+      "field_shape": [
+        15,
+        4,
+        1,
+        2
+      ],
+      "symbol_shape": [
+        4,
+        30,
+        1024
+      ],
+      "positive": {
+        "0.0": 0.0,
+        "0.5": 0.3797187805175781,
+        "0.8999999761581421": 0.9189400672912598,
+        "0.9900000095367432": 0.9373881220817566,
+        "0.9990000128746033": 0.9374143481254578,
+        "1.0": 0.9374172687530518
+      },
+      "negative": {
+        "0.0": 0.0,
+        "0.5": 0.0,
+        "0.8999999761581421": 0.012416296638548374,
+        "0.9900000095367432": 0.024707132950425148,
+        "0.9990000128746033": 0.02556789666414261,
+        "1.0": 0.02566353604197502
+      },
+      "both": {
+        "0.0": 0.0,
+        "0.5": 0.0,
+        "0.8999999761581421": 0.004854208789765835,
+        "0.9900000095367432": 0.009569375775754452,
+        "0.9990000128746033": 0.00991024263203144,
+        "1.0": 0.009948116727173328
+      },
+      "active_symbols": 68,
+      "above_use_floor": 16,
+      "order_max": [
+        0.4630799889564514,
+        0.9374172687530518,
+        0.0,
+        0.0
+      ]
+    },
+    "pi=True,floor=0.111": {
+      "field_shape": [
+        15,
+        4,
+        1,
+        2
+      ],
+      "symbol_shape": [
+        4,
+        30,
+        1024
+      ],
+      "positive": {
+        "0.0": 0.0,
+        "0.5": 0.0,
+        "0.8999999761581421": 0.01615225151181221,
+        "0.9900000095367432": 0.054365649819374084,
+        "0.9990000128746033": 0.058224596083164215,
+        "1.0": 0.05865336209535599
+      },
+      "negative": {
+        "0.0": 0.0,
+        "0.5": 0.0,
+        "0.8999999761581421": 0.0,
+        "0.9900000095367432": 0.0,
+        "0.9990000128746033": 0.0,
+        "1.0": 0.0
+      },
+      "both": {
+        "0.0": 0.0,
+        "0.5": 0.0,
+        "0.8999999761581421": 0.0,
+        "0.9900000095367432": 0.0,
+        "0.9990000128746033": 0.0,
+        "1.0": 0.0
+      },
+      "active_symbols": 8,
+      "above_use_floor": 0,
+      "order_max": [
+        0.022979488596320152,
+        0.05865336209535599,
+        0.0,
+        0.0
+      ]
+    }
+  },
+  "source_unchanged": true
+}

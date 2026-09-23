@@ -105,6 +105,18 @@ def apply_thought_effect(model, result, *, row, work):
         n = min(len(field), len(existing))
         field[:n, :existing.shape[1], :previous_locations] = existing[:n].detach()
     object.__setattr__(carrier, '_thought_occurrence', location)
+    # An inferred subject has no input byte extent. Keep a sentinel extent
+    # and empty position evidence beside its independently retained pair.
+    extents = getattr(carrier, '_concept_extents', None)
+    positions = getattr(carrier, '_concept_position_evidence', None)
+    if torch.is_tensor(extents) and extents.shape[1] < field.shape[2]:
+        added = field.shape[2] - extents.shape[1]
+        extents = torch.cat((extents, extents.new_full((extents.shape[0], added, 2), -1)), dim=1)
+        object.__setattr__(carrier, '_concept_extents', extents)
+        if torch.is_tensor(positions):
+            positions = torch.cat((positions, positions.new_zeros(
+                positions.shape[0], positions.shape[1], added, positions.shape[3], 2)), dim=2)
+            object.__setattr__(carrier, '_concept_position_evidence', positions)
     query = field.new_zeros(field.shape)
     for reference in seeds:
         try:

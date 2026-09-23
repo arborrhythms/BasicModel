@@ -1,0 +1,549 @@
+/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7928: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-23-item11a/validated-source/canonical-configured.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+  warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up, 100.00%)
+/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18870: RuntimeWarning: CS order-1 block exhausted (4 rows): concept 13 gets records only, no weighted reading (overflow #1)
+  warnings.warn(
+/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18870: RuntimeWarning: CS order-1 block exhausted (4 rows): concept 14 gets records only, no weighted reading (overflow #2)
+  warnings.warn(
+/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18870: RuntimeWarning: CS order-1 block exhausted (4 rows): concept 15 gets records only, no weighted reading (overflow #3)
+  warnings.warn(
+/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18870: RuntimeWarning: CS order-1 block exhausted (4 rows): concept 16 gets records only, no weighted reading (overflow #4)
+  warnings.warn(
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.450s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.096s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.067s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.064s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.063s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.063s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.062s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.064s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.063s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.064s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.064s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.065s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.064s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.064s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.064s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.065s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.064s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.064s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.062s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.063s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.063s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.064s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.063s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.064s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.065s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.065s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.064s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.064s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.064s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.064s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.065s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7928: RuntimeWarning: reconstruction_zeroed [config /Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-23-item11a/validated-source/canonical-configured.xml]: reconstruction loss zeroed: no D3 (per_word=False) and masked-LM inputs missing (mask, target); percept .what=Codebook, pred_full shape=(4, 8, 1024)
+  warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+batch = 0 (Δ=0.061s, 100.00%)
+runEpoch(validation): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.030s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+  return func(*args, **kwargs)
+{
+  "seed": 42,
+  "config": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-23-item11a/validated-source/canonical-configured.xml",
+  "config_sha256": "10f79861c9cbab744fa04ab63e940c81f4dffd567643105014a127cb2ef833d2",
+  "device": "cpu",
+  "threads": 1,
+  "torch": "2.14.0",
+  "batch_size": 4,
+  "training": {
+    "updates": 16,
+    "seconds": 1.415324208966922,
+    "losses": [
+      {
+        "reconstruction": 0.0001470169227104634,
+        "answer": 0.17499873042106628
+      },
+      {
+        "reconstruction": 0.00017617882986087352,
+        "answer": 1.78288996219635
+      },
+      {
+        "reconstruction": 0.00014823577657807618,
+        "answer": 0.20076286792755127
+      },
+      {
+        "reconstruction": 0.00023181164579000324,
+        "answer": 0.31886404752731323
+      },
+      {
+        "reconstruction": 0.00020828245033044368,
+        "answer": 0.2581523358821869
+      },
+      {
+        "reconstruction": 0.00012110598618164659,
+        "answer": 0.22077271342277527
+      },
+      {
+        "reconstruction": 7.148162694647908e-05,
+        "answer": 0.3783244788646698
+      },
+      {
+        "reconstruction": 6.13659867667593e-05,
+        "answer": 0.18633469939231873
+      },
+      {
+        "reconstruction": 0.0003381349379196763,
+        "answer": 0.28169745206832886
+      },
+      {
+        "reconstruction": 0.0006162074860185385,
+        "answer": 0.2909104526042938
+      },
+      {
+        "reconstruction": 1.484274343965808e-05,
+        "answer": 0.1751939058303833
+      },
+      {
+        "reconstruction": 5.704492286895402e-05,
+        "answer": 0.2902384400367737
+      },
+      {
+        "reconstruction": 8.67790004122071e-05,
+        "answer": 0.23771031200885773
+      },
+      {
+        "reconstruction": 5.513622090802528e-05,
+        "answer": 0.1848544180393219
+      },
+      {
+        "reconstruction": 5.2618637710111216e-05,
+        "answer": 0.26850542426109314
+      },
+      {
+        "reconstruction": 3.6540377550409175e-06,
+        "answer": 0.20563435554504395
+      }
+    ]
+  },
+  "validation": {
+    "reconstruction": 0.0,
+    "answer": 0.19084449112415314
+  },
+  "projection": {
+    "chart": "unit_ball",
+    "tower_reads": true,
+    "slot_norm": {
+      "0.0": 0.0,
+      "0.5": 0.06789282709360123,
+      "0.8999999761581421": 1.0,
+      "0.9900000095367432": 1.0000001192092896,
+      "0.9990000128746033": 1.0000001192092896,
+      "1.0": 1.0000001192092896
+    },
+    "shape": [
+      4,
+      16,
+      8
+    ],
+    "magnitude": {
+      "0.0": 0.0,
+      "0.5": 0.00023147810134105384,
+      "0.8999999761581421": 0.4625109136104584,
+      "0.9900000095367432": 0.6487306356430054,
+      "0.9990000128746033": 0.6487307548522949,
+      "1.0": 0.6487307548522949
+    },
+    "winning_magnitude": {
+      "0.0": 0.0,
+      "0.5": 0.0062968796119093895,
+      "0.8999999761581421": 0.6487305760383606,
+      "0.9900000095367432": 0.6487307548522949,
+      "0.9990000128746033": 0.6487307548522949,
+      "1.0": 0.6487307548522949
+    },
+    "calibration": {
+      "0.0": 0.0,
+      "0.5": 0.0006374263903126121,
+      "0.8999999761581421": 0.01968088187277317,
+      "0.9900000095367432": 0.11457529664039612,
+      "0.9990000128746033": 0.2554505467414856,
+      "1.0": 0.2712737023830414
+    },
+    "heldout": {
+      "0.0": 0.0,
+      "0.5": 0.0006386801833286881,
+      "0.8999999761581421": 0.022324129939079285,
+      "0.9900000095367432": 0.11364765465259552,
+      "0.9990000128746033": 0.25770875811576843,
+      "1.0": 0.2889889180660248
+    },
+    "calibration_margin": 1.25,
+    "proposed_floor": 0.34,
+    "configured_floor": 0.112
+  },
+  "control_scopes": [
+    {
+      "floor": 0.0,
+      "slots": 8,
+      "scopes": 512,
+      "positive_max": 0.32257142663002014,
+      "negative_max": 0.25664758682250977,
+      "both_max": 0.0011088537285104394
+    },
+    {
+      "floor": 0.0,
+      "slots": 64,
+      "scopes": 64,
+      "positive_max": 0.8056895732879639,
+      "negative_max": 0.7596819400787354,
+      "both_max": 0.2507553994655609
+    },
+    {
+      "floor": 0.0,
+      "slots": 256,
+      "scopes": 16,
+      "positive_max": 0.9887368083000183,
+      "negative_max": 0.9854283928871155,
+      "both_max": 0.7118659615516663
+    },
+    {
+      "floor": 0.112,
+      "slots": 8,
+      "scopes": 512,
+      "positive_max": 0.19931183755397797,
+      "negative_max": 0.13467109203338623,
+      "both_max": 0.0
+    },
+    {
+      "floor": 0.112,
+      "slots": 64,
+      "scopes": 64,
+      "positive_max": 0.35889846086502075,
+      "negative_max": 0.2512058913707733,
+      "both_max": 0.0
+    },
+    {
+      "floor": 0.112,
+      "slots": 256,
+      "scopes": 16,
+      "positive_max": 0.7727009057998657,
+      "negative_max": 0.6262701749801636,
+      "both_max": 0.0
+    },
+    {
+      "floor": 0.34,
+      "slots": 8,
+      "scopes": 512,
+      "positive_max": 0.0,
+      "negative_max": 0.0,
+      "both_max": 0.0
+    },
+    {
+      "floor": 0.34,
+      "slots": 64,
+      "scopes": 64,
+      "positive_max": 0.0,
+      "negative_max": 0.0,
+      "both_max": 0.0
+    },
+    {
+      "floor": 0.34,
+      "slots": 256,
+      "scopes": 16,
+      "positive_max": 0.0,
+      "negative_max": 0.0,
+      "both_max": 0.0
+    }
+  ],
+  "live": {
+    "pi=False,floor=0.0": {
+      "field_shape": [
+        15,
+        4,
+        2,
+        2
+      ],
+      "symbol_shape": [
+        4,
+        30,
+        1024
+      ],
+      "positive": {
+        "0.0": 0.0,
+        "0.5": 0.0,
+        "0.8999999761581421": 0.7238578200340271,
+        "0.9900000095367432": 0.9968172311782837,
+        "0.9990000128746033": 0.9968174695968628,
+        "1.0": 0.9968175292015076
+      },
+      "negative": {
+        "0.0": 0.0,
+        "0.5": 0.05157126113772392,
+        "0.8999999761581421": 0.8489609956741333,
+        "0.9900000095367432": 0.8822510242462158,
+        "0.9990000128746033": 0.8822510242462158,
+        "1.0": 0.8822510242462158
+      },
+      "both": {
+        "0.0": 0.0,
+        "0.5": 0.0,
+        "0.8999999761581421": 0.002499929629266262,
+        "0.9900000095367432": 0.02697303518652916,
+        "0.9990000128746033": 0.026973113417625427,
+        "1.0": 0.026973122730851173
+      },
+      "active_symbols": 62,
+      "above_use_floor": 36,
+      "order_max": [
+        0.6647900342941284,
+        0.9681641459465027,
+        0.0,
+        0.0
+      ]
+    },
+    "pi=False,floor=0.112": {
+      "field_shape": [
+        15,
+        4,
+        2,
+        2
+      ],
+      "symbol_shape": [
+        4,
+        30,
+        1024
+      ],
+      "positive": {
+        "0.0": 0.0,
+        "0.5": 0.0,
+        "0.8999999761581421": 0.6056235432624817,
+        "0.9900000095367432": 0.9867601990699768,
+        "0.9990000128746033": 0.9867601990699768,
+        "1.0": 0.9867601990699768
+      },
+      "negative": {
+        "0.0": 0.0,
+        "0.5": 0.02622757852077484,
+        "0.8999999761581421": 0.8071029186248779,
+        "0.9900000095367432": 0.8435215353965759,
+        "0.9990000128746033": 0.8435215950012207,
+        "1.0": 0.8435215950012207
+      },
+      "both": {
+        "0.0": 0.0,
+        "0.5": 0.0,
+        "0.8999999761581421": 0.0,
+        "0.9900000095367432": 0.0,
+        "0.9990000128746033": 0.0,
+        "1.0": 0.0
+      },
+      "active_symbols": 48,
+      "above_use_floor": 36,
+      "order_max": [
+        0.6044265031814575,
+        0.9176596403121948,
+        0.0,
+        0.0
+      ]
+    },
+    "pi=False,floor=0.34": {
+      "field_shape": [
+        15,
+        4,
+        2,
+        2
+      ],
+      "symbol_shape": [
+        4,
+        30,
+        1024
+      ],
+      "positive": {
+        "0.0": 0.0,
+        "0.5": 0.0,
+        "0.8999999761581421": 0.2741069793701172,
+        "0.9900000095367432": 0.7223545908927917,
+        "0.9990000128746033": 0.7223545908927917,
+        "1.0": 0.7223545908927917
+      },
+      "negative": {
+        "0.0": 0.0,
+        "0.5": 0.002679764525964856,
+        "0.8999999761581421": 0.6508083939552307,
+        "0.9900000095367432": 0.7167352437973022,
+        "0.9990000128746033": 0.716735303401947,
+        "1.0": 0.716735303401947
+      },
+      "both": {
+        "0.0": 0.0,
+        "0.5": 0.0,
+        "0.8999999761581421": 0.0,
+        "0.9900000095367432": 0.0,
+        "0.9990000128746033": 0.0,
+        "1.0": 0.0
+      },
+      "active_symbols": 48,
+      "above_use_floor": 24,
+      "order_max": [
+        0.4677738547325134,
+        0.4730793237686157,
+        0.0,
+        0.0
+      ]
+    },
+    "pi=True,floor=0.0": {
+      "field_shape": [
+        15,
+        4,
+        2,
+        2
+      ],
+      "symbol_shape": [
+        4,
+        30,
+        1024
+      ],
+      "positive": {
+        "0.0": 0.0,
+        "0.5": 0.0,
+        "0.8999999761581421": 0.7238578200340271,
+        "0.9900000095367432": 0.9968172311782837,
+        "0.9990000128746033": 0.9968174695968628,
+        "1.0": 0.9968175292015076
+      },
+      "negative": {
+        "0.0": 0.0,
+        "0.5": 0.05157126113772392,
+        "0.8999999761581421": 0.8489609956741333,
+        "0.9900000095367432": 0.8822510242462158,
+        "0.9990000128746033": 0.8822510242462158,
+        "1.0": 0.8822510242462158
+      },
+      "both": {
+        "0.0": 0.0,
+        "0.5": 0.0,
+        "0.8999999761581421": 0.002499929629266262,
+        "0.9900000095367432": 0.02697303518652916,
+        "0.9990000128746033": 0.026973113417625427,
+        "1.0": 0.026973122730851173
+      },
+      "active_symbols": 62,
+      "above_use_floor": 36,
+      "order_max": [
+        0.6647900342941284,
+        0.9681641459465027,
+        0.0,
+        0.0
+      ]
+    },
+    "pi=True,floor=0.112": {
+      "field_shape": [
+        15,
+        4,
+        2,
+        2
+      ],
+      "symbol_shape": [
+        4,
+        30,
+        1024
+      ],
+      "positive": {
+        "0.0": 0.0,
+        "0.5": 0.0,
+        "0.8999999761581421": 0.6056235432624817,
+        "0.9900000095367432": 0.9867601990699768,
+        "0.9990000128746033": 0.9867601990699768,
+        "1.0": 0.9867601990699768
+      },
+      "negative": {
+        "0.0": 0.0,
+        "0.5": 0.02622757852077484,
+        "0.8999999761581421": 0.8071029186248779,
+        "0.9900000095367432": 0.8435215353965759,
+        "0.9990000128746033": 0.8435215950012207,
+        "1.0": 0.8435215950012207
+      },
+      "both": {
+        "0.0": 0.0,
+        "0.5": 0.0,
+        "0.8999999761581421": 0.0,
+        "0.9900000095367432": 0.0,
+        "0.9990000128746033": 0.0,
+        "1.0": 0.0
+      },
+      "active_symbols": 48,
+      "above_use_floor": 36,
+      "order_max": [
+        0.6044265031814575,
+        0.9176596403121948,
+        0.0,
+        0.0
+      ]
+    },
+    "pi=True,floor=0.34": {
+      "field_shape": [
+        15,
+        4,
+        2,
+        2
+      ],
+      "symbol_shape": [
+        4,
+        30,
+        1024
+      ],
+      "positive": {
+        "0.0": 0.0,
+        "0.5": 0.0,
+        "0.8999999761581421": 0.2741069793701172,
+        "0.9900000095367432": 0.7223545908927917,
+        "0.9990000128746033": 0.7223545908927917,
+        "1.0": 0.7223545908927917
+      },
+      "negative": {
+        "0.0": 0.0,
+        "0.5": 0.002679764525964856,
+        "0.8999999761581421": 0.6508083939552307,
+        "0.9900000095367432": 0.7167352437973022,
+        "0.9990000128746033": 0.716735303401947,
+        "1.0": 0.716735303401947
+      },
+      "both": {
+        "0.0": 0.0,
+        "0.5": 0.0,
+        "0.8999999761581421": 0.0,
+        "0.9900000095367432": 0.0,
+        "0.9990000128746033": 0.0,
+        "1.0": 0.0
+      },
+      "active_symbols": 48,
+      "above_use_floor": 24,
+      "order_max": [
+        0.4677738547325134,
+        0.4730793237686157,
+        0.0,
+        0.0
+      ]
+    }
+  },
+  "source_unchanged": true
+}
