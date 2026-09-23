@@ -1701,9 +1701,10 @@ rung with pi off, four with pi on; the taper ranks the stronger pole and
 admits the pair together. The perceptual towers' binary folds map N → N/2;
 the pyramid's width per order is the allocated row count under the taper.
 
-**Negation enters only above order 0.** From symbols a part may enter
-negated, by addressing its negative pole, so a conjunction can say *this and
-not that*. That is XOR's home: `(x ∧ ¬y) ∨ (¬x ∧ y)` is two conjunction
+**Negation exists only for concepts, not percepts (or symbols).** A concept
+may include a negated part by addressing that part's negative pole, so a
+conjunction can say *this and not that*. That is XOR's home:
+`(x ∧ ¬y) ∨ (¬x ∧ y)` is two conjunction
 concepts and one union concept over them in conceptual space; it is also a
 concept formed by exclusion, which is what *apoha* says a concept is
 ([Philosophy](Philosophy.md#expectation-as-a-negative-image-attention-as-exclusion-2026-09-20)).

@@ -5,7 +5,7 @@ off-codebook generative vectors; a higher-order vector is a region of order
 0; LTM holds serial form only, episodes by chaining; rev 6: recency buffer
 plus cued retrieval, surprise as the learned residual, expectation's gain;
 rev 7: expectation as a negative image added at the seal, negation only
-above order 0, attention as the non-affirming exclusion of the non-object,
+for concepts, attention as the non-affirming exclusion of the non-object,
 needing no prediction; semantic and
 episodic LTM; psychological cross-reference).
 Companion to
@@ -204,7 +204,7 @@ activation of `0` is presence `½` — neutral, nothing new — so confirmed
 content is not denied; it is simply not conceived again. Denial is a negative
 value, and it arises only where an expectation went unmet.
 
-#### 2.6.2 Negation exists only above order 0
+#### 2.6.2 Negation exists only for concepts, not percepts (or symbols)
 
 Perceptual space does not carry negation (Alec, 2026-09-20). A percept is a
 presence in `[0, 1]`: "a percept is one-sided; its opposite is the complement
@@ -213,7 +213,7 @@ presence in `[0, 1]`: "a percept is one-sided; its opposite is the complement
 has a complement but **no additive inverse**, and cancelling by addition needs
 one. Zeroth-order concepts are assemblages of percepts, and the order-0 field
 (2.2) is the pyramid's snap *presence*. *Amended (Alec, 2026-09-23):* no
-rung of the pyramid is signed any more. Negation above order 0 is the
+rung of the pyramid is signed any more. Conceptual negation is the
 presence `c⁻` of the concept's negative symbol, computed from the parts by
 the De Morgan dual fold
 ([two truths §1.1](2026-09-16-two-truths-ideas-and-relations.md#11-both-is-a-compositional-fact-decided-alec-2026-09-23));
@@ -923,7 +923,7 @@ store fields (episodic) — has close precedents. References are in §8.
 | expectation as a negative image (2.6.1) | cerebellum-like circuits learn, by anti-Hebbian plasticity, a negative image of the predictable input, which is added to the input and cancels it | Bell 1981; Bell et al. 1997; Bell, Han & Sawtell 2008 |
 | | habituation as a learned model of the stimulus whose mismatch releases the orienting response; lateral inhibition as predictive coding; a predicted outcome supports no new learning; a deviant in a regular sequence evokes a mismatch response | Sokolov 1963; Srinivasan, Laughlin & Dubs 1982; Kamin 1969; Näätänen, Gaillard & Mäntysalo 1978 |
 | what is conceived is the semantic remainder (2.6.1, test 32) | the N400 is smaller the more expected a word's meaning, and smaller for an unexpected word that shares features with the expected one; modelled as the change a word makes in a probabilistic representation of meaning | Federmeier & Kutas 1999; Kutas & Federmeier 2011; Rabovsky et al. 2018 |
-| negation only above order 0 (2.6.2) | firing rates cannot be negative, so signed prediction errors are carried by separate positive-error and negative-error populations | Keller & Mrsic-Flogel 2018 |
+| negation only for concepts (2.6.2) | firing rates cannot be negative, so signed prediction errors are carried by separate positive-error and negative-error populations | Keller & Mrsic-Flogel 2018 |
 | conceived absence (2.6.5) | the omission of an expected sound evokes a response with the expected sound's signature; dopamine neurons dip at the time of an omitted reward; omitted reward is an aversive event in its own right | SanMiguel et al. 2013; Wacongne et al. 2011; Schultz et al. 1997; Amsel 1958 |
 | | a negative statement is natural only where the affirmative was expected | Wason 1965 |
 | a gain; `g = 0` as beginner's mind (2.6.6) | attention as the precision given to a prior; contemplative practice as progressively reducing the weight of prediction in favour of present evidence; habituation to a repeated click reported absent in Zen practitioners, not replicated, later found reduced for startle | Feldman & Friston 2010; Lutz et al. 2008; Laukkonen & Slagter 2021; Kasamatsu & Hirai 1966; Becker & Shapiro 1981; Antonova, Chadwick & Kumari 2015 |

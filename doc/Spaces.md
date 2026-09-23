@@ -560,7 +560,7 @@ exists. Sensation is therefore never subtracted from. What the unsigned
 carrier does support is withdrawal, the non-affirming `non`, and that is how
 attention works here: the reading scope and the priority surface exclude
 the non-object without predicting it. See the
-[accessible-mind spec §2.6.2](specs/2026-09-20-accessible-mind-subsystems.md#262-negation-exists-only-above-order-0)
+[accessible-mind spec §2.6.2](specs/2026-09-20-accessible-mind-subsystems.md#262-negation-exists-only-for-concepts-not-percepts-or-symbols)
 and [Philosophy](Philosophy.md#expectation-as-a-negative-image-attention-as-exclusion-2026-09-20).
 
 ### Sigma/Pi Membership Lattice {#percept-membership-lattice}
