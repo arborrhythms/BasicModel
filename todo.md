@@ -36,19 +36,47 @@ seed may make a *measurement* reproducible, never an *assertion* true. A test
 that fails at some seed has found a defect; fix the defect, or let it fail.
 Do not remove unused reasoning methods without Alec's review.
 
-- **11. A concept is sigma over pi; the pyramid is a taxonomy of kinds —
-   learning residue.** The union default, optional two-pass conjunction/union,
-   signed exponents, context-backed provisional rows, use gate, transpose and
-   checkpoint/optimizer ownership have landed for review
-   ([mechanism and measurements](doc/benchmarks/2026-09-22-item11/README.md),
-   [settled design](doc/Architecture.md#decided-in-direction-a-concept-is-sigma-over-pi-alec-2026-09-21)).
-   The unseeded learning gates with four and eight conjunction concepts both
-   remain **null (MSE .5)** from zero exponents; the signed-part representation
-   check is not a learning pass. Close this residue only when those gates pass
-   without selecting a seed or weakening the bar. The preserved `d4dc385`
-   native reconstruction workload is serial; trained sparse-pyramid
-   reconstruction remains unmeasured. Object kinds, `conceptualize_chain`,
-   `chain_idx` and JOINT remain item 7's work. Items 10 and 9 have not started.
+- **11a. WholeSpace analysis as intersections of properties** (Alec,
+   2026-09-23; new). WholeSpace's analysis is neither computationally
+   complete nor the dual of PartSpace's. Today it is region means of the
+   unity snapped to VQ prototypes, a fixed lookup table of four property rows
+   (LETTER, DIGIT, CAPITAL, punctuation) and a monotone pi membership slot;
+   none of these can form a learned "a or b". The design, by tower:
+   **OR belongs to WholeSpace** — a property is a union of primitive
+   elements, the letter class `a ∨ b ∨ c …` over the byte atoms, a word the
+   maximal run over which a property holds, and a narrower type the
+   intersection of properties (CAPITAL ∧ LETTER); **AND belongs to
+   PartSpace** — a whole is the co-presence of its parts, the synthesis
+   fold; and their **combination belongs to the concept**: XOR is the kind
+   over WholeSpace's property `A ∨ B` and not PartSpace's whole `A ∧ B`,
+   the negation through the whole's `c⁻`. `A` and `B` must be positionally
+   grounded across the two independently coded towers — the same `.where`
+   in both — for the concept's combination to name one occurrence.
+   This means one occurrence/extent with positions or roles inside it;
+   A and B need not occupy the same raw byte position. An observed zero
+   supplies counterevidence; a missing observation remains unknown.
+   Completeness is a property of that combined architecture, not of either
+   tower (Codex, 2026-09-23). The negation is evaluated per position — the
+   whole's `c⁻` at the positions where `A ∨ B` holds — since read over the
+   whole field every concept co-present with anything is "both" and the
+   negative channel would discriminate nothing (two-truths §1.1). Words, spaces and digits
+   are a priori today only because we hand them to the mind; they are to be
+   defined in terms of primitive elements, as learned properties over the
+   byte atoms, with the complement side of each bifurcation available so the
+   algebra is complete. Codex's item, design and build (Alec, 2026-09-23), from this
+   brief: fix the property algebra, its folds and reverses, and what stays a
+   priori, in the Architecture doc before code; build it behind the existing
+   analysis/synthesis knobs and delete the lookup-table path it replaces —
+   no two permanent modes; Claude reviews the landing. **Exit:** the four a-priori property
+   rows reproduced as learned properties over bytes; segmentation by
+   constant-type runs unchanged on the ladder corpus; and the **end-to-end
+   XOR test point** — the parallel model on XOR input, WholeSpace's property
+   `A ∨ B` and PartSpace's whole `A ∧ B` from primitive elements, grounded
+   at one `.where`, snapped to order-0 atoms, the concept `(A ∨ B) ∧ ¬(A ∧
+   B)` over them through the whole's `c⁻`, and the readout — passing unseeded,
+   in place of item 11's `xfail` pyramid gate. Interacts with item 10 (the
+   membership folds of the towers): measure there before adopting a fold
+   here.
 - **10. Evaluate bounded pi and sigma folds as normalized means** (Alec's
    proposal, 2026-09-21; [proposal and first evaluation](doc/Architecture.md#proposal-bounded-pi-and-sigma-folds-as-normalized-means-alec-2026-09-21)).
    A new item; the number is reused. Today Sigma and Pi are one map in the
@@ -145,6 +173,9 @@ Do not remove unused reasoning methods without Alec's review.
    between words — into the concept store's own hierarchy of higher-order
    concepts, which is the taxonomy (§3.4 as amended; item 11), trust on the
    LTM row.
+   The seal must store `(c⁺, c⁻)` and preserve both separately from neither
+   (§1.1); the current scalar `_collapse_trust` is replaced here. Item 11's
+   paired conceptual field and checkpoint do not implement this LTM seal.
    Then the distributional context widens from the sentence to the
    **situation** the predictor anchors, under three `model.xml` variables
    (plan §8.4 point 2: situation weight, anchor bound, expectation weight);
@@ -221,6 +252,7 @@ Everything that is decided in direction but not on this path is in
 
 ### Done (newest first)
 
+- `e917d9c` Item 11 review corrections carry paired evidence through scoped dual folds, symbols, thought and checkpoints; calibrated background rejection and the full receipt pass, learned XOR remains null for item 11a ([receipt](doc/Testing.md#item-11-review-corrections-paired-evidence-september-23)).
 - `eb45ae4` Item 11 lands the union default, optional conjunction pass and context-backed provisional rows; unseeded XOR learning remains null ([receipt](doc/Testing.md#item-11-concept-parts-and-provisional-rows-september-22)).
 - `d4dc385` Item 10 (the first of that number) records the reconstruction baseline and packed/single parity gap, fixes MentalModel compaction overflow, and removes selected passing seeds (taken early from item 2; [receipt](doc/Testing.md#item-10-reconstruction-baseline-and-seed-audit-september-21)).
 - `f8aa23c` Item 11 completes generation catalogue ownership, scoped output dispatch, checkpoint/Adam migration and supervised gradient boundaries ([receipt](doc/Testing.md#item-11-generation-ownership-september-21)).

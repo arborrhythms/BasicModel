@@ -1,0 +1,46 @@
+{
+  "implementation_commit": "e917d9c0b50a0f36946af759680bc39d96da09d6",
+  "validated_source_files": 633,
+  "validated_source_sha256": "e6adf6efca88de6a508d0cd2edf5040be3acd4ef9f83c023537be8f76eb7138b",
+  "committed_source_matches_receipts": true,
+  "full": {
+    "receipt": "full-result.json.gz",
+    "source_manifest": "full-source-manifest.json",
+    "summary": "full-summary.json",
+    "selected": 4743,
+    "completed": 4743,
+    "passed": 4410,
+    "skipped": 332,
+    "xfailed": 1,
+    "exit_code": 0
+  },
+  "affected": {
+    "receipt": "affected-final-result.json.gz",
+    "selected": 247,
+    "completed": 247,
+    "passed": 219,
+    "skipped": 28,
+    "exit_code": 0
+  },
+  "explicit_slow": {
+    "receipt": "live-final-result.json.gz",
+    "selected": 37,
+    "completed": 37,
+    "passed": 35,
+    "xfailed": 2,
+    "exit_code": 0
+  },
+  "documentation_links": {
+    "receipt": "doc-links-result.json.gz",
+    "selected": 72,
+    "completed": 72,
+    "passed": 72,
+    "exit_code": 0
+  },
+  "measurements": "final-source/manifest.json",
+  "reconstruction_reference": "d4dc385",
+  "reconstruction_delta_pi_off": 0,
+  "reconstruction_delta_pi_on": 0,
+  "learning_disposition": "Four- and eight-conjunction unseeded XOR gates remain null (MSE .5), retained as strict expected failures; the end-to-end learning gate belongs to item 11a.",
+  "next_item": "11a; stop for review before implementation"
+}

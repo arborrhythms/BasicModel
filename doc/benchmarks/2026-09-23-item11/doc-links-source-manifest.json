@@ -665,7 +665,7 @@
     "doc/Spaces.md": "688b60a5753b8d2a0fb2e7d5b06c75d42a8d6efb09dafdaecb79e997c5be7cff",
     "doc/SymbolFirewall.md": "8423d6039cefb24456e594a06396056adf17c7bef6c7f3e7aee2ddca26fe63d6",
     "doc/TaxonomyQueries.md": "df1f1c3b185eb3a74350427cddc823c6bfd69dcd67d370f32cfc8b2b6ec696a8",
-    "doc/Testing.md": "400ba3684445837972dfbd207bdb98905ae1b025cab38a70eef5df37b12a74ed",
+    "doc/Testing.md": "09a5f95af19215a410cf3adaf31e775403caef99dc22df0435ff4b6dab8cfe53",
     "doc/ThoughtHistory.md": "35bf126e107a5c159c25e3892b1f88b3aad5fd9863281a9ae4f2a86244f37874",
     "doc/Training.md": "f71d32c40607c5187b9e234d96599656b4c1efa129408c75ba64dc0d9b6832ee",
     "doc/WhatSpacetimeDesign.md": "4fb758d3d0ccfc5642740371b1562ceb0a9b6d7dfeb9fa494cd6a66b8ac85972",
@@ -680,7 +680,7 @@
     "doc/benchmarks/2026-09-21-item12/README.md": "f688cb5db30bd7f3c18d4225703945e426a13b0566e70de646b65185b463aa25",
     "doc/benchmarks/2026-09-21-item2/README.md": "6fe7d5042639ae7ed64a48f39dddc821a331704e0420af073c1c9ecc0234d3cc",
     "doc/benchmarks/2026-09-22-item11/README.md": "36822643f043bae4b7b15052c5a49cc2f534dedc3c9de38f2590f70c0fa7e734",
-    "doc/benchmarks/2026-09-23-item11/README.md": "91e84dfeb22999b232ba8e41ca7a2f4411e55de816a8da5f46021f70b37c5732",
+    "doc/benchmarks/2026-09-23-item11/README.md": "63d9a559ad3dd26ce0ca720b1c0fe253adedda4bb2351efcda6bbda91f472403",
     "doc/checkpoints/2026-09-17-production-spec/README.md": "6cb41932e32e6721c39a0c90d1bb2896233d187b2f9c697d1c065ee47bb871a8",
     "doc/plans/2026-07-16-sparse-subspace-carrier-design.md": "e1b9d4af02fb65015dd2f12ffe5d22ffb02e568cf303fe6e016134b395fa026e",
     "doc/plans/2026-09-08-what-spec-deliverables.md": "2e72c22ff72dc610a1e18ca9e49cfd625524e3d5ce28248865f9db4f2b468cd0",
@@ -706,6 +706,6 @@
     "doc/specs/2026-09-16-two-truths-ideas-and-relations.md": "9ded6661a3178f8d5ce0898a633068497b881a5ac35b3243ec33ba03f82fc673",
     "doc/specs/2026-09-18-thought-operations-in-compose.md": "321bfec4d552fdf89cb656a649c6fb67b41e8e17370e567b56ac61fe1e6cb4d4",
     "doc/specs/2026-09-20-accessible-mind-subsystems.md": "53d6b56a451df4884124379e22c6b24ecdb6ebd4d41b0a65a081e11cc7b88dae",
-    "todo.md": "f3ef3452808b89c113ef2980eb673e2aad0741776e3261294ae7d639ed02e344"
+    "todo.md": "4ceb02e01f6452991f3d640096669c35db49e5cfb42c942f45690ab7b0274c6d"
   }
 }

@@ -7,6 +7,10 @@ The WholeSpace redesign and its learned XOR gate remain item 11a. The
 two-truths seal remains item 7; its scalar trust collapse is not a carrier
 for the new conceptual evidence.
 
+Implementation: `e917d9c0b50a0f36946af759680bc39d96da09d6`.
+The [landing record](receipt-info.json) ties that commit to the validated
+source map and the final receipts below.
+
 ## Representation and computation
 
 The live field is `[S, batch, occurrence, 2]`, where S is the sum of the
