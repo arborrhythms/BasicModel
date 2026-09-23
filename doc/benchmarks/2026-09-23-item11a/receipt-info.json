@@ -48,5 +48,8 @@
   "reconstruction_after_delta": 0.00013082846999168396,
   "learning_disposition": "Six unseeded native XOR runs pass, each with four conjunction concepts, at pool sizes 4 and 8; supervised primitive naming and paired concept learning.",
   "review_residue": "Post-optimizer maximum normalization currently applies only to assigned provisional disjunctive rows. Long unions accumulate false support at the 256-position stress scope.",
-  "next_item": "10; stop for review before implementation"
+  "next_item": "10; stop for review before implementation",
+  "implementation_commit": "4b097dc815afdff3dcabd8c22de1268be317eb1e",
+  "committed_source_matches_full_contract_and_doc_receipts": true,
+  "earlier_receipts_match_runtime_and_configuration": true
 }

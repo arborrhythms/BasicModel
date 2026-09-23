@@ -1,6 +1,6 @@
 # Item 11a: learned primitive properties and grounded XOR
 
-The implementation follows the [property design](../../Architecture.md#item-11a-primitive-properties-and-grounded-extents-september-23)
+Implementation `4b097dc` follows the [property design](../../Architecture.md#item-11a-primitive-properties-and-grounded-extents-september-23)
 and the [item 11a brief](spec.md).
 WholeSpace owns learned memberships over byte primitives. Its runtime reads
 and acquired predicates use those parameters; former tag definitions enter
