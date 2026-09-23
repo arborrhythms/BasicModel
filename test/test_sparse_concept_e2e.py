@@ -20,6 +20,7 @@ if _BIN not in sys.path:
     sys.path.insert(0, _BIN)
 
 import torch
+from test_cs_sparse_weights import _evidence
 
 import Spaces
 import Language
@@ -137,11 +138,11 @@ def test_symbolic_phase_snap_runs_even_unpopulated():
     D_dict = int(cs.similarity_codebook.getW().shape[-1])
     settled = torch.randn(2, 64, D_dict)
     content, acts = cs.cs_symbolic_phase(settled)
-    assert acts is not None and acts.shape == (64, 2)
+    assert acts is not None and acts.shape == (sum(cs._order_caps()), 2, 64, 2)
     start0, end0 = cs.order_slice(0)
     assert torch.any(acts[start0:end0] != 0)           # a_0: live snap
     assert torch.all(acts[end0:] == 0)                 # higher orders: empty
-    assert content.shape == (2, 64, D_dict)            # the symbolic slab
+    assert content.shape == (2, 2 * sum(cs._order_caps()), D_dict)            # the symbolic slab
 
 
 def test_symbolic_phase_inactive_is_noop():
@@ -278,7 +279,7 @@ def test_csw_weights_update_under_optimizer_step():
     vals = cs._sparse_families(1)[1].values
     before = vals.detach().clone()
     opt = torch.optim.SGD([vals], lr=1.0)
-    content, _ = cs.cs_forward_content(a_0, what)
+    content, _ = cs.cs_forward_content(_evidence(a_0), what)
     opt.zero_grad()
     content.sum().backward()
     opt.step()
@@ -340,7 +341,7 @@ def test_two_phase_forward_cutover_stamps_terminal_activations():
     last_cs = getattr(m, "_combine_last_cs_sub", None)
     assert last_cs is not None
     acts = getattr(last_cs, "_concept_activations", None)
-    assert acts is not None and int(acts.shape[0]) == int(cs0.nVectors)
+    assert acts is not None and int(acts.shape[0]) == sum(cs0._order_caps())
     # EMA identity trace: order-0 rows moved; higher-order rows untouched.
     after = W.detach().clone()
     assert not torch.equal(after[start0:end0], before[start0:end0])

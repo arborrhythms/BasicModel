@@ -1540,3 +1540,46 @@ explicitly measured XOR failures, not capability passes.
 
 Final documentation links pass **71/71**, `item11-doc-links-final`, with the same
 validated source ([receipt](benchmarks/2026-09-22-item11/doc-links-final-result.json.gz)).
+
+## Item 11 review corrections: paired evidence (September 23)
+
+The [implementation and calibration record](benchmarks/2026-09-23-item11/README.md)
+replaces the half-present snap background with independent `(c⁺, c⁻)`
+evidence per occurrence. Sigma and pi compute dual folds, with nonnegative
+exponents and explicit source polarity. Both survives independently of
+neither through the transpose, thought effects, symbol leg and conceptual
+checkpoint. Context matching uses a dense host tensor over the taper span;
+alternative exponents normalize by their maximum, discovered gates stay at
+one, and sparse values have one checkpoint owner.
+
+The production-snap regression reproduces the old `.75 / .9375 / .99609375`
+false presences with 2 / 4 / 8 inactive parts and now reads zero throughout.
+The trained parallel smoke model supplies a measured `.005` admission floor;
+independent feature-permutation controls are rejected at 8, 64 and 256 slots.
+The live eight-slot batch retains weak evidence below the discovery use floor.
+This is a bounded calibration and live measurement, not learned XOR or
+successful discovery. The `d4dc385` serial reconstruction means match exactly
+with pi off and on. Packed/single parity remains item 9's first landing.
+
+The final [affected receipt](benchmarks/2026-09-23-item11/affected-final-result.json.gz)
+completes **247/247** cases: **219 passed, 28 skipped**, exit 0. The explicit
+[slow receipt](benchmarks/2026-09-23-item11/live-final-result.json.gz) completes
+**37/37**: **35 passed and two strict expected failures**, exit 0. Both
+unseeded zero-definition XOR gates retain MSE **.5** after 900 updates and
+the unchanged **< .1** learning bar. The expected-failure disposition is
+the September 23 review decision; item 11a owns the end-to-end learning gate.
+The paired LTM seal and object testimony remain item 7.
+
+The final source-matched [full receipt](benchmarks/2026-09-23-item11/full-result.json.gz)
+completes **4,743/4,743** cases: **4,410 passed, 332 skipped and one existing
+expected failure**, exit **0**, in **1,061.76 seconds**, with no waived
+failure or compiler-cache retry. Peak aggregate footprint is **17.003 GiB**
+under the unchanged 20 GiB aggregate / 8 GiB per-worker caps. The
+[source manifest](benchmarks/2026-09-23-item11/full-source-manifest.json) and
+[summary](benchmarks/2026-09-23-item11/full-summary.json) match the affected,
+explicit slow and reconstruction/calibration receipts across **633 source
+files**, SHA-256 of the sorted compact validated-source map:
+`e6adf6efca88de6a508d0cd2edf5040be3acd4ef9f83c023537be8f76eb7138b`.
+
+The final [documentation-link receipt](benchmarks/2026-09-23-item11/doc-links-result.json.gz)
+completes **72/72** cases, all passed, exit 0.

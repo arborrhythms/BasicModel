@@ -527,24 +527,18 @@ the other.
   `ConceptDim` atom + its untyped sparse edge decomposition, populated at mint
   by `_populate_concept_weights`) is the representational side — see the next
   bullet.
-- **Implicit (subsymbolic).** Each concept has a corresponding **learned vector** —
-  a strictly-positive `ConceptDim` **atom** (a feature signature) stored in the CS
-  concept dictionary (`similarity_codebook`, softplus-rectified). For a higher-order
-  concept the *production* is no longer "$\sigma$ then quantize", nor the earlier
-  iterated sparse wave; it is a **feedforward $\sigma$-pyramid**
-  (`cs_forward_content`, bin/Spaces.py; dual-towers rev 2, 2026-07-12): the single
-  untyped square `ConceptualAttentionLayer` computes each rung $k$'s rows in one
-  hop, $a^k = \tanh(W [a^{<k} \mid 1])$, gathered under a per-batch top-K taper
-  (`order_slice(k)` / `_order_caps`), with $K$ = `symbolicOrder` bounding the
-  rung count — **no fixed point and no re-injection** (each rung reads only the
-  rows already settled below it; nothing is fed back into its own input). The
-  concept code is the final rung's activation
-  scaling its positive atom ($a \cdot \mathrm{softplus}(atom)$; radial: magnitude = certainty,
-  sign = present vs anti-present). The many$\to$one abstraction is carried by the sparse
-  WEIGHTS (which sources contribute, with what sign), not by a $\sigma$-fold + VQ snap; the
-  gradient reaches the weights, the source activations, and the dictionary
-  (forward-connected). `PerceptDim` and `ConceptDim` are decoupled — a concept is in a
-  different vector space than its percepts, never a sum of percept vectors.
+- **Implicit (subsymbolic).** Each concept has one distributed code in the
+  ConceptualSpace dictionary. The parallel knowing field carries independent
+  positive and negative evidence per occurrence. `cs_forward_content`
+  composes disjunctive parts by a union and its negative-channel dual;
+  `conceptualPi` adds conjunctive parts before that union. Exponents are
+  nonnegative, and a negated part selects the opposite symbol pole. The
+  taper admits both poles together. Final symbol readout unions occurrences
+  and scales the two directions of the one code, preserving both separately
+  from neither. The many-to-one abstraction lives on those part edges.
+  [Architecture](Architecture.md#decided-in-direction-a-concept-is-sigma-over-pi-alec-2026-09-21)
+  specifies the folds, discovery and reverse; the serial idea-vector path
+  remains distinct from this paired conceptual field.
 
 **Coordination.** Order-raising is the coupling between the two. When the explicit
 tower raises a higher-order part-percept/whole-percept (built directly, inserted on

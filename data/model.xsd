@@ -1283,6 +1283,8 @@
            unrolls the loop when K is shape-bucketed (BPE power-of-
            two quantisation). -->
       <xs:element name="perWordStemSerial" type="xs:boolean" minOccurs="0"/>
+      <!-- Independent positive/negative snap admission, before slot union. -->
+      <xs:element name="conceptEvidenceFloor" type="unitInterval" minOccurs="0"/>
       <!-- Per-space override of architecture.truthCriterion. -->
       <xs:element name="truthCriterion" type="unitInterval" minOccurs="0"/>
       <!-- Per-space override of architecture.attentionPromotion. -->

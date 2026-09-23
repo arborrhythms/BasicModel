@@ -107,12 +107,20 @@ concept over the whole continuous conceptual codebook. Parallel: all concepts
 are active to some degree at once. Words enter it as (concept row,
 activation); priming acts on it. Expectation does not: this field is
 presence, which carries no sign, so no negative image can be left in it
-(2.6.2).
+(2.6.2). *Amended (Alec, 2026-09-23):* every concept has **two symbols**
+in this field, `c⁺` for the concept present and `c⁻` for its negation
+present, both presences, sharing one concept row (`i ↔ (i⁺, i⁻)`; the
+concept's code is stored once). Negation is itself a presence, so the field
+still carries no sign, and the four corners of the tetralemma — true,
+false, **both**, neither — are read from the pair. Both is a compositional
+fact, a whole whose parts differ under a predicate, and objects are not
+symbols
+([two truths §1.1](2026-09-16-two-truths-ideas-and-relations.md#11-both-is-a-compositional-fact-decided-alec-2026-09-23)).
 
 ### 2.3 Parallel conceptual knowing, higher order
 A **field** over the higher-order symbols: symbols composed of symbols (the
 discretized symbolic codebook; abstraction order ≥ 1). Shares row indices
-with 2.2 (one symbol per concept). A higher-order symbol is a single point at
+with 2.2 (two symbols per concept: its presence and its negation's). A higher-order symbol is a single point at
 its own order and a **region of order 0**: the sigma-pyramid computes its
 activation from its members, and `synthesize_higher_order` mints it from a
 recurrent member set, so the region is defined by membership and may be
@@ -204,9 +212,14 @@ presence in `[0, 1]`: "a percept is one-sided; its opposite is the complement
 ([Spaces](../Spaces.md#percept-geometry-positive-unit-hypercube)). The cube
 has a complement but **no additive inverse**, and cancelling by addition needs
 one. Zeroth-order concepts are assemblages of percepts, and the order-0 field
-(2.2) is the pyramid's snap *presence*; sign first enters at the first rung
-(`tanh(W[a|1])`). So a negative image cannot be left at order 0: there is
-nowhere to put it. Consequences:
+(2.2) is the pyramid's snap *presence*. *Amended (Alec, 2026-09-23):* no
+rung of the pyramid is signed any more. Negation above order 0 is the
+presence `c⁻` of the concept's negative symbol, computed from the parts by
+the De Morgan dual fold
+([two truths §1.1](2026-09-16-two-truths-ideas-and-relations.md#11-both-is-a-compositional-fact-decided-alec-2026-09-23));
+the signed carrier below is the sealed idea in a slot, where expectation's
+negative image remains a separate operation. So a negative image cannot be
+left at order 0: there is nowhere to put it. Consequences:
 
 1. **Sensation is never subtracted from.** Perceptual knowing (2.1), the
    order-0 field (2.2), the word stream and the codes of arriving words are

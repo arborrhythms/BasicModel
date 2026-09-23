@@ -1,0 +1,45 @@
+{
+  "reference": "d4dc385",
+  "native": {
+    "off": [
+      {
+        "phase": "before_training",
+        "baseline": 0.10059325583279133,
+        "current": 0.10059325583279133,
+        "delta": 0.0
+      },
+      {
+        "phase": "training",
+        "baseline": 0.0927930697798729,
+        "current": 0.0927930697798729,
+        "delta": 0.0
+      },
+      {
+        "phase": "after_training",
+        "baseline": 0.09232672862708569,
+        "current": 0.09232672862708569,
+        "delta": 0.0
+      }
+    ],
+    "on": [
+      {
+        "phase": "before_training",
+        "baseline": 0.10059325583279133,
+        "current": 0.10059325583279133,
+        "delta": 0.0
+      },
+      {
+        "phase": "training",
+        "baseline": 0.0927930697798729,
+        "current": 0.0927930697798729,
+        "delta": 0.0
+      },
+      {
+        "phase": "after_training",
+        "baseline": 0.09232672862708569,
+        "current": 0.09232672862708569,
+        "delta": 0.0
+      }
+    ]
+  }
+}

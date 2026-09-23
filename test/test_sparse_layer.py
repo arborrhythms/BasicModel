@@ -127,7 +127,7 @@ def test_self_edge_allowed_by_default():
 
 def test_conceptual_attention_layer_is_square_and_forbids_self_edges():
     ly = ConceptualAttentionLayer.square(8)   # N=8 concepts -> [9 x 8], no roles
-    assert (ly.nInput, ly.nOutput) == (9, 8)
+    assert (ly.nInput, ly.nOutput) == (18, 8)
     with pytest.raises(ValueError, match="self-edge"):
         ly.add_edge(3, 3)
 
@@ -135,7 +135,7 @@ def test_conceptual_attention_layer_is_square_and_forbids_self_edges():
 def test_conceptual_attention_union_uses_presence_chart():
     ly = ConceptualAttentionLayer.square(4)
     ly.add_edge(2, 0, weight=.5)
-    u = torch.zeros(5, 1)
+    u = torch.zeros(10, 1)
     u[0] = .75
     out = ly.fold_presence(u)
     torch.testing.assert_close(out[2], torch.tensor([.5]))
@@ -144,7 +144,7 @@ def test_conceptual_attention_union_uses_presence_chart():
 
 def test_conceptual_attention_empty_union_is_absent():
     ly = ConceptualAttentionLayer.square(3)
-    assert not ly.fold_presence(torch.rand(4, 2)).any()
+    assert not ly.fold_presence(torch.rand(8, 2)).any()
 
 
 # -- concept relation store (moved off SparseLayer onto ConceptualAttentionLayer)

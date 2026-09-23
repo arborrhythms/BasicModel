@@ -16459,29 +16459,14 @@ class SymbolSpace(Space):
 
     def forward_concept_to_symbol(self, concept_sub, *, prior_symbolic=None,
                                   language_plan=None):
-        """CS -> SS: the symbol (representation) leg of a concept -- the
-        reverse/decode direction of the row-aligned concept<->symbol
-        dictionary, in a sparse autoencoder ``PS/WS -(W)-> CS -> SS -(edges)->
-        percept``.
+        """Decode paired symbols from the argument's one code per concept.
 
-        The concept arrives THROUGH THE ARGUMENT (the dataflow rule: Spaces are
-        operators; cross-space interaction goes only through ``forward``). The
-        symbol is the ROW-ALIGNED view of the concept -- symbol ``i`` is the
-        ``.what`` view of concept ``i`` -- so the leg is built from the
-        concept's OWN materialized codes, NEVER from the WholeSpace meta
-        codebook or a stashed ``_model_symbolSpace`` pointer (the reach the
-        retired ``ConceptualSpace._build_symbol_leg`` made). SymbolSpace syncs
-        the first ``N`` rows of the codebook IT OWNS (``subspace.what``) to the
-        concept codes (a space writing its own codebook -- allowed) under
-        ``no_grad``, so the decode / symbol-attention paths read the row-aligned
-        symbol view. When the concept carries ``_concept_activations`` (the
-        sparse forward's 0-D symbols), the leg is ``activation x identity-row``
-        -- gradient flows through the ACTIVATION (the symbol's value) while the
-        codebook rows stay EMA-only (the symbol's identity). Without
-        activations (sparse-inactive) the leg falls back to the detached
-        concept-content copy. Returns the ``[B, N, D]`` symbol-leg SubSpace, or
-        ``None`` for an empty / degenerate concept (-> ``bind_streams`` fills a
-        zero leg), matching the old leg's ``None`` contract.
+        A paired field produces [B, 2S, D], with positive and negative rows
+        interleaved. Gradients flow through evidence; the detached dictionary
+        names each concept once. Located, row-aligned input events retain
+        their band on both symbol rows. An opaque conceptual dictionary has
+        no band; its occurrence scope travels in the evidence field.
+        Serial event inputs without a paired field remain detached snapshots.
         """
         # The peer scheduler hands SS a completed CS tensor rather than the
         # live mutable CS carrier: A(w+1) may already have reused that carrier
@@ -16491,14 +16476,47 @@ class SymbolSpace(Space):
         read_view = isinstance(concept_sub, SubSpaceView)
         if concept_sub is None:
             return None
+        acts = (None if raw_event or read_view
+                else getattr(concept_sub, '_concept_activations', None))
         if raw_event:
             event = concept_sub
         else:
-            if concept_sub.is_empty():
+            if concept_sub.is_empty() and not torch.is_tensor(acts):
                 return None
             event = concept_sub.materialize()
-        if event is None or event.dim() < 2:
+        if not torch.is_tensor(acts) and (event is None or event.dim() < 2):
             return None
+        if torch.is_tensor(acts):
+            from ConceptEvidence import decode, symbols
+            codes = getattr(concept_sub, '_concept_codes', None)
+            row_events = codes is None
+            if codes is None:
+                if event is None:
+                    raise ValueError('paired symbol read requires concept codes')
+                if event.ndim == 2:
+                    event = event.unsqueeze(0)
+                codes = event.detach().mean(dim=0)
+            if codes.ndim != 2 or len(codes) < len(acts):
+                raise ValueError('paired symbol read requires one code per concept')
+            codes = codes[:len(acts)].detach().clone()
+            cb = getattr(getattr(self, 'subspace', None), 'what', None)
+            W = cb.getW() if cb is not None and hasattr(cb, 'getW') else None
+            if W is not None:
+                n, d = min(len(codes), len(W)), min(codes.shape[-1], W.shape[-1])
+                with torch.no_grad():
+                    W[:n, :d].copy_(codes[:n, :d].to(W))
+            symbol_event = decode(acts, codes)
+            width = int(getattr(self.subspace, 'nWhat', codes.shape[-1]))
+            if row_events and event.shape[-1] > width:
+                band = event.detach()[..., width:].repeat_interleave(2, dim=1)
+                symbol_event = torch.cat((symbol_event[..., :width], band), dim=-1)
+            leg = self._publish_symbol_snapshot(
+                symbol_event, concept_sub,
+                prior_symbolic=prior_symbolic, language_plan=language_plan)
+            object.__setattr__(leg, '_symbol_evidence', symbols(acts))
+            object.__setattr__(leg, '_concept_activations', acts)
+            object.__setattr__(leg, '_concept_codes', codes)
+            return leg
         sym_event = event.detach()
         if sym_event.dim() == 2:
             sym_event = sym_event.unsqueeze(0)
@@ -16515,28 +16533,6 @@ class SymbolSpace(Space):
                 with torch.no_grad():
                     W[:rows, :cw] = sym_event[:, :rows, :cw].mean(dim=0).to(
                         W.device, W.dtype)
-        acts = (None if raw_event or read_view
-                else getattr(concept_sub, "_concept_activations", None))
-        if (acts is not None and torch.is_tensor(acts)
-                and int(acts.shape[0]) >= N and W is not None):
-            # 0-D symbol: the signed activation scales the row-aligned identity
-            # row; grad flows through the ACTIVATION, rows stay EMA-only.
-            # CLONE the rows: the next stage's no_grad codebook sync mutates W
-            # in-place, and a live detached VIEW saved by this product would
-            # fail backward with a version-counter error.
-            a_t = acts[:N].t().unsqueeze(-1)             # [B, N, 1]
-            rows_w = W[:N].detach().clone().to(a_t.device, a_t.dtype)
-            cw = min(D, int(rows_w.shape[-1]))
-            leg = a_t.new_zeros((int(a_t.shape[0]), N, D))
-            leg[..., :cw] = a_t * rows_w[:, :cw].unsqueeze(0)
-            # The sparse symbol codebook names CONTENT only.  Positional and
-            # temporal coordinates are event metadata, so preserve their
-            # conceptual carrier values instead of silently zeroing the band
-            # when the SS WHAT width is smaller than the CS event width.
-            if D > cw:
-                leg[..., cw:] = sym_event[..., :N, cw:].to(
-                    leg.device, leg.dtype)
-            sym_event = leg
         return self._publish_symbol_snapshot(
             sym_event, concept_sub, prior_symbolic=prior_symbolic,
             language_plan=language_plan)

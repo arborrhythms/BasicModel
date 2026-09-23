@@ -119,6 +119,7 @@ def test_cs_direct_snap_cannot_score_or_ema_write_inactive_tail():
     torch.nn.Module.__init__(cs)
     cs.similarity_codebook = cb
     cs.nVectors = 4
+    cs.concept_evidence_floor = 0.
     cs.outputShape = [4, 2]
     object.__setattr__(cs, "_concept_binding", "aligned")
     object.__setattr__(cs, "_serial", True)
@@ -129,7 +130,7 @@ def test_cs_direct_snap_cannot_score_or_ema_write_inactive_tail():
     activation = cs.cs_snap_order0(
         torch.tensor([[[0.8, 0.8]]]), ema=True)
 
-    assert activation.shape == (2, 1)
+    assert activation.shape == (2, 1, 1, 2)
     assert torch.equal(cb.getW()[2:].detach(), inactive_before)
 
 

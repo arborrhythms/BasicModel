@@ -127,15 +127,16 @@ def test_symbol_leg_from_activations_is_0d_times_row_and_carries_grad():
     sub = Spaces.SubSpace(inputShape=(N, D), outputShape=(N, D),
                           nInputDim=D, nOutputDim=D)
     sub.set_event(ev)
-    acts = torch.randn(N, B, requires_grad=True)     # [N, B] signed symbols
+    acts = torch.rand(N, B, 1, 2, requires_grad=True)
     object.__setattr__(sub, "_concept_activations", acts)
     leg = ss.forward_concept_to_symbol(sub)
     assert leg is not None
     out = leg.materialize()
-    assert out.shape == (B, N, D) and out.requires_grad
+    assert out.shape == (B, 2 * N, D) and out.requires_grad
     # leg == activation x (EMA-synced, detached) identity row.
     rows = W[:N].detach()
-    want = acts.t().unsqueeze(-1) * rows.unsqueeze(0)
+    from ConceptEvidence import decode
+    want = decode(acts, rows)
     assert torch.allclose(out[..., :int(rows.shape[-1])], want, atol=1e-5)
     out.sum().backward()
     assert acts.grad is not None and torch.any(acts.grad != 0)
@@ -161,11 +162,11 @@ def test_symbol_leg_survives_repeated_sync_backward():
         return s
 
     sub0 = _sub()
-    acts0 = torch.randn(N, B, requires_grad=True)
+    acts0 = torch.rand(N, B, 1, 2, requires_grad=True)
     object.__setattr__(sub0, "_concept_activations", acts0)
     leg0 = ss.forward_concept_to_symbol(sub0)         # stage 0 (saved for bwd)
     sub1 = _sub()
-    acts1 = torch.randn(N, B, requires_grad=True)
+    acts1 = torch.rand(N, B, 1, 2, requires_grad=True)
     object.__setattr__(sub1, "_concept_activations", acts1)
     ss.forward_concept_to_symbol(sub1)                # stage 1: re-syncs W
     ss.forward_concept_to_symbol(sub1)                # stage 2: re-syncs W

@@ -1,0 +1,14 @@
+[
+  {
+    "nodeid": "test/test_concept_sigma_pi.py::test_unseeded_xor_learns_through_concept_pyramid[4]",
+    "outcome": "xfailed",
+    "message": "test/test_concept_sigma_pi.py:164: in test_unseeded_xor_learns_through_concept_pyramid\n    assert mse < .1, f'XOR learning null with {width} conjunctions: MSE={mse:.9f}'\nE   AssertionError: XOR learning null with 4 conjunctions: MSE=0.500000000\nE   assert 0.5 < 0.1",
+    "stdout": "{'conjunctions': 4, 'updates': 900, 'mse': 0.5, 'outputs': [0.0, 0.0, 0.0, 0.0]}\n"
+  },
+  {
+    "nodeid": "test/test_concept_sigma_pi.py::test_unseeded_xor_learns_through_concept_pyramid[8]",
+    "outcome": "xfailed",
+    "message": "test/test_concept_sigma_pi.py:164: in test_unseeded_xor_learns_through_concept_pyramid\n    assert mse < .1, f'XOR learning null with {width} conjunctions: MSE={mse:.9f}'\nE   AssertionError: XOR learning null with 8 conjunctions: MSE=0.500000000\nE   assert 0.5 < 0.1",
+    "stdout": "{'conjunctions': 8, 'updates': 900, 'mse': 0.5, 'outputs': [0.0, 0.0, 0.0, 0.0]}\n"
+  }
+]

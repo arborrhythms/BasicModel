@@ -15597,6 +15597,10 @@ class ConceptualSpace(Space):
         # its gate is measured use, independent of sentence truth learning.
         self.conceptual_pi = bool(TheXMLConfig.space(
             "ConceptualSpace", "conceptualPi", False))
+        self.concept_evidence_floor = float(TheXMLConfig.space(
+            "ConceptualSpace", "conceptEvidenceFloor", 0.005))
+        if not 0 <= self.concept_evidence_floor < 1:
+            raise ValueError('conceptEvidenceFloor must be in [0, 1)')
         self._promotion_enabled = bool(TheXMLConfig.space(
             "ConceptualSpace", "attentionPromotion", False))
         self.concept_pool_size = int(TheXMLConfig.space(
@@ -18284,9 +18288,10 @@ class ConceptualSpace(Space):
             vals = getattr(ly, "values", None)
             if vals is None or ly.nnz == 0:
                 continue
-            bias = int(ly.nInput) - 1
+            bias = int(ly.nOutput)
             v = vals.detach().abs().cpu()
             for pos, (r, c) in enumerate(zip(ly._rows, ly._cols)):
+                c %= bias + 1
                 if c == bias:
                     continue
                 wt = float(v[pos])
@@ -18324,8 +18329,9 @@ class ConceptualSpace(Space):
             fams[o] = got
         return got
 
-    def add_concept_edge(self, row, col, weight=0.0, *, conjunctive=False):
-        """Add a signed exponent to W_pi or W_sigma, zero without evidence.
+    def add_concept_edge(self, row, col, weight=0.0, *, conjunctive=False,
+                         negated=False):
+        """Add a nonnegative exponent; a negated part addresses its c-minus.
 
         Concepts share one row inventory. Conjunctive parts read lower
         orders; a disjunctive part at the same order reads its conjunction.
@@ -18349,6 +18355,12 @@ class ConceptualSpace(Space):
         _c = int(col)
         if _c == int(self.nVectors):
             _c = self._bias_col()
+        if _c == r:
+            raise ValueError('self-edge: a concept cannot be its own part')
+        if float(weight) < 0:
+            raise ValueError('concept exponents are nonnegative; use negated=True')
+        if negated:
+            _c += ly.nOutput + 1
         self._maybe_rebuild_optimizer_for_csw()
         out = ly.add_edge(r, _c, weight=weight)
         # Values may have regrown: re-arm the frozen-weights grad hook.
@@ -18356,7 +18368,7 @@ class ConceptualSpace(Space):
             self._refresh_frozen_values_hook()
         return out
 
-    def concept_weights(self, row, *, conjunctive=False):
+    def concept_weights(self, row, *, conjunctive=False, negated=False):
         """The ``(col, weight)`` edges of GLOBAL concept ``row`` on the
         shared untyped store (cols are global rows; ``nVectors`` is the
         bias column), sorted by col. Empty when none."""
@@ -18371,9 +18383,10 @@ class ConceptualSpace(Space):
         # convention (col == nVectors); storage uses the store's nOutput.
         _bias = int(ly.nOutput)
         _nv = int(self.nVectors)
-        return sorted(((_nv if int(c) == _bias else int(c)),
+        return sorted(((_nv if int(c) % (_bias + 1) == _bias else int(c) % (_bias + 1)),
                        float(ly.values[i]))
-                      for (rr, c), i in ly._index.items() if rr == r)
+                      for (rr, c), i in ly._index.items()
+                      if rr == r and (int(c) > _bias) == bool(negated))
 
     def _sparse_family_nnz(self):
         """Total edge count over the DISTINCT family layers (v3: every order
@@ -18456,31 +18469,18 @@ class ConceptualSpace(Space):
         return act.clamp(min=0.0) if nonneg else act
 
     def cs_decode(self, order, concept_activation, what_W):
-        """Dictionary decoder: scale each concept's stored ConceptDim atom by
-        its signed activation. ``concept_activation`` is ``[n_concepts_o, B]``
-        (the sparse encoder output for ``order``); ``what_W`` is the FULL
-        ``CS.subspace.what`` codebook (``[nVectors, ConceptDim]``). The order's
-        concepts occupy the stacked slice ``order_slice(order)``. Returns the
-        per-concept code slab ``[B, n_concepts_o, ConceptDim]`` -- concept
-        ``c``'s row is ``activation[c] * what[slice_start + c]`` (so percepts in
-        PerceptDim and concepts in ConceptDim never share a vector space).
-        The live forward uses the same signed-row decode over the full
-        inventory (:meth:`cs_forward_content`)."""
+        """Two symbol rows share one distributed code at each concept row."""
+        from ConceptEvidence import decode
         start, end = self.order_slice(order)
-        atoms = what_W[start:end]                    # [n_concepts_o, ConceptDim]
-        a = concept_activation.t().unsqueeze(-1)     # [B, n_concepts_o, 1]
-        return a * atoms.unsqueeze(0)                # [B, n_concepts_o, ConceptDim]
+        return decode(concept_activation, what_W[start:end])
 
     def cs_snap_order0(self, settled_event, ema=False):
-        """The LATE-CUTOVER SNAP (P2): read the settled mixed field against
-        the ORDER-0 block of the conceptual codebook. Read = differentiable
-        normalized-sum presence (slot-mean projection onto the unit atom
-        direction in hypercube-diagonal units -- magnitude-preserving, NOT
-        cosine), tanh-squashed: ``a_0[v, b]`` in ``[0, 1)``. With ``ema``
-        (training only) the winning order-0 rows EMA toward their slot
-        contents under ``no_grad`` -- the identity/position trace; codebooks
-        stay EMA-only. Returns ``a_0 [caps[0], B]`` or ``None`` when the
-        codebook is unavailable."""
+        """Read both poles per occurrence before any union over locations.
+
+        Projections use unit code directions in hypercube-diagonal units.
+        A measured floor admits evidence separately to each pole. Return
+        [order-zero concept, batch, occurrence, 2]; EMA stays identity-only.
+        """
         cb = getattr(self, "similarity_codebook", None)
         W_full = cb.getW() if (cb is not None and hasattr(cb, "getW")) else None
         if (settled_event is None or W_full is None
@@ -18500,10 +18500,11 @@ class ConceptualSpace(Space):
         # through CloneBackward): the EMA write below mutates the same rows
         # in-place, and a saved live VIEW would fail backward with a
         # version-counter error (the SS-leg clone lesson).
-        # Dual-towers rev 2 (design 2026-07-10 "Why" #1): SIGNED readout --
-        # the nonneg clamp annihilated the mean-negative epoch-1 readout.
-        a_0 = torch.tanh(self.source_code_activation(
-            ev, W0.clone(), nonneg=False, normalize=True))   # [caps0, B]
+        from ConceptEvidence import admit
+        D = min(int(ev.shape[-1]), int(W0.shape[-1]))
+        atoms = F.normalize(W0[:, :D].clone(), dim=-1, eps=1e-8)
+        projection = torch.matmul(ev[..., :D], atoms.t()) / math.sqrt(max(1, D))
+        a_0 = admit(projection, self.concept_evidence_floor).permute(2, 0, 1, 3)
         if ema and self.training:
             with torch.no_grad():
                 D = min(int(ev.shape[-1]), int(W0.shape[-1]))
@@ -18546,113 +18547,130 @@ class ConceptualSpace(Space):
             return None
         return lam * total
 
-    def _concept_rung_presence(self, u, admitted, start, end):
-        """Two scatter passes over parts, with same-order pi feeding sigma."""
+    def _concept_rung_presence(self, field, start, end):
+        """Four chart scatters with pi on; each occurrence keeps its scope."""
         ly = _concept_alloc_of(self).layer(0)
-        S = ly.nOutput
-        x = torch.cat([u[:S], u.new_ones((1, u.shape[-1]))])
-        allowed = torch.cat([admitted[:S], admitted.new_ones((1, u.shape[-1]))])
-        own = None
+        S, B, L, _ = field.shape
+        positive = field[..., 0].reshape(S, B * L)
+        negative = field[..., 1].reshape(S, B * L)
+        x = torch.cat((positive, positive.new_ones(1, B * L),
+                       negative, negative.new_zeros(1, B * L)))
+        own, has_pi = None, None
         if self.conceptual_pi:
-            own = ly.conjunctive.fold_presence(
-                x * allowed, conjunctive=True, start=start, end=end)
-            x = x.index_copy(0, torch.arange(start, end, device=x.device), own)
-            # Same-order sources are conjunctions, including their gate.
-            gates = ly.participation[start:end].clone().to(x.device)[:, None]
-            x = x.index_copy(0, torch.arange(start, end, device=x.device), own * gates)
-            has_pi = x.new_zeros(end - start)
-            rr, _ = ly.conjunctive._indices(x.device)
-            rr = rr[(rr >= start) & (rr < end)] - start
-            has_pi = has_pi.index_add(0, rr, torch.ones_like(rr, dtype=x.dtype))
-            allowed = allowed.index_copy(0, torch.arange(start, end, device=x.device),
-                                         (has_pi > 0).to(x.dtype)[:, None].expand(-1, x.shape[-1]))
-        return ly.fold_presence(x, start=start, end=end, admitted=allowed, own=own)
+            own = torch.stack((
+                ly.conjunctive.fold_presence(x, conjunctive=True, start=start, end=end),
+                ly.conjunctive.fold_presence(x, dual=True, start=start, end=end)), -1)
+            gates = ly.participation[start:end].clone().to(x)[:, None]
+            rows = torch.arange(start, end, device=x.device)
+            x = x.index_copy(0, rows, own[..., 0] * gates)
+            x = x.index_copy(0, rows + S + 1, own[..., 1] * gates)
+            has_pi = self._concept_part_rows(ly.conjunctive, x.device)[start:end]
+        result = torch.stack((
+            ly.fold_presence(x, start=start, end=end,
+                             own=None if own is None else own[..., 0], own_mask=has_pi),
+            ly.fold_presence(x, start=start, end=end, conjunctive=True, dual=True,
+                             own=None if own is None else own[..., 1], own_mask=has_pi)), -1)
+        return result.reshape(end - start, B, L, 2)
+
+    @staticmethod
+    def _concept_part_rows(matrix, device):
+        """Only positive exponents define a part; zero is unassigned."""
+        rows, _ = matrix._indices(device)
+        mass = torch.zeros(matrix.nOutput, device=device)
+        if matrix.values is not None:
+            mass = mass.index_add(0, rows, matrix.values.detach().to(device).clamp_min(0))
+        return mass > 0
 
     def cs_forward_content(self, a_0, dictionary):
-        """Union over parts per rung; optional conjunction pass precedes it.
+        """Compose paired evidence within occurrences, then read two symbols.
 
-        Presence travels between rungs; signed evidence scales code atoms.
-        Participation gates both readings before the top-K taper. Pruned
-        disjunctive parts contribute no evidence, including negated parts.
+        The taper ranks either pole and admits both together. Only the bounded
+        store span is materialized, independently of dictionary capacity.
         """
+        from ConceptEvidence import symbols, decode
+        if a_0.ndim != 4 or a_0.shape[-1] != 2:
+            raise ValueError('snap requires [concept, batch, occurrence, 2]')
         self._ensure_concept_pool()
-        N, B = int(self.nVectors), int(a_0.shape[-1])
         caps = self._order_caps()
         ly = _concept_alloc_of(self).layer(0)
+        S, B, L = ly.nOutput, a_0.shape[1], a_0.shape[2]
         n0 = int(a_0.shape[0])
-        a = torch.cat([a_0, a_0.new_zeros((N - n0, B))])
-        u = torch.cat([(a_0 + 1) * .5, a_0.new_zeros((N - n0, B))])
-        admitted = torch.cat([a_0.new_ones((n0, B)), a_0.new_zeros((N - n0, B))])
-        level_acts = [float(a.detach().abs().max())]
-        sel_rows = [torch.arange(n0, device=a.device)[:, None].expand(-1, B)]
-        priority = getattr(self, "_relevance_priority", None)
+        field = torch.cat((a_0, a_0.new_zeros(S - n0, B, L, 2)))
+        level_acts = [float(a_0.detach().max())]
+        sel_rows = [torch.arange(n0, device=field.device)[:, None].expand(-1, B)]
+        priority = getattr(self, '_relevance_priority', None)
+        p_rel = None
         if torch.is_tensor(priority):
-            p_rel = (priority if priority.dim() == 2 else priority[:, None])
-            p_rel = p_rel.to(a).expand(N, B).detach()
-        else:
-            p_rel = None
+            p_rel = (priority if priority.ndim == 2 else priority[:, None])[:S]
+            p_rel = p_rel.to(field).expand(S, B).detach()
         for k in range(1, min(int(self._symbolic_order) + 1, len(caps))):
-            start, end = self.order_slice(k)
-            n_alloc = min(int(ly._row_next.get(start, 0)), end - start)
-            if n_alloc <= 0:
+            start, stop = self.order_slice(k)
+            count = min(int(ly._row_next.get(start, 0)), stop - start)
+            if count <= 0:
                 level_acts.append(0.)
                 continue
-            end = start + n_alloc
-            rows = torch.arange(start, end, device=a.device)
-            y = self._concept_rung_presence(u, admitted, start, end)
-            gate = ly.participation[start:end].clone().to(a)[:, None]
-            ready = (~ly.provisional[start:end] | ly.assigned[start:end]).to(a)[:, None]
-            cand = gate * (2 * y - 1) * ready
-            rank = cand.abs()
+            end = start + count
+            rows = torch.arange(start, end, device=field.device)
+            raw = self._concept_rung_presence(field, start, end)
+            gate = ly.participation[start:end].clone().to(field)[:, None, None, None]
+            ready = (~ly.provisional[start:end] | ly.assigned[start:end]).to(field)
+            candidate = raw * gate * ready[:, None, None, None]
+            rank = symbols(candidate).amax(-1)
             score = None
             if p_rel is not None:
                 with torch.no_grad():
-                    x = torch.cat([p_rel[:ly.nOutput], p_rel.new_zeros((1, B))])
+                    pole = torch.cat((p_rel, p_rel.new_zeros(1, B)))
+                    x = torch.cat((pole, pole))
                     hop = ly.forward_linear_abs(x)
                     if self.conceptual_pi:
                         hop = hop + ly.conjunctive.forward_linear_abs(x)
                     score = p_rel[start:end] + hop[start:end]
                 rank = rank * (1 + score)
-            _, topi = torch.topk(rank, min(int(caps[k]), n_alloc), dim=0)
-            mask = torch.zeros_like(cand).scatter(0, topi, 1.) * ready
-            a = a.index_copy(0, rows, cand * mask)
-            u = u.index_copy(0, rows, gate * y * mask)
-            admitted = admitted.index_copy(0, rows, mask)
+            _, topi = torch.topk(rank, min(int(caps[k]), count), dim=0)
+            mask = torch.zeros_like(rank).scatter(0, topi, 1.) * ready[:, None]
+            field = field.index_copy(0, rows, candidate * mask[:, :, None, None])
             if p_rel is not None:
                 p_rel = p_rel.index_copy(0, rows, score * mask)
-            level_acts.append(float((cand * mask).detach().abs().max()))
+            level_acts.append(float((candidate * mask[:, :, None, None]).detach().max()))
             sel_rows.append(rows[topi])
-        object.__setattr__(self, "_cs_level_acts", level_acts)
-        object.__setattr__(self, "_cs_level_rows", [r.detach() for r in sel_rows])
-        object.__setattr__(self, "_cs_wave_qe", None)
-        return a.t().unsqueeze(-1) * dictionary.clone().unsqueeze(0), a
+        object.__setattr__(self, '_cs_level_acts', level_acts)
+        object.__setattr__(self, '_cs_level_rows', [r.detach() for r in sel_rows])
+        object.__setattr__(self, '_cs_wave_qe', None)
+        return decode(field, dictionary[:S].clone()), field
 
-    def cs_reverse_presence(self, y):
-        """Traverse the pyramid by W_sigma then W_pi chart transposes.
-
-        Input and output are presences. A zero input row supplies no query;
-        a conjunction shares log-presence, a union shares log-complement.
-        This is a balanced many-to-one reconstruction, not an inverse of
-        a particular choice among alternative parts.
-        """
+    def cs_reverse_presence(self, field):
+        """Transpose each pole in its own chart, preserving occurrence scope."""
+        if field.ndim != 4 or field.shape[-1] != 2:
+            raise ValueError('reverse requires [concept, batch, occurrence, 2]')
         ly = _concept_alloc_of(self).layer(0)
-        S = ly.nOutput
-        result = y.clone()
+        S, B, L = ly.nOutput, field.shape[1], field.shape[2]
+        result = field[:S].clone()
         for k in range(min(int(self._symbolic_order), len(self._order_caps()) - 1), 0, -1):
             start, end = self.order_slice(k)
-            own = result.new_zeros(S)
+            own = self._concept_part_rows(ly.conjunctive, field.device) if self.conceptual_pi else None
+            poles = result.reshape(S, B * L, 2)
+            contributions, own_poles = [], []
+            for channel in range(2):
+                part, own_part = ly.reverse_presence(
+                    poles[..., channel], start=start, end=end,
+                    conjunctive=bool(channel), dual=bool(channel), own=own)
+                contributions.append(part)
+                own_poles.append(own_part)
+            combined = 1 - (1 - contributions[0]) * (1 - contributions[1])
             if self.conceptual_pi:
-                rr, _ = ly.conjunctive._indices(y.device)
-                rr = rr[(rr >= start) & (rr < end)]
-                own = own.index_add(0, rr, torch.ones_like(rr, dtype=y.dtype)).gt(0)
-            sigma, pi_y = ly.reverse_presence(result[:S], start=start, end=end, own=own)
-            if self.conceptual_pi:
-                pi_input = 1 - (1 - pi_y) * (1 - sigma[:S] * own[:, None])
-                pi, _ = ly.conjunctive.reverse_presence(
-                    pi_input.clamp(0, 1), conjunctive=True, start=start, end=end)
-                sigma = sigma + pi
-            # Independent paths combine by union; preserve a stronger query.
-            result = torch.cat([1 - (1 - result[:S]) * (1 - sigma[:S].clamp(0, 1)), result[S:]])
+                # Same-order disjuncts address their pi result, not another
+                # sigma level. Feed that share and the own conjunct to W_pi.
+                for channel in range(2):
+                    offset = channel * (S + 1)
+                    share = combined[offset:offset + S] * own[:, None]
+                    pi_input = 1 - (1 - own_poles[channel]) * (1 - share)
+                    part, _ = ly.conjunctive.reverse_presence(
+                        pi_input, start=start, end=end,
+                        conjunctive=not bool(channel), dual=bool(channel))
+                    combined = 1 - (1 - combined) * (1 - part)
+            inferred = torch.stack((combined[:S], combined[S + 1:2 * S + 1]), -1)
+            inferred = inferred.reshape(S, B, L, 2).clamp(0, 1)
+            result = 1 - (1 - result) * (1 - inferred)
         return result
 
     # -- per-order weight population at mint (abstraction_order-keyed) ---------
@@ -18831,9 +18849,9 @@ class ConceptualSpace(Space):
         (:meth:`cs_snap_order0`, EMA identity trace while training) and run
         the iterated wave composition (:meth:`cs_forward_content`) --
         quantization happens ONLY here, at the bandwidth seam, as late as
-        possible. Returns ``(content, activations)`` -- the final signed
-        activations ``[N, B]`` are the 0-D symbols (grad-bearing; the SS leg
-        is built from them); the content feeds the losses/SS leg ONLY and is
+        possible. Returns ``(content, evidence)`` -- the paired field
+        ``[S, B, occurrence, 2]`` carries the grad-bearing symbols; the
+        content feeds the losses/SS leg only and is
         NEVER substituted back into the subsymbolic carrier (decision 10:
         ``sparseReplace`` retired). ``(settled, None)`` when inactive or the
         shapes are unusable."""
@@ -18850,7 +18868,7 @@ class ConceptualSpace(Space):
         if a_0 is None:
             return settled, None
         object.__setattr__(self, "_cs_last_a0", a_0.detach())
-        content, acts = self.cs_forward_content(a_0, dict_W)   # acts [N, B]
+        content, acts = self.cs_forward_content(a_0, dict_W)
         # Stage the pyramid's per-order winners on the subspace index so a
         # generic materialize() pulls exactly the selected codes (rev 2 #6).
         rows = getattr(self, "_cs_level_rows", None)
@@ -19350,7 +19368,7 @@ class ConceptualSpace(Space):
                 if row == c_row:
                     with torch.no_grad():
                         value = matrix.values[pos]
-                        matrix.values[pos] = value.sign() * (value.abs() + eta).clamp_max(cap)
+                        matrix.values[pos] = (value.clamp_min(0) + eta).clamp_max(cap)
 
     def _decay_concept_edges(self, cid, factor=0.9):
         """Scale ``cid``'s sparse edge values by ``factor`` (the forgetting
@@ -19368,12 +19386,13 @@ class ConceptualSpace(Space):
             return None                            # unallocated: no edges
         return max(float(matrix.decay_row(c_row, factor=factor)) for matrix in ly.part_matrices())
 
-    # Context is a sparse row over witnessed concepts. The provisional pool
+    # Context is a dense host row over the bounded taper span. The provisional pool
     # uses the same rows and part matrices as discovered concepts.
     def _ensure_concept_pool(self):
         if not self._promotion_enabled or not self._sparse_active():
             return
         ly = _concept_alloc_of(self).layer(0)
+        ly.ensure_context()
         for order in range(1, len(self._order_caps())):
             start, end = self.order_slice(order)
             missing = self.concept_pool_size - int(ly.provisional[start:end].sum())
@@ -19392,32 +19411,25 @@ class ConceptualSpace(Space):
         self._sparse_families(0)
 
     @staticmethod
-    def _context_vector(matrix, row):
-        result = torch.zeros(matrix.nInput, device='cpu')
-        if matrix.values is not None:
-            values = matrix.values.detach().cpu()
-            for (r, col), pos in matrix._index.items():
-                if r == row:
-                    result[col] = values[pos]
-        return result
-
-    @staticmethod
     def _context_cosine(a, b):
         return float(torch.dot(a, b) / (a.norm() * b.norm()).clamp_min(1e-12))
 
     @torch.no_grad()
     def _write_concept_context(self, row, context):
         ly = _concept_alloc_of(self).layer(0)
-        where = ly.where
-        previous = self._context_vector(where, row)
+        where = ly.ensure_context()
         beta = self.concept_use_ewma if int(ly.context_seen[row]) else 0.
-        updated = beta * previous + (1 - beta) * context
-        for col in updated.nonzero().flatten().tolist():
-            pos = where.add_edge(row, col, weight=0.)
-            where.values[pos] = updated[col].to(where.values.device)
-        if where.values is not None:
-            where.values.requires_grad_(False)
+        where[row].mul_(beta).add_(context.cpu(), alpha=1 - beta)
         ly.context_seen[row] = ly.observation
+
+    @staticmethod
+    @torch.no_grad()
+    def _normalize_concept_parts(matrix, row):
+        rows, _ = matrix._indices(matrix._device())
+        positions = (rows == row).nonzero().flatten()
+        if matrix.values is not None and len(positions):
+            values = matrix.values[positions].clamp_min(0)
+            matrix.values[positions] = values / values.max().clamp_min(1e-12)
 
     def _witnessed_rows(self):
         """Only percepts and kinds discovered from them have witnessed where."""
@@ -19438,29 +19450,27 @@ class ConceptualSpace(Space):
 
     @torch.no_grad()
     def _assign_concept_parts(self, order, parts, context, *, conjunctive=False, evidence=None):
-        """VQ assignment touches provisional rows only; discovery fixes identity."""
+        """Match definitions or contexts in rows; assignment never mints a copy."""
         ly = _concept_alloc_of(self).layer(0)
+        where = ly.ensure_context()
         start, end = self.order_slice(order)
         matrix = ly.conjunctive if conjunctive else ly
-        desired = torch.zeros(ly.nOutput)
+        offset = ly.nOutput + 1
+        desired = torch.zeros(matrix.nInput, device='cpu')
         desired[list(parts)] = 1.
-        # Recurrent definitions reuse their row, without competing against
-        # discovered concepts or suppressing any other concept's activity.
-        best, score = None, self.concept_match_cos
-        for row in range(start, end):
-            if not bool(ly.assigned[row]):
-                continue
-            current = self._context_vector(matrix, row)[:ly.nOutput].abs()
-            if conjunctive:
-                # Every co-present part is necessary: a partial set must not
-                # reuse and dilute a different conjunction's definition.
-                match = float(torch.equal(current > 0, desired > 0))
-            else:
-                if not bool(current.any()):
-                    continue
-                match = self._context_cosine(context, self._context_vector(ly.where, row))
-            if match >= score:
-                best, score = row, match
+        definitions = torch.zeros(end - start, matrix.nInput, device='cpu')
+        rr, cc = matrix._indices(torch.device('cpu'))
+        selected = (rr >= start) & (rr < end)
+        if matrix.values is not None:
+            definitions[rr[selected] - start, cc[selected]] = matrix.values.detach().cpu()[selected].clamp_min(0)
+        if conjunctive:
+            scores = ((definitions > 0) == (desired > 0)).all(-1).float()
+        else:
+            scores = (where[start:end] @ context) / (where[start:end].norm(dim=-1) * context.norm()).clamp_min(1e-12)
+        valid = ly.assigned[start:end].cpu() & (definitions > 0).any(-1)
+        scores = scores.masked_fill(~valid, -1)
+        score, index = scores.max(0)
+        best = start + int(index) if float(score) >= self.concept_match_cos else None
         if best is None:
             candidates = [r for r in range(start, end) if bool(ly.provisional[r])
                           and (not bool(ly.assigned[r]) or
@@ -19470,43 +19480,38 @@ class ConceptualSpace(Space):
             best = min(candidates, key=lambda r: (bool(ly.assigned[r]),
                                                   float(ly.participation[r]),
                                                   int(ly.context_seen[r]), r))
-            # Recycling clears every reference to the provisional row. No
-            # discovered identity or LTM reference can name it yet.
-            for m in (*ly.part_matrices(), ly.where):
-                m.remove_edges([(r, c) for r, c in m._index if r == best or c == best])
+            for m in ly.part_matrices():
+                m.remove_edges([(r, c) for r, c in m._index
+                                if r == best or c % offset == best])
+            where[best].zero_()
+            where[:, best].zero_()
             ly.participation[best] = 0.
             ly.context_seen[best] = 0
             ly.assigned[best] = True
             ly.witnessed[best] = True
         new_assignment = not any(r == best for r, _ in matrix._index)
         if evidence is not None and not new_assignment:
-            for (r, col), pos in matrix._index.items():
-                if r == best:
-                    matrix.values[pos].mul_(self.concept_use_ewma)
+            rr, _ = matrix._indices(matrix._device())
+            matrix.values[rr == best] *= self.concept_use_ewma
         for col in parts:
-            support = float(ly.witness_strength[col])
-            support = support if support > 0 else 1.
+            source, negative = col % offset, col >= offset
+            support = float(ly.witness_strength[source]) or 1.
             existed = (best, col) in matrix._index
-            pos = self.add_concept_edge(best, col, weight=support, conjunctive=conjunctive)
-            if pos is not None:
-                # Co-observation is positive evidence. EWMA acts alongside
-                # ordinary gradients; it never updates participation by loss.
-                if existed and evidence is not None:
-                    matrix.values[pos].add_((1 - self.concept_use_ewma) * float(evidence[col]))
-            cid = self.concept_id_at_row(best)
-            part = self.concept_id_at_row(col)
+            pos = self.add_concept_edge(best, source, weight=support,
+                                        conjunctive=conjunctive, negated=negative)
+            if pos is not None and existed and evidence is not None:
+                matrix.values[pos].add_((1 - self.concept_use_ewma) * float(evidence[col]))
+            cid, part = self.concept_id_at_row(best), self.concept_id_at_row(source)
             if cid is not None and part is not None:
                 _concept_alloc_of(self).add(cid, 'part', ('sym', int(part)))
+        self._normalize_concept_parts(matrix, best)
         self._write_concept_context(best, context)
         return best
 
     @torch.no_grad()
     def promotion_observe(self):
-        """Match wheres across occasions, and optionally whole co-present sets.
-
-        The staged admitted field is consumed once at the sentence boundary.
-        Contexts and gates are buffers on rows; there is no candidate cache.
-        """
+        """Match contexts by matrix-vector product; gate by raw paired use."""
+        from ConceptEvidence import symbols
         if not self._promotion_enabled or not self._sparse_active():
             return
         acts = getattr(self, '_promo_last_acts', None)
@@ -19517,25 +19522,26 @@ class ConceptualSpace(Space):
             raise RuntimeError('ConceptualSpace.promotion_observe: NaN/Inf in admitted activations')
         self._ensure_concept_pool()
         ly = _concept_alloc_of(self).layer(0)
-        N = ly.nOutput
+        N, offset = ly.nOutput, ly.nOutput + 1
         a = acts.detach().cpu()[:N]
+        readings = symbols(a)
         level_rows = getattr(self, '_cs_level_rows', ())
         if not level_rows:
             return
         selected = torch.cat([r.detach().cpu() for r in level_rows])
-        for b in range(a.shape[-1]):
+        witnessed = set(self._witnessed_rows())
+        where = ly.ensure_context()
+        for b in range(a.shape[1]):
             ly.observation.add_(1)
             tick = int(ly.observation)
-            witnessed = self._witnessed_rows()
-            active = sorted(set(selected[:, b].tolist()) & set(witnessed))
-            active = [r for r in active if float(a[r, b]) > 1e-3]
-            field = torch.zeros(N)
-            field[active] = (a[active, b] + 1) * .5
+            active = sorted(set(selected[:, b].tolist()) & witnessed)
+            active = [r for r in active if float(readings[r, b, 0]) > 1e-3]
+            field = torch.zeros(N, device='cpu')
+            field[active] = readings[active, b, 0]
+            evidence = torch.cat((field, field.new_zeros(1), readings[:, b, 1], field.new_zeros(1)))
             for focal in active:
                 beta = self.concept_use_ewma if int(ly.context_seen[focal]) else 0.
                 ly.witness_strength[focal] = beta * ly.witness_strength[focal] + (1 - beta) * field[focal]
-            # Match against earlier occasions, never another focal from this
-            # occasion. Update source wheres only after assignment decisions.
             for focal in active:
                 context = field.clone()
                 context[focal] = 0
@@ -19548,38 +19554,39 @@ class ConceptualSpace(Space):
                 start, end = self.order_slice(order)
                 alternatives = [r for r in witnessed if start <= r < end and r != focal
                                 and r not in active and 0 < int(ly.context_seen[r]) < tick]
-                matches = [(self._context_cosine(context, self._context_vector(ly.where, r)), r)
-                           for r in alternatives]
-                if matches:
-                    similarity, other = max(matches)
-                    if similarity >= self.concept_match_cos:
-                        self._assign_concept_parts(order + 1, (focal, other), context, evidence=field)
+                if alternatives:
+                    similarities = (where[alternatives] @ context) / (where[alternatives].norm(dim=-1) * context.norm()).clamp_min(1e-12)
+                    similarity, index = similarities.max(0)
+                    if float(similarity) >= self.concept_match_cos:
+                        self._assign_concept_parts(order + 1, (focal, alternatives[int(index)]), context, evidence=evidence)
             if self.conceptual_pi:
-                for order in range(len(self._order_caps()) - 1):
-                    start, end = self.order_slice(order)
-                    parts = [r for r in active if start <= r < end]
-                    if len(parts) >= 2:
-                        context = field.clone()
-                        context[parts] = 0
-                        self._assign_concept_parts(order + 1, parts, context, conjunctive=True, evidence=field)
+                # Co-presence is within an occurrence. Independent locations
+                # cannot supply counterevidence to one another's conjunction.
+                for location in range(a.shape[2]):
+                    for order in range(len(self._order_caps()) - 1):
+                        start, end = self.order_slice(order)
+                        parts = [r + polarity * offset for r in witnessed
+                                 if start <= r < end for polarity in range(2)
+                                 if float(a[r, b, location, polarity]) > self.concept_use_floor]
+                        if len(parts) >= 2:
+                            context = field.clone()
+                            context[[c % offset for c in parts]] = 0
+                            self._assign_concept_parts(order + 1, parts, context,
+                                                       conjunctive=True, evidence=evidence)
             for focal in active:
                 context = field.clone()
                 context[focal] = 0
                 self._write_concept_context(focal, context)
-            # Evaluate the raw concept, before its participation gate. Gates
-            # therefore grow from zero by use and cannot train themselves on.
-            u = field[:, None]
-            admitted = (field > 0).float()[:, None]
-            beta = self.concept_use_ewma
+            u = a[:, b:b + 1].clone()
             for order in range(1, len(self._order_caps())):
                 start, end = self.order_slice(order)
-                raw = self._concept_rung_presence(u, admitted, start, end).cpu()
+                raw = self._concept_rung_presence(u, start, end).cpu()
                 managed = ly.managed[start:end] & ly.assigned[start:end]
-                use = (raw[:, 0] > self.concept_use_floor).to(ly.participation)
+                use = (symbols(raw).amax(dim=(1, 2)) > self.concept_use_floor).to(ly.participation)
                 gates = ly.participation[start:end]
-                gates[managed] = beta * gates[managed] + (1 - beta) * use[managed]
-                u[start:end] = raw * gates.cpu()[:, None] * managed.cpu()[:, None]
-                admitted[start:end] = managed.cpu()[:, None]
+                gates[managed] = self.concept_use_ewma * gates[managed] + (1 - self.concept_use_ewma) * use[managed]
+                ready = (~ly.provisional[start:end] | ly.assigned[start:end]).cpu()
+                u[start:end] = raw * gates.cpu()[:, None, None, None] * ready[:, None, None, None]
         self._maybe_rebuild_optimizer_for_csw()
 
     @torch.no_grad()
@@ -19599,6 +19606,7 @@ class ConceptualSpace(Space):
             for matrix in ly.part_matrices():
                 matrix.remove_edges([(r, col) for (r, col), pos in matrix._index.items()
                                      if r == row and abs(float(matrix.values[pos])) < self.concept_part_floor])
+                self._normalize_concept_parts(matrix, row)
             cid = alloc.new_concept()
             old_key = ly._tensor_row_keys.pop(row)
             ly._tensor_rows.pop(old_key)
@@ -19606,9 +19614,11 @@ class ConceptualSpace(Space):
             ly._tensor_rows[key] = row
             ly._tensor_row_keys[row] = key
             ly.provisional[row] = False
+            ly.managed[row] = False
+            ly.participation[row] = 1.
             for matrix in ly.part_matrices():
                 for r, col in matrix._index:
-                    part = self.concept_id_at_row(col)
+                    part = self.concept_id_at_row(col % (ly.nOutput + 1))
                     if r == row and part is not None:
                         alloc.add(cid, 'part', ('sym', int(part)))
             alloc.placement[cid] = order
@@ -19618,9 +19628,9 @@ class ConceptualSpace(Space):
             cb = getattr(self, 'similarity_codebook', None)
             W = cb.getW() if cb is not None else None
             if W is not None:
-                parts = [(col, abs(float(m.values[pos])))
+                parts = [(col % (ly.nOutput + 1), (1 if col <= ly.nOutput else -1) * float(m.values[pos]))
                          for m in ly.part_matrices() for (r, col), pos in m._index.items()
-                         if r == row and col < ly.nOutput]
+                         if r == row and col % (ly.nOutput + 1) < ly.nOutput]
                 if parts:
                     code = sum(weight * W[col] for col, weight in parts)
                     # Codebook updates occur at the host boundary; forward
@@ -22538,6 +22548,8 @@ class ConceptualSpace(Space):
         # field, driven by ``BasicModel._forward_body``). None clears any
         # stale activation stamp from a prior pass on the same object.
         object.__setattr__(self.subspace, "_concept_activations", None)
+        object.__setattr__(self.subspace, "_concept_codes", None)
+        object.__setattr__(self.subspace, "_thought_occurrence", None)
         object.__setattr__(self.subspace, "_index", None)  # stale top-K clear
         # STM bookkeeping (2026-05-28 fix). Mode-dependent:
         #

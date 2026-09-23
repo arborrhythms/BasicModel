@@ -17,6 +17,7 @@ import sys
 
 sys.path.insert(0, "bin")
 import torch
+from test_cs_sparse_weights import _evidence
 
 from recon_bench import _build_model, _resolve_config
 
@@ -149,13 +150,13 @@ def test_priority_reranks_topk_selection():
     a_0[3, 0] = 0.9
     a_0[5, 0] = 0.9
     what = torch.randn(16, 32)
-    cs.cs_forward_content(a_0, what)
+    cs.cs_forward_content(_evidence(a_0), what)
     assert int(cs._cs_level_rows[1][0, 0]) == rA
     prio = torch.zeros(16)
     prio[rB] = 100.0
     object.__setattr__(cs, "_relevance_priority", prio)
     try:
-        cs.cs_forward_content(a_0, what)
+        cs.cs_forward_content(_evidence(a_0), what)
         assert int(cs._cs_level_rows[1][0, 0]) == rB
     finally:
         object.__setattr__(cs, "_relevance_priority", None)
@@ -168,12 +169,12 @@ def test_priority_never_distorts_activations():
     a_0[3, 0] = 0.9
     a_0[5, 0] = 0.9
     what = torch.randn(16, 32)
-    _c, acts_plain = cs.cs_forward_content(a_0, what)
+    _c, acts_plain = cs.cs_forward_content(_evidence(a_0), what)
     prio = torch.zeros(16)
     prio[rB] = 100.0
     object.__setattr__(cs, "_relevance_priority", prio)
     try:
-        _c, acts_prio = cs.cs_forward_content(a_0, what)
+        _c, acts_prio = cs.cs_forward_content(_evidence(a_0), what)
     finally:
         object.__setattr__(cs, "_relevance_priority", None)
     assert torch.allclose(acts_plain[rA], acts_prio[rA])
@@ -188,13 +189,13 @@ def test_priority_spreads_through_edge_magnitudes():
     a_0[3, 0] = 0.9
     a_0[5, 0] = 0.9
     what = torch.randn(16, 32)
-    cs.cs_forward_content(a_0, what)
+    cs.cs_forward_content(_evidence(a_0), what)
     assert int(cs._cs_level_rows[1][0, 0]) == rA
     prio = torch.zeros(16)
     prio[5] = 100.0                    # rB's CONSTITUENT (order-0 row 5)
     object.__setattr__(cs, "_relevance_priority", prio)
     try:
-        cs.cs_forward_content(a_0, what)
+        cs.cs_forward_content(_evidence(a_0), what)
         assert int(cs._cs_level_rows[1][0, 0]) == rB, (
             "constituent priority must spread up through |W|")
     finally:

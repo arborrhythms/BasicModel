@@ -642,7 +642,11 @@ The implementation keeps percept and concept/symbol carriers distinct:
 | metric | dot product for concepts; projective lookup for Lexicon rows |
 | magnitude | scalar activation carries certainty |
 
-In the aligned sparse conceptual implementation, the stored `ConceptDim` atom
+The parallel conceptual field uses independent `(c⁺, c⁻)` presences and two
+symbols per code, as detailed below. The table above describes the signed
+vector geometry of an individual serial reference, not storage of that pair.
+
+In the aligned serial conceptual implementation, the stored `ConceptDim` atom
 is a signed unit direction. Magnitude lives in the scalar activation:
 `concept_code = signed_activation * atom`. The canonical serial dictionary is
 initialized on that sphere and is not an Adam parameter: after a sentence
@@ -755,7 +759,7 @@ See also [Mereology](Mereology.md) and [Logic](Logic.md).
 |---|---|---|
 | PartSpace radix/meronomy | `[0,1]^d`; presence MSE | percept-presence row |
 | WholeSpace property basis | `[0,1]^d`; property-membership metric | whole-percept property row |
-| SymbolSpace | reference identity + signed activation | ConceptualSpace concept id |
+| SymbolSpace | two pole symbols sharing one concept code; serial references keep their event contract | ConceptualSpace concept id and pole |
 | Conceptual similarity codebook | unit rows; dot product | SBOW concept row |
 
 The ConceptualSpace entry is the concept dictionary's *situating* metric, not
@@ -800,13 +804,10 @@ $\|x\|^2$ add, and the cdist autograd plumbing.
 > **Note.** This dot-product metric is the `similarity_codebook`'s retrieval
 > metric (used by the substitutability / SBOW *situating* signal), NOT the
 > forward concept-production path. When the sparse transform is
-> active, a concept code is produced by the snap + feedforward sigma-pyramid
-> (order $k$: $\mathrm{cand} = \tanh(W [a \mid 1])$ gathered to
-> `order_slice(k)` with a per-batch top-K taper — one hop per order, no
-> re-injection — then $a \cdot \mathrm{softplus}(atom)$) — there is no
-> `argmax_i (x · c_i)` concept retrieval on the forward path, and the atoms
-> are softplus-positive rather than maintained unit-norm by EMA. See
-> **ConceptualSpace $\to$ The symbolic phase**.
+> active, a paired field is produced by the snap and the concept pyramid,
+> using dual presence folds and a per-batch taper. Its two symbols scale
+> opposite directions of one stored concept code. Dictionary identity and
+> evidence are separate. See **ConceptualSpace → The symbolic phase**.
 
 ConceptualSpace concepts are *named directions* in belief space. $x \cdot
 c_i$ gives the *signed strength of belief that $x$ affirms concept $i$*:
@@ -1253,24 +1254,18 @@ direction.
 
 ## ConceptualSpace
 
-**Role.** Forms concepts from perceptual/symbolic *sources*. When the
-sparse transform is active (`symbolicOrder > 0` in parallel mode,
-`_sparse_active()`), a concept is a high-dimensional atom in **ConceptDim**
-(stored in the CS concept dictionary, the `similarity_codebook`) whose signed
-activation is produced by the POST-PUMP SYMBOLIC PHASE (2026-07-02 two-phase
-rework; dual-towers rev 2 feedforward sigma-pyramid, 2026-07-10, superseding
-the v3 iterated wave): the settled field is snapped to the ORDER-0 snap block
-(`cs_snap_order0`) and a feedforward pyramid runs up to $K$ = `symbolicOrder`
-order-indexed rungs over the single untyped square `ConceptualAttentionLayer`
-(one hop per rung, gathered to that order's rows via `order_slice`, with a
-per-batch top-K taper — no fixed point, no re-injection), then each activation
-scales its atom (the decode inlined in `cs_forward_content`). `PerceptDim`
-and `ConceptDim` are **decoupled** (the
-weights live in index/activation space); a concept is NOT an additive linear
-map over percept vectors and there are no "conceptual hyperplanes
-partitioning perceptual space." `CS.forward` itself is ALWAYS STM bookkeeping
-only (the transform fires once per forward at `_forward_body`'s cutover,
-never in-loop). See **The symbolic phase** below.
+**Role.** Forms concepts from perceptual and symbolic sources. With
+`symbolicOrder > 0` in parallel mode, the post-pump snap produces paired
+positive/negative evidence per occurrence. A feedforward pyramid composes
+that field over the bounded taper span S. `W_sigma` stores disjunctive parts;
+`conceptualPi` additionally reads conjunctive parts in `W_pi`. Both poles
+share each part's nonnegative exponent, with dual fold charts. Two symbols
+share one stored concept code. The field feeds the symbol leg and conceptual
+losses, without replacing the subsymbolic carrier. `CS.forward` itself
+performs STM bookkeeping; the pyramid runs once at `_forward_body`'s cutover.
+The [settled design](Architecture.md#decided-in-direction-a-concept-is-sigma-over-pi-alec-2026-09-21)
+and [calibration](benchmarks/2026-09-23-item11/README.md) define the current
+representation and its measured limits.
 
 **Aligned serial geometry.** The BasicModel path is distinct from the
 sparse-parallel phase described below. PS and WS each expose eight live
@@ -1343,91 +1338,55 @@ the master plan, no per-stage caches. The sparse-coding reconstruction is
 referential — the untyped edge lists ARE the concept's decomposition —
 rather than an inverse fold.
 
-**The symbolic phase (two-phase forward, 2026-07-02;
-dual-towers rev 2 FEEDFORWARD SIGMA-PYRAMID, 2026-07-10, superseding the
-v3 iterated wave).** When
-`_sparse_active()` (i.e. `_symbolic_order > 0` and parallel/`serial=false`),
-`BasicModel._forward_body` runs the purely subsymbolic pump for
-`subsymbolicOrder` passes and then ONE cutover on the settled terminal field
-(`cs_symbolic_phase` = the snap + `cs_forward_content`,
-[`bin/Spaces.py`](../bin/Spaces.py)):
+**The symbolic phase.** With `symbolicOrder > 0` and `serial=false`,
+`BasicModel._forward_body` runs the continuous perceptual pump and then
+`cs_symbolic_phase` on the settled terminal field:
 
-```
-a_0        = cs_snap_order0(settled)        # signed tanh normalized-sum presence
-                                            # vs the ORDER-0 snap block (+ EMA trace)
-a          = pad(a_0, N)                    # order-0 rows, zero-padded to the full inventory
-for k in 1..min(K, len(order_caps) - 1):    # K = symbolicOrder: a CEILING, not forced depth
-    start, end = order_slice(k)             # order k's row range in the stacked inventory
-    cand       = tanh(W [a | 1])[start:end] # ONE feedforward hop, gathered to order k's rows
-    winners    = top_k(rank(cand), caps[k]) # per-batch top-K taper (order_caps()[k])
-    a[start:end] = cand * winners_mask      # only the winners commit; losers stay 0
-code[c]    = a[c] * softplus(atom[c])       # dictionary decode (inlined)
+```text
+a0 = cs_snap_order0(settled)              # [order-zero rows, batch, occurrence, 2]
+a  = pad_concept_axis(a0, sum(caps))      # store span S, independent of inventory
+for order in 1..K:
+    candidate = compose_dual_folds(a)    # pi then sigma when conceptualPi is on
+    candidate *= detached_use_gate
+    rank = max_pole(union_occurrences(candidate))
+    a[order_slice(order)] = admit_pairs(candidate, top_k(rank, caps[order]))
+pair = union_occurrences(a)              # [S, batch, 2]; both stays distinct
+symbols[2*i]   =  pair[i, :, 0] * code[i]
+symbols[2*i+1] = -pair[i, :, 1] * code[i]
 ```
 
-`cs_forward_content` ([`bin/Spaces.py`](../bin/Spaces.py)) is a strict
-**feedforward sigma-pyramid**, not an iterated fixed-point wave: order 0 is
-the snap, and each subsequent order $k$ is read straight off `order_slice(k)`
-and computed in exactly ONE hop through the shared store `W` — "No fixed
-point, no re-injection" (the function's own in-code comment). Unlike the
-retired v3 wave there is no repeated re-application of `W` to its own output
-and no additive source term `s` carried step to step; `order_caps()` derives
-each order's row budget as a tile-based taper `[base, base>>1, .., 1]`
-(`base` = `outputShape[0]` tiles, shrunk until the whole taper fits
-`nVectors`), and at each order only the top-`caps[k]` candidates by rank
-survive. Rank defaults to `|cand|`, optionally boosted by
-`self._relevance_priority` (an admitted-rows-only awareness-spreading score,
-`rank = |cand| * (1 + score)` with `score = p[row] + (|W| p)[row]`; absent by
-default, in which case ranking is byte-identical to plain `|cand|` top-K).
-The per-step wave-settle statistic once tracked as `_cs_wave_qe` is now
-hardcoded to `None` (`# wave retired`) — a single feedforward pass has no
-settle dynamics left to report, and the Kripke-groundedness diagnostic that
-read it, `cs_groundedness_probe`, was REMOVED 2026-07-10 along with the wave
-(zero grep hits in the current codebase; see
-[Architecture.md](Architecture.md#relation-table-entry-contract) "Groundedness
-and cycles"). Per-order diagnostics instead live on `_cs_level_acts` /
-`_cs_level_rows` (the winning activations / global row indices at each rung),
-the latter used to stage the pyramid's per-order winners onto the subspace
-index so a generic `materialize()` pulls exactly the selected codes.
+Each rung uses two scatter passes with pi off and four with pi on. The
+positive sigma channel is `-expm1(sum(w * log1p(-presence)))`; its negative
+channel is the conjunction of the literals' negative poles. Pi uses the dual
+charts. A negated part swaps source poles; empty and all-zero definitions
+assert neither. Exact Boolean rails coexist with finite log floors for
+backward. Relevance can boost ranking but does not alter the field's polarity.
+The transpose distributes each pole in its own chart and retains occurrence
+scope. The final symbol read unions across occurrences; the dictionary is
+stored once, with no signed scalar collapsing both into neither.
 
-The percept families AND the per-order role-split families are RETIRED: the
-store is ONE
-square untyped `ConceptualAttentionLayer` (a `SparseLayer` subclass) over the stacked
-concept inventory, edges = fuzzy set-membership degrees, plus a
-bias-column edge for relations bounded above by the EVERYTHING pole (a
-concrete whole retires it). The row space is order-tapered, not a flat
-two-block split: `order_caps()` ([`bin/Spaces.py`](../bin/Spaces.py)) gives
-`[base, base>>1, .., 1]` (`base = min(outputShape[0], N)`, shrunk until the
-whole taper fits `N = nVectors`), and `order_slice(k)` is the `[start, end)`
-row range of order `k` within that stacked taper. The SNAP block is
-`order_slice(0)` (width `base`) and RESERVES codebook rows for order-0
-concepts (no in-edges; their decomposition lives in the reference store);
-`order_slice(k)` for `k = 1..K` is the RELATION POOL, itself sub-divided
-per order (each order's cap is the prior order's `>> 1`, first-come within
-its own slice; overflow warns loudly). Self-edges raise (the Quine
-atom). Weights are **signed** and learnable (`SparseLayer.values`, grown
-host-side by `add_concept_edge`, surfaced via `getParameters()` and
-registered into the optimizer by `_maybe_rebuild_optimizer_for_csw`); the
-store ALSO owns the DISCRETE relation records (ordered
-`[whole, part]` constituents; `ConceptAllocator` in bin/Layers.py holds the
-global ids/caches). Population is at mint: one untyped edge per SYMBOLIC
-constituent plus the EVERYTHING bias edge (`_populate_concept_weights`;
-`_concept_source_order` stays as bookkeeping — $K$ is an ITERATION BUDGET,
-not forced ramsification: a depth-$d$ vine completes at iteration $d$, tail
-links first). Concretely, each sparse entry pairs one concept row index with
-one symbol column index. Repeated entries with the same concept index form its
-set-like definition; recursive `[whole=current, part=rest]` relation concepts
-form a vine. The normative distinction is stated in
-[Architecture.md](Architecture.md#relation-table-entry-contract). The
-phase outputs feed the SS leg, the head-side losses (conceptual SBOW on the
-settled slab), and the concept table — NEVER the subsymbolic carrier
-(`<sparseReplace>` retired). Off-path (`symbolicOrder = 0`) $\to$ no cutover $\to$
-byte-identical.
+`_order_caps()` allocates a tile-based taper `[base, base>>1, ..., 1]`,
+shrinking it to fit the dictionary. Only its span S is materialized.
+`order_slice(0)` reserves the snap rows; higher slices hold compositions and
+the provisional pool. Exponents are trainable and projected nonnegative;
+participation is detached EWMA use. Discovery fixes its gate at one.
+Contexts are a dense CPU S-by-S tensor. Sparse values and pool metadata
+persist once, in the structural sidecar. The module registration supplies
+optimizer identities, not a second checkpoint copy.
 
-**Activation carrier.** `subspace.activation` is the scalar/presence
-activation used by the Space pipeline. Paired `[pos, neg]` tensors still
-appear in explicit grammar/truth operators that implement catuskoti logic,
-and in user-supplied truth-set activations, but they are no longer a
-space-wide output mode.
+The concept allocator also owns ordered constituent records. Existing word,
+object and chain writers remain until item 7 replaces the sequence and
+object-testimony path with the two-truths seal. There is one concept row
+inventory, with conjunctive or disjunctive parts, not different row kinds.
+`symbolicOrder=0` disables this parallel cutover; aligned serial grammar
+continues to use its own event/STM path.
+
+**Activation carrier.** `subspace.activation` remains the ordinary pipeline
+presence gate. The conceptual knowing field is the separate paired
+`_concept_activations` tensor, whose occurrence axis is retained in the
+checkpoint and whose two poles travel through thought effects and the SS
+leg. Serial idea vectors and the pending item-7 LTM seal have their own
+contracts; neither is a substitute for this paired field.
 
 **MASK on `SubSpace._active`.** Two orthogonal per-position tensors:
 `activation` and `_active: [B, N, M]` (modality presence flags).

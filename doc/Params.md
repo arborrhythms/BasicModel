@@ -71,13 +71,13 @@ sub-elements `<training>` and `<data>` (see below).
 | `ergodic` | bool | `false` | Ergodic exploration: eligible layers use `W_eff = bias * W + var * noise`; `bias`/`var` are gradient-energy buffers, not Adam parameters. See [Ergodic.md](Ergodic.md). |
 | `naive` | bool | `false` | Materialise `W_eff` densely in `InvertibleLinearLayer`. Slower; debugging only. `false` uses sequential L / D / U triangular solves. |
 | `serial` | bool | derived | Forward-dispatch mode. `true` = serial / grammatical (per-word `[B, 1, D]` body); `false` = parallel (whole-slab `[B, N, D]` body). If omitted, legacy configs derive it from `symbolicOrder > 0`; new configs should set it explicitly. |
-| `symbolicOrder` | int | `0` | Number of conceptual rungs at the parallel cutover. Each rung reads lower-order parts by union; `conceptualPi` adds the preceding conjunction pass and same-order conjunctive readout. Signed row evidence scales the stored concept code. `0` disables the pyramid; serial grammar dispatch is independent. |
+| `symbolicOrder` | int | `0` | Number of conceptual rungs at the parallel cutover. Each rung reads lower-order parts by union; `conceptualPi` adds the preceding conjunction pass and same-order conjunctive readout. Each concept carries positive and negative evidence per occurrence; its two symbols share one stored code. `0` disables the pyramid; serial grammar dispatch is independent. |
 | `conceptualPi` | bool | `false` | Compute conjunctive parts in `W_pi` before disjunctive parts in `W_sigma`. Also permits the pool to discover co-present wholes, with every observed part necessary. |
 | `attentionPromotion` | bool | `false` | Enable witnessed-context discovery in the conceptual row pool at the parallel sentence boundary. Independent of `truthCriterion`. |
 | `conceptPoolSize` | positive int | `1` | Provisional rows reserved per conceptual order, replenished after discovery, within the fixed inventory. Exhaustion is reported; discovered rows are never recycled. |
 | `conceptUseEWMA` | decimal | `0.9` | Previous-value coefficient for context, part support and participation updates; must be less than one. |
 | `conceptUseFloor` | decimal | `0.5` | Raw presence must exceed this floor to count as use, before participation gates it. |
-| `conceptMintThreshold` | decimal | `0.8` | Participation at or above this value gives the row a permanent concept identity and distributed code. |
+| `conceptMintThreshold` | decimal | `0.8` | Participation at or above this value gives the row a permanent concept identity and distributed code, clears use management, and fixes participation at one. |
 | `conceptRecycleThreshold` | decimal | `0.2` | Reassign the least-used provisional row below this value when no free row remains. Must be below the discovery threshold. |
 | `conceptMatchCos` | decimal | `0.8` | Minimum cosine between witnessed context weights for substitution. A conjunction reuses only its complete observed part set. |
 | `conceptPartFloor` | decimal | `0.001` | Prune exponents weaker in magnitude than this floor when a provisional concept is discovered. |
@@ -323,6 +323,13 @@ PS `<codebook>` element was retired (the percept prototypes live on the
 the analysis/synthesis orientation.
 
 ### `<ConceptualSpace>`
+
+`conceptEvidenceFloor` (decimal in `[0, 1)`, default **0.005**) admits
+per-occurrence snap projections independently to the two poles with
+`relu(±p − τ)/(1 − τ)`. It is measured on the trained parallel smoke model;
+[the receipt](benchmarks/2026-09-23-item11/README.md) records its scope,
+synthetic controls, count accumulation and remaining weak live evidence.
+It is independent of the later `conceptUseFloor` discovery gate.
 
 Holds the conceptual dictionary, location-aligned PS/WS binding state, and
 short-term memory. The sigma/pi fold ladders live on PS and WS, respectively.

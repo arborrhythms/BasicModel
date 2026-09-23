@@ -579,7 +579,7 @@ def test_allocator_square_growth_moves_only_the_everything_bias():
     model._restore_allocator_extras(cs, _allocator_blob(old_n))
 
     layer = allocator.layer()
-    assert (layer.nOutput, layer.nInput) == (new_n, new_n + 1)
+    assert (layer.nOutput, layer.nInput) == (new_n, 2 * (new_n + 1))
     assert layer._rows == [2]
     assert layer._cols == [new_n]
     assert layer._index == {(2, new_n): 0}

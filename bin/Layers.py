@@ -5249,6 +5249,22 @@ class SparseLayer(Layer):
     def nnz(self):
         return len(self._rows)
 
+    def _save_to_state_dict(self, destination, prefix, keep_vars):
+        super()._save_to_state_dict(destination, prefix, keep_vars)
+        if getattr(self, '_sidecar_owned', False):
+            destination.pop(prefix + 'values', None)
+
+    def _load_from_state_dict(self, state_dict, prefix, local_metadata,
+                             strict, missing_keys, unexpected_keys, error_msgs):
+        if getattr(self, '_sidecar_owned', False):
+            # Topology and values are restored together, once, by the sidecar.
+            state_dict = dict(state_dict)
+            state_dict.pop(prefix + 'values', None)
+            if self.values is not None:
+                state_dict[prefix + 'values'] = self.values.detach()
+        super()._load_from_state_dict(state_dict, prefix, local_metadata,
+                                     strict, missing_keys, unexpected_keys, error_msgs)
+
     def _device(self):
         if self.values is not None:
             return self.values.device
@@ -5349,9 +5365,12 @@ class SparseLayer(Layer):
             raise IndexError(
                 f"SparseLayer.add_edge out of range: ({r},{c}) for "
                 f"[{self.nOutput},{self.nInput}]")
-        if self._forbid_self_edges and r == c:
+        source = c % (self.nOutput + 1) if getattr(self, '_paired_sources', False) else c
+        if self._forbid_self_edges and r == source:
             raise ValueError(
                 f"SparseLayer: self-edge ({r}, {c}) forbidden")
+        if getattr(self, '_sidecar_owned', False) and float(weight) < 0:
+            raise ValueError('concept exponents must be nonnegative')
         pos = self._index.get((r, c))
         if pos is not None:
             return pos
@@ -5458,54 +5477,54 @@ class SparseLayer(Layer):
 
 
     def fold_presence(self, u, *, conjunctive=False, start=0, end=None,
-                      admitted=None, own=None):
-        """Scatter signed exponents in log-presence or log-complement.
+                      own=None, own_mask=None, dual=False):
+        """Scatter nonnegative exponents; polarity is a source column.
 
-        Zero has the symmetric directional derivative of the two signed
-        charts. This lets an unknown edge learn either polarity without a
-        random nonzero initialization. Rail floors bound log derivatives;
-        log1p/expm1 preserve weak union evidence.
+        A dual pass swaps the two source blocks and the fold chart. Empty
+        definitions, including all-zero exponents, assert neither polarity.
+        Finite log floors preserve gradients without moving Boolean rails.
         """
         end = self.nOutput if end is None else int(end)
         rows, cols = self._indices(u.device)
         select = (rows >= int(start)) & (rows < end)
         rows, cols = rows[select], cols[select]
+        if dual:
+            cols = (cols + self.nInput // 2) % self.nInput
         out = u.new_zeros((end - int(start), u.shape[-1]))
+        mass = u.new_zeros(end - int(start))
+        rail = torch.zeros_like(out)
         if self.values is not None:
-            w = self.values.clone().to(u.device)[select, None]
+            w = self.values.clone().to(u.device)[select].clamp_min(0)
             v = u.index_select(0, cols).clamp(0, 1)
             eps = torch.finfo(v.dtype).eps
             if conjunctive:
-                # Straight-through floors retain a finite chart slope at
-                # a rail; a newly zero-initialized conjunction starts at 1.
                 vp = v + (v.clamp_min(eps) - v).detach()
-                vn = 1 - v
-                vn = vn + (vn.clamp_min(eps) - vn).detach()
-                positive, negative = vp.log(), vn.log()
+                chart = vp.log()
+                hit = v == 0
             else:
                 vp = v + (v.clamp_max(1 - eps) - v).detach()
-                vn = 1 - v
-                vn = vn + (vn.clamp_max(1 - eps) - vn).detach()
-                positive, negative = torch.log1p(-vp), torch.log1p(-vn)
-            contribution = torch.where(
-                w > 0, w * positive,
-                torch.where(w < 0, -w * negative,
-                            w * (positive - negative) * .5))
-            if admitted is not None:
-                contribution = contribution * admitted.index_select(0, cols)
-            out = out.index_add(0, rows - int(start), contribution)
-        count = torch.zeros(end - int(start), device=u.device, dtype=torch.long)
-        count = count.index_add(0, rows - int(start), torch.ones_like(rows))
-        if conjunctive:
-            return out.exp() * (count > 0).unsqueeze(-1)
+                chart = torch.log1p(-vp)
+                hit = v == 1
+            out = out.index_add(0, rows - int(start), w[:, None] * chart)
+            mass = mass.index_add(0, rows - int(start), w)
+            rail = rail.index_add(0, rows - int(start),
+                                  (hit & (w[:, None] > 0)).to(out.dtype))
         if own is not None:
             eps = torch.finfo(out.dtype).eps
-            safe = own + (own.clamp_max(1 - eps) - own).detach()
-            out = out + torch.log1p(-safe)
-        return -torch.expm1(out)
+            mask = own_mask.to(out.dtype)[:, None]
+            bounded = own.clamp_min(eps) if conjunctive else own.clamp_max(1 - eps)
+            safe = own + (bounded - own).detach()
+            out = out + mask * (safe.log() if conjunctive else torch.log1p(-safe))
+            mass = mass + own_mask.to(mass)
+            rail = rail + mask * ((own == 0) if conjunctive else (own == 1)).to(out.dtype)
+        result = out.exp() if conjunctive else -torch.expm1(out)
+        exact = torch.where(rail > 0, torch.zeros_like(result) if conjunctive
+                            else torch.ones_like(result), result)
+        result = result + (exact - result).detach()
+        return result * (mass > 0)[:, None]
 
     def reverse_presence(self, y, *, conjunctive=False, start=0, end=None,
-                         own=None):
+                         own=None, dual=False):
         """Row-normalized chart transpose, sharing evidence among parts.
 
         The implicit own conjunct has exponent one in the union. Return
@@ -5515,9 +5534,11 @@ class SparseLayer(Layer):
         rows, cols = self._indices(y.device)
         selected = (rows >= int(start)) & (rows < end)
         rows, cols = rows[selected], cols[selected]
+        if dual:
+            cols = (cols + self.nInput // 2) % self.nInput
         weights = (y.new_zeros((0,)) if self.values is None else
                    self.values.clone().to(y.device)[selected])
-        magnitude = weights.abs()
+        magnitude = weights.clamp_min(0)
         denominator = y.new_zeros(self.nOutput).index_add(0, rows, magnitude)
         if own is not None:
             denominator = denominator + own.to(y.dtype)
@@ -5526,25 +5547,17 @@ class SparseLayer(Layer):
         chart = (y.clamp_min(eps).log() if conjunctive else
                  torch.log1p(-y.clamp_max(1 - eps)))
         evidence = chart.index_select(0, rows) * share[:, None] * (y.index_select(0, rows) > 0)
-        # Opposite polarities are independent evidence. Combine their signed
-        # readouts after the transpose, never by cancelling their exponents.
         result = y.new_zeros((self.nInput, y.shape[-1]))
-        used = y.new_zeros((self.nInput, y.shape[-1]))
-        for positive in (True, False):
-            mask = (weights > 0) if positive else (weights < 0)
-            acc = result.new_zeros(result.shape).index_add(0, cols[mask], evidence[mask])
-            hit = used.new_zeros(used.shape).index_add(
-                0, cols[mask], (y.index_select(0, rows[mask]) > 0).to(y.dtype))
-            presence = acc.exp() if conjunctive else -torch.expm1(acc)
-            if not positive:
-                presence = 1 - presence
-            result = result + presence * (hit > 0)
-            used = used + (hit > 0)
-        result = result / used.clamp_min(1)
+        mask = magnitude > 0
+        acc = result.index_add(0, cols[mask], evidence[mask])
+        hit = result.index_add(0, cols[mask],
+                               (y.index_select(0, rows[mask]) > 0).to(y.dtype))
+        result = (acc.exp() if conjunctive else -torch.expm1(acc)) * (hit > 0)
         own_share = None
         if own is not None:
-            own_share = -torch.expm1(chart / denominator.clamp_min(1e-12)[:, None])
-            own_share = own_share * own[:, None]
+            share_chart = chart / denominator.clamp_min(1e-12)[:, None]
+            own_share = share_chart.exp() if conjunctive else -torch.expm1(share_chart)
+            own_share = own_share * own[:, None] * (y > 0)
         return result, own_share
 
 
@@ -5571,7 +5584,10 @@ class ConceptualAttentionLayer(SparseLayer):
 
         self.conjunctive = SparseLayer(nInput, nOutput, nonlinear=False,
                                       device=device, forbid_self_edges=True)
-        self.where = SparseLayer(nOutput, nOutput, nonlinear=False, device=device)
+        self._sidecar_owned = self.conjunctive._sidecar_owned = True
+        self._paired_sources = self.conjunctive._paired_sources = nInput == 2 * (nOutput + 1)
+        # Context is a bounded host slab over the taper span, not inventory.
+        self.where = torch.zeros(0, 0, device='cpu')
         for name, value in (
                 ('participation', torch.ones(nOutput)),
                 ('provisional', torch.zeros(nOutput, dtype=torch.bool)),
@@ -5589,12 +5605,46 @@ class ConceptualAttentionLayer(SparseLayer):
     def part_matrices(self):
         return self, self.conjunctive
 
+    @torch.no_grad()
+    def project_parts(self):
+        """Projected gradient updates preserve polarity and discovered kinds."""
+        for matrix in self.part_matrices():
+            if matrix.values is not None:
+                matrix.values.clamp_min_(0)
+        if self.values is not None:
+            rows, _ = self._indices(self.values.device)
+            maxima = self.values.new_zeros(self.nOutput).scatter_reduce_(
+                0, rows, self.values, reduce='amax')
+            divisor = torch.where(self.assigned.to(rows.device)[rows],
+                                  maxima[rows].clamp_min(1e-12), 1.)
+            self.values.div_(divisor)
+
+    def migrate_part_moments(self, optimizer):
+        """A signed-to-pole checkpoint conversion reverses first moments."""
+        for matrix in self.part_matrices():
+            signs = getattr(matrix, '_checkpoint_exponent_signs', None)
+            if signs is None:
+                continue
+            for leaf in RadixLayer._optimizer_leaves(optimizer):
+                moment = leaf.state.get(matrix.values, {}).get('exp_avg')
+                if moment is not None:
+                    moment.mul_(signs.to(moment))
+            del matrix._checkpoint_exponent_signs
+
+    def ensure_context(self):
+        """Allocate only when the parallel pool observes its bounded span."""
+        if self.where.numel() == 0:
+            self.where = torch.zeros(self.nOutput, self.nOutput, device='cpu')
+        return self.where
+
     @classmethod
     def square(cls, n_concepts, device=None):
-        """THE square [ (N+1) x N ] wave store: forbid_self_edges (x = {x},
-        the Quine atom); the trailing column (col == N) is the EVERYTHING
-        bias pole."""
-        return cls(int(n_concepts) + 1, int(n_concepts),
+        """S concept rows read two blocks of S sources plus a bias pole.
+
+        Column S is EVERYTHING; 2S+1 is its absent negative pole. Neither
+        polarity of a concept may enter its own definition.
+        """
+        return cls(2 * (int(n_concepts) + 1), int(n_concepts),
                    device=device, forbid_self_edges=True)
 
     def forward(self, presence):
@@ -5607,24 +5657,46 @@ class ConceptualAttentionLayer(SparseLayer):
     def parts_extras(self):
         """Checkpoint both parts matrices and row-aligned discovery state."""
         matrices = {}
-        for name, matrix in (('conjunctive', self.conjunctive), ('where', self.where)):
+        for name, matrix in (('conjunctive', self.conjunctive),):
             matrices[name] = dict(rows=list(matrix._rows), cols=list(matrix._cols),
                                   values=None if matrix.values is None else matrix.values.detach().cpu().clone())
-        return dict(version=1, matrices=matrices,
+        return dict(version=2, matrices=matrices, where=self.where.clone(),
                     buffers={name: value.detach().cpu().clone()
                              for name, value in self.named_buffers(recurse=False)})
 
     def load_parts_extras(self, saved, *, old_size=None):
         if saved is None:
             return
-        if saved.get('version') != 1:
+        if saved.get('version') not in (1, 2):
             raise ValueError('unsupported conceptual parts checkpoint')
-        for name in ('conjunctive', 'where'):
+        old_span = self.nOutput if old_size is None else old_size
+        self.where.zero_()
+        if saved['version'] == 1:
+            context = saved['matrices']['where']
+            if context['values'] is not None:
+                self.ensure_context()
+                self.where[context['rows'], context['cols']] = context['values'].cpu()
+        else:
+            context = saved['where']
+            if context.numel() and tuple(context.shape) != (old_span, old_span):
+                raise ValueError('concept context shape mismatch')
+            if context.numel():
+                self.ensure_context()[:old_span, :old_span].copy_(context.cpu())
+        for name in ('conjunctive',):
             matrix = getattr(self, name)
             blob = saved['matrices'][name]
             rows, cols, values = blob['rows'], blob['cols'], blob['values']
-            if name == 'conjunctive' and old_size is not None:
-                cols = [self.nOutput if col == old_size else col for col in cols]
+            if saved['version'] == 1:
+                cols = [(self.nOutput if c == old_span else c) +
+                        (self.nOutput + 1 if values is not None and values[i] < 0 else 0)
+                        for i, c in enumerate(cols)]
+                if values is not None:
+                    matrix._checkpoint_exponent_signs = torch.where(values < 0, -1., 1.)
+                    values = values.abs()
+            elif old_size is not None:
+                cols = [(self.nOutput if c % (old_span + 1) == old_span
+                         else c % (old_span + 1)) + (c // (old_span + 1)) * (self.nOutput + 1)
+                        for c in cols]
             if (len(rows) != len(cols) or len(set(zip(rows, cols))) != len(rows)
                     or (values is not None and values.numel() != len(rows))
                     or any(not 0 <= r < matrix.nOutput for r in rows)
@@ -5783,8 +5855,7 @@ class ConceptualAttentionLayer(SparseLayer):
     def definition_sparsity_penalty(self, free_size=2):
         """Rank-ordered soft-L0 on each concept's DEFINITION SIZE (snap
         contract sec 1.4 / sec 5, 2026-07-06): sort a concept row's in-edge
-        weights by ``|w|`` (excluding the trailing EVERYTHING-pole column --
-        a standing axiom, not part of the definition), EXEMPT the top
+        weights by magnitude (excluding both standing bias poles), EXEMPT the top
         ``free_size`` (genus + differentia, the minimal definition), and sum
         the marginal ranks. Shrinkage then lands only on the surplus symbols
         (the ones to drop) while the core stay at full presence -- a
@@ -5796,19 +5867,21 @@ class ConceptualAttentionLayer(SparseLayer):
         vals = self.values
         if vals is None or not torch.is_tensor(vals) or vals.numel() == 0:
             return None
-        N = int(self.nOutput)                    # concept rows
-        ncol = int(self.nInput)                  # N + 1: last col = pole
-        concept_cols = max(0, ncol - 1)
+        ncol = int(self.nInput)
         free = max(0, int(free_size))
-        if N <= 0 or concept_cols <= free:
-            return None
         rows_t, cols_t = self._indices(vals.device)
-        # Scatter the flat COO edge values into a dense [N, ncol] view; grad
-        # flows to ``vals`` through index_put (edges are unique, no accumulate).
-        dense = vals.new_zeros(N, ncol).index_put((rows_t, cols_t), vals)
-        w = dense[:, :concept_cols].abs()        # drop the EVERYTHING pole
-        sorted_w, _ = torch.sort(w, dim=-1, descending=True)
-        return sorted_w[:, free:].sum()
+        concept_col = ((cols_t % (self.nOutput + 1)) < self.nOutput
+                       if getattr(self, '_paired_sources', False) else cols_t < ncol - 1)
+        rows, weights = rows_t[concept_col], vals[concept_col].clamp_min(0)
+        # Sort edges by magnitude, then stably group rows. Segment ranks
+        # exempt each row's core without allocating an inventory-sized square.
+        by_weight = weights.argsort(descending=True, stable=True)
+        order = by_weight[rows[by_weight].argsort(stable=True)]
+        rows, weights = rows[order], weights[order]
+        positions = torch.arange(len(rows), device=rows.device)
+        starts = torch.cat((torch.ones_like(rows[:1], dtype=torch.bool), rows[1:] != rows[:-1]))
+        base = torch.where(starts, positions, 0).cummax(0).values
+        return weights[(positions - base) >= free].sum()
 
 
 class ConceptAllocator:

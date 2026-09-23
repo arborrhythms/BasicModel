@@ -23,6 +23,7 @@ if _BIN not in sys.path:
 
 import pytest
 import torch
+from test_cs_sparse_weights import _evidence
 
 import Spaces
 from test_basicmodel import _populate_test_config
@@ -120,15 +121,15 @@ def test_depth_d_vine_completes_structurally():
     for w in words:
         a_0[_row0(cs, w), 0] = 0.75
     what = torch.randn(64, _D)
-    _c, a = cs.cs_forward_content(a_0, what)         # ONE pass, no iteration
-    assert float(a.detach()[tl, 0]) > 0.5            # tail: tanh(1.5)
-    assert float(a.detach()[m, 0]) > 0.5             # mid reads the tail rung
-    assert float(a.detach()[h, 0]) > 0.5             # head completes in-pass
+    _c, a = cs.cs_forward_content(_evidence(a_0), what)         # ONE pass, no iteration
+    assert float(a.detach()[tl, 0, 0, 0]) > 0.5            # tail: tanh(1.5)
+    assert float(a.detach()[m, 0, 0, 0]) > 0.5             # mid reads the tail rung
+    assert float(a.detach()[h, 0, 0, 0]) > 0.5             # head completes in-pass
     for r in rows:                                   # kill the vine's edges
         for c, _w in cs.concept_weights(r):
             _set_edge_value(cs, r, c, 0.0)
-    _c, a2 = cs.cs_forward_content(a_0, what)
-    assert abs(float(a2.detach()[h, 0]) + 1.) < 1e-6      # the vine was the cause
+    _c, a2 = cs.cs_forward_content(_evidence(a_0), what)
+    assert abs(float(a2.detach()[h, 0, 0, 0])) < 1e-6      # the vine was the cause
 
 
 # -- 2/3. self-reference at the store boundary ----------------------------------

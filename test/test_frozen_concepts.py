@@ -15,6 +15,7 @@ import sys
 
 sys.path.insert(0, "bin")
 import torch
+from test_cs_sparse_weights import _evidence
 
 from recon_bench import _build_model, _resolve_config
 
@@ -65,7 +66,7 @@ def test_frozen_weights_no_grad():
     a_0[3, 0] = 0.9
     a_0[5, 0] = 0.9
     what = torch.randn(16, 32)
-    content, _a = cs.cs_forward_content(a_0, what)
+    content, _a = cs.cs_forward_content(_evidence(a_0), what)
     content.sum().backward()
     g = ly.values.grad
     assert g is not None

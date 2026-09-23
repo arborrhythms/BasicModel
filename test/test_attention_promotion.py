@@ -20,6 +20,7 @@ import pytest
 import torch
 
 import Spaces
+from test_cs_sparse_weights import _evidence
 from test_basicmodel import _populate_test_config
 
 _D = 8
@@ -60,9 +61,9 @@ def _observe(cs, active, B_rows=None):
     activation; the level-rows stash is the full snap block (order-0 rows
     are always staged by the pyramid)."""
     N = int(cs.nVectors)
-    a = torch.zeros(N, 1)
+    a = torch.zeros(sum(cs._order_caps()), 1, 1, 2)
     for r, v in active.items():
-        a[int(r), 0] = float(v)
+        a[int(r), 0, 0, 0] = float(v)
     snap = torch.arange(cs._order_caps()[0]).unsqueeze(-1)
     object.__setattr__(cs, "_promo_last_acts", a)
     object.__setattr__(cs, "_cs_level_rows", [snap])
@@ -98,7 +99,7 @@ def test_first_matching_context_assigns_pair_before_discovery():
     assert ly.participation[r].item() == pytest.approx(.1)
     assert cs.concept_id_at_row(r) is None
     assert cs.promotion_pass() == []
-    assert cs._context_vector(ly.where, r)[c] > 0
+    assert ly.where[r][c] > 0
     assert not hasattr(cs, '_promotion_cache_state')
 
 
@@ -155,14 +156,14 @@ def test_switch_on_copresence_needs_every_part():
     r = _pool_rows(cs)[0]
     assert set(dict(cs.concept_weights(r, conjunctive=True))) == set(parts)
     assert cs.concept_weights(r) == []
-    a0 = torch.full((cs._order_caps()[0], 4), -1.)
+    a0 = torch.zeros(cs._order_caps()[0], 4)
     a0[parts, 0] = 1.
     for i in range(3):
         a0[parts, i + 1] = 1.
-        a0[parts[i], i + 1] = -1.
+        a0[parts[i], i + 1] = 0.
     ly.participation[r] = 1.
-    _, result = cs.cs_forward_content(a0, torch.randn(128, 8))
-    torch.testing.assert_close(result[r], torch.tensor([1., -1., -1., -1.]), atol=3e-6, rtol=0)
+    _, result = cs.cs_forward_content(_evidence(a0), torch.randn(128, 8))
+    torch.testing.assert_close(result[r, :, 0, 0], torch.tensor([1., 0., 0., 0.]), atol=3e-6, rtol=0)
 
 
 def test_objects_never_acquire_witnessed_kinds():
@@ -203,8 +204,8 @@ def test_provisional_parts_receive_gradient_through_use_gate():
     _observe(cs, {b: .8, c: .8})
     r = _pool_rows(cs)[0]
     ly = Spaces._concept_alloc_of(cs).layer()
-    a0 = torch.zeros(cs._order_caps()[0], 1, requires_grad=True)
-    _, acts = cs.cs_forward_content(a0, torch.randn(128, 8))
+    a0 = torch.full((cs._order_caps()[0], 1), .5, requires_grad=True)
+    _, acts = cs.cs_forward_content(_evidence(a0), torch.randn(128, 8))
     acts[r].sum().backward()
     assert ly.values.grad.abs().sum() > 0
     assert ly.participation.grad is None
@@ -225,13 +226,13 @@ def test_pool_checkpoint_preserves_both_parts_where_use_and_next_assignment():
     assert before._tensor_rows == after._tensor_rows
     torch.testing.assert_close(before.participation, after.participation)
     torch.testing.assert_close(before.conjunctive.values, after.conjunctive.values)
-    torch.testing.assert_close(before.where.values, after.where.values)
+    torch.testing.assert_close(before.where, after.where)
     for space in (cs, restored):
         _observe(space, {r: 1. for _, r in rows[:3]})
     torch.testing.assert_close(before.participation, after.participation)
 
 
-def test_registered_pool_checkpoint_loads_before_parameter_shape_validation(tmp_path):
+def test_registered_pool_checkpoint_has_one_sidecar_restore(tmp_path):
     from test_structural_checkpoint import _model_with
     from types import SimpleNamespace
     cs, rows = _fixture(pi=True)
@@ -275,7 +276,7 @@ def test_row_pool_prunes_weak_edges_when_use_discovers_it(pi):
     if pi:
         assert rows[4][1] not in dict(cs.concept_weights(r, conjunctive=True))
     _, activation = cs.cs_forward_content(
-        torch.full((cs._order_caps()[0], 1), -.5), torch.zeros(128, _D))
+        _evidence(torch.full((cs._order_caps()[0], 1), .25)), torch.zeros(128, _D))
     activation[frozen_row].sum().backward()
     assert ly.values.grad[ly._index[(frozen_row, a)]] == 0
     if pi:

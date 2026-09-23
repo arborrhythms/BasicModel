@@ -1,39 +1,21 @@
 <?xml version="1.0" ?>
 <model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:noNamespaceSchemaLocation="model.xsd">
-  <!-- MM_sparse_concept: the sparse-coding Conceptual Space driver
-       (doc/plans/2026-06-27-sparse-coding-cs-plan.md; v3 iterated wave,
-       doc/plans/2026-07-02-iterated-symbolic-loop.md).
-
-       A concept is a high-dimensional atom stored on CS.subspace.what
-       (ConceptDim). Structure lives on ONE square untyped AttentionLayer
-       [N x N+1] (bottom-up attention over the concept inventory; a
-       SparseLayer subclass): a SNAP block of rows (order-0 concepts =
-       codebook rows, no in-edges) plus a RELATION POOL (minted relations);
-       edges are untyped fuzzy set-membership degrees, one per symbolic
-       constituent, plus the trailing EVERYTHING bias column. The forward is
-       the iterated wave a^{i+1} = tanh(W [a^i | 1] + s): s is the order-0
-       snap presence, an ADDITIVE source each step, and K = symbolicOrder is
-       the ITERATION BUDGET (a depth-d vine completes at iteration d; K=3
-       here). concept_code[c] = a[c] * softplus(what[c]). Weights are SIGNED
-       (a negative weight = the feature's presence anti-correlates with the
-       concept); the atoms are strictly-positive mereological-feature
-       signatures. Forward-connected: the gradient reaches the sparse
-       weights, the activations, and the dictionary.
-
-       Activation is by symbolicOrder (not a config gate): symbolicOrder>=1
-       with <serial>false</serial> (the explicit override of the back-compat
-       serial = symbolicOrder>0 default) runs the PARALLEL symbolic loop;
-       symbolicOrder=0 is the byte-identical off-path (no snap, no wave).
-       <symbolTower>true</symbolTower> routes the CS->SS leg through
-       SymbolSpace.forward_concept_to_symbol. A sibling of MM_symbol_tower.xml;
-       runs on the xor smoke dataset. -->
+  <!-- Parallel conceptual smoke workload on the xor dataset.
+       One distributed code per concept names two symbols. A rectified
+       projection admits positive and negative evidence separately, scoped
+       to each occurrence. The pyramid computes a union over disjunctive
+       parts, with an optional preceding conjunction over W_pi. Exponents
+       are nonnegative; a negated part addresses the negative symbol.
+       The taper allocates 8 + 4 + 2 + 1 = 15 live concept rows here.
+       SymbolSpace reads two rows per concept from the paired field.
+       symbolicOrder=0 disables this cutover; serial grammar is independent.
+       This workload measures the live path, not learned tower-grounded XOR. -->
   <architecture>
     <subsymbolicOrder>3</subsymbolicOrder>
     <!-- explicit override: parallel symbolic loop at symbolicOrder>=1. -->
     <serial>false</serial>
-    <!-- iteration budget K: a depth d vine completes at iteration d; K=3
-         covers the XOR presentations (K=1 would leave deep links dark). -->
+    <!-- Three conceptual composition rungs above the eight order-0 atoms. -->
     <symbolicOrder>3</symbolicOrder>
     <l1Lambda>0.01</l1Lambda>
     <sigmaPi>butterfly</sigmaPi>
@@ -80,11 +62,8 @@
   <ConceptualSpace>
     <nInput>8</nInput>
     <nInputDim>1024</nInputDim>
-    <!-- P5 capacity sizing: the snap/pool blocks must hold the mint load
-         (XOR: 4 words x (A word-sym + B object-sym) + metas + joint-chain
-         links). Post-P3 the inventory is decoupled from the 8-slot slab
-         (content never substitutes), so nVectors > nInput is safe:
-         snap 16 rows + pool 16 rows. -->
+    <!-- Dictionary capacity is independent of the eight occurrence slots
+         and the fifteen rows allocated by the conceptual taper. -->
     <nVectors>32</nVectors>
     <stmCapacity>8</stmCapacity>
     <nDim>1024</nDim>

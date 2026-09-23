@@ -69,7 +69,7 @@ def test_thought_effect_uses_cached_row_identity(monkeypatch):
         MappingProxyType({'frames': ({'leaf_codes': ((row,), (), ())},)}))
     for _ in range(2):
         apply_thought_effect(SimpleNamespace(conceptualSpace=cs), result, row=0, work=QueryWorkBudget(32))
-    assert cs.subspace._concept_activations[row, 0] == 1
+    assert cs.subspace._concept_activations[row, 0, 0, 0] == 1
 
 
 def test_index_checkpoint_compaction_and_codebook_remap():
@@ -274,7 +274,7 @@ def test_higher_order_retrieval_seeds_discontinuous_members_only():
     result = ThoughtResult('what', 'conceptual-subgoal', 'set', 'retrieval', meaning,
         MappingProxyType({'frames': ({'meaning': held},)}))
     apply_thought_effect(SimpleNamespace(conceptualSpace=cs), result, row=0, work=QueryWorkBudget(32))
-    field = cs.subspace._concept_activations[:, 0]
+    field = cs.subspace._concept_activations[:, 0, 0, 0]
     assert field[rows[0]] == field[rows[2]] == 1 and field[rows[1]] == 0
     assert not field.requires_grad
 

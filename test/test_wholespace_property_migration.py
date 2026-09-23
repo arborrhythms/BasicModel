@@ -255,10 +255,14 @@ def test_symbolspace_and_grammar_use_conceptual_not_property_width(tmp_path):
         nInputDim=cs.subspace.muxedSize,
         nOutputDim=cs.subspace.muxedSize)
     concept_sub.set_event(event)
-    concept_sub._concept_activations = torch.ones(8, 1)
+    concept_sub._concept_activations = torch.full((8, 1, 1, 2), .25)
+    concept_sub._concept_activations[..., 1] = .75
     symbol_leg = ss.forward_concept_to_symbol(concept_sub).materialize()
-    assert tuple(symbol_leg.shape) == tuple(event.shape)
-    assert torch.equal(symbol_leg[..., ss.nWhat:], event[..., ss.nWhat:])
+    assert tuple(symbol_leg.shape) == (1, 16, cs.subspace.muxedSize)
+    torch.testing.assert_close(symbol_leg[:, 0::2, :ss.nWhat], .25 * event[..., :ss.nWhat])
+    torch.testing.assert_close(symbol_leg[:, 1::2, :ss.nWhat], -.75 * event[..., :ss.nWhat])
+    assert torch.equal(symbol_leg[:, 0::2, ss.nWhat:], event[..., ss.nWhat:])
+    assert torch.equal(symbol_leg[:, 1::2, ss.nWhat:], event[..., ss.nWhat:])
 
 
 def test_property_model_category_vq_and_parser_context_are_cs_owned(tmp_path):

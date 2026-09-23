@@ -3234,6 +3234,11 @@ class BaseModel(Mereology, nn.Module):
         part_space = getattr(self, "perceptualSpace", None)
         if part_space is not None:
             object.__setattr__(part_space, "_radix_optimizer", optimizer)
+        for cs in list(getattr(self, 'conceptualSpaces', ()) or ()):
+            allocator = getattr(cs, '_concept_allocator', None)
+            if allocator is not None:
+                for layer in allocator._layers.values():
+                    layer.migrate_part_moments(optimizer)
         return optimizer
 
     def rebuild_optimizer(self):
@@ -4693,6 +4698,16 @@ class BaseModel(Mereology, nn.Module):
             }
             if attrs:
                 entry["attributes"] = attrs
+            carrier = getattr(cs, 'subspace', None)
+            evidence = getattr(carrier, '_concept_activations', None)
+            if torch.is_tensor(evidence):
+                if evidence.ndim != 4 or evidence.shape[-1] != 2:
+                    raise ValueError('checkpoint knowing requires paired evidence')
+                entry['knowing'] = {
+                    'evidence': _checkpoint_host_copy(evidence),
+                    'thought_occurrence': getattr(carrier, '_thought_occurrence', None),
+                    'code_owner': int(getattr(carrier, '_concept_code_owner', i)),
+                }
             if (property_basis and cs is getattr(
                     self, "conceptualSpace", None)
                     and hasattr(cs, "vocab_extras")):
@@ -4810,43 +4825,37 @@ class BaseModel(Mereology, nn.Module):
             saved_n_output = int(blob.get("nOutput", layer.nOutput))
             live_n_input = int(layer.nInput)
             live_n_output = int(layer.nOutput)
-            shape_mismatch = (
-                saved_n_input != live_n_input
-                or saved_n_output != live_n_output)
+            old_columns = saved_n_input == saved_n_output + 1
+            paired_columns = saved_n_input == 2 * (saved_n_output + 1)
+            shape_mismatch = saved_n_output != live_n_output
             square_expansion = bool(
-                shape_mismatch
-                and self._aligned_inventory_capacity() is not None
-                and saved_n_input == saved_n_output + 1
-                and live_n_input == live_n_output + 1
+                shape_mismatch and self._aligned_inventory_capacity() is not None
+                and (old_columns or paired_columns)
+                and live_n_input == 2 * (live_n_output + 1)
                 and saved_n_output < live_n_output)
-            if shape_mismatch and not square_expansion:
-                raise ValueError(
-                    "ConceptAllocator store shape mismatch: checkpoint "
-                    f"[{blob.get('nOutput')}, {blob.get('nInput')}] vs live "
-                    f"[{layer.nOutput}, {layer.nInput}]")
-            rows = [int(v) for v in blob.get("rows", ())]
-            cols = [int(v) for v in blob.get("cols", ())]
+            if (shape_mismatch and not square_expansion) or (
+                    not old_columns and saved_n_input != live_n_input and not square_expansion):
+                raise ValueError('ConceptAllocator store shape mismatch')
+            rows = [int(v) for v in blob.get('rows', ())]
+            cols = [int(v) for v in blob.get('cols', ())]
             if square_expansion:
-                # Ordinary row/column ids remain stable under first-axis
-                # capacity growth.  The sole exception is the trailing
-                # EVERYTHING pole: its coordinate is N, so move old N to new
-                # N.  A nonzero region base means the checkpoint partitioned
-                # the square into capacity-relative blocks; relocating those
-                # rows requires a full coordinated repartition and must not be
-                # guessed during load.
-                row_next = blob.get("row_next") or {}
-                nonzero_bases = [
-                    int(base) for base in row_next if int(base) != 0]
-                if nonzero_bases:
-                    raise ValueError(
-                        "ConceptAllocator capacity expansion is unsafe for "
-                        "a partitioned row map (nonzero region bases "
-                        f"{sorted(nonzero_bases)}). Increase capacity before "
-                        "training or migrate the partition explicitly.")
-                cols = [
-                    live_n_output if c == saved_n_output else c
-                    for c in cols
-                ]
+                bases = [int(base) for base in (blob.get('row_next') or {}) if int(base) != 0]
+                if bases:
+                    raise ValueError('ConceptAllocator capacity expansion is unsafe for a partitioned row map')
+            values = blob.get('values')
+            if values is not None and int(values.numel()) != len(rows):
+                raise ValueError('ConceptAllocator sparse values/indices length mismatch')
+            if old_columns or square_expansion:
+                remapped = []
+                for i, col in enumerate(cols):
+                    source = col if old_columns else col % (saved_n_output + 1)
+                    negative = (values is not None and float(values[i]) < 0) if old_columns else col > saved_n_output
+                    source = live_n_output if source == saved_n_output else source
+                    remapped.append(source + (live_n_output + 1 if negative else 0))
+                cols = remapped
+                if old_columns and values is not None:
+                    layer._checkpoint_exponent_signs = torch.where(values < 0, -1., 1.)
+                    values = values.abs()
             if len(rows) != len(cols) or len(set(zip(rows, cols))) != len(rows):
                 raise ValueError(
                     "ConceptAllocator sparse COO checkpoint is malformed")
@@ -4854,11 +4863,10 @@ class BaseModel(Mereology, nn.Module):
                     c < 0 or c >= int(layer.nInput) for c in cols):
                 raise ValueError(
                     "ConceptAllocator sparse COO checkpoint is out of bounds")
-            values = blob.get("values")
             if values is not None and int(values.numel()) != len(rows):
                 raise ValueError(
                     "ConceptAllocator sparse values/indices length mismatch")
-            init_vals = [float(v) for v in blob.get("init_vals", ())]
+            init_vals = [abs(float(v)) for v in blob.get("init_vals", ())]
             if len(init_vals) != len(rows):
                 if values is None:
                     raise ValueError(
@@ -4931,6 +4939,22 @@ class BaseModel(Mereology, nn.Module):
                 if name == "_promotion_cache_state":
                     raise ValueError("host promotion candidates require an explicit row-pool migration")
                 object.__setattr__(cs, str(name), _checkpoint_host_copy(value))
+            knowing = entry.get('knowing')
+            if knowing is not None:
+                evidence = knowing['evidence']
+                if evidence.ndim != 4 or evidence.shape[-1] != 2:
+                    raise ValueError('checkpoint knowing requires paired evidence')
+                owner = int(knowing['code_owner'])
+                if not 0 <= owner < len(conceptual_spaces):
+                    raise ValueError('checkpoint knowing code owner is absent')
+                codes = conceptual_spaces[owner].similarity_codebook.getW()
+                if len(evidence) > len(codes):
+                    raise ValueError('checkpoint knowing exceeds concept inventory')
+                carrier = cs.subspace
+                object.__setattr__(carrier, '_concept_activations', evidence.to(codes).clone())
+                object.__setattr__(carrier, '_concept_codes', codes[:len(evidence)].detach())
+                object.__setattr__(carrier, '_concept_code_owner', owner)
+                object.__setattr__(carrier, '_thought_occurrence', knowing['thought_occurrence'])
             conceptual_blob = entry.get("conceptual_structure")
             if (isinstance(conceptual_blob, dict)
                     and hasattr(cs, "load_vocab_extras")):
@@ -5184,16 +5208,13 @@ class BaseModel(Mereology, nn.Module):
                     f"reconstructInLoop: dropped {len(_student)} detached "
                     "reverse-student keys from the checkpoint (declared "
                     "migration)")
-        # The row pool registers trainable parts for optimizer names. Restore
-        # its topology before auditing state_dict shapes, including on a
-        # fresh model that has not yet observed a conceptual field.
-        if isinstance(structural_extras, dict):
-            spaces = list(getattr(self, 'conceptualSpaces', ()) or ())
-            for raw_index, entry in structural_extras.get('conceptual_spaces', {}).items():
-                allocator = entry.get('allocator')
-                index = int(raw_index)
-                if allocator is not None and 0 <= index < len(spaces):
-                    self._restore_allocator_extras(spaces[index], allocator)
+        # Concept values have one owner: the structural sidecar. Older
+        # checkpoints also registered copies through the module tree.
+        duplicated_parts = [key for key in state if 'concept_parts_layer.' in key]
+        if duplicated_parts and not structural_extras:
+            raise ValueError('concept part checkpoint requires its structural sidecar')
+        for key in duplicated_parts:
+            state.pop(key)
 
         # Pre-check for shape mismatches before attempting to load.
         # This produces an actionable diagnostic instead of a raw PyTorch error.
@@ -6667,12 +6688,21 @@ class BasicModel(BaseModel):
         knowing = None if anticipating else getattr(carrier, '_concept_activations', None)
         if limit and torch.is_tensor(knowing) and row < knowing.shape[1] and work.consume('context_record'):
             from Queries import _basis
-            basis = _basis(self.conceptualSpace).detach()
+            basis = getattr(carrier, '_concept_codes', None)
+            if basis is None:
+                basis = _basis(self.conceptualSpace)
+            basis = basis.detach()
             n = min(len(knowing), len(basis))
-            weights = knowing[:n, row].detach()
-            idea = (weights[:, None] * basis[:n]).sum(0) / weights.abs().sum().clamp_min(1.)
-            if bool(weights.abs().any()):
-                short.append((ConceptualMeaning.from_description(idea), 0.))
+            from ConceptEvidence import symbols
+            pair = symbols(knowing[:n])[:, row].detach()
+            # Serial retrieval receives each pole separately; the parallel
+            # field remains a pair even when a signed idea is requested.
+            for polarity in range(2):
+                weights = pair[:, polarity]
+                if bool(weights.any()):
+                    idea = (weights[:, None] * basis[:n]).sum(0) / weights.sum().clamp_min(1.)
+                    short.append((ConceptualMeaning.from_description(
+                        idea if polarity == 0 else -idea), 0.))
         history = memory.thought_window(b=row, limit=limit - len(short)) if limit and not anticipating else ()
         for record in history:
             if not work.consume("context_record"):
@@ -15646,6 +15676,14 @@ class BasicModel(BaseModel):
                 if self.ergodic:
                     self.paramUpdate()
                 optimizer.step()
+            # Project learned exponents onto the nonnegative orthant. The
+            # source column owns polarity, so an update never flips a part.
+            with torch.no_grad():
+                for cs in self.conceptualSpaces:
+                    allocator = getattr(cs, '_concept_allocator', None)
+                    if allocator is not None:
+                        for layer in allocator._layers.values():
+                            layer.project_parts()
             self._assert_finite_train_state("after optimizer.step")
             # The episode credit boundary (spec 8.2): durable LTM detaches
             # here, after the one optimizer step of the episode.
@@ -18581,14 +18619,16 @@ class BasicModel(BaseModel):
             _content, _acts = _cut_cs.cs_symbolic_phase(_settled)
             # SEEN write moved to ``_prime_seen_step`` (unconditional, once
             # per batch, both paths) -- awareness primes (simplified law).
-            # Fail loud on a mis-shaped pyramid output (rows-first [N, B]):
-            # a transposed acts would silently misuse batch rows as symbols.
             assert _acts is None or (
-                _acts.dim() == 2
-                and int(_acts.shape[0]) == int(_cut_cs.nVectors)), (
-                f"symbolic phase acts must be [nVectors, B]; got "
-                f"{None if _acts is None else tuple(_acts.shape)}")
-            object.__setattr__(last_cs, "_concept_activations", _acts)
+                _acts.ndim == 4 and _acts.shape[-1] == 2
+                and int(_acts.shape[0]) == sum(_cut_cs._order_caps())), (
+                'symbolic phase requires [store span, batch, occurrence, 2]')
+            object.__setattr__(last_cs, '_concept_activations', _acts)
+            object.__setattr__(last_cs, '_thought_occurrence', None)
+            object.__setattr__(last_cs, '_concept_code_owner', 0)
+            if _acts is not None:
+                object.__setattr__(last_cs, '_concept_codes',
+                                   _cut_cs.similarity_codebook.getW()[:len(_acts)].detach().clone())
             if _acts is not None:
                 # The SS leg, ONCE: syncs the SS codebook to the settled
                 # concept codes; the leg's gradient rides the activations.

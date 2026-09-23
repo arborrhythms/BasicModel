@@ -83,25 +83,48 @@ def apply_thought_effect(model, result, *, row, work):
             seeds.extend(('row', code) for role in member.get('leaf_codes', ()) for code in role)
     if not seeds:
         return
+    spaces = list(getattr(model, 'conceptualSpaces', ()) or ())
+    owner = getattr(carrier, '_concept_code_owner', None)
+    if owner is not None and 0 <= owner < len(spaces):
+        # The cutover field and its definitions use the same dictionary,
+        # even when the terminal carrier belongs to a later tower stage.
+        space = spaces[owner]
+    elif spaces:
+        owner = next(i for i, candidate in enumerate(spaces) if candidate is space)
     basis = _basis(space)
     existing = getattr(carrier, '_concept_activations', None)
     batch = max(row + 1, int(existing.shape[1]) if torch.is_tensor(existing) else 1)
-    field = basis.new_zeros(len(basis), batch)
+    sparse = callable(getattr(space, '_sparse_active', None)) and space._sparse_active()
+    count = sum(space._order_caps()) if sparse else len(basis)
+    location = getattr(carrier, '_thought_occurrence', None)
+    previous_locations = int(existing.shape[2]) if torch.is_tensor(existing) else 0
+    if location is None or location >= previous_locations:
+        location = previous_locations
+    field = basis.new_zeros(count, batch, max(previous_locations, location + 1), 2)
     if torch.is_tensor(existing):
         n = min(len(field), len(existing))
-        field[:n, :existing.shape[1]] = existing[:n].detach()
-    inferred = None
-    if callable(getattr(space, '_sparse_active', None)) and space._sparse_active():
-        query = field.new_zeros(field.shape)
-        for reference in seeds:
-            try:
-                index = reference[1] if reference[0] == 'row' else _existing_row(space, reference)
-            except ValueError:
-                continue
-            if 0 <= index < len(query):
-                query[index, row] = 1.
-        inferred = space.cs_reverse_presence(query)
-    pending, seen = list(seeds), set()
+        field[:n, :existing.shape[1], :previous_locations] = existing[:n].detach()
+    object.__setattr__(carrier, '_thought_occurrence', location)
+    query = field.new_zeros(field.shape)
+    for reference in seeds:
+        try:
+            index = reference[1] if reference[0] == 'row' else _existing_row(space, reference)
+        except ValueError:
+            continue
+        if 0 <= index < len(query):
+            query[index, row, location, 0] = 1.
+    inferred = space.cs_reverse_presence(query) if sparse else query
+    if sparse:
+        # The paired COO transpose is the definition. Include inferred
+        # literals even when no separate relation record names the edge.
+        roots = (query[:, row].amax(dim=(1, 2)) > 0).nonzero().flatten().tolist()
+        supported = (inferred[:, row].amax(dim=(1, 2)) > 0).nonzero().flatten().tolist()
+        for index in roots + [i for i in supported if i not in roots]:
+            if not work.consume('effect_node'):
+                break
+            previous, added = field[index, row], inferred[index, row]
+            field[index, row] = previous + added - previous * added
+    pending, seen = ([] if sparse else list(seeds)), set()
     while pending:
         reference = pending.pop()
         if reference in seen:
@@ -118,8 +141,11 @@ def apply_thought_effect(model, result, *, row, work):
             except ValueError:
                 continue
         if 0 <= index < len(field):
-            field[index, row] = 1. if inferred is None else inferred[index, row]
+            field[index, row, location, 0] = 1.
         if cid is not None:
             pending.extend(part for part in space.concept_parts(cid)
                            if isinstance(part, tuple) and part[0] == 'sym')
     object.__setattr__(carrier, '_concept_activations', field.detach())
+    object.__setattr__(carrier, '_concept_codes', basis[:count].detach())
+    if owner is not None:
+        object.__setattr__(carrier, '_concept_code_owner', owner)

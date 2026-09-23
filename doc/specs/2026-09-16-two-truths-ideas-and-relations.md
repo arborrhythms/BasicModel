@@ -78,6 +78,133 @@ located occurrence ("cat!", here and now) is an idea with the tense-only
 VP and a `.when`. The concept is the idea; its occurrences are located
 rows. Neither nihilism nor eternalism, and no third form.
 
+### 1.1 Both is a compositional fact (decided, Alec, 2026-09-23)
+
+Truth in this system is defined over existence. The bare NP's VP is the
+existence copula, and a predicate holds of a thing when the thing's region
+lies in the predicate's region (§3.2: parthood is the primitive). A thing
+has parts, and its parts may differ. A soccer ball is black and white:
+some of its parts lie in the black region and others in the white. The
+truth of "the ball is black" is then not true, not false and not unknown.
+It is **both**, and both is a fact about composition, not a defect of
+judgement.
+
+A truth system that keeps one value per predicate — true, false, or a
+signed scalar between them — forces every object to be simple: to take
+exactly one value under each predicate, which is to be a symbol rather
+than a thing with parts. That is the habit of symbolic logic in the
+Western tradition, where the subject–predicate form makes predicates
+singular. Whitehead named the error: the substance–quality reading of
+every proposition, which he held responsible for misplacing concreteness
+in the subject and could not survive a world of processes with parts
+(*Process and Reality*, 1929, Part II; *Science and the Modern World*,
+1925, ch. 3). It is also why mereology has to come before predicate logic,
+as Peter Simons argues (*Parts: A Study in Ontology*, Oxford, 1987, whose
+improper-parthood primitive §3.2 already adopts): parts are exactly where
+one predicate can hold and fail of one thing at once, and identity,
+overlap and proper part are derived from parthood rather than assumed.
+Both is therefore a value the system **must** be able to state and keep,
+because objects are not symbols.
+
+The tetralemma's four corners are all first-class values of a predicate
+over a thing: **true** (the predicate holds of the thing as a whole),
+**false**, **both** (its parts differ under the predicate), **neither**
+(unknown). Both is not a contradiction. A contradiction is two sources
+asserting incompatible truths of the *same* part; it lives across LTM rows,
+each with its source's trust, and is resolved by trust (§4). Both is one
+source seeing a heterogeneous whole; it lives inside one row and must
+survive the seal. Dharmakīrti's exclusion of the contradicted cognition
+from valid cognition is untouched by this: a heterogeneous whole is
+perceived, not inferred against itself.
+
+Consequences (decided):
+
+- **Two symbols per concept.** Every concept has a positive symbol `c⁺`
+  (the concept present) and a negative symbol `c⁻` (its negation present),
+  both presences in `[0, 1]`, sharing one concept row: the symbol index is
+  `i ↔ (i⁺, i⁻)` and the concept's distributed code is stored once. The
+  four corners read directly from the pair — `t = c⁺(1 − c⁻)`,
+  `f = c⁻(1 − c⁺)`, `both = c⁺c⁻`, `neither = (1 − c⁺)(1 − c⁻)` — so
+  luminosity (catuṣkoṭi coverage) is measurable per symbol. **What is
+  stored and carried is the evidence pair `(c⁺, c⁻)`, never the derived
+  corners**: `t` and `f` send both `(1, 1)` and neither `(0, 0)` to
+  `(0, 0)` and lose exactly the distinction being added (Codex,
+  2026-09-23). Negation is a
+  presence, so the concept pyramid is monotone over positive presences with
+  non-negative exponents, and a negated part is an edge to `c⁻`
+  ([accessible mind §2.2](2026-09-20-accessible-mind-subsystems.md#22-parallel-conceptual-knowing-zeroth-order);
+  [Architecture, item 11](../Architecture.md#decided-in-direction-a-concept-is-sigma-over-pi-alec-2026-09-21)).
+- **The channels measure presence of supporting evidence among the
+  parts, not the proportion of the whole.** The ball is both black and
+  white whatever the share of each; how much is the meronomy's question
+  (`.where` extents), not the symbol's. So the snap reads each channel by
+  an **evidence fold over slots** of the rectified projection onto the
+  atom (`relu p_n`) and onto its negation (`relu −p_n`): the **union over
+  admitted slots**, `1 − ∏(1 − e_n)`, where a slot is admitted to a
+  channel only above a noise floor `τ`, `e_n = relu(|p_n| − τ)/(1 − τ)`
+  (confirmed for implementation, Alec 2026-09-23). Every rectified fold is
+  biased upward by noise on both channels — noise has a positive and a
+  negative part, and rectification hands one to each — so admission comes
+  first, as the taper does for the pyramid (Architecture, settled point 4);
+  the union is then the existential "some part carries this", the same
+  sigma the pyramid uses, so order 0 and order 1 read alike. Max is
+  withdrawn (Alec): its extreme-value bias grows with the slot count, so
+  the channel with more slots wins from noise, and one spurious slot in the
+  other channel manufactures both. The slot-mean is ruled out: two slots at
+  +1 and −1 average to `(.5, .5)`, a quarter in every corner, which is not
+  both (Codex). `τ` is a `model.xml` parameter set from a measurement, the
+  distribution of projection magnitudes for unrelated content in a trained
+  model (item 10, finding 6), not guessed. The tests state the meaning:
+  slots `+1, −1` → `(1, 1)`, both = 1; all slots inactive → `(0, 0)`,
+  neither = 1; eight slots at .1 under `τ = .2` → `(0, 0)`.
+- **A composed concept's `c⁻` is the De Morgan dual fold, never
+  `1 − c⁺`** (which would erase both and neither). A literal over part `A`
+  is the pair `(c⁺_A, c⁻_A)`, swapped for a negated part. A kind, a union
+  over `W_σ`, has `c⁺ = union of the literals' positive channels` and
+  `c⁻ = conjunction of their negative channels` (`¬(A ∨ B) = ¬A ∧ ¬B`); a
+  whole, a conjunction over `W_π`, has `c⁺ = conjunction` and `c⁻ = union`
+  of the respective channels. The same non-negative exponents serve both
+  channels; only the chart is swapped (`log u` against `log(1 − u)`).
+  Checks: all parts neither → `(0, 0)`; all parts both → `(1, 1)`; in the
+  kind `A ∨ B` with `A` both and `B` absent, `(1, 1)`: the kind is present
+  through `A` and its negation through `¬A ∧ ¬B`. The reverse is the
+  transpose of each fold on its own channel; the taper ranks a row by its
+  evidence `max(c⁺, c⁻)`, so a both-row ranks high; the symbolic readout
+  carries the pair. Cost: two further scatter passes per rung.
+- **All percepts are positive; evidence against comes through the
+  definition** (Alec, 2026-09-23). A zeroth-order concept's atom has
+  positive and negative components over the percept dimensions, and a
+  white code projects negatively onto black's atom, so white at a position
+  is evidence against black there. No negative percept exists. For the
+  ball this reads black present and non-black present, which is the honest
+  report of the presentation, and white counts as non-black without harm.
+- **Evidence against is scoped to the subject's extent.** Read over the
+  whole field, every concept's negative channel is fed by everything else
+  present — the mat is non-cat — so at order 0, where the subject is the
+  presentation itself, "both" is true of every concept that shares the
+  scene and discriminates nothing. Wherever a subject exists, the negative
+  channel is read only within its extent. In the terms of Tibetan debate
+  this is pervasion (*khyab pa*, *vyāpti*): the cat does not pervade "cat
+  and mat" (Alec, 2026-09-23). The corners are the four cases of
+  pervasion over a subject's parts — the predicate pervades (true), its
+  negation pervades (false), neither pervades because the parts differ
+  (both), nothing is known of the parts (neither). A predicate over a whole
+  reads its parts; a conjunction with a negated part in the pyramid reads the
+  negated part at the positions of its positive parts, which is the
+  positional grounding of item 11a. So the pair is kept **per position**
+  through the zeroth-order read and the pyramid's rungs, and the union
+  over positions is taken last, for the symbol's own activation. At the
+  production tile count this is eight evaluations of a store of about
+  fifteen rows, not a cost.
+- **A row stores the pair `(c⁺, c⁻)`.** The stored scalar `t − f` (§3.4,
+  §9 item 2 as first decided) cannot hold both; the corners are derived at
+  read time. Trust stays on the row; the edge still carries none.
+- **"Both" is asserted by composition, never by a sentence alone.** "The
+  ball is black and white" seals as an idea whose object has parts under
+  two predicates; a single assertion "the ball is black" from a source
+  raises `c⁺` with that source's trust and leaves `c⁻` to the parts that
+  differ or to another source.
+
 ## 2. Collapse versus reference (decided)
 
 An embedded clause whose content is absolute does **not** require a
@@ -275,9 +402,10 @@ rows between concept rows, the META bindings, and discovery from witnessed
 substitution — the same context on different occasions — for words and
 percepts
 ([Architecture](../Architecture.md#decided-in-direction-a-concept-is-sigma-over-pi-alec-2026-09-21)).
-Trust stays on the LTM row; the edge carries none. The tetralemma trust
-tuple (t, f, both, neither) is computation-time only; the stored scalar
-is `t − f` as today.
+Trust stays on the LTM row; the edge carries none. *Amended (Alec,
+2026-09-23, §1.1):* the row stores the evidence pair `(c⁺, c⁻)` and the
+tetralemma tuple (t, f, both, neither) is derived from it at read time; the former
+stored scalar `t − f` cannot hold **both**, which is a compositional fact.
 
 **Word to object is a direct index.** Translation from a word to its
 object never traverses the taxonomy. The word-keyed binding table
@@ -540,8 +668,9 @@ further decision, are folded into the sections above:
 2. **WholeSpace META taxonomy: vestigial, retired.** META is the
    concept-level word/object generalisation with one writer; the taxonomy
    is a derived index; word-to-object translation is the direct binding
-   index. The tetralemma tuple is computation-time only; the learn-score
-   gate is retired.
+   index. The tetralemma tuple is computation-time only (superseded
+   2026-09-23 by §1.1: the row stores the pair); the learn-score gate is
+   retired.
 3. **No REL_EQUAL.** Improper parthood is the primitive (Simons 1987);
    whole is part with swapped operands; equality is two part rows with
    independent trust; subsumption between concepts is parthood;

@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-23-item11/evidence.py",
+    "--config",
+    "/Users/arogers/github/WikiOracle/basicmodel/output/item11-paired-validation-measurements/calibration.xml",
+    "--out",
+    "/Users/arogers/github/WikiOracle/basicmodel/output/item11-paired-validation-measurements/calibration.json"
+  ],
+  "pid": 63384,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 4055240568,
+  "elapsed_seconds": 9.803246834024321,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/output/item11-paired-validation-measurements/calibration.log"
+}
