@@ -28,12 +28,10 @@ from Spaces import Space, PartSpace, WholeSpace
 _XOR_HEAD_NVEC = [8, 8, 8]
 _GRAMMAR_HEAD_NVEC = [4, 2, 2]
 _HEAD_SD = {  # (n_keys, sha16 of sorted state_dict key names)
-    # 2026-09-11 (meronomy fold ladder, contract 3): the learned boundary
-    # weights live on the property inventory (propertyBasis configs) only;
-    # these legacy-basis configs carry none, so their key sets are the
-    # original HEAD pins.
-    "data/MM_20M_xor.xml": (554, "3eb1cc3a2392044d"),
-    "data/MM_20M_grammar.xml": (731, "6eea8571d26d4e91"),
+    # Measured against the accepted 440af47 baseline. The complete key sets
+    # match that baseline; the older pins predated its grammar additions.
+    "data/MM_20M_xor.xml": (554, "6761889f00108ece"),
+    "data/MM_20M_grammar.xml": (749, "a46523768706c5c9"),
 }
 
 
@@ -182,10 +180,14 @@ def test_ws_routing_after_serial_migration():
 # ---- Native membership read and feedforward pyramid ----
 
 @pytest.mark.slow
-def test_written_order0_words_are_present_after_one_smoke_epoch():
-    """Witnessed words must read through their fused positional PS parts."""
+def test_written_order0_words_are_present_after_one_smoke_epoch(tmp_path):
+    """Read word groups through native run positions and word extents."""
     import torch
-    m = _run_one_epoch("data/MM_sparse_concept.xml")
+    from test_grounded_xor import grounded_model
+    m, _ = grounded_model(tmp_path, inventory=128, load_data=True)
+    m.train()
+    m.runEpoch(optimizer=m.getOptimizer(lr=.01), batchSize=4,
+               split='train', max_batches=1)
     # Read the same workload after the training boundary wrote its words.
     m.runEpoch(optimizer=None, batchSize=4, split="train", max_batches=1)
     cs0 = m.conceptualSpaces[0]

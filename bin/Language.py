@@ -16496,15 +16496,21 @@ class SymbolSpace(Space):
                 if event.ndim == 2:
                     event = event.unsqueeze(0)
                 codes = event.detach().mean(dim=0)
-            if codes.ndim != 2 or len(codes) < len(acts):
+            if codes.ndim not in (2, 3) or codes.shape[-2] < len(acts):
                 raise ValueError('paired symbol read requires one code per concept')
-            codes = codes[:len(acts)].detach().clone()
+            codes = codes[..., :len(acts), :].detach().clone()
             cb = getattr(getattr(self, 'subspace', None), 'what', None)
             W = cb.getW() if cb is not None and hasattr(cb, 'getW') else None
             if W is not None:
-                n, d = min(len(codes), len(W)), min(codes.shape[-1], W.shape[-1])
+                n, d = min(codes.shape[-2], len(W)), min(codes.shape[-1], W.shape[-1])
                 with torch.no_grad():
-                    W[:n, :d].copy_(codes[:n, :d].to(W))
+                    addresses = getattr(concept_sub, '_concept_inventory_rows', None)
+                    if addresses is None:
+                        W[:n, :d].copy_(codes[:n, :d].to(W))
+                    else:
+                        valid = (addresses >= 0) & (addresses < len(W))
+                        values = codes.permute(1, 0, 2) if codes.ndim == 3 else codes
+                        W[addresses[valid], :d] = values[valid, :d].to(W)
             symbol_event = decode(acts, codes)
             width = int(getattr(self.subspace, 'nWhat', codes.shape[-1]))
             if row_events and event.shape[-1] > width:
@@ -16516,7 +16522,13 @@ class SymbolSpace(Space):
             object.__setattr__(leg, '_symbol_evidence', symbols(acts))
             object.__setattr__(leg, '_concept_activations', acts)
             object.__setattr__(leg, '_concept_codes', codes)
-            for name in ('position_evidence', 'position_spans', 'extents'):
+            ids = getattr(concept_sub, '_concept_ids', None)
+            if ids is not None:
+                # Packed slots travel with logical symbol addresses: 2*cid
+                # and 2*cid+1. Rebinding a slot cannot rename a symbol.
+                addresses = 2 * ids[..., None] + torch.arange(2, device=ids.device)
+                object.__setattr__(leg, '_symbol_indices', addresses)
+            for name in ('position_evidence', 'position_spans', 'extents', 'ids', 'inventory_rows'):
                 object.__setattr__(leg, '_concept_' + name,
                                    getattr(concept_sub, '_concept_' + name, None))
             return leg

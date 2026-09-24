@@ -1661,3 +1661,30 @@ and measurement receipts exactly, SHA-256
 `1e91b282935cb2bb88e137f3584f2f6fcd3e159534c2b2170d917ec3485011b2`.
 The preceding interrupted and memory-bounded attempts remain recorded in
 the review receipt; neither is counted as passing validation.
+
+
+### Item 11b accepted-review corrections: recurrent parts and attended rows (2026-09-24)
+
+The [correction receipt](benchmarks/2026-09-24-item11b-corrections/README.md)
+records the failing probes and the bounded validation for recurrent part
+formation, containment over canonical ids, and concept fields rebound per
+sentence. Twelve distinct words are read through eight order-0 slots, both
+across turns and in one batch. Checkpoints, symbols, priming and thought
+retain concept identity across those bindings. The landed 11b negative-pole
+formula, witnessing, location and XOR gate are preserved; 11c is not part
+of this landing.
+
+All **44 affected cases pass**, including the explicit slow optimizer and
+training smoke checks. Serial reconstruction remains unchanged from 11b:
+the after-training mean is 0.142% above `d4dc385`; frozen primitive
+memberships reproduce the reference exactly. All eight prior rows over
+256 bytes and the 160 runs over 32 sentences are unchanged. The receipt
+retains the failing probes, fixture corrections and the first full run's
+single fixture failure.
+
+The [final full receipt](benchmarks/2026-09-24-item11b-corrections/full-result.json.gz)
+completes **4,794 unique cases: 4,463 passed, 330 skipped, one existing
+expected failure**, exit 0. All six fresh unseeded XOR runs pass. Its
+639-file source map matches the final affected and measurement receipts
+exactly, SHA-256
+`15201722241d80122b33e50a87fc1dddcf6cdfc8bb40caf5f8334ec7ba33f2d7`.

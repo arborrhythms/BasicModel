@@ -72,7 +72,8 @@ def test_word_symbol_defines_order0_native_features_and_object_stays_unwritten()
     assert set(cs.concept_parts(A)) == {1, 2}       # the reference store
     assert cs.concept_wholes(A) == [int(WORD)]
     features = Spaces._concept_alloc_of(cs).layer().features
-    assert {col for row, col in features._index if row == a_row} == {4, 8, 4 * int(WORD) + 2}
+    assert {col for row, col in features._index if row == a_row} == {4, 4 * int(WORD) + 2}
+    assert Spaces._concept_alloc_of(cs).layer().feature_groups[a_row, 4] == (1, 2)
     b_row = cs._csw_concept_row(0, B)
     assert not any(row == b_row for row, _ in features._index)
 

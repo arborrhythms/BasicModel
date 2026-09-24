@@ -2050,10 +2050,16 @@ Missing observations supply neither pole. There is no dual fold at this seam.
 Negation exists only for concepts, not percepts (or symbols): the concept's
 signed definition chooses the complement of a perceptual membership.
 
-For a word such as "love", the PartSpace feature is the fused, ordered group
-of letters with its own span, not four word-level features that must each
-hold everywhere. Its constituent letters remain in PartSpace. The
-WholeSpace feature is the word-like property covering the span. A word
+For a word such as "love", the PS literal is the ordered group of existing
+part ids, with repetition and adjacency retained. A first witness creates
+no PartSpace row. The same containment reader reads either that group or
+a single percept id inside the candidate span. Positions carry the radix's
+canonical longest-match tiling; the read neither expands bytes nor searches
+other tilings. Recurrence may promote the group into one percept. The radix
+records its id ancestry, and the definition then addresses that row without
+changing its membership read or learned exponent. A part formed in a turn
+does not aggregate further in that turn: formation stops aggregation.
+The WholeSpace literal is the word-like property pervading the span. A word
 usually has one such part and whole; a concept can have several necessary
 percepts in each of several sufficient alternatives. Witnessing writes
 those conjuncts and alternatives positively. Graded support from incomplete
@@ -2061,6 +2067,22 @@ letter composition belongs to item 10's membership-fold evaluation.
 The meronomic refinement and pruning pass treats each alternative's own
 conjunction separately; accumulated references across different witnesses
 are not one over-collected conjunction and cannot retire the union.
+
+**The attended field.** Alec: eight parts from PartSpace and eight wholes
+from WholeSpace are the attended space of perception, a span in `.what`
+restricting both mereological level and location. Conceptual space arises
+from that field. Order-0 rows are therefore bound per turn. A read gathers
+definitions referencing the attended memberships, admits them up to the
+caps by membership support, and composes the existing taper over that field.
+Sparse definitions and their weights persist in the inventory keyed by
+concept id; an attended row has no permanent owner. Sparse views gather
+those weights without copying their learning state. Sentences in a batch
+bind independently within the same caps. Retained evidence carries its own
+concept ids and code snapshot after the view is released.
+Context weights use persistent inventory addresses resolved from concept
+ids, stored sparsely; a reused field slot cannot transfer another concept's
+context. Checkpoints, the priming bridge, symbols and thought effects resolve
+concept ids instead of treating packed field offsets as identities.
 
 **Occurrences and extents.** Constant-signature runs remain positions;
 word units remain subject extents. PartSpace part spans and WholeSpace
@@ -2116,12 +2138,18 @@ the 11a normalization residue. The 11a prior memberships and segmentation
 remain unchanged. The [11b receipt](benchmarks/2026-09-23-item11b/README.md)
 records the gate, controls, serial reconstruction against `d4dc385`, and the
 source-matched validation. The [September 24 review correction](benchmarks/2026-09-24-item11b-review/README.md)
-records located parts, native word fusion and alternative percept definitions.
+records located parts and alternative percept definitions. Its first-witness
+fusion and permanent order-0 field assignment are superseded by the correction
+above; the landed negative-pole formula, witnessing, location and XOR gate
+remain the 11b contract. The [attended-field correction receipt](benchmarks/2026-09-24-item11b-corrections/README.md)
+records recurrent parts, canonical-id containment and per-turn binding.
 
-**Shared symbol index.** A parallel symbol-leg row `j` addresses concept
-row `j // 2`; `j % 2` selects its pole. The codebook keeps one row per
-concept. Serial word references already carry concept rows and must not
-be halved. Readers must use their declared index domain.
+**Shared symbol index.** Concept id `c` has logical symbol addresses `2*c`
+and `2*c+1`. A parallel carrier packs two poles per attended concept and
+retains the ids beside those packed offsets; rebinding an offset cannot
+rename a symbol. The codebook keeps one code per inventory concept. Serial
+word references already carry their inventory addresses and are not halved.
+Readers use their declared index domain.
 
 
 ---

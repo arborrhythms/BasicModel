@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-23-item11a/priors.py",
+    "--out",
+    "/Users/arogers/github/WikiOracle/basicmodel/output/item11b-corrections-final-measurements/priors.json"
+  ],
+  "pid": 40956,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 491078856,
+  "elapsed_seconds": 3.6110004170332104,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/output/item11b-corrections-final-measurements/priors.log"
+}

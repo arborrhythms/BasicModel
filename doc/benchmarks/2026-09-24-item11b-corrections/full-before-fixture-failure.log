@@ -1,0 +1,30 @@
+F.                                                                       [100%]
+=================================== FAILURES ===================================
+___________ test_word_A_symbol_is_location_concept_no_duplicate_knit ___________
+test/test_mereology_word_binding.py:280: in test_word_A_symbol_is_location_concept_no_duplicate_knit
+    stub._maybe_autobind_meta(pid_2d, vec_tensor, word_groups=word_groups,
+bin/Spaces.py:17504: in _maybe_autobind_meta
+    self._autobind_cross_tower(pid_2d, percept_where, ws,
+bin/Spaces.py:17732: in _autobind_cross_tower
+    self.refine_over_collected()
+bin/Spaces.py:19322: in refine_over_collected
+    row = ConceptualSpace._csw_row_of(self, sym)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:19490: in _csw_row_of
+    rows = self._csw_rows_of(concept_id)
+           ^^^^^^^^^^^^^^^^^
+E   AttributeError: 'types.SimpleNamespace' object has no attribute '_csw_rows_of'
+=============================== warnings summary ===============================
+test/test_mereology_word_binding.py::test_word_A_symbol_is_location_concept_no_duplicate_knit
+test/test_mereology_word_binding.py::test_two_words_mint_the_joint_sentence_chain
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1731: RuntimeWarning: EventEncoding[WholeSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_mereology_word_binding.py::test_word_A_symbol_is_location_concept_no_duplicate_knit
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_mereology_word_binding.py::test_word_A_symbol_is_location_concept_no_duplicate_knit
+1 failed, 1 passed, 3 warnings in 3.07s

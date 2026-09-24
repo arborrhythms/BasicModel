@@ -1,0 +1,39 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+___________________ test_first_witness_keeps_existing_parts ____________________
+test/test_order0_attended_field.py:15: in test_first_witness_keeps_existing_parts
+    assert ps.fuse_parts(parts) == parts
+E   assert [2] == [0, 1, 1, 0]
+E     
+E     At index 0 diff: 2 != 0
+E     Right contains 3 more items, first extra item: 1
+E     Use -v to get more diff
+_________ test_containment_reads_canonical_ids_without_expanding_bytes _________
+test/test_order0_attended_field.py:29: in test_containment_reads_canonical_ids_without_expanding_bytes
+    pair = Spaces.PartSpace.part_memberships(
+bin/Spaces.py:12080: in part_memberships
+    sequence = store.bytes_for(pid)
+               ^^^^^^^^^^^^^^^^^^^^
+test/test_order0_attended_field.py:24: in forbidden
+    raise AssertionError('the conceptual read must not expand percept bytes')
+E   AssertionError: the conceptual read must not expand percept bytes
+=========================== short test summary info ============================
+FAILED test/test_order0_attended_field.py::test_first_witness_keeps_existing_parts
+FAILED test/test_order0_attended_field.py::test_containment_reads_canonical_ids_without_expanding_bytes
+2 failed in 2.36s
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_______________ test_inventory_outlives_the_eight_attended_rows ________________
+test/test_order0_attended_field.py:42: in test_inventory_outlives_the_eight_attended_rows
+    assert row is not None, 'a field cap must not cap persistent definitions'
+E   AssertionError: a field cap must not cap persistent definitions
+E   assert None is not None
+=============================== warnings summary ===============================
+test/test_order0_attended_field.py::test_inventory_outlives_the_eight_attended_rows
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:19009: RuntimeWarning: CS snap block exhausted (8 rows): concept 9 gets records only, no weighted reading (overflow #1)
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_order0_attended_field.py::test_inventory_outlives_the_eight_attended_rows
+1 failed, 1 warning in 2.08s

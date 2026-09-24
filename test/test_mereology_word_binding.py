@@ -48,6 +48,7 @@ def _cs_stub(ss):
     code without standing up a full model."""
     stub = types.SimpleNamespace()
     stub.terminalSymbolSpace_ref = ss
+    stub.nVectors = ss.nVectors
     stub.wholeSpace_ref = None
     stub._maybe_autobind_meta = types.MethodType(
         Spaces.ConceptualSpace._maybe_autobind_meta, stub)
@@ -65,6 +66,8 @@ def _cs_stub(ss):
                # into the per-order sparse weight store; these short-circuit to a
                # no-op on the stub (not sparse-active -> no _symbolic_order).
                "_populate_concept_weights", "_sparse_active",
+               # Refinement resolves definitions through the inventory.
+               "_csw_rows_of", "_order_caps",
                # the spans-staged S2c lifecycle (refine + pruning round).
                "refine_over_collected", "retire_concept",
                "prune_concept_links", "_whole_ancestors", "_drop_concept_edge",

@@ -1,0 +1,23 @@
+
+=== worker-000.log ===
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_________ test_default_expectation_adds_only_its_owned_checkpoint_keys _________
+test/test_dual_towers.py:94: in test_default_expectation_adds_only_its_owned_checkpoint_keys
+    assert (len(keys), h) == (n, sha), (cfg, len(keys), h)
+E   AssertionError: ('data/MM_20M_xor.xml', 554, '6761889f00108ece')
+E   assert (554, '6761889f00108ece') == (554, '3eb1cc3a2392044d')
+E     
+E     At index 1 diff: '6761889f00108ece' != '3eb1cc3a2392044d'
+E     Use -v to get more diff
+----------------------------- Captured stdout call -----------------------------
+[BasicModel] No checkpoint at /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-11b-baseline-j_4e9ys7/output/MM_20M_xor.ckpt, starting fresh
+=============================== warnings summary ===============================
+test/test_dual_towers.py::test_default_expectation_adds_only_its_owned_checkpoint_keys
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-11b-baseline-j_4e9ys7/bin/Models.py:7919: RuntimeWarning: output_state_boundary [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-11b-baseline-j_4e9ys7/data/MM_20M_xor.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_dual_towers.py::test_default_expectation_adds_only_its_owned_checkpoint_keys
+1 failed, 1 warning in 4.61s

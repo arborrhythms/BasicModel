@@ -4709,7 +4709,7 @@ class BaseModel(Mereology, nn.Module):
                     'thought_occurrence': getattr(carrier, '_thought_occurrence', None),
                     'code_owner': int(getattr(carrier, '_concept_code_owner', i)),
                 }
-                for name in ('position_evidence', 'position_spans', 'extents'):
+                for name in ('position_evidence', 'position_spans', 'extents', 'ids', 'inventory_rows'):
                     value = getattr(carrier, '_concept_' + name, None)
                     if torch.is_tensor(value):
                         entry['knowing'][name] = _checkpoint_host_copy(value)
@@ -4828,6 +4828,9 @@ class BaseModel(Mereology, nn.Module):
             layer = alloc.layer(order)
             saved_n_input = int(blob.get("nInput", layer.nInput))
             saved_n_output = int(blob.get("nOutput", layer.nOutput))
+            if (layer.nOutput < saved_n_output <= int(getattr(cs, 'nVectors', layer.nOutput))
+                    and getattr(cs, '_sparse_active', lambda: False)()):
+                layer.grow_inventory(saved_n_output)
             live_n_input = int(layer.nInput)
             live_n_output = int(layer.nOutput)
             old_columns = saved_n_input == saved_n_output + 1
@@ -4957,7 +4960,24 @@ class BaseModel(Mereology, nn.Module):
                     raise ValueError('checkpoint knowing exceeds concept inventory')
                 carrier = cs.subspace
                 object.__setattr__(carrier, '_concept_activations', evidence.to(codes).clone())
-                object.__setattr__(carrier, '_concept_codes', codes[:len(evidence)].detach())
+                # Identity is retained with the evidence, never recovered from
+                # this turn's attended slot. Older receipts migrate once here.
+                ids = knowing.get('ids')
+                rows = knowing.get('inventory_rows')
+                owner_space = conceptual_spaces[owner]
+                if ids is not None:
+                    layer = owner_space._concept_allocator.layer(0)
+                    addresses = []
+                    for cid in ids.flatten().tolist():
+                        address = owner_space._csw_row_of(cid) if cid >= 0 else layer.row_of(('provisional', cid))
+                        addresses.append(-1 if address is None else address)
+                    rows = torch.tensor(addresses, device=codes.device, dtype=torch.long).reshape(ids.shape)
+                elif rows is None:
+                    rows = torch.arange(len(evidence), device=codes.device)
+                    ids = torch.tensor([owner_space.concept_id_at_row(int(r)) or -1 for r in rows], device=codes.device)
+                object.__setattr__(carrier, '_concept_codes', owner_space._field_codes(codes, rows).detach())
+                object.__setattr__(carrier, '_concept_ids', ids.to(codes.device).clone())
+                object.__setattr__(carrier, '_concept_inventory_rows', rows.to(codes.device).clone())
                 object.__setattr__(carrier, '_concept_code_owner', owner)
                 object.__setattr__(carrier, '_thought_occurrence', knowing['thought_occurrence'])
                 for name in ('position_evidence', 'position_spans', 'extents'):
@@ -6707,6 +6727,8 @@ class BasicModel(BaseModel):
             if basis is None:
                 basis = _basis(self.conceptualSpace)
             basis = basis.detach()
+            if basis.ndim == 3:
+                basis = basis[row]
             n = min(len(knowing), len(basis))
             from ConceptEvidence import symbols
             pair = symbols(knowing[:n])[:, row].detach()
@@ -7457,7 +7479,10 @@ class BasicModel(BaseModel):
         rows = (getattr(cs0, "_cs_level_rows", None)
                 if cs0 is not None else None)
         if rows:
-            cs0.prime_seen(torch.cat([r.reshape(-1) for r in rows]))
+            packed = torch.cat(rows)
+            binding = cs0._field_inventory_rows(packed.device)
+            addresses = binding.gather(0, packed) if binding.ndim == 2 else binding[packed]
+            cs0.prime_seen(addresses[addresses >= 0])
         # CS->PS / CS->WS heat projection (Alec 2026-07-12): the diffused
         # concept heat lands on the word triples' PS pids (primed
         # RECOGNITION) and word-whole WS rows (primed RETRIEVAL -- the
@@ -18656,6 +18681,8 @@ class BasicModel(BaseModel):
                 and int(_acts.shape[0]) == sum(_cut_cs._order_caps())), (
                 'symbolic phase requires [store span, batch, occurrence, 2]')
             object.__setattr__(last_cs, '_concept_activations', _acts)
+            object.__setattr__(last_cs, '_concept_ids', _cut_cs._cs_field_concept_ids.detach().clone())
+            object.__setattr__(last_cs, '_concept_inventory_rows', _cut_cs._cs_field_rows.detach().clone())
             object.__setattr__(last_cs, '_thought_occurrence', None)
             object.__setattr__(last_cs, '_concept_code_owner', 0)
             for name in ('position_evidence', 'position_spans', 'extents'):
@@ -18663,7 +18690,7 @@ class BasicModel(BaseModel):
                                    getattr(_cut_cs, '_cs_' + name, None))
             if _acts is not None:
                 object.__setattr__(last_cs, '_concept_codes',
-                                   _cut_cs.similarity_codebook.getW()[:len(_acts)].detach().clone())
+                                   _cut_cs._field_codes(_cut_cs.similarity_codebook.getW()).detach())
             if _acts is not None:
                 # The SS leg, ONCE: syncs the SS codebook to the settled
                 # concept codes; the leg's gradient rides the activations.

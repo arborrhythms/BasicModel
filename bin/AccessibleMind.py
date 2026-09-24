@@ -117,15 +117,34 @@ def apply_thought_effect(model, result, *, row, work):
             positions = torch.cat((positions, positions.new_zeros(
                 positions.shape[0], positions.shape[1], added, positions.shape[3], 2)), dim=2)
             object.__setattr__(carrier, '_concept_position_evidence', positions)
+    addresses = getattr(carrier, '_concept_inventory_rows', None)
+    addresses = (torch.arange(count, device=basis.device) if addresses is None
+                 else addresses.to(basis.device).clone())
+    ids = getattr(carrier, '_concept_ids', None)
+    ids = (torch.tensor([space.concept_id_at_row(int(r)) or -1 for r in addresses], device=basis.device)
+           if ids is None else ids.to(basis.device).clone())
     query = field.new_zeros(field.shape)
     for reference in seeds:
         try:
             index = reference[1] if reference[0] == 'row' else _existing_row(space, reference)
         except ValueError:
             continue
+        if sparse:
+            cid = space.concept_id_at_row(index)
+            bound_ids = ids[:, row] if ids.ndim == 2 else ids
+            bound_rows = addresses[:, row] if addresses.ndim == 2 else addresses
+            slots = (bound_ids == cid).nonzero().flatten() if cid is not None else (bound_rows == index).nonzero().flatten()
+            if not len(slots):
+                order = space._concept_source_order(cid) if cid is not None else 0
+                start, end = space.order_slice(order)
+                slots = (bound_rows[start:end] < 0).nonzero().flatten() + start
+                if len(slots):
+                    bound_rows[slots[0]] = index
+                    bound_ids[slots[0]] = -1 if cid is None else cid
+            index = int(slots[0]) if len(slots) else -1
         if 0 <= index < len(query):
             query[index, row, location, 0] = 1.
-    inferred = space.cs_reverse_presence(query) if sparse else query
+    inferred = space.cs_reverse_presence(query, inventory_rows=addresses) if sparse else query
     if sparse:
         # The paired COO transpose is the definition. Include inferred
         # literals even when no separate relation record names the edge.
@@ -158,6 +177,9 @@ def apply_thought_effect(model, result, *, row, work):
             pending.extend(part for part in space.concept_parts(cid)
                            if isinstance(part, tuple) and part[0] == 'sym')
     object.__setattr__(carrier, '_concept_activations', field.detach())
-    object.__setattr__(carrier, '_concept_codes', basis[:count].detach())
+    object.__setattr__(carrier, '_concept_codes',
+                       space._field_codes(basis, addresses).detach() if sparse else basis[:count].detach())
+    object.__setattr__(carrier, '_concept_ids', ids.detach())
+    object.__setattr__(carrier, '_concept_inventory_rows', addresses.detach())
     if owner is not None:
         object.__setattr__(carrier, '_concept_code_owner', owner)

@@ -31,14 +31,14 @@ def corners(pair):
 
 
 def decode(field, codes):
-    """Two symbol rows per concept, addressed 2*i and 2*i+1, one code."""
+    """Pack two poles per bound concept; the carrier supplies its concept ids."""
     pair = symbols(field).permute(1, 0, 2)
-    rows = torch.arange(2 * len(codes), device=codes.device)
-    # The symbol leg has two rows per concept; dictionary addresses are
-    # row // 2. Serial word references already carry concept-row addresses.
-    poles = codes.index_select(0, rows // 2)
+    rows = torch.arange(2 * codes.shape[-2], device=codes.device)
+    # These are packed offsets only. Logical symbol addresses are 2*cid
+    # and 2*cid+1 in the retained carrier, independent of the attended slot.
+    poles = codes.index_select(-2, rows // 2)
     poles = poles * torch.where(rows % 2 == 0, 1., -1.)[:, None]
-    return pair.flatten(1, 2).unsqueeze(-1) * poles.unsqueeze(0)
+    return pair.flatten(1, 2).unsqueeze(-1) * (poles.unsqueeze(0) if poles.ndim == 2 else poles)
 
 
 def in_extents(position_evidence, position_spans, extents):

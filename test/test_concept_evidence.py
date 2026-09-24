@@ -116,7 +116,9 @@ def test_part_values_have_only_one_checkpoint_owner():
     cs.add_concept_edge(row, 0, .7, negated=True)
     cs.add_concept_edge(row, 1, .8, conjunctive=True)
     store = Spaces._concept_alloc_of(cs).layer()
-    store.ensure_context()[row, 0] = .4
+    context = torch.zeros(store.nOutput)
+    context[0] = .4
+    store.write_context(row, context, 0.)
     assert not any('concept_parts_layer' in name for name in cs.state_dict())
     assert any(parameter is store.values for parameter in cs.parameters())
     saved = store.parts_extras()

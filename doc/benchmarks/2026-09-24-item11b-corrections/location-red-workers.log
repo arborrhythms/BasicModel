@@ -1,0 +1,18 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+________ test_location_writer_keeps_an_ordered_group_before_recurrence _________
+test/test_order0_attended_field.py:206: in test_location_writer_keeps_an_ordered_group_before_recurrence
+    assert list(store.feature_groups.values()) == [tuple(parts)]
+E   assert [] == [(0, 1, 1, 0)]
+E     
+E     Right contains one more item: (0, 1, 1, 0)
+E     Use -v to get more diff
+=============================== warnings summary ===============================
+test/test_order0_attended_field.py::test_location_writer_keeps_an_ordered_group_before_recurrence
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_order0_attended_field.py::test_location_writer_keeps_an_ordered_group_before_recurrence
+1 failed, 1 warning in 2.02s

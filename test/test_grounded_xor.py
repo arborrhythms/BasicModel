@@ -20,7 +20,7 @@ from test_wholespace_property_migration import _set_text
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def grounded_model(tmp_path, pool=4):
+def grounded_model(tmp_path, pool=4, inventory=None, load_data=False):
     tree = ET.parse(ROOT / 'data/MM_xor_fixture.xml')
     root = tree.getroot()
     slots = 2 * pool
@@ -35,12 +35,16 @@ def grounded_model(tmp_path, pool=4):
         'PartSpace/nVectors': slots, 'PartSpace/synthesis': 'meronomy',
         'PartSpace/chunkPromotionThreshold': 100000,
         'ConceptualSpace/nInput': slots, 'ConceptualSpace/nOutput': slots,
-        'ConceptualSpace/nVectors': 8 * pool,
+        'ConceptualSpace/nVectors': 8 * pool if inventory is None else inventory,
         'WholeSpace/nInput': slots, 'WholeSpace/nOutput': slots,
         'WholeSpace/nVectors': 16, 'WholeSpace/propertyBasis': True,
         'WholeSpace/analysis': 'meronomy', 'WholeSpace/digitWholes': False,
         'WholeSpace/divideWithinWhole': False, 'OutputSpace/nInput': slots,
     }
+    if inventory is not None:
+        values['architecture/mereologyRaise'] = True
+    if load_data:
+        values['architecture/data/dataset'] = 'xor'
     for key, value in values.items():
         _set_text(root, key, value)
     grammar = root.find('SymbolSpace/language/grammar')
@@ -53,7 +57,11 @@ def grounded_model(tmp_path, pool=4):
     Language.TheGrammar._configured = False
     with warnings.catch_warnings():
         warnings.simplefilter('ignore')
-        model, _ = Models.BasicModel.from_config(str(path))
+        if load_data:
+            from recon_bench import _build_model
+            model, *_ = _build_model(str(path))
+        else:
+            model, _ = Models.BasicModel.from_config(str(path))
     model.eval()
     model.set_sigma(0.)
     x = torch.zeros(4, 1, slots, dtype=torch.long)

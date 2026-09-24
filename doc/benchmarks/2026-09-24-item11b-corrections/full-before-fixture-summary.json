@@ -1,0 +1,25 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "elapsed_seconds": 1087.9423462080304,
+  "limits": {
+    "memory_bytes": 21474836480,
+    "aggregate_memory_bytes": 21474836480,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 10,
+    "worker_seconds": 1800,
+    "suite_seconds": 10800,
+    "batch_size": 8,
+    "max_files": 1
+  },
+  "peak_aggregate_memory_bytes": 13307562896,
+  "compile_cache_retries": [],
+  "selected": 4794,
+  "completed": 4794,
+  "outcomes": {
+    "passed": 4462,
+    "skipped": 330,
+    "failed": 1,
+    "xfailed": 1
+  }
+}

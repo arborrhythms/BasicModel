@@ -1,0 +1,14 @@
+
+=== worker-000.log ===
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_________ test_definition_group_tracks_new_overlapping_canonical_parts _________
+output/test_item11b_retiling_probe.py:18: in test_definition_group_tracks_new_overlapping_canonical_parts
+    assert store.canonical_parts(old_literal) == [ab, c]
+E   assert [0, 3] == [4, 2]
+E     
+E     At index 0 diff: 0 != 4
+E     Use -v to get more diff
+=========================== short test summary info ============================
+FAILED output/test_item11b_retiling_probe.py::test_definition_group_tracks_new_overlapping_canonical_parts
+1 failed in 2.26s

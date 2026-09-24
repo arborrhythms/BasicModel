@@ -5476,6 +5476,45 @@ class SparseLayer(Layer):
         return self._apply_shape(y, transpose=True)
 
 
+    def bind(self, inventory_rows, *, paired=True):
+        """Gather a differentiable sparse view into a transient attended field.
+
+        Inventory addresses stay in the persistent definition. Missing source
+        concepts contribute zero evidence; the standing poles keep their rails.
+        """
+        addresses = [int(r) for r in inventory_rows]
+        lookup = {r: i for i, r in enumerate(addresses) if r >= 0}
+        size = len(addresses)
+        view = SparseLayer(2 * (size + 1) if paired else self.nInput,
+                           size, nonlinear=False, device=self._device())
+        selected, rows, cols, missing = [], [], [], []
+        for pos, (row, col) in enumerate(zip(self._rows, self._cols)):
+            target = lookup.get(row)
+            if target is None:
+                continue
+            absent = False
+            if paired:
+                source, pole = col % (self.nOutput + 1), col // (self.nOutput + 1)
+                source = size if source == self.nOutput else lookup.get(source)
+                if source is None:
+                    # Both poles of an unattended source are unknown. Keep
+                    # its exponent and mask membership on both fold passes.
+                    absent = True
+                    source, pole = size, 1
+                col = source + pole * (size + 1)
+            selected.append(pos)
+            rows.append(target)
+            cols.append(col)
+            missing.append(absent)
+        view._rows, view._cols = rows, cols
+        view._index = {pair: i for i, pair in enumerate(zip(rows, cols))}
+        if self.values is not None:
+            index = torch.tensor(selected, device=self.values.device, dtype=torch.long)
+            object.__setattr__(view, 'values', self.values.index_select(0, index))
+        view._inventory_edges = selected
+        view._missing_sources = torch.tensor(missing, dtype=torch.bool)
+        return view
+
     def fold_presence(self, u, *, conjunctive=False, start=0, end=None,
                       own=None, own_mask=None, dual=False, edge_memberships=None):
         """Scatter nonnegative exponents; polarity is a source column.
@@ -5503,6 +5542,9 @@ class SparseLayer(Layer):
             # gathers only the written edges, using this same pi scatter.
             v = (u.index_select(0, cols) if edge_memberships is None
                  else edge_memberships[select]).clamp(0, 1)
+            missing = getattr(self, '_missing_sources', None)
+            if missing is not None:
+                v = v.masked_fill(missing.to(v.device)[select, None], 0.)
             eps = torch.finfo(v.dtype).eps
             if conjunctive:
                 vp = v + (v.clamp_min(eps) - v).detach()
@@ -5556,6 +5598,9 @@ class SparseLayer(Layer):
         evidence = chart.index_select(0, rows) * share[:, None] * (y.index_select(0, rows) > 0)
         result = y.new_zeros((self.nInput, y.shape[-1]))
         mask = magnitude > 0
+        missing = getattr(self, '_missing_sources', None)
+        if missing is not None:
+            mask &= ~missing.to(mask.device)[selected]
         acc = result.index_add(0, cols[mask], evidence[mask])
         hit = result.index_add(0, cols[mask],
                                (y.index_select(0, rows[mask]) > 0).to(y.dtype))
@@ -5596,10 +5641,14 @@ class ConceptualAttentionLayer(SparseLayer):
         self.features = SparseLayer(1, nOutput, nonlinear=False, device=device)
         self.features._feature_sources = True
         self.features._sidecar_owned = True
+        # A PS literal may be an ordered group before recurrence forms a
+        # percept. Metadata belongs to its sparse edge, including its pole.
+        self.feature_groups = {}
         self._sidecar_owned = self.conjunctive._sidecar_owned = True
         self._paired_sources = self.conjunctive._paired_sources = nInput == 2 * (nOutput + 1)
-        # Context is a bounded host slab over the taper span, not inventory.
-        self.where = torch.zeros(0, 0, device='cpu')
+        # Context is sparse over persistent inventory addresses, never field slots.
+        self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+                                             torch.empty(0, device='cpu'), (0, 0), device='cpu').coalesce()
         for name, value in (
                 ('participation', torch.ones(nOutput)),
                 ('provisional', torch.zeros(nOutput, dtype=torch.bool)),
@@ -5652,8 +5701,54 @@ class ConceptualAttentionLayer(SparseLayer):
     def ensure_context(self):
         """Allocate only when the parallel pool observes its bounded span."""
         if self.where.numel() == 0:
-            self.where = torch.zeros(self.nOutput, self.nOutput, device='cpu')
+            self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+                                                 torch.empty(0, device='cpu'), (self.nOutput, self.nOutput), device='cpu').coalesce()
         return self.where
+
+    def grow_inventory(self, size):
+        """Grow definition storage independently of the bounded attended field."""
+        size, old = int(size), self.nOutput
+        if size <= old:
+            return
+        for matrix in self.part_matrices():
+            matrix._cols = [(c % (old + 1) if c % (old + 1) != old else size)
+                            + (c // (old + 1)) * (size + 1) for c in matrix._cols]
+            matrix._index = {pair: i for i, pair in enumerate(zip(matrix._rows, matrix._cols))}
+            matrix.nInput, matrix.nOutput = 2 * (size + 1), size
+            matrix._dev_cache = None
+        self.features.nOutput = size
+        for name, value in list(self.named_buffers(recurse=False)):
+            if value.ndim == 1:
+                fill = 1 if name == 'participation' else 0
+                setattr(self, name, torch.cat((value, value.new_full((size - old,), fill))))
+        if self.where.numel():
+            self.where = torch.sparse_coo_tensor(self.where.indices(), self.where.values(),
+                                                 (size, size), device='cpu').coalesce()
+
+    def context_similarities(self, context):
+        """Sparse inventory context dot products and row norms, without a square slab."""
+        where = self.ensure_context().coalesce()
+        dot = torch.sparse.mm(where, context.cpu()[:, None]).flatten()
+        norm = dot.new_zeros(self.nOutput).index_add_(0, where.indices()[0], where.values().square()).sqrt_()
+        return dot / (norm * context.norm()).clamp_min(1e-12)
+
+    def write_context(self, row, context, beta):
+        where = self.ensure_context().coalesce()
+        indices, values = where.indices(), where.values()
+        previous = values.new_zeros(self.nOutput)
+        selected = indices[0] == row
+        previous[indices[1, selected]] = values[selected]
+        updated = beta * previous + (1 - beta) * context.cpu()
+        columns = updated.nonzero().flatten()
+        new = torch.stack((torch.full_like(columns, row), columns))
+        self.where = torch.sparse_coo_tensor(torch.cat((indices[:, ~selected], new), 1),
+            torch.cat((values[~selected], updated[columns])), where.shape, device='cpu').coalesce()
+
+    def clear_context(self, row):
+        where = self.ensure_context().coalesce()
+        indices = where.indices()
+        keep = (indices != row).all(0)
+        self.where = torch.sparse_coo_tensor(indices[:, keep], where.values()[keep], where.shape, device='cpu').coalesce()
 
     @classmethod
     def square(cls, n_concepts, device=None):
@@ -5679,28 +5774,31 @@ class ConceptualAttentionLayer(SparseLayer):
             matrices[name] = dict(rows=list(matrix._rows), cols=list(matrix._cols),
                                   nInput=matrix.nInput,
                                   values=None if matrix.values is None else matrix.values.detach().cpu().clone())
-        return dict(version=3, matrices=matrices, where=self.where.clone(),
+        return dict(version=4, matrices=matrices, where=self.where.clone(),
+                    feature_groups=dict(self.feature_groups),
                     buffers={name: value.detach().cpu().clone()
                              for name, value in self.named_buffers(recurse=False)})
 
     def load_parts_extras(self, saved, *, old_size=None):
         if saved is None:
             return
-        if saved.get('version') not in (1, 2, 3):
+        if saved.get('version') not in (1, 2, 3, 4):
             raise ValueError('unsupported conceptual parts checkpoint')
+        self.feature_groups = dict(saved.get('feature_groups', {}))
         old_span = self.nOutput if old_size is None else old_size
         self.where.zero_()
         if saved['version'] == 1:
-            context = saved['matrices']['where']
-            if context['values'] is not None:
-                self.ensure_context()
-                self.where[context['rows'], context['cols']] = context['values'].cpu()
+            blob = saved['matrices']['where']
+            context = torch.sparse_coo_tensor(torch.tensor([blob['rows'], blob['cols']], dtype=torch.long),
+                torch.empty(0) if blob['values'] is None else blob['values'].cpu(), (old_span, old_span)).coalesce()
         else:
             context = saved['where']
             if context.numel() and tuple(context.shape) != (old_span, old_span):
                 raise ValueError('concept context shape mismatch')
-            if context.numel():
-                self.ensure_context()[:old_span, :old_span].copy_(context.cpu())
+        if context.numel():
+            context = context.cpu().to_sparse_coo().coalesce()
+            self.where = torch.sparse_coo_tensor(context.indices(), context.values(),
+                (self.nOutput, self.nOutput), device='cpu').coalesce()
         for name in ('conjunctive', 'features'):
             matrix = getattr(self, name)
             blob = saved['matrices'].get(name, dict(rows=[], cols=[], values=None, nInput=1))
@@ -13472,6 +13570,45 @@ class RadixLayer(Layer):
         # ``flush_pending_promotions`` after backward + optimizer.step (or at
         # the corresponding no-grad inference boundary).
         self._pending_promotions: Dict[bytes, torch.Tensor] = {}
+        self.part_groups = {}
+        self._canonical_group_cache = None
+        self._pending_part_groups = {}
+        self._formed_this_turn = set()
+
+    def begin_turn(self):
+        """A formation may participate in aggregation only on a later turn."""
+        self._formed_this_turn.clear()
+
+    def canonical_parts(self, parts):
+        """Retile a definition's group using recorded id ancestry, never bytes.
+
+        This migrates the literal when formations overlap or arrive together.
+        Observed positions are not expanded: the membership reader still
+        compares only the canonical ids retained in the attended field.
+        """
+        if self._canonical_group_cache is None:
+            leaves, prefixes = {}, {}
+            for pid, group in sorted(self.part_groups.items()):
+                native = tuple(atom for part in group for atom in leaves.get(part, (part,)))
+                leaves[pid] = native
+                prefixes.setdefault(native[0], []).append((native, pid))
+            for choices in prefixes.values():
+                choices.sort(key=lambda item: -len(item[0]))
+            self._canonical_group_cache = leaves, prefixes
+        leaves, prefixes = self._canonical_group_cache
+        native = tuple(atom for part in parts for atom in leaves.get(int(part), (int(part),)))
+        parts, index = [], 0
+        while index < len(native):
+            for group, pid in prefixes.get(native[index], ()):
+                if native[index:index + len(group)] == group:
+                    parts.append(pid)
+                    index += len(group)
+                    break
+            else:
+                parts.append(native[index])
+                index += 1
+        return parts
+
 
     @property
     def codebook(self):
@@ -13667,7 +13804,11 @@ class RadixLayer(Layer):
         chunk: bytes,
         init_vector: torch.Tensor,
     ) -> Optional[int]:
-        """Install with existing slack, otherwise defer to a safe boundary."""
+        """Form recurrent groups; a fresh part stops aggregation this turn."""
+        parts = self.spell_out(chunk)
+        if any(p in self._formed_this_turn for p in parts):
+            return None
+        self._pending_part_groups[bytes(chunk)] = tuple(parts)
         if self._size < self._capacity:
             return int(self.insert(chunk, init_vector=init_vector))
         # Standalone RadixLayer users historically grow on insert. Only a
@@ -13742,6 +13883,11 @@ class RadixLayer(Layer):
         self.hash_map[chunk_b] = new_id
         self.inverse_table.append(chunk_b)
         self._size += 1
+        group = self._pending_part_groups.pop(chunk_b, None)
+        if group:
+            self.part_groups[new_id] = group
+            self._canonical_group_cache = None
+            self._formed_this_turn.add(new_id)
         # Canonical fold provenance (todo "make abstraction order
         # canonical"): a multi-byte percept row is PRODUCED by the sigma
         # radix synthesis (bytes -> chunk combine) -- stamp FOLD_SIGMA at
@@ -14456,6 +14602,8 @@ class RadixLayer(Layer):
             "inverse_table": list(self.inverse_table),
             "byte_fallback_hits": self.byte_fallback.extras_dump(),
             "chunk_hits": dict(self._chunk_hits),
+            "part_groups": dict(self.part_groups),
+            "pending_part_groups": dict(self._pending_part_groups),
             "pending_promotions": [
                 (chunk, init.detach().to(device="cpu").clone())
                 for chunk, init in self._pending_promotions.items()
@@ -14526,6 +14674,10 @@ class RadixLayer(Layer):
                 "RadixLayer checkpoint pending promotions exceed configured "
                 f"maxVectors={self._max_capacity}")
         self._pending_promotions = pending
+        self.part_groups = dict(extras.get("part_groups", {}))
+        self._canonical_group_cache = None
+        self._pending_part_groups = dict(extras.get("pending_part_groups", {}))
+        self._formed_this_turn.clear()
 
 
 #endregion

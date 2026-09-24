@@ -1,0 +1,26 @@
+{
+  "bin/Layers.py": {
+    "caller_audit": "ab3646ce1eb01bc18b774a8658ca511b13455710c26fd690c55ee4ec898f0853",
+    "final": "aa8037106996db97bdd24c9a829425a49f7004b2f44b429a162f4b4cd6d831c0"
+  },
+  "test/test_dual_towers.py": {
+    "caller_audit": "4b54f29d6526ea38cce7dbe02d99c005d5365a7e29930713168fdd693197a7f4",
+    "final": "da5aaf291d08e003583f564662b176f3b84cce402f5dd65c15e41e69b96d3413"
+  },
+  "test/test_grounded_xor.py": {
+    "caller_audit": "70689d7cb63e47112f2666728acd2b1aee0ca2206421fb2bcd09eb9ae18d2178",
+    "final": "5339f87ce8cf9d755cc6c5d12f5369bf3153a818d4d66a78e95b1dc9ffd7b2e2"
+  },
+  "test/test_mereology_word_binding.py": {
+    "caller_audit": "07f03fcc635d132b466b4def7d968799508d9e34338f4a102153774541efb648",
+    "final": "073728c22d8014e2207bab13278c6c9faacbb4c03d02634125ff236f302a1b03"
+  },
+  "test/test_order0_attended_field.py": {
+    "caller_audit": "11cabd79992c8e3bc9b5fd4b8448d5886a867bccafbe35d17fa72220a222b60e",
+    "final": "d5660f156b8038019d3b6250973758611e3520a6c70cc268bc2c6f80b054c35f"
+  },
+  "test/test_sparse_concept_e2e.py": {
+    "caller_audit": "8973c66d5ff118d8f4eb873a2cad1b11e182864c504e77fb8b2ffcd8bb6da5a6",
+    "final": "cd3650776b3cfb9af63d453aecaeae3cdd0861e6326bff24979bdd38849e88bf"
+  }
+}
