@@ -127,3 +127,6 @@ and its links are checked again after the receipt and todo are complete.
 All 77 documentation-link cases pass after completing the receipt and todo.
 Source and prose are checked for whitespace errors; preserved raw logs and
 generated measurement XML retain their original bytes.
+
+[Receipt metadata](receipt-info.json) records the implementation commit.
+All 638 committed source blobs match the validated snapshot byte for byte.

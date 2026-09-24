@@ -690,7 +690,7 @@
     "doc/benchmarks/2026-09-23-item11a/spec.md": "4ef123fa60b912c298d481f381583b57b8125b7094b27304c3e971278c9a0578",
     "doc/benchmarks/2026-09-23-item11b/README.md": "dc0a160a820645cda2f4d93fb036e6f2e22d1432f351d91408b7e64ab2f68875",
     "doc/benchmarks/2026-09-23-item11b/spec.md": "f9524cef78caf4b2a5ada6f4137b53086fe4736bfb82ffda4b2df8da37dd1bb3",
-    "doc/benchmarks/2026-09-24-item11b-review/README.md": "0f379d182d452dd8c0773bd74d99b4ddb0aa524c7ae01d849267330e62b08f4b",
+    "doc/benchmarks/2026-09-24-item11b-review/README.md": "5d74963a4378c09e4c2143c1039ce7d119ca30fd9f9bb117e6c2c9e629677999",
     "doc/checkpoints/2026-09-17-production-spec/README.md": "6cb41932e32e6721c39a0c90d1bb2896233d187b2f9c697d1c065ee47bb871a8",
     "doc/plans/2026-07-16-sparse-subspace-carrier-design.md": "e1b9d4af02fb65015dd2f12ffe5d22ffb02e568cf303fe6e016134b395fa026e",
     "doc/plans/2026-09-08-what-spec-deliverables.md": "2e72c22ff72dc610a1e18ca9e49cfd625524e3d5ce28248865f9db4f2b468cd0",
@@ -716,6 +716,6 @@
     "doc/specs/2026-09-16-two-truths-ideas-and-relations.md": "9b4fea8b304fb239a83c9e26257676b73dc464d309bff7024ebc7dba8b82c6ff",
     "doc/specs/2026-09-18-thought-operations-in-compose.md": "321bfec4d552fdf89cb656a649c6fb67b41e8e17370e567b56ac61fe1e6cb4d4",
     "doc/specs/2026-09-20-accessible-mind-subsystems.md": "91657e075c87571f7c6fdcbe26c40b845a1ebd26ae7fa7150bf0d18125904147",
-    "todo.md": "4d20b7c38317f7871395d2665847b146ba37985cf5f3bd72aa7ef4c993f228e6"
+    "todo.md": "e54b8e4fd6cf5496c648cc400edda41d6fae483290d860e7789b1f2f262dadd2"
   }
 }
