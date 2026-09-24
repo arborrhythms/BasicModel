@@ -138,3 +138,10 @@ receipt, measurements and working tree byte for byte, SHA-256
 Documentation is recorded separately and checked after the receipt and
 todo are complete. Preserved raw logs and generated measurement XML keep
 their original bytes.
+
+[Receipt metadata](receipt-info.json) records the implementation commit.
+All 639 committed source blobs match the validated snapshot byte for byte.
+
+All **79 documentation-link cases** pass after completing the receipt and
+todo ([receipt](doc-links-result.json.gz)). Source and prose pass whitespace
+checks; raw logs and generated measurement XML retain their original bytes.
