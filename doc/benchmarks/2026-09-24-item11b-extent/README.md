@@ -98,3 +98,11 @@ at 12.39 GiB aggregate memory ([summary](full-summary.json),
 measurements and working tree byte for byte. Documentation is recorded
 separately. Preserved raw logs and generated measurement XML retain their
 original bytes.
+
+[Receipt metadata](receipt-info.json) records implementation commit
+`15c9bde`. All 639 committed source blobs match the validated snapshot
+byte for byte.
+
+All **80 documentation-link cases** pass after completing the receipt and
+todo ([receipt](doc-links-result.json.gz)). Source and prose pass whitespace
+checks; preserved raw logs and generated measurement XML are unchanged.
