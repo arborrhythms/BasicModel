@@ -12025,6 +12025,88 @@ class PartSpace(Space):
         return store.flush_pending_promotions(
             optimizer=optimizer, owner_space=self)
 
+    @torch.no_grad()
+    def fuse_parts(self, part_ids):
+        """Intern one witnessed ordered group in the native part inventory.
+
+        Called at the sentence boundary. The radix retains its byte meronomy;
+        the distributed initializer is the existing synthesis of those parts.
+        Only the staged constituents enter the fusion, never a surface label.
+        """
+        ids = [int(p) for p in part_ids]
+        if len(ids) < 2:
+            return ids
+        store = self.percept_store
+        raw = b''.join(store.bytes_for(p) for p in ids)
+        pid = store.get_id(raw)
+        if pid is None:
+            indices = torch.tensor([ids], device=store.vector_for(ids[0]).device)
+            vector = self.synthesize_word_parts(
+                indices, torch.ones_like(indices, dtype=torch.bool),
+                functional=True)[0, 0, :store.dim]
+            store._queue_promotion(raw, vector)
+            self.flush_pending_promotions(getattr(self, '_radix_optimizer', None))
+            pid = store.get_id(raw)
+            if pid is None:
+                raise RuntimeError('witnessed part fusion could not enter the native inventory')
+        return [int(pid)]
+
+    @staticmethod
+    def part_memberships(store, features, part_ids, part_spans, spans, length):
+        """Read located parts, including the ordered meronomy of a fusion.
+
+        A part need only occur inside the candidate span. Its complement
+        requires an observed span without that part. Canonical bytes stay
+        inside PartSpace; concept definitions address only native row ids.
+        Without a radix, native ids themselves are indivisible percepts.
+        """
+        device = part_ids.device
+        valid = (part_ids >= 0) & (part_spans[..., 1] > part_spans[..., 0])
+        if store is None:
+            contained = ((part_spans[:, None, :, 0] >= spans[..., 0, None])
+                         & (part_spans[:, None, :, 1] <= spans[..., 1, None])
+                         & valid[:, None])
+            overlap = (torch.minimum(spans[..., 1, None], part_spans[:, None, :, 1])
+                       - torch.maximum(spans[..., 0, None], part_spans[:, None, :, 0])).clamp_min(0)
+            size = spans[..., 1] - spans[..., 0]
+            complete = ((overlap * valid[:, None]).sum(-1) == size) & (size > 0)
+            match = part_ids[None, :, None] == features[:, None, None, None]
+            present = (match & contained[None]).any(-1)
+            return torch.stack((present, ~present & complete[None]), -1)
+        # Expand only retained percepts, not the raw input. This makes the
+        # read independent of how a known group was tiled on this encounter.
+        atoms = part_ids.new_full((len(part_ids), length), -1)
+        for pid in part_ids[valid].unique().tolist():
+            sequence = store.bytes_for(pid)
+            b, n = ((part_ids == pid) & valid).nonzero(as_tuple=True)
+            starts, ends = part_spans[b, n].unbind(-1)
+            if ((ends - starts) != len(sequence)).any():
+                raise ValueError('native part span differs from its retained meronomy')
+            for offset, value in enumerate(sequence):
+                atoms[b, starts + offset] = value if value else -1
+        observed = F.pad((atoms >= 0).long().cumsum(-1), (1, 0))
+        starts, ends = spans.unbind(-1)
+        complete = ((observed.gather(1, ends) - observed.gather(1, starts)
+                     == ends - starts) & (ends > starts))
+        pairs = []
+        for feature in features.tolist():
+            sequence = store.bytes_for(feature)
+            width = len(sequence)
+            matches = torch.ones_like(atoms, dtype=torch.bool)
+            for offset, value in enumerate(sequence):
+                matches[:, :length - offset] &= atoms[:, offset:] == value
+                if offset:
+                    matches[:, length - offset:] = False
+                if offset >= length:
+                    matches.zero_()
+                    break
+            counts = F.pad(matches.long().cumsum(-1), (1, 0))
+            stop = (ends - width + 1).clamp(min=0, max=length)
+            present = ((counts.gather(1, stop) - counts.gather(1, starts) > 0)
+                       & (ends - starts >= width) & (width > 0))
+            pairs.append(torch.stack((present, ~present & complete), -1))
+        return torch.stack(pairs)
+
     def _ensure_radix_atomic_bytes(self, batch_tokens):
         """Pre-seed every byte needed by this eager lexical batch.
 
@@ -17747,7 +17829,8 @@ class ConceptualSpace(Space):
                         got = (getattr(self, "_word_obj_meta", None)
                                or {}).get(key)
                         loc_sym = got[0] if got else None
-                matched = False
+                word_definition = loc_sym is not None
+                matched_parts = []
                 span_when = None
                 for n in range(N):
                     pid = int(pid_2d[b, n])
@@ -17774,9 +17857,19 @@ class ConceptualSpace(Space):
                                 # transient carrier and move to the next span.
                                 break
                             loc_sym = ConceptualSpace.new_concept(self)
-                        matched = True
+                        matched_parts.append(pid)
+                if loc_sym is not None and matched_parts:
+                    # The word writer already retained this witness's fused
+                    # part and whole. Location knitting must not append its
+                    # letters as additional required word-level features.
+                    if word_definition:
+                        continue
+                    model = getattr(self, '_model', None)
+                    ps = getattr(model, 'perceptualSpace', None)
+                    if ps is not None and self._sparse_active():
+                        matched_parts = ps.fuse_parts(matched_parts)
+                    for pid in matched_parts:
                         self.add_part(loc_sym, pid)
-                if loc_sym is not None and matched:
                     property_rows = ()
                     if (whole_space is not None
                             and getattr(whole_space, "property_basis", False)):
@@ -18351,10 +18444,10 @@ class ConceptualSpace(Space):
         """
         n_snap = self._order_caps()[0]
         r = int(row)
-        if r < n_snap:
+        if r < n_snap and (conjunctive or not 0 <= int(col) < n_snap):
             raise ValueError(
-                f"add_concept_edge: snap row {r} accepts no edges -- "
-                f"order-0 concepts read native feature weights")
+                f"order-0 row {r} accepts only alternatives over "
+                f"order-0 percept conjunctions")
         # Frozen definition: no FORMING of new connections on its row.
         if getattr(self, "_frozen_concepts", None) and r in self._frozen_rows():
             return None
@@ -18406,10 +18499,10 @@ class ConceptualSpace(Space):
         return result
 
     def cs_read_memberships(self, percepts, extents):
-        """Pervasion of native features at occurrences, union at extent readout.
+        """Located parts and pervading properties, union at extent readout.
 
         Both poles use the same pi fold. Negative weights swap a feature's
-        membership and complement, never the fold. PS whole spans and WS
+        membership and complement, never the fold. PS part spans and WS
         runs retain their input brackets; identical occurrences count once.
         """
         from ConceptEvidence import in_extents
@@ -18436,18 +18529,13 @@ class ConceptualSpace(Space):
         membership = torch.zeros(len(columns), B, L, 2, device=raw.device, dtype=dtype)
         ps_edges = (towers == 0).nonzero().flatten()
         if len(ps_edges):
-            overlap = (torch.minimum(spans[..., 1, None], part_spans[:, None, :, 1])
-                       - torch.maximum(spans[..., 0, None], part_spans[:, None, :, 0])).clamp_min(0)
-            valid = (part_spans[..., 1] > part_spans[..., 0]) & (part_ids >= 0)
-            overlap = overlap * valid[:, None]
-            length = spans[..., 1] - spans[..., 0]
-            covered = (length > 0) & (overlap.sum(-1) == length)
-            match = part_ids[None, :, None] == features[ps_edges, None, None, None]
-            hit = overlap[None] > 0
-            positive = (~(hit & ~match).any(-1)) & covered[None]
-            negative = (~(hit & match).any(-1)) & covered[None]
+            model = getattr(self, '_model', None)
+            ps = getattr(model, 'perceptualSpace', None)
+            native = getattr(ps, 'percept_store', None)
+            pair = PartSpace.part_memberships(
+                native, features[ps_edges], part_ids, part_spans, spans, raw.shape[1])
             membership = membership.index_copy(0, ps_edges,
-                torch.stack((positive, negative), -1).to(membership))
+                                                pair.to(membership))
         ws_edges = (towers == 1).nonzero().flatten()
         if len(ws_edges) and primitive is not None:
             counts = counts_in_spans(raw, spans, observed=raw != 0)
@@ -18461,10 +18549,24 @@ class ConceptualSpace(Space):
                                membership.flip(-1), membership)
         prototype = membership.new_zeros(0, B * L)
         start, end = self.order_slice(0)
-        positions = torch.stack([
+        conjunctions = torch.stack([
             matrix.fold_presence(prototype, conjunctive=True, start=start, end=end,
                                  edge_memberships=required[..., pole].reshape(len(columns), B * L))
-            for pole in (0, 1)], -1).reshape(end - start, B, L, 2)
+            for pole in (0, 1)], -1)
+        # Each row's percept conjunction is a sufficient alternative. Sigma
+        # links read the other rows' conjunctions at this same occurrence;
+        # their negative channel is the product of complement products.
+        own = self._concept_part_rows(matrix, raw.device)[start:end]
+        positive, negative = conjunctions.unbind(-1)
+        padding = positive.new_zeros(store.nOutput - end, B * L)
+        alternatives = torch.cat((positive, padding, positive.new_ones(1, B * L),
+                                  negative, padding, negative.new_zeros(1, B * L)))
+        positions = torch.stack((
+            store.fold_presence(alternatives, start=start, end=end,
+                                own=positive, own_mask=own),
+            store.fold_presence(alternatives, start=start, end=end,
+                                conjunctive=True, dual=True,
+                                own=negative, own_mask=own)), -1).reshape(end - start, B, L, 2)
         field, retained = in_extents(positions, spans, extents)
         object.__setattr__(self, '_cs_position_evidence', retained)
         object.__setattr__(self, '_cs_position_spans', spans.detach().clone())
@@ -18499,6 +18601,19 @@ class ConceptualSpace(Space):
         weights = matrix.values.to(codes) * torch.where(cols % 2 == 0, 1., -1.)
         values = dictionary.new_zeros(self._order_caps()[0], width).index_add_(0, rows, codes * weights[:, None])
         defined = self._concept_part_rows(matrix, dictionary.device)[:len(values)]
+        store = alloc.layer(0)
+        if store.values is not None:
+            targets, sources = store._indices(dictionary.device)
+            source_rows = sources % (store.nOutput + 1)
+            chosen = ((targets < len(values)) & (source_rows < len(values))).nonzero().flatten()
+            alt_weights = store.values[chosen].to(values) * torch.where(
+                sources[chosen] <= store.nOutput, 1., -1.)
+            base = F.normalize(values, dim=-1, eps=1e-8)
+            values = values.index_add(0, targets[chosen],
+                                     base[source_rows[chosen]] * alt_weights[:, None])
+            alternative_mass = values.new_zeros(len(values)).index_add_(
+                0, targets[chosen], alt_weights.abs())
+            defined |= alternative_mass > 0
         frozen = self._frozen_rows() if getattr(self, '_frozen_concepts', None) else set()
         if frozen:
             defined[list(r for r in frozen if r < len(defined))] = False
@@ -18897,7 +19012,7 @@ class ConceptualSpace(Space):
                     f"reading (overflow #{n})", RuntimeWarning)
         return row
 
-    def _populate_concept_weights(self, concept_id):
+    def _populate_concept_weights(self, concept_id, *, witness=None):
         """Write witnessed definitions into the shared concept inventory.
 
         Order 0 addresses native PS percepts and WS properties by reference.
@@ -18907,12 +19022,15 @@ class ConceptualSpace(Space):
         """
         if not self._sparse_active():
             return
+        if int(concept_id) in getattr(self, '_frozen_concepts', ()):
+            return
 
         def _is_sym(x):
             return isinstance(x, tuple) and len(x) == 2 and x[0] == "sym"
         alloc = _concept_alloc_of(self)
-        parts = self.concept_parts(concept_id)
-        wholes = self.concept_wholes(concept_id)
+        parts, wholes = (witness if witness is not None else
+                        (self.concept_parts(concept_id), self.concept_wholes(concept_id)))
+        parts, wholes = list(parts), list(wholes)
         sym_refs = [x for x in (parts + wholes) if _is_sym(x)]
         n_raw = sum(1 for x in (parts + wholes)
                     if not _is_sym(x) and x not in (_NOTHING, _EVERYTHING))
@@ -18930,6 +19048,7 @@ class ConceptualSpace(Space):
             # Raw parts and wholes are independent native row addresses.
             # Witnessing writes positive memberships only.
             model = getattr(self, '_model', None)
+            literals = []
             for tower, refs in (('ps', parts), ('ws', wholes)):
                 if (tower == 'ws' and model is not None and not hasattr(
                         model.wholeSpaces[0].subspace.what, 'primitive_properties')):
@@ -18939,7 +19058,35 @@ class ConceptualSpace(Space):
                 for ref in refs:
                     if (isinstance(ref, int) and ref >= 0
                             and ref not in (_NOTHING, _EVERYTHING)):
-                        self.add_concept_feature(c_row, tower, ref, 1.)
+                        literals.append((tower, ref))
+            if not literals:
+                return
+            store = alloc.layer(0)
+            columns = {4 * ref + 2 * (tower == 'ws') for tower, ref in literals}
+            def written(row):
+                return {col for r, col in store.features._index if r == row and col % 2 == 0}
+            own = written(c_row)
+            if witness is not None and own and own != columns:
+                alternatives = [r for r, _weight in self.concept_weights(c_row)]
+                if any(written(r) == columns for r in alternatives):
+                    return
+                if not ConceptualSpace._automatic_concept_admitted(self, 1, reason='percept alternative'):
+                    return
+                # Alternatives are ordinary concepts in the existing row
+                # inventory, each with its own percept conjunction.
+                if store._row_next.get(0, 0) >= self._order_caps()[0]:
+                    return
+                alternative = ConceptualSpace.new_concept(self)
+                target = self._csw_concept_row(0, alternative)
+                for p in parts:
+                    self.add_part(alternative, p)
+                for w in wholes:
+                    self.add_whole(alternative, w)
+                self.add_concept_edge(c_row, target, 1.)
+            else:
+                target = c_row
+            for tower, ref in literals:
+                self.add_concept_feature(target, tower, ref, 1.)
             self._maybe_rebuild_optimizer_for_csw()
             return
         for x in sym_refs:
@@ -18988,6 +19135,12 @@ class ConceptualSpace(Space):
             object.__setattr__(self, "_promo_last_acts", acts.detach())
         return content, acts
 
+    def _has_percept_alternatives(self, concept_id):
+        """Whether an allocated order-0 definition unions other conjunctions."""
+        store = _concept_alloc_of(self).layer()
+        row = store.row_of(('snap', int(concept_id)))
+        return row is not None and any(r == row for r, _ in store._index)
+
     def refine_over_collected(self, *, k_parts=None, k_wholes=None):
         """The over-collection lifecycle pass — RETIRE-ON-TRIGGER, driving BOTH
         towers (doc/specs/mereological-order-raising.md "Lifecycle"). First
@@ -19021,6 +19174,10 @@ class ConceptualSpace(Space):
                 continue                              # higher-order: not re-refined
             if int(sym) in getattr(self, "_frozen_concepts", ()):
                 continue                              # frozen: no restructuring
+            # The accumulated witness references span alternatives, not one
+            # co-present group. Each alternative owns its own conjunction.
+            if ConceptualSpace._has_percept_alternatives(self, sym):
+                continue
             store = alloc.store_of(sym)
             n_p = store.count_role(sym, "part")
             n_w = store.count_role(sym, "whole")
@@ -19332,6 +19489,8 @@ class ConceptualSpace(Space):
         for c in list(alloc.placement):
             if int(c) in getattr(self, "_frozen_concepts", ()):
                 continue                       # frozen: no forgetting
+            if ConceptualSpace._has_percept_alternatives(self, c):
+                continue                       # prune within each conjunction
             ws_all = {w for w in alloc.refs(c, "whole")
                       if not isinstance(w, tuple)}
             # EVERYTHING is the loosest whole of all: once ANY other whole is
@@ -19946,6 +20105,12 @@ class ConceptualSpace(Space):
         reuses its A/B/C; A still ACCUMULATES any newly-presented word-parts);
         with ``key=None`` every call mints a fresh triple. Returns ``(A, B, C)``.
         """
+        # The concept references one ordered PS fusion, not all its letters.
+        # Boundary callers supply the staged group; the radix owns its bytes.
+        model = getattr(self, '_model', None)
+        ps = getattr(model, 'perceptualSpace', None)
+        if ps is not None and self._sparse_active():
+            word_parts = ps.fuse_parts(word_parts)
         if word_whole is None:
             word_wholes = ()
         elif isinstance(word_whole, (tuple, list, set, frozenset)):
@@ -19964,7 +20129,7 @@ class ConceptualSpace(Space):
             # namespace self, which carries no bound helper.
             ConceptualSpace._priming_bridge_put(
                 self, A, C, word_parts, None, accrue=True)
-            self._populate_concept_weights(A)      # re-decompose A (parts grew)
+            self._populate_concept_weights(A, witness=(word_parts, word_wholes))
             # Hebbian: word/object co-occurred again -> strengthen the META
             # tie's edge values (no_grad; codebooks stay EMA-only). Weakening
             # awaits a dis-occurrence signal (vacuous in a text-only learner).
@@ -19994,7 +20159,7 @@ class ConceptualSpace(Space):
             wom[key] = (A, B, C)
         # The word's order-0 definition reads its native PS/WS features.
         # The object remains unwritten until testimony supplies its parts.
-        self._populate_concept_weights(A)
+        self._populate_concept_weights(A, witness=(word_parts, word_wholes))
         self._populate_concept_weights(B)
         self._populate_concept_weights(C)
         # CS->PS/WS priming-projection bridge (Alec 2026-07-12): the triple's

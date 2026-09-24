@@ -1,0 +1,23 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_________ test_alternatives_do_not_trigger_conjunctive_overcollection __________
+output/test_order0_alternative_lifetime.py:9: in test_alternatives_do_not_trigger_conjunctive_overcollection
+    assert A not in Spaces._concept_alloc_of(cs).retired
+E   assert 1 not in {1}
+E    +  where {1} = <Layers.ConceptAllocator object at 0x127ec5250>.retired
+E    +    where <Layers.ConceptAllocator object at 0x127ec5250> = <function _concept_alloc_of at 0x128067a60>(ConceptualSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Tensor()\n   ...  (concept_parts_layer): ConceptualAttentionLayer(\n    (conjunctive): SparseLayer()\n    (features): SparseLayer()\n  )\n))
+E    +      where <function _concept_alloc_of at 0x128067a60> = Spaces._concept_alloc_of
+=============================== warnings summary ===============================
+test/test_basicmodel.py:450
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_basicmodel.py:450: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+output/test_order0_alternative_lifetime.py::test_alternatives_do_not_trigger_conjunctive_overcollection
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED output/test_order0_alternative_lifetime.py::test_alternatives_do_not_trigger_conjunctive_overcollection
+1 failed, 2 warnings in 1.96s

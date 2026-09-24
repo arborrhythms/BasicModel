@@ -1634,3 +1634,30 @@ lifetime remains a review decision, documented in the landing record.
 The final [documentation-link receipt](benchmarks/2026-09-23-item11a/doc-links-result.json.gz)
 passes **74/74** cases, exit 0. [Receipt metadata](benchmarks/2026-09-23-item11a/receipt-info.json)
 records the implementation source and review residue.
+
+### Item 11b review: located parts and pervading wholes (2026-09-24)
+
+The [review receipt](benchmarks/2026-09-24-item11b-review/README.md) closes
+the residue of the [first membership-read landing](benchmarks/2026-09-23-item11b/README.md).
+Word definitions reference one native fused PartSpace group, with its
+ordered constituents retained in that tower. A part may occupy a proper
+subspan; a WholeSpace property must pervade the occurrence. Different
+witnesses supply alternative percept conjunctions on ordinary concept rows,
+and survive meronomic refinement. The corrected slow smoke guard requires
+positive evidence at position, extent and symbol scope after one epoch.
+
+All **186 affected cases pass**, including explicit slow smoke and optimizer
+checks and six unseeded native XOR runs at pool sizes four and eight. The
+serial comparison is unchanged from 11b: after-training reconstruction is
+0.142% above `d4dc385`, and freezing primitive memberships reproduces that
+reference exactly. Prior memberships and all 160 runs over 32 sentences
+remain unchanged. Normalization is limited to assigned provisional
+disjunctive rows; the accepted 11a residue is closed.
+
+The [full receipt](benchmarks/2026-09-24-item11b-review/full-result.json.gz)
+completes **4,782 unique cases: 4,451 passed, 330 skipped, one existing
+expected failure**, exit 0. Its 638-file source map matches the affected
+and measurement receipts exactly, SHA-256
+`1e91b282935cb2bb88e137f3584f2f6fcd3e159534c2b2170d917ec3485011b2`.
+The preceding interrupted and memory-bounded attempts remain recorded in
+the review receipt; neither is counted as passing validation.

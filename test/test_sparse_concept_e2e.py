@@ -216,11 +216,14 @@ def test_getparameters_byte_identical_when_inactive():
 def test_model_optimizer_picks_up_csw_weights():
     m = _build("MM_sparse_concept.xml")
     cs = [c for c in m.conceptualSpaces if c._sparse_active()][-1]
-    # populate per-order weights on the model's own CS, then ask for the optimizer
-    cs.create_word_object_meta([1, 2], WORD, key="cat")
-    cs.create_word_object_meta([3, 4], WORD, key="dog")
-    csw_ptrs = {ly.values.data_ptr() for fam in cs._sparse_fam.values()
-                for ly in fam if ly is not None and ly.values is not None}
+    # Witness actual native parts, then check every definition matrix,
+    # including the feature weights of the newly fused word parts.
+    for word in (b'cat', b'dog'):
+        parts = m.perceptualSpace.percept_store.spell_out(word)
+        cs.create_word_object_meta(parts, WORD, key=word)
+    csw_ptrs = {ly.values.data_ptr()
+                for ly in Spaces._concept_alloc_of(cs).layer().definition_matrices()
+                if ly.values is not None}
     assert csw_ptrs
     opt = m.getOptimizer(lr=0.01)
     opt_ptrs = {p.data_ptr()

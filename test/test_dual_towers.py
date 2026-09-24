@@ -182,20 +182,20 @@ def test_ws_routing_after_serial_migration():
 # ---- Native membership read and feedforward pyramid ----
 
 @pytest.mark.slow
-def test_unwritten_order0_read_is_neither():
-    """The first forward precedes boundary admission of native definitions.
-
-    Random distributed codes cannot invent evidence for an unwritten row.
-    The primitive-input learning gate tests presence after naming.
-    """
+def test_written_order0_words_are_present_after_one_smoke_epoch():
+    """Witnessed words must read through their fused positional PS parts."""
     import torch
     m = _run_one_epoch("data/MM_sparse_concept.xml")
+    # Read the same workload after the training boundary wrote its words.
+    m.runEpoch(optimizer=None, batchSize=4, split="train", max_batches=1)
     cs0 = m.conceptualSpaces[0]
     a0 = getattr(cs0, "_cs_last_a0", None)
     assert a0 is not None and torch.is_tensor(a0)
-    assert a0.count_nonzero() == 0
     store = Spaces._concept_alloc_of(cs0).layer()
     assert store.features.nnz > 0, 'the boundary must admit witnessed features'
+    assert a0[..., 0].count_nonzero() > 0, 'written word definitions must read positive evidence'
+    assert cs0._cs_position_evidence[..., 0].count_nonzero() > 0
+    assert m._combine_last_cs_sub._concept_activations[..., 0].count_nonzero() > 0
 
 
 @pytest.mark.slow

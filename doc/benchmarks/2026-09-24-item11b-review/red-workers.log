@@ -1,0 +1,48 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+__________ test_order0_unions_alternative_percept_conjunctions[False] __________
+test/test_order0_percept_definitions.py:20: in test_order0_unions_alternative_percept_conjunctions
+    cs.add_concept_edge(0, 1, 1.)
+bin/Spaces.py:18355: in add_concept_edge
+    raise ValueError(
+E   ValueError: add_concept_edge: snap row 0 accepts no edges -- order-0 concepts read native feature weights
+__________ test_order0_unions_alternative_percept_conjunctions[True] ___________
+test/test_order0_percept_definitions.py:20: in test_order0_unions_alternative_percept_conjunctions
+    cs.add_concept_edge(0, 1, 1.)
+bin/Spaces.py:18355: in add_concept_edge
+    raise ValueError(
+E   ValueError: add_concept_edge: snap row 0 accepts no edges -- order-0 concepts read native feature weights
+=========================== short test summary info ============================
+FAILED test/test_order0_percept_definitions.py::test_order0_unions_alternative_percept_conjunctions[False]
+FAILED test/test_order0_percept_definitions.py::test_order0_unions_alternative_percept_conjunctions[True]
+2 failed in 2.46s
+
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_________ test_written_order0_words_are_present_after_one_smoke_epoch __________
+test/test_dual_towers.py:196: in test_written_order0_words_are_present_after_one_smoke_epoch
+    assert a0[..., 0].count_nonzero() > 0, 'written word definitions must read positive evidence'
+E   AssertionError: written word definitions must read positive evidence
+E   assert tensor(0) > 0
+E    +  where tensor(0) = <built-in method count_nonzero of Tensor object at 0x1288ea080>()
+E    +    where <built-in method count_nonzero of Tensor object at 0x1288ea080> = tensor([[[0.],\n         [0.],\n         [0.],\n         [0.]],\n\n        [[0.],\n         [0.],\n         [0.],\n         [0...    [[0.],\n         [0.],\n         [0.],\n         [0.]],\n\n        [[0.],\n         [0.],\n         [0.],\n         [0.]]]).count_nonzero
+----------------------------- Captured stdout call -----------------------------
+[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/output/MM_sparse_concept.ckpt, starting fresh
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+batch = 0 (Δ=0.221s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+=============================== warnings summary ===============================
+test/test_dual_towers.py::test_written_order0_words_are_present_after_one_smoke_epoch
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7919: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_sparse_concept.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_dual_towers.py::test_written_order0_words_are_present_after_one_smoke_epoch
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7919: RuntimeWarning: reconstruction_zeroed [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_sparse_concept.xml]: reconstruction loss zeroed: no D3 (per_word=False) and masked-LM inputs missing (mask, target); percept .what=Codebook, pred_full shape=(4, 8, 1024)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_dual_towers.py::test_written_order0_words_are_present_after_one_smoke_epoch
+1 failed, 2 warnings in 5.18s

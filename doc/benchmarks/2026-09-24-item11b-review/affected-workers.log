@@ -1,0 +1,484 @@
+..                                                                       [100%]
+2 passed in 2.52s
+
+..                                                                       [100%]
+=============================== warnings summary ===============================
+test/test_order0_percept_definitions.py::test_witnesses_write_alternatives_without_conjoining_their_literals
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+2 passed, 1 warning in 2.49s
+
+..                                                                       [100%]
+=============================== warnings summary ===============================
+test/test_order0_percept_definitions.py::test_alternatives_do_not_trigger_conjunctive_overcollection
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+2 passed, 1 warning in 2.56s
+
+..                                                                       [100%]
+2 passed in 2.53s
+
+..                                                                       [100%]
+2 passed in 3.22s
+
+..                                                                       [100%]
+2 passed in 3.17s
+
+..                                                                       [100%]
+2 passed in 3.24s
+
+..                                                                       [100%]
+2 passed in 3.29s
+
+..                                                                       [100%]
+=============================== warnings summary ===============================
+test/test_cs_sparse_weights.py::test_add_concept_edge_dedup_and_query
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+2 passed, 1 warning in 2.45s
+
+..                                                                       [100%]
+=============================== warnings summary ===============================
+test/test_cs_sparse_weights.py::test_shared_untyped_square_store
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+2 passed, 1 warning in 2.41s
+
+..                                                                       [100%]
+2 passed in 2.42s
+
+..                                                                       [100%]
+2 passed in 2.45s
+
+..                                                                       [100%]
+2 passed in 2.60s
+
+..                                                                       [100%]
+=============================== warnings summary ===============================
+test/test_cs_sparse_weights.py::test_forward_content_literal_poles_and_standing_bias
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+2 passed, 1 warning in 2.57s
+
+..                                                                       [100%]
+2 passed in 2.51s
+
+..                                                                       [100%]
+2 passed in 2.53s
+
+..                                                                       [100%]
+2 passed in 2.78s
+
+..                                                                       [100%]
+2 passed in 2.73s
+
+..                                                                       [100%]
+2 passed in 2.75s
+
+..                                                                       [100%]
+=============================== warnings summary ===============================
+test/test_frozen_concepts.py::test_set_reading_primes_the_concept
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7919: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_sparse_concept.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+2 passed, 1 warning in 5.38s
+
+.                                                                        [100%]
+=============================== warnings summary ===============================
+test/test_frozen_concepts.py::test_reading_wiring_desires_staged_wholes
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7919: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_sparse_concept.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_frozen_concepts.py::test_reading_wiring_desires_staged_wholes
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:19009: RuntimeWarning: CS snap block exhausted (8 rows): concept 12 gets records only, no weighted reading (overflow #1)
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 2 warnings in 6.50s
+
+..                                                                       [100%]
+2 passed in 2.45s
+
+..                                                                       [100%]
+2 passed in 2.76s
+
+..                                                                       [100%]
+2 passed in 2.74s
+
+.                                                                        [100%]
+1 passed in 2.96s
+
+..                                                                       [100%]
+2 passed in 2.35s
+
+..                                                                       [100%]
+2 passed in 2.32s
+
+..                                                                       [100%]
+2 passed in 2.26s
+
+..                                                                       [100%]
+2 passed in 2.24s
+
+..                                                                       [100%]
+2 passed in 2.65s
+
+..                                                                       [100%]
+2 passed in 2.64s
+
+..                                                                       [100%]
+=============================== warnings summary ===============================
+test/test_cs_symbol_table.py::test_singleton_populates_one_untyped_edge
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+2 passed, 1 warning in 2.65s
+
+..                                                                       [100%]
+2 passed in 2.67s
+
+..                                                                       [100%]
+2 passed in 2.41s
+
+..                                                                       [100%]
+2 passed in 2.38s
+
+..                                                                       [100%]
+2 passed in 2.38s
+
+..                                                                       [100%]
+2 passed in 2.37s
+
+..                                                                       [100%]
+2 passed in 2.87s
+
+..                                                                       [100%]
+2 passed in 2.88s
+
+..                                                                       [100%]
+2 passed in 2.94s
+
+..                                                                       [100%]
+=============================== warnings summary ===============================
+test/test_cs_symbol_table.py::test_prune_removes_bias_edge_of_dropped_everything
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+2 passed, 1 warning in 3.25s
+
+..                                                                       [100%]
+=============================== warnings summary ===============================
+test/test_cs_symbol_table.py::test_assert_relation_replaces_poles_and_enters_embedding
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+2 passed, 1 warning in 2.41s
+
+..                                                                       [100%]
+=============================== warnings summary ===============================
+test/test_cs_symbol_table.py::test_assert_relation_sym_weight_lands_on_edge
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+2 passed, 1 warning in 2.39s
+
+..                                                                       [100%]
+2 passed in 2.39s
+
+..                                                                       [100%]
+=============================== warnings summary ===============================
+test/test_cs_symbol_table.py::test_assert_concrete_whole_retires_everything_bias_edge
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+2 passed, 1 warning in 2.37s
+
+..                                                                       [100%]
+=============================== warnings summary ===============================
+test/test_cs_symbol_table.py::test_word_object_tie_strengthens_on_reoccurrence
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+2 passed, 1 warning in 2.67s
+
+..                                                                       [100%]
+=============================== warnings summary ===============================
+test/test_mereology_word_binding.py::test_word_whole_accumulates_parts_and_raises
+test/test_mereology_word_binding.py::test_same_word_reuses_one_whole_idempotently
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1731: RuntimeWarning: EventEncoding[WholeSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+2 passed, 2 warnings in 2.66s
+
+..                                                                       [100%]
+=============================== warnings summary ===============================
+test/test_mereology_word_binding.py::test_short_word_below_threshold_does_not_raise
+test/test_mereology_word_binding.py::test_gate_on_routes_to_word_binding
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1731: RuntimeWarning: EventEncoding[WholeSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+2 passed, 2 warnings in 2.67s
+
+..                                                                       [100%]
+=============================== warnings summary ===============================
+test/test_mereology_word_binding.py::test_gate_off_does_not_word_bind
+test/test_mereology_word_binding.py::test_gate_on_creates_word_object_meta
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1731: RuntimeWarning: EventEncoding[WholeSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+2 passed, 2 warnings in 2.63s
+
+..                                                                       [100%]
+=============================== warnings summary ===============================
+test/test_mereology_word_binding.py::test_meronomy_two_words_keyed_by_surface
+test/test_mereology_word_binding.py::test_cs_owns_relation_taxonomy_by_reference
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1731: RuntimeWarning: EventEncoding[WholeSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+2 passed, 2 warnings in 2.42s
+
+..                                                                       [100%]
+=============================== warnings summary ===============================
+test/test_mereology_word_binding.py::test_word_A_symbol_is_location_concept_no_duplicate_knit
+test/test_mereology_word_binding.py::test_two_words_mint_the_joint_sentence_chain
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1731: RuntimeWarning: EventEncoding[WholeSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+2 passed, 2 warnings in 2.40s
+
+..                                                                       [100%]
+2 passed in 2.41s
+
+..                                                                       [100%]
+2 passed in 2.41s
+
+..                                                                       [100%]
+2 passed in 2.57s
+
+..                                                                       [100%]
+2 passed in 2.47s
+
+..                                                                       [100%]
+2 passed in 2.47s
+
+..                                                                       [100%]
+2 passed in 2.46s
+
+..                                                                       [100%]
+2 passed in 2.45s
+
+..                                                                       [100%]
+2 passed in 2.43s
+
+.                                                                        [100%]
+1 passed in 2.46s
+
+..                                                                       [100%]
+2 passed in 2.41s
+
+..                                                                       [100%]
+2 passed in 2.49s
+
+..                                                                       [100%]
+2 passed in 2.52s
+
+..                                                                       [100%]
+2 passed in 2.49s
+
+..                                                                       [100%]
+2 passed in 2.41s
+
+..                                                                       [100%]
+2 passed in 2.43s
+
+..                                                                       [100%]
+2 passed in 2.40s
+
+..                                                                       [100%]
+2 passed in 2.40s
+
+..                                                                       [100%]
+2 passed in 2.39s
+
+..                                                                       [100%]
+2 passed in 2.43s
+
+..                                                                       [100%]
+2 passed in 2.40s
+
+..                                                                       [100%]
+2 passed in 2.38s
+
+..                                                                       [100%]
+2 passed in 2.38s
+
+..                                                                       [100%]
+2 passed in 2.68s
+
+..                                                                       [100%]
+=============================== warnings summary ===============================
+test/test_concept_evidence.py::test_alternatives_normalize_each_update_before_discovery
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+2 passed, 1 warning in 2.70s
+
+..                                                                       [100%]
+2 passed in 2.68s
+
+..                                                                       [100%]
+2 passed in 2.65s
+
+.                                                                        [100%]
+1 passed in 2.46s
+
+..                                                                       [100%]
+2 passed in 2.44s
+
+..                                                                       [100%]
+2 passed in 2.43s
+
+..                                                                       [100%]
+=============================== warnings summary ===============================
+test/test_concept_sigma_pi.py::test_weak_disjuncts_have_declared_accumulation_bound
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+2 passed, 1 warning in 2.41s
+
+..                                                                       [100%]
+2 passed in 3.24s
+
+..                                                                       [100%]
+2 passed in 3.24s
+
+.                                                                        [100%]
+1 passed in 3.34s
+
+..                                                                       [100%]
+=============================== warnings summary ===============================
+test/test_grounded_xor.py::test_native_unseeded_xor[0-4]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+2 passed, 1 warning in 5.47s
+
+..                                                                       [100%]
+=============================== warnings summary ===============================
+test/test_grounded_xor.py::test_native_unseeded_xor[1-4]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+2 passed, 1 warning in 4.70s
+
+..                                                                       [100%]
+=============================== warnings summary ===============================
+test/test_grounded_xor.py::test_native_unseeded_xor[2-4]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+2 passed, 1 warning in 4.66s
+
+..                                                                       [100%]
+=============================== warnings summary ===============================
+test/test_sparse_concept_e2e.py::test_meta_is_ordered_pair_over_subsymbols
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+2 passed, 1 warning in 2.40s
+
+..                                                                       [100%]
+=============================== warnings summary ===============================
+test/test_sparse_concept_e2e.py::test_chain_link_edge_to_rest_link_is_populated
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+2 passed, 1 warning in 2.40s
+
+..                                                                       [100%]
+=============================== warnings summary ===============================
+test/test_sparse_concept_e2e.py::test_order_block_overflow_is_safe
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:19009: RuntimeWarning: CS snap block exhausted (4 rows): concept 4 gets records only, no weighted reading (overflow #1)
+    warnings.warn(
+
+test/test_sparse_concept_e2e.py::test_order_block_overflow_is_safe
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:19009: RuntimeWarning: CS snap block exhausted (4 rows): concept 5 gets records only, no weighted reading (overflow #2)
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+2 passed, 2 warnings in 2.79s
+
+..                                                                       [100%]
+2 passed in 5.47s
+
+..                                                                       [100%]
+2 passed in 5.50s
+
+..                                                                       [100%]
+2 passed in 5.35s
+
+..                                                                       [100%]
+2 passed in 5.36s
+
+..                                                                       [100%]
+2 passed in 8.46s
+
+.                                                                        [100%]
+=============================== warnings summary ===============================
+test/test_dual_towers.py::test_written_order0_words_are_present_after_one_smoke_epoch
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7919: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_sparse_concept.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_dual_towers.py::test_written_order0_words_are_present_after_one_smoke_epoch
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7919: RuntimeWarning: reconstruction_zeroed [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_sparse_concept.xml]: reconstruction loss zeroed: no D3 (per_word=False) and masked-LM inputs missing (mask, target); percept .what=Codebook, pred_full shape=(4, 8, 1024)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 2 warnings in 6.44s

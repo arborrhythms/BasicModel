@@ -226,7 +226,8 @@ the un-mix goes DOWN. Phase B -- ONE late cutover at the bandwidth seam
 (`cs_symbolic_phase`): each order-0 concept reads its signed feature
 definition: the product of native PartSpace
 percept memberships and WholeSpace property memberships at each occurrence.
-Both symbols use pervasion; the subject readout unions its occurrences. The
+Parts occur within the span; whole properties pervade it. The concept unions
+alternative percept conjunctions, then the subject readout unions occurrences. The
 concept pyramid runs ($K$ = `symbolicOrder` rungs over the
 `ConceptualAttentionLayer`, below) and its outputs feed the SS leg,
 the head-side losses (conceptual SBOW on the settled slab), and the concept
@@ -2028,27 +2029,44 @@ extension/intension duality described in
 **The membership read.** The definition addresses native PartSpace percept
 rows and WholeSpace property rows, whose addresses remain independent.
 Each signed feature weight is stored as a nonnegative exponent on either
-the feature's membership or its complement. For required memberships `m_j`
-and their observed complements `m̄_j`, both symbols use the existing pi
-scatter:
+the feature's membership or its complement. The September 24 review
+correction makes the definition sigma over pi at order 0 too: each ordinary
+row supplies a conjunction of percepts, and sigma connections select
+alternative conjunctions. For memberships `m_j` and observed complements
+`m̄_j`, the required computation is:
 
-    c⁺(occurrence) = ∏_j m_j(occurrence)^|w_j|
-    c⁻(occurrence) = ∏_j m̄_j(occurrence)^|w_j|
+    p⁺_alt(occurrence) = ∏_j m_j(occurrence)^|w_j|
+    p⁻_alt(occurrence) = ∏_j m̄_j(occurrence)^|w_j|
+    c⁺(occurrence) = 1 − ∏_alt (1 − p⁺_alt(occurrence))
+    c⁻(occurrence) = ∏_alt p⁻_alt(occurrence)
 
 A negative weight exchanges `m_j` and `m̄_j`. Empty and all-zero definitions
-assert neither symbol. Both towers read by pervasion, never existentially:
-a property must hold throughout the run, or its complement must. Reading
+assert neither symbol. **Pervasion is necessary for a whole, not a part**
+(Alec, September 24). PartSpace supplies a located part inside the subject;
+it need not occupy every position. WholeSpace supplies a covering property:
+that property must hold throughout the run, or its complement must. Reading
 the complement throughout a run is not the complement of the run's product.
-PartSpace reads the native percept rows covering its occurrence. Missing
-observations supply neither pole. There is no dual fold at this seam.
+Missing observations supply neither pole. There is no dual fold at this seam.
 Negation exists only for concepts, not percepts (or symbols): the concept's
 signed definition chooses the complement of a perceptual membership.
 
+For a word such as "love", the PartSpace feature is the fused, ordered group
+of letters with its own span, not four word-level features that must each
+hold everywhere. Its constituent letters remain in PartSpace. The
+WholeSpace feature is the word-like property covering the span. A word
+usually has one such part and whole; a concept can have several necessary
+percepts in each of several sufficient alternatives. Witnessing writes
+those conjuncts and alternatives positively. Graded support from incomplete
+letter composition belongs to item 10's membership-fold evaluation.
+The meronomic refinement and pruning pass treats each alternative's own
+conjunction separately; accumulated references across different witnesses
+are not one over-collected conjunction and cannot retire the union.
+
 **Occurrences and extents.** Constant-signature runs remain positions;
-word units remain subject extents. PartSpace whole spans and WholeSpace
+word units remain subject extents. PartSpace part spans and WholeSpace
 runs retain their input brackets. The two towers' features meet on those
-brackets; identical spans count once. Within each occurrence the read is
-a product. The one union at readout ranges over occurrences wholly inside
+brackets; identical spans count once. Within each occurrence the definition
+is sigma over its percept conjunctions. The separate union at readout ranges over occurrences wholly inside
 the subject's extent, separately for each symbol. This is where both is
 born. Retained position pairs and extent boundaries travel through the
 conceptual field, symbol readout and checkpoints. Composition above order
@@ -2061,6 +2079,9 @@ retrieval and tied reconstruction. Their order-0 rows follow the signed
 feature definition at the sentence boundary; changing a code cannot change
 a membership read. The existing definition-sparsity penalty also reads
 feature weights. There is no additional regularizer.
+The boundary replaces order-0 distributed rows with their definitions'
+codes, so the SBOW gradient on those rows is inert as a lasting update.
+It does not teach the membership definition through the stored code.
 
 An observed positive definition can offer zero-magnitude candidates from
 its lower-order context, including the opposite source pole. Gradients can
@@ -2094,7 +2115,8 @@ seal-written definitions retain their learned exponent scale. This closes
 the 11a normalization residue. The 11a prior memberships and segmentation
 remain unchanged. The [11b receipt](benchmarks/2026-09-23-item11b/README.md)
 records the gate, controls, serial reconstruction against `d4dc385`, and the
-source-matched validation.
+source-matched validation. The [September 24 review correction](benchmarks/2026-09-24-item11b-review/README.md)
+records located parts, native word fusion and alternative percept definitions.
 
 **Shared symbol index.** A parallel symbol-leg row `j` addresses concept
 row `j // 2`; `j % 2` selects its pole. The codebook keeps one row per

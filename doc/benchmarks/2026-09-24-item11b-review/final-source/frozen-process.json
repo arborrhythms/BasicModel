@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-23-item11a/reconstruction_ablation.py",
+    "--config",
+    "/Users/arogers/github/WikiOracle/basicmodel/output/item11b-review-publish-measurements/off.xml",
+    "--out",
+    "/Users/arogers/github/WikiOracle/basicmodel/output/item11b-review-publish-measurements/frozen.json"
+  ],
+  "pid": 22416,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 1352878744,
+  "elapsed_seconds": 54.08578658406623,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/output/item11b-review-publish-measurements/frozen.log"
+}

@@ -153,8 +153,10 @@ Consequences (decided):
   than the objection warrants; `conceptEvidenceFloor` stays a parameter,
   recalibrated once in the corrected units below. *Superseded by todo item
   11b (decided, Alec 2026-09-23): order-0 concepts read the towers'
-  feature memberships with their own signed weights by pervasion within an
-  occurrence, so unrelated features read zero and no floor exists; the
+  feature memberships with their own signed weights. As corrected by Alec
+  on September 24, parts are located within the occurrence and whole
+  properties pervade it; the concept unions alternative percept
+  conjunctions. Unrelated features read zero and no floor exists; the
   union across occurrences inside the subject is the readout, where both is
   born, and XOR is the both corner of one property.*) Every rectified fold is
   biased upward by noise on both channels — noise has a positive and a

@@ -36,72 +36,6 @@ seed may make a *measurement* reproducible, never an *assertion* true. A test
 that fails at some seed has found a defect; fix the defect, or let it fail.
 Do not remove unused reasoning methods without Alec's review.
 
-- **11b. Order-0 concepts read features, not projections; pervasion within
-   an occurrence, union across occurrences** (LANDED 2026-09-23;
-   decided by Alec 2026-09-23).
-   Alec's formulation: an order-0 concept is present at a location if the
-   product of the towers' feature memberships with its own signed weights
-   says so — a weight matrix over memberships with a saturating
-   nonlinearity, the existing pi fold with signed exponents; there is no
-   notion of precision at the conceptual level, only for the concept's
-   location (`.where`). Pervasion in both towers, never existential
-   (confirmed). In location a concept is bounded below by its parts and
-   above by its wholes (parts ⊆ concept ⊆ wholes); in presence the bounds
-   invert (present whole ⇒ present part; present concept ⇒ every required
-   part), the extension/intension duality. Alec: percepts create two towers;
-   they meet at a span covered by an order-0 concept, defined by presence and
-   absence of features (weights −1..1), written to two symbols; WholeSpace is
-   defined by cuts, "is a / is not a", so every tower read is **pervasion,
-   never existential**; and the calibrated floor is not good enough. The 11a
-   landing deviates in one place: the concept is a distributed atom read by
-   projecting each tower's mapped code onto it (`PerceptRead`), which is
-   never zero for unrelated content and so needs `conceptEvidenceFloor`,
-   which drifts under training (.112 calibrated; controls .27–.29 after
-   training). The consistent form: **(a)** an order-0 concept's definition
-   is its signed weights over the towers' rows — PartSpace percept rows and
-   WholeSpace property rows — realised as non-negative exponents on a row's
-   membership or on its complement (WS `complement()` exists); **(b)** the
-   read within one occurrence (a WS run, a PS whole's span) is pervasion:
-   the positive symbol is the weighted product of the required memberships,
-   the negative symbol the weighted product of the complements — the
-   property pervades the run, or its complement does, which is the cut;
-   **(c)** the only union is across occurrences inside the subject's extent,
-   at the readout, where **both** is born: the concept applies in some
-   occurrences of the space and fails in others; no De Morgan dual at the
-   seam, no existential tower fold; **(d)** the learned tower maps, the
-   projection, the floor and its calibration are deleted; the regularised
-   weighting over the input space is the concept's existing
-   definition-sparsity penalty over its feature weights; **(e)** the
-   distributed code remains for similarity, retrieval and the tied
-   reconstruction, as a consequence of the definition, never the read.
-   Kept: learned byte memberships, runs and extents, two symbols per
-   concept, the pyramid's dual folds above order 0. **Gate:** for the
-   property P = "is a one" over a two-position extent, the corners are the
-   truth table — `11` true-only, `00` false-only, `01`/`10` both — so **XOR
-   is the both corner of one property**, a conjunction over the two symbols
-   of one constituent, learned unseeded; OR is P⁺ and AND is true-only. The
-   11a `(A ∨ B) ∧ ¬(A ∧ B)` check stays as a composition test; PartSpace's
-   whole is what distinguishes `01` from `10`. Exit: the gate above from
-   primitive input; no floor parameter in `model.xml`; unrelated-content
-   controls read exactly zero at every scope; the 11a priors and
-   segmentation unchanged.
-
-   **Landing:** native signed feature definitions replace the projection
-   read; both symbols pervade occurrences and readout unions them inside the
-   subject extent. The floor and calibration harness are deleted; candidate
-   preparation runs at the sentence boundary and `getParameters` is pure.
-   Six of six unseeded primitive-input XOR runs pass, with exact-zero
-   unrelated controls. Priors and segmentation are unchanged; serial
-   reconstruction matches 11a (final cost 0.142% above `d4dc385`). The
-   source-matched full run completed 4,775 unique cases: 4,444 passed,
-   330 skipped and one existing expected failure. See the
-   [11b receipt](doc/benchmarks/2026-09-23-item11b/README.md). Stop for review;
-   item 10 is next, then item 9's packed/single-sentence parity diagnosis.
-
-**11a normalization residue closed (Alec, 2026-09-23).** Post-optimizer
-maximum normalization applies to assigned provisional disjunctive rows only;
-discovered and seal-written definitions retain scale. Accepted for item 11b.
-
 - **10. Evaluate bounded pi and sigma folds as normalized means** (Alec's
    proposal, 2026-09-21; [proposal and first evaluation](doc/Architecture.md#proposal-bounded-pi-and-sigma-folds-as-normalized-means-alec-2026-09-21)).
    A new item; the number is reused. Today Sigma and Pi are one map in the
@@ -279,6 +213,8 @@ Everything that is decided in direction but not on this path is in
 [FutureWork](doc/FutureWork.md).
 
 ### Done (newest first)
+
+- `e969c11` Item 11b: native membership definitions, located fused parts and pervading wholes, with alternatives preserved through refinement; normalization residue closed ([review receipt](doc/benchmarks/2026-09-24-item11b-review/README.md), [design](doc/Architecture.md#item-11b-membership-read-and-extent-truth-corners-september-23)).
 
 - `4b097dc` Item 11a learns WholeSpace properties over byte primitives, retains grounded extent evidence and passes six unseeded native XOR runs ([receipt](doc/Testing.md#item-11a-primitive-properties-and-grounded-extents-2026-09-23)).
 - `e917d9c` Item 11 review corrections carry paired evidence through scoped dual folds, symbols, thought and checkpoints; calibrated background rejection and the full receipt pass, learned XOR remains null for item 11a ([receipt](doc/Testing.md#item-11-review-corrections-paired-evidence-september-23)).

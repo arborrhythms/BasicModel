@@ -1,0 +1,13 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_______ test_a_located_part_need_not_pervade_but_the_whole_property_must _______
+test/test_concept_memberships.py:64: in test_a_located_part_need_not_pervade_but_the_whole_property_must
+    torch.testing.assert_close(cs._cs_position_evidence[0, :, 0, -1],
+E   AssertionError: Tensor-likes are not close!
+E   
+E   Mismatched elements: 1 / 6 (16.7%)
+E   Greatest absolute difference: 1.0 at index (0, 0) (up to 1e-05 allowed)
+E   Greatest relative difference: 1.0 at index (0, 0) (up to 1.3e-06 allowed)
+=========================== short test summary info ============================
+FAILED test/test_concept_memberships.py::test_a_located_part_need_not_pervade_but_the_whole_property_must
+1 failed in 2.03s

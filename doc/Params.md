@@ -325,9 +325,10 @@ the analysis/synthesis orientation.
 ### `<ConceptualSpace>`
 
 Order-0 concepts read their signed weights over native feature memberships.
-Both symbols use pervasion within an occurrence; readout unions occurrences
-inside the subject's extent. The projection admission parameter and its
-calibration are removed. `conceptUseFloor` remains the separate discovery
+PartSpace supplies located parts; WholeSpace supplies pervading properties.
+The concept unions alternative percept conjunctions within an occurrence;
+readout unions occurrences inside the subject's extent. The projection
+admission parameter and its calibration are removed. `conceptUseFloor` remains the separate discovery
 gate over measured use.
 
 Holds the conceptual dictionary, location-aligned PS/WS binding state, and

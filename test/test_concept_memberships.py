@@ -47,7 +47,7 @@ def test_parameter_getter_does_not_offer_new_parts():
     assert matrix.values is parameter
 
 
-def test_both_towers_pervade_each_occurrence_without_an_existential_fold():
+def test_a_located_part_need_not_pervade_but_the_whole_property_must():
     cs = _cs()
     primitive = PrimitiveProperties(1)
     primitive.teach(0, [48, 49], [0., 1.])
@@ -55,14 +55,18 @@ def test_both_towers_pervade_each_occurrence_without_an_existential_fold():
     cs.add_concept_feature(0, 'ps', 7, .5)
     cs.add_concept_feature(0, 'ws', 0, 1.)
     raw = torch.tensor([[49, 49], [49, 48], [48, 48]])
-    part_ids = torch.tensor([[7], [7], [8]])
+    part_ids = torch.tensor([[7, 8], [7, 8], [8, 8]])
+    parts = torch.tensor([[[0, 1], [1, 2]]]).expand(3, -1, -1)
     whole = torch.tensor([[[0, 2]]]).expand(3, -1, -1)
-    field = cs.cs_read_memberships((part_ids, whole, primitive, raw, whole), whole)
-    torch.testing.assert_close(field[0, :, 0], torch.tensor([[1., 0.], [0., 0.], [0., 1.]]))
+    cs.cs_read_memberships((part_ids, parts, primitive, raw, whole), whole)
+    # The part at [0,1] suffices at [0,2]; the property must hold at both
+    # positions. Inspect this occurrence before the extent readout union.
+    torch.testing.assert_close(cs._cs_position_evidence[0, :, 0, -1],
+                               torch.tensor([[1., 0.], [0., 0.], [0., 1.]]))
     # A missing byte supplies neither pole, including a missing complement.
     raw[2, 1] = 0
-    field = cs.cs_read_memberships((part_ids, whole, primitive, raw, whole), whole)
-    assert field[0, 2].count_nonzero() == 0
+    cs.cs_read_memberships((part_ids, parts, primitive, raw, whole), whole)
+    assert cs._cs_position_evidence[0, 2, 0, -1].count_nonzero() == 0
 
 
 def test_fractional_feature_weights_use_one_product_then_one_extent_union():
