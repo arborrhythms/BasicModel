@@ -180,24 +180,42 @@ def test_ws_routing_after_serial_migration():
 # ---- Native membership read and feedforward pyramid ----
 
 @pytest.mark.slow
-def test_written_order0_words_are_present_after_one_smoke_epoch(tmp_path):
-    """Read word groups through native run positions and word extents."""
+def test_written_order0_words_are_present_after_one_smoke_epoch(monkeypatch):
+    """The raw smoke workload reads each present word without denying it."""
     import torch
-    from test_grounded_xor import grounded_model
-    m, _ = grounded_model(tmp_path, inventory=128, load_data=True)
-    m.train()
-    m.runEpoch(optimizer=m.getOptimizer(lr=.01), batchSize=4,
-               split='train', max_batches=1)
+    m = _run_one_epoch("data/MM_sparse_concept.xml")
+    cs0 = m.conceptualSpaces[0]
+    read = cs0.cs_read_memberships
+    seen = {}
+    def capture(percepts, extents):
+        result = read(percepts, extents)
+        seen['raw'] = percepts[3].detach().clone()
+        return result
+    monkeypatch.setattr(cs0, 'cs_read_memberships', capture)
     # Read the same workload after the training boundary wrote its words.
     m.runEpoch(optimizer=None, batchSize=4, split="train", max_batches=1)
-    cs0 = m.conceptualSpaces[0]
     a0 = getattr(cs0, "_cs_last_a0", None)
     assert a0 is not None and torch.is_tensor(a0)
     store = Spaces._concept_alloc_of(cs0).layer()
     assert store.features.nnz > 0, 'the boundary must admit witnessed features'
-    assert a0[..., 0].count_nonzero() > 0, 'written word definitions must read positive evidence'
-    assert cs0._cs_position_evidence[..., 0].count_nonzero() > 0
-    assert m._combine_last_cs_sub._concept_activations[..., 0].count_nonzero() > 0
+    carrier = m._combine_last_cs_sub
+    leg = m.symbolSpace.forward_concept_to_symbol(carrier)
+    raw = seen['raw']
+    raw = raw[:, 0] if raw.ndim == 3 else raw
+    for b, row in enumerate(raw):
+        word = bytes(row[row != 0].tolist()).decode()
+        cid = cs0._word_obj_meta[word][0]
+        ids = carrier._concept_ids
+        ids = ids[:, b] if ids.ndim == 2 else ids
+        slots = (ids == cid).nonzero().flatten()
+        assert len(slots) == 1, word
+        slot = slots.item()
+        for evidence in (a0[slot, b], cs0._cs_position_evidence[slot, b],
+                         carrier._concept_activations[slot, b], leg._symbol_evidence[slot, b]):
+            assert evidence[..., 0].max() > 0, word
+            assert evidence[..., 1].count_nonzero() == 0, word
+        print({'present_word': word, 'extent_pair': a0[slot, b].tolist(),
+               'symbol_pair': leg._symbol_evidence[slot, b].tolist()})
 
 
 @pytest.mark.slow

@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-21-item10/probe.py",
+    "--config",
+    "/Users/arogers/github/WikiOracle/basicmodel/output/item11b-extent-measurements/on.xml",
+    "--out",
+    "/Users/arogers/github/WikiOracle/basicmodel/output/item11b-extent-measurements/on.json"
+  ],
+  "pid": 48935,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 1531251496,
+  "elapsed_seconds": 47.67555874993559,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/output/item11b-extent-measurements/on.log"
+}

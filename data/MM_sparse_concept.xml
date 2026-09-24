@@ -3,8 +3,10 @@
        xsi:noNamespaceSchemaLocation="model.xsd">
   <!-- Parallel conceptual smoke workload on the xor dataset.
        One distributed code per concept names two symbols. Signed feature
-       weights read native memberships by pervasion; a subject's readout
-       unions its occurrences. The pyramid computes a union over disjunctive
+       weights read contained PartSpace parts over a subject's extent and
+       pervading WholeSpace properties at its positions; the readout unions
+       those positions. Raw regions stop at the last observed byte, with
+       padded regions empty. The pyramid computes a union over disjunctive
        parts, with an optional preceding conjunction over W_pi. Exponents
        are nonnegative; a negated part addresses the negative symbol.
        The taper allocates 8 + 4 + 2 + 1 = 15 live concept rows here.

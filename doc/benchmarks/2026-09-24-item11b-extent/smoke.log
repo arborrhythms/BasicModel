@@ -1,0 +1,10 @@
+[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/output/MM_sparse_concept.ckpt, starting fresh
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+batch = 0 (Δ=0.254s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+{'present_word': 'hello world', 'extent_pair': [[1.0, 0.0]], 'symbol_pair': [1.0, 0.0]}
+{'present_word': 'hello there', 'extent_pair': [[1.0, 0.0]], 'symbol_pair': [1.0, 0.0]}
+{'present_word': 'loving world', 'extent_pair': [[1.0, 0.0]], 'symbol_pair': [1.0, 0.0]}
+{'present_word': 'loving there', 'extent_pair': [[1.0, 0.0]], 'symbol_pair': [1.0, 0.0]}

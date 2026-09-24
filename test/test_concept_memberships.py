@@ -1,4 +1,5 @@
 """Order-zero definitions read native features, independently of codes."""
+import pytest
 import torch
 
 import Spaces
@@ -67,6 +68,47 @@ def test_a_located_part_need_not_pervade_but_the_whole_property_must():
     raw[2, 1] = 0
     cs.cs_read_memberships((part_ids, parts, primitive, raw, whole), whole)
     assert cs._cs_position_evidence[0, 2, 0, -1].count_nonzero() == 0
+
+
+@pytest.mark.parametrize('literal', [(7,), (7, 8)])
+def test_part_containment_belongs_to_the_subject_extent(literal):
+    cs = _cs()
+    cs.add_concept_feature(0, 'ps', literal, 1.)
+    raw = torch.full((1, 8), 65)
+    ids = torch.tensor([[7, 8, 9, 9, 9, 9, 9, 9]])
+    starts = torch.arange(8)
+    positions = torch.stack((starts, starts + 1), -1)[None]
+    extents = torch.tensor([[[0, 4], [4, 8]]])
+    actual = cs.cs_read_memberships((ids, positions, None, raw, positions), extents)
+    # Other positions inside a subject do not deny its present part.
+    torch.testing.assert_close(actual[0, 0], torch.tensor([[1., 0.], [0., 1.]]))
+    assert cs._cs_position_evidence[0, 0, 0, :, 1].count_nonzero() == 0
+    assert cs._cs_position_evidence[0, 0, 1, :, 0].count_nonzero() == 0
+    # Absence still requires complete observation of that subject.
+    missing = cs.cs_read_memberships((ids[:, :6], positions[:, :6], None,
+                                      raw, positions), extents)
+    assert missing[0, 0, 1].count_nonzero() == 0
+    if len(literal) > 1:
+        separated = torch.tensor([[[0, 1], [1, 4]]])
+        apart = cs.cs_read_memberships((ids, positions, None, raw, positions), separated)
+        assert apart[0, 0, :, 0].count_nonzero() == 0
+    empty = cs.cs_read_memberships((ids, positions, None, raw, positions), extents[:, :0])
+    assert empty.shape[2] == cs._cs_position_evidence.shape[2] == 0
+
+
+def test_raw_analysis_layout_clips_regions_to_observed_input():
+    from types import SimpleNamespace
+    raw = torch.zeros(4, 1, 4096, dtype=torch.long)
+    for row, text in enumerate((b'hello world', b'bye', b'', b'a' * 600)):
+        raw[row, 0, :len(text)] = torch.tensor(list(text), dtype=torch.long)
+    positions, extents = Spaces.WholeSpace.concept_evidence_layout(
+        SimpleNamespace(), raw, 8)
+    expected = torch.zeros(4, 8, 2, dtype=torch.long)
+    expected[0, 0] = torch.tensor([0, 11])
+    expected[1, 0] = torch.tensor([0, 3])
+    expected[3, :2] = torch.tensor([[0, 512], [512, 600]])
+    torch.testing.assert_close(positions, expected)
+    torch.testing.assert_close(extents[:, 0], torch.tensor([[0, 11], [0, 3], [0, 0], [0, 600]]))
 
 
 def test_fractional_feature_weights_use_one_product_then_one_extent_union():

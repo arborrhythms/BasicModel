@@ -18523,8 +18523,10 @@ class ConceptualSpace(Space):
         weight = (required.new_zeros(len(rows)) if matrix.values is None
                   else matrix.values.detach().to(required).clamp_min(0))
         mass = required.new_zeros(store.nOutput).index_add_(0, rows, weight)
-        support = required[..., 0].amax(dim=(1, 2)) if len(rows) else weight
-        referenced = required.amax(dim=(1, 2, 3)) if len(rows) else weight
+        support = (required[..., 0].amax(dim=(1, 2)) if required.numel()
+                   else torch.zeros_like(weight))
+        referenced = (required.amax(dim=(1, 2, 3)) if required.numel()
+                      else torch.zeros_like(weight))
         attended_parts = set(part_ids[part_ids >= 0].tolist())
         for edge, (row, col) in enumerate(zip(matrix._rows, matrix._cols)):
             if (col // 2) % 2 == 0:
@@ -18557,8 +18559,9 @@ class ConceptualSpace(Space):
         """Located parts and pervading properties, union at extent readout.
 
         Both poles use the same pi fold. Negative weights swap a feature's
-        membership and complement, never the fold. PS part spans and WS
-        runs retain their input brackets; identical occurrences count once.
+        membership and complement, never the fold. Part containment is read
+        over the subject extent and shared by its positions. WholeSpace
+        properties pervade each position; identical brackets count once.
         """
         from ConceptEvidence import in_extents
         from PerceptProperties import counts_in_spans
@@ -18595,7 +18598,8 @@ class ConceptualSpace(Space):
                             sorted_keys[:, 1:] == sorted_keys[:, :-1]), 1)
         duplicate = torch.zeros_like(repeat).scatter(1, order, repeat)
         spans = spans.masked_fill(duplicate[..., None], 0)
-        L = spans.shape[1]
+        P, E = spans.shape[1], extents.shape[1]
+        L = E * P
         self._ensure_concept_pool()
         self._canonicalize_part_literals()
         store = _concept_alloc_of(self).layer(0)
@@ -18603,7 +18607,7 @@ class ConceptualSpace(Space):
         _, columns = matrix._indices(raw.device)
         features, towers, poles = columns // 4, (columns // 2) % 2, columns % 2
         dtype = self.similarity_codebook.getW().dtype
-        membership = torch.zeros(len(columns), B, L, 2, device=raw.device, dtype=dtype)
+        membership = torch.zeros(len(columns), B, E, P, 2, device=raw.device, dtype=dtype)
         ps_edges = (towers == 0).nonzero().flatten()
         if len(ps_edges):
             model = getattr(self, '_model', None)
@@ -18612,9 +18616,9 @@ class ConceptualSpace(Space):
             literals = [store.feature_groups.get((matrix._rows[i], matrix._cols[i]),
                                                  (matrix._cols[i] // 4,)) for i in ps_edges.tolist()]
             pair = PartSpace.part_memberships(
-                native, literals, part_ids, part_spans, spans, raw.shape[1])
+                native, literals, part_ids, part_spans, extents, raw.shape[1])
             membership = membership.index_copy(0, ps_edges,
-                                                pair.to(membership))
+                pair[:, :, :, None, :].expand(-1, -1, -1, P, -1).to(membership))
         ws_edges = (towers == 1).nonzero().flatten()
         if len(ws_edges) and primitive is not None:
             counts = counts_in_spans(raw, spans, observed=raw != 0)
@@ -18623,7 +18627,11 @@ class ConceptualSpace(Space):
             complete = counts.sum(-1) == spans[..., 1] - spans[..., 0]
             pair = torch.stack((positive, negative), -1) * complete[..., None, None]
             membership = membership.index_copy(0, ws_edges,
-                pair.index_select(2, features[ws_edges]).permute(2, 0, 1, 3).to(membership))
+                pair.index_select(2, features[ws_edges]).permute(2, 0, 1, 3)[:, :, None]
+                    .expand(-1, -1, E, -1, -1).to(membership))
+        # Extents retain separate copies of their position evidence. Flatten
+        # only for the existing sparse fold, then restore the subject axis.
+        membership = membership.flatten(2, 3)
         required = torch.where(poles[:, None, None, None].bool(),
                                membership.flip(-1), membership)
         self._bind_attended_concepts(required, matrix, part_ids)
@@ -18651,8 +18659,11 @@ class ConceptualSpace(Space):
                                 own=positive, own_mask=own),
             store.fold_presence(alternatives, start=start, end=end,
                                 conjunctive=True, dual=True,
-                                own=negative, own_mask=own)), -1).reshape(end - start, B, L, 2)
-        field, retained = in_extents(positions, spans, extents)
+                                own=negative, own_mask=own)), -1).reshape(end - start, B * E, P, 2)
+        brackets = spans[:, None].expand(B, E, P, 2).reshape(B * E, P, 2)
+        field, retained = in_extents(positions, brackets, extents.reshape(B * E, 1, 2))
+        field = field.reshape(end - start, B, E, 2)
+        retained = retained.reshape(end - start, B, E, P, 2)
         object.__setattr__(self, '_cs_position_evidence', retained)
         object.__setattr__(self, '_cs_position_spans', spans.detach().clone())
         object.__setattr__(self, '_cs_extents', extents.detach().clone())
@@ -28837,15 +28848,20 @@ class WholeSpace(Space):
             return None, None
         raw = unity[:, 0] if unity.ndim == 3 else unity
         B, L = raw.shape
+        live_end = torch.where(raw != 0, torch.arange(L, device=raw.device) + 1, 0).amax(-1)
         positions = getattr(self, '_staged_analysis_spans', None)
         if not torch.is_tensor(positions):
             positions = uniform_spans(B, L, slots, device=raw.device)
+            # Raw carrier regions keep their input coordinates, but a short
+            # row observes only their prefix. Padding supplies no positions.
+            positions = torch.minimum(positions, live_end[:, None, None])
+            positions = positions.masked_fill(
+                (positions[..., 1] <= positions[..., 0])[..., None], 0)
         else:
             positions = positions[:, :slots].to(raw.device)
             positions = F.pad(positions, (0, 0, 0, max(0, slots - positions.shape[1])))
         extents = getattr(self, '_staged_unit_spans', None)
         if not torch.is_tensor(extents):
-            live_end = torch.where(raw != 0, torch.arange(L, device=raw.device) + 1, 0).amax(-1)
             extents = torch.stack((torch.zeros_like(live_end), live_end), -1).unsqueeze(1)
         else:
             # Only extents containing admitted position slots enter the live

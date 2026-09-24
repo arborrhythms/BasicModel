@@ -2042,8 +2042,11 @@ alternative conjunctions. For memberships `m_j` and observed complements
 
 A negative weight exchanges `m_j` and `m̄_j`. Empty and all-zero definitions
 assert neither symbol. **Pervasion is necessary for a whole, not a part**
-(Alec, September 24). PartSpace supplies a located part inside the subject;
-it need not occupy every position. WholeSpace supplies a covering property:
+(Alec, September 24). PartSpace supplies a located part inside the subject's
+extent; containment is evaluated over that extent and shared by its
+positions. Other positions in the subject do not deny a part already
+present there. An absent part supplies its complement only when the
+subject extent is completely observed. WholeSpace supplies a covering property:
 that property must hold throughout the run, or its complement must. Reading
 the complement throughout a run is not the complement of the run's product.
 Missing observations supply neither pole. There is no dual fold at this seam.
@@ -2053,7 +2056,7 @@ signed definition chooses the complement of a perceptual membership.
 For a word such as "love", the PS literal is the ordered group of existing
 part ids, with repetition and adjacency retained. A first witness creates
 no PartSpace row. The same containment reader reads either that group or
-a single percept id inside the candidate span. Positions carry the radix's
+a single percept id inside the subject extent. Positions carry the radix's
 canonical longest-match tiling; the read neither expands bytes nor searches
 other tilings. Recurrence may promote the group into one percept. The radix
 records its id ancestry, and the definition then addresses that row without
@@ -2087,8 +2090,12 @@ concept ids instead of treating packed field offsets as identities.
 **Occurrences and extents.** Constant-signature runs remain positions;
 word units remain subject extents. PartSpace part spans and WholeSpace
 runs retain their input brackets. The two towers' features meet on those
-brackets; identical spans count once. Within each occurrence the definition
-is sigma over its percept conjunctions. The separate union at readout ranges over occurrences wholly inside
+brackets; identical spans count once. With raw analysis, uniform carrier
+regions are clipped to each input's last observed byte and wholly padded
+regions are empty. Each subject retains its own position evidence: the
+extent's part containment meets each position's property pervasion, then
+the definition reads sigma over its percept conjunctions. The separate
+union at readout ranges over occurrences wholly inside
 the subject's extent, separately for each symbol. This is where both is
 born. Retained position pairs and extent boundaries travel through the
 conceptual field, symbol readout and checkpoints. Composition above order
@@ -2143,6 +2150,9 @@ fusion and permanent order-0 field assignment are superseded by the correction
 above; the landed negative-pole formula, witnessing, location and XOR gate
 remain the 11b contract. The [attended-field correction receipt](benchmarks/2026-09-24-item11b-corrections/README.md)
 records recurrent parts, canonical-id containment and per-turn binding.
+The [extent correction receipt](benchmarks/2026-09-24-item11b-extent/README.md)
+records containment at the subject extent, raw spans clipped to observed
+input, and the restored raw smoke's positive-only read of each present word.
 
 **Shared symbol index.** Concept id `c` has logical symbol addresses `2*c`
 and `2*c+1`. A parallel carrier packs two poles per attended concept and

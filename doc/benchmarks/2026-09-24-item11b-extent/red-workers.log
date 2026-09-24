@@ -1,0 +1,92 @@
+
+=== worker-000.log ===
+F                                                                        [100%]
+=================================== FAILURES ===================================
+________ test_part_containment_belongs_to_the_subject_extent[literal0] _________
+test/test_concept_memberships.py:84: in test_part_containment_belongs_to_the_subject_extent
+    torch.testing.assert_close(actual[0, 0], torch.tensor([[1., 0.], [0., 1.]]))
+E   AssertionError: Tensor-likes are not close!
+E   
+E   Mismatched elements: 1 / 4 (25.0%)
+E   Greatest absolute difference: 1.0 at index (0, 1) (up to 1e-05 allowed)
+E   Greatest relative difference: inf at index (0, 1) (up to 1.3e-06 allowed)
+=============================== warnings summary ===============================
+test/test_concept_memberships.py::test_part_containment_belongs_to_the_subject_extent[literal0]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_concept_memberships.py::test_part_containment_belongs_to_the_subject_extent[literal0]
+1 failed, 1 warning in 2.12s
+
+=== worker-001.log ===
+F                                                                        [100%]
+=================================== FAILURES ===================================
+________ test_part_containment_belongs_to_the_subject_extent[literal1] _________
+test/test_concept_memberships.py:84: in test_part_containment_belongs_to_the_subject_extent
+    torch.testing.assert_close(actual[0, 0], torch.tensor([[1., 0.], [0., 1.]]))
+E   AssertionError: Tensor-likes are not close!
+E   
+E   Mismatched elements: 2 / 4 (50.0%)
+E   Greatest absolute difference: 1.0 at index (0, 0) (up to 1e-05 allowed)
+E   Greatest relative difference: inf at index (0, 1) (up to 1.3e-06 allowed)
+=============================== warnings summary ===============================
+test/test_concept_memberships.py::test_part_containment_belongs_to_the_subject_extent[literal1]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_concept_memberships.py::test_part_containment_belongs_to_the_subject_extent[literal1]
+1 failed, 1 warning in 2.10s
+
+=== worker-002.log ===
+F                                                                        [100%]
+=================================== FAILURES ===================================
+___________ test_raw_analysis_layout_clips_regions_to_observed_input ___________
+test/test_concept_memberships.py:108: in test_raw_analysis_layout_clips_regions_to_observed_input
+    torch.testing.assert_close(positions, expected)
+E   AssertionError: Tensor-likes are not equal!
+E   
+E   Mismatched elements: 58 / 64 (90.6%)
+E   Greatest absolute difference: 4096 at index (0, 7, 1)
+E   Greatest relative difference: inf at index (0, 1, 0)
+=========================== short test summary info ============================
+FAILED test/test_concept_memberships.py::test_raw_analysis_layout_clips_regions_to_observed_input
+1 failed in 2.09s
+
+=== worker-003.log ===
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_________ test_written_order0_words_are_present_after_one_smoke_epoch __________
+test/test_dual_towers.py:215: in test_written_order0_words_are_present_after_one_smoke_epoch
+    assert evidence[..., 0].max() > 0, word
+E   AssertionError: hello world
+E   assert tensor(0.) > 0
+E    +  where tensor(0.) = <built-in method max of Tensor object at 0x12ac6a4e0>()
+E    +    where <built-in method max of Tensor object at 0x12ac6a4e0> = tensor([0.]).max
+----------------------------- Captured stdout call -----------------------------
+[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/output/MM_sparse_concept.ckpt, starting fresh
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+batch = 0 (Δ=0.225s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+=============================== warnings summary ===============================
+test/test_dual_towers.py::test_written_order0_words_are_present_after_one_smoke_epoch
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7944: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_sparse_concept.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_dual_towers.py::test_written_order0_words_are_present_after_one_smoke_epoch
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_dual_towers.py::test_written_order0_words_are_present_after_one_smoke_epoch
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7944: RuntimeWarning: reconstruction_zeroed [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_sparse_concept.xml]: reconstruction loss zeroed: no D3 (per_word=False) and masked-LM inputs missing (mask, target); percept .what=Codebook, pred_full shape=(4, 8, 1024)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_dual_towers.py::test_written_order0_words_are_present_after_one_smoke_epoch
+1 failed, 3 warnings in 5.22s

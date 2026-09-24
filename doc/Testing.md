@@ -1688,3 +1688,35 @@ expected failure**, exit 0. All six fresh unseeded XOR runs pass. Its
 639-file source map matches the final affected and measurement receipts
 exactly, SHA-256
 `15201722241d80122b33e50a87fc1dddcf6cdfc8bb40caf5f8334ec7ba33f2d7`.
+
+
+### Item 11b extent containment and restored raw smoke (2026-09-24)
+
+The [extent correction receipt](benchmarks/2026-09-24-item11b-extent/README.md)
+records the failing probes and fix for PartSpace containment at the subject
+extent and raw analysis regions extending into padding. A subject shares
+its contained parts across its positions, while WholeSpace retains pervasion
+at each position. Separate extents retain separate evidence. Uniform raw
+carrier regions now stop at the last observed byte; padded regions are empty.
+
+All **129 affected cases pass**, including explicit slow tests. The smoke
+guard again runs `MM_sparse_concept.xml` through a real optimizer epoch and
+asserts positive evidence and exactly zero negative evidence for every
+present word at extent, retained position, carrier and symbol scope. Each
+of the four inputs reads `(1,0)` at extent and symbol scope. The six unseeded
+native XOR runs pass; the accepted recurrence, attended-field and identity
+behavior is preserved.
+
+Serial reconstruction is unchanged from accepted 11b: the after-training
+mean remains 0.142% above `d4dc385`, and frozen primitive memberships
+reproduce that reference exactly. The eight prior rows over 256 bytes and
+segmentation of 32 sentences into 160 runs are unchanged. The affected and
+measurement receipts match the same 639-file source map, SHA-256
+`523f8196273c5e715b4c8aaadc868520d39b768d16bf6b25c0be6d102dc63ad7`.
+
+The [full receipt](benchmarks/2026-09-24-item11b-extent/full-result.json.gz)
+completes **4,798 unique cases: 4,467 passed, 330 skipped, one existing
+expected failure**, exit zero. All six fresh unseeded XOR runs pass again.
+Its source map matches the affected and measurement receipts byte for byte.
+The bounded run takes 1,092.1 seconds with a 12.39 GiB aggregate memory peak;
+no compiler-cache retry ran.

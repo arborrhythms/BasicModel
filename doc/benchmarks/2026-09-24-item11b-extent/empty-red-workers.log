@@ -1,0 +1,46 @@
+
+=== worker-000.log ===
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+________ test_part_containment_belongs_to_the_subject_extent[literal0] _________
+test/test_concept_memberships.py:95: in test_part_containment_belongs_to_the_subject_extent
+    empty = cs.cs_read_memberships((ids, positions, None, raw, positions), extents[:, :0])
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:18635: in cs_read_memberships
+    self._bind_attended_concepts(required, matrix, part_ids)
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:18526: in _bind_attended_concepts
+    support = required[..., 0].amax(dim=(1, 2)) if len(rows) else weight
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+E   IndexError: amax(): Expected reduction dim 2 to have non-zero size.
+________ test_part_containment_belongs_to_the_subject_extent[literal1] _________
+test/test_concept_memberships.py:95: in test_part_containment_belongs_to_the_subject_extent
+    empty = cs.cs_read_memberships((ids, positions, None, raw, positions), extents[:, :0])
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:18635: in cs_read_memberships
+    self._bind_attended_concepts(required, matrix, part_ids)
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:18526: in _bind_attended_concepts
+    support = required[..., 0].amax(dim=(1, 2)) if len(rows) else weight
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+E   IndexError: amax(): Expected reduction dim 2 to have non-zero size.
+=============================== warnings summary ===============================
+test/test_concept_memberships.py::test_part_containment_belongs_to_the_subject_extent[literal0]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_concept_memberships.py::test_part_containment_belongs_to_the_subject_extent[literal0]
+FAILED test/test_concept_memberships.py::test_part_containment_belongs_to_the_subject_extent[literal1]
+2 failed, 1 warning in 2.47s

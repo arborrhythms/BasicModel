@@ -214,6 +214,7 @@ Everything that is decided in direction but not on this path is in
 
 ### Done (newest first)
 
+- Item 11b extent correction: containment at the subject extent, observed raw spans and the restored positive-only `MM_sparse_concept` smoke ([receipt](doc/benchmarks/2026-09-24-item11b-extent/README.md); commit recorded after landing).
 - `aa235d2` Item 11b accepted-review corrections: recurrent parts, containment over canonical ids, and order-0 fields bound per turn with persistent concept identity ([receipt](doc/benchmarks/2026-09-24-item11b-corrections/README.md)).
 - `db73581` Item 11b: native membership definitions, located fused parts and pervading wholes, with alternatives preserved through refinement; normalization residue closed ([review receipt](doc/benchmarks/2026-09-24-item11b-review/README.md), [design](doc/Architecture.md#item-11b-membership-read-and-extent-truth-corners-september-23)).
 
