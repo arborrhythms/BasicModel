@@ -371,6 +371,45 @@ ops are gone. Splitting happens only where a percept or a symbol is
 formed: the symbolic layer muxes and demuxes around `execute`, and the
 perceptual layer reads coordinates.
 
+#### `interpret`: word-concept to object-concept (item 9b, 2026-09-25)
+
+Decided (Alec, 2026-09-25;
+[plan](plans/2026-09-25-item-9b-mode-sharing-and-interpret.md)). The
+resolution the paragraph above describes — a word resolved to its object
+concept — is a declared `<compose>` operator:
+
+```text
+interpret_O1 = interpret.forward(interpret_I1)
+interpret_I1 = interpret.reverse(interpret_O1)     # generate face: lexicalization
+```
+
+Unary, like `not`; its second argument is implicit, the current attentive
+field. `interpret_I1` is the **word-concept**: the code the word arrives
+as, which PartSpace has already looked up as the recurring unit the fold
+ladder admitted — `interpret` is never the byte-to-word step.
+`interpret_O1` is the **object-concept** in the shared inventory: the
+order-1 particular when the field holds an occurrence the word addresses
+(*the cat*, *Felix*), otherwise the kind (*cat*), with the resolution
+supplied by the grammatical context per
+[Lexicon](Lexicon.md#word-forms-and-concept-orders); the operator never
+reads the surface form, and no word is anchored to it.
+
+It is not a mode and not chooser-routed: in serial mode **every arriving
+word is interpreted before it takes part in composition**, so `lift`,
+`lower`, `part` and the rest compose object-concepts, not words. What is
+learned is only the resolution. An **unknown word mints** a provisional
+object row whose only literal is the word occurrence that named it —
+object-concepts without direct experience, by testimony; a second
+occurrence resolves to the same row, admission follows the ordinary
+recurrence rule, and a later witnessed percept or a sealed assertion
+(*a wug is a bird*) writes its definition. `interpret` replaces the
+host-side `create_word_object_meta` triple `(A = word, B = object,
+C = meta)` and its callers; the two-truths seal, which writes asserted
+part rows between the object concepts words resolve to, stops resolving
+them itself. The `<thought>` face is off by default; a per-model
+allow-list may add it (naming what is attended, the noting meditator's
+move, which is also the re-symbolization that closes a parallel pass).
+
 #### Tensor reverses for the compiled loops (2026-09-13)
 
 `LanguageSpace.reverse_binary_step(parent, op_local, valid, reference,

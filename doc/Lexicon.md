@@ -82,6 +82,14 @@ identity across events is object permanence; order 2 is the kind (*cat*).
 Higher kinds can occupy further orders. Formation and testimony supply
 these concepts; lexical resolution never invents a missing one.
 
+Item 9b names the operator that performs this resolution: `interpret`
+([Language](Language.md#interpret-word-concept-to-object-concept-item-9b-2026-09-25)),
+the default per-word step of serial mode, from the word-concept PartSpace
+looked up to the object-concept at the order the grammar selects. The one
+case in which resolution *does* create a concept is the unknown word:
+`interpret` mints a provisional object row whose only literal is the
+naming occurrence — testimony — and later occurrences resolve to it.
+
 A selected compose rule can declare `reference="I2:particular"` (the
 shipped determiner `lower`) or `reference="I2:pronoun"` (the shipped
 contextual `bind`). `event`, `name`, `kind`, `generic`, and explicit

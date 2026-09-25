@@ -1,0 +1,140 @@
+{
+  "affected": {
+    "reason": "passed",
+    "exit_code": 0,
+    "elapsed_seconds": 112.95755299995653,
+    "limits": {
+      "memory_bytes": 17179869184,
+      "aggregate_memory_bytes": 17179869184,
+      "per_worker_memory_bytes": 8589934592,
+      "workers": 2,
+      "worker_seconds": 1800,
+      "suite_seconds": 10800,
+      "batch_size": 8,
+      "max_files": 1
+    },
+    "peak_aggregate_memory_bytes": 7653612816,
+    "compile_cache_retries": [],
+    "selected": 193,
+    "completed": 193,
+    "outcomes": {
+      "passed": 125,
+      "skipped": 68
+    },
+    "source_files": 650,
+    "source_delta_from_review": {
+      "test/test_reconstruction_bank_contract.py": {
+        "before": "a9283e5fc5ae420f6e0f38a6d6d134e9709ce3e4d3b2f5d77f0a817fa0665a4d",
+        "after": "893718a4810bca96eeda78ead80dfef0c0a4915a8c897d728d39a15803c78288"
+      }
+    },
+    "source_sha256": "048d5a5d87f56ba8f8c53d4111018bbf5a82c3b4a76f1f80a579c8a0e90b2b64"
+  },
+  "slow": {
+    "reason": "passed",
+    "exit_code": 0,
+    "elapsed_seconds": 616.1374330420513,
+    "limits": {
+      "memory_bytes": 17179869184,
+      "aggregate_memory_bytes": 17179869184,
+      "per_worker_memory_bytes": 8589934592,
+      "workers": 2,
+      "worker_seconds": 1800,
+      "suite_seconds": 10800,
+      "batch_size": 1,
+      "max_files": 1
+    },
+    "peak_aggregate_memory_bytes": 9647137672,
+    "compile_cache_retries": [],
+    "selected": 24,
+    "completed": 24,
+    "outcomes": {
+      "passed": 24
+    },
+    "source_files": 650,
+    "source_delta_from_review": {
+      "test/test_reconstruction_bank_contract.py": {
+        "before": "a9283e5fc5ae420f6e0f38a6d6d134e9709ce3e4d3b2f5d77f0a817fa0665a4d",
+        "after": "893718a4810bca96eeda78ead80dfef0c0a4915a8c897d728d39a15803c78288"
+      }
+    },
+    "source_sha256": "048d5a5d87f56ba8f8c53d4111018bbf5a82c3b4a76f1f80a579c8a0e90b2b64"
+  },
+  "cleanup": {
+    "reason": "passed",
+    "exit_code": 0,
+    "elapsed_seconds": 12.878145458060317,
+    "limits": {
+      "memory_bytes": 8589934592,
+      "aggregate_memory_bytes": 8589934592,
+      "per_worker_memory_bytes": 8589934592,
+      "workers": 1,
+      "worker_seconds": 1800,
+      "suite_seconds": 10800,
+      "batch_size": 8,
+      "max_files": 1
+    },
+    "peak_aggregate_memory_bytes": 5126410872,
+    "compile_cache_retries": [],
+    "selected": 8,
+    "completed": 8,
+    "outcomes": {
+      "passed": 8
+    },
+    "source_files": 650,
+    "source_delta_from_review": {},
+    "source_sha256": "4054a9492f4d1210cc0ca20f2044dd8ed522c65e89c491a1198ac01f93f2010a"
+  },
+  "full": {
+    "reason": "passed",
+    "exit_code": 0,
+    "elapsed_seconds": 1178.7615358750336,
+    "limits": {
+      "memory_bytes": 21474836480,
+      "aggregate_memory_bytes": 21474836480,
+      "per_worker_memory_bytes": 8589934592,
+      "workers": 8,
+      "worker_seconds": 1800,
+      "suite_seconds": 10800,
+      "batch_size": 8,
+      "max_files": 1
+    },
+    "peak_aggregate_memory_bytes": 12694423312,
+    "compile_cache_retries": [],
+    "selected": 4839,
+    "completed": 4839,
+    "outcomes": {
+      "passed": 4514,
+      "skipped": 324,
+      "xfailed": 1
+    },
+    "source_files": 650,
+    "source_delta_from_review": {},
+    "source_sha256": "4054a9492f4d1210cc0ca20f2044dd8ed522c65e89c491a1198ac01f93f2010a"
+  },
+  "doc-links": {
+    "reason": "passed",
+    "exit_code": 0,
+    "elapsed_seconds": 29.580057499930263,
+    "limits": {
+      "memory_bytes": 8589934592,
+      "aggregate_memory_bytes": 8589934592,
+      "per_worker_memory_bytes": 8589934592,
+      "workers": 2,
+      "worker_seconds": 1800,
+      "suite_seconds": 10800,
+      "batch_size": 8,
+      "max_files": 1
+    },
+    "peak_aggregate_memory_bytes": 861244056,
+    "compile_cache_retries": [],
+    "selected": 87,
+    "completed": 87,
+    "outcomes": {
+      "passed": 87
+    },
+    "source_files": 650,
+    "source_delta_from_review": {},
+    "source_sha256": "4054a9492f4d1210cc0ca20f2044dd8ed522c65e89c491a1198ac01f93f2010a"
+  }
+}

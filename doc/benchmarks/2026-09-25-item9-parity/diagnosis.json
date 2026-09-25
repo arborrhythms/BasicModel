@@ -1,0 +1,53 @@
+{
+  "method": "Same pre-fix packed recovered ideas, changing only byte candidate validity; no re-inversion.",
+  "sentences": [
+    {
+      "row": 0,
+      "sentence": 0,
+      "actual_seal_max_difference": 0.0,
+      "pre_fix_recovered_max_difference": 0.04728598892688751,
+      "original_packed_byte_cost": 0.6541093587875366,
+      "rescored_same_recovered_ideas": {
+        "whole_bank": 0.6541093440998035,
+        "sentence_bank": 0.6431978879942714
+      },
+      "single_byte_cost": 0.613806962966919
+    },
+    {
+      "row": 0,
+      "sentence": 1,
+      "actual_seal_max_difference": 0.0,
+      "pre_fix_recovered_max_difference": 0.09343469887971878,
+      "original_packed_byte_cost": 0.9467770457267761,
+      "rescored_same_recovered_ideas": {
+        "whole_bank": 0.9467769965655558,
+        "sentence_bank": 0.8239518105353151
+      },
+      "single_byte_cost": 0.7259159684181213
+    },
+    {
+      "row": 1,
+      "sentence": 0,
+      "actual_seal_max_difference": 0.0,
+      "pre_fix_recovered_max_difference": 0.05340423434972763,
+      "original_packed_byte_cost": 0.7255563735961914,
+      "rescored_same_recovered_ideas": {
+        "whole_bank": 0.7255563578995256,
+        "sentence_bank": 0.700378617994526
+      },
+      "single_byte_cost": 0.6725914478302002
+    },
+    {
+      "row": 1,
+      "sentence": 1,
+      "actual_seal_max_difference": 0.0,
+      "pre_fix_recovered_max_difference": 0.0500115230679512,
+      "original_packed_byte_cost": 0.8674945831298828,
+      "rescored_same_recovered_ideas": {
+        "whole_bank": 0.867494540126063,
+        "sentence_bank": 0.7712459478003438
+      },
+      "single_byte_cost": 0.7232958674430847
+    }
+  ]
+}

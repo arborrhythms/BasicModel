@@ -544,6 +544,14 @@ percepts assert neither. No projection onto codes or evidence floor occurs
 at the seam. Pi edges above this membership read intersect order-0 field
 readings, retaining designated occurrence brackets before the extent union.
 
+*Item 9b (decided in direction, Alec 2026-09-25):* the seam becomes a
+per-bracket read. Each percept row's presence and observed complement are
+pooled over the occurrences inside the one convex bracket of attention
+before the definition matrix reads them; the per-extent, per-position
+tensors and the retained pairs in the conceptual field go, and exact
+co-location stays in perception (fused parts, pervading runs). See
+[Architecture](Architecture.md#one-where-one-when-many-whats-the-field-attention-and-the-two-modes-item-9b-september-25).
+
 Concept ids persist; order-0 field rows bind per turn. The field is common
 to all concepts, and precision belongs only to location. Max over occurrences
 inside the subject keeps both poles. Symbolization raises order; subsequent

@@ -819,6 +819,9 @@ not (observer-written located conjunctions, `_compose_order0` and pole swap)
 operate only in parallel mode. They do not operate in grammatical/serial
 mode. Conversely, the grammar's `lift` and `lower` do not run in parallel
 mode. These are alternative operations; native perception serves both.
+The exclusion holds within a pass; across passes the two modes share one
+inventory and may alternate on the same content
+([item 9b](#one-where-one-when-many-whats-the-field-attention-and-the-two-modes-item-9b-september-25)).
 
 1. **Granularity of analysis and synthesis.** PartSpace combines existing
    parts into recurrent ordered groups; WholeSpace divides the inclusive
@@ -1190,9 +1193,146 @@ scores whole codes. Where and when re-enter when a concept is realised as
 a symbol or a percept.
 
 All concepts are read within one attentive field; none is individually
-located. Retained occurrence brackets are coordinates of that field beside
-the opaque event. They support level finding and selection of a region of
-interest without adding location coordinates to concept identities.
+located. The field has exactly one bracket and one interval; occurrence
+brackets belong to the percept events, not to the field or to any concept
+(item 9b below). Level finding and selection of a region of interest are
+the narrowing of that one bracket.
+
+### One where, one when, many whats: the field, attention and the two modes (item 9b, September 25)
+
+**Decided in direction (Alec, 2026-09-25);
+[plan](plans/2026-09-25-item-9b-mode-sharing-and-interpret.md).** This
+section states the conceptual side of the architecture after item 9b. It
+replaces the sentence above about retained occurrence brackets, the 8/8
+attended-field truncation of item 11b, and the per-extent, per-position
+seam read of items 11b/11c; those remain the *landed* code until Codex's
+9b landing and are named there as what it replaces.
+
+**Three kinds of thing, and only one chooses its coordinates.**
+
+| Thing | `.where` | `.when` | `.what` |
+|---|---|---|---|
+| a percept event, a symbol occurrence | its own bracket | its own time | one code |
+| a **field** — a reading; an LTM row is a sealed field | **one** convex bracket | **one** interval | **many** codes: the parts and wholes inside the bracket |
+| a **concept row** in the store | none | none | its definition over percept poles |
+
+A concept *in a field* therefore has a where and a when — the field's —
+and a multiplicity of `.what` perceptual codes that are parts or wholes of
+that (where, when) location. A concept *row* has neither coordinate. The
+seal writes the pair once per LTM row, never per concept.
+
+**The conceptual field is a percept activation vector.** For every
+percept row, its presence and its observed complement, each **pooled over
+the occurrences inside the bracket** — the union at readout that 11b
+performs per symbol, moved down to the seam. In serial mode sixteen pairs
+are nonzero (eight parts, eight wholes: the attended field); in parallel
+mode every active percept is. Above it sit the sparse definition matrix
+(one COO row per order-0 concept over percept poles, read by the 11c
+folds) and the symbol matrix. Nothing else is conceptual. The `[B, E, P]`
+occurrence tensors of `cs_read_memberships`, the retained position pairs
+travelling through the field, symbol readout and checkpoints, and the
+`n0` truncation of `_bind_attended_concepts` all go; the where they
+carried stays with the percept events.
+
+**Attention is one convex bracket.** Open attention (parallel mode) sets
+the bracket to the whole input; focused attention (serial mode) narrows it
+to the current word's extent and neighbourhood; the region-of-interest
+move is narrowing the bracket, which is attention as non-affirming
+exclusion ([Philosophy](Philosophy.md#expectation-as-a-negative-image-attention-as-exclusion-2026-09-20)).
+No per-concept `.where` channel exists: it would give concepts individual
+locations, which the opacity note above forbids. What one convex bracket
+cannot express — attending to two disjoint regions at once — is exactly
+what a higher-order concept is for.
+
+**Both is the field's report.** If a property holds on one occurrence
+inside the bracket and fails on another, its percept pair pools to
+`(1, 1)` before any concept reads it, and the concept reads *both*. That
+is not an error: it is the field reporting that the bracket pools
+heterogeneous occurrences, the *both* corner of the tetralemma the
+architecture was built to handle. The two remedies are the two prompts
+already decided: **narrow the bracket** (attend, divide), or **raise
+order** when the heterogeneity is the thing to name (sigma over symbols).
+Convexity is what keeps the two remedies distinct: a contiguous support
+refines within order 0; a support discontiguous *within* the bracket
+raises order. The same holds in time: a concept present at one moment and
+absent at another inside the field's interval reads *both*, and the
+remedies are narrowing to one row or naming the change — a process, an
+event, a habit.
+
+**Exact co-location is perception's.** Pi over pooled activations
+computes co-presence within the bracket, which equals co-location only
+when the bracket is one occurrence — the same `∃x A ∧ ∃x B ≠ ∃x (A ∧ B)`
+that rules out pi over symbols, now at the seam. So the conjunctions that
+must be exact are perceptual: PartSpace's fused part (*A at 1 and B at
+2*, one recurring unit), WholeSpace's pervading run, property
+intersections on a run. A conceptual intersection is bracket-scoped and
+may read *both*. XOR becomes simpler: `10` and `01` are two fused parts,
+two distinct percepts, so the cases are pi over those presences and sigma
+unions them, while the *both* corner of "is a one" over the word bracket
+is the reading that prompts the division. Attribution still reaches
+`.where`: reverse pi attributes a reading to percept rows by wire, and
+their events carry the brackets, so the refine-before-raise run count
+moves to perception's side.
+
+**When.** A field's time is its position in the LTM chain — the sentence
+being written — plus the exact clock side-band that already rides beside
+`.when`. A recalled row enters thought with its own pair: its bracket in
+the source document and its chain position, the situation the predictor
+anchors. An interval wider than one row is an episode. Tense is the
+relation between the field's interval and the utterance's, a relation
+between two brackets, never a property of a concept row; `lift` extends a
+thing into a process by widening the interval the field reads.
+
+**Consequently (Alec, 2026-09-25): every LTM row carries a `.where` and a
+`.when`**, the field's pair, written once by the seal. **`.where` is one
+unique field over all percepts**: input positions have unique locations by
+construction, and every symbol occurrence — a located percept — has a
+unique `.where` in that same field as well: **symbols' `.where` extends
+the `.where` of the pre-allocated part and whole percepts** — one address
+space with input positions first, then PartSpace's part rows and
+WholeSpace's whole rows at their pre-allocated offsets, then the symbols
+continuing the range; this is the global where-space slice registry of
+before 2026-06-04 revived on the perceptual side as an address space for
+locations only (the `where_offset` stubs mark where it was; codebook
+identity stays the row index per Spaces' Codebook Uniqueness Contract).
+Stable slices need stable capacities: the plan proposes restoring fixed
+physical capacity for every perceptual codebook with logical growth only,
+as the concept inventory already does, in place of the runtime geometric
+growth and its recompiles (plan entry 4e). Symbol occurrences produced by thought take
+their symbols' offsets. LTM is the exception: **a row's address is its
+`.when` alone**, and its `.where` records what it was looking at, so rows
+may share a `.where`.
+
+**The two modes share one structure.** The inventory — order-0 rows,
+definitions, symbol pairs, memberships — is one for both modes; no mode
+holds a private copy, and a checkpoint from either loads in the other.
+Serial mode is focused attention with the grammar's `lift` and `lower`;
+parallel mode is open attention with the field's sigma, pi and not. The
+mode exclusion of 11c holds **within a pass**; across passes the modes may
+alternate on the same content, each parallel pass ending with
+re-symbolization (every word symbol read back against the field, the
+reverse of `interpret`), which is the mechanical form of label feedback.
+The psychological reasons — the two modes share one conceptual structure
+in humans, the sharing erodes each side somewhat, the erosion is mostly a
+loss of online maintenance, and meditators gain the ability to switch
+modes rather than losing one — are set out in
+[Philosophy](Philosophy.md#attention-as-one-bracket-both-as-the-fields-report-and-the-sharing-of-the-two-modes-2026-09-25).
+The interleaving schedule (`modeSchedule`) and the erosion gate are the
+plan's two remaining questions.
+
+**`interpret`: word-concept to object-concept.** In serial mode every
+arriving word is interpreted before it takes part in composition:
+PartSpace looks the word up as the recurring unit the fold ladder
+admitted, and `interpret` maps that word-concept to the object-concept it
+refers to — the order-1 particular when the field holds an occurrence the
+word addresses, otherwise the kind — with the resolution supplied by the
+grammar, never by the surface form. It is not a mode and not
+chooser-routed. An unknown word **mints** a provisional object row whose
+only literal is the word occurrence that named it: that is how
+object-concepts come to exist without direct experience, by testimony,
+and its second occurrence resolves to the same row. `interpret` replaces
+the host-side `create_word_object_meta` triple; its reverse is
+lexicalization. See [Language](Language.md#interpret-word-concept-to-object-concept-item-9b-2026-09-25).
 
 ### Loop and parameter ownership (tied reconstruction, 2026-09-16)
 
@@ -1214,6 +1354,20 @@ identifies operand occurrences; seal reversal recovers each completed sentence's
 stack; then a reverse word walk undoes unary/post folds, pops and scores the
 word, and undoes its pre-fold. Repeated concept rows retain their own signed
 occurrence activations. Packed sentences have separate boundaries and costs.
+Every dictionary candidate retains its occurrence's sentence id. Both the
+bounded inverse search and byte-assignment softmax exclude other sentences'
+entries, including duplicates of an identity present in the current sentence.
+First-sight concept admission and active-codebook growth precede staging this
+bank. Requested tied reconstruction requires a complete bank and at least one
+usable WORD surface candidate per active sentence; missing staging or failed
+admission cannot silently become a uniform-only byte loss. The boundary checks
+tensor metadata in Python and asserts ownership and sentence coverage on device,
+without reading tensor scalars back to the host; accelerator assertion failures
+are reported asynchronously.
+The live seal bank is completed with each row's final slots and depth before
+saved answer programs are captured; ragged rows can end at different slots.
+These changes preserve packed/single parity at equal frozen model state
+([item 9 diagnosis](benchmarks/2026-09-25-item9-parity/README.md)).
 The two floating passes use gradient-bearing carries; the metadata pass needs
 no backward tape ([Models.py:11300](../bin/Models.py#L11300)).
 
@@ -2072,7 +2226,9 @@ are not one over-collected conjunction and cannot retire the union.
 **The attended field.** Alec: eight parts from PartSpace and eight wholes
 from WholeSpace are the attended space of perception, a span in `.what`
 restricting both mereological level and location. Conceptual space arises
-from that field. Order-0 rows are therefore bound per turn. A read gathers
+from that field. (Item 9b makes this the *serial* form — focused
+attention — and opens the field to every active percept in parallel mode;
+the `n0` truncation below is what it removes.) Order-0 rows are therefore bound per turn. A read gathers
 definitions referencing the attended memberships, admits them up to the
 caps by membership support, and composes the existing taper over that field.
 Sparse definitions and their weights persist in the inventory keyed by

@@ -198,7 +198,7 @@ def _replay_operand_rows(m):
 
 
 @pytest.mark.slow
-def test_packed_trace_records_pre_fold_operand_rows_at_every_binary(tmp_path):
+def test_packed_trace_records_pre_fold_operand_rows_at_every_binary(tmp_path, monkeypatch):
     """Codex item 4: real packed seals retain the operands of the fold,
     including a known leaf beside a composite, before reducing the stack."""
     m = _build_ladder_variant(tmp_path, "operand_rows", [
@@ -208,6 +208,20 @@ def test_packed_trace_records_pre_fold_operand_rows_at_every_binary(tmp_path):
     m._chart_compose_per_word = lambda: None
     m.stm_reduce_tau = 1.0
     m._install_unit_span_fn()
+    # This is a binary operand-provenance probe. Preserve lexical leaves
+    # until a binary consumes them: an ordinary unary rewrite legitimately
+    # clears the row identity and need not leave a mixed pair at the seal.
+    # Control that precondition instead of depending on a chooser draw.
+    from Spaces import LanguageUnaryChoice
+
+    def retain_leaf(state, gate):
+        depth = state[1]
+        inactive = torch.zeros_like(depth, dtype=torch.bool)
+        return LanguageUnaryChoice(state[0][:, 0], inactive,
+                                   torch.full_like(depth, -1), inactive,
+                                   state[0].new_zeros(depth.shape))
+
+    monkeypatch.setattr(m.languageSpace, "choose_unary", retain_leaf)
     try:
         _stage_packed(m, [["aa bb cc dd ee", "ff gg hh ii jj"], ["kk ll mm", "nn oo"]])
         with torch.no_grad():

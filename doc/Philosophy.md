@@ -1269,6 +1269,96 @@ thinking: preferences need no inferences*, American Psychologist 35(2).
 Zwaan & Radvansky (1998), *Situation models in language comprehension and
 memory*, Psychological Bulletin 123(2).
 
+## Attention as One Bracket, Both as the Field's Report, and the Sharing of the Two Modes (2026-09-25)
+
+**The catuṣkoṭi's *both*, located.** The architecture reads four corners
+from a concept's two presences: true, false, both, neither. Item 9b says
+where *both* comes from. The conceptual field is a percept activation
+vector pooled over one convex bracket of attention; a concept row carries
+no location. If a property holds on one occurrence inside the bracket and
+fails on another, the field reports the concept as both present and
+absent. That is Nāgārjuna's corner exactly as the design intended it: not
+a contradiction in the thing, but a fact about the scope of the reading —
+the soccer ball is both black and white until one looks at a hexagon. The
+two responses are the two prompts already decided: narrow the bracket, or
+raise order and name the heterogeneity itself. A concept in a field has
+one where and one when — the field's — and many whats; a concept in the
+store has neither. A field wider than one moment reports the same *both*
+across time, and the same two remedies name a process or an event.
+
+**Two modes, one structure.** Serial mode is focused attention, the
+grammar's operators over a narrow bracket; parallel mode is open
+attention, the field's sigma, pi and negation over the whole input. Alec's
+position is that the two share one conceptual structure, that training
+serial concepts helps develop the parallel objects, and that the risk is
+the parallel mode eroding the crisp boundaries serial processing
+maintains. The human literature bears this out, in both directions, and
+supplies the remedy.
+
+- **One structure.** Semantic memory has one amodal hub behind verbal and
+  nonverbal access, and semantic dementia erodes a concept in naming and
+  drawing together (Lambon Ralph et al. 2017). A heard label lets an
+  image suppressed by continuous flash suppression break into awareness
+  where an uninformative cue does not, at a perceptual locus (Lupyan &
+  Ward 2013): the label acting on the field, which in this architecture
+  is the symbol's reverse against the field. Two distinct labels let
+  9-month-olds individuate two objects where tones and sounds do not (Xu
+  2002); words as essence placeholders (Carey 2009) is the order-1
+  particular forming with object permanence under a name.
+- **Serial processing keeps boundaries crisp online.** Russian speakers'
+  colour-category advantage vanishes under verbal but not spatial
+  interference (Winawer et al. 2007). Aphasia selectively impairs
+  low-dimensional, single-feature categories in proportion to the naming
+  deficit while family-resemblance categories survive (Lupyan & Mirman
+  2013; the language network's role is contested by Benn et al. 2023).
+  Adults lose the ability to combine geometry with a landmark while
+  verbally shadowing but not while clapping (Hermer-Vazquez, Spelke &
+  Katsnelson 1999; contested by Ratliff & Newcombe 2008). With the serial
+  system offline, crisp categories degrade toward graded similarity —
+  the erosion Alec named, mostly a loss of online maintenance rather than
+  of stored structure.
+- **The erosion runs the other way too.** Learned categories compress
+  within-category discrimination (Goldstone 1994); verbalizing a face
+  impairs its later recognition (Schooler & Engstler-Schooler 1990;
+  Alogna et al. 2014). Each mode costs the other something.
+- **Meditators.** Twenty minutes of breath meditation reduced Stroop
+  interference and produced more atypical category exemplars than
+  controls (Wenk-Sormaz 2005): boundary loosening in the predicted
+  direction. Three months of intensive practice sharpened fine perceptual
+  discrimination, persisting five months (MacLean et al. 2010); the
+  attentional blink shrinks after retreat (Slagter et al. 2007);
+  one-pointed concentration stabilizes binocular rivalry (Carter et al.
+  2005); Deikman (1966) called this deautomatization. The counterweight
+  is Farb et al. (2007): after eight weeks of mindfulness training the
+  narrative and experiential modes of self-reference become neurally
+  dissociable. Training yields the ability to engage either mode; it does
+  not remove the narrative one.
+
+**What the architecture does with this.** Share the structure: one
+inventory for both modes. Expect erosion in both directions and measure it
+with a categorical-perception index under serial-only, parallel-only and
+interleaved training. Do not keep the modes as permanent alternatives:
+alternate them, and after every open pass read each word symbol back
+against the field, as a noting meditator names what arose. And give the
+serial loop `interpret`, the one operator that writes the parallel
+field's objects from words — so that reading develops the objects a video
+feed would otherwise have to supply, and an unfamiliar word can create an
+object the mind has never seen. Plan:
+[item 9b](plans/2026-09-25-item-9b-mode-sharing-and-interpret.md).
+
+**Sources.** Alogna et al. 2014, *Perspect. Psychol. Sci.* 9:556; Benn et
+al. 2023, *Cereb. Cortex* 33:10380; Carey 2009, *The Origin of Concepts*;
+Carter et al. 2005, *Curr. Biol.* 15:R412; Deikman 1966, *Psychiatry*
+29:324; Farb et al. 2007, *SCAN* 2:313; Goldstone 1994, *JEP: General*
+123:178; Hermer-Vazquez, Spelke & Katsnelson 1999, *Cogn. Psychol.* 39:3;
+Lambon Ralph et al. 2017, *Nat. Rev. Neurosci.* 18:42; Lupyan & Mirman
+2013, *Cortex* 49:1187; Lupyan & Ward 2013, *PNAS* 110:14196; MacLean et
+al. 2010, *Psychol. Sci.* 21:829; Ratliff & Newcombe 2008, *Cogn.
+Psychol.* 56:142; Schooler & Engstler-Schooler 1990, *Cogn. Psychol.*
+22:36; Slagter et al. 2007, *PLoS Biol.* 5:e138; Wenk-Sormaz 2005,
+*Altern. Ther. Health Med.* 11:42; Winawer et al. 2007, *PNAS* 104:7780;
+Xu 2002, *Cognition* 85:223.
+
 ## Summary
 
 | WikiOracle | Category | Buddhist Epistemology | Sanskrit |

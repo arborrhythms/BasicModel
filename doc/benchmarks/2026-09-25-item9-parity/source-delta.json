@@ -1,0 +1,22 @@
+{
+  "bin/Models.py": {
+    "before": "1603e23110e03c513b4bcb9e952c4a1ba59167324eb7647aca3277fcdde5a16d",
+    "after": "2c6a39a97bc8d9d1df120f004cc0a3246ea2e4ac66579243011dd7b293b73c15"
+  },
+  "bin/Spaces.py": {
+    "before": "d4411dd10523358d19e3a0d51af65f40c30990a3c87fb1ec60f38f95b84a1cfe",
+    "after": "fb273d9c0273a54d7815c70585861110ed6812143275fdadd346495ffcf0d197"
+  },
+  "test/test_packed_reconstruction_parity.py": {
+    "before": null,
+    "after": "c1269fb7d6b89fe48bb74c1137ac8742e00625b66a31d49169cf295f14d22d8f"
+  },
+  "test/test_reverse_traversal.py": {
+    "before": "a30aa37e48b1b085be49635f0beecf5ad8ad37b8eb363396cb21b88a7997e88d",
+    "after": "97dc512a0a7b493311f5693bd35db0a2b48dacb10785e77182f3eb2ab1376fe5"
+  },
+  "test/test_word_store.py": {
+    "before": "da35931b7e987c50fe0446df2bb2c9d10b015d733e7e70999a3134df0f2c9857",
+    "after": "2b3201a7eacd37586f3d76adf2585bd0d9b6e5c4b0b13c347bbed89d013d486b"
+  }
+}

@@ -1,0 +1,150 @@
+{
+  "atol": 1e-06,
+  "rtol": 1e-05,
+  "seed": 42,
+  "source_equal": true,
+  "config_equal": true,
+  "parameters_equal": true,
+  "dictionary_equal": true,
+  "packed_mean": 0.6839025616645813,
+  "single_mean": 0.6839025616645813,
+  "sentences": [
+    {
+      "source_row": 0,
+      "text": "9 plus 1",
+      "root": {
+        "same_shape": true,
+        "max_abs_difference": 0.0,
+        "close": true
+      },
+      "program_root": {
+        "same_shape": true,
+        "max_abs_difference": 0.0,
+        "close": true
+      },
+      "reference": {
+        "same_shape": true,
+        "max_abs_difference": 0.0,
+        "close": true
+      },
+      "recovered": {
+        "same_shape": true,
+        "max_abs_difference": 0.0,
+        "close": true
+      },
+      "byte_cost": {
+        "same_shape": true,
+        "max_abs_difference": 0.0,
+        "close": true
+      },
+      "program_owns_seal": true,
+      "actions_equal": true,
+      "effective_candidates_equal": true,
+      "differing_staged_inputs": []
+    },
+    {
+      "source_row": 1,
+      "text": "14 plus 1",
+      "root": {
+        "same_shape": true,
+        "max_abs_difference": 0.0,
+        "close": true
+      },
+      "program_root": {
+        "same_shape": true,
+        "max_abs_difference": 0.0,
+        "close": true
+      },
+      "reference": {
+        "same_shape": true,
+        "max_abs_difference": 0.0,
+        "close": true
+      },
+      "recovered": {
+        "same_shape": true,
+        "max_abs_difference": 0.0,
+        "close": true
+      },
+      "byte_cost": {
+        "same_shape": true,
+        "max_abs_difference": 0.0,
+        "close": true
+      },
+      "program_owns_seal": true,
+      "actions_equal": true,
+      "effective_candidates_equal": true,
+      "differing_staged_inputs": [
+        "_ar_word_part_offsets"
+      ]
+    },
+    {
+      "source_row": 2,
+      "text": "2 plus 1",
+      "root": {
+        "same_shape": true,
+        "max_abs_difference": 0.0,
+        "close": true
+      },
+      "program_root": {
+        "same_shape": true,
+        "max_abs_difference": 0.0,
+        "close": true
+      },
+      "reference": {
+        "same_shape": true,
+        "max_abs_difference": 0.0,
+        "close": true
+      },
+      "recovered": {
+        "same_shape": true,
+        "max_abs_difference": 0.0,
+        "close": true
+      },
+      "byte_cost": {
+        "same_shape": true,
+        "max_abs_difference": 0.0,
+        "close": true
+      },
+      "program_owns_seal": true,
+      "actions_equal": true,
+      "effective_candidates_equal": true,
+      "differing_staged_inputs": []
+    },
+    {
+      "source_row": 3,
+      "text": "3 plus 1",
+      "root": {
+        "same_shape": true,
+        "max_abs_difference": 0.0,
+        "close": true
+      },
+      "program_root": {
+        "same_shape": true,
+        "max_abs_difference": 0.0,
+        "close": true
+      },
+      "reference": {
+        "same_shape": true,
+        "max_abs_difference": 0.0,
+        "close": true
+      },
+      "recovered": {
+        "same_shape": true,
+        "max_abs_difference": 0.0,
+        "close": true
+      },
+      "byte_cost": {
+        "same_shape": true,
+        "max_abs_difference": 0.0,
+        "close": true
+      },
+      "program_owns_seal": true,
+      "actions_equal": true,
+      "effective_candidates_equal": true,
+      "differing_staged_inputs": [
+        "_ar_word_part_offsets"
+      ]
+    }
+  ],
+  "parity_demonstrated": true
+}

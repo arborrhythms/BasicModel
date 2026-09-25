@@ -1,0 +1,18 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-25-item9-bank/fallback_probe.py",
+    "--root",
+    "/Users/arogers/github/WikiOracle/basicmodel",
+    "--out",
+    "/Users/arogers/github/WikiOracle/basicmodel/output/item9-bank-fallback-probe/after.json",
+    "--expect",
+    "error"
+  ],
+  "pid": 50987,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 1927629224,
+  "elapsed_seconds": 10.583875500014983,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/output/item9-bank-fallback-probe/after.log"
+}

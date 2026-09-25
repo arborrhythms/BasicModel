@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-21-item10/probe.py",
+    "--out",
+    "/Users/arogers/github/WikiOracle/basicmodel/output/item9-parity-review/baseline.json"
+  ],
+  "pid": 39645,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 4263514624,
+  "elapsed_seconds": 40.65361020807177,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/output/item9-parity-review/baseline.log"
+}

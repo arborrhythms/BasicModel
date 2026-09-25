@@ -1,0 +1,6 @@
+{
+  "test/test_reconstruction_bank_contract.py": {
+    "before": "a9283e5fc5ae420f6e0f38a6d6d134e9709ce3e4d3b2f5d77f0a817fa0665a4d",
+    "after": "893718a4810bca96eeda78ead80dfef0c0a4915a8c897d728d39a15803c78288"
+  }
+}

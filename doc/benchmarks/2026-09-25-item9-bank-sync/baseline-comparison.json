@@ -1,0 +1,9 @@
+{
+  "preceding_receipt": "../2026-09-25-item9-bank/measurements/baseline.json",
+  "all_reconstruction_and_answer_steps_identical": true,
+  "phase_means": {
+    "before_training": 0.10061445273458958,
+    "training": 0.0879226878285408,
+    "after_training": 0.08916187100112438
+  }
+}

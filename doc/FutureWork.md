@@ -298,3 +298,44 @@ strict-improvement/patience criterion is recorded for review in
 [Architecture](Architecture.md) and the [receipt](benchmarks/2026-09-24-item10/README.md).
 Choosing new attention targets from a neither reading remains future policy
 work. See [two truths §1.1](specs/2026-09-16-two-truths-ideas-and-relations.md#11-both-is-a-compositional-fact-decided-alec-2026-09-23).
+
+## Throughput levers for the serial loop (item 1 candidates)
+
+**Recorded 2026-09-25 (Claude, on Alec's instruction) for item 1, the
+optimization item, once its todo entry is next edited.** The compiled July
+baseline ran at 6.803 sentences/s at B24 ([receipt](benchmarks/2026-07-27-pre-teacher-baseline.md));
+the September eager, batch-1, expectation-on measurement ran at 0.26. The
+per-word arithmetic is of the same order as a depth-4 NanoChat's per-token
+arithmetic (about 40M parameters touched either way); the gap is scheduling.
+Compare by bytes seen and wall time only
+([pilot](NanoChatGrammarPilot.md#question-and-falsifiable-first-milestone)).
+
+1. **Batch across sentences.** The word loop is a recurrence, so positions
+   cannot be parallelized, but sentences can; recurrent training scales
+   nearly linearly with batch until compute-bound. The pilot config still
+   defaults to batch 4.
+2. **Known-word lookup under the serial flag (Alec).** Known words are
+   looked up in PartSpace, not translated. If the lookup needs a cache, or a
+   hint about when to stop synthesizing over bytes and return the word's
+   code, add it as an optimization concession under the serial-mode flag,
+   beside the concessions already there. The byte ladder then runs in full
+   only for unknown words, which is where `interpret` mints new objects
+   ([item 9b](plans/2026-09-25-item-9b-mode-sharing-and-interpret.md)).
+3. **Subsample reconstruction.** The tied reverse walk with its candidate
+   search costs about as much as the forward; run it on every k-th batch or
+   a subset of rows through the existing placement knob, with the
+   reconstruction measurements re-baselined for the chosen k.
+4. **Close the host islands.** Vectorize and compile the eager per-row and
+   per-edge loops named under item 1 (`cs_read_memberships`,
+   `_compose_order0`, `_reverse_field`, `refine_over_collected`,
+   `_prepare_part_learning`, `promotion_observe`), and move the host-side
+   COO dictionaries of the sparse stores to device CSR tensors so the whole
+   word step compiles as one graph. The last such pass, the 2026-07-06
+   vectorization of `stage_analysis_spans` / `property_spans`, bought a
+   third of an epoch byte-identically (noted in the
+   [fold-ladder plan](plans/2026-09-10-meronomy-fold-ladder.md)).
+5. **One pass each** for `subsymbolicOrder` and `symbolicOrder` in the
+   first session.
+
+Compounded, these put the serial loop in the tens of sentences per second,
+NanoChat's order on the same machine; parity is not claimed.

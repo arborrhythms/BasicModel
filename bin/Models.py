@@ -11895,6 +11895,7 @@ class BasicModel(BaseModel):
         isp._ar_word_object_atoms = None
         isp._ar_concept_lookup_rows = None
         isp._ar_concept_lookup_atoms = None
+        isp._ar_concept_lookup_sentence_ids = None
         for name in ("_ar_percept_reference_codes", "_ar_percept_reference_roles",
                      "_ar_part_reference_vectors", "_ar_whole_reference_vectors",
                      "_ar_readout_coefficients", "_ar_whole_reference_presence"):
@@ -12147,6 +12148,15 @@ class BasicModel(BaseModel):
                     dtype=lookup_atoms.dtype)
                 isp._ar_concept_lookup_rows = bank_rows
                 isp._ar_concept_lookup_atoms = lookup_atoms
+                # Every candidate retains its source occurrence's sentence.
+                # Repeated rows in another sentence are separate bank entries;
+                # admitting them to an inverse or byte softmax changes its prior.
+                sentence_ids = isp._packed_sentence_ids.to(device=rows.device)
+                bank_sentence_ids = torch.full_like(bank_rows, -1)
+                bank_sentence_ids[:, :int(rows.shape[1])] = sentence_ids
+                bank_sentence_ids[:, object_start:object_start + int(rows.shape[1])] = sentence_ids
+                isp._ar_concept_lookup_sentence_ids = torch.where(
+                    bank_rows >= 0, bank_sentence_ids, torch.full_like(bank_rows, -1))
                 # These are carried into the ``while_loop`` beside the full
                 # sentence lookup bank.  HOP inputs may not alias one another,
                 # even when both are read-only, so give the two lexical
@@ -12290,6 +12300,57 @@ class BasicModel(BaseModel):
                     bank_valid[b, col, :n] = True
         isp._ar_bank_bytes = bank_bytes.to(device=bank.device)
         isp._ar_bank_valid = bank_valid.to(device=bank.device)
+
+    def _validate_reconstruction_bank(self):
+        """Check sentence coverage at the eager boundary, after admission.
+
+        The bank is a snapshot of admitted WORD/OBJECT concepts, not an
+        independently growing vocabulary. A missing snapshot or a sentence
+        with no usable surface candidates cannot train a tied inverse.
+        Tensor invariants stay on device; only structural metadata is read
+        by Python. Accelerator assertion failures surface asynchronously.
+        """
+        isp = self.inputSpace
+        active = getattr(isp, "_word_active_mask", None)
+        ids = getattr(isp, "_packed_sentence_ids", None)
+        rows = getattr(isp, "_ar_concept_lookup_rows", None)
+        atoms = getattr(isp, "_ar_concept_lookup_atoms", None)
+        owners = getattr(isp, "_ar_concept_lookup_sentence_ids", None)
+        surfaces = getattr(isp, "_ar_bank_bytes", None)
+        valid = getattr(isp, "_ar_bank_valid", None)
+        if not (torch.is_tensor(active) and active.ndim == 2
+                and torch.is_tensor(ids) and ids.shape == active.shape):
+            raise RuntimeError("tied reconstruction bank requires staged word and sentence masks")
+        B, W = active.shape
+        if not (torch.is_tensor(rows) and rows.ndim == 2 and rows.shape[0] == B
+                and rows.shape[1] > 0 and torch.is_tensor(atoms) and atoms.ndim == 3
+                and atoms.shape[:2] == rows.shape):
+            raise RuntimeError("tied reconstruction bank was not staged after concept admission")
+        if not (torch.is_tensor(owners) and owners.shape == rows.shape
+                and owners.dtype == torch.long):
+            raise RuntimeError("tied reconstruction bank lost its sentence ownership")
+        if not (torch.is_tensor(surfaces) and surfaces.ndim == 3
+                and surfaces.shape[:2] == rows.shape and torch.is_tensor(valid)
+                and valid.shape == surfaces.shape and valid.dtype == torch.bool):
+            raise RuntimeError("tied reconstruction bank requires staged WORD surfaces and validity")
+        torch._assert_async(
+            ~((rows >= 0) & ((owners < 0) | (owners >= W))).any(),
+            "tied reconstruction bank has invalid sentence ownership")
+        torch._assert_async(
+            ~(active & ((ids < 0) | (ids >= W))).any(),
+            "tied reconstruction bank has invalid input sentence ownership")
+        if W == 0:
+            return
+        # O(B*(W+L)): a populated first sentence must not conceal an empty
+        # later sentence. Padding and absent rows require no candidates.
+        usable = (rows >= 0) & valid.any(-1)
+        counts = torch.zeros_like(active, dtype=torch.long).scatter_add(
+            1, owners.clamp(0, W - 1), usable.long())
+        missing = active & (counts.gather(1, ids.clamp(0, W - 1)) == 0)
+        torch._assert_async(
+            ~missing.any(),
+            "tied reconstruction has no surface candidates after concept admission; "
+            "populate the concept inventory and stage its WORD surfaces before reconstruction")
 
     def _word_symbol_rows(self):
         """``[B, W]`` the symbol row of each staged word: its object
@@ -12552,6 +12613,8 @@ class BasicModel(BaseModel):
         Returns ``(recovered [B, W, D], idea_cost [B], byte_cost [B],
         truncated [B], byte_cost_per_sentence [B, slots])``.
         """
+        if not torch.compiler.is_compiling():
+            self._validate_reconstruction_bank()
         isp = self.inputSpace
         language = self.languageSpace
         trace = self._reconstruction_stack()
@@ -12596,6 +12659,10 @@ class BasicModel(BaseModel):
         byte_ready, bytes_bwp, valid_bwp = self._byte_tables(B, W)   # the words' bytes
         snap_ready, bank_n, bank_bytes, bank_valid = self._snapshot_tables(reference)
         basis, basis_valid = self._reconstruction_basis_snapshot(reference)
+        bank_sentence_ids = getattr(isp, "_ar_concept_lookup_sentence_ids", None)
+        if not (torch.is_tensor(bank_sentence_ids) and bank_sentence_ids.shape == basis_valid.shape):
+            raise RuntimeError("reconstruction candidates lost their sentence ownership")
+        bank_sentence_ids = bank_sentence_ids.detach().to(dev).clone()
         basis_limit = int(self.reconstruction_basis_limit)
         byte_ready = bool(byte_ready and snap_ready)
         binary_ops = list(language._tree_layer(2).ops)
@@ -12702,7 +12769,7 @@ class BasicModel(BaseModel):
             ref = reference.gather(1, pos.reshape(B, 1, 1).expand(B, 1, D)).reshape(B, D).detach()
             return torch.where(valid[:, None], ref, torch.zeros_like(ref)), (use_right, valid)
 
-        def _undo_binary(stack, depth, slot_b, ok, ref, side="right"):
+        def _undo_binary(stack, depth, slot_b, ok, ref, side="right", *, sentence):
             top = stack[:, 0, :]
             rec_slot = _col_rows(rule_ids, slot_b)
             rec_mask = torch.logical_and(
@@ -12713,7 +12780,8 @@ class BasicModel(BaseModel):
             valid = valid & (depth < cap) & (_col_rows(arities, slot_b) == 2)
             left, right, unavailable = language.reverse_binary_step(
                 top, local_b, valid, ref, inverses=inverses, reference_side=side,
-                basis=basis, basis_valid=basis_valid, candidate_limit=basis_limit,
+                basis=basis, basis_valid=basis_valid & (bank_sentence_ids == sentence[:, None]),
+                candidate_limit=basis_limit,
                 return_status=True)
             split = torch.cat(
                 (right.unsqueeze(1), left.unsqueeze(1), stack[:, 1:cap - 1, :]), dim=1)
@@ -12767,7 +12835,7 @@ class BasicModel(BaseModel):
                 ok = torch.logical_and(present, seal_count > k)
                 ref, side = _operand_reference(seal_base + k)
                 stack, depth, unavailable = _undo_binary(
-                    stack, depth, seal_base + k, ok, ref, side)
+                    stack, depth, seal_base + k, ok, ref, side, sentence=s_idx.expand(B))
                 bad = bad | unavailable
             sel = (slot_ids == s_idx)                                       # [1, slots]
             pre_stack = torch.where(sel.reshape(1, slots, 1, 1), stack.unsqueeze(1), pre_stack)
@@ -12810,14 +12878,17 @@ class BasicModel(BaseModel):
                 stack, depth, (3 * w + 2).reshape(1).expand(B), wa)
             slot_post = (3 * w + 1).reshape(1).expand(B)
             ref_post, side_post = _operand_reference(slot_post)
-            stack, depth, unavailable_post = _undo_binary(stack, depth, slot_post, wa, ref_post, side_post)
+            stack, depth, unavailable_post = _undo_binary(
+                stack, depth, slot_post, wa, ref_post, side_post, sentence=sid)
             # pop: the top is the recovered word, scored on the spot
             top = stack[:, 0, :]
             underflow = torch.logical_and(wa, depth < 1)
             pop_w = wa.to(S.dtype)
             idea_d = (top - ref_w).square().mean(-1)
             byte_d = self._byte_word_cost(
-                top, w, bank_n, bank_bytes, bank_valid, bytes_bwp, valid_bwp, byte_ready)
+                top, w, bank_n, bank_bytes,
+                bank_valid & (bank_sentence_ids == sid[:, None])[:, :, None],
+                bytes_bwp, valid_bwp, byte_ready)
             col = sid.reshape(B, 1)
             idea_sum = idea_sum.scatter_add(1, col, (idea_d * pop_w).reshape(B, 1))
             byte_sum = byte_sum.scatter_add(1, col, (byte_d * pop_w).reshape(B, 1))
@@ -12827,7 +12898,8 @@ class BasicModel(BaseModel):
             depth = depth - torch.logical_and(wa, depth >= 1).to(depth.dtype)
             slot_pre = (3 * w).reshape(1).expand(B)
             ref_pre, side_pre = _operand_reference(slot_pre)
-            stack, depth, unavailable_pre = _undo_binary(stack, depth, slot_pre, wa, ref_pre, side_pre)
+            stack, depth, unavailable_pre = _undo_binary(
+                stack, depth, slot_pre, wa, ref_pre, side_pre, sentence=sid)
             bad = underflow | unavailable_post | unavailable_pre | unavailable_unary
             trunc = trunc.scatter_add(1, col, bad.to(S.dtype).reshape(B, 1))
             if keep_ideas:
@@ -12872,9 +12944,9 @@ class BasicModel(BaseModel):
         atoms = getattr(self.inputSpace, "_ar_concept_lookup_atoms", None)
         rows = getattr(self.inputSpace, "_ar_concept_lookup_rows", None)
         B, _, D = reference.shape
-        if not (torch.is_tensor(atoms) and torch.is_tensor(rows)):
-            return reference.new_zeros(B, 1, D), torch.zeros(
-                B, 1, dtype=torch.bool, device=reference.device)
+        if not (torch.is_tensor(atoms) and atoms.ndim == 3 and atoms.shape[0] == B
+                and torch.is_tensor(rows) and rows.shape == atoms.shape[:2]):
+            raise RuntimeError("tied reconstruction requires a staged concept lookup bank")
         bank = atoms.detach().to(reference).clone()
         bank = F.pad(bank[..., :D], (0, max(0, D - bank.shape[-1])))
         return bank, rows.detach().to(reference.device).ge(0).clone()
@@ -12882,15 +12954,17 @@ class BasicModel(BaseModel):
     def _snapshot_tables(self, reference):
         """``(ready, bank_n [B, L, D], bank_bytes [B, L, P], bank_valid
         [B, L, P])``: the brick's dictionary snapshot as the byte
-        decoder's candidates (normalised rows). Missing snapshots keep only
-        the uniform null candidate; input bytes are scoring targets only."""
+        decoder's candidates (normalised rows). Missing snapshots are staging
+        errors; input bytes are scoring targets only."""
         isp = self.inputSpace
         atoms = getattr(isp, "_ar_concept_lookup_atoms", None)
         bank_bytes = getattr(isp, "_ar_bank_bytes", None)
         bank_valid = getattr(isp, "_ar_bank_valid", None)
         B, W, D = int(reference.shape[0]), int(reference.shape[1]), int(reference.shape[2])
         if (torch.is_tensor(atoms) and atoms.dim() == 3 and torch.is_tensor(bank_bytes)
-                and torch.is_tensor(bank_valid) and int(atoms.shape[0]) == B
+                and torch.is_tensor(bank_valid) and bank_bytes.dim() == 3
+                and bank_valid.shape == bank_bytes.shape and int(atoms.shape[0]) == B
+                and int(bank_bytes.shape[0]) == B
                 and int(atoms.shape[1]) == int(bank_bytes.shape[1])):
             bank = atoms.detach().to(device=reference.device, dtype=reference.dtype).clone()
             valid = bank_valid.detach().to(device=reference.device).clone()
@@ -12906,15 +12980,7 @@ class BasicModel(BaseModel):
             return (True, torch.nn.functional.normalize(bank, dim=-1),
                     bank_bytes.detach().to(device=reference.device).clone(),
                     valid)
-        part_ids = getattr(isp, "_ar_word_part_ids", None)
-        P = (int(part_ids.shape[-1]) if torch.is_tensor(part_ids) and part_ids.dim() == 3
-             else 1)
-        # With scoreable input bytes but no known candidate, retain the
-        # honest uniform-null cost. Neither copying the target into a
-        # candidate nor turning the loss off can establish reconstruction.
-        return (True, reference.new_zeros(B, 1, D),
-                torch.zeros(B, 1, P, dtype=torch.long, device=reference.device),
-                torch.zeros(B, 1, P, dtype=torch.bool, device=reference.device))
+        raise RuntimeError("tied reconstruction requires a staged WORD surface bank")
 
     def _byte_tables(self, B, W):
         """Full staged target bytes and validity ``[B, W, P]``, for scoring.
@@ -12975,10 +13041,11 @@ class BasicModel(BaseModel):
         if not ready or P == 0:
             return idea.new_zeros(B)
         idea_n = torch.nn.functional.normalize(idea, dim=-1)
+        present = bank_valid.any(dim=-1)                                 # [B, L]
+        bank_n = torch.where(present[:, :, None], bank_n, torch.zeros_like(bank_n))
         # a symbol's value is its signed activation and its identity its
         # row: the snap reads the row regardless of the sign
         sim = torch.einsum("bd,bkd->bk", idea_n, bank_n).abs() / self._BYTE_ASSIGNMENT_TAU
-        present = bank_valid.any(dim=-1)                                 # [B, L]
         # Token buffers terminate at their first NUL, even if a caller's
         # span includes padding or stale bytes after it.
         bank_valid = bank_valid & (bank_bytes != 0).to(torch.long).cumprod(-1).bool()
@@ -13857,6 +13924,8 @@ class BasicModel(BaseModel):
         self._stage_serial_concept_rows()
         # the snapshot's surfaces need the bank the concept rows just staged
         self._stage_snapshot_bytes()
+        if getattr(self, "reconstruct_in_loop", False):
+            self._validate_reconstruction_bank()
         # Teacher objective addresses are a separate student query seam. This
         # records corpus/document/sentence/span codes on ``self.teacher.lesson``
         # without reading or changing the event's subjective .where/.when
@@ -22654,6 +22723,20 @@ class BasicModel(BaseModel):
                     final_valid.reshape(
                         int(S.shape[0]), 1, 1),
                     root_candidate, tensor_sentence_roots)
+                # The loop bank owns intermediate seals; complete it with
+                # each row's final seal before capturing answer programs.
+                # Ragged rows can finish in different sentence slots.
+                end_slots, end_depth = self._final_end_state(S, post_depth)
+                live_roots, live_depth = tensor_chunk_state[4:6]
+                live_candidate = self._tensor_write_word_column(
+                    live_roots, final_slot, end_slots.flatten(1))
+                live_roots = torch.where(final_valid[:, None, None], live_candidate, live_roots)
+                depth_candidate = live_depth.scatter(1, final_slot[:, None], end_depth[:, None])
+                live_depth = torch.where(final_valid[:, None], depth_candidate, live_depth)
+                tensor_chunk_state = (*tensor_chunk_state[:4], live_roots, live_depth)
+                if not torch.compiler.is_compiling():
+                    object.__setattr__(self, "_tensor_sentence_roots_live", live_roots)
+                    object.__setattr__(self, "_tensor_sentence_roots_depth", live_depth)
             # Verification handles for the end-to-end probe / future
             # 2b-2-ii consumer: the single sentence idea S [B, D_c]
             # and the post-sweep STM depth (must be 1 across rows).

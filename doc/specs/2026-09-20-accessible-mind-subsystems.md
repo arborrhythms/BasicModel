@@ -125,6 +125,20 @@ fact, a whole whose parts differ under a predicate, and objects are not
 symbols
 ([two truths §1.1](2026-09-16-two-truths-ideas-and-relations.md#11-both-is-a-compositional-fact-decided-alec-2026-09-23)).
 
+*Amended (Alec, 2026-09-25, item 9b):* the field is a **percept
+activation vector** — for every percept row, its presence and its
+observed complement, pooled over the occurrences inside **one convex
+bracket** in space and **one interval** in time — read through the sparse
+definition matrix into the `(c⁺, c⁻)` pairs above. A field has one where,
+one when and many whats; a concept row has no coordinates; a percept
+event keeps its own. Focused attention (serial mode) leaves sixteen pairs
+nonzero, open attention (parallel mode) all active percepts. Words enter
+the field through `interpret` (word-concept to object-concept, §4), not as
+a bare (concept row, activation). *Both* is the field's report that the
+bracket pools heterogeneous occurrences, and the prompt to narrow it or
+to raise order; exact co-location is perception's
+([Architecture](../Architecture.md#one-where-one-when-many-whats-the-field-attention-and-the-two-modes-item-9b-september-25)).
+
 ### 2.3 Parallel conceptual knowing, higher order
 A **field** over the higher-order symbols: symbols composed of symbols (the
 discretized symbolic codebook; abstraction order ≥ 1). Shares row indices
@@ -701,6 +715,10 @@ held; an episode is approximated by chaining ideas.
 
 A subsymbolic operator, when declared, has exactly the `<compose>` /
 `<generate>` row. It sees nothing a structural operator does not.
+`interpret` (item 9b), the default per-word step of serial mode that maps
+a word-concept to its object-concept, has the `<compose>` row and may
+also **mint** an order-0 object row for an unknown word (W on 2.2 by
+testimony); its `<generate>` face is lexicalization.
 
 Nothing has write access to 2.1 or 2.2 on expectation's behalf, and
 `<compose>` has no access to 2.6 at all: that pair of blanks is the purity

@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-21-item10/probe.py",
+    "--out",
+    "/Users/arogers/github/WikiOracle/basicmodel/output/item9-bank-sync-measurements/baseline.json"
+  ],
+  "pid": 68004,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 4227551720,
+  "elapsed_seconds": 44.07004208408762,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/output/item9-bank-sync-measurements/baseline.log"
+}

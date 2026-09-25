@@ -409,8 +409,17 @@ def test_ws_word_whole_registry_resolves_to_rows(tmp_path_factory):
 
 
 @pytest.mark.slow
-def test_forward_records_kind_tagged_trace(tmp_path_factory):
+def test_forward_records_kind_tagged_trace(tmp_path_factory, monkeypatch):
     m = _build(tmp_path_factory, word_store=True)
+    # This probes committed-fold recording. The unaligned smoke router may
+    # otherwise choose COPY throughout, leaving no grammar choice to record.
+    original_reduce = m._stm_bounded_reduce_step
+
+    def demand_fold(*args, **kwargs):
+        kwargs["demand"] = True
+        return original_reduce(*args, **kwargs)
+
+    monkeypatch.setattr(m, "_stm_bounded_reduce_step", demand_fold)
     loader = m.inputSpace.data.data_loader(split="train", num_streams=4)
     items, _ = next(iter(loader))
     x = m.inputSpace.prepInput(items)
@@ -1025,7 +1034,7 @@ def test_word_surface_and_reassociated_object_survive_strict_checkpoint(tmp_path
                 model.symbolSpace.soft_reset()
 
 
-def test_missing_surface_candidates_keep_uniform_null_cost_without_input_fallback():
+def test_missing_surface_snapshot_is_a_staging_error_without_input_fallback():
     import math
     m = _surface_snapshot_model()
     try:
@@ -1036,18 +1045,21 @@ def test_missing_surface_candidates_keep_uniform_null_cost_without_input_fallbac
         assert target_ready and bool(target_valid[:, 0].any())
         owner._row_surfaces.clear()
         m._stage_snapshot_bytes()
-        for missing_snapshot in (False, True):
-            if missing_snapshot:
-                isp._ar_bank_bytes = None
-                isp._ar_bank_valid = None
-                isp._ar_concept_lookup_atoms = None
-            ready, bank, values, valid = m._snapshot_tables(reference)
-            assert ready and not bool(valid.any())
-            cost = m._byte_word_cost(reference[:, 0], torch.tensor(0),
-                                     bank, values, valid,
-                                     target_bytes, target_valid, ready)
-            # The ordinary 256-byte alphabet includes the NUL terminator.
-            torch.testing.assert_close(cost, torch.full_like(cost, math.log(256)))
+        ready, bank, values, valid = m._snapshot_tables(reference)
+        assert ready and not bool(valid.any())
+        cost = m._byte_word_cost(reference[:, 0], torch.tensor(0),
+                                 bank, values, valid,
+                                 target_bytes, target_valid, ready)
+        # The scoring primitive has an uncertainty floor, but production
+        # reconstruction must reject a sentence with no usable candidates.
+        torch.testing.assert_close(cost, torch.full_like(cost, math.log(256)))
+        with pytest.raises(RuntimeError, match="reconstruction has no surface candidates"):
+            m._validate_reconstruction_bank()
+        isp._ar_bank_bytes = None
+        isp._ar_bank_valid = None
+        isp._ar_concept_lookup_atoms = None
+        with pytest.raises(RuntimeError, match="staged WORD surface bank"):
+            m._snapshot_tables(reference)
     finally:
         m.End()
         m.symbolSpace.soft_reset()

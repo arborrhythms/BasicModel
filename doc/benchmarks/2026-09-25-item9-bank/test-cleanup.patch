@@ -1,0 +1,25 @@
+--- before/test_reconstruction_bank_contract.py
++++ after/test_reconstruction_bank_contract.py
+@@ -1,9 +1,22 @@
+ """A requested reconstruction must have a populated, sentence-owned bank."""
++import gc
++
+ import pytest
+ import torch
+ 
+ from test_packed_reconstruction_parity import build_model
+ from test_reverse_traversal import _stage_packed
++
++
++@pytest.fixture(autouse=True)
++def _release_independent_models():
++    # Each fault constructs a separate model with cyclic space backrefs.
++    # Release them between cases, not only at the module boundary: eight
++    # retained models can exceed the bounded worker's memory cap.
++    gc.collect()
++    yield
++    torch._dynamo.reset()
++    gc.collect()
+ 
+ 
+ def _stage(model):

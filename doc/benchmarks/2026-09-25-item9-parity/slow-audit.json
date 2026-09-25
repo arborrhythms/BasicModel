@@ -1,0 +1,938 @@
+{
+  "outcomes": {
+    "passed": 100,
+    "failed": 1
+  },
+  "sources": {
+    "affected-complete": {
+      "source_delta_from_review": {
+        "test/test_word_store.py": {
+          "measured": "da35931b7e987c50fe0446df2bb2c9d10b015d733e7e70999a3134df0f2c9857",
+          "review": "2b3201a7eacd37586f3d76adf2585bd0d9b6e5c4b0b13c347bbed89d013d486b"
+        }
+      }
+    },
+    "affected-remaining": {
+      "source_delta_from_review": {
+        "test/test_word_store.py": {
+          "measured": "da35931b7e987c50fe0446df2bb2c9d10b015d733e7e70999a3134df0f2c9857",
+          "review": "2b3201a7eacd37586f3d76adf2585bd0d9b6e5c4b0b13c347bbed89d013d486b"
+        }
+      }
+    },
+    "word-trace-final": {
+      "source_delta_from_review": {}
+    }
+  },
+  "reports": {
+    "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[0]": {
+      "nodeid": "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 52.87044579198118,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\nbatch = 0 (\u0394=33.583s)\r\nbatch = 0 (\u0394=0.740s)\r\nbatch = 1 (\u0394=0.721s)\r\n",
+      "run": "affected-complete"
+    },
+    "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[1]": {
+      "nodeid": "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 52.42059691704344,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\nbatch = 0 (\u0394=33.883s)\r\nbatch = 0 (\u0394=0.741s)\r\nbatch = 1 (\u0394=0.725s)\r\n",
+      "run": "affected-complete"
+    },
+    "test/test_reverse_traversal.py::test_traversal_recovers_every_active_word_without_underflow": {
+      "nodeid": "test/test_reverse_traversal.py::test_traversal_recovers_every_active_word_without_underflow",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 17.483296749996953,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_reverse_traversal.py::test_tied_binary_reverse_recomposes_the_parent": {
+      "nodeid": "test/test_reverse_traversal.py::test_tied_binary_reverse_recomposes_the_parent",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.26090220804326236,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_reverse_traversal.py::test_chunk_reverse_is_the_exact_residual_against_the_reference": {
+      "nodeid": "test/test_reverse_traversal.py::test_chunk_reverse_is_the_exact_residual_against_the_reference",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.25996758393011987,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_reverse_traversal.py::test_cleared_trace_reports_truncation": {
+      "nodeid": "test/test_reverse_traversal.py::test_cleared_trace_reports_truncation",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 35.21511816699058,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_reverse_traversal.py::test_byte_fidelity_is_zero_on_the_row_and_positive_off_it": {
+      "nodeid": "test/test_reverse_traversal.py::test_byte_fidelity_is_zero_on_the_row_and_positive_off_it",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.49822491698432714,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_reverse_traversal.py::test_packed_trace_records_pre_fold_operand_rows_at_every_binary": {
+      "nodeid": "test/test_reverse_traversal.py::test_packed_trace_records_pre_fold_operand_rows_at_every_binary",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 11.861090333084576,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_reverse_traversal.py::test_packed_rows_reconstruct_each_sentence_separately": {
+      "nodeid": "test/test_reverse_traversal.py::test_packed_rows_reconstruct_each_sentence_separately",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 72.05237525003031,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_reverse_traversal.py::test_traversal_compiles_into_the_one_sentence_graph": {
+      "nodeid": "test/test_reverse_traversal.py::test_traversal_compiles_into_the_one_sentence_graph",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 46.0841720829485,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[2]": {
+      "nodeid": "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[2]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 51.952408125041984,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\nbatch = 0 (\u0394=32.788s)\r\nbatch = 0 (\u0394=0.685s)\r\nbatch = 1 (\u0394=0.671s)\r\n",
+      "run": "affected-complete"
+    },
+    "test/test_packed_reconstruction_parity.py::test_excluded_byte_candidate_preserves_value_and_gradient": {
+      "nodeid": "test/test_packed_reconstruction_parity.py::test_excluded_byte_candidate_preserves_value_and_gradient",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0015955419512465596,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_reverse_traversal.py::test_tied_traversal_trains_the_fold_parameters_and_owns_none": {
+      "nodeid": "test/test_reverse_traversal.py::test_tied_traversal_trains_the_fold_parameters_and_owns_none",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 63.41728895902634,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_reverse_traversal.py::test_evaluation_decode_unwinds_from_the_end_state": {
+      "nodeid": "test/test_reverse_traversal.py::test_evaluation_decode_unwinds_from_the_end_state",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 14.896045207977295,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_reverse_traversal.py::test_final_end_state_keeps_three_slots_for_a_relative_row": {
+      "nodeid": "test/test_reverse_traversal.py::test_final_end_state_keeps_three_slots_for_a_relative_row",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.5494172080652788,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_reverse_traversal.py::test_byte_cost_is_positive_for_a_wrong_or_empty_idea_even_with_one_word": {
+      "nodeid": "test/test_reverse_traversal.py::test_byte_cost_is_positive_for_a_wrong_or_empty_idea_even_with_one_word",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 2.748374833026901,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_reverse_traversal.py::test_snapshot_rows_absent_from_the_brick_do_not_enter_the_score": {
+      "nodeid": "test/test_reverse_traversal.py::test_snapshot_rows_absent_from_the_brick_do_not_enter_the_score",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.5492850410519168,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_reverse_traversal.py::test_seal_chain_of_chunks_unwinds_to_the_words": {
+      "nodeid": "test/test_reverse_traversal.py::test_seal_chain_of_chunks_unwinds_to_the_words",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 16.678074417053722,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_reverse_traversal.py::test_snapshot_bytes_are_staged_on_the_first_brick": {
+      "nodeid": "test/test_reverse_traversal.py::test_snapshot_bytes_are_staged_on_the_first_brick",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.4795369999483228,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_tied_operator_reconstruction.py::test_word_scoring_honors_existing_nul_termination": {
+      "nodeid": "test/test_tied_operator_reconstruction.py::test_word_scoring_honors_existing_nul_termination",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.013830000068992376,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_tied_operator_reconstruction.py::test_surface_snapshot_does_not_turn_a_longer_word_into_a_full_window_match[1]": {
+      "nodeid": "test/test_tied_operator_reconstruction.py::test_surface_snapshot_does_not_turn_a_longer_word_into_a_full_window_match[1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007316250121220946,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_tied_operator_reconstruction.py::test_surface_snapshot_does_not_turn_a_longer_word_into_a_full_window_match[2]": {
+      "nodeid": "test/test_tied_operator_reconstruction.py::test_surface_snapshot_does_not_turn_a_longer_word_into_a_full_window_match[2]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006032499950379133,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_tied_operator_reconstruction.py::test_byte_fidelity_penalizes_a_candidate_with_extra_suffix_bytes": {
+      "nodeid": "test/test_tied_operator_reconstruction.py::test_byte_fidelity_penalizes_a_candidate_with_extra_suffix_bytes",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005153339589014649,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_tied_operator_reconstruction.py::test_inactive_dictionary_row_cannot_poison_byte_loss_or_its_gradient[False]": {
+      "nodeid": "test/test_tied_operator_reconstruction.py::test_inactive_dictionary_row_cannot_poison_byte_loss_or_its_gradient[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.23149279202334583,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_tied_operator_reconstruction.py::test_inactive_dictionary_row_cannot_poison_byte_loss_or_its_gradient[True]": {
+      "nodeid": "test/test_tied_operator_reconstruction.py::test_inactive_dictionary_row_cannot_poison_byte_loss_or_its_gradient[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.2295622080564499,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_tied_operator_reconstruction.py::test_tied_affine_inverse_uses_the_retained_operand[left-lift]": {
+      "nodeid": "test/test_tied_operator_reconstruction.py::test_tied_affine_inverse_uses_the_retained_operand[left-lift]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.23116187495179474,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_tied_operator_reconstruction.py::test_tied_affine_inverse_uses_the_retained_operand[left-lower]": {
+      "nodeid": "test/test_tied_operator_reconstruction.py::test_tied_affine_inverse_uses_the_retained_operand[left-lower]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.22923954098951072,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_tied_operator_reconstruction.py::test_tied_affine_inverse_uses_the_retained_operand[right-lift]": {
+      "nodeid": "test/test_tied_operator_reconstruction.py::test_tied_affine_inverse_uses_the_retained_operand[right-lift]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.24986529198940843,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_tied_operator_reconstruction.py::test_tied_affine_inverse_uses_the_retained_operand[right-lower]": {
+      "nodeid": "test/test_tied_operator_reconstruction.py::test_tied_affine_inverse_uses_the_retained_operand[right-lower]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.22837512497790158,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_tied_operator_reconstruction.py::test_absorbed_marker_uses_its_own_reference": {
+      "nodeid": "test/test_tied_operator_reconstruction.py::test_absorbed_marker_uses_its_own_reference",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.23341937502846122,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_tied_operator_reconstruction.py::test_product_recovers_nonzero_operand_residual": {
+      "nodeid": "test/test_tied_operator_reconstruction.py::test_product_recovers_nonzero_operand_residual",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.23144337499979883,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_tied_operator_reconstruction.py::test_unselected_unary_is_not_evaluated": {
+      "nodeid": "test/test_tied_operator_reconstruction.py::test_unselected_unary_is_not_evaluated",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.2333809999981895,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_tied_operator_reconstruction.py::test_snapshot_owns_values_across_same_shape_dictionary_update": {
+      "nodeid": "test/test_tied_operator_reconstruction.py::test_snapshot_owns_values_across_same_shape_dictionary_update",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 14.966991792083718,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_tied_operator_reconstruction.py::test_snapshot_preserves_backward_after_same_shape_dictionary_update": {
+      "nodeid": "test/test_tied_operator_reconstruction.py::test_snapshot_preserves_backward_after_same_shape_dictionary_update",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.6333204170223325,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_tied_operator_reconstruction.py::test_candidate_search_executes_at_most_the_declared_pair_budget[8]": {
+      "nodeid": "test/test_tied_operator_reconstruction.py::test_candidate_search_executes_at_most_the_declared_pair_budget[8]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.240558166988194,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_tied_operator_reconstruction.py::test_candidate_search_executes_at_most_the_declared_pair_budget[16]": {
+      "nodeid": "test/test_tied_operator_reconstruction.py::test_candidate_search_executes_at_most_the_declared_pair_budget[16]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.23509904090315104,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_tied_operator_reconstruction.py::test_missing_absorbed_operand_uses_bounded_compose_candidates": {
+      "nodeid": "test/test_tied_operator_reconstruction.py::test_missing_absorbed_operand_uses_bounded_compose_candidates",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.23500037495978177,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_tied_operator_reconstruction.py::test_unavailable_inverse_is_explicit_without_candidates": {
+      "nodeid": "test/test_tied_operator_reconstruction.py::test_unavailable_inverse_is_explicit_without_candidates",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.23513525002636015,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_tied_operator_reconstruction.py::test_noninvertible_compose_transform_uses_the_bounded_candidate_path": {
+      "nodeid": "test/test_tied_operator_reconstruction.py::test_noninvertible_compose_transform_uses_the_bounded_candidate_path",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.25080691592302173,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_tied_operator_reconstruction.py::test_adverb_uses_its_own_bounded_inverse_and_shared_parameters": {
+      "nodeid": "test/test_tied_operator_reconstruction.py::test_adverb_uses_its_own_bounded_inverse_and_shared_parameters",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.23642737499903888,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_tied_operator_reconstruction.py::test_masked_candidate_values_do_not_poison_parent_gradient": {
+      "nodeid": "test/test_tied_operator_reconstruction.py::test_masked_candidate_values_do_not_poison_parent_gradient",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.23197929107118398,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_tied_operator_reconstruction.py::test_inactive_batch_row_does_not_poison_the_selected_inverse_gradient": {
+      "nodeid": "test/test_tied_operator_reconstruction.py::test_inactive_batch_row_does_not_poison_the_selected_inverse_gradient",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.23484945902600884,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_tied_operator_reconstruction.py::test_declared_identity_unary_is_available_on_opaque_concepts[null]": {
+      "nodeid": "test/test_tied_operator_reconstruction.py::test_declared_identity_unary_is_available_on_opaque_concepts[null]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.30545029090717435,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_tied_operator_reconstruction.py::test_declared_identity_unary_is_available_on_opaque_concepts[exist]": {
+      "nodeid": "test/test_tied_operator_reconstruction.py::test_declared_identity_unary_is_available_on_opaque_concepts[exist]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.2376255829585716,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_tied_operator_reconstruction.py::test_declared_identity_unary_is_available_on_opaque_concepts[tense]": {
+      "nodeid": "test/test_tied_operator_reconstruction.py::test_declared_identity_unary_is_available_on_opaque_concepts[tense]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.23065070796292275,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_tied_operator_reconstruction.py::test_declared_identity_unary_is_available_on_opaque_concepts[morphology]": {
+      "nodeid": "test/test_tied_operator_reconstruction.py::test_declared_identity_unary_is_available_on_opaque_concepts[morphology]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.23479966598097235,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_tied_operator_reconstruction.py::test_byte_targets_survive_whole_word_and_prefix_promotion[alphabet]": {
+      "nodeid": "test/test_tied_operator_reconstruction.py::test_byte_targets_survive_whole_word_and_prefix_promotion[alphabet]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.35116520896553993,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_tied_operator_reconstruction.py::test_byte_targets_survive_whole_word_and_prefix_promotion[alph]": {
+      "nodeid": "test/test_tied_operator_reconstruction.py::test_byte_targets_survive_whole_word_and_prefix_promotion[alph]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.35222887503914535,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_tied_reconstruction_compile.py::test_separate_reconstruction_resolves_the_auto_backend": {
+      "nodeid": "test/test_tied_reconstruction_compile.py::test_separate_reconstruction_resolves_the_auto_backend",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.9710340410238132,
+      "message": "",
+      "stdout": "",
+      "run": "affected-remaining"
+    },
+    "test/test_tied_reconstruction_compile.py::test_word_end_scoring_accepts_dynamic_target_windows": {
+      "nodeid": "test/test_tied_reconstruction_compile.py::test_word_end_scoring_accepts_dynamic_target_windows",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.7631563750328496,
+      "message": "",
+      "stdout": "",
+      "run": "affected-remaining"
+    },
+    "test/test_tied_reconstruction_compile.py::test_cached_backward_supports_retained_reads_after_an_ordinary_step": {
+      "nodeid": "test/test_tied_reconstruction_compile.py::test_cached_backward_supports_retained_reads_after_an_ordinary_step",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.4862454159883782,
+      "message": "",
+      "stdout": "",
+      "run": "affected-remaining"
+    },
+    "test/test_tied_reconstruction_compile.py::test_reconstruction_compile_retains_buffers_for_joint_gradient_reads": {
+      "nodeid": "test/test_tied_reconstruction_compile.py::test_reconstruction_compile_retains_buffers_for_joint_gradient_reads",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 179.7473256669473,
+      "message": "",
+      "stdout": "",
+      "run": "affected-remaining"
+    },
+    "test/test_tied_reconstruction_objective.py::test_tied_runbatch_scores_the_same_owned_objective_once[False]": {
+      "nodeid": "test/test_tied_reconstruction_objective.py::test_tied_runbatch_scores_the_same_owned_objective_once[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 15.239856165950187,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n",
+      "run": "affected-complete"
+    },
+    "test/test_tied_reconstruction_objective.py::test_tied_runbatch_scores_the_same_owned_objective_once[True]": {
+      "nodeid": "test/test_tied_reconstruction_objective.py::test_tied_runbatch_scores_the_same_owned_objective_once[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 60.02482045895886,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\n",
+      "run": "affected-complete"
+    },
+    "test/test_tied_reconstruction_objective.py::test_production_configuration_selects_tied_input_objective": {
+      "nodeid": "test/test_tied_reconstruction_objective.py::test_production_configuration_selects_tied_input_objective",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00037545908708125353,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_tied_reconstruction_objective.py::test_student_checkpoint_migrates_shared_weights_and_adam_by_name": {
+      "nodeid": "test/test_tied_reconstruction_objective.py::test_student_checkpoint_migrates_shared_weights_and_adam_by_name",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.5736172499600798,
+      "message": "",
+      "stdout": "[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-5266/test_student_checkpoint_migrat0/student.ckpt\r\nreconstructInLoop: dropped 12 detached reverse-student keys from the checkpoint (declared migration)\r\n[BasicModel] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-5266/test_student_checkpoint_migrat0/student.ckpt\r\n[BasicModel] optimizer checkpoint remapped by parameter name: restored 1 state(s), reset 0 WholeSpace property state(s), ignored 1 removed parameter state(s)\r\n",
+      "run": "affected-complete"
+    },
+    "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[True]": {
+      "nodeid": "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 19.60342987498734,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[False]": {
+      "nodeid": "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 7.782331291935407,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_compiled_expectation_boundary.py::test_explicit_boundary_retains_depth_two_and_skips_masked_rows": {
+      "nodeid": "test/test_compiled_expectation_boundary.py::test_explicit_boundary_retains_depth_two_and_skips_masked_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002679915982298553,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_prepared_answer_boundary.py::test_realization_uses_a_held_derivation_without_running_resolution[False]": {
+      "nodeid": "test/test_prepared_answer_boundary.py::test_realization_uses_a_held_derivation_without_running_resolution[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 5.854863040964119,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_prepared_answer_boundary.py::test_realization_uses_a_held_derivation_without_running_resolution[True]": {
+      "nodeid": "test/test_prepared_answer_boundary.py::test_realization_uses_a_held_derivation_without_running_resolution[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 5.908202874939889,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_prepared_answer_boundary.py::test_prepared_answer_generates_more_words_than_the_captured_input": {
+      "nodeid": "test/test_prepared_answer_boundary.py::test_prepared_answer_generates_more_words_than_the_captured_input",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 5.45745916699525,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_prepared_answer_boundary.py::test_public_boundary_prepares_target_free_metadata_before_realization": {
+      "nodeid": "test/test_prepared_answer_boundary.py::test_public_boundary_prepares_target_free_metadata_before_realization",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 5.023726833984256,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_prepared_answer_boundary.py::test_prepared_concept_handoff_cuts_answer_state_gradient[False]": {
+      "nodeid": "test/test_prepared_answer_boundary.py::test_prepared_concept_handoff_cuts_answer_state_gradient[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 4.840100124944001,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_prepared_answer_boundary.py::test_prepared_concept_handoff_cuts_answer_state_gradient[True]": {
+      "nodeid": "test/test_prepared_answer_boundary.py::test_prepared_concept_handoff_cuts_answer_state_gradient[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 6.923945166985504,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_prepared_answer_boundary.py::test_answer_loss_trains_an_executed_shared_inverse_without_state_credit": {
+      "nodeid": "test/test_prepared_answer_boundary.py::test_answer_loss_trains_an_executed_shared_inverse_without_state_credit",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 7.054088667035103,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_prepared_answer_boundary.py::test_what_reconstructs_then_resolves_then_realizes": {
+      "nodeid": "test/test_prepared_answer_boundary.py::test_what_reconstructs_then_resolves_then_realizes",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 52.88275270804297,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_word_store.py::test_word_ids_are_promoted_multibyte_entries": {
+      "nodeid": "test/test_word_store.py::test_word_ids_are_promoted_multibyte_entries",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002428625011816621,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_word_store.py::test_single_byte_word_needs_standalone_attestation": {
+      "nodeid": "test/test_word_store.py::test_single_byte_word_needs_standalone_attestation",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007867090171203017,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_word_store.py::test_word_ids_index_the_shared_basis_rows": {
+      "nodeid": "test/test_word_store.py::test_word_ids_index_the_shared_basis_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0008204999612644315,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_word_store.py::test_radial_recommender_recovers_signed_pair": {
+      "nodeid": "test/test_word_store.py::test_radial_recommender_recovers_signed_pair",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004899590276181698,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_word_store.py::test_recommender_row_restriction_recovers_stored_pair": {
+      "nodeid": "test/test_word_store.py::test_recommender_row_restriction_recovers_stored_pair",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002882499247789383,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_word_store.py::test_knob_default_off": {
+      "nodeid": "test/test_word_store.py::test_knob_default_off",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 2.2575209999922663,
+      "message": "",
+      "stdout": "[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/output/MM_word_store_off.ckpt, starting fresh\r\n",
+      "run": "affected-complete"
+    },
+    "test/test_word_store.py::test_reading_promotes_the_batch_words": {
+      "nodeid": "test/test_word_store.py::test_reading_promotes_the_batch_words",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 3.305398958036676,
+      "message": "",
+      "stdout": "[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/output/MM_word_store_on.ckpt, starting fresh\r\n",
+      "run": "affected-complete"
+    },
+    "test/test_word_store.py::test_one_to_one_recognition_registers_under_words": {
+      "nodeid": "test/test_word_store.py::test_one_to_one_recognition_registers_under_words",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 2.249530875007622,
+      "message": "",
+      "stdout": "[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/output/MM_word_store_on.ckpt, starting fresh\r\n",
+      "run": "affected-complete"
+    },
+    "test/test_word_store.py::test_percept_extras_ride_the_checkpoint_envelope": {
+      "nodeid": "test/test_word_store.py::test_percept_extras_ride_the_checkpoint_envelope",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 3.3069249170366675,
+      "message": "",
+      "stdout": "[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/output/MM_word_store_on.ckpt, starting fresh\r\n",
+      "run": "affected-complete"
+    },
+    "test/test_word_store.py::test_storeless_configs_emit_no_percept_key": {
+      "nodeid": "test/test_word_store.py::test_storeless_configs_emit_no_percept_key",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 2.280793249956332,
+      "message": "",
+      "stdout": "[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/output/MM_word_store_off.ckpt, starting fresh\r\n",
+      "run": "affected-complete"
+    },
+    "test/test_word_store.py::test_slot_kind_stacks_mirror_the_push_discipline": {
+      "nodeid": "test/test_word_store.py::test_slot_kind_stacks_mirror_the_push_discipline",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002062499988824129,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_word_store.py::test_words_summary_row_running_mean": {
+      "nodeid": "test/test_word_store.py::test_words_summary_row_running_mean",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.5830438329139724,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_word_store.py::test_ws_word_whole_registry_resolves_to_rows": {
+      "nodeid": "test/test_word_store.py::test_ws_word_whole_registry_resolves_to_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 2.8922444579657167,
+      "message": "",
+      "stdout": "[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/output/MM_word_store_on.ckpt, starting fresh\r\n",
+      "run": "affected-complete"
+    },
+    "test/test_word_store.py::test_forward_records_kind_tagged_trace": {
+      "nodeid": "test/test_word_store.py::test_forward_records_kind_tagged_trace",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 2.714588165981695,
+      "message": "",
+      "stdout": "[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/output/MM_word_store_on.ckpt, starting fresh\r\n",
+      "run": "word-trace-final"
+    },
+    "test/test_word_store.py::test_word_pair_snap_recovers_folded_pair": {
+      "nodeid": "test/test_word_store.py::test_word_pair_snap_recovers_folded_pair",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006307079456746578,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_word_store.py::test_word_pair_snap_orders_by_side_dot": {
+      "nodeid": "test/test_word_store.py::test_word_pair_snap_orders_by_side_dot",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002997079864144325,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_word_store.py::test_intersection_snap_priming_recovers_present_words": {
+      "nodeid": "test/test_word_store.py::test_intersection_snap_priming_recovers_present_words",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000966791994869709,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_word_store.py::test_grammar_layer_reverse_snap_is_op_respecting": {
+      "nodeid": "test/test_word_store.py::test_grammar_layer_reverse_snap_is_op_respecting",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006470830412581563,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_word_store.py::test_union_snap_needs_no_priming": {
+      "nodeid": "test/test_word_store.py::test_union_snap_needs_no_priming",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0013782919850200415,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_word_store.py::test_word_side_snap_support_match_beats_l2": {
+      "nodeid": "test/test_word_store.py::test_word_side_snap_support_match_beats_l2",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002216249704360962,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_word_store.py::test_word_side_snap_minimal_residual": {
+      "nodeid": "test/test_word_store.py::test_word_side_snap_minimal_residual",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005240000318735838,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_word_store.py::test_grammar_reverse_ops_from_generate_section": {
+      "nodeid": "test/test_word_store.py::test_grammar_reverse_ops_from_generate_section",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 2.246054125018418,
+      "message": "",
+      "stdout": "[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/output/MM_word_store_on.ckpt, starting fresh\r\n",
+      "run": "affected-complete"
+    },
+    "test/test_word_store.py::test_reverse_chooser_picks_fold_op_by_roundtrip": {
+      "nodeid": "test/test_word_store.py::test_reverse_chooser_picks_fold_op_by_roundtrip",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 1.1210808330215514,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_word_store.py::test_leaf_distill_default_off": {
+      "nodeid": "test/test_word_store.py::test_leaf_distill_default_off",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 1.7477955420035869,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=False).\r\n",
+      "run": "affected-complete"
+    },
+    "test/test_word_store.py::test_leaf_distill_trains_root_toward_leaves": {
+      "nodeid": "test/test_word_store.py::test_leaf_distill_trains_root_toward_leaves",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 3.5673801250522956,
+      "message": "",
+      "stdout": "[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/output/MM_word_store_on.ckpt, starting fresh\r\n[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=False).\r\n",
+      "run": "affected-complete"
+    },
+    "test/test_word_store.py::test_percept_concept_reverse_index_and_row": {
+      "nodeid": "test/test_word_store.py::test_percept_concept_reverse_index_and_row",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00032220897264778614,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_word_store.py::test_concept_row_content_lights_up_the_resolved_row": {
+      "nodeid": "test/test_word_store.py::test_concept_row_content_lights_up_the_resolved_row",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003384590381756425,
+      "message": "",
+      "stdout": "",
+      "run": "affected-complete"
+    },
+    "test/test_word_store.py::test_concept_index_read_sizes_inventory_by_explicit_nvectors": {
+      "nodeid": "test/test_word_store.py::test_concept_index_read_sizes_inventory_by_explicit_nvectors",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 2.2245237909955904,
+      "message": "",
+      "stdout": "[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/output/wordstore_cir.ckpt, starting fresh\r\n",
+      "run": "affected-complete"
+    },
+    "test/test_tied_reconstruction_compile.py::test_separate_reconstruction_does_not_retrace_backward_every_step": {
+      "nodeid": "test/test_tied_reconstruction_compile.py::test_separate_reconstruction_does_not_retrace_backward_every_step",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 177.85169404093176,
+      "message": "test/test_tied_reconstruction_compile.py:178: in test_separate_reconstruction_does_not_retrace_backward_every_step\n    assert any(g.abs().sum() > 0 for g in used)\nE   assert False\nE    +  where False = any(<generator object test_separate_reconstruction_does_not_retrace_backward_every_step.<locals>.<genexpr> at 0x121aa8040>)",
+      "stdout": "",
+      "run": "affected-remaining"
+    },
+    "test/test_word_store.py::test_dictionary_surface_snapshot_is_independent_of_staged_input_bytes": {
+      "nodeid": "test/test_word_store.py::test_dictionary_surface_snapshot_is_independent_of_staged_input_bytes",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.3788155410438776,
+      "message": "",
+      "stdout": "",
+      "run": "affected-remaining"
+    },
+    "test/test_word_store.py::test_missing_surface_candidates_keep_uniform_null_cost_without_input_fallback": {
+      "nodeid": "test/test_word_store.py::test_missing_surface_candidates_keep_uniform_null_cost_without_input_fallback",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.3891224169638008,
+      "message": "",
+      "stdout": "",
+      "run": "affected-remaining"
+    },
+    "test/test_word_store.py::test_surface_bytes_belong_to_words_and_objects_follow_their_association": {
+      "nodeid": "test/test_word_store.py::test_surface_bytes_belong_to_words_and_objects_follow_their_association",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.3763411659747362,
+      "message": "",
+      "stdout": "",
+      "run": "affected-remaining"
+    },
+    "test/test_word_store.py::test_word_surface_and_reassociated_object_survive_strict_checkpoint": {
+      "nodeid": "test/test_word_store.py::test_word_surface_and_reassociated_object_survive_strict_checkpoint",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.6769065000116825,
+      "message": "",
+      "stdout": "[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-5279/test_word_surface_and_reassoci0/word_surfaces.ckpt\r\n[BasicModel] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-5279/test_word_surface_and_reassoci0/word_surfaces.ckpt\r\n",
+      "run": "affected-remaining"
+    },
+    "test/test_word_store.py::test_two_epoch_training_severs_cross_batch_graph": {
+      "nodeid": "test/test_word_store.py::test_two_epoch_training_severs_cross_batch_graph",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 5.4906895000021905,
+      "message": "",
+      "stdout": "[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/output/MM_20M_grammar_wordstore.ckpt, starting fresh\r\n[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 100.00%)\r\nTraining throughput: 1 batches in 1.854s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=1.474s, 100.00%)\r\nTraining throughput: 1 batches in 1.464s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n",
+      "run": "affected-remaining"
+    }
+  }
+}

@@ -1903,3 +1903,74 @@ over 32 sentences match their preserved reference.
 The final source-matched full receipt completes **4,824 cases**: **4,502 passed**, **321 skipped** and **1 existing expected failure**, with no red outcomes. All 648 source files match `bac8dbede6bc069132a4fb1e3ca75c683ace40614ea7e8e1832f9745a734b001` across the full, affected, CLI and explicit slow receipts and the serial measurements. The new slow serial exclusion check is included in the explicit passing selection. Alec approved publication on September 25; implementation `99207a3` [matches all 648 reviewed source blobs](benchmarks/2026-09-25-item10-forward/committed-source-verification.json).
 
 Final documentation-link verification: **84/84 passed**.
+
+
+## Item 9 first landing: packed/single reconstruction parity (September 25)
+
+The [parity receipt](benchmarks/2026-09-25-item9-parity/README.md) diagnoses the
+current-tree gap before the expectation-learning experiment. Actual seals and
+leaves are identical on the declared four-sentence workload. Packed inverse
+search and byte scoring previously admitted neighboring sentences' candidates;
+saved programs also read an unfilled final root slot. Candidate ownership now
+follows sentence ids, and the final seal completes the saved-state bank.
+
+Earlier packed-answer measurements, including the September 16 supplied-answer
+runs at batch size 2, reconstructed from zero-filled saved states instead of
+the sentences' actual final states, so their answer-quality numbers are unreliable
+and must not be cited.
+
+Parity uses atol 1e-6 and rtol 1e-5 for every sentence, with three ambient
+initializations in the regression and the historical seed 42 only for the
+measurement. Every measured seal, saved program root, retained/recovered leaf
+and byte cost agrees exactly. Mean byte cost is **.6839025617** in both layouts;
+the native serial baseline remains **.0891618710** after seven updates.
+
+The initial parity review's source-matched full default receipt completes **4,829 cases**:
+**4,504 passed, 324 skipped and 1 existing expected failure**. The default
+affected selection is **62 passed / 39 skipped**. The slow-enabled affected
+audit covers all 101 cases across bounded runs: **100 pass and 1 fails**. The
+nonzero compose-gradient assertion in the reconstruction-cache probe fails
+on both the patched and committed runtime, before its cache assertion; that
+failure remains open in item 1. Both inherited trace-fixture failures were
+reproduced before correcting their operation preconditions without selecting
+a seed or weakening their assertions.
+The operand-provenance fixture now retains leaves until binary consumption;
+that particular probe no longer covers a unary rewrite followed by a binary fold.
+
+All 649 source files in that initial review match
+`ffcb8cb2c80b7c7d42078e6358c98fb5e4f19b8bd38303d865538c170db409e4`
+across the full/default affected receipts, corrected word-store check and
+measurements. The broad slow audit predates only the final word-store fixture
+edit; its exact source deltas and all failed/interrupted attempts are retained
+in the receipt. Expectation-learning utility remains unproven and belongs
+to a subsequent landing; the accepted review correction below owns publication.
+
+Initial parity documentation-link verification: **85/85 passed**. This records
+the source before review and publication.
+
+The [bank-contract review follow-up](benchmarks/2026-09-25-item9-bank/README.md)
+investigates first-sight inventory growth and removes silent reconstruction
+fallbacks for missing staging or a sentence with no usable candidates. Its
+full receipt completes **4,839 cases: 4,514 passed, 324 skipped and 1 existing
+expected failure**, with no red outcomes. The affected selection is **125 passed /
+68 skipped**; the explicit slow selection passes **24/24**, including compiled
+reconstruction and all three ambient parity cases. Packed/single measurements
+and the serial baseline remain exactly unchanged. This validation supersedes
+the earlier source receipt for the revised implementation. A test-only model
+cleanup separates the affected/slow measurements from the final full source;
+the receipt records that exact delta, with production files unchanged.
+Documentation-link verification passes **87/87** for that review snapshot.
+
+The [accepted host-sync correction](benchmarks/2026-09-25-item9-bank-sync/README.md)
+keeps the bank invariants on device with asynchronous assertions. Fake-tensor
+and native MPS profiler probes reproduce the previous scalar host reads and
+require their absence after the fix. Alec accepted Claude's review and
+authorized publication of the full tree after this correction and validation.
+The final source-matched receipt completes **4,844 cases: 4,519 passed,
+324 skipped and 1 existing expected failure**, with no red outcomes. The
+affected selection is **129 passed / 68 skipped**; all **24 explicit slow
+checks pass**. Packed/single means remain **.6839025617** and the serial
+after-training baseline remains **.0891618710**. All 650 source files match
+`08ea1dc59989ae9dac0f71b1d1c75d41b0a3bd6cfdf957776275ba01d6aa6cdc`
+across the affected, slow, full and measurement receipts.
+Final documentation-link verification: **88/88 passed**.

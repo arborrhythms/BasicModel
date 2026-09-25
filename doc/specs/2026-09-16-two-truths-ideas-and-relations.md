@@ -230,6 +230,15 @@ share one index, no new reference mechanism exists.
 
 ### 3.1 Idea rows (decided)
 
+*Amended (Alec, 2026-09-25, item 9b):* the row schema gains **`.where`
+and `.when`**, the sealed field's one bracket and one interval, written
+once per row by the seal beside `refs`, the surprise column and the
+`(c⁺, c⁻)` pair. A row's address is its `.when` alone; its `.where`
+records what it was looking at, so rows may share a `.where`. No concept
+inside the row carries either coordinate
+([Architecture](../Architecture.md#one-where-one-when-many-whats-the-field-attention-and-the-two-modes-item-9b-september-25)).
+
+
 An idea row in the unified `TernaryTruthStore` (`symbolSpace.ltm_store`)
 has `rel_type = REL_NONE`, its fused vector in the NP1 slot, Null in VP
 and NP2, scalar trust, timestamp, origin and optional source text as

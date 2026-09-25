@@ -38,6 +38,46 @@ seed may make a *measurement* reproducible, never an *assertion* true. A test
 that fails at some seed has found a defect; fix the defect, or let it fail.
 Do not remove unused reasoning methods without Alec's review.
 
+- **9b. One structure across the two modes; the field as a percept
+   activation vector; `interpret`** ([spec](doc/plans/2026-09-25-item-9b-mode-sharing-and-interpret.md);
+   [Architecture](doc/Architecture.md#one-where-one-when-many-whats-the-field-attention-and-the-two-modes-item-9b-september-25);
+   [Philosophy](doc/Philosophy.md#attention-as-one-bracket-both-as-the-fields-report-and-the-sharing-of-the-two-modes-2026-09-25)).
+   Decided by Alec, 2026-09-25: (1) one inventory for both modes, no
+   private copies, checkpoints load in either mode; (2) the conceptual
+   field is a percept activation vector — presence and observed complement
+   per percept row, pooled over the occurrences inside **one convex
+   bracket** in space and **one interval** in time; a field has one where,
+   one when and many whats, a concept row has neither coordinate, a
+   percept event keeps its own, an LTM row's address is its `.when` and
+   its `.where` is what it was looking at, and symbols' `.where` extends
+   the pre-allocated part and whole percepts' `.where` in one address
+   space (the pre-2026-06-04 where-space slice registry, revived); (3)
+   open attention in parallel mode (all
+   active percepts), focused attention in serial mode (the 8/8 attended
+   field), no `n0` truncation, no per-concept `.where`/`.when` channel;
+   (4) *both* is the field's report that the bracket is heterogeneous —
+   narrow it, or raise order; exact co-location is perception's (fused
+   parts, pervading runs), so XOR's cases are the fused parts `10`/`01`;
+   (5) `interpret`, the default per-word word-concept → object-concept
+   step of serial mode, unknown words minting provisional object rows by
+   testimony, `create_word_object_meta` deleted. Pending Alec's yes/no:
+   `modeSchedule` (`serial | parallel | interleave:N`, re-symbolization
+   after every parallel pass) and the erosion gate (categorical-perception
+   ordering across three seeds), and fixed-capacity perceptual codebooks
+   with stable where-space slices (§4e). **Next after the parity landing
+   (Alec, September 25).** Work: replace
+   the 11b/11c `[B, E, P]` seam read, retained pairs in the field and
+   readout/checkpoint position pairs with the per-bracket pooled read and
+   the field's single pair; move the refine-before-raise run count to
+   percept events via attribution; open attention in parallel mode;
+   `interpret` with its three faces and the seal no longer resolving
+   objects; then the schedule and the gate. Exit: the native XOR gate and
+   exact-zero controls unchanged; serial reconstruction within the 11b
+   tolerance of `99207a3`; a concept learned in one mode read by id with
+   the same definition in the other; the `interpret` tests of plan §5
+   (particular, kind, reverse, every word interpreted, unknown word minted
+   once and reused, `create_word_object_meta` gone); the erosion
+   orderings; docs per plan §6.
 - **9. Expectation learning gates.** The negative-image mechanism and residual
    query credit are in (`7d7dc4f`,
    [measurements](doc/benchmarks/2026-09-21-item2/README.md)): the predictor
@@ -45,19 +85,18 @@ Do not remove unused reasoning methods without Alec's review.
    remainder than an unrelated one, but the native runs are seven optimizer
    steps on one seed, prediction does not beat its context-free control, and
    the reasoning comparison is null.
-   **First, its own landing: diagnose the packed/single reconstruction
-   gap that `d4dc385` recorded** (mean tied byte cost .78669 packed against
-   .68387 single;
-   [baseline](doc/benchmarks/2026-09-21-item10/README.md)). The evidence runs
-   below and the full training session both train packed, so a 15% penalty for
-   packing is not a number to carry. The clue is sharp: for the first sentence
-   of a row the retained leaves and the sealed state are identical and the
-   reconstruction still differs, so the difference enters the reverse path
-   from something other than the sealed idea; and later sentences' sealed
-   states differ, so composition is not independent across a pack. Name each
-   input that differs between the two modes. Exit: parity within a stated
-   tolerance after a fix, or a written account of why packing legitimately
-   changes the result, for Alec to accept.
+   Packed/single reconstruction parity and the bank safeguards are reviewed;
+   Alec authorized publication after the
+   [host-sync correction](doc/benchmarks/2026-09-25-item9-bank-sync/README.md).
+   **Item 9b is next (Alec, September 25); these learning gates remain open.**
+   *Compatibility (Claude, 2026-09-25):* the baseline for parity and for
+   every later "unchanged" check is now `99207a3` (serial after-training
+   .0891618710), not `d4dc385`; re-measure both layouts on the current
+   tree before diagnosing. Item 9 runs on the serial path, which by the
+   mode exclusion never touches the order-0 field, its sigma/pi/not or the
+   attended rows; the negative image remains a sealed-idea operation
+   (accessible-mind §2.6.2 as amended). The reconstruction-only control
+   must reconstruct from forward artifacts, never a saved input trace.
    Then the gates. Exit: on the packed native config, at
    least three seeds and a run length declared in advance — ordered prediction
    beats the shuffled and context-free controls at equal updates, with
@@ -80,6 +119,9 @@ Do not remove unused reasoning methods without Alec's review.
    CLI gates stop before training at unsupported W=6. Keep these failures
    visible; no passing-seed selection or expected-failure waiver
    ([audit](doc/benchmarks/2026-09-21-item10/README.md#validation-and-limits)).
+   *Compatibility:* `XOR_grammar.xml` composes `not` / `conjunction` /
+   `disjunction` over symbols on the serial path and never used the deleted
+   tower folds, so its gate stands as written; its baseline is `99207a3`.
 - **7. Two truths** ([spec](doc/specs/2026-09-16-two-truths-ideas-and-relations.md)),
    new session. One S = one LTM row: an absolute S fuses to one point and
    writes an idea row with derivation and `refs`; a relative S (generic
@@ -99,8 +141,23 @@ Do not remove unused reasoning methods without Alec's review.
    concepts, which is the taxonomy (§3.4 as amended; item 11), trust on the
    LTM row.
    The seal must store `(c⁺, c⁻)` and preserve both separately from neither
-   (§1.1); the current scalar `_collapse_trust` is replaced here. Item 11's
+   (§1.1); the current scalar `_collapse_trust` is replaced here, and §3.1's
+   "scalar trust" row schema is amended in the same landing, gaining the
+   sealed field's `.where` and `.when` (item 9b; the row's address is its
+   `.when`, its `.where` is what it was looking at). Item 11's
    paired conceptual field and checkpoint do not implement this LTM seal.
+   *Compatibility with 11c (Claude, 2026-09-25):* (a) the taxonomy is the
+   concept store's sigma rows, and order is taxonomic depth: "cats are
+   animals" is a sigma edge from the *animal* row to the *cat* symbol one
+   order below, so the seal places a kind one order above what it
+   subsumes and symbolizes when no row exists there; it never writes a
+   conjunctive edge above order 0 or a same-order part row. (b) Testimony
+   writes directly; the refine-before-raise gate governs only discovery
+   from context. (c) 11c entry 11 lands here: a word form addresses a set
+   of concept ids across orders (event, particular, kind); the particular
+   is order-1 symbolization and *is* object permanence, and the seal binds
+   the form to it — today production binds only the order-0 word and its
+   object. (d) A pronoun ties to an order-1 particular, never a kind.
    Then the distributional context widens from the sentence to the
    **situation** the predictor anchors, under three `model.xml` variables
    (plan §8.4 point 2: situation weight, anchor bound, expectation weight);
@@ -128,6 +185,13 @@ Do not remove unused reasoning methods without Alec's review.
    the existing MM_20M grammar free-derivation harness at 0/4 exact recovery
    after three epochs; its acceptance assertion now requires recovery rather
    than preserving that zero ([audit](doc/benchmarks/2026-09-21-item10/README.md#validation-and-limits)).
+   *Compatibility:* this is the serial grammar's `lift`/`lower` with their
+   tied chart inverses, unchanged by 11c and by item 10's drop. Recovery is
+   measured from forward artifacts — the stored derivation and activations —
+   never a saved input trace (Alec, 2026-09-25); and the 11c rule for
+   descent applies: reverse sigma is a choice of case, reverse pi is
+   attribution against the field, so clean-up decoding through the forward
+   kernel is the intended form of that choice.
 - **5. Forgetting** ([spec](doc/specs/2026-09-16-forgetting.md)), after item 7
    (needs `refs` and every S writing a row). Document-boundary pass from the
    high-water to the low-water mark deleting the lowest-value unprotected
@@ -137,17 +201,31 @@ Do not remove unused reasoning methods without Alec's review.
    subordinate rows, then the row, gradually, coarsening the referring row
    instead of cascading where the operand's point survives. Exit: the fourteen
    §7 tests, the accessible-mind spec's test 31 (retention by surprise), the
-   §6 elements in schema/`model.xml`/Params.md, the §8 docs, and the `d4dc385`
+   §6 elements in schema/`model.xml`/Params.md, the §8 docs, and the `99207a3`
    reconstruction measurements unchanged unless explicitly re-baselined.
+   *Compatibility:* rows carry the pair `(c⁺, c⁻)` (§1.1); `|trust|` in
+   the value is `|c⁺ − c⁻|` (11c entry 2's collapse) and the *both* corner
+   `min(c⁺, c⁻)` counts as dissonance in the luminosity term, so a
+   heterogeneous row is protected, not discarded. Open for Alec: forgetting
+   of the concept inventory itself — order-0 definitions, alternatives and
+   feature groups — is not in the spec; discovered rows are never recycled
+   (item 11), so their retirement needs a rule here or in FutureWork.
 - **4. Run harness and resume test.** One logger per interval: reconstruction
    loss; expectation discrepancy; LTM occupancy, forgetting passes, rows
    deleted per origin, value cut-off; luminosity of provisioned truths; the
    per-shared-operator gradient cosine and norm ratio — reconstruction against
    expectation, and against output where answers are supplied — with the
    operators in persistent opposition named; the held-out two-truths §7
-   test-12 probe and a fixed reconstruction sample. And a resume test proving
+   test-12 probe and a fixed reconstruction sample; and from 11–11c: order-0
+   inventory rows used against `nVectors`, provisional-pool occupancy and
+   exhaustion warnings, raises per order with their run counts and stalled
+   patience, refinement requests, lexical references left unknown per order.
+   And a resume test proving
    a mid-epoch checkpoint restores cursor, stream count, `refs` / surprise
-   columns and forgetting counters with the next batch byte-identical. Exit:
+   columns and forgetting counters with the next batch byte-identical —
+   including the concept sidecar (feature groups, located brackets, sparse
+   context, refinement buffers), the radix part groups and pending groups,
+   the word-form index and the understanding's conceptual field. Exit:
    one command on a small config; the test in the suite.
 - **3. Corpus at target size.** Raise `maxDocs`, exercise multi-shard if needed,
    measure sentence-list/address-table memory and loader time, confirm
@@ -162,15 +240,38 @@ Do not remove unused reasoning methods without Alec's review.
    remove the stale `dispatch_per_row_reset` note in
    [the fold-ladder plan](doc/plans/2026-09-10-meronomy-fold-ladder.md#open-defects-found-on-the-way)
    (`taxonomy_parent_map` is now initialised).
-- **1. Compiler work.** Forward chooser split/lift once per slot; backward's
+   From the 11–11c refactor, verify legacy before deleting (no-legacy rule;
+   reasoning methods need Alec's review): `overlap_where_tiling` and
+   `where_tiling_for_pass`, `intent_boosts`, WholeSpace `part_chain`,
+   `_automatic_synthesize_higher_order` against the pool's discovery path,
+   and the META `insert_meta` / `taxonomy_parent` bindings once item 7's
+   concept-level taxonomy owns them. Move the 2.9 MB
+   `evaluation-source.tar.gz` out of the repository (the receipt keeps its
+   hash) unless Alec wants it in-tree.
+- **1. Compiler work.** The throughput levers for the serial loop — batch
+   across sentences, the known-word lookup concession under the serial
+   flag, subsampled reconstruction, closing the host islands and moving
+   the sparse stores to device CSR, single passes — are listed in
+   [FutureWork](doc/FutureWork.md#throughput-levers-for-the-serial-loop-item-1-candidates)
+   and belong here (Alec, 2026-09-25). Forward chooser split/lift once per slot; backward's
    launch-bound kernel count per brick; B24 brick +25% against pre-ladder.
    Exit: sentences/s and peak memory at the run's batch and brick size against
-   the July baseline.
+   the July baseline, re-taken on `99207a3` since the tower fold ladders are
+   gone. New eager hot spots from 11–11c to measure and vectorise: the
+   per-row loop in `cs_read_memberships`, the per-row composition in
+   `_compose_order0`, the edge loops in `_reverse_field`, the per-reading
+   descent in `refine_over_collected`, candidate growth in
+   `_prepare_part_learning`, and the per-column loops in
+   `promotion_observe`.
+   The explicit slow reconstruction-cache probe fails its nonzero
+   compose-gradient assertion on the current baseline; the cache claim remains
+   unverified by that probe ([audit](doc/benchmarks/2026-09-25-item9-parity/README.md#validation)).
 - **0. The full training session**: the long FineWeb run, only with items 11–2
    done and item 1 measured. Expectation on in `model.xml`; the
    `BasicModel.xml` flip follows the plan's §10 gates. Stop on rising
-   expectation discrepancy, a reconstruction regression against the `d4dc385`
-   baseline, or a forgetting pass deleting protected rows.
+   expectation discrepancy, a reconstruction regression against the `99207a3`
+   baseline, a forgetting pass deleting protected rows, a provisional-pool
+   exhaustion warning, or order-0 inventory approaching `nVectors`.
 
 Everything that is decided in direction but not on this path is in
 [FutureWork](doc/FutureWork.md).

@@ -10282,6 +10282,7 @@ class InputSpace(Space):
         # F.embedding(sparse=True) call on every iteration.
         self._ar_concept_lookup_rows = None
         self._ar_concept_lookup_atoms = None
+        self._ar_concept_lookup_sentence_ids = None
         for name in ("_ar_percept_reference_codes", "_ar_percept_reference_roles",
                      "_ar_part_reference_vectors", "_ar_whole_reference_vectors",
                      "_ar_readout_coefficients", "_ar_whole_reference_presence"):
@@ -10334,6 +10335,7 @@ class InputSpace(Space):
         self._ar_word_object_atoms = None
         self._ar_concept_lookup_rows = None
         self._ar_concept_lookup_atoms = None
+        self._ar_concept_lookup_sentence_ids = None
         for name in ("_ar_percept_reference_codes", "_ar_percept_reference_roles",
                      "_ar_part_reference_vectors", "_ar_whole_reference_vectors",
                      "_ar_readout_coefficients", "_ar_whole_reference_presence"):
