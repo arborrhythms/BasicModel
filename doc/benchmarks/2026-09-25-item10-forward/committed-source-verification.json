@@ -1,0 +1,13 @@
+{
+  "implementation_commit": "99207a382fab21d9eee62a5e1208edd9d0e2412c",
+  "implementation_tree": "ab94f9bda92327f6cdc4298ec8b1f1d780303642",
+  "reviewed_source_files": 648,
+  "committed_source_files_verified": 648,
+  "source_map_sha256": "bac8dbede6bc069132a4fb1e3ca75c683ace40614ea7e8e1832f9745a734b001",
+  "committed_blobs_match_reviewed_source": true,
+  "working_source_matches_reviewed_source": true,
+  "mismatches": [],
+  "method": "SHA-256 of every committed source blob read with git cat-file --batch, compared with review-source.json.",
+  "validation_summary": "validation-summary.json",
+  "publication_approval": "Alec, September 25, 2026: Great, commit and push. Thanks."
+}

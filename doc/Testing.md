@@ -1900,6 +1900,6 @@ The serial measurement remains **.0891618710** after training against
 priors agree. All eight 11a property rows over 256 bytes and all 160 runs
 over 32 sentences match their preserved reference.
 
-The final source-matched full receipt completes **4,824 cases**: **4,502 passed**, **321 skipped** and **1 existing expected failure**, with no red outcomes. All 648 source files match `bac8dbede6bc069132a4fb1e3ca75c683ace40614ea7e8e1832f9745a734b001` across the full, affected, CLI and explicit slow receipts and the serial measurements. The new slow serial exclusion check is included in the explicit passing selection. Work stops for review before commit, push or parent bump.
+The final source-matched full receipt completes **4,824 cases**: **4,502 passed**, **321 skipped** and **1 existing expected failure**, with no red outcomes. All 648 source files match `bac8dbede6bc069132a4fb1e3ca75c683ace40614ea7e8e1832f9745a734b001` across the full, affected, CLI and explicit slow receipts and the serial measurements. The new slow serial exclusion check is included in the explicit passing selection. Alec approved publication on September 25; implementation `99207a3` [matches all 648 reviewed source blobs](benchmarks/2026-09-25-item10-forward/committed-source-verification.json).
 
 Final documentation-link verification: **84/84 passed**.

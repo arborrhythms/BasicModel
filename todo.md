@@ -38,24 +38,6 @@ seed may make a *measurement* reproducible, never an *assertion* true. A test
 that fails at some seed has found a defect; fix the defect, or let it fail.
 Do not remove unused reasoning methods without Alec's review.
 
-**Review approved for publication (Alec, September 25):**
-
-- **11c residue: accepted September 25.** Refine-before-raise keeps three
-  completed optimizer updates without strict improvement in the worst local
-  both residual; improvement resets patience and a pure/unknown read clears
-  it. No change to the accepted policy.
-- **10. Decided: dropped (Alec, September 25).** Normalized means and their
-  mode are deleted; the [evaluation](doc/benchmarks/2026-09-24-item10/README.md)
-  preserves the measurements and rejected source. The final review correction
-  removes saved percept events, reconstructs from located concept evidence
-  through native activity, asserts the serial/parallel operator exclusions,
-  and removes the unexercised XOR grammar. The lesson teaches memberships and
-  one name, never XOR. `XOR_exact` reconstructs **4/4** against the stated 50%
-  bar and passes the unchanged crisp-output assertion, unseeded. The
-  [forward-artifact receipt](doc/benchmarks/2026-09-25-item10-forward/README.md)
-  records the correction and validation. Review is complete; publish the
-  reviewed source and record its landing hash below.
-
 - **9. Expectation learning gates.** The negative-image mechanism and residual
    query credit are in (`7d7dc4f`,
    [measurements](doc/benchmarks/2026-09-21-item2/README.md)): the predictor
@@ -195,6 +177,8 @@ Everything that is decided in direction but not on this path is in
 
 ### Done (newest first)
 
+- `99207a3` Item 10 decided: dropped; normalized means deleted, native XOR and forward-evidence reconstruction pass unseeded, with mode exclusions asserted ([receipt](doc/benchmarks/2026-09-25-item10-forward/README.md), [evaluation](doc/benchmarks/2026-09-24-item10/README.md)).
+- `99207a3` Item 11c residue: accepted three-update refine-before-raise patience, reset by strict improvement and cleared by pure/unknown reads ([receipt](doc/benchmarks/2026-09-25-item10-forward/README.md)).
 - `d5f2e1a` Item 11c: native perception, located XOR, per-pole witnessing, nonzero focus and grammatical reference across orders ([receipt](doc/benchmarks/2026-09-24-item11c/README.md)).
 - `15c9bde` Item 11b extent correction: containment at the subject extent, observed raw spans and the restored positive-only `MM_sparse_concept` smoke ([receipt](doc/benchmarks/2026-09-24-item11b-extent/README.md)).
 - `aa235d2` Item 11b accepted-review corrections: recurrent parts, containment over canonical ids, and order-0 fields bound per turn with persistent concept identity ([receipt](doc/benchmarks/2026-09-24-item11b-corrections/README.md)).

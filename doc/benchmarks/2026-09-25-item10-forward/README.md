@@ -1,7 +1,7 @@
 # Item 10 final review correction: reconstruction from forward evidence
 
 Review approved for publication by Alec on September 25, 2026.
-This supersedes the saved-view inverse in the
+Implemented in `99207a382fab21d9eee62a5e1208edd9d0e2412c`. This supersedes the saved-view inverse in the
 [earlier resolution receipt](../2026-09-25-item10-resolution/README.md).
 
 Item 10 remains **decided: dropped**. The normalized mode is deleted; its
@@ -75,9 +75,9 @@ The unseeded [CLI reconstruction gate](cli-gates.json) reaches **4/4** against t
 
 [Serial reconstruction](serial/comparison.json) after training is **.0891618710**, against **.0923267286** at `d4dc385`, without a tolerance gate. Pi off/on and frozen priors agree. [Prior and segmentation measurements](serial/priors.json) preserve all eight rows over 256 bytes and all 160 runs across 32 sentences.
 
-The [source archive](review-source.tar.gz), [hash map](review-source.json), [correction delta](source-delta.json) and [tracked diff](tracked-source.patch) make the proposed source reviewable. Earlier failing and interrupted attempts are diagnostics only. A concurrent affected-file attempt encountered a temporary test-config deletion; final checks ran sequentially after the full suite.
+The [source archive](review-source.tar.gz), [hash map](review-source.json), [correction delta](source-delta.json) and [tracked diff](tracked-source.patch) preserve the reviewed source. [Committed-source verification](committed-source-verification.json) confirms all 648 implementation blobs match that source exactly. Earlier failing and interrupted attempts are diagnostics only. A concurrent affected-file attempt encountered a temporary test-config deletion; final checks ran sequentially after the full suite.
 
-BasicModel remains at `606683a8e32aac66569669a5e607f64eeec3ae32` and WikiOracle at `8e7123a1c55ce10ce924d1f27b1e2037dc8890c7`. No commit, push, parent bump or item 9 work.
+The [pre-publication heads](heads.json) record BasicModel at `606683a8e32aac66569669a5e607f64eeec3ae32` and WikiOracle at `8e7123a1c55ce10ce924d1f27b1e2037dc8890c7`. Item 10 and the accepted 11c residue are closed in the todo under implementation commit `99207a3`; item 9 remains unstarted.
 
 
 ## Affected files
@@ -100,7 +100,7 @@ BasicModel remains at `606683a8e32aac66569669a5e607f64eeec3ae32` and WikiOracle 
 - [Architecture](../../Architecture.md), [Testing](../../Testing.md) and
   [todo](../../../todo.md): the accepted rule and completed review correction.
 
-The earlier item 10 and 11c residue changes remain part of this uncommitted
-proposal. Their archived measurements and deletion record are retained.
+The earlier item 10 and 11c residue changes are included in this landing.
+Their archived measurements and deletion record are retained.
 
 Final documentation-link verification: **84/84 passed**.
