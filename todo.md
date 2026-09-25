@@ -85,9 +85,6 @@ Do not remove unused reasoning methods without Alec's review.
    remainder than an unrelated one, but the native runs are seven optimizer
    steps on one seed, prediction does not beat its context-free control, and
    the reasoning comparison is null.
-   Packed/single reconstruction parity and the bank safeguards are reviewed;
-   Alec authorized publication after the
-   [host-sync correction](doc/benchmarks/2026-09-25-item9-bank-sync/README.md).
    **Item 9b is next (Alec, September 25); these learning gates remain open.**
    *Compatibility (Claude, 2026-09-25):* the baseline for parity and for
    every later "unchanged" check is now `99207a3` (serial after-training
@@ -277,6 +274,8 @@ Everything that is decided in direction but not on this path is in
 [FutureWork](doc/FutureWork.md).
 
 ### Done (newest first)
+
+- `0e70001` Item 9 parity landing: sentence-owned reconstruction candidates, final saved roots, first-sight bank checks without scalar host reads, and the historical-answer warning ([receipt](doc/benchmarks/2026-09-25-item9-bank-sync/README.md)); expectation-learning gates remain open.
 
 - `99207a3` Item 10 decided: dropped; normalized means deleted, native XOR and forward-evidence reconstruction pass unseeded, with mode exclusions asserted ([receipt](doc/benchmarks/2026-09-25-item10-forward/README.md), [evaluation](doc/benchmarks/2026-09-24-item10/README.md)).
 - `99207a3` Item 11c residue: accepted three-update refine-before-raise patience, reset by strict improvement and cleared by pure/unknown reads ([receipt](doc/benchmarks/2026-09-25-item10-forward/README.md)).

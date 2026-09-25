@@ -1,0 +1,13 @@
+{
+  "implementation_commit": "0e700012064c1d80410db94a0b145eabad3fff99",
+  "implementation_tree": "4f0f5cb144f9446fa4ec2c896671aa4fed41df95",
+  "reviewed_source_files": 650,
+  "committed_source_files_verified": 650,
+  "source_map_sha256": "08ea1dc59989ae9dac0f71b1d1c75d41b0a3bd6cfdf957776275ba01d6aa6cdc",
+  "committed_blobs_match_reviewed_source": true,
+  "working_source_matches_reviewed_source": true,
+  "mismatches": [],
+  "method": "SHA-256 of every committed source blob read with git cat-file --batch, compared with review-source.json.",
+  "validation_summary": "validation-summary.json",
+  "publication_approval": "Alec, September 25, 2026: Then commit and push all changes in the tree, and begin the next item (now called 9b)."
+}

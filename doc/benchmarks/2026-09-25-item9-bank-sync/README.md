@@ -79,3 +79,8 @@ item 1, as documented in the original parity receipt; it is not waived here.
 Documentation-link verification passes **88/88** on the same source manifest.
 The implementation and the 9b planning documents are included in Alec's
 authorized full-tree publication.
+
+Implementation `0e70001` includes all changes in the reviewed tree, including the
+latest 9b plan with section 4e. All 650 committed source blobs match the review
+manifest ([committed-source verification](committed-source-verification.json)).
+Item 9b is next; the expectation-learning gates remain open.

@@ -1974,3 +1974,5 @@ after-training baseline remains **.0891618710**. All 650 source files match
 `08ea1dc59989ae9dac0f71b1d1c75d41b0a3bd6cfdf957776275ba01d6aa6cdc`
 across the affected, slow, full and measurement receipts.
 Final documentation-link verification: **88/88 passed**.
+
+Implementation `0e70001` [matches all 650 reviewed source blobs](benchmarks/2026-09-25-item9-bank-sync/committed-source-verification.json); item 9b follows this parity landing, while the expectation-learning gates remain open.
